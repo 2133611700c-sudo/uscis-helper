@@ -9,6 +9,8 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { routing } from '@/i18n/routing';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileBottomBar } from '@/components/layout/MobileBottomBar';
+import { MiaFloatingWidget } from '@/components/widgets/MiaFloatingWidget';
 import '../globals.css';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' });
@@ -21,19 +23,32 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'metadata' });
-  const localeMap: Record<string, string> = { en: 'en_US', ru: 'ru_RU', uk: 'uk_UA' };
+  const localeMap: Record<string, string> = {
+    en: 'en_US',
+    ru: 'ru_RU',
+    uk: 'uk_UA',
+    es: 'es_ES',
+  };
 
   return {
     title: t('title'),
     description: t('description'),
     keywords: t('keywords'),
     metadataBase: new URL('https://messenginfo.com'),
+    icons: {
+      icon: [
+        { url: '/favicon.ico' },
+        { url: '/icon.svg', type: 'image/svg+xml' },
+      ],
+      apple: [{ url: '/apple-touch-icon.png' }],
+    },
     alternates: {
       canonical: `https://messenginfo.com/${locale}`,
       languages: {
         'en': 'https://messenginfo.com/en',
         'ru': 'https://messenginfo.com/ru',
         'uk': 'https://messenginfo.com/uk',
+        'es': 'https://messenginfo.com/es',
         'x-default': 'https://messenginfo.com/en',
       },
     },
@@ -44,6 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: 'Messenginfo',
       locale: localeMap[locale] ?? 'en_US',
       type: 'website',
+      images: [{ url: '/og/messenginfo-og.png', width: 1200, height: 630 }],
     },
     robots: { index: true, follow: true },
   };
@@ -60,7 +76,7 @@ const organizationJsonLd = {
   url: 'https://messenginfo.com',
   email: 'contact@messenginfo.com',
   areaServed: 'US',
-  knowsLanguage: ['en', 'ru', 'uk'],
+  knowsLanguage: ['en', 'ru', 'uk', 'es'],
 };
 
 export default async function LocaleLayout({ children, params }: Props) {
@@ -71,11 +87,13 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} className={inter.variable}>
-      <body className="min-h-screen flex flex-col bg-background text-foreground antialiased">
+      <body className="min-h-screen flex flex-col bg-background text-foreground antialiased pb-14 md:pb-0">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
+          <MobileBottomBar />
+          <MiaFloatingWidget />
         </NextIntlClientProvider>
         <Analytics />
         <SpeedInsights />

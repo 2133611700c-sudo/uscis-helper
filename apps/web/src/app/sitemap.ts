@@ -1,29 +1,70 @@
 import type { MetadataRoute } from 'next';
 
 const BASE_URL = 'https://messenginfo.com';
-const LOCALES = ['en', 'ru', 'uk'] as const;
-const PAGES = ['', '/privacy', '/terms', '/disclaimer'] as const;
+const LOCALES = ['en', 'ru', 'uk', 'es'] as const;
+
+const BASE_PAGES = [
+  '',
+  '/privacy',
+  '/terms',
+  '/disclaimer',
+  '/about',
+  '/contact',
+  '/faq',
+  '/services',
+] as const;
+
+const SERVICE_SLUGS = [
+  'parole-expires-soon',
+  're-parole-u4u',
+  'tps-ukraine',
+  'ead-work-permit',
+  'i-94',
+  'uscis-case-status',
+  'payment-problem',
+  'biometrics',
+  'rfe-denial',
+  'translate-document',
+  'form-draft-helper',
+  'official-sources',
+] as const;
+
+function hreflangAlternates(path: string) {
+  return Object.fromEntries([
+    ...LOCALES.map((l) => [l, `${BASE_URL}/${l}${path}`]),
+    ['x-default', `${BASE_URL}/en${path}`],
+  ]);
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
+  const lastModified = new Date('2026-04-29');
   const entries: MetadataRoute.Sitemap = [];
 
   for (const locale of LOCALES) {
-    for (const page of PAGES) {
-      const url = `${BASE_URL}/${locale}${page}`;
+    // Base pages (8 per locale)
+    for (const page of BASE_PAGES) {
       entries.push({
-        url,
+        url: `${BASE_URL}/${locale}${page}`,
         lastModified,
         changeFrequency: page === '' ? 'weekly' : 'monthly',
-        priority: page === '' ? 1.0 : 0.7,
-        alternates: {
-          languages: Object.fromEntries(
-            LOCALES.map((l) => [l, `${BASE_URL}/${l}${page}`]),
-          ),
-        },
+        priority: page === '' ? 1.0 : page === '/services' ? 0.9 : 0.7,
+        alternates: { languages: hreflangAlternates(page) },
+      });
+    }
+
+    // Service pages (12 per locale)
+    for (const slug of SERVICE_SLUGS) {
+      const path = `/services/${slug}`;
+      entries.push({
+        url: `${BASE_URL}/${locale}${path}`,
+        lastModified,
+        changeFrequency: 'monthly',
+        priority: 0.8,
+        alternates: { languages: hreflangAlternates(path) },
       });
     }
   }
 
+  // Total: 4 × (8 + 12) = 80 entries
   return entries;
 }
