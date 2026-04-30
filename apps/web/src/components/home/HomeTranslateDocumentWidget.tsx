@@ -259,7 +259,7 @@ export function HomeTranslateDocumentWidget() {
             body={ts('source.body')}
             uscisPolicyManualLabel={ts('source.uscisPolicyManual')}
             ecfrLabel={ts('source.ecfr')}
-            lastCheckedLabel={ts('source.lastCheckedLabel')}
+            lastCheckedLabel={ts('source.lastCheckedLabel', { date: '2026-04-30' })}
           />
         </div>
       )}
