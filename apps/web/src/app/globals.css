@@ -42,11 +42,11 @@
   --color-risk-mid-fg: #b45309;
   --color-risk-high-bg: #fee2e2;
   --color-risk-high-fg: #b91c1c;
-  --radius-card: 1rem;
+  --radius-card: 0.75rem;
   --radius-btn: 0.625rem;
   --radius-badge: 9999px;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.06);
-  --shadow-card-hover: 0 4px 8px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.10);
+  --shadow-card: 0 2px 12px rgb(0 0 0 / 0.08);
+  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.12);
   --shadow-header: 0 1px 0 rgb(0 0 0 / 0.05);
   --max-w-content: 1200px;
 }

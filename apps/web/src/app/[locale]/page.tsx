@@ -20,7 +20,7 @@ export default async function HomePage() {
       <OfficialSourcesStrip />
       <AskQuestionCTA locale={locale} />
       <HowWeHelpSection />
-      <DocumentToolsSection locale={locale} />
+      <DocumentToolsSection />
       <TelegramStrip />
       <DisclaimerSection />
     </>
