@@ -51,8 +51,12 @@ importers:
   packages/db:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2
+        specifier: ^2.49.0
         version: 2.105.1
+    devDependencies:
+      typescript:
+        specifier: ^5
+        version: 5.9.3
 
   packages/shared: {}
 
