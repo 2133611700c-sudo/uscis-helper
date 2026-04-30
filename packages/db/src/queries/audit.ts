@@ -1,11 +1,12 @@
 import type { ServerClient } from '../client';
+import type { Json } from '../types/supabase';
 
 interface AuditEntry {
   actor_id?: string | null;
   action: string;
   target_table?: string;
   target_id?: string;
-  detail?: Record<string, unknown>;
+  detail?: Json;
   ip_hash?: string;
 }
 
