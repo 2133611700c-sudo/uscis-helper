@@ -110,8 +110,8 @@
       "shortProblem": "Learn how to respond to a Request for Evidence or an application denial."
     },
     "translate-document": {
-      "title": "Translate a Document",
-      "shortProblem": "Understand USCIS translation requirements for foreign-language documents."
+      "title": "Translate Document",
+      "shortProblem": "Upload a passport, birth certificate, or other document and prepare an English translation draft."
     },
     "form-draft-helper": {
       "title": "Form Draft Helper",
@@ -323,11 +323,11 @@
       "whatHelps": "What this helps with",
       "commonMistakes": "Common mistakes",
       "relatedServices": "Related Services",
-      "translationNotice": "USCIS generally requires a full English translation and translator certification for foreign-language documents submitted to USCIS. This page does not create a certified translation."
+      "translationNotice": "USCIS generally requires a full English translation with translator certification. This page creates a draft for review only."
     }
   },
   "translatePage": {
-    "safeStatement": "USCIS generally requires a full English translation and translator certification for foreign-language documents submitted to USCIS. This page does not create a certified translation."
+    "safeStatement": "USCIS generally requires a full English translation with translator certification. This page creates a draft for review only."
   },
   "askQuestion": {
     "title": "Don't see your question?",
@@ -535,6 +535,188 @@
           "body": "You may request access, correction, or deletion of your data by contacting contact@messenginfo.com."
         }
       ]
+    }
+  },
+  "translationService": {
+    "home": "Home",
+    "backToServices": "Back to Services",
+    "title": "Translate Document",
+    "subtitle": "Create a clean English translation draft from your original document. Use it to review names, dates, document fields, and prepare for a certified translator if needed.",
+    "draftOnlyBanner": "Draft only — translator certification is not included in this step.",
+    "chooseDocumentTitle": "Choose your document",
+    "chooseDocumentSubtitle": "Select the document type you want to prepare.",
+    "startAction": "Start →",
+    "documents": {
+      "passport": {
+        "title": "Passport",
+        "description": "Upload a passport bio page and prepare a clear English draft.",
+        "panelTitle": "Passport Translation Draft",
+        "fieldsIncluded": [
+          "English draft with the main passport fields.",
+          "Name, date of birth, passport number, issue date, and expiration date.",
+          "Notes for visible stamps or seals when they affect the main page.",
+          "Draft PDF layout for review before translator certification."
+        ],
+        "uploadInstructions": [
+          "Upload a clear photo or scan of the passport bio page.",
+          "Make sure all text is readable from edge to edge.",
+          "Avoid glare, blur, shadows, and cropped corners."
+        ],
+        "riskNote": "Review spelling, dates, and document numbers before final translator review."
+      },
+      "birth-certificate": {
+        "title": "Birth Certificate",
+        "description": "Prepare a draft with names, dates, places, and registry details.",
+        "panelTitle": "Birth Certificate Translation Draft",
+        "fieldsIncluded": [
+          "Child and parent names as shown on the original.",
+          "Date and place of birth, certificate number, and registry office details.",
+          "Visible seals, notes, or marginal entries when readable.",
+          "Draft layout you can review before sending to a translator."
+        ],
+        "uploadInstructions": [
+          "Upload the full certificate, front and back if text appears on both sides.",
+          "Keep stamps, seals, and handwritten notes visible.",
+          "Use a scan or flat photo with good contrast."
+        ],
+        "riskNote": "Birth records often include marginal notes. Keep the full page visible."
+      },
+      "marriage-certificate": {
+        "title": "Marriage Certificate",
+        "description": "Prepare a draft with spouses, dates, places, and registry details.",
+        "panelTitle": "Marriage Certificate Translation Draft",
+        "fieldsIncluded": [
+          "Spouse names, date of marriage, and place of registration.",
+          "Certificate numbers, registry references, and issuing authority details.",
+          "Visible seals or annotations when they appear on the document.",
+          "Draft layout for quick review before translator certification."
+        ],
+        "uploadInstructions": [
+          "Upload the full certificate, including all printed notes.",
+          "Do not crop off the registry area or seals.",
+          "Use a scan or high-resolution photo without glare."
+        ],
+        "riskNote": "Marriage certificates often fail when the registry section is cropped out."
+      },
+      "divorce-certificate": {
+        "title": "Divorce Certificate",
+        "description": "Prepare a draft with parties, dates, decision details, and registry data.",
+        "panelTitle": "Divorce Certificate Translation Draft",
+        "fieldsIncluded": [
+          "Names of both parties and the registration or decision date.",
+          "Court or registry references visible on the document.",
+          "Certificate numbers, issuing office, and official notes.",
+          "Draft layout for review before final translation steps."
+        ],
+        "uploadInstructions": [
+          "Upload the complete document, including any court or registry pages.",
+          "Keep signatures, stamps, and handwritten notes visible when present.",
+          "Use clear lighting and avoid folded edges."
+        ],
+        "riskNote": "If the divorce document has multiple pages, include all of them."
+      },
+      "diploma-transcript": {
+        "title": "Diploma / Transcript",
+        "description": "Prepare a draft with school names, dates, grades, and degree details.",
+        "panelTitle": "Diploma / Transcript Translation Draft",
+        "fieldsIncluded": [
+          "Institution name, degree or diploma title, and graduation dates.",
+          "Subjects, grades, or transcript rows when readable.",
+          "Issuing authority details and document numbers if shown.",
+          "Draft layout for reviewing names, dates, and academic terms."
+        ],
+        "uploadInstructions": [
+          "Upload the diploma or transcript pages in full.",
+          "Keep tables, grades, and stamps readable.",
+          "Use PDF when the document has multiple pages."
+        ],
+        "riskNote": "Academic records often need every page, not just the cover."
+      },
+      "military-document": {
+        "title": "Military Document",
+        "description": "Prepare a draft with service dates, unit details, and official notes.",
+        "panelTitle": "Military Document Translation Draft",
+        "fieldsIncluded": [
+          "Service dates, unit references, and personal identification fields.",
+          "Visible orders, discharge notes, or classification details.",
+          "Stamps, seals, and handwritten notes when readable.",
+          "Draft format for review before translator certification."
+        ],
+        "uploadInstructions": [
+          "Upload the full document, including all stamped pages.",
+          "Make sure handwriting is as clear as possible.",
+          "Use multiple photos or a PDF if the record spans several pages."
+        ],
+        "riskNote": "Military records often contain handwritten notes that need manual review later."
+      },
+      "driver-license": {
+        "title": "Driver License",
+        "description": "Prepare a draft with identity fields, dates, categories, and restrictions.",
+        "panelTitle": "Driver License Translation Draft",
+        "fieldsIncluded": [
+          "Name, document number, date of birth, issue date, and expiration date.",
+          "Vehicle categories and visible restrictions or endorsements.",
+          "Issuing authority details when shown.",
+          "Draft format for checking core identity fields before final review."
+        ],
+        "uploadInstructions": [
+          "Upload the front side and the back side if text appears on both sides.",
+          "Keep the card edges visible and avoid flash glare.",
+          "Use a flat photo or scan with readable small print."
+        ],
+        "riskNote": "If the back side contains codes or restrictions, upload it too."
+      },
+      "other-document": {
+        "title": "Other Document",
+        "description": "Prepare a draft for documents that do not fit the main categories.",
+        "panelTitle": "Other Document Translation Draft",
+        "fieldsIncluded": [
+          "Core names, dates, document numbers, and issuing authority details.",
+          "Visible seals, signatures, and short notes where readable.",
+          "Simple draft layout for review before human translation steps.",
+          "A clear list of fields that may still need manual completion."
+        ],
+        "uploadInstructions": [
+          "Upload the clearest complete copy you have.",
+          "Include every page that contains official text, seals, or signatures.",
+          "Use PDF if the document has more than one page."
+        ],
+        "riskNote": "Other documents vary a lot. Review the draft carefully before using it."
+      }
+    },
+    "panel": {
+      "whatYouGet": "What you get",
+      "whatToUpload": "What to upload",
+      "uploadButton": "Upload photo or file",
+      "createDraftButton": "Create Translation Draft",
+      "useAnotherDocument": "Use another document"
+    },
+    "upload": {
+      "dropText": "Drop your file here or click to upload",
+      "acceptedTypes": "Accepted: JPG, PNG, PDF, HEIC",
+      "maxSize": "Max 10 MB",
+      "privacyNote": "Your file is used only to create the draft. Do not upload sensitive documents unless you agree to the privacy terms.",
+      "localOnlyNotice": "Draft generation is not active yet. This test screen shows the intended flow. No file is uploaded.",
+      "fileTooLarge": "This file is larger than 10 MB. Please upload a smaller file.",
+      "unsupportedType": "Unsupported file type. Use JPG, PNG, PDF, or HEIC.",
+      "heicWarning": "HEIC files may need conversion before draft generation is activated.",
+      "removeFile": "Remove file"
+    },
+    "result": {
+      "placeholderTitle": "Draft flow ready",
+      "noBackend": "Your draft flow is ready for the next step. AI generation will be connected after verification.",
+      "draftOnly": "Draft only — translator certification is not included.",
+      "downloadDraft": "Download Draft PDF",
+      "sendToEmail": "Send to Email",
+      "startAnother": "Start another document"
+    },
+    "source": {
+      "title": "Official source requirement",
+      "body": "USCIS generally requires foreign-language documents to include a full English translation with translator certification. This tool creates a draft only.",
+      "uscisPolicyManual": "USCIS Policy Manual — Chapter 6 Evidence",
+      "ecfr": "8 CFR 103.2(b)(3)",
+      "lastCheckedLabel": "Last checked: {date}",
+      "sourceLabel": "Source: official government website"
     }
   }
 }
