@@ -110,8 +110,8 @@
       "shortProblem": "Aprenda a responder a una solicitud de evidencia o a una denegación de solicitud."
     },
     "translate-document": {
-      "title": "Traducir un documento",
-      "shortProblem": "Conozca los requisitos de USCIS para documentos en idiomas extranjeros."
+      "title": "Traducción de documentos",
+      "shortProblem": "Suba un pasaporte, certificado u otro documento y prepare un borrador de traducción al inglés."
     },
     "form-draft-helper": {
       "title": "Asistente para formularios",
@@ -323,11 +323,11 @@
       "whatHelps": "En qué ayuda",
       "commonMistakes": "Errores comunes",
       "relatedServices": "Servicios relacionados",
-      "translationNotice": "USCIS generalmente requiere una traducción completa al inglés y una certificación del traductor para los documentos en idiomas extranjeros presentados ante USCIS. Esta página no genera una traducción certificada."
+      "translationNotice": "USCIS generalmente exige una traducción completa al inglés y una certificación del traductor. Esta página crea solo un borrador para revisión."
     }
   },
   "translatePage": {
-    "safeStatement": "USCIS generalmente requiere una traducción completa al inglés y una certificación del traductor para los documentos en idiomas extranjeros presentados ante USCIS. Esta página no genera una traducción certificada."
+    "safeStatement": "USCIS generalmente exige una traducción completa al inglés y una certificación del traductor. Esta página crea solo un borrador para revisión."
   },
   "askQuestion": {
     "title": "¿No encuentra su pregunta?",
@@ -535,6 +535,188 @@
           "body": "Puede solicitar acceso, corrección o eliminación de sus datos contactando a contact@messenginfo.com."
         }
       ]
+    }
+  },
+  "translationService": {
+    "home": "Inicio",
+    "backToServices": "Volver a servicios",
+    "title": "Traducción de documentos",
+    "subtitle": "Cree un borrador de traducción al inglés a partir del documento original. Revise nombres, fechas y campos antes de la verificación final por un traductor.",
+    "draftOnlyBanner": "Solo borrador: esta etapa no incluye certificación del traductor.",
+    "chooseDocumentTitle": "Elija su documento",
+    "chooseDocumentSubtitle": "Seleccione el tipo de documento que desea preparar.",
+    "startAction": "Abrir →",
+    "documents": {
+      "passport": {
+        "title": "Pasaporte",
+        "description": "Suba la página biográfica del pasaporte y prepare un borrador claro en inglés.",
+        "panelTitle": "Borrador de traducción de pasaporte",
+        "fieldsIncluded": [
+          "Borrador en inglés con los campos principales del pasaporte.",
+          "Nombre, fecha de nacimiento, número de pasaporte, fecha de emisión y vencimiento.",
+          "Notas sobre sellos visibles cuando afecten la página principal.",
+          "Diseño PDF de borrador para revisión antes de la certificación del traductor."
+        ],
+        "uploadInstructions": [
+          "Suba una foto o escaneo claro de la página biográfica del pasaporte.",
+          "Asegúrese de que todo el texto sea legible de borde a borde.",
+          "Evite reflejos, desenfoque, sombras y esquinas recortadas."
+        ],
+        "riskNote": "Revise nombres, fechas y números del documento antes de la revisión final del traductor."
+      },
+      "birth-certificate": {
+        "title": "Certificado de nacimiento",
+        "description": "Prepare un borrador con nombres, fechas, lugares y datos del registro.",
+        "panelTitle": "Borrador de traducción del certificado de nacimiento",
+        "fieldsIncluded": [
+          "Nombres del niño y de los padres tal como aparecen en el original.",
+          "Fecha y lugar de nacimiento, número del certificado y datos del registro.",
+          "Sellos visibles, notas o anotaciones marginales cuando sean legibles.",
+          "Diseño de borrador para revisión antes de enviarlo a un traductor."
+        ],
+        "uploadInstructions": [
+          "Suba el documento completo, frente y reverso si hay texto en ambos lados.",
+          "Mantenga visibles los sellos, timbres y notas manuscritas.",
+          "Use un escaneo o una foto plana con buen contraste."
+        ],
+        "riskNote": "Los certificados de nacimiento suelen incluir notas marginales. Muestre la página completa."
+      },
+      "marriage-certificate": {
+        "title": "Certificado de matrimonio",
+        "description": "Prepare un borrador con los cónyuges, fechas, lugar y datos del registro.",
+        "panelTitle": "Borrador de traducción del certificado de matrimonio",
+        "fieldsIncluded": [
+          "Nombres de los cónyuges, fecha del matrimonio y lugar del registro.",
+          "Números del certificado, referencias del registro y datos de la autoridad emisora.",
+          "Sellos o anotaciones visibles cuando aparezcan en el documento.",
+          "Diseño de borrador para revisión rápida antes de la certificación del traductor."
+        ],
+        "uploadInstructions": [
+          "Suba el documento completo, incluidas todas las notas impresas.",
+          "No recorte la zona del registro ni los sellos.",
+          "Use un escaneo o foto de alta resolución sin reflejos."
+        ],
+        "riskNote": "Los certificados de matrimonio suelen fallar cuando la sección del registro está recortada."
+      },
+      "divorce-certificate": {
+        "title": "Certificado de divorcio",
+        "description": "Prepare un borrador con las partes, fechas, decisión y datos del registro.",
+        "panelTitle": "Borrador de traducción del certificado de divorcio",
+        "fieldsIncluded": [
+          "Nombres de ambas partes y fecha del registro o de la decisión.",
+          "Referencias del tribunal o del registro visibles en el documento.",
+          "Números del certificado, oficina emisora y notas oficiales.",
+          "Diseño de borrador para revisión antes de los pasos finales de traducción."
+        ],
+        "uploadInstructions": [
+          "Suba el documento completo, incluidas las páginas del tribunal o del registro.",
+          "Mantenga visibles firmas, sellos y notas manuscritas cuando existan.",
+          "Use buena iluminación y evite bordes doblados."
+        ],
+        "riskNote": "Si el documento de divorcio tiene varias páginas, súbalas todas."
+      },
+      "diploma-transcript": {
+        "title": "Diploma / historial académico",
+        "description": "Prepare un borrador con institución, fechas, calificaciones y datos del título.",
+        "panelTitle": "Borrador de traducción de diploma / historial académico",
+        "fieldsIncluded": [
+          "Nombre de la institución, título o grado y fechas de graduación.",
+          "Asignaturas, calificaciones o filas del historial cuando sean legibles.",
+          "Datos de la autoridad emisora y números del documento si aparecen.",
+          "Diseño de borrador para revisar nombres, fechas y términos académicos."
+        ],
+        "uploadInstructions": [
+          "Suba el diploma o las páginas del historial académico completas.",
+          "Mantenga legibles tablas, calificaciones y sellos.",
+          "Use PDF si el documento tiene varias páginas."
+        ],
+        "riskNote": "Los registros académicos suelen requerir todas las páginas, no solo la portada."
+      },
+      "military-document": {
+        "title": "Documento militar",
+        "description": "Prepare un borrador con fechas de servicio, unidad y notas oficiales.",
+        "panelTitle": "Borrador de traducción de documento militar",
+        "fieldsIncluded": [
+          "Fechas de servicio, referencias de la unidad y campos de identificación personal.",
+          "Órdenes visibles, notas de baja o detalles de clasificación.",
+          "Sellos, timbres y notas manuscritas cuando sean legibles.",
+          "Formato de borrador para revisión antes de la certificación del traductor."
+        ],
+        "uploadInstructions": [
+          "Suba el documento completo, incluidas todas las páginas selladas.",
+          "Procure que la escritura a mano sea lo más legible posible.",
+          "Use varias fotos o un PDF si el registro tiene varias páginas."
+        ],
+        "riskNote": "Los registros militares suelen contener notas manuscritas que después requieren revisión manual."
+      },
+      "driver-license": {
+        "title": "Licencia de conducir",
+        "description": "Prepare un borrador con datos personales, fechas, categorías y restricciones.",
+        "panelTitle": "Borrador de traducción de licencia de conducir",
+        "fieldsIncluded": [
+          "Nombre, número del documento, fecha de nacimiento, emisión y vencimiento.",
+          "Categorías de vehículo y restricciones o endosos visibles.",
+          "Datos de la autoridad emisora cuando aparezcan.",
+          "Formato de borrador para revisar los campos principales antes de la revisión final."
+        ],
+        "uploadInstructions": [
+          "Suba el frente y el reverso si hay texto en ambos lados.",
+          "Mantenga visibles los bordes de la tarjeta y evite reflejos del flash.",
+          "Use una foto plana o un escaneo para que se lea la letra pequeña."
+        ],
+        "riskNote": "Si el reverso contiene códigos o restricciones, súbalo también."
+      },
+      "other-document": {
+        "title": "Otro documento",
+        "description": "Prepare un borrador para documentos que no encajan en las categorías principales.",
+        "panelTitle": "Borrador de traducción de otro documento",
+        "fieldsIncluded": [
+          "Nombres, fechas, números del documento y datos de la autoridad emisora.",
+          "Sellos visibles, firmas y notas breves cuando sean legibles.",
+          "Diseño simple de borrador para revisión antes de la traducción humana.",
+          "Lista clara de campos que aún pueden requerir completarse manualmente."
+        ],
+        "uploadInstructions": [
+          "Suba la copia completa más clara que tenga.",
+          "Incluya todas las páginas con texto oficial, sellos o firmas.",
+          "Use PDF si el documento tiene más de una página."
+        ],
+        "riskNote": "Estos documentos varían mucho. Revise el borrador con cuidado antes de usarlo."
+      }
+    },
+    "panel": {
+      "whatYouGet": "Qué recibe",
+      "whatToUpload": "Qué subir",
+      "uploadButton": "Subir foto o archivo",
+      "createDraftButton": "Crear borrador de traducción",
+      "useAnotherDocument": "Usar otro documento"
+    },
+    "upload": {
+      "dropText": "Suelte su archivo aquí o haga clic para subirlo",
+      "acceptedTypes": "Aceptados: JPG, PNG, PDF, HEIC",
+      "maxSize": "Máximo 10 MB",
+      "privacyNote": "El archivo se usa solo para crear el borrador. No suba documentos sensibles si no acepta la política de privacidad.",
+      "localOnlyNotice": "La generación del borrador aún no está activa. Esta pantalla de prueba muestra el flujo previsto. No se sube ningún archivo.",
+      "fileTooLarge": "Este archivo supera los 10 MB. Suba un archivo más pequeño.",
+      "unsupportedType": "Tipo de archivo no compatible. Use JPG, PNG, PDF o HEIC.",
+      "heicWarning": "Los archivos HEIC pueden requerir conversión antes de activar la generación del borrador.",
+      "removeFile": "Quitar archivo"
+    },
+    "result": {
+      "placeholderTitle": "Flujo de borrador listo",
+      "noBackend": "Su flujo de borrador está listo para el siguiente paso. La generación con IA se conectará después de la verificación.",
+      "draftOnly": "Solo borrador: no incluye certificación del traductor.",
+      "downloadDraft": "Descargar borrador PDF",
+      "sendToEmail": "Enviar por correo",
+      "startAnother": "Comenzar otro documento"
+    },
+    "source": {
+      "title": "Requisito oficial de la fuente",
+      "body": "USCIS generalmente exige que los documentos en idioma extranjero incluyan una traducción completa al inglés con certificación del traductor. Esta herramienta crea solo un borrador.",
+      "uscisPolicyManual": "USCIS Policy Manual — Chapter 6 Evidence",
+      "ecfr": "8 CFR 103.2(b)(3)",
+      "lastCheckedLabel": "Última revisión: {date}",
+      "sourceLabel": "Fuente: sitio oficial del gobierno"
     }
   }
 }
