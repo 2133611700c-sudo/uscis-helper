@@ -372,7 +372,7 @@
         "description": "Cuándo y cómo debe traducirse una licencia de conducir para USCIS."
       }
     },
-    "footnote": "Las herramientas de documentos estarán disponibles próximamente. Estas páginas explican qué preparar y enlazan a requisitos oficiales."
+    "footnote": "Las herramientas para documentos se agregarán después de la verificación. Estas páginas explican qué preparar y enlazan a los requisitos oficiales."
   },
   "telegramStrip": {
     "title": "Acceso a la comunidad",
@@ -401,7 +401,13 @@
         "tagline": "Información migratoria de fuentes oficiales para ucranianos en EE. UU. No somos un bufete de abogados."
       },
       "services": {
-        "title": "Servicios"
+        "title": "Servicios",
+        "links": {
+          "all": "Ver todos los servicios",
+          "reparole": "Re-parole (U4U)",
+          "ead": "Permiso de trabajo EAD",
+          "tps": "TPS Ucrania"
+        }
       },
       "resources": {
         "title": "Recursos",

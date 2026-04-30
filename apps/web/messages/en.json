@@ -372,7 +372,7 @@
         "description": "When and how a driver's license must be translated for USCIS."
       }
     },
-    "footnote": "Document tools are coming soon. These pages explain what to prepare and link to official requirements."
+    "footnote": "Document tools will be added after verification. These pages explain what to prepare and link to official requirements."
   },
   "telegramStrip": {
     "title": "Community access",
@@ -401,7 +401,13 @@
         "tagline": "Official-source immigration information for Ukrainians in the U.S. Not a law firm."
       },
       "services": {
-        "title": "Services"
+        "title": "Services",
+        "links": {
+          "all": "Browse All Services",
+          "reparole": "Re-parole (U4U)",
+          "ead": "EAD Work Permit",
+          "tps": "TPS Ukraine"
+        }
       },
       "resources": {
         "title": "Resources",

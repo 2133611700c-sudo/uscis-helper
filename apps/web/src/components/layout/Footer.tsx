@@ -20,16 +20,16 @@ export function Footer() {
             <p className="text-white font-semibold text-sm mb-3">{t('columns.services.title')}</p>
             <nav className="flex flex-col gap-2 text-sm">
               <Link href={`/${locale}/services`} className="text-slate-400 hover:text-white transition-colors">
-                Browse All Services
+                {t('columns.services.links.all')}
               </Link>
               <Link href={`/${locale}/services/re-parole-u4u`} className="text-slate-400 hover:text-white transition-colors">
-                Re-parole (U4U)
+                {t('columns.services.links.reparole')}
               </Link>
               <Link href={`/${locale}/services/ead-work-permit`} className="text-slate-400 hover:text-white transition-colors">
-                EAD Work Permit
+                {t('columns.services.links.ead')}
               </Link>
               <Link href={`/${locale}/services/tps-ukraine`} className="text-slate-400 hover:text-white transition-colors">
-                TPS Ukraine
+                {t('columns.services.links.tps')}
               </Link>
             </nav>
           </div>
