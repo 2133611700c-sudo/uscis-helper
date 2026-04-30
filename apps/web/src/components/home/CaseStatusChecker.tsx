@@ -28,10 +28,10 @@ export function CaseStatusChecker() {
   return (
     <section
       id="case-status"
-      className="mt-8 rounded-card bg-white border border-slate-200 p-5 shadow-card"
+      className="mt-8 rounded-card bg-white border border-slate-200 p-5 md:p-6 shadow-card"
     >
-      <h2 className="text-sm font-semibold text-ink-900 mb-1">{t('title')}</h2>
-      <p className="text-xs text-ink-500 mb-3">{t('description')}</p>
+      <h2 className="text-lg font-semibold text-ink-900 mb-1">{t('title')}</h2>
+      <p className="text-sm text-ink-500 mb-4">{t('description')}</p>
       <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500 pointer-events-none" />
@@ -46,7 +46,7 @@ export function CaseStatusChecker() {
         </div>
         <button
           type="submit"
-          className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-btn transition-colors"
+          className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-base font-medium px-5 py-2.5 rounded-btn transition-colors"
         >
           {t('button')}
         </button>
@@ -56,7 +56,7 @@ export function CaseStatusChecker() {
           {error}
         </p>
       )}
-      <p className="mt-2 text-xs text-ink-500">{t('privacyNote')}</p>
+      <p className="mt-2 text-sm text-ink-500">{t('privacyNote')}</p>
     </section>
   )
 }

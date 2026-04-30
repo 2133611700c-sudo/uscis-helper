@@ -11,7 +11,7 @@ interface IconBadgeProps {
 
 const sizeMap: Record<Size, { container: string; icon: string }> = {
   sm: { container: 'w-8 h-8', icon: 'w-4 h-4' },
-  md: { container: 'w-12 h-12', icon: 'w-6 h-6' },
+  md: { container: 'w-14 h-14', icon: 'w-7 h-7' },
   lg: { container: 'w-16 h-16', icon: 'w-8 h-8' },
 }
 
