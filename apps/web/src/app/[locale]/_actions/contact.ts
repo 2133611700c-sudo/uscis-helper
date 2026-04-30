@@ -41,6 +41,18 @@ export async function submitContact(
   _prevState: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
+  try {
+    return await _submitContactImpl(_prevState, formData);
+  } catch (err) {
+    console.error('[contact] unhandled error:', err instanceof Error ? err.message : String(err));
+    return { ok: false, code: 'serverError' };
+  }
+}
+
+async function _submitContactImpl(
+  _prevState: ContactFormState,
+  formData: FormData,
+): Promise<ContactFormState> {
   // a) Validate
   const raw = {
     name: formData.get('name'),
