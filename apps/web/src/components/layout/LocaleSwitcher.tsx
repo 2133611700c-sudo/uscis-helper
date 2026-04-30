@@ -1,55 +1,50 @@
 'use client'
 
+import { useMemo } from 'react'
+import { Globe } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, usePathname } from 'next/navigation'
 import { routing } from '@/i18n/routing'
-import { cn } from '@/lib/utils'
 
 const labels: Record<string, string> = { en: 'EN', ru: 'RU', uk: 'UK', es: 'ES' }
-const localeIndex = Object.fromEntries(routing.locales.map((locale, index) => [locale, index])) as Record<string, number>
+type AppLocale = (typeof routing.locales)[number]
 
 export function LocaleSwitcher() {
-  const locale = useLocale()
+  const locale = useLocale() as AppLocale
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations('header.languageSelector')
 
-  function switchLocale(newLocale: string) {
-    if (newLocale === locale) return
+  const { currentLabel, nextLocale, nextLabel } = useMemo(() => {
+    const locales = [...routing.locales] as AppLocale[]
+    const currentIndex = Math.max(locales.indexOf(locale), 0)
+    const nextIndex = (currentIndex + 1) % locales.length
+    return {
+      currentLabel: labels[locale],
+      nextLocale: locales[nextIndex],
+      nextLabel: labels[locales[nextIndex]],
+    }
+  }, [locale])
+
+  function switchLocale() {
     const segments = pathname.split('/')
-    segments[1] = newLocale
+    segments[1] = nextLocale
     router.push(segments.join('/'))
   }
 
   return (
-    <div
-      className="relative inline-grid grid-cols-4 items-center rounded-full border border-slate-200 bg-slate-100 p-1 shadow-sm overflow-hidden"
-      aria-label={t('label')}
+    <button
+      type="button"
+      onClick={switchLocale}
+      className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-ink-800 shadow-sm transition-all duration-200 hover:border-brand-200 hover:bg-slate-50"
+      aria-label={`${t('label')}: ${currentLabel} → ${nextLabel}`}
+      title={t('label')}
     >
-      <span
-        aria-hidden="true"
-        className="absolute left-1 top-1 bottom-1 rounded-full bg-brand-600 shadow-sm transition-transform duration-300 ease-out"
-        style={{
-          width: 'calc(25% - 0.375rem)',
-          transform: `translateX(calc(${localeIndex[locale] ?? 0} * 100% + ${localeIndex[locale] ?? 0} * 0.125rem))`,
-        }}
-      />
-      {routing.locales.map((l) => (
-        <button
-          key={l}
-          onClick={() => switchLocale(l)}
-          className={cn(
-            'relative z-10 min-w-[42px] sm:min-w-[46px] px-2.5 py-2 text-xs font-semibold rounded-full transition-colors duration-200',
-            l === locale
-              ? 'text-white'
-              : 'text-ink-600 hover:text-ink-900'
-          )}
-          aria-label={`Switch to ${labels[l]}`}
-          aria-current={l === locale ? 'true' : undefined}
-        >
-          {labels[l]}
-        </button>
-      ))}
-    </div>
+      <Globe className="h-4 w-4 shrink-0 text-ink-700" />
+      <span>{currentLabel}</span>
+      <span className="text-[9px] font-semibold text-ink-500 opacity-60">
+        → {nextLabel}
+      </span>
+    </button>
   )
 }
