@@ -120,7 +120,8 @@
     "official-sources": {
       "title": "Biblioteca de fuentes oficiales",
       "shortProblem": "Enlaces seleccionados a USCIS, CBP, DOJ y otras fuentes gubernamentales autorizadas."
-    }
+    },
+    "action": "Abrir →"
   },
   "servicePages": {
     "parole-expires-soon": {
@@ -314,6 +315,15 @@
       ],
       "officialNote": "Todas las fuentes listadas son sitios web oficiales del gobierno de EE. UU.",
       "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "labels": {
+      "home": "Inicio",
+      "openOfficialSource": "Abrir fuente oficial",
+      "backToServices": "Volver a servicios",
+      "whatHelps": "En qué ayuda",
+      "commonMistakes": "Errores comunes",
+      "relatedServices": "Servicios relacionados",
+      "translationNotice": "USCIS generalmente requiere una traducción completa al inglés y una certificación del traductor para los documentos en idiomas extranjeros presentados ante USCIS. Esta página no genera una traducción certificada."
     }
   },
   "translatePage": {

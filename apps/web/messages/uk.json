@@ -125,7 +125,8 @@
     "official-sources": {
       "title": "Бібліотека офіційних джерел",
       "shortProblem": "Підібрані посилання на USCIS, CBP, DOJ та інші авторитетні державні джерела."
-    }
+    },
+    "action": "Відкрити →"
   },
   "servicePages": {
     "parole-expires-soon": {
@@ -319,6 +320,15 @@
       ],
       "officialNote": "Усі вказані джерела — офіційні сайти уряду США.",
       "lastVerifiedLabel": "Перевірено: {date}"
+    },
+    "labels": {
+      "home": "Головна",
+      "openOfficialSource": "Відкрити офіційне джерело",
+      "backToServices": "Назад до послуг",
+      "whatHelps": "Чим це допомагає",
+      "commonMistakes": "Поширені помилки",
+      "relatedServices": "Схожі послуги",
+      "translationNotice": "USCIS зазвичай вимагає повний переклад англійською та засвідчення перекладача для іноземномовних документів, що подаються до USCIS. Ця сторінка не створює засвідчений переклад."
     }
   },
   "translatePage": {

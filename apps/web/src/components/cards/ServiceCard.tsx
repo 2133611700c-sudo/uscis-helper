@@ -21,9 +21,9 @@ export function ServiceCard({ card, locale, className }: ServiceCardProps) {
       href={`/${locale}/services/${card.slug}`}
       data-service-card={card.id}
       className={cn(
-        'group flex flex-col gap-3 rounded-card bg-white border border-slate-100 p-5',
-        'shadow-card hover:shadow-card-hover transition-shadow duration-200',
-        'hover:-translate-y-0.5 transition-transform',
+        'group flex h-full min-h-[176px] md:min-h-[228px] flex-col gap-4 rounded-card bg-white border border-slate-100 p-5 md:p-6',
+        'shadow-card hover:shadow-card-hover transition-[transform,box-shadow] duration-200',
+        'hover:-translate-y-1 active:scale-[0.99]',
         className,
       )}
     >
@@ -31,15 +31,20 @@ export function ServiceCard({ card, locale, className }: ServiceCardProps) {
         <IconBadge icon={card.icon} size="md" />
         <RiskBadge risk={card.risk} />
       </div>
-      <div>
-        <h3 className="font-semibold text-ink-900 text-sm leading-snug group-hover:text-brand-600 transition-colors">
+      <div className="space-y-2">
+        <h3 className="font-semibold text-ink-900 text-lg leading-snug group-hover:text-brand-600 transition-colors">
           {cardData.title}
         </h3>
-        <p className="mt-1 text-xs text-ink-500 leading-relaxed line-clamp-2">
+        <p className="text-sm text-ink-600 leading-relaxed line-clamp-3">
           {cardData.shortProblem}
         </p>
       </div>
-      {card.hasOfficialSource && <SourceBadge className="self-start mt-auto" />}
+      <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+        {card.hasOfficialSource ? <SourceBadge className="self-start" /> : <span />}
+        <span className="text-sm font-medium text-brand-600 transition-transform group-hover:translate-x-0.5">
+          {t('action')}
+        </span>
+      </div>
     </Link>
   )
 }

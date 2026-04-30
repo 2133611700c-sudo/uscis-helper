@@ -13,7 +13,7 @@ export function AskQuestionCTA({ locale }: AskQuestionCTAProps) {
   return (
     <div className="py-10 bg-white">
       <Container>
-        <div className="rounded-card bg-brand-50 border border-brand-100 p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-6">
+        <div className="rounded-card bg-brand-50 border border-brand-100 p-6 md:p-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex items-start gap-4 flex-1">
             <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
               <HelpCircle className="w-5 h-5 text-brand-600" />
@@ -26,14 +26,14 @@ export function AskQuestionCTA({ locale }: AskQuestionCTAProps) {
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Link
               href={`/${locale}/faq`}
-              className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-btn transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-base font-medium px-5 py-2.5 rounded-btn transition-colors"
             >
               {t('ctaFaq')}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href={`/${locale}/contact`}
-              className="inline-flex items-center justify-center gap-2 border border-brand-200 text-brand-700 hover:bg-brand-100 text-sm font-medium px-5 py-2.5 rounded-btn transition-colors"
+              className="inline-flex items-center justify-center gap-2 border border-brand-200 text-brand-700 hover:bg-brand-100 text-base font-medium px-5 py-2.5 rounded-btn transition-colors"
             >
               {t('ctaContact')}
             </Link>
