@@ -1,45 +1,82 @@
-import { useTranslations, useLocale } from 'next-intl';
-import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl'
+import Link from 'next/link'
 
 export function Footer() {
-  const t = useTranslations('footer');
-  const tLinks = useTranslations('footer.links');
-  const locale = useLocale();
-  const year = new Date().getFullYear();
+  const t = useTranslations('footer')
+  const locale = useLocale()
 
   return (
-    <footer className="border-t border-border bg-muted/30">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2">
-            <p className="text-lg font-semibold text-primary mb-2">Messenginfo</p>
-            <p className="text-sm text-muted-foreground mb-4">{t('tagline')}</p>
-            <p className="text-xs text-muted-foreground max-w-md">{t('shortDisclaimer')}</p>
-          </div>
+    <footer className="bg-ink-900 text-slate-300">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+          {/* About */}
           <div>
-            <p className="text-sm font-medium mb-3">{t('contact')}</p>
+            <p className="text-white font-bold text-base mb-2">{t('columns.about.title')}</p>
+            <p className="text-slate-400 text-sm leading-relaxed">{t('columns.about.tagline')}</p>
+          </div>
+
+          {/* Services */}
+          <div>
+            <p className="text-white font-semibold text-sm mb-3">{t('columns.services.title')}</p>
             <nav className="flex flex-col gap-2 text-sm">
-              <Link href={`/${locale}/privacy`} className="text-muted-foreground hover:text-foreground transition-colors">
-                {tLinks('privacy')}
+              <Link href={`/${locale}/services`} className="text-slate-400 hover:text-white transition-colors">
+                Browse All Services
               </Link>
-              <Link href={`/${locale}/terms`} className="text-muted-foreground hover:text-foreground transition-colors">
-                {tLinks('terms')}
+              <Link href={`/${locale}/services/re-parole-u4u`} className="text-slate-400 hover:text-white transition-colors">
+                Re-parole (U4U)
               </Link>
-              <Link href={`/${locale}/disclaimer`} className="text-muted-foreground hover:text-foreground transition-colors">
-                {tLinks('disclaimer')}
+              <Link href={`/${locale}/services/ead-work-permit`} className="text-slate-400 hover:text-white transition-colors">
+                EAD Work Permit
               </Link>
-              <a href="mailto:contact@messenginfo.com" className="text-muted-foreground hover:text-foreground transition-colors">
-                contact@messenginfo.com
-              </a>
+              <Link href={`/${locale}/services/tps-ukraine`} className="text-slate-400 hover:text-white transition-colors">
+                TPS Ukraine
+              </Link>
+            </nav>
+          </div>
+
+          {/* Resources */}
+          <div>
+            <p className="text-white font-semibold text-sm mb-3">{t('columns.resources.title')}</p>
+            <nav className="flex flex-col gap-2 text-sm">
+              <Link href={`#sources`} className="text-slate-400 hover:text-white transition-colors">
+                {t('columns.resources.links.officialLinks')}
+              </Link>
+              <Link href={`/${locale}/faq`} className="text-slate-400 hover:text-white transition-colors">
+                {t('columns.resources.links.faq')}
+              </Link>
+              <Link href={`/${locale}/contact`} className="text-slate-400 hover:text-white transition-colors">
+                {t('columns.resources.links.contact')}
+              </Link>
+            </nav>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <p className="text-white font-semibold text-sm mb-3">{t('columns.legal.title')}</p>
+            <nav className="flex flex-col gap-2 text-sm">
+              <Link href={`/${locale}/privacy`} className="text-slate-400 hover:text-white transition-colors">
+                {t('columns.legal.links.privacy')}
+              </Link>
+              <Link href={`/${locale}/terms`} className="text-slate-400 hover:text-white transition-colors">
+                {t('columns.legal.links.terms')}
+              </Link>
+              <Link href={`/${locale}/disclaimer`} className="text-slate-400 hover:text-white transition-colors">
+                {t('columns.legal.links.disclaimer')}
+              </Link>
             </nav>
           </div>
         </div>
-        <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">
-            {t('rights', { year })}
-          </p>
+
+        <div className="mt-10 pt-6 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-slate-500">{t('bottom')}</p>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span>EN</span><span>·</span>
+            <span>RU</span><span>·</span>
+            <span>UK</span><span>·</span>
+            <span>ES</span>
+          </div>
         </div>
       </div>
     </footer>
-  );
+  )
 }

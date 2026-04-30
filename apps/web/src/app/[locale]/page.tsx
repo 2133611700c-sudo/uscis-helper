@@ -1,19 +1,28 @@
-import { HeroSection } from '@/components/sections/HeroSection';
-import { ServicesSection } from '@/components/sections/ServicesSection';
-import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
-import { WhyMessenginfoSection } from '@/components/sections/WhyMessenginfoSection';
-import { ContactSection } from '@/components/sections/ContactSection';
-import { DisclaimerSection } from '@/components/sections/DisclaimerSection';
+import { getLocale } from 'next-intl/server'
+import { TrendingTopicsBar } from '@/components/home/TrendingTopicsBar'
+import { Hero } from '@/components/home/Hero'
+import { OfficialSourcesStrip } from '@/components/home/OfficialSourcesStrip'
+import { ServiceCardGrid } from '@/components/home/ServiceCardGrid'
+import { AskQuestionCTA } from '@/components/home/AskQuestionCTA'
+import { HowWeHelpSection } from '@/components/home/HowWeHelpSection'
+import { DocumentToolsSection } from '@/components/home/DocumentToolsSection'
+import { TelegramStrip } from '@/components/home/TelegramStrip'
+import { DisclaimerSection } from '@/components/home/DisclaimerSection'
 
-export default function HomePage() {
+export default async function HomePage() {
+  const locale = await getLocale()
+
   return (
     <>
-      <HeroSection />
-      <ServicesSection />
-      <HowItWorksSection />
-      <WhyMessenginfoSection />
-      <ContactSection />
+      <TrendingTopicsBar locale={locale} />
+      <Hero locale={locale} />
+      <OfficialSourcesStrip />
+      <ServiceCardGrid locale={locale} />
+      <AskQuestionCTA locale={locale} />
+      <HowWeHelpSection />
+      <DocumentToolsSection locale={locale} />
+      <TelegramStrip />
       <DisclaimerSection />
     </>
-  );
+  )
 }
