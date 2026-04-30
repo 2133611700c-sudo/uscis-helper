@@ -37,7 +37,15 @@
       "Basado en fuentes oficiales",
       "4 idiomas",
       "No es un bufete de abogados"
-    ]
+    ],
+    "disclaimer": {
+      "badge": "Solo soporte informativo",
+      "items": [
+        "No somos abogados ni abogados de inmigración con licencia.",
+        "Solo brindamos soporte informativo, asistencia con traducción de documentos y preparación de formularios.",
+        "Para asesoramiento legal, consulte a un abogado de inmigración con licencia."
+      ]
+    }
   },
   "caseStatus": {
     "title": "Verificar el estado de su caso en USCIS",

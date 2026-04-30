@@ -6,11 +6,11 @@ import {
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   FileCheck2,
   Languages,
 } from 'lucide-react'
 import { translationDocuments, type TranslationDocumentType } from '@/data/translationDocuments'
-import { DocumentTypeCard } from '@/components/services/translation/DocumentTypeCard'
 import { DocumentUploadBox } from '@/components/services/translation/DocumentUploadBox'
 import { DraftResultPlaceholder } from '@/components/services/translation/DraftResultPlaceholder'
 import { OfficialTranslationSourceBox } from '@/components/services/translation/OfficialTranslationSourceBox'
@@ -113,20 +113,39 @@ export function HomeTranslateDocumentWidget() {
 
       {isOpen && (
         <div className="border-t border-[#dee2e6] p-5 md:p-6 space-y-6">
-          {/* 2-column card grid — 1 col mobile, 2 col sm+ (matches HF pattern) */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {translationDocuments.map((doc) => (
-              <DocumentTypeCard
-                key={doc.id}
-                title={gridMessages.documents[doc.id].title}
-                description={gridMessages.documents[doc.id].description}
-                icon={doc.icon}
-                isSelected={selectedDoc === doc.id}
-                onSelect={() => selectDoc(doc.id)}
-                actionLabel={gridMessages.startAction}
-              />
-            ))}
-          </div>
+          {/* Single-column list — "выпал список колонкой" */}
+          <ul className="divide-y divide-[#dee2e6] overflow-hidden rounded-[12px] border border-[#dee2e6]">
+            {translationDocuments.map((doc) => {
+              const Icon = doc.icon
+              const isSelected = selectedDoc === doc.id
+              return (
+                <li key={doc.id}>
+                  <button
+                    type="button"
+                    onClick={() => selectDoc(doc.id)}
+                    className={cn(
+                      'flex w-full items-center gap-3 px-5 py-4 text-left transition-colors',
+                      isSelected ? 'bg-brand-50' : 'hover:bg-slate-50',
+                    )}
+                  >
+                    <div className={cn(
+                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
+                      isSelected ? 'bg-brand-100' : 'bg-slate-100',
+                    )}>
+                      <Icon className={cn('h-4 w-4', isSelected ? 'text-brand-600' : 'text-ink-500')} />
+                    </div>
+                    <span className={cn(
+                      'flex-1 text-sm font-medium',
+                      isSelected ? 'font-semibold text-brand-700' : 'text-ink-700',
+                    )}>
+                      {gridMessages.documents[doc.id].title}
+                    </span>
+                    {isSelected && <ChevronRight className="h-4 w-4 shrink-0 text-brand-600" />}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
 
           {/* Service panel — appears below grid when doc selected */}
           {selectedDoc && docContent && (
