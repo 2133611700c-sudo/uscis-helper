@@ -37,7 +37,15 @@
       "Official-source based",
       "4 languages",
       "Not a law firm"
-    ]
+    ],
+    "disclaimer": {
+      "badge": "Service Support Only",
+      "items": [
+        "We are not licensed attorneys or immigration lawyers.",
+        "We provide information support, document translation assistance, and form-preparation help only.",
+        "For legal advice, please contact a licensed immigration attorney."
+      ]
+    }
   },
   "caseStatus": {
     "title": "Check Your USCIS Case Status",
