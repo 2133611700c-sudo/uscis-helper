@@ -14,7 +14,7 @@ export function MobileBottomBar() {
   const links = [
     { href: `/${locale}`, label: t('home'), icon: Home },
     { href: `/${locale}/services`, label: t('services'), icon: Grid3X3 },
-    { href: `#case-status`, label: t('status'), icon: Search },
+    { href: `/${locale}/#case-status`, label: t('status'), icon: Search },
     { href: `/${locale}/contact`, label: t('contact'), icon: Mail },
   ]
 
@@ -33,7 +33,7 @@ export function MobileBottomBar() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors',
+                'flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors',
                 isActive ? 'text-brand-600' : 'text-ink-500 hover:text-ink-900',
               )}
               aria-current={isActive ? 'page' : undefined}

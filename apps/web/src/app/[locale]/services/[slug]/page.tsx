@@ -81,6 +81,7 @@ export default async function ServicePage({ params }: Props) {
   const tCards = await getTranslations({ locale, namespace: 'cards' })
   const tPages = await getTranslations({ locale, namespace: 'servicePages' })
   const tBreadcrumb = await getTranslations({ locale, namespace: 'services' })
+  const pageLabels = await getTranslations({ locale, namespace: 'servicePages.labels' })
 
   const cardData = tCards.raw(slug) as { title: string; shortProblem: string }
   const pageData = tPages.raw(slug) as {
@@ -111,8 +112,8 @@ export default async function ServicePage({ params }: Props) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `https://messenginfo.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: 'Services', item: `https://messenginfo.com/${locale}/services` },
+      { '@type': 'ListItem', position: 1, name: pageLabels('home'), item: `https://messenginfo.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: tBreadcrumb('title'), item: `https://messenginfo.com/${locale}/services` },
       { '@type': 'ListItem', position: 3, name: cardData.title, item: `https://messenginfo.com/${locale}/services/${slug}` },
     ],
   }
@@ -141,7 +142,7 @@ export default async function ServicePage({ params }: Props) {
       <div className="bg-slate-50 border-b border-slate-100">
         <Container>
           <nav className="py-3 flex items-center gap-1.5 text-xs text-ink-500" aria-label="Breadcrumb">
-            <Link href={`/${locale}`} className="hover:text-ink-900 transition-colors">Home</Link>
+            <Link href={`/${locale}`} className="hover:text-ink-900 transition-colors">{pageLabels('home')}</Link>
             <ChevronRight className="w-3 h-3" />
             <Link href={`/${locale}/services`} className="hover:text-ink-900 transition-colors">{tBreadcrumb('title')}</Link>
             <ChevronRight className="w-3 h-3" />
@@ -168,16 +169,16 @@ export default async function ServicePage({ params }: Props) {
               href={card.officialSourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-btn transition-colors"
+              className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-base font-medium px-5 py-2.5 rounded-btn transition-colors"
             >
-              Open Official Source
+              {pageLabels('openOfficialSource')}
               <ExternalLink className="w-4 h-4" />
             </a>
             <Link
               href={`/${locale}/services`}
-              className="inline-flex items-center gap-2 border border-slate-200 text-ink-700 hover:bg-slate-50 text-sm font-medium px-5 py-2.5 rounded-btn transition-colors"
+              className="inline-flex items-center gap-2 border border-slate-200 text-ink-700 hover:bg-slate-50 text-base font-medium px-5 py-2.5 rounded-btn transition-colors"
             >
-              Back to Services
+              {pageLabels('backToServices')}
             </Link>
           </div>
         </div>
@@ -199,10 +200,7 @@ export default async function ServicePage({ params }: Props) {
         <div className="bg-amber-50 border-y border-amber-200">
           <Container>
             <div className="py-4 max-w-3xl">
-              <p className="text-sm text-amber-800 font-medium">
-                {/* safeStatement is static per spec */}
-                USCIS generally requires a full English translation and translator certification for foreign-language documents submitted to USCIS. This page does not create a certified translation.
-              </p>
+              <p className="text-sm text-amber-800 font-medium">{pageLabels('translationNotice')}</p>
             </div>
           </Container>
         </div>
@@ -212,7 +210,7 @@ export default async function ServicePage({ params }: Props) {
       <Section className="bg-slate-50">
         <div className="max-w-3xl grid md:grid-cols-2 gap-8">
           <div>
-            <h2 className="text-xl font-bold text-ink-900 mb-4">What this helps with</h2>
+            <h2 className="text-xl font-bold text-ink-900 mb-4">{pageLabels('whatHelps')}</h2>
             <ul className="space-y-3">
               {pageData.whatHelps.map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-ink-700">
@@ -223,7 +221,7 @@ export default async function ServicePage({ params }: Props) {
             </ul>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-ink-900 mb-4">Common mistakes</h2>
+            <h2 className="text-xl font-bold text-ink-900 mb-4">{pageLabels('commonMistakes')}</h2>
             <ul className="space-y-3">
               {pageData.commonMistakes.map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-ink-700">
@@ -259,7 +257,7 @@ export default async function ServicePage({ params }: Props) {
       {/* Related services */}
       {related.length > 0 && (
         <Section className="bg-slate-50">
-          <h2 className="text-xl font-bold text-ink-900 mb-6">Related Services</h2>
+          <h2 className="text-xl font-bold text-ink-900 mb-6">{pageLabels('relatedServices')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {related.map((relCard) => (
               <ServiceCard key={relCard.id} card={relCard} locale={locale} />

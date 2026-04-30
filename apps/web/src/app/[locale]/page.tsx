@@ -14,10 +14,10 @@ export default async function HomePage() {
 
   return (
     <>
-      <TrendingTopicsBar locale={locale} />
       <Hero locale={locale} />
-      <OfficialSourcesStrip />
       <ServiceCardGrid locale={locale} />
+      <TrendingTopicsBar locale={locale} />
+      <OfficialSourcesStrip />
       <AskQuestionCTA locale={locale} />
       <HowWeHelpSection />
       <DocumentToolsSection locale={locale} />

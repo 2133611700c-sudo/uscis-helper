@@ -120,7 +120,8 @@
     "official-sources": {
       "title": "Official Sources Library",
       "shortProblem": "Curated links to USCIS, CBP, DOJ, and other authoritative government sources."
-    }
+    },
+    "action": "Start →"
   },
   "servicePages": {
     "parole-expires-soon": {
@@ -314,6 +315,15 @@
       ],
       "officialNote": "All sources listed are official U.S. government websites.",
       "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "labels": {
+      "home": "Home",
+      "openOfficialSource": "Open Official Source",
+      "backToServices": "Back to Services",
+      "whatHelps": "What this helps with",
+      "commonMistakes": "Common mistakes",
+      "relatedServices": "Related Services",
+      "translationNotice": "USCIS generally requires a full English translation and translator certification for foreign-language documents submitted to USCIS. This page does not create a certified translation."
     }
   },
   "translatePage": {
