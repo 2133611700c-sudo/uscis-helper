@@ -12,7 +12,7 @@ export function Hero({ locale }: HeroProps) {
         src="/hero-bg.png"
         alt="Messenginfo — Immigration Information & Document Help"
         className="w-full block"
-        style={{ maxHeight: '600px', objectFit: 'cover', objectPosition: 'center top' }}
+        style={{ display: 'block', width: '100%', height: 'auto' }}
         fetchPriority="high"
       />
 
