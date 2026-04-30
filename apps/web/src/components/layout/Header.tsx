@@ -1,33 +1,43 @@
-import { useTranslations, useLocale } from 'next-intl';
-import Link from 'next/link';
-import { LanguageSwitcher } from './LanguageSwitcher';
+import { useTranslations, useLocale } from 'next-intl'
+import Link from 'next/link'
+import { Logo } from '@/components/brand/Logo'
+import { LocaleSwitcher } from './LocaleSwitcher'
 
 export function Header() {
-  const t = useTranslations('header.nav');
-  const locale = useLocale();
+  const t = useTranslations('header')
+  const locale = useLocale()
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href={`/${locale}`} className="flex items-center gap-2">
-          <span className="text-xl font-bold text-primary">Messenginfo</span>
-        </Link>
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          <Link href={`/${locale}`} className="text-muted-foreground hover:text-foreground transition-colors">
-            {t('home')}
+    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-slate-100" style={{ boxShadow: 'var(--shadow-header)' }}>
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+        <Logo locale={locale} />
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-5 text-sm" aria-label="Main navigation">
+          <Link href={`/${locale}/services`} className="text-ink-600 hover:text-ink-900 transition-colors font-medium">
+            {t('nav.services')}
           </Link>
-          <Link href={`/${locale}/privacy`} className="text-muted-foreground hover:text-foreground transition-colors">
-            {t('privacy')}
+          <Link href={`/${locale}/services/translate-document`} className="text-ink-600 hover:text-ink-900 transition-colors font-medium">
+            {t('nav.documents')}
           </Link>
-          <Link href={`/${locale}/terms`} className="text-muted-foreground hover:text-foreground transition-colors">
-            {t('terms')}
+          <Link href={`/${locale}/faq`} className="text-ink-600 hover:text-ink-900 transition-colors font-medium">
+            {t('nav.faq')}
           </Link>
-          <Link href={`/${locale}/disclaimer`} className="text-muted-foreground hover:text-foreground transition-colors">
-            {t('disclaimer')}
+          <Link href={`#sources`} className="text-ink-600 hover:text-ink-900 transition-colors font-medium">
+            {t('nav.sources')}
           </Link>
         </nav>
-        <LanguageSwitcher />
+
+        <div className="flex items-center gap-3">
+          <LocaleSwitcher />
+          <Link
+            href={`#case-status`}
+            className="hidden sm:inline-flex items-center bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-btn transition-colors"
+          >
+            {t('ctaStatus')}
+          </Link>
+        </div>
       </div>
     </header>
-  );
+  )
 }

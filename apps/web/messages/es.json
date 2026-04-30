@@ -1,0 +1,524 @@
+{
+  "metadata": {
+    "title": "Messenginfo – Ayuda con USCIS para ucranianos en EE. UU.",
+    "description": "Orientación oficial de USCIS para ucranianos: re-parole U4U, TPS, EAD, I-94, estado del caso y traducción de documentos. 4 idiomas. No somos un bufete de abogados.",
+    "keywords": "ayuda USCIS, inmigración Ucrania, re-parole U4U, TPS Ucrania, permiso de trabajo EAD, I-94, verificar estado del caso, autoayuda inmigratoria"
+  },
+  "header": {
+    "logoLabel": "Messenginfo",
+    "nav": {
+      "services": "Servicios",
+      "documents": "Documentos",
+      "faq": "Preguntas frecuentes",
+      "sources": "Fuentes"
+    },
+    "ctaStatus": "Verificar estado",
+    "languageSelector": {
+      "label": "Seleccionar idioma"
+    }
+  },
+  "trending": {
+    "label": "Tendencias:",
+    "topics": {
+      "reparole": "Re-parole U4U",
+      "tps-ukraine": "TPS Ucrania",
+      "ead-delays": "Demoras EAD",
+      "payment-issues": "Problemas de pago",
+      "i-94-issues": "Problemas con I-94",
+      "rfe-denial": "RFE / Denegación"
+    }
+  },
+  "hero": {
+    "title": "Ayuda con USCIS para ucranianos en EE. UU.",
+    "subtitle": "Información de fuentes oficiales, orientación sobre documentos y pasos claros para U4U, re-parole, TPS, EAD, I-94 y seguimiento de casos.",
+    "ctaServices": "Ver servicios",
+    "ctaUpdates": "Últimas actualizaciones",
+    "trustItems": [
+      "Basado en fuentes oficiales",
+      "4 idiomas",
+      "No es un bufete de abogados"
+    ]
+  },
+  "caseStatus": {
+    "title": "Verificar el estado de su caso en USCIS",
+    "description": "Introduzca su número de recibo para abrir la página oficial de USCIS. Su número nunca se almacena.",
+    "placeholder": "IOE1234567890",
+    "button": "Verificar estado",
+    "errorInvalid": "Introduzca un número de recibo válido (p. ej. IOE1234567890 o EAC1234567890).",
+    "privacyNote": "Su número de recibo se valida localmente y nunca se envía a nuestros servidores."
+  },
+  "officialSources": {
+    "title": "Fuentes oficiales",
+    "items": {
+      "uscis-case-status": {
+        "name": "Estado de caso USCIS",
+        "description": "Consulte el estado oficial de su solicitud pendiente ante USCIS."
+      },
+      "uscis-forms": {
+        "name": "Formularios USCIS",
+        "description": "Descargue formularios oficiales de inmigración e instrucciones de USCIS."
+      },
+      "cbp-i94": {
+        "name": "CBP I-94",
+        "description": "Consulte o imprima su registro oficial de entrada/salida I-94."
+      },
+      "doj-accredited": {
+        "name": "Representantes acreditados del DOJ",
+        "description": "Encuentre organizaciones reconocidas y representantes de inmigración acreditados por el DOJ."
+      }
+    }
+  },
+  "services": {
+    "title": "¿En qué necesita ayuda?",
+    "subtitle": "Seleccione un tema para encontrar orientación oficial, listas de documentos y próximos pasos."
+  },
+  "cards": {
+    "parole-expires-soon": {
+      "title": "Mi parole vence pronto",
+      "shortProblem": "Conozca sus opciones antes de que venza su parole humanitario."
+    },
+    "re-parole-u4u": {
+      "title": "Re-parole (Uniting for Ukraine)",
+      "shortProblem": "Orientación para solicitar el re-parole bajo el programa U4U."
+    },
+    "tps-ukraine": {
+      "title": "TPS para Ucrania",
+      "shortProblem": "Estado de Protección Temporal para ciudadanos ucranianos en EE. UU."
+    },
+    "ead-work-permit": {
+      "title": "Permiso de trabajo EAD",
+      "shortProblem": "Solicite o renueve su Documento de Autorización de Empleo (Formulario I-765)."
+    },
+    "i-94": {
+      "title": "Registro de entrada/salida I-94",
+      "shortProblem": "Acceda, imprima o corrija su registro I-94 en el portal de CBP."
+    },
+    "uscis-case-status": {
+      "title": "Estado de caso USCIS",
+      "shortProblem": "Consulte el estado de una solicitud pendiente usando su número de recibo."
+    },
+    "payment-problem": {
+      "title": "Problema de pago",
+      "shortProblem": "Resuelva problemas con tarifas de presentación, cheques rechazados o errores de pago."
+    },
+    "biometrics": {
+      "title": "Cita de biometría",
+      "shortProblem": "Sepa qué llevar, qué esperar y cómo reprogramar su cita de biometría."
+    },
+    "rfe-denial": {
+      "title": "RFE o denegación",
+      "shortProblem": "Aprenda a responder a una solicitud de evidencia o a una denegación de solicitud."
+    },
+    "translate-document": {
+      "title": "Traducir un documento",
+      "shortProblem": "Conozca los requisitos de USCIS para documentos en idiomas extranjeros."
+    },
+    "form-draft-helper": {
+      "title": "Asistente para formularios",
+      "shortProblem": "Orientación para completar correctamente los formularios comunes de USCIS."
+    },
+    "official-sources": {
+      "title": "Biblioteca de fuentes oficiales",
+      "shortProblem": "Enlaces seleccionados a USCIS, CBP, DOJ y otras fuentes gubernamentales autorizadas."
+    }
+  },
+  "servicePages": {
+    "parole-expires-soon": {
+      "title": "Mi parole vence pronto",
+      "subtitle": "Pasos a seguir antes de que venza su parole humanitario.",
+      "whatHelps": [
+        "Verifique la fecha de vencimiento de su parole en su registro I-94 en i94.cbp.dhs.gov",
+        "Revise su elegibilidad para el re-parole bajo el programa Uniting for Ukraine",
+        "Evalúe si el Estado de Protección Temporal (TPS) aplica a su situación"
+      ],
+      "commonMistakes": [
+        "Esperar hasta los últimos días antes del vencimiento para actuar",
+        "Confundir el vencimiento del parole con el vencimiento de la autorización de trabajo",
+        "No verificar la fecha correcta en el registro I-94"
+      ],
+      "officialNote": "USCIS proporciona información oficial sobre el parole humanitario en uscis.gov.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "re-parole-u4u": {
+      "title": "Re-parole bajo Uniting for Ukraine (U4U)",
+      "subtitle": "Orientación oficial para solicitar el re-parole a través del programa U4U.",
+      "whatHelps": [
+        "Revise la página oficial de USCIS del programa Uniting for Ukraine para conocer los requisitos actuales",
+        "Confirme su estado de parole actual y fecha de vencimiento en su registro I-94",
+        "Prepare los documentos de respaldo requeridos según las instrucciones oficiales de USCIS"
+      ],
+      "commonMistakes": [
+        "Presentar la solicitud sin verificar los requisitos actuales del programa",
+        "Proporcionar información personal incompleta o inconsistente",
+        "Confundir el parole con otros estatus migratorios"
+      ],
+      "officialNote": "Toda la información de re-parole proviene de la página oficial de USCIS Uniting for Ukraine.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "tps-ukraine": {
+      "title": "Estado de Protección Temporal (TPS) para Ucrania",
+      "subtitle": "Qué significa el TPS para los ciudadanos ucranianos actualmente en Estados Unidos.",
+      "whatHelps": [
+        "Visite la página oficial de TPS Ucrania de USCIS para conocer el período de designación y los requisitos actuales",
+        "Comprenda los beneficios del TPS: protección contra la deportación y elegibilidad para autorización de trabajo",
+        "Revise el período de registro y los formularios requeridos en USCIS.gov"
+      ],
+      "commonMistakes": [
+        "Solicitar después de la fecha límite de registro sin verificar las reglas de registro inicial tardío",
+        "Asumir que el TPS se renueva automáticamente sin presentar una nueva solicitud",
+        "No mantener los requisitos de residencia continua"
+      ],
+      "officialNote": "La designación y los requisitos del TPS se publican en la página oficial de USCIS TPS Ucrania.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "ead-work-permit": {
+      "title": "Documento de Autorización de Empleo (EAD) — Formulario I-765",
+      "subtitle": "Orientación para solicitar o renovar su permiso de trabajo EAD.",
+      "whatHelps": [
+        "Descargue el Formulario I-765 y las instrucciones desde la página oficial de formularios de USCIS",
+        "Identifique la categoría de elegibilidad correcta para su estatus migratorio",
+        "Presente antes de que venza su EAD actual para solicitar una extensión automática"
+      ],
+      "commonMistakes": [
+        "Seleccionar la categoría de elegibilidad incorrecta en el Formulario I-765",
+        "Presentar demasiado tarde para aprovechar la extensión automática de 180 días",
+        "No incluir los documentos de respaldo correctos para su categoría"
+      ],
+      "officialNote": "El Formulario I-765 y las tarifas actuales están disponibles en uscis.gov/i-765.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "i-94": {
+      "title": "Registro de entrada/salida I-94",
+      "subtitle": "Cómo acceder, imprimir y entender su registro I-94 oficial.",
+      "whatHelps": [
+        "Acceda a su registro I-94 en i94.cbp.dhs.gov con la información de su documento de viaje",
+        "Verifique que la clase de admisión y la fecha sean correctas",
+        "Imprima o guarde su I-94 más reciente para verificaciones de USCIS o del empleador"
+      ],
+      "commonMistakes": [
+        "Asumir que la fecha de vencimiento de la visa es igual a la estadía autorizada — verifique el I-94",
+        "No corregir errores en el I-94 de inmediato a través del proceso de inspección diferida de CBP",
+        "Usar un I-94 desactualizado cuando existe uno más reciente tras una reentrada"
+      ],
+      "officialNote": "Los registros I-94 son administrados por la Aduana y Protección Fronteriza de EE. UU. en i94.cbp.dhs.gov.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "uscis-case-status": {
+      "title": "Estado de caso USCIS",
+      "subtitle": "Cómo verificar el estado de una solicitud pendiente ante USCIS.",
+      "whatHelps": [
+        "Use su número de recibo (p. ej. IOE1234567890) para verificar el estado en egov.uscis.gov",
+        "Regístrese para recibir actualizaciones por correo electrónico en su cuenta en línea de USCIS",
+        "Comprenda los mensajes de estado comunes y qué significan para su caso"
+      ],
+      "commonMistakes": [
+        "Contactar a USCIS antes de que haya transcurrido el tiempo de procesamiento publicado",
+        "Confundir la fecha del aviso con la fecha de recibo",
+        "No guardar el aviso de recibo en un lugar seguro"
+      ],
+      "officialNote": "El estado del caso de USCIS está disponible en el portal oficial egov.uscis.gov.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "payment-problem": {
+      "title": "Problemas de pago de tarifas",
+      "subtitle": "Cómo resolver problemas de pago con presentaciones ante USCIS.",
+      "whatHelps": [
+        "Revise las opciones de pago disponibles en la página oficial de tarifas de USCIS en uscis.gov",
+        "Use la cuenta en línea my.uscis.gov para gestionar pagos de formularios elegibles",
+        "Contacte a USCIS a través de canales oficiales si una tarifa fue rechazada o cobrada incorrectamente"
+      ],
+      "commonMistakes": [
+        "Presentar montos incorrectos — siempre verifique las tarifas actuales antes de presentar",
+        "Usar un método de pago vencido o no compatible",
+        "No incluir todas las tarifas requeridas al presentar varios formularios juntos"
+      ],
+      "officialNote": "Las tarifas actuales de USCIS se publican en uscis.gov/forms/filing-fees.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "biometrics": {
+      "title": "Cita de biometría",
+      "subtitle": "Qué esperar en su cita de biometría de USCIS.",
+      "whatHelps": [
+        "Lleve su aviso de cita de biometría y una identificación oficial con foto vigente",
+        "Llegue a tiempo — la mayoría de las citas duran 30 minutos o menos",
+        "Contacte a USCIS con anticipación si necesita reprogramar su cita"
+      ],
+      "commonMistakes": [
+        "Olvidar llevar el aviso de cita de biometría",
+        "Presentarse sin una identificación con foto válida",
+        "No presentarse sin reprogramar, lo que puede retrasar el procesamiento"
+      ],
+      "officialNote": "Los requisitos de biometría se describen en la página oficial de tarifas biométricas de USCIS.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "rfe-denial": {
+      "title": "Solicitud de evidencia (RFE) o denegación",
+      "subtitle": "Cómo entender y responder a un RFE o a una denegación de solicitud.",
+      "whatHelps": [
+        "Lea detenidamente el aviso de RFE o denegación — especifica qué evidencia o información se necesita",
+        "Responda dentro del plazo indicado en el aviso",
+        "Consulte a un representante acreditado o abogado de inmigración autorizado para RFEs complejos"
+      ],
+      "commonMistakes": [
+        "Perder el plazo de respuesta, lo que puede resultar en la denegación de la solicitud",
+        "Proporcionar respuestas incompletas que no abordan todos los puntos del RFE",
+        "No consultar a un profesional cuando el RFE implica preguntas legales"
+      ],
+      "officialNote": "La orientación del Manual de Políticas de USCIS sobre RFEs está disponible en uscis.gov/policy-manual.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "translate-document": {
+      "title": "Traducción de documentos para USCIS",
+      "subtitle": "Qué requiere USCIS al presentar documentos en idiomas extranjeros.",
+      "whatHelps": [
+        "USCIS generalmente requiere una traducción completa al inglés y una declaración de certificación del traductor",
+        "El traductor debe certificar que es competente para traducir y que la traducción es precisa",
+        "Consulte 8 CFR 103.2 para conocer el requisito oficial de certificación de traducción"
+      ],
+      "commonMistakes": [
+        "Presentar una traducción parcial en lugar de una traducción completa",
+        "Omitir la declaración de certificación del traductor",
+        "Usar traducción automática sin revisión humana y certificación adecuada"
+      ],
+      "officialNote": "Los requisitos de traducción están codificados en 8 CFR 103.2 (ecfr.gov).",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "form-draft-helper": {
+      "title": "Asistente para formularios USCIS",
+      "subtitle": "Orientación para completar correctamente los formularios comunes de USCIS.",
+      "whatHelps": [
+        "Siempre descargue la versión actual del formulario desde uscis.gov/forms",
+        "Lea las instrucciones oficiales antes de completar cualquier campo",
+        "Use tinta negra o complete el formulario electrónicamente si está permitido"
+      ],
+      "commonMistakes": [
+        "Usar una versión desactualizada del formulario — USCIS puede rechazar versiones anteriores",
+        "Dejar campos requeridos en blanco o escribir 'N/A' donde no se indique",
+        "No firmar y fechar el formulario antes de presentarlo"
+      ],
+      "officialNote": "Los formularios e instrucciones actuales de USCIS están disponibles en uscis.gov/forms.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    },
+    "official-sources": {
+      "title": "Biblioteca de fuentes oficiales",
+      "subtitle": "Enlaces seleccionados a recursos migratorios autorizados del gobierno de EE. UU.",
+      "whatHelps": [
+        "Use USCIS.gov como fuente principal para formularios, tarifas y políticas de inmigración",
+        "Verifique las credenciales de abogados en el registro de representantes acreditados del DOJ",
+        "Consulte su registro de entrada I-94 en i94.cbp.dhs.gov"
+      ],
+      "commonMistakes": [
+        "Confiar en sitios web no oficiales o redes sociales para orientación migratoria",
+        "Usar información desactualizada — siempre verifique la fecha de cualquier recurso",
+        "Pagar a terceros para acceder a formularios o información gubernamental gratuita"
+      ],
+      "officialNote": "Todas las fuentes listadas son sitios web oficiales del gobierno de EE. UU.",
+      "lastVerifiedLabel": "Última verificación: {date}"
+    }
+  },
+  "translatePage": {
+    "safeStatement": "USCIS generalmente requiere una traducción completa al inglés y una certificación del traductor para los documentos en idiomas extranjeros presentados ante USCIS. Esta página no genera una traducción certificada."
+  },
+  "askQuestion": {
+    "title": "¿No encuentra su pregunta?",
+    "subtitle": "Explore nuestra base de conocimiento o contáctenos.",
+    "ctaFaq": "Ver preguntas frecuentes",
+    "ctaContact": "Contáctenos"
+  },
+  "howWeHelp": {
+    "title": "Cómo le ayudamos",
+    "subtitle": "Messenginfo le conecta con fuentes oficiales y organiza la información que necesita.",
+    "items": [
+      {
+        "title": "Encontrar fuentes oficiales",
+        "description": "Cada página enlaza directamente a USCIS.gov, CBP, DOJ y otras fuentes gubernamentales autorizadas."
+      },
+      {
+        "title": "Organizar sus documentos",
+        "description": "Entienda qué documentos son necesarios para cada trámite migratorio y cómo prepararlos."
+      },
+      {
+        "title": "Obtener próximos pasos claros",
+        "description": "Orientación paso a paso sobre qué hacer a continuación, basada en instrucciones oficiales."
+      }
+    ]
+  },
+  "documentTools": {
+    "title": "Orientación sobre traducción de documentos",
+    "subtitle": "Comprenda los requisitos de USCIS para traducir documentos en idiomas extranjeros. Seleccione un tipo de documento para conocer lo que se necesita.",
+    "items": {
+      "passport": {
+        "title": "Pasaporte",
+        "description": "Requisitos de traducción de la página biográfica para presentaciones ante USCIS."
+      },
+      "birth-certificate": {
+        "title": "Acta de nacimiento",
+        "description": "Requisitos de traducción completa y certificación para registros de nacimiento."
+      },
+      "marriage-certificate": {
+        "title": "Acta de matrimonio",
+        "description": "Qué requiere USCIS al presentar documentos de matrimonio extranjeros."
+      },
+      "diploma": {
+        "title": "Diploma / Título",
+        "description": "Requisitos de traducción de credenciales académicas para fines migratorios."
+      },
+      "military-document": {
+        "title": "Documento militar",
+        "description": "Orientación de traducción para registros de servicio militar y documentos de baja."
+      },
+      "driver-license": {
+        "title": "Licencia de conducir",
+        "description": "Cuándo y cómo debe traducirse una licencia de conducir para USCIS."
+      }
+    },
+    "footnote": "Las herramientas de documentos estarán disponibles próximamente. Estas páginas explican qué preparar y enlazan a requisitos oficiales."
+  },
+  "telegramStrip": {
+    "title": "Acceso a la comunidad",
+    "channelButton": "Abrir canal",
+    "botButton": "Abrir bot",
+    "fallbackText": "El canal y el bot de Telegram se agregarán después de la verificación."
+  },
+  "miaWidget": {
+    "greeting": "¡Hola! Soy Mia, su guía en Messenginfo.",
+    "disclaimer": "Soy un navegador rápido, no un asistente de chat. Para preguntas, contáctenos.",
+    "links": {
+      "caseStatus": "Verificar estado del caso",
+      "services": "Ver servicios",
+      "sources": "Fuentes oficiales",
+      "contact": "Contacto"
+    }
+  },
+  "disclaimer": {
+    "title": "Messenginfo no es un bufete de abogados y no brinda asesoría legal.",
+    "body": "Proporcionamos información de fuentes oficiales y orientación de autoayuda. Para asesoría legal, consulte a un abogado de inmigración autorizado o a un representante acreditado por el DOJ."
+  },
+  "footer": {
+    "columns": {
+      "about": {
+        "title": "Acerca de",
+        "tagline": "Información migratoria de fuentes oficiales para ucranianos en EE. UU. No somos un bufete de abogados."
+      },
+      "services": {
+        "title": "Servicios"
+      },
+      "resources": {
+        "title": "Recursos",
+        "links": {
+          "officialLinks": "Fuentes oficiales",
+          "faq": "Preguntas frecuentes",
+          "telegram": "Telegram",
+          "contact": "Contacto"
+        }
+      },
+      "legal": {
+        "title": "Legal",
+        "links": {
+          "privacy": "Política de privacidad",
+          "terms": "Términos de servicio",
+          "disclaimer": "Aviso legal"
+        }
+      }
+    },
+    "bottom": "© 2026 Messenginfo"
+  },
+  "mobileBar": {
+    "home": "Inicio",
+    "services": "Servicios",
+    "status": "Estado",
+    "contact": "Contacto"
+  },
+  "badges": {
+    "risk": {
+      "low": "Riesgo bajo",
+      "medium": "Riesgo medio",
+      "high": "Riesgo alto"
+    },
+    "officialSource": "Fuente oficial"
+  },
+  "errors": {
+    "404": {
+      "title": "Página no encontrada",
+      "body": "La página que busca no existe.",
+      "back": "Volver al inicio"
+    },
+    "500": {
+      "title": "Algo salió mal",
+      "body": "Ocurrió un error inesperado. Por favor, inténtelo de nuevo.",
+      "back": "Volver al inicio"
+    }
+  },
+  "legal": {
+    "disclaimer": {
+      "title": "Aviso legal",
+      "alert": "Messenginfo no es un bufete de abogados y no brinda asesoría legal.",
+      "notice": "Pendiente de revisión legal por un abogado autorizado.",
+      "backHome": "← Volver al inicio",
+      "lastReviewed": "29 de abril de 2026",
+      "sections": [
+        {
+          "id": "not-law-firm",
+          "title": "No somos un bufete de abogados",
+          "body": "Messenginfo no es un bufete de abogados, no emplea abogados y no brinda asesoría legal. Nada en este sitio web constituye asesoría legal ni crea una relación abogado-cliente."
+        },
+        {
+          "id": "not-affiliated",
+          "title": "No estamos afiliados al gobierno de EE. UU.",
+          "body": "Messenginfo no está afiliado, respaldado ni conectado a USCIS, DHS, DOS ni a ninguna otra agencia del gobierno de EE. UU."
+        },
+        {
+          "id": "consult-attorney",
+          "title": "Para asesoría legal, consulte a un abogado autorizado",
+          "body": "Para asesoría legal sobre su situación migratoria específica, consulte a un abogado de inmigración autorizado. El DOJ mantiene un registro de organizaciones reconocidas y representantes acreditados en justice.gov/eoir."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Términos de servicio",
+      "notice": "Pendiente de revisión legal por un abogado autorizado.",
+      "backHome": "← Volver al inicio",
+      "lastReviewed": "29 de abril de 2026",
+      "sections": [
+        {
+          "id": "acceptance",
+          "title": "1. Aceptación de los términos",
+          "body": "Al acceder o usar messenginfo.com, usted acepta quedar vinculado por estos Términos de servicio."
+        },
+        {
+          "id": "about",
+          "title": "2. Acerca de Messenginfo",
+          "body": "Messenginfo es un servicio de información, no un bufete de abogados. No brindamos asesoría legal. El uso de nuestro servicio no crea una relación abogado-cliente."
+        },
+        {
+          "id": "disclaimers",
+          "title": "3. Exenciones de responsabilidad",
+          "body": "EL SITIO SE PROPORCIONA TAL CUAL, SIN GARANTÍAS. NO BRINDAMOS ASESORÍA LEGAL. SIEMPRE VERIFIQUE LA INFORMACIÓN CON FUENTES OFICIALES (USCIS.GOV)."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Política de privacidad",
+      "notice": "Pendiente de revisión legal por un abogado autorizado.",
+      "backHome": "← Volver al inicio",
+      "lastReviewed": "29 de abril de 2026",
+      "sections": [
+        {
+          "id": "intro",
+          "title": "1. Introducción",
+          "body": "Messenginfo opera messenginfo.com. Esta Política de privacidad explica cómo recopilamos, usamos y protegemos su información."
+        },
+        {
+          "id": "collection",
+          "title": "2. Información que recopilamos",
+          "body": "Solo recopilamos lo que usted proporciona a través del formulario de contacto (nombre, correo electrónico, mensaje) y análisis anónimos a través de Vercel Analytics. No almacenamos números de recibo ni detalles del caso."
+        },
+        {
+          "id": "rights",
+          "title": "3. Sus derechos",
+          "body": "Puede solicitar acceso, corrección o eliminación de sus datos contactando a contact@messenginfo.com."
+        }
+      ]
+    }
+  }
+}

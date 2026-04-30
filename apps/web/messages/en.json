@@ -1,320 +1,524 @@
 {
   "metadata": {
-    "title": "Messenginfo – Immigration Information & Self-Help Tools",
-    "description": "Clear, official-source immigration information and self-help tools for navigating U.S. immigration forms, procedures, and deadlines.",
-    "keywords": "immigration information, USCIS forms, document translation, immigration self-help, parole, TPS, EAD"
+    "title": "Messenginfo – USCIS Help for Ukrainians in the U.S.",
+    "description": "Official-source USCIS guidance for Ukrainians: U4U re-parole, TPS, EAD, I-94, case status, and document translation. 4 languages. Not a law firm.",
+    "keywords": "USCIS help, Ukraine immigration, re-parole U4U, TPS Ukraine, EAD work permit, I-94, case status checker, immigration self-help"
   },
   "header": {
+    "logoLabel": "Messenginfo",
     "nav": {
-      "home": "Home",
-      "privacy": "Privacy",
-      "terms": "Terms",
-      "disclaimer": "Disclaimer"
+      "services": "Services",
+      "documents": "Documents",
+      "faq": "FAQ",
+      "sources": "Sources"
     },
-    "langSwitcher": "Language"
-  },
-  "footer": {
-    "tagline": "Immigration information, made human.",
-    "rights": "© {year} Messenginfo. All rights reserved.",
-    "shortDisclaimer": "Messenginfo is not a law firm and does not provide legal advice. Information is for educational purposes only.",
-    "contact": "Contact",
-    "links": {
-      "privacy": "Privacy Policy",
-      "terms": "Terms of Service",
-      "disclaimer": "Disclaimer"
+    "ctaStatus": "Check Status",
+    "languageSelector": {
+      "label": "Select language"
     }
   },
-  "home": {
-    "hero": {
-      "title": "Navigate Your Immigration Journey with Confidence",
-      "subtitle": "Messenginfo provides clear, reliable information on U.S. immigration forms, procedures, and official resources—so you can manage your own case with confidence.",
-      "cta": "Get in Touch",
-      "badge": "Information service · Not legal advice"
+  "trending": {
+    "label": "Trending:",
+    "topics": {
+      "reparole": "Re-parole U4U",
+      "tps-ukraine": "TPS Ukraine",
+      "ead-delays": "EAD Delays",
+      "payment-issues": "Payment Issues",
+      "i-94-issues": "I-94 Problems",
+      "rfe-denial": "RFE / Denial"
+    }
+  },
+  "hero": {
+    "title": "USCIS help for Ukrainians in the U.S.",
+    "subtitle": "Official sources, document guidance, and clear next steps for U4U, re-parole, TPS, EAD, I-94, and case tracking.",
+    "ctaServices": "Browse Services",
+    "ctaUpdates": "Read Latest Updates",
+    "trustItems": [
+      "Official-source based",
+      "4 languages",
+      "Not a law firm"
+    ]
+  },
+  "caseStatus": {
+    "title": "Check Your USCIS Case Status",
+    "description": "Enter your receipt number to open the official USCIS case status page. Your number is never stored.",
+    "placeholder": "IOE1234567890",
+    "button": "Check Status",
+    "errorInvalid": "Please enter a valid receipt number (e.g. IOE1234567890 or EAC1234567890).",
+    "privacyNote": "Your receipt number is validated locally and never sent to our servers."
+  },
+  "officialSources": {
+    "title": "Official sources",
+    "items": {
+      "uscis-case-status": {
+        "name": "USCIS Case Status",
+        "description": "Check the official status of your pending USCIS application."
+      },
+      "uscis-forms": {
+        "name": "USCIS Forms",
+        "description": "Download official immigration forms and instructions from USCIS."
+      },
+      "cbp-i94": {
+        "name": "CBP I-94",
+        "description": "View or print your official I-94 arrival/departure record."
+      },
+      "doj-accredited": {
+        "name": "DOJ Accredited Representatives",
+        "description": "Find recognized organizations and DOJ-accredited immigration representatives."
+      }
+    }
+  },
+  "services": {
+    "title": "What do you need help with?",
+    "subtitle": "Select a topic to find official guidance, document checklists, and next steps."
+  },
+  "cards": {
+    "parole-expires-soon": {
+      "title": "My Parole Is Expiring Soon",
+      "shortProblem": "Understand your options before your humanitarian parole expires."
     },
-    "services": {
-      "title": "How We Help",
-      "subtitle": "We help you understand the paperwork—you make the decisions.",
-      "items": [
-        {
-          "title": "Document Translation Guidance",
-          "description": "Understand what USCIS requires for certified document translations: which documents need translation, what certification language to use, and how to meet official standards."
-        },
-        {
-          "title": "Form-Filling Guidance",
-          "description": "Step-by-step explanations of common immigration forms—what each field means, which documents to attach, and where to submit. Based on official USCIS instructions."
-        },
-        {
-          "title": "Official Source Navigation",
-          "description": "Direct, curated links to USCIS.gov, DOS, and other government sources so you always get information straight from the authoritative source—not forums or rumor."
-        }
-      ]
+    "re-parole-u4u": {
+      "title": "Re-parole (Uniting for Ukraine)",
+      "shortProblem": "Guidance on applying for re-parole under the U4U program."
     },
-    "how": {
-      "title": "How It Works",
-      "steps": [
-        {
-          "title": "Tell Us What You Need",
-          "description": "Reach out via our contact form with your question or the form you are working on. We respond in your preferred language."
-        },
-        {
-          "title": "Get Plain-Language Information",
-          "description": "We send you clear explanations sourced from official government publications—no jargon, no guesswork."
-        },
-        {
-          "title": "Take Action with Confidence",
-          "description": "Use our guidance to prepare your own filings. For complex situations, we'll point you to licensed immigration attorneys and recognized organizations."
-        }
-      ]
+    "tps-ukraine": {
+      "title": "TPS for Ukraine",
+      "shortProblem": "Temporary Protected Status for Ukrainian nationals currently in the U.S."
     },
-    "why": {
-      "title": "Why Messenginfo",
-      "points": [
-        {
-          "title": "Official Sources Only",
-          "description": "Every piece of information is sourced from USCIS.gov and official government publications. Not forums, not social media, not rumors."
-        },
-        {
-          "title": "Three Languages",
-          "description": "Available in English, Russian, and Ukrainian to serve the communities that need clear immigration information most."
-        },
-        {
-          "title": "Privacy First",
-          "description": "We collect only what we need. No tracking cookies, no advertising profiles, no data selling—ever."
-        }
-      ]
+    "ead-work-permit": {
+      "title": "EAD Work Permit",
+      "shortProblem": "Apply for or renew your Employment Authorization Document (Form I-765)."
     },
-    "contact": {
-      "title": "Contact Us",
-      "subtitle": "Have a question about a form, a deadline, or a translation requirement? Send us a message. We typically respond within 1–2 business days.",
-      "form": {
-        "name": "Full Name",
-        "namePlaceholder": "Your full name",
-        "email": "Email Address",
-        "emailPlaceholder": "you@example.com",
-        "message": "Message",
-        "messagePlaceholder": "Describe your question or situation...",
-        "consent": "I understand that Messenginfo does not provide legal advice and that this message is not establishing an attorney-client relationship.",
-        "consentRequired": "You must acknowledge this to proceed.",
-        "submit": "Send Message",
-        "submitting": "Sending...",
-        "success": "Your message was received. We will respond within 1–2 business days.",
-        "error": "Something went wrong. Please try again or email us directly.",
-        "rateLimit": "Too many submissions. Please wait an hour before trying again.",
-        "validation": "Please check the form and correct the highlighted fields."
+    "i-94": {
+      "title": "I-94 Arrival/Departure Record",
+      "shortProblem": "Access, print, or correct your I-94 record via the CBP portal."
+    },
+    "uscis-case-status": {
+      "title": "USCIS Case Status",
+      "shortProblem": "Track the status of a pending USCIS application using your receipt number."
+    },
+    "payment-problem": {
+      "title": "Payment Problem",
+      "shortProblem": "Resolve filing fee issues, rejected checks, or payment errors with USCIS."
+    },
+    "biometrics": {
+      "title": "Biometrics Appointment",
+      "shortProblem": "Understand what to bring, what to expect, and how to reschedule biometrics."
+    },
+    "rfe-denial": {
+      "title": "RFE or Denial",
+      "shortProblem": "Learn how to respond to a Request for Evidence or an application denial."
+    },
+    "translate-document": {
+      "title": "Translate a Document",
+      "shortProblem": "Understand USCIS translation requirements for foreign-language documents."
+    },
+    "form-draft-helper": {
+      "title": "Form Draft Helper",
+      "shortProblem": "Guidance on completing common USCIS forms correctly."
+    },
+    "official-sources": {
+      "title": "Official Sources Library",
+      "shortProblem": "Curated links to USCIS, CBP, DOJ, and other authoritative government sources."
+    }
+  },
+  "servicePages": {
+    "parole-expires-soon": {
+      "title": "My Parole Is Expiring Soon",
+      "subtitle": "Steps to take before your humanitarian parole expires.",
+      "whatHelps": [
+        "Check your parole end date on your I-94 record at i94.cbp.dhs.gov",
+        "Review your eligibility for re-parole under the Uniting for Ukraine program",
+        "Explore whether Temporary Protected Status (TPS) applies to your situation"
+      ],
+      "commonMistakes": [
+        "Waiting until the last few days before expiration to take action",
+        "Confusing parole expiration with work authorization expiration",
+        "Failing to verify the correct end date on the I-94 record"
+      ],
+      "officialNote": "USCIS provides official information about humanitarian parole at uscis.gov.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "re-parole-u4u": {
+      "title": "Re-parole Under Uniting for Ukraine (U4U)",
+      "subtitle": "Official guidance on applying for re-parole through the U4U program.",
+      "whatHelps": [
+        "Review the official USCIS Uniting for Ukraine program page for current requirements",
+        "Confirm your current parole status and expiration date via your I-94 record",
+        "Prepare required supporting documents as listed in official USCIS instructions"
+      ],
+      "commonMistakes": [
+        "Submitting the application without verifying current program requirements",
+        "Providing incomplete or inconsistent personal information",
+        "Misunderstanding the difference between parole and other immigration statuses"
+      ],
+      "officialNote": "All re-parole information comes from the official USCIS Uniting for Ukraine page.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "tps-ukraine": {
+      "title": "Temporary Protected Status (TPS) for Ukraine",
+      "subtitle": "What TPS means for Ukrainian nationals currently in the United States.",
+      "whatHelps": [
+        "Visit the official USCIS TPS Ukraine page for current designation period and requirements",
+        "Understand TPS benefits: protection from removal and work authorization eligibility",
+        "Review the registration period and required forms on USCIS.gov"
+      ],
+      "commonMistakes": [
+        "Applying after the registration deadline without checking for late initial registration rules",
+        "Assuming TPS automatically renews without filing a re-registration application",
+        "Not maintaining continuous residence requirements"
+      ],
+      "officialNote": "TPS designation and requirements are published on the official USCIS TPS Ukraine page.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "ead-work-permit": {
+      "title": "Employment Authorization Document (EAD) — Form I-765",
+      "subtitle": "Guidance on applying for or renewing your EAD work permit.",
+      "whatHelps": [
+        "Download Form I-765 and instructions from the official USCIS forms page",
+        "Identify the correct eligibility category for your immigration status",
+        "File before your current EAD expires to request an automatic extension"
+      ],
+      "commonMistakes": [
+        "Selecting the wrong eligibility category on Form I-765",
+        "Filing too late to take advantage of the automatic 180-day extension",
+        "Submitting without the correct supporting documents for your category"
+      ],
+      "officialNote": "Form I-765 and current filing fees are available at uscis.gov/i-765.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "i-94": {
+      "title": "I-94 Arrival/Departure Record",
+      "subtitle": "How to access, print, and understand your official I-94 record.",
+      "whatHelps": [
+        "Access your I-94 record at i94.cbp.dhs.gov using your travel document information",
+        "Verify that the class of admission and date are correct",
+        "Print or save your most recent I-94 for USCIS or employer verification"
+      ],
+      "commonMistakes": [
+        "Assuming your visa expiration date equals your authorized stay — check the I-94",
+        "Not correcting errors on the I-94 promptly through the CBP deferred inspection process",
+        "Using an outdated I-94 when a newer one exists after re-entry"
+      ],
+      "officialNote": "I-94 records are maintained by U.S. Customs and Border Protection at i94.cbp.dhs.gov.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "uscis-case-status": {
+      "title": "USCIS Case Status",
+      "subtitle": "How to check the status of a pending USCIS application.",
+      "whatHelps": [
+        "Use your receipt number (e.g. IOE1234567890) to check status at egov.uscis.gov",
+        "Sign up for case status updates by email on your USCIS online account",
+        "Understand common status messages and what they mean for your case"
+      ],
+      "commonMistakes": [
+        "Contacting USCIS before the published processing time has elapsed",
+        "Confusing the notice date with the receipt date",
+        "Not keeping the receipt notice in a safe place"
+      ],
+      "officialNote": "USCIS case status is available at the official USCIS case status portal egov.uscis.gov.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "payment-problem": {
+      "title": "Filing Fee Payment Problems",
+      "subtitle": "How to resolve payment issues with USCIS filings.",
+      "whatHelps": [
+        "Review your payment method options on the official USCIS fee page at uscis.gov",
+        "Use the my.uscis.gov online account to manage payments for eligible forms",
+        "Contact USCIS through official channels if a fee was rejected or debited incorrectly"
+      ],
+      "commonMistakes": [
+        "Submitting incorrect fee amounts — always verify current fees before filing",
+        "Using an expired or unsupported payment method",
+        "Not including all required fees when filing multiple forms together"
+      ],
+      "officialNote": "Current USCIS filing fees are published at uscis.gov/forms/filing-fees.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "biometrics": {
+      "title": "Biometrics Appointment",
+      "subtitle": "What to expect at your USCIS biometrics appointment.",
+      "whatHelps": [
+        "Bring your biometrics appointment notice and a valid government-issued photo ID",
+        "Arrive on time — most appointments take 30 minutes or less",
+        "Contact USCIS in advance if you need to reschedule your appointment"
+      ],
+      "commonMistakes": [
+        "Forgetting to bring the biometrics appointment notice",
+        "Appearing without a valid photo ID",
+        "Missing the appointment without rescheduling, which can delay processing"
+      ],
+      "officialNote": "Biometrics requirements are described on the official USCIS biometrics fee page.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "rfe-denial": {
+      "title": "Request for Evidence (RFE) or Denial",
+      "subtitle": "Understanding and responding to an RFE or application denial.",
+      "whatHelps": [
+        "Read the RFE or denial notice carefully — it specifies what evidence or information is needed",
+        "Respond within the deadline stated in the notice",
+        "Consult an accredited representative or licensed immigration attorney for complex RFEs"
+      ],
+      "commonMistakes": [
+        "Missing the response deadline, which can result in the application being denied",
+        "Providing incomplete responses that do not address all points in the RFE",
+        "Not consulting a professional when the RFE involves legal questions"
+      ],
+      "officialNote": "USCIS Policy Manual guidance on RFEs is available at uscis.gov/policy-manual.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "translate-document": {
+      "title": "Document Translation for USCIS",
+      "subtitle": "What USCIS requires when submitting foreign-language documents.",
+      "whatHelps": [
+        "USCIS generally requires a full English translation and a translator certification statement",
+        "The translator must certify that they are competent to translate and that the translation is accurate",
+        "Review 8 CFR 103.2 for the official translation certification requirement"
+      ],
+      "commonMistakes": [
+        "Submitting a partial translation instead of a full translation",
+        "Omitting the translator certification statement",
+        "Using machine translation without human review and a proper certification"
+      ],
+      "officialNote": "Translation requirements are codified at 8 CFR 103.2 (ecfr.gov).",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "form-draft-helper": {
+      "title": "USCIS Form Draft Helper",
+      "subtitle": "Guidance on completing common USCIS forms correctly.",
+      "whatHelps": [
+        "Always download the current version of the form from uscis.gov/forms",
+        "Read the official form instructions before filling out any field",
+        "Use black ink or complete the form electronically if allowed"
+      ],
+      "commonMistakes": [
+        "Using an outdated form version — USCIS may reject older versions",
+        "Leaving required fields blank or writing 'N/A' where not instructed",
+        "Not signing and dating the form before submission"
+      ],
+      "officialNote": "Current USCIS forms and instructions are available at uscis.gov/forms.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    },
+    "official-sources": {
+      "title": "Official Sources Library",
+      "subtitle": "Curated links to authoritative U.S. government immigration resources.",
+      "whatHelps": [
+        "Use USCIS.gov as your primary source for immigration forms, fees, and policy",
+        "Verify attorney credentials at the DOJ accredited representatives roster",
+        "Check your I-94 arrival record at i94.cbp.dhs.gov"
+      ],
+      "commonMistakes": [
+        "Relying on unofficial websites or social media for immigration guidance",
+        "Using outdated information — always check the date of any resource you find",
+        "Paying third parties to access free government forms or information"
+      ],
+      "officialNote": "All sources listed are official U.S. government websites.",
+      "lastVerifiedLabel": "Last verified: {date}"
+    }
+  },
+  "translatePage": {
+    "safeStatement": "USCIS generally requires a full English translation and translator certification for foreign-language documents submitted to USCIS. This page does not create a certified translation."
+  },
+  "askQuestion": {
+    "title": "Don't see your question?",
+    "subtitle": "Browse our knowledge base or contact us.",
+    "ctaFaq": "Browse FAQ & Answers",
+    "ctaContact": "Contact us"
+  },
+  "howWeHelp": {
+    "title": "How We Help",
+    "subtitle": "Messenginfo connects you with official sources and organizes the information you need.",
+    "items": [
+      {
+        "title": "Find official sources",
+        "description": "Every page links directly to USCIS.gov, CBP, DOJ, and other authoritative government sources."
+      },
+      {
+        "title": "Organize your documents",
+        "description": "Understand what documents are needed for each immigration process and how to prepare them."
+      },
+      {
+        "title": "Get clear next steps",
+        "description": "Step-by-step guidance on what to do next, based on official instructions."
+      }
+    ]
+  },
+  "documentTools": {
+    "title": "Document Translation Guidance",
+    "subtitle": "Understand USCIS requirements for translating foreign-language documents. Select a document type to learn what is needed.",
+    "items": {
+      "passport": {
+        "title": "Passport",
+        "description": "Bio page translation requirements for USCIS submissions."
+      },
+      "birth-certificate": {
+        "title": "Birth Certificate",
+        "description": "Full translation and certification requirements for birth records."
+      },
+      "marriage-certificate": {
+        "title": "Marriage Certificate",
+        "description": "What USCIS requires when submitting foreign marriage documents."
+      },
+      "diploma": {
+        "title": "Diploma / Degree",
+        "description": "Academic credential translation requirements for immigration purposes."
+      },
+      "military-document": {
+        "title": "Military Document",
+        "description": "Translation guidance for military service records and discharge papers."
+      },
+      "driver-license": {
+        "title": "Driver's License",
+        "description": "When and how a driver's license must be translated for USCIS."
       }
     },
-    "disclaimer": {
-      "title": "Important Notice",
-      "body": "Messenginfo is not a law firm and does not provide legal advice. We provide information from official government sources to help you understand U.S. immigration procedures. For advice about your specific situation, please consult a licensed immigration attorney."
+    "footnote": "Document tools are coming soon. These pages explain what to prepare and link to official requirements."
+  },
+  "telegramStrip": {
+    "title": "Community access",
+    "channelButton": "Open Channel",
+    "botButton": "Open Bot",
+    "fallbackText": "Telegram channel and bot will be added after verification."
+  },
+  "miaWidget": {
+    "greeting": "Hi! I'm Mia, your guide to Messenginfo.",
+    "disclaimer": "I'm a quick navigator, not a chat assistant. For questions, contact us.",
+    "links": {
+      "caseStatus": "Check Case Status",
+      "services": "Browse Services",
+      "sources": "Official Sources",
+      "contact": "Contact"
+    }
+  },
+  "disclaimer": {
+    "title": "Messenginfo is not a law firm and does not provide legal advice.",
+    "body": "We provide official-source information and self-help guidance. For legal advice, consult a licensed immigration attorney or DOJ-accredited representative."
+  },
+  "footer": {
+    "columns": {
+      "about": {
+        "title": "About",
+        "tagline": "Official-source immigration information for Ukrainians in the U.S. Not a law firm."
+      },
+      "services": {
+        "title": "Services"
+      },
+      "resources": {
+        "title": "Resources",
+        "links": {
+          "officialLinks": "Official Links",
+          "faq": "FAQ",
+          "telegram": "Telegram",
+          "contact": "Contact"
+        }
+      },
+      "legal": {
+        "title": "Legal",
+        "links": {
+          "privacy": "Privacy Policy",
+          "terms": "Terms of Service",
+          "disclaimer": "Disclaimer"
+        }
+      }
+    },
+    "bottom": "© 2026 Messenginfo"
+  },
+  "mobileBar": {
+    "home": "Home",
+    "services": "Services",
+    "status": "Status",
+    "contact": "Contact"
+  },
+  "badges": {
+    "risk": {
+      "low": "Low risk",
+      "medium": "Medium risk",
+      "high": "High risk"
+    },
+    "officialSource": "Official source"
+  },
+  "errors": {
+    "404": {
+      "title": "Page not found",
+      "body": "The page you are looking for does not exist.",
+      "back": "Back to Home"
+    },
+    "500": {
+      "title": "Something went wrong",
+      "body": "An unexpected error occurred. Please try again.",
+      "back": "Back to Home"
     }
   },
   "legal": {
-    "privacy": {
-      "title": "Privacy Policy",
-      "lastReviewed": "April 29, 2026",
+    "disclaimer": {
+      "title": "Disclaimer",
+      "alert": "Messenginfo is not a law firm and does not provide legal advice.",
       "notice": "Pending legal review by a licensed attorney.",
       "backHome": "← Back to Home",
+      "lastReviewed": "April 29, 2026",
       "sections": [
         {
-          "id": "intro",
-          "title": "1. Introduction",
-          "body": "Messenginfo (\"we,\" \"us,\" or \"our\") operates the website messenginfo.com. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or contact us. Please read this policy carefully. If you disagree with its terms, please discontinue use of the site."
+          "id": "not-law-firm",
+          "title": "Not a Law Firm",
+          "body": "Messenginfo is not a law firm, does not employ attorneys, and does not provide legal advice. Nothing on this website constitutes legal advice or creates an attorney-client relationship."
         },
         {
-          "id": "definitions",
-          "title": "2. Definitions",
-          "body": "\"Personal Data\" means any information that relates to an identified or identifiable natural person. \"Processing\" means any operation performed on personal data. \"Service\" means the messenginfo.com website and related information services."
+          "id": "not-affiliated",
+          "title": "Not Affiliated with the U.S. Government",
+          "body": "Messenginfo is not affiliated with, endorsed by, or connected to USCIS, DHS, DOS, or any other U.S. government agency."
         },
         {
-          "id": "collection",
-          "title": "3. Information We Collect",
-          "body": "We collect information you provide directly: your name, email address, and message when you use our contact form. We collect information automatically: anonymized analytics data (page views, browser type, country) via Vercel Analytics, which does not use cookies and collects no personally identifiable information. We collect your IP address for rate-limiting purposes only; it is hashed immediately and never stored in plain text. We do not collect: tracking cookies, advertising identifiers, biometric data, payment information, or health data."
-        },
-        {
-          "id": "use",
-          "title": "4. How We Use Your Information",
-          "body": "We use your information to: respond to your inquiries and provide requested information; improve our service based on aggregated, anonymized analytics; comply with applicable legal obligations; and prevent abuse through rate limiting."
-        },
-        {
-          "id": "legal-bases",
-          "title": "5. Legal Bases for Processing (GDPR)",
-          "body": "If you are in the European Economic Area, we process your data under the following legal bases: Consent — when you submit the contact form, you consent to processing of your name, email, and message to respond to your inquiry. Legitimate Interests — processing IP hashes for security and rate-limiting; anonymized analytics for service improvement. Legal Obligation — when required by applicable law."
-        },
-        {
-          "id": "sharing",
-          "title": "6. Sharing and Service Providers",
-          "body": "We share your information only with the following service providers who process data on our behalf: Supabase (database hosting, United States); Vercel (website hosting and analytics, United States); Resend (email delivery, United States) — when active; Cloudflare (DNS and email routing, United States). We do not sell your personal data. We do not share your data with advertising networks."
-        },
-        {
-          "id": "transfers",
-          "title": "7. International Transfers",
-          "body": "Our servers are located in the United States. If you are accessing our service from the EU/EEA or UK, your data will be transferred to and processed in the United States. We rely on Standard Contractual Clauses and adequacy decisions where applicable to ensure lawful transfer."
-        },
-        {
-          "id": "retention",
-          "title": "8. Data Retention",
-          "body": "Contact form submissions are retained for 24 months. Audit logs are retained for 36 months. Anonymized analytics data is retained per Vercel's data retention policy. Upon expiry, data is deleted automatically."
-        },
-        {
-          "id": "rights",
-          "title": "9. Your Rights",
-          "body": "Under GDPR (EU residents): You have the right to access, rectify, erase, restrict, or port your personal data; to object to processing; and to withdraw consent at any time. Under CCPA (California residents): You have the right to know what data we collect, to delete your data, to opt out of sale (we do not sell data), and to non-discrimination. To exercise any right, contact us at contact@messenginfo.com."
-        },
-        {
-          "id": "children",
-          "title": "10. Children's Privacy",
-          "body": "Our service is not directed to children under 16 years of age. We do not knowingly collect personal information from children under 16. If you believe we have inadvertently collected such information, please contact us immediately."
-        },
-        {
-          "id": "cookies",
-          "title": "11. Cookies",
-          "body": "We use only essential session cookies required for the website to function. We do not use tracking, advertising, or analytics cookies. Vercel Analytics is cookieless. You do not need to accept cookies to use our service."
-        },
-        {
-          "id": "security",
-          "title": "12. Security",
-          "body": "We implement reasonable security measures including: TLS encryption for all data in transit; encryption at rest via Supabase; access controls limiting who can access personal data; audit logging for data access events. No method of transmission over the Internet is 100% secure."
-        },
-        {
-          "id": "changes",
-          "title": "13. Changes to This Policy",
-          "body": "We may update this Privacy Policy from time to time. Changes are effective when posted. The \"Last reviewed\" date at the top of this page reflects the most recent update. We encourage you to review this policy periodically."
-        },
-        {
-          "id": "contact-us",
-          "title": "14. Contact",
-          "body": "For privacy-related requests, contact us at: contact@messenginfo.com"
+          "id": "consult-attorney",
+          "title": "For Legal Advice, Consult a Licensed Attorney",
+          "body": "For legal advice about your specific immigration situation, consult a licensed immigration attorney. The DOJ maintains a roster of recognized organizations and accredited representatives at justice.gov/eoir."
         }
       ]
     },
     "terms": {
       "title": "Terms of Service",
-      "lastReviewed": "April 29, 2026",
       "notice": "Pending legal review by a licensed attorney.",
       "backHome": "← Back to Home",
+      "lastReviewed": "April 29, 2026",
       "sections": [
         {
           "id": "acceptance",
           "title": "1. Acceptance of Terms",
-          "body": "By accessing or using messenginfo.com (\"Site\"), you agree to be bound by these Terms of Service (\"Terms\"). If you do not agree to all of these Terms, do not use the Site."
+          "body": "By accessing or using messenginfo.com, you agree to be bound by these Terms of Service."
         },
         {
           "id": "about",
           "title": "2. About Messenginfo",
-          "body": "Messenginfo is an information service, not a law firm. We do not provide legal advice. We provide general information sourced from official government publications and self-help tools to help you understand U.S. immigration procedures. Use of our service does not create an attorney-client relationship."
-        },
-        {
-          "id": "eligibility",
-          "title": "3. Eligibility",
-          "body": "You must be at least 18 years old and have the legal capacity to enter into a contract to use our service. By using the Site, you represent that you meet these requirements."
-        },
-        {
-          "id": "services",
-          "title": "4. Services",
-          "body": "We provide: information about U.S. immigration forms and procedures sourced from USCIS.gov and other official government publications; guidance on document translation requirements; and self-help tools and resources. We do not file applications on your behalf, represent you before USCIS or any government agency, or provide individualized legal analysis."
-        },
-        {
-          "id": "user-responsibilities",
-          "title": "5. Your Responsibilities",
-          "body": "You are solely responsible for: the accuracy of your own filings; compliance with all applicable laws and USCIS requirements; verifying information against official sources before acting; and seeking licensed legal counsel for complex situations."
-        },
-        {
-          "id": "permitted-use",
-          "title": "6. Permitted Use",
-          "body": "You may use the Site for personal, non-commercial purposes. You may not use the Site to provide services to third parties for compensation without our written permission."
-        },
-        {
-          "id": "prohibited",
-          "title": "7. Prohibited Conduct",
-          "body": "You may not: use the Site for any unlawful purpose; attempt to extract legal advice from our information service; scrape or automatically collect content from the Site; interfere with the Site's operation; impersonate any person or entity; or use the Site in any way that could damage Messenginfo's reputation."
-        },
-        {
-          "id": "ip",
-          "title": "8. Intellectual Property",
-          "body": "All content on the Site, including text, design, and code, is owned by or licensed to Messenginfo and is protected by applicable intellectual property laws. You may not reproduce, distribute, or create derivative works without our written permission."
+          "body": "Messenginfo is an information service, not a law firm. We do not provide legal advice. Use of our service does not create an attorney-client relationship."
         },
         {
           "id": "disclaimers",
-          "title": "9. Disclaimers",
-          "body": "THE SITE IS PROVIDED \"AS IS\" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT PROVIDE LEGAL ADVICE. WE MAKE NO GUARANTEES ABOUT OUTCOMES OF IMMIGRATION FILINGS. INFORMATION ON THE SITE MAY NOT REFLECT THE MOST RECENT USCIS POLICY CHANGES. ALWAYS VERIFY INFORMATION AGAINST OFFICIAL SOURCES (USCIS.GOV) AND CONSULT A LICENSED ATTORNEY FOR YOUR SPECIFIC SITUATION."
-        },
-        {
-          "id": "liability",
-          "title": "10. Limitation of Liability",
-          "body": "To the maximum extent permitted by law, Messenginfo shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of, or inability to use, the Site or services."
-        },
-        {
-          "id": "indemnification",
-          "title": "11. Indemnification",
-          "body": "You agree to indemnify and hold harmless Messenginfo and its operators from any claims, losses, or expenses (including attorneys' fees) arising from your use of the Site, violation of these Terms, or infringement of any third party's rights."
-        },
-        {
-          "id": "governing-law",
-          "title": "12. Governing Law",
-          "body": "These Terms shall be governed by the laws of the State of California, United States, without regard to conflict of law principles. [Placeholder — pending attorney review for final jurisdiction.]"
-        },
-        {
-          "id": "disputes",
-          "title": "13. Dispute Resolution",
-          "body": "Any disputes arising from these Terms shall be resolved by binding arbitration on an individual basis. Class action waivers apply to the extent permitted by law. [Placeholder — pending attorney review for final arbitration clause.]"
-        },
-        {
-          "id": "misc",
-          "title": "14. General",
-          "body": "If any provision of these Terms is found unenforceable, the remaining provisions remain in full force. These Terms constitute the entire agreement between you and Messenginfo regarding the Site."
-        },
-        {
-          "id": "contact-us",
-          "title": "15. Contact",
-          "body": "Questions about these Terms: contact@messenginfo.com"
+          "title": "3. Disclaimers",
+          "body": "THE SITE IS PROVIDED AS-IS WITHOUT WARRANTIES. WE DO NOT PROVIDE LEGAL ADVICE. ALWAYS VERIFY INFORMATION AGAINST OFFICIAL SOURCES (USCIS.GOV)."
         }
       ]
     },
-    "disclaimer": {
-      "title": "Disclaimer",
-      "lastReviewed": "April 29, 2026",
+    "privacy": {
+      "title": "Privacy Policy",
       "notice": "Pending legal review by a licensed attorney.",
       "backHome": "← Back to Home",
-      "alert": "Messenginfo is not a law firm and does not provide legal advice.",
+      "lastReviewed": "April 29, 2026",
       "sections": [
         {
-          "id": "not-law-firm",
-          "title": "Not a Law Firm",
-          "body": "Messenginfo is not a law firm, does not employ attorneys, and does not provide legal advice. Nothing on this website constitutes legal advice or creates an attorney-client relationship. The information provided is for general educational purposes only."
+          "id": "intro",
+          "title": "1. Introduction",
+          "body": "Messenginfo operates messenginfo.com. This Privacy Policy explains how we collect, use, and protect your information."
         },
         {
-          "id": "not-affiliated",
-          "title": "Not Affiliated with the U.S. Government",
-          "body": "Messenginfo is not affiliated with, endorsed by, sponsored by, or connected to U.S. Citizenship and Immigration Services (USCIS), the Department of Homeland Security (DHS), the Department of State (DOS), or any other U.S. government agency. References to these agencies are for informational purposes only."
+          "id": "collection",
+          "title": "2. Information We Collect",
+          "body": "We collect only what you provide via the contact form (name, email, message) and anonymized analytics via Vercel Analytics. We do not store receipt numbers or case details."
         },
         {
-          "id": "what-we-do",
-          "title": "What We Do",
-          "body": "We provide information sourced from official government publications to help you understand U.S. immigration procedures and self-help tools. Our goal is to make official information more accessible and understandable."
-        },
-        {
-          "id": "what-we-dont",
-          "title": "What We Do Not Do",
-          "body": "We do not: represent users before USCIS or any government agency; prepare or file applications on behalf of users; provide individualized legal analysis or advice; guarantee any immigration outcome; or advise on the legal strategy for your specific case."
-        },
-        {
-          "id": "consult-attorney",
-          "title": "For Legal Advice, Consult a Licensed Attorney",
-          "body": "For legal advice about your specific immigration situation, consult a licensed immigration attorney in your state. The American Immigration Lawyers Association (AILA) provides an attorney referral service at aila.org. The U.S. Department of Justice maintains a roster of recognized organizations and accredited representatives at justice.gov/eoir."
-        },
-        {
-          "id": "official-sources",
-          "title": "Always Verify Official Information",
-          "body": "Immigration law changes frequently. Always verify information against official government sources—primarily USCIS.gov—before making decisions or filing applications. Messenginfo is not responsible for actions taken based on information from this site."
+          "id": "rights",
+          "title": "3. Your Rights",
+          "body": "You may request access, correction, or deletion of your data by contacting contact@messenginfo.com."
         }
       ]
     }
-  },
-  "errors": {
-    "404": "Page not found.",
-    "500": "Something went wrong. Please try again.",
-    "rateLimit": "Too many requests. Please try again later.",
-    "validation": "Please check your input and try again.",
-    "backHome": "Back to Home"
   }
 }

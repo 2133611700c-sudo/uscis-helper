@@ -10,7 +10,7 @@ const contactSchema = z.object({
   message: z.string().min(10).max(2000),
   consent: z.literal('true'),
   honeypot: z.string().max(0),
-  locale: z.enum(['en', 'ru', 'uk']),
+  locale: z.enum(['en', 'ru', 'uk', 'es']),
 });
 
 export type ContactFormState = {
