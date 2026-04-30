@@ -1,0 +1,320 @@
+{
+  "metadata": {
+    "title": "Messenginfo – Immigration Information & Self-Help Tools",
+    "description": "Clear, official-source immigration information and self-help tools for navigating U.S. immigration forms, procedures, and deadlines.",
+    "keywords": "immigration information, USCIS forms, document translation, immigration self-help, parole, TPS, EAD"
+  },
+  "header": {
+    "nav": {
+      "home": "Home",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "disclaimer": "Disclaimer"
+    },
+    "langSwitcher": "Language"
+  },
+  "footer": {
+    "tagline": "Immigration information, made human.",
+    "rights": "© {year} Messenginfo. All rights reserved.",
+    "shortDisclaimer": "Messenginfo is not a law firm and does not provide legal advice. Information is for educational purposes only.",
+    "contact": "Contact",
+    "links": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "disclaimer": "Disclaimer"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Navigate Your Immigration Journey with Confidence",
+      "subtitle": "Messenginfo provides clear, reliable information on U.S. immigration forms, procedures, and official resources—so you can manage your own case with confidence.",
+      "cta": "Get in Touch",
+      "badge": "Information service · Not legal advice"
+    },
+    "services": {
+      "title": "How We Help",
+      "subtitle": "We help you understand the paperwork—you make the decisions.",
+      "items": [
+        {
+          "title": "Document Translation Guidance",
+          "description": "Understand what USCIS requires for certified document translations: which documents need translation, what certification language to use, and how to meet official standards."
+        },
+        {
+          "title": "Form-Filling Guidance",
+          "description": "Step-by-step explanations of common immigration forms—what each field means, which documents to attach, and where to submit. Based on official USCIS instructions."
+        },
+        {
+          "title": "Official Source Navigation",
+          "description": "Direct, curated links to USCIS.gov, DOS, and other government sources so you always get information straight from the authoritative source—not forums or rumor."
+        }
+      ]
+    },
+    "how": {
+      "title": "How It Works",
+      "steps": [
+        {
+          "title": "Tell Us What You Need",
+          "description": "Reach out via our contact form with your question or the form you are working on. We respond in your preferred language."
+        },
+        {
+          "title": "Get Plain-Language Information",
+          "description": "We send you clear explanations sourced from official government publications—no jargon, no guesswork."
+        },
+        {
+          "title": "Take Action with Confidence",
+          "description": "Use our guidance to prepare your own filings. For complex situations, we'll point you to licensed immigration attorneys and recognized organizations."
+        }
+      ]
+    },
+    "why": {
+      "title": "Why Messenginfo",
+      "points": [
+        {
+          "title": "Official Sources Only",
+          "description": "Every piece of information is sourced from USCIS.gov and official government publications. Not forums, not social media, not rumors."
+        },
+        {
+          "title": "Three Languages",
+          "description": "Available in English, Russian, and Ukrainian to serve the communities that need clear immigration information most."
+        },
+        {
+          "title": "Privacy First",
+          "description": "We collect only what we need. No tracking cookies, no advertising profiles, no data selling—ever."
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contact Us",
+      "subtitle": "Have a question about a form, a deadline, or a translation requirement? Send us a message. We typically respond within 1–2 business days.",
+      "form": {
+        "name": "Full Name",
+        "namePlaceholder": "Your full name",
+        "email": "Email Address",
+        "emailPlaceholder": "you@example.com",
+        "message": "Message",
+        "messagePlaceholder": "Describe your question or situation...",
+        "consent": "I understand that Messenginfo does not provide legal advice and that this message is not establishing an attorney-client relationship.",
+        "consentRequired": "You must acknowledge this to proceed.",
+        "submit": "Send Message",
+        "submitting": "Sending...",
+        "success": "Your message was received. We will respond within 1–2 business days.",
+        "error": "Something went wrong. Please try again or email us directly.",
+        "rateLimit": "Too many submissions. Please wait an hour before trying again.",
+        "validation": "Please check the form and correct the highlighted fields."
+      }
+    },
+    "disclaimer": {
+      "title": "Important Notice",
+      "body": "Messenginfo is not a law firm and does not provide legal advice. We provide information from official government sources to help you understand U.S. immigration procedures. For advice about your specific situation, please consult a licensed immigration attorney."
+    }
+  },
+  "legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "lastReviewed": "April 29, 2026",
+      "notice": "Pending legal review by a licensed attorney.",
+      "backHome": "← Back to Home",
+      "sections": [
+        {
+          "id": "intro",
+          "title": "1. Introduction",
+          "body": "Messenginfo (\"we,\" \"us,\" or \"our\") operates the website messenginfo.com. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or contact us. Please read this policy carefully. If you disagree with its terms, please discontinue use of the site."
+        },
+        {
+          "id": "definitions",
+          "title": "2. Definitions",
+          "body": "\"Personal Data\" means any information that relates to an identified or identifiable natural person. \"Processing\" means any operation performed on personal data. \"Service\" means the messenginfo.com website and related information services."
+        },
+        {
+          "id": "collection",
+          "title": "3. Information We Collect",
+          "body": "We collect information you provide directly: your name, email address, and message when you use our contact form. We collect information automatically: anonymized analytics data (page views, browser type, country) via Vercel Analytics, which does not use cookies and collects no personally identifiable information. We collect your IP address for rate-limiting purposes only; it is hashed immediately and never stored in plain text. We do not collect: tracking cookies, advertising identifiers, biometric data, payment information, or health data."
+        },
+        {
+          "id": "use",
+          "title": "4. How We Use Your Information",
+          "body": "We use your information to: respond to your inquiries and provide requested information; improve our service based on aggregated, anonymized analytics; comply with applicable legal obligations; and prevent abuse through rate limiting."
+        },
+        {
+          "id": "legal-bases",
+          "title": "5. Legal Bases for Processing (GDPR)",
+          "body": "If you are in the European Economic Area, we process your data under the following legal bases: Consent — when you submit the contact form, you consent to processing of your name, email, and message to respond to your inquiry. Legitimate Interests — processing IP hashes for security and rate-limiting; anonymized analytics for service improvement. Legal Obligation — when required by applicable law."
+        },
+        {
+          "id": "sharing",
+          "title": "6. Sharing and Service Providers",
+          "body": "We share your information only with the following service providers who process data on our behalf: Supabase (database hosting, United States); Vercel (website hosting and analytics, United States); Resend (email delivery, United States) — when active; Cloudflare (DNS and email routing, United States). We do not sell your personal data. We do not share your data with advertising networks."
+        },
+        {
+          "id": "transfers",
+          "title": "7. International Transfers",
+          "body": "Our servers are located in the United States. If you are accessing our service from the EU/EEA or UK, your data will be transferred to and processed in the United States. We rely on Standard Contractual Clauses and adequacy decisions where applicable to ensure lawful transfer."
+        },
+        {
+          "id": "retention",
+          "title": "8. Data Retention",
+          "body": "Contact form submissions are retained for 24 months. Audit logs are retained for 36 months. Anonymized analytics data is retained per Vercel's data retention policy. Upon expiry, data is deleted automatically."
+        },
+        {
+          "id": "rights",
+          "title": "9. Your Rights",
+          "body": "Under GDPR (EU residents): You have the right to access, rectify, erase, restrict, or port your personal data; to object to processing; and to withdraw consent at any time. Under CCPA (California residents): You have the right to know what data we collect, to delete your data, to opt out of sale (we do not sell data), and to non-discrimination. To exercise any right, contact us at contact@messenginfo.com."
+        },
+        {
+          "id": "children",
+          "title": "10. Children's Privacy",
+          "body": "Our service is not directed to children under 16 years of age. We do not knowingly collect personal information from children under 16. If you believe we have inadvertently collected such information, please contact us immediately."
+        },
+        {
+          "id": "cookies",
+          "title": "11. Cookies",
+          "body": "We use only essential session cookies required for the website to function. We do not use tracking, advertising, or analytics cookies. Vercel Analytics is cookieless. You do not need to accept cookies to use our service."
+        },
+        {
+          "id": "security",
+          "title": "12. Security",
+          "body": "We implement reasonable security measures including: TLS encryption for all data in transit; encryption at rest via Supabase; access controls limiting who can access personal data; audit logging for data access events. No method of transmission over the Internet is 100% secure."
+        },
+        {
+          "id": "changes",
+          "title": "13. Changes to This Policy",
+          "body": "We may update this Privacy Policy from time to time. Changes are effective when posted. The \"Last reviewed\" date at the top of this page reflects the most recent update. We encourage you to review this policy periodically."
+        },
+        {
+          "id": "contact-us",
+          "title": "14. Contact",
+          "body": "For privacy-related requests, contact us at: contact@messenginfo.com"
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "lastReviewed": "April 29, 2026",
+      "notice": "Pending legal review by a licensed attorney.",
+      "backHome": "← Back to Home",
+      "sections": [
+        {
+          "id": "acceptance",
+          "title": "1. Acceptance of Terms",
+          "body": "By accessing or using messenginfo.com (\"Site\"), you agree to be bound by these Terms of Service (\"Terms\"). If you do not agree to all of these Terms, do not use the Site."
+        },
+        {
+          "id": "about",
+          "title": "2. About Messenginfo",
+          "body": "Messenginfo is an information service, not a law firm. We do not provide legal advice. We provide general information sourced from official government publications and self-help tools to help you understand U.S. immigration procedures. Use of our service does not create an attorney-client relationship."
+        },
+        {
+          "id": "eligibility",
+          "title": "3. Eligibility",
+          "body": "You must be at least 18 years old and have the legal capacity to enter into a contract to use our service. By using the Site, you represent that you meet these requirements."
+        },
+        {
+          "id": "services",
+          "title": "4. Services",
+          "body": "We provide: information about U.S. immigration forms and procedures sourced from USCIS.gov and other official government publications; guidance on document translation requirements; and self-help tools and resources. We do not file applications on your behalf, represent you before USCIS or any government agency, or provide individualized legal analysis."
+        },
+        {
+          "id": "user-responsibilities",
+          "title": "5. Your Responsibilities",
+          "body": "You are solely responsible for: the accuracy of your own filings; compliance with all applicable laws and USCIS requirements; verifying information against official sources before acting; and seeking licensed legal counsel for complex situations."
+        },
+        {
+          "id": "permitted-use",
+          "title": "6. Permitted Use",
+          "body": "You may use the Site for personal, non-commercial purposes. You may not use the Site to provide services to third parties for compensation without our written permission."
+        },
+        {
+          "id": "prohibited",
+          "title": "7. Prohibited Conduct",
+          "body": "You may not: use the Site for any unlawful purpose; attempt to extract legal advice from our information service; scrape or automatically collect content from the Site; interfere with the Site's operation; impersonate any person or entity; or use the Site in any way that could damage Messenginfo's reputation."
+        },
+        {
+          "id": "ip",
+          "title": "8. Intellectual Property",
+          "body": "All content on the Site, including text, design, and code, is owned by or licensed to Messenginfo and is protected by applicable intellectual property laws. You may not reproduce, distribute, or create derivative works without our written permission."
+        },
+        {
+          "id": "disclaimers",
+          "title": "9. Disclaimers",
+          "body": "THE SITE IS PROVIDED \"AS IS\" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT PROVIDE LEGAL ADVICE. WE MAKE NO GUARANTEES ABOUT OUTCOMES OF IMMIGRATION FILINGS. INFORMATION ON THE SITE MAY NOT REFLECT THE MOST RECENT USCIS POLICY CHANGES. ALWAYS VERIFY INFORMATION AGAINST OFFICIAL SOURCES (USCIS.GOV) AND CONSULT A LICENSED ATTORNEY FOR YOUR SPECIFIC SITUATION."
+        },
+        {
+          "id": "liability",
+          "title": "10. Limitation of Liability",
+          "body": "To the maximum extent permitted by law, Messenginfo shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of, or inability to use, the Site or services."
+        },
+        {
+          "id": "indemnification",
+          "title": "11. Indemnification",
+          "body": "You agree to indemnify and hold harmless Messenginfo and its operators from any claims, losses, or expenses (including attorneys' fees) arising from your use of the Site, violation of these Terms, or infringement of any third party's rights."
+        },
+        {
+          "id": "governing-law",
+          "title": "12. Governing Law",
+          "body": "These Terms shall be governed by the laws of the State of California, United States, without regard to conflict of law principles. [Placeholder — pending attorney review for final jurisdiction.]"
+        },
+        {
+          "id": "disputes",
+          "title": "13. Dispute Resolution",
+          "body": "Any disputes arising from these Terms shall be resolved by binding arbitration on an individual basis. Class action waivers apply to the extent permitted by law. [Placeholder — pending attorney review for final arbitration clause.]"
+        },
+        {
+          "id": "misc",
+          "title": "14. General",
+          "body": "If any provision of these Terms is found unenforceable, the remaining provisions remain in full force. These Terms constitute the entire agreement between you and Messenginfo regarding the Site."
+        },
+        {
+          "id": "contact-us",
+          "title": "15. Contact",
+          "body": "Questions about these Terms: contact@messenginfo.com"
+        }
+      ]
+    },
+    "disclaimer": {
+      "title": "Disclaimer",
+      "lastReviewed": "April 29, 2026",
+      "notice": "Pending legal review by a licensed attorney.",
+      "backHome": "← Back to Home",
+      "alert": "Messenginfo is not a law firm and does not provide legal advice.",
+      "sections": [
+        {
+          "id": "not-law-firm",
+          "title": "Not a Law Firm",
+          "body": "Messenginfo is not a law firm, does not employ attorneys, and does not provide legal advice. Nothing on this website constitutes legal advice or creates an attorney-client relationship. The information provided is for general educational purposes only."
+        },
+        {
+          "id": "not-affiliated",
+          "title": "Not Affiliated with the U.S. Government",
+          "body": "Messenginfo is not affiliated with, endorsed by, sponsored by, or connected to U.S. Citizenship and Immigration Services (USCIS), the Department of Homeland Security (DHS), the Department of State (DOS), or any other U.S. government agency. References to these agencies are for informational purposes only."
+        },
+        {
+          "id": "what-we-do",
+          "title": "What We Do",
+          "body": "We provide information sourced from official government publications to help you understand U.S. immigration procedures and self-help tools. Our goal is to make official information more accessible and understandable."
+        },
+        {
+          "id": "what-we-dont",
+          "title": "What We Do Not Do",
+          "body": "We do not: represent users before USCIS or any government agency; prepare or file applications on behalf of users; provide individualized legal analysis or advice; guarantee any immigration outcome; or advise on the legal strategy for your specific case."
+        },
+        {
+          "id": "consult-attorney",
+          "title": "For Legal Advice, Consult a Licensed Attorney",
+          "body": "For legal advice about your specific immigration situation, consult a licensed immigration attorney in your state. The American Immigration Lawyers Association (AILA) provides an attorney referral service at aila.org. The U.S. Department of Justice maintains a roster of recognized organizations and accredited representatives at justice.gov/eoir."
+        },
+        {
+          "id": "official-sources",
+          "title": "Always Verify Official Information",
+          "body": "Immigration law changes frequently. Always verify information against official government sources—primarily USCIS.gov—before making decisions or filing applications. Messenginfo is not responsible for actions taken based on information from this site."
+        }
+      ]
+    }
+  },
+  "errors": {
+    "404": "Page not found.",
+    "500": "Something went wrong. Please try again.",
+    "rateLimit": "Too many requests. Please try again later.",
+    "validation": "Please check your input and try again.",
+    "backHome": "Back to Home"
+  }
+}
