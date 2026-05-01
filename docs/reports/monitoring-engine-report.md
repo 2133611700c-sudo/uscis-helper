@@ -1,10 +1,11 @@
 # Monitoring Engine Report (TASK-06)
 
-- Date (UTC): 2026-05-01T17:43:00Z
+- Date (UTC): 2026-05-01T18:10:00Z
 - Branch verified: `main`
-- PR: [#1](https://github.com/2133611700c-sudo/uscis-helper/pull/1)
-- Merge commit: `f02f305b3ed0a1cddbcd054416f29d6875b9eeb3`
-- Supabase project ref: `taqlarevwifgfnjxilfh`
+- PR #1 (initial): `f02f305` — monitoring engine added
+- PR #2 (pnpm hotfix): [#2](https://github.com/2133611700c-sudo/uscis-helper/pull/2) — merge commit `69b5e39`
+- pnpm fix direct commit: `893cc09` — remove version conflict with packageManager field
+- Supabase project ref: `rtfxrlountkoegsseukx`
 
 ## 1) Supabase Verification
 
@@ -100,16 +101,59 @@ Monitoring sources by type:
 - 21 rows visible
 - values remain `NULL` (consistent with all workflow runs failing before monitor steps execute)
 
-## 5) Final Status
+## 5) pnpm Hotfix (PR #2)
+
+**Root cause:** `pnpm/action-setup@v3` was placed AFTER `actions/setup-node@v4`. When setup-node tried to configure the pnpm cache, pnpm was not yet installed.
+
+**Secondary issue:** Specifying `version: 10` in the workflow conflicted with `"packageManager": "pnpm@10.33.2"` in `package.json`.
+
+**Fix applied:**
+- PR #2 merged — moved `pnpm/action-setup@v4` BEFORE `actions/setup-node@v4` in all 5 files
+- Commit `893cc09` — removed `version:` key, letting `packageManager` field drive the version
+
+**Post-fix workflow results (all 5 on main):**
+
+| Workflow | Run ID | Status | Conclusion |
+|---|---|---|---|
+| Dead Link Checker | 25226209602 | completed | **success** ✅ |
+| USCIS News Monitor | 25226210689 | completed | **success** ✅ |
+| Federal Register Monitor | 25226211809 | completed | **success** ✅ |
+| Form Edition Checker | 25226213020 | completed | **success** ✅ |
+| YouTube Monitor | 25226214429 | completed | **success** ✅ |
+
+## 6) Post-Fix Supabase State
+
+Migration applied via `supabase db push` (monitoring_engine.sql).
+Seed re-run: `Inserted: 21, skipped: 0`.
+
+| Table | Count |
+|---|---|
+| monitoring_sources | 21 |
+| monitoring_alerts | 31 |
+| form_editions | 1 |
+| dead_links_log | 2 |
+
+Sources by type: `federal_register:1 form_page:8 uscis_page:2 uscis_rss:1 youtube_rss:9`
+
+`last_checked_at` status: NULL on all 21 sources.
+- USCIS RSS: returned 0 items (feed may be empty or rate-limited)
+- YouTube RSS: all 9 URLs return 404 — `?user=` format deprecated by YouTube; correct format is `?channel_id=UC...`
+- Scripts handle these gracefully (exit 0) but do not write `last_checked_at` when no content fetched
+
+## 7) Final Status
 
 **PARTIAL**
 
-Reason:
-- Migration and seed are complete.
-- Workflows are now correctly visible on default branch (`main`) and can be dispatched.
-- Mandatory success gate is not met because all 5 runs failed on missing `pnpm` in GitHub Actions runtime.
+| Gate | Status |
+|---|---|
+| pnpm fix — all 5 workflows pass | ✅ DONE |
+| dead-link-checker success | ✅ DONE |
+| DB receives log entries (monitoring_alerts +31, dead_links_log +2) | ✅ DONE |
+| last_checked_at updated on monitoring_sources | ❌ NULL |
+| YouTube sources reachable | ❌ 9/9 return 404 |
+| USCIS RSS returns items | ❌ 0 items |
 
-Blocker to reach DONE:
-1. Fix workflow setup so `pnpm` is installed before/with `actions/setup-node`.
-2. Re-run workflows on `main`.
-3. Confirm at least `dead-link-checker.yml` completes successfully and verify non-empty DB effects if changes are detected.
+**Remaining blockers:**
+1. YouTube seed URLs must use `channel_id` format — fix in `supabase/seed` or re-seed with correct IDs
+2. USCIS RSS empty — verify feed URL is correct and not rate-limited
+3. Once sources return data, `last_checked_at` will update automatically on next run
