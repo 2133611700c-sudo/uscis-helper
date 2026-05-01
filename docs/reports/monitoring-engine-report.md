@@ -1,122 +1,123 @@
-# Monitoring Engine Report
+# Monitoring Engine Report (TASK-06)
 
-**Date**: 2026-05-01T01:07:00-07:00  
-**Branch**: `pain-misinfo-faq-20260430-2242`  
-**Commit**: `NOT_COMMITTED_YET`
+- Date (UTC): 2026-05-01T08:46:10Z
+- Branch: `pain-misinfo-faq-20260430-2242`
+- Commit: `105778c`
+- Supabase project ref: `taqlarevwifgfnjxilfh`
 
-## Supabase tables created
+## Verification Summary
 
-| Table | Created | Initial rows |
-|---|---|---|
-| monitoring_sources | no (migration not applied) | unknown |
-| monitoring_alerts | no (migration not applied) | unknown |
-| form_editions | no (migration not applied) | unknown |
-| dead_links_log | no (migration not applied) | unknown |
+- Migration applied: **yes**
+  - Evidence: `docs/reports/evidence/task-06/09-supabase-migration-success.png`
+  - Method: Supabase SQL Editor execution of `supabase/migrations/20260501010337_monitoring_engine.sql`
 
-Migration file staged in repo:  
-`supabase/migrations/20260501010337_monitoring_engine.sql`
+- Tables verified: **yes**
+  - Evidence: `docs/reports/evidence/task-06/10-supabase-table-verification-4rows.png`
+  - Expected table list result: **4 rows**
+    - `dead_links_log`
+    - `form_editions`
+    - `monitoring_alerts`
+    - `monitoring_sources`
 
-## GitHub Actions workflows created
+- Initial table counts (before seed): **verified**
+  - Evidence: `docs/reports/evidence/task-06/11-supabase-initial-counts-zero.png`
+  - Counts:
+    - `monitoring_sources`: 0
+    - `monitoring_alerts`: 0
+    - `form_editions`: 0
+    - `dead_links_log`: 0
 
-| File | Cadence | Verified valid YAML |
-|---|---|---|
-| `.github/workflows/uscis-news-monitor.yml` | every 6h | yes |
-| `.github/workflows/federal-register-monitor.yml` | daily 09 ET | yes |
-| `.github/workflows/form-edition-checker.yml` | weekly Mon 09 ET | yes |
-| `.github/workflows/dead-link-checker.yml` | daily 03 ET | yes |
-| `.github/workflows/youtube-monitor.yml` | daily 12 ET | yes |
+- Sources seeded: **yes**
+  - CLI evidence: `/tmp/task-06-seed-rerun.log`
+  - Supabase evidence: `docs/reports/evidence/task-06/12-supabase-seeded-source-type-counts.png`
+  - Seed output:
+    - Latest rerun: `Seed completed. Inserted: 0, skipped(existing): 21`
+    - Initial successful run in this task window inserted 21 rows.
+  - Source counts:
+    - `federal_register`: 1
+    - `form_page`: 8
+    - `uscis_page`: 2
+    - `uscis_rss`: 1
+    - `youtube_rss`: 9
+    - **Total**: 21
 
-## Scripts created
+- GitHub secrets verified by name: **yes (required names except optional Resend)**
+  - CLI evidence: `gh secret list`
+  - Browser evidence: `docs/reports/evidence/task-06/16-github-actions-secrets.png`
+  - Present:
+    - `SUPABASE_URL`
+    - `SUPABASE_SERVICE_ROLE_KEY`
+    - `CONTACT_EMAIL_DESTINATION`
+    - `FEDERAL_REGISTER_USER_AGENT`
+  - Also present:
+    - `NEXT_PUBLIC_SUPABASE_URL`
+    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - Missing:
+    - `RESEND_API_KEY` (optional unless email delivery verification is required)
 
-| File | Lines | Compiles |
-|---|---:|---|
-| `scripts/monitoring/lib/supabase-client.ts` | 21 | yes |
-| `scripts/monitoring/lib/email.ts` | 31 | yes |
-| `scripts/monitoring/lib/hash.ts` | 10 | yes |
-| `scripts/monitoring/monitor-uscis-news.ts` | 104 | yes |
-| `scripts/monitoring/monitor-federal-register.ts` | 90 | yes |
-| `scripts/monitoring/check-form-editions.ts` | 111 | yes |
-| `scripts/monitoring/check-dead-links.ts` | 91 | yes |
-| `scripts/monitoring/monitor-youtube.ts` | 88 | yes |
-| `scripts/monitoring/build-digest-email.ts` | 94 | yes |
-| `scripts/monitoring/seed-sources.ts` | 116 | yes |
-| `scripts/monitoring/set-github-secrets.sh` | 25 | generated only (NOT executed) |
+## GitHub Workflow Trigger Verification
 
-Compilation evidence: `/tmp/task-06-scripts-tsc.log` (EXIT:0)
+- Target branch for manual run: `pain-misinfo-faq-20260430-2242`
+- Workflow files exist on target branch: **yes**
+  - Evidence: `gh api 'repos/2133611700c-sudo/uscis-helper/contents/.github/workflows?ref=pain-misinfo-faq-20260430-2242'`
+  - Browser evidence: `docs/reports/evidence/task-06/14-github-branch-page.png`
+- Actions UI verification screenshot:
+  - `docs/reports/evidence/task-06/15-github-actions-branch-view.png`
 
-## Sources seeded
+### Manual trigger results (real)
 
-Seed input file: `tasks/TASK-06-monitoring-engine/data/monitoring-sources-seed.csv`
+Evidence: `/tmp/task-06-workflow-dispatch.log`
 
-| source_type | count |
-|---|---:|
-| uscis_rss | 1 |
-| uscis_page | 2 |
-| form_page | 8 |
-| youtube_rss | 9 |
-| federal_register | 1 (auto-added by seed script fallback) |
+| Workflow | Trigger attempt | Result | Reason |
+|---|---|---|---|
+| `dead-link-checker.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
+| `uscis-news-monitor.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
+| `federal-register-monitor.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
+| `form-edition-checker.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
+| `youtube-monitor.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
 
-## Test runs
+- Workflows triggered: **0/5 successful dispatches**
+- Workflows succeeded: **0/5**
+- `gh run list --limit 20`: empty (`[]`)
 
-| Workflow | Triggered | Result |
-|---|---|---|
-| uscis-news-monitor | no | blocked (secrets missing) |
-| federal-register-monitor | no | blocked (secrets missing) |
-| form-edition-checker | no | blocked (secrets missing) |
-| dead-link-checker | no | blocked (secrets missing) |
-| youtube-monitor | no | blocked (secrets missing) |
+## DB Effects After Workflow Attempts
 
-## First alerts inserted
+- Evidence (counts): `docs/reports/evidence/task-06/13-supabase-post-workflow-counts.png`
+  - `monitoring_alerts`: 0
+  - `form_editions`: 0
+  - `dead_links_log`: 0
 
-Not executed. Database connection blocked by missing env vars.
+- Evidence (source monitoring status view): `docs/reports/evidence/task-06/18-supabase-monitoring-sources-last-checked-results.png`
+  - Query:
+    - `select source_type, last_checked_at from monitoring_sources order by source_type, url limit 30;`
+  - Observed:
+    - 21 rows returned
+    - `last_checked_at` values are `NULL` (expected because no workflow run executed)
 
-## Rate limit status
+## Browser Evidence Folder
 
-Runtime checks not executed (blocked by missing env vars).  
-Rate-limit handling is implemented in scripts:
-- Federal Register: retry after `429` with delay
-- USCIS/form checks: one-pass per source
-- YouTube: RSS feed polling with delta detection
+- `docs/reports/evidence/task-06/`
+  - `08-supabase-taql-overview.png`
+  - `09-supabase-migration-success.png`
+  - `10-supabase-table-verification-4rows.png`
+  - `11-supabase-initial-counts-zero.png`
+  - `12-supabase-seeded-source-type-counts.png`
+  - `13-supabase-post-workflow-counts.png`
+  - `14-github-branch-page.png`
+  - `15-github-actions-branch-view.png`
+  - `16-github-actions-secrets.png`
+  - `18-supabase-monitoring-sources-last-checked-results.png`
 
-## Dead links found in initial scan
+## Final Status
 
-Not executed (blocked by missing `SUPABASE_URL`).
+**PARTIAL**
 
-## Action items for user (manual)
+Reason:
+- Migration: done
+- Seeding: done
+- Mandatory workflow success gate not met: `dead-link-checker.yml` could not be dispatched because GitHub returns `workflow ... not found on the default branch`.
 
-1. Set environment variables for local runs (or GitHub Secrets):
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `RESEND_API_KEY` (optional for production email send)
-   - `CONTACT_EMAIL_DESTINATION`
-   - `FEDERAL_REGISTER_USER_AGENT`
-2. Apply migration:
-   - `supabase/migrations/20260501010337_monitoring_engine.sql`
-3. Seed sources:
-   - `npx tsx scripts/monitoring/seed-sources.ts`
-4. Review `scripts/monitoring/set-github-secrets.sh`, then run manually.
-5. Trigger each workflow manually after secrets are set.
-
-## Blocking errors captured
-
-- Local seed run fails exactly with:
-  - `Error: Missing required env var: SUPABASE_URL`
-  - Evidence: `/tmp/task-06-seed-attempt.log`
-
-## Pending
-
-- Apply migration in Supabase project
-- Execute seed script successfully
-- First workflow run verification via `gh workflow run`
-- First digest email delivery verification
-
-## Issues / decisions
-
-1. Root repo did not include runtime dependencies required by monitoring scripts.  
-   Added to root `package.json`:
-   - `@supabase/supabase-js`
-   - `tsx`
-   - `typescript`
-   - `@types/node`
-2. Added `scripts/monitoring/tsconfig.json` so monitoring scripts compile independently from web app tsconfig.
-3. `federal_register` source row is absent in the provided seed CSV; `seed-sources.ts` auto-adds it to avoid null `source_id` in alerts.
+To reach **DONE**:
+1. Make these workflow files available on the repository default branch (`main`) or change default branch policy.
+2. Re-run 5 dispatch commands.
+3. Confirm at least `dead-link-checker.yml` succeeds and capture run logs/screenshots.
