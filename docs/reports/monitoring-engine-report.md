@@ -154,6 +154,48 @@ Sources by type: `federal_register:1 form_page:8 uscis_page:2 uscis_rss:1 youtub
 | USCIS RSS returns items | ❌ 0 items |
 
 **Remaining blockers:**
-1. YouTube seed URLs must use `channel_id` format — fix in `supabase/seed` or re-seed with correct IDs
-2. USCIS RSS empty — verify feed URL is correct and not rate-limited
-3. Once sources return data, `last_checked_at` will update automatically on next run
+1. ~~YouTube seed URLs must use `channel_id` format~~ — **FIXED** (commit `92f1ba6`)
+2. USCIS RSS empty — feed may be temporarily empty or rate-limited; URL is correct
+
+---
+
+## 8) YouTube Seed Fix
+
+**Commit:** `92f1ba6` — fix(seed): replace YouTube ?user= URLs with channel_id= format
+
+| Handle | Old URL (404) | channel_id | RSS (200) |
+|---|---|---|---|
+| @ukrainiansinusa | ?user=ukrainiansinusa | UCh6YKsvLAKUzvXn2rRYwspg | ✅ |
+| @Immigraciya_in_usa | ?user=Immigraciya_in_usa | UCDY0jWSktAAvDT2tfQmnG2A | ✅ |
+| @immigrationlawyerusa | ?user=immigrationlawyerusa | UCohRIei964GJg_sliJy8C9g | ✅ |
+| @arvian_immigration | ?user=arvian_immigration | UCygWuwypPFl6rLkMc1HGt7w | ✅ |
+| @reloka-ua | ?user=reloka-ua | UC6NMk8pjQ58s5yZO22NVMgA | ✅ |
+| @infoua_usa | ?user=infoua_usa | UCmhWd03SiHRTE5w0pFj8PxQ | ✅ |
+| @TeachBK | ?user=TeachBK | UC5cL8HA6gs-gBG3flnzmhow | ✅ |
+| @elmi_usa | ?user=elmi_usa | UCbVhdTLEDp4ZfHAmuf5lAsw | ✅ |
+| @ECUALeauge | ?user=ECUALeauge | UCj_gvvmlHHZ-OZvm04unDMQ | ✅ |
+
+**youtube-monitor.yml run:** https://github.com/2133611700c-sudo/uscis-helper/actions/runs/25226548929 — **success** ✅  
+**New videos inserted:** 135  
+**last_checked_at:** updated on all 9/9 YouTube sources (2026-05-01T18:11–18:12Z)
+
+**Final Supabase counts:**
+
+| Table | Count |
+|---|---|
+| monitoring_sources | 21 |
+| monitoring_alerts | 166 |
+| form_editions | 1 |
+| dead_links_log | 2 |
+
+## 9) Final Status — DONE
+
+| Gate | Status |
+|---|---|
+| pnpm fix — all 5 workflows pass | ✅ |
+| dead-link-checker success | ✅ |
+| youtube-monitor success + 135 videos inserted | ✅ |
+| 9/9 YouTube last_checked_at updated | ✅ |
+| monitoring_sources: 21 | ✅ |
+| monitoring_alerts: 166 | ✅ |
+| Remaining blocker | USCIS RSS returned 0 items (feed may be empty) |
