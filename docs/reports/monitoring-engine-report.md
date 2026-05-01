@@ -1,39 +1,30 @@
 # Monitoring Engine Report (TASK-06)
 
-- Date (UTC): 2026-05-01T08:46:10Z
-- Branch: `pain-misinfo-faq-20260430-2242`
-- Commit: `105778c`
+- Date (UTC): 2026-05-01T17:43:00Z
+- Branch verified: `main`
+- PR: [#1](https://github.com/2133611700c-sudo/uscis-helper/pull/1)
+- Merge commit: `f02f305b3ed0a1cddbcd054416f29d6875b9eeb3`
 - Supabase project ref: `taqlarevwifgfnjxilfh`
 
-## Verification Summary
+## 1) Supabase Verification
 
 - Migration applied: **yes**
   - Evidence: `docs/reports/evidence/task-06/09-supabase-migration-success.png`
-  - Method: Supabase SQL Editor execution of `supabase/migrations/20260501010337_monitoring_engine.sql`
+  - SQL source: `supabase/migrations/20260501010337_monitoring_engine.sql`
 
-- Tables verified: **yes**
+- Required tables exist: **yes (4/4)**
   - Evidence: `docs/reports/evidence/task-06/10-supabase-table-verification-4rows.png`
-  - Expected table list result: **4 rows**
-    - `dead_links_log`
-    - `form_editions`
-    - `monitoring_alerts`
+  - Tables:
     - `monitoring_sources`
+    - `monitoring_alerts`
+    - `form_editions`
+    - `dead_links_log`
 
-- Initial table counts (before seed): **verified**
-  - Evidence: `docs/reports/evidence/task-06/11-supabase-initial-counts-zero.png`
-  - Counts:
-    - `monitoring_sources`: 0
-    - `monitoring_alerts`: 0
-    - `form_editions`: 0
-    - `dead_links_log`: 0
-
-- Sources seeded: **yes**
+- Seed run status: **yes**
   - CLI evidence: `/tmp/task-06-seed-rerun.log`
   - Supabase evidence: `docs/reports/evidence/task-06/12-supabase-seeded-source-type-counts.png`
-  - Seed output:
-    - Latest rerun: `Seed completed. Inserted: 0, skipped(existing): 21`
-    - Initial successful run in this task window inserted 21 rows.
-  - Source counts:
+  - Seed state after rerun: `Inserted: 0, skipped(existing): 21`
+  - Source totals:
     - `federal_register`: 1
     - `form_page`: 8
     - `uscis_page`: 2
@@ -41,83 +32,84 @@
     - `youtube_rss`: 9
     - **Total**: 21
 
-- GitHub secrets verified by name: **yes (required names except optional Resend)**
-  - CLI evidence: `gh secret list`
-  - Browser evidence: `docs/reports/evidence/task-06/16-github-actions-secrets.png`
+## 2) GitHub Verification
+
+- Default branch verified: `main`
+- Workflow files visible on default branch: **yes**
+  - Evidence: `docs/reports/evidence/task-06/19-github-actions-main-workflows-visible.png`
+  - Files:
+    - `.github/workflows/dead-link-checker.yml`
+    - `.github/workflows/uscis-news-monitor.yml`
+    - `.github/workflows/federal-register-monitor.yml`
+    - `.github/workflows/form-edition-checker.yml`
+    - `.github/workflows/youtube-monitor.yml`
+
+- Secrets by name verified: **yes**
+  - Evidence: `docs/reports/evidence/task-06/16-github-actions-secrets.png`
   - Present:
     - `SUPABASE_URL`
     - `SUPABASE_SERVICE_ROLE_KEY`
     - `CONTACT_EMAIL_DESTINATION`
     - `FEDERAL_REGISTER_USER_AGENT`
-  - Also present:
-    - `NEXT_PUBLIC_SUPABASE_URL`
-    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - Missing:
-    - `RESEND_API_KEY` (optional unless email delivery verification is required)
+  - Missing optional:
+    - `RESEND_API_KEY` (only needed for email sending verification)
 
-## GitHub Workflow Trigger Verification
+## 3) Manual Workflow Runs on `main`
 
-- Target branch for manual run: `pain-misinfo-faq-20260430-2242`
-- Workflow files exist on target branch: **yes**
-  - Evidence: `gh api 'repos/2133611700c-sudo/uscis-helper/contents/.github/workflows?ref=pain-misinfo-faq-20260430-2242'`
-  - Browser evidence: `docs/reports/evidence/task-06/14-github-branch-page.png`
-- Actions UI verification screenshot:
-  - `docs/reports/evidence/task-06/15-github-actions-branch-view.png`
+Dispatch method: `gh workflow run ... --ref main`
 
-### Manual trigger results (real)
+| Workflow | Run URL | Branch | Status | Result | Failure Step | Error |
+|---|---|---|---|---|---|---|
+| `dead-link-checker.yml` | https://github.com/2133611700c-sudo/uscis-helper/actions/runs/25224990241 | `main` | completed | failure | `Run actions/setup-node@v4` | `Unable to locate executable file: pnpm` |
+| `uscis-news-monitor.yml` | https://github.com/2133611700c-sudo/uscis-helper/actions/runs/25224990257 | `main` | completed | failure | `Run actions/setup-node@v4` | `Unable to locate executable file: pnpm` |
+| `youtube-monitor.yml` | https://github.com/2133611700c-sudo/uscis-helper/actions/runs/25224990295 | `main` | completed | failure | `Run actions/setup-node@v4` | `Unable to locate executable file: pnpm` |
+| `federal-register-monitor.yml` | https://github.com/2133611700c-sudo/uscis-helper/actions/runs/25224990350 | `main` | completed | failure | `Run actions/setup-node@v4` | `Unable to locate executable file: pnpm` |
+| `form-edition-checker.yml` | https://github.com/2133611700c-sudo/uscis-helper/actions/runs/25224990370 | `main` | completed | failure | `Run actions/setup-node@v4` | `Unable to locate executable file: pnpm` |
 
-Evidence: `/tmp/task-06-workflow-dispatch.log`
+Workflow evidence screenshots:
+- `docs/reports/evidence/task-06/20-run-dead-link-checker-25224990241.png`
+- `docs/reports/evidence/task-06/20-run-uscis-news-monitor-25224990257.png`
+- `docs/reports/evidence/task-06/20-run-youtube-monitor-25224990295.png`
+- `docs/reports/evidence/task-06/20-run-federal-register-monitor-25224990350.png`
+- `docs/reports/evidence/task-06/20-run-form-edition-checker-25224990370.png`
 
-| Workflow | Trigger attempt | Result | Reason |
-|---|---|---|---|
-| `dead-link-checker.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
-| `uscis-news-monitor.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
-| `federal-register-monitor.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
-| `form-edition-checker.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
-| `youtube-monitor.yml` | attempted | failed | HTTP 404: workflow not found on default branch |
+Failed log extract reference:
+- `/tmp/task-06-failed-last50.log`
 
-- Workflows triggered: **0/5 successful dispatches**
-- Workflows succeeded: **0/5**
-- `gh run list --limit 20`: empty (`[]`)
+## 4) Supabase Post-Run Effects
 
-## DB Effects After Workflow Attempts
+Post-run SQL evidence:
+- `docs/reports/evidence/task-06/21-supabase-postrun-table-counts.png`
+- `docs/reports/evidence/task-06/22-supabase-postrun-source-type-counts.png`
+- `docs/reports/evidence/task-06/18-supabase-monitoring-sources-last-checked-results.png`
 
-- Evidence (counts): `docs/reports/evidence/task-06/13-supabase-post-workflow-counts.png`
-  - `monitoring_alerts`: 0
-  - `form_editions`: 0
-  - `dead_links_log`: 0
+Post-run counts:
+- `monitoring_sources`: 21
+- `monitoring_alerts`: 0
+- `form_editions`: 0
+- `dead_links_log`: 0
 
-- Evidence (source monitoring status view): `docs/reports/evidence/task-06/18-supabase-monitoring-sources-last-checked-results.png`
-  - Query:
-    - `select source_type, last_checked_at from monitoring_sources order by source_type, url limit 30;`
-  - Observed:
-    - 21 rows returned
-    - `last_checked_at` values are `NULL` (expected because no workflow run executed)
+Monitoring sources by type:
+- `federal_register`: 1
+- `form_page`: 8
+- `uscis_page`: 2
+- `uscis_rss`: 1
+- `youtube_rss`: 9
 
-## Browser Evidence Folder
+`last_checked_at` status:
+- 21 rows visible
+- values remain `NULL` (consistent with all workflow runs failing before monitor steps execute)
 
-- `docs/reports/evidence/task-06/`
-  - `08-supabase-taql-overview.png`
-  - `09-supabase-migration-success.png`
-  - `10-supabase-table-verification-4rows.png`
-  - `11-supabase-initial-counts-zero.png`
-  - `12-supabase-seeded-source-type-counts.png`
-  - `13-supabase-post-workflow-counts.png`
-  - `14-github-branch-page.png`
-  - `15-github-actions-branch-view.png`
-  - `16-github-actions-secrets.png`
-  - `18-supabase-monitoring-sources-last-checked-results.png`
-
-## Final Status
+## 5) Final Status
 
 **PARTIAL**
 
 Reason:
-- Migration: done
-- Seeding: done
-- Mandatory workflow success gate not met: `dead-link-checker.yml` could not be dispatched because GitHub returns `workflow ... not found on the default branch`.
+- Migration and seed are complete.
+- Workflows are now correctly visible on default branch (`main`) and can be dispatched.
+- Mandatory success gate is not met because all 5 runs failed on missing `pnpm` in GitHub Actions runtime.
 
-To reach **DONE**:
-1. Make these workflow files available on the repository default branch (`main`) or change default branch policy.
-2. Re-run 5 dispatch commands.
-3. Confirm at least `dead-link-checker.yml` succeeds and capture run logs/screenshots.
+Blocker to reach DONE:
+1. Fix workflow setup so `pnpm` is installed before/with `actions/setup-node`.
+2. Re-run workflows on `main`.
+3. Confirm at least `dead-link-checker.yml` completes successfully and verify non-empty DB effects if changes are detected.
