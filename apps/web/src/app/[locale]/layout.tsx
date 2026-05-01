@@ -38,9 +38,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     icons: {
       icon: [
         { url: '/favicon.ico' },
+        { url: '/icon-16x16.png', sizes: '16x16', type: 'image/png' },
+        { url: '/icon-32x32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/icon-48x48.png', sizes: '48x48', type: 'image/png' },
         { url: '/icon.svg', type: 'image/svg+xml' },
       ],
-      apple: [{ url: '/apple-touch-icon.png' }],
+      shortcut: '/favicon.ico',
+      apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
     },
     alternates: {
       canonical: `https://messenginfo.com/${locale}`,
@@ -59,7 +63,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: 'Messenginfo',
       locale: localeMap[locale] ?? 'en_US',
       type: 'website',
-      images: [{ url: '/og/messenginfo-og.png', width: 1200, height: 630 }],
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Messenginfo' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: ['/og-image.png'],
     },
     robots: { index: true, follow: true },
   };
