@@ -199,3 +199,58 @@ Sources by type: `federal_register:1 form_page:8 uscis_page:2 uscis_rss:1 youtub
 | monitoring_sources: 21 | ✅ |
 | monitoring_alerts: 166 | ✅ |
 | Remaining blocker | USCIS RSS returned 0 items (feed may be empty) |
+
+---
+
+## 10) USCIS News Monitor Fix (PR #3)
+
+**Commit:** `3699c77` — fix(monitoring): rewrite USCIS news monitor + add page sources
+
+**Root cause of remaining blockers:**
+- `monitor-uscis-news.ts` only handled one `uscis_rss` source and returned early when RSS was empty → `last_checked_at` never written
+- No `uscis_page` handler existed — 6 HTML newsroom pages were never processed
+
+**Fix applied:**
+- Rewrote script: separate `processRssSource()` + `processPageSource()` functions
+- Always updates `last_checked_at` even when RSS is empty or fetch fails
+- HTML parser extracts newsroom article links via regex
+- Added 5 new seed rows: Forms Updates RSS + 4 newsroom/forms HTML pages
+
+**New sources added (total: 26):**
+- `uscis_rss`: USCIS Forms Updates RSS (was missing)
+- `uscis_page`: USCIS Newsroom All News, Alerts, News Releases, Forms Updates Page
+
+**Workflow run:** https://github.com/2133611700c-sudo/uscis-helper/actions/runs/25227033391 — **success** ✅
+
+**Post-fix Supabase state:**
+
+| Table | Count |
+|---|---|
+| monitoring_sources | 26 |
+| monitoring_alerts | 182 |
+| form_editions | 1 |
+| dead_links_log | 2 |
+
+**USCIS sources last_checked_at (all updated ~2026-05-01T18:24Z):**
+- `uscis_rss` USCIS All News RSS ✅
+- `uscis_rss` USCIS Forms Updates RSS ✅ (10 items, 10 new alerts)
+- `uscis_page` USCIS Newsroom All News ✅ (10 links)
+- `uscis_page` USCIS Newsroom Alerts ✅ (16 links)
+- `uscis_page` USCIS Newsroom News Releases ✅ (7 links)
+- `uscis_page` USCIS Forms Updates Page ✅ (12 links)
+- `uscis_page` USCIS Uniting for Ukraine ✅ (7 links)
+- `uscis_page` USCIS TPS Ukraine page ✅ (1 link)
+
+## 11) Final Status — COMPLETE ✅
+
+| Gate | Status |
+|---|---|
+| pnpm fix — all 5 workflows pass | ✅ |
+| dead-link-checker success | ✅ |
+| youtube-monitor + 135 videos inserted | ✅ |
+| 9/9 YouTube last_checked_at updated | ✅ |
+| uscis-news-monitor success | ✅ |
+| 8/8 USCIS sources last_checked_at updated | ✅ |
+| monitoring_sources: 26 | ✅ |
+| monitoring_alerts: 182 | ✅ |
+| No remaining blockers | ✅ |
