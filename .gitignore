@@ -5,3 +5,5 @@ coverage
 .dist
 .secrets-uscis.txt
 docs/archive/*
+.vercel
+.env*.local
