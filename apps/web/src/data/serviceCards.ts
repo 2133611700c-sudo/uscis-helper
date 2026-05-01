@@ -10,6 +10,7 @@ export interface ServiceCard {
   id: string
   slug: string
   icon: LucideIcon
+  image?: string
   risk: RiskLevel
   hasOfficialSource: boolean
   officialSourceUrl: string
@@ -20,14 +21,14 @@ export interface ServiceCard {
 export const serviceCards: ServiceCard[] = [
   { id: 'parole-expires-soon', slug: 'parole-expires-soon', icon: CalendarClock, risk: 'high', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/humanitarian/uniting-for-ukraine', sourceLastVerified: '2026-04-29', sortOrder: 1 },
   { id: 're-parole-u4u', slug: 're-parole-u4u', icon: ShieldCheck, risk: 'high', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/humanitarian/uniting-for-ukraine', sourceLastVerified: '2026-04-29', sortOrder: 2 },
-  { id: 'tps-ukraine', slug: 'tps-ukraine', icon: Flag, risk: 'medium', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/humanitarian/temporary-protected-status/temporary-protected-status-designated-country-ukraine', sourceLastVerified: '2026-04-29', sortOrder: 3 },
-  { id: 'ead-work-permit', slug: 'ead-work-permit', icon: IdCard, risk: 'medium', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/i-765', sourceLastVerified: '2026-04-29', sortOrder: 4 },
-  { id: 'i-94', slug: 'i-94', icon: Stamp, risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://i94.cbp.dhs.gov/', sourceLastVerified: '2026-04-29', sortOrder: 5 },
+  { id: 'tps-ukraine', slug: 'tps-ukraine', icon: Flag, image: '/service-icons/tps-ukraine.png', risk: 'medium', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/humanitarian/temporary-protected-status/temporary-protected-status-designated-country-ukraine', sourceLastVerified: '2026-04-29', sortOrder: 3 },
+  { id: 'ead-work-permit', slug: 'ead-work-permit', icon: IdCard, image: '/service-icons/work-permit.png', risk: 'medium', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/i-765', sourceLastVerified: '2026-04-29', sortOrder: 4 },
+  { id: 'i-94', slug: 'i-94', icon: Stamp, image: '/service-icons/i-94.png', risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://i94.cbp.dhs.gov/', sourceLastVerified: '2026-04-29', sortOrder: 5 },
   { id: 'uscis-case-status', slug: 'uscis-case-status', icon: Search, risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://egov.uscis.gov/', sourceLastVerified: '2026-04-29', sortOrder: 6 },
   { id: 'payment-problem', slug: 'payment-problem', icon: CreditCard, risk: 'medium', hasOfficialSource: true, officialSourceUrl: 'https://my.uscis.gov/', sourceLastVerified: '2026-04-29', sortOrder: 7 },
-  { id: 'biometrics', slug: 'biometrics', icon: Fingerprint, risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/forms/filing-fees/biometric-services-fee', sourceLastVerified: '2026-04-29', sortOrder: 8 },
+  { id: 'biometrics', slug: 'biometrics', icon: Fingerprint, image: '/service-icons/biometrics.png', risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/forms/filing-fees/biometric-services-fee', sourceLastVerified: '2026-04-29', sortOrder: 8 },
   { id: 'rfe-denial', slug: 'rfe-denial', icon: FileWarning, risk: 'high', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/policy-manual', sourceLastVerified: '2026-04-29', sortOrder: 9 },
-  { id: 'translate-document', slug: 'translate-document', icon: Languages, risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-103/section-103.2', sourceLastVerified: '2026-04-29', sortOrder: 10 },
+  { id: 'translate-document', slug: 'translate-document', icon: Languages, image: '/service-icons/translate-document.png', risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-103/section-103.2', sourceLastVerified: '2026-04-29', sortOrder: 10 },
   { id: 'form-draft-helper', slug: 'form-draft-helper', icon: ClipboardEdit, risk: 'medium', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/forms', sourceLastVerified: '2026-04-29', sortOrder: 11 },
   { id: 'official-sources', slug: 'official-sources', icon: Library, risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/', sourceLastVerified: '2026-04-29', sortOrder: 12 },
 ]
