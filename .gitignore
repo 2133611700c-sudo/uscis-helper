@@ -7,3 +7,4 @@ coverage
 docs/archive/*
 .vercel
 .env*.local
+.claude/
