@@ -1,5 +1,10 @@
 source_type,url,title,notes
-uscis_rss,https://www.uscis.gov/news/rss-feed/all-news,USCIS All News RSS,Primary USCIS news feed
+uscis_rss,https://www.uscis.gov/news/rss-feed/all-news,USCIS All News RSS,Primary USCIS news feed (returns empty — kept for tracking)
+uscis_rss,https://www.uscis.gov/forms/forms-updates/rss-feed,USCIS Forms Updates RSS,Active RSS feed with form edition updates
+uscis_page,https://www.uscis.gov/newsroom/all-news,USCIS Newsroom All News,HTML newsroom page — monitored for new article links
+uscis_page,https://www.uscis.gov/newsroom/alerts,USCIS Newsroom Alerts,HTML alerts page — monitored for new alert links
+uscis_page,https://www.uscis.gov/newsroom/news-releases,USCIS Newsroom News Releases,HTML page — monitored for new release links
+uscis_page,https://www.uscis.gov/forms/forms-updates,USCIS Forms Updates Page,HTML page — backup for forms-updates RSS
 uscis_page,https://www.uscis.gov/humanitarian/uniting-for-ukraine,USCIS Uniting for Ukraine,U4U policy page
 uscis_page,https://www.uscis.gov/humanitarian/temporary-protected-status/temporary-protected-status-designated-country-ukraine,USCIS TPS Ukraine page,TPS country page
 form_page,https://www.uscis.gov/i-131,USCIS Form I-131 page,Re-parole / travel
