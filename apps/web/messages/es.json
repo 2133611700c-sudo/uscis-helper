@@ -10,12 +10,17 @@
       "services": "Servicios",
       "documents": "Documentos",
       "faq": "Preguntas frecuentes",
-      "sources": "Fuentes"
+      "sources": "Fuentes",
+      "home": "Inicio",
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "disclaimer": "Aviso legal"
     },
     "ctaStatus": "Verificar estado",
     "languageSelector": {
       "label": "Seleccionar idioma"
-    }
+    },
+    "langSwitcher": "Idioma"
   },
   "trending": {
     "label": "Tendencias:",
@@ -53,7 +58,10 @@
     "placeholder": "IOE1234567890",
     "button": "Verificar estado",
     "errorInvalid": "Introduzca un número de recibo válido (p. ej. IOE1234567890 o EAC1234567890).",
-    "privacyNote": "Su número de recibo se valida localmente y nunca se envía a nuestros servidores."
+    "privacyNote": "Su número de recibo se valida localmente y nunca se envía a nuestros servidores.",
+    "subtitle": "Ingrese su número de recibo de 13 caracteres. No lo almacenamos.",
+    "buttonLabel": "Abrir USCIS",
+    "disclaimer": "No almacenamos su número de recibo. Al enviar se abre la página oficial de estado de caso de USCIS en una nueva pestaña."
   },
   "officialSources": {
     "title": "Fuentes oficiales",
@@ -445,7 +453,16 @@
         }
       }
     },
-    "bottom": "© 2026 Messenginfo"
+    "bottom": "© 2026 Messenginfo",
+    "tagline": "Información de inmigración — en lenguaje claro.",
+    "rights": "© {year} Messenginfo. Todos los derechos reservados.",
+    "shortDisclaimer": "Messenginfo no es un bufete de abogados y no brinda asesoría legal. La información se proporciona únicamente con fines educativos.",
+    "contact": "Contacto",
+    "links": {
+      "privacy": "Política de privacidad",
+      "terms": "Términos de servicio",
+      "disclaimer": "Aviso legal"
+    }
   },
   "mobileBar": {
     "home": "Inicio",
@@ -471,7 +488,10 @@
       "title": "Algo salió mal",
       "body": "Ocurrió un error inesperado. Por favor, inténtelo de nuevo.",
       "back": "Volver al inicio"
-    }
+    },
+    "rateLimit": "Demasiadas solicitudes. Por favor intente más tarde.",
+    "validation": "Por favor revise su información e intente de nuevo.",
+    "backHome": "Volver al inicio"
   },
   "legal": {
     "disclaimer": {
@@ -495,6 +515,21 @@
           "id": "consult-attorney",
           "title": "Para asesoría legal, consulte a un abogado autorizado",
           "body": "Para asesoría legal sobre su situación migratoria específica, consulte a un abogado de inmigración autorizado. El DOJ mantiene un registro de organizaciones reconocidas y representantes acreditados en justice.gov/eoir."
+        },
+        {
+          "id": "unofficial-info",
+          "title": "Exactitud de la información",
+          "body": "Aunque nos esforzamos por proporcionar información precisa y actualizada, las leyes y políticas de inmigración cambian con frecuencia. Siempre verifique la información con fuentes gubernamentales oficiales antes de tomar cualquier acción."
+        },
+        {
+          "id": "no-guarantee",
+          "title": "Sin garantía de resultado",
+          "body": "El uso de Messenginfo no garantiza ningún resultado particular en su caso de inmigración. Los resultados dependen de las circunstancias individuales y las decisiones gubernamentales oficiales."
+        },
+        {
+          "id": "provisional-data",
+          "title": "Información provisional",
+          "body": "Las tarifas de formularios, fechas de edición e información de políticas se etiquetan como provisionales hasta que se verifiquen con fuentes oficiales en los últimos 30 días. Siempre consulte uscis.gov para obtener información actual."
         }
       ]
     },
@@ -518,6 +553,66 @@
           "id": "disclaimers",
           "title": "3. Exenciones de responsabilidad",
           "body": "EL SITIO SE PROPORCIONA TAL CUAL, SIN GARANTÍAS. NO BRINDAMOS ASESORÍA LEGAL. SIEMPRE VERIFIQUE LA INFORMACIÓN CON FUENTES OFICIALES (USCIS.GOV)."
+        },
+        {
+          "id": "use",
+          "title": "3. Uso aceptable",
+          "body": "Usted acepta no usar el servicio con ningún propósito ilegal; no intentar obtener acceso no autorizado; no interferir con la operación del servicio; no enviar información falsa o engañosa."
+        },
+        {
+          "id": "ip",
+          "title": "4. Propiedad intelectual",
+          "body": "Todo el contenido en este sitio es propiedad de Messenginfo o sus licenciantes. No puede reproducir, distribuir o crear obras derivadas sin nuestro permiso escrito."
+        },
+        {
+          "id": "third-party",
+          "title": "5. Enlaces de terceros",
+          "body": "Enlazamos a sitios web gubernamentales oficiales y otros sitios de terceros. No somos responsables del contenido o las prácticas de privacidad de esos sitios."
+        },
+        {
+          "id": "privacy",
+          "title": "6. Privacidad",
+          "body": "Su uso del servicio también está regido por nuestra Política de privacidad, que se incorpora a estos Términos por referencia."
+        },
+        {
+          "id": "limitation",
+          "title": "7. Limitación de responsabilidad",
+          "body": "EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY, MESSENGINFO NO SERÁ RESPONSABLE DE NINGÚN DAÑO INDIRECTO, INCIDENTAL, ESPECIAL, CONSECUENTE O PUNITIVO QUE SURJA DE SU USO DEL SERVICIO."
+        },
+        {
+          "id": "indemnification",
+          "title": "8. Indemnización",
+          "body": "Usted acepta indemnizar y eximir de responsabilidad a Messenginfo de cualquier reclamación que surja de su uso del servicio o violación de estos Términos."
+        },
+        {
+          "id": "governing-law",
+          "title": "9. Ley aplicable",
+          "body": "Estos Términos se regirán por las leyes del Estado de California, sin tener en cuenta sus disposiciones sobre conflicto de leyes."
+        },
+        {
+          "id": "dispute-resolution",
+          "title": "10. Resolución de disputas",
+          "body": "Cualquier disputa se resolverá mediante arbitraje vinculante de acuerdo con las reglas de la Asociación Americana de Arbitraje, excepto para medidas cautelares."
+        },
+        {
+          "id": "severability",
+          "title": "11. Divisibilidad",
+          "body": "Si alguna disposición de estos Términos se considera inaplicable, las disposiciones restantes continuarán en plena vigencia."
+        },
+        {
+          "id": "entire-agreement",
+          "title": "12. Acuerdo completo",
+          "body": "Estos Términos constituyen el acuerdo completo entre usted y Messenginfo con respecto al servicio y reemplazan todos los acuerdos anteriores."
+        },
+        {
+          "id": "changes",
+          "title": "13. Cambios a los términos",
+          "body": "Podemos actualizar estos Términos periódicamente. Le notificaremos de cambios significativos publicando los nuevos Términos en esta página con una fecha revisada."
+        },
+        {
+          "id": "contact",
+          "title": "14. Contacto",
+          "body": "Para preguntas sobre estos Términos, contáctenos en 2133611700uscis@gmail.com."
         }
       ]
     },
@@ -541,6 +636,61 @@
           "id": "rights",
           "title": "3. Sus derechos",
           "body": "Puede solicitar acceso, corrección o eliminación de sus datos contactando a contact@messenginfo.com."
+        },
+        {
+          "id": "use",
+          "title": "4. Cómo usamos su información",
+          "body": "Usamos su información para: responder a sus consultas; mejorar el servicio basándose en análisis anonimizados; cumplir con obligaciones legales aplicables; prevenir abusos mediante límites de solicitudes."
+        },
+        {
+          "id": "legal-bases",
+          "title": "5. Bases legales para el procesamiento (GDPR)",
+          "body": "Procesamos sus datos basándonos en: su consentimiento (formulario de contacto); nuestros intereses legítimos (seguridad, análisis); cumplimiento de obligaciones legales."
+        },
+        {
+          "id": "retention",
+          "title": "6. Retención de datos",
+          "body": "Los envíos del formulario de contacto se conservan hasta 12 meses. Los datos analíticos anonimizados se conservan indefinidamente en forma agregada. Los hashes de IP usados para límites de solicitudes se eliminan dentro de 24 horas."
+        },
+        {
+          "id": "sharing",
+          "title": "7. Compartir datos",
+          "body": "No vendemos sus datos. Solo los compartimos con: Resend (entrega de correo electrónico); Vercel (alojamiento y análisis); Supabase (base de datos). Todos los procesadores están contractualmente obligados a la confidencialidad."
+        },
+        {
+          "id": "security",
+          "title": "8. Seguridad",
+          "body": "Usamos HTTPS, almacenamiento cifrado y controles de acceso. Ningún sistema es completamente seguro — si cree que sus datos han sido comprometidos, contáctenos de inmediato."
+        },
+        {
+          "id": "rights",
+          "title": "9. Sus derechos",
+          "body": "Dependiendo de su ubicación, puede tener derecho a: acceder a sus datos personales; corregir datos inexactos; solicitar la eliminación; oponerse al procesamiento; recibir una copia de sus datos."
+        },
+        {
+          "id": "california",
+          "title": "10. Residentes de California (CCPA/CPRA)",
+          "body": "Los residentes de California tienen derecho a saber qué información personal recopilamos, derecho a eliminar información personal y derecho a optar por no participar en la venta (no vendemos datos)."
+        },
+        {
+          "id": "children",
+          "title": "11. Privacidad de los niños",
+          "body": "Nuestro servicio no está dirigido a personas menores de 13 años. No recopilamos intencionalmente información personal de niños."
+        },
+        {
+          "id": "international",
+          "title": "12. Transferencias internacionales",
+          "body": "Sus datos pueden procesarse en los Estados Unidos y otros países. Garantizamos las protecciones adecuadas para cualquier transferencia internacional."
+        },
+        {
+          "id": "changes",
+          "title": "13. Cambios a esta política",
+          "body": "Podemos actualizar esta política periódicamente. Publicaremos la política actualizada en esta página con una fecha revisada."
+        },
+        {
+          "id": "contact",
+          "title": "14. Contacto",
+          "body": "Para consultas de privacidad, contáctenos en 2133611700uscis@gmail.com."
         }
       ]
     }
@@ -725,6 +875,90 @@
       "ecfr": "8 CFR 103.2(b)(3)",
       "lastCheckedLabel": "Última revisión: {date}",
       "sourceLabel": "Fuente: sitio oficial del gobierno"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Navegue su caso de inmigración con confianza",
+      "subtitle": "Messenginfo proporciona información clara y confiable sobre formularios USCIS, procedimientos y recursos oficiales — para que pueda gestionar su caso de manera independiente.",
+      "cta": "Contáctenos",
+      "badge": "Servicio de información · No es asesoría legal"
+    },
+    "services": {
+      "title": "Cómo ayudamos",
+      "subtitle": "Le ayudamos a navegar el papeleo — usted toma las decisiones.",
+      "items": [
+        {
+          "title": "Orientación para traducción de documentos",
+          "description": "Conozca lo que USCIS requiere para traducciones certificadas: qué documentos traducir, qué certificación usar y cómo cumplir con los estándares oficiales."
+        },
+        {
+          "title": "Asistencia para completar formularios",
+          "description": "Explicaciones paso a paso de los formularios de inmigración más comunes — qué significa cada campo, qué documentos adjuntar y dónde presentar. Basado en instrucciones oficiales de USCIS."
+        },
+        {
+          "title": "Navegación de fuentes oficiales",
+          "description": "Enlaces directos a USCIS.gov, DOS y otros recursos gubernamentales — siempre de una fuente autorizada, no de foros."
+        }
+      ]
+    },
+    "how": {
+      "title": "Cómo funciona",
+      "steps": [
+        {
+          "title": "Cuéntenos su pregunta",
+          "description": "Escríbanos a través del formulario de contacto sobre su pregunta o el formulario con el que está trabajando. Respondemos en su idioma."
+        },
+        {
+          "title": "Obtenga información en lenguaje claro",
+          "description": "Le enviaremos explicaciones claras de publicaciones gubernamentales oficiales — sin jerga ni suposiciones."
+        },
+        {
+          "title": "Actúe con confianza",
+          "description": "Use nuestra información para preparar sus propias solicitudes. En situaciones complejas, le referiremos a abogados de inmigración con licencia."
+        }
+      ]
+    },
+    "why": {
+      "title": "Por qué Messenginfo",
+      "points": [
+        {
+          "title": "Solo fuentes oficiales",
+          "description": "Toda la información proviene de USCIS.gov y publicaciones gubernamentales oficiales. No de foros, no de redes sociales, no de rumores."
+        },
+        {
+          "title": "Cuatro idiomas",
+          "description": "Disponible en inglés, ruso, ucraniano y español — para las comunidades que más necesitan información de inmigración clara."
+        },
+        {
+          "title": "Privacidad primero",
+          "description": "Recopilamos solo lo necesario. Sin cookies de seguimiento, sin perfiles publicitarios, sin venta de datos — nunca."
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contáctenos",
+      "subtitle": "¿Tiene preguntas sobre un formulario, fecha límite o traducción de documentos? Escríbanos. Generalmente respondemos en 1–2 días hábiles.",
+      "form": {
+        "name": "Nombre completo",
+        "namePlaceholder": "Su nombre completo",
+        "email": "Dirección de correo electrónico",
+        "emailPlaceholder": "usted@ejemplo.com",
+        "message": "Mensaje",
+        "messagePlaceholder": "Describa su pregunta o situación...",
+        "consent": "Entiendo que Messenginfo no brinda asesoría legal y que este mensaje no crea una relación abogado-cliente.",
+        "consentRequired": "Debe reconocer esto para continuar.",
+        "submit": "Enviar mensaje",
+        "submitting": "Enviando...",
+        "success": "Su mensaje ha sido recibido. Responderemos en 1–2 días hábiles.",
+        "error": "Algo salió mal. Por favor intente de nuevo o escríbanos directamente.",
+        "rateLimit": "Demasiados envíos. Por favor espere una hora antes de intentar de nuevo.",
+        "validation": "Por favor revise el formulario y corrija los campos marcados."
+      }
+    },
+    "disclaimer": {
+      "title": "Aviso importante",
+      "body": "Messenginfo no es un bufete de abogados y no brinda asesoría legal. Proporcionamos información de fuentes gubernamentales oficiales para ayudarle a comprender los procedimientos de inmigración de EE. UU. Para preguntas específicas a su situación, consulte a un abogado de inmigración con licencia."
     }
   }
 }

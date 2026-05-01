@@ -31,3 +31,16 @@ export const serviceCards: ServiceCard[] = [
   { id: 'form-draft-helper', slug: 'form-draft-helper', icon: ClipboardEdit, risk: 'medium', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/forms', sourceLastVerified: '2026-04-29', sortOrder: 11 },
   { id: 'official-sources', slug: 'official-sources', icon: Library, risk: 'low', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/', sourceLastVerified: '2026-04-29', sortOrder: 12 },
 ]
+
+export function getServiceCard(slug: string): ServiceCard | undefined {
+  return serviceCards.find((c) => c.slug === slug)
+}
+
+export function getRelatedServices(slug: string, count = 3): ServiceCard[] {
+  const current = getServiceCard(slug)
+  if (!current) return []
+  return serviceCards
+    .filter((c) => c.slug !== slug)
+    .sort((a, b) => Math.abs(a.sortOrder - current.sortOrder) - Math.abs(b.sortOrder - current.sortOrder))
+    .slice(0, count)
+}
