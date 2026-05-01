@@ -1,0 +1,21 @@
+source_type,url,title,notes
+uscis_rss,https://www.uscis.gov/news/rss-feed/all-news,USCIS All News RSS,Primary USCIS news feed
+uscis_page,https://www.uscis.gov/humanitarian/uniting-for-ukraine,USCIS Uniting for Ukraine,U4U policy page
+uscis_page,https://www.uscis.gov/humanitarian/temporary-protected-status/temporary-protected-status-designated-country-ukraine,USCIS TPS Ukraine page,TPS country page
+form_page,https://www.uscis.gov/i-131,USCIS Form I-131 page,Re-parole / travel
+form_page,https://www.uscis.gov/i-765,USCIS Form I-765 page,EAD work permit
+form_page,https://www.uscis.gov/i-821,USCIS Form I-821 page,TPS application
+form_page,https://www.uscis.gov/i-912,USCIS Form I-912 page,Fee waiver
+form_page,https://www.uscis.gov/g-1145,USCIS Form G-1145 page,E-notification
+form_page,https://www.uscis.gov/ar-11,USCIS Form AR-11 page,Address change
+form_page,https://www.uscis.gov/i-589,USCIS Form I-589 page,Asylum
+form_page,https://www.uscis.gov/g-1055,USCIS Form G-1055 fee schedule,Fee schedule reference
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=ukrainiansinusa,@ukrainiansinusa,Already audited (YT-SOURCE-01)
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=Immigraciya_in_usa,@Immigraciya_in_usa,Murat'ova attorney channel
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=immigrationlawyerusa,@immigrationlawyerusa,Manylich attorney channel
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=arvian_immigration,@arvian_immigration,Attorney channel
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=reloka-ua,@reloka-ua,Community channel
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=infoua_usa,@infoua_usa,Community channel
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=TeachBK,@TeachBK,I-94 specialist
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=elmi_usa,@elmi_usa,Community with disclaimers
+youtube_rss,https://www.youtube.com/feeds/videos.xml?user=ECUALeauge,@ECUALeauge,USCRI partner
