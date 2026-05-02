@@ -22,14 +22,14 @@ export function ServiceCard({ card, locale, className }: ServiceCardProps) {
       href={`/${locale}/services/${card.slug}`}
       data-service-card={card.id}
       className={cn(
-        // H&F-matched card shell: 14px radius, border, shadow, overflow-hidden
-        'group flex h-full flex-col rounded-[14px] bg-white overflow-hidden',
-        'border border-slate-200/80',
+        // H&F-matched card shell: 14px mobile → 20px desktop, border, shadow
+        'group flex h-full flex-col rounded-[14px] md:rounded-[20px] bg-white overflow-hidden',
+        'border border-slate-200/70',
         'shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
         // H&F-matched transitions: translateY(-5px) on hover, scale(.97) on active
         'transition-[transform,box-shadow] duration-300 ease-out',
-        'hover:-translate-y-[5px] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)]',
-        'active:scale-[0.97]',
+        'hover:-translate-y-[5px] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)]',
+        'active:scale-[0.97] active:duration-100',
         !card.image && 'min-h-[176px] md:min-h-[200px]',
         className,
       )}

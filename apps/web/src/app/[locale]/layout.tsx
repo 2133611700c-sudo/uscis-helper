@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Playfair_Display } from 'next/font/google';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -14,6 +14,7 @@ import { MiaFloatingWidget } from '@/components/widgets/MiaFloatingWidget';
 import '../globals.css';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' });
+const playfair = Playfair_Display({ subsets: ['latin'], weight: ['700', '800'], variable: '--font-playfair' });
 
 type Props = {
   children: React.ReactNode;
@@ -87,6 +88,20 @@ const organizationJsonLd = {
   knowsLanguage: ['en', 'ru', 'uk', 'es'],
 };
 
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Messenginfo',
+  url: 'https://messenginfo.com',
+  description: 'Official-source immigration information and self-help tools for Ukrainians in the US. Not a law firm.',
+  inLanguage: ['en', 'ru', 'uk', 'es'],
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: { '@type': 'EntryPoint', urlTemplate: 'https://messenginfo.com/en/faq?q={search_term_string}' },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
@@ -94,7 +109,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = (await import(`../../../messages/${locale}.json`)).default;
 
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale} className={`${inter.variable} ${playfair.variable}`}>
       <body className="min-h-screen flex flex-col bg-background text-foreground antialiased pb-14 md:pb-0">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Header />
@@ -109,6 +124,11 @@ export default async function LocaleLayout({ children, params }: Props) {
           id="org-jsonld"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <Script
+          id="website-jsonld"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
       </body>
     </html>

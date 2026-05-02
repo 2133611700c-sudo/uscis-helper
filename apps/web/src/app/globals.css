@@ -45,9 +45,10 @@
   --radius-card: 1rem;
   --radius-btn: 0.625rem;
   --radius-badge: 9999px;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.06);
-  --shadow-card-hover: 0 4px 8px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.10);
-  --shadow-header: 0 1px 0 rgb(0 0 0 / 0.05);
+  /* H&F-matched shadow system */
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 12px 40px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+  --shadow-header: 0 1px 0 rgb(0 0 0 / 0.06);
   --max-w-content: 1200px;
 }
 
@@ -72,6 +73,14 @@
   --radius: 0.625rem;
 }
 
+/* ── H&F-matched HTML/body foundation ── */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
 * {
   border-color: var(--border);
 }
@@ -81,4 +90,27 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── Playfair Display serif — for section headings ── */
+.font-display {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+/* ── Smooth focus ring ── */
+:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Image defaults (H&F pattern) ── */
+img {
+  display: block;
+}
+
+/* ── Tap highlight off (mobile) ── */
+button, a {
+  -webkit-tap-highlight-color: transparent;
 }
