@@ -42,7 +42,7 @@ export default async function ServicesPage({ params }: Props) {
           <h1 className="text-3xl md:text-4xl font-bold text-ink-900">{t('title')}</h1>
           <p className="mt-3 text-ink-600 text-base max-w-2xl mx-auto">{t('subtitle')}</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 min-[600px]:grid-cols-2 gap-4 min-[600px]:gap-5">
           {serviceCards.map((card) => (
             <ServiceCard key={card.id} card={card} locale={locale} />
           ))}

@@ -258,7 +258,7 @@ export default async function ServicePage({ params }: Props) {
       {related.length > 0 && (
         <Section className="bg-slate-50">
           <h2 className="text-xl font-bold text-ink-900 mb-6">{pageLabels('relatedServices')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 min-[600px]:grid-cols-2 gap-4 min-[600px]:gap-5">
             {related.map((relCard) => (
               <ServiceCard key={relCard.id} card={relCard} locale={locale} />
             ))}
