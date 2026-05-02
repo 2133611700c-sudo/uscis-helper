@@ -22,7 +22,8 @@ export function ServiceCardGrid({ locale }: ServiceCardGridProps) {
         </p>
       </div>
       {/* H&F grid: 1-col mobile → 2-col sm → 3-col xl */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
+      {/* H&F exact: 1-col mobile gap-16px → 2-col at 600px gap-20px */}
+      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 gap-4 min-[600px]:gap-5">
         {serviceCards.map((card) => (
           <ServiceCard key={card.id} card={card} locale={locale} />
         ))}
