@@ -37,19 +37,19 @@ export function ServiceCard({ card, locale, className }: ServiceCardProps) {
       {/* ─── Service image ─── */}
       {card.image && (
         // H&F .sph: 200px → 220px → 260px → 280px
-        <div className="relative w-full h-[200px] sm:h-[220px] md:h-[240px] lg:h-[260px] shrink-0 overflow-hidden bg-slate-100">
+        <div className="relative w-full h-[200px] sm:h-[220px] md:h-[240px] lg:h-[260px] shrink-0 overflow-hidden bg-[#0c1a35]">
           <Image
             src={card.image}
             alt={cardData.title}
             fill
             priority={card.sortOrder <= 4}
             className={cn(
-              'object-cover object-center',
-              // H&F: scale(1.07) on hover, 500ms ease
+              'object-contain object-center',
+              // scale on hover — slightly reduced vs cover to avoid edge clipping
               'transition-transform duration-500 ease-in-out',
-              'group-hover:scale-[1.07] group-active:scale-[1.04]',
+              'group-hover:scale-[1.04] group-active:scale-[1.02]',
             )}
-            sizes="(min-width: 1280px) 560px, (min-width: 768px) 50vw, 100vw"
+            sizes="(min-width: 768px) 50vw, 100vw"
           />
           {/* Official source badge — overlaid bottom-left */}
           {card.hasOfficialSource && (
