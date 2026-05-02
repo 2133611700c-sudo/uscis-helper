@@ -21,7 +21,7 @@ export function ServiceCardGrid({ locale }: ServiceCardGridProps) {
           {t('subtitle')}
         </p>
       </div>
-      {/* H&F grid: 1-col mobile → 2-col sm → 3-col xl */}
+      {/* H&F exact grid: 1-col mobile → 2-col at 600px max */}
       {/* H&F exact: 1-col mobile gap-16px → 2-col at 600px gap-20px */}
       <div className="grid grid-cols-1 min-[600px]:grid-cols-2 gap-4 min-[600px]:gap-5">
         {serviceCards.map((card) => (
