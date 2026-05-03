@@ -471,11 +471,6 @@
     "contact": "Contacto"
   },
   "badges": {
-    "risk": {
-      "low": "Riesgo bajo",
-      "medium": "Riesgo medio",
-      "high": "Riesgo alto"
-    },
     "officialSource": "Fuente oficial"
   },
   "errors": {

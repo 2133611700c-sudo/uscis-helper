@@ -6,7 +6,6 @@ import { ExternalLink, Library, ChevronRight } from 'lucide-react'
 import { routing } from '@/i18n/routing'
 import { serviceCards } from '@/data/serviceCards'
 import { IconBadge } from '@/components/ui/IconBadge'
-import { RiskBadge } from '@/components/cards/RiskBadge'
 import { SourceBadge } from '@/components/cards/SourceBadge'
 import { ServiceCard } from '@/components/cards/ServiceCard'
 import { DisclaimerSection } from '@/components/home/DisclaimerSection'
@@ -156,10 +155,11 @@ export default async function ServicePage({ params }: Props) {
         <div className="max-w-3xl">
           <div className="flex items-start gap-4 mb-4">
             <IconBadge icon={card.icon} size="lg" />
-            <div className="flex gap-2 flex-wrap pt-1">
-              <RiskBadge risk={card.risk} />
-              {card.hasOfficialSource && <SourceBadge />}
-            </div>
+            {card.hasOfficialSource && (
+              <div className="flex gap-2 flex-wrap pt-1">
+                <SourceBadge />
+              </div>
+            )}
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-ink-900">{pageData.title}</h1>
           <p className="mt-3 text-lg text-ink-600">{pageData.subtitle}</p>
@@ -225,7 +225,7 @@ export default async function ServicePage({ params }: Props) {
             <ul className="space-y-3">
               {pageData.commonMistakes.map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-ink-700">
-                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-risk-high-fg shrink-0" />
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
                   {item}
                 </li>
               ))}
