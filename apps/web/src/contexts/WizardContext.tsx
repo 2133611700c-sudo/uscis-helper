@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -23,7 +24,7 @@ export type FamilyMember = {
 }
 
 export type WizardState = {
-  sessionId: string
+  sessionId: string | null
   anonUserId: string
   step: number
   locale: 'ru' | 'uk' | 'en' | 'es'
@@ -39,6 +40,8 @@ export type WizardState = {
   miaOpen: boolean
   miaMessages: Array<{ role: 'user' | 'assistant'; content: string; ts: number }>
 }
+
+export type SyncStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 // ---------------------------------------------------------------------------
 // Pricing
@@ -72,7 +75,7 @@ function uuidV4(): string {
 const LS_KEY = 'wizard:re-parole-u4u:state'
 
 type PersistedSlice = {
-  sessionId: string
+  sessionId: string | null
   anonUserId: string
   step: number
   locale: WizardState['locale']
@@ -96,6 +99,16 @@ function savePersisted(slice: PersistedSlice): void {
     window.localStorage.setItem(LS_KEY, JSON.stringify(slice))
   } catch {
     // quota exceeded or private mode — silently ignore
+  }
+}
+
+function getSessionIdFromUrl(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('session')
+  } catch {
+    return null
   }
 }
 
@@ -128,8 +141,9 @@ function buildMembers(size: number, existing: FamilyMember[]): FamilyMember[] {
 
 function buildInitialState(): WizardState {
   const persisted = loadPersisted()
+  const urlSessionId = getSessionIdFromUrl()
 
-  const sessionId = persisted?.sessionId ?? uuidV4()
+  const sessionId = urlSessionId ?? persisted?.sessionId ?? null
   const anonUserId = persisted?.anonUserId ?? uuidV4()
   const step = persisted?.step ?? 0
   const locale = persisted?.locale ?? 'en'
@@ -156,11 +170,80 @@ function buildInitialState(): WizardState {
 }
 
 // ---------------------------------------------------------------------------
+// Session API helpers
+// ---------------------------------------------------------------------------
+
+interface SessionApiResponse {
+  session_id: string
+  id: string
+  anon_user_id: string
+  locale: string
+  service_slug: string
+  current_step: number
+  state_json: Record<string, unknown>
+  created_at: string
+}
+
+async function createSession(anonUserId: string, locale: string): Promise<string | null> {
+  try {
+    const res = await fetch('/api/wizard/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale, service_slug: 're-parole-u4u', anon_user_id: anonUserId }),
+    })
+    if (!res.ok) return null
+    const data: SessionApiResponse = await res.json() as SessionApiResponse
+    return data.session_id ?? data.id ?? null
+  } catch {
+    return null
+  }
+}
+
+async function fetchSession(sessionId: string): Promise<SessionApiResponse | null> {
+  try {
+    const res = await fetch(`/api/wizard/session?id=${encodeURIComponent(sessionId)}`)
+    if (!res.ok) return null
+    return await res.json() as SessionApiResponse
+  } catch {
+    return null
+  }
+}
+
+async function patchSession(
+  sessionId: string,
+  currentStep: number,
+  stateJson: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    const res = await fetch('/api/wizard/session', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, current_step: currentStep, state_json: stateJson }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+function updateUrlSession(sessionId: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    const url = new URL(window.location.href)
+    url.searchParams.set('session', sessionId)
+    window.history.replaceState(null, '', url.toString())
+  } catch {
+    // ignore
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Context value type
 // ---------------------------------------------------------------------------
 
 type WizardContextValue = {
   state: WizardState
+  syncStatus: SyncStatus
   setStep: (step: number) => void
   setLocale: (locale: WizardState['locale']) => void
   setTheme: (theme: WizardState['theme']) => void
@@ -182,8 +265,46 @@ const WizardContext = createContext<WizardContextValue | null>(null)
 
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<WizardState>(buildInitialState)
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
+  const patchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mountedRef = useRef(false)
 
-  // Persist critical slice on every state change
+  // On mount: create or hydrate session
+  useEffect(() => {
+    if (mountedRef.current) return
+    mountedRef.current = true
+
+    async function initSession() {
+      const currentState = state
+
+      // If we have a sessionId (from URL or localStorage), try to hydrate from API
+      if (currentState.sessionId) {
+        const remote = await fetchSession(currentState.sessionId)
+        if (remote) {
+          // Hydrate step from Supabase (authoritative), keep other local state
+          setState((s) => ({
+            ...s,
+            sessionId: remote.session_id ?? remote.id,
+            step: remote.current_step ?? s.step,
+          }))
+          return
+        }
+        // Hydration failed (session expired/not found) — create new one
+      }
+
+      // Create new session
+      const newSessionId = await createSession(currentState.anonUserId, currentState.locale)
+      if (newSessionId) {
+        setState((s) => ({ ...s, sessionId: newSessionId }))
+        updateUrlSession(newSessionId)
+      }
+    }
+
+    void initSession()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Persist critical slice to localStorage on every relevant state change
   useEffect(() => {
     savePersisted({
       sessionId: state.sessionId,
@@ -193,6 +314,44 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       theme: state.theme,
     })
   }, [state.sessionId, state.anonUserId, state.step, state.locale, state.theme])
+
+  // Debounced PATCH to Supabase whenever step or stateJson-relevant fields change
+  useEffect(() => {
+    if (!state.sessionId) return
+
+    // Clear any pending debounce
+    if (patchDebounceRef.current) {
+      clearTimeout(patchDebounceRef.current)
+    }
+
+    setSyncStatus('saving')
+
+    patchDebounceRef.current = setTimeout(async () => {
+      if (!state.sessionId) return
+
+      const stateJson: Record<string, unknown> = {
+        packageSize: state.packageSize,
+        packagePrice: state.packagePrice,
+        filingMethod: state.filingMethod,
+        paymentStatus: state.paymentStatus,
+        memberCount: state.members.length,
+      }
+
+      const ok = await patchSession(state.sessionId, state.step, stateJson)
+      setSyncStatus(ok ? 'saved' : 'error')
+
+      // Reset to idle after 2 seconds
+      setTimeout(() => setSyncStatus('idle'), 2000)
+    }, 500)
+
+    return () => {
+      if (patchDebounceRef.current) {
+        clearTimeout(patchDebounceRef.current)
+      }
+    }
+  // Only trigger on meaningful state changes, not miaMessages (too noisy)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.step, state.packageSize, state.filingMethod, state.paymentStatus, state.sessionId])
 
   const setStep = useCallback((step: number) => {
     setState((s) => ({ ...s, step }))
@@ -255,6 +414,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   const value = useMemo<WizardContextValue>(
     () => ({
       state,
+      syncStatus,
       setStep,
       setLocale,
       setTheme,
@@ -269,6 +429,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     }),
     [
       state,
+      syncStatus,
       setStep,
       setLocale,
       setTheme,
