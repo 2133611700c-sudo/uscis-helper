@@ -6,13 +6,23 @@ import type { ServiceData } from './types'
  * VERIFIED 2026-05-03 from official USCIS sources:
  * - I-131 edition 02/27/26 is CURRENT as of April 1, 2026 (edition 01/20/25 no longer accepted)
  *   Evidence: USCIS forms-updates page; DHS guide PDF dated 02/27/2026; search index confirmation
- * - Item 10.C confirmed: Ukraine Immigration Task Force + Nova Ukraine Refugee Portal
- *   ("Check box C in Question 10" / "Item 10.C in Part 1 of the paper form")
- * - USCIS Ukraine re-parole page: "Handwrite 'Ukraine RE-PAROLE' at the top
- *   of the form"; "no earlier than 180 days (6 months) before the expiration
- *   of their current period of parole"
+ * - PAPER FILING item: Part 2, Item 1.e "I am outside the United States, and I am applying for
+ *   Advance Parole Document" — even if applicant is inside the US.
+ *   Source: uscis.gov/humanitarian/uniting-for-ukraine/re-parole-process... (verified 2026-05-03)
+ *   NOTE: was 10.C under old streamlined process (eliminated June 2025). Old item 10.C is
+ *   no longer correct — superseded by Item 1.e per USCIS.gov re-parole page.
+ * - ONLINE FILING: select "I am outside the United States applying for Advance Parole Document"
+ *   in dropdown + answer "Yes" to re-parole question.
+ * - USCIS Ukraine re-parole page: "Handwrite 'Ukraine RE-PAROLE' at the top of the form"
+ * - Filing window: "no earlier than 180 days (6 months) before the expiration of their current
+ *   period of parole"
  * - I-765 instructions (line 599): "Parole--(c)(11)" EAD category
- * - Re-parole for in-US Ukrainians resumed June 9, 2025 (USCIS Alfonso-Royals memo)
+ * - Re-parole for in-US Ukrainians: paused Jan 27 2025, admin hold Feb 14 2025,
+ *   RESUMED June 9 2025 (federal court order), now case-by-case only — streamlined process
+ *   eliminated.
+ * - Fee structure: two separate fees — I-131 filing fee + parole grant fee (charged upon
+ *   conditional approval). Effective Oct 16, 2025. Direct to uscis.gov/feecalculator.
+ * - Processing time: 8–21+ months (significant backlogs as of 2026).
  */
 export const reParoleU4UData: ServiceData = {
   slug: 're-parole-u4u',
@@ -23,9 +33,10 @@ export const reParoleU4UData: ServiceData = {
   form: {
     id: 'I-131',
     edition: '02/27/26',
-    item_for_u4u: '10.C',
+    // was 10.C under old streamlined process (eliminated June 2025); correct item is now 1.e
+    item_for_u4u: '1.e',
     item_label:
-      'Re-parole Process for certain Ukrainian Citizens and Their Immediate Family Members Paroled Into the United States on or After February 11, 2022',
+      'I am outside the United States, and I am applying for Advance Parole Document (select even if you are inside the US — per USCIS re-parole instructions)',
     top_of_form_text: 'Ukraine RE-PAROLE',
   },
 
@@ -50,6 +61,13 @@ export const reParoleU4UData: ServiceData = {
     schedule_url: 'https://www.uscis.gov/g-1055',
     note_key: 'services.re-parole-u4u.fees.note',
   },
+
+  // Status warning: U4U paused Jan 2025, resumed June 9 2025 (federal court), now case-by-case
+  statusWarningKey: 'servicePages.re-parole-u4u.statusWarning',
+  // Fee notice: two-fee structure — filing fee + parole grant fee (Oct 2025)
+  feeNoticeKey: 'servicePages.re-parole-u4u.feeNotice',
+  // Processing time: 8–21+ months
+  processingWarningKey: 'servicePages.re-parole-u4u.processingWarning',
 
   sources: [
     {

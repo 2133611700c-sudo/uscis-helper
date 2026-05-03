@@ -171,22 +171,25 @@
       ],
       "officialNote": "Toda la información de re-parole proviene de la página oficial de USCIS Uniting for Ukraine.",
       "lastVerifiedLabel": "Última verificación: {date}",
+      "statusWarning": "⚠️ Estado del programa: El programa U4U fue pausado en enero de 2025 y reanudado el 9 de junio de 2025 por orden judicial federal. El procesamiento ahora es caso por caso — el proceso simplificado fue eliminado. Verifique el estado actual en uscis.gov antes de presentar.",
+      "feeNotice": "Las tarifas varían. Desde octubre de 2025, USCIS cobra una tarifa de presentación más una tarifa separada de concesión de libertad condicional cobrada en la aprobación condicional — además de la tarifa de presentación del I-131. Use la Calculadora de Tarifas oficial en uscis.gov/feecalculator.",
+      "processingWarning": "Tiempos actuales de procesamiento de USCIS para solicitudes de re-parole: 8–21+ meses. Planifique con anticipación. Presente lo antes posible (dentro de los 180 días antes de que expire su parole actual).",
       "verified": {
         "facts": {
           "title": "Datos verificados",
           "form": "Formulario I-131 (edición 02/27/26)",
-          "item": "Ítem 10.C — Re-parole Process for certain Ukrainian Citizens",
+          "item": "Parte 2, ítem 1.e — Seleccione 'Estoy fuera de los Estados Unidos y solicito un Documento de Libertad Condicional Anticipada' (aunque esté en EE.UU.). Escriba 'Ukraine RE-PAROLE' en la parte superior del formulario.",
           "topNote": "Escriba a mano «Ukraine RE-PAROLE» en la parte superior del formulario",
           "window": "Ventana de presentación: no antes de 180 días (6 meses) antes de que expire el parole actual"
         },
         "fees": {
           "title": "Tarifas de USCIS",
-          "note": "Las tarifas de USCIS se pagan directamente a USCIS — no a nosotros. Los montos pueden cambiar.",
+          "note": "Las tarifas de USCIS se pagan directamente a USCIS — no a nosotros. Los montos pueden cambiar. Nota: USCIS cobra tanto una tarifa de presentación como una tarifa separada de concesión de parole (cobrada en la aprobación condicional).",
           "checkLink": "Verificar el monto actual en USCIS Fee Calculator"
         },
         "processing": {
           "title": "Tiempos de procesamiento",
-          "note": "Los tiempos de procesamiento cambian. Consulte datos actuales en USCIS Processing Times."
+          "note": "Los tiempos cambian. Retrasos actuales: 8–21+ meses. Consulte datos actuales en USCIS Processing Times."
         },
         "disclaimer": "Información y soporte de documentos. No es asesoría legal. Usted presenta usted mismo."
       }
