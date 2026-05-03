@@ -119,17 +119,27 @@ export default async function ServicePage({ params }: Props) {
   const isReParoleU4U = slug === 're-parole-u4u'
 
   // Verified facts block — only present for re-parole-u4u (full_data: true).
-  // Source: serviceData/re-parole-u4u.ts (verified 2026-05-02 from USCIS).
-  const verifiedFacts = isReParoleU4U
-    ? (tPages.raw('re-parole-u4u') as Record<string, unknown>).verified as
-        | {
-            facts: { title: string; form: string; item: string; topNote: string; window: string }
-            fees: { title: string; note: string; checkLink: string }
-            processing: { title: string; note: string }
-            disclaimer: string
-          }
-        | undefined
+  // Source: serviceData/re-parole-u4u.ts (verified 2026-05-03 from USCIS).
+  const reParolePageData = isReParoleU4U
+    ? (tPages.raw('re-parole-u4u') as Record<string, unknown>)
     : undefined
+
+  const verifiedFacts = reParolePageData?.verified as
+    | {
+        facts: { title: string; form: string; item: string; topNote: string; window: string }
+        fees: { title: string; note: string; checkLink: string }
+        processing: { title: string; note: string }
+        disclaimer: string
+      }
+    | undefined
+
+  // New notice banners (stage-4: medical, EAD, fee waiver)
+  const statusWarning = isReParoleU4U ? (reParolePageData?.statusWarning as string | undefined) : undefined
+  const feeNotice = isReParoleU4U ? (reParolePageData?.feeNotice as string | undefined) : undefined
+  const processingWarning = isReParoleU4U ? (reParolePageData?.processingWarning as string | undefined) : undefined
+  const medicalNote = isReParoleU4U ? (reParolePageData?.medicalNote as string | undefined) : undefined
+  const eadWarning = isReParoleU4U ? (reParolePageData?.eadWarning as string | undefined) : undefined
+  const feeWaiverNote = isReParoleU4U ? (reParolePageData?.feeWaiverNote as string | undefined) : undefined
 
   // JSON-LD breadcrumb + service schema
   const breadcrumbJsonLd = {
@@ -258,6 +268,46 @@ export default async function ServicePage({ params }: Props) {
           </div>
         </div>
       </Section>
+
+      {/* Re-parole U4U notice banners — status, fees, processing, medical, EAD, fee waiver */}
+      {isReParoleU4U && (statusWarning || feeNotice || processingWarning || medicalNote || eadWarning || feeWaiverNote) && (
+        <div className="border-y border-amber-200 bg-amber-50">
+          <Container>
+            <div className="py-4 max-w-3xl space-y-3">
+              {statusWarning && (
+                <p className="text-sm text-amber-900">
+                  <span className="font-semibold">Program status: </span>{statusWarning}
+                </p>
+              )}
+              {feeNotice && (
+                <p className="text-sm text-amber-900">
+                  <span className="font-semibold">Fees: </span>{feeNotice}
+                </p>
+              )}
+              {processingWarning && (
+                <p className="text-sm text-amber-900">
+                  <span className="font-semibold">Processing: </span>{processingWarning}
+                </p>
+              )}
+              {medicalNote && (
+                <p className="text-sm text-amber-900">
+                  <span className="font-semibold">Medical documentation: </span>{medicalNote}
+                </p>
+              )}
+              {eadWarning && (
+                <p className="text-sm text-amber-900">
+                  <span className="font-semibold">EAD / work permit: </span>{eadWarning}
+                </p>
+              )}
+              {feeWaiverNote && (
+                <p className="text-sm text-amber-900">
+                  <span className="font-semibold">Fee waiver: </span>{feeWaiverNote}
+                </p>
+              )}
+            </div>
+          </Container>
+        </div>
+      )}
 
       {/* Verified facts block — only for re-parole-u4u (full_data: true) */}
       {isReParoleU4U && verifiedFacts && (

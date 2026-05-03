@@ -171,22 +171,28 @@
       ],
       "officialNote": "Toda la información de re-parole proviene de la página oficial de USCIS Uniting for Ukraine.",
       "lastVerifiedLabel": "Última verificación: {date}",
+      "statusWarning": "Actualización del programa: El programa de re-parole U4U fue suspendido en enero de 2025 y reanudado el 9 de junio de 2025 por orden judicial federal. USCIS está revisando las solicitudes caso por caso. El proceso de re-parole simplificado ya no está disponible. Verifique la orientación actual de USCIS antes de presentar.",
+      "feeNotice": "USCIS cobra una tarifa de presentación. Además, a algunos solicitantes se les cobra una tarifa de concesión de parole al recibir aprobación condicional. Las tarifas están sujetas a cambios. Use la Calculadora de Tarifas de USCIS (uscis.gov/feecalculator) y G-1055 (uscis.gov/g-1055) para los montos actuales.",
+      "processingWarning": "Los tiempos de procesamiento de USCIS varían significativamente. Consulte los estimados actuales en uscis.gov/processing-times. Planifique para períodos de espera sustanciales.",
+      "medicalNote": "Se requiere documentación médica: prueba de vacunas y prueba de TB/IGRA cuando aplique. Siga las instrucciones actuales de USCIS para los requisitos médicos.",
+      "eadWarning": "No presente el Formulario I-765 para autorización de empleo basada en esta solicitud de re-parole hasta que su I-131 haya sido aprobado y USCIS autorice la presentación del EAD. Este paquete de re-parole no es un paquete de presentación de EAD.",
+      "feeWaiverNote": "Si no puede pagar la tarifa de presentación, puede solicitar una exención de tarifas usando el Formulario I-912. Las solicitudes de exención de tarifas son típicamente solo para presentación en papel. Verifique los requisitos de elegibilidad actuales de USCIS en uscis.gov/i-912.",
       "verified": {
         "facts": {
           "title": "Datos verificados",
           "form": "Formulario I-131 (edición 02/27/26)",
-          "item": "Ítem 10.C — Re-parole Process for certain Ukrainian Citizens",
+          "item": "Parte 2, Ítem 1.e — Seleccione \"Estoy fuera de los Estados Unidos, solicitando un Documento de Parole Adelantado\" (seleccione esto incluso si está dentro de los EE.UU.). Escriba \"Ukraine RE-PAROLE\" en la parte superior del formulario.",
           "topNote": "Escriba a mano «Ukraine RE-PAROLE» en la parte superior del formulario",
           "window": "Ventana de presentación: no antes de 180 días (6 meses) antes de que expire el parole actual"
         },
         "fees": {
           "title": "Tarifas de USCIS",
-          "note": "Las tarifas de USCIS se pagan directamente a USCIS — no a nosotros. Los montos pueden cambiar.",
-          "checkLink": "Verificar el monto actual en USCIS Fee Calculator"
+          "note": "Las tarifas de USCIS se pagan directamente a USCIS — no a nosotros. Los montos pueden cambiar. Nota: USCIS cobra una tarifa de presentación Y una tarifa de concesión de parole por separado (cobrada al recibir aprobación condicional).",
+          "checkLink": "Verificar los montos actuales en USCIS Fee Calculator"
         },
         "processing": {
           "title": "Tiempos de procesamiento",
-          "note": "Los tiempos de procesamiento cambian. Consulte datos actuales en USCIS Processing Times."
+          "note": "Los tiempos de procesamiento varían significativamente. Consulte datos actuales en USCIS Processing Times. Planifique para períodos de espera sustanciales."
         },
         "disclaimer": "Información y soporte de documentos. No es asesoría legal. Usted presenta usted mismo."
       }
