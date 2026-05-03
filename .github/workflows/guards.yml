@@ -1,0 +1,140 @@
+name: Content & Brand Guards
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  guards:
+    name: Forbidden patterns + typecheck + build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ───────────────────────────────────────────────────────────────
+      # Forbidden-string guards (per CLAUDE.md and execution doc)
+      # Each step exits non-zero if its pattern is found in source.
+      # faqAnswers.ts is excluded from the risk-language guard — that
+      # file holds narrative FAQ text where "риск" appears in normal
+      # prose, not as a UI label. Cleanup is tracked separately.
+      # ───────────────────────────────────────────────────────────────
+
+      - name: Guard — hardcoded USCIS dollar amounts
+        run: |
+          set +e
+          HITS=$(grep -REn '\$580|\$630|\$1[,]?0[02]0' apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
+          if [ -n "$HITS" ]; then
+            echo "::error::Hardcoded USCIS amount found. Use https://www.uscis.gov/feecalculator link instead."
+            echo "$HITS"
+            exit 1
+          fi
+          echo "OK — no hardcoded USCIS amounts."
+
+      - name: Guard — risk language in UI
+        run: |
+          set +e
+          HITS=$(grep -REn "high risk|low risk|medium risk|riskLevel|bg-risk-|risk-high|risk-low|RiskBadge" \
+            apps/web/src apps/web/messages 2>/dev/null \
+            | grep -v node_modules \
+            | grep -v faqAnswers.ts)
+          if [ -n "$HITS" ]; then
+            echo "::error::Risk language in UI. Move narrative to faqAnswers.ts or rephrase."
+            echo "$HITS"
+            exit 1
+          fi
+          echo "OK — no risk language in UI."
+
+      - name: Guard — forbidden brand & marketing strings
+        run: |
+          set +e
+          HITS=$(grep -REn "USCIS Helper|AI-powered|AI-assisted|AI lawyer|Certified Translation|we determine eligibility|we guarantee approval|we file for you" \
+            apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
+          if [ -n "$HITS" ]; then
+            echo "::error::Forbidden marketing/brand string."
+            echo "$HITS"
+            exit 1
+          fi
+          echo "OK — no forbidden brand strings."
+
+      - name: Guard — incorrect I-131 facts (02/27/26 / Item 10.G with Ukraine)
+        run: |
+          set +e
+          # 02/27/26 is I-129 edition — never I-131. Block confusion.
+          # Item 10.G is Family Reunification Task Force — not Ukrainian re-parole.
+          HITS_DATE=$(grep -REn "02/27/26" apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
+          HITS_ITEM=$(grep -REn "10\.G.*Ukraine|10\.G.*re-parole|Ukraine.*10\.G" apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
+          if [ -n "$HITS_DATE" ] || [ -n "$HITS_ITEM" ]; then
+            echo "::error::Wrong I-131 facts. Edition is 01/20/25; Ukraine re-parole is Item 10.C."
+            [ -n "$HITS_DATE" ] && echo "Date hits:" && echo "$HITS_DATE"
+            [ -n "$HITS_ITEM" ] && echo "Item 10.G+Ukraine hits:" && echo "$HITS_ITEM"
+            exit 1
+          fi
+          echo "OK — no wrong I-131 facts."
+
+      - name: Guard — forbidden master email in source
+        run: |
+          set +e
+          # Per CLAUDE.md: master Google account email must never appear in
+          # source/comments/tests. Use BACKUP_EMAIL env var for ops mail.
+          HITS=$(grep -RnE "2133611700c@gmail" apps/ 2>/dev/null | grep -v node_modules)
+          if [ -n "$HITS" ]; then
+            echo "::error::Master account email leaked into source. Use env var only."
+            echo "$HITS"
+            exit 1
+          fi
+          echo "OK — no master email in source."
+
+      - name: Guard — DeepSeek model names in client UI
+        run: |
+          set +e
+          # DeepSeek model names allowed only in env vars / server code.
+          # If found in messages or app/components — surface as UI string.
+          HITS=$(grep -REn "DeepSeek|deepseek-(chat|reasoner|ocr|v4)" \
+            apps/web/messages apps/web/src/app apps/web/src/components 2>/dev/null \
+            | grep -v node_modules \
+            | grep -v "// server" \
+            | grep -v "server-only")
+          if [ -n "$HITS" ]; then
+            echo "::error::DeepSeek model name in client-visible code. Use 'assistant' in UI."
+            echo "$HITS"
+            exit 1
+          fi
+          echo "OK — no DeepSeek leak in client UI."
+
+      # ───────────────────────────────────────────────────────────────
+      # Type and build verification
+      # ───────────────────────────────────────────────────────────────
+
+      - name: TypeScript check
+        run: pnpm --filter web typecheck
+
+      - name: Production build
+        run: pnpm --filter web build
