@@ -11,15 +11,21 @@ type FilingOption = {
 
 const OPTIONS: FilingOption[] = [
   {
-    value: 'mail',
-    title: 'Mail to USCIS Chicago Lockbox',
-    description:
-      'Print and mail your completed I-131 with photos and supporting documents.',
-  },
-  {
     value: 'online',
     title: 'Online via myUSCIS',
     description: 'File electronically through myUSCIS. Requires a myUSCIS account.',
+  },
+  {
+    value: 'mail',
+    title: 'Mail to USCIS lockbox',
+    description:
+      'Print and mail your completed I-131 with photos and supporting documents. Check uscis.gov/i-131-addresses for the current mailing address.',
+  },
+  {
+    value: 'unsure',
+    title: 'I am not sure yet',
+    description:
+      'We will include instructions for both methods in your packet. You can decide later.',
   },
 ]
 
@@ -67,7 +73,16 @@ export function Screen08() {
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
         <p className="text-xs text-amber-800">
-          Check uscis.gov for the current mailing address. Addresses occasionally change.
+          Mailing addresses can change. Always verify at{' '}
+          <a
+            href="https://www.uscis.gov/i-131-addresses"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            uscis.gov/i-131-addresses
+          </a>{' '}
+          before sending.
         </p>
       </div>
     </div>
