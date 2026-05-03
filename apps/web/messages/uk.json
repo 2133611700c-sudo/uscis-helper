@@ -170,7 +170,26 @@
         "Нерозуміння різниці між паролем та іншими імміграційними статусами"
       ],
       "officialNote": "Уся інформація про повторний парол взята з офіційної сторінки USCIS Uniting for Ukraine.",
-      "lastVerifiedLabel": "Перевірено: {date}"
+      "lastVerifiedLabel": "Перевірено: {date}",
+      "verified": {
+        "facts": {
+          "title": "Перевірені факти",
+          "form": "Форма I-131 (видання 01/20/25)",
+          "item": "Пункт 10.C — «Re-parole Process for certain Ukrainian Citizens»",
+          "topNote": "У верхній частині форми напишіть від руки: «Ukraine RE-PAROLE»",
+          "window": "Вікно подачі: не раніше ніж за 180 днів (6 місяців) до закінчення поточного parole"
+        },
+        "fees": {
+          "title": "Збори USCIS",
+          "note": "Збори USCIS сплачуються напряму в USCIS — не нам. Розмір може змінюватися.",
+          "checkLink": "Перевірити актуальний розмір на USCIS Fee Calculator"
+        },
+        "processing": {
+          "title": "Терміни розгляду",
+          "note": "Терміни змінюються. Актуальні дані — на USCIS Processing Times."
+        },
+        "disclaimer": "Інформаційна та документальна підтримка. Не юридична консультація. Подаєте самостійно."
+      }
     },
     "tps-ukraine": {
       "title": "Тимчасовий захищений статус (TPS) для України",

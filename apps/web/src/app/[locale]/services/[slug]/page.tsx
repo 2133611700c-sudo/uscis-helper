@@ -105,6 +105,20 @@ export default async function ServicePage({ params }: Props) {
 
   const isTranslate = slug === 'translate-document'
   const isCaseStatus = slug === 'uscis-case-status'
+  const isReParoleU4U = slug === 're-parole-u4u'
+
+  // Verified facts block — only present for re-parole-u4u (full_data: true).
+  // Source: serviceData/re-parole-u4u.ts (verified 2026-05-02 from USCIS).
+  const verifiedFacts = isReParoleU4U
+    ? (tPages.raw('re-parole-u4u') as Record<string, unknown>).verified as
+        | {
+            facts: { title: string; form: string; item: string; topNote: string; window: string }
+            fees: { title: string; note: string; checkLink: string }
+            processing: { title: string; note: string }
+            disclaimer: string
+          }
+        | undefined
+    : undefined
 
   // JSON-LD breadcrumb + service schema
   const breadcrumbJsonLd = {
@@ -233,6 +247,65 @@ export default async function ServicePage({ params }: Props) {
           </div>
         </div>
       </Section>
+
+      {/* Verified facts block — only for re-parole-u4u (full_data: true) */}
+      {isReParoleU4U && verifiedFacts && (
+        <Section>
+          <div className="max-w-3xl space-y-4">
+            <div className="rounded-card border border-slate-200 bg-slate-50 p-5">
+              <h3 className="font-semibold text-ink-900 mb-3">{verifiedFacts.facts.title}</h3>
+              <ul className="space-y-2 text-sm text-ink-700">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0" />
+                  {verifiedFacts.facts.form}
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0" />
+                  {verifiedFacts.facts.item}
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0" />
+                  {verifiedFacts.facts.topNote}
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0" />
+                  {verifiedFacts.facts.window}
+                </li>
+              </ul>
+            </div>
+
+            <div className="rounded-card border border-slate-200 bg-white p-5">
+              <h3 className="font-semibold text-ink-900 mb-2">{verifiedFacts.fees.title}</h3>
+              <p className="text-sm text-ink-700 mb-3">{verifiedFacts.fees.note}</p>
+              <a
+                href="https://www.uscis.gov/feecalculator"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors"
+              >
+                {verifiedFacts.fees.checkLink}
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <div className="rounded-card border border-slate-200 bg-white p-5">
+              <h3 className="font-semibold text-ink-900 mb-2">{verifiedFacts.processing.title}</h3>
+              <p className="text-sm text-ink-700 mb-3">{verifiedFacts.processing.note}</p>
+              <a
+                href="https://egov.uscis.gov/processing-times/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors"
+              >
+                USCIS Processing Times
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <p className="text-xs text-ink-500">{verifiedFacts.disclaimer}</p>
+          </div>
+        </Section>
+      )}
 
       {/* Official source callout */}
       <Section>
