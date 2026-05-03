@@ -59,7 +59,7 @@ export function CaseStatusChecker() {
         </button>
       </form>
       {error && (
-        <p id="receipt-error" role="alert" className="mt-2 text-xs text-risk-high-fg">
+        <p id="receipt-error" role="alert" className="mt-2 text-xs text-red-700">
           {error}
         </p>
       )}
