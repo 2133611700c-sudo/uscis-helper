@@ -66,7 +66,7 @@ export const i131: FormIntelligence = {
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
       provisional: false,
-      notes: 'Part 1 Item 4. Online filing $580. Confirmed from G-1055.',
+      notes: 'Part 1 Item 4, online filing. Check current fee on USCIS Fee Calculator: https://www.uscis.gov/feecalculator',
     },
     {
       amount_usd: 580,
@@ -84,7 +84,7 @@ export const i131: FormIntelligence = {
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
       provisional: false,
-      notes: 'Part 1 Item 5, most bases. Online = $580. Certain bases (IMMVI, Ms. L., FRTF, parolee with pending I-485 filed before Apr 2024) may be $0. Confirmed from G-1055.',
+      notes: 'Part 1 Item 5, most bases. Certain bases (IMMVI, Ms. L., FRTF, parolee with pending I-485 filed before Apr 2024) may be fee-exempt. Check current fee on USCIS Fee Calculator: https://www.uscis.gov/feecalculator',
     },
     {
       amount_usd: 580,
@@ -102,7 +102,7 @@ export const i131: FormIntelligence = {
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
       provisional: false,
-      notes: 'Confirmed from G-1055 Appendix B page 43: "Certain Ukrainians paroled on or after Feb 11, 2022. Select Part 1, Item 10.C. Paper: $630, Online: $580."',
+      notes: 'Certain Ukrainians paroled on or after Feb 11, 2022. Select Part 1, Item 10.C (paper filing). Check current fee on USCIS Fee Calculator: https://www.uscis.gov/feecalculator',
     },
     {
       amount_usd: 580,
