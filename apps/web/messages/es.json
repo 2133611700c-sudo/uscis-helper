@@ -170,7 +170,26 @@
         "Confundir el parole con otros estatus migratorios"
       ],
       "officialNote": "Toda la información de re-parole proviene de la página oficial de USCIS Uniting for Ukraine.",
-      "lastVerifiedLabel": "Última verificación: {date}"
+      "lastVerifiedLabel": "Última verificación: {date}",
+      "verified": {
+        "facts": {
+          "title": "Datos verificados",
+          "form": "Formulario I-131 (edición 01/20/25)",
+          "item": "Ítem 10.C — Re-parole Process for certain Ukrainian Citizens",
+          "topNote": "Escriba a mano «Ukraine RE-PAROLE» en la parte superior del formulario",
+          "window": "Ventana de presentación: no antes de 180 días (6 meses) antes de que expire el parole actual"
+        },
+        "fees": {
+          "title": "Tarifas de USCIS",
+          "note": "Las tarifas de USCIS se pagan directamente a USCIS — no a nosotros. Los montos pueden cambiar.",
+          "checkLink": "Verificar el monto actual en USCIS Fee Calculator"
+        },
+        "processing": {
+          "title": "Tiempos de procesamiento",
+          "note": "Los tiempos de procesamiento cambian. Consulte datos actuales en USCIS Processing Times."
+        },
+        "disclaimer": "Información y soporte de documentos. No es asesoría legal. Usted presenta usted mismo."
+      }
     },
     "tps-ukraine": {
       "title": "Estado de Protección Temporal (TPS) para Ucrania",
