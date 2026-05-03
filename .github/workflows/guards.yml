@@ -93,11 +93,12 @@ jobs:
           # - Item 10.G = Family Reunification Task Force, NOT Ukrainian re-parole
           # - Ukrainian re-parole correct item = 10.C (verified from I-131 PDF)
           #
-          # Block 01/20/25 appearing as the active/current edition.
-          # Allow it only as historical reference (edition_replaces, "no longer accepted", comments).
-          HITS_OLD=$(grep -REn "01/20/25" apps/web/src apps/web/messages 2>/dev/null \
+          # Block 01/20/25 appearing as the I-131 form edition in user-visible strings.
+          # Scope: only I-131 context. I-821/I-765/etc may have different editions.
+          # Allow historical references (edition_replaces, "no longer accepted", "old", "stopped", comments).
+          HITS_OLD=$(grep -REn "I-131.*01/20/25|01/20/25.*I-131" apps/web/src apps/web/messages 2>/dev/null \
             | grep -v node_modules \
-            | grep -Ev "edition_replaces|no.longer|not.accepted|replaced|superseded|legacy|#|//")
+            | grep -Ev "edition_replaces|no.longer|not.accepted|replaced|superseded|legacy|old|stopped|#|//")
           # Block 10.G being incorrectly associated with Ukraine re-parole
           HITS_ITEM=$(grep -REn "10\.G.*[Uu]kraine|10\.G.*re-parole|[Uu]kraine.*10\.G|re-parole.*10\.G" \
             apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
