@@ -84,20 +84,36 @@ jobs:
           fi
           echo "OK — no forbidden brand strings."
 
-      - name: Guard — incorrect I-131 facts (02/27/26 / Item 10.G with Ukraine)
+      - name: Guard — stale I-131 edition or wrong item for Ukraine re-parole
         run: |
           set +e
-          # 02/27/26 is I-129 edition — never I-131. Block confusion.
-          # Item 10.G is Family Reunification Task Force — not Ukrainian re-parole.
-          HITS_DATE=$(grep -REn "02/27/26" apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
-          HITS_ITEM=$(grep -REn "10\.G.*Ukraine|10\.G.*re-parole|Ukraine.*10\.G" apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
-          if [ -n "$HITS_DATE" ] || [ -n "$HITS_ITEM" ]; then
-            echo "::error::Wrong I-131 facts. Edition is 01/20/25; Ukraine re-parole is Item 10.C."
-            [ -n "$HITS_DATE" ] && echo "Date hits:" && echo "$HITS_DATE"
-            [ -n "$HITS_ITEM" ] && echo "Item 10.G+Ukraine hits:" && echo "$HITS_ITEM"
-            exit 1
+          # VERIFIED FACTS (USCIS Forms Updates page, 2026-05-03):
+          # - I-131 current accepted edition: 02/27/26  ← CORRECT, allowed in source
+          # - Edition 01/20/25 is NO LONGER accepted since April 1, 2026
+          # - Item 10.G = Family Reunification Task Force, NOT Ukrainian re-parole
+          # - Ukrainian re-parole correct item = 10.C (verified from I-131 PDF)
+          #
+          # Block 01/20/25 appearing as the active/current edition.
+          # Allow it only as historical reference (edition_replaces, "no longer accepted", comments).
+          HITS_OLD=$(grep -REn "01/20/25" apps/web/src apps/web/messages 2>/dev/null \
+            | grep -v node_modules \
+            | grep -Ev "edition_replaces|no.longer|not.accepted|replaced|superseded|legacy|#|//")
+          # Block 10.G being incorrectly associated with Ukraine re-parole
+          HITS_ITEM=$(grep -REn "10\.G.*[Uu]kraine|10\.G.*re-parole|[Uu]kraine.*10\.G|re-parole.*10\.G" \
+            apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
+          FAIL=0
+          if [ -n "$HITS_OLD" ]; then
+            echo "::error::Stale I-131 edition 01/20/25 used as current. Correct edition is 02/27/26 (USCIS Forms Updates, since April 1 2026)."
+            echo "$HITS_OLD"
+            FAIL=1
           fi
-          echo "OK — no wrong I-131 facts."
+          if [ -n "$HITS_ITEM" ]; then
+            echo "::error::Item 10.G incorrectly associated with Ukrainian re-parole. Correct item is 10.C."
+            echo "$HITS_ITEM"
+            FAIL=1
+          fi
+          [ $FAIL -eq 0 ] && echo "OK — I-131 edition and item references correct."
+          exit $FAIL
 
       - name: Guard — forbidden master email in source
         run: |
