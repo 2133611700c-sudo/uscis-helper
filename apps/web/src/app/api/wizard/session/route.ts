@@ -10,26 +10,25 @@ function getSupabase() {
 }
 
 // POST /api/wizard/session — create new session
+// Table schema: id (UUID PK auto), anon_user_id, service_slug, locale, current_step, state_json
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
     const { locale = 'en', service_slug = 're-parole-u4u', anon_user_id } = body
     const supabase = getSupabase()
-    const sessionId = randomUUID()
     const { data, error } = await supabase
       .from('wizard_sessions')
       .insert({
-        session_id: sessionId,
         anon_user_id: anon_user_id || randomUUID(),
         locale,
         service_slug,
         current_step: 0,
-        status: 'active',
+        state_json: {},
       })
-      .select('session_id, id, created_at')
+      .select('id, anon_user_id, locale, service_slug, current_step, created_at')
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ session_id: data.session_id, id: data.id, created_at: data.created_at })
+    return NextResponse.json({ session_id: data.id, ...data })
   } catch (e: unknown) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
@@ -43,34 +42,34 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabase()
     const { data, error } = await supabase
       .from('wizard_sessions')
-      .select('session_id, locale, service_slug, current_step, status, created_at, updated_at')
-      .eq('session_id', sessionId)
+      .select('id, locale, service_slug, current_step, state_json, created_at, updated_at')
+      .eq('id', sessionId)
       .single()
     if (error || !data) return NextResponse.json({ error: 'not found' }, { status: 404 })
-    return NextResponse.json(data)
+    return NextResponse.json({ session_id: data.id, ...data })
   } catch (e: unknown) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
 
-// PATCH /api/wizard/session — update step + state
+// PATCH /api/wizard/session — update step + partial state
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json()
-    const { session_id, current_step, status } = body
+    const { session_id, current_step, state_json } = body
     if (!session_id) return NextResponse.json({ error: 'session_id required' }, { status: 400 })
     const supabase = getSupabase()
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
     if (current_step !== undefined) update.current_step = current_step
-    if (status !== undefined) update.status = status
+    if (state_json !== undefined) update.state_json = state_json
     const { data, error } = await supabase
       .from('wizard_sessions')
       .update(update)
-      .eq('session_id', session_id)
-      .select('session_id, current_step, status, updated_at')
+      .eq('id', session_id)
+      .select('id, current_step, state_json, updated_at')
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json(data)
+    return NextResponse.json({ session_id: data.id, ...data })
   } catch (e: unknown) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
