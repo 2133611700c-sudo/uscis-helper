@@ -132,13 +132,14 @@ jobs:
       - name: Guard — DeepSeek model names in client UI
         run: |
           set +e
-          # DeepSeek model names allowed only in env vars / server code.
-          # If found in messages or app/components — surface as UI string.
+          # DeepSeek allowed in server-side code (app/api/, lib/, packages/).
+          # Block only in client-visible locations: messages, [locale] pages, components.
           HITS=$(grep -REn "DeepSeek|deepseek-(chat|reasoner|ocr|v4)" \
-            apps/web/messages apps/web/src/app apps/web/src/components 2>/dev/null \
-            | grep -v node_modules \
-            | grep -v "// server" \
-            | grep -v "server-only")
+            apps/web/messages \
+            apps/web/src/components \
+            "apps/web/src/app/[locale]" \
+            2>/dev/null \
+            | grep -v node_modules)
           if [ -n "$HITS" ]; then
             echo "::error::DeepSeek model name in client-visible code. Use 'assistant' in UI."
             echo "$HITS"
