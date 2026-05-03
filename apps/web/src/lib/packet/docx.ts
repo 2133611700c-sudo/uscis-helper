@@ -1,0 +1,183 @@
+/**
+ * apps/web/src/lib/packet/docx.ts
+ *
+ * Generate a translation draft DOCX using the docx package.
+ * The DOCX contains the same information as the PDF but in editable Word format.
+ */
+
+import {
+  Document,
+  Packer,
+  Paragraph,
+  Table,
+  TableCell,
+  TableRow,
+  TextRun,
+  HeadingLevel,
+  BorderStyle,
+  WidthType,
+  AlignmentType,
+} from 'docx'
+import type { PacketInput } from './types'
+
+export async function generateDraftDOCX(input: PacketInput): Promise<Buffer> {
+  const certStatement =
+    input.certifier_statement ??
+    'This document contains a machine-assisted translation of the original source text. ' +
+    'The translation has been reviewed for accuracy. This is not a certified translation ' +
+    'as defined by 8 CFR 103.2(b)(3). For official USCIS submissions, a certified human ' +
+    'translator statement may be required. Consult a licensed immigration attorney.'
+
+  const infoRows = [
+    ['Order ID', input.order_id],
+    ['Document Type', input.doc_type.replace(/_/g, ' ').toUpperCase()],
+    ['Source Language', input.source_language.toUpperCase()],
+    ['Target Language', input.target_language.toUpperCase()],
+    ['Translated At', input.translated_at.toISOString().split('T')[0]],
+  ]
+
+  const doc = new Document({
+    sections: [
+      {
+        children: [
+          // Title
+          new Paragraph({
+            heading: HeadingLevel.TITLE,
+            children: [
+              new TextRun({
+                text: 'MESSENGINFO — Document Translation Record',
+                bold: true,
+                color: '1D5CBB',
+              }),
+            ],
+          }),
+
+          new Paragraph({ text: '' }),
+
+          // Info table
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: infoRows.map(
+              ([label, value]) =>
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      width: { size: 30, type: WidthType.PERCENTAGE },
+                      children: [
+                        new Paragraph({
+                          children: [new TextRun({ text: label, bold: true })],
+                        }),
+                      ],
+                      borders: {
+                        top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                      },
+                    }),
+                    new TableCell({
+                      width: { size: 70, type: WidthType.PERCENTAGE },
+                      children: [new Paragraph({ text: value })],
+                      borders: {
+                        top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                      },
+                    }),
+                  ],
+                })
+            ),
+          }),
+
+          new Paragraph({ text: '' }),
+
+          // Certification statement
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            children: [new TextRun({ text: 'Translator Statement', bold: true })],
+          }),
+
+          new Paragraph({
+            children: [new TextRun({ text: certStatement, italics: true, size: 20 })],
+          }),
+
+          new Paragraph({ text: '' }),
+
+          // Fields heading
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            children: [new TextRun({ text: 'Translated Fields', bold: true })],
+          }),
+
+          // Fields table
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              // Header row
+              new TableRow({
+                tableHeader: true,
+                children: ['Field', 'Source Text', 'Translation'].map(
+                  (header) =>
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [new TextRun({ text: header, bold: true, color: '1D5CBB' })],
+                        }),
+                      ],
+                      shading: { fill: 'EFF6FF' },
+                      borders: {
+                        top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                        right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                      },
+                    })
+                ),
+              }),
+              // Data rows
+              ...input.fields.map(
+                (field) =>
+                  new TableRow({
+                    children: [
+                      field.field_name.replace(/_/g, ' '),
+                      field.source_text,
+                      field.translated_text,
+                    ].map(
+                      (cellText) =>
+                        new TableCell({
+                          children: [new Paragraph({ text: cellText })],
+                          borders: {
+                            top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                            bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                            left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                            right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+                          },
+                        })
+                    ),
+                  })
+              ),
+            ],
+          }),
+
+          new Paragraph({ text: '' }),
+
+          // Footer disclaimer
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'NOT LEGAL ADVICE. Not a certified translation. For informational purposes only. Generated by messenginfo.com',
+                color: 'CC1A1A',
+                size: 18,
+              }),
+            ],
+          }),
+        ],
+      },
+    ],
+  })
+
+  const buffer = await Packer.toBuffer(doc)
+  return Buffer.from(buffer)
+}

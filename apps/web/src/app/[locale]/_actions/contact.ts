@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { headers } from 'next/headers';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
+import { sendContactNotification } from '@/lib/email/resend';
 
 const contactSchema = z.object({
   name: z.string().min(2).max(100),
@@ -115,42 +116,12 @@ async function _submitContactImpl(
     return { ok: false, code: 'serverError' };
   }
 
-  // f) Attempt Resend email — fire-and-forget, submission already persisted in Supabase above
-  const resendKey = process.env.RESEND_API_KEY ?? '';
-  const fromAddress = process.env.EMAIL_FROM_ADDRESS ?? 'noreply@messenginfo.com';
-  const toAddress = process.env.CONTACT_EMAIL_DESTINATION ?? '';
-
-  if (resendKey && toAddress) {
-    try {
-      const emailRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: fromAddress,
-          to: [toAddress],
-          subject: `[Messenginfo] New contact message from ${name}`,
-          text: `Name: ${name}\nEmail: ${email}\nLocale: ${locale}\n\n${message}`,
-        }),
-      });
-
-      if (emailRes.ok) {
-        const emailData = (await emailRes.json()) as { id?: string };
-        await db.from('audit_log').insert({
-          actor_id: null,
-          action: 'contact_email_sent',
-          target_table: 'contact',
-          target_id: null,
-          detail: { resend_id: emailData.id ?? '', to: toAddress } as Record<string, unknown>,
-          ip_hash: ipHash,
-        });
-      }
-      // Domain not verified → email fails silently; submission already in audit_log
-    } catch (emailErr) {
-      console.error('[contact] email send failed:', emailErr instanceof Error ? emailErr.message : String(emailErr));
-    }
+  // f) Send email via Resend lib (BCC applied automatically) — fire-and-forget
+  try {
+    await sendContactNotification({ name, email, message, locale });
+    // Logging is handled inside sendContactNotification via email_events table
+  } catch (emailErr) {
+    console.error('[contact] email send failed:', emailErr instanceof Error ? emailErr.message : String(emailErr));
   }
 
   return { ok: true, code: 'success' };

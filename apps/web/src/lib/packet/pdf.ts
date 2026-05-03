@@ -1,0 +1,165 @@
+/**
+ * apps/web/src/lib/packet/pdf.ts
+ *
+ * Generate a translation certificate PDF using pdf-lib.
+ * The PDF contains:
+ *   - Header: Messenginfo branding, document type, language pair
+ *   - Certification statement (non-legal disclaimer)
+ *   - Table of translated fields
+ *   - Footer: order ID, date
+ */
+
+import { PDFDocument, StandardFonts, rgb, PDFPage } from 'pdf-lib'
+import type { PacketInput } from './types'
+
+const BRAND_COLOR = rgb(0.11, 0.36, 0.73) // #1D5CBB Messenginfo blue
+const TEXT_COLOR = rgb(0.1, 0.1, 0.1)
+const MUTED_COLOR = rgb(0.4, 0.4, 0.4)
+const LINE_COLOR = rgb(0.85, 0.85, 0.85)
+
+const MARGIN = 50
+const PAGE_WIDTH = 612  // US Letter
+const PAGE_HEIGHT = 792
+
+export async function generateTranslationPDF(input: PacketInput): Promise<Buffer> {
+  const pdfDoc = await PDFDocument.create()
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+
+  let page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+  let y = PAGE_HEIGHT - MARGIN
+
+  function text(
+    p: PDFPage,
+    content: string,
+    x: number,
+    yPos: number,
+    options: { size?: number; font?: typeof fontBold; color?: ReturnType<typeof rgb> } = {}
+  ) {
+    p.drawText(content, {
+      x,
+      y: yPos,
+      size: options.size ?? 11,
+      font: options.font ?? font,
+      color: options.color ?? TEXT_COLOR,
+    })
+  }
+
+  function line(p: PDFPage, yPos: number) {
+    p.drawLine({
+      start: { x: MARGIN, y: yPos },
+      end: { x: PAGE_WIDTH - MARGIN, y: yPos },
+      thickness: 0.5,
+      color: LINE_COLOR,
+    })
+  }
+
+  // ─── Header ───────────────────────────────────────────────────────────────
+  text(page, 'MESSENGINFO', MARGIN, y, { size: 18, font: fontBold, color: BRAND_COLOR })
+  y -= 20
+  text(page, 'Document Translation Record', MARGIN, y, { size: 12, color: MUTED_COLOR })
+  y -= 10
+  line(page, y)
+  y -= 20
+
+  // ─── Document info ────────────────────────────────────────────────────────
+  const infoItems = [
+    ['Order ID:', input.order_id],
+    ['Document Type:', input.doc_type.replace(/_/g, ' ').toUpperCase()],
+    ['Source Language:', input.source_language.toUpperCase()],
+    ['Target Language:', input.target_language.toUpperCase()],
+    ['Translated At:', input.translated_at.toISOString().split('T')[0]],
+  ]
+
+  for (const [label, value] of infoItems) {
+    text(page, label, MARGIN, y, { size: 10, font: fontBold })
+    text(page, value, MARGIN + 120, y, { size: 10 })
+    y -= 16
+  }
+
+  y -= 10
+  line(page, y)
+  y -= 20
+
+  // ─── Certification statement ──────────────────────────────────────────────
+  const certStatement =
+    input.certifier_statement ??
+    'This document contains a machine-assisted translation of the original source text. ' +
+    'The translation has been reviewed for accuracy. This is not a certified translation ' +
+    'as defined by 8 CFR 103.2(b)(3). For official USCIS submissions, a certified human ' +
+    'translator statement may be required. Consult a licensed immigration attorney.'
+
+  text(page, 'TRANSLATOR STATEMENT', MARGIN, y, { size: 10, font: fontBold, color: BRAND_COLOR })
+  y -= 16
+
+  // Word-wrap statement
+  const words = certStatement.split(' ')
+  let line2 = ''
+  const maxLineWidth = PAGE_WIDTH - MARGIN * 2
+  for (const word of words) {
+    const testLine = line2 ? `${line2} ${word}` : word
+    const testWidth = font.widthOfTextAtSize(testLine, 9)
+    if (testWidth > maxLineWidth && line2) {
+      text(page, line2, MARGIN, y, { size: 9, color: MUTED_COLOR })
+      y -= 13
+      line2 = word
+    } else {
+      line2 = testLine
+    }
+    if (y < MARGIN + 80) {
+      page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+      y = PAGE_HEIGHT - MARGIN
+    }
+  }
+  if (line2) {
+    text(page, line2, MARGIN, y, { size: 9, color: MUTED_COLOR })
+    y -= 13
+  }
+
+  y -= 10
+  line(page, y)
+  y -= 20
+
+  // ─── Fields table ─────────────────────────────────────────────────────────
+  text(page, 'TRANSLATED FIELDS', MARGIN, y, { size: 10, font: fontBold, color: BRAND_COLOR })
+  y -= 18
+
+  // Table header
+  text(page, 'FIELD', MARGIN, y, { size: 9, font: fontBold, color: MUTED_COLOR })
+  text(page, 'SOURCE TEXT', MARGIN + 120, y, { size: 9, font: fontBold, color: MUTED_COLOR })
+  text(page, 'TRANSLATION', MARGIN + 300, y, { size: 9, font: fontBold, color: MUTED_COLOR })
+  y -= 4
+  line(page, y)
+  y -= 12
+
+  for (const field of input.fields) {
+    if (y < MARGIN + 60) {
+      page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+      y = PAGE_HEIGHT - MARGIN
+    }
+
+    const fieldLabel = field.field_name.replace(/_/g, ' ')
+    text(page, fieldLabel, MARGIN, y, { size: 9 })
+    text(page, field.source_text.slice(0, 30), MARGIN + 120, y, { size: 9 })
+    text(page, field.translated_text.slice(0, 40), MARGIN + 300, y, { size: 9 })
+    y -= 14
+  }
+
+  y -= 10
+  line(page, y)
+  y -= 16
+
+  // ─── Footer ───────────────────────────────────────────────────────────────
+  text(page, `Generated by Messenginfo · messenginfo.com · Order ${input.order_id}`, MARGIN, y, {
+    size: 8,
+    color: MUTED_COLOR,
+  })
+  y -= 12
+  text(page, 'NOT LEGAL ADVICE. Not a certified translation. For informational purposes only.', MARGIN, y, {
+    size: 8,
+    color: rgb(0.7, 0.1, 0.1),
+  })
+
+  const pdfBytes = await pdfDoc.save()
+  return Buffer.from(pdfBytes)
+}

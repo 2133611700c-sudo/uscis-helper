@@ -4,9 +4,9 @@ import { ExternalLink } from 'lucide-react'
 
 const infoCards = [
   {
-    label: 'Edition: 01/20/25',
+    label: 'Edition: 02/27/26',
     detail:
-      'Check the top-right corner of the form. ONLY the 01/20/25 edition is accepted.',
+      'Use the 02/27/26 edition. USCIS stopped accepting the old 01/20/25 edition after March 31, 2026.',
   },
   {
     label: 'Item 10.C',
