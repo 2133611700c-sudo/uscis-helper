@@ -974,5 +974,45 @@
       "title": "Important notice",
       "body": "Messenginfo is not a law firm and does not provide legal advice. We provide information from official government sources to help you understand U.S. immigration procedures. For questions specific to your situation, consult a licensed immigration attorney."
     }
+  },
+  "wizard": {
+    "nav": {
+      "back": "← Back",
+      "next": "Next →",
+      "done": "Done",
+      "step_of": "Step {current} of {total}"
+    },
+    "steps": {
+      "0": "Welcome",
+      "1": "About the Form",
+      "2": "Package",
+      "3": "Family",
+      "4": "Documents",
+      "5": "Recognition",
+      "6": "Confirmation",
+      "7": "Information",
+      "8": "Filing Method",
+      "9": "Preview",
+      "10": "Payment",
+      "11": "Download",
+      "12": "Transfer"
+    },
+    "mia": {
+      "title": "Mia",
+      "placeholder": "Ask a question about Re-Parole U4U…",
+      "send": "Send",
+      "thinking": "Mia is thinking…",
+      "open_hint": "Have questions?"
+    },
+    "theme": {
+      "light": "Light theme",
+      "dark": "Dark theme"
+    },
+    "language": {
+      "ru": "RU",
+      "uk": "UK",
+      "en": "EN",
+      "es": "ES"
+    }
   }
 }
