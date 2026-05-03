@@ -31,6 +31,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import JSZip from 'jszip'
 
@@ -628,21 +629,28 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 5. Log to audit_log (fire and forget — non-fatal)
-    void supabase.from('audit_log').insert({
-      action: 'packet_generated',
-      target_table: 'wizard_sessions',
-      detail: {
-        session_id,
-        storage_key: storageKey,
-        filing_method: method,
-        file_count: fileCount,
-        package_size: state.packageSize ?? 1,
-        locale: session.locale,
-        service_slug: session.service_slug,
-        generated_at: new Date().toISOString(),
-      },
-    })
+    // 5. Log to audit_log — use waitUntil so Vercel keeps lambda alive until insert completes
+    waitUntil(
+      Promise.resolve(
+        supabase.from('audit_log').insert({
+          action: 'packet_generated',
+          target_table: 'wizard_sessions',
+          target_id: session_id,
+          detail: {
+            session_id,
+            storage_key: storageKey,
+            filing_method: method,
+            file_count: fileCount,
+            package_size: state.packageSize ?? 1,
+            locale: session.locale,
+            service_slug: session.service_slug,
+            generated_at: new Date().toISOString(),
+          },
+        })
+      ).then(({ error }) => {
+        if (error) console.error('[audit_log] packet_generated insert failed:', error.message)
+      })
+    )
 
     // 6. Log to generated_packets table if it exists (fire and forget)
     void supabase.from('generated_packets').insert({
