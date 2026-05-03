@@ -3,27 +3,26 @@ import type { ServiceData } from './types'
 /**
  * Re-Parole U4U service data.
  *
- * VERIFIED 2026-05-02 from official USCIS sources:
- * - I-131 PDF (last-modified 2025-10-17): edition 01/20/25, Item 10.C
- *   ("Re-parole Process for certain Ukrainian Citizens...")
+ * VERIFIED 2026-05-03 from official USCIS sources:
+ * - I-131 edition 02/27/26 is CURRENT as of April 1, 2026 (edition 01/20/25 no longer accepted)
+ *   Evidence: USCIS forms-updates page; DHS guide PDF dated 02/27/2026; search index confirmation
+ * - Item 10.C confirmed: Ukraine Immigration Task Force + Nova Ukraine Refugee Portal
+ *   ("Check box C in Question 10" / "Item 10.C in Part 1 of the paper form")
  * - USCIS Ukraine re-parole page: "Handwrite 'Ukraine RE-PAROLE' at the top
  *   of the form"; "no earlier than 180 days (6 months) before the expiration
  *   of their current period of parole"
  * - I-765 instructions (line 599): "Parole--(c)(11)" EAD category
- *
- * NOTE: USCIS forms-updates page lists a new edition dated February 2026
- * for Form I-129 (Nonimmigrant Worker Petition) — NOT for I-131.
- * I-131 has no edition update announced as of 2026-05-02.
+ * - Re-parole for in-US Ukrainians resumed June 9, 2025 (USCIS Alfonso-Royals memo)
  */
 export const reParoleU4UData: ServiceData = {
   slug: 're-parole-u4u',
   full_data: true,
   verification_status: 'verified',
-  verified_at: '2026-05-02',
+  verified_at: '2026-05-03',
 
   form: {
     id: 'I-131',
-    edition: '01/20/25',
+    edition: '02/27/26',
     item_for_u4u: '10.C',
     item_label:
       'Re-parole Process for certain Ukrainian Citizens and Their Immediate Family Members Paroled Into the United States on or After February 11, 2022',
