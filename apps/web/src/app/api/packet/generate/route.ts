@@ -239,8 +239,8 @@ function build04EvidenceIndex(state: WizardStateJson): string {
   return lines.join('\n')
 }
 
-function build05FormGuide(): string {
-  return [
+function build05FormGuide(method: string): string {
+  const lines = [
     'FORM I-131 — COMPLETION GUIDE',
     '==============================',
     '',
@@ -274,11 +274,19 @@ function build05FormGuide(): string {
     '  NOTE: Item 10.C was used under the old streamlined process (ELIMINATED June 2025).',
     '  Item 10.C is NO LONGER CORRECT. Use Part 2, Item 1.e.',
     '',
-    'WRITE AT TOP OF FORM — PAPER ONLY',
-    '----------------------------------',
-    'Handwrite in pen at the very top of the form:',
-    '  "Ukraine RE-PAROLE"',
-    '',
+  ]
+
+  if (method === 'mail' || method === 'unsure') {
+    lines.push(
+      'WRITE AT TOP OF FORM — PAPER ONLY',
+      '----------------------------------',
+      'Handwrite in pen at the very top of the form:',
+      '  "Ukraine RE-PAROLE"',
+      '',
+    )
+  }
+
+  lines.push(
     'ITEM TO SELECT — ONLINE FILING',
     '-------------------------------',
     'On my.uscis.gov, select the dropdown option:',
@@ -293,7 +301,9 @@ function build05FormGuide(): string {
     'FORM I-131 OFFICIAL SOURCE',
     '--------------------------',
     'https://www.uscis.gov/i-131',
-  ].join('\n')
+  )
+
+  return lines.join('\n')
 }
 
 function build06FilingInstructions(method: string): string {
@@ -570,7 +580,7 @@ export async function POST(req: NextRequest) {
     zip.file('02-applicant-summary.txt', build02ApplicantSummary(state))
     zip.file('03-personal-explanation.txt', build03Explanation(state))
     zip.file('04-evidence-index.txt', build04EvidenceIndex(state))
-    zip.file('05-form-i131-guide.txt', build05FormGuide())
+    zip.file('05-form-i131-guide.txt', build05FormGuide(method))
     zip.file('06-filing-instructions.txt', build06FilingInstructions(method))
     zip.file('07-document-checklist.txt', build07DocumentChecklist(state))
     zip.file('08-fees-and-links.txt', build08FeesAndLinks())
