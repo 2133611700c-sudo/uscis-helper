@@ -28,6 +28,14 @@ export async function POST(req: NextRequest) {
       .select('id, anon_user_id, locale, service_slug, current_step, created_at')
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Log wizard_start event (no PII) — fire and forget, non-fatal
+    void supabase.from('audit_log').insert({
+      action: 'wizard.start',
+      target_table: 'wizard_sessions',
+      detail: { service_slug, locale, session_id: data.id },
+    })
+
     return NextResponse.json({ session_id: data.id, ...data })
   } catch (e: unknown) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
@@ -69,6 +77,16 @@ export async function PATCH(req: NextRequest) {
       .select('id, current_step, state_json, updated_at')
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Log step_save event (no PII — only step number) — fire and forget, non-fatal
+    if (current_step !== undefined) {
+      void supabase.from('audit_log').insert({
+        action: 'wizard.step_save',
+        target_table: 'wizard_sessions',
+        detail: { session_id, step: current_step },
+      })
+    }
+
     return NextResponse.json({ session_id: data.id, ...data })
   } catch (e: unknown) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
