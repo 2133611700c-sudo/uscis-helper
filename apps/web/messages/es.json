@@ -974,5 +974,45 @@
       "title": "Aviso importante",
       "body": "Messenginfo no es un bufete de abogados y no brinda asesoría legal. Proporcionamos información de fuentes gubernamentales oficiales para ayudarle a comprender los procedimientos de inmigración de EE. UU. Para preguntas específicas a su situación, consulte a un abogado de inmigración con licencia."
     }
+  },
+  "wizard": {
+    "nav": {
+      "back": "← Atrás",
+      "next": "Siguiente →",
+      "done": "Listo",
+      "step_of": "Paso {current} de {total}"
+    },
+    "steps": {
+      "0": "Bienvenida",
+      "1": "Sobre el formulario",
+      "2": "Paquete",
+      "3": "Familia",
+      "4": "Documentos",
+      "5": "Reconocimiento",
+      "6": "Confirmación",
+      "7": "Información",
+      "8": "Método de presentación",
+      "9": "Vista previa",
+      "10": "Pago",
+      "11": "Descargar",
+      "12": "Transferencia"
+    },
+    "mia": {
+      "title": "Mia",
+      "placeholder": "Haz una pregunta sobre Re-Parole U4U…",
+      "send": "Enviar",
+      "thinking": "Mia está pensando…",
+      "open_hint": "¿Tienes preguntas?"
+    },
+    "theme": {
+      "light": "Tema claro",
+      "dark": "Tema oscuro"
+    },
+    "language": {
+      "ru": "RU",
+      "uk": "UK",
+      "en": "EN",
+      "es": "ES"
+    }
   }
 }
