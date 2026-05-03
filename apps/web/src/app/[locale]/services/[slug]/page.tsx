@@ -30,6 +30,11 @@ const SLUGS = [
 
 type Slug = (typeof SLUGS)[number]
 
+// Per BUG-003: only services with verified full content are indexable.
+// Stub services (placeholder content only) get robots: noindex to avoid
+// thin-content SEO penalty. List grows as services are verified one-by-one.
+const FULL_DATA_SLUGS: ReadonlySet<Slug> = new Set<Slug>(['re-parole-u4u'])
+
 interface Props {
   params: Promise<{ locale: string; slug: string }>
 }
@@ -49,11 +54,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${cardData.title} | Messenginfo`
   const description = cardData.shortProblem
+  const isFullData = FULL_DATA_SLUGS.has(slug as Slug)
 
   return {
     title,
     description,
     metadataBase: new URL('https://messenginfo.com'),
+    // BUG-003: stub services (full_data: false) get noindex to prevent
+    // thin-content SEO penalty. Only services with verified content indexed.
+    robots: isFullData
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
     alternates: {
       canonical: `https://messenginfo.com/${locale}/services/${slug}`,
       languages: Object.fromEntries(

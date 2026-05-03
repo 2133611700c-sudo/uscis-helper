@@ -26,6 +26,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     metadataBase: new URL('https://messenginfo.com'),
+    // BUG-003: translate-document is a stub (no verified full data yet) — noindex.
+    robots: { index: false, follow: true },
     alternates: {
       canonical: `https://messenginfo.com/${locale}/services/translate-document`,
       languages: Object.fromEntries(
