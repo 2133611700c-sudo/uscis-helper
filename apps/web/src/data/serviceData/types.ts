@@ -31,6 +31,7 @@ export interface ServiceFilingInfo {
 export interface ServiceFeesInfo {
   calculator_url: string
   schedule_url: string
+  fee_waiver_url?: string
   note_key: string
 }
 
@@ -50,4 +51,11 @@ export interface ServiceData {
   filing: ServiceFilingInfo
   fees: ServiceFeesInfo
   sources: ServiceSource[]
+  // Optional message keys for status/notice banners
+  statusWarningKey?: string
+  feeNoticeKey?: string
+  processingWarningKey?: string
+  medicalNoteKey?: string
+  eadWarningKey?: string
+  feeWaiverNoteKey?: string
 }
