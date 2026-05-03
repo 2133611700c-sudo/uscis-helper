@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { generateFullPacket } from '@/lib/packet'
+import type { PacketInput } from '@/lib/packet'
 
 function getSupabase() {
   const url = process.env.SUPABASE_URL!
@@ -60,6 +62,75 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json(data)
   } catch (e: unknown) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}
+
+// POST /api/translation/process — generate packet for a reviewed order
+export async function POST(req: NextRequest) {
+  try {
+    const body = (await req.json()) as { order_id?: string }
+    const { order_id } = body
+
+    if (!order_id) return NextResponse.json({ error: 'order_id required' }, { status: 400 })
+
+    const supabase = getSupabase()
+
+    // Fetch order details
+    const { data: order, error: fetchError } = await supabase
+      .from('translation_orders')
+      .select('order_id, status, document_type, locale, fields_reviewed')
+      .eq('order_id', order_id)
+      .single()
+
+    if (fetchError ?? !order) {
+      return NextResponse.json({ error: 'order not found' }, { status: 404 })
+    }
+
+    // Build PacketInput from order data
+    const fields = Array.isArray(order.fields_reviewed)
+      ? (order.fields_reviewed as Array<{ field_name: string; source_text: string; translated_text: string }>)
+      : []
+
+    const input: PacketInput = {
+      order_id: order.order_id as string,
+      doc_type: (order.document_type as string) ?? 'other',
+      source_language: 'original',
+      target_language: (order.locale as string) ?? 'en',
+      translated_at: new Date(),
+      fields,
+    }
+
+    const result = await generateFullPacket(input)
+
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error ?? 'Packet generation failed' }, { status: 500 })
+    }
+
+    // Update order status
+    await supabase
+      .from('translation_orders')
+      .update({ status: 'packet_ready', updated_at: new Date().toISOString() })
+      .eq('order_id', order_id)
+
+    await supabase.from('translation_events').insert({
+      order_id,
+      event_type: 'packet_generated',
+      metadata: {
+        has_signed_url: !!result.signedUrl,
+        files_count: result.files.length,
+      },
+    })
+
+    return NextResponse.json({
+      ok: true,
+      order_id,
+      download_url: result.signedUrl ?? null,
+      expires_at: result.expiresAt?.toISOString() ?? null,
+      files: result.files.map((f) => ({ filename: f.filename, contentType: f.contentType })),
+    })
+  } catch (e: unknown) {
+    console.error('[translation/process] packet error:', String(e))
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
