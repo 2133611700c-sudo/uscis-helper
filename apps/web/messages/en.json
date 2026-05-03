@@ -171,22 +171,25 @@
       ],
       "officialNote": "All re-parole information comes from the official USCIS Uniting for Ukraine page.",
       "lastVerifiedLabel": "Last verified: {date}",
+      "statusWarning": "⚠️ Program Update: The U4U re-parole program was paused in January 2025 and resumed June 9, 2025 by federal court order. Processing is now case-by-case only — the expedited streamlined process has been eliminated. Verify current status at uscis.gov before filing.",
+      "feeNotice": "Filing fees vary. As of October 2025, USCIS charges a filing fee plus a separate parole grant fee charged upon conditional approval — in addition to the I-131 filing fee. Use the official USCIS Fee Calculator at uscis.gov/feecalculator for current amounts. Do not rely on third-party sources for fee amounts.",
+      "processingWarning": "Current USCIS processing times for re-parole applications: 8–21+ months. Plan accordingly. File as early as possible (within 180 days before current parole expires).",
       "verified": {
         "facts": {
           "title": "Verified facts",
           "form": "Form I-131 (edition 02/27/26)",
-          "item": "Item 10.C — Re-parole Process for certain Ukrainian Citizens",
+          "item": "Part 2, Item 1.e — Select 'I am outside the United States, applying for Advance Parole Document' (even if you are inside the US). Write 'Ukraine RE-PAROLE' at the top of the form.",
           "topNote": "Handwrite \"Ukraine RE-PAROLE\" at the top of the form",
           "window": "Filing window: no earlier than 180 days (6 months) before current parole expires"
         },
         "fees": {
           "title": "USCIS fees",
-          "note": "USCIS fees are paid directly to USCIS — not to us. Amounts may change.",
+          "note": "USCIS fees are paid directly to USCIS — not to us. Amounts may change. Note: USCIS charges both a filing fee AND a separate parole grant fee (charged upon conditional approval).",
           "checkLink": "Check current amount on USCIS Fee Calculator"
         },
         "processing": {
           "title": "Processing times",
-          "note": "Processing times change. Check current data on USCIS Processing Times."
+          "note": "Processing times change. Current backlogs: 8–21+ months. Check current data on USCIS Processing Times."
         },
         "disclaimer": "Information and document support only. Not legal advice. You file yourself."
       }

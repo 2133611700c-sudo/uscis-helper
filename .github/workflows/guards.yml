@@ -84,14 +84,34 @@ jobs:
           fi
           echo "OK — no forbidden brand strings."
 
+      - name: Guard — stale re-parole item 10.C in user-facing content
+        run: |
+          set +e
+          # Item 10.C was for old streamlined process (eliminated June 2025).
+          # Current correct item for paper I-131 re-parole: Part 2, Item 1.e
+          # Block 10.C in user-facing content (messages + serviceData)
+          # Allow in comments, historical notes, test files.
+          HITS=$(grep -REn "10\.C" \
+            apps/web/messages \
+            apps/web/src/data/serviceData \
+            2>/dev/null \
+            | grep -v node_modules \
+            | grep -Ev "#|//|\*|old|legacy|was|previous|former|streamlined|eliminated|longer|superseded|incorrect|wrong|not correct")
+          if [ -n "$HITS" ]; then
+            echo "::error::Stale item 10.C in user-facing content. Correct item is 1.e (per USCIS.gov, June 2025)."
+            echo "$HITS"
+            exit 1
+          fi
+          echo "OK — no stale item 10.C in user-facing content."
+
       - name: Guard — stale I-131 edition or wrong item for Ukraine re-parole
         run: |
           set +e
-          # VERIFIED FACTS (USCIS Forms Updates page, 2026-05-03):
+          # VERIFIED FACTS (USCIS.gov, 2026-05-03):
           # - I-131 current accepted edition: 02/27/26  ← CORRECT, allowed in source
           # - Edition 01/20/25 is NO LONGER accepted since April 1, 2026
           # - Item 10.G = Family Reunification Task Force, NOT Ukrainian re-parole
-          # - Ukrainian re-parole correct item = 10.C (verified from I-131 PDF)
+          # - Ukrainian re-parole correct item = 1.e (was 10.C under old streamlined, eliminated June 2025)
           #
           # Block 01/20/25 appearing as the I-131 form edition in user-visible strings.
           # Scope: only I-131 context. I-821/I-765/etc may have different editions.
@@ -109,7 +129,7 @@ jobs:
             FAIL=1
           fi
           if [ -n "$HITS_ITEM" ]; then
-            echo "::error::Item 10.G incorrectly associated with Ukrainian re-parole. Correct item is 10.C."
+            echo "::error::Item 10.G incorrectly associated with Ukrainian re-parole. Correct item is 1.e (per USCIS.gov, June 2025)."
             echo "$HITS_ITEM"
             FAIL=1
           fi

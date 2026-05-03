@@ -52,15 +52,35 @@ function buildChecklistText(state: WizardStateJson): string {
     'Use edition: 02/27/26 (current as of April 1, 2026)',
     'Source: https://www.uscis.gov/forms/forms-updates',
     '',
-    'ITEM TO CHECK',
-    '-------------',
-    'Part 1, Item 10.C — Re-parole Process for certain Ukrainian Citizens',
-    'and Their Immediate Family Members Paroled Into the United States',
-    'on or After February 11, 2022',
+    'PROGRAM STATUS NOTICE',
+    '---------------------',
+    'U4U re-parole was PAUSED January 27, 2025 and RESUMED June 9, 2025 (federal court order).',
+    'Processing is now case-by-case only — the streamlined process has been eliminated.',
+    'Verify current program status at uscis.gov before filing.',
+    '',
+    'ITEM TO CHECK (PAPER FORM)',
+    '--------------------------',
+    // was Part 1, Item 10.C under old streamlined process (eliminated June 2025)
+    // correct item per USCIS.gov (verified 2026-05-03): Part 2, Item 1.e
+    'Part 2, Item 1.e — "I am outside the United States, and I am applying for',
+    'Advance Parole Document" — select this EVEN IF you are inside the US.',
+    '',
+    'ONLINE FILING ITEM',
+    '------------------',
+    'Select "I am outside the United States applying for Advance Parole Document"',
+    'in the dropdown, then answer "Yes" to the re-parole question.',
     '',
     'WRITE AT TOP OF FORM',
     '--------------------',
     '"Ukraine RE-PAROLE" (handwrite in pen at the top of the paper form)',
+    '',
+    'FEES — IMPORTANT',
+    '----------------',
+    'USCIS charges TWO separate fees for re-parole:',
+    '  1. I-131 filing fee (paid when you submit)',
+    '  2. Parole grant fee (charged upon conditional approval — before final grant)',
+    'Use uscis.gov/feecalculator for current amounts. Do NOT hardcode amounts from',
+    'third-party sources — USCIS fee schedules change. Total fees may be significant.',
     '',
   ]
 
@@ -69,12 +89,14 @@ function buildChecklistText(state: WizardStateJson): string {
     lines.push('---------------------')
     lines.push('[ ] Print all 14 pages of I-131 (sign in ink — no digital signatures)')
     lines.push('[ ] Write "Ukraine RE-PAROLE" at top of form in pen')
+    lines.push('[ ] Check box for Part 2, Item 1.e (Advance Parole Document — even if inside US)')
     lines.push('[ ] Attach 2 passport-style photos per applicant (2"x2")')
     lines.push('[ ] Include copy of previous parole approval notice or parole document')
     lines.push('[ ] Include copy of current I-94 (download at https://i94.cbp.dhs.gov)')
     lines.push('[ ] Include copy of your Ukrainian passport (biographical page + any visa pages)')
     lines.push('[ ] Prepare supporting statement (see your written explanation below)')
     lines.push('[ ] USCIS filing fee — check current amount at https://www.uscis.gov/feecalculator')
+    lines.push('[ ] Note: a separate parole grant fee is charged upon conditional approval')
     lines.push('[ ] Check mailing address at https://www.uscis.gov/i-131-addresses BEFORE sending')
     lines.push('')
   }
@@ -84,11 +106,12 @@ function buildChecklistText(state: WizardStateJson): string {
     lines.push('----------------------------------')
     lines.push('[ ] Create or log in to myUSCIS at https://my.uscis.gov')
     lines.push('[ ] Select "File a form online" → Form I-131')
-    lines.push('[ ] In "additional information" field, enter: Ukraine RE-PAROLE')
-    lines.push('[ ] Select Part 1, Item 10.C as your basis for re-parole')
+    lines.push('[ ] Select "I am outside the United States applying for Advance Parole Document"')
+    lines.push('[ ] Answer "Yes" to the re-parole question when prompted')
     lines.push('[ ] Upload scanned copies of supporting documents (PDF preferred)')
     lines.push('[ ] Include current I-94 (download at https://i94.cbp.dhs.gov)')
     lines.push('[ ] USCIS filing fee — check current amount at https://www.uscis.gov/feecalculator')
+    lines.push('[ ] Note: a separate parole grant fee is charged upon conditional approval')
     lines.push('[ ] Pay USCIS fee through the myUSCIS portal (do not send payment separately)')
     lines.push('')
   }

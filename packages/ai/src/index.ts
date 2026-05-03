@@ -37,15 +37,19 @@ function containsHighRisk(text: string): boolean {
 // Update this block when USCIS publishes new editions or policy changes.
 const VERIFIED_FACTS: Record<string, string> = {
   're-parole-u4u': [
-    'VERIFIED USCIS FACTS for Re-Parole U4U (as of 2026-05-03, source: uscis.gov/forms/forms-updates + i-131.pdf):',
+    'VERIFIED USCIS FACTS for Re-Parole U4U (as of 2026-05-03, source: uscis.gov):',
     '- Form: I-131 (Application for Travel Document)',
-    '- Current accepted edition: 02/27/26. Edition 01/20/25 is NO LONGER accepted by USCIS as of April 1, 2026.',
-    '- Item for Ukrainian re-parole (U4U): Part 2, Item 10.C "Re-Parole" (verified from I-131 PDF text)',
-    '- Write "Ukraine RE-PAROLE" at the top of the form',
-    '- Filing window: within 180 days before current parole expires',
-    '- USCIS fees: do NOT state specific dollar amounts — direct users to uscis.gov/feecalculator',
-    '- Re-parole program for in-US Ukrainians resumed June 9, 2025',
-    '- EAD category: (c)(11) per I-765 instructions',
+    '- Current accepted edition: 02/27/26. Edition 01/20/25 NO LONGER accepted since April 1, 2026.',
+    '- PAPER FILING item: Part 2, Item 1.e "I am outside the United States, and I am applying for Advance Parole Document" — select EVEN IF applicant is inside the US.',
+    '- ONLINE FILING: select the Advance Parole option in dropdown + answer "Yes" to re-parole question.',
+    '- Write "Ukraine RE-PAROLE" at the top of the form.',
+    '- Filing window: within 180 days before current parole expires.',
+    '- FEES: Two separate fees — I-131 filing fee + parole grant fee (charged on conditional approval, effective October 2025). Direct to uscis.gov/feecalculator. Do NOT state dollar amounts.',
+    '- Program status: paused Jan 27 2025, admin hold Feb 14 2025, RESUMED June 9 2025 (federal court order). Now case-by-case only — streamlined process eliminated.',
+    '- Processing time: 8–21+ months (significant backlogs as of 2026).',
+    '- EAD category: (c)(11) per I-765 instructions.',
+    'CRITICAL: Use Item 1.e, NOT 10.C or 10.G. Item 10.C was for old streamlined process eliminated in 2025.',
+    'When asked about program status: ALWAYS mention it was paused and resumed, processing is case-by-case only.',
     'When answering questions about I-131 edition, ALWAYS use 02/27/26 — NOT any older date.',
   ].join('\n'),
 }

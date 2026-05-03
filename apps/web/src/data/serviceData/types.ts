@@ -50,4 +50,10 @@ export interface ServiceData {
   filing: ServiceFilingInfo
   fees: ServiceFeesInfo
   sources: ServiceSource[]
+  /** i18n key for a prominent status-warning banner (e.g. program paused/resumed) */
+  statusWarningKey?: string
+  /** i18n key for a fee-notice block below the fees section */
+  feeNoticeKey?: string
+  /** i18n key for processing-time warning */
+  processingWarningKey?: string
 }
