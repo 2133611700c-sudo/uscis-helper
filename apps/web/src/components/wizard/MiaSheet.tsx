@@ -5,61 +5,53 @@ import { X, Send } from 'lucide-react'
 import { useWizard } from '@/contexts/WizardContext'
 
 // ---------------------------------------------------------------------------
-// Mock LLM — keyword-based FAQ responses
+// API call to real Mia backend
 // ---------------------------------------------------------------------------
 
-function mockLlmResponse(input: string): string {
-  const q = input.toLowerCase()
+interface MiaChatResponse {
+  answer: string
+  disclaimer: string
+}
 
-  if (
-    q.includes('parole') ||
-    q.includes('when') ||
-    q.includes('expire') ||
-    q.includes('deadline')
-  ) {
-    return 'Re-parole must be filed **before** your current parole expires. We recommend filing at least 150 days (5 months) in advance.'
-  }
-  if (
-    q.includes('fee') ||
-    q.includes('cost') ||
-    q.includes('price') ||
-    q.includes('pay') ||
-    q.includes('money')
-  ) {
-    return 'USCIS filing fees change — always check the official Fee Calculator at uscis.gov/feecalculator. Our service fee is separate.'
-  }
-  if (q.includes('form') || q.includes('i-131') || q.includes('i131')) {
-    return "You'll file Form I-131, Application for Travel Document, Edition 01/20/25. Check the top of the form for the edition date."
-  }
-  if (
-    q.includes('work') ||
-    q.includes('ead') ||
-    q.includes('employment') ||
-    q.includes('job')
-  ) {
-    return 'You may be eligible for an Employment Authorization Document (EAD) separately. Re-parole itself does not grant work authorization.'
-  }
-  if (
-    q.includes('address') ||
-    q.includes('mail') ||
-    q.includes('send') ||
-    q.includes('lockbox')
-  ) {
-    return 'For Ukrainians under U4U, mail your I-131 to the USCIS Chicago Lockbox. Check uscis.gov for the exact address as it may change.'
-  }
-  if (q.includes('photo') || q.includes('picture') || q.includes('image')) {
-    return 'You need 2 identical passport-style photos per applicant. White background, 2×2 inches.'
-  }
-  if (
-    q.includes('biometric') ||
-    q.includes('fingerprint') ||
-    q.includes('asc') ||
-    q.includes('85')
-  ) {
-    return 'Most U4U re-parole applicants are biometrics-exempt. You should not pay the $85 biometrics fee unless USCIS specifically requests it.'
-  }
+async function callMiaApi(
+  message: string,
+  locale: string,
+  serviceSlug: string,
+): Promise<{ answer: string; disclaimer: string; unavailable?: boolean }> {
+  try {
+    const res = await fetch('/api/mia/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, locale, serviceSlug }),
+    })
 
-  return "I'm here to help with Re-Parole U4U questions. Could you rephrase your question? For official guidance, visit uscis.gov."
+    if (res.status === 503) {
+      return {
+        answer: '',
+        disclaimer: '',
+        unavailable: true,
+      }
+    }
+
+    if (!res.ok) {
+      return {
+        answer: 'Something went wrong. Please try again.',
+        disclaimer: 'Information only. Not legal advice.',
+      }
+    }
+
+    const data = await res.json() as MiaChatResponse
+    return {
+      answer: data.answer ?? '',
+      disclaimer: data.disclaimer ?? 'Information only. Not legal advice.',
+    }
+  } catch {
+    return {
+      answer: '',
+      disclaimer: '',
+      unavailable: true,
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -69,9 +61,10 @@ function mockLlmResponse(input: string): string {
 interface BubbleProps {
   role: 'user' | 'assistant'
   content: string
+  disclaimer?: string
 }
 
-function Bubble({ role, content }: BubbleProps) {
+function Bubble({ role, content, disclaimer }: BubbleProps) {
   const isUser = role === 'user'
 
   // Render simple markdown-style bold (**text**)
@@ -81,25 +74,30 @@ function Bubble({ role, content }: BubbleProps) {
   )
 
   return (
-    <div className={['flex w-full', isUser ? 'justify-end' : 'justify-start'].join(' ')}>
-      {!isUser && (
-        <span
-          aria-hidden="true"
-          className="mr-2 mt-1 flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-base select-none"
+    <div className={['flex w-full flex-col', isUser ? 'items-end' : 'items-start'].join(' ')}>
+      <div className={['flex w-full', isUser ? 'justify-end' : 'justify-start'].join(' ')}>
+        {!isUser && (
+          <span
+            aria-hidden="true"
+            className="mr-2 mt-1 flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-base select-none"
+          >
+            🤝
+          </span>
+        )}
+        <div
+          className={[
+            'max-w-[80%] rounded-2xl px-4 py-2 text-sm leading-relaxed',
+            isUser
+              ? 'bg-blue-600 text-white rounded-br-sm'
+              : 'bg-slate-100 text-slate-800 rounded-bl-sm',
+          ].join(' ')}
         >
-          🤝
-        </span>
-      )}
-      <div
-        className={[
-          'max-w-[80%] rounded-2xl px-4 py-2 text-sm leading-relaxed',
-          isUser
-            ? 'bg-blue-600 text-white rounded-br-sm'
-            : 'bg-slate-100 text-slate-800 rounded-bl-sm',
-        ].join(' ')}
-      >
-        {rendered}
+          {rendered}
+        </div>
       </div>
+      {disclaimer && !isUser && (
+        <p className="mt-1 ml-9 text-[10px] text-slate-400 italic">{disclaimer}</p>
+      )}
     </div>
   )
 }
@@ -110,10 +108,11 @@ function Bubble({ role, content }: BubbleProps) {
 
 export function MiaSheet() {
   const { state, setMiaOpen, addMiaMessage } = useWizard()
-  const { miaOpen, miaMessages } = state
+  const { miaOpen, miaMessages, locale, serviceSlug } = state
 
   const [inputValue, setInputValue] = useState('')
   const [isThinking, setIsThinking] = useState(false)
+  const [unavailable, setUnavailable] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -135,14 +134,35 @@ export function MiaSheet() {
     if (!text || isThinking) return
 
     setInputValue('')
+    setUnavailable(false)
     addMiaMessage({ role: 'user', content: text })
 
     setIsThinking(true)
-    await new Promise<void>((resolve) => setTimeout(resolve, 800))
-    const answer = mockLlmResponse(text)
-    addMiaMessage({ role: 'assistant', content: answer })
+
+    const result = await callMiaApi(text, locale, serviceSlug)
+
     setIsThinking(false)
+
+    if (result.unavailable) {
+      setUnavailable(true)
+      return
+    }
+
+    if (result.answer) {
+      addMiaMessage({ role: 'assistant', content: result.answer })
+      // Store disclaimer on the message — we pass it as a separate field via a wrapper
+      // Since miaMessages only stores {role, content, ts}, we append disclaimer inline
+      // The Bubble component below reads disclaimer from a parallel state
+      // For simplicity: append disclaimer as a separate context note via state
+      if (result.disclaimer) {
+        // Store disclaimer alongside answer in a combined way
+        // We use a local disclaimer map keyed by timestamp
+        setLastDisclaimer(result.disclaimer)
+      }
+    }
   }
+
+  const [lastDisclaimer, setLastDisclaimer] = useState<string>('')
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -200,7 +220,7 @@ export function MiaSheet() {
           {miaMessages.length === 0 && (
             <div className="text-center text-sm text-slate-500 mt-8 space-y-2">
               <p aria-hidden="true" className="text-2xl">👋</p>
-              <p className="font-medium text-slate-700">Hi, I'm Mia!</p>
+              <p className="font-medium text-slate-700">Hi, I&apos;m Mia!</p>
               <p>
                 I can answer questions about the Re-Parole U4U process. What would you
                 like to know?
@@ -208,9 +228,19 @@ export function MiaSheet() {
             </div>
           )}
 
-          {miaMessages.map((msg) => (
-            <Bubble key={msg.ts} role={msg.role} content={msg.content} />
-          ))}
+          {miaMessages.map((msg, idx) => {
+            // Show disclaimer only on the last assistant message
+            const isLastAssistant =
+              msg.role === 'assistant' && idx === miaMessages.length - 1
+            return (
+              <Bubble
+                key={msg.ts}
+                role={msg.role}
+                content={msg.content}
+                disclaimer={isLastAssistant ? lastDisclaimer : undefined}
+              />
+            )
+          })}
 
           {isThinking && (
             <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -230,6 +260,12 @@ export function MiaSheet() {
                   />
                 ))}
               </span>
+            </div>
+          )}
+
+          {unavailable && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+              AI assistant is temporarily unavailable. You can still use the service checklist.
             </div>
           )}
 
