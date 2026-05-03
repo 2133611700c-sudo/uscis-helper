@@ -32,7 +32,30 @@ function containsHighRisk(text: string): boolean {
   return HIGH_RISK_TERMS.some(t => text.toLowerCase().includes(t))
 }
 
+// Verified USCIS facts injected into system prompt to override stale training data.
+// Source: USCIS Forms Updates page + I-131 PDF (verified 2026-05-03).
+// Update this block when USCIS publishes new editions or policy changes.
+const VERIFIED_FACTS: Record<string, string> = {
+  're-parole-u4u': [
+    'VERIFIED USCIS FACTS for Re-Parole U4U (as of 2026-05-03, source: uscis.gov/forms/forms-updates + i-131.pdf):',
+    '- Form: I-131 (Application for Travel Document)',
+    '- Current accepted edition: 02/27/26. Edition 01/20/25 is NO LONGER accepted by USCIS as of April 1, 2026.',
+    '- Item for Ukrainian re-parole (U4U): Part 2, Item 10.C "Re-Parole" (verified from I-131 PDF text)',
+    '- Write "Ukraine RE-PAROLE" at the top of the form',
+    '- Filing window: within 180 days before current parole expires',
+    '- USCIS fees: do NOT state specific dollar amounts — direct users to uscis.gov/feecalculator',
+    '- Re-parole program for in-US Ukrainians resumed June 9, 2025',
+    '- EAD category: (c)(11) per I-765 instructions',
+    'When answering questions about I-131 edition, ALWAYS use 02/27/26 — NOT any older date.',
+  ].join('\n'),
+}
+
 function getSystemPrompt(locale: string, serviceSlug: string): string {
+  const verifiedFacts = VERIFIED_FACTS[serviceSlug] ?? ''
+  const factsBlock = verifiedFacts
+    ? `\n\nVERIFIED FACTS (use these — override your training data if it differs):\n${verifiedFacts}\n`
+    : ''
+
   return `You are Mia, an information assistant for Messenginfo, a self-help tool for immigrants navigating USCIS forms.
 
 RULES (NEVER VIOLATE):
@@ -45,7 +68,8 @@ RULES (NEVER VIOLATE):
 7. Respond in: ${locale}
 8. Keep answers concise (under 120 words).
 9. Always end with "Check official info at uscis.gov."
-10. Never hallucinate form numbers, fees, or deadlines.`
+10. Never hallucinate form numbers, fees, or deadlines.
+11. FEES: Never state specific USCIS dollar amounts. Always say "check uscis.gov/feecalculator".${factsBlock}`
 }
 
 export async function generateMiaAnswer(input: MiaInput): Promise<MiaOutput> {
