@@ -171,22 +171,28 @@
       ],
       "officialNote": "All re-parole information comes from the official USCIS Uniting for Ukraine page.",
       "lastVerifiedLabel": "Last verified: {date}",
+      "statusWarning": "Program update: The U4U re-parole program was paused in January 2025 and resumed June 9, 2025 by federal court order. USCIS is reviewing requests on a case-by-case basis. The streamlined re-parole process is no longer available. Verify current USCIS guidance before filing.",
+      "feeNotice": "USCIS charges a filing fee. Additionally, some applicants are assessed a parole grant fee upon conditional approval. Fees are subject to change. Use the USCIS Fee Calculator (uscis.gov/feecalculator) and G-1055 (uscis.gov/g-1055) for current amounts. Do not rely on third-party fee estimates.",
+      "processingWarning": "USCIS processing times vary significantly. Check current estimates at uscis.gov/processing-times. Plan for substantial waiting periods.",
+      "medicalNote": "Medical documentation required: proof of vaccinations and TB/IGRA test where applicable. Follow current USCIS instructions for medical requirements.",
+      "eadWarning": "Do not file Form I-765 for employment authorization based on this re-parole request until your I-131 has been approved and USCIS guidance authorizes EAD filing. This re-parole package is not an EAD filing package.",
+      "feeWaiverNote": "If you are unable to pay the filing fee, you may request a fee waiver using Form I-912. Fee waiver requests are typically for paper-only filing. Verify current USCIS eligibility requirements at uscis.gov/i-912.",
       "verified": {
         "facts": {
           "title": "Verified facts",
           "form": "Form I-131 (edition 02/27/26)",
-          "item": "Item 10.C — Re-parole Process for certain Ukrainian Citizens",
+          "item": "Part 2, Item 1.e — Select \"I am outside the United States, applying for Advance Parole Document\" (select this even if you are inside the US). Write \"Ukraine RE-PAROLE\" at the top of the form.",
           "topNote": "Handwrite \"Ukraine RE-PAROLE\" at the top of the form",
           "window": "Filing window: no earlier than 180 days (6 months) before current parole expires"
         },
         "fees": {
           "title": "USCIS fees",
-          "note": "USCIS fees are paid directly to USCIS — not to us. Amounts may change.",
-          "checkLink": "Check current amount on USCIS Fee Calculator"
+          "note": "USCIS fees are paid directly to USCIS — not to us. Amounts may change. Note: USCIS charges both a filing fee AND a separate parole grant fee (charged upon conditional approval).",
+          "checkLink": "Check current amounts on USCIS Fee Calculator"
         },
         "processing": {
           "title": "Processing times",
-          "note": "Processing times change. Check current data on USCIS Processing Times."
+          "note": "Processing times vary significantly. Check current data on USCIS Processing Times. Plan for substantial waiting periods."
         },
         "disclaimer": "Information and document support only. Not legal advice. You file yourself."
       }
