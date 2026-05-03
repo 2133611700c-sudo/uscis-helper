@@ -33,7 +33,7 @@ export type WizardState = {
   packageSize: number
   packagePrice: number
   members: FamilyMember[]
-  filingMethod: 'mail' | 'online' | null
+  filingMethod: 'mail' | 'online' | 'unsure' | null
   paymentStatus: 'unpaid' | 'paid' | 'mock_paid'
   downloadUrl: string | null
   transferEmail: string | null
