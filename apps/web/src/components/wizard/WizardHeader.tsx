@@ -36,9 +36,9 @@ function SyncIndicator() {
  */
 export function WizardHeader() {
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 px-4 py-3 backdrop-blur-sm">
       <div className="flex items-center gap-2">
-        <span className="text-base font-bold tracking-tight text-slate-900">Messenginfo</span>
+        <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">Messenginfo</span>
         <SyncIndicator />
       </div>
       <div className="flex items-center gap-2">

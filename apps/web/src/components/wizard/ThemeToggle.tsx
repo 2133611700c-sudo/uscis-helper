@@ -16,15 +16,19 @@ export function ThemeToggle() {
   const { state, setTheme } = useWizard()
   const isDark = state.theme === 'dark'
 
-  // Apply data-theme to root element whenever theme changes
+  // Apply `dark` class to <html> whenever theme changes (Tailwind v4 class strategy)
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', state.theme)
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
     try {
       sessionStorage.setItem(SS_KEY, state.theme)
     } catch {
       // sessionStorage unavailable — ignore
     }
-  }, [state.theme])
+  }, [state.theme, isDark])
 
   function handleToggle() {
     setTheme(isDark ? 'light' : 'dark')

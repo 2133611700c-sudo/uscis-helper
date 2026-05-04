@@ -37,9 +37,9 @@ export function DesktopStepSidebar({ slug }: DesktopStepSidebarProps) {
     <aside
       data-testid="desktop-step-sidebar"
       data-slug={slug}
-      className="border-r border-slate-200 bg-slate-50 p-5 overflow-y-auto"
+      className="border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-5 overflow-y-auto"
     >
-      <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
         Steps
       </h2>
       <ol className="space-y-1">
@@ -53,9 +53,9 @@ export function DesktopStepSidebar({ slug }: DesktopStepSidebarProps) {
               key={index}
               className={[
                 'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm',
-                isCurrent ? 'bg-green-50 font-semibold text-green-800' : '',
-                isPast ? 'text-slate-600' : '',
-                isFuture ? 'text-slate-400' : '',
+                isCurrent ? 'bg-green-50 dark:bg-green-900/20 font-semibold text-green-800 dark:text-green-400' : '',
+                isPast ? 'text-slate-600 dark:text-slate-400' : '',
+                isFuture ? 'text-slate-400 dark:text-slate-600' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
