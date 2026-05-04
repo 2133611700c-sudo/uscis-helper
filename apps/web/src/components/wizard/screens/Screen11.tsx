@@ -18,7 +18,7 @@ const CHECKLIST_ONLINE = [
   'Write "Ukraine RE-PAROLE" in the additional information field',
   'Upload scanned copies of all supporting documents',
   'Include copy of current I-94 (download at i94.cbp.dhs.gov)',
-  'USCIS filing fee ~$580 — check current amount at uscis.gov/feecalculator',
+  'USCIS filing fee — check current amount at uscis.gov/feecalculator before paying',
   'Pay USCIS fee online through the myUSCIS portal',
 ]
 
@@ -178,9 +178,8 @@ export function Screen11() {
           This information is for your reference only. Fees are paid directly to USCIS — not to us.
         </p>
         <div className="mt-2 text-[12px] space-y-1" style={{ color: 'var(--text-2)' }}>
-          <p>· I-131 online: ~$580</p>
-          <p>· I-131 by mail: ~$630</p>
-          <p>· Parole grant fee (if approved): ~$1,000–1,020</p>
+          <p>· I-131 filing fee — verify at uscis.gov/feecalculator</p>
+          <p>· Parole grant fee (if approved) — verify at uscis.gov/feecalculator</p>
         </div>
         <a
           href="https://www.uscis.gov/feecalculator"

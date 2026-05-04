@@ -3,7 +3,7 @@
 const INFO_CARDS = [
   {
     label: 'Current Edition',
-    detail: 'Form I-131 edition 02/27/26 — accepted from April 1, 2026. Download at uscis.gov/i-131.',
+    detail: 'Form I-131 edition 01/20/25 — currently accepted. Download at uscis.gov/i-131.',
     type: 'info' as const,
   },
   {
@@ -39,7 +39,7 @@ export function Screen01() {
           className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
           style={{ background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
         >
-          Edition 02/27/26
+          Edition 01/20/25
         </span>
         <span
           className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
@@ -86,7 +86,7 @@ export function Screen01() {
       >
         <p className="text-[13px]" style={{ color: 'var(--warning-text)' }}>
           <strong>USCIS filing fees (paid directly to USCIS, not to us):</strong>
-          {' '}Online ~$580 · Paper ~$630.{' '}
+          {' '}Fees vary — verify current amounts at{' '}
           <a
             href="https://www.uscis.gov/feecalculator"
             target="_blank"
