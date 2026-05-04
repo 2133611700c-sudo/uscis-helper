@@ -3,39 +3,129 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 
-const LEGAL_CHECKBOXES = [
-  {
-    id: 'check-accuracy',
-    text: 'I have verified all fields above — they are correct.',
+const T = {
+  uk: {
+    title: 'Перегляд та підтвердження',
+    subtitle: 'Прочитайте та підтвердьте кожен пункт перед формуванням пакету.',
+    packetTitle: 'Готовий пакет документів',
+    packetSubtitle: 'Усі документи готові для подачі до USCIS',
+    packetFor: (size: number) => `для ${size} ${size === 1 ? 'заявника' : 'заявників'}`,
+    paymentNote: 'Оплата ще не активована — безкоштовно в прототипі',
+    features: [
+      'Заповнена форма I-131 (редагований DOCX)',
+      'Переклади документів на англійську',
+      'Покрокова інструкція передачі даних до USCIS',
+      'Контрольний список документів',
+      'Посилання для завантаження дійсне 7 днів',
+    ],
+    ackTitle: 'Обов\'язкові підтвердження',
+    checkboxes: [
+      'Я перевірив(ла) всі поля вище — вони вірні.',
+      'Я розумію, що несу відповідальність за точність даних у формі.',
+      'Я розумію, що Messenginfo не подає документи від мого імені — я подаю самостійно на my.uscis.gov або поштою.',
+    ],
+    privacyNote: 'Ми не зберігаємо ваші документи та особисті дані після формування пакету. Вся інформація видаляється автоматично.',
+    payBtn: (price: number, allChecked: boolean) =>
+      allChecked ? `Оплатити $${price} →` : 'Підтвердьте всі пункти вище, щоб продовжити',
+    generatingBtn: 'Формуємо пакет…',
+    feeNote: 'Внески USCIS сплачуються окремо та безпосередньо до USCIS — перевіряйте поточні суми на',
+    feeLink: 'Перевірити внески ↗',
   },
-  {
-    id: 'check-responsibility',
-    text: 'I understand that I am responsible for the accuracy of the data in the form.',
+  ru: {
+    title: 'Просмотр и подтверждение',
+    subtitle: 'Прочитайте и подтвердите каждый пункт перед формированием пакета.',
+    packetTitle: 'Готовый пакет документов',
+    packetSubtitle: 'Все документы готовы для подачи в USCIS',
+    packetFor: (size: number) => `для ${size} заявитель${size === 1 ? 'я' : 'ей'}`,
+    paymentNote: 'Оплата ещё не активирована — бесплатно в прототипе',
+    features: [
+      'Заполненная форма I-131 (редактируемый DOCX)',
+      'Переводы документов на английский язык',
+      'Пошаговая инструкция передачи данных в USCIS',
+      'Контрольный список документов',
+      'Ссылка для скачивания действительна 7 дней',
+    ],
+    ackTitle: 'Обязательные подтверждения',
+    checkboxes: [
+      'Я проверил(а) все поля выше — они корректны.',
+      'Я понимаю, что несу ответственность за точность данных в форме.',
+      'Я понимаю, что Messenginfo не подаёт документы за меня — я подаю самостоятельно на my.uscis.gov или по почте.',
+    ],
+    privacyNote: 'Мы не храним ваши документы и личные данные после формирования пакета. Вся информация удаляется автоматически.',
+    payBtn: (price: number, allChecked: boolean) =>
+      allChecked ? `Оплатить $${price} →` : 'Подтвердите все пункты выше, чтобы продолжить',
+    generatingBtn: 'Формируем пакет…',
+    feeNote: 'Взносы USCIS оплачиваются отдельно и непосредственно в USCIS — проверяйте текущие суммы на',
+    feeLink: 'Проверить взносы ↗',
   },
-  {
-    id: 'check-not-filing',
-    text: 'I understand that Messenginfo does not file on my behalf — I file myself at my.uscis.gov or by mail.',
+  en: {
+    title: 'Review & confirm',
+    subtitle: 'Please read and acknowledge the items below before generating your packet.',
+    packetTitle: 'Ready-Made Document Packet',
+    packetSubtitle: 'All documents ready for USCIS submission',
+    packetFor: (size: number) => `for ${size} packet${size !== 1 ? 's' : ''}`,
+    paymentNote: 'Payment not yet enabled — free in prototype',
+    features: [
+      'Completed I-131 (editable DOCX)',
+      'Document translations to English',
+      'Step-by-step USCIS data transfer guide',
+      'Document checklist',
+      'Download link valid 7 days',
+    ],
+    ackTitle: 'Mandatory acknowledgments',
+    checkboxes: [
+      'I have verified all fields above — they are correct.',
+      'I understand that I am responsible for the accuracy of the data in the form.',
+      'I understand that Messenginfo does not file on my behalf — I file myself at my.uscis.gov or by mail.',
+    ],
+    privacyNote: 'We do not store your documents and personal data after generating the packet. All information is deleted automatically.',
+    payBtn: (price: number, allChecked: boolean) =>
+      allChecked ? `Pay $${price} →` : 'Acknowledge all items above to continue',
+    generatingBtn: 'Generating packet…',
+    feeNote: 'USCIS filing fees are paid separately and directly to USCIS — verify current amounts at',
+    feeLink: 'Check current fees ↗',
   },
-] as const
-
-const PAY_FEATURES = [
-  'Completed I-131 (editable DOCX)',
-  'Document translations to English',
-  'Step-by-step USCIS data transfer guide',
-  'Document checklist',
-  'Download link valid 7 days',
-]
+  es: {
+    title: 'Revisar y confirmar',
+    subtitle: 'Lea y confirme los elementos a continuación antes de generar su paquete.',
+    packetTitle: 'Paquete de documentos listo',
+    packetSubtitle: 'Todos los documentos listos para presentar a USCIS',
+    packetFor: (size: number) => `para ${size} paquete${size !== 1 ? 's' : ''}`,
+    paymentNote: 'Pago aún no habilitado — gratuito en prototipo',
+    features: [
+      'I-131 completado (DOCX editable)',
+      'Traducciones de documentos al inglés',
+      'Guía paso a paso de transferencia de datos a USCIS',
+      'Lista de verificación de documentos',
+      'Enlace de descarga válido 7 días',
+    ],
+    ackTitle: 'Reconocimientos obligatorios',
+    checkboxes: [
+      'He verificado todos los campos anteriores — son correctos.',
+      'Entiendo que soy responsable de la exactitud de los datos en el formulario.',
+      'Entiendo que Messenginfo no presenta solicitudes en mi nombre — yo mismo/a presento en my.uscis.gov o por correo.',
+    ],
+    privacyNote: 'No almacenamos sus documentos ni datos personales después de generar el paquete. Toda la información se elimina automáticamente.',
+    payBtn: (price: number, allChecked: boolean) =>
+      allChecked ? `Pagar $${price} →` : 'Confirme todos los elementos anteriores para continuar',
+    generatingBtn: 'Generando paquete…',
+    feeNote: 'Las tarifas de USCIS se pagan por separado y directamente a USCIS — verifique los montos actuales en',
+    feeLink: 'Verificar tarifas ↗',
+  },
+} as const
 
 export function Screen10() {
   const { state, setPaymentStatus, setStep } = useWizard()
   const { packageSize, packagePrice } = state
+  const t = T[state.locale] ?? T.en
+
   const [loading, setLoading] = useState(false)
-  const [checked, setChecked] = useState<Record<string, boolean>>({})
+  const [checked, setChecked] = useState<Record<number, boolean>>({})
 
-  const allChecked = LEGAL_CHECKBOXES.every((c) => checked[c.id])
+  const allChecked = t.checkboxes.every((_, i) => checked[i])
 
-  function toggleCheck(id: string) {
-    setChecked((prev) => ({ ...prev, [id]: !prev[id] }))
+  function toggleCheck(i: number) {
+    setChecked((prev) => ({ ...prev, [i]: !prev[i] }))
   }
 
   function handlePay() {
@@ -51,10 +141,10 @@ export function Screen10() {
     <div className="space-y-4">
       <div>
         <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
-          Review &amp; confirm
+          {t.title}
         </h1>
         <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
-          Please read and acknowledge the items below before generating your packet.
+          {t.subtitle}
         </p>
       </div>
 
@@ -65,10 +155,10 @@ export function Screen10() {
       >
         <p className="text-[40px] mb-2">📄</p>
         <h2 className="text-[18px] font-bold mb-1.5" style={{ color: 'var(--text-1)' }}>
-          Ready-Made Document Packet
+          {t.packetTitle}
         </h2>
         <p className="text-[13px] mb-4 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-          All documents ready for USCIS submission
+          {t.packetSubtitle}
         </p>
 
         {/* Price */}
@@ -77,7 +167,7 @@ export function Screen10() {
             <span className="text-[24px] align-top">$</span>{packagePrice}
           </span>
           <p className="text-[13px]" style={{ color: 'var(--text-3)' }}>
-            for {packageSize} packet{packageSize !== 1 ? 's' : ''}
+            {t.packetFor(packageSize)}
           </p>
         </div>
 
@@ -86,7 +176,7 @@ export function Screen10() {
           className="rounded-[10px] p-3 text-left mb-4"
           style={{ background: 'var(--surface-2)' }}
         >
-          {PAY_FEATURES.map((f) => (
+          {t.features.map((f) => (
             <div key={f} className="flex items-start gap-2 py-1">
               <span className="font-bold flex-shrink-0" style={{ color: 'var(--success)' }}>✓</span>
               <span className="text-[13px]" style={{ color: 'var(--text-2)' }}>{f}</span>
@@ -99,11 +189,11 @@ export function Screen10() {
           className="inline-block text-[11px] font-semibold px-3 py-1 rounded-full mb-3"
           style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}
         >
-          Payment not yet enabled — free in prototype
+          {t.paymentNote}
         </span>
       </div>
 
-      {/* Legal checkboxes */}
+      {/* Legal checkboxes — CRITICAL: must be fully translated */}
       <div
         className="rounded-[12px] p-3.5 space-y-0"
         style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}
@@ -112,26 +202,31 @@ export function Screen10() {
           className="text-[11px] font-semibold uppercase tracking-wide mb-3"
           style={{ color: 'var(--warning-text)', letterSpacing: '0.6px' }}
         >
-          Mandatory acknowledgments
+          {t.ackTitle}
         </p>
-        {LEGAL_CHECKBOXES.map((item) => (
+        {t.checkboxes.map((text, i) => (
           <label
-            key={item.id}
-            className="flex items-start gap-2.5 py-2 cursor-pointer"
-            onClick={() => toggleCheck(item.id)}
+            key={i}
+            className="flex items-start gap-2.5 py-2.5 cursor-pointer"
+            onClick={() => toggleCheck(i)}
           >
             <div
-              className="w-[22px] h-[22px] rounded-[5px] flex-shrink-0 flex items-center justify-center mt-0.5"
+              className="w-[26px] h-[26px] rounded-[6px] flex-shrink-0 flex items-center justify-center mt-0.5"
               style={{
-                border: `2px solid ${checked[item.id] ? 'var(--success)' : 'var(--warning-text)'}`,
-                background: checked[item.id] ? 'var(--success)' : 'var(--surface)',
+                border: `2px solid ${checked[i] ? 'var(--success)' : 'var(--warning-text)'}`,
+                background: checked[i] ? 'var(--success)' : 'var(--surface)',
               }}
             >
-              {checked[item.id] && <span className="text-white font-bold text-[14px]">✓</span>}
+              {checked[i] && <span className="text-white font-bold text-[15px]">✓</span>}
             </div>
-            <input type="checkbox" checked={!!checked[item.id]} onChange={() => toggleCheck(item.id)} className="sr-only" />
-            <span className="text-[13px] leading-relaxed" style={{ color: 'var(--text-1)' }}>
-              {item.text}
+            <input
+              type="checkbox"
+              checked={!!checked[i]}
+              onChange={() => toggleCheck(i)}
+              className="sr-only"
+            />
+            <span className="text-[14px] leading-relaxed" style={{ color: 'var(--text-1)' }}>
+              {text}
             </span>
           </label>
         ))}
@@ -144,7 +239,7 @@ export function Screen10() {
       >
         <span className="flex-shrink-0">🔒</span>
         <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-2)' }}>
-          We do not store your documents and personal data after generating the packet. All information is deleted automatically.
+          {t.privacyNote}
         </p>
       </div>
 
@@ -163,13 +258,13 @@ export function Screen10() {
           opacity: allChecked && !loading ? 1 : 0.6,
         }}
       >
-        {loading ? 'Generating packet…' : !allChecked ? 'Acknowledge all items above to continue' : `Pay $${packagePrice} →`}
+        {loading ? t.generatingBtn : t.payBtn(packagePrice, allChecked)}
       </button>
 
       <p className="text-[11px]" style={{ color: 'var(--text-3)' }}>
-        USCIS filing fees are paid separately and directly to USCIS — verify current amounts at{' '}
+        {t.feeNote}{' '}
         <a href="https://www.uscis.gov/feecalculator" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>
-          Check current fees ↗
+          {t.feeLink}
         </a>
       </p>
     </div>

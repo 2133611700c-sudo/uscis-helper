@@ -2,9 +2,65 @@
 
 import { useWizard } from '@/contexts/WizardContext'
 
+const T = {
+  uk: {
+    title: 'Члени сім\'ї',
+    subtitle: 'Дайте кожній людині прізвисько, щоб їх розрізняти. Справжні імена не зберігаються.',
+    mainApplicant: 'Я — Головний заявник',
+    memberLabel: (i: number) => `Член сім\'ї ${i}`,
+    packetLabel: (i: number) => `Пакет ${i}`,
+    placeholderMe: 'напр. "Я" або прізвисько',
+    placeholderOther: (i: number) => `Прізвисько особи ${i}`,
+    addPerson: '+ Додати ще одну особу',
+    tooMany: 'Для груп більше 10 осіб — зв\'яжіться з нами.',
+    saveNote: '📧 Хочете зберегти прогрес та продовжити пізніше?',
+    saveLink: 'Вкажіть e-mail на наступному кроці.',
+  },
+  ru: {
+    title: 'Члены семьи',
+    subtitle: 'Дайте каждому человеку прозвище, чтобы их различать. Настоящие имена не сохраняются.',
+    mainApplicant: 'Я — Главный заявитель',
+    memberLabel: (i: number) => `Член семьи ${i}`,
+    packetLabel: (i: number) => `Пакет ${i}`,
+    placeholderMe: 'напр. "Я" или прозвище',
+    placeholderOther: (i: number) => `Прозвище человека ${i}`,
+    addPerson: '+ Добавить ещё одного человека',
+    tooMany: 'Для групп более 10 человек — свяжитесь с нами.',
+    saveNote: '📧 Хотите сохранить прогресс и продолжить позже?',
+    saveLink: 'Введите e-mail на следующем шаге.',
+  },
+  en: {
+    title: 'Family members',
+    subtitle: 'Give each person a nickname to tell them apart. Real names are not stored.',
+    mainApplicant: 'Me — Main applicant',
+    memberLabel: (i: number) => `Member ${i}`,
+    packetLabel: (i: number) => `Packet ${i}`,
+    placeholderMe: 'e.g. "Me" or nickname',
+    placeholderOther: (i: number) => `Person ${i} nickname`,
+    addPerson: '+ Add another person',
+    tooMany: 'For groups larger than 10, please contact us.',
+    saveNote: '📧 Want to save your progress and continue later?',
+    saveLink: 'Enter your email on the next screen.',
+  },
+  es: {
+    title: 'Miembros de la familia',
+    subtitle: 'Dé a cada persona un apodo para distinguirlos. Los nombres reales no se almacenan.',
+    mainApplicant: 'Yo — Solicitante principal',
+    memberLabel: (i: number) => `Miembro ${i}`,
+    packetLabel: (i: number) => `Paquete ${i}`,
+    placeholderMe: 'ej. "Yo" o apodo',
+    placeholderOther: (i: number) => `Apodo persona ${i}`,
+    addPerson: '+ Agregar otra persona',
+    tooMany: 'Para grupos de más de 10 personas, contáctenos.',
+    saveNote: '📧 ¿Quiere guardar su progreso y continuar más tarde?',
+    saveLink: 'Ingrese su correo en la siguiente pantalla.',
+  },
+} as const
+
 export function Screen03() {
   const { state, setPackageSize, setMember } = useWizard()
   const { members, packageSize } = state
+  const t = T[state.locale] ?? T.en
 
   function handleAliasChange(id: string, value: string) {
     setMember(id, { alias: value })
@@ -18,10 +74,10 @@ export function Screen03() {
     <div className="space-y-4">
       <div>
         <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
-          Family members
+          {t.title}
         </h1>
         <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
-          Give each person a nickname to tell them apart. Real names are not stored.
+          {t.subtitle}
         </p>
       </div>
 
@@ -34,17 +90,17 @@ export function Screen03() {
           >
             <div className="flex items-center justify-between mb-2.5">
               <span className="text-[14px] font-semibold" style={{ color: 'var(--text-1)' }}>
-                {i === 0 ? 'Me — Main applicant' : `Member ${i + 1}`}
+                {i === 0 ? t.mainApplicant : t.memberLabel(i + 1)}
               </span>
               <span className="text-[12px]" style={{ color: 'var(--text-3)' }}>
-                Packet {i + 1}
+                {t.packetLabel(i + 1)}
               </span>
             </div>
             <input
               type="text"
               value={member.alias}
               onChange={(e) => handleAliasChange(member.id, e.target.value)}
-              placeholder={i === 0 ? 'e.g. "Me" or nickname' : `Person ${i + 1} nickname`}
+              placeholder={i === 0 ? t.placeholderMe : t.placeholderOther(i + 1)}
               aria-label={`Alias for person ${i + 1}`}
               className="w-full rounded-[8px] text-[16px] transition-all"
               style={{
@@ -79,11 +135,11 @@ export function Screen03() {
             color: 'var(--text-3)',
           }}
         >
-          + Add another person
+          {t.addPerson}
         </button>
       ) : (
         <p className="text-[13px] text-center" style={{ color: 'var(--text-3)' }}>
-          For groups larger than 10, please contact us.
+          {t.tooMany}
         </p>
       )}
 
@@ -92,9 +148,9 @@ export function Screen03() {
         className="rounded-[12px] p-3.5 text-[13px] leading-relaxed"
         style={{ background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
       >
-        📧 Want to save your progress and continue later?{' '}
+        {t.saveNote}{' '}
         <span style={{ color: 'var(--primary)', fontWeight: 600 }}>
-          Enter your email on the next screen.
+          {t.saveLink}
         </span>
       </div>
     </div>
