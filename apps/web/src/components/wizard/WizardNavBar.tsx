@@ -9,6 +9,9 @@ interface WizardNavBarProps {
   onBack: () => void
   onNext: () => void
   onValidate?: () => boolean
+  /** When true, the forward button is hidden — used on screens that own their own
+   *  navigation (e.g. Screen01 Legal Gate renders its own "Continue" button). */
+  hideNext?: boolean
 }
 
 const NAV_T = {
@@ -23,7 +26,7 @@ const NAV_T = {
  *   [← Back] [Step X of 13] [Next →] / [Done]
  * Fixed on mobile, inline on desktop.
  */
-export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarProps) {
+export function WizardNavBar({ step, onBack, onNext, onValidate, hideNext }: WizardNavBarProps) {
   const { state } = useWizard()
   const t = NAV_T[state.locale] ?? NAV_T.en
   const isFirst = step === 0
@@ -70,8 +73,10 @@ export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarP
         {t.step(step + 1, TOTAL_STEPS + 1)}
       </span>
 
-      {/* Next / Done */}
-      {isLast ? (
+      {/* Next / Done — hidden on screens that own their own forward navigation */}
+      {hideNext ? (
+        <div className="flex-1" aria-hidden="true" />
+      ) : isLast ? (
         <button
           type="button"
           onClick={onNext}
