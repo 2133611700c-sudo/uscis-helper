@@ -25,6 +25,8 @@ const T = {
       parole_notice: 'Повідомлення USCIS про ваш поточний термін паролю.',
       photo: '2×2 дюйми, білий фон, зроблено протягом 6 місяців.',
     },
+    skipBtn: 'Продовжити без завантаження',
+    skipNote: 'Можна завантажити пізніше або надати документи безпосередньо до USCIS.',
   },
   ru: {
     title: 'Загрузите документы',
@@ -46,6 +48,8 @@ const T = {
       parole_notice: 'Уведомление USCIS о вашем текущем сроке пароля.',
       photo: '2×2 дюйма, белый фон, сделано в течение 6 месяцев.',
     },
+    skipBtn: 'Продолжить без загрузки',
+    skipNote: 'Можно загрузить позже или предоставить документы непосредственно в USCIS.',
   },
   en: {
     title: 'Upload documents',
@@ -67,6 +71,8 @@ const T = {
       parole_notice: 'USCIS approval notice for your current parole period.',
       photo: '2×2 inch, white background, taken within 6 months.',
     },
+    skipBtn: 'Continue without uploading',
+    skipNote: 'You can upload later or provide documents directly to USCIS.',
   },
   es: {
     title: 'Subir documentos',
@@ -88,6 +94,8 @@ const T = {
       parole_notice: 'Aviso de aprobación de USCIS para su período de parole actual.',
       photo: '2×2 pulgadas, fondo blanco, tomada en los últimos 6 meses.',
     },
+    skipBtn: 'Continuar sin subir',
+    skipNote: 'Puede subir más tarde o entregar los documentos directamente a USCIS.',
   },
 } as const
 
@@ -104,7 +112,7 @@ const DOC_SLOTS: DocSlot[] = [
 ]
 
 export function Screen04() {
-  const { state, setMember } = useWizard()
+  const { state, setMember, setStep } = useWizard()
   const { members } = state
   const t = T[state.locale] ?? T.en
   const [activeIndex, setActiveIndex] = useState(0)
@@ -234,6 +242,27 @@ export function Screen04() {
             </div>
           )
         })}
+      </div>
+
+      {/* Skip — continue without uploading */}
+      <div className="pt-1">
+        <button
+          type="button"
+          onClick={() => setStep(5)}
+          className="w-full rounded-[10px] text-[14px] font-medium transition-all active:scale-[0.98]"
+          style={{
+            background: 'var(--surface-2)',
+            color: 'var(--text-2)',
+            border: '1px solid var(--border)',
+            padding: '13px 14px',
+            minHeight: '48px',
+          }}
+        >
+          {t.skipBtn}
+        </button>
+        <p className="text-[11px] mt-1.5 text-center" style={{ color: 'var(--text-3)' }}>
+          {t.skipNote}
+        </p>
       </div>
     </div>
   )
