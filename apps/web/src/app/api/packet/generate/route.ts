@@ -244,23 +244,20 @@ function build05FormGuide(method: string): string {
     'FORM I-131 — COMPLETION GUIDE',
     '==============================',
     '',
-    'VERIFIED USCIS FACTS (verified 2026-05-03 from uscis.gov)',
+    'VERIFIED USCIS FACTS (verified 2026-05-04 from uscis.gov)',
     '----------------------------------------------------------',
     '',
     'FORM EDITION',
     '------------',
-    'Use edition: 02/27/26',
-    'Current as of: April 1, 2026 (edition 01/20/25 is NO LONGER ACCEPTED)',
+    'Use edition: 01/20/25',
+    'Verified: uscis.gov/i-131 (USCIS last reviewed 03/30/2026)',
     'Download: https://www.uscis.gov/i-131',
     'Forms updates: https://www.uscis.gov/forms/forms-updates',
     '',
     'PROGRAM STATUS',
     '--------------',
-    'U4U re-parole was PAUSED January 27, 2025.',
-    'Admin hold: February 14, 2025.',
-    'RESUMED: June 9, 2025 (federal court order).',
-    'Current status: case-by-case review only.',
-    'ELIMINATED: the streamlined re-parole process (as of June 2025).',
+    'Form I-134A (sponsor intake): PAUSED since January 28, 2025 (Executive Order).',
+    'Form I-131 Re-Parole: ACTIVE — separate process, reviewed case-by-case.',
     'Verify current program status at uscis.gov before filing.',
     '',
     'ITEM TO CHECK — PAPER FORM',
@@ -317,7 +314,7 @@ function build06FilingInstructions(method: string): string {
   if (method === 'mail' || method === 'unsure') {
     lines.push('PAPER / MAIL FILING')
     lines.push('-------------------')
-    lines.push('Step 1: Download Form I-131 edition 02/27/26 from https://www.uscis.gov/i-131')
+    lines.push('Step 1: Download Form I-131 edition 01/20/25 from https://www.uscis.gov/i-131')
     lines.push('Step 2: Print all 14 pages of the form.')
     lines.push('Step 3: Write "Ukraine RE-PAROLE" in pen at the very top of page 1.')
     lines.push('Step 4: In Part 2, check box for Item 1.e.')
@@ -388,7 +385,7 @@ function build07DocumentChecklist(state: WizardStateJson): string {
     '',
     'FORM I-131',
     '----------',
-    '[ ] Form I-131 edition 02/27/26 (download: https://www.uscis.gov/i-131)',
+    '[ ] Form I-131 edition 01/20/25 (download: https://www.uscis.gov/i-131)',
     '[ ] Part 2, Item 1.e checked (paper) OR correct dropdown selected (online)',
     ...(method === 'mail' || method === 'unsure' ? [
       '[ ] "Ukraine RE-PAROLE" written in pen at top of form (paper filing)',
