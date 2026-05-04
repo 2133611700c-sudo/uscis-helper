@@ -75,7 +75,8 @@ export function WizardController() {
     <div className="relative pb-20 lg:pb-0">
       <SyncIndicator status={syncStatus} />
       <ActiveScreen />
-      <WizardNavBar step={step} onBack={handleBack} onNext={handleNext} />
+      {/* step 1 = Legal Gate — Screen01 owns its own forward button; hide NavBar Next to prevent bypass */}
+      <WizardNavBar step={step} onBack={handleBack} onNext={handleNext} hideNext={step === 1} />
       <MiaFAB />
       <MiaSheet />
     </div>
