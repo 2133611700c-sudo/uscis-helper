@@ -107,6 +107,86 @@ export const reParoleU4UData: ServiceData = {
   // Fee waiver: Form I-912 for paper filing
   feeWaiverNoteKey: 'servicePages.re-parole-u4u.feeWaiverNote',
 
+  msLSettlement: {
+    filingPaper: {
+      handwrite: 'Ms. L Settlement Class Member',
+      alternateHandwrite: 'Ms. L. Settlement QAFM',
+      position: 'top of first page of Form I-131',
+    },
+    filingOnline: {
+      applicationCategory: 'Box 10.G',
+      note: 'Select Box 10.G — NOT Box 10.C — when filing online as Ms. L. Settlement member',
+    },
+    hr1FeesExempt: true,
+    exemptSince: '2026-02-05',
+    verifyEligibilityUrl: 'https://together.gov',
+    verifyEligibilityUrlEs: 'https://juntos.gov',
+    note: 'Eligibility is verified through the Family Reunification Task Force. Cannot be self-declared.',
+    sourceUrl: 'https://www.uscis.gov/g-1055',
+    sourceNote: 'USCIS G-1055 (last reviewed 04/23/2026)',
+  },
+
+  feeArchitecture: {
+    dhsBaseFee: {
+      noteKey: 'fees.baseFee.note',
+      feeCalculatorUrl: 'https://www.uscis.gov/fees',
+      feeScheduleUrl: 'https://www.uscis.gov/g-1055',
+      feeWaiverEligible: true,
+      feeWaiverForm: 'I-912',
+      feeWaiverRequiresPaper: true,
+    },
+    hr1ParoleGrantFee: {
+      noteKey: 'fees.paroleGrant.note',
+      chargedAfterApproval: true,
+      chargedAtFiling: false,
+      feeWaiverEligible: false,
+      msLExempt: true,
+      msLExemptSince: '2026-02-05',
+      sourceUrl: 'https://www.uscis.gov/g-1055',
+    },
+    hr1EadRenewal: {
+      noteKey: 'fees.eadRenewal.note',
+      feeWaiverEligible: false,
+      msLExempt: true,
+      canRequestViaI131Part9: true,
+      sourceUrl: 'https://www.uscis.gov/g-1055',
+    },
+    paperPayment: {
+      noteKey: 'fees.payment.note',
+      checksProhibitedSince: '2025-10-28',
+      allowedMethods: ['G-1450 (credit/debit card)', 'G-1650 (ACH)'],
+      exemptionForm: 'G-1651',
+      exemptionEdition: '06/03/25',
+      sourceUrl: 'https://www.uscis.gov/g-1651',
+    },
+  },
+
+  eadSequence: {
+    warningKey: 'ead.sequence.warning',
+    correctSequence: [
+      'eadSequence.step1',
+      'eadSequence.step2',
+      'eadSequence.step3',
+      'eadSequence.step4',
+    ],
+    sourceNote: 'USCIS U4U Re-Parole Guide (last reviewed 10/11/2024)',
+  },
+
+  paperFilingChecklist: [
+    { id: 'g1145', titleKey: 'checklist.g1145.title', descKey: 'checklist.g1145.desc', recommended: true },
+    { id: 'ar11', titleKey: 'checklist.ar11.title', descKey: 'checklist.ar11.desc', required: true, url: 'https://www.uscis.gov/ar-11' },
+    { id: 'keepCopy', titleKey: 'checklist.keepCopy.title', descKey: 'checklist.keepCopy.desc', required: true },
+    { id: 'applicantAccount', titleKey: 'checklist.applicantAccount.title', descKey: 'checklist.applicantAccount.desc', required: true },
+    { id: 'childPassport', titleKey: 'checklist.childPassport.title', descKey: 'checklist.childPassport.desc', conditional: true, showIf: 'hasMemberUnder18' },
+  ],
+
+  medicalAttestation: {
+    location: 'USCIS online account (my.uscis.gov)',
+    paperAccountNote: 'Even paper filers should create a USCIS account and link their case',
+    noteKey: 'medical.attestation.note',
+    sourceNote: 'USCIS U4U archived instructions',
+  },
+
   filingMethods: {
     paper: {
       formPart: 'Part 2, Item 1.e',
