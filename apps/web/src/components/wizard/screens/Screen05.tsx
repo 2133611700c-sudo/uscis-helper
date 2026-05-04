@@ -13,6 +13,7 @@ const T = {
     noDocs: (alias: string) => `Для "${alias}" документи не завантажено`,
     noDocsNote: 'Це нормально — ви заповните дані безпосередньо у формі I-131. Перейдіть далі, і ми проведемо вас через кожне обов\'язкове поле.',
     continueManual: 'Продовжити — заповнити вручну →',
+    translateHint: '📝 Документи не англійською? Замовте переклад →',
     allRecognized: '✓ Усі документи розпізнано',
     extractedNote: 'Ми витягли дані з ваших документів. Тепер перевірте кожне поле.',
     futureNote: 'Автоматичне заповнення полів — у наступному оновленні.',
@@ -27,6 +28,7 @@ const T = {
     noDocs: (alias: string) => `Для "${alias}" документы не загружены`,
     noDocsNote: 'Это нормально — вы заполните данные непосредственно в форме I-131. Двигайтесь дальше, и мы проведём вас через каждое обязательное поле.',
     continueManual: 'Продолжить — заполнить вручную →',
+    translateHint: '📝 Документы не на английском? Заказать перевод →',
     allRecognized: '✓ Все документы распознаны',
     extractedNote: 'Мы извлекли данные из ваших документов. Теперь проверьте каждое поле.',
     futureNote: 'Автоматическое заполнение полей — в следующем обновлении.',
@@ -41,6 +43,7 @@ const T = {
     noDocs: (alias: string) => `No documents uploaded for "${alias}"`,
     noDocsNote: "That's fine — you'll fill in the details directly on Form I-131. Skip ahead and we'll guide you through every required field.",
     continueManual: 'Continue — fill in details manually →',
+    translateHint: '📝 Documents not in English? Order translation →',
     allRecognized: '✓ All documents recognized',
     extractedNote: "We extracted data from your documents. Now you'll verify each field.",
     futureNote: 'Automated field extraction available in a future update.',
@@ -55,6 +58,7 @@ const T = {
     noDocs: (alias: string) => `No se subieron documentos para "${alias}"`,
     noDocsNote: 'No hay problema — completará los datos directamente en el Formulario I-131. Continúe y lo guiaremos en cada campo requerido.',
     continueManual: 'Continuar — completar manualmente →',
+    translateHint: '📝 ¿Documentos no están en inglés? Solicitar traducción →',
     allRecognized: '✓ Todos los documentos reconocidos',
     extractedNote: 'Extrajimos datos de sus documentos. Ahora verifique cada campo.',
     futureNote: 'Extracción automática de campos disponible en una actualización futura.',
@@ -167,6 +171,21 @@ export function Screen05() {
             >
               {t.continueManual}
             </button>
+
+            {/* Translation CTA */}
+            <a
+              href={`/${state.locale}/services/translate-document`}
+              className="block w-full text-center rounded-[10px] text-[14px] font-medium transition-all"
+              style={{
+                background: 'var(--info-bg)',
+                border: '1px solid var(--info-border)',
+                color: 'var(--info-text)',
+                padding: '12px 14px',
+                textDecoration: 'none',
+              }}
+            >
+              {t.translateHint}
+            </a>
           </>
         )}
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import { MemberTabs } from '@/components/wizard/MemberTabs'
+import { ScreenGlossary } from '@/components/wizard/ScreenGlossary'
 
 // PII POLICY: We do NOT collect or store names, dates of birth, passport numbers,
 // I-94 numbers, or other identifying information. Users enter these directly on
@@ -203,6 +204,8 @@ export function Screen06() {
       >
         {t.continueBtn}
       </button>
+
+      <ScreenGlossary terms={['I-94', 'USCIS', 'Parole']} locale={state.locale} />
     </div>
   )
 }
