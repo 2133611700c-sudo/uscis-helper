@@ -67,6 +67,49 @@ export interface ServiceVerifiedSource {
   messenginfoVerified: string
 }
 
+export interface MsLSettlementData {
+  filingPaper: { handwrite: string; alternateHandwrite: string; position: string }
+  filingOnline: { applicationCategory: string; note: string }
+  hr1FeesExempt: boolean
+  exemptSince: string
+  verifyEligibilityUrl: string
+  verifyEligibilityUrlEs: string
+  note: string
+  sourceUrl: string
+  sourceNote: string
+}
+
+export interface FeeArchitectureData {
+  dhsBaseFee: { noteKey: string; feeCalculatorUrl: string; feeScheduleUrl: string; feeWaiverEligible: boolean; feeWaiverForm: string; feeWaiverRequiresPaper: boolean }
+  hr1ParoleGrantFee: { noteKey: string; chargedAfterApproval: boolean; chargedAtFiling: boolean; feeWaiverEligible: boolean; msLExempt: boolean; msLExemptSince: string; sourceUrl: string }
+  hr1EadRenewal: { noteKey: string; feeWaiverEligible: boolean; msLExempt: boolean; canRequestViaI131Part9: boolean; sourceUrl: string }
+  paperPayment: { noteKey: string; checksProhibitedSince: string; allowedMethods: string[]; exemptionForm: string; exemptionEdition: string; sourceUrl: string }
+}
+
+export interface EadSequenceData {
+  warningKey: string
+  correctSequence: string[]
+  sourceNote: string
+}
+
+export interface ChecklistItem {
+  id: string
+  titleKey: string
+  descKey: string
+  recommended?: boolean
+  required?: boolean
+  conditional?: boolean
+  showIf?: string
+  url?: string
+}
+
+export interface MedicalAttestationData {
+  location: string
+  paperAccountNote: string
+  noteKey: string
+  sourceNote: string
+}
+
 export interface ServiceData {
   slug: string
   full_data: boolean
@@ -80,6 +123,11 @@ export interface ServiceData {
   filingMethods?: ServiceFilingMethods
   verifiedSources?: ServiceVerifiedSource[]
   messenginfoVerifiedOn?: string
+  msLSettlement?: MsLSettlementData
+  feeArchitecture?: FeeArchitectureData
+  eadSequence?: EadSequenceData
+  paperFilingChecklist?: ChecklistItem[]
+  medicalAttestation?: MedicalAttestationData
   // Optional message keys for status/notice banners
   statusWarningKey?: string
   feeNoticeKey?: string
