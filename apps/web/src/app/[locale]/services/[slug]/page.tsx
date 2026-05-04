@@ -219,20 +219,117 @@ export default async function ServicePage({ params }: Props) {
 
           {/* Stage-8: Re-Parole wizard CTA — self-help guided packet builder */}
           {isReParoleU4U && (
-            <div className="mt-6 rounded-xl border border-brand-200 bg-brand-50 p-5">
-              <p className="text-base font-semibold text-ink-900 mb-1">
-                Start Re-Parole Packet
-              </p>
-              <p className="text-sm text-ink-600 mb-4">
-                Guided self-help. You review and file yourself. Not legal advice.
-              </p>
-              <Link
-                href={`/${locale}/services/re-parole-u4u/start`}
-                className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-btn transition-colors"
-              >
-                Start Re-Parole Packet
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+            <div className="mt-6 space-y-4">
+              {/* Main CTA card */}
+              <div className="rounded-xl border-2 border-brand-500 bg-brand-50 p-6">
+                <p className="text-xl font-bold text-ink-900 mb-1">
+                  Prepare Your Re-Parole Packet
+                </p>
+                <p className="text-base text-ink-600 mb-2">
+                  Step-by-step guided help. You review every page and file yourself.
+                </p>
+                <p className="text-sm text-ink-500 mb-5">
+                  Takes about 20–30 minutes. We prepare the forms — you submit to USCIS.
+                </p>
+                <Link
+                  href={`/${locale}/services/re-parole-u4u/start`}
+                  className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-base font-bold px-6 py-3 rounded-lg transition-colors"
+                  style={{ minHeight: '52px' }}
+                >
+                  Start Now — It&apos;s Free to Try
+                  <ChevronRight className="w-5 h-5" />
+                </Link>
+              </div>
+
+              {/* Pricing transparency */}
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
+                <p className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
+                  Transparent Pricing
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">Messenginfo service fee: from $15</p>
+                      <p className="text-xs text-ink-500">For 1 person — packet preparation, form fill, download. More people = slightly higher fee.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">USCIS government filing fee: $0 for most U4U</p>
+                      <p className="text-xs text-ink-500">Re-Parole I-131 currently has no USCIS fee for Ukraine for Ukrainians program participants. Always verify at uscis.gov before filing.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* How it works — 3 steps */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
+                  How It Works — 3 Steps
+                </p>
+                <div className="space-y-3">
+                  {[
+                    { n: '1', title: 'Upload your documents', desc: 'Passport photo page + Form I-94. We extract the data automatically.' },
+                    { n: '2', title: 'Review and confirm', desc: 'Check every field before the packet is assembled. You\'re in control.' },
+                    { n: '3', title: 'Download and file', desc: 'Get your completed I-131 packet. File online at my.uscis.gov or mail it.' },
+                  ].map(({ n, title, desc }) => (
+                    <div key={n} className="flex items-start gap-3">
+                      <span className="mt-0.5 w-6 h-6 rounded-full bg-brand-600 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{n}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-ink-900">{title}</p>
+                        <p className="text-xs text-ink-500">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* FAQ accordion items — static, plain language */}
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
+                <p className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
+                  Common Questions
+                </p>
+                <div className="space-y-3 text-sm">
+                  <details className="group">
+                    <summary className="font-medium text-ink-900 cursor-pointer list-none flex items-center justify-between">
+                      Do I need a lawyer?
+                      <ChevronRight className="w-4 h-4 text-ink-400 group-open:rotate-90 transition-transform" />
+                    </summary>
+                    <p className="mt-2 text-ink-600 text-xs leading-relaxed">
+                      No. This is a self-help tool for preparing paperwork. We do not provide legal advice. If your case is complicated (denied before, criminal history, etc.) — consult an immigration attorney.
+                    </p>
+                  </details>
+                  <details className="group">
+                    <summary className="font-medium text-ink-900 cursor-pointer list-none flex items-center justify-between">
+                      What documents do I need?
+                      <ChevronRight className="w-4 h-4 text-ink-400 group-open:rotate-90 transition-transform" />
+                    </summary>
+                    <p className="mt-2 text-ink-600 text-xs leading-relaxed">
+                      Your passport (bio-data page), Form I-94 (printable from i94.cbp.dhs.gov), proof of Ukrainian nationality, and any prior USCIS approval notices if you have them.
+                    </p>
+                  </details>
+                  <details className="group">
+                    <summary className="font-medium text-ink-900 cursor-pointer list-none flex items-center justify-between">
+                      My parole expires soon — is there still time?
+                      <ChevronRight className="w-4 h-4 text-ink-400 group-open:rotate-90 transition-transform" />
+                    </summary>
+                    <p className="mt-2 text-ink-600 text-xs leading-relaxed">
+                      File as early as possible — USCIS recommends applying at least 90 days before your current parole expires. If it expires in less than 30 days, prepare the packet today.
+                    </p>
+                  </details>
+                  <details className="group">
+                    <summary className="font-medium text-ink-900 cursor-pointer list-none flex items-center justify-between">
+                      Can I file online?
+                      <ChevronRight className="w-4 h-4 text-ink-400 group-open:rotate-90 transition-transform" />
+                    </summary>
+                    <p className="mt-2 text-ink-600 text-xs leading-relaxed">
+                      Yes. Re-Parole I-131 can be filed online at my.uscis.gov (Box 10.C) or mailed. We prepare packets for both options. Online filing is faster and you get instant receipt confirmation.
+                    </p>
+                  </details>
+                </div>
+              </div>
             </div>
           )}
         </div>
