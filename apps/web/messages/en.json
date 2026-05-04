@@ -171,7 +171,18 @@
       ],
       "officialNote": "All re-parole information comes from the official USCIS Uniting for Ukraine page.",
       "lastVerifiedLabel": "Last verified: {date}",
-      "statusWarning": "Program update: The U4U re-parole program was paused in January 2025 and resumed June 9, 2025 by federal court order. USCIS is reviewing requests on a case-by-case basis. The streamlined re-parole process is no longer available. Verify current USCIS guidance before filing.",
+      "statusWarning": "Important: The U4U sponsor process (Form I-134A) was paused in January 2025 by Executive Order. Re-Parole for Ukrainians already in the U.S. (Form I-131) is a separate process that continues to be reviewed case-by-case. Verify current USCIS guidance before filing.",
+      "service.status.note": "U4U sponsor process (Form I-134A) was paused in January 2025 by Executive Order. Re-Parole for Ukrainians already in the U.S. (Form I-131) is a separate process that continues to be reviewed case-by-case.",
+      "service.status.source": "Source: USCIS Re-Parole Guide (last reviewed 10/11/2024) · USCIS Form I-131 page (last reviewed 03/30/2026)",
+      "filing.paper.title": "Filing by Mail",
+      "filing.paper.step1": "In Part 2 of Form I-131, select Item 1.e",
+      "filing.paper.step2": "Handwrite \"Ukraine RE-PAROLE\" at the top of the first page",
+      "filing.paper.feeWaiver": "Fee Waiver (Form I-912) is available when filing by mail",
+      "filing.online.title": "Filing Online (my.uscis.gov)",
+      "filing.online.step1": "Select: \"I am outside the United States, applying for Advance Parole Document\"",
+      "filing.online.step2": "Answer Yes when asked: \"Are you applying for re-parole?\"",
+      "filing.online.noFeeWaiver": "Fee Waiver (Form I-912) is not available when filing online. File by mail if you need a fee waiver.",
+      "filing.source": "Source: USCIS Form I-131 (last reviewed 03/30/2026) · USCIS U4U Re-Parole Guide (last reviewed 10/11/2024)",
       "feeNotice": "USCIS charges a filing fee. Additionally, some applicants are assessed a parole grant fee upon conditional approval. Fees are subject to change. Use the USCIS Fee Calculator (uscis.gov/feecalculator) and G-1055 (uscis.gov/g-1055) for current amounts. Do not rely on third-party fee estimates.",
       "processingWarning": "USCIS processing times vary significantly. Check current estimates at uscis.gov/processing-times. Plan for substantial waiting periods.",
       "medicalNote": "Medical documentation required: proof of vaccinations and TB/IGRA test where applicable. Follow current USCIS instructions for medical requirements.",
@@ -182,7 +193,7 @@
       "verified": {
         "facts": {
           "title": "Verified facts",
-          "form": "Form I-131 (edition 02/27/26)",
+          "form": "Form I-131 (edition 01/20/25)",
           "item": "Part 2, Item 1.e — Select \"I am outside the United States, applying for Advance Parole Document\" (select this even if you are inside the US). Write \"Ukraine RE-PAROLE\" at the top of the form.",
           "topNote": "Paper filing only: handwrite \"Ukraine RE-PAROLE\" at the top of the paper Form I-131. For online filing, follow the re-parole prompts at my.uscis.gov.",
           "window": "Filing window: no earlier than 180 days (6 months) before current parole expires"
