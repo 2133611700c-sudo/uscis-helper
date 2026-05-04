@@ -21,7 +21,7 @@ const USCIS_LINKS = [
   },
   {
     label: 'USCIS · Re-Parole Information',
-    href: 'https://www.uscis.gov/humanitarian/re-parole',
+    href: 'https://www.uscis.gov/humanitarian/uniting-for-ukraine/re-parole-process-for-ukrainians',
   },
 ] as const
 

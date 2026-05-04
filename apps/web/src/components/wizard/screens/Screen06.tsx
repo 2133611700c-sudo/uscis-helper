@@ -4,15 +4,18 @@ import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import { MemberTabs } from '@/components/wizard/MemberTabs'
 
-type FieldDef = { key: string; label: string; required?: boolean; type?: string }
+// PII POLICY: We do NOT collect or store names, dates of birth, passport numbers,
+// I-94 numbers, or other identifying information. Users enter these directly on
+// the official USCIS form. This checklist only tracks which items are ready.
 
-const FIELDS: FieldDef[] = [
-  { key: 'lastName', label: 'Last name', required: true },
-  { key: 'firstName', label: 'First name', required: true },
-  { key: 'middleName', label: 'Middle name' },
-  { key: 'dob', label: 'Date of birth', type: 'date' },
-  { key: 'countryOfBirth', label: 'Country of birth' },
-  { key: 'i94Number', label: 'I-94 number' },
+const CHECKLIST_ITEMS = [
+  { key: 'hasName', label: 'Full legal name (as on passport)' },
+  { key: 'hasDob', label: 'Date of birth' },
+  { key: 'hasI94', label: 'I-94 number (find at i94.cbp.dhs.gov)' },
+  { key: 'hasCountry', label: 'Country of birth' },
+  { key: 'hasPassport', label: 'Passport number and expiration date' },
+  { key: 'hasAddress', label: 'Current U.S. mailing address' },
+  { key: 'hasParoleDate', label: 'Current parole expiration date (on I-94)' },
 ]
 
 export function Screen06() {
@@ -22,10 +25,10 @@ export function Screen06() {
 
   const activeMember = members[activeIndex]
 
-  function handleChange(key: string, value: string) {
+  function handleCheck(key: string, checked: boolean) {
     if (!activeMember) return
     setMember(activeMember.id, {
-      fields: { ...activeMember.fields, [key]: value },
+      fields: { ...activeMember.fields, [key]: checked ? 'yes' : '' },
     })
   }
 
@@ -34,51 +37,66 @@ export function Screen06() {
   return (
     <div className="max-w-lg mx-auto space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Confirm your information</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Have this information ready</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Review and edit the details for each applicant.
+          You will enter these details directly on Form I-131. Check each item you have available.
+        </p>
+      </div>
+
+      {/* Security notice */}
+      <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
+        <p className="text-xs text-blue-800 leading-relaxed">
+          <strong>Privacy:</strong> We do not collect or store your personal identifiers
+          (name, date of birth, I-94 number, passport number). Enter them directly on the
+          official form. Do not include sensitive numbers in the explanation field.
         </p>
       </div>
 
       <MemberTabs activeIndex={activeIndex} onChange={setActiveIndex} />
 
-      <form
+      <div
         id={`member-panel-${activeIndex}`}
         role="tabpanel"
-        aria-label={`Fields for ${activeMember.alias}`}
-        className="space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault()
-          setStep(7)
-        }}
+        aria-label={`Checklist for ${activeMember.alias}`}
+        className="space-y-2"
       >
-        {FIELDS.map((field) => (
-          <div key={field.key} className="flex flex-col gap-1">
-            <label
-              htmlFor={`field-${field.key}`}
-              className="text-xs font-semibold text-slate-600 uppercase tracking-wide"
-            >
-              {field.label}
-              {field.required && <span className="text-red-500 ml-0.5">*</span>}
-            </label>
+        {CHECKLIST_ITEMS.map((item) => (
+          <label
+            key={item.key}
+            className={[
+              'flex items-center gap-3 cursor-pointer rounded-xl border-2 p-3 transition-colors',
+              activeMember.fields[item.key] === 'yes'
+                ? 'border-green-300 bg-green-50'
+                : 'border-slate-200 bg-white hover:border-slate-300',
+            ].join(' ')}
+          >
             <input
-              id={`field-${field.key}`}
-              type={field.type ?? 'text'}
-              value={activeMember.fields[field.key] ?? ''}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              required={field.required}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="checkbox"
+              checked={activeMember.fields[item.key] === 'yes'}
+              onChange={(e) => handleCheck(item.key, e.target.checked)}
+              className="h-4 w-4 shrink-0 rounded border-slate-300 text-green-600 focus:ring-green-500"
             />
-          </div>
+            <span className="text-sm text-slate-700">{item.label}</span>
+          </label>
         ))}
+      </div>
 
-        <button
-          type="submit"
-          className="mt-2 w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
-        >
-          Save &amp; Continue
-        </button>
-      </form>
+      <a
+        href="https://i94.cbp.dhs.gov/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
+      >
+        Look up your I-94 record at i94.cbp.dhs.gov →
+      </a>
+
+      <button
+        type="button"
+        onClick={() => setStep(7)}
+        className="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
+      >
+        Continue →
+      </button>
     </div>
   )
 }
