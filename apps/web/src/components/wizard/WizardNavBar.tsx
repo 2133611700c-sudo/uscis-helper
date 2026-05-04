@@ -36,7 +36,7 @@ export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarP
 
   return (
     <div
-      className="flex items-center gap-2 px-4 py-3 fixed bottom-0 left-0 right-0 z-40 lg:static lg:z-auto lg:mt-6"
+      className="flex items-center gap-2 px-4 py-3 fixed bottom-0 left-0 right-0 z-[60] lg:static lg:z-auto lg:mt-6"
       style={{
         background: 'var(--surface)',
         borderTop: '1px solid var(--border)',

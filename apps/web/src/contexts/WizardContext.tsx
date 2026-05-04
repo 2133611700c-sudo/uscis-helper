@@ -139,15 +139,16 @@ function buildMembers(size: number, existing: FamilyMember[]): FamilyMember[] {
 // Initial state
 // ---------------------------------------------------------------------------
 
-function getLocaleFromUrl(): WizardState['locale'] {
-  if (typeof window === 'undefined') return 'en'
+function getLocaleFromUrl(): WizardState['locale'] | null {
+  if (typeof window === 'undefined') return null
   try {
     const segments = window.location.pathname.split('/').filter(Boolean)
     const first = segments[0] as WizardState['locale']
     const VALID: WizardState['locale'][] = ['uk', 'ru', 'en', 'es']
-    return VALID.includes(first) ? first : 'en'
+    // Return null when no valid locale segment found — lets caller fall back to persisted
+    return VALID.includes(first) ? first : null
   } catch {
-    return 'en'
+    return null
   }
 }
 
@@ -159,8 +160,8 @@ function buildInitialState(): WizardState {
   const sessionId = urlSessionId ?? persisted?.sessionId ?? null
   const anonUserId = persisted?.anonUserId ?? uuidV4()
   const step = persisted?.step ?? 0
-  // URL locale wins over persisted — user navigating to /uk should get Ukrainian
-  const locale = urlLocale !== 'en' ? urlLocale : (persisted?.locale ?? 'en')
+  // URL locale ALWAYS wins over persisted — /en/ must show English even if localStorage has 'ru'
+  const locale = urlLocale ?? persisted?.locale ?? 'en'
   const theme = persisted?.theme ?? 'light'
   const packageSize = 1
 

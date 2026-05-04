@@ -178,7 +178,7 @@ export function MiaSheet() {
       {/* Backdrop */}
       <div
         aria-hidden="true"
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-[65] bg-black/40 backdrop-blur-sm"
         onClick={() => setMiaOpen(false)}
       />
 
@@ -189,7 +189,7 @@ export function MiaSheet() {
         aria-label="Mia assistant"
         className={[
           // Mobile: full-height sheet from bottom
-          'fixed inset-x-0 bottom-0 z-50',
+          'fixed inset-x-0 bottom-0 z-[70]',
           'flex flex-col',
           'bg-white rounded-t-2xl shadow-2xl',
           'h-[92dvh]',
