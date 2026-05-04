@@ -1034,12 +1034,6 @@
       "es": "ES"
     }
   },
-  "msL.title": "Ms. L. Settlement Class Member?",
-  "msL.desc": "If you are a Ms. L. Settlement Class member or qualifying additional family member (QAFM), you may be exempt from HR-1 fees as of February 5, 2026.",
-  "msL.online": "When filing online: select Box 10.G (not Box 10.C)",
-  "msL.paper": "When filing by mail: handwrite \"Ms. L Settlement Class Member\" or \"Ms. L. Settlement QAFM\" at top of first page",
-  "msL.verify": "Verify your eligibility at together.gov or juntos.gov",
-  "msL.source": "Source: USCIS G-1055 fee schedule (last reviewed 04/23/2026)",
   "fees.baseFee.note": "Use the USCIS Fee Calculator for current amounts. Fees may vary based on age, filing method, and parole category.",
   "fees.paroleGrant.note": "HR-1 Parole Grant Fee: USCIS charges this fee after conditional approval — not at the time of filing. You will receive a separate payment notice with a deadline.",
   "fees.paroleGrant.approx": "See current amount at uscis.gov/g-1055 (subject to annual adjustment).",

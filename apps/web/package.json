@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "guard:reparole": "node scripts/guard-reparole-regulatory-truth.mjs"
   },
   "dependencies": {
     "@stripe/stripe-js": "^9.4.0",
