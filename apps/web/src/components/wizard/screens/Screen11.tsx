@@ -3,46 +3,190 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 
-const CHECKLIST_MAIL = [
-  'Print all pages of I-131 (sign in ink — do not use digital signature)',
-  'Write "Ukraine RE-PAROLE" at the top of the form in pen',
-  'Attach 2 passport-style photos per applicant (2"×2")',
-  'Include copy of previous parole document (I-94 or approval notice)',
-  'Include copy of current I-94 (download at i94.cbp.dhs.gov)',
-  'Check current mailing address at uscis.gov/i-131-addresses',
-  'USCIS filing fee — check current amount at uscis.gov/feecalculator',
-]
-
-const CHECKLIST_ONLINE = [
-  'Create or log in to your myUSCIS account at my.uscis.gov',
-  'Write "Ukraine RE-PAROLE" in the additional information field',
-  'Upload scanned copies of all supporting documents',
-  'Include copy of current I-94 (download at i94.cbp.dhs.gov)',
-  'USCIS filing fee — check current amount at uscis.gov/feecalculator before paying',
-  'Pay USCIS fee online through the myUSCIS portal',
-]
-
-const CHECKLIST_UNSURE = [
-  'Review both filing options at uscis.gov/i-131',
-  'Write "Ukraine RE-PAROLE" at top of form (or in additional info field)',
-  'Gather: I-94, previous parole approval, proof of Ukrainian citizenship',
-  'Check USCIS filing fee at uscis.gov/feecalculator',
-  'For mail: check address at uscis.gov/i-131-addresses',
-  'For online: create a myUSCIS account at my.uscis.gov',
-]
+const T = {
+  uk: {
+    title: 'Пакет готовий',
+    subtitle: 'Завантажте зараз або отримайте посилання на e-mail.',
+    downloadBtn: '📦 Завантажити пакет документів',
+    downloadingBtn: 'Готуємо ваш пакет…',
+    whatToDo: '💡 Що робити з пакетом',
+    whatToDoText: 'Відкрийте файли з пакету та перенесіть дані до форми USCIS. Використовуйте режим «Передача даних до USCIS» — він показує кожне поле по одному.',
+    emailBtn: '📧 Надіслати на e-mail →',
+    checklistTitle: (method: string | null) =>
+      `📌 Перед подачею${method === 'online' ? ' (онлайн)' : method === 'mail' ? ' (поштою)' : ''}:`,
+    feesTitle: '📌 Внески USCIS (для вашої довідки)',
+    feesNote: 'Ця інформація тільки для довідки. Внески сплачуються безпосередньо до USCIS — не нам.',
+    fee1: '· Внесок за подачу I-131 — перевіряйте на uscis.gov/feecalculator',
+    fee2: '· Внесок за схвалення паролю (якщо схвалено) — перевіряйте на uscis.gov/feecalculator',
+    feeLink: 'Перевірити поточні внески на калькуляторі USCIS ↗',
+    openUscis: 'Відкрити my.uscis.gov ↗',
+    checklistMail: [
+      'Роздрукуйте всі сторінки I-131 (підпишіть вручну — не цифровий підпис)',
+      'Напишіть «Ukraine RE-PAROLE» вгорі форми від руки',
+      'Прикладіть 2 паспортних фото на кожного заявника (5×5 см)',
+      'Включіть копію попереднього документа про пароль (I-94 або повідомлення про схвалення)',
+      'Включіть копію поточного I-94 (завантажте на i94.cbp.dhs.gov)',
+      'Перевірте поточну поштову адресу на uscis.gov/i-131-addresses',
+      'Внесок USCIS — перевіряйте поточну суму на uscis.gov/feecalculator',
+    ],
+    checklistOnline: [
+      'Створіть або увійдіть до вашого акаунту myUSCIS на my.uscis.gov',
+      'Напишіть «Ukraine RE-PAROLE» у полі додаткової інформації',
+      'Завантажте скановані копії всіх підтверджуючих документів',
+      'Включіть копію поточного I-94 (завантажте на i94.cbp.dhs.gov)',
+      'Внесок USCIS — перевіряйте поточну суму на uscis.gov/feecalculator перед оплатою',
+      'Оплатіть внесок онлайн через портал myUSCIS',
+    ],
+    checklistUnsure: [
+      'Перегляньте обидва способи подачі на uscis.gov/i-131',
+      'Напишіть «Ukraine RE-PAROLE» вгорі форми (або у полі додаткової інформації)',
+      'Підготуйте: I-94, попереднє схвалення паролю, підтвердження громадянства України',
+      'Перевірте внесок USCIS на uscis.gov/feecalculator',
+      'Для пошти: перевірте адресу на uscis.gov/i-131-addresses',
+      'Для онлайн: створіть акаунт myUSCIS на my.uscis.gov',
+    ],
+  },
+  ru: {
+    title: 'Пакет готов',
+    subtitle: 'Скачайте сейчас или получите ссылку на e-mail.',
+    downloadBtn: '📦 Скачать пакет документов',
+    downloadingBtn: 'Готовим ваш пакет…',
+    whatToDo: '💡 Что делать с пакетом',
+    whatToDoText: 'Откройте файлы из пакета и перенесите данные в форму USCIS. Используйте режим «Передача данных в USCIS» — он показывает каждое поле по одному.',
+    emailBtn: '📧 Отправить на e-mail →',
+    checklistTitle: (method: string | null) =>
+      `📌 Перед подачей${method === 'online' ? ' (онлайн)' : method === 'mail' ? ' (почтой)' : ''}:`,
+    feesTitle: '📌 Взносы USCIS (для вашей справки)',
+    feesNote: 'Эта информация только для справки. Взносы оплачиваются непосредственно в USCIS — не нам.',
+    fee1: '· Взнос за подачу I-131 — проверяйте на uscis.gov/feecalculator',
+    fee2: '· Взнос за одобрение пароля (если одобрено) — проверяйте на uscis.gov/feecalculator',
+    feeLink: 'Проверить текущие взносы на калькуляторе USCIS ↗',
+    openUscis: 'Открыть my.uscis.gov ↗',
+    checklistMail: [
+      'Распечатайте все страницы I-131 (подпишите вручную — не цифровая подпись)',
+      'Напишите «Ukraine RE-PAROLE» вверху формы от руки',
+      'Приложите 2 паспортных фото на каждого заявителя (5×5 см)',
+      'Включите копию предыдущего документа о пароле (I-94 или уведомление об одобрении)',
+      'Включите копию текущего I-94 (скачайте на i94.cbp.dhs.gov)',
+      'Проверьте текущий почтовый адрес на uscis.gov/i-131-addresses',
+      'Взнос USCIS — проверяйте текущую сумму на uscis.gov/feecalculator',
+    ],
+    checklistOnline: [
+      'Создайте или войдите в ваш аккаунт myUSCIS на my.uscis.gov',
+      'Напишите «Ukraine RE-PAROLE» в поле дополнительной информации',
+      'Загрузите сканированные копии всех подтверждающих документов',
+      'Включите копию текущего I-94 (скачайте на i94.cbp.dhs.gov)',
+      'Взнос USCIS — проверяйте текущую сумму на uscis.gov/feecalculator перед оплатой',
+      'Оплатите взнос онлайн через портал myUSCIS',
+    ],
+    checklistUnsure: [
+      'Просмотрите оба способа подачи на uscis.gov/i-131',
+      'Напишите «Ukraine RE-PAROLE» вверху формы (или в поле дополнительной информации)',
+      'Подготовьте: I-94, предыдущее одобрение пароля, подтверждение гражданства Украины',
+      'Проверьте взнос USCIS на uscis.gov/feecalculator',
+      'Для почты: проверьте адрес на uscis.gov/i-131-addresses',
+      'Для онлайн: создайте аккаунт myUSCIS на my.uscis.gov',
+    ],
+  },
+  en: {
+    title: 'Packet ready',
+    subtitle: 'Download now or get a link to your email.',
+    downloadBtn: '📦 Download packet to phone',
+    downloadingBtn: 'Preparing your packet…',
+    whatToDo: '💡 What to do with your packet',
+    whatToDoText: 'Open the files from the packet and copy the data into the USCIS form. Use the "Data Transfer to USCIS" mode — it shows each field one by one.',
+    emailBtn: '📧 Also send to email →',
+    checklistTitle: (method: string | null) =>
+      `📌 Before you file${method === 'online' ? ' (online)' : method === 'mail' ? ' (by mail)' : ''}:`,
+    feesTitle: '📌 USCIS fees (for your reference)',
+    feesNote: 'This information is for your reference only. Fees are paid directly to USCIS — not to us.',
+    fee1: '· I-131 filing fee — verify at uscis.gov/feecalculator',
+    fee2: '· Parole grant fee (if approved) — verify at uscis.gov/feecalculator',
+    feeLink: 'Check current fees on USCIS Fee Calculator ↗',
+    openUscis: 'Open my.uscis.gov ↗',
+    checklistMail: [
+      'Print all pages of I-131 (sign in ink — do not use digital signature)',
+      'Write "Ukraine RE-PAROLE" at the top of the form in pen',
+      'Attach 2 passport-style photos per applicant (2"×2")',
+      'Include copy of previous parole document (I-94 or approval notice)',
+      'Include copy of current I-94 (download at i94.cbp.dhs.gov)',
+      'Check current mailing address at uscis.gov/i-131-addresses',
+      'USCIS filing fee — check current amount at uscis.gov/feecalculator',
+    ],
+    checklistOnline: [
+      'Create or log in to your myUSCIS account at my.uscis.gov',
+      'Write "Ukraine RE-PAROLE" in the additional information field',
+      'Upload scanned copies of all supporting documents',
+      'Include copy of current I-94 (download at i94.cbp.dhs.gov)',
+      'USCIS filing fee — check current amount at uscis.gov/feecalculator before paying',
+      'Pay USCIS fee online through the myUSCIS portal',
+    ],
+    checklistUnsure: [
+      'Review both filing options at uscis.gov/i-131',
+      'Write "Ukraine RE-PAROLE" at top of form (or in additional info field)',
+      'Gather: I-94, previous parole approval, proof of Ukrainian citizenship',
+      'Check USCIS filing fee at uscis.gov/feecalculator',
+      'For mail: check address at uscis.gov/i-131-addresses',
+      'For online: create a myUSCIS account at my.uscis.gov',
+    ],
+  },
+  es: {
+    title: 'Paquete listo',
+    subtitle: 'Descargue ahora u obtenga un enlace en su correo.',
+    downloadBtn: '📦 Descargar paquete de documentos',
+    downloadingBtn: 'Preparando su paquete…',
+    whatToDo: '💡 Qué hacer con su paquete',
+    whatToDoText: 'Abra los archivos del paquete y copie los datos en el formulario de USCIS. Use el modo "Transferencia de datos a USCIS" — muestra cada campo uno por uno.',
+    emailBtn: '📧 También enviar al correo →',
+    checklistTitle: (method: string | null) =>
+      `📌 Antes de presentar${method === 'online' ? ' (en línea)' : method === 'mail' ? ' (por correo)' : ''}:`,
+    feesTitle: '📌 Tarifas de USCIS (para su referencia)',
+    feesNote: 'Esta información es solo de referencia. Las tarifas se pagan directamente a USCIS — no a nosotros.',
+    fee1: '· Tarifa de presentación I-131 — verifique en uscis.gov/feecalculator',
+    fee2: '· Tarifa de aprobación de parole (si se aprueba) — verifique en uscis.gov/feecalculator',
+    feeLink: 'Verificar tarifas actuales en la Calculadora de USCIS ↗',
+    openUscis: 'Abrir my.uscis.gov ↗',
+    checklistMail: [
+      'Imprima todas las páginas del I-131 (firme con tinta — no firma digital)',
+      'Escriba "Ukraine RE-PAROLE" en la parte superior del formulario con bolígrafo',
+      'Adjunte 2 fotos tipo pasaporte por solicitante (5×5 cm)',
+      'Incluya copia del documento de parole anterior (I-94 o aviso de aprobación)',
+      'Incluya copia del I-94 actual (descargue en i94.cbp.dhs.gov)',
+      'Verifique la dirección postal actual en uscis.gov/i-131-addresses',
+      'Tarifa de USCIS — verifique el monto actual en uscis.gov/feecalculator',
+    ],
+    checklistOnline: [
+      'Cree o inicie sesión en su cuenta myUSCIS en my.uscis.gov',
+      'Escriba "Ukraine RE-PAROLE" en el campo de información adicional',
+      'Suba copias escaneadas de todos los documentos de apoyo',
+      'Incluya copia del I-94 actual (descargue en i94.cbp.dhs.gov)',
+      'Tarifa de USCIS — verifique el monto actual en uscis.gov/feecalculator antes de pagar',
+      'Pague la tarifa de USCIS en línea a través del portal myUSCIS',
+    ],
+    checklistUnsure: [
+      'Revise ambas opciones de presentación en uscis.gov/i-131',
+      'Escriba "Ukraine RE-PAROLE" en la parte superior del formulario (o en el campo de información adicional)',
+      'Reúna: I-94, aprobación de parole anterior, prueba de ciudadanía ucraniana',
+      'Verifique la tarifa de USCIS en uscis.gov/feecalculator',
+      'Para correo: verifique la dirección en uscis.gov/i-131-addresses',
+      'Para en línea: cree una cuenta myUSCIS en my.uscis.gov',
+    ],
+  },
+} as const
 
 export function Screen11() {
   const { state, setDownloadUrl, setStep } = useWizard()
   const { sessionId, filingMethod, downloadUrl } = state
+  const t = T[state.locale] ?? T.en
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const checklist =
     filingMethod === 'online'
-      ? CHECKLIST_ONLINE
+      ? t.checklistOnline
       : filingMethod === 'mail'
-        ? CHECKLIST_MAIL
-        : CHECKLIST_UNSURE
+        ? t.checklistMail
+        : t.checklistUnsure
 
   async function handleDownload() {
     setError('')
@@ -89,10 +233,10 @@ export function Screen11() {
           ✓
         </div>
         <h1 className="text-[22px] font-bold mb-1" style={{ color: 'var(--text-1)' }}>
-          Packet ready
+          {t.title}
         </h1>
         <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
-          Download now or get a link to your email.
+          {t.subtitle}
         </p>
       </div>
 
@@ -121,7 +265,7 @@ export function Screen11() {
           cursor: loading ? 'not-allowed' : 'pointer',
         }}
       >
-        {loading ? 'Preparing your packet…' : '📦 Download packet to phone'}
+        {loading ? t.downloadingBtn : t.downloadBtn}
       </button>
 
       {/* What to do next */}
@@ -130,11 +274,10 @@ export function Screen11() {
         style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)' }}
       >
         <p className="text-[13px] font-semibold mb-2" style={{ color: 'var(--info-text)' }}>
-          💡 What to do with your packet
+          {t.whatToDo}
         </p>
         <p className="text-[13px] leading-relaxed" style={{ color: 'var(--info-text)' }}>
-          Open the files from the packet and copy the data into the USCIS form. Use the
-          "Data Transfer to USCIS" mode — it shows each field one by one.
+          {t.whatToDoText}
         </p>
       </div>
 
@@ -144,7 +287,7 @@ export function Screen11() {
           className="text-[11px] font-semibold uppercase tracking-wide mb-2"
           style={{ color: 'var(--text-3)', letterSpacing: '0.6px' }}
         >
-          📌 Before you file{filingMethod === 'online' ? ' (online)' : filingMethod === 'mail' ? ' (by mail)' : ''}:
+          {t.checklistTitle(filingMethod)}
         </p>
         <div
           className="rounded-[12px] overflow-hidden"
@@ -172,14 +315,14 @@ export function Screen11() {
         style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
       >
         <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
-          📌 USCIS fees (for your reference)
+          {t.feesTitle}
         </p>
         <p className="text-[12px]" style={{ color: 'var(--text-2)' }}>
-          This information is for your reference only. Fees are paid directly to USCIS — not to us.
+          {t.feesNote}
         </p>
         <div className="mt-2 text-[12px] space-y-1" style={{ color: 'var(--text-2)' }}>
-          <p>· I-131 filing fee — verify at uscis.gov/feecalculator</p>
-          <p>· Parole grant fee (if approved) — verify at uscis.gov/feecalculator</p>
+          <p>{t.fee1}</p>
+          <p>{t.fee2}</p>
         </div>
         <a
           href="https://www.uscis.gov/feecalculator"
@@ -188,7 +331,7 @@ export function Screen11() {
           className="inline-block mt-2 text-[12px] font-semibold"
           style={{ color: 'var(--primary)' }}
         >
-          Check current fees on USCIS Fee Calculator ↗
+          {t.feeLink}
         </a>
       </div>
 
@@ -208,7 +351,7 @@ export function Screen11() {
           justifyContent: 'center',
         }}
       >
-        Open my.uscis.gov ↗
+        {t.openUscis}
       </a>
 
       <button
@@ -223,7 +366,7 @@ export function Screen11() {
           minHeight: '44px',
         }}
       >
-        📧 Also send to email →
+        {t.emailBtn}
       </button>
     </div>
   )
