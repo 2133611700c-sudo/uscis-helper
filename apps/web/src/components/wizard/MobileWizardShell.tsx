@@ -15,7 +15,7 @@ interface MobileWizardShellProps {
  */
 export function MobileWizardShell({ children, slug }: MobileWizardShellProps) {
   return (
-    <div data-testid="mobile-wizard-shell" data-slug={slug} className="min-h-screen bg-white">
+    <div data-testid="mobile-wizard-shell" data-slug={slug} className="min-h-screen bg-white dark:bg-slate-900 transition-colors duration-200">
       <WizardHeader />
       <main className="px-4 py-5">{children}</main>
     </div>
