@@ -14,13 +14,13 @@ const OPTIONS: FilingOption[] = [
   {
     value: 'online',
     title: 'Online via myUSCIS',
-    description: 'File electronically at my.uscis.gov. Requires a myUSCIS account. Fee: ~$580.',
+    description: 'File electronically at my.uscis.gov. Requires a myUSCIS account. Verify current fee at uscis.gov/feecalculator.',
     icon: '🌐',
   },
   {
     value: 'mail',
     title: 'Mail to USCIS lockbox',
-    description: 'Print and mail I-131 with photos and supporting documents. Fee: ~$630. Check uscis.gov/i-131-addresses for current address.',
+    description: 'Print and mail I-131 with photos and supporting documents. Verify current fee at uscis.gov/feecalculator. Check uscis.gov/i-131-addresses for current mailing address.',
     icon: '📬',
   },
   {
@@ -86,7 +86,7 @@ export function Screen08() {
         style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)' }}
       >
         <p className="text-[12px] font-semibold" style={{ color: 'var(--info-text)' }}>
-          Form I-131 (edition 02/27/26) — key items:
+          Form I-131 (edition 01/20/25) — key items:
         </p>
         <div className="text-[12px] space-y-1" style={{ color: 'var(--info-text)' }}>
           <p>· <strong>Part 2, Item 1.e</strong> — Select "Re-Parole" as the basis for your application.</p>

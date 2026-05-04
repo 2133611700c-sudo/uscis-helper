@@ -98,7 +98,7 @@ export function Screen09() {
           {packageSize} applicant{packageSize !== 1 ? 's' : ''} · ${packagePrice} service fee · {filingLabel}
         </p>
         <p className="text-[12px] mt-1" style={{ color: 'var(--info-text)' }}>
-          USCIS filing fees (~$580 online / ~$630 paper) are paid separately to USCIS.
+          USCIS filing fees are paid separately and directly to USCIS. Verify current amounts at uscis.gov/feecalculator.
         </p>
       </div>
 
