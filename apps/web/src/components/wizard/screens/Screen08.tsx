@@ -35,6 +35,10 @@ const T = {
     mailingWarning: 'Поштові адреси можуть змінюватись. Завжди перевіряйте на',
     mailingLink: 'uscis.gov/i-131-addresses ↗',
     mailingEnd: 'перед відправкою.',
+    i912Title: '💡 Немає доходу або низький дохід?',
+    i912Text: 'Ви можете запросити звільнення від сплати внеску (fee waiver) через Form I-912. Ми включимо бланк та інструкції у ваш пакет.',
+    continueBtn: 'Продовжити →',
+    errorMsg: 'Будь ласка, виберіть спосіб подачі.',
   },
   ru: {
     title: 'Как будете подавать?',
@@ -67,6 +71,10 @@ const T = {
     mailingWarning: 'Почтовые адреса могут меняться. Всегда проверяйте на',
     mailingLink: 'uscis.gov/i-131-addresses ↗',
     mailingEnd: 'перед отправкой.',
+    i912Title: '💡 Нет дохода или низкий доход?',
+    i912Text: 'Вы можете запросить освобождение от уплаты взноса (fee waiver) через Form I-912. Мы включим бланк и инструкции в ваш пакет.',
+    continueBtn: 'Продолжить →',
+    errorMsg: 'Пожалуйста, выберите способ подачи.',
   },
   en: {
     title: 'How will you file?',
@@ -99,6 +107,10 @@ const T = {
     mailingWarning: 'Mailing addresses can change. Always verify at',
     mailingLink: 'uscis.gov/i-131-addresses ↗',
     mailingEnd: 'before sending.',
+    i912Title: '💡 Low or no income?',
+    i912Text: 'You may qualify for a fee waiver using Form I-912. We will include the form and instructions in your packet.',
+    continueBtn: 'Continue →',
+    errorMsg: 'Please select a filing method.',
   },
   es: {
     title: '¿Cómo presentará la solicitud?',
@@ -131,6 +143,10 @@ const T = {
     mailingWarning: 'Las direcciones postales pueden cambiar. Siempre verifique en',
     mailingLink: 'uscis.gov/i-131-addresses ↗',
     mailingEnd: 'antes de enviar.',
+    i912Title: '💡 ¿Ingresos bajos o nulos?',
+    i912Text: 'Puede calificar para una exención de tarifa usando el Formulario I-912. Incluiremos el formulario e instrucciones en su paquete.',
+    continueBtn: 'Continuar →',
+    errorMsg: 'Por favor seleccione un método de presentación.',
   },
 } as const
 
@@ -141,6 +157,11 @@ export function Screen08() {
 
   function handleSelect(value: WizardState['filingMethod']) {
     setFilingMethod(value)
+    // No auto-advance — user must read the callout and press Continue
+  }
+
+  function handleContinue() {
+    if (!filingMethod) return
     setStep(9)
   }
 
@@ -217,6 +238,39 @@ export function Screen08() {
           {' '}{t.mailingEnd}
         </p>
       </div>
+
+      {/* I-912 fee waiver callout — shown only when mail is selected */}
+      {filingMethod === 'mail' && (
+        <div
+          className="rounded-[12px] p-3.5"
+          style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)' }}
+        >
+          <p className="text-[13px] font-semibold mb-1" style={{ color: 'var(--success-text)' }}>
+            {t.i912Title}
+          </p>
+          <p className="text-[12px]" style={{ color: 'var(--success-text)' }}>
+            {t.i912Text}
+          </p>
+        </div>
+      )}
+
+      {/* Explicit continue button — only active when a choice is made */}
+      <button
+        type="button"
+        onClick={handleContinue}
+        disabled={!filingMethod}
+        className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
+        style={{
+          background: filingMethod ? 'var(--btn-action)' : 'var(--surface-2)',
+          color: filingMethod ? 'var(--btn-action-text)' : 'var(--text-3)',
+          border: 'none',
+          padding: '14px',
+          minHeight: '52px',
+          cursor: filingMethod ? 'pointer' : 'not-allowed',
+        }}
+      >
+        {t.continueBtn}
+      </button>
     </div>
   )
 }
