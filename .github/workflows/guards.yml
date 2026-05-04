@@ -87,33 +87,34 @@ jobs:
       - name: Guard — stale I-131 edition or wrong item for Ukraine re-parole
         run: |
           set +e
-          # VERIFIED FACTS (USCIS Forms Updates page, 2026-05-03):
-          # - I-131 current accepted edition: 02/27/26  ← CORRECT, allowed in source
-          # - Edition 01/20/25 is NO LONGER accepted since April 1, 2026
-          # - Item 10.G = Family Reunification Task Force, NOT Ukrainian re-parole
-          # - Ukrainian re-parole correct item = 10.C (verified from I-131 PDF)
+          # VERIFIED FACTS (live uscis.gov/i-131, verified 2026-05-04, USCIS page last reviewed 03/30/2026):
+          # - I-131 current accepted edition: 01/20/25  ← CORRECT, required in source
+          # - "02/27/26" was the Feb 27 2024 U4U program announcement date — NOT a form edition
+          # - Paper filing Ukrainian re-parole: Part 2, Item 1.e (select even if inside US)
+          # - Online filing Ukrainian re-parole (my.uscis.gov): Box 10.C
+          # - Item 10.G = Ms. L. Settlement Class Members / FRTF — NOT standard Ukrainian re-parole
           #
-          # Block 01/20/25 appearing as the I-131 form edition in user-visible strings.
-          # Scope: only I-131 context. I-821/I-765/etc may have different editions.
-          # Allow historical references (edition_replaces, "no longer accepted", "old", "stopped", comments).
-          HITS_OLD=$(grep -REn "I-131.*01/20/25|01/20/25.*I-131" apps/web/src apps/web/messages 2>/dev/null \
+          # Block 02/27/26 appearing as the I-131 form edition in user-visible strings.
+          # Allow 02/27/26 only in comments/documentation explaining it is WRONG.
+          HITS_WRONG=$(grep -REn "I-131.*02/27/26|02/27/26.*I-131|edition.*02/27/26|02/27/26.*edition" \
+            apps/web/src apps/web/messages 2>/dev/null \
             | grep -v node_modules \
-            | grep -Ev "edition_replaces|no.longer|not.accepted|replaced|superseded|legacy|old|stopped|#|//")
-          # Block 10.G being incorrectly associated with Ukraine re-parole
-          HITS_ITEM=$(grep -REn "10\.G.*[Uu]kraine|10\.G.*re-parole|[Uu]kraine.*10\.G|re-parole.*10\.G" \
+            | grep -Ev "WRONG|NOT a form|program announcement|NOT the form|DO NOT|Do NOT|#|//")
+          # Block 10.G being incorrectly associated with standard Ukrainian re-parole
+          HITS_ITEM=$(grep -REn "10\.G.*[Uu]kraine.*re-parole|[Uu]kraine.*re-parole.*10\.G" \
             apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
           FAIL=0
-          if [ -n "$HITS_OLD" ]; then
-            echo "::error::Stale I-131 edition 01/20/25 used as current. Correct edition is 02/27/26 (USCIS Forms Updates, since April 1 2026)."
-            echo "$HITS_OLD"
+          if [ -n "$HITS_WRONG" ]; then
+            echo "::error::Wrong I-131 edition 02/27/26 used as current. Correct edition is 01/20/25 (verified uscis.gov/i-131, 2026-05-04)."
+            echo "$HITS_WRONG"
             FAIL=1
           fi
           if [ -n "$HITS_ITEM" ]; then
-            echo "::error::Item 10.G incorrectly associated with Ukrainian re-parole. Correct item is 10.C."
+            echo "::error::Item 10.G incorrectly associated with standard Ukrainian re-parole. 10.G = Ms. L. Settlement only."
             echo "$HITS_ITEM"
             FAIL=1
           fi
-          [ $FAIL -eq 0 ] && echo "OK — I-131 edition and item references correct."
+          [ $FAIL -eq 0 ] && echo "OK — I-131 edition 01/20/25 correct, no wrong edition 02/27/26 in user-visible strings."
           exit $FAIL
 
       - name: Guard — forbidden master email in source
