@@ -116,21 +116,28 @@ function getSessionIdFromUrl(): string | null {
 // Default member factory
 // ---------------------------------------------------------------------------
 
-function makeMember(index: number): FamilyMember {
+const ALIAS_LABEL: Record<WizardState['locale'], string> = {
+  uk: 'Особа',
+  ru: 'Людина',
+  en: 'Person',
+  es: 'Persona',
+}
+
+function makeMember(index: number, locale: WizardState['locale'] = 'en'): FamilyMember {
   return {
     id: uuidV4(),
-    alias: `Person ${index + 1}`,
+    alias: `${ALIAS_LABEL[locale]} ${index + 1}`,
     docs: {},
     fields: {},
     manualAnswers: {},
   }
 }
 
-function buildMembers(size: number, existing: FamilyMember[]): FamilyMember[] {
+function buildMembers(size: number, existing: FamilyMember[], locale: WizardState['locale'] = 'en'): FamilyMember[] {
   if (size <= 0) return []
   const next: FamilyMember[] = []
   for (let i = 0; i < size; i++) {
-    next.push(existing[i] ?? makeMember(i))
+    next.push(existing[i] ?? makeMember(i, locale))
   }
   return next
 }
@@ -174,7 +181,7 @@ function buildInitialState(): WizardState {
     serviceSlug: 're-parole-u4u',
     packageSize,
     packagePrice: calcPrice(packageSize),
-    members: [makeMember(0)],
+    members: [makeMember(0, locale)],
     filingMethod: null,
     paymentStatus: 'unpaid',
     downloadUrl: null,
@@ -385,7 +392,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       ...s,
       packageSize: size,
       packagePrice: calcPrice(size),
-      members: buildMembers(size, s.members),
+      members: buildMembers(size, s.members, s.locale),
     }))
   }, [])
 
