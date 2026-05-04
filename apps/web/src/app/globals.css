@@ -25,80 +25,147 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* Brand tokens */
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-900: #312e81;
-  --color-ink-900: #0f172a;
-  --color-ink-700: #334155;
-  --color-ink-600: #475569;
-  --color-ink-500: #64748b;
-  --radius-card: 1rem;
+  /* Brand tokens — zinc palette matching prototype */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-text: var(--success-text);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-text: var(--warning-text);
+  --color-info-bg: var(--info-bg);
+  --color-info-text: var(--info-text);
+  --color-info-border: var(--info-border);
+
+  --radius-card: 0.75rem;
   --radius-btn: 0.625rem;
   --radius-badge: 9999px;
-  /* H&F-matched shadow system */
-  --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-card-hover: 0 12px 40px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
-  --shadow-header: 0 1px 0 rgb(0 0 0 / 0.06);
+}
+
+/* ── Light mode tokens ── */
+:root {
+  --background: #f4f4f5;
+  --foreground: #0f0f0f;
+  --card: #ffffff;
+  --card-foreground: #0f0f0f;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #0f0f0f;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #eff6ff;
+  --accent-foreground: #1d4ed8;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e5e5e7;
+  --input: #e5e5e7;
+  --ring: #2563eb;
+  --radius: 0.625rem;
+
+  /* Extended surface tokens */
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --surface-3: #f4f4f5;
+  --border-strong: #d4d4d8;
+
+  /* Text scale */
+  --text-1: #0f0f0f;
+  --text-2: #52525b;
+  --text-3: #71717a;
+
+  /* Semantic color tokens */
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --success-border: #bbf7d0;
+  --success-text: #15803d;
+  --warning-bg: #fffbeb;
+  --warning-border: #fde68a;
+  --warning-text: #a16207;
+  --info-bg: #eff6ff;
+  --info-border: #bfdbfe;
+  --info-text: #1d4ed8;
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --error-text: #b91c1c;
+
+  /* Black button (light mode: dark bg) */
+  --btn-action: #0f0f0f;
+  --btn-action-text: #ffffff;
+
+  /* Shadows */
+  --shadow-card: 0 0 40px rgba(0,0,0,0.08);
+  --shadow-header: 0 1px 0 rgba(0,0,0,0.06);
   --max-w-content: 1200px;
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.511 0.262 276.966);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.967 0.003 264.542);
-  --secondary-foreground: oklch(0.21 0.034 264.665);
-  --muted: oklch(0.967 0.003 264.542);
-  --muted-foreground: oklch(0.554 0.012 285.938);
-  --accent: oklch(0.967 0.003 264.542);
-  --accent-foreground: oklch(0.21 0.034 264.665);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.928 0.006 264.531);
-  --input: oklch(0.928 0.006 264.531);
-  --ring: oklch(0.511 0.262 276.966);
-  --radius: 0.625rem;
-}
-
-/* ── Dark mode tokens — wrapped in @layer base so Tailwind v4 preserves them ── */
+/* ── Dark mode tokens — must be in @layer base to survive Tailwind v4 build ── */
 @layer base {
   .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.557 0.234 276.966);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.269 0.006 264.542);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0.006 264.542);
-    --muted-foreground: oklch(0.705 0.012 285.938);
-    --accent: oklch(0.269 0.006 264.542);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 29.234);
-    --destructive-foreground: oklch(0.145 0 0);
-    --border: oklch(0.269 0.006 264.542);
-    --input: oklch(0.269 0.006 264.542);
-    --ring: oklch(0.557 0.234 276.966);
+    --background: #09090b;
+    --foreground: #fafafa;
+    --card: #18181b;
+    --card-foreground: #fafafa;
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+    --secondary: #27272a;
+    --secondary-foreground: #fafafa;
+    --muted: #27272a;
+    --muted-foreground: #a1a1aa;
+    --accent: #1e3a8a;
+    --accent-foreground: #93c5fd;
+    --destructive: #f87171;
+    --destructive-foreground: #09090b;
+    --border: #27272a;
+    --input: #27272a;
+    --ring: #3b82f6;
+
+    /* Extended surface tokens */
+    --surface: #18181b;
+    --surface-2: #27272a;
+    --surface-3: #3f3f46;
+    --border-strong: #3f3f46;
+
+    /* Text scale */
+    --text-1: #fafafa;
+    --text-2: #a1a1aa;
+    --text-3: #71717a;
+
+    /* Semantic color tokens */
+    --success: #22c55e;
+    --success-bg: #052e16;
+    --success-border: #166534;
+    --success-text: #4ade80;
+    --warning-bg: #422006;
+    --warning-border: #92400e;
+    --warning-text: #fbbf24;
+    --info-bg: #1e3a8a;
+    --info-border: #1e40af;
+    --info-text: #93c5fd;
+    --error-bg: #450a0a;
+    --error-border: #991b1b;
+    --error-text: #fca5a5;
+
+    /* Black button (dark mode: white bg) */
+    --btn-action: #fafafa;
+    --btn-action-text: #18181b;
+
     color-scheme: dark;
   }
 
-  /* Wizard dark mode shell overrides — covers hardcoded Tailwind slate colors */
+  /* Wizard shell dark overrides */
   .dark [data-testid="desktop-wizard-shell"],
   .dark [data-testid="mobile-wizard-shell"] {
-    background-color: oklch(0.145 0 0);
-    color: oklch(0.985 0 0);
+    background-color: #09090b;
+    color: #fafafa;
   }
 }
 
-/* ── H&F-matched HTML/body foundation ── */
+/* ── HTML/body foundation ── */
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
@@ -113,24 +180,19 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, sans-serif;
   line-height: 1.6;
   overflow-x: hidden;
 }
 
-/* ── Playfair Display serif — for section headings ── */
-.font-display {
-  font-family: var(--font-playfair), Georgia, serif;
-}
-
 /* ── Smooth focus ring ── */
 :focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* ── Image defaults (H&F pattern) ── */
+/* ── Image defaults ── */
 img {
   display: block;
 }

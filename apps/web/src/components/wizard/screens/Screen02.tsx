@@ -3,94 +3,165 @@
 import { useWizard } from '@/contexts/WizardContext'
 import { calcPrice } from '@/contexts/WizardContext'
 
-const MIN_COUNT = 1
-const MAX_INLINE = 6
+const PACKAGES = [
+  { size: 1, label: 'Just me', sub: '1 packet', highlight: false },
+  { size: 2, label: '2 people', save: 'save $5', highlight: false },
+  { size: 3, label: '3 people', save: 'save $10', highlight: false },
+  { size: 4, label: '4 people · Family Pack', save: 'save $15', highlight: true },
+  { size: 5, label: '5 people', save: 'save $20', highlight: false },
+  { size: 6, label: '6 people', save: 'save $25', highlight: false },
+]
 
 export function Screen02() {
   const { state, setPackageSize, setStep } = useWizard()
   const { packageSize } = state
 
-  function decrement() {
-    if (packageSize > MIN_COUNT) setPackageSize(packageSize - 1)
-  }
-
-  function increment() {
-    setPackageSize(packageSize + 1)
-  }
-
-  function handleChoose() {
-    setStep(3)
+  function handleMore() {
+    setPackageSize(packageSize < 6 ? packageSize + 1 : packageSize + 1)
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">How many people are applying?</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Select the number of family members in this application packet.
+        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
+          Who are you preparing a packet for?
+        </h1>
+        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
+          Each person needs a separate I-131 packet — this is a USCIS requirement.
         </p>
       </div>
 
-      {/* Quick-select cards 1-6 */}
-      <div className="grid grid-cols-3 gap-2">
-        {Array.from({ length: MAX_INLINE }, (_, i) => i + 1).map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => setPackageSize(n)}
-            className={[
-              'rounded-xl border-2 py-4 text-lg font-bold transition-colors',
-              packageSize === n
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
-                : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300',
-            ].join(' ')}
+      {/* Package tiles */}
+      <div className="space-y-2">
+        {PACKAGES.map((pkg) => {
+          const isSelected = packageSize === pkg.size
+          return (
+            <button
+              key={pkg.size}
+              type="button"
+              onClick={() => setPackageSize(pkg.size)}
+              className="w-full flex items-center gap-3 rounded-[12px] text-left transition-all active:scale-[0.99]"
+              style={{
+                background: isSelected ? 'var(--accent)' : 'var(--surface)',
+                border: isSelected
+                  ? '2.5px solid var(--primary)'
+                  : pkg.highlight
+                    ? '1.5px solid var(--primary)'
+                    : '1.5px solid var(--border-strong)',
+                padding: isSelected ? '13.5px' : '14px',
+                minHeight: '64px',
+              }}
+            >
+              {/* Radio */}
+              <div
+                className="w-[22px] h-[22px] rounded-full flex-shrink-0 flex items-center justify-center"
+                style={{
+                  border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border-strong)'}`,
+                }}
+              >
+                {isSelected && (
+                  <span
+                    className="w-[10px] h-[10px] rounded-full"
+                    style={{ background: 'var(--primary)' }}
+                  />
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-semibold" style={{ color: 'var(--text-1)' }}>
+                  {pkg.label}
+                </p>
+                {pkg.save && (
+                  <p className="text-[12px] font-bold mt-0.5" style={{ color: 'var(--success-text)' }}>
+                    ✓ {pkg.save}
+                  </p>
+                )}
+                {pkg.sub && (
+                  <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-3)' }}>
+                    {pkg.sub}
+                  </p>
+                )}
+              </div>
+
+              {/* Price */}
+              <span
+                className="text-[17px] font-bold flex-shrink-0"
+                style={{ color: 'var(--text-1)', fontVariantNumeric: 'tabular-nums' }}
+              >
+                ${calcPrice(pkg.size)}
+              </span>
+            </button>
+          )
+        })}
+
+        {/* 7+ option */}
+        {packageSize > 6 && (
+          <div
+            className="rounded-[12px] p-3.5 flex items-center justify-between"
+            style={{ background: 'var(--accent)', border: '2.5px solid var(--primary)' }}
           >
-            {n}
+            <div>
+              <p className="text-[14px] font-semibold" style={{ color: 'var(--text-1)' }}>
+                {packageSize} people
+              </p>
+              <p className="text-[12px] font-bold" style={{ color: 'var(--success-text)' }}>
+                ✓ save ${(packageSize - 1) * 5}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPackageSize(packageSize - 1)}
+                className="w-[32px] h-[32px] rounded-full text-[18px] font-bold flex items-center justify-center"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border-strong)', color: 'var(--text-1)' }}
+              >
+                −
+              </button>
+              <span className="text-[17px] font-bold" style={{ color: 'var(--text-1)', fontVariantNumeric: 'tabular-nums' }}>
+                ${calcPrice(packageSize)}
+              </span>
+              <button
+                type="button"
+                onClick={handleMore}
+                className="w-[32px] h-[32px] rounded-full text-[18px] font-bold flex items-center justify-center"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border-strong)', color: 'var(--text-1)' }}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Add more than 6 */}
+        {packageSize <= 6 && (
+          <button
+            type="button"
+            onClick={handleMore}
+            className="w-full rounded-[12px] text-[13px] font-medium py-3 transition-all"
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px dashed var(--border-strong)',
+              color: 'var(--text-3)',
+            }}
+          >
+            + More than 6 people
           </button>
-        ))}
+        )}
       </div>
 
-      {/* +/- for more than 6 */}
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={decrement}
-          disabled={packageSize <= MIN_COUNT}
-          aria-label="Decrease count"
-          className="w-10 h-10 rounded-full border border-slate-300 text-slate-700 text-xl font-bold hover:bg-slate-50 disabled:opacity-40 transition-colors"
-        >
-          −
-        </button>
-        <span className="text-2xl font-bold text-slate-900 w-8 text-center">{packageSize}</span>
-        <button
-          type="button"
-          onClick={increment}
-          aria-label="Increase count"
-          className="w-10 h-10 rounded-full border border-slate-300 text-slate-700 text-xl font-bold hover:bg-slate-50 transition-colors"
-        >
-          +
-        </button>
-        <span className="text-sm text-slate-500 ml-2">
-          {packageSize} {packageSize === 1 ? 'person' : 'people'}
-        </span>
-      </div>
-
-      {/* Price display */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-        <p className="text-base font-semibold text-blue-900">
-          {packageSize} {packageSize === 1 ? 'person' : 'people'} — ${calcPrice(packageSize)} service fee
-        </p>
-        <p className="mt-1 text-xs text-blue-700">
-          Our service fee covers assistance with form preparation only.
-        </p>
-      </div>
-
+      {/* Help chip */}
       <button
         type="button"
-        onClick={handleChoose}
-        className="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-full text-[12px] font-medium px-2.5 py-1.5 transition-all"
+        style={{
+          background: 'var(--info-bg)',
+          border: '1px solid var(--info-border)',
+          color: 'var(--info-text)',
+        }}
       >
-        Choose this package
+        <span className="font-bold">?</span>
+        Why does each person need a separate packet?
       </button>
     </div>
   )

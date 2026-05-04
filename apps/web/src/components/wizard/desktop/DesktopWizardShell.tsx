@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react'
 import { WizardHeader } from '@/components/wizard/WizardHeader'
-import { DesktopStepSidebar } from './DesktopStepSidebar'
 import { DesktopAssistantPanel } from './DesktopAssistantPanel'
 
 interface DesktopWizardShellProps {
@@ -11,20 +10,27 @@ interface DesktopWizardShellProps {
 }
 
 /**
- * Desktop wizard shell (≥1024px). 3-column layout:
- *   [280 step sidebar] | [1fr main work area] | [360 assistant panel]
+ * Desktop wizard shell (≥1024px). 2-column layout matching prototype:
+ *   [1fr main content] | [360px assistant panel]
  *
- * IMPORTANT: Rendered ONLY on desktop by WizardShell viewport router.
- * Do NOT add `lg:hidden` / `md:block` — that duplicates DOM and breaks
- * shared state. One shell in the tree at a time.
+ * Left step sidebar removed — progress shown via dots in WizardHeader.
  */
 export function DesktopWizardShell({ children, slug }: DesktopWizardShellProps) {
   return (
-    <div data-testid="desktop-wizard-shell" data-slug={slug} className="min-h-screen bg-white dark:bg-slate-900 transition-colors duration-200">
+    <div
+      data-testid="desktop-wizard-shell"
+      data-slug={slug}
+      className="min-h-screen transition-colors duration-200"
+      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
+    >
       <WizardHeader />
-      <div className="grid min-h-[calc(100vh-57px)] grid-cols-[280px_1fr_360px]">
-        <DesktopStepSidebar slug={slug} />
-        <main className="overflow-x-hidden p-6">{children}</main>
+      <div
+        className="grid min-h-[calc(100vh-73px)]"
+        style={{ gridTemplateColumns: '1fr 360px' }}
+      >
+        <main className="overflow-x-hidden px-8 py-7 max-w-3xl">
+          {children}
+        </main>
         <DesktopAssistantPanel slug={slug} />
       </div>
     </div>

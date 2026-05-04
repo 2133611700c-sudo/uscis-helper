@@ -5,18 +5,26 @@ import { useWizard } from '@/contexts/WizardContext'
 
 const LEGAL_CHECKBOXES = [
   {
-    id: 'check-not-legal-advice',
-    text: 'I understand that Messenginfo provides document preparation assistance only, not legal advice. Messenginfo is not a law firm and does not represent me before USCIS.',
+    id: 'check-accuracy',
+    text: 'I have verified all fields above — they are correct.',
   },
   {
-    id: 'check-uscis-fees-separate',
-    text: 'I understand that USCIS filing fees are separate from this service fee and are paid directly to USCIS. The current fee amount is available at uscis.gov/feecalculator.',
+    id: 'check-responsibility',
+    text: 'I understand that I am responsible for the accuracy of the data in the form.',
   },
   {
-    id: 'check-data-retention',
-    text: 'I understand that my session data is stored temporarily to generate my packet and is deleted within 30 days. Messenginfo does not sell my personal information.',
+    id: 'check-not-filing',
+    text: 'I understand that Messenginfo does not file on my behalf — I file myself at my.uscis.gov or by mail.',
   },
 ] as const
+
+const PAY_FEATURES = [
+  'Completed I-131 (editable DOCX)',
+  'Document translations to English',
+  'Step-by-step USCIS data transfer guide',
+  'Document checklist',
+  'Download link valid 7 days',
+]
 
 export function Screen10() {
   const { state, setPaymentStatus, setStep } = useWizard()
@@ -40,82 +48,129 @@ export function Screen10() {
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Review &amp; confirm</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
+          Review &amp; confirm
+        </h1>
+        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
           Please read and acknowledge the items below before generating your packet.
         </p>
       </div>
 
-      {/* Order summary */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-slate-600">
-            Document preparation — {packageSize} applicant{packageSize !== 1 ? 's' : ''}
+      {/* Paywall card */}
+      <div
+        className="rounded-[16px] p-5 text-center"
+        style={{ border: '2px solid var(--primary)', background: 'var(--surface)' }}
+      >
+        <p className="text-[40px] mb-2">📄</p>
+        <h2 className="text-[18px] font-bold mb-1.5" style={{ color: 'var(--text-1)' }}>
+          Ready-Made Document Packet
+        </h2>
+        <p className="text-[13px] mb-4 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+          All documents ready for USCIS submission
+        </p>
+
+        {/* Price */}
+        <div className="mb-3">
+          <span className="text-[42px] font-extrabold" style={{ color: 'var(--text-1)', fontVariantNumeric: 'tabular-nums' }}>
+            <span className="text-[24px] align-top">$</span>{packagePrice}
           </span>
-          <span className="text-lg font-bold text-slate-900">${packagePrice}</span>
+          <p className="text-[13px]" style={{ color: 'var(--text-3)' }}>
+            for {packageSize} packet{packageSize !== 1 ? 's' : ''}
+          </p>
         </div>
-        <div className="mt-3 border-t border-slate-200 pt-3 flex items-center justify-between">
-          <span className="text-sm font-semibold text-slate-700">Service fee</span>
-          <span className="rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-700">
-            Payment not yet enabled
-          </span>
+
+        {/* Features */}
+        <div
+          className="rounded-[10px] p-3 text-left mb-4"
+          style={{ background: 'var(--surface-2)' }}
+        >
+          {PAY_FEATURES.map((f) => (
+            <div key={f} className="flex items-start gap-2 py-1">
+              <span className="font-bold flex-shrink-0" style={{ color: 'var(--success)' }}>✓</span>
+              <span className="text-[13px]" style={{ color: 'var(--text-2)' }}>{f}</span>
+            </div>
+          ))}
         </div>
+
+        {/* Payment note */}
+        <span
+          className="inline-block text-[11px] font-semibold px-3 py-1 rounded-full mb-3"
+          style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}
+        >
+          Payment not yet enabled — free in prototype
+        </span>
       </div>
 
       {/* Legal checkboxes */}
-      <div className="space-y-4">
-        <p className="text-sm font-semibold text-slate-700">
-          You must acknowledge all three items to continue:
+      <div
+        className="rounded-[12px] p-3.5 space-y-0"
+        style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}
+      >
+        <p
+          className="text-[11px] font-semibold uppercase tracking-wide mb-3"
+          style={{ color: 'var(--warning-text)', letterSpacing: '0.6px' }}
+        >
+          Mandatory acknowledgments
         </p>
         {LEGAL_CHECKBOXES.map((item) => (
           <label
             key={item.id}
-            className={[
-              'flex items-start gap-3 cursor-pointer rounded-xl border-2 p-3 transition-colors',
-              checked[item.id]
-                ? 'border-blue-300 bg-blue-50'
-                : 'border-slate-200 bg-white hover:border-slate-300',
-            ].join(' ')}
+            className="flex items-start gap-2.5 py-2 cursor-pointer"
+            onClick={() => toggleCheck(item.id)}
           >
-            <input
-              type="checkbox"
-              id={item.id}
-              checked={!!checked[item.id]}
-              onChange={() => toggleCheck(item.id)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-xs text-slate-700 leading-relaxed">{item.text}</span>
+            <div
+              className="w-[22px] h-[22px] rounded-[5px] flex-shrink-0 flex items-center justify-center mt-0.5"
+              style={{
+                border: `2px solid ${checked[item.id] ? 'var(--success)' : 'var(--warning-text)'}`,
+                background: checked[item.id] ? 'var(--success)' : 'var(--surface)',
+              }}
+            >
+              {checked[item.id] && <span className="text-white font-bold text-[14px]">✓</span>}
+            </div>
+            <input type="checkbox" checked={!!checked[item.id]} onChange={() => toggleCheck(item.id)} className="sr-only" />
+            <span className="text-[13px] leading-relaxed" style={{ color: 'var(--text-1)' }}>
+              {item.text}
+            </span>
           </label>
         ))}
+      </div>
+
+      {/* Privacy note */}
+      <div
+        className="rounded-[12px] p-3.5 flex items-start gap-2.5"
+        style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+      >
+        <span className="flex-shrink-0">🔒</span>
+        <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-2)' }}>
+          We do not store your documents and personal data after generating the packet. All information is deleted automatically.
+        </p>
       </div>
 
       <button
         type="button"
         onClick={handlePay}
         disabled={loading || !allChecked}
-        className={[
-          'w-full rounded-xl px-6 py-4 text-base font-semibold text-white transition-all',
-          loading || !allChecked
-            ? 'bg-slate-300 cursor-not-allowed text-slate-500'
-            : 'bg-blue-600 hover:bg-blue-700',
-        ].join(' ')}
+        className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
+        style={{
+          background: allChecked && !loading ? 'var(--btn-action)' : 'var(--border-strong)',
+          color: allChecked && !loading ? 'var(--btn-action-text)' : 'var(--text-3)',
+          border: 'none',
+          padding: '14px',
+          minHeight: '52px',
+          cursor: allChecked && !loading ? 'pointer' : 'not-allowed',
+          opacity: allChecked && !loading ? 1 : 0.6,
+        }}
       >
-        {loading ? 'Generating packet…' : !allChecked ? 'Please acknowledge all items above' : 'Continue — Generate My Packet →'}
+        {loading ? 'Generating packet…' : !allChecked ? 'Acknowledge all items above to continue' : `Pay $${packagePrice} →`}
       </button>
 
-      <p className="text-xs text-slate-400 leading-relaxed">
-        USCIS filing fees are paid separately and directly to USCIS.
-        Check the current fee schedule at{' '}
-        <a
-          href="https://www.uscis.gov/feecalculator"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline"
-        >
-          uscis.gov/feecalculator
-        </a>.
+      <p className="text-[11px]" style={{ color: 'var(--text-3)' }}>
+        USCIS filing fees ($580 online / $630 paper) are paid separately and directly to USCIS.{' '}
+        <a href="https://www.uscis.gov/feecalculator" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>
+          Check current fees ↗
+        </a>
       </p>
     </div>
   )
