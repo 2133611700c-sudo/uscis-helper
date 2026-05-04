@@ -71,6 +71,19 @@ export function Screen08() {
         ))}
       </div>
 
+      {/* Regulatory callout: I-131 form specifics */}
+      <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 space-y-1.5">
+        <p className="text-xs font-semibold text-blue-900">Form I-131 (edition 01/20/25) — key items:</p>
+        <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
+          <li>
+            <strong>Part 2, Item 1.e</strong> — Select "Re-Parole" as the basis for your application.
+          </li>
+          <li>
+            <strong>Box 10.C</strong> — Enter your current parole expiration date (from your I-94 or approval notice).
+          </li>
+        </ul>
+      </div>
+
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
         <p className="text-xs text-amber-800">
           Mailing addresses can change. Always verify at{' '}

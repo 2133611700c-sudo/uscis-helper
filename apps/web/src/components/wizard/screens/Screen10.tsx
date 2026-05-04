@@ -42,9 +42,9 @@ export function Screen10() {
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Review &amp; pay</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Review &amp; confirm</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Please read and acknowledge the items below before proceeding to payment.
+          Please read and acknowledge the items below before generating your packet.
         </p>
       </div>
 
@@ -57,8 +57,10 @@ export function Screen10() {
           <span className="text-lg font-bold text-slate-900">${packagePrice}</span>
         </div>
         <div className="mt-3 border-t border-slate-200 pt-3 flex items-center justify-between">
-          <span className="text-sm font-semibold text-slate-700">Total due today</span>
-          <span className="text-xl font-bold text-slate-900">${packagePrice}</span>
+          <span className="text-sm font-semibold text-slate-700">Service fee</span>
+          <span className="rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-700">
+            Payment not yet enabled
+          </span>
         </div>
       </div>
 
@@ -100,7 +102,7 @@ export function Screen10() {
             : 'bg-blue-600 hover:bg-blue-700',
         ].join(' ')}
       >
-        {loading ? 'Processing…' : !allChecked ? 'Please acknowledge all items above' : 'Pay with card →'}
+        {loading ? 'Generating packet…' : !allChecked ? 'Please acknowledge all items above' : 'Continue — Generate My Packet →'}
       </button>
 
       <p className="text-xs text-slate-400 leading-relaxed">
