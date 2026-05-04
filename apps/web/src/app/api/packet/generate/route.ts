@@ -20,10 +20,10 @@
  * Logs to audit_log: event_type='packet_generated'
  * Logs to generated_packets if table exists.
  *
- * USCIS FACTS (verified 2026-05-03):
- *   - Paper: Part 2, Item 1.e (NOT 10.C — old streamlined process, eliminated June 2025)
- *   - Online: select "I am outside the United States applying for Advance Parole Document"
- *   - Top of form: handwrite "Ukraine RE-PAROLE"
+ * USCIS FACTS (verified 2026-05-04):
+ *   - Paper (mail): Part 2, Item 1.e + handwrite "Ukraine RE-PAROLE" at top of first page
+ *   - Online (my.uscis.gov): Box 10.C — "Certain Ukrainians paroled on/after Feb 11, 2022"
+ *   - Top of PAPER form only: handwrite "Ukraine RE-PAROLE"
  *   - Medical: vaccines + TB/IGRA test required
  *   - EAD: DO NOT file I-765 before I-131 approval
  *   - Fee waiver: Form I-912 for paper filing
@@ -260,35 +260,36 @@ function build05FormGuide(method: string): string {
     'Form I-131 Re-Parole: ACTIVE — separate process, reviewed case-by-case.',
     'Verify current program status at uscis.gov before filing.',
     '',
-    'ITEM TO CHECK — PAPER FORM',
-    '--------------------------',
+    'FILING METHOD — PAPER vs ONLINE',
+    '--------------------------------',
+    'Paper (mail) filing and online (my.uscis.gov) filing use DIFFERENT item selections.',
+    'Use the correct selection for YOUR chosen filing method.',
+    '',
+    'ITEM TO CHECK — PAPER FORM (mail filing only)',
+    '----------------------------------------------',
     'Part 2, Item 1.e:',
     '  "I am outside the United States, and I am applying for Advance Parole Document"',
     '',
     '  IMPORTANT: Select this option EVEN IF you are currently inside the United States.',
     '  This is per official USCIS instructions for U4U re-parole applicants.',
     '',
-    '  NOTE: Item 10.C was used under the old streamlined process (ELIMINATED June 2025).',
-    '  Item 10.C is NO LONGER CORRECT. Use Part 2, Item 1.e.',
-    '',
   ]
 
   if (method === 'mail' || method === 'unsure') {
     lines.push(
-      'WRITE AT TOP OF FORM — PAPER ONLY',
-      '----------------------------------',
-      'Handwrite in pen at the very top of the form:',
+      'WRITE AT TOP OF FORM — PAPER FILING ONLY',
+      '-----------------------------------------',
+      'Handwrite in pen at the very top of the first page of the form:',
       '  "Ukraine RE-PAROLE"',
       '',
     )
   }
 
   lines.push(
-    'ITEM TO SELECT — ONLINE FILING',
-    '-------------------------------',
-    'On my.uscis.gov, select the dropdown option:',
-    '  "I am outside the United States applying for Advance Parole Document"',
-    'Then answer "Yes" to the re-parole question when prompted.',
+    'ITEM TO SELECT — ONLINE FILING (my.uscis.gov only)',
+    '----------------------------------------------------',
+    'Box 10.C: "Certain Ukrainians paroled on/after Feb 11, 2022"',
+    'Source: uscis.gov/i-131 (verified 2026-05-04)',
     '',
     'FILING WINDOW',
     '-------------',
@@ -347,10 +348,10 @@ function build06FilingInstructions(method: string): string {
     lines.push('-----------------------')
     lines.push('Step 1: Create or log in to myUSCIS at https://my.uscis.gov')
     lines.push('Step 2: Select "File a form online" → Form I-131.')
-    lines.push('Step 3: In the dropdown, select:')
-    lines.push('        "I am outside the United States applying for Advance Parole Document"')
-    lines.push('        Select this EVEN IF you are currently inside the US.')
-    lines.push('Step 4: Answer "Yes" to the re-parole question when prompted.')
+    lines.push('Step 3: Select Box 10.C:')
+    lines.push('        "Certain Ukrainians paroled on/after Feb 11, 2022"')
+    lines.push('        (Source: uscis.gov/i-131, verified 2026-05-04)')
+    lines.push('Step 4: Complete all required fields in the online form.')
     lines.push('Step 5: Complete all required fields in the online form.')
     lines.push('Step 6: Upload scanned copies of all supporting documents (PDF preferred).')
     lines.push('        Include current I-94 (download at https://i94.cbp.dhs.gov)')
