@@ -20,7 +20,7 @@ interface DesktopWizardShellProps {
  */
 export function DesktopWizardShell({ children, slug }: DesktopWizardShellProps) {
   return (
-    <div data-testid="desktop-wizard-shell" data-slug={slug} className="min-h-screen bg-white">
+    <div data-testid="desktop-wizard-shell" data-slug={slug} className="min-h-screen bg-white dark:bg-slate-900 transition-colors duration-200">
       <WizardHeader />
       <div className="grid min-h-[calc(100vh-57px)] grid-cols-[280px_1fr_360px]">
         <DesktopStepSidebar slug={slug} />

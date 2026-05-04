@@ -67,6 +67,37 @@
   --radius: 0.625rem;
 }
 
+/* ── Dark mode tokens — wrapped in @layer base so Tailwind v4 preserves them ── */
+@layer base {
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.557 0.234 276.966);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.269 0.006 264.542);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0.006 264.542);
+    --muted-foreground: oklch(0.705 0.012 285.938);
+    --accent: oklch(0.269 0.006 264.542);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 29.234);
+    --destructive-foreground: oklch(0.145 0 0);
+    --border: oklch(0.269 0.006 264.542);
+    --input: oklch(0.269 0.006 264.542);
+    --ring: oklch(0.557 0.234 276.966);
+    color-scheme: dark;
+  }
+
+  /* Wizard dark mode shell overrides — covers hardcoded Tailwind slate colors */
+  .dark [data-testid="desktop-wizard-shell"],
+  .dark [data-testid="mobile-wizard-shell"] {
+    background-color: oklch(0.145 0 0);
+    color: oklch(0.985 0 0);
+  }
+}
+
 /* ── H&F-matched HTML/body foundation ── */
 html {
   scroll-behavior: smooth;
