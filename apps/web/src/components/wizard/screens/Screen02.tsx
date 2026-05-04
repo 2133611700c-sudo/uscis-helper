@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import { calcPrice } from '@/contexts/WizardContext'
 
@@ -13,6 +14,7 @@ const T = {
     subs: ['1 пакет', '', '', '', '', ''],
     moreBtn: '+ Більше 6 осіб',
     whyChip: 'Чому кожен потребує окремого пакету?',
+    whyAnswer: 'USCIS вимагає окрему підписану форму I-131 для кожної особи, яка подає заявку. Один пакет для декількох людей не допускається.',
     peopleLabel: (n: number) => `${n} осіб`,
     saveLabel: (n: number) => `економія $${(n - 1) * 5}`,
   },
@@ -25,6 +27,7 @@ const T = {
     subs: ['1 пакет', '', '', '', '', ''],
     moreBtn: '+ Более 6 человек',
     whyChip: 'Почему каждому нужен отдельный пакет?',
+    whyAnswer: 'USCIS требует отдельную подписанную форму I-131 для каждого заявителя. Один пакет на несколько человек не допускается.',
     peopleLabel: (n: number) => `${n} человек`,
     saveLabel: (n: number) => `экономия $${(n - 1) * 5}`,
   },
@@ -37,6 +40,7 @@ const T = {
     subs: ['1 packet', '', '', '', '', ''],
     moreBtn: '+ More than 6 people',
     whyChip: 'Why does each person need a separate packet?',
+    whyAnswer: 'USCIS requires a separate signed Form I-131 for each applicant. One packet for multiple people is not allowed.',
     peopleLabel: (n: number) => `${n} people`,
     saveLabel: (n: number) => `save $${(n - 1) * 5}`,
   },
@@ -49,6 +53,7 @@ const T = {
     subs: ['1 paquete', '', '', '', '', ''],
     moreBtn: '+ Más de 6 personas',
     whyChip: '¿Por qué cada persona necesita un paquete separado?',
+    whyAnswer: 'USCIS requiere un Formulario I-131 firmado por separado para cada solicitante. Un paquete para varias personas no está permitido.',
     peopleLabel: (n: number) => `${n} personas`,
     saveLabel: (n: number) => `ahorra $${(n - 1) * 5}`,
   },
@@ -60,6 +65,7 @@ export function Screen02() {
   const { state, setPackageSize } = useWizard()
   const { packageSize } = state
   const t = T[state.locale] ?? T.en
+  const [whyOpen, setWhyOpen] = useState(false)
 
   function handleMore() {
     setPackageSize(packageSize + 1)
@@ -203,19 +209,30 @@ export function Screen02() {
         )}
       </div>
 
-      {/* Help chip */}
-      <button
-        type="button"
-        className="inline-flex items-center gap-1.5 rounded-full text-[12px] font-medium px-2.5 py-1.5 transition-all"
-        style={{
-          background: 'var(--info-bg)',
-          border: '1px solid var(--info-border)',
-          color: 'var(--info-text)',
-        }}
-      >
-        <span className="font-bold">?</span>
-        {t.whyChip}
-      </button>
+      {/* Help chip — expandable */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setWhyOpen((o) => !o)}
+          className="inline-flex items-center gap-1.5 rounded-full text-[12px] font-medium px-2.5 py-1.5 transition-all"
+          style={{
+            background: 'var(--info-bg)',
+            border: '1px solid var(--info-border)',
+            color: 'var(--info-text)',
+          }}
+        >
+          <span className="font-bold">{whyOpen ? '▲' : '?'}</span>
+          {t.whyChip}
+        </button>
+        {whyOpen && (
+          <div
+            className="mt-2 rounded-[10px] p-3 text-[13px] leading-relaxed"
+            style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)', color: 'var(--info-text)' }}
+          >
+            {t.whyAnswer}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

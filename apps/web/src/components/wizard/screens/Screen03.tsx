@@ -13,8 +13,8 @@ const T = {
     placeholderOther: (i: number) => `Прізвисько особи ${i}`,
     addPerson: '+ Додати ще одну особу',
     tooMany: 'Для груп більше 10 осіб — зв\'яжіться з нами.',
-    saveNote: '📧 Хочете зберегти прогрес та продовжити пізніше?',
-    saveLink: 'Вкажіть e-mail на наступному кроці.',
+    saveNote: '📧 Хочете зберегти пакет та отримати посилання?',
+    saveLink: 'Введіть e-mail після оплати — ми надішлемо посилання на завантаження.',
   },
   ru: {
     title: 'Члены семьи',
@@ -26,8 +26,8 @@ const T = {
     placeholderOther: (i: number) => `Прозвище человека ${i}`,
     addPerson: '+ Добавить ещё одного человека',
     tooMany: 'Для групп более 10 человек — свяжитесь с нами.',
-    saveNote: '📧 Хотите сохранить прогресс и продолжить позже?',
-    saveLink: 'Введите e-mail на следующем шаге.',
+    saveNote: '📧 Хотите сохранить пакет и получить ссылку?',
+    saveLink: 'Введите e-mail после оплаты — мы отправим ссылку на скачивание.',
   },
   en: {
     title: 'Family members',
@@ -39,8 +39,8 @@ const T = {
     placeholderOther: (i: number) => `Person ${i} nickname`,
     addPerson: '+ Add another person',
     tooMany: 'For groups larger than 10, please contact us.',
-    saveNote: '📧 Want to save your progress and continue later?',
-    saveLink: 'Enter your email on the next screen.',
+    saveNote: '📧 Want to save your packet and get a download link?',
+    saveLink: 'Enter your email after payment — we\'ll send a download link.',
   },
   es: {
     title: 'Miembros de la familia',
@@ -52,8 +52,8 @@ const T = {
     placeholderOther: (i: number) => `Apodo persona ${i}`,
     addPerson: '+ Agregar otra persona',
     tooMany: 'Para grupos de más de 10 personas, contáctenos.',
-    saveNote: '📧 ¿Quiere guardar su progreso y continuar más tarde?',
-    saveLink: 'Ingrese su correo en la siguiente pantalla.',
+    saveNote: '📧 ¿Quiere guardar su paquete y recibir un enlace?',
+    saveLink: 'Ingrese su correo después del pago — le enviaremos el enlace de descarga.',
   },
 } as const
 
