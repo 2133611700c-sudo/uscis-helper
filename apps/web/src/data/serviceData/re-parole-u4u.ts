@@ -3,7 +3,7 @@ import type { ServiceData } from './types'
 /**
  * Re-Parole U4U service data.
  *
- * VERIFIED 2026-05-03 from official USCIS sources (uscis.gov):
+ * VERIFIED 2026-05-04 from official USCIS sources (uscis.gov):
  *
  * I-131 EDITION:
  *   - Edition 01/20/25 is CURRENT (verified live uscis.gov/i-131 on 2026-05-04,
@@ -254,32 +254,32 @@ export const reParoleU4UData: ServiceData = {
     {
       label: 'USCIS · Re-Parole Process for Certain Ukrainian Citizens',
       url: 'https://www.uscis.gov/humanitarian/uniting-for-ukraine/re-parole-process-for-certain-ukrainian-citizens-and-their-immediate-family-members',
-      last_verified: '2026-05-03',
+      last_verified: '2026-05-04',
     },
     {
       label: 'USCIS · Forms Updates',
       url: 'https://www.uscis.gov/forms/forms-updates',
-      last_verified: '2026-05-03',
+      last_verified: '2026-05-04',
     },
     {
       label: 'USCIS · Fee Calculator',
       url: 'https://www.uscis.gov/feecalculator',
-      last_verified: '2026-05-03',
+      last_verified: '2026-05-04',
     },
     {
       label: 'USCIS · G-1055 Fee Schedule',
       url: 'https://www.uscis.gov/g-1055',
-      last_verified: '2026-05-03',
+      last_verified: '2026-05-04',
     },
     {
       label: 'USCIS · Form I-912 Fee Waiver',
       url: 'https://www.uscis.gov/i-912',
-      last_verified: '2026-05-03',
+      last_verified: '2026-05-04',
     },
     {
       label: 'CBP · I-94 Lookup',
       url: 'https://i94.cbp.dhs.gov/',
-      last_verified: '2026-05-03',
+      last_verified: '2026-05-04',
     },
   ],
 }

@@ -119,7 +119,7 @@ export default async function ServicePage({ params }: Props) {
   const isReParoleU4U = slug === 're-parole-u4u'
 
   // Verified facts block — only present for re-parole-u4u (full_data: true).
-  // Source: serviceData/re-parole-u4u.ts (verified 2026-05-03 from USCIS).
+  // Source: serviceData/re-parole-u4u.ts (verified 2026-05-04 from USCIS).
   const reParolePageData = isReParoleU4U
     ? (tPages.raw('re-parole-u4u') as Record<string, unknown>)
     : undefined
