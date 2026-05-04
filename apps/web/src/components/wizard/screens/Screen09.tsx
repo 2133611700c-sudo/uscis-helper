@@ -1,6 +1,7 @@
 'use client'
 
 import { useWizard } from '@/contexts/WizardContext'
+import { ScreenGlossary } from '@/components/wizard/ScreenGlossary'
 
 const T = {
   uk: {
@@ -270,6 +271,8 @@ export function Screen09() {
       >
         {t.confirmBtn}
       </button>
+
+      <ScreenGlossary terms={['I-131', 'Re-Parole', 'U4U', 'I-912']} locale={state.locale} />
     </div>
   )
 }

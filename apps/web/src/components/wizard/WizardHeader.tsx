@@ -36,6 +36,30 @@ const STEP_PROGRESS = {
   es: (s: number, t: number) => `Paso ${s} de ${t}`,
 } as const
 
+// Time hints shown at specific steps to reassure user how long is left
+const TIME_HINTS: Record<string, Record<number, string>> = {
+  uk: {
+    2: '⏱ Залишилось ~8 хвилин',
+    6: '⏱ Залишилось ~4 хвилини',
+    9: '⏱ Майже готово — ~2 хвилини',
+  },
+  ru: {
+    2: '⏱ Осталось ~8 минут',
+    6: '⏱ Осталось ~4 минуты',
+    9: '⏱ Почти готово — ~2 минуты',
+  },
+  en: {
+    2: '⏱ About 8 minutes left',
+    6: '⏱ About 4 minutes left',
+    9: '⏱ Almost done — ~2 minutes',
+  },
+  es: {
+    2: '⏱ Quedan ~8 minutos',
+    6: '⏱ Quedan ~4 minutos',
+    9: '⏱ Casi listo — ~2 minutos',
+  },
+}
+
 const SYNC_LABELS = {
   uk: { saving: 'Зберігаємо…', saved: '✓ Збережено', error: 'Помилка збереження' },
   ru: { saving: 'Сохраняем…', saved: '✓ Сохранено', error: 'Ошибка сохранения' },
@@ -109,6 +133,8 @@ export function WizardHeader() {
   const labels = STEP_LABELS[state.locale] ?? STEP_LABELS.en
   const stepLabel = labels[state.step] ?? `${state.step + 1}`
   const progressFn = STEP_PROGRESS[state.locale] ?? STEP_PROGRESS.en
+  const timeHints = TIME_HINTS[state.locale] ?? TIME_HINTS.en
+  const timeHint = timeHints[state.step]
 
   return (
     <header
@@ -137,6 +163,16 @@ export function WizardHeader() {
         </span>
         <SyncIndicator />
       </div>
+
+      {/* Row 3: time hint — only on steps 2, 6, 9 */}
+      {timeHint && (
+        <div
+          className="rounded-[6px] px-2.5 py-1 text-[11px] font-medium self-start"
+          style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
+        >
+          {timeHint}
+        </div>
+      )}
     </header>
   )
 }
