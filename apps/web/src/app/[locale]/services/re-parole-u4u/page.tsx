@@ -53,8 +53,8 @@ const T = {
         key: 'status',
         icon: '🔍',
         title: 'Перевірити статус справи',
-        desc: 'Вже подали заявку і маєте номер квитанції (IOE/WAC/LIN)? Перевірте статус на офіційному сайті USCIS.',
-        cta: 'Перевірити статус ↗',
+        desc: 'Вже подали заявку? Введіть номер квитанції (IOE/WAC/LIN) і дізнайтесь, що означає ваш статус.',
+        cta: 'Перевірити статус →',
         highlight: false,
       },
       {
@@ -63,6 +63,14 @@ const T = {
         title: 'Перекласти документ для USCIS',
         desc: 'Документи не англійською? Підготуйте чернетку перекладу для перевірки перед передачею сертифікованому перекладачу.',
         cta: 'Перекласти документ →',
+        highlight: false,
+      },
+      {
+        key: 'sources',
+        icon: '🔗',
+        title: 'Офіційні ресурси USCIS',
+        desc: 'I-131, I-94, калькулятор внесків, адреси для пошти, myUSCIS — всі офіційні посилання на одній сторінці.',
+        cta: 'Відкрити ресурси →',
         highlight: false,
       },
     ],
@@ -98,8 +106,8 @@ const T = {
         key: 'status',
         icon: '🔍',
         title: 'Проверить статус дела',
-        desc: 'Уже подали заявление и есть номер квитанции (IOE/WAC/LIN)? Проверьте статус на официальном сайте USCIS.',
-        cta: 'Проверить статус ↗',
+        desc: 'Уже подали заявление? Введите номер квитанции (IOE/WAC/LIN) и узнайте, что означает ваш статус.',
+        cta: 'Проверить статус →',
         highlight: false,
       },
       {
@@ -108,6 +116,14 @@ const T = {
         title: 'Перевести документ для USCIS',
         desc: 'Документы не на английском? Подготовьте черновик перевода для проверки перед передачей сертифицированному переводчику.',
         cta: 'Перевести документ →',
+        highlight: false,
+      },
+      {
+        key: 'sources',
+        icon: '🔗',
+        title: 'Официальные ресурсы USCIS',
+        desc: 'I-131, I-94, калькулятор взносов, адреса для почты, myUSCIS — все официальные ссылки на одной странице.',
+        cta: 'Открыть ресурсы →',
         highlight: false,
       },
     ],
@@ -143,8 +159,8 @@ const T = {
         key: 'status',
         icon: '🔍',
         title: 'Check case status',
-        desc: 'Already filed and have a receipt number (IOE/WAC/LIN)? Check your status on the official USCIS site.',
-        cta: 'Check status ↗',
+        desc: 'Already filed? Enter your receipt number (IOE/WAC/LIN) and find out what your status means.',
+        cta: 'Check status →',
         highlight: false,
       },
       {
@@ -153,6 +169,14 @@ const T = {
         title: 'Translate a document for USCIS',
         desc: 'Documents not in English? Prepare a translation draft to review before sending to a certified translator.',
         cta: 'Translate document →',
+        highlight: false,
+      },
+      {
+        key: 'sources',
+        icon: '🔗',
+        title: 'Official USCIS resources',
+        desc: 'I-131, I-94, fee calculator, mailing addresses, myUSCIS — all official links in one place.',
+        cta: 'Open resources →',
         highlight: false,
       },
     ],
@@ -188,8 +212,8 @@ const T = {
         key: 'status',
         icon: '🔍',
         title: 'Verificar estado del caso',
-        desc: '¿Ya presentó y tiene un número de recibo (IOE/WAC/LIN)? Verifique su estado en el sitio oficial de USCIS.',
-        cta: 'Verificar estado ↗',
+        desc: '¿Ya presentó? Ingrese su número de recibo (IOE/WAC/LIN) y descubra qué significa su estado.',
+        cta: 'Verificar estado →',
         highlight: false,
       },
       {
@@ -198,6 +222,14 @@ const T = {
         title: 'Traducir documento para USCIS',
         desc: '¿Documentos no están en inglés? Prepare un borrador de traducción para revisar antes de enviarlo a un traductor certificado.',
         cta: 'Traducir documento →',
+        highlight: false,
+      },
+      {
+        key: 'sources',
+        icon: '🔗',
+        title: 'Recursos oficiales de USCIS',
+        desc: 'I-131, I-94, calculadora de tarifas, direcciones postales, myUSCIS — todos los enlaces oficiales en una página.',
+        cta: 'Abrir recursos →',
         highlight: false,
       },
     ],
@@ -210,13 +242,14 @@ type Locale = keyof typeof T
 
 function getHref(entryKey: string, locale: string): string {
   if (entryKey === 'wizard') return `/${locale}/services/re-parole-u4u/start`
-  if (entryKey === 'status') return 'https://egov.uscis.gov/casestatus/landing.do'
+  if (entryKey === 'status') return `/${locale}/services/re-parole-u4u/status`
   if (entryKey === 'translate') return `/${locale}/services/translate-document`
+  if (entryKey === 'sources') return `/${locale}/services/re-parole-u4u/sources`
   return '#'
 }
 
-function isExternal(entryKey: string): boolean {
-  return entryKey === 'status'
+function isExternal(_entryKey: string): boolean {
+  return false
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
