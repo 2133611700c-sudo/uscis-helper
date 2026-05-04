@@ -1,21 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { GLOSSARY } from './GlossaryProvider'
+import { getGlossaryDef } from './GlossaryProvider'
 
 interface GlossaryTooltipProps {
   term: string
+  /** BCP-47 locale — 'uk' | 'ru' | 'en' | 'es'. Defaults to 'en'. */
+  locale?: string
   children: React.ReactNode
 }
 
 /**
  * Wraps `children` with a dotted underline and shows the glossary definition
- * on hover (desktop) or tap (mobile).
- *
- * Uses a CSS-based tooltip — no Radix required.
+ * on hover (desktop) or tap (mobile) in the wizard locale.
  */
-export function GlossaryTooltip({ term, children }: GlossaryTooltipProps) {
-  const definition = GLOSSARY[term]
+export function GlossaryTooltip({ term, locale = 'en', children }: GlossaryTooltipProps) {
+  const definition = getGlossaryDef(term, locale)
   const [visible, setVisible] = useState(false)
 
   if (!definition) {
@@ -29,7 +29,7 @@ export function GlossaryTooltip({ term, children }: GlossaryTooltipProps) {
       <span
         role="button"
         tabIndex={0}
-        aria-label={`Definition: ${term}`}
+        aria-label={`${term}: ${definition}`}
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => setVisible(false)}
         onFocus={() => setVisible(true)}
@@ -42,12 +42,12 @@ export function GlossaryTooltip({ term, children }: GlossaryTooltipProps) {
           }
           if (e.key === 'Escape') setVisible(false)
         }}
-        className={[
-          'cursor-help',
-          'border-b border-dashed border-slate-400',
-          'text-inherit',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:rounded-sm',
-        ].join(' ')}
+        style={{
+          borderBottom: '1.5px dashed var(--primary)',
+          cursor: 'help',
+          color: 'inherit',
+        }}
+        className="focus:outline-none"
       >
         {children}
       </span>
@@ -56,18 +56,37 @@ export function GlossaryTooltip({ term, children }: GlossaryTooltipProps) {
       {visible && (
         <span
           role="tooltip"
-          className={[
-            'absolute bottom-full left-1/2 -translate-x-1/2 mb-2',
-            'z-50 w-64 max-w-[calc(100vw-2rem)]',
-            'rounded-lg bg-slate-800 text-white text-sm leading-snug',
-            'px-3 py-2 shadow-xl',
-            // Arrow
-            "after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2",
-            'after:border-4 after:border-transparent after:border-t-slate-800',
-          ].join(' ')}
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[70] w-64 max-w-[calc(100vw-2rem)]"
+          style={{
+            background: 'var(--text-1)',
+            color: 'var(--surface)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            fontSize: '13px',
+            lineHeight: '1.5',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+          }}
         >
-          <span className="block font-semibold text-xs text-slate-300 mb-1">{term}</span>
+          <span
+            style={{ display: 'block', fontWeight: 700, fontSize: '11px', marginBottom: '4px', opacity: 0.7 }}
+          >
+            {term}
+          </span>
           {definition}
+          {/* Arrow */}
+          <span
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: `6px solid var(--text-1)`,
+            }}
+          />
         </span>
       )}
     </span>
