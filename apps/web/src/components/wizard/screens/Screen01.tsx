@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import { ScreenGlossary } from '@/components/wizard/ScreenGlossary'
 
 // Legal Gate — 2 blocking questions before the wizard begins
 // Expired parole or active RFE/NOID = hard block + legal resources redirect
@@ -311,6 +312,8 @@ export function Screen01() {
       >
         {t.continueBtn}
       </button>
+
+      <ScreenGlossary terms={['Parole', 'Re-Parole', 'I-94']} locale={state.locale} />
     </div>
   )
 }

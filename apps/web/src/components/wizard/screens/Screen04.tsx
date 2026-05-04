@@ -27,6 +27,9 @@ const T = {
     },
     skipBtn: 'Продовжити без завантаження',
     skipNote: 'Можна завантажити пізніше або надати документи безпосередньо до USCIS.',
+    translateTitle: 'Документи не англійською?',
+    translateNote: 'Замовте сертифікований переклад для USCIS.',
+    translateBtn: 'Замовити переклад →',
   },
   ru: {
     title: 'Загрузите документы',
@@ -50,6 +53,9 @@ const T = {
     },
     skipBtn: 'Продолжить без загрузки',
     skipNote: 'Можно загрузить позже или предоставить документы непосредственно в USCIS.',
+    translateTitle: 'Документы не на английском?',
+    translateNote: 'Закажите сертифицированный перевод для USCIS.',
+    translateBtn: 'Заказать перевод →',
   },
   en: {
     title: 'Upload documents',
@@ -73,6 +79,9 @@ const T = {
     },
     skipBtn: 'Continue without uploading',
     skipNote: 'You can upload later or provide documents directly to USCIS.',
+    translateTitle: 'Documents not in English?',
+    translateNote: 'Order a certified translation for USCIS.',
+    translateBtn: 'Order translation →',
   },
   es: {
     title: 'Subir documentos',
@@ -96,6 +105,9 @@ const T = {
     },
     skipBtn: 'Continuar sin subir',
     skipNote: 'Puede subir más tarde o entregar los documentos directamente a USCIS.',
+    translateTitle: '¿Documentos no están en inglés?',
+    translateNote: 'Solicite una traducción certificada para USCIS.',
+    translateBtn: 'Solicitar traducción →',
   },
 } as const
 
@@ -263,6 +275,32 @@ export function Screen04() {
         <p className="text-[11px] mt-1.5 text-center" style={{ color: 'var(--text-3)' }}>
           {t.skipNote}
         </p>
+      </div>
+
+      {/* Translation CTA */}
+      <div
+        className="rounded-[12px] p-3.5 flex items-center justify-between gap-3"
+        style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)' }}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold" style={{ color: 'var(--info-text)' }}>
+            📝 {t.translateTitle}
+          </p>
+          <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-3)' }}>
+            {t.translateNote}
+          </p>
+        </div>
+        <a
+          href={`/${state.locale}/services/translate-document`}
+          className="text-[13px] font-semibold flex-shrink-0 rounded-[8px] px-3 py-2 transition-all"
+          style={{
+            background: 'var(--primary)',
+            color: '#fff',
+            textDecoration: 'none',
+          }}
+        >
+          {t.translateBtn}
+        </a>
       </div>
     </div>
   )

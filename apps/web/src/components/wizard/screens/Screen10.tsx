@@ -30,6 +30,9 @@ const T = {
     generatingBtn: 'Формуємо пакет…',
     feeNote: 'Внески USCIS сплачуються окремо та безпосередньо до USCIS — перевіряйте поточні суми на',
     feeLink: 'Перевірити внески ↗',
+    feeCardTitle: '⚠️ Держмито USCIS — це окремо від $',
+    feeCardText: 'Більшість учасників U4U не платять держмито ($0*). Перевірте точну суму перед подачею:',
+    feeCardLink: 'uscis.gov/feecalculator ↗',
   },
   ru: {
     title: 'Просмотр и подтверждение',
@@ -57,6 +60,9 @@ const T = {
     generatingBtn: 'Формируем пакет…',
     feeNote: 'Взносы USCIS оплачиваются отдельно и непосредственно в USCIS — проверяйте текущие суммы на',
     feeLink: 'Проверить взносы ↗',
+    feeCardTitle: '⚠️ Госпошлина USCIS — это отдельно от $',
+    feeCardText: 'Большинство участников U4U не платят госпошлину ($0*). Проверьте точную сумму перед подачей:',
+    feeCardLink: 'uscis.gov/feecalculator ↗',
   },
   en: {
     title: 'Review & confirm',
@@ -84,6 +90,9 @@ const T = {
     generatingBtn: 'Generating packet…',
     feeNote: 'USCIS filing fees are paid separately and directly to USCIS — verify current amounts at',
     feeLink: 'Check current fees ↗',
+    feeCardTitle: '⚠️ USCIS govt fee — separate from $',
+    feeCardText: 'Most U4U participants pay $0* in USCIS fees. Verify the exact amount before filing:',
+    feeCardLink: 'uscis.gov/feecalculator ↗',
   },
   es: {
     title: 'Revisar y confirmar',
@@ -111,6 +120,9 @@ const T = {
     generatingBtn: 'Generando paquete…',
     feeNote: 'Las tarifas de USCIS se pagan por separado y directamente a USCIS — verifique los montos actuales en',
     feeLink: 'Verificar tarifas ↗',
+    feeCardTitle: '⚠️ Tarifa USCIS — separada de $',
+    feeCardText: 'La mayoría de participantes U4U pagan $0* en tarifas USCIS. Verifique el monto exacto antes de presentar:',
+    feeCardLink: 'uscis.gov/feecalculator ↗',
   },
 } as const
 
@@ -243,6 +255,28 @@ export function Screen10() {
         </p>
       </div>
 
+      {/* ⚠️ USCIS fee card — prominent, BEFORE pay button */}
+      <div
+        className="rounded-[12px] p-3.5"
+        style={{ background: 'var(--warning-bg)', border: '1.5px solid var(--warning-border)' }}
+      >
+        <p className="text-[13px] font-bold mb-1" style={{ color: 'var(--warning-text)' }}>
+          {t.feeCardTitle}{packagePrice}
+        </p>
+        <p className="text-[13px] leading-relaxed mb-2" style={{ color: 'var(--warning-text)' }}>
+          {t.feeCardText}
+        </p>
+        <a
+          href="https://www.uscis.gov/feecalculator"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[13px] font-semibold"
+          style={{ color: 'var(--primary)' }}
+        >
+          {t.feeCardLink}
+        </a>
+      </div>
+
       <button
         type="button"
         onClick={handlePay}
@@ -260,13 +294,6 @@ export function Screen10() {
       >
         {loading ? t.generatingBtn : t.payBtn(packagePrice, allChecked)}
       </button>
-
-      <p className="text-[11px]" style={{ color: 'var(--text-3)' }}>
-        {t.feeNote}{' '}
-        <a href="https://www.uscis.gov/feecalculator" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>
-          {t.feeLink}
-        </a>
-      </p>
     </div>
   )
 }
