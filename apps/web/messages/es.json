@@ -176,13 +176,15 @@
       "processingWarning": "Los tiempos de procesamiento de USCIS varían significativamente. Consulte los estimados actuales en uscis.gov/processing-times. Planifique para períodos de espera sustanciales.",
       "medicalNote": "Se requiere documentación médica: prueba de vacunas y prueba de TB/IGRA cuando aplique. Siga las instrucciones actuales de USCIS para los requisitos médicos.",
       "eadWarning": "No presente el Formulario I-765 para autorización de empleo basada en esta solicitud de re-parole hasta que su I-131 haya sido aprobado y USCIS autorice la presentación del EAD. Este paquete de re-parole no es un paquete de presentación de EAD.",
+      "eadWarningBlock": "Advertencia importante sobre EAD: no presente el Formulario I-765 para autorización de empleo basada en este re-parole hasta que USCIS apruebe su Formulario I-131. Presentarlo demasiado pronto puede causar confusión o rechazo.",
+      "processingTimeNote": "Los tiempos de procesamiento cambian. Las solicitudes de U4U re-parole pueden tardar muchos meses. Revise la página oficial de USCIS Processing Times antes de presentar y monitoree su caso después del envío.",
       "feeWaiverNote": "Si no puede pagar la tarifa de presentación, puede solicitar una exención de tarifas usando el Formulario I-912. Las solicitudes de exención de tarifas son típicamente solo para presentación en papel. Verifique los requisitos de elegibilidad actuales de USCIS en uscis.gov/i-912.",
       "verified": {
         "facts": {
           "title": "Datos verificados",
           "form": "Formulario I-131 (edición 02/27/26)",
           "item": "Parte 2, Ítem 1.e — Seleccione \"Estoy fuera de los Estados Unidos, solicitando un Documento de Parole Adelantado\" (seleccione esto incluso si está dentro de los EE.UU.). Escriba \"Ukraine RE-PAROLE\" en la parte superior del formulario.",
-          "topNote": "Escriba a mano «Ukraine RE-PAROLE» en la parte superior del formulario",
+          "topNote": "Solo para presentación en papel: escriba a mano \"Ukraine RE-PAROLE\" en la parte superior del Formulario I-131 en papel. Para presentación en línea, siga las indicaciones de re-parole en my.uscis.gov.",
           "window": "Ventana de presentación: no antes de 180 días (6 meses) antes de que expire el parole actual"
         },
         "fees": {
