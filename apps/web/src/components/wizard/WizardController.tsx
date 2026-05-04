@@ -34,31 +34,8 @@ const SCREENS: Record<number, React.ComponentType> = {
   12: Screen12,
 }
 
-function SyncIndicator({ status }: { status: import('@/contexts/WizardContext').SyncStatus }) {
-  if (status === 'idle') return null
-
-  const label =
-    status === 'saving' ? 'Saving…' : status === 'saved' ? 'Saved' : 'Could not save'
-
-  const color =
-    status === 'saving'
-      ? 'text-slate-400'
-      : status === 'saved'
-        ? 'text-green-600'
-        : 'text-amber-600'
-
-  return (
-    <span
-      aria-live="polite"
-      className={`fixed top-2 right-3 z-50 text-[11px] font-medium transition-opacity ${color}`}
-    >
-      {label}
-    </span>
-  )
-}
-
 export function WizardController() {
-  const { state, syncStatus, setStep } = useWizard()
+  const { state, setStep } = useWizard()
   const { step } = state
 
   const ActiveScreen = SCREENS[step] ?? Screen00
@@ -73,7 +50,6 @@ export function WizardController() {
 
   return (
     <div className="relative pb-20 lg:pb-0">
-      <SyncIndicator status={syncStatus} />
       <ActiveScreen />
       {/* step 1 = Legal Gate — Screen01 owns its own forward button; hide NavBar Next to prevent bypass */}
       <WizardNavBar step={step} onBack={handleBack} onNext={handleNext} hideNext={step === 1} />
