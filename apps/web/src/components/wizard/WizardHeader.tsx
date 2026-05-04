@@ -8,23 +8,23 @@ const TOTAL_STEPS = 12
 
 const STEP_LABELS: Record<string, Record<number, string>> = {
   uk: {
-    0: 'Вступ', 1: 'Про форму', 2: 'Пакет', 3: 'Сім\'я', 4: 'Документи',
+    0: 'Вступ', 1: 'Перевірка', 2: 'Пакет', 3: 'Сім\'я', 4: 'Документи',
     5: 'Розпізнавання', 6: 'Підтвердження', 7: 'Відомості', 8: 'Спосіб подачі',
     9: 'Перегляд', 10: 'Оплата', 11: 'Завантаження', 12: 'Передача',
   },
   ru: {
-    0: 'Введение', 1: 'О форме', 2: 'Пакет', 3: 'Семья', 4: 'Документы',
+    0: 'Введение', 1: 'Проверка', 2: 'Пакет', 3: 'Семья', 4: 'Документы',
     5: 'Распознавание', 6: 'Подтверждение', 7: 'Сведения', 8: 'Способ подачи',
     9: 'Просмотр', 10: 'Оплата', 11: 'Загрузка', 12: 'Передача',
   },
   en: {
-    0: 'Welcome', 1: 'About the Form', 2: 'Package', 3: 'Family', 4: 'Documents',
-    5: 'Recognition', 6: 'Confirm', 7: 'Info & Evidence', 8: 'Filing Method',
+    0: 'Welcome', 1: 'Eligibility', 2: 'Package', 3: 'Family', 4: 'Documents',
+    5: 'Recognition', 6: 'Checklist', 7: 'Evidence', 8: 'Filing Method',
     9: 'Preview', 10: 'Payment', 11: 'Download', 12: 'Transfer',
   },
   es: {
-    0: 'Bienvenido', 1: 'Sobre el formulario', 2: 'Paquete', 3: 'Familia', 4: 'Documentos',
-    5: 'Reconocimiento', 6: 'Confirmación', 7: 'Información', 8: 'Método de presentación',
+    0: 'Bienvenido', 1: 'Elegibilidad', 2: 'Paquete', 3: 'Familia', 4: 'Documentos',
+    5: 'Reconocimiento', 6: 'Confirmación', 7: 'Evidencia', 8: 'Método de presentación',
     9: 'Vista previa', 10: 'Pago', 11: 'Descarga', 12: 'Transferencia',
   },
 }
