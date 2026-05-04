@@ -3,6 +3,93 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 
+const T = {
+  uk: {
+    title: 'Передача даних до USCIS',
+    subtitle: 'Відкрийте my.uscis.gov у новій вкладці. Копіюйте поля по одному.',
+    emailTab: '📧 Посилання на e-mail',
+    transferTab: '➤ Режим передачі',
+    emailTitle: '📧 Отримати посилання на e-mail',
+    emailNote: 'Збережіть посилання — воно буде дійсне 7 днів. Ви зможете завантажити з іншого пристрою.',
+    emailPlaceholder: 'ваш@email.com',
+    sendBtn: 'Надіслати на e-mail →',
+    successTitle: 'Все готово!',
+    successNote: (email: string) => `Посилання для завантаження буде надіслано на ${email}. Посилання дійсне 7 днів.`,
+    fieldOf: (cur: number, total: number) => `Поле ${cur} з ${total}`,
+    uscisAsks: 'USCIS запитує:',
+    copyBtn: '📋 Скопіювати та відкрити USCIS',
+    copiedBtn: '✓ Скопійовано!',
+    backBtn: '← Назад',
+    nextBtn: 'Далі →',
+    progressLabel: (cur: number, total: number) => `Прогрес: ${cur} з ${total}`,
+    iphoneTip: '💡 На iPhone: перемикайтесь між вкладками цього сайту та USCIS — копіюйте тут, вставляйте там. Прогрес зберігається автоматично.',
+    backToDownload: '← Назад до завантаження',
+  },
+  ru: {
+    title: 'Передача данных в USCIS',
+    subtitle: 'Откройте my.uscis.gov в новой вкладке. Копируйте поля по одному.',
+    emailTab: '📧 Ссылка на e-mail',
+    transferTab: '➤ Режим передачи',
+    emailTitle: '📧 Получить ссылку на e-mail',
+    emailNote: 'Сохраните ссылку — она будет действительна 7 дней. Вы сможете скачать с другого устройства.',
+    emailPlaceholder: 'ваш@email.com',
+    sendBtn: 'Отправить на e-mail →',
+    successTitle: 'Всё готово!',
+    successNote: (email: string) => `Ссылка для скачивания будет отправлена на ${email}. Ссылка действительна 7 дней.`,
+    fieldOf: (cur: number, total: number) => `Поле ${cur} из ${total}`,
+    uscisAsks: 'USCIS спрашивает:',
+    copyBtn: '📋 Скопировать и открыть USCIS',
+    copiedBtn: '✓ Скопировано!',
+    backBtn: '← Назад',
+    nextBtn: 'Далее →',
+    progressLabel: (cur: number, total: number) => `Прогресс: ${cur} из ${total}`,
+    iphoneTip: '💡 На iPhone: переключайтесь между вкладками этого сайта и USCIS — копируйте здесь, вставляйте там. Прогресс сохраняется автоматически.',
+    backToDownload: '← Назад к скачиванию',
+  },
+  en: {
+    title: 'Transfer data to USCIS',
+    subtitle: 'Open my.uscis.gov in a new tab. Copy fields one by one.',
+    emailTab: '📧 Email link',
+    transferTab: '➤ Transfer mode',
+    emailTitle: '📧 Get link on email',
+    emailNote: 'Save the link — it will work for 7 days. You can download from another device.',
+    emailPlaceholder: 'you@example.com',
+    sendBtn: 'Send to email →',
+    successTitle: 'All done!',
+    successNote: (email: string) => `Download link will be sent to ${email}. Link is valid for 7 days.`,
+    fieldOf: (cur: number, total: number) => `Field ${cur} of ${total}`,
+    uscisAsks: 'USCIS asks:',
+    copyBtn: '📋 Copy & open USCIS',
+    copiedBtn: '✓ Copied!',
+    backBtn: '← Back',
+    nextBtn: 'Next →',
+    progressLabel: (cur: number, total: number) => `Progress: ${cur} of ${total}`,
+    iphoneTip: '💡 On iPhone: switch tabs between this site and USCIS — copy here, paste there. Progress is saved automatically.',
+    backToDownload: '← Back to download',
+  },
+  es: {
+    title: 'Transferir datos a USCIS',
+    subtitle: 'Abra my.uscis.gov en una nueva pestaña. Copie los campos uno por uno.',
+    emailTab: '📧 Enlace por correo',
+    transferTab: '➤ Modo transferencia',
+    emailTitle: '📧 Obtener enlace por correo',
+    emailNote: 'Guarde el enlace — funcionará por 7 días. Puede descargar desde otro dispositivo.',
+    emailPlaceholder: 'usted@ejemplo.com',
+    sendBtn: 'Enviar por correo →',
+    successTitle: '¡Todo listo!',
+    successNote: (email: string) => `El enlace de descarga se enviará a ${email}. El enlace es válido por 7 días.`,
+    fieldOf: (cur: number, total: number) => `Campo ${cur} de ${total}`,
+    uscisAsks: 'USCIS pregunta:',
+    copyBtn: '📋 Copiar y abrir USCIS',
+    copiedBtn: '✓ ¡Copiado!',
+    backBtn: '← Atrás',
+    nextBtn: 'Siguiente →',
+    progressLabel: (cur: number, total: number) => `Progreso: ${cur} de ${total}`,
+    iphoneTip: '💡 En iPhone: cambie de pestaña entre este sitio y USCIS — copie aquí, pegue allí. El progreso se guarda automáticamente.',
+    backToDownload: '← Volver a descarga',
+  },
+} as const
+
 const TRANSFER_FIELDS = [
   { question: 'Family Name (Item 1.a)', value: 'PETRENKO' },
   { question: 'Given Name (Item 1.b)', value: 'OLENA' },
@@ -13,6 +100,7 @@ const TRANSFER_FIELDS = [
 
 export function Screen12() {
   const { state, setTransferEmail, setStep } = useWizard()
+  const t = T[state.locale] ?? T.en
   const [email, setEmail] = useState(state.transferEmail ?? '')
   const [sent, setSent] = useState(Boolean(state.transferEmail))
   const [mode, setMode] = useState<'email' | 'transfer'>('email')
@@ -39,10 +127,10 @@ export function Screen12() {
     <div className="space-y-4">
       <div>
         <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
-          Transfer data to USCIS
+          {t.title}
         </h1>
         <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
-          Open my.uscis.gov in a new tab. Copy fields one by one.
+          {t.subtitle}
         </p>
       </div>
 
@@ -60,7 +148,7 @@ export function Screen12() {
               border: mode === m ? 'none' : '1px solid var(--border)',
             }}
           >
-            {m === 'email' ? '📧 Email link' : '➤ Transfer mode'}
+            {m === 'email' ? t.emailTab : t.transferTab}
           </button>
         ))}
       </div>
@@ -73,21 +161,20 @@ export function Screen12() {
           >
             <p className="text-[32px] mb-2">✅</p>
             <p className="text-[16px] font-bold mb-1" style={{ color: 'var(--success-text)' }}>
-              All done!
+              {t.successTitle}
             </p>
             <p className="text-[13px]" style={{ color: 'var(--success-text)' }}>
-              Download link will be sent to <strong>{email}</strong>.
-              Link is valid for 7 days.
+              {t.successNote(email)}
             </p>
           </div>
         ) : (
           <form onSubmit={handleSend} className="space-y-3">
             <div>
               <h2 className="text-[16px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
-                📧 Get link on email
+                {t.emailTitle}
               </h2>
               <p className="text-[13px] mb-3" style={{ color: 'var(--text-2)' }}>
-                Save the link — it will work for 7 days. You can download from another device.
+                {t.emailNote}
               </p>
             </div>
             <input
@@ -96,7 +183,7 @@ export function Screen12() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t.emailPlaceholder}
               className="w-full rounded-[8px] text-[16px]"
               style={{
                 background: 'var(--surface-2)',
@@ -119,7 +206,7 @@ export function Screen12() {
                 minHeight: '52px',
               }}
             >
-              Send to email →
+              {t.sendBtn}
             </button>
           </form>
         )
@@ -136,10 +223,10 @@ export function Screen12() {
               className="text-[12px] font-semibold uppercase tracking-wide mb-2"
               style={{ color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}
             >
-              Field {transferIdx + 1} of {TRANSFER_FIELDS.length}
+              {t.fieldOf(transferIdx + 1, TRANSFER_FIELDS.length)}
             </p>
             <p className="text-[13px] mb-1.5" style={{ color: 'var(--text-2)' }}>
-              USCIS asks:{' '}
+              {t.uscisAsks}{' '}
               <strong style={{ color: 'var(--text-1)' }}>
                 {TRANSFER_FIELDS[transferIdx]?.question}
               </strong>
@@ -167,7 +254,7 @@ export function Screen12() {
                 minHeight: '52px',
               }}
             >
-              {copied ? '✓ Copied!' : '📋 Copy & open USCIS'}
+              {copied ? t.copiedBtn : t.copyBtn}
             </button>
 
             <div className="flex gap-2">
@@ -183,7 +270,7 @@ export function Screen12() {
                   opacity: transferIdx === 0 ? 0.4 : 1,
                 }}
               >
-                ← Back
+                {t.backBtn}
               </button>
               <button
                 type="button"
@@ -197,7 +284,7 @@ export function Screen12() {
                   opacity: transferIdx === TRANSFER_FIELDS.length - 1 ? 0.4 : 1,
                 }}
               >
-                Next →
+                {t.nextBtn}
               </button>
             </div>
           </div>
@@ -207,7 +294,7 @@ export function Screen12() {
             className="rounded-[8px] p-2.5 text-[12px]"
             style={{ background: 'var(--surface-2)', color: 'var(--text-2)' }}
           >
-            Progress: {transferIdx + 1} of {TRANSFER_FIELDS.length}
+            {t.progressLabel(transferIdx + 1, TRANSFER_FIELDS.length)}
             <div
               className="h-[4px] rounded-[2px] mt-1.5 overflow-hidden"
               style={{ background: 'var(--border)' }}
@@ -227,8 +314,7 @@ export function Screen12() {
             className="rounded-[12px] p-3 text-[12px] leading-relaxed"
             style={{ background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--border)' }}
           >
-            💡 On iPhone: switch tabs between this site and USCIS — copy here, paste there.
-            Progress is saved automatically.
+            {t.iphoneTip}
           </div>
         </div>
       )}
@@ -245,7 +331,7 @@ export function Screen12() {
           minHeight: '44px',
         }}
       >
-        ← Back to download
+        {t.backToDownload}
       </button>
     </div>
   )

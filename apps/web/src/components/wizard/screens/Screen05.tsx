@@ -4,9 +4,69 @@ import { useState, useEffect } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import { MemberTabs } from '@/components/wizard/MemberTabs'
 
+const T = {
+  uk: {
+    title: 'Перевірка документів',
+    subtitle: 'Перевіряємо завантажені файли для кожного заявника.',
+    analyzing: 'Аналізуємо… ⏳',
+    analyzingNote: 'Витягуємо дані з ваших документів',
+    noDocs: (alias: string) => `Для "${alias}" документи не завантажено`,
+    noDocsNote: 'Це нормально — ви заповните дані безпосередньо у формі I-131. Перейдіть далі, і ми проведемо вас через кожне обов\'язкове поле.',
+    continueManual: 'Продовжити — заповнити вручну →',
+    allRecognized: '✓ Усі документи розпізнано',
+    extractedNote: 'Ми витягли дані з ваших документів. Тепер перевірте кожне поле.',
+    futureNote: 'Автоматичне заповнення полів — у наступному оновленні.',
+    uploadedBadge: '✓ Завантажено',
+    continueBtn: 'Продовжити →',
+  },
+  ru: {
+    title: 'Проверка документов',
+    subtitle: 'Проверяем загруженные файлы для каждого заявителя.',
+    analyzing: 'Анализируем… ⏳',
+    analyzingNote: 'Извлекаем данные из ваших документов',
+    noDocs: (alias: string) => `Для "${alias}" документы не загружены`,
+    noDocsNote: 'Это нормально — вы заполните данные непосредственно в форме I-131. Двигайтесь дальше, и мы проведём вас через каждое обязательное поле.',
+    continueManual: 'Продолжить — заполнить вручную →',
+    allRecognized: '✓ Все документы распознаны',
+    extractedNote: 'Мы извлекли данные из ваших документов. Теперь проверьте каждое поле.',
+    futureNote: 'Автоматическое заполнение полей — в следующем обновлении.',
+    uploadedBadge: '✓ Загружено',
+    continueBtn: 'Продолжить →',
+  },
+  en: {
+    title: 'Reviewing your documents',
+    subtitle: 'Checking uploaded files for each applicant.',
+    analyzing: 'Analyzing… ⏳',
+    analyzingNote: 'Extracting data from your documents',
+    noDocs: (alias: string) => `No documents uploaded for "${alias}"`,
+    noDocsNote: "That's fine — you'll fill in the details directly on Form I-131. Skip ahead and we'll guide you through every required field.",
+    continueManual: 'Continue — fill in details manually →',
+    allRecognized: '✓ All documents recognized',
+    extractedNote: "We extracted data from your documents. Now you'll verify each field.",
+    futureNote: 'Automated field extraction available in a future update.',
+    uploadedBadge: '✓ Uploaded',
+    continueBtn: 'Continue →',
+  },
+  es: {
+    title: 'Revisando sus documentos',
+    subtitle: 'Verificando archivos subidos para cada solicitante.',
+    analyzing: 'Analizando… ⏳',
+    analyzingNote: 'Extrayendo datos de sus documentos',
+    noDocs: (alias: string) => `No se subieron documentos para "${alias}"`,
+    noDocsNote: 'No hay problema — completará los datos directamente en el Formulario I-131. Continúe y lo guiaremos en cada campo requerido.',
+    continueManual: 'Continuar — completar manualmente →',
+    allRecognized: '✓ Todos los documentos reconocidos',
+    extractedNote: 'Extrajimos datos de sus documentos. Ahora verifique cada campo.',
+    futureNote: 'Extracción automática de campos disponible en una actualización futura.',
+    uploadedBadge: '✓ Subido',
+    continueBtn: 'Continuar →',
+  },
+} as const
+
 export function Screen05() {
   const { state, setStep } = useWizard()
   const { members } = state
+  const t = T[state.locale] ?? T.en
   const [activeIndex, setActiveIndex] = useState(0)
   const [analyzing, setAnalyzing] = useState(false)
 
@@ -32,10 +92,10 @@ export function Screen05() {
     <div className="space-y-4">
       <div>
         <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
-          Reviewing your documents
+          {t.title}
         </h1>
         <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
-          Checking uploaded files for each applicant.
+          {t.subtitle}
         </p>
       </div>
 
@@ -62,10 +122,10 @@ export function Screen05() {
               aria-label="Analyzing"
             />
             <p className="text-[14px] font-medium" style={{ color: 'var(--info-text)' }}>
-              Analyzing… ⏳
+              {t.analyzing}
             </p>
             <p className="text-[12px] mt-1" style={{ color: 'var(--text-3)' }}>
-              Extracting data from your documents
+              {t.analyzingNote}
             </p>
           </div>
         )}
@@ -84,11 +144,10 @@ export function Screen05() {
                 <span className="text-[20px] flex-shrink-0">📄</span>
                 <div>
                   <p className="text-[14px] font-semibold mb-1" style={{ color: 'var(--warning-text)' }}>
-                    No documents uploaded for {activeMember.alias}
+                    {t.noDocs(activeMember.alias)}
                   </p>
                   <p className="text-[13px] leading-relaxed" style={{ color: 'var(--warning-text)' }}>
-                    That&apos;s fine — you&apos;ll fill in the details directly on Form I-131.
-                    Skip ahead and we&apos;ll guide you through every required field.
+                    {t.noDocsNote}
                   </p>
                 </div>
               </div>
@@ -106,7 +165,7 @@ export function Screen05() {
                 minHeight: '52px',
               }}
             >
-              Continue — fill in details manually →
+              {t.continueManual}
             </button>
           </>
         )}
@@ -122,10 +181,10 @@ export function Screen05() {
                 className="text-[11px] font-semibold uppercase tracking-wide mb-3"
                 style={{ color: 'var(--success-text)', letterSpacing: '0.6px' }}
               >
-                ✓ All documents recognized
+                {t.allRecognized}
               </p>
               <p className="text-[13px] mb-3 leading-relaxed" style={{ color: 'var(--success-text)' }}>
-                We extracted data from your documents. Now you&apos;ll verify each field.
+                {t.extractedNote}
               </p>
               {Object.entries(activeMember.docs)
                 .filter(([, d]) => d.status === 'done')
@@ -138,12 +197,12 @@ export function Screen05() {
                       {docKey.replace(/_/g, ' ')}
                     </span>
                     <span className="font-bold text-[12px]" style={{ color: 'var(--success-text)' }}>
-                      ✓ Uploaded
+                      {t.uploadedBadge}
                     </span>
                   </div>
                 ))}
               <p className="mt-2 text-[12px]" style={{ color: 'var(--text-3)' }}>
-                Automated field extraction available in a future update.
+                {t.futureNote}
               </p>
             </div>
 
@@ -159,7 +218,7 @@ export function Screen05() {
                 minHeight: '52px',
               }}
             >
-              Continue →
+              {t.continueBtn}
             </button>
           </>
         )}

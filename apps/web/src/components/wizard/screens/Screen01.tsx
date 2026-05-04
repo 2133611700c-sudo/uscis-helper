@@ -1,112 +1,316 @@
 'use client'
 
-const INFO_CARDS = [
-  {
-    label: 'Current Edition',
-    detail: 'Form I-131 edition 01/20/25 — currently accepted. Download at uscis.gov/i-131.',
-    type: 'info' as const,
+import { useState } from 'react'
+import { useWizard } from '@/contexts/WizardContext'
+
+// Legal Gate — 2 blocking questions before the wizard begins
+// Expired parole or active RFE/NOID = hard block + legal resources redirect
+
+const T = {
+  uk: {
+    title: 'Перевірка права',
+    subtitle: 'Два запитання перед початком. Це займе 30 секунд.',
+    q1label: 'Ваш поточний пароль ще активний?',
+    q1hint: 'Термін дії на вашому I-94 ще не закінчився.',
+    q1yes: '✓ Так, ще активний',
+    q1no: '✗ Ні, термін закінчився',
+    q2label: 'Ви отримували RFE або NOID щодо вашого паролю?',
+    q2hint: 'RFE = Request for Evidence, NOID = Notice of Intent to Deny',
+    q2no: '✓ Ні, не отримував(ла)',
+    q2yes: '✗ Так, отримував(ла)',
+    continueBtn: 'Продовжити →',
+    notAnswered: 'Будь ласка, дайте відповідь на обидва запитання',
+    blockedExpiredTitle: 'Потрібна юридична консультація',
+    blockedExpiredText:
+      'Схоже, що строк вашого паролю минув. Ви все ще можете подати заявку, але ситуація складніша — радимо спочатку проконсультуватись з імміграційним адвокатом.',
+    blockedRFETitle: 'Потрібна юридична консультація',
+    blockedRFEText:
+      'Ви отримали RFE або NOID. Подача заявки повторного паролю в такій ситуації вимагає юридичного супроводу.',
+    legalBtn: 'Безкоштовні юридичні ресурси →',
+    backBtn: '← Змінити відповіді',
+    usaImmigrationLegal: 'USA Immigration Legal',
+    note: 'Ця служба не надає юридичні поради. Messenginfo допомагає правильно заповнити форму — не замінює адвоката.',
   },
-  {
-    label: 'Paper filing: Part 2, Item 1.e',
-    detail: 'Select Item 1.e and handwrite "Ukraine RE-PAROLE" at the top of the first page.',
-    type: 'neutral' as const,
+  ru: {
+    title: 'Проверка права на подачу',
+    subtitle: 'Два вопроса перед началом. Это займёт 30 секунд.',
+    q1label: 'Ваш текущий пароль ещё активен?',
+    q1hint: 'Срок действия на вашем I-94 ещё не истёк.',
+    q1yes: '✓ Да, ещё активен',
+    q1no: '✗ Нет, срок истёк',
+    q2label: 'Получали ли вы RFE или NOID по вашему паролю?',
+    q2hint: 'RFE = Request for Evidence, NOID = Notice of Intent to Deny',
+    q2no: '✓ Нет, не получал(а)',
+    q2yes: '✗ Да, получал(а)',
+    continueBtn: 'Продолжить →',
+    notAnswered: 'Пожалуйста, ответьте на оба вопроса',
+    blockedExpiredTitle: 'Требуется юридическая консультация',
+    blockedExpiredText:
+      'Похоже, срок вашего пароля истёк. Вы всё ещё можете подать заявление, но ситуация сложнее — рекомендуем сначала проконсультироваться с иммиграционным адвокатом.',
+    blockedRFETitle: 'Требуется юридическая консультация',
+    blockedRFEText:
+      'Вы получили RFE или NOID. Подача заявления на повторный пароль в такой ситуации требует юридического сопровождения.',
+    legalBtn: 'Бесплатные юридические ресурсы →',
+    backBtn: '← Изменить ответы',
+    usaImmigrationLegal: 'США — Иммиграционная помощь',
+    note: 'Эта служба не предоставляет юридические консультации. Messenginfo помогает заполнить форму — не заменяет адвоката.',
   },
-  {
-    label: 'Online filing: Box 10.C',
-    detail: 'File at my.uscis.gov — select Box 10.C in the online form.',
-    type: 'neutral' as const,
+  en: {
+    title: 'Eligibility Check',
+    subtitle: 'Two questions before you start. Takes 30 seconds.',
+    q1label: 'Is your current parole still active?',
+    q1hint: 'The expiration date on your I-94 has not passed yet.',
+    q1yes: '✓ Yes, still active',
+    q1no: '✗ No, it has expired',
+    q2label: 'Have you received an RFE or NOID about your parole?',
+    q2hint: 'RFE = Request for Evidence, NOID = Notice of Intent to Deny',
+    q2no: '✓ No, I have not',
+    q2yes: '✗ Yes, I have',
+    continueBtn: 'Continue →',
+    notAnswered: 'Please answer both questions',
+    blockedExpiredTitle: 'Legal Consultation Recommended',
+    blockedExpiredText:
+      'Your parole appears to have expired. You may still be able to file, but the situation is more complex — we strongly recommend consulting an immigration attorney first.',
+    blockedRFETitle: 'Legal Consultation Required',
+    blockedRFEText:
+      'You have received an RFE or NOID. Filing for re-parole in this situation requires legal guidance.',
+    legalBtn: 'Free Legal Resources →',
+    backBtn: '← Change answers',
+    usaImmigrationLegal: 'Immigration Legal Resources',
+    note: 'This service does not provide legal advice. Messenginfo helps you fill out the form — it does not replace an attorney.',
   },
-  {
-    label: 'Filing window',
-    detail: 'Submit up to 180 days before your current parole expires. Processing: 8–21 months.',
-    type: 'neutral' as const,
+  es: {
+    title: 'Verificación de elegibilidad',
+    subtitle: 'Dos preguntas antes de comenzar. Toma 30 segundos.',
+    q1label: '¿Su parole actual sigue activo?',
+    q1hint: 'La fecha de vencimiento en su I-94 no ha pasado todavía.',
+    q1yes: '✓ Sí, sigue activo',
+    q1no: '✗ No, ya venció',
+    q2label: '¿Ha recibido un RFE o NOID sobre su parole?',
+    q2hint: 'RFE = Solicitud de Evidencia, NOID = Aviso de Intención de Denegar',
+    q2no: '✓ No, no he recibido',
+    q2yes: '✗ Sí, he recibido',
+    continueBtn: 'Continuar →',
+    notAnswered: 'Por favor responda ambas preguntas',
+    blockedExpiredTitle: 'Se recomienda consulta legal',
+    blockedExpiredText:
+      'Parece que su parole ha vencido. Aún puede presentar la solicitud, pero la situación es más compleja — recomendamos consultar a un abogado de inmigración primero.',
+    blockedRFETitle: 'Se requiere consulta legal',
+    blockedRFEText:
+      'Ha recibido un RFE o NOID. Presentar una solicitud de re-parole en esta situación requiere orientación legal.',
+    legalBtn: 'Recursos legales gratuitos →',
+    backBtn: '← Cambiar respuestas',
+    usaImmigrationLegal: 'Recursos Legales de Inmigración',
+    note: 'Este servicio no brinda asesoramiento legal. Messenginfo le ayuda a llenar el formulario — no reemplaza a un abogado.',
   },
-]
+} as const
 
 export function Screen01() {
-  return (
-    <div className="space-y-4">
+  const { state, setStep } = useWizard()
+  const t = T[state.locale] ?? T.en
 
-      {/* Badges */}
-      <div className="flex gap-2 flex-wrap">
-        <span
-          className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
-          style={{ background: 'var(--info-bg)', color: 'var(--info-text)' }}
-        >
-          Form I-131
-        </span>
-        <span
-          className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
-          style={{ background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
-        >
-          Edition 01/20/25
-        </span>
-        <span
-          className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
-          style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
-        >
-          Source: USCIS
-        </span>
-      </div>
+  const [paroleActive, setParoleActive] = useState<boolean | null>(null)
+  const [hasRFE, setHasRFE] = useState<boolean | null>(null)
+  const [attempted, setAttempted] = useState(false)
 
-      <div>
-        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
-          About Form I-131
-        </h1>
-        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
-          Key facts before you start — edition, filing options, and timeline.
-        </p>
-      </div>
+  const isBlocked =
+    paroleActive === false || hasRFE === true
 
-      {INFO_CARDS.map((card) => (
+  const blockReason =
+    paroleActive === false ? 'expired' : hasRFE === true ? 'rfe' : null
+
+  function handleContinue() {
+    setAttempted(true)
+    if (paroleActive === null || hasRFE === null) return
+    if (isBlocked) return
+    setStep(2)
+  }
+
+  if (isBlocked && blockReason) {
+    return (
+      <div className="space-y-4">
+        {/* Block card */}
         <div
-          key={card.label}
-          className="rounded-[12px] p-3.5"
-          style={{
-            background: card.type === 'info' ? 'var(--info-bg)' : 'var(--surface)',
-            border: `1px solid ${card.type === 'info' ? 'var(--info-border)' : 'var(--border)'}`,
-          }}
+          className="rounded-[16px] p-5 text-center"
+          style={{ background: 'var(--warning-bg)', border: '2px solid var(--warning-border)' }}
         >
-          <p className="text-[14px] font-semibold mb-1" style={{ color: card.type === 'info' ? 'var(--info-text)' : 'var(--text-1)' }}>
-            {card.label}
-          </p>
-          <p className="text-[13px]" style={{ color: card.type === 'info' ? 'var(--info-text)' : 'var(--text-2)' }}>
-            {card.detail}
+          <div className="text-[48px] mb-3">⚠️</div>
+          <h1 className="text-[20px] font-bold mb-3" style={{ color: 'var(--text-1)' }}>
+            {blockReason === 'expired' ? t.blockedExpiredTitle : t.blockedRFETitle}
+          </h1>
+          <p className="text-[15px] leading-relaxed" style={{ color: 'var(--text-2)' }}>
+            {blockReason === 'expired' ? t.blockedExpiredText : t.blockedRFEText}
           </p>
         </div>
-      ))}
 
-      {/* Fee reminder */}
-      <div
-        className="rounded-[12px] p-3.5"
-        style={{
-          background: 'var(--warning-bg)',
-          border: '1px solid var(--warning-border)',
-        }}
-      >
-        <p className="text-[13px]" style={{ color: 'var(--warning-text)' }}>
-          <strong>USCIS filing fees (paid directly to USCIS, not to us):</strong>
-          {' '}Fees vary — verify current amounts at{' '}
+        {/* Legal resources */}
+        <div
+          className="rounded-[12px] p-3.5 space-y-2.5"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>
+            {t.usaImmigrationLegal}
+          </p>
           <a
-            href="https://www.uscis.gov/feecalculator"
+            href="https://www.immigrationadvocates.org/nonprofit/legaldirectory/"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: 'var(--warning-text)', fontWeight: 600 }}
+            className="flex items-center justify-between rounded-[10px] p-3 no-underline transition-all active:scale-[0.99]"
+            style={{ background: 'var(--primary)', color: '#fff' }}
           >
-            Check current fees ↗
+            <span className="text-[14px] font-semibold">National Immigration Legal Services Directory</span>
+            <span>↗</span>
           </a>
+          <a
+            href="https://www.uscis.gov/about-us/find-legal-services"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between rounded-[10px] p-3 no-underline transition-all active:scale-[0.99]"
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
+          >
+            <span className="text-[14px] font-semibold">USCIS — Find Legal Services ↗</span>
+          </a>
+        </div>
+
+        {/* Note */}
+        <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-3)' }}>
+          {t.note}
+        </p>
+
+        {/* Back button */}
+        <button
+          type="button"
+          onClick={() => {
+            setParoleActive(null)
+            setHasRFE(null)
+            setAttempted(false)
+          }}
+          className="w-full rounded-[10px] text-[14px] font-medium transition-all"
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border-strong)',
+            color: 'var(--text-2)',
+            padding: '12px',
+            minHeight: '44px',
+          }}
+        >
+          {t.backBtn}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
+          {t.title}
+        </h1>
+        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
+          {t.subtitle}
         </p>
       </div>
 
-      <a
-        href="https://www.uscis.gov/i-131"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-[14px] font-semibold no-underline transition-all"
-        style={{ color: 'var(--primary)' }}
+      {/* Q1 */}
+      <div
+        className="rounded-[12px] p-4"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
-        Download I-131 from uscis.gov ↗
-      </a>
+        <p className="text-[15px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
+          1. {t.q1label}
+        </p>
+        <p className="text-[12px] mb-3" style={{ color: 'var(--text-3)' }}>{t.q1hint}</p>
+        <div className="flex gap-2.5">
+          <button
+            type="button"
+            onClick={() => setParoleActive(true)}
+            className="flex-1 rounded-[10px] text-[14px] font-semibold transition-all py-3"
+            style={{
+              background: paroleActive === true ? 'var(--success)' : 'var(--surface-2)',
+              color: paroleActive === true ? '#fff' : 'var(--text-1)',
+              border: `1.5px solid ${paroleActive === true ? 'var(--success)' : 'var(--border-strong)'}`,
+            }}
+          >
+            {t.q1yes}
+          </button>
+          <button
+            type="button"
+            onClick={() => setParoleActive(false)}
+            className="flex-1 rounded-[10px] text-[14px] font-semibold transition-all py-3"
+            style={{
+              background: paroleActive === false ? 'var(--error-bg)' : 'var(--surface-2)',
+              color: paroleActive === false ? 'var(--error-text)' : 'var(--text-1)',
+              border: `1.5px solid ${paroleActive === false ? 'var(--error-border)' : 'var(--border-strong)'}`,
+            }}
+          >
+            {t.q1no}
+          </button>
+        </div>
+      </div>
+
+      {/* Q2 */}
+      <div
+        className="rounded-[12px] p-4"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
+        <p className="text-[15px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
+          2. {t.q2label}
+        </p>
+        <p className="text-[12px] mb-3" style={{ color: 'var(--text-3)' }}>{t.q2hint}</p>
+        <div className="flex gap-2.5">
+          <button
+            type="button"
+            onClick={() => setHasRFE(false)}
+            className="flex-1 rounded-[10px] text-[14px] font-semibold transition-all py-3"
+            style={{
+              background: hasRFE === false ? 'var(--success)' : 'var(--surface-2)',
+              color: hasRFE === false ? '#fff' : 'var(--text-1)',
+              border: `1.5px solid ${hasRFE === false ? 'var(--success)' : 'var(--border-strong)'}`,
+            }}
+          >
+            {t.q2no}
+          </button>
+          <button
+            type="button"
+            onClick={() => setHasRFE(true)}
+            className="flex-1 rounded-[10px] text-[14px] font-semibold transition-all py-3"
+            style={{
+              background: hasRFE === true ? 'var(--error-bg)' : 'var(--surface-2)',
+              color: hasRFE === true ? 'var(--error-text)' : 'var(--text-1)',
+              border: `1.5px solid ${hasRFE === true ? 'var(--error-border)' : 'var(--border-strong)'}`,
+            }}
+          >
+            {t.q2yes}
+          </button>
+        </div>
+      </div>
+
+      {/* Validation error */}
+      {attempted && (paroleActive === null || hasRFE === null) && (
+        <p className="text-[13px] font-medium" style={{ color: 'var(--error-text)' }}>
+          {t.notAnswered}
+        </p>
+      )}
+
+      {/* Disclaimer */}
+      <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-3)' }}>
+        {t.note}
+      </p>
+
+      <button
+        type="button"
+        onClick={handleContinue}
+        className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
+        style={{
+          background: 'var(--btn-action)',
+          color: 'var(--btn-action-text)',
+          border: 'none',
+          padding: '14px',
+          minHeight: '52px',
+        }}
+      >
+        {t.continueBtn}
+      </button>
     </div>
   )
 }

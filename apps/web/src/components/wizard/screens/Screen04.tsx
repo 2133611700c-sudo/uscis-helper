@@ -4,43 +4,109 @@ import { useState, useRef } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import { MemberTabs } from '@/components/wizard/MemberTabs'
 
+const T = {
+  uk: {
+    title: 'Завантажте документи',
+    subtitle: 'Зробіть фото — ми витягнемо дані. Документи окремі для кожного члена сім\'ї.',
+    qualityChip: '💡 Яка якість фото потрібна?',
+    required: 'обов\'язково',
+    uploaded: '✓ Завантажено',
+    takePhoto: '📷 Фото / Завантажити',
+    chooseFile: '📂 Файл',
+    docLabels: {
+      passport: 'Паспорт — сторінка з фото',
+      i94: 'Запис I-94 Arrival/Departure',
+      parole_notice: 'Попереднє повідомлення про пароль',
+      photo: 'Паспортне фото (нещодавнє)',
+    },
+    docDescs: {
+      passport: 'Сторінка з фото: ім\'я, дата народження, номер паспорту.',
+      i94: 'Роздрукуйте на i94.cbp.dhs.gov або використайте паперову копію.',
+      parole_notice: 'Повідомлення USCIS про ваш поточний термін паролю.',
+      photo: '2×2 дюйми, білий фон, зроблено протягом 6 місяців.',
+    },
+  },
+  ru: {
+    title: 'Загрузите документы',
+    subtitle: 'Сделайте фото — мы извлечём данные. Документы отдельные для каждого члена семьи.',
+    qualityChip: '💡 Какое качество фото нужно?',
+    required: 'обязательно',
+    uploaded: '✓ Загружено',
+    takePhoto: '📷 Фото / Загрузить',
+    chooseFile: '📂 Файл',
+    docLabels: {
+      passport: 'Паспорт — страница с фото',
+      i94: 'Запись I-94 Arrival/Departure',
+      parole_notice: 'Предыдущее уведомление о пароле',
+      photo: 'Фото на документы (недавнее)',
+    },
+    docDescs: {
+      passport: 'Страница с фото: имя, дата рождения, номер паспорта.',
+      i94: 'Распечатайте на i94.cbp.dhs.gov или используйте бумажную копию.',
+      parole_notice: 'Уведомление USCIS о вашем текущем сроке пароля.',
+      photo: '2×2 дюйма, белый фон, сделано в течение 6 месяцев.',
+    },
+  },
+  en: {
+    title: 'Upload documents',
+    subtitle: 'Take a photo — we auto-extract the data. Documents are separate for each family member.',
+    qualityChip: '💡 What photo quality is needed?',
+    required: 'required',
+    uploaded: '✓ Uploaded',
+    takePhoto: '📷 Take Photo / Upload',
+    chooseFile: '📂 File',
+    docLabels: {
+      passport: 'Passport — photo page',
+      i94: 'I-94 Arrival/Departure Record',
+      parole_notice: 'Previous Parole Notice',
+      photo: 'Recent Passport-Style Photo',
+    },
+    docDescs: {
+      passport: 'Photo page with your name, date of birth, and passport number.',
+      i94: 'Print from i94.cbp.dhs.gov or use your paper copy.',
+      parole_notice: 'USCIS approval notice for your current parole period.',
+      photo: '2×2 inch, white background, taken within 6 months.',
+    },
+  },
+  es: {
+    title: 'Subir documentos',
+    subtitle: 'Tome una foto — extraemos los datos automáticamente. Documentos separados para cada miembro.',
+    qualityChip: '💡 ¿Qué calidad de foto se necesita?',
+    required: 'requerido',
+    uploaded: '✓ Subido',
+    takePhoto: '📷 Tomar foto / Subir',
+    chooseFile: '📂 Archivo',
+    docLabels: {
+      passport: 'Pasaporte — página de foto',
+      i94: 'Registro I-94 de Llegada/Salida',
+      parole_notice: 'Aviso de Parole Anterior',
+      photo: 'Foto tipo pasaporte reciente',
+    },
+    docDescs: {
+      passport: 'Página de foto con nombre, fecha de nacimiento y número de pasaporte.',
+      i94: 'Imprima desde i94.cbp.dhs.gov o use su copia en papel.',
+      parole_notice: 'Aviso de aprobación de USCIS para su período de parole actual.',
+      photo: '2×2 pulgadas, fondo blanco, tomada en los últimos 6 meses.',
+    },
+  },
+} as const
+
 type DocSlot = {
-  key: string
-  label: string
-  desc: string
+  key: 'passport' | 'i94' | 'parole_notice' | 'photo'
   required: boolean
 }
 
 const DOC_SLOTS: DocSlot[] = [
-  {
-    key: 'passport',
-    label: 'Passport — photo page',
-    desc: 'Photo page with your name, date of birth, and passport number.',
-    required: true,
-  },
-  {
-    key: 'i94',
-    label: 'I-94 Arrival/Departure Record',
-    desc: 'Print from i94.cbp.dhs.gov or use your paper copy.',
-    required: true,
-  },
-  {
-    key: 'parole_notice',
-    label: 'Previous Parole Notice',
-    desc: 'USCIS approval notice for your current parole period.',
-    required: false,
-  },
-  {
-    key: 'photo',
-    label: 'Recent Passport-Style Photo',
-    desc: '2×2 inch, white background, taken within 6 months.',
-    required: false,
-  },
+  { key: 'passport', required: true },
+  { key: 'i94', required: true },
+  { key: 'parole_notice', required: false },
+  { key: 'photo', required: false },
 ]
 
 export function Screen04() {
   const { state, setMember } = useWizard()
   const { members } = state
+  const t = T[state.locale] ?? T.en
   const [activeIndex, setActiveIndex] = useState(0)
 
   const activeMember = members[activeIndex]
@@ -67,10 +133,10 @@ export function Screen04() {
     <div className="space-y-4">
       <div>
         <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
-          Upload documents
+          {t.title}
         </h1>
         <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
-          Take a photo — we auto-extract the data. Documents are separate for each family member.
+          {t.subtitle}
         </p>
       </div>
 
@@ -82,7 +148,7 @@ export function Screen04() {
         className="inline-flex items-center gap-1.5 rounded-full text-[12px] font-medium px-2.5 py-1.5"
         style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)', color: 'var(--info-text)' }}
       >
-        💡 What photo quality is needed?
+        {t.qualityChip}
       </button>
 
       <div
@@ -106,9 +172,11 @@ export function Screen04() {
             >
               <div className="flex items-start justify-between gap-2 mb-1.5">
                 <p className="text-[14px] font-semibold" style={{ color: 'var(--text-1)' }}>
-                  {slot.label}
+                  {t.docLabels[slot.key]}
                   {slot.required && (
-                    <span className="ml-1.5 text-[11px] font-bold" style={{ color: 'var(--error-text)' }}>required</span>
+                    <span className="ml-1.5 text-[11px] font-bold" style={{ color: 'var(--error-text)' }}>
+                      {t.required}
+                    </span>
                   )}
                 </p>
                 {isDone && (
@@ -116,12 +184,12 @@ export function Screen04() {
                     className="text-[12px] font-bold px-2 py-0.5 rounded-[6px] flex-shrink-0"
                     style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
                   >
-                    ✓ Uploaded
+                    {t.uploaded}
                   </span>
                 )}
               </div>
               <p className="text-[13px] mb-2.5" style={{ color: 'var(--text-3)' }}>
-                {slot.desc}
+                {t.docDescs[slot.key]}
               </p>
               {!isDone && (
                 <div className="flex gap-2">
@@ -137,7 +205,7 @@ export function Screen04() {
                       minHeight: '44px',
                     }}
                   >
-                    📷 Take Photo / Upload
+                    {t.takePhoto}
                   </button>
                   <button
                     type="button"
@@ -151,7 +219,7 @@ export function Screen04() {
                       minHeight: '44px',
                     }}
                   >
-                    📂 File
+                    {t.chooseFile}
                   </button>
                 </div>
               )}
@@ -160,7 +228,7 @@ export function Screen04() {
                 type="file"
                 accept="image/*,.pdf"
                 className="sr-only"
-                aria-label={`Upload ${slot.label}`}
+                aria-label={`Upload ${t.docLabels[slot.key]}`}
                 onChange={() => handleFileChange(slot.key)}
               />
             </div>

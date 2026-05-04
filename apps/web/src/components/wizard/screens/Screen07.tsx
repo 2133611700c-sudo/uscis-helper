@@ -3,8 +3,72 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 
+const T = {
+  uk: {
+    title: 'Пояснення та докази',
+    subtitle: 'Поясніть, чому ви маєте право на повторний пароль. Потрібен хоча б один з трьох варіантів нижче.',
+    explanationLabel: 'Письмове пояснення',
+    explanationOptional: '(необов\'язково, якщо додаєте документи)',
+    explanationPlaceholder: 'Коротко поясніть вашу ситуацію та причину запиту повторного паролю. Наприклад: дата закінчення поточного паролю, зв\'язки з Україною, гуманітарні обставини.',
+    explanationNote: 'Не вказуйте номери паспорту, I-94, SSN, паролі або банківські реквізити.',
+    docsLabel: 'Підтверджуючі документи',
+    docsOptional: '(необов\'язково, якщо надаєте письмове пояснення)',
+    docsExamples: 'Приклади: поточний I-94, попереднє повідомлення про схвалення паролю, підтвердження громадянства України.',
+    attachBtn: '+ Додати файли (PDF, JPG, PNG)',
+    evidenceLaterLabel: 'Я зберу підтверджуючі документи та додам їх безпосередньо до заявки USCIS.',
+    errorMsg: 'Будь ласка, надайте пояснення, додайте документи, або позначте "Додам докази пізніше".',
+    continueBtn: 'Продовжити →',
+  },
+  ru: {
+    title: 'Пояснение и доказательства',
+    subtitle: 'Объясните, почему вы имеете право на повторный пароль. Нужен хотя бы один из трёх вариантов ниже.',
+    explanationLabel: 'Письменное пояснение',
+    explanationOptional: '(необязательно, если прикладываете документы)',
+    explanationPlaceholder: 'Кратко объясните вашу ситуацию и причину запроса повторного пароля. Например: дата окончания текущего пароля, связи с Украиной, гуманитарные обстоятельства.',
+    explanationNote: 'Не указывайте номера паспорта, I-94, SSN, пароли или банковские реквизиты.',
+    docsLabel: 'Подтверждающие документы',
+    docsOptional: '(необязательно, если предоставляете письменное пояснение)',
+    docsExamples: 'Примеры: текущий I-94, предыдущее уведомление об одобрении пароля, подтверждение гражданства Украины.',
+    attachBtn: '+ Добавить файлы (PDF, JPG, PNG)',
+    evidenceLaterLabel: 'Я соберу подтверждающие документы и приложу их непосредственно к заявке USCIS.',
+    errorMsg: 'Пожалуйста, предоставьте пояснение, добавьте документы или отметьте "Добавлю доказательства позже".',
+    continueBtn: 'Продолжить →',
+  },
+  en: {
+    title: 'Supporting statement & evidence',
+    subtitle: 'Explain why you qualify for re-parole. You need at least one of the three options below.',
+    explanationLabel: 'Written explanation',
+    explanationOptional: '(optional if you attach documents)',
+    explanationPlaceholder: 'Briefly explain your situation and why you are requesting re-parole. For example: current parole expiration date, ties to Ukraine, humanitarian circumstances.',
+    explanationNote: 'Do not include passport numbers, I-94 numbers, SSN, passwords, or financial account numbers.',
+    docsLabel: 'Supporting documents',
+    docsOptional: '(optional if you provide a written explanation)',
+    docsExamples: 'Examples: current I-94, previous parole approval notice, proof of Ukrainian citizenship.',
+    attachBtn: '+ Attach files (PDF, JPG, PNG)',
+    evidenceLaterLabel: 'I will gather supporting documents and attach them directly to my USCIS submission.',
+    errorMsg: "Please provide an explanation, attach documents, or check \"I'll attach evidence later\".",
+    continueBtn: 'Continue →',
+  },
+  es: {
+    title: 'Declaración y evidencias',
+    subtitle: 'Explique por qué califica para re-parole. Necesita al menos una de las tres opciones a continuación.',
+    explanationLabel: 'Explicación escrita',
+    explanationOptional: '(opcional si adjunta documentos)',
+    explanationPlaceholder: 'Explique brevemente su situación y por qué solicita re-parole. Por ejemplo: fecha de vencimiento del parole actual, vínculos con Ucrania, circunstancias humanitarias.',
+    explanationNote: 'No incluya números de pasaporte, I-94, SSN, contraseñas ni datos bancarios.',
+    docsLabel: 'Documentos de apoyo',
+    docsOptional: '(opcional si proporciona una explicación escrita)',
+    docsExamples: 'Ejemplos: I-94 actual, aviso de aprobación de parole anterior, prueba de ciudadanía ucraniana.',
+    attachBtn: '+ Adjuntar archivos (PDF, JPG, PNG)',
+    evidenceLaterLabel: 'Recopilaré documentos de apoyo y los adjuntaré directamente a mi solicitud de USCIS.',
+    errorMsg: 'Por favor proporcione una explicación, adjunte documentos o marque "Adjuntaré evidencia más tarde".',
+    continueBtn: 'Continuar →',
+  },
+} as const
+
 export function Screen07() {
   const { state, setMember, setStep } = useWizard()
+  const t = T[state.locale] ?? T.en
   const member = state.members[0]
 
   const [explanation, setExplanation] = useState(
@@ -33,7 +97,7 @@ export function Screen07() {
     const hasEvidence = evidenceFiles.length > 0
 
     if (!hasExplanation && !hasEvidence && !evidenceLater) {
-      setError('Please provide an explanation, attach documents, or check "I\'ll attach evidence later".')
+      setError(t.errorMsg)
       return
     }
 
@@ -55,10 +119,10 @@ export function Screen07() {
     <div className="space-y-4">
       <div>
         <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
-          Supporting statement &amp; evidence
+          {t.title}
         </h1>
         <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
-          Explain why you qualify for re-parole. You need at least one of the three options below.
+          {t.subtitle}
         </p>
       </div>
 
@@ -70,9 +134,9 @@ export function Screen07() {
             className="block text-[13px] font-semibold mb-1.5"
             style={{ color: 'var(--text-1)' }}
           >
-            Written explanation
+            {t.explanationLabel}
             <span className="ml-1.5 font-normal text-[12px]" style={{ color: 'var(--text-3)' }}>
-              (optional if you attach documents)
+              {t.explanationOptional}
             </span>
           </label>
           <textarea
@@ -80,7 +144,7 @@ export function Screen07() {
             rows={5}
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
-            placeholder="Briefly explain your situation and why you are requesting re-parole. For example: current parole expiration date, ties to Ukraine, humanitarian circumstances."
+            placeholder={t.explanationPlaceholder}
             className="w-full rounded-[8px] text-[16px] resize-y"
             style={{
               background: 'var(--surface-2)',
@@ -93,20 +157,20 @@ export function Screen07() {
             }}
           />
           <p className="text-[11px] mt-1" style={{ color: 'var(--text-3)' }}>
-            Do not include passport numbers, I-94 numbers, SSN, passwords, or financial account numbers.
+            {t.explanationNote}
           </p>
         </div>
 
         {/* Evidence upload */}
         <div>
           <p className="text-[13px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
-            Supporting documents
+            {t.docsLabel}
             <span className="ml-1.5 font-normal text-[12px]" style={{ color: 'var(--text-3)' }}>
-              (optional if you provide a written explanation)
+              {t.docsOptional}
             </span>
           </p>
           <p className="text-[12px] mb-2" style={{ color: 'var(--text-3)' }}>
-            Examples: current I-94, previous parole approval notice, proof of Ukrainian citizenship.
+            {t.docsExamples}
           </p>
           <label
             htmlFor="evidence-upload"
@@ -118,7 +182,7 @@ export function Screen07() {
               minHeight: '52px',
             }}
           >
-            <span>+ Attach files (PDF, JPG, PNG)</span>
+            <span>{t.attachBtn}</span>
             <input
               id="evidence-upload"
               type="file"
@@ -162,7 +226,7 @@ export function Screen07() {
           }}
         >
           <div
-            className="w-[22px] h-[22px] rounded-[5px] flex-shrink-0 flex items-center justify-center mt-0.5"
+            className="w-[24px] h-[24px] rounded-[6px] flex-shrink-0 flex items-center justify-center mt-0.5"
             style={{
               border: `2px solid ${evidenceLater ? 'var(--primary)' : 'var(--border-strong)'}`,
               background: evidenceLater ? 'var(--primary)' : 'var(--surface)',
@@ -177,7 +241,7 @@ export function Screen07() {
             className="sr-only"
           />
           <span className="text-[13px]" style={{ color: 'var(--text-1)' }}>
-            I will gather supporting documents and attach them directly to my USCIS submission.
+            {t.evidenceLaterLabel}
           </span>
         </label>
 
@@ -201,7 +265,7 @@ export function Screen07() {
             minHeight: '52px',
           }}
         >
-          Continue →
+          {t.continueBtn}
         </button>
       </form>
     </div>
