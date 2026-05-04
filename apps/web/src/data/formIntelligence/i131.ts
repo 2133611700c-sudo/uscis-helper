@@ -1,9 +1,9 @@
 // apps/web/src/data/formIntelligence/i131.ts
-// Source: USCIS Form I-131 PDF edition 02/27/26 (current as of 2026-05-03)
-// Previous edition 01/20/25 — NOT accepted after March 31, 2026
-// Instructions source: I-131 Instructions PDF edition 02/27/26
+// Edition: 01/20/25 — verified live from uscis.gov/i-131 on 2026-05-04 (USCIS page last reviewed 03/30/2026).
+// IMPORTANT: "02/27/26" was the Feb 27 2024 U4U program announcement date — NOT a form edition.
+//            Do NOT use "02/27/26" anywhere as the I-131 form edition.
+// Instructions source: I-131 Instructions PDF edition 01/20/25
 // Fees source: Form G-1055 PDF (uscis.gov/g-1055), fetched 2026-04-30
-// Edition update verified 2026-05-03: USCIS forms-updates + DHS PDF guide 02/27/2026
 // All data is provisional — labeled per field where confirmed vs not_confirmed
 
 import type { FormIntelligence } from './types'
@@ -14,10 +14,10 @@ export const i131: FormIntelligence = {
   official_url: 'https://www.uscis.gov/i-131',
   form_pdf_url: 'https://www.uscis.gov/sites/default/files/document/forms/i-131.pdf',
   instructions_pdf_url: 'https://www.uscis.gov/sites/default/files/document/forms/i-131instr.pdf',
-  // Current edition as of 2026-05-03: 02/27/26 (replaces 01/20/25, which was rejected after Mar 31, 2026)
-  // Evidence: USCIS forms-updates page; DHS advance-parole guide PDF dated 02/27/2026
-  edition_date: '02/27/26',
-  edition_last_verified: '2026-05-03',
+  // Edition verified live from uscis.gov/i-131 on 2026-05-04 (USCIS page last reviewed 03/30/2026).
+  // "02/27/26" was the Feb 27 2024 program announcement date — NOT the form edition.
+  edition_date: '01/20/25',
+  edition_last_verified: '2026-05-04',
   topics: ['re-parole', 'travel-document', 'advance-parole', 'parole-document', 'arrival-departure-record'],
 
   who_may_use: [
@@ -780,12 +780,12 @@ export const i131: FormIntelligence = {
     },
     {
       text: 'Biometrics are required for most applicants aged 14–79 (Refugee Travel Document, Reentry Permit, re-parole, parole in place). USCIS will send appointment notice after filing.',
-      source: 'Form I-131 Instructions 02/27/26, Section 9 (Biometric Services Requirement)',
+      source: 'Form I-131 Instructions 01/20/25, Section 9 (Biometric Services Requirement)',
       severity: 'caution',
     },
     {
       text: 'DHS may revoke or terminate a Parole Document at any time, including while the alien is in the United States',
-      source: 'Form I-131 Instructions 02/27/26, Section 8 (Warning)',
+      source: 'Form I-131 Instructions 01/20/25, Section 8 (Warning)',
       severity: 'caution',
     },
     {
@@ -794,13 +794,13 @@ export const i131: FormIntelligence = {
       severity: 'caution',
     },
     {
-      text: 'Ukrainian re-parole filers must select Box 10.C (not boxes for outside-U.S. travel documents). Filing under the wrong box may result in rejection or denial.',
-      source: 'Form I-131 Instructions 02/27/26; community forensic audit research',
+      text: 'Ukrainian re-parole filing method depends on how you file: Paper = Part 2, Item 1.e (select even if inside US) + handwrite "Ukraine RE-PAROLE" at top of first page. Online (my.uscis.gov) = select Box 10.C. Using the wrong item/box may result in rejection or denial.',
+      source: 'USCIS Form I-131 page (last reviewed 03/30/2026); USCIS U4U Re-Parole Guide (last reviewed 10/11/2024)',
       severity: 'critical',
     },
     {
       text: 'Filing I-131 for re-parole does NOT automatically grant EAD — a separate I-765 or Part 9 EAD request is needed',
-      source: 'Form I-131 Instructions 02/27/26, Part 9',
+      source: 'Form I-131 Instructions 01/20/25, Part 9',
       severity: 'info',
     },
     {
@@ -816,11 +816,11 @@ export const i131: FormIntelligence = {
       url: 'https://www.uscis.gov/i-131',
     },
     {
-      title: 'I-131 Form PDF (Edition 02/27/26)',
+      title: 'I-131 Form PDF (Edition 01/20/25)',
       url: 'https://www.uscis.gov/sites/default/files/document/forms/i-131.pdf',
     },
     {
-      title: 'I-131 Instructions PDF (Edition 02/27/26)',
+      title: 'I-131 Instructions PDF (Edition 01/20/25)',
       url: 'https://www.uscis.gov/sites/default/files/document/forms/i-131instr.pdf',
     },
     {
