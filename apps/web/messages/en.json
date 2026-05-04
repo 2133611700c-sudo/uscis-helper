@@ -179,8 +179,8 @@
       "filing.paper.step2": "Handwrite \"Ukraine RE-PAROLE\" at the top of the first page",
       "filing.paper.feeWaiver": "Fee Waiver (Form I-912) is available when filing by mail",
       "filing.online.title": "Filing Online (my.uscis.gov)",
-      "filing.online.step1": "Select: \"I am outside the United States, applying for Advance Parole Document\"",
-      "filing.online.step2": "Answer Yes when asked: \"Are you applying for re-parole?\"",
+      "filing.online.step1": "Select Box 10.C: \"Certain Ukrainians paroled on/after Feb 11, 2022\"",
+      "filing.online.step2": "Complete all required fields and upload supporting documents (PDF). Pay the USCIS filing fee through the myUSCIS portal.",
       "filing.online.noFeeWaiver": "Fee Waiver (Form I-912) is not available when filing online. File by mail if you need a fee waiver.",
       "filing.source": "Source: USCIS Form I-131 (last reviewed 03/30/2026) · USCIS U4U Re-Parole Guide (last reviewed 10/11/2024)",
       "feeNotice": "USCIS charges a filing fee. Additionally, some applicants are assessed a parole grant fee upon conditional approval. Fees are subject to change. Use the USCIS Fee Calculator (uscis.gov/feecalculator) and G-1055 (uscis.gov/g-1055) for current amounts. Do not rely on third-party fee estimates.",
@@ -195,7 +195,7 @@
           "title": "Verified facts",
           "form": "Form I-131 (edition 01/20/25)",
           "item": "Part 2, Item 1.e — Select \"I am outside the United States, applying for Advance Parole Document\" (select this even if you are inside the US). Write \"Ukraine RE-PAROLE\" at the top of the form.",
-          "topNote": "Paper filing only: handwrite \"Ukraine RE-PAROLE\" at the top of the paper Form I-131. For online filing, follow the re-parole prompts at my.uscis.gov.",
+          "topNote": "Paper filing only: handwrite \"Ukraine RE-PAROLE\" at the top of Form I-131. Online filing (my.uscis.gov): select Box 10.C — \"Certain Ukrainians paroled on/after Feb 11, 2022\". (Source: uscis.gov/i-131, verified 2026-05-04)",
           "window": "Filing window: no earlier than 180 days (6 months) before current parole expires"
         },
         "fees": {
