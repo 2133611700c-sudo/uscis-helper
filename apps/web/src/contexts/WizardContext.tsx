@@ -139,14 +139,28 @@ function buildMembers(size: number, existing: FamilyMember[]): FamilyMember[] {
 // Initial state
 // ---------------------------------------------------------------------------
 
+function getLocaleFromUrl(): WizardState['locale'] {
+  if (typeof window === 'undefined') return 'en'
+  try {
+    const segments = window.location.pathname.split('/').filter(Boolean)
+    const first = segments[0] as WizardState['locale']
+    const VALID: WizardState['locale'][] = ['uk', 'ru', 'en', 'es']
+    return VALID.includes(first) ? first : 'en'
+  } catch {
+    return 'en'
+  }
+}
+
 function buildInitialState(): WizardState {
   const persisted = loadPersisted()
   const urlSessionId = getSessionIdFromUrl()
+  const urlLocale = getLocaleFromUrl()
 
   const sessionId = urlSessionId ?? persisted?.sessionId ?? null
   const anonUserId = persisted?.anonUserId ?? uuidV4()
   const step = persisted?.step ?? 0
-  const locale = persisted?.locale ?? 'en'
+  // URL locale wins over persisted — user navigating to /uk should get Ukrainian
+  const locale = urlLocale !== 'en' ? urlLocale : (persisted?.locale ?? 'en')
   const theme = persisted?.theme ?? 'light'
   const packageSize = 1
 

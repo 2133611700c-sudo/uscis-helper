@@ -1,5 +1,7 @@
 'use client'
 
+import { useWizard } from '@/contexts/WizardContext'
+
 const TOTAL_STEPS = 12
 
 interface WizardNavBarProps {
@@ -9,12 +11,21 @@ interface WizardNavBarProps {
   onValidate?: () => boolean
 }
 
+const NAV_T = {
+  uk: { back: '← Назад', next: 'Далі →', done: 'Готово ✓', step: (s: number, t: number) => `Крок ${s} з ${t}` },
+  ru: { back: '← Назад', next: 'Далее →', done: 'Готово ✓', step: (s: number, t: number) => `Шаг ${s} из ${t}` },
+  en: { back: '← Back', next: 'Next →', done: 'Done ✓', step: (s: number, t: number) => `Step ${s} of ${t}` },
+  es: { back: '← Atrás', next: 'Siguiente →', done: 'Listo ✓', step: (s: number, t: number) => `Paso ${s} de ${t}` },
+} as const
+
 /**
  * Bottom navigation bar — matches prototype style:
  *   [← Back] [Step X of 13] [Next →] / [Done]
  * Fixed on mobile, inline on desktop.
  */
 export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarProps) {
+  const { state } = useWizard()
+  const t = NAV_T[state.locale] ?? NAV_T.en
   const isFirst = step === 0
   const isLast = step === TOTAL_STEPS
 
@@ -47,7 +58,7 @@ export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarP
             minHeight: '52px',
           }}
         >
-          ← Back
+          {t.back}
         </button>
       )}
 
@@ -56,7 +67,7 @@ export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarP
         className="flex-1 text-center text-[14px] font-medium"
         style={{ color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}
       >
-        Step {step + 1} of {TOTAL_STEPS + 1}
+        {t.step(step + 1, TOTAL_STEPS + 1)}
       </span>
 
       {/* Next / Done */}
@@ -73,7 +84,7 @@ export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarP
             minHeight: '52px',
           }}
         >
-          Done ✓
+          {t.done}
         </button>
       ) : (
         <button
@@ -88,7 +99,7 @@ export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarP
             minHeight: '52px',
           }}
         >
-          Next →
+          {t.next}
         </button>
       )}
     </div>

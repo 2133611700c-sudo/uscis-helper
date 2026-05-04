@@ -6,40 +6,58 @@ import { useWizard } from '@/contexts/WizardContext'
 
 const TOTAL_STEPS = 12
 
-const STEP_LABELS: Record<number, string> = {
-  0: 'Welcome',
-  1: 'About the Form',
-  2: 'Package',
-  3: 'Family',
-  4: 'Documents',
-  5: 'Recognition',
-  6: 'Confirm',
-  7: 'Info & Evidence',
-  8: 'Filing Method',
-  9: 'Preview',
-  10: 'Payment',
-  11: 'Download',
-  12: 'Transfer',
+const STEP_LABELS: Record<string, Record<number, string>> = {
+  uk: {
+    0: 'Вступ', 1: 'Про форму', 2: 'Пакет', 3: 'Сім\'я', 4: 'Документи',
+    5: 'Розпізнавання', 6: 'Підтвердження', 7: 'Відомості', 8: 'Спосіб подачі',
+    9: 'Перегляд', 10: 'Оплата', 11: 'Завантаження', 12: 'Передача',
+  },
+  ru: {
+    0: 'Введение', 1: 'О форме', 2: 'Пакет', 3: 'Семья', 4: 'Документы',
+    5: 'Распознавание', 6: 'Подтверждение', 7: 'Сведения', 8: 'Способ подачи',
+    9: 'Просмотр', 10: 'Оплата', 11: 'Загрузка', 12: 'Передача',
+  },
+  en: {
+    0: 'Welcome', 1: 'About the Form', 2: 'Package', 3: 'Family', 4: 'Documents',
+    5: 'Recognition', 6: 'Confirm', 7: 'Info & Evidence', 8: 'Filing Method',
+    9: 'Preview', 10: 'Payment', 11: 'Download', 12: 'Transfer',
+  },
+  es: {
+    0: 'Bienvenido', 1: 'Sobre el formulario', 2: 'Paquete', 3: 'Familia', 4: 'Documentos',
+    5: 'Reconocimiento', 6: 'Confirmación', 7: 'Información', 8: 'Método de presentación',
+    9: 'Vista previa', 10: 'Pago', 11: 'Descarga', 12: 'Transferencia',
+  },
 }
 
+const STEP_PROGRESS = {
+  uk: (s: number, t: number) => `Крок ${s} з ${t}`,
+  ru: (s: number, t: number) => `Шаг ${s} из ${t}`,
+  en: (s: number, t: number) => `Step ${s} of ${t}`,
+  es: (s: number, t: number) => `Paso ${s} de ${t}`,
+} as const
+
+const SYNC_LABELS = {
+  uk: { saving: 'Зберігаємо…', saved: '✓ Збережено', error: 'Помилка збереження' },
+  ru: { saving: 'Сохраняем…', saved: '✓ Сохранено', error: 'Ошибка сохранения' },
+  en: { saving: 'Saving…', saved: '✓ Saved', error: 'Could not save' },
+  es: { saving: 'Guardando…', saved: '✓ Guardado', error: 'Error al guardar' },
+} as const
+
 function SyncIndicator() {
-  const { syncStatus } = useWizard()
+  const { syncStatus, state } = useWizard()
+  const labels = SYNC_LABELS[state.locale] ?? SYNC_LABELS.en
 
   if (syncStatus === 'idle') return null
 
   const label =
-    syncStatus === 'saving'
-      ? 'Saving…'
-      : syncStatus === 'saved'
-        ? '✓ Saved'
-        : 'Could not save'
+    syncStatus === 'saving' ? labels.saving
+    : syncStatus === 'saved' ? labels.saved
+    : labels.error
 
   const color =
-    syncStatus === 'saving'
-      ? 'var(--text-3)'
-      : syncStatus === 'saved'
-        ? 'var(--success)'
-        : 'var(--warning-text)'
+    syncStatus === 'saving' ? 'var(--text-3)'
+    : syncStatus === 'saved' ? 'var(--success)'
+    : 'var(--warning-text)'
 
   return (
     <span
@@ -88,7 +106,9 @@ function ProgressDots({ step }: { step: number }) {
  */
 export function WizardHeader() {
   const { state } = useWizard()
-  const stepLabel = STEP_LABELS[state.step] ?? `Step ${state.step + 1}`
+  const labels = STEP_LABELS[state.locale] ?? STEP_LABELS.en
+  const stepLabel = labels[state.step] ?? `${state.step + 1}`
+  const progressFn = STEP_PROGRESS[state.locale] ?? STEP_PROGRESS.en
 
   return (
     <header
@@ -113,7 +133,7 @@ export function WizardHeader() {
           className="text-[12px] font-semibold"
           style={{ color: 'var(--text-2)', fontVariantNumeric: 'tabular-nums' }}
         >
-          Step {state.step + 1} of {TOTAL_STEPS + 1} · {stepLabel}
+          {progressFn(state.step + 1, TOTAL_STEPS + 1)} · {stepLabel}
         </span>
         <SyncIndicator />
       </div>
