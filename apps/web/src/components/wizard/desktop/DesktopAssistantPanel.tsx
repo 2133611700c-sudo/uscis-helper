@@ -36,7 +36,7 @@ export function DesktopAssistantPanel({ slug }: DesktopAssistantPanelProps) {
     <aside
       data-testid="desktop-assistant-panel"
       data-slug={slug}
-      className="border-l border-slate-200 bg-white p-5 overflow-y-auto"
+      className="border-l border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 overflow-y-auto"
     >
       {/* Mia card */}
       <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 mb-6">
