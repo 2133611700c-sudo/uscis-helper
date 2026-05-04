@@ -30,7 +30,7 @@
  *   - Fees: never hardcode — link to feecalculator + g-1055
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import JSZip from 'jszip'
 
@@ -438,6 +438,10 @@ function build07DocumentChecklist(state: WizardStateJson): string {
     '    and USCIS guidance specifically authorizes EAD filing.',
     '    This re-parole packet is NOT an EAD filing packet.',
     '',
+    '    ⚠️ EAD (Form I-765): Do NOT file for employment authorization based on',
+    '    this re-parole until your Form I-131 is approved. Filing too early',
+    '    may cause rejection.',
+    '',
     'ADDITIONAL FOR FAMILY MEMBERS',
     '------------------------------',
     '[ ] Repeat all document steps for each family member included in application',
@@ -481,6 +485,10 @@ function build08FeesAndLinks(): string {
     'USCIS processing times vary significantly.',
     'Check current estimates: https://egov.uscis.gov/processing-times/',
     'Plan for substantial waiting periods.',
+    '',
+    '⏳ Processing time: USCIS processing times change frequently. U4U re-parole',
+    'may take many months. Check https://egov.uscis.gov/processing-times/ before',
+    'filing and monitor your case status after submission.',
     '',
     'OFFICIAL USCIS LINKS',
     '--------------------',
@@ -628,20 +636,25 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 5. Log to audit_log (fire and forget — non-fatal)
-    void supabase.from('audit_log').insert({
-      action: 'packet_generated',
-      target_table: 'wizard_sessions',
-      detail: {
-        session_id,
-        storage_key: storageKey,
-        filing_method: method,
-        file_count: fileCount,
-        package_size: state.packageSize ?? 1,
-        locale: session.locale,
-        service_slug: session.service_slug,
-        generated_at: new Date().toISOString(),
-      },
+    // 5. Log to audit_log — use after() so Next.js keeps lambda alive until insert completes
+    //    after() is preferred over @vercel/functions waitUntil() on Next.js 15.3.1+
+    after(async () => {
+      const { error } = await supabase.from('audit_log').insert({
+        action: 'packet_generated',
+        target_table: 'wizard_sessions',
+        target_id: session_id,
+        detail: {
+          session_id,
+          storage_key: storageKey,
+          filing_method: method,
+          file_count: fileCount,
+          package_size: state.packageSize ?? 1,
+          locale: session.locale,
+          service_slug: session.service_slug,
+          generated_at: new Date().toISOString(),
+        },
+      })
+      if (error) console.error('[audit_log] packet_generated insert failed:', error.message)
     })
 
     // 6. Log to generated_packets table if it exists (fire and forget)

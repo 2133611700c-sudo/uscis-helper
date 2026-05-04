@@ -176,13 +176,15 @@
       "processingWarning": "USCIS processing times vary significantly. Check current estimates at uscis.gov/processing-times. Plan for substantial waiting periods.",
       "medicalNote": "Medical documentation required: proof of vaccinations and TB/IGRA test where applicable. Follow current USCIS instructions for medical requirements.",
       "eadWarning": "Do not file Form I-765 for employment authorization based on this re-parole request until your I-131 has been approved and USCIS guidance authorizes EAD filing. This re-parole package is not an EAD filing package.",
+      "eadWarningBlock": "Important EAD warning: Do not file Form I-765 for employment authorization based on this re-parole request until USCIS approves your Form I-131. Filing too early may cause confusion or rejection.",
+      "processingTimeNote": "Processing times change. U4U re-parole requests may take many months. Check the official USCIS Processing Times page before filing and monitor your case after submission.",
       "feeWaiverNote": "If you are unable to pay the filing fee, you may request a fee waiver using Form I-912. Fee waiver requests are typically for paper-only filing. Verify current USCIS eligibility requirements at uscis.gov/i-912.",
       "verified": {
         "facts": {
           "title": "Verified facts",
           "form": "Form I-131 (edition 02/27/26)",
           "item": "Part 2, Item 1.e — Select \"I am outside the United States, applying for Advance Parole Document\" (select this even if you are inside the US). Write \"Ukraine RE-PAROLE\" at the top of the form.",
-          "topNote": "Handwrite \"Ukraine RE-PAROLE\" at the top of the form",
+          "topNote": "Paper filing only: handwrite \"Ukraine RE-PAROLE\" at the top of the paper Form I-131. For online filing, follow the re-parole prompts at my.uscis.gov.",
           "window": "Filing window: no earlier than 180 days (6 months) before current parole expires"
         },
         "fees": {
