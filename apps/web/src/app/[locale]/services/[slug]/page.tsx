@@ -216,6 +216,25 @@ export default async function ServicePage({ params }: Props) {
               {pageLabels('backToServices')}
             </Link>
           </div>
+
+          {/* Stage-8: Re-Parole wizard CTA — self-help guided packet builder */}
+          {isReParoleU4U && (
+            <div className="mt-6 rounded-xl border border-brand-200 bg-brand-50 p-5">
+              <p className="text-base font-semibold text-ink-900 mb-1">
+                Start Re-Parole Packet
+              </p>
+              <p className="text-sm text-ink-600 mb-4">
+                Guided self-help. You review and file yourself. Not legal advice.
+              </p>
+              <Link
+                href={`/${locale}/services/re-parole-u4u/start`}
+                className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-btn transition-colors"
+              >
+                Start Re-Parole Packet
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
         </div>
       </Section>
 
