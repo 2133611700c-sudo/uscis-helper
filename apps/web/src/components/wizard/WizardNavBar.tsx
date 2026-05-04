@@ -10,10 +10,9 @@ interface WizardNavBarProps {
 }
 
 /**
- * Bottom navigation bar for the wizard.
- * - Step 0: Back is hidden
- * - Step 12: Next is replaced with "Done"
- * - Fixed at bottom on mobile, inline in main column on desktop
+ * Bottom navigation bar — matches prototype style:
+ *   [← Back] [Step X of 13] [Next →] / [Done]
+ * Fixed on mobile, inline on desktop.
  */
 export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarProps) {
   const isFirst = step === 0
@@ -25,22 +24,38 @@ export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarP
   }
 
   return (
-    <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 fixed bottom-0 left-0 right-0 z-40 lg:static lg:z-auto lg:border-t lg:mt-6">
+    <div
+      className="flex items-center gap-2 px-4 py-3 fixed bottom-0 left-0 right-0 z-40 lg:static lg:z-auto lg:mt-6"
+      style={{
+        background: 'var(--surface)',
+        borderTop: '1px solid var(--border)',
+      }}
+    >
       {/* Back */}
       {isFirst ? (
-        <div className="w-20" aria-hidden="true" />
+        <div className="w-[56px] flex-shrink-0" aria-hidden="true" />
       ) : (
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1 rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+          className="flex-shrink-0 rounded-[10px] text-[15px] font-semibold transition-all active:scale-95"
+          style={{
+            background: 'var(--surface)',
+            border: '1.5px solid var(--border-strong)',
+            color: 'var(--text-1)',
+            padding: '14px 18px',
+            minHeight: '52px',
+          }}
         >
           ← Back
         </button>
       )}
 
       {/* Step counter */}
-      <span className="text-sm font-medium text-slate-500">
+      <span
+        className="flex-1 text-center text-[14px] font-medium"
+        style={{ color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}
+      >
         Step {step + 1} of {TOTAL_STEPS + 1}
       </span>
 
@@ -49,15 +64,29 @@ export function WizardNavBar({ step, onBack, onNext, onValidate }: WizardNavBarP
         <button
           type="button"
           onClick={onNext}
-          className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
+          className="flex-shrink-0 rounded-[10px] text-[15px] font-bold transition-all active:scale-95"
+          style={{
+            background: 'var(--success)',
+            color: '#fff',
+            border: 'none',
+            padding: '14px 24px',
+            minHeight: '52px',
+          }}
         >
-          Done
+          Done ✓
         </button>
       ) : (
         <button
           type="button"
           onClick={handleNext}
-          className="flex items-center gap-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          className="flex-1 rounded-[10px] text-[15px] font-bold transition-all active:scale-95"
+          style={{
+            background: 'var(--btn-action)',
+            color: 'var(--btn-action-text)',
+            border: 'none',
+            padding: '14px',
+            minHeight: '52px',
+          }}
         >
           Next →
         </button>

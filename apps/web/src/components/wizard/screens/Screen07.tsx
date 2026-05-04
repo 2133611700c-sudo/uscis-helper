@@ -33,13 +33,10 @@ export function Screen07() {
     const hasEvidence = evidenceFiles.length > 0
 
     if (!hasExplanation && !hasEvidence && !evidenceLater) {
-      setError(
-        'Please provide an explanation, attach supporting documents, or check "I will attach evidence later".'
-      )
+      setError('Please provide an explanation, attach documents, or check "I\'ll attach evidence later".')
       return
     }
 
-    // Save into manualAnswers for the primary member
     if (member) {
       setMember(member.id, {
         manualAnswers: {
@@ -55,24 +52,28 @@ export function Screen07() {
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-5">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Supporting statement &amp; evidence</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Explain why you qualify for re-parole and attach any supporting documents.
-          You need at least one of the three options below.
+        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
+          Supporting statement &amp; evidence
+        </h1>
+        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
+          Explain why you qualify for re-parole. You need at least one of the three options below.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Explanation textarea */}
-        <div className="space-y-1">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Explanation */}
+        <div>
           <label
             htmlFor="explanation"
-            className="text-sm font-semibold text-slate-700"
+            className="block text-[13px] font-semibold mb-1.5"
+            style={{ color: 'var(--text-1)' }}
           >
             Written explanation
-            <span className="ml-1 font-normal text-slate-400 text-xs">(optional if you attach documents)</span>
+            <span className="ml-1.5 font-normal text-[12px]" style={{ color: 'var(--text-3)' }}>
+              (optional if you attach documents)
+            </span>
           </label>
           <textarea
             id="explanation"
@@ -80,26 +81,42 @@ export function Screen07() {
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
             placeholder="Briefly explain your situation and why you are requesting re-parole. For example: current parole expiration date, ties to Ukraine, humanitarian circumstances."
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            className="w-full rounded-[8px] text-[16px] resize-y"
+            style={{
+              background: 'var(--surface-2)',
+              color: 'var(--text-1)',
+              border: '1px solid var(--border)',
+              padding: '11px 12px',
+              minHeight: '100px',
+              outline: 'none',
+              fontFamily: 'inherit',
+            }}
           />
-          <p className="text-xs text-slate-400">
-            This text will be included in your preparation checklist. Do not include passport numbers,
-            I-94 numbers, Social Security numbers, passwords, or financial account numbers.
+          <p className="text-[11px] mt-1" style={{ color: 'var(--text-3)' }}>
+            Do not include passport numbers, I-94 numbers, SSN, passwords, or financial account numbers.
           </p>
         </div>
 
         {/* Evidence upload */}
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-slate-700">
+        <div>
+          <p className="text-[13px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
             Supporting documents
-            <span className="ml-1 font-normal text-slate-400 text-xs">(optional if you provide a written explanation)</span>
+            <span className="ml-1.5 font-normal text-[12px]" style={{ color: 'var(--text-3)' }}>
+              (optional if you provide a written explanation)
+            </span>
           </p>
-          <p className="text-xs text-slate-500">
-            Examples: copy of current I-94, previous parole approval notice, proof of Ukrainian citizenship.
+          <p className="text-[12px] mb-2" style={{ color: 'var(--text-3)' }}>
+            Examples: current I-94, previous parole approval notice, proof of Ukrainian citizenship.
           </p>
           <label
             htmlFor="evidence-upload"
-            className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="flex cursor-pointer items-center gap-3 rounded-[12px] text-[14px] font-medium transition-all"
+            style={{
+              border: '1.5px dashed var(--border-strong)',
+              color: 'var(--text-3)',
+              padding: '14px',
+              minHeight: '52px',
+            }}
           >
             <span>+ Attach files (PDF, JPG, PNG)</span>
             <input
@@ -113,20 +130,22 @@ export function Screen07() {
           </label>
 
           {evidenceFiles.length > 0 && (
-            <ul className="space-y-1">
+            <ul className="space-y-1.5 mt-2">
               {evidenceFiles.map((f, idx) => (
                 <li
                   key={idx}
-                  className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700 border border-slate-200"
+                  className="flex items-center justify-between rounded-[8px] px-3 py-2 text-[13px]"
+                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
                 >
                   <span className="truncate max-w-[240px]">{f.name}</span>
                   <button
                     type="button"
                     onClick={() => removeFile(idx)}
-                    className="ml-2 text-slate-400 hover:text-red-500 transition-colors"
+                    className="ml-2 transition-colors"
+                    style={{ color: 'var(--text-3)' }}
                     aria-label="Remove file"
                   >
-                    &#x2715;
+                    ✕
                   </button>
                 </li>
               ))}
@@ -134,31 +153,55 @@ export function Screen07() {
           )}
         </div>
 
-        {/* Evidence later checkbox */}
-        <label className="flex items-start gap-3 cursor-pointer">
+        {/* Evidence later */}
+        <label
+          className="flex items-start gap-3 cursor-pointer rounded-[12px] p-3.5 transition-all"
+          style={{
+            background: evidenceLater ? 'var(--info-bg)' : 'var(--surface)',
+            border: `1px solid ${evidenceLater ? 'var(--info-border)' : 'var(--border)'}`,
+          }}
+        >
+          <div
+            className="w-[22px] h-[22px] rounded-[5px] flex-shrink-0 flex items-center justify-center mt-0.5"
+            style={{
+              border: `2px solid ${evidenceLater ? 'var(--primary)' : 'var(--border-strong)'}`,
+              background: evidenceLater ? 'var(--primary)' : 'var(--surface)',
+            }}
+          >
+            {evidenceLater && <span className="text-white font-bold text-[14px]">✓</span>}
+          </div>
           <input
             type="checkbox"
             checked={evidenceLater}
             onChange={(e) => setEvidenceLater(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            className="sr-only"
           />
-          <span className="text-sm text-slate-700">
+          <span className="text-[13px]" style={{ color: 'var(--text-1)' }}>
             I will gather supporting documents and attach them directly to my USCIS submission.
           </span>
         </label>
 
-        {/* Validation error */}
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-            <p className="text-sm text-red-800">{error}</p>
+          <div
+            className="rounded-[12px] p-3.5"
+            style={{ background: 'var(--error-bg)', border: '1px solid var(--error-border)' }}
+          >
+            <p className="text-[13px]" style={{ color: 'var(--error-text)' }}>{error}</p>
           </div>
         )}
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
+          className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
+          style={{
+            background: 'var(--btn-action)',
+            color: 'var(--btn-action-text)',
+            border: 'none',
+            padding: '14px',
+            minHeight: '52px',
+          }}
         >
-          Continue &#8594;
+          Continue →
         </button>
       </form>
     </div>

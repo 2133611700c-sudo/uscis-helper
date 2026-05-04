@@ -3,10 +3,21 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 
+const TRANSFER_FIELDS = [
+  { question: 'Family Name (Item 1.a)', value: 'PETRENKO' },
+  { question: 'Given Name (Item 1.b)', value: 'OLENA' },
+  { question: 'Date of Birth (Item 3)', value: '05/15/1985' },
+  { question: 'Country of Birth (Item 5)', value: 'Ukraine' },
+  { question: 'I-94 Number (Item 10.C)', value: 'I-94 number from your record' },
+]
+
 export function Screen12() {
-  const { setTransferEmail, setStep } = useWizard()
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const { state, setTransferEmail, setStep } = useWizard()
+  const [email, setEmail] = useState(state.transferEmail ?? '')
+  const [sent, setSent] = useState(Boolean(state.transferEmail))
+  const [mode, setMode] = useState<'email' | 'transfer'>('email')
+  const [transferIdx, setTransferIdx] = useState(0)
+  const [copied, setCopied] = useState(false)
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault()
@@ -15,30 +26,70 @@ export function Screen12() {
     setSent(true)
   }
 
+  function handleCopy() {
+    const field = TRANSFER_FIELDS[transferIdx]
+    if (field) {
+      void navigator.clipboard.writeText(field.value).catch(() => {})
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }
+  }
+
   return (
-    <div className="max-w-lg mx-auto space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Get your packet by email</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Enter your email address and we will send the packet when the feature is available.
+        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
+          Transfer data to USCIS
+        </h1>
+        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
+          Open my.uscis.gov in a new tab. Copy fields one by one.
         </p>
       </div>
 
-      {sent ? (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center">
-            <p className="text-2xl mb-2">All done! ✅</p>
-            <p className="text-sm text-green-800">
-              Email will be sent to <strong>{email}</strong> when configured.
+      {/* Mode switcher */}
+      <div className="flex gap-2">
+        {(['email', 'transfer'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className="flex-1 rounded-[8px] text-[13px] font-semibold py-2 transition-all"
+            style={{
+              background: mode === m ? 'var(--primary)' : 'var(--surface-2)',
+              color: mode === m ? '#fff' : 'var(--text-2)',
+              border: mode === m ? 'none' : '1px solid var(--border)',
+            }}
+          >
+            {m === 'email' ? '📧 Email link' : '➤ Transfer mode'}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'email' && (
+        sent ? (
+          <div
+            className="rounded-[12px] p-5 text-center"
+            style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)' }}
+          >
+            <p className="text-[32px] mb-2">✅</p>
+            <p className="text-[16px] font-bold mb-1" style={{ color: 'var(--success-text)' }}>
+              All done!
+            </p>
+            <p className="text-[13px]" style={{ color: 'var(--success-text)' }}>
+              Download link will be sent to <strong>{email}</strong>.
+              Link is valid for 7 days.
             </p>
           </div>
-        </div>
-      ) : (
-        <form onSubmit={handleSend} className="space-y-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="transfer-email" className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-              Email address
-            </label>
+        ) : (
+          <form onSubmit={handleSend} className="space-y-3">
+            <div>
+              <h2 className="text-[16px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
+                📧 Get link on email
+              </h2>
+              <p className="text-[13px] mb-3" style={{ color: 'var(--text-2)' }}>
+                Save the link — it will work for 7 days. You can download from another device.
+              </p>
+            </div>
             <input
               id="transfer-email"
               type="email"
@@ -46,30 +97,156 @@ export function Screen12() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-[8px] text-[16px]"
+              style={{
+                background: 'var(--surface-2)',
+                color: 'var(--text-1)',
+                border: '1px solid var(--border)',
+                padding: '11px 12px',
+                minHeight: '44px',
+                outline: 'none',
+                fontFamily: 'inherit',
+              }}
             />
+            <button
+              type="submit"
+              className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
+              style={{
+                background: 'var(--btn-action)',
+                color: 'var(--btn-action-text)',
+                border: 'none',
+                padding: '14px',
+                minHeight: '52px',
+              }}
+            >
+              Send to email →
+            </button>
+          </form>
+        )
+      )}
+
+      {mode === 'transfer' && (
+        <div className="space-y-3">
+          {/* Transfer card */}
+          <div
+            className="rounded-[12px] p-4"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
+            <p
+              className="text-[12px] font-semibold uppercase tracking-wide mb-2"
+              style={{ color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}
+            >
+              Field {transferIdx + 1} of {TRANSFER_FIELDS.length}
+            </p>
+            <p className="text-[13px] mb-1.5" style={{ color: 'var(--text-2)' }}>
+              USCIS asks:{' '}
+              <strong style={{ color: 'var(--text-1)' }}>
+                {TRANSFER_FIELDS[transferIdx]?.question}
+              </strong>
+            </p>
+            <div
+              className="rounded-[10px] p-3.5 mb-3 font-mono text-[18px] font-bold break-words"
+              style={{
+                background: 'var(--accent)',
+                border: '1.5px solid var(--primary)',
+                color: 'var(--text-1)',
+              }}
+            >
+              {TRANSFER_FIELDS[transferIdx]?.value}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="w-full rounded-[10px] text-[15px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] mb-2"
+              style={{
+                background: copied ? 'var(--success)' : 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                padding: '14px',
+                minHeight: '52px',
+              }}
+            >
+              {copied ? '✓ Copied!' : '📋 Copy & open USCIS'}
+            </button>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={transferIdx === 0}
+                onClick={() => setTransferIdx((i) => i - 1)}
+                className="flex-1 rounded-[8px] text-[13px] font-semibold py-2.5 transition-all"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1.5px solid var(--border-strong)',
+                  color: 'var(--text-1)',
+                  opacity: transferIdx === 0 ? 0.4 : 1,
+                }}
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                disabled={transferIdx === TRANSFER_FIELDS.length - 1}
+                onClick={() => setTransferIdx((i) => i + 1)}
+                className="flex-1 rounded-[8px] text-[13px] font-semibold py-2.5 transition-all"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1.5px solid var(--border-strong)',
+                  color: 'var(--text-1)',
+                  opacity: transferIdx === TRANSFER_FIELDS.length - 1 ? 0.4 : 1,
+                }}
+              >
+                Next →
+              </button>
+            </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
+          {/* Progress bar */}
+          <div
+            className="rounded-[8px] p-2.5 text-[12px]"
+            style={{ background: 'var(--surface-2)', color: 'var(--text-2)' }}
           >
-            Send to my email →
-          </button>
+            Progress: {transferIdx + 1} of {TRANSFER_FIELDS.length}
+            <div
+              className="h-[4px] rounded-[2px] mt-1.5 overflow-hidden"
+              style={{ background: 'var(--border)' }}
+            >
+              <div
+                className="h-full rounded-[2px] transition-all"
+                style={{
+                  width: `${((transferIdx + 1) / TRANSFER_FIELDS.length) * 100}%`,
+                  background: 'var(--primary)',
+                }}
+              />
+            </div>
+          </div>
 
-          <p className="text-xs text-center text-slate-400">
-            Email will be sent when configured.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => setStep(11)}
-            className="w-full rounded-xl border border-slate-300 bg-white px-6 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+          {/* iPhone tip */}
+          <div
+            className="rounded-[12px] p-3 text-[12px] leading-relaxed"
+            style={{ background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--border)' }}
           >
-            I&apos;ll download it myself
-          </button>
-        </form>
+            💡 On iPhone: switch tabs between this site and USCIS — copy here, paste there.
+            Progress is saved automatically.
+          </div>
+        </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => setStep(11)}
+        className="w-full rounded-[10px] text-[13px] font-medium transition-all"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border-strong)',
+          color: 'var(--text-2)',
+          padding: '11px',
+          minHeight: '44px',
+        }}
+      >
+        ← Back to download
+      </button>
     </div>
   )
 }
