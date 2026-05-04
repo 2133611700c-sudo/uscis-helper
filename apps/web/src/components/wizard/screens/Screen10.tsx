@@ -167,7 +167,7 @@ export function Screen10() {
       </button>
 
       <p className="text-[11px]" style={{ color: 'var(--text-3)' }}>
-        USCIS filing fees ($580 online / $630 paper) are paid separately and directly to USCIS.{' '}
+        USCIS filing fees are paid separately and directly to USCIS — verify current amounts at{' '}
         <a href="https://www.uscis.gov/feecalculator" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>
           Check current fees ↗
         </a>
