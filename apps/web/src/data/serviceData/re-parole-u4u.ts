@@ -6,29 +6,30 @@ import type { ServiceData } from './types'
  * VERIFIED 2026-05-03 from official USCIS sources (uscis.gov):
  *
  * I-131 EDITION:
- *   - Edition 02/27/26 is CURRENT as of April 1, 2026 (01/20/25 no longer accepted)
+ *   - Edition 01/20/25 is CURRENT (verified live uscis.gov/i-131 on 2026-05-04,
+ *     USCIS page last reviewed 03/30/2026).
+ *   - "02/27/26" was the Feb 27 2024 program announcement date — NOT a form edition.
+ *     DO NOT use 02/27/26 anywhere in this codebase.
  *
- * PAPER FILING ITEM:
- *   - Part 2, Item 1.e: "I am outside the United States, and I am applying for
- *     Advance Parole Document" — select EVEN IF applicant is inside the US.
- *   - Old Item 10.C was under streamlined process (eliminated June 2025). INCORRECT NOW.
- *   - Source: uscis.gov/humanitarian/uniting-for-ukraine/re-parole-process...
+ * PAPER FILING:
+ *   - Part 2, Item 1.e — select even if applicant is inside the US.
+ *   - Handwrite "Ukraine RE-PAROLE" at the top of the first page.
+ *   - Source: USCIS U4U Re-Parole Guide (last reviewed 10/11/2024)
  *
- * ONLINE FILING:
- *   - Select "I am outside the United States applying for Advance Parole Document"
- *     in dropdown + answer "Yes" to re-parole question.
- *
- * TOP OF FORM:
- *   - Handwrite "Ukraine RE-PAROLE" at the top of the paper form.
+ * ONLINE FILING (my.uscis.gov):
+ *   - Application category: Box 10.C
+ *   - Dropdown: "I am outside the United States, and I am applying for an Advance Parole Document"
+ *   - Answer "Yes" to re-parole question.
+ *   - Fee waiver (I-912) NOT available for online filing.
+ *   - Source: USCIS Form I-131 page (last reviewed 03/30/2026)
  *
  * FILING WINDOW:
  *   - No earlier than 180 days (6 months) before current parole expires.
  *
  * U4U PROGRAM STATUS:
- *   - Paused: Jan 27, 2025
- *   - Admin hold: Feb 14, 2025
- *   - Resumed: June 9, 2025 (federal court order)
- *   - Now: case-by-case only; streamlined process eliminated June 2025.
+ *   - Form I-134A (sponsor intake): PAUSED since Jan 28, 2025 (Executive Order).
+ *   - Form I-131 Re-Parole: ACTIVE — separate process, continues case-by-case.
+ *   - DO NOT state "program resumed June 9, 2025" — not on USCIS.gov.
  *
  * FEE STRUCTURE (effective Oct 16, 2025):
  *   - Two separate fees: I-131 filing fee + parole grant fee (on conditional approval).
@@ -54,13 +55,15 @@ export const reParoleU4UData: ServiceData = {
   slug: 're-parole-u4u',
   full_data: true,
   verification_status: 'verified',
-  verified_at: '2026-05-03',
+  verified_at: '2026-05-04',
 
   form: {
     id: 'I-131',
-    edition: '02/27/26',
-    // was 10.C under old streamlined process (eliminated June 2025)
-    // correct item per USCIS.gov (verified 2026-05-03): Part 2, Item 1.e
+    // Edition verified live from uscis.gov/i-131 on 2026-05-04 (USCIS last reviewed 03/30/2026).
+    // "02/27/26" was the Feb 27 2024 program announcement — NOT the form edition.
+    edition: '01/20/25',
+    // Paper filing: Part 2, Item 1.e — select even if inside the US.
+    // Online filing: Box 10.C via my.uscis.gov.
     item_for_u4u: '1.e',
     item_label:
       'I am outside the United States, and I am applying for Advance Parole Document (select even if you are inside the US — per USCIS re-parole instructions)',
@@ -90,7 +93,8 @@ export const reParoleU4UData: ServiceData = {
     note_key: 'services.re-parole-u4u.fees.note',
   },
 
-  // Status warning: U4U paused Jan 2025, resumed June 9 2025 (federal court), now case-by-case
+  // Status: I-134A (sponsor intake) paused Jan 2025. I-131 Re-Parole = ACTIVE, separate process.
+  // Do NOT reference "June 9 2025 court order resumed program" — not on USCIS.gov.
   statusWarningKey: 'servicePages.re-parole-u4u.statusWarning',
   // Fee notice: two-fee structure — filing fee + parole grant fee (Oct 2025)
   feeNoticeKey: 'servicePages.re-parole-u4u.feeNotice',
@@ -103,11 +107,69 @@ export const reParoleU4UData: ServiceData = {
   // Fee waiver: Form I-912 for paper filing
   feeWaiverNoteKey: 'servicePages.re-parole-u4u.feeWaiverNote',
 
+  filingMethods: {
+    paper: {
+      formPart: 'Part 2, Item 1.e',
+      handwrite: 'Ukraine RE-PAROLE',
+      handwritePosition: 'top of first page of Form I-131',
+      feeWaiverAllowed: true,
+      sourceNote: 'USCIS U4U Re-Parole Guide (last reviewed 10/11/2024)',
+    },
+    online: {
+      portal: 'https://my.uscis.gov',
+      applicationCategory: 'Box 10.C — Certain Ukrainians paroled on/after Feb 11, 2022',
+      userDropdown: 'I am outside the United States, and I am applying for an Advance Parole Document',
+      reParoleAnswer: 'Yes',
+      feeWaiverAllowed: false,
+      feeWaiverNoteKey: 'servicePages.re-parole-u4u.filing.online.noFeeWaiver',
+      sourceNote: 'USCIS Form I-131 page (last reviewed 03/30/2026)',
+    },
+  },
+
+  verifiedSources: [
+    {
+      id: 'i131',
+      label: 'Form I-131',
+      url: 'https://www.uscis.gov/i-131',
+      uscisLastReviewed: '2026-03-30',
+      messenginfoVerified: '2026-05-04',
+    },
+    {
+      id: 'u4u-reparole',
+      label: 'U4U Re-Parole Guide',
+      url: 'https://www.uscis.gov/humanitarian/uniting-for-ukraine/re-parole-process-for-certain-ukrainian-citizens-and-their-immediate-family-members',
+      uscisLastReviewed: '2024-10-11',
+      messenginfoVerified: '2026-05-04',
+    },
+    {
+      id: 'i765',
+      label: 'Form I-765 (EAD)',
+      url: 'https://www.uscis.gov/i-765',
+      uscisLastReviewed: '2026-04-30',
+      messenginfoVerified: '2026-05-04',
+    },
+    {
+      id: 'g1055',
+      label: 'G-1055 Fee Schedule',
+      url: 'https://www.uscis.gov/g-1055',
+      uscisLastReviewed: '2026-04-23',
+      messenginfoVerified: '2026-05-04',
+    },
+    {
+      id: 'i134a-alert',
+      label: 'U4U I-134A Pause Notice',
+      url: 'https://www.uscis.gov/newsroom/alerts/update-on-form-i-134a',
+      uscisLastReviewed: '2025-01-28',
+      messenginfoVerified: '2026-05-04',
+    },
+  ],
+  messenginfoVerifiedOn: '2026-05-04',
+
   sources: [
     {
       label: 'USCIS · Form I-131',
       url: 'https://www.uscis.gov/i-131',
-      last_verified: '2026-05-03',
+      last_verified: '2026-05-04',
     },
     {
       label: 'USCIS · Re-Parole Process for Certain Ukrainian Citizens',

@@ -171,7 +171,18 @@
       ],
       "officialNote": "Toda la información de re-parole proviene de la página oficial de USCIS Uniting for Ukraine.",
       "lastVerifiedLabel": "Última verificación: {date}",
-      "statusWarning": "Actualización del programa: El programa de re-parole U4U fue suspendido en enero de 2025 y reanudado el 9 de junio de 2025 por orden judicial federal. USCIS está revisando las solicitudes caso por caso. El proceso de re-parole simplificado ya no está disponible. Verifique la orientación actual de USCIS antes de presentar.",
+      "statusWarning": "Importante: el proceso de patrocinio (Formulario I-134A) fue pausado en enero de 2025 por Orden Ejecutiva. La Re-Parole para ucranianos ya en EE.UU. (Formulario I-131) es un proceso separado que continúa revisándose caso por caso. Verifique la orientación actual de USCIS antes de presentar.",
+      "service.status.note": "El proceso de patrocinio (Formulario I-134A) fue pausado en enero de 2025 por Orden Ejecutiva. La Re-Parole para ucranianos ya en EE.UU. (Formulario I-131) es un proceso separado que continúa revisándose caso por caso.",
+      "service.status.source": "Fuente: Guía Re-Parole USCIS (actualizada 10/11/2024) · USCIS Formulario I-131 (actualizada 03/30/2026)",
+      "filing.paper.title": "Presentación por correo",
+      "filing.paper.step1": "En la Parte 2 del Formulario I-131, seleccione el punto 1.e",
+      "filing.paper.step2": "Escriba a mano \"Ukraine RE-PAROLE\" en la parte superior de la primera página",
+      "filing.paper.feeWaiver": "La exención de tarifas (Formulario I-912) está disponible al presentar por correo",
+      "filing.online.title": "Presentación en línea (my.uscis.gov)",
+      "filing.online.step1": "Seleccione: \"Estoy fuera de los EE.UU. y solicito un Documento de Libertad Condicional Anticipada\"",
+      "filing.online.step2": "Responda Sí cuando se le pregunte si está solicitando re-parole",
+      "filing.online.noFeeWaiver": "La exención de tarifas (Formulario I-912) no está disponible al presentar en línea. Presente por correo si necesita una exención.",
+      "filing.source": "Fuente: USCIS Formulario I-131 (actualizada 03/30/2026) · Guía USCIS U4U Re-Parole (actualizada 10/11/2024)",
       "feeNotice": "USCIS cobra una tarifa de presentación. Además, a algunos solicitantes se les cobra una tarifa de concesión de parole al recibir aprobación condicional. Las tarifas están sujetas a cambios. Use la Calculadora de Tarifas de USCIS (uscis.gov/feecalculator) y G-1055 (uscis.gov/g-1055) para los montos actuales.",
       "processingWarning": "Los tiempos de procesamiento de USCIS varían significativamente. Consulte los estimados actuales en uscis.gov/processing-times. Planifique para períodos de espera sustanciales.",
       "medicalNote": "Se requiere documentación médica: prueba de vacunas y prueba de TB/IGRA cuando aplique. Siga las instrucciones actuales de USCIS para los requisitos médicos.",
@@ -182,7 +193,7 @@
       "verified": {
         "facts": {
           "title": "Datos verificados",
-          "form": "Formulario I-131 (edición 02/27/26)",
+          "form": "Formulario I-131 (edición 01/20/25)",
           "item": "Parte 2, Ítem 1.e — Seleccione \"Estoy fuera de los Estados Unidos, solicitando un Documento de Parole Adelantado\" (seleccione esto incluso si está dentro de los EE.UU.). Escriba \"Ukraine RE-PAROLE\" en la parte superior del formulario.",
           "topNote": "Solo para presentación en papel: escriba a mano \"Ukraine RE-PAROLE\" en la parte superior del Formulario I-131 en papel. Para presentación en línea, siga las indicaciones de re-parole en my.uscis.gov.",
           "window": "Ventana de presentación: no antes de 180 días (6 meses) antes de que expire el parole actual"
