@@ -179,8 +179,8 @@
       "filing.paper.step2": "Escriba a mano \"Ukraine RE-PAROLE\" en la parte superior de la primera página",
       "filing.paper.feeWaiver": "La exención de tarifas (Formulario I-912) está disponible al presentar por correo",
       "filing.online.title": "Presentación en línea (my.uscis.gov)",
-      "filing.online.step1": "Seleccione: \"Estoy fuera de los EE.UU. y solicito un Documento de Libertad Condicional Anticipada\"",
-      "filing.online.step2": "Responda Sí cuando se le pregunte si está solicitando re-parole",
+      "filing.online.step1": "Seleccione Box 10.C: \"Ciertos ucranianos bajo libertad condicional el 11 de febrero de 2022 o después\"",
+      "filing.online.step2": "Complete todos los campos requeridos y cargue los documentos de respaldo (PDF). Pague la tarifa de USCIS a través del portal myUSCIS.",
       "filing.online.noFeeWaiver": "La exención de tarifas (Formulario I-912) no está disponible al presentar en línea. Presente por correo si necesita una exención.",
       "filing.source": "Fuente: USCIS Formulario I-131 (actualizada 03/30/2026) · Guía USCIS U4U Re-Parole (actualizada 10/11/2024)",
       "feeNotice": "USCIS cobra una tarifa de presentación. Además, a algunos solicitantes se les cobra una tarifa de concesión de parole al recibir aprobación condicional. Las tarifas están sujetas a cambios. Use la Calculadora de Tarifas de USCIS (uscis.gov/feecalculator) y G-1055 (uscis.gov/g-1055) para los montos actuales.",
@@ -195,7 +195,7 @@
           "title": "Datos verificados",
           "form": "Formulario I-131 (edición 01/20/25)",
           "item": "Parte 2, Ítem 1.e — Seleccione \"Estoy fuera de los Estados Unidos, solicitando un Documento de Parole Adelantado\" (seleccione esto incluso si está dentro de los EE.UU.). Escriba \"Ukraine RE-PAROLE\" en la parte superior del formulario.",
-          "topNote": "Solo para presentación en papel: escriba a mano \"Ukraine RE-PAROLE\" en la parte superior del Formulario I-131 en papel. Para presentación en línea, siga las indicaciones de re-parole en my.uscis.gov.",
+          "topNote": "Solo para presentación en papel: escriba a mano \"Ukraine RE-PAROLE\" en la parte superior del Formulario I-131. Presentación en línea (my.uscis.gov): seleccione Box 10.C — \"Ciertos ucranianos bajo libertad condicional el 11 de febrero de 2022 o después\". (Fuente: uscis.gov/i-131, verificado 2026-05-04)",
           "window": "Ventana de presentación: no antes de 180 días (6 meses) antes de que expire el parole actual"
         },
         "fees": {
