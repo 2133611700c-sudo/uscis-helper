@@ -46,7 +46,8 @@
   --radius-badge: 9999px;
 }
 
-/* ── Light mode tokens ── */
+/* ── Light mode tokens — in @layer base so dark-mode block can override ── */
+@layer base {
 :root {
   --background: #f4f4f5;
   --foreground: #0f0f0f;
@@ -103,8 +104,7 @@
   --max-w-content: 1200px;
 }
 
-/* ── Dark mode tokens — must be in @layer base to survive Tailwind v4 build ── */
-@layer base {
+/* ── Dark mode tokens ── */
   .dark {
     --background: #09090b;
     --foreground: #fafafa;
@@ -163,7 +163,7 @@
     background-color: #09090b;
     color: #fafafa;
   }
-}
+} /* end @layer base */
 
 /* ── HTML/body foundation ── */
 html {
