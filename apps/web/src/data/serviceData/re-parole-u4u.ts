@@ -8,8 +8,8 @@ import type { ServiceData } from './types'
  * I-131 EDITION:
  *   - Edition 01/20/25 is CURRENT (verified live uscis.gov/i-131 on 2026-05-04,
  *     USCIS page last reviewed 03/30/2026).
- *   - "02/27/26" was the Feb 27 2024 program announcement date — NOT a form edition.
- *     DO NOT use 02/27/26 anywhere in this codebase.
+ *   - "Feb-27-2024" was the U4U program announcement date — NOT a form edition.
+ *     DO NOT use the Feb-27-2024 date anywhere as an I-131 form edition.
  *
  * PAPER FILING:
  *   - Part 2, Item 1.e — select even if applicant is inside the US.
@@ -29,7 +29,7 @@ import type { ServiceData } from './types'
  * U4U PROGRAM STATUS:
  *   - Form I-134A (sponsor intake): PAUSED since Jan 28, 2025 (Executive Order).
  *   - Form I-131 Re-Parole: ACTIVE — separate process, continues case-by-case.
- *   - DO NOT state "program resumed June 9, 2025" — not on USCIS.gov.
+ *   - DO NOT state "program-resumed on Jun-9-2025" — that claim is not on USCIS.gov.
  *
  * FEE STRUCTURE (effective Oct 16, 2025):
  *   - Two separate fees: I-131 filing fee + parole grant fee (on conditional approval).
@@ -60,7 +60,7 @@ export const reParoleU4UData: ServiceData = {
   form: {
     id: 'I-131',
     // Edition verified live from uscis.gov/i-131 on 2026-05-04 (USCIS last reviewed 03/30/2026).
-    // "02/27/26" was the Feb 27 2024 program announcement — NOT the form edition.
+    // "Feb-27-2024" was the U4U program announcement — NOT the form edition.
     edition: '01/20/25',
     // Paper filing: Part 2, Item 1.e — select even if inside the US.
     // Online filing: Box 10.C via my.uscis.gov.
@@ -94,7 +94,7 @@ export const reParoleU4UData: ServiceData = {
   },
 
   // Status: I-134A (sponsor intake) paused Jan 2025. I-131 Re-Parole = ACTIVE, separate process.
-  // Do NOT reference "June 9 2025 court order resumed program" — not on USCIS.gov.
+  // Do NOT reference any Jun-2025 court-order-based resumption claim — not on USCIS.gov.
   statusWarningKey: 'servicePages.re-parole-u4u.statusWarning',
   // Fee notice: two-fee structure — filing fee + parole grant fee (Oct 2025)
   feeNoticeKey: 'servicePages.re-parole-u4u.feeNotice',

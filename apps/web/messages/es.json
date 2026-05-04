@@ -1034,12 +1034,6 @@
       "es": "ES"
     }
   },
-  "msL.title": "¿Miembro del acuerdo Ms. L.?",
-  "msL.desc": "Si es miembro de la clase del acuerdo Ms. L. o familiar adicional calificado (QAFM), puede estar exento de las tarifas HR-1 a partir del 5 de febrero de 2026.",
-  "msL.online": "Al presentar en línea: seleccione Box 10.G (no Box 10.C)",
-  "msL.paper": "Al presentar por correo: escriba a mano \"Ms. L Settlement Class Member\" o \"Ms. L. Settlement QAFM\" en la parte superior de la primera página",
-  "msL.verify": "Verifique su elegibilidad en together.gov o juntos.gov",
-  "msL.source": "Fuente: programa de tarifas USCIS G-1055 (actualizado 23/04/2026)",
   "fees.baseFee.note": "Use la Calculadora de Tarifas de USCIS para los montos actuales. Las tarifas pueden variar según la edad, el método de presentación y la categoría de libertad condicional.",
   "fees.paroleGrant.note": "Tarifa de otorgamiento de libertad condicional HR-1: USCIS cobra esta tarifa después de la aprobación condicional, no al momento de presentar. Recibirá un aviso de pago separado con fecha límite.",
   "fees.paroleGrant.approx": "Consulte el monto actual en uscis.gov/g-1055 (sujeto a ajuste anual).",
