@@ -11,7 +11,7 @@ export function Screen09() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Preview your application packet</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Review everything before proceeding to payment.
+          Review your information before generating your packet.
         </p>
       </div>
 
@@ -27,14 +27,6 @@ export function Screen09() {
                 <p className="text-sm font-semibold text-slate-800">
                   {member.alias || `Person ${i + 1}`}
                 </p>
-                {member.fields['dob'] && (
-                  <p className="text-xs text-slate-500 mt-0.5">DOB: {member.fields['dob']}</p>
-                )}
-                {member.fields['lastName'] && (
-                  <p className="text-xs text-slate-500">
-                    {member.fields['firstName']} {member.fields['lastName']}
-                  </p>
-                )}
               </div>
               <span className="text-xs text-slate-400 capitalize">
                 {filingMethod ?? 'method not set'}
@@ -58,7 +50,7 @@ export function Screen09() {
           onClick={() => setStep(10)}
           className="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
         >
-          Looks good — proceed to payment →
+          Looks good — continue to confirm →
         </button>
         <button
           type="button"
