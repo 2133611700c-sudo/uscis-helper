@@ -83,8 +83,8 @@ export function Screen07() {
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
           />
           <p className="text-xs text-slate-400">
-            This text will be included in your preparation checklist. Do not include passwords or
-            financial account numbers.
+            This text will be included in your preparation checklist. Do not include passport numbers,
+            I-94 numbers, Social Security numbers, passwords, or financial account numbers.
           </p>
         </div>
 
