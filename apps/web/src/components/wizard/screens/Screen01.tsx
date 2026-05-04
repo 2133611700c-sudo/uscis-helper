@@ -4,13 +4,14 @@ import { ExternalLink } from 'lucide-react'
 
 const infoCards = [
   {
-    label: 'Edition: 02/27/26',
+    label: 'Edition: 01/20/25',
     detail:
-      'Use the 02/27/26 edition. USCIS stopped accepting the old 01/20/25 edition after March 31, 2026.',
+      'Use Form I-131 edition 01/20/25 (verified uscis.gov/i-131, 2026-05-04). Download at uscis.gov/i-131.',
   },
   {
-    label: 'Item 10.C',
-    detail: 'For U4U re-parole, select checkbox 10.C on page 2 of I-131.',
+    label: 'Paper: Item 1.e · Online: Box 10.C',
+    detail:
+      'Paper filing: select Part 2, Item 1.e — and handwrite "Ukraine RE-PAROLE" at top of first page. Online filing (my.uscis.gov): select Box 10.C.',
   },
   {
     label: 'Filing Window',

@@ -41,6 +41,32 @@ export interface ServiceSource {
   last_verified: string
 }
 
+export interface ServiceFilingMethod {
+  formPart?: string
+  handwrite?: string
+  handwritePosition?: string
+  feeWaiverAllowed: boolean
+  feeWaiverNoteKey?: string
+  portal?: string
+  applicationCategory?: string
+  userDropdown?: string
+  reParoleAnswer?: string
+  sourceNote: string
+}
+
+export interface ServiceFilingMethods {
+  paper: ServiceFilingMethod
+  online: ServiceFilingMethod
+}
+
+export interface ServiceVerifiedSource {
+  id: string
+  label: string
+  url: string
+  uscisLastReviewed: string
+  messenginfoVerified: string
+}
+
 export interface ServiceData {
   slug: string
   full_data: boolean
@@ -51,6 +77,9 @@ export interface ServiceData {
   filing: ServiceFilingInfo
   fees: ServiceFeesInfo
   sources: ServiceSource[]
+  filingMethods?: ServiceFilingMethods
+  verifiedSources?: ServiceVerifiedSource[]
+  messenginfoVerifiedOn?: string
   // Optional message keys for status/notice banners
   statusWarningKey?: string
   feeNoticeKey?: string
