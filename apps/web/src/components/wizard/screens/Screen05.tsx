@@ -12,12 +12,10 @@ export function Screen05() {
 
   const activeMember = members[activeIndex]
 
-  // Determine if this member has at least one successfully uploaded doc
   const hasUploadedDocs =
     activeMember != null &&
     Object.values(activeMember.docs).some((d) => d.status === 'done')
 
-  // Only run the "analyzing" spinner when there are actual uploads to process
   useEffect(() => {
     if (!hasUploadedDocs) {
       setAnalyzing(false)
@@ -31,13 +29,13 @@ export function Screen05() {
   if (!activeMember) return null
 
   return (
-    <div className="max-w-lg mx-auto space-y-4">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
           Reviewing your documents
         </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Checking the uploaded files for each applicant.
+        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
+          Checking uploaded files for each applicant.
         </p>
       </div>
 
@@ -49,29 +47,47 @@ export function Screen05() {
         aria-label={`Review for ${activeMember.alias}`}
         className="space-y-3"
       >
-        {/* ── Case 1: spinner while analyzing real uploads ── */}
+        {/* Spinner while analyzing */}
         {analyzing && (
-          <div className="flex flex-col items-center gap-3 py-8">
+          <div
+            className="rounded-[12px] p-6 text-center"
+            style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)' }}
+          >
             <div
-              className="h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"
+              className="w-[32px] h-[32px] rounded-full mx-auto mb-3 animate-spin"
+              style={{
+                border: '3px solid var(--info-border)',
+                borderTopColor: 'var(--primary)',
+              }}
               aria-label="Analyzing"
             />
-            <p className="text-sm text-slate-500 dark:text-slate-400">Analyzing… ⏳</p>
+            <p className="text-[14px] font-medium" style={{ color: 'var(--info-text)' }}>
+              Analyzing… ⏳
+            </p>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--text-3)' }}>
+              Extracting data from your documents
+            </p>
           </div>
         )}
 
-        {/* ── Case 2: no uploads → manual entry notice ── */}
+        {/* No uploads */}
         {!analyzing && !hasUploadedDocs && (
           <>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-4 space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="text-lg leading-none">📄</span>
+            <div
+              className="rounded-[12px] p-4"
+              style={{
+                background: 'var(--warning-bg)',
+                border: '1px solid var(--warning-border)',
+              }}
+            >
+              <div className="flex items-start gap-2.5">
+                <span className="text-[20px] flex-shrink-0">📄</span>
                 <div>
-                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                  <p className="text-[14px] font-semibold mb-1" style={{ color: 'var(--warning-text)' }}>
                     No documents uploaded for {activeMember.alias}
                   </p>
-                  <p className="mt-1 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                    That&apos;s fine — you&apos;ll fill in the details directly on Form&nbsp;I-131.
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--warning-text)' }}>
+                    That&apos;s fine — you&apos;ll fill in the details directly on Form I-131.
                     Skip ahead and we&apos;ll guide you through every required field.
                   </p>
                 </div>
@@ -81,41 +97,67 @@ export function Screen05() {
             <button
               type="button"
               onClick={() => setStep(6)}
-              className="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
+              className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
+              style={{
+                background: 'var(--btn-action)',
+                color: 'var(--btn-action-text)',
+                border: 'none',
+                padding: '14px',
+                minHeight: '52px',
+              }}
             >
               Continue — fill in details manually →
             </button>
           </>
         )}
 
-        {/* ── Case 3: uploads done → show extracted data (real OCR coming soon) ── */}
+        {/* Uploads done */}
         {!analyzing && hasUploadedDocs && (
           <>
-            <div className="rounded-xl border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-700 p-4 space-y-2">
-              <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide mb-2">
-                Extracted from uploaded documents
+            <div
+              className="rounded-[12px] p-4"
+              style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)' }}
+            >
+              <p
+                className="text-[11px] font-semibold uppercase tracking-wide mb-3"
+                style={{ color: 'var(--success-text)', letterSpacing: '0.6px' }}
+              >
+                ✓ All documents recognized
+              </p>
+              <p className="text-[13px] mb-3 leading-relaxed" style={{ color: 'var(--success-text)' }}>
+                We extracted data from your documents. Now you&apos;ll verify each field.
               </p>
               {Object.entries(activeMember.docs)
                 .filter(([, d]) => d.status === 'done')
                 .map(([docKey]) => (
-                  <div key={docKey} className="flex items-center justify-between text-sm py-0.5">
-                    <span className="text-slate-600 dark:text-slate-400 capitalize">
+                  <div
+                    key={docKey}
+                    className="flex items-center justify-between text-[13px] py-1"
+                  >
+                    <span className="capitalize" style={{ color: 'var(--text-2)' }}>
                       {docKey.replace(/_/g, ' ')}
                     </span>
-                    <span className="font-medium text-green-700 dark:text-green-300 text-xs">
+                    <span className="font-bold text-[12px]" style={{ color: 'var(--success-text)' }}>
                       ✓ Uploaded
                     </span>
                   </div>
                 ))}
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                Automated field extraction will be available in a future update.
+              <p className="mt-2 text-[12px]" style={{ color: 'var(--text-3)' }}>
+                Automated field extraction available in a future update.
               </p>
             </div>
 
             <button
               type="button"
               onClick={() => setStep(6)}
-              className="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
+              className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
+              style={{
+                background: 'var(--btn-action)',
+                color: 'var(--btn-action-text)',
+                border: 'none',
+                padding: '14px',
+                minHeight: '52px',
+              }}
             >
               Continue →
             </button>

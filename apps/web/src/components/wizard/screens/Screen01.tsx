@@ -1,72 +1,112 @@
 'use client'
 
-import { ExternalLink } from 'lucide-react'
-
-const infoCards = [
+const INFO_CARDS = [
   {
-    label: 'Edition: 01/20/25',
-    detail:
-      'Use Form I-131 edition 01/20/25 (verified uscis.gov/i-131, 2026-05-04). Download at uscis.gov/i-131.',
+    label: 'Current Edition',
+    detail: 'Form I-131 edition 02/27/26 — accepted from April 1, 2026. Download at uscis.gov/i-131.',
+    type: 'info' as const,
   },
   {
-    label: 'Paper: Item 1.e · Online: Box 10.C',
-    detail:
-      'Paper filing: select Part 2, Item 1.e — and handwrite "Ukraine RE-PAROLE" at top of first page. Online filing (my.uscis.gov): select Box 10.C.',
+    label: 'Paper filing: Part 2, Item 1.e',
+    detail: 'Select Item 1.e and handwrite "Ukraine RE-PAROLE" at the top of the first page.',
+    type: 'neutral' as const,
   },
   {
-    label: 'Filing Window',
-    detail: 'File up to 180 days before your parole expires.',
+    label: 'Online filing: Box 10.C',
+    detail: 'File at my.uscis.gov — select Box 10.C in the online form.',
+    type: 'neutral' as const,
+  },
+  {
+    label: 'Filing window',
+    detail: 'Submit up to 180 days before your current parole expires. Processing: 8–21 months.',
+    type: 'neutral' as const,
   },
 ]
 
 export function Screen01() {
   return (
-    <div className="max-w-lg mx-auto space-y-5">
+    <div className="space-y-4">
+
+      {/* Badges */}
+      <div className="flex gap-2 flex-wrap">
+        <span
+          className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
+          style={{ background: 'var(--info-bg)', color: 'var(--info-text)' }}
+        >
+          Form I-131
+        </span>
+        <span
+          className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
+          style={{ background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
+        >
+          Edition 02/27/26
+        </span>
+        <span
+          className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
+          style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
+        >
+          Source: USCIS
+        </span>
+      </div>
+
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          Form I-131 — Application for Travel Document
+        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
+          About Form I-131
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Key facts about the form before you begin.
+        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
+          Key facts before you start — edition, filing options, and timeline.
         </p>
       </div>
 
-      <div className="space-y-3">
-        {infoCards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+      {INFO_CARDS.map((card) => (
+        <div
+          key={card.label}
+          className="rounded-[12px] p-3.5"
+          style={{
+            background: card.type === 'info' ? 'var(--info-bg)' : 'var(--surface)',
+            border: `1px solid ${card.type === 'info' ? 'var(--info-border)' : 'var(--border)'}`,
+          }}
+        >
+          <p className="text-[14px] font-semibold mb-1" style={{ color: card.type === 'info' ? 'var(--info-text)' : 'var(--text-1)' }}>
+            {card.label}
+          </p>
+          <p className="text-[13px]" style={{ color: card.type === 'info' ? 'var(--info-text)' : 'var(--text-2)' }}>
+            {card.detail}
+          </p>
+        </div>
+      ))}
+
+      {/* Fee reminder */}
+      <div
+        className="rounded-[12px] p-3.5"
+        style={{
+          background: 'var(--warning-bg)',
+          border: '1px solid var(--warning-border)',
+        }}
+      >
+        <p className="text-[13px]" style={{ color: 'var(--warning-text)' }}>
+          <strong>USCIS filing fees (paid directly to USCIS, not to us):</strong>
+          {' '}Online ~$580 · Paper ~$630.{' '}
+          <a
+            href="https://www.uscis.gov/feecalculator"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'var(--warning-text)', fontWeight: 600 }}
           >
-            <p className="text-sm font-semibold text-slate-800">{card.label}</p>
-            <p className="mt-1 text-sm text-slate-600">{card.detail}</p>
-          </div>
-        ))}
+            Check current fees ↗
+          </a>
+        </p>
       </div>
 
       <a
         href="https://www.uscis.gov/i-131"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+        className="inline-flex items-center gap-1.5 text-[14px] font-semibold no-underline transition-all"
+        style={{ color: 'var(--primary)' }}
       >
-        Download I-131 from uscis.gov →
-        <ExternalLink className="w-3.5 h-3.5" />
+        Download I-131 from uscis.gov ↗
       </a>
-
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <p className="text-sm text-amber-800">
-          <span className="font-semibold">Filing fees: </span>
-          Check current fees at{' '}
-          <a
-            href="https://www.uscis.gov/feecalculator"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:no-underline"
-          >
-            uscis.gov/feecalculator
-          </a>
-        </p>
-      </div>
     </div>
   )
 }

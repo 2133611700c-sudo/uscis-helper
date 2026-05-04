@@ -34,21 +34,31 @@ export function Screen06() {
 
   if (!activeMember) return null
 
+  const checkedCount = CHECKLIST_ITEMS.filter(
+    (i) => activeMember.fields[i.key] === 'yes',
+  ).length
+
   return (
-    <div className="max-w-lg mx-auto space-y-4">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Have this information ready</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          You will enter these details directly on Form I-131. Check each item you have available.
+        <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
+          Have this information ready
+        </h1>
+        <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
+          Tap <strong>✓ Correct</strong> on each field or <strong>Edit</strong> if something is wrong.
+          Mandatory confirmation before payment.
         </p>
       </div>
 
-      {/* Security notice */}
-      <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
-        <p className="text-xs text-blue-800 leading-relaxed">
-          <strong>Privacy:</strong> We do not collect or store your personal identifiers
-          (name, date of birth, I-94 number, passport number). Enter them directly on the
-          official form. Do not include sensitive numbers in the explanation field.
+      {/* Privacy notice */}
+      <div
+        className="rounded-[12px] p-3.5"
+        style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', display: 'flex', gap: '10px' }}
+      >
+        <span className="text-[16px] flex-shrink-0">🔒</span>
+        <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-2)' }}>
+          We do not store your personal identifiers (name, date of birth, I-94, passport number).
+          Enter them directly on the official form.
         </p>
       </div>
 
@@ -60,32 +70,56 @@ export function Screen06() {
         aria-label={`Checklist for ${activeMember.alias}`}
         className="space-y-2"
       >
-        {CHECKLIST_ITEMS.map((item) => (
-          <label
-            key={item.key}
-            className={[
-              'flex items-center gap-3 cursor-pointer rounded-xl border-2 p-3 transition-colors',
-              activeMember.fields[item.key] === 'yes'
-                ? 'border-green-300 bg-green-50'
-                : 'border-slate-200 bg-white hover:border-slate-300',
-            ].join(' ')}
-          >
-            <input
-              type="checkbox"
-              checked={activeMember.fields[item.key] === 'yes'}
-              onChange={(e) => handleCheck(item.key, e.target.checked)}
-              className="h-4 w-4 shrink-0 rounded border-slate-300 text-green-600 focus:ring-green-500"
-            />
-            <span className="text-sm text-slate-700">{item.label}</span>
-          </label>
-        ))}
+        {CHECKLIST_ITEMS.map((item) => {
+          const isChecked = activeMember.fields[item.key] === 'yes'
+          return (
+            <label
+              key={item.key}
+              className="flex items-start gap-3 rounded-[12px] cursor-pointer transition-all"
+              style={{
+                background: isChecked ? 'var(--success-bg)' : 'var(--surface)',
+                border: `1px solid ${isChecked ? 'var(--success-border)' : 'var(--border)'}`,
+                padding: '14px',
+              }}
+            >
+              {/* Custom checkbox */}
+              <div
+                className="w-[22px] h-[22px] rounded-[5px] flex-shrink-0 flex items-center justify-center mt-0.5"
+                style={{
+                  border: `2px solid ${isChecked ? 'var(--success)' : 'var(--border-strong)'}`,
+                  background: isChecked ? 'var(--success)' : 'var(--surface)',
+                }}
+              >
+                {isChecked && (
+                  <span className="text-white font-bold text-[14px]">✓</span>
+                )}
+              </div>
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={(e) => handleCheck(item.key, e.target.checked)}
+                className="sr-only"
+              />
+              <span className="text-[14px]" style={{ color: 'var(--text-1)' }}>
+                {item.label}
+              </span>
+            </label>
+          )
+        })}
       </div>
+
+      {checkedCount > 0 && (
+        <p className="text-[13px] font-medium" style={{ color: 'var(--success-text)' }}>
+          ✓ {checkedCount} of {CHECKLIST_ITEMS.length} items confirmed
+        </p>
+      )}
 
       <a
         href="https://i94.cbp.dhs.gov/"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
+        className="text-[14px] font-semibold no-underline transition-all"
+        style={{ color: 'var(--primary)' }}
       >
         Look up your I-94 record at i94.cbp.dhs.gov →
       </a>
@@ -93,7 +127,14 @@ export function Screen06() {
       <button
         type="button"
         onClick={() => setStep(7)}
-        className="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
+        className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
+        style={{
+          background: 'var(--btn-action)',
+          color: 'var(--btn-action-text)',
+          border: 'none',
+          padding: '14px',
+          minHeight: '52px',
+        }}
       >
         Continue →
       </button>
