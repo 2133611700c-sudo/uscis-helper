@@ -1,7 +1,13 @@
 // apps/web/src/data/formIntelligence/i131.ts
+//
+// ⚠️  DEPRECATED — NOT USED BY PRODUCTION UI OR PACKET GENERATOR.
+//     Do not use as a regulatory source of truth.
+//     Use re-parole-u4u serviceData + sourceFacts instead.
+//     This file is retained for reference only and may contain stale fee data.
+//
 // Edition: 01/20/25 — verified live from uscis.gov/i-131 on 2026-05-04 (USCIS page last reviewed 03/30/2026).
-// IMPORTANT: "02/27/26" was the Feb 27 2024 U4U program announcement date — NOT a form edition.
-//            Do NOT use "02/27/26" anywhere as the I-131 form edition.
+// IMPORTANT: "Feb-27-2024" was the U4U program announcement date — NOT a form edition.
+//            Do NOT use the Feb-27-2024 date anywhere as the I-131 form edition.
 // Instructions source: I-131 Instructions PDF edition 01/20/25
 // Fees source: Form G-1055 PDF (uscis.gov/g-1055), fetched 2026-04-30
 // All data is provisional — labeled per field where confirmed vs not_confirmed
@@ -15,7 +21,7 @@ export const i131: FormIntelligence = {
   form_pdf_url: 'https://www.uscis.gov/sites/default/files/document/forms/i-131.pdf',
   instructions_pdf_url: 'https://www.uscis.gov/sites/default/files/document/forms/i-131instr.pdf',
   // Edition verified live from uscis.gov/i-131 on 2026-05-04 (USCIS page last reviewed 03/30/2026).
-  // "02/27/26" was the Feb 27 2024 program announcement date — NOT the form edition.
+  // "Feb-27-2024" was the U4U program announcement date — NOT the form edition.
   edition_date: '01/20/25',
   edition_last_verified: '2026-05-04',
   topics: ['re-parole', 'travel-document', 'advance-parole', 'parole-document', 'arrival-departure-record'],
@@ -29,7 +35,7 @@ export const i131: FormIntelligence = {
     'CNMI long-term residents applying for advance permission to travel',
     'Aliens outside the U.S. applying for an initial Parole Document (FWVP, IMMVI, intergovernmental referral, FRTF, or other specific programs)',
     'Aliens inside the U.S. applying for initial Parole in Place (Military PIP, FRTF, other)',
-    'Previously paroled aliens inside the U.S. requesting a new period of parole (re-parole) — including Ukrainian re-parole under Part 1 Item 10.C',
+    'Previously paroled aliens inside the U.S. requesting a new period of parole (re-parole) — including Ukrainian re-parole. Paper: Part 2 Item 1.e + handwrite "Ukraine RE-PAROLE" at top. Online (my.uscis.gov): select Box 10.C.',
   ],
 
   filing_method: ['paper', 'online'],
@@ -38,21 +44,21 @@ export const i131: FormIntelligence = {
 
   fees: [
     {
-      amount_usd: 630,
+      amount_usd: 'varies',
       label: 'Reentry Permit — paper filing',
       fee_waiver_eligible: false,
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'Part 1 Item 1. Confirmed from G-1055 Appendix B. Not eligible for fee waiver.',
+      provisional: true,
+      notes: 'Part 1 Item 1. Not eligible for fee waiver. DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
     {
-      amount_usd: 630,
+      amount_usd: 'varies',
       label: 'Refugee Travel Document — paper filing (non-refugee-status filers)',
       fee_waiver_eligible: true,
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'Part 1 Item 2 or 3, when applicant is NOT filing under Item 13 (refugee status holder). Confirmed from G-1055.',
+      provisional: true,
+      notes: 'Part 1 Item 2 or 3, when applicant is NOT filing under Item 13 (refugee status holder). DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
     {
       amount_usd: 0,
@@ -60,69 +66,69 @@ export const i131: FormIntelligence = {
       fee_waiver_eligible: false,
       effective_date: '2024-04-01',
       provisional: false,
-      notes: 'Part 1 Items 2/3 + Item 13 Yes. Confirmed from G-1055.',
+      notes: 'Part 1 Items 2/3 + Item 13 Yes. Confirmed from G-1055 — $0 fee.',
     },
     {
-      amount_usd: 630,
+      amount_usd: 'varies',
       label: 'TPS Travel Authorization Document — paper filing',
       fee_waiver_eligible: true,
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'Part 1 Item 4, online filing. Check current fee on USCIS Fee Calculator: https://www.uscis.gov/feecalculator',
+      provisional: true,
+      notes: 'Part 1 Item 4. DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
     {
-      amount_usd: 580,
+      amount_usd: 'varies',
       label: 'TPS Travel Authorization Document — online filing',
       fee_waiver_eligible: true,
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'Part 1 Item 4, online. Confirmed from G-1055.',
+      provisional: true,
+      notes: 'Part 1 Item 4, online. DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
     {
-      amount_usd: 630,
+      amount_usd: 'varies',
       label: 'Advance Parole Document — paper filing (most categories)',
       fee_waiver_eligible: true,
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'Part 1 Item 5, most bases. Certain bases (IMMVI, Ms. L., FRTF, parolee with pending I-485 filed before Apr 2024) may be fee-exempt. Check current fee on USCIS Fee Calculator: https://www.uscis.gov/feecalculator',
+      provisional: true,
+      notes: 'Part 1 Item 5, most bases. Certain bases (IMMVI, Ms. L., FRTF, parolee with pending I-485 filed before Apr 2024) may be fee-exempt. DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
     {
-      amount_usd: 580,
+      amount_usd: 'varies',
       label: 'Advance Parole Document — online filing (most categories)',
       fee_waiver_eligible: true,
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'Part 1 Item 5, online. Confirmed from G-1055.',
+      provisional: true,
+      notes: 'Part 1 Item 5, online. DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
     {
-      amount_usd: 630,
-      label: 'Ukrainian Re-parole (Part 1 Item 10.C) — paper filing',
+      amount_usd: 'varies',
+      label: 'Ukrainian Re-parole — paper filing (Part 2 Item 1.e + handwrite "Ukraine RE-PAROLE")',
       fee_waiver_eligible: true,
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'Certain Ukrainians paroled on or after Feb 11, 2022. Select Part 1, Item 10.C (paper filing). Check current fee on USCIS Fee Calculator: https://www.uscis.gov/feecalculator',
+      provisional: true,
+      notes: 'Certain Ukrainians paroled on or after Feb 11, 2022. Paper filing: Part 2, Item 1.e — handwrite "Ukraine RE-PAROLE" at the top of Form I-131. Do NOT select Part 1 Item 10.C on paper. DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
     {
-      amount_usd: 580,
-      label: 'Ukrainian Re-parole (Part 1 Item 10.C) — online filing',
+      amount_usd: 'varies',
+      label: 'Ukrainian Re-parole — online filing (Box 10.C, my.uscis.gov)',
       fee_waiver_eligible: true,
       fee_waiver_form: 'I-912',
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'Confirmed from G-1055 Appendix B page 43.',
+      provisional: true,
+      notes: 'Online filing at my.uscis.gov: select Box 10.C — "Certain Ukrainians paroled on/after Feb 11, 2022". DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
     {
-      amount_usd: 280,
+      amount_usd: 'varies',
       label: 'Additional EAD fee (Pub. L. 119-21) — when requesting EAD with re-parole in Part 9',
       fee_waiver_eligible: false,
       effective_date: '2024-04-01',
-      provisional: false,
-      notes: 'G-1055 page 44: "Additional EAD Fee Due at Filing: Pub. L. 119-21 Fee $280. Must be submitted separately. This fee may not be waived." Applies when Part 9 Item 1 is checked.',
+      provisional: true,
+      notes: 'Previously $280 per G-1055 page 44. Non-waivable. Applies when Part 9 Item 1 is checked. DEPRECATED FILE — verify current fee at https://www.uscis.gov/feecalculator',
     },
   ],
 
