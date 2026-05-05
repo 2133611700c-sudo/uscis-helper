@@ -383,14 +383,14 @@ function StepIndicator({ step, locale }: { step: number; locale: string }) {
         return (
           <div key={idx} className="flex items-center gap-1 flex-shrink-0">
             <div className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold transition-all
-              ${done ? 'bg-green-500 text-white' : active ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+              ${done ? 'bg-green-500 text-white' : active ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)]'}`}>
               {done ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="10" height="10"><polyline points="20 6 9 17 4 12" /></svg>
               ) : idx}
             </div>
             <span className={`text-[11px] font-semibold whitespace-nowrap
-              ${done ? 'text-green-600' : active ? 'text-blue-600' : 'text-slate-400'}`}>{label}</span>
-            {i < steps.length - 1 && <div className={`w-4 h-0.5 mx-1 ${done ? 'bg-green-400' : 'bg-slate-200'}`} />}
+              ${done ? 'text-green-600' : active ? 'text-blue-600' : 'text-[var(--text-2)]'}`}>{label}</span>
+            {i < steps.length - 1 && <div className={`w-4 h-0.5 mx-1 ${done ? 'bg-green-400' : 'bg-[var(--border)]'}`} />}
           </div>
         )
       })}
@@ -412,7 +412,7 @@ function DocCard({ doc, locale, srcLang, selected, onSelect }: {
       className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center cursor-pointer transition-all duration-150 min-h-[132px]
         ${selected
           ? 'border-blue-600 bg-blue-50 shadow-md -translate-y-0.5'
-          : 'border-slate-200 bg-white hover:border-blue-400 hover:-translate-y-0.5 hover:shadow-md'}`}
+          : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400 hover:-translate-y-0.5 hover:shadow-md'}`}
     >
       {selected && (
         <span className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow z-10">
@@ -426,7 +426,7 @@ function DocCard({ doc, locale, srcLang, selected, onSelect }: {
         <div className="absolute top-0 right-0 border-solid border-[0_12px_12px_0] border-[transparent_rgba(255,255,255,.22)_transparent_transparent]" />
         <span className="relative z-10 text-white" dangerouslySetInnerHTML={{ __html: doc.icon }} />
       </div>
-      <span className="text-[14px] font-bold text-slate-900 leading-tight max-w-[110px] hyphens-auto word-break-all">{label}</span>
+      <span className="text-[14px] font-bold text-[var(--text-1)] leading-tight max-w-[110px] hyphens-auto word-break-all">{label}</span>
     </button>
   )
 }
@@ -521,14 +521,14 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             <a href={returnUrl} className="text-sm font-semibold text-blue-700 hover:text-blue-900 whitespace-nowrap">{returnLabel}</a>
           </div>
         )}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{ui.popular}</p>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+          <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-3">{ui.popular}</p>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {popular.map((d) => (
               <DocCard key={d.id} doc={d} locale={locale} srcLang={srcLang} selected={docId === d.id} onSelect={() => selectDoc(d.id)} />
             ))}
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-5 mb-3">{ui.other}</p>
+          <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mt-5 mb-3">{ui.other}</p>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {other.map((d) => (
               <DocCard key={d.id} doc={d} locale={locale} srcLang={srcLang} selected={docId === d.id} onSelect={() => selectDoc(d.id)} />
@@ -546,19 +546,19 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     return (
       <div className="max-w-lg mx-auto space-y-4">
         <StepIndicator step={1} locale={locale} />
-        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-600 transition-colors">
+        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
           <ArrowLeft className="w-4 h-4" />{ui.back}
         </button>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900 mb-5">{ui.langTitle}</h2>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{ui.langTop3}</p>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-5">{ui.langTitle}</h2>
+          <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-3">{ui.langTop3}</p>
           <div className="grid grid-cols-3 gap-2.5 mb-4">
             {LANGS_TOP3.map((l) => (
               <button key={l.id} type="button" onClick={() => setSrcLang(l.id)}
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-[1.5px] text-center cursor-pointer transition-all
-                  ${srcLang === l.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-400'}`}>
+                  ${srcLang === l.id ? 'border-blue-600 bg-blue-50' : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400'}`}>
                 <span className="text-2xl leading-none">{l.flag}</span>
-                <span className="text-[13px] font-bold text-slate-900">{l.label}</span>
+                <span className="text-[13px] font-bold text-[var(--text-1)]">{l.label}</span>
                 {srcLang === l.id && (
                   <span className="text-blue-600">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
@@ -576,9 +576,9 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               {LANGS_MORE.map((l) => (
                 <button key={l.id} type="button" onClick={() => setSrcLang(l.id as SourceLang)}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-[1.5px] transition-all
-                    ${srcLang === l.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-400'}`}>
+                    ${srcLang === l.id ? 'border-blue-600 bg-blue-50' : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400'}`}>
                   <span className="text-xl">{l.flag}</span>
-                  <span className="text-[14px] font-semibold text-slate-900">{l.label}</span>
+                  <span className="text-[14px] font-semibold text-[var(--text-1)]">{l.label}</span>
                   {srcLang === l.id && (
                     <span className="ml-auto text-blue-600">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
@@ -604,16 +604,16 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     return (
       <div className="max-w-lg mx-auto space-y-4">
         <StepIndicator step={2} locale={locale} />
-        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-600 transition-colors">
+        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
           <ArrowLeft className="w-4 h-4" />{ui.back}
         </button>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900 mb-2">{ui.uploadTitle}</h2>
-          <p className="text-sm text-slate-500 mb-5">{ui.uploadHint}</p>
-          <div className="rounded-xl border-2 border-dashed border-slate-300 p-8 text-center bg-slate-50">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-11 h-11 text-slate-300 mx-auto mb-3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <p className="text-sm font-medium text-slate-500">JPG, PNG, PDF, HEIC · max 10 MB</p>
-            <p className="text-xs text-slate-400 mt-1">(Upload coming soon — not required to continue)</p>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-2">{ui.uploadTitle}</h2>
+          <p className="text-sm text-[var(--text-2)] mb-5">{ui.uploadHint}</p>
+          <div className="rounded-xl border-2 border-dashed border-[var(--border)] p-8 text-center bg-[var(--surface-2)]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-11 h-11 text-[var(--text-2)] mx-auto mb-3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p className="text-sm font-medium text-[var(--text-2)]">JPG, PNG, PDF, HEIC · max 10 MB</p>
+            <p className="text-xs text-[var(--text-2)] mt-1">(Upload coming soon — not required to continue)</p>
           </div>
         </div>
         <button type="button" onClick={goNext}
@@ -636,28 +636,28 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     return (
       <div className="max-w-lg mx-auto space-y-4">
         <StepIndicator step={3} locale={locale} />
-        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-600 transition-colors">
+        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
           <ArrowLeft className="w-4 h-4" />{ui.back}
         </button>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900 mb-1">{ui.fieldsTitle}</h2>
-          <p className="text-sm text-slate-500 mb-5">{ui.fieldsHint}</p>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">{ui.fieldsTitle}</h2>
+          <p className="text-sm text-[var(--text-2)] mb-5">{ui.fieldsHint}</p>
           {groups.map(({ id: grp, label: grpLabel }) => {
             const grpFields = fields.filter((f) => f.group === grp)
             if (grpFields.length === 0) return null
             return (
               <div key={grp} className="mb-6">
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider pb-2 border-b-2 border-blue-100 mb-4 flex items-center gap-1.5">
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider pb-2 border-b-2 border-blue-200 mb-4 flex items-center gap-1.5">
                   <span>{grpLabel}</span>
                 </p>
                 <div className="flex flex-col gap-4">
                   {grpFields.map((field) => (
                     <div key={field.key} className="flex flex-col gap-1.5">
                       <label className="flex flex-col gap-0.5">
-                        <span className="text-[13px] font-bold text-slate-700">
+                        <span className="text-[13px] font-bold text-[var(--text-1)]">
                           {origLabel(field, srcLang)}
                           {field.required && <span className="text-red-500 ml-1">*</span>}
-                          <span className="ml-1.5 text-[12px] font-normal text-slate-400">/ {field.en}</span>
+                          <span className="ml-1.5 text-[12px] font-normal text-[var(--text-2)]">/ {field.en}</span>
                         </span>
                       </label>
                       <input
@@ -665,7 +665,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                         value={fieldValues[field.key] ?? ''}
                         onChange={(e) => setFieldValues((v) => ({ ...v, [field.key]: e.target.value }))}
                         placeholder={field.placeholder?.[srcLang] ?? field.placeholder?.en ?? ''}
-                        className="w-full px-3.5 py-3 border-[1.5px] border-slate-200 rounded-lg bg-white text-[15px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-slate-300"
+                        className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-[15px] text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
                       />
                       {field.helpExample && (
                         <div>
@@ -707,22 +707,22 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     return (
       <div className="max-w-lg mx-auto space-y-4">
         <StepIndicator step={4} locale={locale} />
-        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-600 transition-colors">
+        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
           <ArrowLeft className="w-4 h-4" />{ui.back}
         </button>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900 mb-1">{ui.reviewTitle}</h2>
-          <p className="text-sm text-slate-500 mb-5">{ui.reviewHint}</p>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">{ui.reviewTitle}</h2>
+          <p className="text-sm text-[var(--text-2)] mb-5">{ui.reviewHint}</p>
           <div className="flex flex-col gap-3">
             {fields.filter((f) => (fieldValues[f.key] ?? '').trim()).map((field) => (
-              <div key={field.key} className="rounded-xl border border-slate-200 overflow-hidden">
-                <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-500">{srcFlag} {origLabel(field, srcLang)}</span>
-                  <ChevronRight className="w-3 h-3 text-slate-300" />
+              <div key={field.key} className="rounded-xl border border-[var(--border)] overflow-hidden">
+                <div className="px-3.5 py-2 bg-[var(--surface-2)] border-b border-[var(--border)] flex items-center gap-2">
+                  <span className="text-xs font-bold text-[var(--text-2)]">{srcFlag} {origLabel(field, srcLang)}</span>
+                  <ChevronRight className="w-3 h-3 text-[var(--text-2)]" />
                   <span className="text-xs font-bold text-blue-600">{field.en}</span>
                 </div>
                 <div className="px-3.5 py-2.5">
-                  <p className="text-[15px] font-semibold text-slate-900">{fieldValues[field.key]}</p>
+                  <p className="text-[15px] font-semibold text-[var(--text-1)]">{fieldValues[field.key]}</p>
                 </div>
               </div>
             ))}
@@ -745,19 +745,19 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
       <div className="max-w-lg mx-auto space-y-4">
         <StepIndicator step={5} locale={locale} />
         {!downloaded && (
-          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-600 transition-colors">
+          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
             <ArrowLeft className="w-4 h-4" />{ui.back}
           </button>
         )}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">{ui.confirmTitle}</h2>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-4">{ui.confirmTitle}</h2>
           <div className="flex flex-col gap-3 mb-5">
             {confirmTexts.map((text, i) => (
               <label key={i} className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={checks[i]}
                   onChange={(e) => setChecks((prev) => { const n = [...prev]; n[i] = e.target.checked; return n })}
                   className="mt-0.5 h-4 w-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500" />
-                <span className="text-sm leading-relaxed text-slate-700">{text}</span>
+                <span className="text-sm leading-relaxed text-[var(--text-1)]">{text}</span>
               </label>
             ))}
           </div>
@@ -792,7 +792,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   <Download className="h-4 w-4" />{ui.downloadAgain}
                 </button>
                 <button type="button" onClick={reset}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors">
                   {ui.anotherDoc}
                 </button>
               </div>
