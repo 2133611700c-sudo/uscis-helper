@@ -1,9 +1,10 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2, FileCheck2, Save } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Download, FileCheck2, Save } from 'lucide-react'
 import { type TranslationDocumentType } from '@/data/translationDocuments'
 import { translationDocuments } from '@/data/translationDocuments'
+import { downloadTranslationTemplate } from '@/lib/translation/generateTranslationHTML'
 import { DocumentUploadBox } from './DocumentUploadBox'
 import { DraftResultPlaceholder } from './DraftResultPlaceholder'
 import { OfficialTranslationSourceBox } from './OfficialTranslationSourceBox'
@@ -131,7 +132,7 @@ async function patchReviewedFields(
 interface ManualEntryFormProps {
   documentType: TranslationDocumentType
   orderId: string
-  onSaved: () => void
+  onSaved: (values: Record<string, string>) => void
 }
 
 function ManualEntryForm({ documentType, orderId, onSaved }: ManualEntryFormProps) {
@@ -148,7 +149,7 @@ function ManualEntryForm({ documentType, orderId, onSaved }: ManualEntryFormProp
     const ok = await patchReviewedFields(orderId, values)
     setIsSaving(false)
     if (ok) {
-      onSaved()
+      onSaved(values)
     } else {
       setSaveError('Could not save fields. Please try again.')
     }
@@ -262,6 +263,7 @@ export function TranslationServicePanel({
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [fieldsSaved, setFieldsSaved] = useState(false)
+  const [savedFields, setSavedFields] = useState<Record<string, string> | null>(null)
 
   const documentContent = messages.documents[selectedDocument]
   const documentConfig = useMemo(
@@ -328,6 +330,7 @@ export function TranslationServicePanel({
     setUploadError(null)
     setIsUploading(false)
     setFieldsSaved(false)
+    setSavedFields(null)
   }
 
   if (!documentContent || !documentConfig) return null
@@ -439,13 +442,10 @@ export function TranslationServicePanel({
               {/* Order received confirmation */}
               <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
                 <p className="text-sm font-semibold text-green-800">
-                  Your document has been received.
+                  ✓ Document received. Enter the fields below to generate your translation draft.
                 </p>
-                <p className="mt-1 text-sm text-green-700">
-                  Order ID: <span className="font-mono font-semibold">{uploadResult.order_id}</span>
-                </p>
-                <p className="mt-1 text-sm text-green-700">
-                  Our team will prepare your translation draft.
+                <p className="mt-1 text-sm text-green-700 font-mono text-xs">
+                  Ref: {uploadResult.order_id}
                 </p>
               </div>
 
@@ -454,27 +454,59 @@ export function TranslationServicePanel({
                 <ManualEntryForm
                   documentType={selectedDocument}
                   orderId={uploadResult.order_id}
-                  onSaved={() => setFieldsSaved(true)}
+                  onSaved={(values) => {
+                    setSavedFields(values)
+                    setFieldsSaved(true)
+                  }}
                 />
               )}
-              {isManualReviewRequired && fieldsSaved && (
-                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-                  <p className="text-sm font-semibold text-green-800">Fields saved.</p>
-                  <p className="mt-1 text-sm text-green-700">
-                    Our team will prepare your translation packet.
+
+              {/* After fields saved — download the draft */}
+              {isManualReviewRequired && fieldsSaved && savedFields && (
+                <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
+                  <p className="text-sm font-semibold text-blue-900 mb-1">
+                    ✓ Fields saved — your translation draft is ready.
+                  </p>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Review the draft, complete the certification block, and sign before submitting to USCIS.
+                    Messenginfo does not certify translations — you sign as the translator of record.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => downloadTranslationTemplate(selectedDocument, savedFields)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Translation Draft (.html → print as PDF)
+                  </button>
+                  <p className="mt-2 text-xs text-blue-600">
+                    Open the file in your browser → File → Print → Save as PDF
                   </p>
                 </div>
               )}
 
-              <DraftResultPlaceholder
-                title={messages.result.placeholderTitle}
-                body={messages.result.noBackend}
-                draftOnly={messages.result.draftOnly}
-                downloadLabel={messages.result.downloadDraft}
-                sendToEmailLabel={messages.result.sendToEmail}
-                startAnotherLabel={messages.result.startAnother}
-                onReset={resetFlow}
-              />
+              {/* Only show placeholder when the real download isn't available yet */}
+              {!(fieldsSaved && savedFields) && (
+                <DraftResultPlaceholder
+                  title={messages.result.placeholderTitle}
+                  body={messages.result.noBackend}
+                  draftOnly={messages.result.draftOnly}
+                  downloadLabel={messages.result.downloadDraft}
+                  sendToEmailLabel={messages.result.sendToEmail}
+                  startAnotherLabel={messages.result.startAnother}
+                  onReset={resetFlow}
+                />
+              )}
+              {/* "Translate another" link */}
+              {fieldsSaved && savedFields && (
+                <button
+                  type="button"
+                  onClick={resetFlow}
+                  className="text-sm font-medium text-brand-700 hover:text-brand-800 transition-colors"
+                >
+                  ← Translate another document
+                </button>
+              )}
             </div>
           )}
         </div>

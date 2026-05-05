@@ -37,10 +37,17 @@ const T = {
       { num: '2', title: 'Отримайте пакет', desc: 'Система підготує заповнену Form I-131 та чек-лист документів.' },
       { num: '3', title: 'Надішліть до USCIS', desc: 'Роздрукуйте та подайте самостійно — або з допомогою юриста.' },
     ],
-    priceTitle: 'Вартість',
+    ctaStatus: '🔍 Перевірити статус справи →',
+    ctaTranslate: '📄 Перекласти документ →',
+    priceTitle: 'Вартість послуги',
     priceService: 'Послуга Messenginfo',
     priceServiceDesc: 'Підготовка пакету Form I-131',
-    priceFrom: 'від $15',
+    priceRows: [
+      { label: '1 людина', price: '$15' },
+      { label: '2 людини', price: '$25', save: 'економія $5' },
+      { label: '3 людини', price: '$35', save: 'економія $10' },
+      { label: '4+ (сім'я)', price: '$45', save: 'економія $15', highlight: true },
+    ],
     priceUSCIS: 'Держмито USCIS',
     priceUSCISDesc: 'Більшість U4U — $0. Перевірте на',
     priceUSCISLink: 'uscis.gov/feecalculator',
@@ -118,10 +125,17 @@ const T = {
       { num: '2', title: 'Получите пакет', desc: 'Система подготовит заполненную Form I-131 и чек-лист документов.' },
       { num: '3', title: 'Отправьте в USCIS', desc: 'Распечатайте и подайте самостоятельно — или с помощью адвоката.' },
     ],
-    priceTitle: 'Стоимость',
+    ctaStatus: '🔍 Проверить статус дела →',
+    ctaTranslate: '📄 Перевести документ →',
+    priceTitle: 'Стоимость услуги',
     priceService: 'Услуга Messenginfo',
     priceServiceDesc: 'Подготовка пакета Form I-131',
-    priceFrom: 'от $15',
+    priceRows: [
+      { label: '1 человек', price: '$15' },
+      { label: '2 человека', price: '$25', save: 'экономия $5' },
+      { label: '3 человека', price: '$35', save: 'экономия $10' },
+      { label: '4+ (семья)', price: '$45', save: 'экономия $15', highlight: true },
+    ],
     priceUSCIS: 'Госпошлина USCIS',
     priceUSCISDesc: 'Большинство U4U — $0. Проверьте на',
     priceUSCISLink: 'uscis.gov/feecalculator',
@@ -199,10 +213,17 @@ const T = {
       { num: '2', title: 'Get your packet', desc: 'The system prepares a filled Form I-131 and a document checklist.' },
       { num: '3', title: 'File with USCIS', desc: 'Print and file yourself — or with the help of an attorney.' },
     ],
-    priceTitle: 'Pricing',
+    ctaStatus: '🔍 Check case status →',
+    ctaTranslate: '📄 Translate a document →',
+    priceTitle: 'Service pricing',
     priceService: 'Messenginfo service fee',
     priceServiceDesc: 'Form I-131 packet preparation',
-    priceFrom: 'from $15',
+    priceRows: [
+      { label: '1 person', price: '$15' },
+      { label: '2 people', price: '$25', save: 'save $5' },
+      { label: '3 people', price: '$35', save: 'save $10' },
+      { label: '4+ (family)', price: '$45', save: 'save $15', highlight: true },
+    ],
     priceUSCIS: 'USCIS government fee',
     priceUSCISDesc: 'Most U4U applicants — $0. Verify at',
     priceUSCISLink: 'uscis.gov/feecalculator',
@@ -280,10 +301,17 @@ const T = {
       { num: '2', title: 'Obtenga su paquete', desc: 'El sistema prepara el Form I-131 completo y una lista de documentos.' },
       { num: '3', title: 'Presente ante USCIS', desc: 'Imprima y presente por su cuenta — o con ayuda de un abogado.' },
     ],
-    priceTitle: 'Precio',
+    ctaStatus: '🔍 Verificar estado del caso →',
+    ctaTranslate: '📄 Traducir documento →',
+    priceTitle: 'Precio del servicio',
     priceService: 'Tarifa de servicio Messenginfo',
     priceServiceDesc: 'Preparación del paquete Form I-131',
-    priceFrom: 'desde $15',
+    priceRows: [
+      { label: '1 persona', price: '$15' },
+      { label: '2 personas', price: '$25', save: 'ahorra $5' },
+      { label: '3 personas', price: '$35', save: 'ahorra $10' },
+      { label: '4+ (familia)', price: '$45', save: 'ahorra $15', highlight: true },
+    ],
     priceUSCIS: 'Tarifa gubernamental USCIS',
     priceUSCISDesc: 'La mayoría de U4U — $0. Verifique en',
     priceUSCISLink: 'uscis.gov/feecalculator',
@@ -446,11 +474,53 @@ export default async function ReParoleLandingPage({ params }: Props) {
             textDecoration: 'none',
             boxShadow: '0 3px 14px rgba(22,163,74,0.30)',
             letterSpacing: '0.01em',
-            marginBottom: '12px',
+            marginBottom: '10px',
           }}
         >
           {t.ctaMain}
         </a>
+
+        {/* Secondary CTAs — status + translate */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <a
+            href={`/${locale}/services/re-parole-u4u/status`}
+            style={{
+              flex: 1,
+              display: 'block',
+              padding: '11px 8px',
+              textAlign: 'center',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'var(--text-1)',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              textDecoration: 'none',
+              lineHeight: 1.3,
+            }}
+          >
+            {t.ctaStatus}
+          </a>
+          <a
+            href={`/${locale}/services/translate-document`}
+            style={{
+              flex: 1,
+              display: 'block',
+              padding: '11px 8px',
+              textAlign: 'center',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'var(--text-1)',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              textDecoration: 'none',
+              lineHeight: 1.3,
+            }}
+          >
+            {t.ctaTranslate}
+          </a>
+        </div>
 
         {/* Trust pills — below CTA */}
         <div
@@ -595,23 +665,37 @@ export default async function ReParoleLandingPage({ params }: Props) {
             </p>
           </div>
 
-          {/* Messenginfo fee */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '12px 14px',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <div>
+          {/* Messenginfo fee — per-person rows */}
+          <div style={{ borderBottom: '1px solid var(--border)' }}>
+            <div style={{ padding: '12px 14px 8px' }}>
               <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)' }}>{t.priceService}</p>
               <p style={{ fontSize: '11px', color: 'var(--text-3)' }}>{t.priceServiceDesc}</p>
             </div>
-            <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-1)', fontVariantNumeric: 'tabular-nums', flexShrink: 0, marginLeft: '8px' }}>
-              {t.priceFrom}
-            </span>
+            {(t.priceRows as ReadonlyArray<{ label: string; price: string; save?: string; highlight?: boolean }>).map((row) => (
+              <div
+                key={row.label}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 14px',
+                  background: row.highlight ? 'var(--success-bg, #dcfce7)' : 'transparent',
+                  borderTop: '1px solid var(--border)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-2)' }}>{row.label}</span>
+                  {row.save && (
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--success-text, #166534)', background: 'var(--success-bg, #dcfce7)', padding: '1px 6px', borderRadius: '99px' }}>
+                      {row.save}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: row.highlight ? 'var(--success)' : 'var(--text-1)', fontVariantNumeric: 'tabular-nums' }}>
+                  {row.price}
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* USCIS fee */}
