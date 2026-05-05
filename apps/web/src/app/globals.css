@@ -254,6 +254,11 @@ html {
   border-radius: 4px;
 }
 
+/* ── Wizard: hide site Header — WizardHeader is the single sticky bar ── */
+body.wizard-active [data-site-header] {
+  display: none;
+}
+
 /* ── Image defaults ── */
 img {
   display: block;
