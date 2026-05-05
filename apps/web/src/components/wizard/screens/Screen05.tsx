@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import { MemberTabs } from '@/components/wizard/MemberTabs'
+import { SupportBlock } from '@/components/wizard/SupportBlock'
 
 const T = {
   uk: {
@@ -242,6 +243,8 @@ export function Screen05() {
           </>
         )}
       </div>
+
+      <SupportBlock locale={state.locale} />
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import { SupportBlock } from '@/components/wizard/SupportBlock'
 
 const T = {
   uk: {
@@ -333,6 +334,8 @@ export function Screen12() {
       >
         {t.backToDownload}
       </button>
+
+      <SupportBlock locale={state.locale} />
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useWizard } from '@/contexts/WizardContext'
 import { ScreenGlossary } from '@/components/wizard/ScreenGlossary'
+import { SupportBlock } from '@/components/wizard/SupportBlock'
 
 const T = {
   uk: {
@@ -273,6 +274,7 @@ export function Screen09() {
       </button>
 
       <ScreenGlossary terms={['I-131', 'Re-Parole', 'U4U', 'I-912']} locale={state.locale} />
+      <SupportBlock locale={state.locale} />
     </div>
   )
 }

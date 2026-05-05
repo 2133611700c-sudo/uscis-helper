@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import { SupportBlock } from '@/components/wizard/SupportBlock'
 
 const T = {
   uk: {
@@ -294,6 +295,8 @@ export function Screen10() {
       >
         {loading ? t.generatingBtn : t.payBtn(packagePrice, allChecked)}
       </button>
+
+      <SupportBlock locale={state.locale} />
     </div>
   )
 }
