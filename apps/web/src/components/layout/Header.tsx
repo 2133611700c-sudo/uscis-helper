@@ -10,6 +10,7 @@ export function Header() {
 
   return (
     <header
+      data-site-header="true"
       className="sticky top-0 z-50 w-full backdrop-blur-[20px] border-b"
       style={{
         background: 'var(--surface-1)',

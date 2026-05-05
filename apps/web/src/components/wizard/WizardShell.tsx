@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { MobileWizardShell } from './MobileWizardShell'
 import { DesktopWizardShell } from './desktop/DesktopWizardShell'
@@ -22,9 +22,17 @@ interface WizardShellProps {
  * IMPORTANT: Do NOT render both shells with CSS `md:hidden` / `lg:block` —
  * that duplicates DOM, duplicates IDs, breaks shared state. One shell
  * in the tree at a time, switched by viewport.
+ *
+ * The wizard adds `wizard-active` to <body> so globals.css can hide the
+ * site Header — WizardHeader is the single sticky bar while inside the wizard.
  */
 export function WizardShell({ children, slug }: WizardShellProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
+
+  useEffect(() => {
+    document.body.classList.add('wizard-active')
+    return () => { document.body.classList.remove('wizard-active') }
+  }, [])
 
   if (isDesktop) {
     return <DesktopWizardShell slug={slug}>{children}</DesktopWizardShell>
