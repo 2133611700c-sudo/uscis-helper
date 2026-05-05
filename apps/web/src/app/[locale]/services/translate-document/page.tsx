@@ -4,7 +4,6 @@ import { ChevronRight, FileText } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { routing } from '@/i18n/routing'
 import { Container } from '@/components/ui/Container'
-import { Section } from '@/components/ui/Section'
 import { IconBadge } from '@/components/ui/IconBadge'
 import { TranslationServiceExperience } from '@/components/services/translation/TranslationServiceExperience'
 
@@ -65,50 +64,57 @@ export default async function TranslateDocumentPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <div className="bg-slate-50 border-b border-slate-100">
+      {/* Breadcrumb */}
+      <div className="border-b border-[var(--border)] bg-[var(--surface-2)]">
         <Container>
-          <nav className="flex items-center gap-1.5 py-3 text-xs text-ink-500" aria-label="Breadcrumb">
-            <Link href={`/${locale}`} className="transition-colors hover:text-ink-900">
+          <nav className="flex items-center gap-1.5 py-3 text-xs text-[var(--text-2)]" aria-label="Breadcrumb">
+            <Link href={`/${locale}`} className="transition-colors hover:text-[var(--text-1)]">
               {tBreadcrumb('home')}
             </Link>
             <ChevronRight className="h-3 w-3" />
-            <Link href={`/${locale}/services`} className="transition-colors hover:text-ink-900">
+            <Link href={`/${locale}/services`} className="transition-colors hover:text-[var(--text-1)]">
               {tServices('title')}
             </Link>
             <ChevronRight className="h-3 w-3" />
-            <span className="font-medium text-ink-900">{tBreadcrumb('title')}</span>
+            <span className="font-medium text-[var(--text-1)]">{tBreadcrumb('title')}</span>
           </nav>
         </Container>
       </div>
 
-      <Section className="pb-8">
-        <div className="max-w-4xl">
-          <Link
-            href={`/${locale}/services`}
-            className="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-slate-50"
-          >
-            {tBreadcrumb('backToServices')}
-          </Link>
-          <div className="flex items-start gap-4">
-            <IconBadge icon={FileText} size="lg" />
-            <div className="space-y-3">
-              <h1 className="text-4xl font-bold leading-[1.1] text-ink-900 md:text-5xl">
-                {tBreadcrumb('title')}
-              </h1>
-              <p className="max-w-3xl text-base leading-relaxed text-ink-600 md:text-lg">
-                {tBreadcrumb('subtitle')}
-              </p>
-              <p className="inline-flex rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800">
-                {tBreadcrumb('draftOnlyBanner')}
-              </p>
+      {/* Compact hero — always readable in light + dark */}
+      <div className="border-b border-[var(--border)] bg-[var(--surface-1)]">
+        <Container>
+          <div className="py-5">
+            <Link
+              href={`/${locale}/services`}
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-4 py-1.5 text-sm font-medium text-[var(--text-2)] transition-colors hover:text-[var(--text-1)]"
+            >
+              {tBreadcrumb('backToServices')}
+            </Link>
+            <div className="flex items-start gap-3">
+              <IconBadge icon={FileText} size="lg" />
+              <div className="space-y-2">
+                <h1 className="text-2xl font-bold leading-tight text-[var(--text-1)] md:text-3xl">
+                  {tBreadcrumb('title')}
+                </h1>
+                <p className="max-w-2xl text-sm leading-relaxed text-[var(--text-2)] md:text-base">
+                  {tBreadcrumb('subtitle')}
+                </p>
+                <p className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800 border border-amber-200">
+                  {tBreadcrumb('draftOnlyBanner')}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </Section>
+        </Container>
+      </div>
 
-      <Section className="bg-slate-50 pt-0">
-        <TranslationServiceExperience messages={messages.translationService} />
-      </Section>
+      {/* Wizard — full width, proper bg */}
+      <div className="bg-[var(--surface-2)] py-6">
+        <Container>
+          <TranslationServiceExperience messages={messages.translationService} />
+        </Container>
+      </div>
     </>
   )
 }
