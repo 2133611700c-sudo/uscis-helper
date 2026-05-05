@@ -1,6 +1,7 @@
 'use client'
 
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { SiteThemeToggle } from '@/components/layout/SiteThemeToggle'
 import { useWizard } from '@/contexts/WizardContext'
 
 const TOTAL_STEPS = 12
@@ -147,6 +148,7 @@ export function WizardHeader() {
       <div className="flex items-center justify-between gap-2">
         <ProgressDots step={state.step} />
         <div className="flex items-center gap-2 flex-shrink-0">
+          <SiteThemeToggle />
           <LanguageSwitcher />
         </div>
       </div>
