@@ -8,12 +8,12 @@ const T = {
   uk: {
     title: 'Перегляд та підтвердження',
     subtitle: 'Прочитайте та підтвердьте кожен пункт перед формуванням пакету.',
-    packetTitle: 'Готовий пакет документів',
-    packetSubtitle: 'Усі документи готові для подачі до USCIS',
+    packetTitle: 'Чернетка пакету документів',
+    packetSubtitle: 'Чернетка документів — перевірте перед подачею',
     packetFor: (size: number) => `для ${size} ${size === 1 ? 'заявника' : 'заявників'}`,
     paymentNote: 'Оплата ще не активована — безкоштовно в прототипі',
     features: [
-      'Заповнена форма I-131 (редагований DOCX)',
+      'Чернетка форми I-131 (редагований DOCX)',
       'Переклади документів на англійську',
       'Покрокова інструкція передачі даних до USCIS',
       'Контрольний список документів',
@@ -38,12 +38,12 @@ const T = {
   ru: {
     title: 'Просмотр и подтверждение',
     subtitle: 'Прочитайте и подтвердите каждый пункт перед формированием пакета.',
-    packetTitle: 'Готовый пакет документов',
-    packetSubtitle: 'Все документы готовы для подачи в USCIS',
+    packetTitle: 'Черновик пакета документов',
+    packetSubtitle: 'Черновик документов — проверьте перед подачей',
     packetFor: (size: number) => `для ${size} заявитель${size === 1 ? 'я' : 'ей'}`,
     paymentNote: 'Оплата ещё не активирована — бесплатно в прототипе',
     features: [
-      'Заполненная форма I-131 (редактируемый DOCX)',
+      'Черновик формы I-131 (редактируемый DOCX)',
       'Переводы документов на английский язык',
       'Пошаговая инструкция передачи данных в USCIS',
       'Контрольный список документов',
@@ -68,12 +68,12 @@ const T = {
   en: {
     title: 'Review & confirm',
     subtitle: 'Please read and acknowledge the items below before generating your packet.',
-    packetTitle: 'Ready-Made Document Packet',
-    packetSubtitle: 'All documents ready for USCIS submission',
+    packetTitle: 'I-131 Draft Packet',
+    packetSubtitle: 'Draft documents to review before filing',
     packetFor: (size: number) => `for ${size} packet${size !== 1 ? 's' : ''}`,
     paymentNote: 'Payment not yet enabled — free in prototype',
     features: [
-      'Completed I-131 (editable DOCX)',
+      'I-131 Draft (editable DOCX)',
       'Document translations to English',
       'Step-by-step USCIS data transfer guide',
       'Document checklist',
@@ -98,12 +98,12 @@ const T = {
   es: {
     title: 'Revisar y confirmar',
     subtitle: 'Lea y confirme los elementos a continuación antes de generar su paquete.',
-    packetTitle: 'Paquete de documentos listo',
-    packetSubtitle: 'Todos los documentos listos para presentar a USCIS',
+    packetTitle: 'Borrador del paquete I-131',
+    packetSubtitle: 'Borrador de documentos — revise antes de presentar',
     packetFor: (size: number) => `para ${size} paquete${size !== 1 ? 's' : ''}`,
     paymentNote: 'Pago aún no habilitado — gratuito en prototipo',
     features: [
-      'I-131 completado (DOCX editable)',
+      'Borrador del I-131 (DOCX editable)',
       'Traducciones de documentos al inglés',
       'Guía paso a paso de transferencia de datos a USCIS',
       'Lista de verificación de documentos',
