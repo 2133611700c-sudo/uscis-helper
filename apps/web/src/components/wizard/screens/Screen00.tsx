@@ -73,7 +73,7 @@ const T = {
         title: 'Обирайте "Переклад", якщо...',
         items: [
           'Є документи не англійською (паспорт, свідоцтво)',
-          'USCIS вимагає офіційний переклад з підтвердженням',
+          'USCIS вимагає переклад англійською для документів іншою мовою',
           'Потрібна чернетка перекладу для підготовки пакету',
         ],
       },
@@ -146,7 +146,7 @@ const T = {
         title: 'Выберите "Перевод", если...',
         items: [
           'Есть документы не на английском (паспорт, свидетельство)',
-          'USCIS требует официальный перевод с подтверждением',
+          'USCIS требует полный перевод на английский для иноязычных документов',
           'Нужен черновик перевода для подготовки пакета',
         ],
       },
@@ -219,7 +219,7 @@ const T = {
         title: 'Choose "Translate" if...',
         items: [
           'You have documents not in English (passport, certificate)',
-          'USCIS requires a certified translation',
+          'USCIS requires an English translation for foreign-language documents',
           'You need a translation draft to complete your packet',
         ],
       },
@@ -292,7 +292,7 @@ const T = {
         title: 'Elija "Traducir" si...',
         items: [
           'Tiene documentos no en inglés (pasaporte, certificado)',
-          'USCIS requiere traducción certificada',
+          'USCIS requiere traducción al inglés de documentos en otro idioma',
           'Necesita un borrador de traducción para preparar su paquete',
         ],
       },
