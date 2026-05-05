@@ -148,7 +148,8 @@ export function WizardHeader() {
       <div className="flex items-center justify-between gap-2">
         <ProgressDots step={state.step} />
         <div className="flex items-center gap-2 flex-shrink-0">
-          <LanguageSwitcher />
+          {/* Hide lang switcher on step 0 — Screen00 owns locale selection */}
+          {state.step !== 0 && <LanguageSwitcher />}
           <ThemeToggle />
         </div>
       </div>
