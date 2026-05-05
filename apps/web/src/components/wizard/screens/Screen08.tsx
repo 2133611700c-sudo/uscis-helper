@@ -263,8 +263,8 @@ export function Screen08() {
         disabled={!filingMethod}
         className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
         style={{
-          background: filingMethod ? 'var(--btn-action)' : 'var(--surface-2)',
-          color: filingMethod ? 'var(--btn-action-text)' : 'var(--text-3)',
+          background: filingMethod ? 'var(--success)' : 'var(--surface-2)',
+          color: filingMethod ? '#fff' : 'var(--text-3)',
           border: 'none',
           padding: '14px',
           minHeight: '52px',
