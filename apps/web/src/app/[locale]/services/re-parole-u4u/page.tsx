@@ -46,7 +46,7 @@ const T = {
       { label: '1 людина', price: '$15' },
       { label: '2 людини', price: '$25', save: 'економія $5' },
       { label: '3 людини', price: '$35', save: 'економія $10' },
-      { label: '4+ (сім'я)', price: '$45', save: 'економія $15', highlight: true },
+      { label: "4+ (сім'я)", price: '$45', save: 'економія $15', highlight: true },
     ],
     priceUSCIS: 'Держмито USCIS',
     priceUSCISDesc: 'Більшість U4U — $0. Перевірте на',
