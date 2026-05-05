@@ -182,7 +182,8 @@ export function MiaSheet() {
         onClick={() => setMiaOpen(false)}
       />
 
-      {/* Sheet / Modal */}
+      {/* Sheet / Modal — always light theme: bg-white + explicit dark text so that
+          wizard dark-mode inheritance (white color on html.dark) never bleeds in */}
       <div
         role="dialog"
         aria-modal="true"
@@ -191,7 +192,7 @@ export function MiaSheet() {
           // Mobile: full-height sheet from bottom
           'fixed inset-x-0 bottom-0 z-[70]',
           'flex flex-col',
-          'bg-white rounded-t-2xl shadow-2xl',
+          'bg-white text-slate-900 rounded-t-2xl shadow-2xl',
           'h-[92dvh]',
           // Desktop: centered modal
           'sm:inset-auto sm:top-1/2 sm:left-1/2',
@@ -218,9 +219,9 @@ export function MiaSheet() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-0">
           {miaMessages.length === 0 && (
-            <div className="text-center text-sm text-slate-500 mt-8 space-y-2">
+            <div className="text-center text-sm text-slate-600 mt-8 space-y-2">
               <p aria-hidden="true" className="text-2xl">👋</p>
-              <p className="font-medium text-slate-700">Hi, I&apos;m Mia!</p>
+              <p className="font-medium text-slate-800">Hi, I&apos;m Mia!</p>
               <p>
                 I can answer questions about the Re-Parole U4U process. What would you
                 like to know?
@@ -284,8 +285,9 @@ export function MiaSheet() {
             disabled={isThinking}
             className={[
               'flex-1 rounded-xl border border-slate-300 bg-white',
+              // Explicit colors — dark-mode inheritance must not bleed into this white-bg input
+              'text-slate-900 placeholder:text-slate-500',
               'px-4 py-2.5 text-sm',
-              'placeholder:text-slate-400',
               'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
               'disabled:opacity-50',
               'transition-colors',
