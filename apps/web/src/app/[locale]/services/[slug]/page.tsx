@@ -273,7 +273,7 @@ export default async function ServicePage({ params }: Props) {
                   {[
                     { n: '1', title: 'Upload your documents', desc: 'Passport photo page + Form I-94. We extract the data automatically.' },
                     { n: '2', title: 'Review and confirm', desc: 'Check every field before the packet is assembled. You\'re in control.' },
-                    { n: '3', title: 'Download and file', desc: 'Get your completed I-131 packet. File online at my.uscis.gov or mail it.' },
+                    { n: '3', title: 'Download and file', desc: 'Download your I-131 draft packet. Review every field, then file at my.uscis.gov or by mail.' },
                   ].map(({ n, title, desc }) => (
                     <div key={n} className="flex items-start gap-3">
                       <span className="mt-0.5 w-6 h-6 rounded-full bg-brand-600 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{n}</span>
