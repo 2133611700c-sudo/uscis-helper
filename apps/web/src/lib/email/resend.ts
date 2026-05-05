@@ -196,7 +196,7 @@ export async function sendPacketReadyEmail(params: {
     <p style="color:#888;font-size:13px">This link expires on ${expiryStr}.</p>
     <hr style="border:none;border-top:1px solid #ddd;margin:24px 0">
     <p style="color:#CC1A1A;font-size:12px">
-      <strong>NOT LEGAL ADVICE.</strong> This is not a certified translation. For USCIS submissions requiring certified translation, consult a licensed immigration attorney.
+      <strong>NOT LEGAL ADVICE.</strong> This is a translator-signed draft template. USCIS generally requires a complete English translation with a signed translator certification statement. Consult a licensed immigration attorney for official submissions.
     </p>
     <p style="color:#888;font-size:12px">messenginfo.com</p>
   `
@@ -205,7 +205,7 @@ export async function sendPacketReadyEmail(params: {
     to: params.to,
     subject: `[Messenginfo] Your translation packet is ready — Order ${params.orderId}`,
     html,
-    text: `Your translation packet for order ${params.orderId} is ready.\n\nDownload: ${params.downloadUrl}\n\nExpires: ${expiryStr}\n\nNOT LEGAL ADVICE. Not a certified translation.`,
+    text: `Your translation packet for order ${params.orderId} is ready.\n\nDownload: ${params.downloadUrl}\n\nExpires: ${expiryStr}\n\nNOT LEGAL ADVICE. Translator-signed draft template only.`,
     type: 'packet_ready',
   })
 }

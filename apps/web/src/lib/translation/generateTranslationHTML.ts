@@ -349,7 +349,7 @@ export function generateTranslationHTML(
   <div class="footer">
     <p>
       Prepared with Messenginfo · messenginfo.com · For informational use only.<br>
-      Messenginfo is not a law firm and does not provide legal advice or certified translation services.<br>
+      Messenginfo is not a law firm and does not provide legal advice or translation certification services.<br>
       Translation requirements: 8 CFR 103.2(b)(3) · Last verified: 2026-05-04 · uscis.gov
     </p>
   </div>
