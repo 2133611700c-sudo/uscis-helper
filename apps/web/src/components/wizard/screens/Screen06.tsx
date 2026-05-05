@@ -195,8 +195,8 @@ export function Screen06() {
         onClick={() => setStep(7)}
         className="w-full rounded-[10px] text-[15px] font-bold transition-all active:scale-[0.98]"
         style={{
-          background: 'var(--btn-action)',
-          color: 'var(--btn-action-text)',
+          background: 'var(--success)',
+          color: '#fff',
           border: 'none',
           padding: '14px',
           minHeight: '52px',
