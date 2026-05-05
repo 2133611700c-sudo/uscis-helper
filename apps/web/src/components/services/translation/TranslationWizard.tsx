@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { ArrowLeft, CheckCircle2, Download, ChevronRight } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, Download, ChevronRight } from 'lucide-react'
 import { downloadTranslationTemplate } from '@/lib/translation/generateTranslationHTML'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ interface DocDef {
   label: Record<string, string>
   icon: string
   color: string
-  prodId: string // maps to generateTranslationHTML DocumentType
+  prodId: string
   fields: FieldDef[]
 }
 
@@ -53,7 +53,7 @@ const LANGS_MORE: { id: SourceLang; label: string; flag: string }[] = [
   { id: 'pt', label: 'Português', flag: '🇧🇷' },
 ]
 
-// ─── Document definitions with bilingual field labels (ported from prototype) ─
+// ─── Document definitions ─────────────────────────────────────────────────────
 
 const DOCS: DocDef[] = [
   {
@@ -64,6 +64,7 @@ const DOCS: DocDef[] = [
     fields: [
       { key: 'full_name', en: 'Last Name', orig: { uk: 'Прізвище', ru: 'Фамилия', es: 'Apellido', pl: 'Nazwisko', de: 'Nachname', fr: 'Nom de famille', ar: 'اللقب', zh: '姓', ko: '성', pt: 'Sobrenome', en: 'Last Name' }, required: true, group: 'personal', placeholder: { uk: 'ШЕВЧЕНКО', ru: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' } },
       { key: 'given_names', en: 'Given Names', orig: { uk: "Ім'я та по батькові", ru: 'Имя и отчество', es: 'Nombres', pl: 'Imię i imię ojca', de: 'Vornamen', fr: 'Prénoms', ar: 'الاسم الأول', zh: '名', ko: '이름', pt: 'Nomes', en: 'Given Names' }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС ГРИГОРОВИЧ', ru: 'ТАРАС ГРИГОРОВИЧ', en: 'TARAS' } },
+      { key: 'sex', en: 'Sex', orig: { uk: 'Стать', ru: 'Пол', es: 'Sexo', pl: 'Płeć', de: 'Geschlecht', fr: 'Sexe', ar: 'الجنس', zh: '性别', ko: '성별', pt: 'Sexo', en: 'Sex' }, required: true, group: 'personal', type: 'radio', options: [{ val: 'M', label: { uk: 'Чоловіча / M', ru: 'Мужской / M', es: 'Masculino / M', en: 'Male / M' } }, { val: 'F', label: { uk: 'Жіноча / F', ru: 'Женский / F', es: 'Femenino / F', en: 'Female / F' } }] },
       { key: 'date_of_birth', en: 'Date of Birth', orig: { uk: 'Дата народження', ru: 'Дата рождения', es: 'Fecha de nacimiento', pl: 'Data urodzenia', de: 'Geburtsdatum', fr: 'Date de naissance', ar: 'تاريخ الميلاد', zh: '出生日期', ko: '생년월일', pt: 'Data de nascimento', en: 'Date of Birth' }, required: true, group: 'personal', type: 'date' },
       { key: 'place_of_birth', en: 'Place of Birth', orig: { uk: 'Місце народження', ru: 'Место рождения', es: 'Lugar de nacimiento', pl: 'Miejsce urodzenia', de: 'Geburtsort', fr: 'Lieu de naissance', ar: 'مكان الولادة', zh: '出生地', ko: '출생지', pt: 'Local de nascimento', en: 'Place of Birth' }, required: true, group: 'personal', placeholder: { uk: 'м. Київ, Україна', ru: 'г. Киев, Украина', en: 'Kyiv, Ukraine' } },
       { key: 'nationality', en: 'Nationality', orig: { uk: 'Громадянство', ru: 'Гражданство', es: 'Nacionalidad', pl: 'Obywatelstwo', de: 'Staatsangehörigkeit', fr: 'Nationalité', ar: 'الجنسية', zh: '国籍', ko: '국적', pt: 'Nacionalidade', en: 'Nationality' }, required: true, group: 'personal', placeholder: { uk: 'Українець/ка', ru: 'Украинец', en: 'Ukrainian' } },
@@ -81,7 +82,7 @@ const DOCS: DocDef[] = [
     fields: [
       { key: 'full_name', en: "Child's Last Name", orig: { uk: 'Прізвище дитини', ru: 'Фамилия ребёнка', es: 'Apellido del niño', en: "Child's Last Name" }, required: true, group: 'personal', placeholder: { uk: 'ШЕВЧЕНКО', ru: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' } },
       { key: 'given_names', en: "Child's First Name", orig: { uk: "Ім'я дитини", ru: 'Имя ребёнка', es: 'Nombre del niño', en: "Child's First Name" }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС', ru: 'ТАРАС', en: 'TARAS' } },
-      { key: 'date_of_birth', en: "Child's Date of Birth", orig: { uk: 'Дата народження дитини', ru: 'Дата рождения ребёнка', es: 'Fecha de nacimiento', en: "Date of Birth" }, required: true, group: 'personal', type: 'date' },
+      { key: 'date_of_birth', en: "Child's Date of Birth", orig: { uk: 'Дата народження дитини', ru: 'Дата рождения ребёнка', es: 'Fecha de nacimiento', en: 'Date of Birth' }, required: true, group: 'personal', type: 'date' },
       { key: 'place_of_birth', en: 'Place of Birth', orig: { uk: 'Місце народження', ru: 'Место рождения', es: 'Lugar de nacimiento', en: 'Place of Birth' }, required: true, group: 'personal', placeholder: { uk: 'м. Київ', ru: 'г. Киев', en: 'Kyiv' } },
       { key: 'father_name', en: "Father's Name", orig: { uk: "Ім'я батька", ru: 'Имя отца', es: 'Nombre del padre', en: "Father's Name" }, required: false, group: 'personal', placeholder: { uk: 'ГРИГОРІЙ ІВАНОВИЧ ШЕВЧЕНКО', ru: 'ГРИГОРИЙ ИВАНОВИЧ', en: 'HRYHORIY IVANOVYCH SHEVCHENKO' } },
       { key: 'mother_name', en: "Mother's Name", orig: { uk: "Ім'я матері", ru: 'Имя матери', es: 'Nombre de la madre', en: "Mother's Name" }, required: false, group: 'personal', placeholder: { uk: 'ГАННА ПЕТРІВНА ШЕВЧЕНКО', ru: 'АННА ПЕТРОВНА', en: 'HANNA PETRIVNA SHEVCHENKO' } },
@@ -181,7 +182,7 @@ const DOCS: DocDef[] = [
   },
 ]
 
-// ─── UI strings (by wizard locale) ───────────────────────────────────────────
+// ─── UI strings ───────────────────────────────────────────────────────────────
 
 const UI: Record<string, Record<string, string>> = {
   en: {
@@ -192,6 +193,7 @@ const UI: Record<string, Record<string, string>> = {
     stepFields: 'Fields',
     stepReview: 'Review',
     stepConfirm: 'Confirm',
+    stepDownload: 'Download',
     back: 'Back',
     next: 'Continue',
     skip: 'Skip',
@@ -200,7 +202,11 @@ const UI: Record<string, Record<string, string>> = {
     langOther: 'Other languages',
     uploadTitle: 'Upload your document (optional)',
     uploadHint: 'Photo or scan — used for reference only. Not required to download.',
-    uploadSkip: 'Skip upload',
+    uploadCameraBtn: '📷 Take photo',
+    uploadFileBtn: '📁 Upload file',
+    uploadSkip: 'Skip — enter fields manually',
+    uploadRemove: 'Remove',
+    uploadSelected: 'File selected:',
     fieldsTitle: 'Enter fields from your document',
     fieldsHint: 'Copy exactly as written. Fields marked * are required.',
     grpPersonal: 'Personal information',
@@ -214,6 +220,10 @@ const UI: Record<string, Record<string, string>> = {
     confirm2: 'I understand this is a draft template. I will complete the certification block and sign it myself.',
     confirm3: 'I understand Messenginfo does not certify translations. I am the translator of record.',
     disclaimer: '⚠ AI draft only. Messenginfo does not certify translations. You review, complete the certification block, and sign it yourself before submitting to USCIS (8 CFR 103.2(b)(3)).',
+    paymentTitle: 'Complete your order',
+    paymentDisabled: 'Payment is currently disabled in this prototype.',
+    paymentPrice: 'Planned price after launch: $15 / document.',
+    paymentContinue: 'Continue without payment (test mode)',
     download: 'Download Translation Draft (.html)',
     downloaded: '✓ Download started.',
     downloadedHint: 'Open in browser → File → Print → Save as PDF. Sign the certification block by hand before submitting.',
@@ -225,6 +235,7 @@ const UI: Record<string, Record<string, string>> = {
     next3: 'Include signed template with translation draft and original document',
     next4: 'Mail the complete package to USCIS',
     fillRequired: 'Fill in all required fields (*) to continue.',
+    fillConfirm: 'Check all three boxes to continue.',
   },
   uk: {
     popular: 'Популярні документи',
@@ -234,6 +245,7 @@ const UI: Record<string, Record<string, string>> = {
     stepFields: 'Поля',
     stepReview: 'Перевірка',
     stepConfirm: 'Підтвердження',
+    stepDownload: 'Завантаження',
     back: 'Назад',
     next: 'Продовжити',
     skip: 'Пропустити',
@@ -242,7 +254,11 @@ const UI: Record<string, Record<string, string>> = {
     langOther: 'Інші мови:',
     uploadTitle: 'Завантажте документ (опційно)',
     uploadHint: 'Фото або скан — тільки для довідки. Не обов\'язково для завантаження.',
-    uploadSkip: 'Пропустити',
+    uploadCameraBtn: '📷 Зробити фото',
+    uploadFileBtn: '📁 Завантажити файл',
+    uploadSkip: 'Пропустити — ввести поля вручну',
+    uploadRemove: 'Видалити',
+    uploadSelected: 'Вибраний файл:',
     fieldsTitle: 'Введіть поля з вашого документа',
     fieldsHint: 'Копіюйте точно як написано. Поля зі * обов\'язкові.',
     grpPersonal: 'Особисті дані',
@@ -256,6 +272,10 @@ const UI: Record<string, Record<string, string>> = {
     confirm2: 'Я розумію, що це чернетка. Я самостійно заповню блок підтвердження і підпишу.',
     confirm3: 'Я розумію, що Messenginfo не засвідчує переклади. Я є перекладачем відповідно до запису.',
     disclaimer: '⚠ Лише чернетка. Messenginfo не засвідчує переклади. Ви самостійно перевіряєте, заповнюєте блок підтвердження та підписуєте перед подачею до USCIS (8 CFR 103.2(b)(3)).',
+    paymentTitle: 'Оформлення замовлення',
+    paymentDisabled: 'Оплата наразі вимкнена в цьому прототипі.',
+    paymentPrice: 'Планова ціна після запуску: $15 / документ.',
+    paymentContinue: 'Продовжити без оплати (тестовий режим)',
     download: 'Завантажити чернетку перекладу (.html)',
     downloaded: '✓ Завантаження розпочато.',
     downloadedHint: 'Відкрийте у браузері → Файл → Друк → Зберегти як PDF. Підпишіть блок підтвердження від руки.',
@@ -267,6 +287,7 @@ const UI: Record<string, Record<string, string>> = {
     next3: 'Додайте підписаний шаблон разом із чернеткою та оригіналом',
     next4: 'Відправте пакет документів до USCIS',
     fillRequired: 'Заповніть всі обов\'язкові поля (*) щоб продовжити.',
+    fillConfirm: 'Позначте всі три пункти щоб продовжити.',
   },
   ru: {
     popular: 'Популярные документы',
@@ -276,6 +297,7 @@ const UI: Record<string, Record<string, string>> = {
     stepFields: 'Поля',
     stepReview: 'Проверка',
     stepConfirm: 'Подтверждение',
+    stepDownload: 'Загрузка',
     back: 'Назад',
     next: 'Продолжить',
     skip: 'Пропустить',
@@ -284,7 +306,11 @@ const UI: Record<string, Record<string, string>> = {
     langOther: 'Другие языки:',
     uploadTitle: 'Загрузите документ (необязательно)',
     uploadHint: 'Фото или скан — только для справки. Не обязательно для загрузки.',
-    uploadSkip: 'Пропустить',
+    uploadCameraBtn: '📷 Сделать фото',
+    uploadFileBtn: '📁 Загрузить файл',
+    uploadSkip: 'Пропустить — ввести поля вручную',
+    uploadRemove: 'Удалить',
+    uploadSelected: 'Выбранный файл:',
     fieldsTitle: 'Введите поля из вашего документа',
     fieldsHint: 'Копируйте точно как написано. Поля со * обязательны.',
     grpPersonal: 'Личные данные',
@@ -298,6 +324,10 @@ const UI: Record<string, Record<string, string>> = {
     confirm2: 'Я понимаю, что это черновик. Я самостоятельно заполню блок подтверждения и подпишу.',
     confirm3: 'Я понимаю, что Messenginfo не заверяет переводы. Я являюсь переводчиком по записи.',
     disclaimer: '⚠ Только черновик. Messenginfo не заверяет переводы. Вы самостоятельно проверяете, заполняете блок подтверждения и подписываете перед подачей в USCIS (8 CFR 103.2(b)(3)).',
+    paymentTitle: 'Оформление заказа',
+    paymentDisabled: 'Оплата временно отключена в этом прототипе.',
+    paymentPrice: 'Плановая цена после запуска: $15 / документ.',
+    paymentContinue: 'Продолжить без оплаты (тестовый режим)',
     download: 'Скачать черновик перевода (.html)',
     downloaded: '✓ Загрузка началась.',
     downloadedHint: 'Откройте в браузере → Файл → Печать → Сохранить как PDF. Подпишите блок подтверждения от руки.',
@@ -309,6 +339,7 @@ const UI: Record<string, Record<string, string>> = {
     next3: 'Вложите подписанный шаблон вместе с черновиком и оригиналом',
     next4: 'Отправьте пакет документов в USCIS',
     fillRequired: 'Заполните все обязательные поля (*) для продолжения.',
+    fillConfirm: 'Отметьте все три пункта для продолжения.',
   },
   es: {
     popular: 'Documentos populares',
@@ -318,6 +349,7 @@ const UI: Record<string, Record<string, string>> = {
     stepFields: 'Campos',
     stepReview: 'Revisión',
     stepConfirm: 'Confirmación',
+    stepDownload: 'Descarga',
     back: 'Atrás',
     next: 'Continuar',
     skip: 'Omitir',
@@ -326,7 +358,11 @@ const UI: Record<string, Record<string, string>> = {
     langOther: 'Otros idiomas:',
     uploadTitle: 'Suba su documento (opcional)',
     uploadHint: 'Foto o escaneo — solo de referencia. No es necesario para descargar.',
-    uploadSkip: 'Omitir',
+    uploadCameraBtn: '📷 Tomar foto',
+    uploadFileBtn: '📁 Subir archivo',
+    uploadSkip: 'Omitir — ingresar campos manualmente',
+    uploadRemove: 'Eliminar',
+    uploadSelected: 'Archivo seleccionado:',
     fieldsTitle: 'Ingrese los campos de su documento',
     fieldsHint: 'Copie exactamente como está escrito. Los campos con * son obligatorios.',
     grpPersonal: 'Datos personales',
@@ -340,6 +376,10 @@ const UI: Record<string, Record<string, string>> = {
     confirm2: 'Entiendo que esto es un borrador. Completaré el bloque de certificación y lo firmaré yo mismo.',
     confirm3: 'Entiendo que Messenginfo no certifica traducciones. Yo soy el traductor de registro.',
     disclaimer: '⚠ Solo borrador. Messenginfo no certifica traducciones. Usted revisa, completa el bloque de certificación y lo firma antes de presentar a USCIS (8 CFR 103.2(b)(3)).',
+    paymentTitle: 'Complete su pedido',
+    paymentDisabled: 'El pago está actualmente deshabilitado en este prototipo.',
+    paymentPrice: 'Precio planificado después del lanzamiento: $15 / documento.',
+    paymentContinue: 'Continuar sin pago (modo de prueba)',
     download: 'Descargar borrador de traducción (.html)',
     downloaded: '✓ Descarga iniciada.',
     downloadedHint: 'Abra en el navegador → Archivo → Imprimir → Guardar como PDF. Firme el bloque de certificación a mano.',
@@ -351,10 +391,11 @@ const UI: Record<string, Record<string, string>> = {
     next3: 'Incluya la plantilla firmada con el borrador y el documento original',
     next4: 'Envíe el paquete completo a USCIS',
     fillRequired: 'Complete todos los campos obligatorios (*) para continuar.',
+    fillConfirm: 'Marque las tres casillas para continuar.',
   },
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function t(locale: string, key: string): string {
   return (UI[locale] ?? UI.en)[key] ?? (UI.en[key] ?? key)
@@ -364,7 +405,7 @@ function origLabel(field: FieldDef, srcLang: string): string {
   return field.orig[srcLang] ?? field.orig.en ?? field.en
 }
 
-// ─── Step indicator ───────────────────────────────────────────────────────────
+// ─── Step indicator (6 steps) ─────────────────────────────────────────────────
 
 function StepIndicator({ step, locale }: { step: number; locale: string }) {
   const steps = [
@@ -373,6 +414,7 @@ function StepIndicator({ step, locale }: { step: number; locale: string }) {
     t(locale, 'stepFields'),
     t(locale, 'stepReview'),
     t(locale, 'stepConfirm'),
+    t(locale, 'stepDownload'),
   ]
   return (
     <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
@@ -400,8 +442,8 @@ function StepIndicator({ step, locale }: { step: number; locale: string }) {
 
 // ─── Doc card ─────────────────────────────────────────────────────────────────
 
-function DocCard({ doc, locale, srcLang, selected, onSelect }: {
-  doc: DocDef; locale: string; srcLang: string
+function DocCard({ doc, locale, selected, onSelect }: {
+  doc: DocDef; locale: string
   selected: boolean; onSelect: () => void
 }) {
   const label = doc.label[locale] ?? doc.label.en
@@ -419,7 +461,6 @@ function DocCard({ doc, locale, srcLang, selected, onSelect }: {
           <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" width="10" height="10"><polyline points="20 6 9 17 4 12" /></svg>
         </span>
       )}
-      {/* Gradient illustration */}
       <div className="w-16 h-[72px] rounded-[9px] flex items-center justify-center flex-shrink-0 relative overflow-hidden"
         style={{ background: doc.color }}>
         <div className="absolute inset-1.5 rounded-[5px] border border-white/20 bg-white/10" />
@@ -431,7 +472,7 @@ function DocCard({ doc, locale, srcLang, selected, onSelect }: {
   )
 }
 
-// ─── Main wizard component ────────────────────────────────────────────────────
+// ─── Main wizard ──────────────────────────────────────────────────────────────
 
 interface TranslationWizardProps {
   locale: string
@@ -443,7 +484,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const ui = UI[locale] ?? UI.en
 
   // Wizard state
-  const [step, setStep] = useState(0)                  // 0=DocGrid, 1=Lang, 2=Upload, 3=Fields, 4=Review, 5=Confirm+DL
+  // steps: 0=DocGrid, 1=Lang, 2=Upload, 3=Fields, 4=Review, 5=Confirm, 6=Payment+Download
+  const [step, setStep] = useState(0)
   const [docId, setDocId] = useState<DocId | null>(null)
   const [srcLang, setSrcLang] = useState<SourceLang>('uk')
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
@@ -452,12 +494,17 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [helpOpen, setHelpOpen] = useState<string | null>(null)
   const [showMoreLangs, setShowMoreLangs] = useState(false)
 
+  // File upload state
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [uploadedPreview, setUploadedPreview] = useState<string | null>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const doc = DOCS.find((d) => d.id === docId)
   const fields = doc?.fields ?? []
 
   const requiredFilled = fields.filter((f) => f.required).every((f) => (fieldValues[f.key] ?? '').trim().length > 0)
   const allChecked = checks.every(Boolean)
-  const canDownload = requiredFilled && allChecked
 
   function selectDoc(id: DocId) {
     setDocId(id)
@@ -465,6 +512,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     setFieldValues(Object.fromEntries((d?.fields ?? []).map((f) => [f.key, ''])))
     setChecks([false, false, false])
     setDownloaded(false)
+    setUploadedFile(null)
+    setUploadedPreview(null)
     setStep(1)
     window.scrollTo(0, 0)
   }
@@ -480,6 +529,17 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     window.scrollTo(0, 0)
   }
 
+  function handleFileSelect(file: File) {
+    setUploadedFile(file)
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (e) => setUploadedPreview(e.target?.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setUploadedPreview(null)
+    }
+  }
+
   function handleDownload() {
     if (!doc) return
     downloadTranslationTemplate(doc.prodId as any, fieldValues, srcLang)
@@ -489,10 +549,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   function reset() {
     setStep(0); setDocId(null); setSrcLang('uk')
     setFieldValues({}); setChecks([false, false, false]); setDownloaded(false)
+    setUploadedFile(null); setUploadedPreview(null)
     window.scrollTo(0, 0)
   }
 
-  // ── Return banner ──
+  // Return banner
   const returnBannerText = fromSource === 're-parole-u4u'
     ? (locale === 'uk' ? 'Перекласти документ для заявки Re-Parole'
       : locale === 'ru' ? 'Перевести документ для заявки Re-Parole'
@@ -506,9 +567,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
       : '← Back to Re-Parole')
     : (returnUrl ? '← Go back' : null)
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 0 — Document grid
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── STEP 0: Document grid ──────────────────────────────────────────────────
   if (step === 0) {
     const popular = DOCS.filter((d) => d.popular)
     const other = DOCS.filter((d) => !d.popular)
@@ -525,13 +584,13 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-3">{ui.popular}</p>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {popular.map((d) => (
-              <DocCard key={d.id} doc={d} locale={locale} srcLang={srcLang} selected={docId === d.id} onSelect={() => selectDoc(d.id)} />
+              <DocCard key={d.id} doc={d} locale={locale} selected={docId === d.id} onSelect={() => selectDoc(d.id)} />
             ))}
           </div>
           <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mt-5 mb-3">{ui.other}</p>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {other.map((d) => (
-              <DocCard key={d.id} doc={d} locale={locale} srcLang={srcLang} selected={docId === d.id} onSelect={() => selectDoc(d.id)} />
+              <DocCard key={d.id} doc={d} locale={locale} selected={docId === d.id} onSelect={() => selectDoc(d.id)} />
             ))}
           </div>
         </div>
@@ -539,9 +598,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     )
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 1 — Source language
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── STEP 1: Source language ────────────────────────────────────────────────
   if (step === 1) {
     return (
       <div className="max-w-lg mx-auto space-y-4">
@@ -597,9 +654,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     )
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 2 — Upload (optional)
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── STEP 2: Upload ─────────────────────────────────────────────────────────
   if (step === 2) {
     return (
       <div className="max-w-lg mx-auto space-y-4">
@@ -608,25 +663,80 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           <ArrowLeft className="w-4 h-4" />{ui.back}
         </button>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-[var(--text-1)] mb-2">{ui.uploadTitle}</h2>
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">{ui.uploadTitle}</h2>
           <p className="text-sm text-[var(--text-2)] mb-5">{ui.uploadHint}</p>
-          <div className="rounded-xl border-2 border-dashed border-[var(--border)] p-8 text-center bg-[var(--surface-2)]">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-11 h-11 text-[var(--text-2)] mx-auto mb-3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <p className="text-sm font-medium text-[var(--text-2)]">JPG, PNG, PDF, HEIC · max 10 MB</p>
-            <p className="text-xs text-[var(--text-2)] mt-1">(Upload coming soon — not required to continue)</p>
-          </div>
+
+          {/* Hidden file inputs */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*,.pdf,.heic"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f) }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf,.heic"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f) }}
+          />
+
+          {!uploadedFile ? (
+            <div className="flex flex-col gap-3">
+              {/* Camera button */}
+              <button type="button" onClick={() => cameraInputRef.current?.click()}
+                className="flex items-center gap-3 w-full rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--surface-2)] px-4 py-4 hover:border-blue-400 transition-all text-left">
+                <span className="text-3xl leading-none">📷</span>
+                <div>
+                  <p className="text-[14px] font-bold text-[var(--text-1)]">{ui.uploadCameraBtn}</p>
+                  <p className="text-[12px] text-[var(--text-2)]">JPG, PNG, HEIC</p>
+                </div>
+              </button>
+              {/* File picker button */}
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-3 w-full rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--surface-2)] px-4 py-4 hover:border-blue-400 transition-all text-left">
+                <span className="text-3xl leading-none">📁</span>
+                <div>
+                  <p className="text-[14px] font-bold text-[var(--text-1)]">{ui.uploadFileBtn}</p>
+                  <p className="text-[12px] text-[var(--text-2)]">JPG, PNG, PDF, HEIC · max 10 MB</p>
+                </div>
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+              {uploadedPreview ? (
+                <img src={uploadedPreview} alt="document preview" className="w-full max-h-48 object-contain rounded-lg mb-3" />
+              ) : (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">📄</span>
+                  <span className="text-sm font-semibold text-[var(--text-1)] truncate">{uploadedFile.name}</span>
+                </div>
+              )}
+              <p className="text-xs text-green-700 mb-2">
+                <span className="font-bold">{ui.uploadSelected}</span> {uploadedFile.name}
+              </p>
+              <button type="button" onClick={() => { setUploadedFile(null); setUploadedPreview(null) }}
+                className="text-xs text-red-600 hover:text-red-800 font-medium transition-colors">
+                {ui.uploadRemove}
+              </button>
+            </div>
+          )}
         </div>
-        <button type="button" onClick={goNext}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
-          {ui.skip} →
-        </button>
+
+        {/* Skip or Continue */}
+        <div className="flex flex-col gap-2">
+          <button type="button" onClick={goNext}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
+            {uploadedFile ? ui.next : ui.uploadSkip} →
+          </button>
+        </div>
       </div>
     )
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 3 — Field entry
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── STEP 3: Fields ─────────────────────────────────────────────────────────
   if (step === 3) {
     const groups: { id: Group; label: string }[] = [
       { id: 'personal', label: ui.grpPersonal },
@@ -647,8 +757,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             if (grpFields.length === 0) return null
             return (
               <div key={grp} className="mb-6">
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider pb-2 border-b-2 border-blue-200 mb-4 flex items-center gap-1.5">
-                  <span>{grpLabel}</span>
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider pb-2 border-b-2 border-blue-200 mb-4">
+                  {grpLabel}
                 </p>
                 <div className="flex flex-col gap-4">
                   {grpFields.map((field) => (
@@ -660,13 +770,39 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                           <span className="ml-1.5 text-[12px] font-normal text-[var(--text-2)]">/ {field.en}</span>
                         </span>
                       </label>
-                      <input
-                        type={field.type === 'date' ? 'date' : 'text'}
-                        value={fieldValues[field.key] ?? ''}
-                        onChange={(e) => setFieldValues((v) => ({ ...v, [field.key]: e.target.value }))}
-                        placeholder={field.placeholder?.[srcLang] ?? field.placeholder?.en ?? ''}
-                        className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-[15px] text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
-                      />
+
+                      {/* Radio → chips */}
+                      {field.type === 'radio' && field.options ? (
+                        <div className="flex gap-2 flex-wrap">
+                          {field.options.map((opt) => {
+                            const optLabel = opt.label[srcLang] ?? opt.label.en
+                            const selected = fieldValues[field.key] === opt.val
+                            return (
+                              <button
+                                key={opt.val}
+                                type="button"
+                                onClick={() => setFieldValues((v) => ({ ...v, [field.key]: opt.val }))}
+                                className={`px-4 py-2 rounded-full border-[1.5px] text-[14px] font-semibold transition-all
+                                  ${selected
+                                    ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
+                                    : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-1)] hover:border-blue-400'}`}
+                              >
+                                {selected && <span className="mr-1.5">✓</span>}{optLabel}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        /* Text / date input */
+                        <input
+                          type={field.type === 'date' ? 'date' : 'text'}
+                          value={fieldValues[field.key] ?? ''}
+                          onChange={(e) => setFieldValues((v) => ({ ...v, [field.key]: e.target.value }))}
+                          placeholder={field.placeholder?.[srcLang] ?? field.placeholder?.en ?? ''}
+                          className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-[15px] text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+                        />
+                      )}
+
                       {field.helpExample && (
                         <div>
                           <button type="button" onClick={() => setHelpOpen(helpOpen === field.key ? null : field.key)}
@@ -699,9 +835,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     )
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 4 — Review
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── STEP 4: Review ─────────────────────────────────────────────────────────
   if (step === 4) {
     const srcFlag = [...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'
     return (
@@ -736,19 +870,15 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     )
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 5 — Confirm + Download
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── STEP 5: Confirm ────────────────────────────────────────────────────────
   if (step === 5) {
     const confirmTexts = [ui.confirm1, ui.confirm2, ui.confirm3]
     return (
       <div className="max-w-lg mx-auto space-y-4">
         <StepIndicator step={5} locale={locale} />
-        {!downloaded && (
-          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
-            <ArrowLeft className="w-4 h-4" />{ui.back}
-          </button>
-        )}
+        <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
+          <ArrowLeft className="w-4 h-4" />{ui.back}
+        </button>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
           <h2 className="text-xl font-bold text-[var(--text-1)] mb-4">{ui.confirmTitle}</h2>
           <div className="flex flex-col gap-3 mb-5">
@@ -761,16 +891,63 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               </label>
             ))}
           </div>
-          <p className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5 text-sm font-medium text-amber-800 mb-4">
+          <p className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5 text-sm font-medium text-amber-800">
             {ui.disclaimer}
           </p>
+        </div>
+        {!allChecked && (
+          <p className="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2 border border-amber-200">{ui.fillConfirm}</p>
+        )}
+        <button type="button" onClick={goNext} disabled={!allChecked}
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">
+          {ui.next}
+        </button>
+      </div>
+    )
+  }
+
+  // ── STEP 6: Payment placeholder + Download ─────────────────────────────────
+  if (step === 6) {
+    return (
+      <div className="max-w-lg mx-auto space-y-4">
+        <StepIndicator step={6} locale={locale} />
+        {!downloaded && (
+          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />{ui.back}
+          </button>
+        )}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-4">{ui.paymentTitle}</h2>
 
           {!downloaded ? (
-            <button type="button" onClick={handleDownload} disabled={!canDownload}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">
-              <Download className="h-5 w-5" />
-              {ui.download}
-            </button>
+            <>
+              {/* Order summary */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[13px] text-[var(--text-2)] mb-0.5">
+                    {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'}
+                    {' '}→ EN
+                  </p>
+                  <p className="text-[15px] font-bold text-[var(--text-1)]">{doc?.label[locale] ?? doc?.label.en}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[13px] text-[var(--text-2)] line-through">$15.00</p>
+                  <p className="text-[15px] font-bold text-green-600">FREE</p>
+                </div>
+              </div>
+
+              {/* Payment disabled banner */}
+              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-4 mb-5">
+                <p className="text-[14px] font-bold text-amber-800">🚧 {ui.paymentDisabled}</p>
+                <p className="mt-1 text-[13px] text-amber-700">{ui.paymentPrice}</p>
+              </div>
+
+              <button type="button" onClick={handleDownload}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
+                <Download className="h-5 w-5" />
+                {ui.paymentContinue}
+              </button>
+            </>
           ) : (
             <div className="space-y-4">
               <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
