@@ -236,6 +236,12 @@ const UI: Record<string, Record<string, string>> = {
     next4: 'Mail the complete package to USCIS',
     fillRequired: 'Fill in all required fields (*) to continue.',
     fillConfirm: 'Check all three boxes to continue.',
+    emailLabel: 'Send to your email',
+    emailPlaceholder: 'your@email.com',
+    emailBtn: 'Send to email',
+    emailSending: 'Sending…',
+    emailSent: '✓ Sent! Check your inbox.',
+    emailError: 'Failed to send. Try again.',
   },
   uk: {
     popular: 'Популярні документи',
@@ -288,6 +294,12 @@ const UI: Record<string, Record<string, string>> = {
     next4: 'Відправте пакет документів до USCIS',
     fillRequired: 'Заповніть всі обов\'язкові поля (*) щоб продовжити.',
     fillConfirm: 'Позначте всі три пункти щоб продовжити.',
+    emailLabel: 'Надіслати на пошту',
+    emailPlaceholder: 'ваша@пошта.com',
+    emailBtn: 'Надіслати на пошту',
+    emailSending: 'Надсилаємо…',
+    emailSent: '✓ Надіслано! Перевірте вхідні.',
+    emailError: 'Помилка. Спробуйте ще раз.',
   },
   ru: {
     popular: 'Популярные документы',
@@ -340,6 +352,12 @@ const UI: Record<string, Record<string, string>> = {
     next4: 'Отправьте пакет документов в USCIS',
     fillRequired: 'Заполните все обязательные поля (*) для продолжения.',
     fillConfirm: 'Отметьте все три пункта для продолжения.',
+    emailLabel: 'Отправить на почту',
+    emailPlaceholder: 'ваша@почта.com',
+    emailBtn: 'Отправить на почту',
+    emailSending: 'Отправляем…',
+    emailSent: '✓ Отправлено! Проверьте входящие.',
+    emailError: 'Ошибка. Попробуйте ещё раз.',
   },
   es: {
     popular: 'Documentos populares',
@@ -392,6 +410,12 @@ const UI: Record<string, Record<string, string>> = {
     next4: 'Envíe el paquete completo a USCIS',
     fillRequired: 'Complete todos los campos obligatorios (*) para continuar.',
     fillConfirm: 'Marque las tres casillas para continuar.',
+    emailLabel: 'Enviar a su correo',
+    emailPlaceholder: 'su@correo.com',
+    emailBtn: 'Enviar por correo',
+    emailSending: 'Enviando…',
+    emailSent: '✓ ¡Enviado! Revise su bandeja de entrada.',
+    emailError: 'Error al enviar. Inténtelo de nuevo.',
   },
 }
 
@@ -492,6 +516,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [checks, setChecks] = useState([false, false, false])
   const [downloaded, setDownloaded] = useState(false)
   const [helpOpen, setHelpOpen] = useState<string | null>(null)
+  const [emailInput, setEmailInput] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [showMoreLangs, setShowMoreLangs] = useState(false)
 
   // File upload state
@@ -544,6 +572,35 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     if (!doc) return
     downloadTranslationTemplate(doc.prodId as any, fieldValues, srcLang)
     setDownloaded(true)
+  }
+
+  async function handleSendEmail() {
+    if (!doc || !emailInput.trim() || emailSending || emailSent) return
+    setEmailSending(true)
+    setEmailError(null)
+    try {
+      const res = await fetch('/api/translation/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailInput.trim(),
+          prodId: doc.prodId,
+          fieldValues,
+          srcLang,
+          docLabel: doc.label[locale] ?? doc.label.en,
+        }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setEmailSent(true)
+      } else {
+        setEmailError(data.error ?? ui.emailError)
+      }
+    } catch {
+      setEmailError(ui.emailError)
+    } finally {
+      setEmailSending(false)
+    }
   }
 
   function reset() {
@@ -963,6 +1020,39 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   <li>{ui.next4}</li>
                 </ol>
               </div>
+              {/* Email delivery block */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+                <p className="text-[13px] font-semibold text-[var(--text-1)] mb-3">
+                  📧 {ui.emailLabel}
+                </p>
+                {emailSent ? (
+                  <p className="text-sm font-semibold text-green-700">{ui.emailSent}</p>
+                ) : (
+                  <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => { setEmailInput(e.target.value); setEmailError(null) }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSendEmail() }}
+                      placeholder={ui.emailPlaceholder}
+                      className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={emailSending}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendEmail}
+                      disabled={emailSending || !emailInput.trim()}
+                      className="flex-shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+                    >
+                      {emailSending ? ui.emailSending : ui.emailBtn}
+                    </button>
+                  </div>
+                )}
+                {emailError && (
+                  <p className="mt-2 text-xs text-red-600">{emailError}</p>
+                )}
+              </div>
+
               <div className="flex gap-3 flex-wrap">
                 <button type="button" onClick={handleDownload}
                   className="inline-flex items-center gap-2 rounded-xl border border-blue-300 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors">
