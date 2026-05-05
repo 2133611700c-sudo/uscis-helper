@@ -28,8 +28,8 @@ const T = {
     skipBtn: 'Продовжити без завантаження',
     skipNote: 'Можна завантажити пізніше або надати документи безпосередньо до USCIS.',
     translateTitle: 'Документи не англійською?',
-    translateNote: 'Замовте сертифікований переклад для USCIS.',
-    translateBtn: 'Замовити переклад →',
+    translateNote: 'Підготуйте чернетку перекладу — ви перевіряєте і підписуєте самостійно.',
+    translateBtn: 'Підготувати переклад →',
   },
   ru: {
     title: 'Загрузите документы',
@@ -54,8 +54,8 @@ const T = {
     skipBtn: 'Продолжить без загрузки',
     skipNote: 'Можно загрузить позже или предоставить документы непосредственно в USCIS.',
     translateTitle: 'Документы не на английском?',
-    translateNote: 'Закажите сертифицированный перевод для USCIS.',
-    translateBtn: 'Заказать перевод →',
+    translateNote: 'Подготовьте черновик перевода — вы проверяете и подписываете самостоятельно.',
+    translateBtn: 'Подготовить перевод →',
   },
   en: {
     title: 'Upload documents',
@@ -80,8 +80,8 @@ const T = {
     skipBtn: 'Continue without uploading',
     skipNote: 'You can upload later or provide documents directly to USCIS.',
     translateTitle: 'Documents not in English?',
-    translateNote: 'Order a certified translation for USCIS.',
-    translateBtn: 'Order translation →',
+    translateNote: 'Prepare a translation draft — you review and sign it yourself.',
+    translateBtn: 'Prepare translation →',
   },
   es: {
     title: 'Subir documentos',
@@ -106,8 +106,8 @@ const T = {
     skipBtn: 'Continuar sin subir',
     skipNote: 'Puede subir más tarde o entregar los documentos directamente a USCIS.',
     translateTitle: '¿Documentos no están en inglés?',
-    translateNote: 'Solicite una traducción certificada para USCIS.',
-    translateBtn: 'Solicitar traducción →',
+    translateNote: 'Prepare un borrador de traducción — usted revisa y firma por su cuenta.',
+    translateBtn: 'Preparar traducción →',
   },
 } as const
 
