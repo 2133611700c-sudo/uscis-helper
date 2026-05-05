@@ -11,7 +11,7 @@ export function AskQuestionCTA({ locale }: AskQuestionCTAProps) {
   const t = useTranslations('askQuestion')
 
   return (
-    <div className="py-10 bg-white">
+    <div className="py-10" style={{ background: 'var(--bg)' }}>
       <Container>
         <div className="rounded-card bg-brand-50 border border-brand-100 p-6 md:p-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex items-start gap-4 flex-1">
