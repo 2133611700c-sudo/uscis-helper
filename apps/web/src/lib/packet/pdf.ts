@@ -85,9 +85,10 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   const certStatement =
     input.certifier_statement ??
     'This document contains a machine-assisted translation of the original source text. ' +
-    'The translation has been reviewed for accuracy. This is not a certified translation ' +
-    'as defined by 8 CFR 103.2(b)(3). For official USCIS submissions, a certified human ' +
-    'translator statement may be required. Consult a licensed immigration attorney.'
+    'The translation has been reviewed for accuracy. Per 8 CFR 103.2(b)(3), USCIS generally ' +
+    'requires a complete English translation with a signed translator certification statement. ' +
+    'This is a draft template — the translator must review, complete, and sign the certification. ' +
+    'Consult a licensed immigration attorney for official USCIS submissions.'
 
   text(page, 'TRANSLATOR STATEMENT', MARGIN, y, { size: 10, font: fontBold, color: BRAND_COLOR })
   y -= 16
@@ -155,7 +156,7 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
     color: MUTED_COLOR,
   })
   y -= 12
-  text(page, 'NOT LEGAL ADVICE. Not a certified translation. For informational purposes only.', MARGIN, y, {
+  text(page, 'NOT LEGAL ADVICE. Translator-signed draft only. For informational purposes only.', MARGIN, y, {
     size: 8,
     color: rgb(0.7, 0.1, 0.1),
   })
