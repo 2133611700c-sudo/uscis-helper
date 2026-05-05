@@ -97,8 +97,8 @@ export function WizardNavBar({ step, onBack, onNext, onValidate, hideNext }: Wiz
           onClick={handleNext}
           className="flex-1 rounded-[10px] text-[15px] font-bold transition-all active:scale-95"
           style={{
-            background: 'var(--btn-action)',
-            color: 'var(--btn-action-text)',
+            background: 'var(--success)',
+            color: '#fff',
             border: 'none',
             padding: '14px',
             minHeight: '52px',
