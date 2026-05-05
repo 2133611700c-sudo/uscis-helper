@@ -16,7 +16,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type EmailType = 'contact' | 'packet_ready' | 'admin_notification' | 'magic_link'
+export type EmailType = 'contact' | 'packet_ready' | 'admin_notification' | 'magic_link' | 'translation_email'
 
 export interface SendEmailParams {
   to: string
@@ -208,6 +208,80 @@ export async function sendPacketReadyEmail(params: {
     text: `Your translation packet for order ${params.orderId} is ready.\n\nDownload: ${params.downloadUrl}\n\nExpires: ${expiryStr}\n\nNOT LEGAL ADVICE. Translator-signed draft template only.`,
     type: 'packet_ready',
   })
+}
+
+/**
+ * Send a translation draft HTML file to the user's email as an attachment.
+ */
+export async function sendTranslationEmail(params: {
+  to: string
+  docLabel: string
+  htmlContent: string
+  filename: string
+}): Promise<SendEmailResult> {
+  const client = getResendClient()
+
+  if (!client) {
+    const err = 'RESEND_API_KEY not configured'
+    await logEmailEvent({ type: 'translation_email', to: params.to, subject: '', ok: false, error: err })
+    return { ok: false, error: err }
+  }
+
+  const from = getFromAddress()
+  const bcc = getBccAddress()
+  const subject = `[Messenginfo] Your translation draft — ${params.docLabel}`
+
+  const emailHtml = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+      <h2 style="color:#1D5CBB">Your translation draft is attached</h2>
+      <p>Your <strong>${escapeHtml(params.docLabel)}</strong> translation draft is attached to this email as an HTML file.</p>
+      <h3 style="margin-top:20px">Next steps:</h3>
+      <ol style="line-height:2">
+        <li>Open the attached <code>.html</code> file in your browser</li>
+        <li>File → Print → Save as PDF</li>
+        <li>Sign the Certification block by hand (required by USCIS)</li>
+        <li>Submit with your original document</li>
+      </ol>
+      <div style="margin-top:20px;padding:12px 16px;background:#FFF7ED;border-left:4px solid #F59E0B;border-radius:4px">
+        <p style="margin:0;color:#92400E;font-size:13px">
+          <strong>⚠ IMPORTANT:</strong> This is a draft template only. Messenginfo does not certify translations.
+          You must complete and sign the Certification block yourself before submitting to USCIS (8 CFR 103.2(b)(3)).
+        </p>
+      </div>
+      <hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0">
+      <p style="color:#9CA3AF;font-size:12px">messenginfo.com — Not legal advice. Draft template only.</p>
+    </div>
+  `
+
+  const attachment = Buffer.from(params.htmlContent, 'utf-8').toString('base64')
+
+  try {
+    const { data, error } = await client.emails.send({
+      from,
+      to: [params.to],
+      bcc: bcc ? [bcc] : undefined,
+      subject,
+      html: emailHtml,
+      attachments: [
+        {
+          filename: params.filename,
+          content: attachment,
+        },
+      ],
+    })
+
+    if (error) {
+      await logEmailEvent({ type: 'translation_email', to: params.to, subject, ok: false, error: error.message })
+      return { ok: false, error: error.message }
+    }
+
+    await logEmailEvent({ type: 'translation_email', to: params.to, subject, messageId: data?.id, ok: true })
+    return { ok: true, messageId: data?.id ?? undefined }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Unknown error'
+    await logEmailEvent({ type: 'translation_email', to: params.to, subject, ok: false, error: msg })
+    return { ok: false, error: msg }
+  }
 }
 
 // ─── HTML helper ──────────────────────────────────────────────────────────────
