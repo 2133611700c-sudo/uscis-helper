@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateMiaAnswer } from '@uscis-helper/ai'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { scrubPII } from '@/lib/security/pii'
+import { checkPromptInjection } from '@/lib/security/prompt-guard'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,6 +31,16 @@ export async function POST(req: NextRequest) {
 
     if (message.length > 500) {
       return NextResponse.json({ error: 'message too long (max 500 chars)' }, { status: 400 })
+    }
+
+    // Prompt injection guard — block attempts to override system instructions
+    const guardResult = checkPromptInjection(message)
+    if (!guardResult.safe) {
+      console.warn('[security/prompt-guard] injection attempt blocked:', guardResult.label, ip)
+      return NextResponse.json(
+        { error: 'Your message could not be processed. Please ask a question about your re-parole application.' },
+        { status: 400 }
+      )
     }
 
     // Scrub PII before passing to AI (A-Numbers, receipts, SSN, phone, email)

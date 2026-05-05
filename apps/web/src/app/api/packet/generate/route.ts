@@ -33,6 +33,8 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import JSZip from 'jszip'
+import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { isUUID } from '@/lib/security/validation'
 
 const SIGNED_URL_EXPIRY_SECONDS = 7 * 24 * 60 * 60 // 7 days
 const PACKETS_BUCKET = 'packets'
@@ -556,12 +558,27 @@ function build09Disclaimer(): string {
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 5 packets per minute per IP (expensive — ZIP generation + Supabase storage)
+  const ip = getClientIP(req)
+  const rl = await rateLimit(`packet-generate:${ip}`, 5, 60_000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: 'Too many requests. Please wait before generating another packet.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt.getTime() - Date.now()) / 1000)) } }
+    )
+  }
+
   try {
     const body = await req.json() as { session_id?: string }
     const { session_id } = body
 
     if (!session_id || typeof session_id !== 'string') {
       return NextResponse.json({ ok: false, error: 'session_id required' }, { status: 400 })
+    }
+
+    // Validate UUID format — reject probing or injection attempts
+    if (!isUUID(session_id)) {
+      return NextResponse.json({ ok: false, error: 'invalid session_id format' }, { status: 400 })
     }
 
     const supabase = createAdminSupabaseClient()
