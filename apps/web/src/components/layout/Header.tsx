@@ -2,6 +2,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { Logo } from '@/components/brand/Logo'
 import { LocaleSwitcher } from './LocaleSwitcher'
+import { SiteThemeToggle } from './SiteThemeToggle'
 
 export function Header() {
   const t = useTranslations('header')
@@ -30,6 +31,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <SiteThemeToggle />
           <LocaleSwitcher />
           {/* Sign in — ghost pill button */}
           <Link
