@@ -1,12 +1,11 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2, Download, FileCheck2, Save } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Download, FileCheck2 } from 'lucide-react'
 import { type TranslationDocumentType } from '@/data/translationDocuments'
 import { translationDocuments } from '@/data/translationDocuments'
 import { downloadTranslationTemplate } from '@/lib/translation/generateTranslationHTML'
 import { DocumentUploadBox } from './DocumentUploadBox'
-import { DraftResultPlaceholder } from './DraftResultPlaceholder'
 import { OfficialTranslationSourceBox } from './OfficialTranslationSourceBox'
 
 interface TranslationDocumentContent {
@@ -65,141 +64,108 @@ interface TranslationServicePanelProps {
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 
 // ---------------------------------------------------------------------------
-// Manual entry field definitions per document type
+// Field definitions per document type
 // ---------------------------------------------------------------------------
 
 type FieldDef = { key: string; label: string; required: boolean }
 
 const MANUAL_FIELDS: Record<string, FieldDef[]> = {
-  'i-131': [
-    { key: 'full_name', label: 'Full Legal Name', required: true },
+  passport: [
+    { key: 'full_name', label: 'Full Legal Name (Last, First, Middle)', required: true },
     { key: 'date_of_birth', label: 'Date of Birth', required: true },
-    { key: 'country_of_birth', label: 'Country of Birth', required: true },
-    { key: 'a_number', label: 'A-Number (if any)', required: false },
-    { key: 'parole_expiration', label: 'Parole Expiration Date', required: true },
-    { key: 'address', label: 'Current US Address', required: false },
+    { key: 'place_of_birth', label: 'Place of Birth (City, Country)', required: true },
+    { key: 'nationality', label: 'Nationality / Citizenship', required: false },
+    { key: 'gender', label: 'Gender', required: false },
+    { key: 'document_number', label: 'Passport Number', required: true },
+    { key: 'issue_date', label: 'Date of Issue', required: false },
+    { key: 'expiry_date', label: 'Date of Expiry', required: false },
+    { key: 'issuing_authority', label: 'Issuing Authority', required: false },
   ],
-  'i-765': [
-    { key: 'full_name', label: 'Full Legal Name', required: true },
+  'birth-certificate': [
+    { key: 'full_name', label: "Child's Full Legal Name", required: true },
     { key: 'date_of_birth', label: 'Date of Birth', required: true },
-    { key: 'country_of_birth', label: 'Country of Birth', required: true },
-    { key: 'a_number', label: 'A-Number', required: true },
-    { key: 'category', label: 'EAD Category (e.g. (c)(11))', required: true },
+    { key: 'place_of_birth', label: 'Place of Birth (City, Region, Country)', required: true },
+    { key: 'father_name', label: "Father's Full Name", required: false },
+    { key: 'mother_name', label: "Mother's Full Name", required: false },
+    { key: 'document_number', label: 'Certificate / Registration Number', required: false },
+    { key: 'issue_date', label: 'Date of Issue', required: false },
+    { key: 'issuing_authority', label: 'Issuing Authority (Office / City)', required: false },
+  ],
+  'marriage-certificate': [
+    { key: 'spouse1_name', label: 'Spouse 1 — Full Legal Name', required: true },
+    { key: 'spouse2_name', label: 'Spouse 2 — Full Legal Name', required: true },
+    { key: 'date_of_marriage', label: 'Date of Marriage', required: true },
+    { key: 'place_of_marriage', label: 'Place of Marriage (City, Country)', required: false },
+    { key: 'document_number', label: 'Certificate / Registration Number', required: false },
+    { key: 'issue_date', label: 'Date of Issue', required: false },
+    { key: 'issuing_authority', label: 'Issuing Authority', required: false },
+  ],
+  'divorce-certificate': [
+    { key: 'spouse1_name', label: 'Former Spouse 1 — Full Legal Name', required: true },
+    { key: 'spouse2_name', label: 'Former Spouse 2 — Full Legal Name', required: true },
+    { key: 'date_of_divorce', label: 'Date of Divorce', required: true },
+    { key: 'place_of_divorce', label: 'Place of Divorce (City, Country)', required: false },
+    { key: 'document_number', label: 'Certificate / Registration Number', required: false },
+    { key: 'issue_date', label: 'Date of Issue', required: false },
+    { key: 'issuing_authority', label: 'Issuing Authority / Court', required: false },
+  ],
+  'diploma-transcript': [
+    { key: 'full_name', label: "Graduate's Full Legal Name", required: true },
+    { key: 'degree_title', label: 'Degree / Qualification Title', required: true },
+    { key: 'institution', label: 'Name of Institution', required: true },
+    { key: 'graduation_date', label: 'Date of Graduation', required: false },
+    { key: 'document_number', label: 'Diploma / Certificate Number', required: false },
+    { key: 'issuing_authority', label: 'Issuing Authority', required: false },
+  ],
+  'military-document': [
+    { key: 'full_name', label: "Service Member's Full Legal Name", required: true },
+    { key: 'date_of_birth', label: 'Date of Birth', required: false },
+    { key: 'document_number', label: 'Document Number / Military ID', required: false },
+    { key: 'service_branch', label: 'Branch of Service', required: false },
+    { key: 'issue_date', label: 'Date of Issue', required: false },
+    { key: 'issuing_authority', label: 'Issuing Authority', required: false },
+  ],
+  'driver-license': [
+    { key: 'full_name', label: "Driver's Full Legal Name", required: true },
+    { key: 'date_of_birth', label: 'Date of Birth', required: true },
+    { key: 'address', label: 'Address on Document', required: false },
+    { key: 'document_number', label: 'License Number', required: true },
+    { key: 'issue_date', label: 'Date of Issue', required: false },
+    { key: 'expiry_date', label: 'Date of Expiry', required: false },
+    { key: 'issuing_authority', label: 'Issuing Authority (State / Country)', required: false },
   ],
 }
 
 const DEFAULT_MANUAL_FIELDS: FieldDef[] = [
   { key: 'full_name', label: 'Full Legal Name', required: true },
-  { key: 'date_of_birth', label: 'Date of Birth', required: true },
-  { key: 'document_number', label: 'Document Number', required: true },
+  { key: 'date_of_birth', label: 'Date of Birth', required: false },
+  { key: 'document_number', label: 'Document Number', required: false },
+  { key: 'issue_date', label: 'Date of Issue', required: false },
   { key: 'issuing_authority', label: 'Issuing Authority', required: false },
-  { key: 'issue_date', label: 'Issue Date', required: false },
-  { key: 'expiry_date', label: 'Expiry Date', required: false },
 ]
 
 function getFieldsForDocument(docType: TranslationDocumentType): FieldDef[] {
   return MANUAL_FIELDS[docType] ?? DEFAULT_MANUAL_FIELDS
 }
 
-// ---------------------------------------------------------------------------
-// PATCH reviewed fields
-// ---------------------------------------------------------------------------
+const ORIGINAL_LANGUAGES = [
+  { value: 'Ukrainian', label: 'Ukrainian / Українська' },
+  { value: 'Russian', label: 'Russian / Русский' },
+  { value: 'Spanish', label: 'Spanish / Español' },
+  { value: 'French', label: 'French / Français' },
+  { value: 'German', label: 'German / Deutsch' },
+  { value: 'Polish', label: 'Polish / Polski' },
+  { value: 'Portuguese', label: 'Portuguese / Português' },
+  { value: 'Arabic', label: 'Arabic / العربية' },
+  { value: 'Chinese', label: 'Chinese / 中文' },
+  { value: 'Other', label: 'Other language' },
+]
 
-async function patchReviewedFields(
-  orderId: string,
-  fieldsReviewed: Record<string, string>,
-): Promise<boolean> {
-  try {
-    const res = await fetch('/api/translation/process', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: orderId,
-        fields_reviewed: fieldsReviewed,
-        status: 'fields_submitted',
-      }),
-    })
-    return res.ok
-  } catch {
-    return false
-  }
-}
-
-// ---------------------------------------------------------------------------
-// ManualEntryForm
-// ---------------------------------------------------------------------------
-
-interface ManualEntryFormProps {
-  documentType: TranslationDocumentType
-  orderId: string
-  onSaved: (values: Record<string, string>) => void
-}
-
-function ManualEntryForm({ documentType, orderId, onSaved }: ManualEntryFormProps) {
-  const fields = getFieldsForDocument(documentType)
-  const [values, setValues] = useState<Record<string, string>>(
-    Object.fromEntries(fields.map((f) => [f.key, ''])),
-  )
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-
-  async function handleSave() {
-    setIsSaving(true)
-    setSaveError(null)
-    const ok = await patchReviewedFields(orderId, values)
-    setIsSaving(false)
-    if (ok) {
-      onSaved(values)
-    } else {
-      setSaveError('Could not save fields. Please try again.')
-    }
-  }
-
-  return (
-    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-4">
-      <div>
-        <p className="text-sm font-semibold text-blue-900">Manual field entry required</p>
-        <p className="mt-1 text-sm text-blue-700">
-          Automatic text extraction is not available yet. Please enter the fields below.
-        </p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {fields.map((field) => (
-          <div key={field.key} className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-ink-700">
-              {field.label}
-              {field.required && <span className="ml-1 text-red-500">*</span>}
-            </label>
-            <input
-              type="text"
-              value={values[field.key] ?? ''}
-              onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
-              placeholder={field.label}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        ))}
-      </div>
-
-      {saveError && (
-        <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
-          {saveError}
-        </p>
-      )}
-
-      <button
-        type="button"
-        onClick={() => void handleSave()}
-        disabled={isSaving}
-        className="inline-flex items-center gap-2 rounded-btn bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-      >
-        <Save className="h-4 w-4" />
-        {isSaving ? 'Saving…' : 'Save Fields'}
-      </button>
-    </div>
-  )
-}
+const CONFIRMATION_CHECKS = [
+  'I entered the fields from my actual document — not from memory.',
+  'I understand this is a draft template. I will complete the certification block and sign it myself.',
+  'I understand Messenginfo does not certify translations. I am the translator of record.',
+]
 
 function isAcceptedFile(file: File) {
   const lowerName = file.name.toLowerCase()
@@ -219,35 +185,6 @@ function isAcceptedFile(file: File) {
 }
 
 // ---------------------------------------------------------------------------
-// Upload API call
-// ---------------------------------------------------------------------------
-
-interface UploadResult {
-  order_id: string
-  status: string
-  ocr_status: string
-  message: string
-}
-
-async function uploadDocument(file: File, locale: string): Promise<UploadResult | null> {
-  try {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('locale', locale)
-
-    const res = await fetch('/api/translation/upload', {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!res.ok) return null
-    return await res.json() as UploadResult
-  } catch {
-    return null
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -256,14 +193,16 @@ export function TranslationServicePanel({
   messages,
   onResetDocument,
 }: TranslationServicePanelProps) {
+  const fields = getFieldsForDocument(selectedDocument)
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [showResult, setShowResult] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const [fieldsSaved, setFieldsSaved] = useState(false)
-  const [savedFields, setSavedFields] = useState<Record<string, string> | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>(
+    Object.fromEntries(fields.map((f) => [f.key, ''])),
+  )
+  const [originalLanguage, setOriginalLanguage] = useState('Ukrainian')
+  const [checks, setChecks] = useState([false, false, false])
+  const [downloaded, setDownloaded] = useState(false)
 
   const documentContent = messages.documents[selectedDocument]
   const documentConfig = useMemo(
@@ -271,74 +210,59 @@ export function TranslationServicePanel({
     [selectedDocument],
   )
 
+  // Required fields are filled
+  const requiredFilled = fields
+    .filter((f) => f.required)
+    .every((f) => (fieldValues[f.key] ?? '').trim().length > 0)
+
+  // At least one field has any value
+  const anyFilled = Object.values(fieldValues).some((v) => v.trim().length > 0)
+
+  // All confirmations checked
+  const allChecked = checks.every(Boolean)
+
+  // Download is unlocked when: required fields filled + all 3 boxes checked
+  const canDownload = requiredFilled && allChecked
+
   function handleFileSelect(file: File | null) {
-    setShowResult(false)
-    setUploadResult(null)
-    setUploadError(null)
     if (!file) {
       setSelectedFile(null)
-      setErrorMessage(null)
+      setFileError(null)
       return
     }
-
     if (file.size > MAX_FILE_BYTES) {
       setSelectedFile(file)
-      setErrorMessage(messages.upload.fileTooLarge)
+      setFileError(messages.upload.fileTooLarge)
       return
     }
-
     if (!isAcceptedFile(file)) {
       setSelectedFile(file)
-      setErrorMessage(messages.upload.unsupportedType)
+      setFileError(messages.upload.unsupportedType)
       return
     }
-
     setSelectedFile(file)
-    setErrorMessage(null)
+    setFileError(null)
   }
 
-  async function handleCreateDraft() {
-    if (!selectedFile || errorMessage || isUploading) return
-
-    setIsUploading(true)
-    setUploadError(null)
-
-    // Detect locale from browser (fallback to 'en')
-    const locale =
-      typeof window !== 'undefined'
-        ? (document.documentElement.lang?.slice(0, 2) ?? 'en')
-        : 'en'
-
-    const result = await uploadDocument(selectedFile, locale)
-
-    setIsUploading(false)
-
-    if (!result) {
-      setUploadError('Upload failed. Please try again.')
-      return
-    }
-
-    setUploadResult(result)
-    setShowResult(true)
+  function handleDownload() {
+    downloadTranslationTemplate(selectedDocument, fieldValues, originalLanguage)
+    setDownloaded(true)
   }
 
   function resetFlow() {
     setSelectedFile(null)
-    setErrorMessage(null)
-    setShowResult(false)
-    setUploadResult(null)
-    setUploadError(null)
-    setIsUploading(false)
-    setFieldsSaved(false)
-    setSavedFields(null)
+    setFileError(null)
+    setFieldValues(Object.fromEntries(fields.map((f) => [f.key, ''])))
+    setOriginalLanguage('Ukrainian')
+    setChecks([false, false, false])
+    setDownloaded(false)
   }
 
   if (!documentContent || !documentConfig) return null
 
-  const isManualReviewRequired = uploadResult?.ocr_status === 'manual_review_required'
-
   return (
     <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card md:p-6">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.08em] text-brand-600">
@@ -361,6 +285,7 @@ export function TranslationServicePanel({
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
         <div className="space-y-6">
+          {/* What you get / what to upload info boxes */}
           <div className="grid gap-6 md:grid-cols-2">
             <div className="rounded-card border border-slate-200 bg-slate-50 p-5">
               <div className="flex items-center gap-2">
@@ -393,124 +318,153 @@ export function TranslationServicePanel({
             </div>
           </div>
 
-          <DocumentUploadBox
-            messages={{
-              ...messages.upload,
-              uploadButton: messages.panel.uploadButton,
-            }}
-            selectedFile={selectedFile}
-            onFileSelect={handleFileSelect}
-            errorMessage={errorMessage}
-          />
-
-          {/* Legal disclaimer — always visible before upload */}
-          <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
-            AI draft only. Messenginfo does not certify translations. You review and sign the certification yourself.
-          </p>
-
-          {/* Upload error */}
-          {uploadError && (
-            <p className="rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
-              {uploadError}
+          {/* Upload box — optional, for future OCR */}
+          <div>
+            <p className="mb-2 text-sm font-medium text-ink-700">
+              Optional: upload your document (photo or scan) — used for reference only
             </p>
-          )}
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => void handleCreateDraft()}
-              disabled={!selectedFile || !!errorMessage || isUploading}
-              className="inline-flex w-full items-center justify-center rounded-btn bg-brand-600 px-5 py-3 text-base font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto"
-            >
-              {isUploading ? 'Uploading…' : messages.panel.createDraftButton}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                resetFlow()
-                onResetDocument()
+            <DocumentUploadBox
+              messages={{
+                ...messages.upload,
+                uploadButton: messages.panel.uploadButton,
               }}
-              className="inline-flex w-full items-center justify-center rounded-btn border border-slate-200 px-5 py-3 text-base font-medium text-ink-700 transition-colors hover:bg-slate-50 sm:w-auto"
-            >
-              {messages.panel.useAnotherDocument}
-            </button>
+              selectedFile={selectedFile}
+              onFileSelect={handleFileSelect}
+              errorMessage={fileError}
+            />
           </div>
 
-          {/* Upload result */}
-          {showResult && uploadResult && (
+          {/* ── STEP 1: Original language selector ── */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+            <p className="mb-3 text-sm font-semibold text-ink-900">
+              Step 1 — Original language of your document
+            </p>
+            <select
+              value={originalLanguage}
+              onChange={(e) => setOriginalLanguage(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              {ORIGINAL_LANGUAGES.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* ── STEP 2: Field entry ── */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-ink-900">
+                Step 2 — Enter the fields from your document
+              </p>
+              <p className="mt-1 text-sm text-ink-500">
+                Copy exactly as written. Fields marked <span className="text-red-500">*</span> are required.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {fields.map((field) => (
+                <div key={field.key} className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-ink-700">
+                    {field.label}
+                    {field.required && <span className="ml-1 text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    value={fieldValues[field.key] ?? ''}
+                    onChange={(e) =>
+                      setFieldValues((v) => ({ ...v, [field.key]: e.target.value }))
+                    }
+                    placeholder={field.label}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {anyFilled && !requiredFilled && (
+              <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                Fill in all required fields (*) to unlock the download.
+              </p>
+            )}
+          </div>
+
+          {/* ── STEP 3: Confirmation checkboxes ── */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3">
+            <p className="text-sm font-semibold text-ink-900">
+              Step 3 — Confirm before downloading
+            </p>
+            {CONFIRMATION_CHECKS.map((text, i) => (
+              <label key={i} className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={checks[i]}
+                  onChange={(e) =>
+                    setChecks((prev) => {
+                      const next = [...prev]
+                      next[i] = e.target.checked
+                      return next
+                    })
+                  }
+                  className="mt-0.5 h-4 w-4 rounded border-slate-400 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="text-sm leading-relaxed text-ink-700">{text}</span>
+              </label>
+            ))}
+          </div>
+
+          {/* Legal disclaimer */}
+          <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+            ⚠ AI draft only. Messenginfo does not certify translations. You review, complete the
+            certification block, and sign it yourself before submitting to USCIS (8 CFR 103.2(b)(3)).
+          </p>
+
+          {/* ── Download button ── */}
+          {!downloaded ? (
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={!canDownload}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-btn bg-brand-600 px-5 py-3 text-base font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto"
+            >
+              <Download className="h-5 w-5" />
+              Download Translation Draft (.html)
+            </button>
+          ) : (
             <div className="space-y-3">
-              {/* Order received confirmation */}
               <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-                <p className="text-sm font-semibold text-green-800">
-                  ✓ Document received. Enter the fields below to generate your translation draft.
-                </p>
-                <p className="mt-1 text-sm text-green-700 font-mono text-xs">
-                  Ref: {uploadResult.order_id}
+                <p className="text-sm font-semibold text-green-800">✓ Download started.</p>
+                <p className="mt-1 text-sm text-green-700">
+                  Open the file in your browser → File → Print → Save as PDF. Then sign the
+                  certification block by hand before submitting to USCIS.
                 </p>
               </div>
-
-              {/* Manual entry form */}
-              {isManualReviewRequired && !fieldsSaved && (
-                <ManualEntryForm
-                  documentType={selectedDocument}
-                  orderId={uploadResult.order_id}
-                  onSaved={(values) => {
-                    setSavedFields(values)
-                    setFieldsSaved(true)
-                  }}
-                />
-              )}
-
-              {/* After fields saved — download the draft */}
-              {isManualReviewRequired && fieldsSaved && savedFields && (
-                <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-blue-900 mb-1">
-                    ✓ Fields saved — your translation draft is ready.
-                  </p>
-                  <p className="text-sm text-blue-700 mb-3">
-                    Review the draft, complete the certification block, and sign before submitting to USCIS.
-                    Messenginfo does not certify translations — you sign as the translator of record.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => downloadTranslationTemplate(selectedDocument, savedFields)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download Translation Draft (.html → print as PDF)
-                  </button>
-                  <p className="mt-2 text-xs text-blue-600">
-                    Open the file in your browser → File → Print → Save as PDF
-                  </p>
-                </div>
-              )}
-
-              {/* Only show placeholder when the real download isn't available yet */}
-              {!(fieldsSaved && savedFields) && (
-                <DraftResultPlaceholder
-                  title={messages.result.placeholderTitle}
-                  body={messages.result.noBackend}
-                  draftOnly={messages.result.draftOnly}
-                  downloadLabel={messages.result.downloadDraft}
-                  sendToEmailLabel={messages.result.sendToEmail}
-                  startAnotherLabel={messages.result.startAnother}
-                  onReset={resetFlow}
-                />
-              )}
-              {/* "Translate another" link */}
-              {fieldsSaved && savedFields && (
+              <div className="flex gap-3 flex-wrap">
                 <button
                   type="button"
-                  onClick={resetFlow}
-                  className="text-sm font-medium text-brand-700 hover:text-brand-800 transition-colors"
+                  onClick={handleDownload}
+                  className="inline-flex items-center gap-2 rounded-btn border border-brand-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+                >
+                  <Download className="h-4 w-4" />
+                  Download again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetFlow()
+                    onResetDocument()
+                  }}
+                  className="inline-flex items-center gap-2 rounded-btn border border-slate-200 px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-slate-50"
                 >
                   ← Translate another document
                 </button>
-              )}
+              </div>
             </div>
           )}
         </div>
 
+        {/* Right sidebar */}
         <div className="space-y-4">
           <OfficialTranslationSourceBox
             sourceLabel={messages.source.sourceLabel}
