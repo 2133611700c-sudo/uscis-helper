@@ -9,9 +9,9 @@ export function TelegramStrip() {
   const hasLinks = channelUrl || botUrl
 
   return (
-    <div className="py-10 bg-brand-50 border-y border-brand-100">
+    <div className="py-10 border-y" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
       <Container>
-        <div className="rounded-card bg-white border border-brand-100 p-6 flex flex-col md:flex-row md:items-center gap-6">
+        <div className="rounded-card border p-6 flex flex-col md:flex-row md:items-center gap-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
           <div className="flex-1">
             <h3 className="text-lg font-bold text-ink-900">{t('title')}</h3>
             {!hasLinks && (

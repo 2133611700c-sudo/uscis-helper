@@ -15,19 +15,14 @@ export default async function HomePage() {
   return (
     <>
       <Hero locale={locale} />
-      {/* Pin homepage body to light mode — dark toggle belongs to the wizard only.
-          All ink-* and brand-* tokens are hardcoded light-mode values;
-          without this wrapper they become invisible on the dark body bg. */}
-      <div className="bg-white text-slate-900">
-        <ServiceCardGrid locale={locale} />
-        <TrendingTopicsBar locale={locale} />
-        <OfficialSourcesStrip />
-        <AskQuestionCTA locale={locale} />
-        <HowWeHelpSection />
-        <DocumentToolsSection />
-        <TelegramStrip />
-        <DisclaimerSection />
-      </div>
+      <ServiceCardGrid locale={locale} />
+      <TrendingTopicsBar locale={locale} />
+      <OfficialSourcesStrip />
+      <AskQuestionCTA locale={locale} />
+      <HowWeHelpSection />
+      <DocumentToolsSection />
+      <TelegramStrip />
+      <DisclaimerSection />
     </>
   )
 }

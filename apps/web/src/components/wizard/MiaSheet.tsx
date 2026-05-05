@@ -79,24 +79,25 @@ function Bubble({ role, content, disclaimer }: BubbleProps) {
         {!isUser && (
           <span
             aria-hidden="true"
-            className="mr-2 mt-1 flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-base select-none"
+            className="mr-2 mt-1 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base select-none"
+            style={{ background: 'var(--surface-3)' }}
           >
             🤝
           </span>
         )}
         <div
-          className={[
-            'max-w-[80%] rounded-2xl px-4 py-2 text-sm leading-relaxed',
+          className="max-w-[80%] rounded-2xl px-4 py-2 text-sm leading-relaxed"
+          style={
             isUser
-              ? 'bg-blue-600 text-white rounded-br-sm'
-              : 'bg-slate-100 text-slate-800 rounded-bl-sm',
-          ].join(' ')}
+              ? { background: 'var(--accent)', color: '#fff', borderBottomRightRadius: '4px' }
+              : { background: 'var(--surface-3)', color: 'var(--text-1)', borderBottomLeftRadius: '4px' }
+          }
         >
           {rendered}
         </div>
       </div>
       {disclaimer && !isUser && (
-        <p className="mt-1 ml-9 text-[10px] text-slate-400 italic">{disclaimer}</p>
+        <p className="mt-1 ml-9 text-[10px] italic" style={{ color: 'var(--text-3)' }}>{disclaimer}</p>
       )}
     </div>
   )
@@ -150,13 +151,7 @@ export function MiaSheet() {
 
     if (result.answer) {
       addMiaMessage({ role: 'assistant', content: result.answer })
-      // Store disclaimer on the message — we pass it as a separate field via a wrapper
-      // Since miaMessages only stores {role, content, ts}, we append disclaimer inline
-      // The Bubble component below reads disclaimer from a parallel state
-      // For simplicity: append disclaimer as a separate context note via state
       if (result.disclaimer) {
-        // Store disclaimer alongside answer in a combined way
-        // We use a local disclaimer map keyed by timestamp
         setLastDisclaimer(result.disclaimer)
       }
     }
@@ -182,8 +177,7 @@ export function MiaSheet() {
         onClick={() => setMiaOpen(false)}
       />
 
-      {/* Sheet / Modal — always light theme: bg-white + explicit dark text so that
-          wizard dark-mode inheritance (white color on html.dark) never bleeds in */}
+      {/* Sheet / Modal */}
       <div
         role="dialog"
         aria-modal="true"
@@ -192,25 +186,30 @@ export function MiaSheet() {
           // Mobile: full-height sheet from bottom
           'fixed inset-x-0 bottom-0 z-[70]',
           'flex flex-col',
-          'bg-white text-slate-900 rounded-t-2xl shadow-2xl',
+          'rounded-t-2xl shadow-2xl',
           'h-[92dvh]',
           // Desktop: centered modal
           'sm:inset-auto sm:top-1/2 sm:left-1/2',
           'sm:-translate-x-1/2 sm:-translate-y-1/2',
           'sm:w-[480px] sm:h-[600px] sm:rounded-2xl',
         ].join(' ')}
+        style={{ background: 'var(--surface-1)', color: 'var(--text-1)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 flex-shrink-0">
+        <div
+          className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+          style={{ borderBottom: '1px solid var(--border)' }}
+        >
           <div className="flex items-center gap-2">
             <span aria-hidden="true" className="text-xl">🤝</span>
-            <span className="font-semibold text-slate-800 text-base">Mia</span>
+            <span className="font-semibold text-base" style={{ color: 'var(--text-1)' }}>Mia</span>
           </div>
           <button
             type="button"
             aria-label="Close"
             onClick={() => setMiaOpen(false)}
-            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg transition-colors hover:opacity-80"
+            style={{ color: 'var(--text-3)', background: 'transparent' }}
           >
             <X className="w-5 h-5" />
           </button>
@@ -219,9 +218,9 @@ export function MiaSheet() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-0">
           {miaMessages.length === 0 && (
-            <div className="text-center text-sm text-slate-600 mt-8 space-y-2">
+            <div className="text-center text-sm mt-8 space-y-2" style={{ color: 'var(--text-2)' }}>
               <p aria-hidden="true" className="text-2xl">👋</p>
-              <p className="font-medium text-slate-800">Hi, I&apos;m Mia!</p>
+              <p className="font-medium" style={{ color: 'var(--text-1)' }}>Hi, I&apos;m Mia!</p>
               <p>
                 I can answer questions about the Re-Parole U4U process. What would you
                 like to know?
@@ -244,10 +243,11 @@ export function MiaSheet() {
           })}
 
           {isThinking && (
-            <div className="flex items-center gap-2 text-sm text-slate-500">
+            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-3)' }}>
               <span
                 aria-hidden="true"
-                className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-base"
+                className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base"
+                style={{ background: 'var(--surface-3)' }}
               >
                 🤝
               </span>
@@ -256,8 +256,8 @@ export function MiaSheet() {
                 {[0, 1, 2].map((i) => (
                   <span
                     key={i}
-                    className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 150}ms` }}
+                    className="w-1.5 h-1.5 rounded-full animate-bounce"
+                    style={{ background: 'var(--text-3)', animationDelay: `${i * 150}ms` }}
                   />
                 ))}
               </span>
@@ -265,7 +265,14 @@ export function MiaSheet() {
           )}
 
           {unavailable && (
-            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+            <div
+              className="rounded-xl px-4 py-3 text-sm"
+              style={{
+                background: 'var(--warning-bg)',
+                border: '1px solid var(--warning-border, var(--border))',
+                color: 'var(--warning-text)',
+              }}
+            >
               AI assistant is temporarily unavailable. You can still use the service checklist.
             </div>
           )}
@@ -274,7 +281,10 @@ export function MiaSheet() {
         </div>
 
         {/* Input area */}
-        <div className="flex-shrink-0 border-t border-slate-200 px-3 py-3 flex gap-2 items-center">
+        <div
+          className="flex-shrink-0 px-3 py-3 flex gap-2 items-center"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
           <input
             ref={inputRef}
             type="text"
@@ -284,14 +294,16 @@ export function MiaSheet() {
             placeholder="Ask a question about Re-Parole U4U…"
             disabled={isThinking}
             className={[
-              'flex-1 rounded-xl border border-slate-300 bg-white',
-              // Explicit colors — dark-mode inheritance must not bleed into this white-bg input
-              'text-slate-900 placeholder:text-slate-500',
-              'px-4 py-2.5 text-sm',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+              'flex-1 rounded-xl px-4 py-2.5 text-sm',
+              'focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent',
               'disabled:opacity-50',
               'transition-colors',
             ].join(' ')}
+            style={{
+              background: 'var(--surface-2)',
+              color: 'var(--text-1)',
+              border: '1px solid var(--border)',
+            }}
           />
           <button
             type="button"
@@ -301,18 +313,19 @@ export function MiaSheet() {
             className={[
               'flex-shrink-0 flex items-center justify-center',
               'w-10 h-10 rounded-xl',
-              'bg-blue-600 text-white',
-              'hover:bg-blue-700 active:scale-95',
+              'text-white',
+              'hover:opacity-90 active:scale-95',
               'disabled:opacity-40 disabled:cursor-not-allowed',
               'transition-all duration-150',
             ].join(' ')}
+            style={{ background: 'var(--accent)' }}
           >
             <Send className="w-4 h-4" />
           </button>
         </div>
 
         {/* Disclaimer */}
-        <p className="flex-shrink-0 text-center text-[10px] text-slate-400 pb-2">
+        <p className="flex-shrink-0 text-center text-[10px] pb-2" style={{ color: 'var(--text-3)' }}>
           Information only. Not legal advice.
         </p>
       </div>

@@ -110,7 +110,8 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} className={`${inter.variable} ${playfair.variable}`}>
-      <body className="min-h-screen flex flex-col bg-background text-foreground antialiased pb-14 md:pb-0">
+      <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark');}}catch(e){}})();` }} />
+      <body className="min-h-screen flex flex-col antialiased pb-14 md:pb-0">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Header />
           <main className="flex-1">{children}</main>
