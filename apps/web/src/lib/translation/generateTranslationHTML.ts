@@ -500,6 +500,20 @@ export function transliterateCyrillic(str: string, srcLang?: string): string {
     MAP = hasRussianOnly ? RU_MAP : UK_MAP
   }
   const UA_VOWELS = new Set(['А','Е','Є','И','І','Ї','О','У','Ю','Я'])
+  const RU_VOWELS = new Set(['А','Е','Ё','И','О','У','Ы','Э','Ю','Я'])
+  const isUkMap = MAP === UK_MAP
+
+  // Returns the nearest preceding Cyrillic letter (uppercase), or null at word boundary.
+  // Word boundary = start of string, space, hyphen, or any non-Cyrillic char.
+  function prevCyrUpper(s: string, idx: number): string | null {
+    for (let j = idx - 1; j >= 0; j--) {
+      const c = s[j]
+      if (CYRILLIC_RE.test(c)) return c.toUpperCase()
+      // Non-Cyrillic (space, hyphen, digit, Latin) = word boundary
+      return null
+    }
+    return null
+  }
 
   let result = ''
   for (let i = 0; i < str.length; i++) {
@@ -516,17 +530,28 @@ export function transliterateCyrillic(str: string, srcLang?: string): string {
 
     const isCyrUpper = ch === upper && /\p{Lu}/u.test(ch)
 
-    // KMU 2010 position-dependent rules:
-    //   Й after vowel → 'I'  (ЮРІЙ → YURII, not YURIY)
-    //   Ї after vowel → 'I'  (Київ → Kyiv, not Kyyiv)
+    // ── Position-dependent transliteration rules ───────────────────────────
     let latin: string
+
     if ((upper === 'Й' || upper === 'Ї') && i > 0) {
+      // KMU 2010: Й/Ї after vowel → 'I'  (ЮРІЙ→YURII, Київ→Kyiv)
       const prev = str[i - 1].toUpperCase()
-      if (UA_VOWELS.has(prev)) {
-        latin = 'I'
-      } else {
-        latin = MAP[upper] ?? (upper === 'Й' ? 'Y' : 'Yi')
-      }
+      latin = UA_VOWELS.has(prev) ? 'I' : (MAP[upper] ?? (upper === 'Й' ? 'Y' : 'Yi'))
+
+    } else if (upper === 'Я' && isUkMap) {
+      // KMU 2010: Я at word start → Ya; everywhere else → Ia
+      // (ЯРОСЛАВ→YAROSLAV, ТЕТЯНА→TETIANA, ЗАПОРІЖЖЯ→ZAPORIZHZHIA)
+      const prev = prevCyrUpper(str, i)
+      latin = (prev === null) ? 'Ya' : 'Ia'
+
+    } else if (upper === 'Е' && !isUkMap) {
+      // GOST 7.79-2000: Е after consonant → E; start/vowel/ь/ъ → Ye
+      // (ПЕТРОВ→PETROV, СЕРГЕЙ→SERGEI, ЕЛЕНА→YELENA)
+      const prev = prevCyrUpper(str, i)
+      const afterSoftHard = prev === 'Ь' || prev === 'Ъ'
+      const afterVowel = prev !== null && RU_VOWELS.has(prev)
+      latin = (prev === null || afterSoftHard || afterVowel) ? 'Ye' : 'E'
+
     } else {
       latin = MAP[upper] ?? ''
     }
