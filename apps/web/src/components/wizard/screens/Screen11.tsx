@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import { ReviewPrompt } from '@/components/wizard/ReviewPrompt'
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -465,6 +466,13 @@ export function Screen11() {
       >
         {t.emailBtn}
       </button>
+
+      {/* Review prompt — always shown; skipped state self-removes */}
+      <ReviewPrompt
+        locale={state.locale}
+        sessionId={sessionId}
+        serviceSlug="re-parole-u4u"
+      />
     </div>
   )
 }
