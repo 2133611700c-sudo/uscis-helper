@@ -327,13 +327,13 @@
       "title": "Document Translation for USCIS",
       "subtitle": "What USCIS requires when submitting foreign-language documents.",
       "whatHelps": [
-        "USCIS generally requires a full English translation and a translator certification statement",
-        "The translator must certify that they are competent to translate and that the translation is accurate",
-        "Review 8 CFR 103.2 for the official translation certification requirement"
+        "USCIS generally requires a full English translation and a signed self-certification statement per 8 CFR 103.2(b)(3)",
+        "The signer must certify that they are competent to translate and that the translation is accurate",
+        "Review 8 CFR 103.2 for the official translation self-certification requirement"
       ],
       "commonMistakes": [
         "Submitting a partial translation instead of a full translation",
-        "Omitting the translator certification statement",
+        "Omitting the signed self-certification statement",
         "Using machine translation without human review and a proper certification"
       ],
       "officialNote": "Translation requirements are codified at 8 CFR 103.2 (ecfr.gov).",
@@ -739,7 +739,7 @@
     "backToServices": "Back to Services",
     "title": "Translate Document",
     "subtitle": "Create a clean English translation draft from your original document. Use it to review names, dates, document fields, and prepare for a certified translator if needed.",
-    "draftOnlyBanner": "Draft only — translator certification is not included in this step.",
+    "draftOnlyBanner": "Draft only — no professional translator certification.",
     "chooseDocumentTitle": "Choose your document",
     "chooseDocumentSubtitle": "Select the document type you want to prepare.",
     "startAction": "Start →",
@@ -1021,7 +1021,7 @@
     "result": {
       "placeholderTitle": "Draft flow ready",
       "noBackend": "Your draft flow is ready for the next step. AI generation will be connected after verification.",
-      "draftOnly": "Draft only — translator certification is not included.",
+      "draftOnly": "Draft only — no professional translator certification.",
       "downloadDraft": "Download Draft PDF",
       "sendToEmail": "Send to Email",
       "startAnother": "Start another document"
@@ -1048,7 +1048,7 @@
       "items": [
         {
           "title": "Document translation guidance",
-          "description": "Learn what USCIS requires for certified translations: which documents to translate, what certification language to use, and how to meet official standards."
+          "description": "Learn what USCIS requires when submitting translated documents: which documents to translate, what self-certification language to use, and how to meet official standards per 8 CFR 103.2(b)(3)."
         },
         {
           "title": "Form completion assistance",

@@ -427,7 +427,7 @@ function OutputsStep({
       label: 'Certification Statement',
       filename: 'certification-statement.html',
       icon: '🖊',
-      description: 'Standalone translator certification — print and sign',
+      description: 'Self-certification template — print, complete, and sign',
       content: outputs.certificationStatement,
     },
     {
