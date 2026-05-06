@@ -9,6 +9,8 @@ import { downloadTranslationTemplate } from '@/lib/translation/generateTranslati
 type DocId =
   | 'passport' | 'birth_cert' | 'marriage_cert' | 'divorce_cert'
   | 'diploma' | 'driving_license' | 'military_id' | 'medical_record'
+  | 'death_cert' | 'adoption_cert' | 'name_change_cert' | 'police_record'
+  | 'property_doc' | 'employment_record'
 
 type SourceLang = 'uk' | 'ru' | 'es' | 'pl' | 'de' | 'fr' | 'ar' | 'zh' | 'ko' | 'pt' | 'en'
 
@@ -167,7 +169,7 @@ const DOCS: DocDef[] = [
     ],
   },
   {
-    id: 'medical_record', popular: false, prodId: 'other-document',
+    id: 'medical_record', popular: false, prodId: 'medical-record',
     label: { uk: 'Медична довідка', ru: 'Медицинская справка', en: 'Medical Record', es: 'Registro médico', pl: 'Zaświadczenie lekarskie', de: 'Ärztliches Attest', fr: 'Certificat médical', ar: 'سجل طبي', zh: '医疗记录', ko: '의료기록', pt: 'Registro médico' },
     color: 'linear-gradient(150deg,#0c4a6e 0%,#38bdf8 100%)',
     icon: '<svg viewBox="0 0 26 32" width="26" height="32" fill="none"><rect x="1" y="5" width="24" height="26" rx="2" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.88)" stroke-width="1.5"/><rect x="8" y="2" width="10" height="6.5" rx="2.5" fill="rgba(255,255,255,.28)" stroke="rgba(255,255,255,.82)" stroke-width="1.3"/><rect x="11" y="11.5" width="4" height="11" rx="2" fill="rgba(255,255,255,.95)"/><rect x="7.5" y="15" width="11" height="4" rx="2" fill="rgba(255,255,255,.95)"/><rect x="4" y="25.5" width="18" height="1.5" rx=".75" fill="rgba(255,255,255,.48)"/><rect x="4" y="28.5" width="14" height="1.3" rx=".65" fill="rgba(255,255,255,.35)"/></svg>',
@@ -178,6 +180,97 @@ const DOCS: DocDef[] = [
       { key: 'document_number', en: 'Record / Reference Number', orig: { uk: 'Тип довідки', ru: 'Тип справки', es: 'Tipo de registro', en: 'Record Type / Number' }, required: true, group: 'document', placeholder: { uk: 'Медична довідка / №123', ru: 'Медицинская справка / №123', en: 'Medical Certificate / No.123' } },
       { key: 'issue_date', en: 'Date of Issue', orig: { uk: 'Дата видачі', ru: 'Дата выдачи', es: 'Fecha de emisión', en: 'Date of Issue' }, required: true, group: 'document', type: 'date' },
       { key: 'issuing_authority', en: 'Medical Facility', orig: { uk: 'Медичний заклад', ru: 'Медицинское учреждение', es: 'Establecimiento médico', en: 'Medical Facility' }, required: true, group: 'authority', placeholder: { uk: 'КМЛ №1, Київ', ru: 'КМБ №1, Киев', en: 'City Hospital No.1, Kyiv' } },
+    ],
+  },
+  {
+    id: 'death_cert', popular: false, prodId: 'death-certificate',
+    label: { uk: 'Свідоцтво про смерть', ru: 'Свидетельство о смерти', en: 'Death Certificate', es: 'Certificado de defunción', pl: 'Akt zgonu', de: 'Sterbeurkunde', fr: 'Acte de décès', ar: 'شهادة الوفاة', zh: '死亡证明', ko: '사망증명서', pt: 'Certidão de óbito' },
+    color: 'linear-gradient(150deg,#1c1917 0%,#57534e 100%)',
+    icon: '<svg viewBox="0 0 28 34" width="28" height="34" fill="none"><rect x="1" y="1" width="26" height="32" rx="1.5" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.72)" stroke-width="1.5"/><rect x="3.5" y="3.5" width="21" height="27" rx=".8" stroke="rgba(255,255,255,.3)" stroke-width=".8" stroke-dasharray="2.5 2"/><path d="M14 7v8M10 11h8" stroke="rgba(255,255,255,.9)" stroke-width="2.2" stroke-linecap="round"/><rect x="5" y="22" width="18" height="1.5" rx=".75" fill="rgba(255,255,255,.55)"/><rect x="6" y="25" width="16" height="1.3" rx=".65" fill="rgba(255,255,255,.4)"/><rect x="7" y="28" width="14" height="1.3" rx=".65" fill="rgba(255,255,255,.3)"/></svg>',
+    fields: [
+      { key: 'full_name', en: "Deceased's Last Name", orig: { uk: 'Прізвище померлого/ої', ru: 'Фамилия умершего/ей', es: 'Apellido del fallecido', en: "Deceased's Last Name" }, required: true, group: 'personal', placeholder: { uk: 'ШЕВЧЕНКО', ru: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' } },
+      { key: 'given_names', en: "Deceased's Given Names", orig: { uk: "Ім'я та по батькові", ru: 'Имя и отчество', es: 'Nombres del fallecido', en: "Given Names" }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС ГРИГОРОВИЧ', ru: 'ТАРАС ГРИГОРОВИЧ', en: 'TARAS HRYHOROVYCH' } },
+      { key: 'date_of_birth', en: 'Date of Birth', orig: { uk: 'Дата народження', ru: 'Дата рождения', es: 'Fecha de nacimiento', en: 'Date of Birth' }, required: false, group: 'personal', type: 'date' },
+      { key: 'date_of_death', en: 'Date of Death', orig: { uk: 'Дата смерті', ru: 'Дата смерти', es: 'Fecha de defunción', en: 'Date of Death' }, required: true, group: 'document', type: 'date' },
+      { key: 'place_of_death', en: 'Place of Death', orig: { uk: 'Місце смерті', ru: 'Место смерти', es: 'Lugar de defunción', en: 'Place of Death' }, required: true, group: 'document', placeholder: { uk: 'м. Київ, Україна', ru: 'г. Киев, Украина', en: 'Kyiv, Ukraine' } },
+      { key: 'document_number', en: 'Certificate Number', orig: { uk: 'Номер свідоцтва', ru: 'Номер свидетельства', es: 'Número de certificado', en: 'Certificate Number' }, required: true, group: 'document', placeholder: { uk: 'І-КВ №123456', ru: 'І-КВ №123456', en: 'I-KV No.123456' } },
+      { key: 'issue_date', en: 'Date of Issue', orig: { uk: 'Дата видачі', ru: 'Дата выдачи', es: 'Fecha de emisión', en: 'Date of Issue' }, required: true, group: 'document', type: 'date' },
+      { key: 'issuing_authority', en: 'Registry Office', orig: { uk: 'Орган РАЦС', ru: 'Орган ЗАГС', es: 'Registro Civil', en: 'Registry Office' }, required: true, group: 'authority', placeholder: { uk: 'Шевченківський РАЦС м. Київ', ru: 'Шевченковский ЗАГС г. Киев', en: 'Civil Registry, Kyiv' } },
+    ],
+  },
+  {
+    id: 'adoption_cert', popular: false, prodId: 'adoption-certificate',
+    label: { uk: 'Свідоцтво про усиновлення', ru: 'Свидетельство об усыновлении', en: 'Adoption Certificate', es: 'Certificado de adopción', pl: 'Akt adopcji', de: 'Adoptionsurkunde', fr: "Acte d'adoption", ar: 'شهادة التبني', zh: '收养证书', ko: '입양증명서', pt: 'Certidão de adoção' },
+    color: 'linear-gradient(150deg,#701a75 0%,#e879f9 100%)',
+    icon: '<svg viewBox="0 0 28 34" width="28" height="34" fill="none"><rect x="1" y="1" width="26" height="32" rx="1.5" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.85)" stroke-width="1.5"/><path d="M14 8c-3.3 0-6 2.5-6 5.5S10.7 19 14 19s6-2.5 6-5.5S17.3 8 14 8z" fill="rgba(255,255,255,.85)"/><path d="M10 17.5C7 18.8 5 21.5 5 24.5h18c0-3-2-5.7-5-7" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M10.5 10.5l1.5 1.5 3.5-3.5" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    fields: [
+      { key: 'child_name', en: "Child's Last Name (after adoption)", orig: { uk: 'Прізвище дитини (після усиновлення)', ru: 'Фамилия ребёнка (после усыновления)', es: 'Apellido del niño (después)', en: "Child's Last Name (after adoption)" }, required: true, group: 'personal', placeholder: { uk: 'ШЕВЧЕНКО', ru: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' } },
+      { key: 'given_names', en: "Child's Given Names", orig: { uk: "Ім'я дитини", ru: 'Имя ребёнка', es: 'Nombres del niño', en: "Child's Given Names" }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС', ru: 'ТАРАС', en: 'TARAS' } },
+      { key: 'date_of_birth', en: "Child's Date of Birth", orig: { uk: 'Дата народження дитини', ru: 'Дата рождения ребёнка', es: 'Fecha de nacimiento', en: 'Date of Birth' }, required: true, group: 'personal', type: 'date' },
+      { key: 'father_name', en: "Adoptive Parent 1 — Full Name", orig: { uk: "Усиновлювач 1 — ПІБ", ru: 'Усыновитель 1 — ФИО', es: 'Padre adoptivo 1', en: "Adoptive Parent 1" }, required: true, group: 'personal', placeholder: { uk: 'ГРИГОРІЙ ІВАНОВИЧ ШЕВЧЕНКО', ru: 'ГРИГОРИЙ ИВАНОВИЧ', en: 'HRYHORIY IVANOVYCH SHEVCHENKO' } },
+      { key: 'mother_name', en: "Adoptive Parent 2 — Full Name (if applicable)", orig: { uk: "Усиновлювач 2 — ПІБ (якщо є)", ru: 'Усыновитель 2 — ФИО (если есть)', es: 'Madre adoptiva 2 (si aplica)', en: "Adoptive Parent 2 (if applicable)" }, required: false, group: 'personal', placeholder: { uk: 'ГАННА ПЕТРІВНА ШЕВЧЕНКО', ru: 'АННА ПЕТРОВНА', en: 'HANNA PETRIVNA SHEVCHENKO' } },
+      { key: 'document_number', en: 'Certificate / Court Decision Number', orig: { uk: 'Номер свідоцтва / рішення суду', ru: 'Номер свидетельства / решения суда', es: 'Número de certificado', en: 'Certificate Number' }, required: true, group: 'document', placeholder: { uk: 'І-КВ №123456', ru: 'І-КВ №123456', en: 'I-KV No.123456' } },
+      { key: 'issue_date', en: 'Date of Issue', orig: { uk: 'Дата видачі', ru: 'Дата выдачи', es: 'Fecha de emisión', en: 'Date of Issue' }, required: true, group: 'document', type: 'date' },
+      { key: 'issuing_authority', en: 'Issuing Authority / Court', orig: { uk: 'Орган / Суд', ru: 'Орган / Суд', es: 'Autoridad / Tribunal', en: 'Issuing Authority / Court' }, required: true, group: 'authority', placeholder: { uk: 'Шевченківський районний суд м. Київ', ru: 'Шевченковский районный суд', en: 'Shevchenko District Court, Kyiv' } },
+    ],
+  },
+  {
+    id: 'name_change_cert', popular: false, prodId: 'name-change-certificate',
+    label: { uk: 'Свідоцтво про зміну імені', ru: 'Свидетельство о смене имени', en: 'Name Change Certificate', es: 'Certificado de cambio de nombre', pl: 'Akt zmiany imienia', de: 'Namensänderungsurkunde', fr: 'Acte de changement de nom', ar: 'شهادة تغيير الاسم', zh: '改名证书', ko: '개명증명서', pt: 'Certidão de mudança de nome' },
+    color: 'linear-gradient(150deg,#7c3aed 0%,#c4b5fd 100%)',
+    icon: '<svg viewBox="0 0 28 34" width="28" height="34" fill="none"><rect x="1" y="1" width="26" height="32" rx="1.5" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.85)" stroke-width="1.5"/><path d="M7 10h14M7 14h10M7 18h12" stroke="rgba(255,255,255,.7)" stroke-width="1.5" stroke-linecap="round"/><path d="M19 22l2 2-2 2M21 24H15" stroke="rgba(255,255,255,.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    fields: [
+      { key: 'full_name', en: 'Former Last Name', orig: { uk: 'Колишнє прізвище', ru: 'Прежняя фамилия', es: 'Apellido anterior', en: 'Former Last Name' }, required: true, group: 'personal', placeholder: { uk: 'ФРАНКО', ru: 'ФРАНКО', en: 'FRANKO' } },
+      { key: 'given_names', en: 'Former Given Names', orig: { uk: "Колишнє ім'я та по батькові", ru: 'Прежнее имя и отчество', es: 'Nombres anteriores', en: 'Former Given Names' }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС ГРИГОРОВИЧ', ru: 'ТАРАС ГРИГОРОВИЧ', en: 'TARAS HRYHOROVYCH' } },
+      { key: 'spouse1_name', en: 'New Last Name', orig: { uk: 'Нове прізвище', ru: 'Новая фамилия', es: 'Nuevo apellido', en: 'New Last Name' }, required: true, group: 'personal', placeholder: { uk: 'ШЕВЧЕНКО', ru: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' } },
+      { key: 'spouse2_name', en: 'New Given Names', orig: { uk: "Нове ім'я та по батькові", ru: 'Новое имя и отчество', es: 'Nuevos nombres', en: 'New Given Names' }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС ГРИГОРОВИЧ', ru: 'ТАРАС ГРИГОРОВИЧ', en: 'TARAS HRYHOROVYCH' } },
+      { key: 'date_of_birth', en: 'Date of Birth', orig: { uk: 'Дата народження', ru: 'Дата рождения', es: 'Fecha de nacimiento', en: 'Date of Birth' }, required: true, group: 'personal', type: 'date' },
+      { key: 'document_number', en: 'Certificate / Decision Number', orig: { uk: 'Номер свідоцтва / рішення', ru: 'Номер свидетельства / решения', es: 'Número de certificado', en: 'Certificate Number' }, required: true, group: 'document', placeholder: { uk: 'І-КВ №123456', ru: 'І-КВ №123456', en: 'I-KV No.123456' } },
+      { key: 'issue_date', en: 'Date of Issue', orig: { uk: 'Дата видачі', ru: 'Дата выдачи', es: 'Fecha de emisión', en: 'Date of Issue' }, required: true, group: 'document', type: 'date' },
+      { key: 'issuing_authority', en: 'Issuing Authority', orig: { uk: 'Орган РАЦС', ru: 'Орган ЗАГС', es: 'Registro Civil', en: 'Registry Office' }, required: true, group: 'authority', placeholder: { uk: 'Шевченківський РАЦС м. Київ', ru: 'Шевченковский ЗАГС г. Киев', en: 'Civil Registry, Kyiv' } },
+    ],
+  },
+  {
+    id: 'police_record', popular: false, prodId: 'police-record',
+    label: { uk: 'Довідка про несудимість', ru: 'Справка о несудимости', en: 'Police / Criminal Record', es: 'Antecedentes penales', pl: 'Zaświadczenie o niekaralności', de: 'Führungszeugnis', fr: 'Casier judiciaire', ar: 'سجل الشرطة', zh: '无犯罪记录', ko: '범죄경력조회', pt: 'Registro criminal' },
+    color: 'linear-gradient(150deg,#1e3a5f 0%,#3b82f6 100%)',
+    icon: '<svg viewBox="0 0 28 34" width="28" height="34" fill="none"><path d="M14 2L3 7v10c0 7.5 4.8 12.8 11 14.5C20.2 29.8 25 24.5 25 17V7L14 2z" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.88)" stroke-width="1.5" stroke-linejoin="round"/><path d="M9.5 16l3 3 6-6" stroke="rgba(255,255,255,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    fields: [
+      { key: 'full_name', en: 'Last Name', orig: { uk: 'Прізвище', ru: 'Фамилия', es: 'Apellido', en: 'Last Name' }, required: true, group: 'personal', placeholder: { uk: 'ШЕВЧЕНКО', ru: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' } },
+      { key: 'given_names', en: 'Given Names', orig: { uk: "Ім'я та по батькові", ru: 'Имя и отчество', es: 'Nombres', en: 'Given Names' }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС ГРИГОРОВИЧ', ru: 'ТАРАС ГРИГОРОВИЧ', en: 'TARAS HRYHOROVYCH' } },
+      { key: 'date_of_birth', en: 'Date of Birth', orig: { uk: 'Дата народження', ru: 'Дата рождения', es: 'Fecha de nacimiento', en: 'Date of Birth' }, required: true, group: 'personal', type: 'date' },
+      { key: 'document_number', en: 'Record Type (e.g. No Criminal Record)', orig: { uk: 'Тип довідки (наприклад: відсутність судимостей)', ru: 'Тип справки (напр.: отсутствие судимостей)', es: 'Tipo de registro', en: 'Record Type' }, required: true, group: 'document', placeholder: { uk: 'Відомості про несудимість', ru: 'Сведения о несудимости', en: 'No Criminal Record' } },
+      { key: 'issue_date', en: 'Date of Issue', orig: { uk: 'Дата видачі', ru: 'Дата выдачи', es: 'Fecha de emisión', en: 'Date of Issue' }, required: true, group: 'document', type: 'date' },
+      { key: 'issuing_authority', en: 'Issuing Authority (Police / Ministry)', orig: { uk: 'Орган видачі (Поліція / МВС)', ru: 'Орган выдачи (Полиция / МВД)', es: 'Autoridad emisora', en: 'Issuing Authority' }, required: true, group: 'authority', placeholder: { uk: 'Інформаційний центр МВС України', ru: 'Информационный центр МВД Украины', en: 'Information Center, Ministry of Internal Affairs of Ukraine' } },
+    ],
+  },
+  {
+    id: 'property_doc', popular: false, prodId: 'property-document',
+    label: { uk: 'Документ на нерухомість', ru: 'Документ на недвижимость', en: 'Property Document', es: 'Documento de propiedad', pl: 'Dokument własności', de: 'Eigentumsnachweis', fr: 'Titre de propriété', ar: 'وثيقة ملكية', zh: '房产证明', ko: '부동산증명서', pt: 'Documento de propriedade' },
+    color: 'linear-gradient(150deg,#1a3a1a 0%,#4ade80 100%)',
+    icon: '<svg viewBox="0 0 30 32" width="30" height="32" fill="none"><path d="M15 3L2 12h4v17h8v-8h2v8h8V12h4L15 3z" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.88)" stroke-width="1.5" stroke-linejoin="round"/><rect x="11" y="19" width="8" height="10" rx="1" stroke="rgba(255,255,255,.5)" stroke-width=".8" fill="none"/><circle cx="15" cy="22.5" r="1" fill="rgba(255,255,255,.7)"/></svg>',
+    fields: [
+      { key: 'full_name', en: "Owner's Last Name", orig: { uk: 'Прізвище власника', ru: 'Фамилия владельца', es: 'Apellido del propietario', en: "Owner's Last Name" }, required: true, group: 'personal', placeholder: { uk: 'ШЕВЧЕНКО', ru: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' } },
+      { key: 'given_names', en: "Owner's Given Names", orig: { uk: "Ім'я та по батькові власника", ru: 'Имя и отчество владельца', es: 'Nombres del propietario', en: "Owner's Given Names" }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС ГРИГОРОВИЧ', ru: 'ТАРАС ГРИГОРОВИЧ', en: 'TARAS HRYHOROVYCH' } },
+      { key: 'document_number', en: 'Document / Registration Number', orig: { uk: 'Номер документа / реєстраційний номер', ru: 'Номер документа / регистрационный номер', es: 'Número de documento', en: 'Document / Registration Number' }, required: true, group: 'document', placeholder: { uk: 'КВ №123456', ru: 'КВ №123456', en: 'KV No.123456' } },
+      { key: 'spouse1_name', en: 'Property Address', orig: { uk: 'Адреса нерухомості', ru: 'Адрес недвижимости', es: 'Dirección de la propiedad', en: 'Property Address' }, required: true, group: 'document', placeholder: { uk: 'вул. Хрещатик 1, кв. 10, Київ', ru: 'ул. Крещатик 1, кв. 10, Киев', en: '1 Khreshchatyk St, Apt 10, Kyiv' } },
+      { key: 'issue_date', en: 'Date of Registration / Issue', orig: { uk: 'Дата реєстрації / видачі', ru: 'Дата регистрации / выдачи', es: 'Fecha de registro', en: 'Date of Registration / Issue' }, required: true, group: 'document', type: 'date' },
+      { key: 'issuing_authority', en: 'Issuing Authority (Registry / Notary)', orig: { uk: 'Орган видачі (Реєстр / Нотаріус)', ru: 'Орган выдачи (Реестр / Нотариус)', es: 'Autoridad emisora', en: 'Issuing Authority' }, required: true, group: 'authority', placeholder: { uk: 'Держреєстр речових прав, Київ', ru: 'Государственный реестр прав', en: 'State Registry of Real Property Rights, Kyiv' } },
+    ],
+  },
+  {
+    id: 'employment_record', popular: false, prodId: 'employment-record',
+    label: { uk: 'Трудова довідка / книжка', ru: 'Трудовая справка / книжка', en: 'Employment Record', es: 'Registro de empleo', pl: 'Zaświadczenie o zatrudnieniu', de: 'Arbeitsbescheinigung', fr: "Attestation d'emploi", ar: 'سجل العمل', zh: '劳动记录', ko: '재직증명서', pt: 'Registro de emprego' },
+    color: 'linear-gradient(150deg,#1e3a5f 0%,#f59e0b 100%)',
+    icon: '<svg viewBox="0 0 30 28" width="30" height="28" fill="none"><rect x="1" y="7" width="28" height="20" rx="1.5" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.88)" stroke-width="1.5"/><rect x="10" y="3" width="10" height="7" rx="1.5" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.82)" stroke-width="1.3"/><rect x="5" y="13" width="20" height="1.5" rx=".75" fill="rgba(255,255,255,.65)"/><rect x="5" y="16.5" width="16" height="1.3" rx=".65" fill="rgba(255,255,255,.48)"/><rect x="5" y="19.5" width="18" height="1.3" rx=".65" fill="rgba(255,255,255,.48)"/><rect x="5" y="22.5" width="12" height="1.3" rx=".65" fill="rgba(255,255,255,.35)"/></svg>',
+    fields: [
+      { key: 'full_name', en: "Employee's Last Name", orig: { uk: 'Прізвище працівника', ru: 'Фамилия работника', es: 'Apellido del empleado', en: "Employee's Last Name" }, required: true, group: 'personal', placeholder: { uk: 'ШЕВЧЕНКО', ru: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' } },
+      { key: 'given_names', en: "Employee's Given Names", orig: { uk: "Ім'я та по батькові", ru: 'Имя и отчество', es: 'Nombres del empleado', en: "Employee's Given Names" }, required: true, group: 'personal', placeholder: { uk: 'ТАРАС ГРИГОРОВИЧ', ru: 'ТАРАС ГРИГОРОВИЧ', en: 'TARAS HRYHOROVYCH' } },
+      { key: 'date_of_birth', en: 'Date of Birth', orig: { uk: 'Дата народження', ru: 'Дата рождения', es: 'Fecha de nacimiento', en: 'Date of Birth' }, required: false, group: 'personal', type: 'date' },
+      { key: 'document_number', en: 'Position / Job Title', orig: { uk: 'Посада / Назва роботи', ru: 'Должность / Название работы', es: 'Cargo / Puesto de trabajo', en: 'Position / Job Title' }, required: true, group: 'document', placeholder: { uk: 'Інженер-програміст', ru: 'Инженер-программист', en: 'Software Engineer' } },
+      { key: 'spouse1_name', en: 'Employer / Organization Name', orig: { uk: 'Назва роботодавця / організації', ru: 'Название работодателя / организации', es: 'Nombre del empleador', en: 'Employer Name' }, required: true, group: 'document', placeholder: { uk: 'ТОВ "Технології"', ru: 'ООО "Технологии"', en: 'Technology LLC' } },
+      { key: 'issue_date', en: 'Date of Issue', orig: { uk: 'Дата видачі', ru: 'Дата выдачи', es: 'Fecha de emisión', en: 'Date of Issue' }, required: true, group: 'document', type: 'date' },
+      { key: 'issuing_authority', en: 'Issuing Authority (HR / Employer)', orig: { uk: 'Орган видачі (Відділ кадрів)', ru: 'Орган выдачи (Отдел кадров)', es: 'Autoridad emisora', en: 'Issuing Authority (HR Department)' }, required: true, group: 'authority', placeholder: { uk: 'Відділ кадрів, ТОВ "Технології"', ru: 'Отдел кадров, ООО "Технологии"', en: 'HR Department, Technology LLC' } },
     ],
   },
 ]
@@ -216,24 +309,25 @@ const UI: Record<string, Record<string, string>> = {
     reviewTitle: 'Review your entries',
     reviewHint: 'Check that all values are correct before downloading.',
     confirmTitle: 'Confirm before downloading',
-    confirm1: 'I entered the fields from my actual document — not from memory.',
-    confirm2: 'I understand this is a draft template. I will complete the certification block and sign it myself.',
-    confirm3: 'I understand Messenginfo does not certify translations. I am the translator of record.',
-    disclaimer: '⚠ AI draft only. Messenginfo does not certify translations. You review, complete the certification block, and sign it yourself before submitting to USCIS (8 CFR 103.2(b)(3)).',
+    confirm1: 'I am the lawful owner or authorized representative for this document',
+    confirm2: 'All data has been verified and matches the original document',
+    confirm3: 'I understand this is a draft translation for personal use, not a notarized or attorney-prepared document',
+    disclaimer: 'This translation draft is provided for self-help USCIS filing. This service is not legal advice, an attorney, or an immigration consultant. USCIS generally requires a complete English translation with a signed translator certification statement.',
     paymentTitle: 'Complete your order',
-    paymentDisabled: 'Payment is currently disabled in this prototype.',
+    paymentDisabled: 'Payment is disabled. Service is in test mode — download for free.',
     paymentPrice: 'Planned price after launch: $15 / document.',
-    paymentContinue: 'Continue without payment (test mode)',
+    paymentContinue: 'Continue test without payment',
     download: 'Download Translation Draft (.html)',
     downloaded: '✓ Download started.',
     downloadedHint: 'Open in browser → File → Print → Save as PDF. Sign the certification block by hand before submitting.',
     downloadAgain: 'Download again',
-    anotherDoc: '← Translate another document',
-    certWarn: 'Without a signed certification template, USCIS may reject your translation.',
-    next1: 'Print all files',
+    anotherDoc: '+ Another document',
+    certWarn: 'Without a signed Certification Template, USCIS may reject your translation.',
+    next1: 'Print all 4 files',
     next2: 'Sign the Certification Template — handwritten signature required',
     next3: 'Include signed template with translation draft and original document',
     next4: 'Mail the complete package to USCIS',
+    nextTitle: 'What to do next:',
     fillRequired: 'Fill in all required fields (*) to continue.',
     fillConfirm: 'Check all three boxes to continue.',
     emailLabel: 'Send to your email',
@@ -242,6 +336,24 @@ const UI: Record<string, Record<string, string>> = {
     emailSending: 'Sending…',
     emailSent: '✓ Sent! Check your inbox.',
     emailError: 'Failed to send. Try again.',
+    filesReady: 'Files are ready',
+    enNotice: 'All files are in English as required by USCIS.',
+    file1Label: 'Translation draft',
+    file1Note: 'HTML · print/PDF',
+    file2Label: 'Translator certification',
+    file2Note: 'HTML · sign by hand ⚠',
+    file3Label: 'Filing checklist',
+    file3Note: 'HTML',
+    file4Label: 'Filing instructions',
+    file4Note: 'HTML',
+    dlAll: 'Download all files',
+    reviewAsk: 'Did this draft help you?',
+    reviewBtn: 'Leave a review',
+    priceBadge: 'Planned price after launch:',
+    wyg1: 'Translation draft (HTML, printable)',
+    wyg2: 'Translator certification template',
+    wyg3: 'USCIS filing checklist',
+    wyg4: 'Filing instructions',
   },
   uk: {
     popular: 'Популярні документи',
@@ -274,24 +386,25 @@ const UI: Record<string, Record<string, string>> = {
     reviewTitle: 'Перевірте введені дані',
     reviewHint: 'Перевірте, що всі значення правильні перед завантаженням.',
     confirmTitle: 'Підтвердіть перед завантаженням',
-    confirm1: 'Я ввів(ла) поля з оригінального документа — не по пам\'яті.',
-    confirm2: 'Я розумію, що це чернетка. Я самостійно заповню блок підтвердження і підпишу.',
-    confirm3: 'Я розумію, що Messenginfo не засвідчує переклади. Я є перекладачем відповідно до запису.',
-    disclaimer: '⚠ Лише чернетка. Messenginfo не засвідчує переклади. Ви самостійно перевіряєте, заповнюєте блок підтвердження та підписуєте перед подачею до USCIS (8 CFR 103.2(b)(3)).',
+    confirm1: 'Я є законним власником або уповноваженим представником',
+    confirm2: 'Дані перевірені і відповідають оригіналу',
+    confirm3: 'Я розумію, що це чернетка, а не нотаріально завірений переклад',
+    disclaimer: 'Ця чернетка надається для самостійного заповнення форм USCIS. Сервіс не є юридичною консультацією, адвокатом або імміграційним консультантом. USCIS зазвичай вимагає повний переклад англійською з підписаним підтвердженням перекладача.',
     paymentTitle: 'Оформлення замовлення',
-    paymentDisabled: 'Оплата наразі вимкнена в цьому прототипі.',
-    paymentPrice: 'Планова ціна після запуску: $15 / документ.',
-    paymentContinue: 'Продовжити без оплати (тестовий режим)',
+    paymentDisabled: 'Оплата вимкнена. Сервіс у тестовому режимі — скачайте безкоштовно.',
+    paymentPrice: 'Запланована ціна після запуску: $15 / документ.',
+    paymentContinue: 'Продовжити тест без оплати',
     download: 'Завантажити чернетку перекладу (.html)',
     downloaded: '✓ Завантаження розпочато.',
     downloadedHint: 'Відкрийте у браузері → Файл → Друк → Зберегти як PDF. Підпишіть блок підтвердження від руки.',
     downloadAgain: 'Завантажити ще раз',
-    anotherDoc: '← Перекласти інший документ',
-    certWarn: 'Без підписаного шаблону підтвердження USCIS може відхилити ваш переклад.',
-    next1: 'Роздрукуйте всі файли',
-    next2: 'Підпишіть шаблон підтвердження — від руки',
-    next3: 'Додайте підписаний шаблон разом із чернеткою та оригіналом',
-    next4: 'Відправте пакет документів до USCIS',
+    anotherDoc: '+ Ще один документ',
+    certWarn: 'Без підписаного Шаблону підтвердження переклад можуть не прийняти в USCIS.',
+    next1: 'Роздрукуйте всі 4 файли',
+    next2: 'Підпишіть Шаблон підтвердження — від руки',
+    next3: 'Вкладіть підписаний шаблон із чернеткою та оригіналом',
+    next4: 'Відправте пакет до USCIS',
+    nextTitle: 'Що робити далі:',
     fillRequired: 'Заповніть всі обов\'язкові поля (*) щоб продовжити.',
     fillConfirm: 'Позначте всі три пункти щоб продовжити.',
     emailLabel: 'Надіслати на пошту',
@@ -300,6 +413,24 @@ const UI: Record<string, Record<string, string>> = {
     emailSending: 'Надсилаємо…',
     emailSent: '✓ Надіслано! Перевірте вхідні.',
     emailError: 'Помилка. Спробуйте ще раз.',
+    filesReady: 'Файли готові',
+    enNotice: 'Всі файли англійською відповідно до вимог USCIS.',
+    file1Label: 'Чернетка перекладу',
+    file1Note: 'HTML · друк/PDF',
+    file2Label: 'Підтвердження перекладача',
+    file2Note: 'HTML · підписати вручну ⚠',
+    file3Label: 'Контрольний список',
+    file3Note: 'HTML',
+    file4Label: 'Інструкції з подання',
+    file4Note: 'HTML',
+    dlAll: 'Завантажити всі файли',
+    reviewAsk: 'Ця чернетка вам допомогла?',
+    reviewBtn: 'Залишити відгук',
+    priceBadge: 'Запланована ціна після запуску:',
+    wyg1: 'Чернетка перекладу (HTML, друкується)',
+    wyg2: 'Шаблон підтвердження перекладача',
+    wyg3: 'Контрольний список для USCIS',
+    wyg4: 'Інструкції з подання',
   },
   ru: {
     popular: 'Популярные документы',
@@ -332,24 +463,25 @@ const UI: Record<string, Record<string, string>> = {
     reviewTitle: 'Проверьте введённые данные',
     reviewHint: 'Убедитесь, что все значения верны перед загрузкой.',
     confirmTitle: 'Подтвердите перед загрузкой',
-    confirm1: 'Я ввёл(а) поля из оригинального документа — не по памяти.',
-    confirm2: 'Я понимаю, что это черновик. Я самостоятельно заполню блок подтверждения и подпишу.',
-    confirm3: 'Я понимаю, что Messenginfo не заверяет переводы. Я являюсь переводчиком по записи.',
-    disclaimer: '⚠ Только черновик. Messenginfo не заверяет переводы. Вы самостоятельно проверяете, заполняете блок подтверждения и подписываете перед подачей в USCIS (8 CFR 103.2(b)(3)).',
+    confirm1: 'Я являюсь законным владельцем или уполномоченным представителем',
+    confirm2: 'Данные проверены и соответствуют оригиналу',
+    confirm3: 'Я понимаю, что это черновик, а не нотариально заверенный перевод',
+    disclaimer: 'Этот черновик предоставляется для самостоятельного заполнения форм USCIS. Сервис не является юридической консультацией, адвокатом или иммиграционным консультантом. USCIS обычно требует полный перевод на английский с подписанным подтверждением переводчика.',
     paymentTitle: 'Оформление заказа',
-    paymentDisabled: 'Оплата временно отключена в этом прототипе.',
-    paymentPrice: 'Плановая цена после запуска: $15 / документ.',
-    paymentContinue: 'Продолжить без оплаты (тестовый режим)',
+    paymentDisabled: 'Оплата временно отключена. Сервис в тестовом режиме — скачайте бесплатно.',
+    paymentPrice: 'Запланированная цена после запуска: $15 / документ.',
+    paymentContinue: 'Продолжить тест без оплаты',
     download: 'Скачать черновик перевода (.html)',
     downloaded: '✓ Загрузка началась.',
     downloadedHint: 'Откройте в браузере → Файл → Печать → Сохранить как PDF. Подпишите блок подтверждения от руки.',
     downloadAgain: 'Скачать ещё раз',
-    anotherDoc: '← Перевести другой документ',
-    certWarn: 'Без подписанного шаблона подтверждения USCIS может отклонить ваш перевод.',
-    next1: 'Распечатайте все файлы',
-    next2: 'Подпишите шаблон подтверждения — от руки',
-    next3: 'Вложите подписанный шаблон вместе с черновиком и оригиналом',
-    next4: 'Отправьте пакет документов в USCIS',
+    anotherDoc: '+ Ещё один документ',
+    certWarn: 'Без подписанного Шаблона подтверждения перевод могут не принять в USCIS.',
+    next1: 'Распечатайте все 4 файла',
+    next2: 'Подпишите Шаблон подтверждения — от руки',
+    next3: 'Вложите подписанный шаблон с черновиком и оригиналом',
+    next4: 'Отправьте пакет в USCIS',
+    nextTitle: 'Что делать дальше:',
     fillRequired: 'Заполните все обязательные поля (*) для продолжения.',
     fillConfirm: 'Отметьте все три пункта для продолжения.',
     emailLabel: 'Отправить на почту',
@@ -358,6 +490,24 @@ const UI: Record<string, Record<string, string>> = {
     emailSending: 'Отправляем…',
     emailSent: '✓ Отправлено! Проверьте входящие.',
     emailError: 'Ошибка. Попробуйте ещё раз.',
+    filesReady: 'Файлы готовы',
+    enNotice: 'Все файлы на английском согласно требованиям USCIS.',
+    file1Label: 'Черновик перевода',
+    file1Note: 'HTML · печать/PDF',
+    file2Label: 'Подтверждение переводчика',
+    file2Note: 'HTML · подписать вручную ⚠',
+    file3Label: 'Контрольный список',
+    file3Note: 'HTML',
+    file4Label: 'Инструкции по подаче',
+    file4Note: 'HTML',
+    dlAll: 'Скачать все файлы',
+    reviewAsk: 'Этот черновик вам помог?',
+    reviewBtn: 'Оставить отзыв',
+    priceBadge: 'Запланированная цена после запуска:',
+    wyg1: 'Черновик перевода (HTML, для печати)',
+    wyg2: 'Шаблон подтверждения переводчика',
+    wyg3: 'Контрольный список для USCIS',
+    wyg4: 'Инструкции по подаче',
   },
   es: {
     popular: 'Documentos populares',
@@ -390,24 +540,25 @@ const UI: Record<string, Record<string, string>> = {
     reviewTitle: 'Revise sus entradas',
     reviewHint: 'Verifique que todos los valores sean correctos antes de descargar.',
     confirmTitle: 'Confirmar antes de descargar',
-    confirm1: 'Ingresé los campos de mi documento real — no de memoria.',
-    confirm2: 'Entiendo que esto es un borrador. Completaré el bloque de certificación y lo firmaré yo mismo.',
-    confirm3: 'Entiendo que Messenginfo no certifica traducciones. Yo soy el traductor de registro.',
-    disclaimer: '⚠ Solo borrador. Messenginfo no certifica traducciones. Usted revisa, completa el bloque de certificación y lo firma antes de presentar a USCIS (8 CFR 103.2(b)(3)).',
+    confirm1: 'Soy el propietario legal o representante autorizado de este documento',
+    confirm2: 'Los datos han sido verificados y coinciden con el original',
+    confirm3: 'Entiendo que esto es un borrador, no una traducción notariada',
+    disclaimer: 'Este borrador se proporciona para el llenado de formularios USCIS por cuenta propia. Este servicio no es asesoramiento legal, abogado o consultor de inmigración. USCIS generalmente requiere una traducción completa al inglés con una declaración firmada del traductor.',
     paymentTitle: 'Complete su pedido',
-    paymentDisabled: 'El pago está actualmente deshabilitado en este prototipo.',
+    paymentDisabled: 'Pago desactivado. Servicio en modo de prueba — descargue gratis.',
     paymentPrice: 'Precio planificado después del lanzamiento: $15 / documento.',
-    paymentContinue: 'Continuar sin pago (modo de prueba)',
+    paymentContinue: 'Continuar prueba sin pago',
     download: 'Descargar borrador de traducción (.html)',
     downloaded: '✓ Descarga iniciada.',
     downloadedHint: 'Abra en el navegador → Archivo → Imprimir → Guardar como PDF. Firme el bloque de certificación a mano.',
     downloadAgain: 'Descargar de nuevo',
-    anotherDoc: '← Traducir otro documento',
-    certWarn: 'Sin una plantilla de certificación firmada, USCIS puede rechazar su traducción.',
-    next1: 'Imprima todos los archivos',
-    next2: 'Firme la plantilla de certificación — firma manuscrita requerida',
+    anotherDoc: '+ Otro documento',
+    certWarn: 'Sin una Plantilla de certificación firmada, USCIS puede rechazar su traducción.',
+    next1: 'Imprima los 4 archivos',
+    next2: 'Firme la Plantilla de certificación — firma manuscrita requerida',
     next3: 'Incluya la plantilla firmada con el borrador y el documento original',
     next4: 'Envíe el paquete completo a USCIS',
+    nextTitle: 'Qué hacer a continuación:',
     fillRequired: 'Complete todos los campos obligatorios (*) para continuar.',
     fillConfirm: 'Marque las tres casillas para continuar.',
     emailLabel: 'Enviar a su correo',
@@ -416,6 +567,24 @@ const UI: Record<string, Record<string, string>> = {
     emailSending: 'Enviando…',
     emailSent: '✓ ¡Enviado! Revise su bandeja de entrada.',
     emailError: 'Error al enviar. Inténtelo de nuevo.',
+    filesReady: 'Archivos listos',
+    enNotice: 'Todos los archivos están en inglés según los requisitos de USCIS.',
+    file1Label: 'Borrador de traducción',
+    file1Note: 'HTML · imprimir/PDF',
+    file2Label: 'Certificación del traductor',
+    file2Note: 'HTML · firmar a mano ⚠',
+    file3Label: 'Lista de verificación',
+    file3Note: 'HTML',
+    file4Label: 'Instrucciones de presentación',
+    file4Note: 'HTML',
+    dlAll: 'Descargar todos los archivos',
+    reviewAsk: '¿Le ayudó este borrador?',
+    reviewBtn: 'Dejar una reseña',
+    priceBadge: 'Precio planificado después del lanzamiento:',
+    wyg1: 'Borrador de traducción (HTML, imprimible)',
+    wyg2: 'Plantilla de certificación del traductor',
+    wyg3: 'Lista de verificación para USCIS',
+    wyg4: 'Instrucciones de presentación',
   },
 }
 
@@ -427,6 +596,102 @@ function t(locale: string, key: string): string {
 
 function origLabel(field: FieldDef, srcLang: string): string {
   return field.orig[srcLang] ?? field.orig.en ?? field.en
+}
+
+// ─── 4-file generator (matches prototype output) ──────────────────────────────
+
+function generateTranslationFiles(
+  doc: DocDef,
+  fieldValues: Record<string, string>,
+  srcLang: SourceLang,
+): [string, string, string, string] {
+  const now = new Date().toLocaleDateString('en-US')
+  const allLangs = [...LANGS_TOP3, ...LANGS_MORE]
+  const srcLangLabel = allLangs.find((l) => l.id === srcLang)?.label ?? srcLang
+  const docLabelEn = doc.label.en ?? doc.label.uk ?? doc.id
+
+  const rows = doc.fields.map((f) => {
+    const v = fieldValues[f.key] || ''
+    const oLabel = f.orig[srcLang] ?? f.orig.en ?? f.en
+    return `<tr>
+      <td style="padding:6px 12px;border:1px solid #ddd;background:#f9f9f9;color:#555">${oLabel}</td>
+      <td style="padding:6px 12px;border:1px solid #ddd;background:#f9f9f9;font-weight:600">${v || '—'}</td>
+      <td style="padding:6px 12px;border:1px solid #ddd;color:#555">${f.en}</td>
+      <td style="padding:6px 12px;border:1px solid #ddd;font-weight:700">${v || '—'}</td>
+    </tr>`
+  }).join('')
+
+  const file1 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Translation Draft — ${docLabelEn}</title>
+<style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#111}h1{font-size:20px;margin-bottom:6px}table{border-collapse:collapse;width:100%;margin-top:16px}th{background:#1e40af;color:#fff;padding:8px 12px;text-align:left;font-size:13px}td{font-size:13px}@media print{body{margin:0;padding:10px}}</style>
+</head><body>
+<h1>TRANSLATION DRAFT — ${docLabelEn.toUpperCase()}</h1>
+<p style="font-size:13px;color:#555"><strong>Source language:</strong> ${srcLangLabel} &nbsp;|&nbsp; <strong>Target:</strong> English &nbsp;|&nbsp; <strong>Prepared:</strong> ${now}</p>
+<p style="font-size:12px;background:#fef3c7;border:1px solid #f59e0b;padding:8px 12px;border-radius:4px">⚠ This is a self-prepared translation draft for USCIS filing. A signed certification statement must accompany this document.</p>
+<table><thead><tr><th>Field (${srcLangLabel})</th><th>${srcLangLabel} Value</th><th>Field (English)</th><th>English Value</th></tr></thead><tbody>${rows}</tbody></table>
+<p style="font-size:11px;color:#999;margin-top:20px">Generated by Messenginfo.com — self-help USCIS translation tool</p>
+</body></html>`
+
+  const applicantName = (fieldValues['full_name'] ?? fieldValues['child_name'] ?? '').trim()
+
+  const file2 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Translator Certification</title>
+<style>body{font-family:Arial,sans-serif;max-width:750px;margin:40px auto;padding:20px;line-height:1.8;color:#111}h1{font-size:18px}.sig-line{border-top:2px solid #000;margin-top:44px;width:320px;padding-top:6px;font-size:12px;color:#555}@media print{body{margin:0;padding:10px}}</style>
+</head><body>
+<h1>TRANSLATOR CERTIFICATION STATEMENT</h1>
+<p>I, the undersigned, hereby certify that I am competent to translate from <strong>${srcLangLabel}</strong> into <strong>English</strong>, and that the attached translation of the <strong>${docLabelEn}</strong> is accurate and complete to the best of my knowledge and ability.</p>
+<p>I understand that any false statements made herein are punishable by law (18 U.S.C. § 1001).</p>
+<p><strong>Document type:</strong> ${docLabelEn}<br>
+<strong>Applicant:</strong> ${applicantName || '___________________________'}<br>
+<strong>Date of certification:</strong> ${now}</p>
+<div class="sig-line">Translator's Signature (HANDWRITTEN — do not type)</div>
+<p style="margin-top:14px">Printed name: ___________________________<br>Date: ___________________________<br>Phone or email: ___________________________</p>
+<p style="font-size:12px;color:#777;margin-top:28px;border-top:1px solid #eee;padding-top:10px">Per 8 CFR 103.2(b)(3) — USCIS generally requires a complete English translation with a signed translator certification statement. This service is not an attorney, notary, or immigration consultant.</p>
+</body></html>`
+
+  const file3 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>USCIS Filing Checklist</title>
+<style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;color:#111}h1{font-size:18px}.item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #eee;align-items:flex-start}.box{width:20px;height:20px;border:2px solid #333;flex-shrink:0;border-radius:3px;margin-top:1px}@media print{body{margin:0;padding:10px}}</style>
+</head><body>
+<h1>USCIS FILING CHECKLIST — ${docLabelEn.toUpperCase()}</h1>
+<p style="font-size:13px;color:#555">Date: ${now}</p>
+<div class="item"><div class="box"></div><div>Translation draft — printed, legible, all fields visible</div></div>
+<div class="item"><div class="box"></div><div><strong>Certification statement — SIGNED BY HAND</strong> (date + printed name required)</div></div>
+<div class="item"><div class="box"></div><div>Copy of original document attached (front and back if applicable)</div></div>
+<div class="item"><div class="box"></div><div>Original document not cropped — all edges and text visible</div></div>
+<div class="item"><div class="box"></div><div>All required fields on the main USCIS form completed</div></div>
+<div class="item"><div class="box"></div><div>Correct USCIS filing fee included (check or money order payable to "U.S. Department of Homeland Security")</div></div>
+<div class="item"><div class="box"></div><div>Return envelope or correct mailing address verified at uscis.gov/forms</div></div>
+<p style="font-size:12px;color:#888;margin-top:20px;padding-top:12px;border-top:1px solid #eee">Translation templates built from official USCIS guidance. If USCIS requests corrections to the template format itself, report at messenginfo.com.</p>
+</body></html>`
+
+  const file4 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Filing Instructions</title>
+<style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;line-height:1.8;color:#111}h1{font-size:18px}h2{font-size:15px;color:#1e40af;margin-top:24px;border-bottom:2px solid #e0e7ff;padding-bottom:4px}@media print{body{margin:0;padding:10px}}</style>
+</head><body>
+<h1>FILING INSTRUCTIONS — ${docLabelEn.toUpperCase()}</h1>
+<p style="font-size:13px;color:#555">Prepared: ${now}</p>
+<h2>Step 1 — Print all files</h2>
+<p>Print all 4 documents on white paper, black ink, at 100% scale. Do not scale to fit — USCIS may reject reduced-size documents.</p>
+<h2>Step 2 — Sign the certification statement</h2>
+<p><strong>Handwrite</strong> your signature on the Translator Certification page. Add your printed name, the date, and your contact information. Electronic signatures are not accepted by USCIS.</p>
+<h2>Step 3 — Assemble the packet</h2>
+<p>Order: (1) Signed certification → (2) Translation draft → (3) Copy of original ${docLabelEn}. Paperclip or staple supporting document groups separately — do not staple to the main USCIS form.</p>
+<h2>Step 4 — Mail to USCIS</h2>
+<p>Use USPS Priority Mail with tracking. Always verify the current USCIS lockbox address at <strong>uscis.gov/forms</strong> before mailing — addresses change by state and form type. Keep your tracking number.</p>
+<h2>Template correction policy</h2>
+<p>Translation templates are built from official USCIS guidance (8 CFR 103.2(b)(3)). If a USCIS officer returns your translation requesting corrections to the <em>template format itself</em> — not your personal data — report it at messenginfo.com.</p>
+</body></html>`
+
+  return [file1, file2, file3, file4]
+}
+
+function downloadHtmlFile(html: string, filename: string) {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 // ─── Step indicator (6 steps) ─────────────────────────────────────────────────
@@ -515,6 +780,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
   const [checks, setChecks] = useState([false, false, false])
   const [downloaded, setDownloaded] = useState(false)
+  const [generatedFiles, setGeneratedFiles] = useState<string[]>([])
   const [helpOpen, setHelpOpen] = useState<string | null>(null)
   const [emailInput, setEmailInput] = useState('')
   const [emailSending, setEmailSending] = useState(false)
@@ -570,8 +836,21 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function handleDownload() {
     if (!doc) return
-    downloadTranslationTemplate(doc.prodId as any, fieldValues, srcLang)
+    const files = generateTranslationFiles(doc, fieldValues, srcLang)
+    setGeneratedFiles(Array.from(files))
+    // Download all 4 with stagger
+    const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
+    files.forEach((html, i) => {
+      setTimeout(() => downloadHtmlFile(html, `${names[i]}.html`), i * 350)
+    })
     setDownloaded(true)
+  }
+
+  function handleDownloadSingle(idx: number) {
+    const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
+    const files = generatedFiles.length === 4 ? generatedFiles : (doc ? Array.from(generateTranslationFiles(doc, fieldValues, srcLang)) : [])
+    if (!files[idx]) return
+    downloadHtmlFile(files[idx], `${names[idx]}.html`)
   }
 
   async function handleSendEmail() {
@@ -978,25 +1257,34 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
           {!downloaded ? (
             <>
-              {/* Order summary */}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[13px] text-[var(--text-2)] mb-0.5">
-                    {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'}
-                    {' '}→ EN
-                  </p>
-                  <p className="text-[15px] font-bold text-[var(--text-1)]">{doc?.label[locale] ?? doc?.label.en}</p>
+              {/* Price card */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[13px] text-[var(--text-2)] mb-0.5">
+                      {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'}
+                      {' '}→ EN · {doc?.label[locale] ?? doc?.label.en}
+                    </p>
+                    <p className="text-[11px] text-[var(--text-3)]">{ui.priceBadge} $15</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[13px] text-[var(--text-2)] line-through">$15.00</p>
+                    <p className="text-[16px] font-bold text-green-600">FREE</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[13px] text-[var(--text-2)] line-through">$15.00</p>
-                  <p className="text-[15px] font-bold text-green-600">FREE</p>
+                <div className="flex flex-col gap-1.5">
+                  {([ui.wyg1, ui.wyg2, ui.wyg3, ui.wyg4] as string[]).map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[13px] text-[var(--text-2)]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14" className="text-green-500 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
+                      {item}
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Payment disabled banner */}
-              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-4 mb-5">
-                <p className="text-[14px] font-bold text-amber-800">🚧 {ui.paymentDisabled}</p>
-                <p className="mt-1 text-[13px] text-amber-700">{ui.paymentPrice}</p>
+              {/* Test mode banner */}
+              <div className="rounded-xl bg-[var(--surface-2)] border border-[var(--border)] px-4 py-3 mb-4">
+                <p className="text-[13px] text-[var(--text-2)]">🧪 {ui.paymentDisabled}</p>
               </div>
 
               <button type="button" onClick={handleDownload}
@@ -1007,68 +1295,78 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             </>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-                <p className="text-sm font-bold text-green-800">{ui.downloaded}</p>
-                <p className="mt-1 text-sm text-green-700">{ui.downloadedHint}</p>
-              </div>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-2">⚠ {ui.certWarn}</p>
-                <ol className="text-sm text-amber-800 flex flex-col gap-1.5 list-decimal list-inside">
-                  <li>{ui.next1}</li>
-                  <li>{ui.next2}</li>
-                  <li>{ui.next3}</li>
-                  <li>{ui.next4}</li>
-                </ol>
-              </div>
-              {/* Email delivery block */}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <p className="text-[13px] font-semibold text-[var(--text-1)] mb-3">
-                  📧 {ui.emailLabel}
-                </p>
-                {emailSent ? (
-                  <p className="text-sm font-semibold text-green-700">{ui.emailSent}</p>
-                ) : (
-                  <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-                    <input
-                      type="email"
-                      value={emailInput}
-                      onChange={(e) => { setEmailInput(e.target.value); setEmailError(null) }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleSendEmail() }}
-                      placeholder={ui.emailPlaceholder}
-                      className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={emailSending}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSendEmail}
-                      disabled={emailSending || !emailInput.trim()}
-                      className="flex-shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
-                    >
-                      {emailSending ? ui.emailSending : ui.emailBtn}
-                    </button>
-                  </div>
-                )}
-                {emailError && (
-                  <p className="mt-2 text-xs text-red-600">{emailError}</p>
-                )}
+              {/* Success header */}
+              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center">
+                <p className="text-[15px] font-bold text-green-800">✅ {ui.filesReady}</p>
               </div>
 
+              {/* USCIS English notice */}
+              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-[12px] text-blue-700 text-center">
+                {ui.enNotice}
+              </div>
+
+              {/* 4 file items */}
+              <div className="flex flex-col gap-2">
+                {[
+                  { label: ui.file1Label, note: ui.file1Note, warn: false },
+                  { label: ui.file2Label, note: ui.file2Note, warn: true },
+                  { label: ui.file3Label, note: ui.file3Note, warn: false },
+                  { label: ui.file4Label, note: ui.file4Note, warn: false },
+                ].map((f, i) => (
+                  <button key={i} type="button" onClick={() => handleDownloadSingle(i)}
+                    className={`flex items-center gap-3 w-full rounded-xl border px-4 py-3 text-left transition-all hover:shadow-sm active:scale-[.98]
+                      ${f.warn ? 'border-amber-300 bg-amber-50 hover:bg-amber-100' : 'border-[var(--border)] bg-[var(--surface-2)] hover:bg-[var(--surface-1)]'}`}>
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${f.warn ? 'bg-amber-200 text-amber-800' : 'bg-blue-100 text-blue-700'}`}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[14px] font-bold ${f.warn ? 'text-amber-800' : 'text-[var(--text-1)]'}`}>{f.label}</p>
+                      <p className={`text-[12px] ${f.warn ? 'text-amber-600' : 'text-[var(--text-2)]'}`}>{f.note}</p>
+                    </div>
+                    <div className={`shrink-0 ${f.warn ? 'text-amber-600' : 'text-blue-500'}`}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Download all */}
+              <button type="button" onClick={handleDownload}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-blue-600 text-blue-600 px-5 py-2.5 text-[14px] font-bold hover:bg-blue-50 transition-colors">
+                <Download className="h-4 w-4" />{ui.dlAll}
+              </button>
+
+              {/* Next steps */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+                <p className="text-[13px] font-bold text-[var(--text-1)] mb-3">{ui.nextTitle}</p>
+                <div className="flex flex-col gap-2">
+                  {[ui.next1, ui.next2, ui.next3, ui.next4].map((step, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</div>
+                      <p className="text-[13px] text-[var(--text-2)] leading-relaxed pt-0.5">{step}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cert warning */}
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p className="text-[13px] font-bold text-amber-800">⚠ {ui.certWarn}</p>
+              </div>
+
+              {/* Actions */}
               <div className="flex gap-3 flex-wrap">
-                <button type="button" onClick={handleDownload}
-                  className="inline-flex items-center gap-2 rounded-xl border border-blue-300 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors">
-                  <Download className="h-4 w-4" />{ui.downloadAgain}
-                </button>
                 <button type="button" onClick={reset}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors">
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-1)] transition-colors">
                   {ui.anotherDoc}
                 </button>
+                {returnUrl && returnLabel && (
+                  <a href={returnUrl}
+                    className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors">
+                    <ArrowLeft className="h-4 w-4" />{returnLabel}
+                  </a>
+                )}
               </div>
-              {returnUrl && returnLabel && (
-                <a href={returnUrl}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900 transition-colors">
-                  <ArrowLeft className="h-4 w-4" />{returnLabel}
-                </a>
-              )}
             </div>
           )}
         </div>

@@ -531,7 +531,7 @@
     "disclaimer": {
       "title": "Aviso legal",
       "alert": "Messenginfo no es un bufete de abogados y no brinda asesoría legal.",
-      "notice": "Pendiente de revisión legal por un abogado autorizado.",
+      "notice": "Última actualización: 29 de abril de 2026. Para preguntas sobre su situación específica, consulte a un abogado de inmigración autorizado.",
       "backHome": "← Volver al inicio",
       "lastReviewed": "29 de abril de 2026",
       "sections": [
@@ -564,12 +564,17 @@
           "id": "provisional-data",
           "title": "Información provisional",
           "body": "Las tarifas de formularios, fechas de edición e información de políticas se etiquetan como provisionales hasta que se verifiquen con fuentes oficiales en los últimos 30 días. Siempre consulte uscis.gov para obtener información actual."
+        },
+        {
+          "id": "california-notice",
+          "title": "Aviso para residentes de California (California Immigration Consultants Act)",
+          "body": "Messenginfo es un servicio de tecnología e información, no un consultor de inmigración según lo definido en California Business & Professions Code §22440 y siguientes. Messenginfo no prepara ni presenta solicitudes de inmigración en nombre de los usuarios, no representa a clientes ante agencias gubernamentales y no brinda asesoría legal individualizada. Los usuarios preparan y presentan sus propios documentos. Si necesita asistencia migratoria individualizada en California, consulte a un abogado de inmigración con licencia (State Bar of California, calbar.ca.gov) o un representante acreditado por el DOJ (justice.gov/eoir)."
         }
       ]
     },
     "terms": {
       "title": "Términos de servicio",
-      "notice": "Pendiente de revisión legal por un abogado autorizado.",
+      "notice": "Última actualización: 29 de abril de 2026. Para preguntas sobre su situación específica, consulte a un abogado de inmigración autorizado.",
       "backHome": "← Volver al inicio",
       "lastReviewed": "29 de abril de 2026",
       "sections": [
@@ -652,7 +657,7 @@
     },
     "privacy": {
       "title": "Política de privacidad",
-      "notice": "Pendiente de revisión legal por un abogado autorizado.",
+      "notice": "Última actualización: 29 de abril de 2026. Para preguntas sobre su situación específica, consulte a un abogado de inmigración autorizado.",
       "backHome": "← Volver al inicio",
       "lastReviewed": "29 de abril de 2026",
       "sections": [
