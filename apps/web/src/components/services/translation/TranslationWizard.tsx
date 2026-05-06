@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Download, ChevronRight } from 'lucide-react'
-import { downloadTranslationTemplate } from '@/lib/translation/generateTranslationHTML'
+import { downloadTranslationTemplate, hasCyrillic, transliterateCyrillic } from '@/lib/translation/generateTranslationHTML'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +46,7 @@ const LANGS_TOP3: { id: SourceLang; label: string; flag: string }[] = [
   { id: 'es', label: 'Español', flag: '🇪🇸' },
 ]
 const LANGS_MORE: { id: SourceLang; label: string; flag: string }[] = [
+  { id: 'en', label: 'English', flag: '🇺🇸' },
   { id: 'pl', label: 'Polski', flag: '🇵🇱' },
   { id: 'de', label: 'Deutsch', flag: '🇩🇪' },
   { id: 'fr', label: 'Français', flag: '🇫🇷' },
@@ -54,6 +55,44 @@ const LANGS_MORE: { id: SourceLang; label: string; flag: string }[] = [
   { id: 'ko', label: '한국어', flag: '🇰🇷' },
   { id: 'pt', label: 'Português', flag: '🇧🇷' },
 ]
+
+// Target language options (for the "Translate TO" selector)
+const LANGS_TARGET_TOP: { id: SourceLang; label: string; flag: string }[] = [
+  { id: 'en', label: 'English', flag: '🇺🇸' },
+  { id: 'uk', label: 'Українська', flag: '🇺🇦' },
+  { id: 'ru', label: 'Русский', flag: '🇷🇺' },
+]
+const LANGS_TARGET_MORE: { id: SourceLang; label: string; flag: string }[] = [
+  { id: 'es', label: 'Español', flag: '🇪🇸' },
+  { id: 'pl', label: 'Polski', flag: '🇵🇱' },
+  { id: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { id: 'fr', label: 'Français', flag: '🇫🇷' },
+  { id: 'ko', label: '한국어', flag: '🇰🇷' },
+  { id: 'zh', label: '中文', flag: '🇨🇳' },
+  { id: 'pt', label: 'Português', flag: '🇧🇷' },
+]
+
+// Certification statement template in the target language.
+// Used in file2 (self-certification) and file1 (translation draft header).
+function getCertStatement(
+  srcLabel: string,
+  targetLabel: string,
+  docLabel: string,
+  lang: SourceLang,
+): string {
+  const s: Partial<Record<SourceLang, string>> = {
+    en: `I, the undersigned, hereby certify that I am competent to translate from <strong>${srcLabel}</strong> into <strong>${targetLabel}</strong>, and that the attached translation of the <strong>${docLabel}</strong> is accurate and complete to the best of my knowledge and ability.`,
+    uk: `Я, нижчепідписаний(-а), засвідчую, що маю достатні знання для перекладу з <strong>${srcLabel}</strong> на <strong>${targetLabel}</strong>, і що наданий переклад документа «<strong>${docLabel}</strong>» є повним та точним відповідно до моїх знань та можливостей.`,
+    ru: `Я, нижеподписавшийся(-аяся), настоящим удостоверяю, что обладаю достаточными знаниями для перевода с <strong>${srcLabel}</strong> на <strong>${targetLabel}</strong>, и что данный перевод документа «<strong>${docLabel}</strong>» является полным и точным в меру моих знаний и способностей.`,
+    es: `Yo, el/la abajo firmante, certifico que soy competente para traducir del <strong>${srcLabel}</strong> al <strong>${targetLabel}</strong>, y que la presente traducción del documento <strong>${docLabel}</strong> es completa y exacta.`,
+    de: `Ich, der/die Unterzeichnete, bezeuge, dass ich befähigt bin, von <strong>${srcLabel}</strong> ins <strong>${targetLabel}</strong> zu übersetzen, und dass die vorliegende Übersetzung des Dokuments <strong>${docLabel}</strong> vollständig und korrekt ist.`,
+    fr: `Je, soussigné(e), certifie être compétent(e) pour traduire du <strong>${srcLabel}</strong> vers le <strong>${targetLabel}</strong>, et que la traduction ci-jointe du document <strong>${docLabel}</strong> est complète et exacte.`,
+    ko: `본인은 <strong>${srcLabel}</strong>에서 <strong>${targetLabel}</strong>으로 번역할 능력이 있으며, <strong>${docLabel}</strong> 문서의 번역이 본인의 능력 범위 내에서 정확하고 완전함을 증명합니다.`,
+    zh: `本人特此证明具有将<strong>${srcLabel}</strong>翻译成<strong>${targetLabel}</strong>的能力，所附<strong>${docLabel}</strong>文件的翻译在本人知识范围内准确完整。`,
+    pl: `Ja, niżej podpisany(-a), niniejszym poświadczam, że jestem kompetentny(-a) do tłumaczenia z języka <strong>${srcLabel}</strong> na język <strong>${targetLabel}</strong>, oraz że dołączone tłumaczenie dokumentu <strong>${docLabel}</strong> jest pełne i dokładne.`,
+  }
+  return s[lang] ?? s.en!
+}
 
 // ─── Document definitions ─────────────────────────────────────────────────────
 
@@ -613,31 +652,45 @@ function generateTranslationFiles(
   doc: DocDef,
   fieldValues: Record<string, string>,
   srcLang: SourceLang,
+  targetLang: SourceLang = 'en',
 ): [string, string, string, string] {
   const now = new Date().toLocaleDateString('en-US')
-  const allLangs = [...LANGS_TOP3, ...LANGS_MORE]
+  const allLangs = [...LANGS_TOP3, ...LANGS_MORE, ...LANGS_TARGET_TOP, ...LANGS_TARGET_MORE]
   const srcLangLabel = allLangs.find((l) => l.id === srcLang)?.label ?? srcLang
-  const docLabelEn = doc.label.en ?? doc.label.uk ?? doc.id
+  const targetLangLabel = allLangs.find((l) => l.id === targetLang)?.label ?? targetLang
+
+  // Document title in target language; fall back to English
+  const docLabelTarget = (doc.label as Record<string, string>)[targetLang] ?? doc.label.en ?? doc.id
+  const docLabelSrc = (doc.label as Record<string, string>)[srcLang] ?? doc.label.en ?? doc.id
 
   const rows = doc.fields.map((f) => {
     const v = fieldValues[f.key] || ''
-    const oLabel = f.orig[srcLang] ?? f.orig.en ?? f.en
+    // Field label in the source language (as it appears on the original document)
+    const srcLabel = (f.orig as Record<string, string>)[srcLang] ?? f.orig.en ?? f.en
+    // Field label in the target language (for the translated output column)
+    const tgtLabel = (f.orig as Record<string, string>)[targetLang] ?? f.orig.en ?? f.en
+    // Value in target language: transliterate Cyrillic → Latin only when target is English
+    const tgtValue = (targetLang === 'en' && v && hasCyrillic(v))
+      ? transliterateCyrillic(v)
+      : v
     return `<tr>
-      <td style="padding:6px 12px;border:1px solid #ddd;background:#f9f9f9;color:#555">${oLabel}</td>
+      <td style="padding:6px 12px;border:1px solid #ddd;background:#f9f9f9;color:#555">${srcLabel}</td>
       <td style="padding:6px 12px;border:1px solid #ddd;background:#f9f9f9;font-weight:600">${v || '—'}</td>
-      <td style="padding:6px 12px;border:1px solid #ddd;color:#555">${f.en}</td>
-      <td style="padding:6px 12px;border:1px solid #ddd;font-weight:700">${v || '—'}</td>
+      <td style="padding:6px 12px;border:1px solid #ddd;color:#555">${tgtLabel}</td>
+      <td style="padding:6px 12px;border:1px solid #ddd;font-weight:700">${tgtValue || '—'}</td>
     </tr>`
   }).join('')
 
-  const file1 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Translation Draft — ${docLabelEn}</title>
+  const certStatement = getCertStatement(srcLangLabel, targetLangLabel, docLabelTarget, targetLang)
+
+  const file1 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Translation Draft — ${docLabelTarget}</title>
 <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#111}h1{font-size:20px;margin-bottom:6px}table{border-collapse:collapse;width:100%;margin-top:16px}th{background:#1e40af;color:#fff;padding:8px 12px;text-align:left;font-size:13px}td{font-size:13px}@media print{body{margin:0;padding:10px}}</style>
 </head><body>
-<h1>TRANSLATION DRAFT — ${docLabelEn.toUpperCase()}</h1>
-<p style="font-size:13px;color:#555"><strong>Source language:</strong> ${srcLangLabel} &nbsp;|&nbsp; <strong>Target:</strong> English &nbsp;|&nbsp; <strong>Prepared:</strong> ${now}</p>
-<p style="font-size:12px;background:#fef3c7;border:1px solid #f59e0b;padding:8px 12px;border-radius:4px">⚠ This is a self-prepared translation draft for USCIS filing. A signed certification statement must accompany this document.</p>
-<table><thead><tr><th>Field (${srcLangLabel})</th><th>${srcLangLabel} Value</th><th>Field (English)</th><th>English Value</th></tr></thead><tbody>${rows}</tbody></table>
-<p style="font-size:11px;color:#999;margin-top:20px">Generated by Messenginfo.com — self-help USCIS translation tool</p>
+<h1>TRANSLATION DRAFT — ${docLabelTarget.toUpperCase()}</h1>
+<p style="font-size:13px;color:#555"><strong>Source:</strong> ${srcLangLabel} (${docLabelSrc}) &nbsp;→&nbsp; <strong>Target:</strong> ${targetLangLabel} (${docLabelTarget}) &nbsp;|&nbsp; <strong>Prepared:</strong> ${now}</p>
+<p style="font-size:12px;background:#fef3c7;border:1px solid #f59e0b;padding:8px 12px;border-radius:4px">⚠ Self-prepared translation draft. A signed certification statement must accompany this document.</p>
+<table><thead><tr><th>Field (${srcLangLabel})</th><th>${srcLangLabel} Value</th><th>Field (${targetLangLabel})</th><th>${targetLangLabel} Value</th></tr></thead><tbody>${rows}</tbody></table>
+<p style="font-size:11px;color:#999;margin-top:20px">Generated by Messenginfo.com</p>
 </body></html>`
 
   const applicantName = (fieldValues['full_name'] ?? fieldValues['child_name'] ?? '').trim()
@@ -646,20 +699,20 @@ function generateTranslationFiles(
 <style>body{font-family:Arial,sans-serif;max-width:750px;margin:40px auto;padding:20px;line-height:1.8;color:#111}h1{font-size:18px}.sig-line{border-top:2px solid #000;margin-top:44px;width:320px;padding-top:6px;font-size:12px;color:#555}@media print{body{margin:0;padding:10px}}</style>
 </head><body>
 <h1>TRANSLATOR SELF-CERTIFICATION STATEMENT</h1>
-<p>I, the undersigned, hereby certify that I am competent to translate from <strong>${srcLangLabel}</strong> into <strong>English</strong>, and that the attached translation of the <strong>${docLabelEn}</strong> is accurate and complete to the best of my knowledge and ability.</p>
+<p>${certStatement}</p>
 <p>I understand that any false statements made herein are punishable by law (18 U.S.C. § 1001).</p>
-<p><strong>Document type:</strong> ${docLabelEn}<br>
+<p><strong>Document type:</strong> ${docLabelTarget}<br>
 <strong>Applicant:</strong> ${applicantName || '___________________________'}<br>
 <strong>Date of certification:</strong> ${now}</p>
 <div class="sig-line">Translator's Signature (HANDWRITTEN — do not type)</div>
 <p style="margin-top:14px">Printed name: ___________________________<br>Date: ___________________________<br>Phone or email: ___________________________</p>
-<p style="font-size:12px;color:#777;margin-top:28px;border-top:1px solid #eee;padding-top:10px">Per 8 CFR 103.2(b)(3) — USCIS generally requires a complete English translation with a signed self-certification statement. This service is not an attorney, notary, or immigration consultant.</p>
+<p style="font-size:12px;color:#777;margin-top:28px;border-top:1px solid #eee;padding-top:10px">Per 8 CFR 103.2(b)(3). This service is not an attorney, notary, or immigration consultant.</p>
 </body></html>`
 
   const file3 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>USCIS Filing Checklist</title>
 <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;color:#111}h1{font-size:18px}.item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #eee;align-items:flex-start}.box{width:20px;height:20px;border:2px solid #333;flex-shrink:0;border-radius:3px;margin-top:1px}@media print{body{margin:0;padding:10px}}</style>
 </head><body>
-<h1>USCIS FILING CHECKLIST — ${docLabelEn.toUpperCase()}</h1>
+<h1>USCIS FILING CHECKLIST — ${docLabelTarget.toUpperCase()}</h1>
 <p style="font-size:13px;color:#555">Date: ${now}</p>
 <div class="item"><div class="box"></div><div>Translation draft — printed, legible, all fields visible</div></div>
 <div class="item"><div class="box"></div><div><strong>Certification statement — SIGNED BY HAND</strong> (date + printed name required)</div></div>
@@ -674,14 +727,14 @@ function generateTranslationFiles(
   const file4 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Filing Instructions</title>
 <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;line-height:1.8;color:#111}h1{font-size:18px}h2{font-size:15px;color:#1e40af;margin-top:24px;border-bottom:2px solid #e0e7ff;padding-bottom:4px}@media print{body{margin:0;padding:10px}}</style>
 </head><body>
-<h1>FILING INSTRUCTIONS — ${docLabelEn.toUpperCase()}</h1>
+<h1>FILING INSTRUCTIONS — ${docLabelTarget.toUpperCase()}</h1>
 <p style="font-size:13px;color:#555">Prepared: ${now}</p>
 <h2>Step 1 — Print all files</h2>
 <p>Print all 4 documents on white paper, black ink, at 100% scale. Do not scale to fit — USCIS may reject reduced-size documents.</p>
 <h2>Step 2 — Sign the certification statement</h2>
 <p><strong>Handwrite</strong> your signature on the Translator Certification page. Add your printed name, the date, and your contact information. Electronic signatures are not accepted by USCIS.</p>
 <h2>Step 3 — Assemble the packet</h2>
-<p>Order: (1) Signed certification → (2) Translation draft → (3) Copy of original ${docLabelEn}. Paperclip or staple supporting document groups separately — do not staple to the main USCIS form.</p>
+<p>Order: (1) Signed certification → (2) Translation draft → (3) Copy of original ${docLabelTarget}. Paperclip or staple supporting document groups separately — do not staple to the main USCIS form.</p>
 <h2>Step 4 — Mail to USCIS</h2>
 <p>Use USPS Priority Mail with tracking. Always verify the current USCIS lockbox address at <strong>uscis.gov/forms</strong> before mailing — addresses change by state and form type. Keep your tracking number.</p>
 <h2>Template correction policy</h2>
@@ -786,7 +839,17 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [step, setStep] = useState(0)
   const [docId, setDocId] = useState<DocId | null>(null)
   const [srcLang, setSrcLang] = useState<SourceLang>('uk')
+  const [targetLang, setTargetLang] = useState<SourceLang>('en')
+  const [showMoreTargetLangs, setShowMoreTargetLangs] = useState(false)
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
+
+  // Smart target: if user picks same as source, flip to the opposite default
+  useEffect(() => {
+    if (srcLang === targetLang) {
+      setTargetLang(srcLang === 'en' ? 'uk' : 'en')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [srcLang])
   const [checks, setChecks] = useState([false, false, false])
   const [downloaded, setDownloaded] = useState(false)
   const [generatedFiles, setGeneratedFiles] = useState<string[]>([])
@@ -845,7 +908,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function handleDownload() {
     if (!doc) return
-    const files = generateTranslationFiles(doc, fieldValues, srcLang)
+    const files = generateTranslationFiles(doc, fieldValues, srcLang, targetLang)
     setGeneratedFiles(Array.from(files))
     // Download all 4 with stagger
     const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
@@ -857,7 +920,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function handleDownloadSingle(idx: number) {
     const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
-    const files = generatedFiles.length === 4 ? generatedFiles : (doc ? Array.from(generateTranslationFiles(doc, fieldValues, srcLang)) : [])
+    const files = generatedFiles.length === 4 ? generatedFiles : (doc ? Array.from(generateTranslationFiles(doc, fieldValues, srcLang, targetLang)) : [])
     if (!files[idx]) return
     downloadHtmlFile(files[idx], `${names[idx]}.html`)
   }
@@ -892,7 +955,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   }
 
   function reset() {
-    setStep(0); setDocId(null); setSrcLang('uk')
+    setStep(0); setDocId(null); setSrcLang('uk'); setTargetLang('en')
     setFieldValues({}); setChecks([false, false, false]); setDownloaded(false)
     setUploadedFile(null); setUploadedPreview(null)
     window.scrollTo(0, 0)
@@ -990,7 +1053,77 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               ))}
             </div>
           )}
+
+          {/* ── Target language ──────────────────────────────────────── */}
+          <div className="mt-6 pt-5 border-t border-[var(--border)]">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">→</span>
+              <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider">
+                {locale === 'uk' ? 'Перекласти на:' : locale === 'ru' ? 'Перевести на:' : 'Translate to:'}
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2.5 mb-3">
+              {LANGS_TARGET_TOP.map((l) => {
+                const isDisabled = l.id === srcLang
+                return (
+                  <button key={l.id} type="button"
+                    onClick={() => !isDisabled && setTargetLang(l.id)}
+                    disabled={isDisabled}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-[1.5px] text-center transition-all
+                      ${isDisabled ? 'opacity-30 cursor-not-allowed border-[var(--border)] bg-[var(--surface-2)]'
+                        : targetLang === l.id
+                          ? 'border-green-600 bg-green-50'
+                          : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-green-400 cursor-pointer'}`}>
+                    <span className="text-2xl leading-none">{l.flag}</span>
+                    <span className="text-[13px] font-bold text-[var(--text-1)]">{l.label}</span>
+                    {targetLang === l.id && !isDisabled && (
+                      <span className="text-green-600">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            <button type="button" onClick={() => setShowMoreTargetLangs(!showMoreTargetLangs)}
+              className="text-sm text-green-700 font-medium flex items-center gap-1 mb-2">
+              {locale === 'uk' ? 'Інші мови' : locale === 'ru' ? 'Другие языки' : 'More languages'} <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showMoreTargetLangs ? 'rotate-90' : ''}`} />
+            </button>
+            {showMoreTargetLangs && (
+              <div className="flex flex-col gap-2 mt-2">
+                {LANGS_TARGET_MORE.map((l) => {
+                  const isDisabled = l.id === srcLang
+                  return (
+                    <button key={l.id} type="button"
+                      onClick={() => !isDisabled && setTargetLang(l.id as SourceLang)}
+                      disabled={isDisabled}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-[1.5px] transition-all
+                        ${isDisabled ? 'opacity-30 cursor-not-allowed border-[var(--border)]'
+                          : targetLang === l.id
+                            ? 'border-green-600 bg-green-50'
+                            : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-green-400'}`}>
+                      <span className="text-xl">{l.flag}</span>
+                      <span className="text-[14px] font-semibold text-[var(--text-1)]">{l.label}</span>
+                      {targetLang === l.id && !isDisabled && (
+                        <span className="ml-auto text-green-600">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Direction summary pill */}
+        <div className="flex items-center justify-center gap-3 py-2 px-4 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">
+          <span>{[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'} {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.label ?? srcLang}</span>
+          <span>→</span>
+          <span>{LANGS_TARGET_TOP.find((l) => l.id === targetLang)?.flag ?? LANGS_TARGET_MORE.find((l) => l.id === targetLang)?.flag ?? '🌐'} {LANGS_TARGET_TOP.find((l) => l.id === targetLang)?.label ?? LANGS_TARGET_MORE.find((l) => l.id === targetLang)?.label ?? targetLang}</span>
+        </div>
+
         <button type="button" onClick={goNext}
           className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
           {ui.next}

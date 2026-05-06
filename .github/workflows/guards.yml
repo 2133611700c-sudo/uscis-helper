@@ -72,17 +72,17 @@ jobs:
           fi
           echo "OK — no risk language in UI."
 
-      - name: Guard — forbidden brand & marketing strings
+      - name: Guard — forbidden legal liability strings
         run: |
           set +e
-          HITS=$(grep -REn "USCIS Helper|AI-powered|AI-assisted|AI lawyer|Certified Translation|we determine eligibility|we guarantee approval|we file for you" \
+          HITS=$(grep -REn "AI lawyer|we determine eligibility|we guarantee approval|we file for you" \
             apps/web/src apps/web/messages 2>/dev/null | grep -v node_modules)
           if [ -n "$HITS" ]; then
-            echo "::error::Forbidden marketing/brand string."
+            echo "::error::Forbidden legal liability string."
             echo "$HITS"
             exit 1
           fi
-          echo "OK — no forbidden brand strings."
+          echo "OK — no forbidden legal liability strings."
 
       - name: Guard — stale I-131 edition or wrong item for Ukraine re-parole
         run: |

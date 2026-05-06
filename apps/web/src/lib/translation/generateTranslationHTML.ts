@@ -215,7 +215,7 @@ const RU_MAP: Record<string, string> = {
 
 const CYRILLIC_RE = /[Ѐ-ӿ]/
 
-function hasCyrillic(str: string): boolean {
+export function hasCyrillic(str: string): boolean {
   return CYRILLIC_RE.test(str)
 }
 
@@ -227,7 +227,7 @@ function hasCyrillic(str: string): boolean {
  * - Non-Cyrillic characters (digits, hyphens, spaces, apostrophes) are kept as-is
  *   except for Ukrainian apostrophe (' ʼ ') which is dropped per KMU 2010.
  */
-function transliterateCyrillic(str: string): string {
+export function transliterateCyrillic(str: string): string {
   const isUkrainian = /[ЄІЇҐєіїґ]/.test(str)
   const MAP = isUkrainian ? UK_MAP : RU_MAP
   const UA_VOWELS = new Set(['А','Е','Є','И','І','Ї','О','У','Ю','Я'])
