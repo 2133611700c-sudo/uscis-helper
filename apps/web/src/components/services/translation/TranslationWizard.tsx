@@ -340,8 +340,8 @@ const UI: Record<string, Record<string, string>> = {
     enNotice: 'All files are in English as required by USCIS.',
     file1Label: 'Translation draft',
     file1Note: 'HTML · print/PDF',
-    file2Label: 'Translator certification',
-    file2Note: 'HTML · sign by hand ⚠',
+    file2Label: 'Self-Certification Template',
+    file2Note: 'HTML · you sign by hand ⚠',
     file3Label: 'Filing checklist',
     file3Note: 'HTML',
     file4Label: 'Filing instructions',
@@ -351,7 +351,7 @@ const UI: Record<string, Record<string, string>> = {
     reviewBtn: 'Leave a review',
     priceBadge: 'Planned price after launch:',
     wyg1: 'Translation draft (HTML, printable)',
-    wyg2: 'Translator certification template',
+    wyg2: 'Self-Certification Template (you sign)',
     wyg3: 'USCIS filing checklist',
     wyg4: 'Filing instructions',
   },
@@ -417,8 +417,8 @@ const UI: Record<string, Record<string, string>> = {
     enNotice: 'Всі файли англійською відповідно до вимог USCIS.',
     file1Label: 'Чернетка перекладу',
     file1Note: 'HTML · друк/PDF',
-    file2Label: 'Підтвердження перекладача',
-    file2Note: 'HTML · підписати вручну ⚠',
+    file2Label: 'Шаблон самопідтвердження',
+    file2Note: 'HTML · ви підписуєте вручну ⚠',
     file3Label: 'Контрольний список',
     file3Note: 'HTML',
     file4Label: 'Інструкції з подання',
@@ -428,7 +428,7 @@ const UI: Record<string, Record<string, string>> = {
     reviewBtn: 'Залишити відгук',
     priceBadge: 'Запланована ціна після запуску:',
     wyg1: 'Чернетка перекладу (HTML, друкується)',
-    wyg2: 'Шаблон підтвердження перекладача',
+    wyg2: 'Шаблон самопідтвердження (ви підписуєте)',
     wyg3: 'Контрольний список для USCIS',
     wyg4: 'Інструкції з подання',
   },
@@ -494,8 +494,8 @@ const UI: Record<string, Record<string, string>> = {
     enNotice: 'Все файлы на английском согласно требованиям USCIS.',
     file1Label: 'Черновик перевода',
     file1Note: 'HTML · печать/PDF',
-    file2Label: 'Подтверждение переводчика',
-    file2Note: 'HTML · подписать вручную ⚠',
+    file2Label: 'Шаблон самоподтверждения',
+    file2Note: 'HTML · вы подписываете вручную ⚠',
     file3Label: 'Контрольный список',
     file3Note: 'HTML',
     file4Label: 'Инструкции по подаче',
@@ -505,7 +505,7 @@ const UI: Record<string, Record<string, string>> = {
     reviewBtn: 'Оставить отзыв',
     priceBadge: 'Запланированная цена после запуска:',
     wyg1: 'Черновик перевода (HTML, для печати)',
-    wyg2: 'Шаблон подтверждения переводчика',
+    wyg2: 'Шаблон самоподтверждения (вы подписываете)',
     wyg3: 'Контрольный список для USCIS',
     wyg4: 'Инструкции по подаче',
   },
@@ -571,8 +571,8 @@ const UI: Record<string, Record<string, string>> = {
     enNotice: 'Todos los archivos están en inglés según los requisitos de USCIS.',
     file1Label: 'Borrador de traducción',
     file1Note: 'HTML · imprimir/PDF',
-    file2Label: 'Certificación del traductor',
-    file2Note: 'HTML · firmar a mano ⚠',
+    file2Label: 'Plantilla de auto-certificación',
+    file2Note: 'HTML · usted firma a mano ⚠',
     file3Label: 'Lista de verificación',
     file3Note: 'HTML',
     file4Label: 'Instrucciones de presentación',
@@ -582,7 +582,7 @@ const UI: Record<string, Record<string, string>> = {
     reviewBtn: 'Dejar una reseña',
     priceBadge: 'Precio planificado después del lanzamiento:',
     wyg1: 'Borrador de traducción (HTML, imprimible)',
-    wyg2: 'Plantilla de certificación del traductor',
+    wyg2: 'Plantilla de auto-certificación (usted firma)',
     wyg3: 'Lista de verificación para USCIS',
     wyg4: 'Instrucciones de presentación',
   },
@@ -642,10 +642,10 @@ function generateTranslationFiles(
 
   const applicantName = (fieldValues['full_name'] ?? fieldValues['child_name'] ?? '').trim()
 
-  const file2 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Translator Certification</title>
+  const file2 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Self-Certification Template</title>
 <style>body{font-family:Arial,sans-serif;max-width:750px;margin:40px auto;padding:20px;line-height:1.8;color:#111}h1{font-size:18px}.sig-line{border-top:2px solid #000;margin-top:44px;width:320px;padding-top:6px;font-size:12px;color:#555}@media print{body{margin:0;padding:10px}}</style>
 </head><body>
-<h1>TRANSLATOR CERTIFICATION STATEMENT</h1>
+<h1>TRANSLATOR SELF-CERTIFICATION STATEMENT</h1>
 <p>I, the undersigned, hereby certify that I am competent to translate from <strong>${srcLangLabel}</strong> into <strong>English</strong>, and that the attached translation of the <strong>${docLabelEn}</strong> is accurate and complete to the best of my knowledge and ability.</p>
 <p>I understand that any false statements made herein are punishable by law (18 U.S.C. § 1001).</p>
 <p><strong>Document type:</strong> ${docLabelEn}<br>
