@@ -1143,7 +1143,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                           type={field.type === 'date' ? 'date' : 'text'}
                           value={fieldValues[field.key] ?? ''}
                           onChange={(e) => setFieldValues((v) => ({ ...v, [field.key]: e.target.value }))}
-                          placeholder={field.placeholder?.[srcLang] ?? field.placeholder?.en ?? ''}
+                          // Always use English (Latin) placeholder — guides users to enter transliterated values
+                          placeholder={field.placeholder?.en ?? field.placeholder?.[srcLang] ?? ''}
                           className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-[15px] text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
                         />
                       )}
