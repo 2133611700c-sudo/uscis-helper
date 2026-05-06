@@ -303,6 +303,43 @@ const _DOCS_REMOVED = [
   },
 ]
 
+// ─── OCR field-name → docDef field-key mapping ────────────────────────────────
+// Maps field names returned by /api/ocr/extract to the canonical field keys used
+// in docDefinitions.ts / fieldValues state.
+
+const OCR_TO_FIELD: Record<string, string> = {
+  // Passport fields
+  surname: 'full_name',
+  given_names: 'given_names',
+  nationality: 'nationality',
+  date_of_birth: 'date_of_birth',
+  place_of_birth: 'place_of_birth',
+  passport_number: 'document_number',
+  issue_date: 'issue_date',
+  expiry_date: 'expiry_date',
+  issuing_country: 'issuing_authority',
+  // Birth cert / generic
+  full_name: 'full_name',
+  father_name: 'father_name',
+  mother_name: 'mother_name',
+  registration_number: 'document_number',
+  issuing_authority: 'issuing_authority',
+  // Drivers license
+  last_name: 'full_name',
+  first_name: 'given_names',
+  license_number: 'document_number',
+  // Generic
+  document_number: 'document_number',
+}
+
+/** Map wizard docId → OCR doc_type accepted by /api/ocr/extract */
+function docIdToOcrType(id: string): string {
+  if (id.startsWith('passport')) return 'passport'
+  if (id === 'birth_cert') return 'birth_cert'
+  if (id === 'driving_license') return 'drivers_license'
+  return 'other'
+}
+
 // ─── UI strings ───────────────────────────────────────────────────────────────
 
 const UI: Record<string, Record<string, string>> = {
@@ -321,13 +358,16 @@ const UI: Record<string, Record<string, string>> = {
     langTitle: 'What language is your document in?',
     langTop3: 'Most common',
     langOther: 'Other languages',
-    uploadTitle: 'Upload your document (optional)',
-    uploadHint: 'Photo or scan — used for reference only. Not required to download.',
+    uploadTitle: 'Upload your document — AI fills the fields',
+    uploadHint: 'Take a photo or upload a scan — AI will automatically fill in all fields. You can review and correct before downloading.',
     uploadCameraBtn: '📷 Take photo',
     uploadFileBtn: '📁 Upload file',
     uploadSkip: 'Skip — enter fields manually',
     uploadRemove: 'Remove',
     uploadSelected: 'File selected:',
+    ocrAnalyzing: 'AI is reading your document…',
+    ocrSuccess: 'fields filled automatically by AI',
+    ocrNone: 'Could not read the document — please fill in manually.',
     fieldsTitle: 'Enter fields from your document',
     fieldsHint: 'Copy exactly as written. Fields marked * are required.',
     grpPersonal: 'Personal information',
@@ -398,13 +438,16 @@ const UI: Record<string, Record<string, string>> = {
     langTitle: 'Яка мова вашого документа?',
     langTop3: 'Найпопулярніші',
     langOther: 'Інші мови:',
-    uploadTitle: 'Завантажте документ (опційно)',
-    uploadHint: 'Фото або скан — тільки для довідки. Не обов\'язково для завантаження.',
+    uploadTitle: 'Завантажте документ — ШІ заповнить поля',
+    uploadHint: 'Зробіть фото або завантажте скан — ШІ автоматично заповнить усі поля. Ви зможете перевірити та виправити перед завантаженням.',
     uploadCameraBtn: '📷 Зробити фото',
     uploadFileBtn: '📁 Завантажити файл',
     uploadSkip: 'Пропустити — ввести поля вручну',
     uploadRemove: 'Видалити',
     uploadSelected: 'Вибраний файл:',
+    ocrAnalyzing: 'ШІ читає ваш документ…',
+    ocrSuccess: 'полів заповнено автоматично',
+    ocrNone: 'Не вдалось прочитати документ — заповніть вручну.',
     fieldsTitle: 'Введіть поля з вашого документа',
     fieldsHint: 'Копіюйте точно як написано. Поля зі * обов\'язкові.',
     grpPersonal: 'Особисті дані',
@@ -475,13 +518,16 @@ const UI: Record<string, Record<string, string>> = {
     langTitle: 'На каком языке ваш документ?',
     langTop3: 'Наиболее популярные',
     langOther: 'Другие языки:',
-    uploadTitle: 'Загрузите документ (необязательно)',
-    uploadHint: 'Фото или скан — только для справки. Не обязательно для загрузки.',
+    uploadTitle: 'Загрузите документ — ИИ заполнит поля',
+    uploadHint: 'Сделайте фото или загрузите скан — ИИ автоматически заполнит все поля. Вы сможете проверить и исправить перед скачиванием.',
     uploadCameraBtn: '📷 Сделать фото',
     uploadFileBtn: '📁 Загрузить файл',
     uploadSkip: 'Пропустить — ввести поля вручную',
     uploadRemove: 'Удалить',
     uploadSelected: 'Выбранный файл:',
+    ocrAnalyzing: 'ИИ читает ваш документ…',
+    ocrSuccess: 'полей заполнено автоматически',
+    ocrNone: 'Не удалось прочитать документ — заполните вручную.',
     fieldsTitle: 'Введите поля из вашего документа',
     fieldsHint: 'Копируйте точно как написано. Поля со * обязательны.',
     grpPersonal: 'Личные данные',
@@ -552,13 +598,16 @@ const UI: Record<string, Record<string, string>> = {
     langTitle: '¿En qué idioma está su documento?',
     langTop3: 'Más populares',
     langOther: 'Otros idiomas:',
-    uploadTitle: 'Suba su documento (opcional)',
-    uploadHint: 'Foto o escaneo — solo de referencia. No es necesario para descargar.',
+    uploadTitle: 'Suba su documento — IA completará los campos',
+    uploadHint: 'Tome una foto o suba un escaneo — la IA completará todos los campos automáticamente. Podrá revisar y corregir antes de descargar.',
     uploadCameraBtn: '📷 Tomar foto',
     uploadFileBtn: '📁 Subir archivo',
     uploadSkip: 'Omitir — ingresar campos manualmente',
     uploadRemove: 'Eliminar',
     uploadSelected: 'Archivo seleccionado:',
+    ocrAnalyzing: 'IA está leyendo su documento…',
+    ocrSuccess: 'campos completados automáticamente',
+    ocrNone: 'No se pudo leer el documento — ingrese los campos manualmente.',
     fieldsTitle: 'Ingrese los campos de su documento',
     fieldsHint: 'Copie exactamente como está escrito. Los campos con * son obligatorios.',
     grpPersonal: 'Datos personales',
@@ -874,6 +923,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // OCR state
+  const [ocrLoading, setOcrLoading] = useState(false)
+  const [ocrFilledCount, setOcrFilledCount] = useState(0)
+
   const doc = DOCS.find((d) => d.id === docId)
   // Merge era extra fields (e.g. Soviet nationality field) when an era is selected
   const docEraObj: EraVariant | null = doc?.eraVariants?.find((e) => e.id === docEra) ?? null
@@ -911,12 +964,65 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function handleFileSelect(file: File) {
     setUploadedFile(file)
+    setOcrFilledCount(0)
     if (file.type.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = (e) => setUploadedPreview(e.target?.result as string)
       reader.readAsDataURL(file)
     } else {
       setUploadedPreview(null)
+    }
+  }
+
+  /** Stage 13A: upload file → OCR API → pre-fill fieldValues → advance to Step 3 */
+  async function handleOcrExtract(file: File) {
+    setOcrLoading(true)
+    try {
+      // Convert file to base64 (strip data-URL prefix)
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = (e.target?.result as string) ?? ''
+          resolve(result.includes(',') ? result.split(',')[1] : result)
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      const ocrType = docIdToOcrType(docId ?? '')
+      const res = await fetch('/api/ocr/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doc_type: ocrType, image_base64: base64 }),
+      })
+      const data = (await res.json()) as {
+        ok: boolean
+        mode?: string
+        extractedFields?: Record<string, string | null>
+        confidence?: number
+      }
+
+      if (data.ok && data.extractedFields) {
+        const newValues: Record<string, string> = {}
+        let filled = 0
+        for (const [ocrKey, ocrValue] of Object.entries(data.extractedFields)) {
+          if (!ocrValue) continue
+          const fieldKey = OCR_TO_FIELD[ocrKey]
+          if (fieldKey) {
+            newValues[fieldKey] = ocrValue
+            filled++
+          }
+        }
+        if (filled > 0) {
+          setFieldValues((prev) => ({ ...prev, ...newValues }))
+          setOcrFilledCount(filled)
+        }
+      }
+    } catch {
+      // Silent fail — user will fill manually
+    } finally {
+      setOcrLoading(false)
+      goNext()
     }
   }
 
@@ -1255,11 +1361,21 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           )}
         </div>
 
-        {/* Skip or Continue */}
+        {/* Skip or Continue (with OCR) */}
         <div className="flex flex-col gap-2">
-          <button type="button" onClick={goNext}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
-            {uploadedFile ? ui.next : ui.uploadSkip} →
+          <button
+            type="button"
+            disabled={ocrLoading}
+            onClick={() => uploadedFile ? handleOcrExtract(uploadedFile) : goNext()}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+            {ocrLoading ? (
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                {ui.ocrAnalyzing}
+              </>
+            ) : (
+              <>{uploadedFile ? ui.next : ui.uploadSkip} →</>
+            )}
           </button>
         </div>
       </div>
@@ -1281,7 +1397,18 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
         </button>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
           <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">{ui.fieldsTitle}</h2>
-          <p className="text-sm text-[var(--text-2)] mb-5">{ui.fieldsHint}</p>
+          <p className="text-sm text-[var(--text-2)] mb-3">{ui.fieldsHint}</p>
+
+          {/* OCR auto-fill banner */}
+          {ocrFilledCount > 0 && (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 mb-5">
+              <span className="text-xl">✨</span>
+              <p className="text-sm font-semibold text-emerald-800">
+                <span className="text-emerald-600 font-bold">{ocrFilledCount}</span> {ui.ocrSuccess}
+              </p>
+            </div>
+          )}
+
           {groups.map(({ id: grp, label: grpLabel }) => {
             const grpFields = fields.filter((f) => (f.group ?? inferGroup(f.key)) === grp)
             if (grpFields.length === 0) return null
