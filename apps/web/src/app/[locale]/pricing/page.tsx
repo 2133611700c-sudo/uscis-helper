@@ -49,7 +49,7 @@ const T = {
         name: 'Translation Draft',
         price: '$15',
         period: 'per document',
-        description: 'AI-assisted English translation draft. You review field values, you sign the self-certification template.',
+        description: 'Computer-generated English translation draft. You review field values, you sign the self-certification template.',
         cta: 'Translate a document',
         ctaHref: '/services/translate-document',
         highlight: false,
@@ -148,8 +148,8 @@ const T = {
         a: 'Both packages are self-certified (you sign). The Reviewed Draft ($29) includes enhanced formatting, a more detailed certification statement with stronger legal language, multi-page document support, and the Format Guarantee. The Translation Draft ($15) is the standard package — same 4 files, simpler formatting.',
       },
       {
-        q: 'When will Human-Certified Translation be available?',
-        a: 'We are building a partner network of licensed human translators. Human-Certified Translation is targeted for launch in Q3 2026. Join the waitlist on the homepage.',
+        q: 'When will Professionally Reviewed Translation be available?',
+        a: 'We are building a partner network of licensed human translators. Professionally Reviewed Translation is targeted for launch in Q3 2026. Join the waitlist on the homepage.',
       },
       {
         q: 'Is this legal advice?',
