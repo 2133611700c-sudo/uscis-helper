@@ -6,6 +6,7 @@ import { routing } from '@/i18n/routing'
 import { Container } from '@/components/ui/Container'
 import { IconBadge } from '@/components/ui/IconBadge'
 import { TranslationServiceExperience } from '@/components/services/translation/TranslationServiceExperience'
+import { TranslationSamplePreview } from '@/components/services/translation/TranslationSamplePreview'
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -106,6 +107,16 @@ export default async function TranslateDocumentPage({ params }: Props) {
               </div>
             </div>
           </div>
+        </Container>
+      </div>
+
+      {/* Stage 13B: Sample output preview — show before wizard to build trust */}
+      <div className="bg-[var(--surface-2)] pt-6 pb-0">
+        <Container>
+          <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-3">
+            {locale === 'uk' ? '👇 Ось як виглядає результат' : locale === 'ru' ? '👇 Вот как выглядит результат' : locale === 'es' ? '👇 Así luce el resultado' : '👇 This is what you get'}
+          </p>
+          <TranslationSamplePreview locale={locale} />
         </Container>
       </div>
 

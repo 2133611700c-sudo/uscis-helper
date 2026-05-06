@@ -372,6 +372,9 @@ const UI: Record<string, Record<string, string>> = {
     historyTitle: 'Recent translations',
     historyRedownload: 'Re-download',
     historyDelete: 'Remove',
+    addToSession: '+ Add another document (same person)',
+    downloadZip: 'Download all as ZIP',
+    sessionCount: 'docs in session',
     fieldsTitle: 'Enter fields from your document',
     fieldsHint: 'Copy exactly as written. Fields marked * are required.',
     grpPersonal: 'Personal information',
@@ -455,6 +458,9 @@ const UI: Record<string, Record<string, string>> = {
     historyTitle: 'Нещодавні переклади',
     historyRedownload: 'Завантажити знову',
     historyDelete: 'Видалити',
+    addToSession: '+ Додати ще документ (та сама особа)',
+    downloadZip: 'Завантажити все як ZIP',
+    sessionCount: 'документів у сесії',
     fieldsTitle: 'Введіть поля з вашого документа',
     fieldsHint: 'Копіюйте точно як написано. Поля зі * обов\'язкові.',
     grpPersonal: 'Особисті дані',
@@ -538,6 +544,9 @@ const UI: Record<string, Record<string, string>> = {
     historyTitle: 'Недавние переводы',
     historyRedownload: 'Скачать снова',
     historyDelete: 'Удалить',
+    addToSession: '+ Добавить документ (тот же человек)',
+    downloadZip: 'Скачать всё как ZIP',
+    sessionCount: 'документов в сессии',
     fieldsTitle: 'Введите поля из вашего документа',
     fieldsHint: 'Копируйте точно как написано. Поля со * обязательны.',
     grpPersonal: 'Личные данные',
@@ -621,6 +630,9 @@ const UI: Record<string, Record<string, string>> = {
     historyTitle: 'Traducciones recientes',
     historyRedownload: 'Descargar de nuevo',
     historyDelete: 'Eliminar',
+    addToSession: '+ Agregar otro documento (misma persona)',
+    downloadZip: 'Descargar todo como ZIP',
+    sessionCount: 'documentos en la sesión',
     fieldsTitle: 'Ingrese los campos de su documento',
     fieldsHint: 'Copie exactamente como está escrito. Los campos con * son obligatorios.',
     grpPersonal: 'Datos personales',
@@ -943,6 +955,9 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   // Order history (Stage 13D)
   const { history, saveEntry, removeEntry } = useTranslationHistory()
 
+  // Stage 13C: multi-doc session — accumulates translated docs for ZIP
+  const [sessionDocs, setSessionDocs] = useState<Array<{ label: string; files: string[] }>>([])
+
   const doc = DOCS.find((d) => d.id === docId)
   // Merge era extra fields (e.g. Soviet nationality field) when an era is selected
   const docEraObj: EraVariant | null = doc?.eraVariants?.find((e) => e.id === docEra) ?? null
@@ -1055,6 +1070,57 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     // Stage 13D: save to order history
     const docLabel = (doc.label as Record<string, string>)[locale] ?? doc.label.en
     saveEntry({ docId: doc.id, docLabel, srcLang, targetLang, docEra, fieldValues })
+  }
+
+  /** Stage 13C: save current 4 files to session, reset wizard, keep sessionDocs */
+  function handleAddToSession() {
+    if (!doc || generatedFiles.length !== 4) return
+    const docLabel = (doc.label as Record<string, string>)[locale] ?? doc.label.en
+    setSessionDocs((prev) => [...prev, { label: docLabel, files: generatedFiles }])
+    // Reset wizard but keep sessionDocs alive
+    setStep(0); setDocId(null); setDocEra(null); setSrcLang('uk'); setTargetLang('en')
+    setFieldValues({}); setChecks([false, false, false]); setDownloaded(false)
+    setGeneratedFiles([]); setUploadedFile(null); setUploadedPreview(null)
+    setOcrFilledCount(0); setEmailInput(''); setEmailSent(false); setEmailError(null)
+    window.scrollTo(0, 0)
+  }
+
+  /** Stage 13C: ZIP all session docs + current doc and trigger download */
+  async function handleDownloadZip() {
+    if (!doc) return
+    const JSZip = (await import('jszip')).default
+    const zip = new JSZip()
+    const fileNames = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
+
+    // Add all accumulated session docs
+    sessionDocs.forEach((sd, idx) => {
+      const folder = zip.folder(`doc-${idx + 1}-${sd.label.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')}`)
+      if (folder) {
+        sd.files.forEach((html, fi) => folder.file(`${fileNames[fi]}.html`, html))
+      }
+    })
+
+    // Add current (last) doc
+    const currentFiles = generatedFiles.length === 4
+      ? generatedFiles
+      : Array.from(generateTranslationDoc(doc, fields, fieldValues, srcLang, targetLang, docEraObj?.noteForTranslator))
+    const currentLabel = (doc.label as Record<string, string>)[locale] ?? doc.label.en
+    const lastIdx = sessionDocs.length + 1
+    const lastFolder = zip.folder(`doc-${lastIdx}-${currentLabel.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')}`)
+    if (lastFolder) {
+      currentFiles.forEach((html, fi) => lastFolder.file(`${fileNames[fi]}.html`, html))
+    }
+
+    const blob = await zip.generateAsync({ type: 'blob' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `translations-${lastIdx}-docs.zip`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
+
+    // Clear session after ZIP download
+    setSessionDocs([])
   }
 
   function handleDownloadSingle(idx: number) {
@@ -1745,8 +1811,55 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                 <p className="text-[13px] font-bold text-amber-800">⚠ {ui.certWarn}</p>
               </div>
 
+              {/* Stage 13E: Email delivery */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+                <p className="text-[13px] font-semibold text-[var(--text-1)] mb-2">📧 {ui.emailLabel}</p>
+                {emailSent ? (
+                  <p className="text-[14px] font-semibold text-green-700">{ui.emailSent}</p>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSendEmail() }}
+                      placeholder={ui.emailPlaceholder}
+                      className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-[14px] text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendEmail}
+                      disabled={emailSending || !emailInput.trim()}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-[13px] font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                      {emailSending ? ui.emailSending : ui.emailBtn}
+                    </button>
+                  </div>
+                )}
+                {emailError && <p className="text-[12px] text-red-600 mt-1">{emailError}</p>}
+              </div>
+
+              {/* Stage 13C: Session ZIP banner (shows when ≥1 doc already in session) */}
+              {sessionDocs.length > 0 && (
+                <div className="rounded-xl border border-purple-200 bg-purple-50 px-4 py-3 flex items-center gap-3">
+                  <span className="text-xl">📦</span>
+                  <div className="flex-1">
+                    <p className="text-[13px] font-bold text-purple-800">{sessionDocs.length + 1} {ui.sessionCount}</p>
+                    <p className="text-[11px] text-purple-600">{sessionDocs.map((s) => s.label).join(', ')}</p>
+                  </div>
+                  <button type="button" onClick={handleDownloadZip}
+                    className="rounded-lg bg-purple-600 px-3 py-2 text-[13px] font-bold text-white hover:bg-purple-700 transition-colors whitespace-nowrap">
+                    {ui.downloadZip}
+                  </button>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex gap-3 flex-wrap">
+                {/* Add to session (same person, multiple docs) */}
+                <button type="button" onClick={handleAddToSession}
+                  className="inline-flex items-center gap-2 rounded-xl border border-purple-300 bg-purple-50 px-4 py-2.5 text-sm font-semibold text-purple-700 hover:bg-purple-100 transition-colors">
+                  {ui.addToSession}
+                </button>
                 <button type="button" onClick={reset}
                   className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-1)] transition-colors">
                   {ui.anotherDoc}
