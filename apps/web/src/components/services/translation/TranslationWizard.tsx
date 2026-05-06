@@ -11,6 +11,7 @@ import {
   DocEra,
   EraVariant,
 } from '@/lib/translation/docDefinitions'
+import { useTranslationHistory } from '@/lib/translation/useTranslationHistory'
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -368,6 +369,9 @@ const UI: Record<string, Record<string, string>> = {
     ocrAnalyzing: 'AI is reading your document…',
     ocrSuccess: 'fields filled automatically by AI',
     ocrNone: 'Could not read the document — please fill in manually.',
+    historyTitle: 'Recent translations',
+    historyRedownload: 'Re-download',
+    historyDelete: 'Remove',
     fieldsTitle: 'Enter fields from your document',
     fieldsHint: 'Copy exactly as written. Fields marked * are required.',
     grpPersonal: 'Personal information',
@@ -448,6 +452,9 @@ const UI: Record<string, Record<string, string>> = {
     ocrAnalyzing: 'ШІ читає ваш документ…',
     ocrSuccess: 'полів заповнено автоматично',
     ocrNone: 'Не вдалось прочитати документ — заповніть вручну.',
+    historyTitle: 'Нещодавні переклади',
+    historyRedownload: 'Завантажити знову',
+    historyDelete: 'Видалити',
     fieldsTitle: 'Введіть поля з вашого документа',
     fieldsHint: 'Копіюйте точно як написано. Поля зі * обов\'язкові.',
     grpPersonal: 'Особисті дані',
@@ -528,6 +535,9 @@ const UI: Record<string, Record<string, string>> = {
     ocrAnalyzing: 'ИИ читает ваш документ…',
     ocrSuccess: 'полей заполнено автоматически',
     ocrNone: 'Не удалось прочитать документ — заполните вручную.',
+    historyTitle: 'Недавние переводы',
+    historyRedownload: 'Скачать снова',
+    historyDelete: 'Удалить',
     fieldsTitle: 'Введите поля из вашего документа',
     fieldsHint: 'Копируйте точно как написано. Поля со * обязательны.',
     grpPersonal: 'Личные данные',
@@ -608,6 +618,9 @@ const UI: Record<string, Record<string, string>> = {
     ocrAnalyzing: 'IA está leyendo su documento…',
     ocrSuccess: 'campos completados automáticamente',
     ocrNone: 'No se pudo leer el documento — ingrese los campos manualmente.',
+    historyTitle: 'Traducciones recientes',
+    historyRedownload: 'Descargar de nuevo',
+    historyDelete: 'Eliminar',
     fieldsTitle: 'Ingrese los campos de su documento',
     fieldsHint: 'Copie exactamente como está escrito. Los campos con * son obligatorios.',
     grpPersonal: 'Datos personales',
@@ -927,6 +940,9 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrFilledCount, setOcrFilledCount] = useState(0)
 
+  // Order history (Stage 13D)
+  const { history, saveEntry, removeEntry } = useTranslationHistory()
+
   const doc = DOCS.find((d) => d.id === docId)
   // Merge era extra fields (e.g. Soviet nationality field) when an era is selected
   const docEraObj: EraVariant | null = doc?.eraVariants?.find((e) => e.id === docEra) ?? null
@@ -1036,6 +1052,9 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
       setTimeout(() => downloadHtmlFile(html, `${names[i]}.html`), i * 350)
     })
     setDownloaded(true)
+    // Stage 13D: save to order history
+    const docLabel = (doc.label as Record<string, string>)[locale] ?? doc.label.en
+    saveEntry({ docId: doc.id, docLabel, srcLang, targetLang, docEra, fieldValues })
   }
 
   function handleDownloadSingle(idx: number) {
@@ -1095,6 +1114,22 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
       : '← Back to Re-Parole')
     : (returnUrl ? '← Go back' : null)
 
+  /** Stage 13D: Restore a history entry and fast-forward to Step 6 download */
+  function reDownloadFromHistory(entry: (typeof history)[0]) {
+    const d = DOCS.find((x) => x.id === entry.docId)
+    if (!d) return
+    setDocId(entry.docId)
+    setDocEra(entry.docEra as DocEra | null)
+    setSrcLang(entry.srcLang as SourceLang)
+    setTargetLang(entry.targetLang as SourceLang)
+    setFieldValues(entry.fieldValues)
+    setChecks([true, true, true])
+    setDownloaded(false)
+    setGeneratedFiles([])
+    setStep(6)
+    window.scrollTo(0, 0)
+  }
+
   // ── STEP 0: Document grid ──────────────────────────────────────────────────
   if (step === 0) {
     const popular = DOCS.filter((d) => d.popular)
@@ -1108,6 +1143,40 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             <a href={returnUrl} className="text-sm font-semibold text-blue-700 hover:text-blue-900 whitespace-nowrap">{returnLabel}</a>
           </div>
         )}
+        {/* Stage 13D: Recent translations history */}
+        {history.length > 0 && (
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+            <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-3">{ui.historyTitle}</p>
+            <div className="flex flex-col gap-2">
+              {history.map((entry) => {
+                const savedDate = new Date(entry.savedAt).toLocaleDateString(locale === 'uk' ? 'uk-UA' : locale === 'ru' ? 'ru-RU' : 'en-US', { month: 'short', day: 'numeric' })
+                const langFlag = [...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === entry.srcLang)?.flag ?? '🌐'
+                return (
+                  <div key={entry.id} className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
+                    <span className="text-xl shrink-0">{langFlag}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-semibold text-[var(--text-1)] truncate">{entry.docLabel}</p>
+                      <p className="text-[12px] text-[var(--text-2)]">{entry.srcLang.toUpperCase()} → {entry.targetLang.toUpperCase()} · {savedDate}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => reDownloadFromHistory(entry)}
+                      className="text-[13px] font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap shrink-0 transition-colors">
+                      {ui.historyRedownload}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeEntry(entry.id)}
+                      className="text-[12px] text-[var(--text-3)] hover:text-red-600 shrink-0 transition-colors ml-1">
+                      ✕
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
           <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-3">{ui.popular}</p>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
