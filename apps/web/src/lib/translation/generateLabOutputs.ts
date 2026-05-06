@@ -3,7 +3,7 @@
  *
  * File 1: translation-draft.html         — USCIS translation per 8 CFR 103.2(b)(3)
  * File 2: field-review-checklist.html    — AI extraction results + user corrections table
- * File 3: certification-statement.html   — standalone translator certification block to sign
+ * File 3: certification-statement.html   — standalone self-certification template to print and sign
  * File 4: filing-instructions.html       — step-by-step filing guide
  *
  * All are self-contained HTML (no external dependencies).
@@ -231,18 +231,18 @@ export function generateCertificationStatement(
   sourceLanguage: string,
 ): string {
   const body = `
-    ${pageHeader('Translator Certification Statement', `8 CFR 103.2(b)(3) — Required for USCIS Submissions`)}
+    ${pageHeader('Self-Certification Statement', `8 CFR 103.2(b)(3) — Required for USCIS Submissions`)}
     ${draftBanner()}
 
     <p style="font-size:11pt;margin-bottom:20px;line-height:1.7">
       The following certification statement must accompany any foreign-language document
       submitted to USCIS. The translator must complete and sign this statement.
-      USCIS requires a full English translation and a signed translator certification
+      USCIS requires a full English translation and a signed self-certification statement
       for each foreign-language document (8 CFR 103.2(b)(3)).
     </p>
 
     <div class="cert-block">
-      <h2>Translator Certification Statement</h2>
+      <h2>Self-Certification Statement</h2>
       <p style="font-size:11pt;margin-bottom:16px;line-height:1.7">
         I, <span style="display:inline-block;width:220px;border-bottom:1px solid #000">&nbsp;</span>,
         certify that I am competent to translate from <strong>${esc(sourceLanguage)}</strong>
@@ -342,7 +342,7 @@ export function generateFilingInstructions(
       <strong>📋 Your translation package checklist:</strong>
       <ul style="margin-top:8px;padding-left:20px;line-height:2">
         <li>✅ Translation Draft (.html printed to PDF)</li>
-        <li>✅ Translator Certification Statement (signed in ink)</li>
+        <li>✅ Self-Certification Statement (signed in ink)</li>
         <li>✅ Copy of original ${esc(sample.titleEn)} in ${esc(sourceLanguage)}</li>
         <li>✅ Included with main USCIS application</li>
       </ul>
