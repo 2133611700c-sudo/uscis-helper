@@ -193,6 +193,100 @@ const DOC_TYPE_TITLES: Record<string, string> = {
 }
 
 // ---------------------------------------------------------------------------
+// Cyrillic → Latin transliteration (KMU 2010 for Ukrainian; GOST-based for Russian)
+// Used to auto-convert user-entered Cyrillic field values into English for the output.
+// ---------------------------------------------------------------------------
+
+/** Maps uppercase Ukrainian Cyrillic → Latin (KMU 2010, Cabinet of Ministers Resolution #55, 2010). */
+const UK_MAP: Record<string, string> = {
+  А:'A',  Б:'B',  В:'V',  Г:'H',  Ґ:'G',  Д:'D',  Е:'E',  Є:'Ye',
+  Ж:'Zh', З:'Z',  И:'Y',  І:'I',  Ї:'Yi', Й:'Y',  К:'K',  Л:'L',
+  М:'M',  Н:'N',  О:'O',  П:'P',  Р:'R',  С:'S',  Т:'T',  У:'U',
+  Ф:'F',  Х:'Kh', Ц:'Ts', Ч:'Ch', Ш:'Sh', Щ:'Shch', Ь:'', Ю:'Yu', Я:'Ya',
+}
+
+/** Maps uppercase Russian Cyrillic → Latin (simplified GOST 7.79-2000 System B). */
+const RU_MAP: Record<string, string> = {
+  А:'A',  Б:'B',  В:'V',  Г:'G',  Д:'D',  Е:'Ye', Ё:'Yo', Ж:'Zh',
+  З:'Z',  И:'I',  Й:'Y',  К:'K',  Л:'L',  М:'M',  Н:'N',  О:'O',
+  П:'P',  Р:'R',  С:'S',  Т:'T',  У:'U',  Ф:'F',  Х:'Kh', Ц:'Ts',
+  Ч:'Ch', Ш:'Sh', Щ:'Shch', Ъ:'', Ы:'Y',  Ь:'',  Э:'E',  Ю:'Yu', Я:'Ya',
+}
+
+const CYRILLIC_RE = /[Ѐ-ӿ]/
+
+function hasCyrillic(str: string): boolean {
+  return CYRILLIC_RE.test(str)
+}
+
+/**
+ * Transliterate a string containing Cyrillic characters to Latin.
+ * - Detects Ukrainian vs Russian by presence of Ukrainian-only letters (Є І Ї Ґ).
+ * - Preserves ALL-CAPS formatting: ЮРЧЕНКО → YURCHENKO.
+ * - Applies KMU 2010 rule: Й after a vowel → "I" (ЮРІЙ → YURII, not YURIY).
+ * - Non-Cyrillic characters (digits, hyphens, spaces, apostrophes) are kept as-is
+ *   except for Ukrainian apostrophe (' ʼ ') which is dropped per KMU 2010.
+ */
+function transliterateCyrillic(str: string): string {
+  const isUkrainian = /[ЄІЇҐєіїґ]/.test(str)
+  const MAP = isUkrainian ? UK_MAP : RU_MAP
+  const UA_VOWELS = new Set(['А','Е','Є','И','І','Ї','О','У','Ю','Я'])
+
+  let result = ''
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i]
+    // Drop Ukrainian apostrophes (word-internal softener before Є Ю Я Ї).
+    // Covers: ASCII apostrophe (U+0027), left/right curly quotes (U+2018/U+2019),
+    // Ukrainian modifier letter apostrophe (U+02BC), and prime (U+2032).
+    // Using charCode checks to avoid any source-encoding ambiguity.
+    const cc = ch.charCodeAt(0)
+    if (cc === 0x27 || cc === 0x2018 || cc === 0x2019 || cc === 0x02BC || cc === 0x2032) continue
+
+    const upper = ch.toUpperCase()
+    if (!(upper in MAP)) { result += ch; continue }
+
+    const isCyrUpper = ch === upper && /\p{Lu}/u.test(ch)
+
+    // KMU 2010 position-dependent rules:
+    //   Й after vowel → 'I'  (ЮРІЙ → YURII, not YURIY)
+    //   Ї after vowel → 'I'  (Київ → Kyiv, not Kyyiv)
+    let latin: string
+    if ((upper === 'Й' || upper === 'Ї') && i > 0) {
+      const prev = str[i - 1].toUpperCase()
+      if (UA_VOWELS.has(prev)) {
+        latin = 'I'
+      } else {
+        latin = MAP[upper] ?? (upper === 'Й' ? 'Y' : 'Yi')
+      }
+    } else {
+      latin = MAP[upper] ?? ''
+    }
+    if (!latin) continue // soft sign, hard sign → drop
+
+    // Preserve casing:
+    // - Lowercase Cyrillic → all-lowercase Latin (е → e, ш → sh)
+    // - Uppercase Cyrillic followed by lowercase Cyrillic = title case →
+    //     capitalize only the first Latin char (Ш+е = Sh, Х+а = Kh)
+    // - Uppercase Cyrillic followed by uppercase or end-of-string = all-caps →
+    //     uppercase entire Latin sequence (ШЕ = SHE, ХА = KHA)
+    if (!isCyrUpper) {
+      result += latin.toLowerCase()
+    } else {
+      // Peek at the next Cyrillic character to decide title vs all-caps
+      const nextIsCyrLower = (i + 1 < str.length) && /\p{Ll}/u.test(str[i + 1]) && CYRILLIC_RE.test(str[i + 1])
+      if (nextIsCyrLower) {
+        // Title case: e.g. Ш + е → Sh (not SH)
+        result += latin.charAt(0).toUpperCase() + latin.slice(1).toLowerCase()
+      } else {
+        // All caps: e.g. Ш in ШЕВЧЕНКО → SH
+        result += latin.toUpperCase()
+      }
+    }
+  }
+  return result
+}
+
+// ---------------------------------------------------------------------------
 // HTML generator
 // ---------------------------------------------------------------------------
 
@@ -216,10 +310,23 @@ export function generateTranslationHTML(
   const rows = filledFields
     .map(([key, value]) => {
       const label = fieldLabels[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+      // Auto-transliterate Cyrillic values to Latin for USCIS compliance.
+      // If the user entered Cyrillic, show the transliterated English value prominently
+      // and the original text in small italic below it for reference.
+      let displayValue: string
+      if (hasCyrillic(value)) {
+        const transliterated = transliterateCyrillic(value)
+        displayValue =
+          `${escapeHtml(transliterated)}<div class="orig-value">Original: ${escapeHtml(value)}</div>`
+      } else {
+        displayValue = escapeHtml(value)
+      }
+
       return `
         <tr>
           <td class="field-label">${escapeHtml(label)}</td>
-          <td class="field-value">${escapeHtml(value)}</td>
+          <td class="field-value">${displayValue}</td>
         </tr>`
     })
     .join('')
@@ -304,6 +411,7 @@ export function generateTranslationHTML(
     }
     .field-label { width: 45%; color: #333; font-style: italic; }
     .field-value { width: 55%; color: #000; font-weight: 500; }
+    .orig-value { font-size: 9.5pt; color: #666; font-weight: 400; font-style: italic; margin-top: 2px; }
     .certification-block {
       border: 1.5px solid #000;
       padding: 16px 18px;
