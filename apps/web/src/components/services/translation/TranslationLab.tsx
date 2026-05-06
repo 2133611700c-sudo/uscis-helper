@@ -413,7 +413,7 @@ function OutputsStep({
       label: 'Translation Draft',
       filename: 'translation-draft.html',
       icon: '📄',
-      description: 'USCIS-compliant certified translation per 8 CFR 103.2(b)(3)',
+      description: 'USCIS-ready translation draft per 8 CFR 103.2(b)(3) — you sign the self-certification',
       content: outputs.translationDraft,
     },
     {
