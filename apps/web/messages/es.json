@@ -874,6 +874,125 @@
           "Use PDF si el documento tiene más de una página."
         ],
         "riskNote": "Estos documentos varían mucho. Revise el borrador con cuidado antes de usarlo."
+      },
+      "death-certificate": {
+        "title": "Certificado de Defunción",
+        "description": "Prepare un borrador con nombre, fechas, lugar de fallecimiento y datos del registro.",
+        "panelTitle": "Borrador de traducción del certificado de defunción",
+        "fieldsIncluded": [
+          "Nombre completo del fallecido, fecha y lugar de fallecimiento.",
+          "Número de certificado y datos de la oficina de registro.",
+          "Causa de fallecimiento si aparece en el documento.",
+          "Borrador para revisar antes de la certificación del traductor."
+        ],
+        "uploadInstructions": [
+          "Cargue el certificado completo incluyendo sellos y firmas.",
+          "Mantenga todos los sellos y notas manuscritas visibles.",
+          "Use un escáner o foto plana con buen contraste."
+        ],
+        "riskNote": "Los certificados de defunción suelen necesitarse para herencias y beneficios. Verifique todas las fechas con cuidado."
+      },
+      "adoption-certificate": {
+        "title": "Certificado de Adopción",
+        "description": "Prepare un borrador con el nombre del menor, padres adoptivos y decisión judicial.",
+        "panelTitle": "Borrador de traducción del certificado de adopción",
+        "fieldsIncluded": [
+          "Nombre del menor antes y después de la adopción.",
+          "Nombres completos de los padres adoptivos y fecha de la decisión.",
+          "Número de referencia del tribunal o registro y autoridad emisora.",
+          "Borrador para revisar antes de la certificación del traductor."
+        ],
+        "uploadInstructions": [
+          "Cargue el certificado completo o la decisión judicial con todas las páginas.",
+          "Mantenga firmas, sellos y estampillas oficiales visibles.",
+          "Use escáner o foto plana sin reflejos."
+        ],
+        "riskNote": "Los documentos de adopción suelen tener varias páginas. Incluya todas en su carga."
+      },
+      "name-change-certificate": {
+        "title": "Certificado de Cambio de Nombre",
+        "description": "Prepare un borrador con el nombre anterior y nuevo, fecha de decisión y autoridad emisora.",
+        "panelTitle": "Borrador de traducción del certificado de cambio de nombre",
+        "fieldsIncluded": [
+          "Nombre legal completo anterior y nuevo.",
+          "Fecha de decisión o registro y número de documento.",
+          "Motivo del cambio de nombre si aparece en el documento.",
+          "Borrador para revisar antes de la certificación del traductor."
+        ],
+        "uploadInstructions": [
+          "Cargue el certificado completo o la decisión judicial.",
+          "Mantenga sellos, estampillas y notas manuscritas visibles.",
+          "Use escáner o foto plana con buen contraste."
+        ],
+        "riskNote": "Los documentos de cambio de nombre son críticos para la coherencia de identidad en todos los trámites de USCIS."
+      },
+      "police-record": {
+        "title": "Antecedentes Penales",
+        "description": "Prepare un borrador con nombre, estado del registro, autoridad emisora y fechas de vigencia.",
+        "panelTitle": "Borrador de traducción de antecedentes penales",
+        "fieldsIncluded": [
+          "Nombre completo, fecha y lugar de nacimiento.",
+          "Estado del registro (p. ej., Sin antecedentes) y número de referencia.",
+          "Autoridad emisora y fecha de emisión.",
+          "Fecha de vigencia si aparece en el documento."
+        ],
+        "uploadInstructions": [
+          "Cargue el documento completo incluyendo todos los sellos y firmas.",
+          "Mantenga la sección de la autoridad emisora completamente visible.",
+          "Use escáner o foto plana sin reflejos."
+        ],
+        "riskNote": "Los antecedentes penales suelen requerirse para la green card y naturalización. Confirme que la fecha de vigencia está dentro del plazo requerido."
+      },
+      "medical-record": {
+        "title": "Documento / Certificado Médico",
+        "description": "Prepare un borrador con nombre del paciente, diagnóstico, período de tratamiento e institución.",
+        "panelTitle": "Borrador de traducción del documento médico",
+        "fieldsIncluded": [
+          "Nombre completo y fecha de nacimiento del paciente.",
+          "Diagnóstico o condición médica cuando aparece.",
+          "Fechas de tratamiento y datos del médico tratante.",
+          "Institución médica emisora y número de referencia del documento."
+        ],
+        "uploadInstructions": [
+          "Cargue el documento completo incluyendo todas las páginas con detalles médicos.",
+          "Mantenga la firma del médico y el sello institucional visibles.",
+          "Use escáner o foto plana con buen contraste."
+        ],
+        "riskNote": "Los documentos médicos varían mucho en formato. Revise todos los campos cuidadosamente antes de usar el borrador."
+      },
+      "property-document": {
+        "title": "Documentos de Propiedad",
+        "description": "Prepare un borrador con nombre del propietario, dirección, tipo de documento y datos de registro.",
+        "panelTitle": "Borrador de traducción de documentos de propiedad",
+        "fieldsIncluded": [
+          "Nombre legal completo del propietario y dirección de la propiedad.",
+          "Tipo de documento (título, escritura) y número de registro.",
+          "Fecha de registro y datos de la autoridad emisora.",
+          "Borrador para revisar antes de la certificación del traductor."
+        ],
+        "uploadInstructions": [
+          "Cargue el documento completo incluyendo todas las páginas selladas y firmadas.",
+          "Mantenga los números de registro y sellos oficiales claramente visibles.",
+          "Use escáner o foto plana — no fotografíe documentos doblados."
+        ],
+        "riskNote": "Los documentos de propiedad suelen requerir traducción notariada. Confirme los requisitos de certificación con USCIS."
+      },
+      "employment-record": {
+        "title": "Registro de Empleo",
+        "description": "Prepare un borrador con empleador, puesto, fechas de empleo y certificación oficial.",
+        "panelTitle": "Borrador de traducción del registro de empleo",
+        "fieldsIncluded": [
+          "Nombre completo del empleado y nombre del empleador / organización.",
+          "Cargo o puesto y fechas de inicio y fin del empleo.",
+          "Número de referencia del documento y datos de la autoridad emisora.",
+          "Borrador para revisar antes de la certificación del traductor."
+        ],
+        "uploadInstructions": [
+          "Cargue el registro completo incluyendo todas las páginas selladas.",
+          "Mantenga las entradas manuscritas y sellos oficiales claramente visibles.",
+          "Use PDF cuando el registro ocupa varias páginas."
+        ],
+        "riskNote": "Los registros de empleo suelen contener fechas manuscritas. Revíselas cuidadosamente antes de finalizar el borrador."
       }
     },
     "panel": {
