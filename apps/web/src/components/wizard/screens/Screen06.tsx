@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import { MemberTabs } from '@/components/wizard/MemberTabs'
 import { ScreenGlossary } from '@/components/wizard/ScreenGlossary'
+import { HelpTip } from '@/components/wizard/HelpTip'
 
 // PII POLICY: We do NOT collect or store names, dates of birth, passport numbers,
 // I-94 numbers, or other identifying information. Users enter these directly on
@@ -23,6 +24,15 @@ const T = {
       'Поточна поштова адреса в США',
       'Дата закінчення поточного паролю (на I-94)',
     ],
+    helpTips: [
+      null,
+      null,
+      'I-94 — це офіційний електронний запис про ваш в\'їзд до США. Знайдіть його безкоштовно на сайті i94.cbp.dhs.gov → "Get Most Recent I-94". Потрібен 11-значний номер у верхньому правому куті.',
+      null,
+      null,
+      null,
+      'Знайдіть дату закінчення паролю у вашому I-94 у рядку "Admit Until Date". Зазвичай це дата приблизно через рік після останнього в\'їзду до США.',
+    ] as (string | null)[],
     checkedCount: (n: number, total: number) => `✓ ${n} з ${total} пунктів підтверджено`,
     i94Link: 'Перевірте свій запис I-94 на i94.cbp.dhs.gov →',
     continueBtn: 'Продовжити →',
@@ -40,6 +50,15 @@ const T = {
       'Текущий почтовый адрес в США',
       'Дата окончания текущего пароля (на I-94)',
     ],
+    helpTips: [
+      null,
+      null,
+      'I-94 — это официальная электронная запись о вашем въезде в США. Найдите её бесплатно на i94.cbp.dhs.gov → "Get Most Recent I-94". Нужен 11-значный номер в правом верхнем углу.',
+      null,
+      null,
+      null,
+      'Дату окончания пароля ищите в вашем I-94 в строке "Admit Until Date". Обычно это дата примерно через год после последнего въезда в США.',
+    ] as (string | null)[],
     checkedCount: (n: number, total: number) => `✓ ${n} из ${total} пунктов подтверждено`,
     i94Link: 'Проверьте свою запись I-94 на i94.cbp.dhs.gov →',
     continueBtn: 'Продолжить →',
@@ -57,6 +76,15 @@ const T = {
       'Current U.S. mailing address',
       'Current parole expiration date (on I-94)',
     ],
+    helpTips: [
+      null,
+      null,
+      'Your I-94 is the official electronic record of your US entry. Find it free at i94.cbp.dhs.gov → "Get Most Recent I-94". You need the 11-digit number shown in the top-right corner.',
+      null,
+      null,
+      null,
+      'Find your parole expiration date in your I-94 under "Admit Until Date". It is typically about one year after your last entry into the US.',
+    ] as (string | null)[],
     checkedCount: (n: number, total: number) => `✓ ${n} of ${total} items confirmed`,
     i94Link: 'Look up your I-94 record at i94.cbp.dhs.gov →',
     continueBtn: 'Continue →',
@@ -74,6 +102,15 @@ const T = {
       'Dirección postal actual en EE.UU.',
       'Fecha de vencimiento del parole actual (en I-94)',
     ],
+    helpTips: [
+      null,
+      null,
+      'Su I-94 es el registro electrónico oficial de su entrada a EE.UU. Encuéntrelo gratis en i94.cbp.dhs.gov → "Get Most Recent I-94". Necesita el número de 11 dígitos que aparece en la esquina superior derecha.',
+      null,
+      null,
+      null,
+      'Busque la fecha de vencimiento del parole en su I-94 en el campo "Admit Until Date". Generalmente es aproximadamente un año después de su última entrada a EE.UU.',
+    ] as (string | null)[],
     checkedCount: (n: number, total: number) => `✓ ${n} de ${total} elementos confirmados`,
     i94Link: 'Consulte su registro I-94 en i94.cbp.dhs.gov →',
     continueBtn: 'Continuar →',
@@ -138,6 +175,7 @@ export function Screen06() {
         {ITEM_KEYS.map((key, idx) => {
           const isChecked = activeMember.fields[key] === 'yes'
           const label = t.items[idx]
+          const tip = t.helpTips[idx] ?? null
           return (
             <label
               key={key}
@@ -166,8 +204,14 @@ export function Screen06() {
                 onChange={(e) => handleCheck(key, e.target.checked)}
                 className="sr-only"
               />
-              <span className="text-[14px]" style={{ color: 'var(--text-1)' }}>
+              <span className="text-[14px] flex-1" style={{ color: 'var(--text-1)' }}>
                 {label}
+                {tip && (
+                  <HelpTip
+                    id={`tip-${key}`}
+                    content={tip}
+                  />
+                )}
               </span>
             </label>
           )

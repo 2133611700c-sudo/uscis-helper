@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import { HelpTip } from '@/components/wizard/HelpTip'
 
 const T = {
   uk: {
@@ -9,6 +10,7 @@ const T = {
     subtitle: 'Поясніть, чому ви маєте право на повторний пароль. Потрібен хоча б один з трьох варіантів нижче.',
     explanationLabel: 'Письмове пояснення',
     explanationOptional: '(необов\'язково, якщо додаєте документи)',
+    explanationHelp: 'Пишіть від першої особи. Вкажіть: коли і як ви в\'їхали до США, за якою програмою (U4U), коли закінчується ваш поточний пароль, і чому ви просите продовження. Не потрібно бути юристом — просто опишіть факти своєї ситуації. Ми надаємо шаблон для початку.',
     explanationPlaceholder: 'Наприклад:\n"Я приїхала до США у 2022 році за програмою U4U. Мій поточний parole діє до [вкажіть дату із I-94]. Прошу продовжити parole для продовження захисту в США та можливості продовжувати роботу."\n\nЗмініть деталі відповідно до вашої ситуації.',
     explanationNote: 'Не вказуйте номери паспорту, I-94, SSN, паролі або банківські реквізити.',
     docsLabel: 'Підтверджуючі документи',
@@ -24,6 +26,7 @@ const T = {
     subtitle: 'Объясните, почему вы имеете право на повторный пароль. Нужен хотя бы один из трёх вариантов ниже.',
     explanationLabel: 'Письменное пояснение',
     explanationOptional: '(необязательно, если прикладываете документы)',
+    explanationHelp: 'Пишите от первого лица. Укажите: когда и как вы въехали в США, по какой программе (U4U), когда заканчивается ваш текущий пароль, и почему вы просите продление. Не нужно быть юристом — просто опишите факты своей ситуации. Мы предоставляем шаблон для начала.',
     explanationPlaceholder: 'Например:\n"Я приехала в США в 2022 году по программе U4U. Мой текущий parole действует до [укажите дату из I-94]. Прошу продлить parole для продолжения защиты в США и возможности продолжать работу."\n\nИзмените детали в соответствии с вашей ситуацией.',
     explanationNote: 'Не указывайте номера паспорта, I-94, SSN, пароли или банковские реквизиты.',
     docsLabel: 'Подтверждающие документы',
@@ -39,6 +42,7 @@ const T = {
     subtitle: 'Explain why you qualify for re-parole. You need at least one of the three options below.',
     explanationLabel: 'Written explanation',
     explanationOptional: '(optional if you attach documents)',
+    explanationHelp: 'Write in first person. Include: when and how you entered the US, under which program (U4U), when your current parole expires, and why you are requesting re-parole. You do not need to be a lawyer — just state the facts of your situation. We provide a template to get you started.',
     explanationPlaceholder: 'Example:\n"I came to the United States in 2022 under the U4U program. My current parole expires on [enter the date from your I-94]. I am requesting re-parole to continue my protection in the United States."\n\nAdjust the details to match your situation.',
     explanationNote: 'Do not include passport numbers, I-94 numbers, SSN, passwords, or financial account numbers.',
     docsLabel: 'Supporting documents',
@@ -54,6 +58,7 @@ const T = {
     subtitle: 'Explique por qué califica para re-parole. Necesita al menos una de las tres opciones a continuación.',
     explanationLabel: 'Explicación escrita',
     explanationOptional: '(opcional si adjunta documentos)',
+    explanationHelp: 'Escriba en primera persona. Incluya: cuándo y cómo entró a EE.UU., bajo qué programa (U4U), cuándo vence su parole actual y por qué solicita re-parole. No necesita ser abogado — solo describa los hechos de su situación. Le proporcionamos una plantilla para comenzar.',
     explanationPlaceholder: 'Ejemplo:\n"Llegué a los Estados Unidos en 2022 bajo el programa U4U. Mi parole actual vence el [indique la fecha de su I-94]. Solicito re-parole para continuar con mi protección en los Estados Unidos."\n\nAjuste los detalles según su situación.',
     explanationNote: 'No incluya números de pasaporte, I-94, SSN, contraseñas ni datos bancarios.',
     docsLabel: 'Documentos de apoyo',
@@ -138,6 +143,7 @@ export function Screen07() {
             <span className="ml-1.5 font-normal text-[12px]" style={{ color: 'var(--text-3)' }}>
               {t.explanationOptional}
             </span>
+            <HelpTip id="tip-explanation" content={t.explanationHelp} />
           </label>
           <textarea
             id="explanation"
