@@ -1,15 +1,269 @@
 /**
- * Generates a USCIS-ready translation draft as an HTML string.
+ * Translation document HTML generator.
  *
- * Legal basis: 8 CFR 103.2(b)(3)
- * "Any document containing foreign language submitted to USCIS shall be accompanied
- * by a full English language translation which the translator has certified as
- * complete and accurate, and by the translator's certification that he or she is
- * competent to translate from the foreign language into English."
+ * Exports:
+ *  - generateTranslationDoc()  — primary: takes DocDef + FieldDef[] from docDefinitions.ts
+ *  - generateTranslationHTML() — legacy helper (kept for compatibility)
+ *  - hasCyrillic() / transliterateCyrillic() — transliteration utilities
+ *  - downloadTranslationTemplate() — browser download helper
  *
- * IMPORTANT: This is a DRAFT TEMPLATE. The user reviews and signs the certification
- * themselves. Messenginfo does not certify translations.
+ * IMPORTANT: This is a DRAFT TEMPLATE.
+ * The user reviews, completes the certification section, and signs before submitting.
+ * Messenginfo does not certify translations.
  */
+
+import type { DocDef, FieldDef, SourceLang } from './docDefinitions'
+
+// ---------------------------------------------------------------------------
+// Language display names (used in output headers)
+// ---------------------------------------------------------------------------
+
+const LANG_NAMES: Record<string, string> = {
+  uk: 'Ukrainian', ru: 'Russian', en: 'English', es: 'Spanish',
+  pl: 'Polish',    de: 'German',  fr: 'French',  ar: 'Arabic',
+  zh: 'Chinese',   ko: 'Korean',  pt: 'Portuguese',
+}
+
+function langName(code: string): string {
+  return LANG_NAMES[code] ?? code.toUpperCase()
+}
+
+// ---------------------------------------------------------------------------
+// Primary generator: takes DocDef + FieldDef[] + values → 4 HTML files
+// Returns [translationDraft, certStatement, checklist, instructions]
+// ---------------------------------------------------------------------------
+
+export function generateTranslationDoc(
+  doc: DocDef,
+  allFields: FieldDef[],
+  values: Record<string, string>,
+  srcLang: SourceLang,
+  targetLang: SourceLang = 'en',
+  eraNote?: string,
+): [string, string, string, string] {
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  const src  = langName(srcLang)
+  const tgt  = langName(targetLang)
+  const docTitleSrc = (doc.label as Record<string, string>)[srcLang]    ?? doc.label.en ?? doc.id
+  const docTitleTgt = (doc.label as Record<string, string>)[targetLang] ?? doc.label.en ?? doc.id
+  const applicantName = (values['full_name'] ?? values['child_name'] ?? '').trim()
+
+  // ── Build field rows ──────────────────────────────────────────────────────
+  const rows = allFields
+    .filter(f => {
+      const v = values[f.key]
+      return v && v.trim().length > 0
+    })
+    .map(f => {
+      const origVal = values[f.key] ?? ''
+      // Field label on the original document (source language side)
+      const srcLabel  = (f.orig as Record<string, string>)[srcLang]    ?? f.orig.en    ?? f.en
+      // Field label in the translation output (target language side)
+      const tgtLabel  = (f.orig as Record<string, string>)[targetLang] ?? f.orig.en    ?? f.en
+      // Transliterate Cyrillic → Latin when target is English
+      const tgtValue = (targetLang === 'en' && hasCyrillic(origVal))
+        ? transliterateCyrillic(origVal)
+        : origVal
+      const origHtml = hasCyrillic(origVal)
+        ? `${escapeHtml(origVal)}`
+        : escapeHtml(origVal)
+      return `
+        <tr>
+          <td class="c1">${escapeHtml(srcLabel)}</td>
+          <td class="c2">${origHtml}</td>
+          <td class="c3">${escapeHtml(tgtLabel)}</td>
+          <td class="c4">${escapeHtml(tgtValue) || '—'}</td>
+        </tr>`
+    })
+    .join('')
+
+  // ── Era note banner ───────────────────────────────────────────────────────
+  const eraBanner = eraNote
+    ? `<div class="era-note">📝 Translator note: ${escapeHtml(eraNote)}</div>`
+    : ''
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FILE 1 — Translation Draft (professional layout)
+  // ─────────────────────────────────────────────────────────────────────────
+  const file1 = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Translation — ${escapeHtml(docTitleTgt)}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Times New Roman',Times,serif;font-size:12pt;color:#000;background:#fff;max-width:780px;margin:0 auto;padding:48px 40px 60px}
+.doc-header{text-align:center;border-bottom:2.5px solid #000;padding-bottom:16px;margin-bottom:18px}
+.doc-title{font-size:17pt;font-weight:bold;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.doc-meta{font-size:11pt;color:#333;display:flex;justify-content:center;gap:32px;flex-wrap:wrap}
+.doc-meta span{white-space:nowrap}
+.draft-banner{background:#fff8e1;border:1.5px solid #f59e0b;border-radius:3px;padding:8px 14px;font-size:10pt;color:#92400e;text-align:center;margin-bottom:16px}
+.era-note{background:#eff6ff;border:1px solid #93c5fd;border-radius:3px;padding:8px 14px;font-size:10.5pt;color:#1e40af;margin-bottom:16px}
+.sec-label{font-size:10pt;font-weight:bold;text-transform:uppercase;letter-spacing:.07em;color:#666;border-bottom:1px solid #bbb;padding-bottom:4px;margin:18px 0 8px}
+table{width:100%;border-collapse:collapse;margin-bottom:18px}
+th{background:#f0f0f0;font-size:10pt;font-weight:bold;padding:7px 10px;text-align:left;border:1.5px solid #aaa}
+td{padding:6px 10px;border:1px solid #ccc;font-size:11pt;vertical-align:top}
+.c1{width:22%;color:#555;font-style:italic}
+.c2{width:28%;color:#222;font-weight:600}
+.c3{width:22%;color:#555;font-style:italic}
+.c4{width:28%;color:#000;font-weight:700}
+.cert{border:2px solid #000;padding:18px 20px;margin-top:28px;border-radius:2px}
+.cert h2{font-size:13pt;font-weight:bold;text-transform:uppercase;text-align:center;letter-spacing:.05em;margin-bottom:12px}
+.cert p{font-size:11pt;line-height:1.7;margin-bottom:12px}
+.sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px;margin-top:16px}
+.sig-line{border-bottom:1.5px solid #000;min-height:26px}
+.sig-lbl{font-size:9.5pt;color:#555;margin-top:3px}
+.footer{margin-top:30px;padding-top:10px;border-top:1px solid #ccc;font-size:9pt;color:#777;text-align:center;line-height:1.6}
+@media print{body{padding:20px}}
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <div class="doc-title">Translation of ${escapeHtml(docTitleTgt)}</div>
+  <div class="doc-meta">
+    <span>From: <strong>${escapeHtml(src)}</strong> (${escapeHtml(docTitleSrc)})</span>
+    <span>Into: <strong>${escapeHtml(tgt)}</strong></span>
+    <span>Date: <strong>${today}</strong></span>
+  </div>
+</div>
+
+<div class="draft-banner">⚠ DRAFT TEMPLATE — Review all fields. Sign the certification section before submitting to any authority.</div>
+${eraBanner}
+
+<div class="sec-label">Document Fields</div>
+<table>
+<thead>
+  <tr>
+    <th>Field (${escapeHtml(src)})</th>
+    <th>Original Value</th>
+    <th>Field (${escapeHtml(tgt)})</th>
+    <th>Translation / Value</th>
+  </tr>
+</thead>
+<tbody>
+${rows || '<tr><td colspan="4" style="text-align:center;color:#999;padding:14px">No fields entered.</td></tr>'}
+</tbody>
+</table>
+
+<div class="cert">
+  <h2>Translator's Certification</h2>
+  <p>I, <span style="text-decoration:underline">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>, certify that I am competent to translate from <strong>${escapeHtml(src)}</strong> into <strong>${escapeHtml(tgt)}</strong>, and that the above translation is complete and accurate to the best of my knowledge and belief.</p>
+  <p><strong>Document:</strong> ${escapeHtml(docTitleTgt)}&nbsp;&nbsp;&nbsp;<strong>Applicant:</strong> ${escapeHtml(applicantName) || '—'}&nbsp;&nbsp;&nbsp;<strong>Date:</strong> ${today}</p>
+  <div class="sig-grid">
+    <div><div class="sig-line">&nbsp;</div><div class="sig-lbl">Signature (handwritten)</div></div>
+    <div><div class="sig-line">&nbsp;</div><div class="sig-lbl">Date signed</div></div>
+    <div><div class="sig-line">&nbsp;</div><div class="sig-lbl">Printed full name</div></div>
+    <div><div class="sig-line">&nbsp;</div><div class="sig-lbl">Phone or email (optional)</div></div>
+    <div style="grid-column:1/-1"><div class="sig-line">&nbsp;</div><div class="sig-lbl">Mailing address — Street, City, State, ZIP</div></div>
+  </div>
+</div>
+
+<div class="footer">
+  Messenginfo.com · Translation preparation tool · Not a law firm · Does not provide legal advice<br>
+  8 CFR 103.2(b)(3) · uscis.gov
+</div>
+
+</body></html>`
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FILE 2 — Standalone Certification Statement page
+  // ─────────────────────────────────────────────────────────────────────────
+  const file2 = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Certification Statement</title>
+<style>
+body{font-family:'Times New Roman',Times,serif;font-size:12pt;max-width:720px;margin:60px auto;padding:20px;color:#000;line-height:1.8}
+h1{font-size:15pt;font-weight:bold;text-transform:uppercase;text-align:center;margin-bottom:28px;letter-spacing:.05em}
+p{margin-bottom:16px}
+.sig-line{border-top:1.5px solid #000;width:320px;margin-top:50px;padding-top:6px;font-size:11pt;color:#555}
+.footer{font-size:10pt;color:#888;margin-top:40px;padding-top:10px;border-top:1px solid #ccc}
+@media print{body{margin:20px}}
+</style>
+</head>
+<body>
+<h1>Translator's Certification Statement</h1>
+<p>I, _________________________________________, certify that I am competent to translate from <strong>${escapeHtml(src)}</strong> into <strong>${escapeHtml(tgt)}</strong>, and that the translation of the attached <strong>${escapeHtml(docTitleTgt)}</strong> is complete and accurate to the best of my knowledge and belief.</p>
+<p>I understand that any false statements made herein are punishable under applicable law.</p>
+<p><strong>Applicant name:</strong> ${escapeHtml(applicantName) || '___________________________'}<br/>
+<strong>Date of certification:</strong> ${today}</p>
+<div class="sig-line">Signature of Translator (HANDWRITTEN — do not type)</div>
+<p style="margin-top:18px">Printed name: ___________________________<br/>
+Date: ___________________________<br/>
+Phone or email: ___________________________<br/>
+Mailing address: ___________________________</p>
+<div class="footer">Per 8 CFR 103.2(b)(3) · Messenginfo.com · Not a law firm</div>
+</body></html>`
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FILE 3 — Submission Checklist
+  // ─────────────────────────────────────────────────────────────────────────
+  const file3 = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Submission Checklist</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:680px;margin:40px auto;padding:20px;color:#111}
+h1{font-size:16pt;margin-bottom:6px}
+.sub{font-size:11pt;color:#555;margin-bottom:18px}
+.item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #eee;align-items:flex-start}
+.box{width:20px;height:20px;border:2px solid #333;flex-shrink:0;border-radius:3px;margin-top:1px}
+strong{color:#000}
+.footer{font-size:9.5pt;color:#888;margin-top:20px;padding-top:10px;border-top:1px solid #ddd}
+@media print{body{margin:0;padding:10px}}
+</style>
+</head>
+<body>
+<h1>Submission Checklist — ${escapeHtml(docTitleTgt)}</h1>
+<div class="sub">Prepared ${today} · Applicant: ${escapeHtml(applicantName) || '—'}</div>
+<div class="item"><div class="box"></div><div>Translation draft — all fields visible, printed legibly on white paper</div></div>
+<div class="item"><div class="box"></div><div><strong>Certification statement — signed by hand</strong> (date + printed name required; no electronic signature)</div></div>
+<div class="item"><div class="box"></div><div>Copy of the original document attached (front and back if applicable)</div></div>
+<div class="item"><div class="box"></div><div>All text including stamps and seals is visible on the copy</div></div>
+<div class="item"><div class="box"></div><div>Main USCIS form completed with matching names and dates</div></div>
+<div class="item"><div class="box"></div><div>Correct USCIS filing fee included (verify at uscis.gov/feecalculator)</div></div>
+<div class="item"><div class="box"></div><div>Correct USCIS mailing address verified at uscis.gov/forms before sending</div></div>
+<div class="item"><div class="box"></div><div>Return envelope or postage included if required</div></div>
+<div class="footer">Messenginfo.com · 8 CFR 103.2(b)(3)</div>
+</body></html>`
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FILE 4 — Filing Instructions
+  // ─────────────────────────────────────────────────────────────────────────
+  const file4 = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Filing Instructions</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:680px;margin:40px auto;padding:20px;line-height:1.8;color:#111}
+h1{font-size:16pt;margin-bottom:6px}
+.sub{font-size:11pt;color:#555;margin-bottom:20px}
+h2{font-size:13pt;color:#1e40af;margin-top:22px;border-bottom:2px solid #e0e7ff;padding-bottom:4px}
+p{margin-top:8px;font-size:11pt}
+.footer{font-size:9.5pt;color:#888;margin-top:28px;padding-top:10px;border-top:1px solid #ddd}
+@media print{body{margin:0;padding:10px}}
+</style>
+</head>
+<body>
+<h1>Filing Instructions — ${escapeHtml(docTitleTgt)}</h1>
+<div class="sub">Prepared ${today}</div>
+<h2>Step 1 — Print all pages</h2>
+<p>Print at 100% scale on white Letter/A4 paper. Do not scale to fit — USCIS may reject reduced-size documents.</p>
+<h2>Step 2 — Sign the certification</h2>
+<p><strong>Handwrite</strong> your signature on the certification page. Include printed name, date, and mailing address. Electronic signatures are not accepted for paper filings.</p>
+<h2>Step 3 — Assemble the packet</h2>
+<p>Recommended order: (1) Signed certification → (2) Translation draft → (3) Copy of the original ${escapeHtml(docTitleTgt)}. Do not staple to the main USCIS form — paperclip the supporting document group.</p>
+<h2>Step 4 — Verify address and mail</h2>
+<p>Check the current USCIS lockbox address at <strong>uscis.gov/forms</strong> before mailing — addresses vary by state and form type. Send via USPS Priority Mail or a trackable courier. Keep your receipt.</p>
+<div class="footer">Messenginfo.com · Translation preparation tool · Not a law firm · 8 CFR 103.2(b)(3)</div>
+</body></html>`
+
+  return [file1, file2, file3, file4]
+}
 
 export type DocumentType =
   | 'passport'
