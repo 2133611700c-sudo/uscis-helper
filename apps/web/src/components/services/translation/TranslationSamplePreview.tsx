@@ -17,7 +17,7 @@ export function TranslationSamplePreview({ locale }: { locale: string }) {
       valueCol: 'Значення (оригінал)',
       transCol: 'Переклад (English)',
       cert: 'Блок сертифікації перекладача',
-      certBody: 'I, [Your Name], hereby certify that I am competent to translate from Ukrainian into English, and that the foregoing is a complete and accurate translation of the attached document.',
+      certBody: 'I, [Your Name], certify that I am fluent in English and Ukrainian, and that the attached document is an accurate translation of the [Document Title] attached hereto.',
       cta: 'Перекласти свій документ безкоштовно →',
     },
     ru: {
@@ -28,7 +28,7 @@ export function TranslationSamplePreview({ locale }: { locale: string }) {
       valueCol: 'Значение (оригинал)',
       transCol: 'Перевод (English)',
       cert: 'Блок сертификации переводчика',
-      certBody: 'I, [Your Name], hereby certify that I am competent to translate from Ukrainian into English, and that the foregoing is a complete and accurate translation of the attached document.',
+      certBody: 'I, [Your Name], certify that I am fluent in English and Ukrainian, and that the attached document is an accurate translation of the [Document Title] attached hereto.',
       cta: 'Перевести документ бесплатно →',
     },
     es: {
@@ -39,7 +39,7 @@ export function TranslationSamplePreview({ locale }: { locale: string }) {
       valueCol: 'Valor (original)',
       transCol: 'Traducción (English)',
       cert: 'Bloque de certificación',
-      certBody: 'I, [Your Name], hereby certify that I am competent to translate from Ukrainian into English, and that the foregoing is a complete and accurate translation of the attached document.',
+      certBody: 'I, [Your Name], certify that I am fluent in English and Ukrainian, and that the attached document is an accurate translation of the [Document Title] attached hereto.',
       cta: 'Traducir su documento gratis →',
     },
     en: {
@@ -50,7 +50,7 @@ export function TranslationSamplePreview({ locale }: { locale: string }) {
       valueCol: 'Value (original)',
       transCol: 'Translation (English)',
       cert: 'Translator certification block',
-      certBody: 'I, [Your Name], hereby certify that I am competent to translate from Ukrainian into English, and that the foregoing is a complete and accurate translation of the attached document.',
+      certBody: 'I, [Your Name], certify that I am fluent in English and Ukrainian, and that the attached document is an accurate translation of the [Document Title] attached hereto.',
       cta: 'Translate your document free →',
     },
   }
@@ -113,12 +113,12 @@ export function TranslationSamplePreview({ locale }: { locale: string }) {
       </div>
 
       {/* Certification block stub */}
-      <div className="border-t border-dashed border-blue-300 bg-blue-50 px-5 py-3">
-        <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider mb-1">📋 {t.cert}</p>
-        <p className="text-[11px] text-blue-800 leading-relaxed italic">{t.certBody}</p>
+      <div className="border-t border-dashed border-blue-400 bg-blue-600 px-5 py-3">
+        <p className="text-[11px] font-bold text-blue-100 uppercase tracking-wider mb-1">📋 {t.cert}</p>
+        <p className="text-[11px] text-white leading-relaxed italic">{t.certBody}</p>
         <div className="mt-2 flex items-center gap-4">
-          <div className="h-px flex-1 border-b border-dashed border-blue-400" />
-          <p className="text-[10px] text-blue-500">Signature · Date · Address</p>
+          <div className="h-px flex-1 border-b border-dashed border-blue-300" />
+          <p className="text-[10px] text-blue-200">Signature · Date · Address</p>
           <div className="h-px flex-1 border-b border-dashed border-blue-400" />
         </div>
       </div>
