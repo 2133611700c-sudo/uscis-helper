@@ -2,40 +2,27 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Download, ChevronRight } from 'lucide-react'
-import { downloadTranslationTemplate, hasCyrillic, transliterateCyrillic } from '@/lib/translation/generateTranslationHTML'
+import { hasCyrillic, transliterateCyrillic } from '@/lib/translation/generateTranslationHTML'
+import {
+  DOCS,
+  DocDef,
+  FieldDef,
+  SourceLang,
+  DocEra,
+  EraVariant,
+} from '@/lib/translation/docDefinitions'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type DocId =
-  | 'passport' | 'birth_cert' | 'marriage_cert' | 'divorce_cert'
-  | 'diploma' | 'driving_license' | 'military_id' | 'medical_record'
-  | 'death_cert' | 'adoption_cert' | 'name_change_cert' | 'police_record'
-  | 'property_doc' | 'employment_record'
-
-type SourceLang = 'uk' | 'ru' | 'es' | 'pl' | 'de' | 'fr' | 'ar' | 'zh' | 'ko' | 'pt' | 'en'
+// ─── Local types ──────────────────────────────────────────────────────────────
 
 type Group = 'personal' | 'document' | 'authority'
 
-interface FieldDef {
-  key: string
-  en: string
-  orig: Record<string, string>
-  required: boolean
-  type?: 'text' | 'date' | 'radio'
-  group: Group
-  options?: { val: string; label: Record<string, string> }[]
-  helpExample?: Record<string, string>
-  placeholder?: Record<string, string>
-}
-
-interface DocDef {
-  id: DocId
-  popular: boolean
-  label: Record<string, string>
-  icon: string
-  color: string
-  prodId: string
-  fields: FieldDef[]
+/** Infer display group from field key when explicit group is absent. */
+function inferGroup(key: string): Group {
+  if (/issuing_authority|court_name|institution|employer_name|bank_name/.test(key)) return 'authority'
+  if (
+    /document_number|issue_date|expiry_date|date_of_marriage|date_of_divorce|date_of_death|decision_date|effective_date|registration_date|graduation_date|graduation_year|vaccination_date|treatment_dates|employment_start|employment_end|statement_period|document_type|record_type|case_number|parties|order_summary|powers_granted|property_address|property_description|account|opening_balance|closing_balance|categories|lot_number|rank|service_branch|degree_title|field_of_study|position|address|nationality_field|registry_book_number/.test(key)
+  ) return 'document'
+  return 'personal'
 }
 
 // ─── Source languages ─────────────────────────────────────────────────────────
@@ -94,11 +81,13 @@ function getCertStatement(
   return s[lang] ?? s.en!
 }
 
-// ─── Document definitions ─────────────────────────────────────────────────────
+// DOCS imported from @/lib/translation/docDefinitions — see that file for all 20 document types.
 
-const DOCS: DocDef[] = [
+// (inline DOCS removed — imported from @/lib/translation/docDefinitions)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _DOCS_REMOVED = [
   {
-    id: 'passport', popular: true, prodId: 'passport',
+    id: '__placeholder__', popular: false, prodId: '__placeholder__',
     label: { uk: 'Паспорт', ru: 'Паспорт', en: 'Passport', es: 'Pasaporte', pl: 'Paszport', de: 'Reisepass', fr: 'Passeport', ar: 'جواز سفر', zh: '护照', ko: '여권', pt: 'Passaporte' },
     color: 'linear-gradient(150deg,#1e40af 0%,#3b82f6 100%)',
     icon: '<svg viewBox="0 0 30 38" width="30" height="38" fill="none"><rect x="1" y="1" width="28" height="36" rx="2" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.9)" stroke-width="1.5"/><line x1="6" y1="1" x2="6" y2="37" stroke="rgba(255,255,255,.3)" stroke-width="1"/><circle cx="17" cy="13" r="4.5" stroke="rgba(255,255,255,.95)" stroke-width="1.4" fill="rgba(255,255,255,.18)"/><path d="M9 22c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="rgba(255,255,255,.9)" stroke-width="1.4" stroke-linecap="round" fill="none"/><rect x="8" y="25" width="14" height="1.5" rx=".75" fill="rgba(255,255,255,.65)"/><rect x="2" y="28.5" width="26" height="1.5" rx=".75" fill="rgba(255,255,255,.55)"/><rect x="2" y="31.5" width="26" height="1.5" rx=".75" fill="rgba(255,255,255,.55)"/><rect x="2" y="34.5" width="20" height="1.5" rx=".75" fill="rgba(255,255,255,.4)"/></svg>',
@@ -634,7 +623,7 @@ function t(locale: string, key: string): string {
 }
 
 function origLabel(field: FieldDef, srcLang: string): string {
-  return field.orig[srcLang] ?? field.orig.en ?? field.en
+  return (field.orig as Record<string, string>)[srcLang] ?? field.orig.en ?? field.en
 }
 
 /** Format ISO date "YYYY-MM-DD" → "DD.MM.YYYY" for display; return as-is if not a date */
@@ -653,6 +642,8 @@ function generateTranslationFiles(
   fieldValues: Record<string, string>,
   srcLang: SourceLang,
   targetLang: SourceLang = 'en',
+  extraFields: FieldDef[] = [],
+  eraNote?: string,
 ): [string, string, string, string] {
   const now = new Date().toLocaleDateString('en-US')
   const allLangs = [...LANGS_TOP3, ...LANGS_MORE, ...LANGS_TARGET_TOP, ...LANGS_TARGET_MORE]
@@ -663,7 +654,8 @@ function generateTranslationFiles(
   const docLabelTarget = (doc.label as Record<string, string>)[targetLang] ?? doc.label.en ?? doc.id
   const docLabelSrc = (doc.label as Record<string, string>)[srcLang] ?? doc.label.en ?? doc.id
 
-  const rows = doc.fields.map((f) => {
+  const allFields = [...doc.fields, ...extraFields]
+  const rows = allFields.map((f) => {
     const v = fieldValues[f.key] || ''
     // Field label in the source language (as it appears on the original document)
     const srcLabel = (f.orig as Record<string, string>)[srcLang] ?? f.orig.en ?? f.en
@@ -689,6 +681,7 @@ function generateTranslationFiles(
 <h1>TRANSLATION DRAFT — ${docLabelTarget.toUpperCase()}</h1>
 <p style="font-size:13px;color:#555"><strong>Source:</strong> ${srcLangLabel} (${docLabelSrc}) &nbsp;→&nbsp; <strong>Target:</strong> ${targetLangLabel} (${docLabelTarget}) &nbsp;|&nbsp; <strong>Prepared:</strong> ${now}</p>
 <p style="font-size:12px;background:#fef3c7;border:1px solid #f59e0b;padding:8px 12px;border-radius:4px">⚠ Self-prepared translation draft. A signed certification statement must accompany this document.</p>
+${eraNote ? `<p style="font-size:12px;background:#eff6ff;border:1px solid #93c5fd;padding:8px 12px;border-radius:4px">📝 Translator note: ${eraNote}</p>` : ''}
 <table><thead><tr><th>Field (${srcLangLabel})</th><th>${srcLangLabel} Value</th><th>Field (${targetLangLabel})</th><th>${targetLangLabel} Value</th></tr></thead><tbody>${rows}</tbody></table>
 <p style="font-size:11px;color:#999;margin-top:20px">Generated by Messenginfo.com</p>
 </body></html>`
@@ -797,7 +790,7 @@ function DocCard({ doc, locale, selected, onSelect }: {
   doc: DocDef; locale: string
   selected: boolean; onSelect: () => void
 }) {
-  const label = doc.label[locale] ?? doc.label.en
+  const label = (doc.label as Record<string, string>)[locale] ?? doc.label.en
   return (
     <button
       type="button"
@@ -837,7 +830,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   // Wizard state
   // steps: 0=DocGrid, 1=Lang, 2=Upload, 3=Fields, 4=Review, 5=Confirm, 6=Payment+Download
   const [step, setStep] = useState(0)
-  const [docId, setDocId] = useState<DocId | null>(null)
+  const [docId, setDocId] = useState<string | null>(null)
+  const [docEra, setDocEra] = useState<DocEra | null>(null)
   const [srcLang, setSrcLang] = useState<SourceLang>('uk')
   const [targetLang, setTargetLang] = useState<SourceLang>('en')
   const [showMoreTargetLangs, setShowMoreTargetLangs] = useState(false)
@@ -850,6 +844,19 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [srcLang])
+
+  // When era changes, initialize any new extra field keys to '' so they appear in the form
+  useEffect(() => {
+    const extraFields = doc?.eraVariants?.find((e) => e.id === docEra)?.extraFields ?? []
+    if (extraFields.length > 0) {
+      setFieldValues((prev) => {
+        const patch: Record<string, string> = {}
+        extraFields.forEach((f) => { if (!(f.key in prev)) patch[f.key] = '' })
+        return Object.keys(patch).length > 0 ? { ...prev, ...patch } : prev
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docEra])
   const [checks, setChecks] = useState([false, false, false])
   const [downloaded, setDownloaded] = useState(false)
   const [generatedFiles, setGeneratedFiles] = useState<string[]>([])
@@ -867,13 +874,19 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const doc = DOCS.find((d) => d.id === docId)
-  const fields = doc?.fields ?? []
+  // Merge era extra fields (e.g. Soviet nationality field) when an era is selected
+  const docEraObj: EraVariant | null = doc?.eraVariants?.find((e) => e.id === docEra) ?? null
+  const fields: FieldDef[] = [
+    ...(doc?.fields ?? []),
+    ...(docEraObj?.extraFields ?? []),
+  ]
 
   const requiredFilled = fields.filter((f) => f.required).every((f) => (fieldValues[f.key] ?? '').trim().length > 0)
   const allChecked = checks.every(Boolean)
 
-  function selectDoc(id: DocId) {
+  function selectDoc(id: string) {
     setDocId(id)
+    setDocEra(null)
     const d = DOCS.find((x) => x.id === id)
     setFieldValues(Object.fromEntries((d?.fields ?? []).map((f) => [f.key, ''])))
     setChecks([false, false, false])
@@ -908,7 +921,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function handleDownload() {
     if (!doc) return
-    const files = generateTranslationFiles(doc, fieldValues, srcLang, targetLang)
+    const files = generateTranslationFiles(doc, fieldValues, srcLang, targetLang, docEraObj?.extraFields, docEraObj?.noteForTranslator)
     setGeneratedFiles(Array.from(files))
     // Download all 4 with stagger
     const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
@@ -920,7 +933,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function handleDownloadSingle(idx: number) {
     const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
-    const files = generatedFiles.length === 4 ? generatedFiles : (doc ? Array.from(generateTranslationFiles(doc, fieldValues, srcLang, targetLang)) : [])
+    const files = generatedFiles.length === 4 ? generatedFiles : (doc ? Array.from(generateTranslationFiles(doc, fieldValues, srcLang, targetLang, docEraObj?.extraFields, docEraObj?.noteForTranslator)) : [])
     if (!files[idx]) return
     downloadHtmlFile(files[idx], `${names[idx]}.html`)
   }
@@ -938,7 +951,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           prodId: doc.prodId,
           fieldValues,
           srcLang,
-          docLabel: doc.label[locale] ?? doc.label.en,
+          docLabel: (doc.label as Record<string, string>)[locale] ?? doc.label.en,
         }),
       })
       const data = await res.json()
@@ -955,7 +968,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   }
 
   function reset() {
-    setStep(0); setDocId(null); setSrcLang('uk'); setTargetLang('en')
+    setStep(0); setDocId(null); setDocEra(null); setSrcLang('uk'); setTargetLang('en')
     setFieldValues({}); setChecks([false, false, false]); setDownloaded(false)
     setUploadedFile(null); setUploadedPreview(null)
     window.scrollTo(0, 0)
@@ -1015,6 +1028,44 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           <ArrowLeft className="w-4 h-4" />{ui.back}
         </button>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+
+          {/* ── Era / Country selector (only for docs with era variants) ───── */}
+          {doc?.eraVariants && doc.eraVariants.length > 0 && (
+            <div className="mb-6 pb-5 border-b border-[var(--border)]">
+              <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-3">
+                {locale === 'uk' ? 'Країна та період документа' : locale === 'ru' ? 'Страна и период документа' : 'Document country & period'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDocEra(null)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-[1.5px] text-[13px] font-semibold transition-all
+                    ${!docEra ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-[var(--border)] text-[var(--text-1)] hover:border-blue-400'}`}>
+                  🌐 {locale === 'uk' ? 'Будь-яка' : locale === 'ru' ? 'Любая' : 'Any'}
+                </button>
+                {doc.eraVariants.map((era) => (
+                  <button
+                    key={era.id}
+                    type="button"
+                    onClick={() => {
+                      setDocEra(era.id)
+                      setSrcLang(era.srcLang)
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border-[1.5px] text-[13px] font-semibold transition-all
+                      ${docEra === era.id ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-[var(--border)] text-[var(--text-1)] hover:border-blue-400'}`}>
+                    <span>{era.flag}</span>
+                    <span>{(era.label as Record<string, string>)[locale] ?? era.label.en}</span>
+                  </button>
+                ))}
+              </div>
+              {docEraObj?.noteForTranslator && (
+                <div className="mt-3 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  📝 {docEraObj.noteForTranslator}
+                </div>
+              )}
+            </div>
+          )}
+
           <h2 className="text-xl font-bold text-[var(--text-1)] mb-5">{ui.langTitle}</h2>
           <p className="text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-3">{ui.langTop3}</p>
           <div className="grid grid-cols-3 gap-2.5 mb-4">
@@ -1231,7 +1282,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">{ui.fieldsTitle}</h2>
           <p className="text-sm text-[var(--text-2)] mb-5">{ui.fieldsHint}</p>
           {groups.map(({ id: grp, label: grpLabel }) => {
-            const grpFields = fields.filter((f) => f.group === grp)
+            const grpFields = fields.filter((f) => (f.group ?? inferGroup(f.key)) === grp)
             if (grpFields.length === 0) return null
             return (
               <div key={grp} className="mb-6">
@@ -1406,7 +1457,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   <div>
                     <p className="text-[13px] text-[var(--text-2)] mb-0.5">
                       {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'}
-                      {' '}→ EN · {doc?.label[locale] ?? doc?.label.en}
+                      {' '}→ EN · {(doc?.label as Record<string, string> | undefined)?.[locale] ?? doc?.label.en}
                     </p>
                     <p className="text-[11px] text-[var(--text-3)]">{ui.priceBadge} $15</p>
                   </div>
