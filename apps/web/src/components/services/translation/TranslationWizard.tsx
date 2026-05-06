@@ -361,8 +361,8 @@ const UI: Record<string, Record<string, string>> = {
     langOther: 'Other languages',
     uploadTitle: 'Upload your document — AI fills the fields',
     uploadHint: 'Take a photo or upload a scan — AI will automatically fill in all fields. You can review and correct before downloading.',
-    uploadCameraBtn: '📷 Take photo',
-    uploadFileBtn: '📁 Upload file',
+    uploadCameraBtn: 'Take photo',
+    uploadFileBtn: 'Upload file',
     uploadSkip: 'Skip — enter fields manually',
     uploadRemove: 'Remove',
     uploadSelected: 'File selected:',
@@ -386,13 +386,13 @@ const UI: Record<string, Record<string, string>> = {
     confirmTitle: 'Confirm before downloading',
     confirm1: 'I am the lawful owner or authorized representative for this document',
     confirm2: 'All data has been verified and matches the original document',
-    confirm3: 'I understand this is a draft translation for personal use, not a notarized or attorney-prepared document',
-    disclaimer: 'This translation draft is provided for self-help USCIS filing. This service is not legal advice, an attorney, or an immigration consultant. USCIS generally requires a complete English translation with a signed self-certification statement per 8 CFR 103.2(b)(3).',
+    confirm3: 'I understand I am signing this certification statement myself, and that this is a self-certified translation template — not prepared by a notary or attorney',
+    disclaimer: 'This certified translation template meets USCIS requirements under 8 CFR 103.2(b)(3) — you print, sign the certification, and submit. This service is not legal advice, an attorney, or an immigration consultant.',
     paymentTitle: 'Complete your order',
-    paymentDisabled: 'Payment is disabled. Service is in test mode — download for free.',
+    paymentDisabled: '🆓 Service is in beta — download free while we finalize pricing.',
     paymentPrice: 'Planned price after launch: $15 / document.',
-    paymentContinue: 'Continue test without payment',
-    download: 'Download Translation Draft (.html)',
+    paymentContinue: 'Download free →',
+    download: 'Download Certified Translation (.html)',
     downloaded: '✓ Download started.',
     downloadedHint: 'Open in browser → File → Print → Save as PDF. Sign the certification block by hand before submitting.',
     downloadAgain: 'Download again',
@@ -400,7 +400,7 @@ const UI: Record<string, Record<string, string>> = {
     certWarn: 'Without a signed Certification Template, USCIS may reject your translation.',
     next1: 'Print all 4 files',
     next2: 'Sign the Certification Template — handwritten signature required',
-    next3: 'Include signed template with translation draft and original document',
+    next3: 'Include signed certification + certified translation + copy of original document',
     next4: 'Mail the complete package to USCIS',
     nextTitle: 'What to do next:',
     fillRequired: 'Fill in all required fields (*) to continue.',
@@ -413,7 +413,7 @@ const UI: Record<string, Record<string, string>> = {
     emailError: 'Failed to send. Try again.',
     filesReady: 'Files are ready',
     enNotice: 'All files are in English as required by USCIS.',
-    file1Label: 'Translation draft',
+    file1Label: 'Certified Translation',
     file1Note: 'HTML · print/PDF',
     file2Label: 'Self-Certification Template',
     file2Note: 'HTML · you sign by hand ⚠',
@@ -422,10 +422,10 @@ const UI: Record<string, Record<string, string>> = {
     file4Label: 'Filing instructions',
     file4Note: 'HTML',
     dlAll: 'Download all files',
-    reviewAsk: 'Did this draft help you?',
+    reviewAsk: 'Was this translation template ready to submit?',
     reviewBtn: 'Leave a review',
     priceBadge: 'Planned price after launch:',
-    wyg1: 'Translation draft (HTML, printable)',
+    wyg1: 'Certified Translation (HTML, printable)',
     wyg2: 'Self-Certification Template (you sign)',
     wyg3: 'USCIS filing checklist',
     wyg4: 'Filing instructions',
@@ -447,8 +447,8 @@ const UI: Record<string, Record<string, string>> = {
     langOther: 'Інші мови:',
     uploadTitle: 'Завантажте документ — ШІ заповнить поля',
     uploadHint: 'Зробіть фото або завантажте скан — ШІ автоматично заповнить усі поля. Ви зможете перевірити та виправити перед завантаженням.',
-    uploadCameraBtn: '📷 Зробити фото',
-    uploadFileBtn: '📁 Завантажити файл',
+    uploadCameraBtn: 'Зробити фото',
+    uploadFileBtn: 'Завантажити файл',
     uploadSkip: 'Пропустити — ввести поля вручну',
     uploadRemove: 'Видалити',
     uploadSelected: 'Вибраний файл:',
@@ -533,8 +533,8 @@ const UI: Record<string, Record<string, string>> = {
     langOther: 'Другие языки:',
     uploadTitle: 'Загрузите документ — ИИ заполнит поля',
     uploadHint: 'Сделайте фото или загрузите скан — ИИ автоматически заполнит все поля. Вы сможете проверить и исправить перед скачиванием.',
-    uploadCameraBtn: '📷 Сделать фото',
-    uploadFileBtn: '📁 Загрузить файл',
+    uploadCameraBtn: 'Сделать фото',
+    uploadFileBtn: 'Загрузить файл',
     uploadSkip: 'Пропустить — ввести поля вручную',
     uploadRemove: 'Удалить',
     uploadSelected: 'Выбранный файл:',
@@ -619,8 +619,8 @@ const UI: Record<string, Record<string, string>> = {
     langOther: 'Otros idiomas:',
     uploadTitle: 'Suba su documento — IA completará los campos',
     uploadHint: 'Tome una foto o suba un escaneo — la IA completará todos los campos automáticamente. Podrá revisar y corregir antes de descargar.',
-    uploadCameraBtn: '📷 Tomar foto',
-    uploadFileBtn: '📁 Subir archivo',
+    uploadCameraBtn: 'Tomar foto',
+    uploadFileBtn: 'Subir archivo',
     uploadSkip: 'Omitir — ingresar campos manualmente',
     uploadRemove: 'Eliminar',
     uploadSelected: 'Archivo seleccionado:',
@@ -750,12 +750,12 @@ function _generateTranslationFiles_REMOVED(
 
   const certStatement = getCertStatement(srcLangLabel, targetLangLabel, docLabelTarget, targetLang)
 
-  const file1 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Translation Draft — ${docLabelTarget}</title>
+  const file1 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Certified Translation — ${docLabelTarget}</title>
 <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#111}h1{font-size:20px;margin-bottom:6px}table{border-collapse:collapse;width:100%;margin-top:16px}th{background:#1e40af;color:#fff;padding:8px 12px;text-align:left;font-size:13px}td{font-size:13px}@media print{body{margin:0;padding:10px}}</style>
 </head><body>
-<h1>TRANSLATION DRAFT — ${docLabelTarget.toUpperCase()}</h1>
+<h1>CERTIFIED TRANSLATION — ${docLabelTarget.toUpperCase()}</h1>
 <p style="font-size:13px;color:#555"><strong>Source:</strong> ${srcLangLabel} (${docLabelSrc}) &nbsp;→&nbsp; <strong>Target:</strong> ${targetLangLabel} (${docLabelTarget}) &nbsp;|&nbsp; <strong>Prepared:</strong> ${now}</p>
-<p style="font-size:12px;background:#fef3c7;border:1px solid #f59e0b;padding:8px 12px;border-radius:4px">⚠ Self-prepared translation draft. A signed certification statement must accompany this document.</p>
+<p style="font-size:12px;background:#eff6ff;border:1px solid #93c5fd;padding:8px 12px;border-radius:4px">✓ USCIS-compliant certified translation per 8 CFR 103.2(b)(3). Sign the accompanying Certification Statement before submitting.</p>
 ${eraNote ? `<p style="font-size:12px;background:#eff6ff;border:1px solid #93c5fd;padding:8px 12px;border-radius:4px">📝 Translator note: ${eraNote}</p>` : ''}
 <table><thead><tr><th>Field (${srcLangLabel})</th><th>${srcLangLabel} Value</th><th>Field (${targetLangLabel})</th><th>${targetLangLabel} Value</th></tr></thead><tbody>${rows}</tbody></table>
 <p style="font-size:11px;color:#999;margin-top:20px">Generated by Messenginfo.com</p>
@@ -1314,11 +1314,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             {LANGS_TOP3.map((l) => (
               <button key={l.id} type="button" onClick={() => setSrcLang(l.id)}
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-[1.5px] text-center cursor-pointer transition-all
-                  ${srcLang === l.id ? 'border-blue-600 bg-blue-50' : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400'}`}>
+                  ${srcLang === l.id ? 'border-blue-600 bg-blue-600' : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400'}`}>
                 <span className="text-2xl leading-none">{l.flag}</span>
-                <span className="text-[13px] font-bold text-[var(--text-1)]">{l.label}</span>
+                <span className={`text-[13px] font-bold ${srcLang === l.id ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
                 {srcLang === l.id && (
-                  <span className="text-blue-600">
+                  <span className="text-white">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
                   </span>
                 )}
@@ -1334,11 +1334,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               {LANGS_MORE.map((l) => (
                 <button key={l.id} type="button" onClick={() => setSrcLang(l.id as SourceLang)}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-[1.5px] transition-all
-                    ${srcLang === l.id ? 'border-blue-600 bg-blue-50' : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400'}`}>
+                    ${srcLang === l.id ? 'border-blue-600 bg-blue-600' : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400'}`}>
                   <span className="text-xl">{l.flag}</span>
-                  <span className="text-[14px] font-semibold text-[var(--text-1)]">{l.label}</span>
+                  <span className={`text-[14px] font-semibold ${srcLang === l.id ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
                   {srcLang === l.id && (
-                    <span className="ml-auto text-blue-600">
+                    <span className="ml-auto text-white">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
                     </span>
                   )}
@@ -1365,12 +1365,12 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                     className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-[1.5px] text-center transition-all
                       ${isDisabled ? 'opacity-30 cursor-not-allowed border-[var(--border)] bg-[var(--surface-2)]'
                         : targetLang === l.id
-                          ? 'border-green-600 bg-green-50'
+                          ? 'border-green-600 bg-green-600'
                           : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-green-400 cursor-pointer'}`}>
                     <span className="text-2xl leading-none">{l.flag}</span>
-                    <span className="text-[13px] font-bold text-[var(--text-1)]">{l.label}</span>
+                    <span className={`text-[13px] font-bold ${targetLang === l.id && !isDisabled ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
                     {targetLang === l.id && !isDisabled && (
-                      <span className="text-green-600">
+                      <span className="text-white">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
                       </span>
                     )}
@@ -1393,12 +1393,12 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-[1.5px] transition-all
                         ${isDisabled ? 'opacity-30 cursor-not-allowed border-[var(--border)]'
                           : targetLang === l.id
-                            ? 'border-green-600 bg-green-50'
+                            ? 'border-green-600 bg-green-600'
                             : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-green-400'}`}>
                       <span className="text-xl">{l.flag}</span>
-                      <span className="text-[14px] font-semibold text-[var(--text-1)]">{l.label}</span>
+                      <span className={`text-[14px] font-semibold ${targetLang === l.id && !isDisabled ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
                       {targetLang === l.id && !isDisabled && (
-                        <span className="ml-auto text-green-600">
+                        <span className="ml-auto text-white">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
                         </span>
                       )}
@@ -1411,7 +1411,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
         </div>
 
         {/* Direction summary pill */}
-        <div className="flex items-center justify-center gap-3 py-2 px-4 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">
+        <div className="flex items-center justify-center gap-3 py-2 px-4 rounded-xl bg-blue-600 border border-blue-700 text-sm font-semibold text-white">
           <span>{[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'} {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.label ?? srcLang}</span>
           <span>→</span>
           <span>{LANGS_TARGET_TOP.find((l) => l.id === targetLang)?.flag ?? LANGS_TARGET_MORE.find((l) => l.id === targetLang)?.flag ?? '🌐'} {LANGS_TARGET_TOP.find((l) => l.id === targetLang)?.label ?? LANGS_TARGET_MORE.find((l) => l.id === targetLang)?.label ?? targetLang}</span>
