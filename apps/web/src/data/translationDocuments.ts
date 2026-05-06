@@ -1,11 +1,17 @@
 import {
+  Briefcase,
   CarFront,
   FileText,
   Files,
   GraduationCap,
+  Heart,
+  Home,
   IdCard,
   ScrollText,
   Shield,
+  Stethoscope,
+  UserCheck,
+  UserPen,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -17,6 +23,13 @@ export type TranslationDocumentType =
   | 'diploma-transcript'
   | 'military-document'
   | 'driver-license'
+  | 'death-certificate'
+  | 'adoption-certificate'
+  | 'name-change-certificate'
+  | 'police-record'
+  | 'medical-record'
+  | 'property-document'
+  | 'employment-record'
   | 'other-document'
 
 export interface TranslationDocumentConfig {
@@ -92,6 +105,69 @@ export const translationDocuments: TranslationDocumentConfig[] = [
     fieldsIncludedKey: 'translationService.documents.driverLicense.fieldsIncluded',
     uploadInstructionsKey: 'translationService.documents.driverLicense.uploadInstructions',
     riskNoteKey: 'translationService.documents.driverLicense.riskNote',
+  },
+  {
+    id: 'death-certificate',
+    icon: ScrollText,
+    titleKey: 'translationService.documents.deathCertificate.title',
+    descriptionKey: 'translationService.documents.deathCertificate.description',
+    fieldsIncludedKey: 'translationService.documents.deathCertificate.fieldsIncluded',
+    uploadInstructionsKey: 'translationService.documents.deathCertificate.uploadInstructions',
+    riskNoteKey: 'translationService.documents.deathCertificate.riskNote',
+  },
+  {
+    id: 'adoption-certificate',
+    icon: Heart,
+    titleKey: 'translationService.documents.adoptionCertificate.title',
+    descriptionKey: 'translationService.documents.adoptionCertificate.description',
+    fieldsIncludedKey: 'translationService.documents.adoptionCertificate.fieldsIncluded',
+    uploadInstructionsKey: 'translationService.documents.adoptionCertificate.uploadInstructions',
+    riskNoteKey: 'translationService.documents.adoptionCertificate.riskNote',
+  },
+  {
+    id: 'name-change-certificate',
+    icon: UserPen,
+    titleKey: 'translationService.documents.nameChangeCertificate.title',
+    descriptionKey: 'translationService.documents.nameChangeCertificate.description',
+    fieldsIncludedKey: 'translationService.documents.nameChangeCertificate.fieldsIncluded',
+    uploadInstructionsKey: 'translationService.documents.nameChangeCertificate.uploadInstructions',
+    riskNoteKey: 'translationService.documents.nameChangeCertificate.riskNote',
+  },
+  {
+    id: 'police-record',
+    icon: UserCheck,
+    titleKey: 'translationService.documents.policeRecord.title',
+    descriptionKey: 'translationService.documents.policeRecord.description',
+    fieldsIncludedKey: 'translationService.documents.policeRecord.fieldsIncluded',
+    uploadInstructionsKey: 'translationService.documents.policeRecord.uploadInstructions',
+    riskNoteKey: 'translationService.documents.policeRecord.riskNote',
+  },
+  {
+    id: 'medical-record',
+    icon: Stethoscope,
+    titleKey: 'translationService.documents.medicalRecord.title',
+    descriptionKey: 'translationService.documents.medicalRecord.description',
+    fieldsIncludedKey: 'translationService.documents.medicalRecord.fieldsIncluded',
+    uploadInstructionsKey: 'translationService.documents.medicalRecord.uploadInstructions',
+    riskNoteKey: 'translationService.documents.medicalRecord.riskNote',
+  },
+  {
+    id: 'property-document',
+    icon: Home,
+    titleKey: 'translationService.documents.propertyDocument.title',
+    descriptionKey: 'translationService.documents.propertyDocument.description',
+    fieldsIncludedKey: 'translationService.documents.propertyDocument.fieldsIncluded',
+    uploadInstructionsKey: 'translationService.documents.propertyDocument.uploadInstructions',
+    riskNoteKey: 'translationService.documents.propertyDocument.riskNote',
+  },
+  {
+    id: 'employment-record',
+    icon: Briefcase,
+    titleKey: 'translationService.documents.employmentRecord.title',
+    descriptionKey: 'translationService.documents.employmentRecord.description',
+    fieldsIncludedKey: 'translationService.documents.employmentRecord.fieldsIncluded',
+    uploadInstructionsKey: 'translationService.documents.employmentRecord.uploadInstructions',
+    riskNoteKey: 'translationService.documents.employmentRecord.riskNote',
   },
   {
     id: 'other-document',

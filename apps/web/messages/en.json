@@ -874,6 +874,125 @@
           "Use PDF if the document has more than one page."
         ],
         "riskNote": "Other documents vary a lot. Review the draft carefully before using it."
+      },
+      "death-certificate": {
+        "title": "Death Certificate",
+        "description": "Prepare a draft with name, dates, place of death, and registry details.",
+        "panelTitle": "Death Certificate Translation Draft",
+        "fieldsIncluded": [
+          "Deceased's full name, date and place of death.",
+          "Certificate number and registry office details.",
+          "Cause of death when shown on the document.",
+          "Draft layout for review before translator certification."
+        ],
+        "uploadInstructions": [
+          "Upload the full certificate including seals and signatures.",
+          "Keep all stamps and handwritten notes visible.",
+          "Use a scan or flat photo with good contrast."
+        ],
+        "riskNote": "Death certificates are often needed for inheritance and survivor benefit claims. Verify all dates carefully."
+      },
+      "adoption-certificate": {
+        "title": "Adoption Certificate",
+        "description": "Prepare a draft with child name, adoptive parents, and court decision details.",
+        "panelTitle": "Adoption Certificate Translation Draft",
+        "fieldsIncluded": [
+          "Child's name before and after adoption.",
+          "Adoptive parents' full names and date of adoption decision.",
+          "Court or registry reference number and issuing authority.",
+          "Draft layout for review before translator certification."
+        ],
+        "uploadInstructions": [
+          "Upload the full certificate or court decision including all pages.",
+          "Keep signatures, seals, and official stamps visible.",
+          "Use a scan or flat photo without glare."
+        ],
+        "riskNote": "Adoption documents often span multiple pages. Include all pages in your upload."
+      },
+      "name-change-certificate": {
+        "title": "Name Change Certificate",
+        "description": "Prepare a draft showing former and new legal name, decision date, and issuing authority.",
+        "panelTitle": "Name Change Certificate Translation Draft",
+        "fieldsIncluded": [
+          "Former full legal name and new full legal name.",
+          "Date of decision or registration and document number.",
+          "Reason for name change when shown on the document.",
+          "Draft layout for review before translator certification."
+        ],
+        "uploadInstructions": [
+          "Upload the full certificate or court decision.",
+          "Keep stamps, seals, and handwritten notes visible.",
+          "Use a scan or flat photo with good contrast."
+        ],
+        "riskNote": "Name change documents are critical for identity consistency across all USCIS filings."
+      },
+      "police-record": {
+        "title": "Police / Criminal Record",
+        "description": "Prepare a draft showing name, record status, issuing authority, and validity dates.",
+        "panelTitle": "Police Record Translation Draft",
+        "fieldsIncluded": [
+          "Full name, date of birth, and place of birth.",
+          "Record status (e.g., No Criminal Record) and reference number.",
+          "Issuing authority and date of issue.",
+          "Validity date when shown on the document."
+        ],
+        "uploadInstructions": [
+          "Upload the complete document including all stamps and signatures.",
+          "Keep the issuing authority section fully visible.",
+          "Use a scan or flat photo without glare."
+        ],
+        "riskNote": "Police records are often required for green card and naturalization applications. Confirm the validity date is within the required window."
+      },
+      "medical-record": {
+        "title": "Medical Record / Certificate",
+        "description": "Prepare a draft with patient name, diagnosis, treatment period, and issuing institution.",
+        "panelTitle": "Medical Record Translation Draft",
+        "fieldsIncluded": [
+          "Patient's full name and date of birth.",
+          "Diagnosis or medical condition when shown.",
+          "Treatment dates and attending physician details.",
+          "Issuing medical institution and document reference number."
+        ],
+        "uploadInstructions": [
+          "Upload the full document including all pages with medical details.",
+          "Keep the doctor's signature and institution stamp visible.",
+          "Use a scan or flat photo with good contrast."
+        ],
+        "riskNote": "Medical records vary widely in format. Review all fields carefully before using the draft."
+      },
+      "property-document": {
+        "title": "Property Document",
+        "description": "Prepare a draft with owner name, property address, document type, and registration details.",
+        "panelTitle": "Property Document Translation Draft",
+        "fieldsIncluded": [
+          "Owner's full legal name and property address.",
+          "Document type (title, deed, or ownership certificate) and registration number.",
+          "Date of registration and issuing authority details.",
+          "Draft layout for review before translator certification."
+        ],
+        "uploadInstructions": [
+          "Upload the full document including all stamped and signed pages.",
+          "Keep registration numbers and official seals clearly visible.",
+          "Use a scan or flat photo — avoid photographing folded documents."
+        ],
+        "riskNote": "Property documents often need notarized translations. Confirm the translator's certification requirements with USCIS."
+      },
+      "employment-record": {
+        "title": "Employment Record",
+        "description": "Prepare a draft with employer, position, employment dates, and official certification.",
+        "panelTitle": "Employment Record Translation Draft",
+        "fieldsIncluded": [
+          "Employee's full name and employer / organization name.",
+          "Job title or position and employment start and end dates.",
+          "Document reference number and issuing authority details.",
+          "Draft layout for review before translator certification."
+        ],
+        "uploadInstructions": [
+          "Upload the full record including all stamped pages.",
+          "Keep handwritten entries and official seals clearly visible.",
+          "Use PDF when the record spans multiple pages."
+        ],
+        "riskNote": "Employment records often contain handwritten dates. Review these carefully before finalizing the draft."
       }
     },
     "panel": {
