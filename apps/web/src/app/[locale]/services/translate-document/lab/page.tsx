@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: 'Translation Lab — AI Extraction Pipeline | Messenginfo',
     description:
-      'Interactive demo: upload a Ukrainian document, watch AI extract all fields, review confidence scores, and download a USCIS-ready certified translation.',
+      'Interactive demo: upload a Ukrainian document, watch AI extract all fields, review confidence scores, and download a USCIS-ready translation draft package.',
     robots: { index: false, follow: false },
   }
 }
