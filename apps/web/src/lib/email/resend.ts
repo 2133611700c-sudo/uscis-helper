@@ -196,7 +196,7 @@ export async function sendPacketReadyEmail(params: {
     <p style="color:#888;font-size:13px">This link expires on ${expiryStr}.</p>
     <hr style="border:none;border-top:1px solid #ddd;margin:24px 0">
     <p style="color:#CC1A1A;font-size:12px">
-      <strong>NOT LEGAL ADVICE.</strong> This is a translator-signed draft template. USCIS generally requires a complete English translation with a signed translator certification statement. Consult a licensed immigration attorney for official submissions.
+      <strong>NOT LEGAL ADVICE.</strong> This is a draft translation package. USCIS generally requires a complete English translation with a signed self-certification statement (8 CFR 103.2(b)(3)). You must print, complete, and sign the included Self-Certification Template. Consult a licensed immigration attorney for official submissions.
     </p>
     <p style="color:#888;font-size:12px">messenginfo.com</p>
   `

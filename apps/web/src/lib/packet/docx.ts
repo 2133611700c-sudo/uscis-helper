@@ -25,8 +25,8 @@ export async function generateDraftDOCX(input: PacketInput): Promise<Buffer> {
     input.certifier_statement ??
     'This document contains a machine-assisted translation of the original source text. ' +
     'The translation has been reviewed for accuracy. Per 8 CFR 103.2(b)(3), USCIS generally ' +
-    'requires a complete English translation with a signed translator certification statement. ' +
-    'This is a draft template — the translator must review, complete, and sign the certification. ' +
+    'requires a complete English translation with a signed self-certification statement. ' +
+    'This is a draft template — the signer must review, complete, and sign the self-certification block. ' +
     'Consult a licensed immigration attorney for official USCIS submissions.'
 
   const infoRows = [
