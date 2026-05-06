@@ -598,6 +598,15 @@ function origLabel(field: FieldDef, srcLang: string): string {
   return field.orig[srcLang] ?? field.orig.en ?? field.en
 }
 
+/** Format ISO date "YYYY-MM-DD" → "DD.MM.YYYY" for display; return as-is if not a date */
+function formatFieldValue(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-')
+    return `${d}.${m}.${y}`
+  }
+  return value
+}
+
 // ─── 4-file generator (matches prototype output) ──────────────────────────────
 
 function generateTranslationFiles(
@@ -1192,7 +1201,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   <span className="text-xs font-bold text-blue-600">{field.en}</span>
                 </div>
                 <div className="px-3.5 py-2.5">
-                  <p className="text-[15px] font-semibold text-[var(--text-1)]">{fieldValues[field.key]}</p>
+                  <p className="text-[15px] font-semibold text-[var(--text-1)]">{formatFieldValue(fieldValues[field.key] ?? '')}</p>
                 </div>
               </div>
             ))}
