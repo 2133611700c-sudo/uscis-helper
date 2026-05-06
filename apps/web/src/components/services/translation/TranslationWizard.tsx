@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Download, ChevronRight } from 'lucide-react'
-import { hasCyrillic, transliterateCyrillic } from '@/lib/translation/generateTranslationHTML'
+import { generateTranslationDoc, hasCyrillic, transliterateCyrillic } from '@/lib/translation/generateTranslationHTML'
 import {
   DOCS,
   DocDef,
@@ -635,9 +635,10 @@ function formatFieldValue(value: string): string {
   return value
 }
 
-// ─── 4-file generator (matches prototype output) ──────────────────────────────
+// ─── generateTranslationFiles removed — now using generateTranslationDoc() from generateTranslationHTML.ts ──
 
-function generateTranslationFiles(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _generateTranslationFiles_REMOVED(
   doc: DocDef,
   fieldValues: Record<string, string>,
   srcLang: SourceLang,
@@ -921,7 +922,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function handleDownload() {
     if (!doc) return
-    const files = generateTranslationFiles(doc, fieldValues, srcLang, targetLang, docEraObj?.extraFields, docEraObj?.noteForTranslator)
+    const files = generateTranslationDoc(doc, fields, fieldValues, srcLang, targetLang, docEraObj?.noteForTranslator)
     setGeneratedFiles(Array.from(files))
     // Download all 4 with stagger
     const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
@@ -933,7 +934,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function handleDownloadSingle(idx: number) {
     const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
-    const files = generatedFiles.length === 4 ? generatedFiles : (doc ? Array.from(generateTranslationFiles(doc, fieldValues, srcLang, targetLang, docEraObj?.extraFields, docEraObj?.noteForTranslator)) : [])
+    const files = generatedFiles.length === 4 ? generatedFiles : (doc ? Array.from(generateTranslationDoc(doc, fields, fieldValues, srcLang, targetLang, docEraObj?.noteForTranslator)) : [])
     if (!files[idx]) return
     downloadHtmlFile(files[idx], `${names[idx]}.html`)
   }
