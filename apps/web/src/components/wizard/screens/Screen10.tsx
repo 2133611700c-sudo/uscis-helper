@@ -4,10 +4,24 @@ import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import { SupportBlock } from '@/components/wizard/SupportBlock'
 
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+
 const T = {
   uk: {
     title: 'Перегляд та підтвердження',
-    subtitle: 'Прочитайте та підтвердьте кожен пункт перед формуванням пакету.',
+    subtitle: 'Перевірте зведення вашого пакету, потім підтвердьте та перейдіть до завантаження.',
+    summaryTitle: '📋 Зведення пакету',
+    applicants: (n: number) => `${n} ${n === 1 ? 'заявник' : n < 5 ? 'заявники' : 'заявників'}`,
+    filingLabel: 'Спосіб подачі:',
+    filingMail: '✉️ Поштою',
+    filingOnline: '🌐 Онлайн (my.uscis.gov)',
+    filingUnsure: '❓ Ще не визначено',
+    filingNone: '— не обрано',
+    docsReady: (n: number, total: number) => `${n}/${total} документів завантажено`,
+    infoReady: (n: number, total: number) => `${n}/${total} пунктів інформації готові`,
+    editBtn: '← Змінити',
     packetTitle: 'Чернетка пакету документів',
     packetSubtitle: 'Чернетка документів — перевірте перед подачею',
     packetFor: (size: number) => `для ${size} ${size === 1 ? 'заявника' : 'заявників'}`,
@@ -19,25 +33,36 @@ const T = {
       'Контрольний список документів',
       'Посилання для завантаження дійсне 7 днів',
     ],
-    ackTitle: 'Обов\'язкові підтвердження',
+    ackTitle: "Обов'язкові підтвердження",
     checkboxes: [
-      'Я перевірив(ла) всі поля вище — вони вірні.',
-      'Я розумію, що несу відповідальність за точність даних у формі.',
-      'Я розумію, що Messenginfo не подає документи від мого імені — я подаю самостійно на my.uscis.gov або поштою.',
+      "Я перевірив(ла) всі дані вище — вони вірні.",
+      "Я розумію, що несу відповідальність за точність даних у формі.",
+      "Я розумію, що Messenginfo не подає документи від мого імені — я подаю самостійно на my.uscis.gov або поштою.",
     ],
     privacyNote: 'Ми не зберігаємо ваші документи та особисті дані після формування пакету. Вся інформація видаляється автоматично.',
     payBtn: (price: number, allChecked: boolean) =>
-      allChecked ? `Оплатити $${price} →` : 'Підтвердьте всі пункти вище, щоб продовжити',
+      allChecked ? `Сформувати пакет — $${price} →` : 'Підтвердьте всі пункти вище, щоб продовжити',
     generatingBtn: 'Формуємо пакет…',
     feeNote: 'Внески USCIS сплачуються окремо та безпосередньо до USCIS — перевіряйте поточні суми на',
     feeLink: 'Перевірити внески ↗',
-    feeCardTitle: '⚠️ Держмито USCIS — це окремо від $',
+    feeCardTitle: '⚠️ Держмито USCIS — окремо від $',
     feeCardText: 'Більшість учасників U4U не платять держмито ($0*). Перевірте точну суму перед подачею:',
     feeCardLink: 'uscis.gov/feecalculator ↗',
+    memberLabel: 'Особа',
   },
   ru: {
     title: 'Просмотр и подтверждение',
-    subtitle: 'Прочитайте и подтвердите каждый пункт перед формированием пакета.',
+    subtitle: 'Проверьте сводку вашего пакета, затем подтвердите и перейдите к скачиванию.',
+    summaryTitle: '📋 Сводка пакета',
+    applicants: (n: number) => `${n} заявитель${n === 1 ? '' : n < 5 ? 'я' : 'ей'}`,
+    filingLabel: 'Способ подачи:',
+    filingMail: '✉️ По почте',
+    filingOnline: '🌐 Онлайн (my.uscis.gov)',
+    filingUnsure: '❓ Ещё не определено',
+    filingNone: '— не выбрано',
+    docsReady: (n: number, total: number) => `${n}/${total} документов загружено`,
+    infoReady: (n: number, total: number) => `${n}/${total} пунктов информации готовы`,
+    editBtn: '← Изменить',
     packetTitle: 'Черновик пакета документов',
     packetSubtitle: 'Черновик документов — проверьте перед подачей',
     packetFor: (size: number) => `для ${size} заявитель${size === 1 ? 'я' : 'ей'}`,
@@ -51,23 +76,34 @@ const T = {
     ],
     ackTitle: 'Обязательные подтверждения',
     checkboxes: [
-      'Я проверил(а) все поля выше — они корректны.',
+      'Я проверил(а) все данные выше — они корректны.',
       'Я понимаю, что несу ответственность за точность данных в форме.',
       'Я понимаю, что Messenginfo не подаёт документы за меня — я подаю самостоятельно на my.uscis.gov или по почте.',
     ],
     privacyNote: 'Мы не храним ваши документы и личные данные после формирования пакета. Вся информация удаляется автоматически.',
     payBtn: (price: number, allChecked: boolean) =>
-      allChecked ? `Оплатить $${price} →` : 'Подтвердите все пункты выше, чтобы продолжить',
+      allChecked ? `Сформировать пакет — $${price} →` : 'Подтвердите все пункты выше, чтобы продолжить',
     generatingBtn: 'Формируем пакет…',
     feeNote: 'Взносы USCIS оплачиваются отдельно и непосредственно в USCIS — проверяйте текущие суммы на',
     feeLink: 'Проверить взносы ↗',
-    feeCardTitle: '⚠️ Госпошлина USCIS — это отдельно от $',
+    feeCardTitle: '⚠️ Госпошлина USCIS — отдельно от $',
     feeCardText: 'Большинство участников U4U не платят госпошлину ($0*). Проверьте точную сумму перед подачей:',
     feeCardLink: 'uscis.gov/feecalculator ↗',
+    memberLabel: 'Человек',
   },
   en: {
-    title: 'Review & confirm',
-    subtitle: 'Please read and acknowledge the items below before generating your packet.',
+    title: 'Review & Confirm',
+    subtitle: 'Review your packet summary below, then acknowledge and proceed to download.',
+    summaryTitle: '📋 Packet Summary',
+    applicants: (n: number) => `${n} applicant${n !== 1 ? 's' : ''}`,
+    filingLabel: 'Filing method:',
+    filingMail: '✉️ By mail',
+    filingOnline: '🌐 Online (my.uscis.gov)',
+    filingUnsure: '❓ Not decided yet',
+    filingNone: '— not selected',
+    docsReady: (n: number, total: number) => `${n}/${total} documents uploaded`,
+    infoReady: (n: number, total: number) => `${n}/${total} info items confirmed`,
+    editBtn: '← Edit',
     packetTitle: 'I-131 Draft Packet',
     packetSubtitle: 'Draft documents to review before filing',
     packetFor: (size: number) => `for ${size} packet${size !== 1 ? 's' : ''}`,
@@ -81,23 +117,34 @@ const T = {
     ],
     ackTitle: 'Mandatory acknowledgments',
     checkboxes: [
-      'I have verified all fields above — they are correct.',
+      'I have reviewed all data above — it is correct.',
       'I understand that I am responsible for the accuracy of the data in the form.',
       'I understand that Messenginfo does not file on my behalf — I file myself at my.uscis.gov or by mail.',
     ],
     privacyNote: 'We do not store your documents and personal data after generating the packet. All information is deleted automatically.',
     payBtn: (price: number, allChecked: boolean) =>
-      allChecked ? `Pay $${price} →` : 'Acknowledge all items above to continue',
+      allChecked ? `Generate packet — $${price} →` : 'Acknowledge all items above to continue',
     generatingBtn: 'Generating packet…',
     feeNote: 'USCIS filing fees are paid separately and directly to USCIS — verify current amounts at',
     feeLink: 'Check current fees ↗',
     feeCardTitle: '⚠️ USCIS govt fee — separate from $',
     feeCardText: 'Most U4U participants pay $0* in USCIS fees. Verify the exact amount before filing:',
     feeCardLink: 'uscis.gov/feecalculator ↗',
+    memberLabel: 'Person',
   },
   es: {
     title: 'Revisar y confirmar',
-    subtitle: 'Lea y confirme los elementos a continuación antes de generar su paquete.',
+    subtitle: 'Revise el resumen de su paquete, luego confirme y proceda a la descarga.',
+    summaryTitle: '📋 Resumen del paquete',
+    applicants: (n: number) => `${n} solicitante${n !== 1 ? 's' : ''}`,
+    filingLabel: 'Método de presentación:',
+    filingMail: '✉️ Por correo',
+    filingOnline: '🌐 En línea (my.uscis.gov)',
+    filingUnsure: '❓ Aún no decidido',
+    filingNone: '— no seleccionado',
+    docsReady: (n: number, total: number) => `${n}/${total} documentos cargados`,
+    infoReady: (n: number, total: number) => `${n}/${total} elementos de info confirmados`,
+    editBtn: '← Editar',
     packetTitle: 'Borrador del paquete I-131',
     packetSubtitle: 'Borrador de documentos — revise antes de presentar',
     packetFor: (size: number) => `para ${size} paquete${size !== 1 ? 's' : ''}`,
@@ -111,25 +158,38 @@ const T = {
     ],
     ackTitle: 'Reconocimientos obligatorios',
     checkboxes: [
-      'He verificado todos los campos anteriores — son correctos.',
+      'He revisado todos los datos anteriores — son correctos.',
       'Entiendo que soy responsable de la exactitud de los datos en el formulario.',
       'Entiendo que Messenginfo no presenta solicitudes en mi nombre — yo mismo/a presento en my.uscis.gov o por correo.',
     ],
     privacyNote: 'No almacenamos sus documentos ni datos personales después de generar el paquete. Toda la información se elimina automáticamente.',
     payBtn: (price: number, allChecked: boolean) =>
-      allChecked ? `Pagar $${price} →` : 'Confirme todos los elementos anteriores para continuar',
+      allChecked ? `Generar paquete — $${price} →` : 'Confirme todos los elementos anteriores para continuar',
     generatingBtn: 'Generando paquete…',
     feeNote: 'Las tarifas de USCIS se pagan por separado y directamente a USCIS — verifique los montos actuales en',
     feeLink: 'Verificar tarifas ↗',
     feeCardTitle: '⚠️ Tarifa USCIS — separada de $',
     feeCardText: 'La mayoría de participantes U4U pagan $0* en tarifas USCIS. Verifique el monto exacto antes de presentar:',
     feeCardLink: 'uscis.gov/feecalculator ↗',
+    memberLabel: 'Persona',
   },
 } as const
 
+// ---------------------------------------------------------------------------
+// Doc keys that Screen04/05 upload
+// ---------------------------------------------------------------------------
+const DOC_KEYS = ['passport', 'i94', 'parole_notice', 'photo'] as const
+
+// Info keys that Screen06 confirms
+const INFO_KEYS = ['hasName', 'hasDob', 'hasI94', 'hasCountry', 'hasPassport', 'hasAddress', 'hasParoleDate'] as const
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export function Screen10() {
   const { state, setPaymentStatus, setStep } = useWizard()
-  const { packageSize, packagePrice } = state
+  const { packageSize, packagePrice, members, filingMethod } = state
   const t = T[state.locale] ?? T.en
 
   const [loading, setLoading] = useState(false)
@@ -150,8 +210,19 @@ export function Screen10() {
     }, 1500)
   }
 
+  // Filing method display
+  const filingDisplay =
+    filingMethod === 'mail'
+      ? t.filingMail
+      : filingMethod === 'online'
+        ? t.filingOnline
+        : filingMethod === 'unsure'
+          ? t.filingUnsure
+          : t.filingNone
+
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div>
         <h1 className="text-[22px] font-bold leading-tight mb-2" style={{ color: 'var(--text-1)' }}>
           {t.title}
@@ -161,7 +232,108 @@ export function Screen10() {
         </p>
       </div>
 
-      {/* Paywall card */}
+      {/* ── PACKET SUMMARY ────────────────────────────────────────────────── */}
+      <div
+        className="rounded-[14px] overflow-hidden"
+        style={{ border: '1px solid var(--border)' }}
+      >
+        {/* Summary header */}
+        <div
+          className="flex items-center justify-between px-4 py-3"
+          style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}
+        >
+          <span className="text-[13px] font-semibold" style={{ color: 'var(--text-1)' }}>
+            {t.summaryTitle}
+          </span>
+          <span className="text-[13px] font-medium" style={{ color: 'var(--primary)' }}>
+            {t.applicants(packageSize)} · ${packagePrice}
+          </span>
+        </div>
+
+        {/* Filing method row */}
+        <div
+          className="flex items-center justify-between px-4 py-3"
+          style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}
+        >
+          <span className="text-[13px]" style={{ color: 'var(--text-2)' }}>
+            {t.filingLabel}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-medium" style={{ color: 'var(--text-1)' }}>
+              {filingDisplay}
+            </span>
+            <button
+              type="button"
+              onClick={() => setStep(5)}
+              className="text-[11px] font-semibold rounded-[6px] px-2 py-0.5 transition-all"
+              style={{ background: 'var(--surface-2)', color: 'var(--primary)', border: '1px solid var(--border)' }}
+            >
+              {t.editBtn}
+            </button>
+          </div>
+        </div>
+
+        {/* Per-member rows */}
+        {members.map((member, idx) => {
+          const uploadedDocs = DOC_KEYS.filter(
+            (k) => member.docs[k]?.status === 'done',
+          ).length
+          const confirmedInfo = INFO_KEYS.filter(
+            (k) => member.fields[k] === 'yes',
+          ).length
+
+          const docsOk = uploadedDocs === DOC_KEYS.length
+          const infoOk = confirmedInfo === INFO_KEYS.length
+
+          return (
+            <div
+              key={member.id}
+              className="flex items-start gap-3 px-4 py-3"
+              style={{
+                borderBottom: idx < members.length - 1 ? '1px solid var(--border)' : undefined,
+                background: 'var(--surface)',
+              }}
+            >
+              {/* Avatar */}
+              <div
+                className="flex-shrink-0 w-[32px] h-[32px] rounded-full flex items-center justify-center text-[14px] font-bold mt-0.5"
+                style={{ background: 'var(--accent)', color: 'var(--primary)' }}
+              >
+                {idx + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-1)' }}>
+                  {member.alias}
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                  <span
+                    className="text-[11px]"
+                    style={{ color: docsOk ? 'var(--success-text)' : 'var(--warning-text)' }}
+                  >
+                    {docsOk ? '✓' : '○'} {t.docsReady(uploadedDocs, DOC_KEYS.length)}
+                  </span>
+                  <span
+                    className="text-[11px]"
+                    style={{ color: infoOk ? 'var(--success-text)' : 'var(--text-3)' }}
+                  >
+                    {infoOk ? '✓' : '○'} {t.infoReady(confirmedInfo, INFO_KEYS.length)}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStep(4)}
+                className="flex-shrink-0 text-[11px] font-semibold rounded-[6px] px-2 py-0.5 transition-all self-start mt-0.5"
+                style={{ background: 'var(--surface-2)', color: 'var(--primary)', border: '1px solid var(--border)' }}
+              >
+                {t.editBtn}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── PAYWALL CARD ──────────────────────────────────────────────────── */}
       <div
         className="rounded-[16px] p-5 text-center"
         style={{ border: '2px solid var(--primary)', background: 'var(--surface)' }}
@@ -176,7 +348,10 @@ export function Screen10() {
 
         {/* Price */}
         <div className="mb-3">
-          <span className="text-[42px] font-extrabold" style={{ color: 'var(--text-1)', fontVariantNumeric: 'tabular-nums' }}>
+          <span
+            className="text-[42px] font-extrabold"
+            style={{ color: 'var(--text-1)', fontVariantNumeric: 'tabular-nums' }}
+          >
             <span className="text-[24px] align-top">$</span>{packagePrice}
           </span>
           <p className="text-[13px]" style={{ color: 'var(--text-3)' }}>
@@ -184,11 +359,8 @@ export function Screen10() {
           </p>
         </div>
 
-        {/* Features */}
-        <div
-          className="rounded-[10px] p-3 text-left mb-4"
-          style={{ background: 'var(--surface-2)' }}
-        >
+        {/* Feature list */}
+        <div className="rounded-[10px] p-3 text-left mb-4" style={{ background: 'var(--surface-2)' }}>
           {t.features.map((f) => (
             <div key={f} className="flex items-start gap-2 py-1">
               <span className="font-bold flex-shrink-0" style={{ color: 'var(--success)' }}>✓</span>
@@ -197,7 +369,7 @@ export function Screen10() {
           ))}
         </div>
 
-        {/* Payment note */}
+        {/* Payment note badge */}
         <span
           className="inline-block text-[11px] font-semibold px-3 py-1 rounded-full mb-3"
           style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}
@@ -206,7 +378,7 @@ export function Screen10() {
         </span>
       </div>
 
-      {/* Legal checkboxes — CRITICAL: must be fully translated */}
+      {/* ── LEGAL ACKNOWLEDGMENTS ─────────────────────────────────────────── */}
       <div
         className="rounded-[12px] p-3.5 space-y-0"
         style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}
@@ -256,7 +428,7 @@ export function Screen10() {
         </p>
       </div>
 
-      {/* ⚠️ USCIS fee card — prominent, BEFORE pay button */}
+      {/* ⚠️ USCIS fee card */}
       <div
         className="rounded-[12px] p-3.5"
         style={{ background: 'var(--warning-bg)', border: '1.5px solid var(--warning-border)' }}
@@ -278,6 +450,7 @@ export function Screen10() {
         </a>
       </div>
 
+      {/* Generate / pay button */}
       <button
         type="button"
         onClick={handlePay}

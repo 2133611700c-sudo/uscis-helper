@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+
 const T = {
   uk: {
     title: 'Пакет готовий',
@@ -13,7 +17,10 @@ const T = {
     whatToDoText: 'Відкрийте файли з пакету та перенесіть дані до форми USCIS. Використовуйте режим «Передача даних до USCIS» — він показує кожне поле по одному.',
     emailBtn: '📧 Надіслати на e-mail →',
     checklistTitle: (method: string | null) =>
-      `📌 Перед подачею${method === 'online' ? ' (онлайн)' : method === 'mail' ? ' (поштою)' : ''}:`,
+      `📌 Контрольний список перед подачею${method === 'online' ? ' (онлайн)' : method === 'mail' ? ' (поштою)' : ''}`,
+    checklistNote: 'Відмічайте кожен пункт по мірі виконання. Прогрес зберігається в сесії.',
+    checklistDone: (n: number, total: number) => `${n} з ${total} виконано`,
+    checklistAllDone: '✅ Всі пункти виконано — готово до подачі!',
     feesTitle: '📌 Внески USCIS (для вашої довідки)',
     feesNote: 'Ця інформація тільки для довідки. Внески сплачуються безпосередньо до USCIS — не нам.',
     fee1: '· Внесок за подачу I-131 — перевіряйте на uscis.gov/feecalculator',
@@ -27,21 +34,21 @@ const T = {
       'Включіть копію попереднього документа про пароль (I-94 або повідомлення про схвалення)',
       'Включіть копію поточного I-94 (завантажте на i94.cbp.dhs.gov)',
       'Перевірте поточну поштову адресу на uscis.gov/i-131-addresses',
-      'Внесок USCIS — перевіряйте поточну суму на uscis.gov/feecalculator',
+      'Оплатіть держмито USCIS (перевіряйте на uscis.gov/feecalculator)',
     ],
     checklistOnline: [
       'Створіть або увійдіть до вашого акаунту myUSCIS на my.uscis.gov',
       'Напишіть «Ukraine RE-PAROLE» у полі додаткової інформації',
       'Завантажте скановані копії всіх підтверджуючих документів',
       'Включіть копію поточного I-94 (завантажте на i94.cbp.dhs.gov)',
-      'Внесок USCIS — перевіряйте поточну суму на uscis.gov/feecalculator перед оплатою',
-      'Оплатіть внесок онлайн через портал myUSCIS',
+      'Перевірте держмито USCIS на uscis.gov/feecalculator перед оплатою',
+      'Оплатіть держмито онлайн через портал myUSCIS',
     ],
     checklistUnsure: [
       'Перегляньте обидва способи подачі на uscis.gov/i-131',
       'Напишіть «Ukraine RE-PAROLE» вгорі форми (або у полі додаткової інформації)',
       'Підготуйте: I-94, попереднє схвалення паролю, підтвердження громадянства України',
-      'Перевірте внесок USCIS на uscis.gov/feecalculator',
+      'Перевірте держмито USCIS на uscis.gov/feecalculator',
       'Для пошти: перевірте адресу на uscis.gov/i-131-addresses',
       'Для онлайн: створіть акаунт myUSCIS на my.uscis.gov',
     ],
@@ -55,7 +62,10 @@ const T = {
     whatToDoText: 'Откройте файлы из пакета и перенесите данные в форму USCIS. Используйте режим «Передача данных в USCIS» — он показывает каждое поле по одному.',
     emailBtn: '📧 Отправить на e-mail →',
     checklistTitle: (method: string | null) =>
-      `📌 Перед подачей${method === 'online' ? ' (онлайн)' : method === 'mail' ? ' (почтой)' : ''}:`,
+      `📌 Контрольный список перед подачей${method === 'online' ? ' (онлайн)' : method === 'mail' ? ' (по почте)' : ''}`,
+    checklistNote: 'Отмечайте каждый пункт по мере выполнения. Прогресс сохраняется в сессии.',
+    checklistDone: (n: number, total: number) => `${n} из ${total} выполнено`,
+    checklistAllDone: '✅ Все пункты выполнены — готово к подаче!',
     feesTitle: '📌 Взносы USCIS (для вашей справки)',
     feesNote: 'Эта информация только для справки. Взносы оплачиваются непосредственно в USCIS — не нам.',
     fee1: '· Взнос за подачу I-131 — проверяйте на uscis.gov/feecalculator',
@@ -69,21 +79,21 @@ const T = {
       'Включите копию предыдущего документа о пароле (I-94 или уведомление об одобрении)',
       'Включите копию текущего I-94 (скачайте на i94.cbp.dhs.gov)',
       'Проверьте текущий почтовый адрес на uscis.gov/i-131-addresses',
-      'Взнос USCIS — проверяйте текущую сумму на uscis.gov/feecalculator',
+      'Оплатите госпошлину USCIS (проверяйте на uscis.gov/feecalculator)',
     ],
     checklistOnline: [
       'Создайте или войдите в ваш аккаунт myUSCIS на my.uscis.gov',
       'Напишите «Ukraine RE-PAROLE» в поле дополнительной информации',
       'Загрузите сканированные копии всех подтверждающих документов',
       'Включите копию текущего I-94 (скачайте на i94.cbp.dhs.gov)',
-      'Взнос USCIS — проверяйте текущую сумму на uscis.gov/feecalculator перед оплатой',
-      'Оплатите взнос онлайн через портал myUSCIS',
+      'Проверьте госпошлину USCIS на uscis.gov/feecalculator перед оплатой',
+      'Оплатите госпошлину онлайн через портал myUSCIS',
     ],
     checklistUnsure: [
       'Просмотрите оба способа подачи на uscis.gov/i-131',
       'Напишите «Ukraine RE-PAROLE» вверху формы (или в поле дополнительной информации)',
       'Подготовьте: I-94, предыдущее одобрение пароля, подтверждение гражданства Украины',
-      'Проверьте взнос USCIS на uscis.gov/feecalculator',
+      'Проверьте госпошлину USCIS на uscis.gov/feecalculator',
       'Для почты: проверьте адрес на uscis.gov/i-131-addresses',
       'Для онлайн: создайте аккаунт myUSCIS на my.uscis.gov',
     ],
@@ -91,13 +101,16 @@ const T = {
   en: {
     title: 'Packet ready',
     subtitle: 'Download now or get a link to your email.',
-    downloadBtn: '📦 Download packet to phone',
+    downloadBtn: '📦 Download packet',
     downloadingBtn: 'Preparing your packet…',
     whatToDo: '💡 What to do with your packet',
     whatToDoText: 'Open the files from the packet and copy the data into the USCIS form. Use the "Data Transfer to USCIS" mode — it shows each field one by one.',
     emailBtn: '📧 Also send to email →',
     checklistTitle: (method: string | null) =>
-      `📌 Before you file${method === 'online' ? ' (online)' : method === 'mail' ? ' (by mail)' : ''}:`,
+      `📌 Pre-filing checklist${method === 'online' ? ' (online)' : method === 'mail' ? ' (by mail)' : ''}`,
+    checklistNote: 'Check off each item as you complete it. Progress is saved in your session.',
+    checklistDone: (n: number, total: number) => `${n} of ${total} done`,
+    checklistAllDone: '✅ All items complete — ready to file!',
     feesTitle: '📌 USCIS fees (for your reference)',
     feesNote: 'This information is for your reference only. Fees are paid directly to USCIS — not to us.',
     fee1: '· I-131 filing fee — verify at uscis.gov/feecalculator',
@@ -111,14 +124,14 @@ const T = {
       'Include copy of previous parole document (I-94 or approval notice)',
       'Include copy of current I-94 (download at i94.cbp.dhs.gov)',
       'Check current mailing address at uscis.gov/i-131-addresses',
-      'USCIS filing fee — check current amount at uscis.gov/feecalculator',
+      'Pay USCIS filing fee (verify amount at uscis.gov/feecalculator)',
     ],
     checklistOnline: [
       'Create or log in to your myUSCIS account at my.uscis.gov',
       'Write "Ukraine RE-PAROLE" in the additional information field',
       'Upload scanned copies of all supporting documents',
       'Include copy of current I-94 (download at i94.cbp.dhs.gov)',
-      'USCIS filing fee — check current amount at uscis.gov/feecalculator before paying',
+      'Check USCIS filing fee at uscis.gov/feecalculator before paying',
       'Pay USCIS fee online through the myUSCIS portal',
     ],
     checklistUnsure: [
@@ -139,7 +152,10 @@ const T = {
     whatToDoText: 'Abra los archivos del paquete y copie los datos en el formulario de USCIS. Use el modo "Transferencia de datos a USCIS" — muestra cada campo uno por uno.',
     emailBtn: '📧 También enviar al correo →',
     checklistTitle: (method: string | null) =>
-      `📌 Antes de presentar${method === 'online' ? ' (en línea)' : method === 'mail' ? ' (por correo)' : ''}:`,
+      `📌 Lista de verificación previa${method === 'online' ? ' (en línea)' : method === 'mail' ? ' (por correo)' : ''}`,
+    checklistNote: 'Marque cada elemento a medida que lo complete. El progreso se guarda en su sesión.',
+    checklistDone: (n: number, total: number) => `${n} de ${total} completados`,
+    checklistAllDone: '✅ ¡Todos los elementos completados — listo para presentar!',
     feesTitle: '📌 Tarifas de USCIS (para su referencia)',
     feesNote: 'Esta información es solo de referencia. Las tarifas se pagan directamente a USCIS — no a nosotros.',
     fee1: '· Tarifa de presentación I-131 — verifique en uscis.gov/feecalculator',
@@ -153,14 +169,14 @@ const T = {
       'Incluya copia del documento de parole anterior (I-94 o aviso de aprobación)',
       'Incluya copia del I-94 actual (descargue en i94.cbp.dhs.gov)',
       'Verifique la dirección postal actual en uscis.gov/i-131-addresses',
-      'Tarifa de USCIS — verifique el monto actual en uscis.gov/feecalculator',
+      'Pague la tarifa de USCIS (verifique el monto en uscis.gov/feecalculator)',
     ],
     checklistOnline: [
       'Cree o inicie sesión en su cuenta myUSCIS en my.uscis.gov',
       'Escriba "Ukraine RE-PAROLE" en el campo de información adicional',
       'Suba copias escaneadas de todos los documentos de apoyo',
       'Incluya copia del I-94 actual (descargue en i94.cbp.dhs.gov)',
-      'Tarifa de USCIS — verifique el monto actual en uscis.gov/feecalculator antes de pagar',
+      'Verifique la tarifa de USCIS en uscis.gov/feecalculator antes de pagar',
       'Pague la tarifa de USCIS en línea a través del portal myUSCIS',
     ],
     checklistUnsure: [
@@ -174,12 +190,17 @@ const T = {
   },
 } as const
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export function Screen11() {
   const { state, setDownloadUrl, setStep } = useWizard()
   const { sessionId, filingMethod, downloadUrl } = state
   const t = T[state.locale] ?? T.en
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({})
 
   const checklist =
     filingMethod === 'online'
@@ -187,6 +208,13 @@ export function Screen11() {
       : filingMethod === 'mail'
         ? t.checklistMail
         : t.checklistUnsure
+
+  const doneCount = checklist.filter((_, i) => checkedItems[i]).length
+  const allDone = doneCount === checklist.length
+
+  function toggleItem(i: number) {
+    setCheckedItems((prev) => ({ ...prev, [i]: !prev[i] }))
+  }
 
   async function handleDownload() {
     setError('')
@@ -281,31 +309,100 @@ export function Screen11() {
         </p>
       </div>
 
-      {/* Filing checklist */}
+      {/* ── INTERACTIVE FILING CHECKLIST ──────────────────────────────────── */}
       <div>
-        <p
-          className="text-[11px] font-semibold uppercase tracking-wide mb-2"
-          style={{ color: 'var(--text-3)', letterSpacing: '0.6px' }}
-        >
-          {t.checklistTitle(filingMethod)}
+        {/* Checklist header */}
+        <div className="flex items-center justify-between mb-2">
+          <p
+            className="text-[12px] font-semibold uppercase tracking-wide"
+            style={{ color: 'var(--text-3)', letterSpacing: '0.6px' }}
+          >
+            {t.checklistTitle(filingMethod)}
+          </p>
+          <span
+            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+            style={{
+              background: allDone ? 'var(--success-bg)' : 'var(--surface-2)',
+              color: allDone ? 'var(--success-text)' : 'var(--text-3)',
+              border: `1px solid ${allDone ? 'var(--success-border)' : 'var(--border)'}`,
+            }}
+          >
+            {t.checklistDone(doneCount, checklist.length)}
+          </span>
+        </div>
+
+        {/* Checklist note */}
+        <p className="text-[11px] mb-2" style={{ color: 'var(--text-3)' }}>
+          {t.checklistNote}
         </p>
+
+        {/* All-done banner */}
+        {allDone && (
+          <div
+            className="rounded-[10px] p-3 mb-2 text-center text-[13px] font-semibold"
+            style={{ background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}
+          >
+            {t.checklistAllDone}
+          </div>
+        )}
+
+        {/* Progress bar */}
         <div
-          className="rounded-[12px] overflow-hidden"
-          style={{ border: '1px solid var(--border)' }}
+          className="h-[4px] rounded-[2px] mb-3 overflow-hidden"
+          style={{ background: 'var(--border)' }}
         >
-          {checklist.map((item, idx) => (
-            <div
-              key={item}
-              className="flex items-start gap-2.5 px-3.5 py-3 text-[13px]"
-              style={{
-                borderBottom: idx < checklist.length - 1 ? '1px solid var(--border)' : undefined,
-                color: 'var(--text-1)',
-              }}
-            >
-              <span className="flex-shrink-0 mt-0.5" style={{ color: 'var(--text-3)' }}>□</span>
-              <span>{item}</span>
-            </div>
-          ))}
+          <div
+            className="h-full rounded-[2px] transition-all duration-300"
+            style={{
+              width: `${checklist.length > 0 ? (doneCount / checklist.length) * 100 : 0}%`,
+              background: allDone ? 'var(--success)' : 'var(--primary)',
+            }}
+          />
+        </div>
+
+        {/* Interactive checklist items */}
+        <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+          {checklist.map((item, idx) => {
+            const done = !!checkedItems[idx]
+            return (
+              <label
+                key={item}
+                className="flex items-start gap-3 px-3.5 py-3 cursor-pointer transition-colors"
+                style={{
+                  borderBottom: idx < checklist.length - 1 ? '1px solid var(--border)' : undefined,
+                  background: done ? 'var(--success-bg)' : 'var(--surface)',
+                }}
+                onClick={() => toggleItem(idx)}
+              >
+                {/* Custom checkbox */}
+                <div
+                  className="flex-shrink-0 w-[22px] h-[22px] rounded-[5px] flex items-center justify-center mt-0.5"
+                  style={{
+                    border: `2px solid ${done ? 'var(--success)' : 'var(--border-strong)'}`,
+                    background: done ? 'var(--success)' : 'var(--surface)',
+                  }}
+                >
+                  {done && <span className="text-white font-bold text-[12px]">✓</span>}
+                </div>
+                <input
+                  type="checkbox"
+                  checked={done}
+                  onChange={() => toggleItem(idx)}
+                  className="sr-only"
+                />
+                <span
+                  className="text-[13px] leading-snug"
+                  style={{
+                    color: done ? 'var(--success-text)' : 'var(--text-1)',
+                    textDecoration: done ? 'line-through' : 'none',
+                    opacity: done ? 0.75 : 1,
+                  }}
+                >
+                  {item}
+                </span>
+              </label>
+            )
+          })}
         </div>
       </div>
 
