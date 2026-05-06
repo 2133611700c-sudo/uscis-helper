@@ -31,7 +31,7 @@ export async function createPacketZIP(files: DocumentFile[]): Promise<Buffer> {
       'IMPORTANT NOTICES:',
       '- This is a translator-signed draft template, not a formal translation certification service.',
       '- Per 8 CFR 103.2(b)(3), USCIS generally requires a complete English translation with',
-      '  a signed translator certification statement is required per 8 CFR 103.2(b)(3).',
+      '  a signed self-certification statement. You must print, complete, and sign the included template.',
       '- This document is for informational purposes only.',
       '- NOT LEGAL ADVICE. Consult a licensed immigration attorney.',
       '',

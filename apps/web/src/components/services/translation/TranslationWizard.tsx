@@ -312,7 +312,7 @@ const UI: Record<string, Record<string, string>> = {
     confirm1: 'I am the lawful owner or authorized representative for this document',
     confirm2: 'All data has been verified and matches the original document',
     confirm3: 'I understand this is a draft translation for personal use, not a notarized or attorney-prepared document',
-    disclaimer: 'This translation draft is provided for self-help USCIS filing. This service is not legal advice, an attorney, or an immigration consultant. USCIS generally requires a complete English translation with a signed translator certification statement.',
+    disclaimer: 'This translation draft is provided for self-help USCIS filing. This service is not legal advice, an attorney, or an immigration consultant. USCIS generally requires a complete English translation with a signed self-certification statement per 8 CFR 103.2(b)(3).',
     paymentTitle: 'Complete your order',
     paymentDisabled: 'Payment is disabled. Service is in test mode — download for free.',
     paymentPrice: 'Planned price after launch: $15 / document.',
@@ -389,7 +389,7 @@ const UI: Record<string, Record<string, string>> = {
     confirm1: 'Я є законним власником або уповноваженим представником',
     confirm2: 'Дані перевірені і відповідають оригіналу',
     confirm3: 'Я розумію, що це чернетка, а не нотаріально завірений переклад',
-    disclaimer: 'Ця чернетка надається для самостійного заповнення форм USCIS. Сервіс не є юридичною консультацією, адвокатом або імміграційним консультантом. USCIS зазвичай вимагає повний переклад англійською з підписаним підтвердженням перекладача.',
+    disclaimer: 'Ця чернетка надається для самостійного заповнення форм USCIS. Сервіс не є юридичною консультацією, адвокатом або імміграційним консультантом. USCIS зазвичай вимагає повний переклад англійською з підписаним шаблоном самопідтвердження (8 CFR 103.2(b)(3)).',
     paymentTitle: 'Оформлення замовлення',
     paymentDisabled: 'Оплата вимкнена. Сервіс у тестовому режимі — скачайте безкоштовно.',
     paymentPrice: 'Запланована ціна після запуску: $15 / документ.',
@@ -466,7 +466,7 @@ const UI: Record<string, Record<string, string>> = {
     confirm1: 'Я являюсь законным владельцем или уполномоченным представителем',
     confirm2: 'Данные проверены и соответствуют оригиналу',
     confirm3: 'Я понимаю, что это черновик, а не нотариально заверенный перевод',
-    disclaimer: 'Этот черновик предоставляется для самостоятельного заполнения форм USCIS. Сервис не является юридической консультацией, адвокатом или иммиграционным консультантом. USCIS обычно требует полный перевод на английский с подписанным подтверждением переводчика.',
+    disclaimer: 'Этот черновик предоставляется для самостоятельного заполнения форм USCIS. Сервис не является юридической консультацией, адвокатом или иммиграционным консультантом. USCIS обычно требует полный перевод на английский с подписанным шаблоном самоподтверждения (8 CFR 103.2(b)(3)).',
     paymentTitle: 'Оформление заказа',
     paymentDisabled: 'Оплата временно отключена. Сервис в тестовом режиме — скачайте бесплатно.',
     paymentPrice: 'Запланированная цена после запуска: $15 / документ.',
@@ -543,7 +543,7 @@ const UI: Record<string, Record<string, string>> = {
     confirm1: 'Soy el propietario legal o representante autorizado de este documento',
     confirm2: 'Los datos han sido verificados y coinciden con el original',
     confirm3: 'Entiendo que esto es un borrador, no una traducción notariada',
-    disclaimer: 'Este borrador se proporciona para el llenado de formularios USCIS por cuenta propia. Este servicio no es asesoramiento legal, abogado o consultor de inmigración. USCIS generalmente requiere una traducción completa al inglés con una declaración firmada del traductor.',
+    disclaimer: 'Este borrador se proporciona para el llenado de formularios USCIS por cuenta propia. Este servicio no es asesoramiento legal, abogado o consultor de inmigración. USCIS generalmente requiere una traducción completa al inglés con una declaración de auto-certificación firmada (8 CFR 103.2(b)(3)).',
     paymentTitle: 'Complete su pedido',
     paymentDisabled: 'Pago desactivado. Servicio en modo de prueba — descargue gratis.',
     paymentPrice: 'Precio planificado después del lanzamiento: $15 / documento.',
@@ -653,7 +653,7 @@ function generateTranslationFiles(
 <strong>Date of certification:</strong> ${now}</p>
 <div class="sig-line">Translator's Signature (HANDWRITTEN — do not type)</div>
 <p style="margin-top:14px">Printed name: ___________________________<br>Date: ___________________________<br>Phone or email: ___________________________</p>
-<p style="font-size:12px;color:#777;margin-top:28px;border-top:1px solid #eee;padding-top:10px">Per 8 CFR 103.2(b)(3) — USCIS generally requires a complete English translation with a signed translator certification statement. This service is not an attorney, notary, or immigration consultant.</p>
+<p style="font-size:12px;color:#777;margin-top:28px;border-top:1px solid #eee;padding-top:10px">Per 8 CFR 103.2(b)(3) — USCIS generally requires a complete English translation with a signed self-certification statement. This service is not an attorney, notary, or immigration consultant.</p>
 </body></html>`
 
   const file3 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>USCIS Filing Checklist</title>

@@ -739,7 +739,7 @@
     "backToServices": "Volver a servicios",
     "title": "Traducción de documentos",
     "subtitle": "Cree un borrador de traducción al inglés a partir del documento original. Revise nombres, fechas y campos antes de la verificación final por un traductor.",
-    "draftOnlyBanner": "Solo borrador: esta etapa no incluye certificación del traductor.",
+    "draftOnlyBanner": "Solo borrador — sin certificación profesional del traductor.",
     "chooseDocumentTitle": "Elija su documento",
     "chooseDocumentSubtitle": "Seleccione el tipo de documento que desea preparar.",
     "startAction": "Abrir →",
