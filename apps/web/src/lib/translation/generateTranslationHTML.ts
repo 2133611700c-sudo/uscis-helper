@@ -60,9 +60,9 @@ export function generateTranslationDoc(
       const srcLabel  = (f.orig as Record<string, string>)[srcLang]    ?? f.orig.en    ?? f.en
       // Field label in the translation output (target language side)
       const tgtLabel  = (f.orig as Record<string, string>)[targetLang] ?? f.orig.en    ?? f.en
-      // Transliterate Cyrillic → Latin when target is English
+      // Transliterate Cyrillic → Latin when target is English (pass srcLang for correct map)
       const tgtValue = (targetLang === 'en' && hasCyrillic(origVal))
-        ? transliterateCyrillic(origVal)
+        ? transliterateCyrillic(origVal, srcLang)
         : origVal
       const origHtml = hasCyrillic(origVal)
         ? `${escapeHtml(origVal)}`
@@ -148,7 +148,7 @@ ${rows || '<tr><td colspan="4" style="text-align:center;color:#999;padding:14px"
 
 <div class="cert">
   <h2>Translator's Certification</h2>
-  <p>I, <span style="text-decoration:underline">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>, certify that I am competent to translate from <strong>${escapeHtml(src)}</strong> into <strong>${escapeHtml(tgt)}</strong>, and that the above translation is complete and accurate to the best of my knowledge and belief.</p>
+  <p>I, <span style="text-decoration:underline">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>, certify that I am fluent in English and <strong>${escapeHtml(src)}</strong>, and that the attached document is an accurate translation of the <strong>${escapeHtml(docTitleTgt)}</strong> attached hereto.</p>
   <p><strong>Document:</strong> ${escapeHtml(docTitleTgt)}&nbsp;&nbsp;&nbsp;<strong>Applicant:</strong> ${escapeHtml(applicantName) || '—'}&nbsp;&nbsp;&nbsp;<strong>Date:</strong> ${today}</p>
   <div class="sig-grid">
     <div><div class="sig-line">&nbsp;</div><div class="sig-lbl">Signature (handwritten)</div></div>
@@ -185,13 +185,15 @@ p{margin-bottom:16px}
 </head>
 <body>
 <h1>Translator's Certification Statement</h1>
-<p>I, _________________________________________, certify that I am competent to translate from <strong>${escapeHtml(src)}</strong> into <strong>${escapeHtml(tgt)}</strong>, and that the translation of the attached <strong>${escapeHtml(docTitleTgt)}</strong> is complete and accurate to the best of my knowledge and belief.</p>
-<p>I understand that any false statements made herein are punishable under applicable law.</p>
+<p style="font-size:11pt;color:#555;margin-bottom:14px">Per <strong>8 CFR 103.2(b)(3)</strong> · UC Berkeley / USCIS suggested format</p>
+<p>I, _________________________________________, certify that I am fluent in English and <strong>${escapeHtml(src)}</strong>, and that the attached document is an accurate translation of the <strong>${escapeHtml(docTitleTgt)}</strong> attached hereto.</p>
+<p>I understand that any willfully false statement herein may result in penalties under applicable U.S. law.</p>
 <p><strong>Applicant name:</strong> ${escapeHtml(applicantName) || '___________________________'}<br/>
 <strong>Date of certification:</strong> ${today}</p>
 <div class="sig-line">Signature of Translator (HANDWRITTEN — do not type)</div>
 <p style="margin-top:18px">Printed name: ___________________________<br/>
 Date: ___________________________<br/>
+Title / Organization (if any): ___________________________<br/>
 Phone or email: ___________________________<br/>
 Mailing address: ___________________________</p>
 <div class="footer">Per 8 CFR 103.2(b)(3) · Messenginfo.com · Not a law firm</div>
@@ -481,9 +483,22 @@ export function hasCyrillic(str: string): boolean {
  * - Non-Cyrillic characters (digits, hyphens, spaces, apostrophes) are kept as-is
  *   except for Ukrainian apostrophe (' ʼ ') which is dropped per KMU 2010.
  */
-export function transliterateCyrillic(str: string): string {
-  const isUkrainian = /[ЄІЇҐєіїґ]/.test(str)
-  const MAP = isUkrainian ? UK_MAP : RU_MAP
+/**
+ * Optional srcLang parameter ('uk' | 'ru') overrides auto-detection.
+ * Without it: Russian-only letters (Ё Ъ Ы Э) → RU_MAP; everything else → UK_MAP.
+ * This ensures ЮРЧЕНКО (no unique Ukrainian letters) still uses KMU 2010 (UK).
+ */
+export function transliterateCyrillic(str: string, srcLang?: string): string {
+  let MAP: Record<string, string>
+  if (srcLang === 'ru') {
+    MAP = RU_MAP
+  } else if (srcLang === 'uk') {
+    MAP = UK_MAP
+  } else {
+    // Default to UK_MAP unless string contains Russian-only letters (Ё Ъ Ы Э)
+    const hasRussianOnly = /[ЁЪЫЭёъыэ]/.test(str)
+    MAP = hasRussianOnly ? RU_MAP : UK_MAP
+  }
   const UA_VOWELS = new Set(['А','Е','Є','И','І','Ї','О','У','Ю','Я'])
 
   let result = ''
@@ -570,7 +585,9 @@ export function generateTranslationHTML(
       // and the original text in small italic below it for reference.
       let displayValue: string
       if (hasCyrillic(value)) {
-        const transliterated = transliterateCyrillic(value)
+        // Infer srcLang from originalLanguage string for correct transliteration map
+        const inferredSrcLang = originalLanguage.toLowerCase().startsWith('russian') ? 'ru' : 'uk'
+        const transliterated = transliterateCyrillic(value, inferredSrcLang)
         displayValue =
           `${escapeHtml(transliterated)}<div class="orig-value">Original: ${escapeHtml(value)}</div>`
       } else {
@@ -754,9 +771,9 @@ export function generateTranslationHTML(
   <div class="certification-block">
     <h2>Translator Certification</h2>
     <p>
-      Pursuant to <strong>8 CFR 103.2(b)(3)</strong>, I certify that I am competent to translate
-      from <strong>${escapeHtml(originalLanguage)}</strong> into <strong>English</strong>, and that
-      the above translation is complete and accurate to the best of my knowledge and belief.
+      Pursuant to <strong>8 CFR 103.2(b)(3)</strong>, I certify that I am fluent in English and
+      <strong>${escapeHtml(originalLanguage)}</strong>, and that the attached document is an accurate
+      translation of the ${escapeHtml(docTitle)} attached hereto.
     </p>
 
     <div class="sign-grid">
