@@ -418,7 +418,7 @@
       },
       "birth-certificate": {
         "title": "Birth Certificate",
-        "description": "Full translation and certification requirements for birth records."
+        "description": "What USCIS requires when submitting birth record translations."
       },
       "marriage-certificate": {
         "title": "Marriage Certificate",
@@ -531,7 +531,7 @@
     "disclaimer": {
       "title": "Disclaimer",
       "alert": "Messenginfo is not a law firm and does not provide legal advice.",
-      "notice": "Pending legal review by a licensed attorney.",
+      "notice": "Last updated April 29, 2026. For questions about your specific situation, consult a licensed immigration attorney.",
       "backHome": "← Back to Home",
       "lastReviewed": "April 29, 2026",
       "sections": [
@@ -564,12 +564,17 @@
           "id": "provisional-data",
           "title": "Provisional Information",
           "body": "Form fees, edition dates, and policy information are labeled as provisional until verified against official sources within the last 30 days. Always check uscis.gov for current information."
+        },
+        {
+          "id": "california-notice",
+          "title": "Notice for California Residents (Immigration Consultants Act)",
+          "body": "Messenginfo is a technology and information service — not an immigration consultant as defined under California Business & Professions Code §22440 et seq. Messenginfo does not select, prepare, or complete immigration applications on behalf of users, does not represent clients before any government agency, and does not provide individualized legal advice. Users prepare and file their own documents. If you require individualized immigration assistance in California, consult a licensed immigration attorney (State Bar of California, calbar.ca.gov) or a DOJ-accredited representative (justice.gov/eoir)."
         }
       ]
     },
     "terms": {
       "title": "Terms of Service",
-      "notice": "Pending legal review by a licensed attorney.",
+      "notice": "Last updated April 29, 2026. These terms govern your use of Messenginfo.",
       "backHome": "← Back to Home",
       "lastReviewed": "April 29, 2026",
       "sections": [
@@ -652,7 +657,7 @@
     },
     "privacy": {
       "title": "Privacy Policy",
-      "notice": "Pending legal review by a licensed attorney.",
+      "notice": "Last updated April 29, 2026. This policy describes how Messenginfo handles your data.",
       "backHome": "← Back to Home",
       "lastReviewed": "April 29, 2026",
       "sections": [
@@ -979,7 +984,7 @@
       },
       "employment-record": {
         "title": "Employment Record",
-        "description": "Prepare a draft with employer, position, employment dates, and official certification.",
+        "description": "Prepare a draft with employer, position, employment dates, and official record details.",
         "panelTitle": "Employment Record Translation Draft",
         "fieldsIncluded": [
           "Employee's full name and employer / organization name.",
