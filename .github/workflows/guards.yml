@@ -149,6 +149,13 @@ jobs:
           echo "OK — no DeepSeek leak in client UI."
 
       # ───────────────────────────────────────────────────────────────
+      # Content & brand guard script (self-certification language)
+      # ───────────────────────────────────────────────────────────────
+
+      - name: Guard — content & certification language
+        run: pnpm --filter web guard:content
+
+      # ───────────────────────────────────────────────────────────────
       # Type and build verification
       # ───────────────────────────────────────────────────────────────
 
