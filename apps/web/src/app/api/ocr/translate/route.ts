@@ -30,6 +30,37 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+
+// ─── Quality logging (fire-and-forget) ───────────────────────────────────────
+
+function logQuality(row: {
+  doc_type: string
+  source_lang: string
+  confidence: number
+  latency_ms: number
+  status: string
+  error?: string | null
+}) {
+  try {
+    const supabase = createAdminSupabaseClient()
+    supabase
+      .from('translation_quality_log')
+      .insert({
+        doc_type:    row.doc_type,
+        source_lang: row.source_lang,
+        confidence:  row.confidence,
+        latency_ms:  row.latency_ms,
+        status:      row.status,
+        error:       row.error ?? null,
+      })
+      .then(({ error }) => {
+        if (error) console.error('[quality-log] insert failed:', error.message)
+      })
+  } catch (e) {
+    console.error('[quality-log] unexpected error:', String(e))
+  }
+}
 
 // ─── Field classification ─────────────────────────────────────────────────────
 
@@ -308,8 +339,11 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Hoisted so catch block can log doc_type on unexpected errors
+  let body: { fields?: unknown; doc_type?: unknown; source_lang?: unknown } | null = null
+
   try {
-    const body = (await req.json()) as {
+    body = (await req.json()) as {
       fields?: unknown
       doc_type?: unknown
       source_lang?: unknown
@@ -354,7 +388,17 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    const t0 = Date.now()
     const result = await translateWithLLM(fields, doc_type, source_lang)
+    const latency_ms = Date.now() - t0
+
+    logQuality({
+      doc_type,
+      source_lang,
+      confidence:  result.confidence,
+      latency_ms,
+      status:      result.fallback_needed ? 'low_confidence' : 'ok',
+    })
 
     return NextResponse.json({
       ok: true,
@@ -366,6 +410,14 @@ export async function POST(req: NextRequest) {
     })
   } catch (e: unknown) {
     console.error('[ocr/translate] handler error:', String(e))
+    logQuality({
+      doc_type:    typeof body?.doc_type === 'string' ? body.doc_type : 'unknown',
+      source_lang: 'unknown',
+      confidence:  0,
+      latency_ms:  0,
+      status:      'error',
+      error:       String(e),
+    })
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })
   }
 }
