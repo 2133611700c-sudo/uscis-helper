@@ -57,8 +57,18 @@ export default async function middleware(req: NextRequest): Promise<NextResponse
 
   // ── 2. Admin auth guard ───────────────────────────────────────────────────
   // Short-circuits before i18n — /admin/* is English-only, no locale routing.
-  const adminResponse = adminGuard(req)
-  if (adminResponse !== null) return adminResponse
+  const { pathname } = req.nextUrl
+  if (pathname.startsWith('/admin')) {
+    const adminResponse = adminGuard(req)
+    if (adminResponse !== null) return adminResponse
+    // Cookie valid — serve admin page directly, skip next-intl locale routing
+    const res = NextResponse.next()
+    const secHeaders = buildSecurityHeaders()
+    for (const [key, value] of Object.entries(secHeaders)) {
+      res.headers.set(key, value)
+    }
+    return res
+  }
 
   // ── 3. i18n routing ───────────────────────────────────────────────────────
   const response = await Promise.resolve(intlMiddleware(req))
