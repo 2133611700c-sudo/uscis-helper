@@ -1043,11 +1043,12 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [emailGateSending, setEmailGateSending] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
 
-  // P0-3: Contact gate — captured between upload and fields
+  // P0-3: Contact gate — merged into payment step (Phase 5)
   const [contactName, setContactName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
-  const [contactCaptured, setContactCaptured] = useState(false)
+  // contactCaptured always starts true — gate moved to step 6 (payment)
+  const [contactCaptured, setContactCaptured] = useState(true)
   const [contactSaving, setContactSaving] = useState(false)
   // P0-5: OCR simplified preview — shown after OCR if fields were extracted
   const [ocrPreviewDone, setOcrPreviewDone] = useState(false)
@@ -1096,7 +1097,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     setUploadedFile(null)
     setUploadedPreview(null)
     setEmailGateSaved(false)
-    setContactCaptured(false)
+    setContactCaptured(true)  // gate moved to step 6
     setOcrPreviewDone(false)
     setManualReviewSending(false)
     setManualReviewSent(false)
@@ -1109,15 +1110,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     if (step === 1) { setStep(0); setDocId(null); window.scrollTo(0, 0); return }
     // P0-3/P0-5: sub-step back navigation within step 3
     if (step === 3) {
-      if (contactCaptured && ocrPreviewDone) {
-        // In fields form after OCR preview → back to OCR preview
+      if (ocrPreviewDone) {
+        // In fields form → back to verify key fields screen
         setOcrPreviewDone(false); window.scrollTo(0, 0); return
       }
-      if (contactCaptured) {
-        // In OCR preview or fields (no OCR) → back to contact gate
-        setContactCaptured(false); window.scrollTo(0, 0); return
-      }
-      // In contact gate → go to step 2 (upload)
+      // In verify key fields screen → back to upload
       setStep(2); window.scrollTo(0, 0); return
     }
     setStep((s) => Math.max(0, s - 1))
@@ -1944,85 +1941,12 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   // ── STEP 3: Contact gate (P0-3) → OCR preview (P0-5) → Fields ────────────
   if (step === 3) {
 
-    // ── STEP 3A: Contact gate ─────────────────────────────────────────────────
-    if (!contactCaptured) {
-      return (
-        <div className="max-w-lg mx-auto space-y-4">
-          <StepIndicator step={2} locale={locale} />
-          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
-            <ArrowLeft className="w-4 h-4" />{ui.back}
-          </button>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">{ui.contactTitle}</h2>
-              <p className="text-sm text-[var(--text-2)]">{ui.contactHint}</p>
-            </div>
-            {/* Name (required) */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-bold text-[var(--text-1)]">
-                {ui.contactNameLabel} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                placeholder={ui.contactNamePlaceholder}
-                autoComplete="name"
-                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
-              />
-            </div>
-            {/* Email (optional) */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-bold text-[var(--text-1)]">{ui.contactEmailLabel}</label>
-              <input
-                type="email"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                placeholder={ui.contactEmailPlaceholder}
-                autoComplete="email"
-                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
-              />
-            </div>
-            {/* Phone (optional) */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-bold text-[var(--text-1)]">{ui.contactPhoneLabel}</label>
-              <input
-                type="tel"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-                placeholder={ui.contactPhonePlaceholder}
-                autoComplete="tel"
-                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleContactCapture}
-              disabled={!contactName.trim() || contactSaving}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
-            >
-              {contactSaving ? '…' : ui.contactNext}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setContactName('skip'); setContactCaptured(true); window.scrollTo(0, 0) }}
-              className="w-full text-center text-sm text-[var(--text-2)] hover:text-[var(--text-1)] py-2 transition-colors"
-            >
-              {ui.contactSkip}
-            </button>
-          </div>
-        </div>
-      )
-    }
-
-    // ── STEP 3B: OCR preview (P0-5) — only if OCR extracted fields ───────────
-    if (ocrFilledCount > 0 && !ocrPreviewDone) {
+    // ── STEP 3B: Verify key fields — always shown (Phase 6) ──────────────────
+    if (!ocrPreviewDone) {
       const keyFields = KEY_FIELDS_BY_DOCTYPE[docId ?? ''] ?? []
-      const previewFields = fields.filter(
-        (f) => keyFields.includes(f.key) && (fieldValues[f.key] ?? '').trim()
-      )
+      const previewFields = fields.filter((f) => keyFields.includes(f.key))
+      const anyOcrFilled = previewFields.some((f) => (fieldValues[f.key] ?? '').trim())
+
       async function handleRequestManualReview() {
         if (manualReviewSending || manualReviewSent) return
         setManualReviewSending(true)
@@ -2059,35 +1983,52 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           </button>
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">✨</span>
-              <h2 className="text-xl font-bold text-[var(--text-1)]">{ui.ocrPreviewTitle}</h2>
+              <span className="text-xl">{anyOcrFilled ? '✨' : '📋'}</span>
+              <h2 className="text-xl font-bold text-[var(--text-1)]">
+                {anyOcrFilled
+                  ? (locale === 'ru' ? 'Проверьте ключевые поля' : locale === 'uk' ? 'Перевірте ключові поля' : locale === 'es' ? 'Verifique los campos clave' : 'Check key fields')
+                  : (locale === 'ru' ? 'Заполните ключевые поля' : locale === 'uk' ? 'Заповніть ключові поля' : locale === 'es' ? 'Complete los campos clave' : 'Fill in key fields')}
+              </h2>
             </div>
-            <p className="text-sm text-[var(--text-2)] mb-4">{ui.ocrPreviewHint}</p>
-            {previewFields.length > 0 ? (
+            <p className="text-sm text-[var(--text-2)] mb-4">
+              {anyOcrFilled
+                ? (locale === 'ru' ? 'Мы автоматически распознали данные. Проверьте, всё ли верно.' : locale === 'uk' ? 'Ми автоматично розпізнали дані. Перевірте, чи все вірно.' : locale === 'es' ? 'Reconocimos los datos automáticamente. Verifique que sean correctos.' : 'We auto-extracted your data. Please verify it looks correct.')
+                : (locale === 'ru' ? 'Заполните основные поля вручную на следующем шаге.' : locale === 'uk' ? 'Заповніть основні поля вручну на наступному кроці.' : locale === 'es' ? 'Complete los campos principales manualmente en el siguiente paso.' : 'Fill in the key fields manually on the next step.')}
+            </p>
+            {previewFields.length > 0 && (
               <div className="flex flex-col gap-3">
-                {previewFields.map((field) => (
-                  <div key={field.key} className="rounded-xl border border-[var(--border)] overflow-hidden">
-                    <div className="px-3.5 py-2 bg-[var(--surface-2)] border-b border-[var(--border)]">
-                      <span className="text-xs font-bold text-[var(--text-2)]">{field.en}</span>
+                {previewFields.map((field) => {
+                  const val = (fieldValues[field.key] ?? '').trim()
+                  return (
+                    <div key={field.key} className="rounded-xl border border-[var(--border)] overflow-hidden">
+                      <div className="px-3.5 py-2 bg-[var(--surface-2)] border-b border-[var(--border)]">
+                        <span className="text-xs font-bold text-[var(--text-2)]">{field.en}</span>
+                      </div>
+                      <div className="px-3.5 py-2.5">
+                        {val
+                          ? <p className="text-base font-semibold text-[var(--text-1)]">{val}</p>
+                          : <p className="text-sm text-[var(--text-3)] italic">{locale === 'ru' ? 'не распознано' : locale === 'uk' ? 'не розпізнано' : locale === 'es' ? 'no detectado' : 'not detected'}</p>}
+                      </div>
                     </div>
-                    <div className="px-3.5 py-2.5">
-                      <p className="text-base font-semibold text-[var(--text-1)]">{fieldValues[field.key]}</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
-            ) : (
-              <p className="text-sm text-[var(--text-2)] italic">{ui.ocrNone}</p>
             )}
           </div>
+
+          {/* Two action buttons (Phase 6) */}
           <div className="flex flex-col gap-2">
+            {anyOcrFilled && (
+              <button type="button" onClick={goNext}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
+                {locale === 'ru' ? '✅ Верно — продолжить' : locale === 'uk' ? '✅ Вірно — продовжити' : locale === 'es' ? '✅ Correcto — continuar' : '✅ Looks right — continue'}
+              </button>
+            )}
             <button type="button" onClick={() => { setOcrPreviewDone(true); window.scrollTo(0, 0) }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
-              {ui.ocrPreviewConfirm}
-            </button>
-            <button type="button" onClick={() => { setOcrPreviewDone(true); window.scrollTo(0, 0) }}
-              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-800 py-2 transition-colors">
-              {ui.ocrPreviewEdit}
+              className={`w-full flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-semibold transition-colors ${anyOcrFilled ? 'border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-1)] hover:border-blue-400' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+              {anyOcrFilled
+                ? (locale === 'ru' ? '✏️ Исправить вручную' : locale === 'uk' ? '✏️ Виправити вручну' : locale === 'es' ? '✏️ Corregir manualmente' : '✏️ Fix manually')
+                : (locale === 'ru' ? '✏️ Заполнить вручную' : locale === 'uk' ? '✏️ Заповнити вручну' : locale === 'es' ? '✏️ Llenar manualmente' : '✏️ Fill in manually')}
             </button>
             {!manualReviewSent ? (
               <button type="button" onClick={handleRequestManualReview} disabled={manualReviewSending}
@@ -2327,6 +2268,29 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   // ── STEP 6: Payment placeholder + Download ─────────────────────────────────
   if (step === 6) {
+    // Phase 7+8: contact capture + direct download (no Stripe in launch beta)
+    async function handleStep6Download() {
+      if (contactSaving) return
+      setContactSaving(true)
+      try {
+        const email = contactEmail.trim()
+        const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+        if (emailValid) {
+          fetch('/api/translation/email-capture', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, locale, doc_type: docId, src_lang: srcLang }),
+          }).catch(() => {})
+        }
+        track('contact_captured', { doc_type: docId, locale, has_email: emailValid, has_phone: !!contactPhone.trim() })
+        // Pre-fill email send field for success screen
+        if (emailValid) setEmailInput(email)
+      } finally {
+        setContactSaving(false)
+      }
+      executeDownload()
+    }
+
     return (
       <div className="max-w-lg mx-auto space-y-4">
         <StepIndicator step={6} locale={locale} />
@@ -2335,210 +2299,223 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             <ArrowLeft className="w-4 h-4" />{ui.back}
           </button>
         )}
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-[var(--text-1)] mb-4">{ui.paymentTitle}</h2>
 
-          {!downloaded ? (
-            <>
-              {/* Price card */}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 mb-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-sm text-[var(--text-2)] mb-0.5">
-                      {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'}
-                      {' '}→ EN · {(doc?.label as Record<string, string> | undefined)?.[locale] ?? doc?.label.en}
-                    </p>
-                    <p className="text-xs text-[var(--text-3)]">{ui.priceBadge}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold text-[var(--text-1)]">{TRANSLATION_PRICE_DISPLAY}</p>
-                    <p className="text-xs text-[var(--text-3)]">one-time</p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {([ui.wyg1, ui.wyg2, ui.wyg3, ui.wyg4] as string[]).map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-[var(--text-2)]">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14" className="text-green-500 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stripe pay button */}
-              <button
-                type="button"
-                onClick={handleStripeCheckout}
-                disabled={checkoutLoading}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {checkoutLoading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    {locale === 'uk'
-                      ? 'Переходимо до оплати…'
-                      : locale === 'ru'
-                      ? 'Переходим к оплате…'
-                      : locale === 'es'
-                      ? 'Redirigiendo al pago…'
-                      : 'Redirecting to payment…'}
-                  </>
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" className="shrink-0">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                      <line x1="1" y1="10" x2="23" y2="10" />
-                    </svg>
-                    {locale === 'uk'
-                      ? `Оплатити ${TRANSLATION_PRICE_SHORT} — Отримати файли`
-                      : locale === 'ru'
-                      ? `Оплатить ${TRANSLATION_PRICE_SHORT} — Получить файлы`
-                      : locale === 'es'
-                      ? `Pagar ${TRANSLATION_PRICE_SHORT} — Obtener archivos`
-                      : `Pay ${TRANSLATION_PRICE_SHORT} — Get Your Files`}
-                  </>
-                )}
-              </button>
-
-              {/* Secure payment note */}
-              <p className="text-xs text-center text-[var(--text-3)] mt-2">
-                🔒{' '}
-                {locale === 'uk'
-                  ? 'Безпечна оплата через Stripe · Visa · Mastercard · Google Pay'
-                  : locale === 'ru'
-                  ? 'Безопасная оплата через Stripe · Visa · Mastercard · Google Pay'
-                  : locale === 'es'
-                  ? 'Pago seguro a través de Stripe · Visa · Mastercard · Google Pay'
-                  : 'Secure checkout via Stripe · Visa · Mastercard · Google Pay'}
+        {!downloaded ? (
+          /* ── Phase 7: Email + price + download ──────────────────────────── */
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">
+                {locale === 'ru' ? 'Получите готовый перевод' : locale === 'uk' ? 'Отримайте готовий переклад' : locale === 'es' ? 'Obtenga su traducción' : 'Get your translation'}
+              </h2>
+              <p className="text-sm text-[var(--text-2)]">
+                {locale === 'ru' ? 'Укажите email — пришлём файлы. Или скачайте сразу.' : locale === 'uk' ? 'Вкажіть email — надішлемо файли. Або завантажте одразу.' : locale === 'es' ? 'Indique su email para recibir los archivos, o descargue ahora.' : 'Enter your email to receive files, or download right away.'}
               </p>
-            </>
-          ) : (
-            <div className="space-y-4">
-              {/* Success header */}
-              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center">
-                <p className="text-base font-bold text-green-800">✅ {ui.filesReady}</p>
+            </div>
+
+            {/* Contact fields — optional */}
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-[var(--text-1)]">
+                  {locale === 'ru' ? 'Ваше имя' : locale === 'uk' ? 'Ваше ім\'я' : locale === 'es' ? 'Su nombre' : 'Your name'}
+                  <span className="ml-1 text-xs font-normal text-[var(--text-2)]">
+                    ({locale === 'ru' ? 'необязательно' : locale === 'uk' ? 'необов\'язково' : locale === 'es' ? 'opcional' : 'optional'})
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={contactName === 'skip' ? '' : contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  placeholder={locale === 'ru' ? 'например, Мария Коваленко' : locale === 'uk' ? 'наприклад, Марія Коваленко' : locale === 'es' ? 'p.ej. María Kovalenko' : 'e.g. Maria Kovalenko'}
+                  autoComplete="name"
+                  className="w-full px-3.5 py-2.5 border border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-sm text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+                />
               </div>
-
-              {/* USCIS English notice */}
-              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700 text-center">
-                {ui.enNotice}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-[var(--text-1)]">
+                  Email
+                  <span className="ml-1 text-xs font-normal text-[var(--text-2)]">
+                    ({locale === 'ru' ? 'для получения файлов' : locale === 'uk' ? 'для отримання файлів' : locale === 'es' ? 'para recibir archivos' : 'to receive files'})
+                  </span>
+                </label>
+                <input
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder={locale === 'ru' ? 'ваш@email.com' : locale === 'uk' ? 'ваша@пошта.com' : 'your@email.com'}
+                  autoComplete="email"
+                  className="w-full px-3.5 py-2.5 border border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-sm text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+                />
               </div>
+            </div>
 
-              {/* 4 file items */}
-              <div className="flex flex-col gap-2">
-                {[
-                  { label: ui.file1Label, note: ui.file1Note, warn: false },
-                  { label: ui.file2Label, note: ui.file2Note, warn: true },
-                  { label: ui.file3Label, note: ui.file3Note, warn: false },
-                  { label: ui.file4Label, note: ui.file4Note, warn: false },
-                ].map((f, i) => (
-                  <button key={i} type="button" onClick={() => handleDownloadSingle(i)}
-                    className={`flex items-center gap-3 w-full rounded-xl border px-4 py-3 text-left transition-all hover:shadow-sm active:scale-[.98]
-                      ${f.warn ? 'border-amber-300 bg-amber-50 hover:bg-amber-100' : 'border-[var(--border)] bg-[var(--surface-2)] hover:bg-[var(--surface-1)]'}`}>
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${f.warn ? 'bg-amber-200 text-amber-800' : 'bg-blue-100 text-blue-700'}`}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold ${f.warn ? 'text-amber-800' : 'text-[var(--text-1)]'}`}>{f.label}</p>
-                      <p className={`text-xs ${f.warn ? 'text-amber-600' : 'text-[var(--text-2)]'}`}>{f.note}</p>
-                    </div>
-                    <div className={`shrink-0 ${f.warn ? 'text-amber-600' : 'text-blue-500'}`}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Download all */}
-              <button type="button" onClick={handleDownload}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-blue-600 text-blue-600 px-5 py-2.5 text-sm font-bold hover:bg-blue-50 transition-colors">
-                <Download className="h-4 w-4" />{ui.dlAll}
-              </button>
-
-              {/* Next steps */}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <p className="text-sm font-bold text-[var(--text-1)] mb-3">{ui.nextTitle}</p>
-                <div className="flex flex-col gap-2">
-                  {[ui.next1, ui.next2, ui.next3, ui.next4].map((step, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</div>
-                      <p className="text-sm text-[var(--text-2)] leading-relaxed pt-0.5">{step}</p>
-                    </div>
-                  ))}
+            {/* Price card */}
+            <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-green-800">
+                    {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'}
+                    {' '}→ EN · {(doc?.label as Record<string, string> | undefined)?.[locale] ?? doc?.label.en}
+                  </p>
+                  <div className="flex flex-col gap-1 mt-2">
+                    {([ui.wyg1, ui.wyg2, ui.wyg3, ui.wyg4] as string[]).map((item, i) => (
+                      <div key={i} className="flex items-center gap-1.5 text-xs text-green-700">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12" /></svg>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="text-right shrink-0 ml-3">
+                  <p className="text-2xl font-bold text-green-800">{TRANSLATION_PRICE_DISPLAY}</p>
+                  <p className="text-xs text-green-600">{locale === 'ru' ? 'бесплатно' : locale === 'uk' ? 'безкоштовно' : locale === 'es' ? 'gratis' : 'free'}</p>
                 </div>
               </div>
+            </div>
 
-              {/* Cert warning */}
-              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
-                <p className="text-sm font-bold text-amber-800">⚠ {ui.certWarn}</p>
-              </div>
+            {/* Primary download button */}
+            <button
+              type="button"
+              onClick={handleStep6Download}
+              disabled={contactSaving}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-base font-bold text-white hover:bg-blue-700 active:scale-[.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+            >
+              <Download className="h-5 w-5 shrink-0" />
+              {locale === 'uk' ? 'Завантажити файли — $0.00' : locale === 'ru' ? 'Скачать файлы — $0.00' : locale === 'es' ? 'Descargar archivos — $0.00' : 'Download files — $0.00'}
+            </button>
 
-              {/* Stage 13E: Email delivery */}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <p className="text-sm font-semibold text-[var(--text-1)] mb-2">📧 {ui.emailLabel}</p>
-                {emailSent ? (
-                  <p className="text-sm font-semibold text-green-700">{ui.emailSent}</p>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleSendEmail() }}
-                      placeholder={ui.emailPlaceholder}
-                      className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSendEmail}
-                      disabled={emailSending || !emailInput.trim()}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
-                      {emailSending ? ui.emailSending : ui.emailBtn}
-                    </button>
+            <p className="text-xs text-center text-[var(--text-2)]">
+              {locale === 'ru' ? '🔒 Файлы готовятся на вашем устройстве. Никуда не отправляются без вашего разрешения.' : locale === 'uk' ? '🔒 Файли готуються на вашому пристрої. Нікуди не відправляються без вашого дозволу.' : locale === 'es' ? '🔒 Los archivos se generan en su dispositivo. No se envían sin su permiso.' : '🔒 Files are generated on your device. Nothing is sent without your permission.'}
+            </p>
+          </div>
+        ) : (
+          /* ── Phase 8: Success / delivery screen ─────────────────────────── */
+          <div className="space-y-4">
+            {/* Success banner */}
+            <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-center">
+              <p className="text-2xl mb-1">🎉</p>
+              <p className="text-base font-bold text-green-800">
+                {locale === 'ru' ? 'Файлы готовы!' : locale === 'uk' ? 'Файли готові!' : locale === 'es' ? '¡Archivos listos!' : 'Files ready!'}
+              </p>
+              <p className="text-sm text-green-700 mt-1">
+                {locale === 'ru' ? 'Скачивание началось автоматически.' : locale === 'uk' ? 'Завантаження розпочалось автоматично.' : locale === 'es' ? 'La descarga comenzó automáticamente.' : 'Download started automatically.'}
+              </p>
+            </div>
+
+            {/* USCIS English notice */}
+            <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700 text-center">
+              {ui.enNotice}
+            </div>
+
+            {/* 4 file items */}
+            <div className="flex flex-col gap-2">
+              {[
+                { label: ui.file1Label, note: ui.file1Note, warn: false },
+                { label: ui.file2Label, note: ui.file2Note, warn: true },
+                { label: ui.file3Label, note: ui.file3Note, warn: false },
+                { label: ui.file4Label, note: ui.file4Note, warn: false },
+              ].map((f, i) => (
+                <button key={i} type="button" onClick={() => handleDownloadSingle(i)}
+                  className={`flex items-center gap-3 w-full rounded-xl border px-4 py-3 text-left transition-all hover:shadow-sm active:scale-[.98]
+                    ${f.warn ? 'border-amber-300 bg-amber-50 hover:bg-amber-100' : 'border-[var(--border)] bg-[var(--surface-2)] hover:bg-[var(--surface-1)]'}`}>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${f.warn ? 'bg-amber-200 text-amber-800' : 'bg-blue-100 text-blue-700'}`}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   </div>
-                )}
-                {emailError && <p className="text-xs text-red-600 mt-1">{emailError}</p>}
-              </div>
-
-              {/* Stage 13C: Session ZIP banner (shows when ≥1 doc already in session) */}
-              {sessionDocs.length > 0 && (
-                <div className="rounded-xl border border-purple-200 bg-purple-50 px-4 py-3 flex items-center gap-3">
-                  <span className="text-xl">📦</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-purple-800">{sessionDocs.length + 1} {ui.sessionCount}</p>
-                    <p className="text-xs text-purple-600">{sessionDocs.map((s) => s.label).join(', ')}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold ${f.warn ? 'text-amber-800' : 'text-[var(--text-1)]'}`}>{f.label}</p>
+                    <p className={`text-xs ${f.warn ? 'text-amber-600' : 'text-[var(--text-2)]'}`}>{f.note}</p>
                   </div>
-                  <button type="button" onClick={handleDownloadZip}
-                    className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-bold text-white hover:bg-purple-700 transition-colors whitespace-nowrap">
-                    {ui.downloadZip}
+                  <div className={`shrink-0 ${f.warn ? 'text-amber-600' : 'text-blue-500'}`}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Download all again */}
+            <button type="button" onClick={executeDownload}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-blue-600 text-blue-600 px-5 py-2.5 text-sm font-bold hover:bg-blue-50 transition-colors">
+              <Download className="h-4 w-4" />{ui.dlAll}
+            </button>
+
+            {/* Email delivery — auto-triggered if email captured, else show field */}
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+              <p className="text-sm font-semibold text-[var(--text-1)] mb-2">📧 {ui.emailLabel}</p>
+              {emailSent ? (
+                <p className="text-sm font-semibold text-green-700">{ui.emailSent}</p>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSendEmail() }}
+                    placeholder={ui.emailPlaceholder}
+                    className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendEmail}
+                    disabled={emailSending || !emailInput.trim()}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                    {emailSending ? ui.emailSending : ui.emailBtn}
                   </button>
                 </div>
               )}
+              {emailError && <p className="text-xs text-red-600 mt-1">{emailError}</p>}
+            </div>
 
-              {/* Actions */}
-              <div className="flex gap-3 flex-wrap">
-                {/* Add to session (same person, multiple docs) */}
-                <button type="button" onClick={handleAddToSession}
-                  className="inline-flex items-center gap-2 rounded-xl border border-purple-300 bg-purple-50 px-4 py-2.5 text-sm font-semibold text-purple-700 hover:bg-purple-100 transition-colors">
-                  {ui.addToSession}
-                </button>
-                <button type="button" onClick={reset}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-1)] transition-colors">
-                  {ui.anotherDoc}
-                </button>
-                {returnUrl && returnLabel && (
-                  <a href={returnUrl}
-                    className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors">
-                    <ArrowLeft className="h-4 w-4" />{returnLabel}
-                  </a>
-                )}
+            {/* Next steps */}
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+              <p className="text-sm font-bold text-[var(--text-1)] mb-3">{ui.nextTitle}</p>
+              <div className="flex flex-col gap-2">
+                {[ui.next1, ui.next2, ui.next3, ui.next4].map((s, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</div>
+                    <p className="text-sm text-[var(--text-2)] leading-relaxed pt-0.5">{s}</p>
+                  </div>
+                ))}
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Cert warning */}
+            <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-bold text-amber-800">⚠ {ui.certWarn}</p>
+            </div>
+
+            {/* Stage 13C: Session ZIP banner */}
+            {sessionDocs.length > 0 && (
+              <div className="rounded-xl border border-purple-200 bg-purple-50 px-4 py-3 flex items-center gap-3">
+                <span className="text-xl">📦</span>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-purple-800">{sessionDocs.length + 1} {ui.sessionCount}</p>
+                  <p className="text-xs text-purple-600">{sessionDocs.map((s) => s.label).join(', ')}</p>
+                </div>
+                <button type="button" onClick={handleDownloadZip}
+                  className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-bold text-white hover:bg-purple-700 transition-colors whitespace-nowrap">
+                  {ui.downloadZip}
+                </button>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3 flex-wrap">
+              <button type="button" onClick={handleAddToSession}
+                className="inline-flex items-center gap-2 rounded-xl border border-purple-300 bg-purple-50 px-4 py-2.5 text-sm font-semibold text-purple-700 hover:bg-purple-100 transition-colors">
+                {ui.addToSession}
+              </button>
+              <button type="button" onClick={reset}
+                className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-1)] transition-colors">
+                {ui.anotherDoc}
+              </button>
+              {returnUrl && returnLabel && (
+                <a href={returnUrl}
+                  className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors">
+                  <ArrowLeft className="h-4 w-4" />{returnLabel}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
