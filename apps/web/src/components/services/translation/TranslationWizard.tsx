@@ -1912,9 +1912,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               contact_name: contactName !== 'skip' ? contactName : '',
               contact_email: contactEmail,
               contact_phone: contactPhone,
-              doc_type: docId,
+              doc_type: docId ?? 'unknown',
               source_lang: srcLang,
               source_fields: fieldValues,
+              confidence: 0,
+              reason: 'user_requested',
               locale,
             }),
           })
