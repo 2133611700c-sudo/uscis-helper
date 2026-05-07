@@ -68,17 +68,13 @@ async function insertReviewQueue(payload: {
   const { data, error } = await supabase
     .from('manual_review_queue')
     .insert({
-      session_id: payload.session_id,
       doc_type: payload.doc_type,
       source_lang: payload.source_lang,
       contact_name: payload.contact_name,
       contact_email: payload.contact_email,
       contact_phone: payload.contact_phone,
       source_fields: payload.source_fields,
-      confidence: payload.confidence,
-      reason: payload.reason,
       status: 'pending',
-      created_at: new Date().toISOString(),
     })
     .select('id')
     .single()
@@ -225,10 +221,7 @@ export async function POST(req: NextRequest) {
       reason?: unknown
     }
 
-    // Validate required fields
-    if (typeof body.session_id !== 'string' || !body.session_id) {
-      return NextResponse.json({ ok: false, error: '"session_id" is required' }, { status: 400 })
-    }
+    // Validate required fields — session_id is optional (translation flow has no session)
     if (typeof body.doc_type !== 'string' || !body.doc_type) {
       return NextResponse.json({ ok: false, error: '"doc_type" is required' }, { status: 400 })
     }
@@ -253,7 +246,8 @@ export async function POST(req: NextRequest) {
     const confidence = typeof body.confidence === 'number' ? Math.min(1, Math.max(0, body.confidence)) : 0
 
     const payload = {
-      session_id: body.session_id,
+      // session_id is optional — Re-Parole flow provides it, translation flow does not
+      session_id: typeof body.session_id === 'string' ? body.session_id : '',
       doc_type: body.doc_type,
       source_lang,
       contact_name: typeof body.contact_name === 'string' ? body.contact_name.trim() || null : null,
