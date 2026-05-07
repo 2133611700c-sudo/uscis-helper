@@ -6,7 +6,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy init — do NOT call new Resend() at module level (crashes Next.js build when key absent)
+function getResend() {
+  const key = process.env.RESEND_API_KEY
+  if (!key) throw new Error('RESEND_API_KEY not configured')
+  return new Resend(key)
+}
 const FROM = (process.env.EMAIL_FROM_ADDRESS ?? 'noreply@messenginfo.com').trim()
 const ADMIN = (process.env.BACKUP_EMAIL ?? 'info@messenginfo.com').trim()
 
@@ -36,25 +41,25 @@ export async function POST(req: NextRequest) {
 
     const tips: Record<string, string[]> = {
       en: [
-        'Print the <strong>Certified Translation</strong> file — this is what you submit to USCIS.',
+        'Print the <strong>Translation Draft</strong> file — this is what you submit to USCIS.',
         'Sign the certification statement by hand in the blue signature box.',
         'Keep a copy for your records.',
         'Submit with your USCIS application package.',
       ],
       uk: [
-        'Роздрукуйте файл <strong>Certified Translation</strong> — саме його ви подаєте до USCIS.',
+        'Роздрукуйте файл <strong>Чернетки перекладу</strong> — саме його ви подаєте до USCIS.',
         'Підпишіть заяву про підтвердження від руки в синьому полі підпису.',
         'Зберіть копію для своїх записів.',
         'Подайте разом з вашим пакетом документів до USCIS.',
       ],
       ru: [
-        'Распечатайте файл <strong>Certified Translation</strong> — именно его вы подаёте в USCIS.',
+        'Распечатайте файл <strong>Черновика перевода</strong> — именно его вы подаёте в USCIS.',
         'Подпишите заявление о подтверждении от руки в синем поле подписи.',
         'Сохраните копию для своих записей.',
         'Подайте вместе с вашим пакетом документов в USCIS.',
       ],
       es: [
-        'Imprima el archivo <strong>Certified Translation</strong> — este es el que envía a USCIS.',
+        'Imprima el archivo <strong>Borrador de traducción</strong> — este es el que envía a USCIS.',
         'Firme la declaración de certificación a mano en el cuadro azul de firma.',
         'Guarde una copia para sus registros.',
         'Presente junto con su paquete de solicitud de USCIS.',
@@ -99,6 +104,7 @@ export async function POST(req: NextRequest) {
 </body></html>`
 
     // Send to user (non-blocking, catch silently)
+    const resend = getResend()
     await resend.emails.send({
       from: `Messenginfo <${FROM}>`,
       to: email,
