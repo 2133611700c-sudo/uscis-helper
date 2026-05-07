@@ -22,13 +22,9 @@ const T = {
       { code: 'SRC', form: 'I-765 (Texas SC)', color: 'bg-pink-100 text-pink-800' },
       { code: 'IOE', form: 'Online filings', color: 'bg-gray-100 text-gray-800' },
     ],
-    timelineTitle: 'Typical processing times (2026)',
-    timelines: [
-      { form: 'Form I-131 (Re-Parole)', time: '6–12 months', note: 'Apply 120 days before expiry' },
-      { form: 'Form I-765 (EAD)', time: '3–6 months', note: '540-day auto-extension if timely filed' },
-      { form: 'Form I-485 (LPR)', time: '18–30 months', note: 'Priority date must be current' },
-      { form: 'Form I-539 (Status change)', time: '6–18 months', note: 'Do not travel while pending' },
-    ],
+    processingTimesTitle: 'Check official processing times',
+    processingTimesDesc: 'Processing times change frequently. Always check the official USCIS tool — never rely on third-party estimates.',
+    processingTimesBtn: 'Check Processing Times on USCIS.gov →',
     officialBtn: 'Go to USCIS Case Status Portal',
     officialNote: 'Always verify on the official USCIS website',
     alertsTitle: 'Get status update alerts',
@@ -62,13 +58,9 @@ const T = {
       { code: 'SRC', form: 'I-765 (Texas SC)', color: 'bg-pink-100 text-pink-800' },
       { code: 'IOE', form: 'Онлайн-подачі', color: 'bg-gray-100 text-gray-800' },
     ],
-    timelineTitle: 'Типові терміни розгляду (2026)',
-    timelines: [
-      { form: 'Form I-131 (Re-Parole)', time: '6–12 місяців', note: 'Подавайте за 120 днів до закінчення' },
-      { form: 'Form I-765 (EAD)', time: '3–6 місяців', note: '540-денне автопродовження при своєчасній подачі' },
-      { form: 'Form I-485 (LPR)', time: '18–30 місяців', note: 'Priority date має бути поточною' },
-      { form: 'Form I-539 (зміна статусу)', time: '6–18 місяців', note: 'Не подорожуйте під час розгляду' },
-    ],
+    processingTimesTitle: 'Офіційні терміни розгляду',
+    processingTimesDesc: 'Терміни часто змінюються. Завжди перевіряйте на офіційному інструменті USCIS — ніколи не покладайтесь на сторонні оцінки.',
+    processingTimesBtn: 'Перевірити терміни на USCIS.gov →',
     officialBtn: 'Перейти на портал статусу справ USCIS',
     officialNote: 'Завжди перевіряйте на офіційному сайті USCIS',
     alertsTitle: 'Отримувати сповіщення про оновлення статусу',
@@ -102,13 +94,9 @@ const T = {
       { code: 'SRC', form: 'I-765 (Texas SC)', color: 'bg-pink-100 text-pink-800' },
       { code: 'IOE', form: 'Онлайн-подачи', color: 'bg-gray-100 text-gray-800' },
     ],
-    timelineTitle: 'Типичные сроки рассмотрения (2026)',
-    timelines: [
-      { form: 'Form I-131 (Re-Parole)', time: '6–12 месяцев', note: 'Подавайте за 120 дней до истечения' },
-      { form: 'Form I-765 (EAD)', time: '3–6 месяцев', note: '540-дневное авторасширение при своевременной подаче' },
-      { form: 'Form I-485 (LPR)', time: '18–30 месяцев', note: 'Priority date должна быть текущей' },
-      { form: 'Form I-539 (изменение статуса)', time: '6–18 месяцев', note: 'Не путешествуйте во время рассмотрения' },
-    ],
+    processingTimesTitle: 'Официальные сроки рассмотрения',
+    processingTimesDesc: 'Сроки часто меняются. Всегда проверяйте на официальном инструменте USCIS — не полагайтесь на сторонние оценки.',
+    processingTimesBtn: 'Проверить сроки на USCIS.gov →',
     officialBtn: 'Перейти на портал статусов дел USCIS',
     officialNote: 'Всегда проверяйте на официальном сайте USCIS',
     alertsTitle: 'Получать уведомления об обновлении статуса',
@@ -142,13 +130,9 @@ const T = {
       { code: 'SRC', form: 'I-765 (Texas SC)', color: 'bg-pink-100 text-pink-800' },
       { code: 'IOE', form: 'Presentaciones en línea', color: 'bg-gray-100 text-gray-800' },
     ],
-    timelineTitle: 'Tiempos de procesamiento típicos (2026)',
-    timelines: [
-      { form: 'Formulario I-131 (Re-Parole)', time: '6–12 meses', note: 'Solicite 120 días antes del vencimiento' },
-      { form: 'Formulario I-765 (EAD)', time: '3–6 meses', note: 'Extensión automática de 540 días si se presentó a tiempo' },
-      { form: 'Formulario I-485 (LPR)', time: '18–30 meses', note: 'La fecha de prioridad debe ser actual' },
-      { form: 'Formulario I-539 (cambio de estado)', time: '6–18 meses', note: 'No viaje mientras está pendiente' },
-    ],
+    processingTimesTitle: 'Tiempos de procesamiento oficiales',
+    processingTimesDesc: 'Los tiempos cambian con frecuencia. Siempre verifique en la herramienta oficial de USCIS — nunca confíe en estimaciones de terceros.',
+    processingTimesBtn: 'Ver tiempos en USCIS.gov →',
     officialBtn: 'Ir al Portal de Estado de Casos de USCIS',
     officialNote: 'Siempre verifique en el sitio web oficial de USCIS',
     alertsTitle: 'Recibir alertas de actualización de estado',
@@ -279,23 +263,19 @@ export function CaseStatusTracker({ locale }: { locale: string }) {
             </div>
           </div>
 
-          {/* Processing times */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5">
-            <h2 className="text-[15px] font-bold text-[var(--text-1)] mb-3">{t.timelineTitle}</h2>
-            <div className="divide-y divide-[var(--border)]">
-              {t.timelines.map((item: { form: string; time: string; note: string }) => (
-                <div key={item.form} className="py-3 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[14px] font-semibold text-[var(--text-1)]">{item.form}</p>
-                    <p className="text-[12px] text-[var(--text-3)]">{item.note}</p>
-                  </div>
-                  <span className="shrink-0 text-[13px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">{item.time}</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-[11px] text-[var(--text-3)] mt-3">
-              ⚠ Times vary. Always check <a href="https://www.uscis.gov/processing-times" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">uscis.gov/processing-times</a> for current data.
-            </p>
+          {/* Processing times — link to official USCIS tool, no hardcoded estimates */}
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <h2 className="text-[15px] font-bold text-amber-900 mb-2">⏱ {t.processingTimesTitle}</h2>
+            <p className="text-[13px] text-amber-800 mb-4 leading-relaxed">{t.processingTimesDesc}</p>
+            <a
+              href="https://egov.uscis.gov/processing-times/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('uscis_processing_times_clicked', { locale })}
+              className="inline-flex items-center gap-2 bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold text-[13px] hover:bg-amber-800 transition-colors"
+            >
+              {t.processingTimesBtn}
+            </a>
           </div>
 
           {/* Official portal CTA */}
