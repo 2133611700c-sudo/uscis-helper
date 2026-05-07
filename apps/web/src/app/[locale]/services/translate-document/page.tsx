@@ -159,7 +159,7 @@ export default async function TranslateDocumentPage({ params }: Props) {
               ? 'Messenginfo — не юридична фірма і не сертифіковане бюро перекладів. Ми надаємо шаблон-чернетку перекладу для самостійної підготовки документів. Шаблон не є юридичною консультацією. Перед подачею до USCIS перевірте актуальні вимоги на uscis.gov. Використовуючи сервіс, ви приймаєте повну відповідальність за зміст і підпис перекладу.'
               : locale === 'es'
               ? 'Messenginfo no es una firma legal ni una agencia de traducción certificada. Proporcionamos plantillas de traducción en borrador. Esto no constituye asesoría legal. Verifique los requisitos actuales en uscis.gov antes de presentar su solicitud. Al usar el servicio, acepta total responsabilidad por el contenido y firma de la traducción.'
-              : 'Messenginfo is not a law firm or certified translation agency. We provide draft translation templates for self-preparation only. This is not legal advice. Verify current requirements at uscis.gov before filing. By using this service you accept full responsibility for the translation content and signature.'}
+              : 'Messenginfo is not a law firm and does not provide professional translation services. We provide draft translation templates for self-preparation only. This is not legal advice. Verify current requirements at uscis.gov before filing. By using this service you accept full responsibility for the translation content and signature.'}
           </p>
         </Container>
       </div>
