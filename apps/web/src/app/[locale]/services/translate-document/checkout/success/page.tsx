@@ -25,7 +25,7 @@ interface PendingSession {
 const T = {
   en: {
     title: '✅ Payment received!',
-    subtitle: 'Your certified translation is ready. Download all 4 files below.',
+    subtitle: 'Your translation template is ready. Download all 4 files below.',
     file1: 'Translation Draft (EN)',
     file2: 'Translator Certification',
     file3: 'USCIS Checklist',
