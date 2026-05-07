@@ -738,8 +738,8 @@
     "home": "Inicio",
     "backToServices": "Volver a servicios",
     "title": "Traducción de documentos",
-    "subtitle": "Cree un borrador de traducción al inglés a partir del documento original. Revise nombres, fechas y campos antes de la verificación final por un traductor.",
-    "draftOnlyBanner": "Solo borrador — sin certificación profesional del traductor.",
+    "subtitle": "Obtenga una plantilla de traducción lista para USCIS en minutos — imprima, firme y presente.",
+    "draftOnlyBanner": "Plantilla compatible con USCIS — usted firma la declaración de certificación.",
     "chooseDocumentTitle": "Elija su documento",
     "chooseDocumentSubtitle": "Seleccione el tipo de documento que desea preparar.",
     "startAction": "Abrir →",
@@ -1021,7 +1021,7 @@
     "result": {
       "placeholderTitle": "Flujo de borrador listo",
       "noBackend": "Su flujo de borrador está listo para el siguiente paso. La generación con IA se conectará después de la verificación.",
-      "draftOnly": "Solo borrador: no incluye certificación del traductor.",
+      "draftOnly": "Plantilla para USCIS — usted firma la certificación.",
       "downloadDraft": "Descargar borrador PDF",
       "sendToEmail": "Enviar por correo",
       "startAnother": "Comenzar otro documento"
