@@ -970,6 +970,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [emailGateValue, setEmailGateValue] = useState('')
   const [emailGateSaved, setEmailGateSaved] = useState(false)
   const [emailGateSending, setEmailGateSending] = useState(false)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
 
   // File upload state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -1177,6 +1178,41 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     setEmailGateSaved(true) // don't show gate again
     setEmailGateOpen(false)
     executeDownload()
+  }
+
+  /** Stage 10I: Initiate Stripe checkout for translation — fallback to free download if Stripe not configured */
+  async function handleStripeCheckout() {
+    if (!doc) return
+    setCheckoutLoading(true)
+    try {
+      // Persist wizard state so the success page can regenerate files
+      try {
+        localStorage.setItem(
+          'translation_pending',
+          JSON.stringify({ docId, srcLang, targetLang, docEra, fieldValues, savedAt: Date.now() }),
+        )
+      } catch { /* private-mode browsers block localStorage — safe to ignore */ }
+
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product: 'translation', locale }),
+      })
+
+      // 503 = Stripe not configured (e.g. dev / staging without keys) — fall back to free
+      if (res.status === 503) { handleDownload(); return }
+
+      const data = (await res.json()) as { url?: string; free?: boolean; error?: string }
+      if (data.free || !data.url) { handleDownload(); return }
+
+      track('translation_checkout_started', { doc_type: docId, locale })
+      window.location.href = data.url
+    } catch {
+      // Network error — degrade gracefully
+      handleDownload()
+    } finally {
+      setCheckoutLoading(false)
+    }
   }
 
   /** Stage 13C: save current 4 files to session, reset wizard, keep sessionDocs */
@@ -1829,11 +1865,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                       {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'}
                       {' '}→ EN · {(doc?.label as Record<string, string> | undefined)?.[locale] ?? doc?.label.en}
                     </p>
-                    <p className="text-[11px] text-[var(--text-3)]">{ui.priceBadge} $15</p>
+                    <p className="text-[11px] text-[var(--text-3)]">{ui.priceBadge}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[13px] text-[var(--text-2)] line-through">$15.00</p>
-                    <p className="text-[16px] font-bold text-green-600">FREE</p>
+                    <p className="text-[20px] font-bold text-[var(--text-1)]">$15.00</p>
+                    <p className="text-[11px] text-[var(--text-3)]">one-time</p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -1846,16 +1882,55 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                 </div>
               </div>
 
-              {/* Test mode banner */}
-              <div className="rounded-xl bg-[var(--surface-2)] border border-[var(--border)] px-4 py-3 mb-4">
-                <p className="text-[13px] text-[var(--text-2)]">🧪 {ui.paymentDisabled}</p>
-              </div>
-
-              <button type="button" onClick={handleDownload}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
-                <Download className="h-5 w-5" />
-                {ui.paymentContinue}
+              {/* Stripe pay button */}
+              <button
+                type="button"
+                onClick={handleStripeCheckout}
+                disabled={checkoutLoading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {checkoutLoading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    {locale === 'uk'
+                      ? 'Переходимо до оплати…'
+                      : locale === 'ru'
+                      ? 'Переходим к оплате…'
+                      : locale === 'es'
+                      ? 'Redirigiendo al pago…'
+                      : 'Redirecting to payment…'}
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" className="shrink-0">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                      <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    {locale === 'uk'
+                      ? 'Оплатити $15 — Отримати файли'
+                      : locale === 'ru'
+                      ? 'Оплатить $15 — Получить файлы'
+                      : locale === 'es'
+                      ? 'Pagar $15 — Obtener archivos'
+                      : 'Pay $15 — Get Your Files'}
+                  </>
+                )}
               </button>
+
+              {/* Secure payment note */}
+              <p className="text-[11px] text-center text-[var(--text-3)] mt-2">
+                🔒{' '}
+                {locale === 'uk'
+                  ? 'Безпечна оплата через Stripe · Visa · Mastercard · Google Pay'
+                  : locale === 'ru'
+                  ? 'Безопасная оплата через Stripe · Visa · Mastercard · Google Pay'
+                  : locale === 'es'
+                  ? 'Pago seguro a través de Stripe · Visa · Mastercard · Google Pay'
+                  : 'Secure checkout via Stripe · Visa · Mastercard · Google Pay'}
+              </p>
             </>
           ) : (
             <div className="space-y-4">
