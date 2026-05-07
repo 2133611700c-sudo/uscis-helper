@@ -115,6 +115,7 @@ async function notifyStaff(payload: {
     low_confidence: 'Low translation confidence',
     user_requested: 'User explicitly requested human review',
     translate_error: 'Translation API error',
+    ocr_unreadable: '⚠️ Photo unreadable — auto-orientation failed, manual translation needed',
   }
   const reasonLabel = reasonLabels[payload.reason] ?? payload.reason
 
@@ -226,7 +227,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: '"doc_type" is required' }, { status: 400 })
     }
 
-    const validReasons = new Set(['low_confidence', 'user_requested', 'translate_error'])
+    const validReasons = new Set(['low_confidence', 'user_requested', 'translate_error', 'ocr_unreadable'])
     const reason =
       typeof body.reason === 'string' && validReasons.has(body.reason)
         ? body.reason
