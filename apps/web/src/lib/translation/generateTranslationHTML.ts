@@ -114,7 +114,8 @@ td{padding:6px 10px;border:1px solid #ccc;font-size:11pt;vertical-align:top}
 .sig-line{border-bottom:1.5px solid #000;min-height:26px}
 .sig-lbl{font-size:9.5pt;color:#555;margin-top:3px}
 .footer{margin-top:30px;padding-top:10px;border-top:1px solid #ccc;font-size:9pt;color:#777;text-align:center;line-height:1.6}
-@media print{body{padding:20px}}
+@page{margin:1in}
+@media print{body{margin:0;padding:0}table,tr,.cert,.sec-label{page-break-inside:avoid}.draft-banner{display:none}}
 </style>
 </head>
 <body>
@@ -180,7 +181,8 @@ h1{font-size:15pt;font-weight:bold;text-transform:uppercase;text-align:center;ma
 p{margin-bottom:16px}
 .sig-line{border-top:1.5px solid #000;width:320px;margin-top:50px;padding-top:6px;font-size:11pt;color:#555}
 .footer{font-size:10pt;color:#888;margin-top:40px;padding-top:10px;border-top:1px solid #ccc}
-@media print{body{margin:20px}}
+@page{margin:1in}
+@media print{body{margin:0;padding:0}p,.sig-line{page-break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -215,7 +217,8 @@ h1{font-size:16pt;margin-bottom:6px}
 .box{width:20px;height:20px;border:2px solid #333;flex-shrink:0;border-radius:3px;margin-top:1px}
 strong{color:#000}
 .footer{font-size:9.5pt;color:#888;margin-top:20px;padding-top:10px;border-top:1px solid #ddd}
-@media print{body{margin:0;padding:10px}}
+@page{margin:1in}
+@media print{body{margin:0;padding:0}.item{page-break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -247,7 +250,8 @@ h1{font-size:16pt;margin-bottom:6px}
 h2{font-size:13pt;color:#1e40af;margin-top:22px;border-bottom:2px solid #e0e7ff;padding-bottom:4px}
 p{margin-top:8px;font-size:11pt}
 .footer{font-size:9.5pt;color:#888;margin-top:28px;padding-top:10px;border-top:1px solid #ddd}
-@media print{body{margin:0;padding:10px}}
+@page{margin:1in}
+@media print{body{margin:0;padding:0}h2,p{page-break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -752,9 +756,11 @@ export function generateTranslationHTML(
       text-align: center;
       line-height: 1.5;
     }
+    @page { margin: 1in; }
     @media print {
-      body { padding: 20px; }
-      .draft-banner { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { margin: 0; padding: 0; }
+      table, tr, .cert, .section { page-break-inside: avoid; }
+      .draft-banner { display: none; }
     }
   </style>
 </head>

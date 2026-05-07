@@ -236,7 +236,10 @@
 } /* end @layer base */
 
 /* ── HTML/body foundation ── */
+/* P0-9: 18px base — required for elderly/low-vision users (60yo Russian-speaking target audience).
+   All existing rem values scale proportionally. Easy to revert if other pages regress. */
 html {
+  font-size: 18px;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -13,6 +13,7 @@ import {
   EraVariant,
 } from '@/lib/translation/docDefinitions'
 import { useTranslationHistory } from '@/lib/translation/useTranslationHistory'
+import { TRANSLATION_PRICE_DISPLAY, TRANSLATION_PRICE_SHORT } from '@/lib/pricing'
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -396,6 +397,23 @@ const UI: Record<string, Record<string, string>> = {
     addToSession: '+ Add another document (same person)',
     downloadZip: 'Download all as ZIP',
     sessionCount: 'docs in session',
+    contactTitle: 'Before we continue',
+    contactHint: 'Your name is required so we can personalize your translation. Email is optional.',
+    contactNameLabel: 'Your full name',
+    contactNamePlaceholder: 'e.g. Maria Kovalenko',
+    contactEmailLabel: 'Email (optional — to receive your files)',
+    contactEmailPlaceholder: 'your@email.com',
+    contactPhoneLabel: 'Phone (optional)',
+    contactPhonePlaceholder: '+1 (555) 000-0000',
+    contactNext: 'Continue',
+    contactSkip: 'Skip',
+    ocrPreviewTitle: 'AI found these fields',
+    ocrPreviewHint: 'Review the extracted values — you can edit any of them in the next step.',
+    ocrPreviewConfirm: 'Looks correct — continue',
+    ocrPreviewEdit: 'Edit manually',
+    ocrPreviewManual: 'Fields look wrong — request human review',
+    ocrPreviewSending: 'Sending request…',
+    ocrPreviewSent: '✓ Request sent. We\'ll contact you within 24 hours.',
     fieldsTitle: 'Enter fields from your document',
     fieldsHint: 'Copy exactly as written. Fields marked * are required.',
     grpPersonal: 'Personal information',
@@ -483,6 +501,23 @@ const UI: Record<string, Record<string, string>> = {
     addToSession: '+ Додати ще документ (та сама особа)',
     downloadZip: 'Завантажити все як ZIP',
     sessionCount: 'документів у сесії',
+    contactTitle: 'Перед тим як продовжити',
+    contactHint: 'Ваше ім\'я потрібне для персоналізації перекладу. Email — необов\'язково.',
+    contactNameLabel: 'Ваше повне ім\'я',
+    contactNamePlaceholder: 'наприклад, Марія Коваленко',
+    contactEmailLabel: 'Email (необов\'язково — для отримання файлів)',
+    contactEmailPlaceholder: 'ваша@пошта.com',
+    contactPhoneLabel: 'Телефон (необов\'язково)',
+    contactPhonePlaceholder: '+1 (555) 000-0000',
+    contactNext: 'Продовжити',
+    contactSkip: 'Пропустити',
+    ocrPreviewTitle: 'ШІ знайшов ці поля',
+    ocrPreviewHint: 'Перевірте знайдені значення — на наступному кроці ви зможете виправити будь-яке з них.',
+    ocrPreviewConfirm: 'Виглядає правильно — продовжити',
+    ocrPreviewEdit: 'Редагувати вручну',
+    ocrPreviewManual: 'Поля виглядають неправильно — запросити перевірку людиною',
+    ocrPreviewSending: 'Надсилаємо запит…',
+    ocrPreviewSent: '✓ Запит надіслано. Ми зв\'яжемось з вами протягом 24 годин.',
     fieldsTitle: 'Введіть поля з вашого документа',
     fieldsHint: 'Копіюйте точно як написано. Поля зі * обов\'язкові.',
     grpPersonal: 'Особисті дані',
@@ -570,6 +605,23 @@ const UI: Record<string, Record<string, string>> = {
     addToSession: '+ Добавить документ (тот же человек)',
     downloadZip: 'Скачать всё как ZIP',
     sessionCount: 'документов в сессии',
+    contactTitle: 'Прежде чем продолжить',
+    contactHint: 'Ваше имя нужно для персонализации перевода. Email — необязателен.',
+    contactNameLabel: 'Ваше полное имя',
+    contactNamePlaceholder: 'например, Мария Коваленко',
+    contactEmailLabel: 'Email (необязательно — для получения файлов)',
+    contactEmailPlaceholder: 'ваш@email.com',
+    contactPhoneLabel: 'Телефон (необязательно)',
+    contactPhonePlaceholder: '+1 (555) 000-0000',
+    contactNext: 'Продолжить',
+    contactSkip: 'Пропустить',
+    ocrPreviewTitle: 'ИИ нашёл эти поля',
+    ocrPreviewHint: 'Проверьте найденные значения — на следующем шаге вы сможете исправить любое.',
+    ocrPreviewConfirm: 'Выглядит правильно — продолжить',
+    ocrPreviewEdit: 'Редактировать вручную',
+    ocrPreviewManual: 'Поля выглядят неправильно — запросить проверку специалистом',
+    ocrPreviewSending: 'Отправляем запрос…',
+    ocrPreviewSent: '✓ Запрос отправлен. Мы свяжемся с вами в течение 24 часов.',
     fieldsTitle: 'Введите поля из вашего документа',
     fieldsHint: 'Копируйте точно как написано. Поля со * обязательны.',
     grpPersonal: 'Личные данные',
@@ -657,6 +709,23 @@ const UI: Record<string, Record<string, string>> = {
     addToSession: '+ Agregar otro documento (misma persona)',
     downloadZip: 'Descargar todo como ZIP',
     sessionCount: 'documentos en la sesión',
+    contactTitle: 'Antes de continuar',
+    contactHint: 'Su nombre es necesario para personalizar la traducción. El correo es opcional.',
+    contactNameLabel: 'Su nombre completo',
+    contactNamePlaceholder: 'p.ej. María Kovalenko',
+    contactEmailLabel: 'Correo electrónico (opcional — para recibir archivos)',
+    contactEmailPlaceholder: 'su@correo.com',
+    contactPhoneLabel: 'Teléfono (opcional)',
+    contactPhonePlaceholder: '+1 (555) 000-0000',
+    contactNext: 'Continuar',
+    contactSkip: 'Omitir',
+    ocrPreviewTitle: 'La IA encontró estos campos',
+    ocrPreviewHint: 'Revise los valores — puede editarlos en el siguiente paso.',
+    ocrPreviewConfirm: 'Se ve correcto — continuar',
+    ocrPreviewEdit: 'Editar manualmente',
+    ocrPreviewManual: 'Los campos se ven incorrectos — solicitar revisión humana',
+    ocrPreviewSending: 'Enviando solicitud…',
+    ocrPreviewSent: '✓ Solicitud enviada. Nos pondremos en contacto en 24 horas.',
     fieldsTitle: 'Ingrese los campos de su documento',
     fieldsHint: 'Copie exactamente como está escrito. Los campos con * son obligatorios.',
     grpPersonal: 'Datos personales',
@@ -867,13 +936,13 @@ function StepIndicator({ step, locale }: { step: number; locale: string }) {
         const active = step === idx
         return (
           <div key={idx} className="flex items-center gap-1 flex-shrink-0">
-            <div className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold transition-all
+            <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all
               ${done ? 'bg-green-500 text-white' : active ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)]'}`}>
               {done ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="10" height="10"><polyline points="20 6 9 17 4 12" /></svg>
               ) : idx}
             </div>
-            <span className={`text-[11px] font-semibold whitespace-nowrap
+            <span className={`text-xs font-semibold whitespace-nowrap
               ${done ? 'text-green-600' : active ? 'text-blue-600' : 'text-[var(--text-2)]'}`}>{label}</span>
             {i < steps.length - 1 && <div className={`w-4 h-0.5 mx-1 ${done ? 'bg-green-400' : 'bg-[var(--border)]'}`} />}
           </div>
@@ -894,7 +963,8 @@ function DocCard({ doc, locale, selected, onSelect }: {
     <button
       type="button"
       onClick={onSelect}
-      className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center cursor-pointer transition-all duration-150 min-h-[132px]
+      aria-label={label}
+      className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center cursor-pointer transition-all duration-150 min-h-[160px]
         ${selected
           ? 'border-blue-600 bg-blue-50 shadow-md -translate-y-0.5'
           : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400 hover:-translate-y-0.5 hover:shadow-md'}`}
@@ -910,7 +980,8 @@ function DocCard({ doc, locale, selected, onSelect }: {
         <div className="absolute top-0 right-0 border-solid border-[0_12px_12px_0] border-[transparent_rgba(255,255,255,.22)_transparent_transparent]" />
         <span className="relative z-10 text-white" dangerouslySetInnerHTML={{ __html: doc.icon }} />
       </div>
-      <span className="text-[14px] font-bold text-[var(--text-1)] leading-tight max-w-[110px] hyphens-auto word-break-all">{label}</span>
+      {/* P0-8: drop word-break-all — breaks Cyrillic labels unreadably */}
+      <span className="text-sm font-bold text-[var(--text-1)] leading-tight max-w-[110px] hyphens-auto break-words">{label}</span>
     </button>
   )
 }
@@ -972,6 +1043,17 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [emailGateSending, setEmailGateSending] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
 
+  // P0-3: Contact gate — captured between upload and fields
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactCaptured, setContactCaptured] = useState(false)
+  const [contactSaving, setContactSaving] = useState(false)
+  // P0-5: OCR simplified preview — shown after OCR if fields were extracted
+  const [ocrPreviewDone, setOcrPreviewDone] = useState(false)
+  const [manualReviewSending, setManualReviewSending] = useState(false)
+  const [manualReviewSent, setManualReviewSent] = useState(false)
+
   // File upload state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null)
@@ -1011,6 +1093,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     setUploadedFile(null)
     setUploadedPreview(null)
     setEmailGateSaved(false)
+    setContactCaptured(false)
+    setOcrPreviewDone(false)
+    setManualReviewSending(false)
+    setManualReviewSent(false)
     setStep(1)
     window.scrollTo(0, 0)
     track('wizard_doc_selected', { doc_type: id, locale })
@@ -1018,6 +1104,19 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function goBack() {
     if (step === 1) { setStep(0); setDocId(null); window.scrollTo(0, 0); return }
+    // P0-3/P0-5: sub-step back navigation within step 3
+    if (step === 3) {
+      if (contactCaptured && ocrPreviewDone) {
+        // In fields form after OCR preview → back to OCR preview
+        setOcrPreviewDone(false); window.scrollTo(0, 0); return
+      }
+      if (contactCaptured) {
+        // In OCR preview or fields (no OCR) → back to contact gate
+        setContactCaptured(false); window.scrollTo(0, 0); return
+      }
+      // In contact gate → go to step 2 (upload)
+      setStep(2); window.scrollTo(0, 0); return
+    }
     setStep((s) => Math.max(0, s - 1))
     window.scrollTo(0, 0)
   }
@@ -1053,6 +1152,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   async function handleOcrExtract(file: File) {
     setOcrLoading(true)
     setOcrPhase('scan')
+    setOcrPreviewDone(false) // P0-5: reset so preview shows fresh after re-upload
     try {
       const ocrType = docIdToOcrType(docId ?? '')
       let rawText: string | null = null
@@ -1125,6 +1225,48 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     } finally {
       setOcrLoading(false)
       goNext()
+    }
+  }
+
+  // P0-3: Key fields to show in OCR preview per doc type (P0-5)
+  const KEY_FIELDS_BY_DOCTYPE: Record<string, string[]> = {
+    passport:        ['full_name', 'given_names', 'date_of_birth', 'document_number', 'nationality', 'expiry_date'],
+    birth_cert:      ['full_name', 'given_names', 'date_of_birth', 'place_of_birth', 'document_number', 'issuing_authority'],
+    marriage_cert:   ['spouse1_name', 'given_names', 'spouse2_name', 'mother_name', 'date_of_marriage', 'document_number'],
+    divorce_cert:    ['spouse1_name', 'given_names', 'spouse2_name', 'date_of_divorce', 'document_number'],
+    diploma:         ['full_name', 'given_names', 'degree_title', 'institution', 'document_number', 'issue_date'],
+    driving_license: ['full_name', 'given_names', 'date_of_birth', 'document_number', 'issue_date', 'expiry_date'],
+    medical_record:  ['full_name', 'given_names', 'date_of_birth', 'document_number', 'issue_date', 'issuing_authority'],
+    military_id:     ['full_name', 'given_names', 'date_of_birth', 'document_number', 'issue_date', 'issuing_authority'],
+    death_cert:      ['full_name', 'given_names', 'date_of_death', 'place_of_death', 'document_number', 'issuing_authority'],
+  }
+
+  // P0-3: Contact gate submission
+  async function handleContactCapture() {
+    const name = contactName.trim()
+    if (!name || contactSaving) return
+    setContactSaving(true)
+    try {
+      const email = contactEmail.trim()
+      const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      // Fire-and-forget: only call if email valid — don't block on failure
+      if (emailValid) {
+        fetch('/api/translation/email-capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, locale, doc_type: docId, src_lang: srcLang }),
+        }).catch(() => {})
+      }
+      track('contact_captured', {
+        doc_type: docId,
+        locale,
+        has_email: emailValid,
+        has_phone: !!contactPhone.trim(),
+      })
+      setContactCaptured(true)
+      window.scrollTo(0, 0)
+    } finally {
+      setContactSaving(false)
     }
   }
 
@@ -1364,19 +1506,19 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   <div key={entry.id} className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
                     <span className="text-xl shrink-0">{langFlag}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-semibold text-[var(--text-1)] truncate">{entry.docLabel}</p>
-                      <p className="text-[12px] text-[var(--text-2)]">{entry.srcLang.toUpperCase()} → {entry.targetLang.toUpperCase()} · {savedDate}</p>
+                      <p className="text-sm font-semibold text-[var(--text-1)] truncate">{entry.docLabel}</p>
+                      <p className="text-xs text-[var(--text-2)]">{entry.srcLang.toUpperCase()} → {entry.targetLang.toUpperCase()} · {savedDate}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => reDownloadFromHistory(entry)}
-                      className="text-[13px] font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap shrink-0 transition-colors">
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap shrink-0 transition-colors">
                       {ui.historyRedownload}
                     </button>
                     <button
                       type="button"
                       onClick={() => removeEntry(entry.id)}
-                      className="text-[12px] text-[var(--text-3)] hover:text-red-600 shrink-0 transition-colors ml-1">
+                      className="text-xs text-[var(--text-3)] hover:text-red-600 shrink-0 transition-colors ml-1">
                       ✕
                     </button>
                   </div>
@@ -1424,7 +1566,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                 <button
                   type="button"
                   onClick={() => setDocEra(null)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-[1.5px] text-[13px] font-semibold transition-all
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-[1.5px] text-sm font-semibold transition-all
                     ${!docEra ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-[var(--border)] text-[var(--text-1)] hover:border-blue-400'}`}>
                   🌐 {locale === 'uk' ? 'Будь-яка' : locale === 'ru' ? 'Любая' : 'Any'}
                 </button>
@@ -1436,7 +1578,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                       setDocEra(era.id)
                       setSrcLang(era.srcLang)
                     }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border-[1.5px] text-[13px] font-semibold transition-all
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border-[1.5px] text-sm font-semibold transition-all
                       ${docEra === era.id ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-[var(--border)] text-[var(--text-1)] hover:border-blue-400'}`}>
                     <span>{era.flag}</span>
                     <span>{(era.label as Record<string, string>)[locale] ?? era.label.en}</span>
@@ -1444,7 +1586,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                 ))}
               </div>
               {docEraObj?.noteForTranslator && (
-                <div className="mt-3 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <div className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                   📝 {docEraObj.noteForTranslator}
                 </div>
               )}
@@ -1459,7 +1601,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-[1.5px] text-center cursor-pointer transition-all
                   ${srcLang === l.id ? 'border-blue-600 bg-blue-600' : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400'}`}>
                 <span className="text-2xl leading-none">{l.flag}</span>
-                <span className={`text-[13px] font-bold ${srcLang === l.id ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
+                <span className={`text-sm font-bold ${srcLang === l.id ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
                 {srcLang === l.id && (
                   <span className="text-white">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
@@ -1479,7 +1621,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-[1.5px] transition-all
                     ${srcLang === l.id ? 'border-blue-600 bg-blue-600' : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400'}`}>
                   <span className="text-xl">{l.flag}</span>
-                  <span className={`text-[14px] font-semibold ${srcLang === l.id ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
+                  <span className={`text-sm font-semibold ${srcLang === l.id ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
                   {srcLang === l.id && (
                     <span className="ml-auto text-white">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
@@ -1511,7 +1653,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                           ? 'border-green-600 bg-green-600'
                           : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-green-400 cursor-pointer'}`}>
                     <span className="text-2xl leading-none">{l.flag}</span>
-                    <span className={`text-[13px] font-bold ${targetLang === l.id && !isDisabled ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
+                    <span className={`text-sm font-bold ${targetLang === l.id && !isDisabled ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
                     {targetLang === l.id && !isDisabled && (
                       <span className="text-white">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
@@ -1539,7 +1681,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                             ? 'border-green-600 bg-green-600'
                             : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-green-400'}`}>
                       <span className="text-xl">{l.flag}</span>
-                      <span className={`text-[14px] font-semibold ${targetLang === l.id && !isDisabled ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
+                      <span className={`text-sm font-semibold ${targetLang === l.id && !isDisabled ? 'text-white' : 'text-[var(--text-1)]'}`}>{l.label}</span>
                       {targetLang === l.id && !isDisabled && (
                         <span className="ml-auto text-white">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
@@ -1604,8 +1746,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                 className="flex items-center gap-3 w-full rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--surface-2)] px-4 py-4 hover:border-blue-400 transition-all text-left">
                 <span className="text-3xl leading-none">📷</span>
                 <div>
-                  <p className="text-[14px] font-bold text-[var(--text-1)]">{ui.uploadCameraBtn}</p>
-                  <p className="text-[12px] text-[var(--text-2)]">JPG, PNG, HEIC</p>
+                  <p className="text-sm font-bold text-[var(--text-1)]">{ui.uploadCameraBtn}</p>
+                  <p className="text-xs text-[var(--text-2)]">JPG, PNG, HEIC</p>
                 </div>
               </button>
               {/* File picker button */}
@@ -1613,8 +1755,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                 className="flex items-center gap-3 w-full rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--surface-2)] px-4 py-4 hover:border-blue-400 transition-all text-left">
                 <span className="text-3xl leading-none">📁</span>
                 <div>
-                  <p className="text-[14px] font-bold text-[var(--text-1)]">{ui.uploadFileBtn}</p>
-                  <p className="text-[12px] text-[var(--text-2)]">JPG, PNG, PDF, HEIC · max 10 MB</p>
+                  <p className="text-sm font-bold text-[var(--text-1)]">{ui.uploadFileBtn}</p>
+                  <p className="text-xs text-[var(--text-2)]">JPG, PNG, PDF, HEIC · max 10 MB</p>
                 </div>
               </button>
             </div>
@@ -1639,6 +1781,20 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           )}
         </div>
 
+        {/* P0-10: Privacy reassurance — no TTL promises, honest framing */}
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 flex items-start gap-2">
+          <span className="text-lg leading-none mt-0.5">🔒</span>
+          <p className="text-xs text-[var(--text-2)] leading-relaxed">
+            {locale === 'ru'
+              ? 'Ваш документ загружается только для обработки. Мы не используем его в других целях и не передаём третьим лицам.'
+              : locale === 'uk'
+              ? 'Ваш документ завантажується лише для обробки. Ми не використовуємо його в інших цілях і не передаємо третім особам.'
+              : locale === 'es'
+              ? 'Su documento se carga solo para procesamiento. No lo usamos para otros fines ni lo compartimos con terceros.'
+              : 'Your document is uploaded for processing only. We do not use it for other purposes or share it with third parties.'}
+          </p>
+        </div>
+
         {/* Skip or Continue (with OCR) */}
         <div className="flex flex-col gap-2">
           <button
@@ -1649,7 +1805,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             {ocrLoading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                {ocrPhase === 'scan' ? ui.ocrScanning : ui.ocrAnalyzing}
+                {/* P0-4: Honest processing framing — "1–3 minutes" not a spinner with no ETA */}
+                {ocrPhase === 'scan'
+                  ? (locale === 'ru' ? 'Сканируем документ… 1–3 мин' : locale === 'uk' ? 'Скануємо документ… 1–3 хв' : locale === 'es' ? 'Escaneando documento… 1–3 min' : 'Scanning document… 1–3 min')
+                  : (locale === 'ru' ? 'Разбираем поля… почти готово' : locale === 'uk' ? 'Аналізуємо поля… майже готово' : locale === 'es' ? 'Analizando campos… casi listo' : 'Analyzing fields… almost done')}
               </>
             ) : (
               <>{uploadedFile ? ui.next : ui.uploadSkip} →</>
@@ -1660,8 +1819,170 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     )
   }
 
-  // ── STEP 3: Fields ─────────────────────────────────────────────────────────
+  // ── STEP 3: Contact gate (P0-3) → OCR preview (P0-5) → Fields ────────────
   if (step === 3) {
+
+    // ── STEP 3A: Contact gate ─────────────────────────────────────────────────
+    if (!contactCaptured) {
+      return (
+        <div className="max-w-lg mx-auto space-y-4">
+          <StepIndicator step={2} locale={locale} />
+          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />{ui.back}
+          </button>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">{ui.contactTitle}</h2>
+              <p className="text-sm text-[var(--text-2)]">{ui.contactHint}</p>
+            </div>
+            {/* Name (required) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[var(--text-1)]">
+                {ui.contactNameLabel} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                placeholder={ui.contactNamePlaceholder}
+                autoComplete="name"
+                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+              />
+            </div>
+            {/* Email (optional) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[var(--text-1)]">{ui.contactEmailLabel}</label>
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                placeholder={ui.contactEmailPlaceholder}
+                autoComplete="email"
+                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+              />
+            </div>
+            {/* Phone (optional) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[var(--text-1)]">{ui.contactPhoneLabel}</label>
+              <input
+                type="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder={ui.contactPhonePlaceholder}
+                autoComplete="tel"
+                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleContactCapture}
+              disabled={!contactName.trim() || contactSaving}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+            >
+              {contactSaving ? '…' : ui.contactNext}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setContactName('skip'); setContactCaptured(true); window.scrollTo(0, 0) }}
+              className="w-full text-center text-sm text-[var(--text-2)] hover:text-[var(--text-1)] py-2 transition-colors"
+            >
+              {ui.contactSkip}
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    // ── STEP 3B: OCR preview (P0-5) — only if OCR extracted fields ───────────
+    if (ocrFilledCount > 0 && !ocrPreviewDone) {
+      const keyFields = KEY_FIELDS_BY_DOCTYPE[docId ?? ''] ?? []
+      const previewFields = fields.filter(
+        (f) => keyFields.includes(f.key) && (fieldValues[f.key] ?? '').trim()
+      )
+      async function handleRequestManualReview() {
+        if (manualReviewSending || manualReviewSent) return
+        setManualReviewSending(true)
+        try {
+          await fetch('/api/translation/manual-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contact_name: contactName !== 'skip' ? contactName : '',
+              contact_email: contactEmail,
+              contact_phone: contactPhone,
+              doc_type: docId ?? 'unknown',
+              source_lang: srcLang,
+              source_fields: fieldValues,
+              confidence: 0,
+              reason: 'user_requested',
+              locale,
+            }),
+          })
+          track('manual_review_requested', { doc_type: docId, locale, source: 'ocr_preview' })
+          setManualReviewSent(true)
+        } catch {
+          setManualReviewSent(true)
+        } finally {
+          setManualReviewSending(false)
+        }
+      }
+
+      return (
+        <div className="max-w-lg mx-auto space-y-4">
+          <StepIndicator step={3} locale={locale} />
+          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />{ui.back}
+          </button>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xl">✨</span>
+              <h2 className="text-xl font-bold text-[var(--text-1)]">{ui.ocrPreviewTitle}</h2>
+            </div>
+            <p className="text-sm text-[var(--text-2)] mb-4">{ui.ocrPreviewHint}</p>
+            {previewFields.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {previewFields.map((field) => (
+                  <div key={field.key} className="rounded-xl border border-[var(--border)] overflow-hidden">
+                    <div className="px-3.5 py-2 bg-[var(--surface-2)] border-b border-[var(--border)]">
+                      <span className="text-xs font-bold text-[var(--text-2)]">{field.en}</span>
+                    </div>
+                    <div className="px-3.5 py-2.5">
+                      <p className="text-base font-semibold text-[var(--text-1)]">{fieldValues[field.key]}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--text-2)] italic">{ui.ocrNone}</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <button type="button" onClick={() => { setOcrPreviewDone(true); window.scrollTo(0, 0) }}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
+              {ui.ocrPreviewConfirm}
+            </button>
+            <button type="button" onClick={() => { setOcrPreviewDone(true); window.scrollTo(0, 0) }}
+              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-800 py-2 transition-colors">
+              {ui.ocrPreviewEdit}
+            </button>
+            {!manualReviewSent ? (
+              <button type="button" onClick={handleRequestManualReview} disabled={manualReviewSending}
+                className="w-full text-center text-xs text-[var(--text-2)] hover:text-[var(--text-1)] py-1.5 transition-colors border border-[var(--border)] rounded-lg">
+                {manualReviewSending ? ui.ocrPreviewSending : ui.ocrPreviewManual}
+              </button>
+            ) : (
+              <p className="text-center text-xs text-emerald-700 bg-emerald-50 rounded-lg py-2 border border-emerald-200">
+                {ui.ocrPreviewSent}
+              </p>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    // ── STEP 3C: Fields form ──────────────────────────────────────────────────
     const groups: { id: Group; label: string }[] = [
       { id: 'personal', label: ui.grpPersonal },
       { id: 'document', label: ui.grpDocument },
@@ -1699,10 +2020,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   {grpFields.map((field) => (
                     <div key={field.key} className="flex flex-col gap-1.5">
                       <label className="flex flex-col gap-0.5">
-                        <span className="text-[13px] font-bold text-[var(--text-1)]">
+                        <span className="text-sm font-bold text-[var(--text-1)]">
                           {origLabel(field, srcLang)}
                           {field.required && <span className="text-red-500 ml-1">*</span>}
-                          <span className="ml-1.5 text-[12px] font-normal text-[var(--text-2)]">/ {field.en}</span>
+                          <span className="ml-1.5 text-xs font-normal text-[var(--text-2)]">/ {field.en}</span>
                         </span>
                       </label>
 
@@ -1717,7 +2038,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                                 key={opt.val}
                                 type="button"
                                 onClick={() => setFieldValues((v) => ({ ...v, [field.key]: opt.val }))}
-                                className={`px-4 py-2 rounded-full border-[1.5px] text-[14px] font-semibold transition-all
+                                className={`px-4 py-2 rounded-full border-[1.5px] text-sm font-semibold transition-all
                                   ${selected
                                     ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
                                     : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-1)] hover:border-blue-400'}`}
@@ -1735,19 +2056,19 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                           onChange={(e) => setFieldValues((v) => ({ ...v, [field.key]: e.target.value }))}
                           // Always use English (Latin) placeholder — guides users to enter transliterated values
                           placeholder={field.placeholder?.en ?? field.placeholder?.[srcLang] ?? ''}
-                          className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-[15px] text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+                          className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
                         />
                       )}
 
                       {field.helpExample && (
                         <div>
                           <button type="button" onClick={() => setHelpOpen(helpOpen === field.key ? null : field.key)}
-                            className="text-[12px] text-blue-600 flex items-center gap-1">
+                            className="text-xs text-blue-600 flex items-center gap-1">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                             {ui.whereToFind}
                           </button>
                           {helpOpen === field.key && (
-                            <div className="mt-1.5 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-[12px] text-blue-800">
+                            <div className="mt-1.5 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-800">
                               {field.helpExample[srcLang] ?? field.helpExample.en}
                             </div>
                           )}
@@ -1792,7 +2113,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   <span className="text-xs font-bold text-blue-600">{field.en}</span>
                 </div>
                 <div className="px-3.5 py-2.5">
-                  <p className="text-[15px] font-semibold text-[var(--text-1)]">{formatFieldValue(fieldValues[field.key] ?? '')}</p>
+                  <p className="text-base font-semibold text-[var(--text-1)]">{formatFieldValue(fieldValues[field.key] ?? '')}</p>
                 </div>
               </div>
             ))}
@@ -1807,6 +2128,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   }
 
   // ── STEP 5: Confirm ────────────────────────────────────────────────────────
+  // P0-6 + P0-7: Signature path choice + collapsible self-cert disclosure
   if (step === 5) {
     const confirmTexts = [ui.confirm1, ui.confirm2, ui.confirm3]
     return (
@@ -1815,29 +2137,68 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
         <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
           <ArrowLeft className="w-4 h-4" />{ui.back}
         </button>
+
+        {/* P0-6: Path choice — self-cert vs professional translator */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-[var(--text-1)] mb-4">{ui.confirmTitle}</h2>
-          <div className="flex flex-col gap-3 mb-5">
-            {confirmTexts.map((text, i) => (
-              <label key={i} className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={checks[i]}
-                  onChange={(e) => setChecks((prev) => { const n = [...prev]; n[i] = e.target.checked; return n })}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500" />
-                <span className="text-sm leading-relaxed text-[var(--text-1)]">{text}</span>
-              </label>
-            ))}
-          </div>
-          <p className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5 text-sm font-medium text-amber-800">
-            {ui.disclaimer}
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-2">
+            {locale === 'ru' ? 'Как вы хотите подписать перевод?' : locale === 'uk' ? 'Як ви хочете підписати переклад?' : locale === 'es' ? '¿Cómo desea firmar la traducción?' : 'How do you want to sign the translation?'}
+          </h2>
+          <p className="text-sm text-[var(--text-2)] mb-4">
+            {locale === 'ru' ? 'USCIS принимает оба варианта. Самостоятельная подпись — законна и бесплатна.' : locale === 'uk' ? 'USCIS приймає обидва варіанти. Самостійний підпис — законний і безкоштовний.' : locale === 'es' ? 'USCIS acepta ambas opciones. La firma propia es legal y gratuita.' : 'USCIS accepts both options. Self-certification is legal and free.'}
           </p>
+          <div className="flex flex-col gap-3">
+            {/* Path A — self-cert (continue) */}
+            <button type="button" onClick={goNext}
+              className="flex items-start gap-3 w-full rounded-xl border-2 border-blue-600 bg-blue-50 px-4 py-3 text-left hover:bg-blue-100 transition-colors">
+              <span className="text-xl leading-none mt-0.5">✍️</span>
+              <div>
+                <p className="text-base font-bold text-blue-700">
+                  {locale === 'ru' ? 'Подписать самостоятельно' : locale === 'uk' ? 'Підписати самостійно' : locale === 'es' ? 'Firmar yo mismo' : 'Self-certify (free)'}
+                </p>
+                <p className="text-sm text-[var(--text-2)]">
+                  {locale === 'ru' ? 'Вы сами подписываете заявление переводчика. Законно, быстро, бесплатно.' : locale === 'uk' ? 'Ви самі підписуєте заяву перекладача. Законно, швидко, безкоштовно.' : locale === 'es' ? 'Usted firma la declaración del traductor. Legal, rápido, gratis.' : 'You sign the translator statement yourself. Legal, fast, free.'}
+                </p>
+              </div>
+            </button>
+            {/* Path B — professional translator */}
+            <a href={`/${locale}/contact?topic=pro-translator`}
+              className="flex items-start gap-3 w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left hover:border-blue-400 transition-colors">
+              <span className="text-xl leading-none mt-0.5">👨‍💼</span>
+              <div>
+                <p className="text-base font-bold text-[var(--text-1)]">
+                  {locale === 'ru' ? 'Профессиональный переводчик' : locale === 'uk' ? 'Професійний перекладач' : locale === 'es' ? 'Traductor profesional' : 'Professional translator'}
+                </p>
+                <p className="text-sm text-[var(--text-2)]">
+                  {locale === 'ru' ? 'Messenginfo проверит и подпишет за вас. Свяжитесь с нами.' : locale === 'uk' ? 'Messenginfo перевірить і підпише за вас. Зв\'яжіться з нами.' : locale === 'es' ? 'Messenginfo revisará y firmará por usted. Contáctenos.' : 'Messenginfo will review and sign for you. Contact us.'}
+                </p>
+              </div>
+            </a>
+          </div>
         </div>
-        {!allChecked && (
-          <p className="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2 border border-amber-200">{ui.fillConfirm}</p>
-        )}
-        <button type="button" onClick={goNext} disabled={!allChecked}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">
-          {ui.next}
-        </button>
+
+        {/* P0-7: Collapsible self-cert disclosure — replaces full-page wall */}
+        <details className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] overflow-hidden">
+          <summary className="px-5 py-3 cursor-pointer text-sm font-semibold text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors list-none flex items-center gap-2">
+            <span className="text-base">ℹ️</span>
+            {locale === 'ru' ? 'Что значит самостоятельная подпись?' : locale === 'uk' ? 'Що означає самостійний підпис?' : locale === 'es' ? '¿Qué significa firmar uno mismo?' : 'What does self-certification mean?'}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="ml-auto"><polyline points="6 9 12 15 18 9" /></svg>
+          </summary>
+          <div className="px-5 pb-4 pt-2 border-t border-[var(--border)]">
+            <div className="flex flex-col gap-3 mb-4">
+              {confirmTexts.map((text, i) => (
+                <label key={i} className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={checks[i]}
+                    onChange={(e) => setChecks((prev) => { const n = [...prev]; n[i] = e.target.checked; return n })}
+                    className="mt-0.5 h-5 w-5 rounded border-slate-400 text-blue-600 focus:ring-blue-500" />
+                  <span className="text-sm leading-relaxed text-[var(--text-1)]">{text}</span>
+                </label>
+              ))}
+            </div>
+            <p className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5 text-sm font-medium text-amber-800">
+              {ui.disclaimer}
+            </p>
+          </div>
+        </details>
       </div>
     )
   }
@@ -1861,20 +2222,20 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="text-[13px] text-[var(--text-2)] mb-0.5">
+                    <p className="text-sm text-[var(--text-2)] mb-0.5">
                       {[...LANGS_TOP3, ...LANGS_MORE].find((l) => l.id === srcLang)?.flag ?? '🌐'}
                       {' '}→ EN · {(doc?.label as Record<string, string> | undefined)?.[locale] ?? doc?.label.en}
                     </p>
-                    <p className="text-[11px] text-[var(--text-3)]">{ui.priceBadge}</p>
+                    <p className="text-xs text-[var(--text-3)]">{ui.priceBadge}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[20px] font-bold text-[var(--text-1)]">$15.00</p>
-                    <p className="text-[11px] text-[var(--text-3)]">one-time</p>
+                    <p className="text-xl font-bold text-[var(--text-1)]">{TRANSLATION_PRICE_DISPLAY}</p>
+                    <p className="text-xs text-[var(--text-3)]">one-time</p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   {([ui.wyg1, ui.wyg2, ui.wyg3, ui.wyg4] as string[]).map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 text-[13px] text-[var(--text-2)]">
+                    <div key={i} className="flex items-center gap-2 text-sm text-[var(--text-2)]">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14" className="text-green-500 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
                       {item}
                     </div>
@@ -1910,18 +2271,18 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                       <line x1="1" y1="10" x2="23" y2="10" />
                     </svg>
                     {locale === 'uk'
-                      ? 'Оплатити $15 — Отримати файли'
+                      ? `Оплатити ${TRANSLATION_PRICE_SHORT} — Отримати файли`
                       : locale === 'ru'
-                      ? 'Оплатить $15 — Получить файлы'
+                      ? `Оплатить ${TRANSLATION_PRICE_SHORT} — Получить файлы`
                       : locale === 'es'
-                      ? 'Pagar $15 — Obtener archivos'
-                      : 'Pay $15 — Get Your Files'}
+                      ? `Pagar ${TRANSLATION_PRICE_SHORT} — Obtener archivos`
+                      : `Pay ${TRANSLATION_PRICE_SHORT} — Get Your Files`}
                   </>
                 )}
               </button>
 
               {/* Secure payment note */}
-              <p className="text-[11px] text-center text-[var(--text-3)] mt-2">
+              <p className="text-xs text-center text-[var(--text-3)] mt-2">
                 🔒{' '}
                 {locale === 'uk'
                   ? 'Безпечна оплата через Stripe · Visa · Mastercard · Google Pay'
@@ -1936,11 +2297,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             <div className="space-y-4">
               {/* Success header */}
               <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center">
-                <p className="text-[15px] font-bold text-green-800">✅ {ui.filesReady}</p>
+                <p className="text-base font-bold text-green-800">✅ {ui.filesReady}</p>
               </div>
 
               {/* USCIS English notice */}
-              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-[12px] text-blue-700 text-center">
+              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700 text-center">
                 {ui.enNotice}
               </div>
 
@@ -1959,8 +2320,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[14px] font-bold ${f.warn ? 'text-amber-800' : 'text-[var(--text-1)]'}`}>{f.label}</p>
-                      <p className={`text-[12px] ${f.warn ? 'text-amber-600' : 'text-[var(--text-2)]'}`}>{f.note}</p>
+                      <p className={`text-sm font-bold ${f.warn ? 'text-amber-800' : 'text-[var(--text-1)]'}`}>{f.label}</p>
+                      <p className={`text-xs ${f.warn ? 'text-amber-600' : 'text-[var(--text-2)]'}`}>{f.note}</p>
                     </div>
                     <div className={`shrink-0 ${f.warn ? 'text-amber-600' : 'text-blue-500'}`}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1971,18 +2332,18 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
               {/* Download all */}
               <button type="button" onClick={handleDownload}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-blue-600 text-blue-600 px-5 py-2.5 text-[14px] font-bold hover:bg-blue-50 transition-colors">
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-blue-600 text-blue-600 px-5 py-2.5 text-sm font-bold hover:bg-blue-50 transition-colors">
                 <Download className="h-4 w-4" />{ui.dlAll}
               </button>
 
               {/* Next steps */}
               <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <p className="text-[13px] font-bold text-[var(--text-1)] mb-3">{ui.nextTitle}</p>
+                <p className="text-sm font-bold text-[var(--text-1)] mb-3">{ui.nextTitle}</p>
                 <div className="flex flex-col gap-2">
                   {[ui.next1, ui.next2, ui.next3, ui.next4].map((step, i) => (
                     <div key={i} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</div>
-                      <p className="text-[13px] text-[var(--text-2)] leading-relaxed pt-0.5">{step}</p>
+                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</div>
+                      <p className="text-sm text-[var(--text-2)] leading-relaxed pt-0.5">{step}</p>
                     </div>
                   ))}
                 </div>
@@ -1990,14 +2351,14 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
               {/* Cert warning */}
               <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
-                <p className="text-[13px] font-bold text-amber-800">⚠ {ui.certWarn}</p>
+                <p className="text-sm font-bold text-amber-800">⚠ {ui.certWarn}</p>
               </div>
 
               {/* Stage 13E: Email delivery */}
               <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <p className="text-[13px] font-semibold text-[var(--text-1)] mb-2">📧 {ui.emailLabel}</p>
+                <p className="text-sm font-semibold text-[var(--text-1)] mb-2">📧 {ui.emailLabel}</p>
                 {emailSent ? (
-                  <p className="text-[14px] font-semibold text-green-700">{ui.emailSent}</p>
+                  <p className="text-sm font-semibold text-green-700">{ui.emailSent}</p>
                 ) : (
                   <div className="flex gap-2">
                     <input
@@ -2006,18 +2367,18 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                       onChange={(e) => setEmailInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleSendEmail() }}
                       placeholder={ui.emailPlaceholder}
-                      className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-[14px] text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                     <button
                       type="button"
                       onClick={handleSendEmail}
                       disabled={emailSending || !emailInput.trim()}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-[13px] font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
                       {emailSending ? ui.emailSending : ui.emailBtn}
                     </button>
                   </div>
                 )}
-                {emailError && <p className="text-[12px] text-red-600 mt-1">{emailError}</p>}
+                {emailError && <p className="text-xs text-red-600 mt-1">{emailError}</p>}
               </div>
 
               {/* Stage 13C: Session ZIP banner (shows when ≥1 doc already in session) */}
@@ -2025,11 +2386,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                 <div className="rounded-xl border border-purple-200 bg-purple-50 px-4 py-3 flex items-center gap-3">
                   <span className="text-xl">📦</span>
                   <div className="flex-1">
-                    <p className="text-[13px] font-bold text-purple-800">{sessionDocs.length + 1} {ui.sessionCount}</p>
-                    <p className="text-[11px] text-purple-600">{sessionDocs.map((s) => s.label).join(', ')}</p>
+                    <p className="text-sm font-bold text-purple-800">{sessionDocs.length + 1} {ui.sessionCount}</p>
+                    <p className="text-xs text-purple-600">{sessionDocs.map((s) => s.label).join(', ')}</p>
                   </div>
                   <button type="button" onClick={handleDownloadZip}
-                    className="rounded-lg bg-purple-600 px-3 py-2 text-[13px] font-bold text-white hover:bg-purple-700 transition-colors whitespace-nowrap">
+                    className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-bold text-white hover:bg-purple-700 transition-colors whitespace-nowrap">
                     {ui.downloadZip}
                   </button>
                 </div>
@@ -2072,10 +2433,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
                   <Mail className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-[15px] font-bold text-[var(--text-1)]">
+                  <p className="text-base font-bold text-[var(--text-1)]">
                     {locale === 'uk' ? 'Отримати на пошту' : locale === 'ru' ? 'Получить на почту' : locale === 'es' ? 'Recibir por email' : 'Get files by email'}
                   </p>
-                  <p className="text-[12px] text-[var(--text-3)]">
+                  <p className="text-xs text-[var(--text-3)]">
                     {locale === 'uk' ? 'Необов\'язково — скасуйте, щоб одразу завантажити' : locale === 'ru' ? 'Необязательно — пропустите для скачивания' : locale === 'es' ? 'Opcional — omita para descargar directamente' : 'Optional — skip to download directly'}
                   </p>
                 </div>
@@ -2085,7 +2446,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               </button>
             </div>
 
-            <p className="text-[13px] text-[var(--text-2)] mb-4">
+            <p className="text-sm text-[var(--text-2)] mb-4">
               {locale === 'uk' ? '📧 Надішлемо всі 4 файли на вашу пошту — щоб мати запасний доступ.' : locale === 'ru' ? '📧 Отправим все 4 файла на вашу почту — для резервного доступа.' : locale === 'es' ? '📧 Le enviaremos los 4 archivos a su correo como respaldo.' : '📧 We\'ll email all 4 files to you as a backup.'}
             </p>
 
@@ -2095,7 +2456,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               onChange={(e) => setEmailGateValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleEmailGateSubmit() }}
               placeholder={locale === 'uk' ? 'ваша@пошта.com' : locale === 'ru' ? 'ваша@почта.com' : 'your@email.com'}
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-[14px] text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-400 mb-3"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-400 mb-3"
               autoFocus
             />
 
@@ -2103,14 +2464,14 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
               type="button"
               onClick={handleEmailGateSubmit}
               disabled={emailGateSending || !emailGateValue.trim()}
-              className="w-full rounded-xl bg-blue-600 px-4 py-3 text-[14px] font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-2">
+              className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-2">
               {emailGateSending ? '…' : (locale === 'uk' ? 'Надіслати та завантажити' : locale === 'ru' ? 'Отправить и скачать' : locale === 'es' ? 'Enviar y descargar' : 'Email & Download')}
             </button>
 
             <button
               type="button"
               onClick={handleEmailGateSkip}
-              className="w-full rounded-xl border border-[var(--border)] px-4 py-2.5 text-[13px] font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)] transition-colors">
+              className="w-full rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)] transition-colors">
               {locale === 'uk' ? 'Пропустити → просто завантажити' : locale === 'ru' ? 'Пропустить → просто скачать' : locale === 'es' ? 'Omitir → solo descargar' : 'Skip → just download'}
             </button>
           </div>

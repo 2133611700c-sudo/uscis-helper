@@ -104,6 +104,16 @@ export default async function TranslateDocumentPage({ params }: Props) {
                 <p className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800 border border-amber-200">
                   {tBreadcrumb('draftOnlyBanner')}
                 </p>
+                {/* P0-11: Legal disclaimer — visible in hero, above fold */}
+                <p className="text-xs text-[var(--text-3)] mt-1">
+                  {locale === 'ru'
+                    ? 'Messenginfo — не юридическая фирма. Мы помогаем подготовить шаблон перевода, но не оказываем юридических услуг.'
+                    : locale === 'uk'
+                    ? 'Messenginfo — не юридична фірма. Ми допомагаємо підготувати шаблон перекладу, але не надаємо юридичних послуг.'
+                    : locale === 'es'
+                    ? 'Messenginfo no es una firma legal. Ayudamos a preparar plantillas de traducción, no brindamos asesoría legal.'
+                    : 'Messenginfo is not a law firm. We help prepare translation templates; we do not provide legal advice.'}
+                </p>
               </div>
             </div>
           </div>
