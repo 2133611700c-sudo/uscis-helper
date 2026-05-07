@@ -112,48 +112,80 @@ function emptyFields(docType: DocType): Record<string, string | null> {
   return Object.fromEntries(fields.map((f) => [f, null]))
 }
 
-// ─── Helper: vision OCR via DeepSeek ─────────────────────────────────────────
+// ─── Helper: vision OCR (OpenAI gpt-4o-mini preferred, DeepSeek fallback) ────
+
+interface VisionProvider {
+  apiKey: string
+  baseURL: string
+  model: string
+}
+
+function getVisionProvider(): VisionProvider | null {
+  // Priority 1: OpenAI (best vision quality)
+  if (process.env.OPENAI_API_KEY) {
+    return {
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: 'https://api.openai.com/v1',
+      model: process.env.OPENAI_VISION_MODEL ?? 'gpt-4o-mini',
+    }
+  }
+  // Priority 2: DeepSeek vision (if explicitly configured)
+  if (process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_VISION_MODEL) {
+    return {
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com',
+      model: process.env.DEEPSEEK_VISION_MODEL,
+    }
+  }
+  return null
+}
 
 async function attemptVisionOCR(
   imageBase64: string,
   docType: DocType
 ): Promise<{ ok: boolean; fields: Record<string, string | null>; confidence: number; rawContent?: string }> {
-  const apiKey = process.env.DEEPSEEK_API_KEY
-  const baseURL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com'
-  const visionModel = process.env.DEEPSEEK_VISION_MODEL
-
-  if (!apiKey || !visionModel) {
-    return { ok: false, fields: emptyFields(docType), confidence: 0 }
-  }
+  const provider = getVisionProvider()
+  if (!provider) return { ok: false, fields: emptyFields(docType), confidence: 0 }
 
   const fieldList = FIELD_TEMPLATES[docType]?.join(', ') ?? 'document fields'
-  const prompt = `You are a document OCR assistant. Extract the following fields from this ${docType.replace(/_/g, ' ')} document image: ${fieldList}.
+  const prompt = `You are a government document OCR assistant. Extract EXACTLY these fields from this ${docType.replace(/_/g, ' ')} image: ${fieldList}.
 
-Return ONLY a JSON object with these exact keys. Use null for any field you cannot read clearly. Do NOT guess or hallucinate values. Example: {"surname": "DOE", "given_names": "JOHN", "passport_number": null}`
+Rules:
+- Return ONLY valid JSON, no markdown, no explanation
+- Use null for any field you cannot read clearly
+- Never guess or hallucinate — accuracy is critical for USCIS submissions
+- Dates format: MM/DD/YYYY when possible
+- Names: as printed on document (ALL CAPS if so printed)
+
+Example: {"surname": "DOE", "given_names": "JOHN", "date_of_birth": "01/15/1985", "passport_number": null}`
 
   try {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 30_000)
+    const timer = setTimeout(() => controller.abort(), 35_000)
 
-    const res = await fetch(`${baseURL}/chat/completions`, {
+    const res = await fetch(`${provider.baseURL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${provider.apiKey}`,
       },
       body: JSON.stringify({
-        model: visionModel,
-        max_tokens: 500,
-        temperature: 0.1,
+        model: provider.model,
+        max_tokens: 600,
+        temperature: 0.05,
+        response_format: { type: 'json_object' },
         messages: [
           {
             role: 'user',
             content: [
-              { type: 'text', text: prompt },
               {
                 type: 'image_url',
-                image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`,
+                  detail: 'high',
+                },
               },
+              { type: 'text', text: prompt },
             ],
           },
         ],
@@ -164,6 +196,8 @@ Return ONLY a JSON object with these exact keys. Use null for any field you cann
     clearTimeout(timer)
 
     if (!res.ok) {
+      const errText = await res.text().catch(() => '')
+      console.error(`[ocr] vision API error ${res.status}:`, errText.slice(0, 200))
       return { ok: false, fields: emptyFields(docType), confidence: 0 }
     }
 
@@ -172,20 +206,31 @@ Return ONLY a JSON object with these exact keys. Use null for any field you cann
     }
     const content = data.choices?.[0]?.message?.content ?? ''
 
-    // Parse JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      return { ok: false, fields: emptyFields(docType), confidence: 0, rawContent: content }
+    // Parse JSON — try direct parse first (json_object mode), then regex
+    let extracted: Record<string, string | null>
+    try {
+      extracted = JSON.parse(content) as Record<string, string | null>
+    } catch {
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) return { ok: false, fields: emptyFields(docType), confidence: 0, rawContent: content }
+      extracted = JSON.parse(jsonMatch[0]) as Record<string, string | null>
     }
 
-    const extracted = JSON.parse(jsonMatch[0]) as Record<string, string | null>
-    // Compute confidence: fraction of fields that are non-null
-    const totalFields = Object.keys(emptyFields(docType)).length
-    const filledFields = Object.values(extracted).filter((v) => v !== null && v !== '').length
+    // Merge with template to ensure all keys present
+    const template = emptyFields(docType)
+    const merged: Record<string, string | null> = { ...template }
+    for (const key of Object.keys(template)) {
+      if (extracted[key] !== undefined) merged[key] = extracted[key]
+    }
+
+    // Confidence = fraction of fields successfully extracted
+    const totalFields = Object.keys(template).length
+    const filledFields = Object.values(merged).filter((v) => v !== null && v !== '').length
     const confidence = totalFields > 0 ? filledFields / totalFields : 0
 
-    return { ok: true, fields: extracted, confidence, rawContent: content }
-  } catch {
+    return { ok: true, fields: merged, confidence, rawContent: content }
+  } catch (err) {
+    console.error('[ocr] vision call failed:', err)
     return { ok: false, fields: emptyFields(docType), confidence: 0 }
   }
 }
@@ -239,9 +284,9 @@ export async function POST(req: NextRequest) {
 
     // Attempt OCR if image provided and vision model configured
     const hasImage = image_base64 && typeof image_base64 === 'string' && image_base64.length > 100
-    const hasVisionModel = !!process.env.DEEPSEEK_VISION_MODEL
+    const hasVisionProvider = !!getVisionProvider()
 
-    if (hasImage && hasVisionModel) {
+    if (hasImage && hasVisionProvider) {
       const ocrResult = await attemptVisionOCR(image_base64!, normalizedDocType)
 
       if (ocrResult.ok) {
@@ -255,13 +300,13 @@ export async function POST(req: NextRequest) {
             : warnings,
         })
       } else {
-        warnings.push('Vision OCR failed or model unavailable — switching to manual review mode')
+        warnings.push('Vision OCR failed — switching to manual review mode')
       }
     }
 
     // Manual review mode: return empty field template
-    if (hasImage && !hasVisionModel) {
-      warnings.push('Vision model (DEEPSEEK_VISION_MODEL) not configured — manual review required')
+    if (hasImage && !hasVisionProvider) {
+      warnings.push('No vision model configured (add OPENAI_API_KEY or DEEPSEEK_VISION_MODEL) — manual review required')
     }
 
     return NextResponse.json({
