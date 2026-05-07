@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { after } from 'next/server'
 import { stripe, STRIPE_PRICES, isStripeConfigured, StripeProduct } from '@/lib/stripe/client'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { TRANSLATION_PRICE_CENTS, REPAROLE_TIER1_PRICE_CENTS } from '@/lib/pricing'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,14 +18,14 @@ const PRODUCT_CONFIG: Record<
 > = {
   're-parole-u4u': {
     priceId: () => STRIPE_PRICES.reparoleU4UTier1,
-    amountCents: 1500,
+    amountCents: REPAROLE_TIER1_PRICE_CENTS,
     successPath: (locale, sessionId) =>
       `/${locale}/services/re-parole-u4u/checkout/success?cs={CHECKOUT_SESSION_ID}&wizard=${sessionId}`,
     cancelPath: (locale) => `/${locale}/services/re-parole-u4u`,
   },
   translation: {
     priceId: () => STRIPE_PRICES.translationSingle,
-    amountCents: 1500,
+    amountCents: TRANSLATION_PRICE_CENTS,
     successPath: (locale, _sessionId) =>
       `/${locale}/services/translate-document/checkout/success?cs={CHECKOUT_SESSION_ID}`,
     cancelPath: (locale) => `/${locale}/services/translate-document`,
