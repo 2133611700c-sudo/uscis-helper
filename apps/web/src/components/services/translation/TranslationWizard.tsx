@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Download, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Download, ChevronRight, X, Mail } from 'lucide-react'
+import { track } from '@/components/analytics/Analytics'
 import { generateTranslationDoc, hasCyrillic, transliterateCyrillic } from '@/lib/translation/generateTranslationHTML'
 import {
   DOCS,
@@ -941,6 +942,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [showMoreLangs, setShowMoreLangs] = useState(false)
+  // Email gate (Block 2.1): shown before first download
+  const [emailGateOpen, setEmailGateOpen] = useState(false)
+  const [emailGateValue, setEmailGateValue] = useState('')
+  const [emailGateSaved, setEmailGateSaved] = useState(false)
+  const [emailGateSending, setEmailGateSending] = useState(false)
 
   // File upload state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -978,8 +984,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     setDownloaded(false)
     setUploadedFile(null)
     setUploadedPreview(null)
+    setEmailGateSaved(false)
     setStep(1)
     window.scrollTo(0, 0)
+    track('wizard_doc_selected', { doc_type: id, locale })
   }
 
   function goBack() {
@@ -989,8 +997,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   }
 
   function goNext() {
-    setStep((s) => s + 1)
+    const nextStep = step + 1
+    setStep(nextStep)
     window.scrollTo(0, 0)
+    track('wizard_step_completed', { step, next_step: nextStep, doc_type: docId, locale })
   }
 
   function handleFileSelect(file: File) {
@@ -1057,19 +1067,56 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     }
   }
 
-  function handleDownload() {
+  function executeDownload() {
     if (!doc) return
     const files = generateTranslationDoc(doc, fields, fieldValues, srcLang, targetLang, docEraObj?.noteForTranslator)
     setGeneratedFiles(Array.from(files))
-    // Download all 4 with stagger
     const names = ['translation-draft', 'translator-certification', 'uscis-checklist', 'filing-instructions']
     files.forEach((html, i) => {
       setTimeout(() => downloadHtmlFile(html, `${names[i]}.html`), i * 350)
     })
     setDownloaded(true)
-    // Stage 13D: save to order history
     const docLabel = (doc.label as Record<string, string>)[locale] ?? doc.label.en
     saveEntry({ docId: doc.id, docLabel, srcLang, targetLang, docEra, fieldValues })
+    track('translation_download_completed', { doc_type: docId, src_lang: srcLang, target_lang: targetLang, locale })
+  }
+
+  function handleDownload() {
+    if (!doc) return
+    // First download: show email gate unless already saved
+    if (!emailGateSaved && !downloaded) {
+      setEmailGateOpen(true)
+      return
+    }
+    executeDownload()
+  }
+
+  async function handleEmailGateSubmit() {
+    const email = emailGateValue.trim()
+    if (!email || emailGateSending) return
+    setEmailGateSending(true)
+    try {
+      // Fire-and-forget: save lead to Resend/API
+      await fetch('/api/translation/email-capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, locale, doc_type: docId, src_lang: srcLang }),
+      }).catch(() => { /* non-blocking */ })
+      track('email_captured', { source: 'download_gate', doc_type: docId, locale })
+      setEmailGateSaved(true)
+      setEmailInput(email) // pre-fill the post-download email field
+    } finally {
+      setEmailGateSending(false)
+      setEmailGateOpen(false)
+      executeDownload()
+    }
+  }
+
+  function handleEmailGateSkip() {
+    track('email_gate_skipped', { doc_type: docId, locale })
+    setEmailGateSaved(true) // don't show gate again
+    setEmailGateOpen(false)
+    executeDownload()
   }
 
   /** Stage 13C: save current 4 files to session, reset wizard, keep sessionDocs */
@@ -1878,5 +1925,62 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     )
   }
 
-  return null
+  return (
+    <>
+      {/* ── Email Gate Modal (Block 2.1) ── */}
+      {emailGateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-[var(--surface-1)] border border-[var(--border)] shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
+                  <Mail className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-bold text-[var(--text-1)]">
+                    {locale === 'uk' ? 'Отримати на пошту' : locale === 'ru' ? 'Получить на почту' : locale === 'es' ? 'Recibir por email' : 'Get files by email'}
+                  </p>
+                  <p className="text-[12px] text-[var(--text-3)]">
+                    {locale === 'uk' ? 'Необов\'язково — скасуйте, щоб одразу завантажити' : locale === 'ru' ? 'Необязательно — пропустите для скачивания' : locale === 'es' ? 'Opcional — omita para descargar directamente' : 'Optional — skip to download directly'}
+                  </p>
+                </div>
+              </div>
+              <button type="button" onClick={handleEmailGateSkip} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-[13px] text-[var(--text-2)] mb-4">
+              {locale === 'uk' ? '📧 Надішлемо всі 4 файли на вашу пошту — щоб мати запасний доступ.' : locale === 'ru' ? '📧 Отправим все 4 файла на вашу почту — для резервного доступа.' : locale === 'es' ? '📧 Le enviaremos los 4 archivos a su correo como respaldo.' : '📧 We\'ll email all 4 files to you as a backup.'}
+            </p>
+
+            <input
+              type="email"
+              value={emailGateValue}
+              onChange={(e) => setEmailGateValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleEmailGateSubmit() }}
+              placeholder={locale === 'uk' ? 'ваша@пошта.com' : locale === 'ru' ? 'ваша@почта.com' : 'your@email.com'}
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-[14px] text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-blue-400 mb-3"
+              autoFocus
+            />
+
+            <button
+              type="button"
+              onClick={handleEmailGateSubmit}
+              disabled={emailGateSending || !emailGateValue.trim()}
+              className="w-full rounded-xl bg-blue-600 px-4 py-3 text-[14px] font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-2">
+              {emailGateSending ? '…' : (locale === 'uk' ? 'Надіслати та завантажити' : locale === 'ru' ? 'Отправить и скачать' : locale === 'es' ? 'Enviar y descargar' : 'Email & Download')}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleEmailGateSkip}
+              className="w-full rounded-xl border border-[var(--border)] px-4 py-2.5 text-[13px] font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)] transition-colors">
+              {locale === 'uk' ? 'Пропустити → просто завантажити' : locale === 'ru' ? 'Пропустить → просто скачать' : locale === 'es' ? 'Omitir → solo descargar' : 'Skip → just download'}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }

@@ -13,6 +13,7 @@
     "guard": "npm run guard:reparole && npm run guard:content"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.51.0",
     "@stripe/stripe-js": "^9.4.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.0",

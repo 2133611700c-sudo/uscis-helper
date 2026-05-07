@@ -18,8 +18,10 @@ const SERVICE_SLUGS = [
   'parole-expires-soon',
   're-parole-u4u',
   'tps-ukraine',
+  'tps-status',
   'ead-work-permit',
   'i-94',
+  'i-94-guide',
   'uscis-case-status',
   'payment-problem',
   'biometrics',
@@ -27,6 +29,7 @@ const SERVICE_SLUGS = [
   'translate-document',
   'form-draft-helper',
   'official-sources',
+  'attorney-directory',
 ] as const;
 
 function hreflangAlternates(path: string) {
@@ -37,7 +40,7 @@ function hreflangAlternates(path: string) {
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date('2026-04-29');
+  const lastModified = new Date('2026-05-06');
   const entries: MetadataRoute.Sitemap = [];
 
   for (const locale of LOCALES) {

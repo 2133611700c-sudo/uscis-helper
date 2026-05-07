@@ -3,6 +3,37 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { TranslationWizard } from './TranslationWizard'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+
+const WizardFallback = (
+  <div
+    style={{
+      minHeight: '60vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '1rem',
+      color: 'var(--text-2, #64748b)',
+    }}
+  >
+    <p style={{ fontWeight: 600 }}>⚠️ The wizard failed to load.</p>
+    <button
+      onClick={() => window.location.reload()}
+      style={{
+        padding: '0.5rem 1.25rem',
+        background: 'var(--accent, #3b82f6)',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '0.5rem',
+        cursor: 'pointer',
+        fontWeight: 600,
+      }}
+    >
+      Reload page
+    </button>
+  </div>
+)
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TranslationServiceExperience(_props: any) {
@@ -22,10 +53,12 @@ export function TranslationServiceExperience(_props: any) {
   }, [])
 
   return (
-    <TranslationWizard
-      locale={locale}
-      returnUrl={returnUrl}
-      fromSource={fromSource}
-    />
+    <ErrorBoundary label="TranslationWizard" fallback={WizardFallback}>
+      <TranslationWizard
+        locale={locale}
+        returnUrl={returnUrl}
+        fromSource={fromSource}
+      />
+    </ErrorBoundary>
   )
 }
