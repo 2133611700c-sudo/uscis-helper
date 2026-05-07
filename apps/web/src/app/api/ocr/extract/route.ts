@@ -3,21 +3,25 @@
  *
  * Document field extraction endpoint.
  *
- * Modes:
- *   1. "ocr"            — Vision API call (if DEEPSEEK_VISION_MODEL is set and image_base64 provided)
- *   2. "manual_review_required" — Returns field template for manual entry (default/fallback)
+ * Architecture (priority order):
+ *   1. "text_parse"  — raw_text provided (Tesseract.js client-side OCR) →
+ *                      DeepSeek-V3 text model parses fields (DEFAULT, ~$0.001/doc)
+ *   2. "ocr"         — vision API call (ENABLE_OPENAI_VISION=true + image_base64)
+ *   3. "manual_review_required" — fallback, returns empty field template
  *
- * Request body:
- *   session_id?    string   Optional wizard session ID for audit trail
+ * Request body (JSON):
+ *   session_id?    string   Optional wizard session ID
  *   member_id?     string   Optional family member ID
- *   doc_type       string   Required: 'passport' | 'i94' | 'i797' | 'ead' | 'drivers_license' | 'birth_cert' | 'other'
- *   image_base64?  string   Optional: base64-encoded image (JPEG/PNG/WEBP)
+ *   doc_type       string   'passport' | 'i94' | 'i797' | 'ead' | 'drivers_license' | 'birth_cert' | 'other'
+ *   raw_text?      string   Raw OCR text from Tesseract.js (preferred path)
+ *   image_base64?  string   Base64 image — used ONLY if ENABLE_OPENAI_VISION=true
  *
  * Response:
  *   ok:              boolean
- *   mode:            'ocr' | 'manual_review_required'
- *   extractedFields: Record<string, string | null>   — field name → extracted value or null
- *   confidence:      number (0–1) — 1.0 if manual review, AI-reported if OCR
+ *   mode:            'text_parse' | 'ocr' | 'manual_review_required'
+ *   provider:        'deepseek' | 'openai' | null
+ *   extractedFields: Record<string, string | null>
+ *   confidence:      number (0–1)
  *   warnings:        string[]
  */
 
@@ -26,151 +30,186 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 
 // ─── Document field templates ─────────────────────────────────────────────────
 
-type DocType = 'passport' | 'i94' | 'i797' | 'ead' | 'drivers_license' | 'birth_cert' | 'other'
+type DocType =
+  | 'passport'
+  | 'i94'
+  | 'i797'
+  | 'ead'
+  | 'drivers_license'
+  | 'birth_cert'
+  | 'other'
 
 const FIELD_TEMPLATES: Record<DocType, string[]> = {
   passport: [
-    'surname',
-    'given_names',
-    'nationality',
-    'date_of_birth',
-    'place_of_birth',
-    'passport_number',
-    'issue_date',
-    'expiry_date',
-    'issuing_country',
-    'mrz_line1',
-    'mrz_line2',
+    'surname', 'given_names', 'nationality', 'date_of_birth', 'place_of_birth',
+    'passport_number', 'issue_date', 'expiry_date', 'issuing_country',
+    'mrz_line1', 'mrz_line2',
   ],
   i94: [
-    'i94_number',
-    'last_name',
-    'first_name',
-    'birth_date',
-    'country_of_citizenship',
-    'admission_class',
-    'admit_until_date',
+    'i94_number', 'last_name', 'first_name', 'birth_date',
+    'country_of_citizenship', 'admission_class', 'admit_until_date',
   ],
   i797: [
-    'receipt_number',
-    'case_type',
-    'priority_date',
-    'notice_date',
-    'applicant_name',
-    'a_number',
-    'valid_from',
-    'valid_through',
+    'receipt_number', 'case_type', 'priority_date', 'notice_date',
+    'applicant_name', 'a_number', 'valid_from', 'valid_through',
     'class_of_admission',
   ],
   ead: [
-    'card_number',
-    'category',
-    'last_name',
-    'first_name',
-    'date_of_birth',
-    'country_of_birth',
-    'valid_from',
-    'card_expires',
-    'a_number',
+    'card_number', 'category', 'last_name', 'first_name', 'date_of_birth',
+    'country_of_birth', 'valid_from', 'card_expires', 'a_number',
   ],
   drivers_license: [
-    'last_name',
-    'first_name',
-    'address',
-    'date_of_birth',
-    'issue_date',
-    'expiry_date',
-    'license_number',
-    'state',
+    'last_name', 'first_name', 'address', 'date_of_birth', 'issue_date',
+    'expiry_date', 'license_number', 'state',
   ],
   birth_cert: [
-    'full_name',
-    'date_of_birth',
-    'place_of_birth',
-    'father_name',
-    'mother_name',
-    'registration_number',
-    'issue_date',
-    'issuing_authority',
+    'full_name', 'date_of_birth', 'place_of_birth', 'father_name',
+    'mother_name', 'registration_number', 'issue_date', 'issuing_authority',
   ],
   other: [
-    'document_type',
-    'document_number',
-    'full_name',
-    'date_of_birth',
-    'issue_date',
-    'expiry_date',
+    'document_type', 'document_number', 'full_name',
+    'date_of_birth', 'issue_date', 'expiry_date',
   ],
 }
 
 const VALID_DOC_TYPES = new Set<string>(Object.keys(FIELD_TEMPLATES))
-
-// ─── Helper: build empty field map ───────────────────────────────────────────
 
 function emptyFields(docType: DocType): Record<string, string | null> {
   const fields = FIELD_TEMPLATES[docType] ?? FIELD_TEMPLATES.other
   return Object.fromEntries(fields.map((f) => [f, null]))
 }
 
-// ─── Helper: vision OCR (OpenAI gpt-4o-mini preferred, DeepSeek fallback) ────
+// ─── Shared: merge extracted fields with template ─────────────────────────────
 
-interface VisionProvider {
-  apiKey: string
-  baseURL: string
-  model: string
-}
-
-function getVisionProvider(): VisionProvider | null {
-  // Priority 1: OpenAI (best vision quality)
-  if (process.env.OPENAI_API_KEY) {
-    return {
-      apiKey: process.env.OPENAI_API_KEY,
-      baseURL: 'https://api.openai.com/v1',
-      model: process.env.OPENAI_VISION_MODEL ?? 'gpt-4o-mini',
+function mergeExtracted(
+  extracted: Record<string, unknown>,
+  template: Record<string, string | null>
+): { fields: Record<string, string | null>; confidence: number } {
+  const merged: Record<string, string | null> = { ...template }
+  for (const key of Object.keys(template)) {
+    const v = extracted[key]
+    if (v !== undefined && v !== '') {
+      merged[key] = typeof v === 'string' ? v : null
     }
   }
-  // Priority 2: DeepSeek vision (if explicitly configured)
-  if (process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_VISION_MODEL) {
-    return {
-      apiKey: process.env.DEEPSEEK_API_KEY,
-      baseURL: process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com',
-      model: process.env.DEEPSEEK_VISION_MODEL,
-    }
-  }
-  return null
+  const total = Object.keys(template).length
+  const filled = Object.values(merged).filter((v) => v !== null && v !== '').length
+  return { fields: merged, confidence: total > 0 ? filled / total : 0 }
 }
 
-async function attemptVisionOCR(
-  imageBase64: string,
+// ─── Mode 1 (DEFAULT): DeepSeek text parser from Tesseract raw text ───────────
+
+async function parseTextWithDeepSeek(
+  rawText: string,
   docType: DocType
-): Promise<{ ok: boolean; fields: Record<string, string | null>; confidence: number; rawContent?: string }> {
-  const provider = getVisionProvider()
-  if (!provider) return { ok: false, fields: emptyFields(docType), confidence: 0 }
+): Promise<{ ok: boolean; fields: Record<string, string | null>; confidence: number }> {
+  const apiKey = process.env.DEEPSEEK_API_KEY
+  if (!apiKey) {
+    return { ok: false, fields: emptyFields(docType), confidence: 0 }
+  }
 
-  const fieldList = FIELD_TEMPLATES[docType]?.join(', ') ?? 'document fields'
-  const prompt = `You are a government document OCR assistant. Extract EXACTLY these fields from this ${docType.replace(/_/g, ' ')} image: ${fieldList}.
+  const baseURL = process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com'
+  const model = process.env.DEEPSEEK_MODEL ?? 'deepseek-chat'
+  const fieldList = (FIELD_TEMPLATES[docType] ?? FIELD_TEMPLATES.other).join(', ')
 
+  const systemPrompt = `You are a government document parser.
+You receive raw OCR text extracted from a ${docType.replace(/_/g, ' ')} document.
+Extract EXACTLY these fields: ${fieldList}.
 Rules:
 - Return ONLY valid JSON, no markdown, no explanation
-- Use null for any field you cannot read clearly
+- Use null for any field you cannot find in the text
 - Never guess or hallucinate — accuracy is critical for USCIS submissions
 - Dates format: MM/DD/YYYY when possible
-- Names: as printed on document (ALL CAPS if so printed)
+- Names: as printed (ALL CAPS if so printed)
+- For MRZ lines: copy exactly as found, character-perfect`
 
-Example: {"surname": "DOE", "given_names": "JOHN", "date_of_birth": "01/15/1985", "passport_number": null}`
+  const userPrompt = `OCR text:\n\`\`\`\n${rawText.slice(0, 3000)}\n\`\`\`\n\nExtract the fields as JSON.`
+
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 20_000)
+
+    const res = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 500,
+        temperature: 0.05,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timer)
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => '')
+      console.error(`[ocr/deepseek] error ${res.status}:`, err.slice(0, 200))
+      return { ok: false, fields: emptyFields(docType), confidence: 0 }
+    }
+
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>
+    }
+    const content = data.choices?.[0]?.message?.content ?? ''
+
+    // Parse JSON from content
+    let extracted: Record<string, unknown>
+    try {
+      // Strip markdown fences if present
+      const clean = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
+      extracted = JSON.parse(clean) as Record<string, unknown>
+    } catch {
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        console.error('[ocr/deepseek] no JSON in response:', content.slice(0, 200))
+        return { ok: false, fields: emptyFields(docType), confidence: 0 }
+      }
+      extracted = JSON.parse(jsonMatch[0]) as Record<string, unknown>
+    }
+
+    const { fields, confidence } = mergeExtracted(extracted, emptyFields(docType))
+    return { ok: true, fields, confidence }
+  } catch (err) {
+    console.error('[ocr/deepseek] parse call failed:', err)
+    return { ok: false, fields: emptyFields(docType), confidence: 0 }
+  }
+}
+
+// ─── Mode 2 (EXPLICIT FLAG): OpenAI vision — only if ENABLE_OPENAI_VISION=true ─
+
+async function attemptOpenAIVision(
+  imageBase64: string,
+  docType: DocType
+): Promise<{ ok: boolean; fields: Record<string, string | null>; confidence: number }> {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) return { ok: false, fields: emptyFields(docType), confidence: 0 }
+
+  const model = process.env.OPENAI_VISION_MODEL ?? 'gpt-4o-mini'
+  const fieldList = (FIELD_TEMPLATES[docType] ?? FIELD_TEMPLATES.other).join(', ')
+  const prompt = `Extract these fields from this ${docType.replace(/_/g, ' ')} image: ${fieldList}.
+Return ONLY valid JSON. Use null for unreadable fields. Never hallucinate.
+Dates: MM/DD/YYYY. Names: as printed.`
 
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 35_000)
 
-    const res = await fetch(`${provider.baseURL}/chat/completions`, {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${provider.apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: provider.model,
+        model,
         max_tokens: 600,
         temperature: 0.05,
         response_format: { type: 'json_object' },
@@ -180,10 +219,7 @@ Example: {"surname": "DOE", "given_names": "JOHN", "date_of_birth": "01/15/1985"
             content: [
               {
                 type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`,
-                  detail: 'high',
-                },
+                image_url: { url: `data:image/jpeg;base64,${imageBase64}`, detail: 'high' },
               },
               { type: 'text', text: prompt },
             ],
@@ -196,8 +232,8 @@ Example: {"surname": "DOE", "given_names": "JOHN", "date_of_birth": "01/15/1985"
     clearTimeout(timer)
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => '')
-      console.error(`[ocr] vision API error ${res.status}:`, errText.slice(0, 200))
+      const err = await res.text().catch(() => '')
+      console.error(`[ocr/openai] error ${res.status}:`, err.slice(0, 200))
       return { ok: false, fields: emptyFields(docType), confidence: 0 }
     }
 
@@ -206,31 +242,19 @@ Example: {"surname": "DOE", "given_names": "JOHN", "date_of_birth": "01/15/1985"
     }
     const content = data.choices?.[0]?.message?.content ?? ''
 
-    // Parse JSON — try direct parse first (json_object mode), then regex
-    let extracted: Record<string, string | null>
+    let extracted: Record<string, unknown>
     try {
-      extracted = JSON.parse(content) as Record<string, string | null>
+      extracted = JSON.parse(content) as Record<string, unknown>
     } catch {
       const jsonMatch = content.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) return { ok: false, fields: emptyFields(docType), confidence: 0, rawContent: content }
-      extracted = JSON.parse(jsonMatch[0]) as Record<string, string | null>
+      if (!jsonMatch) return { ok: false, fields: emptyFields(docType), confidence: 0 }
+      extracted = JSON.parse(jsonMatch[0]) as Record<string, unknown>
     }
 
-    // Merge with template to ensure all keys present
-    const template = emptyFields(docType)
-    const merged: Record<string, string | null> = { ...template }
-    for (const key of Object.keys(template)) {
-      if (extracted[key] !== undefined) merged[key] = extracted[key]
-    }
-
-    // Confidence = fraction of fields successfully extracted
-    const totalFields = Object.keys(template).length
-    const filledFields = Object.values(merged).filter((v) => v !== null && v !== '').length
-    const confidence = totalFields > 0 ? filledFields / totalFields : 0
-
-    return { ok: true, fields: merged, confidence, rawContent: content }
+    const { fields, confidence } = mergeExtracted(extracted, emptyFields(docType))
+    return { ok: true, fields, confidence }
   } catch (err) {
-    console.error('[ocr] vision call failed:', err)
+    console.error('[ocr/openai] vision call failed:', err)
     return { ok: false, fields: emptyFields(docType), confidence: 0 }
   }
 }
@@ -239,15 +263,17 @@ Example: {"surname": "DOE", "given_names": "JOHN", "date_of_birth": "01/15/1985"
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 10 OCR requests per minute per IP (more expensive than chat)
+    // Rate limit: 15 OCR requests / minute per IP
     const ip = getClientIP(req)
-    const rl = await rateLimit(`ocr:${ip}`, 10, 60_000)
+    const rl = await rateLimit(`ocr:${ip}`, 15, 60_000)
     if (!rl.allowed) {
       return NextResponse.json(
         { ok: false, error: 'Too many requests', mode: 'rate_limited' },
         {
           status: 429,
-          headers: { 'Retry-After': String(Math.ceil((rl.resetAt.getTime() - Date.now()) / 1000)) },
+          headers: {
+            'Retry-After': String(Math.ceil((rl.resetAt.getTime() - Date.now()) / 1000)),
+          },
         }
       )
     }
@@ -256,65 +282,87 @@ export async function POST(req: NextRequest) {
       session_id?: string
       member_id?: string
       doc_type?: string
+      raw_text?: string
       image_base64?: string
     }
 
-    const { doc_type, image_base64 } = body
+    const { doc_type, raw_text, image_base64 } = body
 
-    // Validate doc_type
     if (!doc_type || typeof doc_type !== 'string') {
-      return NextResponse.json(
-        { ok: false, error: 'doc_type is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ ok: false, error: 'doc_type is required' }, { status: 400 })
     }
 
     const normalizedDocType = doc_type.toLowerCase().replace(/[-\s]/g, '_') as DocType
     if (!VALID_DOC_TYPES.has(normalizedDocType)) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: `Invalid doc_type. Valid values: ${[...VALID_DOC_TYPES].join(', ')}`,
-        },
+        { ok: false, error: `Invalid doc_type. Valid: ${[...VALID_DOC_TYPES].join(', ')}` },
         { status: 400 }
       )
     }
 
     const warnings: string[] = []
+    const hasRawText = typeof raw_text === 'string' && raw_text.trim().length > 20
+    const hasImage = typeof image_base64 === 'string' && image_base64.length > 100
+    const openAIVisionEnabled = process.env.ENABLE_OPENAI_VISION === 'true'
 
-    // Attempt OCR if image provided and vision model configured
-    const hasImage = image_base64 && typeof image_base64 === 'string' && image_base64.length > 100
-    const hasVisionProvider = !!getVisionProvider()
+    // ── Priority 1: DeepSeek text parse (Tesseract.js path) ──────────────────
+    if (hasRawText) {
+      const result = await parseTextWithDeepSeek(raw_text!, normalizedDocType)
+      if (result.ok) {
+        return NextResponse.json({
+          ok: true,
+          mode: 'text_parse',
+          provider: 'deepseek',
+          extractedFields: result.fields,
+          confidence: result.confidence,
+          warnings:
+            result.confidence < 0.4
+              ? ['Low confidence — OCR text may be unclear, please verify fields']
+              : [],
+        })
+      }
+      warnings.push('DeepSeek text parse failed — falling back')
+    }
 
-    if (hasImage && hasVisionProvider) {
-      const ocrResult = await attemptVisionOCR(image_base64!, normalizedDocType)
-
-      if (ocrResult.ok) {
+    // ── Priority 2: OpenAI vision (explicit feature flag only) ───────────────
+    if (hasImage && openAIVisionEnabled) {
+      const result = await attemptOpenAIVision(image_base64!, normalizedDocType)
+      if (result.ok) {
         return NextResponse.json({
           ok: true,
           mode: 'ocr',
-          extractedFields: ocrResult.fields,
-          confidence: ocrResult.confidence,
-          warnings: ocrResult.confidence < 0.5
-            ? ['Low confidence OCR result — please verify all fields manually']
-            : warnings,
+          provider: 'openai',
+          extractedFields: result.fields,
+          confidence: result.confidence,
+          warnings:
+            result.confidence < 0.5
+              ? ['Low confidence OCR — please verify all fields']
+              : warnings,
         })
-      } else {
-        warnings.push('Vision OCR failed — switching to manual review mode')
       }
+      warnings.push('OpenAI vision OCR failed — switching to manual review')
     }
 
-    // Manual review mode: return empty field template
-    if (hasImage && !hasVisionProvider) {
-      warnings.push('No vision model configured (add OPENAI_API_KEY or DEEPSEEK_VISION_MODEL) — manual review required')
+    // ── Fallback: manual review ───────────────────────────────────────────────
+    if (hasImage && !openAIVisionEnabled && !hasRawText) {
+      warnings.push(
+        'Image received but vision OCR is disabled. ' +
+        'Use Tesseract.js in the browser to extract text first, ' +
+        'then send raw_text. ' +
+        'To enable vision: set ENABLE_OPENAI_VISION=true in Vercel env vars.'
+      )
     }
 
     return NextResponse.json({
       ok: true,
       mode: 'manual_review_required',
+      provider: null,
       extractedFields: emptyFields(normalizedDocType),
-      confidence: 1.0, // 1.0 = "user will fill manually, no AI guessing"
-      warnings: warnings.length > 0 ? warnings : ['Please enter all fields manually'],
+      confidence: 1.0,
+      warnings:
+        warnings.length > 0
+          ? warnings
+          : ['Please enter all fields manually'],
       fieldList: FIELD_TEMPLATES[normalizedDocType],
     })
   } catch (e: unknown) {
