@@ -4,6 +4,9 @@
  * English-only (staff interface).
  */
 
+// Must be dynamic — requires SUPABASE_SERVICE_ROLE_KEY at runtime (not available during CI build)
+export const dynamic = 'force-dynamic'
+
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 
