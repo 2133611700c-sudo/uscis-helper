@@ -5,7 +5,6 @@
  * NEXT_PUBLIC_POSTHOG_KEY        = phc_xxxxxxxxxx
  * NEXT_PUBLIC_POSTHOG_HOST       = https://us.i.posthog.com
  */
-import { useEffect } from 'react'
 import Script from 'next/script'
 
 declare global {
