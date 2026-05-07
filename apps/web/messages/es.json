@@ -138,6 +138,18 @@
       "title": "Biblioteca de fuentes oficiales",
       "shortProblem": "Enlaces seleccionados a USCIS, CBP, DOJ y otras fuentes gubernamentales autorizadas."
     },
+    "tps-status": {
+      "title": "TPS Ucrania — Estado Actual",
+      "shortProblem": "Estado actual del Estatus de Protección Temporal para Ucrania y plazos de re-registro."
+    },
+    "attorney-directory": {
+      "title": "Encontrar Ayuda Legal",
+      "shortProblem": "Organizaciones verificadas de asistencia legal gratuita y asequible. Cómo detectar fraudes."
+    },
+    "i-94-guide": {
+      "title": "Guía del I-94",
+      "shortProblem": "Cómo acceder, leer, imprimir y corregir su registro I-94 en el portal de CBP."
+    },
     "action": "Abrir →"
   },
   "servicePages": {

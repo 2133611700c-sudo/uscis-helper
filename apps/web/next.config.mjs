@@ -10,25 +10,23 @@ const nextConfig = {
 
 const intlConfig = withNextIntl(nextConfig);
 
-// Sentry wraps the intl config — only activates when SENTRY_DSN is set
-export default withSentryConfig(intlConfig, {
-  // Source maps are uploaded to Sentry during CI/CD builds only
-  // Set SENTRY_AUTH_TOKEN in Vercel env vars for this to work
-  silent: true,
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
+// Sentry webpack plugin (source-map upload + auto-instrumentation) is only
+// activated when SENTRY_AUTH_TOKEN is present — i.e. Vercel production builds.
+// CI and local builds skip it to avoid @sentry/cli binary requirements.
+// The runtime Sentry SDK (sentry.client/server/edge.config.ts) still loads
+// in all environments when NEXT_PUBLIC_SENTRY_DSN is set.
+const finalConfig = process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(intlConfig, {
+      silent: true,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      disableLogger: true,
+      tunnelRoute: '/monitoring',
+      hideSourceMaps: true,
+      autoInstrumentServerFunctions: true,
+      autoInstrumentMiddleware: true,
+      autoInstrumentAppDirectory: true,
+    })
+  : intlConfig;
 
-  // Reduce bundle size — tree-shake Sentry logger
-  disableLogger: true,
-
-  // Tunnel Sentry requests through /monitoring to avoid ad-blockers
-  tunnelRoute: '/monitoring',
-
-  // Hide source maps from users (keep them server-side for debugging)
-  hideSourceMaps: true,
-
-  // Automatically instrument Next.js data fetchers
-  autoInstrumentServerFunctions: true,
-  autoInstrumentMiddleware: true,
-  autoInstrumentAppDirectory: true,
-});
+export default finalConfig;
