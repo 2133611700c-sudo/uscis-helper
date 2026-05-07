@@ -981,7 +981,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   // OCR state
   const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrFilledCount, setOcrFilledCount] = useState(0)
-  // Phase label during OCR: 'scan' = Tesseract running, 'parse' = DeepSeek API call
+  // Phase label during OCR: 'scan' = Tesseract running, 'parse' = server AI field parse
   const [ocrPhase, setOcrPhase] = useState<'scan' | 'parse'>('scan')
 
   // Order history (Stage 13D)
@@ -1043,11 +1043,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   /**
    * Stage 13A (updated): upload file → Tesseract.js (browser OCR) → raw text →
-   * /api/ocr/extract (DeepSeek parse) → pre-fill fieldValues → advance to Step 3
+   * /api/ocr/extract (server AI parse) → pre-fill fieldValues → advance to Step 3
    *
    * Architecture:
    *   1. If image file: run Tesseract.js client-side (free, no server cost)
-   *   2. Send raw_text to /api/ocr/extract → DeepSeek-V3 parses fields
+   *   2. Send raw_text to /api/ocr/extract → server AI parses fields
    *   3. On any failure: silently advance (user fills manually)
    */
   async function handleOcrExtract(file: File) {
@@ -1085,7 +1085,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
         }
       }
 
-      // ── Step 2: DeepSeek API parse (if raw text available) ─────────────────
+      // ── Step 2: server AI field parse (if raw text available) ───────────────
       if (rawText) {
         setOcrPhase('parse')
         const res = await fetch('/api/ocr/extract', {
