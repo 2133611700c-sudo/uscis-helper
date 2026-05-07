@@ -1,7 +1,8 @@
 import {
   CalendarClock, ShieldCheck, Flag, IdCard, Stamp, Search,
   CreditCard, Fingerprint, FileWarning, Languages,
-  ClipboardEdit, Library, type LucideIcon
+  ClipboardEdit, Library, ShieldAlert, Scale, BookOpen,
+  type LucideIcon
 } from 'lucide-react'
 
 export interface ServiceCard {
@@ -33,6 +34,9 @@ export const serviceCards: ServiceCard[] = [
   { id: 'translate-document', slug: 'translate-document', icon: Languages, image: '/service-icons/translate-document.webp', hasOfficialSource: true, officialSourceUrl: 'https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-103/section-103.2', sourceLastVerified: '2026-04-29', sortOrder: 10 },
   { id: 'form-draft-helper', slug: 'form-draft-helper', icon: ClipboardEdit, image: '/service-icons/form-draft-helper.webp', hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/forms', sourceLastVerified: '2026-04-29', sortOrder: 11 },
   { id: 'official-sources', slug: 'official-sources', icon: Library, hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/', sourceLastVerified: '2026-04-29', sortOrder: 12 },
+  { id: 'tps-status', slug: 'tps-status', icon: ShieldAlert, hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/humanitarian/temporary-protected-status/temporary-protected-status-designated-country-ukraine', sourceLastVerified: '2026-05-06', sortOrder: 13 },
+  { id: 'attorney-directory', slug: 'attorney-directory', icon: Scale, hasOfficialSource: true, officialSourceUrl: 'https://www.uscis.gov/avoid-scams/find-legal-services', sourceLastVerified: '2026-05-06', sortOrder: 14 },
+  { id: 'i-94-guide', slug: 'i-94-guide', icon: BookOpen, hasOfficialSource: true, officialSourceUrl: 'https://i94.cbp.dhs.gov/', sourceLastVerified: '2026-05-06', sortOrder: 15 },
 ]
 
 export function getServiceCard(slug: string): ServiceCard | undefined {

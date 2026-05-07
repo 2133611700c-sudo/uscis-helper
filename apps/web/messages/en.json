@@ -138,6 +138,18 @@
       "title": "Official Sources Library",
       "shortProblem": "Curated links to USCIS, CBP, DOJ, and other authoritative government sources."
     },
+    "tps-status": {
+      "title": "TPS Ukraine — Current Status",
+      "shortProblem": "Check the latest Temporary Protected Status designation for Ukraine and re-registration deadlines."
+    },
+    "attorney-directory": {
+      "title": "Find Immigration Legal Help",
+      "shortProblem": "Vetted free and low-cost legal aid organizations. How to spot and avoid immigration scams."
+    },
+    "i-94-guide": {
+      "title": "I-94 Arrival Record Guide",
+      "shortProblem": "How to access, read, print, and correct your I-94 record from the CBP portal."
+    },
     "action": "Start →"
   },
   "servicePages": {
