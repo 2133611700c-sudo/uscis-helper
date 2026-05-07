@@ -6,6 +6,46 @@ import { isMaliciousBot } from '@/lib/security/bot'
 
 const intlMiddleware = createMiddleware(routing)
 
+// ── Admin auth constants ───────────────────────────────────────────────────
+const ADMIN_COOKIE = 'admin_session'
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days in seconds
+
+function adminGuard(req: NextRequest): NextResponse | null {
+  const { pathname, searchParams } = req.nextUrl
+
+  // Only guard /admin/* paths
+  if (!pathname.startsWith('/admin')) return null
+
+  const cookie = req.cookies.get(ADMIN_COOKIE)?.value
+  const secret = process.env.ADMIN_SECRET
+
+  // If valid cookie present — allow through
+  if (cookie && secret && cookie === secret) return null
+
+  // /admin/login?token=xxx — exchange token for cookie
+  if (pathname === '/admin/login') {
+    const token = searchParams.get('token')
+    if (token && secret && token === secret) {
+      // Token valid: set httpOnly cookie, redirect to admin without token in URL
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/admin/manual-review'
+      redirectUrl.search = ''
+      const res = NextResponse.redirect(redirectUrl)
+      res.cookies.set(ADMIN_COOKIE, secret, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: COOKIE_MAX_AGE,
+        path: '/',
+      })
+      return res
+    }
+  }
+
+  // Not authenticated — return 404 (don't reveal /admin exists)
+  return new NextResponse(null, { status: 404 })
+}
+
 export default async function middleware(req: NextRequest): Promise<NextResponse> {
   // ── 1. Bot detection ──────────────────────────────────────────────────────
   // Only runs for page routes — API routes are excluded by the matcher below.
@@ -15,10 +55,15 @@ export default async function middleware(req: NextRequest): Promise<NextResponse
     return new NextResponse('Forbidden', { status: 403 })
   }
 
-  // ── 2. i18n routing ───────────────────────────────────────────────────────
+  // ── 2. Admin auth guard ───────────────────────────────────────────────────
+  // Short-circuits before i18n — /admin/* is English-only, no locale routing.
+  const adminResponse = adminGuard(req)
+  if (adminResponse !== null) return adminResponse
+
+  // ── 3. i18n routing ───────────────────────────────────────────────────────
   const response = await Promise.resolve(intlMiddleware(req))
 
-  // ── 3. Security headers ───────────────────────────────────────────────────
+  // ── 4. Security headers ───────────────────────────────────────────────────
   // Attach to every page response (CSP, HSTS, X-Frame-Options, etc.)
   const secHeaders = buildSecurityHeaders()
   for (const [key, value] of Object.entries(secHeaders)) {
