@@ -397,6 +397,23 @@ const UI: Record<string, Record<string, string>> = {
     addToSession: '+ Add another document (same person)',
     downloadZip: 'Download all as ZIP',
     sessionCount: 'docs in session',
+    contactTitle: 'Before we continue',
+    contactHint: 'Your name is required so we can personalize your translation. Email is optional.',
+    contactNameLabel: 'Your full name',
+    contactNamePlaceholder: 'e.g. Maria Kovalenko',
+    contactEmailLabel: 'Email (optional — to receive your files)',
+    contactEmailPlaceholder: 'your@email.com',
+    contactPhoneLabel: 'Phone (optional)',
+    contactPhonePlaceholder: '+1 (555) 000-0000',
+    contactNext: 'Continue',
+    contactSkip: 'Skip',
+    ocrPreviewTitle: 'AI found these fields',
+    ocrPreviewHint: 'Review the extracted values — you can edit any of them in the next step.',
+    ocrPreviewConfirm: 'Looks correct — continue',
+    ocrPreviewEdit: 'Edit manually',
+    ocrPreviewManual: 'Fields look wrong — request human review',
+    ocrPreviewSending: 'Sending request…',
+    ocrPreviewSent: '✓ Request sent. We\'ll contact you within 24 hours.',
     fieldsTitle: 'Enter fields from your document',
     fieldsHint: 'Copy exactly as written. Fields marked * are required.',
     grpPersonal: 'Personal information',
@@ -484,6 +501,23 @@ const UI: Record<string, Record<string, string>> = {
     addToSession: '+ Додати ще документ (та сама особа)',
     downloadZip: 'Завантажити все як ZIP',
     sessionCount: 'документів у сесії',
+    contactTitle: 'Перед тим як продовжити',
+    contactHint: 'Ваше ім\'я потрібне для персоналізації перекладу. Email — необов\'язково.',
+    contactNameLabel: 'Ваше повне ім\'я',
+    contactNamePlaceholder: 'наприклад, Марія Коваленко',
+    contactEmailLabel: 'Email (необов\'язково — для отримання файлів)',
+    contactEmailPlaceholder: 'ваша@пошта.com',
+    contactPhoneLabel: 'Телефон (необов\'язково)',
+    contactPhonePlaceholder: '+1 (555) 000-0000',
+    contactNext: 'Продовжити',
+    contactSkip: 'Пропустити',
+    ocrPreviewTitle: 'ШІ знайшов ці поля',
+    ocrPreviewHint: 'Перевірте знайдені значення — на наступному кроці ви зможете виправити будь-яке з них.',
+    ocrPreviewConfirm: 'Виглядає правильно — продовжити',
+    ocrPreviewEdit: 'Редагувати вручну',
+    ocrPreviewManual: 'Поля виглядають неправильно — запросити перевірку людиною',
+    ocrPreviewSending: 'Надсилаємо запит…',
+    ocrPreviewSent: '✓ Запит надіслано. Ми зв\'яжемось з вами протягом 24 годин.',
     fieldsTitle: 'Введіть поля з вашого документа',
     fieldsHint: 'Копіюйте точно як написано. Поля зі * обов\'язкові.',
     grpPersonal: 'Особисті дані',
@@ -571,6 +605,23 @@ const UI: Record<string, Record<string, string>> = {
     addToSession: '+ Добавить документ (тот же человек)',
     downloadZip: 'Скачать всё как ZIP',
     sessionCount: 'документов в сессии',
+    contactTitle: 'Прежде чем продолжить',
+    contactHint: 'Ваше имя нужно для персонализации перевода. Email — необязателен.',
+    contactNameLabel: 'Ваше полное имя',
+    contactNamePlaceholder: 'например, Мария Коваленко',
+    contactEmailLabel: 'Email (необязательно — для получения файлов)',
+    contactEmailPlaceholder: 'ваш@email.com',
+    contactPhoneLabel: 'Телефон (необязательно)',
+    contactPhonePlaceholder: '+1 (555) 000-0000',
+    contactNext: 'Продолжить',
+    contactSkip: 'Пропустить',
+    ocrPreviewTitle: 'ИИ нашёл эти поля',
+    ocrPreviewHint: 'Проверьте найденные значения — на следующем шаге вы сможете исправить любое.',
+    ocrPreviewConfirm: 'Выглядит правильно — продолжить',
+    ocrPreviewEdit: 'Редактировать вручную',
+    ocrPreviewManual: 'Поля выглядят неправильно — запросить проверку специалистом',
+    ocrPreviewSending: 'Отправляем запрос…',
+    ocrPreviewSent: '✓ Запрос отправлен. Мы свяжемся с вами в течение 24 часов.',
     fieldsTitle: 'Введите поля из вашего документа',
     fieldsHint: 'Копируйте точно как написано. Поля со * обязательны.',
     grpPersonal: 'Личные данные',
@@ -658,6 +709,23 @@ const UI: Record<string, Record<string, string>> = {
     addToSession: '+ Agregar otro documento (misma persona)',
     downloadZip: 'Descargar todo como ZIP',
     sessionCount: 'documentos en la sesión',
+    contactTitle: 'Antes de continuar',
+    contactHint: 'Su nombre es necesario para personalizar la traducción. El correo es opcional.',
+    contactNameLabel: 'Su nombre completo',
+    contactNamePlaceholder: 'p.ej. María Kovalenko',
+    contactEmailLabel: 'Correo electrónico (opcional — para recibir archivos)',
+    contactEmailPlaceholder: 'su@correo.com',
+    contactPhoneLabel: 'Teléfono (opcional)',
+    contactPhonePlaceholder: '+1 (555) 000-0000',
+    contactNext: 'Continuar',
+    contactSkip: 'Omitir',
+    ocrPreviewTitle: 'La IA encontró estos campos',
+    ocrPreviewHint: 'Revise los valores — puede editarlos en el siguiente paso.',
+    ocrPreviewConfirm: 'Se ve correcto — continuar',
+    ocrPreviewEdit: 'Editar manualmente',
+    ocrPreviewManual: 'Los campos se ven incorrectos — solicitar revisión humana',
+    ocrPreviewSending: 'Enviando solicitud…',
+    ocrPreviewSent: '✓ Solicitud enviada. Nos pondremos en contacto en 24 horas.',
     fieldsTitle: 'Ingrese los campos de su documento',
     fieldsHint: 'Copie exactamente como está escrito. Los campos con * son obligatorios.',
     grpPersonal: 'Datos personales',
@@ -975,6 +1043,17 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [emailGateSending, setEmailGateSending] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
 
+  // P0-3: Contact gate — captured between upload and fields
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactCaptured, setContactCaptured] = useState(false)
+  const [contactSaving, setContactSaving] = useState(false)
+  // P0-5: OCR simplified preview — shown after OCR if fields were extracted
+  const [ocrPreviewDone, setOcrPreviewDone] = useState(false)
+  const [manualReviewSending, setManualReviewSending] = useState(false)
+  const [manualReviewSent, setManualReviewSent] = useState(false)
+
   // File upload state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null)
@@ -1014,6 +1093,10 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     setUploadedFile(null)
     setUploadedPreview(null)
     setEmailGateSaved(false)
+    setContactCaptured(false)
+    setOcrPreviewDone(false)
+    setManualReviewSending(false)
+    setManualReviewSent(false)
     setStep(1)
     window.scrollTo(0, 0)
     track('wizard_doc_selected', { doc_type: id, locale })
@@ -1021,6 +1104,19 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
 
   function goBack() {
     if (step === 1) { setStep(0); setDocId(null); window.scrollTo(0, 0); return }
+    // P0-3/P0-5: sub-step back navigation within step 3
+    if (step === 3) {
+      if (contactCaptured && ocrPreviewDone) {
+        // In fields form after OCR preview → back to OCR preview
+        setOcrPreviewDone(false); window.scrollTo(0, 0); return
+      }
+      if (contactCaptured) {
+        // In OCR preview or fields (no OCR) → back to contact gate
+        setContactCaptured(false); window.scrollTo(0, 0); return
+      }
+      // In contact gate → go to step 2 (upload)
+      setStep(2); window.scrollTo(0, 0); return
+    }
     setStep((s) => Math.max(0, s - 1))
     window.scrollTo(0, 0)
   }
@@ -1056,6 +1152,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   async function handleOcrExtract(file: File) {
     setOcrLoading(true)
     setOcrPhase('scan')
+    setOcrPreviewDone(false) // P0-5: reset so preview shows fresh after re-upload
     try {
       const ocrType = docIdToOcrType(docId ?? '')
       let rawText: string | null = null
@@ -1128,6 +1225,48 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     } finally {
       setOcrLoading(false)
       goNext()
+    }
+  }
+
+  // P0-3: Key fields to show in OCR preview per doc type (P0-5)
+  const KEY_FIELDS_BY_DOCTYPE: Record<string, string[]> = {
+    passport:        ['full_name', 'given_names', 'date_of_birth', 'document_number', 'nationality', 'expiry_date'],
+    birth_cert:      ['full_name', 'given_names', 'date_of_birth', 'place_of_birth', 'document_number', 'issuing_authority'],
+    marriage_cert:   ['spouse1_name', 'given_names', 'spouse2_name', 'mother_name', 'date_of_marriage', 'document_number'],
+    divorce_cert:    ['spouse1_name', 'given_names', 'spouse2_name', 'date_of_divorce', 'document_number'],
+    diploma:         ['full_name', 'given_names', 'degree_title', 'institution', 'document_number', 'issue_date'],
+    driving_license: ['full_name', 'given_names', 'date_of_birth', 'document_number', 'issue_date', 'expiry_date'],
+    medical_record:  ['full_name', 'given_names', 'date_of_birth', 'document_number', 'issue_date', 'issuing_authority'],
+    military_id:     ['full_name', 'given_names', 'date_of_birth', 'document_number', 'issue_date', 'issuing_authority'],
+    death_cert:      ['full_name', 'given_names', 'date_of_death', 'place_of_death', 'document_number', 'issuing_authority'],
+  }
+
+  // P0-3: Contact gate submission
+  async function handleContactCapture() {
+    const name = contactName.trim()
+    if (!name || contactSaving) return
+    setContactSaving(true)
+    try {
+      const email = contactEmail.trim()
+      const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      // Fire-and-forget: only call if email valid — don't block on failure
+      if (emailValid) {
+        fetch('/api/translation/email-capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, locale, doc_type: docId, src_lang: srcLang }),
+        }).catch(() => {})
+      }
+      track('contact_captured', {
+        doc_type: docId,
+        locale,
+        has_email: emailValid,
+        has_phone: !!contactPhone.trim(),
+      })
+      setContactCaptured(true)
+      window.scrollTo(0, 0)
+    } finally {
+      setContactSaving(false)
     }
   }
 
@@ -1680,8 +1819,168 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     )
   }
 
-  // ── STEP 3: Fields ─────────────────────────────────────────────────────────
+  // ── STEP 3: Contact gate (P0-3) → OCR preview (P0-5) → Fields ────────────
   if (step === 3) {
+
+    // ── STEP 3A: Contact gate ─────────────────────────────────────────────────
+    if (!contactCaptured) {
+      return (
+        <div className="max-w-lg mx-auto space-y-4">
+          <StepIndicator step={2} locale={locale} />
+          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />{ui.back}
+          </button>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-[var(--text-1)] mb-1">{ui.contactTitle}</h2>
+              <p className="text-sm text-[var(--text-2)]">{ui.contactHint}</p>
+            </div>
+            {/* Name (required) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[var(--text-1)]">
+                {ui.contactNameLabel} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                placeholder={ui.contactNamePlaceholder}
+                autoComplete="name"
+                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+              />
+            </div>
+            {/* Email (optional) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[var(--text-1)]">{ui.contactEmailLabel}</label>
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                placeholder={ui.contactEmailPlaceholder}
+                autoComplete="email"
+                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+              />
+            </div>
+            {/* Phone (optional) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[var(--text-1)]">{ui.contactPhoneLabel}</label>
+              <input
+                type="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder={ui.contactPhonePlaceholder}
+                autoComplete="tel"
+                className="w-full px-3.5 py-3 border-[1.5px] border-[var(--border)] rounded-lg bg-[var(--surface-1)] text-base text-[var(--text-1)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-[var(--text-2)]"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleContactCapture}
+              disabled={!contactName.trim() || contactSaving}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+            >
+              {contactSaving ? '…' : ui.contactNext}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setContactName('skip'); setContactCaptured(true); window.scrollTo(0, 0) }}
+              className="w-full text-center text-sm text-[var(--text-2)] hover:text-[var(--text-1)] py-2 transition-colors"
+            >
+              {ui.contactSkip}
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    // ── STEP 3B: OCR preview (P0-5) — only if OCR extracted fields ───────────
+    if (ocrFilledCount > 0 && !ocrPreviewDone) {
+      const keyFields = KEY_FIELDS_BY_DOCTYPE[docId ?? ''] ?? []
+      const previewFields = fields.filter(
+        (f) => keyFields.includes(f.key) && (fieldValues[f.key] ?? '').trim()
+      )
+      async function handleRequestManualReview() {
+        if (manualReviewSending || manualReviewSent) return
+        setManualReviewSending(true)
+        try {
+          await fetch('/api/translation/manual-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contact_name: contactName !== 'skip' ? contactName : '',
+              contact_email: contactEmail,
+              contact_phone: contactPhone,
+              doc_type: docId,
+              source_lang: srcLang,
+              source_fields: fieldValues,
+              locale,
+            }),
+          })
+          track('manual_review_requested', { doc_type: docId, locale, source: 'ocr_preview' })
+          setManualReviewSent(true)
+        } catch {
+          setManualReviewSent(true)
+        } finally {
+          setManualReviewSending(false)
+        }
+      }
+
+      return (
+        <div className="max-w-lg mx-auto space-y-4">
+          <StepIndicator step={3} locale={locale} />
+          <button type="button" onClick={goBack} className="flex items-center gap-1.5 text-sm text-[var(--text-2)] hover:text-blue-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />{ui.back}
+          </button>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xl">✨</span>
+              <h2 className="text-xl font-bold text-[var(--text-1)]">{ui.ocrPreviewTitle}</h2>
+            </div>
+            <p className="text-sm text-[var(--text-2)] mb-4">{ui.ocrPreviewHint}</p>
+            {previewFields.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {previewFields.map((field) => (
+                  <div key={field.key} className="rounded-xl border border-[var(--border)] overflow-hidden">
+                    <div className="px-3.5 py-2 bg-[var(--surface-2)] border-b border-[var(--border)]">
+                      <span className="text-xs font-bold text-[var(--text-2)]">{field.en}</span>
+                    </div>
+                    <div className="px-3.5 py-2.5">
+                      <p className="text-base font-semibold text-[var(--text-1)]">{fieldValues[field.key]}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--text-2)] italic">{ui.ocrNone}</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <button type="button" onClick={() => { setOcrPreviewDone(true); window.scrollTo(0, 0) }}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 transition-colors">
+              {ui.ocrPreviewConfirm}
+            </button>
+            <button type="button" onClick={() => { setOcrPreviewDone(true); window.scrollTo(0, 0) }}
+              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-800 py-2 transition-colors">
+              {ui.ocrPreviewEdit}
+            </button>
+            {!manualReviewSent ? (
+              <button type="button" onClick={handleRequestManualReview} disabled={manualReviewSending}
+                className="w-full text-center text-xs text-[var(--text-2)] hover:text-[var(--text-1)] py-1.5 transition-colors border border-[var(--border)] rounded-lg">
+                {manualReviewSending ? ui.ocrPreviewSending : ui.ocrPreviewManual}
+              </button>
+            ) : (
+              <p className="text-center text-xs text-emerald-700 bg-emerald-50 rounded-lg py-2 border border-emerald-200">
+                {ui.ocrPreviewSent}
+              </p>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    // ── STEP 3C: Fields form ──────────────────────────────────────────────────
     const groups: { id: Group; label: string }[] = [
       { id: 'personal', label: ui.grpPersonal },
       { id: 'document', label: ui.grpDocument },
