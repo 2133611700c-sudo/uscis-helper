@@ -1065,6 +1065,9 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   const [ocrFilledCount, setOcrFilledCount] = useState(0)
   // Phase label during OCR: 'scan' = Tesseract running, 'parse' = server AI field parse
   const [ocrPhase, setOcrPhase] = useState<'scan' | 'parse'>('scan')
+  // Auto-orientation: unreadable fallback
+  const [unreadableSubmitted, setUnreadableSubmitted] = useState(false)
+  const [unreadableCaseId, setUnreadableCaseId] = useState<string | null>(null)
 
   // Order history (Stage 13D)
   const { history, saveEntry, removeEntry } = useTranslationHistory()
@@ -1140,52 +1143,146 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     }
   }
 
+  // ─── Orientation helpers ───────────────────────────────────────────────────
+
+  /** Rotate a Blob/File by degrees (0|90|180|270) via canvas. Returns corrected Blob. */
+  function rotateBlob(blob: Blob, degrees: 0 | 90 | 180 | 270): Promise<Blob> {
+    return new Promise((resolve) => {
+      if (degrees === 0) { resolve(blob); return }
+      const img = new Image()
+      const url = URL.createObjectURL(blob)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const swap = degrees === 90 || degrees === 270
+        const canvas = document.createElement('canvas')
+        canvas.width  = swap ? img.naturalHeight : img.naturalWidth
+        canvas.height = swap ? img.naturalWidth  : img.naturalHeight
+        const ctx = canvas.getContext('2d')!
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate((degrees * Math.PI) / 180)
+        ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2)
+        canvas.toBlob((b) => resolve(b ?? blob), 'image/jpeg', 0.92)
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(blob) }
+      img.src = url
+    })
+  }
+
   /**
-   * Stage 13A (updated): upload file → Tesseract.js (browser OCR) → raw text →
-   * /api/ocr/extract (server AI parse) → pre-fill fieldValues → advance to Step 3
+   * Returns true when OCR output is unreadable garbage:
+   * – fewer than 20 meaningful characters, OR
+   * – fewer than 30% of characters are letters (high symbol ratio = rotated/blurred)
+   */
+  function ocrLooksBad(text: string): boolean {
+    const t = text.trim()
+    if (t.length < 20) return true
+    const letters = (t.match(/\p{L}/gu) ?? []).length
+    return letters / t.length < 0.30
+  }
+
+  /**
+   * POSTs to /api/translation/manual-review with reason='ocr_unreadable'.
+   * Stores the returned case_id and sets unreadableSubmitted=true.
+   */
+  async function submitUnreadableForReview() {
+    try {
+      const res = await fetch('/api/translation/manual-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contact_name:  contactName !== 'skip' ? contactName : '',
+          contact_email: contactEmail,
+          contact_phone: contactPhone,
+          doc_type:      docId ?? 'unknown',
+          source_lang:   srcLang,
+          source_fields: {},
+          confidence:    0,
+          reason:        'ocr_unreadable',
+          locale,
+        }),
+      })
+      const json = (await res.json()) as { ok?: boolean; case_id?: string }
+      if (json.case_id) setUnreadableCaseId(json.case_id.slice(0, 8))
+      track('manual_review_requested', { doc_type: docId, locale, source: 'ocr_unreadable' })
+    } catch {
+      /* fire-and-forget — screen still shows even if network failed */
+    }
+    setUnreadableSubmitted(true)
+  }
+
+  /**
+   * 3-layer orientation pipeline + OCR + server AI parse.
    *
-   * Architecture:
-   *   1. If image file: run Tesseract.js client-side (free, no server cost)
-   *   2. Send raw_text to /api/ocr/extract → server AI parses fields
-   *   3. On any failure: silently advance (user fills manually)
+   * Layer 1 — EXIF  (exifr, free, ~0ms):   reads EXIF orientation tag, rotates canvas
+   * Layer 2 — OSD   (Tesseract, free, ~1s): if confidence ≥ 1.5, rotates canvas again
+   * Recognize       Tesseract on corrected image
+   * ocrLooksBad?  → manual-review with reason='ocr_unreadable'  (no Layer 3)
+   * ok?           → /api/ocr/extract → prefill fields → goNext()
    */
   async function handleOcrExtract(file: File) {
     setOcrLoading(true)
     setOcrPhase('scan')
-    setOcrPreviewDone(false) // P0-5: reset so preview shows fresh after re-upload
+    setOcrPreviewDone(false)
+    let shouldAdvance = true
+
     try {
       const ocrType = docIdToOcrType(docId ?? '')
       let rawText: string | null = null
 
-      // ── Step 1: Tesseract.js browser OCR (image files only) ────────────────
       if (file.type.startsWith('image/')) {
         try {
-          // Dynamic import keeps Tesseract (~3MB WASM) out of the main bundle
-          const { createWorker } = await import('tesseract.js')
+          let workingBlob: Blob = file
 
-          // Build language string: always include English for doc structure,
-          // add source language if different (e.g. "eng+ukr" for Ukrainian docs)
+          // ── Layer 1: EXIF orientation ──────────────────────────────────────
+          try {
+            const exifr = await import('exifr')
+            const orientation = (await exifr.orientation(file)) as number | undefined
+            // EXIF tag → degrees to rotate CW so image appears upright
+            const EXIF_DEG: Record<number, 0 | 90 | 180 | 270> = { 1: 0, 3: 180, 6: 90, 8: 270 }
+            const angle = EXIF_DEG[orientation ?? 1] ?? 0
+            if (angle !== 0) workingBlob = await rotateBlob(workingBlob, angle)
+          } catch { /* exifr unavailable or no EXIF — continue */ }
+
+          // ── Layer 2: Tesseract OSD ──────────────────────────────────────────
+          try {
+            const { createWorker } = await import('tesseract.js')
+            const osdWorker = await createWorker('osd', 1, { logger: () => {} })
+            const { data: osd } = await osdWorker.detect(workingBlob)
+            await osdWorker.terminate()
+
+            // osd.orientation = 0 (up) | 1 (CCW 90°) | 2 (180°) | 3 (CW 90°)
+            const OSD_DEG: Record<number, 0 | 90 | 180 | 270> = { 0: 0, 1: 270, 2: 180, 3: 90 }
+            const osdConf = (osd as { orientationConfidence?: number }).orientationConfidence ?? 0
+            const osdOrient = (osd as { orientation?: number }).orientation ?? 0
+            if (osdConf >= 1.5 && osdOrient !== 0) {
+              const angle = OSD_DEG[osdOrient] ?? 0
+              if (angle !== 0) workingBlob = await rotateBlob(workingBlob, angle)
+            }
+          } catch { /* OSD failed — continue with possibly-EXIF-corrected image */ }
+
+          // ── Tesseract recognize on corrected image ──────────────────────────
+          const { createWorker } = await import('tesseract.js')
           const srcCode = TESSERACT_LANG[srcLang ?? 'en'] ?? 'eng'
           const langs = srcCode === 'eng' ? 'eng' : `eng+${srcCode}`
+          const recWorker = await createWorker(langs, 1, { logger: () => {} })
+          const { data: { text } } = await recWorker.recognize(workingBlob)
+          await recWorker.terminate()
 
-          const worker = await createWorker(langs, 1, {
-            logger: () => {},       // suppress console spam
-            workerBlobURL: true,    // worker loads from jsDelivr CDN
-          })
-
-          const { data: { text } } = await worker.recognize(file)
-          await worker.terminate()
-
-          // Only use if meaningful text was found (>20 chars of real content)
-          if (text.trim().length > 20) {
-            rawText = text
+          // ── ocrLooksBad → manual review fallback ───────────────────────────
+          if (ocrLooksBad(text)) {
+            shouldAdvance = false
+            await submitUnreadableForReview()
+            return
           }
+
+          if (text.trim().length > 20) rawText = text
+
         } catch {
-          // Tesseract failed (network, WASM error, etc.) — skip to manual
+          // Tesseract fully failed — silently advance, user fills manually
         }
       }
 
-      // ── Step 2: server AI field parse (if raw text available) ───────────────
+      // ── Server AI field parse ─────────────────────────────────────────────
       if (rawText) {
         setOcrPhase('parse')
         const res = await fetch('/api/ocr/extract', {
@@ -1217,14 +1314,11 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
           }
         }
       }
-      // Non-image files (PDF, etc.) or Tesseract failures: advance silently,
-      // user fills fields manually. No image_base64 sent — OpenAI vision is
-      // disabled by default (ENABLE_OPENAI_VISION=true required to enable).
     } catch {
-      // Silent fail — user will fill manually
+      // Silent fail — user fills manually
     } finally {
       setOcrLoading(false)
-      goNext()
+      if (shouldAdvance) goNext()
     }
   }
 
@@ -1711,6 +1805,34 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   }
 
   // ── STEP 2: Upload ─────────────────────────────────────────────────────────
+
+  // Unreadable photo fallback — shown instead of upload UI after ocr_unreadable
+  if (step === 2 && unreadableSubmitted) {
+    const MSG: Partial<Record<string, { title: string; body: string; contact: string; caseLabel: string }>> = {
+      uk: { title: 'Документ отримано', body: 'Цей документ потребує ручної перевірки. Ми підготуємо переклад і надішлемо готовий PDF на вашу електронну пошту протягом 24 годин.', contact: 'Питання? Напишіть на contact@messenginfo.com', caseLabel: 'Номер заявки' },
+      ru: { title: 'Документ принят', body: 'Этот документ требует ручной проверки. Мы подготовим перевод и пришлём готовый PDF на ваш email в течение 24 часов.', contact: 'Вопросы? Напишите на contact@messenginfo.com', caseLabel: 'Номер заявки' },
+      es: { title: 'Documento recibido', body: 'Este documento requiere revisión manual. Prepararemos la traducción y enviaremos el PDF a su correo electrónico en un plazo de 24 horas.', contact: 'Preguntas: contact@messenginfo.com', caseLabel: 'Número de caso' },
+    }
+    const m = MSG[locale] ?? { title: 'Document Received', body: 'This document requires manual review. We will prepare your translation and send the PDF to your email within 24 hours.', contact: 'Questions? Write to contact@messenginfo.com', caseLabel: 'Case ID' }
+    return (
+      <div className="max-w-lg mx-auto">
+        <StepIndicator step={2} locale={locale} />
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-8 text-center shadow-sm">
+          <div className="text-4xl mb-4">📋</div>
+          <h2 className="text-xl font-bold text-[var(--text-1)] mb-3">{m.title}</h2>
+          <p className="text-sm text-[var(--text-2)] mb-4 leading-relaxed">{m.body}</p>
+          <p className="text-xs text-[var(--text-3)] mb-6">{m.contact}</p>
+          {unreadableCaseId && (
+            <div className="inline-block bg-[var(--surface-2)] rounded-lg px-4 py-2 border border-[var(--border)]">
+              <span className="text-xs text-[var(--text-2)]">{m.caseLabel}: </span>
+              <span className="text-sm font-mono font-bold text-[var(--text-1)]">{unreadableCaseId}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   if (step === 2) {
     return (
       <div className="max-w-lg mx-auto space-y-4">
