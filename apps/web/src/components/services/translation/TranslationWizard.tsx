@@ -342,6 +342,25 @@ function docIdToOcrType(id: string): string {
   return 'other'
 }
 
+/**
+ * Map wizard source-language ID → Tesseract.js ISO 639-3 language code.
+ * English is always added as the base; this adds the source language as secondary.
+ * Used in browser-side Tesseract OCR (tesseract.js v7).
+ */
+const TESSERACT_LANG: Record<string, string> = {
+  uk: 'ukr',  // Ukrainian
+  ru: 'rus',  // Russian
+  es: 'spa',  // Spanish
+  en: 'eng',  // English
+  pl: 'pol',  // Polish
+  de: 'deu',  // German
+  fr: 'fra',  // French
+  ar: 'ara',  // Arabic
+  zh: 'chi_sim', // Simplified Chinese
+  ko: 'kor',  // Korean
+  pt: 'por',  // Portuguese
+}
+
 // ─── UI strings ───────────────────────────────────────────────────────────────
 
 const UI: Record<string, Record<string, string>> = {
@@ -367,6 +386,7 @@ const UI: Record<string, Record<string, string>> = {
     uploadSkip: 'Skip — enter fields manually',
     uploadRemove: 'Remove',
     uploadSelected: 'File selected:',
+    ocrScanning: 'Scanning text from image…',
     ocrAnalyzing: 'AI is reading your document…',
     ocrSuccess: 'fields filled automatically by AI',
     ocrNone: 'Could not read the document — please fill in manually.',
@@ -453,6 +473,7 @@ const UI: Record<string, Record<string, string>> = {
     uploadSkip: 'Пропустити — ввести поля вручну',
     uploadRemove: 'Видалити',
     uploadSelected: 'Вибраний файл:',
+    ocrScanning: 'Сканування тексту із зображення…',
     ocrAnalyzing: 'ШІ читає ваш документ…',
     ocrSuccess: 'полів заповнено автоматично',
     ocrNone: 'Не вдалось прочитати документ — заповніть вручну.',
@@ -539,6 +560,7 @@ const UI: Record<string, Record<string, string>> = {
     uploadSkip: 'Пропустить — ввести поля вручную',
     uploadRemove: 'Удалить',
     uploadSelected: 'Выбранный файл:',
+    ocrScanning: 'Сканирование текста из изображения…',
     ocrAnalyzing: 'ИИ читает ваш документ…',
     ocrSuccess: 'полей заполнено автоматически',
     ocrNone: 'Не удалось прочитать документ — заполните вручную.',
@@ -625,6 +647,7 @@ const UI: Record<string, Record<string, string>> = {
     uploadSkip: 'Omitir — ingresar campos manualmente',
     uploadRemove: 'Eliminar',
     uploadSelected: 'Archivo seleccionado:',
+    ocrScanning: 'Escaneando texto de la imagen…',
     ocrAnalyzing: 'IA está leyendo su documento…',
     ocrSuccess: 'campos completados automáticamente',
     ocrNone: 'No se pudo leer el documento — ingrese los campos manualmente.',
@@ -957,6 +980,8 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
   // OCR state
   const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrFilledCount, setOcrFilledCount] = useState(0)
+  // Phase label during OCR: 'scan' = Tesseract running, 'parse' = DeepSeek API call
+  const [ocrPhase, setOcrPhase] = useState<'scan' | 'parse'>('scan')
 
   // Order history (Stage 13D)
   const { history, saveEntry, removeEntry } = useTranslationHistory()
@@ -1015,50 +1040,85 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
     }
   }
 
-  /** Stage 13A: upload file → OCR API → pre-fill fieldValues → advance to Step 3 */
+  /**
+   * Stage 13A (updated): upload file → Tesseract.js (browser OCR) → raw text →
+   * /api/ocr/extract (DeepSeek parse) → pre-fill fieldValues → advance to Step 3
+   *
+   * Architecture:
+   *   1. If image file: run Tesseract.js client-side (free, no server cost)
+   *   2. Send raw_text to /api/ocr/extract → DeepSeek-V3 parses fields
+   *   3. On any failure: silently advance (user fills manually)
+   */
   async function handleOcrExtract(file: File) {
     setOcrLoading(true)
+    setOcrPhase('scan')
     try {
-      // Convert file to base64 (strip data-URL prefix)
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = (e.target?.result as string) ?? ''
-          resolve(result.includes(',') ? result.split(',')[1] : result)
-        }
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
-
       const ocrType = docIdToOcrType(docId ?? '')
-      const res = await fetch('/api/ocr/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ doc_type: ocrType, image_base64: base64 }),
-      })
-      const data = (await res.json()) as {
-        ok: boolean
-        mode?: string
-        extractedFields?: Record<string, string | null>
-        confidence?: number
+      let rawText: string | null = null
+
+      // ── Step 1: Tesseract.js browser OCR (image files only) ────────────────
+      if (file.type.startsWith('image/')) {
+        try {
+          // Dynamic import keeps Tesseract (~3MB WASM) out of the main bundle
+          const { createWorker } = await import('tesseract.js')
+
+          // Build language string: always include English for doc structure,
+          // add source language if different (e.g. "eng+ukr" for Ukrainian docs)
+          const srcCode = TESSERACT_LANG[srcLang ?? 'en'] ?? 'eng'
+          const langs = srcCode === 'eng' ? 'eng' : `eng+${srcCode}`
+
+          const worker = await createWorker(langs, 1, {
+            logger: () => {},       // suppress console spam
+            workerBlobURL: true,    // worker loads from jsDelivr CDN
+          })
+
+          const { data: { text } } = await worker.recognize(file)
+          await worker.terminate()
+
+          // Only use if meaningful text was found (>20 chars of real content)
+          if (text.trim().length > 20) {
+            rawText = text
+          }
+        } catch {
+          // Tesseract failed (network, WASM error, etc.) — skip to manual
+        }
       }
 
-      if (data.ok && data.extractedFields) {
-        const newValues: Record<string, string> = {}
-        let filled = 0
-        for (const [ocrKey, ocrValue] of Object.entries(data.extractedFields)) {
-          if (!ocrValue) continue
-          const fieldKey = OCR_TO_FIELD[ocrKey]
-          if (fieldKey) {
-            newValues[fieldKey] = ocrValue
-            filled++
+      // ── Step 2: DeepSeek API parse (if raw text available) ─────────────────
+      if (rawText) {
+        setOcrPhase('parse')
+        const res = await fetch('/api/ocr/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doc_type: ocrType, raw_text: rawText }),
+        })
+        const data = (await res.json()) as {
+          ok: boolean
+          mode?: string
+          extractedFields?: Record<string, string | null>
+          confidence?: number
+        }
+
+        if (data.ok && data.extractedFields) {
+          const newValues: Record<string, string> = {}
+          let filled = 0
+          for (const [ocrKey, ocrValue] of Object.entries(data.extractedFields)) {
+            if (!ocrValue) continue
+            const fieldKey = OCR_TO_FIELD[ocrKey]
+            if (fieldKey) {
+              newValues[fieldKey] = ocrValue
+              filled++
+            }
+          }
+          if (filled > 0) {
+            setFieldValues((prev) => ({ ...prev, ...newValues }))
+            setOcrFilledCount(filled)
           }
         }
-        if (filled > 0) {
-          setFieldValues((prev) => ({ ...prev, ...newValues }))
-          setOcrFilledCount(filled)
-        }
       }
+      // Non-image files (PDF, etc.) or Tesseract failures: advance silently,
+      // user fills fields manually. No image_base64 sent — OpenAI vision is
+      // disabled by default (ENABLE_OPENAI_VISION=true required to enable).
     } catch {
       // Silent fail — user will fill manually
     } finally {
@@ -1553,7 +1613,7 @@ export function TranslationWizard({ locale, returnUrl, fromSource }: Translation
             {ocrLoading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                {ui.ocrAnalyzing}
+                {ocrPhase === 'scan' ? ui.ocrScanning : ui.ocrAnalyzing}
               </>
             ) : (
               <>{uploadedFile ? ui.next : ui.uploadSkip} →</>
