@@ -1,19 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { after } from 'next/server'
-import { stripe, STRIPE_PRICES, isStripeConfigured } from '@/lib/stripe/client'
+import { stripe, STRIPE_PRICES, isStripeConfigured, StripeProduct } from '@/lib/stripe/client'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
+// ── Price + routing config per product ────────────────────────────────────────
+const PRODUCT_CONFIG: Record<
+  StripeProduct,
+  {
+    priceId: () => string
+    amountCents: number
+    successPath: (locale: string, sessionId: string) => string
+    cancelPath: (locale: string) => string
+  }
+> = {
+  're-parole-u4u': {
+    priceId: () => STRIPE_PRICES.reparoleU4UTier1,
+    amountCents: 1500,
+    successPath: (locale, sessionId) =>
+      `/${locale}/services/re-parole-u4u/checkout/success?cs={CHECKOUT_SESSION_ID}&wizard=${sessionId}`,
+    cancelPath: (locale) => `/${locale}/services/re-parole-u4u`,
+  },
+  translation: {
+    priceId: () => STRIPE_PRICES.translationSingle,
+    amountCents: 1500,
+    successPath: (locale, _sessionId) =>
+      `/${locale}/services/translate-document/checkout/success?cs={CHECKOUT_SESSION_ID}`,
+    cancelPath: (locale) => `/${locale}/services/translate-document`,
+  },
+}
+
 export async function POST(req: NextRequest) {
-  if (!isStripeConfigured() || !stripe) {
-    return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 })
+  const body = await req.json().catch(() => ({}))
+  const { session_id, locale = 'en', product = 're-parole-u4u' } = body as {
+    session_id?: string
+    locale?: string
+    product?: StripeProduct
   }
 
-  const body = await req.json().catch(() => ({}))
-  const { session_id, locale = 'en' } = body
-  if (!session_id) {
+  const cfg = PRODUCT_CONFIG[product] ?? PRODUCT_CONFIG['re-parole-u4u']
+
+  if (!isStripeConfigured(product) || !stripe) {
+    return NextResponse.json({ error: 'Stripe not configured', free: true }, { status: 503 })
+  }
+
+  if (!session_id && product !== 'translation') {
     return NextResponse.json({ error: 'session_id required' }, { status: 400 })
+  }
+
+  const priceId = cfg.priceId()
+  if (!priceId) {
+    return NextResponse.json({ error: 'Price ID not configured', free: true }, { status: 503 })
   }
 
   const origin = req.headers.get('origin') ?? 'https://messenginfo.com'
@@ -21,10 +59,14 @@ export async function POST(req: NextRequest) {
   const checkout = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
-    line_items: [{ price: STRIPE_PRICES.reparoleU4UTier1, quantity: 1 }],
-    success_url: `${origin}/${locale}/services/re-parole-u4u/checkout/success?cs={CHECKOUT_SESSION_ID}&wizard=${session_id}`,
-    cancel_url: `${origin}/${locale}/services/re-parole-u4u`,
-    metadata: { wizard_session_id: session_id, service: 're-parole-u4u', tier: '1' },
+    line_items: [{ price: priceId, quantity: 1 }],
+    success_url: `${origin}${cfg.successPath(locale, session_id ?? '')}`,
+    cancel_url: `${origin}${cfg.cancelPath(locale)}`,
+    metadata: {
+      wizard_session_id: session_id ?? '',
+      service: product,
+      tier: '1',
+    },
   })
 
   const supabase = createAdminSupabaseClient()
@@ -32,11 +74,11 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase.from('audit_log').insert({
       action: 'stripe_checkout_created',
       target_table: 'wizard_sessions',
-      target_id: session_id,
+      target_id: session_id ?? product,
       detail: {
         stripe_checkout_id: checkout.id,
-        amount_cents: 1500,
-        service_slug: 're-parole-u4u',
+        amount_cents: cfg.amountCents,
+        service_slug: product,
         tier: 1,
       },
     })
