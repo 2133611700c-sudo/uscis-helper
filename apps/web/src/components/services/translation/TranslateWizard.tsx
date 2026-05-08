@@ -379,6 +379,9 @@ const WIZARD_CSS = `
 .tw-plan{background:var(--surf);border:2px solid var(--brd);border-radius:var(--r);padding:20px;margin-bottom:12px;cursor:pointer;transition:all .2s;position:relative}
 .tw-plan:hover{border-color:var(--acc)}
 .tw-plan.sel{border-color:var(--acc);background:var(--acc-l);box-shadow:0 0 0 1px var(--acc)}
+.tw-plan.sel .tw-plan-name{color:var(--acc)}
+.tw-plan.sel .tw-plan-desc{color:var(--acc)}
+.tw-plan.sel .tw-plan-note{color:var(--acc-h)}
 .tw-plan.rec{border-color:var(--gold)}
 .tw-plan.sel.rec{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
 .tw-badge{position:absolute;top:-10px;right:16px;background:var(--gold);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
@@ -800,6 +803,7 @@ export function TranslateWizard() {
   // ── Back button (screen-specific destination) ──
   const BackBtn = ({ to }: { to: Screen | 'landing' }) => (
     <button
+      type="button"
       className="tw-back"
       onClick={() => {
         if (to === 'landing') router.push(backHref)
@@ -820,7 +824,7 @@ export function TranslateWizard() {
         <div className="tw-animate">
           <BackBtn to="price" />
           <div className="tw-wrap">
-            <div style={{ height: 16 }} />
+            {progBar()}
             <h1 className="tw-h1">{t['h.title']}</h1>
             <p className="tw-subtitle">{t['h.sub']}</p>
 
@@ -978,6 +982,7 @@ export function TranslateWizard() {
             </div>
 
             <button
+              type="button"
               className="tw-btn tw-btn-primary"
               disabled={!selectedPlan}
               onClick={() => goTo('upload')}
