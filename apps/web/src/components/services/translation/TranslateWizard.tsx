@@ -1,22 +1,14 @@
 'use client'
 
 /**
- * TranslateWizard — v12
+ * TranslateWizard — v13
  *
- * Full React port of translate-wizard.html v11.
- * Renders inside [locale]/layout.tsx — shared Header/Footer provided automatically.
- * Locale from URL params drives displayed language.
- * Back buttons on every screen navigate to /{locale}/services/translate-document.
- *
- * All v11 product logic preserved:
- *   - Two upload zones (📷 camera / 📁 file)
- *   - Checkout-time profile collection → checkPayReady()
- *   - Signature canvas pad with HiDPI scaling
- *   - generatePdf() audit payload
- *   - DEMO_MODE flag
- *   - Manual wet-signature fallback with ⚠️ warning
- *   - isProfileValid() shared validator
- *   - 8 CFR §103.2(b)(3) certification
+ * Changes from v12:
+ *   - sessionStorage draft state (translationWizardDraft_v1)
+ *   - Detection screen: 3 separate cards (doc type / language / quality)
+ *   - Bad-photo branch: 'bad-photo' screen when quality is low
+ *   - Plus/Premium note: human field review disclaimer
+ *   - Price screen: selected plan shows ✓ badge + strong border highlight
  */
 
 import { useRef, useState, useEffect, useCallback } from 'react'
@@ -24,9 +16,10 @@ import { useParams, useRouter } from 'next/navigation'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 const DEMO_MODE = true // Set to false in production
+const DRAFT_KEY = 'translationWizardDraft_v1'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Screen = 'upload' | 'detect' | 'price' | 'payment' | 'pending' | 'review' | 'cert' | 'done'
+type Screen = 'upload' | 'detect' | 'bad-photo' | 'price' | 'payment' | 'pending' | 'review' | 'cert' | 'done'
 type Plan = 'basic' | 'plus' | 'premium'
 type Lang = 'uk' | 'ru' | 'en' | 'es'
 
@@ -48,6 +41,18 @@ const T: Record<Lang, Record<string, string>> = {
     'h.footer': 'Ми перевіримо документ безкоштовно. Переклад — після оплати.',
     'd.title': 'Перевіряємо документ...',
     'd.sub': 'Визначаємо тип та перевіряємо якість фото',
+    'd.doctype': 'Тип документа',
+    'd.lang': 'Мова документа',
+    'd.quality': 'Якість фото',
+    'd.doctype.val': 'Свідоцтво про народження',
+    'd.lang.val': 'Українська',
+    'd.quality.val': 'Добра',
+    'd.quality.low': 'Недостатня',
+    'bp.title': 'Фото нечітке',
+    'bp.sub': 'Ми не можемо розпізнати текст. Спробуйте ще раз або продовжте з Plus.',
+    'bp.retake': 'Зробити фото ще раз',
+    'bp.upload': 'Завантажити інший файл',
+    'bp.plus': 'Продовжити з Plus — спеціаліст перевірить ($19.99)',
     'p.ready': 'Документ готовий до перекладу',
     'p.type': 'Тип: Свідоцтво про народження',
     'p.lang': 'Мова: Українська',
@@ -56,7 +61,10 @@ const T: Record<Lang, Record<string, string>> = {
     'p.basic': 'Швидкий PDF. Ви перевіряєте ключові поля самостійно.',
     'p.rec': 'Рекомендовано',
     'p.plus': 'Спеціаліст перевірить імена, дати та номери перед фінальним PDF.',
+    'p.plus.note': 'Перевірка людиною тільки полів. Не юридична консультація. Messenginfo не сертифікує переклад.',
     'p.prem': 'Детальна перевірка для нечітких фото або важливих подач.',
+    'p.prem.note': 'Перевірка людиною тільки полів. Не юридична консультація. Messenginfo не сертифікує переклад.',
+    'p.selected': '✓ Обрано',
     'p.es': 'Іспанська копія', 'p.es.d': 'Для California DMV, школи, роботодавця',
     'p.btn': 'Продовжити до оплати',
     'p.note': 'Безкоштовне виправлення помилок форматування. Без гарантій ухвалення.',
@@ -81,7 +89,7 @@ const T: Record<Lang, Record<string, string>> = {
     'c.your': 'Перекладач:',
     'c.fname': "Повне ім'я латиницею (як у паспорті)", 'c.addr': 'Адреса в США', 'c.phone': 'Телефон',
     'c.cb1': 'Я підтверджую, що володію українською та англійською мовами на рівні, достатньому для сертифікації перекладу.',
-    'c.cb2': 'Я перевірив(ла) всі поля та беру на себе повну відповідальність за точність перекладу. Messenginfo лише допоміг з підготовкою драфту та форматуванням.',
+    'c.cb2': 'Я перевірив(ла) всі поля та беру на себе повну відповідальність за точність перекладу. Messenginfo лише допоміг з підготовкою та форматуванням.',
     'c.sig.title': 'Підпишіть переклад',
     'c.sig.desc': 'Намалюйте ваш підпис пальцем, мишкою або стилусом. Підпис буде розміщений на сторінці сертифікації у PDF.',
     'c.sig.hint': '↑ Підпишіть тут', 'c.sig.clear': 'Очистити',
@@ -111,13 +119,28 @@ const T: Record<Lang, Record<string, string>> = {
     'h.footer': 'Мы проверим документ бесплатно. Перевод — после оплаты.',
     'd.title': 'Проверяем документ...',
     'd.sub': 'Определяем тип и проверяем качество фото',
+    'd.doctype': 'Тип документа',
+    'd.lang': 'Язык документа',
+    'd.quality': 'Качество фото',
+    'd.doctype.val': 'Свидетельство о рождении',
+    'd.lang.val': 'Украинский',
+    'd.quality.val': 'Хорошее',
+    'd.quality.low': 'Недостаточное',
+    'bp.title': 'Фото нечёткое',
+    'bp.sub': 'Мы не можем распознать текст. Попробуйте ещё раз или продолжите с Plus.',
+    'bp.retake': 'Сделать фото ещё раз',
+    'bp.upload': 'Загрузить другой файл',
+    'bp.plus': 'Продолжить с Plus — специалист проверит ($19.99)',
     'p.ready': 'Документ готов к переводу',
     'p.type': 'Тип: Свидетельство о рождении', 'p.lang': 'Язык: Украинский', 'p.quality': 'Качество фото: Хорошее',
     'p.choose': 'Выберите вариант:',
     'p.basic': 'Быстрый PDF. Вы проверяете ключевые поля сами.',
     'p.rec': 'Рекомендуем',
     'p.plus': 'Специалист проверит имена, даты и номера перед финальным PDF.',
+    'p.plus.note': 'Проверка человеком только полей. Не юридическая консультация. Messenginfo не сертифицирует перевод.',
     'p.prem': 'Детальная проверка для нечётких фото или важных подач.',
+    'p.prem.note': 'Проверка человеком только полей. Не юридическая консультация. Messenginfo не сертифицирует перевод.',
+    'p.selected': '✓ Выбрано',
     'p.es': 'Испанская копия', 'p.es.d': 'Для California DMV, школы, работодателя',
     'p.btn': 'Продолжить к оплате',
     'p.note': 'Бесплатное исправление ошибок форматирования. Без гарантий принятия.',
@@ -142,7 +165,7 @@ const T: Record<Lang, Record<string, string>> = {
     'c.your': 'Переводчик:',
     'c.fname': 'Полное имя латиницей (как в паспорте)', 'c.addr': 'Адрес в США', 'c.phone': 'Телефон',
     'c.cb1': 'Я подтверждаю, что владею украинским и английским языками на уровне, достаточном для сертификации перевода.',
-    'c.cb2': 'Я проверил(а) все поля и беру на себя полную ответственность за точность перевода. Messenginfo лишь помог с подготовкой драфта и форматированием.',
+    'c.cb2': 'Я проверил(а) все поля и беру на себя полную ответственность за точность перевода. Messenginfo лишь помог с подготовкой и форматированием.',
     'c.sig.title': 'Подпишите перевод',
     'c.sig.desc': 'Нарисуйте подпись пальцем, мышкой или стилусом. Подпись будет размещена на странице сертификации в PDF.',
     'c.sig.hint': '↑ Подпишите здесь', 'c.sig.clear': 'Очистить',
@@ -172,13 +195,28 @@ const T: Record<Lang, Record<string, string>> = {
     'h.footer': 'We check your document for free. Translation after payment.',
     'd.title': 'Checking your document...',
     'd.sub': 'Detecting type and checking photo quality',
+    'd.doctype': 'Document type',
+    'd.lang': 'Document language',
+    'd.quality': 'Photo quality',
+    'd.doctype.val': 'Birth Certificate',
+    'd.lang.val': 'Ukrainian',
+    'd.quality.val': 'Good',
+    'd.quality.low': 'Too low',
+    'bp.title': 'Photo is unclear',
+    'bp.sub': 'We cannot read the text reliably. Retake or upload a clearer photo, or continue with Plus for human review.',
+    'bp.retake': 'Retake photo',
+    'bp.upload': 'Upload another file',
+    'bp.plus': 'Continue with Plus — a person will review ($19.99)',
     'p.ready': 'Document ready for translation',
     'p.type': 'Type: Birth Certificate', 'p.lang': 'Language: Ukrainian', 'p.quality': 'Photo quality: Good',
     'p.choose': 'Choose your option:',
     'p.basic': 'Fast PDF. You check the key fields yourself.',
     'p.rec': 'Recommended',
     'p.plus': 'A person checks names, dates, and numbers before final PDF.',
+    'p.plus.note': 'Human field review only. Not legal advice. Messenginfo does not certify the translation.',
     'p.prem': 'Priority review for blurry photos or important filings.',
+    'p.prem.note': 'Human field review only. Not legal advice. Messenginfo does not certify the translation.',
+    'p.selected': '✓ Selected',
     'p.es': 'Spanish copy', 'p.es.d': 'For California DMV, school, employer',
     'p.btn': 'Continue to payment',
     'p.note': 'Free correction for formatting errors. No acceptance guarantee.',
@@ -233,13 +271,28 @@ const T: Record<Lang, Record<string, string>> = {
     'h.footer': 'Verificamos su documento gratis. Traducción después del pago.',
     'd.title': 'Verificando su documento...',
     'd.sub': 'Detectando tipo y verificando calidad de foto',
+    'd.doctype': 'Tipo de documento',
+    'd.lang': 'Idioma del documento',
+    'd.quality': 'Calidad de foto',
+    'd.doctype.val': 'Certificado de Nacimiento',
+    'd.lang.val': 'Ucraniano',
+    'd.quality.val': 'Buena',
+    'd.quality.low': 'Insuficiente',
+    'bp.title': 'La foto no es clara',
+    'bp.sub': 'No podemos leer el texto con claridad. Tome otra foto o continúe con Plus para revisión humana.',
+    'bp.retake': 'Tomar otra foto',
+    'bp.upload': 'Subir otro archivo',
+    'bp.plus': 'Continuar con Plus — un especialista revisará ($19.99)',
     'p.ready': 'Documento listo para traducción',
     'p.type': 'Tipo: Certificado de Nacimiento', 'p.lang': 'Idioma: Ucraniano', 'p.quality': 'Calidad de foto: Buena',
     'p.choose': 'Elija su opción:',
     'p.basic': 'PDF rápido. Usted revisa los campos clave.',
     'p.rec': 'Recomendado',
     'p.plus': 'Un especialista revisa nombres, fechas y números antes del PDF final.',
+    'p.plus.note': 'Revisión humana de campos únicamente. No es asesoría legal. Messenginfo no certifica la traducción.',
     'p.prem': 'Revisión prioritaria para fotos borrosas o trámites importantes.',
+    'p.prem.note': 'Revisión humana de campos únicamente. No es asesoría legal. Messenginfo no certifica la traducción.',
+    'p.selected': '✓ Seleccionado',
     'p.es': 'Copia en español', 'p.es.d': 'Para California DMV, escuela, empleador',
     'p.btn': 'Continuar al pago',
     'p.note': 'Corrección gratuita de errores de formato. Sin garantía de aceptación.',
@@ -264,7 +317,7 @@ const T: Record<Lang, Record<string, string>> = {
     'c.your': 'Traductor:',
     'c.fname': 'Nombre completo en letras latinas (como en pasaporte)', 'c.addr': 'Dirección en EE.UU.', 'c.phone': 'Teléfono',
     'c.cb1': 'Confirmo que domino ucraniano e inglés a un nivel suficiente para certificar esta traducción.',
-    'c.cb2': 'Revisé todos los campos y asumo total responsabilidad por la exactitud de la traducción. Messenginfo solo ayudó con la preparación del borrador y el formato.',
+    'c.cb2': 'Revisé todos los campos y asumo total responsabilidad por la exactitud de la traducción. Messenginfo solo ayudó con la preparación y el formato.',
     'c.sig.title': 'Firme su traducción',
     'c.sig.desc': 'Dibuje su firma con el dedo, ratón o lápiz. Se colocará en la página de certificación del PDF.',
     'c.sig.hint': '↑ Firme aquí', 'c.sig.clear': 'Borrar',
@@ -310,14 +363,23 @@ const WIZARD_CSS = `
 .tw-btn-outline{background:none;border:2px solid var(--brd);color:var(--text-1,#1a1714)}
 .tw-btn-outline:hover{border-color:var(--acc);color:var(--acc)}
 .tw-btn-sm{padding:6px 14px;font-size:12px;width:auto;display:inline-block;border-radius:8px;cursor:pointer;border:2px solid var(--brd);background:none;font-family:inherit;font-weight:600;color:var(--text-1,#1a1714)}
+.tw-detect-cards{display:flex;flex-direction:column;gap:10px;margin:20px 0}
+.tw-detect-card{background:var(--surf);border:1.5px solid var(--brd);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.tw-detect-card-icon{font-size:28px;min-width:36px;text-align:center}
+.tw-detect-card-label{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.tw-detect-card-val{font-size:15px;font-weight:700;color:var(--text-1,#1a1714)}
+.tw-detect-card.loading .tw-detect-card-val{color:var(--ink3)}
 .tw-plan{background:var(--surf);border:2px solid var(--brd);border-radius:var(--r);padding:20px;margin-bottom:12px;cursor:pointer;transition:all .2s;position:relative}
 .tw-plan:hover{border-color:var(--acc)}
-.tw-plan.sel{border-color:var(--acc);background:var(--acc-l)}
+.tw-plan.sel{border-color:var(--acc);background:var(--acc-l);box-shadow:0 0 0 1px var(--acc)}
 .tw-plan.rec{border-color:var(--gold)}
+.tw-plan.sel.rec{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
 .tw-badge{position:absolute;top:-10px;right:16px;background:var(--gold);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+.tw-badge-sel{position:absolute;top:-10px;left:16px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
 .tw-plan-name{font-size:18px;font-weight:700;margin-bottom:4px}
 .tw-plan-price{font-size:24px;font-weight:700;color:var(--acc);margin-bottom:6px}
 .tw-plan-desc{font-size:14px;color:var(--ink2);line-height:1.5}
+.tw-plan-note{font-size:11px;color:var(--ink3);margin-top:8px;line-height:1.5;font-style:italic}
 .tw-field{background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .tw-field-lbl{font-size:12px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
 .tw-field-orig{font-size:14px;color:var(--ink2)}
@@ -353,6 +415,10 @@ const WIZARD_CSS = `
 .tw-profile-edit-box{background:var(--surf);border:2px solid var(--acc);border-radius:var(--r);padding:16px;margin-bottom:16px}
 .tw-sig-wrap{background:var(--surf);border:2px solid var(--brd);border-radius:var(--r);padding:4px;margin-bottom:8px}
 .tw-sig-canvas{width:100%;height:140px;display:block;cursor:crosshair;touch-action:none;border-radius:10px}
+.tw-bad-photo{background:#fff8f8;border:2px solid #f5c6c6;border-radius:var(--r);padding:24px;text-align:center;margin:20px 0}
+.tw-bad-photo-icon{font-size:52px;margin-bottom:12px}
+.tw-bad-photo-title{font-size:20px;font-weight:700;color:#b33;margin-bottom:8px}
+.tw-bad-photo-sub{font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:20px}
 @keyframes tw-spin{to{transform:rotate(360deg)}}
 @keyframes tw-fadeup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .tw-animate{animation:tw-fadeup .35s ease}
@@ -374,6 +440,26 @@ const REVIEW_FIELDS = [
   { labelKey: 'r.dracs', orig: 'Звенигородський ДРАЦС', val: 'Zvenyhorodka DRACS' },
   { labelKey: 'r.issued', orig: '15.04.1814', val: 'April 15, 1814' },
 ]
+
+// ─── Draft state serializable shape ──────────────────────────────────────────
+interface DraftState {
+  screen: Screen
+  selectedPlan: Plan | null
+  spanishCopy: boolean
+  profile: Profile
+  payForm: Profile
+}
+
+function saveDraft(state: DraftState) {
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(state)) } catch {}
+}
+
+function loadDraft(): DraftState | null {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY)
+    return raw ? (JSON.parse(raw) as DraftState) : null
+  } catch { return null }
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function TranslateWizard() {
@@ -397,6 +483,35 @@ export function TranslateWizard() {
   const [manualSig, setManualSig] = useState(false)
   const [hasDrawn, setHasDrawn] = useState(false)
   const [reviewFields, setReviewFields] = useState(REVIEW_FIELDS.map(f => ({ ...f, editVal: f.val, editing: false })))
+  // Detection animation state
+  const [detectStep, setDetectStep] = useState(0) // 0=loading, 1=doctype, 2=lang, 3=quality
+
+  // ── Restore draft on mount ──
+  useEffect(() => {
+    const draft = loadDraft()
+    if (!draft) return
+    // Only restore mid-flow states — don't restore 'done' or 'detect'
+    const restorable: Screen[] = ['price', 'payment', 'pending', 'review', 'cert']
+    if (restorable.includes(draft.screen)) {
+      setScreen(draft.screen)
+      setSelectedPlan(draft.selectedPlan)
+      setSpanishCopy(draft.spanishCopy)
+      setProfile(draft.profile)
+      setPayForm(draft.payForm)
+      setEditForm(draft.payForm)
+    }
+  }, [])
+
+  // ── Save draft on state changes ──
+  useEffect(() => {
+    const restorable: Screen[] = ['price', 'payment', 'pending', 'review', 'cert']
+    if (restorable.includes(screen)) {
+      saveDraft({ screen, selectedPlan, spanishCopy, profile, payForm })
+    }
+    if (screen === 'done' || screen === 'upload') {
+      try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
+    }
+  }, [screen, selectedPlan, spanishCopy, profile, payForm])
 
   // ── Canvas refs ──
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -427,10 +542,17 @@ export function TranslateWizard() {
     window.scrollTo(0, 0)
   }, [])
 
-  // ── Upload ──
+  // ── Upload → detect animation ──
   const handleUpload = useCallback(() => {
+    setDetectStep(0)
     goTo('detect')
-    setTimeout(() => goTo('price'), 2500)
+    // Animate detection cards appearing one by one
+    setTimeout(() => setDetectStep(1), 700)
+    setTimeout(() => setDetectStep(2), 1300)
+    setTimeout(() => setDetectStep(3), 1900)
+    // In DEMO_MODE always show "good quality" → price screen
+    // In a real flow, quality check could trigger 'bad-photo'
+    setTimeout(() => goTo('price'), 2800)
   }, [goTo])
 
   // ── Plan select ──
@@ -572,15 +694,15 @@ export function TranslateWizard() {
     setReviewFields(REVIEW_FIELDS.map(f => ({ ...f, editVal: f.val, editing: false })))
     initRef.current = false
     ctxRef.current = null
+    try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
     goTo('upload')
   }, [goTo])
 
   // ── Progress bars helper ──
-  const screenOrder: Screen[] = ['upload', 'detect', 'price', 'payment', 'pending', 'review', 'cert', 'done']
   const progressScreens: Screen[] = ['price', 'payment', 'pending', 'review', 'cert', 'done']
   const progressIdx = progressScreens.indexOf(screen)
 
-  const progBar = (n: number) => {
+  const progBar = () => {
     if (progressIdx < 0) return null
     return (
       <div className="tw-progress">
@@ -652,11 +774,73 @@ export function TranslateWizard() {
       {screen === 'detect' && (
         <div className="tw-animate">
           <div className="tw-wrap">
-            <div style={{ height: 60, textAlign: 'center', paddingTop: 40 }}>
-              <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
+            <div style={{ height: 32 }} />
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <div style={{ width: 44, height: 44, border: '4px solid var(--brd)', borderTopColor: 'var(--acc)', borderRadius: '50%', animation: 'tw-spin 1s linear infinite', margin: '0 auto 16px' }} />
               <h2 className="tw-h2">{t['d.title']}</h2>
-              <p className="tw-subtitle">{t['d.sub']}</p>
-              <div style={{ width: 48, height: 48, border: '4px solid var(--brd)', borderTopColor: 'var(--acc)', borderRadius: '50%', animation: 'tw-spin 1s linear infinite', margin: '24px auto 0' }} />
+              <p style={{ fontSize: 14, color: 'var(--ink2)', marginBottom: 24 }}>{t['d.sub']}</p>
+            </div>
+
+            {/* 3 detection cards appearing sequentially */}
+            <div className="tw-detect-cards">
+              <div className={`tw-detect-card${detectStep < 1 ? ' loading' : ''}`} style={{ opacity: detectStep >= 0 ? 1 : 0, transition: 'opacity .4s' }}>
+                <div className="tw-detect-card-icon">📄</div>
+                <div>
+                  <div className="tw-detect-card-label">{t['d.doctype']}</div>
+                  <div className="tw-detect-card-val">{detectStep >= 1 ? t['d.doctype.val'] : '…'}</div>
+                </div>
+                {detectStep >= 1 && <div style={{ marginLeft: 'auto', fontSize: 20 }}>✅</div>}
+              </div>
+
+              <div className={`tw-detect-card${detectStep < 2 ? ' loading' : ''}`} style={{ opacity: detectStep >= 1 ? 1 : 0, transition: 'opacity .4s' }}>
+                <div className="tw-detect-card-icon">🌐</div>
+                <div>
+                  <div className="tw-detect-card-label">{t['d.lang']}</div>
+                  <div className="tw-detect-card-val">{detectStep >= 2 ? t['d.lang.val'] : '…'}</div>
+                </div>
+                {detectStep >= 2 && <div style={{ marginLeft: 'auto', fontSize: 20 }}>✅</div>}
+              </div>
+
+              <div className={`tw-detect-card${detectStep < 3 ? ' loading' : ''}`} style={{ opacity: detectStep >= 2 ? 1 : 0, transition: 'opacity .4s' }}>
+                <div className="tw-detect-card-icon">🔍</div>
+                <div>
+                  <div className="tw-detect-card-label">{t['d.quality']}</div>
+                  <div className="tw-detect-card-val">{detectStep >= 3 ? t['d.quality.val'] : '…'}</div>
+                </div>
+                {detectStep >= 3 && <div style={{ marginLeft: 'auto', fontSize: 20 }}>✅</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── BAD PHOTO ── */}
+      {screen === 'bad-photo' && (
+        <div className="tw-animate">
+          <BackBtn to="upload" />
+          <div className="tw-wrap">
+            <div className="tw-bad-photo">
+              <div className="tw-bad-photo-icon">📷</div>
+              <div className="tw-bad-photo-title">{t['bp.title']}</div>
+              <p className="tw-bad-photo-sub">{t['bp.sub']}</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label className="tw-btn tw-btn-primary" style={{ cursor: 'pointer' }}>
+                  {t['bp.retake']}
+                  <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleUpload} />
+                </label>
+                <label className="tw-btn tw-btn-outline" style={{ cursor: 'pointer' }}>
+                  {t['bp.upload']}
+                  <input type="file" accept="image/*,.pdf,application/pdf" style={{ display: 'none' }} onChange={handleUpload} />
+                </label>
+                <button
+                  className="tw-btn"
+                  style={{ background: 'var(--gold)', color: '#fff', marginTop: 4 }}
+                  onClick={() => { setSelectedPlan('plus'); goTo('payment') }}
+                >
+                  {t['bp.plus']}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -667,16 +851,19 @@ export function TranslateWizard() {
         <div className="tw-animate">
           <BackBtn to="upload" />
           <div className="tw-wrap">
-            {progBar(0)}
+            {progBar()}
 
-            <div className="tw-status">
-              <div className="tw-status-icon">✅</div>
-              <div className="tw-status-title">{t['p.ready']}</div>
-              <div className="tw-status-meta">
-                <span style={{ display: 'block', margin: '4px 0' }}>{t['p.type']}</span>
-                <span style={{ display: 'block', margin: '4px 0' }}>{t['p.lang']}</span>
-                <span style={{ display: 'block', margin: '4px 0' }}>{t['p.quality']}</span>
-              </div>
+            {/* Detection summary — 3 compact chips */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '16px 0' }}>
+              {[
+                { icon: '📄', val: t['d.doctype.val'] },
+                { icon: '🌐', val: t['d.lang.val'] },
+                { icon: '🔍', val: t['d.quality.val'] },
+              ].map((chip, i) => (
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'var(--acc-l)', border: '1px solid var(--acc)', borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 600, color: 'var(--acc)' }}>
+                  {chip.icon} {chip.val}
+                </span>
+              ))}
             </div>
 
             <h2 className="tw-h2">{t['p.choose']}</h2>
@@ -687,10 +874,14 @@ export function TranslateWizard() {
                 className={`tw-plan${plan === 'plus' ? ' rec' : ''}${selectedPlan === plan ? ' sel' : ''}`}
                 onClick={() => handleSelectPlan(plan)}
               >
+                {selectedPlan === plan && <div className="tw-badge-sel">{t['p.selected']}</div>}
                 {plan === 'plus' && <div className="tw-badge">{t['p.rec']}</div>}
                 <div className="tw-plan-name">{plan.charAt(0).toUpperCase() + plan.slice(1)}</div>
                 <div className="tw-plan-price">${prices[plan].toFixed(2)}</div>
                 <div className="tw-plan-desc">{t[`p.${plan === 'premium' ? 'prem' : plan}`]}</div>
+                {(plan === 'plus' || plan === 'premium') && (
+                  <div className="tw-plan-note">{t[`p.${plan}.note`]}</div>
+                )}
               </div>
             ))}
 
@@ -721,7 +912,7 @@ export function TranslateWizard() {
         <div className="tw-animate">
           <BackBtn to="price" />
           <div className="tw-wrap">
-            {progBar(1)}
+            {progBar()}
 
             <h2 className="tw-h2">{t['pay.title']}</h2>
 
@@ -797,7 +988,7 @@ export function TranslateWizard() {
         <div className="tw-animate">
           <BackBtn to="payment" />
           <div className="tw-wrap">
-            {progBar(2)}
+            {progBar()}
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
               <div style={{ fontSize: 64, marginBottom: 16 }}>👤</div>
               <h2 className="tw-h2">{t['pend.title']}</h2>
@@ -823,7 +1014,7 @@ export function TranslateWizard() {
         <div className="tw-animate">
           <BackBtn to={selectedPlan === 'basic' ? 'payment' : 'pending'} />
           <div className="tw-wrap">
-            {progBar(3)}
+            {progBar()}
 
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 32 }}>✅</div>
@@ -884,7 +1075,7 @@ export function TranslateWizard() {
         <div className="tw-animate">
           <BackBtn to="review" />
           <div className="tw-wrap">
-            {progBar(4)}
+            {progBar()}
 
             <h2 className="tw-h2">{t['c.title']}</h2>
             <p className="tw-subtitle">{t['c.sub']}</p>
@@ -995,7 +1186,7 @@ export function TranslateWizard() {
       {screen === 'done' && (
         <div className="tw-animate">
           <div className="tw-wrap">
-            {progBar(5)}
+            {progBar()}
 
             <div style={{ textAlign: 'center', padding: '24px 0' }}>
               <div style={{ fontSize: 64, marginBottom: 12 }}>✅</div>

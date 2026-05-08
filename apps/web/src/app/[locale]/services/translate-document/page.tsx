@@ -113,13 +113,6 @@ export default async function TranslateDocumentPage({ params }: Props) {
               </span>
             </div>
 
-            {/* Primary CTA */}
-            <a
-              href={`/${locale}/services/translate-document/start`}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-base font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[.98] transition-all"
-            >
-              {locale === 'ru' ? 'Начать перевод →' : locale === 'uk' ? 'Почати переклад →' : locale === 'es' ? 'Comenzar traducción →' : 'Start translation →'}
-            </a>
           </div>
         </Container>
       </div>
@@ -190,12 +183,12 @@ export default async function TranslateDocumentPage({ params }: Props) {
         <Container>
           <p className="text-xs text-[var(--text-2)] leading-relaxed max-w-3xl">
             {locale === 'ru'
-              ? 'Messenginfo — не юридическая фирма и не сертифицированное бюро переводов. Мы предоставляем шаблон-черновик перевода для самостоятельной подготовки документов. Шаблон не является юридической консультацией. Перед подачей в USCIS проверьте актуальные требования на uscis.gov. Используя сервис, вы принимаете полную ответственность за содержание и подпись перевода.'
+              ? 'Messenginfo — не юридическая фирма и не агентство переводов. Вы самостоятельно подписываете сертификацию переводчика в соответствии с 8 CFR §103.2(b)(3) и несёте полную ответственность за точность перевода. Это не юридическая консультация. Перед подачей в USCIS проверьте актуальные требования на uscis.gov.'
               : locale === 'uk'
-              ? 'Messenginfo — не юридична фірма і не сертифіковане бюро перекладів. Ми надаємо шаблон-чернетку перекладу для самостійної підготовки документів. Шаблон не є юридичною консультацією. Перед подачею до USCIS перевірте актуальні вимоги на uscis.gov. Використовуючи сервіс, ви приймаєте повну відповідальність за зміст і підпис перекладу.'
+              ? 'Messenginfo — не юридична фірма і не агентство перекладів. Ви самостійно підписуєте сертифікацію перекладача відповідно до 8 CFR §103.2(b)(3) і несете повну відповідальність за точність перекладу. Це не є юридичною консультацією. Перед подачею до USCIS перевірте актуальні вимоги на uscis.gov.'
               : locale === 'es'
-              ? 'Messenginfo no es una firma legal ni una agencia de traducción certificada. Proporcionamos plantillas de traducción en borrador. Esto no constituye asesoría legal. Verifique los requisitos actuales en uscis.gov antes de presentar su solicitud. Al usar el servicio, acepta total responsabilidad por el contenido y firma de la traducción.'
-              : 'Messenginfo is not a law firm and does not provide professional translation services. We provide draft translation templates for self-preparation only. This is not legal advice. Verify current requirements at uscis.gov before filing. By using this service you accept full responsibility for the translation content and signature.'}
+              ? 'Messenginfo no es una firma legal ni una agencia de traducción. Usted firma la certificación del traductor conforme a 8 CFR §103.2(b)(3) y asume total responsabilidad por la exactitud de la traducción. Esto no constituye asesoría legal. Verifique los requisitos actuales en uscis.gov antes de presentar.'
+              : 'Messenginfo is not a law firm and is not a translation agency. You sign the translator certification under 8 CFR §103.2(b)(3) and accept full responsibility for the accuracy of the translation. This is not legal advice. Verify current requirements at uscis.gov before filing.'}
           </p>
         </Container>
       </div>
