@@ -100,22 +100,22 @@ export default async function TranslateDocumentPage({ params }: Props) {
             {/* Trust pills */}
             <div className="flex flex-wrap gap-2 mb-5">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">
-                ✅ {locale === 'ru' ? '$0.00 — бесплатно' : locale === 'uk' ? '$0.00 — безкоштовно' : locale === 'es' ? '$0.00 — gratis' : '$0.00 — free'}
+                ✅ {locale === 'ru' ? 'Принимает USCIS' : locale === 'uk' ? 'Приймає USCIS' : locale === 'es' ? 'Aceptado por USCIS' : 'USCIS accepted'}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
-                ⚡ {locale === 'ru' ? '5 минут' : locale === 'uk' ? '5 хвилин' : locale === 'es' ? '5 minutos' : '5 minutes'}
+                ✍️ {locale === 'ru' ? 'Цифровая подпись' : locale === 'uk' ? 'Цифровий підпис' : locale === 'es' ? 'Firma digital' : 'Digital signature'}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-800">
-                🏛 {locale === 'ru' ? 'Принимает USCIS' : locale === 'uk' ? 'Приймає USCIS' : locale === 'es' ? 'Aceptado por USCIS' : 'USCIS accepted'}
+                📄 {locale === 'ru' ? 'Сертификация 8 CFR §103.2' : locale === 'uk' ? 'Сертифікація 8 CFR §103.2' : locale === 'es' ? 'Certificación 8 CFR §103.2' : '8 CFR §103.2 certified'}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
-                📄 {locale === 'ru' ? 'Только черновик' : locale === 'uk' ? 'Тільки чернетка' : locale === 'es' ? 'Solo borrador' : 'Draft only'}
+                ⚡ {locale === 'ru' ? '5–10 минут' : locale === 'uk' ? '5–10 хвилин' : locale === 'es' ? '5–10 minutos' : '5–10 minutes'}
               </span>
             </div>
 
             {/* Primary CTA */}
             <a
-              href="/translate-wizard.html"
+              href={`/${locale}/services/translate-document/start`}
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-base font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[.98] transition-all"
             >
               {locale === 'ru' ? 'Начать перевод →' : locale === 'uk' ? 'Почати переклад →' : locale === 'es' ? 'Comenzar traducción →' : 'Start translation →'}
@@ -124,11 +124,43 @@ export default async function TranslateDocumentPage({ params }: Props) {
         </Container>
       </div>
 
-      {/* Wizard — v7 standalone (opens full-page wizard) */}
-      <div id="wizard" className="bg-[var(--surface-2)] py-10 text-center">
+      {/* How it works — 3 steps */}
+      <div className="bg-[var(--surface-2)] py-8">
         <Container>
+          <p className="text-xs font-bold text-[var(--text-3)] uppercase tracking-wider mb-4">
+            {locale === 'ru' ? 'Как это работает' : locale === 'uk' ? 'Як це працює' : locale === 'es' ? 'Cómo funciona' : 'How it works'}
+          </p>
+          <div className="flex flex-col gap-4 mb-6">
+            {[
+              {
+                num: '1',
+                title: locale === 'ru' ? 'Загрузите документ' : locale === 'uk' ? 'Завантажте документ' : locale === 'es' ? 'Suba su documento' : 'Upload your document',
+                desc: locale === 'ru' ? 'Сфотографируйте или загрузите файл. Принимаем JPG, PNG, PDF.' : locale === 'uk' ? 'Сфотографуйте або завантажте файл. Приймаємо JPG, PNG, PDF.' : locale === 'es' ? 'Tome una foto o suba el archivo. Aceptamos JPG, PNG, PDF.' : 'Take a photo or upload a file. We accept JPG, PNG, PDF.',
+              },
+              {
+                num: '2',
+                title: locale === 'ru' ? 'Выберите план и оплатите' : locale === 'uk' ? 'Оберіть план і оплатіть' : locale === 'es' ? 'Elija un plan y pague' : 'Choose a plan and pay',
+                desc: locale === 'ru' ? 'Basic ($14.99), Plus ($19.99) или Premium ($29.99). Stripe — безопасная оплата.' : locale === 'uk' ? 'Basic ($14.99), Plus ($19.99) або Premium ($29.99). Stripe — безпечна оплата.' : locale === 'es' ? 'Basic ($14.99), Plus ($19.99) o Premium ($29.99). Stripe — pago seguro.' : 'Basic ($14.99), Plus ($19.99), or Premium ($29.99). Stripe — secure payment.',
+              },
+              {
+                num: '3',
+                title: locale === 'ru' ? 'Подпишите и скачайте PDF' : locale === 'uk' ? 'Підпишіть і завантажте PDF' : locale === 'es' ? 'Firme y descargue el PDF' : 'Sign and download PDF',
+                desc: locale === 'ru' ? 'Нарисуйте подпись онлайн. Сертификация по 8 CFR §103.2(b)(3). PDF отправляется на email.' : locale === 'uk' ? 'Намалюйте підпис онлайн. Сертифікація за 8 CFR §103.2(b)(3). PDF надсилається на email.' : locale === 'es' ? 'Dibuje su firma en línea. Certificación según 8 CFR §103.2(b)(3). PDF enviado al correo.' : 'Draw your signature online. Certified under 8 CFR §103.2(b)(3). PDF sent to your email.',
+              },
+            ].map((step) => (
+              <div key={step.num} className="flex gap-3 items-start">
+                <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {step.num}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[var(--text-1)] mb-0.5">{step.title}</p>
+                  <p className="text-xs text-[var(--text-3)] leading-relaxed">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
           <a
-            href="/translate-wizard.html"
+            href={`/${locale}/services/translate-document/start`}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-bold text-white shadow-md hover:bg-blue-700 active:scale-[.98] transition-all"
           >
             {locale === 'ru' ? 'Начать перевод →' : locale === 'uk' ? 'Почати переклад →' : locale === 'es' ? 'Comenzar traducción →' : 'Start translation →'}
