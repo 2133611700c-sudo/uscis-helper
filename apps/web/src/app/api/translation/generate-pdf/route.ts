@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         <h2 style="color:#1e40af">✅ Your translation certification is ready</h2>
         <p>Hi ${profile.name},</p>
-        <p>Your certified translation document is attached to this email as an HTML file.
+        <p>Your translation document is attached to this email as an HTML file.
            Open it in your browser, then use <strong>File → Print → Save as PDF</strong>
            to create the final PDF for USCIS submission.</p>
         <table style="width:100%;border-collapse:collapse;margin:16px 0">
