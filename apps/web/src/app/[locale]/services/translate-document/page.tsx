@@ -5,7 +5,6 @@ import { getTranslations } from 'next-intl/server'
 import { routing } from '@/i18n/routing'
 import { Container } from '@/components/ui/Container'
 import { IconBadge } from '@/components/ui/IconBadge'
-import { TranslationServiceExperience } from '@/components/services/translation/TranslationServiceExperience'
 import { TranslationSamplePreview } from '@/components/services/translation/TranslationSamplePreview'
 
 interface Props {
@@ -116,7 +115,7 @@ export default async function TranslateDocumentPage({ params }: Props) {
 
             {/* Primary CTA */}
             <a
-              href="#wizard"
+              href="/translate-wizard.html"
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-base font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[.98] transition-all"
             >
               {locale === 'ru' ? 'Начать перевод →' : locale === 'uk' ? 'Почати переклад →' : locale === 'es' ? 'Comenzar traducción →' : 'Start translation →'}
@@ -125,10 +124,15 @@ export default async function TranslateDocumentPage({ params }: Props) {
         </Container>
       </div>
 
-      {/* Wizard — id anchor for CTA scroll (Phase 4) */}
-      <div id="wizard" className="bg-[var(--surface-2)] py-6">
+      {/* Wizard — v7 standalone (opens full-page wizard) */}
+      <div id="wizard" className="bg-[var(--surface-2)] py-10 text-center">
         <Container>
-          <TranslationServiceExperience messages={messages.translationService} />
+          <a
+            href="/translate-wizard.html"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-bold text-white shadow-md hover:bg-blue-700 active:scale-[.98] transition-all"
+          >
+            {locale === 'ru' ? 'Начать перевод →' : locale === 'uk' ? 'Почати переклад →' : locale === 'es' ? 'Comenzar traducción →' : 'Start translation →'}
+          </a>
         </Container>
       </div>
 
