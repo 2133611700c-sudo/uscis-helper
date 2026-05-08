@@ -22,10 +22,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink-1);-w
 .container{max-width:440px;margin:0 auto;padding:20px 20px 0}
 
 /* Header */
-.header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
-.logo{font-family:'Playfair Display',serif;font-size:20px;color:var(--accent);letter-spacing:-.02em}
+.header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px;border-bottom:1px solid rgba(255,255,255,.08);background:#1a1714;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:sticky;top:0;z-index:10}
+.logo img{height:36px;width:auto;display:block}
 .lang-sw{display:flex;gap:4px}
-.lang-sw button{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:var(--ink-2);cursor:pointer;font-family:inherit}
+.lang-sw button{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;font-family:inherit;transition:all .15s}
 .lang-sw button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
 /* Progress */
@@ -148,7 +148,9 @@ h2{font-size:18px;font-weight:700;margin-bottom:12px}
 
 <!-- ========== HEADER ========== -->
 <div class="header">
-  <div class="logo">Messenginfo</div>
+  <a class="logo" href="https://messenginfo.com" aria-label="Messenginfo home">
+    <img src="/brand/messenginfo-full.webp" alt="Messenginfo">
+  </a>
   <div class="lang-sw">
     <button onclick="setLang('uk')" id="lb-uk" class="active">UK</button>
     <button onclick="setLang('ru')" id="lb-ru">RU</button>
