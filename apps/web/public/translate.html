@@ -14,6 +14,12 @@
   --danger:#c44;--danger-light:#fef2f2;
   --radius:14px;--shadow:0 2px 12px rgba(0,0,0,.06);
 }
+html.dark{
+  --bg:#1a1714;--surface:#231f1c;--border:#3a3530;
+  --ink-1:#f0ede8;--ink-2:#9e9890;--ink-3:#6b6560;
+  --accent-light:#1a3328;--gold-light:#2a2115;--danger-light:#2a1515;
+  --shadow:0 2px 12px rgba(0,0,0,.3);
+}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink-1);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 .screen{display:none;min-height:100vh;padding:0 0 40px}
@@ -23,9 +29,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink-1);-w
 
 /* Header */
 .header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px;border-bottom:1px solid rgba(255,255,255,.08);background:#1a1714;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:sticky;top:0;z-index:10}
+html.dark .header{background:#1a1714}
+html:not(.dark) .header{background:#1e1d1b}
 .logo img{height:36px;width:auto;display:block}
+.header-right{display:flex;align-items:center;gap:8px}
+.theme-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 8px;cursor:pointer;font-size:15px;line-height:1;transition:background .15s;color:#fff}
+.theme-btn:hover{background:rgba(255,255,255,.15)}
 .lang-sw{display:flex;gap:4px}
 .lang-sw button{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;font-family:inherit;transition:all .15s}
+.lang-sw button:hover{color:#fff;border-color:rgba(255,255,255,.4)}
 .lang-sw button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
 /* Progress */
@@ -151,11 +163,14 @@ h2{font-size:18px;font-weight:700;margin-bottom:12px}
   <a class="logo" href="https://messenginfo.com" aria-label="Messenginfo home">
     <img src="/brand/messenginfo-full.webp" alt="Messenginfo">
   </a>
-  <div class="lang-sw">
-    <button onclick="setLang('uk')" id="lb-uk" class="active">UK</button>
-    <button onclick="setLang('ru')" id="lb-ru">RU</button>
-    <button onclick="setLang('en')" id="lb-en">EN</button>
-    <button onclick="setLang('es')" id="lb-es">ES</button>
+  <div class="header-right">
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+    <div class="lang-sw">
+      <button onclick="setLang('uk')" id="lb-uk" class="active">UK</button>
+      <button onclick="setLang('ru')" id="lb-ru">RU</button>
+      <button onclick="setLang('en')" id="lb-en">EN</button>
+      <button onclick="setLang('es')" id="lb-es">ES</button>
+    </div>
   </div>
 </div>
 
@@ -916,6 +931,24 @@ function setLang(l){
       else el.innerHTML=T[l][k].replace(/\n/g,'<br>');
     }
   });
+}
+
+// ===== THEME TOGGLE =====
+(function(){
+  var stored=localStorage.getItem('theme');
+  var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var dark=stored==='dark'||(stored===null&&prefersDark);
+  document.documentElement.classList.toggle('dark',dark);
+  document.addEventListener('DOMContentLoaded',function(){
+    var btn=document.getElementById('theme-btn');
+    if(btn)btn.textContent=dark?'☀️':'🌙';
+  });
+})();
+function toggleTheme(){
+  var isDark=document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme',isDark?'dark':'light');
+  var btn=document.getElementById('theme-btn');
+  if(btn)btn.textContent=isDark?'☀️':'🌙';
 }
 
 // ===== CONFIG =====
