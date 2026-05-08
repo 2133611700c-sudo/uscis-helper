@@ -86,6 +86,6 @@ export default async function middleware(req: NextRequest): Promise<NextResponse
 export const config = {
   matcher: [
     // Exclude: API routes, Next.js internals, static files, images, icons, manifests
-    '/((?!api|_next/static|_next/image|favicon\\.ico|favicon\\.png|icon\\.svg|apple-touch-icon\\.png|icons/|og/|sitemap\\.xml|robots\\.txt|manifest\\.webmanifest|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.gif|.*\\.svg).*)',
+    '/((?!api|_next/static|_next/image|favicon\\.ico|favicon\\.png|icon\\.svg|apple-touch-icon\\.png|icons/|og/|sitemap\\.xml|robots\\.txt|manifest\\.webmanifest|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.gif|.*\\.svg|.*\\.html).*)',
   ],
 }
