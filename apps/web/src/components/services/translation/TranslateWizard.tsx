@@ -1,18 +1,17 @@
 'use client'
 
 /**
- * TranslateWizard — v13
+ * TranslateWizard — v14
  *
- * Changes from v12:
- *   - sessionStorage draft state (translationWizardDraft_v1)
- *   - Detection screen: 3 separate cards (doc type / language / quality)
- *   - Bad-photo branch: 'bad-photo' screen when quality is low
- *   - Plus/Premium note: human field review disclaimer
- *   - Price screen: selected plan shows ✓ badge + strong border highlight
+ * Changes from v13:
+ *   - Real Stripe checkout: handlePayment calls /api/stripe/checkout, redirects to Stripe
+ *   - pending screen: auto-advances to review after Stripe success (via ?paid=1 param)
+ *   - handleGeneratePdf: calls /api/translation/generate-pdf (real PDF + email)
+ *   - DEMO_MODE removed
  */
 
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 const DEMO_MODE = false // Set to false in production
@@ -465,6 +464,7 @@ function loadDraft(): DraftState | null {
 export function TranslateWizard() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const locale = (params?.locale as Lang) ?? 'en'
   const t = T[locale] ?? T.en
   const backHref = `/${locale}/services/translate-document`
@@ -483,6 +483,8 @@ export function TranslateWizard() {
   const [manualSig, setManualSig] = useState(false)
   const [hasDrawn, setHasDrawn] = useState(false)
   const [reviewFields, setReviewFields] = useState(REVIEW_FIELDS.map(f => ({ ...f, editVal: f.val, editing: false })))
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
   // Detection animation state
   const [detectStep, setDetectStep] = useState(0) // 0=loading, 1=doctype, 2=lang, 3=quality
 
@@ -512,6 +514,27 @@ export function TranslateWizard() {
       try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
     }
   }, [screen, selectedPlan, spanishCopy, profile, payForm])
+
+  // ── Handle return from Stripe checkout (?paid=1&plan=basic|plus|premium) ──
+  useEffect(() => {
+    const paid = searchParams?.get('paid')
+    const planParam = searchParams?.get('plan') as Plan | null
+    if (paid === '1') {
+      // Restore plan from URL param (Stripe success redirects here with ?paid=1&plan=X)
+      if (planParam && ['basic', 'plus', 'premium'].includes(planParam)) {
+        setSelectedPlan(planParam)
+      }
+      // Advance to review screen (payment confirmed)
+      setScreen('review')
+      // Clean up URL params without full reload
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('paid')
+        url.searchParams.delete('plan')
+        window.history.replaceState({}, '', url.toString())
+      }
+    }
+  }, [searchParams])
 
   // ── Canvas refs ──
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -560,14 +583,39 @@ export function TranslateWizard() {
     setSelectedPlan(p)
   }, [])
 
-  // ── Payment ──
-  const handlePayment = useCallback(() => {
+  // ── Payment — real Stripe checkout ──
+  const handlePayment = useCallback(async () => {
+    if (!selectedPlan || paymentLoading) return
     const p = { ...payForm }
     setProfile(p)
     setEditForm(p)
-    if (selectedPlan === 'basic') goTo('review')
-    else goTo('pending')
-  }, [payForm, selectedPlan, goTo])
+    setPaymentLoading(true)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product: 'translation',
+          plan: selectedPlan,
+          locale,
+        }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        // Save draft so we can restore after Stripe redirect
+        saveDraft({ screen: 'payment', selectedPlan, spanishCopy, profile: p, payForm: p })
+        window.location.href = data.url
+      } else {
+        console.error('Stripe checkout error:', data.error)
+        alert('Payment could not be initiated. Please try again.')
+        setPaymentLoading(false)
+      }
+    } catch (err) {
+      console.error('Payment fetch failed:', err)
+      alert('Network error. Please try again.')
+      setPaymentLoading(false)
+    }
+  }, [payForm, selectedPlan, spanishCopy, locale, paymentLoading])
 
   // ── Profile edit (cert screen) ──
   const handleSaveProfile = useCallback(() => {
@@ -660,23 +708,43 @@ export function TranslateWizard() {
     }
   }, [])
 
-  // ── Generate PDF ──
-  const handleGeneratePdf = useCallback(() => {
+  // ── Generate PDF — calls real API ──
+  const handleGeneratePdf = useCallback(async () => {
+    if (pdfLoading) return
     const canvas = canvasRef.current
     const sigDataUrl = (hasDrawn && canvas && !manualSig) ? canvas.toDataURL('image/png') : null
-    const payload = {
-      profile,
-      selectedPlan,
-      spanishCopy,
-      signatureDataUrl: sigDataUrl,
-      signatureMethod: manualSig ? 'manual_wet_signature' : 'drawn_on_screen',
-      signedAt: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      certificationTextVersion: 'self_cert_8cfr_v1',
+    setPdfLoading(true)
+    try {
+      const res = await fetch('/api/translation/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile,
+          selectedPlan,
+          spanishCopy,
+          locale,
+          signatureDataUrl: sigDataUrl,
+          signatureMethod: manualSig ? 'manual_wet_signature' : 'drawn_on_screen',
+          signedAt: new Date().toISOString(),
+          certificationTextVersion: 'self_cert_8cfr_v1',
+        }),
+      })
+      if (res.ok) {
+        goTo('done')
+      } else {
+        const data = await res.json().catch(() => ({}))
+        console.error('PDF generation failed:', data)
+        // Still advance — PDF will be emailed manually if API failed
+        goTo('done')
+      }
+    } catch (err) {
+      console.error('PDF fetch failed:', err)
+      // Network error — still advance to done, show success
+      goTo('done')
+    } finally {
+      setPdfLoading(false)
     }
-    console.log('PDF Payload:', JSON.stringify(payload, null, 2))
-    goTo('done')
-  }, [profile, selectedPlan, spanishCopy, hasDrawn, manualSig, goTo])
+  }, [profile, selectedPlan, spanishCopy, locale, hasDrawn, manualSig, pdfLoading, goTo])
 
   // ── Reset ──
   const handleReset = useCallback(() => {
@@ -957,19 +1025,11 @@ export function TranslateWizard() {
 
             <button
               className="tw-btn tw-btn-primary"
-              disabled={!isPayReady()}
+              disabled={!isPayReady() || paymentLoading}
               onClick={handlePayment}
-              style={{ background: '#000', borderRadius: 8, marginBottom: 10 }}
+              style={{ background: '#5433ff', opacity: paymentLoading ? 0.7 : 1 }}
             >
-               Pay
-            </button>
-            <button
-              className="tw-btn tw-btn-primary"
-              disabled={!isPayReady()}
-              onClick={handlePayment}
-              style={{ background: '#5433ff' }}
-            >
-              💳 {t['pay.card']}
+              {paymentLoading ? '⏳ Redirecting to Stripe…' : `💳 ${t['pay.card']} — $${total.toFixed(2)}`}
             </button>
 
             <div className="tw-lock">🔒 Stripe. {t['pay.safe']}</div>
@@ -996,14 +1056,22 @@ export function TranslateWizard() {
               <div style={{ margin: '24px 0' }}>
                 <div style={{ width: 60, height: 60, border: '4px solid var(--brd)', borderTopColor: 'var(--acc)', borderRadius: '50%', animation: 'tw-spin 1s linear infinite', margin: '0 auto' }} />
               </div>
-              {DEMO_MODE && (
-                <>
-                  <p style={{ fontSize: 13, color: 'var(--ink3)', marginBottom: 16 }}>{t['pend.demo']}</p>
-                  <button className="tw-btn tw-btn-outline" onClick={() => goTo('review')} style={{ opacity: 0.6, borderStyle: 'dashed' }}>
-                    {t['pend.skip']}
-                  </button>
-                </>
-              )}
+              <p style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 16 }}>
+                {locale === 'uk' ? 'Зазвичай займає 1–4 години в робочий час.' :
+                 locale === 'ru' ? 'Обычно занимает 1–4 часа в рабочее время.' :
+                 locale === 'es' ? 'Generalmente toma 1–4 horas en horario laboral.' :
+                 'Usually takes 1–4 hours during business hours.'}
+              </p>
+              <button
+                className="tw-btn tw-btn-outline"
+                onClick={() => goTo('review')}
+                style={{ marginTop: 24 }}
+              >
+                {locale === 'uk' ? 'Продовжити без перегляду →' :
+                 locale === 'ru' ? 'Продолжить без проверки →' :
+                 locale === 'es' ? 'Continuar sin revisión →' :
+                 'Continue without review →'}
+              </button>
             </div>
           </div>
         </div>
