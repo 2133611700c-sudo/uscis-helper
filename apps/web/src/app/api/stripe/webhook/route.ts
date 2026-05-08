@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event
   try {
     event = stripe.webhooks.constructEvent(body, sig, whsec)
-  } catch {
+  } catch (e) {
+    console.error('[webhook] signature verification failed:', e instanceof Error ? e.message : e)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -25,22 +26,55 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const cs = event.data.object as Stripe.Checkout.Session
-    const wizardSessionId = cs.metadata?.wizard_session_id ?? ''
+    const service     = cs.metadata?.service ?? ''
+    const plan        = cs.metadata?.plan ?? ''
+    const wizardId    = cs.metadata?.wizard_session_id ?? ''
+    const customerEmail = (cs.customer_details as { email?: string } | null)?.email ?? null
 
     after(async () => {
-      const { error } = await supabase.from('audit_log').insert({
+      // ── Audit log for every payment ───────────────────────────────────────
+      await supabase.from('audit_log').insert({
         action: 'stripe_payment_succeeded',
-        target_table: 'wizard_sessions',
-        target_id: wizardSessionId,
+        target_table: service === 'translation' ? 'translation_orders' : 'wizard_sessions',
+        target_id: wizardId || cs.id,
         detail: {
           stripe_checkout_id: cs.id,
           amount_total: cs.amount_total,
-          customer_email: (cs.customer_details as { email?: string } | null)?.email ?? null,
-          service_slug: cs.metadata?.service ?? null,
+          customer_email: customerEmail,
+          service_slug: service,
+          plan,
         },
+      }).then(({ error }) => {
+        if (error) console.error('[webhook] audit_log insert failed:', error.message)
       })
-      if (error) console.error('[audit_log] stripe_payment_succeeded failed:', error.message)
+
+      // ── Translation: update order status to 'emailed' ─────────────────────
+      if (service === 'translation' && customerEmail) {
+        const { error } = await supabase
+          .from('translation_orders')
+          .update({ status: 'emailed', stripe_checkout_id: cs.id })
+          .eq('email', customerEmail)
+          .eq('status', 'signed')
+          .order('created_at', { ascending: false })
+          .limit(1)
+        if (error) console.error('[webhook] translation_orders update failed:', error.message)
+      }
+
+      // ── Re-Parole: update wizard session status ───────────────────────────
+      if (service === 're-parole-u4u' && wizardId) {
+        const { error } = await supabase
+          .from('wizard_sessions')
+          .update({ payment_status: 'paid', stripe_checkout_id: cs.id })
+          .eq('id', wizardId)
+        if (error) console.error('[webhook] wizard_sessions update failed:', error.message)
+      }
     })
+  }
+
+  if (event.type === 'payment_intent.payment_failed') {
+    const pi = event.data.object as Stripe.PaymentIntent
+    console.error('[webhook] payment failed:', pi.id, pi.last_payment_error?.message)
+    // No action needed — user stays on Stripe page and can retry
   }
 
   return NextResponse.json({ received: true })
