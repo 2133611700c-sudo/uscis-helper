@@ -91,7 +91,8 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
   }
 
   const from = getFromAddress()
-  const bcc = getBccAddress()
+  // No BCC on translation_email — client gets their doc, admin gets a separate clean report
+  const bcc = params.type === 'translation_email' ? undefined : getBccAddress()
 
   try {
     const attachments = params.attachment
