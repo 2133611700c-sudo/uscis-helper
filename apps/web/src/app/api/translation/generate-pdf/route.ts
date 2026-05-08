@@ -158,16 +158,30 @@ export async function POST(req: NextRequest) {
     attachment: { filename: 'uscis-translation-certification.html', content: certHtml },
   })
 
-  // ── 3. Admin notification ────────────────────────────────────────────────────
-  const adminEmail = process.env.CONTACT_EMAIL_DESTINATION
-  if (adminEmail) {
-    await sendEmail({
-      to: adminEmail,
-      subject: `[NEW ORDER] Translation ${planLabel} — ${profile.name}`,
-      html: `<pre style="font-family:monospace;font-size:13px">${JSON.stringify({ profile, selectedPlan, spanishCopy, locale, signedAt, signatureMethod: payload.signatureMethod }, null, 2)}</pre>`,
-      type: 'admin_notification',
-    })
-  }
+  // ── 3. Admin report (no attachments, no documents — text summary only) ────────
+  await sendEmail({
+    to: '2133611700uscis@gmail.com',
+    subject: `[NEW ORDER] Translation ${planLabel} — ${profile.name}`,
+    html: `
+      <div style="font-family:monospace;font-size:13px;max-width:600px">
+        <h3 style="font-family:sans-serif;color:#1e40af">📋 New Translation Order</h3>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:6px 12px;background:#f3f4f6;font-weight:700;width:40%">Name</td><td style="padding:6px 12px;border-bottom:1px solid #e5e7eb">${profile.name}</td></tr>
+          <tr><td style="padding:6px 12px;background:#f3f4f6;font-weight:700">Email</td><td style="padding:6px 12px;border-bottom:1px solid #e5e7eb">${profile.email}</td></tr>
+          <tr><td style="padding:6px 12px;background:#f3f4f6;font-weight:700">Phone</td><td style="padding:6px 12px;border-bottom:1px solid #e5e7eb">${profile.phone || '—'}</td></tr>
+          <tr><td style="padding:6px 12px;background:#f3f4f6;font-weight:700">Address</td><td style="padding:6px 12px;border-bottom:1px solid #e5e7eb">${profile.addr || '—'}</td></tr>
+          <tr><td style="padding:6px 12px;background:#f3f4f6;font-weight:700">Plan</td><td style="padding:6px 12px;border-bottom:1px solid #e5e7eb">${planLabel}${spanishCopy ? ' + Spanish Copy' : ''}</td></tr>
+          <tr><td style="padding:6px 12px;background:#f3f4f6;font-weight:700">Locale</td><td style="padding:6px 12px;border-bottom:1px solid #e5e7eb">${locale}</td></tr>
+          <tr><td style="padding:6px 12px;background:#f3f4f6;font-weight:700">Signature</td><td style="padding:6px 12px;border-bottom:1px solid #e5e7eb">${payload.signatureMethod === 'drawn_on_screen' ? 'Digital (drawn)' : 'Manual wet signature'}</td></tr>
+          <tr><td style="padding:6px 12px;background:#f3f4f6;font-weight:700">Signed at</td><td style="padding:6px 12px">${new Date(signedAt).toLocaleString('en-US')}</td></tr>
+        </table>
+        <p style="font-family:sans-serif;font-size:12px;color:#9ca3af;margin-top:16px">
+          ℹ️ Document not attached — client received their certification directly.
+        </p>
+      </div>
+    `,
+    type: 'admin_notification',
+  })
 
   return NextResponse.json({ ok: true })
 }
