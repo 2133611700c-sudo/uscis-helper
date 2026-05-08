@@ -6,6 +6,22 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@uscis-helper/db', '@uscis-helper/shared'],
+
+  async redirects() {
+    return [
+      // 301 redirect from old standalone HTML wizard to new Next.js wizard
+      {
+        source: '/translate-wizard.html',
+        destination: '/en/services/translate-document/start',
+        permanent: true,
+      },
+      {
+        source: '/translate-wizard',
+        destination: '/en/services/translate-document/start',
+        permanent: true,
+      },
+    ]
+  },
 };
 
 const intlConfig = withNextIntl(nextConfig);
