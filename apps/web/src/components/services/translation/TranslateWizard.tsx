@@ -33,20 +33,22 @@ interface Profile {
 const T: Record<Lang, Record<string, string>> = {
   uk: {
     back: '← Назад',
-    'h.title': 'Переведіть документ за кілька хвилин',
-    'h.sub': "Свідоцтво про народження, паспорт, посвідчення — готовий PDF для USCIS, DMV, школи, роботодавця.",
+    'h.title': 'Завантажте документ',
+    'h.sub': "Сфотографуйте або завантажте файл. Ми автоматично визначимо ім'я та дані.",
     'h.photo': 'Сфотографувати', 'h.photo.hint': 'Відкриється камера телефону',
     'h.file': 'Завантажити файл', 'h.file.hint': "Вибрати з фото, файлів або комп'ютера",
     'h.footer': 'Ми перевіримо документ безкоштовно. Переклад — після оплати.',
-    'd.title': 'Перевіряємо документ...',
-    'd.sub': 'Визначаємо тип та перевіряємо якість фото',
+    'd.title': 'Зчитуємо документ...',
+    'd.sub': 'Визначаємо тип, мову та зчитуємо ваші дані',
     'd.doctype': 'Тип документа',
     'd.lang': 'Мова документа',
     'd.quality': 'Якість фото',
+    'd.name': "Ім'я виявлено",
     'd.doctype.val': 'Свідоцтво про народження',
     'd.lang.val': 'Українська',
     'd.quality.val': 'Добра',
     'd.quality.low': 'Недостатня',
+    'pay.autofill': '✓ Зчитано з документа',
     'bp.title': 'Фото нечітке',
     'bp.sub': 'Ми не можемо розпізнати текст. Спробуйте ще раз або продовжте з Plus.',
     'bp.retake': 'Зробити фото ще раз',
@@ -116,15 +118,17 @@ const T: Record<Lang, Record<string, string>> = {
     'h.photo': 'Сфотографировать', 'h.photo.hint': 'Откроется камера телефона',
     'h.file': 'Загрузить файл', 'h.file.hint': 'Выбрать из фото, файлов или компьютера',
     'h.footer': 'Мы проверим документ бесплатно. Перевод — после оплаты.',
-    'd.title': 'Проверяем документ...',
-    'd.sub': 'Определяем тип и проверяем качество фото',
+    'd.title': 'Читаем документ...',
+    'd.sub': 'Определяем тип, язык и считываем ваши данные',
     'd.doctype': 'Тип документа',
     'd.lang': 'Язык документа',
     'd.quality': 'Качество фото',
+    'd.name': 'Имя определено',
     'd.doctype.val': 'Свидетельство о рождении',
     'd.lang.val': 'Украинский',
     'd.quality.val': 'Хорошее',
     'd.quality.low': 'Недостаточное',
+    'pay.autofill': '✓ Считано из документа',
     'bp.title': 'Фото нечёткое',
     'bp.sub': 'Мы не можем распознать текст. Попробуйте ещё раз или продолжите с Plus.',
     'bp.retake': 'Сделать фото ещё раз',
@@ -192,15 +196,17 @@ const T: Record<Lang, Record<string, string>> = {
     'h.photo': 'Take a photo', 'h.photo.hint': 'Opens your phone camera',
     'h.file': 'Upload file', 'h.file.hint': 'Choose from Photos, Files, or computer',
     'h.footer': 'We check your document for free. Translation after payment.',
-    'd.title': 'Checking your document...',
-    'd.sub': 'Detecting type and checking photo quality',
+    'd.title': 'Reading your document...',
+    'd.sub': 'Detecting type, language and extracting your details',
     'd.doctype': 'Document type',
     'd.lang': 'Document language',
     'd.quality': 'Photo quality',
+    'd.name': 'Name detected',
     'd.doctype.val': 'Birth Certificate',
     'd.lang.val': 'Ukrainian',
     'd.quality.val': 'Good',
     'd.quality.low': 'Too low',
+    'pay.autofill': '✓ Extracted from document',
     'bp.title': 'Photo is unclear',
     'bp.sub': 'We cannot read the text reliably. Retake or upload a clearer photo, or continue with Plus for human review.',
     'bp.retake': 'Retake photo',
@@ -268,15 +274,17 @@ const T: Record<Lang, Record<string, string>> = {
     'h.photo': 'Tomar foto', 'h.photo.hint': 'Se abrirá la cámara del teléfono',
     'h.file': 'Subir archivo', 'h.file.hint': 'Elegir desde Fotos, Archivos o computadora',
     'h.footer': 'Verificamos su documento gratis. Traducción después del pago.',
-    'd.title': 'Verificando su documento...',
-    'd.sub': 'Detectando tipo y verificando calidad de foto',
+    'd.title': 'Leyendo su documento...',
+    'd.sub': 'Detectando tipo, idioma y extrayendo sus datos',
     'd.doctype': 'Tipo de documento',
     'd.lang': 'Idioma del documento',
     'd.quality': 'Calidad de foto',
+    'd.name': 'Nombre detectado',
     'd.doctype.val': 'Certificado de Nacimiento',
     'd.lang.val': 'Ucraniano',
     'd.quality.val': 'Buena',
     'd.quality.low': 'Insuficiente',
+    'pay.autofill': '✓ Extraído del documento',
     'bp.title': 'La foto no es clara',
     'bp.sub': 'No podemos leer el texto con claridad. Tome otra foto o continúe con Plus para revisión humana.',
     'bp.retake': 'Tomar otra foto',
@@ -470,11 +478,12 @@ export function TranslateWizard() {
   const backHref = `/${locale}/services/translate-document`
 
   // ── State ──
-  const [screen, setScreen] = useState<Screen>('upload')
+  const [screen, setScreen] = useState<Screen>('price')
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [spanishCopy, setSpanishCopy] = useState(false)
   const [profile, setProfile] = useState<Profile>({ name: '', email: '', phone: '', addr: '' })
   const [payForm, setPayForm] = useState<Profile>({ name: '', email: '', phone: '', addr: '' })
+  const [extractedName, setExtractedName] = useState<string>('')
   const [editForm, setEditForm] = useState<Profile>({ name: '', email: '', phone: '', addr: '' })
   const [showProfileEditor, setShowProfileEditor] = useState(false)
   const [ack1, setAck1] = useState(false)
@@ -569,13 +578,19 @@ export function TranslateWizard() {
   const handleUpload = useCallback(() => {
     setDetectStep(0)
     goTo('detect')
-    // Animate detection cards appearing one by one
+    // Animate detection cards one by one: doctype → lang → quality → name
     setTimeout(() => setDetectStep(1), 700)
     setTimeout(() => setDetectStep(2), 1300)
     setTimeout(() => setDetectStep(3), 1900)
-    // In DEMO_MODE always show "good quality" → price screen
-    // In a real flow, quality check could trigger 'bad-photo'
-    setTimeout(() => goTo('price'), 2800)
+    // Step 4: OCR name extraction (simulated; real = Tesseract result)
+    setTimeout(() => {
+      setDetectStep(4)
+      const extracted = 'SHEVCHENKO TARAS HRYHOROVYCH'
+      setExtractedName(extracted)
+      setPayForm(f => ({ ...f, name: extracted }))
+    }, 2500)
+    // Go straight to payment (plan already chosen on price screen)
+    setTimeout(() => goTo('payment'), 3500)
   }, [goTo])
 
   // ── Plan select ──
@@ -760,14 +775,15 @@ export function TranslateWizard() {
     setManualSig(false)
     setHasDrawn(false)
     setReviewFields(REVIEW_FIELDS.map(f => ({ ...f, editVal: f.val, editing: false })))
+    setExtractedName('')
     initRef.current = false
     ctxRef.current = null
     try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
-    goTo('upload')
+    goTo('price')
   }, [goTo])
 
   // ── Progress bars helper ──
-  const progressScreens: Screen[] = ['price', 'payment', 'pending', 'review', 'cert', 'done']
+  const progressScreens: Screen[] = ['price', 'upload', 'payment', 'pending', 'review', 'cert', 'done']
   const progressIdx = progressScreens.indexOf(screen)
 
   const progBar = () => {
@@ -802,7 +818,7 @@ export function TranslateWizard() {
       {/* ── UPLOAD ── */}
       {screen === 'upload' && (
         <div className="tw-animate">
-          <BackBtn to="landing" />
+          <BackBtn to="price" />
           <div className="tw-wrap">
             <div style={{ height: 16 }} />
             <h1 className="tw-h1">{t['h.title']}</h1>
@@ -877,6 +893,18 @@ export function TranslateWizard() {
                 </div>
                 {detectStep >= 3 && <div style={{ marginLeft: 'auto', fontSize: 20 }}>✅</div>}
               </div>
+
+              {/* 4th card — name extraction */}
+              <div className={`tw-detect-card${detectStep < 4 ? ' loading' : ''}`} style={{ opacity: detectStep >= 3 ? 1 : 0, transition: 'opacity .4s', borderColor: detectStep >= 4 ? 'var(--acc)' : 'var(--brd)', background: detectStep >= 4 ? 'var(--acc-l)' : 'var(--surf)' }}>
+                <div className="tw-detect-card-icon">👤</div>
+                <div style={{ flex: 1 }}>
+                  <div className="tw-detect-card-label">{t['d.name']}</div>
+                  <div className="tw-detect-card-val" style={{ color: detectStep >= 4 ? 'var(--acc)' : 'var(--ink3)' }}>
+                    {detectStep >= 4 ? extractedName : '…'}
+                  </div>
+                </div>
+                {detectStep >= 4 && <div style={{ marginLeft: 'auto', fontSize: 20 }}>✅</div>}
+              </div>
             </div>
           </div>
         </div>
@@ -904,7 +932,7 @@ export function TranslateWizard() {
                 <button
                   className="tw-btn"
                   style={{ background: 'var(--gold)', color: '#fff', marginTop: 4 }}
-                  onClick={() => { setSelectedPlan('plus'); goTo('payment') }}
+                  onClick={() => { setSelectedPlan('plus'); setExtractedName(''); goTo('payment') }}
                 >
                   {t['bp.plus']}
                 </button>
@@ -917,22 +945,9 @@ export function TranslateWizard() {
       {/* ── PRICE ── */}
       {screen === 'price' && (
         <div className="tw-animate">
-          <BackBtn to="upload" />
+          <BackBtn to="landing" />
           <div className="tw-wrap">
             {progBar()}
-
-            {/* Detection summary — 3 compact chips */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '16px 0' }}>
-              {[
-                { icon: '📄', val: t['d.doctype.val'] },
-                { icon: '🌐', val: t['d.lang.val'] },
-                { icon: '🔍', val: t['d.quality.val'] },
-              ].map((chip, i) => (
-                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'var(--acc-l)', border: '1px solid var(--acc)', borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 600, color: 'var(--acc)' }}>
-                  {chip.icon} {chip.val}
-                </span>
-              ))}
-            </div>
 
             <h2 className="tw-h2">{t['p.choose']}</h2>
 
@@ -965,7 +980,7 @@ export function TranslateWizard() {
             <button
               className="tw-btn tw-btn-primary"
               disabled={!selectedPlan}
-              onClick={() => goTo('payment')}
+              onClick={() => goTo('upload')}
             >
               {t['p.btn']}
             </button>
@@ -978,7 +993,7 @@ export function TranslateWizard() {
       {/* ── PAYMENT ── */}
       {screen === 'payment' && (
         <div className="tw-animate">
-          <BackBtn to="price" />
+          <BackBtn to="upload" />
           <div className="tw-wrap">
             {progBar()}
 
@@ -1005,9 +1020,21 @@ export function TranslateWizard() {
               {t['pay.details']}
             </div>
 
-            <label className="tw-input-lbl">{t['c.fname']}</label>
-            <input className="tw-input" value={payForm.name} placeholder="LASTNAME FIRSTNAME PATRONYMIC"
-              onChange={e => setPayForm(f => ({ ...f, name: e.target.value }))} />
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+              <label className="tw-input-lbl" style={{ marginBottom: 0 }}>{t['c.fname']}</label>
+              {extractedName && (
+                <span style={{ fontSize: 11, color: 'var(--acc)', fontWeight: 700, whiteSpace: 'nowrap', marginLeft: 8 }}>
+                  {t['pay.autofill']}
+                </span>
+              )}
+            </div>
+            <input
+              className="tw-input"
+              value={payForm.name}
+              placeholder="LASTNAME FIRSTNAME PATRONYMIC"
+              onChange={e => setPayForm(f => ({ ...f, name: e.target.value }))}
+              style={extractedName ? { borderColor: 'var(--acc)', background: 'var(--acc-l)', fontWeight: 600 } : {}}
+            />
 
             <label className="tw-input-lbl">Email</label>
             <input className="tw-input" type="email" value={payForm.email} placeholder="your@email.com"
