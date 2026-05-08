@@ -15,7 +15,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
-const DEMO_MODE = true // Set to false in production
+const DEMO_MODE = false // Set to false in production
 const DRAFT_KEY = 'translationWizardDraft_v1'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
