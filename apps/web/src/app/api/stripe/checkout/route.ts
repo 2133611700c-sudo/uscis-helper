@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
   // ── Translation ────────────────────────────────────────────────────────────
   if (product === 'translation') {
     const priceId = translationPriceId(plan)
+    const keySnippet = (process.env.STRIPE_SECRET_KEY ?? '').slice(0, 12) + '...' + (process.env.STRIPE_SECRET_KEY ?? '').slice(-4)
+    console.log('[stripe/checkout] translation plan=%s priceId=%s keySnippet=%s keyLen=%d', plan, priceId, keySnippet, (process.env.STRIPE_SECRET_KEY ?? '').length)
     if (!priceId) {
       return NextResponse.json({ error: `Price ID not configured for plan: ${plan}` }, { status: 503 })
     }
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error('[stripe/checkout] translation session create failed:', msg)
-      return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 502 })
+      return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 500 })
     }
 
     const supabase = createAdminSupabaseClient()
@@ -99,7 +101,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[stripe/checkout] reparole session create failed:', msg)
-    return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 502 })
+    return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 500 })
   }
 
   const supabase = createAdminSupabaseClient()
