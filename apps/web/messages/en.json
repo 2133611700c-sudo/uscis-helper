@@ -390,11 +390,11 @@
       "whatHelps": "What this helps with",
       "commonMistakes": "Common mistakes",
       "relatedServices": "Related Services",
-      "translationNotice": "USCIS generally requires a full English translation with translator certification. This page creates a draft for review only."
+      "translationNotice": "USCIS requires a full English translation with a signed certification under 8 CFR §103.2(b)(3). You sign as the translator."
     }
   },
   "translatePage": {
-    "safeStatement": "USCIS generally requires a full English translation with translator certification. This page creates a draft for review only."
+    "safeStatement": "USCIS requires a full English translation with a signed certification under 8 CFR §103.2(b)(3). You sign as the translator. Messenginfo is not a translation agency."
   },
   "askQuestion": {
     "title": "Don't see your question?",
@@ -750,8 +750,8 @@
     "home": "Home",
     "backToServices": "Back to Services",
     "title": "Translate Document",
-    "subtitle": "Get a USCIS-ready translation template in minutes — print, sign, and submit.",
-    "draftOnlyBanner": "USCIS-compliant template — you sign the certification statement.",
+    "subtitle": "Upload your document, sign online, and get a USCIS-ready certified PDF in minutes.",
+    "draftOnlyBanner": "USCIS-accepted — you sign the certification statement under 8 CFR §103.2(b)(3).",
     "chooseDocumentTitle": "Choose your document",
     "chooseDocumentSubtitle": "Select the document type you want to prepare.",
     "startAction": "Start →",
@@ -1033,14 +1033,14 @@
     "result": {
       "placeholderTitle": "Draft flow ready",
       "noBackend": "Your draft flow is ready for the next step. AI generation will be connected after verification.",
-      "draftOnly": "Draft only — no professional translator certification.",
+      "draftOnly": "You self-certify as translator under 8 CFR §103.2(b)(3). Not a professional translation agency.",
       "downloadDraft": "Download Draft PDF",
       "sendToEmail": "Send to Email",
       "startAnother": "Start another document"
     },
     "source": {
       "title": "Official source requirement",
-      "body": "USCIS generally requires foreign-language documents to include a full English translation with translator certification. This tool creates a draft only.",
+      "body": "USCIS generally requires foreign-language documents to include a full English translation with a signed certification under 8 CFR §103.2(b)(3). You sign as the translator.",
       "uscisPolicyManual": "USCIS Policy Manual — Chapter 6 Evidence",
       "ecfr": "8 CFR 103.2(b)(3)",
       "lastCheckedLabel": "Last checked: {date}",
