@@ -24,6 +24,7 @@ export interface SendEmailParams {
   html: string
   text?: string
   type: EmailType
+  attachment?: { filename: string; content: string }
 }
 
 export interface SendEmailResult {
@@ -93,6 +94,10 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
   const bcc = getBccAddress()
 
   try {
+    const attachments = params.attachment
+      ? [{ filename: params.attachment.filename, content: Buffer.from(params.attachment.content, 'utf-8').toString('base64') }]
+      : undefined
+
     const { data, error } = await client.emails.send({
       from,
       to: [params.to],
@@ -100,6 +105,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       subject: params.subject,
       html: params.html,
       text: params.text,
+      attachments,
     })
 
     if (error) {
