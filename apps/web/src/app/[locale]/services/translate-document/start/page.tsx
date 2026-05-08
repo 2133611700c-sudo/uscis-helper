@@ -18,6 +18,7 @@
  */
 
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { TranslateWizard } from '@/components/services/translation/TranslateWizard'
 
 interface Props {
@@ -52,5 +53,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TranslateDocumentStartPage({ params }: Props) {
   // params consumed to satisfy Next.js RSC signature
   await params
-  return <TranslateWizard />
+  return (
+    <Suspense>
+      <TranslateWizard />
+    </Suspense>
+  )
 }
