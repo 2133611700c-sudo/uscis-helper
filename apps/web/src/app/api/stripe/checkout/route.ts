@@ -43,8 +43,6 @@ export async function POST(req: NextRequest) {
   // ── Translation ────────────────────────────────────────────────────────────
   if (product === 'translation') {
     const priceId = translationPriceId(plan)
-    const keySnippet = (process.env.STRIPE_SECRET_KEY ?? '').slice(0, 12) + '...' + (process.env.STRIPE_SECRET_KEY ?? '').slice(-4)
-    console.log('[stripe/checkout] translation plan=%s priceId=%s keySnippet=%s keyLen=%d', plan, priceId, keySnippet, (process.env.STRIPE_SECRET_KEY ?? '').length)
     if (!priceId) {
       return NextResponse.json({ error: `Price ID not configured for plan: ${plan}` }, { status: 503 })
     }
