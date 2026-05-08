@@ -47,14 +47,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Price ID not configured for plan: ${plan}` }, { status: 503 })
     }
 
-    const checkout = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/${locale}/services/translate-document/start?paid=1&plan=${plan}&cs={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${origin}/${locale}/services/translate-document/start?cancelled=1`,
-      metadata: { service: 'translation', plan, wizard_session_id: session_id ?? '' },
-    })
+    let checkout
+    try {
+      checkout = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${origin}/${locale}/services/translate-document/start?paid=1&plan=${plan}&cs={CHECKOUT_SESSION_ID}`,
+        cancel_url:  `${origin}/${locale}/services/translate-document/start?cancelled=1`,
+        metadata: { service: 'translation', plan, wizard_session_id: session_id ?? '' },
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[stripe/checkout] translation session create failed:', msg)
+      return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 502 })
+    }
 
     const supabase = createAdminSupabaseClient()
     after(async () => {
@@ -81,14 +87,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Re-parole price ID not configured' }, { status: 503 })
   }
 
-  const checkout = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    payment_method_types: ['card'],
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/${locale}/services/re-parole-u4u/checkout/success?cs={CHECKOUT_SESSION_ID}&wizard=${session_id}`,
-    cancel_url:  `${origin}/${locale}/services/re-parole-u4u`,
-    metadata: { service: 're-parole-u4u', wizard_session_id: session_id, tier: '1' },
-  })
+  let checkout
+  try {
+    checkout = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${origin}/${locale}/services/re-parole-u4u/checkout/success?cs={CHECKOUT_SESSION_ID}&wizard=${session_id}`,
+      cancel_url:  `${origin}/${locale}/services/re-parole-u4u`,
+      metadata: { service: 're-parole-u4u', wizard_session_id: session_id, tier: '1' },
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[stripe/checkout] reparole session create failed:', msg)
+    return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 502 })
+  }
 
   const supabase = createAdminSupabaseClient()
   after(async () => {
