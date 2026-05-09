@@ -186,9 +186,15 @@ export async function persistExtractedFields(
       combined_bbox:    f.combined_bbox ?? null,    // jsonb [x0,y0,x1,y1] when multi-word
     }))
     // Delete existing rows for this session first (idempotent re-extraction)
-    await supabase.from('extracted_fields').delete().eq('session_id', sessionId)
+    const { error: delErr } = await supabase.from('extracted_fields').delete().eq('session_id', sessionId)
+    if (delErr) console.error('[PacketStateManager] extracted_fields delete error:', delErr)
+
     if (rows.length > 0) {
-      await supabase.from('extracted_fields').insert(rows)
+      const { error: insErr } = await supabase.from('extracted_fields').insert(rows)
+      if (insErr) {
+        console.error('[PacketStateManager] extracted_fields insert error:', JSON.stringify(insErr))
+        throw insErr   // bubble to catch so it's visible in logs
+      }
     }
   } catch (err) {
     console.error('[PacketStateManager] persistExtractedFields failed:', err)
