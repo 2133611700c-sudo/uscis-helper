@@ -1,165 +1,218 @@
 /**
  * apps/web/src/lib/packet/pdf.ts
  *
- * Generate a translation certificate PDF using pdf-lib.
- * The PDF contains:
- *   - Header: Messenginfo branding, document type, language pair
- *   - Certification statement (non-legal disclaimer)
- *   - Table of translated fields
- *   - Footer: order ID, date
+ * Messenginfo Translation Engine v5.0 — Bureau-Style PDF Generator
+ * Uses pdf-lib. Returns Buffer (Node.js compatible).
+ *
+ * Output pages:
+ *   1. Translation header + extracted field table
+ *   2. Certification block (8 CFR §103.2(b)(3)) + typed signature
+ *   3. Source trace table (QA/audit page — last page)
+ *
+ * Hard rules:
+ *   - NO "CERTIFIED COPY" — removed
+ *   - NO "Certified Translation by Messenginfo" — forbidden
+ *   - Certification block references 8 CFR §103.2(b)(3)
+ *   - Human signs; AI drafted
  */
-
-import { PDFDocument, StandardFonts, rgb, PDFPage } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from 'pdf-lib'
 import type { PacketInput } from './types'
 
-const BRAND_COLOR = rgb(0.11, 0.36, 0.73) // #1D5CBB Messenginfo blue
-const TEXT_COLOR = rgb(0.1, 0.1, 0.1)
-const MUTED_COLOR = rgb(0.4, 0.4, 0.4)
-const LINE_COLOR = rgb(0.85, 0.85, 0.85)
+const BRAND_BLUE  = rgb(0.11, 0.36, 0.73)
+const TEXT_DARK   = rgb(0.08, 0.08, 0.08)
+const MUTED       = rgb(0.40, 0.40, 0.40)
+const RULE_COLOR  = rgb(0.82, 0.82, 0.82)
+const WARN_ORANGE = rgb(0.85, 0.45, 0.00)
 
-const MARGIN = 50
-const PAGE_WIDTH = 612  // US Letter
-const PAGE_HEIGHT = 792
+const MARGIN     = 52
+const PAGE_W     = 612   // US Letter
+const PAGE_H     = 792
+const LINE_H     = 16
+const SECTION_GAP = 20
+
+type Ctx = {
+  doc: PDFDocument
+  font: PDFFont
+  bold: PDFFont
+  mono: PDFFont
+}
+
+function clampText(str: string | null | undefined, maxLen = 60): string {
+  const s = String(str ?? '')
+  return s.length > maxLen ? s.slice(0, maxLen - 1) + '…' : s
+}
+
+function drawHRule(page: PDFPage, y: number) {
+  page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.5, color: RULE_COLOR })
+}
+
+function drawText(
+  page: PDFPage,
+  ctx: Ctx,
+  text: string,
+  x: number,
+  y: number,
+  opts: { size?: number; font?: PDFFont; color?: ReturnType<typeof rgb>; maxWidth?: number } = {}
+) {
+  const lines = wrapText(text, opts.maxWidth ?? PAGE_W - x - MARGIN, opts.font ?? ctx.font, opts.size ?? 10)
+  let curY = y
+  for (const line of lines) {
+    page.drawText(line, {
+      x, y: curY,
+      size: opts.size ?? 10,
+      font: opts.font ?? ctx.font,
+      color: opts.color ?? TEXT_DARK,
+    })
+    curY -= LINE_H
+  }
+  return curY
+}
+
+function wrapText(text: string, maxWidth: number, font: PDFFont, size: number): string[] {
+  if (!text) return ['']
+  const words = text.split(' ')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word
+    const w = font.widthOfTextAtSize(test, size)
+    if (w > maxWidth && current) {
+      lines.push(current)
+      current = word
+    } else {
+      current = test
+    }
+  }
+  if (current) lines.push(current)
+  return lines
+}
 
 export async function generateTranslationPDF(input: PacketInput): Promise<Buffer> {
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const mono = await pdfDoc.embedFont(StandardFonts.Courier)
+  const ctx: Ctx = { doc: pdfDoc, font, bold, mono }
 
-  let page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-  let y = PAGE_HEIGHT - MARGIN
+  // ── PAGE 1: Translation ──────────────────────────────────────────────────────
+  let page = pdfDoc.addPage([PAGE_W, PAGE_H])
+  let y = PAGE_H - MARGIN
 
-  function text(
-    p: PDFPage,
-    content: string,
-    x: number,
-    yPos: number,
-    options: { size?: number; font?: typeof fontBold; color?: ReturnType<typeof rgb> } = {}
-  ) {
-    p.drawText(content, {
-      x,
-      y: yPos,
-      size: options.size ?? 11,
-      font: options.font ?? font,
-      color: options.color ?? TEXT_COLOR,
-    })
-  }
-
-  function line(p: PDFPage, yPos: number) {
-    p.drawLine({
-      start: { x: MARGIN, y: yPos },
-      end: { x: PAGE_WIDTH - MARGIN, y: yPos },
-      thickness: 0.5,
-      color: LINE_COLOR,
-    })
-  }
-
-  // ─── Header ───────────────────────────────────────────────────────────────
-  text(page, 'MESSENGINFO', MARGIN, y, { size: 18, font: fontBold, color: BRAND_COLOR })
+  // Header
+  page.drawText('MESSENGINFO', { x: MARGIN, y, size: 18, font: bold, color: BRAND_BLUE })
   y -= 20
-  text(page, 'Document Translation Record', MARGIN, y, { size: 12, color: MUTED_COLOR })
-  y -= 10
-  line(page, y)
-  y -= 20
+  page.drawText('Document Translation Record', { x: MARGIN, y, size: 11, font, color: MUTED })
+  y -= SECTION_GAP
+  drawHRule(page, y); y -= 14
 
-  // ─── Document info ────────────────────────────────────────────────────────
-  const infoItems = [
-    ['Order ID:', input.order_id],
-    ['Document Type:', input.doc_type.replace(/_/g, ' ').toUpperCase()],
-    ['Source Language:', input.source_language.toUpperCase()],
-    ['Target Language:', input.target_language.toUpperCase()],
-    ['Translated At:', input.translated_at.toISOString().split('T')[0]],
+  // Metadata
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  const meta = [
+    ['Translation Scope', clampText(input.scopeTitle, 70)],
+    ['Language Pair', 'Ukrainian → English'],
+    ['Translation Date', today],
+    ['Session Reference', input.sessionId.slice(0, 16)],
   ]
-
-  for (const [label, value] of infoItems) {
-    text(page, label, MARGIN, y, { size: 10, font: fontBold })
-    text(page, value, MARGIN + 120, y, { size: 10 })
-    y -= 16
+  for (const [label, value] of meta) {
+    page.drawText(label + ':', { x: MARGIN, y, size: 9, font: bold, color: MUTED })
+    page.drawText(value, { x: MARGIN + 130, y, size: 9, font, color: TEXT_DARK })
+    y -= LINE_H
   }
+  y -= SECTION_GAP
+  drawHRule(page, y); y -= 16
 
-  y -= 10
-  line(page, y)
-  y -= 20
-
-  // ─── Certification statement ──────────────────────────────────────────────
-  const certStatement =
-    input.certifier_statement ??
-    'This document contains a machine-assisted translation of the original source text. ' +
-    'The translation has been reviewed for accuracy. Per 8 CFR 103.2(b)(3), USCIS generally ' +
-    'requires a complete English translation with a signed self-certification statement. ' +
-    'This is a draft template — the signer must review, complete, and sign the self-certification block. ' +
-    'Consult a licensed immigration attorney for official USCIS submissions.'
-
-  text(page, 'TRANSLATOR STATEMENT', MARGIN, y, { size: 10, font: fontBold, color: BRAND_COLOR })
-  y -= 16
-
-  // Word-wrap statement
-  const words = certStatement.split(' ')
-  let line2 = ''
-  const maxLineWidth = PAGE_WIDTH - MARGIN * 2
-  for (const word of words) {
-    const testLine = line2 ? `${line2} ${word}` : word
-    const testWidth = font.widthOfTextAtSize(testLine, 9)
-    if (testWidth > maxLineWidth && line2) {
-      text(page, line2, MARGIN, y, { size: 9, color: MUTED_COLOR })
-      y -= 13
-      line2 = word
-    } else {
-      line2 = testLine
-    }
-    if (y < MARGIN + 80) {
-      page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-      y = PAGE_HEIGHT - MARGIN
-    }
-  }
-  if (line2) {
-    text(page, line2, MARGIN, y, { size: 9, color: MUTED_COLOR })
-    y -= 13
-  }
-
-  y -= 10
-  line(page, y)
-  y -= 20
-
-  // ─── Fields table ─────────────────────────────────────────────────────────
-  text(page, 'TRANSLATED FIELDS', MARGIN, y, { size: 10, font: fontBold, color: BRAND_COLOR })
-  y -= 18
-
-  // Table header
-  text(page, 'FIELD', MARGIN, y, { size: 9, font: fontBold, color: MUTED_COLOR })
-  text(page, 'SOURCE TEXT', MARGIN + 120, y, { size: 9, font: fontBold, color: MUTED_COLOR })
-  text(page, 'TRANSLATION', MARGIN + 300, y, { size: 9, font: fontBold, color: MUTED_COLOR })
-  y -= 4
-  line(page, y)
-  y -= 12
+  // Field table
+  page.drawText('ENGLISH TRANSLATION', { x: MARGIN, y, size: 12, font: bold, color: TEXT_DARK })
+  y -= SECTION_GAP
 
   for (const field of input.fields) {
-    if (y < MARGIN + 60) {
-      page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-      y = PAGE_HEIGHT - MARGIN
-    }
+    if (!field.normalized_value) continue
+    if (y < MARGIN + 40) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); y = PAGE_H - MARGIN }
 
-    const fieldLabel = field.field_name.replace(/_/g, ' ')
-    text(page, fieldLabel, MARGIN, y, { size: 9 })
-    text(page, field.source_text.slice(0, 30), MARGIN + 120, y, { size: 9 })
-    text(page, field.translated_text.slice(0, 40), MARGIN + 300, y, { size: 9 })
-    y -= 14
+    const label = field.field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    page.drawText(label + ':', { x: MARGIN, y, size: 10, font: bold, color: TEXT_DARK })
+    const endY = drawText(page, ctx, clampText(field.normalized_value, 80), MARGIN + 180, y, { size: 10 })
+    if (field.review_required) {
+      page.drawText('⚠ review', { x: PAGE_W - MARGIN - 60, y, size: 8, font, color: WARN_ORANGE })
+    }
+    y = Math.min(y - LINE_H, endY) - 4
   }
 
-  y -= 10
-  line(page, y)
-  y -= 16
+  y -= SECTION_GAP
+  drawHRule(page, y); y -= 14
 
-  // ─── Footer ───────────────────────────────────────────────────────────────
-  text(page, `Generated by Messenginfo · messenginfo.com · Order ${input.order_id}`, MARGIN, y, {
-    size: 8,
-    color: MUTED_COLOR,
-  })
-  y -= 12
-  text(page, 'NOT LEGAL ADVICE. Translator-signed draft only. For informational purposes only.', MARGIN, y, {
-    size: 8,
-    color: rgb(0.7, 0.1, 0.1),
-  })
+  // Disclaimer
+  const disclaimer = 'Messenginfo is not a law firm. This is an AI-assisted translation draft reviewed and signed by a named human translator. The translator accepts full responsibility for accuracy under 8 CFR §103.2(b)(3). Verify current USCIS requirements at uscis.gov before filing.'
+  y = drawText(page, ctx, disclaimer, MARGIN, y, { size: 8, color: MUTED, maxWidth: PAGE_W - MARGIN * 2 })
+
+  // ── PAGE 2: Certification ────────────────────────────────────────────────────
+  page = pdfDoc.addPage([PAGE_W, PAGE_H])
+  y = PAGE_H - MARGIN
+
+  page.drawText('TRANSLATOR CERTIFICATION', { x: MARGIN, y, size: 14, font: bold, color: TEXT_DARK })
+  y -= 6; drawHRule(page, y); y -= 20
+
+  page.drawText('Self-Certification pursuant to 8 CFR §103.2(b)(3)', { x: MARGIN, y, size: 10, font, color: MUTED })
+  y -= SECTION_GAP * 2
+
+  const cert = input.certificationRecord
+  const statement = cert.statement || `I, ${cert.signer_full_name}, certify that I am competent to translate from Ukrainian to English, and that the attached translation is accurate and complete to the best of my knowledge and belief, pursuant to 8 CFR §103.2(b)(3).`
+  y = drawText(page, ctx, statement, MARGIN, y, { size: 11, maxWidth: PAGE_W - MARGIN * 2 })
+  y -= SECTION_GAP * 2
+
+  // Signer block
+  const certDate = new Date(cert.signed_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  const signerRows = [
+    ['Translator Name', cert.signer_full_name],
+    ['Date', certDate],
+    ...(cert.address ? [['Address', cert.address]] : []),
+    ...(cert.phone ? [['Phone', cert.phone]] : []),
+    ...(cert.email ? [['Email', cert.email]] : []),
+  ]
+  for (const [lbl, val] of signerRows) {
+    page.drawText(lbl + ':', { x: MARGIN, y, size: 10, font: bold, color: TEXT_DARK })
+    page.drawText(val, { x: MARGIN + 140, y, size: 10, font, color: TEXT_DARK })
+    y -= LINE_H + 4
+  }
+  y -= SECTION_GAP
+
+  // Signature line
+  drawHRule(page, y)
+  y -= 14
+  page.drawText('Signature (typed): ' + cert.signature_typed_name, { x: MARGIN, y, size: 11, font, color: TEXT_DARK })
+  y -= LINE_H
+  page.drawText('Certification Version: ' + cert.certification_version, { x: MARGIN, y, size: 8, font, color: MUTED })
+
+  // ── PAGE 3: Source Trace (QA/Audit) ────────────────────────────────────────
+  page = pdfDoc.addPage([PAGE_W, PAGE_H])
+  y = PAGE_H - MARGIN
+
+  page.drawText('SOURCE TRACE — QA/AUDIT RECORD', { x: MARGIN, y, size: 12, font: bold, color: MUTED })
+  y -= 6; drawHRule(page, y); y -= 14
+  page.drawText('This page is for audit purposes. It is not part of the certified translation.', { x: MARGIN, y, size: 8, font, color: MUTED })
+  y -= SECTION_GAP
+
+  for (const trace of input.sourceTraces) {
+    if (y < MARGIN + 30) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); y = PAGE_H - MARGIN }
+    page.drawText(trace.field, { x: MARGIN, y, size: 8, font: bold, color: TEXT_DARK })
+    page.drawText(`zone: ${trace.source_zone}`, { x: MARGIN + 140, y, size: 7, font: mono, color: MUTED })
+    page.drawText(`conf: ${trace.confidence.toFixed(2)}`, { x: MARGIN + 340, y, size: 7, font: mono, color: trace.confidence < 0.70 ? WARN_ORANGE : MUTED })
+    y -= 12
+    page.drawText(`raw: ${clampText(trace.raw_value, 50)}`, { x: MARGIN + 12, y, size: 7, font: mono, color: MUTED })
+    page.drawText(`→ ${clampText(trace.normalized_value, 40)}`, { x: MARGIN + 280, y, size: 7, font: mono, color: TEXT_DARK })
+    y -= LINE_H
+  }
+
+  if (input.qaWarnings && input.qaWarnings.length > 0) {
+    y -= SECTION_GAP
+    page.drawText('QA WARNINGS:', { x: MARGIN, y, size: 8, font: bold, color: WARN_ORANGE })
+    y -= 12
+    for (const w of input.qaWarnings) {
+      if (y < MARGIN + 20) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); y = PAGE_H - MARGIN }
+      page.drawText('• ' + clampText(w, 80), { x: MARGIN + 8, y, size: 7, font, color: WARN_ORANGE })
+      y -= 12
+    }
+  }
 
   const pdfBytes = await pdfDoc.save()
   return Buffer.from(pdfBytes)
