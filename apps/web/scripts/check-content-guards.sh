@@ -101,6 +101,51 @@ else
   ok "Translator Certification Statement (UI string)"
 fi
 
+# ── Rule 8: No UPL / legal advice claims ─────────────────────
+banner "Rule 8 — No UPL / legal-advice phrases in UI"
+UPL_PATTERNS=(
+  "USCIS requires you"
+  "USCIS will accept"
+  "USCIS will reject"
+  "guaranteed acceptance"
+  "will cause denial"
+  "will cause RFE"
+  "RFE will"
+  "legal advice"
+  "must file"
+  "case strategy"
+  "This guarantees acceptance"
+  "This is legally sufficient"
+)
+for PHRASE in "${UPL_PATTERNS[@]}"; do
+  HITS=$(grep -rin "$PHRASE" "$SRC/components" "$SRC/app" "$MSG" 2>/dev/null \
+    | grep -v "FORBIDDEN_PHRASES\|detection-list\|content-guard\|__tests__\|\.test\.ts\|\.spec\.ts" \
+    | grep -vi "not legal advice\|no legal advice\|does not provide legal advice\|is not legal advice\|not a law firm\|is this legal advice\|for legal advice\|not provide legal\|does not.*legal\|is not.*legal\|constitutes legal advice\|WE DO NOT PROVIDE LEGAL\|nothing.*legal advice\|not.*legal advice" \
+    || true)
+  if [ -n "$HITS" ]; then
+    fail "UPL phrase: $PHRASE"
+    echo "$HITS" | sed 's/^/     /'
+  else
+    ok "UPL clean: $PHRASE"
+  fi
+done
+
+# ── Rule 9: No PDF-forbidden phrases in renderer / PDF lib ────
+banner "Rule 9 — No forbidden PDF phrases in renderer/packet"
+PDF_PATTERNS=("CERTIFIED COPY" "Translator Note" "internal QA" "ocr_id" "source trace")
+for PHRASE in "${PDF_PATTERNS[@]}"; do
+  HITS=$(grep -rn "$PHRASE" "$SRC/lib/packet" "$SRC/lib/translation/bureauStyleRenderer.ts" 2>/dev/null \
+    | grep -v "FORBIDDEN_PHRASES\|detection-list\|content-guard\|__tests__\|\.test\.ts" \
+    | grep -v "^\s*[*\/]\|NO.*$PHRASE\|No.*$PHRASE\|no.*$PHRASE\|removed\|NOT.*$PHRASE\|without.*$PHRASE" \
+    || true)
+  if [ -n "$HITS" ]; then
+    fail "PDF forbidden phrase: $PHRASE"
+    echo "$HITS" | sed 's/^/     /'
+  else
+    ok "PDF clean: $PHRASE"
+  fi
+done
+
 # ── Summary ───────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"

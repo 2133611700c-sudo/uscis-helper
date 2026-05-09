@@ -317,8 +317,42 @@ export async function POST(
     return { ...f, normalized_value: normalized }
   })
 
+  // ── 9a. Phase 3: Critical field completeness guard ───────────────────────
+  // All 11 critical fields must have a DB row — even if unreadable.
+  // Missing fields get a review_required placeholder so the Evidence Review
+  // UI can show them and block certification until the user resolves them.
+  const ALL_CRITICAL_FIELDS = [
+    'document_type', 'series', 'number',
+    'surname', 'given_names', 'patronymic',
+    'date_of_birth', 'place_of_birth', 'sex',
+    'issued_by', 'date_of_issue',
+  ] as const
+
+  const presentFieldNames = new Set(processed.map(f => f.field))
+  const missingCritical = ALL_CRITICAL_FIELDS.filter(f => !presentFieldNames.has(f))
+
+  const placeholders: ExtractedField[] = missingCritical.map(f => ({
+    field:            f,
+    source_label:     '',
+    source_zone:      'unknown',
+    bbox:             [0, 0, 0, 0] as [number, number, number, number],
+    raw_value:        '',
+    normalized_value: '',
+    language_layer:   'uk',
+    confidence:       0,
+    review_required:  true,
+    evidence_type:    'zone_fallback',
+    bbox_status:      'missing',
+    ocr_ids:          [],
+  }))
+
+  const withPlaceholders = [...processed, ...placeholders]
+  if (placeholders.length > 0) {
+    console.warn(`[ocr-from-storage] ${sessionId} — ${placeholders.length} critical field(s) not extracted: ${missingCritical.join(', ')}`)
+  }
+
   // ── 9. Persist extracted_fields ───────────────────────────────────────────
-  await persistExtractedFields(sessionId, processed)
+  await persistExtractedFields(sessionId, withPlaceholders)
 
   // Advance session status
   await supabase.from('translation_sessions').update({
@@ -329,8 +363,8 @@ export async function POST(
 
   // Finalise extraction_runs row
   const durationMs      = Date.now() - startMs
-  const ocrConfidence   = processed.length
-    ? processed.reduce((s, f) => s + f.confidence, 0) / processed.length
+  const ocrConfidence   = withPlaceholders.length
+    ? withPlaceholders.reduce((s, f) => s + f.confidence, 0) / withPlaceholders.length
     : 0
 
   await finaliseRun(supabase, runId, 'completed', sessionId, {
@@ -350,11 +384,12 @@ export async function POST(
       run_id: runId, doc_id: doc.id, provider: 'google_vision',
       ocr_words: ocrResult.words.length, ocr_lines: ocrResult.lines.length,
       ocr_processing_ms: ocrResult.processing_ms, total_ms: durationMs,
-      fields_total: processed.length,
-      review_required_count: processed.filter(f => f.review_required).length,
-      bbox_exact:    processed.filter(f => f.bbox_status === 'exact').length,
-      bbox_combined: processed.filter(f => f.bbox_status === 'combined').length,
-      bbox_missing:  processed.filter(f => f.bbox_status === 'missing').length,
+      fields_total: withPlaceholders.length,
+      review_required_count: withPlaceholders.filter(f => f.review_required).length,
+      missing_critical_count: placeholders.length,
+      bbox_exact:    withPlaceholders.filter(f => f.bbox_status === 'exact').length,
+      bbox_combined: withPlaceholders.filter(f => f.bbox_status === 'combined').length,
+      bbox_missing:  withPlaceholders.filter(f => f.bbox_status === 'missing').length,
     },
   })
 
@@ -364,7 +399,7 @@ export async function POST(
     metadata: { run_id: runId, doc_id: doc.id, total_fields: processed.length },
   })
 
-  console.log(`[ocr-from-storage] ${sessionId} — ${processed.length} fields in ${durationMs}ms (ocr=${ocrResult.processing_ms}ms)`)
+  console.log(`[ocr-from-storage] ${sessionId} — ${withPlaceholders.length} fields (${placeholders.length} placeholders) in ${durationMs}ms (ocr=${ocrResult.processing_ms}ms)`)
 
   // ── Return HTTP 200 with extracted fields ────────────────────────────────
   return NextResponse.json({
@@ -375,11 +410,12 @@ export async function POST(
     doc_type: docType,
     provider: 'google_vision',
     ocr_words_count: ocrResult.words.length,
-    fields_count: processed.length,
-    review_required_count: processed.filter(f => f.review_required).length,
+    fields_count: withPlaceholders.length,
+    review_required_count: withPlaceholders.filter(f => f.review_required).length,
+    missing_critical_count: placeholders.length,
     duration_ms: durationMs,
     warnings: [...ocrResult.warnings, ...mapResult.warnings],
-    fields: processed.map(f => ({
+    fields: withPlaceholders.map(f => ({
       field:            f.field,
       raw_value:        f.raw_value,
       normalized_value: f.normalized_value,
