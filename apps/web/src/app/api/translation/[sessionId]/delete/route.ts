@@ -1,5 +1,5 @@
 /**
- * GET /api/translation/[id]/delete?token=<signed-token>
+ * GET /api/translation/[sessionId]/delete?token=<signed-token>
  *
  * On-demand GDPR delete for a specific manual_review_queue case.
  * Called from the delete link in the client confirmation email.
@@ -8,6 +8,10 @@
  * Signed with ADMIN_SECRET. Valid 90 days. Idempotent (already-deleted = ok).
  *
  * On success: redirects to /delete-confirmed page.
+ *
+ * Note: the dynamic segment was renamed from [id] to [sessionId] to avoid a
+ * Next.js App Router conflict with the [sessionId] folder that hosts the
+ * review-state / confirm-field / correct-field routes.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -18,9 +22,9 @@ export const runtime = 'nodejs'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
-  const { id: pathId } = await params
+  const { sessionId: pathId } = await params
   const token = req.nextUrl.searchParams.get('token')
   const secret = process.env.ADMIN_SECRET
 
