@@ -22,19 +22,28 @@
 
 ## Payment Mode Decision
 
-**⚠️ IMPORTANT — DECIDE BEFORE SENDING LINK TO P001:**
+**🚨 BLOCKER — DO NOT SEND P001 LINK UNTIL THIS IS RESOLVED**
 
-Stripe is in LIVE mode (`cs_live_` prefix confirmed in prior smoke test).  
-Real payment will be charged unless one of the following is configured:
-- A Stripe coupon code set to 100% discount
-- A manual `payment_confirmed = true` override in DB (for test only)
-- A mock payment path
+Stripe is in **LIVE mode** (`cs_live_` prefix confirmed in prior smoke test).  
+Real money will be charged to P001 unless one of the options below is implemented first.
 
-**Operator action required:** Decide whether P001 pays real money or gets a manual override.  
-Record decision here before sending user the link.
+### Options (choose exactly one before sending):
+
+| Option | How to implement | Risk |
+|--------|-----------------|------|
+| **A — Stripe 100% coupon** | Create coupon in Stripe dashboard → Products → Coupons. Set 100% off, single-use. Add coupon code to user message. | LOW — Stripe handles it cleanly |
+| **B — DB override** | Set `payment_confirmed = true` in `extraction_runs` for P001's session after upload. Requires operator to watch for session creation and patch DB. | MEDIUM — manual, timing-dependent |
+| **C — P001 pays real money** | No change needed. Inform P001 they will be charged the real price (e.g. $24.99 or applicable plan). Update user message with price. | HIGH — pilot user pays real money |
+| **D — Switch to Stripe TEST mode** | Change `STRIPE_SECRET_KEY` env var in Vercel to `sk_test_...` and redeploy. P001 uses test card `4242 4242 4242 4242`. | MEDIUM — requires redeployment |
+
+### Status: ⛔ UNDECIDED
 
 Decision: _______________  
 Date decided: _______________
+Option chosen: _______________ (A / B / C / D)
+Notes: _______________
+
+**Action: Fill in decision above, then update both user message files accordingly.**
 
 ---
 
