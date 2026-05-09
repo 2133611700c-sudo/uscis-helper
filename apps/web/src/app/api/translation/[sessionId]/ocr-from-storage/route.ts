@@ -57,9 +57,21 @@ const SMART_RETAKE_USER_MESSAGE =
 const COMPRESS_MAX_DIMENSION = 1024
 const COMPRESS_JPEG_QUALITY = 70
 
-// Timeouts for each step (must leave buffer for 202 response + DB writes)
-const DEEPSEEK_TIMEOUT_MS = 25_000   // 25s — leaves room before Vercel 60s limit
-const TESSERACT_TIMEOUT_MS = 15_000  // 15s
+// Timeouts for each step.
+// Total function budget = 60s (Vercel maxDuration, includes after() work).
+// Budget breakdown:
+//   202 response + DB writes        ~2s
+//   Image download + compression    ~3s
+//   DeepSeek Vision call            22s
+//   Status update + audit logs      ~3s
+//   ─────────────────────────────   30s  ← well within 60s limit
+//
+// Tesseract fallback is NOT used in the async pipeline — Tesseract.js
+// cold-loads language models (~15-30s) which would push us past 60s.
+// Tesseract remains available for the synchronous /api/translation/extract
+// testing path. A proper async queue (Inngest/Upstash) can re-enable it later.
+const DEEPSEEK_TIMEOUT_MS = 22_000   // 22s gives 30s+ total headroom
+const TESSERACT_TIMEOUT_MS = 15_000  // kept for reference (not used in async path)
 
 // ── Field templates ───────────────────────────────────────────────────────────
 const UA_PASSPORT_BOOKLET_FIELDS = [
@@ -486,23 +498,14 @@ async function runExtractionPipeline(params: {
     visionResult = (extractionResult as typeof extractionResult & { visionResult?: VisionExtractionResult }).visionResult
   }
 
-  // Step 2: Tesseract fallback (15s timeout)
-  if (!extractionResult.ok || extractionResult.fields.length === 0) {
-    console.warn(`[ocr-pipeline:${runId}] DeepSeek failed, falling back to Tesseract`)
-    const tessResult = await extractWithTesseract({
-      imageBuffer: compressedBuffer,
-      docType,
-      glossaryJson,
-      fieldTemplate,
-    })
-    if (tessResult.ok && tessResult.fields.length > 0) {
-      extractionResult = { ok: true, fields: tessResult.fields }
-      mode = 'tesseract_deepseek'
-      visionResult = tessResult.visionResult
-    }
-  }
+  // Step 2: Tesseract fallback intentionally skipped in async pipeline.
+  // Tesseract.js cold-initialises language packs in 15-30s on first load,
+  // which would push the total function time past the 60s maxDuration and
+  // leave extraction_runs stuck on "processing" with no terminal update.
+  // Tesseract remains available on the synchronous extract route for testing.
+  // TODO: re-enable when migrated to an async queue (Inngest / Upstash).
 
-  // Option D: total failure → manual_review_required
+  // Option D: DeepSeek failed → manual_review_required
   if (!extractionResult.ok || extractionResult.fields.length === 0) {
     await supabase.from('extraction_runs').update({
       status: 'manual_review_required',
