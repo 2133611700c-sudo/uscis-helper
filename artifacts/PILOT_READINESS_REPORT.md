@@ -1,7 +1,7 @@
 # Messenginfo / USCIS Helper — Pilot Readiness Report
 **Date:** 2026-05-09  
 **Branch:** main  
-**HEAD commit:** 6251887  
+**HEAD commit:** 32943be  
 **Reporter:** Automated verification (Claude — lead production engineer role)  
 **Scope:** Ukrainian internal passport translation — controlled pilot (1–3 known users)
 
@@ -9,8 +9,54 @@
 
 ## VERDICT: ✅ PILOT-READY (with one deferred item)
 
-All hard gates pass. Five bugs were found and fixed during this verification run.  
+All hard gates pass. Six bugs were found and fixed during this verification run (5 from prior session + 1 PDF source-trace P0).  
 One item (Playwright mobile screenshots) was not automated — manual spot-check recommended before user #1.
+
+---
+
+## Post-Report Addendum — Glossary + PDF Cleanliness Pass (commit 32943be)
+
+Completed after initial PILOT_READY verdict. All items below were blocking full accuracy compliance.
+
+### A. Customer PDF — SOURCE TRACE page removed (P0)
+
+`apps/web/src/lib/packet/pdf.ts` previously generated a third page titled "SOURCE TRACE - QA/AUDIT RECORD" that included raw OCR confidence scores, zone metadata, and source trace data. This page was visible to customers and violated the product's "audit data stays in DB" rule.
+
+**Fix:** Page 3 generation code (30 lines) removed entirely. PDF is now 2 pages: Translation + Certification. Source trace data is stored exclusively in `extracted_fields` and `audit_logs` tables.
+
+### B. Agency Glossary — Ukrainian militsiya/police era rules
+
+| File | Description |
+|---|---|
+| `ukraine_agency_abbreviations.json` | 25-entry glossary: militsiya-era (РВ, ВМ, МВС/МВД), migration services (ДМС/УДМС/ГУДМС), civil registry (ЗАГС/РАЦС/ДРАЦС), National Police (НПУ/УНП/ГУНП) |
+| `agencyGlossary.ts` | `resolveAgencyAbbr()`, `scanTextForAgencyAbbr()`, `resolveIssuedBy()` with era safety gate |
+| `field-mapper.ts` | `issued_by` and `issuing_authority` fields now run through `resolveIssuedBy()` automatically |
+
+**Era safety rules enforced in code:**
+- Pre-July 2015 documents: militia abbreviations (ВМ, РВ, РВ УМВС, etc.) cannot resolve to "Police" — flagged `militia_era_police_label_rejected`
+- НПУ/УНП/ГУНП on pre-2015 documents: flagged `police_abbr_on_pre2015_doc` + `review_required=true`
+- Unrecognized Cyrillic uppercase sequences: flagged `abbreviation_not_verified` + `review_required=true`
+- МВД (Soviet-era) stays "Ministry of Internal Affairs" — not modernized to Ukrainian МВС
+
+### C. Test count
+
+| Metric | Before | After |
+|---|---|---|
+| Test count | 292 | **325** |
+| Glossary tests (new) | 0 | 33 |
+| TypeScript errors | 0 | 0 |
+| Build | clean | clean |
+
+### D. Security grep (post-addendum)
+
+| Pattern | Result |
+|---|---|
+| `AIza` keys | ✓ Only in test asserting no real key |
+| `sk_live_` Stripe | ✓ None in source |
+| `sk_test_` Stripe | ✓ Only in `.env.example` placeholder |
+| `private_key` literals | ✓ None |
+| DeepSeek `sk-` | ✓ None |
+| `.env` files tracked | ✓ None |
 
 ---
 
@@ -267,7 +313,7 @@ All well under the 10s serverless timeout. Render p95 ~800ms is acceptable for d
 ## Final Checklist
 
 - [x] TypeScript clean
-- [x] 292 tests pass
+- [x] 325 tests pass (292 original + 33 glossary)
 - [x] Build exits 0
 - [x] No hardcoded secrets in repo
 - [x] No .env files tracked
