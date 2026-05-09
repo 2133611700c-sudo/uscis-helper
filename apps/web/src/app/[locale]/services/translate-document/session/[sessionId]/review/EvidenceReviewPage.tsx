@@ -59,9 +59,13 @@ interface ReviewField {
   review_required: boolean
   confirmed: boolean
   confirmed_at: string | null
-  // Phase 1 evidence provenance — null for pre-Phase-1 rows
-  evidence_type: 'full_image' | 'zone_fallback' | null
-  bbox_status: 'exact' | 'approximate' | 'missing' | null
+  // v6 OCR ID evidence
+  ocr_ids?: string[] | null
+  bbox?: [number, number, number, number] | null       // [x0, y0, x1, y1] normalised 0–1
+  combined_bbox?: [number, number, number, number] | null
+  evidence_crop_path?: string | null
+  evidence_type: 'ocr_bbox' | 'combined_ocr_bbox' | 'full_image' | 'zone_fallback' | null
+  bbox_status: 'exact' | 'combined' | 'approximate' | 'missing' | null
   is_critical: boolean
 }
 
@@ -173,11 +177,25 @@ function EvidenceBadge({
   bboxStatus: ReviewField['bbox_status']
 }) {
   if (!evidenceType) return null
-  const isVision = evidenceType === 'full_image'
+
+  const isOcrExact    = evidenceType === 'ocr_bbox'
+  const isOcrCombined = evidenceType === 'combined_ocr_bbox'
+  const isOcr         = isOcrExact || isOcrCombined
+
+  const sourceLabel = isOcrExact    ? '🔍 Word-level OCR' :
+                      isOcrCombined ? '🔍 Multi-word OCR' :
+                      evidenceType === 'full_image' ? '🔍 Vision scan' :
+                      '📝 OCR text'
+
   const bboxLabel =
     bboxStatus === 'exact'       ? '📍 exact position' :
+    bboxStatus === 'combined'    ? '📍 combined position' :
     bboxStatus === 'approximate' ? '📍 approx position' :
                                    '📍 no position'
+
+  const color  = isOcr ? '#166534' : bboxStatus === 'missing' ? '#6b7280' : '#1d4ed8'
+  const bg     = isOcr ? '#dcfce7' : bboxStatus === 'missing' ? '#f3f4f6' : '#eff6ff'
+  const border = isOcr ? '#86efac' : bboxStatus === 'missing' ? '#e5e7eb' : '#bfdbfe'
 
   return (
     <span style={{
@@ -186,13 +204,13 @@ function EvidenceBadge({
       gap: '4px',
       fontSize: '11px',
       fontWeight: 600,
-      color: isVision ? '#1d4ed8' : '#6b7280',
-      background: isVision ? '#eff6ff' : '#f3f4f6',
-      border: `1px solid ${isVision ? '#bfdbfe' : '#e5e7eb'}`,
+      color,
+      background: bg,
+      border: `1px solid ${border}`,
       padding: '2px 7px',
       borderRadius: '20px',
     }}>
-      {isVision ? '🔍 Vision scan' : '📝 OCR text'} · {bboxLabel}
+      {sourceLabel} · {bboxLabel}
     </span>
   )
 }
@@ -497,9 +515,39 @@ function ReviewProgress({ progress, gates }: { progress: ReviewProgress; gates: 
 }
 
 /** Document image viewer */
-function SourceCropViewer({ imageUrl }: { imageUrl: string | null }) {
+/**
+ * SourceCropViewer — shows evidence for a single field.
+ *
+ * Priority:
+ *   1. crop_path exists → show the pre-cropped field image
+ *   2. bbox + imageUrl exists → show full image with highlighted bbox overlay
+ *   3. combined_bbox → same but labelled as multi-word region
+ *   4. zone_fallback / no bbox → show warning + full image
+ *
+ * No JSON or raw coordinates are shown to the user.
+ */
+function SourceCropViewer({
+  imageUrl,
+  field,
+}: {
+  imageUrl: string | null
+  field?: ReviewField | null
+}) {
   const [expanded, setExpanded] = useState(false)
   if (!imageUrl) return null
+
+  const cropPath   = field?.evidence_crop_path ?? null
+  const bbox       = field?.combined_bbox ?? field?.bbox ?? null
+  const bboxStatus = field?.bbox_status
+  const evidenceType = field?.evidence_type
+
+  const hasBbox       = bbox && bboxStatus !== 'missing' && bboxStatus !== null
+  const isZoneFallback = evidenceType === 'zone_fallback' || bboxStatus === 'missing'
+
+  const label = field
+    ? `📄 View source: ${humanField(field.field)}`
+    : '📄 View your document'
+
   return (
     <div style={{ marginBottom: '16px' }}>
       <button
@@ -520,9 +568,10 @@ function SourceCropViewer({ imageUrl }: { imageUrl: string | null }) {
           color: C.text1,
         }}
       >
-        <span>📄 View your document</span>
+        <span>{label}</span>
         <span style={{ fontSize: '20px', color: C.gray }}>{expanded ? '▲' : '▼'}</span>
       </button>
+
       {expanded && (
         <div style={{
           border: `1px solid ${C.border}`,
@@ -530,18 +579,104 @@ function SourceCropViewer({ imageUrl }: { imageUrl: string | null }) {
           borderRadius: '0 0 16px 16px',
           overflow: 'hidden',
           background: '#f3f4f6',
-          textAlign: 'center',
           padding: '12px',
         }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt="Your uploaded document"
-            style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '8px' }}
-          />
-          <p style={{ fontSize: '14px', color: C.gray, marginTop: '8px' }}>
-            Use this image to verify the translation is correct
-          </p>
+
+          {/* Priority 1: pre-cropped field image */}
+          {cropPath && (
+            <div style={{ textAlign: 'center' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={cropPath}
+                alt={`Cropped region for ${field?.field ?? 'field'}`}
+                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '8px', border: '2px solid #86efac' }}
+              />
+              <p style={{ fontSize: '14px', color: '#166534', marginTop: '6px' }}>
+                ✅ Exact field crop — this is the text we read
+              </p>
+            </div>
+          )}
+
+          {/* Priority 2/3: full image with bbox highlight */}
+          {!cropPath && hasBbox && bbox && (
+            <div style={{ position: 'relative', display: 'inline-block', width: '100%', textAlign: 'center' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt="Your uploaded document"
+                style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '8px', display: 'block', margin: '0 auto' }}
+                id={`doc-img-${field?.id ?? 'main'}`}
+              />
+              {/* SVG overlay for bbox highlight */}
+              <svg
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                }}
+              >
+                <rect
+                  x={`${bbox[0] * 100}%`}
+                  y={`${bbox[1] * 100}%`}
+                  width={`${(bbox[2] - bbox[0]) * 100}%`}
+                  height={`${(bbox[3] - bbox[1]) * 100}%`}
+                  fill="rgba(37, 99, 235, 0.15)"
+                  stroke="#2563eb"
+                  strokeWidth="0.5"
+                  rx="0.3"
+                />
+              </svg>
+              <p style={{ fontSize: '14px', color: '#1d4ed8', marginTop: '8px' }}>
+                {bboxStatus === 'combined'
+                  ? '🔍 Blue region = combined area covering this multi-word value'
+                  : '🔍 Blue region = exact location of this field in your document'}
+              </p>
+            </div>
+          )}
+
+          {/* Priority 4: zone fallback — no exact position */}
+          {!cropPath && isZoneFallback && (
+            <div>
+              <div style={{
+                background: '#fef3c7',
+                border: '1px solid #fcd34d',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                marginBottom: '10px',
+                fontSize: '16px',
+                color: '#92400e',
+              }}>
+                ⚠️ We could not isolate this exact field. Please check the full document image below and verify the value is correct.
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl}
+                  alt="Your uploaded document"
+                  style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '8px' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Fallback: no field prop — show plain document */}
+          {!cropPath && !hasBbox && !isZoneFallback && (
+            <div style={{ textAlign: 'center' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt="Your uploaded document"
+                style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '8px' }}
+              />
+              <p style={{ fontSize: '14px', color: C.gray, marginTop: '8px' }}>
+                Use this image to verify the translation is correct
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -709,11 +844,13 @@ function CorrectFieldModal({
 function EvidenceFieldCard({
   field,
   sessionId,
+  documentImageUrl,
   onConfirmed,
   onCorrected,
 }: {
   field: ReviewField
   sessionId: string
+  documentImageUrl?: string | null
   onConfirmed: (fieldName: string) => void
   onCorrected: (fieldName: string, newValue: string) => void
 }) {
@@ -828,6 +965,13 @@ function EvidenceFieldCard({
             )}
           </div>
         </div>
+
+        {/* Per-field source evidence viewer */}
+        {documentImageUrl && (
+          <div style={{ marginTop: '10px', marginBottom: '4px' }}>
+            <SourceCropViewer imageUrl={documentImageUrl} field={field} />
+          </div>
+        )}
 
         {/* Action buttons */}
         {!field.confirmed && (
@@ -1527,6 +1671,7 @@ export function EvidenceReviewPage({
                 key={f.field}
                 field={f}
                 sessionId={sessionId}
+                documentImageUrl={document_image_url}
                 onConfirmed={handleFieldConfirmed}
                 onCorrected={handleFieldCorrected}
               />
@@ -1546,6 +1691,7 @@ export function EvidenceReviewPage({
                 key={f.field}
                 field={f}
                 sessionId={sessionId}
+                documentImageUrl={document_image_url}
                 onConfirmed={handleFieldConfirmed}
                 onCorrected={handleFieldCorrected}
               />

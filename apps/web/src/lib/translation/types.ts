@@ -34,18 +34,21 @@ export type DocumentType =
 
 /**
  * How the field was located in the source image.
- * full_image   — vision model saw the whole image, bbox came from the model
- * zone_fallback — Tesseract/text-only path; no bbox available
+ * ocr_bbox          — exact bbox from a single OCR token (best)
+ * combined_ocr_bbox — union of multiple OCR token bboxes (multi-word value)
+ * full_image        — legacy: vision model saw whole image, bbox from model
+ * zone_fallback     — no bbox available (OCR returned no matching token)
  */
-export type EvidenceType = 'full_image' | 'zone_fallback'
+export type EvidenceType = 'ocr_bbox' | 'combined_ocr_bbox' | 'full_image' | 'zone_fallback'
 
 /**
  * Reliability of the bounding box.
- * exact       — model returned a tight bbox around the field
- * approximate — model returned a bbox but quality is uncertain (e.g. low confidence)
- * missing     — no bbox available (Tesseract path or model refused to emit one)
+ * exact       — single OCR token matched directly
+ * combined    — multiple OCR tokens combined into union bbox
+ * approximate — bbox present but uncertain (legacy vision path)
+ * missing     — no usable bbox; review_required must be true for critical fields
  */
-export type BboxStatus = 'exact' | 'approximate' | 'missing'
+export type BboxStatus = 'exact' | 'combined' | 'approximate' | 'missing'
 
 /**
  * One evidence block from a VisionProvider result.
@@ -66,7 +69,7 @@ export interface EvidenceItem {
  */
 export interface VisionExtractionResult {
   raw_text: string
-  provider: 'deepseek_vision' | 'tesseract_deepseek' | 'manual'
+  provider: 'google_vision' | 'deepseek_vision' | 'tesseract_deepseek' | 'manual'
   ocr_confidence: number         // 0.0–1.0 overall confidence
   pages: number                  // number of pages processed
   warnings: string[]
@@ -102,6 +105,10 @@ export interface ExtractedField {
   language_layer: LanguageLayer
   confidence: number        // 0.0–1.0
   review_required: boolean
+  // ── OCR ID evidence (v6 — Google Vision + DeepSeek Text path) ────────────
+  ocr_ids?: string[]        // IDs from OcrWord/OcrLine that back this field
+  combined_bbox?: [number, number, number, number]  // union of multi-word bboxes when ocr_ids.length > 1
+  // ── Evidence provenance ───────────────────────────────────────────────────
   evidence_crop_path?: string
   evidence_type?: EvidenceType
   bbox_status?: BboxStatus
