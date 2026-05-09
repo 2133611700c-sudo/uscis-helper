@@ -180,7 +180,11 @@ export async function persistExtractedFields(
       confidence:       f.confidence,
       review_required:  f.review_required,
     }))
-    await supabase.from('extracted_fields').upsert(rows, { onConflict: 'session_id,field' })
+    // Delete existing rows for this session first (idempotent re-extraction)
+    await supabase.from('extracted_fields').delete().eq('session_id', sessionId)
+    if (rows.length > 0) {
+      await supabase.from('extracted_fields').insert(rows)
+    }
   } catch (err) {
     console.error('[PacketStateManager] persistExtractedFields failed:', err)
   }
