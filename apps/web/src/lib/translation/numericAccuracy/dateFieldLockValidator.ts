@@ -56,12 +56,15 @@ export const ALL_MONTHS: Readonly<Record<string, string>> = {
 
 // Maps field name → allowed source zone patterns
 const DATE_ZONE_LOCKS: Record<string, string[]> = {
-  date_of_birth:       ['birth_block', 'personal_data', 'dob_line', 'demographic_block'],
-  date_of_issue:       ['issuance_block', 'issue_block', 'validity_block', 'administrative_block'],
-  date_of_expiry:      ['issuance_block', 'validity_block', 'expiry_block'],
-  date_of_marriage:    ['registration_block', 'civil_act_block', 'main_block'],
-  date_of_death:       ['registration_block', 'civil_act_block', 'main_block'],
-  date_of_registration:['registration_block', 'civil_act_block', 'footer_block'],
+  // Passport booklet fields
+  date_of_birth:         ['birth_block', 'personal_data', 'dob_line', 'demographic_block', 'child_block'],
+  date_of_issue:         ['issuance_block', 'issue_block', 'validity_block', 'administrative_block', 'footer_block'],
+  date_of_expiry:        ['issuance_block', 'validity_block', 'expiry_block'],
+  date_of_marriage:      ['registration_block', 'civil_act_block', 'main_block'],
+  date_of_death:         ['registration_block', 'civil_act_block', 'main_block'],
+  date_of_registration:  ['registration_block', 'civil_act_block', 'footer_block'],
+  // Birth certificate fields
+  act_record_date:       ['act_record_block', 'civil_act_block', 'registration_block'],
 }
 
 export interface DateLockResult {
