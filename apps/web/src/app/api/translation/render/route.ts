@@ -176,10 +176,16 @@ export async function POST(req: NextRequest) {
   }
 
   if (unconfirmedCritical.length > 0 || missingCritical.length > 0 || mismatchedFields.length > 0) {
+    // PII-safe: log field names and counts only — never field values
     await supabase.from('audit_logs').insert({
       session_id,
       event_type: 'render_blocked_completeness_audit',
-      metadata: { unconfirmedCritical, missingCritical, mismatchedFields },
+      metadata: {
+        unconfirmed_critical_fields: unconfirmedCritical,
+        missing_critical_fields: missingCritical,
+        mismatched_field_names: mismatchedFields.map(m => m.split(':')[0]),  // field name only, no values
+        mismatched_count: mismatchedFields.length,
+      },
     })
     return NextResponse.json({
       ok: false,
