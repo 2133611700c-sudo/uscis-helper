@@ -19,8 +19,13 @@
  *   - abnormal casing detection
  */
 import { describe, it, expect } from 'vitest'
-import { normalizeDateUkrainian } from '../numericAccuracy/dateFieldLockValidator'
-import { validateDateFieldLock } from '../numericAccuracy/dateFieldLockValidator'
+import {
+  normalizeDateUkrainian,
+  validateDateFieldLock,
+  UKRAINIAN_MONTHS,
+  RUSSIAN_MONTHS,
+  ALL_MONTHS,
+} from '../numericAccuracy/dateFieldLockValidator'
 import { validatePassportPerforation } from '../numericAccuracy/passportPerforationValidator'
 import {
   hasMixedScript,
@@ -32,22 +37,11 @@ import {
 import type { ExtractedField } from '../types'
 import type { OcrResult } from '../../ocr/types'
 
-// ── Ukrainian month map (used by normalizeDateUkrainian) ──────────────────────
-const UA_MONTHS: Record<string, string> = {
-  'січня':'January','лютого':'February','березня':'March','квітня':'April',
-  'травня':'May','червня':'June','липня':'July','серпня':'August',
-  'вересня':'September','жовтня':'October','листопада':'November','грудня':'December',
-}
-
-// ── Russian month map (bilingual fallback) ────────────────────────────────────
-const RU_MONTHS: Record<string, string> = {
-  'января':'January','февраля':'February','марта':'March','апреля':'April',
-  'мая':'May','июня':'June','июля':'July','августа':'August',
-  'сентября':'September','октября':'October','ноября':'November','декабря':'December',
-}
-
-// ── Combined month map for normalizeDateUkrainian ────────────────────────────
-const ALL_MONTHS = { ...UA_MONTHS, ...RU_MONTHS }
+// Month maps are now imported from the canonical source (dateFieldLockValidator.ts).
+// Tests use the exported names directly — do NOT redefine them here.
+// Kept as local aliases for the few tests that use the old names:
+const UA_MONTHS = UKRAINIAN_MONTHS
+const RU_MONTHS = RUSSIAN_MONTHS
 
 // ── Mock OcrResult factory ────────────────────────────────────────────────────
 function makeOcrWord(id: string, text: string, x: number, y: number, w: number, h: number, conf = 0.95) {
