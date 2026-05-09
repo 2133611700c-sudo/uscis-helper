@@ -14,7 +14,36 @@
  *   5. FinalDownloadPanel — render + download PDF button
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+
+// ── Async extraction types ────────────────────────────────────────────────────
+
+type ExtractionRunStatus =
+  | 'queued'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'retake_required'
+  | 'manual_review_required'
+
+interface ExtractionPollResult {
+  ok: boolean
+  extraction_run_id: string
+  session_id: string
+  status: ExtractionRunStatus
+  is_terminal: boolean
+  // completed
+  provider?: string
+  confidence?: number
+  warnings?: string[]
+  fields_count?: number
+  next_step?: string
+  // retake_required / failed / manual_review_required
+  user_message?: string
+  retake_count?: number
+  max_retakes?: number
+  image_quality?: { overall: number; issues: string[] }
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -165,6 +194,250 @@ function EvidenceBadge({
     }}>
       {isVision ? '🔍 Vision scan' : '📝 OCR text'} · {bboxLabel}
     </span>
+  )
+}
+
+// ── Async extraction banner ───────────────────────────────────────────────────
+
+/**
+ * Shows real-time OCR extraction status while the job is running.
+ * Visible states:
+ *   queued / processing  → spinner + "We are reading your document…"
+ *   completed            → success flash (auto-dismisses after 3s)
+ *   retake_required      → user-friendly message + retry button
+ *   failed / manual_review_required → error message + retry / manual options
+ */
+function AsyncExtractionBanner({
+  sessionId,
+  runStatus,
+  onCompleted,
+  onRetake,
+  onDismiss,
+}: {
+  sessionId: string
+  runStatus: ExtractionPollResult | null
+  onCompleted: () => void
+  onRetake: () => void
+  onDismiss: () => void
+}) {
+  if (!runStatus) return null
+
+  // queued or processing
+  if (runStatus.status === 'queued' || runStatus.status === 'processing') {
+    return (
+      <div style={{
+        background: '#eff6ff',
+        border: '2px solid #bfdbfe',
+        borderRadius: '16px',
+        padding: '20px 24px',
+        marginBottom: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+      }}>
+        <div style={{
+          flexShrink: 0,
+          width: '36px',
+          height: '36px',
+          border: '4px solid #bfdbfe',
+          borderTopColor: C.blue,
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <div>
+          <p style={{ fontSize: '18px', fontWeight: 700, color: '#1e40af', margin: '0 0 4px' }}>
+            We are reading your document…
+          </p>
+          <p style={{ fontSize: '15px', color: '#3b82f6', margin: 0 }}>
+            {runStatus.status === 'queued'
+              ? 'Starting up — this usually takes under 30 seconds.'
+              : 'Extraction in progress — please wait, the page will update automatically.'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // completed
+  if (runStatus.status === 'completed') {
+    return (
+      <div style={{
+        background: '#f0fdf4',
+        border: '2px solid #86efac',
+        borderRadius: '16px',
+        padding: '20px 24px',
+        marginBottom: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '16px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span style={{ fontSize: '28px' }}>✅</span>
+          <div>
+            <p style={{ fontSize: '17px', fontWeight: 700, color: C.green, margin: '0 0 2px' }}>
+              Document read successfully!
+            </p>
+            <p style={{ fontSize: '15px', color: '#15803d', margin: 0 }}>
+              {runStatus.fields_count ?? 0} fields extracted.
+              {runStatus.provider === 'tesseract_deepseek' ? ' (OCR text mode used)' : ''}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          style={{
+            flexShrink: 0,
+            padding: '8px 14px',
+            fontSize: '14px',
+            fontWeight: 600,
+            border: '1px solid #86efac',
+            borderRadius: '8px',
+            background: 'transparent',
+            color: C.green,
+            cursor: 'pointer',
+          }}
+        >
+          Dismiss
+        </button>
+      </div>
+    )
+  }
+
+  // retake_required
+  if (runStatus.status === 'retake_required') {
+    return (
+      <div style={{
+        background: '#fffbeb',
+        border: '2px solid #fde68a',
+        borderRadius: '16px',
+        padding: '20px 24px',
+        marginBottom: '16px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '14px' }}>
+          <span style={{ fontSize: '28px', flexShrink: 0 }}>📷</span>
+          <div>
+            <p style={{ fontSize: '17px', fontWeight: 700, color: '#92400e', margin: '0 0 4px' }}>
+              Photo needs to be retaken
+            </p>
+            <p style={{ fontSize: '15px', color: '#b45309', margin: 0, lineHeight: 1.5 }}>
+              {runStatus.user_message ?? 'The photo quality was not sufficient. Please retake with better lighting.'}
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={onRetake}
+            style={{
+              flex: 2,
+              padding: '13px 16px',
+              fontSize: '16px',
+              fontWeight: 700,
+              border: 'none',
+              borderRadius: '10px',
+              background: '#f59e0b',
+              color: '#fff',
+              cursor: 'pointer',
+              minHeight: '44px',
+            }}
+          >
+            📷 Retake photo
+          </button>
+          <a
+            href={`/en/services/translate-document/session/${sessionId}/review`}
+            style={{
+              flex: 1,
+              padding: '13px 16px',
+              fontSize: '15px',
+              fontWeight: 600,
+              border: '2px solid #fde68a',
+              borderRadius: '10px',
+              background: 'transparent',
+              color: '#92400e',
+              cursor: 'pointer',
+              minHeight: '44px',
+              textDecoration: 'none',
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            Use anyway
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  // failed or manual_review_required
+  return (
+    <div style={{
+      background: '#fef2f2',
+      border: '2px solid #fca5a5',
+      borderRadius: '16px',
+      padding: '20px 24px',
+      marginBottom: '16px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '14px' }}>
+        <span style={{ fontSize: '28px', flexShrink: 0 }}>⚠️</span>
+        <div>
+          <p style={{ fontSize: '17px', fontWeight: 700, color: '#991b1b', margin: '0 0 4px' }}>
+            {runStatus.status === 'manual_review_required'
+              ? 'Could not read document automatically'
+              : 'Extraction did not complete'}
+          </p>
+          <p style={{ fontSize: '15px', color: '#b91c1c', margin: 0, lineHeight: 1.5 }}>
+            {runStatus.user_message ??
+              'Please try uploading a clearer photo, or enter the fields manually below.'}
+          </p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <a
+          href={`/en/services/translate-document/start`}
+          style={{
+            flex: 2,
+            padding: '13px 16px',
+            fontSize: '16px',
+            fontWeight: 700,
+            border: 'none',
+            borderRadius: '10px',
+            background: C.red,
+            color: '#fff',
+            cursor: 'pointer',
+            minHeight: '44px',
+            textDecoration: 'none',
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          Upload new photo
+        </a>
+        <button
+          type="button"
+          onClick={onDismiss}
+          style={{
+            flex: 1,
+            padding: '13px 16px',
+            fontSize: '15px',
+            fontWeight: 600,
+            border: '2px solid #fca5a5',
+            borderRadius: '10px',
+            background: 'transparent',
+            color: '#991b1b',
+            cursor: 'pointer',
+            minHeight: '44px',
+          }}
+        >
+          Enter manually
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -969,15 +1242,30 @@ function FinalDownloadPanel({ sessionId }: { sessionId: string }) {
 
 // ── Main EvidenceReviewPage ───────────────────────────────────────────────────
 
+const POLL_INTERVAL_MS = 3_000
+const POLL_MAX_DURATION_MS = 120_000  // 2 min timeout — show manual fallback after this
+const TERMINAL_STATUSES: ExtractionRunStatus[] = [
+  'completed', 'failed', 'retake_required', 'manual_review_required',
+]
+
 export function EvidenceReviewPage({
   sessionId,
   locale,
+  initialRunId,
 }: {
   sessionId: string
   locale: string
+  initialRunId?: string
 }) {
   const [state, setState] = useState<ReviewState | null>(null)
   const [loadError, setLoadError] = useState('')
+
+  // Async OCR polling state
+  const [activeRunId, setActiveRunId] = useState<string | null>(initialRunId ?? null)
+  const [runStatus, setRunStatus] = useState<ExtractionPollResult | null>(null)
+  const [showBanner, setShowBanner] = useState<boolean>(Boolean(initialRunId))
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollStartedAtRef = useRef<number | null>(null)
 
   const loadState = useCallback(async () => {
     try {
@@ -993,6 +1281,72 @@ export function EvidenceReviewPage({
       setLoadError('Could not load your translation. Please refresh the page.')
     }
   }, [sessionId])
+
+  // Polling logic — start when activeRunId is set, stop on terminal state or timeout
+  const stopPolling = useCallback(() => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
+    }
+  }, [])
+
+  const pollOnce = useCallback(async (runId: string) => {
+    // Timeout safety: if polling has exceeded max duration, show manual fallback
+    if (pollStartedAtRef.current && Date.now() - pollStartedAtRef.current > POLL_MAX_DURATION_MS) {
+      stopPolling()
+      setRunStatus(prev => ({
+        ...(prev ?? {
+          ok: true,
+          extraction_run_id: runId,
+          session_id: sessionId,
+          is_terminal: true,
+        }),
+        status: 'manual_review_required' as ExtractionRunStatus,
+        is_terminal: true,
+        user_message:
+          'Extraction is taking longer than expected. ' +
+          'Please try again or enter the fields manually.',
+      }))
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/translation/${sessionId}/extraction-status/${runId}`)
+      if (!res.ok) {
+        // Don't stop polling on transient errors — just skip this tick
+        console.warn(`[poll:${runId}] Status ${res.status}`)
+        return
+      }
+      const data = await res.json() as ExtractionPollResult
+      setRunStatus(data)
+
+      if (data.is_terminal || TERMINAL_STATUSES.includes(data.status)) {
+        stopPolling()
+        // On completion reload the review state to show fresh fields
+        if (data.status === 'completed') {
+          await loadState()
+        }
+      }
+    } catch (err) {
+      console.warn(`[poll:${runId}] Network error:`, err)
+      // Transient error — keep polling
+    }
+  }, [sessionId, stopPolling, loadState])
+
+  // Start polling when activeRunId is set
+  useEffect(() => {
+    if (!activeRunId) return
+
+    pollStartedAtRef.current = Date.now()
+    setShowBanner(true)
+
+    // Poll immediately on mount, then every POLL_INTERVAL_MS
+    pollOnce(activeRunId)
+    pollIntervalRef.current = setInterval(() => pollOnce(activeRunId), POLL_INTERVAL_MS)
+
+    return () => stopPolling()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRunId])
 
   useEffect(() => { loadState() }, [loadState])
 
@@ -1073,6 +1427,18 @@ export function EvidenceReviewPage({
     })
   }
 
+  // Retake: redirect back to upload/start page so user can re-upload
+  function handleRetake() {
+    window.location.href = `/${locale}/services/translate-document/start`
+  }
+
+  // Dismiss banner (e.g., after completion flash or manual fallback)
+  function handleDismissBanner() {
+    setShowBanner(false)
+    setActiveRunId(null)
+    setRunStatus(null)
+  }
+
   // ── Loading ─────────────────────────────────────────────────────────────────
   if (!state && !loadError) {
     return (
@@ -1131,6 +1497,17 @@ export function EvidenceReviewPage({
             {session.scope_title || 'Ukrainian Passport Translation'}
           </p>
         </div>
+
+        {/* Async extraction status banner */}
+        {showBanner && (
+          <AsyncExtractionBanner
+            sessionId={sessionId}
+            runStatus={runStatus}
+            onCompleted={() => setShowBanner(false)}
+            onRetake={handleRetake}
+            onDismiss={handleDismissBanner}
+          />
+        )}
 
         {/* Progress */}
         <ReviewProgress progress={review_progress} gates={gates} />

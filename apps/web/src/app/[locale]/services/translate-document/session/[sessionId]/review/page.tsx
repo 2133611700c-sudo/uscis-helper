@@ -23,6 +23,7 @@ import { EvidenceReviewPage } from './EvidenceReviewPage'
 
 interface Props {
   params: Promise<{ locale: string; sessionId: string }>
+  searchParams: Promise<{ run_id?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -39,11 +40,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ReviewPage({ params }: Props) {
+export default async function ReviewPage({ params, searchParams }: Props) {
   const { locale, sessionId } = await params
+  const { run_id } = await searchParams
   return (
     <Suspense fallback={<LoadingScreen />}>
-      <EvidenceReviewPage sessionId={sessionId} locale={locale} />
+      <EvidenceReviewPage sessionId={sessionId} locale={locale} initialRunId={run_id} />
     </Suspense>
   )
 }

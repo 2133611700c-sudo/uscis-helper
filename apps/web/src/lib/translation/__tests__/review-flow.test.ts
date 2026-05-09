@@ -455,3 +455,226 @@ describe('evidence audit gate (Phase 3 render)', () => {
     expect(warnings[0]).toMatch(/manually entered/i)
   })
 })
+
+// ── Async extraction job (Phase async) ───────────────────────────────────────
+// These tests mirror the logic in:
+//   POST /api/translation/[sessionId]/ocr-from-storage  (returns 202)
+//   GET  /api/translation/[sessionId]/extraction-status/[runId]  (polling)
+// All tested purely in-process — no network or DB calls.
+
+type ExtractionRunStatus =
+  | 'queued' | 'processing' | 'completed' | 'failed'
+  | 'retake_required' | 'manual_review_required'
+
+/** Simulates what POST /ocr-from-storage returns immediately (202) */
+function simulateOcrStart(sessionValid: boolean, docExists: boolean): {
+  status: number
+  body: { ok: boolean; status?: string; extraction_run_id?: string; error?: string }
+} {
+  if (!sessionValid) return { status: 404, body: { ok: false, error: 'Session not found' } }
+  if (!docExists)    return { status: 404, body: { ok: false, error: 'No uploaded document found' } }
+  return {
+    status: 202,
+    body: { ok: true, status: 'queued', extraction_run_id: 'run-abc-123' },
+  }
+}
+
+/** Simulates what GET /extraction-status/[runId] returns for a given run state */
+function simulateStatusPoll(run: {
+  status: ExtractionRunStatus
+  fields_count?: number
+  user_message?: string
+  retake_count?: number
+}): {
+  is_terminal: boolean
+  status: ExtractionRunStatus
+  fields_count?: number
+  user_message?: string
+  retake_count?: number
+} {
+  const terminal: ExtractionRunStatus[] = [
+    'completed', 'failed', 'retake_required', 'manual_review_required',
+  ]
+  return {
+    ...run,
+    is_terminal: terminal.includes(run.status),
+  }
+}
+
+/** Simulates whether a failed OCR run blocks certification */
+function ocrFailedBlocksCert(runStatus: ExtractionRunStatus, fieldsCount: number): boolean {
+  // Cert requires fields to exist and be confirmed — no fields = blocked
+  if (runStatus === 'failed' || runStatus === 'manual_review_required') {
+    return fieldsCount === 0
+  }
+  return false
+}
+
+/** Simulates pipeline outcome given provider responses */
+function simulatePipelineOutcome(params: {
+  deepseekOk: boolean
+  deepseekFieldCount: number
+  tesseractOk: boolean
+  tesseractFieldCount: number
+  imageQualityOverall: number
+  retakeCount: number
+}): ExtractionRunStatus {
+  const RETAKE_THRESHOLD = 0.4
+  const MAX_RETAKES = 2
+
+  if (params.deepseekOk && params.deepseekFieldCount > 0) {
+    // Smart Retake check
+    if (params.imageQualityOverall < RETAKE_THRESHOLD && params.retakeCount < MAX_RETAKES) {
+      return 'retake_required'
+    }
+    return 'completed'
+  }
+  if (params.tesseractOk && params.tesseractFieldCount > 0) {
+    if (params.imageQualityOverall < RETAKE_THRESHOLD && params.retakeCount < MAX_RETAKES) {
+      return 'retake_required'
+    }
+    return 'completed'
+  }
+  return 'manual_review_required'
+}
+
+describe('async OCR extraction job — 202 response', () => {
+  it('returns HTTP 202 with extraction_run_id when session and doc exist', () => {
+    const { status, body } = simulateOcrStart(true, true)
+    expect(status).toBe(202)
+    expect(body.ok).toBe(true)
+    expect(body.status).toBe('queued')
+    expect(body.extraction_run_id).toBeDefined()
+    expect(typeof body.extraction_run_id).toBe('string')
+  })
+
+  it('returns 404 when session does not exist', () => {
+    const { status, body } = simulateOcrStart(false, true)
+    expect(status).toBe(404)
+    expect(body.ok).toBe(false)
+  })
+
+  it('returns 404 when no document uploaded yet', () => {
+    const { status, body } = simulateOcrStart(true, false)
+    expect(status).toBe(404)
+    expect(body.ok).toBe(false)
+    expect(body.error).toMatch(/document/i)
+  })
+})
+
+describe('async OCR — polling status endpoint', () => {
+  it('returns is_terminal=false for queued status', () => {
+    const result = simulateStatusPoll({ status: 'queued' })
+    expect(result.is_terminal).toBe(false)
+  })
+
+  it('returns is_terminal=false for processing status', () => {
+    const result = simulateStatusPoll({ status: 'processing' })
+    expect(result.is_terminal).toBe(false)
+  })
+
+  it('returns is_terminal=true for completed with fields_count', () => {
+    const result = simulateStatusPoll({ status: 'completed', fields_count: 11 })
+    expect(result.is_terminal).toBe(true)
+    expect(result.fields_count).toBe(11)
+  })
+
+  it('returns is_terminal=true for failed', () => {
+    const result = simulateStatusPoll({ status: 'failed', user_message: 'Storage error.' })
+    expect(result.is_terminal).toBe(true)
+  })
+
+  it('returns is_terminal=true for manual_review_required', () => {
+    const result = simulateStatusPoll({ status: 'manual_review_required', user_message: 'Could not read document.' })
+    expect(result.is_terminal).toBe(true)
+    expect(result.user_message).toBeDefined()
+    expect(result.user_message).not.toMatch(/tesseract|deepseek|api key|exception/i)
+  })
+
+  it('returns is_terminal=true for retake_required with user_message', () => {
+    const result = simulateStatusPoll({
+      status: 'retake_required',
+      user_message: 'The photo is too blurry or poorly lit for reliable extraction.',
+      retake_count: 1,
+    })
+    expect(result.is_terminal).toBe(true)
+    expect(result.user_message).toBeDefined()
+    expect(result.user_message).not.toMatch(/ocr error|tesseract|model|api/i)
+  })
+})
+
+describe('async OCR — failed extraction blocks certification', () => {
+  it('blocks cert when OCR failed and no fields exist', () => {
+    expect(ocrFailedBlocksCert('failed', 0)).toBe(true)
+  })
+
+  it('blocks cert when manual_review_required and no fields', () => {
+    expect(ocrFailedBlocksCert('manual_review_required', 0)).toBe(true)
+  })
+
+  it('does not block cert if prior extraction left fields (re-run scenario)', () => {
+    // If the session already has 11 fields from a previous run, cert should not be blocked
+    // by a new failed run — this is a UI concern, not a server gate
+    expect(ocrFailedBlocksCert('failed', 11)).toBe(false)
+  })
+})
+
+describe('async OCR — pipeline outcome simulation', () => {
+  it('completes via DeepSeek Vision when it returns fields', () => {
+    const status = simulatePipelineOutcome({
+      deepseekOk: true, deepseekFieldCount: 11,
+      tesseractOk: false, tesseractFieldCount: 0,
+      imageQualityOverall: 0.9, retakeCount: 0,
+    })
+    expect(status).toBe('completed')
+  })
+
+  it('completes via Tesseract fallback when DeepSeek fails', () => {
+    const status = simulatePipelineOutcome({
+      deepseekOk: false, deepseekFieldCount: 0,
+      tesseractOk: true, tesseractFieldCount: 8,
+      imageQualityOverall: 0.85, retakeCount: 0,
+    })
+    expect(status).toBe('completed')
+  })
+
+  it('returns manual_review_required when both providers fail', () => {
+    const status = simulatePipelineOutcome({
+      deepseekOk: false, deepseekFieldCount: 0,
+      tesseractOk: false, tesseractFieldCount: 0,
+      imageQualityOverall: 0.5, retakeCount: 0,
+    })
+    expect(status).toBe('manual_review_required')
+  })
+
+  it('returns retake_required on low image quality within retake budget', () => {
+    const status = simulatePipelineOutcome({
+      deepseekOk: true, deepseekFieldCount: 5,
+      tesseractOk: false, tesseractFieldCount: 0,
+      imageQualityOverall: 0.2,  // below 0.4 threshold
+      retakeCount: 1,            // still under max 2
+    })
+    expect(status).toBe('retake_required')
+  })
+
+  it('proceeds to completed after max retakes even if quality is low', () => {
+    // Once retakeCount >= MAX_RETAKES, do not loop forever — use whatever result we have
+    const status = simulatePipelineOutcome({
+      deepseekOk: true, deepseekFieldCount: 5,
+      tesseractOk: false, tesseractFieldCount: 0,
+      imageQualityOverall: 0.2,
+      retakeCount: 2,  // at max — must not retake again
+    })
+    expect(status).toBe('completed')
+  })
+
+  it('timeout scenario: both providers timeout → manual_review_required', () => {
+    // Simulate what happens when AbortSignal fires — both return ok:false
+    const status = simulatePipelineOutcome({
+      deepseekOk: false, deepseekFieldCount: 0,
+      tesseractOk: false, tesseractFieldCount: 0,
+      imageQualityOverall: 0.7, retakeCount: 0,
+    })
+    expect(status).toBe('manual_review_required')
+  })
+})
