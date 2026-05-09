@@ -17,16 +17,11 @@ Once you upload, please check every field carefully:
 - Only tap Confirm when the field matches your physical passport exactly
 - Do not sign the certification until all fields match your document
 
-[PAYMENT — OPERATOR: INSERT ONE OF THE FOLLOWING BEFORE SENDING]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Option A (coupon): "Use code [COUPON_CODE] at checkout — your pilot translation is complimentary."
-Option C (real charge): "A fee of $[PRICE] will be charged at checkout."
-Option D (test card): "At payment, use test card 4242 4242 4242 4242, any future expiry, any CVC."
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This is the first test run. No payment is required from you now. We will provide a free pilot code/link and manually review the PDF before delivery.
 
 This tool does not provide legal advice. You are responsible for verifying the translation matches your document before signing.
 
-After you complete the steps, our team will review your document before sending your PDF.
+After you complete the steps, our team will manually review your document before sending your PDF.
 
 If you have questions, reply to this message.
 
