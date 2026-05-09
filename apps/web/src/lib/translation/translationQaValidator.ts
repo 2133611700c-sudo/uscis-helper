@@ -6,11 +6,23 @@
 import { ExtractedField, CertificationRecord, PacketState, QAResult } from './types'
 
 // content-guard: detection-list — these are phrases we DETECT and block, not product claims
+// Phase C: UPL-safe additions — no legal advice, no immigration outcome claims
 const FORBIDDEN_PHRASES = [
+  // Original set
   'USCIS accepted', 'guaranteed', 'approved translation',
   'certified by AI', 'instant certified translation',
   '100% accepted', 'CERTIFIED COPY', 'Round seal',
   'Uploaded image', 'Police Department',
+  // Phase 7: PDF-specific forbidden phrases
+  'CERTIFIED COPY', 'certified copy', 'Page 1', 'Page 2',
+  'Translator Note', 'internal QA', 'source trace', 'ocr_id',
+  // Phase C: UPL-safe — no legal advice or immigration outcome claims
+  'USCIS requires', 'USCIS will accept', 'USCIS will reject',
+  'guaranteed acceptance', 'guaranteed to be accepted',
+  'will cause denial', 'will cause RFE', 'RFE will',
+  'legal advice', 'must file', 'case strategy',
+  'You must file', 'USCIS requires you',
+  'This is legally sufficient', 'This guarantees acceptance',
 ]
 
 const CRITICAL_FIELDS_BY_DOCTYPE: Record<string, string[]> = {
