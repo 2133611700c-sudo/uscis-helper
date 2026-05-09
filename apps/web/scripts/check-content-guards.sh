@@ -60,6 +60,7 @@ fi
 banner "Rule 4 — No 'certified translation' as product claim"
 HITS=$(grep -rn "certified translation" "$SRC/components" "$SRC/app" "$SRC/lib" "$MSG" 2>/dev/null \
   | grep -v "not a certified translation\|not create a certified\|cannot create a certified\|does not produce a certified" \
+  | grep -v "translationQaValidator\|FORBIDDEN_PHRASES\|# content-guard: detection-list" \
   || true)
 if [ -n "$HITS" ]; then
   fail "certified translation (product claim)"

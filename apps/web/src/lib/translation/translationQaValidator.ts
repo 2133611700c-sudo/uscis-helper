@@ -5,6 +5,7 @@
  */
 import { ExtractedField, CertificationRecord, PacketState, QAResult } from './types'
 
+// content-guard: detection-list — these are phrases we DETECT and block, not product claims
 const FORBIDDEN_PHRASES = [
   'USCIS accepted', 'guaranteed', 'approved translation',
   'certified by AI', 'instant certified translation',
