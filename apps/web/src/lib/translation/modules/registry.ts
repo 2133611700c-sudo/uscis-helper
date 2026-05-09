@@ -17,6 +17,8 @@
 import type { DocumentModule } from './types'
 import { passportBookletModule } from './passportBooklet.module'
 import { birthCertificateModule } from './birthCertificate.module'
+import { marriageCertificateModule } from './marriageCertificate.module'
+import { divorceCertificateModule } from './divorceCertificate.module'
 import { manualReviewModule } from './manualReview.module'
 
 // ── Module registry table ─────────────────────────────────────────────────────
@@ -26,6 +28,8 @@ import { manualReviewModule } from './manualReview.module'
 const MODULE_REGISTRY: ReadonlyMap<string, DocumentModule> = new Map([
   [passportBookletModule.documentType, passportBookletModule],
   [birthCertificateModule.documentType, birthCertificateModule],
+  [marriageCertificateModule.documentType, marriageCertificateModule],
+  [divorceCertificateModule.documentType, divorceCertificateModule],
   [manualReviewModule.documentType, manualReviewModule],
 ])
 

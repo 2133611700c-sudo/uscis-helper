@@ -20,6 +20,8 @@ import {
 } from '../registry'
 import { passportBookletModule } from '../passportBooklet.module'
 import { birthCertificateModule } from '../birthCertificate.module'
+import { marriageCertificateModule } from '../marriageCertificate.module'
+import { divorceCertificateModule } from '../divorceCertificate.module'
 import { manualReviewModule } from '../manualReview.module'
 
 // ── findDocumentModule ────────────────────────────────────────────────────────
@@ -40,8 +42,18 @@ describe('findDocumentModule', () => {
     expect(m).toBe(manualReviewModule)
   })
 
-  it('returns null for an unknown document type', () => {
+  it('returns the marriage certificate module for its exact documentType key', () => {
     const m = findDocumentModule('ua_marriage_certificate')
+    expect(m).toBe(marriageCertificateModule)
+  })
+
+  it('returns the divorce certificate module for its exact documentType key', () => {
+    const m = findDocumentModule('ua_divorce_certificate')
+    expect(m).toBe(divorceCertificateModule)
+  })
+
+  it('returns null for a truly unknown document type', () => {
+    const m = findDocumentModule('ua_unknown_document_xyz')
     expect(m).toBeNull()
   })
 
@@ -74,6 +86,18 @@ describe('getDocumentModule', () => {
     expect(birthCertificateModule.status).toBe('active')
     const m = getDocumentModule('ua_birth_certificate')
     expect(m).toBe(birthCertificateModule)
+  })
+
+  it('returns marriageCertificateModule for ua_marriage_certificate (active)', () => {
+    expect(marriageCertificateModule.status).toBe('active')
+    const m = getDocumentModule('ua_marriage_certificate')
+    expect(m).toBe(marriageCertificateModule)
+  })
+
+  it('returns divorceCertificateModule for ua_divorce_certificate (active)', () => {
+    expect(divorceCertificateModule.status).toBe('active')
+    const m = getDocumentModule('ua_divorce_certificate')
+    expect(m).toBe(divorceCertificateModule)
   })
 
   it('returns manualReview for manual_only module (pass-through)', () => {
@@ -115,6 +139,16 @@ describe('listDocumentModules', () => {
     expect(types).toContain('ua_birth_certificate')
   })
 
+  it('includes the marriage certificate module', () => {
+    const types = listDocumentModules().map(m => m.documentType)
+    expect(types).toContain('ua_marriage_certificate')
+  })
+
+  it('includes the divorce certificate module', () => {
+    const types = listDocumentModules().map(m => m.documentType)
+    expect(types).toContain('ua_divorce_certificate')
+  })
+
   it('does NOT include the manualReview sentinel', () => {
     const types = listDocumentModules().map(m => m.documentType)
     expect(types).not.toContain('manual_review_required')
@@ -147,6 +181,16 @@ describe('listActiveModules', () => {
     expect(types).toContain('ua_birth_certificate')
   })
 
+  it('includes the marriage certificate (active)', () => {
+    const types = listActiveModules().map(m => m.documentType)
+    expect(types).toContain('ua_marriage_certificate')
+  })
+
+  it('includes the divorce certificate (active)', () => {
+    const types = listActiveModules().map(m => m.documentType)
+    expect(types).toContain('ua_divorce_certificate')
+  })
+
   it('does NOT include the manualReview module', () => {
     const types = listActiveModules().map(m => m.documentType)
     expect(types).not.toContain('manual_review_required')
@@ -168,8 +212,16 @@ describe('isAutoDraftSupported', () => {
     expect(isAutoDraftSupported('manual_review_required')).toBe(false)
   })
 
-  it('returns false for unknown type', () => {
-    expect(isAutoDraftSupported('ua_marriage_certificate')).toBe(false)
+  it('returns true for marriage certificate (active + allowAutoPdf)', () => {
+    expect(isAutoDraftSupported('ua_marriage_certificate')).toBe(true)
+  })
+
+  it('returns true for divorce certificate (active + allowAutoPdf)', () => {
+    expect(isAutoDraftSupported('ua_divorce_certificate')).toBe(true)
+  })
+
+  it('returns false for truly unknown type', () => {
+    expect(isAutoDraftSupported('ua_unknown_doc_xyz')).toBe(false)
   })
 
   it('returns false for empty string', () => {
@@ -244,6 +296,8 @@ describe('getRegisteredDocumentTypes', () => {
     const types = getRegisteredDocumentTypes()
     expect(types).toContain('ua_internal_passport_booklet')
     expect(types).toContain('ua_birth_certificate')
+    expect(types).toContain('ua_marriage_certificate')
+    expect(types).toContain('ua_divorce_certificate')
     expect(types).toContain('manual_review_required')
   })
 })
