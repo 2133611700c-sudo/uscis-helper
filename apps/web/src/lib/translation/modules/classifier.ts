@@ -63,6 +63,23 @@ const DOCUMENT_TYPE_ALIASES: ReadonlyMap<string, string> = new Map([
   ['свидетельство о расторжении брака', 'ua_divorce_certificate'],
   ['ua_divorce',                    'ua_divorce_certificate'],
 
+  // ── ua_international_passport ─────────────────────────────────────────────
+  ['ua_international_passport',     'ua_international_passport'],
+  ['international_passport',        'ua_international_passport'],
+  ['ua_intl_passport',              'ua_international_passport'],
+  ['закордонний паспорт',           'ua_international_passport'],
+  ['загранпаспорт',                 'ua_international_passport'],
+  ['закордонний паспорт україни',   'ua_international_passport'],
+
+  // ── ua_id_card ────────────────────────────────────────────────────────────
+  ['ua_id_card',                    'ua_id_card'],
+  ['id_card',                       'ua_id_card'],
+  ['id card',                       'ua_id_card'],
+  ['ukrainian id card',             'ua_id_card'],
+  ['посвідчення особи',             'ua_id_card'],
+  ['id-картка',                     'ua_id_card'],
+  ['ідентифікаційна картка',        'ua_id_card'],
+
   // ── manual_review_required (explicit escalation) ─────────────────────────
   ['manual_review_required',        'manual_review_required'],
   ['manual_review',                 'manual_review_required'],

@@ -367,6 +367,8 @@ describe('getAliasTable', () => {
       'ua_birth_certificate',
       'ua_marriage_certificate',
       'ua_divorce_certificate',
+      'ua_international_passport',
+      'ua_id_card',
       'manual_review_required',
     ])
     for (const val of getAliasTable().values()) {
