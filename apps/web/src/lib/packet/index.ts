@@ -32,7 +32,7 @@ export async function generateFullPacket(input: PacketInput): Promise<PacketOutp
     // 1. Generate PDF
     const pdfBuffer = await generateTranslationPDF(input)
     files.push({
-      filename: `translation_${input.order_id}.pdf`,
+      filename: `translation_${input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A'}.pdf`,
       contentType: 'application/pdf',
       buffer: pdfBuffer,
     })
@@ -40,7 +40,7 @@ export async function generateFullPacket(input: PacketInput): Promise<PacketOutp
     // 2. Generate DOCX
     const docxBuffer = await generateDraftDOCX(input)
     files.push({
-      filename: `translation_${input.order_id}.docx`,
+      filename: `translation_${input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A'}.docx`,
       contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       buffer: docxBuffer,
     })
@@ -48,13 +48,13 @@ export async function generateFullPacket(input: PacketInput): Promise<PacketOutp
     // 3. Create ZIP
     const zipBuffer = await createPacketZIP(files)
     const zipFile: DocumentFile = {
-      filename: `packet_${input.order_id}.zip`,
+      filename: `packet_${input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A'}.zip`,
       contentType: 'application/zip',
       buffer: zipBuffer,
     }
 
     // 4. Upload to Supabase Storage
-    const storageKey = `${input.order_id}/packet.zip`
+    const storageKey = `${input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A'}/packet.zip`
     let signedUrl: string | undefined
     let expiresAt: Date | undefined
 
@@ -90,10 +90,10 @@ export async function generateFullPacket(input: PacketInput): Promise<PacketOutp
             .from('translation_orders')
             .update({
               storage_key: storageKey,
-              pdf_storage_key: `${input.order_id}/translation_${input.order_id}.pdf`,
+              pdf_storage_key: `${input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A'}/translation_${input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A'}.pdf`,
               updated_at: new Date().toISOString(),
             })
-            .eq('order_id', input.order_id)
+            .eq('order_id', input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A')
         }
       }
     } catch (storageErr: unknown) {
@@ -104,7 +104,7 @@ export async function generateFullPacket(input: PacketInput): Promise<PacketOutp
 
     return {
       ok: true,
-      orderId: input.order_id,
+      orderId: input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A',
       files: [...files, zipFile],
       signedUrl,
       expiresAt,
@@ -114,7 +114,7 @@ export async function generateFullPacket(input: PacketInput): Promise<PacketOutp
     console.error('[packet] generation error:', msg)
     return {
       ok: false,
-      orderId: input.order_id,
+      orderId: input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A',
       files,
       error: `Packet generation failed: ${msg}`,
     }
