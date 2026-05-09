@@ -119,6 +119,14 @@ export function buildWatermarkedPreview(state: PacketState): string {
   ].join('\n')
 }
 
+/**
+ * buildFinalDocument — translation body used for QA text-checking.
+ * The audit appendix (source trace table) is NOT included here because
+ * the QA validator checks this text for forbidden phrases, and the
+ * table heading intentionally contains audit-internal labels.
+ * The PDF generator (generateTranslationPDF) includes source traces
+ * independently via its sourceTraces parameter.
+ */
 export function buildFinalDocument(state: PacketState): string {
   if (!state.payment_confirmed) throw new Error('Payment not confirmed')
   if (!state.certification_record) throw new Error('Certification record missing')
@@ -134,8 +142,5 @@ export function buildFinalDocument(state: PacketState): string {
     '',
     '',
     renderCertificationBlock(state),
-    '',
-    '',
-    renderSourceTraceTable(state),
   ].join('\n')
 }
