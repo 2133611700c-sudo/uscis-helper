@@ -40,12 +40,28 @@ const DOCUMENT_TYPE_ALIASES: ReadonlyMap<string, string> = new Map([
   ['паспорт громадянина україни',   'ua_internal_passport_booklet'],
   ['паспорт гражданина украины',    'ua_internal_passport_booklet'],
 
-  // ── ua_birth_certificate (draft — will route to manualReview) ────────────
+  // ── ua_birth_certificate ─────────────────────────────────────────────────
   ['ua_birth_certificate',          'ua_birth_certificate'],
   ['birth_certificate',             'ua_birth_certificate'],
   ['birth certificate',             'ua_birth_certificate'],
   ['свідоцтво про народження',      'ua_birth_certificate'],
   ['свидетельство о рождении',      'ua_birth_certificate'],
+
+  // ── ua_marriage_certificate ───────────────────────────────────────────────
+  ['ua_marriage_certificate',       'ua_marriage_certificate'],
+  ['marriage_certificate',          'ua_marriage_certificate'],
+  ['marriage certificate',          'ua_marriage_certificate'],
+  ['свідоцтво про шлюб',            'ua_marriage_certificate'],
+  ['свидетельство о браке',         'ua_marriage_certificate'],
+  ['ua_marriage',                   'ua_marriage_certificate'],
+
+  // ── ua_divorce_certificate ────────────────────────────────────────────────
+  ['ua_divorce_certificate',        'ua_divorce_certificate'],
+  ['divorce_certificate',           'ua_divorce_certificate'],
+  ['divorce certificate',           'ua_divorce_certificate'],
+  ['свідоцтво про розірвання шлюбу', 'ua_divorce_certificate'],
+  ['свидетельство о расторжении брака', 'ua_divorce_certificate'],
+  ['ua_divorce',                    'ua_divorce_certificate'],
 
   // ── manual_review_required (explicit escalation) ─────────────────────────
   ['manual_review_required',        'manual_review_required'],

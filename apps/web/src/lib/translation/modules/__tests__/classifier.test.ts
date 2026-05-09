@@ -11,6 +11,8 @@ import {
   getAliasTable,
 } from '../classifier'
 import { passportBookletModule } from '../passportBooklet.module'
+import { marriageCertificateModule } from '../marriageCertificate.module'
+import { divorceCertificateModule } from '../divorceCertificate.module'
 import { manualReviewModule } from '../manualReview.module'
 
 // ── classifyDocumentType ──────────────────────────────────────────────────────
@@ -140,14 +142,65 @@ describe('classifyDocumentType — low confidence', () => {
   })
 })
 
-describe('classifyDocumentType — unknown types', () => {
-  it('returns manualReview for ua_marriage_certificate (not registered)', () => {
-    const result = classifyDocumentType('ua_marriage_certificate', 1.0)
-    expect(result.module).toBe(manualReviewModule)
-    expect(result.usedFallback).toBe(true)
-    expect(result.fallbackReason).toBe('unsupported_document_type')
+describe('classifyDocumentType — marriage certificate aliases', () => {
+  const MARRIAGE_ALIASES = [
+    'ua_marriage_certificate',
+    'marriage_certificate',
+    'marriage certificate',
+    'ua_marriage',
+  ]
+
+  for (const alias of MARRIAGE_ALIASES) {
+    it(`resolves '${alias}' to marriage certificate module`, () => {
+      const result = classifyDocumentType(alias, 1.0)
+      expect(result.module).toBe(marriageCertificateModule)
+      expect(result.usedFallback).toBe(false)
+    })
+  }
+
+  it('resolves Cyrillic свідоцтво про шлюб to marriage certificate module', () => {
+    const result = classifyDocumentType('свідоцтво про шлюб', 1.0)
+    expect(result.module).toBe(marriageCertificateModule)
+    expect(result.usedFallback).toBe(false)
   })
 
+  it('resolves Russian свидетельство о браке to marriage certificate module', () => {
+    const result = classifyDocumentType('свидетельство о браке', 1.0)
+    expect(result.module).toBe(marriageCertificateModule)
+    expect(result.usedFallback).toBe(false)
+  })
+})
+
+describe('classifyDocumentType — divorce certificate aliases', () => {
+  const DIVORCE_ALIASES = [
+    'ua_divorce_certificate',
+    'divorce_certificate',
+    'divorce certificate',
+    'ua_divorce',
+  ]
+
+  for (const alias of DIVORCE_ALIASES) {
+    it(`resolves '${alias}' to divorce certificate module`, () => {
+      const result = classifyDocumentType(alias, 1.0)
+      expect(result.module).toBe(divorceCertificateModule)
+      expect(result.usedFallback).toBe(false)
+    })
+  }
+
+  it('resolves Cyrillic свідоцтво про розірвання шлюбу to divorce certificate module', () => {
+    const result = classifyDocumentType('свідоцтво про розірвання шлюбу', 1.0)
+    expect(result.module).toBe(divorceCertificateModule)
+    expect(result.usedFallback).toBe(false)
+  })
+
+  it('resolves Russian свидетельство о расторжении брака to divorce certificate module', () => {
+    const result = classifyDocumentType('свидетельство о расторжении брака', 1.0)
+    expect(result.module).toBe(divorceCertificateModule)
+    expect(result.usedFallback).toBe(false)
+  })
+})
+
+describe('classifyDocumentType — unknown types', () => {
   it('returns manualReview for random garbage input', () => {
     const result = classifyDocumentType('skdjfhaslkjdfhaskjdf', 1.0)
     expect(result.module).toBe(manualReviewModule)
@@ -219,8 +272,18 @@ describe('resolveDocumentModule', () => {
     expect(m).toBe(passportBookletModule)
   })
 
-  it('returns manualReview for unknown type', () => {
+  it('returns marriageCertificateModule for ua_marriage_certificate (active)', () => {
     const m = resolveDocumentModule('ua_marriage_certificate', 1.0)
+    expect(m).toBe(marriageCertificateModule)
+  })
+
+  it('returns divorceCertificateModule for ua_divorce_certificate (active)', () => {
+    const m = resolveDocumentModule('ua_divorce_certificate', 1.0)
+    expect(m).toBe(divorceCertificateModule)
+  })
+
+  it('returns manualReview for truly unknown type', () => {
+    const m = resolveDocumentModule('ua_unknown_doc_xyz', 1.0)
     expect(m).toBe(manualReviewModule)
   })
 
@@ -270,6 +333,22 @@ describe('getAliasTable', () => {
     expect(getAliasTable().get('manual_review')).toBe('manual_review_required')
   })
 
+  it('maps ua_marriage_certificate to ua_marriage_certificate', () => {
+    expect(getAliasTable().get('ua_marriage_certificate')).toBe('ua_marriage_certificate')
+  })
+
+  it('maps marriage certificate to ua_marriage_certificate', () => {
+    expect(getAliasTable().get('marriage certificate')).toBe('ua_marriage_certificate')
+  })
+
+  it('maps ua_divorce_certificate to ua_divorce_certificate', () => {
+    expect(getAliasTable().get('ua_divorce_certificate')).toBe('ua_divorce_certificate')
+  })
+
+  it('maps divorce certificate to ua_divorce_certificate', () => {
+    expect(getAliasTable().get('divorce certificate')).toBe('ua_divorce_certificate')
+  })
+
   it('has no empty-string keys', () => {
     for (const key of getAliasTable().keys()) {
       expect(key.length).toBeGreaterThan(0)
@@ -286,6 +365,8 @@ describe('getAliasTable', () => {
     const knownTypes = new Set([
       'ua_internal_passport_booklet',
       'ua_birth_certificate',
+      'ua_marriage_certificate',
+      'ua_divorce_certificate',
       'manual_review_required',
     ])
     for (const val of getAliasTable().values()) {
