@@ -94,6 +94,10 @@ export default async function TranslateDocumentPage({ params }: Props) {
                 <p className="max-w-2xl text-sm leading-relaxed text-[var(--text-2)] md:text-base">
                   {tBreadcrumb('subtitle')}
                 </p>
+                {/* Supported scope notice — replaces any "any document" implication. */}
+                <p className="max-w-2xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900 md:text-sm">
+                  {tBreadcrumb('supportedScope')}
+                </p>
               </div>
             </div>
 
@@ -109,7 +113,7 @@ export default async function TranslateDocumentPage({ params }: Props) {
                 📄 {locale === 'ru' ? 'Сертификация 8 CFR §103.2' : locale === 'uk' ? 'Сертифікація 8 CFR §103.2' : locale === 'es' ? 'Certificación 8 CFR §103.2' : '8 CFR §103.2 certified'}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
-                ⚡ {locale === 'ru' ? '5–10 минут' : locale === 'uk' ? '5–10 хвилин' : locale === 'es' ? '5–10 minutos' : '5–10 minutes'}
+                ⚡ {locale === 'ru' ? '5–10 минут для поддерживаемых документов' : locale === 'uk' ? '5–10 хвилин для підтримуваних документів' : locale === 'es' ? '5–10 minutos para documentos compatibles' : '5–10 minutes for supported documents'}
               </span>
             </div>
 

@@ -44,6 +44,11 @@ import {
   getCriticalFieldSetForDocumentType,
   getCriticalFieldsForDocumentType,
 } from '@/lib/translation/modules/adapters'
+import { findDocumentModule } from '@/lib/translation/modules/registry'
+import {
+  routePipelineToManualReview,
+  gateInputFromSignals,
+} from '@/lib/translation/manualReview/integrations'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60   // safety ceiling; target ≤15s (Vision ~5s + DeepSeek Text ~8s + overhead)
@@ -164,12 +169,32 @@ export async function POST(
         error_message: pre.message,
         error_detail:  pre.detail,
       })
+      // G2: image quality / file type failure → manual review ticket
+      await routePipelineToManualReview(gateInputFromSignals({
+        sessionId,
+        documentId: doc.id,
+        documentType: docType,
+        moduleStatus: findDocumentModule(docType)?.status ?? null,
+        imageQuality: { failed: true, retries: retakeCount },
+        retakeExhausted: retakeCount >= SMART_RETAKE_MAX_ATTEMPTS,
+        extractionErrors: ['preprocess_unsupported_file_type'],
+      }))
       return NextResponse.json({ ok: false, error: pre.message, code: pre.code }, { status: 422 })
     }
     await finaliseRun(supabase, runId, 'failed', sessionId, {
       error_message: pre.message,
       error_detail:  pre.detail,
     })
+    // G2: preprocess generic failure → manual review ticket
+    await routePipelineToManualReview(gateInputFromSignals({
+      sessionId,
+      documentId: doc.id,
+      documentType: docType,
+      moduleStatus: findDocumentModule(docType)?.status ?? null,
+      imageQuality: { failed: true, retries: retakeCount },
+      retakeExhausted: retakeCount >= SMART_RETAKE_MAX_ATTEMPTS,
+      extractionErrors: ['preprocess_failed'],
+    }))
     return NextResponse.json({ ok: false, error: pre.message }, { status: 422 })
   }
 
@@ -186,6 +211,15 @@ export async function POST(
       error_message: 'OCR provider not configured. Contact support.',
       error_detail:  ocrRaw.reason,
     })
+    // G3: ocr provider blocked → manual review ticket (system_error, high priority via paidUser/urgent)
+    await routePipelineToManualReview(gateInputFromSignals({
+      sessionId,
+      documentId: doc.id,
+      documentType: docType,
+      moduleStatus: findDocumentModule(docType)?.status ?? null,
+      extractionErrors: ['ocr_provider_blocked'],
+      paidUser: true,  // surface as HIGH priority — this is a system outage
+    }))
     return NextResponse.json({
       ok: false,
       error: 'OCR provider is not configured.',
@@ -217,6 +251,16 @@ export async function POST(
     await finaliseRun(supabase, runId, 'manual_review_required', sessionId, {
       error_message: 'Automatic extraction could not read your document. Please use manual entry or re-upload a clearer photo.',
     })
+    // G4: smart-retake exhausted (no text detected) → manual review ticket
+    await routePipelineToManualReview(gateInputFromSignals({
+      sessionId,
+      documentId: doc.id,
+      documentType: docType,
+      moduleStatus: findDocumentModule(docType)?.status ?? null,
+      retakeExhausted: true,
+      ocrFailureCount: retakeCount,
+      extractionErrors: ['no_text_detected'],
+    }))
     return NextResponse.json({
       ok: false,
       code: 'manual_review_required',
@@ -235,6 +279,15 @@ export async function POST(
       error_message: 'Could not identify fields in your document. Please re-upload a clearer photo or enter fields manually.',
       raw_text: ocrResult.raw_text.slice(0, 2000),
     })
+    // G5: DeepSeek field-mapping failure → manual review ticket
+    await routePipelineToManualReview(gateInputFromSignals({
+      sessionId,
+      documentId: doc.id,
+      documentType: docType,
+      moduleStatus: findDocumentModule(docType)?.status ?? null,
+      ocrConfidence: 0.3,
+      extractionErrors: ['deepseek_mapping_failed'],
+    }))
     return NextResponse.json({
       ok: false,
       code: 'manual_review_required',
@@ -262,6 +315,25 @@ export async function POST(
       retake_count: retakeCount,
       max_retakes:  SMART_RETAKE_MAX_ATTEMPTS,
     }, { status: 422 })
+  }
+
+  // G4 (image quality variant): retake budget exhausted with low quality
+  if (
+    imageQuality &&
+    imageQuality.overall < SMART_RETAKE_QUALITY_THRESHOLD &&
+    retakeCount >= SMART_RETAKE_MAX_ATTEMPTS
+  ) {
+    await routePipelineToManualReview(gateInputFromSignals({
+      sessionId,
+      documentId: doc.id,
+      documentType: docType,
+      moduleStatus: findDocumentModule(docType)?.status ?? null,
+      retakeExhausted: true,
+      ocrFailureCount: retakeCount,
+      ocrConfidence: imageQuality.overall,
+      imageQuality: { failed: true, retries: retakeCount },
+      extractionErrors: ['image_quality_below_threshold'],
+    }))
   }
 
   // ── 7. Resolve OCR IDs → bboxes ──────────────────────────────────────────
@@ -346,6 +418,35 @@ export async function POST(
   const withPlaceholders = [...processed, ...placeholders]
   if (placeholders.length > 0) {
     console.warn(`[ocr-from-storage] ${sessionId} — ${placeholders.length} critical field(s) not extracted: ${missingCritical.join(', ')}`)
+  }
+
+  // G6: missing critical fields → manual review ticket
+  // G7: non-active module → manual review ticket (covered by same call via moduleStatus)
+  // Both are bundled into a single router invocation so we get one ticket with
+  // both reasons rather than two separate tickets.
+  const moduleForGate = findDocumentModule(docType)
+  const moduleStatusForGate = moduleForGate?.status ?? null
+  const needsTicket = (placeholders.length > 0) || (moduleStatusForGate !== null && moduleStatusForGate !== 'active')
+
+  if (needsTicket) {
+    const ocrAvgConf = withPlaceholders.length
+      ? withPlaceholders.reduce((s, f) => s + f.confidence, 0) / withPlaceholders.length
+      : 0
+    await routePipelineToManualReview(gateInputFromSignals({
+      sessionId,
+      documentId: doc.id,
+      documentType: docType,
+      moduleStatus: moduleStatusForGate,
+      ocrConfidence: ocrAvgConf,
+      criticalFieldResults: ALL_CRITICAL_FIELDS.map(f => {
+        const found = processed.find(p => p.field === f)
+        return {
+          fieldKey: f,
+          present: Boolean(found),
+          hasEvidence: Boolean(found && found.evidence_type === 'ocr_bbox'),
+        }
+      }),
+    }))
   }
 
   // ── 9. Persist extracted_fields ───────────────────────────────────────────
