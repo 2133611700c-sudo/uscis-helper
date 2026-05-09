@@ -189,7 +189,7 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
 
   page.drawText('SOURCE TRACE — QA/AUDIT RECORD', { x: MARGIN, y, size: 12, font: bold, color: MUTED })
   y -= 6; drawHRule(page, y); y -= 14
-  page.drawText('This page is for audit purposes. It is not part of the certified translation.', { x: MARGIN, y, size: 8, font, color: MUTED })
+  page.drawText('This page is for audit/QA purposes only. It is not part of the translation document.', { x: MARGIN, y, size: 8, font, color: MUTED })
   y -= SECTION_GAP
 
   for (const trace of input.sourceTraces) {
