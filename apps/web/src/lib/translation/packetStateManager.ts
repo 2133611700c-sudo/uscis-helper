@@ -179,6 +179,9 @@ export async function persistExtractedFields(
       language_layer:   f.language_layer,
       confidence:       f.confidence,
       review_required:  f.review_required,
+      // Phase 1 evidence provenance — null for pre-Phase-1 rows
+      evidence_type:    f.evidence_type ?? null,
+      bbox_status:      f.bbox_status ?? null,
     }))
     // Delete existing rows for this session first (idempotent re-extraction)
     await supabase.from('extracted_fields').delete().eq('session_id', sessionId)

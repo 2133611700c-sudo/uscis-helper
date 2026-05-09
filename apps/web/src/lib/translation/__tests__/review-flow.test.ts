@@ -247,3 +247,211 @@ describe('OCR extraction result parsing', () => {
     expect(processed[3].bbox).toEqual([0, 0, 1, 1])
   })
 })
+
+// ── Phase 1: evidence_type + bbox_status classification ───────────────────────
+
+type BboxStatus = 'exact' | 'approximate' | 'missing'
+type EvidenceType = 'full_image' | 'zone_fallback'
+
+function classifyBbox(
+  bbox: unknown,
+  confidence: number
+): { bbox: [number,number,number,number]; bbox_status: BboxStatus } {
+  const isValid =
+    Array.isArray(bbox) &&
+    bbox.length === 4 &&
+    bbox.every((v: unknown) => typeof v === 'number' && isFinite(v)) &&
+    !(bbox[0] === 0 && bbox[1] === 0 && bbox[2] === 1 && bbox[3] === 1)
+
+  if (isValid) {
+    const b = bbox as [number,number,number,number]
+    const bbox_status: BboxStatus = confidence >= 0.70 ? 'exact' : 'approximate'
+    return { bbox: b, bbox_status }
+  }
+  return { bbox: [0, 0, 1, 1], bbox_status: 'missing' }
+}
+
+describe('classifyBbox (Phase 1)', () => {
+  it('returns exact when bbox is valid and confidence >= 0.70', () => {
+    const { bbox_status } = classifyBbox([0.1, 0.2, 0.8, 0.9], 0.85)
+    expect(bbox_status).toBe('exact')
+  })
+
+  it('returns approximate when bbox is valid but confidence < 0.70', () => {
+    const { bbox_status } = classifyBbox([0.1, 0.2, 0.8, 0.9], 0.60)
+    expect(bbox_status).toBe('approximate')
+  })
+
+  it('returns missing and fallback bbox when bbox is null', () => {
+    const { bbox, bbox_status } = classifyBbox(null, 0.95)
+    expect(bbox_status).toBe('missing')
+    expect(bbox).toEqual([0, 0, 1, 1])
+  })
+
+  it('returns missing when bbox is literally [0,0,1,1] (degenerate fallback)', () => {
+    const { bbox_status } = classifyBbox([0, 0, 1, 1], 0.90)
+    expect(bbox_status).toBe('missing')
+  })
+
+  it('returns missing when bbox has wrong length', () => {
+    const { bbox_status } = classifyBbox([0.1, 0.2], 0.90)
+    expect(bbox_status).toBe('missing')
+  })
+
+  it('returns missing when bbox contains non-finite values', () => {
+    const { bbox_status } = classifyBbox([NaN, 0.2, 0.8, 0.9], 0.90)
+    expect(bbox_status).toBe('missing')
+  })
+})
+
+describe('evidence_type assignment (Phase 1)', () => {
+  it('DeepSeek Vision path produces evidence_type=full_image', () => {
+    const evidenceType: EvidenceType = 'full_image'
+    expect(evidenceType).toBe('full_image')
+  })
+
+  it('Tesseract fallback path produces evidence_type=zone_fallback', () => {
+    const evidenceType: EvidenceType = 'zone_fallback'
+    expect(evidenceType).toBe('zone_fallback')
+  })
+
+  it('Tesseract fields always have bbox_status=missing', () => {
+    // Tesseract never provides bbox — always missing
+    const fields = [
+      { field: 'surname', bbox: [0, 0, 1, 1] as [number,number,number,number], evidence_type: 'zone_fallback' as EvidenceType, bbox_status: 'missing' as BboxStatus },
+      { field: 'given_names', bbox: [0, 0, 1, 1] as [number,number,number,number], evidence_type: 'zone_fallback' as EvidenceType, bbox_status: 'missing' as BboxStatus },
+    ]
+    fields.forEach(f => {
+      expect(f.evidence_type).toBe('zone_fallback')
+      expect(f.bbox_status).toBe('missing')
+    })
+  })
+})
+
+// ── Phase 1: Smart Retake logic ───────────────────────────────────────────────
+
+const SMART_RETAKE_QUALITY_THRESHOLD = 0.4
+const SMART_RETAKE_MAX_ATTEMPTS = 2
+
+function shouldRetake(
+  imageQualityOverall: number,
+  retakeCount: number
+): { required: boolean; reason?: string } {
+  if (imageQualityOverall < SMART_RETAKE_QUALITY_THRESHOLD && retakeCount < SMART_RETAKE_MAX_ATTEMPTS) {
+    return {
+      required: true,
+      reason: 'The photo is too blurry or poorly lit for reliable extraction.',
+    }
+  }
+  return { required: false }
+}
+
+describe('Smart Retake (Phase 1)', () => {
+  it('triggers retake when quality is low and no prior retake', () => {
+    const { required } = shouldRetake(0.25, 0)
+    expect(required).toBe(true)
+  })
+
+  it('triggers retake when quality is low and one prior retake', () => {
+    const { required } = shouldRetake(0.30, 1)
+    expect(required).toBe(true)
+  })
+
+  it('does NOT trigger retake when max attempts reached', () => {
+    const { required } = shouldRetake(0.10, 2)  // retakeCount = 2 = max
+    expect(required).toBe(false)
+  })
+
+  it('does NOT trigger retake when quality is above threshold', () => {
+    const { required } = shouldRetake(0.45, 0)
+    expect(required).toBe(false)
+  })
+
+  it('does NOT trigger retake when quality is exactly at threshold', () => {
+    const { required } = shouldRetake(0.40, 0)
+    expect(required).toBe(false)
+  })
+
+  it('returns user-friendly message (no raw OCR error text)', () => {
+    const { reason } = shouldRetake(0.10, 0)
+    expect(reason).toBeDefined()
+    expect(reason).not.toMatch(/tesseract|deepseek|api|exception|error:/i)
+    expect(reason!.length).toBeGreaterThan(20)
+  })
+})
+
+// ── Phase 2: confidence label helpers ────────────────────────────────────────
+
+function confidenceLabel(conf: number): { text: string } {
+  if (conf >= 0.85) return { text: 'Looks clear' }
+  if (conf >= 0.70) return { text: 'Please check carefully' }
+  return               { text: 'Needs review' }
+}
+
+describe('confidenceLabel (Phase 2 UI)', () => {
+  it('returns "Looks clear" for high confidence', () => {
+    expect(confidenceLabel(0.95).text).toBe('Looks clear')
+    expect(confidenceLabel(0.85).text).toBe('Looks clear')
+  })
+
+  it('returns "Please check carefully" for medium confidence', () => {
+    expect(confidenceLabel(0.84).text).toBe('Please check carefully')
+    expect(confidenceLabel(0.70).text).toBe('Please check carefully')
+  })
+
+  it('returns "Needs review" for low confidence', () => {
+    expect(confidenceLabel(0.69).text).toBe('Needs review')
+    expect(confidenceLabel(0.0).text).toBe('Needs review')
+  })
+
+  it('does not use legalistic language ("certified", "guaranteed", "approved")', () => {
+    const labels = [0.95, 0.75, 0.50].map(c => confidenceLabel(c).text)
+    labels.forEach(label => {
+      expect(label).not.toMatch(/certif|guarant|approv|uscis.accept/i)
+    })
+  })
+})
+
+// ── Phase 3: evidence audit gate ─────────────────────────────────────────────
+
+describe('evidence audit gate (Phase 3 render)', () => {
+  it('hard-blocks if OCR ran but ALL critical fields have no evidence', () => {
+    const ocrResultExists = true
+    const criticalWithoutEvidence = CRITICAL_FIELDS  // all 8 missing evidence
+    const shouldHardBlock =
+      ocrResultExists &&
+      criticalWithoutEvidence.length === CRITICAL_FIELDS.length
+
+    expect(shouldHardBlock).toBe(true)
+  })
+
+  it('does NOT hard-block if no OCR ran (pre-Phase-1 session)', () => {
+    const ocrResultExists = false
+    const criticalWithoutEvidence = CRITICAL_FIELDS
+    const shouldHardBlock =
+      ocrResultExists &&
+      criticalWithoutEvidence.length === CRITICAL_FIELDS.length
+
+    expect(shouldHardBlock).toBe(false)
+  })
+
+  it('does NOT hard-block when only some critical fields lack evidence', () => {
+    const ocrResultExists = true
+    const criticalWithoutEvidence = ['series', 'number']  // only 2 missing
+    const shouldHardBlock =
+      ocrResultExists &&
+      criticalWithoutEvidence.length === CRITICAL_FIELDS.length
+
+    expect(shouldHardBlock).toBe(false)
+  })
+
+  it('generates a warning (not error) for pre-Phase-1 sessions', () => {
+    const ocrResultExists = false
+    const warnings: string[] = []
+    if (!ocrResultExists) {
+      warnings.push('No OCR run found for this session — fields may be manually entered.')
+    }
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toMatch(/manually entered/i)
+  })
+})

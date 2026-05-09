@@ -30,6 +30,9 @@ interface ReviewField {
   review_required: boolean
   confirmed: boolean
   confirmed_at: string | null
+  // Phase 1 evidence provenance — null for pre-Phase-1 rows
+  evidence_type: 'full_image' | 'zone_fallback' | null
+  bbox_status: 'exact' | 'approximate' | 'missing' | null
   is_critical: boolean
 }
 
@@ -115,6 +118,54 @@ const C = {
   text1:   '#111827',
   text2:   '#374151',
   text3:   '#6b7280',
+}
+
+// ── Confidence label helpers ─────────────────────────────────────────────────
+
+/**
+ * Plain-language confidence label shown to the translator on each field card.
+ * Mirrors USCIS-safe language — no "high accuracy" claims.
+ */
+function confidenceLabel(conf: number): { text: string; color: string; bg: string } {
+  if (conf >= 0.85) return { text: 'Looks clear',          color: '#15803d', bg: '#dcfce7' }
+  if (conf >= 0.70) return { text: 'Please check carefully', color: '#92400e', bg: '#fef3c7' }
+  return               { text: 'Needs review',            color: '#991b1b', bg: '#fee2e2' }
+}
+
+/**
+ * Small badge showing OCR evidence provenance.
+ * Only shown when evidence_type is known (Phase-1 extractions only).
+ */
+function EvidenceBadge({
+  evidenceType,
+  bboxStatus,
+}: {
+  evidenceType: ReviewField['evidence_type']
+  bboxStatus: ReviewField['bbox_status']
+}) {
+  if (!evidenceType) return null
+  const isVision = evidenceType === 'full_image'
+  const bboxLabel =
+    bboxStatus === 'exact'       ? '📍 exact position' :
+    bboxStatus === 'approximate' ? '📍 approx position' :
+                                   '📍 no position'
+
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      fontSize: '11px',
+      fontWeight: 600,
+      color: isVision ? '#1d4ed8' : '#6b7280',
+      background: isVision ? '#eff6ff' : '#f3f4f6',
+      border: `1px solid ${isVision ? '#bfdbfe' : '#e5e7eb'}`,
+      padding: '2px 7px',
+      borderRadius: '20px',
+    }}>
+      {isVision ? '🔍 Vision scan' : '📝 OCR text'} · {bboxLabel}
+    </span>
+  )
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -465,7 +516,25 @@ function EvidenceFieldCard({
                   ✓ CONFIRMED
                 </span>
               )}
+              {/* Plain-language confidence label */}
+              {!field.confirmed && (() => {
+                const lbl = confidenceLabel(field.confidence)
+                return (
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: lbl.color,
+                    background: lbl.bg,
+                    padding: '2px 8px',
+                    borderRadius: '20px',
+                  }}>
+                    {lbl.text}
+                  </span>
+                )
+              })()}
             </div>
+            {/* Evidence provenance badge */}
+            <EvidenceBadge evidenceType={field.evidence_type} bboxStatus={field.bbox_status} />
 
             {/* Translation value — large, readable */}
             <p style={{ fontSize: '20px', fontWeight: 600, color: C.text1, margin: '0 0 6px', wordBreak: 'break-word' }}>
@@ -1124,13 +1193,39 @@ export function EvidenceReviewPage({
           </div>
         )}
 
-        {/* Certification form — only shown when critical fields are confirmed */}
-        {fields.length > 0 && (
+        {/* Certification form — gated on can_certify or already signed */}
+        {(gates.can_certify || Boolean(certification_record)) && (
           <CertificationForm
             sessionId={sessionId}
             existingCert={certification_record}
             onCertified={handleCertified}
           />
+        )}
+
+        {/* Pre-certification hint — shown while critical fields still pending */}
+        {!gates.can_certify && !certification_record && fields.length > 0 && (
+          <div style={{
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            marginTop: '24px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px',
+          }}>
+            <span style={{ fontSize: '22px', flexShrink: 0 }}>🔒</span>
+            <div>
+              <p style={{ fontSize: '16px', fontWeight: 700, color: '#92400e', margin: '0 0 4px' }}>
+                Signature locked — confirm all required fields first
+              </p>
+              <p style={{ fontSize: '14px', color: '#b45309', margin: 0 }}>
+                {gates.unconfirmed_critical.length > 0
+                  ? `Still needed: ${gates.unconfirmed_critical.map(humanField).join(', ')}`
+                  : 'Confirm the required fields above to unlock signing.'}
+              </p>
+            </div>
+          </div>
         )}
 
         {/* Payment gate */}
