@@ -13,6 +13,10 @@
 import type { OcrResult, OcrLine, OcrWord } from './types'
 import type { DocumentType } from '@/lib/translation/types'
 import { analyseNameField, NAME_FIELDS } from './nameNormalizer'
+import { resolveIssuedBy } from '@/lib/translation/glossary/agencyGlossary'
+
+// Fields that should be run through the agency glossary resolver
+const AUTHORITY_FIELDS = new Set(['issued_by', 'issuing_authority'])
 
 const DEEPSEEK_TEXT_URL = 'https://api.deepseek.com/chat/completions'
 const FIELD_MAPPER_TIMEOUT_MS = 30_000
@@ -256,6 +260,23 @@ Return format:
           if (nameAnalysis.review_required) {
             reviewRequired = true
             reviewReason = nameAnalysis.review_reason
+          }
+        }
+
+        // ── Agency glossary: resolve issued_by / issuing_authority ───────
+        if (AUTHORITY_FIELDS.has(fieldName) && rawVal.trim()) {
+          // Extract doc year from normalized date_of_issue if available (not accessible here),
+          // so we pass undefined and let the resolver use its era defaults.
+          // The caller (extraction pipeline) can re-run with docYear if needed.
+          const glossaryResult = resolveIssuedBy(rawVal)
+          if (glossaryResult.glossary_confidence !== 'none') {
+            finalNormVal = glossaryResult.resolved
+            if (glossaryResult.review_required) {
+              reviewRequired = true
+              reviewReason = reviewReason
+                ? `${reviewReason}; ${glossaryResult.reason ?? 'glossary_review'}`
+                : (glossaryResult.reason ?? 'glossary_review')
+            }
           }
         }
 
