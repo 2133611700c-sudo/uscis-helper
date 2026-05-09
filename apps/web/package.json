@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "guard:reparole": "node scripts/guard-reparole-regulatory-truth.mjs",
     "guard:content": "bash scripts/check-content-guards.sh",
-    "guard": "npm run guard:reparole && npm run guard:content"
+    "guard": "npm run guard:reparole && npm run guard:content",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.51.0",
@@ -42,9 +44,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/runner": "^4.1.5",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.1.6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.5"
   },
   "optionalDependencies": {
     "@upstash/ratelimit": "^2.0.5",
