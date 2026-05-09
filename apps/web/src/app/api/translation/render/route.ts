@@ -98,10 +98,15 @@ export async function POST(req: NextRequest) {
   const state = {
     ...sessionData,
     document_type:        sessionData.doc_type ?? 'ua_passport_internal',
-    scope_title:          sessionData.scope_title ?? `English Translation of Ukrainian Internal Passport`,
+    scope_title:          sessionData.scope_title ?? 'English Translation of Ukrainian Internal Passport',
     extracted_fields:     extractedFields,
     source_traces:        sourceTraces,
-    certification_record: certData ?? null,
+    user_corrections:     [],   // populated only if user made edits in Review UI
+    // Remap DB column names → CertificationRecord field names
+    certification_record: certData ? {
+      ...certData,
+      address: certData.signer_address ?? undefined,  // DB: signer_address → type: address
+    } : null,
     payment_confirmed:    Boolean(sessionData.payment_confirmed),
   } as unknown as PacketState
 
