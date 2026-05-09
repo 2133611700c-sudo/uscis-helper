@@ -18,6 +18,10 @@ import { validateCertificationRecord } from '@/lib/translation/certificationReco
 import { PacketState } from '@/lib/translation/types'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
 import Stripe from 'stripe'
+import {
+  getCriticalFieldsForDocumentType,
+  getEvidenceRequiredFieldsForDocumentType,
+} from '@/lib/translation/modules/adapters'
 
 export const dynamic = 'force-dynamic'
 
@@ -144,10 +148,8 @@ export async function POST(req: NextRequest) {
 
   // Gate 3: Source-to-final completeness audit
   // All critical fields must be human-confirmed before render
-  const CRITICAL_FIELDS_RENDER = [
-    'surname', 'given_names', 'date_of_birth', 'place_of_birth',
-    'series', 'number', 'issued_by', 'date_of_issue',
-  ]
+  // Field list is driven by the document module, not hardcoded.
+  const CRITICAL_FIELDS_RENDER = getCriticalFieldsForDocumentType(sessionData.doc_type)
   const { data: confirmedRows } = await supabase
     .from('extracted_fields')
     .select('field, confirmed, normalized_value')
@@ -209,13 +211,14 @@ export async function POST(req: NextRequest) {
 
   const ocrResultExists = (ocrAuditRows?.length ?? 0) > 0
 
-  // Evidence coverage: critical fields with no evidence_type are pre-Phase-1 rows.
-  // We warn but do not hard-block (grandfathering existing paid sessions).
+  // Evidence coverage: fields with evidenceRequired='required' and no evidence_type
+  // are pre-Phase-1 rows. We warn but do not hard-block (grandfathering).
+  const EVIDENCE_REQUIRED_FIELDS = getEvidenceRequiredFieldsForDocumentType(sessionData.doc_type)
   const { data: evidenceRows } = await supabase
     .from('extracted_fields')
     .select('field, evidence_type')
     .eq('session_id', session_id)
-    .in('field', CRITICAL_FIELDS_RENDER)
+    .in('field', EVIDENCE_REQUIRED_FIELDS)
 
   type EvidenceRow = { field: string; evidence_type: string | null }
   const criticalWithoutEvidence = (evidenceRows ?? [])
@@ -233,7 +236,7 @@ export async function POST(req: NextRequest) {
   }
   // Hard-block only if OCR exists but critical fields have NO evidence at all
   // (meaning Phase-1 OCR ran but failed to label fields — indicates a code bug).
-  if (ocrResultExists && criticalWithoutEvidence.length === CRITICAL_FIELDS_RENDER.length) {
+  if (ocrResultExists && criticalWithoutEvidence.length === EVIDENCE_REQUIRED_FIELDS.length) {
     return NextResponse.json({
       ok: false,
       error: 'Evidence audit failed: OCR completed but no critical fields have evidence records.',

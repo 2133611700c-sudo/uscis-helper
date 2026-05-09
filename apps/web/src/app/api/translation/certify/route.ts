@@ -7,14 +7,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { buildCertificationRecord, validateCertificationRecord } from '@/lib/translation/certificationRecord'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { getCriticalFieldsForDocumentType } from '@/lib/translation/modules/adapters'
 
 export const dynamic = 'force-dynamic'
-
-/** Critical fields that must ALL be confirmed before certification is allowed */
-const CRITICAL_FIELDS = [
-  'surname', 'given_names', 'date_of_birth', 'place_of_birth',
-  'series', 'number', 'issued_by', 'date_of_issue',
-]
 
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req)
@@ -39,6 +34,17 @@ export async function POST(req: NextRequest) {
 
   // ── Gate: all critical fields must be confirmed before certification ────────
   const supabaseGate = createAdminSupabaseClient()
+
+  // Fetch doc_type from session so the critical field list is module-driven
+  const { data: sessionRow } = await supabaseGate
+    .from('translation_sessions')
+    .select('doc_type')
+    .eq('session_id', session_id)
+    .single()
+
+  const docType = sessionRow?.doc_type ?? null
+  const CRITICAL_FIELDS = getCriticalFieldsForDocumentType(docType)
+
   const { data: fieldRows } = await supabaseGate
     .from('extracted_fields')
     .select('field, confirmed')
