@@ -42,7 +42,7 @@ import { buildOcrLookup, resolveOcrIds } from '@/lib/ocr/bbox-resolver'
 import { isBlocked } from '@/lib/ocr/types'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30   // Google Vision (~5s) + DeepSeek Text (~8s) + overhead = ~15s typical
+export const maxDuration = 60   // safety ceiling; target ≤15s (Vision ~5s + DeepSeek Text ~8s + overhead)
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SMART_RETAKE_QUALITY_THRESHOLD = 0.4
