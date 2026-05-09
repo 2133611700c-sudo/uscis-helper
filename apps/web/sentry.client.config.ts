@@ -19,9 +19,10 @@ if (SENTRY_DSN) {
 
     integrations: [
       Sentry.replayIntegration({
-        // Strip PII from replays
-        maskAllText: false,
-        blockAllMedia: false,
+        // Mask all text and inputs — translation pages render real passport data
+        maskAllText: true,
+        maskAllInputs: true,
+        blockAllMedia: true,
       }),
     ],
 
