@@ -121,24 +121,99 @@ export function setCertificationRecord(state: PacketState, record: Certification
   }
 }
 
-// Supabase persistence
+// Supabase persistence — writes to translation_sessions (v5 schema)
 export async function persistPacketState(state: PacketState): Promise<void> {
   try {
     const supabase = createAdminSupabaseClient()
-    await supabase.from('translation_orders').upsert({
-      session_id: state.session_id,
-      status: state.status,
-      document_type: state.document_type,
-      uploaded_pages: state.uploaded_pages,
-      total_pages: state.total_pages_declared,
+    await supabase.from('translation_sessions').upsert({
+      session_id:       state.session_id,
+      status:           state.status,
+      doc_type:         state.document_type,
+      uploaded_pages:   state.uploaded_pages,
+      total_pages:      state.total_pages_declared,
       payment_confirmed: state.payment_confirmed,
-      payment_checkout_id: state.payment_checkout_id,
-      scope_title: state.scope_title,
-      locale: state.locale,
-      qa_status: state.qa_result?.status ?? null,
-      updated_at: state.updated_at,
+      scope_title:      state.scope_title,
+      locale:           state.locale,
+      updated_at:       state.updated_at,
     }, { onConflict: 'session_id' })
   } catch (err) {
     console.error('[PacketStateManager] persist failed:', err)
+  }
+}
+
+// Write a single audit log entry
+export async function writeAuditLog(params: {
+  session_id: string
+  event_type: string
+  actor?: string
+  metadata?: Record<string, unknown>
+}): Promise<void> {
+  try {
+    const supabase = createAdminSupabaseClient()
+    await supabase.from('audit_logs').insert({
+      session_id:  params.session_id,
+      event_type:  params.event_type,
+      actor:       params.actor ?? 'system',
+      metadata:    params.metadata ?? {},
+    })
+  } catch (err) {
+    console.error('[PacketStateManager] audit log failed:', err)
+  }
+}
+
+// Persist extracted fields to normalized extracted_fields table
+export async function persistExtractedFields(
+  sessionId: string,
+  fields: ExtractedField[]
+): Promise<void> {
+  try {
+    const supabase = createAdminSupabaseClient()
+    // Upsert by (session_id, field) — replace existing on re-extraction
+    const rows = fields.map(f => ({
+      session_id:       sessionId,
+      field:            f.field,
+      source_label:     f.source_label,
+      source_zone:      f.source_zone,
+      raw_value:        f.raw_value,
+      normalized_value: f.normalized_value,
+      language_layer:   f.language_layer,
+      confidence:       f.confidence,
+      review_required:  f.review_required,
+    }))
+    await supabase.from('extracted_fields').upsert(rows, { onConflict: 'session_id,field' })
+  } catch (err) {
+    console.error('[PacketStateManager] persistExtractedFields failed:', err)
+  }
+}
+
+// Record a user correction with version tracking
+export async function recordCorrection(params: {
+  session_id: string
+  field: string
+  old_value: string
+  new_value: string
+  reason?: string
+  correction_type?: string
+}): Promise<void> {
+  try {
+    const supabase = createAdminSupabaseClient()
+    // Get current version count for this field
+    const { count } = await supabase
+      .from('user_corrections')
+      .select('*', { count: 'exact', head: true })
+      .eq('session_id', params.session_id)
+      .eq('field', params.field)
+    const version = (count ?? 0) + 1
+    await supabase.from('user_corrections').insert({
+      session_id:      params.session_id,
+      field:           params.field,
+      old_value:       params.old_value,
+      new_value:       params.new_value,
+      reason:          params.reason ?? null,
+      correction_type: params.correction_type ?? 'manual',
+      version,
+    })
+  } catch (err) {
+    console.error('[PacketStateManager] recordCorrection failed:', err)
   }
 }

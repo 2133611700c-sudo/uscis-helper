@@ -17,7 +17,8 @@ export type TranslationStatus =
 export type LanguageLayer = 'uk' | 'ru' | 'mixed' | 'unknown'
 
 export type DocumentType =
-  | 'ua_passport_booklet'
+  | 'ua_passport_booklet'       // Ukrainian internal passport (book format, blue cover)
+  | 'ua_passport_internal'      // alias kept for backward compatibility
   | 'ua_passport_id_card'
   | 'ua_passport_biometric'
   | 'ua_birth_certificate'
@@ -50,6 +51,7 @@ export interface CertificationRecord {
   statement: string
   signature_typed_name: string
   signed_at: string          // ISO 8601
+  source_language?: string   // e.g. 'Ukrainian'
   address?: string
   phone?: string
   email?: string

@@ -8,6 +8,7 @@ import { PacketState, ExtractedField, DocumentType } from './types'
 
 const DOC_TYPE_LABELS: Record<DocumentType, string> = {
   ua_passport_booklet:    'Ukrainian Internal Passport (Booklet)',
+  ua_passport_internal:   'Ukrainian Internal Passport (Booklet)',  // alias
   ua_passport_id_card:    'Ukrainian Passport (ID Card)',
   ua_passport_biometric:  'Ukrainian Biometric (Foreign) Passport',
   ua_birth_certificate:   'Ukrainian Birth Certificate',
