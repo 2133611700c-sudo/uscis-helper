@@ -10,6 +10,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { validateSessionId, validateFieldName } from '@/lib/translation/inputValidation'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,16 @@ const CRITICAL_FIELDS = [
   'surname', 'given_names', 'date_of_birth', 'place_of_birth',
   'series', 'number', 'issued_by', 'date_of_issue',
 ]
+
+/** Best-effort audit write — never throws. */
+async function tryAudit(
+  supabase: ReturnType<typeof createAdminSupabaseClient>,
+  payload: Record<string, unknown>
+): Promise<void> {
+  try {
+    await supabase.from('audit_logs').insert(payload)
+  } catch { /* swallow — audit must never crash the route */ }
+}
 
 export async function POST(
   req: NextRequest,
@@ -26,30 +37,52 @@ export async function POST(
   const body = await req.json().catch(() => ({})) as { field?: string }
   const { field } = body
 
-  if (!sessionId) return NextResponse.json({ ok: false, error: 'sessionId required' }, { status: 400 })
-  if (!field) return NextResponse.json({ ok: false, error: 'field required' }, { status: 400 })
+  // ── Input validation ─────────────────────────────────────────────────────
+  const sessionErr = validateSessionId(sessionId)
+  if (sessionErr) return NextResponse.json({ ok: false, ...sessionErr }, { status: sessionErr.status })
 
+  const fieldErr = validateFieldName(field)
+  if (fieldErr) return NextResponse.json({ ok: false, ...fieldErr }, { status: fieldErr.status })
+
+  const safeField = field as string
   const supabase = createAdminSupabaseClient()
+
+  // ── Session existence check ──────────────────────────────────────────────
+  const { data: session } = await supabase
+    .from('translation_sessions')
+    .select('session_id')
+    .eq('session_id', sessionId)
+    .single()
+
+  if (!session) {
+    return NextResponse.json({ ok: false, error: 'session_not_found', message: 'Session not found.' }, { status: 404 })
+  }
+
   const confirmedAt = new Date().toISOString()
 
-  const { error } = await supabase
+  const { error: updateErr } = await supabase
     .from('extracted_fields')
     .update({ confirmed: true, confirmed_at: confirmedAt })
     .eq('session_id', sessionId)
-    .eq('field', field)
+    .eq('field', safeField)
 
-  if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  if (updateErr) {
+    await tryAudit(supabase, {
+      session_id: sessionId,
+      event_type: 'error',
+      metadata: { route: 'confirm-field', field: safeField, error_code: updateErr.code },
+    })
+    return NextResponse.json({ ok: false, error: 'db_error', message: 'Could not update field.' }, { status: 500 })
   }
 
-  // Audit
-  await supabase.from('audit_logs').insert({
+  // ── Audit ────────────────────────────────────────────────────────────────
+  await tryAudit(supabase, {
     session_id: sessionId,
     event_type: 'field_confirmed',
-    metadata: { field, confirmed_at: confirmedAt },
+    metadata: { field: safeField, confirmed_at: confirmedAt },
   })
 
-  // Recompute gates
+  // ── Recompute gates ──────────────────────────────────────────────────────
   const { data: allFields } = await supabase
     .from('extracted_fields')
     .select('field, confirmed')
@@ -62,7 +95,7 @@ export async function POST(
 
   return NextResponse.json({
     ok: true,
-    field,
+    field: safeField,
     confirmed_at: confirmedAt,
     gates: {
       can_certify: canCertify,

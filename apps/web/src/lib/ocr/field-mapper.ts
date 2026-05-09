@@ -12,6 +12,7 @@
  */
 import type { OcrResult, OcrLine, OcrWord } from './types'
 import type { DocumentType } from '@/lib/translation/types'
+import { analyseNameField, NAME_FIELDS } from './nameNormalizer'
 
 const DEEPSEEK_TEXT_URL = 'https://api.deepseek.com/chat/completions'
 const FIELD_MAPPER_TIMEOUT_MS = 30_000
@@ -27,6 +28,7 @@ export interface MappedField {
   source_label_ids?: string[]   // IDs of the label token(s) if identifiable
   confidence: number            // 0.0–1.0
   review_required: boolean
+  review_reason?: string
   language_layer?: 'uk' | 'ru' | 'mixed' | 'unknown'
   source_label?: string         // human label as printed (for display)
   source_zone?: string          // rough zone description
@@ -237,14 +239,35 @@ Return format:
       .map(f => {
         const conf = typeof f.confidence === 'number' ? Math.min(1, Math.max(0, f.confidence)) : 0.5
         const ocrIds = Array.isArray(f.ocr_ids) ? f.ocr_ids.filter(id => typeof id === 'string') : []
+        const fieldName = String(f.field)
+        const rawVal    = String(f.raw_value ?? '')
+        const normVal   = String(f.normalized_value ?? '')
+
+        // ── Phase 2: name normalization + lookalike detection ────────────
+        let finalNormVal  = normVal
+        let reviewRequired = conf < 0.70 || Boolean(f.review_required)
+        let reviewReason: string | undefined
+
+        if (NAME_FIELDS.has(fieldName) && rawVal.trim()) {
+          const nameAnalysis = analyseNameField(rawVal)
+          // Apply safe casing normalization
+          finalNormVal = nameAnalysis.normalized
+          // Escalate review if suspicious
+          if (nameAnalysis.review_required) {
+            reviewRequired = true
+            reviewReason = nameAnalysis.review_reason
+          }
+        }
+
         return {
-          field:            String(f.field),
-          raw_value:        String(f.raw_value ?? ''),
-          normalized_value: String(f.normalized_value ?? ''),
+          field:            fieldName,
+          raw_value:        rawVal,
+          normalized_value: finalNormVal,
           ocr_ids:          ocrIds as string[],
           source_label_ids: Array.isArray(f.source_label_ids) ? f.source_label_ids as string[] : undefined,
           confidence:       conf,
-          review_required:  conf < 0.70 || Boolean(f.review_required),
+          review_required:  reviewRequired,
+          review_reason:    reviewReason,
           language_layer:   (['uk','ru','mixed','unknown'].includes(String(f.language_layer)) ? f.language_layer : 'uk') as MappedField['language_layer'],
           source_label:     typeof f.source_label === 'string' ? f.source_label : undefined,
           source_zone:      typeof f.source_zone === 'string' ? f.source_zone : undefined,
