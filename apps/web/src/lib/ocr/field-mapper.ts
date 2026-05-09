@@ -14,7 +14,7 @@ import type { OcrResult, OcrLine, OcrWord } from './types'
 import type { DocumentType } from '@/lib/translation/types'
 
 const DEEPSEEK_TEXT_URL = 'https://api.deepseek.com/chat/completions'
-const FIELD_MAPPER_TIMEOUT_MS = 15_000
+const FIELD_MAPPER_TIMEOUT_MS = 30_000
 const MAX_TOKENS_INPUT = 6000   // characters; Vision result text is typically 200–800 chars
 
 // ── Field mapper result ───────────────────────────────────────────────────────
