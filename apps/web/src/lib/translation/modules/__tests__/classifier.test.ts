@@ -46,25 +46,25 @@ describe('classifyDocumentType — passport aliases', () => {
 })
 
 describe('classifyDocumentType — birth certificate aliases', () => {
-  it('resolves ua_birth_certificate to manualReview (draft module)', () => {
+  it('resolves ua_birth_certificate to birthCertificateModule (active since v6.0)', () => {
     const result = classifyDocumentType('ua_birth_certificate', 1.0)
-    // Birth cert module is draft → module is manualReview, but canonicalType
-    // reflects what was resolved from the alias (ua_birth_certificate), not the
-    // module that was ultimately used. This is intentional — it lets callers
-    // distinguish "birth cert → manual review" from "unknown type → manual review".
-    expect(result.module).toBe(manualReviewModule)
-    expect(result.usedFallback).toBe(true)
+    // Birth certificate module promoted to active — routes to itself, not manualReview
+    expect(result.module.documentType).toBe('ua_birth_certificate')
+    expect(result.module).not.toBe(manualReviewModule)
+    expect(result.usedFallback).toBe(false)
     expect(result.canonicalType).toBe('ua_birth_certificate')
   })
 
-  it('resolves birth_certificate to manualReview (draft)', () => {
+  it('resolves birth_certificate to birthCertificateModule (active)', () => {
     const result = classifyDocumentType('birth_certificate', 1.0)
-    expect(result.module).toBe(manualReviewModule)
+    expect(result.module.documentType).toBe('ua_birth_certificate')
+    expect(result.usedFallback).toBe(false)
   })
 
-  it('resolves свідоцтво про народження to manualReview (draft)', () => {
+  it('resolves свідоцтво про народження to birthCertificateModule (active)', () => {
     const result = classifyDocumentType('свідоцтво про народження', 1.0)
-    expect(result.module).toBe(manualReviewModule)
+    expect(result.module.documentType).toBe('ua_birth_certificate')
+    expect(result.usedFallback).toBe(false)
   })
 })
 

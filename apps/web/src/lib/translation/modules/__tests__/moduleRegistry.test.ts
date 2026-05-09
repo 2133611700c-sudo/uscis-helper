@@ -69,10 +69,11 @@ describe('getDocumentModule', () => {
     expect(m).toBe(manualReviewModule)
   })
 
-  it('returns manualReview for a draft module (ua_birth_certificate)', () => {
-    expect(birthCertificateModule.status).toBe('draft')
+  it('returns birthCertificateModule for ua_birth_certificate (promoted to active)', () => {
+    // Birth certificate module promoted to active in v6.0 — routes to itself
+    expect(birthCertificateModule.status).toBe('active')
     const m = getDocumentModule('ua_birth_certificate')
-    expect(m).toBe(manualReviewModule)
+    expect(m).toBe(birthCertificateModule)
   })
 
   it('returns manualReview for manual_only module (pass-through)', () => {
@@ -141,9 +142,9 @@ describe('listActiveModules', () => {
     expect(types).toContain('ua_internal_passport_booklet')
   })
 
-  it('does NOT include the birth certificate (draft)', () => {
+  it('includes the birth certificate (active since v6.0)', () => {
     const types = listActiveModules().map(m => m.documentType)
-    expect(types).not.toContain('ua_birth_certificate')
+    expect(types).toContain('ua_birth_certificate')
   })
 
   it('does NOT include the manualReview module', () => {
@@ -159,8 +160,8 @@ describe('isAutoDraftSupported', () => {
     expect(isAutoDraftSupported('ua_internal_passport_booklet')).toBe(true)
   })
 
-  it('returns false for birth certificate (draft)', () => {
-    expect(isAutoDraftSupported('ua_birth_certificate')).toBe(false)
+  it('returns true for birth certificate (active + allowAutoPdf since v6.0)', () => {
+    expect(isAutoDraftSupported('ua_birth_certificate')).toBe(true)
   })
 
   it('returns false for manual_review_required', () => {
@@ -221,9 +222,9 @@ describe('classifyToModule', () => {
     expect(m).toBe(passportBookletModule)
   })
 
-  it('returns manualReview for draft type (birth certificate)', () => {
+  it('returns birthCertificateModule for ua_birth_certificate (active since v6.0)', () => {
     const m = classifyToModule('ua_birth_certificate', 1.0)
-    expect(m).toBe(manualReviewModule)
+    expect(m).toBe(birthCertificateModule)
   })
 })
 
