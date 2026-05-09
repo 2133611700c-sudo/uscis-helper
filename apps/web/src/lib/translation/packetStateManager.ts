@@ -179,9 +179,11 @@ export async function persistExtractedFields(
       language_layer:   f.language_layer,
       confidence:       f.confidence,
       review_required:  f.review_required,
-      // Phase 1 evidence provenance — null for pre-Phase-1 rows
+      // Evidence provenance (v6 — Google Vision + DeepSeek Text)
       evidence_type:    f.evidence_type ?? null,
       bbox_status:      f.bbox_status ?? null,
+      ocr_ids:          f.ocr_ids ?? null,          // jsonb array of OCR token IDs
+      combined_bbox:    f.combined_bbox ?? null,    // jsonb [x0,y0,x1,y1] when multi-word
     }))
     // Delete existing rows for this session first (idempotent re-extraction)
     await supabase.from('extracted_fields').delete().eq('session_id', sessionId)

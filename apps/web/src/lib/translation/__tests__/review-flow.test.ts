@@ -678,3 +678,176 @@ describe('async OCR — pipeline outcome simulation', () => {
     expect(status).toBe('manual_review_required')
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Phase 6 — Dedicated OCR provider + ID-based evidence mapping (10 new tests)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import { bboxToTuple, unionBboxes, isBlocked } from '@/lib/ocr/types'
+import type { OcrResult, OcrWord, OcrBoundingBox, OcrBlockedResult } from '@/lib/ocr/types'
+import { buildOcrLookup, resolveOcrIds } from '@/lib/ocr/bbox-resolver'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function makeWord(id: string, text: string, x: number, y: number, w: number, h: number): OcrWord {
+  return {
+    id,
+    text,
+    page: 1,
+    bbox: { x, y, width: w, height: h },
+    confidence: 0.98,
+    source: 'google_vision',
+  }
+}
+
+function makeOcrResult(words: OcrWord[]): OcrResult {
+  return {
+    provider: 'google_vision',
+    raw_text: words.map(w => w.text).join(' '),
+    pages: [],
+    lines: [],
+    words,
+    processing_ms: 1200,
+    warnings: [],
+    created_at: new Date().toISOString(),
+  }
+}
+
+// ── Suite 1: OCR provider returns words with stable IDs ───────────────────────
+
+describe('OCR provider — word IDs and bboxes', () => {
+  it('each word has a unique stable ID in w_NNNN format', () => {
+    const words: OcrWord[] = [
+      makeWord('w_0000', 'ПАСПОРТ', 0.1, 0.05, 0.3, 0.04),
+      makeWord('w_0001', 'REDACTED_NAME', 0.1, 0.2, 0.25, 0.04),
+      makeWord('w_0002', 'Сергій', 0.1, 0.25, 0.2, 0.04),
+    ]
+    const ids = words.map(w => w.id)
+    const unique = new Set(ids)
+    expect(unique.size).toBe(words.length)
+    ids.forEach(id => expect(id).toMatch(/^w_\d{4}$/))
+  })
+
+  it('each word bbox is normalised 0–1 and non-degenerate', () => {
+    const word = makeWord('w_0012', 'REDACTED_NAME', 0.12, 0.25, 0.18, 0.032)
+    expect(word.bbox.x).toBeGreaterThanOrEqual(0)
+    expect(word.bbox.y).toBeGreaterThanOrEqual(0)
+    expect(word.bbox.x + word.bbox.width).toBeLessThanOrEqual(1)
+    expect(word.bbox.y + word.bbox.height).toBeLessThanOrEqual(1)
+    const tuple = bboxToTuple(word.bbox)
+    expect(tuple).not.toEqual([0, 0, 1, 1])   // not degenerate
+  })
+
+  it('bboxToTuple converts bbox to [x0, y0, x1, y1]', () => {
+    const bbox: OcrBoundingBox = { x: 0.12, y: 0.25, width: 0.18, height: 0.032 }
+    const tuple = bboxToTuple(bbox)
+    expect(tuple[0]).toBeCloseTo(0.12)
+    expect(tuple[1]).toBeCloseTo(0.25)
+    expect(tuple[2]).toBeCloseTo(0.30)
+    expect(tuple[3]).toBeCloseTo(0.282)
+  })
+
+  it('unionBboxes computes correct outer bounds for multi-word date', () => {
+    // "19 лютого 2003" — 3 words side by side
+    const boxes: OcrBoundingBox[] = [
+      { x: 0.10, y: 0.40, width: 0.04, height: 0.03 },  // "19"
+      { x: 0.15, y: 0.40, width: 0.09, height: 0.03 },  // "лютого"
+      { x: 0.25, y: 0.40, width: 0.06, height: 0.03 },  // "2003"
+    ]
+    const union = unionBboxes(boxes)
+    expect(union.x).toBeCloseTo(0.10)
+    expect(union.y).toBeCloseTo(0.40)
+    expect(union.x + union.width).toBeCloseTo(0.31)
+    expect(union.height).toBeCloseTo(0.03)
+  })
+})
+
+// ── Suite 2: bbox resolver — OCR ID → bbox mapping ───────────────────────────
+
+describe('bbox resolver — resolveOcrIds', () => {
+  const resolverWords = [
+    makeWord('w_0012', 'REDACTED_NAME', 0.10, 0.20, 0.18, 0.032),
+    makeWord('w_0013', 'Сергій',     0.10, 0.24, 0.14, 0.032),
+    makeWord('w_0020', '19',         0.10, 0.40, 0.04, 0.030),
+    makeWord('w_0021', 'лютого',     0.15, 0.40, 0.09, 0.030),
+    makeWord('w_0022', '2003',       0.25, 0.40, 0.06, 0.030),
+  ]
+  const resolverOcr    = makeOcrResult(resolverWords)
+  const resolverLookup = buildOcrLookup(resolverOcr)
+
+  it('single ID → bbox_status exact', () => {
+    const result = resolveOcrIds(['w_0012'], resolverLookup)
+    expect(result.bbox_status).toBe('exact')
+    expect(result.evidence_type).toBe('ocr_bbox')
+    expect(result.unresolved_ids).toHaveLength(0)
+    expect(result.resolved_count).toBe(1)
+    expect(result.bbox).not.toEqual([0, 0, 1, 1])
+  })
+
+  it('multiple IDs → bbox_status combined with union bbox', () => {
+    const result = resolveOcrIds(['w_0020', 'w_0021', 'w_0022'], resolverLookup)
+    expect(result.bbox_status).toBe('combined')
+    expect(result.evidence_type).toBe('ocr_bbox')
+    expect(result.resolved_count).toBe(3)
+    // x0 should be 0.10, x1 should be 0.31
+    expect(result.bbox[0]).toBeCloseTo(0.10)
+    expect(result.bbox[2]).toBeCloseTo(0.31)
+  })
+
+  it('unknown ID marks unresolved and sets review_required_by_bbox', () => {
+    const result = resolveOcrIds(['w_9999'], resolverLookup)  // doesn't exist
+    expect(result.bbox_status).toBe('missing')
+    expect(result.evidence_type).toBe('zone_fallback')
+    expect(result.unresolved_ids).toContain('w_9999')
+    expect(result.review_required_by_bbox).toBe(true)
+  })
+
+  it('empty ocr_ids → missing bbox, review_required', () => {
+    const result = resolveOcrIds([], resolverLookup)
+    expect(result.bbox_status).toBe('missing')
+    expect(result.review_required_by_bbox).toBe(true)
+    expect(result.resolved_count).toBe(0)
+  })
+
+  it('partial resolution: one known, one unknown → combined with unresolved noted', () => {
+    const result = resolveOcrIds(['w_0012', 'w_9998'], resolverLookup)
+    // w_0012 resolves, w_9998 doesn't
+    expect(result.resolved_count).toBe(1)
+    expect(result.unresolved_ids).toContain('w_9998')
+    // Still gets a bbox from the one that resolved
+    expect(result.bbox_status).toBe('combined')  // 1 resolved + 1 unresolved → combined
+    expect(result.evidence_type).toBe('ocr_bbox')
+  })
+})
+
+// ── Suite 3: OCR provider blocked when credentials missing ────────────────────
+
+describe('OCR provider — BLOCKED result when credentials missing', () => {
+  it('isBlocked() returns true for OcrBlockedResult', () => {
+    const blocked: OcrBlockedResult = {
+      blocked: true,
+      reason: 'GOOGLE_CLOUD_VISION_API_KEY not set',
+      required_env_vars: ['GOOGLE_CLOUD_VISION_API_KEY'],
+    }
+    expect(isBlocked(blocked)).toBe(true)
+  })
+
+  it('isBlocked() returns false for a real OcrResult', () => {
+    const result: OcrResult = makeOcrResult([makeWord('w_0000', 'test', 0.1, 0.1, 0.2, 0.05)])
+    expect(isBlocked(result)).toBe(false)
+  })
+
+  it('BLOCKED result includes exact env var names without values', () => {
+    const blocked: OcrBlockedResult = {
+      blocked: true,
+      reason: 'API key missing',
+      required_env_vars: ['GOOGLE_CLOUD_VISION_API_KEY'],
+    }
+    expect(blocked.required_env_vars).toContain('GOOGLE_CLOUD_VISION_API_KEY')
+    // Must NOT contain actual key values
+    blocked.required_env_vars.forEach(v => {
+      expect(v).not.toMatch(/AIza/)   // no real API key pattern
+      expect(v).not.toMatch(/sk-/)    // no OpenAI-style keys
+    })
+  })
+})
