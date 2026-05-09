@@ -54,8 +54,12 @@ create policy "svc_translation_documents" on public.translation_documents
 create index if not exists idx_td_session on public.translation_documents (session_id);
 
 -- ── 3. extracted_fields ──────────────────────────────────────
+-- Drop old incompatible schema (field_key/field_value from init migration).
+-- CASCADE removes any dependent objects (indexes, FKs).
+drop table if exists public.extracted_fields cascade;
+
 -- One row per extracted field (normalized, not JSONB blob)
-create table if not exists public.extracted_fields (
+create table public.extracted_fields (
   id                uuid        primary key default gen_random_uuid(),
   session_id        text        not null references public.translation_sessions(session_id) on delete cascade,
   field             text        not null,        -- e.g. 'surname', 'date_of_birth'

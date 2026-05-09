@@ -17,6 +17,8 @@ import { loadGlossary, lookupTerm } from '@/lib/translation/glossary/glossaryLoa
 import { transliterateName } from '@/lib/translation/glossary/nominativeCaseRestorer'
 import { normalizeDateUkrainian } from '@/lib/translation/numericAccuracy/dateFieldLockValidator'
 import { DocumentType, ExtractedField } from '@/lib/translation/types'
+import { persistExtractedFields, writeAuditLog } from '@/lib/translation/packetStateManager'
+import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { readFile } from 'fs/promises'
 import path from 'path'
 
@@ -156,9 +158,38 @@ export async function POST(req: NextRequest) {
     return { ...field, normalized_value: normalized }
   })
 
+  // Persist fields + advance session status → extracted
+  const session_id = body.session_id
+  if (session_id) {
+    try {
+      await persistExtractedFields(session_id, processed)
+
+      const supabase = createAdminSupabaseClient()
+      await supabase.from('translation_sessions').update({
+        status: 'extracted',
+        doc_type,
+        updated_at: new Date().toISOString(),
+      }).eq('session_id', session_id)
+
+      await writeAuditLog({
+        session_id,
+        event_type: 'extraction_completed',
+        metadata: {
+          doc_type,
+          total_fields: processed.length,
+          review_required_count: processed.filter(f => f.review_required).length,
+          image_quality: result.imageQuality,
+        },
+      })
+    } catch (err) {
+      console.error('[translation/extract] persist failed:', err)
+      // Non-fatal: still return the fields
+    }
+  }
+
   return NextResponse.json({
     ok: true,
-    session_id: body.session_id,
+    session_id,
     doc_type,
     fields: processed,
     image_quality: result.imageQuality,
