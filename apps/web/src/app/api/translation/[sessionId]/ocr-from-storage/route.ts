@@ -40,6 +40,10 @@ import { getOcrProvider } from '@/lib/ocr/providers'
 import { mapFieldsWithDeepSeek } from '@/lib/ocr/field-mapper'
 import { buildOcrLookup, resolveOcrIds } from '@/lib/ocr/bbox-resolver'
 import { isBlocked } from '@/lib/ocr/types'
+import {
+  getCriticalFieldSetForDocumentType,
+  getCriticalFieldsForDocumentType,
+} from '@/lib/translation/modules/adapters'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60   // safety ceiling; target ≤15s (Vision ~5s + DeepSeek Text ~8s + overhead)
@@ -50,12 +54,6 @@ const SMART_RETAKE_MAX_ATTEMPTS = 2
 const SMART_RETAKE_USER_MESSAGE =
   'The photo is too blurry or poorly lit for reliable extraction. ' +
   'Please retake with better lighting, steady hands, and the document flat on a surface.'
-
-// Critical fields that MUST have bbox evidence; missing bbox → review_required
-const CRITICAL_FIELDS = new Set([
-  'surname', 'given_names', 'date_of_birth', 'place_of_birth',
-  'series', 'number', 'issued_by', 'date_of_issue',
-])
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(
@@ -92,6 +90,10 @@ export async function POST(
 
   const docType: DocumentType =
     body.doc_type ?? (session.doc_type as DocumentType) ?? 'ua_passport_booklet'
+
+  // Critical field set — driven by module registry, not hardcoded
+  // This replaces the old static 8-field CRITICAL_FIELDS constant.
+  const CRITICAL_FIELDS = getCriticalFieldSetForDocumentType(docType)
 
   // ── 2. Locate document ────────────────────────────────────────────────────
   const docQuery = supabase
@@ -318,15 +320,10 @@ export async function POST(
   })
 
   // ── 9a. Phase 3: Critical field completeness guard ───────────────────────
-  // All 11 critical fields must have a DB row — even if unreadable.
+  // All critical fields (per module) must have a DB row — even if unreadable.
   // Missing fields get a review_required placeholder so the Evidence Review
   // UI can show them and block certification until the user resolves them.
-  const ALL_CRITICAL_FIELDS = [
-    'document_type', 'series', 'number',
-    'surname', 'given_names', 'patronymic',
-    'date_of_birth', 'place_of_birth', 'sex',
-    'issued_by', 'date_of_issue',
-  ] as const
+  const ALL_CRITICAL_FIELDS = getCriticalFieldsForDocumentType(docType)
 
   const presentFieldNames = new Set(processed.map(f => f.field))
   const missingCritical = ALL_CRITICAL_FIELDS.filter(f => !presentFieldNames.has(f))
