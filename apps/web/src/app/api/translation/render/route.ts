@@ -191,9 +191,58 @@ export async function POST(req: NextRequest) {
     }, { status: 422 })
   }
 
-  // Gate 4: QA validators
+  // Gate 3.5: OCR/Vision result exists + evidence coverage for critical fields
+  // Checks that an ocr_completed audit event exists for this session (Phase 1+).
+  // Pre-Phase-1 sessions (no evidence columns) pass with a warning.
+  const { data: ocrAuditRows } = await supabase
+    .from('audit_logs')
+    .select('id')
+    .eq('session_id', session_id)
+    .eq('event_type', 'ocr_completed')
+    .limit(1)
+
+  const ocrResultExists = (ocrAuditRows?.length ?? 0) > 0
+
+  // Evidence coverage: critical fields with no evidence_type are pre-Phase-1 rows.
+  // We warn but do not hard-block (grandfathering existing paid sessions).
+  const { data: evidenceRows } = await supabase
+    .from('extracted_fields')
+    .select('field, evidence_type')
+    .eq('session_id', session_id)
+    .in('field', CRITICAL_FIELDS_RENDER)
+
+  type EvidenceRow = { field: string; evidence_type: string | null }
+  const criticalWithoutEvidence = (evidenceRows ?? [])
+    .filter((r: EvidenceRow) => r.evidence_type === null)
+    .map((r: EvidenceRow) => r.field)
+
+  const evidenceWarnings: string[] = []
+  if (!ocrResultExists) {
+    evidenceWarnings.push('No OCR run found for this session — fields may be manually entered.')
+  }
+  if (criticalWithoutEvidence.length > 0) {
+    evidenceWarnings.push(
+      `${criticalWithoutEvidence.length} critical field(s) have no evidence record (pre-Phase-1 extraction): ${criticalWithoutEvidence.join(', ')}`
+    )
+  }
+  // Hard-block only if OCR exists but critical fields have NO evidence at all
+  // (meaning Phase-1 OCR ran but failed to label fields — indicates a code bug).
+  if (ocrResultExists && criticalWithoutEvidence.length === CRITICAL_FIELDS_RENDER.length) {
+    return NextResponse.json({
+      ok: false,
+      error: 'Evidence audit failed: OCR completed but no critical fields have evidence records.',
+      gate: 'evidence_audit',
+      critical_without_evidence: criticalWithoutEvidence,
+    }, { status: 422 })
+  }
+
+  // Gate 4: QA validators (merge in any evidence warnings from Gate 3.5)
   const finalText = buildFinalDocument(state)
   const qa = runQaValidators(state, finalText)
+  // Carry evidence warnings forward into QA result for PDF audit trail
+  if (evidenceWarnings.length > 0) {
+    qa.warnings = [...(qa.warnings ?? []), ...evidenceWarnings]
+  }
 
   if (qa.status === 'FAIL') {
     return NextResponse.json({
