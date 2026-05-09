@@ -100,6 +100,7 @@ const FULL_GLOSSARY: GlossaryModule = {
 
 const DOC_TYPE_MODULES: Record<DocumentType, (keyof GlossaryModule)[]> = {
   ua_passport_booklet:    ['passport_fields', 'admin_terms', 'agencies', 'abbreviations', 'months', 'sex_values', 'marital_status', 'historical_geography_lock'],
+  ua_passport_internal:   ['passport_fields', 'admin_terms', 'agencies', 'abbreviations', 'months', 'sex_values', 'marital_status', 'historical_geography_lock'],  // alias
   ua_passport_id_card:    ['passport_fields', 'admin_terms', 'agencies', 'months', 'sex_values'],
   ua_passport_biometric:  ['passport_fields', 'admin_terms', 'agencies', 'months', 'sex_values'],
   ua_birth_certificate:   ['admin_terms', 'agencies', 'months', 'sex_values', 'historical_geography_lock'],

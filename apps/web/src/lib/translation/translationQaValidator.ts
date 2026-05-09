@@ -24,7 +24,14 @@ export function runQaValidators(state: PacketState, finalText?: string): QAResul
   const warnings: string[] = []
   const required_actions: string[] = []
 
-  // 1. Source trace check
+  // 1a. Global source traces check — source_traces array must be present and non-empty
+  //     when there are extracted fields. Every render requires audit trail.
+  if (state.extracted_fields.length > 0 && state.source_traces.length === 0) {
+    failures.push('No source traces provided — every extracted field must have a source trace (bbox + zone)')
+    required_actions.push('Re-run extraction so source_traces is populated for all fields')
+  }
+
+  // 1b. Per-field source trace check for critical fields
   for (const field of state.extracted_fields) {
     const isCritical = (CRITICAL_FIELDS_BY_DOCTYPE[state.document_type ?? ''] ?? []).includes(field.field)
     const hasTrace = field.source_zone && field.bbox && field.bbox.length === 4

@@ -45,14 +45,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Certification record invalid', details: errors }, { status: 400 })
   }
 
-  // Persist to Supabase
+  // Persist certification record to dedicated table
   try {
     const supabase = createAdminSupabaseClient()
-    await supabase.from('translation_orders').update({
-      certification_record: record,
-      status: 'certified',
-      updated_at: new Date().toISOString(),
-    }).eq('session_id', session_id)
+
+    // Upsert into certification_records
+    await supabase.from('certification_records').upsert({
+      session_id:             session_id,
+      signer_full_name:       record.signer_full_name,
+      signer_address:         body.signer_address ?? null,
+      signer_phone:           body.signer_phone ?? null,
+      signer_email:           body.signer_email ?? null,
+      source_language:        body.source_language ?? 'Ukrainian',
+      target_language:        'English',
+      language_pair_confirmed: record.language_pair_confirmed,
+      statement:              record.statement,
+      signature_typed_name:   record.signature_typed_name,
+      certification_version:  record.certification_version,
+      signed_at:              record.signed_at,
+    }, { onConflict: 'session_id' })
+
+    // Update session status
+    await supabase.from('translation_sessions')
+      .update({ status: 'certified', updated_at: new Date().toISOString() })
+      .eq('session_id', session_id)
+
+    // Audit log
+    await supabase.from('audit_logs').insert({
+      session_id,
+      event_type: 'certification_completed',
+      metadata: {
+        signer_full_name: record.signer_full_name,
+        certification_version: record.certification_version,
+        signed_at: record.signed_at,
+      },
+    })
   } catch (err) {
     console.error('[translation/certify] persist failed:', err)
   }

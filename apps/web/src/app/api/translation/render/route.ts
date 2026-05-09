@@ -42,10 +42,10 @@ export async function POST(req: NextRequest) {
   const { session_id, checkout_id } = body
   if (!session_id) return NextResponse.json({ ok: false, error: 'session_id required' }, { status: 400 })
 
-  // Load state from Supabase
+  // Load state from Supabase (v5 schema: translation_sessions)
   const supabase = createAdminSupabaseClient()
   const { data, error } = await supabase
-    .from('translation_orders')
+    .from('translation_sessions')
     .select('*')
     .eq('session_id', session_id)
     .single()
@@ -114,12 +114,33 @@ export async function POST(req: NextRequest) {
       qaWarnings: qa.warnings,
     } as Parameters<typeof generateTranslationPDF>[0])
 
-    // Mark as rendered
-    await supabase.from('translation_orders').update({
+    // Mark session as rendered
+    await supabase.from('translation_sessions').update({
       status: 'rendered',
-      payment_confirmed: true,
       updated_at: new Date().toISOString(),
     }).eq('session_id', session_id)
+
+    // Persist final_renders row
+    const storageKey = `renders/${session_id}/${Date.now()}.pdf`
+    await supabase.from('final_renders').insert({
+      session_id,
+      storage_key: storageKey,
+      content_type: 'application/pdf',
+      file_size_bytes: pdfBuffer.length,
+      qa_passed: true,
+      qa_report: { status: qa.status, warnings: qa.warnings ?? [], failures: qa.failures ?? [] },
+    })
+
+    // Audit log
+    await supabase.from('audit_logs').insert({
+      session_id,
+      event_type: 'final_rendered',
+      metadata: {
+        file_size_bytes: pdfBuffer.length,
+        qa_status: qa.status,
+        storage_key: storageKey,
+      },
+    })
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
@@ -131,6 +152,12 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('[translation/render] PDF generation failed:', err)
+    // Audit failure
+    await supabase.from('audit_logs').insert({
+      session_id,
+      event_type: 'error',
+      metadata: { step: 'render', error: String(err) },
+    })
     return NextResponse.json({ ok: false, error: 'PDF generation failed', details: String(err) }, { status: 500 })
   }
 }
