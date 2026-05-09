@@ -10,6 +10,12 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
+/** Critical fields that must ALL be confirmed before certification is allowed */
+const CRITICAL_FIELDS = [
+  'surname', 'given_names', 'date_of_birth', 'place_of_birth',
+  'series', 'number', 'issued_by', 'date_of_issue',
+]
+
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req)
   const rl = await rateLimit(`translation_certify:${ip}`, 10, 60_000)
@@ -31,6 +37,30 @@ export async function POST(req: NextRequest) {
   if (!signer_name) return NextResponse.json({ ok: false, error: 'signer_name required' }, { status: 400 })
   if (!signature_typed_name) return NextResponse.json({ ok: false, error: 'signature_typed_name required' }, { status: 400 })
 
+  // ── Gate: all critical fields must be confirmed before certification ────────
+  const supabaseGate = createAdminSupabaseClient()
+  const { data: fieldRows } = await supabaseGate
+    .from('extracted_fields')
+    .select('field, confirmed')
+    .eq('session_id', session_id)
+
+  const fields = fieldRows ?? []
+  const presentCritical = CRITICAL_FIELDS.filter(cf => fields.find(f => f.field === cf))
+  const unconfirmedCritical = presentCritical.filter(cf => {
+    const row = fields.find(f => f.field === cf)
+    return row && !row.confirmed
+  })
+
+  if (unconfirmedCritical.length > 0) {
+    return NextResponse.json({
+      ok: false,
+      error: 'Cannot certify: critical fields not yet confirmed by human reviewer.',
+      gate: 'critical_fields_unconfirmed',
+      unconfirmed_critical: unconfirmedCritical,
+      required_action: `Please confirm all required fields in the Review tab before signing: ${unconfirmedCritical.join(', ')}`,
+    }, { status: 400 })
+  }
+
   const record = buildCertificationRecord({
     signerName: signer_name,
     signerAddress: body.signer_address,
@@ -47,7 +77,7 @@ export async function POST(req: NextRequest) {
 
   // Persist certification record to dedicated table
   try {
-    const supabase = createAdminSupabaseClient()
+    const supabase = supabaseGate
 
     // Upsert into certification_records
     await supabase.from('certification_records').upsert({

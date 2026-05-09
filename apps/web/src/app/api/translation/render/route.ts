@@ -142,7 +142,56 @@ export async function POST(req: NextRequest) {
     }, { status: 400 })
   }
 
-  // Gate 3: QA validators
+  // Gate 3: Source-to-final completeness audit
+  // All critical fields must be human-confirmed before render
+  const CRITICAL_FIELDS_RENDER = [
+    'surname', 'given_names', 'date_of_birth', 'place_of_birth',
+    'series', 'number', 'issued_by', 'date_of_issue',
+  ]
+  const { data: confirmedRows } = await supabase
+    .from('extracted_fields')
+    .select('field, confirmed, normalized_value')
+    .eq('session_id', session_id)
+
+  type ConfirmedRow = { field: string; confirmed: boolean; normalized_value: string | null }
+  const confirmedMap: Record<string, ConfirmedRow> = Object.fromEntries(
+    (confirmedRows ?? []).map(r => [r.field, r as ConfirmedRow])
+  )
+  const unconfirmedCritical = CRITICAL_FIELDS_RENDER.filter(cf => {
+    const row = confirmedMap[cf]
+    return row && !row.confirmed
+  })
+  const missingCritical = CRITICAL_FIELDS_RENDER.filter(cf => !confirmedMap[cf])
+
+  // Final PDF fields must match the confirmed DB values (source-to-final audit)
+  const finalFieldMap = Object.fromEntries(
+    state.extracted_fields.map(f => [f.field, f.normalized_value])
+  )
+  const mismatchedFields: string[] = []
+  for (const [field, dbRow] of Object.entries(confirmedMap)) {
+    const finalVal = finalFieldMap[field]
+    if (dbRow.confirmed && finalVal && finalVal !== dbRow.normalized_value) {
+      mismatchedFields.push(`${field}: DB="${dbRow.normalized_value}" vs final="${finalVal}"`)
+    }
+  }
+
+  if (unconfirmedCritical.length > 0 || missingCritical.length > 0 || mismatchedFields.length > 0) {
+    await supabase.from('audit_logs').insert({
+      session_id,
+      event_type: 'render_blocked_completeness_audit',
+      metadata: { unconfirmedCritical, missingCritical, mismatchedFields },
+    })
+    return NextResponse.json({
+      ok: false,
+      error: 'Source-to-final completeness audit failed — cannot render.',
+      gate: 'completeness_audit',
+      unconfirmed_critical: unconfirmedCritical,
+      missing_critical: missingCritical,
+      mismatched_fields: mismatchedFields,
+    }, { status: 422 })
+  }
+
+  // Gate 4: QA validators
   const finalText = buildFinalDocument(state)
   const qa = runQaValidators(state, finalText)
 
