@@ -39,7 +39,12 @@ type Ctx = {
 
 function clampText(str: string | null | undefined, maxLen = 60): string {
   const s = String(str ?? '')
-  return s.length > maxLen ? s.slice(0, maxLen - 1) + '…' : s
+  return s.length > maxLen ? s.slice(0, maxLen - 1) + '...' : s
+}
+
+/** Replace characters outside WinAnsi (Latin-1, code points 32-255) with '?' */
+function sanitizeWinAnsi(str: string | null | undefined): string {
+  return String(str ?? '').replace(/[^\x20-\xFF]/g, '?')
 }
 
 function drawHRule(page: PDFPage, y: number) {
@@ -131,9 +136,9 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
 
     const label = field.field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     page.drawText(label + ':', { x: MARGIN, y, size: 10, font: bold, color: TEXT_DARK })
-    const endY = drawText(page, ctx, clampText(field.normalized_value, 80), MARGIN + 180, y, { size: 10 })
+    const endY = drawText(page, ctx, sanitizeWinAnsi(clampText(field.normalized_value, 80)), MARGIN + 180, y, { size: 10 })
     if (field.review_required) {
-      page.drawText('⚠ review', { x: PAGE_W - MARGIN - 60, y, size: 8, font, color: WARN_ORANGE })
+      page.drawText('! review', { x: PAGE_W - MARGIN - 60, y, size: 8, font, color: WARN_ORANGE })
     }
     y = Math.min(y - LINE_H, endY) - 4
   }
@@ -171,7 +176,7 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   ]
   for (const [lbl, val] of signerRows) {
     page.drawText(lbl + ':', { x: MARGIN, y, size: 10, font: bold, color: TEXT_DARK })
-    page.drawText(val, { x: MARGIN + 140, y, size: 10, font, color: TEXT_DARK })
+    page.drawText(sanitizeWinAnsi(val), { x: MARGIN + 140, y, size: 10, font, color: TEXT_DARK })
     y -= LINE_H + 4
   }
   y -= SECTION_GAP
@@ -198,8 +203,8 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
     page.drawText(`zone: ${trace.source_zone}`, { x: MARGIN + 140, y, size: 7, font: mono, color: MUTED })
     page.drawText(`conf: ${trace.confidence.toFixed(2)}`, { x: MARGIN + 340, y, size: 7, font: mono, color: trace.confidence < 0.70 ? WARN_ORANGE : MUTED })
     y -= 12
-    page.drawText(`raw: ${clampText(trace.raw_value, 50)}`, { x: MARGIN + 12, y, size: 7, font: mono, color: MUTED })
-    page.drawText(`-> ${clampText(trace.normalized_value, 40)}`, { x: MARGIN + 280, y, size: 7, font: mono, color: TEXT_DARK })
+    page.drawText(`raw: ${sanitizeWinAnsi(clampText(trace.raw_value, 50))}`, { x: MARGIN + 12, y, size: 7, font: mono, color: MUTED })
+    page.drawText(`-> ${sanitizeWinAnsi(clampText(trace.normalized_value, 40))}`, { x: MARGIN + 280, y, size: 7, font: mono, color: TEXT_DARK })
     y -= LINE_H
   }
 
