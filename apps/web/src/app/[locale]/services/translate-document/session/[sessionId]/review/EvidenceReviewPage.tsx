@@ -891,7 +891,7 @@ function FinalDownloadPanel({ sessionId }: { sessionId: string }) {
       </button>
 
       <p style={{ fontSize: '13px', color: C.gray, lineHeight: 1.5 }}>
-        PDF includes: certified translation + translator signature + source audit trail.
+        PDF includes: official translation + translator signature + source audit trail.
         Keep a printed copy with your USCIS application.
       </p>
     </div>
