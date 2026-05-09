@@ -1,5 +1,5 @@
 /**
- * Bureau-Style Renderer — Messenginfo v5.0
+ * Bureau-Style Renderer -Messenginfo v5.0
  * Generates clean translation output. No internal QA notes.
  * No "CERTIFIED COPY". No forbidden phrases.
  * Final PDF locked behind payment + certification record.
@@ -28,7 +28,7 @@ export function buildScopeTitle(
 ): string {
   const label = DOC_TYPE_LABELS[docType] ?? 'Ukrainian Official Document'
   if (uploadedPages > 0 && uploadedPages < totalPages) {
-    return `English Translation of the Provided ${label} Pages (pages 1–${uploadedPages} of ${totalPages})`
+    return `English Translation of the Provided ${label} Pages (pages 1-${uploadedPages} of ${totalPages})`
   }
   return `English Translation of ${label}`
 }
@@ -43,7 +43,7 @@ export function renderTranslationHeader(state: PacketState): string {
     '',
     `Document Type: ${DOC_TYPE_LABELS[state.document_type ?? 'other']}`,
     `Translation Scope: ${state.scope_title}`,
-    `Language Pair: Ukrainian → English`,
+    `Language Pair: Ukrainian -> English`,
     `Translation Date: ${today}`,
     `Session: ${state.session_id}`,
   ].join('\n')
@@ -100,12 +100,12 @@ export function renderSourceTraceTable(state: PacketState): string {
       t.review_required ? 'YES' : 'NO',
     ].join(' | ')
   )
-  return [sep, 'SOURCE TRACE (QA/Audit — not part of translation)', sep, header, sep, ...rows, sep].join('\n')
+  return [sep, 'SOURCE TRACE (QA/Audit - not part of translation)', sep, header, sep, ...rows, sep].join('\n')
 }
 
 export function buildWatermarkedPreview(state: PacketState): string {
   return [
-    '[DRAFT — NOT CERTIFIED — FOR REVIEW ONLY]',
+    '[DRAFT - NOT CERTIFIED - FOR REVIEW ONLY]',
     '',
     renderTranslationHeader(state),
     '',
