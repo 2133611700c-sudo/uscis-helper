@@ -22,6 +22,7 @@ import {
   getCriticalFieldsForDocumentType,
   getEvidenceRequiredFieldsForDocumentType,
 } from '@/lib/translation/modules/adapters'
+import { getOpenManualReviewForSession } from '@/lib/translation/manualReview/integrations'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,6 +114,22 @@ export async function POST(req: NextRequest) {
     } : null,
     payment_confirmed:    Boolean(sessionData.payment_confirmed),
   } as unknown as PacketState
+
+  // Gate 0: Manual review queue — hard block if any open ticket exists for this
+  // session. Approved-for-render and completed states are pass-through; rejected
+  // tickets do not block (the operator explicitly closed the case).
+  // This is the DB-backed second line of defense in addition to the
+  // module-level allowAutoPdf:false gate.
+  const mrSummary = await getOpenManualReviewForSession(session_id)
+  if (mrSummary.open) {
+    return NextResponse.json({
+      ok: false,
+      error: 'This document is in manual review. The translation will be ready after the team review is complete.',
+      gate: 'manual_review_pending',
+      manual_review_status: mrSummary.status,
+      message_key: mrSummary.userMessageKey,
+    }, { status: 423 })
+  }
 
   // Gate 1: Payment verification
   const paymentVerified = checkout_id

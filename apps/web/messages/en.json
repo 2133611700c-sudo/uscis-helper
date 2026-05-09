@@ -750,7 +750,7 @@
     "home": "Home",
     "backToServices": "Back to Services",
     "title": "Translate Document",
-    "subtitle": "Upload your document, sign online, and get a USCIS-ready certified PDF in minutes.",
+    "subtitle": "Upload a supported Ukrainian document, sign online, and download a USCIS-ready certified PDF.",
     "draftOnlyBanner": "USCIS-accepted — you sign the certification statement under 8 CFR §103.2(b)(3).",
     "chooseDocumentTitle": "Choose your document",
     "chooseDocumentSubtitle": "Select the document type you want to prepare.",
@@ -1045,7 +1045,8 @@
       "ecfr": "8 CFR 103.2(b)(3)",
       "lastCheckedLabel": "Last checked: {date}",
       "sourceLabel": "Source: official government website"
-    }
+    },
+    "supportedScope": "We currently support selected Ukrainian documents (internal passport, birth, marriage, divorce certificates). Unsupported, unclear, or low-confidence documents are routed to a team member for manual review — we will notify you when your translation is ready."
   },
   "home": {
     "hero": {

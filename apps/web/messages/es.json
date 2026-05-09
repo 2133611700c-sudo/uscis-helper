@@ -1045,7 +1045,8 @@
       "ecfr": "8 CFR 103.2(b)(3)",
       "lastCheckedLabel": "Última revisión: {date}",
       "sourceLabel": "Fuente: sitio oficial del gobierno"
-    }
+    },
+    "supportedScope": "We currently support selected Ukrainian documents (internal passport, birth, marriage, divorce certificates). Unsupported, unclear, or low-confidence documents are routed to a team member for manual review — we will notify you when your translation is ready."
   },
   "home": {
     "hero": {
