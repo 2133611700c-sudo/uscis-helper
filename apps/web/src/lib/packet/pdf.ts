@@ -7,7 +7,9 @@
  * Output pages:
  *   1. Translation header + extracted field table
  *   2. Certification block (8 CFR §103.2(b)(3)) + typed signature
- *   3. Source trace table (QA/audit page — last page)
+ *
+ * Audit/source trace data is stored in DB only (extracted_fields, audit_logs).
+ * It is NEVER included in the customer-facing PDF.
  *
  * Hard rules:
  *   - NO "CERTIFIED COPY" — removed
@@ -188,36 +190,9 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   y -= LINE_H
   page.drawText('Certification Version: ' + cert.certification_version, { x: MARGIN, y, size: 8, font, color: MUTED })
 
-  // ── PAGE 3: Source Trace (QA/Audit) ────────────────────────────────────────
-  page = pdfDoc.addPage([PAGE_W, PAGE_H])
-  y = PAGE_H - MARGIN
-
-  page.drawText('SOURCE TRACE - QA/AUDIT RECORD', { x: MARGIN, y, size: 12, font: bold, color: MUTED })
-  y -= 6; drawHRule(page, y); y -= 14
-  page.drawText('This page is for audit/QA purposes only. It is not part of the translation document.', { x: MARGIN, y, size: 8, font, color: MUTED })
-  y -= SECTION_GAP
-
-  for (const trace of input.sourceTraces) {
-    if (y < MARGIN + 30) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); y = PAGE_H - MARGIN }
-    page.drawText(trace.field, { x: MARGIN, y, size: 8, font: bold, color: TEXT_DARK })
-    page.drawText(`zone: ${trace.source_zone}`, { x: MARGIN + 140, y, size: 7, font: mono, color: MUTED })
-    page.drawText(`conf: ${trace.confidence.toFixed(2)}`, { x: MARGIN + 340, y, size: 7, font: mono, color: trace.confidence < 0.70 ? WARN_ORANGE : MUTED })
-    y -= 12
-    page.drawText(`raw: ${sanitizeWinAnsi(clampText(trace.raw_value, 50))}`, { x: MARGIN + 12, y, size: 7, font: mono, color: MUTED })
-    page.drawText(`-> ${sanitizeWinAnsi(clampText(trace.normalized_value, 40))}`, { x: MARGIN + 280, y, size: 7, font: mono, color: TEXT_DARK })
-    y -= LINE_H
-  }
-
-  if (input.qaWarnings && input.qaWarnings.length > 0) {
-    y -= SECTION_GAP
-    page.drawText('QA WARNINGS:', { x: MARGIN, y, size: 8, font: bold, color: WARN_ORANGE })
-    y -= 12
-    for (const w of input.qaWarnings) {
-      if (y < MARGIN + 20) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); y = PAGE_H - MARGIN }
-      page.drawText('• ' + clampText(w, 80), { x: MARGIN + 8, y, size: 7, font, color: WARN_ORANGE })
-      y -= 12
-    }
-  }
+  // SOURCE TRACE / QA audit data is stored in the DB (extracted_fields, audit_logs).
+  // It is intentionally NOT included in the customer-facing PDF.
+  // Admin audit exports are a separate internal tool.
 
   const pdfBytes = await pdfDoc.save()
   return Buffer.from(pdfBytes)
