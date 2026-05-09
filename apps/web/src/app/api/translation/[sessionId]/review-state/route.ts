@@ -45,10 +45,10 @@ export async function GET(
     return NextResponse.json({ ok: false, error: 'Session not found' }, { status: 404 })
   }
 
-  // Load extracted fields
+  // Load extracted fields (evidence_type + bbox_status added in Phase 1 migration)
   const { data: fieldRows } = await supabase
     .from('extracted_fields')
-    .select('id, field, source_label, source_zone, raw_value, normalized_value, language_layer, confidence, review_required, confirmed, confirmed_at, created_at')
+    .select('id, field, source_label, source_zone, raw_value, normalized_value, language_layer, confidence, review_required, confirmed, confirmed_at, evidence_type, bbox_status, created_at')
     .eq('session_id', sessionId)
     .order('created_at')
 
@@ -125,6 +125,9 @@ export async function GET(
       review_required: f.review_required,
       confirmed: f.confirmed,
       confirmed_at: f.confirmed_at,
+      // Phase 1 evidence provenance — may be null for pre-Phase-1 rows
+      evidence_type: (f as Record<string, unknown>).evidence_type ?? null,
+      bbox_status: (f as Record<string, unknown>).bbox_status ?? null,
       is_critical: CRITICAL_FIELDS.includes(f.field),
     })),
     document_image_url: documentImageUrl,
