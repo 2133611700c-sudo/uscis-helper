@@ -29,12 +29,20 @@ export async function generateDraftDOCX(input: PacketInput): Promise<Buffer> {
     'This is a draft template — the signer must review, complete, and sign the self-certification block. ' +
     'Consult a licensed immigration attorney for official USCIS submissions.'
 
+  const orderId = input.orderId ?? input.order_id ?? input.sessionId ?? 'N/A'
+  const docType = (input.doc_type ?? input.documentType ?? 'other').toString().replace(/_/g, ' ').toUpperCase()
+  const srcLang = (input.source_language ?? 'Ukrainian').toUpperCase()
+  const tgtLang = (input.target_language ?? 'English').toUpperCase()
+  const translatedAt = input.translated_at
+    ? (typeof input.translated_at === 'string' ? input.translated_at : new Date(input.translated_at).toISOString()).split('T')[0]
+    : new Date().toISOString().split('T')[0]
+
   const infoRows = [
-    ['Order ID', input.order_id],
-    ['Document Type', input.doc_type.replace(/_/g, ' ').toUpperCase()],
-    ['Source Language', input.source_language.toUpperCase()],
-    ['Target Language', input.target_language.toUpperCase()],
-    ['Translated At', input.translated_at.toISOString().split('T')[0]],
+    ['Order ID', orderId],
+    ['Document Type', docType],
+    ['Source Language', srcLang],
+    ['Target Language', tgtLang],
+    ['Translated At', translatedAt],
   ]
 
   const doc = new Document({
@@ -142,9 +150,9 @@ export async function generateDraftDOCX(input: PacketInput): Promise<Buffer> {
                 (field) =>
                   new TableRow({
                     children: [
-                      field.field_name.replace(/_/g, ' '),
-                      field.source_text,
-                      field.translated_text,
+                      (field.field ?? '').replace(/_/g, ' '),
+                      field.raw_value ?? '',
+                      field.normalized_value ?? '',
                     ].map(
                       (cellText) =>
                         new TableCell({

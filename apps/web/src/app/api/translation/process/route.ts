@@ -88,17 +88,43 @@ export async function POST(req: NextRequest) {
     }
 
     // Build PacketInput from order data
-    const fields = Array.isArray(order.fields_reviewed)
-      ? (order.fields_reviewed as Array<{ field_name: string; source_text: string; translated_text: string }>)
+    // Map legacy field shape to v5 ExtractedField shape
+    type LegacyField = { field_name: string; source_text: string; translated_text: string }
+    const rawFields = Array.isArray(order.fields_reviewed)
+      ? (order.fields_reviewed as LegacyField[])
       : []
+
+    const fields = rawFields.map((f: LegacyField) => ({
+      field: f.field_name ?? 'unknown',
+      source_label: f.field_name ?? '',
+      source_zone: 'unknown',
+      bbox: [0, 0, 1, 1] as [number, number, number, number],
+      raw_value: f.source_text ?? '',
+      normalized_value: f.translated_text ?? '',
+      language_layer: 'uk' as const,
+      confidence: 1.0,
+      review_required: false,
+    }))
 
     const input: PacketInput = {
       order_id: order.order_id as string,
+      scopeTitle: `English Translation of Ukrainian Document`,
+      documentType: (order.document_type as string) ?? 'other',
       doc_type: (order.document_type as string) ?? 'other',
-      source_language: 'original',
+      source_language: 'Ukrainian',
       target_language: (order.locale as string) ?? 'en',
-      translated_at: new Date(),
+      translated_at: new Date().toISOString(),
       fields,
+      sourceTraces: [],
+      certificationRecord: {
+        signer_full_name: '',
+        language_pair_confirmed: false,
+        statement: '',
+        signature_typed_name: '',
+        signed_at: new Date().toISOString(),
+        certification_version: 'v1.0-8cfr-2026',
+      },
+      sessionId: order.order_id as string,
     }
 
     const result = await generateFullPacket(input)

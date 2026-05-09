@@ -1,36 +1,38 @@
 /**
- * apps/web/src/lib/packet/types.ts
- *
- * Shared types for document packet generation.
+ * pdf-lib packet input/output types — Messenginfo v5.0
+ * Backward-compatible with existing index.ts / docx.ts / zip.ts
  */
-
-export interface TranslatedField {
-  field_name: string
-  source_text: string
-  translated_text: string
-}
+import type { ExtractedField, SourceTrace, CertificationRecord, DocumentType } from '@/lib/translation/types'
 
 export interface PacketInput {
-  order_id: string
-  doc_type: string
-  source_language: string
-  target_language: string
-  translated_at: Date
-  fields: TranslatedField[]
-  // Optional metadata
-  client_name?: string
+  // v5 fields
+  scopeTitle: string
+  documentType: DocumentType | string
+  fields: ExtractedField[]
+  sourceTraces: SourceTrace[]
+  certificationRecord: CertificationRecord
+  sessionId: string
+  qaWarnings?: string[]
+
+  // Legacy fields (used by index.ts / docx.ts)
+  order_id?: string
+  orderId?: string
+  doc_type?: string
+  source_language?: string
+  target_language?: string
+  translated_at?: string
   certifier_statement?: string
 }
 
 export interface DocumentFile {
   filename: string
-  contentType: 'application/pdf' | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' | 'application/zip'
+  contentType: string
   buffer: Buffer
 }
 
 export interface PacketOutput {
   ok: boolean
-  orderId: string
+  orderId?: string
   files: DocumentFile[]
   signedUrl?: string
   expiresAt?: Date
