@@ -117,21 +117,48 @@ export function scanTextForAgencyAbbr(text: string, docYear?: number): GlossaryR
 }
 
 /**
- * Find Cyrillic uppercase sequences (2+ chars) in text that are NOT in the glossary.
- * These look like abbreviations (e.g. "УМКН", "ХXYZ") but are unrecognized.
- * Returns an array of GlossaryResult with review_required=true.
+ * Geographic/administrative qualifiers that commonly appear in issued_by strings
+ * alongside agency abbreviations. These are NOT agency abbreviations and must NOT
+ * trigger review_required — they just qualify the location of the issuing office.
+ * e.g. "ДМС ЧЕРКАСЬКОЇ ОБЛ ." — "ОБЛ" (oblast) is a geographic qualifier, not an agency.
+ */
+const GEOGRAPHIC_QUALIFIERS = new Set([
+  'ОБЛ',  // oblast
+  'РН',   // raion (district)
+  'МІС',  // misto (city)
+  'СМТ',  // selyshche miskoho typu (urban-type settlement)
+  'СТ',   // stanytsia / stantsiya
+  'МТ',   // misto / mistechko variant
+  'М',    // misto (single letter — skip, below length threshold)
+])
+
+/**
+ * Find unrecognized abbreviations by splitting text into whitespace-separated tokens
+ * and checking each whole token.
+ *
+ * Rules:
+ * - Token must be ALL uppercase Cyrillic, exactly 2–8 chars (real abbreviations)
+ * - Long words like "ЧЕРКАСЬКОЇ" (10 chars) are proper adjectives, NOT abbreviations → skipped
+ * - Known glossary entries → skipped (handled by scanTextForAgencyAbbr)
+ * - Geographic qualifiers like "ОБЛ", "РН" → skipped
+ * - Multi-word known entries like "РВ УМВС": each sub-token is in ENTRIES individually → both skipped
  */
 function findUnrecognizedAbbreviations(text: string): GlossaryResult[] {
-  // Match 2+ consecutive uppercase Cyrillic letters (optionally followed by space + more Cyrillic uppercase)
-  // This catches standalone tokens like УМКН or multi-part ones like РВ УМВС handled by known scanner
-  const CYRILLIC_UPPER_ABBR = /[А-ЯЁІЇЄҐ]{2,}(?:\s[А-ЯЁІЇЄҐ]{2,})*/gu
+  if (!text) return []
   const results: GlossaryResult[] = []
   const seen = new Set<string>()
 
-  for (const match of text.matchAll(CYRILLIC_UPPER_ABBR)) {
-    const token = match[0]
-    // Skip if it's already a known key (will be handled by scanTextForAgencyAbbr)
+  // Split on any non-Cyrillic-alpha character (whitespace, punctuation, digits, Latin)
+  const tokens = text.split(/[^Ѐ-ӿ]+/u).filter(t => t.length > 0)
+
+  for (const token of tokens) {
+    // Must be entirely uppercase Cyrillic and 2–8 chars to qualify as an abbreviation
+    // {2,8} with $ anchor tests the WHOLE token — rejects "ЧЕРКАСЬКОЇ" (10 chars)
+    if (!/^[А-ЯЁІЇЄҐ]{2,8}$/.test(token)) continue
+    // Skip known glossary entries
     if (ENTRIES[token] || seen.has(token)) continue
+    // Skip common geographic/administrative qualifiers
+    if (GEOGRAPHIC_QUALIFIERS.has(token)) continue
     seen.add(token)
     results.push({
       abbreviation: token,
