@@ -109,7 +109,7 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
   const meta = [
     ['Translation Scope', clampText(input.scopeTitle, 70)],
-    ['Language Pair', 'Ukrainian → English'],
+    ['Language Pair', 'Ukrainian -> English'],
     ['Translation Date', today],
     ['Session Reference', input.sessionId.slice(0, 16)],
   ]
@@ -187,7 +187,7 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   page = pdfDoc.addPage([PAGE_W, PAGE_H])
   y = PAGE_H - MARGIN
 
-  page.drawText('SOURCE TRACE — QA/AUDIT RECORD', { x: MARGIN, y, size: 12, font: bold, color: MUTED })
+  page.drawText('SOURCE TRACE - QA/AUDIT RECORD', { x: MARGIN, y, size: 12, font: bold, color: MUTED })
   y -= 6; drawHRule(page, y); y -= 14
   page.drawText('This page is for audit/QA purposes only. It is not part of the translation document.', { x: MARGIN, y, size: 8, font, color: MUTED })
   y -= SECTION_GAP
@@ -199,7 +199,7 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
     page.drawText(`conf: ${trace.confidence.toFixed(2)}`, { x: MARGIN + 340, y, size: 7, font: mono, color: trace.confidence < 0.70 ? WARN_ORANGE : MUTED })
     y -= 12
     page.drawText(`raw: ${clampText(trace.raw_value, 50)}`, { x: MARGIN + 12, y, size: 7, font: mono, color: MUTED })
-    page.drawText(`→ ${clampText(trace.normalized_value, 40)}`, { x: MARGIN + 280, y, size: 7, font: mono, color: TEXT_DARK })
+    page.drawText(`-> ${clampText(trace.normalized_value, 40)}`, { x: MARGIN + 280, y, size: 7, font: mono, color: TEXT_DARK })
     y -= LINE_H
   }
 
