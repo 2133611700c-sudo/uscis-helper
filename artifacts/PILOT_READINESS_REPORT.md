@@ -1,16 +1,60 @@
 # Messenginfo / USCIS Helper — Pilot Readiness Report
 **Date:** 2026-05-09  
 **Branch:** main  
-**HEAD commit:** 32943be  
+**HEAD commit:** 80f9054  
 **Reporter:** Automated verification (Claude — lead production engineer role)  
 **Scope:** Ukrainian internal passport translation — controlled pilot (1–3 known users)
 
 ---
 
-## VERDICT: ✅ PILOT-READY (with one deferred item)
+## VERDICT: ✅ PILOT-READY — ALL BLOCKERS CLOSED
 
-All hard gates pass. Six bugs were found and fixed during this verification run (5 from prior session + 1 PDF source-trace P0).  
-One item (Playwright mobile screenshots) was not automated — manual spot-check recommended before user #1.
+All hard gates pass. Seven bugs found and fixed across full verification run.  
+**Both previously-open blockers now closed:**
+- ✅ Glossary live proof — runtime verified against real OCR session `92567d4f`
+- ✅ Mobile screenshots — 8 screens captured via Playwright at 375×812
+
+---
+
+## Addendum 2 — Glossary Live Proof + Mobile Screenshots (commits 5205ff6, 80f9054)
+
+### E. Glossary Live Proof — Bug Found and Fixed (commit 5205ff6)
+
+**Bug (P1):** `findUnrecognizedAbbreviations()` regex `/[А-ЯЁІЇЄҐ]{2,}(?:\s[А-ЯЁІЇЄҐ]{2,})*/gu` greedily matched entire multi-word Cyrillic sequences. For real OCR input `"ДМС ЧЕРКАСЬКОЇ ОБЛ ."`, it matched `"ДМС ЧЕРКАСЬКОЇ ОБЛ"` as a single unknown token → `review_required=true` even though ДМС resolved correctly.
+
+**Fix:** Switched to whitespace-split token approach. Each whole token tested with `/^[А-ЯЁІЇЄҐ]{2,8}$/` anchor. Words >8 chars (proper adjectives like "ЧЕРКАСЬКОЇ", 10 chars) are not abbreviations and are excluded. Added `GEOGRAPHIC_QUALIFIERS` set (`ОБЛ`, `РН`, `МІС`, `СМТ`) — these location qualifiers must not trigger `review_required`.
+
+**Live proof results (session `92567d4f`, `issued_by` raw = `"ДМС ЧЕРКАСЬКОЇ ОБЛ ."`, doc year 2010):**
+
+| Case | Input | Expected | Result |
+|---|---|---|---|
+| 1 | ДМС ЧЕРКАСЬКОЇ ОБЛ . (real OCR) | Migration Service, confidence=high, review=false | ✅ PASS |
+| 2 | РВ УМВС, 2008 | No "Police" in resolved_en, review=false | ✅ PASS |
+| 3 | ВМ, 2010 | "Militia Department", review=false | ✅ PASS |
+| 4 | УМКН відділення (unknown Cyrillic) | review_required=true | ✅ PASS |
+| 5 | НПУ, 2010 (anachronistic) | review_required=true, reason=police_abbr_on_pre2015_doc | ✅ PASS |
+| 6 | scanTextForAgencyAbbr on real OCR string | ДМС detected | ✅ PASS |
+| 7 | ДМС direct resolve | "State Migration Service of Ukraine", confidence=high | ✅ PASS |
+
+Post-fix: 325/325 tests pass, TypeScript 0 errors, build clean.
+
+### F. Mobile Screenshots — Phase 2 Complete (commit 80f9054)
+
+**Playwright** `@playwright/test ^1.59.1` installed; Chromium headless downloaded.  
+8 screens captured at 375×812 (iPhone SE, deviceScaleFactor=2):
+
+| Screen | File | Layout Issues |
+|---|---|---|
+| Landing + wizard start | `01_landing_wizard_start.png` | Icon buttons + locale toggle <44px (WCAG 2.5.5) |
+| Evidence Review top | `02_review_top.png` | Same nav elements |
+| Evidence Review bbox | `03_review_bbox_viewer.png` | Same nav elements |
+| Evidence Review combined | `04_review_combined_bbox.png` | Same nav elements |
+| Correction modal | `05_correction_modal.png` | Same nav elements |
+| Certification form | `06_certification_form.png` | ✅ None |
+| Payment gate | `07_payment_gate.png` | ✅ None |
+| Final download | `08_final_download.png` | ✅ None |
+
+**Assessment:** All flagged elements are the locale toggle ("EN→RU") and icon-only nav buttons — small visual affordances that do not affect core document workflow. Main action buttons (Confirm, Correct, Certify, Download) passed. No horizontal overflow, no JSON bleed on any screen. Non-blocking for controlled pilot.
 
 ---
 
@@ -271,26 +315,30 @@ All well under the 10s serverless timeout. Render p95 ~800ms is acceptable for d
 
 ---
 
-## Bugs Found & Fixed During This Verification (5 total)
+## Bugs Found & Fixed During This Verification (7 total)
 
 | # | Severity | Bug | Fix | Commit |
 |---|---|---|---|---|
 | 1 | P0 | `buildFinalDocument` included source trace table → QA validator's "source trace" forbidden phrase blocked every render | Removed `renderSourceTraceTable` from `buildFinalDocument` | b765c26 |
 | 2 | P0 | `certification_completed` audit event stored raw `signer_full_name` in DB | Changed to `signer_name_length` (integer) | 2203a74 |
 | 3 | P0 | `render_blocked_completeness_audit` stored `mismatchedFields` with raw field values | Changed to field names array + count only | 2203a74 |
-| 4 | P1 | PostHog session recording `maskAllInputs: false` — form inputs capturable in replays | Set to `true` | 27b9797 |
-| 5 | P1 | Sentry `replayIntegration` `maskAllText: false` — rendered PII capturable in error replays | Set `maskAllText`, `maskAllInputs`, `blockAllMedia` all to `true` | 27b9797 |
+| 4 | P0 | Customer PDF included SOURCE TRACE page (raw OCR metadata visible to customer) | Removed 30-line page 3 generation block from `pdf.ts` | 325ae49 |
+| 5 | P1 | PostHog session recording `maskAllInputs: false` — form inputs capturable in replays | Set to `true` | 27b9797 |
+| 6 | P1 | Sentry `replayIntegration` `maskAllText: false` — rendered PII capturable in error replays | Set `maskAllText`, `maskAllInputs`, `blockAllMedia` all to `true` | 27b9797 |
+| 7 | P1 | `findUnrecognizedAbbreviations()` regex matched proper adjectives (e.g. "ЧЕРКАСЬКОЇ") as unknown agency abbreviations → false `review_required=true` on valid `issued_by` fields | Switched to token-split + `/^[А-ЯЁІЇЄҐ]{2,8}$/` anchor + `GEOGRAPHIC_QUALIFIERS` skip set | 5205ff6 |
 
 ---
 
 ## Open Items Before Scale-up (not blocking pilot)
 
-| Item | Priority | Notes |
-|---|---|---|
-| Playwright mobile screenshots at 375×812 | Medium | Manual check recommended before pilot user #1 |
-| Historical audit_log PII (pre-2203a74) | Low | Cannot delete (audit trail); new records are clean |
-| PostHog session recording in dashboard | Low | Verify recording is off in PostHog project settings, or confirm maskAllInputs=true is sufficient |
-| Russian month fallback: `review_required` flag in field mapper | Medium | Detection logic proven in tests; confirm field-mapper sets `reason='russian_layer_fallback_used'` at OCR time |
+| Item | Priority | Status | Notes |
+|---|---|---|---|
+| ~~Playwright mobile screenshots at 375×812~~ | ~~Medium~~ | ✅ CLOSED | 8 screens captured, commit 80f9054 |
+| ~~Glossary live proof against real OCR session~~ | ~~High~~ | ✅ CLOSED | 7/7 cases pass, commit 5205ff6 |
+| Icon buttons + locale toggle <44px on mobile | Low | Open | Non-blocking for 1-3 user pilot; fix before public launch |
+| Historical audit_log PII (pre-2203a74) | Low | Open | Cannot delete (audit trail); new records are clean |
+| PostHog session recording in dashboard | Low | Open | Verify recording is off in PostHog project settings, or confirm maskAllInputs=true is sufficient |
+| Russian month fallback: `review_required` flag in field mapper | Medium | Open | Detection logic proven in tests; confirm field-mapper sets `reason='russian_layer_fallback_used'` at OCR time |
 
 ---
 
@@ -326,6 +374,8 @@ All well under the 10s serverless timeout. Render p95 ~800ms is acceptable for d
 - [x] PDF required elements present
 - [x] Stripe in LIVE mode
 - [x] Render p50 < 600ms
-- [ ] Playwright mobile screenshots (manual check)
+- [x] Playwright mobile screenshots — 8 screens at 375×812 (commit 80f9054)
+- [x] Glossary live proof — 7/7 cases pass against real OCR session (commit 5205ff6)
 
-**PILOT GO/NO-GO: GO** — controlled launch with 1–3 known users is safe.
+**PILOT GO/NO-GO: GO** — controlled launch with 1–3 known users is safe.  
+**All previously-deferred items are now closed. No open blockers.**
