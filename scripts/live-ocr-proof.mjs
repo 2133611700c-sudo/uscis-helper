@@ -114,7 +114,7 @@ let ocrResponse
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       document_id: documentId,
-      doc_type: 'ukrainian_passport_internal',
+      doc_type: 'ua_passport_internal',
       retake_count: 2, // bypass quality gate — prove full pipeline end-to-end
     }),
   })

@@ -71,9 +71,30 @@ function buildOcrTokenPrompt(ocrResult: OcrResult): string {
 
 // ── Field definitions per doc type ───────────────────────────────────────────
 
+// All 11 critical fields for internal passport:
+// document_type, series, number, surname, given_names, patronymic,
+// date_of_birth, place_of_birth, sex, issued_by, date_of_issue
+const UA_INTERNAL_FIELDS = [
+  'document_type',    // ПАСПОРТ / PASSPORT
+  'series',           // серія (АА, ВВ, etc.)
+  'number',           // 6-digit number
+  'surname',          // ПРІЗВИЩЕ
+  'given_names',      // ІМ'Я (first name)
+  'patronymic',       // ПО БАТЬКОВІ / PATRONYMIC
+  'date_of_birth',    // ДАТА НАРОДЖЕННЯ
+  'place_of_birth',   // МІСЦЕ НАРОДЖЕННЯ
+  'sex',              // СТАТЬ / SEX
+  'issued_by',        // ОРГАН ВИДАЧІ / ISSUED BY
+  'date_of_issue',    // ДАТА ВИДАЧІ / DATE OF ISSUE
+  // extended fields (not critical but extract if present)
+  'nationality',      // ГРОМАДЯНСТВО
+  'date_of_expiry',   // ДІЙСНИЙ ДО
+  'record_number',    // РНОКПП / tax number
+]
+
 const FIELD_TARGETS: Record<string, string[]> = {
-  ua_passport_booklet:   ['surname','given_names','nationality','date_of_birth','place_of_birth','sex','series','number','issued_by','date_of_issue','date_of_expiry','record_number','tax_number'],
-  ua_passport_internal:  ['surname','given_names','nationality','date_of_birth','place_of_birth','sex','series','number','issued_by','date_of_issue','date_of_expiry','record_number','tax_number'],
+  ua_passport_booklet:   UA_INTERNAL_FIELDS,
+  ua_passport_internal:  UA_INTERNAL_FIELDS,
   ua_passport_id_card:   ['surname','given_names','date_of_birth','place_of_birth','sex','number','issued_by','date_of_issue','date_of_expiry','record_number'],
   ua_birth_certificate:  ['full_name','date_of_birth','place_of_birth','father_name','mother_name','registration_number','issue_date','issuing_authority'],
   ua_marriage_certificate: ['bride_name','groom_name','marriage_date','marriage_place','registration_number','issue_date','issuing_authority'],
@@ -111,7 +132,25 @@ Each token is prefixed [LINE l_NNNN] or [WORD w_NNNN].
 Your task: identify which OCR tokens correspond to each document field.
 Return ONLY a JSON object — no markdown, no explanation.
 NEVER invent coordinates. NEVER calculate positions. Only return IDs from the provided token list.
-For each field, list the IDs of the word tokens that make up the field VALUE (not the label).`
+For each field, list the IDs of the word tokens that make up the field VALUE (not the label).
+
+Field mapping rules for Ukrainian internal passport (ua_passport_internal / ua_passport_booklet):
+- document_type: the word ПАСПОРТ or PASSPORT (normalized: "Ukrainian Internal Passport")
+- series: 2-letter Cyrillic series (e.g. АА, ВВ) — from document header or серія field. Normalized to Latin transliteration.
+- number: 6-digit number following the series
+- surname: value after label ПРІЗВИЩЕ (one or more words)
+- given_names: value after label ІМ'Я or ІМЯ (first name only, not patronymic)
+- patronymic: value after label ПО БАТЬКОВІ or PATRONYMIC (middle/father's name in Ukrainian tradition)
+- date_of_birth: value after ДАТА НАРОДЖЕННЯ — format DD місяць YYYY; normalize month to English (лютого=February, жовтня=October, etc.)
+- place_of_birth: value after МІСЦЕ НАРОДЖЕННЯ (city, oblast)
+- sex: value after СТАТЬ (Ч→Male, Ж→Female; also M→Male, F→Female)
+- issued_by: value after ОРГАН ВИДАЧІ or ВИДАНИЙ (issuing authority name, may be multiple words)
+- date_of_issue: value after ДАТА ВИДАЧІ — same date format rules as date_of_birth
+- nationality: value after ГРОМАДЯНСТВО (normalized: "Ukrainian")
+- date_of_expiry: value after ДІЙСНИЙ ДО
+- record_number: 10-digit РНОКПП / taxpayer number
+
+IMPORTANT: Extract ALL found fields. Do not skip any field that is visible in the OCR. If a field label is present but value is unreadable, still include the field with review_required: true.`
 
   const userPrompt = `Document type: ${docType}
 
