@@ -15,6 +15,12 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  useManualReviewStatus,
+  isManualReviewActive,
+  resolveManualReviewClientCopy,
+  type ManualReviewBucket,
+} from '@/lib/translation/manualReview/useManualReviewStatus'
 
 // ── Async extraction types ────────────────────────────────────────────────────
 
@@ -1294,13 +1300,15 @@ function PaymentGateStatus({
 }
 
 /** Final download panel — shown when all gates pass */
-function FinalDownloadPanel({ sessionId }: { sessionId: string }) {
+function FinalDownloadPanel({ sessionId, locale = 'en' }: { sessionId: string; locale?: string }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [manualReviewBlock, setManualReviewBlock] = useState<{ messageKey: string } | null>(null)
 
   async function handleDownload() {
     setLoading(true)
     setError('')
+    setManualReviewBlock(null)
     try {
       const res = await fetch('/api/translation/render', {
         method: 'POST',
@@ -1309,7 +1317,19 @@ function FinalDownloadPanel({ sessionId }: { sessionId: string }) {
       })
 
       if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
+        const json = await res.json().catch(() => ({})) as {
+          error?: string
+          gate?: string
+          message_key?: string
+        }
+        // HTTP 423 + gate=manual_review_pending: show calm safe message instead of generic error.
+        if (res.status === 423 || json.gate === 'manual_review_pending') {
+          setManualReviewBlock({
+            messageKey: typeof json.message_key === 'string' ? json.message_key : 'mr.user.in_progress',
+          })
+          setLoading(false)
+          return
+        }
         setError(json.error ?? `Error ${res.status} — please try again`)
         setLoading(false)
         return
@@ -1349,7 +1369,18 @@ function FinalDownloadPanel({ sessionId }: { sessionId: string }) {
         Click below to download your official USCIS-ready PDF.
       </p>
 
-      {error && (
+      {manualReviewBlock && (
+        <div
+          data-testid="manual-review-render-block"
+          style={{ background: '#dbeafe', border: '2px solid #93c5fd', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', textAlign: 'left' }}
+        >
+          <p style={{ fontSize: '15px', color: '#1e40af', margin: 0, lineHeight: 1.5 }}>
+            {resolveManualReviewClientCopy(manualReviewBlock.messageKey, locale)}
+          </p>
+        </div>
+      )}
+
+      {!manualReviewBlock && error && (
         <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
           <p style={{ fontSize: '15px', color: C.red, margin: 0 }}>{error}</p>
         </div>
@@ -1384,6 +1415,72 @@ function FinalDownloadPanel({ sessionId }: { sessionId: string }) {
   )
 }
 
+// ── Manual review banner ─────────────────────────────────────────────────────
+//
+// Shown when /api/translation/[sessionId]/manual-review-status reports a
+// non-terminal bucket (in_progress / awaiting_you / ready). PII-safe: never
+// renders ticket id, admin notes, reasons, safe_summary, or extraction details.
+
+function ManualReviewBanner({
+  bucket,
+  messageKey,
+  nextStepKey,
+  estimatedHours,
+  locale,
+}: {
+  bucket: ManualReviewBucket
+  messageKey: string
+  nextStepKey: string | null
+  estimatedHours: number | null
+  locale: string
+}) {
+  const tone =
+    bucket === 'awaiting_you' ? { bg: '#fef3c7', border: '#fcd34d', text: '#92400e', icon: '✉️' } :
+    bucket === 'ready'        ? { bg: '#dcfce7', border: '#86efac', text: '#166534', icon: '✅' } :
+                                { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af', icon: '⏳' }
+  const body = resolveManualReviewClientCopy(messageKey, locale)
+  const next = nextStepKey ? resolveManualReviewClientCopy(nextStepKey, locale) : null
+  const etaLabel =
+    typeof estimatedHours === 'number' && estimatedHours > 0
+      ? (locale === 'ru' ? `Примерное время: до ${estimatedHours} ч`
+        : locale === 'uk' ? `Орієнтовний час: до ${estimatedHours} год`
+        : `Estimated time: up to ${estimatedHours}h`)
+      : null
+
+  return (
+    <div
+      data-testid="manual-review-banner"
+      style={{
+        background: tone.bg,
+        border: `2px solid ${tone.border}`,
+        borderRadius: '16px',
+        padding: '20px 24px',
+        marginBottom: '16px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+        <span style={{ fontSize: '28px', flexShrink: 0 }}>{tone.icon}</span>
+        <div>
+          <p style={{ fontSize: '17px', fontWeight: 700, color: tone.text, margin: '0 0 6px' }}>
+            {locale === 'ru' ? 'Ручная проверка'
+              : locale === 'uk' ? 'Ручна перевірка'
+              : 'Manual review'}
+          </p>
+          <p style={{ fontSize: '15px', color: tone.text, margin: 0, lineHeight: 1.5 }}>{body}</p>
+          {next && (
+            <p style={{ fontSize: '14px', color: tone.text, margin: '8px 0 0', lineHeight: 1.5, opacity: 0.85 }}>
+              {next}
+            </p>
+          )}
+          {etaLabel && (
+            <p style={{ fontSize: '13px', color: tone.text, margin: '8px 0 0', opacity: 0.7 }}>{etaLabel}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main EvidenceReviewPage ───────────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 3_000
@@ -1403,6 +1500,12 @@ export function EvidenceReviewPage({
 }) {
   const [state, setState] = useState<ReviewState | null>(null)
   const [loadError, setLoadError] = useState('')
+
+  // Live manual-review status (server-managed bucket: not_in_review / in_progress / awaiting_you / ready / closed).
+  // Polls the safe public endpoint; never exposes ticket id, admin notes, reasons, or PII.
+  const manualReview = useManualReviewStatus(sessionId)
+  const mrBucket = manualReview.data?.status ?? null
+  const showManualReviewBanner = isManualReviewActive(mrBucket)
 
   // Async OCR polling state
   const [activeRunId, setActiveRunId] = useState<string | null>(initialRunId ?? null)
@@ -1642,8 +1745,22 @@ export function EvidenceReviewPage({
           </p>
         </div>
 
-        {/* Async extraction status banner */}
-        {showBanner && (
+        {/* Manual review banner — overrides extraction banner when an active ticket exists.
+            Source: GET /api/translation/[sessionId]/manual-review-status.
+            PII-safe: only bucket-level message keys, never ticket id, reasons, or admin notes. */}
+        {showManualReviewBanner && manualReview.data && (
+          <ManualReviewBanner
+            bucket={manualReview.data.status}
+            messageKey={manualReview.data.messageKey}
+            nextStepKey={manualReview.data.nextStepKey}
+            estimatedHours={manualReview.data.estimatedHours}
+            locale={locale}
+          />
+        )}
+
+        {/* Async extraction status banner — fallback path for sessions without a manual-review
+            ticket (preserves the legacy extraction_runs.manual_review_required UX). */}
+        {!showManualReviewBanner && showBanner && (
           <AsyncExtractionBanner
             sessionId={sessionId}
             runStatus={runStatus}
@@ -1760,7 +1877,7 @@ export function EvidenceReviewPage({
 
         {/* Final download — only when all gates pass */}
         {gates.can_render && (
-          <FinalDownloadPanel sessionId={sessionId} />
+          <FinalDownloadPanel sessionId={sessionId} locale={locale} />
         )}
 
         {/* Bottom padding for mobile */}
