@@ -100,14 +100,15 @@ export async function POST(req: NextRequest) {
       .update({ status: 'certified', updated_at: new Date().toISOString() })
       .eq('session_id', session_id)
 
-    // Audit log
+    // Audit log — PII-safe: no raw names, only metadata
     await supabase.from('audit_logs').insert({
       session_id,
       event_type: 'certification_completed',
       metadata: {
-        signer_full_name: record.signer_full_name,
+        signer_name_length: record.signer_full_name?.length ?? 0,
         certification_version: record.certification_version,
         signed_at: record.signed_at,
+        language_pair_confirmed: record.language_pair_confirmed,
       },
     })
   } catch (err) {
