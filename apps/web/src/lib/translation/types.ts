@@ -30,6 +30,68 @@ export type DocumentType =
   | 'ua_military'
   | 'other'
 
+// ── Evidence / OCR provenance types ─────────────────────────────────────────
+
+/**
+ * How the field was located in the source image.
+ * full_image   — vision model saw the whole image, bbox came from the model
+ * zone_fallback — Tesseract/text-only path; no bbox available
+ */
+export type EvidenceType = 'full_image' | 'zone_fallback'
+
+/**
+ * Reliability of the bounding box.
+ * exact       — model returned a tight bbox around the field
+ * approximate — model returned a bbox but quality is uncertain (e.g. low confidence)
+ * missing     — no bbox available (Tesseract path or model refused to emit one)
+ */
+export type BboxStatus = 'exact' | 'approximate' | 'missing'
+
+/**
+ * One evidence block from a VisionProvider result.
+ * Represents either a recognised field or a raw text block.
+ */
+export interface EvidenceItem {
+  field?: string                              // field name when mapped; undefined for raw text blocks
+  raw_text: string                            // verbatim text from this evidence zone
+  bbox?: [number, number, number, number]    // [x0, y0, x1, y1] normalised 0–1; absent when missing
+  page: number                                // 0-indexed page
+  confidence: number                          // 0.0–1.0
+  evidence_type: EvidenceType
+  bbox_status: BboxStatus
+}
+
+/**
+ * Canonical result returned by every VisionProvider implementation.
+ */
+export interface VisionExtractionResult {
+  raw_text: string
+  provider: 'deepseek_vision' | 'tesseract_deepseek' | 'manual'
+  ocr_confidence: number         // 0.0–1.0 overall confidence
+  pages: number                  // number of pages processed
+  warnings: string[]
+  created_at: string             // ISO 8601
+  evidence_items?: EvidenceItem[] // per-field evidence blocks when available
+}
+
+/**
+ * Contract that every OCR/Vision adapter must satisfy.
+ */
+export interface VisionProvider {
+  extractRawTextFromDocument(document: {
+    imageBase64?: string
+    imageBuffer?: Buffer
+    mimeType: string
+    docType: DocumentType
+    glossaryJson: string
+    fieldTemplate: string[]
+  }): Promise<VisionExtractionResult & {
+    ok: boolean
+    fields: ExtractedField[]
+    imageQuality?: { overall: number; issues: string[] }
+  }>
+}
+
 export interface ExtractedField {
   field: string
   source_label: string
@@ -41,6 +103,8 @@ export interface ExtractedField {
   confidence: number        // 0.0–1.0
   review_required: boolean
   evidence_crop_path?: string
+  evidence_type?: EvidenceType
+  bbox_status?: BboxStatus
   user_corrected?: boolean
   correction_class?: 'controlling_spelling' | 'ocr_error' | 'one_document_exception'
 }

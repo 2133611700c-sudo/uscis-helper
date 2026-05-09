@@ -4,19 +4,23 @@
  * Real OCR adapter — production path that does NOT require manually typed raw_text.
  *
  * Pipeline:
- *   1. Load latest uploaded document from translation_documents table
- *   2. Download image bytes from Supabase Storage
- *   3. Convert to base64
- *   4. Send to DeepSeek Vision (deepseek-chat with image_url) OR
- *      fall back to Tesseract.js server-side OCR → DeepSeek text parse
- *   5. Post-process fields (glossary, transliteration, date normalization)
- *   6. Persist extracted_fields, update session status → extracted
- *   7. Return fields + image_quality
+ *   1. Write audit log: ocr_started
+ *   2. Load latest uploaded document from translation_documents table
+ *   3. Download image bytes from Supabase Storage
+ *   4. Try DeepSeek Vision (full_image, bbox from model)
+ *      → on failure fall back to Tesseract.js + DeepSeek text parse (zone_fallback, bbox=missing)
+ *   5. Smart Retake: if image_quality.overall < 0.4 and retake_count < 2 → return retake_required
+ *   6. Write audit log: ocr_completed (includes VisionExtractionResult + raw_text)
+ *   7. Post-process fields (glossary, transliteration, date normalization)
+ *   8. Persist extracted_fields, update session status → extracted
+ *   9. Write audit log: extraction_completed
+ *  10. On any OCR failure: write audit log: ocr_failed
  *
  * Body (optional): {
- *   doc_type?: DocumentType    — defaults to session.doc_type or 'ua_passport_booklet'
- *   document_id?: string       — specific doc ID; defaults to latest for session
+ *   doc_type?: DocumentType
+ *   document_id?: string
  *   controlling_spelling?: Record<string,string>
+ *   retake_count?: number        — caller increments on Smart Retake; max 2
  * }
  *
  * Hard rule: This is the ONLY server path that should run OCR in production.
@@ -28,11 +32,24 @@ import { loadGlossary, lookupTerm } from '@/lib/translation/glossary/glossaryLoa
 import { transliterateName } from '@/lib/translation/glossary/nominativeCaseRestorer'
 import { normalizeDateUkrainian } from '@/lib/translation/numericAccuracy/dateFieldLockValidator'
 import { persistExtractedFields, writeAuditLog } from '@/lib/translation/packetStateManager'
-import { DocumentType, ExtractedField } from '@/lib/translation/types'
+import {
+  DocumentType,
+  ExtractedField,
+  EvidenceItem,
+  VisionExtractionResult,
+  BboxStatus,
+} from '@/lib/translation/types'
 
 export const dynamic = 'force-dynamic'
 // Large images may take time — give DeepSeek up to 60s
 export const maxDuration = 60
+
+// ── Smart Retake constants ────────────────────────────────────────────────────
+const SMART_RETAKE_QUALITY_THRESHOLD = 0.4
+const SMART_RETAKE_MAX_ATTEMPTS = 2
+const SMART_RETAKE_USER_MESSAGE =
+  'The photo is too blurry or poorly lit for reliable extraction. ' +
+  'Please retake with better lighting, steady hands, and the document flat on a surface.'
 
 // ── Ukrainian passport booklet field template ────────────────────────────────
 const UA_PASSPORT_BOOKLET_FIELDS = [
@@ -57,6 +74,26 @@ function getFieldTemplate(docType: DocumentType): string[] {
   }
 }
 
+// ── Bbox validity helper ──────────────────────────────────────────────────────
+function classifyBbox(
+  bbox: unknown,
+  confidence: number
+): { bbox: [number,number,number,number]; bbox_status: BboxStatus } {
+  const isValid =
+    Array.isArray(bbox) &&
+    bbox.length === 4 &&
+    bbox.every((v: unknown) => typeof v === 'number' && isFinite(v)) &&
+    // reject degenerate full-image fallbacks returned literally as [0,0,1,1]
+    !(bbox[0] === 0 && bbox[1] === 0 && bbox[2] === 1 && bbox[3] === 1)
+
+  if (isValid) {
+    const b = bbox as [number,number,number,number]
+    const bbox_status: BboxStatus = confidence >= 0.70 ? 'exact' : 'approximate'
+    return { bbox: b, bbox_status }
+  }
+  return { bbox: [0, 0, 1, 1], bbox_status: 'missing' }
+}
+
 // ── DeepSeek Vision extraction ───────────────────────────────────────────────
 async function extractWithDeepSeekVision(params: {
   imageBase64: string
@@ -64,7 +101,12 @@ async function extractWithDeepSeekVision(params: {
   docType: DocumentType
   glossaryJson: string
   fieldTemplate: string[]
-}): Promise<{ ok: boolean; fields: ExtractedField[]; imageQuality?: { overall: number; issues: string[] } }> {
+}): Promise<{
+  ok: boolean
+  fields: ExtractedField[]
+  imageQuality?: { overall: number; issues: string[] }
+  visionResult?: VisionExtractionResult
+}> {
   const apiKey = process.env.DEEPSEEK_API_KEY
   if (!apiKey) return { ok: false, fields: [] }
 
@@ -95,6 +137,8 @@ For each field found, return:
 }
 
 Return: { "fields": [...], "image_quality": { "overall": 0.9, "issues": [] } }`
+
+  const startedAt = new Date().toISOString()
 
   try {
     const res = await fetch('https://api.deepseek.com/chat/completions', {
@@ -143,14 +187,60 @@ Return: { "fields": [...], "image_quality": { "overall": 0.9, "issues": [] } }`
       parsed = JSON.parse(match[0])
     }
 
-    const fields = ((parsed.fields ?? []) as ExtractedField[]).map(f => ({
-      ...f,
-      bbox: Array.isArray(f.bbox) && f.bbox.length === 4 ? f.bbox : [0, 0, 1, 1] as [number,number,number,number],
-      confidence: typeof f.confidence === 'number' ? Math.min(1, Math.max(0, f.confidence)) : 0.5,
-      review_required: (typeof f.confidence === 'number' ? f.confidence : 0.5) < 0.70 || Boolean(f.review_required),
-    })) as ExtractedField[]
+    const rawFields = (parsed.fields ?? []) as Array<Record<string, unknown>>
+    const evidenceItems: EvidenceItem[] = []
 
-    return { ok: true, fields, imageQuality: parsed.image_quality }
+    const fields: ExtractedField[] = rawFields.map(f => {
+      const conf = typeof f.confidence === 'number' ? Math.min(1, Math.max(0, f.confidence)) : 0.5
+      const { bbox, bbox_status } = classifyBbox(f.bbox, conf)
+      const review_required = conf < 0.70 || Boolean(f.review_required)
+
+      evidenceItems.push({
+        field: typeof f.field === 'string' ? f.field : undefined,
+        raw_text: typeof f.raw_value === 'string' ? f.raw_value : '',
+        bbox: bbox_status !== 'missing' ? bbox : undefined,
+        page: 0,
+        confidence: conf,
+        evidence_type: 'full_image',
+        bbox_status,
+      })
+
+      return {
+        field: String(f.field ?? ''),
+        source_label: String(f.source_label ?? ''),
+        source_zone: String(f.source_zone ?? ''),
+        bbox,
+        raw_value: String(f.raw_value ?? ''),
+        normalized_value: String(f.normalized_value ?? ''),
+        language_layer: (f.language_layer as 'uk' | 'ru' | 'mixed' | 'unknown') ?? 'uk',
+        confidence: conf,
+        review_required,
+        evidence_type: 'full_image',
+        bbox_status,
+      } satisfies ExtractedField
+    })
+
+    // Compute overall OCR confidence as median of field confidences
+    const confs = fields.map(f => f.confidence)
+    const sorted = [...confs].sort((a, b) => a - b)
+    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0.5
+
+    // Reconstruct raw_text from all raw_values for audit trail
+    const raw_text = rawFields
+      .map(f => `${f.source_label ?? f.field}: ${f.raw_value ?? ''}`)
+      .join('\n')
+
+    const visionResult: VisionExtractionResult = {
+      raw_text,
+      provider: 'deepseek_vision',
+      ocr_confidence: median,
+      pages: 1,
+      warnings: [],
+      created_at: startedAt,
+      evidence_items: evidenceItems,
+    }
+
+    return { ok: true, fields, imageQuality: parsed.image_quality, visionResult }
   } catch (err) {
     console.error('[ocr-from-storage] DeepSeek vision call failed:', err)
     return { ok: false, fields: [] }
@@ -163,11 +253,18 @@ async function extractWithTesseract(params: {
   docType: DocumentType
   glossaryJson: string
   fieldTemplate: string[]
-}): Promise<{ ok: boolean; fields: ExtractedField[]; rawText?: string }> {
+}): Promise<{
+  ok: boolean
+  fields: ExtractedField[]
+  rawText?: string
+  visionResult?: VisionExtractionResult
+}> {
   const apiKey = process.env.DEEPSEEK_API_KEY
   if (!apiKey) return { ok: false, fields: [] }
 
+  const startedAt = new Date().toISOString()
   let rawText = ''
+
   try {
     // Dynamic import to avoid bundler issues — Tesseract.js is heavy
     const Tesseract = await import('tesseract.js')
@@ -231,14 +328,51 @@ Return: { "fields": [...], "image_quality": { "overall": 0.8, "issues": [] } }`
       parsed = JSON.parse(match[0])
     }
 
-    const fields = ((parsed.fields ?? []) as ExtractedField[]).map(f => ({
-      ...f,
-      bbox: [0, 0, 1, 1] as [number,number,number,number],
+    const rawFields = (parsed.fields ?? []) as Array<Record<string, unknown>>
+    const evidenceItems: EvidenceItem[] = rawFields.map(f => ({
+      field: typeof f.field === 'string' ? f.field : undefined,
+      raw_text: typeof f.raw_value === 'string' ? f.raw_value : '',
+      // Tesseract path: no bbox available
+      bbox: undefined,
+      page: 0,
       confidence: typeof f.confidence === 'number' ? Math.min(1, Math.max(0, f.confidence)) : 0.5,
-      review_required: (typeof f.confidence === 'number' ? f.confidence : 0.5) < 0.70 || Boolean(f.review_required),
-    })) as ExtractedField[]
+      evidence_type: 'zone_fallback' as const,
+      bbox_status: 'missing' as const,
+    }))
 
-    return { ok: true, fields, rawText }
+    const fields: ExtractedField[] = rawFields.map(f => {
+      const conf = typeof f.confidence === 'number' ? Math.min(1, Math.max(0, f.confidence)) : 0.5
+      return {
+        field: String(f.field ?? ''),
+        source_label: String(f.source_label ?? ''),
+        source_zone: String(f.source_zone ?? ''),
+        // Tesseract path: no meaningful bbox
+        bbox: [0, 0, 1, 1] as [number,number,number,number],
+        raw_value: String(f.raw_value ?? ''),
+        normalized_value: String(f.normalized_value ?? ''),
+        language_layer: (f.language_layer as 'uk' | 'ru' | 'mixed' | 'unknown') ?? 'uk',
+        confidence: conf,
+        review_required: conf < 0.70 || Boolean(f.review_required),
+        evidence_type: 'zone_fallback' as const,
+        bbox_status: 'missing' as const,
+      } satisfies ExtractedField
+    })
+
+    const confs = fields.map(f => f.confidence)
+    const sorted = [...confs].sort((a, b) => a - b)
+    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0.5
+
+    const visionResult: VisionExtractionResult = {
+      raw_text: rawText,
+      provider: 'tesseract_deepseek',
+      ocr_confidence: median,
+      pages: 1,
+      warnings: ['Tesseract OCR fallback used — bbox not available for any field'],
+      created_at: startedAt,
+      evidence_items: evidenceItems,
+    }
+
+    return { ok: true, fields, rawText, visionResult }
   } catch (err) {
     console.error('[ocr-from-storage] DeepSeek text parse failed:', err)
     return { ok: false, fields: [], rawText }
@@ -259,11 +393,13 @@ export async function POST(
     doc_type?: DocumentType
     document_id?: string
     controlling_spelling?: Record<string, string>
+    retake_count?: number
   }
 
+  const retakeCount = typeof body.retake_count === 'number' ? body.retake_count : 0
   const supabase = createAdminSupabaseClient()
 
-  // Load session
+  // ── Load session ──────────────────────────────────────────────────────────
   const { data: session } = await supabase
     .from('translation_sessions')
     .select('session_id, doc_type, status')
@@ -279,7 +415,7 @@ export async function POST(
     (session.doc_type as DocumentType) ??
     'ua_passport_booklet'
 
-  // Load target document
+  // ── Load target document ──────────────────────────────────────────────────
   const docQuery = supabase
     .from('translation_documents')
     .select('id, storage_key, mime_type, original_name')
@@ -301,12 +437,32 @@ export async function POST(
     }, { status: 404 })
   }
 
-  // Download image from Supabase Storage
+  // ── Audit: ocr_started ────────────────────────────────────────────────────
+  await writeAuditLog({
+    session_id: sessionId,
+    event_type: 'ocr_started',
+    metadata: {
+      doc_type: docType,
+      document_id: doc.id,
+      retake_count: retakeCount,
+    },
+  })
+
+  // ── Download image from Supabase Storage ──────────────────────────────────
   const { data: fileData, error: dlErr } = await supabase.storage
     .from('translation-documents')
     .download(doc.storage_key)
 
   if (dlErr || !fileData) {
+    await writeAuditLog({
+      session_id: sessionId,
+      event_type: 'ocr_failed',
+      metadata: {
+        doc_type: docType,
+        document_id: doc.id,
+        reason: `storage_download_failed: ${dlErr?.message ?? 'unknown'}`,
+      },
+    })
     return NextResponse.json({
       ok: false,
       error: `Failed to download document from storage: ${dlErr?.message ?? 'unknown'}`,
@@ -322,7 +478,10 @@ export async function POST(
   const fieldTemplate = getFieldTemplate(docType)
   const controllingSpelling = body.controlling_spelling ?? {}
 
-  // ── Step 1: Try DeepSeek Vision (preferred if image format is supported) ──
+  let mode: VisionExtractionResult['provider'] = 'deepseek_vision'
+  let visionResult: VisionExtractionResult | undefined
+
+  // ── Step 1: Try DeepSeek Vision ───────────────────────────────────────────
   let extractionResult = await extractWithDeepSeekVision({
     imageBase64,
     mimeType,
@@ -331,7 +490,10 @@ export async function POST(
     fieldTemplate,
   })
 
-  let mode = 'deepseek_vision'
+  if (extractionResult.ok && extractionResult.fields.length > 0) {
+    mode = 'deepseek_vision'
+    visionResult = extractionResult.visionResult
+  }
 
   // ── Step 2: Fallback — Tesseract.js + DeepSeek text parse ─────────────────
   if (!extractionResult.ok || extractionResult.fields.length === 0) {
@@ -343,16 +505,18 @@ export async function POST(
       fieldTemplate,
     })
     if (tesseractResult.ok && tesseractResult.fields.length > 0) {
-      extractionResult = { ok: true, fields: tesseractResult.fields }
+      extractionResult = { ok: true, fields: tesseractResult.fields, imageQuality: undefined }
       mode = 'tesseract_deepseek'
+      visionResult = tesseractResult.visionResult
     }
   }
 
+  // ── Total OCR failure ─────────────────────────────────────────────────────
   if (!extractionResult.ok || extractionResult.fields.length === 0) {
     await writeAuditLog({
       session_id: sessionId,
-      event_type: 'extraction_failed',
-      metadata: { doc_type: docType, document_id: doc.id, mode },
+      event_type: 'ocr_failed',
+      metadata: { doc_type: docType, document_id: doc.id, mode, retake_count: retakeCount },
     })
     return NextResponse.json({
       ok: false,
@@ -360,6 +524,54 @@ export async function POST(
       error: 'OCR extraction failed — please use manual entry or re-upload a clearer image.',
     }, { status: 503 })
   }
+
+  // ── Smart Retake: poor image quality check ────────────────────────────────
+  const imageQuality = extractionResult.imageQuality
+  if (
+    imageQuality &&
+    imageQuality.overall < SMART_RETAKE_QUALITY_THRESHOLD &&
+    retakeCount < SMART_RETAKE_MAX_ATTEMPTS
+  ) {
+    await writeAuditLog({
+      session_id: sessionId,
+      event_type: 'ocr_retake_required',
+      metadata: {
+        doc_type: docType,
+        document_id: doc.id,
+        image_quality: imageQuality,
+        retake_count: retakeCount,
+        max_retakes: SMART_RETAKE_MAX_ATTEMPTS,
+      },
+    })
+    return NextResponse.json({
+      ok: false,
+      retake_required: true,
+      retake_count: retakeCount,
+      max_retakes: SMART_RETAKE_MAX_ATTEMPTS,
+      user_message: SMART_RETAKE_USER_MESSAGE,
+      image_quality: imageQuality,
+    }, { status: 422 })
+  }
+
+  // ── Audit: ocr_completed (store raw OCR result) ───────────────────────────
+  await writeAuditLog({
+    session_id: sessionId,
+    event_type: 'ocr_completed',
+    metadata: {
+      doc_type: docType,
+      document_id: doc.id,
+      mode,
+      retake_count: retakeCount,
+      provider: visionResult?.provider,
+      ocr_confidence: visionResult?.ocr_confidence,
+      pages: visionResult?.pages,
+      warnings: visionResult?.warnings,
+      // Store full raw_text for audit trail and replay
+      raw_text: visionResult?.raw_text?.slice(0, 8000),
+      evidence_items_count: visionResult?.evidence_items?.length ?? 0,
+      image_quality: imageQuality,
+    },
+  })
 
   // ── Post-process: glossary + transliteration + date normalization ──────────
   const processed = extractionResult.fields.map(field => {
@@ -388,6 +600,7 @@ export async function POST(
     updated_at: new Date().toISOString(),
   }).eq('session_id', sessionId)
 
+  // ── Audit: extraction_completed ───────────────────────────────────────────
   await writeAuditLog({
     session_id: sessionId,
     event_type: 'extraction_completed',
@@ -397,7 +610,12 @@ export async function POST(
       document_id: doc.id,
       total_fields: processed.length,
       review_required_count: processed.filter(f => f.review_required).length,
-      image_quality: extractionResult.imageQuality,
+      full_image_count: processed.filter(f => f.evidence_type === 'full_image').length,
+      zone_fallback_count: processed.filter(f => f.evidence_type === 'zone_fallback').length,
+      bbox_exact_count: processed.filter(f => f.bbox_status === 'exact').length,
+      bbox_approximate_count: processed.filter(f => f.bbox_status === 'approximate').length,
+      bbox_missing_count: processed.filter(f => f.bbox_status === 'missing').length,
+      image_quality: imageQuality,
     },
   })
 
@@ -407,7 +625,17 @@ export async function POST(
     mode,
     doc_type: docType,
     fields: processed,
-    image_quality: extractionResult.imageQuality,
+    image_quality: imageQuality,
+    vision_result: visionResult
+      ? {
+          provider: visionResult.provider,
+          ocr_confidence: visionResult.ocr_confidence,
+          pages: visionResult.pages,
+          warnings: visionResult.warnings,
+          evidence_items_count: visionResult.evidence_items?.length ?? 0,
+          created_at: visionResult.created_at,
+        }
+      : null,
     total_fields: processed.length,
     review_required_count: processed.filter(f => f.review_required).length,
     next_step: `Review fields at /en/services/translate-document/session/${sessionId}/review`,
