@@ -42,19 +42,68 @@ export async function POST(req: NextRequest) {
   const { session_id, checkout_id } = body
   if (!session_id) return NextResponse.json({ ok: false, error: 'session_id required' }, { status: 400 })
 
-  // Load state from Supabase (v5 schema: translation_sessions)
+  // Load all state from v5 schema (session + related tables)
   const supabase = createAdminSupabaseClient()
-  const { data, error } = await supabase
+  const { data: sessionData, error } = await supabase
     .from('translation_sessions')
     .select('*')
     .eq('session_id', session_id)
     .single()
 
-  if (error || !data) {
+  if (error || !sessionData) {
     return NextResponse.json({ ok: false, error: 'Session not found' }, { status: 404 })
   }
 
-  const state = data as unknown as PacketState
+  // Load certification record
+  const { data: certData } = await supabase
+    .from('certification_records')
+    .select('*')
+    .eq('session_id', session_id)
+    .single()
+
+  // Load extracted fields → map to ExtractedField[] and SourceTrace[]
+  const { data: fieldRows } = await supabase
+    .from('extracted_fields')
+    .select('*')
+    .eq('session_id', session_id)
+    .order('created_at')
+
+  const extractedFields = (fieldRows ?? []).map((r: Record<string, unknown>) => ({
+    field:            r.field,
+    source_label:     r.source_label ?? '',
+    source_zone:      r.source_zone ?? 'unknown',
+    bbox:             [0, 0, 1, 0.1] as [number,number,number,number],
+    raw_value:        r.raw_value ?? '',
+    normalized_value: r.normalized_value ?? '',
+    language_layer:   r.language_layer ?? 'uk',
+    confidence:       Number(r.confidence ?? 1),
+    review_required:  Boolean(r.review_required),
+  }))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sourceTraces = (extractedFields as any[]).map((f) => ({
+    field:            f.field,
+    document_type:    sessionData.doc_type ?? 'ua_passport_internal',
+    source_label:     f.source_label,
+    source_zone:      f.source_zone,
+    bbox:             f.bbox,
+    raw_value:        f.raw_value,
+    normalized_value: f.normalized_value,
+    language_layer:   f.language_layer,
+    confidence:       f.confidence,
+    review_required:  f.review_required,
+  }))
+
+  // Assemble PacketState
+  const state = {
+    ...sessionData,
+    document_type:        sessionData.doc_type ?? 'ua_passport_internal',
+    scope_title:          sessionData.scope_title ?? `English Translation of Ukrainian Internal Passport`,
+    extracted_fields:     extractedFields,
+    source_traces:        sourceTraces,
+    certification_record: certData ?? null,
+    payment_confirmed:    Boolean(sessionData.payment_confirmed),
+  } as unknown as PacketState
 
   // Gate 1: Payment verification
   const paymentVerified = checkout_id
