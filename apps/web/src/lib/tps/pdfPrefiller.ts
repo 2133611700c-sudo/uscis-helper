@@ -98,7 +98,11 @@ export async function prefill(
   ops: PrefillOp[],
   opts: PrefillOptions,
 ): Promise<PrefillResult> {
-  const pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false })
+  // USCIS PDFs are encrypted with permissive flags (allow filling + printing,
+  // forbid content modification). pdf-lib refuses encrypted PDFs by default;
+  // ignoreEncryption=true is the documented and supported escape hatch for
+  // exactly this case.
+  const pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false, ignoreEncryption: true })
 
   // 1. Strip XFA so Adobe reads AcroForm.
   stripXfa(pdfDoc)
