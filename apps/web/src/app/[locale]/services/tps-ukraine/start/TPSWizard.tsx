@@ -25,6 +25,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import GeneratePacketBlock from './GeneratePacketBlock'
 
 type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -701,9 +702,19 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
         <button type="button" onClick={() => typeof window !== 'undefined' && window.print()} style={{ ...secondaryBtn, display: 'block', width: '100%', textAlign: 'center', marginBottom: 10 }}>
           {t.s5Print}
         </button>
-        <button type="button" onClick={restart} style={{ ...secondaryBtn, display: 'block', width: '100%', textAlign: 'center' }}>
+        <button type="button" onClick={restart} style={{ ...secondaryBtn, display: 'block', width: '100%', textAlign: 'center', marginBottom: 10 }}>
           {t.s5Restart}
         </button>
+
+        {/* Phase 1 auto-fill: collects the remaining personal fields and
+            POSTs to /api/tps/generate-packet to download a ZIP with
+            prefilled I-821 (+I-765 if wants_ead). DRAFT watermark + XFA
+            strip handled server-side. */}
+        <GeneratePacketBlock
+          locale={locale}
+          filingPath={answers.filing_path}
+          wantsEad={answers.wants_ead}
+        />
       </div>
     )
   }
