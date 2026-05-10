@@ -33,7 +33,7 @@ type Slug = (typeof SLUGS)[number]
 // Per BUG-003: only services with verified full content are indexable.
 // Stub services (placeholder content only) get robots: noindex to avoid
 // thin-content SEO penalty. List grows as services are verified one-by-one.
-const FULL_DATA_SLUGS: ReadonlySet<Slug> = new Set<Slug>(['re-parole-u4u'])
+const FULL_DATA_SLUGS: ReadonlySet<Slug> = new Set<Slug>(['re-parole-u4u', 'tps-ukraine'])
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>
