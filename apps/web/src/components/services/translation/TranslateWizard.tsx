@@ -34,7 +34,8 @@ const T: Record<Lang, Record<string, string>> = {
   uk: {
     back: '← Назад',
     'h.title': 'Завантажте документ',
-    'h.sub': "Сфотографуйте або завантажте файл. Ми автоматично визначимо ім'я та дані.",
+    'h.sub': "Сфотографуйте або завантажте файл. Якщо ми не зможемо впевнено визначити документ — ми передамо його на ручну перевірку нашою командою, не вгадуємо.",
+    'h.scope_notice': 'Самостійний потік підтримує тільки український внутрішній паспорт (книжка). Інші українські документи можна завантажити — наш спеціаліст перевірить вручну.',
     'h.photo': 'Сфотографувати', 'h.photo.hint': 'Відкриється камера телефону',
     'h.file': 'Завантажити файл', 'h.file.hint': "Вибрати з фото, файлів або комп'ютера",
     'h.footer': 'Ми перевіримо документ безкоштовно. Переклад — після оплати.',
@@ -114,7 +115,8 @@ const T: Record<Lang, Record<string, string>> = {
   ru: {
     back: '← Назад',
     'h.title': 'Загрузите ваш украинский документ',
-    'h.sub': 'Самостоятельная подготовка перевода украинского внутреннего паспорта (booklet). Другие украинские документы принимаются — наш специалист проверит вручную.',
+    'h.sub': 'Сфотографируйте или загрузите файл. Если мы не сможем уверенно распознать документ — передадим его на ручную проверку нашей команде, не гадаем.',
+    'h.scope_notice': 'Самостоятельный поток поддерживает только украинский внутренний паспорт (книжечка). Другие украинские документы можно загрузить — наш специалист проверит вручную.',
     'h.photo': 'Сфотографировать', 'h.photo.hint': 'Откроется камера телефона',
     'h.file': 'Загрузить файл', 'h.file.hint': 'Выбрать из фото, файлов или компьютера',
     'h.footer': 'Мы проверим документ бесплатно. Перевод — после оплаты.',
@@ -192,7 +194,8 @@ const T: Record<Lang, Record<string, string>> = {
   en: {
     back: '← Back',
     'h.title': 'Upload your Ukrainian document',
-    'h.sub': 'Self-service draft is supported for the Ukrainian internal passport booklet. Other Ukrainian documents may be uploaded and will be reviewed manually by our team.',
+    'h.sub': "Take a photo or upload a file. If we cannot identify the document confidently, we route it to manual review by our team — we don't guess.",
+    'h.scope_notice': 'The self-service flow supports the Ukrainian internal passport booklet. Other Ukrainian documents may be uploaded and will be reviewed manually by our team.',
     'h.photo': 'Take a photo', 'h.photo.hint': 'Opens your phone camera',
     'h.file': 'Upload file', 'h.file.hint': 'Choose from Photos, Files, or computer',
     'h.footer': 'We check your document for free. Translation after payment.',
@@ -270,7 +273,8 @@ const T: Record<Lang, Record<string, string>> = {
   es: {
     back: '← Volver',
     'h.title': 'Suba su documento ucraniano',
-    'h.sub': 'Borrador autoservicio disponible para el pasaporte interno ucraniano (libreta). Otros documentos ucranianos pueden subirse y serán revisados manualmente por nuestro equipo.',
+    'h.sub': 'Tome una foto o suba un archivo. Si no podemos identificar el documento con confianza, lo enviamos a revisión manual por nuestro equipo — no adivinamos.',
+    'h.scope_notice': 'El flujo de autoservicio admite el pasaporte interno ucraniano (libreta). Otros documentos ucranianos pueden subirse y serán revisados manualmente por nuestro equipo.',
     'h.photo': 'Tomar foto', 'h.photo.hint': 'Se abrirá la cámara del teléfono',
     'h.file': 'Subir archivo', 'h.file.hint': 'Elegir desde Fotos, Archivos o computadora',
     'h.footer': 'Verificamos su documento gratis. Traducción después del pago.',
@@ -827,6 +831,22 @@ export function TranslateWizard() {
             {progBar()}
             <h1 className="tw-h1">{t['h.title']}</h1>
             <p className="tw-subtitle">{t['h.sub']}</p>
+
+            <div
+              data-testid="scope-notice"
+              style={{
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: 'var(--ink2)',
+                background: 'var(--surf)',
+                border: '1px solid var(--brd)',
+                borderRadius: 8,
+                padding: '10px 12px',
+                marginBottom: 12,
+              }}
+            >
+              {t['h.scope_notice']}
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <label className="tw-upload">
