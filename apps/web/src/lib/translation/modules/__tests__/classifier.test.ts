@@ -372,6 +372,7 @@ describe('getAliasTable', () => {
       'ua_birth_certificate',
       'ua_marriage_certificate',
       'ua_divorce_certificate',
+      'ua_death_certificate',         // Added 2026-05-10 — skeleton draft module
       'ua_international_passport',
       'ua_id_card',
       'manual_review_required',
