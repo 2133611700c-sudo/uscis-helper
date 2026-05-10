@@ -38,7 +38,15 @@ export const birthCertificateModule: DocumentModule = {
     uk: 'Свідоцтво про народження (Україна)',
   },
 
-  status: 'active',
+  // Demoted from 'active' to 'draft' on 2026-05-09 per
+  // DEMOTE_UNPROVEN_MODULES_AND_LOCK_PRODUCTION_SCOPE.
+  // Synthetic-only E2E is not sufficient for self-serve auto-PDF.
+  // Re-promote only after a real (sanitized) fixture passes the FULL
+  // pipeline (upload → OCR → extraction → review → certify → render).
+  // While 'draft', registry.getDocumentModule() returns manualReviewModule
+  // for ua_birth_certificate, so customer PDF cannot be produced and the
+  // session is escalated to manual review.
+  status: 'draft',
 
   supportedLanguages: ['uk', 'ru'],
 
@@ -473,7 +481,11 @@ export const birthCertificateModule: DocumentModule = {
   reviewPolicy: {
     requireUserConfirmation: true,
     requireEvidenceForCriticalFields: true,
-    allowAutoPdf: true,   // allowed ONLY after all 14 critical fields confirmed by user
+    // Demoted to false on 2026-05-09 — synthetic-only E2E does not justify
+    // self-serve auto-PDF. The DocumentModule.status='draft' above is the
+    // primary safety lock (registry returns manualReviewModule for non-active
+    // statuses); allowAutoPdf:false here is defense-in-depth.
+    allowAutoPdf: false,
     manualReviewIfMissingCritical: true,
     manualReviewIfLowConfidence: true,
     manualReviewIfUnsupportedLayout: true,
