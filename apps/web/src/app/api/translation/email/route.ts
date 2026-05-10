@@ -2,7 +2,7 @@
  * POST /api/translation/email
  *
  * Generates a translation draft HTML and sends it to the user's email as an attachment.
- * Called from TranslationWizard Step 6 (post-download email block).
+ * Called from TranslateWizard post-download email block.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
