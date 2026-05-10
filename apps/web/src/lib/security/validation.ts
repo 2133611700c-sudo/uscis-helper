@@ -30,8 +30,22 @@ export function sanitiseLocale(value: unknown): Locale {
 
 // ── Service slugs ────────────────────────────────────────────────────────────
 
-export const VALID_SERVICE_SLUGS = ['re-parole-u4u'] as const
+/**
+ * Whitelist of service slugs the wizard infrastructure can route.
+ *
+ * Phase 0 (multi-service wizard refactor) added `tps-ukraine` alongside the
+ * original `re-parole-u4u`. Adding a slug here is a deliberate gate: it
+ * authorises both the public API (`/api/wizard/session`) and the in-browser
+ * `WizardProvider` to persist sessions / localStorage under that slug.
+ *
+ * Never accept a service_slug from untrusted input without going through
+ * `sanitiseServiceSlug()` — that's what enforces this whitelist.
+ */
+export const VALID_SERVICE_SLUGS = ['re-parole-u4u', 'tps-ukraine'] as const
 export type ServiceSlug = (typeof VALID_SERVICE_SLUGS)[number]
+
+/** Default slug used when no slug is supplied (preserves pre-Phase-0 behaviour). */
+export const DEFAULT_SERVICE_SLUG: ServiceSlug = 're-parole-u4u'
 
 export function isValidServiceSlug(value: unknown): value is ServiceSlug {
   return VALID_SERVICE_SLUGS.includes(value as ServiceSlug)
@@ -39,7 +53,7 @@ export function isValidServiceSlug(value: unknown): value is ServiceSlug {
 
 /** Sanitise a service slug from untrusted input; falls back to default. */
 export function sanitiseServiceSlug(value: unknown): ServiceSlug {
-  return isValidServiceSlug(value) ? value : 're-parole-u4u'
+  return isValidServiceSlug(value) ? value : DEFAULT_SERVICE_SLUG
 }
 
 // ── File types ───────────────────────────────────────────────────────────────
