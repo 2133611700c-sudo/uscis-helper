@@ -23,8 +23,8 @@ type Locale = 'uk' | 'ru' | 'en' | 'es'
 
 interface Props {
   locale: Locale
-  filingPath: 'initial' | 're_registration' | 'unknown'
-  wantsEad: boolean | null
+  filingPath: 'initial' | 're_registration' | 'unknown' | 'unselected'
+  wantsEad: boolean | null | undefined
 }
 
 interface PersonalFields {
@@ -156,7 +156,10 @@ const COPY = {
 
 export default function GeneratePacketBlock({ locale, filingPath, wantsEad }: Props) {
   const c = COPY[locale]
-  const [open, setOpen] = useState(false)
+  // Open by default. The block lives at the bottom of the final summary screen
+  // and is the actual product — hiding it behind a toggle made senior users
+  // miss it during UX testing.
+  const [open, setOpen] = useState(true)
   const [fields, setFields] = useState<PersonalFields>(() => {
     if (typeof window === 'undefined') return EMPTY
     try {
@@ -186,7 +189,9 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad }: Pr
     setError(null)
     setZipUrl(null)
 
-    const path = filingPath === 'unknown' ? 'initial' : filingPath
+    const path = filingPath === 'initial' || filingPath === 're_registration'
+      ? filingPath
+      : 'initial'
     const body = {
       family_name: fields.family_name,
       given_name: fields.given_name,

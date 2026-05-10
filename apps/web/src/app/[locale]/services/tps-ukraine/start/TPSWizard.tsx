@@ -29,8 +29,11 @@ import GeneratePacketBlock from './GeneratePacketBlock'
 
 type Locale = 'uk' | 'ru' | 'en' | 'es'
 
-type FilingPath = 'initial' | 're_registration' | 'unknown'
-type TriState = boolean | null
+type FilingPath = 'initial' | 're_registration' | 'unknown' | 'unselected'
+// undefined = user hasn't answered yet (no card highlighted)
+// null      = user explicitly clicked "Не уверен"
+// boolean   = explicit yes / no
+type TriState = boolean | null | undefined
 
 interface TPSAnswers {
   filing_path: FilingPath
@@ -50,20 +53,20 @@ interface TPSAnswers {
 }
 
 const DEFAULTS: TPSAnswers = {
-  filing_path: 'unknown',
-  has_prior_tps: null,
-  has_passport: null,
-  has_i94: null,
+  filing_path: 'unselected',
+  has_prior_tps: undefined,
+  has_passport: undefined,
+  has_i94: undefined,
   date_entered_us: '',
-  wants_ead: null,
-  has_ead: null,
+  wants_ead: undefined,
+  has_ead: undefined,
   ead_expiration_date: '',
-  wants_fee_waiver: null,
+  wants_fee_waiver: undefined,
   filing_method: 'unknown',
   cr_evidence: [],
   cpp_evidence: [],
   needs_attorney: false,
-  has_criminal_concern: null,
+  has_criminal_concern: undefined,
 }
 
 const STORAGE_KEY = 'wizard:tps-ukraine:state:v1'
@@ -78,52 +81,52 @@ const T = {
     progress: (n: number, total: number) => `Крок ${n} з ${total}`,
     yes: 'Так', no: 'Ні', unsure: 'Не впевнений',
 
-    s1Title: '1. Початкова заявка чи re-registration?',
-    s1Body: 'Якщо ви ніколи не подавали TPS — це initial. Якщо TPS у вас вже був і ви продовжуєте — re-registration.',
-    s1Initial: 'Перша подача (initial)',
-    s1Reg: 'Продовження (re-registration)',
+    s1Title: '1. Ви подаєте вперше чи продовжуєте?',
+    s1Body: 'Якщо ви ніколи раніше не подавали TPS — оберіть «вперше». Якщо ви вже мали TPS і подаєте знову, щоб продовжити його — оберіть «продовжую».',
+    s1Initial: 'Подаю вперше',
+    s1Reg: 'Продовжую (вже мав TPS раніше)',
     s1Unknown: 'Не впевнений',
-    s1Hint: 'Якщо не впевнений — ми покажемо обидва шляхи у підсумку.',
+    s1Hint: 'Це найважливіший вибір — від нього залежать наступні кроки та форми.',
 
-    s2Title: '2. Особа та дата прибуття',
+    s2Title: '2. Документи та дата прибуття',
     s2Passport: 'У вас є дійсний паспорт?',
-    s2I94: 'У вас є I-94?',
-    s2I94Hint: 'I-94 — електронний запис в’їзду CBP. Перевірити можна на i94.cbp.dhs.gov.',
-    s2Date: 'Дата вашого останнього в’їзду в США',
-    s2DatePlaceholder: 'YYYY-MM-DD',
-    s2DateHint: 'Потрібна для розрахунку continuous residence (з 16 серпня 2023 р.) та continuous physical presence (з 20 жовтня 2023 р.).',
+    s2I94: 'У вас є запис I-94 (підтвердження в\'їзду в США)?',
+    s2I94Hint: 'I-94 — це електронний запис вашого в\'їзду в США, який створює прикордонна служба CBP. Перевірити та завантажити можна на сайті:',
+    s2Date: 'Дата вашого останнього в\'їзду в США',
+    s2DatePlaceholder: '',
+    s2DateHint: 'Потрібно для перевірки безперервного проживання в США (з 16 серпня 2023 року) та безперервної фізичної присутності (з 20 жовтня 2023 року).',
 
-    s3Title: '3. EAD та fee waiver',
-    s3Ead: 'Вам потрібен дозвіл на роботу (EAD)?',
-    s3EadHint: 'Подається окремою формою I-765. Можна разом з I-821 або після.',
-    s3HasEad: 'У вас вже є TPS EAD?',
-    s3EadExpiry: 'Дата на картці EAD (Card Expires)',
-    s3EadAutoNote: 'Деякі TPS EAD з датою 19 квітня 2025 або 19 жовтня 2023 автоматично продовжені до 19 квітня 2026. Перевіряйте на сторінці USCIS.',
-    s3FeeWaiver: 'Потрібен fee waiver (I-912)?',
-    s3FeeWaiverHint: 'Form I-912 — звільнення від держмита. Подається ТІЛЬКИ паперовою заявою.',
-    s3Result: 'Шлях подачі:',
-    s3Paper: 'Паперова подача (потрібен fee waiver)',
-    s3Online: 'Онлайн через my.uscis.gov',
+    s3Title: '3. Дозвіл на роботу та зменшення оплати',
+    s3Ead: 'Вам потрібен дозвіл на роботу в США?',
+    s3EadHint: 'Дозвіл на роботу — це окрема картка від USCIS (форма I-765, категорія EAD). Можна подати разом з основною заявою або пізніше.',
+    s3HasEad: 'У вас вже є картка EAD (дозвіл на роботу) за TPS?',
+    s3EadExpiry: 'Дата на вашій картці EAD (поле «Card Expires»)',
+    s3EadAutoNote: 'Деякі картки EAD з датами 19.04.2025 або 19.10.2023 автоматично продовжені до 19.04.2026. Точно перевіряйте на сторінці USCIS.',
+    s3FeeWaiver: 'Бажаєте подати заяву на звільнення від державного збору USCIS?',
+    s3FeeWaiverHint: 'Це заява про відсутність коштів на оплату державного збору (форма USCIS I-912). Подається ТІЛЬКИ на папері — не онлайн.',
+    s3Result: 'Як подавати документи:',
+    s3Paper: 'Паперова подача (бо ви просите звільнення від оплати)',
+    s3Online: 'Онлайн на сайті my.uscis.gov',
     s3UnknownMethod: 'Залежить від ваших відповідей',
 
-    s4Title: '4. Докази проживання',
-    s4Body: 'Виберіть категорії документів, які у вас є. Що більше — то краще.',
-    s4CrTitle: 'Continuous residence (з 16.08.2023):',
-    s4CppTitle: 'Continuous physical presence (з 20.10.2023):',
+    s4Title: '4. Документи для підтвердження проживання',
+    s4Body: 'Поставте позначку біля кожної категорії документів, які у вас є. Чим більше доказів — тим краще.',
+    s4CrTitle: 'Підтвердження проживання в США (з 16.08.2023):',
+    s4CppTitle: 'Підтвердження фізичної присутності в США (з 20.10.2023):',
     s4CrItems: [
-      { id: 'rent', label: 'Договір оренди / квитанції' },
-      { id: 'utility', label: 'Рахунки за комунальні' },
+      { id: 'rent', label: 'Договір оренди житла / квитанції про оплату' },
+      { id: 'utility', label: 'Рахунки за комунальні послуги (світло, газ, вода)' },
       { id: 'bank', label: 'Банківські виписки' },
-      { id: 'medical', label: 'Медичні документи' },
-      { id: 'school', label: 'Шкільні записи' },
-      { id: 'employer', label: 'Лист від роботодавця' },
-      { id: 'tax', label: 'Податкові документи' },
+      { id: 'medical', label: 'Медичні документи (візити до лікаря в США)' },
+      { id: 'school', label: 'Шкільні записи дітей' },
+      { id: 'employer', label: 'Лист від роботодавця в США' },
+      { id: 'tax', label: 'Податкові декларації (federal tax returns)' },
     ],
     s4CppItems: [
-      { id: 'travel', label: 'Записи I-94 без виїздів з 20.10.2023' },
+      { id: 'travel', label: 'Запис I-94 без виїздів з 20.10.2023' },
       { id: 'leases', label: 'Безперервні договори оренди' },
-      { id: 'cards', label: 'Виписки з кредитних карток (показують US-транзакції)' },
-      { id: 'paystubs', label: 'Платіжні відомості' },
+      { id: 'cards', label: 'Виписки з кредитних карток із покупками в США' },
+      { id: 'paystubs', label: 'Розрахункові листи (paystubs) із зарплати' },
     ],
 
     s5Title: '5. Підсумок — що готувати',
@@ -147,52 +150,52 @@ const T = {
     progress: (n: number, total: number) => `Шаг ${n} из ${total}`,
     yes: 'Да', no: 'Нет', unsure: 'Не уверен',
 
-    s1Title: '1. Первичная заявка или re-registration?',
-    s1Body: 'Если вы никогда не подавали TPS — это initial. Если TPS у вас уже был и продлеваете — re-registration.',
-    s1Initial: 'Первая подача (initial)',
-    s1Reg: 'Продление (re-registration)',
+    s1Title: '1. Вы подаёте впервые или продлеваете?',
+    s1Body: 'Если вы никогда раньше не подавали TPS — выберите «впервые». Если у вас уже был TPS и вы хотите его продлить — выберите «продлеваю».',
+    s1Initial: 'Подаю впервые',
+    s1Reg: 'Продлеваю (TPS у меня уже был)',
     s1Unknown: 'Не уверен',
-    s1Hint: 'Если не уверены — мы покажем оба пути в итоге.',
+    s1Hint: 'Это самый главный выбор — от него зависят все следующие шаги и формы.',
 
-    s2Title: '2. Личность и дата прибытия',
+    s2Title: '2. Документы и дата прибытия',
     s2Passport: 'У вас есть действующий паспорт?',
-    s2I94: 'У вас есть I-94?',
-    s2I94Hint: 'I-94 — электронная запись въезда CBP. Проверить можно на i94.cbp.dhs.gov.',
+    s2I94: 'У вас есть запись I-94 (подтверждение въезда в США)?',
+    s2I94Hint: 'I-94 — это электронная запись о вашем въезде в США, которую создаёт пограничная служба CBP. Проверить и скачать можно на сайте:',
     s2Date: 'Дата вашего последнего въезда в США',
-    s2DatePlaceholder: 'YYYY-MM-DD',
-    s2DateHint: 'Нужна для расчёта continuous residence (с 16 августа 2023 г.) и continuous physical presence (с 20 октября 2023 г.).',
+    s2DatePlaceholder: '',
+    s2DateHint: 'Нужна для проверки непрерывного проживания в США (с 16 августа 2023 года) и непрерывного физического присутствия (с 20 октября 2023 года).',
 
-    s3Title: '3. EAD и fee waiver',
-    s3Ead: 'Нужно ли разрешение на работу (EAD)?',
-    s3EadHint: 'Подаётся отдельной формой I-765. Вместе с I-821 или после.',
-    s3HasEad: 'У вас уже есть TPS EAD?',
-    s3EadExpiry: 'Дата на карточке EAD (Card Expires)',
-    s3EadAutoNote: 'Некоторые TPS EAD с датой 19 апреля 2025 или 19 октября 2023 автоматически продлены до 19 апреля 2026 г. Проверяйте на странице USCIS.',
-    s3FeeWaiver: 'Нужен fee waiver (I-912)?',
-    s3FeeWaiverHint: 'Form I-912 — освобождение от госпошлины. Подаётся ТОЛЬКО бумажной заявкой.',
-    s3Result: 'Способ подачи:',
-    s3Paper: 'Бумажная подача (нужен fee waiver)',
-    s3Online: 'Онлайн через my.uscis.gov',
+    s3Title: '3. Разрешение на работу и снижение оплаты',
+    s3Ead: 'Вам нужно разрешение на работу в США?',
+    s3EadHint: 'Разрешение на работу — это отдельная карточка от USCIS (форма I-765, категория EAD). Можно подать вместе с основной заявой или позже.',
+    s3HasEad: 'У вас уже есть карточка EAD (разрешение на работу) по TPS?',
+    s3EadExpiry: 'Дата на вашей карточке EAD (поле «Card Expires»)',
+    s3EadAutoNote: 'Некоторые карточки EAD с датами 19.04.2025 или 19.10.2023 автоматически продлены до 19.04.2026. Точно проверяйте на странице USCIS.',
+    s3FeeWaiver: 'Хотите подать заявку на освобождение от государственной пошлины USCIS?',
+    s3FeeWaiverHint: 'Это заявление о невозможности оплатить государственную пошлину (форма USCIS I-912). Подаётся ТОЛЬКО на бумаге — не онлайн.',
+    s3Result: 'Как подавать документы:',
+    s3Paper: 'Бумажная подача (так как вы просите освобождение от оплаты)',
+    s3Online: 'Онлайн на сайте my.uscis.gov',
     s3UnknownMethod: 'Зависит от ваших ответов',
 
-    s4Title: '4. Доказательства проживания',
-    s4Body: 'Выберите категории документов, которые у вас есть. Чем больше — тем лучше.',
-    s4CrTitle: 'Continuous residence (с 16.08.2023):',
-    s4CppTitle: 'Continuous physical presence (с 20.10.2023):',
+    s4Title: '4. Документы для подтверждения проживания',
+    s4Body: 'Отметьте каждую категорию документов, которые у вас есть. Чем больше доказательств — тем лучше.',
+    s4CrTitle: 'Подтверждение проживания в США (с 16.08.2023):',
+    s4CppTitle: 'Подтверждение физического присутствия в США (с 20.10.2023):',
     s4CrItems: [
-      { id: 'rent', label: 'Договор аренды / квитанции' },
-      { id: 'utility', label: 'Счета за коммунальные' },
+      { id: 'rent', label: 'Договор аренды жилья / квитанции об оплате' },
+      { id: 'utility', label: 'Счета за коммунальные услуги (свет, газ, вода)' },
       { id: 'bank', label: 'Банковские выписки' },
-      { id: 'medical', label: 'Медицинские документы' },
-      { id: 'school', label: 'Школьные записи' },
-      { id: 'employer', label: 'Письмо от работодателя' },
-      { id: 'tax', label: 'Налоговые документы' },
+      { id: 'medical', label: 'Медицинские документы (визиты к врачу в США)' },
+      { id: 'school', label: 'Школьные записи детей' },
+      { id: 'employer', label: 'Письмо от работодателя в США' },
+      { id: 'tax', label: 'Налоговые декларации (federal tax returns)' },
     ],
     s4CppItems: [
-      { id: 'travel', label: 'Записи I-94 без выездов с 20.10.2023' },
+      { id: 'travel', label: 'Запись I-94 без выездов с 20.10.2023' },
       { id: 'leases', label: 'Непрерывные договоры аренды' },
-      { id: 'cards', label: 'Выписки кредитных карт (US-транзакции)' },
-      { id: 'paystubs', label: 'Платёжные ведомости' },
+      { id: 'cards', label: 'Выписки кредитных карт с покупками в США' },
+      { id: 'paystubs', label: 'Расчётные листы (paystubs) с зарплаты' },
     ],
 
     s5Title: '5. Итог — что готовить',
@@ -500,9 +503,7 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
 
         <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text-1)', marginBottom: 6 }}>{t.s2Date}</label>
         <input
-          type="text"
-          inputMode="numeric"
-          placeholder={t.s2DatePlaceholder}
+          type="date"
           value={answers.date_entered_us}
           onChange={(e) => update({ date_entered_us: e.target.value })}
           style={{
@@ -536,9 +537,7 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text-1)', marginBottom: 6 }}>{t.s3EadExpiry}</label>
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="YYYY-MM-DD"
+                  type="date"
                   value={answers.ead_expiration_date}
                   onChange={(e) => update({ ead_expiration_date: e.target.value })}
                   style={{
@@ -774,19 +773,24 @@ function Yn({
   t,
 }: {
   label: string
-  value: boolean | null
+  value: boolean | null | undefined
   onChange: (v: boolean | null) => void
   t: { yes: string; no: string; unsure: string }
 }) {
-  const card = (v: boolean | null, txt: string) => ({
+  // A button is highlighted ONLY when the user has explicitly clicked it.
+  // value === undefined means "not yet answered" — no card highlighted, so the
+  // user must actively pick one. This fixes the prior bug where "Не уверен"
+  // appeared selected by default.
+  const isMatch = (v: boolean | null) => value !== undefined && value === v
+  const card = (v: boolean | null) => ({
     flex: 1,
     padding: '10px 8px',
     textAlign: 'center' as const,
     fontSize: 13,
     fontWeight: 700,
-    color: value === v ? '#fff' : 'var(--text-1)',
-    background: value === v ? 'var(--success)' : 'var(--surface)',
-    border: value === v ? '2px solid var(--success)' : '1px solid var(--border)',
+    color: isMatch(v) ? '#fff' : 'var(--text-1)',
+    background: isMatch(v) ? 'var(--success)' : 'var(--surface)',
+    border: isMatch(v) ? '2px solid var(--success)' : '1px solid var(--border)',
     borderRadius: 10,
     cursor: 'pointer',
   })
@@ -794,9 +798,9 @@ function Yn({
     <div style={{ marginBottom: 4 }}>
       <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)', marginBottom: 8 }}>{label}</p>
       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        <button type="button" style={card(true, t.yes)} onClick={() => onChange(true)}>{t.yes}</button>
-        <button type="button" style={card(false, t.no)} onClick={() => onChange(false)}>{t.no}</button>
-        <button type="button" style={card(null, t.unsure)} onClick={() => onChange(null)}>{t.unsure}</button>
+        <button type="button" style={card(true)} onClick={() => onChange(true)}>{t.yes}</button>
+        <button type="button" style={card(false)} onClick={() => onChange(false)}>{t.no}</button>
+        <button type="button" style={card(null)} onClick={() => onChange(null)}>{t.unsure}</button>
       </div>
     </div>
   )
