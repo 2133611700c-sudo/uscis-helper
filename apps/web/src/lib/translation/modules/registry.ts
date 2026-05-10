@@ -19,6 +19,7 @@ import { passportBookletModule } from './passportBooklet.module'
 import { birthCertificateModule } from './birthCertificate.module'
 import { marriageCertificateModule } from './marriageCertificate.module'
 import { divorceCertificateModule } from './divorceCertificate.module'
+import { deathCertificateModule } from './deathCertificate.module'
 import { internationalPassportModule } from './internationalPassport.module'
 import { ukrainianIdCardModule } from './ukrainianIdCard.module'
 import { manualReviewModule } from './manualReview.module'
@@ -32,6 +33,7 @@ const MODULE_REGISTRY: ReadonlyMap<string, DocumentModule> = new Map([
   [birthCertificateModule.documentType, birthCertificateModule],
   [marriageCertificateModule.documentType, marriageCertificateModule],
   [divorceCertificateModule.documentType, divorceCertificateModule],
+  [deathCertificateModule.documentType, deathCertificateModule],
   [internationalPassportModule.documentType, internationalPassportModule],
   [ukrainianIdCardModule.documentType, ukrainianIdCardModule],
   [manualReviewModule.documentType, manualReviewModule],
