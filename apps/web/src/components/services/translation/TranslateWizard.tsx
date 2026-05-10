@@ -18,7 +18,26 @@ const DEMO_MODE = false // Set to false in production
 const DRAFT_KEY = 'translationWizardDraft_v1'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Screen = 'upload' | 'detect' | 'bad-photo' | 'price' | 'payment' | 'pending' | 'review' | 'cert' | 'done'
+type Screen =
+  | 'upload'
+  | 'doctype-picker'      // post-upload: user declares what they uploaded
+  | 'manual-review-info'  // anything not ua_internal_passport_booklet → no self-serve
+  | 'detect'
+  | 'bad-photo'
+  | 'price'
+  | 'payment'
+  | 'pending'
+  | 'review'
+  | 'cert'
+  | 'done'
+
+/**
+ * Doc-type values the wizard understands at the picker stage.
+ * 'ua_internal_passport_booklet' is the only value that proceeds to the
+ * existing self-review/payment path. Everything else is a sentinel that
+ * routes to the manual-review handoff before any payment screen.
+ */
+type DocTypeChoice = 'ua_internal_passport_booklet' | 'other_ukrainian_document'
 type Plan = 'basic' | 'plus' | 'premium'
 type Lang = 'uk' | 'ru' | 'en' | 'es'
 
@@ -36,6 +55,17 @@ const T: Record<Lang, Record<string, string>> = {
     'h.title': 'Завантажте документ',
     'h.sub': "Сфотографуйте або завантажте файл. Якщо ми не зможемо впевнено визначити документ — ми передамо його на ручну перевірку нашою командою, не вгадуємо.",
     'h.scope_notice': 'Самостійний потік підтримує тільки український внутрішній паспорт (книжка). Інші українські документи можна завантажити — наш спеціаліст перевірить вручну.',
+    'dp.title': 'Який це документ?',
+    'dp.sub': 'Виберіть тип документа, який ви завантажили. Ми не вгадуємо.',
+    'dp.passport': 'Внутрішній паспорт (книжка)',
+    'dp.passport.hint': 'Доступний самостійний потік перегляду.',
+    'dp.other': 'Інший український документ',
+    'dp.other.hint': 'Перевірить наш спеціаліст вручну.',
+    'mr.title': 'Ручна перевірка нашою командою',
+    'mr.body': 'Цей документ може потребувати ручної перевірки нашою командою. Ми не вгадуємо нечіткі поля. Ви можете продовжити, і ми підкажемо наступний крок.',
+    'mr.email_us': 'Написати нашій команді',
+    'mr.upload_different': 'Завантажити інший документ',
+    'mr.no_payment': 'Оплата зараз не береться. Не є юридичною консультацією. Не гарантуємо прийняття USCIS.',
     'h.photo': 'Сфотографувати', 'h.photo.hint': 'Відкриється камера телефону',
     'h.file': 'Завантажити файл', 'h.file.hint': "Вибрати з фото, файлів або комп'ютера",
     'h.footer': 'Ми перевіримо документ безкоштовно. Переклад — після оплати.',
@@ -117,6 +147,17 @@ const T: Record<Lang, Record<string, string>> = {
     'h.title': 'Загрузите ваш украинский документ',
     'h.sub': 'Сфотографируйте или загрузите файл. Если мы не сможем уверенно распознать документ — передадим его на ручную проверку нашей команде, не гадаем.',
     'h.scope_notice': 'Самостоятельный поток поддерживает только украинский внутренний паспорт (книжечка). Другие украинские документы можно загрузить — наш специалист проверит вручную.',
+    'dp.title': 'Что это за документ?',
+    'dp.sub': 'Выберите тип документа, который вы загрузили. Мы не угадываем.',
+    'dp.passport': 'Внутренний паспорт (книжечка)',
+    'dp.passport.hint': 'Доступен самостоятельный поток.',
+    'dp.other': 'Другой украинский документ',
+    'dp.other.hint': 'Проверит наш специалист вручную.',
+    'mr.title': 'Ручная проверка нашей командой',
+    'mr.body': 'Этот документ может потребовать ручной проверки нашей командой. Мы не угадываем неясные поля. Вы можете продолжить, и мы подскажем следующий шаг.',
+    'mr.email_us': 'Написать нашей команде',
+    'mr.upload_different': 'Загрузить другой документ',
+    'mr.no_payment': 'Оплата сейчас не взимается. Не является юридической консультацией. Не гарантируем принятие USCIS.',
     'h.photo': 'Сфотографировать', 'h.photo.hint': 'Откроется камера телефона',
     'h.file': 'Загрузить файл', 'h.file.hint': 'Выбрать из фото, файлов или компьютера',
     'h.footer': 'Мы проверим документ бесплатно. Перевод — после оплаты.',
@@ -196,6 +237,17 @@ const T: Record<Lang, Record<string, string>> = {
     'h.title': 'Upload your Ukrainian document',
     'h.sub': "Take a photo or upload a file. If we cannot identify the document confidently, we route it to manual review by our team — we don't guess.",
     'h.scope_notice': 'The self-service flow supports the Ukrainian internal passport booklet. Other Ukrainian documents may be uploaded and will be reviewed manually by our team.',
+    'dp.title': 'What document is this?',
+    'dp.sub': "Pick the type of document you uploaded. We don't guess.",
+    'dp.passport': 'Internal passport (booklet)',
+    'dp.passport.hint': 'Self-review flow available.',
+    'dp.other': 'Other Ukrainian document',
+    'dp.other.hint': 'Reviewed manually by our team.',
+    'mr.title': 'Manual review by our team',
+    'mr.body': 'This document may need manual review by our team. We do not guess unclear fields. You can continue and we will guide the next step.',
+    'mr.email_us': 'Email our team',
+    'mr.upload_different': 'Upload a different document',
+    'mr.no_payment': 'No payment is taken now. Not legal advice. We do not guarantee USCIS acceptance.',
     'h.photo': 'Take a photo', 'h.photo.hint': 'Opens your phone camera',
     'h.file': 'Upload file', 'h.file.hint': 'Choose from Photos, Files, or computer',
     'h.footer': 'We check your document for free. Translation after payment.',
@@ -275,6 +327,17 @@ const T: Record<Lang, Record<string, string>> = {
     'h.title': 'Suba su documento ucraniano',
     'h.sub': 'Tome una foto o suba un archivo. Si no podemos identificar el documento con confianza, lo enviamos a revisión manual por nuestro equipo — no adivinamos.',
     'h.scope_notice': 'El flujo de autoservicio admite el pasaporte interno ucraniano (libreta). Otros documentos ucranianos pueden subirse y serán revisados manualmente por nuestro equipo.',
+    'dp.title': '¿Qué documento es este?',
+    'dp.sub': 'Elija el tipo de documento que subió. No adivinamos.',
+    'dp.passport': 'Pasaporte interno (libreta)',
+    'dp.passport.hint': 'Flujo de autorrevisión disponible.',
+    'dp.other': 'Otro documento ucraniano',
+    'dp.other.hint': 'Revisado manualmente por nuestro equipo.',
+    'mr.title': 'Revisión manual por nuestro equipo',
+    'mr.body': 'Este documento puede requerir revisión manual por nuestro equipo. No adivinamos campos poco claros. Puede continuar y le guiaremos con el siguiente paso.',
+    'mr.email_us': 'Escribir a nuestro equipo',
+    'mr.upload_different': 'Subir otro documento',
+    'mr.no_payment': 'No se cobra ningún pago ahora. No es asesoramiento legal. No garantizamos la aceptación de USCIS.',
     'h.photo': 'Tomar foto', 'h.photo.hint': 'Se abrirá la cámara del teléfono',
     'h.file': 'Subir archivo', 'h.file.hint': 'Elegir desde Fotos, Archivos o computadora',
     'h.footer': 'Verificamos su documento gratis. Traducción después del pago.',
@@ -491,6 +554,11 @@ export function TranslateWizard() {
   const [profile, setProfile] = useState<Profile>({ name: '', email: '', phone: '', addr: '' })
   const [payForm, setPayForm] = useState<Profile>({ name: '', email: '', phone: '', addr: '' })
   const [extractedName, setExtractedName] = useState<string>('')
+  // ── Doctype picker / classification gate ──
+  // Set after the user declares what they uploaded on the 'doctype-picker'
+  // screen. Only 'ua_internal_passport_booklet' continues to detect/payment;
+  // everything else routes to 'manual-review-info' (no Stripe checkout).
+  const [docTypeChoice, setDocTypeChoice] = useState<DocTypeChoice | null>(null)
   const [editForm, setEditForm] = useState<Profile>({ name: '', email: '', phone: '', addr: '' })
   const [showProfileEditor, setShowProfileEditor] = useState(false)
   const [ack1, setAck1] = useState(false)
@@ -581,22 +649,38 @@ export function TranslateWizard() {
     window.scrollTo(0, 0)
   }, [])
 
-  // ── Upload → detect animation ──
+  // ── Upload → doctype picker ──
+  // Production truth: only ua_internal_passport_booklet may auto-PDF.
+  // We don't pretend to auto-detect — we ask the user to declare what they
+  // uploaded so non-passport documents go to manual review BEFORE payment.
   const handleUpload = useCallback(() => {
+    setDocTypeChoice(null)
+    setDetectStep(0)
+    goTo('doctype-picker')
+  }, [goTo])
+
+  // ── Doctype picker → either detect+payment or manual-review-info ──
+  const handlePickDocType = useCallback((choice: DocTypeChoice) => {
+    setDocTypeChoice(choice)
+    if (choice !== 'ua_internal_passport_booklet') {
+      // Anything other than the passport booklet routes to manual review.
+      // No Stripe checkout, no instant-PDF promise.
+      goTo('manual-review-info')
+      return
+    }
+    // Passport booklet → existing self-review/payment path.
     setDetectStep(0)
     goTo('detect')
     // Animate detection cards one by one: doctype → lang → quality → name
     setTimeout(() => setDetectStep(1), 700)
     setTimeout(() => setDetectStep(2), 1300)
     setTimeout(() => setDetectStep(3), 1900)
-    // Step 4: OCR name extraction (simulated; real = Tesseract result)
     setTimeout(() => {
       setDetectStep(4)
       const extracted = 'SHEVCHENKO TARAS HRYHOROVYCH'
       setExtractedName(extracted)
       setPayForm(f => ({ ...f, name: extracted }))
     }, 2500)
-    // Go straight to payment (plan already chosen on price screen)
     setTimeout(() => goTo('payment'), 3500)
   }, [goTo])
 
@@ -874,6 +958,115 @@ export function TranslateWizard() {
               {' · '}
               <a href={`/${locale}/privacy`} style={{ color: 'var(--acc)', textDecoration: 'underline' }}>Privacy Policy</a>
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── DOCTYPE PICKER ── */}
+      {/* Routes upload → either self-review (detect/payment) or manual-review-info.
+          Production truth: only ua_internal_passport_booklet auto-PDFs. */}
+      {screen === 'doctype-picker' && (
+        <div className="tw-animate" data-testid="doctype-picker">
+          <BackBtn to="upload" />
+          <div className="tw-wrap">
+            <div style={{ height: 16 }} />
+            <h1 className="tw-h1">{t['dp.title']}</h1>
+            <p className="tw-subtitle">{t['dp.sub']}</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button
+                type="button"
+                data-testid="doctype-pick-passport"
+                onClick={() => handlePickDocType('ua_internal_passport_booklet')}
+                className="tw-upload"
+                style={{ textAlign: 'left', cursor: 'pointer' }}
+              >
+                <div style={{ fontSize: 32, minWidth: 48, textAlign: 'center' }}>📕</div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+                    {t['dp.passport']}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--ink2)' }}>
+                    {t['dp.passport.hint']}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                data-testid="doctype-pick-other"
+                onClick={() => handlePickDocType('other_ukrainian_document')}
+                className="tw-upload"
+                style={{ textAlign: 'left', cursor: 'pointer' }}
+              >
+                <div style={{ fontSize: 32, minWidth: 48, textAlign: 'center' }}>📄</div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+                    {t['dp.other']}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--ink2)' }}>
+                    {t['dp.other.hint']}
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MANUAL REVIEW INFO ── */}
+      {/* Shown for any doctype other than ua_internal_passport_booklet.
+          NO payment cards, NO Stripe checkout, NO instant-PDF promise. */}
+      {screen === 'manual-review-info' && (
+        <div className="tw-animate" data-testid="manual-review-info">
+          <BackBtn to="doctype-picker" />
+          <div className="tw-wrap">
+            <div style={{ height: 16 }} />
+            <h1 className="tw-h1">{t['mr.title']}</h1>
+            <p className="tw-subtitle">{t['mr.body']}</p>
+
+            <div
+              style={{
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: 'var(--ink2)',
+                background: 'var(--surf)',
+                border: '1px solid var(--brd)',
+                borderRadius: 8,
+                padding: '10px 12px',
+                marginBottom: 16,
+              }}
+            >
+              {t['mr.no_payment']}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <a
+                href="mailto:hello@messenginfo.com?subject=Manual%20review%20request"
+                data-testid="manual-review-email"
+                className="tw-upload"
+                style={{ textAlign: 'left', textDecoration: 'none', color: 'inherit' }}
+              >
+                <div style={{ fontSize: 32, minWidth: 48, textAlign: 'center' }}>✉️</div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{t['mr.email_us']}</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink2)' }}>hello@messenginfo.com</div>
+                </div>
+              </a>
+
+              <button
+                type="button"
+                data-testid="manual-review-upload-different"
+                onClick={() => goTo('upload')}
+                className="tw-upload"
+                style={{ textAlign: 'left', cursor: 'pointer' }}
+              >
+                <div style={{ fontSize: 32, minWidth: 48, textAlign: 'center' }}>📷</div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{t['mr.upload_different']}</div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       )}
