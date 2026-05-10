@@ -10,6 +10,10 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { buildLocalStorageKey } from './wizardStorageKey'
+
+// Re-export so existing call sites that import from WizardContext keep working.
+export { buildLocalStorageKey }
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,7 +76,16 @@ function uuidV4(): string {
 // localStorage helpers
 // ---------------------------------------------------------------------------
 
-const LS_KEY = 'wizard:re-parole-u4u:state'
+/**
+ * Phase 0 multi-service refactor: the localStorage key is now derived from the
+ * active serviceSlug so Re-Parole and TPS Ukraine sessions cannot collide.
+ *
+ *   Re-Parole: wizard:re-parole-u4u:state
+ *   TPS:       wizard:tps-ukraine:state
+ *
+ * Implementation lives in ./wizardStorageKey so unit tests can import it
+ * without dragging in this whole JSX module.
+ */
 
 type PersistedSlice = {
   sessionId: string | null
@@ -82,10 +95,10 @@ type PersistedSlice = {
   theme: WizardState['theme']
 }
 
-function loadPersisted(): PersistedSlice | null {
+function loadPersisted(serviceSlug: string): PersistedSlice | null {
   if (typeof window === 'undefined') return null
   try {
-    const raw = window.localStorage.getItem(LS_KEY)
+    const raw = window.localStorage.getItem(buildLocalStorageKey(serviceSlug))
     if (!raw) return null
     return JSON.parse(raw) as PersistedSlice
   } catch {
@@ -93,10 +106,10 @@ function loadPersisted(): PersistedSlice | null {
   }
 }
 
-function savePersisted(slice: PersistedSlice): void {
+function savePersisted(serviceSlug: string, slice: PersistedSlice): void {
   if (typeof window === 'undefined') return
   try {
-    window.localStorage.setItem(LS_KEY, JSON.stringify(slice))
+    window.localStorage.setItem(buildLocalStorageKey(serviceSlug), JSON.stringify(slice))
   } catch {
     // quota exceeded or private mode — silently ignore
   }
@@ -159,8 +172,8 @@ function getLocaleFromUrl(): WizardState['locale'] | null {
   }
 }
 
-function buildInitialState(): WizardState {
-  const persisted = loadPersisted()
+function buildInitialState(serviceSlug: string): WizardState {
+  const persisted = loadPersisted(serviceSlug)
   const urlSessionId = getSessionIdFromUrl()
   const urlLocale = getLocaleFromUrl()
 
@@ -178,7 +191,7 @@ function buildInitialState(): WizardState {
     step,
     locale,
     theme,
-    serviceSlug: 're-parole-u4u',
+    serviceSlug,
     packageSize,
     packagePrice: calcPrice(packageSize),
     members: [makeMember(0, locale)],
@@ -206,12 +219,16 @@ interface SessionApiResponse {
   created_at: string
 }
 
-async function createSession(anonUserId: string, locale: string): Promise<string | null> {
+async function createSession(
+  anonUserId: string,
+  locale: string,
+  serviceSlug: string,
+): Promise<string | null> {
   try {
     const res = await fetch('/api/wizard/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locale, service_slug: 're-parole-u4u', anon_user_id: anonUserId }),
+      body: JSON.stringify({ locale, service_slug: serviceSlug, anon_user_id: anonUserId }),
     })
     if (!res.ok) return null
     const data: SessionApiResponse = await res.json() as SessionApiResponse
@@ -285,8 +302,31 @@ const WizardContext = createContext<WizardContextValue | null>(null)
 // Provider
 // ---------------------------------------------------------------------------
 
-export function WizardProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<WizardState>(buildInitialState)
+/**
+ * Phase 0 multi-service refactor: WizardProvider now accepts a `serviceSlug`
+ * prop so the same context can host both Re-Parole and TPS Ukraine flows
+ * without colliding on localStorage or Supabase service_slug.
+ *
+ * Backward compatibility: when no prop is passed, `serviceSlug` defaults to
+ * `'re-parole-u4u'` — this preserves the pre-Phase-0 behaviour for any
+ * callers that haven't been updated yet.
+ *
+ * Acceptance:
+ *   - Re-Parole session saves as service_slug=re-parole-u4u
+ *   - TPS session saves as service_slug=tps-ukraine
+ *   - localStorage keys are namespaced per slug
+ *   - no DB migration required (service_slug column already exists)
+ */
+export interface WizardProviderProps {
+  children: ReactNode
+  serviceSlug?: string
+}
+
+export function WizardProvider({ children, serviceSlug = 're-parole-u4u' }: WizardProviderProps) {
+  // serviceSlug is captured at mount time; remounting under a different slug
+  // (e.g. navigating between /re-parole-u4u/start and /tps-ukraine/start) gives
+  // a fresh state because Next.js unmounts the provider between route trees.
+  const [state, setState] = useState<WizardState>(() => buildInitialState(serviceSlug))
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const patchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(false)
@@ -314,8 +354,12 @@ export function WizardProvider({ children }: { children: ReactNode }) {
         // Hydration failed (session expired/not found) — create new one
       }
 
-      // Create new session
-      const newSessionId = await createSession(currentState.anonUserId, currentState.locale)
+      // Create new session under the active serviceSlug
+      const newSessionId = await createSession(
+        currentState.anonUserId,
+        currentState.locale,
+        currentState.serviceSlug,
+      )
       if (newSessionId) {
         setState((s) => ({ ...s, sessionId: newSessionId }))
         updateUrlSession(newSessionId)
@@ -326,16 +370,17 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Persist critical slice to localStorage on every relevant state change
+  // Persist critical slice to localStorage on every relevant state change.
+  // Key is namespaced per serviceSlug so multiple services do not collide.
   useEffect(() => {
-    savePersisted({
+    savePersisted(state.serviceSlug, {
       sessionId: state.sessionId,
       anonUserId: state.anonUserId,
       step: state.step,
       locale: state.locale,
       theme: state.theme,
     })
-  }, [state.sessionId, state.anonUserId, state.step, state.locale, state.theme])
+  }, [state.serviceSlug, state.sessionId, state.anonUserId, state.step, state.locale, state.theme])
 
   // Debounced PATCH to Supabase whenever step or stateJson-relevant fields change
   useEffect(() => {

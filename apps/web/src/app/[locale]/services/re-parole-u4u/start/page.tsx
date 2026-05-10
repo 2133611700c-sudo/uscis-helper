@@ -49,7 +49,7 @@ export default async function ReParoleStartPage({ params }: Props) {
   const { locale: _locale } = await params
 
   return (
-    <WizardProvider>
+    <WizardProvider serviceSlug="re-parole-u4u">
       <WizardShell slug="re-parole-u4u">
         <WizardController />
       </WizardShell>
