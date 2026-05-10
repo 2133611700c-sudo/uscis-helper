@@ -38,17 +38,21 @@ export interface PrefillOptions {
 
 /**
  * Remove /XFA from the /AcroForm dictionary so Adobe uses the AcroForm
- * shadow tree (which is what pdf-lib actually writes to).
+ * shadow tree (which is what pdf-lib actually writes to). Best-effort —
+ * if the PDF lacks AcroForm or the dict shape is unexpected, just skip:
+ * filling still works in most viewers without the strip.
  */
 function stripXfa(pdfDoc: PDFDocument): void {
-  const acroFormRef = pdfDoc.catalog.get(PDFName.of('AcroForm'))
-  if (!acroFormRef) return
-  const acroForm = pdfDoc.context.lookup(acroFormRef, PDFDict)
-  if (!acroForm) return
-  acroForm.delete(PDFName.of('XFA'))
-  // Setting NeedAppearances=true forces Adobe to regenerate visual
-  // appearances from the field values we wrote.
-  acroForm.set(PDFName.of('NeedAppearances'), pdfDoc.context.obj(true))
+  try {
+    const acroForm = pdfDoc.catalog.lookup(PDFName.of('AcroForm'))
+    if (!(acroForm instanceof PDFDict)) return
+    acroForm.delete(PDFName.of('XFA'))
+    // Setting NeedAppearances=true forces Adobe to regenerate visual
+    // appearances from the field values we wrote.
+    acroForm.set(PDFName.of('NeedAppearances'), pdfDoc.context.obj(true))
+  } catch {
+    // Strip is an optimization; if it fails, the form still fills.
+  }
 }
 
 /**
