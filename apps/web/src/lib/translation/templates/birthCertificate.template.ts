@@ -164,7 +164,8 @@ export function renderBirthCertificate(input: BirthCertRenderInput): BirthCertRe
   }
 
   // Build certification block (self_cert_birth_v1)
-  const dateFormatted = new Date(input.translation_date).toLocaleDateString('en-US', {
+  // v5 §17/§24 + final-plan 2.4: USCIS-safe EU format "12 May 1990"
+  const dateFormatted = new Date(input.translation_date).toLocaleDateString('en-GB', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
 
