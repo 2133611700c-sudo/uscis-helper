@@ -104,16 +104,25 @@ export default async function TranslateDocumentPage({ params }: Props) {
             {/* Trust pills */}
             <div className="flex flex-wrap gap-2 mb-5">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">
-                ✅ {locale === 'ru' ? 'Принимает USCIS' : locale === 'uk' ? 'Приймає USCIS' : locale === 'es' ? 'Aceptado por USCIS' : 'USCIS accepted'}
+                ✅ {locale === 'ru' ? 'Шаблон сертификации 8 CFR §103.2(b)(3)'
+                    : locale === 'uk' ? 'Шаблон сертифікації 8 CFR §103.2(b)(3)'
+                    : locale === 'es' ? 'Plantilla 8 CFR §103.2(b)(3)'
+                    : '8 CFR §103.2(b)(3) template'}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
                 ✍️ {locale === 'ru' ? 'Цифровая подпись' : locale === 'uk' ? 'Цифровий підпис' : locale === 'es' ? 'Firma digital' : 'Digital signature'}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-800">
-                📄 {locale === 'ru' ? 'Сертификация 8 CFR §103.2' : locale === 'uk' ? 'Сертифікація 8 CFR §103.2' : locale === 'es' ? 'Certificación 8 CFR §103.2' : '8 CFR §103.2 certified'}
+                🤝 {locale === 'ru' ? 'Ручная проверка для других документов'
+                    : locale === 'uk' ? 'Ручна перевірка для інших документів'
+                    : locale === 'es' ? 'Revisión manual para otros documentos'
+                    : 'Manual review for other documents'}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
-                ⚡ {locale === 'ru' ? '5–10 минут для поддерживаемых документов' : locale === 'uk' ? '5–10 хвилин для підтримуваних документів' : locale === 'es' ? '5–10 minutos para documentos compatibles' : '5–10 minutes for supported documents'}
+                ⚡ {locale === 'ru' ? '5–10 минут для внутреннего паспорта Украины'
+                    : locale === 'uk' ? '5–10 хвилин для внутрішнього паспорта України'
+                    : locale === 'es' ? '5–10 minutos para el pasaporte interno ucraniano'
+                    : '5–10 minutes for the Ukrainian internal passport'}
               </span>
             </div>
 

@@ -750,8 +750,8 @@
     "home": "Home",
     "backToServices": "Back to Services",
     "title": "Translate Document",
-    "subtitle": "Upload a supported Ukrainian document, sign online, and download a USCIS-ready certified PDF.",
-    "draftOnlyBanner": "USCIS-accepted — you sign the certification statement under 8 CFR §103.2(b)(3).",
+    "subtitle": "Self-service translation for the Ukrainian internal passport booklet. Other Ukrainian documents may be uploaded but route to a team member for manual review.",
+    "draftOnlyBanner": "You self-certify as the translator under 8 CFR §103.2(b)(3). This tool does not provide legal advice and does not guarantee USCIS acceptance.",
     "chooseDocumentTitle": "Choose your document",
     "chooseDocumentSubtitle": "Select the document type you want to prepare.",
     "startAction": "Start →",
@@ -1046,7 +1046,7 @@
       "lastCheckedLabel": "Last checked: {date}",
       "sourceLabel": "Source: official government website"
     },
-    "supportedScope": "We currently support selected Ukrainian documents (internal passport, birth, marriage, divorce certificates). Unsupported, unclear, or low-confidence documents are routed to a team member for manual review — we will notify you when your translation is ready."
+    "supportedScope": "Currently only the Ukrainian internal passport booklet is fully self-serve. Birth, marriage, divorce, ID card, and international passport are accepted but routed to manual review by our team. Unsupported or unclear documents are also routed to manual review."
   },
   "home": {
     "hero": {

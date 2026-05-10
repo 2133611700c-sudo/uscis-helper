@@ -750,8 +750,8 @@
     "home": "Inicio",
     "backToServices": "Volver a servicios",
     "title": "Traducción de documentos",
-    "subtitle": "Suba su documento, firme en línea y obtenga un PDF certificado para USCIS, DMV, escuela y empleadores.",
-    "draftOnlyBanner": "Aceptado por USCIS — usted firma la certificación del traductor conforme a 8 CFR §103.2(b)(3).",
+    "subtitle": "Traducción autoservicio del pasaporte interno ucraniano. Otros documentos ucranianos se pueden subir, pero se envían a un miembro del equipo para revisión manual.",
+    "draftOnlyBanner": "Usted firma la certificación del traductor conforme a 8 CFR §103.2(b)(3). Esta herramienta no proporciona asesoramiento legal y no garantiza la aceptación de USCIS.",
     "chooseDocumentTitle": "Elija su documento",
     "chooseDocumentSubtitle": "Seleccione el tipo de documento que desea preparar.",
     "startAction": "Abrir →",
@@ -1046,7 +1046,7 @@
       "lastCheckedLabel": "Última revisión: {date}",
       "sourceLabel": "Fuente: sitio oficial del gobierno"
     },
-    "supportedScope": "We currently support selected Ukrainian documents (internal passport, birth, marriage, divorce certificates). Unsupported, unclear, or low-confidence documents are routed to a team member for manual review — we will notify you when your translation is ready."
+    "supportedScope": "Actualmente solo el pasaporte interno ucraniano es totalmente autoservicio. Otros documentos (certificados de nacimiento/matrimonio/divorcio, ID, pasaporte internacional) se aceptan pero se envían a revisión manual por nuestro equipo. Los documentos no compatibles o poco claros también se envían a revisión manual."
   },
   "home": {
     "hero": {

@@ -33,11 +33,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     en: 'Document Translation — Messenginfo',
     es: 'Traducción de Documentos — Messenginfo',
   }
+  // Honest scope after 2026-05-09 demotion: only ua_internal_passport_booklet
+  // is fully self-serve. Other Ukrainian documents may be uploaded but route
+  // to a team member for manual review. No "PDF ready in minutes" general claim.
+  // No "USCIS-accepted" guarantee. No legal advice.
   const descs: Record<string, string> = {
-    uk: 'Перекладіть ваш документ (свідоцтво, паспорт, посвідчення) для USCIS. Підпишіть онлайн. PDF готовий за кілька хвилин.',
-    ru: 'Переведите ваш документ (свидетельство, паспорт, удостоверение) для USCIS. Подпишите онлайн. PDF готов за несколько минут.',
-    en: 'Translate your document (birth certificate, passport, ID) for USCIS. Sign online. PDF ready in minutes.',
-    es: 'Traduzca su documento (certificado, pasaporte, ID) para USCIS. Firme en línea. PDF listo en minutos.',
+    uk: 'Самостійний переклад українського внутрішнього паспорта для USCIS. Інші українські документи приймаються через ручну перевірку нашою командою. Не є юридичною консультацією.',
+    ru: 'Самостоятельный перевод украинского внутреннего паспорта для USCIS. Другие украинские документы принимаются через ручную проверку нашей командой. Не является юридической консультацией.',
+    en: 'Self-service translation for the Ukrainian internal passport booklet for USCIS purposes. Other Ukrainian documents are accepted through manual review by our team. Not legal advice.',
+    es: 'Traducción autoservicio del pasaporte interno ucraniano para USCIS. Otros documentos ucranianos se procesan mediante revisión manual de nuestro equipo. No es asesoramiento legal.',
   }
   return {
     title: titles[locale] ?? titles.en,
