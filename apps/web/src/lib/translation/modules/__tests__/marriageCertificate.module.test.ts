@@ -12,8 +12,8 @@ describe('marriageCertificateModule — structure', () => {
     expect(marriageCertificateModule.documentType).toBe('ua_marriage_certificate')
   })
 
-  it('is status active', () => {
-    expect(marriageCertificateModule.status).toBe('active')
+  it('is status draft (demoted 2026-05-09 — no real fixture / no E2E)', () => {
+    expect(marriageCertificateModule.status).toBe('draft')
   })
 
   it('supports uk and ru languages', () => {
@@ -186,8 +186,8 @@ describe('marriageCertificateModule — review policy', () => {
     expect(marriageCertificateModule.reviewPolicy.requireUserConfirmation).toBe(true)
   })
 
-  it('allowAutoPdf is true (gated by all confirmations)', () => {
-    expect(marriageCertificateModule.reviewPolicy.allowAutoPdf).toBe(true)
+  it('allowAutoPdf is false (demoted 2026-05-09 — defense-in-depth alongside status:draft)', () => {
+    expect(marriageCertificateModule.reviewPolicy.allowAutoPdf).toBe(false)
   })
 
   it('manualReviewIfMissingCritical is true', () => {

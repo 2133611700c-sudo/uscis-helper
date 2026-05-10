@@ -31,10 +31,13 @@ Do not promote a module to `active` without filling every column below. This fil
 
 | Status | Count | Modules |
 |---|---|---|
-| `active` (auto-PDF allowed) | 4 | `ua_internal_passport_booklet`, `ua_birth_certificate`, `ua_marriage_certificate`, `ua_divorce_certificate` |
-| `draft` (no auto-PDF) | 2 | `ua_international_passport`, `ua_id_card` |
+| `active` (auto-PDF allowed) | **1** | `ua_internal_passport_booklet` |
+| `draft` (no auto-PDF) | **5** | `ua_birth_certificate` (demoted 2026-05-09), `ua_marriage_certificate` (demoted 2026-05-09), `ua_divorce_certificate` (demoted 2026-05-09), `ua_international_passport`, `ua_id_card` |
 | `manual_only` (no auto-anything) | 1 | `manual_review_required` (fallback sentinel) |
 | `not_registered` (always manual review) | 7+ | death certificate, driver licence, criminal-record certificate, diploma/transcript, military documents, court decisions, notarial statements |
+
+**2026-05-09 demotion (`DEMOTE_UNPROVEN_MODULES_AND_LOCK_PRODUCTION_SCOPE`):**
+Birth, marriage, and divorce modules were flipped from `active` to `draft` because they have no real-fixture E2E evidence. Synthetic-only smoke (birth cert) is not enough for self-serve auto-PDF. While `draft`, `registry.getDocumentModule()` returns `manualReviewModule` for these doc types, so customer PDF cannot be produced and uploads escalate to manual review. Re-promote to `active` only after the FULL pipeline (upload → OCR → DeepSeek extraction → review → certify → render) passes against a real (sanitized) fixture committed under `artifacts/e2e/<doc_type>/`.
 
 Source: `apps/web/src/lib/translation/modules/registry.ts` lists the 7 registered modules; classifier alias table contains 0 aliases for the unsupported types listed above.
 

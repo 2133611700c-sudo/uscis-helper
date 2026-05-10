@@ -47,26 +47,28 @@ describe('classifyDocumentType — passport aliases', () => {
   })
 })
 
-describe('classifyDocumentType — birth certificate aliases', () => {
-  it('resolves ua_birth_certificate to birthCertificateModule (active since v6.0)', () => {
+describe('classifyDocumentType — birth certificate aliases (demoted to draft 2026-05-09)', () => {
+  it('resolves ua_birth_certificate to manualReviewModule (status=draft)', () => {
     const result = classifyDocumentType('ua_birth_certificate', 1.0)
-    // Birth certificate module promoted to active — routes to itself, not manualReview
-    expect(result.module.documentType).toBe('ua_birth_certificate')
-    expect(result.module).not.toBe(manualReviewModule)
-    expect(result.usedFallback).toBe(false)
+    // Birth certificate was demoted from 'active' to 'draft' on 2026-05-09 —
+    // synthetic-only E2E does not justify auto-PDF. Classifier returns
+    // manualReviewModule via the registry's "non-active → manualReview" rule.
+    expect(result.module).toBe(manualReviewModule)
+    expect(result.usedFallback).toBe(true)
+    expect(result.fallbackReason).toBe('module_not_active')
     expect(result.canonicalType).toBe('ua_birth_certificate')
   })
 
-  it('resolves birth_certificate to birthCertificateModule (active)', () => {
+  it('resolves birth_certificate alias to manualReviewModule (draft)', () => {
     const result = classifyDocumentType('birth_certificate', 1.0)
-    expect(result.module.documentType).toBe('ua_birth_certificate')
-    expect(result.usedFallback).toBe(false)
+    expect(result.module).toBe(manualReviewModule)
+    expect(result.usedFallback).toBe(true)
   })
 
-  it('resolves свідоцтво про народження to birthCertificateModule (active)', () => {
+  it('resolves свідоцтво про народження to manualReviewModule (draft)', () => {
     const result = classifyDocumentType('свідоцтво про народження', 1.0)
-    expect(result.module.documentType).toBe('ua_birth_certificate')
-    expect(result.usedFallback).toBe(false)
+    expect(result.module).toBe(manualReviewModule)
+    expect(result.usedFallback).toBe(true)
   })
 })
 
@@ -142,7 +144,7 @@ describe('classifyDocumentType — low confidence', () => {
   })
 })
 
-describe('classifyDocumentType — marriage certificate aliases', () => {
+describe('classifyDocumentType — marriage certificate aliases (demoted to draft 2026-05-09)', () => {
   const MARRIAGE_ALIASES = [
     'ua_marriage_certificate',
     'marriage_certificate',
@@ -150,28 +152,31 @@ describe('classifyDocumentType — marriage certificate aliases', () => {
     'ua_marriage',
   ]
 
+  // Marriage certificate module was demoted from 'active' to 'draft' on 2026-05-09 —
+  // synthetic-only would not be enough; this module has neither synthetic nor real
+  // E2E. Every alias must now route to manualReview.
   for (const alias of MARRIAGE_ALIASES) {
-    it(`resolves '${alias}' to marriage certificate module`, () => {
+    it(`resolves '${alias}' to manualReviewModule (draft)`, () => {
       const result = classifyDocumentType(alias, 1.0)
-      expect(result.module).toBe(marriageCertificateModule)
-      expect(result.usedFallback).toBe(false)
+      expect(result.module).toBe(manualReviewModule)
+      expect(result.usedFallback).toBe(true)
     })
   }
 
-  it('resolves Cyrillic свідоцтво про шлюб to marriage certificate module', () => {
+  it('resolves Cyrillic свідоцтво про шлюб to manualReviewModule (draft)', () => {
     const result = classifyDocumentType('свідоцтво про шлюб', 1.0)
-    expect(result.module).toBe(marriageCertificateModule)
-    expect(result.usedFallback).toBe(false)
+    expect(result.module).toBe(manualReviewModule)
+    expect(result.usedFallback).toBe(true)
   })
 
-  it('resolves Russian свидетельство о браке to marriage certificate module', () => {
+  it('resolves Russian свидетельство о браке to manualReviewModule (draft)', () => {
     const result = classifyDocumentType('свидетельство о браке', 1.0)
-    expect(result.module).toBe(marriageCertificateModule)
-    expect(result.usedFallback).toBe(false)
+    expect(result.module).toBe(manualReviewModule)
+    expect(result.usedFallback).toBe(true)
   })
 })
 
-describe('classifyDocumentType — divorce certificate aliases', () => {
+describe('classifyDocumentType — divorce certificate aliases (demoted to draft 2026-05-09)', () => {
   const DIVORCE_ALIASES = [
     'ua_divorce_certificate',
     'divorce_certificate',
@@ -180,23 +185,23 @@ describe('classifyDocumentType — divorce certificate aliases', () => {
   ]
 
   for (const alias of DIVORCE_ALIASES) {
-    it(`resolves '${alias}' to divorce certificate module`, () => {
+    it(`resolves '${alias}' to manualReviewModule (draft)`, () => {
       const result = classifyDocumentType(alias, 1.0)
-      expect(result.module).toBe(divorceCertificateModule)
-      expect(result.usedFallback).toBe(false)
+      expect(result.module).toBe(manualReviewModule)
+      expect(result.usedFallback).toBe(true)
     })
   }
 
-  it('resolves Cyrillic свідоцтво про розірвання шлюбу to divorce certificate module', () => {
+  it('resolves Cyrillic свідоцтво про розірвання шлюбу to manualReviewModule (draft)', () => {
     const result = classifyDocumentType('свідоцтво про розірвання шлюбу', 1.0)
-    expect(result.module).toBe(divorceCertificateModule)
-    expect(result.usedFallback).toBe(false)
+    expect(result.module).toBe(manualReviewModule)
+    expect(result.usedFallback).toBe(true)
   })
 
-  it('resolves Russian свидетельство о расторжении брака to divorce certificate module', () => {
+  it('resolves Russian свидетельство о расторжении брака to manualReviewModule (draft)', () => {
     const result = classifyDocumentType('свидетельство о расторжении брака', 1.0)
-    expect(result.module).toBe(divorceCertificateModule)
-    expect(result.usedFallback).toBe(false)
+    expect(result.module).toBe(manualReviewModule)
+    expect(result.usedFallback).toBe(true)
   })
 })
 
@@ -272,14 +277,14 @@ describe('resolveDocumentModule', () => {
     expect(m).toBe(passportBookletModule)
   })
 
-  it('returns marriageCertificateModule for ua_marriage_certificate (active)', () => {
+  it('returns manualReviewModule for ua_marriage_certificate (demoted to draft 2026-05-09)', () => {
     const m = resolveDocumentModule('ua_marriage_certificate', 1.0)
-    expect(m).toBe(marriageCertificateModule)
+    expect(m).toBe(manualReviewModule)
   })
 
-  it('returns divorceCertificateModule for ua_divorce_certificate (active)', () => {
+  it('returns manualReviewModule for ua_divorce_certificate (demoted to draft 2026-05-09)', () => {
     const m = resolveDocumentModule('ua_divorce_certificate', 1.0)
-    expect(m).toBe(divorceCertificateModule)
+    expect(m).toBe(manualReviewModule)
   })
 
   it('returns manualReview for truly unknown type', () => {

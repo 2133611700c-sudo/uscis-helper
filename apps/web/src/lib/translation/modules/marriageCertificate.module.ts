@@ -46,7 +46,15 @@ export const marriageCertificateModule: DocumentModule = {
     uk: 'Свідоцтво про шлюб (Україна)',
   },
 
-  status: 'active',
+  // Demoted from 'active' to 'draft' on 2026-05-09 per
+  // DEMOTE_UNPROVEN_MODULES_AND_LOCK_PRODUCTION_SCOPE.
+  // No real fixture / no E2E smoke / no PDF QA / no privacy QA committed.
+  // While 'draft', registry.getDocumentModule() returns manualReviewModule
+  // for ua_marriage_certificate, so customer PDF cannot be produced and the
+  // session is escalated to manual review.
+  // Re-promote to 'active' only after the FULL pipeline pass against a real
+  // (sanitized) fixture is committed under artifacts/e2e/marriage_cert/.
+  status: 'draft',
 
   supportedLanguages: ['uk', 'ru'],
 
@@ -595,7 +603,8 @@ export const marriageCertificateModule: DocumentModule = {
   reviewPolicy: {
     requireUserConfirmation: true,
     requireEvidenceForCriticalFields: true,
-    allowAutoPdf: true,
+    // Demoted to false on 2026-05-09 — defense-in-depth alongside status:'draft' above.
+    allowAutoPdf: false,
     manualReviewIfMissingCritical: true,
     manualReviewIfLowConfidence: true,
     manualReviewIfUnsupportedLayout: true,

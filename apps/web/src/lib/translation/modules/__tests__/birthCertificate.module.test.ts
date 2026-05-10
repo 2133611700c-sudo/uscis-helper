@@ -21,8 +21,8 @@ describe('birthCertificateModule structure', () => {
     expect(birthCertificateModule.documentType).toBe('ua_birth_certificate')
   })
 
-  it('has status = active', () => {
-    expect(birthCertificateModule.status).toBe('active')
+  it('has status = draft (demoted 2026-05-09 — synthetic-only E2E does not justify auto-PDF)', () => {
+    expect(birthCertificateModule.status).toBe('draft')
   })
 
   it('has displayName in en, ru, uk', () => {
@@ -276,8 +276,8 @@ describe('birthCertificateModule validators', () => {
 // ── Review policy ─────────────────────────────────────────────────────────────
 
 describe('birthCertificateModule reviewPolicy', () => {
-  it('has allowAutoPdf = true (after all gates pass)', () => {
-    expect(birthCertificateModule.reviewPolicy.allowAutoPdf).toBe(true)
+  it('has allowAutoPdf = false (demoted 2026-05-09 — defense-in-depth alongside status:draft)', () => {
+    expect(birthCertificateModule.reviewPolicy.allowAutoPdf).toBe(false)
   })
 
   it('has requireUserConfirmation = true', () => {

@@ -12,8 +12,8 @@ describe('divorceCertificateModule — structure', () => {
     expect(divorceCertificateModule.documentType).toBe('ua_divorce_certificate')
   })
 
-  it('is status active', () => {
-    expect(divorceCertificateModule.status).toBe('active')
+  it('is status draft (demoted 2026-05-09 — no real fixture / no E2E / complex_legal_basis path unverified)', () => {
+    expect(divorceCertificateModule.status).toBe('draft')
   })
 
   it('supports uk and ru languages', () => {
@@ -182,8 +182,8 @@ describe('divorceCertificateModule — review policy', () => {
     expect(divorceCertificateModule.reviewPolicy.requireUserConfirmation).toBe(true)
   })
 
-  it('allowAutoPdf is true (gated by all confirmations)', () => {
-    expect(divorceCertificateModule.reviewPolicy.allowAutoPdf).toBe(true)
+  it('allowAutoPdf is false (demoted 2026-05-09 — defense-in-depth alongside status:draft)', () => {
+    expect(divorceCertificateModule.reviewPolicy.allowAutoPdf).toBe(false)
   })
 
   it('manualReviewIfMissingCritical is true', () => {

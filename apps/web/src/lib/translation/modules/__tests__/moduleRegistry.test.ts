@@ -81,23 +81,25 @@ describe('getDocumentModule', () => {
     expect(m).toBe(manualReviewModule)
   })
 
-  it('returns birthCertificateModule for ua_birth_certificate (promoted to active)', () => {
-    // Birth certificate module promoted to active in v6.0 — routes to itself
-    expect(birthCertificateModule.status).toBe('active')
+  it('returns manualReviewModule for ua_birth_certificate (demoted to draft 2026-05-09)', () => {
+    // Birth certificate module was demoted from 'active' to 'draft' on 2026-05-09 —
+    // synthetic-only E2E does not justify self-serve auto-PDF.
+    // Per registry.getDocumentModule(): non-active modules route to manualReview.
+    expect(birthCertificateModule.status).toBe('draft')
     const m = getDocumentModule('ua_birth_certificate')
-    expect(m).toBe(birthCertificateModule)
+    expect(m).toBe(manualReviewModule)
   })
 
-  it('returns marriageCertificateModule for ua_marriage_certificate (active)', () => {
-    expect(marriageCertificateModule.status).toBe('active')
+  it('returns manualReviewModule for ua_marriage_certificate (demoted to draft 2026-05-09)', () => {
+    expect(marriageCertificateModule.status).toBe('draft')
     const m = getDocumentModule('ua_marriage_certificate')
-    expect(m).toBe(marriageCertificateModule)
+    expect(m).toBe(manualReviewModule)
   })
 
-  it('returns divorceCertificateModule for ua_divorce_certificate (active)', () => {
-    expect(divorceCertificateModule.status).toBe('active')
+  it('returns manualReviewModule for ua_divorce_certificate (demoted to draft 2026-05-09)', () => {
+    expect(divorceCertificateModule.status).toBe('draft')
     const m = getDocumentModule('ua_divorce_certificate')
-    expect(m).toBe(divorceCertificateModule)
+    expect(m).toBe(manualReviewModule)
   })
 
   it('returns manualReview for manual_only module (pass-through)', () => {
@@ -176,19 +178,19 @@ describe('listActiveModules', () => {
     expect(types).toContain('ua_internal_passport_booklet')
   })
 
-  it('includes the birth certificate (active since v6.0)', () => {
+  it('does NOT include birth certificate (demoted to draft 2026-05-09)', () => {
     const types = listActiveModules().map(m => m.documentType)
-    expect(types).toContain('ua_birth_certificate')
+    expect(types).not.toContain('ua_birth_certificate')
   })
 
-  it('includes the marriage certificate (active)', () => {
+  it('does NOT include marriage certificate (demoted to draft 2026-05-09)', () => {
     const types = listActiveModules().map(m => m.documentType)
-    expect(types).toContain('ua_marriage_certificate')
+    expect(types).not.toContain('ua_marriage_certificate')
   })
 
-  it('includes the divorce certificate (active)', () => {
+  it('does NOT include divorce certificate (demoted to draft 2026-05-09)', () => {
     const types = listActiveModules().map(m => m.documentType)
-    expect(types).toContain('ua_divorce_certificate')
+    expect(types).not.toContain('ua_divorce_certificate')
   })
 
   it('does NOT include the manualReview module', () => {
@@ -204,20 +206,20 @@ describe('isAutoDraftSupported', () => {
     expect(isAutoDraftSupported('ua_internal_passport_booklet')).toBe(true)
   })
 
-  it('returns true for birth certificate (active + allowAutoPdf since v6.0)', () => {
-    expect(isAutoDraftSupported('ua_birth_certificate')).toBe(true)
+  it('returns false for birth certificate (demoted to draft 2026-05-09)', () => {
+    expect(isAutoDraftSupported('ua_birth_certificate')).toBe(false)
   })
 
   it('returns false for manual_review_required', () => {
     expect(isAutoDraftSupported('manual_review_required')).toBe(false)
   })
 
-  it('returns true for marriage certificate (active + allowAutoPdf)', () => {
-    expect(isAutoDraftSupported('ua_marriage_certificate')).toBe(true)
+  it('returns false for marriage certificate (demoted to draft 2026-05-09)', () => {
+    expect(isAutoDraftSupported('ua_marriage_certificate')).toBe(false)
   })
 
-  it('returns true for divorce certificate (active + allowAutoPdf)', () => {
-    expect(isAutoDraftSupported('ua_divorce_certificate')).toBe(true)
+  it('returns false for divorce certificate (demoted to draft 2026-05-09)', () => {
+    expect(isAutoDraftSupported('ua_divorce_certificate')).toBe(false)
   })
 
   it('returns false for truly unknown type', () => {
@@ -274,9 +276,9 @@ describe('classifyToModule', () => {
     expect(m).toBe(passportBookletModule)
   })
 
-  it('returns birthCertificateModule for ua_birth_certificate (active since v6.0)', () => {
+  it('returns manualReviewModule for ua_birth_certificate (demoted to draft 2026-05-09)', () => {
     const m = classifyToModule('ua_birth_certificate', 1.0)
-    expect(m).toBe(birthCertificateModule)
+    expect(m).toBe(manualReviewModule)
   })
 })
 
