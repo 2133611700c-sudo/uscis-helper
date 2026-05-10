@@ -68,8 +68,10 @@ export async function POST(req: NextRequest) {
         // Surface counts so the wizard can confirm visually what happened.
         'X-TPS-I821-Applied': String(result.i821.applied),
         'X-TPS-I821-Skipped': String(result.i821.skipped),
+        'X-TPS-I821-First-Skip': result.i821.firstSkips[0] ?? '',
         'X-TPS-I765-Applied': String(result.i765.applied),
         'X-TPS-I765-Skipped': String(result.i765.skipped),
+        'X-TPS-I765-First-Skip': result.i765.firstSkips[0] ?? '',
       },
     })
   } catch (e: unknown) {
