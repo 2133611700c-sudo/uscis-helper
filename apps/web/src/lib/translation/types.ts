@@ -105,6 +105,14 @@ export interface ExtractedField {
   language_layer: LanguageLayer
   confidence: number        // 0.0–1.0
   review_required: boolean
+  // ── v5 §10 Numeric Accuracy Protocol — double-pass evidence ──────────────
+  // Each pass that touched this field's raw_value, in order. Examples:
+  //   ['visual_pass_1']                              — single pass, low evidence
+  //   ['visual_pass_1','visual_pass_2']              — double pass agreed
+  //   ['visual_pass_1','visual_pass_2','ocr_compare']— double pass + OCR compare
+  //   ['visual_pass_1','visual_pass_2','digit_shape_compare'] — w/ digitShapeComparator
+  // Optional for backward compatibility; consumers MUST default to ['visual_pass_1'].
+  passes?: string[]
   // ── OCR ID evidence (v6 — Google Vision + DeepSeek Text path) ────────────
   ocr_ids?: string[]        // IDs from OcrWord/OcrLine that back this field
   combined_bbox?: [number, number, number, number]  // union of multi-word bboxes when ocr_ids.length > 1

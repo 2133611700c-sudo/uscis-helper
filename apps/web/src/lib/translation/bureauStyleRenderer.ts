@@ -34,7 +34,9 @@ export function buildScopeTitle(
 }
 
 export function renderTranslationHeader(state: PacketState): string {
-  const today = new Date().toLocaleDateString('en-US', {
+  // v5 §17/§24 + final-plan 2.4: USCIS-safe EU format "12 May 1990"
+  // (locale en-GB; day-month-year; no leading zero forced).
+  const today = new Date().toLocaleDateString('en-GB', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
   return [
@@ -60,7 +62,8 @@ export function renderCertificationBlock(state: PacketState): string {
   const cert = state.certification_record
   if (!cert) throw new Error('Cannot render certification block: CertificationRecord missing')
 
-  const date = new Date(cert.signed_at).toLocaleDateString('en-US', {
+  // v5 §17/§24 + final-plan 2.4: USCIS-safe EU format "12 May 1990"
+  const date = new Date(cert.signed_at).toLocaleDateString('en-GB', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
 
