@@ -63,6 +63,19 @@ const DOCUMENT_TYPE_ALIASES: ReadonlyMap<string, string> = new Map([
   ['свидетельство о расторжении брака', 'ua_divorce_certificate'],
   ['ua_divorce',                    'ua_divorce_certificate'],
 
+  // ── ua_death_certificate ──────────────────────────────────────────────────
+  // Skeleton module: status='draft', so classifier still routes via
+  // resolveDocumentModule()→manualReviewModule. Aliases give us a known
+  // documentType in admin/audit logs instead of "unknown".
+  ['ua_death_certificate',          'ua_death_certificate'],
+  ['death_certificate',             'ua_death_certificate'],
+  ['death certificate',             'ua_death_certificate'],
+  ['certificate of death',          'ua_death_certificate'],
+  ['свідоцтво про смерть',          'ua_death_certificate'],
+  ['свидетельство о смерти',        'ua_death_certificate'],
+  ['смерть',                        'ua_death_certificate'],
+  ['ua_death',                      'ua_death_certificate'],
+
   // ── ua_international_passport ─────────────────────────────────────────────
   ['ua_international_passport',     'ua_international_passport'],
   ['international_passport',        'ua_international_passport'],
