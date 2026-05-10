@@ -15,7 +15,11 @@
  * source-of-truth (edition date of the underlying USCIS PDF).
  */
 
-import { PDFDocument, PDFName, PDFDict, StandardFonts, rgb, degrees } from 'pdf-lib'
+import {
+  PDFDocument, PDFName, PDFDict,
+  PDFTextField, PDFCheckBox, PDFDropdown,
+  StandardFonts, rgb, degrees,
+} from 'pdf-lib'
 
 export interface PrefillOp {
   field: string
@@ -127,31 +131,46 @@ export async function prefill(
       skipped.push({ field: op.field, reason: 'field_not_found' })
       continue
     }
-    const T = f.constructor.name
+    // IMPORTANT: do NOT use f.constructor.name — in the Vercel production
+    // bundle, pdf-lib class names are minified (e.g. "b"). instanceof is
+    // robust against minification because it walks the prototype chain.
     try {
-      if (op.kind === 'text' && T === 'PDFTextField') {
-        // pdf-lib types are loose here — use the runtime API.
-        (f as unknown as { setText: (s: string) => void }).setText(String(op.value ?? ''))
+      if (op.kind === 'text' && f instanceof PDFTextField) {
+        f.setText(String(op.value ?? ''))
         applied++
-      } else if (op.kind === 'checkbox' && T === 'PDFCheckBox') {
-        const cb = f as unknown as { check: () => void; uncheck: () => void }
-        if (op.value === true) cb.check()
-        else cb.uncheck()
+      } else if (op.kind === 'checkbox' && f instanceof PDFCheckBox) {
+        if (op.value === true) f.check()
+        else f.uncheck()
         applied++
       } else if (op.kind === 'choice') {
-        // USCIS state dropdowns appear as both /Ch (choice) and sometimes
-        // as text fields. Try setText first; if that fails, try select().
-        if (T === 'PDFDropdown') {
-          (f as unknown as { select: (s: string) => void }).select(String(op.value ?? ''))
-        } else if (T === 'PDFTextField') {
-          (f as unknown as { setText: (s: string) => void }).setText(String(op.value ?? ''))
+        // USCIS state pickers vary: most are /Tx text fields with a 2-letter
+        // value, some pages render them as /Ch dropdowns. Try the dropdown
+        // first (will throw if value isn't a valid option), fall through to
+        // text-field setText.
+        if (f instanceof PDFDropdown) {
+          try {
+            f.select(String(op.value ?? ''))
+          } catch {
+            // Some PDFs reject unknown options; just skip cleanly.
+            skipped.push({ field: op.field, reason: `dropdown_value_rejected:${op.value}` })
+            continue
+          }
+          applied++
+        } else if (f instanceof PDFTextField) {
+          f.setText(String(op.value ?? ''))
+          applied++
         } else {
-          skipped.push({ field: op.field, reason: `unsupported_choice_type_${T}` })
-          continue
+          skipped.push({ field: op.field, reason: 'choice_field_unsupported_type' })
         }
-        applied++
       } else {
-        skipped.push({ field: op.field, reason: `mismatch_${op.kind}_vs_${T}` })
+        // Type mismatch — surface what kind of field it actually is by
+        // checking instanceof, not minified constructor name.
+        const actual =
+          f instanceof PDFTextField ? 'text' :
+          f instanceof PDFCheckBox  ? 'checkbox' :
+          f instanceof PDFDropdown  ? 'choice' :
+          'other'
+        skipped.push({ field: op.field, reason: `mismatch_${op.kind}_vs_${actual}` })
       }
     } catch (e) {
       skipped.push({ field: op.field, reason: `error:${e instanceof Error ? e.message : String(e)}` })
