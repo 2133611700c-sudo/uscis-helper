@@ -22,6 +22,23 @@ for FILE in i-821.pdf i-821instr.pdf i-765.pdf i-765instr.pdf i-765ws.pdf i-912.
     "https://www.uscis.gov/sites/default/files/document/forms/$FILE"
 done
 
+# 2.5 Normalize the three fillable PDFs with qpdf so pdf-lib can parse them.
+# USCIS publishes forms as encrypted XFA-hybrid PDFs with inline object refs
+# that pdf-lib refuses to walk. qpdf --decrypt rewrites the PDF without
+# encryption and with object streams disabled — pdf-lib then loads cleanly.
+# Edition stamps and form fields are preserved; only the wrapping changes.
+if ! command -v qpdf >/dev/null 2>&1; then
+  echo "qpdf not found — install with 'brew install qpdf' before continuing." >&2
+  exit 1
+fi
+PUB="$ROOT/apps/web/public/uscis/tps"
+mkdir -p "$PUB"
+for FILE in i-821.pdf i-765.pdf i-912.pdf; do
+  qpdf --password='' --decrypt --object-streams=disable \
+    "$TPS/pdf/$FILE" "$PUB/$FILE.tmp"
+  mv "$PUB/$FILE.tmp" "$PUB/$FILE"
+done
+
 # 3. Rebuild manifest + field inventories
 python3 "$ROOT/scripts/uscis/build_manifest.py"
 python3 "$ROOT/scripts/uscis/inventory_fields.py"
