@@ -20,6 +20,11 @@
 import { useState } from 'react'
 import type { TpsExtractedField } from '@/lib/tps/types'
 import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessChecker'
+import {
+  LegalRiskFlags,
+  EMPTY_LEGAL_RISK,
+  type LegalRiskValue,
+} from '@/components/tps/LegalRiskFlags'
 
 type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -405,6 +410,36 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
   const [zipUrl, setZipUrl] = useState<string | null>(null)
   const [missing, setMissing] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+
+  // B1.1 — Legal-risk flags. Persisted in localStorage so a returning
+  // user does not have to re-answer; cleared by the SP-4 'Clear my data'
+  // button below. NO PII — just three booleans.
+  const [legalRisk, setLegalRiskRaw] = useState<LegalRiskValue>(() => {
+    if (typeof window === 'undefined') return EMPTY_LEGAL_RISK
+    try {
+      const raw = window.localStorage.getItem('tps:legal-risk:v1')
+      if (!raw) return EMPTY_LEGAL_RISK
+      const parsed = JSON.parse(raw) as Partial<LegalRiskValue>
+      return {
+        has_criminal_concern: parsed.has_criminal_concern ?? null,
+        has_prior_tps_denial: parsed.has_prior_tps_denial ?? null,
+        left_us_without_advance_parole:
+          parsed.left_us_without_advance_parole ?? null,
+      }
+    } catch {
+      return EMPTY_LEGAL_RISK
+    }
+  })
+  const setLegalRiskFlag = (key: keyof LegalRiskValue, val: boolean) => {
+    setLegalRiskRaw((prev) => {
+      const next = { ...prev, [key]: val }
+      try {
+        window.localStorage.setItem('tps:legal-risk:v1', JSON.stringify(next))
+      } catch { /* ignore */ }
+      return next
+    })
+  }
+
   // SP-4 mitigation (SECURITY_PRIVACY_AUDIT_TPS_V1): the user can wipe the
   // localStorage personal-fields key from their own browser after they've
   // downloaded the ZIP. Important on shared devices (refugee help centres,
@@ -415,9 +450,11 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       window.localStorage.removeItem(STORAGE_KEY)
       window.localStorage.removeItem('wizard:tps-ukraine:state:v1')
       window.localStorage.removeItem('tps:attest:v1')
+      window.localStorage.removeItem('tps:legal-risk:v1')
     } catch { /* ignore */ }
     setFields(EMPTY)
     setAttestedAt(null)
+    setLegalRiskRaw(EMPTY_LEGAL_RISK)
     setDataCleared(true)
   }
 
@@ -472,9 +509,16 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       ead_category: wantsEad === true ? (path === 'initial' ? 'a12' : 'c19') : null,
       daytime_phone: fields.daytime_phone,
       email: fields.email,
-      has_criminal_concern: false,
-      has_prior_tps_denial: false,
-      left_us_without_advance_parole: false,
+      // B1.1 — Pass legal-risk flags through to the server. The flags are
+      // INFORMATIONAL for now (server records but does not block). A future
+      // pre-flight legal classifier can branch on these without a contract
+      // change. `null` (user hasn't answered) is sent as `false` because the
+      // TPSAnswers contract is strict-boolean — but the user-facing notice
+      // only fires on explicit `true`.
+      has_criminal_concern: legalRisk.has_criminal_concern === true,
+      has_prior_tps_denial: legalRisk.has_prior_tps_denial === true,
+      left_us_without_advance_parole:
+        legalRisk.left_us_without_advance_parole === true,
     }
 
     try {
@@ -665,6 +709,16 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       <input style={input} value={fields.daytime_phone} onChange={(e) => update('daytime_phone', e.target.value)} />
       <label style={label}>{c.email}</label>
       <input type="email" style={input} value={fields.email} onChange={(e) => update('email', e.target.value)} />
+
+      {/* B1.1 — Legal-risk routing UI. 3 yes/no questions. Any "yes"
+          surfaces a non-blocking amber notice recommending licensed
+          immigration attorney / DOJ-accredited representative.
+          NEVER blocks generate — informed user decision. */}
+      <LegalRiskFlags
+        locale={locale}
+        value={legalRisk}
+        onChange={setLegalRiskFlag}
+      />
 
       {/* P110.2 — Packet Completeness Checker. Shows forms-to-be-included,
           filled vs. missing critical fields, signing locations and
