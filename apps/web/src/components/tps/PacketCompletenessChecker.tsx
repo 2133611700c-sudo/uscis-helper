@@ -226,24 +226,17 @@ const COPY: Record<Locale, CopyBundle> = {
   },
 }
 
-// Critical fields list — MUST match isMinimallyComplete() in lib/tps/answers.ts
-const CRITICAL_FIELDS: ReadonlyArray<keyof CheckerFields> = [
-  'family_name', 'given_name', 'dob', 'sex',
-  'country_of_birth',
-  'passport_number', 'passport_country_of_issuance', 'passport_expiration_date',
-  'us_address_street', 'us_address_city', 'us_address_state', 'us_address_zip',
-  'last_entry_date',
-  'daytime_phone', 'email',
-] as const
+// Critical fields list + edition strings — pulled from the single
+// source of truth at lib/services/tps/config.ts. This kills the four-
+// place drift risk (Checker / packetBuilder / health probe / answers).
+import { TPS_CRITICAL_FIELDS, TPS_FORMS } from '@/lib/services/tps/config'
 
-// Edition + page counts pinned in the source layer (see
-// docs/uscis/forms/tps/forms_manifest.json). The PacketCompletenessChecker
-// is a presentation-only component, so we display them here as constants
-// — kept in sync with the field maps' header comments.
-const I821_EDITION = '01/20/25'
-const I821_PAGES = 13
-const I765_EDITION = '08/21/25'
-const I765_PAGES = 7
+const CRITICAL_FIELDS: ReadonlyArray<keyof CheckerFields> =
+  TPS_CRITICAL_FIELDS as ReadonlyArray<keyof CheckerFields>
+const I821_EDITION = TPS_FORMS.i821.edition
+const I821_PAGES = TPS_FORMS.i821.pages
+const I765_EDITION = TPS_FORMS.i765.edition
+const I765_PAGES = TPS_FORMS.i765.pages
 
 function isFilled(value: string | undefined | null): boolean {
   return typeof value === 'string' && value.trim() !== ''
