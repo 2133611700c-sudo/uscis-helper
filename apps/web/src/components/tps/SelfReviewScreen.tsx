@@ -17,6 +17,7 @@
  */
 
 import { useState } from 'react'
+import { ManualHelpModal } from '@/components/tps/ManualHelpModal'
 
 export type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -87,6 +88,7 @@ const COPY = {
     next: 'Далі →',
     blockedMissing: (n: number) => `Заповніть обов’язкові поля: ${n}`,
     latinFormLabel: 'так буде записано у формі USCIS',
+    needHelp: 'Я не впевнений — потрібна допомога',
   },
   ru: {
     pageTitle: 'Проверьте данные',
@@ -98,6 +100,7 @@ const COPY = {
     next: 'Дальше →',
     blockedMissing: (n: number) => `Заполните обязательные поля: ${n}`,
     latinFormLabel: 'так будет записано в форме USCIS',
+    needHelp: 'Я не уверен — нужна помощь',
   },
   en: {
     pageTitle: 'Check the details',
@@ -109,6 +112,7 @@ const COPY = {
     next: 'Next →',
     blockedMissing: (n: number) => `Fill ${n} required field${n === 1 ? '' : 's'}`,
     latinFormLabel: 'this is how it will appear on the USCIS form',
+    needHelp: "I'm not sure — I need help",
   },
   es: {
     pageTitle: 'Revise los datos',
@@ -120,12 +124,16 @@ const COPY = {
     next: 'Siguiente →',
     blockedMissing: (n: number) => `Complete ${n} campo${n === 1 ? '' : 's'} obligatorio${n === 1 ? '' : 's'}`,
     latinFormLabel: 'así aparecerá en el formulario USCIS',
+    needHelp: 'No estoy seguro — necesito ayuda',
   },
 } as const
 
 export function SelfReviewScreen(props: SelfReviewProps) {
   const c = COPY[props.locale]
   const [pressed, setPressed] = useState<string | null>(null)
+  // CB.3 — Manual fallback. Surfaces ManualHelpModal which POSTs to
+  // /api/tps/manual-review. Reason = user_requested_human_help.
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const missingCritical = props.rows.filter(
     (r) => r.critical && (!r.value || r.value.toString().trim() === ''),
@@ -360,6 +368,34 @@ export function SelfReviewScreen(props: SelfReviewProps) {
           {c.blockedMissing(missingCritical.length)}
         </p>
       )}
+
+      {/* CB.3 — Manual fallback. Always available; visible under bottom bar. */}
+      <button
+        type="button"
+        data-testid="tps-review-need-help"
+        onClick={() => setHelpOpen(true)}
+        style={{
+          display: 'block',
+          margin: '12px auto 0',
+          padding: '8px 12px',
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--text-3)',
+          fontSize: 13,
+          textDecoration: 'underline',
+          cursor: 'pointer',
+        }}
+      >
+        {c.needHelp}
+      </button>
+
+      <ManualHelpModal
+        open={helpOpen}
+        locale={props.locale}
+        stage="review"
+        reason="user_requested_human_help"
+        onClose={() => setHelpOpen(false)}
+      />
     </section>
   )
 }

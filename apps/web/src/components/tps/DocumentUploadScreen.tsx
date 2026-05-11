@@ -23,6 +23,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import type { TpsExtractedField, TpsDocType, TpsModuleResult } from '@/lib/tps/types'
+import { ManualHelpModal } from '@/components/tps/ManualHelpModal'
 
 export type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -83,6 +84,7 @@ const COPY = {
     btnNext: 'Далі →',
     btnBack: '← Назад',
     btnSkipAll: 'Я введу дані руками',
+    btnNeedHelp: 'Потрібна допомога',
     blockMissing: 'Завантажте паспорт або натисніть «Я введу дані руками».',
   },
   ru: {
@@ -106,6 +108,7 @@ const COPY = {
     btnNext: 'Дальше →',
     btnBack: '← Назад',
     btnSkipAll: 'Я введу данные руками',
+    btnNeedHelp: 'Нужна помощь',
     blockMissing: 'Загрузите паспорт или нажмите «Я введу данные руками».',
   },
   en: {
@@ -129,6 +132,7 @@ const COPY = {
     btnNext: 'Next →',
     btnBack: '← Back',
     btnSkipAll: 'I will type the data myself',
+    btnNeedHelp: 'I need help',
     blockMissing: 'Upload your passport or press "I will type the data myself".',
   },
   es: {
@@ -152,6 +156,7 @@ const COPY = {
     btnNext: 'Siguiente →',
     btnBack: '← Atrás',
     btnSkipAll: 'Ingresaré los datos a mano',
+    btnNeedHelp: 'Necesito ayuda',
     blockMissing: 'Suba su pasaporte o presione "Ingresaré los datos a mano".',
   },
 } as const
@@ -299,6 +304,11 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
     { doc_type: 'i94',      required: false, state: { kind: 'empty' } },
     { doc_type: 'ead',      required: false, state: { kind: 'empty' } },
   ])
+  // CB.3 — Manual fallback. Opens ManualHelpModal which POSTs to
+  // /api/tps/manual-review. The reason code picks 'image_quality_failed'
+  // when any slot has hit the image-quality gate, otherwise the generic
+  // 'user_requested_human_help'. No PII is sent — only email + stage label.
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const slotMeta = (t: TpsDocType) => {
     if (t === 'passport') return { title: c.slotPassport, hint: c.slotPassportHint }
@@ -494,6 +504,35 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
           {c.btnSkipAll}
         </button>
       )}
+
+      {/* CB.3 — Manual fallback. Always available so a stuck user is
+          never trapped. Reason code defaults to user_requested_human_help. */}
+      <button
+        type="button"
+        data-testid="tps-upload-need-help"
+        onClick={() => setHelpOpen(true)}
+        style={{
+          display: 'block',
+          margin: '6px auto 0',
+          padding: '8px 12px',
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--text-3)',
+          fontSize: 13,
+          textDecoration: 'underline',
+          cursor: 'pointer',
+        }}
+      >
+        {c.btnNeedHelp}
+      </button>
+
+      <ManualHelpModal
+        open={helpOpen}
+        locale={locale}
+        stage="upload"
+        reason="user_requested_human_help"
+        onClose={() => setHelpOpen(false)}
+      />
     </section>
   )
 }
