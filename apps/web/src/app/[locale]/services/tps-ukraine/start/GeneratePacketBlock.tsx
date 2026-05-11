@@ -18,6 +18,7 @@
  */
 
 import { useState } from 'react'
+import type { TpsExtractedField } from '@/lib/tps/types'
 
 type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -25,6 +26,60 @@ interface Props {
   locale: Locale
   filingPath: 'initial' | 're_registration' | 'unknown' | 'unselected'
   wantsEad: boolean | null | undefined
+  /**
+   * Optional OCR-extracted fields. When provided, they seed the form's
+   * initial state — only filling in fields the user has not already typed
+   * (localStorage values win over OCR). This keeps the existing flow for
+   * users who chose to type manually while letting the OCR path prefill
+   * fresh sessions.
+   */
+  preExtracted?: TpsExtractedField[]
+}
+
+/**
+ * Apply OCR-extracted fields onto a PersonalFields object.
+ * OCR values fill ONLY empty slots — anything the user has already typed
+ * (rehydrated from localStorage) wins. This avoids the "I edited my name
+ * and it got overwritten" trap.
+ */
+function applyPreExtracted(
+  base: PersonalFields,
+  preExtracted: TpsExtractedField[] | undefined,
+): PersonalFields {
+  if (!preExtracted || preExtracted.length === 0) return base
+  const next = { ...base }
+  // Whitelist: only fields that exist on PersonalFields. Anything else (e.g.
+  // ead_category_on_card, a_number, i94_class_of_admission) is intentionally
+  // ignored here — those belong to I-765 server-side mapping, not this UI.
+  const fieldMap: Record<string, keyof PersonalFields> = {
+    family_name: 'family_name',
+    given_name: 'given_name',
+    middle_name: 'middle_name',
+    dob: 'dob',
+    sex: 'sex',
+    country_of_birth: 'country_of_birth',
+    passport_number: 'passport_number',
+    passport_country_of_issuance: 'passport_country_of_issuance',
+    passport_expiration_date: 'passport_expiration_date',
+    i94_admission_number: 'i94_admission_number',
+    last_entry_date: 'last_entry_date',
+  }
+  for (const f of preExtracted) {
+    const key = fieldMap[f.field]
+    if (!key) continue
+    if (next[key] && next[key].toString().trim() !== '') continue // user value wins
+    const val = f.normalized_value
+    if (val == null || val.toString().trim() === '') continue
+    if (key === 'sex') {
+      // Coerce to 'M' | 'F' | ''
+      const v = val.toString().toUpperCase().charAt(0)
+      next.sex = v === 'M' || v === 'F' ? v : ''
+    } else {
+      // PersonalFields fields are all string; safe cast.
+      ;(next as Record<string, string>)[key] = val.toString()
+    }
+  }
+  return next
 }
 
 interface PersonalFields {
@@ -270,19 +325,21 @@ const COPY = {
   },
 } as const
 
-export default function GeneratePacketBlock({ locale, filingPath, wantsEad }: Props) {
+export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preExtracted }: Props) {
   const c = COPY[locale]
   // Open by default. The block lives at the bottom of the final summary screen
   // and is the actual product — hiding it behind a toggle made senior users
   // miss it during UX testing.
   const [open, setOpen] = useState(true)
   const [fields, setFields] = useState<PersonalFields>(() => {
-    if (typeof window === 'undefined') return EMPTY
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY)
-      if (raw) return { ...EMPTY, ...(JSON.parse(raw) as Partial<PersonalFields>) }
-    } catch { /* ignore */ }
-    return EMPTY
+    let base: PersonalFields = EMPTY
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY)
+        if (raw) base = { ...EMPTY, ...(JSON.parse(raw) as Partial<PersonalFields>) }
+      } catch { /* ignore */ }
+    }
+    return applyPreExtracted(base, preExtracted)
   })
   const [busy, setBusy] = useState(false)
   const [zipUrl, setZipUrl] = useState<string | null>(null)
