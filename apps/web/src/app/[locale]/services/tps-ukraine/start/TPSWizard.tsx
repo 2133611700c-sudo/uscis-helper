@@ -371,13 +371,29 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
   const [hydrated, setHydrated] = useState(false)
 
   // hydrate from localStorage
+  // Per UX audit: a returning user was being dropped onto step 5 because
+  // localStorage persisted the last step. That looked like a bug ("the
+  // wizard skipped my questions"). Fix: on a fresh page load we ALWAYS
+  // reset to step 1 by default. To resume mid-flow the URL must carry
+  // `?continue=1` (set by internal "Resume" CTAs). Answers themselves
+  // still rehydrate so the user doesn't have to re-type everything.
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw) as { step?: number; answers?: TPSAnswers }
-        if (typeof parsed.step === 'number' && parsed.step >= 1 && parsed.step <= TOTAL_SCREENS) {
+        const shouldContinue =
+          typeof window !== 'undefined' &&
+          new URLSearchParams(window.location.search).get('continue') === '1'
+        if (
+          shouldContinue &&
+          typeof parsed.step === 'number' &&
+          parsed.step >= 1 &&
+          parsed.step <= TOTAL_SCREENS
+        ) {
           setStep(parsed.step)
+        } else {
+          setStep(1)
         }
         if (parsed.answers && typeof parsed.answers === 'object') {
           setAnswers({ ...DEFAULTS, ...parsed.answers })
@@ -619,12 +635,12 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
 
     const transferGuide = [
       { form: 'I-821', parts: locale === 'uk'
-          ? 'Part 1 — особисті дані · Part 2 — країна Ukraine · Part 3 — eligibility (initial / re-registration) · Part 4 — в’їзди та фізична присутність · Part 5 — останні поїздки'
+          ? 'Частина 1 — особисті дані · Частина 2 — країна (Україна) · Частина 3 — вид подання (вперше або продовження) · Частина 4 — в\'їзди та фізична присутність · Частина 5 — останні поїздки'
           : locale === 'ru'
-          ? 'Part 1 — личные данные · Part 2 — страна Ukraine · Part 3 — eligibility (initial / re-registration) · Part 4 — въезды и физическое присутствие · Part 5 — последние поездки'
+          ? 'Часть 1 — личные данные · Часть 2 — страна (Украина) · Часть 3 — вид подачи (впервые или продление) · Часть 4 — въезды и физическое присутствие · Часть 5 — последние поездки'
           : locale === 'es'
-          ? 'Part 1 — datos personales · Part 2 — país Ucrania · Part 3 — eligibility (inicial / re-registración) · Part 4 — entradas y presencia física · Part 5 — viajes recientes'
-          : 'Part 1 — your personal data · Part 2 — country Ukraine · Part 3 — eligibility (initial / re-registration) · Part 4 — entries and physical presence · Part 5 — recent travel',
+          ? 'Parte 1 — datos personales · Parte 2 — país (Ucrania) · Parte 3 — tipo de solicitud (inicial o renovación) · Parte 4 — entradas y presencia física · Parte 5 — viajes recientes'
+          : 'Part 1 — personal data · Part 2 — country (Ukraine) · Part 3 — filing type (initial or re-registration) · Part 4 — entries and physical presence · Part 5 — recent travel',
         url: 'https://www.uscis.gov/i-821',
       },
     ]
@@ -632,12 +648,12 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
       transferGuide.push({
         form: 'I-765',
         parts: locale === 'uk'
-          ? 'Eligibility category: (c)(19) поки TPS на розгляді; (a)(12) після того як TPS схвалений. Точно — на сторінці USCIS.'
+          ? 'Код категорії дозволу на роботу: (c)(19) поки заявка TPS на розгляді; (a)(12) після затвердження TPS. Точно — на сторінці USCIS.'
           : locale === 'ru'
-          ? 'Eligibility category: (c)(19) пока TPS на рассмотрении; (a)(12) после того как TPS одобрен. Точно — на странице USCIS.'
+          ? 'Код категории разрешения на работу: (c)(19) пока заявка TPS на рассмотрении; (a)(12) после одобрения TPS. Точно — на странице USCIS.'
           : locale === 'es'
-          ? 'Eligibility category: (c)(19) mientras TPS está pendiente; (a)(12) después de aprobado. Confirme en la página de USCIS.'
-          : 'Eligibility category: (c)(19) while TPS is pending; (a)(12) after TPS is granted. Confirm USCIS instructions.',
+          ? 'Código de categoría del permiso de trabajo: (c)(19) mientras la solicitud TPS está pendiente; (a)(12) después de la aprobación. Confirme en la página de USCIS.'
+          : 'Work permit category code: (c)(19) while the TPS application is pending; (a)(12) after TPS is granted. Confirm USCIS instructions.',
         url: 'https://www.uscis.gov/i-765',
       })
     }
