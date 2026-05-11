@@ -89,13 +89,19 @@ function wordText(gw: GWord): string {
 
 export const googleVisionProvider: OcrProvider = {
   async extractText({ imageBuffer, mimeType }): Promise<OcrResult | OcrBlockedResult> {
-    const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY
+    // Accept either env-var name — historically the Translation Engine
+    // used GOOGLE_CLOUD_VISION_API_KEY while ops set GOOGLE_VISION_API_KEY
+    // in repo .env.local. Reading both keeps every deploy working without
+    // a flag-day rename.
+    const apiKey =
+      process.env.GOOGLE_CLOUD_VISION_API_KEY ||
+      process.env.GOOGLE_VISION_API_KEY
     if (!apiKey) {
       return {
         blocked: true,
         reason:
           'Google Cloud Vision API key is not configured. ' +
-          'Add GOOGLE_CLOUD_VISION_API_KEY to your environment variables.',
+          'Add GOOGLE_CLOUD_VISION_API_KEY (or GOOGLE_VISION_API_KEY) to your environment variables.',
         required_env_vars: ['GOOGLE_CLOUD_VISION_API_KEY'],
       }
     }
