@@ -19,6 +19,7 @@
 
 import { useState } from 'react'
 import type { TpsExtractedField } from '@/lib/tps/types'
+import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessChecker'
 
 type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -637,6 +638,16 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       <input style={input} value={fields.daytime_phone} onChange={(e) => update('daytime_phone', e.target.value)} />
       <label style={label}>{c.email}</label>
       <input type="email" style={input} value={fields.email} onChange={(e) => update('email', e.target.value)} />
+
+      {/* P110.2 — Packet Completeness Checker. Shows forms-to-be-included,
+          filled vs. missing critical fields, signing locations and
+          lockbox preview BEFORE the user clicks Generate. */}
+      <PacketCompletenessChecker
+        locale={locale}
+        fields={fields}
+        wantsEad={wantsEad}
+        filingPath={filingPath}
+      />
 
       {/* TFR.6 — Attestation gate. Generate stays disabled until checked. */}
       <label
