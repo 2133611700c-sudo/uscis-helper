@@ -42,10 +42,16 @@ const MAX_BYTES = 10 * 1024 * 1024
 
 // Accept only inline images. PDFs are rejected here — they should be
 // pre-split client-side or via a different endpoint.
+// SVG / HTML / scripts are NOT in the list — fail-closed against the
+// disguised-payload class of attacks.
 const ALLOWED_MIME = new Set([
   'image/jpeg',
+  'image/jpg', // some clients use the non-standard /jpg subtype
   'image/png',
   'image/webp',
+  // HEIC / HEIF — iPhone default. Sharp can transcode in preprocessing.
+  'image/heic',
+  'image/heif',
 ])
 
 export async function POST(req: NextRequest) {
