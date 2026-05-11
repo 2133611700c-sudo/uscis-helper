@@ -18,12 +18,16 @@
 import { NextResponse } from 'next/server'
 import { PINNED_HASHES } from '@/lib/tps/formIntegrity'
 import { SNAPSHOT_DATE } from '@/lib/tps/filingGuidance'
+import { TPS_FORMS } from '@/lib/services/tps/config'
 
+// Pulled from the single source at lib/services/tps/config.ts. The only
+// constant local to this module is I-131 — it belongs to the Re-Parole
+// service which has its own future config module.
 const FORM_META = {
-  i821: { edition: '01/20/25', pages: 13, filled: true },
-  i765: { edition: '08/21/25', pages: 7, filled: true },
+  i821: { edition: TPS_FORMS.i821.edition, pages: TPS_FORMS.i821.pages, filled: TPS_FORMS.i821.filled },
+  i765: { edition: TPS_FORMS.i765.edition, pages: TPS_FORMS.i765.pages, filled: TPS_FORMS.i765.filled },
   i131: { edition: '01/20/25', pages: 14, filled: true },
-  i912: { edition: '07/22/25', pages: 8, filled: false }, // we don't fill I-912 yet
+  i912: { edition: TPS_FORMS.i912.edition, pages: TPS_FORMS.i912.pages, filled: TPS_FORMS.i912.filled },
 } as const
 
 const BUILD_TIME = new Date().toISOString()
