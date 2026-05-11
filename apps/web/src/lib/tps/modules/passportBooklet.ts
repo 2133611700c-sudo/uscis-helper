@@ -93,18 +93,27 @@ function indexLines(ocr: OcrResult): LineCandidate[] {
 /**
  * Case-insensitive substring match in a line, tolerant to Latin/Cyrillic
  * confusables (e.g. Latin 'I' vs Cyrillic 'І').
+ *
+ * Vision reads "Ім'я" as "IM'A" (the M is also Latin) in many booklet
+ * scans, so we must reverse-map ALL Latin look-alikes — not just I/E/A —
+ * before comparing to a Cyrillic label.
  */
 function lineMatchesLabel(text: string, label: string): boolean {
   if (!text || !label) return false
-  // Normalize: uppercase, replace common confusables, strip non-letters.
-  const norm = (s: string) =>
-    s
-      .toUpperCase()
-      .replace(/['ʼ`’]/g, '')
-      .replace(/I/g, 'І')
-      .replace(/E/g, 'Е')
-      .replace(/A/g, 'А')
-      .replace(/[^А-ЯІЇЄҐ]/gu, '')
+  // Latin → Cyrillic look-alike substitutions covering every char that
+  // ever appears in a Ukrainian booklet label.
+  const SUBS: ReadonlyArray<[RegExp, string]> = [
+    [/A/g, 'А'], [/B/g, 'В'], [/C/g, 'С'], [/E/g, 'Е'], [/H/g, 'Н'],
+    [/I/g, 'І'], [/K/g, 'К'], [/M/g, 'М'], [/O/g, 'О'], [/P/g, 'Р'],
+    [/T/g, 'Т'], [/X/g, 'Х'], [/Y/g, 'У'],
+  ]
+  const norm = (s: string) => {
+    let t = s.toUpperCase().replace(/['ʼ`’]/g, '')
+    for (const [re, repl] of SUBS) t = t.replace(re, repl)
+    // Drop everything that isn't a Cyrillic letter — strips slashes,
+    // English label residue ("Surname"), whitespace, etc.
+    return t.replace(/[^А-ЯІЇЄҐ]/gu, '')
+  }
   const t = norm(text)
   const l = norm(label)
   return l.length > 0 && t.includes(l)
