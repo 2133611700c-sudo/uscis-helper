@@ -37,6 +37,7 @@
  */
 
 import type { ReactNode } from 'react'
+import { lockboxFor } from '@/lib/tps/filingGuidance'
 
 export type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -90,7 +91,14 @@ interface CopyBundle {
   signI765: string
   signWarning: string
   lockboxHeading: string
-  lockboxBody: string
+  // OC-2 fix: lockbox shown is the ACTUAL one matched to the user's
+  // state of residence. Phoenix-vs-Chicago is a per-state question for
+  // TPS Ukraine paper filing (verbatim from uscis.gov/.../TPS-Ukraine
+  // snapshot 2026-05-10). Showing "Phoenix" to a New York filer while
+  // the README points to Chicago is the kind of drift that kills trust.
+  lockboxKnown: (lockboxName: string, state: string) => string
+  lockboxUnknown: (state: string) => string
+  lockboxNoState: string
   rowLabels: Record<keyof CheckerFields, string>
 }
 
@@ -109,7 +117,11 @@ const COPY: Record<Locale, CopyBundle> = {
     signI765: 'I-765 — Частина 3 на сторінці 4. Чорна або синя ручка.',
     signWarning: 'Ми НЕ підписуємо за вас. Це треба зробити руками після друку.',
     lockboxHeading: 'Куди надсилати',
-    lockboxBody: 'USCIS Lockbox у Фініксі (для громадян України за TPS / U4U). Точну адресу для вашого штату подивіться на сторінці USCIS у блоці «Куди надіслати» після генерації пакета.',
+    lockboxKnown: (name, state) =>
+      `${name} (для жителів штату ${state}). Повна адреса з’явиться у README після генерації пакета. Завжди перевіряйте її на офіційній сторінці USCIS перед відправкою.`,
+    lockboxUnknown: (state) =>
+      `Для штату «${state}» ми не змогли визначити адресу автоматично. Перевірте офіційну сторінку USCIS перед відправкою.`,
+    lockboxNoState: 'Вкажіть штат — ми покажемо точну адресу USCIS Lockbox для вашого штату.',
     rowLabels: {
       family_name: 'Прізвище', given_name: 'Ім’я', dob: 'Дата народження', sex: 'Стать',
       country_of_birth: 'Країна народження',
@@ -135,7 +147,11 @@ const COPY: Record<Locale, CopyBundle> = {
     signI765: 'I-765 — Часть 3 на странице 4. Чёрная или синяя ручка.',
     signWarning: 'Мы НЕ подписываем за вас. Это нужно сделать вручную после печати.',
     lockboxHeading: 'Куда отправлять',
-    lockboxBody: 'USCIS Lockbox в Финиксе (для граждан Украины по TPS / U4U). Точный адрес для вашего штата вы увидите на странице USCIS в блоке «Куда отправить» после генерации пакета.',
+    lockboxKnown: (name, state) =>
+      `${name} (для жителей штата ${state}). Полный адрес появится в README после генерации пакета. Всегда сверяйте его с официальной страницей USCIS перед отправкой.`,
+    lockboxUnknown: (state) =>
+      `Для штата «${state}» мы не смогли определить адрес автоматически. Сверьтесь с официальной страницей USCIS перед отправкой.`,
+    lockboxNoState: 'Укажите штат — мы покажем точный адрес USCIS Lockbox для вашего штата.',
     rowLabels: {
       family_name: 'Фамилия', given_name: 'Имя', dob: 'Дата рождения', sex: 'Пол',
       country_of_birth: 'Страна рождения',
@@ -161,7 +177,11 @@ const COPY: Record<Locale, CopyBundle> = {
     signI765: 'I-765 — Part 3 on page 4. Black or blue ink.',
     signWarning: 'We do NOT sign for you. You must sign by hand after printing.',
     lockboxHeading: 'Where to mail',
-    lockboxBody: 'USCIS Lockbox in Phoenix (for Ukrainian nationals filing TPS / U4U). The exact address for your state will appear on the USCIS page in the "Where to send" block after the packet is generated.',
+    lockboxKnown: (name, state) =>
+      `${name} (for ${state} residents). The full address will appear in the README inside your downloaded ZIP. Always verify against the official USCIS page before mailing.`,
+    lockboxUnknown: (state) =>
+      `We could not determine the lockbox for "${state}" automatically. Verify on the official USCIS page before mailing.`,
+    lockboxNoState: 'Enter your state — we will show the exact USCIS Lockbox address for it.',
     rowLabels: {
       family_name: 'Family name', given_name: 'Given name', dob: 'Date of birth', sex: 'Sex',
       country_of_birth: 'Country of birth',
@@ -187,7 +207,11 @@ const COPY: Record<Locale, CopyBundle> = {
     signI765: 'I-765 — Parte 3 en la página 4. Tinta negra o azul.',
     signWarning: 'NO firmamos por usted. Debe firmar a mano después de imprimir.',
     lockboxHeading: 'Adónde enviar',
-    lockboxBody: 'USCIS Lockbox en Phoenix (para nacionales ucranianos que presentan TPS / U4U). La dirección exacta para su estado aparecerá en la página de USCIS en el bloque "Dónde enviar" después de generar el paquete.',
+    lockboxKnown: (name, state) =>
+      `${name} (para residentes de ${state}). La dirección completa aparecerá en el README del ZIP descargado. Verifíquela siempre en la página oficial de USCIS antes de enviar.`,
+    lockboxUnknown: (state) =>
+      `No pudimos determinar la lockbox para "${state}" automáticamente. Verifique en la página oficial de USCIS antes de enviar.`,
+    lockboxNoState: 'Indique su estado — mostraremos la dirección exacta del USCIS Lockbox.',
     rowLabels: {
       family_name: 'Apellido', given_name: 'Nombre', dob: 'Fecha de nacimiento', sex: 'Sexo',
       country_of_birth: 'País de nacimiento',
@@ -375,11 +399,26 @@ export function PacketCompletenessChecker(props: PacketCompletenessProps): React
         {c.signWarning}
       </p>
 
-      {/* Lockbox */}
+      {/* Lockbox — OC-2 fix: state-driven, not hardcoded Phoenix */}
       <p style={sectionHeader}>{c.lockboxHeading}</p>
       <p style={{ ...liBase, marginBottom: 0 }} data-testid="checker-lockbox">
-        {c.lockboxBody}
+        {renderLockboxLine(props.fields.us_address_state, c)}
       </p>
     </section>
   )
+}
+
+/** Pure helper: pick the right lockbox copy variant based on what the
+ *  user has typed for their state. Exposed for test reuse. */
+export function renderLockboxLine(
+  stateInput: string | undefined | null,
+  c: CopyBundle,
+): string {
+  const state = (stateInput || '').trim().toUpperCase()
+  if (!state) return c.lockboxNoState
+  const result = lockboxFor(state)
+  if (result.ok) {
+    return c.lockboxKnown(result.lockbox.display_name, state)
+  }
+  return c.lockboxUnknown(state)
 }
