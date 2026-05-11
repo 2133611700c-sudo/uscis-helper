@@ -33,7 +33,7 @@ interface Props {
 const T = {
   uk: {
     metaTitle: 'TPS для України — Messenginfo',
-    metaDesc: 'Підготуйте всю інформацію для подання TPS Ukraine (Form I-821, I-765, I-912). Ви подаєте самостійно через USCIS. Ми не юридична фірма.',
+    metaDesc: 'Готові PDF I-821 та I-765 з вашими даними і письмова інструкція для I-912. Ви подаєте самостійно через USCIS. Ми не юридична фірма.',
     badge: 'TPS Україна — продовжено до 19 жовтня 2026',
     title: 'TPS для України',
     subtitle: 'Допоможемо підготувати всю інформацію для подання та заповнення TPS у USCIS — крок за кроком.',
@@ -49,7 +49,7 @@ const T = {
     howTitle: 'Як це працює',
     howSteps: [
       { num: '1', title: 'Дайте відповіді', desc: 'Помічник поставить прості запитання: подаєте вперше чи продовжуєте, чи потрібен дозвіл на роботу, чи бажаєте звільнення від державного збору USCIS.' },
-      { num: '2', title: 'Отримайте інструкцію', desc: 'Список потрібних документів, інструкція що куди вписати у форми I-821 / I-765 / I-912, посилання на офіційні поля USCIS.' },
+      { num: '2', title: 'Отримайте пакет', desc: 'Готові PDF I-821 та I-765 (вже заповнені вашими даними), плюс письмова інструкція для I-912, якщо вам потрібне звільнення від оплати.' },
       { num: '3', title: 'Подайте до USCIS', desc: 'Заповніть та подайте через my.uscis.gov онлайн або поштою. Ми не подаємо за вас.' },
     ],
     ctaStatus: '🔍 Перевірити статус TPS →',
@@ -114,14 +114,14 @@ const T = {
       },
       {
         q: 'Що таке заявка на звільнення від оплати (форма I-912)?',
-        a: 'Форма I-912 дозволяє попросити USCIS не брати з вас державний збір — за певних умов. Подається лише разом з паперовою заявою (не онлайн). Право на звільнення є не у всіх — критерії на uscis.gov/i-912.',
+        a: 'Форма I-912 дозволяє попросити USCIS не брати з вас державний збір — за певних умов. Подається лише разом з паперовою заявою (не онлайн). Право на звільнення є не у всіх — критерії на uscis.gov/i-912. Зараз ми не генеруємо готовий PDF I-912 — пакет містить письмову інструкцію, щоб ви могли заповнити її вручну.',
       },
     ],
     footer: 'TPS Ukraine продовжено до 19 жовтня 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo не подає документи від вашого імені',
   },
   ru: {
     metaTitle: 'TPS для Украины — Messenginfo',
-    metaDesc: 'Подготовьте всю информацию для подачи TPS Ukraine (Form I-821, I-765, I-912). Вы подаёте сами через USCIS. Мы не юридическая фирма.',
+    metaDesc: 'Готовые PDF I-821 и I-765 с вашими данными и письменная инструкция для I-912. Вы подаёте сами через USCIS. Мы не юридическая фирма.',
     badge: 'TPS Украина — продлено до 19 октября 2026',
     title: 'TPS для Украины',
     subtitle: 'Поможем подготовить всю информацию для подачи и заполнения TPS в USCIS — шаг за шагом.',
@@ -137,7 +137,7 @@ const T = {
     howTitle: 'Как это работает',
     howSteps: [
       { num: '1', title: 'Ответьте на вопросы', desc: 'Помощник задаст простые вопросы: подаёте впервые или продлеваете, нужно ли разрешение на работу, хотите ли подать заявку на освобождение от государственной пошлины USCIS.' },
-      { num: '2', title: 'Получите инструкцию', desc: 'Список нужных документов, инструкция что куда вписывать в I-821 / I-765 / I-912, ссылки на официальные поля USCIS.' },
+      { num: '2', title: 'Получите пакет', desc: 'Готовые PDF I-821 и I-765 (уже заполнены вашими данными), плюс письменная инструкция для I-912, если вам нужно освобождение от оплаты.' },
       { num: '3', title: 'Подайте в USCIS', desc: 'Заполните и подайте через my.uscis.gov онлайн или почтой. Мы не подаём за вас.' },
     ],
     ctaStatus: '🔍 Проверить статус TPS →',
@@ -202,14 +202,14 @@ const T = {
       },
       {
         q: 'Что такое заявление на освобождение от оплаты (форма I-912)?',
-        a: 'Форма I-912 позволяет попросить USCIS не брать с вас государственную пошлину — при определённых условиях. Подаётся только с бумажной заявкой (не онлайн). Право на освобождение есть не у всех — критерии на uscis.gov/i-912.',
+        a: 'Форма I-912 позволяет попросить USCIS не брать с вас государственную пошлину — при определённых условиях. Подаётся только с бумажной заявкой (не онлайн). Право на освобождение есть не у всех — критерии на uscis.gov/i-912. Сейчас мы не генерируем готовый PDF I-912 — пакет содержит письменную инструкцию, чтобы вы могли заполнить её вручную.',
       },
     ],
     footer: 'TPS Ukraine продлено до 19 октября 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo не подаёт документы от вашего имени',
   },
   en: {
     metaTitle: 'TPS for Ukraine — Messenginfo',
-    metaDesc: 'Prepare all the information needed for filing TPS Ukraine (Form I-821, I-765, I-912). You file with USCIS yourself. We are not a law firm.',
+    metaDesc: 'Filled I-821 and I-765 PDFs with your data, plus written guidance for I-912. You file with USCIS yourself. We are not a law firm.',
     badge: 'TPS Ukraine — extended through Oct 19, 2026',
     title: 'TPS for Ukraine',
     subtitle: 'We help you prepare all the information you need to file TPS with USCIS — step by step.',
@@ -225,7 +225,7 @@ const T = {
     howTitle: 'How it works',
     howSteps: [
       { num: '1', title: 'Answer questions', desc: 'The wizard asks plain questions: initial TPS vs re-registration, whether you need an EAD, whether you need a fee waiver (I-912).' },
-      { num: '2', title: 'Get your instructions', desc: 'Evidence checklist, instructions for what to enter in I-821 / I-765 / I-912, links to the official USCIS fields.' },
+      { num: '2', title: 'Get your packet', desc: 'Filled I-821 and I-765 PDFs with your data already in the cells, plus written guidance for I-912 if you need a fee waiver.' },
       { num: '3', title: 'File with USCIS', desc: 'Submit through my.uscis.gov online or by mail. We do not file on your behalf.' },
     ],
     ctaStatus: '🔍 Check TPS status →',
@@ -290,14 +290,14 @@ const T = {
       },
       {
         q: 'What is a fee waiver / I-912?',
-        a: 'Form I-912 lets you request a USCIS fee waiver under certain conditions. It can only be filed with a paper application (not online). Not everyone is eligible — see criteria at uscis.gov/i-912.',
+        a: 'Form I-912 lets you request a USCIS fee waiver under certain conditions. It can only be filed with a paper application (not online). Not everyone is eligible — see criteria at uscis.gov/i-912. We do not yet generate a filled I-912 PDF — the packet includes written guidance so you can fill it by hand.',
       },
     ],
     footer: 'TPS Ukraine extended through Oct 19, 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo does not file on your behalf',
   },
   es: {
     metaTitle: 'TPS para Ucrania — Messenginfo',
-    metaDesc: 'Prepare toda la información para presentar TPS Ucrania (Form I-821, I-765, I-912). Usted presenta ante USCIS. No somos un bufete.',
+    metaDesc: 'PDFs I-821 e I-765 ya rellenados con sus datos, y una guía escrita para I-912. Usted presenta ante USCIS. No somos un bufete.',
     badge: 'TPS Ucrania — extendido hasta 19 oct 2026',
     title: 'TPS para Ucrania',
     subtitle: 'Le ayudamos a preparar toda la información para presentar TPS ante USCIS — paso a paso.',
@@ -313,7 +313,7 @@ const T = {
     howTitle: 'Cómo funciona',
     howSteps: [
       { num: '1', title: 'Responda preguntas', desc: 'El asistente le hace preguntas simples: si presenta por primera vez o renueva, si necesita permiso de trabajo, si desea solicitar exención de la tarifa de USCIS.' },
-      { num: '2', title: 'Obtenga instrucciones', desc: 'Lista de evidencias, instrucciones de qué poner en I-821 / I-765 / I-912, enlaces a los campos oficiales de USCIS.' },
+      { num: '2', title: 'Obtenga su paquete', desc: 'PDFs I-821 e I-765 ya rellenados con sus datos, más una guía escrita para I-912 si necesita exención de tarifa.' },
       { num: '3', title: 'Presente ante USCIS', desc: 'Envíe por my.uscis.gov en línea o por correo. Nosotros no presentamos por usted.' },
     ],
     ctaStatus: '🔍 Verificar estado TPS →',
@@ -378,7 +378,7 @@ const T = {
       },
       {
         q: '¿Qué es la solicitud de exención de tarifa (formulario I-912)?',
-        a: 'El Form I-912 permite solicitar la exención de tarifas de USCIS bajo ciertas condiciones. Solo se puede presentar con una solicitud en papel (no en línea). No todos son elegibles — criterios en uscis.gov/i-912.',
+        a: 'El Form I-912 permite solicitar la exención de tarifas de USCIS bajo ciertas condiciones. Solo se puede presentar con una solicitud en papel (no en línea). No todos son elegibles — criterios en uscis.gov/i-912. Por ahora no generamos un PDF I-912 rellenado — el paquete incluye una guía escrita para que pueda completarlo a mano.',
       },
     ],
     footer: 'TPS Ucrania extendido hasta el 19 oct 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo no presenta en su nombre',
