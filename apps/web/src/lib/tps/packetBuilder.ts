@@ -15,6 +15,7 @@ import type { TPSAnswers } from './answers'
 import { buildI821Ops } from './forms/i821FieldMap'
 import { buildI765Ops } from './forms/i765FieldMap'
 import { prefill } from './pdfPrefiller'
+import { lockboxFor, feeGuidance, SNAPSHOT_DATE, OFFICIAL_TPS_UKRAINE_PAGE } from './filingGuidance'
 
 // Edition dates verified against uscis.gov on 2026-05-10 and stamped on the
 // PDF footers. If USCIS publishes a new edition, scripts/uscis/refresh_tps_forms.sh
@@ -98,6 +99,57 @@ function buildReadme(
   // dropdown), NOT only text fields. Different sessions can legitimately
   // show different totals because skipped optional-section fields lower
   // the count.
+  // ── Lockbox section ──────────────────────────────────────────────────────
+  // The README is the LAST surface a user sees before mailing. The audit
+  // explicitly flagged that "see the lockbox in the I-821 Instructions"
+  // dumps the user into another PDF — we now resolve and print the address
+  // for them based on their state. Falls back to a "look it up" message if
+  // we can't determine the state.
+  const lockboxLines: string[] = []
+  const lockbox = lockboxFor(a.us_address_state ?? '')
+  if (lockbox.ok) {
+    lockboxLines.push(
+      `WHERE TO MAIL (resolved for state: ${lockbox.state})`,
+      `  ${lockbox.lockbox.display_name}`,
+      '',
+      '  By U.S. Postal Service:',
+      ...lockbox.lockbox.usps.map((l) => '    ' + l),
+      '',
+      '  By FedEx, UPS, or DHL (street address — NOT for USPS):',
+      ...lockbox.lockbox.courier.map((l) => '    ' + l),
+      '',
+      `  Source: ${lockbox.source_url}`,
+      `  Snapshot date: ${lockbox.snapshot_date}. Verify before mailing — addresses can change.`,
+    )
+  } else {
+    lockboxLines.push(
+      'WHERE TO MAIL',
+      `  We could not resolve a lockbox address for state code "${lockbox.state}".`,
+      `  Look up the current address on the official USCIS TPS Ukraine page:`,
+      `    ${lockbox.source_url}`,
+    )
+  }
+
+  // ── Fee section ──────────────────────────────────────────────────────────
+  // Per official_source_rule: enumerate WHICH fees apply, link to the
+  // USCIS Fee Schedule for each. Do NOT print dollar amounts — they change.
+  const fees = feeGuidance({
+    filing_path: a.filing_path ?? 'unselected',
+    wants_ead: !!a.wants_ead,
+    wants_fee_waiver: !!a.wants_fee_waiver,
+    age: null,
+  })
+  const feeLines: string[] = [
+    'GOVERNMENT FEES (verify current amounts on uscis.gov before mailing)',
+  ]
+  for (const f of fees.applicable) {
+    feeLines.push(`  • ${f.form} — ${f.reason}`)
+    feeLines.push(`    ${f.fee_lookup_url}`)
+  }
+  for (const note of fees.notes) {
+    feeLines.push(`  Note: ${note}`)
+  }
+
   return [
     'Messenginfo — TPS Ukraine packet draft',
     `Generated: ${ts}`,
@@ -114,7 +166,12 @@ function buildReadme(
     '  2. Carefully review every prefilled field. Correct anything that is wrong.',
     '  3. Complete every field that we could not fill (signature, certain Part 3/4 items).',
     '  4. Print, sign in INK, and assemble your supporting documents.',
-    '  5. Mail to the USCIS Lockbox address listed in the I-821 Instructions.',
+    '  5. Pay the correct USCIS government fee (see below).',
+    '  6. Mail the package to the address shown below.',
+    '',
+    ...lockboxLines,
+    '',
+    ...feeLines,
     '',
     'WHAT WE DID NOT DO',
     '  - We did NOT submit anything to USCIS on your behalf.',
@@ -122,9 +179,10 @@ function buildReadme(
     '  - We did NOT determine your eligibility — please verify on uscis.gov.',
     '',
     'SOURCE FORMS',
-    `  These PDFs were generated from the latest official USCIS PDFs as of`,
-    `  2026-05-10, verified against uscis.gov pages and PDF footer edition stamps.`,
-    '  See messenginfo.com/services/tps-ukraine/sources for the official USCIS links.',
+    `  These PDFs were generated from the official USCIS PDFs verified against`,
+    `  uscis.gov pages and PDF footer edition stamps on ${SNAPSHOT_DATE}.`,
+    `  Official TPS Ukraine page: ${OFFICIAL_TPS_UKRAINE_PAGE}`,
+    '  See messenginfo.com/services/tps-ukraine/sources for all source links.',
     '',
     'If a field looks wrong, do NOT mail the form. Edit it in Adobe first or',
     'come back to messenginfo.com and re-run the wizard with corrected data.',
