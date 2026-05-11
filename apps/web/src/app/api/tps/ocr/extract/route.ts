@@ -31,7 +31,13 @@ import { runPassportModule } from '@/lib/tps/modules/passport'
 import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
 import { runI94Module } from '@/lib/tps/modules/i94'
 import { runEadModule } from '@/lib/tps/modules/ead'
-import type { TpsModuleResult } from '@/lib/tps/types'
+import type { TpsModuleResult, TpsExtractedField } from '@/lib/tps/types'
+import {
+  runBrain,
+  validateBrainField,
+  isBrainEnabled,
+  type DocumentBrainOutput,
+} from '@/lib/tps/ai/documentBrain'
 
 // Vision REST call needs full Node runtime (Buffer + fetch with timeout).
 export const runtime = 'nodejs'
@@ -204,6 +210,92 @@ export async function POST(req: NextRequest) {
       moduleResult = null
   }
 
+  // ── DS.2 — Optional AI Brain fallback. Runs ONLY when:
+  //   (a) operator has set TPS_AI_BRAIN_ENABLED=1 in the environment, AND
+  //   (b) the rule-based module produced no result OR fewer than 3 fields,
+  //       OR the document type hint is missing.
+  // Privacy: only raw_text + lines (no image, no PII bundle beyond
+  // what Vision already extracted) is sent to DeepSeek.
+  // Validators (validateBrainField) are applied to each Brain field
+  // before it's surfaced — anything failing is left as requires_review
+  // and is never auto-merged into PDF data.
+  let brainResult: DocumentBrainOutput | null = null
+  const ruleFieldsCount = moduleResult?.fields?.length ?? 0
+  const shouldTryBrain =
+    isBrainEnabled() &&
+    (moduleResult === null || moduleResult.matched === false || ruleFieldsCount < 3)
+  if (shouldTryBrain) {
+    try {
+      brainResult = await runBrain({
+        raw_text: result.raw_text,
+        lines: result.lines.map((l) => l.text),
+        doc_type_hint: docTypeHint || null,
+      })
+    } catch (e: unknown) {
+      // Never let Brain failure crash the OCR response. Surface as a
+      // soft warning — the user still gets rule-based output + can edit.
+      brainResult = {
+        ok: false,
+        error_code: 'UNKNOWN',
+        detail: e instanceof Error ? e.message : 'unknown',
+      }
+    }
+  }
+
+  // Build extra TpsExtractedField[] from validated Brain output. Each
+  // brain-derived field is marked extraction_source='ai_brain' so the
+  // review screen can render an "AI" badge and the user explicitly
+  // confirms it.
+  let brainFields: TpsExtractedField[] = []
+  let brainSkipped: Array<{ field: string; reason: string }> = []
+  if (brainResult?.ok) {
+    const r = brainResult.result
+    for (const [k, f] of Object.entries(r.fields)) {
+      if (!f) continue
+      const validation = validateBrainField(k, f)
+      if (!validation.ok) {
+        brainSkipped.push({ field: k, reason: validation.reason ?? 'invalid' })
+        continue
+      }
+      brainFields.push({
+        field: k,
+        raw_value: f.source_value,
+        normalized_value: f.final_value,
+        extraction_source: 'ai_brain',
+        source_document_id: document_id,
+        source_zone: f.source_line ?? 'ai_brain',
+        bbox: null,
+        language_layer: 'mixed',
+        confidence: f.confidence,
+        review_required: f.requires_review,
+        ocr_word_ids: [],
+        passes: [],
+        failures: [],
+        user_corrected: false,
+      })
+    }
+  }
+
+  // Merge strategy: rule-based fields win when both sources have the
+  // same field key (rule-based is deterministic and audited). Brain
+  // fills the gaps.
+  let mergedModule = moduleResult
+  if (brainFields.length > 0) {
+    const existingKeys = new Set<string>(moduleResult?.fields?.map((f) => f.field) ?? [])
+    const additions = brainFields.filter((f) => !existingKeys.has(f.field))
+    mergedModule = {
+      module:
+        (moduleResult?.module as string) ||
+        (brainResult?.ok ? `ai_brain:${brainResult.result.document_type}` : 'ai_brain'),
+      matched: (moduleResult?.matched ?? false) || additions.length > 0,
+      match_reason: moduleResult?.match_reason ?? 'ai_brain_fallback',
+      fields: [...(moduleResult?.fields ?? []), ...additions],
+      manual_review_required:
+        Boolean(moduleResult?.manual_review_required) ||
+        (brainResult?.ok ? brainResult.result.needs_manual_review : false),
+    } as TpsModuleResult
+  }
+
   // ── Successful OCR. Build a response with just what downstream agents
   //    need; we do NOT include the raw API response (could leak provider
   //    internals or echoed key).
@@ -230,7 +322,27 @@ export async function POST(req: NextRequest) {
       route_total_ms: Date.now() - t0,
       warnings: result.warnings,
       // Per-document module output — present only when doc_type_hint is set.
-      module: moduleResult,
+      // If the AI Brain ran and added fields, `module` is the merged shape.
+      module: mergedModule,
+      // DS.2 — Brain diagnostics surfaced to the client (UI never renders
+      // raw_response_length; this is for /api/tps/health-style monitoring).
+      brain: brainResult
+        ? brainResult.ok
+          ? {
+              ok: true,
+              document_type: brainResult.result.document_type,
+              document_type_confidence: brainResult.result.document_type_confidence,
+              field_count: Object.keys(brainResult.result.fields).length,
+              needs_manual_review: brainResult.result.needs_manual_review,
+              warnings: brainResult.result.warnings,
+              validated_skipped: brainSkipped,
+            }
+          : {
+              ok: false,
+              error_code: brainResult.error_code,
+              detail: brainResult.detail,
+            }
+        : { ok: false, error_code: 'NOT_RUN', detail: shouldTryBrain ? 'flag_off' : 'rules_sufficient' },
     },
     {
       status: 200,
@@ -245,10 +357,14 @@ export async function POST(req: NextRequest) {
         'X-OCR-Preprocess-Resized': String(pre.resized),
         'X-OCR-Preprocess-Width': String(pre.width),
         'X-OCR-Preprocess-Height': String(pre.height),
-        'X-TPS-Module': moduleResult ? moduleResult.module : 'none',
-        'X-TPS-Module-Matched': moduleResult ? String(moduleResult.matched) : 'na',
-        'X-TPS-Module-Fields': moduleResult ? String(moduleResult.fields.length) : '0',
-        'X-TPS-Module-ManualReview': moduleResult ? String(moduleResult.manual_review_required) : 'na',
+        'X-TPS-Module': mergedModule ? mergedModule.module : 'none',
+        'X-TPS-Module-Matched': mergedModule ? String(mergedModule.matched) : 'na',
+        'X-TPS-Module-Fields': mergedModule ? String(mergedModule.fields.length) : '0',
+        'X-TPS-Module-ManualReview': mergedModule ? String(mergedModule.manual_review_required) : 'na',
+        // Brain headers — only present when the Brain was attempted.
+        'X-TPS-Brain': brainResult ? (brainResult.ok ? brainResult.result.document_type : `error:${brainResult.error_code}`) : 'off',
+        'X-TPS-Brain-Added': String(brainFields.length),
+        'X-TPS-Brain-Skipped': String(brainSkipped.length),
       },
     },
   )
