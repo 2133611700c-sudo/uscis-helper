@@ -128,6 +128,8 @@ const COPY = {
     i94: 'I-94 admission number (11 цифр)', entry: 'Дата останнього в\'їзду в США',
     phone: 'Денний телефон', email: 'Email',
     generate: 'Згенерувати PDF-пакет (чернетка)',
+    attestation: 'Я ознайомився з даними вище. Я розумію, що Messenginfo не подає документи за мене і не є юридичною фірмою.',
+    attestRequired: 'Поставте галочку, щоб згенерувати пакет.',
     generating: 'Генерую…',
     successHeader: 'Готово. Що далі?',
     success: 'PDF з вашими даними готові. Тепер уважно перевірте і відправте до USCIS самостійно.',
@@ -180,6 +182,8 @@ const COPY = {
     i94: 'I-94 admission number (11 цифр)', entry: 'Дата последнего въезда в США',
     phone: 'Дневной телефон', email: 'Email',
     generate: 'Сгенерировать PDF-пакет (черновик)',
+    attestation: 'Я ознакомился с данными выше. Я понимаю, что Messenginfo не подаёт документы за меня и не является юридической фирмой.',
+    attestRequired: 'Поставьте галочку, чтобы сгенерировать пакет.',
     generating: 'Генерирую…',
     successHeader: 'Готово. Что дальше?',
     success: 'PDF с вашими данными готовы. Теперь внимательно проверьте и отправьте в USCIS самостоятельно.',
@@ -232,6 +236,8 @@ const COPY = {
     i94: 'I-94 admission number (11 digits)', entry: 'Date of your last entry to the US',
     phone: 'Daytime phone', email: 'Email',
     generate: 'Generate PDF packet (draft)',
+    attestation: 'I have reviewed the information above. I understand Messenginfo does not file documents on my behalf and is not a law firm.',
+    attestRequired: 'Check the box to enable packet generation.',
     generating: 'Generating…',
     successHeader: 'Done. What next?',
     success: 'Your PDFs are ready. Review them carefully and then mail or upload to USCIS yourself.',
@@ -284,6 +290,8 @@ const COPY = {
     i94: 'I-94 admission number (11 dígitos)', entry: 'Fecha de su última entrada a EE.UU.',
     phone: 'Teléfono diurno', email: 'Email',
     generate: 'Generar paquete PDF (borrador)',
+    attestation: 'He revisado la información anterior. Entiendo que Messenginfo no presenta documentos por mí y no es un bufete de abogados.',
+    attestRequired: 'Marque la casilla para habilitar la generación del paquete.',
     generating: 'Generando…',
     successHeader: 'Listo. ¿Qué sigue?',
     success: 'Sus PDFs están listos. Revíselos cuidadosamente y luego envíelos o cárguelos en USCIS usted mismo.',
@@ -342,6 +350,26 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
     return applyPreExtracted(base, preExtracted)
   })
   const [busy, setBusy] = useState(false)
+  // TFR.6 — Attestation gate. Required by the agreed product plan so the
+  // user explicitly acknowledges Messenginfo's scope (not a law firm,
+  // doesn't file) before downloading a draft packet. Timestamp stored
+  // in localStorage so a returning user doesn't have to re-attest within
+  // the same session. NO PII captured.
+  const [attestedAt, setAttestedAt] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = window.localStorage.getItem('tps:attest:v1')
+      return raw ? parseInt(raw, 10) : null
+    } catch { return null }
+  })
+  const setAttested = (v: boolean) => {
+    const ts = v ? Date.now() : null
+    setAttestedAt(ts)
+    try {
+      if (ts) window.localStorage.setItem('tps:attest:v1', String(ts))
+      else window.localStorage.removeItem('tps:attest:v1')
+    } catch { /* ignore */ }
+  }
   const [zipUrl, setZipUrl] = useState<string | null>(null)
   const [missing, setMissing] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -582,9 +610,58 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       <label style={label}>{c.email}</label>
       <input type="email" style={input} value={fields.email} onChange={(e) => update('email', e.target.value)} />
 
-      <button type="button" onClick={generate} disabled={busy} style={primary} data-testid="generate-btn">
+      {/* TFR.6 — Attestation gate. Generate stays disabled until checked. */}
+      <label
+        data-testid="tps-attestation-row"
+        style={{
+          display: 'flex',
+          gap: 12,
+          alignItems: 'flex-start',
+          padding: '14px 14px',
+          marginTop: 16,
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderRadius: 10,
+          fontSize: 13,
+          lineHeight: 1.5,
+          cursor: 'pointer',
+        }}
+      >
+        <input
+          type="checkbox"
+          data-testid="tps-attestation-checkbox"
+          checked={attestedAt !== null}
+          onChange={(e) => setAttested(e.target.checked)}
+          style={{ marginTop: 3, width: 18, height: 18, accentColor: 'var(--success)', flexShrink: 0 }}
+        />
+        <span style={{ color: 'var(--text-1)' }}>{c.attestation}</span>
+      </label>
+
+      <button
+        type="button"
+        onClick={generate}
+        disabled={busy || attestedAt === null}
+        aria-disabled={busy || attestedAt === null}
+        style={{
+          ...primary,
+          opacity: busy || attestedAt === null ? 0.45 : 1,
+          cursor: busy || attestedAt === null ? 'not-allowed' : 'pointer',
+          background: busy || attestedAt === null ? 'var(--surface-2)' : primary.background,
+          color: busy || attestedAt === null ? 'var(--text-3)' : primary.color,
+          boxShadow: busy || attestedAt === null ? 'none' : primary.boxShadow,
+        }}
+        data-testid="generate-btn"
+      >
         {busy ? c.generating : c.generate}
       </button>
+      {attestedAt === null && (
+        <p
+          data-testid="tps-attestation-hint"
+          style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6, textAlign: 'center' }}
+        >
+          {c.attestRequired}
+        </p>
+      )}
 
       {missing.length > 0 && (
         <div style={{ marginTop: 12, padding: 12, background: 'var(--warning-bg, #fef3c7)', color: 'var(--warning-text, #92400e)', borderRadius: 10, fontSize: 13 }}>
