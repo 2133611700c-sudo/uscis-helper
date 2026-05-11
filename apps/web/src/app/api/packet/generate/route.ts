@@ -35,6 +35,8 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import JSZip from 'jszip'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { isUUID } from '@/lib/security/validation'
+import { buildReParoleI131 } from '@/lib/reparole/packetBuilder'
+import type { ReParoleAnswers } from '@/lib/reparole/answers'
 
 const SIGNED_URL_EXPIRY_SECONDS = 7 * 24 * 60 * 60 // 7 days
 const PACKETS_BUCKET = 'packets'
@@ -76,6 +78,65 @@ interface WizardStateJson {
   evidence?: EvidenceItem[]
   current_step?: number
   selected_tier?: number
+}
+
+// ─── ReParoleAnswers adapter ──────────────────────────────────────────────────
+
+/**
+ * Convert the wizard's loose `WizardStateJson` shape into the strict
+ * `ReParoleAnswers` contract needed by the I-131 field map.
+ *
+ * Returns null when essential fields are missing — caller skips the PDF
+ * and the user still receives the 9-file text guide. This is a graceful
+ * additive feature: if the wizard data is incomplete, we don't fail the
+ * packet, we just don't include the filled PDF.
+ *
+ * The wizard's `manual` answers use loose camelCase; the I-131 field
+ * map uses snake_case. This mapper bridges the two without leaking
+ * either convention into the other module.
+ */
+function toReParoleAnswers(state: WizardStateJson): ReParoleAnswers | null {
+  const m = state.manual ?? {}
+  // Primary applicant. If the user added family members in `state.members`,
+  // the first member's manualAnswers wins over the top-level `manual` so
+  // multi-applicant flows fill the form for the primary applicant.
+  const first = state.members?.[0]?.manualAnswers ?? {}
+  const get = (k: string): string => (first[k] ?? m[k] ?? '').toString().trim()
+  const firstName = get('firstName')
+  const lastName = get('lastName')
+  if (!firstName || !lastName) {
+    // Without family + given name the I-131 has no useful Part 2; skip.
+    return null
+  }
+  const sexRaw = (get('sex') || get('gender')).toUpperCase()
+  const sex: 'M' | 'F' | '' =
+    sexRaw === 'M' || sexRaw.startsWith('MAL') ? 'M'
+    : sexRaw === 'F' || sexRaw.startsWith('FEM') ? 'F'
+    : ''
+  return {
+    family_name: lastName,
+    given_name: firstName,
+    middle_name: get('middleName') || undefined,
+    mailing_street: get('address') || get('street'),
+    mailing_apt_ste_flr: get('apt') || undefined,
+    mailing_city: get('city'),
+    mailing_state: get('state'),
+    mailing_zip: get('zip'),
+    physical_same_as_mailing: true,
+    a_number: get('aNumber') || get('a_number') || undefined,
+    country_of_birth: get('countryOfBirth') || 'Ukraine',
+    country_of_nationality: get('countryOfCitizenship') || get('nationality') || 'Ukraine',
+    sex,
+    dob: get('dob') || get('dateOfBirth'),
+    ssn: get('ssn') || undefined,
+    uscis_online_account_number: get('uscisOnlineAccountNumber') || undefined,
+    class_of_admission: get('classOfAdmission') || 'UH',
+    i94_admission_number: get('i94Number') || get('i94') || undefined,
+    daytime_phone: get('phone') || get('daytimePhone'),
+    mobile_phone: get('mobilePhone') || undefined,
+    email: get('email'),
+    filing_method: state.filingMethod ?? 'unsure',
+  }
 }
 
 // ─── File builders ────────────────────────────────────────────────────────────
@@ -609,7 +670,29 @@ export async function POST(req: NextRequest) {
     zip.file('08-fees-and-links.txt', build08FeesAndLinks())
     zip.file('09-disclaimer.txt', build09Disclaimer())
 
-    const fileCount = 9
+    // ── 2b. Add filled I-131.pdf when we have enough applicant data ──────
+    // Mirror of TPS: read official PDF + apply ReParole field map via the
+    // shared pdfPrefiller (Cyrillic → Latin transliteration baked in).
+    // If the wizard state lacks required identity fields we skip the PDF
+    // and the user still gets the 9-file text guide. So this is additive,
+    // not a replacement.
+    const reParoleAnswers = toReParoleAnswers(state)
+    let i131Stats: { applied: number; skipped: number } = { applied: 0, skipped: 0 }
+    let i131Generated = false
+    if (reParoleAnswers) {
+      try {
+        const built = await buildReParoleI131(reParoleAnswers)
+        zip.file('10-form-i131.pdf', Buffer.from(built.i131_bytes))
+        i131Stats = { applied: built.i131.applied, skipped: built.i131.skipped }
+        i131Generated = true
+      } catch (err) {
+        // Do NOT fail the whole packet generation if PDF prefill blows up.
+        // Surface in audit log instead. The text guides are still in the ZIP.
+        console.error('[reparole-packet] I-131 fill failed:', err)
+      }
+    }
+
+    const fileCount = i131Generated ? 10 : 9
 
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
 
