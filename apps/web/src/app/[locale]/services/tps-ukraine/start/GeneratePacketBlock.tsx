@@ -48,9 +48,17 @@ function applyPreExtracted(
 ): PersonalFields {
   if (!preExtracted || preExtracted.length === 0) return base
   const next = { ...base }
-  // Whitelist: only fields that exist on PersonalFields. Anything else (e.g.
-  // ead_category_on_card, a_number, i94_class_of_admission) is intentionally
-  // ignored here — those belong to I-765 server-side mapping, not this UI.
+  // Whitelist: only fields that exist on PersonalFields. Fields like
+  // ead_category_on_card and ead_expiration_date are deliberately NOT
+  // listed — ead_category is driven from filing_path on the server side,
+  // and an existing EAD's expiration is not a USCIS-form input on I-821/
+  // I-765 (it's reference info for the user, not data we write to a
+  // form).
+  //
+  // I-94 class_of_admission maps to TPSAnswers.status_at_last_entry which
+  // lands on I-765 Page 3 Line 23.
+  // EAD a_number maps to TPSAnswers.a_number which lands on
+  //   I-821 Part 2 Item 7 (Page 02) AND I-765 Part 2 Line 7 (Page 2).
   const fieldMap: Record<string, keyof PersonalFields> = {
     family_name: 'family_name',
     given_name: 'given_name',
@@ -63,6 +71,8 @@ function applyPreExtracted(
     passport_expiration_date: 'passport_expiration_date',
     i94_admission_number: 'i94_admission_number',
     last_entry_date: 'last_entry_date',
+    a_number: 'a_number',
+    i94_class_of_admission: 'status_at_last_entry',
   }
   for (const f of preExtracted) {
     const key = fieldMap[f.field]
@@ -100,6 +110,14 @@ interface PersonalFields {
   last_entry_date: string  // YYYY-MM-DD
   daytime_phone: string
   email: string
+  /** A-Number (Alien Registration Number) — 9 digits, no 'A' prefix.
+   *  Sourced from EAD card OCR; user can edit. Empty when the applicant
+   *  doesn't have one yet (most initial TPS filers). */
+  a_number: string
+  /** Status at last entry, e.g. "Parole", "B-2", "UH". Sourced from
+   *  I-94 OCR (Class of Admission field). Auto-defaults to "UH" for U4U
+   *  parolees when blank and the user marked TPS-Ukraine path. */
+  status_at_last_entry: string
 }
 
 const EMPTY: PersonalFields = {
@@ -110,6 +128,7 @@ const EMPTY: PersonalFields = {
   us_address_street: '', us_address_city: '', us_address_state: '', us_address_zip: '',
   i94_admission_number: '', last_entry_date: '',
   daytime_phone: '', email: '',
+  a_number: '', status_at_last_entry: '',
 }
 
 const STORAGE_KEY = 'wizard:tps-ukraine:personal:v1'
@@ -411,6 +430,15 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       mailing_same_as_physical: true,
       last_entry_date: fields.last_entry_date,
       i94_admission_number: fields.i94_admission_number || undefined,
+      // status_at_last_entry: OCR fills "UH" / "Parole" from I-94 class of
+      // admission. If still blank for TPS-Ukraine path, default to "UH"
+      // (Uniting for Ukraine), which is the actual class of admission USCIS
+      // CBP uses for U4U parolees and the value real applicants must put on
+      // I-765 Line 23. Empty string is allowed if the user truly entered on
+      // a different basis (B-2, F-1, …) and OCR has not run yet.
+      status_at_last_entry: fields.status_at_last_entry
+        || (filingPath === 'initial' ? 'UH' : undefined),
+      a_number: fields.a_number || undefined,
       filing_path: path,
       wants_ead: wantsEad === true,
       ead_category: wantsEad === true ? (path === 'initial' ? 'a12' : 'c19') : null,

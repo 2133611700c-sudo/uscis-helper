@@ -136,6 +136,30 @@ describe('buildPacket — TPS Ukraine initial-path fixture', () => {
     expect(result.i765.skipped).toBe(0)
   })
 
+  it('routes A-Number + status_at_last_entry into both I-821 and I-765 (OCR EAD/I-94 payload)', async () => {
+    // A-Number from EAD card (9 digits, no 'A' prefix) and class of
+    // admission "UH" from I-94 — exactly the shape lib/tps/modules emits
+    // and applyPreExtracted now writes onto the wizard answers.
+    const withOcr: TPSAnswers = {
+      ...fixtureInitialPath,
+      a_number: '987654321',
+      status_at_last_entry: 'UH',
+    }
+    const result = await buildPacket(withOcr)
+    expect(result.i821.skipped).toBe(0)
+    expect(result.i765.skipped).toBe(0)
+
+    const zip = await JSZip.loadAsync(result.zipBytes)
+    const i821Text = pdfToText(await zip.file('I-821.pdf')!.async('uint8array'))
+    const i765Text = pdfToText(await zip.file('I-765.pdf')!.async('uint8array'))
+
+    // A-Number must land in both forms.
+    expect(i821Text).toMatch(/987654321/)
+    expect(i765Text).toMatch(/987654321/)
+    // Class of admission ("UH") must land on I-765 Line 23.
+    expect(i765Text).toMatch(/UH/)
+  })
+
   it('skips I-765 entirely when wants_ead is false', async () => {
     const noEad: TPSAnswers = { ...fixtureInitialPath, wants_ead: false, ead_category: null }
     const result = await buildPacket(noEad)
