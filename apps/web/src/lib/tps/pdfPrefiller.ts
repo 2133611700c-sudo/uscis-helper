@@ -198,12 +198,24 @@ export async function prefill(
   await stampDraftAndProvenance(pdfDoc, opts)
 
   // 3. Update field appearances so the values display in any viewer.
+  // Best-effort try here, but ALSO pass updateFieldAppearances: false to
+  // .save() below — some USCIS forms (notably I-131) contain rich-text
+  // fields in their Part 13 "additional space" pages that pdf-lib
+  // cannot introspect (RichTextFieldReadError). Skipping the global
+  // appearance refresh on save is safe: Adobe Reader / Preview re-
+  // generate appearances on first open, so our written values still
+  // render visually. Our per-field setText() above already wrote the
+  // value into the AcroForm V entry, which is what USCIS scanners and
+  // viewers actually read.
   try {
     form.updateFieldAppearances()
   } catch {
     /* best-effort */
   }
 
-  const bytes = await pdfDoc.save({ useObjectStreams: false })
+  const bytes = await pdfDoc.save({
+    useObjectStreams: false,
+    updateFieldAppearances: false,
+  })
   return { bytes, applied, skipped }
 }
