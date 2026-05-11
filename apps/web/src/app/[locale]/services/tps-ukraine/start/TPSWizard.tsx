@@ -30,6 +30,7 @@ import { DocumentUploadScreen } from '@/components/tps/DocumentUploadScreen'
 import { SelfReviewScreen, type ReviewRow } from '@/components/tps/SelfReviewScreen'
 import { OcrFieldEditModal, inputTypeForField } from '@/components/tps/OcrFieldEditModal'
 import type { TpsExtractedField } from '@/lib/tps/types'
+import { toWinAnsiSafe, hasCyrillic } from '@/lib/tps/transliterate'
 
 type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -1026,25 +1027,37 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
     )
   }
   if (ocrPhase === 'ocr_review') {
-    const rows: ReviewRow[] = ocrFields.map((f) => ({
-      key: f.field,
-      label: prettyLabel(f.field, locale),
-      value: f.normalized_value,
-      critical: CRITICAL_FIELDS.has(f.field),
-      confidenceLow: f.review_required,
-      confidenceHint: f.review_required
-        ? (locale === 'uk' ? 'погано видно — перевірте'
-          : locale === 'ru' ? 'плохо видно — проверьте'
-          : locale === 'es' ? 'baja calidad — verifique'
-          : 'low confidence — verify')
-        : undefined,
-      source: f.source_document_id ? `${
-        locale === 'uk' ? 'з'
-        : locale === 'ru' ? 'из'
-        : locale === 'es' ? 'de'
-        : 'from'
-      } ${docKindLabel(f.source_document_id, locale)}` : undefined,
-    }))
+    const rows: ReviewRow[] = ocrFields.map((f) => {
+      const valueStr = f.normalized_value == null ? '' : String(f.normalized_value)
+      // Latin preview: only meaningful for Cyrillic-containing string fields
+      // (names, place of birth). USCIS forms render WinAnsi → user must see
+      // the exact Latin spelling we will write into the PDF before they
+      // press Next. If the value is already Latin (passport_number, dob,
+      // I-94 number, phone), latinPreview === value and the chip is hidden.
+      const latinPreview = valueStr && hasCyrillic(valueStr)
+        ? toWinAnsiSafe(valueStr)
+        : undefined
+      return {
+        key: f.field,
+        label: prettyLabel(f.field, locale),
+        value: f.normalized_value,
+        critical: CRITICAL_FIELDS.has(f.field),
+        confidenceLow: f.review_required,
+        confidenceHint: f.review_required
+          ? (locale === 'uk' ? 'погано видно — перевірте'
+            : locale === 'ru' ? 'плохо видно — проверьте'
+            : locale === 'es' ? 'baja calidad — verifique'
+            : 'low confidence — verify')
+          : undefined,
+        source: f.source_document_id ? `${
+          locale === 'uk' ? 'з'
+          : locale === 'ru' ? 'из'
+          : locale === 'es' ? 'de'
+          : 'from'
+        } ${docKindLabel(f.source_document_id, locale)}` : undefined,
+        latinPreview,
+      }
+    })
     const reviewTitle = locale === 'uk' ? 'Важливі дані для форми'
       : locale === 'ru' ? 'Важные данные для формы'
       : locale === 'es' ? 'Datos importantes para el formulario'
