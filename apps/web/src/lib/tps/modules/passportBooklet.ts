@@ -138,17 +138,79 @@ function stripBilingualNoise(s: string): string {
 }
 
 /**
+ * Latin → Cyrillic look-alike reverse map for Ukrainian/Russian context.
+ *
+ * Real-world failure mode: Google Vision often reads handwritten Cyrillic
+ * letters that visually match Latin glyphs as Latin. So "ТАРАС" (Cyrillic)
+ * arrives as "TAPAC" (Latin). For an all-look-alike string we would
+ * previously discard it as "junk" — losing the real name. With this map
+ * we recognize the substitution and rebuild the Cyrillic so KMU-55
+ * transliteration produces the correct USCIS-spelling ("Taras", not
+ * "Tarac" or worse).
+ *
+ * Only characters that have BOTH a Cyrillic glyph and a visually
+ * identical Latin glyph are in this map. Latin B/D/F/G/J/L/N/Q/R/S/U/V/W/Z
+ * are deliberately NOT included — they're not common look-alike
+ * substitutions and including them would cause false positives on
+ * actual English values.
+ */
+const LATIN_TO_CYRILLIC_LOOKALIKE: Record<string, string> = {
+  'A': 'А', 'B': 'В', 'C': 'С', 'E': 'Е', 'H': 'Н',
+  'I': 'І', 'K': 'К', 'M': 'М', 'O': 'О', 'P': 'Р',
+  'T': 'Т', 'X': 'Х', 'Y': 'У',
+  'a': 'а', 'c': 'с', 'e': 'е', 'i': 'і', 'o': 'о',
+  'p': 'р', 'x': 'х', 'y': 'у',
+}
+
+/**
+ * True when every character is either:
+ *   - whitespace / dash / apostrophe (separators)
+ *   - a Latin character that has a Cyrillic look-alike
+ * i.e. the string CAN be the Cyrillic value that Vision misread.
+ */
+function isAllLookalikeLatin(s: string): boolean {
+  if (!s) return false
+  let sawLetter = false
+  for (const ch of s) {
+    if (/\s|[-'’ʼ`]/u.test(ch)) continue
+    if (!(ch in LATIN_TO_CYRILLIC_LOOKALIKE)) return false
+    sawLetter = true
+  }
+  return sawLetter
+}
+
+/**
+ * Reverse-map Latin look-alike chars back to their Cyrillic equivalents.
+ * Non-look-alike Latin chars are preserved (so "Smith" → "Smith"),
+ * but in practice this is only called when isAllLookalikeLatin returned
+ * true.
+ */
+function unlookalike(s: string): string {
+  let out = ''
+  for (const ch of s) {
+    out += LATIN_TO_CYRILLIC_LOOKALIKE[ch] ?? ch
+  }
+  return out
+}
+
+/**
  * Did the cleaned value end up looking like junk? (e.g. only a separator
  * or only Latin label words). Used to know whether to fall back to the
  * NEXT line instead of returning a useless "value".
+ *
+ * Special case: if the value is all Latin LOOK-ALIKES (chars that have
+ * Cyrillic counterparts) AND ≥2 letters, it's likely real Cyrillic that
+ * Vision misread — treat as NOT junk. The caller is expected to reverse-
+ * map before transliterating.
  */
 function isValueJunk(s: string): boolean {
   if (!s || s.length < 2) return true
-  // No Cyrillic + no digits → probably leftover English label
   const hasCyrillic = /[А-ЯІЇЄҐа-яіїєґ]/u.test(s)
   const hasDigit = /\d/.test(s)
-  if (!hasCyrillic && !hasDigit) return true
-  return false
+  if (hasCyrillic || hasDigit) return false
+  // All-Latin: still acceptable if it's all-look-alike (Cyrillic misread).
+  if (isAllLookalikeLatin(s)) return false
+  return true
 }
 
 /**
@@ -223,9 +285,15 @@ function looksLikeLabel(text: string): boolean {
 
 /**
  * Title-case a Cyrillic name. "ИВАН" → "Иван", "ИВАН ПЕТРОВИЧ" → "Иван Петрович".
+ *
+ * Also handles the all-Latin-look-alike case: when Vision misread the
+ * Cyrillic name as Latin homoglyphs (e.g. "TAPAC" instead of "ТАРАС"),
+ * we reverse-map back to Cyrillic before title-casing. This is the
+ * crucial fix that lets booklet given_name extraction work in practice.
  */
 function titleCaseCyrillic(s: string): string {
-  return s
+  const restored = isAllLookalikeLatin(s) ? unlookalike(s) : s
+  return restored
     .toLowerCase()
     .split(/\s+/)
     .map((w) => (w.length > 0 ? w[0].toUpperCase() + w.slice(1) : w))
