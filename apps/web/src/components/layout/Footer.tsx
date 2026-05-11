@@ -48,7 +48,7 @@ export function Footer() {
                 {t('columns.resources.links.contact')}
               </Link>
               <Link href={`/${locale}/pricing`} className="text-slate-400 hover:text-white transition-colors">
-                Pricing
+                {t('columns.resources.links.pricing')}
               </Link>
             </nav>
           </div>
