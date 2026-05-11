@@ -12,6 +12,7 @@ import { DisclaimerSection } from '@/components/home/DisclaimerSection'
 import { CaseStatusChecker } from '@/components/home/CaseStatusChecker'
 import { Container } from '@/components/ui/Container'
 import { Section } from '@/components/ui/Section'
+import { ServiceBackBar } from '@/components/layout/ServiceBackBar'
 
 const SLUGS = [
   'parole-expires-soon',
@@ -171,6 +172,12 @@ export default async function ServicePage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
       />
+
+      {/* Big senior-friendly back button (visible on mobile where the
+          breadcrumb shrinks too small to tap). Mounted alongside the
+          desktop breadcrumb — both render but the back bar is the
+          primary recovery affordance for older users on phones. */}
+      <ServiceBackBar locale={locale} />
 
       {/* Breadcrumb */}
       <div className="bg-slate-50 border-b border-slate-100">

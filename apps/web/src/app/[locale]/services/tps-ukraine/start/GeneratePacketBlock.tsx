@@ -74,14 +74,43 @@ const COPY = {
     phone: 'Денний телефон', email: 'Email',
     generate: 'Згенерувати PDF-пакет (чернетка)',
     generating: 'Генерую…',
-    successHeader: 'Готово.',
-    success: 'Завантажте ZIP, відкрийте PDF у Adobe, перевірте кожне поле, підпишіть ручкою і відправте USCIS самостійно.',
+    successHeader: 'Готово. Що далі?',
+    success: 'PDF з вашими даними готові. Тепер уважно перевірте і відправте до USCIS самостійно.',
     download: 'Завантажити ZIP',
     again: 'Згенерувати ще раз',
     errorHeader: 'Не вдалося згенерувати.',
     missing: 'Незаповнені поля:',
     legal: 'Це чернетка. Messenginfo не подає документи в USCIS і не дає юридичних порад. Уважно перевіряйте все перед відправкою.',
     state_placeholder: 'CA',
+
+    nsZip: 'Що всередині ZIP-архіву',
+    nsZipI821: 'I-821.pdf — заява на TPS (13 сторінок).',
+    nsZipI765: 'I-765.pdf — заява на дозвіл на роботу (7 сторінок), якщо ви її обрали.',
+    nsZipReadme: 'README.txt — короткий путівник.',
+    nsSign: 'Де поставити підпис',
+    nsSignI821: 'I-821 — Частина 8 на сторінці 10. Підпишіть і поставте дату.',
+    nsSignI765: 'I-765 — Частина 3 на сторінці 4. Підпишіть і поставте дату.',
+    nsSignPenWarning: 'Підпис лише чорною або синьою ручкою на роздрукованому папері.',
+    nsPrint: 'Як друкувати',
+    nsPrintLines: 'Одностороння печать (single-sided). Без масштабування (100%, без "fit to page"). Папір A4 або US Letter.',
+    nsEnvelope: 'Що покласти в конверт',
+    nsEnvelopeI821: 'Заповнений і підписаний I-821.',
+    nsEnvelopeI765: 'Заповнений і підписаний I-765 (якщо подаєте EAD).',
+    nsEnvelopeFee: 'Чек/мані-ордер за держзбір USCIS — або I-912 (якщо просите звільнення).',
+    nsEnvelopeEvidence: 'Копії доказів проживання (НЕ оригінали).',
+    nsEnvelopePassport: 'Копія сторінки паспорта (НЕ оригінал).',
+    nsAddress: 'Куди надіслати',
+    nsAddressBody: 'USCIS приймає TPS у спеціальних адресах "Lockbox". Адреса залежить від вашого штату. Точну адресу для I-821 і I-765 завжди перевіряйте на офіційних сторінках USCIS:',
+    nsAddressI821Link: 'Адреси для I-821 →',
+    nsAddressI765Link: 'Адреси для I-765 →',
+    nsOnline: 'Або подайте онлайн',
+    nsOnlineBody: 'I-821 та I-765 (категорія TPS) можна подати онлайн через ваш USCIS-акаунт. Це швидше і дозволяє платити карткою. Але онлайн-подання НЕ підтримує I-912 (звільнення від оплати) — у цьому випадку лише папір.',
+    nsOnlineLink: 'Зайти в my.uscis.gov →',
+    nsSourcesTitle: 'Офіційні джерела USCIS',
+    nsSourceTpsPage: 'TPS Ukraine — країнова сторінка USCIS',
+    nsSourceI821: 'Форма I-821 (USCIS)',
+    nsSourceI765: 'Форма I-765 (USCIS)',
+    nsSourceTpsGeneral: 'TPS — загальні вимоги і докази',
   },
   ru: {
     toggleOpen: '↓ Заполнить готовый PDF-пакет (черновик)',
@@ -97,14 +126,43 @@ const COPY = {
     phone: 'Дневной телефон', email: 'Email',
     generate: 'Сгенерировать PDF-пакет (черновик)',
     generating: 'Генерирую…',
-    successHeader: 'Готово.',
-    success: 'Скачайте ZIP, откройте PDF в Adobe, проверьте каждое поле, подпишите ручкой и отправьте в USCIS сами.',
+    successHeader: 'Готово. Что дальше?',
+    success: 'PDF с вашими данными готовы. Теперь внимательно проверьте и отправьте в USCIS самостоятельно.',
     download: 'Скачать ZIP',
     again: 'Сгенерировать ещё раз',
     errorHeader: 'Не удалось сгенерировать.',
     missing: 'Незаполненные поля:',
     legal: 'Это черновик. Messenginfo не подаёт документы в USCIS и не даёт юридических советов. Внимательно проверяйте всё перед отправкой.',
     state_placeholder: 'CA',
+
+    nsZip: 'Что внутри ZIP-архива',
+    nsZipI821: 'I-821.pdf — заявление на TPS (13 страниц).',
+    nsZipI765: 'I-765.pdf — заявление на разрешение на работу (7 страниц), если вы его выбрали.',
+    nsZipReadme: 'README.txt — короткий путеводитель.',
+    nsSign: 'Где поставить подпись',
+    nsSignI821: 'I-821 — Часть 8 на странице 10. Подпишите и поставьте дату.',
+    nsSignI765: 'I-765 — Часть 3 на странице 4. Подпишите и поставьте дату.',
+    nsSignPenWarning: 'Подпись только чёрной или синей ручкой на распечатанной бумаге.',
+    nsPrint: 'Как печатать',
+    nsPrintLines: 'Односторонняя печать (single-sided). Без масштабирования (100%, без "fit to page"). Бумага A4 или US Letter.',
+    nsEnvelope: 'Что положить в конверт',
+    nsEnvelopeI821: 'Заполненный и подписанный I-821.',
+    nsEnvelopeI765: 'Заполненный и подписанный I-765 (если подаёте на EAD).',
+    nsEnvelopeFee: 'Чек/мани-ордер за госпошлину USCIS — или I-912 (если просите освобождение от оплаты).',
+    nsEnvelopeEvidence: 'Копии доказательств проживания (НЕ оригиналы).',
+    nsEnvelopePassport: 'Копия страницы паспорта (НЕ оригинал).',
+    nsAddress: 'Куда отправлять',
+    nsAddressBody: 'USCIS принимает TPS по специальным адресам "Lockbox". Адрес зависит от вашего штата. Точный адрес для I-821 и I-765 всегда проверяйте на официальных страницах USCIS:',
+    nsAddressI821Link: 'Адреса для I-821 →',
+    nsAddressI765Link: 'Адреса для I-765 →',
+    nsOnline: 'Или подайте онлайн',
+    nsOnlineBody: 'I-821 и I-765 (категория TPS) можно подать онлайн через ваш USCIS-аккаунт. Это быстрее и позволяет платить картой. Но онлайн-подача НЕ поддерживает I-912 (освобождение от оплаты) — в этом случае только бумага.',
+    nsOnlineLink: 'Зайти в my.uscis.gov →',
+    nsSourcesTitle: 'Официальные источники USCIS',
+    nsSourceTpsPage: 'TPS Ukraine — страновая страница USCIS',
+    nsSourceI821: 'Форма I-821 (USCIS)',
+    nsSourceI765: 'Форма I-765 (USCIS)',
+    nsSourceTpsGeneral: 'TPS — общие требования и доказательства',
   },
   en: {
     toggleOpen: '↓ Fill the PDF packet (draft)',
@@ -120,14 +178,43 @@ const COPY = {
     phone: 'Daytime phone', email: 'Email',
     generate: 'Generate PDF packet (draft)',
     generating: 'Generating…',
-    successHeader: 'Done.',
-    success: 'Download the ZIP, open the PDFs in Adobe, review every field, sign in ink, and mail to USCIS yourself.',
+    successHeader: 'Done. What next?',
+    success: 'Your PDFs are ready. Review them carefully and then mail or upload to USCIS yourself.',
     download: 'Download ZIP',
     again: 'Generate again',
     errorHeader: 'Could not generate.',
     missing: 'Missing fields:',
     legal: 'This is a draft. Messenginfo does not file documents with USCIS and does not provide legal advice. Review everything carefully before mailing.',
     state_placeholder: 'CA',
+
+    nsZip: 'What is inside the ZIP',
+    nsZipI821: 'I-821.pdf — TPS application (13 pages).',
+    nsZipI765: 'I-765.pdf — work permit application (7 pages), if you requested one.',
+    nsZipReadme: 'README.txt — short guide.',
+    nsSign: 'Where to sign',
+    nsSignI821: 'I-821 — Part 8 on page 10. Sign and date.',
+    nsSignI765: 'I-765 — Part 3 on page 4. Sign and date.',
+    nsSignPenWarning: 'Sign in black or blue ink on the printed paper.',
+    nsPrint: 'How to print',
+    nsPrintLines: 'Single-sided. No scaling (100%, NOT "fit to page"). A4 or US Letter paper.',
+    nsEnvelope: 'What to put in the envelope',
+    nsEnvelopeI821: 'Filled and signed I-821.',
+    nsEnvelopeI765: 'Filled and signed I-765 (if filing for EAD).',
+    nsEnvelopeFee: 'Check or money order for the USCIS fee — or I-912 (if requesting a fee waiver).',
+    nsEnvelopeEvidence: 'Copies of residence evidence (NOT originals).',
+    nsEnvelopePassport: 'Copy of your passport page (NOT the original).',
+    nsAddress: 'Where to mail',
+    nsAddressBody: 'USCIS accepts TPS at special "Lockbox" addresses. The address depends on your state. Always check the official USCIS filing-addresses pages for I-821 and I-765:',
+    nsAddressI821Link: 'I-821 mailing addresses →',
+    nsAddressI765Link: 'I-765 mailing addresses →',
+    nsOnline: 'Or file online',
+    nsOnlineBody: 'I-821 and I-765 (TPS category) can be filed online through your USCIS account. Online is faster and lets you pay by card. But online filing does NOT support I-912 (fee waiver) — paper only in that case.',
+    nsOnlineLink: 'Go to my.uscis.gov →',
+    nsSourcesTitle: 'Official USCIS sources',
+    nsSourceTpsPage: 'TPS Ukraine — USCIS country page',
+    nsSourceI821: 'Form I-821 (USCIS)',
+    nsSourceI765: 'Form I-765 (USCIS)',
+    nsSourceTpsGeneral: 'TPS — general requirements and evidence',
   },
   es: {
     toggleOpen: '↓ Llenar el paquete PDF (borrador)',
@@ -143,14 +230,43 @@ const COPY = {
     phone: 'Teléfono diurno', email: 'Email',
     generate: 'Generar paquete PDF (borrador)',
     generating: 'Generando…',
-    successHeader: 'Listo.',
-    success: 'Descargue el ZIP, abra los PDFs en Adobe, revise cada campo, firme con bolígrafo y envíe a USCIS usted mismo.',
+    successHeader: 'Listo. ¿Qué sigue?',
+    success: 'Sus PDFs están listos. Revíselos cuidadosamente y luego envíelos o cárguelos en USCIS usted mismo.',
     download: 'Descargar ZIP',
     again: 'Generar otra vez',
     errorHeader: 'No se pudo generar.',
     missing: 'Campos faltantes:',
     legal: 'Esto es un borrador. Messenginfo no presenta documentos ante USCIS ni brinda asesoría legal. Revise todo cuidadosamente antes de enviar.',
     state_placeholder: 'CA',
+
+    nsZip: 'Qué hay dentro del ZIP',
+    nsZipI821: 'I-821.pdf — solicitud de TPS (13 páginas).',
+    nsZipI765: 'I-765.pdf — solicitud de permiso de trabajo (7 páginas), si la solicitó.',
+    nsZipReadme: 'README.txt — guía corta.',
+    nsSign: 'Dónde firmar',
+    nsSignI821: 'I-821 — Parte 8 en la página 10. Firme y ponga la fecha.',
+    nsSignI765: 'I-765 — Parte 3 en la página 4. Firme y ponga la fecha.',
+    nsSignPenWarning: 'Firme solo con bolígrafo azul o negro en el papel impreso.',
+    nsPrint: 'Cómo imprimir',
+    nsPrintLines: 'Una cara (single-sided). Sin escalado (100%, NO "ajustar a página"). Papel A4 o US Letter.',
+    nsEnvelope: 'Qué poner en el sobre',
+    nsEnvelopeI821: 'I-821 llenado y firmado.',
+    nsEnvelopeI765: 'I-765 llenado y firmado (si solicita EAD).',
+    nsEnvelopeFee: 'Cheque o money order por la tarifa de USCIS — o I-912 (si solicita exención de pago).',
+    nsEnvelopeEvidence: 'Copias de evidencias de residencia (NO originales).',
+    nsEnvelopePassport: 'Copia de la página del pasaporte (NO el original).',
+    nsAddress: 'A dónde enviar',
+    nsAddressBody: 'USCIS recibe TPS en direcciones "Lockbox" especiales. La dirección depende de su estado. Siempre confirme la dirección oficial de USCIS para I-821 e I-765:',
+    nsAddressI821Link: 'Direcciones para I-821 →',
+    nsAddressI765Link: 'Direcciones para I-765 →',
+    nsOnline: 'O presente en línea',
+    nsOnlineBody: 'I-821 e I-765 (categoría TPS) se pueden presentar en línea a través de su cuenta de USCIS. En línea es más rápido y permite pagar con tarjeta. Pero la presentación en línea NO admite I-912 (exención de tarifa) — solo papel en ese caso.',
+    nsOnlineLink: 'Ir a my.uscis.gov →',
+    nsSourcesTitle: 'Fuentes oficiales de USCIS',
+    nsSourceTpsPage: 'TPS Ucrania — página del país de USCIS',
+    nsSourceI821: 'Formulario I-821 (USCIS)',
+    nsSourceI765: 'Formulario I-765 (USCIS)',
+    nsSourceTpsGeneral: 'TPS — requisitos generales y evidencias',
   },
 } as const
 
@@ -274,6 +390,55 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad }: Pr
     border: '1px solid var(--border)', cursor: 'pointer',
   }
 
+  // Styles for the post-download instructions panel.
+  const postSection: React.CSSProperties = {
+    padding: '14px 16px',
+    marginBottom: 10,
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 10,
+  }
+  const postHeading: React.CSSProperties = {
+    fontSize: 15,
+    fontWeight: 800,
+    color: 'var(--text-1)',
+    marginBottom: 8,
+  }
+  const postBody: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: 1.5,
+    color: 'var(--text-2)',
+    marginBottom: 8,
+  }
+  const postList: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: 1.65,
+    color: 'var(--text-2)',
+    paddingLeft: 20,
+    marginBottom: 4,
+  }
+  const postWarn: React.CSSProperties = {
+    fontSize: 13,
+    lineHeight: 1.4,
+    color: 'var(--warning-text, #92400e)',
+    background: 'var(--warning-bg, #fef3c7)',
+    padding: '8px 10px',
+    borderRadius: 8,
+    marginTop: 6,
+  }
+  const postLink: React.CSSProperties = {
+    display: 'block',
+    padding: '10px 12px',
+    marginTop: 6,
+    background: 'var(--surface-2)',
+    color: 'var(--primary)',
+    fontSize: 14,
+    fontWeight: 700,
+    borderRadius: 8,
+    textDecoration: 'none',
+    border: '1px solid var(--border)',
+  }
+
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)}
@@ -378,13 +543,115 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad }: Pr
         </div>
       )}
       {zipUrl && (
-        <div style={{ marginTop: 12, padding: 12, background: 'var(--success-bg, #dcfce7)', color: 'var(--success-text, #166534)', borderRadius: 10, fontSize: 14 }}>
-          <p style={{ fontWeight: 700, marginBottom: 4 }}>{c.successHeader}</p>
-          <p style={{ marginBottom: 10, lineHeight: 1.4 }}>{c.success}</p>
-          <a href={zipUrl} download="tps-packet-draft.zip" style={{ display: 'inline-block', padding: '10px 14px', background: 'var(--success)', color: '#fff', fontWeight: 700, borderRadius: 10, textDecoration: 'none', marginRight: 8 }} data-testid="download-zip">
-            {c.download}
-          </a>
-          <button type="button" onClick={generate} style={{ ...secondary }}>{c.again}</button>
+        <div data-testid="post-download" style={{ marginTop: 12 }}>
+          {/* Success header + download */}
+          <div style={{ padding: 14, background: 'var(--success-bg, #dcfce7)', color: 'var(--success-text, #166534)', borderRadius: 10, fontSize: 14, marginBottom: 12 }}>
+            <p style={{ fontWeight: 800, fontSize: 16, marginBottom: 6 }}>{c.successHeader}</p>
+            <p style={{ marginBottom: 12, lineHeight: 1.45 }}>{c.success}</p>
+            <a
+              href={zipUrl}
+              download="tps-packet-draft.zip"
+              style={{
+                display: 'inline-block',
+                padding: '12px 18px',
+                background: 'var(--success)',
+                color: '#fff',
+                fontWeight: 800,
+                fontSize: 15,
+                borderRadius: 10,
+                textDecoration: 'none',
+                marginRight: 8,
+                boxShadow: '0 3px 14px rgba(22,163,74,0.30)',
+              }}
+              data-testid="download-zip"
+            >
+              ⬇ {c.download}
+            </a>
+            <button type="button" onClick={generate} style={{ ...secondary, marginLeft: 4 }}>{c.again}</button>
+          </div>
+
+          {/* What's in the ZIP */}
+          <section style={postSection}>
+            <h4 style={postHeading}>{c.nsZip}</h4>
+            <ul style={postList}>
+              <li>{c.nsZipI821}</li>
+              <li>{c.nsZipI765}</li>
+              <li>{c.nsZipReadme}</li>
+            </ul>
+          </section>
+
+          {/* Where to sign */}
+          <section style={postSection}>
+            <h4 style={postHeading}>{c.nsSign}</h4>
+            <ul style={postList}>
+              <li>{c.nsSignI821}</li>
+              <li>{c.nsSignI765}</li>
+            </ul>
+            <p style={postWarn}>{c.nsSignPenWarning}</p>
+          </section>
+
+          {/* How to print */}
+          <section style={postSection}>
+            <h4 style={postHeading}>{c.nsPrint}</h4>
+            <p style={postBody}>{c.nsPrintLines}</p>
+          </section>
+
+          {/* Envelope checklist */}
+          <section style={postSection}>
+            <h4 style={postHeading}>{c.nsEnvelope}</h4>
+            <ul style={postList}>
+              <li>{c.nsEnvelopeI821}</li>
+              <li>{c.nsEnvelopeI765}</li>
+              <li>{c.nsEnvelopeFee}</li>
+              <li>{c.nsEnvelopeEvidence}</li>
+              <li>{c.nsEnvelopePassport}</li>
+            </ul>
+          </section>
+
+          {/* Mailing address (link to USCIS official filing-addresses pages) */}
+          <section style={postSection}>
+            <h4 style={postHeading}>{c.nsAddress}</h4>
+            <p style={postBody}>{c.nsAddressBody}</p>
+            <a
+              href="https://www.uscis.gov/forms/filing-fees/form-i-821-filing-addresses"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={postLink}
+            >
+              {c.nsAddressI821Link}
+            </a>
+            <a
+              href="https://www.uscis.gov/forms/filing-fees/form-i-765-filing-addresses"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={postLink}
+            >
+              {c.nsAddressI765Link}
+            </a>
+          </section>
+
+          {/* Online filing alternative */}
+          <section style={postSection}>
+            <h4 style={postHeading}>{c.nsOnline}</h4>
+            <p style={postBody}>{c.nsOnlineBody}</p>
+            <a
+              href="https://my.uscis.gov"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={postLink}
+            >
+              {c.nsOnlineLink}
+            </a>
+          </section>
+
+          {/* Official sources */}
+          <section style={{ ...postSection, background: 'var(--surface-2)' }}>
+            <h4 style={postHeading}>{c.nsSourcesTitle}</h4>
+            <a href="https://www.uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine" target="_blank" rel="noopener noreferrer" style={postLink}>{c.nsSourceTpsPage} ↗</a>
+            <a href="https://www.uscis.gov/i-821" target="_blank" rel="noopener noreferrer" style={postLink}>{c.nsSourceI821} ↗</a>
+            <a href="https://www.uscis.gov/i-765" target="_blank" rel="noopener noreferrer" style={postLink}>{c.nsSourceI765} ↗</a>
+            <a href="https://www.uscis.gov/humanitarian/temporary-protected-status" target="_blank" rel="noopener noreferrer" style={postLink}>{c.nsSourceTpsGeneral} ↗</a>
+          </section>
         </div>
       )}
 

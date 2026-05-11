@@ -142,6 +142,9 @@ const T = {
     s5Print: '🖨 Роздрукувати підсумок',
     s5AttorneyWarn: '⚠ Через ваші відповіді (кримінальні питання чи невпевненість) ми рекомендуємо звернутися до ліцензованого імміграційного адвоката перед подачею.',
     s5AttorneyLink: 'Знайти legal services через USCIS →',
+
+    s6Title: '6. Готова форма для USCIS (чернетка)',
+    s6Body: 'Це останній крок. Ви введете дані, ми згенеруємо PDF із вашими відповідями вже в клітинках. Ви роздрукуєте, підпишете і надішлете до USCIS самостійно.',
   },
   ru: {
     back: '← Назад',
@@ -211,6 +214,9 @@ const T = {
     s5Print: '🖨 Распечатать итог',
     s5AttorneyWarn: '⚠ Из-за ваших ответов (уголовные вопросы или неуверенность) мы рекомендуем обратиться к лицензированному иммиграционному адвокату перед подачей.',
     s5AttorneyLink: 'Найти legal services через USCIS →',
+
+    s6Title: '6. Готовая форма для USCIS (черновик)',
+    s6Body: 'Это последний шаг. Вы введёте данные, мы сгенерируем PDF с вашими ответами уже в клетках. Вы распечатаете, подпишете и отправите в USCIS самостоятельно.',
   },
   en: {
     back: '← Back',
@@ -280,6 +286,9 @@ const T = {
     s5Print: '🖨 Print summary',
     s5AttorneyWarn: '⚠ Based on your answers (criminal questions or uncertainty) we recommend consulting a licensed immigration attorney before filing.',
     s5AttorneyLink: 'Find legal services via USCIS →',
+
+    s6Title: '6. Your USCIS forms (draft)',
+    s6Body: 'This is the final step. You enter your data, we generate PDFs with your answers already in the boxes. You print, sign, and mail to USCIS yourself.',
   },
   es: {
     back: '← Volver',
@@ -349,12 +358,20 @@ const T = {
     s5Print: '🖨 Imprimir resumen',
     s5AttorneyWarn: '⚠ Por sus respuestas (asuntos criminales o incertidumbre) recomendamos consultar a un abogado de inmigración con licencia antes de presentar.',
     s5AttorneyLink: 'Encontrar servicios legales por USCIS →',
+
+    s6Title: '6. Formulario listo para enviar (borrador)',
+    s6Body: 'Este es el último paso. Usted ingresa sus datos, generamos un PDF con sus respuestas ya en las casillas. Usted imprime, firma y envía a USCIS.',
   },
 } as const
 
 // ── component ───────────────────────────────────────────────────────────────
 
-const TOTAL_SCREENS = 5
+// Wizard length increased to 6: Step 6 is the dedicated "Заполнить
+// готовый PDF" screen. Per UX audit, having the prefill form auto-expanded
+// inside Step 5 felt "appeared unexpectedly". Splitting it into its own
+// step gives it proper signposting via the progress bar and lets the user
+// review the summary first, then explicitly opt into the form filling.
+const TOTAL_SCREENS = 6
 
 interface Props {
   locale: string
@@ -720,11 +737,24 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
         <button type="button" onClick={restart} style={{ ...secondaryBtn, display: 'block', width: '100%', textAlign: 'center', marginBottom: 10 }}>
           {t.s5Restart}
         </button>
+      </div>
+    )
+  }
 
-        {/* Phase 1 auto-fill: collects the remaining personal fields and
+  function ScreenS6() {
+    return (
+      <div>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', marginBottom: 10 }}>
+          {t.s6Title}
+        </h2>
+        <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 18, lineHeight: 1.5 }}>
+          {t.s6Body}
+        </p>
+        {/* GeneratePacketBlock collects the remaining personal fields and
             POSTs to /api/tps/generate-packet to download a ZIP with
             prefilled I-821 (+I-765 if wants_ead). DRAFT watermark + XFA
-            strip handled server-side. */}
+            strip handled server-side. Promoted from "expanded panel on
+            S5" to dedicated step per UX audit. */}
         <GeneratePacketBlock
           locale={locale}
           filingPath={answers.filing_path}
@@ -762,6 +792,7 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
         {step === 3 && <ScreenS3 />}
         {step === 4 && <ScreenS4 />}
         {step === 5 && <ScreenS5 />}
+        {step === 6 && <ScreenS6 />}
       </section>
 
       {step < TOTAL_SCREENS && (

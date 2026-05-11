@@ -1,0 +1,175 @@
+/**
+ * buildPacket fixture tests — end-to-end PDF prefill on the server side.
+ *
+ * Locked guards:
+ *   1. Synthetic fixture (no real PII).
+ *   2. I-821 must apply >= 20 fields (threshold below today's 26 to allow
+ *      USCIS rename churn without breaking CI; alert if it ever drops).
+ *   3. I-765 must apply >= 15 fields (today's 21; same buffer).
+ *   4. Zero skipped fields when the answers are minimally complete.
+ *   5. Edition stamps preserved in the rendered PDF text:
+ *      I-821 → "Form I-821 Edition 01/20/25"
+ *      I-765 → "Form I-765 Edition 08/21/25"
+ *   6. Each prefilled value lands somewhere in the extracted PDF text
+ *      (smoke that the form-field map actually wrote it).
+ *
+ * Why this matters: the prod-only bugs we hit (encryption, XFA-hybrid,
+ * minified constructor names) all silently passed typecheck and would
+ * have passed any UI test that didn't actually open the rendered PDF.
+ * This test runs the same code path the production API does.
+ */
+
+import { describe, it, expect } from 'vitest'
+import { execSync } from 'node:child_process'
+import { writeFileSync, unlinkSync, existsSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+import JSZip from 'jszip'
+
+import { buildPacket } from '../packetBuilder'
+import type { TPSAnswers } from '../answers'
+
+// ── Synthetic fixture (no real PII — generic placeholder strings) ────────────
+const fixtureInitialPath: TPSAnswers = {
+  family_name: 'TESTFAMILY',
+  given_name: 'TESTGIVEN',
+  middle_name: 'TESTMID',
+  dob: '1980-01-15',
+  sex: 'M',
+  country_of_birth: 'Ukraine',
+  country_of_nationality: 'Ukraine',
+  passport_number: 'XX0000000',
+  passport_country_of_issuance: 'Ukraine',
+  passport_expiration_date: '2030-12-31',
+  us_address_street: '100 Test St',
+  us_address_city: 'Testville',
+  us_address_state: 'CA',
+  us_address_zip: '90001',
+  mailing_same_as_physical: true,
+  last_entry_date: '2023-05-01',
+  i94_admission_number: '00000000001',
+  filing_path: 'initial',
+  wants_ead: true,
+  ead_category: 'a12',
+  daytime_phone: '5550000000',
+  email: 'test@example.invalid',
+  has_criminal_concern: false,
+  has_prior_tps_denial: false,
+  left_us_without_advance_parole: false,
+}
+
+// Helper: extract text from a PDF buffer using poppler's pdftotext.
+function pdfToText(bytes: Uint8Array): string {
+  const path = join(tmpdir(), `packet-test-${Date.now()}-${Math.random().toString(36).slice(2)}.pdf`)
+  writeFileSync(path, bytes)
+  try {
+    return execSync(`pdftotext -layout "${path}" - 2>/dev/null`, { encoding: 'utf-8' })
+  } catch {
+    return ''
+  } finally {
+    if (existsSync(path)) unlinkSync(path)
+  }
+}
+
+describe('buildPacket — TPS Ukraine initial-path fixture', () => {
+  it('produces a ZIP with I-821.pdf, I-765.pdf, README.txt and applies fields without skips', async () => {
+    const result = await buildPacket(fixtureInitialPath)
+
+    expect(result.zipBytes.byteLength).toBeGreaterThan(100_000)
+    expect(result.i821.applied).toBeGreaterThanOrEqual(20)
+    expect(result.i821.skipped).toBe(0)
+    expect(result.i765.applied).toBeGreaterThanOrEqual(15)
+    expect(result.i765.skipped).toBe(0)
+
+    // Unzip and assert structure
+    const zip = await JSZip.loadAsync(result.zipBytes)
+    expect(zip.file('I-821.pdf')).not.toBeNull()
+    expect(zip.file('I-765.pdf')).not.toBeNull()
+    expect(zip.file('README.txt')).not.toBeNull()
+  })
+
+  it('preserves the official USCIS edition stamps inside the rendered PDFs', async () => {
+    const result = await buildPacket(fixtureInitialPath)
+    const zip = await JSZip.loadAsync(result.zipBytes)
+
+    const i821Bytes = await zip.file('I-821.pdf')!.async('uint8array')
+    const i765Bytes = await zip.file('I-765.pdf')!.async('uint8array')
+
+    const i821Text = pdfToText(i821Bytes)
+    const i765Text = pdfToText(i765Bytes)
+
+    // Edition stamps must survive the prefill + flatten round trip.
+    expect(i821Text).toMatch(/Form I-821 Edition 01\/20\/25/)
+    expect(i765Text).toMatch(/Form I-765 Edition 08\/21\/25/)
+  })
+
+  it('writes the applicant identity into both PDFs (proves the field map wired correctly)', async () => {
+    const result = await buildPacket(fixtureInitialPath)
+    const zip = await JSZip.loadAsync(result.zipBytes)
+
+    const i821Text = pdfToText(await zip.file('I-821.pdf')!.async('uint8array'))
+    const i765Text = pdfToText(await zip.file('I-765.pdf')!.async('uint8array'))
+
+    // Family name + given name must appear in both forms.
+    expect(i821Text).toMatch(/TESTFAMILY/)
+    expect(i821Text).toMatch(/TESTGIVEN/)
+    expect(i765Text).toMatch(/TESTFAMILY/)
+    expect(i765Text).toMatch(/TESTGIVEN/)
+
+    // I-821 specific fields: passport number, DOB in USCIS format MM/DD/YYYY
+    expect(i821Text).toMatch(/XX0000000/)
+    expect(i821Text).toMatch(/01\/15\/1980/)
+
+    // I-765 specific: passport number, DOB, daytime phone, email
+    expect(i765Text).toMatch(/XX0000000/)
+    expect(i765Text).toMatch(/01\/15\/1980/)
+    expect(i765Text).toMatch(/test@example\.invalid/)
+  })
+
+  it('handles re-registration path with EAD category C19', async () => {
+    const reReg: TPSAnswers = { ...fixtureInitialPath, filing_path: 're_registration', ead_category: 'c19' }
+    const result = await buildPacket(reReg)
+    expect(result.i821.applied).toBeGreaterThanOrEqual(20)
+    expect(result.i821.skipped).toBe(0)
+    expect(result.i765.applied).toBeGreaterThanOrEqual(15)
+    expect(result.i765.skipped).toBe(0)
+  })
+
+  it('skips I-765 entirely when wants_ead is false', async () => {
+    const noEad: TPSAnswers = { ...fixtureInitialPath, wants_ead: false, ead_category: null }
+    const result = await buildPacket(noEad)
+    expect(result.i821.applied).toBeGreaterThanOrEqual(20)
+    expect(result.i765.applied).toBe(0)
+    expect(result.i765.skipped).toBe(0)
+
+    const zip = await JSZip.loadAsync(result.zipBytes)
+    expect(zip.file('I-821.pdf')).not.toBeNull()
+    // No EAD requested -> no I-765 in the ZIP.
+    expect(zip.file('I-765.pdf')).toBeNull()
+  })
+})
+
+// ── Forms manifest edition-drift guard ────────────────────────────────────────
+
+describe('forms manifest edition drift guard', () => {
+  it('forms_manifest.json reports every form as current_from_official_page', async () => {
+    const path = join(process.cwd(), '..', '..', 'docs/uscis/forms/tps/forms_manifest.json')
+    // Try repo-root resolution first (running tests from apps/web), fall
+    // back to cwd-resolved path (running from repo root or CI).
+    let manifestText: string
+    try {
+      manifestText = (await import('node:fs')).readFileSync(path, 'utf-8')
+    } catch {
+      const altPath = join(process.cwd(), 'docs/uscis/forms/tps/forms_manifest.json')
+      manifestText = (await import('node:fs')).readFileSync(altPath, 'utf-8')
+    }
+    const manifest = JSON.parse(manifestText) as {
+      forms: Record<string, { edition_match: string }>
+    }
+    const offenders = Object.entries(manifest.forms)
+      .filter(([, m]) => m.edition_match !== 'current_from_official_page')
+      .map(([k]) => k)
+    expect(offenders).toEqual([])
+  })
+})
