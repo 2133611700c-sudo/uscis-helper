@@ -99,9 +99,19 @@ function uscisDateToIso(d: string | null): string | null {
 
 /**
  * Find the two MRZ lines in an OcrResult. Returns null if not found.
+ *
+ * Strategy A: look at OcrResult.lines for two adjacent lines that
+ *   independently match TD3 shape. This is the clean case.
+ *
+ * Strategy B (fallback): Google Vision sometimes merges the two MRZ
+ *   lines into a single OcrLine with whitespace between them, even
+ *   though raw_text preserves the newline. When strategy A fails,
+ *   split raw_text on newlines, find adjacent MRZ-shape rows, and
+ *   synthesise OcrLine wrappers using the original line's bbox so
+ *   provenance still works for downstream agents.
  */
 function locateMrzLines(ocr: OcrResult): { line1: OcrLine; line2: OcrLine } | null {
-  // Build candidates: lines on the lower half of the page with high MRZ ratio.
+  // ── Strategy A: clean per-line lookup ─────────────────────────────────────
   const candidates: OcrLine[] = []
   for (const line of ocr.lines) {
     const shape = toMrzShape(line.text)
@@ -109,31 +119,65 @@ function locateMrzLines(ocr: OcrResult): { line1: OcrLine; line2: OcrLine } | nu
     if (mrzCharRatio(shape) < MIN_MRZ_RATIO) continue
     candidates.push(line)
   }
-  if (candidates.length < 2) return null
-
-  // Sort by y (top to bottom) and look for two adjacent lines.
-  candidates.sort((a, b) => a.bbox.y - b.bbox.y)
-
-  // The first MRZ line of a TD3 passport starts with "P" (document type).
-  for (let i = 0; i < candidates.length - 1; i++) {
-    const top = candidates[i]
-    const next = candidates[i + 1]
-    const topShape = toMrzShape(top.text)
-    // Adjacency check: lines are within 5% of each other on Y axis.
-    const gap = next.bbox.y - (top.bbox.y + top.bbox.height)
-    if (gap > 0.05) continue
-    if (topShape.startsWith('P')) {
-      return { line1: top, line2: next }
+  if (candidates.length >= 2) {
+    candidates.sort((a, b) => a.bbox.y - b.bbox.y)
+    for (let i = 0; i < candidates.length - 1; i++) {
+      const top = candidates[i]
+      const next = candidates[i + 1]
+      const topShape = toMrzShape(top.text)
+      const gap = next.bbox.y - (top.bbox.y + top.bbox.height)
+      if (gap > 0.05) continue
+      if (topShape.startsWith('P')) return { line1: top, line2: next }
+    }
+    // Last-two fallback within strategy A.
+    if (candidates.length >= 2) {
+      return {
+        line1: candidates[candidates.length - 2],
+        line2: candidates[candidates.length - 1],
+      }
     }
   }
 
-  // Fallback: take the bottom two candidates regardless of starting char.
-  // The check digits will catch a wrong pair.
-  if (candidates.length >= 2) {
-    const last = candidates[candidates.length - 1]
-    const prev = candidates[candidates.length - 2]
-    return { line1: prev, line2: last }
+  // ── Strategy B: raw_text newline split ────────────────────────────────────
+  // Vision frequently merges MRZ lines into one OcrLine but preserves
+  // \n in raw_text. Split there and rebuild.
+  const rawLines = (ocr.raw_text ?? '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean)
+  // Try every pair of adjacent rows.
+  for (let i = 0; i < rawLines.length - 1; i++) {
+    const a = toMrzShape(rawLines[i])
+    const b = toMrzShape(rawLines[i + 1])
+    if (a.length < TD3_LINE_LEN_MIN || a.length > TD3_LINE_LEN_MAX) continue
+    if (b.length < TD3_LINE_LEN_MIN || b.length > TD3_LINE_LEN_MAX) continue
+    if (mrzCharRatio(a) < MIN_MRZ_RATIO) continue
+    if (mrzCharRatio(b) < MIN_MRZ_RATIO) continue
+    // Found two adjacent MRZ-shape rows. Build synthetic OcrLine wrappers.
+    // Reuse the bbox/confidence of the OcrLine that contained both rows
+    // (typically the first/only OcrLine).
+    const sourceLine = ocr.lines[0] ?? null
+    const bboxA = sourceLine?.bbox ?? { x: 0, y: 0.85, width: 1, height: 0.05 }
+    const bboxB = sourceLine?.bbox ?? { x: 0, y: 0.9, width: 1, height: 0.05 }
+    const confidence = sourceLine?.confidence ?? null
+    const synthA: OcrLine = {
+      id: 'l_raw_a',
+      text: rawLines[i],
+      page: 1,
+      bbox: bboxA,
+      words: [],
+      confidence: confidence ?? undefined,
+      source: 'google_vision_raw_text_split',
+    }
+    const synthB: OcrLine = {
+      id: 'l_raw_b',
+      text: rawLines[i + 1],
+      page: 1,
+      bbox: bboxB,
+      words: [],
+      confidence: confidence ?? undefined,
+      source: 'google_vision_raw_text_split',
+    }
+    return { line1: synthA, line2: synthB }
   }
+
   return null
 }
 
