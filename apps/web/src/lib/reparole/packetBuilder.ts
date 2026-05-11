@@ -24,6 +24,7 @@ import path from 'node:path'
 import type { ReParoleAnswers } from './answers'
 import { buildI131Ops } from './i131FieldMap'
 import { prefill } from '@/lib/tps/pdfPrefiller'
+import { assertFormIntegrity } from '@/lib/tps/formIntegrity'
 
 // Edition date verified against uscis.gov on 2026-05-11 and stamped on
 // the PDF footer ("Form I-131 Edition 01/20/25"). If USCIS publishes a
@@ -42,6 +43,9 @@ export interface ReParolePacketResult {
 
 export async function buildReParoleI131(answers: ReParoleAnswers): Promise<ReParolePacketResult> {
   const i131Bytes = await fs.readFile(publicPdfPath('i-131.pdf'))
+  // CB.6 — Runtime integrity guard. Fails fast if the on-disk PDF was
+  // replaced without updating PINNED_HASHES + field map together.
+  assertFormIntegrity('i-131.pdf', i131Bytes)
   const ops = buildI131Ops(answers)
 
   const result = await prefill(new Uint8Array(i131Bytes), ops, {
