@@ -26,6 +26,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import GeneratePacketBlock from './GeneratePacketBlock'
+import { DocumentUploadScreen } from '@/components/tps/DocumentUploadScreen'
+import { SelfReviewScreen, type ReviewRow } from '@/components/tps/SelfReviewScreen'
+import type { TpsExtractedField } from '@/lib/tps/types'
 
 type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -87,6 +90,9 @@ const T = {
     s1Reg: 'Продовжую (вже мав TPS раніше)',
     s1Unknown: 'Не впевнений',
     s1Hint: 'Це найважливіший вибір — від нього залежать наступні кроки та форми.',
+    s1OcrCta: '📷 У мене є фото документів — завантажити',
+    s1OcrHint: 'Ми прочитаємо паспорт / I-94 / EAD і автоматично підставимо дані у форму.',
+    ocrDone: 'Готово! Прочитано полів: {n}. Ми підставимо їх у форму на останньому кроці.',
 
     s2Title: '2. Документи та дата прибуття',
     s2Passport: 'У вас є дійсний паспорт?',
@@ -159,6 +165,9 @@ const T = {
     s1Reg: 'Продлеваю (TPS у меня уже был)',
     s1Unknown: 'Не уверен',
     s1Hint: 'Это самый главный выбор — от него зависят все следующие шаги и формы.',
+    s1OcrCta: '📷 У меня есть фото документов — загрузить',
+    s1OcrHint: 'Мы прочитаем паспорт / I-94 / EAD и автоматически подставим данные в форму.',
+    ocrDone: 'Готово! Прочитано полей: {n}. Подставим их в форму на последнем шаге.',
 
     s2Title: '2. Документы и дата прибытия',
     s2Passport: 'У вас есть действующий паспорт?',
@@ -231,6 +240,9 @@ const T = {
     s1Reg: 'Extension (re-registration)',
     s1Unknown: 'Not sure',
     s1Hint: 'If unsure — we will show both paths in the summary.',
+    s1OcrCta: '📷 I have photos of my documents — upload',
+    s1OcrHint: 'We will read your passport / I-94 / EAD and prefill the form for you.',
+    ocrDone: 'Done! {n} fields read. We will prefill them on the final step.',
 
     s2Title: '2. Identity and arrival',
     s2Passport: 'Do you have a valid passport?',
@@ -303,6 +315,9 @@ const T = {
     s1Reg: 'Extensión (re-registración)',
     s1Unknown: 'No estoy seguro',
     s1Hint: 'Si no está seguro — mostraremos ambos caminos en el resumen.',
+    s1OcrCta: '📷 Tengo fotos de mis documentos — subir',
+    s1OcrHint: 'Leeremos su pasaporte / I-94 / EAD y prellenaremos el formulario.',
+    ocrDone: 'Listo! {n} campos leídos. Los prellenaremos en el último paso.',
 
     s2Title: '2. Identidad y llegada',
     s2Passport: '¿Tiene pasaporte vigente?',
@@ -364,6 +379,110 @@ const T = {
   },
 } as const
 
+// ── OCR review helpers ──────────────────────────────────────────────────────
+
+/**
+ * Fields whose absence should BLOCK the user from leaving the self-review
+ * screen. Source: I-821 Part 1 + Part 4 "must-have" cells. EAD-specific
+ * fields (a_number, ead_category_on_card, ead_expiration_date) are NOT
+ * critical here — they only matter if the user is also filing I-765, and
+ * the I-765 form on Step 6 has its own validation.
+ */
+const CRITICAL_FIELDS: ReadonlySet<string> = new Set([
+  'family_name',
+  'given_name',
+  'dob',
+  'passport_number',
+  'passport_expiration_date',
+])
+
+/**
+ * Localized human label for an extracted field key. Used by the
+ * SelfReviewScreen rows. We intentionally keep this in TPSWizard rather
+ * than in lib/tps — these are user-facing strings, not engine concerns,
+ * and they need to honor the wizard's locale prop.
+ */
+function prettyLabel(field: string, locale: Locale): string {
+  const L: Record<string, Record<Locale, string>> = {
+    family_name: {
+      uk: 'Прізвище', ru: 'Фамилия', en: 'Family name', es: 'Apellido',
+    },
+    given_name: {
+      uk: 'Ім’я', ru: 'Имя', en: 'Given name', es: 'Nombre',
+    },
+    middle_name: {
+      uk: 'По батькові', ru: 'Отчество', en: 'Middle name', es: 'Segundo nombre',
+    },
+    dob: {
+      uk: 'Дата народження', ru: 'Дата рождения', en: 'Date of birth', es: 'Fecha de nacimiento',
+    },
+    sex: {
+      uk: 'Стать', ru: 'Пол', en: 'Sex', es: 'Sexo',
+    },
+    country_of_nationality: {
+      uk: 'Громадянство', ru: 'Гражданство', en: 'Nationality', es: 'Nacionalidad',
+    },
+    country_of_birth: {
+      uk: 'Країна народження', ru: 'Страна рождения', en: 'Country of birth', es: 'País de nacimiento',
+    },
+    passport_number: {
+      uk: 'Номер паспорта', ru: 'Номер паспорта', en: 'Passport number', es: 'Número de pasaporte',
+    },
+    passport_country_of_issuance: {
+      uk: 'Країна видачі паспорта', ru: 'Страна выдачи паспорта', en: 'Passport country of issuance', es: 'País emisor del pasaporte',
+    },
+    passport_expiration_date: {
+      uk: 'Паспорт дійсний до', ru: 'Паспорт действителен до', en: 'Passport expiration', es: 'Vencimiento del pasaporte',
+    },
+    i94_admission_number: {
+      uk: 'Номер I-94', ru: 'Номер I-94', en: 'I-94 admission number', es: 'Número de admisión I-94',
+    },
+    i94_class_of_admission: {
+      uk: 'Клас в’їзду (I-94)', ru: 'Класс въезда (I-94)', en: 'Class of admission (I-94)', es: 'Clase de admisión (I-94)',
+    },
+    last_entry_date: {
+      uk: 'Дата останнього в’їзду', ru: 'Дата последнего въезда', en: 'Last entry date', es: 'Fecha del último ingreso',
+    },
+    i94_admit_until: {
+      uk: 'I-94 дійсний до', ru: 'I-94 действителен до', en: 'I-94 admit until', es: 'I-94 válido hasta',
+    },
+    a_number: {
+      uk: 'A-номер (на EAD)', ru: 'A-номер (на EAD)', en: 'A-Number (from EAD)', es: 'A-Number (de EAD)',
+    },
+    ead_category_on_card: {
+      uk: 'Категорія EAD', ru: 'Категория EAD', en: 'EAD category', es: 'Categoría EAD',
+    },
+    ead_expiration_date: {
+      uk: 'EAD дійсний до', ru: 'EAD действителен до', en: 'EAD expiration', es: 'Vencimiento del EAD',
+    },
+  }
+  return L[field]?.[locale] ?? field
+}
+
+/**
+ * Human description of WHICH document a field came from. Used to populate
+ * the SelfReviewScreen `source` label so the user sees "Фамилия из паспорта"
+ * rather than "Фамилия из doc_passport_1234".
+ *
+ * Heuristic: source_document_id values from DocumentUploadScreen start
+ * with the slot name. If we can't infer cleanly, return the raw id —
+ * that's still better than nothing, and the user is unlikely to see this
+ * code path because slots are tagged on upload.
+ */
+function docKindLabel(documentId: string, locale: Locale): string {
+  const id = (documentId || '').toLowerCase()
+  if (id.includes('passport')) {
+    return locale === 'uk' ? 'паспорта' : locale === 'ru' ? 'паспорта' : locale === 'es' ? 'pasaporte' : 'passport'
+  }
+  if (id.includes('i94') || id.includes('i_94') || id.includes('i-94')) {
+    return 'I-94'
+  }
+  if (id.includes('ead')) {
+    return 'EAD'
+  }
+  return documentId
+}
+
 // ── component ───────────────────────────────────────────────────────────────
 
 // Wizard length increased to 6: Step 6 is the dedicated "Заполнить
@@ -386,6 +505,15 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
   const [step, setStep] = useState(1)
   const [answers, setAnswers] = useState<TPSAnswers>(DEFAULTS)
   const [hydrated, setHydrated] = useState(false)
+
+  // OCR mini-flow state. Lives alongside the wizard rather than inside its
+  // step machine so we never break existing localStorage migrations. When
+  // user clicks the "I have document photos" CTA on Step 1 we switch the
+  // page into 'ocr_upload' → 'ocr_review' → resume wizard at Step 1 with
+  // extracted fields cached for GeneratePacketBlock to consume.
+  const [ocrPhase, setOcrPhase] = useState<'wizard' | 'ocr_upload' | 'ocr_review'>('wizard')
+  const [ocrFields, setOcrFields] = useState<TpsExtractedField[]>([])
+  const [ocrAnyManualReview, setOcrAnyManualReview] = useState<boolean>(false)
 
   // hydrate from localStorage
   // Per UX audit: a returning user was being dropped onto step 5 because
@@ -518,7 +646,56 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
         <button type="button" style={choiceCard(answers.filing_path === 'unknown')} onClick={() => update({ filing_path: 'unknown', has_prior_tps: null })}>
           {t.s1Unknown}
         </button>
-        <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>{t.s1Hint}</p>
+
+        {/* OCR escape hatch — placed AFTER the path choice so the user
+            answers the most-important question first (initial vs. re-
+            registration drives every later screen). The CTA is intentionally
+            understated: it's a faster path for users with photos, not a
+            replacement for the wizard. We do NOT block on path being chosen
+            because document fields are independent of filing path. */}
+        <button
+          type="button"
+          data-testid="tps-ocr-cta"
+          onClick={() => setOcrPhase('ocr_upload')}
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '14px 16px',
+            marginTop: 18,
+            background: 'var(--surface-2)',
+            color: 'var(--text-1)',
+            fontSize: 15,
+            fontWeight: 700,
+            borderRadius: 12,
+            border: '1px dashed var(--primary)',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          {t.s1OcrCta}
+        </button>
+        <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6, marginBottom: 6 }}>{t.s1OcrHint}</p>
+
+        {ocrFields.length > 0 && (
+          <p
+            data-testid="tps-ocr-done-banner"
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: ocrAnyManualReview ? 'var(--warning-text, #92400e)' : 'var(--success)',
+              background: ocrAnyManualReview ? 'var(--warning-bg, #fef3c7)' : 'var(--success-bg, #dcfce7)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '10px 12px',
+              marginTop: 8,
+              marginBottom: 6,
+            }}
+          >
+            {t.ocrDone.replace('{n}', String(ocrFields.length))}
+          </p>
+        )}
+
+        <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 10 }}>{t.s1Hint}</p>
       </div>
     )
   }
@@ -759,8 +936,94 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
           locale={locale}
           filingPath={answers.filing_path}
           wantsEad={answers.wants_ead}
+          preExtracted={ocrFields}
         />
       </div>
+    )
+  }
+
+  // ── OCR phase short-circuits ───────────────────────────────────────────────
+  // When the user is in the document-upload or self-review phase we render
+  // a focused fullscreen flow instead of the wizard. This keeps the OCR UX
+  // simple — one job per screen — and avoids interleaving "your data is
+  // being read" with the unrelated step-2 yes/no questions.
+  if (ocrPhase === 'ocr_upload') {
+    return (
+      <DocumentUploadScreen
+        locale={locale}
+        onComplete={(result) => {
+          setOcrFields(result.fields)
+          setOcrAnyManualReview(result.anyManualReview)
+          setOcrPhase('ocr_review')
+        }}
+        onBack={() => setOcrPhase('wizard')}
+        onSkipAll={() => setOcrPhase('wizard')}
+      />
+    )
+  }
+  if (ocrPhase === 'ocr_review') {
+    const rows: ReviewRow[] = ocrFields.map((f) => ({
+      key: f.field,
+      label: prettyLabel(f.field, locale),
+      value: f.normalized_value,
+      critical: CRITICAL_FIELDS.has(f.field),
+      confidenceLow: f.review_required,
+      confidenceHint: f.review_required
+        ? (locale === 'uk' ? 'погано видно — перевірте'
+          : locale === 'ru' ? 'плохо видно — проверьте'
+          : locale === 'es' ? 'baja calidad — verifique'
+          : 'low confidence — verify')
+        : undefined,
+      source: f.source_document_id ? `${
+        locale === 'uk' ? 'з'
+        : locale === 'ru' ? 'из'
+        : locale === 'es' ? 'de'
+        : 'from'
+      } ${docKindLabel(f.source_document_id, locale)}` : undefined,
+    }))
+    const reviewTitle = locale === 'uk' ? 'Важливі дані для форми'
+      : locale === 'ru' ? 'Важные данные для формы'
+      : locale === 'es' ? 'Datos importantes para el formulario'
+      : 'Key fields for the form'
+
+    return (
+      <SelfReviewScreen
+        locale={locale}
+        groupTitle={reviewTitle}
+        rows={rows}
+        onEdit={(rowKey) => {
+          // Minimal-friction inline edit: prompt() is intentionally
+          // primitive — a dedicated edit modal is on the roadmap, but for
+          // launch this covers the 95% "OCR got it wrong by one letter"
+          // case without forcing a second component into this PR. The
+          // prompt is localized below.
+          const target = ocrFields.find((f) => f.field === rowKey)
+          if (!target) return
+          const promptMsg = locale === 'uk' ? `Виправте: ${prettyLabel(rowKey, locale)}`
+            : locale === 'ru' ? `Исправьте: ${prettyLabel(rowKey, locale)}`
+            : locale === 'es' ? `Corregir: ${prettyLabel(rowKey, locale)}`
+            : `Edit: ${prettyLabel(rowKey, locale)}`
+          const initial = target.normalized_value?.toString() ?? ''
+          const next = typeof window !== 'undefined' ? window.prompt(promptMsg, initial) : null
+          if (next === null) return // user cancelled
+          const trimmed = next.trim()
+          setOcrFields((prev) =>
+            prev.map((f) =>
+              f.field === rowKey
+                ? {
+                    ...f,
+                    normalized_value: trimmed,
+                    raw_value: trimmed,
+                    extraction_source: 'user_corrected',
+                    review_required: trimmed === '',
+                  }
+                : f,
+            ),
+          )
+        }}
+        onBack={() => setOcrPhase('ocr_upload')}
+        onNext={() => setOcrPhase('wizard')}
+      />
     )
   }
 
