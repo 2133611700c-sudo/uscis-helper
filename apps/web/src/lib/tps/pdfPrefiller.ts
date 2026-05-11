@@ -20,6 +20,7 @@ import {
   PDFTextField, PDFCheckBox, PDFDropdown,
   StandardFonts, rgb, degrees,
 } from 'pdf-lib'
+import { toWinAnsiSafe } from './transliterate'
 
 export interface PrefillOp {
   field: string
@@ -136,7 +137,12 @@ export async function prefill(
     // robust against minification because it walks the prototype chain.
     try {
       if (op.kind === 'text' && f instanceof PDFTextField) {
-        f.setText(String(op.value ?? ''))
+        // USCIS PDFs use WinAnsi (CP1252) font encoding which CANNOT render
+        // Cyrillic. Transliterate Ukrainian Cyrillic to Latin per KMU-55
+        // (the same rule used on real Ukrainian passports). Latin input
+        // passes through untouched. Reproduces the encoding USCIS officers
+        // actually see when scanning real Ukrainian applicants' passports.
+        f.setText(toWinAnsiSafe(String(op.value ?? '')))
         applied++
       } else if (op.kind === 'checkbox' && f instanceof PDFCheckBox) {
         if (op.value === true) f.check()
