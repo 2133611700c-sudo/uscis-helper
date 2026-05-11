@@ -2,13 +2,37 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { MessageCircle, X, Search, Grid3X3, Library, Mail } from 'lucide-react'
+
+/**
+ * Routes where the floating widget MUST be hidden — they have their own
+ * focused step-by-step UX where a generic 72×72 AI bubble in the bottom-
+ * right corner steals attention and (on 390px viewports) physically
+ * overlaps choice cards. Test reported overlap of the "Продлеваю" card
+ * on Step 1 of the TPS wizard, confirmed by browser audit.
+ *
+ * Match policy: substring match on the locale-stripped path so any
+ * sub-route inside these flows stays clean too.
+ */
+const HIDE_ON_PATH_SUBSTRINGS: readonly string[] = [
+  '/services/tps-ukraine/start',
+  '/services/re-parole-u4u/start',
+  '/services/translate-document/start',
+]
+
+function shouldHideOnPath(pathname: string | null): boolean {
+  if (!pathname) return false
+  return HIDE_ON_PATH_SUBSTRINGS.some((s) => pathname.includes(s))
+}
 
 export function MiaFloatingWidget() {
   const [open, setOpen] = useState(false)
   const t = useTranslations('miaWidget')
   const locale = useLocale()
+  const pathname = usePathname()
+  const hidden = shouldHideOnPath(pathname)
   const panelRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -53,6 +77,10 @@ export function MiaFloatingWidget() {
       window.removeEventListener('mousedown', onMouseDown)
     }
   }, [open])
+
+  if (hidden) {
+    return null
+  }
 
   return (
     <div data-mia-widget className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col items-end gap-3">

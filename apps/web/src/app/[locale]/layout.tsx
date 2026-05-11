@@ -109,8 +109,19 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   const messages = (await import(`../../../messages/${locale}.json`)).default;
 
+  // Build/deployment fingerprint for auditors. Not displayed to the user —
+  // view-source / DevTools only. Vercel injects VERCEL_GIT_COMMIT_SHA and
+  // VERCEL_DEPLOYMENT_ID at build time. Fallback to 'unknown' so local
+  // dev (no Vercel env) still renders cleanly.
+  const buildSha = process.env.VERCEL_GIT_COMMIT_SHA ?? 'unknown';
+  const deploymentId = process.env.VERCEL_DEPLOYMENT_ID ?? 'unknown';
+
   return (
     <html lang={locale} className={`${inter.variable} ${playfair.variable}`}>
+      <head>
+        <meta name="x-build-sha" content={buildSha} />
+        <meta name="x-vercel-deployment" content={deploymentId} />
+      </head>
       <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark');}}catch(e){}})();` }} />
       <body className="min-h-screen antialiased pb-14 md:pb-0">
         <NextIntlClientProvider locale={locale} messages={messages}>
