@@ -32,6 +32,7 @@ export type TpsExtractionSource =
   | 'ocr_mrz'         // parsed from MRZ check-digit-validated zone
   | 'ocr_visual'      // OCR raw text near a labelled anchor
   | 'ocr_keyword'     // anchored to a keyword (e.g. "Class of Admission")
+  | 'ai_brain'        // DeepSeek Document Brain — feature-flag gated, validators applied
   | 'user_input'      // user typed it directly
   | 'user_corrected'  // user edited an OCR'd value
   | 'inferred'        // derived from another field (e.g. ead_category from filing_path)

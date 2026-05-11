@@ -705,6 +705,11 @@
           "body": "Contact form submissions are retained for up to 12 months. Anonymized analytics data is retained indefinitely in aggregated form. IP hashes used for rate limiting are deleted within 24 hours."
         },
         {
+          "id": "tps-uscis-document-processing",
+          "title": "TPS document processing (OCR and AI)",
+          "body": "When you upload a document image in the TPS Ukraine wizard, the file passes an image-quality check in your browser/our server, then the bytes are sent to Google Cloud Vision (Google LLC, USA) for text recognition. The image is not stored on our servers: the bytes live only in request memory and are released after the response. If the operator enables the experimental AI layer (TPS_AI_BRAIN_ENABLED flag), the Google Vision extracted text (no image, no other identifying data attached) is additionally sent to DeepSeek (DeepSeek, China) for document-type classification and field extraction. The AI never writes into a USCIS form directly — every value requires your confirmation on the review screen. The AI layer is opt-in and off by default. After your PDF packet is generated, you can wipe local data using the \"Clear my data\" button."
+        },
+        {
           "id": "sharing",
           "title": "7. Data sharing",
           "body": "We do not sell your data. We share it only with: Resend (email delivery); Vercel (hosting and analytics); Supabase (database). All processors are contractually bound to confidentiality."
