@@ -52,6 +52,13 @@ export function buildI765Ops(a: TPSAnswers): I765Op[] {
   ops.push({ field: 'form1[0].Page2[0].Pt2Line5_State[0]',          kind: 'choice', value: a.us_address_state })
   ops.push({ field: 'form1[0].Page2[0].Pt2Line5_ZipCode[0]',        kind: 'text', value: a.us_address_zip })
 
+  // ── Page 2: Item 7 — A-Number (Alien Registration Number) ────────────────
+  // Routed from EAD-card OCR (lib/tps/modules/ead.ts emits `a_number`).
+  // Inventory field name: form1[0].Page2[0].Line7_AlienNumber[0]
+  if (a.a_number) {
+    ops.push({ field: 'form1[0].Page2[0].Line7_AlienNumber[0]', kind: 'text', value: a.a_number })
+  }
+
   // ── Page 3: identity continued ─────────────────────────────────────────────
   ops.push({ field: 'form1[0].Page3[0].Line18a_CityTownOfBirth[0]', kind: 'text', value: '' /* not captured this cycle */ })
   ops.push({ field: 'form1[0].Page3[0].Line18c_CountryOfBirth[0]',  kind: 'text', value: a.country_of_birth })
