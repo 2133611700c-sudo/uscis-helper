@@ -146,6 +146,37 @@ for PHRASE in "${PDF_PATTERNS[@]}"; do
   fi
 done
 
+# ── Rule 10: TPS forbidden claims (from CB.5 / TPS controlled-beta) ─
+# Hard list from TPS_CONTROLLED_BETA_READINESS_FINAL prompt-pack.
+# Each phrase, if it appears in user-facing copy, breaks the promise
+# that Messenginfo never claims to be USCIS-approved or a law firm.
+banner "Rule 10 — TPS forbidden claims"
+TPS_FORBIDDEN=(
+  "we file for you"
+  "we file on your behalf"
+  "USCIS accepted"
+  "USCIS approved"
+  "official USCIS partner"
+  "guaranteed approval"
+  "guaranteed acceptance"
+  "we are certified"
+  "we are a law firm"
+  "fully done"
+  "paid launch ready"
+)
+for PHRASE in "${TPS_FORBIDDEN[@]}"; do
+  HITS=$(grep -rin "$PHRASE" "$SRC/components" "$SRC/app" "$MSG" 2>/dev/null \
+    | grep -v "FORBIDDEN_PHRASES\|detection-list\|content-guard\|__tests__\|\.test\.ts\|\.spec\.ts\|TPS_CONTROLLED_BETA\|TPS_FINISH_PLAN\|SECURITY_PRIVACY_AUDIT\|OUTPUT_CONTRACT_AUDIT" \
+    | grep -vi "not a law firm\|is not a law firm\|do not file\|does not file\|does not.*USCIS\|not.*USCIS accepted\|not.*USCIS approved\|never.*guarantee\|no guaranteed\|no.*guarantee\|never.*USCIS partner\|not.*USCIS partner\|not.*certified\|no \"USCIS\|no '\''USCIS\|^\s*\*.*no\b" \
+    || true)
+  if [ -n "$HITS" ]; then
+    fail "TPS forbidden: $PHRASE"
+    echo "$HITS" | sed 's/^/     /'
+  else
+    ok "TPS clean: $PHRASE"
+  fi
+done
+
 # ── Summary ───────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"
