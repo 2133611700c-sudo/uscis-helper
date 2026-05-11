@@ -15,6 +15,7 @@
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { ServiceBackBar } from '@/components/layout/ServiceBackBar'
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -240,6 +241,8 @@ export default async function EADLandingPage({ params }: Props) {
   const t = T[locale] ?? T.en
 
   return (
+    <>
+    <ServiceBackBar locale={locale} />
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-10">
 
       {/* Hero */}
@@ -387,5 +390,6 @@ export default async function EADLandingPage({ params }: Props) {
       </section>
 
     </main>
+    </>
   )
 }
