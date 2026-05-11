@@ -116,6 +116,17 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     ops.push({ field: 'form1[0].Page02[0].Part2_Item6_ZipCode[0]',   kind: 'text', value: a.mailing_zip ?? '' })
   }
 
+  // ── Part 2 — Item 7: A-Number (Alien Registration Number, if any) ────────
+  // OCR'd from an EAD card; user can also type. 9 digits, no 'A' prefix.
+  // Inventory field name: form1[0].Page02[0].Part2_Item7_AlienNumber[0]
+  if (a.a_number) {
+    ops.push({
+      field: 'form1[0].Page02[0].Part2_Item7_AlienNumber[0]',
+      kind: 'text',
+      value: a.a_number,
+    })
+  }
+
   // ── Part 2 — Item 8 (USCIS online account number, if any) ─────────────────
   if (a.uscis_online_account) {
     ops.push({
