@@ -28,6 +28,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import GeneratePacketBlock from './GeneratePacketBlock'
 import { DocumentUploadScreen } from '@/components/tps/DocumentUploadScreen'
 import { SelfReviewScreen, type ReviewRow } from '@/components/tps/SelfReviewScreen'
+import { OcrFieldEditModal, inputTypeForField } from '@/components/tps/OcrFieldEditModal'
 import type { TpsExtractedField } from '@/lib/tps/types'
 
 type Locale = 'uk' | 'ru' | 'en' | 'es'
@@ -92,6 +93,8 @@ const T = {
     s1Hint: 'Це найважливіший вибір — від нього залежать наступні кроки та форми.',
     s1OcrCta: '📷 У мене є фото документів — завантажити',
     s1OcrHint: 'Ми прочитаємо паспорт / I-94 / EAD і автоматично підставимо дані у форму.',
+    s1ResumeNote: 'Ви продовжуєте попередню сесію.',
+    s1RestartCta: '↺ Почати спочатку',
     ocrDone: 'Готово! Прочитано полів: {n}. Ми підставимо їх у форму на останньому кроці.',
 
     s2Title: '2. Документи та дата прибуття',
@@ -167,6 +170,8 @@ const T = {
     s1Hint: 'Это самый главный выбор — от него зависят все следующие шаги и формы.',
     s1OcrCta: '📷 У меня есть фото документов — загрузить',
     s1OcrHint: 'Мы прочитаем паспорт / I-94 / EAD и автоматически подставим данные в форму.',
+    s1ResumeNote: 'Вы продолжаете предыдущую сессию.',
+    s1RestartCta: '↺ Начать заново',
     ocrDone: 'Готово! Прочитано полей: {n}. Подставим их в форму на последнем шаге.',
 
     s2Title: '2. Документы и дата прибытия',
@@ -242,6 +247,8 @@ const T = {
     s1Hint: 'If unsure — we will show both paths in the summary.',
     s1OcrCta: '📷 I have photos of my documents — upload',
     s1OcrHint: 'We will read your passport / I-94 / EAD and prefill the form for you.',
+    s1ResumeNote: 'You are continuing a previous session.',
+    s1RestartCta: '↺ Start over',
     ocrDone: 'Done! {n} fields read. We will prefill them on the final step.',
 
     s2Title: '2. Identity and arrival',
@@ -317,6 +324,8 @@ const T = {
     s1Hint: 'Si no está seguro — mostraremos ambos caminos en el resumen.',
     s1OcrCta: '📷 Tengo fotos de mis documentos — subir',
     s1OcrHint: 'Leeremos su pasaporte / I-94 / EAD y prellenaremos el formulario.',
+    s1ResumeNote: 'Está continuando una sesión anterior.',
+    s1RestartCta: '↺ Empezar de nuevo',
     ocrDone: 'Listo! {n} campos leídos. Los prellenaremos en el último paso.',
 
     s2Title: '2. Identidad y llegada',
@@ -514,6 +523,10 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
   const [ocrPhase, setOcrPhase] = useState<'wizard' | 'ocr_upload' | 'ocr_review'>('wizard')
   const [ocrFields, setOcrFields] = useState<TpsExtractedField[]>([])
   const [ocrAnyManualReview, setOcrAnyManualReview] = useState<boolean>(false)
+  // Which extracted-field key is currently being edited in the inline
+  // modal. null = no edit dialog open. Driving this from TPSWizard (not
+  // SelfReviewScreen) keeps SelfReviewScreen reusable across services.
+  const [editingField, setEditingField] = useState<string | null>(null)
 
   // hydrate from localStorage
   // Per UX audit: a returning user was being dropped onto step 5 because
@@ -631,10 +644,61 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
     marginBottom: 10,
   })
 
+  // True when the user is mid-flow with previously-saved answers — they
+  // hydrated from localStorage. We surface a small "↺ Start over" pill
+  // so a returning user can deliberately reset instead of having their
+  // last answers silently carry over. Per UX audit: the wizard now
+  // defaults to Step 1 on fresh loads, but Step 1 doesn't show the
+  // user that any prior answers are still loaded — until they click an
+  // answer and notice another card highlighted. The pill closes that gap.
+  const hasPriorState =
+    answers.filing_path !== 'unselected' ||
+    answers.has_passport !== undefined ||
+    answers.has_i94 !== undefined ||
+    answers.wants_ead !== undefined ||
+    ocrFields.length > 0
+
   // ── screens ──
   function ScreenS1() {
     return (
       <div>
+        {hasPriorState && (
+          <div
+            data-testid="tps-resume-banner"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 12px',
+              marginBottom: 14,
+              background: 'var(--info-bg, #dbeafe)',
+              color: 'var(--info-text, #1e3a8a)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              fontSize: 13,
+            }}
+          >
+            <span style={{ flex: 1 }}>{t.s1ResumeNote}</span>
+            <button
+              type="button"
+              data-testid="tps-restart-cta"
+              onClick={restart}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text-1)',
+                cursor: 'pointer',
+              }}
+            >
+              {t.s1RestartCta}
+            </button>
+          </div>
+        )}
+
         <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', marginBottom: 8 }}>{t.s1Title}</h2>
         <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 16, lineHeight: 1.5 }}>{t.s1Body}</p>
         <button type="button" style={choiceCard(answers.filing_path === 'initial')} onClick={() => update({ filing_path: 'initial', has_prior_tps: false })}>
@@ -987,43 +1051,49 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
       : 'Key fields for the form'
 
     return (
-      <SelfReviewScreen
-        locale={locale}
-        groupTitle={reviewTitle}
-        rows={rows}
-        onEdit={(rowKey) => {
-          // Minimal-friction inline edit: prompt() is intentionally
-          // primitive — a dedicated edit modal is on the roadmap, but for
-          // launch this covers the 95% "OCR got it wrong by one letter"
-          // case without forcing a second component into this PR. The
-          // prompt is localized below.
-          const target = ocrFields.find((f) => f.field === rowKey)
-          if (!target) return
-          const promptMsg = locale === 'uk' ? `Виправте: ${prettyLabel(rowKey, locale)}`
-            : locale === 'ru' ? `Исправьте: ${prettyLabel(rowKey, locale)}`
-            : locale === 'es' ? `Corregir: ${prettyLabel(rowKey, locale)}`
-            : `Edit: ${prettyLabel(rowKey, locale)}`
-          const initial = target.normalized_value?.toString() ?? ''
-          const next = typeof window !== 'undefined' ? window.prompt(promptMsg, initial) : null
-          if (next === null) return // user cancelled
-          const trimmed = next.trim()
-          setOcrFields((prev) =>
-            prev.map((f) =>
-              f.field === rowKey
-                ? {
-                    ...f,
-                    normalized_value: trimmed,
-                    raw_value: trimmed,
-                    extraction_source: 'user_corrected',
-                    review_required: trimmed === '',
-                  }
-                : f,
-            ),
-          )
-        }}
-        onBack={() => setOcrPhase('ocr_upload')}
-        onNext={() => setOcrPhase('wizard')}
-      />
+      <>
+        <SelfReviewScreen
+          locale={locale}
+          groupTitle={reviewTitle}
+          rows={rows}
+          onEdit={(rowKey) => setEditingField(rowKey)}
+          onBack={() => setOcrPhase('ocr_upload')}
+          onNext={() => setOcrPhase('wizard')}
+        />
+        {/* Inline edit modal — replaces the old window.prompt() that was
+            painful on mobile. Picks the right input control by field
+            type (date / sex / text). Saving flips extraction_source to
+            'user_corrected' so the provenance contract is preserved. */}
+        <OcrFieldEditModal
+          field={editingField}
+          label={editingField ? prettyLabel(editingField, locale) : ''}
+          value={
+            editingField
+              ? (ocrFields.find((f) => f.field === editingField)?.normalized_value?.toString() ?? '')
+              : ''
+          }
+          inputType={editingField ? inputTypeForField(editingField) : 'text'}
+          locale={locale}
+          onClose={() => setEditingField(null)}
+          onSave={(next) => {
+            if (!editingField) return
+            setOcrFields((prev) =>
+              prev.map((f) =>
+                f.field === editingField
+                  ? {
+                      ...f,
+                      normalized_value: next,
+                      raw_value: next,
+                      extraction_source: 'user_corrected',
+                      review_required: next === '',
+                    }
+                  : f,
+              ),
+            )
+            setEditingField(null)
+          }}
+        />
+      </>
     )
   }
 

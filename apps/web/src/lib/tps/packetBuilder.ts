@@ -89,15 +89,24 @@ function buildReadme(
   i765: { applied: number; skipped: { field: string; reason: string }[] } | null,
 ): string {
   const ts = new Date().toISOString()
+  // The README's "N fields prefilled" number is the same `applied` count
+  // that we expose in the X-TPS-{I821,I765}-Applied response headers — see
+  // apps/web/src/app/api/tps/generate-packet/route.ts. If a future audit
+  // sees the header and the README disagree, the bug is upstream of this
+  // function (likely in the prefiller). Field count semantics: this is the
+  // total number of AcroForm cells we successfully wrote (text + checkbox +
+  // dropdown), NOT only text fields. Different sessions can legitimately
+  // show different totals because skipped optional-section fields lower
+  // the count.
   return [
     'Messenginfo — TPS Ukraine packet draft',
     `Generated: ${ts}`,
     '',
     'WHAT THIS IS',
     '  Two PDFs prefilled with the data you typed into the wizard:',
-    `    I-821 (Application for TPS) — edition ${I821_EDITION}, ${i821.applied} fields prefilled`,
+    `    I-821 (Application for TPS) — edition ${I821_EDITION}, ${i821.applied} AcroForm cells written`,
     a.wants_ead && i765
-      ? `    I-765 (Application for EAD) — edition ${I765_EDITION}, ${i765.applied} fields prefilled, category (${a.ead_category === 'a12' ? 'a' : 'c'})(${a.ead_category === 'a12' ? '12' : '19'})`
+      ? `    I-765 (Application for EAD) — edition ${I765_EDITION}, ${i765.applied} AcroForm cells written, category (${a.ead_category === 'a12' ? 'a' : 'c'})(${a.ead_category === 'a12' ? '12' : '19'})`
       : '    I-765 was not generated (you chose not to request an EAD).',
     '',
     'WHAT TO DO',
