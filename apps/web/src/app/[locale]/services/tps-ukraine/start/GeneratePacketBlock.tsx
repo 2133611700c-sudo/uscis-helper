@@ -155,6 +155,9 @@ const COPY = {
     success: 'PDF з вашими даними готові. Тепер уважно перевірте і відправте до USCIS самостійно.',
     download: 'Завантажити ZIP',
     again: 'Згенерувати ще раз',
+    clearData: 'Стерти мої дані з браузера',
+    clearDataHint: 'Видаляє все, що ви ввели, з цього пристрою. Згенерований ZIP залишиться у вас.',
+    clearDataDone: 'Стерто. Дані більше не зберігаються тут.',
     errorHeader: 'Не вдалося згенерувати.',
     missing: 'Незаповнені поля:',
     legal: 'Це чернетка. Messenginfo не подає документи в USCIS і не дає юридичних порад. Уважно перевіряйте все перед відправкою.',
@@ -209,6 +212,9 @@ const COPY = {
     success: 'PDF с вашими данными готовы. Теперь внимательно проверьте и отправьте в USCIS самостоятельно.',
     download: 'Скачать ZIP',
     again: 'Сгенерировать ещё раз',
+    clearData: 'Стереть мои данные из браузера',
+    clearDataHint: 'Удаляет всё, что вы ввели, с этого устройства. Скачанный ZIP останется у вас.',
+    clearDataDone: 'Стёрто. Данные больше не хранятся здесь.',
     errorHeader: 'Не удалось сгенерировать.',
     missing: 'Незаполненные поля:',
     legal: 'Это черновик. Messenginfo не подаёт документы в USCIS и не даёт юридических советов. Внимательно проверяйте всё перед отправкой.',
@@ -263,6 +269,9 @@ const COPY = {
     success: 'Your PDFs are ready. Review them carefully and then mail or upload to USCIS yourself.',
     download: 'Download ZIP',
     again: 'Generate again',
+    clearData: 'Clear my data from this browser',
+    clearDataHint: 'Removes everything you typed from this device. The ZIP you downloaded stays with you.',
+    clearDataDone: 'Cleared. Your data is no longer stored here.',
     errorHeader: 'Could not generate.',
     missing: 'Missing fields:',
     legal: 'This is a draft. Messenginfo does not file documents with USCIS and does not provide legal advice. Review everything carefully before mailing.',
@@ -317,6 +326,9 @@ const COPY = {
     success: 'Sus PDFs están listos. Revíselos cuidadosamente y luego envíelos o cárguelos en USCIS usted mismo.',
     download: 'Descargar ZIP',
     again: 'Generar otra vez',
+    clearData: 'Borrar mis datos de este navegador',
+    clearDataHint: 'Elimina todo lo que escribió de este dispositivo. El ZIP que descargó queda con usted.',
+    clearDataDone: 'Borrado. Sus datos ya no se guardan aquí.',
     errorHeader: 'No se pudo generar.',
     missing: 'Campos faltantes:',
     legal: 'Esto es un borrador. Messenginfo no presenta documentos ante USCIS ni brinda asesoría legal. Revise todo cuidadosamente antes de enviar.',
@@ -393,6 +405,21 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
   const [zipUrl, setZipUrl] = useState<string | null>(null)
   const [missing, setMissing] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  // SP-4 mitigation (SECURITY_PRIVACY_AUDIT_TPS_V1): the user can wipe the
+  // localStorage personal-fields key from their own browser after they've
+  // downloaded the ZIP. Important on shared devices (refugee help centres,
+  // family computers, library workstations).
+  const [dataCleared, setDataCleared] = useState(false)
+  const clearMyData = () => {
+    try {
+      window.localStorage.removeItem(STORAGE_KEY)
+      window.localStorage.removeItem('wizard:tps-ukraine:state:v1')
+      window.localStorage.removeItem('tps:attest:v1')
+    } catch { /* ignore */ }
+    setFields(EMPTY)
+    setAttestedAt(null)
+    setDataCleared(true)
+  }
 
   function update<K extends keyof PersonalFields>(k: K, v: PersonalFields[K]) {
     setFields((prev) => {
@@ -741,6 +768,38 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
               ⬇ {c.download}
             </a>
             <button type="button" onClick={generate} style={{ ...secondary, marginLeft: 4 }}>{c.again}</button>
+            {/* SP-4 mitigation: one-click PII wipe from the browser. */}
+            <div style={{ marginTop: 12 }}>
+              {dataCleared ? (
+                <p
+                  data-testid="clear-data-done"
+                  style={{ fontSize: 13, fontWeight: 700, color: 'var(--success-text, #166534)', margin: 0 }}
+                >
+                  ✓ {c.clearDataDone}
+                </p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={clearMyData}
+                    data-testid="clear-data-btn"
+                    style={{
+                      ...secondary,
+                      background: 'transparent',
+                      color: 'var(--text-2)',
+                      border: '1px solid var(--border)',
+                      padding: '8px 12px',
+                      fontSize: 13,
+                    }}
+                  >
+                    🗑 {c.clearData}
+                  </button>
+                  <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, marginBottom: 0 }}>
+                    {c.clearDataHint}
+                  </p>
+                </>
+              )}
+            </div>
           </div>
 
           {/* What's in the ZIP */}
