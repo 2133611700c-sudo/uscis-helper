@@ -47,7 +47,7 @@ const T = {
     ],
     howTitle: 'Як це працює',
     howSteps: [
-      { num: '1', title: 'Дайте відповіді', desc: 'Майстер задасть прості питання: початкове TPS чи re-registration, чи потрібна EAD, чи зменшення збору (I-912).' },
+      { num: '1', title: 'Дайте відповіді', desc: 'Помічник поставить прості запитання: подаєте вперше чи продовжуєте, чи потрібен дозвіл на роботу, чи бажаєте звільнення від державного збору USCIS.' },
       { num: '2', title: 'Отримайте інструкцію', desc: 'Список потрібних документів, інструкція що куди вписати у форми I-821 / I-765 / I-912, посилання на офіційні поля USCIS.' },
       { num: '3', title: 'Подайте до USCIS', desc: 'Заповніть та подайте через my.uscis.gov онлайн або поштою. Ми не подаємо за вас.' },
     ],
@@ -63,7 +63,7 @@ const T = {
       { label: "4+ (сім'я)", price: '$45', save: 'економія $15', highlight: true },
     ],
     priceUSCIS: 'Держмито USCIS',
-    priceUSCISDesc: 'Залежить від форм та права на fee waiver (I-912). Перевірте на',
+    priceUSCISDesc: 'Залежить від форм та права на звільнення від оплати (форма I-912). Перевірте на',
     priceUSCISLink: 'uscis.gov/feecalculator',
     priceUSCISVal: 'див. калькулятор',
     entries: [
@@ -104,16 +104,16 @@ const T = {
         a: 'Так. TPS для України було продовжено на 18 місяців — з 20 квітня 2025 по 19 жовтня 2026 року (Federal Register notice 2025-00771). Деталі і офіційні дати — на сторінці USCIS TPS Ukraine.',
       },
       {
-        q: 'Що означає re-registration?',
+        q: 'Що означає продовження TPS (re-registration)?',
         a: 'Якщо у вас вже є TPS, вам потрібно повторно зареєструватися щоб зберегти статус. Вікно повторної реєстрації для поточного продовження: 17 січня – 18 березня 2025 року. Уточнюйте на сторінці USCIS — терміни можуть оновлюватись.',
       },
       {
-        q: 'Як отримати дозвіл на роботу (EAD)?',
+        q: 'Як отримати дозвіл на роботу в США?',
         a: 'Подайте Form I-765 разом з Form I-821. Деякі попередньо видані TPS EAD автоматично продовжені до 19 квітня 2026 року — перевірте дату Card Expires на вашій картці на сторінці USCIS.',
       },
       {
-        q: 'Що таке fee waiver / I-912?',
-        a: 'Form I-912 дозволяє запросити звільнення від держмита USCIS за певних умов. Подається лише разом з паперовою заявою (не онлайн). Не всі мають право — критерії на uscis.gov/i-912.',
+        q: 'Що таке заявка на звільнення від оплати (форма I-912)?',
+        a: 'Форма I-912 дозволяє попросити USCIS не брати з вас державний збір — за певних умов. Подається лише разом з паперовою заявою (не онлайн). Право на звільнення є не у всіх — критерії на uscis.gov/i-912.',
       },
     ],
     footer: 'TPS Ukraine продовжено до 19 жовтня 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo не подає документи від вашого імені',
@@ -135,7 +135,7 @@ const T = {
     ],
     howTitle: 'Как это работает',
     howSteps: [
-      { num: '1', title: 'Ответьте на вопросы', desc: 'Мастер задаст простые вопросы: первичный TPS или re-registration, нужна ли EAD, нужен ли fee waiver (I-912).' },
+      { num: '1', title: 'Ответьте на вопросы', desc: 'Помощник задаст простые вопросы: подаёте впервые или продлеваете, нужно ли разрешение на работу, хотите ли подать заявку на освобождение от государственной пошлины USCIS.' },
       { num: '2', title: 'Получите инструкцию', desc: 'Список нужных документов, инструкция что куда вписывать в I-821 / I-765 / I-912, ссылки на официальные поля USCIS.' },
       { num: '3', title: 'Подайте в USCIS', desc: 'Заполните и подайте через my.uscis.gov онлайн или почтой. Мы не подаём за вас.' },
     ],
@@ -151,7 +151,7 @@ const T = {
       { label: '4+ (семья)', price: '$45', save: 'экономия $15', highlight: true },
     ],
     priceUSCIS: 'Госпошлина USCIS',
-    priceUSCISDesc: 'Зависит от форм и права на fee waiver (I-912). Проверьте на',
+    priceUSCISDesc: 'Зависит от форм и права на освобождение от оплаты (форма I-912). Проверьте на',
     priceUSCISLink: 'uscis.gov/feecalculator',
     priceUSCISVal: 'см. калькулятор',
     entries: [
@@ -192,16 +192,16 @@ const T = {
         a: 'Да. TPS для Украины было продлено на 18 месяцев — с 20 апреля 2025 по 19 октября 2026 года (Federal Register notice 2025-00771). Детали и официальные даты — на странице USCIS TPS Ukraine.',
       },
       {
-        q: 'Что значит re-registration?',
+        q: 'Что значит продление TPS (re-registration)?',
         a: 'Если у вас уже есть TPS, нужно повторно зарегистрироваться чтобы сохранить статус. Окно повторной регистрации для текущего продления: 17 января – 18 марта 2025 года. Уточняйте на странице USCIS — сроки могут обновляться.',
       },
       {
-        q: 'Как получить разрешение на работу (EAD)?',
+        q: 'Как получить разрешение на работу в США?',
         a: 'Подайте Form I-765 вместе с Form I-821. Некоторые ранее выданные TPS EAD автоматически продлены до 19 апреля 2026 — проверьте дату Card Expires на вашей карте на странице USCIS.',
       },
       {
-        q: 'Что такое fee waiver / I-912?',
-        a: 'Form I-912 позволяет запросить освобождение от госпошлины USCIS при определённых условиях. Подаётся только с бумажной заявкой (не онлайн). Не у всех есть право — критерии на uscis.gov/i-912.',
+        q: 'Что такое заявление на освобождение от оплаты (форма I-912)?',
+        a: 'Форма I-912 позволяет попросить USCIS не брать с вас государственную пошлину — при определённых условиях. Подаётся только с бумажной заявкой (не онлайн). Право на освобождение есть не у всех — критерии на uscis.gov/i-912.',
       },
     ],
     footer: 'TPS Ukraine продлено до 19 октября 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo не подаёт документы от вашего имени',
@@ -311,7 +311,7 @@ const T = {
     ],
     howTitle: 'Cómo funciona',
     howSteps: [
-      { num: '1', title: 'Responda preguntas', desc: 'El asistente hace preguntas simples: TPS inicial o re-registración, si necesita EAD, si necesita fee waiver (I-912).' },
+      { num: '1', title: 'Responda preguntas', desc: 'El asistente le hace preguntas simples: si presenta por primera vez o renueva, si necesita permiso de trabajo, si desea solicitar exención de la tarifa de USCIS.' },
       { num: '2', title: 'Obtenga instrucciones', desc: 'Lista de evidencias, instrucciones de qué poner en I-821 / I-765 / I-912, enlaces a los campos oficiales de USCIS.' },
       { num: '3', title: 'Presente ante USCIS', desc: 'Envíe por my.uscis.gov en línea o por correo. Nosotros no presentamos por usted.' },
     ],
@@ -327,7 +327,7 @@ const T = {
       { label: '4+ (familia)', price: '$45', save: 'ahorra $15', highlight: true },
     ],
     priceUSCIS: 'Tarifa gubernamental USCIS',
-    priceUSCISDesc: 'Depende de los formularios y de la elegibilidad para fee waiver (I-912). Verifique en',
+    priceUSCISDesc: 'Depende de los formularios y de la elegibilidad para la exención de tarifa (formulario I-912). Verifique en',
     priceUSCISLink: 'uscis.gov/feecalculator',
     priceUSCISVal: 'ver calculadora',
     entries: [
@@ -372,11 +372,11 @@ const T = {
         a: 'Si ya tiene TPS, debe re-registrarse para mantenerlo. Ventana de re-registración para la extensión actual: 17 enero – 18 marzo 2025. Confirme en la página de USCIS — las ventanas pueden cambiar.',
       },
       {
-        q: '¿Cómo obtengo permiso de trabajo (EAD)?',
+        q: '¿Cómo obtengo permiso de trabajo en EE. UU.?',
         a: 'Presente el Form I-765 junto con el Form I-821. Algunos EAD TPS emitidos antes fueron extendidos automáticamente hasta el 19 de abril de 2026 — verifique la fecha Card Expires en su tarjeta y en la página de USCIS.',
       },
       {
-        q: '¿Qué es fee waiver / I-912?',
+        q: '¿Qué es la solicitud de exención de tarifa (formulario I-912)?',
         a: 'El Form I-912 permite solicitar la exención de tarifas de USCIS bajo ciertas condiciones. Solo se puede presentar con una solicitud en papel (no en línea). No todos son elegibles — criterios en uscis.gov/i-912.',
       },
     ],

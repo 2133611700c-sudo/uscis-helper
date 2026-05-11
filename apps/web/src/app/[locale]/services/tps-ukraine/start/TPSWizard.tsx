@@ -755,9 +755,33 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
               {t.back}
             </button>
           )}
-          <button type="button" onClick={next} style={{ ...primaryBtn, flex: step > 1 ? 2 : 1 }}>
-            {t.next}
-          </button>
+          {/* Step 1 must be answered before the user can advance — the
+              initial/re-registration choice drives every later screen, so
+              a default-skip would route into the wrong service. Other
+              screens have softer answers and can be advanced even if
+              partially filled. */}
+          {(() => {
+            const blocked = step === 1 && answers.filing_path === 'unselected'
+            return (
+              <button
+                type="button"
+                onClick={blocked ? undefined : next}
+                disabled={blocked}
+                aria-disabled={blocked}
+                style={{
+                  ...primaryBtn,
+                  flex: step > 1 ? 2 : 1,
+                  opacity: blocked ? 0.45 : 1,
+                  cursor: blocked ? 'not-allowed' : 'pointer',
+                  background: blocked ? 'var(--surface-2)' : primaryBtn.background,
+                  color: blocked ? 'var(--text-3)' : primaryBtn.color,
+                  boxShadow: blocked ? 'none' : primaryBtn.boxShadow,
+                }}
+              >
+                {t.next}
+              </button>
+            )
+          })()}
         </section>
       )}
     </main>
