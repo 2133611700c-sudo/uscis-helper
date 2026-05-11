@@ -705,6 +705,11 @@
           "body": "Los envíos del formulario de contacto se conservan hasta 12 meses. Los datos analíticos anonimizados se conservan indefinidamente en forma agregada. Los hashes de IP usados para límites de solicitudes se eliminan dentro de 24 horas."
         },
         {
+          "id": "tps-uscis-document-processing",
+          "title": "Procesamiento de documentos TPS (OCR e IA)",
+          "body": "Cuando sube una imagen de documento en el asistente TPS Ucrania, el archivo pasa una verificación de calidad en su navegador/nuestro servidor y luego se envía a Google Cloud Vision (Google LLC, EE. UU.) para el reconocimiento de texto. La imagen no se almacena en nuestros servidores: los bytes solo viven en la memoria de la solicitud y se liberan tras la respuesta. Si el operador activa la capa de IA experimental (bandera TPS_AI_BRAIN_ENABLED), el texto extraído por Google Vision (sin imagen, sin otros datos identificativos) se envía adicionalmente a DeepSeek (DeepSeek, China) para clasificación del tipo de documento y extracción de campos. La IA nunca escribe directamente en un formulario USCIS — cada valor requiere su confirmación en la pantalla de revisión. La capa de IA es opcional y está desactivada por defecto. Después de generar su PDF, puede borrar los datos locales con el botón \"Borrar mis datos\"."
+        },
+        {
           "id": "sharing",
           "title": "7. Compartir datos",
           "body": "No vendemos sus datos. Solo los compartimos con: Resend (entrega de correo electrónico); Vercel (alojamiento y análisis); Supabase (base de datos). Todos los procesadores están contractualmente obligados a la confidencialidad."
