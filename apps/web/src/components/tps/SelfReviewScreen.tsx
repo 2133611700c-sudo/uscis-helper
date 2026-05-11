@@ -44,6 +44,14 @@ export interface ReviewRow {
 
   /** Optional source document tag, e.g. "из паспорта". Shown small. */
   source?: string
+
+  /** Optional Latin-transliterated preview of the value, shown when the
+   *  value is in Cyrillic and will be written into a USCIS form as
+   *  Latin. Pattern: "Шевченко → Shevchenko". When undefined or equal to
+   *  the value, no preview chip is rendered (Latin source). Helps the
+   *  60+ Ukrainian user trust that we did the right transliteration
+   *  before they accept the row. */
+  latinPreview?: string
 }
 
 export interface SelfReviewProps {
@@ -78,6 +86,7 @@ const COPY = {
     back: '← Назад',
     next: 'Далі →',
     blockedMissing: (n: number) => `Заповніть обов’язкові поля: ${n}`,
+    latinFormLabel: 'так буде записано у формі USCIS',
   },
   ru: {
     pageTitle: 'Проверьте данные',
@@ -88,6 +97,7 @@ const COPY = {
     back: '← Назад',
     next: 'Дальше →',
     blockedMissing: (n: number) => `Заполните обязательные поля: ${n}`,
+    latinFormLabel: 'так будет записано в форме USCIS',
   },
   en: {
     pageTitle: 'Check the details',
@@ -98,6 +108,7 @@ const COPY = {
     back: '← Back',
     next: 'Next →',
     blockedMissing: (n: number) => `Fill ${n} required field${n === 1 ? '' : 's'}`,
+    latinFormLabel: 'this is how it will appear on the USCIS form',
   },
   es: {
     pageTitle: 'Revise los datos',
@@ -108,6 +119,7 @@ const COPY = {
     back: '← Atrás',
     next: 'Siguiente →',
     blockedMissing: (n: number) => `Complete ${n} campo${n === 1 ? '' : 's'} obligatorio${n === 1 ? '' : 's'}`,
+    latinFormLabel: 'así aparecerá en el formulario USCIS',
   },
 } as const
 
@@ -216,6 +228,31 @@ export function SelfReviewScreen(props: SelfReviewProps) {
                 >
                   {isEmpty ? c.valueMissing : row.value}
                 </p>
+                {!isEmpty && row.latinPreview && row.latinPreview !== row.value && (
+                  <p
+                    data-testid={`review-latin-${row.key}`}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--success, #16a34a)',
+                      marginTop: 3,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    → {row.latinPreview}{' '}
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 400,
+                        color: 'var(--text-3)',
+                      }}
+                    >
+                      · {c.latinFormLabel}
+                    </span>
+                  </p>
+                )}
                 {(row.confidenceHint || row.source) && (
                   <p
                     style={{
