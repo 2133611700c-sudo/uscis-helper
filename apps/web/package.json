@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "guard:reparole": "node scripts/guard-reparole-regulatory-truth.mjs",
     "guard:content": "bash scripts/check-content-guards.sh",
-    "guard": "npm run guard:reparole && npm run guard:content",
+    "guard:i18n": "node scripts/check-i18n-drift.mjs",
+    "guard": "npm run guard:reparole && npm run guard:content && npm run guard:i18n",
     "test": "vitest run",
     "test:watch": "vitest"
   },
