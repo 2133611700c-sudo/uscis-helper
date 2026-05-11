@@ -26,6 +26,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked } from '@/lib/ocr/types'
+import { runPassportModule } from '@/lib/tps/modules/passport'
+import { runI94Module } from '@/lib/tps/modules/i94'
+import { runEadModule } from '@/lib/tps/modules/ead'
+import type { TpsModuleResult } from '@/lib/tps/types'
 
 // Vision REST call needs full Node runtime (Buffer + fetch with timeout).
 export const runtime = 'nodejs'
@@ -116,6 +120,26 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // ── Run the per-document extraction module if a hint was supplied.
+  //    Hint-based routing keeps the response shape stable: caller asks
+  //    "this is a passport" and gets passport-specific TpsExtractedField[].
+  //    Without a hint we return raw OCR only.
+  const document_id = `doc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  let moduleResult: TpsModuleResult | null = null
+  switch (docTypeHint) {
+    case 'passport':
+      moduleResult = runPassportModule(result, { document_id })
+      break
+    case 'i94':
+      moduleResult = runI94Module(result, { document_id })
+      break
+    case 'ead':
+      moduleResult = runEadModule(result, { document_id })
+      break
+    default:
+      moduleResult = null
+  }
+
   // ── Successful OCR. Build a response with just what downstream agents
   //    need; we do NOT include the raw API response (could leak provider
   //    internals or echoed key).
@@ -124,6 +148,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       provider: result.provider,
       doc_type_hint: docTypeHint || null,
+      document_id,
       raw_text: result.raw_text,
       page_count: result.pages.length,
       word_count: result.words.length,
@@ -140,6 +165,8 @@ export async function POST(req: NextRequest) {
       processing_ms: result.processing_ms,
       route_total_ms: Date.now() - t0,
       warnings: result.warnings,
+      // Per-document module output — present only when doc_type_hint is set.
+      module: moduleResult,
     },
     {
       status: 200,
@@ -150,6 +177,10 @@ export async function POST(req: NextRequest) {
         'X-OCR-Provider': result.provider,
         'X-OCR-Word-Count': String(result.words.length),
         'X-OCR-Page-Count': String(result.pages.length),
+        'X-TPS-Module': moduleResult ? moduleResult.module : 'none',
+        'X-TPS-Module-Matched': moduleResult ? String(moduleResult.matched) : 'na',
+        'X-TPS-Module-Fields': moduleResult ? String(moduleResult.fields.length) : '0',
+        'X-TPS-Module-ManualReview': moduleResult ? String(moduleResult.manual_review_required) : 'na',
       },
     },
   )
