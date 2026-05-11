@@ -24,6 +24,7 @@
  */
 
 import type { Metadata } from 'next'
+import { ServiceBackBar } from '@/components/layout/ServiceBackBar'
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -419,6 +420,7 @@ export default async function TpsUkraineLandingPage({ params }: Props) {
 
   return (
     <main style={{ minHeight: '100dvh', background: 'var(--background)', padding: '0 0 48px' }}>
+      <ServiceBackBar locale={locale} />
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <section
@@ -489,6 +491,27 @@ export default async function TpsUkraineLandingPage({ params }: Props) {
         >
           {t.ctaMain}
         </a>
+
+        {/* Audit fix: surface the price right under the CTA so the user
+            doesn't get sticker-shock after scrolling deep into the page. */}
+        <p
+          style={{
+            fontSize: '12px',
+            color: 'var(--text-3)',
+            marginTop: '-4px',
+            marginBottom: '12px',
+            textAlign: 'center',
+            lineHeight: 1.4,
+          }}
+        >
+          {locale === 'uk'
+            ? 'Від $15 — наша комісія за підготовку. Державний збір USCIS — окремо.'
+            : locale === 'ru'
+            ? 'От $15 — наша комиссия за подготовку. Государственный сбор USCIS — отдельно.'
+            : locale === 'es'
+            ? 'Desde $15 — nuestra tarifa de preparación. La tarifa de USCIS se paga aparte.'
+            : 'From $15 — our preparation fee. The USCIS government fee is paid separately.'}
+        </p>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
           <a
