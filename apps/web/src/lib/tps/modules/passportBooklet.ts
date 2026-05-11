@@ -47,9 +47,16 @@ import type {
 const BOOKLET_MODULE: TpsDocType = 'passport'
 
 // Series+number lives on every page top: two Cyrillic letters + 6 digits,
-// printed as perforation. e.g. "ЕА 991991", "КН 123456". OCR usually reads
-// the dotted version as plain text once Vision processes the page.
-const SERIES_NUMBER_RE = /([А-ЯІЇЄҐ]{2})\s*([0-9]{6})/u
+// printed as perforation. e.g. "ЕА 991991", "КН 123456". OCR reads it as
+// the dotted version most of the time. We accept Vision's variants:
+//   - "ЕА 991991"
+//   - "ЕА991991" (no space)
+//   - "ЕА 991 991" or "ЕА 99 19 91" (spaced digit groups)
+//   - "EA 991991" (Latin look-alikes mistaken for Cyrillic)
+// We allow Latin A/B/C/E/H/I/K/M/O/P/T/X for letters because Cyrillic
+// letters that look identical to those Latin chars confuse Vision.
+const SERIES_NUMBER_RE =
+  /\b([А-ЯІЇЄҐABCEHIKMOPTX]{2})\s*((?:[0-9]\s*){6})\b/u
 
 // Date of birth — many formats. We try several:
 //   "25 червня 1986 року"  (UA written-out month)
@@ -104,6 +111,47 @@ function lineMatchesLabel(text: string, label: string): boolean {
 }
 
 /**
+ * Strip bilingual-layer noise from an extracted booklet value.
+ *
+ * The Ukrainian booklet is bilingual: labels are printed as
+ *   "Прізвище / Surname"
+ *   "Ім'я / Given Names"
+ *   "Дата народження / Date of birth"
+ * Vision often reads the slash + English label as part of the line, so
+ * what we want as "Шевченко" arrives as "/ Surname Шевченко" or
+ * "Шевченко / Surname". We strip:
+ *   - leading separators ":-—_/"
+ *   - a leading or trailing English-word run (Latin letters)
+ *   - duplicate inner whitespace
+ */
+function stripBilingualNoise(s: string): string {
+  let t = s.trim()
+  // Strip leading separator(s)
+  t = t.replace(/^[:\-—_\/\s.]+/, '')
+  // Strip a leading English-label run: "Surname Шевченко" → "Шевченко"
+  t = t.replace(/^[A-Za-z][A-Za-z .'\-]{0,40}(?=\s+[А-ЯІЇЄҐа-яіїєґ])/u, '')
+  // Strip a trailing English-label run: "Шевченко / Surname" → "Шевченко"
+  t = t.replace(/\s*[\/\-—]\s*[A-Za-z][A-Za-z .'\-]{0,40}$/u, '')
+  // Strip any trailing Latin-only word salad after the Cyrillic value
+  t = t.replace(/([А-ЯІЇЄҐа-яіїєґ][А-ЯІЇЄҐа-яіїєґ\-' ]+?)\s+[A-Za-z][A-Za-z .'\-]{0,40}$/u, '$1')
+  return t.replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Did the cleaned value end up looking like junk? (e.g. only a separator
+ * or only Latin label words). Used to know whether to fall back to the
+ * NEXT line instead of returning a useless "value".
+ */
+function isValueJunk(s: string): boolean {
+  if (!s || s.length < 2) return true
+  // No Cyrillic + no digits → probably leftover English label
+  const hasCyrillic = /[А-ЯІЇЄҐа-яіїєґ]/u.test(s)
+  const hasDigit = /\d/.test(s)
+  if (!hasCyrillic && !hasDigit) return true
+  return false
+}
+
+/**
  * Find the value associated with a label. Strategy: look at the same line
  * (label may be followed by value), then look at the NEXT non-empty line.
  * Returns null if no plausible value found.
@@ -122,27 +170,33 @@ function findValueNear(
   if (labelStartCi >= 0) {
     const tail = text.slice(labelStartCi + label.length).trim()
     if (tail.length >= 2 && !/^[:\-—_\.]+$/.test(tail)) {
-      // Strip leading separators
-      const cleaned = tail.replace(/^[:\-—_\s]+/, '').trim()
-      if (cleaned.length >= 2) {
+      const cleaned = stripBilingualNoise(tail)
+      if (!isValueJunk(cleaned)) {
         return { value: cleaned, sourceLine: labelLine.line }
       }
     }
   }
 
-  // 2) Look at the previous line (booklet often has value ABOVE label).
-  for (let off = 1; off <= 2; off++) {
-    const prev = lines[labelIdx - off]
-    if (prev && prev.text.length >= 2 && !looksLikeLabel(prev.text)) {
-      return { value: prev.text, sourceLine: prev.line }
+  // 2) Look at the NEXT line (booklet layout: label printed on left, value
+  //    handwritten on the line below or to the right).
+  for (let off = 1; off <= 3; off++) {
+    const next = lines[labelIdx + off]
+    if (!next || next.text.length < 2) continue
+    if (looksLikeLabel(next.text)) continue
+    const cleaned = stripBilingualNoise(next.text)
+    if (!isValueJunk(cleaned)) {
+      return { value: cleaned, sourceLine: next.line }
     }
   }
 
-  // 3) Look at the next line.
+  // 3) Fallback: previous line (rare layout where value sits above label).
   for (let off = 1; off <= 2; off++) {
-    const next = lines[labelIdx + off]
-    if (next && next.text.length >= 2 && !looksLikeLabel(next.text)) {
-      return { value: next.text, sourceLine: next.line }
+    const prev = lines[labelIdx - off]
+    if (!prev || prev.text.length < 2) continue
+    if (looksLikeLabel(prev.text)) continue
+    const cleaned = stripBilingualNoise(prev.text)
+    if (!isValueJunk(cleaned)) {
+      return { value: cleaned, sourceLine: prev.line }
     }
   }
   return null
@@ -276,9 +330,14 @@ export function runPassportBookletModule(
   }
 
   const surname = findField(['Прізвище', 'Призвище', 'Фамилия'])
-  const givenName = findField(["Ім'я", 'Ім я', 'Імя', 'Имя'])
+  // The given-name label is "Ім'я" in Ukrainian; the apostrophe Vision
+  // returns varies (', ʼ, ’, `) — try all forms plus the curly variants
+  // plus the plain Russian "Имя".
+  const givenName = findField([
+    "Ім'я", 'Імʼя', 'Ім’я', 'Ім`я', 'Ім я', 'Імя', 'Имя',
+  ])
   const middleName = findField(['По батькові', 'Побатькові', 'Отчество'])
-  const dobRaw = findField(['Дата народження', 'Датарождения', 'Дата рождения'])
+  const dobRaw = findField(['Дата народження', 'Дата рождения', 'Датарождения'])
 
   // ── Emit fields. Every booklet field is review_required=true because
   // handwritten Cyrillic OCR is unreliable.
