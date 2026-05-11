@@ -193,21 +193,23 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
           updateSlot(doc_type, { kind: 'error', fileName: file.name, message: data.error ?? `HTTP ${res.status}` })
           return
         }
-        const module = data.module
-        if (!module || !module.matched) {
+        // Use `mod` instead of `module` — Next.js lint forbids reassigning
+        // the CommonJS `module` global (no-assign-module-variable).
+        const mod = data.module
+        if (!mod || !mod.matched) {
           updateSlot(doc_type, {
             kind: 'error',
             fileName: file.name,
-            message: module?.warnings?.[0] ?? 'No fields detected',
+            message: mod?.warnings?.[0] ?? 'No fields detected',
           })
           return
         }
         updateSlot(doc_type, {
           kind: 'ok',
           fileName: file.name,
-          extractedCount: module.fields.length,
-          manualReview: module.manual_review_required,
-          fields: module.fields,
+          extractedCount: mod.fields.length,
+          manualReview: mod.manual_review_required,
+          fields: mod.fields,
           documentId: data.document_id ?? `doc_${Date.now()}`,
         })
       } catch (e) {
