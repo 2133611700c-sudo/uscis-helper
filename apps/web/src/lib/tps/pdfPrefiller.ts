@@ -147,17 +147,28 @@ export async function prefill(
         // value, some pages render them as /Ch dropdowns. Try the dropdown
         // first (will throw if value isn't a valid option), fall through to
         // text-field setText.
+        //
+        // Empty/whitespace value = user didn't fill this field (e.g. the
+        // mailing-address state when they share their residence address).
+        // We skip silently — it's a legitimate "leave blank" intent, not an
+        // error. Counting it under `skipped` previously created the
+        // misleading X-TPS-I821-Skipped: 1 (Part2_Item6_State) on every
+        // packet, which the audit reports complained about.
+        const choiceValue = String(op.value ?? '').trim()
+        if (choiceValue === '') {
+          continue
+        }
         if (f instanceof PDFDropdown) {
           try {
-            f.select(String(op.value ?? ''))
+            f.select(choiceValue)
           } catch {
-            // Some PDFs reject unknown options; just skip cleanly.
-            skipped.push({ field: op.field, reason: `dropdown_value_rejected:${op.value}` })
+            // Value supplied but rejected by the dropdown — real skip.
+            skipped.push({ field: op.field, reason: `dropdown_value_rejected:${choiceValue}` })
             continue
           }
           applied++
         } else if (f instanceof PDFTextField) {
-          f.setText(String(op.value ?? ''))
+          f.setText(choiceValue)
           applied++
         } else {
           skipped.push({ field: op.field, reason: 'choice_field_unsupported_type' })

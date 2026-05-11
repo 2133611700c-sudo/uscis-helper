@@ -72,6 +72,11 @@ export interface TPSAnswers {
   wants_ead: boolean
   ead_category: EadCategory         // 'a12' for initial, 'c19' for re-registration
 
+  // ── Fee bundle ─────────────────────────────────────────────────────────────
+  /** True if the user is requesting a fee waiver (Form I-912). Drives README
+   *  fee guidance + (future) I-912 packet inclusion. */
+  wants_fee_waiver?: boolean
+
   // ── Contact ────────────────────────────────────────────────────────────────
   daytime_phone: string
   email: string

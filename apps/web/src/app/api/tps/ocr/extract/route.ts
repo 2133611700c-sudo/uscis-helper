@@ -26,6 +26,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked } from '@/lib/ocr/types'
+import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { runPassportModule } from '@/lib/tps/modules/passport'
 import { runI94Module } from '@/lib/tps/modules/i94'
 import { runEadModule } from '@/lib/tps/modules/ead'
@@ -103,11 +104,42 @@ export async function POST(req: NextRequest) {
   }
 
   const arrayBuffer = await file.arrayBuffer()
-  const imageBuffer = Buffer.from(arrayBuffer)
+  const rawBuffer = Buffer.from(arrayBuffer)
+
+  // ── Image-quality gate (PP.T2 — reuses the v5 translation engine's
+  //    preprocessor). This catches blurry / too-small / corrupt photos
+  //    BEFORE we pay for a Vision call AND returns a structured error
+  //    that DocumentUploadScreen can render in the user's language
+  //    ("plохо видно — снимите ещё раз"). Phone photos with EXIF
+  //    rotation get auto-rotated, and oversized images get resized to
+  //    ≤2048px so Vision doesn't time out on 50-MP camera shots.
+  const t0 = Date.now()
+  const pre = await preprocessImage(rawBuffer, mimeType)
+  if (!pre.ok) {
+    return NextResponse.json(
+      {
+        error: pre.message,
+        quality_error: {
+          code: pre.code,            // 'too_small' | 'too_blurry' | 'corrupt_image' | 'unsupported_file_type'
+          message: pre.message,      // user-safe localized in the client
+        },
+        ok: false,
+      },
+      {
+        status: 422,
+        headers: {
+          'X-OCR-QualityGate': pre.code,
+        },
+      },
+    )
+  }
+  // Use the normalised buffer + MIME. The original is dropped here —
+  // no global cache, no logging, GC eligible after response.
+  const imageBuffer = pre.buffer
+  const effectiveMime = pre.mimeType
 
   // ── Call OCR provider
-  const t0 = Date.now()
-  const result = await googleVisionProvider.extractText({ imageBuffer, mimeType })
+  const result = await googleVisionProvider.extractText({ imageBuffer, mimeType: effectiveMime })
 
   if (isBlocked(result)) {
     return NextResponse.json(
@@ -177,6 +209,10 @@ export async function POST(req: NextRequest) {
         'X-OCR-Provider': result.provider,
         'X-OCR-Word-Count': String(result.words.length),
         'X-OCR-Page-Count': String(result.pages.length),
+        // Preprocess fingerprint — auditors can see what the gate did.
+        'X-OCR-Preprocess-Resized': String(pre.resized),
+        'X-OCR-Preprocess-Width': String(pre.width),
+        'X-OCR-Preprocess-Height': String(pre.height),
         'X-TPS-Module': moduleResult ? moduleResult.module : 'none',
         'X-TPS-Module-Matched': moduleResult ? String(moduleResult.matched) : 'na',
         'X-TPS-Module-Fields': moduleResult ? String(moduleResult.fields.length) : '0',
