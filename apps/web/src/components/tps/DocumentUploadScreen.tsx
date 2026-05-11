@@ -156,6 +156,46 @@ const COPY = {
   },
 } as const
 
+/**
+ * Localized error messages for the image-quality gate. Maps server-side
+ * preprocess error codes ('too_small' / 'too_blurry' / 'corrupt_image' /
+ * 'unsupported_file_type') to a sentence we can show the user. Designed
+ * for the 60+ smartphone user — plain language, no jargon, ends with
+ * a concrete next step.
+ */
+function qualityMessageFor(
+  code: 'too_small' | 'too_blurry' | 'corrupt_image' | 'unsupported_file_type',
+  locale: Locale,
+): string {
+  const MSG: Record<typeof code, Record<Locale, string>> = {
+    too_small: {
+      uk: 'Фото замале. Зробіть знімок ближче й чіткіше і завантажте ще раз.',
+      ru: 'Фото слишком маленькое. Сделайте снимок ближе и чётче и загрузите снова.',
+      en: 'The photo is too small. Take a closer, sharper picture and upload again.',
+      es: 'La foto es demasiado pequeña. Tome una foto más cercana y nítida e intente de nuevo.',
+    },
+    too_blurry: {
+      uk: 'Фото нечітке. Сфотографуйте при гарному світлі без рук і завантажте ще раз.',
+      ru: 'Фото размытое. Сфотографируйте при хорошем свете и без рук, потом загрузите снова.',
+      en: 'The photo is blurry. Try again in good light, holding the phone steady.',
+      es: 'La foto está borrosa. Vuelva a intentarlo con buena luz y sin mover el teléfono.',
+    },
+    corrupt_image: {
+      uk: 'Не вдалося прочитати файл. Спробуйте інший знімок (JPEG або PNG).',
+      ru: 'Не получилось прочитать файл. Попробуйте другой снимок (JPEG или PNG).',
+      en: 'We could not read the file. Try another picture (JPEG or PNG).',
+      es: 'No pudimos leer el archivo. Pruebe con otra foto (JPEG o PNG).',
+    },
+    unsupported_file_type: {
+      uk: 'Цей тип файлу ще не підтримується. Зробіть фото документа і завантажте JPEG або PNG.',
+      ru: 'Этот тип файла пока не поддерживается. Сфотографируйте документ и загрузите JPEG или PNG.',
+      en: 'This file type is not supported yet. Take a photo of the document and upload as JPEG or PNG.',
+      es: 'Este tipo de archivo aún no es compatible. Tome una foto del documento y súbala como JPEG o PNG.',
+    },
+  }
+  return MSG[code]?.[locale] ?? MSG[code]?.en ?? 'Could not read the image.'
+}
+
 export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: Props) {
   const c = COPY[locale]
   const [slots, setSlots] = useState<DocumentSlot[]>([
@@ -186,11 +226,22 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
         const data = (await res.json()) as {
           ok?: boolean
           error?: string
+          quality_error?: {
+            code: 'too_small' | 'too_blurry' | 'corrupt_image' | 'unsupported_file_type'
+            message: string
+          }
           module?: TpsModuleResult
           document_id?: string
         }
         if (!res.ok || !data.ok) {
-          updateSlot(doc_type, { kind: 'error', fileName: file.name, message: data.error ?? `HTTP ${res.status}` })
+          // Image-quality gate failures (422) deserve a localized,
+          // human-readable message — not a "HTTP 422" mystery. Map the
+          // server `code` to the user's locale.
+          let msg = data.error ?? `HTTP ${res.status}`
+          if (data.quality_error) {
+            msg = qualityMessageFor(data.quality_error.code, locale)
+          }
+          updateSlot(doc_type, { kind: 'error', fileName: file.name, message: msg })
           return
         }
         // Use `mod` instead of `module` — Next.js lint forbids reassigning
@@ -220,7 +271,7 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
         })
       }
     },
-    [updateSlot],
+    [updateSlot, locale],
   )
 
   // Required slot = passport. Block forward navigation until it is ok.
