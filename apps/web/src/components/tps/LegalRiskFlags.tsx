@@ -39,6 +39,7 @@
  */
 
 import type { ReactNode } from 'react'
+import { TPS_A11Y } from '@/lib/tps/a11y'
 
 export type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -194,26 +195,40 @@ export function LegalRiskFlags(props: LegalRiskProps): ReactNode {
     >
       <h3
         style={{
-          fontSize: 16,
-          fontWeight: 800,
+          // A11Y: section title 16→18
+          fontSize: TPS_A11Y.TEXT_PRIMARY_VALUE,
+          fontWeight: TPS_A11Y.WEIGHT_HEAVY,
           color: 'var(--text-1)',
           marginBottom: 4,
         }}
       >
         {c.title}
       </h3>
-      <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12, lineHeight: 1.5 }}>
+      <p style={{
+        // A11Y: intro 13→16 — older users read it slowly, must be comfortable
+        fontSize: TPS_A11Y.TEXT_BODY,
+        color: 'var(--text-1)',
+        marginBottom: 14,
+        lineHeight: TPS_A11Y.LINE_HEIGHT_BODY,
+      }}>
         {c.intro}
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {questions.map(({ key, label }) => (
           <div
             key={key}
             data-testid={`tps-legal-risk-${key}`}
-            style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
           >
-            <p style={{ fontSize: 14, color: 'var(--text-1)', margin: 0, lineHeight: 1.45 }}>
+            <p style={{
+              // A11Y: question text 14→16
+              fontSize: TPS_A11Y.TEXT_BODY,
+              fontWeight: TPS_A11Y.WEIGHT_MEDIUM,
+              color: 'var(--text-1)',
+              margin: 0,
+              lineHeight: TPS_A11Y.LINE_HEIGHT_BODY,
+            }}>
               {label}
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -240,21 +255,37 @@ export function LegalRiskFlags(props: LegalRiskProps): ReactNode {
         <div
           data-testid="tps-legal-risk-notice"
           style={{
-            marginTop: 14,
-            padding: 14,
+            marginTop: 16,
+            padding: 16,
             background: 'var(--warning-bg, #fef3c7)',
             color: 'var(--warning-text, #92400e)',
-            borderRadius: 10,
-            border: '1px solid var(--warning, #fcd34d)',
+            borderRadius: 12,
+            border: '2px solid var(--warning, #fcd34d)',
           }}
         >
-          <p style={{ fontWeight: 800, fontSize: 14, marginBottom: 6 }}>
+          <p style={{
+            // A11Y: notice heading 14→17
+            fontWeight: TPS_A11Y.WEIGHT_HEAVY,
+            fontSize: 17,
+            marginBottom: 8,
+          }}>
             {c.noticeHeading}
           </p>
-          <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 8 }}>
+          <p style={{
+            // A11Y: notice body 13→16 — at-risk user must read this fully
+            fontSize: TPS_A11Y.TEXT_BODY,
+            lineHeight: TPS_A11Y.LINE_HEIGHT_BODY,
+            marginBottom: 10,
+          }}>
             {c.noticeBody}
           </p>
-          <p style={{ fontSize: 12, fontStyle: 'italic', marginBottom: 8 }}>
+          <p style={{
+            // A11Y: 'not a law firm' MUST be readable — 12→14 medium weight
+            fontSize: TPS_A11Y.TEXT_DISCLAIMER,
+            fontWeight: TPS_A11Y.WEIGHT_MEDIUM,
+            fontStyle: 'italic',
+            marginBottom: 10,
+          }}>
             {c.noticeNotLawFirm}
           </p>
           <a
@@ -262,10 +293,14 @@ export function LegalRiskFlags(props: LegalRiskProps): ReactNode {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              fontSize: 13,
-              fontWeight: 700,
+              // A11Y: link to USCIS find-legal-services 13→15
+              fontSize: 15,
+              fontWeight: TPS_A11Y.WEIGHT_BOLD,
               color: 'var(--warning-text, #92400e)',
               textDecoration: 'underline',
+              display: 'inline-block',
+              minHeight: TPS_A11Y.TOUCH_MIN,
+              lineHeight: '44px',
             }}
             data-testid="tps-legal-risk-link"
           >
@@ -310,14 +345,16 @@ function RadioPill(props: RadioPillProps): ReactNode {
       aria-pressed={props.checked}
       style={{
         flex: 1,
-        minHeight: 44,
-        padding: '10px 14px',
+        // A11Y: 48px touch target (TOUCH_PRIMARY), 17px label so elder
+        // user can read Yes/No without zooming on small Android.
+        minHeight: TPS_A11Y.TOUCH_PRIMARY,
+        padding: '12px 16px',
         background: bg,
         color,
         border,
         borderRadius: 10,
-        fontSize: 15,
-        fontWeight: 700,
+        fontSize: 17,
+        fontWeight: TPS_A11Y.WEIGHT_BOLD,
         cursor: 'pointer',
       }}
     >

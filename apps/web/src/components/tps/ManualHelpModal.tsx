@@ -19,6 +19,7 @@
  */
 
 import { useState } from 'react'
+import { TPS_A11Y } from '@/lib/tps/a11y'
 
 export type Locale = 'uk' | 'ru' | 'en' | 'es'
 export type Stage = 'upload' | 'review' | 'generate'
@@ -195,7 +196,7 @@ export function ManualHelpModal(props: ManualHelpModalProps) {
       >
         <h3
           id="tps-manual-help-title"
-          style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}
+          style={{ fontSize: 20, fontWeight: TPS_A11Y.WEIGHT_HEAVY, marginBottom: 12 }}
         >
           {c.title}
         </h3>
@@ -204,7 +205,12 @@ export function ManualHelpModal(props: ManualHelpModalProps) {
           <>
             <p
               data-testid="tps-manual-help-success"
-              style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 8 }}
+              style={{
+                // A11Y: success body 14→16
+                fontSize: TPS_A11Y.TEXT_BODY,
+                lineHeight: TPS_A11Y.LINE_HEIGHT_BODY,
+                marginBottom: 10,
+              }}
             >
               <strong>{c.successTitle}</strong>
               <br />
@@ -221,12 +227,25 @@ export function ManualHelpModal(props: ManualHelpModalProps) {
           </>
         ) : (
           <>
-            <p style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 12, color: 'var(--text-2)' }}>
+            <p style={{
+              // A11Y: body explanation 14→16 — explains data flow
+              fontSize: TPS_A11Y.TEXT_BODY,
+              lineHeight: TPS_A11Y.LINE_HEIGHT_BODY,
+              marginBottom: 14,
+              color: 'var(--text-1)',
+            }}>
               {c.body}
             </p>
 
             <label
-              style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4, color: 'var(--text-2)' }}
+              style={{
+                // A11Y: email label 12→14
+                display: 'block',
+                fontSize: TPS_A11Y.TEXT_LABEL,
+                fontWeight: TPS_A11Y.WEIGHT_BOLD,
+                marginBottom: 6,
+                color: 'var(--text-1)',
+              }}
             >
               {c.emailLabel}
             </label>
@@ -253,7 +272,13 @@ export function ManualHelpModal(props: ManualHelpModalProps) {
             {errorText && (
               <p
                 data-testid="tps-manual-help-email-error"
-                style={{ fontSize: 12, color: 'var(--danger-text, #991b1b)', marginBottom: 8 }}
+                style={{
+                  // A11Y: invalid-email error 12→14, weight 600
+                  fontSize: TPS_A11Y.TEXT_LABEL,
+                  fontWeight: TPS_A11Y.WEIGHT_SEMIBOLD,
+                  color: 'var(--danger-text, #991b1b)',
+                  marginBottom: 10,
+                }}
               >
                 {errorText}
               </p>
@@ -263,19 +288,28 @@ export function ManualHelpModal(props: ManualHelpModalProps) {
               <div
                 data-testid="tps-manual-help-error"
                 style={{
-                  fontSize: 12,
+                  // A11Y: error block 12→14
+                  fontSize: TPS_A11Y.TEXT_LABEL,
                   color: 'var(--danger-text, #991b1b)',
                   background: 'var(--danger-bg, #fee2e2)',
-                  padding: 8,
+                  padding: 12,
                   borderRadius: 8,
-                  marginBottom: 8,
+                  marginBottom: 10,
                 }}
               >
                 <strong>{c.errorTitle}</strong> {c.errorBody}
               </div>
             )}
 
-            <p style={{ fontSize: 11, color: 'var(--text-3)', fontStyle: 'italic', marginBottom: 12 }}>
+            <p style={{
+              // A11Y: 'not a law firm' 11→14, color text-3→text-2,
+              // medium weight so italic stays readable for elder users.
+              fontSize: TPS_A11Y.TEXT_DISCLAIMER,
+              fontWeight: TPS_A11Y.WEIGHT_MEDIUM,
+              color: 'var(--text-2)',
+              fontStyle: 'italic',
+              marginBottom: 14,
+            }}>
               {c.notLawFirm}
             </p>
 
@@ -310,13 +344,15 @@ export function ManualHelpModal(props: ManualHelpModalProps) {
   )
 }
 
+// A11Y: primary CTA 48px tall, 17px label — readable on small phones
 const primaryBtn: React.CSSProperties = {
   flex: 2,
-  padding: '12px 18px',
+  minHeight: TPS_A11Y.TOUCH_PRIMARY,
+  padding: '14px 20px',
   background: 'var(--success)',
   color: '#fff',
-  fontSize: 15,
-  fontWeight: 800,
+  fontSize: 17,
+  fontWeight: TPS_A11Y.WEIGHT_HEAVY,
   borderRadius: 10,
   border: 'none',
   cursor: 'pointer',
@@ -324,11 +360,12 @@ const primaryBtn: React.CSSProperties = {
 
 const secondaryBtn: React.CSSProperties = {
   flex: 1,
-  padding: '12px 14px',
+  minHeight: TPS_A11Y.TOUCH_PRIMARY,
+  padding: '14px 16px',
   background: 'var(--surface-2)',
   color: 'var(--text-1)',
-  fontSize: 14,
-  fontWeight: 700,
+  fontSize: TPS_A11Y.TEXT_BODY_COMPACT,
+  fontWeight: TPS_A11Y.WEIGHT_BOLD,
   borderRadius: 10,
   border: '1px solid var(--border)',
   cursor: 'pointer',

@@ -38,6 +38,7 @@
 
 import type { ReactNode } from 'react'
 import { lockboxFor } from '@/lib/tps/filingGuidance'
+import { TPS_A11Y } from '@/lib/tps/a11y'
 
 export type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -272,18 +273,21 @@ export function PacketCompletenessChecker(props: PacketCompletenessProps): React
     marginTop: 18,
   }
   const sectionHeader: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 800,
+    // A11Y: section header 12→14, color text-3→text-2
+    fontSize: TPS_A11Y.TEXT_LABEL,
+    fontWeight: TPS_A11Y.WEIGHT_HEAVY,
     textTransform: 'uppercase',
     letterSpacing: '0.4px',
-    color: 'var(--text-3)',
-    marginTop: 14,
-    marginBottom: 6,
+    color: 'var(--text-2)',
+    marginTop: 16,
+    marginBottom: 8,
   }
   const liBase: React.CSSProperties = {
-    fontSize: 13,
-    lineHeight: 1.5,
-    padding: '4px 0',
+    // A11Y: row text 13→15 — these are checklist items the user
+    // verifies before mailing USCIS, must be comfortably readable.
+    fontSize: 15,
+    lineHeight: TPS_A11Y.LINE_HEIGHT_BODY,
+    padding: '6px 0',
     color: 'var(--text-1)',
   }
 
@@ -295,8 +299,9 @@ export function PacketCompletenessChecker(props: PacketCompletenessProps): React
     >
       <h3
         style={{
-          fontSize: 16,
-          fontWeight: 800,
+          // A11Y: card title 16→18
+          fontSize: TPS_A11Y.TEXT_PRIMARY_VALUE,
+          fontWeight: TPS_A11Y.WEIGHT_HEAVY,
           color: 'var(--text-1)',
           marginBottom: 4,
         }}
@@ -370,10 +375,12 @@ export function PacketCompletenessChecker(props: PacketCompletenessProps): React
           </ul>
           <p
             style={{
-              fontSize: 12,
+              // A11Y: missing-fields count is the user's main signal
+              // of incompleteness — bumped 12→15.
+              fontSize: 15,
               color: 'var(--danger-text, #991b1b)',
-              fontWeight: 700,
-              marginTop: 8,
+              fontWeight: TPS_A11Y.WEIGHT_BOLD,
+              marginTop: 10,
             }}
             data-testid="checker-missing-footer"
           >
@@ -390,9 +397,12 @@ export function PacketCompletenessChecker(props: PacketCompletenessProps): React
       </ul>
       <p
         style={{
-          fontSize: 12,
-          color: 'var(--text-3)',
-          marginTop: 6,
+          // A11Y: 'We do NOT sign for you' warning is a critical
+          // expectation-setter. 12→14, italic kept, text-3→text-2.
+          fontSize: TPS_A11Y.TEXT_DISCLAIMER,
+          fontWeight: TPS_A11Y.WEIGHT_MEDIUM,
+          color: 'var(--text-2)',
+          marginTop: 8,
           fontStyle: 'italic',
         }}
       >

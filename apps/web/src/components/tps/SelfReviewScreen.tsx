@@ -18,6 +18,7 @@
 
 import { useState } from 'react'
 import { ManualHelpModal } from '@/components/tps/ManualHelpModal'
+import { TPS_A11Y } from '@/lib/tps/a11y'
 
 export type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -173,9 +174,11 @@ export function SelfReviewScreen(props: SelfReviewProps) {
       {props.groupTitle && (
         <p
           style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: 'var(--text-3)',
+            // A11Y: section header — bumped from 12 to TEXT_LABEL (14) so
+            // older users can scan section boundaries without zooming.
+            fontSize: TPS_A11Y.TEXT_LABEL,
+            fontWeight: TPS_A11Y.WEIGHT_BOLD,
+            color: 'var(--text-2)', // text-3 fails AA at 14px — use text-2
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
             marginBottom: 8,
@@ -213,21 +216,23 @@ export function SelfReviewScreen(props: SelfReviewProps) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p
                   style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: 'var(--text-3)',
+                    // A11Y: row label bumped 12→14, color text-3→text-2
+                    fontSize: TPS_A11Y.TEXT_LABEL,
+                    fontWeight: TPS_A11Y.WEIGHT_BOLD,
+                    color: 'var(--text-2)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.4px',
-                    marginBottom: 2,
+                    marginBottom: 4,
                   }}
                 >
                   {row.label}
                 </p>
                 <p
                   style={{
-                    fontSize: 16,
-                    fontWeight: 600,
-                    color: isEmpty ? 'var(--text-3)' : 'var(--text-1)',
+                    // A11Y: primary value bumped 16→18 for older readers
+                    fontSize: TPS_A11Y.TEXT_PRIMARY_VALUE,
+                    fontWeight: TPS_A11Y.WEIGHT_SEMIBOLD,
+                    color: isEmpty ? 'var(--text-2)' : 'var(--text-1)',
                     fontStyle: isEmpty ? 'italic' : 'normal',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -240,10 +245,12 @@ export function SelfReviewScreen(props: SelfReviewProps) {
                   <p
                     data-testid={`review-latin-${row.key}`}
                     style={{
-                      fontSize: 13,
-                      fontWeight: 600,
+                      // A11Y: Latin preview is core trust signal —
+                      // bumped 13→15, label inside bumped 11→13 + medium weight
+                      fontSize: 15,
+                      fontWeight: TPS_A11Y.WEIGHT_BOLD,
                       color: 'var(--success, #16a34a)',
-                      marginTop: 3,
+                      marginTop: 4,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -252,9 +259,9 @@ export function SelfReviewScreen(props: SelfReviewProps) {
                     → {row.latinPreview}{' '}
                     <span
                       style={{
-                        fontSize: 11,
-                        fontWeight: 400,
-                        color: 'var(--text-3)',
+                        fontSize: TPS_A11Y.TEXT_TINY_FLOOR,
+                        fontWeight: TPS_A11Y.WEIGHT_MEDIUM,
+                        color: 'var(--text-2)',
                       }}
                     >
                       · {c.latinFormLabel}
@@ -264,9 +271,11 @@ export function SelfReviewScreen(props: SelfReviewProps) {
                 {(row.confidenceHint || row.source) && (
                   <p
                     style={{
-                      fontSize: 11,
-                      color: row.confidenceLow ? 'var(--warning-text, #92400e)' : 'var(--text-3)',
-                      marginTop: 2,
+                      // A11Y: confidence/source 11→13, color readable on amber
+                      fontSize: TPS_A11Y.TEXT_TINY_FLOOR,
+                      fontWeight: TPS_A11Y.WEIGHT_MEDIUM,
+                      color: row.confidenceLow ? 'var(--warning-text, #92400e)' : 'var(--text-2)',
+                      marginTop: 4,
                     }}
                   >
                     {row.confidenceHint && <span>{row.confidenceHint}</span>}
@@ -358,9 +367,13 @@ export function SelfReviewScreen(props: SelfReviewProps) {
       {!canProceed && (
         <p
           style={{
-            fontSize: 12,
+            // A11Y: missing-fields footer is critical — bumped 12→14
+            // and weight 700 so an older user immediately knows what's
+            // blocking the Next button.
+            fontSize: TPS_A11Y.TEXT_LABEL,
+            fontWeight: TPS_A11Y.WEIGHT_BOLD,
             color: 'var(--danger-text, #991b1b)',
-            marginTop: 8,
+            marginTop: 10,
             textAlign: 'center',
           }}
           aria-live="polite"
@@ -369,19 +382,22 @@ export function SelfReviewScreen(props: SelfReviewProps) {
         </p>
       )}
 
-      {/* CB.3 — Manual fallback. Always available; visible under bottom bar. */}
+      {/* CB.3 — Manual fallback. Always available; visible under bottom bar.
+          A11Y: text bumped 13→14, color text-3→text-2, touch target 44px. */}
       <button
         type="button"
         data-testid="tps-review-need-help"
         onClick={() => setHelpOpen(true)}
         style={{
           display: 'block',
-          margin: '12px auto 0',
-          padding: '8px 12px',
+          margin: '14px auto 0',
+          padding: '12px 16px',
+          minHeight: TPS_A11Y.TOUCH_MIN,
           background: 'transparent',
           border: 'none',
-          color: 'var(--text-3)',
-          fontSize: 13,
+          color: 'var(--text-2)',
+          fontSize: TPS_A11Y.TEXT_LABEL,
+          fontWeight: TPS_A11Y.WEIGHT_MEDIUM,
           textDecoration: 'underline',
           cursor: 'pointer',
         }}
