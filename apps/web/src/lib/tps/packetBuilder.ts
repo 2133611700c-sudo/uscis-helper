@@ -16,6 +16,7 @@ import { buildI821Ops } from './forms/i821FieldMap'
 import { buildI765Ops } from './forms/i765FieldMap'
 import { prefill } from './pdfPrefiller'
 import { lockboxFor, feeGuidance, SNAPSHOT_DATE, OFFICIAL_TPS_UKRAINE_PAGE } from './filingGuidance'
+import { assertFormIntegrity } from './formIntegrity'
 
 // Edition dates verified against uscis.gov on 2026-05-10 and stamped on the
 // PDF footers. If USCIS publishes a new edition, scripts/uscis/refresh_tps_forms.sh
@@ -41,6 +42,13 @@ export async function buildPacket(answers: TPSAnswers): Promise<PacketResult> {
     fs.readFile(publicPdfPath('i-821.pdf')),
     fs.readFile(publicPdfPath('i-765.pdf')),
   ])
+
+  // CB.6 — Runtime integrity guard. Throws if the on-disk PDF was
+  // swapped without updating PINNED_HASHES + field map together.
+  // Cached after first hit, so this is single-digit milliseconds once
+  // per process. Verified bytes flow straight into the prefiller.
+  assertFormIntegrity('i-821.pdf', i821Bytes)
+  if (answers.wants_ead) assertFormIntegrity('i-765.pdf', i765Bytes)
 
   // Build prefill operations from the field maps.
   const i821Ops = buildI821Ops(answers)
