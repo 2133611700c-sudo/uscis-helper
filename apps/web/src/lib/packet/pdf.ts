@@ -19,6 +19,7 @@
  */
 import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from 'pdf-lib'
 import type { PacketInput } from './types'
+import { toWinAnsiSafe } from '@/lib/tps/transliterate'
 
 const BRAND_BLUE  = rgb(0.11, 0.36, 0.73)
 const TEXT_DARK   = rgb(0.08, 0.08, 0.08)
@@ -44,9 +45,24 @@ function clampText(str: string | null | undefined, maxLen = 60): string {
   return s.length > maxLen ? s.slice(0, maxLen - 1) + '...' : s
 }
 
-/** Replace characters outside WinAnsi (Latin-1, code points 32-255) with '?' */
+/**
+ * Make a string WinAnsi-safe for pdf-lib drawText.
+ *
+ * Strategy upgrade (2026-05-11):
+ *   Previously this function replaced any non-CP1252 char with '?'. That
+ *   silently destroyed Cyrillic — a real Ukrainian name "Шевченко" became
+ *   "????????" on the bureau-cert page. Now we delegate to the shared
+ *   KMU-55 transliterator in lib/tps/transliterate.ts so any Cyrillic
+ *   leaking through becomes a readable Latin equivalent ("Shevchenko").
+ *
+ *   The translation engine itself emits Latin in `normalized_value`
+ *   (Ukrainian → English is its whole job), so this path is mostly
+ *   defensive — but the cert block uses raw signer names where Cyrillic
+ *   could conceivably slip in, and any future code that calls drawText
+ *   with applicant-facing strings is protected too.
+ */
 function sanitizeWinAnsi(str: string | null | undefined): string {
-  return String(str ?? '').replace(/[^\x20-\xFF]/g, '?')
+  return toWinAnsiSafe(String(str ?? ''))
 }
 
 function drawHRule(page: PDFPage, y: number) {
