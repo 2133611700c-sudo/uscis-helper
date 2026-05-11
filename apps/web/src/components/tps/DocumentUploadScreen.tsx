@@ -66,8 +66,8 @@ const COPY = {
     title: 'Завантажте документи',
     subtitle: 'Ми прочитаємо ваші документи і пiдставимо дані у форму. Ви потім перевірите кожне поле.',
     privacy: 'Файли видаляються з нашого сервера після формування пакета. Ми не передаємо їх третім особам.',
-    slotPassport: 'Закордонний паспорт',
-    slotPassportHint: 'Фото сторінки з фотографією. Розворот має бути добре освітлений, без бликів.',
+    slotPassport: 'Паспорт',
+    slotPassportHint: 'Підійде закордонний паспорт (синя/червона книжка, MRZ внизу) АБО внутрішній паспорт-книжка України. Сфотографуйте розворот з фото — добре освітлений, без бликів.',
     slotI94: 'I-94 (запис в’їзду в США)',
     slotI94Hint: 'Скриншот або роздруківка з i94.cbp.dhs.gov.',
     slotEad: 'Картка EAD (якщо у вас вже є дозвіл на роботу)',
@@ -89,8 +89,8 @@ const COPY = {
     title: 'Загрузите документы',
     subtitle: 'Мы прочитаем ваши документы и подставим данные в форму. Вы потом проверите каждое поле.',
     privacy: 'Файлы удаляются с нашего сервера после формирования пакета. Мы не передаём их третьим лицам.',
-    slotPassport: 'Загранпаспорт',
-    slotPassportHint: 'Фото страницы с фотографией. Разворот должен быть хорошо освещён, без бликов.',
+    slotPassport: 'Паспорт',
+    slotPassportHint: 'Подойдёт загранпаспорт (синяя/красная книжка, MRZ внизу) ИЛИ внутренний украинский паспорт-книжка. Сфотографируйте разворот с фото — хорошо освещённый, без бликов.',
     slotI94: 'I-94 (запись о въезде в США)',
     slotI94Hint: 'Скриншот или распечатка с i94.cbp.dhs.gov.',
     slotEad: 'Карточка EAD (если у вас уже есть разрешение на работу)',
@@ -112,8 +112,8 @@ const COPY = {
     title: 'Upload your documents',
     subtitle: 'We will read your documents and prefill the form. You will review every field after.',
     privacy: 'Files are deleted from our server after the packet is generated. We do not share them with third parties.',
-    slotPassport: 'International passport',
-    slotPassportHint: 'Photo of the biographic page. Well lit, no glare.',
+    slotPassport: 'Passport',
+    slotPassportHint: 'Either an international passport (booklet with MRZ on the bottom) OR the internal Ukrainian passport-book. Photograph the page with your photo — well lit, no glare.',
     slotI94: 'I-94 (US entry record)',
     slotI94Hint: 'Screenshot or printout from i94.cbp.dhs.gov.',
     slotEad: 'EAD card (if you already have a work permit)',
@@ -135,8 +135,8 @@ const COPY = {
     title: 'Suba sus documentos',
     subtitle: 'Leeremos sus documentos y prellenaremos el formulario. Usted revisará cada campo después.',
     privacy: 'Los archivos se eliminan de nuestro servidor después de generar el paquete. No los compartimos con terceros.',
-    slotPassport: 'Pasaporte internacional',
-    slotPassportHint: 'Foto de la página biográfica. Bien iluminada, sin reflejos.',
+    slotPassport: 'Pasaporte',
+    slotPassportHint: 'Sirve un pasaporte internacional (con MRZ al pie) O el pasaporte ucraniano interno (libro). Fotografíe la página con su foto — bien iluminada, sin reflejos.',
     slotI94: 'I-94 (registro de entrada a EE.UU.)',
     slotI94Hint: 'Captura o impresión de i94.cbp.dhs.gov.',
     slotEad: 'Tarjeta EAD (si ya tiene permiso de trabajo)',
@@ -196,6 +196,102 @@ function qualityMessageFor(
   return MSG[code]?.[locale] ?? MSG[code]?.en ?? 'Could not read the image.'
 }
 
+/**
+ * Localized human-readable message for the case where OCR ran successfully
+ * (HTTP 200) but the per-document module did NOT match. We surface the
+ * module's match_reason and first warning, but map them to plain-language
+ * messages in the user's locale — the raw English string like "Could not
+ * locate a TD3 MRZ on this document." is useless for a 60-year-old user.
+ *
+ * Map keys are the match_reason strings emitted by the passport / passport-
+ * booklet / i94 / ead modules. Unknown reasons fall back to a generic
+ * "we couldn't read this — try another photo or another document" line.
+ */
+function moduleFailureMessage(
+  matchReason: string,
+  warnings: string[] | undefined,
+  docType: TpsDocType,
+  locale: Locale,
+): string {
+  const MSG: Record<string, Record<Locale, string>> = {
+    // Passport TD3 path could not locate MRZ AND the booklet path also did
+    // not find Ukrainian-booklet labels. Most likely user uploaded the
+    // wrong page (e.g. visa or stamps page) or a non-passport document.
+    mrz_not_located: {
+      uk: 'Не вдалось знайти машиночитану зону (MRZ) на цьому фото. Сфотографуйте розворот з фото та двома рядками великих літер унизу — або завантажте внутрішній паспорт-книжку.',
+      ru: 'Не удалось найти машиночитаемую зону (MRZ) на этом фото. Сфотографируйте разворот с фото и двумя строками заглавных букв внизу — или загрузите внутренний паспорт-книжку.',
+      en: 'Could not find the machine-readable zone (MRZ) on this photo. Use the page with the photo and the two lines of capital letters at the bottom — or upload your internal Ukrainian passport-book.',
+      es: 'No se encontró la zona de lectura automática (MRZ). Use la página con foto y las dos líneas de letras mayúsculas al pie — o suba el pasaporte interno ucraniano.',
+    },
+    // Booklet path was tried (after TD3 failed) and ALSO did not match —
+    // signals (Cyrillic "ПАСПОРТ ГРОМАДЯНИНА УКРАЇНИ" etc.) absent.
+    booklet_signals_missing: {
+      uk: 'Не схоже на український паспорт. Перевірте: ви сфотографували сторінку з вашими даними? Якщо у вас є тільки внутрішній паспорт — сфотографуйте розворот з фото та підписом.',
+      ru: 'Не похоже на украинский паспорт. Проверьте: вы сфотографировали страницу со своими данными? Если у вас только внутренний паспорт — сфотографируйте разворот с фото и подписью.',
+      en: 'This does not look like a Ukrainian passport. Make sure you photographed the page with your personal details — for an internal passport, use the spread with your photo and signature.',
+      es: 'Esto no parece ser un pasaporte ucraniano. Asegúrese de fotografiar la página con sus datos personales.',
+    },
+    // Booklet matched (signals present) but we could not parse a single
+    // critical field from it. Photo was probably blurry or partially
+    // cropped.
+    booklet_no_fields_extracted: {
+      uk: 'Ми побачили український паспорт, але не змогли прочитати поля. Зробіть чіткіше фото при гарному освітленні без рук.',
+      ru: 'Мы увидели украинский паспорт, но не смогли прочитать поля. Сделайте чёткое фото при хорошем освещении без дрожания.',
+      en: 'We detected a Ukrainian passport but could not read the field values. Try again with a clearer, well-lit photo.',
+      es: 'Detectamos un pasaporte ucraniano pero no pudimos leer los campos. Pruebe con una foto más clara.',
+    },
+    // I-94 module: layout not detected.
+    i94_layout_not_detected: {
+      uk: 'Не схоже на запис I-94. Завантажте скріншот або PDF з i94.cbp.dhs.gov.',
+      ru: 'Не похоже на запись I-94. Загрузите скриншот или PDF с i94.cbp.dhs.gov.',
+      en: 'This does not look like an I-94. Upload a screenshot or PDF from i94.cbp.dhs.gov.',
+      es: 'Esto no parece ser un I-94. Suba una captura o PDF de i94.cbp.dhs.gov.',
+    },
+    // EAD module: layout not detected.
+    ead_layout_not_detected: {
+      uk: 'Не схоже на картку EAD. Сфотографуйте обидві сторони картки USCIS.',
+      ru: 'Не похоже на карточку EAD. Сфотографируйте обе стороны карточки USCIS.',
+      en: 'This does not look like an EAD card. Photograph both sides of the USCIS card.',
+      es: 'Esto no parece una tarjeta EAD. Fotografíe ambas caras de la tarjeta de USCIS.',
+    },
+  }
+
+  // Try match_reason first, then a couple of well-known warning shapes.
+  const fromReason = MSG[matchReason]?.[locale]
+  if (fromReason) return fromReason
+
+  // Generic per-doc-type fallback. Only the doc types the upload screen
+  // currently exposes — passport / i94 / ead — get a tailored message; any
+  // future doc type falls through to a generic line.
+  const GENERIC: Partial<Record<TpsDocType, Record<Locale, string>>> = {
+    passport: {
+      uk: 'Не вдалося прочитати паспорт із цього фото. Спробуйте інший знімок або введіть дані руками.',
+      ru: 'Не получилось прочитать паспорт с этого фото. Попробуйте другой снимок или введите данные руками.',
+      en: 'We could not read the passport from this photo. Try another picture or enter the data manually.',
+      es: 'No pudimos leer el pasaporte de esta foto. Pruebe con otra foto o ingrese los datos a mano.',
+    },
+    i94: {
+      uk: 'Не вдалося прочитати I-94 із цього файла.',
+      ru: 'Не получилось прочитать I-94 из этого файла.',
+      en: 'Could not read the I-94 from this file.',
+      es: 'No pudimos leer el I-94 de este archivo.',
+    },
+    ead: {
+      uk: 'Не вдалося прочитати картку EAD з цього фото.',
+      ru: 'Не получилось прочитать карточку EAD с этого фото.',
+      en: 'Could not read the EAD card from this photo.',
+      es: 'No pudimos leer la tarjeta EAD de esta foto.',
+    },
+  }
+  const FALLBACK: Record<Locale, string> = {
+    uk: 'Не вдалося прочитати документ.',
+    ru: 'Не получилось прочитать документ.',
+    en: 'Could not read the document.',
+    es: 'No pudimos leer el documento.',
+  }
+  return GENERIC[docType]?.[locale] ?? FALLBACK[locale]
+}
+
 export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: Props) {
   const c = COPY[locale]
   const [slots, setSlots] = useState<DocumentSlot[]>([
@@ -251,7 +347,15 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
           updateSlot(doc_type, {
             kind: 'error',
             fileName: file.name,
-            message: mod?.warnings?.[0] ?? 'No fields detected',
+            // Map module match_reason to a localized, actionable message.
+            // The raw English warnings ("Could not locate a TD3 MRZ on
+            // this document.") are useless for a Russian-speaking user.
+            message: moduleFailureMessage(
+              mod?.match_reason ?? '',
+              mod?.warnings,
+              doc_type,
+              locale,
+            ),
           })
           return
         }

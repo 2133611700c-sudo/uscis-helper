@@ -28,6 +28,7 @@ import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked } from '@/lib/ocr/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { runPassportModule } from '@/lib/tps/modules/passport'
+import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
 import { runI94Module } from '@/lib/tps/modules/i94'
 import { runEadModule } from '@/lib/tps/modules/ead'
 import type { TpsModuleResult } from '@/lib/tps/types'
@@ -156,12 +157,37 @@ export async function POST(req: NextRequest) {
   //    Hint-based routing keeps the response shape stable: caller asks
   //    "this is a passport" and gets passport-specific TpsExtractedField[].
   //    Without a hint we return raw OCR only.
+  //
+  //    For doc_type_hint=passport we try BOTH formats:
+  //      1. TD3 MRZ (international Ukrainian passport / загранпаспорт)
+  //      2. Internal Ukrainian passport-booklet (паспорт-книжка) — if TD3
+  //         not located.
+  //    This is critical for real Ukrainian users — many never had a
+  //    travel passport and only have the internal booklet, which is
+  //    explicitly accepted by USCIS I-821 Instructions as a national
+  //    identity document with photograph.
   const document_id = `doc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
   let moduleResult: TpsModuleResult | null = null
   switch (docTypeHint) {
-    case 'passport':
-      moduleResult = runPassportModule(result, { document_id })
+    case 'passport': {
+      const td3 = runPassportModule(result, { document_id })
+      if (td3.matched) {
+        moduleResult = td3
+      } else {
+        // Fallback to internal-passport-booklet label-based extraction.
+        const booklet = runPassportBookletModule(result, { document_id })
+        if (booklet.matched) {
+          moduleResult = booklet
+        } else {
+          // Neither matched — surface the more informative reason so the
+          // user-facing UI can localize properly.
+          moduleResult = td3.match_reason === 'mrz_not_located'
+            ? booklet // (matched=false, booklet_signals_missing) — better hint
+            : td3
+        }
+      }
       break
+    }
     case 'i94':
       moduleResult = runI94Module(result, { document_id })
       break

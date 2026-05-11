@@ -88,7 +88,10 @@ export function buildI765Ops(a: TPSAnswers): I765Op[] {
   }
 
   // ── Page 4: applicant contact (Part 3) ─────────────────────────────────────
-  ops.push({ field: 'form1[0].Page4[0].Pt3Line3_DaytimePhoneNumber1[0]', kind: 'text', value: a.daytime_phone })
+  // I-765 phone field has maxLength=10 (digits only). Real users type with
+  // dashes/parens/spaces; strip to digits-only so pdf-lib accepts the value.
+  const phoneDigitsOnly = (a.daytime_phone || '').replace(/\D/g, '').slice(0, 10)
+  ops.push({ field: 'form1[0].Page4[0].Pt3Line3_DaytimePhoneNumber1[0]', kind: 'text', value: phoneDigitsOnly })
   ops.push({ field: 'form1[0].Page4[0].Pt3Line5_Email[0]',                kind: 'text', value: a.email })
 
   return ops
