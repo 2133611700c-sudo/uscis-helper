@@ -6,6 +6,7 @@
  */
 
 import type { Metadata } from 'next'
+import { ServiceBackBar } from '@/components/layout/ServiceBackBar'
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -243,6 +244,7 @@ export default async function TpsUkraineSourcesPage({ params }: Props) {
 
   return (
     <main style={{ minHeight: '100dvh', background: 'var(--background)', padding: '0 0 48px' }}>
+      <ServiceBackBar locale={locale} />
       <section style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 20px 18px' }}>
         <a
           href={backHref}
