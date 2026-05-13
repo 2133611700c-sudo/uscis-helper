@@ -2,7 +2,9 @@
  * /[locale]/services/tps-ukraine/sources
  *
  * Official USCIS sources for TPS Ukraine. Server component, zero JS.
- * Outbound links open in new tab. All facts verified 2026-05-10.
+ * Outbound links open in new tab. All facts verified 2026-05-12.
+ * Updated 2026-05-12: added H.R.1 EAD cap rule (FR 2026-08333) and
+ * signature rule (FR 2026-09289) per USCIS monitoring cycle.
  */
 
 import type { Metadata } from 'next'
@@ -19,7 +21,7 @@ const T = {
     title: 'Офіційні джерела TPS Україна',
     intro: 'Це посилання на офіційні сторінки USCIS та Federal Register. Завжди звіряйтесь з ними — Messenginfo не змінює офіційні правила і не подає за вас.',
     back: '← Назад до TPS',
-    note: 'Дата останньої перевірки: 10 травня 2026 р.',
+    note: 'Дата останньої перевірки: 12 травня 2026 р.',
   },
   ru: {
     metaTitle: 'TPS Украина — официальные источники | Messenginfo',
@@ -27,7 +29,7 @@ const T = {
     title: 'Официальные источники TPS Украина',
     intro: 'Это ссылки на официальные страницы USCIS и Federal Register. Всегда сверяйтесь с ними — Messenginfo не меняет официальные правила и не подаёт за вас.',
     back: '← Назад к TPS',
-    note: 'Дата последней проверки: 10 мая 2026 г.',
+    note: 'Дата последней проверки: 12 мая 2026 г.',
   },
   en: {
     metaTitle: 'TPS Ukraine — official sources | Messenginfo',
@@ -35,7 +37,7 @@ const T = {
     title: 'Official TPS Ukraine sources',
     intro: 'These are links to the official USCIS and Federal Register pages. Always verify with them — Messenginfo does not change official rules and does not file for you.',
     back: '← Back to TPS',
-    note: 'Last verified: May 10, 2026.',
+    note: 'Last verified: May 12, 2026.',
   },
   es: {
     metaTitle: 'TPS Ucrania — fuentes oficiales | Messenginfo',
@@ -43,7 +45,7 @@ const T = {
     title: 'Fuentes oficiales TPS Ucrania',
     intro: 'Estos son enlaces a las páginas oficiales de USCIS y Federal Register. Siempre verifique con ellos — Messenginfo no cambia las reglas oficiales y no presenta por usted.',
     back: '← Volver a TPS',
-    note: 'Última verificación: 10 de mayo de 2026.',
+    note: 'Última verificación: 12 de mayo de 2026.',
   },
 } as const
 
@@ -77,6 +79,13 @@ const CATEGORIES: Record<Locale, SourceCategory[]> = {
       items: [
         { name: 'USCIS fee calculator', desc: 'Точно вирахуйте суму держмита для вашої комбінації форм.', url: 'https://www.uscis.gov/feecalculator', label: 'uscis.gov/feecalculator' },
         { name: 'my.uscis.gov — онлайн-подача', desc: 'Офіційний акаунт USCIS для онлайн-подачі та статусу справи.', url: 'https://my.uscis.gov/', label: 'my.uscis.gov' },
+      ],
+    },
+    {
+      title: '⚠ Нові правила 2026 — перевірте перед поданням',
+      items: [
+        { name: 'H.R.1 TPS EAD cap (діє з 29 травня 2026)', desc: 'Правило H.R.1: нові TPS EAD дійсні лише 1 рік. Деякі збори H.R.1 не скасовуються через I-912. Джерело: 91 FR 22952 (doc 2026-08333).', url: 'https://www.federalregister.gov/documents/2026/04/29/2026-08333/uscis-immigration-fees-and-related-procedures-required-by-hr1-reconciliation-bill', label: 'federalregister.gov/.../2026-08333' },
+        { name: 'Підписи на формах (діє з 10 липня 2026)', desc: 'USCIS може відхилити заяву і утримати збір, якщо підпис недійсний (копія, текст, програма). Джерело: 91 FR 25479 (doc 2026-09289).', url: 'https://www.federalregister.gov/documents/2026/05/11/2026-09289/signatures-on-immigration-benefit-requests', label: 'federalregister.gov/.../2026-09289' },
       ],
     },
     {
@@ -120,6 +129,13 @@ const CATEGORIES: Record<Locale, SourceCategory[]> = {
       ],
     },
     {
+      title: '⚠ Новые правила 2026 — проверьте перед подачей',
+      items: [
+        { name: 'H.R.1 TPS EAD cap (с 29 мая 2026)', desc: 'Правило H.R.1: новые TPS EAD действительны только 1 год. Некоторые сборы H.R.1 не отменяются через I-912. Источник: 91 FR 22952 (doc 2026-08333).', url: 'https://www.federalregister.gov/documents/2026/04/29/2026-08333/uscis-immigration-fees-and-related-procedures-required-by-hr1-reconciliation-bill', label: 'federalregister.gov/.../2026-08333' },
+        { name: 'Подписи на формах (с 10 июля 2026)', desc: 'USCIS может отклонить заявление и удержать сбор, если подпись недействительна (копия, текст, программа). Источник: 91 FR 25479 (doc 2026-09289).', url: 'https://www.federalregister.gov/documents/2026/05/11/2026-09289/signatures-on-immigration-benefit-requests', label: 'federalregister.gov/.../2026-09289' },
+      ],
+    },
+    {
       title: '📰 Federal Register и официальные объявления',
       items: [
         { name: 'Federal Register notice 2025-00771', desc: 'Продление TPS Ukraine на 18 месяцев (апрель 2025 — октябрь 2026), 60-дневное окно re-registration, автопродление EAD.', url: 'https://www.federalregister.gov/documents/2025/01/17/2025-00771/extension-of-the-designation-of-ukraine-for-temporary-protected-status', label: 'federalregister.gov/.../2025-00771' },
@@ -160,6 +176,13 @@ const CATEGORIES: Record<Locale, SourceCategory[]> = {
       ],
     },
     {
+      title: '⚠ New 2026 rules — verify before filing',
+      items: [
+        { name: 'H.R.1 TPS EAD cap (effective May 29, 2026)', desc: 'H.R.1 rule: new TPS EADs valid for 1 year only. Some H.R.1 fees cannot be waived via I-912. Source: 91 FR 22952 (doc 2026-08333).', url: 'https://www.federalregister.gov/documents/2026/04/29/2026-08333/uscis-immigration-fees-and-related-procedures-required-by-hr1-reconciliation-bill', label: 'federalregister.gov/.../2026-08333' },
+        { name: 'Signature rule (effective July 10, 2026)', desc: 'USCIS may deny application and keep filing fee if signature is invalid (copied image, typed name, software). Source: 91 FR 25479 (doc 2026-09289).', url: 'https://www.federalregister.gov/documents/2026/05/11/2026-09289/signatures-on-immigration-benefit-requests', label: 'federalregister.gov/.../2026-09289' },
+      ],
+    },
+    {
       title: '📰 Federal Register and official announcements',
       items: [
         { name: 'Federal Register notice 2025-00771', desc: 'Extension of TPS Ukraine for 18 months (Apr 2025 – Oct 2026), 60-day re-registration window, EAD auto-extension.', url: 'https://www.federalregister.gov/documents/2025/01/17/2025-00771/extension-of-the-designation-of-ukraine-for-temporary-protected-status', label: 'federalregister.gov/.../2025-00771' },
@@ -197,6 +220,13 @@ const CATEGORIES: Record<Locale, SourceCategory[]> = {
       items: [
         { name: 'USCIS fee calculator', desc: 'Calcule la tarifa exacta de USCIS para su combinación de formularios.', url: 'https://www.uscis.gov/feecalculator', label: 'uscis.gov/feecalculator' },
         { name: 'my.uscis.gov — presentación en línea', desc: 'Cuenta oficial de USCIS para presentación en línea y estado del caso.', url: 'https://my.uscis.gov/', label: 'my.uscis.gov' },
+      ],
+    },
+    {
+      title: '⚠ Nuevas reglas 2026 — verifique antes de presentar',
+      items: [
+        { name: 'H.R.1 TPS EAD cap (vigente desde 29 may 2026)', desc: 'Regla H.R.1: los nuevos EAD TPS son válidos solo por 1 año. Algunas tarifas H.R.1 no pueden exonerarse mediante I-912. Fuente: 91 FR 22952 (doc 2026-08333).', url: 'https://www.federalregister.gov/documents/2026/04/29/2026-08333/uscis-immigration-fees-and-related-procedures-required-by-hr1-reconciliation-bill', label: 'federalregister.gov/.../2026-08333' },
+        { name: 'Regla de firma (vigente desde 10 jul 2026)', desc: 'USCIS puede denegar la solicitud y retener la tarifa si la firma es inválida (imagen copiada, nombre escrito, software). Fuente: 91 FR 25479 (doc 2026-09289).', url: 'https://www.federalregister.gov/documents/2026/05/11/2026-09289/signatures-on-immigration-benefit-requests', label: 'federalregister.gov/.../2026-09289' },
       ],
     },
     {

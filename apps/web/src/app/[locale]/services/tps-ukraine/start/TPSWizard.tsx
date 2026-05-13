@@ -265,7 +265,7 @@ const T = {
     s3EadHint: 'Filed as a separate Form I-765, together with I-821 or after.',
     s3HasEad: 'Do you already have a TPS EAD?',
     s3EadExpiry: 'Card Expires date on your EAD',
-    s3EadAutoNote: 'Some TPS EADs with Card Expires Apr 19, 2025 or Oct 19, 2023 are automatically extended through Apr 19, 2026. Verify on the USCIS page.',
+    s3EadAutoNote: 'The EAD auto-extension through Apr 19, 2026 (for cards with Apr 19, 2025 or Oct 19, 2023 expiry) is now expired as of May 2026. Verify current EAD validity on the official USCIS TPS Ukraine page.',
     s3FeeWaiver: 'Do you need a fee waiver (I-912)?',
     s3FeeWaiverHint: 'Form I-912 — request to waive USCIS fees. Paper filing ONLY.',
     s3Result: 'Filing method:',

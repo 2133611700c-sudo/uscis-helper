@@ -26,9 +26,29 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import JSZip from 'jszip'
+import { PDFDocument } from 'pdf-lib'
 
 import { buildPacket } from '../packetBuilder'
 import type { TPSAnswers } from '../answers'
+
+// Helper: read an AcroForm text-field value directly from the PDF bytes.
+// Used to verify split per-digit cells (e.g. I-765 Line7 AlienNumber) where
+// pdftotext may not reassemble the digits into a contiguous string.
+async function readAcroFieldValue(bytes: Uint8Array, fieldName: string): Promise<string | null> {
+  try {
+    const doc = await PDFDocument.load(bytes, { ignoreEncryption: true })
+    const form = doc.getForm()
+    const field = form.getFieldMaybe(fieldName)
+    if (!field) return null
+    // TextField has getText(); fallback to empty string if not a text field.
+    if ('getText' in field && typeof (field as { getText: () => string }).getText === 'function') {
+      return (field as { getText: () => string }).getText() ?? null
+    }
+    return null
+  } catch {
+    return null
+  }
+}
 
 // ── Synthetic fixture (no real PII — generic placeholder strings) ────────────
 const fixtureInitialPath: TPSAnswers = {
@@ -150,13 +170,26 @@ describe('buildPacket — TPS Ukraine initial-path fixture', () => {
     expect(result.i765.skipped).toBe(0)
 
     const zip = await JSZip.loadAsync(result.zipBytes)
-    const i821Text = pdfToText(await zip.file('I-821.pdf')!.async('uint8array'))
     const i765Text = pdfToText(await zip.file('I-765.pdf')!.async('uint8array'))
 
-    // A-Number must land in both forms.
-    expect(i821Text).toMatch(/987654321/)
-    expect(i765Text).toMatch(/987654321/)
-    // Class of admission ("UH") must land on I-765 Line 23.
+    // I-821 Part 2 Item 7 AlienNumber and I-765 Line 7 AlienNumber are both
+    // AcroForm split-cell fields. pdftotext does not reassemble per-digit
+    // cells reliably. Verify via AcroForm field value — this is the real
+    // contract: when a USCIS officer opens the PDF, the field holds the value.
+    const i821FieldValue = await readAcroFieldValue(
+      await zip.file('I-821.pdf')!.async('uint8array'),
+      'form1[0].Page02[0].Part2_Item7_AlienNumber[0]',
+    )
+    expect(i821FieldValue).toBe('987654321')
+
+    const i765FieldValue = await readAcroFieldValue(
+      await zip.file('I-765.pdf')!.async('uint8array'),
+      'form1[0].Page2[0].Line7_AlienNumber[0]',
+    )
+    expect(i765FieldValue).toBe('987654321')
+
+    // Class of admission ("UH") lands in I-765 Line 23 — that one is a
+    // regular text field that renders fine to pdftotext.
     expect(i765Text).toMatch(/UH/)
   })
 

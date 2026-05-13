@@ -91,6 +91,13 @@ interface CopyBundle {
   signI821: string
   signI765: string
   signWarning: string
+  /** Effective 2026-07-10 (FR 2026-09289): USCIS may deny AND keep fee for invalid signature */
+  signDenyFeeWarning: string
+  feeHeading: string
+  feeWaiverNote: string
+  feeHr1Note: string
+  feeVerifyLink: string
+  sourceSnapshotNote: string
   lockboxHeading: string
   // OC-2 fix: lockbox shown is the ACTUAL one matched to the user's
   // state of residence. Phoenix-vs-Chicago is a per-state question for
@@ -112,25 +119,31 @@ const COPY: Record<Locale, CopyBundle> = {
     i765NotIncluded: 'I-765 не включено (ви не запросили дозвіл на роботу)',
     filledHeading: 'Поля, які ми вже маємо',
     missingHeading: 'Потрібно ще заповнити',
-    missingFooter: (n) => `Залишилось обов’язкових полів: ${n}`,
-    signingHeading: 'Підписи на папері (після друку)',
+    missingFooter: (n) => `Залишилось обов'язкових полів: ${n}`,
+    signingHeading: 'Підпис на папері (після друку)',
     signI821: 'I-821 — Частина 8 на сторінці 10. Чорна або синя ручка.',
     signI765: 'I-765 — Частина 3 на сторінці 4. Чорна або синя ручка.',
-    signWarning: 'Ми НЕ підписуємо за вас. Це треба зробити руками після друку.',
+    signWarning: 'Ми НЕ підписуємо за вас. Підпис потрібно поставити від руки після друку.',
+    signDenyFeeWarning: '⚠ Важливо (з 10 липня 2026): USCIS може ВІДХИЛИТИ заяву і УТРИМАТИ ВАШ ЗБІР, якщо підпис недійсний — скопійований, набраний текстом або зроблений програмою. Підписуйте тільки від руки ручкою.',
+    feeHeading: 'Державний збір USCIS',
+    feeWaiverNote: 'Форма I-912 (звільнення від збору) поширюється лише на стандартні збори USCIS: I-821, біометрія, I-765.',
+    feeHr1Note: '⚠ Збори, встановлені законом H.R.1 (з 29 травня 2026), — НЕ скасовуються через I-912. Перевірте поточні збори перед відправкою.',
+    feeVerifyLink: 'Перевірити збори: uscis.gov/feecalculator',
+    sourceSnapshotNote: 'Дані правил перевірено: 12 травня 2026. Завжди звіряйтеся з офіційним сайтом USCIS перед поданням.',
     lockboxHeading: 'Куди надсилати',
     lockboxKnown: (name, state) =>
-      `${name} (для жителів штату ${state}). Повна адреса з’явиться у README після генерації пакета. Завжди перевіряйте її на офіційній сторінці USCIS перед відправкою.`,
+      `${name} (для жителів штату ${state}). Повна адреса з'явиться у README після генерації пакета. Завжди перевіряйте її на офіційній сторінці USCIS перед відправкою.`,
     lockboxUnknown: (state) =>
       `Для штату «${state}» ми не змогли визначити адресу автоматично. Перевірте офіційну сторінку USCIS перед відправкою.`,
     lockboxNoState: 'Вкажіть штат — ми покажемо точну адресу USCIS Lockbox для вашого штату.',
     rowLabels: {
-      family_name: 'Прізвище', given_name: 'Ім’я', dob: 'Дата народження', sex: 'Стать',
+      family_name: 'Прізвище', given_name: 'Ім\'я', dob: 'Дата народження', sex: 'Стать',
       country_of_birth: 'Країна народження',
       passport_number: 'Номер паспорта', passport_country_of_issuance: 'Країна видачі паспорта',
       passport_expiration_date: 'Паспорт дійсний до',
       us_address_street: 'Адреса в США (вулиця)', us_address_city: 'Місто', us_address_state: 'Штат',
       us_address_zip: 'ZIP-код',
-      last_entry_date: 'Дата в’їзду в США',
+      last_entry_date: 'Дата в\'їзду в США',
       daytime_phone: 'Денний телефон', email: 'Email',
     },
   },
@@ -143,10 +156,16 @@ const COPY: Record<Locale, CopyBundle> = {
     filledHeading: 'Поля, которые у нас уже есть',
     missingHeading: 'Нужно ещё заполнить',
     missingFooter: (n) => `Осталось обязательных полей: ${n}`,
-    signingHeading: 'Подписи на бумаге (после печати)',
+    signingHeading: 'Подпись на бумаге (после печати)',
     signI821: 'I-821 — Часть 8 на странице 10. Чёрная или синяя ручка.',
     signI765: 'I-765 — Часть 3 на странице 4. Чёрная или синяя ручка.',
-    signWarning: 'Мы НЕ подписываем за вас. Это нужно сделать вручную после печати.',
+    signWarning: 'Мы НЕ подписываем за вас. Подпись нужно поставить вручную после печати.',
+    signDenyFeeWarning: '⚠ Важно (с 10 июля 2026): USCIS может ОТКЛОНИТЬ заявление и УДЕРЖАТЬ ВАШ СБОР, если подпись недействительна — скопирована, напечатана текстом или создана программой. Подписывайте только от руки ручкой.',
+    feeHeading: 'Государственный сбор USCIS',
+    feeWaiverNote: 'Форма I-912 (освобождение от сбора) распространяется только на стандартные сборы USCIS: I-821, биометрия, I-765.',
+    feeHr1Note: '⚠ Сборы, установленные законом H.R.1 (с 29 мая 2026), НЕ отменяются через I-912. Проверьте текущие сборы перед отправкой.',
+    feeVerifyLink: 'Проверить сборы: uscis.gov/feecalculator',
+    sourceSnapshotNote: 'Данные правил проверены: 12 мая 2026. Всегда сверяйтесь с официальным сайтом USCIS перед подачей.',
     lockboxHeading: 'Куда отправлять',
     lockboxKnown: (name, state) =>
       `${name} (для жителей штата ${state}). Полный адрес появится в README после генерации пакета. Всегда сверяйте его с официальной страницей USCIS перед отправкой.`,
@@ -173,10 +192,16 @@ const COPY: Record<Locale, CopyBundle> = {
     filledHeading: 'Fields we already have',
     missingHeading: 'Still need from you',
     missingFooter: (n) => `Required fields remaining: ${n}`,
-    signingHeading: 'Where you sign on paper (after printing)',
+    signingHeading: 'Signature on paper (after printing)',
     signI821: 'I-821 — Part 8 on page 10. Black or blue ink.',
     signI765: 'I-765 — Part 3 on page 4. Black or blue ink.',
     signWarning: 'We do NOT sign for you. You must sign by hand after printing.',
+    signDenyFeeWarning: '⚠ Important (from July 10, 2026): USCIS may DENY your application and KEEP YOUR FILING FEE if it later finds an invalid signature — copied image, typed name, or software-generated. Sign by hand in ink only.',
+    feeHeading: 'USCIS government fee',
+    feeWaiverNote: 'Form I-912 (fee waiver) covers standard USCIS base fees only: I-821, biometrics, I-765.',
+    feeHr1Note: '⚠ Fees required by H.R.1 (effective May 29, 2026) CANNOT be waived via I-912 — they are non-waivable by statute. Verify current fees before mailing.',
+    feeVerifyLink: 'Verify fees: uscis.gov/feecalculator',
+    sourceSnapshotNote: 'Rules verified: May 12, 2026. Always check the official USCIS site before filing.',
     lockboxHeading: 'Where to mail',
     lockboxKnown: (name, state) =>
       `${name} (for ${state} residents). The full address will appear in the README inside your downloaded ZIP. Always verify against the official USCIS page before mailing.`,
@@ -203,10 +228,16 @@ const COPY: Record<Locale, CopyBundle> = {
     filledHeading: 'Campos que ya tenemos',
     missingHeading: 'Aún falta completar',
     missingFooter: (n) => `Campos obligatorios pendientes: ${n}`,
-    signingHeading: 'Dónde firmar en papel (después de imprimir)',
+    signingHeading: 'Firma en papel (después de imprimir)',
     signI821: 'I-821 — Parte 8 en la página 10. Tinta negra o azul.',
     signI765: 'I-765 — Parte 3 en la página 4. Tinta negra o azul.',
     signWarning: 'NO firmamos por usted. Debe firmar a mano después de imprimir.',
+    signDenyFeeWarning: '⚠ Importante (desde el 10 jul 2026): USCIS puede RECHAZAR su solicitud y RETENER SU TARIFA si la firma es inválida — imagen copiada, nombre mecanografiado o firma de software. Firme solo a mano con tinta.',
+    feeHeading: 'Tarifa gubernamental de USCIS',
+    feeWaiverNote: 'El formulario I-912 (exención de tarifa) cubre solo las tarifas base estándar de USCIS: I-821, biometría, I-765.',
+    feeHr1Note: '⚠ Las tarifas exigidas por H.R.1 (vigentes desde el 29 may 2026) NO pueden eximirse mediante I-912 — son obligatorias por ley. Verifique las tarifas actuales antes de enviar.',
+    feeVerifyLink: 'Verificar tarifas: uscis.gov/feecalculator',
+    sourceSnapshotNote: 'Reglas verificadas: 12 de mayo de 2026. Siempre consulte el sitio oficial de USCIS antes de presentar.',
     lockboxHeading: 'Adónde enviar',
     lockboxKnown: (name, state) =>
       `${name} (para residentes de ${state}). La dirección completa aparecerá en el README del ZIP descargado. Verifíquela siempre en la página oficial de USCIS antes de enviar.`,
@@ -390,8 +421,6 @@ export function PacketCompletenessChecker(props: PacketCompletenessProps): React
       </ul>
       <p
         style={{
-          // A11Y: 'We do NOT sign for you' warning is a critical
-          // expectation-setter. 12→14, italic kept, text-3→text-2.
           fontSize: TPS_A11Y.TEXT_DISCLAIMER,
           fontWeight: TPS_A11Y.WEIGHT_MEDIUM,
           color: 'var(--text-2)',
@@ -400,6 +429,71 @@ export function PacketCompletenessChecker(props: PacketCompletenessProps): React
         }}
       >
         {c.signWarning}
+      </p>
+      {/* Signature rule warning — FR doc 2026-09289, effective 2026-07-10 */}
+      <p
+        data-testid="checker-sign-deny-fee-warning"
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: 'var(--warning-text, #92400e)',
+          background: 'var(--warning-bg, #fef3c7)',
+          padding: '8px 10px',
+          borderRadius: 8,
+          marginTop: 8,
+          lineHeight: 1.45,
+        }}
+      >
+        {c.signDenyFeeWarning}
+      </p>
+
+      {/* Government fee check — H.R.1 rule, effective 2026-05-29 */}
+      <p style={{ ...sectionHeader, marginTop: 16 }} data-testid="checker-fee-heading">{c.feeHeading}</p>
+      <p style={{ ...liBase, marginBottom: 4 }}>{c.feeWaiverNote}</p>
+      <p
+        data-testid="checker-hr1-fee-warning"
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: 'var(--warning-text, #92400e)',
+          background: 'var(--warning-bg, #fef3c7)',
+          padding: '8px 10px',
+          borderRadius: 8,
+          marginTop: 4,
+          lineHeight: 1.45,
+        }}
+      >
+        {c.feeHr1Note}
+      </p>
+      <a
+        href="https://www.uscis.gov/feecalculator"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="checker-fee-link"
+        style={{
+          display: 'block',
+          marginTop: 6,
+          fontSize: 13,
+          fontWeight: 700,
+          color: 'var(--primary)',
+          textDecoration: 'none',
+        }}
+      >
+        {c.feeVerifyLink} ↗
+      </a>
+
+      {/* Source snapshot date */}
+      <p
+        data-testid="checker-source-snapshot"
+        style={{
+          fontSize: 11,
+          color: 'var(--text-3)',
+          marginTop: 14,
+          fontStyle: 'italic',
+          lineHeight: 1.4,
+        }}
+      >
+        {c.sourceSnapshotNote}
       </p>
 
       {/* Lockbox — OC-2 fix: state-driven, not hardcoded Phoenix */}

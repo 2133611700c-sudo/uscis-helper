@@ -4,16 +4,19 @@
  * TPS Ukraine landing — Re-Parole parity (server component, inline T,
  * zero-JS FAQ via <details>/<summary>).
  *
- * VERIFIED 2026-05-10 from official USCIS sources:
+ * VERIFIED 2026-05-12 from official USCIS/Federal Register sources:
  *   - TPS Ukraine extended for 18 months, from Apr 20, 2025 through Oct 19, 2026.
  *     (Federal Register notice 2025-00771, published 2025-01-17.)
- *   - 60-day re-registration window: Jan 17, 2025 – Mar 18, 2025.
- *   - Certain EADs auto-extended through Apr 19, 2026
- *     (EADs with Card Expires of Apr 19, 2025 or Oct 19, 2023).
+ *   - 60-day re-registration window: Jan 17, 2025 – Mar 18, 2025 (CLOSED).
+ *   - EAD auto-extension through Apr 19, 2026 is EXPIRED (past as of May 2026).
+ *   - H.R.1 EAD cap (FR doc 2026-08333, effective 2026-05-29):
+ *     TPS-based EADs issued/renewed on or after May 29, 2026 are valid for 1 year only.
+ *   - Signature rule (FR doc 2026-09289, effective 2026-07-10):
+ *     USCIS may deny AND keep filing fee for invalid signature.
  *   - Forms involved:
  *       I-821  — Application for Temporary Protected Status
  *       I-765  — Application for Employment Authorization (EAD)
- *       I-912  — Request for Fee Waiver (paper filing only)
+ *       I-912  — Request for Fee Waiver (paper filing only; does NOT waive H.R.1 fees)
  *       I-131  — Advance Parole (optional, for travel)
  *   - Source: uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine
  *
@@ -35,6 +38,9 @@ const T = {
     metaTitle: 'TPS для України — Messenginfo',
     metaDesc: 'Готові PDF I-821 та I-765 з вашими даними і письмова інструкція для I-912. Ви подаєте самостійно через USCIS. Ми не юридична фірма.',
     badge: 'TPS Україна — продовжено до 19 жовтня 2026',
+    alertTitle: '⚠ Нові правила USCIS — перевірте перед подачею',
+    alertBody: 'З 29 травня 2026: нові EAD/TPS дійсні лише 1 рік (не весь строк TPS). Деякі збори H.R.1 не скасовуються через I-912. З 10 липня 2026: USCIS може відхилити заяву і утримати ваш збір, якщо підпис недійсний.',
+    alertLink: 'Офіційні джерела →',
     title: 'TPS для України',
     subtitle: 'Допоможемо підготувати всю інформацію для подання та заповнення TPS у USCIS — крок за кроком.',
     ctaMain: 'Почати підготовку TPS →',
@@ -110,11 +116,11 @@ const T = {
       },
       {
         q: 'Як отримати дозвіл на роботу в США?',
-        a: 'Подайте Form I-765 разом з Form I-821. Деякі попередньо видані TPS EAD автоматично продовжені до 19 квітня 2026 року — перевірте дату Card Expires на вашій картці на сторінці USCIS.',
+        a: 'Подайте Form I-765 разом з Form I-821. Увага: з 29 травня 2026 нові TPS EAD дійсні лише 1 рік від дати видачі (не весь строк TPS) — правило H.R.1 (FR doc 2026-08333). Попередній автоматичний строк до 19 квітня 2026 вже минув. Перевіряйте актуальні терміни на офіційній сторінці USCIS TPS Ukraine перед поданням.',
       },
       {
         q: 'Що таке заявка на звільнення від оплати (форма I-912)?',
-        a: 'Форма I-912 дозволяє попросити USCIS не брати з вас державний збір — за певних умов. Подається лише разом з паперовою заявою (не онлайн). Право на звільнення є не у всіх — критерії на uscis.gov/i-912. Зараз ми не генеруємо готовий PDF I-912 — пакет містить письмову інструкцію, щоб ви могли заповнити її вручну.',
+        a: 'Форма I-912 дозволяє попросити USCIS не брати стандартний збір за I-821, біометрію та I-765 — за певних умов. Подається лише разом з паперовою заявою (не онлайн). Важливо: збори, встановлені законом H.R.1 (з 29 травня 2026), — наприклад, збір за TPS EAD — НЕ скасовуються через I-912. Перевірте поточні збори на uscis.gov/feecalculator. Право на звільнення є не у всіх — критерії на uscis.gov/i-912. Ми не генеруємо PDF I-912 — пакет містить письмову інструкцію.',
       },
     ],
     footer: 'TPS Ukraine продовжено до 19 жовтня 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo не подає документи від вашого імені',
@@ -123,6 +129,9 @@ const T = {
     metaTitle: 'TPS для Украины — Messenginfo',
     metaDesc: 'Готовые PDF I-821 и I-765 с вашими данными и письменная инструкция для I-912. Вы подаёте сами через USCIS. Мы не юридическая фирма.',
     badge: 'TPS Украина — продлено до 19 октября 2026',
+    alertTitle: '⚠ Новые правила USCIS — проверьте перед подачей',
+    alertBody: 'С 29 мая 2026: новые EAD/TPS действительны только 1 год (не весь срок TPS). Некоторые сборы H.R.1 не отменяются через I-912. С 10 июля 2026: USCIS может отклонить заявление и удержать ваш сбор, если подпись недействительна.',
+    alertLink: 'Официальные источники →',
     title: 'TPS для Украины',
     subtitle: 'Поможем подготовить всю информацию для подачи и заполнения TPS в USCIS — шаг за шагом.',
     ctaMain: 'Начать подготовку TPS →',
@@ -198,11 +207,11 @@ const T = {
       },
       {
         q: 'Как получить разрешение на работу в США?',
-        a: 'Подайте Form I-765 вместе с Form I-821. Некоторые ранее выданные TPS EAD автоматически продлены до 19 апреля 2026 — проверьте дату Card Expires на вашей карте на странице USCIS.',
+        a: 'Подайте Form I-765 вместе с Form I-821. Внимание: с 29 мая 2026 новые TPS EAD действительны только 1 год с даты выдачи (не весь срок TPS) — правило H.R.1 (FR doc 2026-08333). Предыдущий автоматический срок до 19 апреля 2026 уже истёк. Проверяйте актуальные сроки на официальной странице USCIS TPS Ukraine перед подачей.',
       },
       {
         q: 'Что такое заявление на освобождение от оплаты (форма I-912)?',
-        a: 'Форма I-912 позволяет попросить USCIS не брать с вас государственную пошлину — при определённых условиях. Подаётся только с бумажной заявкой (не онлайн). Право на освобождение есть не у всех — критерии на uscis.gov/i-912. Сейчас мы не генерируем готовый PDF I-912 — пакет содержит письменную инструкцию, чтобы вы могли заполнить её вручную.',
+        a: 'Форма I-912 позволяет попросить USCIS не брать стандартную пошлину за I-821, биометрию и I-765 — при определённых условиях. Подаётся только с бумажной заявкой (не онлайн). Важно: сборы, установленные законом H.R.1 (с 29 мая 2026), — например, сбор за TPS EAD — НЕ отменяются через I-912. Проверьте текущие сборы на uscis.gov/feecalculator. Право на освобождение есть не у всех — критерии на uscis.gov/i-912. Мы не генерируем PDF I-912 — пакет содержит письменную инструкцию.',
       },
     ],
     footer: 'TPS Ukraine продлено до 19 октября 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo не подаёт документы от вашего имени',
@@ -211,6 +220,9 @@ const T = {
     metaTitle: 'TPS for Ukraine — Messenginfo',
     metaDesc: 'Filled I-821 and I-765 PDFs with your data, plus written guidance for I-912. You file with USCIS yourself. We are not a law firm.',
     badge: 'TPS Ukraine — extended through Oct 19, 2026',
+    alertTitle: '⚠ New USCIS rules — verify before filing',
+    alertBody: 'From May 29, 2026: new TPS EADs are valid for 1 year only (not the full TPS period) under H.R.1. Some H.R.1 fees cannot be waived via I-912. From July 10, 2026: USCIS may deny your application and keep your filing fee if the signature is invalid.',
+    alertLink: 'Official sources →',
     title: 'TPS for Ukraine',
     subtitle: 'We help you prepare all the information you need to file TPS with USCIS — step by step.',
     ctaMain: 'Start TPS preparation →',
@@ -286,11 +298,11 @@ const T = {
       },
       {
         q: 'How do I get a work permit (EAD)?',
-        a: 'File Form I-765 together with Form I-821. Some previously issued TPS EADs were automatically extended through Apr 19, 2026 — check the Card Expires date on your card and the USCIS page.',
+        a: 'File Form I-765 together with Form I-821. Important: from May 29, 2026, new TPS-based EADs are valid for only 1 year from the issue date (not the full TPS period) under H.R.1 (FR doc 2026-08333). The previous EAD auto-extension through Apr 19, 2026 has expired. Always verify current EAD validity rules on the official USCIS TPS Ukraine page before filing.',
       },
       {
         q: 'What is a fee waiver / I-912?',
-        a: 'Form I-912 lets you request a USCIS fee waiver under certain conditions. It can only be filed with a paper application (not online). Not everyone is eligible — see criteria at uscis.gov/i-912. We do not yet generate a filled I-912 PDF — the packet includes written guidance so you can fill it by hand.',
+        a: 'Form I-912 lets you request a waiver of standard USCIS base fees (I-821, biometrics, I-765) under certain conditions. Paper filing only — not online. Important: fees required by H.R.1 (effective May 29, 2026) — such as the TPS employment authorization fee — CANNOT be waived via I-912; they are non-waivable by statute. Verify current fees at uscis.gov/feecalculator. Not everyone qualifies — see criteria at uscis.gov/i-912. We do not generate a filled I-912 PDF — the packet includes written guidance.',
       },
     ],
     footer: 'TPS Ukraine extended through Oct 19, 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo does not file on your behalf',
@@ -299,6 +311,9 @@ const T = {
     metaTitle: 'TPS para Ucrania — Messenginfo',
     metaDesc: 'PDFs I-821 e I-765 ya rellenados con sus datos, y una guía escrita para I-912. Usted presenta ante USCIS. No somos un bufete.',
     badge: 'TPS Ucrania — extendido hasta 19 oct 2026',
+    alertTitle: '⚠ Nuevas reglas de USCIS — verifique antes de presentar',
+    alertBody: 'Desde el 29 may 2026: los nuevos EAD/TPS son válidos solo 1 año (no todo el período TPS) según H.R.1. Algunas tarifas de H.R.1 no se pueden eximir con I-912. Desde el 10 jul 2026: USCIS puede rechazar su solicitud y retener su tarifa si la firma es inválida.',
+    alertLink: 'Fuentes oficiales →',
     title: 'TPS para Ucrania',
     subtitle: 'Le ayudamos a preparar toda la información para presentar TPS ante USCIS — paso a paso.',
     ctaMain: 'Comenzar preparación TPS →',
@@ -374,11 +389,11 @@ const T = {
       },
       {
         q: '¿Cómo obtengo permiso de trabajo en EE. UU.?',
-        a: 'Presente el Form I-765 junto con el Form I-821. Algunos EAD TPS emitidos antes fueron extendidos automáticamente hasta el 19 de abril de 2026 — verifique la fecha Card Expires en su tarjeta y en la página de USCIS.',
+        a: 'Presente el Form I-765 junto con el Form I-821. Importante: desde el 29 de mayo de 2026, los nuevos EAD basados en TPS son válidos solo 1 año desde la fecha de emisión (no todo el período TPS) según H.R.1 (FR doc 2026-08333). La extensión automática anterior hasta el 19 de abril de 2026 ya expiró. Verifique las reglas actuales de validez del EAD en la página oficial de USCIS TPS Ukraine antes de presentar.',
       },
       {
         q: '¿Qué es la solicitud de exención de tarifa (formulario I-912)?',
-        a: 'El Form I-912 permite solicitar la exención de tarifas de USCIS bajo ciertas condiciones. Solo se puede presentar con una solicitud en papel (no en línea). No todos son elegibles — criterios en uscis.gov/i-912. Por ahora no generamos un PDF I-912 rellenado — el paquete incluye una guía escrita para que pueda completarlo a mano.',
+        a: 'El Form I-912 permite solicitar la exención de tarifas base estándar de USCIS (I-821, biometría, I-765) bajo ciertas condiciones. Solo en papel, no en línea. Importante: las tarifas exigidas por H.R.1 (vigentes desde el 29 may 2026), como la tarifa de autorización de empleo TPS, NO pueden eximirse mediante I-912 — son obligatorias por ley. Verifique las tarifas actuales en uscis.gov/feecalculator. No todos son elegibles — criterios en uscis.gov/i-912. No generamos PDF I-912 — el paquete incluye una guía escrita.',
       },
     ],
     footer: 'TPS Ucrania extendido hasta el 19 oct 2026 · uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine · Messenginfo no presenta en su nombre',
@@ -421,6 +436,30 @@ export default async function TpsUkraineLandingPage({ params }: Props) {
   return (
     <main style={{ minHeight: '100dvh', background: 'var(--background)', padding: '0 0 48px' }}>
       <ServiceBackBar locale={locale} />
+
+      {/* ── Regulatory Alert Banner ───────────────────────────────── */}
+      {/* Source: USCIS_RULE_SNAPSHOT_2026-05-12 (H.R.1 EAD cap + signature rule) */}
+      <section
+        data-testid="tps-regulatory-alert"
+        style={{
+          background: 'var(--warning-bg, #fef3c7)',
+          borderBottom: '2px solid var(--warning-border, #f59e0b)',
+          padding: '12px 20px',
+        }}
+      >
+        <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--warning-text, #92400e)', marginBottom: '4px' }}>
+          {t.alertTitle}
+        </p>
+        <p style={{ fontSize: '12px', color: 'var(--warning-text, #92400e)', lineHeight: 1.45, marginBottom: '6px' }}>
+          {t.alertBody}
+        </p>
+        <a
+          href={`/${locale}/services/tps-ukraine/sources`}
+          style={{ fontSize: '12px', fontWeight: 700, color: 'var(--warning-text, #92400e)', textDecoration: 'underline' }}
+        >
+          {t.alertLink}
+        </a>
+      </section>
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <section
