@@ -24,7 +24,20 @@
  * a stale address.
  */
 
-export const SNAPSHOT_DATE = '2026-05-10'
+export const SNAPSHOT_DATE = '2026-05-12'
+/**
+ * H.R.1 FEE RULE (effective 2026-05-29, doc 2026-08333, 91 FR 22952):
+ * The following fees are mandated by H.R.1 and CANNOT be waived or reduced
+ * via Form I-912 or any other USCIS fee-waiver mechanism:
+ *   • H.R.1 TPS employment authorization fee
+ *   • Asylum application filing fee ($100 minimum)
+ *   • Annual Asylum Fee ($100/year per pending application)
+ *   • Form I-94 fee ($24)
+ * Standard USCIS base fees (I-821, biometrics, I-765) remain waivable via I-912.
+ * Source snapshot: USCIS_RULE_SNAPSHOT_2026-05-12.report.yaml
+ */
+export const HR1_FEE_RULE_EFFECTIVE = '2026-05-29'
+export const HR1_FEE_RULE_DOC = '2026-08333'
 export const OFFICIAL_TPS_UKRAINE_PAGE =
   'https://www.uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine'
 export const OFFICIAL_FEE_SCHEDULE_PAGE = 'https://www.uscis.gov/g-1055'
@@ -229,12 +242,23 @@ export function feeGuidance(inputs: FeeGuidanceInputs): FeeGuidance {
   const notes: string[] = []
   if (inputs.wants_fee_waiver) {
     notes.push(
-      'If USCIS approves your fee waiver request, the I-821, biometrics, and I-765 fees become $0. ' +
-      'A fee waiver is not automatic — only USCIS can approve it.',
+      'If USCIS approves your fee waiver request (I-912), the standard I-821, biometrics, and I-765 ' +
+      'base fees become $0. A fee waiver is not automatic — only USCIS can approve it.',
+    )
+    notes.push(
+      'H.R.1 ALERT (effective 2026-05-29, doc 2026-08333): Fees mandated by H.R.1 (TPS employment ' +
+      'authorization fee, I-94 fee, asylum fees) CANNOT be waived or reduced via I-912 — they are ' +
+      'non-waivable by statute. Verify which fees apply to your case on uscis.gov/feecalculator.',
     )
   }
   notes.push(
-    'The exact dollar amounts above can change. Always verify the current fee on the official USCIS Fee Schedule (G-1055).',
+    'The exact dollar amounts can change. Always verify the current fee on the official USCIS Fee Schedule (G-1055) ' +
+    'before mailing: https://www.uscis.gov/g-1055',
+  )
+  notes.push(
+    'EAD VALIDITY RULE (H.R.1, effective 2026-05-29): TPS-based EADs issued or renewed on or after ' +
+    '2026-05-29 are valid for 1 year (or remaining TPS period, whichever is shorter). ' +
+    'Verify current EAD validity rules on the official USCIS TPS Ukraine page.',
   )
 
   return {
