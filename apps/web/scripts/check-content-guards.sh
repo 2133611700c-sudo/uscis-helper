@@ -177,6 +177,61 @@ for PHRASE in "${TPS_FORBIDDEN[@]}"; do
   fi
 done
 
+# ── Rule 11: Signature-deny-fee warning MUST be present in product copy ──
+# FR doc 2026-09289 (effective 2026-07-10): USCIS may deny and keep fee
+# for invalid signatures. The warning must appear in packetBuilder README
+# and in PacketCompletenessChecker / GeneratePacketBlock sign sections.
+banner "Rule 11 — Signature deny+fee warning present in packetBuilder README"
+README_WARN=$(grep -c "DENY\|deny\|RETAIN\|retain\|fee.*invalid\|invalid.*fee" \
+  "$SRC/lib/tps/packetBuilder.ts" 2>/dev/null || true)
+if [ "${README_WARN:-0}" -lt 1 ]; then
+  fail "packetBuilder.ts missing signature deny+fee warning"
+else
+  ok "packetBuilder.ts contains signature deny+fee warning"
+fi
+
+banner "Rule 11b — Signature deny+fee warning present in GeneratePacketBlock"
+BLOCK_WARN=$(grep -c "DENY\|deny\|RETAIN\|retain\|FR 2026-09289\|2026-09289" \
+  "$SRC/app/[locale]/services/tps-ukraine/start/GeneratePacketBlock.tsx" 2>/dev/null || true)
+if [ "${BLOCK_WARN:-0}" -lt 1 ]; then
+  fail "GeneratePacketBlock.tsx missing signature deny+fee warning"
+else
+  ok "GeneratePacketBlock.tsx contains signature deny+fee warning"
+fi
+
+banner "Rule 11c — Signature deny+fee warning present in PacketCompletenessChecker"
+CHECKER_WARN=$(grep -c "DENY\|deny\|RETAIN\|retain\|FR 2026-09289\|2026-09289\|signDenyFeeWarning" \
+  "$SRC/components/tps/PacketCompletenessChecker.tsx" 2>/dev/null || true)
+if [ "${CHECKER_WARN:-0}" -lt 1 ]; then
+  fail "PacketCompletenessChecker.tsx missing signature deny+fee warning"
+else
+  ok "PacketCompletenessChecker.tsx contains signature deny+fee warning"
+fi
+
+# ── Rule 12: No unconditional stale EAD auto-extension date claim ────────
+# The EAD auto-extension date (Apr 19, 2026) has expired as of May 2026.
+# Claiming it as a current/future EAD validity date is factually wrong.
+# Rule: block any UI string that mentions "Apr 19, 2026" or "April 19, 2026"
+# NEXT TO EAD context ("EAD", "work permit", "автопродовження", "автопродление")
+# without being explicitly marked as expired.
+# Oct 19, 2026 is the TPS EXTENSION end date (valid/future) — not blocked here.
+# Comment lines (containing ' * ' or beginning with //) and explicit
+# "EXPIRED/expired" or "past" annotations are excluded.
+banner "Rule 12 — No unconditional stale EAD auto-extension date (Apr 19, 2026 + EAD context)"
+STALE_EAD=$(grep -rn "Apr 19, 2026\|April 19, 2026\|04\/19\/2026\|2026-04-19" \
+  "$SRC/components" "$SRC/app" "$MSG" 2>/dev/null \
+  | grep -i "EAD\|work permit\|employment auth\|автопрод\|auto-extension\|autoextension\|Card Expires" \
+  | grep -v "EXPIRED\|expired\|stale\|removed\|past\|no longer\|is expired\|has expired" \
+  | grep -v "^\s*\*\|^\s*//" \
+  | grep -v "__tests__\|\.test\.ts\|\.spec\.ts\|test-fixtures\|\.report\." \
+  || true)
+if [ -n "$STALE_EAD" ]; then
+  fail "Stale EAD auto-extension date (Apr 19, 2026) without expired marker in user-facing copy"
+  echo "$STALE_EAD" | sed 's/^/     /'
+else
+  ok "No unconditional stale EAD auto-extension date (Apr 19, 2026)"
+fi
+
 # ── Summary ───────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"
