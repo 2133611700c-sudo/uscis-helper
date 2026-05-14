@@ -6,10 +6,28 @@
  * Total fields: 511 (per field_inventory_i821.json)
  *
  * We map the SUBSET of fields needed for a single-adult applicant on the
- * initial or re-registration path. Family/co-applicant fields (Parts 4-6),
- * eligibility yes/no Part 3, signature pages, and other complex sub-forms
- * are intentionally NOT mapped — that's a later cycle. The user signs the
- * blank signature line themselves before mailing.
+ * initial or re-registration path.
+ *
+ * FIELD CLASSIFICATION (per TPS_FIELD_COVERAGE_CLOSEOUT_V1):
+ *   MAPPED (this file):
+ *     Part 1  — filing type, TPS country, concurrent EAD
+ *     Part 2  — identity, address, A-number, DOB, sex, SSN, marital status,
+ *               city/country of birth, passport, I-94, status at entry,
+ *               port of entry, authorized stay, other names (first 2)
+ *     Part 3  — biographic (ethnicity, race, eye/hair color)
+ *     Part 7  — all yes/no background questions (defaults to No; user reviews)
+ *     Part 8  — phone, email (contact)
+ *   NOT MAPPED (intentionally manual):
+ *     Part 2  — height/weight (Pt2Line3/4; cosmetic, user fills in Adobe)
+ *     Part 4  — spouse information (conditional, user fills)
+ *     Part 5  — prior spouse information (conditional, user fills)
+ *     Part 6  — co-applicant children (conditional, user fills)
+ *     Part 7  — text fields (trip dates, prior TPS dates) — user fills
+ *     Part 8  — signature/date — user signs in ink
+ *     Part 9  — interpreter — N/A if user self-prepares
+ *     Part 10 — preparer — N/A if user self-prepares
+ *
+ * The user signs the blank signature line themselves before mailing.
  *
  * Field-name format is the literal AcroForm field name from the PDF:
  *   form1[0].Page02[0].Part2_Item1_FamilyName[0]
@@ -144,11 +162,85 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
   ops.push({ field: 'form1[0].Page02[0].Part2_Item12_Sex[0]', kind: 'checkbox', value: a.sex === 'M' })
   ops.push({ field: 'form1[0].Page02[0].Part2_Item12_Sex[1]', kind: 'checkbox', value: a.sex === 'F' })
 
+  // ── Part 2 — Item 9: Social Security Number (if applicant has one) ──────────
+  if (a.ssn) {
+    ops.push({
+      field: 'form1[0].Page02[0].Part2_Item9_SocialSecurityNumber[0]',
+      kind: 'text',
+      value: a.ssn,
+    })
+  }
+
+  // ── Part 2 — Item 11: Date of Birth (second AcroForm instance on Page02) ────
+  // The I-821 PDF has two AcroForm field instances for DOB on Page 2 — Item 10
+  // ([0]) and Item 11 ([0] and [1]). Both carry the same date. Item 11's two
+  // instances appear to be linked left/right cells that split MM/DD and YYYY
+  // on some printer layouts. Writing the full MM/DD/YYYY to both is safe —
+  // the prefiller gracefully skips any cell that rejects a value longer than
+  // its maxLength.
+  ops.push({ field: 'form1[0].Page02[0].Part2_Item11_DateOfBirth[0]', kind: 'text', value: toUscisDate(a.dob) })
+  ops.push({ field: 'form1[0].Page02[0].Part2_Item11_DateOfBirth[1]', kind: 'text', value: toUscisDate(a.dob) })
+
   // ── Part 2 — Item 13: city of birth ────────────────────────────────────────
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item13_CityOrTown[0]', kind: 'text', value: '' /* not captured this cycle */ })
+  ops.push({ field: 'form1[0].Page02[0].Part2_Item13_CityOrTown[0]', kind: 'text', value: a.city_of_birth ?? '' })
 
   // ── Part 2 — Item 14: country of birth ────────────────────────────────────
   ops.push({ field: 'form1[0].Page02[0].Part2_Item14_CountryofBirth[0]', kind: 'text', value: a.country_of_birth })
+
+  // ── Part 2 — Item 17: marital status ──────────────────────────────────────
+  // Seven checkboxes [0]-[6]: single, married, divorced, widowed,
+  // legally_separated, annulled, other. At most one is checked.
+  const maritalMap: Record<string, number> = {
+    single: 0, married: 1, divorced: 2, widowed: 3,
+    legally_separated: 4, annulled: 5, other: 6,
+  }
+  for (let i = 0; i < 7; i++) {
+    ops.push({
+      field: `form1[0].Page02[0].Part2_Item17_MaritalStatus[${i}]`,
+      kind: 'checkbox',
+      value: a.marital_status !== undefined && maritalMap[a.marital_status] === i,
+    })
+  }
+
+  // ── Part 2 — Items 15/16: Other names (aliases / prior names) ────────────────
+  // First two other-name slots have AcroForm cells. Map from other_names[0/1].
+  // Fields: Item15a=FamilyName, Item15b=GivenName, Item15c=MiddleName, Item15d=other-name type
+  // Fields: Item16a=FamilyName, Item16b=GivenName, Item16c=MiddleName, Item16d=other-name type
+  if (a.other_names && a.other_names.length > 0) {
+    const n0 = a.other_names[0]
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item15a[0]', kind: 'text', value: n0.family })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item15b[0]', kind: 'text', value: n0.given })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item15c[0]', kind: 'text', value: n0.middle ?? '' })
+  }
+  if (a.other_names && a.other_names.length > 1) {
+    const n1 = a.other_names[1]
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item16a[0]', kind: 'text', value: n1.family })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item16b[0]', kind: 'text', value: n1.given })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item16c[0]', kind: 'text', value: n1.middle ?? '' })
+  }
+
+  // ── Part 2 — Item 20: Port of entry ─────────────────────────────────────────
+  if (a.port_of_entry_city) {
+    ops.push({ field: 'form1[0].Page03[0].Part2_Item20_CityOrTown[0]', kind: 'text', value: a.port_of_entry_city })
+  }
+  if (a.port_of_entry_state) {
+    ops.push({ field: 'form1[0].Page03[0].Part2_Item20_State[0]', kind: 'choice', value: a.port_of_entry_state })
+  }
+
+  // ── Part 2 — Item 21: Authorized period of stay ──────────────────────────────
+  if (a.authorized_stay) {
+    ops.push({ field: 'form1[0].Page03[0].Part2_Item21_AuthorizedPdofStay[0]', kind: 'text', value: a.authorized_stay })
+  }
+
+  // ── Part 2 — Item 19: immigration status at last entry (Page03) ────────────
+  // I-765 Line 23 already maps this; I-821 Part 2 Item 19 is the same data.
+  if (a.status_at_last_entry) {
+    ops.push({
+      field: 'form1[0].Page03[0].Part2_Item19_ImmigrationStatus[0]',
+      kind: 'text',
+      value: a.status_at_last_entry,
+    })
+  }
 
   // ── Part 2 — Item 22: passport (Page03) ───────────────────────────────────
   ops.push({ field: 'form1[0].Page03[0].Part2_Item22_Passport[0]', kind: 'text', value: a.passport_number })
@@ -160,6 +252,87 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
   // ── Part 2 — Item 24: country of issuance + passport expiration ──────────
   ops.push({ field: 'form1[0].Page03[0].Part2_Item24_CountryofIssuance[0]', kind: 'text', value: a.passport_country_of_issuance })
   ops.push({ field: 'form1[0].Page03[0].Part2_Item24_PassportExpiration[0]', kind: 'text', value: toUscisDate(a.passport_expiration_date) })
+
+  // ── Part 3 — Biographic Information (Pages 03-04) ────────────────────────────
+  // Ethnicity: [0]=Yes Hispanic/Latino, [1]=No not Hispanic/Latino
+  const ethnicityIdx = a.ethnicity === 'hispanic' ? 0 : a.ethnicity === 'not_hispanic' ? 1 : -1
+  for (let i = 0; i < 2; i++) {
+    ops.push({ field: `form1[0].Page03[0].Part3_Item1_Ethnicity[${i}]`, kind: 'checkbox', value: i === ethnicityIdx })
+  }
+  // Race (one or more may be checked)
+  ops.push({ field: 'form1[0].Page03[0].Part3_Item2_RaceW[0]', kind: 'checkbox', value: a.race_white ?? false })
+  ops.push({ field: 'form1[0].Page03[0].Part3_Item2_RaceA[0]', kind: 'checkbox', value: a.race_asian ?? false })
+  ops.push({ field: 'form1[0].Page03[0].Part3_Item2_RaceB[0]', kind: 'checkbox', value: a.race_black ?? false })
+  ops.push({ field: 'form1[0].Page03[0].Part3_Item2_RaceI[0]', kind: 'checkbox', value: a.race_american_indian ?? false })
+  ops.push({ field: 'form1[0].Page03[0].Part3_Item2_RaceH[0]', kind: 'checkbox', value: a.race_pacific_islander ?? false })
+
+  // Eye color: [0]=Black [1]=Blue [2]=Brown [3]=Gray [4]=Green [5]=Hazel [6]=Maroon [7]=Pink [8]=Unknown
+  const eyeColorOrder = ['black', 'blue', 'brown', 'gray', 'green', 'hazel', 'maroon', 'pink', 'unknown'] as const
+  const eyeIdx = a.eye_color !== undefined ? eyeColorOrder.indexOf(a.eye_color) : -1
+  for (let i = 0; i < 9; i++) {
+    ops.push({ field: `form1[0].Page04[0].Page04[0].Part3_Item5_Eyecolor[${i}]`, kind: 'checkbox', value: i === eyeIdx })
+  }
+  // Hair color: [0]=Bald [1]=Black [2]=Blonde [3]=Brown [4]=Gray [5]=Red [6]=Sandy [7]=White [8]=Unknown
+  const hairColorOrder = ['bald', 'black', 'blonde', 'brown', 'gray', 'red', 'sandy', 'white', 'unknown'] as const
+  const hairIdx = a.hair_color !== undefined ? hairColorOrder.indexOf(a.hair_color) : -1
+  for (let i = 0; i < 9; i++) {
+    ops.push({ field: `form1[0].Page04[0].Page04[0].Part3_Item6_Haircolor[${i}]`, kind: 'checkbox', value: i === hairIdx })
+  }
+
+  // ── Part 7 — Background declaration yes/no questions ─────────────────────────
+  // Default: all false (No). User must review and confirm before generation.
+  // The PacketCompletenessChecker enforces part7_reviewed=true before allowing
+  // ZIP download. This satisfies the field_provenance requirement: no silent
+  // defaults — user explicitly sees and confirms each answer.
+  //
+  // Field pattern: _YN[0]=Yes, _YN[1]=No (or _YND for Yes/No/Don't Know)
+  // We write: [0]=value, [1]=!value
+  type YNQ = [string, boolean]  // [field_prefix, answer_value]
+  const part7Questions: YNQ[] = [
+    // Page 7
+    ['form1[0].Page07[0].Part7_Item4a_YN', !!a.part7_4a],
+    ['form1[0].Page07[0].Part7_Item4b_YN', !!a.part7_4b],
+    ['form1[0].Page07[0].Part7_Item4c_YN', !!a.part7_4c],
+    // Page 8
+    ['form1[0].Page08[0].Part7_Item5a_YN', !!a.part7_5a],
+    ['form1[0].Page08[0].Part7_Item5b_YN', !!a.part7_5b],
+    ['form1[0].Page08[0].Part7_Item5c_YN', !!a.part7_5c],
+    ['form1[0].Page08[0].Part7_Item7a_YN', !!a.part7_7a],
+    ['form1[0].Page08[0].Part7_Item7b_YN', !!a.part7_7b],
+    ['form1[0].Page08[0].Part7_Item7c_YN', !!a.part7_7c],
+    ['form1[0].Page08[0].Part7_Item8_YN',  !!a.part7_8],
+    ['form1[0].Page08[0].Part7_Item9a_YN', !!a.part7_9a],
+    ['form1[0].Page08[0].Part7_Item9b_YN', !!a.part7_9b],
+    ['form1[0].Page08[0].Part7_Item9c_YN', !!a.part7_9c],
+    ['form1[0].Page08[0].Part7_Item9d_YN', !!a.part7_9d],
+    ['form1[0].Page08[0].Part7_Item9e_YN', !!a.part7_9e],
+    ['form1[0].Page08[0].Part7_Item11a_YN', !!a.part7_11a],
+    ['form1[0].Page08[0].Part7_Item11b_YN', !!a.part7_11b],
+    ['form1[0].Page08[0].Part7_Item11c_YN', !!a.part7_11c],
+    ['form1[0].Page08[0].Part7_Item11d_YN', !!a.part7_11d],
+    ['form1[0].Page08[0].Part7_Item12a_YN', !!a.part7_12a],
+    ['form1[0].Page08[0].Part7_Item12b_YN', !!a.part7_12b],
+    ['form1[0].Page08[0].Part7_Item12c_YN', !!a.part7_12c],
+    ['form1[0].Page08[0].Part7_Item12d_YN', !!a.part7_12d],
+    ['form1[0].Page08[0].Part7_Item13a_YN', !!a.part7_13a],
+    ['form1[0].Page08[0].Part7_Item13b_YN', !!a.part7_13b],
+    ['form1[0].Page08[0].Part7_Item13c_YN', !!a.part7_13c],
+    // Page 9
+    ['form1[0].Page09[0].Part7_Item17_YN',  !!a.part7_17],
+    ['form1[0].Page09[0].Part7_Item18a_YN', !!a.part7_18a],
+    ['form1[0].Page09[0].Part7_Item18b_YN', !!a.part7_18b],
+    ['form1[0].Page09[0].Part7_Item18c_YN', !!a.part7_18c],
+  ]
+  for (const [prefix, yes] of part7Questions) {
+    ops.push({ field: `${prefix}[0]`, kind: 'checkbox', value: yes })   // Yes
+    ops.push({ field: `${prefix}[1]`, kind: 'checkbox', value: !yes })  // No
+  }
+
+  // ── Part 8 — Contact information (Page 11) ──────────────────────────────────
+  // Phone maxLength = 10 (digits only). Strip non-digits before writing.
+  const phoneDigitsOnly = (a.daytime_phone || '').replace(/\D/g, '').slice(0, 10)
+  ops.push({ field: 'form1[0].Page11[0].Part8_Item3_DayPhone[0]', kind: 'text', value: phoneDigitsOnly })
+  ops.push({ field: 'form1[0].Page11[0].Part8_Item5_Email[0]',    kind: 'text', value: a.email })
 
   return ops
 }

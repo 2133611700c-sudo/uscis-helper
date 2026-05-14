@@ -59,6 +59,8 @@ export interface CheckerFields {
   us_address_state: string
   us_address_zip: string
   last_entry_date: string
+  /** Required for I-821 Part 2 Item 17. Empty string = not yet selected. */
+  marital_status: string
   daytime_phone: string
   email: string
 }
@@ -70,6 +72,8 @@ export interface PacketCompletenessProps {
   wantsEad: boolean | null | undefined
   /** Filing path drives I-765 eligibility category copy (a12 vs c19). */
   filingPath: 'initial' | 're_registration' | 'unknown' | 'unselected'
+  /** Whether the user has confirmed Part 7 background declaration review. */
+  part7Reviewed?: boolean
 }
 
 interface RowSpec {
@@ -108,6 +112,8 @@ interface CopyBundle {
   lockboxUnknown: (state: string) => string
   lockboxNoState: string
   rowLabels: Record<keyof CheckerFields, string>
+  /** Part 7 confirmation copy */
+  part7Required: string
 }
 
 const COPY: Record<Locale, CopyBundle> = {
@@ -144,8 +150,10 @@ const COPY: Record<Locale, CopyBundle> = {
       us_address_street: 'Адреса в США (вулиця)', us_address_city: 'Місто', us_address_state: 'Штат',
       us_address_zip: 'ZIP-код',
       last_entry_date: 'Дата в\'їзду в США',
+      marital_status: 'Сімейний стан',
       daytime_phone: 'Денний телефон', email: 'Email',
     },
+    part7Required: '⚠ Декларацію Part 7 ще не підтверджено.',
   },
   ru: {
     title: 'Что будет в пакете',
@@ -180,8 +188,10 @@ const COPY: Record<Locale, CopyBundle> = {
       us_address_street: 'Адрес в США (улица)', us_address_city: 'Город', us_address_state: 'Штат',
       us_address_zip: 'ZIP-код',
       last_entry_date: 'Дата въезда в США',
+      marital_status: 'Семейное положение',
       daytime_phone: 'Дневной телефон', email: 'Email',
     },
+    part7Required: '⚠ Декларация Part 7 ещё не подтверждена.',
   },
   en: {
     title: 'What will be in your packet',
@@ -216,8 +226,10 @@ const COPY: Record<Locale, CopyBundle> = {
       us_address_street: 'US address (street)', us_address_city: 'City', us_address_state: 'State',
       us_address_zip: 'ZIP code',
       last_entry_date: 'Date of last entry to the US',
+      marital_status: 'Marital status',
       daytime_phone: 'Daytime phone', email: 'Email',
     },
+    part7Required: '⚠ Part 7 background declaration not yet confirmed.',
   },
   es: {
     title: 'Lo que estará en su paquete',
@@ -252,8 +264,10 @@ const COPY: Record<Locale, CopyBundle> = {
       us_address_street: 'Dirección en EE. UU. (calle)', us_address_city: 'Ciudad', us_address_state: 'Estado',
       us_address_zip: 'Código ZIP',
       last_entry_date: 'Fecha de última entrada a EE. UU.',
+      marital_status: 'Estado civil',
       daytime_phone: 'Teléfono diurno', email: 'Email',
     },
+    part7Required: '⚠ Declaración de la Parte 7 aún no confirmada.',
   },
 }
 
@@ -411,6 +425,25 @@ export function PacketCompletenessChecker(props: PacketCompletenessProps): React
             {c.missingFooter(missing.length)}
           </p>
         </>
+      )}
+
+      {/* Part 7 hard-stop warning — shown when user has not yet confirmed */}
+      {props.part7Reviewed === false && (
+        <p
+          data-testid="checker-part7-required"
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: 'var(--danger-text, #991b1b)',
+            background: 'var(--danger-bg, #fee2e2)',
+            padding: '8px 10px',
+            borderRadius: 8,
+            marginTop: 10,
+            lineHeight: 1.4,
+          }}
+        >
+          {c.part7Required}
+        </p>
       )}
 
       {/* Signing on paper */}
