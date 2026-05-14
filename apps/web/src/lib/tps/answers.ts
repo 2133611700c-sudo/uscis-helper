@@ -38,6 +38,12 @@ export interface TPSAnswers {
   uscis_online_account?: string    // 12 digits
   ssn?: string                     // 9 digits, no dashes
 
+  // ── Civil status ───────────────────────────────────────────────────────────
+  city_of_birth?: string           // I-821 Part2 Item 13, I-765 Line 18a
+  /** Marital status for I-821 Part 2 Item 17. Maps to checkboxes [0]-[6].
+   *  'legally_separated' → checkbox [4], 'annulled' → [5], 'other' → [6]. */
+  marital_status?: 'single' | 'married' | 'divorced' | 'widowed' | 'legally_separated' | 'annulled' | 'other'
+
   // ── Travel document ─────────────────────────────────────────────────────────
   passport_number: string
   passport_country_of_issuance: string
@@ -81,6 +87,101 @@ export interface TPSAnswers {
   daytime_phone: string
   email: string
 
+  // ── I-821 Part 3 — Biographic information ─────────────────────────────────
+  /** Hispanic or Latino ethnicity. Drives Part3_Item1_Ethnicity checkboxes.
+   *  [0]=Yes Hispanic/Latino, [1]=No */
+  ethnicity?: 'hispanic' | 'not_hispanic'
+  /** Race checkboxes: Part3_Item2_Race{W/A/B/I/H}. One or more may be true. */
+  race_white?: boolean
+  race_asian?: boolean
+  race_black?: boolean
+  race_american_indian?: boolean
+  race_pacific_islander?: boolean
+  /** Eye color. Part3_Item5_Eyecolor[0-8].
+   *  Indices: 0=Black 1=Blue 2=Brown 3=Gray 4=Green 5=Hazel 6=Maroon 7=Pink 8=Unknown */
+  eye_color?: 'black' | 'blue' | 'brown' | 'gray' | 'green' | 'hazel' | 'maroon' | 'pink' | 'unknown'
+  /** Hair color. Part3_Item6_Haircolor[0-8].
+   *  Indices: 0=Bald 1=Black 2=Blonde 3=Brown 4=Gray 5=Red 6=Sandy 7=White 8=Unknown */
+  hair_color?: 'bald' | 'black' | 'blonde' | 'brown' | 'gray' | 'red' | 'sandy' | 'white' | 'unknown'
+
+  // ── I-821 Part 2 Items 15/16 — Other names used ────────────────────────────
+  // Stored in other_names[] already; Items 15a-16d are the first two other-name
+  // slots the PDF has AcroForm fields for. See i821FieldMap for mapping logic.
+
+  // ── I-821 Part 2 Item 20/21 — Port of entry / authorized stay ─────────────
+  port_of_entry_city?: string       // Part2_Item20_CityOrTown[0]
+  port_of_entry_state?: string      // Part2_Item20_State[0] (2-letter)
+  authorized_stay?: string          // Part2_Item21_AuthorizedPdofStay[0] e.g. 'D/S', '1 year'
+
+  // ── I-765 Part 1 — Type of application ────────────────────────────────────
+  /**
+   * I-765 Part 1 application type checkbox.
+   *   'initial'     → Part1_Checkbox[0] (initial permission to accept employment)
+   *   'replacement' → Part1_Checkbox[1] (replace lost/stolen/damaged card)
+   *   'renewal'     → Part1_Checkbox[2] (renewal of permission/card)
+   * Defaults based on filing_path but user must confirm/override.
+   */
+  i765_application_type?: 'initial' | 'replacement' | 'renewal'
+
+  // ── I-821 Part 7 — Additional information (yes/no questions) ──────────────
+  /**
+   * Part 7 yes/no items. Each key maps to one question on the form.
+   * For a typical Ukrainian TPS applicant through U4U parole ALL should be
+   * false (No). The UI shows every question so the user can correct any answer
+   * before signing. Unchecked (undefined) items are treated as false for the
+   * PDF but the PacketCompletenessChecker blocks generation until the user
+   * has explicitly reviewed the Part 7 declaration.
+   *
+   * Naming: part7_{item}_{sub} where item = I-821 Part 7 item number and
+   * sub = a/b/c if the item has sub-parts.
+   *
+   * Source: I-821 01/20/25 edition, Pages 7-9
+   */
+  // Criminal activity (Page 7)
+  part7_4a?: boolean   // Committed any crime?
+  part7_4b?: boolean   // Arrested/charged/detained?
+  part7_4c?: boolean   // Convicted of any crime?
+  // DUI (Page 7-8)
+  part7_5a?: boolean   // Arrested/cited for DUI?
+  part7_5b?: boolean   // Drove under influence without arrest?
+  part7_5c?: boolean   // Convicted of DUI?
+  // Persecution/genocide (Page 8)
+  part7_7a?: boolean   // Ordered/incited/committed torture or genocide?
+  part7_7b?: boolean   // Engaged in persecution?
+  part7_7c?: boolean   // Member of military/paramilitary/police unit that committed abuses?
+  // Domestic violence IMBRA (Page 8)
+  part7_8?: boolean    // Convicted of domestic violence / stalking?
+  // Immigration fraud (Page 8)
+  part7_9a?: boolean   // Misrepresented facts to obtain immigration benefit?
+  part7_9b?: boolean   // Falsely claimed US citizenship?
+  part7_9c?: boolean   // Obtained/used false US passport?
+  part7_9d?: boolean   // Submitted false documents to federal/state/local authority?
+  part7_9e?: boolean   // Practiced unlawful polygamy?
+  // Removal/exclusion (Page 8)
+  part7_11a?: boolean  // Subject to removal/deportation/exclusion proceeding?
+  part7_11b?: boolean  // Issued final order of removal/deportation/exclusion?
+  part7_11c?: boolean  // Removed/deported/excluded?
+  part7_11d?: boolean  // Unlawfully present after removal order?
+  // Prior TPS history (Page 8)
+  part7_12a?: boolean  // Previously applied for TPS?
+  part7_12b?: boolean  // Previously granted TPS?
+  part7_12c?: boolean  // Previous TPS terminated or withdrawn?
+  part7_12d?: boolean  // Previous TPS application denied?
+  // Benefit fraud (Page 8)
+  part7_13a?: boolean  // Obtained public benefit by fraud?
+  part7_13b?: boolean  // Made false representation to obtain federal benefit?
+  part7_13c?: boolean  // Submitted false document to obtain public benefit?
+  // Prior TPS filing (Page 9)
+  part7_17?: boolean   // Filed I-821 before?
+  // Immigration proceedings (Page 9)
+  part7_18a?: boolean  // In immigration court proceedings?
+  part7_18b?: boolean  // Immigration judge ordered removal?
+  part7_18c?: boolean  // Appeal filed with BIA?
+  /** Has the user reviewed and confirmed the Part 7 background declaration?
+   *  REQUIRED before generation — PacketCompletenessChecker enforces this.
+   *  Prevents silent-default risk: user must see and confirm every No answer. */
+  part7_reviewed?: boolean
+
   // ── Risk flags (drive manual review routing) ───────────────────────────────
   has_criminal_concern: boolean
   has_prior_tps_denial: boolean
@@ -108,6 +209,8 @@ export function isMinimallyComplete(a: TPSAnswers): { ok: boolean; missing: stri
     if (v === undefined || v === null || v === '') missing.push(String(k))
   }
   if (a.wants_ead && !a.ead_category) missing.push('ead_category')
+  if (!a.marital_status) missing.push('marital_status')
+  if (!a.part7_reviewed) missing.push('part7_reviewed')
   return { ok: missing.length === 0, missing }
 }
 

@@ -75,6 +75,7 @@ export const TPS_CRITICAL_FIELDS = [
   'us_address_state',
   'us_address_zip',
   'last_entry_date',
+  'marital_status',
   'daytime_phone',
   'email',
 ] as const

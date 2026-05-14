@@ -18,6 +18,7 @@
  */
 
 import { useState } from 'react'
+import type { TPSAnswers } from '@/lib/tps/answers'
 import type { TpsExtractedField } from '@/lib/tps/types'
 import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessChecker'
 import {
@@ -79,6 +80,10 @@ function applyPreExtracted(
     last_entry_date: 'last_entry_date',
     a_number: 'a_number',
     i94_class_of_admission: 'status_at_last_entry',
+    // city_of_birth and ssn are not emitted by any current OCR module;
+    // include them so future modules can auto-fill without a code change here.
+    city_of_birth: 'city_of_birth',
+    ssn: 'ssn',
   }
   for (const f of preExtracted) {
     const key = fieldMap[f.field]
@@ -91,8 +96,8 @@ function applyPreExtracted(
       const v = val.toString().toUpperCase().charAt(0)
       next.sex = v === 'M' || v === 'F' ? v : ''
     } else {
-      // PersonalFields fields are all string; safe cast.
-      ;(next as Record<string, string>)[key] = val.toString()
+      // PersonalFields string fields — safe cast via unknown.
+      ;(next as unknown as Record<string, string>)[key] = val.toString()
     }
   }
   return next
@@ -124,6 +129,52 @@ interface PersonalFields {
    *  I-94 OCR (Class of Admission field). Auto-defaults to "UH" for U4U
    *  parolees when blank and the user marked TPS-Ukraine path. */
   status_at_last_entry: string
+  /** City of birth — I-821 Part 2 Item 13, I-765 Line 18a. Not on any
+   *  OCR-supported document today; user types it manually. */
+  city_of_birth: string
+  /** Social Security Number — 9 digits, no dashes. Optional: most
+   *  initial TPS filers don't have one yet. */
+  ssn: string
+  /** Marital status — required for I-821 Part 2 Item 17. */
+  marital_status: 'single' | 'married' | 'divorced' | 'widowed' | 'legally_separated' | 'annulled' | 'other' | ''
+  /** I-765 application type — required when wants_ead. */
+  i765_application_type: 'initial' | 'replacement' | 'renewal' | ''
+  // Part 3 — Biographic
+  ethnicity: 'hispanic' | 'not_hispanic' | ''
+  eye_color: 'black' | 'blue' | 'brown' | 'gray' | 'green' | 'hazel' | 'maroon' | 'pink' | 'unknown' | ''
+  hair_color: 'bald' | 'black' | 'blonde' | 'brown' | 'gray' | 'red' | 'sandy' | 'white' | 'unknown' | ''
+  race_white: boolean
+  race_asian: boolean
+  race_black: boolean
+  race_american_indian: boolean
+  race_pacific_islander: boolean
+}
+
+/**
+ * Part 7 yes/no background declaration — kept separate from PersonalFields
+ * to keep the localStorage shape clean and allow independent reset.
+ */
+interface Part7State {
+  // Criminal (Page 7)
+  q4a: boolean; q4b: boolean; q4c: boolean
+  // DUI (Page 7-8)
+  q5a: boolean; q5b: boolean; q5c: boolean
+  // Persecution (Page 8)
+  q7a: boolean; q7b: boolean; q7c: boolean
+  // Domestic violence (Page 8)
+  q8: boolean
+  // Immigration fraud (Page 8)
+  q9a: boolean; q9b: boolean; q9c: boolean; q9d: boolean; q9e: boolean
+  // Removal/exclusion (Page 8)
+  q11a: boolean; q11b: boolean; q11c: boolean; q11d: boolean
+  // Prior TPS (Page 8)
+  q12a: boolean; q12b: boolean; q12c: boolean; q12d: boolean
+  // Benefit fraud (Page 8)
+  q13a: boolean; q13b: boolean; q13c: boolean
+  // Prior filing/proceedings (Page 9)
+  q17: boolean; q18a: boolean; q18b: boolean; q18c: boolean
+  /** User has reviewed all questions above and confirmed their answers. */
+  reviewed: boolean
 }
 
 const EMPTY: PersonalFields = {
@@ -135,7 +186,27 @@ const EMPTY: PersonalFields = {
   i94_admission_number: '', last_entry_date: '',
   daytime_phone: '', email: '',
   a_number: '', status_at_last_entry: '',
+  city_of_birth: '', ssn: '',
+  marital_status: '', i765_application_type: '',
+  ethnicity: '', eye_color: '', hair_color: '',
+  race_white: false, race_asian: false, race_black: false,
+  race_american_indian: false, race_pacific_islander: false,
 }
+
+const EMPTY_PART7: Part7State = {
+  q4a: false, q4b: false, q4c: false,
+  q5a: false, q5b: false, q5c: false,
+  q7a: false, q7b: false, q7c: false,
+  q8: false,
+  q9a: false, q9b: false, q9c: false, q9d: false, q9e: false,
+  q11a: false, q11b: false, q11c: false, q11d: false,
+  q12a: false, q12b: false, q12c: false, q12d: false,
+  q13a: false, q13b: false, q13c: false,
+  q17: false, q18a: false, q18b: false, q18c: false,
+  reviewed: false,
+}
+
+const STORAGE_KEY_PART7 = 'wizard:tps-ukraine:part7:v1'
 
 const STORAGE_KEY = 'wizard:tps-ukraine:personal:v1'
 
@@ -147,7 +218,59 @@ const COPY = {
     intro: 'Введіть дані, які USCIS просить у формі. Ми згенеруємо PDF із вашими відповідями вже у клітинках. Ви потім роздрукуєте, підпишете і подаєте самі.',
     family: 'Прізвище (Family Name)', given: 'Ім\'я (Given Name)', middle: 'По батькові (Middle Name) — необов\'язково',
     dob: 'Дата народження', sex: 'Стать', male: 'Чоловіча', female: 'Жіноча',
-    cob: 'Країна народження',
+    cityob: 'Місто народження', cob: 'Країна народження',
+    ssn: 'SSN (9 цифр, без дефісів) — якщо є',
+    aNumber: 'A-Number (9 цифр без літери A) — якщо є',
+    statusEntry: 'Статус на момент останнього в\'їзду (напр. "UH", "Parole", "B-2")',
+    maritalStatus: 'Сімейний стан (обов\'язково)',
+    ms_single: 'Не одружений/незаміжня', ms_married: 'Одружений/Заміжня',
+    ms_divorced: 'Розлучений/Розлучена', ms_widowed: 'Вдівець/Вдова',
+    ms_separated: 'Юридично розлучений/а', ms_annulled: 'Анульований шлюб', ms_other: 'Інший',
+    i765type: 'Тип заяви I-765 (дозвіл на роботу)',
+    i765_initial: 'Первинний дозвіл', i765_renewal: 'Продовження', i765_replacement: 'Заміна картки',
+    bioHeading: 'Біографічні дані (Part 3 I-821)',
+    ethnicity: 'Етнічна приналежність', eth_hispanic: 'Іспаномовного / латиноамериканського походження', eth_not: 'Не іспаномовного походження',
+    eyeColor: 'Колір очей', hairColor: 'Колір волосся',
+    eye_black: 'Чорний', eye_blue: 'Синій', eye_brown: 'Карий', eye_gray: 'Сірий', eye_green: 'Зелений', eye_hazel: 'Горіховий', eye_maroon: 'Темно-каштановий', eye_pink: 'Рожевий', eye_unknown: 'Невідомий',
+    hair_bald: 'Лисий', hair_black: 'Чорне', hair_blonde: 'Русяве/Світле', hair_brown: 'Каштанове', hair_gray: 'Сиве', hair_red: 'Руде', hair_sandy: 'Піщане', hair_white: 'Сиве/Біле', hair_unknown: 'Невідомий',
+    race: 'Раса (можна кілька)',
+    race_white: 'Біла раса', race_asian: 'Азіатська', race_black: 'Чорна / афроамериканська', race_ai: 'Корінні американці / Аляска', race_pi: 'Тихоокеанські острови',
+    part7Heading: '⚠ Декларація щодо минулого (Part 7 I-821) — обов\'язково перевірте',
+    part7Intro: 'USCIS вимагає відповідей на всі питання нижче. Ми поставили "Ні" за замовчуванням — це відповідь для переважної більшості заявників. Якщо будь-яка відповідь "Так" для вас — змініть її. Прочитайте кожне питання перед підписом.',
+    part7Confirm: 'Я прочитав/прочитала кожне питання і підтверджую, що відповіді правильні.',
+    part7ConfirmRequired: 'Потрібно підтвердити перевірку Part 7 перед генерацією.',
+    part7AttorneyWarning: '⚠ Ви відповіли "Так" на одне або більше питань. Рекомендуємо проконсультуватися з ліцензованим імміграційним адвокатом або акредитованим представником DOJ перед поданням.',
+    // Part 7 question texts (uk)
+    p7_4a: '4a. Ви будь-коли вчиняли злочин будь-якого роду (включаючи ті, за які вас не заарештовували)?',
+    p7_4b: '4b. Вас будь-коли заарештовували, висували звинувачення або затримували?',
+    p7_4c: '4c. Вас будь-коли засуджували за злочин?',
+    p7_5a: '5a. Вас будь-коли заарештовували або цитували за керування автомобілем у нетверезому стані?',
+    p7_5b: '5b. Ви будь-коли керували транспортним засобом у нетверезому стані без арешту?',
+    p7_5c: '5c. Вас будь-коли засуджували за керування у нетверезому стані?',
+    p7_7a: '7a. Ви будь-коли наказували, підбурювали або вчиняли акти катування, геноциду чи масового насильства?',
+    p7_7b: '7b. Ви будь-коли брали участь у переслідуванні будь-якої особи?',
+    p7_7c: '7c. Ви член/офіцер військового, воєнізованого або поліцейського підрозділу, що вчиняв зловживання?',
+    p7_8: '8. Вас будь-коли засуджували за домашнє насильство, переслідування або порушення охоронного ордера?',
+    p7_9a: '9a. Ви будь-коли спотворювали факти для отримання імміграційної пільги?',
+    p7_9b: '9b. Ви будь-коли хибно заявляли про громадянство США?',
+    p7_9c: '9c. Ви будь-коли отримували або використовували підроблений паспорт США?',
+    p7_9d: '9d. Ви будь-коли подавали підроблені документи до федерального/державного органу?',
+    p7_9e: '9e. Ви будь-коли практикували незаконну полігамію?',
+    p7_11a: '11a. Щодо вас будь-коли порушували справу про видворення/виключення?',
+    p7_11b: '11b. Суддя будь-коли виносив остаточне рішення про ваше видворення/виключення?',
+    p7_11c: '11c. Вас будь-коли видворяли, виключали або депортували?',
+    p7_11d: '11d. Ви будь-коли незаконно перебували в США після наказу про видворення?',
+    p7_12a: '12a. Ви раніше подавали заяву на TPS?',
+    p7_12b: '12b. Вам раніше надавали TPS?',
+    p7_12c: '12c. Ваш попередній TPS було скасовано або відкликано?',
+    p7_12d: '12d. Вашу попередню заяву на TPS було відхилено?',
+    p7_13a: '13a. Ви будь-коли отримували державну допомогу шляхом шахрайства?',
+    p7_13b: '13b. Ви будь-коли давали неправдиві показання для отримання федеральних пільг?',
+    p7_13c: '13c. Ви будь-коли подавали підроблені документи для отримання державної допомоги?',
+    p7_17: '17. Ви раніше подавали форму I-821?',
+    p7_18a: '18a. Ви зараз перебуваєте у провадженні імміграційного суду?',
+    p7_18b: '18b. Суддя з питань імміграції виніс рішення про ваше видворення?',
+    p7_18c: '18c. Ви подавали апеляцію до Апеляційної ради з питань імміграції (BIA)?',
     passport: 'Номер паспорта', passportCountry: 'Країна видачі паспорта', passportExp: 'Паспорт дійсний до',
     street: 'Адреса в США (вулиця, номер будинку)', city: 'Місто', state: 'Штат (2 літери, напр. CA)', zip: 'ZIP-код',
     i94: 'I-94 admission number (11 цифр)', entry: 'Дата останнього в\'їзду в США',
@@ -204,7 +327,58 @@ const COPY = {
     intro: 'Введите данные, которые USCIS спрашивает в форме. Мы сгенерируем PDF с вашими ответами уже в клетках. Распечатаете, подпишете и подаёте сами.',
     family: 'Фамилия (Family Name)', given: 'Имя (Given Name)', middle: 'Отчество (Middle Name) — необязательно',
     dob: 'Дата рождения', sex: 'Пол', male: 'Мужской', female: 'Женский',
-    cob: 'Страна рождения',
+    cityob: 'Город рождения', cob: 'Страна рождения',
+    ssn: 'SSN (9 цифр, без дефисов) — если есть',
+    aNumber: 'A-Number (9 цифр без буквы A) — если есть',
+    statusEntry: 'Статус на момент последнего въезда (напр. "UH", "Parole", "B-2")',
+    maritalStatus: 'Семейное положение (обязательно)',
+    ms_single: 'Никогда не состоял/а в браке', ms_married: 'Женат/Замужем',
+    ms_divorced: 'Разведён/Разведена', ms_widowed: 'Вдовец/Вдова',
+    ms_separated: 'Юридически разлучён/а', ms_annulled: 'Брак аннулирован', ms_other: 'Другое',
+    i765type: 'Тип заявления I-765 (разрешение на работу)',
+    i765_initial: 'Первоначальное разрешение', i765_renewal: 'Продление', i765_replacement: 'Замена карточки',
+    bioHeading: 'Биографические данные (Part 3 I-821)',
+    ethnicity: 'Этническая принадлежность', eth_hispanic: 'Испано-/латиноамериканского происхождения', eth_not: 'Не испаноязычного происхождения',
+    eyeColor: 'Цвет глаз', hairColor: 'Цвет волос',
+    eye_black: 'Чёрный', eye_blue: 'Голубой', eye_brown: 'Карий', eye_gray: 'Серый', eye_green: 'Зелёный', eye_hazel: 'Ореховый', eye_maroon: 'Тёмно-каштановый', eye_pink: 'Розовый', eye_unknown: 'Неизвестный',
+    hair_bald: 'Лысый', hair_black: 'Чёрные', hair_blonde: 'Русые/Светлые', hair_brown: 'Каштановые', hair_gray: 'Седые', hair_red: 'Рыжие', hair_sandy: 'Песочные', hair_white: 'Белые/Седые', hair_unknown: 'Неизвестный',
+    race: 'Раса (можно несколько)',
+    race_white: 'Белая раса', race_asian: 'Азиатская', race_black: 'Чёрная / афроамериканская', race_ai: 'Коренные американцы / Аляска', race_pi: 'Острова Тихого океана',
+    part7Heading: '⚠ Декларация о прошлом (Part 7 I-821) — обязательно проверьте',
+    part7Intro: 'USCIS требует ответов на все вопросы ниже. Мы поставили "Нет" по умолчанию — это ответ для подавляющего большинства заявителей. Если какой-либо ответ "Да" для вас — измените его. Прочитайте каждый вопрос перед подписью.',
+    part7Confirm: 'Я прочитал/а каждый вопрос и подтверждаю, что ответы правильные.',
+    part7ConfirmRequired: 'Необходимо подтвердить проверку Part 7 перед генерацией.',
+    part7AttorneyWarning: '⚠ Вы ответили "Да" на один или несколько вопросов. Рекомендуем проконсультироваться с лицензированным иммиграционным адвокатом или аккредитованным представителем DOJ перед подачей.',
+    p7_4a: '4a. Вы когда-либо совершали преступление любого рода (включая те, за которые вас не арестовывали)?',
+    p7_4b: '4b. Вас когда-либо арестовывали, предъявляли обвинения или задерживали?',
+    p7_4c: '4c. Вас когда-либо осуждали за преступление?',
+    p7_5a: '5a. Вас когда-либо арестовывали или штрафовали за вождение в нетрезвом состоянии?',
+    p7_5b: '5b. Вы когда-либо управляли транспортным средством в нетрезвом состоянии без ареста?',
+    p7_5c: '5c. Вас когда-либо осуждали за вождение в нетрезвом состоянии?',
+    p7_7a: '7a. Вы когда-либо приказывали, подстрекали или совершали акты пыток, геноцида или массового насилия?',
+    p7_7b: '7b. Вы когда-либо участвовали в преследовании какого-либо лица?',
+    p7_7c: '7c. Вы являетесь членом/офицером военного, военизированного или полицейского подразделения, совершавшего злоупотребления?',
+    p7_8: '8. Вас когда-либо осуждали за домашнее насилие, преследование или нарушение охранного ордера?',
+    p7_9a: '9a. Вы когда-либо искажали факты для получения иммиграционной льготы?',
+    p7_9b: '9b. Вы когда-либо ложно заявляли о гражданстве США?',
+    p7_9c: '9c. Вы когда-либо получали или использовали поддельный паспорт США?',
+    p7_9d: '9d. Вы когда-либо подавали поддельные документы в федеральный/государственный орган?',
+    p7_9e: '9e. Вы когда-либо практиковали незаконную полигамию?',
+    p7_11a: '11a. В отношении вас когда-либо возбуждали дело о депортации/высылке?',
+    p7_11b: '11b. Судья когда-либо выносил окончательное решение о вашей депортации/высылке?',
+    p7_11c: '11c. Вас когда-либо депортировали, высылали или исключали?',
+    p7_11d: '11d. Вы когда-либо незаконно находились в США после приказа о депортации?',
+    p7_12a: '12a. Вы ранее подавали заявление на TPS?',
+    p7_12b: '12b. Вам ранее предоставляли TPS?',
+    p7_12c: '12c. Ваш предыдущий TPS был отменён или отозван?',
+    p7_12d: '12d. Ваше предыдущее заявление на TPS было отклонено?',
+    p7_13a: '13a. Вы когда-либо получали государственную помощь путём мошенничества?',
+    p7_13b: '13b. Вы когда-либо давали ложные показания для получения федеральных льгот?',
+    p7_13c: '13c. Вы когда-либо подавали поддельные документы для получения государственной помощи?',
+    p7_17: '17. Вы ранее подавали форму I-821?',
+    p7_18a: '18a. Вы сейчас находитесь в производстве иммиграционного суда?',
+    p7_18b: '18b. Судья по делам об иммиграции вынес решение о вашей депортации?',
+    p7_18c: '18c. Вы подавали апелляцию в Апелляционный совет по вопросам иммиграции (BIA)?',
     passport: 'Номер паспорта', passportCountry: 'Страна выдачи паспорта', passportExp: 'Паспорт действителен до',
     street: 'Адрес в США (улица, номер дома)', city: 'Город', state: 'Штат (2 буквы, напр. CA)', zip: 'ZIP-код',
     i94: 'I-94 admission number (11 цифр)', entry: 'Дата последнего въезда в США',
@@ -261,7 +435,58 @@ const COPY = {
     intro: 'Enter the data USCIS asks for on the form. We generate PDFs with your answers already in the boxes. You then print, sign, and mail them yourself.',
     family: 'Family Name', given: 'Given Name', middle: 'Middle Name — optional',
     dob: 'Date of birth', sex: 'Sex', male: 'Male', female: 'Female',
-    cob: 'Country of birth',
+    cityob: 'City of birth', cob: 'Country of birth',
+    ssn: 'SSN (9 digits, no dashes) — if you have one',
+    aNumber: 'A-Number (9 digits, no letter A) — if you have one',
+    statusEntry: 'Immigration status at last entry (e.g. "UH", "Parole", "B-2")',
+    maritalStatus: 'Marital status (required)',
+    ms_single: 'Single (never married)', ms_married: 'Married',
+    ms_divorced: 'Divorced', ms_widowed: 'Widowed',
+    ms_separated: 'Legally separated', ms_annulled: 'Annulled marriage', ms_other: 'Other',
+    i765type: 'I-765 application type (work permit)',
+    i765_initial: 'Initial permission', i765_renewal: 'Renewal', i765_replacement: 'Replacement card',
+    bioHeading: 'Biographic information (Part 3 of I-821)',
+    ethnicity: 'Ethnicity', eth_hispanic: 'Hispanic or Latino', eth_not: 'Not Hispanic or Latino',
+    eyeColor: 'Eye color', hairColor: 'Hair color',
+    eye_black: 'Black', eye_blue: 'Blue', eye_brown: 'Brown', eye_gray: 'Gray', eye_green: 'Green', eye_hazel: 'Hazel', eye_maroon: 'Maroon', eye_pink: 'Pink', eye_unknown: 'Unknown',
+    hair_bald: 'Bald', hair_black: 'Black', hair_blonde: 'Blonde', hair_brown: 'Brown', hair_gray: 'Gray', hair_red: 'Red', hair_sandy: 'Sandy', hair_white: 'White', hair_unknown: 'Unknown',
+    race: 'Race (select all that apply)',
+    race_white: 'White', race_asian: 'Asian', race_black: 'Black or African American', race_ai: 'American Indian / Alaska Native', race_pi: 'Native Hawaiian / Pacific Islander',
+    part7Heading: '⚠ Background Declaration (Part 7 of I-821) — review required',
+    part7Intro: 'USCIS requires answers to all questions below. We defaulted all to "No" — correct for most TPS Ukraine applicants. If any answer is "Yes" for you, toggle it. You must read each question before signing.',
+    part7Confirm: 'I have read each question and confirm my answers are accurate.',
+    part7ConfirmRequired: 'You must confirm the Part 7 review before generating the packet.',
+    part7AttorneyWarning: '⚠ You answered "Yes" to one or more questions. We recommend consulting a licensed immigration attorney or DOJ-accredited representative before filing.',
+    p7_4a: '4a. Have you EVER committed a crime of any kind, including crimes for which you were not arrested?',
+    p7_4b: '4b. Have you EVER been arrested, charged, cited, or detained by any law enforcement officer?',
+    p7_4c: '4c. Have you EVER been convicted of any crime?',
+    p7_5a: '5a. Have you EVER been arrested or cited for driving under the influence?',
+    p7_5b: '5b. Have you EVER driven a vehicle under the influence of alcohol or drugs without being arrested?',
+    p7_5c: '5c. Have you EVER been convicted of driving under the influence?',
+    p7_7a: '7a. Have you EVER ordered, incited, called for, committed, or assisted acts of torture or genocide?',
+    p7_7b: '7b. Have you EVER engaged or assisted in the persecution of any person?',
+    p7_7c: '7c. Are you a member or officer of any military, paramilitary, or police unit that has engaged in abuses?',
+    p7_8: '8. Have you EVER been convicted of domestic violence, stalking, or violating a protective order?',
+    p7_9a: '9a. Have you EVER misrepresented facts to obtain an immigration benefit?',
+    p7_9b: '9b. Have you EVER falsely claimed U.S. citizenship?',
+    p7_9c: '9c. Have you EVER obtained or used a false U.S. passport?',
+    p7_9d: '9d. Have you EVER submitted false documents to a federal, state, or local authority?',
+    p7_9e: '9e. Have you EVER practiced unlawful polygamy?',
+    p7_11a: '11a. Have you EVER been placed in removal, deportation, or exclusion proceedings?',
+    p7_11b: '11b. Has an immigration judge ever issued a final order of removal, deportation, or exclusion against you?',
+    p7_11c: '11c. Have you EVER been removed, deported, or excluded from the United States?',
+    p7_11d: '11d. Have you EVER remained in the U.S. unlawfully after a removal order?',
+    p7_12a: '12a. Have you previously applied for TPS?',
+    p7_12b: '12b. Were you previously granted TPS?',
+    p7_12c: '12c. Was your previous TPS terminated or withdrawn?',
+    p7_12d: '12d. Was your previous TPS application denied?',
+    p7_13a: '13a. Have you EVER obtained a public benefit by fraud?',
+    p7_13b: '13b. Have you EVER made a false representation to obtain a federal benefit?',
+    p7_13c: '13c. Have you EVER submitted false documents to obtain a public benefit?',
+    p7_17: '17. Have you previously filed Form I-821?',
+    p7_18a: '18a. Are you currently in immigration court proceedings?',
+    p7_18b: '18b. Has an immigration judge ordered your removal?',
+    p7_18c: '18c. Have you filed an appeal with the Board of Immigration Appeals (BIA)?',
     passport: 'Passport number', passportCountry: 'Country that issued passport', passportExp: 'Passport expires',
     street: 'US address (street, house number)', city: 'City', state: 'State (2 letters, e.g. CA)', zip: 'ZIP code',
     i94: 'I-94 admission number (11 digits)', entry: 'Date of your last entry to the US',
@@ -318,7 +543,58 @@ const COPY = {
     intro: 'Ingrese los datos que USCIS pide en el formulario. Generamos PDFs con sus respuestas ya en las casillas. Usted imprime, firma y envía.',
     family: 'Apellido (Family Name)', given: 'Nombre (Given Name)', middle: 'Segundo nombre — opcional',
     dob: 'Fecha de nacimiento', sex: 'Sexo', male: 'Masculino', female: 'Femenino',
-    cob: 'País de nacimiento',
+    cityob: 'Ciudad de nacimiento', cob: 'País de nacimiento',
+    ssn: 'SSN (9 dígitos, sin guiones) — si tiene uno',
+    aNumber: 'A-Number (9 dígitos sin letra A) — si tiene uno',
+    statusEntry: 'Estado migratorio al último ingreso (p.ej. "UH", "Parole", "B-2")',
+    maritalStatus: 'Estado civil (obligatorio)',
+    ms_single: 'Soltero/a (nunca casado/a)', ms_married: 'Casado/a',
+    ms_divorced: 'Divorciado/a', ms_widowed: 'Viudo/a',
+    ms_separated: 'Separado/a legalmente', ms_annulled: 'Matrimonio anulado', ms_other: 'Otro',
+    i765type: 'Tipo de solicitud I-765 (permiso de trabajo)',
+    i765_initial: 'Permiso inicial', i765_renewal: 'Renovación', i765_replacement: 'Reemplazo de tarjeta',
+    bioHeading: 'Datos biográficos (Parte 3 del I-821)',
+    ethnicity: 'Etnia', eth_hispanic: 'Hispano o latino', eth_not: 'No hispano ni latino',
+    eyeColor: 'Color de ojos', hairColor: 'Color de cabello',
+    eye_black: 'Negro', eye_blue: 'Azul', eye_brown: 'Café', eye_gray: 'Gris', eye_green: 'Verde', eye_hazel: 'Avellana', eye_maroon: 'Castaño oscuro', eye_pink: 'Rosa', eye_unknown: 'Desconocido',
+    hair_bald: 'Calvo', hair_black: 'Negro', hair_blonde: 'Rubio', hair_brown: 'Castaño', hair_gray: 'Canoso', hair_red: 'Rojo', hair_sandy: 'Arena', hair_white: 'Blanco/Canoso', hair_unknown: 'Desconocido',
+    race: 'Raza (seleccione todas las que correspondan)',
+    race_white: 'Blanca', race_asian: 'Asiática', race_black: 'Negra o afroamericana', race_ai: 'Indio americano / Nativo de Alaska', race_pi: 'Nativo de Hawái / Islas del Pacífico',
+    part7Heading: '⚠ Declaración de antecedentes (Parte 7 del I-821) — revisión obligatoria',
+    part7Intro: 'USCIS requiere respuestas a todas las preguntas. Las hemos marcado "No" por defecto — correcto para la mayoría de solicitantes de TPS Ucrania. Si alguna respuesta es "Sí" para usted, cámbiela. Debe leer cada pregunta antes de firmar.',
+    part7Confirm: 'He leído cada pregunta y confirmo que mis respuestas son correctas.',
+    part7ConfirmRequired: 'Debe confirmar la revisión de la Parte 7 antes de generar el paquete.',
+    part7AttorneyWarning: '⚠ Ha respondido "Sí" a una o más preguntas. Recomendamos consultar con un abogado de inmigración autorizado o representante acreditado del DOJ antes de presentar.',
+    p7_4a: '4a. ¿Ha cometido ALGUNA VEZ un delito de cualquier tipo, incluyendo delitos por los que no fue arrestado/a?',
+    p7_4b: '4b. ¿Ha sido ALGUNA VEZ arrestado/a, acusado/a, citado/a o detenido/a por algún agente del orden?',
+    p7_4c: '4c. ¿Ha sido ALGUNA VEZ condenado/a por algún delito?',
+    p7_5a: '5a. ¿Ha sido ALGUNA VEZ arrestado/a o citado/a por conducir bajo la influencia?',
+    p7_5b: '5b. ¿Ha conducido ALGUNA VEZ un vehículo bajo la influencia sin ser arrestado/a?',
+    p7_5c: '5c. ¿Ha sido ALGUNA VEZ condenado/a por conducir bajo la influencia?',
+    p7_7a: '7a. ¿Ha ordenado, incitado, cometido o asistido ALGUNA VEZ actos de tortura o genocidio?',
+    p7_7b: '7b. ¿Ha participado ALGUNA VEZ en la persecución de alguna persona?',
+    p7_7c: '7c. ¿Es miembro u oficial de alguna unidad militar, paramilitar o policial que haya cometido abusos?',
+    p7_8: '8. ¿Ha sido condenado/a ALGUNA VEZ por violencia doméstica, acoso o violación de una orden de protección?',
+    p7_9a: '9a. ¿Ha tergiversado ALGUNA VEZ hechos para obtener un beneficio migratorio?',
+    p7_9b: '9b. ¿Ha reclamado ALGUNA VEZ falsamente la ciudadanía estadounidense?',
+    p7_9c: '9c. ¿Ha obtenido o usado ALGUNA VEZ un pasaporte estadounidense falso?',
+    p7_9d: '9d. ¿Ha presentado ALGUNA VEZ documentos falsos ante una autoridad federal, estatal o local?',
+    p7_9e: '9e. ¿Ha practicado ALGUNA VEZ poligamia ilegal?',
+    p7_11a: '11a. ¿Ha sido puesto/a ALGUNA VEZ en procedimientos de remoción, deportación o exclusión?',
+    p7_11b: '11b. ¿Ha emitido ALGUNA VEZ un juez de inmigración una orden final de remoción o exclusión en su contra?',
+    p7_11c: '11c. ¿Ha sido ALGUNA VEZ removido/a, deportado/a o excluido/a de los EE.UU.?',
+    p7_11d: '11d. ¿Ha permanecido ALGUNA VEZ ilegalmente en EE.UU. después de una orden de remoción?',
+    p7_12a: '12a. ¿Ha solicitado TPS anteriormente?',
+    p7_12b: '12b. ¿Se le otorgó TPS anteriormente?',
+    p7_12c: '12c. ¿Fue terminado o retirado su TPS anterior?',
+    p7_12d: '12d. ¿Fue denegada su solicitud de TPS anterior?',
+    p7_13a: '13a. ¿Ha obtenido ALGUNA VEZ un beneficio público mediante fraude?',
+    p7_13b: '13b. ¿Ha realizado ALGUNA VEZ una declaración falsa para obtener un beneficio federal?',
+    p7_13c: '13c. ¿Ha presentado ALGUNA VEZ documentos falsos para obtener un beneficio público?',
+    p7_17: '17. ¿Ha presentado anteriormente el Formulario I-821?',
+    p7_18a: '18a. ¿Se encuentra actualmente en proceso ante un tribunal de inmigración?',
+    p7_18b: '18b. ¿Ha ordenado un juez de inmigración su remoción?',
+    p7_18c: '18c. ¿Ha presentado una apelación ante la Junta de Apelaciones de Inmigración (BIA)?',
     passport: 'Número de pasaporte', passportCountry: 'País emisor del pasaporte', passportExp: 'Pasaporte vence',
     street: 'Dirección en EE.UU. (calle, número)', city: 'Ciudad', state: 'Estado (2 letras, ej. CA)', zip: 'Código ZIP',
     i94: 'I-94 admission number (11 dígitos)', entry: 'Fecha de su última entrada a EE.UU.',
@@ -414,6 +690,16 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
   // B1.1 — Legal-risk flags. Persisted in localStorage so a returning
   // user does not have to re-answer; cleared by the SP-4 'Clear my data'
   // button below. NO PII — just three booleans.
+  // Part 7 background declaration state — kept in a separate localStorage key
+  // so it can be reset independently and doesn't inflate the personal-fields blob.
+  const [part7, setPart7] = useState<Part7State>(() => {
+    if (typeof window === 'undefined') return EMPTY_PART7
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY_PART7)
+      return raw ? { ...EMPTY_PART7, ...(JSON.parse(raw) as Partial<Part7State>) } : EMPTY_PART7
+    } catch { return EMPTY_PART7 }
+  })
+
   const [legalRisk, setLegalRiskRaw] = useState<LegalRiskValue>(() => {
     if (typeof window === 'undefined') return EMPTY_LEGAL_RISK
     try {
@@ -448,11 +734,13 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
   const clearMyData = () => {
     try {
       window.localStorage.removeItem(STORAGE_KEY)
+      window.localStorage.removeItem(STORAGE_KEY_PART7)
       window.localStorage.removeItem('wizard:tps-ukraine:state:v1')
       window.localStorage.removeItem('tps:attest:v1')
       window.localStorage.removeItem('tps:legal-risk:v1')
     } catch { /* ignore */ }
     setFields(EMPTY)
+    setPart7(EMPTY_PART7)
     setAttestedAt(null)
     setLegalRiskRaw(EMPTY_LEGAL_RISK)
     setDataCleared(true)
@@ -463,6 +751,16 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       const next = { ...prev, [k]: v }
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      } catch { /* ignore */ }
+      return next
+    })
+  }
+
+  function updatePart7<K extends keyof Part7State>(k: K, v: Part7State[K]) {
+    setPart7((prev) => {
+      const next = { ...prev, [k]: v }
+      try {
+        window.localStorage.setItem(STORAGE_KEY_PART7, JSON.stringify(next))
       } catch { /* ignore */ }
       return next
     })
@@ -492,6 +790,10 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       us_address_city: fields.us_address_city,
       us_address_state: fields.us_address_state.toUpperCase(),
       us_address_zip: fields.us_address_zip,
+      // TODO(P1-UX): This wizard does not yet expose a separate mailing
+      // address UI. Until it does, mailing is always the same as physical.
+      // The field maps (i765FieldMap.ts) handle the separate-mailing case
+      // correctly — this hardcode is the only thing blocking that path.
       mailing_same_as_physical: true,
       last_entry_date: fields.last_entry_date,
       i94_admission_number: fields.i94_admission_number || undefined,
@@ -504,6 +806,23 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       status_at_last_entry: fields.status_at_last_entry
         || (filingPath === 'initial' ? 'UH' : undefined),
       a_number: fields.a_number || undefined,
+      city_of_birth: fields.city_of_birth || undefined,
+      ssn: fields.ssn || undefined,
+      // Civil status (I-821 Part 2 Item 17)
+      marital_status: (fields.marital_status || undefined) as TPSAnswers['marital_status'],
+      // I-765 application type (Part 1 checkboxes)
+      i765_application_type: wantsEad === true
+        ? ((fields.i765_application_type || (path === 'initial' ? 'initial' : 'renewal')) as 'initial' | 'replacement' | 'renewal')
+        : undefined,
+      // Part 3 biographic (I-821 Part 3)
+      ethnicity: (fields.ethnicity || undefined) as TPSAnswers['ethnicity'],
+      race_white: fields.race_white,
+      race_asian: fields.race_asian,
+      race_black: fields.race_black,
+      race_american_indian: fields.race_american_indian,
+      race_pacific_islander: fields.race_pacific_islander,
+      eye_color: (fields.eye_color || undefined) as TPSAnswers['eye_color'],
+      hair_color: (fields.hair_color || undefined) as TPSAnswers['hair_color'],
       filing_path: path,
       wants_ead: wantsEad === true,
       ead_category: wantsEad === true ? (path === 'initial' ? 'a12' : 'c19') : null,
@@ -519,6 +838,22 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       has_prior_tps_denial: legalRisk.has_prior_tps_denial === true,
       left_us_without_advance_parole:
         legalRisk.left_us_without_advance_parole === true,
+      // Part 7 — background declaration (I-821 Pages 7-9)
+      // All default to false (No). User must toggle and confirm.
+      part7_4a: part7.q4a, part7_4b: part7.q4b, part7_4c: part7.q4c,
+      part7_5a: part7.q5a, part7_5b: part7.q5b, part7_5c: part7.q5c,
+      part7_7a: part7.q7a, part7_7b: part7.q7b, part7_7c: part7.q7c,
+      part7_8: part7.q8,
+      part7_9a: part7.q9a, part7_9b: part7.q9b, part7_9c: part7.q9c,
+      part7_9d: part7.q9d, part7_9e: part7.q9e,
+      part7_11a: part7.q11a, part7_11b: part7.q11b,
+      part7_11c: part7.q11c, part7_11d: part7.q11d,
+      part7_12a: part7.q12a, part7_12b: part7.q12b,
+      part7_12c: part7.q12c, part7_12d: part7.q12d,
+      part7_13a: part7.q13a, part7_13b: part7.q13b, part7_13c: part7.q13c,
+      part7_17: part7.q17,
+      part7_18a: part7.q18a, part7_18b: part7.q18b, part7_18c: part7.q18c,
+      part7_reviewed: part7.reviewed,
     }
 
     try {
@@ -673,8 +1008,12 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
         <button type="button" style={{ ...secondary, flex: 1, background: fields.sex === 'F' ? 'var(--success)' : 'var(--surface-2)', color: fields.sex === 'F' ? '#fff' : 'var(--text-1)' }} onClick={() => update('sex', 'F')}>{c.female}</button>
       </div>
 
+      <label style={label}>{c.cityob}</label>
+      <input style={input} value={fields.city_of_birth} onChange={(e) => update('city_of_birth', e.target.value)} />
       <label style={label}>{c.cob}</label>
       <input style={input} value={fields.country_of_birth} onChange={(e) => update('country_of_birth', e.target.value)} />
+      <label style={label}>{c.ssn}</label>
+      <input style={input} value={fields.ssn} maxLength={9} placeholder="123456789" onChange={(e) => update('ssn', e.target.value.replace(/\D/g, '').slice(0, 9))} />
 
       <label style={label}>{c.passport}</label>
       <input style={input} value={fields.passport_number} onChange={(e) => update('passport_number', e.target.value)} />
@@ -710,6 +1049,214 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       <label style={label}>{c.email}</label>
       <input type="email" style={input} value={fields.email} onChange={(e) => update('email', e.target.value)} />
 
+      {/* A-Number and status at last entry */}
+      <label style={label}>{c.aNumber}</label>
+      <input style={input} value={fields.a_number} maxLength={9} placeholder="000000000" onChange={(e) => update('a_number', e.target.value.replace(/\D/g, '').slice(0, 9))} />
+      <label style={label}>{c.statusEntry}</label>
+      <input style={input} value={fields.status_at_last_entry} placeholder="UH" onChange={(e) => update('status_at_last_entry', e.target.value)} />
+
+      {/* Marital status — required for I-821 Part 2 Item 17 */}
+      <label style={label}>{c.maritalStatus}</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {(['single','married','divorced','widowed','legally_separated','annulled','other'] as const).map((ms) => {
+          const labelKey = `ms_${ms === 'legally_separated' ? 'separated' : ms}` as keyof typeof c
+          return (
+            <button
+              key={ms}
+              type="button"
+              style={{
+                ...secondary,
+                background: fields.marital_status === ms ? 'var(--success)' : 'var(--surface-2)',
+                color: fields.marital_status === ms ? '#fff' : 'var(--text-1)',
+                padding: '8px 10px', fontSize: 13,
+              }}
+              onClick={() => update('marital_status', ms)}
+            >
+              {c[labelKey] as string}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* I-765 application type — only shown when wants_ead */}
+      {wantsEad === true && (
+        <>
+          <label style={label}>{c.i765type}</label>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+            {(['initial','renewal','replacement'] as const).map((t) => {
+              const labelKey = `i765_${t}` as keyof typeof c
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  style={{
+                    ...secondary,
+                    flex: 1,
+                    background: fields.i765_application_type === t ? 'var(--success)' : 'var(--surface-2)',
+                    color: fields.i765_application_type === t ? '#fff' : 'var(--text-1)',
+                    fontSize: 13,
+                  }}
+                  onClick={() => update('i765_application_type', t)}
+                >
+                  {c[labelKey] as string}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {/* ── Part 3 Biographic section ─────────────────────────────────── */}
+      <div style={{ marginTop: 16, marginBottom: 8, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+        <h4 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-1)', marginBottom: 8 }}>{c.bioHeading}</h4>
+      </div>
+
+      {/* Ethnicity */}
+      <label style={label}>{c.ethnicity}</label>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <button type="button"
+          style={{ ...secondary, flex: 1, background: fields.ethnicity === 'hispanic' ? 'var(--success)' : 'var(--surface-2)', color: fields.ethnicity === 'hispanic' ? '#fff' : 'var(--text-1)', fontSize: 13 }}
+          onClick={() => update('ethnicity', 'hispanic')}
+        >{c.eth_hispanic}</button>
+        <button type="button"
+          style={{ ...secondary, flex: 1, background: fields.ethnicity === 'not_hispanic' ? 'var(--success)' : 'var(--surface-2)', color: fields.ethnicity === 'not_hispanic' ? '#fff' : 'var(--text-1)', fontSize: 13 }}
+          onClick={() => update('ethnicity', 'not_hispanic')}
+        >{c.eth_not}</button>
+      </div>
+
+      {/* Race (multi-select) */}
+      <label style={label}>{c.race}</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {([
+          ['race_white', 'race_white'],
+          ['race_asian', 'race_asian'],
+          ['race_black', 'race_black'],
+          ['race_american_indian', 'race_ai'],
+          ['race_pacific_islander', 'race_pi'],
+        ] as [keyof PersonalFields, keyof typeof c][]).map(([field, labelKey]) => {
+          const val = fields[field] as boolean
+          return (
+            <button key={field} type="button"
+              style={{ ...secondary, background: val ? 'var(--success)' : 'var(--surface-2)', color: val ? '#fff' : 'var(--text-1)', fontSize: 13 }}
+              onClick={() => update(field, !val as PersonalFields[typeof field])}
+            >{c[labelKey] as string}</button>
+          )
+        })}
+      </div>
+
+      {/* Eye color */}
+      <label style={label}>{c.eyeColor}</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {(['black','blue','brown','gray','green','hazel','maroon','pink','unknown'] as const).map((ec) => {
+          const labelKey = `eye_${ec}` as keyof typeof c
+          return (
+            <button key={ec} type="button"
+              style={{ ...secondary, background: fields.eye_color === ec ? 'var(--success)' : 'var(--surface-2)', color: fields.eye_color === ec ? '#fff' : 'var(--text-1)', fontSize: 13, padding: '7px 10px' }}
+              onClick={() => update('eye_color', ec)}
+            >{c[labelKey] as string}</button>
+          )
+        })}
+      </div>
+
+      {/* Hair color */}
+      <label style={label}>{c.hairColor}</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {(['bald','black','blonde','brown','gray','red','sandy','white','unknown'] as const).map((hc) => {
+          const labelKey = `hair_${hc}` as keyof typeof c
+          return (
+            <button key={hc} type="button"
+              style={{ ...secondary, background: fields.hair_color === hc ? 'var(--success)' : 'var(--surface-2)', color: fields.hair_color === hc ? '#fff' : 'var(--text-1)', fontSize: 13, padding: '7px 10px' }}
+              onClick={() => update('hair_color', hc)}
+            >{c[labelKey] as string}</button>
+          )
+        })}
+      </div>
+
+      {/* ── Part 7 Background Declaration ────────────────────────────────── */}
+      {(() => {
+        const hasYes = [
+          part7.q4a, part7.q4b, part7.q4c,
+          part7.q5a, part7.q5b, part7.q5c,
+          part7.q7a, part7.q7b, part7.q7c,
+          part7.q8,
+          part7.q9a, part7.q9b, part7.q9c, part7.q9d, part7.q9e,
+          part7.q11a, part7.q11b, part7.q11c, part7.q11d,
+          part7.q12a, part7.q12b, part7.q12c, part7.q12d,
+          part7.q13a, part7.q13b, part7.q13c,
+          part7.q17, part7.q18a, part7.q18b, part7.q18c,
+        ].some(Boolean)
+
+        const questions: [keyof Part7State, keyof typeof c][] = [
+          ['q4a','p7_4a'], ['q4b','p7_4b'], ['q4c','p7_4c'],
+          ['q5a','p7_5a'], ['q5b','p7_5b'], ['q5c','p7_5c'],
+          ['q7a','p7_7a'], ['q7b','p7_7b'], ['q7c','p7_7c'],
+          ['q8','p7_8'],
+          ['q9a','p7_9a'], ['q9b','p7_9b'], ['q9c','p7_9c'], ['q9d','p7_9d'], ['q9e','p7_9e'],
+          ['q11a','p7_11a'], ['q11b','p7_11b'], ['q11c','p7_11c'], ['q11d','p7_11d'],
+          ['q12a','p7_12a'], ['q12b','p7_12b'], ['q12c','p7_12c'], ['q12d','p7_12d'],
+          ['q13a','p7_13a'], ['q13b','p7_13b'], ['q13c','p7_13c'],
+          ['q17','p7_17'],
+          ['q18a','p7_18a'], ['q18b','p7_18b'], ['q18c','p7_18c'],
+        ]
+
+        return (
+          <div
+            data-testid="part7-section"
+            style={{
+              marginTop: 18, padding: '14px 16px',
+              border: '2px solid var(--warning-bg, #fef3c7)',
+              background: 'var(--surface)',
+              borderRadius: 12,
+            }}
+          >
+            <h4 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-1)', marginBottom: 8 }}>{c.part7Heading}</h4>
+            <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5, marginBottom: 12 }}>{c.part7Intro}</p>
+
+            {questions.map(([qKey, textKey]) => {
+              const val = part7[qKey] as boolean
+              return (
+                <div key={qKey} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, paddingTop: 2 }}>
+                    <button type="button"
+                      style={{ ...secondary, padding: '4px 10px', fontSize: 12, background: val ? 'var(--danger-bg, #fee2e2)' : 'var(--surface-2)', color: val ? 'var(--danger-text, #991b1b)' : 'var(--text-2)', fontWeight: val ? 800 : 500 }}
+                      onClick={() => updatePart7(qKey, true)}
+                    >Yes</button>
+                    <button type="button"
+                      style={{ ...secondary, padding: '4px 10px', fontSize: 12, background: !val ? 'var(--success)' : 'var(--surface-2)', color: !val ? '#fff' : 'var(--text-2)', fontWeight: !val ? 800 : 500 }}
+                      onClick={() => updatePart7(qKey, false)}
+                    >No</button>
+                  </div>
+                  <span style={{ fontSize: 13, color: 'var(--text-1)', lineHeight: 1.45 }}>{c[textKey] as string}</span>
+                </div>
+              )
+            })}
+
+            {hasYes && (
+              <p style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--warning-text, #92400e)', background: 'var(--warning-bg, #fef3c7)', padding: '8px 10px', borderRadius: 8, marginTop: 8 }}>
+                {c.part7AttorneyWarning}
+              </p>
+            )}
+
+            <label
+              data-testid="part7-confirm-row"
+              style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 12, padding: '10px 12px', background: 'var(--surface-2)', borderRadius: 8, cursor: 'pointer' }}
+            >
+              <input
+                type="checkbox"
+                data-testid="part7-confirm-checkbox"
+                checked={part7.reviewed}
+                onChange={(e) => updatePart7('reviewed', e.target.checked)}
+                style={{ marginTop: 2, width: 18, height: 18, accentColor: 'var(--success)', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 13, color: 'var(--text-1)' }}>{c.part7Confirm}</span>
+            </label>
+            {!part7.reviewed && (
+              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{c.part7ConfirmRequired}</p>
+            )}
+          </div>
+        )
+      })()}
+
       {/* B1.1 — Legal-risk routing UI. 3 yes/no questions. Any "yes"
           surfaces a non-blocking amber notice recommending licensed
           immigration attorney / DOJ-accredited representative.
@@ -728,6 +1275,7 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
         fields={fields}
         wantsEad={wantsEad}
         filingPath={filingPath}
+        part7Reviewed={part7.reviewed}
       />
 
       {/* TFR.6 — Attestation gate. Generate stays disabled until checked. */}
@@ -760,15 +1308,15 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       <button
         type="button"
         onClick={generate}
-        disabled={busy || attestedAt === null}
-        aria-disabled={busy || attestedAt === null}
+        disabled={busy || attestedAt === null || !part7.reviewed}
+        aria-disabled={busy || attestedAt === null || !part7.reviewed}
         style={{
           ...primary,
-          opacity: busy || attestedAt === null ? 0.45 : 1,
-          cursor: busy || attestedAt === null ? 'not-allowed' : 'pointer',
-          background: busy || attestedAt === null ? 'var(--surface-2)' : primary.background,
-          color: busy || attestedAt === null ? 'var(--text-3)' : primary.color,
-          boxShadow: busy || attestedAt === null ? 'none' : primary.boxShadow,
+          opacity: busy || attestedAt === null || !part7.reviewed ? 0.45 : 1,
+          cursor: busy || attestedAt === null || !part7.reviewed ? 'not-allowed' : 'pointer',
+          background: busy || attestedAt === null || !part7.reviewed ? 'var(--surface-2)' : primary.background,
+          color: busy || attestedAt === null || !part7.reviewed ? 'var(--text-3)' : primary.color,
+          boxShadow: busy || attestedAt === null || !part7.reviewed ? 'none' : primary.boxShadow,
         }}
         data-testid="generate-btn"
       >
@@ -780,6 +1328,14 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
           style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6, textAlign: 'center' }}
         >
           {c.attestRequired}
+        </p>
+      )}
+      {attestedAt !== null && !part7.reviewed && (
+        <p
+          data-testid="part7-hint"
+          style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6, textAlign: 'center' }}
+        >
+          {c.part7ConfirmRequired}
         </p>
       )}
 
