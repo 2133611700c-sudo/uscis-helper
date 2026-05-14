@@ -27,40 +27,107 @@ export interface I765Op {
 export function buildI765Ops(a: TPSAnswers): I765Op[] {
   const ops: I765Op[] = []
 
+  // ── Page 1: Part 1 — Type of application ────────────────────────────────────
+  // Three checkboxes: [0]=initial permission, [1]=replacement, [2]=renewal
+  // i765_application_type defaults from filing_path but user must confirm/override.
+  // Provenance: visible_default_confirmed_by_user — shown in UI before generation.
+  const appType = a.i765_application_type
+    ?? (a.filing_path === 'initial' ? 'initial' : 'renewal')
+  ops.push({ field: 'form1[0].Page1[0].Part1_Checkbox[0]', kind: 'checkbox', value: appType === 'initial' })
+  ops.push({ field: 'form1[0].Page1[0].Part1_Checkbox[1]', kind: 'checkbox', value: appType === 'replacement' })
+  ops.push({ field: 'form1[0].Page1[0].Part1_Checkbox[2]', kind: 'checkbox', value: appType === 'renewal' })
+
   // ── Page 1: legal name (Line 1) ────────────────────────────────────────────
   ops.push({ field: 'form1[0].Page1[0].Line1a_FamilyName[0]', kind: 'text', value: a.family_name })
   ops.push({ field: 'form1[0].Page1[0].Line1b_GivenName[0]',  kind: 'text', value: a.given_name })
   ops.push({ field: 'form1[0].Page1[0].Line1c_MiddleName[0]', kind: 'text', value: a.middle_name ?? '' })
 
-  // ── Page 2: US mailing address (Item 4) and physical address (Item 7) ─────
-  // Per I-765 instructions, Item 4 is "U.S. Mailing Address" and Item 6 is
-  // "Is your current mailing address the same as your physical address?".
-  // We map the user's chosen mailing address into Line 4 fields.
+  // ── Page 2: US mailing address (Line 4) and physical address (Line 7) ──────
+  //
+  // I-765 address layout (Page 2):
+  //   Line 4b : Mailing street number and name
+  //   Line 5  : Mailing address continuation (Apt/Ste/Flr, City, State, Zip)
+  //   Line 5 Checkbox [0] : Is mailing address same as physical? YES
+  //   Line 5 Checkbox [1] : Is mailing address same as physical? NO
+  //   Line 7  : Physical address (only when mailing ≠ physical)
+  //
+  // When mailing == physical → Line 4b + Line 5 = physical address; [0] checked.
+  // When mailing ≠  physical → Line 4b + Line 5 = mailing address; [1] checked;
+  //                            Line 7 = physical address.
   const useSeparateMailing = a.mailing_same_as_physical === false && !!a.mailing_street
 
-  // Item 4 — mailing address (always required)
+  // Line 4b — mailing street (or physical when same)
   ops.push({
     field: 'form1[0].Page2[0].Line4b_StreetNumberName[0]',
     kind: 'text',
     value: useSeparateMailing ? (a.mailing_street ?? '') : a.us_address_street,
   })
 
-  // Item 5 — alternative address (we map physical here when separate-mailing case)
-  // For the simple case (mailing = physical), Item 5 carries the same physical address.
-  ops.push({ field: 'form1[0].Page2[0].Pt2Line5_AptSteFlrNumber[0]', kind: 'text', value: a.us_address_unit_number ?? '' })
-  ops.push({ field: 'form1[0].Page2[0].Pt2Line5_CityOrTown[0]',     kind: 'text', value: a.us_address_city })
-  ops.push({ field: 'form1[0].Page2[0].Pt2Line5_State[0]',          kind: 'choice', value: a.us_address_state })
-  ops.push({ field: 'form1[0].Page2[0].Pt2Line5_ZipCode[0]',        kind: 'text', value: a.us_address_zip })
+  // Line 5 — mailing address continuation: unit type + unit number + city + state + zip
+  // Resolve which address to use: mailing when separate, physical otherwise.
+  const line5UnitType   = useSeparateMailing ? (a.mailing_unit_type   ?? null) : (a.us_address_unit_type   ?? null)
+  const line5UnitNumber = useSeparateMailing ? (a.mailing_unit_number ?? '')   : (a.us_address_unit_number ?? '')
+  const line5City       = useSeparateMailing ? (a.mailing_city        ?? '')   : a.us_address_city
+  const line5State      = useSeparateMailing ? (a.mailing_state       ?? '')   : a.us_address_state
+  const line5Zip        = useSeparateMailing ? (a.mailing_zip         ?? '')   : a.us_address_zip
 
-  // ── Page 2: Item 7 — A-Number (Alien Registration Number) ────────────────
+  // Unit type checkboxes: [0]=Apt, [1]=Ste, [2]=Flr
+  const line5UnitIdx = line5UnitType === 'apt' ? 0 : line5UnitType === 'ste' ? 1 : line5UnitType === 'flr' ? 2 : -1
+  for (let i = 0; i < 3; i++) {
+    ops.push({ field: `form1[0].Page2[0].Pt2Line5_Unit[${i}]`, kind: 'checkbox', value: i === line5UnitIdx })
+  }
+  ops.push({ field: 'form1[0].Page2[0].Pt2Line5_AptSteFlrNumber[0]', kind: 'text',   value: line5UnitNumber })
+  ops.push({ field: 'form1[0].Page2[0].Pt2Line5_CityOrTown[0]',      kind: 'text',   value: line5City })
+  ops.push({ field: 'form1[0].Page2[0].Pt2Line5_State[0]',           kind: 'choice', value: line5State })
+  ops.push({ field: 'form1[0].Page2[0].Pt2Line5_ZipCode[0]',         kind: 'text',   value: line5Zip })
+
+  // "Is your mailing address the same as your physical address?" checkbox
+  ops.push({ field: 'form1[0].Page2[0].Part2Line5_Checkbox[0]', kind: 'checkbox', value: !useSeparateMailing })
+  ops.push({ field: 'form1[0].Page2[0].Part2Line5_Checkbox[1]', kind: 'checkbox', value: useSeparateMailing })
+
+  // Line 7 — physical address (only populated when mailing ≠ physical)
+  if (useSeparateMailing) {
+    ops.push({
+      field: 'form1[0].Page2[0].Pt2Line7_StreetNumberName[0]',
+      kind: 'text',
+      value: a.us_address_street,
+    })
+    const phyUnitIdx = a.us_address_unit_type === 'apt' ? 0 : a.us_address_unit_type === 'ste' ? 1 : a.us_address_unit_type === 'flr' ? 2 : -1
+    for (let i = 0; i < 3; i++) {
+      ops.push({ field: `form1[0].Page2[0].Pt2Line7_Unit[${i}]`, kind: 'checkbox', value: i === phyUnitIdx })
+    }
+    ops.push({ field: 'form1[0].Page2[0].Pt2Line7_AptSteFlrNumber[0]', kind: 'text',   value: a.us_address_unit_number ?? '' })
+    ops.push({ field: 'form1[0].Page2[0].Pt2Line7_CityOrTown[0]',      kind: 'text',   value: a.us_address_city })
+    ops.push({ field: 'form1[0].Page2[0].Pt2Line7_State[0]',           kind: 'choice', value: a.us_address_state })
+    ops.push({ field: 'form1[0].Page2[0].Pt2Line7_ZipCode[0]',         kind: 'text',   value: a.us_address_zip })
+  }
+
+  // ── Page 2: Line 7 — A-Number (Alien Registration Number) ────────────────
   // Routed from EAD-card OCR (lib/tps/modules/ead.ts emits `a_number`).
   // Inventory field name: form1[0].Page2[0].Line7_AlienNumber[0]
   if (a.a_number) {
     ops.push({ field: 'form1[0].Page2[0].Line7_AlienNumber[0]', kind: 'text', value: a.a_number })
   }
 
+  // ── Page 2: Line 9 — Gender ──────────────────────────────────────────────────
+  // [0]=Male, [1]=Female (matches I-821 Part2_Item12_Sex ordering)
+  ops.push({ field: 'form1[0].Page2[0].Line9_Checkbox[0]', kind: 'checkbox', value: a.sex === 'M' })
+  ops.push({ field: 'form1[0].Page2[0].Line9_Checkbox[1]', kind: 'checkbox', value: a.sex === 'F' })
+
+  // ── Page 2: Line 10 — Race ────────────────────────────────────────────────────
+  // [0]=White [1]=Asian [2]=Black/African American [3]=American Indian/Alaska [4]=Pacific Islander
+  ops.push({ field: 'form1[0].Page2[0].Line10_Checkbox[0]', kind: 'checkbox', value: a.race_white ?? false })
+  ops.push({ field: 'form1[0].Page2[0].Line10_Checkbox[1]', kind: 'checkbox', value: a.race_asian ?? false })
+  ops.push({ field: 'form1[0].Page2[0].Line10_Checkbox[2]', kind: 'checkbox', value: a.race_black ?? false })
+  ops.push({ field: 'form1[0].Page2[0].Line10_Checkbox[3]', kind: 'checkbox', value: a.race_american_indian ?? false })
+
+  // ── Page 2: Line 12b — Social Security Number (if applicant has one) ──────
+  if (a.ssn) {
+    ops.push({ field: 'form1[0].Page2[0].Line12b_SSN[0]', kind: 'text', value: a.ssn })
+  }
+
   // ── Page 3: identity continued ─────────────────────────────────────────────
-  ops.push({ field: 'form1[0].Page3[0].Line18a_CityTownOfBirth[0]', kind: 'text', value: '' /* not captured this cycle */ })
+  ops.push({ field: 'form1[0].Page3[0].Line18a_CityTownOfBirth[0]', kind: 'text', value: a.city_of_birth ?? '' })
   ops.push({ field: 'form1[0].Page3[0].Line18c_CountryOfBirth[0]',  kind: 'text', value: a.country_of_birth })
   ops.push({ field: 'form1[0].Page3[0].Line19_DOB[0]',              kind: 'text', value: toUscisDate(a.dob) })
 
