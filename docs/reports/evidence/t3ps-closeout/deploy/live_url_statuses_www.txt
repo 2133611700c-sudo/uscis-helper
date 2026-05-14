@@ -1,0 +1,4 @@
+301 /ru/services/tps-ukraine/start -> docs/reports/evidence/t3ps-closeout/deploy/_ru_services_tps-ukraine_start.body.txt
+301 /ru/services/tps-ukraine -> docs/reports/evidence/t3ps-closeout/deploy/_ru_services_tps-ukraine.body.txt
+301 /ru/services/tps-ukraine/sources -> docs/reports/evidence/t3ps-closeout/deploy/_ru_services_tps-ukraine_sources.body.txt
+301 /api/tps/health -> docs/reports/evidence/t3ps-closeout/deploy/_api_tps_health.body.txt
