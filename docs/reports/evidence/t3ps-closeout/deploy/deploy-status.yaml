@@ -1,0 +1,17 @@
+timestamp_utc: "2026-05-14T00:00:00Z"
+branch: main
+pushed_sha: "146c5581c4ca17564c6307663a1d373ff8cb67d7"
+vercel_deployment_id: "dpl_HmwfXFHZ3EpwjSSUxbVgNSm6zXmF"
+vercel_ready: true
+deployed_sha_matches_pushed_sha: true
+health_endpoint: "https://messenginfo.com/api/tps/health"
+health_http_status: 200
+live_checks:
+  - url: "https://messenginfo.com/ru/services/tps-ukraine/start"
+    status: 200
+  - url: "https://messenginfo.com/ru/services/tps-ukraine"
+    status: 200
+  - url: "https://messenginfo.com/ru/services/tps-ukraine/sources"
+    status: 200
+  - url: "https://messenginfo.com/api/tps/health"
+    status: 200
