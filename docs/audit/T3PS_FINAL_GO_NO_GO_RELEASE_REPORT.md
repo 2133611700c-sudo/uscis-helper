@@ -1,7 +1,7 @@
 # T3PS Final GO/NO-GO Release Report
 
 - task_id: `T3PS-05-FINAL-GO-NO-GO-RELEASE-OPS`
-- generated_at: `2026-05-15T01:23:30Z`
+- generated_at: `2026-05-15T07:54:00Z`
 - project: `Messenginfo / USCIS Helper / T3PS`
 - verdict: **NO_GO**
 
@@ -14,11 +14,11 @@ Reason: P0 evidence gates are not fully closed (`T3PS-02 = FAIL`, `T3PS-04 = BLO
 
 ## Production SHA / Deployment Status
 
-- Local `HEAD`: `0e239635b062c1c0e9289bc08794da5d7fbe59b7`
-- `origin/main`: `0e239635b062c1c0e9289bc08794da5d7fbe59b7`
-- Vercel deployment: `dpl_5A1KHYhPswRBuVDvsSr3MJNR1reG`
+- Local `HEAD`: `3128f08c1a31112d715b479b668ab3a52f0b0563`
+- `origin/main`: `3128f08c1a31112d715b479b668ab3a52f0b0563`
+- Vercel deployment: `dpl_9pJGj1brCrCiMMW27rLRmX1JftWE`
 - Vercel state: `READY`
-- Production health SHA: `0e239635b062c1c0e9289bc08794da5d7fbe59b7`
+- Production health SHA: `3128f08c1a31112d715b479b668ab3a52f0b0563`
 - Production health `ok`: `true`
 - Production health `ocr_configured`: `false`
 
@@ -47,23 +47,24 @@ Evidence:
 
 Source report: `/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_02_LIVE_BROWSER_CONTOUR.md`
 
-Status: **FAIL**
+Status: **PARTIAL**
 
 Closed:
 - Static pages/screenshots captured.
 - Console/network exported.
 - Partial Part 7 risk evidence captured.
-- Re-run executed (`docs/reports/evidence/t3ps-final-release/browser-run/`) with fresh artifacts.
+- Re-run executed (`docs/reports/evidence/t3ps-final-release/browser-run-clean/`) with fresh artifacts.
 - OCR request reached production API (`POST /api/tps/ocr/extract = 200`).
+- Generate request reached production API (`POST /api/tps/generate-packet = 200`).
 
 Open blockers:
-1. Generate endpoint still not closed with 200+download proof (`latest observed 422 missing fields`, then no stable download capture).
+1. Generate endpoint 200 is closed, but valid ZIP download artifact from same session is not yet closed (captured file is empty/invalid ZIP).
 2. Missing `legal_risk_prior_denial_yes.png`.
-3. OCR upload path not proven end-to-end in this run.
+3. Full legal-risk yes-cases set not yet complete in current run set.
 
 Evidence bundle:
 - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-browser-contour/`
-- `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run/`
+- `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/`
 
 ## PDF/ZIP Evidence Result
 
@@ -77,9 +78,9 @@ Verified:
 - visual renders generated.
 
 Open blockers:
-1. I-821 invalid map references remain (2).
-2. Full P0 semantic certainty for entry identity fields incomplete.
-3. Part 7 full matrix evidence not fully closed with browser parity.
+1. Full P0 semantic certainty for entry identity fields incomplete.
+2. Part 7 full matrix evidence not fully closed with browser parity.
+3. Remaining unmapped/blank fields still above P0 acceptance for GO.
 
 Evidence bundle:
 - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-pdf-proof/`
@@ -156,7 +157,6 @@ Decision: **NO_GO** for controlled beta at this point.
 
 ## Exact Next Action
 
-Run `T3PS-02-LIVE-BROWSER-CONTOUR-VERIFICATION` again on current production and close only these three artifacts in one session:
-1. `generate_success.png` + `download_visible.png` from the same run,
-2. `legal_risk_prior_denial_yes.png`,
-3. `browser_summary.yaml` with `POST /api/tps/generate-packet = 200`.
+Close two blockers in one session:
+1. valid ZIP binary capture linked to same browser run where `POST /api/tps/generate-packet = 200`,
+2. missing legal-risk yes-case screenshot set (`prior_denial_yes`, `removal_yes`).

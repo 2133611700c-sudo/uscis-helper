@@ -1,53 +1,34 @@
 # T3PS-02 Live Browser Contour Verification
 
 - task_id: `T3PS-02-LIVE-BROWSER-CONTOUR-VERIFICATION`
-- generated_at: `2026-05-15T01:26:40Z`
-- deployed_commit_sha: `0e239635b062c1c0e9289bc08794da5d7fbe59b7`
-- verdict: **FAIL**
+- generated_at: `2026-05-15T07:53:00Z`
+- deployed_commit_sha: `3128f08c1a31112d715b479b668ab3a52f0b0563`
+- verdict: **PARTIAL**
 
-## Browser runs executed
+Evidence dir (latest):  
+`/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/`
 
-1) Prior run bundle:  
-`/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-browser-contour/`
+## Verified results
 
-2) Re-run bundle (latest):  
-`/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run/`
+- `POST /api/tps/ocr/extract`: **200**
+- `POST /api/tps/generate-packet`: **200**
+- Console/network artifacts saved: `console.json`, `network.json`, `failed_requests.json`
+- Screenshots saved including post-generate state: `09_after_generate.png`
+- Failed requests: only `404 /ru/_vercel/insights/script.js` (2x, non-blocking for TPS flow)
 
-## Latest run facts (VERIFIED)
+## Open failure (blocks PASS)
 
-- `ocr_status`: `null` (no OCR API request captured)
-- `generate_status`: `null` (no generate API request captured)
-- `downloaded_file`: `null`
-- failed requests: 2x `404 /ru/_vercel/insights/script.js`
-- screenshots captured: 7 (`01_start_fresh.png` ... `07_generate_result.png`)
+- ZIP artifact in same run is still not proven as valid downloadable packet:
+  - `downloaded_file` path exists in summary
+  - captured file is zero-byte stream and fails `unzip` integrity check
 
-### Re-run update (`2026-05-15`)
+## Pass criteria status
 
-Evidence dir: `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run/`
+- Generate+download in same browser run: **NOT MET**
+- OCR and Generate API proof: **MET**
+- Console/network export: **MET**
+- Legal-risk yes-case full screenshot set: **NOT MET**
 
-- OCR API reached: `200`
-- Generate API reached: `422` (missing fields in payload)
-- Missing fields returned by API:
-  - `family_name`, `given_name`, `dob`
-  - `passport_number`, `passport_expiration_date`
-  - `us_address_street`, `us_address_city`, `us_address_state`, `us_address_zip`
-  - `last_entry_date`, `daytime_phone`, `email`, `marital_status`
-- ZIP download: `not captured`
+## Exact blocker
 
-## Required pass criteria vs actual
-
-- Generate + ZIP in same run: **NOT MET**
-- OCR upload proof: **NOT MET**
-- prior_denial_yes screenshot: **NOT MET**
-- console/network export: **MET**
-
-## Exact broken step
-
-Wizard interaction did not reach controllable upload/review/generate checkpoints in automated mobile run (no file input and no attestation/generate API calls observed).
-
-## One recommended fix
-
-Add stable test IDs/selectors for wizard controls (`upload`, `continue`, `attestation`, `generate`) and rerun this prompt against production until one session captures:
-1) `POST /api/tps/ocr/extract = 200`,
-2) `POST /api/tps/generate-packet = 200`,
-3) ZIP download artifact.
+Frontend generate flow returns `200`, but automated capture cannot yet persist a valid ZIP binary from the same session (empty stream in artifact file).
