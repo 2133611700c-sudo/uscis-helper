@@ -1,0 +1,25 @@
+task_id: T3PS-04-REAL-DOCUMENT-PILOT-AI-OCR-ROBUSTNESS
+commit_sha: "3128f08c1a31112d715b479b668ab3a52f0b0563"
+production_url: "https://messenginfo.com/ru/services/tps-ukraine/start"
+verdict: BLOCKED
+
+health:
+  ok: true
+  sha: "3128f08c1a31112d715b479b668ab3a52f0b0563"
+  ocr_provider: "google_vision"
+  ocr_configured: false
+
+real_files_detected_redacted: []
+
+synthetic_checks:
+  robustness_csv: "docs/audit/T3PS_OCR_ROBUSTNESS_MATRIX.csv"
+  robustness_md: "docs/audit/T3PS_OCR_ROBUSTNESS_MATRIX.md"
+  field_count_nonzero_variants: 0
+
+manual_fallback:
+  endpoint: "/api/tps/manual-review"
+  status: PASS
+
+blockers:
+  - "no real pilot files found in expected Downloads paths"
+  - "production OCR is not configured (health.ocr_configured=false)"
