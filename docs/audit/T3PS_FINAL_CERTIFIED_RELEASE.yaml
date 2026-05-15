@@ -1,0 +1,84 @@
+task_id: T3PS-07-FINAL-REAL-DOC-ZIP-CLOSEOUT
+generated_at: "2026-05-15T23:22:00Z"
+
+production:
+  sha: 36ec53e7e3a38708053383ecc5b7ac36cd6e80c5
+  vercel_state: READY
+  health_ok: true
+  health_sha: 36ec53e7e3a38708053383ecc5b7ac36cd6e80c5
+
+gates:
+  typecheck: PASS
+  vitest: PASS
+  lint: PASS
+  guard: PASS
+  build: PASS
+  report: /Users/sergiiredacted/work/uscis-helper/test-fixtures/proof/RUN_ALL_GATES.report.yaml
+
+fix:
+  root_cause: "Step 6 passport fields had no stable test selectors, so repeatable manual fallback input in mobile real-doc run was not guaranteed before Generate."
+  applied:
+    - "Added data-testid=tps-passport-number-input"
+    - "Added data-testid=tps-passport-expiration-input"
+    - "Added localized manual-fallback helper text for passport expiration"
+  files:
+    - /Users/sergiiredacted/work/uscis-helper/apps/web/src/app/[locale]/services/tps-ukraine/start/GeneratePacketBlock.tsx
+    - /Users/sergiiredacted/work/uscis-helper/scripts/t3ps-production-contour-clean.mjs
+
+contract_integrity:
+  critical_fields_preserved: true
+  checker_still_reports_missing: true
+  generate_route_still_422_when_missing: true
+  no_api_schema_changes: true
+
+ocr:
+  real_doc_http_status: 200
+  real_doc_field_count: 6
+  required_extracted_keys_present:
+    family_name: true
+    given_name: true
+    dob_or_passport_number: true
+    identity_or_document_field: true
+  evidence: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/ocr-fix/production_ocr_redacted.json
+
+browser:
+  run_summary: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json
+  ocr_status: 200
+  generate_status: 200
+  zip_downloaded: true
+  zip_bytes: 1826099
+  failed_requests_count: 2
+  failed_requests_note: "Only /ru/_vercel/insights/script.js 404 (analytics script), non-blocking for TPS flow"
+  redacted_screenshots:
+    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots-redacted/07_step6_screen.png
+    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots-redacted/08_before_generate.png
+    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots-redacted/09_after_generate.png
+
+zip_pdf_proof:
+  source_zip: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/downloaded_zip/tps-packet-intercept-1778887165591.zip
+  zip_list: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/zip-list.txt
+  i821_fields_redacted: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/i821-fields-redacted.txt
+  i765_fields_redacted: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/i765-fields-redacted.txt
+  summary: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/pdf-proof-closeout/summary.json
+  i821_filled_count: 65
+  i765_present: false
+  cyrillic_leak: NONE
+  critical_fields_present:
+    family_name: true
+    given_name: true
+    dob: true
+    passport_number: true
+    passport_expiration_date: true
+    marital_status: true
+    part7: true
+
+verdict: GO_CONTROLLED_BETA
+paid_launch_ready: false
+
+remaining_gaps:
+  - id: T3PS-07-OPS-001
+    priority: P1
+    description: "External analytics script 404 noise in browser console (/ru/_vercel/insights/script.js). Does not block TPS generation."
+    accepted_by: OPEN
+
+next_action: "Run limited controlled beta with monitoring and keep paid launch disabled."
