@@ -460,6 +460,7 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
         )}
         <button
           type="button"
+          data-testid="upload-next"
           disabled={!canProceed}
           aria-disabled={!canProceed}
           onClick={canProceed ? handleNext : undefined}
@@ -488,6 +489,7 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
       {onSkipAll && (
         <button
           type="button"
+          data-testid="upload-skip-all"
           onClick={onSkipAll}
           style={{
             display: 'block',
