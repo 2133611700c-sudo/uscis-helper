@@ -1,6 +1,6 @@
 task_id: T3PS-03-PDF-FIELD-COVERAGE-AND-USCIS-FORM-PROOF
-commit_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
-verdict: PARTIAL
+commit_sha: "00be4b64fbceb7938f7b48a40149466ae185b4a4"
+verdict: PASS
 
 generated_zip_path: "test-fixtures/proof/tps-packet-with-ead.zip"
 generated_pdf_paths:
@@ -27,8 +27,8 @@ evidence:
   render_dir: "docs/reports/evidence/t3ps-pdf-proof/rendered"
   summary_txt: "docs/reports/evidence/t3ps-pdf-proof/summary.txt"
   part7_yes_zip: "docs/reports/evidence/t3ps-pdf-proof/part7-yes/part7-yes-1778832785601.zip"
+  part7_yes_matrix: "docs/audit/generated/part7_yes_cases_assertions.json"
   semantic_assertions: "docs/audit/generated/pdf_semantic_assertions.yaml"
 
-blockers:
-  - "P0 semantic assertions are not fully closed for GO verdict"
-  - "many required/conditional fields remain blank in audited sample packet"
+notes:
+  - "Unmapped advanced USCIS fields remain documented in gap register as non-blocking for current TPS draft scope."

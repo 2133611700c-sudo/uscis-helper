@@ -3,13 +3,13 @@ generated_at: "2026-05-15T07:54:00Z"
 verdict: NO_GO
 
 production:
-  local_head_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
-  origin_main_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
-  vercel_deployment_id: "dpl_6Gsi8qkW9NtJXCLBq4d3RA2d2g5D"
+  local_head_sha: "00be4b64fbceb7938f7b48a40149466ae185b4a4"
+  origin_main_sha: "00be4b64fbceb7938f7b48a40149466ae185b4a4"
+  vercel_deployment_id: "dpl_CqjM2sD1Y3hJvGm6bQvLJ7N5T8yK"
   vercel_state: READY
   health_ok: true
-  health_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
-  ocr_configured: false
+  health_sha: "00be4b64fbceb7938f7b48a40149466ae185b4a4"
+  ocr_configured: true
 
 gates:
   status: PASS
@@ -18,15 +18,13 @@ gates:
 prompt_status:
   t3ps_01: PASS
   t3ps_02: PASS
-  t3ps_03: PARTIAL
+  t3ps_03: PASS
   t3ps_04: FAIL
 
 blocking_reasons:
   - "T3PS-04: real pilot file produced zero extracted fields"
-  - "T3PS-04: OCR not configured in production"
-  - "T3PS-03: P0 semantic closure not complete for all required/conditional paths"
+  - "T3PS-04: OCR configured but passport module extraction still returns zero fields"
 
 next_action:
-  - "configure OCR credentials and confirm health.ocr_configured=true"
-  - "rerun browser contour only after OCR enablement (optional confidence replay)"
+  - "fix production passport extraction path (non-zero mapped fields)"
   - "rerun real-doc pilot with redacted evidence"

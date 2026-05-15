@@ -6,6 +6,7 @@ import { chromium } from '@playwright/test'
 const outDir = path.resolve('docs/reports/evidence/t3ps-pdf-proof')
 const dlDir = path.join(outDir, 'part7-yes')
 fs.mkdirSync(dlDir, { recursive: true })
+const riskCase = process.env.RISK_CASE || 'criminal'
 
 const browser = await chromium.launch({ headless: true })
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ru-RU' })
@@ -70,7 +71,15 @@ await page.locator('[data-testid="field-marital-status-single"]').first().click(
 await page.locator('[data-testid="part7-confirm-checkbox"]').first().check()
 
 // one explicit legal risk = yes
-await page.locator('[data-testid="tps-legal-risk-has_criminal_concern-yes"]').first().click()
+if (riskCase === 'criminal') {
+  await page.locator('[data-testid="tps-legal-risk-has_criminal_concern-yes"]').first().click()
+}
+if (riskCase === 'removal') {
+  await page.locator('[data-testid="tps-legal-risk-left_us_without_advance_parole-yes"]').first().click()
+}
+if (riskCase === 'prior_denial') {
+  await page.locator('[data-testid="tps-legal-risk-has_prior_tps_denial-yes"]').first().click()
+}
 await page.waitForTimeout(500)
 
 await page.locator('[data-testid="tps-attestation-checkbox"]').first().check()
@@ -82,4 +91,6 @@ if (!zipPath) {
   console.error('zip_not_captured')
   process.exit(2)
 }
-console.log(zipPath)
+const tagged = zipPath.replace('.zip', `-${riskCase}.zip`)
+fs.renameSync(zipPath, tagged)
+console.log(tagged)
