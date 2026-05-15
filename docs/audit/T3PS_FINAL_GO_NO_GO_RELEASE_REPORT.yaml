@@ -3,12 +3,12 @@ generated_at: "2026-05-15T07:54:00Z"
 verdict: NO_GO
 
 production:
-  local_head_sha: "3128f08c1a31112d715b479b668ab3a52f0b0563"
-  origin_main_sha: "3128f08c1a31112d715b479b668ab3a52f0b0563"
-  vercel_deployment_id: "dpl_9pJGj1brCrCiMMW27rLRmX1JftWE"
+  local_head_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
+  origin_main_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
+  vercel_deployment_id: "dpl_6Gsi8qkW9NtJXCLBq4d3RA2d2g5D"
   vercel_state: READY
   health_ok: true
-  health_sha: "3128f08c1a31112d715b479b668ab3a52f0b0563"
+  health_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
   ocr_configured: false
 
 gates:
@@ -17,17 +17,16 @@ gates:
 
 prompt_status:
   t3ps_01: PASS
-  t3ps_02: PARTIAL
+  t3ps_02: PASS
   t3ps_03: PARTIAL
-  t3ps_04: BLOCKED
+  t3ps_04: FAIL
 
 blocking_reasons:
-  - "T3PS-02: valid ZIP download artifact not captured in same browser run"
-  - "T3PS-02: legal-risk yes-case screenshot set incomplete"
-  - "T3PS-04: no real pilot file found"
+  - "T3PS-04: real pilot file produced zero extracted fields"
   - "T3PS-04: OCR not configured in production"
+  - "T3PS-03: P0 semantic closure not complete for all required/conditional paths"
 
 next_action:
   - "configure OCR credentials and confirm health.ocr_configured=true"
-  - "rerun browser contour and capture valid ZIP binary + missing legal-risk screenshots"
+  - "rerun browser contour only after OCR enablement (optional confidence replay)"
   - "rerun real-doc pilot with redacted evidence"
