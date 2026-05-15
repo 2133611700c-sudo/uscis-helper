@@ -1023,31 +1023,31 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       <input type="date" style={input} value={fields.passport_expiration_date} onChange={(e) => update('passport_expiration_date', e.target.value)} />
 
       <label style={label}>{c.street}</label>
-      <input style={input} value={fields.us_address_street} onChange={(e) => update('us_address_street', e.target.value)} />
+      <input data-testid="field-us-address-street" style={input} value={fields.us_address_street} onChange={(e) => update('us_address_street', e.target.value)} />
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 8 }}>
         <div>
           <label style={label}>{c.city}</label>
-          <input style={input} value={fields.us_address_city} onChange={(e) => update('us_address_city', e.target.value)} />
+          <input data-testid="field-us-address-city" style={input} value={fields.us_address_city} onChange={(e) => update('us_address_city', e.target.value)} />
         </div>
         <div>
           <label style={label}>{c.state}</label>
-          <input style={input} maxLength={2} placeholder={c.state_placeholder} value={fields.us_address_state} onChange={(e) => update('us_address_state', e.target.value.toUpperCase())} />
+          <input data-testid="field-us-address-state" style={input} maxLength={2} placeholder={c.state_placeholder} value={fields.us_address_state} onChange={(e) => update('us_address_state', e.target.value.toUpperCase())} />
         </div>
         <div>
           <label style={label}>{c.zip}</label>
-          <input style={input} value={fields.us_address_zip} onChange={(e) => update('us_address_zip', e.target.value)} />
+          <input data-testid="field-us-address-zip" style={input} value={fields.us_address_zip} onChange={(e) => update('us_address_zip', e.target.value)} />
         </div>
       </div>
 
       <label style={label}>{c.i94}</label>
       <input style={input} value={fields.i94_admission_number} onChange={(e) => update('i94_admission_number', e.target.value)} />
       <label style={label}>{c.entry}</label>
-      <input type="date" style={input} value={fields.last_entry_date} onChange={(e) => update('last_entry_date', e.target.value)} />
+      <input data-testid="field-last-entry-date" type="date" style={input} value={fields.last_entry_date} onChange={(e) => update('last_entry_date', e.target.value)} />
 
       <label style={label}>{c.phone}</label>
-      <input style={input} value={fields.daytime_phone} onChange={(e) => update('daytime_phone', e.target.value)} />
+      <input data-testid="field-daytime-phone" style={input} value={fields.daytime_phone} onChange={(e) => update('daytime_phone', e.target.value)} />
       <label style={label}>{c.email}</label>
-      <input type="email" style={input} value={fields.email} onChange={(e) => update('email', e.target.value)} />
+      <input data-testid="field-email" type="email" style={input} value={fields.email} onChange={(e) => update('email', e.target.value)} />
 
       {/* A-Number and status at last entry */}
       <label style={label}>{c.aNumber}</label>
@@ -1061,8 +1061,9 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
         {(['single','married','divorced','widowed','legally_separated','annulled','other'] as const).map((ms) => {
           const labelKey = `ms_${ms === 'legally_separated' ? 'separated' : ms}` as keyof typeof c
           return (
-            <button
-              key={ms}
+              <button
+                data-testid={`field-marital-status-${ms}`}
+                key={ms}
               type="button"
               style={{
                 ...secondary,
