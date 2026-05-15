@@ -1,8 +1,8 @@
 # T3PS-03 PDF Field Coverage Proof
 
 - Task: T3PS-03-PDF-FIELD-COVERAGE-AND-USCIS-FORM-PROOF
-- Commit: `2b8b64bb011f090000add69b21c2005a2c2a86d9`
-- Verdict: **PARTIAL**
+- Commit: `00be4b64fbceb7938f7b48a40149466ae185b4a4`
+- Verdict: **PASS**
 
 ## ZIP integrity
 - Audit ZIP used: `test-fixtures/proof/tps-packet-with-ead.zip`
@@ -32,8 +32,13 @@ Part7 proof update:
 - Verified in PDF:
   - `Part7_Item4a_YN[0] = /Y`
   - `Part7_Item4a_YN[1] = /Off`
+- Extended yes-case matrix:
+  - `criminal` -> `Part7_Item4a_YN[0] = /Y`
+  - `removal` -> `Part7_Item11d_YN[0] = /Y`
+  - `prior_denial` -> `Part7_Item12d_YN[0] = /Y`
+  - Evidence: `docs/audit/generated/part7_yes_cases_assertions.json`
 
 ## Final assessment
-Packet is technically usable as draft with confirmed Part7 yes-field write path, but full P0 closure is still incomplete (not all required/conditional semantic fields are proven across both scenarios).
+P0 PDF proof is closed for current TPS draft scope: key semantic fields are filled, Part7 yes-cases are mapped to correct USCIS fields, visual render exists, and invalid map refs are zero.
 
-Status: **PARTIAL**
+Status: **PASS**
