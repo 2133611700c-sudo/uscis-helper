@@ -702,13 +702,28 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
 
         <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', marginBottom: 8 }}>{t.s1Title}</h2>
         <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 16, lineHeight: 1.5 }}>{t.s1Body}</p>
-        <button type="button" style={choiceCard(answers.filing_path === 'initial')} onClick={() => update({ filing_path: 'initial', has_prior_tps: false })}>
+        <button
+          type="button"
+          data-testid="s1-path-initial"
+          style={choiceCard(answers.filing_path === 'initial')}
+          onClick={() => update({ filing_path: 'initial', has_prior_tps: false })}
+        >
           {t.s1Initial}
         </button>
-        <button type="button" style={choiceCard(answers.filing_path === 're_registration')} onClick={() => update({ filing_path: 're_registration', has_prior_tps: true })}>
+        <button
+          type="button"
+          data-testid="s1-path-reregistration"
+          style={choiceCard(answers.filing_path === 're_registration')}
+          onClick={() => update({ filing_path: 're_registration', has_prior_tps: true })}
+        >
           {t.s1Reg}
         </button>
-        <button type="button" style={choiceCard(answers.filing_path === 'unknown')} onClick={() => update({ filing_path: 'unknown', has_prior_tps: null })}>
+        <button
+          type="button"
+          data-testid="s1-path-unknown"
+          style={choiceCard(answers.filing_path === 'unknown')}
+          onClick={() => update({ filing_path: 'unknown', has_prior_tps: null })}
+        >
           {t.s1Unknown}
         </button>
 
@@ -1144,7 +1159,7 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
       {step < TOTAL_SCREENS && (
         <section style={{ padding: '20px 20px 0', display: 'flex', gap: 10 }}>
           {step > 1 && (
-            <button type="button" onClick={back} style={{ ...secondaryBtn, flex: 1, textAlign: 'center' }}>
+            <button type="button" data-testid="wizard-back" onClick={back} style={{ ...secondaryBtn, flex: 1, textAlign: 'center' }}>
               {t.back}
             </button>
           )}
@@ -1158,6 +1173,7 @@ export default function TPSWizard({ locale: rawLocale }: Props) {
             return (
               <button
                 type="button"
+                data-testid="wizard-next"
                 onClick={blocked ? undefined : next}
                 disabled={blocked}
                 aria-disabled={blocked}
