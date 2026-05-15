@@ -1,0 +1,20 @@
+{
+  "http_status": 200,
+  "module": "passport",
+  "matched": true,
+  "field_count": 6,
+  "field_keys": [
+    "family_name",
+    "given_name",
+    "middle_name",
+    "dob",
+    "country_of_nationality",
+    "passport_country_of_issuance"
+  ],
+  "review_required_count": 6,
+  "warnings": [
+    "booklet_dob_unparseable",
+    "booklet_passport_number_missing",
+    "booklet_no_expiration_date"
+  ]
+}
