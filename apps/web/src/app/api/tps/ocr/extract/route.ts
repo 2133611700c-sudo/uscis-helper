@@ -324,6 +324,14 @@ export async function POST(req: NextRequest) {
       // Per-document module output — present only when doc_type_hint is set.
       // If the AI Brain ran and added fields, `module` is the merged shape.
       module: mergedModule,
+      // Backward-compatible aliases for evidence scripts and external checks.
+      // Keep these flat so shell tooling can grep counts/keys quickly.
+      module_result: mergedModule,
+      module_matched: mergedModule ? mergedModule.matched : null,
+      module_field_count: mergedModule ? mergedModule.fields.length : 0,
+      module_field_keys: mergedModule
+        ? Array.from(new Set(mergedModule.fields.map((f) => f.field))).sort()
+        : [],
       // DS.2 — Brain diagnostics surfaced to the client (UI never renders
       // raw_response_length; this is for /api/tps/health-style monitoring).
       brain: brainResult
