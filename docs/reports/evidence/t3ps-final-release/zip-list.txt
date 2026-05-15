@@ -1,0 +1,7 @@
+Archive:  docs/reports/evidence/t3ps-final-release/browser-run-clean/downloaded_zip/tps-packet-intercept-1778887165591.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+  1822573  05-15-2026 23:19   I-821.pdf
+     3314  05-15-2026 23:19   README.txt
+---------                     -------
+  1825887                     2 files
