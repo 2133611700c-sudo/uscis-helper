@@ -839,17 +839,22 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       left_us_without_advance_parole:
         legalRisk.left_us_without_advance_parole === true,
       // Part 7 — background declaration (I-821 Pages 7-9)
-      // All default to false (No). User must toggle and confirm.
-      part7_4a: part7.q4a, part7_4b: part7.q4b, part7_4c: part7.q4c,
+      // Legal-risk quick flags are mapped into their corresponding Part 7
+      // answers so PDF output reflects what the user answered in UI.
+      part7_4a: part7.q4a || legalRisk.has_criminal_concern === true,
+      part7_4b: part7.q4b,
+      part7_4c: part7.q4c,
       part7_5a: part7.q5a, part7_5b: part7.q5b, part7_5c: part7.q5c,
       part7_7a: part7.q7a, part7_7b: part7.q7b, part7_7c: part7.q7c,
       part7_8: part7.q8,
       part7_9a: part7.q9a, part7_9b: part7.q9b, part7_9c: part7.q9c,
       part7_9d: part7.q9d, part7_9e: part7.q9e,
       part7_11a: part7.q11a, part7_11b: part7.q11b,
-      part7_11c: part7.q11c, part7_11d: part7.q11d,
+      part7_11c: part7.q11c,
+      part7_11d: part7.q11d || legalRisk.left_us_without_advance_parole === true,
       part7_12a: part7.q12a, part7_12b: part7.q12b,
-      part7_12c: part7.q12c, part7_12d: part7.q12d,
+      part7_12c: part7.q12c,
+      part7_12d: part7.q12d || legalRisk.has_prior_tps_denial === true,
       part7_13a: part7.q13a, part7_13b: part7.q13b, part7_13c: part7.q13c,
       part7_17: part7.q17,
       part7_18a: part7.q18a, part7_18b: part7.q18b, part7_18c: part7.q18c,

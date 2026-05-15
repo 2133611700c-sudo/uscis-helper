@@ -23,6 +23,10 @@ let downloadedFile = null
 let generateResponseContentType = null
 let generateResponseKeys = []
 let generateRequestBodyBase64 = null
+let generateResponseBodyBytes = null
+let generateReplayStatus = null
+let generateReplayBytes = null
+let generateInterceptBytes = null
 
 const browser = await chromium.launch({ headless: true })
 const context = await browser.newContext({
@@ -32,9 +36,37 @@ const context = await browser.newContext({
 })
 const page = await context.newPage()
 
+await page.route('**/api/tps/generate-packet', async (route) => {
+  const req = route.request()
+  if (req.method() !== 'POST') return route.continue()
+  const resp = await route.fetch()
+  const headers = resp.headers()
+  const ct = (headers['content-type'] || '').toLowerCase()
+  let body = null
+  try {
+    body = await resp.body()
+  } catch {}
+  const bytes = body?.length || 0
+  generateInterceptBytes = bytes
+  if (bytes > 0 && (ct.includes('application/zip') || ct.includes('application/octet-stream'))) {
+    const fp = path.join(DLOAD, `tps-packet-intercept-${Date.now()}.zip`)
+    fs.writeFileSync(fp, body)
+    downloadedFile = fp
+  }
+  await route.fulfill({ response: resp, body: body || undefined })
+})
+
 page.on('console', (m) => consoleLogs.push({ type: m.type(), text: m.text() }))
 page.on('response', async (r) => {
-  const row = { url: r.url(), method: r.request().method(), status: r.status() }
+  const headers = r.headers()
+  const row = {
+    url: r.url(),
+    method: r.request().method(),
+    status: r.status(),
+    content_type: headers['content-type'] || null,
+    content_disposition: headers['content-disposition'] || null,
+    location: headers['location'] || null,
+  }
   networkLogs.push(row)
   if (row.status >= 400) failedRequests.push(row)
   if (row.url.includes('/api/tps/ocr/extract')) ocrStatus = row.status
@@ -49,9 +81,12 @@ page.on('response', async (r) => {
       try {
         if (generateResponseContentType.includes('application/zip') || generateResponseContentType.includes('application/octet-stream')) {
           const buf = await r.body()
-          const fp = path.join(DLOAD, `tps-packet-from-response-${Date.now()}.zip`)
-          fs.writeFileSync(fp, buf)
-          downloadedFile = fp
+          generateResponseBodyBytes = buf?.length || 0
+          if (buf && buf.length > 0) {
+            const fp = path.join(DLOAD, `tps-packet-from-response-${Date.now()}.zip`)
+            fs.writeFileSync(fp, buf)
+            downloadedFile = fp
+          }
         } else if (generateResponseContentType.includes('application/json')) {
           const j = await r.json()
           if (j && typeof j === 'object') generateResponseKeys = Object.keys(j)
@@ -207,8 +242,10 @@ try {
         },
         data: reqBytes,
       })
+      generateReplayStatus = replay.status()
       if (replay.ok()) {
         const buf = await replay.body()
+        generateReplayBytes = buf?.length || 0
         if (buf && buf.length > 0) {
           const fp = path.join(DLOAD, `tps-packet-replay-${Date.now()}.zip`)
           fs.writeFileSync(fp, buf)
@@ -257,8 +294,12 @@ const summary = {
   generate_status: generateStatus,
   generate_missing: generateMissing,
   generate_response_content_type: generateResponseContentType,
+  generate_response_body_bytes: generateResponseBodyBytes,
   generate_response_keys: generateResponseKeys,
   generate_request_body_captured: !!generateRequestBodyBase64,
+  generate_replay_status: generateReplayStatus,
+  generate_replay_bytes: generateReplayBytes,
+  generate_intercept_bytes: generateInterceptBytes,
   downloaded_file: downloadedFile,
   failed_requests_count: failedRequests.length,
 }
