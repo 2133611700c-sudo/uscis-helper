@@ -10,15 +10,15 @@
 `controlled_beta_ready = false`  
 `paid_launch_ready = false`
 
-Reason: P0 evidence gates are not fully closed (`T3PS-02 = FAIL`, `T3PS-04 = BLOCKED`, OCR not configured in production health).
+Reason: P0 evidence gates are not fully closed (`T3PS-03 = PARTIAL`, `T3PS-04 = FAIL`, OCR not configured in production health).
 
 ## Production SHA / Deployment Status
 
-- Local `HEAD`: `3128f08c1a31112d715b479b668ab3a52f0b0563`
-- `origin/main`: `3128f08c1a31112d715b479b668ab3a52f0b0563`
-- Vercel deployment: `dpl_9pJGj1brCrCiMMW27rLRmX1JftWE`
+- Local `HEAD`: `2b8b64bb011f090000add69b21c2005a2c2a86d9`
+- `origin/main`: `2b8b64bb011f090000add69b21c2005a2c2a86d9`
+- Vercel deployment: `dpl_6Gsi8qkW9NtJXCLBq4d3RA2d2g5D`
 - Vercel state: `READY`
-- Production health SHA: `3128f08c1a31112d715b479b668ab3a52f0b0563`
+- Production health SHA: `2b8b64bb011f090000add69b21c2005a2c2a86d9`
 - Production health `ok`: `true`
 - Production health `ocr_configured`: `false`
 
@@ -47,7 +47,7 @@ Evidence:
 
 Source report: `/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_02_LIVE_BROWSER_CONTOUR.md`
 
-Status: **PARTIAL**
+Status: **PASS**
 
 Closed:
 - Static pages/screenshots captured.
@@ -57,13 +57,11 @@ Closed:
 - OCR request reached production API (`POST /api/tps/ocr/extract = 200`).
 - Generate request reached production API (`POST /api/tps/generate-packet = 200`).
 
-Open blockers:
-1. Generate endpoint 200 is closed, but valid ZIP download artifact from same session is not yet closed (captured file is empty/invalid ZIP).
-2. Missing `legal_risk_prior_denial_yes.png`.
-3. Full legal-risk yes-cases set not yet complete in current run set.
+Closed now:
+1. Generate endpoint `200` and same-run valid ZIP binary captured (`tps-packet-intercept-1778832713477.zip`).
+2. Legal-risk yes-case screenshots captured (`criminal`, `removal`, `prior_denial`).
 
 Evidence bundle:
-- `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-browser-contour/`
 - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/`
 
 ## PDF/ZIP Evidence Result
@@ -78,9 +76,8 @@ Verified:
 - visual renders generated.
 
 Open blockers:
-1. Full P0 semantic certainty for entry identity fields incomplete.
-2. Part 7 full matrix evidence not fully closed with browser parity.
-3. Remaining unmapped/blank fields still above P0 acceptance for GO.
+1. Full P0 semantic certainty for all required/conditional paths remains incomplete.
+2. Remaining unmapped/blank fields still above P0 acceptance for GO.
 
 Evidence bundle:
 - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-pdf-proof/`
@@ -90,10 +87,10 @@ Evidence bundle:
 
 Source report: `/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.md`
 
-Status: **BLOCKED**
+Status: **FAIL**
 
 Blocking facts:
-1. Required real-file pattern not found (`t3ps-real-*` / `tps-real-test.*`).
+1. Real passport pilot file was tested, but extraction returned `module_field_count=0`.
 2. Production health exposes `ocr_configured: false`.
 3. Synthetic robustness run yielded mostly `field_count=0`.
 
@@ -157,6 +154,6 @@ Decision: **NO_GO** for controlled beta at this point.
 
 ## Exact Next Action
 
-Close two blockers in one session:
-1. valid ZIP binary capture linked to same browser run where `POST /api/tps/generate-packet = 200`,
-2. missing legal-risk yes-case screenshot set (`prior_denial_yes`, `removal_yes`).
+Close remaining blockers in order:
+1. Resolve production OCR configuration (`ocr_configured=true`) and run real-doc pilot (Prompt #4).
+2. Re-run Prompt #3 semantic matrix on final accepted scenarios and reduce P0 unknowns.

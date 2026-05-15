@@ -1,7 +1,7 @@
 # T3PS-03 PDF Field Coverage Proof
 
 - Task: T3PS-03-PDF-FIELD-COVERAGE-AND-USCIS-FORM-PROOF
-- Commit: `3128f08c1a31112d715b479b668ab3a52f0b0563`
+- Commit: `2b8b64bb011f090000add69b21c2005a2c2a86d9`
 - Verdict: **PARTIAL**
 
 ## ZIP integrity
@@ -25,8 +25,15 @@ Raw dumps and diffs:
 - `docs/audit/generated/i765_generated_filled_fields.txt`
 - `docs/audit/generated/i821_unmapped_pdf_fields.txt`
 - `docs/audit/generated/i765_unmapped_pdf_fields.txt`
+- `docs/audit/generated/pdf_semantic_assertions.yaml`
+
+Part7 proof update:
+- Yes-scenario packet: `docs/reports/evidence/t3ps-pdf-proof/part7-yes/part7-yes-1778832785601.zip`
+- Verified in PDF:
+  - `Part7_Item4a_YN[0] = /Y`
+  - `Part7_Item4a_YN[1] = /Off`
 
 ## Final assessment
-Packet is technically usable as draft, but P0 completeness is not closed: too many required/conditional fields remain blank in generated PDFs for GO verdict.
+Packet is technically usable as draft with confirmed Part7 yes-field write path, but full P0 closure is still incomplete (not all required/conditional semantic fields are proven across both scenarios).
 
 Status: **PARTIAL**

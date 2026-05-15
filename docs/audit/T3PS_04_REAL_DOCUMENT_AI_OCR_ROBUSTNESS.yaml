@@ -1,15 +1,26 @@
 task_id: T3PS-04-REAL-DOCUMENT-PILOT-AI-OCR-ROBUSTNESS
-commit_sha: "3128f08c1a31112d715b479b668ab3a52f0b0563"
+commit_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
 production_url: "https://messenginfo.com/ru/services/tps-ukraine/start"
-verdict: BLOCKED
+verdict: FAIL
 
 health:
   ok: true
-  sha: "3128f08c1a31112d715b479b668ab3a52f0b0563"
+  sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
   ocr_provider: "google_vision"
   ocr_configured: false
 
-real_files_detected_redacted: []
+real_files_detected_redacted:
+  - name: "Passport REDACTED .jpg"
+    size_bytes: 4091062
+    mime: "image/jpeg"
+
+direct_ocr_real_doc:
+  http_status: 200
+  brain_header: "off"
+  brain_added: "0"
+  provider: "google_vision"
+  module_field_count: 0
+  module_field_keys: []
 
 synthetic_checks:
   robustness_csv: "docs/audit/T3PS_OCR_ROBUSTNESS_MATRIX.csv"
@@ -21,5 +32,5 @@ manual_fallback:
   status: PASS
 
 blockers:
-  - "no real pilot files found in expected Downloads paths"
+  - "real pilot file produced zero structured extracted fields"
   - "production OCR is not configured (health.ocr_configured=false)"
