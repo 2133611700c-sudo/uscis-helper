@@ -42,7 +42,10 @@ export async function GET() {
     'unknown'
 
   const ocrConfigured = Boolean(
-    process.env.GOOGLE_CLOUD_VISION || process.env.GOOGLE_VISION,
+    process.env.GOOGLE_CLOUD_VISION_API_KEY ||
+      process.env.GOOGLE_VISION_API_KEY ||
+      process.env.GOOGLE_CLOUD_VISION ||
+      process.env.GOOGLE_VISION,
   )
 
   return NextResponse.json(
