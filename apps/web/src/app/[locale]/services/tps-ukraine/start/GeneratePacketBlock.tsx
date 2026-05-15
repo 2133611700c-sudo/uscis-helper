@@ -272,6 +272,7 @@ const COPY = {
     p7_18b: '18b. Суддя з питань імміграції виніс рішення про ваше видворення?',
     p7_18c: '18c. Ви подавали апеляцію до Апеляційної ради з питань імміграції (BIA)?',
     passport: 'Номер паспорта', passportCountry: 'Країна видачі паспорта', passportExp: 'Паспорт дійсний до',
+    passportExpHint: 'Якщо в цьому документі немає строку дії, перевірте закордонний паспорт або введіть значення вручну, якщо воно відоме.',
     street: 'Адреса в США (вулиця, номер будинку)', city: 'Місто', state: 'Штат (2 літери, напр. CA)', zip: 'ZIP-код',
     i94: 'I-94 admission number (11 цифр)', entry: 'Дата останнього в\'їзду в США',
     phone: 'Денний телефон', email: 'Email',
@@ -380,6 +381,7 @@ const COPY = {
     p7_18b: '18b. Судья по делам об иммиграции вынес решение о вашей депортации?',
     p7_18c: '18c. Вы подавали апелляцию в Апелляционный совет по вопросам иммиграции (BIA)?',
     passport: 'Номер паспорта', passportCountry: 'Страна выдачи паспорта', passportExp: 'Паспорт действителен до',
+    passportExpHint: 'Если в документе нет срока действия, проверьте ваш загранпаспорт или введите данные вручную, если они известны.',
     street: 'Адрес в США (улица, номер дома)', city: 'Город', state: 'Штат (2 буквы, напр. CA)', zip: 'ZIP-код',
     i94: 'I-94 admission number (11 цифр)', entry: 'Дата последнего въезда в США',
     phone: 'Дневной телефон', email: 'Email',
@@ -488,6 +490,7 @@ const COPY = {
     p7_18b: '18b. Has an immigration judge ordered your removal?',
     p7_18c: '18c. Have you filed an appeal with the Board of Immigration Appeals (BIA)?',
     passport: 'Passport number', passportCountry: 'Country that issued passport', passportExp: 'Passport expires',
+    passportExpHint: 'If this document does not show an expiration date, use your international passport or enter the value manually if known.',
     street: 'US address (street, house number)', city: 'City', state: 'State (2 letters, e.g. CA)', zip: 'ZIP code',
     i94: 'I-94 admission number (11 digits)', entry: 'Date of your last entry to the US',
     phone: 'Daytime phone', email: 'Email',
@@ -596,6 +599,7 @@ const COPY = {
     p7_18b: '18b. ¿Ha ordenado un juez de inmigración su remoción?',
     p7_18c: '18c. ¿Ha presentado una apelación ante la Junta de Apelaciones de Inmigración (BIA)?',
     passport: 'Número de pasaporte', passportCountry: 'País emisor del pasaporte', passportExp: 'Pasaporte vence',
+    passportExpHint: 'Si este documento no muestra fecha de vencimiento, use su pasaporte internacional o ingrésela manualmente si la conoce.',
     street: 'Dirección en EE.UU. (calle, número)', city: 'Ciudad', state: 'Estado (2 letras, ej. CA)', zip: 'Código ZIP',
     i94: 'I-94 admission number (11 dígitos)', entry: 'Fecha de su última entrada a EE.UU.',
     phone: 'Teléfono diurno', email: 'Email',
@@ -1021,11 +1025,12 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       <input style={input} value={fields.ssn} maxLength={9} placeholder="123456789" onChange={(e) => update('ssn', e.target.value.replace(/\D/g, '').slice(0, 9))} />
 
       <label style={label}>{c.passport}</label>
-      <input style={input} value={fields.passport_number} onChange={(e) => update('passport_number', e.target.value)} />
+      <input data-testid="tps-passport-number-input" style={input} value={fields.passport_number} onChange={(e) => update('passport_number', e.target.value)} />
       <label style={label}>{c.passportCountry}</label>
       <input style={input} value={fields.passport_country_of_issuance} onChange={(e) => update('passport_country_of_issuance', e.target.value)} />
       <label style={label}>{c.passportExp}</label>
-      <input type="date" style={input} value={fields.passport_expiration_date} onChange={(e) => update('passport_expiration_date', e.target.value)} />
+      <input data-testid="tps-passport-expiration-input" type="date" style={input} value={fields.passport_expiration_date} onChange={(e) => update('passport_expiration_date', e.target.value)} />
+      <p style={{ marginTop: -4, marginBottom: 10, fontSize: 12, color: 'var(--text-3)' }}>{c.passportExpHint}</p>
 
       <label style={label}>{c.street}</label>
       <input data-testid="field-us-address-street" style={input} value={fields.us_address_street} onChange={(e) => update('us_address_street', e.target.value)} />

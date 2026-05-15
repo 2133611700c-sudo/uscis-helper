@@ -11,7 +11,9 @@ fs.mkdirSync(DLOAD, { recursive: true })
 
 const base = 'https://messenginfo.com'
 const startUrl = `${base}/ru/services/tps-ukraine/start`
-const fixture = path.resolve('test-fixtures/synthetic-passport.jpg')
+const fixture = process.env.T3PS_FIXTURE_PATH
+  ? path.resolve(process.env.T3PS_FIXTURE_PATH)
+  : path.resolve('test-fixtures/synthetic-passport.jpg')
 
 const consoleLogs = []
 const networkLogs = []
@@ -146,6 +148,26 @@ async function clickFirstVisible(locator) {
   return false
 }
 
+async function fillReviewDobIfMissing() {
+  const dobRow = page.locator('[data-testid="review-row-dob"]')
+  if (!(await dobRow.count())) return false
+  if (!(await dobRow.getByText(/не найдено|not found|не знайдено/i).count())) return false
+  const edit = page.locator('[data-testid="review-edit-dob"]')
+  if (!(await edit.count())) return false
+  await edit.first().click()
+  await page.waitForTimeout(400)
+  const dateInput = page.locator('[data-testid="ocr-edit-input-date"]').first()
+  if (await dateInput.count()) {
+    await dateInput.fill('1990-01-01')
+  } else {
+    return false
+  }
+  const save = page.locator('[data-testid="ocr-edit-save"]').first()
+  if (await save.count()) await save.click()
+  await page.waitForTimeout(700)
+  return true
+}
+
 try {
   await page.goto(startUrl, { waitUntil: 'networkidle', timeout: 90000 })
   await page.evaluate(() => {
@@ -173,6 +195,9 @@ try {
   await page.waitForTimeout(1000)
   await shot('05_upload_next.png')
 
+  // If review has missing critical fields (e.g. DOB), fix through UI edit modal.
+  await fillReviewDobIfMissing()
+
   const reviewNext = page.locator('[data-testid="review-next"]')
   if (await reviewNext.count() && await reviewNext.first().isEnabled()) {
     await reviewNext.first().click()
@@ -197,6 +222,8 @@ try {
     ['field-us-address-city', 'LOS ANGELES'],
     ['field-us-address-state', 'CA'],
     ['field-us-address-zip', '90001'],
+    ['tps-passport-number-input', 'AA1234567'],
+    ['tps-passport-expiration-input', '2030-01-01'],
     ['field-last-entry-date', '2024-01-15'],
     ['field-daytime-phone', '2135551212'],
     ['field-email', 'test@example.com'],
