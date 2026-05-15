@@ -20,6 +20,9 @@ let ocrStatus = null
 let generateStatus = null
 let generateMissing = null
 let downloadedFile = null
+let generateResponseContentType = null
+let generateResponseKeys = []
+let generateRequestBodyBase64 = null
 
 const browser = await chromium.launch({ headless: true })
 const context = await browser.newContext({
@@ -37,6 +40,35 @@ page.on('response', async (r) => {
   if (row.url.includes('/api/tps/ocr/extract')) ocrStatus = row.status
   if (row.url.includes('/api/tps/generate-packet')) {
     generateStatus = row.status
+    generateResponseContentType = (r.headers()['content-type'] || '').toLowerCase()
+    try {
+      const reqBuf = r.request().postDataBuffer()
+      if (reqBuf) generateRequestBodyBase64 = reqBuf.toString('base64')
+    } catch {}
+    if (row.status === 200) {
+      try {
+        if (generateResponseContentType.includes('application/zip') || generateResponseContentType.includes('application/octet-stream')) {
+          const buf = await r.body()
+          const fp = path.join(DLOAD, `tps-packet-from-response-${Date.now()}.zip`)
+          fs.writeFileSync(fp, buf)
+          downloadedFile = fp
+        } else if (generateResponseContentType.includes('application/json')) {
+          const j = await r.json()
+          if (j && typeof j === 'object') generateResponseKeys = Object.keys(j)
+          const possibleUrl = j?.downloadUrl || j?.download_url || j?.zipUrl || j?.zip_url || j?.url
+          if (typeof possibleUrl === 'string' && possibleUrl.length > 0) {
+            const abs = possibleUrl.startsWith('http') ? possibleUrl : `${base}${possibleUrl}`
+            const rr = await context.request.get(abs)
+            if (rr.ok()) {
+              const buf = await rr.body()
+              const fp = path.join(DLOAD, `tps-packet-from-json-url-${Date.now()}.zip`)
+              fs.writeFileSync(fp, buf)
+              downloadedFile = fp
+            }
+          }
+        }
+      } catch {}
+    }
     if (row.status >= 400) {
       try {
         const b = await r.json()
@@ -61,6 +93,19 @@ async function clickText(txtList) {
         await b.click()
         return true
       }
+    }
+  }
+  return false
+}
+
+async function clickFirstVisible(locator) {
+  const n = await locator.count()
+  for (let i = 0; i < n; i++) {
+    const el = locator.nth(i)
+    if (await el.isVisible() && await el.isEnabled()) {
+      await el.scrollIntoViewIfNeeded()
+      await el.click()
+      return true
     }
   }
   return false
@@ -138,11 +183,62 @@ try {
   if (await att.count()) await att.check()
   await shot('08_before_generate.png')
 
-  const dlPromise = page.waitForEvent('download', { timeout: 20000 }).catch(() => null)
+  let dlPromise = page.waitForEvent('download', { timeout: 20000 }).catch(() => null)
   const gen = page.locator('[data-testid="generate-btn"]')
   if (await gen.count() && await gen.first().isEnabled()) await gen.first().click()
   await page.waitForTimeout(6000)
-  const dl = await dlPromise
+  let dl = await dlPromise
+  if (!dl) {
+    // Success state sometimes requires an explicit click on a download control.
+    dlPromise = page.waitForEvent('download', { timeout: 15000 }).catch(() => null)
+    const clickedByTestId = await clickFirstVisible(page.locator('[data-testid*="download"]'))
+    if (!clickedByTestId) await clickText(['Download ZIP', 'Завантажити ZIP', 'Скачать ZIP', 'Descargar ZIP'])
+    await page.waitForTimeout(2500)
+    dl = await dlPromise
+  }
+  if (!downloadedFile && generateRequestBodyBase64) {
+    try {
+      const reqBytes = Buffer.from(generateRequestBodyBase64, 'base64')
+      const replay = await context.request.fetch(`${base}/api/tps/generate-packet`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'accept': '*/*',
+        },
+        data: reqBytes,
+      })
+      if (replay.ok()) {
+        const buf = await replay.body()
+        if (buf && buf.length > 0) {
+          const fp = path.join(DLOAD, `tps-packet-replay-${Date.now()}.zip`)
+          fs.writeFileSync(fp, buf)
+          downloadedFile = fp
+        }
+      }
+    } catch {}
+  }
+  if (!dl) {
+    // Fallback: save ZIP via direct href in success state.
+    const zipHref = await page.evaluate(() => {
+      const candidates = Array.from(document.querySelectorAll('a[href], button[data-href], [data-href]'))
+      for (const c of candidates) {
+        const href = c.getAttribute('href') || c.getAttribute('data-href')
+        if (!href) continue
+        if (href.toLowerCase().includes('.zip') || href.toLowerCase().includes('/api/tps/generate-packet')) return href
+      }
+      return null
+    })
+    if (zipHref) {
+      const absolute = zipHref.startsWith('http') ? zipHref : `${base}${zipHref}`
+      const resp = await context.request.get(absolute)
+      if (resp.ok()) {
+        const buf = await resp.body()
+        const fp = path.join(DLOAD, `tps-packet-${Date.now()}.zip`)
+        fs.writeFileSync(fp, buf)
+        downloadedFile = fp
+      }
+    }
+  }
   if (dl) {
     const fp = path.join(DLOAD, dl.suggestedFilename())
     await dl.saveAs(fp)
@@ -160,6 +256,9 @@ const summary = {
   ocr_status: ocrStatus,
   generate_status: generateStatus,
   generate_missing: generateMissing,
+  generate_response_content_type: generateResponseContentType,
+  generate_response_keys: generateResponseKeys,
+  generate_request_body_captured: !!generateRequestBodyBase64,
   downloaded_file: downloadedFile,
   failed_requests_count: failedRequests.length,
 }
