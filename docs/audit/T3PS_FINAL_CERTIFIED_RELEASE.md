@@ -1,62 +1,52 @@
-# T3PS-07 Final Real-Doc ZIP Closeout
+# T3PS-08 Controlled Beta Stabilization and Launch Lock
 
-- Task ID: `T3PS-07-FINAL-REAL-DOC-ZIP-CLOSEOUT`
-- Generated at (UTC): `2026-05-15T23:22:00Z`
+- Task ID: `T3PS-08-CONTROLLED-BETA-STABILIZATION-AND-LAUNCH`
+- Generated at (UTC): `2026-05-15T23:36:00Z`
 - Repo: `/Users/sergiikuropiatnyk/work/uscis-helper`
 
-## What Was Broken
+## Final Status
 
-Real-document browser contour reached Step 6, but `Generate` returned `422` with:
-- `passport_number`
-- `passport_expiration_date`
-
-## What Was Fixed
-
-- Added stable Step 6 selectors in `GeneratePacketBlock`:
-  - `data-testid="tps-passport-number-input"`
-  - `data-testid="tps-passport-expiration-input"`
-- Added localized helper copy for manual expiration fallback (RU/UK/EN/ES).
-- Kept server validation unchanged (no weakening of required fields).
-
-## Production + Evidence
-
-- `origin/main` commit: `36ec53e7e3a38708053383ecc5b7ac36cd6e80c5`
-- `/api/tps/health` SHA: `36ec53e7e3a38708053383ecc5b7ac36cd6e80c5`
-- Gates: `PASS` (`typecheck`, `vitest`, `lint`, `guard`, `build`)
-
-### Real-doc browser run (mobile 390x844)
-
-Evidence: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json`
-
-- `OCR: 200`
-- `Generate: 200`
-- `ZIP downloaded: true`
-- `ZIP bytes: 1826099`
-- Non-blocking console/network noise: `/_vercel/insights/script.js 404` (analytics script, not product flow).
-
-Redacted screenshots:
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots-redacted/07_step6_screen.png`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots-redacted/08_before_generate.png`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots-redacted/09_after_generate.png`
-
-### ZIP/PDF proof (redacted)
-
-- ZIP listing: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/zip-list.txt`
-- I-821 keys only: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/i821-fields-redacted.txt`
-- I-765 keys only: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/i765-fields-redacted.txt` (`NOT_PRESENT` in this run)
-- Summary: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/pdf-proof-closeout/summary.json`
-
-Confirmed in generated PDF:
-- `family_name`
-- `given_name`
-- `dob`
-- `passport_number`
-- `passport_expiration_date`
-- `marital_status`
-- `Part7` checkboxes
-- `cyrillic_leak = NONE`
-
-## Final Verdict
-
-- `GO_CONTROLLED_BETA`
+- `GO_CONTROLLED_BETA_LOCKED`
 - `paid_launch_ready: false`
+
+## Production Lock
+
+- Current commit SHA: `94ac67ec8a3f881acae3b3fbe1238ccdc8626d28`
+- Health SHA: `94ac67ec8a3f881acae3b3fbe1238ccdc8626d28`
+- Health SHA match: `true`
+- Deploy status: `READY`
+- Deployment reference (x-vercel-id from smoke): `sfo1::aqvrr-1778888056841-c1a50fbe7808`
+
+## Verification Results
+
+- Gates: `PASS` (`typecheck`, `vitest`, `lint`, `guard`, `build`)
+- HTTP smoke (UA): `PASS` (RU/EN start, RU landing, RU sources, RU privacy, health all reachable)
+- Browser smoke (mobile 390x844): `PASS`
+  - `tps-passport-number-input` visible
+  - `tps-passport-expiration-input` visible
+  - packet checker visible
+  - attestation visible
+- PDF proof: `PASS`
+  - critical fields present (`family_name`, `given_name`, `dob`, `passport_number`, `passport_expiration_date`, `marital_status`, `Part7`)
+  - `cyrillic_leak = NONE`
+
+## Operating Pack
+
+- Operating plan: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_OPERATING_PLAN.md`
+- Checklist: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_CHECKLIST.yaml`
+- Risk register: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_POST_GO_RISK_REGISTER.yaml`
+
+## Monitoring Status
+
+- Counts-only monitoring policy documented: `READY`
+- Alert transport env in this environment: `BLOCKED`
+  - missing keys: `TELEGRAM_OWNER_WEBHOOK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_ALERT_CHAT_ID`
+
+## Open P1 Risks
+
+- Vercel analytics script `/_vercel/insights/script.js` 404 noise (non-blocking)
+- I-912 not generated
+- Paid launch not ready
+- Limited real-user sample
+- External legal review not done
+- Telemetry depth still minimal
