@@ -1,12 +1,16 @@
 {
-  "started_utc": "2026-05-15T07:52:16.244Z",
+  "started_utc": "2026-05-15T08:12:25.622Z",
   "url": "https://messenginfo.com/ru/services/tps-ukraine/start",
   "ocr_status": 200,
   "generate_status": 200,
   "generate_missing": null,
   "generate_response_content_type": "application/zip",
+  "generate_response_body_bytes": 0,
   "generate_response_keys": [],
   "generate_request_body_captured": true,
-  "downloaded_file": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/downloaded_zip/tps-packet-from-response-1778831503242.zip",
+  "generate_replay_status": null,
+  "generate_replay_bytes": null,
+  "generate_intercept_bytes": 1825487,
+  "downloaded_file": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/downloaded_zip/tps-packet-intercept-1778832713477.zip",
   "failed_requests_count": 2
 }
