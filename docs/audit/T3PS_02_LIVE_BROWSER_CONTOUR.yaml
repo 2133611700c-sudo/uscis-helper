@@ -1,0 +1,53 @@
+task_id: T3PS-02-LIVE-BROWSER-CONTOUR-VERIFICATION
+generated_at: "2026-05-15T01:26:40Z"
+deployed_commit_sha: "0e239635b062c1c0e9289bc08794da5d7fbe59b7"
+verdict: FAIL
+
+evidence:
+  prior_run_dir: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-browser-contour"
+  latest_run_dir: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run"
+  latest_screenshots:
+    - "01_start_fresh.png"
+    - "02_after_first_click.png"
+    - "03_no_file_input.png"
+    - "04_review_or_next.png"
+    - "05_legal_risk_yes_try.png"
+    - "06_attestation_try.png"
+    - "07_generate_result.png"
+
+latest_run_summary:
+  ocr_status: null
+  generate_status: null
+  downloaded_file: null
+  failed_requests_count: 2
+  failed_requests:
+    - "404 GET /ru/_vercel/insights/script.js"
+
+rerun_2026_05_15:
+  evidence_dir: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run"
+  ocr_status: 200
+  generate_status: 422
+  generate_missing:
+    - family_name
+    - given_name
+    - dob
+    - passport_number
+    - passport_expiration_date
+    - us_address_street
+    - us_address_city
+    - us_address_state
+    - us_address_zip
+    - last_entry_date
+    - daytime_phone
+    - email
+    - marital_status
+  downloaded_file: null
+
+pass_criteria:
+  generate_and_download_same_run: false
+  ocr_api_success: false
+  prior_denial_yes_screenshot: false
+  console_network_export: true
+
+broken_step: "Wizard automation did not reach upload/review/generate checkpoints with actionable selectors."
+next_fix: "Add stable test IDs for upload/continue/attestation/generate and rerun on production."
