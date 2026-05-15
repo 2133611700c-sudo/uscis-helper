@@ -9,6 +9,7 @@
 - Size: `4,091,062 bytes`
 - MIME: `image/jpeg`
 - File was deleted after pilot per privacy rule.
+- Additional redacted file tested: `0131_Passport Sergii REDACTED .jpg` (`11,430 bytes`)
 
 ## Endpoint pilot result (redacted)
 - `POST /api/tps/ocr/extract` with `doc_type_hint=passport`: **200**
@@ -20,7 +21,7 @@
 
 ## Why fail
 1. Real document did not produce extracted structured fields.
-2. Production health still reports `ocr_configured: false`.
+2. `ocr_configured` switched to `true`, but extraction still returned zero mapped fields.
 3. End-to-end real-doc browser flow cannot be considered operational with zero extraction.
 
 ## What still executed
@@ -40,6 +41,6 @@
 - No real image files tracked in git.
 
 ## Required next fix batch
-1. Configure production OCR (`ocr_configured=true` in health).
-2. Restore non-empty field extraction for passport doc_type on production.
+1. Restore non-empty field extraction for passport `doc_type_hint` on production.
+2. Add explicit module match diagnostics in response for zero-field outcomes.
 3. Re-run redacted browser real-doc flow and verify generated packet semantics.

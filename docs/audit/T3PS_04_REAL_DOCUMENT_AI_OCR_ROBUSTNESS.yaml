@@ -5,13 +5,16 @@ verdict: FAIL
 
 health:
   ok: true
-  sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
+  sha: "00be4b64fbceb7938f7b48a40149466ae185b4a4"
   ocr_provider: "google_vision"
-  ocr_configured: false
+  ocr_configured: true
 
 real_files_detected_redacted:
   - name: "Passport REDACTED .jpg"
     size_bytes: 4091062
+    mime: "image/jpeg"
+  - name: "0131_Passport Sergii REDACTED .jpg"
+    size_bytes: 11430
     mime: "image/jpeg"
 
 direct_ocr_real_doc:
@@ -33,4 +36,4 @@ manual_fallback:
 
 blockers:
   - "real pilot file produced zero structured extracted fields"
-  - "production OCR is not configured (health.ocr_configured=false)"
+  - "production OCR is configured but passport module still returns zero extracted fields"

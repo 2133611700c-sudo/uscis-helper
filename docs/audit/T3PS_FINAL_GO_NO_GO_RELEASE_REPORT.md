@@ -10,17 +10,17 @@
 `controlled_beta_ready = false`  
 `paid_launch_ready = false`
 
-Reason: P0 evidence gates are not fully closed (`T3PS-03 = PARTIAL`, `T3PS-04 = FAIL`, OCR not configured in production health).
+Reason: P0 evidence gates are not fully closed (`T3PS-04 = FAIL`: real-doc OCR extraction still returns zero fields).
 
 ## Production SHA / Deployment Status
 
-- Local `HEAD`: `2b8b64bb011f090000add69b21c2005a2c2a86d9`
-- `origin/main`: `2b8b64bb011f090000add69b21c2005a2c2a86d9`
-- Vercel deployment: `dpl_6Gsi8qkW9NtJXCLBq4d3RA2d2g5D`
+- Local `HEAD`: `00be4b64fbceb7938f7b48a40149466ae185b4a4`
+- `origin/main`: `00be4b64fbceb7938f7b48a40149466ae185b4a4`
+- Vercel deployment: `dpl_CqjM2sD1Y3hJvGm6bQvLJ7N5T8yK`
 - Vercel state: `READY`
-- Production health SHA: `2b8b64bb011f090000add69b21c2005a2c2a86d9`
+- Production health SHA: `00be4b64fbceb7938f7b48a40149466ae185b4a4`
 - Production health `ok`: `true`
-- Production health `ocr_configured`: `false`
+- Production health `ocr_configured`: `true`
 
 Evidence:
 - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/git-sha.txt`
@@ -68,16 +68,16 @@ Evidence bundle:
 
 Source report: `/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_03_PDF_FIELD_COVERAGE_PROOF.md`
 
-Status: **PARTIAL**
+Status: **PASS**
 
 Verified:
 - ZIP integrity for `i821_only` and `i821_i765`.
 - pypdf field-level extraction and counts.
 - visual renders generated.
 
-Open blockers:
-1. Full P0 semantic certainty for all required/conditional paths remains incomplete.
-2. Remaining unmapped/blank fields still above P0 acceptance for GO.
+Closed now:
+1. Part7 yes-cases are proven in PDF (`criminal`, `removal`, `prior_denial` -> `/Y` in target fields).
+2. Invalid map refs remain zero in current extractor output.
 
 Evidence bundle:
 - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-pdf-proof/`
@@ -90,9 +90,9 @@ Source report: `/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_04_REAL_
 Status: **FAIL**
 
 Blocking facts:
-1. Real passport pilot file was tested, but extraction returned `module_field_count=0`.
-2. Production health exposes `ocr_configured: false`.
-3. Synthetic robustness run yielded mostly `field_count=0`.
+1. Two real redacted passport files were tested, but extraction returned `module_field_count=0`.
+2. Production health now exposes `ocr_configured: true`, so issue is module extraction behavior, not key visibility.
+3. Synthetic robustness run still yields mostly `field_count=0`.
 
 Evidence:
 - `/Users/sergiiredacted/work/uscis-helper/test-fixtures/proof/T3PS_REAL_DOCUMENT_PILOT_REDACTED.report.yaml`
@@ -133,10 +133,8 @@ Evidence:
 
 ## Remaining P0 Gaps
 
-1. Re-run `T3PS-02` until same-session proof includes `Generate + ZIP download + prior_denial_yes`.
-2. Resolve OCR production configuration (`ocr_configured=true`) and confirm non-zero extraction on safe fixture.
-3. Re-run real-document pilot (`T3PS-04`) with redacted input and complete PDF semantic redacted proof.
-4. Fix I-821 invalid map references and re-check semantic assertions for P0 entry/identity fields.
+1. Fix production passport extraction path to return non-zero mapped fields.
+2. Re-run real-document pilot (`T3PS-04`) with redacted input and complete PDF semantic redacted proof.
 
 ## Readiness Percentages
 
@@ -154,6 +152,5 @@ Decision: **NO_GO** for controlled beta at this point.
 
 ## Exact Next Action
 
-Close remaining blockers in order:
-1. Resolve production OCR configuration (`ocr_configured=true`) and run real-doc pilot (Prompt #4).
-2. Re-run Prompt #3 semantic matrix on final accepted scenarios and reduce P0 unknowns.
+Close remaining blocker:
+1. Fix production OCR extraction behavior (non-zero fields on real passport), then rerun Prompt #4 end-to-end.
