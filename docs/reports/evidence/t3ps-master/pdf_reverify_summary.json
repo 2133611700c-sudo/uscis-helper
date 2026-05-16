@@ -1,0 +1,17 @@
+{
+  "i821_A": {
+    "total": 511,
+    "filled": 68,
+    "cyrillic_leak_keys": []
+  },
+  "i821_B": {
+    "total": 511,
+    "filled": 68,
+    "cyrillic_leak_keys": []
+  },
+  "i765_B": {
+    "total": 180,
+    "filled": 31,
+    "cyrillic_leak_keys": []
+  }
+}
