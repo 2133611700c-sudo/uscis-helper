@@ -1,0 +1,36 @@
+report: T3PS_MASTER_RELEASE_LOCK_FINAL
+generated_at: "2026-05-16T08:46:20Z"
+repo:
+  local_head: "11c7f978bef35de6eef4380b316bdd3af5fbf115"
+  origin_main: "11c7f978bef35de6eef4380b316bdd3af5fbf115"
+  production_health_sha: "11c7f978bef35de6eef4380b316bdd3af5fbf115"
+  sha_alignment:
+    local_equals_origin: true
+    origin_equals_health: true
+    docs_only_runtime_difference: false
+    explanation: "Current production health SHA equals origin/main; no runtime divergence at snapshot."
+functional_evidence:
+  gates: PASS
+  ocr_matrix: PASS
+  browser_ab: PASS
+  zip_pdf: PASS
+  cyrillic_leak: NONE
+  real_doc_pilot: PARTIAL
+original_5_prompts:
+  status: COMPLETE_BY_SUPERSEDING_EVIDENCE
+  open_blocking_items_count: 0
+residual_gaps:
+  open_p0_count: 0
+  accepted_risks:
+    - telegram monitoring transport remains out of scope for Stage I functional closeout
+    - uscis_notice OCR is not required for Stage I scope
+    - vercel insights 404/CSP noise is non-blocking
+  non_blocking_p1:
+    - monitoring_transport_not_enabled
+    - vercel_insights_404_and_csp_noise
+final_status:
+  controlled_beta: GO_CONTROLLED_BETA_110_LOCKED
+  paid_launch_ready: false
+  public_beta_ready: false
+  telegram_required_for_stage_i: false
+next_action: "Proceed with controlled beta cohort under existing scope freeze; keep P1 operational items in separate track."
