@@ -1,0 +1,7 @@
+[A] /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_A/downloaded_zip/tps-packet-1778919605716.zip
+  I-821.pdf size=1822020 compressed=1822020
+  README.txt size=3314 compressed=3314
+[B] /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/downloaded_zip/tps-packet-1778919607820.zip
+  I-821.pdf size=1821950 compressed=1821950
+  I-765.pdf size=764840 compressed=764840
+  README.txt size=3457 compressed=3457

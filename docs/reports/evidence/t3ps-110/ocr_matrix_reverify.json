@@ -1,0 +1,83 @@
+{
+  "generated_at": "2026-05-16T08:20:42.542900Z",
+  "production_sha": "49194f11ed90db757335c28654a096807f0f87ae",
+  "rows": [
+    {
+      "document_type": "international_passport",
+      "endpoint_status": 200,
+      "module": "passport",
+      "field_count": 8,
+      "key_fields": [
+        "country_of_nationality",
+        "dob",
+        "family_name",
+        "given_name",
+        "passport_country_of_issuance",
+        "passport_expiration_date",
+        "passport_number",
+        "sex"
+      ],
+      "wired_to_wizard": true,
+      "wired_to_pdf": true,
+      "status": "PASS"
+    },
+    {
+      "document_type": "ukrainian_internal_passport",
+      "endpoint_status": 200,
+      "module": "passport",
+      "field_count": 8,
+      "key_fields": [
+        "country_of_nationality",
+        "dob",
+        "family_name",
+        "given_name",
+        "passport_country_of_issuance",
+        "passport_expiration_date",
+        "passport_number",
+        "sex"
+      ],
+      "wired_to_wizard": true,
+      "wired_to_pdf": true,
+      "status": "PASS"
+    },
+    {
+      "document_type": "i94",
+      "endpoint_status": 200,
+      "module": "i94",
+      "field_count": 4,
+      "key_fields": [
+        "i94_admission_number",
+        "i94_admit_until",
+        "i94_class_of_admission",
+        "last_entry_date"
+      ],
+      "wired_to_wizard": true,
+      "wired_to_pdf": true,
+      "status": "PASS"
+    },
+    {
+      "document_type": "ead",
+      "endpoint_status": 200,
+      "module": "ead",
+      "field_count": 3,
+      "key_fields": [
+        "a_number",
+        "ead_category_on_card",
+        "ead_expiration_date"
+      ],
+      "wired_to_wizard": true,
+      "wired_to_pdf": true,
+      "status": "PASS"
+    },
+    {
+      "document_type": "uscis_notice",
+      "endpoint_status": 200,
+      "module": null,
+      "field_count": 0,
+      "key_fields": [],
+      "wired_to_wizard": false,
+      "wired_to_pdf": false,
+      "status": "NOT_REQUIRED"
+    }
+  ]
+}

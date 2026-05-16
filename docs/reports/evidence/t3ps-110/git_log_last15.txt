@@ -1,0 +1,15 @@
+49194f1 docs(t3ps): sync master closeout sha with deployed production
+d2a0d19 docs(t3ps): final consolidated closeout and release lock
+035ba0f chore(tps): refresh functional closeout with deployed production sha
+5d713b4 chore(t3ps): finalize functional closeout evidence matrix and verdict
+0627cba fix(tps): make i94 extractor resilient to I/1 OCR confusion
+451b702 docs(t3ps): refresh day1 beta report after strict-schema deploy
+132f0f5 fix(t3ps): enforce strict manual-review body and finalize beta day1 ops
+ab51822 release(t3ps): lock controlled beta stabilization
+94ac67e audit(t3ps): close T3PS-07 real-doc zip evidence and final verdict
+36ec53e fix(tps): expose missing passport fields in Step 6 manual fallback
+a7f3984 fix(ocr): expose stable module field-count aliases in extract response
+ad25fad audit(t3ps): close prompt3 and update prompt4/5 blocker truth
+00be4b6 fix(guard): remove DeepSeek name from client-facing privacy copy
+c92e9ea audit(t3ps): close prompt2 proof and refresh prompt3-5 evidence
+2b8b64b fix(tps): map legal-risk yes flags into i821 part7 payload
