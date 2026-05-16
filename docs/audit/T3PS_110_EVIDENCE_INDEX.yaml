@@ -23,7 +23,7 @@ artifacts:
     path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_MASTER_CLOSEOUT_REPORT.yaml
     exists: true
     related_phase: consolidated_history
-    sha_if_known: "49194f11ed90db757335c28654a096807f0f87ae"
+    sha_if_known: "9460fa56ed07476d2b7c7e67365399445b6b9944"
     proves: consolidated_evidence_chain
     freshness: fresh
     usable_for_110: true
@@ -53,7 +53,7 @@ artifacts:
     path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-110/
     exists: true
     related_phase: fresh_reverify
-    sha_if_known: "49194f11ed90db757335c28654a096807f0f87ae"
+    sha_if_known: "9460fa56ed07476d2b7c7e67365399445b6b9944"
     proves: gates_browser_ocr_pdf_health
     freshness: fresh
     usable_for_110: true
