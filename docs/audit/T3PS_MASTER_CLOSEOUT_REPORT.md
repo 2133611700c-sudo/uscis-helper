@@ -6,9 +6,9 @@ Controlled beta ready: **true**
 Paid launch ready: **false**
 
 ## SHA Truth
-- Local SHA: `035ba0fddd24f711da6f78ec8649704612af5ce0`
-- Origin SHA: `035ba0fddd24f711da6f78ec8649704612af5ce0`
-- Production health SHA: `035ba0fddd24f711da6f78ec8649704612af5ce0`
+- Local SHA: `d2a0d19f7931142aca60c48d9b0778efb94c257e`
+- Origin SHA: `d2a0d19f7931142aca60c48d9b0778efb94c257e`
+- Production health SHA: `d2a0d19f7931142aca60c48d9b0778efb94c257e`
 - Result: `local == origin == production` at closeout time.
 
 ## Original 5 Prompt Coverage
