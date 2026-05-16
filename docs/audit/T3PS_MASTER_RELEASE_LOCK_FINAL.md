@@ -8,10 +8,10 @@
 - Telegram requirement for Stage I: **false**
 
 ## SHA Truth
-- `local_head`: `11c7f978bef35de6eef4380b316bdd3af5fbf115`
-- `origin/main`: `11c7f978bef35de6eef4380b316bdd3af5fbf115`
+- `local_head`: `3b921947e0afda5c0ba128c01c0c9224d70d4b45`
+- `origin/main`: `3b921947e0afda5c0ba128c01c0c9224d70d4b45`
 - `production /api/tps/health.sha`: `11c7f978bef35de6eef4380b316bdd3af5fbf115`
-- Result: SHA alignment is consistent.
+- Result: docs-only release-accounting commit is ahead of runtime SHA; functional runtime SHA remains last verified code SHA.
 
 ## Functional Evidence (Authoritative)
 - Gates: PASS (`guard`, `typecheck`, with prior full gate pack recorded in 110 reverify)
