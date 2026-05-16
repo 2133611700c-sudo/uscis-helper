@@ -1,7 +1,7 @@
 task_id: T3PS-FINAL-FUNCTIONAL-CLOSEOUT
 generated_at: "2026-05-16T08:20:00Z"
 status: GO_CONTROLLED_BETA
-production_sha: "0627cba5fe5a3b0a94ccf0b05e62476eed96dca0"
+production_sha: "5d713b40d919f559f19e6a0e3ff5127322de065d"
 gates:
   typecheck: PASS
   vitest: PASS

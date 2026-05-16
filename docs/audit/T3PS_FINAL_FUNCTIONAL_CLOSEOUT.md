@@ -1,7 +1,7 @@
 # T3PS Final Functional Closeout
 
 Status: `GO_CONTROLLED_BETA`  
-Production SHA: `0627cba5fe5a3b0a94ccf0b05e62476eed96dca0`
+Production SHA: `5d713b40d919f559f19e6a0e3ff5127322de065d`
 
 ## What was verified
 - OCR matrix complete for supported contour:
