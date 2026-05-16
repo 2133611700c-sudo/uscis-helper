@@ -1,42 +1,39 @@
-# T3PS Master Release Lock Final
+# T3PS Stage I Final Functional Hardening — Master Release Lock
 
-## Executive Verdict
-- Controlled beta status: **GO_CONTROLLED_BETA_110_LOCKED**
-- Functional TPS Stage I status: **PASS**
-- Release accounting status: **PASS**
-- Paid launch readiness: **false**
-- Telegram requirement for Stage I: **false**
+Generated: 2026-05-16T22:02:30Z
+
+## Final Verdict
+- Status: **GO_CONTROLLED_BETA_110_LOCKED**
+- Functional product status: **PASS**
+- Paid launch ready: **false**
+- Telegram required for Stage I: **false**
 
 ## SHA Truth
-- `local_head`: `3b921947e0afda5c0ba128c01c0c9224d70d4b45`
-- `origin/main`: `3b921947e0afda5c0ba128c01c0c9224d70d4b45`
-- `production /api/tps/health.sha`: `11c7f978bef35de6eef4380b316bdd3af5fbf115`
-- Result: docs-only release-accounting commit is ahead of runtime SHA; functional runtime SHA remains last verified code SHA.
+- local/origin/health are aligned at:
+  - `63e735629bfd8d453c06b19e7974adf231f3a60c`
+- SHA status: `MATCH`
 
-## Functional Evidence (Authoritative)
-- Gates: PASS (`guard`, `typecheck`, with prior full gate pack recorded in 110 reverify)
-- OCR matrix: PASS for Stage I required types (`international_passport`, `ukrainian_internal_passport`, `i94`, `ead`), `uscis_notice=NOT_REQUIRED`
-- Browser contours A/B: PASS, `generate-packet=200`, ZIP downloaded
-- PDF/ZIP proof: PASS, critical fields present, `cyrillic_leak=NONE`
-
-## Original 5 Prompt Reconciliation
-- Final accounting uses superseding evidence chain, not historical rewriting.
-- `T3PS-01`: PASS_AS_WRITTEN
-- `T3PS-02`: PASS_BY_SUPERSEDING_EVIDENCE
-- `T3PS-03`: PASS_BY_SUPERSEDING_EVIDENCE
-- `T3PS-04`: PARTIAL_NON_BLOCKING
-- `T3PS-05`: PASS_BY_SUPERSEDING_EVIDENCE
-- Net result: historical partial/superseded rows do not block Stage I.
+## Fresh Functional Evidence
+- Gates: PASS (`typecheck`, `test`, `lint`, `guard`, `build`)
+- OCR matrix: PASS (`international_passport`, `ukrainian_internal_passport`, `i94`, `ead`)
+- Browser Scenario A (I-821 only): PASS (`generate=200`, ZIP captured)
+- Browser Scenario B (I-821 + I-765): PASS (`generate=200`, ZIP downloaded)
+- PDF/ZIP proof: PASS (`I-821` + `I-765` key fields present, `cyrillic_leak=NONE`)
+- Part 7 legal-risk yes-cases: PASS (criminal/removal/prior_denial warning surfaces captured)
+- localStorage stale-data conflict: PASS (no hidden stale override before user review/edit)
 
 ## Residual Gaps (Non-Blocking)
-- Open P0: **0**
-- Accepted risks:
-  - Telegram monitoring transport is out of Stage I functional scope.
-  - USCIS notice OCR is not required in current Stage I scope.
-  - Vercel insights 404/CSP noise is P1 non-blocking.
-- Public beta and paid launch remain out of scope.
+- P0 open blockers: **0**
+- Accepted non-blocking:
+  - Telegram monitoring out of scope for this task
+  - `/_vercel/insights` 404/CSP noise without user-flow impact
+  - USCIS notice OCR marked NOT_REQUIRED for Stage I
 
-## Final Decision
-- **Controlled beta can proceed** under Stage I scope freeze.
-- No feature work was added in this lock cycle.
-- Any future expansion (Telegram transport hardening, paid/public launch, broader doc scope) must be tracked as separate workstreams.
+## Evidence Pointers
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_TRUTH_BASELINE.yaml`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_GATES_RERUN.yaml`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_OCR_MATRIX.yaml`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_BROWSER_AB_PROOF.md`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_PDF_ZIP_PROOF.md`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_PART7_LEGAL_RISK_PROOF.md`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_STATE_CONFLICT_PROOF.md`

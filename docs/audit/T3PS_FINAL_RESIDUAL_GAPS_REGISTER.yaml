@@ -1,0 +1,25 @@
+report: T3PS_FINAL_RESIDUAL_GAPS_REGISTER
+generated_at: "2026-05-16T22:02:30Z"
+status: GO_CONTROLLED_BETA_LOCKED
+residual_gaps:
+  - id: T3PS-FINAL-GAP-001
+    priority: P1
+    blocker: false
+    accepted_risk: true
+    description: Telegram monitoring transport remains out of scope for this Stage I functional hardening task.
+  - id: T3PS-FINAL-GAP-002
+    priority: P1
+    blocker: false
+    accepted_risk: true
+    description: /_vercel/insights/script.js 404 and CSP Cloudflare beacon blocks are present but do not break TPS contour.
+  - id: T3PS-FINAL-GAP-003
+    priority: P2
+    blocker: false
+    accepted_risk: true
+    description: USCIS notice OCR is excluded from Stage I scope and marked NOT_REQUIRED.
+  - id: T3PS-FINAL-GAP-004
+    priority: P2
+    blocker: false
+    accepted_risk: true
+    description: I-912 generation remains out of scope for Stage I.
+open_p0_count: 0
