@@ -1,14 +1,14 @@
 report: T3PS_MASTER_RELEASE_LOCK_FINAL
 generated_at: "2026-05-16T08:46:20Z"
 repo:
-  local_head: "11c7f978bef35de6eef4380b316bdd3af5fbf115"
-  origin_main: "11c7f978bef35de6eef4380b316bdd3af5fbf115"
+  local_head: "3b921947e0afda5c0ba128c01c0c9224d70d4b45"
+  origin_main: "3b921947e0afda5c0ba128c01c0c9224d70d4b45"
   production_health_sha: "11c7f978bef35de6eef4380b316bdd3af5fbf115"
   sha_alignment:
     local_equals_origin: true
-    origin_equals_health: true
-    docs_only_runtime_difference: false
-    explanation: "Current production health SHA equals origin/main; no runtime divergence at snapshot."
+    origin_equals_health: false
+    docs_only_runtime_difference: true
+    explanation: "Latest commit is docs-only release accounting; production runtime remains on last verified functional code SHA."
 functional_evidence:
   gates: PASS
   ocr_matrix: PASS
