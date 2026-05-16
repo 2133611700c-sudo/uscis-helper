@@ -54,9 +54,18 @@ interface RequestBody {
   stage: typeof ALLOWED_STAGES[number]
 }
 
+const ALLOWED_KEYS = ['reason', 'contact_email', 'locale', 'stage'] as const
+
 function isValidBody(b: unknown): b is RequestBody {
   if (typeof b !== 'object' || b === null) return false
   const r = b as Record<string, unknown>
+  const keys = Object.keys(r)
+  if (
+    keys.length !== ALLOWED_KEYS.length ||
+    keys.some((k) => !(ALLOWED_KEYS as readonly string[]).includes(k))
+  ) {
+    return false
+  }
   return (
     typeof r.reason === 'string' &&
     ALLOWED_REASONS.includes(r.reason as ManualReviewReason) &&
@@ -98,7 +107,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          'Body must be { reason, contact_email, locale, stage } with allowed values only',
+          'Body must include only { reason, contact_email, locale, stage } with allowed values',
       },
       { status: 400 },
     )
