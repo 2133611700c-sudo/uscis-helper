@@ -1,18 +1,20 @@
 # T3PS Controlled Beta Day1 Report
 
 - Task: `T3PS-09-CONTROLLED-BETA-OPERATIONS-AND-FIRST-USERS`
-- Timestamp (UTC): `2026-05-15T23:50:00Z`
-- Production SHA: `ab518223789a60d52c84c3d852f0d1ca21d8671d`
+- Timestamp (UTC): `2026-05-16T00:11:00Z`
+- Production SHA: `132f0f582cf5807b931daf3657ce274b128d3342`
 
 ## Operations status
 - Health: `ok=true`, SHA matches baseline.
 - Monitoring transport: `BLOCKED_WITH_EXACT_MISSING_ENV`.
-- Missing env keys: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `CRON_SECRET`.
+- Verified present key: `CRON_SECRET` (production).
+- Missing env keys: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
 
 ## Support flow
 - Manual-help CTA exists in TPS UI.
 - Non-PII ticket creation test: `PASS`.
   - Response: `{"ok":true,"ticket_id":"9b7fb5ae-55be-4b60-a179-f5c2cb5eec92","status":"queued"}`
+  - Latest production response: `{"ok":true,"ticket_id":"ce0ae435-0fb1-4662-8199-67f04b5d66b8","status":"queued","reused":false}`
 - Route stores only reason/email/locale/stage by contract; no image/raw OCR fields accepted in model.
 
 ## Dry run
@@ -29,7 +31,7 @@
 
 ## Issues
 - P0: monitoring transport env blocker.
-- P1: manual-review endpoint strict schema fix implemented; pending production deploy verification.
+- P1: manual-review endpoint strict schema fix deployed and verified (extra key returns 400).
 - Source: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_BETA_ISSUES.yaml`
 
 ## Day1 status

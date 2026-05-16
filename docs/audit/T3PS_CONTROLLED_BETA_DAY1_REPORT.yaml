@@ -1,7 +1,7 @@
 task_id: T3PS-09-CONTROLLED-BETA-OPERATIONS-AND-FIRST-USERS
 generated_at: "2026-05-15T23:50:00Z"
 
-production_sha: ab518223789a60d52c84c3d852f0d1ca21d8671d
+production_sha: 132f0f582cf5807b931daf3657ce274b128d3342
 health:
   url: https://messenginfo.com/api/tps/health
   ok: true
@@ -9,10 +9,13 @@ health:
 
 monitoring_transport:
   status: BLOCKED_WITH_EXACT_MISSING_ENV
+  verified_present_keys:
+    - CRON_SECRET
   missing_env_keys:
     - TELEGRAM_BOT_TOKEN
     - TELEGRAM_CHAT_ID
-    - CRON_SECRET
+  evidence:
+    - vercel env ls (Production includes CRON_SECRET, missing TELEGRAM_* keys)
 
 dry_run:
   status: PASS
@@ -37,12 +40,12 @@ testers:
   first_beta_script: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FIRST_BETA_USERS_SCRIPT.md
 
 counts:
-  completed_flows: 1
-  ocr_success: 1
+  completed_flows: 2
+  ocr_success: 2
   ocr_failures: 0
-  generate_success: 1
+  generate_success: 2
   generate_failures: 0
-  support_requests: 1
+  support_requests: 2
 
 issues_path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_BETA_ISSUES.yaml
 p0_issues:
@@ -53,4 +56,4 @@ p1_issues:
 final_status: BETA_BLOCKED_MONITORING
 go_no_go_for_continue: pause_until_monitoring_transport_enabled
 notes:
-  - manual-review strict-body fix added; deploy verification pending
+  - manual-review strict-body fix deployed and verified in production (extra key => 400)
