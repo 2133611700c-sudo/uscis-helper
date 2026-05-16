@@ -1,11 +1,11 @@
 report: T3PS_FINAL_110_CLOSEOUT_SUMMARY
-generated_at: "2026-05-16T22:28:00Z"
+generated_at: "2026-05-16T22:34:00Z"
 final_status: GO_CONTROLLED_BETA_110_LOCKED
 percent_complete_stage_i: 100
-local_head: "e402d9c2c4cd864f9e65840de298978ae56e68d3"
-origin_main: "e402d9c2c4cd864f9e65840de298978ae56e68d3"
+local_head: "c2309c237d7157259c3b112d6f926032d88bd15d"
+origin_main: "c2309c237d7157259c3b112d6f926032d88bd15d"
 production_health_sha: "e402d9c2c4cd864f9e65840de298978ae56e68d3"
-sha_status: MATCH
+sha_status: DOCS_ONLY_DIVERGENCE
 authoritative_files_count: 11
 authoritative_files_pass: true
 gates_status: PASS
