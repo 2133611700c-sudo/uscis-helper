@@ -1,10 +1,10 @@
 report: T3PS_STATUS_RECONCILIATION_FINAL
-generated_at: "2026-05-16T09:36:00Z"
+generated_at: "2026-05-16T22:02:30Z"
 status_map:
   - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_MASTER_RELEASE_LOCK_FINAL.yaml
     raw_status: GO_CONTROLLED_BETA_110_LOCKED
     class: current_authoritative
-    notes: single source of truth for release accounting
+    notes: updated by final functional hardening evidence pack
 
   - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_110_FINAL_RELEASE_LOCK.yaml
     raw_status: GO_CONTROLLED_BETA_110_LOCKED
@@ -34,7 +34,12 @@ status_map:
   - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_110_EVIDENCE_INDEX.yaml
     raw_status: stale_sha_references
     class: incorrect_stale
-    notes: stale sha values corrected to 11c7f978...
+    notes: historical stale references remain non-authoritative
+
+  - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_RESIDUAL_GAPS_REGISTER.yaml
+    raw_status: GO_CONTROLLED_BETA_LOCKED
+    class: current_authoritative
+    notes: no P0 blockers; accepted P1/P2 risks explicitly listed
 
 authoritative_status:
   controlled_beta: GO_CONTROLLED_BETA_110_LOCKED

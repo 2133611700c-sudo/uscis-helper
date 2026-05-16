@@ -1,36 +1,54 @@
 report: T3PS_MASTER_RELEASE_LOCK_FINAL
-generated_at: "2026-05-16T08:46:20Z"
-repo:
-  local_head: "3b921947e0afda5c0ba128c01c0c9224d70d4b45"
-  origin_main: "3b921947e0afda5c0ba128c01c0c9224d70d4b45"
-  production_health_sha: "11c7f978bef35de6eef4380b316bdd3af5fbf115"
-  sha_alignment:
-    local_equals_origin: true
-    origin_equals_health: false
-    docs_only_runtime_difference: true
-    explanation: "Latest commit is docs-only release accounting; production runtime remains on last verified functional code SHA."
-functional_evidence:
-  gates: PASS
-  ocr_matrix: PASS
-  browser_ab: PASS
-  zip_pdf: PASS
+generated_at: "2026-05-16T22:02:30Z"
+status: GO_CONTROLLED_BETA_110_LOCKED
+local_head: "63e735629bfd8d453c06b19e7974adf231f3a60c"
+origin_main: "63e735629bfd8d453c06b19e7974adf231f3a60c"
+production_health_sha: "63e735629bfd8d453c06b19e7974adf231f3a60c"
+sha_status: MATCH
+gates:
+  typecheck: PASS
+  test: PASS
+  lint: PASS
+  guard: PASS
+  build: PASS
+ocr_matrix:
+  international_passport: PASS
+  ukrainian_internal_passport: PASS
+  i94: PASS
+  ead: PASS
+  uscis_notice: NOT_REQUIRED
+browser_ab:
+  scenario_a_i821_only: PASS
+  scenario_b_i821_i765: PASS
+  generate_200: true
+  zip_downloaded: true
+pdf_proof:
+  i821: PASS
+  i765: PASS
   cyrillic_leak: NONE
-  real_doc_pilot: PARTIAL
-original_5_prompts:
-  status: COMPLETE_BY_SUPERSEDING_EVIDENCE
-  open_blocking_items_count: 0
+legal_risk:
+  criminal_yes: PASS
+  removal_yes: PASS
+  prior_denial_yes: PASS
 residual_gaps:
-  open_p0_count: 0
-  accepted_risks:
-    - telegram monitoring transport remains out of scope for Stage I functional closeout
-    - uscis_notice OCR is not required for Stage I scope
-    - vercel insights 404/CSP noise is non-blocking
-  non_blocking_p1:
-    - monitoring_transport_not_enabled
-    - vercel_insights_404_and_csp_noise
+  - id: T3PS-FINAL-GAP-001
+    priority: P1
+    blocker: false
+    accepted_risk: true
+    description: Telegram monitoring remains out of scope for Stage I.
+  - id: T3PS-FINAL-GAP-002
+    priority: P1
+    blocker: false
+    accepted_risk: true
+    description: /_vercel/insights 404 and CSP beacon blocks are non-blocking.
+  - id: T3PS-FINAL-GAP-003
+    priority: P2
+    blocker: false
+    accepted_risk: true
+    description: USCIS notice OCR not required in Stage I scope.
+final_verdict_reason: "All Stage I functional checks passed with fresh evidence and no open P0 blockers."
 final_status:
   controlled_beta: GO_CONTROLLED_BETA_110_LOCKED
   paid_launch_ready: false
   public_beta_ready: false
   telegram_required_for_stage_i: false
-next_action: "Proceed with controlled beta cohort under existing scope freeze; keep P1 operational items in separate track."
