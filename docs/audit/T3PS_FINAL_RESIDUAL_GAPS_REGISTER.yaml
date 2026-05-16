@@ -1,6 +1,6 @@
 report: T3PS_FINAL_RESIDUAL_GAPS_REGISTER
 generated_at: "2026-05-16T22:02:30Z"
-status: GO_CONTROLLED_BETA_LOCKED
+status: GO_CONTROLLED_BETA_110_LOCKED
 residual_gaps:
   - id: T3PS-FINAL-GAP-001
     priority: P1
