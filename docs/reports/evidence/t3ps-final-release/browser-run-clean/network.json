@@ -8,19 +8,11 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
+    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
     "method": "GET",
     "status": 200,
     "content_type": "font/woff2",
-    "content_disposition": "inline; filename=\"21350d82a1f187e9-s.p.woff2\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
-    "method": "GET",
-    "status": 200,
-    "content_type": "font/woff2",
-    "content_disposition": "inline; filename=\"eaead17c7dbfcd5d-s.p.woff2\"",
+    "content_disposition": "inline; filename=\"e4af272ccee01ff0-s.p.woff2\"",
     "location": null
   },
   {
@@ -32,11 +24,19 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+    "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
     "method": "GET",
     "status": 200,
     "content_type": "font/woff2",
-    "content_disposition": "inline; filename=\"e4af272ccee01ff0-s.p.woff2\"",
+    "content_disposition": "inline; filename=\"eaead17c7dbfcd5d-s.p.woff2\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
+    "method": "GET",
+    "status": 200,
+    "content_type": "font/woff2",
+    "content_disposition": "inline; filename=\"21350d82a1f187e9-s.p.woff2\"",
     "location": null
   },
   {
@@ -45,6 +45,22 @@
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
     "content_disposition": "inline; filename=\"webpack-b7558e2321408026.js\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/ae4de36c-b2a168b1e13f0ae1.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"ae4de36c-b2a168b1e13f0ae1.js\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"main-app-f002351fe5ef7cf4.js\"",
     "location": null
   },
   {
@@ -69,30 +85,6 @@
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
     "content_disposition": "inline; filename=\"4366-b4a42e1398d120e1.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/ae4de36c-b2a168b1e13f0ae1.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"ae4de36c-b2a168b1e13f0ae1.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"5999-030d1d095e3b18cf.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"main-app-f002351fe5ef7cf4.js\"",
     "location": null
   },
   {
@@ -128,14 +120,6 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"1925-e7f13c897d3b0f85.js\"",
-    "location": null
-  },
-  {
     "url": "https://messenginfo.com/_next/static/chunks/4489-04ed089efb9035da.js",
     "method": "GET",
     "status": 200,
@@ -144,11 +128,27 @@
     "location": null
   },
   {
+    "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"5999-030d1d095e3b18cf.js\"",
+    "location": null
+  },
+  {
     "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-9a320c08fe4e946b.js",
     "method": "GET",
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
     "content_disposition": "inline; filename=\"layout-9a320c08fe4e946b.js\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"1925-e7f13c897d3b0f85.js\"",
     "location": null
   },
   {
@@ -192,7 +192,15 @@
     "location": "/ru/_vercel/insights/script.js"
   },
   {
-    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
+    "url": "https://messenginfo.com/ru?_rsc=6myxf",
+    "method": "GET",
+    "status": 200,
+    "content_type": "text/x-component",
+    "content_disposition": null,
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/ru/contact?_rsc=6myxf",
     "method": "GET",
     "status": 200,
     "content_type": "text/x-component",
@@ -208,15 +216,7 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/ru/contact?_rsc=6myxf",
-    "method": "GET",
-    "status": 200,
-    "content_type": "text/x-component",
-    "content_disposition": null,
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/ru?_rsc=6myxf",
+    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
     "method": "GET",
     "status": 200,
     "content_type": "text/x-component",
@@ -240,43 +240,11 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/page-8d8660e344d021df.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"page-8d8660e344d021df.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"global-error-70dba19650f6fb08.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
-    "method": "GET",
-    "status": 200,
-    "content_type": "image/webp",
-    "content_disposition": "attachment; filename=\"messenginfo-full.webp\"",
-    "location": null
-  },
-  {
     "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
     "method": "GET",
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
     "content_disposition": "inline; filename=\"webpack-b7558e2321408026.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"main-app-f002351fe5ef7cf4.js\"",
     "location": null
   },
   {
@@ -288,11 +256,11 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/page-8d8660e344d021df.js",
     "method": "GET",
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"page-1461393b961157c8.js\"",
+    "content_disposition": "inline; filename=\"page-8d8660e344d021df.js\"",
     "location": null
   },
   {
@@ -304,11 +272,51 @@
     "location": null
   },
   {
+    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
+    "method": "GET",
+    "status": 200,
+    "content_type": "image/webp",
+    "content_disposition": "attachment; filename=\"messenginfo-full.webp\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"main-app-f002351fe5ef7cf4.js\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"global-error-70dba19650f6fb08.js\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"page-1461393b961157c8.js\"",
+    "location": null
+  },
+  {
     "url": "https://messenginfo.com/_next/static/chunks/4489-04ed089efb9035da.js",
     "method": "GET",
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
     "content_disposition": "inline; filename=\"4489-04ed089efb9035da.js\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-9a320c08fe4e946b.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"layout-9a320c08fe4e946b.js\"",
     "location": null
   },
   {
@@ -328,11 +336,11 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-9a320c08fe4e946b.js",
+    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
     "method": "GET",
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"layout-9a320c08fe4e946b.js\"",
+    "content_disposition": "inline; filename=\"1925-e7f13c897d3b0f85.js\"",
     "location": null
   },
   {
@@ -344,27 +352,11 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"1925-e7f13c897d3b0f85.js\"",
-    "location": null
-  },
-  {
     "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
     "method": "GET",
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
     "content_disposition": "inline; filename=\"5999-030d1d095e3b18cf.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
-    "method": "GET",
-    "status": 200,
-    "content_type": "font/woff2",
-    "content_disposition": "inline; filename=\"e4af272ccee01ff0-s.p.woff2\"",
     "location": null
   },
   {
@@ -376,19 +368,19 @@
     "location": null
   },
   {
+    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+    "method": "GET",
+    "status": 200,
+    "content_type": "font/woff2",
+    "content_disposition": "inline; filename=\"e4af272ccee01ff0-s.p.woff2\"",
+    "location": null
+  },
+  {
     "url": "https://messenginfo.com/_next/static/chunks/9620-6275325c1dcaeaca.js",
     "method": "GET",
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
     "content_disposition": "inline; filename=\"9620-6275325c1dcaeaca.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-41f1012102216cc3.js",
-    "method": "GET",
-    "status": 200,
-    "content_type": "application/javascript; charset=utf-8",
-    "content_disposition": "inline; filename=\"page-41f1012102216cc3.js\"",
     "location": null
   },
   {
@@ -400,19 +392,19 @@
     "location": null
   },
   {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-41f1012102216cc3.js",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/javascript; charset=utf-8",
+    "content_disposition": "inline; filename=\"page-41f1012102216cc3.js\"",
+    "location": null
+  },
+  {
     "url": "https://messenginfo.com/_vercel/speed-insights/script.js",
     "method": "GET",
     "status": 200,
     "content_type": "application/javascript; charset=utf-8",
     "content_disposition": "inline; filename=\"script.js\"",
-    "location": null
-  },
-  {
-    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
-    "method": "GET",
-    "status": 200,
-    "content_type": "text/x-component",
-    "content_disposition": null,
     "location": null
   },
   {
@@ -424,7 +416,15 @@
     "location": "/ru/_vercel/insights/script.js"
   },
   {
-    "url": "https://messenginfo.com/ru?_rsc=6myxf",
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "method": "GET",
+    "status": 404,
+    "content_type": "text/html; charset=utf-8",
+    "content_disposition": "inline; filename=\"404\"",
+    "location": null
+  },
+  {
+    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
     "method": "GET",
     "status": 200,
     "content_type": "text/x-component",
@@ -432,11 +432,11 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "url": "https://messenginfo.com/ru?_rsc=6myxf",
     "method": "GET",
-    "status": 404,
-    "content_type": "text/html; charset=utf-8",
-    "content_disposition": "inline; filename=\"404\"",
+    "status": 200,
+    "content_type": "text/x-component",
+    "content_disposition": null,
     "location": null
   },
   {
@@ -456,7 +456,7 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/ru/services/re-parole-u4u?_rsc=6myxf",
+    "url": "https://messenginfo.com/ru/services/tps-ukraine?_rsc=6myxf",
     "method": "GET",
     "status": 200,
     "content_type": "text/x-component",
@@ -464,7 +464,7 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/ru/faq?_rsc=6myxf",
+    "url": "https://messenginfo.com/ru/services/re-parole-u4u?_rsc=6myxf",
     "method": "GET",
     "status": 200,
     "content_type": "text/x-component",
@@ -480,7 +480,7 @@
     "location": null
   },
   {
-    "url": "https://messenginfo.com/ru/services/tps-ukraine?_rsc=6myxf",
+    "url": "https://messenginfo.com/ru/faq?_rsc=6myxf",
     "method": "GET",
     "status": 200,
     "content_type": "text/x-component",
