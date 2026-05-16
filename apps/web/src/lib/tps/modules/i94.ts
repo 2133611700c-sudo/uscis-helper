@@ -91,7 +91,11 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
   // ── 1. Admission (I-94) Number — 11 digits ────────────────────────────────
   const adm = findLabelledValue(
     ocr,
-    [/admission\s*\(I[-\s]?94\)\s*number/i, /I[-\s]?94\s*number/i, /\badmission\s+number\b/i],
+    [
+      /admission\s*\(\s*[I1]\s*[-\s]?\s*94\s*\)\s*number/i,
+      /[I1]\s*[-\s]?\s*94\s*number/i,
+      /\badmission\s+number\b/i,
+    ],
     /\b(\d{11})\b/,
   )
   if (adm) {
