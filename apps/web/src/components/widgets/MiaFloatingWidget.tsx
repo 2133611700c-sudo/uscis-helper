@@ -36,10 +36,9 @@ export function MiaFloatingWidget() {
   const panelRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
-  const links = [
-    // Routes to the canonical case-status service page (was `#case-status`
-    // anchor that depended on being on the homepage with a matching DOM id).
-    { href: `/${locale}/services/uscis-case-status`, label: t('links.caseStatus'), icon: Search },
+  const links: Array<{ href: string; label: string; icon: typeof Search; external?: boolean }> = [
+    // Case Status — opens the official USCIS portal DIRECTLY in a new tab.
+    { href: 'https://egov.uscis.gov/', label: t('links.caseStatus'), icon: Search, external: true },
     { href: `/${locale}/#services`, label: t('links.services'), icon: Grid3X3 },
     { href: `/${locale}/#sources`, label: t('links.sources'), icon: Library },
     { href: `/${locale}/contact`, label: t('links.contact'), icon: Mail },
@@ -107,17 +106,35 @@ export function MiaFloatingWidget() {
           <div className="flex-1 overflow-y-auto p-4">
             <p className="text-sm text-slate-700 mb-4">{t('greeting')}</p>
             <nav className="flex flex-col gap-2">
-              {links.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-btn border border-slate-200 px-3 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors"
-                >
-                  <Icon className="w-4 h-4 text-blue-600 shrink-0" />
-                  {label}
-                </Link>
-              ))}
+              {links.map(({ href, label, icon: Icon, external }) => {
+                const className = 'flex items-center gap-3 rounded-btn border border-slate-200 px-3 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors'
+                if (external) {
+                  return (
+                    <a
+                      key={href}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setOpen(false)}
+                      className={className}
+                    >
+                      <Icon className="w-4 h-4 text-blue-600 shrink-0" />
+                      {label}
+                    </a>
+                  )
+                }
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className={className}
+                  >
+                    <Icon className="w-4 h-4 text-blue-600 shrink-0" />
+                    {label}
+                  </Link>
+                )
+              })}
             </nav>
           </div>
 
