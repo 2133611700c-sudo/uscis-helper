@@ -77,6 +77,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: checkout.url, checkout_id: checkout.id })
   }
 
+  // ── TPS Ukraine ────────────────────────────────────────────────────────────
+  if (product === 'tps-ukraine') {
+    const priceId = STRIPE_PRICES.tpsTier1
+    if (!priceId) {
+      return NextResponse.json({ error: 'TPS price ID not configured' }, { status: 503 })
+    }
+
+    // TPS state lives in localStorage, not Supabase. session_id is just the
+    // browser-side wizard UUID for cross-referencing audit_log entries.
+    const tpsWizardId = session_id ?? `anon-${Date.now()}`
+
+    let checkout
+    try {
+      checkout = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${origin}/${locale}/services/tps-ukraine/checkout/success?cs={CHECKOUT_SESSION_ID}&wizard=${tpsWizardId}`,
+        cancel_url:  `${origin}/${locale}/services/tps-ukraine/start`,
+        metadata: { service: 'tps-ukraine', wizard_session_id: tpsWizardId, tier: '1' },
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[stripe/checkout] tps session create failed:', msg)
+      return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 500 })
+    }
+
+    const supabase = createAdminSupabaseClient()
+    after(async () => {
+      await supabase.from('audit_log').insert({
+        action: 'stripe_checkout_created',
+        target_table: 'tps_packets',
+        target_id: tpsWizardId,
+        detail: { stripe_checkout_id: checkout.id, service_slug: 'tps-ukraine' },
+      }).then(({ error }) => {
+        if (error) console.error('[audit_log] tps checkout failed:', error.message)
+      })
+    })
+
+    return NextResponse.json({ url: checkout.url, checkout_id: checkout.id })
+  }
+
   // ── Re-Parole U4U ──────────────────────────────────────────────────────────
   if (!session_id) {
     return NextResponse.json({ error: 'session_id required' }, { status: 400 })

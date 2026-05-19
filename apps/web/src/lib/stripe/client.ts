@@ -8,6 +8,7 @@ export const stripe = secretKey
 
 export const STRIPE_PRICES = {
   reparoleU4UTier1:      process.env.STRIPE_PRICE_ID_REPAROLE_TIER1 ?? '',
+  tpsTier1:              process.env.STRIPE_PRICE_ID_TPS_TIER1 ?? '',
   translationBasic:      process.env.STRIPE_PRICE_ID_TRANSLATION_BASIC ?? '',
   translationPlus:       process.env.STRIPE_PRICE_ID_TRANSLATION_PLUS ?? '',
   translationPremium:    process.env.STRIPE_PRICE_ID_TRANSLATION_PREMIUM ?? '',
@@ -15,7 +16,7 @@ export const STRIPE_PRICES = {
   translationSingle:     process.env.STRIPE_PRICE_ID_TRANSLATION_SINGLE ?? '',
 } as const
 
-export type StripeProduct = 're-parole-u4u' | 'translation'
+export type StripeProduct = 're-parole-u4u' | 'tps-ukraine' | 'translation'
 export type TranslationPlan = 'basic' | 'plus' | 'premium'
 
 export const translationPriceId = (plan: TranslationPlan): string => {
@@ -30,5 +31,6 @@ export const isStripeConfigured = (product?: StripeProduct) => {
   if (!stripe) return false
   if (product === 'translation') return !!(STRIPE_PRICES.translationBasic || STRIPE_PRICES.translationSingle)
   if (product === 're-parole-u4u') return !!STRIPE_PRICES.reparoleU4UTier1
+  if (product === 'tps-ukraine') return !!STRIPE_PRICES.tpsTier1
   return !!STRIPE_PRICES.reparoleU4UTier1
 }
