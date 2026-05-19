@@ -1172,14 +1172,25 @@ export default function TPSWizardV2({ locale }: Props) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw)
-      if (parsed && typeof parsed === 'object') {
-        setData((d) => ({ ...d, ...parsed, uploads: {} }))
-        if (typeof parsed.lastStep === 'number') setStep(parsed.lastStep)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed && typeof parsed === 'object') {
+          setData((d) => ({ ...d, ...parsed, uploads: {} }))
+          if (typeof parsed.lastStep === 'number') setStep(parsed.lastStep)
+        }
       }
     } catch {
       /* ignore */
+    }
+    // Stripe return-from-checkout: ?paid=1 means the user just completed
+    // payment on Stripe and was redirected back via the success page.
+    // Jump straight to Step 6 with paid=true so the download unlocks.
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search)
+      if (sp.get('paid') === '1') {
+        setData((d) => ({ ...d, paid: true }))
+        setStep(6)
+      }
     }
   }, [])
 
@@ -1560,7 +1571,46 @@ export default function TPSWizardV2({ locale }: Props) {
             {!data.paid && (
               <button
                 type="button"
-                onClick={() => setData((d) => ({ ...d, paid: true }))}
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true)
+                  setErrMsg(null)
+                  try {
+                    // Reuse the locally-stored wizard id if any, else mint one.
+                    let wizardId: string | null = null
+                    try {
+                      wizardId = localStorage.getItem('wizard:tps-ukraine:v2:id')
+                      if (!wizardId) {
+                        wizardId = `tps-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+                        localStorage.setItem('wizard:tps-ukraine:v2:id', wizardId)
+                      }
+                    } catch {
+                      /* ignore */
+                    }
+                    const r = await fetch('/api/stripe/checkout', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        product: 'tps-ukraine',
+                        locale,
+                        session_id: wizardId,
+                      }),
+                    })
+                    if (!r.ok) {
+                      const j = await r.json().catch(() => ({}))
+                      throw new Error(j?.error || `HTTP ${r.status}`)
+                    }
+                    const { url } = await r.json()
+                    if (url) {
+                      window.location.href = url
+                    } else {
+                      throw new Error('No checkout URL in response')
+                    }
+                  } catch (e) {
+                    setErrMsg(e instanceof Error ? e.message : String(e))
+                    setBusy(false)
+                  }
+                }}
                 style={{
                   background: PAY_BLUE,
                   color: '#fff',
@@ -1569,15 +1619,16 @@ export default function TPSWizardV2({ locale }: Props) {
                   borderRadius: 14,
                   border: 'none',
                   width: '100%',
-                  cursor: 'pointer',
+                  cursor: busy ? 'wait' : 'pointer',
                   fontWeight: 800,
                   marginBottom: 10,
                   fontFamily: 'inherit',
+                  opacity: busy ? 0.7 : 1,
                 }}
-                onMouseOver={(e) => (e.currentTarget.style.background = PAY_BLUE_DARK)}
-                onMouseOut={(e) => (e.currentTarget.style.background = PAY_BLUE)}
+                onMouseOver={(e) => !busy && (e.currentTarget.style.background = PAY_BLUE_DARK)}
+                onMouseOut={(e) => !busy && (e.currentTarget.style.background = PAY_BLUE)}
               >
-                {t.s6Pay}
+                {busy ? '…' : t.s6Pay}
               </button>
             )}
 
