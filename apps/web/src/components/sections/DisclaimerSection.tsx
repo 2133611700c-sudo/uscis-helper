@@ -16,7 +16,7 @@ export function DisclaimerSection() {
             <p className="text-sm text-amber-800 leading-relaxed">{t('body')}</p>
             <Link
               href={`/${locale}/disclaimer`}
-              className="inline-block mt-3 text-xs text-amber-700 underline underline-offset-4 hover:text-amber-900"
+              className="inline-block mt-3 text-sm font-medium text-amber-700 underline underline-offset-4 hover:text-amber-900"
             >
               Read full disclaimer →
             </Link>
