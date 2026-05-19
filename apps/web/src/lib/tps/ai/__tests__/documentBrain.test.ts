@@ -230,6 +230,56 @@ describe('validateBrainField — deterministic rules', () => {
     const res = validateBrainField('sex', baseField('Q'))
     expect(res.ok).toBe(false)
   })
+
+  // ── Date format coverage — real-world formats we kept rejecting ────────
+  it('accepts DOB DD.MM.YYYY (Ukrainian/European)', () => {
+    const f = baseField('01.01.1985')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('01/01/1985') // normalized to USCIS canonical
+  })
+
+  it('accepts DOB "01 JAN 1985" (visual passport zone)', () => {
+    const f = baseField('01 JAN 1985')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('01/01/1985')
+  })
+
+  it('accepts DOB MRZ YYMMDD (850101) with century resolved', () => {
+    const f = baseField('850101')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('01/01/1985')
+  })
+
+  it('disambiguates DD/MM/YYYY when DD > 12', () => {
+    const f = baseField('15/03/1985')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('03/15/1985')
+  })
+
+  it('rejects passport expiration too far in the future', () => {
+    const yyyy = new Date().getUTCFullYear() + 50
+    const res = validateBrainField('passport_expiration_date', baseField(`01/01/${yyyy}`))
+    expect(res.ok).toBe(false)
+  })
+
+  // ── Country normalization ──────────────────────────────────────────────
+  it('normalizes "Ukraina" to "Ukraine"', () => {
+    const f = baseField('Ukraina')
+    const res = validateBrainField('country_of_nationality', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('Ukraine')
+  })
+
+  it('normalizes "UKR" to "Ukraine"', () => {
+    const f = baseField('UKR')
+    const res = validateBrainField('passport_country_of_issuance', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('Ukraine')
+  })
 })
 
 describe('extractJsonObject', () => {
