@@ -149,7 +149,7 @@ export function Screen01() {
           className="rounded-[12px] p-3.5 space-y-2.5"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
-          <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>
+          <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>
             {t.usaImmigrationLegal}
           </p>
           <a
@@ -174,7 +174,7 @@ export function Screen01() {
         </div>
 
         {/* Note */}
-        <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-3)' }}>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-3)' }}>
           {t.note}
         </p>
 
@@ -220,7 +220,7 @@ export function Screen01() {
         <p className="text-[15px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
           1. {t.q1label}
         </p>
-        <p className="text-[12px] mb-3" style={{ color: 'var(--text-3)' }}>{t.q1hint}</p>
+        <p className="text-sm mb-3" style={{ color: 'var(--text-3)' }}>{t.q1hint}</p>
         <div className="flex gap-2.5">
           <button
             type="button"
@@ -257,7 +257,7 @@ export function Screen01() {
         <p className="text-[15px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
           2. {t.q2label}
         </p>
-        <p className="text-[12px] mb-3" style={{ color: 'var(--text-3)' }}>{t.q2hint}</p>
+        <p className="text-sm mb-3" style={{ color: 'var(--text-3)' }}>{t.q2hint}</p>
         <div className="flex gap-2.5">
           <button
             type="button"
@@ -288,13 +288,13 @@ export function Screen01() {
 
       {/* Validation error */}
       {attempted && (paroleActive === null || hasRFE === null) && (
-        <p className="text-[13px] font-medium" style={{ color: 'var(--error-text)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--error-text)' }}>
           {t.notAnswered}
         </p>
       )}
 
       {/* Disclaimer */}
-      <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-3)' }}>
+      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-3)' }}>
         {t.note}
       </p>
 

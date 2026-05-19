@@ -274,7 +274,7 @@ export function Screen11() {
           className="rounded-[12px] p-3.5"
           style={{ background: 'var(--error-bg)', border: '1px solid var(--error-border)' }}
         >
-          <p className="text-[13px]" style={{ color: 'var(--error-text)' }}>{error}</p>
+          <p className="text-sm" style={{ color: 'var(--error-text)' }}>{error}</p>
         </div>
       )}
 
@@ -302,10 +302,10 @@ export function Screen11() {
         className="rounded-[12px] p-3.5"
         style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)' }}
       >
-        <p className="text-[13px] font-semibold mb-2" style={{ color: 'var(--info-text)' }}>
+        <p className="text-sm font-semibold mb-2" style={{ color: 'var(--info-text)' }}>
           {t.whatToDo}
         </p>
-        <p className="text-[13px] leading-relaxed" style={{ color: 'var(--info-text)' }}>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--info-text)' }}>
           {t.whatToDoText}
         </p>
       </div>
@@ -315,13 +315,13 @@ export function Screen11() {
         {/* Checklist header */}
         <div className="flex items-center justify-between mb-2">
           <p
-            className="text-[12px] font-semibold uppercase tracking-wide"
+            className="text-sm font-semibold uppercase tracking-wide"
             style={{ color: 'var(--text-3)', letterSpacing: '0.6px' }}
           >
             {t.checklistTitle(filingMethod)}
           </p>
           <span
-            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+            className="text-sm font-semibold px-2 py-0.5 rounded-full"
             style={{
               background: allDone ? 'var(--success-bg)' : 'var(--surface-2)',
               color: allDone ? 'var(--success-text)' : 'var(--text-3)',
@@ -333,14 +333,14 @@ export function Screen11() {
         </div>
 
         {/* Checklist note */}
-        <p className="text-[11px] mb-2" style={{ color: 'var(--text-3)' }}>
+        <p className="text-sm mb-2" style={{ color: 'var(--text-3)' }}>
           {t.checklistNote}
         </p>
 
         {/* All-done banner */}
         {allDone && (
           <div
-            className="rounded-[10px] p-3 mb-2 text-center text-[13px] font-semibold"
+            className="rounded-[10px] p-3 mb-2 text-center text-sm font-semibold"
             style={{ background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}
           >
             {t.checklistAllDone}
@@ -383,7 +383,7 @@ export function Screen11() {
                     background: done ? 'var(--success)' : 'var(--surface)',
                   }}
                 >
-                  {done && <span className="text-white font-bold text-[12px]">✓</span>}
+                  {done && <span className="text-white font-bold text-sm">✓</span>}
                 </div>
                 <input
                   type="checkbox"
@@ -392,7 +392,7 @@ export function Screen11() {
                   className="sr-only"
                 />
                 <span
-                  className="text-[13px] leading-snug"
+                  className="text-sm leading-snug"
                   style={{
                     color: done ? 'var(--success-text)' : 'var(--text-1)',
                     textDecoration: done ? 'line-through' : 'none',
@@ -412,13 +412,13 @@ export function Screen11() {
         className="rounded-[12px] p-3.5"
         style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
       >
-        <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
+        <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
           {t.feesTitle}
         </p>
-        <p className="text-[12px]" style={{ color: 'var(--text-2)' }}>
+        <p className="text-sm" style={{ color: 'var(--text-2)' }}>
           {t.feesNote}
         </p>
-        <div className="mt-2 text-[12px] space-y-1" style={{ color: 'var(--text-2)' }}>
+        <div className="mt-2 text-sm space-y-1" style={{ color: 'var(--text-2)' }}>
           <p>{t.fee1}</p>
           <p>{t.fee2}</p>
         </div>
@@ -426,7 +426,7 @@ export function Screen11() {
           href="https://www.uscis.gov/feecalculator"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block mt-2 text-[12px] font-semibold"
+          className="inline-block mt-2 text-sm font-semibold"
           style={{ color: 'var(--primary)' }}
         >
           {t.feeLink}

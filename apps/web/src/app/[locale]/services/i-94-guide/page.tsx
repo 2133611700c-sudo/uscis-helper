@@ -304,13 +304,13 @@ export default async function I94GuidePage({ params }: Props) {
             <div className="space-y-4">
               {t.howSteps.map((step) => (
                 <div key={step.num} className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-teal-600 text-white text-[13px] font-black flex items-center justify-center shrink-0">{step.num}</div>
+                  <div className="w-8 h-8 rounded-full bg-teal-600 text-white text-sm font-black flex items-center justify-center shrink-0">{step.num}</div>
                   <div className="flex-1">
                     <p className="text-[14px] font-bold text-[var(--text-1)] mb-0.5">{step.title}</p>
-                    <p className="text-[13px] text-[var(--text-2)]">{step.desc}</p>
+                    <p className="text-sm text-[var(--text-2)]">{step.desc}</p>
                     {step.action && step.actionUrl && (
                       <a href={step.actionUrl} target="_blank" rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-teal-600 hover:text-teal-800">
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-teal-600 hover:text-teal-800">
                         → {step.action}
                       </a>
                     )}
@@ -331,7 +331,7 @@ export default async function I94GuidePage({ params }: Props) {
                   </div>
                   <div>
                     <p className={`text-[14px] font-bold ${field.important ? 'text-[var(--text-1)]' : 'text-[var(--text-2)]'}`}>{field.name}</p>
-                    <p className="text-[12px] text-[var(--text-2)]">{field.desc}</p>
+                    <p className="text-sm text-[var(--text-2)]">{field.desc}</p>
                   </div>
                 </div>
               ))}
@@ -344,8 +344,8 @@ export default async function I94GuidePage({ params }: Props) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {t.codes.map((item) => (
                 <div key={item.code} className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
-                  <span className={`inline-block text-[12px] font-bold px-2 py-0.5 rounded mb-1.5 ${item.color}`}>{item.code}</span>
-                  <p className="text-[11px] text-[var(--text-2)]">{item.meaning}</p>
+                  <span className={`inline-block text-sm font-bold px-2 py-0.5 rounded mb-1.5 ${item.color}`}>{item.code}</span>
+                  <p className="text-sm text-[var(--text-2)]">{item.meaning}</p>
                 </div>
               ))}
             </div>
@@ -356,8 +356,8 @@ export default async function I94GuidePage({ params }: Props) {
             <h2 className="text-[15px] font-bold text-amber-900 mb-3">{t.errorTitle}</h2>
             <ol className="space-y-2.5">
               {t.errorSteps.map((step, i) => (
-                <li key={i} className="flex items-start gap-3 text-[13px] text-amber-800">
-                  <span className="w-5 h-5 rounded-full bg-amber-400 text-amber-900 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                <li key={i} className="flex items-start gap-3 text-sm text-amber-800">
+                  <span className="w-5 h-5 rounded-full bg-amber-400 text-amber-900 text-sm font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
                   {step}
                 </li>
               ))}
@@ -371,7 +371,7 @@ export default async function I94GuidePage({ params }: Props) {
               {t.faqs.map((faq) => (
                 <div key={faq.q}>
                   <p className="text-[14px] font-semibold text-[var(--text-1)] mb-1">❓ {faq.q}</p>
-                  <p className="text-[13px] text-[var(--text-2)] leading-relaxed">{faq.a}</p>
+                  <p className="text-sm text-[var(--text-2)] leading-relaxed">{faq.a}</p>
                 </div>
               ))}
             </div>
@@ -395,7 +395,7 @@ export default async function I94GuidePage({ params }: Props) {
             </div>
           </div>
 
-          <p className="text-[11px] text-[var(--text-3)] text-center leading-relaxed pb-4">{t.disclaimer}</p>
+          <p className="text-sm text-[var(--text-3)] text-center leading-relaxed pb-4">{t.disclaimer}</p>
         </div>
       </div>
     </>

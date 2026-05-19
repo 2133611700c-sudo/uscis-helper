@@ -62,13 +62,13 @@ export function GlossaryTooltip({ term, locale = 'en', children }: GlossaryToolt
             color: 'var(--surface)',
             borderRadius: '10px',
             padding: '10px 12px',
-            fontSize: '13px',
+            fontSize: '15px',
             lineHeight: '1.5',
             boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
           }}
         >
           <span
-            style={{ display: 'block', fontWeight: 700, fontSize: '11px', marginBottom: '4px', opacity: 0.7 }}
+            style={{ display: 'block', fontWeight: 700, fontSize: '15px', marginBottom: '4px', opacity: 0.7 }}
           >
             {term}
           </span>
