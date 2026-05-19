@@ -153,7 +153,7 @@ export function CaseStatusTracker({ locale }: { locale: string }) {
               {t.badge}
             </span>
             <h1 className="text-3xl md:text-4xl font-bold mb-4">{t.title}</h1>
-            <p className="text-blue-100 text-[15px] leading-relaxed max-w-lg mx-auto">{t.subtitle}</p>
+            <p className="text-blue-100 text-base leading-relaxed max-w-lg mx-auto">{t.subtitle}</p>
           </div>
         </div>
 
@@ -170,17 +170,17 @@ export function CaseStatusTracker({ locale }: { locale: string }) {
             >
               {t.openBtn} ↗
             </a>
-            <p className="mt-4 text-[12px] text-blue-700 leading-relaxed">{t.openHint}</p>
+            <p className="mt-4 text-sm text-blue-700 leading-relaxed">{t.openHint}</p>
           </div>
 
           {/* Receipt number codes — reference table, helps users identify their number */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-5">
-            <h2 className="text-[15px] font-bold text-[var(--text-1)] mb-3">{t.whatTitle}</h2>
+            <h2 className="text-base font-bold text-[var(--text-1)] mb-3">{t.whatTitle}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {t.formCodes.map((item: { code: string; form: string; color: string }) => (
                 <div key={item.code} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-1)]">
-                  <span className={`text-[12px] font-bold px-2 py-0.5 rounded ${item.color}`}>{item.code}</span>
-                  <span className="text-[11px] text-[var(--text-2)]">{item.form}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${item.color}`}>{item.code}</span>
+                  <span className="text-sm text-[var(--text-2)]">{item.form}</span>
                 </div>
               ))}
             </div>
@@ -188,14 +188,14 @@ export function CaseStatusTracker({ locale }: { locale: string }) {
 
           {/* Processing times — external link to USCIS only */}
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-            <h2 className="text-[15px] font-bold text-amber-900 mb-2">⏱ {t.processingTimesTitle}</h2>
-            <p className="text-[13px] text-amber-800 mb-4 leading-relaxed">{t.processingTimesDesc}</p>
+            <h2 className="text-base font-bold text-amber-900 mb-2">⏱ {t.processingTimesTitle}</h2>
+            <p className="text-sm text-amber-800 mb-4 leading-relaxed">{t.processingTimesDesc}</p>
             <a
               href={USCIS_PROCESSING_TIMES_URL}
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleProcessingTimes}
-              className="inline-flex items-center gap-2 bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold text-[13px] hover:bg-amber-800 transition-colors"
+              className="inline-flex items-center gap-2 bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-amber-800 transition-colors"
             >
               {t.processingTimesBtn} ↗
             </a>
@@ -203,12 +203,12 @@ export function CaseStatusTracker({ locale }: { locale: string }) {
 
           {/* FAQ */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] p-5">
-            <h2 className="text-[15px] font-bold text-[var(--text-1)] mb-4">{t.faqTitle}</h2>
+            <h2 className="text-base font-bold text-[var(--text-1)] mb-4">{t.faqTitle}</h2>
             <div className="space-y-4">
               {t.faqs.map((faq: { q: string; a: string }) => (
                 <div key={faq.q}>
-                  <p className="text-[14px] font-semibold text-[var(--text-1)] mb-1">❓ {faq.q}</p>
-                  <p className="text-[13px] text-[var(--text-2)] leading-relaxed">{faq.a}</p>
+                  <p className="text-base font-semibold text-[var(--text-1)] mb-1">❓ {faq.q}</p>
+                  <p className="text-sm text-[var(--text-2)] leading-relaxed">{faq.a}</p>
                 </div>
               ))}
             </div>
@@ -216,7 +216,7 @@ export function CaseStatusTracker({ locale }: { locale: string }) {
 
           {/* Related tools */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-5">
-            <h2 className="text-[15px] font-bold text-[var(--text-1)] mb-3">{t.relatedTitle}</h2>
+            <h2 className="text-base font-bold text-[var(--text-1)] mb-3">{t.relatedTitle}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { href: `/${locale}/services/translate-document`, icon: '📄', label: locale === 'uk' ? 'Переклад документів' : locale === 'ru' ? 'Перевод документов' : locale === 'es' ? 'Traducción de documentos' : 'Document Translation' },
@@ -225,7 +225,7 @@ export function CaseStatusTracker({ locale }: { locale: string }) {
                 { href: `/${locale}/services/tps-status`, icon: '🔒', label: 'TPS Ukraine Status' },
               ].map((link) => (
                 <Link key={link.href} href={link.href}
-                  className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3 text-[14px] font-semibold text-[var(--text-1)] hover:border-blue-400 hover:bg-blue-50 transition-all">
+                  className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3 text-base font-semibold text-[var(--text-1)] hover:border-blue-400 hover:bg-blue-50 transition-all">
                   <span className="text-xl">{link.icon}</span>{link.label}
                 </Link>
               ))}
@@ -233,7 +233,7 @@ export function CaseStatusTracker({ locale }: { locale: string }) {
           </div>
 
           {/* Disclaimer */}
-          <p className="text-[11px] text-[var(--text-3)] text-center leading-relaxed pb-4">{t.disclaimer}</p>
+          <p className="text-sm text-[var(--text-2)] text-center leading-relaxed pb-4">{t.disclaimer}</p>
         </div>
       </div>
     </>
