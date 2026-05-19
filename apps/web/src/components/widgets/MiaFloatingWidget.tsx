@@ -37,7 +37,9 @@ export function MiaFloatingWidget() {
   const buttonRef = useRef<HTMLButtonElement>(null)
 
   const links = [
-    { href: `/${locale}/#case-status`, label: t('links.caseStatus'), icon: Search },
+    // Routes to the canonical case-status service page (was `#case-status`
+    // anchor that depended on being on the homepage with a matching DOM id).
+    { href: `/${locale}/services/uscis-case-status`, label: t('links.caseStatus'), icon: Search },
     { href: `/${locale}/#services`, label: t('links.services'), icon: Grid3X3 },
     { href: `/${locale}/#sources`, label: t('links.sources'), icon: Library },
     { href: `/${locale}/contact`, label: t('links.contact'), icon: Mail },
