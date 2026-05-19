@@ -14,7 +14,11 @@ export function MobileBottomBar() {
   const links = [
     { href: `/${locale}`, label: t('home'), icon: Home },
     { href: `/${locale}/services`, label: t('services'), icon: Grid3X3 },
-    { href: `/${locale}/#case-status`, label: t('status'), icon: Search },
+    // Routes to the canonical case-status service page so the mobile bar
+    // Status button opens the dedicated page regardless of which route the
+    // user is currently on (was `/${locale}/#case-status` — an anchor that
+    // only worked on the homepage and depended on a matching DOM id).
+    { href: `/${locale}/services/uscis-case-status`, label: t('status'), icon: Search },
     { href: `/${locale}/contact`, label: t('contact'), icon: Mail },
   ]
 

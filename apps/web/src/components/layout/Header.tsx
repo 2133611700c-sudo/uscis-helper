@@ -68,9 +68,12 @@ export function Header() {
           >
             {t('signIn')}
           </Link>
-          {/* Check status — filled CTA */}
+          {/* Check status — filled CTA. Routes to the canonical case-status
+              service page so it works from any route, not just the homepage
+              (the previous `#case-status` anchor only worked when the user
+              was already on the home page with a matching anchor in the DOM). */}
           <Link
-            href={`#case-status`}
+            href={`/${locale}/services/uscis-case-status`}
             className="hidden sm:inline-flex items-center active:scale-[0.97] text-white text-sm font-semibold px-4 py-2 rounded-[999px] transition-[background,transform] duration-150"
             style={{ background: '#2563eb' }}
           >
