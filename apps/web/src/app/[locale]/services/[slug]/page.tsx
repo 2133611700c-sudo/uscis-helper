@@ -258,14 +258,14 @@ export default async function ServicePage({ params }: Props) {
                     <span className="mt-0.5 w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
                     <div>
                       <p className="text-sm font-semibold text-ink-900">Messenginfo service fee: from $15</p>
-                      <p className="text-xs text-ink-500">For 1 person — packet preparation, form fill, download. More people = slightly higher fee.</p>
+                      <p className="text-sm text-ink-600">For 1 person — packet preparation, form fill, download. More people = slightly higher fee.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <span className="mt-0.5 w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
                     <div>
                       <p className="text-sm font-semibold text-ink-900">USCIS government filing fee: $0 for most U4U</p>
-                      <p className="text-xs text-ink-500">Re-Parole I-131 currently has no USCIS fee for Ukraine for Ukrainians program participants. Always verify at uscis.gov before filing.</p>
+                      <p className="text-sm text-ink-600">Re-Parole I-131 currently has no USCIS fee for Ukraine for Ukrainians program participants. Always verify at uscis.gov before filing.</p>
                     </div>
                   </div>
                 </div>
@@ -286,7 +286,7 @@ export default async function ServicePage({ params }: Props) {
                       <span className="mt-0.5 w-6 h-6 rounded-full bg-brand-600 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{n}</span>
                       <div>
                         <p className="text-sm font-semibold text-ink-900">{title}</p>
-                        <p className="text-xs text-ink-500">{desc}</p>
+                        <p className="text-sm text-ink-600">{desc}</p>
                       </div>
                     </div>
                   ))}
@@ -304,7 +304,7 @@ export default async function ServicePage({ params }: Props) {
                       Do I need a lawyer?
                       <ChevronRight className="w-4 h-4 text-ink-400 group-open:rotate-90 transition-transform" />
                     </summary>
-                    <p className="mt-2 text-ink-600 text-xs leading-relaxed">
+                    <p className="mt-2 text-ink-700 text-sm leading-relaxed">
                       No. This is a self-help tool for preparing paperwork. We do not provide legal advice. If your case is complicated (denied before, criminal history, etc.) — consult an immigration attorney.
                     </p>
                   </details>
@@ -313,7 +313,7 @@ export default async function ServicePage({ params }: Props) {
                       What documents do I need?
                       <ChevronRight className="w-4 h-4 text-ink-400 group-open:rotate-90 transition-transform" />
                     </summary>
-                    <p className="mt-2 text-ink-600 text-xs leading-relaxed">
+                    <p className="mt-2 text-ink-700 text-sm leading-relaxed">
                       Your passport (bio-data page), Form I-94 (printable from i94.cbp.dhs.gov), proof of Ukrainian nationality, and any prior USCIS approval notices if you have them.
                     </p>
                   </details>
@@ -322,7 +322,7 @@ export default async function ServicePage({ params }: Props) {
                       My parole expires soon — is there still time?
                       <ChevronRight className="w-4 h-4 text-ink-400 group-open:rotate-90 transition-transform" />
                     </summary>
-                    <p className="mt-2 text-ink-600 text-xs leading-relaxed">
+                    <p className="mt-2 text-ink-700 text-sm leading-relaxed">
                       File as early as possible — USCIS recommends applying at least 90 days before your current parole expires. If it expires in less than 30 days, prepare the packet today.
                     </p>
                   </details>
@@ -331,7 +331,7 @@ export default async function ServicePage({ params }: Props) {
                       Can I file online?
                       <ChevronRight className="w-4 h-4 text-ink-400 group-open:rotate-90 transition-transform" />
                     </summary>
-                    <p className="mt-2 text-ink-600 text-xs leading-relaxed">
+                    <p className="mt-2 text-ink-700 text-sm leading-relaxed">
                       Yes. Re-Parole I-131 can be filed online at my.uscis.gov (Box 10.C) or mailed. We prepare packets for both options. Online filing is faster and you get instant receipt confirmation.
                     </p>
                   </details>
@@ -486,7 +486,7 @@ export default async function ServicePage({ params }: Props) {
               </a>
             </div>
 
-            <p className="text-xs text-ink-500">{verifiedFacts.disclaimer}</p>
+            <p className="text-sm text-ink-600">{verifiedFacts.disclaimer}</p>
           </div>
         </Section>
       )}
@@ -501,7 +501,7 @@ export default async function ServicePage({ params }: Props) {
               href={card.officialSourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
+              className="mt-2 inline-flex items-center gap-1.5 text-sm text-brand-600 hover:text-brand-700 font-medium transition-colors"
             >
               {card.officialSourceUrl}
               <ExternalLink className="w-3 h-3" />
