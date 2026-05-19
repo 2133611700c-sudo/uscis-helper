@@ -68,17 +68,17 @@ export function Header() {
           >
             {t('signIn')}
           </Link>
-          {/* Check status — filled CTA. Routes to the canonical case-status
-              service page so it works from any route, not just the homepage
-              (the previous `#case-status` anchor only worked when the user
-              was already on the home page with a matching anchor in the DOM). */}
-          <Link
-            href={`/${locale}/services/uscis-case-status`}
+          {/* Check status — filled CTA. Goes DIRECTLY to the official USCIS
+              Case Status Online portal in a new tab. One click, no detour. */}
+          <a
+            href="https://egov.uscis.gov/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hidden sm:inline-flex items-center active:scale-[0.97] text-white text-sm font-semibold px-4 py-2 rounded-[999px] transition-[background,transform] duration-150"
             style={{ background: '#2563eb' }}
           >
             {t('ctaStatus')}
-          </Link>
+          </a>
         </div>
       </div>
     </header>
