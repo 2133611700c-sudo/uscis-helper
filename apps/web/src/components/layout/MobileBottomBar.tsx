@@ -11,14 +11,12 @@ export function MobileBottomBar() {
   const locale = useLocale()
   const pathname = usePathname()
 
-  const links = [
+  const links: Array<{ href: string; label: string; icon: typeof Home; external?: boolean }> = [
     { href: `/${locale}`, label: t('home'), icon: Home },
     { href: `/${locale}/services`, label: t('services'), icon: Grid3X3 },
-    // Routes to the canonical case-status service page so the mobile bar
-    // Status button opens the dedicated page regardless of which route the
-    // user is currently on (was `/${locale}/#case-status` — an anchor that
-    // only worked on the homepage and depended on a matching DOM id).
-    { href: `/${locale}/services/uscis-case-status`, label: t('status'), icon: Search },
+    // Status — opens the official USCIS Case Status portal DIRECTLY in a new
+    // tab. One tap, no intermediate page on our side.
+    { href: 'https://egov.uscis.gov/', label: t('status'), icon: Search, external: true },
     { href: `/${locale}/contact`, label: t('contact'), icon: Mail },
   ]
 
@@ -30,18 +28,33 @@ export function MobileBottomBar() {
       aria-label="Mobile navigation"
     >
       <div className="grid grid-cols-4 h-14">
-        {links.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href
+        {links.map(({ href, label, icon: Icon, external }) => {
+          const isActive = !external && pathname === href
+          const className = cn(
+            // px-1 + min-width-0 so long labels (e.g. "Контакты") wrap
+            // instead of truncating with an ellipsis on 360–390px viewports.
+            'flex flex-col items-center justify-center gap-0.5 px-1 min-w-0 text-[11px] leading-tight font-medium transition-colors text-center',
+            isActive ? 'text-brand-600' : 'text-ink-500 hover:text-ink-900',
+          )
+          if (external) {
+            return (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={className}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="block w-full break-words">{label}</span>
+              </a>
+            )
+          }
           return (
             <Link
               key={href}
               href={href}
-              className={cn(
-                // px-1 + min-width-0 so long labels (e.g. "Контакты") wrap
-                // instead of truncating with an ellipsis on 360–390px viewports.
-                'flex flex-col items-center justify-center gap-0.5 px-1 min-w-0 text-[11px] leading-tight font-medium transition-colors text-center',
-                isActive ? 'text-brand-600' : 'text-ink-500 hover:text-ink-900',
-              )}
+              className={className}
               aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="w-5 h-5" />
