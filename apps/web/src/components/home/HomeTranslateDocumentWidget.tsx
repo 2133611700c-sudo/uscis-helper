@@ -101,11 +101,11 @@ export function HomeTranslateDocumentWidget() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xl font-bold text-ink-900 md:text-2xl">{t('title')}</p>
-          <p className="mt-0.5 hidden text-sm text-ink-500 sm:block">{t('subtitle')}</p>
+          <p className="mt-0.5 hidden text-sm text-ink-600 sm:block">{t('subtitle')}</p>
         </div>
         <ChevronDown
           className={cn(
-            'h-5 w-5 shrink-0 text-ink-500 transition-transform duration-200',
+            'h-5 w-5 shrink-0 text-ink-600 transition-transform duration-200',
             isOpen && 'rotate-180',
           )}
         />
@@ -132,7 +132,7 @@ export function HomeTranslateDocumentWidget() {
                       'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
                       isSelected ? 'bg-brand-100' : 'bg-slate-100',
                     )}>
-                      <Icon className={cn('h-4 w-4', isSelected ? 'text-brand-600' : 'text-ink-500')} />
+                      <Icon className={cn('h-4 w-4', isSelected ? 'text-brand-600' : 'text-ink-600')} />
                     </div>
                     <span className={cn(
                       'flex-1 text-sm font-medium',

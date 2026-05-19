@@ -33,7 +33,7 @@ export function DraftResultPlaceholder({
           <button
             type="button"
             disabled
-            className="inline-flex items-center justify-center gap-2 rounded-btn border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-ink-500"
+            className="inline-flex items-center justify-center gap-2 rounded-btn border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-ink-600"
           >
             <Download className="h-4 w-4" />
             {downloadLabel}
@@ -41,7 +41,7 @@ export function DraftResultPlaceholder({
           <button
             type="button"
             disabled
-            className="inline-flex items-center justify-center gap-2 rounded-btn border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-ink-500"
+            className="inline-flex items-center justify-center gap-2 rounded-btn border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-ink-600"
           >
             <Mail className="h-4 w-4" />
             {sendToEmailLabel}

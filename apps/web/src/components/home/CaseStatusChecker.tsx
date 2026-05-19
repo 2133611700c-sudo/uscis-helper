@@ -18,7 +18,7 @@ export function CaseStatusChecker() {
       <h2 id="case-status-heading" className="text-lg font-semibold text-ink-900 mb-1">
         {t('title')}
       </h2>
-      <p className="text-sm text-ink-500 mb-4">{t('subtitle')}</p>
+      <p className="text-sm text-ink-600 mb-4">{t('subtitle')}</p>
       <a
         href={USCIS_CASE_STATUS_URL}
         target="_blank"
@@ -27,7 +27,7 @@ export function CaseStatusChecker() {
       >
         {t('buttonLabel')} ↗
       </a>
-      <p className="mt-3 text-sm text-ink-500">{t('disclaimer')}</p>
+      <p className="mt-3 text-sm text-ink-600">{t('disclaimer')}</p>
     </section>
   )
 }

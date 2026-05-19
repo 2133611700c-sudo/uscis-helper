@@ -53,7 +53,7 @@ export function OfficialTranslationSourceBox({
             </a>
           </div>
 
-          <p className="text-xs font-medium uppercase tracking-[0.08em] text-ink-500">
+          <p className="text-xs font-medium uppercase tracking-[0.08em] text-ink-600">
             {lastCheckedLabel.replace('{date}', lastCheckedDate)}
           </p>
         </div>
