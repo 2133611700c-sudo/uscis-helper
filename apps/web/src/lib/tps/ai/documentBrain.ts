@@ -359,6 +359,13 @@ export function validateBrainField(
         return { ok: false, reason: 'passport expiration > 20 years future' }
       }
     }
+    // Normalize whatever-format-Brain-gave-us to USCIS canonical MM/DD/YYYY
+    // in-place, so downstream PDF fillers don't need date-parser logic.
+    f.final_value = toUscisDate(d)
+  }
+  if (fieldKey === 'country_of_nationality' || fieldKey === 'passport_country_of_issuance') {
+    const normalized = normalizeCountry(f.final_value)
+    if (normalized) f.final_value = normalized
   }
   if (fieldKey === 'passport_number') {
     const v = (f.final_value || '').trim()
@@ -393,22 +400,103 @@ export function validateBrainField(
   return { ok: true }
 }
 
+/**
+ * Parse a date string in any of the formats that real-world documents use,
+ * normalized to a UTC Date. Accepts:
+ *
+ *   ISO              YYYY-MM-DD                  (Brain canonical)
+ *   US               MM/DD/YYYY  M/D/YYYY        (USCIS canonical)
+ *   European/UA      DD.MM.YYYY  D.M.YYYY        (Ukrainian internal/passport)
+ *   European slash   DD/MM/YYYY  (only when DD > 12, otherwise treated as US)
+ *   Visual           D MMM YYYY  e.g. "01 JAN 1985", "1 Jan 1985"
+ *   MRZ TD3 birth    YYMMDD                       century resolved: if YY > current+10 → 19YY
+ *
+ * Returns null if no recognized format matches. The validator caller
+ * compares the result against today/1900 bounds.
+ */
 function parseDate(s: string): Date | null {
   if (!s) return null
   const t = s.trim()
+  const yearOk = (y: number) => y >= 1900 && y <= 2099
+  const mkUtc = (y: number, mo: number, d: number): Date | null => {
+    if (!yearOk(y) || mo < 1 || mo > 12 || d < 1 || d > 31) return null
+    const dt = new Date(Date.UTC(y, mo - 1, d))
+    // Reject silent rollover (e.g. Feb 31 → Mar 3)
+    if (
+      dt.getUTCFullYear() !== y ||
+      dt.getUTCMonth() !== mo - 1 ||
+      dt.getUTCDate() !== d
+    ) return null
+    return dt
+  }
+
   // YYYY-MM-DD
-  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (m) return mkUtc(+m[1], +m[2], +m[3])
+
+  // MM/DD/YYYY or M/D/YYYY (US format — wins when month <=12 and day <=12 ambiguity)
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
   if (m) {
-    const d = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00Z`)
-    return isNaN(d.getTime()) ? null : d
+    const a = +m[1], b = +m[2], y = +m[3]
+    // If first token > 12, this must be DD/MM/YYYY
+    if (a > 12 && b <= 12) return mkUtc(y, b, a)
+    return mkUtc(y, a, b) // default MM/DD/YYYY
   }
-  // MM/DD/YYYY
-  m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+
+  // DD.MM.YYYY or D.M.YYYY — unambiguous European/Ukrainian style
+  m = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
+  if (m) return mkUtc(+m[3], +m[2], +m[1])
+
+  // D MMM YYYY  e.g. "01 JAN 1985", "1 Jan 1985", "01-JAN-1985"
+  const MONTHS: Record<string, number> = {
+    JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
+    JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12,
+  }
+  m = t.match(/^(\d{1,2})[\s\-\/]+([A-Za-z]{3,})[\s\-\/]+(\d{4})$/)
   if (m) {
-    const d = new Date(`${m[3]}-${m[1]}-${m[2]}T00:00:00Z`)
-    return isNaN(d.getTime()) ? null : d
+    const mo = MONTHS[m[2].slice(0, 3).toUpperCase()]
+    if (mo) return mkUtc(+m[3], mo, +m[1])
   }
+
+  // MRZ TD3 birth (YYMMDD). Resolve century: YY beyond "current year + 10" rolls
+  // to 19xx. Used when Brain forwards the raw MRZ birth slice unchanged.
+  m = t.match(/^(\d{2})(\d{2})(\d{2})$/)
+  if (m) {
+    const yy = +m[1], mo = +m[2], d = +m[3]
+    const cutoff = (new Date().getFullYear() % 100) + 10
+    const fullYear = yy > cutoff ? 1900 + yy : 2000 + yy
+    return mkUtc(fullYear, mo, d)
+  }
+
   return null
+}
+
+/**
+ * Format a Date as MM/DD/YYYY (USCIS canonical).
+ */
+function toUscisDate(d: Date): string {
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(d.getUTCDate()).padStart(2, '0')
+  return `${mm}/${dd}/${d.getUTCFullYear()}`
+}
+
+/**
+ * Map any text that means "Ukraine" to the canonical English country name.
+ * Add other former-USSR countries as our user base expands.
+ */
+const COUNTRY_ALIASES: Record<string, string> = {
+  ukraine: 'Ukraine',
+  ukr: 'Ukraine',
+  ukraina: 'Ukraine',
+  ukrayina: 'Ukraine',
+  'україна': 'Ukraine',
+  'украина': 'Ukraine',
+}
+
+export function normalizeCountry(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  const key = raw.trim().toLowerCase()
+  return COUNTRY_ALIASES[key] ?? raw.trim()
 }
 
 // ── Prompt + helpers ────────────────────────────────────────────────────────
