@@ -31,16 +31,19 @@ import {
 const makeStub = (response: string) => async () => ({ content: response })
 
 describe('runBrain — gating', () => {
-  it('refuses without TPS_AI_BRAIN_ENABLED and without stub', async () => {
-    // Clear env var defensively
-    const prev = process.env.TPS_AI_BRAIN_ENABLED
+  it('refuses when brain not enabled and without stub', async () => {
+    // Defensively clear both env vars — gate now keys off DEEPSEEK_API_KEY.
+    const prevFlag = process.env.TPS_AI_BRAIN_ENABLED
+    const prevKey = process.env.DEEPSEEK_API_KEY
     delete process.env.TPS_AI_BRAIN_ENABLED
+    delete process.env.DEEPSEEK_API_KEY
     try {
       const out = await runBrain({ raw_text: 'long enough text input here' })
       expect(out.ok).toBe(false)
       if (!out.ok) expect(out.error_code).toBe('NOT_CONFIGURED')
     } finally {
-      if (prev !== undefined) process.env.TPS_AI_BRAIN_ENABLED = prev
+      if (prevFlag !== undefined) process.env.TPS_AI_BRAIN_ENABLED = prevFlag
+      if (prevKey !== undefined) process.env.DEEPSEEK_API_KEY = prevKey
     }
   })
 
