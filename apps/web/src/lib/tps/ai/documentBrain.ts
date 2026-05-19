@@ -136,11 +136,24 @@ export interface DocumentBrainFailure {
 export type DocumentBrainOutput = DocumentBrainOutcome | DocumentBrainFailure
 
 /**
- * Returns true if the operator has enabled the AI brain in this env.
- * Default: OFF. Operator MUST flip the flag explicitly per environment.
+ * Returns true if the AI brain can run in this environment.
+ *
+ * Policy (harmonized with the translation + re-parole OCR pipelines,
+ * which use the same DeepSeek client and do NOT require a separate
+ * opt-in flag):
+ *
+ *   - Brain is ENABLED when DEEPSEEK_API_KEY is present.
+ *   - An operator can force-disable it by setting TPS_AI_BRAIN_ENABLED='0'
+ *     (e.g. during a DeepSeek outage) without removing the API key.
+ *
+ * Previously this defaulted to OFF, which silently turned the AI fallback
+ * into a no-op in production even when the key was configured. That made
+ * the TPS wizard surface zero fields whenever the rule-based passport
+ * module failed to find an MRZ — a very common case for real users.
  */
 export function isBrainEnabled(): boolean {
-  return process.env.TPS_AI_BRAIN_ENABLED === '1'
+  if (process.env.TPS_AI_BRAIN_ENABLED === '0') return false
+  return Boolean(process.env.DEEPSEEK_API_KEY)
 }
 
 /**
