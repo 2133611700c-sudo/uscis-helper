@@ -1,69 +1,33 @@
 'use client'
 
-import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
-const RECEIPT_REGEX = /^(EAC|WAC|LIN|SRC|NBC|MSC|IOE)\d{10}$/
+// Messenginfo does NOT process USCIS case status data. This widget is a
+// navigational link only — no input, no form, no submission. The user clicks
+// the button and lands on the official USCIS Case Status Online portal.
+const USCIS_CASE_STATUS_URL = 'https://egov.uscis.gov/'
 
 export function CaseStatusChecker() {
   const t = useTranslations('caseStatus')
-  const [input, setInput] = useState('')
-  const [error, setError] = useState<string | null>(null)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const normalized = input.replace(/[\s-]/g, '').toUpperCase()
-
-    if (!RECEIPT_REGEX.test(normalized)) {
-      setError(t('errorInvalid'))
-      return
-    }
-
-    // Open USCIS in new tab WITHOUT the receipt number.
-    // We never POST, never store, never include in URL.
-    window.open('https://egov.uscis.gov/', '_blank', 'noopener,noreferrer')
-
-    // DO NOT clear input here — let user see what they typed
-    // DO NOT call any tracking/analytics with normalized
-    setError(null)
-  }
 
   return (
     <section
       className="mt-8 rounded-card bg-white border border-slate-200 p-5 md:p-6 shadow-card"
+      aria-labelledby="case-status-heading"
     >
-      <h2 className="text-lg font-semibold text-ink-900 mb-1">{t('title')}</h2>
+      <h2 id="case-status-heading" className="text-lg font-semibold text-ink-900 mb-1">
+        {t('title')}
+      </h2>
       <p className="text-sm text-ink-500 mb-4">{t('subtitle')}</p>
-      <form id="case-status" onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
-        <div className="flex-1 relative">
-          <label htmlFor="receipt-input" className="sr-only">Receipt number</label>
-          <input
-            id="receipt-input"
-            type="text"
-            autoComplete="off"
-            spellCheck={false}
-            inputMode="text"
-            placeholder={t('placeholder')}
-            value={input}
-            onChange={(e) => { setInput(e.target.value); setError(null); }}
-            aria-invalid={!!error}
-            aria-describedby={error ? 'receipt-error' : 'receipt-help'}
-            className="w-full px-3 py-2.5 rounded-btn border border-slate-200 text-sm text-ink-900 placeholder:text-ink-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-          />
-        </div>
-        <button
-          type="submit"
-          className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-base font-medium px-5 py-2.5 rounded-btn transition-colors"
-        >
-          {t('buttonLabel')}
-        </button>
-      </form>
-      {error && (
-        <p id="receipt-error" role="alert" className="mt-2 text-xs text-red-700">
-          {error}
-        </p>
-      )}
-      <p id="receipt-help" className="mt-2 text-sm text-ink-500">{t('disclaimer')}</p>
+      <a
+        href={USCIS_CASE_STATUS_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-base font-medium px-5 py-2.5 rounded-btn transition-colors"
+      >
+        {t('buttonLabel')} ↗
+      </a>
+      <p className="mt-3 text-sm text-ink-500">{t('disclaimer')}</p>
     </section>
   )
 }
