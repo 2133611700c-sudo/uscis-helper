@@ -59,7 +59,7 @@ export function DocumentUploadBox({
             {messages.uploadButton}
           </span>
           <p className="text-sm text-ink-600">{messages.acceptedTypes}</p>
-          <p className="text-sm text-ink-500">{messages.maxSize}</p>
+          <p className="text-sm text-ink-600">{messages.maxSize}</p>
         </div>
       </label>
       <input
@@ -75,12 +75,12 @@ export function DocumentUploadBox({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-ink-900">{selectedFile.name}</p>
-              <p className="mt-1 text-sm text-ink-500">{formatSize(selectedFile.size)}</p>
+              <p className="mt-1 text-sm text-ink-600">{formatSize(selectedFile.size)}</p>
             </div>
             <button
               type="button"
               onClick={() => onFileSelect(null)}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-ink-500 transition-colors hover:border-slate-300 hover:text-ink-700"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-ink-600 transition-colors hover:border-slate-300 hover:text-ink-700"
               aria-label={messages.removeFile}
             >
               <X className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function DocumentUploadBox({
 
       <div className="space-y-2 rounded-card border border-slate-200 bg-white p-4 shadow-card">
         <p className="text-sm text-ink-700">{messages.privacyNote}</p>
-        <p className="text-sm font-medium text-ink-500">{messages.localOnlyNotice}</p>
+        <p className="text-sm font-medium text-ink-600">{messages.localOnlyNotice}</p>
       </div>
     </div>
   )

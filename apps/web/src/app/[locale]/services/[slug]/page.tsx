@@ -182,7 +182,7 @@ export default async function ServicePage({ params }: Props) {
       {/* Breadcrumb */}
       <div className="bg-slate-50 border-b border-slate-100">
         <Container>
-          <nav className="py-3 flex items-center gap-1.5 text-xs text-ink-500" aria-label="Breadcrumb">
+          <nav className="py-3 flex items-center gap-1.5 text-xs text-ink-600" aria-label="Breadcrumb">
             <Link href={`/${locale}`} className="hover:text-ink-900 transition-colors">{pageLabels('home')}</Link>
             <ChevronRight className="w-3 h-3" />
             <Link href={`/${locale}/services`} className="hover:text-ink-900 transition-colors">{tBreadcrumb('title')}</Link>
@@ -235,7 +235,7 @@ export default async function ServicePage({ params }: Props) {
                 <p className="text-base text-ink-600 mb-2">
                   Step-by-step guided help. You review every page and file yourself.
                 </p>
-                <p className="text-sm text-ink-500 mb-5">
+                <p className="text-sm text-ink-600 mb-5">
                   Takes about 20–30 minutes. We prepare the forms — you submit to USCIS.
                 </p>
                 <Link
@@ -250,7 +250,7 @@ export default async function ServicePage({ params }: Props) {
 
               {/* Pricing transparency */}
               <div className="rounded-xl border border-slate-200 bg-white p-5">
-                <p className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
+                <p className="text-sm font-semibold text-ink-600 uppercase tracking-wide mb-3">
                   Transparent Pricing
                 </p>
                 <div className="space-y-3">
@@ -273,7 +273,7 @@ export default async function ServicePage({ params }: Props) {
 
               {/* How it works — 3 steps */}
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
+                <p className="text-sm font-semibold text-ink-600 uppercase tracking-wide mb-3">
                   How It Works — 3 Steps
                 </p>
                 <div className="space-y-3">
@@ -295,7 +295,7 @@ export default async function ServicePage({ params }: Props) {
 
               {/* FAQ accordion items — static, plain language */}
               <div className="rounded-xl border border-slate-200 bg-white p-5">
-                <p className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
+                <p className="text-sm font-semibold text-ink-600 uppercase tracking-wide mb-3">
                   Common Questions
                 </p>
                 <div className="space-y-3 text-sm">
@@ -506,7 +506,7 @@ export default async function ServicePage({ params }: Props) {
               {card.officialSourceUrl}
               <ExternalLink className="w-3 h-3" />
             </a>
-            <p className="mt-1.5 text-xs text-ink-500">{lastVerified}</p>
+            <p className="mt-1.5 text-xs text-ink-600">{lastVerified}</p>
           </div>
         </div>
       </Section>
