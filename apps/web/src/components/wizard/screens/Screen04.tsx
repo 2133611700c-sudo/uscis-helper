@@ -165,7 +165,7 @@ export function Screen04() {
       {/* Quality tip */}
       <button
         type="button"
-        className="inline-flex items-center gap-1.5 rounded-full text-[12px] font-medium px-2.5 py-1.5"
+        className="inline-flex items-center gap-1.5 rounded-full text-sm font-medium px-2.5 py-1.5"
         style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)', color: 'var(--info-text)' }}
       >
         {t.qualityChip}
@@ -194,21 +194,21 @@ export function Screen04() {
                 <p className="text-[14px] font-semibold" style={{ color: 'var(--text-1)' }}>
                   {t.docLabels[slot.key]}
                   {slot.required && (
-                    <span className="ml-1.5 text-[11px] font-bold" style={{ color: 'var(--error-text)' }}>
+                    <span className="ml-1.5 text-sm font-bold" style={{ color: 'var(--error-text)' }}>
                       {t.required}
                     </span>
                   )}
                 </p>
                 {isDone && (
                   <span
-                    className="text-[12px] font-bold px-2 py-0.5 rounded-[6px] flex-shrink-0"
+                    className="text-sm font-bold px-2 py-0.5 rounded-[6px] flex-shrink-0"
                     style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
                   >
                     {t.uploaded}
                   </span>
                 )}
               </div>
-              <p className="text-[13px] mb-2.5" style={{ color: 'var(--text-3)' }}>
+              <p className="text-sm mb-2.5" style={{ color: 'var(--text-3)' }}>
                 {t.docDescs[slot.key]}
               </p>
               {!isDone && (
@@ -272,7 +272,7 @@ export function Screen04() {
         >
           {t.skipBtn}
         </button>
-        <p className="text-[11px] mt-1.5 text-center" style={{ color: 'var(--text-3)' }}>
+        <p className="text-sm mt-1.5 text-center" style={{ color: 'var(--text-3)' }}>
           {t.skipNote}
         </p>
       </div>
@@ -283,16 +283,16 @@ export function Screen04() {
         style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)' }}
       >
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold" style={{ color: 'var(--info-text)' }}>
+          <p className="text-sm font-semibold" style={{ color: 'var(--info-text)' }}>
             📝 {t.translateTitle}
           </p>
-          <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-3)' }}>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-3)' }}>
             {t.translateNote}
           </p>
         </div>
         <a
           href={`/${state.locale}/services/translate-document?from=re-parole-u4u&return=/${state.locale}/services/re-parole-u4u/start`}
-          className="text-[13px] font-semibold flex-shrink-0 rounded-[8px] px-3 py-2 transition-all"
+          className="text-sm font-semibold flex-shrink-0 rounded-[8px] px-3 py-2 transition-all"
           style={{
             background: 'var(--primary)',
             color: '#fff',

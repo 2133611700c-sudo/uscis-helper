@@ -63,7 +63,7 @@ export default async function ManualReviewDetailPage({
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '12px 0 4px' }}>
           {row.doc_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
         </h1>
-        <div style={{ fontSize: '13px', color: '#64748b' }}>
+        <div style={{ fontSize: '15px', color: '#64748b' }}>
           Case {row.id.slice(0, 8)} · {row.source_lang.toUpperCase()} · Received {created} · Expires {expires}
         </div>
         {isCompleted && (
@@ -95,7 +95,7 @@ export default async function ManualReviewDetailPage({
         <div style={{ display: 'grid', gap: '12px' }}>
           {sourceEntries.map(([key, value]) => (
             <div key={key}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' }}>
                 {key.replace(/_/g, ' ')}
               </label>
               <div style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '6px', background: '#f8fafc', color: '#1e293b', fontSize: '18px', fontFamily: 'monospace' }}>
@@ -120,7 +120,7 @@ export default async function ManualReviewDetailPage({
           {/* Recipient email — prefilled if available, editable */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ [LABEL_STYLE]: true } as React.CSSProperties}>
-              <span style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' }}>
+              <span style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' }}>
                 Send to (client email) *
               </span>
             </label>
@@ -139,7 +139,7 @@ export default async function ManualReviewDetailPage({
           <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
             {sourceEntries.map(([key]) => (
               <div key={key}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' }}>
                   {key.replace(/_/g, ' ')} (English)
                 </label>
                 <input

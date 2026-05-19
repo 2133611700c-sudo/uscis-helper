@@ -33,7 +33,7 @@ export function ScreenGlossary({ terms, locale }: ScreenGlossaryProps) {
       className="rounded-[12px] p-3"
       style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-3)' }}>
+      <p className="text-sm font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-3)' }}>
         💬 {label}
       </p>
 
@@ -45,7 +45,7 @@ export function ScreenGlossary({ terms, locale }: ScreenGlossaryProps) {
               key={term}
               type="button"
               onClick={() => setOpenTerm(isOpen ? null : term)}
-              className="rounded-full text-[12px] font-semibold px-2.5 py-1 transition-all"
+              className="rounded-full text-sm font-semibold px-2.5 py-1 transition-all"
               style={{
                 background: isOpen ? 'var(--primary)' : 'var(--surface)',
                 color: isOpen ? '#fff' : 'var(--text-2)',
@@ -60,7 +60,7 @@ export function ScreenGlossary({ terms, locale }: ScreenGlossaryProps) {
 
       {openTerm && (
         <div
-          className="mt-2.5 rounded-[8px] p-3 text-[13px] leading-relaxed"
+          className="mt-2.5 rounded-[8px] p-3 text-sm leading-relaxed"
           style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)', color: 'var(--info-text)' }}
         >
           <span className="font-bold">{openTerm}:</span>{' '}

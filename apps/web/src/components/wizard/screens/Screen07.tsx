@@ -136,11 +136,11 @@ export function Screen07() {
         <div>
           <label
             htmlFor="explanation"
-            className="block text-[13px] font-semibold mb-1.5"
+            className="block text-sm font-semibold mb-1.5"
             style={{ color: 'var(--text-1)' }}
           >
             {t.explanationLabel}
-            <span className="ml-1.5 font-normal text-[12px]" style={{ color: 'var(--text-3)' }}>
+            <span className="ml-1.5 font-normal text-sm" style={{ color: 'var(--text-3)' }}>
               {t.explanationOptional}
             </span>
             <HelpTip id="tip-explanation" content={t.explanationHelp} />
@@ -162,20 +162,20 @@ export function Screen07() {
               fontFamily: 'inherit',
             }}
           />
-          <p className="text-[11px] mt-1" style={{ color: 'var(--text-3)' }}>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>
             {t.explanationNote}
           </p>
         </div>
 
         {/* Evidence upload */}
         <div>
-          <p className="text-[13px] font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
+          <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
             {t.docsLabel}
-            <span className="ml-1.5 font-normal text-[12px]" style={{ color: 'var(--text-3)' }}>
+            <span className="ml-1.5 font-normal text-sm" style={{ color: 'var(--text-3)' }}>
               {t.docsOptional}
             </span>
           </p>
-          <p className="text-[12px] mb-2" style={{ color: 'var(--text-3)' }}>
+          <p className="text-sm mb-2" style={{ color: 'var(--text-3)' }}>
             {t.docsExamples}
           </p>
           <label
@@ -204,7 +204,7 @@ export function Screen07() {
               {evidenceFiles.map((f, idx) => (
                 <li
                   key={idx}
-                  className="flex items-center justify-between rounded-[8px] px-3 py-2 text-[13px]"
+                  className="flex items-center justify-between rounded-[8px] px-3 py-2 text-sm"
                   style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
                 >
                   <span className="truncate max-w-[240px]">{f.name}</span>
@@ -246,7 +246,7 @@ export function Screen07() {
             onChange={(e) => setEvidenceLater(e.target.checked)}
             className="sr-only"
           />
-          <span className="text-[13px]" style={{ color: 'var(--text-1)' }}>
+          <span className="text-sm" style={{ color: 'var(--text-1)' }}>
             {t.evidenceLaterLabel}
           </span>
         </label>
@@ -256,7 +256,7 @@ export function Screen07() {
             className="rounded-[12px] p-3.5"
             style={{ background: 'var(--error-bg)', border: '1px solid var(--error-border)' }}
           >
-            <p className="text-[13px]" style={{ color: 'var(--error-text)' }}>{error}</p>
+            <p className="text-sm" style={{ color: 'var(--error-text)' }}>{error}</p>
           </div>
         )}
 

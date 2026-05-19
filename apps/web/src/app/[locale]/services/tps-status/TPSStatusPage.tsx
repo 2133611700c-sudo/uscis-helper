@@ -257,32 +257,32 @@ export function TPSStatusPage({ locale }: { locale: string }) {
         <div className="rounded-2xl border-2 border-green-300 bg-green-50 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-[12px] font-semibold text-green-600 uppercase tracking-wide mb-1">{t.statusLabel}</p>
+              <p className="text-sm font-semibold text-green-600 uppercase tracking-wide mb-1">{t.statusLabel}</p>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse inline-block" />
                 <span className="text-[20px] font-black text-green-800">{t.activeLabel}</span>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-[12px] text-green-600 mb-1">{t.throughLabel}</p>
+              <p className="text-sm text-green-600 mb-1">{t.throughLabel}</p>
               <p className="text-[18px] font-bold text-green-900">{TPS_DATA.designatedThrough}</p>
             </div>
           </div>
 
           {/* Re-registration window */}
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
-            <p className="text-[13px] font-bold text-amber-800 mb-2">⚠ {t.reregTitle}</p>
+            <p className="text-sm font-bold text-amber-800 mb-2">⚠ {t.reregTitle}</p>
             <div className="grid grid-cols-2 gap-3 mb-2">
               <div>
-                <p className="text-[11px] text-amber-600">{t.reregOpen}</p>
+                <p className="text-sm text-amber-600">{t.reregOpen}</p>
                 <p className="text-[15px] font-bold text-amber-900">{TPS_DATA.reregistrationOpen}</p>
               </div>
               <div>
-                <p className="text-[11px] text-amber-600">{t.reregClose}</p>
+                <p className="text-sm text-amber-600">{t.reregClose}</p>
                 <p className="text-[15px] font-bold text-amber-900">{TPS_DATA.reregistrationClose}</p>
               </div>
             </div>
-            <p className="text-[12px] text-amber-700">{t.reregWarning}</p>
+            <p className="text-sm text-amber-700">{t.reregWarning}</p>
           </div>
         </div>
 
@@ -291,7 +291,7 @@ export function TPSStatusPage({ locale }: { locale: string }) {
           <h2 className="text-[15px] font-bold text-[var(--text-1)] mb-3">{t.eligibleTitle}</h2>
           <div className="flex flex-wrap gap-2">
             {TPS_DATA.eligibleForms.map((form) => (
-              <span key={form} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-[13px] font-semibold text-blue-800">{form}</span>
+              <span key={form} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-800">{form}</span>
             ))}
           </div>
         </div>
@@ -302,8 +302,8 @@ export function TPSStatusPage({ locale }: { locale: string }) {
           <div className="space-y-3">
             {t.timeline.map((item: { date: string; event: string; type: string }) => (
               <div key={item.date} className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${typeColors[item.type] ?? 'bg-gray-50 border-gray-200 text-gray-800'}`}>
-                <span className="text-[12px] font-bold whitespace-nowrap shrink-0 mt-0.5">{item.date}</span>
-                <span className="text-[13px]">{item.event}</span>
+                <span className="text-sm font-bold whitespace-nowrap shrink-0 mt-0.5">{item.date}</span>
+                <span className="text-sm">{item.event}</span>
               </div>
             ))}
           </div>
@@ -314,7 +314,7 @@ export function TPSStatusPage({ locale }: { locale: string }) {
           <h2 className="text-[15px] font-bold text-[var(--text-1)] mb-3">{t.requirementsTitle}</h2>
           <ul className="space-y-2">
             {t.requirements.map((req: string) => (
-              <li key={req} className="flex items-start gap-2 text-[13px] text-[var(--text-2)]">
+              <li key={req} className="flex items-start gap-2 text-sm text-[var(--text-2)]">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16" className="text-green-500 shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12" /></svg>
                 {req}
               </li>
@@ -325,7 +325,7 @@ export function TPSStatusPage({ locale }: { locale: string }) {
         {/* Calendar download */}
         <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
           <h2 className="text-[15px] font-bold text-blue-900 mb-1">{t.alertTitle}</h2>
-          <p className="text-[13px] text-blue-700 mb-4">{t.alertDesc}</p>
+          <p className="text-sm text-blue-700 mb-4">{t.alertDesc}</p>
           <button type="button" onClick={downloadCal}
             className="inline-flex items-center gap-2 bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-[14px] hover:bg-blue-800 transition-colors">
             📅 {t.calBtn}
@@ -351,7 +351,7 @@ export function TPSStatusPage({ locale }: { locale: string }) {
                   <span className="ml-2 shrink-0 text-[var(--text-3)]">{openFaq === i ? '−' : '+'}</span>
                 </button>
                 {openFaq === i && (
-                  <div className="px-4 pb-4 text-[13px] text-[var(--text-2)] leading-relaxed border-t border-[var(--border)]">
+                  <div className="px-4 pb-4 text-sm text-[var(--text-2)] leading-relaxed border-t border-[var(--border)]">
                     <p className="pt-3">{faq.a}</p>
                   </div>
                 )}
@@ -378,7 +378,7 @@ export function TPSStatusPage({ locale }: { locale: string }) {
           </div>
         </div>
 
-        <p className="text-[11px] text-[var(--text-3)] text-center leading-relaxed pb-4">{t.disclaimer}</p>
+        <p className="text-sm text-[var(--text-3)] text-center leading-relaxed pb-4">{t.disclaimer}</p>
       </div>
     </div>
   )

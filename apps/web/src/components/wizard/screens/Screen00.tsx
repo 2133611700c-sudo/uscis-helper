@@ -329,7 +329,7 @@ export function Screen00() {
         <button
           type="button"
           onClick={() => setShowUnsure(false)}
-          className="text-[13px] font-semibold"
+          className="text-sm font-semibold"
           style={{ color: 'var(--primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
         >
           {t.unsureBackBtn}
@@ -352,7 +352,7 @@ export function Screen00() {
               </p>
             </div>
             {card.items.map((item) => (
-              <div key={item} className="flex gap-2 py-1 text-[13px]" style={{ color: 'var(--text-2)' }}>
+              <div key={item} className="flex gap-2 py-1 text-sm" style={{ color: 'var(--text-2)' }}>
                 <span style={{ color: 'var(--success)', fontWeight: 700, flexShrink: 0 }}>✓</span>
                 <span>{item}</span>
               </div>
@@ -393,7 +393,7 @@ export function Screen00() {
           <h3 className="text-[15px] font-semibold mb-1" style={{ color: 'var(--info-text)' }}>
             {t.welcomeBack}
           </h3>
-          <p className="text-[13px] mb-3" style={{ color: 'var(--info-text)' }}>
+          <p className="text-sm mb-3" style={{ color: 'var(--info-text)' }}>
             {t.welcomeBackDesc}
           </p>
           <div className="flex gap-2">
@@ -414,7 +414,7 @@ export function Screen00() {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="rounded-[8px] text-[13px] font-medium transition-all active:scale-95"
+              className="rounded-[8px] text-sm font-medium transition-all active:scale-95"
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border-strong)',
@@ -465,7 +465,7 @@ export function Screen00() {
                 </p>
                 <p
                   style={{
-                    fontSize: '12px',
+                    fontSize: '15px',
                     color: path.accent ? 'rgba(255,255,255,0.82)' : 'var(--text-3)',
                     lineHeight: 1.4,
                   }}
@@ -475,7 +475,7 @@ export function Screen00() {
               </div>
               <span
                 style={{
-                  fontSize: '13px',
+                  fontSize: '15px',
                   fontWeight: 700,
                   color: path.accent ? '#fff' : 'var(--primary)',
                   flexShrink: 0,
@@ -489,7 +489,7 @@ export function Screen00() {
       </div>
 
       {/* Legal note */}
-      <p className="text-[11px] text-center" style={{ color: 'var(--text-3)' }}>
+      <p className="text-sm text-center" style={{ color: 'var(--text-3)' }}>
         {t.legalNote}
       </p>
     </div>

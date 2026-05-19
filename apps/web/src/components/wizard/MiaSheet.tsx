@@ -97,7 +97,7 @@ function Bubble({ role, content, disclaimer }: BubbleProps) {
         </div>
       </div>
       {disclaimer && !isUser && (
-        <p className="mt-1 ml-9 text-[10px] italic" style={{ color: 'var(--text-3)' }}>{disclaimer}</p>
+        <p className="mt-1 ml-9 text-xs italic" style={{ color: 'var(--text-3)' }}>{disclaimer}</p>
       )}
     </div>
   )
@@ -325,7 +325,7 @@ export function MiaSheet() {
         </div>
 
         {/* Disclaimer */}
-        <p className="flex-shrink-0 text-center text-[10px] pb-2" style={{ color: 'var(--text-3)' }}>
+        <p className="flex-shrink-0 text-center text-xs pb-2" style={{ color: 'var(--text-3)' }}>
           Information only. Not legal advice.
         </p>
       </div>

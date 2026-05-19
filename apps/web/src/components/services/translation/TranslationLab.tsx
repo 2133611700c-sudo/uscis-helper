@@ -652,7 +652,7 @@ export function TranslationLab() {
                 ">
                   {isPast ? '✓' : i + 1}
                 </span>
-                <span className="hidden text-[10px] font-medium sm:block">{s.label}</span>
+                <span className="hidden text-xs font-medium sm:block">{s.label}</span>
               </div>
             )
           })}

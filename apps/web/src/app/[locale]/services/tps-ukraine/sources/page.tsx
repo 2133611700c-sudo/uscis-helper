@@ -278,7 +278,7 @@ export default async function TpsUkraineSourcesPage({ params }: Props) {
       <section style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 20px 18px' }}>
         <a
           href={backHref}
-          style={{ fontSize: '13px', color: 'var(--text-3)', textDecoration: 'none', display: 'inline-block', marginBottom: '12px' }}
+          style={{ fontSize: '15px', color: 'var(--text-3)', textDecoration: 'none', display: 'inline-block', marginBottom: '12px' }}
         >
           {t.back}
         </a>
@@ -286,14 +286,14 @@ export default async function TpsUkraineSourcesPage({ params }: Props) {
           {t.title}
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--text-2)', lineHeight: 1.5 }}>{t.intro}</p>
-        <p style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '10px' }}>{t.note}</p>
+        <p style={{ fontSize: '15px', color: 'var(--text-3)', marginTop: '10px' }}>{t.note}</p>
       </section>
 
       <section style={{ padding: '14px 20px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {cats.map((cat) => (
           <div key={cat.title} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
             <div style={{ padding: '10px 14px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-1)' }}>{cat.title}</p>
+              <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-1)' }}>{cat.title}</p>
             </div>
             {cat.items.map((item, idx) => (
               <a
@@ -312,10 +312,10 @@ export default async function TpsUkraineSourcesPage({ params }: Props) {
                 <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '3px' }}>
                   {item.name}
                 </p>
-                <p style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.45, marginBottom: '4px' }}>
+                <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.45, marginBottom: '4px' }}>
                   {item.desc}
                 </p>
-                <p style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
+                <p style={{ fontSize: '15px', color: 'var(--primary)', fontWeight: 600 }}>
                   {item.label} ↗
                 </p>
               </a>

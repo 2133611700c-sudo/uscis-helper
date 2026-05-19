@@ -158,12 +158,12 @@ export function Screen09() {
               <p className="text-[14px] font-semibold" style={{ color: 'var(--text-1)' }}>
                 {member.alias || `Person ${i + 1}`}
               </p>
-              <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-3)' }}>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--text-3)' }}>
                 {t.packetBadge(i)}
               </p>
             </div>
             <span
-              className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+              className="text-sm font-bold px-2.5 py-1 rounded-full"
               style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
             >
               {t.readyBadge}
@@ -175,7 +175,7 @@ export function Screen09() {
       {/* Free preview */}
       <div>
         <p
-          className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+          className="text-sm font-semibold uppercase tracking-wide mb-2"
           style={{ color: 'var(--text-3)', letterSpacing: '0.6px' }}
         >
           {t.previewTitle}
@@ -196,7 +196,7 @@ export function Screen09() {
               <span className="flex-1 text-[14px]" style={{ color: 'var(--text-1)' }}>
                 {file.name}
               </span>
-              <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>
+              <span className="text-sm" style={{ color: 'var(--text-3)' }}>
                 {file.size}
               </span>
             </div>
@@ -206,7 +206,7 @@ export function Screen09() {
 
       {/* What to do with packet — 3-step block */}
       <div>
-        <p className="text-[13px] font-semibold mb-2.5" style={{ color: 'var(--text-1)' }}>
+        <p className="text-sm font-semibold mb-2.5" style={{ color: 'var(--text-1)' }}>
           {t.stepsTitle}
         </p>
         <div className="space-y-2">
@@ -219,12 +219,12 @@ export function Screen09() {
               <span className="text-[18px] flex-shrink-0 mt-0.5">{step.icon}</span>
               <div className="flex items-start gap-2">
                 <span
-                  className="flex-shrink-0 w-[20px] h-[20px] rounded-full flex items-center justify-center text-[11px] font-bold mt-0.5"
+                  className="flex-shrink-0 w-[20px] h-[20px] rounded-full flex items-center justify-center text-sm font-bold mt-0.5"
                   style={{ background: 'var(--primary)', color: '#fff' }}
                 >
                   {idx + 1}
                 </span>
-                <p className="text-[13px]" style={{ color: 'var(--text-2)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-2)' }}>
                   {step.text}
                 </p>
               </div>
@@ -239,7 +239,7 @@ export function Screen09() {
           className="rounded-[12px] p-3.5"
           style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)' }}
         >
-          <p className="text-[12px]" style={{ color: 'var(--success-text)' }}>
+          <p className="text-sm" style={{ color: 'var(--success-text)' }}>
             {t.i912Reminder}
           </p>
         </div>
@@ -253,7 +253,7 @@ export function Screen09() {
         <p className="text-[14px] font-semibold" style={{ color: 'var(--info-text)' }}>
           {t.costSummary(packageSize, packagePrice, filingLabel)}
         </p>
-        <p className="text-[12px] mt-1" style={{ color: 'var(--info-text)' }}>
+        <p className="text-sm mt-1" style={{ color: 'var(--info-text)' }}>
           {t.uscisNote}
         </p>
       </div>

@@ -621,13 +621,13 @@ function StepIndicator({ step, labels }: { step: number; labels: string[] }) {
         const active = step === i
         return (
           <div key={i} className="flex items-center gap-1 flex-shrink-0">
-            <div className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold transition-all
+            <div className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-bold transition-all
               ${done ? 'bg-green-500 text-white' : active ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)]'}`}>
               {done
                 ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="10" height="10"><polyline points="20 6 9 17 4 12" /></svg>
                 : i + 1}
             </div>
-            <span className={`text-[11px] font-semibold whitespace-nowrap hidden sm:inline
+            <span className={`text-sm font-semibold whitespace-nowrap hidden sm:inline
               ${done ? 'text-green-600' : active ? 'text-blue-600' : 'text-[var(--text-2)]'}`}>{label}</span>
             {i < labels.length - 1 && <div className={`w-3 h-0.5 mx-0.5 ${done ? 'bg-green-400' : 'bg-[var(--border)]'}`} />}
           </div>
@@ -658,8 +658,8 @@ function OptionCard({ selected, onClick, title, desc, badge }: {
         </span>
       )}
       <div className="font-bold text-[15px] text-[var(--text-1)] pr-6">{title}</div>
-      {badge && <div className="text-[11px] font-mono text-blue-600 mt-0.5">{badge}</div>}
-      {desc && <div className="text-[13px] text-[var(--text-2)] mt-1 leading-snug">{desc}</div>}
+      {badge && <div className="text-sm font-mono text-blue-600 mt-0.5">{badge}</div>}
+      {desc && <div className="text-sm text-[var(--text-2)] mt-1 leading-snug">{desc}</div>}
     </button>
   )
 }
@@ -669,7 +669,7 @@ function OptionCard({ selected, onClick, title, desc, badge }: {
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline py-2 border-b border-[var(--border)] last:border-0">
-      <span className="text-[13px] text-[var(--text-2)]">{label}</span>
+      <span className="text-sm text-[var(--text-2)]">{label}</span>
       <span className="text-[14px] font-semibold text-[var(--text-1)] ml-4 text-right">{value || '—'}</span>
     </div>
   )
@@ -735,13 +735,13 @@ export function EADWizard({ locale }: EADWizardProps) {
         </div>
 
         {data.appType === 'renewal' && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 text-[13px] text-green-800 dark:text-green-300">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 text-sm text-green-800 dark:text-green-300">
             <CheckCircle size={16} className="flex-shrink-0 mt-0.5" />
             <span>{ui.autoExt}</span>
           </div>
         )}
 
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text-2)]">
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-sm text-[var(--text-2)]">
           <Info size={14} className="flex-shrink-0 mt-0.5" />
           <span>{ui.notLegal}</span>
         </div>
@@ -774,7 +774,7 @@ export function EADWizard({ locale }: EADWizardProps) {
           />
         ))}
         {data.category === 'c11' && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-300 text-[13px] text-amber-800 dark:text-amber-200">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-300 text-sm text-amber-800 dark:text-amber-200">
             <AlertTriangle size={16} className="flex-shrink-0 mt-0.5 text-amber-600" />
             <span>{ui.c11Warning}</span>
           </div>
@@ -793,7 +793,7 @@ export function EADWizard({ locale }: EADWizardProps) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[13px] font-semibold text-[var(--text-1)] mb-1">{ui.lastName} <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.lastName} <span className="text-red-500">*</span></label>
             <input
               type="text" value={data.lastName}
               onChange={e => patch({ lastName: e.target.value })}
@@ -802,7 +802,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             />
           </div>
           <div>
-            <label className="block text-[13px] font-semibold text-[var(--text-1)] mb-1">{ui.firstName} <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.firstName} <span className="text-red-500">*</span></label>
             <input
               type="text" value={data.firstName}
               onChange={e => patch({ firstName: e.target.value })}
@@ -812,7 +812,7 @@ export function EADWizard({ locale }: EADWizardProps) {
           </div>
         </div>
         <div>
-          <label className="block text-[13px] font-semibold text-[var(--text-1)] mb-1">{ui.middleName}</label>
+          <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.middleName}</label>
           <input
             type="text" value={data.middleName}
             onChange={e => patch({ middleName: e.target.value })}
@@ -821,7 +821,7 @@ export function EADWizard({ locale }: EADWizardProps) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[13px] font-semibold text-[var(--text-1)] mb-1">{ui.dob} <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.dob} <span className="text-red-500">*</span></label>
             <input
               type="date" value={data.dob}
               onChange={e => patch({ dob: e.target.value })}
@@ -829,7 +829,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             />
           </div>
           <div>
-            <label className="block text-[13px] font-semibold text-[var(--text-1)] mb-1">{ui.countryOfBirth}</label>
+            <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.countryOfBirth}</label>
             <input
               type="text" value={data.countryOfBirth}
               onChange={e => patch({ countryOfBirth: e.target.value })}
@@ -839,12 +839,12 @@ export function EADWizard({ locale }: EADWizardProps) {
           </div>
         </div>
         <div>
-          <label className="block text-[13px] font-semibold text-[var(--text-1)] mb-1">{ui.genderLabel}</label>
+          <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.genderLabel}</label>
           <div className="flex gap-2 flex-wrap">
             {(['male', 'female', 'nonbinary'] as const).map(g => (
               <button key={g} type="button"
                 onClick={() => patch({ gender: g })}
-                className={`px-4 py-2 rounded-xl text-[13px] font-semibold border-2 transition-all
+                className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all
                   ${data.gender === g
                     ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
                     : 'border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] hover:border-blue-400'}`}>
@@ -854,14 +854,14 @@ export function EADWizard({ locale }: EADWizardProps) {
           </div>
         </div>
         <div>
-          <label className="block text-[13px] font-semibold text-[var(--text-1)] mb-1">{ui.alienNumber}</label>
+          <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.alienNumber}</label>
           <input
             type="text" value={data.alienNumber}
             onChange={e => patch({ alienNumber: e.target.value })}
             placeholder="A123456789"
             className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="text-[12px] text-[var(--text-2)] mt-1">{ui.alienHint}</p>
+          <p className="text-sm text-[var(--text-2)] mt-1">{ui.alienHint}</p>
         </div>
       </div>
     )
@@ -899,7 +899,7 @@ export function EADWizard({ locale }: EADWizardProps) {
               />
               <div>
                 <div className="text-[14px] font-semibold text-[var(--text-1)]">{doc.label[locale] ?? doc.label.en}</div>
-                <div className={`text-[11px] font-bold mt-0.5 ${isRequired ? 'text-red-600' : 'text-[var(--text-2)]'}`}>
+                <div className={`text-sm font-bold mt-0.5 ${isRequired ? 'text-red-600' : 'text-[var(--text-2)]'}`}>
                   {isRequired ? ui.required : ui.optional}
                 </div>
               </div>
@@ -907,7 +907,7 @@ export function EADWizard({ locale }: EADWizardProps) {
           )
         })}
         {missingRequired && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-300 text-[13px] text-amber-800 dark:text-amber-200">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-300 text-sm text-amber-800 dark:text-amber-200">
             <AlertTriangle size={16} className="flex-shrink-0 mt-0.5 text-amber-500" />
             <span>{ui.missingRequired}</span>
           </div>
@@ -939,13 +939,13 @@ export function EADWizard({ locale }: EADWizardProps) {
           />
         </div>
         {data.filingMethod === 'mail' && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 text-[13px] text-blue-800 dark:text-blue-200">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 text-sm text-blue-800 dark:text-blue-200">
             <Info size={14} className="flex-shrink-0 mt-0.5" />
             <span>{ui.checkAddress}</span>
           </div>
         )}
         <div>
-          <label className="block text-[13px] font-semibold text-[var(--text-1)] mb-1">{ui.addressLabel} <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.addressLabel} <span className="text-red-500">*</span></label>
           <textarea
             value={data.usAddress}
             onChange={e => patch({ usAddress: e.target.value })}
@@ -953,7 +953,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             placeholder="123 Main St, Apt 4B&#10;Chicago, IL 60601"
             className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="text-[12px] text-[var(--text-2)] mt-1">{ui.addressHint}</p>
+          <p className="text-sm text-[var(--text-2)] mt-1">{ui.addressHint}</p>
         </div>
       </div>
     )
@@ -986,7 +986,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             </div>
           ))}
         </div>
-        <p className="text-[13px] text-[var(--text-2)]">{ui.disclaimer}</p>
+        <p className="text-sm text-[var(--text-2)]">{ui.disclaimer}</p>
       </div>
     )
   }
@@ -1016,7 +1016,7 @@ export function EADWizard({ locale }: EADWizardProps) {
               <CheckCircle size={20} className="text-green-600 flex-shrink-0" />
               <div>
                 <div className="font-bold text-green-800 dark:text-green-200">{ui.downloaded}</div>
-                <div className="text-[13px] text-green-700 dark:text-green-300 mt-0.5">{ui.downloadHint}</div>
+                <div className="text-sm text-green-700 dark:text-green-300 mt-0.5">{ui.downloadHint}</div>
               </div>
             </div>
             <button type="button" onClick={handleDownload}
@@ -1038,13 +1038,13 @@ export function EADWizard({ locale }: EADWizardProps) {
         </div>
 
         {data.appType === 'renewal' && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 text-[13px] text-green-800 dark:text-green-300">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 text-sm text-green-800 dark:text-green-300">
             <CheckCircle size={16} className="flex-shrink-0 mt-0.5" />
             <span>{ui.autoExt}</span>
           </div>
         )}
 
-        <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text-2)]">
+        <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-sm text-[var(--text-2)]">
           {ui.disclaimer}
         </div>
       </div>

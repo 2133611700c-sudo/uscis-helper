@@ -140,7 +140,7 @@ export function MiaFloatingWidget() {
 
           {/* Footer */}
           <div className="border-t border-slate-100 px-4 py-2">
-            <p className="text-[10px] text-slate-500 leading-relaxed">{t('disclaimer')}</p>
+            <p className="text-xs text-slate-500 leading-relaxed">{t('disclaimer')}</p>
           </div>
         </div>
       )}

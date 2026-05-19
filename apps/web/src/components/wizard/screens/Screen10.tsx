@@ -242,10 +242,10 @@ export function Screen10() {
           className="flex items-center justify-between px-4 py-3"
           style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}
         >
-          <span className="text-[13px] font-semibold" style={{ color: 'var(--text-1)' }}>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>
             {t.summaryTitle}
           </span>
-          <span className="text-[13px] font-medium" style={{ color: 'var(--primary)' }}>
+          <span className="text-sm font-medium" style={{ color: 'var(--primary)' }}>
             {t.applicants(packageSize)} · ${packagePrice}
           </span>
         </div>
@@ -255,17 +255,17 @@ export function Screen10() {
           className="flex items-center justify-between px-4 py-3"
           style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}
         >
-          <span className="text-[13px]" style={{ color: 'var(--text-2)' }}>
+          <span className="text-sm" style={{ color: 'var(--text-2)' }}>
             {t.filingLabel}
           </span>
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-medium" style={{ color: 'var(--text-1)' }}>
+            <span className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>
               {filingDisplay}
             </span>
             <button
               type="button"
               onClick={() => setStep(5)}
-              className="text-[11px] font-semibold rounded-[6px] px-2 py-0.5 transition-all"
+              className="text-sm font-semibold rounded-[6px] px-2 py-0.5 transition-all"
               style={{ background: 'var(--surface-2)', color: 'var(--primary)', border: '1px solid var(--border)' }}
             >
               {t.editBtn}
@@ -302,18 +302,18 @@ export function Screen10() {
                 {idx + 1}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-1)' }}>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-1)' }}>
                   {member.alias}
                 </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                   <span
-                    className="text-[11px]"
+                    className="text-sm"
                     style={{ color: docsOk ? 'var(--success-text)' : 'var(--warning-text)' }}
                   >
                     {docsOk ? '✓' : '○'} {t.docsReady(uploadedDocs, DOC_KEYS.length)}
                   </span>
                   <span
-                    className="text-[11px]"
+                    className="text-sm"
                     style={{ color: infoOk ? 'var(--success-text)' : 'var(--text-3)' }}
                   >
                     {infoOk ? '✓' : '○'} {t.infoReady(confirmedInfo, INFO_KEYS.length)}
@@ -323,7 +323,7 @@ export function Screen10() {
               <button
                 type="button"
                 onClick={() => setStep(4)}
-                className="flex-shrink-0 text-[11px] font-semibold rounded-[6px] px-2 py-0.5 transition-all self-start mt-0.5"
+                className="flex-shrink-0 text-sm font-semibold rounded-[6px] px-2 py-0.5 transition-all self-start mt-0.5"
                 style={{ background: 'var(--surface-2)', color: 'var(--primary)', border: '1px solid var(--border)' }}
               >
                 {t.editBtn}
@@ -342,7 +342,7 @@ export function Screen10() {
         <h2 className="text-[18px] font-bold mb-1.5" style={{ color: 'var(--text-1)' }}>
           {t.packetTitle}
         </h2>
-        <p className="text-[13px] mb-4 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+        <p className="text-sm mb-4 leading-relaxed" style={{ color: 'var(--text-2)' }}>
           {t.packetSubtitle}
         </p>
 
@@ -354,7 +354,7 @@ export function Screen10() {
           >
             <span className="text-[24px] align-top">$</span>{packagePrice}
           </span>
-          <p className="text-[13px]" style={{ color: 'var(--text-3)' }}>
+          <p className="text-sm" style={{ color: 'var(--text-3)' }}>
             {t.packetFor(packageSize)}
           </p>
         </div>
@@ -364,14 +364,14 @@ export function Screen10() {
           {t.features.map((f) => (
             <div key={f} className="flex items-start gap-2 py-1">
               <span className="font-bold flex-shrink-0" style={{ color: 'var(--success)' }}>✓</span>
-              <span className="text-[13px]" style={{ color: 'var(--text-2)' }}>{f}</span>
+              <span className="text-sm" style={{ color: 'var(--text-2)' }}>{f}</span>
             </div>
           ))}
         </div>
 
         {/* Payment note badge */}
         <span
-          className="inline-block text-[11px] font-semibold px-3 py-1 rounded-full mb-3"
+          className="inline-block text-sm font-semibold px-3 py-1 rounded-full mb-3"
           style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}
         >
           {t.paymentNote}
@@ -384,7 +384,7 @@ export function Screen10() {
         style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}
       >
         <p
-          className="text-[11px] font-semibold uppercase tracking-wide mb-3"
+          className="text-sm font-semibold uppercase tracking-wide mb-3"
           style={{ color: 'var(--warning-text)', letterSpacing: '0.6px' }}
         >
           {t.ackTitle}
@@ -423,7 +423,7 @@ export function Screen10() {
         style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
       >
         <span className="flex-shrink-0">🔒</span>
-        <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-2)' }}>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
           {t.privacyNote}
         </p>
       </div>
@@ -433,17 +433,17 @@ export function Screen10() {
         className="rounded-[12px] p-3.5"
         style={{ background: 'var(--warning-bg)', border: '1.5px solid var(--warning-border)' }}
       >
-        <p className="text-[13px] font-bold mb-1" style={{ color: 'var(--warning-text)' }}>
+        <p className="text-sm font-bold mb-1" style={{ color: 'var(--warning-text)' }}>
           {t.feeCardTitle}{packagePrice}
         </p>
-        <p className="text-[13px] leading-relaxed mb-2" style={{ color: 'var(--warning-text)' }}>
+        <p className="text-sm leading-relaxed mb-2" style={{ color: 'var(--warning-text)' }}>
           {t.feeCardText}
         </p>
         <a
           href="https://www.uscis.gov/feecalculator"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[13px] font-semibold"
+          className="text-sm font-semibold"
           style={{ color: 'var(--primary)' }}
         >
           {t.feeCardLink}

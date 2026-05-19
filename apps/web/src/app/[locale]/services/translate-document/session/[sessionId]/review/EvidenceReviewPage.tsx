@@ -208,7 +208,7 @@ function EvidenceBadge({
       display: 'inline-flex',
       alignItems: 'center',
       gap: '4px',
-      fontSize: '11px',
+      fontSize: '15px',
       fontWeight: 600,
       color,
       background: bg,
@@ -910,7 +910,7 @@ function EvidenceFieldCard({
               </span>
               {field.is_critical && !field.confirmed && (
                 <span style={{
-                  fontSize: '12px',
+                  fontSize: '15px',
                   fontWeight: 700,
                   color: '#b45309',
                   background: '#fef3c7',
@@ -922,7 +922,7 @@ function EvidenceFieldCard({
               )}
               {field.confirmed && (
                 <span style={{
-                  fontSize: '12px',
+                  fontSize: '15px',
                   fontWeight: 700,
                   color: C.green,
                   background: '#dcfce7',
@@ -937,7 +937,7 @@ function EvidenceFieldCard({
                 const lbl = confidenceLabel(field.confidence)
                 return (
                   <span style={{
-                    fontSize: '12px',
+                    fontSize: '15px',
                     fontWeight: 600,
                     color: lbl.color,
                     background: lbl.bg,
@@ -1149,7 +1149,7 @@ function CertificationForm({
                 placeholder="Type your name exactly"
                 style={{ width: '100%', padding: '14px 16px', fontSize: '18px', border: `2px solid ${C.border}`, borderRadius: '10px', color: C.text1, boxSizing: 'border-box', fontStyle: 'italic' }}
               />
-              <p style={{ fontSize: '13px', color: C.gray, marginTop: '4px' }}>This acts as your electronic signature</p>
+              <p style={{ fontSize: '15px', color: C.gray, marginTop: '4px' }}>This acts as your electronic signature</p>
             </div>
 
             <div>
@@ -1219,7 +1219,7 @@ function CertificationForm({
             {saving ? 'Signing…' : 'Sign the translation'}
           </button>
 
-          <p style={{ fontSize: '13px', color: C.gray, textAlign: 'center', marginTop: '12px', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '15px', color: C.gray, textAlign: 'center', marginTop: '12px', lineHeight: 1.5 }}>
             By signing, you certify competency to translate Ukrainian to English
             and that this translation is accurate (8 CFR §103.2(b)(3)).
             Messenginfo is not a law firm.
@@ -1407,7 +1407,7 @@ function FinalDownloadPanel({ sessionId, locale = 'en' }: { sessionId: string; l
         {loading ? 'Generating PDF…' : '⬇ Download Translation PDF'}
       </button>
 
-      <p style={{ fontSize: '13px', color: C.gray, lineHeight: 1.5 }}>
+      <p style={{ fontSize: '15px', color: C.gray, lineHeight: 1.5 }}>
         PDF includes: official translation + translator signature + source audit trail.
         Keep a printed copy with your USCIS application.
       </p>
@@ -1473,7 +1473,7 @@ function ManualReviewBanner({
             </p>
           )}
           {etaLabel && (
-            <p style={{ fontSize: '13px', color: tone.text, margin: '8px 0 0', opacity: 0.7 }}>{etaLabel}</p>
+            <p style={{ fontSize: '15px', color: tone.text, margin: '8px 0 0', opacity: 0.7 }}>{etaLabel}</p>
           )}
         </div>
       </div>

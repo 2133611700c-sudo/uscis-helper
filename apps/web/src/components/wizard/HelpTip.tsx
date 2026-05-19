@@ -31,7 +31,7 @@ export function HelpTip({ id, content, className = '' }: HelpTipProps) {
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center justify-center rounded-full text-[11px] font-bold leading-none transition-all"
+        className="inline-flex items-center justify-center rounded-full text-sm font-bold leading-none transition-all"
         style={{
           width: '18px',
           height: '18px',
@@ -53,7 +53,7 @@ export function HelpTip({ id, content, className = '' }: HelpTipProps) {
         <span
           id={id}
           role="note"
-          className="block rounded-[10px] text-[12px] leading-relaxed"
+          className="block rounded-[10px] text-sm leading-relaxed"
           style={{
             background: 'var(--info-bg, #eff6ff)',
             border: '1px solid var(--info-border, #bfdbfe)',

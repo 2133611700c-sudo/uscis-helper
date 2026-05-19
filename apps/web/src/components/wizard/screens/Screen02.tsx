@@ -81,7 +81,7 @@ export function Screen02() {
         <p className="text-[15px]" style={{ color: 'var(--text-2)' }}>
           {t.subtitle}
         </p>
-        <p className="text-[13px] font-semibold mt-1" style={{ color: 'var(--info-text)' }}>
+        <p className="text-sm font-semibold mt-1" style={{ color: 'var(--info-text)' }}>
           {t.perPerson}
         </p>
       </div>
@@ -133,12 +133,12 @@ export function Screen02() {
                   {label}
                 </p>
                 {save && (
-                  <p className="text-[12px] font-bold mt-0.5" style={{ color: 'var(--success-text)' }}>
+                  <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--success-text)' }}>
                     ✓ {save}
                   </p>
                 )}
                 {sub && (
-                  <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-3)' }}>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--text-3)' }}>
                     {sub}
                   </p>
                 )}
@@ -165,7 +165,7 @@ export function Screen02() {
               <p className="text-[14px] font-semibold" style={{ color: 'var(--text-1)' }}>
                 {t.peopleLabel(packageSize)}
               </p>
-              <p className="text-[12px] font-bold" style={{ color: 'var(--success-text)' }}>
+              <p className="text-sm font-bold" style={{ color: 'var(--success-text)' }}>
                 ✓ {t.saveLabel(packageSize)}
               </p>
             </div>
@@ -198,7 +198,7 @@ export function Screen02() {
           <button
             type="button"
             onClick={handleMore}
-            className="w-full rounded-[12px] text-[13px] font-medium py-3 transition-all"
+            className="w-full rounded-[12px] text-sm font-medium py-3 transition-all"
             style={{
               background: 'var(--surface-2)',
               border: '1px dashed var(--border-strong)',
@@ -215,7 +215,7 @@ export function Screen02() {
         <button
           type="button"
           onClick={() => setWhyOpen((o) => !o)}
-          className="inline-flex items-center gap-1.5 rounded-full text-[12px] font-medium px-2.5 py-1.5 transition-all"
+          className="inline-flex items-center gap-1.5 rounded-full text-sm font-medium px-2.5 py-1.5 transition-all"
           style={{
             background: 'var(--info-bg)',
             border: '1px solid var(--info-border)',
@@ -227,7 +227,7 @@ export function Screen02() {
         </button>
         {whyOpen && (
           <div
-            className="mt-2 rounded-[10px] p-3 text-[13px] leading-relaxed"
+            className="mt-2 rounded-[10px] p-3 text-sm leading-relaxed"
             style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)', color: 'var(--info-text)' }}
           >
             {t.whyAnswer}

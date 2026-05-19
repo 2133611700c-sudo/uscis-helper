@@ -69,7 +69,7 @@ export default async function CheckoutSuccessPage({ params }: Props) {
         <p style={{ fontSize: '15px', color: 'var(--text-2)', lineHeight: 1.5, marginBottom: '12px' }}>
           {t.body}
         </p>
-        <p style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.5, marginBottom: '24px' }}>
+        <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.5, marginBottom: '24px' }}>
           {t.note}
         </p>
         <a

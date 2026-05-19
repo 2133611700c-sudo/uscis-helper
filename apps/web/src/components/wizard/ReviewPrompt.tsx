@@ -126,10 +126,10 @@ export function ReviewPrompt({ locale, sessionId, serviceSlug = 're-parole-u4u' 
         className="px-4 py-3"
         style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}
       >
-        <p className="text-[13px] font-semibold" style={{ color: 'var(--text-1)' }}>
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>
           {t.heading}
         </p>
-        <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-2)' }}>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-2)' }}>
           {t.subheading}
         </p>
       </div>
@@ -159,7 +159,7 @@ export function ReviewPrompt({ locale, sessionId, serviceSlug = 're-parole-u4u' 
         {/* Star label */}
         {displayRating > 0 && (
           <p
-            className="text-center text-[12px] font-semibold"
+            className="text-center text-sm font-semibold"
             style={{ color: 'var(--primary)', minHeight: '18px' }}
           >
             {t.stars[displayRating - 1]}
@@ -174,7 +174,7 @@ export function ReviewPrompt({ locale, sessionId, serviceSlug = 're-parole-u4u' 
             placeholder={t.commentPlaceholder}
             rows={3}
             maxLength={500}
-            className="w-full rounded-[10px] text-[13px] resize-none"
+            className="w-full rounded-[10px] text-sm resize-none"
             style={{
               background: 'var(--surface-2)',
               color: 'var(--text-1)',
@@ -191,7 +191,7 @@ export function ReviewPrompt({ locale, sessionId, serviceSlug = 're-parole-u4u' 
           <button
             type="button"
             onClick={() => setStatus('skipped')}
-            className="flex-1 rounded-[8px] text-[13px] font-medium py-2 transition-all"
+            className="flex-1 rounded-[8px] text-sm font-medium py-2 transition-all"
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -204,7 +204,7 @@ export function ReviewPrompt({ locale, sessionId, serviceSlug = 're-parole-u4u' 
             type="button"
             onClick={handleSubmit}
             disabled={selected === 0 || status === 'submitting'}
-            className="flex-1 rounded-[8px] text-[13px] font-bold py-2 transition-all"
+            className="flex-1 rounded-[8px] text-sm font-bold py-2 transition-all"
             style={{
               background: selected > 0 ? 'var(--primary)' : 'var(--border-strong)',
               color: selected > 0 ? '#fff' : 'var(--text-3)',

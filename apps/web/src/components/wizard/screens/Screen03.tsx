@@ -92,7 +92,7 @@ export function Screen03() {
               <span className="text-[14px] font-semibold" style={{ color: 'var(--text-1)' }}>
                 {i === 0 ? t.mainApplicant : t.memberLabel(i + 1)}
               </span>
-              <span className="text-[12px]" style={{ color: 'var(--text-3)' }}>
+              <span className="text-sm" style={{ color: 'var(--text-3)' }}>
                 {t.packetLabel(i + 1)}
               </span>
             </div>
@@ -138,14 +138,14 @@ export function Screen03() {
           {t.addPerson}
         </button>
       ) : (
-        <p className="text-[13px] text-center" style={{ color: 'var(--text-3)' }}>
+        <p className="text-sm text-center" style={{ color: 'var(--text-3)' }}>
           {t.tooMany}
         </p>
       )}
 
       {/* Info note */}
       <div
-        className="rounded-[12px] p-3.5 text-[13px] leading-relaxed"
+        className="rounded-[12px] p-3.5 text-sm leading-relaxed"
         style={{ background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
       >
         {t.saveNote}{' '}
