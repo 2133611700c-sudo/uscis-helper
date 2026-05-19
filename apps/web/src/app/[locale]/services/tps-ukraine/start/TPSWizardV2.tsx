@@ -474,7 +474,7 @@ const T = {
     s6Download: '⬇ Download packet (ZIP)',
     s6InstrTitle: '📌 How to file with USCIS',
     s6TranslateNote:
-      'If your documents are not in English (passport, birth certificate) — they need a certified translation.',
+      'If your documents are not in English (passport, birth certificate) — they need an English translation with the translator\'s certification statement (per USCIS requirements).',
     s6TranslateLink: 'Order a translation on Messenginfo →',
     s6Disclaimer:
       'Messenginfo does not file on your behalf. We are not a law firm. We do not guarantee USCIS acceptance. Verify dates at ',
