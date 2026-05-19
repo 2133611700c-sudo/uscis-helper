@@ -19,6 +19,7 @@ import { NextResponse } from 'next/server'
 import { PINNED_HASHES } from '@/lib/tps/formIntegrity'
 import { SNAPSHOT_DATE } from '@/lib/tps/filingGuidance'
 import { TPS_FORMS } from '@/lib/services/tps/config'
+import { isBrainEnabled } from '@/lib/tps/ai/documentBrain'
 
 // Pulled from the single source at lib/services/tps/config.ts. The only
 // constant local to this module is I-131 — it belongs to the Re-Parole
@@ -48,12 +49,27 @@ export async function GET() {
       process.env.GOOGLE_VISION,
   )
 
+  // ── AI Brain diagnostics ───────────────────────────────────────────────
+  // Booleans only. Never echo the keys themselves. These let the operator
+  // see at a glance whether the DeepSeek fallback can actually run on this
+  // deploy without leaking any secret material.
+  const deepseekConfigured = Boolean(process.env.DEEPSEEK_API_KEY)
+  const tpsAiBrainEnabled = isBrainEnabled()
+  const brainReady = tpsAiBrainEnabled && deepseekConfigured
+  const brainMisconfigured = tpsAiBrainEnabled && !deepseekConfigured
+
   return NextResponse.json(
     {
       ok: true,
       service: 'messenginfo-uscis-helper',
       sha,
       build_time: BUILD_TIME,
+      // ── AI extraction readiness ─────────────────────────────────────
+      google_vision_configured: ocrConfigured,
+      deepseek_configured: deepseekConfigured,
+      tps_ai_brain_enabled: tpsAiBrainEnabled,
+      brain_ready: brainReady,
+      brain_misconfigured: brainMisconfigured,
       forms: {
         i821: {
           edition: FORM_META.i821.edition,

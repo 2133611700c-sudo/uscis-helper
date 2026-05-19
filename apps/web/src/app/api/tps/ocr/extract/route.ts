@@ -296,6 +296,23 @@ export async function POST(req: NextRequest) {
     } as TpsModuleResult
   }
 
+  // ── Top-level diagnostics so the wizard, monitors, and audit scripts
+  // can see at a glance what happened to extraction without parsing the
+  // nested brain object. No PII surfaced — counts and codes only.
+  const finalFieldKeys = mergedModule
+    ? Array.from(new Set(mergedModule.fields.map((f) => f.field))).sort()
+    : []
+  const finalFieldCount = finalFieldKeys.length
+  const brainStatus: 'off' | 'skipped' | 'ran' | 'error' = !isBrainEnabled()
+    ? 'off'
+    : !shouldTryBrain
+      ? 'skipped'
+      : brainResult?.ok
+        ? 'ran'
+        : 'error'
+  const brainErrorCode = brainResult && !brainResult.ok ? brainResult.error_code : null
+  const brainAddedCount = brainFields.length
+
   // ── Successful OCR. Build a response with just what downstream agents
   //    need; we do NOT include the raw API response (could leak provider
   //    internals or echoed key).
@@ -306,9 +323,16 @@ export async function POST(req: NextRequest) {
       doc_type_hint: docTypeHint || null,
       document_id,
       raw_text: result.raw_text,
+      vision_text_length: result.raw_text.length,
       page_count: result.pages.length,
       word_count: result.words.length,
       line_count: result.lines.length,
+      // Flat extraction diagnostics — auditable at a glance.
+      brain_status: brainStatus,
+      brain_error_code: brainErrorCode,
+      brain_added_count: brainAddedCount,
+      final_field_count: finalFieldCount,
+      final_field_keys: finalFieldKeys,
       pages: result.pages.map((p) => ({
         page: p.page,
         width: p.width,
