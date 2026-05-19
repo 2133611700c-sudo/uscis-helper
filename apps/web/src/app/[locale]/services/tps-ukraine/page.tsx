@@ -636,36 +636,10 @@ export default async function TpsUkraineLandingPage({ params }: Props) {
         </p>
       </section>
 
-      {/* ── Trust cards 2×2 ──────────────────────────────────────── */}
-      <section style={{ padding: '16px 20px 0' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '10px',
-          }}
-        >
-          {t.trustCards.map((card) => (
-            <div
-              key={card.title}
-              style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: '12px',
-                padding: '14px 12px',
-              }}
-            >
-              <div style={{ fontSize: '22px', marginBottom: '6px', lineHeight: 1 }}>{card.icon}</div>
-              <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '4px' }}>
-                {card.title}
-              </p>
-              <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.4 }}>
-                {card.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Trust-cards 2×2 grid removed (per product decision):
+          the 4 cards (🔒/📋/✅/🇺🇸) were visual noise without information.
+          Underlying trustCards data in locale dicts is kept for now in case
+          we need it for another surface; only the rendered block is gone. */}
 
       {/* ── How it works ──────────────────────────────────────── */}
       <section style={{ padding: '16px 20px 0' }}>
@@ -733,11 +707,9 @@ export default async function TpsUkraineLandingPage({ params }: Props) {
             overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '8px 14px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-              {t.priceTitle}
-            </p>
-          </div>
+          {/* «Стоимость подготовки / Preparation pricing» heading removed
+              (per product decision): visually noisy section header, the table
+              of rows below speaks for itself. */}
 
           <div style={{ borderBottom: '1px solid var(--border)' }}>
             <div style={{ padding: '12px 14px 8px' }}>
