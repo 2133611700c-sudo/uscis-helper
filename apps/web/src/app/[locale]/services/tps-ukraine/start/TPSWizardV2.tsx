@@ -818,7 +818,7 @@ function Tip({ text }: { text: string }) {
         borderRadius: '50%',
         background: '#ddd',
         color: '#666',
-        fontSize: 10,
+        fontSize: 13,
         fontWeight: 800,
         alignItems: 'center',
         justifyContent: 'center',
@@ -859,7 +859,7 @@ function OptionPair({
               cursor: 'pointer',
               textAlign: 'center',
               transition: '.15s',
-              fontSize: 15,
+              fontSize: 18,
               fontWeight: 700,
               fontFamily: 'inherit',
             }}
@@ -868,7 +868,7 @@ function OptionPair({
             <small
               style={{
                 display: 'block',
-                fontSize: 11,
+                fontSize: 14,
                 fontWeight: 400,
                 marginTop: 3,
                 opacity: 0.7,
@@ -922,17 +922,17 @@ function UploadDrop({
         opacity: uploading ? 0.7 : 1,
       }}
     >
-      <div style={{ fontSize: 28, marginBottom: 4 }}>{doc.ic}</div>
+      <div style={{ fontSize: 40, marginBottom: 4 }}>{doc.ic}</div>
       <div
         style={{
-          fontSize: 14,
+          fontSize: 17,
           fontWeight: 700,
           color: ok ? GREEN : err ? '#a33' : TEXT_PRIMARY,
         }}
       >
         {doc.lb} {ok && uploadedSuffix} {uploading && '⏳'}
       </div>
-      <div style={{ fontSize: 11, color: TEXT_HINT, marginTop: 3 }}>
+      <div style={{ fontSize: 14, color: TEXT_HINT, marginTop: 3 }}>
         {err ? entry?.errorMsg : doc.ht}
       </div>
       <input
@@ -973,18 +973,18 @@ function RW({
       }}
     >
       <div>
-        <div style={{ fontSize: 12, color: TEXT_MUTED }}>{label}</div>
-        <div style={{ fontSize: 10, color: '#bbb' }}>{source}</div>
+        <div style={{ fontSize: 15, color: TEXT_MUTED }}>{label}</div>
+        <div style={{ fontSize: 13, color: '#bbb' }}>{source}</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, textAlign: 'right' }}>{value}</div>
+        <div style={{ fontSize: 17, fontWeight: 700, textAlign: 'right' }}>{value}</div>
         <button
           type="button"
           onClick={onEdit}
           style={{
             background: 'none',
             border: 'none',
-            fontSize: 11,
+            fontSize: 14,
             color: GREEN,
             cursor: 'pointer',
             marginLeft: 8,
@@ -1014,7 +1014,7 @@ function FieldInput({
 }) {
   return (
     <div style={{ marginBottom: 2 }}>
-      <div style={{ fontSize: 12, color: TEXT_MUTED }}>
+      <div style={{ fontSize: 15, color: TEXT_MUTED }}>
         {label} <Tip text={tip} />
       </div>
       <input
@@ -1026,7 +1026,7 @@ function FieldInput({
           padding: '10px 12px',
           border: `1.5px solid ${BORDER}`,
           borderRadius: 10,
-          fontSize: 14,
+          fontSize: 17,
           margin: '4px 0 10px',
           fontFamily: 'inherit',
         }}
@@ -1050,7 +1050,7 @@ function SingleSelect({
 }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 12, color: TEXT_MUTED }}>
+      <div style={{ fontSize: 15, color: TEXT_MUTED }}>
         {label} <Tip text={tip} />
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '6px 0 12px' }}>
@@ -1066,7 +1066,7 @@ function SingleSelect({
                 border: `1.5px solid ${active ? GREEN : BORDER}`,
                 borderRadius: 8,
                 cursor: 'pointer',
-                fontSize: 13,
+                fontSize: 16,
                 fontWeight: 600,
                 background: active ? GREEN : CARD_BG,
                 color: active ? '#fff' : TEXT_PRIMARY,
@@ -1094,7 +1094,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
         boxShadow: '0 1px 4px rgba(0,0,0,.05)',
       }}
     >
-      <div style={{ fontSize: 15, fontWeight: 800, color: GREEN, marginBottom: 10 }}>{title}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: GREEN, marginBottom: 10 }}>{title}</div>
       {children}
     </div>
   )
@@ -1141,7 +1141,7 @@ function navBtn(forward: boolean): React.CSSProperties {
     padding: 16,
     border: 'none',
     borderRadius: 14,
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: 800,
     cursor: 'pointer',
     textAlign: 'center',
@@ -1270,11 +1270,30 @@ export default function TPSWizardV2({ locale }: Props) {
         const r = await fetch('/api/tps/ocr/extract', { method: 'POST', body: fd })
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         const json = await r.json()
+        // The OCR endpoint returns parsed fields under `module.fields[]`
+        // (TpsExtractedField shape: `{ field, normalized_value, raw_value }`),
+        // NOT under a top-level `fields[]` array — that was a wiring bug.
+        // We also accept legacy shapes (`json.fields` with `{name, value}`)
+        // so any backward-compat tooling keeps working.
         const fields: Record<string, string> = {}
-        const arr = Array.isArray(json?.fields) ? json.fields : []
-        for (const f of arr) {
-          if (f && typeof f.name === 'string' && typeof f.value === 'string') {
-            fields[f.name] = f.value
+        const modFields = Array.isArray(json?.module?.fields) ? json.module.fields : []
+        for (const f of modFields) {
+          if (f && typeof f.field === 'string') {
+            const v =
+              typeof f.normalized_value === 'string' && f.normalized_value
+                ? f.normalized_value
+                : typeof f.raw_value === 'string'
+                  ? f.raw_value
+                  : ''
+            if (v) fields[f.field] = v
+          }
+        }
+        // Backwards-compat: older shape `{ fields: [{ name, value }] }`.
+        if (Object.keys(fields).length === 0 && Array.isArray(json?.fields)) {
+          for (const f of json.fields) {
+            if (f && typeof f.name === 'string' && typeof f.value === 'string') {
+              fields[f.name] = f.value
+            }
           }
         }
         setData((d) => ({
@@ -1380,17 +1399,17 @@ export default function TPSWizardV2({ locale }: Props) {
       style={{
         background: PAGE_BG,
         color: TEXT_PRIMARY,
-        fontSize: 14,
+        fontSize: 17,
         lineHeight: 1.6,
         minHeight: '100vh',
         fontFamily:
           '-apple-system,"Segoe UI",Roboto,Inter,sans-serif',
       }}
     >
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 16px' }}>
         <h1
           style={{
-            fontSize: 22,
+            fontSize: 28,
             fontWeight: 800,
             textAlign: 'center',
             color: GREEN,
@@ -1400,7 +1419,7 @@ export default function TPSWizardV2({ locale }: Props) {
           {t.h1}
         </h1>
         <p
-          style={{ textAlign: 'center', fontSize: 12, color: TEXT_SECONDARY, marginBottom: 20 }}
+          style={{ textAlign: 'center', fontSize: 15, color: TEXT_SECONDARY, marginBottom: 20 }}
         >
           {t.sub}
         </p>
@@ -1424,9 +1443,9 @@ export default function TPSWizardV2({ locale }: Props) {
         {/* STEP 1 — type */}
         {step === 1 && (
           <section>
-            <div style={{ fontSize: 11, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(1)}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 3 }}>{t.s1q}</div>
-            <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 16 }}>{t.s1h}</div>
+            <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(1)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s1q}</div>
+            <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s1h}</div>
             <OptionPair
               value={data.type}
               onPick={(id) => {
@@ -1444,9 +1463,9 @@ export default function TPSWizardV2({ locale }: Props) {
         {/* STEP 2 — method */}
         {step === 2 && (
           <section>
-            <div style={{ fontSize: 11, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(2)}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 3 }}>{t.s2q}</div>
-            <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 16 }}>{t.s2h}</div>
+            <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(2)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s2q}</div>
+            <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s2h}</div>
             <OptionPair
               value={data.method}
               onPick={(id) => {
@@ -1465,7 +1484,7 @@ export default function TPSWizardV2({ locale }: Props) {
                   border: `1.5px solid ${WARN_BORDER}`,
                   borderRadius: 12,
                   padding: 12,
-                  fontSize: 12,
+                  fontSize: 15,
                   color: WARN_TEXT,
                   marginBottom: 12,
                 }}
@@ -1480,9 +1499,9 @@ export default function TPSWizardV2({ locale }: Props) {
         {/* STEP 3 — EAD */}
         {step === 3 && (
           <section>
-            <div style={{ fontSize: 11, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(3)}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 3 }}>{t.s3q}</div>
-            <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 16 }}>{t.s3h}</div>
+            <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(3)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s3q}</div>
+            <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s3h}</div>
             <OptionPair
               value={data.ead}
               onPick={(id) => {
@@ -1501,9 +1520,9 @@ export default function TPSWizardV2({ locale }: Props) {
         {/* STEP 4 — uploads */}
         {step === 4 && (
           <section>
-            <div style={{ fontSize: 11, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(4)}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 3 }}>{t.s4q}</div>
-            <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 16 }}>{t.s4h}</div>
+            <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(4)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s4q}</div>
+            <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s4h}</div>
 
             {docs.map((d) => (
               <UploadDrop
@@ -1529,9 +1548,9 @@ export default function TPSWizardV2({ locale }: Props) {
         {/* STEP 5 — review */}
         {step === 5 && (
           <section>
-            <div style={{ fontSize: 11, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(5)}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 3 }}>{t.s5q}</div>
-            <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 16 }}>{t.s5h}</div>
+            <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(5)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s5q}</div>
+            <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s5h}</div>
 
             <Card title={t.s5OcrTitle}>
               <ReviewOcr t={t} type={data.type} ead={data.ead} mergedOcr={mergedOcr} />
@@ -1561,8 +1580,8 @@ export default function TPSWizardV2({ locale }: Props) {
         {/* STEP 6 — result */}
         {step === 6 && (
           <section>
-            <div style={{ fontSize: 11, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(6)}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>{t.s6q}</div>
+            <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(6)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>{t.s6q}</div>
 
             <Card title={t.s6PkgTitle}>
               <PackageList t={t} type={data.type} ead={data.ead} method={data.method} />
@@ -1614,7 +1633,7 @@ export default function TPSWizardV2({ locale }: Props) {
                 style={{
                   background: PAY_BLUE,
                   color: '#fff',
-                  fontSize: 17,
+                  fontSize: 20,
                   padding: 18,
                   borderRadius: 14,
                   border: 'none',
@@ -1640,7 +1659,7 @@ export default function TPSWizardV2({ locale }: Props) {
                 style={{
                   background: GREEN,
                   color: '#fff',
-                  fontSize: 17,
+                  fontSize: 20,
                   padding: 18,
                   borderRadius: 14,
                   border: 'none',
@@ -1669,7 +1688,7 @@ export default function TPSWizardV2({ locale }: Props) {
                   border: '1.5px solid #d33',
                   borderRadius: 12,
                   padding: 12,
-                  fontSize: 12,
+                  fontSize: 15,
                   color: '#a33',
                   marginBottom: 12,
                 }}
@@ -1688,7 +1707,7 @@ export default function TPSWizardV2({ locale }: Props) {
             <div
               style={{
                 textAlign: 'center',
-                fontSize: 11,
+                fontSize: 14,
                 color: TEXT_HINT,
                 marginTop: 14,
                 padding: 12,
@@ -1720,7 +1739,7 @@ export default function TPSWizardV2({ locale }: Props) {
           style={{
             textAlign: 'center',
             marginTop: 16,
-            fontSize: 10,
+            fontSize: 13,
             color: TEXT_FAINT,
           }}
         >
@@ -1760,7 +1779,7 @@ function NoPassportBlock({ t }: { t: (typeof T)[LocaleKey] }) {
         style={{
           background: 'none',
           border: 'none',
-          fontSize: 12,
+          fontSize: 15,
           color: GREEN,
           cursor: 'pointer',
           textDecoration: 'underline',
@@ -1777,7 +1796,7 @@ function NoPassportBlock({ t }: { t: (typeof T)[LocaleKey] }) {
             border: `1.5px solid ${INFO_BORDER}`,
             borderRadius: 12,
             padding: 12,
-            fontSize: 12,
+            fontSize: 15,
             color: INFO_TEXT,
             marginTop: 8,
           }}
@@ -1935,13 +1954,13 @@ function ReviewManual({
           }}
         >
           <div>
-            <div style={{ fontSize: 12, color: TEXT_MUTED }}>
+            <div style={{ fontSize: 15, color: TEXT_MUTED }}>
               {t.label.ead_category}{' '}
               <Tip text={init ? t.tip.eadInit : t.tip.eadRereg} />
             </div>
-            <div style={{ fontSize: 10, color: '#bbb' }}>{t.tip.eadAuto}</div>
+            <div style={{ fontSize: 13, color: '#bbb' }}>{t.tip.eadAuto}</div>
           </div>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>{init ? 'C19' : 'A12'}</div>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>{init ? 'C19' : 'A12'}</div>
         </div>
       )}
     </>
@@ -1975,7 +1994,7 @@ function PackageList({
           style={{
             padding: '6px 0 6px 26px',
             position: 'relative',
-            fontSize: 14,
+            fontSize: 17,
           }}
         >
           <span
@@ -1984,7 +2003,7 @@ function PackageList({
               left: 0,
               color: GREEN,
               fontWeight: 800,
-              fontSize: 15,
+              fontSize: 18,
             }}
           >
             ✓
@@ -2033,7 +2052,7 @@ function InstructionsCard({
         boxShadow: '0 1px 4px rgba(0,0,0,.05)',
       }}
     >
-      <div style={{ fontSize: 15, fontWeight: 800, color: GREEN, marginBottom: 10 }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color: GREEN, marginBottom: 10 }}>
         {t.s6InstrTitle}
       </div>
       <ul style={{ listStyle: 'none', padding: 0 }}>
@@ -2045,7 +2064,7 @@ function InstructionsCard({
               style={{
                 padding: '6px 0 6px 26px',
                 position: 'relative',
-                fontSize: 14,
+                fontSize: 17,
               }}
               dangerouslySetInnerHTML={{
                 __html: `<span style="position:absolute;left:0;color:${GREEN};font-weight:800;font-size:15px">✓</span>${html}`,
@@ -2061,7 +2080,7 @@ function InstructionsCard({
             border: `1.5px solid ${INFO_BORDER}`,
             borderRadius: 12,
             padding: 12,
-            fontSize: 12,
+            fontSize: 15,
             color: INFO_TEXT,
             marginTop: 12,
           }}
