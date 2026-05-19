@@ -21,7 +21,7 @@
  */
 
 import type { Metadata } from 'next'
-import TPSWizard from './TPSWizard'
+import TPSWizard from './TPSWizardV2'
 
 interface Props {
   params: Promise<{ locale: string }>
