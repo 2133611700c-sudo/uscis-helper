@@ -60,9 +60,9 @@
     "button": "Verificar estado",
     "errorInvalid": "Introduzca un número de recibo válido (p. ej. IOE1234567890 o EAC1234567890).",
     "privacyNote": "Su número de recibo se valida localmente y nunca se envía a nuestros servidores.",
-    "subtitle": "Ingrese su número de recibo de 13 caracteres. No lo almacenamos.",
-    "buttonLabel": "Abrir USCIS",
-    "disclaimer": "No almacenamos su número de recibo. Al enviar se abre la página oficial de estado de caso de USCIS en una nueva pestaña."
+    "subtitle": "No procesamos datos de estado — lo hace el portal oficial de USCIS. Toque para abrirlo.",
+    "buttonLabel": "Abrir USCIS Case Status",
+    "disclaimer": "Messenginfo no maneja números de recibo ni datos de estado. El botón arriba abre el portal oficial de USCIS en una nueva pestaña."
   },
   "officialSources": {
     "title": "Fuentes oficiales",

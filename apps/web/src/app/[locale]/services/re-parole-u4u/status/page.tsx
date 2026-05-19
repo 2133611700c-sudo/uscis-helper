@@ -426,66 +426,36 @@ export default async function StatusPage({ params }: Props) {
         </p>
       </section>
 
-      {/* ── Receipt number form (client-side JS via form action) ─ */}
+      {/* ── Link to official USCIS Case Status (no form, no input) ─ */}
+      {/* Messenginfo does not process receipt numbers. We send the user
+          directly to the official USCIS portal where they enter the number. */}
       <section style={{ padding: '20px 20px 0' }}>
-        <form
-          method="get"
-          action="https://egov.uscis.gov/casestatus/landing.do"
+        <a
+          href="https://egov.uscis.gov/"
           target="_blank"
           rel="noopener noreferrer"
+          style={{
+            display: 'block',
+            width: '100%',
+            fontSize: '15px',
+            fontWeight: 700,
+            padding: '14px',
+            minHeight: '52px',
+            borderRadius: '10px',
+            border: 'none',
+            background: 'var(--btn-action)',
+            color: 'var(--btn-action-text)',
+            textAlign: 'center',
+            textDecoration: 'none',
+            boxSizing: 'border-box',
+            lineHeight: '24px',
+          }}
         >
-          <label
-            htmlFor="receipt"
-            style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-1)', marginBottom: '6px' }}
-          >
-            {t.receiptLabel}
-          </label>
-          <input
-            id="receipt"
-            name="appReceiptNum"
-            type="text"
-            placeholder={t.receiptPlaceholder}
-            autoCapitalize="characters"
-            spellCheck={false}
-            style={{
-              display: 'block',
-              width: '100%',
-              fontSize: '18px',
-              fontWeight: 700,
-              fontFamily: 'monospace',
-              letterSpacing: '0.05em',
-              padding: '12px 14px',
-              borderRadius: '10px',
-              border: '1.5px solid var(--border-strong)',
-              background: 'var(--surface-2)',
-              color: 'var(--text-1)',
-              marginBottom: '8px',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-          <p style={{ fontSize: '12px', color: 'var(--text-3)', marginBottom: '14px', lineHeight: 1.45 }}>
-            {t.receiptHelp}
-          </p>
-          <button
-            type="submit"
-            style={{
-              display: 'block',
-              width: '100%',
-              fontSize: '15px',
-              fontWeight: 700,
-              padding: '14px',
-              minHeight: '52px',
-              borderRadius: '10px',
-              border: 'none',
-              background: 'var(--btn-action)',
-              color: 'var(--btn-action-text)',
-              cursor: 'pointer',
-            }}
-          >
-            {t.checkBtn}
-          </button>
-        </form>
+          {t.checkBtn}
+        </a>
+        <p style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: '8px', lineHeight: 1.45 }}>
+          {t.receiptHelp}
+        </p>
       </section>
 
       {/* ── Status decoder ─────────────────────────────────────── */}

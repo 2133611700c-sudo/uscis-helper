@@ -60,9 +60,9 @@
     "button": "Check Status",
     "errorInvalid": "Please enter a valid receipt number (e.g. IOE1234567890 or EAC1234567890).",
     "privacyNote": "Your receipt number is validated locally and never sent to our servers.",
-    "subtitle": "Enter your 13-character receipt number. We don't store it.",
-    "buttonLabel": "Open USCIS",
-    "disclaimer": "We don't store your receipt number. Submitting opens the official USCIS Case Status page in a new tab."
+    "subtitle": "We don't process case status data — that's done on the official USCIS portal. Tap to open it.",
+    "buttonLabel": "Open USCIS Case Status",
+    "disclaimer": "Messenginfo does not handle receipt numbers or status data. The button above opens the official USCIS Case Status page in a new tab."
   },
   "officialSources": {
     "title": "Official sources",
