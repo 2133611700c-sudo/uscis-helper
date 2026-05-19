@@ -6,9 +6,14 @@ export const stripe = secretKey
   ? new Stripe(secretKey, { apiVersion: '2026-04-22.dahlia' })
   : null
 
+// TPS Ukraine Tier 1: $15 one-time. The live Price ID is public (it appears in
+// the Stripe Checkout URL); the actual secret is STRIPE_SECRET_KEY, which stays
+// in env. Set STRIPE_PRICE_ID_TPS_TIER1 in env to override the default.
+const TPS_TIER1_DEFAULT = 'price_1TYvxFLQzhPNaqEsqmFrydKh'
+
 export const STRIPE_PRICES = {
   reparoleU4UTier1:      process.env.STRIPE_PRICE_ID_REPAROLE_TIER1 ?? '',
-  tpsTier1:              process.env.STRIPE_PRICE_ID_TPS_TIER1 ?? '',
+  tpsTier1:              process.env.STRIPE_PRICE_ID_TPS_TIER1 ?? TPS_TIER1_DEFAULT,
   translationBasic:      process.env.STRIPE_PRICE_ID_TRANSLATION_BASIC ?? '',
   translationPlus:       process.env.STRIPE_PRICE_ID_TRANSLATION_PLUS ?? '',
   translationPremium:    process.env.STRIPE_PRICE_ID_TRANSLATION_PREMIUM ?? '',
