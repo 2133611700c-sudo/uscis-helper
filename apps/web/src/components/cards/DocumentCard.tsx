@@ -38,10 +38,10 @@ export function DocumentCard({ card, locale, className }: DocumentCardProps) {
         <Icon className="w-4 h-4 text-brand-600" />
       </div>
       <div>
-        <p className="text-sm font-medium text-ink-900 group-hover:text-brand-600 transition-colors">
+        <p className="text-base font-semibold text-ink-900 group-hover:text-brand-600 transition-colors">
           {itemData.title}
         </p>
-        <p className="mt-0.5 text-xs text-ink-500 line-clamp-2">{itemData.description}</p>
+        <p className="mt-1 text-sm text-ink-600 line-clamp-2">{itemData.description}</p>
       </div>
     </Link>
   )

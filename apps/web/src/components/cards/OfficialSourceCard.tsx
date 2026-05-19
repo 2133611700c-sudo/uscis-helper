@@ -30,11 +30,11 @@ export function OfficialSourceCard({ source, className }: OfficialSourceCardProp
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-ink-900 group-hover:text-brand-600 transition-colors flex items-center gap-1">
+        <p className="text-base font-semibold text-ink-900 group-hover:text-brand-600 transition-colors flex items-center gap-1">
           {itemData.name}
-          <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
+          <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-50" />
         </p>
-        <p className="mt-0.5 text-xs text-ink-500 leading-relaxed">{itemData.description}</p>
+        <p className="mt-1 text-sm text-ink-600 leading-relaxed">{itemData.description}</p>
       </div>
     </a>
   )
