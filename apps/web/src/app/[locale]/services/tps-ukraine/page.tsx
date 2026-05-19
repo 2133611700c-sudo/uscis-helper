@@ -27,7 +27,9 @@
  */
 
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { ServiceBackBar } from '@/components/layout/ServiceBackBar'
+import { HelpPopover } from '@/components/ui/HelpPopover'
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -437,28 +439,31 @@ export default async function TpsUkraineLandingPage({ params }: Props) {
     <main style={{ minHeight: '100dvh', background: 'var(--background)', padding: '0 0 48px' }}>
       <ServiceBackBar locale={locale} />
 
-      {/* ── Regulatory Alert Banner ───────────────────────────────── */}
-      {/* Source: USCIS_RULE_SNAPSHOT_2026-05-12 (H.R.1 EAD cap + signature rule) */}
+      {/* ── Regulatory Alert — collapsed into a HelpPopover ───────────
+          Previously a full-width amber banner with title + body + link.
+          That block dominated the top of the page and competed with the
+          Hero. Now it is a small amber pill button with a `?` icon; the
+          full text is one tap away (USCIS-style modal). Source kept in
+          locale dicts (alertTitle / alertBody / alertLink). */}
       <section
         data-testid="tps-regulatory-alert"
-        style={{
-          background: 'var(--warning-bg, #fef3c7)',
-          borderBottom: '2px solid var(--warning-border, #f59e0b)',
-          padding: '12px 20px',
-        }}
+        className="px-5 pt-4"
       >
-        <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--warning-text, #92400e)', marginBottom: '4px' }}>
-          {t.alertTitle}
-        </p>
-        <p style={{ fontSize: '15px', color: 'var(--warning-text, #92400e)', lineHeight: 1.45, marginBottom: '6px' }}>
-          {t.alertBody}
-        </p>
-        <a
-          href={`/${locale}/services/tps-ukraine/sources`}
-          style={{ fontSize: '15px', fontWeight: 700, color: 'var(--warning-text, #92400e)', textDecoration: 'underline' }}
+        <HelpPopover
+          triggerLabel={t.alertTitle}
+          title={t.alertTitle}
+          triggerContent={<span className="whitespace-nowrap">{t.alertTitle}</span>}
         >
-          {t.alertLink}
-        </a>
+          <p>{t.alertBody}</p>
+          <p>
+            <Link
+              href={`/${locale}/services/tps-ukraine/sources`}
+              className="font-semibold text-brand-700 hover:text-brand-800 underline underline-offset-4"
+            >
+              {t.alertLink}
+            </Link>
+          </p>
+        </HelpPopover>
       </section>
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
