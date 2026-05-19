@@ -199,7 +199,7 @@ export function Screen08() {
                   <p className="text-[14px] font-semibold mb-1" style={{ color: isSelected ? 'var(--primary)' : 'var(--text-1)' }}>
                     {opt.title}
                   </p>
-                  <p className="text-[13px]" style={{ color: 'var(--text-2)' }}>{opt.description}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-2)' }}>{opt.description}</p>
                 </div>
               </div>
             </button>
@@ -212,10 +212,10 @@ export function Screen08() {
         className="rounded-[12px] p-3.5 space-y-2"
         style={{ background: 'var(--info-bg)', border: '1px solid var(--info-border)' }}
       >
-        <p className="text-[12px] font-semibold" style={{ color: 'var(--info-text)' }}>
+        <p className="text-sm font-semibold" style={{ color: 'var(--info-text)' }}>
           {t.calloutTitle}
         </p>
-        <div className="text-[12px] space-y-1" style={{ color: 'var(--info-text)' }}>
+        <div className="text-sm space-y-1" style={{ color: 'var(--info-text)' }}>
           {t.calloutItems.map((item, i) => (
             <p key={i} dangerouslySetInnerHTML={{ __html: item }} />
           ))}
@@ -227,7 +227,7 @@ export function Screen08() {
         className="rounded-[12px] p-3.5"
         style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}
       >
-        <p className="text-[12px]" style={{ color: 'var(--warning-text)' }}>
+        <p className="text-sm" style={{ color: 'var(--warning-text)' }}>
           {t.mailingWarning}{' '}
           <a
             href="https://www.uscis.gov/i-131-addresses"
@@ -247,10 +247,10 @@ export function Screen08() {
           className="rounded-[12px] p-3.5"
           style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)' }}
         >
-          <p className="text-[13px] font-semibold mb-1" style={{ color: 'var(--success-text)' }}>
+          <p className="text-sm font-semibold mb-1" style={{ color: 'var(--success-text)' }}>
             {t.i912Title}
           </p>
-          <p className="text-[12px]" style={{ color: 'var(--success-text)' }}>
+          <p className="text-sm" style={{ color: 'var(--success-text)' }}>
             {t.i912Text}
           </p>
         </div>

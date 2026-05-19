@@ -247,7 +247,7 @@ export default async function EADLandingPage({ params }: Props) {
 
       {/* Hero */}
       <section>
-        <div className="inline-block px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-[12px] font-bold mb-3">
+        <div className="inline-block px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-sm font-bold mb-3">
           {t.badge}
         </div>
         <h1 className="text-[28px] sm:text-[34px] font-extrabold text-[var(--text-1)] leading-tight">
@@ -267,24 +267,24 @@ export default async function EADLandingPage({ params }: Props) {
         {/* Trust pills */}
         <div className="flex flex-wrap gap-2 mt-4">
           {t.trustPills.map(pill => (
-            <span key={pill} className="px-3 py-1 rounded-full text-[12px] font-semibold bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)]">
+            <span key={pill} className="px-3 py-1 rounded-full text-sm font-semibold bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)]">
               {pill}
             </span>
           ))}
         </div>
-        <p className="mt-3 text-[12px] text-[var(--text-2)]">{t.legalOne}</p>
+        <p className="mt-3 text-sm text-[var(--text-2)]">{t.legalOne}</p>
       </section>
 
       {/* Warning block for re-parole */}
       <section className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950 border border-amber-300">
         <div className="font-bold text-[14px] text-amber-800 dark:text-amber-200 mb-1">{t.warningTitle}</div>
-        <p className="text-[13px] text-amber-700 dark:text-amber-300">{t.warningDesc}</p>
+        <p className="text-sm text-amber-700 dark:text-amber-300">{t.warningDesc}</p>
       </section>
 
       {/* Auto-extension callout */}
       <section className="p-4 rounded-2xl bg-green-50 dark:bg-green-950 border border-green-200">
         <div className="font-bold text-[14px] text-green-800 dark:text-green-200 mb-1">✅ {t.autoExtTitle}</div>
-        <p className="text-[13px] text-green-700 dark:text-green-300">{t.autoExtDesc}</p>
+        <p className="text-sm text-green-700 dark:text-green-300">{t.autoExtDesc}</p>
       </section>
 
       {/* Trust cards */}
@@ -294,7 +294,7 @@ export default async function EADLandingPage({ params }: Props) {
             <div key={card.title} className="p-4 rounded-2xl bg-[var(--surface-1)] border border-[var(--border)]">
               <div className="text-2xl mb-1">{card.icon}</div>
               <div className="font-bold text-[14px] text-[var(--text-1)]">{card.title}</div>
-              <div className="text-[12px] text-[var(--text-2)] mt-1">{card.desc}</div>
+              <div className="text-sm text-[var(--text-2)] mt-1">{card.desc}</div>
             </div>
           ))}
         </div>
@@ -311,7 +311,7 @@ export default async function EADLandingPage({ params }: Props) {
               </div>
               <div>
                 <div className="font-bold text-[15px] text-[var(--text-1)]">{s.title}</div>
-                <div className="text-[13px] text-[var(--text-2)] mt-0.5">{s.desc}</div>
+                <div className="text-sm text-[var(--text-2)] mt-0.5">{s.desc}</div>
               </div>
             </div>
           ))}
@@ -326,7 +326,7 @@ export default async function EADLandingPage({ params }: Props) {
             <div className="flex justify-between items-center">
               <div>
                 <div className="font-bold text-[15px] text-[var(--text-1)]">{t.priceService}</div>
-                <div className="text-[13px] text-[var(--text-2)]">{t.priceServiceDesc}</div>
+                <div className="text-sm text-[var(--text-2)]">{t.priceServiceDesc}</div>
               </div>
               <div className="text-[20px] font-extrabold text-green-600">$0</div>
             </div>
@@ -335,7 +335,7 @@ export default async function EADLandingPage({ params }: Props) {
             <div className="flex justify-between items-start">
               <div>
                 <div className="font-bold text-[15px] text-[var(--text-1)]">{t.priceUSCIS}</div>
-                <div className="text-[13px] text-[var(--text-2)]">
+                <div className="text-sm text-[var(--text-2)]">
                   {t.priceUSCISDesc}{' '}
                   <a href="https://www.uscis.gov/feecalculator" target="_blank" rel="noopener noreferrer"
                     className="text-blue-600 hover:underline">
@@ -369,7 +369,7 @@ export default async function EADLandingPage({ params }: Props) {
                 {faq.q}
                 <span className="text-[var(--text-2)] group-open:rotate-180 transition-transform text-[18px]">⌃</span>
               </summary>
-              <div className="px-4 pb-3 text-[13px] text-[var(--text-2)] leading-relaxed">{faq.a}</div>
+              <div className="px-4 pb-3 text-sm text-[var(--text-2)] leading-relaxed">{faq.a}</div>
             </details>
           ))}
         </div>

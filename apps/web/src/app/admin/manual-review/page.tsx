@@ -104,9 +104,9 @@ export default async function ManualReviewListPage() {
           >
             {r.module_type ?? r.doc_type}
           </Link>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{r.id.slice(0, 8)}</div>
+          <div style={{ fontSize: '15px', color: '#64748b', marginTop: '2px' }}>{r.id.slice(0, 8)}</div>
           {r.safe_summary && (
-            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: '15px', color: '#94a3b8', marginTop: '2px', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {r.safe_summary}
             </div>
           )}
@@ -115,21 +115,21 @@ export default async function ManualReviewListPage() {
           {r.source_lang.toUpperCase()}
         </td>
         <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0' }}>
-          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, ...styleFromCss(priorityStyle) }}>
+          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '15px', fontWeight: 600, ...styleFromCss(priorityStyle) }}>
             {priorityKey}
           </span>
         </td>
-        <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b' }}>
+        <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0', fontSize: '15px', color: '#64748b' }}>
           {reasonsLabel || '—'}
         </td>
-        <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b' }}>
+        <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0', fontSize: '15px', color: '#64748b' }}>
           {created}
         </td>
-        <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b' }}>
+        <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0', fontSize: '15px', color: '#64748b' }}>
           {expires}
         </td>
         <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0' }}>
-          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, ...styleFromCss(statusStyle) }}>
+          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '15px', fontWeight: 600, ...styleFromCss(statusStyle) }}>
             {r.status}
           </span>
         </td>
@@ -158,7 +158,7 @@ export default async function ManualReviewListPage() {
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
           Translation Review Queue
         </h1>
-        <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+        <span style={{ fontSize: '15px', color: '#94a3b8' }}>
           {rows?.length ?? 0} total · Messenginfo Staff
         </span>
       </div>
@@ -174,7 +174,7 @@ export default async function ManualReviewListPage() {
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['Document', 'Lang', 'Priority', 'Reasons', 'Received', 'Expires', 'Status', ''].map(h => (
-                      <th key={h} style={{ padding: '8px', textAlign: 'left', fontSize: '12px', color: '#64748b', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>
+                      <th key={h} style={{ padding: '8px', textAlign: 'left', fontSize: '15px', color: '#64748b', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>
                         {h}
                       </th>
                     ))}

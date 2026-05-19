@@ -409,12 +409,12 @@ export default async function StatusPage({ params }: Props) {
       <section style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 20px 18px' }}>
         <a
           href={`/${locale}/services/re-parole-u4u`}
-          style={{ display: 'inline-block', fontSize: '13px', color: 'var(--primary)', fontWeight: 600, marginBottom: '12px', textDecoration: 'none' }}
+          style={{ display: 'inline-block', fontSize: '15px', color: 'var(--primary)', fontWeight: 600, marginBottom: '12px', textDecoration: 'none' }}
         >
           {t.backLink}
         </a>
         <div style={{ marginBottom: '10px' }}>
-          <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', background: 'var(--info-bg)', color: 'var(--info-text)' }}>
+          <span style={{ display: 'inline-block', fontSize: '15px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', background: 'var(--info-bg)', color: 'var(--info-text)' }}>
             {t.badge}
           </span>
         </div>
@@ -453,7 +453,7 @@ export default async function StatusPage({ params }: Props) {
         >
           {t.checkBtn}
         </a>
-        <p style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: '8px', lineHeight: 1.45 }}>
+        <p style={{ fontSize: '15px', color: 'var(--text-3)', marginTop: '8px', lineHeight: 1.45 }}>
           {t.receiptHelp}
         </p>
       </section>
@@ -483,7 +483,7 @@ export default async function StatusPage({ params }: Props) {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '6px' }}>
                   <span style={{ fontSize: '20px', flexShrink: 0 }}>{s.emoji}</span>
                   <div>
-                    <p style={{ fontSize: '12px', fontWeight: 700, color: c.text, fontFamily: 'monospace', marginBottom: '3px' }}>
+                    <p style={{ fontSize: '15px', fontWeight: 700, color: c.text, fontFamily: 'monospace', marginBottom: '3px' }}>
                       {s.code}
                     </p>
                     <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)', lineHeight: 1.35 }}>
@@ -500,7 +500,7 @@ export default async function StatusPage({ params }: Props) {
                     border: `1px solid ${c.border}`,
                   }}
                 >
-                  <p style={{ fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: '15px', color: 'var(--text-2)', lineHeight: 1.45 }}>
                     👉 {s.action}
                   </p>
                 </div>
@@ -512,7 +512,7 @@ export default async function StatusPage({ params }: Props) {
 
       {/* ── Disclaimer ─────────────────────────────────────────── */}
       <section style={{ padding: '20px 20px 0' }}>
-        <p style={{ fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.5 }}>
+        <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.5 }}>
           {t.notLegal}
         </p>
       </section>

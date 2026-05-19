@@ -142,7 +142,7 @@ export function Screen12() {
             key={m}
             type="button"
             onClick={() => setMode(m)}
-            className="flex-1 rounded-[8px] text-[13px] font-semibold py-2 transition-all"
+            className="flex-1 rounded-[8px] text-sm font-semibold py-2 transition-all"
             style={{
               background: mode === m ? 'var(--primary)' : 'var(--surface-2)',
               color: mode === m ? '#fff' : 'var(--text-2)',
@@ -164,7 +164,7 @@ export function Screen12() {
             <p className="text-[16px] font-bold mb-1" style={{ color: 'var(--success-text)' }}>
               {t.successTitle}
             </p>
-            <p className="text-[13px]" style={{ color: 'var(--success-text)' }}>
+            <p className="text-sm" style={{ color: 'var(--success-text)' }}>
               {t.successNote(email)}
             </p>
           </div>
@@ -174,7 +174,7 @@ export function Screen12() {
               <h2 className="text-[16px] font-semibold mb-1.5" style={{ color: 'var(--text-1)' }}>
                 {t.emailTitle}
               </h2>
-              <p className="text-[13px] mb-3" style={{ color: 'var(--text-2)' }}>
+              <p className="text-sm mb-3" style={{ color: 'var(--text-2)' }}>
                 {t.emailNote}
               </p>
             </div>
@@ -221,12 +221,12 @@ export function Screen12() {
             style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
           >
             <p
-              className="text-[12px] font-semibold uppercase tracking-wide mb-2"
+              className="text-sm font-semibold uppercase tracking-wide mb-2"
               style={{ color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}
             >
               {t.fieldOf(transferIdx + 1, TRANSFER_FIELDS.length)}
             </p>
-            <p className="text-[13px] mb-1.5" style={{ color: 'var(--text-2)' }}>
+            <p className="text-sm mb-1.5" style={{ color: 'var(--text-2)' }}>
               {t.uscisAsks}{' '}
               <strong style={{ color: 'var(--text-1)' }}>
                 {TRANSFER_FIELDS[transferIdx]?.question}
@@ -263,7 +263,7 @@ export function Screen12() {
                 type="button"
                 disabled={transferIdx === 0}
                 onClick={() => setTransferIdx((i) => i - 1)}
-                className="flex-1 rounded-[8px] text-[13px] font-semibold py-2.5 transition-all"
+                className="flex-1 rounded-[8px] text-sm font-semibold py-2.5 transition-all"
                 style={{
                   background: 'var(--surface)',
                   border: '1.5px solid var(--border-strong)',
@@ -277,7 +277,7 @@ export function Screen12() {
                 type="button"
                 disabled={transferIdx === TRANSFER_FIELDS.length - 1}
                 onClick={() => setTransferIdx((i) => i + 1)}
-                className="flex-1 rounded-[8px] text-[13px] font-semibold py-2.5 transition-all"
+                className="flex-1 rounded-[8px] text-sm font-semibold py-2.5 transition-all"
                 style={{
                   background: 'var(--surface)',
                   border: '1.5px solid var(--border-strong)',
@@ -292,7 +292,7 @@ export function Screen12() {
 
           {/* Progress bar */}
           <div
-            className="rounded-[8px] p-2.5 text-[12px]"
+            className="rounded-[8px] p-2.5 text-sm"
             style={{ background: 'var(--surface-2)', color: 'var(--text-2)' }}
           >
             {t.progressLabel(transferIdx + 1, TRANSFER_FIELDS.length)}
@@ -312,7 +312,7 @@ export function Screen12() {
 
           {/* iPhone tip */}
           <div
-            className="rounded-[12px] p-3 text-[12px] leading-relaxed"
+            className="rounded-[12px] p-3 text-sm leading-relaxed"
             style={{ background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--border)' }}
           >
             {t.iphoneTip}
@@ -323,7 +323,7 @@ export function Screen12() {
       <button
         type="button"
         onClick={() => setStep(11)}
-        className="w-full rounded-[10px] text-[13px] font-medium transition-all"
+        className="w-full rounded-[10px] text-sm font-medium transition-all"
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border-strong)',

@@ -418,7 +418,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
         <span
           style={{
             display: 'inline-block',
-            fontSize: '11px',
+            fontSize: '15px',
             fontWeight: 700,
             padding: '3px 10px',
             borderRadius: '99px',
@@ -490,7 +490,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
               padding: '11px 8px',
               textAlign: 'center',
               borderRadius: '10px',
-              fontSize: '12px',
+              fontSize: '15px',
               fontWeight: 600,
               color: 'var(--text-1)',
               background: 'var(--surface-2)',
@@ -509,7 +509,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
               padding: '11px 8px',
               textAlign: 'center',
               borderRadius: '10px',
-              fontSize: '12px',
+              fontSize: '15px',
               fontWeight: 600,
               color: 'var(--text-1)',
               background: 'var(--surface-2)',
@@ -536,7 +536,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
             <span
               key={pill}
               style={{
-                fontSize: '11px',
+                fontSize: '15px',
                 fontWeight: 600,
                 color: 'var(--success-text, #166534)',
                 background: 'var(--success-bg, #dcfce7)',
@@ -552,7 +552,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
         {/* Single-line disclaimer */}
         <p
           style={{
-            fontSize: '11px',
+            fontSize: '15px',
             color: 'var(--text-3)',
             textAlign: 'center',
             lineHeight: 1.4,
@@ -582,10 +582,10 @@ export default async function ReParoleLandingPage({ params }: Props) {
               }}
             >
               <div style={{ fontSize: '22px', marginBottom: '6px', lineHeight: 1 }}>{card.icon}</div>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '4px' }}>
+              <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '4px' }}>
                 {card.title}
               </p>
-              <p style={{ fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.4 }}>
+              <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.4 }}>
                 {card.desc}
               </p>
             </div>
@@ -604,7 +604,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
           }}
         >
           <div style={{ padding: '10px 14px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
               {t.howTitle}
             </p>
           </div>
@@ -626,7 +626,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
                   borderRadius: '50%',
                   background: 'var(--primary)',
                   color: '#fff',
-                  fontSize: '13px',
+                  fontSize: '15px',
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
@@ -640,7 +640,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
                 <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '3px' }}>
                   {step.title}
                 </p>
-                <p style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.4 }}>
+                <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.4 }}>
                   {step.desc}
                 </p>
               </div>
@@ -660,7 +660,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
           }}
         >
           <div style={{ padding: '8px 14px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
               {t.priceTitle}
             </p>
           </div>
@@ -669,7 +669,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
           <div style={{ borderBottom: '1px solid var(--border)' }}>
             <div style={{ padding: '12px 14px 8px' }}>
               <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)' }}>{t.priceService}</p>
-              <p style={{ fontSize: '11px', color: 'var(--text-3)' }}>{t.priceServiceDesc}</p>
+              <p style={{ fontSize: '15px', color: 'var(--text-3)' }}>{t.priceServiceDesc}</p>
             </div>
             {(t.priceRows as ReadonlyArray<{ label: string; price: string; save?: string; highlight?: boolean }>).map((row) => (
               <div
@@ -684,9 +684,9 @@ export default async function ReParoleLandingPage({ params }: Props) {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-2)' }}>{row.label}</span>
+                  <span style={{ fontSize: '15px', color: 'var(--text-2)' }}>{row.label}</span>
                   {row.save && (
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--success-text, #166534)', background: 'var(--success-bg, #dcfce7)', padding: '1px 6px', borderRadius: '99px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--success-text, #166534)', background: 'var(--success-bg, #dcfce7)', padding: '1px 6px', borderRadius: '99px' }}>
                       {row.save}
                     </span>
                   )}
@@ -702,7 +702,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)' }}>{t.priceUSCIS}</p>
-              <p style={{ fontSize: '11px', color: 'var(--text-3)' }}>
+              <p style={{ fontSize: '15px', color: 'var(--text-3)' }}>
                 {t.priceUSCISDesc}{' '}
                 <a
                   href="https://www.uscis.gov/feecalculator"
@@ -744,11 +744,11 @@ export default async function ReParoleLandingPage({ params }: Props) {
                 <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '2px' }}>
                   {entry.title}
                 </p>
-                <p style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.4 }}>
+                <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.4 }}>
                   {entry.desc}
                 </p>
               </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', flexShrink: 0 }}>
+              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--primary)', flexShrink: 0 }}>
                 {entry.cta}
               </span>
             </a>
@@ -767,7 +767,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
           }}
         >
           <div style={{ padding: '10px 14px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
               {t.faqTitle}
             </p>
           </div>
@@ -808,7 +808,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
               <p
                 style={{
                   padding: '0 14px 14px',
-                  fontSize: '13px',
+                  fontSize: '15px',
                   color: 'var(--text-2)',
                   lineHeight: 1.55,
                   marginTop: '-2px',
@@ -823,7 +823,7 @@ export default async function ReParoleLandingPage({ params }: Props) {
 
       {/* ── Footer ─────────────────────────────────────────────── */}
       <section style={{ padding: '16px 20px 0' }}>
-        <p style={{ fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.5 }}>
+        <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.5 }}>
           <a
             href="https://www.uscis.gov/i-131"
             target="_blank"

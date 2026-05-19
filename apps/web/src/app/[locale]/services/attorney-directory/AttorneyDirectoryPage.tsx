@@ -244,7 +244,7 @@ export function AttorneyDirectoryPage({ locale }: { locale: string }) {
         {/* Not-a-lawyer warning */}
         <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5">
           <p className="text-[14px] font-bold text-amber-900 mb-1">{t.warningTitle}</p>
-          <p className="text-[13px] text-amber-800 leading-relaxed">{t.warningDesc}</p>
+          <p className="text-sm text-amber-800 leading-relaxed">{t.warningDesc}</p>
         </div>
 
         {/* Who can help you */}
@@ -255,9 +255,9 @@ export function AttorneyDirectoryPage({ locale }: { locale: string }) {
               <div key={type.title} className={`rounded-xl border p-3 ${type.color}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xl">{type.icon}</span>
-                  <span className="text-[13px] font-bold">{type.title}</span>
+                  <span className="text-sm font-bold">{type.title}</span>
                 </div>
-                <p className="text-[12px] opacity-80">{type.desc}</p>
+                <p className="text-sm opacity-80">{type.desc}</p>
               </div>
             ))}
           </div>
@@ -272,7 +272,7 @@ export function AttorneyDirectoryPage({ locale }: { locale: string }) {
                 const labels: Record<string, string> = { all: t.filterAll, nonprofit: t.filterFree, official: t.filterOfficial, referral: t.filterReferral }
                 return (
                   <button key={f} type="button" onClick={() => setFilter(f)}
-                    className={`text-[11px] px-2.5 py-1 rounded-full font-semibold transition-colors ${filter === f ? 'bg-blue-600 text-white' : 'bg-[var(--surface-2)] text-[var(--text-2)] hover:bg-[var(--surface-1)]'}`}>
+                    className={`text-sm px-2.5 py-1 rounded-full font-semibold transition-colors ${filter === f ? 'bg-blue-600 text-white' : 'bg-[var(--surface-2)] text-[var(--text-2)] hover:bg-[var(--surface-1)]'}`}>
                     {labels[f]}
                   </button>
                 )
@@ -289,17 +289,17 @@ export function AttorneyDirectoryPage({ locale }: { locale: string }) {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="text-[14px] font-bold text-[var(--text-1)]">{org.name}</p>
-                        <p className="text-[12px] text-[var(--text-2)] mt-0.5 leading-relaxed">{org.description}</p>
+                        <p className="text-sm text-[var(--text-2)] mt-0.5 leading-relaxed">{org.description}</p>
                         <div className="flex gap-1 mt-2">
                           {org.languages.map((lang) => (
-                            <span key={lang} className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-3)] uppercase">{lang}</span>
+                            <span key={lang} className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-3)] uppercase">{lang}</span>
                           ))}
                         </div>
                       </div>
                     </div>
                     <a href={org.url} target="_blank" rel="noopener noreferrer"
                       onClick={() => track('attorney_org_clicked', { org: org.name, locale })}
-                      className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                      className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
                       {t.visitBtn}
                     </a>
                   </div>
@@ -312,10 +312,10 @@ export function AttorneyDirectoryPage({ locale }: { locale: string }) {
         {/* Red flags */}
         <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
           <h2 className="text-[15px] font-bold text-red-900 mb-2">{t.redFlagTitle}</h2>
-          <p className="text-[13px] text-red-700 mb-3">{t.redFlagDesc}</p>
+          <p className="text-sm text-red-700 mb-3">{t.redFlagDesc}</p>
           <ul className="space-y-2">
             {RED_FLAGS.map((flag) => (
-              <li key={flag} className="flex items-start gap-2 text-[13px] text-red-800">
+              <li key={flag} className="flex items-start gap-2 text-sm text-red-800">
                 <span className="text-red-500 shrink-0 mt-0.5">🚩</span>{flag}
               </li>
             ))}
@@ -331,8 +331,8 @@ export function AttorneyDirectoryPage({ locale }: { locale: string }) {
                 className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] p-3 hover:border-blue-300 hover:bg-blue-50 transition-all">
                 <span className="text-2xl shrink-0">{item.icon}</span>
                 <div>
-                  <p className="text-[13px] font-bold text-[var(--text-1)]">{item.label}</p>
-                  <p className="text-[11px] text-[var(--text-2)]">{item.desc}</p>
+                  <p className="text-sm font-bold text-[var(--text-1)]">{item.label}</p>
+                  <p className="text-sm text-[var(--text-2)]">{item.desc}</p>
                 </div>
               </a>
             ))}
@@ -357,7 +357,7 @@ export function AttorneyDirectoryPage({ locale }: { locale: string }) {
           </div>
         </div>
 
-        <p className="text-[11px] text-[var(--text-3)] text-center leading-relaxed pb-4">{t.disclaimer}</p>
+        <p className="text-sm text-[var(--text-3)] text-center leading-relaxed pb-4">{t.disclaimer}</p>
       </div>
     </div>
   )

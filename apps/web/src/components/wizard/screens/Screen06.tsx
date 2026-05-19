@@ -159,7 +159,7 @@ export function Screen06() {
         style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', display: 'flex', gap: '10px' }}
       >
         <span className="text-[16px] flex-shrink-0">🔒</span>
-        <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-2)' }}>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
           {t.privacyNote}
         </p>
       </div>
@@ -219,7 +219,7 @@ export function Screen06() {
       </div>
 
       {checkedCount > 0 && (
-        <p className="text-[13px] font-medium" style={{ color: 'var(--success-text)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--success-text)' }}>
           {t.checkedCount(checkedCount, ITEM_KEYS.length)}
         </p>
       )}

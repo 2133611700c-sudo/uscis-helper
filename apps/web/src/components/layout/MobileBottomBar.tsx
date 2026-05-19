@@ -33,7 +33,7 @@ export function MobileBottomBar() {
           const className = cn(
             // px-1 + min-width-0 so long labels (e.g. "Контакты") wrap
             // instead of truncating with an ellipsis on 360–390px viewports.
-            'flex flex-col items-center justify-center gap-0.5 px-1 min-w-0 text-[11px] leading-tight font-medium transition-colors text-center',
+            'flex flex-col items-center justify-center gap-0.5 px-1 min-w-0 text-sm leading-tight font-medium transition-colors text-center',
             isActive ? 'text-brand-600' : 'text-ink-500 hover:text-ink-900',
           )
           if (external) {

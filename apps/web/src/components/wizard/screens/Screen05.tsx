@@ -129,7 +129,7 @@ export function Screen05() {
             <p className="text-[14px] font-medium" style={{ color: 'var(--info-text)' }}>
               {t.analyzing}
             </p>
-            <p className="text-[12px] mt-1" style={{ color: 'var(--text-3)' }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>
               {t.analyzingNote}
             </p>
           </div>
@@ -151,7 +151,7 @@ export function Screen05() {
                   <p className="text-[14px] font-semibold mb-1" style={{ color: 'var(--warning-text)' }}>
                     {t.noDocs(activeMember.alias)}
                   </p>
-                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--warning-text)' }}>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--warning-text)' }}>
                     {t.noDocsNote}
                   </p>
                 </div>
@@ -198,12 +198,12 @@ export function Screen05() {
               style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)' }}
             >
               <p
-                className="text-[11px] font-semibold uppercase tracking-wide mb-3"
+                className="text-sm font-semibold uppercase tracking-wide mb-3"
                 style={{ color: 'var(--success-text)', letterSpacing: '0.6px' }}
               >
                 {t.allRecognized}
               </p>
-              <p className="text-[13px] mb-3 leading-relaxed" style={{ color: 'var(--success-text)' }}>
+              <p className="text-sm mb-3 leading-relaxed" style={{ color: 'var(--success-text)' }}>
                 {t.extractedNote}
               </p>
               {Object.entries(activeMember.docs)
@@ -211,17 +211,17 @@ export function Screen05() {
                 .map(([docKey]) => (
                   <div
                     key={docKey}
-                    className="flex items-center justify-between text-[13px] py-1"
+                    className="flex items-center justify-between text-sm py-1"
                   >
                     <span className="capitalize" style={{ color: 'var(--text-2)' }}>
                       {docKey.replace(/_/g, ' ')}
                     </span>
-                    <span className="font-bold text-[12px]" style={{ color: 'var(--success-text)' }}>
+                    <span className="font-bold text-sm" style={{ color: 'var(--success-text)' }}>
                       {t.uploadedBadge}
                     </span>
                   </div>
                 ))}
-              <p className="mt-2 text-[12px]" style={{ color: 'var(--text-3)' }}>
+              <p className="mt-2 text-sm" style={{ color: 'var(--text-3)' }}>
                 {t.futureNote}
               </p>
             </div>

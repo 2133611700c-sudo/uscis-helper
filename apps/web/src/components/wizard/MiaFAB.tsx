@@ -39,7 +39,7 @@ export function MiaFAB() {
             'absolute -top-1 -right-1',
             'flex items-center justify-center',
             'w-5 h-5 rounded-full',
-            'bg-red-500 text-white text-[10px] font-bold',
+            'bg-red-500 text-white text-xs font-bold',
             'ring-2 ring-white',
           ].join(' ')}
         >

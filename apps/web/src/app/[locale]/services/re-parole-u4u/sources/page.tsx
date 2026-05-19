@@ -452,12 +452,12 @@ export default async function SourcesPage({ params }: Props) {
       <section style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 20px 18px' }}>
         <a
           href={`/${locale}/services/re-parole-u4u`}
-          style={{ display: 'inline-block', fontSize: '13px', color: 'var(--primary)', fontWeight: 600, marginBottom: '12px', textDecoration: 'none' }}
+          style={{ display: 'inline-block', fontSize: '15px', color: 'var(--primary)', fontWeight: 600, marginBottom: '12px', textDecoration: 'none' }}
         >
           {t.backLink}
         </a>
         <div style={{ marginBottom: '10px' }}>
-          <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', background: 'var(--info-bg)', color: 'var(--info-text)' }}>
+          <span style={{ display: 'inline-block', fontSize: '15px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', background: 'var(--info-bg)', color: 'var(--info-text)' }}>
             {t.badge}
           </span>
         </div>
@@ -474,7 +474,7 @@ export default async function SourcesPage({ params }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {t.categories.map((cat) => (
             <div key={cat.title}>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '8px' }}>
+              <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '8px' }}>
                 {cat.title}
               </p>
               <div
@@ -503,10 +503,10 @@ export default async function SourcesPage({ params }: Props) {
                         <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)', marginBottom: '3px', lineHeight: 1.3 }}>
                           {item.name}
                         </p>
-                        <p style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.4, marginBottom: '6px' }}>
+                        <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.4, marginBottom: '6px' }}>
                           {item.desc}
                         </p>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--primary)', fontFamily: 'monospace' }}>
+                        <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--primary)', fontFamily: 'monospace' }}>
                           {item.label} ↗
                         </span>
                       </div>
@@ -521,7 +521,7 @@ export default async function SourcesPage({ params }: Props) {
 
       {/* ── Source note ─────────────────────────────────────────── */}
       <section style={{ padding: '20px 20px 0' }}>
-        <p style={{ fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.5 }}>
+        <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.5 }}>
           {t.sourceNote}
         </p>
       </section>

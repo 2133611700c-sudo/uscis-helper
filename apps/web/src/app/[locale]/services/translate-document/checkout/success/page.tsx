@@ -240,7 +240,7 @@ export default function TranslationCheckoutSuccess() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: '14px', fontWeight: 700, color: fileIsWarning[i] ? '#92400e' : 'var(--text-1)', marginBottom: '2px' }}>{label}</p>
-                    <p style={{ fontSize: '11px', color: fileIsWarning[i] ? '#b45309' : 'var(--text-3)' }}>{fileNames[i]}</p>
+                    <p style={{ fontSize: '15px', color: fileIsWarning[i] ? '#b45309' : 'var(--text-3)' }}>{fileNames[i]}</p>
                   </div>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ flexShrink: 0, color: fileIsWarning[i] ? '#b45309' : '#3b82f6' }}>
                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -272,24 +272,24 @@ export default function TranslationCheckoutSuccess() {
 
             {/* Hint */}
             <div style={{ borderRadius: '10px', border: '1px solid #fcd34d', background: '#fffbeb', padding: '12px 16px' }}>
-              <p style={{ fontSize: '12px', color: '#92400e', lineHeight: 1.5 }}>⚠ {t.hint}</p>
+              <p style={{ fontSize: '15px', color: '#92400e', lineHeight: 1.5 }}>⚠ {t.hint}</p>
             </div>
           </>
         ) : (
           /* No session data — browser cleared localStorage */
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
             <p style={{ fontSize: '14px', color: 'var(--text-2)', lineHeight: 1.5, marginBottom: '8px' }}>{t.noSession}</p>
-            <p style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.5 }}>{t.noSessionNote}</p>
+            <p style={{ fontSize: '15px', color: 'var(--text-3)', lineHeight: 1.5 }}>{t.noSessionNote}</p>
           </div>
         )}
 
         {/* Support + nav */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-1)' }}>{t.thanks}</p>
-          <p style={{ fontSize: '12px', color: 'var(--text-3)' }}>{t.support}</p>
+          <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-1)' }}>{t.thanks}</p>
+          <p style={{ fontSize: '15px', color: 'var(--text-3)' }}>{t.support}</p>
           <a
             href={`/${locale}/services/translate-document`}
-            style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'none', marginTop: '4px' }}
+            style={{ fontSize: '15px', color: '#2563eb', textDecoration: 'none', marginTop: '4px' }}
           >
             {t.backLabel}
           </a>

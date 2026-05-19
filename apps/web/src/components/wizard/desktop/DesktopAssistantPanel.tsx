@@ -54,7 +54,7 @@ export function DesktopAssistantPanel({ slug }: DesktopAssistantPanelProps) {
           Assistant
         </h3>
         <p
-          className="text-[11px] font-semibold uppercase tracking-wide mb-3"
+          className="text-sm font-semibold uppercase tracking-wide mb-3"
           style={{ color: 'var(--text-3)', letterSpacing: '0.5px' }}
         >
           Step {state.step + 1} · {STEP_LABELS[state.step] ?? ''}
@@ -78,7 +78,7 @@ export function DesktopAssistantPanel({ slug }: DesktopAssistantPanelProps) {
       {/* FAQ chips */}
       <div className="mb-4">
         <p
-          className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+          className="text-sm font-semibold uppercase tracking-wide mb-2"
           style={{ color: 'var(--text-3)', letterSpacing: '0.5px' }}
         >
           Common Questions
@@ -89,7 +89,7 @@ export function DesktopAssistantPanel({ slug }: DesktopAssistantPanelProps) {
               key={q}
               type="button"
               onClick={() => setMiaOpen(true)}
-              className="w-full text-left rounded-[10px] text-[13px] font-medium transition-all"
+              className="w-full text-left rounded-[10px] text-sm font-medium transition-all"
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
@@ -107,7 +107,7 @@ export function DesktopAssistantPanel({ slug }: DesktopAssistantPanelProps) {
       {/* Official sources */}
       <div>
         <p
-          className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+          className="text-sm font-semibold uppercase tracking-wide mb-2"
           style={{ color: 'var(--text-3)', letterSpacing: '0.5px' }}
         >
           Official Sources
@@ -119,7 +119,7 @@ export function DesktopAssistantPanel({ slug }: DesktopAssistantPanelProps) {
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-[10px] text-[13px] font-medium transition-all no-underline"
+              className="flex items-center justify-between rounded-[10px] text-sm font-medium transition-all no-underline"
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
@@ -136,7 +136,7 @@ export function DesktopAssistantPanel({ slug }: DesktopAssistantPanelProps) {
       </div>
 
       <p
-        className="mt-4 text-[11px] leading-relaxed"
+        className="mt-4 text-sm leading-relaxed"
         style={{ color: 'var(--text-3)', paddingTop: '12px', borderTop: '1px solid var(--border)' }}
       >
         Information and document support only. Not legal advice.
