@@ -85,7 +85,7 @@ function SyncIndicator() {
 
   return (
     <span
-      className="text-[11px] font-medium flex items-center gap-1"
+      className="text-sm font-medium flex items-center gap-1"
       style={{ color }}
     >
       <span
@@ -156,7 +156,7 @@ export function WizardHeader() {
       {/* Row 2: step label + sync status */}
       <div className="flex items-center justify-between gap-2">
         <span
-          className="text-[12px] font-semibold"
+          className="text-sm font-semibold"
           style={{ color: 'var(--text-2)', fontVariantNumeric: 'tabular-nums' }}
         >
           {progressFn(state.step + 1, TOTAL_STEPS + 1)} · {stepLabel}
@@ -167,7 +167,7 @@ export function WizardHeader() {
       {/* Row 3: time hint — only on steps 2, 6, 9 */}
       {timeHint && (
         <div
-          className="rounded-[6px] px-2.5 py-1 text-[11px] font-medium self-start"
+          className="rounded-[6px] px-2.5 py-1 text-sm font-medium self-start"
           style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}
         >
           {timeHint}

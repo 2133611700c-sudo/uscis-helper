@@ -45,11 +45,11 @@ export function SupportBlock({ locale }: Props) {
         borderTop: '1px solid var(--border)',
       }}
     >
-      <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>{t.label}</span>
+      <span style={{ fontSize: '15px', color: 'var(--text-3)' }}>{t.label}</span>
       <a
         href={`mailto:${t.link}`}
         style={{
-          fontSize: '12px',
+          fontSize: '15px',
           fontWeight: 600,
           color: 'var(--primary)',
           textDecoration: 'none',
