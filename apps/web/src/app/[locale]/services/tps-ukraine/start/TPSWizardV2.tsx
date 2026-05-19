@@ -781,25 +781,33 @@ type LocaleKey = keyof typeof T
 // Constants (mirror prototype tokens 1:1)
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Design tokens ──────────────────────────────────────────────────────────
+// Brand colors (GREEN / PAY_BLUE) stay literal — TPS-green is part of the brand
+// and must look identical in light + dark. All neutral surface/text/border
+// tokens reference the site CSS variables defined in globals.css, so the wizard
+// follows the user's theme toggle without any extra wiring.
 const GREEN = '#0d5a34'
 const GREEN_DARK = '#08391f'
 const PAY_BLUE = '#1a73e8'
 const PAY_BLUE_DARK = '#1557b0'
+// Alerts keep their distinctive light-mode tints — they're rare and brief, and
+// dark-mode alert tones are a separate polish pass.
 const WARN_BG = '#fff3cd'
 const WARN_BORDER = '#ffc107'
 const WARN_TEXT = '#856404'
 const INFO_BG = '#e8f0fe'
 const INFO_BORDER = '#a8c7fa'
 const INFO_TEXT = '#1a4d8f'
-const PAGE_BG = '#f4f5f7'
-const CARD_BG = '#fff'
-const BORDER = '#ddd'
-const BORDER_LIGHT = '#f0f0f0'
-const TEXT_PRIMARY = '#111'
-const TEXT_SECONDARY = '#666'
-const TEXT_MUTED = '#777'
-const TEXT_HINT = '#999'
-const TEXT_FAINT = '#aaa'
+// Neutrals — bound to global CSS vars so the wizard inherits theme switches.
+const PAGE_BG = 'var(--background)'
+const CARD_BG = 'var(--surface-1)'
+const BORDER = 'var(--border)'
+const BORDER_LIGHT = 'var(--surface-3)'
+const TEXT_PRIMARY = 'var(--text-1)'
+const TEXT_SECONDARY = 'var(--text-2)'
+const TEXT_MUTED = 'var(--text-3)'
+const TEXT_HINT = 'var(--text-3)'
+const TEXT_FAINT = 'var(--text-3)'
 
 const STORAGE_KEY = 'wizard:tps-ukraine:v2:state'
 
@@ -1169,13 +1177,51 @@ export default function TPSWizardV2({ locale }: Props) {
   const [errMsg, setErrMsg] = useState<string | null>(null)
 
   // ── Persist to localStorage (without File objects) ───────────────────────
+  //
+  // CRITICAL: the storage key is intentionally locale-independent
+  // (`wizard:tps-ukraine:v2:state`). When the user switches RU ↔ UK ↔ EN ↔ ES
+  // via the header LanguageSwitcher, Next.js does a full route segment
+  // navigation under [locale]/..., which remounts this component with fresh
+  // React state. The single shared key + this restore effect rebuild every
+  // answer, every OCR-extracted field, and the current step on the new
+  // render so the user sees zero progress loss.
+  //
+  // We also rebuild `uploads` from the persisted `uploadsMeta` slice. File
+  // objects can't survive a navigation (the browser won't serialize them),
+  // but the OCR fields, file name, and per-doc status are all we need to
+  // re-render Step 5 / Step 4 chips correctly. Re-running OCR is not needed
+  // because the extracted fields are already in memory.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
         if (parsed && typeof parsed === 'object') {
-          setData((d) => ({ ...d, ...parsed, uploads: {} }))
+          // Reconstruct uploads map from uploadsMeta — without File objects,
+          // but WITH the OCR fields so Step 5 review keeps the recognized
+          // values after a locale switch / theme switch / accidental reload.
+          const rebuiltUploads: Record<string, UploadEntry> = {}
+          const meta = (parsed.uploadsMeta || {}) as Record<
+            string,
+            Pick<UploadEntry, 'fileName' | 'status' | 'fields'> | undefined
+          >
+          for (const k of Object.keys(meta)) {
+            const m = meta[k]
+            if (!m) continue
+            rebuiltUploads[k] = {
+              file: null, // File can't be persisted; we kept the fields/meta
+              fileName: m.fileName,
+              status: m.status,
+              fields: m.fields,
+            }
+          }
+          // Strip server-only/extraneous keys before merging
+          const {
+            uploadsMeta: _uploadsMeta,
+            lastStep: _lastStep,
+            ...rest
+          } = parsed
+          setData((d) => ({ ...d, ...rest, uploads: rebuiltUploads }))
           if (typeof parsed.lastStep === 'number') setStep(parsed.lastStep)
         }
       }
