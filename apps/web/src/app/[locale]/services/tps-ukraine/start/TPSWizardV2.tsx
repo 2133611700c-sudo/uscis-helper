@@ -2600,10 +2600,14 @@ function ReviewManual({
   const ocrAddrCity = mergedFields?.us_address_city?.value ?? ''
   const ocrAddrState = mergedFields?.us_address_state?.value ?? ''
   const ocrAddrZip = mergedFields?.us_address_zip?.value ?? ''
-  const ocrAddrJoined = [
-    ocrAddrStreet,
-    [ocrAddrCity, ocrAddrState, ocrAddrZip].filter(Boolean).join(', ').trim(),
-  ]
+  // USPS canonical format: "Street, City, ST ZIP" — comma between
+  // street and city, comma between city and state, but plain space
+  // between state and zip (USPS does NOT comma there). E.g.
+  //   "4341 Willow Brook Ave 111, Los Angeles, CA 90029"
+  const cityStateZip = ocrAddrCity && ocrAddrState
+    ? `${ocrAddrCity}, ${ocrAddrState}${ocrAddrZip ? ` ${ocrAddrZip}` : ''}`
+    : [ocrAddrCity, ocrAddrState, ocrAddrZip].filter(Boolean).join(' ')
+  const ocrAddrJoined = [ocrAddrStreet, cityStateZip]
     .filter(Boolean)
     .join(', ')
     .trim()
