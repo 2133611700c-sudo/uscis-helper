@@ -50,6 +50,10 @@ export const DocumentTypeEnum = z.enum([
   'i94',
   'ead',
   'uscis_notice',
+  // 2026-05-20: classifier value for U.S. driver's license / state ID
+  // (CA, NY, etc.). Used when re-parole / TPS wizard pulls mailing
+  // address + biometric demographics for I-131 Part 3.
+  'us_drivers_license',
   'unknown',
 ])
 export type DocumentType = z.infer<typeof DocumentTypeEnum>
@@ -95,10 +99,25 @@ export const DocumentBrainResultSchema = z.object({
       passport_expiration_date: FieldSchema.optional(),
       i94_admission_number: FieldSchema.optional(),
       last_entry_date: FieldSchema.optional(),
+      // 2026-05-20: added so Brain can surface I-94 "Admit Until Date"
+      // (the parolee's status-expires date). Was previously dropped at
+      // schema parse, then again at the slot contract filter.
+      i94_admit_until: FieldSchema.optional(),
       i94_class_of_admission: FieldSchema.optional(),
       a_number: FieldSchema.optional(),
       ead_category_on_card: FieldSchema.optional(),
       ead_expiration_date: FieldSchema.optional(),
+      // 2026-05-20: DL slot — mailing address and biometric fields used
+      // for I-131 Part 3. Brain has a dedicated prompt block teaching it
+      // the California DL layout (LN/FN/DOB/SEX/HGT/WGT/EYES/HAIR).
+      us_address_street: FieldSchema.optional(),
+      us_address_city: FieldSchema.optional(),
+      us_address_state: FieldSchema.optional(),
+      us_address_zip: FieldSchema.optional(),
+      height: FieldSchema.optional(),
+      weight: FieldSchema.optional(),
+      eye_color: FieldSchema.optional(),
+      hair_color: FieldSchema.optional(),
     })
     .default({}),
   warnings: z.array(z.string().max(280)).default([]),
@@ -582,7 +601,7 @@ You do NOT invent values. If you cannot find a field, omit it from the output.
 
 Schema:
 {
-  "document_type": "international_passport" | "ukrainian_internal_passport" | "i94" | "ead" | "uscis_notice" | "unknown",
+  "document_type": "international_passport" | "ukrainian_internal_passport" | "i94" | "ead" | "uscis_notice" | "us_drivers_license" | "unknown",
   "document_type_confidence": 0.0..1.0,
   "fields": {
     "family_name"?: { source_value, final_value, confidence, source_line?, requires_review },
@@ -597,10 +616,21 @@ Schema:
     "passport_expiration_date"?: { ... },   // MM/DD/YYYY
     "i94_admission_number"?: { ... },        // digits only, 9-11
     "last_entry_date"?: { ... },             // MM/DD/YYYY
+    "i94_admit_until"?: { ... },             // MM/DD/YYYY or "D/S"
     "i94_class_of_admission"?: { ... },      // short code like UH, B-2
     "a_number"?: { ... },                    // 7-9 digits, no 'A' prefix
     "ead_category_on_card"?: { ... },        // letter+digits, e.g. a12
-    "ead_expiration_date"?: { ... }
+    "ead_expiration_date"?: { ... },
+    // U.S. driver's license / state ID — used to capture mailing
+    // address and biometric demographics for I-131 Part 3.
+    "us_address_street"?: { ... },           // street + apartment, no city/state/zip
+    "us_address_city"?: { ... },
+    "us_address_state"?: { ... },            // 2-letter USPS, e.g. CA, NY
+    "us_address_zip"?: { ... },              // 5-digit or ZIP+4
+    "height"?: { ... },                       // e.g. 6'-06" or 5'-08"
+    "weight"?: { ... },                       // e.g. 231 lb
+    "eye_color"?: { ... },                   // e.g. BRN, BLU
+    "hair_color"?: { ... }                   // e.g. BRN, BLK
   },
   "warnings": ["string"],
   "needs_manual_review": boolean
@@ -624,6 +654,21 @@ Ukrainian / Russian normalization (real-document gotchas):
 12. dob MUST be the date next to "Дата народження" / "Дата рождения" / "Date of birth". Do NOT use issue date ("Дата видачі") or expiration ("Дата закінчення") as dob — that is a critical safety rule.
 13. passport_number for Ukrainian international passports follows 2 letters + 6-7 digits (e.g. "EK790396", "FB1234567"). Strip any spaces.
 14. a_number digits-only, 7-9 digits. The "A" prefix is NEVER part of the value.
+
+U.S. Driver's License / State ID (when document_type is us_drivers_license, or when slot hint = "dl"):
+15. The card uses labelled abbreviations: LN = family_name, FN = given_name, DOB, SEX, HGT, WGT, EYES, HAIR. Extract each.
+16. The mailing address is printed as two consecutive lines without an explicit "Address:" label, e.g.
+       "4341 WILLOW BROOK AVE 111"
+       "LOS ANGELES, CA 90029"
+    Split it into:
+       us_address_street = "4341 Willow Brook Ave 111"   (title-case street + unit, no city/state/zip)
+       us_address_city   = "Los Angeles"                  (title-case)
+       us_address_state  = "CA"                            (2-letter USPS uppercase)
+       us_address_zip    = "90029"                         (5 digits, or "90029-1234" if ZIP+4 is visible)
+17. NEVER include the city / state / zip inside us_address_street. NEVER include the street inside us_address_city.
+18. If the card shows a P.O. Box or apartment ("APT 5", "#111", "UNIT B"), keep it inside us_address_street.
+19. HGT example "6'-06\"" → keep literal feet+inches form in height final_value. WGT "231 lb" → "231 lb". EYES/HAIR keep the 3-letter code (BRN, BLU, GRN) in final_value.
+20. DL fields are NEVER authoritative for identity on a TPS application — passport wins on name/DOB/sex conflicts. We extract them only for the mailing address and physical-description fields used on I-131 Part 3.
 
 Return ONLY the JSON object, no surrounding prose, no markdown fences.`
 
