@@ -36,13 +36,48 @@ type FilingType = 'init' | 'rereg'
 type Method = 'online' | 'paper'
 type EadChoice = 'ead' | 'noead'
 
+/**
+ * Where the wizard's review screen learned a value from. Mirrors the backend
+ * TpsExtractionSource enum (apps/web/src/lib/tps/types.ts) so server and UI
+ * speak the same language. UI maps these to localized human labels via
+ * `t.sourceForExtraction()`.
+ */
+export type ExtractionSource =
+  | 'ocr_mrz'
+  | 'ocr_visual'
+  | 'ocr_keyword'
+  | 'ai_brain'
+  | 'user_input'
+  | 'user_corrected'
+  | 'inferred'
+
+/**
+ * One field's worth of trace data. We keep this richer than a bare string
+ * so the review screen can show:
+ *   - the actual provenance (passport rule vs AI vs user typed)
+ *   - whether the validator flagged the value for human review
+ *   - which document slot the value came from (passport / I-94 / EAD)
+ */
+export interface FieldExtraction {
+  value: string
+  source: ExtractionSource
+  /** True when the validator returned `requires_review` — UI shows a badge. */
+  requires_review: boolean
+  /** Which upload slot produced this field (passport, i94, ead, …). */
+  doc_slot: string
+}
+
 interface UploadEntry {
   file: File | null
   fileName: string
   status: 'idle' | 'uploading' | 'done' | 'error'
   errorMsg?: string
-  /** Merged OCR fields keyed by canonical field name (family_name, given_name, …). */
-  fields?: Record<string, string>
+  /**
+   * Extracted fields keyed by canonical name (family_name, dob, …).
+   * Backward-compatible with the v1 shape `Record<string, string>` —
+   * the rehydration code below upgrades old entries on load.
+   */
+  fields?: Record<string, FieldExtraction>
 }
 
 interface WizardData {
@@ -133,6 +168,9 @@ const T = {
     restart: '↺ Спочатку',
     edit: 'Змінити',
     notSet: '—',
+    notFound: 'Не знайдено — введіть вручну',
+    notInPassport: 'Немає в закордонному паспорті — заповніть на наступному кроці',
+    reviewBadge: 'перевірте AI',
     label: {
       surname: 'Прізвище / Surname',
       given: "Ім'я / Given Name",
@@ -158,6 +196,10 @@ const T = {
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
       i797_or_ead: 'I-797 / EAD → OCR',
+      ai: 'AI розпізнавання',
+      mrz: 'Паспорт · MRZ (висока точність)',
+      visual: 'Паспорт · OCR',
+      user: 'Введено вручну',
     },
     placeholder: {
       address: 'Street, Apt, City, State, ZIP',
@@ -308,6 +350,9 @@ const T = {
     restart: '↺ С начала',
     edit: 'Изменить',
     notSet: '—',
+    notFound: 'Не найдено — введите вручную',
+    notInPassport: 'Нет в загранпаспорте — заполните на следующем шаге',
+    reviewBadge: 'проверьте AI',
     label: {
       surname: 'Фамилия / Surname',
       given: 'Имя / Given Name',
@@ -333,6 +378,10 @@ const T = {
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
       i797_or_ead: 'I-797 / EAD → OCR',
+      ai: 'AI распознавание',
+      mrz: 'Паспорт · MRZ (высокая точность)',
+      visual: 'Паспорт · OCR',
+      user: 'Введено вручную',
     },
     placeholder: {
       address: 'Street, Apt, City, State, ZIP',
@@ -482,6 +531,9 @@ const T = {
     restart: '↺ Restart',
     edit: 'Edit',
     notSet: '—',
+    notFound: 'Not found — enter manually',
+    notInPassport: 'Not on international passport — fill in next step',
+    reviewBadge: 'review AI',
     label: {
       surname: 'Surname / Family name',
       given: 'Given name',
@@ -507,6 +559,10 @@ const T = {
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
       i797_or_ead: 'I-797 / EAD → OCR',
+      ai: 'AI recognition',
+      mrz: 'Passport · MRZ (high confidence)',
+      visual: 'Passport · OCR',
+      user: 'Entered manually',
     },
     placeholder: {
       address: 'Street, Apt, City, State, ZIP',
@@ -657,6 +713,9 @@ const T = {
     restart: '↺ Reiniciar',
     edit: 'Editar',
     notSet: '—',
+    notFound: 'No encontrado — escriba a mano',
+    notInPassport: 'No está en el pasaporte internacional — llene en el siguiente paso',
+    reviewBadge: 'revise IA',
     label: {
       surname: 'Apellido / Surname',
       given: 'Nombre / Given Name',
@@ -682,6 +741,10 @@ const T = {
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
       i797_or_ead: 'I-797 / EAD → OCR',
+      ai: 'Reconocimiento IA',
+      mrz: 'Pasaporte · MRZ (alta confianza)',
+      visual: 'Pasaporte · OCR',
+      user: 'Llenado a mano',
     },
     placeholder: {
       address: 'Calle, Apt, Ciudad, Estado, ZIP',
@@ -961,12 +1024,26 @@ function RW({
   label,
   source,
   value,
+  reviewBadge,
+  missing,
   onEdit,
   editLabel,
 }: {
   label: string
+  /** Human-readable provenance e.g. "Паспорт · MRZ (высокая точность)". */
   source: string
+  /** Already-formatted value (may be empty when missing). */
   value: string
+  /**
+   * Localized text shown next to AI-extracted values that the validator
+   * flagged as requires_review. Pass null/undefined to hide the badge.
+   */
+  reviewBadge?: string | null
+  /**
+   * If true, value is rendered as a localized "not found / fill in manually"
+   * hint instead of a hard dash. Source row is suppressed.
+   */
+  missing?: boolean
   onEdit: () => void
   editLabel: string
 }) {
@@ -978,14 +1055,50 @@ function RW({
         alignItems: 'center',
         padding: '10px 0',
         borderBottom: `1px solid ${BORDER_LIGHT}`,
+        gap: 12,
       }}
     >
-      <div>
+      <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 15, color: TEXT_MUTED }}>{label}</div>
-        <div style={{ fontSize: 13, color: '#bbb' }}>{source}</div>
+        {!missing && source && (
+          <div style={{ fontSize: 13, color: TEXT_HINT }}>{source}</div>
+        )}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ fontSize: 17, fontWeight: 700, textAlign: 'right' }}>{value}</div>
+      <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        {missing ? (
+          <div
+            style={{
+              fontSize: 14,
+              fontStyle: 'italic',
+              color: TEXT_MUTED,
+              textAlign: 'right',
+              maxWidth: 240,
+            }}
+          >
+            {value}
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 17, fontWeight: 700, textAlign: 'right' }}>{value}</div>
+            {reviewBadge && (
+              <span
+                style={{
+                  marginLeft: 8,
+                  padding: '2px 8px',
+                  background: WARN_BG,
+                  color: WARN_TEXT,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  borderRadius: 999,
+                  border: `1px solid ${WARN_BORDER}`,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {reviewBadge}
+              </span>
+            )}
+          </>
+        )}
         <button
           type="button"
           onClick={onEdit}
@@ -1200,19 +1313,45 @@ export default function TPSWizardV2({ locale }: Props) {
           // Reconstruct uploads map from uploadsMeta — without File objects,
           // but WITH the OCR fields so Step 5 review keeps the recognized
           // values after a locale switch / theme switch / accidental reload.
+          //
+          // Backward-compat: v1 stored each field as a bare string
+          // (Record<string, string>); v2 stores FieldExtraction objects.
+          // We upgrade old entries on read so users who had a session
+          // open before the upgrade don't lose their work.
           const rebuiltUploads: Record<string, UploadEntry> = {}
           const meta = (parsed.uploadsMeta || {}) as Record<
             string,
-            Pick<UploadEntry, 'fileName' | 'status' | 'fields'> | undefined
+            {
+              fileName: string
+              status: UploadEntry['status']
+              fields?: Record<string, string | FieldExtraction>
+            } | undefined
           >
           for (const k of Object.keys(meta)) {
             const m = meta[k]
             if (!m) continue
+            const upgradedFields: Record<string, FieldExtraction> = {}
+            if (m.fields) {
+              for (const fk of Object.keys(m.fields)) {
+                const raw = m.fields[fk]
+                if (typeof raw === 'string') {
+                  // v1 → v2 upgrade
+                  upgradedFields[fk] = {
+                    value: raw,
+                    source: 'ocr_visual',
+                    requires_review: false,
+                    doc_slot: k,
+                  }
+                } else if (raw && typeof raw.value === 'string') {
+                  upgradedFields[fk] = raw
+                }
+              }
+            }
             rebuiltUploads[k] = {
-              file: null, // File can't be persisted; we kept the fields/meta
+              file: null,
               fileName: m.fileName,
               status: m.status,
-              fields: m.fields,
+              fields: upgradedFields,
             }
           }
           // Strip server-only/extraneous keys before merging
@@ -1280,13 +1419,20 @@ export default function TPSWizardV2({ locale }: Props) {
   }, [data.type, data.ead, data.method, t])
 
   // ── Merged OCR fields across all uploaded docs ───────────────────────────
-  const mergedOcr = useMemo(() => {
-    const merged: Record<string, string> = {}
+  // We keep the full FieldExtraction trace per key (value + source + review
+  // flag + doc slot). The review screen uses this to (a) show real
+  // provenance per row instead of a hardcoded "Паспорт → OCR" label, and
+  // (b) badge values the AI flagged as requires_review.
+  const mergedFields = useMemo(() => {
+    const merged: Record<string, FieldExtraction> = {}
     for (const id of Object.keys(data.uploads)) {
       const u = data.uploads[id]
       if (!u.fields) continue
       for (const k of Object.keys(u.fields)) {
-        if (!merged[k] && u.fields[k]) merged[k] = u.fields[k]
+        const fx = u.fields[k]
+        // First wins. Rule-based modules run before AI, so the first
+        // upload with a hit for this key is usually the highest-trust one.
+        if (!merged[k] && fx && fx.value) merged[k] = fx
       }
     }
     return merged
@@ -1316,12 +1462,13 @@ export default function TPSWizardV2({ locale }: Props) {
         const r = await fetch('/api/tps/ocr/extract', { method: 'POST', body: fd })
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         const json = await r.json()
-        // The OCR endpoint returns parsed fields under `module.fields[]`
-        // (TpsExtractedField shape: `{ field, normalized_value, raw_value }`),
-        // NOT under a top-level `fields[]` array — that was a wiring bug.
-        // We also accept legacy shapes (`json.fields` with `{name, value}`)
-        // so any backward-compat tooling keeps working.
-        const fields: Record<string, string> = {}
+        // Backend contract:
+        //   json.module.fields[] — TpsExtractedField shape, each with
+        //     `field`, `raw_value`, `normalized_value`, `extraction_source`,
+        //     `review_required`. We keep the full trace per field so the
+        //     review screen can show real provenance (passport MRZ vs AI
+        //     fallback) and badge low-confidence extractions for the user.
+        const fields: Record<string, FieldExtraction> = {}
         const modFields = Array.isArray(json?.module?.fields) ? json.module.fields : []
         for (const f of modFields) {
           if (f && typeof f.field === 'string') {
@@ -1331,14 +1478,35 @@ export default function TPSWizardV2({ locale }: Props) {
                 : typeof f.raw_value === 'string'
                   ? f.raw_value
                   : ''
-            if (v) fields[f.field] = v
+            if (!v) continue
+            const src: ExtractionSource =
+              f.extraction_source === 'ocr_mrz' ||
+              f.extraction_source === 'ocr_visual' ||
+              f.extraction_source === 'ocr_keyword' ||
+              f.extraction_source === 'ai_brain' ||
+              f.extraction_source === 'user_input' ||
+              f.extraction_source === 'user_corrected' ||
+              f.extraction_source === 'inferred'
+                ? (f.extraction_source as ExtractionSource)
+                : 'ocr_visual'
+            fields[f.field] = {
+              value: v,
+              source: src,
+              requires_review: Boolean(f.review_required),
+              doc_slot: id,
+            }
           }
         }
         // Backwards-compat: older shape `{ fields: [{ name, value }] }`.
         if (Object.keys(fields).length === 0 && Array.isArray(json?.fields)) {
           for (const f of json.fields) {
             if (f && typeof f.name === 'string' && typeof f.value === 'string') {
-              fields[f.name] = f.value
+              fields[f.name] = {
+                value: f.value,
+                source: 'ocr_visual',
+                requires_review: false,
+                doc_slot: id,
+              }
             }
           }
         }
@@ -1374,25 +1542,31 @@ export default function TPSWizardV2({ locale }: Props) {
     try {
       const filing_path = data.type === 'init' ? 'initial' : 're_registration'
       const ead = data.ead === 'ead'
+      // Pull the value out of FieldExtraction; alias keeps the rest of this
+      // builder readable (no .value sprinkled everywhere).
+      const v = (k: string): string => mergedFields[k]?.value || ''
+      // A-number reaches the PDF as digits only. Display can keep dashes;
+      // packetBuilder will fail-soft on an invalid shape.
+      const aNumberDigits = v('a_number').replace(/\D/g, '')
       const answers: Partial<TPSAnswers> = {
-        family_name: mergedOcr.family_name || mergedOcr.surname || '',
-        given_name: mergedOcr.given_name || mergedOcr.first_name || '',
-        middle_name: mergedOcr.middle_name || mergedOcr.patronymic || '',
-        dob: mergedOcr.dob || mergedOcr.date_of_birth || '',
-        sex: (mergedOcr.sex === 'F' ? 'F' : 'M') as TPSAnswers['sex'],
-        country_of_birth: mergedOcr.country_of_birth || 'Ukraine',
-        country_of_nationality: mergedOcr.country_of_nationality || 'Ukraine',
-        passport_number: mergedOcr.passport_number || '',
-        passport_country_of_issuance: mergedOcr.passport_country_of_issuance || 'Ukraine',
-        passport_expiration_date: mergedOcr.passport_expiration_date || '',
-        a_number: mergedOcr.a_number || '',
-        i94_admission_number: mergedOcr.i94_admission_number || '',
-        last_entry_date: mergedOcr.last_entry_date || '',
-        status_at_last_entry: mergedOcr.status_at_last_entry || '',
+        family_name: v('family_name') || v('surname'),
+        given_name: v('given_name') || v('first_name'),
+        middle_name: v('middle_name') || v('patronymic'),
+        dob: v('dob') || v('date_of_birth'),
+        sex: (v('sex') === 'F' ? 'F' : 'M') as TPSAnswers['sex'],
+        country_of_birth: v('country_of_birth') || 'Ukraine',
+        country_of_nationality: v('country_of_nationality') || 'Ukraine',
+        passport_number: v('passport_number'),
+        passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
+        passport_expiration_date: v('passport_expiration_date'),
+        a_number: aNumberDigits,
+        i94_admission_number: v('i94_admission_number'),
+        last_entry_date: v('last_entry_date'),
+        status_at_last_entry: v('status_at_last_entry'),
         filing_path,
         wants_ead: ead,
         ead_category: ead ? (data.type === 'init' ? 'a12' : 'c19') : null,
-        us_address_street: data.manual.us_address_street || mergedOcr.address || '',
+        us_address_street: data.manual.us_address_street || v('address'),
         us_address_city: data.manual.us_address_city || '',
         us_address_state: data.manual.us_address_state || '',
         us_address_zip: data.manual.us_address_zip || '',
@@ -1426,7 +1600,7 @@ export default function TPSWizardV2({ locale }: Props) {
     } finally {
       setBusy(false)
     }
-  }, [data, mergedOcr, t.packetErr])
+  }, [data, mergedFields, t.packetErr])
 
   // ── Restart helper ───────────────────────────────────────────────────────
   const restart = useCallback(() => {
@@ -1599,7 +1773,12 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s5h}</div>
 
             <Card title={t.s5OcrTitle}>
-              <ReviewOcr t={t} type={data.type} ead={data.ead} mergedOcr={mergedOcr} />
+              <ReviewOcr
+                t={t}
+                type={data.type}
+                ead={data.ead}
+                mergedFields={mergedFields}
+              />
             </Card>
 
             <Card title={t.s5ManualTitle}>
@@ -1876,52 +2055,110 @@ function ReviewOcr({
   t,
   type,
   ead,
-  mergedOcr,
+  mergedFields,
 }: {
   t: (typeof T)[LocaleKey]
   type?: FilingType
   ead?: EadChoice
-  mergedOcr: Record<string, string>
+  mergedFields: Record<string, FieldExtraction>
 }) {
   const init = type === 'init'
   const wantsEad = ead === 'ead'
-  const rows: Array<{ key: string; label: string; source: string }> = [
-    { key: 'family_name', label: t.label.surname, source: t.source.passport },
-    { key: 'given_name', label: t.label.given, source: t.source.passport },
-    { key: 'middle_name', label: t.label.patronymic, source: t.source.passport },
-    { key: 'dob', label: t.label.dob, source: t.source.passport },
-    { key: 'sex', label: t.label.sex, source: t.source.passport },
-    { key: 'passport_number', label: t.label.passport_number, source: t.source.passport },
-    { key: 'country_of_nationality', label: t.label.country_of_nationality, source: t.source.passport },
+
+  // Per-row expected document slot for the "Not found" hint. We use this
+  // when the field hasn't been extracted, so the missing-value message
+  // can be specific ("Not on international passport — fill in next step"
+  // for patronymic vs the generic "Not found — enter manually" for others).
+  type RowSpec = {
+    key: string
+    label: string
+    /** Document this field is expected to come from. */
+    expectedDoc: 'passport' | 'i94' | 'ead' | 'i797' | 'i797_or_ead'
+    /**
+     * If true, an empty value on an international passport is normal
+     * (not an OCR failure) and we explain that to the user instead of
+     * implying recognition broke.
+     */
+    notOnIntlPassportIfEmpty?: boolean
+  }
+  const rows: RowSpec[] = [
+    { key: 'family_name', label: t.label.surname, expectedDoc: 'passport' },
+    { key: 'given_name', label: t.label.given, expectedDoc: 'passport' },
+    { key: 'middle_name', label: t.label.patronymic, expectedDoc: 'passport', notOnIntlPassportIfEmpty: true },
+    { key: 'dob', label: t.label.dob, expectedDoc: 'passport' },
+    { key: 'sex', label: t.label.sex, expectedDoc: 'passport' },
+    { key: 'passport_number', label: t.label.passport_number, expectedDoc: 'passport' },
+    { key: 'country_of_nationality', label: t.label.country_of_nationality, expectedDoc: 'passport' },
   ]
   if (init) {
     rows.push(
-      { key: 'i94_admission_number', label: t.label.i94_admission_number, source: t.source.i94 },
-      { key: 'last_entry_date', label: t.label.last_entry_date, source: t.source.i94 },
-      { key: 'status_at_last_entry', label: t.label.status_at_last_entry, source: t.source.i94 },
+      { key: 'i94_admission_number', label: t.label.i94_admission_number, expectedDoc: 'i94' },
+      { key: 'last_entry_date', label: t.label.last_entry_date, expectedDoc: 'i94' },
+      { key: 'status_at_last_entry', label: t.label.status_at_last_entry, expectedDoc: 'i94' },
     )
   }
   if (!init && wantsEad) {
     rows.push(
-      { key: 'a_number', label: t.label.a_number, source: t.source.ead },
-      { key: 'address', label: t.label.address, source: t.source.i797_or_ead },
+      { key: 'a_number', label: t.label.a_number, expectedDoc: 'ead' },
+      { key: 'address', label: t.label.address, expectedDoc: 'i797_or_ead' },
     )
   }
   if (!init && !wantsEad) {
-    rows.push({ key: 'address', label: t.label.address, source: t.source.i797 })
+    rows.push({ key: 'address', label: t.label.address, expectedDoc: 'i797' })
   }
+
+  // Map an ExtractionSource to a human-readable provenance string. This is
+  // what makes the "Паспорт → OCR" hardcoded label HONEST — when the AI
+  // brain filled a gap, the row now says "AI распознавание" so the user
+  // knows to double-check that value.
+  const provenanceLabel = (source: ExtractionSource, fallbackDoc: RowSpec['expectedDoc']): string => {
+    if (source === 'ai_brain') return t.source.ai
+    if (source === 'ocr_mrz') return t.source.mrz
+    if (source === 'ocr_visual' || source === 'ocr_keyword') {
+      // Honor the actual doc slot when we have one — e.g. an A-number that
+      // came from EAD via keyword anchor should say "EAD → OCR", not
+      // generic "Passport · OCR".
+      if (fallbackDoc === 'passport') return t.source.visual
+      if (fallbackDoc === 'i94') return t.source.i94
+      if (fallbackDoc === 'ead') return t.source.ead
+      if (fallbackDoc === 'i797') return t.source.i797
+      return t.source.i797_or_ead
+    }
+    if (source === 'user_input' || source === 'user_corrected') return t.source.user
+    return t.source.visual
+  }
+
   return (
     <>
-      {rows.map((r) => (
-        <RW
-          key={r.key}
-          label={r.label}
-          source={r.source}
-          value={mergedOcr[r.key] || t.notSet}
-          onEdit={() => alert(`Edit: ${r.label}`)}
-          editLabel={t.edit}
-        />
-      ))}
+      {rows.map((r) => {
+        const fx = mergedFields[r.key]
+        if (fx && fx.value) {
+          return (
+            <RW
+              key={r.key}
+              label={r.label}
+              source={provenanceLabel(fx.source, r.expectedDoc)}
+              value={fx.value}
+              reviewBadge={fx.requires_review || fx.source === 'ai_brain' ? t.reviewBadge : null}
+              onEdit={() => alert(`Edit: ${r.label}`)}
+              editLabel={t.edit}
+            />
+          )
+        }
+        // No value extracted. Explain why instead of a silent dash.
+        const missingMsg = r.notOnIntlPassportIfEmpty ? t.notInPassport : t.notFound
+        return (
+          <RW
+            key={r.key}
+            label={r.label}
+            source=""
+            value={missingMsg}
+            missing
+            onEdit={() => alert(`Edit: ${r.label}`)}
+            editLabel={t.edit}
+          />
+        )
+      })}
     </>
   )
 }
