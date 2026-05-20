@@ -388,6 +388,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Module-level slot mismatch (Brain-independent) ─────────────────────
+  //
+  // The contract's slot_mismatch flag fires only when Brain successfully
+  // classified the document with a type that disagrees with the slot.
+  // But when Brain fails (INVALID_JSON, timeout, off) AND the rule module
+  // for the requested slot ALSO explicitly says matched=false, we still
+  // have strong evidence the user uploaded the wrong document — the rule
+  // module looked for the slot's anchors and didn't find them. In that
+  // case the wizard should still show the wrong-slot warning instead of
+  // silently rendering an empty Step 5. Observed in production when a
+  // California DL is uploaded into the I-94 slot: rule module returned
+  // 'too_few_i94_anchors_matched', Brain returned INVALID_JSON, and the
+  // user saw zero fields with no explanation.
+  const moduleSaysWrong =
+    docTypeHint !== '' &&
+    moduleResult !== null &&
+    moduleResult.matched === false &&
+    result.raw_text.length > 30  // there IS readable text — just not for this slot
+  const effectiveSlotMismatch = contract.slot_mismatch || moduleSaysWrong
+
   // ── Top-level diagnostics so the wizard, monitors, and audit scripts
   // can see at a glance what happened to extraction without parsing the
   // nested brain object. No PII surfaced — counts and codes only.
@@ -429,8 +449,17 @@ export async function POST(req: NextRequest) {
       // fields (so the wizard never sees them) and the document-type
       // mismatch flag (so the wizard can show a "wrong document for
       // this slot" warning instead of silently merging unrelated data).
+      // slot_mismatch is the OR of the contract's Brain-based flag and
+      // the module-says-wrong heuristic (covers the case when Brain
+      // also failed but the rule module is confident the document is
+      // not what the slot expected).
       slot: contract.slot,
-      slot_mismatch: contract.slot_mismatch,
+      slot_mismatch: effectiveSlotMismatch,
+      slot_mismatch_source: contract.slot_mismatch
+        ? 'brain_doc_type'
+        : moduleSaysWrong
+          ? 'rule_module_no_anchors'
+          : null,
       detected_document_type: contract.detected_document_type,
       rejected_fields: contract.rejected_fields,
       rejected_field_count: contract.rejected_fields.length,
