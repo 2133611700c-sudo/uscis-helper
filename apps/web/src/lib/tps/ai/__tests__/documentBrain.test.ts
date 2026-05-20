@@ -280,6 +280,77 @@ describe('validateBrainField — deterministic rules', () => {
     expect(res.ok).toBe(true)
     expect(f.final_value).toBe('Ukraine')
   })
+
+  // ── Real Ukrainian passport gotchas ─────────────────────────────────────
+  it('accepts DOB DD.MM.YY (2-digit year, Ukrainian biographic zone)', () => {
+    const f = baseField('13.07.85')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('07/13/1985')
+  })
+
+  it('accepts DOB "01 СІЧ 1985" (Ukrainian Cyrillic month)', () => {
+    const f = baseField('01 СІЧ 1985')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('01/01/1985')
+  })
+
+  it('accepts DOB "13 ЛИП 85" (Ukrainian month + 2-digit year)', () => {
+    const f = baseField('13 ЛИП 85')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('07/13/1985')
+  })
+
+  it('accepts DOB "01 ЯНВ 1985" (Russian Cyrillic month)', () => {
+    const f = baseField('01 ЯНВ 1985')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('01/01/1985')
+  })
+
+  it('accepts passport expiration DD.MM.YY future date', () => {
+    const yyyy = new Date().getUTCFullYear() + 5
+    const yy = String(yyyy % 100).padStart(2, '0')
+    const f = baseField(`01.01.${yy}`)
+    const res = validateBrainField('passport_expiration_date', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe(`01/01/${yyyy}`)
+  })
+
+  it('normalizes sex "Ч" (Ukrainian male marker) to "M"', () => {
+    const f = baseField('Ч')
+    const res = validateBrainField('sex', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('M')
+  })
+
+  it('normalizes sex "ЧОЛ" to "M"', () => {
+    const f = baseField('ЧОЛ')
+    const res = validateBrainField('sex', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('M')
+  })
+
+  it('normalizes sex "Ж" (Ukrainian female marker) to "F"', () => {
+    const f = baseField('Ж')
+    const res = validateBrainField('sex', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('F')
+  })
+
+  it('normalizes sex "ЖІН" to "F"', () => {
+    const f = baseField('ЖІН')
+    const res = validateBrainField('sex', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('F')
+  })
+
+  it('still rejects nonsense sex like "Q"', () => {
+    const res = validateBrainField('sex', baseField('Q'))
+    expect(res.ok).toBe(false)
+  })
 })
 
 describe('extractJsonObject', () => {
