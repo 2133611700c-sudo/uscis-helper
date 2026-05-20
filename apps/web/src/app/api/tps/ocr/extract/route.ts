@@ -32,6 +32,7 @@ import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
 import { runI94Module } from '@/lib/tps/modules/i94'
 import { runEadModule } from '@/lib/tps/modules/ead'
 import type { TpsModuleResult, TpsExtractedField } from '@/lib/tps/types'
+import { applyContract } from '@/lib/tps/ocr/documentContracts'
 import {
   runBrain,
   validateBrainField,
@@ -296,6 +297,35 @@ export async function POST(req: NextRequest) {
     } as TpsModuleResult
   }
 
+  // ── Document Slot Firewall ─────────────────────────────────────────────
+  // Apply the per-slot allowed/forbidden field contract BEFORE we surface
+  // anything to the wizard. This blocks two real failure modes seen in
+  // production:
+  //
+  //   1. Brain hallucinating fields the document can't possibly contain
+  //      (e.g. an A-number from a passport upload).
+  //   2. User dropping the wrong document into the wrong slot (e.g.
+  //      passport into the I-94 input). The Brain's `document_type`
+  //      classification doesn't match what the slot expects → flag
+  //      `slot_mismatch: true` so the wizard can warn instead of
+  //      silently merging unrelated fields.
+  //
+  // The contract is the single source of truth; defining a new field
+  // requires explicitly listing it under the right slot.
+  const rawDocTypeFromBrain =
+    brainResult?.ok ? brainResult.result.document_type : null
+  const allMergedKeys = mergedModule
+    ? Array.from(new Set(mergedModule.fields.map((f) => f.field)))
+    : []
+  const contract = applyContract(docTypeHint, allMergedKeys, rawDocTypeFromBrain)
+  if (mergedModule && contract.rejected_fields.length > 0) {
+    const acceptedSet = new Set(contract.accepted_field_keys)
+    mergedModule = {
+      ...mergedModule,
+      fields: mergedModule.fields.filter((f) => acceptedSet.has(f.field)),
+    }
+  }
+
   // ── Top-level diagnostics so the wizard, monitors, and audit scripts
   // can see at a glance what happened to extraction without parsing the
   // nested brain object. No PII surfaced — counts and codes only.
@@ -333,6 +363,15 @@ export async function POST(req: NextRequest) {
       brain_added_count: brainAddedCount,
       final_field_count: finalFieldCount,
       final_field_keys: finalFieldKeys,
+      // ── Slot firewall diagnostics. Surfaces both the hard-rejected
+      // fields (so the wizard never sees them) and the document-type
+      // mismatch flag (so the wizard can show a "wrong document for
+      // this slot" warning instead of silently merging unrelated data).
+      slot: contract.slot,
+      slot_mismatch: contract.slot_mismatch,
+      detected_document_type: contract.detected_document_type,
+      rejected_fields: contract.rejected_fields,
+      rejected_field_count: contract.rejected_fields.length,
       pages: result.pages.map((p) => ({
         page: p.page,
         width: p.width,

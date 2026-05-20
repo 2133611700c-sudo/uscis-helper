@@ -1,0 +1,318 @@
+/**
+ * Document Slot Contract — TPS OCR firewall.
+ *
+ * Single source of truth answering: "Given a user-selected document slot,
+ * which TpsExtractedField keys are allowed to flow through to Step 5
+ * review and downstream PDF prefill, and which must be hard-rejected?"
+ *
+ * Purpose:
+ *   - Stop the AI Brain from filling fields the document can't possibly
+ *     contain (e.g. surfacing an A-number from a passport).
+ *   - Catch wrong-document-in-wrong-slot mistakes (user dropped a
+ *     passport into the I-94 input by accident).
+ *   - Keep identity authoritative: passport fields win over EAD/I-94
+ *     name/DOB when they conflict, so we never silently override.
+ *
+ * The contract is intentionally STRICT. Adding a new allowed field is a
+ * deliberate change that should be discussed in a PR.
+ */
+import type { TpsDocType } from '@/lib/tps/types'
+
+/**
+ * Wizard slot id (matches the keys used in TPSWizardV2.tsx uploads map).
+ * Two slot ids may map to the same document family (e.g. ead and ead_old).
+ */
+export type SlotId =
+  | 'passport'
+  | 'i94'
+  | 'ead'
+  | 'ead_old'
+  | 'tps_notice'
+  | 'photo'
+
+export interface DocumentSlotContract {
+  /** Wizard slot id this contract applies to. */
+  slot: SlotId
+  /**
+   * Backend `TpsDocType` values that, when returned by Brain or by the
+   * rule module, are considered a correct match for this slot.
+   */
+  allowed_document_types: TpsDocType[]
+  /**
+   * Fields the slot may legitimately carry. Anything outside this list
+   * is rejected with `FIELD_NOT_ALLOWED_FOR_DOCUMENT_SLOT`.
+   */
+  allowed_fields: string[]
+  /**
+   * Fields the slot must NEVER carry. A passport, for example, cannot
+   * produce an A-number — that data only exists on EAD/I-797/manual.
+   * Listed explicitly (vs implied complement of allowed_fields) so
+   * audit reviewers can grep the forbidden set per slot.
+   */
+  forbidden_fields: string[]
+}
+
+/**
+ * Per-slot contract registry. Adding a slot or a field here is the
+ * full diff you need to enable it across the pipeline.
+ */
+export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
+  passport: {
+    slot: 'passport',
+    allowed_document_types: ['passport'],
+    allowed_fields: [
+      'family_name',
+      'given_name',
+      'middle_name',
+      'dob',
+      'sex',
+      'country_of_birth',
+      'country_of_nationality',
+      'passport_number',
+      'passport_country_of_issuance',
+      'passport_expiration_date',
+    ],
+    forbidden_fields: [
+      'a_number',
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'last_entry_date',
+      'status_at_last_entry',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'address',
+      'us_address_street',
+      'us_address_city',
+      'us_address_state',
+      'us_address_zip',
+    ],
+  },
+  i94: {
+    slot: 'i94',
+    allowed_document_types: ['i94'],
+    allowed_fields: [
+      'i94_admission_number',
+      'last_entry_date',
+      'i94_class_of_admission',
+      'status_at_last_entry',
+      // I-94 mirrors a few passport-identity fields; allowed read-only,
+      // but the identity conflict guard treats passport as authoritative.
+      'passport_number',
+      'passport_country_of_issuance',
+      'family_name',
+      'given_name',
+      'dob',
+    ],
+    forbidden_fields: [
+      'a_number',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'passport_expiration_date',
+    ],
+  },
+  ead: {
+    slot: 'ead',
+    allowed_document_types: ['ead'],
+    allowed_fields: [
+      'a_number',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      // EAD cards print name and DOB; allowed but identity guard makes
+      // passport authoritative on conflict.
+      'family_name',
+      'given_name',
+      'dob',
+      'sex',
+    ],
+    forbidden_fields: [
+      'passport_expiration_date',
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'last_entry_date',
+    ],
+  },
+  // The "ead_old" slot is the previous EAD on a Re-Registration flow.
+  // Same contract as ead — just a different upload slot.
+  ead_old: {
+    slot: 'ead_old',
+    allowed_document_types: ['ead'],
+    allowed_fields: [
+      'a_number',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'family_name',
+      'given_name',
+      'dob',
+      'sex',
+    ],
+    forbidden_fields: [
+      'passport_expiration_date',
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'last_entry_date',
+    ],
+  },
+  // TPS Approval / Receipt Notice (Form I-797). Carries A-number and
+  // mailing address; we allow conservative name fields for cross-check
+  // but always treat passport as identity-authoritative.
+  tps_notice: {
+    slot: 'tps_notice',
+    allowed_document_types: ['i797'],
+    allowed_fields: [
+      'a_number',
+      'family_name',
+      'given_name',
+      'dob',
+      'address',
+      'us_address_street',
+      'us_address_city',
+      'us_address_state',
+      'us_address_zip',
+    ],
+    forbidden_fields: [
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'passport_expiration_date',
+    ],
+  },
+  // Photo slot is just a 2x2 image carrier — no OCR fields expected.
+  photo: {
+    slot: 'photo',
+    allowed_document_types: [],
+    allowed_fields: [],
+    forbidden_fields: [
+      'family_name',
+      'given_name',
+      'middle_name',
+      'dob',
+      'sex',
+      'passport_number',
+      'passport_expiration_date',
+      'a_number',
+      'i94_admission_number',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'country_of_nationality',
+      'address',
+    ],
+  },
+}
+
+/**
+ * Reason codes a contract violation can produce. Surfaced in the OCR
+ * response and in wizard UI so auditors can grep without parsing prose.
+ */
+export type ContractViolationCode =
+  | 'FIELD_NOT_ALLOWED_FOR_DOCUMENT_SLOT'
+  | 'FORBIDDEN_FIELD_FOR_DOCUMENT_SLOT'
+  | 'DOCUMENT_TYPE_MISMATCH_FOR_SLOT'
+  | 'UNKNOWN_SLOT'
+
+export interface ContractCheckResult {
+  /** The slot id that was applied. Null if slot wasn't recognized. */
+  slot: SlotId | null
+  /**
+   * True when Brain's document_type does not match what the slot expects
+   * (e.g. user dropped a passport into the I-94 input).
+   */
+  slot_mismatch: boolean
+  /** Brain's document type, echoed for UI display. */
+  detected_document_type: TpsDocType | 'unknown' | null
+  /**
+   * Field keys that survived the filter and may be merged into the
+   * wizard's review state.
+   */
+  accepted_field_keys: string[]
+  /**
+   * Per-rejected-field reason. The shape mirrors brain.validated_skipped
+   * so the response stays auditable from one place.
+   */
+  rejected_fields: Array<{ field: string; reason: ContractViolationCode }>
+}
+
+/**
+ * Brain's schema uses long names like "international_passport"; the
+ * server-side TpsDocType uses short names like "passport". Normalize so
+ * the contract can be applied with either source's nomenclature.
+ */
+const DOC_TYPE_ALIASES: Record<string, TpsDocType | 'unknown'> = {
+  passport: 'passport',
+  international_passport: 'passport',
+  ukrainian_internal_passport: 'passport',
+  i94: 'i94',
+  ead: 'ead',
+  i797: 'i797',
+  uscis_notice: 'i797',
+  residence_evidence: 'residence_evidence',
+  translated_document: 'translated_document',
+  unknown: 'unknown',
+}
+
+/**
+ * Apply the slot contract to a set of extracted fields.
+ *
+ * @param slotIdRaw   user-selected slot id (the wizard's docHint)
+ * @param fieldKeys   list of field keys produced by rule modules + Brain
+ * @param detectedDocType  Brain's `document_type` classification, or null.
+ *   Accepts both backend-side TpsDocType names ("passport", "i94") and
+ *   Brain-side long names ("international_passport", "uscis_notice").
+ *
+ * @returns auditable summary; does not mutate inputs.
+ */
+export function applyContract(
+  slotIdRaw: string | null | undefined,
+  fieldKeys: string[],
+  detectedDocType: string | null,
+): ContractCheckResult {
+  const normalizedDocType = detectedDocType
+    ? (DOC_TYPE_ALIASES[detectedDocType] ?? 'unknown')
+    : null
+  const slotId = (slotIdRaw || '').trim() as SlotId
+  const contract = DOCUMENT_CONTRACTS[slotId]
+  if (!contract) {
+    return {
+      slot: null,
+      slot_mismatch: false,
+      detected_document_type: normalizedDocType,
+      accepted_field_keys: [],
+      rejected_fields: fieldKeys.map((k) => ({
+        field: k,
+        reason: 'UNKNOWN_SLOT',
+      })),
+    }
+  }
+  const allowed = new Set(contract.allowed_fields)
+  const forbidden = new Set(contract.forbidden_fields)
+  const accepted: string[] = []
+  const rejected: ContractCheckResult['rejected_fields'] = []
+  for (const key of fieldKeys) {
+    if (forbidden.has(key)) {
+      rejected.push({ field: key, reason: 'FORBIDDEN_FIELD_FOR_DOCUMENT_SLOT' })
+    } else if (!allowed.has(key)) {
+      rejected.push({ field: key, reason: 'FIELD_NOT_ALLOWED_FOR_DOCUMENT_SLOT' })
+    } else {
+      accepted.push(key)
+    }
+  }
+  // Document-type mismatch: Brain says "ead" but slot expected "passport".
+  // 'unknown' is NOT a hard mismatch — Brain may simply not be confident
+  // enough to classify; field-level filter still applies as the safety net.
+  let slotMismatch = false
+  if (
+    normalizedDocType &&
+    normalizedDocType !== 'unknown' &&
+    contract.allowed_document_types.length > 0 &&
+    !contract.allowed_document_types.includes(normalizedDocType as TpsDocType)
+  ) {
+    slotMismatch = true
+  }
+  return {
+    slot: slotId,
+    slot_mismatch: slotMismatch,
+    detected_document_type: normalizedDocType,
+    accepted_field_keys: accepted,
+    rejected_fields: rejected,
+  }
+}
