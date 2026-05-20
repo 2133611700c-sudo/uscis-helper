@@ -11,3 +11,7 @@ docs/archive/*
 # Build artifacts
 apps/web/tsconfig.tsbuildinfo
 apps/web/public/brand/archive/
+
+# Real user documents — PII, never committed
+qa-shots/private/
+docs/audit/REAL_DOC_GROUND_TRUTH.local.yaml
