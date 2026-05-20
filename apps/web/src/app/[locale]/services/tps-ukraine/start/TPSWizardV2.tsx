@@ -186,6 +186,7 @@ const T = {
       mrzMissing: 'Не видно нижню частину паспорта з MRZ. Перезніміть документ повністю або введіть дані вручну.',
       dobMissing: 'Дата народження не знайдена. Перевірте фото або введіть вручну.',
       poorImage: 'Документ погано читається. Зробіть фото чіткіше або введіть дані вручну.',
+      identityConflict: '⚠️ В одному з ваших документів інші особисті дані. Паспорт — основний джерело. Перевірте та виправте, якщо потрібно.',
     },
     label: {
       surname: 'Прізвище / Surname',
@@ -374,6 +375,7 @@ const T = {
       mrzMissing: 'Не видна нижняя часть паспорта с MRZ. Переснимите документ полностью или введите данные вручную.',
       dobMissing: 'Дата рождения не найдена. Проверьте фото или введите вручную.',
       poorImage: 'Документ плохо читается. Сделайте фото чётче или введите данные вручную.',
+      identityConflict: '⚠️ В одном из ваших документов другие личные данные. Паспорт — основной источник. Проверьте и при необходимости исправьте.',
     },
     label: {
       surname: 'Фамилия / Surname',
@@ -561,6 +563,7 @@ const T = {
       mrzMissing: 'The bottom MRZ zone of the passport is not visible. Retake the full document or enter data manually.',
       dobMissing: 'Date of birth not found. Check the photo or enter it manually.',
       poorImage: 'The document is hard to read. Retake a sharper photo or enter the data manually.',
+      identityConflict: '⚠️ One of your documents has different personal data. The passport is the authoritative source. Please review and correct if needed.',
     },
     label: {
       surname: 'Surname / Family name',
@@ -749,6 +752,7 @@ const T = {
       mrzMissing: 'No se ve la zona MRZ del pasaporte. Vuelva a tomar la foto del documento completo o ingrese los datos manualmente.',
       dobMissing: 'No se encontró la fecha de nacimiento. Verifique la foto o ingrésela manualmente.',
       poorImage: 'El documento es difícil de leer. Tome una foto más nítida o ingrese los datos manualmente.',
+      identityConflict: '⚠️ Uno de sus documentos tiene datos personales diferentes. El pasaporte es la fuente autoritativa. Revise y corrija si es necesario.',
     },
     label: {
       surname: 'Apellido / Surname',
@@ -1557,18 +1561,54 @@ export default function TPSWizardV2({ locale }: Props) {
   // flag + doc slot). The review screen uses this to (a) show real
   // provenance per row instead of a hardcoded "Паспорт → OCR" label, and
   // (b) badge values the AI flagged as requires_review.
+  // R1B-4 identity conflict guard.
+  // Identity fields (family_name / given_name / dob / sex / passport_number)
+  // are AUTHORITATIVE from the passport slot. If EAD or I-94 carry the same
+  // field with a DIFFERENT value, we still keep the passport value but flag
+  // requires_review so the wizard surfaces a conflict banner — the user
+  // must confirm before the value reaches the PDF. Same key with the
+  // SAME value across uploads is fine (no conflict).
+  const IDENTITY_FIELDS = new Set([
+    'family_name', 'given_name', 'middle_name', 'dob', 'sex',
+    'passport_number', 'passport_expiration_date',
+    'country_of_nationality', 'country_of_birth',
+  ])
   const mergedFields = useMemo(() => {
     const merged: Record<string, FieldExtraction> = {}
+    const conflicts: Record<string, string[]> = {}
+    // Pass 1 — passport authoritative for identity fields.
+    const passport = data.uploads.passport
+    if (passport?.fields) {
+      for (const k of Object.keys(passport.fields)) {
+        const fx = passport.fields[k]
+        if (fx && fx.value) merged[k] = fx
+      }
+    }
+    // Pass 2 — any other upload fills GAPS plus detects identity conflicts.
     for (const id of Object.keys(data.uploads)) {
+      if (id === 'passport') continue
       const u = data.uploads[id]
       if (!u.fields) continue
       for (const k of Object.keys(u.fields)) {
         const fx = u.fields[k]
-        // First wins. Rule-based modules run before AI, so the first
-        // upload with a hit for this key is usually the highest-trust one.
-        if (!merged[k] && fx && fx.value) merged[k] = fx
+        if (!fx || !fx.value) continue
+        if (!merged[k]) {
+          merged[k] = fx
+          continue
+        }
+        // Conflict: identity field with a different value than passport
+        if (
+          IDENTITY_FIELDS.has(k) &&
+          merged[k].value.toLowerCase().trim() !== fx.value.toLowerCase().trim()
+        ) {
+          (conflicts[k] ||= []).push(`${id}:${fx.value}`)
+          merged[k] = { ...merged[k], requires_review: true }
+        }
       }
     }
+    // Expose conflicts via a side-channel for the UI banner.
+    ;(merged as Record<string, FieldExtraction> & { __conflicts?: typeof conflicts }).__conflicts =
+      Object.keys(conflicts).length > 0 ? conflicts : undefined
     return merged
   }, [data.uploads])
 
@@ -2009,6 +2049,23 @@ export default function TPSWizardV2({ locale }: Props) {
                     </div>,
                   )
                 }
+              }
+              // R1B-4: identity conflict banner — EAD/I-94 disagreed
+              // with passport on a critical identity field. Passport
+              // wins (already merged), but the user sees a banner so
+              // they can confirm before generating the PDF.
+              const conflicts = (mergedFields as Record<string, FieldExtraction> & {
+                __conflicts?: Record<string, string[]>
+              }).__conflicts
+              if (conflicts && Object.keys(conflicts).length > 0) {
+                banners.push(
+                  <div key="conflict" style={{ background: WARN_BG, border: `1.5px solid ${WARN_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: WARN_TEXT, marginBottom: 12 }}>
+                    {t.warn.identityConflict}
+                    <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
+                      {Object.keys(conflicts).join(', ')}
+                    </div>
+                  </div>,
+                )
               }
               return banners
             })()}
