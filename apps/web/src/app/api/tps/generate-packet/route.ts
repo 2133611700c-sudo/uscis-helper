@@ -30,7 +30,12 @@ import { buildPacket } from '@/lib/tps/packetBuilder'
 //   3) A-number is digits-only (7–9). The I-821 / I-765 A-number fields
 //      do not accept dashes or letters.
 const HAS_CYRILLIC = /[Ѐ-ӿ]/
-const USCIS_DATE = /^(\d{2})\/(\d{2})\/(\d{4})$/
+// Accept the two canonical date shapes:
+//   USCIS canonical  MM/DD/YYYY      (what the UI normalizes to)
+//   ISO              YYYY-MM-DD      (used by some fixtures + future API clients)
+// Both are unambiguous; packetBuilder normalizes to USCIS form before writing
+// to pdf-lib. Anything else is a bug upstream and rejected here.
+const VALID_DATE = /^(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})$/
 const LATIN_REQUIRED_FIELDS: ReadonlyArray<keyof TPSAnswers> = [
   'family_name', 'given_name', 'middle_name',
   'us_address_street', 'us_address_city', 'us_address_state', 'us_address_zip',
@@ -58,8 +63,8 @@ function preflightAudit(answers: TPSAnswers): FirewallIssue[] {
   }
   for (const k of DATE_FIELDS) {
     const v = answers[k]
-    if (typeof v === 'string' && v && !USCIS_DATE.test(v)) {
-      issues.push({ field: k, reason: 'date_not_mm_dd_yyyy' })
+    if (typeof v === 'string' && v && !VALID_DATE.test(v)) {
+      issues.push({ field: k, reason: 'date_not_mm_dd_yyyy_or_iso' })
     }
   }
   const a = answers.a_number
