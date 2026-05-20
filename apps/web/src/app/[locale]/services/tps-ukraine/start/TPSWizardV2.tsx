@@ -951,6 +951,19 @@ const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
 // for the UI label; the actual Stripe Price ID is set server-side).
 const TPS_TIER1_PRICE_DISPLAY = '$15'
 
+/**
+ * Identity fields where the passport upload (if present) is the
+ * authoritative source. Other uploads may fill these IF passport is
+ * missing, but may NOT overwrite a passport value silently. Defined
+ * at module scope so the mergedFields useMemo dep list stays empty
+ * (React exhaustive-deps stays clean).
+ */
+const IDENTITY_FIELDS_AUTHORITATIVE: ReadonlySet<string> = new Set([
+  'family_name', 'given_name', 'middle_name', 'dob', 'sex',
+  'passport_number', 'passport_expiration_date',
+  'country_of_nationality', 'country_of_birth',
+])
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Small reusable bits (kept inside this file so the wizard is self-contained)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1568,11 +1581,9 @@ export default function TPSWizardV2({ locale }: Props) {
   // requires_review so the wizard surfaces a conflict banner — the user
   // must confirm before the value reaches the PDF. Same key with the
   // SAME value across uploads is fine (no conflict).
-  const IDENTITY_FIELDS = new Set([
-    'family_name', 'given_name', 'middle_name', 'dob', 'sex',
-    'passport_number', 'passport_expiration_date',
-    'country_of_nationality', 'country_of_birth',
-  ])
+  // Set lives at module scope (declared via IDENTITY_FIELDS_AUTHORITATIVE
+  // near the top of this file) so React's exhaustive-deps lint stays
+  // happy without a dep on a recreated Set per render.
   const mergedFields = useMemo(() => {
     const merged: Record<string, FieldExtraction> = {}
     const conflicts: Record<string, string[]> = {}
@@ -1598,7 +1609,7 @@ export default function TPSWizardV2({ locale }: Props) {
         }
         // Conflict: identity field with a different value than passport
         if (
-          IDENTITY_FIELDS.has(k) &&
+          IDENTITY_FIELDS_AUTHORITATIVE.has(k) &&
           merged[k].value.toLowerCase().trim() !== fx.value.toLowerCase().trim()
         ) {
           (conflicts[k] ||= []).push(`${id}:${fx.value}`)
