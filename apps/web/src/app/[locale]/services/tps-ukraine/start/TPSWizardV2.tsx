@@ -2084,7 +2084,23 @@ export default function TPSWizardV2({ locale }: Props) {
                     )
                   }
                 }
-                if ((u.vision_text_length ?? 0) < 30) {
+                // 2026-05-20: tightened the poorImage trigger. The old
+                // condition `(u.vision_text_length ?? 0) < 30` fired
+                // FALSE POSITIVES on every upload after a page refresh
+                // because vision_text_length is NOT persisted into
+                // localStorage (uploadsSafe at line ~1552 only picks
+                // fileName/status/fields). After hydration, the value
+                // is undefined → defaulted to 0 → < 30 → warning
+                // showed for documents that OCR'd perfectly.
+                //
+                // Two-condition guard: (a) we MUST have a known length
+                // (not undefined), AND (b) the entry has no extracted
+                // fields. If either is false, we have no evidence the
+                // image was actually unreadable — better silent than
+                // crying wolf on the user's working uploads.
+                const knownLen = u.vision_text_length
+                const hasAnyField = u.fields && Object.keys(u.fields).length > 0
+                if (typeof knownLen === 'number' && knownLen < 30 && !hasAnyField) {
                   banners.push(
                     <div key={`p-${slotId}`} style={{ background: INFO_BG, border: `1.5px solid ${INFO_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: INFO_TEXT, marginBottom: 12 }}>
                       {t.warn.poorImage} {u.fileName ? `(${u.fileName})` : ''}
