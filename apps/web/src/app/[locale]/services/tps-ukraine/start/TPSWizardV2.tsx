@@ -1801,10 +1801,15 @@ export default function TPSWizardV2({ locale }: Props) {
         filing_path,
         wants_ead: ead,
         ead_category: ead ? (data.type === 'init' ? 'a12' : 'c19') : null,
-        us_address_street: data.manual.us_address_street || v('address'),
-        us_address_city: data.manual.us_address_city || '',
-        us_address_state: data.manual.us_address_state || '',
-        us_address_zip: data.manual.us_address_zip || '',
+        // 2026-05-20: fall back to OCR'd address parts when the user
+        // didn't manually override. DL slot extracts us_address_*
+        // into mergedFields; without these fallbacks, the I-131 Part 3
+        // city/state/zip stayed empty on the PDF even when the DL was
+        // uploaded.
+        us_address_street: data.manual.us_address_street || v('us_address_street') || v('address'),
+        us_address_city: data.manual.us_address_city || v('us_address_city') || '',
+        us_address_state: data.manual.us_address_state || v('us_address_state') || '',
+        us_address_zip: data.manual.us_address_zip || v('us_address_zip') || '',
         mailing_same_as_physical: true,
         daytime_phone: data.manual.daytime_phone || '',
         email: data.manual.email || '',
@@ -2183,6 +2188,7 @@ export default function TPSWizardV2({ locale }: Props) {
                 type={data.type}
                 ead={data.ead}
                 manual={data.manual}
+                mergedFields={mergedFields}
                 onChange={(patch) =>
                   setData((d) => ({ ...d, manual: { ...d.manual, ...patch } }))
                 }
@@ -2572,16 +2578,35 @@ function ReviewManual({
   type,
   ead,
   manual,
+  mergedFields,
   onChange,
 }: {
   t: (typeof T)[LocaleKey]
   type?: FilingType
   ead?: EadChoice
   manual: WizardData['manual']
+  mergedFields?: Record<string, FieldExtraction>
   onChange: (patch: Partial<WizardData['manual']>) => void
 }) {
   const init = type === 'init'
   const wantsEad = ead === 'ead'
+  // 2026-05-20: when DL OCR populated us_address_* parts, reconstruct the
+  // single-line postal address for the "Адрес в США" field so the user
+  // sees the auto-filled value instead of an empty placeholder. The user
+  // can still edit; on edit the value goes into manual.us_address_street
+  // (the rest stays in mergedFields and the submit path falls back to
+  // mergedFields for city/state/zip — see GeneratePacketBlock submit).
+  const ocrAddrStreet = mergedFields?.us_address_street?.value ?? ''
+  const ocrAddrCity = mergedFields?.us_address_city?.value ?? ''
+  const ocrAddrState = mergedFields?.us_address_state?.value ?? ''
+  const ocrAddrZip = mergedFields?.us_address_zip?.value ?? ''
+  const ocrAddrJoined = [
+    ocrAddrStreet,
+    [ocrAddrCity, ocrAddrState, ocrAddrZip].filter(Boolean).join(', ').trim(),
+  ]
+    .filter(Boolean)
+    .join(', ')
+    .trim()
   return (
     <>
       {init && (
@@ -2589,7 +2614,7 @@ function ReviewManual({
           label={t.label.address}
           placeholder={t.placeholder.address}
           tip={t.tip.address}
-          value={manual.us_address_street || ''}
+          value={manual.us_address_street || ocrAddrJoined || ''}
           onChange={(v) => onChange({ us_address_street: v })}
         />
       )}
