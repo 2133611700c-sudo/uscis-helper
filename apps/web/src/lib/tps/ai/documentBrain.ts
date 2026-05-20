@@ -232,7 +232,18 @@ export async function runBrain(
   let content: string
   try {
     const chatFn = input.chatFn ?? defaultChat
-    const res = await chatFn(messages, { timeoutMs: 25_000 })
+    // 2026-05-20: maxTokens=2500. The default DeepSeek client.chat()
+    // caps at max_tokens=200, which truncated long JSON responses on
+    // documents that surface >8 fields (e.g. California DL extracts
+    // 12 fields including address split + biometrics + dl_number).
+    // The truncated response had no closing brace → extractJsonObject
+    // returned null → INVALID_JSON, and the entire DL pipeline silently
+    // failed with 0 fields in production. 2500 tokens cover the full
+    // 16-field worst-case schema with source_line, source_value,
+    // final_value, confidence, requires_review per field, plus
+    // document_type, document_type_confidence, warnings array, and
+    // needs_manual_review.
+    const res = await chatFn(messages, { timeoutMs: 25_000, maxTokens: 2500 })
     content = res.content
   } catch (e: unknown) {
     if (isDeepSeekError(e, 'TIMEOUT')) {
@@ -704,7 +715,7 @@ Schema:
     "weight"?: { ... },
     "eye_color"?: { ... },                   // 3-letter code, e.g. BRN, BLU
     "hair_color"?: { ... },                  // 3-letter code, e.g. BRN, BLK
-    "dl_number"?: { ... }                    // state DL ID, label "DL" on card
+    "dl_number"?: { ... }                    // state license ID printed next to the DL label
   },
   "warnings": ["string"],
   "needs_manual_review": boolean
@@ -730,7 +741,7 @@ Ukrainian / Russian normalization (real-document gotchas):
 14. a_number digits-only, 7-9 digits. The "A" prefix is NEVER part of the value.
 
 U.S. Driver's License / State ID (when document_type is us_drivers_license, or when slot hint = "dl"):
-15. The card uses labelled abbreviations: DL = dl_number, LN = family_name, FN = given_name, DOB, SEX, HGT, WGT, EYES, HAIR. Extract each. dl_number is the state-issued license ID (e.g. California is a single letter followed by 7 digits — keep the letter, do not strip).
+15. The card uses labelled abbreviations: DL, LN, FN, DOB, SEX, HGT, WGT, EYES, HAIR. Map them to dl_number, family_name, given_name, dob, sex, height, weight, eye_color, hair_color respectively. The DL label is the state license ID (alphanumeric, keep all characters).
 16. The mailing address is printed as two consecutive lines without an explicit "Address:" label. The first line is the street (number + street name + optional unit). The second line is "CITY, ST ZIP". For a generic example, given:
        Line A: "123 ANY STREET NAME APT 4"
        Line B: "ANYTOWN, CA 90000"
