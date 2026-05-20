@@ -816,18 +816,25 @@ export default function ReparoleWizardV2({ locale }: Props) {
                 onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, email: v } }))} />
               <Field label={t.label.ssn} placeholder={t.placeholder.ssn} value={data.manual.ssn || ''}
                 onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, ssn: v } }))} />
+              {/* 2026-05-20: same DL-OCR auto-fill we added to the TPS
+                  wizard. mailing_* inputs now show the OCR'd value as
+                  a fallback when the user hasn't typed anything. User
+                  edit still goes into manual state (priority). The
+                  submit path already had this fallback (line 605-608)
+                  but the UI didn't, so users saw an empty placeholder
+                  even when the DL OCR clearly extracted everything. */}
               <Field label={t.label.mailing_street} placeholder={t.placeholder.mailing}
-                value={data.manual.mailing_street || ''}
+                value={data.manual.mailing_street || mergedFields.us_address_street?.value || ''}
                 onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, mailing_street: v } }))} />
               <div style={{ display: 'flex', gap: 8 }}>
                 <Field label={t.label.mailing_city} placeholder={t.placeholder.city}
-                  value={data.manual.mailing_city || ''}
+                  value={data.manual.mailing_city || mergedFields.us_address_city?.value || ''}
                   onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, mailing_city: v } }))} />
                 <Field label={t.label.mailing_state} placeholder={t.placeholder.state}
-                  value={data.manual.mailing_state || ''}
+                  value={data.manual.mailing_state || mergedFields.us_address_state?.value || ''}
                   onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, mailing_state: v } }))} />
                 <Field label={t.label.mailing_zip} placeholder={t.placeholder.zip}
-                  value={data.manual.mailing_zip || ''}
+                  value={data.manual.mailing_zip || mergedFields.us_address_zip?.value || ''}
                   onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, mailing_zip: v } }))} />
               </div>
             </Card>
