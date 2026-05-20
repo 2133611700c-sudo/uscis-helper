@@ -116,8 +116,10 @@ function findAddressPair(ocr: OcrResult): {
 } | null {
   // Match "CITY NAME, ST ZIP" with optional ZIP+4. Accept any uppercase
   // letters + spaces + .'- in city, exactly 2 uppercase state letters,
-  // and 5-digit or 9-digit ZIP.
-  const cityLineRe = /^([A-Z][A-Z .'\-]*[A-Z]),\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/
+  // and 5-digit or 9-digit ZIP. Vision often emits "LOS ANGELES , CA
+  // 90029" with a space before the comma, so the comma boundary is
+  // \s*,\s+ not just ",\s+".
+  const cityLineRe = /^([A-Z][A-Z .'\-]*[A-Z])\s*,\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/
   for (let i = 1; i < ocr.lines.length; i++) {
     const m = ocr.lines[i].text.match(cityLineRe)
     if (!m) continue
@@ -183,11 +185,14 @@ export function runDlModule(ocr: OcrResult, opts: DlOptions): TpsModuleResult {
     fields.push({ ...base, field: 'sex', raw_value: sex.value, normalized_value: sex.value, source_zone: 'sex_label', bbox: sex.bbox, confidence: sex.confidence })
   }
 
-  // ── HGT — height in feet-inches. Accept both 6'-06" and 6'06" forms.
-  // The literal apostrophes / quotes are preserved.
-  const hgt = findOnAnyLine(ocr, /\bHGT\s+(\d['′][\s-]*\d{1,2}["″])/)
+  // ── HGT — height in feet-inches. Google Vision tokenizes the
+  // foot-inch literal with stray spaces (e.g. "HGT 6 ' - 06 \""), so
+  // the regex must tolerate \s between every glyph. We capture the
+  // raw matched range then collapse the whitespace for normalized_value.
+  const hgt = findOnAnyLine(ocr, /\bHGT\s+(\d\s*['′]\s*[-\s]*\d{1,2}\s*["″])/)
   if (hgt) {
-    fields.push({ ...base, field: 'height', raw_value: hgt.value, normalized_value: hgt.value, source_zone: 'hgt_label', bbox: hgt.bbox, confidence: hgt.confidence })
+    const compact = hgt.value.replace(/\s+/g, '').replace(/['′]/g, "'").replace(/["″]/g, '"')
+    fields.push({ ...base, field: 'height', raw_value: hgt.value, normalized_value: compact, source_zone: 'hgt_label', bbox: hgt.bbox, confidence: hgt.confidence })
   }
 
   // ── WGT — weight, e.g. "231 lb" or "78 kg".
