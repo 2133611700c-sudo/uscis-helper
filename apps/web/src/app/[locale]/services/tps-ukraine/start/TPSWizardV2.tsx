@@ -952,25 +952,79 @@ const TPS_TIER1_PRICE_DISPLAY = '$15'
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Tip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
+  // Close on Escape and outside-click for keyboard / mouse users.
+  // Touch users tap the chip to toggle.
+  useEffect(() => {
+    if (!open) return
+    const onDoc = () => setOpen(false)
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    // Defer document handler so the opening click doesn't immediately close.
+    const id = window.setTimeout(() => document.addEventListener('click', onDoc), 0)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      window.clearTimeout(id)
+      document.removeEventListener('click', onDoc)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
   return (
-    <span
-      title={text}
-      style={{
-        display: 'inline-flex',
-        width: 16,
-        height: 16,
-        borderRadius: '50%',
-        background: '#ddd',
-        color: '#666',
-        fontSize: 13,
-        fontWeight: 800,
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'help',
-        marginLeft: 4,
-      }}
-    >
-      ?
+    <span style={{ display: 'inline-block', position: 'relative', marginLeft: 4, verticalAlign: 'middle' }}>
+      <button
+        type="button"
+        aria-label="Подсказка"
+        aria-expanded={open}
+        title={text}
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
+        style={{
+          display: 'inline-flex',
+          width: 18,
+          height: 18,
+          borderRadius: '50%',
+          background: open ? GREEN : '#ddd',
+          color: open ? '#fff' : '#444',
+          fontSize: 12,
+          fontWeight: 800,
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          border: 'none',
+          padding: 0,
+          fontFamily: 'inherit',
+        }}
+      >
+        ?
+      </button>
+      {open && (
+        <span
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            zIndex: 20,
+            top: 'calc(100% + 6px)',
+            left: -8,
+            width: 260,
+            maxWidth: '70vw',
+            background: '#222',
+            color: '#fff',
+            fontSize: 13,
+            fontWeight: 400,
+            lineHeight: 1.45,
+            padding: '10px 12px',
+            borderRadius: 8,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+            display: 'block',
+            whiteSpace: 'normal',
+          }}
+        >
+          {text}
+        </span>
+      )}
     </span>
   )
 }
