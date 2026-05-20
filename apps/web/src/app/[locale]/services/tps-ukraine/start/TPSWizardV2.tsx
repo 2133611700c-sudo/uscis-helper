@@ -277,6 +277,11 @@ const T = {
         lb: '2 фото 2×2 дюйми',
         ht: 'Кольорові, passport-style, зроблені за останні 30 днів',
       },
+      dl: {
+        ic: '🪪',
+        lb: "Driver's License або State ID (необов'язково)",
+        ht: 'Допоможе автоматично заповнити адресу в США',
+      },
     },
     uploadedSuffix: '✓ завантажено',
     package: {
@@ -466,6 +471,11 @@ const T = {
         lb: '2 фото 2×2 дюйма',
         ht: 'Цветные, passport-style, сделаны за последние 30 дней',
       },
+      dl: {
+        ic: '🪪',
+        lb: "Driver's License или State ID (необязательно)",
+        ht: 'Поможет автоматически заполнить адрес в США',
+      },
     },
     uploadedSuffix: '✓ загружено',
     package: {
@@ -653,6 +663,11 @@ const T = {
         ic: '📸',
         lb: '2 photos 2×2 inches',
         ht: 'Color, passport-style, taken in the last 30 days',
+      },
+      dl: {
+        ic: '🪪',
+        lb: "Driver's License or State ID (optional)",
+        ht: 'Auto-fills your US address',
       },
     },
     uploadedSuffix: '✓ uploaded',
@@ -842,6 +857,11 @@ const T = {
         ic: '📸',
         lb: '2 fotos 2×2 pulgadas',
         ht: 'Color, estilo pasaporte, tomadas en los últimos 30 días',
+      },
+      dl: {
+        ic: '🪪',
+        lb: "Licencia de conducir o State ID (opcional)",
+        ht: 'Llena automáticamente la dirección en EE. UU.',
       },
     },
     uploadedSuffix: '✓ cargado',
@@ -1566,6 +1586,12 @@ export default function TPSWizardV2({ locale }: Props) {
         if (paper) list.push({ id: 'photo', ...t.doc.photo })
       }
     }
+    // Driver's license / state ID — OPTIONAL slot offered in every flow.
+    // Slot contract (documentContracts.ts 'dl') extracts US address parts
+    // and biometric demographics; identity guard still treats passport
+    // as authoritative on name/DOB conflicts, so a DL typo cannot
+    // overwrite a passport value.
+    list.push({ id: 'dl', ...t.doc.dl })
     return list
   }, [data.type, data.ead, data.method, t])
 
