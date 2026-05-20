@@ -78,6 +78,16 @@ interface UploadEntry {
    * the rehydration code below upgrades old entries on load.
    */
   fields?: Record<string, FieldExtraction>
+  /** Brain's document_type classification, surfaced for UI warnings. */
+  detected_document_type?: string | null
+  /** True when Brain says the file does not match the chosen slot. */
+  slot_mismatch?: boolean
+  /** Length of the raw Vision OCR text — used for poor-image hints. */
+  vision_text_length?: number
+  /** Brain run status from the OCR endpoint diagnostics. */
+  brain_status?: 'off' | 'skipped' | 'ran' | 'error'
+  /** Field keys the API contract rejected for this slot. UI may surface. */
+  rejected_field_keys?: string[]
 }
 
 interface WizardData {
@@ -171,6 +181,12 @@ const T = {
     notFound: 'Не знайдено — введіть вручну',
     notInPassport: 'Немає в закордонному паспорті — заповніть на наступному кроці',
     reviewBadge: 'перевірте AI',
+    warn: {
+      slotMismatch: '⚠️ Цей файл не схожий на вибраний тип документа. Перевірте, що завантажуєте правильний документ.',
+      mrzMissing: 'Не видно нижню частину паспорта з MRZ. Перезніміть документ повністю або введіть дані вручну.',
+      dobMissing: 'Дата народження не знайдена. Перевірте фото або введіть вручну.',
+      poorImage: 'Документ погано читається. Зробіть фото чіткіше або введіть дані вручну.',
+    },
     label: {
       surname: 'Прізвище / Surname',
       given: "Ім'я / Given Name",
@@ -353,6 +369,12 @@ const T = {
     notFound: 'Не найдено — введите вручную',
     notInPassport: 'Нет в загранпаспорте — заполните на следующем шаге',
     reviewBadge: 'проверьте AI',
+    warn: {
+      slotMismatch: '⚠️ Этот файл не похож на выбранный тип документа. Проверьте, что загружаете правильный документ.',
+      mrzMissing: 'Не видна нижняя часть паспорта с MRZ. Переснимите документ полностью или введите данные вручную.',
+      dobMissing: 'Дата рождения не найдена. Проверьте фото или введите вручную.',
+      poorImage: 'Документ плохо читается. Сделайте фото чётче или введите данные вручную.',
+    },
     label: {
       surname: 'Фамилия / Surname',
       given: 'Имя / Given Name',
@@ -534,6 +556,12 @@ const T = {
     notFound: 'Not found — enter manually',
     notInPassport: 'Not on international passport — fill in next step',
     reviewBadge: 'review AI',
+    warn: {
+      slotMismatch: '⚠️ This file does not look like the selected document type. Make sure you uploaded the correct document.',
+      mrzMissing: 'The bottom MRZ zone of the passport is not visible. Retake the full document or enter data manually.',
+      dobMissing: 'Date of birth not found. Check the photo or enter it manually.',
+      poorImage: 'The document is hard to read. Retake a sharper photo or enter the data manually.',
+    },
     label: {
       surname: 'Surname / Family name',
       given: 'Given name',
@@ -716,6 +744,12 @@ const T = {
     notFound: 'No encontrado — escriba a mano',
     notInPassport: 'No está en el pasaporte internacional — llene en el siguiente paso',
     reviewBadge: 'revise IA',
+    warn: {
+      slotMismatch: '⚠️ Este archivo no parece coincidir con el tipo de documento seleccionado. Verifique que cargó el documento correcto.',
+      mrzMissing: 'No se ve la zona MRZ del pasaporte. Vuelva a tomar la foto del documento completo o ingrese los datos manualmente.',
+      dobMissing: 'No se encontró la fecha de nacimiento. Verifique la foto o ingrésela manualmente.',
+      poorImage: 'El documento es difícil de leer. Tome una foto más nítida o ingrese los datos manualmente.',
+    },
     label: {
       surname: 'Apellido / Surname',
       given: 'Nombre / Given Name',
@@ -1556,11 +1590,35 @@ export default function TPSWizardV2({ locale }: Props) {
             }
           }
         }
+        // Capture firewall diagnostics so Step 5 can surface a wrong-slot
+        // warning banner without re-querying anything.
+        const slotMismatch = Boolean(json?.slot_mismatch)
+        const detectedDocType = json?.detected_document_type ?? null
+        const visionLen = typeof json?.vision_text_length === 'number'
+          ? json.vision_text_length : undefined
+        const brainStatus = typeof json?.brain_status === 'string'
+          ? (json.brain_status as 'off' | 'skipped' | 'ran' | 'error')
+          : undefined
+        const rejectedKeys: string[] = Array.isArray(json?.rejected_fields)
+          ? json.rejected_fields
+              .map((r: { field?: unknown }) => r?.field)
+              .filter((k: unknown): k is string => typeof k === 'string')
+          : []
         setData((d) => ({
           ...d,
           uploads: {
             ...d.uploads,
-            [id]: { file, fileName: file.name, status: 'done', fields },
+            [id]: {
+              file,
+              fileName: file.name,
+              status: 'done',
+              fields,
+              detected_document_type: detectedDocType,
+              slot_mismatch: slotMismatch,
+              vision_text_length: visionLen,
+              brain_status: brainStatus,
+              rejected_field_keys: rejectedKeys,
+            },
           },
         }))
       } catch (e) {
@@ -1850,6 +1908,56 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(5)}</div>
             <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s5q}</div>
             <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s5h}</div>
+
+            {/* R1A Phase 4: per-upload warning banners. Shown when the
+                firewall detected the file doesn't match the slot, when a
+                passport upload has no MRZ, when DOB is missing despite
+                visible text, or when OCR text was suspiciously short.
+                These banners do NOT block the user — they just make the
+                cause of any missing/stripped field obvious to the
+                30-80yo user, instead of silently dropping data. */}
+            {(() => {
+              const banners: React.ReactNode[] = []
+              for (const slotId of Object.keys(data.uploads)) {
+                const u = data.uploads[slotId]
+                if (u.status !== 'done') continue
+                if (u.slot_mismatch) {
+                  banners.push(
+                    <div key={`m-${slotId}`} style={{ background: WARN_BG, border: `1.5px solid ${WARN_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: WARN_TEXT, marginBottom: 12 }}>
+                      {t.warn.slotMismatch} {u.fileName ? `(${u.fileName})` : ''}
+                      {u.detected_document_type ? ` — detected: ${u.detected_document_type}` : ''}
+                    </div>,
+                  )
+                }
+                if (slotId === 'passport') {
+                  const fieldsObj = u.fields || {}
+                  const list = Object.values(fieldsObj)
+                  const hasMrz = list.some((f) => f.source === 'ocr_mrz')
+                  if (!hasMrz && list.length > 0) {
+                    banners.push(
+                      <div key={`x-${slotId}`} style={{ background: INFO_BG, border: `1.5px solid ${INFO_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: INFO_TEXT, marginBottom: 12 }}>
+                        {t.warn.mrzMissing}
+                      </div>,
+                    )
+                  }
+                  if (!fieldsObj.dob && (u.vision_text_length ?? 0) > 50) {
+                    banners.push(
+                      <div key={`d-${slotId}`} style={{ background: WARN_BG, border: `1.5px solid ${WARN_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: WARN_TEXT, marginBottom: 12 }}>
+                        {t.warn.dobMissing}
+                      </div>,
+                    )
+                  }
+                }
+                if ((u.vision_text_length ?? 0) < 30) {
+                  banners.push(
+                    <div key={`p-${slotId}`} style={{ background: INFO_BG, border: `1.5px solid ${INFO_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: INFO_TEXT, marginBottom: 12 }}>
+                      {t.warn.poorImage} {u.fileName ? `(${u.fileName})` : ''}
+                    </div>,
+                  )
+                }
+              }
+              return banners
+            })()}
 
             <Card title={t.s5OcrTitle}>
               <ReviewOcr
