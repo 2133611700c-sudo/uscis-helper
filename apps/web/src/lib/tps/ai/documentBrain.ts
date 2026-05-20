@@ -138,7 +138,10 @@ export interface DocumentBrainInput {
   lines?: string[]
   doc_type_hint?: string | null
   /** Test hook — pass a stub chat() in tests so we don't hit DeepSeek. */
-  chatFn?: (msgs: ChatMessage[], opts?: { timeoutMs?: number }) => Promise<{ content: string }>
+  chatFn?: (
+    msgs: ChatMessage[],
+    opts?: { timeoutMs?: number; maxTokens?: number },
+  ) => Promise<{ content: string }>
 }
 
 export interface DocumentBrainOutcome {
