@@ -342,7 +342,19 @@ export function validateBrainField(
   fieldKey: string,
   f: DocumentBrainField,
 ): { ok: boolean; reason?: string } {
-  if (hasCyrillic(f.final_value)) {
+  // The Cyrillic guard is a safety net for TEXT fields (names, addresses)
+  // that should have been transliterated upstream via KMU-55. For dates
+  // and sex we INTENTIONALLY allow Cyrillic input (DD.MM.YY with Cyrillic
+  // month, "Ч"/"Ж" markers) and normalize it to Latin/numeric form below.
+  // Apply the guard only to fields that can never legitimately carry
+  // Cyrillic in their final_value.
+  const canCarryCyrillicInput =
+    fieldKey === 'dob' ||
+    fieldKey.endsWith('_date') ||
+    fieldKey === 'sex' ||
+    fieldKey === 'country_of_nationality' ||
+    fieldKey === 'passport_country_of_issuance'
+  if (!canCarryCyrillicInput && hasCyrillic(f.final_value)) {
     return { ok: false, reason: 'final_value still contains Cyrillic — KMU-55 failed' }
   }
   if (fieldKey.endsWith('_date') || fieldKey === 'dob') {
@@ -386,10 +398,20 @@ export function validateBrainField(
     }
   }
   if (fieldKey === 'sex') {
-    const v = (f.final_value || '').toUpperCase().charAt(0)
-    if (v !== 'M' && v !== 'F' && v !== 'X') {
-      return { ok: false, reason: 'sex not M/F/X' }
+    // Real Ukrainian/Russian passports stamp "Ч / M" (чоловіча / male) or
+    // "Ж / F" (жіноча / female) in the biographic zone. The MRZ slice is
+    // always Latin M/F, but Brain often picks up the visual Cyrillic marker
+    // first. Normalize before validating, then write the canonical Latin
+    // letter back so PDF prefill never sees Cyrillic.
+    const raw = (f.final_value || '').toUpperCase()
+    let canonical: 'M' | 'F' | 'X' | null = null
+    if (/^M|МУЖ|МАЛЕ|MALE|^Ч/.test(raw)) canonical = 'M'
+    else if (/^F|ЖЕН|ЖІН|FEMALE|^Ж/.test(raw)) canonical = 'F'
+    else if (/^X|UNSPEC/.test(raw)) canonical = 'X'
+    if (!canonical) {
+      return { ok: false, reason: 'sex not M/F/X (incl. Ч/Ж)' }
     }
+    f.final_value = canonical
   }
   if (fieldKey === 'ead_category_on_card') {
     const v = (f.final_value || '').toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -401,18 +423,26 @@ export function validateBrainField(
 }
 
 /**
- * Parse a date string in any of the formats that real-world documents use,
- * normalized to a UTC Date. Accepts:
+ * Parse a date string in any of the formats that real Ukrainian / EU / US /
+ * MRZ documents put on a biographic page, normalized to a UTC Date.
  *
- *   ISO              YYYY-MM-DD                  (Brain canonical)
- *   US               MM/DD/YYYY  M/D/YYYY        (USCIS canonical)
- *   European/UA      DD.MM.YYYY  D.M.YYYY        (Ukrainian internal/passport)
- *   European slash   DD/MM/YYYY  (only when DD > 12, otherwise treated as US)
- *   Visual           D MMM YYYY  e.g. "01 JAN 1985", "1 Jan 1985"
- *   MRZ TD3 birth    YYMMDD                       century resolved: if YY > current+10 → 19YY
+ * Accepted formats (real-world coverage):
  *
- * Returns null if no recognized format matches. The validator caller
- * compares the result against today/1900 bounds.
+ *   ISO                YYYY-MM-DD                       Brain canonical
+ *   US                 MM/DD/YYYY   M/D/YYYY            USCIS canonical
+ *   European/UA dots   DD.MM.YYYY   D.M.YYYY   DD.MM.YY Ukrainian passport
+ *   European slashes   DD/MM/YYYY   when DD > 12; else falls back to US
+ *   Visual Latin       D MMM YYYY   "01 JAN 1985", "1 Jan 1985", "01-JAN-1985"
+ *   Visual Cyrillic    D Місяць YYYY   "01 СІЧ 1985" (uk), "01 ЯНВ 1985" (ru)
+ *                     also accepts 2-digit year on visual Cyrillic forms
+ *   MRZ TD3 slice      YYMMDD       century resolved (YY > now+10 ⇒ 19YY)
+ *
+ * Two-digit-year rule: YY > (currentYear % 100) + 10 ⇒ 19YY, else 20YY.
+ * That keeps mid-80s births → 1985 and 30 → 2030 for plausible expirations.
+ *
+ * Returns null if no format matches. The validator caller compares the
+ * result against today/1900 bounds for DOB and +20 years for passport
+ * expiration.
  */
 function parseDate(s: string): Date | null {
   if (!s) return null
@@ -429,6 +459,10 @@ function parseDate(s: string): Date | null {
     ) return null
     return dt
   }
+  const resolveCentury = (yy: number): number => {
+    const cutoff = (new Date().getFullYear() % 100) + 10
+    return yy > cutoff ? 1900 + yy : 2000 + yy
+  }
 
   // YYYY-MM-DD
   let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
@@ -438,35 +472,56 @@ function parseDate(s: string): Date | null {
   m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
   if (m) {
     const a = +m[1], b = +m[2], y = +m[3]
-    // If first token > 12, this must be DD/MM/YYYY
     if (a > 12 && b <= 12) return mkUtc(y, b, a)
-    return mkUtc(y, a, b) // default MM/DD/YYYY
+    return mkUtc(y, a, b)
   }
 
-  // DD.MM.YYYY or D.M.YYYY — unambiguous European/Ukrainian style
+  // DD.MM.YYYY or D.M.YYYY — unambiguous European/Ukrainian style (4-digit year)
   m = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
   if (m) return mkUtc(+m[3], +m[2], +m[1])
 
-  // D MMM YYYY  e.g. "01 JAN 1985", "1 Jan 1985", "01-JAN-1985"
-  const MONTHS: Record<string, number> = {
+  // DD.MM.YY — Ukrainian passport biographic zone shows 2-digit years
+  // (e.g. "13.07.85"). Resolve century to keep mid-80s births sane.
+  m = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/)
+  if (m) return mkUtc(resolveCentury(+m[3]), +m[2], +m[1])
+
+  // DD/MM/YY — same idea on slashed visual zones (rarer on UA but seen on I-94)
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/)
+  if (m) {
+    const a = +m[1], b = +m[2], y = resolveCentury(+m[3])
+    if (a > 12 && b <= 12) return mkUtc(y, b, a)
+    return mkUtc(y, a, b)
+  }
+
+  // D MMM YYYY (Latin) — "01 JAN 1985", "1-Jan-1985", "01/JAN/1985"
+  const MONTHS_LATIN: Record<string, number> = {
     JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
     JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12,
   }
-  m = t.match(/^(\d{1,2})[\s\-\/]+([A-Za-z]{3,})[\s\-\/]+(\d{4})$/)
+  // D MMM YYYY (Cyrillic) — covers Ukrainian and Russian month abbreviations
+  // commonly stamped on biographic pages and visa stickers.
+  const MONTHS_CYRILLIC: Record<string, number> = {
+    // Ukrainian
+    'СІЧ': 1, 'ЛЮТ': 2, 'БЕР': 3, 'КВІ': 4, 'ТРА': 5, 'ЧЕР': 6,
+    'ЛИП': 7, 'СЕР': 8, 'ВЕР': 9, 'ЖОВ': 10, 'ЛИС': 11, 'ГРУ': 12,
+    // Russian
+    'ЯНВ': 1, 'ФЕВ': 2, 'МАР': 3, 'АПР': 4, 'МАЙ': 5, 'ИЮН': 6,
+    'ИЮЛ': 7, 'АВГ': 8, 'СЕН': 9, 'ОКТ': 10, 'НОЯ': 11, 'ДЕК': 12,
+  }
+  m = t.match(/^(\d{1,2})[\s\-\/.]+([A-Za-zА-Яа-яІіЇїЄєҐґ]{3,})[\s\-\/.]+(\d{2,4})$/u)
   if (m) {
-    const mo = MONTHS[m[2].slice(0, 3).toUpperCase()]
-    if (mo) return mkUtc(+m[3], mo, +m[1])
+    const tok = m[2].slice(0, 3).toUpperCase()
+    const mo = MONTHS_LATIN[tok] ?? MONTHS_CYRILLIC[tok]
+    if (mo) {
+      const yRaw = +m[3]
+      const y = m[3].length === 2 ? resolveCentury(yRaw) : yRaw
+      return mkUtc(y, mo, +m[1])
+    }
   }
 
-  // MRZ TD3 birth (YYMMDD). Resolve century: YY beyond "current year + 10" rolls
-  // to 19xx. Used when Brain forwards the raw MRZ birth slice unchanged.
+  // MRZ TD3 birth slice (YYMMDD). Used when Brain forwards the raw MRZ slice.
   m = t.match(/^(\d{2})(\d{2})(\d{2})$/)
-  if (m) {
-    const yy = +m[1], mo = +m[2], d = +m[3]
-    const cutoff = (new Date().getFullYear() % 100) + 10
-    const fullYear = yy > cutoff ? 1900 + yy : 2000 + yy
-    return mkUtc(fullYear, mo, d)
-  }
+  if (m) return mkUtc(resolveCentury(+m[1]), +m[2], +m[3])
 
   return null
 }
@@ -542,6 +597,14 @@ Rules:
 6. NEVER fabricate fields. If unsure, omit.
 7. If the document looks like neither passport, I-94, EAD, nor USCIS notice, set document_type "unknown".
 8. needs_manual_review: true if any critical field is missing or confidence < 0.7 on family_name OR given_name OR dob.
+
+Ukrainian / Russian normalization (real-document gotchas):
+9. Sex: "Ч" or "ЧОЛ" or "ЧОЛОВІЧА" or "МУЖ" must become "M". "Ж" or "ЖІН" or "ЖІНОЧА" or "ЖЕН" must become "F". MRZ Latin wins if present.
+10. DOB / passport_expiration_date: the visual zone often shows "DD.MM.YY" with a 2-digit year (e.g. "13.07.85" for July 13 1985). Output final_value as USCIS MM/DD/YYYY ("07/13/1985"). Never output the raw Cyrillic-month form. Recognize Cyrillic month abbreviations СІЧ/ЛЮТ/БЕР/КВІ/ТРА/ЧЕР/ЛИП/СЕР/ВЕР/ЖОВ/ЛИС/ГРУ (Ukrainian) and ЯНВ/ФЕВ/МАР/АПР/МАЙ/ИЮН/ИЮЛ/АВГ/СЕН/ОКТ/НОЯ/ДЕК (Russian).
+11. country_of_nationality / passport_country_of_issuance: "УКРАЇНА", "УКРАИНА", "UKR", "Ukraina" all mean "Ukraine".
+12. dob MUST be the date next to "Дата народження" / "Дата рождения" / "Date of birth". Do NOT use issue date ("Дата видачі") or expiration ("Дата закінчення") as dob — that is a critical safety rule.
+13. passport_number for Ukrainian international passports follows 2 letters + 6-7 digits (e.g. "EK790396", "FB1234567"). Strip any spaces.
+14. a_number digits-only, 7-9 digits. The "A" prefix is NEVER part of the value.
 
 Return ONLY the JSON object, no surrounding prose, no markdown fences.`
 
