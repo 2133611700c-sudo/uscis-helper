@@ -1,28 +1,25 @@
 /**
  * /[locale]/services/re-parole-u4u/start
  *
- * Stage-8: Re-Parole U4U wizard entry point.
+ * Re-Parole U4U wizard entry. Ports the prototype at
+ * /uploads/reparole_prototype_final.html into production with real
+ * backend wiring: shared OCR endpoint, slot firewall, Stripe checkout,
+ * I-131 packet builder. Sitewide Header / language switcher / theme
+ * toggle stay above (rendered by [locale]/layout.tsx).
  *
- * REGULATORY COPY VERIFIED 2026-05-04:
+ * REGULATORY (verified 2026-05-04, still current 2026-05-20):
  *   - Form I-131 edition: 01/20/25
- *   - Paper: Part 2, Item 1.e — select even if inside the US
- *   - Paper top of form: handwrite "Ukraine RE-PAROLE"
- *   - Online (my.uscis.gov): Box 10.C
- *   - I-134A sponsor intake: PAUSED. I-131 Re-Parole: ACTIVE (case-by-case).
- *   - Source: uscis.gov/i-131 (USCIS last reviewed 03/30/2026), verified 2026-05-04
+ *   - Paper: Part 2 Item 1.e + handwrite "Ukraine RE-PAROLE" at top
+ *   - Online (my.uscis.gov): Box 10.C (U4U Ukraine)
+ *   - Source: uscis.gov/i-131
  *
- * This page renders the same WizardProvider + WizardShell + WizardController
- * stack used by /services/[slug]/wizard/page.tsx, scoped to re-parole-u4u.
- *
- * No Stripe. No USCIS submission. No legal advice.
- * Payment is in mock mode (Screen10 → setPaymentStatus('mock_paid')).
- * OCR is placeholder (Screen04/Screen05 show upload UI, no live OCR in Stage 8).
+ * Legacy WizardProvider / WizardShell / WizardController stack was
+ * replaced 2026-05-20 by ReparoleWizardV2. Old code lives in git
+ * history (commits prior to this one) if a rollback is ever needed.
  */
 
 import type { Metadata } from 'next'
-import { WizardProvider } from '@/contexts/WizardContext'
-import { WizardShell } from '@/components/wizard/WizardShell'
-import { WizardController } from '@/components/wizard/WizardController'
+import ReparoleWizardV2 from './ReparoleWizardV2'
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -44,15 +41,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ReParoleStartPage({ params }: Props) {
-  // params needed to satisfy Next.js RSC signature (locale used by WizardProvider
-  // via localStorage / URL; server side renders the shell only)
-  const { locale: _locale } = await params
-
-  return (
-    <WizardProvider serviceSlug="re-parole-u4u">
-      <WizardShell slug="re-parole-u4u">
-        <WizardController />
-      </WizardShell>
-    </WizardProvider>
-  )
+  const { locale } = await params
+  return <ReparoleWizardV2 locale={locale} />
 }

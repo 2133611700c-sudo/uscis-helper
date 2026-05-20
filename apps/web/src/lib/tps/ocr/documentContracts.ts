@@ -29,6 +29,7 @@ export type SlotId =
   | 'ead_old'
   | 'tps_notice'
   | 'photo'
+  | 'dl' // U.S. driver's license / state ID — used by re-parole wizard
 
 export interface DocumentSlotContract {
   /** Wizard slot id this contract applies to. */
@@ -174,6 +175,40 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'i94_class_of_admission',
       'ead_category_on_card',
       'ead_expiration_date',
+      'passport_expiration_date',
+    ],
+  },
+  // U.S. driver's license / state ID — used by the re-parole wizard to
+  // pull mailing address + biometric demographics (height/weight/eye/hair)
+  // that USCIS I-131 Part 3 asks for. Identity name fields are still
+  // owned by the passport slot via the conflict guard, so a typo on a
+  // DL never overrides the passport.
+  dl: {
+    slot: 'dl',
+    allowed_document_types: [],
+    allowed_fields: [
+      'address',
+      'us_address_street',
+      'us_address_city',
+      'us_address_state',
+      'us_address_zip',
+      'family_name',
+      'given_name',
+      'dob',
+      'sex',
+      'height',
+      'weight',
+      'eye_color',
+      'hair_color',
+    ],
+    forbidden_fields: [
+      'a_number',
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'last_entry_date',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'passport_number',
       'passport_expiration_date',
     ],
   },
