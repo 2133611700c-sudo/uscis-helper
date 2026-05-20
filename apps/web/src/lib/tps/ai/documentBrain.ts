@@ -118,6 +118,12 @@ export const DocumentBrainResultSchema = z.object({
       weight: FieldSchema.optional(),
       eye_color: FieldSchema.optional(),
       hair_color: FieldSchema.optional(),
+      // 2026-05-20 round 2: DL number (state-issued license ID). Useful
+      // as cross-reference when verifying address — every state DL has
+      // it (CA: letter + 7 digits; NY: 9 digits; FL: letter + 12 digits).
+      // Not authoritative for any USCIS form field, but the wizard
+      // surfaces it so the user can confirm "this is MY license".
+      dl_number: FieldSchema.optional(),
     })
     .default({}),
   warnings: z.array(z.string().max(280)).default([]),
@@ -322,6 +328,20 @@ function hardenFinalValues(r: DocumentBrainResult): DocumentBrainResult {
       }
     }
 
+    // 2026-05-20: deterministic title-case for postal-address fields.
+    //
+    // Why: DeepSeek empirically ignores the title-case instruction in
+    // SYSTEM_PROMPT for us_address_street / us_address_city — it just
+    // mirrors the all-caps form printed on the California DL. USCIS
+    // accepts either case but the design intent is title-case in the
+    // wizard review screen, so the user sees "Los Angeles" not
+    // "LOS ANGELES". State stays uppercase (USPS 2-letter); zip stays
+    // as-is (digits + optional dash). Don't apply this to names —
+    // analyseNameField already handled those above.
+    if (k === 'us_address_street' || k === 'us_address_city') {
+      safeFinal = toPostalTitleCase(safeFinal)
+    }
+
     next.fields[k] = {
       ...f,
       final_value: safeFinal,
@@ -338,6 +358,59 @@ function hardenFinalValues(r: DocumentBrainResult): DocumentBrainResult {
     }
   }
   return next
+}
+
+/**
+ * Postal title-case for street + city. Idempotent and deterministic.
+ *
+ * Rules:
+ *   - First letter of each whitespace- or dash-separated word is upper.
+ *   - All other letters are lower.
+ *   - Pure-digit words stay as-is ("4341" → "4341").
+ *   - Known USPS abbreviations stay uppercase even if they look like
+ *     words: APT, PO, NE, NW, SE, SW, ST (only when standalone, not when
+ *     inside another word like "Street"), N, S, E, W. We keep this list
+ *     small and uppercase on a separate pass.
+ *
+ * Examples:
+ *   "4341 WILLOW BROOK AVE 111"   → "4341 Willow Brook Ave 111"
+ *   "LOS ANGELES"                  → "Los Angeles"
+ *   "po box 5 ne corner"           → "PO Box 5 NE Corner"
+ *   "saint-petersburg"             → "Saint-Petersburg"
+ */
+const POSTAL_KEEP_UPPER = new Set([
+  'APT', 'PO', 'NE', 'NW', 'SE', 'SW', 'N', 'S', 'E', 'W',
+  'USA', 'US',
+])
+export function toPostalTitleCase(input: string): string {
+  if (!input) return input
+  // Split into segments by spaces while preserving multiple-space behavior.
+  return input
+    .split(' ')
+    .map((seg) => {
+      if (!seg) return seg
+      // Handle hyphenated tokens like "Willow-Brook" by recursing parts.
+      if (seg.includes('-')) {
+        return seg.split('-').map(titleCaseOneToken).join('-')
+      }
+      return titleCaseOneToken(seg)
+    })
+    .join(' ')
+}
+
+function titleCaseOneToken(tok: string): string {
+  if (!tok) return tok
+  // Pure digits / digit + symbol — leave alone (apt numbers, zip+4)
+  if (/^[0-9][0-9\-]*$/.test(tok)) return tok
+  const upper = tok.toUpperCase()
+  if (POSTAL_KEEP_UPPER.has(upper)) return upper
+  // Drop trailing punctuation but remember it (e.g. "AVE," → "Ave,").
+  const m = tok.match(/^([\p{L}'’]+)(.*)$/u)
+  if (!m) return tok
+  const letters = m[1]
+  const tail = m[2]
+  if (!letters) return tok
+  return letters.charAt(0).toUpperCase() + letters.slice(1).toLowerCase() + tail
 }
 
 /**
@@ -627,10 +700,11 @@ Schema:
     "us_address_city"?: { ... },
     "us_address_state"?: { ... },            // 2-letter USPS, e.g. CA, NY
     "us_address_zip"?: { ... },              // 5-digit or ZIP+4
-    "height"?: { ... },                       // e.g. 6'-06" or 5'-08"
-    "weight"?: { ... },                       // e.g. 231 lb
-    "eye_color"?: { ... },                   // e.g. BRN, BLU
-    "hair_color"?: { ... }                   // e.g. BRN, BLK
+    "height"?: { ... },
+    "weight"?: { ... },
+    "eye_color"?: { ... },                   // 3-letter code, e.g. BRN, BLU
+    "hair_color"?: { ... },                  // 3-letter code, e.g. BRN, BLK
+    "dl_number"?: { ... }                    // state DL ID, label "DL" on card
   },
   "warnings": ["string"],
   "needs_manual_review": boolean
@@ -656,7 +730,7 @@ Ukrainian / Russian normalization (real-document gotchas):
 14. a_number digits-only, 7-9 digits. The "A" prefix is NEVER part of the value.
 
 U.S. Driver's License / State ID (when document_type is us_drivers_license, or when slot hint = "dl"):
-15. The card uses labelled abbreviations: LN = family_name, FN = given_name, DOB, SEX, HGT, WGT, EYES, HAIR. Extract each.
+15. The card uses labelled abbreviations: DL = dl_number, LN = family_name, FN = given_name, DOB, SEX, HGT, WGT, EYES, HAIR. Extract each. dl_number is the state-issued license ID (e.g. California is a single letter followed by 7 digits — keep the letter, do not strip).
 16. The mailing address is printed as two consecutive lines without an explicit "Address:" label. The first line is the street (number + street name + optional unit). The second line is "CITY, ST ZIP". For a generic example, given:
        Line A: "123 ANY STREET NAME APT 4"
        Line B: "ANYTOWN, CA 90000"
