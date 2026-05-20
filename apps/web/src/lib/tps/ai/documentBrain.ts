@@ -657,17 +657,17 @@ Ukrainian / Russian normalization (real-document gotchas):
 
 U.S. Driver's License / State ID (when document_type is us_drivers_license, or when slot hint = "dl"):
 15. The card uses labelled abbreviations: LN = family_name, FN = given_name, DOB, SEX, HGT, WGT, EYES, HAIR. Extract each.
-16. The mailing address is printed as two consecutive lines without an explicit "Address:" label, e.g.
-       "4341 WILLOW BROOK AVE 111"
-       "LOS ANGELES, CA 90029"
-    Split it into:
-       us_address_street = "4341 Willow Brook Ave 111"   (title-case street + unit, no city/state/zip)
-       us_address_city   = "Los Angeles"                  (title-case)
+16. The mailing address is printed as two consecutive lines without an explicit "Address:" label. The first line is the street (number + street name + optional unit). The second line is "CITY, ST ZIP". For a generic example, given:
+       Line A: "123 ANY STREET NAME APT 4"
+       Line B: "ANYTOWN, CA 90000"
+    Split into:
+       us_address_street = "123 Any Street Name Apt 4"   (title-case street + unit, no city/state/zip)
+       us_address_city   = "Anytown"                      (title-case)
        us_address_state  = "CA"                            (2-letter USPS uppercase)
-       us_address_zip    = "90029"                         (5 digits, or "90029-1234" if ZIP+4 is visible)
+       us_address_zip    = "90000"                         (5 digits, or "90000-1234" if ZIP+4 is visible)
 17. NEVER include the city / state / zip inside us_address_street. NEVER include the street inside us_address_city.
-18. If the card shows a P.O. Box or apartment ("APT 5", "#111", "UNIT B"), keep it inside us_address_street.
-19. HGT example "6'-06\"" → keep literal feet+inches form in height final_value. WGT "231 lb" → "231 lb". EYES/HAIR keep the 3-letter code (BRN, BLU, GRN) in final_value.
+18. If the card shows a P.O. Box or apartment ("APT 5", "#NNN", "UNIT B"), keep it inside us_address_street.
+19. HGT examples: keep literal feet-inches form in height final_value (e.g. a value like 6 feet 0 inches stays in foot-inch notation). WGT keeps the pound suffix (e.g. "180 lb"). EYES/HAIR keep the 3-letter code (BRN, BLU, GRN) in final_value.
 20. DL fields are NEVER authoritative for identity on a TPS application — passport wins on name/DOB/sex conflicts. We extract them only for the mailing address and physical-description fields used on I-131 Part 3.
 
 Return ONLY the JSON object, no surrounding prose, no markdown fences.`

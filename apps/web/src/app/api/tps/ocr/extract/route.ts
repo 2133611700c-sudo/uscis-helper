@@ -228,9 +228,22 @@ export async function POST(req: NextRequest) {
   // and is never auto-merged into PDF data.
   let brainResult: DocumentBrainOutput | null = null
   const ruleFieldsCount = moduleResult?.fields?.length ?? 0
+  // 2026-05-20: bumped threshold from 3 → 5.
+  //
+  // Why: after the I-94 rule module learned to parse 'YYYY Month DD'
+  // dates (last_entry_date + admit_until) in the same commit, the
+  // module started returning 3 fields on its own (admission_number,
+  // COA, entry_date) on Sergii's real I-94. That made the old
+  // `< 3` gate flip false and Brain was skipped entirely — losing
+  // family_name / given_name / i94_admission_number / passport_number
+  // which Brain was filling in before. Critical I-94 has 8+ relevant
+  // fields, so 3 is too low a 'we have enough' bar. 5 still keeps
+  // Brain from running when the passport rule module hits its full
+  // 8-field MRZ extraction, which is the only case where Brain is
+  // truly redundant.
   const shouldTryBrain =
     isBrainEnabled() &&
-    (moduleResult === null || moduleResult.matched === false || ruleFieldsCount < 3)
+    (moduleResult === null || moduleResult.matched === false || ruleFieldsCount < 5)
   if (shouldTryBrain) {
     try {
       brainResult = await runBrain({
