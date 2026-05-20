@@ -872,7 +872,46 @@ const TEXT_MUTED = 'var(--text-3)'
 const TEXT_HINT = 'var(--text-3)'
 const TEXT_FAINT = 'var(--text-3)'
 
-const STORAGE_KEY = 'wizard:tps-ukraine:v2:state'
+// Storage schema version. Bump whenever the contract/shape of stored
+// uploads or merged fields changes. The hydration code below DISCARDS
+// any persisted state that doesn't match — so old hallucinated values
+// (e.g. an A-number captured under the passport slot before the API
+// firewall existed) can never resurface after a code update.
+const STORAGE_SCHEMA = 3
+const STORAGE_KEY = 'wizard:tps-ukraine:v3:state'
+
+// Per-slot allowed-fields lookup so the wizard re-applies the same
+// firewall the API now enforces — old localStorage from a v2-era
+// session may still contain forbidden fields, this strips them on read.
+const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
+  passport: new Set([
+    'family_name', 'given_name', 'middle_name', 'dob', 'sex',
+    'country_of_birth', 'country_of_nationality',
+    'passport_number', 'passport_country_of_issuance', 'passport_expiration_date',
+  ]),
+  i94: new Set([
+    'i94_admission_number', 'last_entry_date', 'i94_class_of_admission',
+    'status_at_last_entry',
+    'passport_number', 'passport_country_of_issuance',
+    'family_name', 'given_name', 'dob',
+  ]),
+  ead: new Set([
+    'a_number', 'ead_category_on_card', 'ead_expiration_date',
+    'family_name', 'given_name', 'dob', 'sex',
+  ]),
+  ead_old: new Set([
+    'a_number', 'ead_category_on_card', 'ead_expiration_date',
+    'family_name', 'given_name', 'dob', 'sex',
+  ]),
+  tps_notice: new Set([
+    'a_number', 'family_name', 'given_name', 'dob',
+    'address', 'us_address_street', 'us_address_city', 'us_address_state', 'us_address_zip',
+  ]),
+  photo: new Set([]),
+}
+// TPS Stage I price displayed on the Pay button (single source of truth
+// for the UI label; the actual Stripe Price ID is set server-side).
+const TPS_TIER1_PRICE_DISPLAY = '$15'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Small reusable bits (kept inside this file so the wizard is self-contained)
@@ -1306,58 +1345,60 @@ export default function TPSWizardV2({ locale }: Props) {
   // because the extracted fields are already in memory.
   useEffect(() => {
     try {
+      // Schema-version guard: ANY old-schema state is discarded outright.
+      // This is the single most reliable way to evict pre-firewall
+      // hallucinations (e.g. an A-number captured under the passport slot
+      // before the contract existed). We also defensively wipe the v1/v2
+      // keys so users who had those open don't keep seeing ghosts.
+      try { localStorage.removeItem('wizard:tps-ukraine:v2:state') } catch { /* */ }
+      try { localStorage.removeItem('wizard:tps-ukraine:state') } catch { /* */ }
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
-        if (parsed && typeof parsed === 'object') {
-          // Reconstruct uploads map from uploadsMeta — without File objects,
-          // but WITH the OCR fields so Step 5 review keeps the recognized
-          // values after a locale switch / theme switch / accidental reload.
+        if (parsed && typeof parsed === 'object' && parsed.schema === STORAGE_SCHEMA) {
+          // Rebuild uploads map from uploadsMeta — without File objects,
+          // but WITH the OCR fields so Step 5 keeps the recognized values
+          // after a locale switch / theme switch / refresh.
           //
-          // Backward-compat: v1 stored each field as a bare string
-          // (Record<string, string>); v2 stores FieldExtraction objects.
-          // We upgrade old entries on read so users who had a session
-          // open before the upgrade don't lose their work.
+          // CRITICAL: re-apply the document-slot contract during hydration.
+          // The /api/tps/ocr/extract route strips forbidden fields, but
+          // localStorage written before that fix may still contain them.
+          // Filtering on read guarantees the UI can never resurrect a
+          // pre-firewall A-number from a passport slot.
           const rebuiltUploads: Record<string, UploadEntry> = {}
           const meta = (parsed.uploadsMeta || {}) as Record<
             string,
             {
               fileName: string
               status: UploadEntry['status']
-              fields?: Record<string, string | FieldExtraction>
+              fields?: Record<string, FieldExtraction>
             } | undefined
           >
           for (const k of Object.keys(meta)) {
             const m = meta[k]
             if (!m) continue
-            const upgradedFields: Record<string, FieldExtraction> = {}
+            const allowed = SLOT_ALLOWED_FIELDS[k]
+            const cleanFields: Record<string, FieldExtraction> = {}
             if (m.fields) {
               for (const fk of Object.keys(m.fields)) {
-                const raw = m.fields[fk]
-                if (typeof raw === 'string') {
-                  // v1 → v2 upgrade
-                  upgradedFields[fk] = {
-                    value: raw,
-                    source: 'ocr_visual',
-                    requires_review: false,
-                    doc_slot: k,
-                  }
-                } else if (raw && typeof raw.value === 'string') {
-                  upgradedFields[fk] = raw
-                }
+                const fx = m.fields[fk]
+                if (!fx || typeof fx.value !== 'string') continue
+                // Drop any field the slot contract doesn't allow.
+                if (allowed && !allowed.has(fk)) continue
+                cleanFields[fk] = fx
               }
             }
             rebuiltUploads[k] = {
               file: null,
               fileName: m.fileName,
               status: m.status,
-              fields: upgradedFields,
+              fields: cleanFields,
             }
           }
-          // Strip server-only/extraneous keys before merging
           const {
             uploadsMeta: _uploadsMeta,
             lastStep: _lastStep,
+            schema: _schema,
             ...rest
           } = parsed
           setData((d) => ({ ...d, ...rest, uploads: rebuiltUploads }))
@@ -1365,7 +1406,7 @@ export default function TPSWizardV2({ locale }: Props) {
         }
       }
     } catch {
-      /* ignore */
+      /* ignore — corrupt storage just gets ignored, never crashes the wizard */
     }
     // Stripe return-from-checkout: ?paid=1 means the user just completed
     // payment on Stripe and was redirected back via the success page.
@@ -1390,7 +1431,12 @@ export default function TPSWizardV2({ locale }: Props) {
       }
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ ...rest, lastStep: step, uploadsMeta: uploadsSafe }),
+        JSON.stringify({
+          schema: STORAGE_SCHEMA,
+          ...rest,
+          lastStep: step,
+          uploadsMeta: uploadsSafe,
+        }),
       )
     } catch {
       /* ignore */
@@ -1644,7 +1690,40 @@ export default function TPSWizardV2({ locale }: Props) {
           {t.sub}
         </p>
 
-        {/* Progress bar */}
+        {/* Progress bar + persistent restart link.
+            The restart link lives above the progress bar so the user can
+            wipe stale OCR / personal data from any step — critical when
+            the firewall logic has evolved between sessions. */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            marginBottom: 6,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              const ok = typeof window === 'undefined'
+                ? true
+                : window.confirm(t.restart + '?')
+              if (ok) restart()
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 13,
+              color: TEXT_MUTED,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              fontFamily: 'inherit',
+              padding: 0,
+            }}
+          >
+            {t.restart}
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: 3, marginBottom: 20 }}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <span
@@ -1778,6 +1857,67 @@ export default function TPSWizardV2({ locale }: Props) {
                 type={data.type}
                 ead={data.ead}
                 mergedFields={mergedFields}
+                onEdit={(key, label, current) => {
+                  // Real inline edit. We deliberately use the browser
+                  // native prompt() here as Round 3 — it's universally
+                  // accessible (screen readers, 35-80yo touch users on
+                  // older OSes) and ships without a modal dependency.
+                  // The richer in-page editor is a P1 follow-up; this
+                  // unblocks correction TODAY.
+                  if (typeof window === 'undefined') return
+                  const next = window.prompt(label, current)
+                  if (next === null) return // user cancelled
+                  const trimmed = next.trim()
+                  if (trimmed === current.trim()) return
+                  // Write the corrected value back into the FIRST upload
+                  // that carried this field. Mark provenance as
+                  // 'user_corrected' so the source label updates to
+                  // "Введено вручную" / "Entered manually".
+                  setData((d) => {
+                    const next = { ...d, uploads: { ...d.uploads } }
+                    let written = false
+                    for (const slotId of Object.keys(next.uploads)) {
+                      const u = next.uploads[slotId]
+                      if (!u.fields || !u.fields[key]) continue
+                      next.uploads[slotId] = {
+                        ...u,
+                        fields: {
+                          ...u.fields,
+                          [key]: {
+                            value: trimmed,
+                            source: 'user_corrected',
+                            requires_review: false,
+                            doc_slot: slotId,
+                          },
+                        },
+                      }
+                      written = true
+                      break
+                    }
+                    // If no upload carried this field yet (user is filling
+                    // in a missing value), park it under a synthetic
+                    // 'manual' slot so it still flows into Step 6 merge.
+                    if (!written) {
+                      const slotId = 'manual'
+                      const existing = next.uploads[slotId]
+                      next.uploads[slotId] = {
+                        file: null,
+                        fileName: 'manual',
+                        status: 'done',
+                        fields: {
+                          ...(existing?.fields ?? {}),
+                          [key]: {
+                            value: trimmed,
+                            source: 'user_input',
+                            requires_review: false,
+                            doc_slot: slotId,
+                          },
+                        },
+                      }
+                    }
+                    return next
+                  })
+                }}
               />
             </Card>
 
@@ -1872,7 +2012,7 @@ export default function TPSWizardV2({ locale }: Props) {
                 onMouseOver={(e) => !busy && (e.currentTarget.style.background = PAY_BLUE_DARK)}
                 onMouseOut={(e) => !busy && (e.currentTarget.style.background = PAY_BLUE)}
               >
-                {busy ? '…' : t.s6Pay}
+                {busy ? '…' : `${t.s6Pay} — ${TPS_TIER1_PRICE_DISPLAY}`}
               </button>
             )}
 
@@ -2056,11 +2196,19 @@ function ReviewOcr({
   type,
   ead,
   mergedFields,
+  onEdit,
 }: {
   t: (typeof T)[LocaleKey]
   type?: FilingType
   ead?: EadChoice
   mergedFields: Record<string, FieldExtraction>
+  /**
+   * Called when the user clicks "Изменить" on a row. The parent owns the
+   * uploads state, so it does the actual update — we just route the
+   * intent up. Receives the field key, the localized label (for the
+   * prompt), and the current value (to prefill).
+   */
+  onEdit: (key: string, label: string, currentValue: string) => void
 }) {
   const init = type === 'init'
   const wantsEad = ead === 'ead'
@@ -2140,7 +2288,7 @@ function ReviewOcr({
               source={provenanceLabel(fx.source, r.expectedDoc)}
               value={fx.value}
               reviewBadge={fx.requires_review || fx.source === 'ai_brain' ? t.reviewBadge : null}
-              onEdit={() => alert(`Edit: ${r.label}`)}
+              onEdit={() => onEdit(r.key, r.label, fx?.value ?? '')}
               editLabel={t.edit}
             />
           )
@@ -2154,7 +2302,7 @@ function ReviewOcr({
             source=""
             value={missingMsg}
             missing
-            onEdit={() => alert(`Edit: ${r.label}`)}
+            onEdit={() => onEdit(r.key, r.label, '')}
             editLabel={t.edit}
           />
         )
