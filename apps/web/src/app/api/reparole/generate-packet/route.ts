@@ -102,8 +102,9 @@ NEXT STEPS
      the values into my.uscis.gov, Box 10.C (U4U Ukraine).
   3. Do NOT file earlier than 180 days before your current parole
      expires. Early applications are rejected without refund.
-  4. Parole fee: $1,020 (separate USCIS invoice after conditional
-     approval; not waivable).
+  4. Parole filing fee: verify the current amount at
+     uscis.gov/feecalculator. USCIS issues a separate invoice after
+     conditional approval; fee is not waivable.
 
 OFFICIAL SOURCES
   https://www.uscis.gov/i-131
