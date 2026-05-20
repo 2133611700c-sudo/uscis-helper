@@ -212,6 +212,9 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'weight',
       'eye_color',
       'hair_color',
+      // 2026-05-20 round 2: DL number itself (state license ID).
+      // Cross-reference only — never an authoritative USCIS form field.
+      'dl_number',
     ],
     forbidden_fields: [
       'a_number',
