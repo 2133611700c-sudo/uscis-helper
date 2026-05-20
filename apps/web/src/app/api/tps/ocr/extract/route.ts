@@ -303,6 +303,49 @@ export async function POST(req: NextRequest) {
     } as TpsModuleResult
   }
 
+  // ── R1B name-stability override ────────────────────────────────────────
+  // Brain's choice of source_value for name fields is non-deterministic on
+  // passport scans where only part of the MRZ is OCR'd (rule passport
+  // module fails its strict TD3 check, but the upper line "P<UKR..." is
+  // usually still in raw_text). Sergii observed "Sergi" vs "Serhii"
+  // varying across runs of the same image. Fix: scan raw_text once for
+  // any MRZ-shape line, pull surname + given Latin tokens directly, and
+  // force-override Brain's name fields with that deterministic value.
+  // KMU-55 is unnecessary — MRZ is already Latin and authoritative.
+  if (mergedModule && result.raw_text) {
+    const MRZ = /\bP<([A-Z]{3})([A-Z<]+?)<<([A-Z<]+?)(?:<<|<\s|$)/m
+    const m = result.raw_text.match(MRZ)
+    if (m) {
+      const mrzSurname = m[2].replace(/</g, ' ').trim().replace(/\s+/g, ' ')
+      const mrzGiven = m[3].replace(/</g, ' ').trim().replace(/\s+/g, ' ').split(' ')[0] || ''
+      const titleCase = (s: string) =>
+        s.toLowerCase().replace(/(^|\s|-)([a-z])/g, (_, sep: string, c: string) => sep + c.toUpperCase())
+      const overrides: Record<string, string> = {}
+      if (mrzSurname && /^[A-Z]+$/.test(mrzSurname.replace(/\s/g, ''))) {
+        overrides.family_name = titleCase(mrzSurname)
+      }
+      if (mrzGiven && /^[A-Z]+$/.test(mrzGiven)) {
+        overrides.given_name = titleCase(mrzGiven)
+      }
+      if (Object.keys(overrides).length > 0) {
+        mergedModule = {
+          ...mergedModule,
+          fields: mergedModule.fields.map((f) =>
+            overrides[f.field]
+              ? {
+                  ...f,
+                  raw_value: overrides[f.field],
+                  normalized_value: overrides[f.field],
+                  extraction_source: 'ocr_mrz' as const,
+                  source_zone: 'mrz_line_1',
+                }
+              : f,
+          ),
+        }
+      }
+    }
+  }
+
   // ── Document Slot Firewall ─────────────────────────────────────────────
   // Apply the per-slot allowed/forbidden field contract BEFORE we surface
   // anything to the wizard. This blocks two real failure modes seen in
