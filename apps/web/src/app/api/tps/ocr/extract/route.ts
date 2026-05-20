@@ -85,7 +85,13 @@ export async function POST(req: NextRequest) {
   }
 
   const file = form.get('file')
-  const docTypeHint = (form.get('doc_type_hint') as string | null) ?? ''
+  // Accept both names — wizard uploads send `docHint`, legacy / curl scripts
+  // and evidence tooling use `doc_type_hint`. Either way the value is the
+  // wizard's slot id (passport / i94 / ead / tps_notice / ead_old / photo).
+  const docTypeHint =
+    ((form.get('docHint') as string | null) ??
+      (form.get('doc_type_hint') as string | null) ??
+      '').trim()
 
   if (!file || typeof file === 'string') {
     return NextResponse.json(
