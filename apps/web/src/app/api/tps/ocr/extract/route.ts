@@ -31,6 +31,7 @@ import { runPassportModule } from '@/lib/tps/modules/passport'
 import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
 import { runI94Module } from '@/lib/tps/modules/i94'
 import { runEadModule } from '@/lib/tps/modules/ead'
+import { runDlModule } from '@/lib/tps/modules/dl'
 import type { TpsModuleResult, TpsExtractedField } from '@/lib/tps/types'
 import { applyContract } from '@/lib/tps/ocr/documentContracts'
 import {
@@ -212,6 +213,16 @@ export async function POST(req: NextRequest) {
       break
     case 'ead':
       moduleResult = runEadModule(result, { document_id })
+      break
+    case 'dl':
+      // 2026-05-20: deterministic anchor parser. We deliberately do
+      // NOT call Brain for DL because DeepSeek's safety classifier
+      // refuses JSON output on US driver license content, causing
+      // brain_status='error' / brain_error_code='INVALID_JSON' on
+      // every prod call. The DL layout is AAMVA-standardized and the
+      // rule module reliably extracts 9 fields (dl_number, ln, fn,
+      // dob, sex, hgt, wgt, eyes, hair) + the 4 address parts.
+      moduleResult = runDlModule(result, { document_id })
       break
     default:
       moduleResult = null

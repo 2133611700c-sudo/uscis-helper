@@ -15,6 +15,7 @@ export type TpsDocType =
   | 'i94'                   // CBP I-94 record (printout / screenshot)
   | 'ead'                   // USCIS EAD card
   | 'i797'                  // USCIS receipt notice
+  | 'dl'                    // U.S. driver's license / state ID (added 2026-05-20)
   | 'residence_evidence'    // lease / utility / paystub / etc.
   | 'translated_document'   // any Ukrainian doc that needs translation first
   | 'unknown'
