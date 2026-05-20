@@ -94,8 +94,16 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
     allowed_fields: [
       'i94_admission_number',
       'last_entry_date',
+      // i94_admit_until: critical for TPS — tells the wizard when current
+      // parole/status period ends, used to decide if user is in valid
+      // status window for TPS application. Without this, the I-94
+      // upload is half-useless. Added 2026-05-20 after real-doc audit.
+      'i94_admit_until',
       'i94_class_of_admission',
       'status_at_last_entry',
+      // I-94 also carries country of citizenship — allowed read-only;
+      // identity guard makes passport authoritative on conflict.
+      'country_of_nationality',
       // I-94 mirrors a few passport-identity fields; allowed read-only,
       // but the identity conflict guard treats passport as authoritative.
       'passport_number',
@@ -118,6 +126,9 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'a_number',
       'ead_category_on_card',
       'ead_expiration_date',
+      // EAD prints "Country of Birth" — allowed read-only; identity guard
+      // makes passport authoritative on conflict. Added 2026-05-20.
+      'country_of_birth',
       // EAD cards print name and DOB; allowed but identity guard makes
       // passport authoritative on conflict.
       'family_name',
@@ -141,6 +152,7 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'a_number',
       'ead_category_on_card',
       'ead_expiration_date',
+      'country_of_birth',
       'family_name',
       'given_name',
       'dob',

@@ -29,6 +29,35 @@ function usDateToIso(d: string): string | null {
   return `${m[3]}-${mm}-${dd}`
 }
 
+// CBP I-94 printouts often show dates as "2022 September 09" or
+// "2022 Sep 09". Normalize to MM/DD/YYYY so the rest of the pipeline
+// (which only knows US date) keeps working unchanged.
+const MONTHS_LONG: Record<string, string> = {
+  january: '01', february: '02', march: '03', april: '04',
+  may: '05', june: '06', july: '07', august: '08',
+  september: '09', october: '10', november: '11', december: '12',
+  jan: '01', feb: '02', mar: '03', apr: '04', jun: '06', jul: '07',
+  aug: '08', sep: '09', sept: '09', oct: '10', nov: '11', dec: '12',
+}
+
+function yyyyMonthDdToUs(s: string): string | null {
+  // "2022 September 09" or "2022 Sep 9" — case-insensitive.
+  const m = s.match(/\b(\d{4})\s+([A-Za-z]{3,9})\s+(\d{1,2})\b/)
+  if (!m) return null
+  const mm = MONTHS_LONG[m[2].toLowerCase()]
+  if (!mm) return null
+  const dd = m[3].padStart(2, '0')
+  return `${mm}/${dd}/${m[1]}`
+}
+
+// Try MM/DD/YYYY first (whitelisted by valuePattern), fall back to
+// YYYY Month DD if the caller passes a raw line.
+function anyDateToUs(s: string): string | null {
+  const us = s.match(/\b(\d{1,2}\/\d{1,2}\/\d{4})\b/)
+  if (us) return us[1]
+  return yyyyMonthDdToUs(s)
+}
+
 interface I94Options {
   document_id: string
 }
@@ -144,13 +173,22 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
   }
 
   // ── 3. Date of Entry ──────────────────────────────────────────────────────
-  const entry = findLabelledValue(
-    ocr,
-    [/(?:most\s*recent\s*)?date\s*of\s*(?:entry|admission)/i, /admit(?:ted)?\s*on/i],
-    /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/,
-  )
+  // CBP's web printout uses "2022 September 09" (YYYY Month DD), the
+  // travel-history table uses "MM/DD/YYYY". Accept both.
+  const entry =
+    findLabelledValue(
+      ocr,
+      [/(?:most\s*recent\s*)?date\s*of\s*(?:entry|admission)/i, /admit(?:ted)?\s*on/i],
+      /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/,
+    ) ??
+    findLabelledValue(
+      ocr,
+      [/(?:most\s*recent\s*)?date\s*of\s*(?:entry|admission)/i, /admit(?:ted)?\s*on/i],
+      /\b(\d{4}\s+[A-Za-z]{3,9}\s+\d{1,2})\b/,
+    )
   if (entry) {
-    const iso = usDateToIso(entry.value)
+    const usForm = anyDateToUs(entry.value) ?? entry.value
+    const iso = usDateToIso(usForm)
     fields.push({
       ...base,
       field: 'last_entry_date',
@@ -169,25 +207,34 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
   }
 
   // ── 4. Admit Until ────────────────────────────────────────────────────────
-  // Can be MM/DD/YYYY or "D/S" (duration of status).
-  const admitUntilDate = findLabelledValue(
-    ocr,
-    [/admit\s*until/i],
-    /\b(\d{1,2}\/\d{1,2}\/\d{4}|D\/S)\b/,
-  )
+  // Can be MM/DD/YYYY, "YYYY Month DD" (CBP web format), or "D/S"
+  // (duration of status).
+  const admitUntilDate =
+    findLabelledValue(
+      ocr,
+      [/admit\s*until/i],
+      /\b(\d{1,2}\/\d{1,2}\/\d{4}|D\/S)\b/,
+    ) ??
+    findLabelledValue(
+      ocr,
+      [/admit\s*until/i],
+      /\b(\d{4}\s+[A-Za-z]{3,9}\s+\d{1,2})\b/,
+    )
   if (admitUntilDate) {
-    const iso = admitUntilDate.value === 'D/S' ? null : usDateToIso(admitUntilDate.value)
+    const isDS = admitUntilDate.value === 'D/S'
+    const usForm = isDS ? null : (anyDateToUs(admitUntilDate.value) ?? admitUntilDate.value)
+    const iso = !usForm ? null : usDateToIso(usForm)
     fields.push({
       ...base,
       field: 'i94_admit_until',
       raw_value: admitUntilDate.value,
-      normalized_value: iso ?? admitUntilDate.value,
+      normalized_value: iso ?? (isDS ? 'D/S' : usForm ?? admitUntilDate.value),
       source_zone: 'i94_admit_until',
       bbox: admitUntilDate.bbox,
       confidence: admitUntilDate.confidence,
       review_required: false,
       ocr_word_ids: [],
-      passes: admitUntilDate.value === 'D/S' ? ['admit_until_ds'] : iso ? ['us_date_to_iso'] : [],
+      passes: isDS ? ['admit_until_ds'] : iso ? ['us_date_to_iso'] : [],
       failures: [],
     })
   }
