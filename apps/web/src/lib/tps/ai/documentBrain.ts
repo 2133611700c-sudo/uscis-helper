@@ -375,10 +375,7 @@ export function validateBrainField(
     // in-place, so downstream PDF fillers don't need date-parser logic.
     f.final_value = toUscisDate(d)
   }
-  if (fieldKey === 'country_of_nationality' || fieldKey === 'passport_country_of_issuance') {
-    const normalized = normalizeCountry(f.final_value)
-    if (normalized) f.final_value = normalized
-  }
+  // (country normalization handled in the slash-split block below)
   if (fieldKey === 'passport_number') {
     const v = (f.final_value || '').trim()
     if (v.length < 5 || v.length > 15) {
@@ -398,20 +395,42 @@ export function validateBrainField(
     }
   }
   if (fieldKey === 'sex') {
-    // Real Ukrainian/Russian passports stamp "Ч / M" (чоловіча / male) or
-    // "Ж / F" (жіноча / female) in the biographic zone. The MRZ slice is
-    // always Latin M/F, but Brain often picks up the visual Cyrillic marker
-    // first. Normalize before validating, then write the canonical Latin
-    // letter back so PDF prefill never sees Cyrillic.
+    // Real Ukrainian / Russian passports stamp the sex field as either
+    // "Ч / M" / "Ж / F" / "Ч/M" / "M / Ч" or just "Ч" / "Ж" — and Brain
+    // often forwards the visual marker untouched. Scan for ANY recognizable
+    // marker (Latin OR Cyrillic) anywhere in the string and write back the
+    // canonical Latin letter. PDF prefill never sees Cyrillic.
     const raw = (f.final_value || '').toUpperCase()
+    // Pad with spaces so single-char input like "Ч" and slash-separated
+    // pairs like "Ч / M" both match the same regex via simple lookahead
+    // patterns. JS \b doesn't work as expected on Cyrillic.
+    const padded = ` ${raw.replace(/[^A-ZА-ЯІЇЄҐ]/g, ' ').replace(/\s+/g, ' ').trim()} `
     let canonical: 'M' | 'F' | 'X' | null = null
-    if (/^M|МУЖ|МАЛЕ|MALE|^Ч/.test(raw)) canonical = 'M'
-    else if (/^F|ЖЕН|ЖІН|FEMALE|^Ж/.test(raw)) canonical = 'F'
-    else if (/^X|UNSPEC/.test(raw)) canonical = 'X'
+    if (/[ /]M[ /]|МУЖ|МАЛ|MALE|ЧОЛ|[ /]Ч[ /]/.test(padded)) canonical = 'M'
+    else if (/[ /]F[ /]|ЖЕН|ЖІН|FEMALE|[ /]Ж[ /]/.test(padded)) canonical = 'F'
+    else if (/[ /]X[ /]|UNSPEC/.test(padded)) canonical = 'X'
     if (!canonical) {
       return { ok: false, reason: 'sex not M/F/X (incl. Ч/Ж)' }
     }
     f.final_value = canonical
+  }
+  if (fieldKey === 'country_of_nationality' || fieldKey === 'passport_country_of_issuance') {
+    // Brain frequently pulls the bilingual stamp "УКРАЇНА / UKRAINE" or
+    // "Ukraina / Ukraine" as a single token. Split on the / separator and
+    // normalize each half — first successful Ukraine match wins.
+    const raw = (f.final_value || '').trim()
+    if (raw.includes('/')) {
+      for (const part of raw.split('/')) {
+        const norm = normalizeCountry(part)
+        if (norm && norm !== part.trim()) {
+          f.final_value = norm
+          break
+        }
+      }
+    } else {
+      const norm = normalizeCountry(raw)
+      if (norm) f.final_value = norm
+    }
   }
   if (fieldKey === 'ead_category_on_card') {
     const v = (f.final_value || '').toLowerCase().replace(/[^a-z0-9]/g, '')
