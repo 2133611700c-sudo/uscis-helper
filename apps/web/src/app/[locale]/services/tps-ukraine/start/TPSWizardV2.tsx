@@ -65,6 +65,18 @@ export interface FieldExtraction {
   requires_review: boolean
   /** Which upload slot produced this field (passport, i94, ead, …). */
   doc_slot: string
+
+  // ── Provenance (Patch 1 — 2026-05-20) ────────────────────────────────────
+  // Carried through from TpsExtractedField so the review screen and audit
+  // trail can show exactly where a value came from.
+  /** Upstream document id, e.g. "passport_page_1". Null if not provided. */
+  source_document_id: string | null
+  /** Zone within the source document, e.g. "mrz_line_2_dob". Null if not provided. */
+  source_zone: string | null
+  /** Raw OCR string before normalization. Null if not provided. */
+  raw_value: string | null
+  /** Provider confidence 0..1. Null if not provided by extraction module. */
+  confidence: number | null
 }
 
 interface UploadEntry {
@@ -1705,6 +1717,12 @@ export default function TPSWizardV2({ locale }: Props) {
               source: src,
               requires_review: Boolean(f.review_required),
               doc_slot: id,
+              // Provenance pass-through (Patch 1): carry raw evidence from
+              // TpsExtractedField so review screen and audit trail work.
+              source_document_id: typeof f.source_document_id === 'string' ? f.source_document_id : null,
+              source_zone: typeof f.source_zone === 'string' ? f.source_zone : null,
+              raw_value: typeof f.raw_value === 'string' ? f.raw_value : null,
+              confidence: typeof f.confidence === 'number' ? f.confidence : null,
             }
           }
         }
@@ -1717,6 +1735,11 @@ export default function TPSWizardV2({ locale }: Props) {
                 source: 'ocr_visual',
                 requires_review: false,
                 doc_slot: id,
+                // Legacy path: no provenance available.
+                source_document_id: null,
+                source_zone: null,
+                raw_value: null,
+                confidence: null,
               }
             }
           }
@@ -1800,7 +1823,7 @@ export default function TPSWizardV2({ locale }: Props) {
         status_at_last_entry: v('status_at_last_entry'),
         filing_path,
         wants_ead: ead,
-        ead_category: ead ? (data.type === 'init' ? 'a12' : 'c19') : null,
+        ead_category: ead ? (data.type === 'init' ? 'c19' : 'a12') : null,
         // 2026-05-20: fall back to OCR'd address parts when the user
         // didn't manually override. DL slot extracts us_address_*
         // into mergedFields; without these fallbacks, the I-131 Part 3
@@ -2165,6 +2188,12 @@ export default function TPSWizardV2({ locale }: Props) {
                             source: 'user_corrected',
                             requires_review: false,
                             doc_slot: slotId,
+                            // User correction: preserve original provenance if
+                            // the field existed before; otherwise null.
+                            source_document_id: u.fields?.[key]?.source_document_id ?? null,
+                            source_zone: u.fields?.[key]?.source_zone ?? null,
+                            raw_value: u.fields?.[key]?.raw_value ?? null,
+                            confidence: null, // user override — confidence no longer applies
                           },
                         },
                       }
@@ -2188,6 +2217,11 @@ export default function TPSWizardV2({ locale }: Props) {
                             source: 'user_input',
                             requires_review: false,
                             doc_slot: slotId,
+                            // Manual entry: no OCR provenance.
+                            source_document_id: null,
+                            source_zone: null,
+                            raw_value: null,
+                            confidence: null,
                           },
                         },
                       }

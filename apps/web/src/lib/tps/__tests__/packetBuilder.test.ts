@@ -81,7 +81,7 @@ const fixtureInitialPath: TPSAnswers = {
   i94_admission_number: '00000000001',
   filing_path: 'initial',
   wants_ead: true,
-  ead_category: 'a12',
+  ead_category: 'c19',  // initial = pending TPS → (c)(19)
   daytime_phone: '5550000000',
   email: 'test@example.invalid',
   has_criminal_concern: false,
@@ -157,8 +157,8 @@ describe('buildPacket — TPS Ukraine initial-path fixture', () => {
     expect(i765Text).toMatch(/test@example\.invalid/)
   })
 
-  it('handles re-registration path with EAD category C19', async () => {
-    const reReg: TPSAnswers = { ...fixtureInitialPath, filing_path: 're_registration', ead_category: 'c19' }
+  it('handles re-registration path with EAD category A12', async () => {
+    const reReg: TPSAnswers = { ...fixtureInitialPath, filing_path: 're_registration', ead_category: 'a12' }
     const result = await buildPacket(reReg)
     expect(result.i821.applied).toBeGreaterThanOrEqual(20)
     expectKnownI821Skips(result.i821)
