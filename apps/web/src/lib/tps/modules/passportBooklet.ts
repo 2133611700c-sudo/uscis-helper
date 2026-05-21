@@ -137,6 +137,18 @@ function stripBilingualNoise(s: string): string {
   let t = s.trim()
   // Strip leading separator(s)
   t = t.replace(/^[:\-—_\/\s.]+/, '')
+  // 2026-05-21 FIX_TPS_BOOKLET_ENGLISH_LABEL_STRIP_BEFORE_DIGITS:
+  // Strip well-known English passport-label prefixes even when followed
+  // by DIGITS instead of Cyrillic. The previous regex only fired when
+  // a Cyrillic value followed, so DOB lines like "Date of birth 13 СЕР
+  // / AUG 60" kept the "Date of birth" prefix and surfaced as raw OCR
+  // garbage in the wizard. Hardcode the small set of English labels
+  // that appear on the Ukrainian booklet (date of birth, place of
+  // birth, surname, given names, nationality, sex, authority).
+  t = t.replace(
+    /^(?:date\s+of\s+(?:birth|issue|expiry|expir(?:y|ation)|issuance)|place\s+of\s+(?:birth|issue|issuance)|surname|given\s+names?|nationality|sex|authority)\b[:\s.\-—\/]*/i,
+    '',
+  )
   // Strip a leading English-label run: "Surname Шевченко" → "Шевченко"
   t = t.replace(/^[A-Za-z][A-Za-z .'\-]{0,40}(?=\s+[А-ЯІЇЄҐа-яіїєґ])/u, '')
   // Strip a trailing English-label run: "Шевченко / Surname" → "Шевченко"
@@ -313,20 +325,71 @@ function titleCaseCyrillic(s: string): string {
 /**
  * Parse a Ukrainian/Russian date into ISO YYYY-MM-DD, or null on failure.
  */
+// 3-letter abbreviations seen on Ukrainian booklet date strips (lowercase).
+// Latin look-alike variants are folded back to Cyrillic by parseUaDate before
+// lookup, so we only need ONE entry per real month.
+const MONTH_ABBR3: Record<string, number> = {
+  // UA Cyrillic abbreviations (січ, лют, бер, кві, тра, чер, лип, сер, вер, жов, лис, гру)
+  січ: 1, лют: 2, бер: 3, кві: 4, тра: 5, чер: 6,
+  лип: 7, сер: 8, вер: 9, жов: 10, лис: 11, гру: 12,
+  // RU Cyrillic abbreviations (янв, фев, мар, апр, май, июн, июл, авг, сен, окт, ноя, дек)
+  янв: 1, фев: 2, мар: 3, апр: 4, май: 5, июн: 6,
+  июл: 7, авг: 8, сен: 9, окт: 10, ноя: 11, дек: 12,
+  // English abbreviations (Jan/Feb/Mar/.../Dec) — the bilingual right column.
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+}
+
+// Latin char → Cyrillic look-alike. Used to fix Vision misreads like "CEP"
+// for "СЕР" (серпня = August). Apply ONLY when the token has no Latin chars
+// that are NOT in this lookalike set — guards against mangling real English
+// abbreviations like "MAY".
+const LATIN_TO_CYR: Record<string, string> = {
+  A: 'А', B: 'В', C: 'С', E: 'Е', H: 'Н', I: 'І',
+  K: 'К', M: 'М', O: 'О', P: 'Р', T: 'Т', X: 'Х', Y: 'У',
+}
+function tryUnlookalikeToken(token: string): string | null {
+  // Returns the Cyrillic-restored token if every uppercase letter is a
+  // known look-alike; null otherwise.
+  const upper = token.toUpperCase()
+  let out = ''
+  for (const ch of upper) {
+    const sub = LATIN_TO_CYR[ch]
+    if (sub) { out += sub; continue }
+    if (/[А-ЯІЇЄҐ]/u.test(ch)) { out += ch; continue }
+    return null // contains a non-lookalike Latin letter — keep as-is
+  }
+  return out.toLowerCase()
+}
+
 function parseUaDate(s: string): string | null {
+  // 2026-05-21 FIX_TPS_BOOKLET_DOB_PARSE_ABBR: extend the parser so it
+  // handles the date format actually printed on Ukrainian booklet
+  // photo pages — "13 СЕР / AUG 60" — which OCR usually delivers as
+  // "13 CEP / AUG 60" (Cyrillic СЕР look-alike-mangled to Latin CEP).
+  // Previously parseUaDate only matched full-word Ukrainian months
+  // ("серпня") and numeric formats with separators, so this layout
+  // silently returned null and the wizard surfaced the raw OCR text.
   const text = s.trim().toLowerCase()
-  // Written-out: "25 червня 1986" or "25 июня 1986"
-  const m1 = text.match(/(\d{1,2})\s+([а-яії]+)\s+(\d{4})/u)
+
+  // 1) Written-out month: "25 червня 1986" / "25 июня 1986"
+  const m1 = text.match(/(\d{1,2})\s+([а-яії]+)\s+(\d{2,4})/u)
   if (m1) {
     const day = parseInt(m1[1], 10)
     const monthWord = m1[2]
-    const year = parseInt(m1[3], 10)
-    const month = UA_MONTHS[monthWord] ?? RU_MONTHS[monthWord] ?? null
+    let year = parseInt(m1[3], 10)
+    const month =
+      UA_MONTHS[monthWord] ??
+      RU_MONTHS[monthWord] ??
+      MONTH_ABBR3[monthWord.slice(0, 3)] ??
+      null
+    if (year < 100) year = year > 30 ? 1900 + year : 2000 + year
     if (month && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
       return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     }
   }
-  // Numeric: "25.06.1986" / "25/06/1986" / "25-06-1986"
+
+  // 2) Numeric: "25.06.1986" / "25/06/1986" / "25-06-1986"
   const m2 = text.match(/(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})/)
   if (m2) {
     const day = parseInt(m2[1], 10)
@@ -337,6 +400,41 @@ function parseUaDate(s: string): string | null {
       return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     }
   }
+
+  // 3) Abbreviated bilingual: "13 CEP / AUG 60" or "13 СЕР AUG 60" etc.
+  //    Strategy: pull out the FIRST digit-group as day, the LAST digit-group
+  //    as year, then scan every non-digit token between them. If ANY token
+  //    (after Latin→Cyrillic look-alike fold) matches a 3-letter month
+  //    abbreviation, use it.
+  const m3 = text.match(/(\d{1,2})\b([^0-9]+)\b(\d{2,4})\b/)
+  if (m3) {
+    const day = parseInt(m3[1], 10)
+    let year = parseInt(m3[3], 10)
+    if (year < 100) year = year > 30 ? 1900 + year : 2000 + year
+    const tokens = m3[2]
+      .split(/[\s/\\.,\-—_:;]+/u)
+      .map((t) => t.trim())
+      .filter(Boolean)
+    let month: number | null = null
+    for (const token of tokens) {
+      const head = token.slice(0, 3).toLowerCase()
+      // First try the token AS-IS (handles English JAN/FEB/AUG and Cyrillic СЕР).
+      if (MONTH_ABBR3[head] !== undefined) {
+        month = MONTH_ABBR3[head]
+        break
+      }
+      // Then try Latin→Cyrillic restore (handles OCR-mangled "CEP" → "сер").
+      const restored = tryUnlookalikeToken(token.slice(0, 3))
+      if (restored && MONTH_ABBR3[restored] !== undefined) {
+        month = MONTH_ABBR3[restored]
+        break
+      }
+    }
+    if (month && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    }
+  }
+
   return null
 }
 
