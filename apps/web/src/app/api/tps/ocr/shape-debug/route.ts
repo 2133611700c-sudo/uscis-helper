@@ -49,6 +49,7 @@ import { runPassportModule } from '@/lib/tps/modules/passport'
 import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
 import { isStrictValidValue } from '@/lib/tps/strictValidators'
 import type { OcrLine } from '@/lib/ocr/types'
+import { isBlocked } from '@/lib/ocr/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -80,6 +81,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const mime = file.type || 'image/jpeg'
 
     const ocr = await googleVisionProvider.extractText({ imageBuffer: buf, mimeType: mime })
+    if (isBlocked(ocr)) {
+      return NextResponse.json({ blocked: true, blocked_reason: ocr.reason ?? 'unknown' }, { status: 200 })
+    }
     const rawText = ocr.raw_text || ''
     const lines = (ocr.lines || []).map((l: OcrLine) => l.text || '')
 
