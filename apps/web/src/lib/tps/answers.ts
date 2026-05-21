@@ -15,8 +15,10 @@ export type FilingPath = 'initial' | 're_registration'
 
 /**
  * I-765 Eligibility Category. For TPS this is exactly (a)(12) or (c)(19).
- *   - 'a12' → first-time TPS applicant filing concurrently with I-821 initial
- *   - 'c19' → already-granted TPS re-registering
+ *   - 'c19' → first-time TPS applicant filing concurrently with I-821 initial
+ *              (pending TPS — 8 CFR 274a.12(c)(19))
+ *   - 'a12' → already-granted TPS re-registering
+ *              (approved TPS — 8 CFR 274a.12(a)(12))
  */
 export type EadCategory = 'a12' | 'c19' | null
 
@@ -76,7 +78,7 @@ export interface TPSAnswers {
   // ── Filing path & EAD bundle ───────────────────────────────────────────────
   filing_path: FilingPath
   wants_ead: boolean
-  ead_category: EadCategory         // 'a12' for initial, 'c19' for re-registration
+  ead_category: EadCategory         // 'c19' for initial (pending), 'a12' for re-registration (approved)
 
   // ── Fee bundle ─────────────────────────────────────────────────────────────
   /** True if the user is requesting a fee waiver (Form I-912). Drives README
@@ -219,8 +221,8 @@ export function isMinimallyComplete(a: TPSAnswers): { ok: boolean; missing: stri
  * Caller can let user override (rare but possible).
  */
 export function defaultEadCategoryFor(path: FilingPath): EadCategory {
-  if (path === 'initial') return 'a12'
-  if (path === 're_registration') return 'c19'
+  if (path === 'initial') return 'c19'        // pending TPS — 8 CFR 274a.12(c)(19)
+  if (path === 're_registration') return 'a12' // approved TPS — 8 CFR 274a.12(a)(12)
   return null
 }
 

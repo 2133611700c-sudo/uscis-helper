@@ -72,6 +72,7 @@ export async function buildPacket(answers: TPSAnswers): Promise<PacketResult> {
   zip.file('I-821.pdf', i821Filled.bytes)
   if (i765Filled) zip.file('I-765.pdf', i765Filled.bytes)
   zip.file('README.txt', buildReadme(answers, i821Filled, i765Filled))
+  zip.file('CHECKLIST.txt', buildChecklist(answers))
 
   const zipBytes = await zip.generateAsync({ type: 'uint8array' })
 
@@ -90,6 +91,50 @@ export async function buildPacket(answers: TPSAnswers): Promise<PacketResult> {
         }
       : { applied: 0, skipped: 0, firstSkips: [] },
   }
+}
+
+/**
+ * Practical packing checklist — what the user must put in the envelope
+ * (paper filing) or have ready (online filing). No legal promises.
+ */
+function buildChecklist(a: TPSAnswers): string {
+  const items: string[] = []
+  let n = 0
+
+  const add = (text: string) => { n++; items.push(`  [ ] ${n}. ${text}`) }
+
+  add('Form I-821 — printed, reviewed, and SIGNED in ink (black or blue pen).')
+  if (a.wants_ead) {
+    add('Form I-765 — printed, reviewed, and SIGNED in ink.')
+  }
+  add('Photocopy of your passport identity page (the page with your photo and MRZ).')
+  add('Photocopy or printout of your I-94 record (from i94.cbp.dhs.gov or paper copy).')
+  if (a.a_number) {
+    add('Photocopy of your EAD card or I-797 notice (front and back) showing your A-Number.')
+  }
+  add('Two (2) identical passport-style photographs (2" x 2"), with your name and A-Number (if any) written lightly in pencil on the back.')
+  add('Government filing fee — check or money order payable to "U.S. Department of Homeland Security". Verify the current amount on uscis.gov before mailing.')
+  if (a.wants_fee_waiver) {
+    add('Form I-912 (Request for Fee Waiver) with supporting evidence, if you are requesting a waiver.')
+    add('Note: certain fees required by H.R.1 CANNOT be waived. See README.txt for details.')
+  }
+  add('Any additional supporting evidence you believe strengthens your application (optional).')
+  add('Final review: re-read every field on each form before sealing the envelope.')
+
+  return [
+    'Messenginfo — TPS Ukraine packing checklist',
+    `Generated: ${new Date().toISOString()}`,
+    '',
+    'Before mailing (or before starting online filing), confirm you have each item:',
+    '',
+    ...items,
+    '',
+    'IMPORTANT REMINDERS',
+    '  - Messenginfo does NOT file this package for you. You mail or submit it yourself.',
+    '  - Messenginfo does NOT provide legal advice.',
+    '  - Double-check the mailing address in README.txt before sending.',
+    '  - Keep a photocopy of everything you mail for your records.',
+  ].join('\n')
 }
 
 function buildReadme(
@@ -189,6 +234,16 @@ function buildReadme(
     ...lockboxLines,
     '',
     ...feeLines,
+    '',
+    'IF YOU ARE FILING ONLINE (myUSCIS)',
+    '  If you choose to file online instead of by mail:',
+    '  1. Log in to your myUSCIS account at my.uscis.gov yourself.',
+    '  2. Use the generated PDF forms as a reference — open them side by side.',
+    '  3. Type each field value into the online form independently.',
+    '  4. Upload required evidence and passport-style photo as the online form requests.',
+    '  5. Review everything on screen before submitting.',
+    '  6. Submit independently — Messenginfo does not submit for you.',
+    '  Note: online filing availability depends on USCIS. Check uscis.gov for current status.',
     '',
     'WHAT WE DID NOT DO',
     '  - We did NOT submit anything to USCIS on your behalf.',

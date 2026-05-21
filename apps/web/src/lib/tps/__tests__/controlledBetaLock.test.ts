@@ -31,7 +31,7 @@ function validAnswers(): TPSAnswers {
     i94_admission_number: '00000000001',
     filing_path: 'initial',
     wants_ead: true,
-    ead_category: 'a12',
+    ead_category: 'c19',  // initial = pending TPS → (c)(19)
     daytime_phone: '5550000000',
     email: 'test@example.invalid',
     has_criminal_concern: false,
