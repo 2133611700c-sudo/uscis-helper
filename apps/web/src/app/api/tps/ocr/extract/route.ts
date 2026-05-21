@@ -188,14 +188,59 @@ export async function POST(req: NextRequest) {
   //    identity document with photograph.
   const document_id = `doc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
   let moduleResult: TpsModuleResult | null = null
+  // Track the OCR result actually used by the module — when we retry
+  // with a rotated image, we want downstream Brain calls to see the
+  // text from the successful rotation, not the first failed attempt.
+  let effectiveOcrResult = result
   switch (docTypeHint) {
     case 'passport': {
-      const td3 = runPassportModule(result, { document_id })
+      let td3 = runPassportModule(result, { document_id })
+      let booklet: TpsModuleResult | null = null
+
+      // 2026-05-20 T3PS_ROBUST_OCR P0: if neither TD3 MRZ nor the
+      // booklet anchors matched on the upright image, the photo is
+      // likely upside-down or 90/270 rotated AND the user did not
+      // have EXIF orientation set (e.g. exported from a screenshot
+      // tool). Vision's auto-orientation only triggers on some aspect
+      // ratios. Retry with explicit 90/180/270 rotations until MRZ
+      // anchors or booklet anchors hit. Cost: at most 3 extra Vision
+      // calls, only on broken-orientation passports.
+      if (!td3.matched) {
+        booklet = runPassportBookletModule(result, { document_id })
+      }
+      if (!td3.matched && booklet && !booklet.matched) {
+        for (const angle of [90, 180, 270] as const) {
+          try {
+            const sharp = (await import('sharp')).default
+            const rotatedBuffer = await sharp(imageBuffer).rotate(angle).jpeg({ quality: 85 }).toBuffer()
+            const rotatedResult = await googleVisionProvider.extractText({
+              imageBuffer: rotatedBuffer,
+              mimeType: 'image/jpeg',
+            })
+            if (isBlocked(rotatedResult)) continue
+            const tryTd3 = runPassportModule(rotatedResult, { document_id })
+            if (tryTd3.matched) {
+              td3 = tryTd3
+              effectiveOcrResult = rotatedResult
+              break
+            }
+            const tryBooklet = runPassportBookletModule(rotatedResult, { document_id })
+            if (tryBooklet.matched) {
+              booklet = tryBooklet
+              effectiveOcrResult = rotatedResult
+              break
+            }
+          } catch {
+            // sharp unavailable / Vision failure — stop trying rotations.
+            break
+          }
+        }
+      }
+
       if (td3.matched) {
         moduleResult = td3
       } else {
-        // Fallback to internal-passport-booklet label-based extraction.
-        const booklet = runPassportBookletModule(result, { document_id })
+        if (!booklet) booklet = runPassportBookletModule(effectiveOcrResult, { document_id })
         if (booklet.matched) {
           moduleResult = booklet
         } else {
@@ -257,9 +302,11 @@ export async function POST(req: NextRequest) {
     (moduleResult === null || moduleResult.matched === false || ruleFieldsCount < 5)
   if (shouldTryBrain) {
     try {
+      // Use effectiveOcrResult so Brain sees the text from the rotation
+      // that the passport rule module actually succeeded on.
       brainResult = await runBrain({
-        raw_text: result.raw_text,
-        lines: result.lines.map((l) => l.text),
+        raw_text: effectiveOcrResult.raw_text,
+        lines: effectiveOcrResult.lines.map((l) => l.text),
         doc_type_hint: docTypeHint || null,
       })
     } catch (e: unknown) {
@@ -336,9 +383,9 @@ export async function POST(req: NextRequest) {
   // any MRZ-shape line, pull surname + given Latin tokens directly, and
   // force-override Brain's name fields with that deterministic value.
   // KMU-55 is unnecessary — MRZ is already Latin and authoritative.
-  if (mergedModule && result.raw_text) {
+  if (mergedModule && effectiveOcrResult.raw_text) {
     const MRZ = /\bP<([A-Z]{3})([A-Z<]+?)<<([A-Z<]+?)(?:<<|<\s|$)/m
-    const m = result.raw_text.match(MRZ)
+    const m = effectiveOcrResult.raw_text.match(MRZ)
     if (m) {
       const mrzSurname = m[2].replace(/</g, ' ').trim().replace(/\s+/g, ' ')
       const mrzGiven = m[3].replace(/</g, ' ').trim().replace(/\s+/g, ' ').split(' ')[0] || ''
@@ -416,7 +463,7 @@ export async function POST(req: NextRequest) {
     docTypeHint !== '' &&
     moduleResult !== null &&
     moduleResult.matched === false &&
-    result.raw_text.length > 30  // there IS readable text — just not for this slot
+    effectiveOcrResult.raw_text.length > 30  // there IS readable text — just not for this slot
   const effectiveSlotMismatch = contract.slot_mismatch || moduleSaysWrong
 
   // ── Top-level diagnostics so the wizard, monitors, and audit scripts
