@@ -95,3 +95,128 @@ export function isStrictValidValue(field: string, rawValue: string): boolean {
       return true
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2026-05-21 Pre-normalizer for OCR/Brain values whose CONTENT is correct
+// but whose FORMAT does not match the canonical shape we require. Real cause:
+// the EAD module's AI-Brain fallback emits dates in MM/DD/YYYY because
+// DeepSeek is trained on US format. The wizard's isStrictValidValue checks
+// for /^YYYY-MM-DD$/ and drops the value, so the user sees "Не найдено"
+// even though OCR successfully read the date.
+//
+// Design rules:
+//   - SAFE: only unambiguous transformations. "06/25/1986" → "1986-06-25"
+//     (day 25 > 12, so the layout cannot be DD/MM). "09/07/2024" is
+//     AMBIGUOUS (both segments ≤ 12) — we refuse and force manual entry
+//     per the project hard rule "no AI guessing for critical fields".
+//   - Preserves raw_value upstream; this helper only computes a new
+//     normalized_value when one is provably derivable from the raw input.
+//   - No new permissions: invalid values that don't normalize still fail
+//     the subsequent shape check.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ISO_DATE_RE = /^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+
+/**
+ * Try to normalize a date string to YYYY-MM-DD. Returns null if the input
+ * cannot be UNAMBIGUOUSLY parsed (e.g. "09/07/2024" — both interpretations
+ * are valid calendar dates). Caller treats null as "drop / manual entry".
+ */
+export function normalizeDate(s: string): string | null {
+  const trimmed = s.trim()
+  if (!trimmed) return null
+
+  // 1. Already ISO YYYY-MM-DD with valid month/day.
+  if (ISO_DATE_RE.test(trimmed)) return trimmed
+
+  // 2. YYYY/MM/DD or YYYY-MM-DD with single-digit month/day (still ISO-ish).
+  const isoLike = trimmed.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/)
+  if (isoLike) {
+    const [, y, mo, d] = isoLike
+    const candidate = `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+    return ISO_DATE_RE.test(candidate) ? candidate : null
+  }
+
+  // 3. MM/DD/YYYY or DD/MM/YYYY — disambiguate by the first two segments.
+  //    If either segment is > 12, the layout is forced.
+  const slash = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  if (slash) {
+    const a = parseInt(slash[1], 10)
+    const b = parseInt(slash[2], 10)
+    const yyyy = slash[3]
+    if (a > 12 && b <= 12) {
+      // DD/MM/YYYY (EU layout)
+      const candidate = `${yyyy}-${String(b).padStart(2, '0')}-${String(a).padStart(2, '0')}`
+      return ISO_DATE_RE.test(candidate) ? candidate : null
+    }
+    if (b > 12 && a <= 12) {
+      // MM/DD/YYYY (US layout)
+      const candidate = `${yyyy}-${String(a).padStart(2, '0')}-${String(b).padStart(2, '0')}`
+      return ISO_DATE_RE.test(candidate) ? candidate : null
+    }
+    // Ambiguous (both ≤ 12). Refuse per "no AI guessing" rule.
+    return null
+  }
+
+  return null
+}
+
+/**
+ * Try to normalize a sex value to canonical M/F/X. Returns null when the
+ * input cannot be confidently mapped — caller drops to manual entry.
+ */
+export function normalizeSex(s: string): string | null {
+  const v = s.trim().toUpperCase()
+  if (!v) return null
+  // Already canonical
+  if (v === 'M' || v === 'F' || v === 'X') return v
+  // English long form
+  if (v === 'MALE') return 'M'
+  if (v === 'FEMALE') return 'F'
+  // Cyrillic abbreviations seen on Ukrainian booklets (Ч=чоловіча, Ж=жіноча)
+  if (v === 'Ч' || v === 'ЧОЛ' || v === 'ЧОЛОВ' || v === 'МУЖ' || v === 'МУЖСК') return 'M'
+  if (v === 'Ж' || v === 'ЖІН' || v === 'ЖІНОЧ' || v === 'ЖЕН' || v === 'ЖЕНСК') return 'F'
+  return null
+}
+
+/**
+ * Combined normalize + validate. Tries field-specific normalization first
+ * (date and sex are the only fields with real OCR-format vs canonical-format
+ * mismatch in production today), then runs the strict shape check on the
+ * (possibly normalized) value.
+ *
+ * Return `value` is the canonical form to STORE; caller should preserve
+ * the original raw input in raw_value separately for audit.
+ */
+export function normalizeAndValidate(
+  field: string,
+  rawValue: string,
+): { ok: boolean; value: string } {
+  const trimmed = rawValue.trim()
+  if (!trimmed) return { ok: false, value: '' }
+
+  let candidate: string = trimmed
+  switch (field) {
+    case 'dob':
+    case 'last_entry_date':
+    case 'i94_admit_until':
+    case 'passport_expiration_date':
+    case 'ead_expiration_date': {
+      const n = normalizeDate(trimmed)
+      candidate = n ?? trimmed
+      break
+    }
+    case 'sex': {
+      const n = normalizeSex(trimmed)
+      candidate = n ?? trimmed
+      break
+    }
+    default:
+      candidate = trimmed
+  }
+
+  if (isStrictValidValue(field, candidate)) {
+    return { ok: true, value: candidate }
+  }
+  return { ok: false, value: trimmed }
+}
