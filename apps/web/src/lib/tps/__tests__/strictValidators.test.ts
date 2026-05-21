@@ -9,7 +9,12 @@
  * boundary and the user sees "Не найдено — введите вручную".
  */
 import { describe, it, expect } from 'vitest'
-import { isStrictValidValue } from '../strictValidators'
+import {
+  isStrictValidValue,
+  normalizeDate,
+  normalizeSex,
+  normalizeAndValidate,
+} from '../strictValidators'
 
 describe('isStrictValidValue — dob', () => {
   it('accepts valid ISO YYYY-MM-DD', () => {
@@ -112,5 +117,120 @@ describe('isStrictValidValue — unknown fields pass through', () => {
   it('rejects empty value regardless of field', () => {
     expect(isStrictValidValue('family_name', '')).toBe(false)
     expect(isStrictValidValue('family_name', '   ')).toBe(false)
+  })
+})
+
+// 2026-05-21 FIX_TPS_STRICT_VALIDATOR_NORMALIZER tests.
+// EAD evidence (prod 16e558c): AI Brain emits dob "06/25/1986" and
+// ead_expiration_date "09/07/2024" in US format. The old strict validator
+// dropped both → user saw "Не найдено" for fields that OCR actually read.
+// The normalizer fixes UNAMBIGUOUS cases and refuses AMBIGUOUS ones
+// (no guessing for critical fields).
+
+describe('normalizeDate', () => {
+  it('keeps already-ISO dates unchanged', () => {
+    expect(normalizeDate('1986-06-25')).toBe('1986-06-25')
+    expect(normalizeDate('2024-09-07')).toBe('2024-09-07')
+  })
+
+  it('normalizes US MM/DD/YYYY when unambiguous (day > 12)', () => {
+    expect(normalizeDate('06/25/1986')).toBe('1986-06-25')
+    expect(normalizeDate('12/31/2024')).toBe('2024-12-31')
+    expect(normalizeDate('6/5/2024')).toBeNull() // ambiguous: both ≤ 12 → refuse
+  })
+
+  it('normalizes EU DD/MM/YYYY when unambiguous (day > 12 in first slot)', () => {
+    expect(normalizeDate('25/06/1986')).toBe('1986-06-25')
+    expect(normalizeDate('31/12/2024')).toBe('2024-12-31')
+  })
+
+  it('REFUSES ambiguous dates (both segments ≤ 12) — no guessing', () => {
+    expect(normalizeDate('09/07/2024')).toBeNull() // could be Sep 7 OR Jul 9
+    expect(normalizeDate('06/05/1990')).toBeNull()
+    expect(normalizeDate('11/12/1985')).toBeNull()
+  })
+
+  it('handles YYYY/MM/DD slashes', () => {
+    expect(normalizeDate('1986/06/25')).toBe('1986-06-25')
+    expect(normalizeDate('2024-09-07')).toBe('2024-09-07')
+  })
+
+  it('rejects bogus inputs', () => {
+    expect(normalizeDate('')).toBeNull()
+    expect(normalizeDate('Date of birth')).toBeNull()
+    expect(normalizeDate('13 CEP / AUG 60')).toBeNull() // booklet-style, not US/EU
+    expect(normalizeDate('99/99/9999')).toBeNull()
+    expect(normalizeDate('1986-13-32')).toBeNull() // month 13, day 32 → fail ISO regex
+  })
+})
+
+describe('normalizeSex', () => {
+  it('keeps canonical M/F/X', () => {
+    expect(normalizeSex('M')).toBe('M')
+    expect(normalizeSex('F')).toBe('F')
+    expect(normalizeSex('X')).toBe('X')
+  })
+
+  it('maps Male/Female to M/F', () => {
+    expect(normalizeSex('Male')).toBe('M')
+    expect(normalizeSex('female')).toBe('F')
+    expect(normalizeSex('MALE')).toBe('M')
+  })
+
+  it('maps Cyrillic abbreviations', () => {
+    expect(normalizeSex('Ч')).toBe('M')
+    expect(normalizeSex('Ж')).toBe('F')
+    expect(normalizeSex('чол')).toBe('M')
+    expect(normalizeSex('ЖЕНСК')).toBe('F')
+  })
+
+  it('returns null for unrecognized values', () => {
+    expect(normalizeSex('')).toBeNull()
+    expect(normalizeSex('other')).toBeNull()
+    expect(normalizeSex('???')).toBeNull()
+    expect(normalizeSex('Male/Female')).toBeNull()
+  })
+})
+
+describe('normalizeAndValidate — combined pipeline', () => {
+  it('rescues EAD AI-Brain US date for dob (regression for prod 16e558c)', () => {
+    const r = normalizeAndValidate('dob', '06/25/1986')
+    expect(r.ok).toBe(true)
+    expect(r.value).toBe('1986-06-25')
+  })
+
+  it('rescues EAD AI-Brain US date for ead_expiration_date when unambiguous', () => {
+    const r = normalizeAndValidate('ead_expiration_date', '12/31/2024')
+    expect(r.ok).toBe(true)
+    expect(r.value).toBe('2024-12-31')
+  })
+
+  it('REJECTS ambiguous US/EU date for ead_expiration_date (no guessing)', () => {
+    const r = normalizeAndValidate('ead_expiration_date', '09/07/2024')
+    expect(r.ok).toBe(false)
+    expect(r.value).toBe('09/07/2024')
+  })
+
+  it('rescues Female → F for sex', () => {
+    const r = normalizeAndValidate('sex', 'Female')
+    expect(r.ok).toBe(true)
+    expect(r.value).toBe('F')
+  })
+
+  it('still drops raw OCR garbage in DOB', () => {
+    const r = normalizeAndValidate('dob', 'Date of birth 13 CEP / AUG 60')
+    expect(r.ok).toBe(false)
+  })
+
+  it('preserves canonical inputs unchanged', () => {
+    expect(normalizeAndValidate('dob', '1986-06-25')).toEqual({ ok: true, value: '1986-06-25' })
+    expect(normalizeAndValidate('sex', 'M')).toEqual({ ok: true, value: 'M' })
+    expect(normalizeAndValidate('passport_number', 'FU262473')).toEqual({ ok: true, value: 'FU262473' })
+  })
+
+  it('does not normalize fields without a rule', () => {
+    const r = normalizeAndValidate('family_name', "О'Коннор")
+    expect(r.ok).toBe(true)
+    expect(r.value).toBe("О'Коннор")
   })
 })
