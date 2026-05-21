@@ -27,6 +27,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
+import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1655,10 +1656,16 @@ export default function TPSWizardV2({ locale }: Props) {
         }
       }
     }
+    // Alias: i94_class_of_admission → status_at_last_entry. Bug discovered in
+    // the 2026-05-20 TPS_CLEAN_SESSION_REAL_UPLOAD_E2E_AUDIT — without this
+    // bridge both I-821 Part 2 Item 19 and I-765 Line 23 shipped blank even
+    // though the I-94 OCR module had successfully extracted the class code.
+    // Helper is pure + unit-tested in lib/tps/__tests__/wizardAliases.test.ts.
+    const aliased = applyI94StatusAlias(merged)
     // Expose conflicts via a side-channel for the UI banner.
-    ;(merged as Record<string, FieldExtraction> & { __conflicts?: typeof conflicts }).__conflicts =
+    ;(aliased as Record<string, FieldExtraction> & { __conflicts?: typeof conflicts }).__conflicts =
       Object.keys(conflicts).length > 0 ? conflicts : undefined
-    return merged
+    return aliased
   }, [data.uploads])
 
   // ── Step transitions ─────────────────────────────────────────────────────
