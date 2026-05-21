@@ -582,16 +582,27 @@ export function runPassportBookletModule(
 
   if (dobRaw) {
     const iso = parseUaDate(dobRaw.value)
-    emit(
-      'dob',
-      dobRaw.value,
-      iso,
-      dobRaw.sourceLine,
-      'booklet_label_dob',
-      iso ? ['date_parsed'] : [],
-      iso ? [] : ['date_parse_failed'],
-    )
-    if (!iso) warnings.push('booklet_dob_unparseable')
+    if (iso) {
+      // Only emit when we have a clean ISO date. Previously we emitted
+      // the field with normalized_value=null + raw_value=raw, and the
+      // wizard's value resolver fell back to the raw OCR string —
+      // surfacing things like "Date of birth 13 CEP / AUG 60" as the
+      // final DOB shown to the user (regression report 2026-05-21).
+      // If parseUaDate refuses the line, we now stay silent and let
+      // the wizard render "Не найдено — введите вручную" so the user
+      // types the date by hand instead of trusting OCR garbage.
+      emit(
+        'dob',
+        dobRaw.value,
+        iso,
+        dobRaw.sourceLine,
+        'booklet_label_dob',
+        ['date_parsed'],
+        [],
+      )
+    } else {
+      warnings.push('booklet_dob_unparseable')
+    }
   } else {
     warnings.push('booklet_dob_missing')
   }
