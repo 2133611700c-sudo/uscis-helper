@@ -1601,7 +1601,14 @@ export default function TPSWizardV2({ locale }: Props) {
         list.push({ id: 'passport', ...t.doc.passportRereg })
         list.push({ id: 'ead_old', ...t.doc.ead_old })
         list.push({ id: 'i94', ...t.doc.i94Rereg })
-        if (paper) list.push({ id: 'photo', ...t.doc.photo })
+        // 2026-05-21 SCOPE_FIX: removed 'photo' upload slot from re-registration
+        // paper+EAD scenario. Messenginfo's product is auto-filling USCIS PDF
+        // forms from OCR'd documents — we do NOT process passport-style 2×2
+        // photos and we do NOT decide what physical items the user puts in
+        // the USCIS envelope. Telling the user via a dashed-border upload
+        // card that they "need to upload a photo" confused users into
+        // thinking the system requires a photo to proceed. Photo guidance
+        // belongs on uscis.gov instructions, not in our wizard.
       }
     }
     // Driver's license / state ID — OPTIONAL slot offered in every flow.
@@ -2889,7 +2896,9 @@ function InstructionsCard({
     ? [
         t.instrPaper[0],
         t.instrPaper[1],
-        ...(wantsEad ? [t.instrPaperEadPhoto] : []),
+        // 2026-05-21 SCOPE_FIX: removed instrPaperEadPhoto line. Photo
+        // requirement is a USCIS instruction (uscis.gov/i-821); not our
+        // job to remind. We auto-fill forms — that's the only scope.
         t.instrPaper[2],
         t.instrPaper[3],
         t.instrPaper[4],
