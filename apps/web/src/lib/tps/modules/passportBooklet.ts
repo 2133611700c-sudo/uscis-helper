@@ -614,13 +614,39 @@ export function runPassportBookletModule(
     warnings.push('booklet_dob_missing')
   }
 
+  // Try labelled extraction as a FALLBACK when perforation pattern
+  // didn't catch (perforation is often photographically faint or cropped).
+  // 2026-05-21 FIX_TPS_PASSPORT_MRZ_NUMBER_AND_SEX_FAILURE: code audit
+  // showed booklet relied ONLY on perforation pattern for passport_number;
+  // if Vision missed the perforation digits, the field was never emitted.
+  // Now also look for label "Серія/Номер" or "Серия/Номер" or "Number".
+  if (!passportNumber) {
+    const labelHit = findField([
+      'Серія', 'Серия', 'Series',
+      'Номер', 'Number',
+      'Серія/Номер', 'Серия/Номер', 'Series/Number',
+    ])
+    if (labelHit) {
+      // Strip spaces and accept only the 2-letter + 6-digit shape we know
+      // booklets actually use, with Latin look-alike substitution.
+      const cleaned = labelHit.value.toUpperCase().replace(/\s+/g, '')
+      // Map Latin look-alikes back to Cyrillic so SERIES_NUMBER_RE matches
+      // both "ЕК790396" and Vision's "EK790396" misread.
+      const m = cleaned.match(/^([А-ЯІЇЄҐABCEHIKMOPTX]{2})([0-9]{6})$/u)
+      if (m) {
+        passportNumber = `${m[1]} ${m[2]}`
+        passportNumberLine = labelHit.sourceLine
+      }
+    }
+  }
+
   if (passportNumber) {
     emit(
       'passport_number',
       passportNumber,
       passportNumber,
       passportNumberLine,
-      'booklet_perforation_series_number',
+      'booklet_series_number',
       ['series_number_format'],
     )
   } else {
