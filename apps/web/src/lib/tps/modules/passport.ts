@@ -237,6 +237,21 @@ export function runPassportModule(
   const dobCheck   = parsed.checkResults.find(r => r.field === 'date_of_birth')
   const expCheck   = parsed.checkResults.find(r => r.field === 'date_of_expiry')
 
+  // 2026-05-21 FIX_TPS_PASSPORT_MRZ_REVIEW_ON_OVERALL_FAILURE:
+  // If ANY check digit in the MRZ block failed, mark EVERY MRZ-derived
+  // field as requires_review. Rationale: when the composite check fails,
+  // OCR almost certainly mis-read at least one character somewhere in
+  // the 88-character TD3 block — and we can't tell which character.
+  // Adjacent fields whose individual check digit happens to validate are
+  // still SUSPECT because the same OCR pass produced them. Names, sex,
+  // and issuing state have no check digit at all, so without this guard
+  // they'd ship as "MRZ высокая точность" while the document's overall
+  // MRZ failed validation. User report 2026-05-21: passport_number
+  // EK790396 emitted with review=false even though parser reason was
+  // td3_parsed_with_check_failures — user knew the actual number was
+  // different but the UI gave no hint to verify.
+  const mrzOverallSuspect = !parsed.checkDigitsValid
+
   if (parsed.surname) {
     fields.push({
       ...baseProvenance,
@@ -246,10 +261,10 @@ export function runPassportModule(
       source_zone: 'mrz_line_1_surname',
       bbox: located.line1.bbox,
       confidence: located.line1.confidence ?? null,
-      review_required: false,
+      review_required: mrzOverallSuspect,
       ocr_word_ids: located.line1.words.map(w => w.id),
       passes: ['mrz_name_split'],
-      failures: [],
+      failures: mrzOverallSuspect ? ['mrz_overall_check_digit'] : [],
     })
   }
   if (parsed.givenNames) {
@@ -261,10 +276,10 @@ export function runPassportModule(
       source_zone: 'mrz_line_1_given',
       bbox: located.line1.bbox,
       confidence: located.line1.confidence ?? null,
-      review_required: false,
+      review_required: mrzOverallSuspect,
       ocr_word_ids: located.line1.words.map(w => w.id),
       passes: ['mrz_name_split'],
-      failures: [],
+      failures: mrzOverallSuspect ? ['mrz_overall_check_digit'] : [],
     })
   }
   if (parsed.documentNumber) {
@@ -276,10 +291,13 @@ export function runPassportModule(
       source_zone: 'mrz_line_2_document_number',
       bbox: located.line2.bbox,
       confidence: located.line2.confidence ?? null,
-      review_required: docNumCheck?.valid === false,
+      review_required: docNumCheck?.valid === false || mrzOverallSuspect,
       ocr_word_ids: located.line2.words.map(w => w.id),
       passes: docNumCheck?.valid === true ? ['mrz_check_digit'] : [],
-      failures: docNumCheck?.valid === false ? ['mrz_check_digit'] : [],
+      failures: [
+        ...(docNumCheck?.valid === false ? ['mrz_check_digit'] : []),
+        ...(mrzOverallSuspect && docNumCheck?.valid !== false ? ['mrz_overall_check_digit'] : []),
+      ],
     })
   }
   if (parsed.nationality) {
@@ -291,7 +309,7 @@ export function runPassportModule(
       source_zone: 'mrz_line_2_nationality',
       bbox: located.line2.bbox,
       confidence: located.line2.confidence ?? null,
-      review_required: parsed.nationality !== 'UKR',
+      review_required: parsed.nationality !== 'UKR' || mrzOverallSuspect,
       ocr_word_ids: located.line2.words.map(w => w.id),
       passes: ['mrz_nationality_present'],
       failures: parsed.nationality !== 'UKR' ? ['nationality_not_ukr'] : [],
@@ -307,13 +325,16 @@ export function runPassportModule(
       source_zone: 'mrz_line_2_dob',
       bbox: located.line2.bbox,
       confidence: located.line2.confidence ?? null,
-      review_required: dobCheck?.valid === false,
+      review_required: dobCheck?.valid === false || mrzOverallSuspect,
       ocr_word_ids: located.line2.words.map(w => w.id),
       passes: [
         ...(dobCheck?.valid === true ? ['mrz_check_digit'] : []),
         ...(iso ? ['iso_date_parsed'] : []),
       ],
-      failures: dobCheck?.valid === false ? ['mrz_check_digit'] : [],
+      failures: [
+        ...(dobCheck?.valid === false ? ['mrz_check_digit'] : []),
+        ...(mrzOverallSuspect && dobCheck?.valid !== false ? ['mrz_overall_check_digit'] : []),
+      ],
     })
   }
   if (parsed.sex !== 'Unspecified') {
@@ -325,10 +346,10 @@ export function runPassportModule(
       source_zone: 'mrz_line_2_sex',
       bbox: located.line2.bbox,
       confidence: located.line2.confidence ?? null,
-      review_required: false,
+      review_required: mrzOverallSuspect,
       ocr_word_ids: located.line2.words.map(w => w.id),
       passes: ['mrz_sex_present'],
-      failures: [],
+      failures: mrzOverallSuspect ? ['mrz_overall_check_digit'] : [],
     })
   }
   if (parsed.dateOfExpiry) {
@@ -342,7 +363,7 @@ export function runPassportModule(
       source_zone: 'mrz_line_2_expiry',
       bbox: located.line2.bbox,
       confidence: located.line2.confidence ?? null,
-      review_required: expCheck?.valid === false || expired,
+      review_required: expCheck?.valid === false || expired || mrzOverallSuspect,
       ocr_word_ids: located.line2.words.map(w => w.id),
       passes: [
         ...(expCheck?.valid === true ? ['mrz_check_digit'] : []),
@@ -366,10 +387,10 @@ export function runPassportModule(
       source_zone: 'mrz_line_1_issuing_state',
       bbox: located.line1.bbox,
       confidence: located.line1.confidence ?? null,
-      review_required: false,
+      review_required: mrzOverallSuspect,
       ocr_word_ids: located.line1.words.map(w => w.id),
       passes: ['mrz_issuing_state_present'],
-      failures: [],
+      failures: mrzOverallSuspect ? ['mrz_overall_check_digit'] : [],
     })
   }
 

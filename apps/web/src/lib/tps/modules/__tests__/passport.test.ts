@@ -190,4 +190,39 @@ describe('runPassportModule', () => {
       expect(f.bbox).not.toBeNull()
     }
   })
+
+  // 2026-05-21 regression: user reported passport_number EK790396 returned
+  // with review_required=false even though match_reason was
+  // td3_parsed_with_check_failures. The fix: when ANY MRZ check digit
+  // fails, mark EVERY MRZ-derived field as requires_review so the UI
+  // shows "проверьте" — OCR could have mis-read a character anywhere in
+  // the 88-character TD3 block, and adjacent fields whose individual
+  // check digits happen to validate are still suspect.
+  it('marks every MRZ-derived field requires_review when ANY check digit fails', () => {
+    // Build a valid TD3 then corrupt ONE character in line2 outside the
+    // doc-number check span. This trips the composite check while leaving
+    // the per-field docNumber check intact — exactly the regression case.
+    const { line1, line2 } = buildSyntheticTd3()
+    // Flip a character in the personal-number area (positions 28..41).
+    // That area's own check digit will fail AND the composite recalc will
+    // fail, but the document-number's own check (positions 0..9) stays valid.
+    const corrupted = line2.slice(0, 30) + (line2[30] === '0' ? '5' : '0') + line2.slice(31)
+    const ocr = makeOcrFromMrz(line1, corrupted)
+    const r = runPassportModule(ocr, { document_id: 'doc_overall_suspect' })
+
+    expect(r.matched).toBe(true)
+    expect(r.match_reason).toBe('td3_parsed_with_check_failures')
+
+    // Every emitted MRZ field must be flagged for review now.
+    for (const f of r.fields) {
+      expect(f.review_required, `${f.field} should require review when MRZ overall failed`).toBe(true)
+    }
+
+    // passport_number specifically — the user-visible regression — must
+    // carry mrz_overall_check_digit in failures so the audit log explains
+    // why we flagged a field whose own check happened to pass.
+    const pn = r.fields.find(f => f.field === 'passport_number')
+    expect(pn?.review_required).toBe(true)
+    expect(pn?.failures.some(x => x.includes('mrz'))).toBe(true)
+  })
 })
