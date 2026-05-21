@@ -63,6 +63,52 @@ interface I94Options {
 }
 
 /**
+ * Like findLabelledValue, but takes a free predicate over line text
+ * instead of an array of patterns. Lets the caller compose positive
+ * AND negative checks (e.g. matches "Date of Entry" AND NOT contains
+ * "until") so anchors stay strictly disjoint.
+ */
+function findLabelledValueStrict(
+  ocr: OcrResult,
+  labelPredicate: (text: string) => boolean,
+  valuePattern: RegExp,
+): { value: string; lineId: string; bbox: OcrResult['lines'][number]['bbox']; confidence: number | null } | null {
+  for (let i = 0; i < ocr.lines.length; i++) {
+    const line = ocr.lines[i]
+    if (!labelPredicate(line.text)) continue
+    const sameLine = line.text.match(valuePattern)
+    if (sameLine) {
+      return {
+        value: sameLine[1] ?? sameLine[0],
+        lineId: line.id,
+        bbox: line.bbox,
+        confidence: line.confidence ?? null,
+      }
+    }
+    const next = ocr.lines[i + 1]
+    if (next) {
+      const nextLine = next.text.match(valuePattern)
+      if (nextLine) {
+        // Sanity: the next-line value cannot itself carry a different
+        // strict label (e.g. don't let "Date of Entry:" steal the
+        // value sitting on the next line if that next line is actually
+        // "Admit Until Date: 09/07/2024").
+        if (labelPredicate(next.text) || /until/i.test(next.text)) {
+          continue
+        }
+        return {
+          value: nextLine[1] ?? nextLine[0],
+          lineId: next.id,
+          bbox: next.bbox,
+          confidence: next.confidence ?? null,
+        }
+      }
+    }
+  }
+  return null
+}
+
+/**
  * Search OcrResult for a labelled value. Returns the first match found
  * anywhere in the document text along with the line that contained it
  * (for bbox provenance).
@@ -173,19 +219,23 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
   }
 
   // ── 3. Date of Entry ──────────────────────────────────────────────────────
-  // CBP's web printout uses "2022 September 09" (YYYY Month DD), the
-  // travel-history table uses "MM/DD/YYYY". Accept both.
+  //
+  // STRICT anchors per T3PS_ROBUST_OCR spec — only match label lines that
+  // explicitly say "Date of Entry" (or its variants). NEVER match lines
+  // containing the word "until" — that's a different field.
+  //
+  // CBP's web printout uses "2022 September 09" (YYYY Month DD); the
+  // travel-history table uses "MM/DD/YYYY". Both accepted.
+  const ENTRY_LABEL_PATTERNS = [
+    /(?:most\s*recent\s*)?date\s*of\s*(?:entry|admission)/i,
+    /admit(?:ted)?\s*on/i,
+  ]
+  const isEntryLabel = (text: string): boolean =>
+    ENTRY_LABEL_PATTERNS.some((p) => p.test(text)) && !/until/i.test(text)
+
   const entry =
-    findLabelledValue(
-      ocr,
-      [/(?:most\s*recent\s*)?date\s*of\s*(?:entry|admission)/i, /admit(?:ted)?\s*on/i],
-      /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/,
-    ) ??
-    findLabelledValue(
-      ocr,
-      [/(?:most\s*recent\s*)?date\s*of\s*(?:entry|admission)/i, /admit(?:ted)?\s*on/i],
-      /\b(\d{4}\s+[A-Za-z]{3,9}\s+\d{1,2})\b/,
-    )
+    findLabelledValueStrict(ocr, isEntryLabel, /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/) ??
+    findLabelledValueStrict(ocr, isEntryLabel, /\b(\d{4}\s+[A-Za-z]{3,9}\s+\d{1,2})\b/)
   if (entry) {
     const usForm = anyDateToUs(entry.value) ?? entry.value
     const iso = usDateToIso(usForm)
@@ -207,19 +257,17 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
   }
 
   // ── 4. Admit Until ────────────────────────────────────────────────────────
-  // Can be MM/DD/YYYY, "YYYY Month DD" (CBP web format), or "D/S"
-  // (duration of status).
+  //
+  // STRICT anchor: require the word "until" in the label. This is the only
+  // CBP field that uses it, so it's a positive disambiguator. Accept
+  // MM/DD/YYYY, "YYYY Month DD" (CBP web format), or "D/S" (duration of
+  // status).
+  const isAdmitUntilLabel = (text: string): boolean =>
+    /admit\s*until/i.test(text)
+
   const admitUntilDate =
-    findLabelledValue(
-      ocr,
-      [/admit\s*until/i],
-      /\b(\d{1,2}\/\d{1,2}\/\d{4}|D\/S)\b/,
-    ) ??
-    findLabelledValue(
-      ocr,
-      [/admit\s*until/i],
-      /\b(\d{4}\s+[A-Za-z]{3,9}\s+\d{1,2})\b/,
-    )
+    findLabelledValueStrict(ocr, isAdmitUntilLabel, /\b(\d{1,2}\/\d{1,2}\/\d{4}|D\/S)\b/) ??
+    findLabelledValueStrict(ocr, isAdmitUntilLabel, /\b(\d{4}\s+[A-Za-z]{3,9}\s+\d{1,2})\b/)
   if (admitUntilDate) {
     const isDS = admitUntilDate.value === 'D/S'
     const usForm = isDS ? null : (anyDateToUs(admitUntilDate.value) ?? admitUntilDate.value)
@@ -237,6 +285,27 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
       passes: isDS ? ['admit_until_ds'] : iso ? ['us_date_to_iso'] : [],
       failures: [],
     })
+  }
+
+  // ── 5. Sanity guard: last_entry_date should NEVER equal admit_until ─────
+  // If they did match, our anchor parser collapsed two different CBP fields
+  // onto the same source date — this is a strong signal something is wrong
+  // with the OCR layout. We don't drop the values (they may legitimately
+  // match in rare cases like an expiring parolee re-entry), but we mark
+  // both as requires_review so the wizard's amber 'verify' badge fires
+  // and the user looks twice before generating the PDF.
+  const entryField = fields.find((f) => f.field === 'last_entry_date')
+  const admitField = fields.find((f) => f.field === 'i94_admit_until')
+  if (
+    entryField && admitField &&
+    entryField.normalized_value && admitField.normalized_value &&
+    entryField.normalized_value === admitField.normalized_value
+  ) {
+    entryField.review_required = true
+    admitField.review_required = true
+    entryField.failures = [...(entryField.failures ?? []), 'collision_with_admit_until']
+    admitField.failures = [...(admitField.failures ?? []), 'collision_with_last_entry_date']
+    warnings.push('I-94 last_entry_date matches admit_until — verify manually.')
   }
 
   const matched = fields.length >= 2  // need at least admission# + COA OR entry date

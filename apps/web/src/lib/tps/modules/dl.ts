@@ -105,8 +105,154 @@ function findOnAnyLine(
 }
 
 /**
- * Find the city/state/zip line ("LOS ANGELES, CA 90029") and return
- * both that line and the immediately-preceding line (the street).
+ * Find DL postal address components — flexible, layout-independent.
+ *
+ * Strategy (T3PS_ROBUST_OCR spec):
+ *   1. Find the ZIP code anywhere in the OCR text. ZIP is the most
+ *      unambiguous part (always 5 digits, optionally +4).
+ *   2. Look immediately to the LEFT of the ZIP for a 2-letter USPS
+ *      state code.
+ *   3. Look immediately to the LEFT of the state for a city name
+ *      (uppercase letters and spaces, ending at comma or line break).
+ *   4. Look on the PREVIOUS line (or a few lines back) for the street
+ *      address — typically starts with a digit (house number).
+ *
+ * This works even when:
+ *   - the photo is rotated (Vision still emits text in reading order
+ *     within each detected paragraph)
+ *   - the address spans 1 line, 2 lines, or 3+ lines
+ *   - extra whitespace or commas are between tokens
+ *   - the line "CITY, ST ZIP" has been split into two lines
+ *
+ * Returns an object with whatever parts were found, partial OK.
+ * Never invents — if a part is missing, leaves it empty.
+ */
+function findAddressFlexible(ocr: OcrResult): {
+  street: string
+  city: string
+  state: string
+  zip: string
+} | null {
+  // Concatenate all OCR lines into one searchable blob, tracking line
+  // boundaries so we can find the street on the preceding line.
+  const lines = ocr.lines.map((l) => l.text)
+  if (lines.length === 0) return null
+
+  // ZIP regex: 5 digits, optionally followed by -4. Must NOT be part of
+  // a longer numeric sequence (DOB, DL number, document ID, etc).
+  // Negative lookbehind / lookahead for digits.
+  const zipRe = /(?<!\d)(\d{5}(?:-\d{4})?)(?!\d)/g
+  // Two-letter USPS state code preceded by space/comma. We don't enforce
+  // the full USPS list at this point — any [A-Z]{2} that sits between a
+  // city-like token and the ZIP is overwhelmingly the state.
+  const stateRe = /\b([A-Z]{2})\b/
+
+  // Iterate all lines looking for a ZIP. For each ZIP hit, try to
+  // reconstruct the rest of the address backwards through the line and
+  // the preceding lines.
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx]
+    let zipMatch: RegExpExecArray | null
+    zipRe.lastIndex = 0
+    while ((zipMatch = zipRe.exec(line)) !== null) {
+      const zip = zipMatch[1]
+      const zipStart = zipMatch.index
+
+      // Look before the ZIP in the same line for a state code.
+      const beforeZip = line.slice(0, zipStart).trim()
+      // The state is the rightmost 2-letter uppercase token before ZIP.
+      const stateTokens = Array.from(beforeZip.matchAll(/\b([A-Z]{2})\b/g))
+      if (stateTokens.length === 0) continue
+      const stateTok = stateTokens[stateTokens.length - 1]
+      const state = stateTok[1]
+      const stateStart = stateTok.index ?? 0
+
+      // City is what sits between the start of the line (or after a
+      // street component) and the state token, trimmed of commas.
+      const beforeState = beforeZip.slice(0, stateStart).replace(/[,\s]+$/, '').trim()
+      let city = ''
+      let street = ''
+      if (beforeState && /[A-Za-z]/.test(beforeState)) {
+        // City lives at the END of beforeState, after any comma.
+        // beforeState shape on a one-line address: "4341 WILLOW BROOK AVE 111 LOS ANGELES"
+        //   - split on comma if present, take the last segment
+        //   - else assume city is the trailing uppercase word group
+        if (beforeState.includes(',')) {
+          const parts = beforeState.split(',').map((p) => p.trim()).filter(Boolean)
+          if (parts.length >= 2) {
+            street = parts.slice(0, -1).join(', ')
+            city = parts[parts.length - 1]
+          } else {
+            city = parts[0]
+          }
+        } else {
+          // No comma in beforeState — split into tokens, walk from right
+          // until we hit a token containing digits (start of street).
+          const toks = beforeState.split(/\s+/)
+          const cityToks: string[] = []
+          while (toks.length > 0) {
+            const t = toks[toks.length - 1]
+            if (/\d/.test(t)) break
+            cityToks.unshift(toks.pop() as string)
+          }
+          city = cityToks.join(' ')
+          street = toks.join(' ')
+        }
+      }
+
+      // If we didn't find street on this line, look at the previous
+      // few lines for one that starts with a digit (house number).
+      if (!street) {
+        for (let i = lineIdx - 1; i >= Math.max(0, lineIdx - 4); i--) {
+          const candidate = lines[i].trim()
+          if (!candidate) continue
+          // Street typically starts with a digit (house number).
+          if (/^\d/.test(candidate) && candidate.length >= 4) {
+            // Defensive: don't grab a date or a DL number that starts
+            // with digits but has no street keywords. Look for typical
+            // street suffixes (AVE, ST, BLVD, etc) OR a long enough
+            // alpha-numeric token sequence.
+            const looksLikeStreet =
+              /\b(AVE|AVENUE|ST|STREET|BLVD|BOULEVARD|RD|ROAD|DR|DRIVE|LN|LANE|CT|COURT|PL|PLACE|WAY|HWY|HIGHWAY|PKWY|PARKWAY|CIR|CIRCLE|TER|TERRACE|TRL|TRAIL|SQ|SQUARE)\b/i.test(
+                candidate,
+              ) || /[A-Z][A-Z]+/.test(candidate)
+            if (looksLikeStreet) {
+              street = candidate
+              break
+            }
+          }
+        }
+      }
+
+      // City fallback: if still empty, try the line immediately above
+      // the one containing the state token, last word block.
+      if (!city && lineIdx > 0) {
+        const prev = lines[lineIdx - 1].trim()
+        const cityMatch = prev.match(/([A-Z][A-Z .'\-]*[A-Z])\s*$/)
+        if (cityMatch) city = cityMatch[1]
+      }
+
+      // Validate before returning: reject obviously bogus combos.
+      if (!state || state.length !== 2) continue
+      if (!/^\d{5}(-\d{4})?$/.test(zip)) continue
+      // Require at least city OR street. State+zip alone aren't useful.
+      if (!city && !street) continue
+
+      return {
+        street: street ? titleCaseString(street) : '',
+        city: city ? titleCaseString(city.replace(/[,]+$/, '').trim()) : '',
+        state: state.toUpperCase(),
+        zip,
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Old line-pair finder, kept as fallback for the common 2-line layout
+ * (street on line N, "CITY, ST ZIP" on line N+1).
  */
 function findAddressPair(ocr: OcrResult): {
   street: string
@@ -114,19 +260,12 @@ function findAddressPair(ocr: OcrResult): {
   state: string
   zip: string
 } | null {
-  // Match "CITY NAME, ST ZIP" with optional ZIP+4. Accept any uppercase
-  // letters + spaces + .'- in city, exactly 2 uppercase state letters,
-  // and 5-digit or 9-digit ZIP. Vision often emits "LOS ANGELES , CA
-  // 90029" with a space before the comma, so the comma boundary is
-  // \s*,\s+ not just ",\s+".
   const cityLineRe = /^([A-Z][A-Z .'\-]*[A-Z])\s*,\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/
   for (let i = 1; i < ocr.lines.length; i++) {
     const m = ocr.lines[i].text.match(cityLineRe)
     if (!m) continue
     const street = (ocr.lines[i - 1]?.text ?? '').trim()
     if (!street || street.length < 4) continue
-    // Defensive: street line should NOT itself look like a city line,
-    // otherwise we'd swallow two cities (unlikely on a DL but cheap).
     if (cityLineRe.test(street)) continue
     return {
       street: titleCaseString(street),
@@ -213,15 +352,35 @@ export function runDlModule(ocr: OcrResult, opts: DlOptions): TpsModuleResult {
     fields.push({ ...base, field: 'hair_color', raw_value: hair.value, normalized_value: hair.value, source_zone: 'hair_label', bbox: hair.bbox, confidence: hair.confidence })
   }
 
-  // ── Address pair — two consecutive lines, the second matches CITY, ST ZIP.
-  const addr = findAddressPair(ocr)
+  // ── Address — try flexible ZIP-anchored parser first, then fall back
+  // to the strict line-pair parser for the common 2-line layout. Per
+  // T3PS_ROBUST_OCR spec, the flexible parser handles rotated photos,
+  // single-line addresses, and OCR line ordering that doesn't match
+  // the printed card layout. All address parts are marked
+  // requires_review=true because DL is NOT identity-authoritative on
+  // a TPS application and the user must confirm the address before
+  // we ship it to USCIS via I-131 Part 3.
+  const addr = findAddressFlexible(ocr) ?? findAddressPair(ocr)
   if (addr) {
-    fields.push({ ...base, field: 'us_address_street', raw_value: addr.street, normalized_value: addr.street, source_zone: 'address_line_1', review_required: true })
-    fields.push({ ...base, field: 'us_address_city',   raw_value: addr.city,   normalized_value: addr.city,   source_zone: 'address_line_2', review_required: true })
-    fields.push({ ...base, field: 'us_address_state',  raw_value: addr.state,  normalized_value: addr.state,  source_zone: 'address_line_2' })
-    fields.push({ ...base, field: 'us_address_zip',    raw_value: addr.zip,    normalized_value: addr.zip,    source_zone: 'address_line_2' })
+    if (addr.street) {
+      fields.push({ ...base, field: 'us_address_street', raw_value: addr.street, normalized_value: addr.street, source_zone: 'dl_address_street', review_required: true })
+    }
+    if (addr.city) {
+      fields.push({ ...base, field: 'us_address_city', raw_value: addr.city, normalized_value: addr.city, source_zone: 'dl_address_city', review_required: true })
+    }
+    if (addr.state) {
+      fields.push({ ...base, field: 'us_address_state', raw_value: addr.state, normalized_value: addr.state, source_zone: 'dl_address_state', review_required: true })
+    }
+    if (addr.zip) {
+      fields.push({ ...base, field: 'us_address_zip', raw_value: addr.zip, normalized_value: addr.zip, source_zone: 'dl_address_zip', review_required: true })
+    }
+    if (!addr.street || !addr.city) {
+      warnings.push(
+        'DL address parsed partially — street or city missing. Verify manually.',
+      )
+    }
   } else {
-    warnings.push('DL address pair (street + CITY, ST ZIP) not detected.')
+    warnings.push('DL address not detected — image quality, rotation, or layout. Enter manually.')
   }
 
   // Match requires at least 3 anchored fields — single hits are too
