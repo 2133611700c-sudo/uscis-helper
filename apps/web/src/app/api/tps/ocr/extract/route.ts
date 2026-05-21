@@ -269,7 +269,7 @@ export async function POST(req: NextRequest) {
     case 'ead':
       moduleResult = runEadModule(result, { document_id })
       break
-    case 'dl':
+    case 'dl': {
       // 2026-05-20: deterministic anchor parser. We deliberately do
       // NOT call Brain for DL because DeepSeek's safety classifier
       // refuses JSON output on US driver license content, causing
@@ -277,8 +277,58 @@ export async function POST(req: NextRequest) {
       // every prod call. The DL layout is AAMVA-standardized and the
       // rule module reliably extracts 9 fields (dl_number, ln, fn,
       // dob, sex, hgt, wgt, eyes, hair) + the 4 address parts.
-      moduleResult = runDlModule(result, { document_id })
+      //
+      // 2026-05-21 FIX_TPS_DL_ROTATION_AND_ADDRESS_EXTRACTION: real
+      // users photograph their DL sideways. Google Vision OCR's text
+      // comes out unreadable when the card is rotated 90/180/270,
+      // so the AAMVA labels (DL/LN/FN/DOB/HGT/WGT/EYES/HAIR) don't
+      // match anchors and the address block is unparseable. Mirror
+      // the passport rotation retry (a77727d): try 0° first, then
+      // 90/180/270 if either (a) module didn't match at all or
+      // (b) module matched but failed to find the address — the
+      // address is the primary product value of the DL slot.
+      let dlResult = runDlModule(result, { document_id })
+      const dlHasAddressStreet = (mr: TpsModuleResult | null): boolean =>
+        !!mr?.fields?.some((f) => f.field === 'us_address_street')
+      const dlGood = (mr: TpsModuleResult | null): boolean =>
+        !!mr && mr.matched && dlHasAddressStreet(mr)
+      if (!dlGood(dlResult)) {
+        for (const angle of [90, 180, 270] as const) {
+          try {
+            const sharp = (await import('sharp')).default
+            const rotatedBuffer = await sharp(imageBuffer)
+              .rotate(angle)
+              .jpeg({ quality: 85 })
+              .toBuffer()
+            const rotatedResult = await googleVisionProvider.extractText({
+              imageBuffer: rotatedBuffer,
+              mimeType: 'image/jpeg',
+            })
+            if (isBlocked(rotatedResult)) continue
+            const tryDl = runDlModule(rotatedResult, { document_id })
+            // Best rotation = matched AND address recovered → stop.
+            if (dlGood(tryDl)) {
+              dlResult = tryDl
+              effectiveOcrResult = rotatedResult
+              break
+            }
+            // Soft accept: this rotation found strictly more fields than
+            // whatever we have so far. Keep iterating in case a later
+            // rotation produces a good-quality match, but don't waste
+            // the better partial result.
+            if (tryDl.fields.length > dlResult.fields.length) {
+              dlResult = tryDl
+              effectiveOcrResult = rotatedResult
+            }
+          } catch {
+            // sharp unavailable / Vision failure — stop trying.
+            break
+          }
+        }
+      }
+      moduleResult = dlResult
       break
+    }
     default:
       moduleResult = null
   }
