@@ -19,7 +19,13 @@
  * This test runs the same code path the production API does.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+
+// Each test calls buildPacket() which reads 2 USCIS PDFs (~1 MB each) from
+// disk, runs SHA-256 integrity checks, fills AcroForm fields via pdf-lib,
+// and generates a ZIP. Under full-suite parallel load (45 files), I/O
+// contention pushes individual tests from ~8 s (solo) to 40–55 s.
+vi.setConfig({ testTimeout: 120_000 })
 import { execSync } from 'node:child_process'
 import { writeFileSync, unlinkSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
