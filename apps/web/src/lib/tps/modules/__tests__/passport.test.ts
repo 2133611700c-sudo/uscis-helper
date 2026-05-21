@@ -96,6 +96,23 @@ function buildSyntheticTd3({
   return { line1, line2 }
 }
 
+/**
+ * Simulate Google Vision returning the OCR-B MRZ as Cyrillic homoglyphs —
+ * the real failure mode for Ukrainian international passports OCR'd with
+ * languageHints ['uk','en','ru']. Latin glyphs that have an identical
+ * Cyrillic twin are swapped; everything else (digits, '<', non-look-alike
+ * letters) is preserved.
+ */
+const LATIN_TO_CYRILLIC_LOOKALIKE: Record<string, string> = {
+  A: 'А', B: 'В', C: 'С', E: 'Е', H: 'Н', I: 'І', K: 'К',
+  M: 'М', O: 'О', P: 'Р', T: 'Т', X: 'Х', Y: 'У',
+}
+function cyrillicizeMrz(s: string): string {
+  let out = ''
+  for (const ch of s) out += LATIN_TO_CYRILLIC_LOOKALIKE[ch] ?? ch
+  return out
+}
+
 describe('runPassportModule', () => {
   it('extracts fields from a valid Ukrainian TD3 MRZ', () => {
     const { line1, line2 } = buildSyntheticTd3()
@@ -147,6 +164,43 @@ describe('runPassportModule', () => {
     const exp = r.fields.find(f => f.field === 'passport_expiration_date')
     expect(exp?.review_required).toBe(true)
     expect(exp?.failures).toContain('expired_passport')
+  })
+
+  // 2026-05-21 root-cause fix: Google Vision, given Ukrainian/Russian
+  // language hints (which we need for the booklet's Cyrillic visible zone),
+  // reads the OCR-B MRZ of an INTERNATIONAL passport as Cyrillic
+  // homoglyphs. Before the fold, line 1 ("P<UKRTESTSURNAME<<TESTGIVEN...")
+  // scored ~0.70 on mrzCharRatio and was rejected, so the real загранпаспорт
+  // fell through to the booklet module and lost passport_number / dob /
+  // expiry. The module must now fold Cyrillic→Latin and parse the TD3
+  // cleanly (check digits valid → nothing flagged for review).
+  it('locates and parses a TD3 MRZ that Vision returned with Cyrillic homoglyphs', () => {
+    const { line1, line2 } = buildSyntheticTd3()
+    // Sanity: the cyrillicized line really does drop below the 0.85 gate,
+    // i.e. without the fold this document is unrecoverable as an MRZ.
+    const cyr1 = cyrillicizeMrz(line1)
+    const asciiRatio =
+      [...cyr1].filter((c) => /[A-Z0-9<]/.test(c)).length / cyr1.length
+    expect(asciiRatio).toBeLessThan(0.85)
+
+    const ocr = makeOcrFromMrz(cyr1, cyrillicizeMrz(line2))
+    const r = runPassportModule(ocr, { document_id: 'doc_homoglyph' })
+
+    expect(r.matched).toBe(true)
+    expect(r.match_reason).toBe('td3_parsed_valid')
+    expect(r.manual_review_required).toBe(false)
+
+    const byField = Object.fromEntries(r.fields.map((f) => [f.field, f]))
+    expect(byField.family_name?.normalized_value).toBe('Testsurname')
+    expect(byField.given_name?.normalized_value).toBe('Testgiven')
+    expect(byField.passport_number?.normalized_value).toBe('AB1234567')
+    expect(byField.country_of_nationality?.normalized_value).toBe('Ukraine')
+    expect(byField.dob?.normalized_value).toBe('1985-07-12')
+    expect(byField.sex?.normalized_value).toBe('M')
+    expect(byField.passport_expiration_date?.normalized_value).toBe('2029-06-30')
+
+    // Clean MRZ after folding → no field flagged for review.
+    expect(r.fields.every((f) => f.review_required === false)).toBe(true)
   })
 
   it('returns matched=false when no MRZ is present', () => {
