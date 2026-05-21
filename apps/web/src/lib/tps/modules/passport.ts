@@ -56,15 +56,54 @@ function mrzCharRatio(s: string): number {
 }
 
 /**
+ * Cyrillic → Latin homoglyph fold for the MRZ.
+ *
+ * The TD3 MRZ is, by ICAO 9303, printed in OCR-B using ONLY A–Z, 0–9 and
+ * the filler '<'. But /api/tps/ocr/extract calls Google Vision with
+ * languageHints ['uk','en','ru'] — needed so the Cyrillic VISIBLE zone of
+ * Ukrainian documents OCRs correctly for the booklet module. With those
+ * hints, Vision routinely reads the MRZ's Latin OCR-B glyphs as their
+ * Cyrillic look-alikes: "P<UKRKUROPIATNYK" comes back as "Р<UКRКURОРІАТNYК"
+ * and "EK790396" as "ЕК790396".
+ *
+ * Those non-ASCII chars are NOT counted by mrzCharRatio() (which accepts
+ * only [A-Z0-9<]), so a real Ukrainian international passport scores ~0.73
+ * on line 1 and is rejected by locateMrzLines() — the document then falls
+ * through to the booklet module, which cannot read passport_number / dob /
+ * expiry. Folding every Cyrillic MRZ-homoglyph back to its Latin twin
+ * before ratio-scoring AND check-digit parsing restores TD3 detection.
+ *
+ * Since the MRZ can ONLY legitimately contain Latin, every Cyrillic char
+ * here is by definition an OCR misread and is safe to fold. The set mirrors
+ * the booklet module's LATIN_TO_CYRILLIC_LOOKALIKE map (inverted). Cyrillic
+ * letters with no Latin look-alike (Д, Ж, Б, …) are intentionally left
+ * untouched — they cannot appear in a real MRZ, so leaving them lets the
+ * ratio gate / check digits correctly flag a genuinely garbled scan.
+ */
+const CYRILLIC_TO_LATIN_MRZ: Record<string, string> = {
+  'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E', 'Н': 'H', 'І': 'I',
+  'К': 'K', 'М': 'M', 'О': 'O', 'Р': 'P', 'Т': 'T', 'Х': 'X', 'У': 'Y',
+}
+function foldMrzHomoglyphs(s: string): string {
+  let out = ''
+  for (const ch of s) out += CYRILLIC_TO_LATIN_MRZ[ch] ?? ch
+  return out
+}
+
+/**
  * Compact an OCR line to MRZ shape: uppercase, strip whitespace, replace
- * common OCR confusions (« » → <, ' ' → '', etc.).
+ * common OCR confusions (« » → <, ' ' → '', etc.), then fold Cyrillic
+ * homoglyphs back to Latin (Vision misreads the OCR-B MRZ as Cyrillic
+ * under Ukrainian/Russian language hints — see foldMrzHomoglyphs).
  */
 function toMrzShape(s: string): string {
-  return s
-    .toUpperCase()
-    .replace(/\s+/g, '')
-    .replace(/[«»]/g, '<')
-    .replace(/[¥]/g, '<')
+  return foldMrzHomoglyphs(
+    s
+      .toUpperCase()
+      .replace(/\s+/g, '')
+      .replace(/[«»]/g, '<')
+      .replace(/[¥]/g, '<'),
+  )
 }
 
 /**
