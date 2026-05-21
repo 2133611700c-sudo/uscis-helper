@@ -226,6 +226,7 @@ const T = {
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
       i797_or_ead: 'I-797 / EAD → OCR',
+      dl: 'Посвідчення водія → OCR',
       ai: 'AI розпізнавання',
       mrz: 'Паспорт · MRZ (висока точність)',
       visual: 'Паспорт · OCR',
@@ -420,6 +421,7 @@ const T = {
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
       i797_or_ead: 'I-797 / EAD → OCR',
+      dl: 'Водительские права → OCR',
       ai: 'AI распознавание',
       mrz: 'Паспорт · MRZ (высокая точность)',
       visual: 'Паспорт · OCR',
@@ -613,6 +615,7 @@ const T = {
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
       i797_or_ead: 'I-797 / EAD → OCR',
+      dl: 'Driver License → OCR',
       ai: 'AI recognition',
       mrz: 'Passport · MRZ (high confidence)',
       visual: 'Passport · OCR',
@@ -807,6 +810,7 @@ const T = {
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
       i797_or_ead: 'I-797 / EAD → OCR',
+      dl: 'Licencia de conducir → OCR',
       ai: 'Reconocimiento IA',
       mrz: 'Pasaporte · MRZ (alta confianza)',
       visual: 'Pasaporte · OCR',
@@ -2578,13 +2582,32 @@ function ReviewOcr({
   // what makes the "Паспорт → OCR" hardcoded label HONEST — when the AI
   // brain filled a gap, the row now says "AI распознавание" so the user
   // knows to double-check that value.
-  const provenanceLabel = (source: ExtractionSource, fallbackDoc: RowSpec['expectedDoc']): string => {
+  //
+  // 2026-05-21 FIX_TPS_DL_ONLY_SOURCE_LABEL: previously the function picked
+  // its OCR label from `expectedDoc` (the row's CONFIGURED home), not from
+  // the actual `doc_slot` the value was extracted from. Result: with only
+  // a Driver License uploaded, the Фамилия / Имя / DOB rows all showed
+  // "Паспорт · OCR" even though no passport was uploaded — confusing
+  // users into thinking the system invented data from a passport that
+  // didn't exist. Now we honor `actualSlot` (the doc_slot the merger
+  // recorded) first, and fall back to expectedDoc only when the slot
+  // is unknown.
+  const provenanceLabel = (
+    source: ExtractionSource,
+    fallbackDoc: RowSpec['expectedDoc'],
+    actualSlot?: string,
+  ): string => {
     if (source === 'ai_brain') return t.source.ai
     if (source === 'ocr_mrz') return t.source.mrz
     if (source === 'ocr_visual' || source === 'ocr_keyword') {
-      // Honor the actual doc slot when we have one — e.g. an A-number that
-      // came from EAD via keyword anchor should say "EAD → OCR", not
-      // generic "Passport · OCR".
+      // Prefer the actual extraction slot when we know it — that's the
+      // honest provenance the user needs.
+      if (actualSlot === 'dl') return t.source.dl
+      if (actualSlot === 'i94') return t.source.i94
+      if (actualSlot === 'ead') return t.source.ead
+      if (actualSlot === 'i797') return t.source.i797
+      if (actualSlot === 'passport') return t.source.visual
+      // No slot recorded — fall back to the row's expected document.
       if (fallbackDoc === 'passport') return t.source.visual
       if (fallbackDoc === 'i94') return t.source.i94
       if (fallbackDoc === 'ead') return t.source.ead
@@ -2595,6 +2618,30 @@ function ReviewOcr({
     return t.source.visual
   }
 
+  // 2026-05-21 FIX_TPS_DL_ONLY_ADDRESS_VISIBILITY: when the user uploaded a
+  // Driver License (or I-797) and the address parser recovered any part of
+  // it, surface a composite review row right after the OCR identity rows
+  // so the user can SEE that the address was extracted and from which
+  // document. Without this, an init-path filer who uploads only a DL sees
+  // the address silently populate the manual "Адрес в США" input below
+  // and assumes the OCR failed because the review block shows nothing.
+  const addrStreet = mergedFields.us_address_street
+  const addrCity = mergedFields.us_address_city
+  const addrState = mergedFields.us_address_state
+  const addrZip = mergedFields.us_address_zip
+  const hasAnyAddrPart = !!(addrStreet?.value || addrCity?.value || addrState?.value || addrZip?.value)
+  // Build a "Street, City, ST ZIP" preview; missing parts are silently
+  // omitted (the badge will say "проверьте" so user can fix in the input).
+  const composedAddr = hasAnyAddrPart
+    ? [addrStreet?.value, [addrCity?.value, [addrState?.value, addrZip?.value].filter(Boolean).join(' ')].filter(Boolean).join(', ')].filter(Boolean).join(', ')
+    : ''
+  // Pick the dominant slot — street is the canonical one; falls back to
+  // any other part if street is missing (rare).
+  const addrSlot = addrStreet?.doc_slot || addrCity?.doc_slot || addrState?.doc_slot || addrZip?.doc_slot
+  const addrSource = addrStreet?.source || addrCity?.source || addrState?.source || addrZip?.source
+  const addrRequiresReview = !!(addrStreet?.requires_review || addrCity?.requires_review || addrState?.requires_review || addrZip?.requires_review)
+  const addrExpectedDoc: RowSpec['expectedDoc'] = addrSlot === 'dl' ? 'i797' : 'i797_or_ead'
+
   return (
     <>
       {rows.map((r) => {
@@ -2604,7 +2651,7 @@ function ReviewOcr({
             <RW
               key={r.key}
               label={r.label}
-              source={provenanceLabel(fx.source, r.expectedDoc)}
+              source={provenanceLabel(fx.source, r.expectedDoc, fx.doc_slot)}
               value={fx.value}
               reviewBadge={fx.requires_review || fx.source === 'ai_brain' ? t.reviewBadge : null}
               onEdit={() => onEdit(r.key, r.label, fx?.value ?? '')}
@@ -2626,6 +2673,17 @@ function ReviewOcr({
           />
         )
       })}
+      {hasAnyAddrPart && (
+        <RW
+          key="__us_address_composite"
+          label={t.label.address}
+          source={provenanceLabel(addrSource ?? 'ocr_keyword', addrExpectedDoc, addrSlot)}
+          value={composedAddr || t.notFound}
+          reviewBadge={addrRequiresReview ? t.reviewBadge : null}
+          onEdit={() => onEdit('us_address_street', t.label.address, addrStreet?.value ?? '')}
+          editLabel={t.edit}
+        />
+      )}
     </>
   )
 }
