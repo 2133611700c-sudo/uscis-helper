@@ -28,7 +28,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
-import { isStrictValidValue } from '@/lib/tps/strictValidators'
+import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1714,15 +1714,23 @@ export default function TPSWizardV2({ locale }: Props) {
                   ? f.raw_value
                   : ''
             if (!v) continue
-            // 2026-05-21 FIX_TPS_PASSPORT_MRZ_REAL_DOCUMENT_FAILURE:
+            // 2026-05-21 FIX_TPS_PASSPORT_MRZ_REAL_DOCUMENT_FAILURE +
+            // 2026-05-21 FIX_TPS_STRICT_VALIDATOR_NORMALIZER:
             // Strict shape validator — if a backend module emits a field
             // with a value that does NOT match the expected canonical
             // shape, drop it so the review screen shows "Не найдено —
-            // введите вручную" instead of raw OCR garbage. Caught case:
-            // another person's booklet uploaded → DOB row showed
-            // "Date of birth 13 CEP / AUG 60" because normalized_value
-            // was null and the wizard fell back to raw_value.
-            if (!isStrictValidValue(f.field, v)) continue
+            // введите вручную" instead of raw OCR garbage.
+            //
+            // The normalize+validate variant first tries safe, unambiguous
+            // format normalization (US date MM/DD/YYYY → ISO, "Male" →
+            // "M", etc.) so OCR/Brain values whose CONTENT is correct
+            // but whose FORMAT differs from canonical don't get silently
+            // dropped. Ambiguous transformations (e.g. "09/07/2024" where
+            // both segments ≤ 12) still fail and force manual entry —
+            // no guessing for critical fields.
+            const validated = normalizeAndValidate(f.field, v)
+            if (!validated.ok) continue
+            const canonicalValue = validated.value
             const src: ExtractionSource =
               f.extraction_source === 'ocr_mrz' ||
               f.extraction_source === 'ocr_visual' ||
@@ -1734,15 +1742,21 @@ export default function TPSWizardV2({ locale }: Props) {
                 ? (f.extraction_source as ExtractionSource)
                 : 'ocr_visual'
             fields[f.field] = {
-              value: v,
+              // Use the NORMALIZED canonical value (US date → ISO, "Male" → "M").
+              // Preserve original raw_value separately for audit trail.
+              value: canonicalValue,
               source: src,
-              requires_review: Boolean(f.review_required),
+              // If we had to normalize the format (canonical !== v), flag for
+              // user review even when the backend module said no review needed —
+              // a format mismatch usually means an AI/OCR fallback rather than
+              // strict MRZ, and the user should confirm the conversion.
+              requires_review: Boolean(f.review_required) || canonicalValue !== v,
               doc_slot: id,
               // Provenance pass-through (Patch 1): carry raw evidence from
               // TpsExtractedField so review screen and audit trail work.
               source_document_id: typeof f.source_document_id === 'string' ? f.source_document_id : null,
               source_zone: typeof f.source_zone === 'string' ? f.source_zone : null,
-              raw_value: typeof f.raw_value === 'string' ? f.raw_value : null,
+              raw_value: typeof f.raw_value === 'string' ? f.raw_value : v,
               confidence: typeof f.confidence === 'number' ? f.confidence : null,
             }
           }
