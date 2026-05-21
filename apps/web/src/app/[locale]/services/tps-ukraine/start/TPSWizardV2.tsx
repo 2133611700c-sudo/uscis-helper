@@ -28,6 +28,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
+import { isStrictValidValue } from '@/lib/tps/strictValidators'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1713,6 +1714,15 @@ export default function TPSWizardV2({ locale }: Props) {
                   ? f.raw_value
                   : ''
             if (!v) continue
+            // 2026-05-21 FIX_TPS_PASSPORT_MRZ_REAL_DOCUMENT_FAILURE:
+            // Strict shape validator — if a backend module emits a field
+            // with a value that does NOT match the expected canonical
+            // shape, drop it so the review screen shows "Не найдено —
+            // введите вручную" instead of raw OCR garbage. Caught case:
+            // another person's booklet uploaded → DOB row showed
+            // "Date of birth 13 CEP / AUG 60" because normalized_value
+            // was null and the wizard fell back to raw_value.
+            if (!isStrictValidValue(f.field, v)) continue
             const src: ExtractionSource =
               f.extraction_source === 'ocr_mrz' ||
               f.extraction_source === 'ocr_visual' ||
