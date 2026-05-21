@@ -197,18 +197,27 @@ export async function POST(req: NextRequest) {
       let td3 = runPassportModule(result, { document_id })
       let booklet: TpsModuleResult | null = null
 
-      // 2026-05-20 T3PS_ROBUST_OCR P0: if neither TD3 MRZ nor the
-      // booklet anchors matched on the upright image, the photo is
-      // likely upside-down or 90/270 rotated AND the user did not
-      // have EXIF orientation set (e.g. exported from a screenshot
-      // tool). Vision's auto-orientation only triggers on some aspect
-      // ratios. Retry with explicit 90/180/270 rotations until MRZ
-      // anchors or booklet anchors hit. Cost: at most 3 extra Vision
-      // calls, only on broken-orientation passports.
+      // 2026-05-20 T3PS_ROBUST_OCR P0 (revised): the booklet module
+      // matches as soon as it finds ANY field, so a 180-rotated
+      // international passport with a readable visible Cyrillic zone
+      // (УКРАЇНА, СЕРГІЙ, КУРОП'ЯТНИК…) trips booklet.matched=true and
+      // skips the rotation retry — but the MRZ block is unreadable
+      // upside-down so passport_number/passport_expiration_date/sex
+      // are missing. Retry condition is therefore: TD3 didn't match
+      // AND the upright result lacks an MRZ-derived passport_number.
+      // That covers both the never-matched and the booklet-only
+      // (visible-zone-only) cases. Cost: at most 3 extra Vision calls,
+      // only on passports where MRZ wasn't located.
       if (!td3.matched) {
         booklet = runPassportBookletModule(result, { document_id })
       }
-      if (!td3.matched && booklet && !booklet.matched) {
+      const hasPassportNumberFromMrz = (mr: TpsModuleResult | null): boolean =>
+        !!mr?.fields?.some(
+          (f) => f.field === 'passport_number' && f.extraction_source === 'ocr_mrz',
+        )
+      const mrzAlreadyFound =
+        hasPassportNumberFromMrz(td3) || hasPassportNumberFromMrz(booklet)
+      if (!td3.matched && !mrzAlreadyFound) {
         for (const angle of [90, 180, 270] as const) {
           try {
             const sharp = (await import('sharp')).default
@@ -225,11 +234,12 @@ export async function POST(req: NextRequest) {
               break
             }
             const tryBooklet = runPassportBookletModule(rotatedResult, { document_id })
-            if (tryBooklet.matched) {
+            if (tryBooklet.matched && hasPassportNumberFromMrz(tryBooklet)) {
               booklet = tryBooklet
               effectiveOcrResult = rotatedResult
               break
             }
+            // Booklet matched but still no MRZ — keep trying other angles.
           } catch {
             // sharp unavailable / Vision failure — stop trying rotations.
             break
