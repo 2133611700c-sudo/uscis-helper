@@ -263,12 +263,78 @@ export async function POST(req: NextRequest) {
       }
       break
     }
-    case 'i94':
-      moduleResult = runI94Module(result, { document_id })
+    case 'i94': {
+      // 2026-05-21 FIX_TPS_ROTATION_PARITY_I94: real users photograph
+      // their I-94 sideways or upside-down. The rule module needs
+      // CBP labels ('Most Recent Date of Entry', 'Admit Until Date',
+      // 'Class of Admission') in their normal positions; rotation
+      // mangles them and the module returns 0 fields. Mirror the
+      // passport/DL rotation retry: if first pass yields <3 fields,
+      // try 90/180/270 and pick the rotation with the most fields.
+      let i94Result = runI94Module(result, { document_id })
+      const i94FieldCount = (mr: TpsModuleResult | null): number => mr?.fields?.length ?? 0
+      if (i94FieldCount(i94Result) < 3) {
+        for (const angle of [90, 180, 270] as const) {
+          try {
+            const sharp = (await import('sharp')).default
+            const rotatedBuffer = await sharp(imageBuffer)
+              .rotate(angle)
+              .jpeg({ quality: 85 })
+              .toBuffer()
+            const rotatedResult = await googleVisionProvider.extractText({
+              imageBuffer: rotatedBuffer,
+              mimeType: 'image/jpeg',
+            })
+            if (isBlocked(rotatedResult)) continue
+            const tryI94 = runI94Module(rotatedResult, { document_id })
+            if (i94FieldCount(tryI94) > i94FieldCount(i94Result)) {
+              i94Result = tryI94
+              effectiveOcrResult = rotatedResult
+              // Stop early if we have a strong match (≥5 fields).
+              if (i94FieldCount(tryI94) >= 5) break
+            }
+          } catch {
+            break
+          }
+        }
+      }
+      moduleResult = i94Result
       break
-    case 'ead':
-      moduleResult = runEadModule(result, { document_id })
+    }
+    case 'ead': {
+      // 2026-05-21 FIX_TPS_ROTATION_PARITY_EAD: symmetric retry for
+      // EAD photos. The EAD card layout is fixed (USCIS-standardized),
+      // so labels appear at predictable positions when upright. Rotation
+      // breaks anchor matching; retry at 90/180/270.
+      let eadResult = runEadModule(result, { document_id })
+      const eadFieldCount = (mr: TpsModuleResult | null): number => mr?.fields?.length ?? 0
+      if (eadFieldCount(eadResult) < 3) {
+        for (const angle of [90, 180, 270] as const) {
+          try {
+            const sharp = (await import('sharp')).default
+            const rotatedBuffer = await sharp(imageBuffer)
+              .rotate(angle)
+              .jpeg({ quality: 85 })
+              .toBuffer()
+            const rotatedResult = await googleVisionProvider.extractText({
+              imageBuffer: rotatedBuffer,
+              mimeType: 'image/jpeg',
+            })
+            if (isBlocked(rotatedResult)) continue
+            const tryEad = runEadModule(rotatedResult, { document_id })
+            if (eadFieldCount(tryEad) > eadFieldCount(eadResult)) {
+              eadResult = tryEad
+              effectiveOcrResult = rotatedResult
+              if (eadFieldCount(tryEad) >= 5) break
+            }
+          } catch {
+            break
+          }
+        }
+      }
+      moduleResult = eadResult
       break
+    }
     case 'dl': {
       // 2026-05-20: deterministic anchor parser. We deliberately do
       // NOT call Brain for DL because DeepSeek's safety classifier
