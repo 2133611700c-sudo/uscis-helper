@@ -44,10 +44,11 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
-import { googleVisionProvider } from '@/lib/ocr/providers/googleVision'
+import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { runPassportModule } from '@/lib/tps/modules/passport'
 import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
 import { isStrictValidValue } from '@/lib/tps/strictValidators'
+import type { OcrLine } from '@/lib/ocr/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const ocr = await googleVisionProvider.extractText({ imageBuffer: buf, mimeType: mime })
     const rawText = ocr.raw_text || ''
-    const lines = (ocr.lines || []).map((l) => l.text || '')
+    const lines = (ocr.lines || []).map((l: OcrLine) => l.text || '')
 
     const labels_present: Record<string, boolean> = {}
     for (const [key, re] of Object.entries(LABEL_PATTERNS)) {
