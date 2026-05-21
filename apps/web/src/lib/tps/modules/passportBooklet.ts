@@ -513,6 +513,13 @@ export function runPassportBookletModule(
   ])
   const middleName = findField(['По батькові', 'Побатькові', 'Отчество'])
   const dobRaw = findField(['Дата народження', 'Дата рождения', 'Датарождения'])
+  // 2026-05-21 FIX_TPS_PASSPORT_MRZ_NUMBER_AND_SEX_FAILURE: booklet
+  // had no sex extraction at all. Add it — Ukrainian booklets print
+  // "Стать / Sex" (UA) or "Пол / Sex" (RU) followed by single-letter
+  // value (Ч=male, Ж=female) or full word. Strict shape validator at
+  // wizard intake will only accept M/F/X, so non-conforming OCR reads
+  // (e.g. "ЧОЛ" mangled to "yon") get rejected automatically.
+  const sexRaw = findField(['Стать', 'Пол', 'Sex'])
 
   // ── Emit fields. Every booklet field is review_required=true because
   // handwritten Cyrillic OCR is unreliable.
@@ -618,6 +625,30 @@ export function runPassportBookletModule(
     )
   } else {
     warnings.push('booklet_passport_number_missing')
+  }
+
+  // Sex: normalize Ukrainian/Russian/English values to M/F. Anything we
+  // can't confidently map gets dropped (the strict wizard validator
+  // would reject it anyway).
+  if (sexRaw) {
+    const v = sexRaw.value.trim().toUpperCase()
+    // Strip any trailing punctuation / bilingual residue.
+    const head = v.replace(/[^A-ZА-ЯІЇЄҐ]/gu, '').slice(0, 5)
+    let normalized: string | null = null
+    if (head === 'M' || head === 'MALE' || head === 'Ч' || head === 'ЧОЛ' || head === 'ЧОЛОВ' || head === 'МУЖ' || head === 'МУЖСК') {
+      normalized = 'M'
+    } else if (head === 'F' || head === 'FEM' || head === 'FEMAL' || head === 'Ж' || head === 'ЖІН' || head === 'ЖІНОЧ' || head === 'ЖЕН' || head === 'ЖЕНСК') {
+      normalized = 'F'
+    } else if (head === 'X') {
+      normalized = 'X'
+    }
+    if (normalized) {
+      emit('sex', sexRaw.value, normalized, sexRaw.sourceLine, 'booklet_label_sex', ['sex_mapped'], [])
+    } else {
+      warnings.push('booklet_sex_unrecognized')
+    }
+  } else {
+    warnings.push('booklet_sex_missing')
   }
 
   // Nationality + issuing country are always Ukraine for this document.
