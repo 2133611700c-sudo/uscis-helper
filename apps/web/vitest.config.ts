@@ -6,9 +6,10 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    // Default 5 000 ms is too short for integration tests that read real
-    // USCIS PDFs from disk, fill them via pdf-lib, and generate ZIP bundles.
-    // 30 s covers the slowest observed case (~6 s per test on CI).
+    // Default 5 000 ms is too short for tests that touch the filesystem or
+    // import heavy modules. 30 s covers most integration tests; the three
+    // PDF-heavy suites (tps/packetBuilder, reparole/packetBuilder,
+    // controlledBetaLock) set 120 s per-file via vi.setConfig().
     testTimeout: 30_000,
   },
   resolve: {

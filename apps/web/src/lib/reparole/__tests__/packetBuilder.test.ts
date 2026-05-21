@@ -8,7 +8,12 @@
  *  - The PDF's official edition stamp is preserved
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+
+// buildReParoleI131 reads I-131 PDF from disk, fills AcroForm fields, and
+// transliterates Cyrillic via KMU-55. Under full-suite parallel load
+// individual tests spike from ~4.5 s to 30+ s due to I/O contention.
+vi.setConfig({ testTimeout: 120_000 })
 import { buildReParoleI131 } from '../packetBuilder'
 import type { ReParoleAnswers } from '../answers'
 import { PDFDocument, PDFTextField } from 'pdf-lib'
