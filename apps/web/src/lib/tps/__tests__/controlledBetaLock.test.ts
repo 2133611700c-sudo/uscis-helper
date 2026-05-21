@@ -3,6 +3,11 @@ import path from 'node:path'
 
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
+// Route-handler tests dynamically import the generate-packet API route which
+// calls buildPacket → PDF read + integrity + prefill. Under full-suite
+// parallel load, these spike well past 30 s.
+vi.setConfig({ testTimeout: 120_000 })
+
 import { isMinimallyComplete, type TPSAnswers } from '../answers'
 
 const generateBlockPath = path.join(
