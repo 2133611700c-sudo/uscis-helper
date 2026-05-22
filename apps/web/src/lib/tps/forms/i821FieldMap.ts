@@ -232,6 +232,18 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     ops.push({ field: 'form1[0].Page03[0].Part2_Item21_AuthorizedPdofStay[0]', kind: 'text', value: a.authorized_stay })
   }
 
+  // ── Part 2 — Item 18: date of last arrival (Page03) ────────────────────────
+  // The PDF AcroForm field is misleadingly named "P2_Line7_DateOfBirth" but it
+  // is physically above Item 19 (immigration status) at Y≈618 on page 3, which
+  // corresponds to "Date of your last arrival to the United States" on the form.
+  if (a.last_entry_date) {
+    ops.push({
+      field: 'form1[0].Page03[0].P2_Line7_DateOfBirth[0]',
+      kind: 'text',
+      value: toUscisDate(a.last_entry_date),
+    })
+  }
+
   // ── Part 2 — Item 19: immigration status at last entry (Page03) ────────────
   // I-765 Line 23 already maps this; I-821 Part 2 Item 19 is the same data.
   if (a.status_at_last_entry) {
