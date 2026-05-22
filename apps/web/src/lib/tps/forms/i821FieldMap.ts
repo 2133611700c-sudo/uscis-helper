@@ -40,7 +40,7 @@
  */
 
 import type { TPSAnswers } from '../answers'
-import { toUscisDate } from '../answers'
+import { toUscisDate, normalizeCountryOfBirth } from '../answers'
 
 export interface I821Op {
   field: string
@@ -185,7 +185,9 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
   ops.push({ field: 'form1[0].Page02[0].Part2_Item13_CityOrTown[0]', kind: 'text', value: a.city_of_birth ?? '' })
 
   // ── Part 2 — Item 14: country of birth ────────────────────────────────────
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item14_CountryofBirth[0]', kind: 'text', value: a.country_of_birth })
+  // Normalize: Ukrainian passports show oblast/city as "place of birth";
+  // USCIS asks for COUNTRY. normalizeCountryOfBirth converts "Vinnytska Obl. / Ukr" → "Ukraine".
+  ops.push({ field: 'form1[0].Page02[0].Part2_Item14_CountryofBirth[0]', kind: 'text', value: normalizeCountryOfBirth(a.country_of_birth, a.country_of_nationality) })
 
   // ── Part 2 — Item 17: marital status ──────────────────────────────────────
   // Seven checkboxes [0]-[6]: single, married, divorced, widowed,
