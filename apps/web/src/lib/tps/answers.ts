@@ -236,3 +236,22 @@ export function toUscisDate(iso: string | undefined): string {
   if (!m) return ''
   return `${m[2]}/${m[3]}/${m[1]}`
 }
+
+/**
+ * Ukrainian passports show "Місце народження" (place of birth) as an oblast
+ * or city (e.g. "ВІННИЦЬКА ОБЛ." or "Vinnytska Obl. / Ukr").
+ * USCIS forms ask for COUNTRY of birth = "Ukraine", not the region.
+ *
+ * Normalizes any oblast/city/mixed value to the clean country name.
+ */
+export function normalizeCountryOfBirth(raw: string, nationality?: string): string {
+  if (!raw) return nationality || 'Ukraine'
+  const lower = raw.toLowerCase().trim()
+  if (lower === 'ukraine' || lower === 'україна') return 'Ukraine'
+  if (/\bukr/i.test(raw)) return 'Ukraine'
+  if (/обл\.?|obl\.?|область|м\.|місто|city|village|район|raion/i.test(raw)) {
+    return nationality || 'Ukraine'
+  }
+  if (raw.length <= 30 && !/[,\/]/.test(raw)) return raw
+  return nationality || 'Ukraine'
+}
