@@ -35,8 +35,8 @@
     }
   },
   "hero": {
-    "title": "USCIS help for Ukrainians in the U.S.",
-    "subtitle": "Official sources, document guidance, and clear next steps for U4U, re-parole, TPS, EAD, I-94, and case tracking.",
+    "title": "Immigration guidance for the U.S. — based on official sources",
+    "subtitle": "Information from USCIS and other government sources. Document translation, form preparation, and step-by-step instructions.",
     "ctaServices": "Browse Services",
     "ctaUpdates": "Read Latest Updates",
     "trustItems": [
@@ -403,20 +403,20 @@
     "ctaContact": "Contact us"
   },
   "howWeHelp": {
-    "title": "How We Help",
-    "subtitle": "Messenginfo connects you with official sources and organizes the information you need.",
+    "title": "Messenginfo helps you",
+    "subtitle": "You review all data before final submission.",
     "items": [
       {
-        "title": "Find official sources",
-        "description": "Every page links directly to USCIS.gov, CBP, DOJ, and other authoritative government sources."
+        "title": "Understand your situation in plain language",
+        "description": "Select your situation — see the official path, links to USCIS.gov, and a clear explanation of every step."
       },
       {
-        "title": "Organize your documents",
-        "description": "Understand what documents are needed for each immigration process and how to prepare them."
+        "title": "Prepare and translate documents",
+        "description": "Upload your passport, certificate, or other document — get an English translation draft per USCIS standards."
       },
       {
-        "title": "Get clear next steps",
-        "description": "Step-by-step guidance on what to do next, based on official instructions."
+        "title": "Automatically build forms for filing",
+        "description": "The system fills out Forms I-821, I-765, I-131 from your documents. You review, print, sign, and submit yourself."
       }
     ]
   },
