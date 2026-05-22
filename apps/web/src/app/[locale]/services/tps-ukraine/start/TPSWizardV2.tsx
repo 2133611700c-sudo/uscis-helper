@@ -1232,55 +1232,37 @@ function RW({
   return (
     <div
       style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '10px 0',
+        padding: '12px 0',
         borderBottom: `1px solid ${BORDER_LIGHT}`,
-        gap: 12,
       }}
     >
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: 15, color: TEXT_MUTED }}>{label}</div>
-        {!missing && source && (
-          <div style={{ fontSize: 13, color: TEXT_HINT }}>{source}</div>
-        )}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', flexShrink: 1, minWidth: 0, maxWidth: '60%' }}>
+      {/* Row 1: label + source */}
+      <div style={{ fontSize: 14, color: TEXT_MUTED, marginBottom: 2 }}>{label}</div>
+      {!missing && source && (
+        <div style={{ fontSize: 12, color: TEXT_HINT, marginBottom: 6 }}>{source}</div>
+      )}
+      {/* Row 2: value + badge + edit — full width, no squeeze */}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         {missing ? (
-          <div
+          <div style={{ fontSize: 14, fontStyle: 'italic', color: TEXT_MUTED }}>{value}</div>
+        ) : (
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)' }}>{value}</div>
+        )}
+        {!missing && reviewBadge && (
+          <span
             style={{
-              fontSize: 14,
-              fontStyle: 'italic',
-              color: TEXT_MUTED,
-              textAlign: 'right',
-              maxWidth: 240,
-              wordBreak: 'break-word',
+              padding: '2px 8px',
+              background: WARN_BG,
+              color: WARN_TEXT,
+              fontSize: 11,
+              fontWeight: 700,
+              borderRadius: 999,
+              border: `1px solid ${WARN_BORDER}`,
+              whiteSpace: 'nowrap',
             }}
           >
-            {value}
-          </div>
-        ) : (
-          <>
-            <div style={{ fontSize: 17, fontWeight: 700, textAlign: 'right', wordBreak: 'break-word' }}>{value}</div>
-            {reviewBadge && (
-              <span
-                style={{
-                  marginLeft: 8,
-                  padding: '2px 8px',
-                  background: WARN_BG,
-                  color: WARN_TEXT,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  borderRadius: 999,
-                  border: `1px solid ${WARN_BORDER}`,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {reviewBadge}
-              </span>
-            )}
-          </>
+            {reviewBadge}
+          </span>
         )}
         <button
           type="button"
@@ -1291,9 +1273,10 @@ function RW({
             fontSize: 14,
             color: GREEN,
             cursor: 'pointer',
-            marginLeft: 8,
             textDecoration: 'underline',
             fontFamily: 'inherit',
+            padding: 0,
+            whiteSpace: 'nowrap',
           }}
         >
           {editLabel}
