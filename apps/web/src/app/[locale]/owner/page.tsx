@@ -23,8 +23,7 @@ export default function OwnerPage() {
     setLoading(true); setMsg('')
     try {
       const r = await fetch('/api/owner/request-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
       const d = await r.json()
@@ -39,8 +38,7 @@ export default function OwnerPage() {
     setLoading(true); setMsg('')
     try {
       const r = await fetch('/api/owner/verify-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code }),
       })
       const d = await r.json()
@@ -55,29 +53,30 @@ export default function OwnerPage() {
     setStep('email'); setMsg('Session cleared')
   }
 
+  // All colors use CSS variables for dark mode support
   const s: React.CSSProperties = {
     maxWidth: 400, margin: '80px auto', padding: 24,
-    fontFamily: 'system-ui, sans-serif',
+    fontFamily: 'system-ui, sans-serif', color: 'var(--text-1)',
   }
   const input: React.CSSProperties = {
     width: '100%', padding: '12px 16px', fontSize: 18,
-    border: '2px solid #ccc', borderRadius: 8, marginBottom: 12,
-    boxSizing: 'border-box',
+    border: '2px solid var(--border)', borderRadius: 8, marginBottom: 12,
+    boxSizing: 'border-box', background: 'var(--surface-1)', color: 'var(--text-1)',
   }
   const btn: React.CSSProperties = {
     width: '100%', padding: '14px', fontSize: 16, fontWeight: 600,
     border: 'none', borderRadius: 8, cursor: 'pointer',
-    backgroundColor: '#1a1a2e', color: '#fff',
+    backgroundColor: 'var(--accent, #10a37f)', color: '#fff',
   }
 
   if (step === 'check') return <div style={s}><p>Checking...</p></div>
 
   if (step === 'active') return (
     <div style={s}>
-      <h2 style={{ color: '#1a8c1a' }}>✓ Owner Access Active</h2>
+      <h2 style={{ color: 'var(--success, #16a34a)' }}>✓ Owner Access Active</h2>
       <p>All services are free for 24 hours.</p>
       <p>This works on this device and browser.</p>
-      <button style={{ ...btn, backgroundColor: '#666', marginTop: 20 }} onClick={logout}>
+      <button style={{ ...btn, backgroundColor: 'var(--surface-3)', marginTop: 20 }} onClick={logout}>
         Logout
       </button>
     </div>
@@ -85,7 +84,7 @@ export default function OwnerPage() {
 
   return (
     <div style={s}>
-      <h2>Owner Access</h2>
+      <h2 style={{ color: 'var(--text-1)' }}>Owner Access</h2>
       {step === 'email' && (
         <>
           <input style={input} type="email" placeholder="Owner email"
@@ -99,7 +98,7 @@ export default function OwnerPage() {
       )}
       {step === 'code' && (
         <>
-          <p style={{ fontSize: 14, color: '#666' }}>Code sent to your email</p>
+          <p style={{ fontSize: 14, color: 'var(--text-3)' }}>Code sent to your email</p>
           <input style={{ ...input, fontSize: 24, textAlign: 'center', letterSpacing: 8 }}
             type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
             placeholder="000000" value={code}
@@ -109,13 +108,13 @@ export default function OwnerPage() {
           <button style={btn} onClick={verifyCode} disabled={loading}>
             {loading ? 'Verifying...' : 'Verify'}
           </button>
-          <button style={{ ...btn, backgroundColor: 'transparent', color: '#666', marginTop: 8 }}
+          <button style={{ ...btn, backgroundColor: 'transparent', color: 'var(--text-3)', marginTop: 8 }}
             onClick={() => setStep('email')}>
             Back
           </button>
         </>
       )}
-      {msg && <p style={{ marginTop: 12, color: msg.includes('error') || msg.includes('Invalid') ? 'red' : '#333' }}>{msg}</p>}
+      {msg && <p style={{ marginTop: 12, color: msg.includes('error') || msg.includes('Invalid') ? 'var(--error-text, #dc2626)' : 'var(--text-2)' }}>{msg}</p>}
     </div>
   )
 }
