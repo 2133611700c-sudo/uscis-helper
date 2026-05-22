@@ -131,10 +131,20 @@ export async function POST(req: NextRequest) {
     }, { status: 423 })
   }
 
-  // Gate 1: Payment verification
-  const paymentVerified = checkout_id
-    ? await verifyStripePayment(checkout_id)
-    : state.payment_confirmed
+  // Gate 1: Payment verification (owner bypass available)
+  const { isOwnerSession, ownerAuditEvent } = await import('@/lib/ownerAccess')
+  const ownerSession = await isOwnerSession(req)
+
+  let paymentVerified: boolean
+  if (ownerSession.verified) {
+    // Owner bypass: skip Stripe entirely
+    paymentVerified = true
+    console.log('[render] Owner free access:', JSON.stringify(ownerAuditEvent('render', 'translation')))
+  } else {
+    paymentVerified = checkout_id
+      ? await verifyStripePayment(checkout_id)
+      : state.payment_confirmed
+  }
 
   if (!paymentVerified) {
     return NextResponse.json({
