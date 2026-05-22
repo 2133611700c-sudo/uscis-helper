@@ -401,8 +401,8 @@ export async function POST(req: NextRequest) {
 
   // ── DS.2 — Optional AI Brain fallback. Runs ONLY when:
   //   (a) operator has set TPS_AI_BRAIN_ENABLED=1 in the environment, AND
-  //   (b) the rule-based module produced no result OR fewer than 3 fields,
-  //       OR the document type hint is missing.
+  //   (b) the rule-based module produced no result OR fewer than 5 fields,
+  //       OR high-value targeted fields are missing from rule output.
   // Privacy: only raw_text + lines (no image, no PII bundle beyond
   // what Vision already extracted) is sent to DeepSeek.
   // Validators (validateBrainField) are applied to each Brain field
@@ -410,22 +410,26 @@ export async function POST(req: NextRequest) {
   // and is never auto-merged into PDF data.
   let brainResult: DocumentBrainOutput | null = null
   const ruleFieldsCount = moduleResult?.fields?.length ?? 0
-  // 2026-05-20: bumped threshold from 3 → 5.
-  //
-  // Why: after the I-94 rule module learned to parse 'YYYY Month DD'
-  // dates (last_entry_date + admit_until) in the same commit, the
-  // module started returning 3 fields on its own (admission_number,
-  // COA, entry_date) on Sergii's real I-94. That made the old
-  // `< 3` gate flip false and Brain was skipped entirely — losing
-  // family_name / given_name / i94_admission_number / passport_number
-  // which Brain was filling in before. Critical I-94 has 8+ relevant
-  // fields, so 3 is too low a 'we have enough' bar. 5 still keeps
-  // Brain from running when the passport rule module hits its full
-  // 8-field MRZ extraction, which is the only case where Brain is
-  // truly redundant.
+
+  // 2026-05-22: Targeted Brain Fill — high-value fields that rule modules
+  // cannot extract from their primary structured source (e.g. MRZ for
+  // passport has no middle_name or country_of_birth). If any of these
+  // are missing after rule extraction, Brain runs even when the rule
+  // module met the general threshold. The slot firewall still blocks
+  // forbidden fields; the merge strategy still lets rule-based fields
+  // win on conflicts. This targets the zero-manual-entry product goal
+  // without lowering the global threshold.
+  const TARGETED_BRAIN_FIELDS: Record<string, string[]> = {
+    passport: ['middle_name', 'country_of_birth'],
+  }
+  const ruleFieldKeys = new Set(moduleResult?.fields?.map((f) => f.field) ?? [])
+  const targetedMissing = (TARGETED_BRAIN_FIELDS[docTypeHint] ?? [])
+    .filter((f) => !ruleFieldKeys.has(f))
+
   const shouldTryBrain =
     isBrainEnabled() &&
-    (moduleResult === null || moduleResult.matched === false || ruleFieldsCount < 5)
+    (moduleResult === null || moduleResult.matched === false || ruleFieldsCount < 5 ||
+     targetedMissing.length > 0)
   if (shouldTryBrain) {
     try {
       // Use effectiveOcrResult so Brain sees the text from the rotation
@@ -608,6 +612,16 @@ export async function POST(req: NextRequest) {
         : 'error'
   const brainErrorCode = brainResult && !brainResult.ok ? brainResult.error_code : null
   const brainAddedCount = brainFields.length
+  const brainTrigger: 'off' | 'threshold' | 'targeted' | 'no_match' | 'not_needed' =
+    !isBrainEnabled()
+      ? 'off'
+      : moduleResult === null || moduleResult.matched === false
+        ? 'no_match'
+        : ruleFieldsCount < 5
+          ? 'threshold'
+          : targetedMissing.length > 0
+            ? 'targeted'
+            : 'not_needed'
 
   // ── Successful OCR. Build a response with just what downstream agents
   //    need; we do NOT include the raw API response (could leak provider
@@ -627,6 +641,8 @@ export async function POST(req: NextRequest) {
       brain_status: brainStatus,
       brain_error_code: brainErrorCode,
       brain_added_count: brainAddedCount,
+      brain_trigger: brainTrigger,
+      targeted_brain_missing: targetedMissing,
       final_field_count: finalFieldCount,
       final_field_keys: finalFieldKeys,
       // ── Slot firewall diagnostics. Surfaces both the hard-rejected
