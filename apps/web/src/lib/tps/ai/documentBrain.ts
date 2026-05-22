@@ -819,8 +819,12 @@ function firstBalancedObject(s: string): string | null {
 /** Module-level default that lets tests inject a stub. */
 async function defaultChat(
   msgs: ChatMessage[],
-  opts?: { timeoutMs?: number },
+  opts?: { timeoutMs?: number; maxTokens?: number },
 ): Promise<{ content: string }> {
-  const res = await chat(msgs, { temperature: 0, maxTokens: 800, timeoutMs: opts?.timeoutMs })
+  const res = await chat(msgs, {
+    temperature: 0,
+    maxTokens: opts?.maxTokens ?? 2500,
+    timeoutMs: opts?.timeoutMs,
+  })
   return { content: res.content }
 }
