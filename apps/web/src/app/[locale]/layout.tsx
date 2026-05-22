@@ -117,8 +117,9 @@ export default async function LocaleLayout({ children, params }: Props) {
   const deploymentId = process.env.VERCEL_DEPLOYMENT_ID ?? 'unknown';
 
   return (
-    <html lang={locale} className={`${inter.variable} ${playfair.variable}`}>
+    <html lang={locale} translate="no" className={`${inter.variable} ${playfair.variable}`}>
       <head>
+        <meta name="google" content="notranslate" />
         <meta name="x-build-sha" content={buildSha} />
         <meta name="x-vercel-deployment" content={deploymentId} />
       </head>
