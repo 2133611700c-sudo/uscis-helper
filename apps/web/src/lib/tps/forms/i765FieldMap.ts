@@ -82,8 +82,10 @@ export function buildI765Ops(a: TPSAnswers): I765Op[] {
   ops.push({ field: 'form1[0].Page2[0].Pt2Line5_ZipCode[0]',         kind: 'text',   value: line5Zip })
 
   // "Is your mailing address the same as your physical address?" checkbox
-  ops.push({ field: 'form1[0].Page2[0].Part2Line5_Checkbox[0]', kind: 'checkbox', value: !useSeparateMailing })
-  ops.push({ field: 'form1[0].Page2[0].Part2Line5_Checkbox[1]', kind: 'checkbox', value: useSeparateMailing })
+  // PDF appearance states: Checkbox[0] on-state = /N (No), Checkbox[1] on-state = /Y (Yes)
+  // Verified via pypdf: Checkbox[0] AS=/N, Checkbox[1] appearances=[/Y, /Off]
+  ops.push({ field: 'form1[0].Page2[0].Part2Line5_Checkbox[0]', kind: 'checkbox', value: useSeparateMailing })
+  ops.push({ field: 'form1[0].Page2[0].Part2Line5_Checkbox[1]', kind: 'checkbox', value: !useSeparateMailing })
 
   // Line 7 — physical address (only populated when mailing ≠ physical)
   if (useSeparateMailing) {
