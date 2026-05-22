@@ -280,7 +280,7 @@ async function readAllAcroFields(
 import { PDFTextField, PDFCheckBox, PDFDropdown } from 'pdf-lib'
 
 describe('systematic PDF field readback — I-821', () => {
-  it('every text op from buildI821Ops is readable back with correct value', async () => {
+  it('every text AND checkbox op from buildI821Ops is readable back with correct value', async () => {
     const result = await buildPacket(fixtureInitialPath)
     const zip = await JSZip.loadAsync(result.zipBytes)
     const pdfBytes = await zip.file('I-821.pdf')!.async('uint8array')
@@ -291,12 +291,31 @@ describe('systematic PDF field readback — I-821', () => {
     const checked: string[] = []
     let skippedCheckboxes = 0
 
+    // Known XFA ghost fields that don't exist in AcroForm after XFA strip.
+    // These are duplicated Part 7 items that pdf-lib creates ops for
+    // but the actual PDF only has one copy of the field.
+    const KNOWN_MISSING_CHECKBOX_FIELDS = new Set([
+      'form1[0].Page07[0].Part7_Item4c_YN[0]',
+      'form1[0].Page07[0].Part7_Item4c_YN[1]',
+    ])
+
     for (const op of ops) {
-      if (op.kind === 'checkbox') {
-        // Checkboxes in USCIS XFA-hybrid PDFs have unpredictable readback
-        // behavior after XFA strip. Count but don't fail on them — the
-        // existing spot-check tests already verify key checkboxes.
+      if (KNOWN_MISSING_CHECKBOX_FIELDS.has(op.field)) {
         skippedCheckboxes++
+        continue
+      }
+      if (op.kind === 'checkbox') {
+        // Checkbox readback: verify checked/unchecked state matches the op
+        const entry = fields.get(op.field)
+        if (!entry) {
+          mismatches.push(`MISSING_CHECKBOX: ${op.field}`)
+          continue
+        }
+        const expected = op.value === true || op.value === 'Yes'
+        if (entry.value !== expected) {
+          mismatches.push(`CHECKBOX_MISMATCH: ${op.field} (expected=${expected}, actual=${entry.value})`)
+        }
+        checked.push(op.field)
         continue
       }
       const entry = fields.get(op.field)
@@ -320,13 +339,14 @@ describe('systematic PDF field readback — I-821', () => {
     }
 
     // Evidence: how many fields were systematically verified?
-    expect(checked.length).toBeGreaterThanOrEqual(15)
+    // With checkbox readback enabled, we verify text + checkbox fields.
+    expect(checked.length).toBeGreaterThanOrEqual(50)
     expect(mismatches).toEqual([])
   })
 })
 
 describe('systematic PDF field readback — I-765', () => {
-  it('every text op from buildI765Ops is readable back with correct value', async () => {
+  it('every text AND checkbox op from buildI765Ops is readable back with correct value', async () => {
     const result = await buildPacket(fixtureInitialPath)
     const zip = await JSZip.loadAsync(result.zipBytes)
     const pdfBytes = await zip.file('I-765.pdf')!.async('uint8array')
@@ -339,7 +359,17 @@ describe('systematic PDF field readback — I-765', () => {
 
     for (const op of ops) {
       if (op.kind === 'checkbox') {
-        skippedCheckboxes++
+        // I-765 has no known XFA ghost fields — all checkboxes readable
+        const entry = fields.get(op.field)
+        if (!entry) {
+          mismatches.push(`MISSING_CHECKBOX: ${op.field}`)
+          continue
+        }
+        const expected = op.value === true || op.value === 'Yes'
+        if (entry.value !== expected) {
+          mismatches.push(`CHECKBOX_MISMATCH: ${op.field} (expected=${expected}, actual=${entry.value})`)
+        }
+        checked.push(op.field)
         continue
       }
       const entry = fields.get(op.field)
