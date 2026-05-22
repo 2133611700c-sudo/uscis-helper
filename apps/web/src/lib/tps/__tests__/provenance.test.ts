@@ -17,8 +17,10 @@ import {
   defaultProvenance,
   buildAuditRows,
   summarizeProvenance,
+  buildProvenanceFromWizard,
   type ProvenanceMap,
   type PdfAuditRow,
+  type ProvenanceInput,
 } from '../provenance'
 
 describe('provenance factory helpers', () => {
@@ -125,5 +127,137 @@ describe('summarizeProvenance', () => {
     expect(serialized).not.toContain('TESTFAMILY')
     expect(serialized).not.toContain('1980')
     expect(serialized).not.toContain('XX0000000')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Phase 2: buildProvenanceFromWizard tests
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('buildProvenanceFromWizard', () => {
+  const passportField = (field: string, value: string, conf = 0.95): ProvenanceInput => ({
+    value,
+    source: 'ocr_mrz',
+    doc_slot: 'passport',
+    confidence: conf,
+    source_field: field,
+  })
+
+  const i94Field = (field: string, value: string, conf = 0.85): ProvenanceInput => ({
+    value,
+    source: 'ai_brain',
+    doc_slot: 'i94',
+    confidence: conf,
+    source_field: field,
+  })
+
+  const dlField = (field: string, value: string): ProvenanceInput => ({
+    value,
+    source: 'ocr_keyword',
+    doc_slot: 'dl',
+    confidence: 0.9,
+    source_field: field,
+  })
+
+  it('preserves passport OCR provenance for identity fields', () => {
+    const merged: Record<string, ProvenanceInput> = {
+      family_name: passportField('family_name', 'TESTNAME'),
+      dob: passportField('dob', '1986-06-25'),
+    }
+    const map = buildProvenanceFromWizard(merged, {}, ['family_name', 'dob'])
+    expect(map.family_name.source_document_type).toBe('passport')
+    expect(map.family_name.extraction_method).toBe('ocr_mrz')
+    expect(map.family_name.confidence).toBe(0.95)
+    expect(map.family_name.value_status).toBe('auto_with_source')
+    expect(map.dob.source_document_type).toBe('passport')
+  })
+
+  it('preserves I-94 Brain provenance for immigration fields', () => {
+    const merged: Record<string, ProvenanceInput> = {
+      last_entry_date: i94Field('last_entry_date', '2022-09-09'),
+      status_at_last_entry: i94Field('status_at_last_entry', 'UH'),
+    }
+    const map = buildProvenanceFromWizard(merged, {}, ['last_entry_date', 'status_at_last_entry'])
+    expect(map.last_entry_date.source_document_type).toBe('i94')
+    expect(map.last_entry_date.extraction_method).toBe('ai_brain')
+    expect(map.last_entry_date.confidence).toBe(0.85)
+  })
+
+  it('marks user correction when manual override differs from OCR', () => {
+    const merged: Record<string, ProvenanceInput> = {
+      family_name: passportField('family_name', 'REDACTED'),
+    }
+    const manual = { family_name: 'REDACTED' } // user corrected spelling
+    const map = buildProvenanceFromWizard(merged, manual, ['family_name'])
+    expect(map.family_name.user_review_status).toBe('corrected')
+    expect(map.family_name.value_status).toBe('user_manual')
+  })
+
+  it('keeps OCR provenance when manual matches OCR (user confirmed)', () => {
+    const merged: Record<string, ProvenanceInput> = {
+      family_name: passportField('family_name', 'REDACTED'),
+    }
+    const manual = { family_name: 'REDACTED' } // same value = confirmed
+    const map = buildProvenanceFromWizard(merged, manual, ['family_name'])
+    expect(map.family_name.value_status).toBe('auto_with_source')
+    expect(map.family_name.source_document_type).toBe('passport')
+  })
+
+  it('marks manual entry when no OCR source exists', () => {
+    const merged: Record<string, ProvenanceInput> = {}
+    const manual = { daytime_phone: '2131234567' }
+    const map = buildProvenanceFromWizard(merged, manual, ['daytime_phone'])
+    expect(map.daytime_phone.value_status).toBe('user_manual')
+    expect(map.daytime_phone.user_review_status).toBe('manual_entry')
+  })
+
+  it('marks system default for known default fields without source', () => {
+    const merged: Record<string, ProvenanceInput> = {}
+    const map = buildProvenanceFromWizard(merged, {}, ['country_of_nationality'])
+    expect(map.country_of_nationality.value_status).toBe('system_default')
+    expect(map.country_of_nationality.extraction_method).toBe('system_default')
+  })
+
+  it('DL cannot provide immigration provenance (slot firewall)', () => {
+    const merged: Record<string, ProvenanceInput> = {
+      a_number: dlField('a_number', '123456789'),
+      last_entry_date: dlField('last_entry_date', '2022-01-01'),
+      passport_number: dlField('passport_number', 'EK790396'),
+    }
+    const map = buildProvenanceFromWizard(merged, {}, ['a_number', 'last_entry_date', 'passport_number'])
+    // All three should be rejected as DL provenance for immigration fields
+    for (const key of ['a_number', 'last_entry_date', 'passport_number']) {
+      expect(map[key].source_document_type).not.toBe('driver_license')
+    }
+  })
+
+  it('DL CAN provide address provenance (allowed cross-check)', () => {
+    const merged: Record<string, ProvenanceInput> = {
+      us_address_street: dlField('us_address_street', '1213 GORDON ST'),
+      us_address_city: dlField('us_address_city', 'LOS ANGELES'),
+    }
+    const map = buildProvenanceFromWizard(merged, {}, ['us_address_street', 'us_address_city'])
+    expect(map.us_address_street.source_document_type).toBe('driver_license')
+    expect(map.us_address_city.source_document_type).toBe('driver_license')
+  })
+
+  it('omits provenance entry for fields with no source and no default', () => {
+    const merged: Record<string, ProvenanceInput> = {}
+    const map = buildProvenanceFromWizard(merged, {}, ['ssn'])
+    expect(map.ssn).toBeUndefined()
+  })
+
+  it('auto field without provenance must fail audit (detected via audit rows)', () => {
+    // Simulate: a field has a value in answers but no provenance entry
+    const provMap: ProvenanceMap = {} // empty — no provenance for family_name
+    const ops = [
+      { field: 'Part2_FamilyName', kind: 'text' as const, value: 'SOME_VALUE' },
+    ]
+    const rows = buildAuditRows(ops, 'I-821', provMap, new Set(['Part2_FamilyName']))
+    expect(rows[0].source_document_type).toBe('unknown')
+    expect(rows[0].extraction_method).toBe('unknown')
+    // This field is auto-filled (pdf_written=true) but has unknown provenance — audit flag
+    expect(rows[0].pdf_written).toBe(true)
+    expect(rows[0].user_review_status).toBe('unknown')
   })
 })

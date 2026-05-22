@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { isMinimallyComplete, type TPSAnswers, defaultEadCategoryFor } from '@/lib/tps/answers'
 import { buildPacket } from '@/lib/tps/packetBuilder'
+import type { ProvenanceMap } from '@/lib/tps/provenance'
 
 // R1A Phase 6 — pre-PDF firewall.
 // Final safety net BEFORE pdf-lib touches anything. Three checks:
@@ -104,8 +105,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Body must be a TPSAnswers object' }, { status: 400 })
   }
 
+  // Phase 2: extract provenance sidecar (optional, backward-compatible).
+  // The wizard sends { ...answers, _provenance: ProvenanceMap }.
+  // Strip _provenance from the answers object before validation.
+  const rawBody = body as Record<string, unknown>
+  const provenance: ProvenanceMap | null =
+    rawBody._provenance && typeof rawBody._provenance === 'object'
+      ? (rawBody._provenance as ProvenanceMap)
+      : null
+  delete rawBody._provenance
+
   // Normalize: fill ead_category from filing_path if missing.
-  const answers = body as TPSAnswers
+  const answers = rawBody as unknown as TPSAnswers
   if (answers.wants_ead && !answers.ead_category) {
     answers.ead_category = defaultEadCategoryFor(answers.filing_path)
   }
@@ -134,7 +145,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await buildPacket(answers)
+    const result = await buildPacket(answers, provenance)
     return new NextResponse(new Uint8Array(result.zipBytes), {
       status: 200,
       headers: {
