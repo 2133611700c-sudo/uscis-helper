@@ -211,11 +211,11 @@ describe('buildProvenanceFromWizard', () => {
     expect(map.daytime_phone.user_review_status).toBe('manual_entry')
   })
 
-  it('marks system default for known default fields without source', () => {
+  it('marks system default only for workflow fields, not biographic', () => {
     const merged: Record<string, ProvenanceInput> = {}
-    const map = buildProvenanceFromWizard(merged, {}, ['country_of_nationality'])
-    expect(map.country_of_nationality.value_status).toBe('system_default')
-    expect(map.country_of_nationality.extraction_method).toBe('system_default')
+    const map = buildProvenanceFromWizard(merged, {}, ['mailing_same_as_physical'])
+    expect(map.mailing_same_as_physical.value_status).toBe('system_default')
+    expect(map.mailing_same_as_physical.extraction_method).toBe('system_default')
   })
 
   it('DL cannot provide immigration provenance (slot firewall)', () => {
@@ -259,5 +259,75 @@ describe('buildProvenanceFromWizard', () => {
     // This field is auto-filled (pdf_written=true) but has unknown provenance — audit flag
     expect(rows[0].pdf_written).toBe(true)
     expect(rows[0].user_review_status).toBe('unknown')
+  })
+
+  it('reverse mapping resolves I-821 PDF fields to canonical keys', () => {
+    const provMap: ProvenanceMap = {
+      family_name: ocrProvenance('passport', 'ocr_mrz', 0.95, 'family_name'),
+      dob: ocrProvenance('passport', 'ocr_mrz', 0.95, 'dob'),
+      us_address_street: ocrProvenance('driver_license', 'ocr_rule_parser', 0.9, 'us_address_street'),
+      a_number: ocrProvenance('ead', 'ai_brain', 0.85, 'a_number'),
+      passport_number: ocrProvenance('passport', 'ocr_mrz', 0.95, 'passport_number'),
+      i94_admission_number: ocrProvenance('i94', 'ai_brain', 0.85, 'i94_admission_number'),
+    }
+    const ops = [
+      { field: 'form1[0].Page01[0].Part2_Item1_FamilyName[0]', kind: 'text' as const, value: 'TEST' },
+      { field: 'form1[0].Page02[0].Part2_Item10_DateOfBirth[0]', kind: 'text' as const, value: '01/01/1990' },
+      { field: 'form1[0].Page02[0].Part2_Item4_StreetNumberName[0]', kind: 'text' as const, value: '123 ST' },
+      { field: 'form1[0].Page02[0].Part2_Item7_AlienNumber[0]', kind: 'text' as const, value: '123456789' },
+      { field: 'form1[0].Page03[0].Part2_Item22_Passport[0]', kind: 'text' as const, value: 'EK123456' },
+      { field: 'form1[0].Page03[0].Part2_Item22_I94[0]', kind: 'text' as const, value: '12345678901' },
+    ]
+    const applied = new Set(ops.map(o => o.field))
+    const rows = buildAuditRows(ops, 'I-821', provMap, applied)
+
+    // All 6 should resolve to known canonical keys and find provenance
+    expect(rows[0].canonical_field).toBe('family_name')
+    expect(rows[0].source_document_type).toBe('passport')
+    expect(rows[1].canonical_field).toBe('dob')
+    expect(rows[1].source_document_type).toBe('passport')
+    expect(rows[2].canonical_field).toBe('us_address_street')
+    expect(rows[2].source_document_type).toBe('driver_license')
+    expect(rows[3].canonical_field).toBe('a_number')
+    expect(rows[3].source_document_type).toBe('ead')
+    expect(rows[4].canonical_field).toBe('passport_number')
+    expect(rows[4].source_document_type).toBe('passport')
+    expect(rows[5].canonical_field).toBe('i94_admission_number')
+    expect(rows[5].source_document_type).toBe('i94')
+    // None should be 'unknown'
+    for (const r of rows) {
+      expect(r.source_document_type).not.toBe('unknown')
+    }
+  })
+
+  it('reverse mapping resolves I-765 PDF fields to canonical keys', () => {
+    const provMap: ProvenanceMap = {
+      family_name: ocrProvenance('passport', 'ocr_mrz', 0.95, 'family_name'),
+      dob: ocrProvenance('passport', 'ocr_mrz', 0.95, 'dob'),
+      passport_number: ocrProvenance('passport', 'ocr_mrz', 0.95, 'passport_number'),
+      last_entry_date: ocrProvenance('i94', 'ocr_rule_parser', 0.9, 'last_entry_date'),
+    }
+    const ops = [
+      { field: 'form1[0].Page1[0].Line1a_FamilyName[0]', kind: 'text' as const, value: 'TEST' },
+      { field: 'form1[0].Page3[0].Line19_DOB[0]', kind: 'text' as const, value: '01/01/1990' },
+      { field: 'form1[0].Page3[0].Line20b_Passport[0]', kind: 'text' as const, value: 'EK123456' },
+      { field: 'form1[0].Page3[0].Line21_DateOfLastEntry[0]', kind: 'text' as const, value: '09/09/2022' },
+    ]
+    const applied = new Set(ops.map(o => o.field))
+    const rows = buildAuditRows(ops, 'I-765', provMap, applied)
+
+    expect(rows[0].canonical_field).toBe('family_name')
+    expect(rows[0].source_document_type).toBe('passport')
+    expect(rows[1].canonical_field).toBe('dob')
+    expect(rows[2].canonical_field).toBe('passport_number')
+    expect(rows[3].canonical_field).toBe('last_entry_date')
+    expect(rows[3].source_document_type).toBe('i94')
+  })
+
+  it('system_default no longer includes country_of_birth', () => {
+    const merged: Record<string, ProvenanceInput> = {}
+    const map = buildProvenanceFromWizard(merged, {}, ['country_of_birth'])
+    // country_of_birth should NOT be auto-filled as system_default
+    expect(map.country_of_birth).toBeUndefined()
   })
 })
