@@ -1247,7 +1247,7 @@ function RW({
           <div style={{ fontSize: 13, color: TEXT_HINT }}>{source}</div>
         )}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', flexShrink: 1, minWidth: 0, maxWidth: '60%' }}>
         {missing ? (
           <div
             style={{
@@ -1256,13 +1256,14 @@ function RW({
               color: TEXT_MUTED,
               textAlign: 'right',
               maxWidth: 240,
+              wordBreak: 'break-word',
             }}
           >
             {value}
           </div>
         ) : (
           <>
-            <div style={{ fontSize: 17, fontWeight: 700, textAlign: 'right' }}>{value}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, textAlign: 'right', wordBreak: 'break-word' }}>{value}</div>
             {reviewBadge && (
               <span
                 style={{
@@ -1562,6 +1563,15 @@ export default function TPSWizardV2({ locale }: Props) {
         setStep(6)
       }
     }
+
+    // Owner access: check if the current user is the site owner.
+    // If so, skip Stripe entirely — set paid=true so the Generate button
+    // appears instead of the Pay button. This does NOT auto-generate;
+    // the owner still reviews fields and clicks Generate manually.
+    fetch('/api/owner/status')
+      .then((r) => r.json())
+      .then((d) => { if (d?.owner) setData((prev) => ({ ...prev, paid: true })) })
+      .catch(() => { /* not owner, normal flow */ })
   }, [])
 
   useEffect(() => {
