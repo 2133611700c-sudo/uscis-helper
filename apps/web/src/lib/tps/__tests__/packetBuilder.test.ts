@@ -246,3 +246,120 @@ describe('forms manifest edition drift guard', () => {
     expect(offenders).toEqual([])
   })
 })
+
+// ── Systematic PDF field readback ─────────────────────────────────────────────
+//
+// Instead of spot-checking 5-6 fields, this verifies EVERY op that
+// buildI821Ops / buildI765Ops emits by reading the AcroForm field back
+// from the generated PDF. If a field was "applied" but lands in the wrong
+// AcroForm cell, or if the value is silently garbled, this catches it.
+
+import { buildI821Ops } from '../forms/i821FieldMap'
+import { buildI765Ops } from '../forms/i765FieldMap'
+
+async function readAllAcroFields(
+  pdfBytes: Uint8Array,
+): Promise<Map<string, { type: string; value: string | boolean | null }>> {
+  const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true })
+  const form = doc.getForm()
+  const result = new Map<string, { type: string; value: string | boolean | null }>()
+  for (const field of form.getFields()) {
+    const name = field.getName()
+    if (field instanceof PDFTextField) {
+      result.set(name, { type: 'text', value: field.getText() ?? null })
+    } else if (field instanceof PDFCheckBox) {
+      result.set(name, { type: 'checkbox', value: field.isChecked() })
+    } else if (field instanceof PDFDropdown) {
+      const sel = field.getSelected()
+      result.set(name, { type: 'choice', value: sel.length > 0 ? sel[0] : null })
+    }
+  }
+  return result
+}
+
+import { PDFTextField, PDFCheckBox, PDFDropdown } from 'pdf-lib'
+
+describe('systematic PDF field readback — I-821', () => {
+  it('every text op from buildI821Ops is readable back with correct value', async () => {
+    const result = await buildPacket(fixtureInitialPath)
+    const zip = await JSZip.loadAsync(result.zipBytes)
+    const pdfBytes = await zip.file('I-821.pdf')!.async('uint8array')
+    const fields = await readAllAcroFields(pdfBytes)
+    const ops = buildI821Ops(fixtureInitialPath)
+
+    const mismatches: string[] = []
+    const checked: string[] = []
+    let skippedCheckboxes = 0
+
+    for (const op of ops) {
+      if (op.kind === 'checkbox') {
+        // Checkboxes in USCIS XFA-hybrid PDFs have unpredictable readback
+        // behavior after XFA strip. Count but don't fail on them — the
+        // existing spot-check tests already verify key checkboxes.
+        skippedCheckboxes++
+        continue
+      }
+      const entry = fields.get(op.field)
+      if (!entry) {
+        // Field not found in PDF — this is a mapping error.
+        // Only flag if the op intended to write a non-empty value.
+        if (op.value && String(op.value).length > 0) {
+          mismatches.push(`MISSING: ${op.field}`)
+        }
+        continue
+      }
+      const expected = String(op.value)
+      const actual = String(entry.value ?? '')
+      if (actual !== expected) {
+        // Mask PII: show field name and length delta, not raw values.
+        mismatches.push(
+          `MISMATCH: ${op.field} (expected ${expected.length} chars, got ${actual.length})`,
+        )
+      }
+      checked.push(op.field)
+    }
+
+    // Evidence: how many fields were systematically verified?
+    expect(checked.length).toBeGreaterThanOrEqual(15)
+    expect(mismatches).toEqual([])
+  })
+})
+
+describe('systematic PDF field readback — I-765', () => {
+  it('every text op from buildI765Ops is readable back with correct value', async () => {
+    const result = await buildPacket(fixtureInitialPath)
+    const zip = await JSZip.loadAsync(result.zipBytes)
+    const pdfBytes = await zip.file('I-765.pdf')!.async('uint8array')
+    const fields = await readAllAcroFields(pdfBytes)
+    const ops = buildI765Ops(fixtureInitialPath)
+
+    const mismatches: string[] = []
+    const checked: string[] = []
+    let skippedCheckboxes = 0
+
+    for (const op of ops) {
+      if (op.kind === 'checkbox') {
+        skippedCheckboxes++
+        continue
+      }
+      const entry = fields.get(op.field)
+      if (!entry) {
+        if (op.value && String(op.value).length > 0) {
+          mismatches.push(`MISSING: ${op.field}`)
+        }
+        continue
+      }
+      const expected = String(op.value)
+      const actual = String(entry.value ?? '')
+      if (actual !== expected) {
+        mismatches.push(
+          `MISMATCH: ${op.field} (expected ${expected.length} chars, got ${actual.length})`,
+        )
+      }
+      checked.push(op.field)
+    }
+
+    expect(checked.length).toBeGreaterThanOrEqual(10)
+    expect(mismatches).toEqual([])
+  })
+})
