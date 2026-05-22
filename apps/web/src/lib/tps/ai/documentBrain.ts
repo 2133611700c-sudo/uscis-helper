@@ -560,6 +560,8 @@ export function validateBrainField(
  *   Visual Latin       D MMM YYYY   "01 JAN 1985", "1 Jan 1985", "01-JAN-1985"
  *   Visual Cyrillic    D Місяць YYYY   "01 СІЧ 1985" (uk), "01 ЯНВ 1985" (ru)
  *                     also accepts 2-digit year on visual Cyrillic forms
+ *   CBP I-94           YYYY Month DD   "2022 September 09"  (year-first)
+ *   US standard        Month DD, YYYY  "September 09, 2022" (month-first, comma optional)
  *   MRZ TD3 slice      YYMMDD       century resolved (YY > now+10 ⇒ 19YY)
  *
  * Two-digit-year rule: YY > (currentYear % 100) + 10 ⇒ 19YY, else 20YY.
@@ -642,6 +644,24 @@ function parseDate(s: string): Date | null {
       const y = m[3].length === 2 ? resolveCentury(yRaw) : yRaw
       return mkUtc(y, mo, +m[1])
     }
+  }
+
+  // YYYY MonthName DD — CBP I-94 format ("2022 September 09", "2024 June 15").
+  // Year comes first, then full or abbreviated English month, then day.
+  m = t.match(/^(\d{4})[\s\-\/.]+([A-Za-z]{3,})[\s\-\/.]+(\d{1,2})$/u)
+  if (m) {
+    const tok = m[2].slice(0, 3).toUpperCase()
+    const mo = MONTHS_LATIN[tok]
+    if (mo) return mkUtc(+m[1], mo, +m[3])
+  }
+
+  // MonthName DD, YYYY — US standard ("September 09, 2022", "April 19, 2025").
+  // Comma after day is optional. Full or abbreviated month name.
+  m = t.match(/^([A-Za-z]{3,})[\s\-\/.]+(\d{1,2})[,\s\-\/.]+(\d{4})$/u)
+  if (m) {
+    const tok = m[1].slice(0, 3).toUpperCase()
+    const mo = MONTHS_LATIN[tok]
+    if (mo) return mkUtc(+m[3], mo, +m[2])
   }
 
   // MRZ TD3 birth slice (YYMMDD). Used when Brain forwards the raw MRZ slice.
