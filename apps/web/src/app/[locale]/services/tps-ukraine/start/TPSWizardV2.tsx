@@ -295,7 +295,7 @@ const T = {
       },
       dl: {
         ic: '🪪',
-        lb: "Driver's License або State ID (необов'язково)",
+        lb: "Driver's License або State ID",
         ht: 'Допоможе автоматично заповнити адресу в США',
       },
     },
@@ -490,7 +490,7 @@ const T = {
       },
       dl: {
         ic: '🪪',
-        lb: "Driver's License или State ID (необязательно)",
+        lb: "Driver's License или State ID",
         ht: 'Поможет автоматически заполнить адрес в США',
       },
     },
@@ -684,7 +684,7 @@ const T = {
       },
       dl: {
         ic: '🪪',
-        lb: "Driver's License or State ID (optional)",
+        lb: "Driver's License or State ID",
         ht: 'Auto-fills your US address',
       },
     },
@@ -879,7 +879,7 @@ const T = {
       },
       dl: {
         ic: '🪪',
-        lb: "Licencia de conducir o State ID (opcional)",
+        lb: "Licencia de conducir o State ID",
         ht: 'Llena automáticamente la dirección en EE. UU.',
       },
     },
