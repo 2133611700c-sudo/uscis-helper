@@ -164,3 +164,17 @@ jobs:
 
       - name: Production build
         run: pnpm --filter web build
+
+      # ───────────────────────────────────────────────────────────────
+      # Test suite — includes PDF readback via pdftotext (poppler)
+      # ───────────────────────────────────────────────────────────────
+
+      - name: Install poppler-utils for PDF readback tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          echo "pdftotext version:"
+          pdftotext -v 2>&1 | head -1
+
+      - name: Run tests
+        run: pnpm --filter web test
