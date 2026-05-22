@@ -1292,12 +1292,18 @@ function FieldInput({
   tip,
   value,
   onChange,
+  inputMode,
+  maxLength,
+  error,
 }: {
   label: string
   placeholder: string
   tip: string
   value: string
   onChange: (v: string) => void
+  inputMode?: 'text' | 'tel' | 'email' | 'numeric'
+  maxLength?: number
+  error?: string
 }) {
   return (
     <div style={{ marginBottom: 2 }}>
@@ -1308,16 +1314,20 @@ function FieldInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        inputMode={inputMode}
+        maxLength={maxLength}
         style={{
           width: '100%',
           padding: '10px 12px',
-          border: `1.5px solid ${BORDER}`,
+          border: `1.5px solid ${error ? 'var(--error-border, #d33)' : BORDER}`,
           borderRadius: 10,
           fontSize: 17,
-          margin: '4px 0 10px',
+          margin: '4px 0 2px',
           fontFamily: 'inherit',
         }}
       />
+      {error && <div style={{ fontSize: 12, color: 'var(--error-text, #d33)', marginBottom: 8 }}>{error}</div>}
+      {!error && <div style={{ height: 8 }} />}
     </div>
   )
 }
@@ -1890,6 +1900,9 @@ export default function TPSWizardV2({ locale }: Props) {
         i94_admission_number: v('i94_admission_number'),
         last_entry_date: v('last_entry_date'),
         status_at_last_entry: v('status_at_last_entry'),
+        // Current immigration status: re-registration = already has TPS;
+        // initial = whatever they entered with (usually UHP/humanitarian parole)
+        current_immigration_status: filing_path === 're_registration' ? 'TPS' : v('status_at_last_entry'),
         filing_path,
         wants_ead: ead,
         ead_category: ead ? (data.type === 'init' ? 'c19' : 'a12') : null,
@@ -2825,10 +2838,13 @@ function ReviewManual({
       )}
       <FieldInput
         label={t.label.phone}
-        placeholder={t.label.phone}
+        placeholder="2131234567"
         tip={t.tip.phone}
         value={manual.daytime_phone || ''}
-        onChange={(v) => onChange({ daytime_phone: v })}
+        onChange={(v) => onChange({ daytime_phone: v.replace(/\D/g, '').slice(0, 10) })}
+        inputMode="tel"
+        maxLength={10}
+        error={manual.daytime_phone && manual.daytime_phone.replace(/\D/g, '').length !== 10 ? '10 digits required' : undefined}
       />
       <FieldInput
         label={t.label.email}
