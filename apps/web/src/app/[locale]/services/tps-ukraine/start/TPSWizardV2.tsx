@@ -1422,6 +1422,35 @@ function Nav({
   )
 }
 
+/**
+ * Ukrainian passports show "Місце народження" (place of birth) as an oblast
+ * or city, e.g. "ВІННИЦЬКА ОБЛ." or "м.ВІННИЦЯ". The AI often extracts this
+ * and puts it in country_of_birth.  USCIS forms ask for COUNTRY of birth,
+ * not region/city.
+ *
+ * This normalizer:
+ * 1. If the value looks like a country name already → keep it
+ * 2. If it contains "Ukr" → return "Ukraine"
+ * 3. If nationality is "Ukraine" and value is clearly a region → return "Ukraine"
+ * 4. Fallback: "Ukraine" (TPS Ukraine target audience)
+ */
+function normalizeCountryOfBirth(raw: string, nationality: string): string {
+  if (!raw) return nationality || 'Ukraine'
+  const lower = raw.toLowerCase().trim()
+  // Already a clean country name
+  if (lower === 'ukraine' || lower === 'україна') return 'Ukraine'
+  // Contains Ukrainian indicator — extract country
+  if (/\bukr/i.test(raw)) return 'Ukraine'
+  // Contains oblast/city indicators (Ukrainian documents)
+  if (/обл\.?|obl\.?|область|м\.|місто|city|village/i.test(raw)) {
+    return nationality || 'Ukraine'
+  }
+  // If it's a short clean string that looks like a country name, keep it
+  if (raw.length <= 30 && !/[,\/]/.test(raw)) return raw
+  // Contains slash or comma — likely "Oblast / Country" pattern
+  return nationality || 'Ukraine'
+}
+
 function navBtn(forward: boolean): React.CSSProperties {
   return {
     flex: 1,
@@ -1847,7 +1876,12 @@ export default function TPSWizardV2({ locale }: Props) {
         middle_name: v('middle_name') || v('patronymic'),
         dob: v('dob') || v('date_of_birth'),
         sex: (v('sex') === 'F' ? 'F' : 'M') as TPSAnswers['sex'],
-        country_of_birth: v('country_of_birth') || 'Ukraine',
+        // country_of_birth: Ukrainian passports store PLACE of birth (oblast/city)
+        // in the visual zone, but USCIS forms ask for COUNTRY of birth.
+        // If the AI extracted an oblast or city + country pattern, normalize
+        // to just the country name. For Ukrainian nationals: always "Ukraine"
+        // unless the value explicitly names a different country.
+        country_of_birth: normalizeCountryOfBirth(v('country_of_birth'), v('country_of_nationality')),
         country_of_nationality: v('country_of_nationality') || 'Ukraine',
         passport_number: v('passport_number'),
         passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
