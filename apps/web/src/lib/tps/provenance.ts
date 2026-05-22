@@ -142,24 +142,103 @@ interface OpLike {
 }
 
 /**
- * Map a canonical TPSAnswers key from an AcroForm field name.
- * Heuristic: extract the most specific Part/Item/Line identifier.
- * Falls back to the raw field name if no match.
+ * Comprehensive reverse mapping: PDF AcroForm field name → canonical TPSAnswers key.
+ *
+ * Built from i821FieldMap.ts and i765FieldMap.ts source code.
+ * Each entry maps a substring of the PDF field name to the canonical answer key.
+ * Order matters: more specific patterns first to avoid false matches.
  */
+const PDF_FIELD_TO_CANONICAL: Array<[substring: string, canonical: string]> = [
+  // ── I-821 Part 2 — Identity ───────────────────────────────────────────
+  ['Part2_Item1_FamilyName', 'family_name'],
+  ['Part2_Item1_GivenName', 'given_name'],
+  ['Part2_Item1_MiddleName', 'middle_name'],
+  ['Part2_Item4_StreetNumberName', 'us_address_street'],
+  ['Part2_Item4_CityOrTown', 'us_address_city'],
+  ['Part2_Item4_State', 'us_address_state'],
+  ['Part2_Item4_ZipCode', 'us_address_zip'],
+  ['Part2_Item4_AptSteFlrNumber', 'us_address_unit_number'],
+  ['Part2_Item4_InCareofName', 'us_address_in_care_of'],
+  ['Part2_Item5_YN', 'mailing_same_as_physical'],
+  ['Part2_Item6_StreetNumberName', 'mailing_street'],
+  ['Part2_Item6_CityOrTown', 'mailing_city'],
+  ['Part2_Item6_State', 'mailing_state'],
+  ['Part2_Item6_ZipCode', 'mailing_zip'],
+  ['Part2_Item7_AlienNumber', 'a_number'],
+  ['Part2_Item8_AcctIdentifier', 'uscis_online_account'],
+  ['Part2_Item9_SocialSecurityNumber', 'ssn'],
+  ['Part2_Item10_DateOfBirth', 'dob'],
+  ['Part2_Item11_DateOfBirth', 'dob'],
+  ['Part2_Item12_Sex', 'sex'],
+  ['Part2_Item13_CityOrTown', 'city_of_birth'],
+  ['Part2_Item14_CountryofBirth', 'country_of_birth'],
+  ['Part2_Item17_MaritalStatus', 'marital_status'],
+  ['Part2_Item19_ImmigrationStatus', 'status_at_last_entry'],
+  ['Part2_Item20_CityOrTown', 'port_of_entry_city'],
+  ['Part2_Item20_State', 'port_of_entry_state'],
+  ['Part2_Item21_AuthorizedPdofStay', 'authorized_stay'],
+  ['Part2_Item22_Passport', 'passport_number'],
+  ['Part2_Item22_I94', 'i94_admission_number'],
+  ['Part2_Item24_CountryofIssuance', 'passport_country_of_issuance'],
+  ['Part2_Item24_PassportExpiration', 'passport_expiration_date'],
+  ['Part2_Item18_DateLastEntry', 'last_entry_date'],
+  // ── I-821 Part 1 ──────────────────────────────────────────────────────
+  ['Part1_Item1_ApplicationType', 'filing_path'],
+  ['Part1_TPScountry', 'country_of_nationality'],
+  ['Part1_Item3_EADApp', 'wants_ead'],
+  // ── I-821 Part 3 — Biographic ─────────────────────────────────────────
+  ['Part3_Item1_Ethnicity', 'ethnicity'],
+  ['Part3_Item2_Race', 'race'],
+  ['Part3_Item3_Height', 'height'],
+  ['Part3_Item4_Weight', 'weight'],
+  ['Part3_Item5_EyeColor', 'eye_color'],
+  ['Part3_Item6_HairColor', 'hair_color'],
+  // ── I-821 Part 7 — Background questions ───────────────────────────────
+  ['Part7_Item', 'part7_background'],
+  // ── I-821 Part 8 — Contact ────────────────────────────────────────────
+  ['Part8_Item1_Phone', 'daytime_phone'],
+  ['Part8_Item2_Phone', 'mobile_phone'],
+  ['Part8_Item3_Email', 'email'],
+  // ── I-765 — Lines ─────────────────────────────────────────────────────
+  ['Line1a_FamilyName', 'family_name'],
+  ['Line1b_GivenName', 'given_name'],
+  ['Line1c_MiddleName', 'middle_name'],
+  ['Line4b_StreetNumberName', 'us_address_street'],
+  ['Pt2Line5_CityOrTown', 'us_address_city'],
+  ['Pt2Line5_State', 'us_address_state'],
+  ['Pt2Line5_ZipCode', 'us_address_zip'],
+  ['Pt2Line5_AptSteFlrNumber', 'us_address_unit_number'],
+  ['Part2Line5_Checkbox', 'mailing_same_as_physical'],
+  ['Pt2Line7_StreetNumberName', 'us_address_street'],
+  ['Pt2Line7_CityOrTown', 'us_address_city'],
+  ['Pt2Line7_State', 'us_address_state'],
+  ['Pt2Line7_ZipCode', 'us_address_zip'],
+  ['Line7_AlienNumber', 'a_number'],
+  ['Line9_Checkbox', 'sex'],
+  ['Line10_Checkbox', 'race'],
+  ['Line12b_SSN', 'ssn'],
+  ['Line18a_CityTownOfBirth', 'city_of_birth'],
+  ['Line18c_CountryOfBirth', 'country_of_birth'],
+  ['Line19_DOB', 'dob'],
+  ['Line20a_I94Number', 'i94_admission_number'],
+  ['Line20b_Passport', 'passport_number'],
+  ['Line20d_CountryOfIssuance', 'passport_country_of_issuance'],
+  ['Line20e_ExpDate', 'passport_expiration_date'],
+  ['Line21_DateOfLastEntry', 'last_entry_date'],
+  ['Line23_StatusLastEntry', 'status_at_last_entry'],
+  ['Line24_CurrentStatus', 'current_immigration_status'],
+  ['Part1_Checkbox', 'filing_path'],
+  // ── I-765 category code ───────────────────────────────────────────────
+  ['section_1', 'ead_category'],
+]
+
 function canonicalKeyFromPdfField(pdfField: string): string {
-  // e.g. 'form1[0].Page01[0].Part2_Item1_FamilyName[0]' → 'family_name'
+  for (const [substring, canonical] of PDF_FIELD_TO_CANONICAL) {
+    if (pdfField.includes(substring)) return canonical
+  }
+  // Fallback: extract last segment for unmapped fields
   const last = pdfField.split('.').pop() ?? pdfField
-  const base = last.replace(/\[\d+\]$/g, '')
-  // Common mappings
-  if (base.includes('FamilyName')) return 'family_name'
-  if (base.includes('GivenName')) return 'given_name'
-  if (base.includes('MiddleName')) return 'middle_name'
-  if (base.includes('DOB') || base.includes('DateOfBirth')) return 'dob'
-  if (base.includes('PassportNumber')) return 'passport_number'
-  if (base.includes('AlienNumber') || base.includes('A_Number')) return 'a_number'
-  if (base.includes('StreetNumberName')) return 'us_address_street'
-  if (base.includes('TPScountry')) return 'country_of_nationality'
-  return base
+  return last.replace(/\[\d+\]$/g, '')
 }
 
 /**
@@ -268,12 +347,10 @@ function toSourceDocType(docSlot: string): SourceDocumentType {
 
 /**
  * Known system defaults for TPS-Ukraine filing.
- * These fields get auto-populated with hardcoded values when no OCR source exists.
+ * ONLY workflow/filing choices — NOT biographic/citizenship fields.
+ * country_of_birth/nationality/issuance REQUIRE document evidence or user review.
  */
 const SYSTEM_DEFAULT_FIELDS: Record<string, string> = {
-  country_of_birth: 'Ukraine',
-  country_of_nationality: 'Ukraine',
-  passport_country_of_issuance: 'Ukraine',
   mailing_same_as_physical: 'true',
 }
 
