@@ -194,8 +194,10 @@ export async function prefill(
     }
   }
 
-  // 2. Stamp watermark and provenance line.
-  await stampDraftAndProvenance(pdfDoc, opts)
+  // 2. Client-facing PDFs are clean USCIS forms — no watermarks, no draft
+  //    marks, no Messenginfo branding. All warnings and disclaimers live
+  //    in the separate Instruction.pdf, not stamped onto official forms.
+  //    Internal audit/provenance stays inside the system only.
 
   // 3. Update field appearances so the values display in any viewer.
   // Best-effort try here, but ALSO pass updateFieldAppearances: false to
