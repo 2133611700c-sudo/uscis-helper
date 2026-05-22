@@ -16,7 +16,7 @@
  */
 
 import type { TPSAnswers } from '../answers'
-import { toUscisDate } from '../answers'
+import { toUscisDate, normalizeCountryOfBirth } from '../answers'
 
 export interface I765Op {
   field: string
@@ -128,7 +128,7 @@ export function buildI765Ops(a: TPSAnswers): I765Op[] {
 
   // ── Page 3: identity continued ─────────────────────────────────────────────
   ops.push({ field: 'form1[0].Page3[0].Line18a_CityTownOfBirth[0]', kind: 'text', value: a.city_of_birth ?? '' })
-  ops.push({ field: 'form1[0].Page3[0].Line18c_CountryOfBirth[0]',  kind: 'text', value: a.country_of_birth })
+  ops.push({ field: 'form1[0].Page3[0].Line18c_CountryOfBirth[0]',  kind: 'text', value: normalizeCountryOfBirth(a.country_of_birth, a.country_of_nationality) })
   ops.push({ field: 'form1[0].Page3[0].Line19_DOB[0]',              kind: 'text', value: toUscisDate(a.dob) })
 
   // ── Page 3: passport (Line 20) ─────────────────────────────────────────────
