@@ -334,6 +334,36 @@ button, a {
 .dark .bg-blue-50          { background-color: rgba(59,130,246,0.1) !important; }
 .dark .bg-green-50         { background-color: rgba(34,197,94,0.1) !important; }
 
+/* ── Amber/Yellow/Red/Orange alert surfaces ── */
+.dark .bg-amber-50         { background-color: rgba(217,119,6,0.12) !important; }
+.dark .bg-amber-100        { background-color: rgba(217,119,6,0.18) !important; }
+.dark .bg-yellow-50        { background-color: rgba(234,179,8,0.10) !important; }
+.dark .bg-yellow-100       { background-color: rgba(234,179,8,0.15) !important; }
+.dark .bg-red-50           { background-color: rgba(239,68,68,0.10) !important; }
+.dark .bg-red-100          { background-color: rgba(239,68,68,0.15) !important; }
+.dark .bg-orange-100       { background-color: rgba(249,115,22,0.15) !important; }
+
+/* ── Amber/Yellow/Red text (light mode dark → dark mode light) ── */
+.dark .text-amber-600      { color: #fbbf24 !important; }
+.dark .text-amber-700      { color: #fcd34d !important; }
+.dark .text-amber-800      { color: #fde68a !important; }
+.dark .text-amber-900      { color: #fef3c7 !important; }
+.dark .text-yellow-700     { color: #fde68a !important; }
+.dark .text-yellow-800     { color: #fef3c7 !important; }
+.dark .text-red-600        { color: #fca5a5 !important; }
+.dark .text-red-700        { color: #fecaca !important; }
+.dark .text-red-800        { color: #fee2e2 !important; }
+.dark .text-red-900        { color: #fee2e2 !important; }
+.dark .text-red-500        { color: #f87171 !important; }
+.dark .text-orange-800     { color: #fed7aa !important; }
+
+/* ── Amber/Red borders ── */
+.dark .border-amber-200    { border-color: rgba(217,119,6,0.35) !important; }
+.dark .border-amber-300    { border-color: rgba(217,119,6,0.45) !important; }
+.dark .border-amber-400    { border-color: rgba(217,119,6,0.55) !important; }
+.dark .border-red-200      { border-color: rgba(239,68,68,0.30) !important; }
+.dark .border-red-300      { border-color: rgba(239,68,68,0.40) !important; }
+
 /* ── Header/nav in dark mode ── */
 .dark [data-site-header]   { background-color: var(--surface-1) !important; border-color: var(--border) !important; }
 

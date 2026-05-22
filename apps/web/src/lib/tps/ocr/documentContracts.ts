@@ -28,6 +28,7 @@ export type SlotId =
   | 'ead'
   | 'ead_old'
   | 'tps_notice'
+  | 'i797'  // alias for tps_notice — used as docTypeHint in OCR route
   | 'photo'
   | 'dl' // U.S. driver's license / state ID — used by re-parole wizard
 
@@ -188,6 +189,39 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'ead_category_on_card',
       'ead_expiration_date',
       'passport_expiration_date',
+    ],
+  },
+  // I-797 alias — same family as tps_notice but used directly as docTypeHint
+  // in the OCR route. Adds I-797-specific fields (receipt_number, dates, etc.)
+  i797: {
+    slot: 'i797',
+    allowed_document_types: ['i797'],
+    allowed_fields: [
+      'a_number',
+      'receipt_number',
+      'notice_date',
+      'received_date',
+      'notice_type',
+      'form_type',
+      'family_name',
+      'given_name',
+      'dob',
+      'country_of_citizenship',
+    ],
+    forbidden_fields: [
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'last_entry_date',
+      'status_at_last_entry',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'passport_number',
+      'passport_expiration_date',
+      'passport_country_of_issuance',
+      'us_address_street',
+      'us_address_city',
+      'us_address_state',
+      'us_address_zip',
     ],
   },
   // U.S. driver's license / state ID — used by the re-parole wizard to
