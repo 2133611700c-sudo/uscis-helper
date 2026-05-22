@@ -86,25 +86,25 @@
     }
   },
   "services": {
-    "title": "What do you need help with?",
-    "subtitle": "Select a topic to find official guidance, document checklists, and next steps."
+    "title": "Your USCIS forms — filled, translated, ready to file",
+    "subtitle": "Upload your passport and documents — get a complete filing package. In your language, following official USCIS rules. You review, sign, and file yourself."
   },
   "cards": {
     "parole-expires-soon": {
       "title": "My Parole Is Expiring Soon",
-      "shortProblem": "Understand your options before your humanitarian parole expires."
+      "shortProblem": "Parole expiring soon? We explain your options, fill the right forms, and help you keep your status."
     },
     "re-parole-u4u": {
       "title": "Re-parole (Uniting for Ukraine)",
-      "shortProblem": "Guidance on applying for re-parole under the U4U program."
+      "shortProblem": "Extend your U4U parole. We fill Form I-131, translate documents, and prepare your packet."
     },
     "tps-ukraine": {
       "title": "TPS for Ukraine",
-      "shortProblem": "Temporary Protected Status for Ukrainian nationals currently in the U.S."
+      "shortProblem": "Protect your status with TPS. Upload documents — get filled I-821 and I-765 forms."
     },
     "ead-work-permit": {
       "title": "EAD Work Permit",
-      "shortProblem": "Apply for or renew your Employment Authorization Document (Form I-765)."
+      "shortProblem": "Work permit for the US. We help fill I-765 and gather all required documents."
     },
     "i-94": {
       "title": "I-94 Arrival/Departure Record",
@@ -112,7 +112,7 @@
     },
     "uscis-case-status": {
       "title": "USCIS Case Status",
-      "shortProblem": "Track the status of a pending USCIS application using your receipt number."
+      "shortProblem": "Check your USCIS case status by receipt number."
     },
     "payment-problem": {
       "title": "Payment Problem",
@@ -120,7 +120,7 @@
     },
     "biometrics": {
       "title": "Biometrics Appointment",
-      "shortProblem": "Understand what to bring, what to expect, and how to reschedule biometrics."
+      "shortProblem": "Got a biometrics appointment letter? We explain what to bring and how the process works."
     },
     "rfe-denial": {
       "title": "RFE or Denial",
@@ -128,11 +128,11 @@
     },
     "translate-document": {
       "title": "Translate Document",
-      "shortProblem": "Upload a passport, birth certificate, or other document and prepare an English translation draft."
+      "shortProblem": "Translate your passport, certificates, and documents for USCIS. Upload and get a ready translation."
     },
     "form-draft-helper": {
       "title": "Form Draft Helper",
-      "shortProblem": "Guidance on completing common USCIS forms correctly."
+      "shortProblem": "Not sure what to write on a USCIS form? We explain every field in plain language."
     },
     "official-sources": {
       "title": "Official Sources Library",
