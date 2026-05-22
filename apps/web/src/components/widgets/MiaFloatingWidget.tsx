@@ -84,11 +84,11 @@ export function MiaFloatingWidget() {
   }
 
   return (
-    <div data-mia-widget className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col items-end gap-3">
+    <div data-mia-widget className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
       {open && (
         <div
           ref={panelRef}
-          className="w-[min(calc(100vw-1.5rem),26rem)] md:w-[26rem] max-h-[460px] rounded-card bg-white text-slate-900 shadow-card-hover border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-2 duration-200"
+          className="pointer-events-auto w-[min(calc(100vw-1.5rem),26rem)] md:w-[26rem] max-h-[460px] rounded-card bg-white text-slate-900 shadow-card-hover border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-2 duration-200"
         >
           {/* Header */}
           <div className="bg-brand-600 text-white px-4 py-3 flex items-center justify-between">
@@ -145,15 +145,16 @@ export function MiaFloatingWidget() {
         </div>
       )}
 
-      {/* Trigger button */}
+      {/* Trigger button — pointer-events-auto restores clickability within pointer-events-none container.
+           Idle opacity lets content underneath remain partially visible (WCAG overlap). */}
       <button
         ref={buttonRef}
         onClick={() => setOpen((v) => !v)}
-        className="w-[72px] h-[72px] rounded-full bg-brand-600 hover:bg-brand-700 text-white shadow-card-hover flex items-center justify-center transition-colors"
+        className="pointer-events-auto w-14 h-14 md:w-[72px] md:h-[72px] rounded-full bg-brand-600 hover:bg-brand-700 hover:opacity-100 text-white shadow-card-hover flex items-center justify-center transition-all opacity-80"
         aria-label={open ? 'Close Mia' : 'Open Mia'}
         aria-expanded={open}
       >
-        {open ? <X className="w-7 h-7" /> : <MessageCircle className="w-7 h-7" />}
+        {open ? <X className="w-6 h-6 md:w-7 md:h-7" /> : <MessageCircle className="w-6 h-6 md:w-7 md:h-7" />}
       </button>
     </div>
   )
