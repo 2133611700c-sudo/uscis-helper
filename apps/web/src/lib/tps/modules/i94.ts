@@ -163,16 +163,20 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
     user_corrected: false,
   }
 
-  // ── 1. Admission (I-94) Number — 11 digits ────────────────────────────────
-  const adm = findLabelledValue(
-    ocr,
-    [
-      /admission\s*\(\s*[I1]\s*[-\s]?\s*94\s*\)\s*number/i,
-      /[I1]\s*[-\s]?\s*94\s*number/i,
-      /\badmission\s+number\b/i,
-    ],
-    /\b(\d{11})\b/,
-  )
+  // ── 1. Admission (I-94) Number ──────────────────────────────────────────
+  // Modern CBP format: 9 digits + letter + digit (e.g. 123456789A1).
+  // Legacy format: 11 digits. Both are 11 chars total.
+  // Try modern alphanumeric first (more specific), then legacy numeric.
+  const admLabels = [
+    /admission\s*\(\s*[I1]\s*[-\s]?\s*94\s*\)\s*(?:record\s*)?number/i,
+    /[I1]\s*[-\s]?\s*94\s*(?:record\s*)?number/i,
+    /\badmission\s+(?:record\s+)?number\b/i,
+    /\brecord\s+number\b/i,
+    /\b[I1]\s*[-\s]?\s*94\s*#/i,
+  ]
+  const adm =
+    findLabelledValue(ocr, admLabels, /\b(\d{9}[A-Z]\d)\b/) ??   // modern: 9d+letter+d
+    findLabelledValue(ocr, admLabels, /\b(\d{11})\b/)              // legacy: 11 digits
   if (adm) {
     fields.push({
       ...base,
@@ -184,11 +188,46 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
       confidence: adm.confidence,
       review_required: false,
       ocr_word_ids: [],
-      passes: ['i94_admission_number_11_digits'],
+      passes: [adm.value.match(/\d{9}[A-Z]\d/) ? 'i94_modern_alphanumeric' : 'i94_legacy_11_digits'],
       failures: [],
     })
   } else {
-    warnings.push('I-94 admission number (11 digits) not detected near label.')
+    // Fallback: search for an unlabelled I-94-shaped number in the first 20 lines
+    // (header area of CBP printouts). Lower confidence, requires review.
+    let fallbackAdm: { value: string; lineId: string; bbox: OcrResult['lines'][number]['bbox']; confidence: number | null } | null = null
+    for (let i = 0; i < Math.min(ocr.lines.length, 20); i++) {
+      const line = ocr.lines[i]
+      const modern = line.text.match(/\b(\d{9}[A-Z]\d)\b/)
+      const legacy = line.text.match(/\b(\d{11})\b/)
+      const match = modern ?? legacy
+      if (match) {
+        fallbackAdm = {
+          value: match[1],
+          lineId: line.id,
+          bbox: line.bbox,
+          confidence: (line.confidence ?? 0.5) * 0.8, // discount for no label
+        }
+        break
+      }
+    }
+    if (fallbackAdm) {
+      fields.push({
+        ...base,
+        field: 'i94_admission_number',
+        raw_value: fallbackAdm.value,
+        normalized_value: fallbackAdm.value,
+        source_zone: 'i94_admission_number_fallback',
+        bbox: fallbackAdm.bbox,
+        confidence: fallbackAdm.confidence,
+        review_required: true, // no label context = user must verify
+        ocr_word_ids: [],
+        passes: ['i94_admission_number_fallback_header'],
+        failures: [],
+      })
+      warnings.push('I-94 admission number found in header area without label — flagged for review.')
+    } else {
+      warnings.push('I-94 admission number not detected.')
+    }
   }
 
   // ── 2. Class of Admission ─────────────────────────────────────────────────
@@ -287,7 +326,108 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
     })
   }
 
-  // ── 5. Sanity guard: last_entry_date should NEVER equal admit_until ─────
+  // ── 5. Name extraction (cross-check with passport) ─────────────────────
+  // CBP I-94 printouts have labelled name fields. These are cross-checks
+  // (passport is authoritative), but extracting them pushes field count
+  // above the Brain threshold, avoiding unnecessary AI calls.
+  //
+  // Use NEXT-LINE-ONLY strategy for names: label on one line, value on next.
+  // Same-line extraction would catch the label text itself ("First" from
+  // "First (Given) Name").
+  const LAST_NAME_LABELS = [/\blast\s*(?:[\/\(]\s*sur)?name/i, /\bsurname/i, /\bfamily\s*name/i]
+  const FIRST_NAME_LABELS = [/\bfirst\s*(?:[\/\(]\s*given)?/i, /\bgiven\s*name/i]
+  const NAME_VALUE = /^([A-Z][A-Z\s'-]{1,30})$/
+
+  for (let i = 0; i < ocr.lines.length - 1; i++) {
+    const line = ocr.lines[i]
+    const next = ocr.lines[i + 1]
+    if (!next) continue
+    const nextTrimmed = next.text.trim()
+    if (!NAME_VALUE.test(nextTrimmed) || nextTrimmed.length < 2) continue
+
+    if (LAST_NAME_LABELS.some((p) => p.test(line.text)) && !fields.some((f) => f.field === 'family_name')) {
+      fields.push({
+        ...base,
+        field: 'family_name',
+        raw_value: next.text,
+        normalized_value: nextTrimmed.replace(/\s+/g, ' '),
+        source_zone: 'i94_name_block',
+        bbox: next.bbox,
+        confidence: next.confidence ?? null,
+        review_required: false,
+        ocr_word_ids: [],
+        passes: ['i94_family_name_label_match'],
+        failures: [],
+      })
+    }
+    if (FIRST_NAME_LABELS.some((p) => p.test(line.text)) && !fields.some((f) => f.field === 'given_name')) {
+      fields.push({
+        ...base,
+        field: 'given_name',
+        raw_value: next.text,
+        normalized_value: nextTrimmed.replace(/\s+/g, ' '),
+        source_zone: 'i94_name_block',
+        bbox: next.bbox,
+        confidence: next.confidence ?? null,
+        review_required: false,
+        ocr_word_ids: [],
+        passes: ['i94_given_name_label_match'],
+        failures: [],
+      })
+    }
+  }
+
+  // ── 6. Date of Birth ──────────────────────────────────────────────────────
+  const dobLabels = [/\bdate\s*of\s*birth\b/i, /\bdob\b/i, /\bbirth\s*date\b/i]
+  const dob =
+    findLabelledValue(ocr, dobLabels, /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/) ??
+    findLabelledValue(ocr, dobLabels, /\b(\d{4}\s+[A-Za-z]{3,9}\s+\d{1,2})\b/)
+  if (dob) {
+    const usForm = anyDateToUs(dob.value) ?? dob.value
+    const iso = usDateToIso(usForm)
+    if (iso) {
+      fields.push({
+        ...base,
+        field: 'dob',
+        raw_value: dob.value,
+        normalized_value: iso,
+        source_zone: 'i94_dob',
+        bbox: dob.bbox,
+        confidence: dob.confidence,
+        review_required: false,
+        ocr_word_ids: [],
+        passes: ['i94_dob_date_parsed'],
+        failures: [],
+      })
+    }
+  }
+
+  // ── 7. Country of Citizenship ─────────────────────────────────────────────
+  const country = findLabelledValue(
+    ocr,
+    [/\bcountry\s*of\s*(?:citizen|national)/i, /\bcitizenship\b/i, /\bnationality\b/i],
+    /\b([A-Z][A-Za-z\s]{2,25})\b/,
+  )
+  if (country) {
+    const normalized = country.value.trim()
+    if (normalized.length >= 3) {
+      fields.push({
+        ...base,
+        field: 'country_of_citizenship',
+        raw_value: country.value,
+        normalized_value: normalized,
+        source_zone: 'i94_citizenship',
+        bbox: country.bbox,
+        confidence: country.confidence,
+        review_required: false,
+        ocr_word_ids: [],
+        passes: ['i94_citizenship_label_match'],
+        failures: [],
+      })
+    }
+  }
+
+  // ── 8. Sanity guard: last_entry_date should NEVER equal admit_until ─────
   // If they did match, our anchor parser collapsed two different CBP fields
   // onto the same source date — this is a strong signal something is wrong
   // with the OCR layout. We don't drop the values (they may legitimately
