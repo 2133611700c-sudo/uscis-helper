@@ -1,0 +1,5 @@
+generated_at: 2026-05-21T05:19:01Z
+https://messenginfo.com/ http=307 dns=0.058445 connect=0.121187 ttfb=0.396166 total=0.396608
+https://messenginfo.com/ru http=200 dns=0.152533 connect=0.262167 ttfb=0.834293 total=1.274936
+https://messenginfo.com/ru/services/tps-ukraine/start http=200 dns=0.011992 connect=0.072430 ttfb=0.446150 total=0.857282
+https://messenginfo.com/ru/services/translate-document http=200 dns=0.189712 connect=0.251040 ttfb=0.702942 total=0.950278

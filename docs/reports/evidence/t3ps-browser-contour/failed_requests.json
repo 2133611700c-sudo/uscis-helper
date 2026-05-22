@@ -1,0 +1,30 @@
+[
+  {
+    "t": "2026-05-14T07:47:05.123Z",
+    "type": "response",
+    "method": "GET",
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "status": 404
+  },
+  {
+    "t": "2026-05-14T07:47:05.828Z",
+    "type": "response",
+    "method": "GET",
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "status": 404
+  },
+  {
+    "t": "2026-05-14T07:47:07.130Z",
+    "type": "response",
+    "method": "GET",
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "status": 404
+  },
+  {
+    "t": "2026-05-14T07:47:10.451Z",
+    "type": "response",
+    "method": "GET",
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "status": 404
+  }
+]

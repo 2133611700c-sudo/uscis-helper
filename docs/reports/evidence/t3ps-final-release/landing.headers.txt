@@ -1,0 +1,28 @@
+HTTP/2 200 
+date: Fri, 15 May 2026 01:23:27 GMT
+content-type: text/html; charset=utf-8
+age: 0
+cache-control: private, no-cache, no-store, max-age=0, must-revalidate
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.us.i.posthog.com https://cdn.eu.i.posthog.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vitals.vercel-insights.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://stats.g.doubleclick.net https://region1.google-analytics.com https://us.i.posthog.com https://eu.i.posthog.com https://app.posthog.com https://*.sentry.io https://*.ingest.sentry.io https://api.deepseek.com; media-src 'none'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+link: <https://messenginfo.com/en/services/tps-ukraine>; rel="alternate"; hreflang="en", <https://messenginfo.com/ru/services/tps-ukraine>; rel="alternate"; hreflang="ru", <https://messenginfo.com/uk/services/tps-ukraine>; rel="alternate"; hreflang="uk", <https://messenginfo.com/es/services/tps-ukraine>; rel="alternate"; hreflang="es", <https://messenginfo.com/services/tps-ukraine>; rel="alternate"; hreflang="x-default"
+link: </_next/static/media/21350d82a1f187e9-s.p.woff2>; rel=preload; as="font"; crossorigin=""; type="font/woff2", </_next/static/media/e4af272ccee01ff0-s.p.woff2>; rel=preload; as="font"; crossorigin=""; type="font/woff2", </_next/static/media/eaead17c7dbfcd5d-s.p.woff2>; rel=preload; as="font"; crossorigin=""; type="font/woff2"
+permissions-policy: camera=(), microphone=(), geolocation=()
+referrer-policy: strict-origin-when-cross-origin
+server: cloudflare
+set-cookie: NEXT_LOCALE=ru; Path=/; SameSite=lax
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+x-content-type-options: nosniff
+x-dns-prefetch-control: off
+x-frame-options: DENY
+x-matched-path: /[locale]/services/tps-ukraine
+x-powered-by: Next.js
+x-vercel-cache: MISS
+x-vercel-enable-rewrite-caching: 1
+x-vercel-id: sfo1::iad1::fqz7r-1778808207654-ce39250555a3
+cf-cache-status: DYNAMIC
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=PlErHHiJSJRbGucmVHVqdD0c8K%2BJRfZt8c%2FtMiQNPXbABDSQtXtfgJC7RHDHcaMHatULTj9MxbXLk3dLaYEI3dwBWTngnWRTt2KAQ9cMcJfYil9Mh%2B5wfePEPktNcOCScDlx2Ubg3%2FLjdd3sRjU%3D"}]}
+cf-ray: 9fbe5661bb78e9e5-LAX
+alt-svc: h3=":443"; ma=86400
+

@@ -32,6 +32,7 @@ import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
 import { runI94Module } from '@/lib/tps/modules/i94'
 import { runEadModule } from '@/lib/tps/modules/ead'
 import { runDlModule } from '@/lib/tps/modules/dl'
+import { runI797Module } from '@/lib/tps/modules/i797'
 import type { TpsModuleResult, TpsExtractedField } from '@/lib/tps/types'
 import { applyContract } from '@/lib/tps/ocr/documentContracts'
 import {
@@ -393,6 +394,13 @@ export async function POST(req: NextRequest) {
         }
       }
       moduleResult = dlResult
+      break
+    }
+    case 'i797': {
+      // I-797/I-797C Notice of Action. Deterministic rule extraction.
+      // No rotation retry — notices are standard letter format.
+      // No Brain — receipt numbers and A-numbers are deterministic patterns.
+      moduleResult = runI797Module(result, { document_id })
       break
     }
     default:

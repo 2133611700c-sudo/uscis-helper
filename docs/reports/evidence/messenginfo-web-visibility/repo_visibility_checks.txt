@@ -1,0 +1,158 @@
+generated_at: 2026-05-21T05:13:04Z
+
+--- robots.ts/sitemap.ts/noindex metadata refs ---
+apps/web/src/app/not-found.tsx:13:export const metadata: Metadata = {
+apps/web/src/app/not-found.tsx:15:  robots: { index: false, follow: false },
+apps/web/src/app/sitemap.ts:42:export default function sitemap(): MetadataRoute.Sitemap {
+apps/web/src/app/sitemap.ts:54:        alternates: { languages: hreflangAlternates(page) },
+apps/web/src/app/sitemap.ts:66:        alternates: { languages: hreflangAlternates(path) },
+apps/web/src/app/[locale]/layout.tsx:27:  const t = await getTranslations({ locale, namespace: 'metadata' });
+apps/web/src/app/[locale]/layout.tsx:39:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/layout.tsx:51:    alternates: {
+apps/web/src/app/[locale]/layout.tsx:52:      canonical: `https://messenginfo.com/${locale}`,
+apps/web/src/app/[locale]/layout.tsx:61:    openGraph: {
+apps/web/src/app/[locale]/layout.tsx:70:    twitter: {
+apps/web/src/app/[locale]/layout.tsx:74:    robots: { index: true, follow: true },
+apps/web/src/app/[locale]/layout.tsx:141:          type="application/ld+json"
+apps/web/src/app/[locale]/layout.tsx:146:          type="application/ld+json"
+apps/web/src/app/[locale]/contact/page.tsx:17:  const t = await getTranslations({ locale, namespace: 'metadata' })
+apps/web/src/app/[locale]/contact/page.tsx:22:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/contact/page.tsx:23:    alternates: {
+apps/web/src/app/[locale]/contact/page.tsx:24:      canonical: `https://messenginfo.com/${locale}/contact`,
+apps/web/src/app/api/stripe/checkout/route.ts:57:        metadata: { service: 'translation', plan, wizard_session_id: session_id ?? '' },
+apps/web/src/app/api/stripe/checkout/route.ts:98:        metadata: { service: 'tps-ukraine', wizard_session_id: tpsWizardId, tier: '1' },
+apps/web/src/app/api/stripe/checkout/route.ts:138:      metadata: { service: 're-parole-u4u', wizard_session_id: session_id, tier: '1' },
+apps/web/src/app/api/translation/process/route.ts:60:      metadata: { status: data.status },
+apps/web/src/app/api/translation/process/route.ts:145:      metadata: {
+apps/web/src/app/[locale]/faq/page.tsx:20:  const t = await getTranslations({ locale, namespace: 'metadata' })
+apps/web/src/app/[locale]/faq/page.tsx:25:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/faq/page.tsx:26:    alternates: {
+apps/web/src/app/[locale]/faq/page.tsx:27:      canonical: `https://messenginfo.com/${locale}/faq`,
+apps/web/src/app/api/health/route.ts:16:  let canonicalAnswersCount = 0
+apps/web/src/app/api/health/route.ts:30:      .from('canonical_answers')
+apps/web/src/app/api/health/route.ts:32:    canonicalAnswersCount = error ? -1 : (count ?? 0)
+apps/web/src/app/api/health/route.ts:33:  } catch { canonicalAnswersCount = -1 }
+apps/web/src/app/api/health/route.ts:59:    canonical_answers_count: canonicalAnswersCount,
+apps/web/src/app/[locale]/disclaimer/page.tsx:14:    robots: { index: true, follow: true },
+apps/web/src/app/api/stripe/webhook/route.ts:29:    const service     = cs.metadata?.service ?? ''
+apps/web/src/app/api/stripe/webhook/route.ts:30:    const plan        = cs.metadata?.plan ?? ''
+apps/web/src/app/api/stripe/webhook/route.ts:31:    const wizardId    = cs.metadata?.wizard_session_id ?? ''
+apps/web/src/app/robots.ts:3:export default function robots(): MetadataRoute.Robots {
+apps/web/src/app/robots.ts:6:    sitemap: 'https://messenginfo.com/sitemap.xml',
+apps/web/src/app/api/translation/upload/route.ts:113:      metadata: { step: 'upload', error: uploadErr.message, filename: file.name },
+apps/web/src/app/api/translation/upload/route.ts:150:    metadata: {
+apps/web/src/app/[locale]/services/attorney-directory/page.tsx:28:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/attorney-directory/page.tsx:29:    alternates: {
+apps/web/src/app/[locale]/services/attorney-directory/page.tsx:30:      canonical: `https://messenginfo.com/${locale}/services/attorney-directory`,
+apps/web/src/app/[locale]/privacy/page.tsx:13:    robots: { index: true, follow: true },
+apps/web/src/app/[locale]/services/uscis-case-status/page.tsx:29:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/uscis-case-status/page.tsx:30:    alternates: {
+apps/web/src/app/[locale]/services/uscis-case-status/page.tsx:31:      canonical: `https://messenginfo.com/${locale}/services/uscis-case-status`,
+apps/web/src/app/[locale]/services/uscis-case-status/page.tsx:39:    openGraph: {
+apps/web/src/app/api/translation/manual-review/route.ts:13: *     `notifyOperator()` (metadata-only).
+apps/web/src/app/api/translation/manual-review/route.ts:22: *   - Raw fields are NEVER included in any notification or audit metadata.
+apps/web/src/app/api/translation/manual-review/route.ts:127:      metadata: {
+apps/web/src/app/[locale]/services/uscis-case-status/CaseStatusTracker.tsx:146:      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+apps/web/src/app/[locale]/terms/page.tsx:13:    robots: { index: true, follow: true },
+apps/web/src/app/[locale]/services/i-94-guide/page.tsx:29:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/i-94-guide/page.tsx:30:    alternates: {
+apps/web/src/app/[locale]/services/i-94-guide/page.tsx:31:      canonical: `https://messenginfo.com/${locale}/services/i-94-guide`,
+apps/web/src/app/[locale]/services/i-94-guide/page.tsx:39:    openGraph: {
+apps/web/src/app/[locale]/services/i-94-guide/page.tsx:277:      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts:67:      metadata: {
+apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts:83:      metadata: {
+apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts:142:      metadata: { route: 'correct-field', field: safeField, error_code: updateErr.code },
+apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts:174:      metadata: {
+apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts:188:  // ── Audit — PII-safe: no raw values, only lengths and metadata ───────────
+apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts:192:    metadata: {
+apps/web/src/app/[locale]/about/page.tsx:18:  const t = await getTranslations({ locale, namespace: 'metadata' })
+apps/web/src/app/[locale]/about/page.tsx:23:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/about/page.tsx:24:    alternates: {
+apps/web/src/app/[locale]/about/page.tsx:25:      canonical: `https://messenginfo.com/${locale}/about`,
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:13: *     metadata?: Record<string, ...> } // safe metadata only
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:22: *   - sanitizes metadata (no PII permitted in audit log)
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:64:  let body: { to?: unknown; operator_id?: unknown; metadata?: unknown }
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:101:  // Never logged into event metadata as raw — we hash for audit.
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:123:      metadata: {
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:127:        // anything in body.metadata is sanitized inside writeManualReviewEvent
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:128:        ...(typeof body.metadata === 'object' && body.metadata !== null && !Array.isArray(body.metadata)
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:129:          ? (body.metadata as Record<string, unknown>)
+apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts:140: * Goal: avoid storing full operator email/handle in event metadata.
+apps/web/src/app/[locale]/services/[slug]/page.tsx:35:// Stub services (placeholder content only) get robots: noindex to avoid
+apps/web/src/app/[locale]/services/[slug]/page.tsx:63:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/[slug]/page.tsx:64:    // BUG-003: stub services (full_data: false) get noindex to prevent
+apps/web/src/app/[locale]/services/[slug]/page.tsx:66:    robots: isFullData
+apps/web/src/app/[locale]/services/[slug]/page.tsx:69:    alternates: {
+apps/web/src/app/[locale]/services/[slug]/page.tsx:70:      canonical: `https://messenginfo.com/${locale}/services/${slug}`,
+apps/web/src/app/[locale]/services/[slug]/page.tsx:75:    openGraph: {
+apps/web/src/app/[locale]/services/[slug]/page.tsx:168:        type="application/ld+json"
+apps/web/src/app/[locale]/services/[slug]/page.tsx:172:        type="application/ld+json"
+apps/web/src/app/api/translation/[sessionId]/ocr-from-storage/route.ts:18: *   8. Persist extracted_fields with ocr_ids + bbox/evidence metadata
+apps/web/src/app/api/translation/[sessionId]/ocr-from-storage/route.ts:143:    metadata: { run_id: runId, doc_type: docType, document_id: doc.id, provider: 'google_vision', retake_count: retakeCount },
+apps/web/src/app/api/translation/[sessionId]/ocr-from-storage/route.ts:481:    metadata: {
+apps/web/src/app/api/translation/[sessionId]/ocr-from-storage/route.ts:497:    metadata: { run_id: runId, doc_id: doc.id, total_fields: processed.length },
+apps/web/src/app/api/translation/[sessionId]/ocr-from-storage/route.ts:550:      metadata: { run_id: runId, status, ...extra },
+apps/web/src/app/api/translation/extract/route.ts:177:        metadata: {
+apps/web/src/app/[locale]/services/tps-status/page.tsx:29:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/tps-status/page.tsx:30:    alternates: {
+apps/web/src/app/[locale]/services/tps-status/page.tsx:31:      canonical: `https://messenginfo.com/${locale}/services/tps-status`,
+apps/web/src/app/api/translation/render/route.ts:202:      metadata: {
+apps/web/src/app/api/translation/render/route.ts:316:      metadata: {
+apps/web/src/app/api/translation/render/route.ts:337:      metadata: { step: 'render', error: String(err) },
+apps/web/src/app/[locale]/services/translate-document/page.tsx:27:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/translate-document/page.tsx:28:    robots: { index: true, follow: true },
+apps/web/src/app/[locale]/services/translate-document/page.tsx:29:    alternates: {
+apps/web/src/app/[locale]/services/translate-document/page.tsx:30:      canonical: `https://messenginfo.com/${locale}/services/translate-document`,
+apps/web/src/app/[locale]/services/translate-document/page.tsx:35:    openGraph: {
+apps/web/src/app/[locale]/services/translate-document/page.tsx:63:        type="application/ld+json"
+apps/web/src/app/api/tps/generate-packet/route.ts:33:// Accept the two canonical date shapes:
+apps/web/src/app/api/tps/generate-packet/route.ts:34://   USCIS canonical  MM/DD/YYYY      (what the UI normalizes to)
+apps/web/src/app/[locale]/services/translate-document/start/page.tsx:49:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/translate-document/start/page.tsx:50:    robots: { index: false, follow: false },
+apps/web/src/app/[locale]/services/translate-document/start/page.tsx:51:    alternates: {
+apps/web/src/app/[locale]/services/translate-document/start/page.tsx:52:      canonical: `https://messenginfo.com/${locale}/services/translate-document/start`,
+apps/web/src/app/[locale]/services/translate-document/session/[sessionId]/review/page.tsx:39:    robots: { index: false, follow: false },
+apps/web/src/app/[locale]/services/page.tsx:24:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/page.tsx:25:    alternates: {
+apps/web/src/app/[locale]/services/page.tsx:26:      canonical: `https://messenginfo.com/${locale}/services`,
+apps/web/src/app/[locale]/services/translate-document/lab/page.tsx:18:    robots: { index: false, follow: false },
+apps/web/src/app/[locale]/services/ead-work-permit/start/page.tsx:47:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/ead-work-permit/start/page.tsx:48:    robots: { index: false, follow: false },
+apps/web/src/app/[locale]/services/ead-work-permit/start/page.tsx:49:    alternates: {
+apps/web/src/app/[locale]/services/ead-work-permit/start/page.tsx:50:      canonical: `https://messenginfo.com/${locale}/services/ead-work-permit/start`,
+apps/web/src/app/[locale]/services/ead-work-permit/page.tsx:41:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/re-parole-u4u/start/page.tsx:35:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/re-parole-u4u/start/page.tsx:36:    robots: { index: false, follow: false },
+apps/web/src/app/[locale]/services/re-parole-u4u/start/page.tsx:37:    alternates: {
+apps/web/src/app/[locale]/services/re-parole-u4u/start/page.tsx:38:      canonical: `https://messenginfo.com/${locale}/services/re-parole-u4u/start`,
+apps/web/src/app/[locale]/services/re-parole-u4u/sources/page.tsx:430:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/re-parole-u4u/sources/page.tsx:431:    robots: { index: true, follow: true },
+apps/web/src/app/[locale]/services/re-parole-u4u/sources/page.tsx:432:    alternates: {
+apps/web/src/app/[locale]/services/re-parole-u4u/sources/page.tsx:433:      canonical: `https://messenginfo.com/${locale}/services/re-parole-u4u/sources`,
+apps/web/src/app/[locale]/services/re-parole-u4u/info/page.tsx:388:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/re-parole-u4u/info/page.tsx:389:    alternates: {
+apps/web/src/app/[locale]/services/re-parole-u4u/info/page.tsx:390:      canonical: `https://messenginfo.com/${locale}/services/re-parole-u4u/info`,
+apps/web/src/app/[locale]/services/re-parole-u4u/status/page.tsx:387:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/re-parole-u4u/status/page.tsx:388:    robots: { index: true, follow: true },
+apps/web/src/app/[locale]/services/re-parole-u4u/status/page.tsx:389:    alternates: {
+apps/web/src/app/[locale]/services/re-parole-u4u/status/page.tsx:390:      canonical: `https://messenginfo.com/${locale}/services/re-parole-u4u/status`,
+apps/web/src/app/api/translation/[sessionId]/confirm-field/route.ts:73:      metadata: { route: 'confirm-field', field: safeField, error_code: updateErr.code },
+apps/web/src/app/api/translation/[sessionId]/confirm-field/route.ts:82:    metadata: { field: safeField, confirmed_at: confirmedAt },
+apps/web/src/app/api/translation/[sessionId]/review-state/route.ts:5: *   - session metadata (status, doc_type, scope_title)
+apps/web/src/app/[locale]/services/tps-ukraine/sources/page.tsx:256:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/tps-ukraine/sources/page.tsx:257:    alternates: {
+apps/web/src/app/[locale]/services/tps-ukraine/sources/page.tsx:258:      canonical: `https://messenginfo.com/${locale}/services/tps-ukraine/sources`,
+apps/web/src/app/[locale]/services/tps-ukraine/start/page.tsx:47:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/tps-ukraine/start/page.tsx:49:    robots: { index: false, follow: false },
+apps/web/src/app/[locale]/services/tps-ukraine/start/page.tsx:50:    alternates: {
+apps/web/src/app/[locale]/services/tps-ukraine/start/page.tsx:51:      canonical: `https://messenginfo.com/${locale}/services/tps-ukraine/start`,
+apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx:88:   * Extracted fields keyed by canonical name (family_name, dob, …).
+apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx:2653:  // USPS canonical format: "Street, City, ST ZIP" — comma between
+apps/web/src/app/[locale]/services/tps-ukraine/info/page.tsx:420:    metadataBase: new URL('https://messenginfo.com'),
+apps/web/src/app/[locale]/services/tps-ukraine/info/page.tsx:421:    alternates: {
+apps/web/src/app/[locale]/services/tps-ukraine/info/page.tsx:422:      canonical: `https://messenginfo.com/${locale}/services/tps-ukraine/info`,
+apps/web/src/app/api/translation/[sessionId]/manual-review-status/route.ts:5: *   - canonical user-facing status string (4 buckets)
+apps/web/src/app/api/translation/[sessionId]/manual-review-status/route.ts:27:import { canonicalStatus, type ManualReviewStatus } from '@/lib/translation/manualReview/types'
+apps/web/src/app/api/translation/[sessionId]/manual-review-status/route.ts:58:  const c = canonicalStatus(s)
+apps/web/src/app/api/translation/certify/route.ts:109:    // Audit log — PII-safe: no raw names, only metadata
+apps/web/src/app/api/translation/certify/route.ts:113:      metadata: {
