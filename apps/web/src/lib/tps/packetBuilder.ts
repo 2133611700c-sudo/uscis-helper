@@ -61,19 +61,19 @@ export async function buildPacket(
   // Skip I-765 entirely if the user didn't ask for an EAD.
   const i765Ops = answers.wants_ead ? buildI765Ops(answers) : []
 
-  // Run the prefiller on each.
+  // Run the prefiller on each — clean forms, no watermarks.
   const i821Filled = await prefill(new Uint8Array(i821Bytes), i821Ops, {
     edition: I821_EDITION,
-    draftLabel: 'DRAFT — REVIEW & SIGN BEFORE MAILING',
   })
   const i765Filled = answers.wants_ead
     ? await prefill(new Uint8Array(i765Bytes), i765Ops, {
         edition: I765_EDITION,
-        draftLabel: 'DRAFT — REVIEW & SIGN BEFORE MAILING',
       })
     : null
 
-  // Bundle into a ZIP with a README.
+  // Bundle into a ZIP: clean forms + instruction only.
+  // Client-facing rule: NO watermarks, NO draft marks, NO internal audit files.
+  // AUDIT_PROVENANCE stays internal (computed but not exported to client).
   const zip = new JSZip()
   zip.file('I-821.pdf', i821Filled.bytes)
   if (i765Filled) zip.file('I-765.pdf', i765Filled.bytes)
@@ -107,7 +107,8 @@ export async function buildPacket(
     }
     const allRows = [...i821AuditRows, ...i765AuditRows]
     auditSummary = summarizeProvenance(allRows)
-    zip.file('AUDIT_PROVENANCE.txt', buildAuditReport(allRows, auditSummary))
+    // AUDIT_PROVENANCE stays internal — NOT included in client ZIP.
+    // Client gets only clean forms + instruction.
   }
 
   const zipBytes = await zip.generateAsync({ type: 'uint8array' })
