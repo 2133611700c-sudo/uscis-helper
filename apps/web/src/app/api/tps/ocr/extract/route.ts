@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       {
         error: pre.message,
         quality_error: {
-          code: pre.code,            // 'too_small' | 'too_blurry' | 'corrupt_image' | 'unsupported_file_type'
+          code: pre.code,            // 'too_small' | 'too_blurry' | 'too_dark' | 'too_bright' | 'corrupt_image' | 'unsupported_file_type'
           message: pre.message,      // user-safe localized in the client
         },
         ok: false,
@@ -674,6 +674,7 @@ export async function POST(req: NextRequest) {
       lines: result.lines,    // includes ids, bboxes
       processing_ms: result.processing_ms,
       route_total_ms: Date.now() - t0,
+      image_quality: pre.quality,
       warnings: result.warnings,
       // Per-document module output — present only when doc_type_hint is set.
       // If the AI Brain ran and added fields, `module` is the merged shape.
