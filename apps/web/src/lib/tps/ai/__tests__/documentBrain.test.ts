@@ -266,6 +266,48 @@ describe('validateBrainField — deterministic rules', () => {
     expect(res.ok).toBe(false)
   })
 
+  // ── CBP I-94 date formats (year-first and month-first) ────────────────
+  it('accepts "2022 September 09" (CBP I-94 year-first format)', () => {
+    const f = baseField('2022 September 09')
+    const res = validateBrainField('last_entry_date', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('09/09/2022')
+  })
+
+  it('accepts "2024 June 15" (CBP I-94 year-first, short day)', () => {
+    const f = baseField('2024 June 15')
+    const res = validateBrainField('last_entry_date', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('06/15/2024')
+  })
+
+  it('accepts "September 09, 2022" (US standard month-first with comma)', () => {
+    const f = baseField('September 09, 2022')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('09/09/2022')
+  })
+
+  it('accepts "April 19, 2025" (US standard month-first)', () => {
+    const f = baseField('April 19, 2025')
+    const res = validateBrainField('last_entry_date', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('04/19/2025')
+  })
+
+  it('accepts "Jan 5, 1990" (abbreviated month, no leading zero)', () => {
+    const f = baseField('Jan 5, 1990')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('01/05/1990')
+  })
+
+  it('rejects "Blortember 09, 2022" (invalid month name)', () => {
+    const f = baseField('Blortember 09, 2022')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(false)
+  })
+
   // ── Country normalization ──────────────────────────────────────────────
   it('normalizes "Ukraina" to "Ukraine"', () => {
     const f = baseField('Ukraina')
