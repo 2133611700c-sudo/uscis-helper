@@ -1,0 +1,53 @@
+================================================================
+Apply Manual Review Queue v1 migration
+Date:    Sun May 10 00:56:52 PDT 2026
+PWD:     /Users/sergiikuropiatnyk/work/uscis-helper
+================================================================
+
+supabase CLI:  2.90.0
+
+>>> supabase migration list (current state)
+   20260502000001 | 20260502000001 | 2026-05-02 00:00:01 
+   20260503000001 | 20260503000001 | 2026-05-03 00:00:01 
+   20260504000001 | 20260504000001 | 2026-05-04 00:00:01 
+   20260505000001 | 20260505000001 | 2026-05-05 00:00:01 
+   20260507073800 | 20260507073800 | 2026-05-07 07:38:00 
+   20260507073801 | 20260507073801 | 2026-05-07 07:38:01 
+   20260507235900 | 20260507235900 | 2026-05-07 23:59:00 
+   20260508000001 | 20260508000001 | 2026-05-08 00:00:01 
+   20260508120000 | 20260508120000 | 2026-05-08 12:00:00 
+   20260509000000 | 20260509000000 | 2026-05-09 00:00:00 
+   20260509120000 | 20260509120000 | 2026-05-09 12:00:00 
+   20260509210000 | 20260509210000 | 2026-05-09 21:00:00 
+   20260510000001 | 20260510000001 | 2026-05-10 00:00:01 
+   20260511000001 | 20260511000001 | 2026-05-11 00:00:01 
+   20260512000001 | 20260512000001 | 2026-05-12 00:00:01 
+   20260512000002 | 20260512000002 | 2026-05-12 00:00:02 
+   20260512000003 | 20260512000003 | 2026-05-12 00:00:03 
+
+A new version of Supabase CLI is available: v2.98.2 (currently installed v2.90.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+
+================================================================
+Applying pending migrations to LINKED Supabase project.
+Pending migration: 20260509210000_manual_review_queue_v1_hardening.sql
+
+This is ADDITIVE only — no drops, no destructive changes.
+Verified: target table is empty (0 rows) on production. Safe.
+================================================================
+
+>>> yes Y | supabase db push --include-all
+Initialising login role...
+Connecting to remote database...
+Remote database is up to date.
+A new version of Supabase CLI is available: v2.98.2 (currently installed v2.90.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+
+================================================================
+MIGRATION APPLIED.
+
+Next: open run-mr-checks.command once more (sanity), then
+      open push.command to git push origin main.
+================================================================
+
+Press Cmd-W to close this window.
