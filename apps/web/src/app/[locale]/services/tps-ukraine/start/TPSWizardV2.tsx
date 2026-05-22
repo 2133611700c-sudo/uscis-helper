@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
+import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } from '@/lib/tps/provenance'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1885,10 +1886,38 @@ export default function TPSWizardV2({ locale }: Props) {
         has_prior_tps_denial: false,
         left_us_without_advance_parole: false,
       }
+
+      // ── Phase 2: Build provenance sidecar ──────────────────────────────
+      // Convert FieldExtraction → ProvenanceInput for the lib-level converter
+      const provenanceInputs: Record<string, ProvenanceInput> = {}
+      for (const [key, fx] of Object.entries(mergedFields)) {
+        if (fx && fx.value) {
+          provenanceInputs[key] = {
+            value: fx.value,
+            source: fx.source,
+            doc_slot: fx.doc_slot,
+            confidence: fx.confidence,
+            source_field: key,
+          }
+        }
+      }
+      const manualOverrides: Record<string, string> = {}
+      for (const [k, v2] of Object.entries(data.manual)) {
+        if (typeof v2 === 'string' && v2.trim()) manualOverrides[k] = v2
+      }
+      const provenanceByField = buildProvenanceFromWizard(
+        provenanceInputs,
+        manualOverrides,
+        Object.keys(answers).filter((k) => {
+          const val = answers[k as keyof typeof answers]
+          return val !== undefined && val !== null && val !== ''
+        }),
+      )
+
       const r = await fetch('/api/tps/generate-packet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(answers),
+        body: JSON.stringify({ ...answers, _provenance: provenanceByField }),
       })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const blob = await r.blob()
