@@ -71,7 +71,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-slate-500">{t('bottom')}</p>
+          <a href={`/${locale}/owner`} className="text-xs text-slate-500 hover:text-slate-400 transition-colors cursor-default">{t('bottom')}</a>
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <span>EN</span><span>·</span>
             <span>RU</span><span>·</span>
