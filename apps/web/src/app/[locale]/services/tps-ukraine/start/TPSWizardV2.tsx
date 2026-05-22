@@ -926,18 +926,17 @@ type LocaleKey = keyof typeof T
 // and must look identical in light + dark. All neutral surface/text/border
 // tokens reference the site CSS variables defined in globals.css, so the wizard
 // follows the user's theme toggle without any extra wiring.
-const GREEN = '#0d5a34'
-const GREEN_DARK = '#08391f'
+const GREEN = 'var(--accent, #0d5a34)'
+const GREEN_DARK = 'var(--accent-hover, #08391f)'
 const PAY_BLUE = '#1a73e8'
 const PAY_BLUE_DARK = '#1557b0'
-// Alerts keep their distinctive light-mode tints — they're rare and brief, and
-// dark-mode alert tones are a separate polish pass.
-const WARN_BG = '#fff3cd'
-const WARN_BORDER = '#ffc107'
-const WARN_TEXT = '#856404'
-const INFO_BG = '#e8f0fe'
-const INFO_BORDER = '#a8c7fa'
-const INFO_TEXT = '#1a4d8f'
+// Alert colors — use CSS vars for dark mode
+const WARN_BG = 'var(--warning-bg, #fff3cd)'
+const WARN_BORDER = 'var(--warning-border, #ffc107)'
+const WARN_TEXT = 'var(--warning-text, #856404)'
+const INFO_BG = 'var(--info-bg, #e8f0fe)'
+const INFO_BORDER = 'var(--info-border, #a8c7fa)'
+const INFO_TEXT = 'var(--info-text, #1a4d8f)'
 // Neutrals — bound to global CSS vars so the wizard inherits theme switches.
 const PAGE_BG = 'var(--background)'
 const CARD_BG = 'var(--surface-1)'
@@ -1042,8 +1041,8 @@ function Tip({ text }: { text: string }) {
           width: 18,
           height: 18,
           borderRadius: '50%',
-          background: open ? GREEN : '#ddd',
-          color: open ? '#fff' : '#444',
+          background: open ? GREEN : 'var(--surface-3, #ddd)',
+          color: open ? '#fff' : TEXT_PRIMARY,
           fontSize: 12,
           fontWeight: 800,
           alignItems: 'center',
@@ -1109,7 +1108,7 @@ function OptionPair({
               border: `2.5px solid ${active ? GREEN : BORDER}`,
               borderRadius: 14,
               background: active ? GREEN : CARD_BG,
-              color: active ? '#fff' : '#222',
+              color: active ? '#fff' : TEXT_PRIMARY,
               cursor: 'pointer',
               textAlign: 'center',
               transition: '.15s',
@@ -1165,14 +1164,14 @@ function UploadDrop({
       role="button"
       tabIndex={0}
       style={{
-        border: `2.5px ${ok ? 'solid' : 'dashed'} ${ok ? GREEN : err ? '#d33' : '#ccc'}`,
+        border: `2.5px ${ok ? 'solid' : 'dashed'} ${ok ? GREEN : err ? 'var(--error-border, #d33)' : BORDER}`,
         borderRadius: 14,
         padding: 20,
         textAlign: 'center',
         cursor: 'pointer',
         transition: '.2s',
         marginBottom: 10,
-        background: ok ? '#e6f4ea' : err ? '#fdecea' : CARD_BG,
+        background: ok ? 'var(--success-bg, #e6f4ea)' : err ? 'var(--error-bg, #fdecea)' : CARD_BG,
         opacity: uploading ? 0.7 : 1,
       }}
     >
@@ -1181,7 +1180,7 @@ function UploadDrop({
         style={{
           fontSize: 17,
           fontWeight: 700,
-          color: ok ? GREEN : err ? '#a33' : TEXT_PRIMARY,
+          color: ok ? GREEN : err ? 'var(--error-text, #a33)' : TEXT_PRIMARY,
         }}
       >
         {doc.lb} {ok && uploadedSuffix} {uploading && '⏳'}
@@ -1450,8 +1449,8 @@ function navBtn(forward: boolean): React.CSSProperties {
     fontWeight: 800,
     cursor: 'pointer',
     textAlign: 'center',
-    background: forward ? GREEN : '#eee',
-    color: forward ? '#fff' : '#555',
+    background: forward ? GREEN : 'var(--surface-2, #eee)',
+    color: forward ? '#fff' : TEXT_SECONDARY,
     fontFamily: 'inherit',
   }
 }
@@ -2029,7 +2028,7 @@ export default function TPSWizardV2({ locale }: Props) {
               style={{
                 flex: 1,
                 height: 5,
-                background: i <= step ? GREEN : '#e2e5ea',
+                background: i <= step ? GREEN : 'var(--surface-3, #e2e5ea)',
                 borderRadius: 3,
                 transition: '.3s',
               }}
@@ -2442,12 +2441,12 @@ export default function TPSWizardV2({ locale }: Props) {
             {errMsg && (
               <div
                 style={{
-                  background: '#fdecea',
-                  border: '1.5px solid #d33',
+                  background: 'var(--error-bg, #fdecea)',
+                  border: '1.5px solid var(--error-border, #d33)',
                   borderRadius: 12,
                   padding: 12,
                   fontSize: 15,
-                  color: '#a33',
+                  color: 'var(--error-text, #a33)',
                   marginBottom: 12,
                 }}
               >
@@ -2469,7 +2468,7 @@ export default function TPSWizardV2({ locale }: Props) {
                 color: TEXT_HINT,
                 marginTop: 14,
                 padding: 12,
-                background: '#fafafa',
+                background: CARD_BG,
                 borderRadius: 12,
               }}
             >
@@ -2859,7 +2858,7 @@ function ReviewManual({
               {t.label.ead_category}{' '}
               <Tip text={init ? t.tip.eadInit : t.tip.eadRereg} />
             </div>
-            <div style={{ fontSize: 13, color: '#bbb' }}>{t.tip.eadAuto}</div>
+            <div style={{ fontSize: 13, color: TEXT_HINT }}>{t.tip.eadAuto}</div>
           </div>
           <div style={{ fontSize: 17, fontWeight: 700 }}>{init ? 'C19' : 'A12'}</div>
         </div>
