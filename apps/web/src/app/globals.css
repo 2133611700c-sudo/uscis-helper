@@ -148,7 +148,7 @@
     --surface-3: #444654;
     --text-1: #f9fafb;
     --text-2: #e5e7eb;
-    --text-3: #cbd5e1;
+    --text-3: #d1d5db;
     --border: #565869;
     --accent: #10a37f;
     --accent-hover: #13b890;
@@ -305,8 +305,18 @@ button, a {
 .dark .text-ink-700        { color: var(--text-2) !important; }
 .dark .text-slate-600      { color: var(--text-2) !important; }
 .dark .text-gray-600       { color: var(--text-2) !important; }
+.dark .text-ink-600        { color: var(--text-2) !important; }
 .dark .text-slate-500      { color: var(--text-3) !important; }
 .dark .text-gray-500       { color: var(--text-3) !important; }
+.dark .text-ink-500        { color: var(--text-3) !important; }
+.dark .text-slate-400      { color: var(--text-3) !important; }
+.dark .text-gray-400       { color: var(--text-3) !important; }
+.dark .text-ink-400        { color: var(--text-3) !important; }
+
+/* ── Brand text colors (blue accents) ── */
+.dark .text-brand-600      { color: #93c5fd !important; }
+.dark .text-brand-700      { color: #93c5fd !important; }
+.dark .text-brand-800      { color: #bfdbfe !important; }
 
 /* ── Borders ── */
 .dark .border-slate-200    { border-color: var(--border) !important; }
