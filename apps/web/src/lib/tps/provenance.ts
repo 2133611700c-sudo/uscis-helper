@@ -222,3 +222,124 @@ export function summarizeProvenance(rows: PdfAuditRow[]): ProvenanceSummary {
   }
   return summary
 }
+
+// ── Phase 2: Wizard → ProvenanceMap converter ────────────────────────────────
+
+/**
+ * Generic input shape matching the wizard's FieldExtraction.
+ * Avoids importing from UI component — dependency flows lib → UI, not reverse.
+ */
+export interface ProvenanceInput {
+  value: string
+  /** ExtractionSource from wizard: ocr_mrz | ocr_visual | ocr_keyword | ai_brain | user_input | user_corrected | inferred */
+  source: string
+  /** Upload slot: passport | i94 | ead | i797 | dl */
+  doc_slot: string
+  confidence: number | null
+  source_field?: string | null
+}
+
+/** Map wizard ExtractionSource → provenance ExtractionMethod */
+function toExtractionMethod(source: string): ExtractionMethod {
+  switch (source) {
+    case 'ocr_mrz': return 'ocr_mrz'
+    case 'ocr_visual': return 'ocr_label_match'
+    case 'ocr_keyword': return 'ocr_rule_parser'
+    case 'ai_brain': return 'ai_brain'
+    case 'user_input':
+    case 'user_corrected': return 'user_manual'
+    case 'inferred': return 'system_default'
+    default: return 'ocr_rule_parser'
+  }
+}
+
+/** Map wizard doc_slot → provenance SourceDocumentType */
+function toSourceDocType(docSlot: string): SourceDocumentType {
+  switch (docSlot) {
+    case 'passport': return 'passport'
+    case 'i94': return 'i94'
+    case 'ead': return 'ead'
+    case 'i797': return 'i797'
+    case 'dl':
+    case 'driver_license': return 'driver_license'
+    default: return 'user_manual'
+  }
+}
+
+/**
+ * Known system defaults for TPS-Ukraine filing.
+ * These fields get auto-populated with hardcoded values when no OCR source exists.
+ */
+const SYSTEM_DEFAULT_FIELDS: Record<string, string> = {
+  country_of_birth: 'Ukraine',
+  country_of_nationality: 'Ukraine',
+  passport_country_of_issuance: 'Ukraine',
+  mailing_same_as_physical: 'true',
+}
+
+/**
+ * Build a ProvenanceMap from the wizard's merged field state.
+ *
+ * Rules:
+ * 1. If mergedFields[key] exists AND manualOverrides didn't change the value
+ *    → ocrProvenance from the extraction source
+ * 2. If manualOverrides[key] exists AND mergedFields[key] exists with a different value
+ *    → manualProvenance(true) — user corrected an OCR result
+ * 3. If manualOverrides[key] exists AND mergedFields[key] does NOT exist
+ *    → manualProvenance(false) — user entered from scratch
+ * 4. If the value matches a known system default AND no OCR/manual source
+ *    → defaultProvenance()
+ * 5. Driver license fields CANNOT provide immigration provenance
+ *    (slot firewall: DL only supports address/identity cross-check)
+ */
+export function buildProvenanceFromWizard(
+  mergedFields: Record<string, ProvenanceInput>,
+  manualOverrides: Record<string, string>,
+  finalAnswerKeys: string[],
+): ProvenanceMap {
+  const map: ProvenanceMap = {}
+
+  /** Fields that DL is forbidden from providing as immigration source */
+  const DL_FORBIDDEN_IMMIGRATION_FIELDS = new Set([
+    'a_number', 'i94_admission_number', 'last_entry_date', 'status_at_last_entry',
+    'passport_number', 'passport_expiration_date', 'passport_country_of_issuance',
+    'country_of_birth', 'country_of_nationality',
+  ])
+
+  for (const key of finalAnswerKeys) {
+    const mf = mergedFields[key]
+    const manual = manualOverrides[key]
+    const hasManual = manual !== undefined && manual !== null && manual.toString().trim() !== ''
+
+    if (mf && mf.value) {
+      // DL firewall: if the field came from DL and it's an immigration field, reject provenance
+      if (toSourceDocType(mf.doc_slot) === 'driver_license' && DL_FORBIDDEN_IMMIGRATION_FIELDS.has(key)) {
+        // Treat as if the field was manually entered — DL cannot be the source
+        map[key] = hasManual ? manualProvenance(false) : defaultProvenance(key)
+        continue
+      }
+
+      if (hasManual && manual.trim() !== mf.value.trim()) {
+        // User corrected the OCR value
+        map[key] = manualProvenance(true)
+      } else {
+        // OCR value accepted (with or without review)
+        map[key] = ocrProvenance(
+          toSourceDocType(mf.doc_slot),
+          toExtractionMethod(mf.source),
+          mf.confidence ?? 0,
+          mf.source_field ?? key,
+        )
+      }
+    } else if (hasManual) {
+      // No OCR, user typed from scratch
+      map[key] = manualProvenance(false)
+    } else if (key in SYSTEM_DEFAULT_FIELDS) {
+      // Known system default
+      map[key] = defaultProvenance(key)
+    }
+    // If none of the above, field is missing — no provenance entry
+  }
+
+  return map
+}
