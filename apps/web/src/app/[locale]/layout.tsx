@@ -124,7 +124,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <meta name="x-vercel-deployment" content={deploymentId} />
       </head>
       <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark');}}catch(e){}})();` }} />
-      <body className="min-h-screen antialiased pb-14 md:pb-0">
+      <body className="min-h-screen antialiased pb-24 md:pb-0">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <div className="flex flex-col min-h-screen">
             <Header />
