@@ -1,0 +1,66 @@
+
+╔════════════════════════════════════════════════════════════╗
+║  Messenginfo TPS — Ship Controlled Beta                    ║
+║  Started: 2026-05-11 12:48:46                       ║
+╚════════════════════════════════════════════════════════════╝
+
+  Repo:    /Users/sergiikuropiatnyk/work/uscis-helper
+  Branch:  main
+  HEAD:    b6b6e94
+  Commits ahead of origin/main: 15
+
+[1m▶ Stage 1/3 — Running all gates (typecheck / vitest / lint / guard / build)...[0m
+
+
+╔══════════════════════════════════════════════════════╗
+║   Messenginfo TPS — run-all-gates.sh                 ║
+║   Mac-side validation before push                    ║
+╚══════════════════════════════════════════════════════╝
+
+Repo head:       b6b6e94
+Branch:          main
+Commits ahead:   15
+Started at:      2026-05-11T19:48:47Z
+
+▶ typecheck (apps/web)
+  ✅ PASS  typecheck (apps/web)
+▶ vitest (apps/web)
+  ❌ FAIL  vitest (apps/web)
+    ─ last 20 lines:
+      
+      [36m [2m❯[22m src/lib/tps/__tests__/packetBuilder.test.ts:[2m157:22[22m[39m
+          [90m155|[39m
+          [90m156|[39m     [90m// A-Number must land in both forms.[39m
+          [90m157|[39m     [34mexpect[39m(i821Text)[33m.[39m[34mtoMatch[39m([36m/987654321/[39m)
+          [90m   |[39m                      [31m^[39m
+          [90m158|[39m     [34mexpect[39m(i765Text)[33m.[39m[34mtoMatch[39m([36m/987654321/[39m)
+          [90m159|[39m     [90m// Class of admission ("UH") must land on I-765 Line 23.[39m
+      
+      [31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+      
+      
+      [2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m40 passed[39m[22m[90m (41)[39m
+      [2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1785 passed[39m[22m[90m (1786)[39m
+      [2m   Start at [22m 12:48:49
+      [2m   Duration [22m 6.67s[2m (transform 2.03s, setup 0ms, import 3.94s, tests 8.56s, environment 14ms)[22m
+      
+      /Users/sergiikuropiatnyk/work/uscis-helper/apps/web:
+       ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  web@0.1.0 test: `vitest run`
+      Exit status 1
+▶ lint (apps/web)
+  ✅ PASS  lint (apps/web)
+▶ content/i18n/reparole guards
+  ✅ PASS  content/i18n/reparole guards
+▶ build (apps/web)
+  ✅ PASS  build (apps/web)
+
+══════════════════════════════════════════════════════
+  ❌  1 gate(s) FAILED — do NOT push
+      Fix the failures above before pushing.
+      Report: /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/RUN_ALL_GATES.report.yaml
+══════════════════════════════════════════════════════
+
+
+[0;31m[1m✗ Gates FAILED. NOT pushing.[0m
+  Read /Users/sergiikuropiatnyk/work/uscis-helper/.ship.log for full output.
+  Press any key to close...

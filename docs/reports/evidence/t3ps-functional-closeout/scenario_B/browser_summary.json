@@ -1,10 +1,10 @@
 {
   "scenario": "B",
-  "started_utc": "2026-05-16T07:38:52.271Z",
+  "started_utc": "2026-05-16T21:57:02.532Z",
   "ocr_status": 200,
   "generate_status": 200,
   "zip_downloaded": true,
-  "zip_path": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/downloaded_zip/tps-packet-1778917128000.zip",
+  "zip_path": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/downloaded_zip/tps-packet-1778968618232.zip",
   "zip_size_bytes": 2590553,
   "failed_requests": [
     {

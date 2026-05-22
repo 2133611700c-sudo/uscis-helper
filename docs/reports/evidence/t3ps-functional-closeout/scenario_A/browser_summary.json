@@ -1,11 +1,11 @@
 {
   "scenario": "A",
-  "started_utc": "2026-05-16T07:37:37.901Z",
+  "started_utc": "2026-05-16T21:57:37.784Z",
   "ocr_status": 200,
-  "generate_status": 200,
-  "zip_downloaded": true,
-  "zip_path": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_A/downloaded_zip/tps-packet-1778917053361.zip",
-  "zip_size_bytes": 1825546,
+  "generate_status": null,
+  "zip_downloaded": false,
+  "zip_path": null,
+  "zip_size_bytes": 0,
   "failed_requests": [
     {
       "url": "https://messenginfo.com/ru/_vercel/insights/script.js",

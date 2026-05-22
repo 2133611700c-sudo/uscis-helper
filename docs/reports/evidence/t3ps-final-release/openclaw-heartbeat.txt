@@ -1,0 +1,7 @@
+repo=2133611700c-sudo/opencloud-gpt-agent
+workflow=OpenClaw Heartbeat
+run_id=25895049840
+run_url=https://github.com/2133611700c-sudo/opencloud-gpt-agent/actions/runs/25895049840
+status=success
+head_sha=2e02b8036c701c3a9d7e7793ff242292b19f54e1
+report_path=ops/agent-control/reports/openclaw-heartbeat/20260515T012224Z.md

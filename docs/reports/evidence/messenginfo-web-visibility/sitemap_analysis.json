@@ -1,0 +1,16 @@
+{
+  "count": 92,
+  "tpsLanding": [
+    "https://messenginfo.com/en/services/tps-ukraine",
+    "https://messenginfo.com/ru/services/tps-ukraine",
+    "https://messenginfo.com/uk/services/tps-ukraine",
+    "https://messenginfo.com/es/services/tps-ukraine"
+  ],
+  "startUrls": [],
+  "translate": [
+    "https://messenginfo.com/en/services/translate-document",
+    "https://messenginfo.com/ru/services/translate-document",
+    "https://messenginfo.com/uk/services/translate-document",
+    "https://messenginfo.com/es/services/translate-document"
+  ]
+}

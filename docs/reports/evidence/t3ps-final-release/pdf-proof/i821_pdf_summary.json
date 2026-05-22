@@ -1,0 +1,11 @@
+{
+  "zip_path": "docs/reports/evidence/t3ps-final-release/browser-run-clean/downloaded_zip/tps-packet-intercept-1778885593828.zip",
+  "i821_filled_count": 64,
+  "cyrillic_leak_count": 0,
+  "cyrillic_leak_keys": [],
+  "family_name_present": true,
+  "given_name_present": true,
+  "dob_present": false,
+  "marital_present": true,
+  "part7_checkbox_count": 0
+}

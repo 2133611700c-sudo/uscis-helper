@@ -1,0 +1,87 @@
+[
+  {
+    "t": "2026-05-14T07:47:03.479Z",
+    "type": "error",
+    "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.us.i.posthog.com https://cdn.eu.i.posthog.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+  },
+  {
+    "t": "2026-05-14T07:47:04.261Z",
+    "type": "error",
+    "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.us.i.posthog.com https://cdn.eu.i.posthog.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+  },
+  {
+    "t": "2026-05-14T07:47:05.124Z",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 ()"
+  },
+  {
+    "t": "2026-05-14T07:47:05.124Z",
+    "type": "error",
+    "text": "Refused to execute script from 'https://messenginfo.com/ru/_vercel/insights/script.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled."
+  },
+  {
+    "t": "2026-05-14T07:47:05.124Z",
+    "type": "log",
+    "text": "[Vercel Web Analytics] Failed to load script from /_vercel/insights/script.js. Be sure to enable Web Analytics for your project and deploy again. See https://vercel.com/docs/analytics/quickstart for more information."
+  },
+  {
+    "t": "2026-05-14T07:47:05.621Z",
+    "type": "error",
+    "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.us.i.posthog.com https://cdn.eu.i.posthog.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+  },
+  {
+    "t": "2026-05-14T07:47:05.828Z",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 ()"
+  },
+  {
+    "t": "2026-05-14T07:47:05.828Z",
+    "type": "error",
+    "text": "Refused to execute script from 'https://messenginfo.com/ru/_vercel/insights/script.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled."
+  },
+  {
+    "t": "2026-05-14T07:47:05.828Z",
+    "type": "log",
+    "text": "[Vercel Web Analytics] Failed to load script from /_vercel/insights/script.js. Be sure to enable Web Analytics for your project and deploy again. See https://vercel.com/docs/analytics/quickstart for more information."
+  },
+  {
+    "t": "2026-05-14T07:47:06.961Z",
+    "type": "error",
+    "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.us.i.posthog.com https://cdn.eu.i.posthog.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+  },
+  {
+    "t": "2026-05-14T07:47:07.130Z",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 ()"
+  },
+  {
+    "t": "2026-05-14T07:47:07.130Z",
+    "type": "error",
+    "text": "Refused to execute script from 'https://messenginfo.com/ru/_vercel/insights/script.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled."
+  },
+  {
+    "t": "2026-05-14T07:47:07.130Z",
+    "type": "log",
+    "text": "[Vercel Web Analytics] Failed to load script from /_vercel/insights/script.js. Be sure to enable Web Analytics for your project and deploy again. See https://vercel.com/docs/analytics/quickstart for more information."
+  },
+  {
+    "t": "2026-05-14T07:47:10.373Z",
+    "type": "error",
+    "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.us.i.posthog.com https://cdn.eu.i.posthog.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+  },
+  {
+    "t": "2026-05-14T07:47:10.451Z",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 ()"
+  },
+  {
+    "t": "2026-05-14T07:47:10.451Z",
+    "type": "error",
+    "text": "Refused to execute script from 'https://messenginfo.com/ru/_vercel/insights/script.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled."
+  },
+  {
+    "t": "2026-05-14T07:47:10.451Z",
+    "type": "log",
+    "text": "[Vercel Web Analytics] Failed to load script from /_vercel/insights/script.js. Be sure to enable Web Analytics for your project and deploy again. See https://vercel.com/docs/analytics/quickstart for more information."
+  }
+]

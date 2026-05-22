@@ -1,0 +1,20 @@
+HTTP/2 403 
+date: Fri, 15 May 2026 23:32:29 GMT
+content-type: text/plain;charset=UTF-8
+cache-control: public, max-age=0, must-revalidate
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=OeI80H7IMDDdEUKBS%2Bnfetql01%2BBAiAFByu3%2BwT4tNh%2FwtAiq%2BArjAW8LtsnPQQ2vcNgZm2rDVmhQKCr%2FGNRzKXVnLlGKBzkTniCsDQsrCOVWt8ciDewVnZTbLj%2B4pWLQDQy%2F70jYJ97Ld9ZZws%3D"}]}
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://vercel.live; frame-ancestors 'none';
+permissions-policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+server: cloudflare
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-vercel-enable-rewrite-caching: 1
+x-vercel-id: sfo1::jjhzl-1778887949694-3948ef8a5fd4
+cf-cache-status: DYNAMIC
+vary: accept-encoding
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+cf-ray: 9fc5f1357ccb2ae0-LAX
+alt-svc: h3=":443"; ma=86400
+
