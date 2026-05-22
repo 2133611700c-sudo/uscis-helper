@@ -17,6 +17,7 @@ import { buildI765Ops } from './forms/i765FieldMap'
 import { prefill } from './pdfPrefiller'
 import { lockboxFor, feeGuidance, SNAPSHOT_DATE, OFFICIAL_TPS_UKRAINE_PAGE } from './filingGuidance'
 import { assertFormIntegrity } from './formIntegrity'
+import { buildAuditRows, summarizeProvenance, type ProvenanceMap, type ProvenanceSummary, type PdfAuditRow } from './provenance'
 
 // Edition dates verified against uscis.gov on 2026-05-10 and stamped on the
 // PDF footers. If USCIS publishes a new edition, scripts/uscis/refresh_tps_forms.sh
@@ -33,9 +34,14 @@ export interface PacketResult {
   zipBytes: Uint8Array
   i821: { applied: number; skipped: number; firstSkips: string[] }
   i765: { applied: number; skipped: number; firstSkips: string[] }
+  /** Phase 2: provenance audit summary (null if no provenance was provided) */
+  auditSummary: ProvenanceSummary | null
 }
 
-export async function buildPacket(answers: TPSAnswers): Promise<PacketResult> {
+export async function buildPacket(
+  answers: TPSAnswers,
+  provenance?: ProvenanceMap | null,
+): Promise<PacketResult> {
   // Read official PDFs from the public/ bundle (Vercel includes these in the
   // serverless function's filesystem).
   const [i821Bytes, i765Bytes] = await Promise.all([
@@ -74,6 +80,36 @@ export async function buildPacket(answers: TPSAnswers): Promise<PacketResult> {
   zip.file('README.txt', buildReadme(answers, i821Filled, i765Filled))
   zip.file('CHECKLIST.txt', buildChecklist(answers))
 
+  // Phase 2: generate audit rows from provenance sidecar (if provided).
+  // Audit rows link each PDF field → canonical answer → source document → extraction method.
+  // The report contains NO PII — only field names, sources, methods, and structural counts.
+  let auditSummary: ProvenanceSummary | null = null
+  if (provenance) {
+    // Compute applied field sets from ops minus skipped
+    const i821SkippedSet = new Set(i821Filled.skipped.map((s) => s.field))
+    const i821Applied = new Set(i821Ops.map((op) => op.field).filter((f) => !i821SkippedSet.has(f)))
+    const i821AuditRows = buildAuditRows(
+      i821Ops.map((op) => ({ field: op.field, kind: op.kind, value: op.value })),
+      'I-821',
+      provenance,
+      i821Applied,
+    )
+    let i765AuditRows: ReturnType<typeof buildAuditRows> = []
+    if (i765Filled) {
+      const i765SkippedSet = new Set(i765Filled.skipped.map((s) => s.field))
+      const i765Applied = new Set(i765Ops.map((op) => op.field).filter((f) => !i765SkippedSet.has(f)))
+      i765AuditRows = buildAuditRows(
+        i765Ops.map((op) => ({ field: op.field, kind: op.kind, value: op.value })),
+        'I-765',
+        provenance,
+        i765Applied,
+      )
+    }
+    const allRows = [...i821AuditRows, ...i765AuditRows]
+    auditSummary = summarizeProvenance(allRows)
+    zip.file('AUDIT_PROVENANCE.txt', buildAuditReport(allRows, auditSummary))
+  }
+
   const zipBytes = await zip.generateAsync({ type: 'uint8array' })
 
   return {
@@ -90,6 +126,7 @@ export async function buildPacket(answers: TPSAnswers): Promise<PacketResult> {
           firstSkips: i765Filled.skipped.slice(0, 5).map((s) => `${s.field} (${s.reason})`),
         }
       : { applied: 0, skipped: 0, firstSkips: [] },
+    auditSummary,
   }
 }
 
@@ -259,4 +296,55 @@ function buildReadme(
     'If a field looks wrong, do NOT mail the form. Edit it in Adobe first or',
     'come back to messenginfo.com and re-run the wizard with corrected data.',
   ].join('\n')
+}
+
+/**
+ * Build a PII-free audit report from provenance rows.
+ * Contains field names, source documents, extraction methods, and counts only.
+ * No values, no raw text, no personal data.
+ */
+function buildAuditReport(rows: PdfAuditRow[], summary: ProvenanceSummary): string {
+  const ts = new Date().toISOString()
+  const lines: string[] = [
+    'Messenginfo — Provenance Audit Report',
+    `Generated: ${ts}`,
+    '',
+    'This report shows WHERE each PDF field value came from (which document,',
+    'which extraction method) and whether it was auto-filled or manually entered.',
+    'No personal data or field values are included.',
+    '',
+    '── SUMMARY ────────────────────────────────────────────────────────────',
+    `Total fields:         ${summary.total_fields}`,
+    `Auto (with source):   ${summary.auto_with_source}`,
+    `User manual:          ${summary.user_manual}`,
+    `System default:       ${summary.system_default}`,
+    `Unknown provenance:   ${summary.unknown_provenance}`,
+    '',
+    'Source breakdown:',
+  ]
+  for (const [src, count] of Object.entries(summary.source_breakdown)) {
+    lines.push(`  ${src}: ${count}`)
+  }
+  lines.push('', 'Method breakdown:')
+  for (const [meth, count] of Object.entries(summary.method_breakdown)) {
+    lines.push(`  ${meth}: ${count}`)
+  }
+  lines.push(
+    '',
+    '── PER-FIELD DETAIL ───────────────────────────────────────────────────',
+    '',
+  )
+  for (const r of rows) {
+    lines.push(
+      `${r.pdf_form} | ${r.canonical_field}`,
+      `  pdf_field:  ${r.pdf_field_name}`,
+      `  source:     ${r.source_document_type}`,
+      `  method:     ${r.extraction_method}`,
+      `  confidence: ${r.confidence !== null ? r.confidence.toFixed(2) : 'n/a'}`,
+      `  review:     ${r.user_review_status}`,
+      `  written:    ${r.pdf_written ? 'yes' : 'no'}`,
+      '',
+    )
+  }
+  return lines.join('\n')
 }
