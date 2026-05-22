@@ -28,17 +28,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 
-// ─── Brand tokens (TPS-green is also the Re-Parole brand) ───────────────────
-const GREEN = '#0d5a34'
-const GREEN_DARK = '#08391f'
+// ─── Brand tokens — CSS variables for dark mode ─────────────────────────────
+const GREEN = 'var(--accent, #0d5a34)'
+const GREEN_DARK = 'var(--accent-hover, #08391f)'
 const PAY_BLUE = '#1a73e8'
 const PAY_BLUE_DARK = '#1557b0'
-const WARN_BG = '#fff3cd'
-const WARN_BORDER = '#ffc107'
-const WARN_TEXT = '#856404'
-const INFO_BG = '#e8f0fe'
-const INFO_BORDER = '#a8c7fa'
-const INFO_TEXT = '#1a4d8f'
+const WARN_BG = 'var(--warning-bg, #fff3cd)'
+const WARN_BORDER = 'var(--warning-border, #ffc107)'
+const WARN_TEXT = 'var(--warning-text, #856404)'
+const INFO_BG = 'var(--info-bg, #e8f0fe)'
+const INFO_BORDER = 'var(--info-border, #a8c7fa)'
+const INFO_TEXT = 'var(--info-text, #1a4d8f)'
 const PAGE_BG = 'var(--background)'
 const CARD_BG = 'var(--surface-1)'
 const BORDER = 'var(--border)'
@@ -446,6 +446,17 @@ const T = {
 // ─── Component ──────────────────────────────────────────────────────────────
 interface Props { locale: string }
 
+/** Normalize Ukrainian passport "place of birth" (oblast/city) to country name. */
+function normalizeCountryOfBirth(raw: string, nationality: string): string {
+  if (!raw) return nationality || 'Ukraine'
+  const lower = raw.toLowerCase().trim()
+  if (lower === 'ukraine' || lower === 'україна') return 'Ukraine'
+  if (/\bukr/i.test(raw)) return 'Ukraine'
+  if (/обл\.?|obl\.?|область|м\.|місто|city|village|район|raion/i.test(raw)) return nationality || 'Ukraine'
+  if (raw.length <= 30 && !/[,\/]/.test(raw)) return raw
+  return nationality || 'Ukraine'
+}
+
 export default function ReparoleWizardV2({ locale }: Props) {
   const t = T[(locale as LocaleKey)] ?? T.uk
   const [step, setStep] = useState(1)
@@ -498,6 +509,14 @@ export default function ReparoleWizardV2({ locale }: Props) {
         setStep(5)
       }
     }
+  }, [])
+
+  // Owner access: skip Stripe if owner session is active
+  useEffect(() => {
+    fetch('/api/owner/status')
+      .then((r) => r.json())
+      .then((d) => { if (d?.owner) setData((prev) => ({ ...prev, paid: true })) })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -610,7 +629,7 @@ export default function ReparoleWizardV2({ locale }: Props) {
         a_number: aNum,
         dob: v('dob'),
         sex: (v('sex') === 'F' ? 'F' : 'M') as 'M' | 'F',
-        country_of_birth: v('country_of_birth') || 'Ukraine',
+        country_of_birth: normalizeCountryOfBirth(v('country_of_birth'), v('country_of_nationality')),
         country_of_nationality: v('country_of_nationality') || 'Ukraine',
         passport_number: v('passport_number'),
         passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
@@ -718,7 +737,7 @@ export default function ReparoleWizardV2({ locale }: Props) {
         <div style={{ display: 'flex', gap: 3, marginBottom: 20 }}>
           {[1, 2, 3, 4, 5].map((i) => (
             <span key={i} style={{
-              flex: 1, height: 5, background: i <= step ? GREEN : '#e2e5ea',
+              flex: 1, height: 5, background: i <= step ? GREEN : 'var(--surface-3, #e2e5ea)',
               borderRadius: 3, transition: '.3s',
             }} />
           ))}
@@ -810,8 +829,9 @@ export default function ReparoleWizardV2({ locale }: Props) {
             </Card>
 
             <Card title={t.s4ManualTitle}>
-              <Field label={t.label.phone} value={data.manual.daytime_phone || ''}
-                onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, daytime_phone: v } }))} />
+              <Field label={t.label.phone} value={data.manual.daytime_phone || ''} placeholder="2131234567"
+                inputMode="tel" maxLength={10}
+                onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, daytime_phone: v.replace(/\D/g, '').slice(0, 10) } }))} />
               <Field label={t.label.email} value={data.manual.email || ''}
                 onChange={(v) => setData((d) => ({ ...d, manual: { ...d.manual, email: v } }))} />
               <Field label={t.label.ssn} placeholder={t.placeholder.ssn} value={data.manual.ssn || ''}
@@ -936,8 +956,8 @@ export default function ReparoleWizardV2({ locale }: Props) {
             )}
 
             {errMsg && (
-              <div style={{ background: '#fdecea', border: '1.5px solid #d33', borderRadius: 12,
-                padding: 12, fontSize: 14, color: '#a33', marginBottom: 12 }}>{errMsg}</div>
+              <div style={{ background: 'var(--error-bg, #fdecea)', border: '1.5px solid var(--error-border, #d33)', borderRadius: 12,
+                padding: 12, fontSize: 14, color: 'var(--error-text, #a33)', marginBottom: 12 }}>{errMsg}</div>
             )}
 
             <Warn>{t.s5TimeWarn}</Warn>
@@ -1013,13 +1033,13 @@ function UploadDrop({ id, doc, entry, onPick }: {
   return (
     <div onClick={() => inputRef.current?.click()} role="button" tabIndex={0}
       style={{
-        border: `2.5px ${ok ? 'solid' : 'dashed'} ${ok ? GREEN : err ? '#d33' : '#ccc'}`,
+        border: `2.5px ${ok ? 'solid' : 'dashed'} ${ok ? GREEN : err ? 'var(--error-border, #d33)' : BORDER}`,
         borderRadius: 14, padding: 18, textAlign: 'center', cursor: 'pointer',
-        marginBottom: 10, background: ok ? '#e6f4ea' : err ? '#fdecea' : CARD_BG,
+        marginBottom: 10, background: ok ? 'var(--success-bg, #e6f4ea)' : err ? 'var(--error-bg, #fdecea)' : CARD_BG,
         opacity: uploading ? 0.7 : 1, transition: '.2s',
       }}>
       <div style={{ fontSize: 40, marginBottom: 4 }}>{doc.ic}</div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: ok ? GREEN : err ? '#a33' : TEXT_PRIMARY }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: ok ? GREEN : err ? 'var(--error-text, #a33)' : TEXT_PRIMARY }}>
         {doc.lb} {ok && '✓'} {uploading && '⏳'}
       </div>
       <div style={{ fontSize: 14, color: TEXT_HINT, marginTop: 3 }}>
@@ -1067,13 +1087,15 @@ function RWAuto({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Field({ label, placeholder, value, onChange }: {
+function Field({ label, placeholder, value, onChange, inputMode, maxLength }: {
   label: string; placeholder?: string; value: string; onChange: (v: string) => void
+  inputMode?: 'text' | 'tel' | 'email' | 'numeric'; maxLength?: number
 }) {
   return (
     <div style={{ marginBottom: 2, flex: 1 }}>
       <div style={{ fontSize: 15, color: TEXT_MUTED }}>{label}</div>
       <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || label}
+        inputMode={inputMode} maxLength={maxLength}
         style={{
           width: '100%', padding: '10px 12px',
           border: `1.5px solid ${BORDER}`, borderRadius: 10,
@@ -1092,7 +1114,7 @@ function Nav({ back, next, backLabel, nextLabel }: {
         <button type="button" onClick={back} style={{
           flex: 1, padding: 16, border: 'none', borderRadius: 14,
           fontSize: 18, fontWeight: 800, cursor: 'pointer',
-          background: '#eee', color: '#555', fontFamily: 'inherit',
+          background: 'var(--surface-2, #eee)', color: TEXT_SECONDARY, fontFamily: 'inherit',
         }}>{backLabel}</button>
       )}
       {next && nextLabel && (
