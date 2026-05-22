@@ -1,0 +1,17 @@
+URL=https://messenginfo.com/en/services/translate-document/session/3c49bc6c-af3d-455b-b0d0-479e54a623da/review
+OUT=/Users/sergiiredacted/work/uscis-helper/artifacts/mobile_ux/manual_review_banner_ready.png
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForSelector: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for locator('[data-testid="manual-review-banner"]') to be visible[22m
+
+    at /Users/sergiiredacted/work/uscis-helper/scripts/_mr_screenshot.mjs:15:12 {
+  name: 'TimeoutError'
+}
+
+Node.js v25.9.0
+-rw-r--r--@ 1 sergiiredacted  staff  144618 May  9 16:38 /Users/sergiiredacted/work/uscis-helper/artifacts/mobile_ux/manual_review_banner_ready.png
+Done.
