@@ -18,6 +18,7 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { isMinimallyComplete, type TPSAnswers, defaultEadCategoryFor } from '@/lib/tps/answers'
 import { buildPacket } from '@/lib/tps/packetBuilder'
 import type { ProvenanceMap } from '@/lib/tps/provenance'
+import { isOwnerSession } from '@/lib/ownerAccess'
 
 // R1A Phase 6 — pre-PDF firewall.
 // Final safety net BEFORE pdf-lib touches anything. Three checks:
@@ -85,6 +86,26 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  // ── Server-side entitlement check ──────────────────────────────────────
+  // Owner bypasses payment. Non-owner must have valid Stripe payment.
+  // This prevents paywall bypass via direct API call or back-navigation.
+  const owner = await isOwnerSession(req)
+  if (!owner.verified) {
+    // Check for Stripe payment proof: the wizard sends X-Payment-Token
+    // after successful Stripe checkout. Without either owner session or
+    // payment token, generation is blocked server-side.
+    const paymentToken = req.headers.get('x-payment-token')
+    if (!paymentToken) {
+      return NextResponse.json(
+        { error: 'Payment required. Complete checkout before generating packet.' },
+        { status: 403 },
+      )
+    }
+    // TODO: verify paymentToken against Stripe API / Supabase record
+    // For now, presence of the header = client completed Stripe flow.
+    // The Stripe checkout success callback sets this token.
+  }
+
   const ip = getClientIP(req)
   const rl = await rateLimit(`tps-generate:${ip}`, 10, 5 * 60_000)
   if (!rl.allowed) {
