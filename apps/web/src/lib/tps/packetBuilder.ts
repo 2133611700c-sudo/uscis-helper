@@ -77,12 +77,14 @@ export async function buildPacket(
   const zip = new JSZip()
   zip.file('I-821.pdf', i821Filled.bytes)
   if (i765Filled) zip.file('I-765.pdf', i765Filled.bytes)
-  // Single instruction file — merges README + CHECKLIST content.
+  // Single instruction file — merges README + CHECKLIST + multilingual.
   // Client gets exactly 3 files: I-821.pdf, I-765.pdf, INSTRUCTION.txt
   zip.file('INSTRUCTION.txt',
     buildReadme(answers, i821Filled, i765Filled) +
     '\n\n' + '═'.repeat(60) + '\n\n' +
-    buildChecklist(answers)
+    buildChecklist(answers) +
+    '\n\n' + '═'.repeat(60) + '\n\n' +
+    buildMultilingualSections(answers)
   )
 
   // Phase 2: generate audit rows from provenance sidecar (if provided).
@@ -134,6 +136,67 @@ export async function buildPacket(
       : { applied: 0, skipped: 0, firstSkips: [] },
     auditSummary,
   }
+}
+
+/**
+ * Multilingual instruction sections — RU + UK translations of key instructions.
+ * Appended after the English README + CHECKLIST in INSTRUCTION.txt.
+ */
+function buildMultilingualSections(a: TPSAnswers): string {
+  const ead = a.wants_ead
+  return [
+    '📋 ИНСТРУКЦИЯ НА РУССКОМ',
+    '',
+    'ЧТО НАХОДИТСЯ В ЭТОМ ПАКЕТЕ',
+    '  • Form I-821 (PDF) — заявление на TPS, заполнено вашими данными',
+    ead ? '  • Form I-765 (PDF) — заявление на разрешение на работу (EAD)' : null,
+    '  • Этот файл с инструкциями',
+    '',
+    'ЧТО НУЖНО СДЕЛАТЬ',
+    '  1. Откройте каждую PDF-форму и внимательно проверьте ВСЕ заполненные поля.',
+    '  2. Если что-то неправильно — исправьте в Adobe Acrobat Reader.',
+    '  3. Распечатайте обе формы.',
+    '  4. Подпишите РУЧКОЙ (чёрной или синей) — в каждой форме есть строка для подписи.',
+    '     ⚠️  ВНИМАНИЕ: USCIS может ОТКЛОНИТЬ заявление и НЕ ВЕРНУТЬ ПОШЛИНУ,',
+    '     если подпись не от руки (напечатанная, скопированная или поставленная штампом).',
+    '  5. Соберите все документы (см. чек-лист выше на английском).',
+    '  6. Оплатите госпошлину USCIS (проверьте актуальную сумму на uscis.gov/g-1055).',
+    '  7. Отправьте пакет почтой по адресу, указанному выше.',
+    '',
+    'ВАЖНО',
+    '  • Messenginfo НЕ подаёт документы за вас. Вы подаёте самостоятельно.',
+    '  • Messenginfo НЕ является юридической фирмой и НЕ даёт юридических советов.',
+    '  • Проверьте все данные перед отправкой.',
+    '  • Сохраните копии всех документов для себя.',
+    '',
+    '',
+    '═'.repeat(60),
+    '',
+    '',
+    '📋 ІНСТРУКЦІЯ УКРАЇНСЬКОЮ',
+    '',
+    'ЩО ЗНАХОДИТЬСЯ В ЦЬОМУ ПАКЕТІ',
+    '  • Form I-821 (PDF) — заява на TPS, заповнена вашими даними',
+    ead ? '  • Form I-765 (PDF) — заява на дозвіл на роботу (EAD)' : null,
+    '  • Цей файл з інструкціями',
+    '',
+    'ЩО ПОТРІБНО ЗРОБИТИ',
+    '  1. Відкрийте кожну PDF-форму та уважно перевірте ВСІ заповнені поля.',
+    '  2. Якщо щось неправильно — виправте в Adobe Acrobat Reader.',
+    '  3. Роздрукуйте обидві форми.',
+    '  4. Підпишіть РУЧКОЮ (чорною або синьою) — у кожній формі є рядок для підпису.',
+    '     ⚠️  УВАГА: USCIS може ВІДХИЛИТИ заяву і НЕ ПОВЕРНУТИ МИТО,',
+    '     якщо підпис не від руки (надрукований, скопійований або поставлений штампом).',
+    '  5. Зберіть усі документи (див. чек-лист вище англійською).',
+    '  6. Сплатіть держмито USCIS (перевірте актуальну суму на uscis.gov/g-1055).',
+    '  7. Відправте пакет поштою за адресою, вказаною вище.',
+    '',
+    'ВАЖЛИВО',
+    '  • Messenginfo НЕ подає документи за вас. Ви подаєте самостійно.',
+    '  • Messenginfo НЕ є юридичною фірмою і НЕ надає юридичних порад.',
+    '  • Перевірте всі дані перед відправкою.',
+    '  • Збережіть копії всіх документів для себе.',
+  ].filter(Boolean).join('\n')
 }
 
 /**
