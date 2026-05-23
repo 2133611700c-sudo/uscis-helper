@@ -222,11 +222,14 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
   }
 
   // ── Part 2 — Item 20: Port of entry ─────────────────────────────────────────
-  if (a.port_of_entry_city) {
-    ops.push({ field: 'form1[0].Page03[0].Part2_Item20_CityOrTown[0]', kind: 'text', value: a.port_of_entry_city })
+  // Accepts either split fields (port_of_entry_city/state) or combined place_of_last_entry
+  const poeCity = a.port_of_entry_city || (a.place_of_last_entry?.split(',')[0]?.trim() ?? '')
+  const poeState = a.port_of_entry_state || (a.place_of_last_entry?.split(',')[1]?.trim() ?? '')
+  if (poeCity) {
+    ops.push({ field: 'form1[0].Page03[0].Part2_Item20_CityOrTown[0]', kind: 'text', value: poeCity })
   }
-  if (a.port_of_entry_state) {
-    ops.push({ field: 'form1[0].Page03[0].Part2_Item20_State[0]', kind: 'choice', value: a.port_of_entry_state })
+  if (poeState) {
+    ops.push({ field: 'form1[0].Page03[0].Part2_Item20_State[0]', kind: 'choice', value: poeState })
   }
 
   // ── Part 2 — Item 21: Authorized period of stay ──────────────────────────────
@@ -346,7 +349,15 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
   // Phone maxLength = 10 (digits only). Strip non-digits before writing.
   const phoneDigitsOnly = (a.daytime_phone || '').replace(/\D/g, '').slice(0, 10)
   ops.push({ field: 'form1[0].Page11[0].Part8_Item3_DayPhone[0]', kind: 'text', value: phoneDigitsOnly })
+  // Mobile phone — copy from daytime if no separate mobile
+  ops.push({ field: 'form1[0].Page11[0].Part8_Item4_MobilePhone[0]', kind: 'text', value: phoneDigitsOnly })
   ops.push({ field: 'form1[0].Page11[0].Part8_Item5_Email[0]',    kind: 'text', value: a.email })
+
+  // ── Part 8: English proficiency statement ──────────────────────────────────
+  // [0]=Yes I can read/understand English, [1]=No
+  const eng = a.english_proficiency ?? false
+  ops.push({ field: 'form1[0].Page10[0].Part8_Item1_AppStmt[0]', kind: 'checkbox', value: eng })
+  ops.push({ field: 'form1[0].Page10[0].Part8_Item1_AppStmt[1]', kind: 'checkbox', value: !eng })
 
   return ops
 }
