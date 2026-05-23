@@ -9,6 +9,9 @@
  *           given_name         ← Ім'я / Имя
  *           middle_name        ← По батькові / Отчество
  *           dob                ← Дата народження
+ *           sex                ← Стать / Пол
+ *           city_of_birth      ← Місце народження (city/settlement part)
+ *           province_of_birth  ← Місце народження (oblast part)
  *           passport_number    ← Series+Number, e.g. "ЕА 991991"
  *           country_of_nationality ← always 'Ukraine'
  *           passport_country_of_issuance ← always 'Ukraine'
@@ -675,6 +678,54 @@ export function runPassportBookletModule(
     }
   } else {
     warnings.push('booklet_sex_missing')
+  }
+
+  // Nationality + issuing country are always Ukraine for this document.
+
+  // ── Place of birth: city/settlement + oblast ────────────────────────
+  // I-765 Line 18a (city_of_birth) + Line 18b (province_of_birth).
+  // Internal passport has "Місце народження / Место рождения" label
+  // followed by locality + oblast, often on 2 separate lines.
+  const birthPlaceRaw = findField(['Місце народження', 'Место рождения', 'Place of birth'])
+  if (birthPlaceRaw) {
+    const rawText = birthPlaceRaw.value.trim()
+    // Try to split city and oblast. Common patterns:
+    //   "смт. Устинівка Вінницької області"
+    //   "м. Київ" (city only, no oblast)
+    //   Line 1: "смт Устинівка", Line 2: "Вінницької області"
+    const oblastMatch = rawText.match(/(.*?)\s*([\wА-ЯІЇЄҐа-яіїєґ']+(?:ської|ської|ської|зької|цької|ської|ської|ської|ської|ської|ської|ської|ської|ського|ського)\s+(?:обл(?:асті)?\.?))/iu)
+    if (oblastMatch) {
+      const cityPart = oblastMatch[1].trim()
+      const oblastPart = oblastMatch[2].trim()
+      if (cityPart) {
+        emit(
+          'city_of_birth',
+          cityPart,
+          cityPart,
+          birthPlaceRaw.sourceLine,
+          'booklet_label_birthplace_city',
+        )
+      }
+      emit(
+        'province_of_birth',
+        oblastPart,
+        oblastPart,
+        birthPlaceRaw.sourceLine,
+        'booklet_label_birthplace_oblast',
+      )
+    } else {
+      // No oblast pattern found — emit entire value as city_of_birth
+      emit(
+        'city_of_birth',
+        rawText,
+        rawText,
+        birthPlaceRaw.sourceLine,
+        'booklet_label_birthplace_full',
+      )
+    }
+  } else {
+    // Try to find oblast on a separate line near the birthplace label
+    warnings.push('booklet_birth_place_missing')
   }
 
   // Nationality + issuing country are always Ukraine for this document.

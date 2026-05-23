@@ -1,0 +1,183 @@
+/**
+ * Mail-Ready Export Gate — blocks export when data is incomplete or conflicted.
+ * 
+ * This is the LAST safety layer before the user gets a PDF package.
+ * If this gate says NO, the user sees a clear message and must resolve issues.
+ * If this gate says YES, the package is safe to print, sign, and mail.
+ *
+ * The user is 30-80 years old, minimal tech experience.
+ * They must NEVER receive a package that looks ready but has hidden problems.
+ */
+
+import type { TPSAnswers } from './answers'
+
+export interface GateResult {
+  mail_ready: boolean
+  blockers: GateBlocker[]
+  warnings: GateWarning[]
+}
+
+export interface GateBlocker {
+  field: string
+  reason: string
+  user_message: { en: string; ru: string; uk: string }
+}
+
+export interface GateWarning {
+  field: string
+  reason: string
+  user_message: { en: string; ru: string; uk: string }
+}
+
+// Fields that MUST be filled for I-765 + I-821 mail filing
+const REQUIRED_FIELDS: Array<{ key: keyof TPSAnswers; label: string }> = [
+  { key: 'family_name', label: 'Last Name' },
+  { key: 'given_name', label: 'First Name' },
+  { key: 'dob', label: 'Date of Birth' },
+  { key: 'sex', label: 'Sex' },
+  { key: 'country_of_birth', label: 'Country of Birth' },
+  { key: 'country_of_nationality', label: 'Country of Nationality' },
+  { key: 'passport_number', label: 'Passport Number' },
+  { key: 'passport_expiration_date', label: 'Passport Expiration Date' },
+  { key: 'us_address_street', label: 'US Address (Street)' },
+  { key: 'us_address_city', label: 'US Address (City)' },
+  { key: 'us_address_state', label: 'US Address (State)' },
+  { key: 'us_address_zip', label: 'US Address (ZIP)' },
+  { key: 'daytime_phone', label: 'Phone Number' },
+  { key: 'email', label: 'Email' },
+  { key: 'last_entry_date', label: 'Last Entry Date' },
+  { key: 'filing_path', label: 'Filing Type' },
+]
+
+// Fields that are important but not absolute blockers
+const RECOMMENDED_FIELDS: Array<{ key: keyof TPSAnswers; label: string }> = [
+  { key: 'middle_name', label: 'Patronymic / Middle Name' },
+  { key: 'a_number', label: 'A-Number' },
+  { key: 'i94_admission_number', label: 'I-94 Number' },
+  { key: 'city_of_birth', label: 'City of Birth' },
+  { key: 'province_of_birth', label: 'Province of Birth' },
+  { key: 'status_at_last_entry', label: 'Status at Last Entry' },
+  { key: 'ssn', label: 'SSN' },
+]
+
+/**
+ * Run the mail-ready gate. Call this BEFORE generating the final ZIP.
+ * If mail_ready=false, show blockers to user and do not export.
+ */
+export function runMailReadyGate(
+  answers: Partial<TPSAnswers>,
+  conflicts?: Array<{ field: string; reason: string }>,
+  lowConfidenceFields?: Array<{ field: string; confidence: number }>,
+): GateResult {
+  const blockers: GateBlocker[] = []
+  const warnings: GateWarning[] = []
+
+  // Check required fields
+  for (const { key, label } of REQUIRED_FIELDS) {
+    const val = answers[key]
+    if (!val || (typeof val === 'string' && val.trim() === '')) {
+      blockers.push({
+        field: key,
+        reason: `required_field_empty`,
+        user_message: {
+          en: `"${label}" is required but empty. Please fill it in.`,
+          ru: `"${label}" — обязательное поле. Пожалуйста, заполните.`,
+          uk: `"${label}" — обов'язкове поле. Будь ласка, заповніть.`,
+        },
+      })
+    }
+  }
+
+  // Check recommended fields (warnings, not blockers)
+  for (const { key, label } of RECOMMENDED_FIELDS) {
+    const val = answers[key]
+    if (!val || (typeof val === 'string' && val.trim() === '')) {
+      warnings.push({
+        field: key,
+        reason: `recommended_field_empty`,
+        user_message: {
+          en: `"${label}" is empty. USCIS may send a Request for Evidence (RFE).`,
+          ru: `"${label}" не заполнено. USCIS может запросить дополнительные документы (RFE).`,
+          uk: `"${label}" не заповнено. USCIS може запросити додаткові документи (RFE).`,
+        },
+      })
+    }
+  }
+
+  // Check controlling spelling conflicts
+  if (conflicts && conflicts.length > 0) {
+    for (const c of conflicts) {
+      blockers.push({
+        field: c.field,
+        reason: 'controlling_spelling_conflict',
+        user_message: {
+          en: `"${c.field}" has conflicting values in your documents. Please review and choose the correct one.`,
+          ru: `"${c.field}" — в ваших документах разные значения. Проверьте и выберите правильное.`,
+          uk: `"${c.field}" — у ваших документах різні значення. Перевірте і оберіть правильне.`,
+        },
+      })
+    }
+  }
+
+  // Check low-confidence OCR fields
+  if (lowConfidenceFields) {
+    for (const lc of lowConfidenceFields) {
+      if (lc.confidence < 0.5) {
+        blockers.push({
+          field: lc.field,
+          reason: `ocr_confidence_too_low:${lc.confidence}`,
+          user_message: {
+            en: `"${lc.field}" was read from your document but the quality is too low. Please type it manually.`,
+            ru: `"${lc.field}" прочитано из документа, но качество слишком низкое. Введите вручную.`,
+            uk: `"${lc.field}" зчитано з документу, але якість занадто низька. Введіть вручну.`,
+          },
+        })
+      } else if (lc.confidence < 0.7) {
+        warnings.push({
+          field: lc.field,
+          reason: `ocr_confidence_low:${lc.confidence}`,
+          user_message: {
+            en: `"${lc.field}" was read from your document — please double-check it.`,
+            ru: `"${lc.field}" прочитано из документа — пожалуйста, проверьте.`,
+            uk: `"${lc.field}" зчитано з документу — будь ласка, перевірте.`,
+          },
+        })
+      }
+    }
+  }
+
+  // Validate phone format (10 digits)
+  if (answers.daytime_phone) {
+    const digits = answers.daytime_phone.replace(/\D/g, '')
+    if (digits.length !== 10) {
+      blockers.push({
+        field: 'daytime_phone',
+        reason: 'invalid_phone_format',
+        user_message: {
+          en: 'Phone number must be 10 digits (US format).',
+          ru: 'Номер телефона должен содержать 10 цифр (формат США).',
+          uk: 'Номер телефону повинен містити 10 цифр (формат США).',
+        },
+      })
+    }
+  }
+
+  // Validate email has @
+  if (answers.email && !answers.email.includes('@')) {
+    blockers.push({
+      field: 'email',
+      reason: 'invalid_email',
+      user_message: {
+        en: 'Please enter a valid email address.',
+        ru: 'Пожалуйста, введите правильный email.',
+        uk: 'Будь ласка, введіть правильну email адресу.',
+      },
+    })
+  }
+
+  return {
+    mail_ready: blockers.length === 0,
+    blockers,
+    warnings,
+  }
+}
