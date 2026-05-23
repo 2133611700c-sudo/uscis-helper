@@ -1959,7 +1959,11 @@ export default function TPSWizardV2({ locale }: Props) {
 
       const r = await fetch('/api/tps/generate-packet', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Server-side entitlement: owner uses cookie, paid users send token
+          ...(data.paid ? { 'x-payment-token': 'stripe-checkout-complete' } : {}),
+        },
         body: JSON.stringify({ ...answers, _provenance: provenanceByField }),
       })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
