@@ -137,21 +137,26 @@ export async function buildPacket(
     for (const docType of translationOpts.uploadedDocTypes) {
       if (!shouldTranslateForTPSPacket(docType)) continue
 
-      const result = generateTPSTranslation(
-        answers,
-        docType,
-        translationOpts.signerName || '',
-        translationOpts.signerAddress || '',
-        translationOpts.signatureDataUrl ?? null,
-        translationOpts.controllingSpellings || {},
-      )
-      if (result && result.violations.length === 0) {
-        const filename = translationFileName(docType)
-        // Add translation as TXT (Phase 2: render to proper PDF via bureauStyleRenderer)
-        zip.file(filename.replace('.pdf', '.txt'), result.translation_text)
-        zip.file(CERTIFICATION_FILENAME.replace('.pdf', '.txt'),
-          result.certification_text)
-        translations.push({ docType, filename })
+      try {
+        const result = generateTPSTranslation(
+          answers,
+          docType,
+          translationOpts.signerName || '',
+          translationOpts.signerAddress || '',
+          translationOpts.signatureDataUrl ?? null,
+          translationOpts.controllingSpellings || {},
+        )
+        if (result && result.violations.length === 0) {
+          const filename = translationFileName(docType)
+          zip.file(filename.replace('.pdf', '.txt'), result.translation_text)
+          zip.file(CERTIFICATION_FILENAME.replace('.pdf', '.txt'),
+            result.certification_text)
+          translations.push({ docType, filename })
+        }
+      } catch {
+        // Translation generation failed — log but don't block forms.
+        // Forms are critical; translation is an enhancement.
+        console.warn(`[packetBuilder] Translation failed for ${docType}, skipping`)
       }
     }
   }
