@@ -1493,6 +1493,7 @@ export default function TPSWizardV2({ locale }: Props) {
   })
   const [busy, setBusy] = useState(false)
   const [errMsg, setErrMsg] = useState<string | null>(null)
+  const [ownerChecked, setOwnerChecked] = useState(false)
 
   // ── Persist to localStorage (without File objects) ───────────────────────
   //
@@ -1591,8 +1592,11 @@ export default function TPSWizardV2({ locale }: Props) {
     // the owner still reviews fields and clicks Generate manually.
     fetch('/api/owner/status')
       .then((r) => r.json())
-      .then((d) => { if (d?.owner) setData((prev) => ({ ...prev, paid: true })) })
-      .catch(() => { /* not owner, normal flow */ })
+      .then((d) => {
+        if (d?.owner) setData((prev) => ({ ...prev, paid: true }))
+      })
+      .catch(() => {})
+      .finally(() => setOwnerChecked(true))
   }, [])
 
   useEffect(() => {
@@ -2374,7 +2378,11 @@ export default function TPSWizardV2({ locale }: Props) {
               <PackageList t={t} type={data.type} ead={data.ead} method={data.method} />
             </Card>
 
-            {!data.paid && (
+            {/* Gate on ownerChecked to prevent flash of Pay button for owners */}
+            {!ownerChecked && (
+              <div style={{ textAlign: 'center', padding: 20, color: TEXT_MUTED, fontSize: 15 }}>…</div>
+            )}
+            {ownerChecked && !data.paid && (
               <button
                 type="button"
                 disabled={busy}
@@ -2438,7 +2446,7 @@ export default function TPSWizardV2({ locale }: Props) {
               </button>
             )}
 
-            {data.paid && (
+            {ownerChecked && data.paid && (
               <button
                 type="button"
                 onClick={handleGenerate}
