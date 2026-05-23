@@ -18,6 +18,13 @@ import { prefill } from './pdfPrefiller'
 import { lockboxFor, feeGuidance, SNAPSHOT_DATE, OFFICIAL_TPS_UKRAINE_PAGE } from './filingGuidance'
 import { assertFormIntegrity } from './formIntegrity'
 import { buildAuditRows, summarizeProvenance, type ProvenanceMap, type ProvenanceSummary, type PdfAuditRow } from './provenance'
+import {
+  shouldTranslateForTPSPacket,
+  translationFileName,
+  CERTIFICATION_FILENAME,
+  generateTPSTranslation,
+  type TPSDocumentType,
+} from './translationBridge'
 
 // Edition dates verified against uscis.gov on 2026-05-10 and stamped on the
 // PDF footers. If USCIS publishes a new edition, scripts/uscis/refresh_tps_forms.sh
@@ -36,11 +43,27 @@ export interface PacketResult {
   i765: { applied: number; skipped: number; firstSkips: string[] }
   /** Phase 2: provenance audit summary (null if no provenance was provided) */
   auditSummary: ProvenanceSummary | null
+  /** Translation files included in ZIP */
+  translations: { docType: string; filename: string }[]
+}
+
+export interface TranslationOptions {
+  /** Which document types were uploaded (determines which need translation) */
+  uploadedDocTypes?: TPSDocumentType[]
+  /** User's typed name for certification signer */
+  signerName?: string
+  /** User's address for certification */
+  signerAddress?: string
+  /** Base64 PNG signature from SignaturePad (null = blank line for paper signing) */
+  signatureDataUrl?: string | null
+  /** Controlling spellings from DL/MRZ that override Cyrillic transliteration */
+  controllingSpellings?: Record<string, string>
 }
 
 export async function buildPacket(
   answers: TPSAnswers,
   provenance?: ProvenanceMap | null,
+  translationOpts?: TranslationOptions | null,
 ): Promise<PacketResult> {
   // Read official PDFs from the public/ bundle (Vercel includes these in the
   // serverless function's filesystem).
@@ -106,6 +129,33 @@ export async function buildPacket(
     buildMultilingualSections(answers)
   )
 
+  // ── Translation: auto-generate for foreign-language evidence documents ──
+  // ADR-006: one upload → two products (forms + translation).
+  // 8 CFR §103.2(b)(3): any foreign-language document MUST have English translation.
+  const translations: { docType: string; filename: string }[] = []
+  if (translationOpts?.uploadedDocTypes) {
+    for (const docType of translationOpts.uploadedDocTypes) {
+      if (!shouldTranslateForTPSPacket(docType)) continue
+
+      const result = generateTPSTranslation(
+        answers,
+        docType,
+        translationOpts.signerName || '',
+        translationOpts.signerAddress || '',
+        translationOpts.signatureDataUrl ?? null,
+        translationOpts.controllingSpellings || {},
+      )
+      if (result && result.violations.length === 0) {
+        const filename = translationFileName(docType)
+        // Add translation as TXT (Phase 2: render to proper PDF via bureauStyleRenderer)
+        zip.file(filename.replace('.pdf', '.txt'), result.translation_text)
+        zip.file(CERTIFICATION_FILENAME.replace('.pdf', '.txt'),
+          result.certification_text)
+        translations.push({ docType, filename })
+      }
+    }
+  }
+
   // Phase 2: generate audit rows from provenance sidecar (if provided).
   // Audit rows link each PDF field → canonical answer → source document → extraction method.
   // The report contains NO PII — only field names, sources, methods, and structural counts.
@@ -154,6 +204,7 @@ export async function buildPacket(
         }
       : { applied: 0, skipped: 0, firstSkips: [] },
     auditSummary,
+    translations,
   }
 }
 
