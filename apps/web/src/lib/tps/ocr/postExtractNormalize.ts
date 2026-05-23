@@ -44,9 +44,24 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       }
     }
 
-    // City of birth: expand settlement type prefix
-    // "смт. Устинівка" → keep as-is (wizard displays it, pdfPrefiller transliterates)
-    // The transliteration at PDF write time handles Cyrillic→Latin via toWinAnsiSafe
+    // City of birth: expand Ukrainian settlement type abbreviations
+    // "смт. Устинівка" → "Устинівка" (strip prefix, pdfPrefiller transliterates)
+    // "м. Київ" → "Київ"
+    // "с. Іванівка" → "Іванівка"
+    if (f.field === 'city_of_birth' && f.normalized_value) {
+      const cleaned = f.normalized_value
+        .replace(/^смт\.?\s*/i, '')    // селище міського типу → strip
+        .replace(/^с-ще\.?\s*/i, '')   // селище → strip
+        .replace(/^м\.?\s*/i, '')      // місто → strip
+        .replace(/^с\.?\s*/i, '')      // село → strip
+        .replace(/^сел\.?\s*/i, '')    // село → strip
+        .trim()
+      if (cleaned !== f.normalized_value) {
+        normalizations.push(`city_of_birth: "${f.normalized_value}" → "${cleaned}"`)
+        f.normalized_value = cleaned
+        f.passes = [...f.passes, 'knowledge_city_prefix_stripped']
+      }
+    }
 
     // Track duplicate field values across documents for conflict detection
     // (e.g., name from passport MRZ vs name from DL)

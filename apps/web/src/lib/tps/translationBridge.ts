@@ -166,6 +166,8 @@ export function generateTPSTranslation(
 ): {
   translation_text: string
   certification_text: string
+  translation_html: string
+  certification_html: string
   violations: string[]
 } | null {
   const template = resolveTranslationTemplate(docType)
@@ -211,13 +213,78 @@ export function generateTPSTranslation(
     return {
       translation_text: translationLines.join('\n'),
       certification_text: certText,
+      translation_html: renderTranslationHTML(result, input, signatureDataUrl),
+      certification_html: renderCertificationHTML(input, certText, signatureDataUrl),
       violations: result.forbidden_phrase_violations,
     }
   }
 
   // internationalPassport template — Phase 2
-  // For now, return null (international passport MRZ page is already in Latin)
   return null
+}
+
+// ── HTML Renderers ───────────────────────────────────────────────────────
+
+function renderTranslationHTML(
+  result: { title: string; field_lines: string[] },
+  input: PassportBookletRenderInput,
+  _signatureDataUrl: string | null,
+): string {
+  const rows = result.field_lines.map((line) => {
+    const [label, ...rest] = line.split(':')
+    const value = rest.join(':').trim()
+    return `<tr><td style="padding:6px 12px;font-weight:600;white-space:nowrap;border-bottom:1px solid #ddd">${label}</td><td style="padding:6px 12px;border-bottom:1px solid #ddd">${value || '—'}</td></tr>`
+  }).join('\n')
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Translation — ${result.title}</title>
+<style>
+body{font-family:Georgia,'Times New Roman',serif;max-width:700px;margin:40px auto;padding:0 20px;color:#111;line-height:1.5}
+h1{font-size:18px;text-align:center;margin-bottom:4px}
+.sub{text-align:center;font-size:13px;color:#666;margin-bottom:24px}
+table{width:100%;border-collapse:collapse;margin-bottom:24px}
+.footer{font-size:11px;color:#888;text-align:center;margin-top:40px;border-top:1px solid #ddd;padding-top:12px}
+</style></head>
+<body>
+<h1>ENGLISH TRANSLATION</h1>
+<div class="sub">${result.title}<br>Source language: ${input.source_language}<br>Date: ${input.translation_date}</div>
+<table>${rows}</table>
+<div class="footer">This translation was prepared using Messenginfo document translation tool.<br>
+The user reviewed and certified this translation under 8 CFR §103.2(b)(3).</div>
+</body></html>`
+}
+
+function renderCertificationHTML(
+  input: PassportBookletRenderInput,
+  certText: string,
+  signatureDataUrl: string | null,
+): string {
+  const sigBlock = signatureDataUrl
+    ? `<img src="${signatureDataUrl}" alt="Signature" style="max-width:280px;max-height:80px;display:block;margin:8px 0">`
+    : '<div style="border-bottom:1px solid #111;width:280px;height:40px;margin:8px 0"></div>'
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Translation Certification</title>
+<style>
+body{font-family:Georgia,'Times New Roman',serif;max-width:700px;margin:40px auto;padding:0 20px;color:#111;line-height:1.8}
+h1{font-size:18px;text-align:center;margin-bottom:24px}
+.cert{border:2px solid #111;padding:24px;margin:20px 0;border-radius:4px}
+.sig-label{font-size:13px;color:#666;margin-top:16px}
+</style></head>
+<body>
+<h1>CERTIFICATION OF TRANSLATION</h1>
+<div class="cert">
+<p>I, <strong>${input.signer_full_name || '________________________'}</strong>, certify that I am competent to translate from ${input.source_language} to English, and that the attached translation of the document identified as <strong>Internal Passport of Ukraine</strong> is complete and accurate to the best of my abilities.</p>
+<div class="sig-label">Signature:</div>
+${sigBlock}
+<p><strong>Name:</strong> ${input.signer_full_name || ''}<br>
+<strong>Address:</strong> ${input.signer_address || ''}<br>
+<strong>Date:</strong> ${input.translation_date}</p>
+</div>
+<p style="font-size:12px;color:#666">This certification complies with 8 CFR §103.2(b)(3). The translator certifies competence in the source and target languages. This is not a notarized translation. Messenginfo does not certify translations — the user self-certifies as the translator.</p>
+</body></html>`
 }
 
 /**

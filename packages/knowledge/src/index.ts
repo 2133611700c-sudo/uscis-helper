@@ -5,6 +5,10 @@
 export { transliterateKMU55, convertDateToUSCIS } from './transliterate';
 export type { OutputMode } from './transliterate';
 
+// Civil registry terminology (birth/marriage/divorce certificates)
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+export { default as civilRegistryTerms } from './civil_registry_terms.json';
+
 export {
   normalizeName, normalizeDate, normalizeSex,
   normalizeAuthority, normalizePlace, validateOutput,

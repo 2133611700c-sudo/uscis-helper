@@ -148,9 +148,9 @@ export async function buildPacket(
         )
         if (result && result.violations.length === 0) {
           const filename = translationFileName(docType)
-          zip.file(filename.replace('.pdf', '.txt'), result.translation_text)
-          zip.file(CERTIFICATION_FILENAME.replace('.pdf', '.txt'),
-            result.certification_text)
+          // HTML format: professional layout, printable, includes certification
+          zip.file(filename.replace('.pdf', '.html'), result.translation_html)
+          zip.file(CERTIFICATION_FILENAME.replace('.pdf', '.html'), result.certification_html)
           translations.push({ docType, filename })
         }
       } catch {
