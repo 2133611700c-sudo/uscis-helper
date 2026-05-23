@@ -127,3 +127,28 @@ Every work session appends here. Never delete entries. Newest first.
 OCR → postExtractNormalize → response with metadata → wizard stores → merge normalizes → gate checks with real data → blocks or generates
 
 **Remaining:** Production E2E (deploy + real upload), civil_registry_terms migration, city_of_birth Latin normalization
+
+---
+
+## 2026-05-23 (session 6) | I-94 place_of_entry + Production E2E + ADR-006
+
+**Summary:**
+- Added place_of_last_entry extraction to I-94 module (last document-field gap closed)
+- Production E2E proof: wizard functional, province="Vinnytsia Oblast", Patronymic label correct, package generates
+- Critical table correction: 5 fields marked "not extracted" were already working
+- ADR-006: one upload → two products (forms + translation in same package)
+
+**Changed files:**
+- `apps/web/src/lib/tps/modules/i94.ts` — +place_of_last_entry extraction (Port of Entry)
+- `docs/adr/ADR-006-one-upload-two-products.md` — NEW: architecture decision
+
+**Deployed:** SHA 57f5a22
+
+**Production evidence:**
+- Wizard 6 steps functional
+- Province = "Vinnytsia Oblast" (DMS-verified, not raw Cyrillic)
+- "Отчество / Patronymic" label (not "Middle Name")
+- Package generates: I-821 + I-765 + checklist + instructions
+- Hand signature warning present
+
+**Next:** Connect generateTranslationHTML to TPS packet builder. Same upload → forms + translation in one ZIP.
