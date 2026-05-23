@@ -193,3 +193,29 @@ Full ADR-006 implementation: one upload → forms + translation in same ZIP.
 🔲 PDF rendering (currently TXT → needs bureauStyleRenderer for proper PDF)
 🔲 E2E proof: upload → OCR → forms + translation → ZIP
 🔲 Translation standalone service integration (birth/marriage/divorce certs)
+
+---
+
+## 2026-05-24 (session 8) | SignatureStep wired + API route + full pipeline
+
+**Honest error analysis:**
+Over 2 days I created components but didn't wire them. SignatureStep existed as a file but wasn't imported in the wizard. API route wasn't patched. Translation bridge existed but packetBuilder didn't call it. Today I fixed all of that.
+
+**What was done:**
+- [x] SignatureStep wired as step 6 in TPSWizardV2 (wizard now 7 steps)
+- [x] Progress bar updated to 7 segments
+- [x] API route patched: _translation sidecar → buildPacket(translationOpts)
+- [x] Wizard sends uploadedDocTypes + signerName + signatureDataUrl to API
+- [x] packetBuilder try/catch for translation (forms never blocked)
+- [x] Test mock updated (translations[] + auditSummary)
+- [x] signatureData state in wizard, passed through to _translation
+
+**Deployed:** SHA 1bb9d3d (13 commits total this session)
+
+**Tests:** 0 type errors, 1956 pass, 53 files
+
+**Remaining P1:**
+- [ ] Translation as .pdf not .txt (needs bureauStyleRenderer)
+- [ ] city_of_birth "смт." expansion in translation (forms OK via toWinAnsiSafe)
+- [ ] civil_registry_terms.json migration to knowledge
+- [ ] E2E with real upload (requires manual test)
