@@ -84,7 +84,7 @@ describe('generate-packet route status contract (422 vs 200)', () => {
     const { POST } = await import('@/app/api/tps/generate-packet/route')
     const req = new Request('http://localhost/api/tps/generate-packet', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'x-payment-token': 'test' },
       body: JSON.stringify({
         ...validAnswers(),
         passport_number: '',
@@ -109,7 +109,7 @@ describe('generate-packet route status contract (422 vs 200)', () => {
     const { POST } = await import('@/app/api/tps/generate-packet/route')
     const req = new Request('http://localhost/api/tps/generate-packet', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'x-payment-token': 'test' },
       body: JSON.stringify(validAnswers()),
     })
     const res = await POST(req as never)
