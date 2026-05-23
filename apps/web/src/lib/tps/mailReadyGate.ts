@@ -10,6 +10,7 @@
  */
 
 import type { TPSAnswers } from './answers'
+import { checkTranslationCompleteness, type TPSDocumentType } from './translationBridge'
 
 export interface GateResult {
   mail_ready: boolean
@@ -68,6 +69,7 @@ export function runMailReadyGate(
   answers: Partial<TPSAnswers>,
   conflicts?: Array<{ field: string; reason: string }>,
   lowConfidenceFields?: Array<{ field: string; confidence: number }>,
+  translationCheck?: { uploadedDocTypes: TPSDocumentType[]; generatedTranslations: TPSDocumentType[] },
 ): GateResult {
   const blockers: GateBlocker[] = []
   const warnings: GateWarning[] = []
@@ -173,6 +175,27 @@ export function runMailReadyGate(
         uk: 'Будь ласка, введіть правильну email адресу.',
       },
     })
+  }
+
+  // Translation completeness check (ADR-006)
+  // If foreign-language documents were uploaded, translation MUST be generated.
+  // 8 CFR §103.2(b)(3): any foreign-language document must have English translation.
+  if (translationCheck) {
+    const missingTranslations = checkTranslationCompleteness(
+      translationCheck.uploadedDocTypes,
+      translationCheck.generatedTranslations,
+    )
+    for (const msg of missingTranslations) {
+      warnings.push({
+        field: 'translation',
+        reason: 'translation_missing',
+        user_message: {
+          en: `${msg}. USCIS requires English translation of foreign-language documents.`,
+          ru: `${msg}. USCIS требует перевод иностранных документов на английский.`,
+          uk: `${msg}. USCIS вимагає переклад іноземних документів на англійську.`,
+        },
+      })
+    }
   }
 
   return {
