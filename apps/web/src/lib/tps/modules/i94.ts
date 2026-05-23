@@ -448,6 +448,29 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
     warnings.push('I-94 last_entry_date matches admit_until — verify manually.')
   }
 
+  // ── 9. Port / Place of Entry ──────────────────────────────────────────────
+  // CBP I-94 shows "Port of Entry" or "Arrival Port", e.g. "LOS ANGELES, CA"
+  const portOfEntry = findLabelledValue(
+    ocr,
+    [/port\s*of\s*entry/i, /arrival\s*port/i, /port\s*of\s*arrival/i, /entered\s*at/i],
+    /([A-Z][A-Za-z\s.]+,\s*[A-Z]{2})/,
+  )
+  if (portOfEntry) {
+    fields.push({
+      ...base,
+      field: 'place_of_last_entry',
+      raw_value: portOfEntry.value,
+      normalized_value: portOfEntry.value.trim(),
+      source_zone: 'i94_port_of_entry',
+      bbox: portOfEntry.bbox,
+      confidence: portOfEntry.confidence,
+      review_required: false,
+      ocr_word_ids: [],
+      passes: ['i94_port_of_entry_present'],
+      failures: [],
+    })
+  }
+
   const matched = fields.length >= 2  // need at least admission# + COA OR entry date
   if (!matched) {
     return {
