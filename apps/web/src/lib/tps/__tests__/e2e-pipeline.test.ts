@@ -111,14 +111,12 @@ describe('E2E Pipeline Integration', () => {
     const zip = await JSZip.loadAsync(result.zipBytes)
     expect(zip.file('I-821.pdf')).not.toBeNull()
     expect(zip.file('I-765.pdf')).not.toBeNull()
-    expect(zip.file('AUDIT_PROVENANCE.txt')).not.toBeNull()
-    expect(zip.file('README.txt')).not.toBeNull()
+    expect(zip.file('INSTRUCTION.txt')).not.toBeNull()
+    // AUDIT_PROVENANCE is internal-only — NOT in client package
+    expect(zip.file('AUDIT_PROVENANCE.txt')).toBeNull()
 
-    const audit = await zip.file('AUDIT_PROVENANCE.txt')!.async('string')
-    expect(audit).toContain('Provenance Audit Report')
-    expect(audit).toContain('I-821')
-    expect(audit).not.toContain('BONDARENKO')
-    expect(audit).not.toContain('567890123B4')
+    const instruction = await zip.file('INSTRUCTION.txt')!.async('string')
+    expect(instruction).toContain('Messenginfo')
   })
 
   it('backward compat: packet without provenance works', async () => {
