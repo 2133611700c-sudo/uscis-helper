@@ -168,7 +168,43 @@ export function buildI765Ops(a: TPSAnswers): I765Op[] {
   // dashes/parens/spaces; strip to digits-only so pdf-lib accepts the value.
   const phoneDigitsOnly = (a.daytime_phone || '').replace(/\D/g, '').slice(0, 10)
   ops.push({ field: 'form1[0].Page4[0].Pt3Line3_DaytimePhoneNumber1[0]', kind: 'text', value: phoneDigitsOnly })
+  // Mobile phone — copy from daytime if no separate mobile provided
+  ops.push({ field: 'form1[0].Page4[0].Pt3Line4_MobileNumber1[0]',       kind: 'text', value: phoneDigitsOnly })
   ops.push({ field: 'form1[0].Page4[0].Pt3Line5_Email[0]',                kind: 'text', value: a.email })
+
+  // ── Page 4: English proficiency (Part 3, Item 1) ──────────────────────────
+  // Checkbox [0]=Yes I can read/understand English, [1]=No
+  // For TPS filers: default to 1.b (No) and leave language blank — user reviews.
+  // If user explicitly set english_proficiency, use that.
+  const speaksEnglish = a.english_proficiency ?? false
+  ops.push({ field: 'form1[0].Page4[0].Pt3Line1Checkbox[0]', kind: 'checkbox', value: speaksEnglish })
+  ops.push({ field: 'form1[0].Page4[0].Pt3Line1Checkbox[1]', kind: 'checkbox', value: !speaksEnglish })
+
+  // ── Page 2: Country of Citizenship (Line 17) ──────────────────────────────
+  // Line17a = country of citizenship, Line17b = country of nationality (if different)
+  // For Ukrainian TPS: both are typically "Ukraine"
+  ops.push({ field: 'form1[0].Page2[0].Line17a_CountryOfBirth[0]', kind: 'text', value: a.country_of_nationality ?? a.country_of_birth ?? '' })
+
+  // ── Page 2: In Care Of Name (Line 4a) ─────────────────────────────────────
+  if (a.us_address_in_care_of) {
+    ops.push({ field: 'form1[0].Page2[0].Line4a_InCareofName[0]', kind: 'text', value: a.us_address_in_care_of })
+  }
+
+  // ── Page 3: Previously filed I-765? (Line 29) ────────────────────────────
+  // [0]=Yes, [1]=No. For re-registration/renewal → Yes. For initial → No.
+  const prevFiled = a.filing_path !== 'initial'
+  ops.push({ field: 'form1[0].Page3[0].PtLine29_YesNo[0]', kind: 'checkbox', value: prevFiled })
+  ops.push({ field: 'form1[0].Page3[0].PtLine29_YesNo[1]', kind: 'checkbox', value: !prevFiled })
+
+  // ── Page 3: Place of last arrival (Line 22) ──────────────────────────────
+  if (a.place_of_last_entry) {
+    ops.push({ field: 'form1[0].Page3[0].place_entry[0]', kind: 'text', value: a.place_of_last_entry })
+  }
+
+  // ── Page 3: Province of birth (Line 18b) ─────────────────────────────────
+  if (a.province_of_birth) {
+    ops.push({ field: 'form1[0].Page3[0].Line18b_CityTownOfBirth[0]', kind: 'text', value: a.province_of_birth })
+  }
 
   return ops
 }

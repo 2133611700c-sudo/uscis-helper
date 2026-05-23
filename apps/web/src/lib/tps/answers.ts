@@ -42,6 +42,9 @@ export interface TPSAnswers {
 
   // ── Civil status ───────────────────────────────────────────────────────────
   city_of_birth?: string           // I-821 Part2 Item 13, I-765 Line 18a
+  province_of_birth?: string       // I-765 Line 18b (oblast/province)
+  english_proficiency?: boolean    // I-765 Part3 Item 1.a (Yes=can read English)
+  place_of_last_entry?: string     // I-765 Line 22 (e.g. "Los Angeles, CA")
   /** Marital status for I-821 Part 2 Item 17. Maps to checkboxes [0]-[6].
    *  'legally_separated' → checkbox [4], 'annulled' → [5], 'other' → [6]. */
   marital_status?: 'single' | 'married' | 'divorced' | 'widowed' | 'legally_separated' | 'annulled' | 'other'
