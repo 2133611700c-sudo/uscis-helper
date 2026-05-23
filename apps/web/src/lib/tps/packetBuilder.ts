@@ -77,8 +77,13 @@ export async function buildPacket(
   const zip = new JSZip()
   zip.file('I-821.pdf', i821Filled.bytes)
   if (i765Filled) zip.file('I-765.pdf', i765Filled.bytes)
-  zip.file('README.txt', buildReadme(answers, i821Filled, i765Filled))
-  zip.file('CHECKLIST.txt', buildChecklist(answers))
+  // Single instruction file — merges README + CHECKLIST content.
+  // Client gets exactly 3 files: I-821.pdf, I-765.pdf, INSTRUCTION.txt
+  zip.file('INSTRUCTION.txt',
+    buildReadme(answers, i821Filled, i765Filled) +
+    '\n\n' + '═'.repeat(60) + '\n\n' +
+    buildChecklist(answers)
+  )
 
   // Phase 2: generate audit rows from provenance sidecar (if provided).
   // Audit rows link each PDF field → canonical answer → source document → extraction method.
