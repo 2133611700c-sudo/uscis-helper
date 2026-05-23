@@ -79,7 +79,26 @@ export async function buildPacket(
   if (i765Filled) zip.file('I-765.pdf', i765Filled.bytes)
   // Single instruction file — merges README + CHECKLIST + multilingual.
   // Client gets exactly 3 files: I-821.pdf, I-765.pdf, INSTRUCTION.txt
+  const langHeader = [
+    '╔══════════════════════════════════════════════════════════╗',
+    '║          INSTRUCTION / ІНСТРУКЦІЯ / ИНСТРУКЦИЯ           ║',
+    '╠══════════════════════════════════════════════════════════╣',
+    '║                                                          ║',
+    '║  This file contains instructions in 3 languages:         ║',
+    '║                                                          ║',
+    '║  🇺🇸  ENGLISH .............. scroll down / see below      ║',
+    '║  🇷🇺  РУССКИЙ .............. search: "ИНСТРУКЦИЯ"         ║',
+    '║  🇺🇦  УКРАЇНСЬКА ........... search: "ІНСТРУКЦІЯ"         ║',
+    '║                                                          ║',
+    '╚══════════════════════════════════════════════════════════╝',
+    '',
+    '',
+  ].join('\n')
+
   zip.file('INSTRUCTION.txt',
+    langHeader +
+    '🇺🇸  ENGLISH\n' +
+    '═'.repeat(60) + '\n\n' +
     buildReadme(answers, i821Filled, i765Filled) +
     '\n\n' + '═'.repeat(60) + '\n\n' +
     buildChecklist(answers) +
@@ -145,7 +164,10 @@ export async function buildPacket(
 function buildMultilingualSections(a: TPSAnswers): string {
   const ead = a.wants_ead
   return [
-    '📋 ИНСТРУКЦИЯ НА РУССКОМ',
+    '🇷🇺  РУССКИЙ',
+    '═'.repeat(60),
+    '',
+    '📋 ИНСТРУКЦИЯ',
     '',
     'ЧТО НАХОДИТСЯ В ЭТОМ ПАКЕТЕ',
     '  • Form I-821 (PDF) — заявление на TPS, заполнено вашими данными',
@@ -173,7 +195,10 @@ function buildMultilingualSections(a: TPSAnswers): string {
     '═'.repeat(60),
     '',
     '',
-    '📋 ІНСТРУКЦІЯ УКРАЇНСЬКОЮ',
+    '🇺🇦  УКРАЇНСЬКА',
+    '═'.repeat(60),
+    '',
+    '📋 ІНСТРУКЦІЯ',
     '',
     'ЩО ЗНАХОДИТЬСЯ В ЦЬОМУ ПАКЕТІ',
     '  • Form I-821 (PDF) — заява на TPS, заповнена вашими даними',
