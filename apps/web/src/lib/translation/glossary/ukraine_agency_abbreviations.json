@@ -3,7 +3,7 @@
   "_notes": [
     "HISTORICAL ACCURACY RULES:",
     "1. Before July 2015, do NOT translate МВД/міліція structures as Police.",
-    "2. Use 'militia' / 'Militia Department' for militsiya-era units.",
+    "2. Use 'Militsiya Department' (transliterated, NOT translated as 'Militia') for militsiya-era units.",
     "3. Use 'National Police of Ukraine' ONLY for post-July-2015 docs if source supports it.",
     "4. Preserve historical agency names as shown in the document.",
     "5. Do not modernize agency/place names unless official controlling English spelling exists.",
@@ -87,10 +87,10 @@
     },
     "ВМ": {
       "uk_full": "Відділення міліції",
-      "en": "Militia Department",
+      "en": "Militsiya Department",
       "confidence": "high",
       "era": "pre-2015",
-      "note": "MUST render as 'Militia Department', NOT 'Police Department'. Militsiya existed until July 4, 2015.",
+      "note": "MUST render as 'Militsiya Department', NOT 'Police Department' or 'Militia Department'. Transliterate, do not translate. Per ADR-004.",
       "review_required": false
     },
     "ММВ": {

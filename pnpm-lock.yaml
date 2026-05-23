@@ -42,6 +42,9 @@ importers:
       '@uscis-helper/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@uscis-helper/knowledge':
+        specifier: workspace:*
+        version: link:../../packages/knowledge
       '@vercel/analytics':
         specifier: ^1.5.0
         version: 1.6.1(next@15.5.15(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)
@@ -162,6 +165,8 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  packages/knowledge: {}
 
   packages/shared: {}
 

@@ -41,6 +41,7 @@ import {
   isBrainEnabled,
   type DocumentBrainOutput,
 } from '@/lib/tps/ai/documentBrain'
+import { postExtractNormalize } from '@/lib/tps/ocr/postExtractNormalize'
 
 // Vision REST call needs full Node runtime (Buffer + fetch with timeout).
 export const runtime = 'nodejs'
@@ -604,6 +605,16 @@ export async function POST(req: NextRequest) {
     effectiveOcrResult.raw_text.length > 30  // there IS readable text — just not for this slot
   const effectiveSlotMismatch = contract.slot_mismatch || moduleSaysWrong
 
+  // ── Knowledge normalization pass ─────────────────────────────────────
+  // Normalize extracted fields through @uscis-helper/knowledge before
+  // returning to the wizard. This ensures oblast genitive→nominative,
+  // settlement type expansion, and other canonical rules are applied
+  // at extraction time, not deferred to PDF write time.
+  let normalizationMeta = { normalizations_applied: [] as string[], conflicts: [] as Array<{field:string;reason:string}>, low_confidence: [] as Array<{field:string;confidence:number}> }
+  if (mergedModule && mergedModule.fields.length > 0) {
+    normalizationMeta = postExtractNormalize(mergedModule.fields)
+  }
+
   // ── Top-level diagnostics so the wizard, monitors, and audit scripts
   // can see at a glance what happened to extraction without parsing the
   // nested brain object. No PII surfaced — counts and codes only.
@@ -695,6 +706,10 @@ export async function POST(req: NextRequest) {
       module_field_keys: mergedModule
         ? Array.from(new Set(mergedModule.fields.map((f) => f.field))).sort()
         : [],
+      // Knowledge normalization diagnostics
+      knowledge_normalizations: normalizationMeta.normalizations_applied,
+      knowledge_conflicts: normalizationMeta.conflicts,
+      knowledge_low_confidence: normalizationMeta.low_confidence,
       // DS.2 — Brain diagnostics surfaced to the client (UI never renders
       // raw_response_length; this is for /api/tps/health-style monitoring).
       brain: brainResult

@@ -2,12 +2,20 @@
  * Ukrainian Agency Glossary Resolver — Messenginfo v5.0
  *
  * Resolves Ukrainian/Soviet agency abbreviations found in passport documents.
+ * 
+ * CANONICAL SOURCE: @uscis-helper/knowledge (dictionary.ts)
+ * This module delegates to the canonical dictionary for pattern matching
+ * and uses the local JSON for abbreviation-specific lookups.
+ * Both paths produce consistent terminology per ADR-002 and ADR-004.
+ *
  * Rules:
- *  - Before July 2015: militia-era units → "Militia Department", NOT "Police"
+ *  - Before July 2015: militsiya-era units → "Militsiya Department", NOT "Police"
  *  - After July 2015: НПУ/УНП/ГУНП → "National Police of Ukraine"
- *  - Unknown abbreviations → review_required = true, reason = abbreviation_not_verified
+ *  - Unknown abbreviations → fall through to @uscis-helper/knowledge normalizeAuthority
+ *  - If still unresolved → review_required = true
  */
 import glossaryData from './ukraine_agency_abbreviations.json'
+import { normalizeAuthority, type NormalizationContext } from '@uscis-helper/knowledge'
 
 export interface GlossaryEntry {
   uk_full: string
@@ -43,8 +51,23 @@ export function resolveAgencyAbbr(abbr: string, docYear?: number): GlossaryResul
   const key = abbr.trim().toUpperCase()
   const entry = ENTRIES[key]
 
-  // Unknown abbreviation
+  // Unknown abbreviation — fall through to canonical dictionary pattern matching
   if (!entry) {
+    const ctx: NormalizationContext = {
+      mode: 'legal_formal',
+      is_historical_document: docYear ? docYear < 2015 : undefined,
+    }
+    const knowledgeResult = normalizeAuthority(abbr, 'translation_glossary_fallback', ctx)
+    if (knowledgeResult.rule_applied !== 'no_match_passthrough') {
+      return {
+        abbreviation: abbr,
+        resolved_en: knowledgeResult.normalized_value,
+        uk_full: null,
+        confidence: knowledgeResult.confidence > 0.8 ? 'high' : 'medium',
+        review_required: knowledgeResult.review_required,
+        reason: `canonical_dictionary_match:${knowledgeResult.rule_applied}`,
+      }
+    }
     return {
       abbreviation: abbr,
       resolved_en: null,

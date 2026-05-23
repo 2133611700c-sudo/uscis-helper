@@ -1,0 +1,63 @@
+# SOURCE_OF_TRUTH.md
+Purpose: define canonical modules. Prevent duplication. Stop re-litigation.
+
+## Canonical normalization layer
+- `packages/knowledge/src/dictionary.ts` — authorities, geography, field labels, oblasts, blocklist
+- `packages/knowledge/src/normalize.ts` — normalizeName, normalizeDate, normalizeSex, normalizeAuthority, normalizePlace, validateOutput
+- `packages/knowledge/src/transliterate.ts` — KMU-55 engine, date converter
+These own: transliteration, authority names, historical policy, geography, USCIS output, conflicts.
+
+## Canonical TPS data structure
+- `apps/web/src/lib/tps/answers.ts` — TPSAnswers interface, 60+ fields
+
+## Canonical OCR / extraction modules
+- `apps/web/src/lib/tps/modules/passport.ts` — international passport MRZ
+- `apps/web/src/lib/tps/modules/passportBooklet.ts` — internal passport (handwritten)
+- `apps/web/src/lib/tps/modules/dl.ts` — driver license (address, eye/hair, controlling Latin names)
+- `apps/web/src/lib/tps/modules/i94.ts` — I-94 (entry date, status, admission number)
+- `apps/web/src/lib/tps/modules/ead.ts` — EAD card (A-number, category)
+- `apps/web/src/lib/tps/modules/i797.ts` — I-797 notice (A-number, receipt#, uscis_online_account)
+- `apps/web/src/lib/tps/modules/visionBridge.ts` — OCR→Knowledge→TPSAnswers bridge
+
+## Canonical form maps
+- `apps/web/src/lib/tps/forms/i765FieldMap.ts` — I-765 edition 08/21/25
+- `apps/web/src/lib/tps/forms/i821FieldMap.ts` — I-821 edition 01/20/25
+
+## Canonical PDF prefill
+- `apps/web/src/lib/tps/pdfPrefiller.ts` — XFA-strip, AcroForm fill, WinAnsi safety
+
+## Canonical transliteration (app-level, uses knowledge package)
+- `apps/web/src/lib/tps/transliterate.ts` — WinAnsi-safe wrapper over KMU-55
+
+## Canonical OCR entry point
+- `apps/web/src/app/api/tps/ocr/extract/route.ts` — POST endpoint, dispatches to modules
+
+## Canonical prompts
+- `prompts/universal-document-extraction.md` — 10 document types, vision extraction
+- `prompts/vision-extraction-prompt.md` — legacy, simpler version
+- `prompts/translation-agent-system.md` — translation agent rules
+
+## Rules that must never be bypassed
+1. Patronymic = "Patronymic", NEVER "Middle Name"
+2. Historical "Міліція" → "Militsiya", NEVER "Police" or "Militia"
+3. Self-name on authority's own .gov.ua site beats third-party references
+4. Controlling Latin spelling from MRZ/I-94/EAD beats retransliteration
+5. Historical place names in old issuers must not be auto-modernized
+6. "Вінницької області" auto-converts to "Vinnytsia Oblast" (DMS-verified)
+7. "смт" = "urban-type settlement", NEVER "city" or "town"
+
+## Deprecated paths — do not use
+- Any ad-hoc transliteration outside `packages/knowledge` — superseded
+- Any hardcoded authority name mapping outside `dictionary.ts` — superseded
+- `docs/UKRAINE_TERMINOLOGY_DICTIONARY.md` (v1.0 from other agent) — superseded by v1.2 in `dictionary.ts`
+
+
+## Canonical mail-ready gate
+- `apps/web/src/lib/tps/mailReadyGate.ts` — blocks export on: empty required fields, unresolved spelling conflicts, low OCR confidence, invalid phone/email. Messages in EN/RU/UK.
+
+## KNOWN BYPASS PATHS (must migrate to @uscis-helper/knowledge)
+- `apps/web/src/lib/translation/glossary/agencyGlossary.ts` — OLD agency resolver. Uses "Militia Department" (violates ADR-004, should be "Militsiya")
+- `apps/web/src/lib/translation/glossary/ukraine_agency_abbreviations.json` — OLD abbreviation data. Superseded by dictionary.ts
+- `apps/web/src/lib/translation/glossary/civil_registry_terms.json` — OLD ЗАГС/РАЦС terms. Superseded by dictionary.ts
+- `apps/web/src/lib/translation/glossary/nominativeCaseRestorer.ts` — OLD genitive→nominative. Superseded by normalizeOblastToNominative in knowledge
+- **BUG:** translation glossary.test.ts line 47 expects "Militia Department" — must change to "Militsiya" per ADR-004
