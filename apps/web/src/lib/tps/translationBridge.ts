@@ -101,6 +101,125 @@ export function translationFileName(docType: TPSDocumentType): string {
 
 export const CERTIFICATION_FILENAME = 'Certification_Translation.pdf'
 
+// ── Rendering ────────────────────────────────────────────────────────────
+
+import {
+  renderPassportBooklet,
+  PASSPORT_BOOKLET_FIELD_LABELS,
+  type PassportBookletRenderInput,
+  type PassportBookletRenderField,
+} from '@/lib/translation/templates/passportBooklet.template'
+import type { TPSAnswers } from './answers'
+
+/**
+ * Maps TPSAnswers fields to passport booklet template fields.
+ * Uses controlling spelling priority: DL/MRZ Latin > Cyrillic transliteration.
+ */
+function mapTPSToBookletFields(
+  answers: TPSAnswers,
+  controllingSpellings: Record<string, string>,
+): PassportBookletRenderField[] {
+  const get = (key: string): string =>
+    controllingSpellings[key] || (answers as unknown as Record<string, string>)[key] || ''
+
+  const placeOfBirth = [get('city_of_birth'), get('province_of_birth'), 'Ukraine']
+    .filter(Boolean).join(', ')
+
+  const fieldMap: Record<string, string> = {
+    document_type: 'Internal Passport (Booklet) of Ukraine',
+    passport_number: get('passport_number'),
+    surname: get('family_name'),
+    given_name: get('given_name'),
+    patronymic: get('middle_name'),
+    date_of_birth: get('dob'),
+    place_of_birth: placeOfBirth,
+    sex: get('sex') === 'M' ? 'Male' : get('sex') === 'F' ? 'Female' : get('sex'),
+    issuing_authority: get('issuing_authority'),
+    date_of_issue: get('passport_date_of_issue') || '',
+    marital_status: get('marital_status'),
+  }
+
+  return Object.entries(fieldMap)
+    .filter(([, v]) => v && v.trim())
+    .map(([key, value]) => ({
+      field: key,
+      label: PASSPORT_BOOKLET_FIELD_LABELS[key] || key,
+      value,
+      confirmed: true,
+    }))
+}
+
+/**
+ * Generates translation text for a passport document in TPS packet.
+ * Returns { translation_text, certification_text } ready for PDF rendering.
+ *
+ * This function delegates to the EXISTING passportBooklet.template.ts
+ * from Translation Engine v5 — no new rendering logic.
+ */
+export function generateTPSTranslation(
+  answers: TPSAnswers,
+  docType: TPSDocumentType,
+  signerName: string,
+  signerAddress: string,
+  signatureDataUrl: string | null,
+  controllingSpellings: Record<string, string> = {},
+): {
+  translation_text: string
+  certification_text: string
+  violations: string[]
+} | null {
+  const template = resolveTranslationTemplate(docType)
+  if (!template) return null
+
+  if (template === 'passportBooklet') {
+    const fields = mapTPSToBookletFields(answers, controllingSpellings)
+    const input: PassportBookletRenderInput = {
+      session_id: `tps-${Date.now()}`,
+      fields,
+      translation_date: new Date().toLocaleDateString('en-US', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      }),
+      signer_full_name: signerName || `${answers.given_name || ''} ${answers.family_name || ''}`.trim(),
+      signer_address: signerAddress || [
+        answers.us_address_street,
+        answers.us_address_city,
+        answers.us_address_state,
+        answers.us_address_zip,
+      ].filter(Boolean).join(', '),
+      source_language: 'Ukrainian',
+    }
+
+    const result = renderPassportBooklet(input)
+
+    const translationLines = [
+      result.title,
+      '',
+      ...result.field_lines,
+    ]
+
+    const certLines = result.certification_block
+
+    // Replace blank signature line with image if user signed on screen
+    let certText = certLines.join('\n')
+    if (signatureDataUrl) {
+      certText = certText.replace(
+        'Signature:  ____________________________',
+        `Signature:  [SIGNED ELECTRONICALLY — image embedded]`,
+      )
+    }
+
+    return {
+      translation_text: translationLines.join('\n'),
+      certification_text: certText,
+      violations: result.forbidden_phrase_violations,
+    }
+  }
+
+  // internationalPassport template — Phase 2
+  // For now, return null (international passport MRZ page is already in Latin)
+  return null
+}
+
 /**
  * Checks if the TPS packet is complete regarding translations.
  * Returns list of missing translations (empty = all good).
