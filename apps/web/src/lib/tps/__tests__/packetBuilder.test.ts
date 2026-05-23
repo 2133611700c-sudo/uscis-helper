@@ -109,7 +109,7 @@ function pdfToText(bytes: Uint8Array): string {
 }
 
 describe('buildPacket — TPS Ukraine initial-path fixture', () => {
-  it('produces a ZIP with I-821.pdf, I-765.pdf, README.txt and applies fields without skips', async () => {
+  it('produces a ZIP with I-821.pdf, I-765.pdf, INSTRUCTION.txt and applies fields without skips', async () => {
     const result = await buildPacket(fixtureInitialPath)
 
     expect(result.zipBytes.byteLength).toBeGreaterThan(100_000)
@@ -122,7 +122,7 @@ describe('buildPacket — TPS Ukraine initial-path fixture', () => {
     const zip = await JSZip.loadAsync(result.zipBytes)
     expect(zip.file('I-821.pdf')).not.toBeNull()
     expect(zip.file('I-765.pdf')).not.toBeNull()
-    expect(zip.file('README.txt')).not.toBeNull()
+    expect(zip.file('INSTRUCTION.txt')).not.toBeNull()
   })
 
   it('preserves the official USCIS edition stamps inside the rendered PDFs', async () => {
