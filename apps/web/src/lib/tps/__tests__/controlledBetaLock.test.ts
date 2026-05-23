@@ -104,6 +104,8 @@ describe('generate-packet route status contract (422 vs 200)', () => {
         zipBytes: new Uint8Array([80, 75, 3, 4]),
         i821: { applied: 1, skipped: 0, firstSkips: [] as string[] },
         i765: { applied: 0, skipped: 0, firstSkips: [] as string[] },
+        auditSummary: null,
+        translations: [],
       })),
     }))
     const { POST } = await import('@/app/api/tps/generate-packet/route')

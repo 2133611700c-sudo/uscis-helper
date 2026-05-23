@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { isMinimallyComplete, type TPSAnswers, defaultEadCategoryFor } from '@/lib/tps/answers'
-import { buildPacket } from '@/lib/tps/packetBuilder'
+import { buildPacket, type TranslationOptions } from '@/lib/tps/packetBuilder'
 import type { ProvenanceMap } from '@/lib/tps/provenance'
 import { isOwnerSession } from '@/lib/ownerAccess'
 
@@ -136,6 +136,13 @@ export async function POST(req: NextRequest) {
       : null
   delete rawBody._provenance
 
+  // ADR-006: extract translation sidecar (optional, backward-compatible).
+  const translationOpts: TranslationOptions | null =
+    rawBody._translation && typeof rawBody._translation === 'object'
+      ? (rawBody._translation as TranslationOptions)
+      : null
+  delete rawBody._translation
+
   // Normalize: fill ead_category from filing_path if missing.
   const answers = rawBody as unknown as TPSAnswers
   if (answers.wants_ead && !answers.ead_category) {
@@ -166,7 +173,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await buildPacket(answers, provenance)
+    const result = await buildPacket(answers, provenance, translationOpts)
     return new NextResponse(new Uint8Array(result.zipBytes), {
       status: 200,
       headers: {
@@ -180,6 +187,7 @@ export async function POST(req: NextRequest) {
         'X-TPS-I765-Applied': String(result.i765.applied),
         'X-TPS-I765-Skipped': String(result.i765.skipped),
         'X-TPS-I765-First-Skip': result.i765.firstSkips[0] ?? '',
+        'X-TPS-Translations': String(result.translations.length),
       },
     })
   } catch (e: unknown) {
