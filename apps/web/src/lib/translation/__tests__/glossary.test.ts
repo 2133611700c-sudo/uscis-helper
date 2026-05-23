@@ -39,19 +39,19 @@ describe('РВ УМВС — militsiya-era unit', () => {
   })
 })
 
-// ── 2. ВМ renders as "Militia Department" before 2015 ─────────────────────────
+// ── 2. ВМ renders as "Militsiya Department" before 2015 ─────────────────────────
 
 describe('ВМ — відділення міліції', () => {
-  it('renders as Militia Department for pre-2015 doc', () => {
+  it('renders as Militsiya Department for pre-2015 doc', () => {
     const result = resolveAgencyAbbr('ВМ', 2010)
-    expect(result.resolved_en).toBe('Militia Department')
+    expect(result.resolved_en).toBe('Militsiya Department')
     expect(result.review_required).toBe(false)
     expect(result.confidence).toBe('high')
   })
 
-  it('renders as Militia Department without docYear', () => {
+  it('renders as Militsiya Department without docYear', () => {
     const result = resolveAgencyAbbr('ВМ')
-    expect(result.resolved_en).toBe('Militia Department')
+    expect(result.resolved_en).toBe('Militsiya Department')
   })
 
   it('never returns Police for ВМ regardless of year', () => {
