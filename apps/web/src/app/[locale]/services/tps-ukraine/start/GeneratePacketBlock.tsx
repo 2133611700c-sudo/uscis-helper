@@ -20,6 +20,7 @@
 import { useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import type { TpsExtractedField } from '@/lib/tps/types'
+import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessChecker'
 import {
   LegalRiskFlags,
@@ -41,6 +42,10 @@ interface Props {
    * fresh sessions.
    */
   preExtracted?: TpsExtractedField[]
+  /** Knowledge-detected conflicts from OCR normalization. */
+  knowledgeConflicts?: Array<{ field: string; reason: string }>
+  /** Low-confidence OCR fields that need user verification. */
+  knowledgeLowConfidence?: Array<{ field: string; confidence: number }>
 }
 
 /**
@@ -650,7 +655,7 @@ const COPY = {
   },
 } as const
 
-export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preExtracted }: Props) {
+export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preExtracted, knowledgeConflicts, knowledgeLowConfidence }: Props) {
   const c = COPY[locale]
   // Open by default. The block lives at the bottom of the final summary screen
   // and is the actual product — hiding it behind a toggle made senior users
@@ -775,6 +780,22 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
     setMissing([])
     setError(null)
     setZipUrl(null)
+
+    // ── Mail-ready gate: block export if critical data is missing/conflicted ──
+    const gateResult = runMailReadyGate(
+      fields as Partial<TPSAnswers>,
+      knowledgeConflicts,
+      knowledgeLowConfidence,
+    )
+    if (!gateResult.mail_ready) {
+      const blockerLocale = (locale || 'en') as 'en' | 'ru' | 'uk'
+      const blockerMessages = gateResult.blockers.map(b => 
+        b.user_message[blockerLocale] || b.user_message.en
+      )
+      setMissing(blockerMessages)
+      setBusy(false)
+      return
+    }
 
     const path = filingPath === 'initial' || filingPath === 're_registration'
       ? filingPath

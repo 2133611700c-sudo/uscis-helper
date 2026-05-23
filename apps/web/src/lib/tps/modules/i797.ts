@@ -126,6 +126,24 @@ export function runI797Module(ocr: OcrResult, opts: I797Options): TpsModuleResul
   }
 
   // ── 3. Notice Date ─────────────────────────────────────────────────────
+
+  // ── 2b. USCIS Online Account Number (12 digits) ────────────────────────
+  const uscisAcct = findLabelledValue(
+    ocr,
+    [/\buscis\s*(?:online\s*)?account\s*(?:number|#|no\.?)\b/i, /\baccount\s*(?:number|#)\b/i],
+    /\b(\d{12})\b/,
+  )
+  if (uscisAcct) {
+    fields.push({
+      ...base, field: 'uscis_online_account',
+      raw_value: uscisAcct.value, normalized_value: uscisAcct.value,
+      source_zone: 'i797_uscis_account', bbox: uscisAcct.bbox,
+      confidence: uscisAcct.confidence, review_required: false,
+      ocr_word_ids: [], passes: ['i797_uscis_account_labelled'], failures: [],
+    })
+  }
+
+  // ── 3. Notice Date ─────────────────────────────────────────────────────
   const noticeDate = findLabelledValue(
     ocr,
     [/\bnotice\s*date\b/i, /\bdate\s*of\s*(?:this\s*)?notice\b/i],

@@ -1,9 +1,13 @@
 /**
  * Nominative Case Restorer — Messenginfo v5.0
  * Restores Ukrainian names from oblique/genitive case to nominative
- * before ICAO transliteration. Critical for passport booklets where
+ * before transliteration. Critical for passport booklets where
  * names appear in dative form: "Петренку Івану" → "Petrenko Ivan"
+ *
+ * TRANSLITERATION: delegates to @uscis-helper/knowledge (canonical KMU-55)
+ * CASE RESTORATION: this module (unique logic, not duplicated)
  */
+import { transliterateKMU55, normalizeOblastToNominative } from '@uscis-helper/knowledge'
 
 // Common oblique → nominative suffix mappings (Ukrainian)
 // Sorted longest first to avoid partial matches
@@ -33,20 +37,6 @@ const SUFFIX_MAP: Array<[string, string]> = [
 // Known -ко surname rule: dative = -ку, nominative = -ко
 const KO_DATIVE = /^(.+?)ку$/i
 
-// Ukrainian transliteration table (KMU 2010)
-const UK_TO_LATIN: Record<string, string> = {
-  'а':'a','б':'b','в':'v','г':'h','ґ':'g','д':'d','е':'e','є':'ie',
-  'ж':'zh','з':'z','и':'y','і':'i','ї':'i','й':'i','к':'k','л':'l',
-  'м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u',
-  'ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ь':'',
-  'ю':'iu','я':'ia',
-  'А':'A','Б':'B','В':'V','Г':'H','Ґ':'G','Д':'D','Е':'E','Є':'Ie',
-  'Ж':'Zh','З':'Z','И':'Y','І':'I','Ї':'I','Й':'I','К':'K','Л':'L',
-  'М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T','У':'U',
-  'Ф':'F','Х':'Kh','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Shch','Ь':'',
-  'Ю':'Iu','Я':'Ia',
-}
-
 export function restoreNominative(name: string): string {
   if (!name || !name.trim()) return name
   const words = name.trim().split(/\s+/)
@@ -54,10 +44,8 @@ export function restoreNominative(name: string): string {
 }
 
 function restoreWord(word: string): string {
-  // Try -ко dative pattern first
   const koMatch = word.match(KO_DATIVE)
   if (koMatch) return koMatch[1] + 'ко'
-
   const lower = word.toLowerCase()
   for (const [suffix, replacement] of SUFFIX_MAP) {
     if (lower.endsWith(suffix)) {
@@ -68,21 +56,12 @@ function restoreWord(word: string): string {
   return word
 }
 
+/**
+ * @deprecated Use transliterateKMU55 from @uscis-helper/knowledge directly.
+ * Kept for backward compatibility — delegates to canonical engine.
+ */
 export function transliterateKMU2010(ukrainianText: string): string {
-  let result = ''
-  for (let i = 0; i < ukrainianText.length; i++) {
-    const ch = ukrainianText[i]
-    // Special: Є, Ї, Й, Ю, Я at start of word → ie, i, i, iu, ia
-    // (already handled by the table for capitals; lowercase needs word-start check)
-    const prev = i > 0 ? ukrainianText[i - 1] : ''
-    const isWordStart = !prev || /\s/.test(prev)
-    if ((ch === 'є' || ch === 'ю' || ch === 'я') && isWordStart) {
-      result += ch === 'є' ? 'ie' : ch === 'ю' ? 'iu' : 'ia'
-      continue
-    }
-    result += UK_TO_LATIN[ch] ?? ch
-  }
-  return result
+  return transliterateKMU55(ukrainianText)
 }
 
 export function transliterateName(ukrainianName: string, controllingLatinSpelling?: string): string {
@@ -90,5 +69,5 @@ export function transliterateName(ukrainianName: string, controllingLatinSpellin
     return controllingLatinSpelling.trim()
   }
   const nominative = restoreNominative(ukrainianName)
-  return transliterateKMU2010(nominative)
+  return transliterateKMU55(nominative)
 }

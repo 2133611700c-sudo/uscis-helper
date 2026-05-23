@@ -28,6 +28,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
+import { normalizeOblastToNominative } from '@uscis-helper/knowledge'
+import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
 import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } from '@/lib/tps/provenance'
 
@@ -103,6 +105,10 @@ interface UploadEntry {
   brain_status?: 'off' | 'skipped' | 'ran' | 'error'
   /** Field keys the API contract rejected for this slot. UI may surface. */
   rejected_field_keys?: string[]
+  /** Conflicts detected by @uscis-helper/knowledge normalization. */
+  knowledge_conflicts?: Array<{ field: string; reason: string }>
+  /** Fields with OCR confidence below threshold. */
+  knowledge_low_confidence?: Array<{ field: string; confidence: number }>
 }
 
 interface WizardData {
@@ -121,6 +127,7 @@ interface WizardData {
     email?: string
     marital_status?: TPSAnswers['marital_status']
     city_of_birth?: string
+    province_of_birth?: string
     place_of_last_entry?: string
     us_address_in_care_of?: string
     ssn?: string
@@ -225,6 +232,7 @@ const T = {
       ssn: 'SSN',
       ead_category: 'Категорія EAD',
       city_of_birth: 'Місто народження',
+      province_of_birth: 'Область народження',
       place_of_entry: "Місце в'їзду в США",
       in_care_of: 'In Care Of (отримувач пошти)',
     },
@@ -423,6 +431,7 @@ const T = {
       ssn: 'SSN',
       ead_category: 'Категория EAD',
       city_of_birth: 'Город рождения',
+      province_of_birth: 'Область рождения',
       place_of_entry: 'Место въезда в США',
       in_care_of: 'In Care Of (получатель почты)',
     },
@@ -620,6 +629,7 @@ const T = {
       ssn: 'SSN',
       ead_category: 'EAD category',
       city_of_birth: 'City of Birth',
+      province_of_birth: 'Oblast / Province of Birth',
       place_of_entry: 'Place of Last Entry into US',
       in_care_of: 'In Care Of (mail recipient)',
     },
@@ -818,6 +828,7 @@ const T = {
       ssn: 'SSN',
       ead_category: 'Categoría EAD',
       city_of_birth: 'Ciudad de nacimiento',
+      province_of_birth: 'Provincia / Región de nacimiento',
       place_of_entry: 'Lugar de última entrada a EE.UU.',
       in_care_of: 'In Care Of (destinatario del correo)',
     },
@@ -1869,6 +1880,8 @@ export default function TPSWizardV2({ locale }: Props) {
               vision_text_length: visionLen,
               brain_status: brainStatus,
               rejected_field_keys: rejectedKeys,
+              knowledge_conflicts: Array.isArray(json?.knowledge_conflicts) ? json.knowledge_conflicts : [],
+              knowledge_low_confidence: Array.isArray(json?.knowledge_low_confidence) ? json.knowledge_low_confidence : [],
             },
           },
         }))
@@ -1895,6 +1908,14 @@ export default function TPSWizardV2({ locale }: Props) {
     setBusy(true)
     setErrMsg(null)
     try {
+      // ── Collect knowledge metadata from all uploads ──────────────────
+      const allConflicts: Array<{ field: string; reason: string }> = []
+      const allLowConf: Array<{ field: string; confidence: number }> = []
+      for (const entry of Object.values(data.uploads)) {
+        if (entry.knowledge_conflicts) allConflicts.push(...entry.knowledge_conflicts)
+        if (entry.knowledge_low_confidence) allLowConf.push(...entry.knowledge_low_confidence)
+      }
+
       const filing_path = data.type === 'init' ? 'initial' : 're_registration'
       const ead = data.ead === 'ead'
       // Pull the value out of FieldExtraction; alias keeps the rest of this
@@ -1920,6 +1941,7 @@ export default function TPSWizardV2({ locale }: Props) {
         passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
         passport_expiration_date: v('passport_expiration_date'),
         a_number: aNumberDigits,
+        uscis_online_account: v('uscis_online_account'),
         i94_admission_number: v('i94_admission_number'),
         last_entry_date: v('last_entry_date'),
         status_at_last_entry: v('status_at_last_entry'),
@@ -1943,13 +1965,29 @@ export default function TPSWizardV2({ locale }: Props) {
         email: data.manual.email || '',
         marital_status: data.manual.marital_status,
         city_of_birth: data.manual.city_of_birth || v('city_of_birth') || '',
+        province_of_birth: (() => {
+          const raw = data.manual.province_of_birth || v('province_of_birth') || ''
+          const norm = raw ? normalizeOblastToNominative(raw) : null
+          return norm ? norm.transliterated : raw
+        })(),
         place_of_last_entry: data.manual.place_of_last_entry || v('place_of_last_entry') || '',
         us_address_in_care_of: data.manual.us_address_in_care_of || v('us_address_in_care_of') || '',
         ssn: data.manual.ssn,
+        eye_color: (v('eye_color') || undefined) as TPSAnswers['eye_color'],
+        hair_color: (v('hair_color') || undefined) as TPSAnswers['hair_color'],
         part7_reviewed: true,
         has_criminal_concern: false,
         has_prior_tps_denial: false,
         left_us_without_advance_parole: false,
+      }
+
+      // ── Mail-ready gate ─────────────────────────────────────────────
+      const gateResult = runMailReadyGate(answers, allConflicts, allLowConf)
+      if (!gateResult.mail_ready) {
+        const loc = (locale === 'uk' || locale === 'ru') ? locale : 'en'
+        setErrMsg(gateResult.blockers.map(b => b.user_message[loc]).join('\n'))
+        setBusy(false)
+        return
       }
 
       // ── Phase 2: Build provenance sidecar ──────────────────────────────
@@ -2907,6 +2945,13 @@ function ReviewManual({
         tip=""
         value={manual.city_of_birth || ''}
         onChange={(v) => onChange({ city_of_birth: v })}
+      />
+      <FieldInput
+        label={t.label.province_of_birth ?? 'Oblast / Province of Birth'}
+        placeholder="Vinnytsia Oblast"
+        tip=""
+        value={manual.province_of_birth || ''}
+        onChange={(v) => onChange({ province_of_birth: v })}
       />
       <FieldInput
         label={t.label.place_of_entry}
