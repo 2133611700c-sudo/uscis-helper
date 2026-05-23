@@ -32,6 +32,7 @@ import { normalizeOblastToNominative } from '@uscis-helper/knowledge'
 import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
 import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } from '@/lib/tps/provenance'
+import SignatureStep from '@/components/shared/SignatureStep'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -148,7 +149,7 @@ const T = {
   uk: {
     h1: '🇺🇦 TPS для України',
     sub: 'Ми генеруємо форми USCIS — ви подаєте самостійно',
-    stepOf: (n: number) => `Крок ${n} з 6`,
+    stepOf: (n: number) => `Крок ${n} з 7`,
     s1q: 'Ви подаєте вперше чи продовжуєте?',
     s1h: 'Якщо раніше ніколи не мали TPS — «Вперше»',
     s1Init: 'Вперше',
@@ -346,7 +347,7 @@ const T = {
   ru: {
     h1: '🇺🇦 TPS для Украины',
     sub: 'Мы генерируем формы USCIS — вы подаёте сами',
-    stepOf: (n: number) => `Шаг ${n} из 6`,
+    stepOf: (n: number) => `Шаг ${n} из 7`,
     s1q: 'Вы подаёте впервые или продлеваете?',
     s1h: 'Если раньше не было TPS — «Впервые»',
     s1Init: 'Впервые',
@@ -545,7 +546,7 @@ const T = {
   en: {
     h1: '🇺🇦 TPS for Ukraine',
     sub: 'We generate USCIS forms — you file yourself',
-    stepOf: (n: number) => `Step ${n} of 6`,
+    stepOf: (n: number) => `Step ${n} of 7`,
     s1q: 'Filing for the first time or re-registering?',
     s1h: 'Pick «First time» if you have never had TPS before',
     s1Init: 'First time',
@@ -743,7 +744,7 @@ const T = {
   es: {
     h1: '🇺🇦 TPS para Ucrania',
     sub: 'Generamos los formularios de USCIS — usted los presenta',
-    stepOf: (n: number) => `Paso ${n} de 6`,
+    stepOf: (n: number) => `Paso ${n} de 7`,
     s1q: '¿Presenta por primera vez o re-registra?',
     s1h: 'Si nunca ha tenido TPS — «Por primera vez»',
     s1Init: 'Por primera vez',
@@ -1519,6 +1520,7 @@ export default function TPSWizardV2({ locale }: Props) {
   })
   const [busy, setBusy] = useState(false)
   const [errMsg, setErrMsg] = useState<string | null>(null)
+  const [signatureData, setSignatureData] = useState<{ mode: 'screen' | 'paper'; dataUrl: string | null } | null>(null)
   const [ownerChecked, setOwnerChecked] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
 
@@ -2038,7 +2040,7 @@ export default function TPSWizardV2({ locale }: Props) {
               answers.us_address_state,
               answers.us_address_zip,
             ].filter(Boolean).join(', '),
-            signatureDataUrl: null,
+            signatureDataUrl: signatureData?.dataUrl ?? null,
             controllingSpellings: {},
           },
         }),
@@ -2137,7 +2139,7 @@ export default function TPSWizardV2({ locale }: Props) {
           </button>
         </div>
         <div style={{ display: 'flex', gap: 3, marginBottom: 20 }}>
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
             <span
               key={i}
               style={{
@@ -2449,10 +2451,24 @@ export default function TPSWizardV2({ locale }: Props) {
           </section>
         )}
 
-        {/* STEP 6 — result */}
+        {/* STEP 6 — signature */}
         {step === 6 && (
           <section>
             <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(6)}</div>
+            <SignatureStep
+              locale={locale as 'uk' | 'ru' | 'en' | 'es'}
+              onSignature={(sig) => {
+                setSignatureData(sig)
+                goto(7)
+              }}
+            />
+          </section>
+        )}
+
+        {/* STEP 7 — result */}
+        {step === 7 && (
+          <section>
+            <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(7)}</div>
             <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>{t.s6q}</div>
 
             <Card title={t.s6PkgTitle}>
