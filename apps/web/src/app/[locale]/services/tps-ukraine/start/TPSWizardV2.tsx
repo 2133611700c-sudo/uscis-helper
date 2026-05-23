@@ -2024,7 +2024,24 @@ export default function TPSWizardV2({ locale }: Props) {
           // Server-side entitlement: owner uses cookie, paid users send token
           ...(data.paid ? { 'x-payment-token': 'stripe-checkout-complete' } : {}),
         },
-        body: JSON.stringify({ ...answers, _provenance: provenanceByField }),
+        body: JSON.stringify({
+          ...answers,
+          _provenance: provenanceByField,
+          _translation: {
+            uploadedDocTypes: Object.values(data.uploads)
+              .map((u) => u.detected_document_type)
+              .filter(Boolean) as string[],
+            signerName: `${answers.given_name || ''} ${answers.family_name || ''}`.trim(),
+            signerAddress: [
+              answers.us_address_street,
+              answers.us_address_city,
+              answers.us_address_state,
+              answers.us_address_zip,
+            ].filter(Boolean).join(', '),
+            signatureDataUrl: null,
+            controllingSpellings: {},
+          },
+        }),
       })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const blob = await r.blob()
