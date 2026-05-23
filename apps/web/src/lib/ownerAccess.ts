@@ -23,7 +23,7 @@ import type { NextRequest } from 'next/server'
 
 const COOKIE_NAME = '__owner_session'
 const CODE_TTL_MS = 10 * 60 * 1000      // 10 minutes to enter code
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000  // 24 hours
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000  // 30 days
 
 // ── In-memory code store (serverless: per-instance, short-lived) ────────
 // For production with multiple instances, use Supabase or KV.
@@ -110,7 +110,7 @@ export async function setOwnerSessionCookie(email: string): Promise<void> {
   cookieStore.set(COOKIE_NAME, signCookie(email), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: SESSION_TTL_MS / 1000,
     path: '/',
   })
