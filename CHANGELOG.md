@@ -152,3 +152,44 @@ OCR → postExtractNormalize → response with metadata → wizard stores → me
 - Hand signature warning present
 
 **Next:** Connect generateTranslationHTML to TPS packet builder. Same upload → forms + translation in one ZIP.
+
+---
+
+## 2026-05-23 (session 7) | Translation Bridge + SignatureStep + Product Vision
+
+**Summary:**
+Full ADR-006 implementation: one upload → forms + translation in same ZIP.
+
+**Built:**
+- `translationBridge.ts` — shouldTranslate, resolveTemplate, generateTPSTranslation, completenessCheck (16 tests)
+- `SignaturePad.tsx` — reusable touch canvas, 4 languages, high-DPI, dark mode
+- `SignatureStep.tsx` — USCIS rules + "I've read the rules" + user choice (screen/paper/online)
+- `packetBuilder.ts` — patched: auto-generates Translation_Internal_Passport.txt + Certification_Translation.txt
+- `mailReadyGate.ts` — patched: checks translation completeness per 8 CFR §103.2(b)(3)
+- `TPS_PRODUCT_VISION.md` — complete package architecture
+- `ADR-006-one-upload-two-products.md` — architecture decision
+- `ADR-007-signature-rules.md` — USCIS signature rules with sources
+- Interactive product blueprint (4 tabs: flow/arch/docs/zip)
+
+**Deployed:** SHA 8c13826
+
+**Metrics:**
+- Commits: 10 (a9b7062 → 8c13826)
+- Tests: 1956 (was 1940, +16)
+- Files: 30+ created/changed
+- ADRs: 2 new (006, 007)
+
+**P0 DONE:**
+✅ translationBridge.ts (rules + rendering + tests)
+✅ packetBuilder.ts patched (translation in ZIP)
+✅ mailReadyGate.ts patched (translation completeness)
+✅ SignaturePad + SignatureStep (user choice, USCIS rules)
+✅ Product vision documented
+
+**P1 REMAINING:**
+🔲 Wire SignatureStep into TPSWizardV2 as step 6
+🔲 Multi-page upload for internal passport booklet
+🔲 Blank/non-blank page detection
+🔲 PDF rendering (currently TXT → needs bureauStyleRenderer for proper PDF)
+🔲 E2E proof: upload → OCR → forms + translation → ZIP
+🔲 Translation standalone service integration (birth/marriage/divorce certs)
