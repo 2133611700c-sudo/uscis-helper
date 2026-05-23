@@ -1494,6 +1494,7 @@ export default function TPSWizardV2({ locale }: Props) {
   const [busy, setBusy] = useState(false)
   const [errMsg, setErrMsg] = useState<string | null>(null)
   const [ownerChecked, setOwnerChecked] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
 
   // ── Persist to localStorage (without File objects) ───────────────────────
   //
@@ -1587,13 +1588,13 @@ export default function TPSWizardV2({ locale }: Props) {
     }
 
     // Owner access: check if the current user is the site owner.
-    // If so, skip Stripe entirely — set paid=true so the Generate button
-    // appears instead of the Pay button. This does NOT auto-generate;
-    // the owner still reviews fields and clicks Generate manually.
+    // Uses separate isOwner state — NOT saved to localStorage, NOT mixed
+    // with Stripe paid state. This prevents localStorage from overriding
+    // owner access on page reload.
     fetch('/api/owner/status')
       .then((r) => r.json())
       .then((d) => {
-        if (d?.owner) setData((prev) => ({ ...prev, paid: true }))
+        if (d?.owner) setIsOwner(true)
       })
       .catch(() => {})
       .finally(() => setOwnerChecked(true))
@@ -1601,8 +1602,11 @@ export default function TPSWizardV2({ locale }: Props) {
 
   useEffect(() => {
     try {
-      const { uploads, ...rest } = data
+      const { uploads, paid: _paid, ...rest } = data
       // Strip File objects but keep fields for redisplay
+      // NOTE: `paid` is intentionally excluded from localStorage.
+      // Owner access uses isOwner (checked on mount), Stripe uses ?paid=1.
+      // Saving paid=false to localStorage would override owner access on reload.
       const uploadsSafe: Record<string, Pick<UploadEntry, 'fileName' | 'status' | 'fields'>> = {}
       for (const k of Object.keys(uploads)) {
         const u = uploads[k]
@@ -2386,7 +2390,7 @@ export default function TPSWizardV2({ locale }: Props) {
             {!ownerChecked && (
               <div style={{ textAlign: 'center', padding: 20, color: TEXT_MUTED, fontSize: 15 }}>…</div>
             )}
-            {ownerChecked && !data.paid && (
+            {ownerChecked && !isOwner && !data.paid && (
               <button
                 type="button"
                 disabled={busy}
@@ -2450,7 +2454,7 @@ export default function TPSWizardV2({ locale }: Props) {
               </button>
             )}
 
-            {ownerChecked && data.paid && (
+            {ownerChecked && (isOwner || data.paid) && (
               <button
                 type="button"
                 onClick={handleGenerate}
