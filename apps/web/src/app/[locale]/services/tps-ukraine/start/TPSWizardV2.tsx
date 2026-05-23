@@ -120,6 +120,9 @@ interface WizardData {
     daytime_phone?: string
     email?: string
     marital_status?: TPSAnswers['marital_status']
+    city_of_birth?: string
+    place_of_last_entry?: string
+    us_address_in_care_of?: string
     ssn?: string
   }
   paid: boolean
@@ -221,6 +224,9 @@ const T = {
       marital: 'Сімейний стан',
       ssn: 'SSN',
       ead_category: 'Категорія EAD',
+      city_of_birth: 'Місто народження',
+      place_of_entry: "Місце в'їзду в США",
+      in_care_of: 'In Care Of (отримувач пошти)',
     },
     source: {
       passport: 'Паспорт → OCR',
@@ -416,6 +422,9 @@ const T = {
       marital: 'Семейное положение',
       ssn: 'SSN',
       ead_category: 'Категория EAD',
+      city_of_birth: 'Город рождения',
+      place_of_entry: 'Место въезда в США',
+      in_care_of: 'In Care Of (получатель почты)',
     },
     source: {
       passport: 'Паспорт → OCR',
@@ -610,6 +619,9 @@ const T = {
       marital: 'Marital status',
       ssn: 'SSN',
       ead_category: 'EAD category',
+      city_of_birth: 'City of Birth',
+      place_of_entry: 'Place of Last Entry into US',
+      in_care_of: 'In Care Of (mail recipient)',
     },
     source: {
       passport: 'Passport → OCR',
@@ -805,6 +817,9 @@ const T = {
       marital: 'Estado civil',
       ssn: 'SSN',
       ead_category: 'Categoría EAD',
+      city_of_birth: 'Ciudad de nacimiento',
+      place_of_entry: 'Lugar de última entrada a EE.UU.',
+      in_care_of: 'In Care Of (destinatario del correo)',
     },
     source: {
       passport: 'Pasaporte → OCR',
@@ -1927,6 +1942,9 @@ export default function TPSWizardV2({ locale }: Props) {
         daytime_phone: data.manual.daytime_phone || '',
         email: data.manual.email || '',
         marital_status: data.manual.marital_status,
+        city_of_birth: data.manual.city_of_birth || v('city_of_birth') || '',
+        place_of_last_entry: data.manual.place_of_last_entry || v('place_of_last_entry') || '',
+        us_address_in_care_of: data.manual.us_address_in_care_of || v('us_address_in_care_of') || '',
         ssn: data.manual.ssn,
         part7_reviewed: true,
         has_criminal_concern: false,
@@ -2882,6 +2900,27 @@ function ReviewManual({
         ]}
         value={manual.marital_status}
         onPick={(id) => onChange({ marital_status: id as TPSAnswers['marital_status'] })}
+      />
+      <FieldInput
+        label={t.label.city_of_birth}
+        placeholder="Vinnytsya"
+        tip=""
+        value={manual.city_of_birth || ''}
+        onChange={(v) => onChange({ city_of_birth: v })}
+      />
+      <FieldInput
+        label={t.label.place_of_entry}
+        placeholder="Los Angeles, CA"
+        tip=""
+        value={manual.place_of_last_entry || ''}
+        onChange={(v) => onChange({ place_of_last_entry: v })}
+      />
+      <FieldInput
+        label={t.label.in_care_of}
+        placeholder="SERGII REDACTED"
+        tip=""
+        value={manual.us_address_in_care_of || ''}
+        onChange={(v) => onChange({ us_address_in_care_of: v })}
       />
       {init && (
         <FieldInput
