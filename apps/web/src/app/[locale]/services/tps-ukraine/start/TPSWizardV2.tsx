@@ -2029,7 +2029,7 @@ export default function TPSWizardV2({ locale }: Props) {
 
         // Signature from step 6
         // BLOCK generation if user chose 'screen' but didn't actually draw
-        _signature_mode: signatureData?.mode || 'paper',
+        _signature_mode: data.method === 'online' ? 'online_myuscis' : (signatureData?.mode || 'paper'),
         _signature_name: (signatureData?.mode === 'screen' && signatureData?.dataUrl)
           ? `${(v('given_name') || '').toUpperCase()} ${(v('family_name') || '').toUpperCase()}`.trim()
           : undefined,
@@ -3059,21 +3059,21 @@ function ReviewManual({
         label={t.label.city_of_birth}
         placeholder=""
         tip={locale === 'ru' ? 'Из внутреннего паспорта (книжечка). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З внутрішнього паспорта (книжечка). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'Del pasaporte interno. Cargue en paso 4 → el robot lo llenará.' : 'From internal passport (booklet). Upload at step 4 → robot fills it.'}
-        value={manual.city_of_birth || ''}
+        value={manual.city_of_birth || mergedFields?.city_of_birth?.value || ''}
         onChange={(v) => onChange({ city_of_birth: v })}
       />
       <FieldInput
         label={t.label.province_of_birth ?? 'Oblast / Province of Birth'}
         placeholder=""
         tip={locale === 'ru' ? 'Из внутреннего паспорта. Робот нормализует в формат USCIS.' : locale === 'uk' ? 'З внутрішнього паспорта. Робот нормалізує в формат USCIS.' : locale === 'es' ? 'Del pasaporte interno. El robot normaliza al formato USCIS.' : 'From internal passport. Robot normalizes to USCIS format.'}
-        value={manual.province_of_birth || ''}
+        value={manual.province_of_birth || mergedFields?.province_of_birth?.value || ''}
         onChange={(v) => onChange({ province_of_birth: v })}
       />
       <FieldInput
         label={t.label.place_of_entry}
         placeholder=""
         tip={locale === 'ru' ? 'Из I-94 (i94.cbp.dhs.gov). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З I-94 (i94.cbp.dhs.gov). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'De I-94 (i94.cbp.dhs.gov). Cargue en paso 4 → el robot lo llenará.' : 'From I-94 (i94.cbp.dhs.gov). Upload at step 4 → robot fills it.'}
-        value={manual.place_of_last_entry || ''}
+        value={manual.place_of_last_entry || mergedFields?.place_of_last_entry?.value || ''}
         onChange={(v) => onChange({ place_of_last_entry: v })}
       />
       <FieldInput
