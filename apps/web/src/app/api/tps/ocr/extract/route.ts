@@ -437,6 +437,85 @@ export async function POST(req: NextRequest) {
       }
       break
     }
+    // ── P0 FIX (2026-05-24): three wizard slot IDs had NO case in this
+    // switch, so rule-based extraction never ran for them. The contract
+    // firewall (documentContracts.ts) would then kill all fields as
+    // UNKNOWN_SLOT (for i797_or_ead) or surface only Brain output (for
+    // tps_notice / ead_old). Users saw "Not found — enter manually" for
+    // every field despite uploading a valid document.
+    case 'tps_notice': {
+      // Rereg TPS Approval/Receipt Notice = same document family as I-797.
+      // No rotation retry — notices are standard letter format.
+      moduleResult = runI797Module(result, { document_id })
+      break
+    }
+    case 'i797_or_ead': {
+      // Init-path combined slot: user uploads either I-797 OR EAD card.
+      // Strategy: try BOTH modules, pick the one with more fields.
+      const i797Try = runI797Module(result, { document_id })
+      let eadTry = runEadModule(result, { document_id })
+      // Rotation retry for EAD half (same logic as case 'ead').
+      const eadTryCount = (mr: TpsModuleResult | null): number => mr?.fields?.length ?? 0
+      if (eadTryCount(eadTry) < 3) {
+        for (const angle of [90, 180, 270] as const) {
+          try {
+            const sharp = (await import('sharp')).default
+            const rotatedBuffer = await sharp(imageBuffer)
+              .rotate(angle).jpeg({ quality: 85 }).toBuffer()
+            const rotatedResult = await googleVisionProvider.extractText({
+              imageBuffer: rotatedBuffer, mimeType: 'image/jpeg',
+            })
+            if (isBlocked(rotatedResult)) continue
+            const tryEad2 = runEadModule(rotatedResult, { document_id })
+            if (eadTryCount(tryEad2) > eadTryCount(eadTry)) {
+              eadTry = tryEad2
+              effectiveOcrResult = rotatedResult
+              if (eadTryCount(tryEad2) >= 5) break
+            }
+          } catch { break }
+        }
+      }
+      // Winner: whichever matched with more fields. I-797 wins ties
+      // because it carries receipt_number and uscis_online_account
+      // which EAD doesn't have.
+      if (i797Try.matched && (!eadTry.matched || i797Try.fields.length >= eadTry.fields.length)) {
+        moduleResult = i797Try
+      } else if (eadTry.matched) {
+        moduleResult = eadTry
+      } else {
+        // Neither matched — return the one with more fields for Brain
+        // to augment, or i797Try if tied (better field coverage).
+        moduleResult = i797Try.fields.length >= eadTry.fields.length ? i797Try : eadTry
+      }
+      break
+    }
+    case 'ead_old': {
+      // Rereg previous EAD card. Same extraction as case 'ead' but
+      // the wizard sends docHint='ead_old'.
+      let eadOldResult = runEadModule(result, { document_id })
+      const eadOldCount = (mr: TpsModuleResult | null): number => mr?.fields?.length ?? 0
+      if (eadOldCount(eadOldResult) < 3) {
+        for (const angle of [90, 180, 270] as const) {
+          try {
+            const sharp = (await import('sharp')).default
+            const rotatedBuffer = await sharp(imageBuffer)
+              .rotate(angle).jpeg({ quality: 85 }).toBuffer()
+            const rotatedResult = await googleVisionProvider.extractText({
+              imageBuffer: rotatedBuffer, mimeType: 'image/jpeg',
+            })
+            if (isBlocked(rotatedResult)) continue
+            const tryEadOld = runEadModule(rotatedResult, { document_id })
+            if (eadOldCount(tryEadOld) > eadOldCount(eadOldResult)) {
+              eadOldResult = tryEadOld
+              effectiveOcrResult = rotatedResult
+              if (eadOldCount(tryEadOld) >= 5) break
+            }
+          } catch { break }
+        }
+      }
+      moduleResult = eadOldResult
+      break
+    }
     default:
       moduleResult = null
   }
