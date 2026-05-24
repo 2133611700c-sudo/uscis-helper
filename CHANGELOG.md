@@ -76,6 +76,13 @@ Every work session appends here. Never delete entries. Newest first.
 - Previous parser only scanned offsets 0..+4 (below) → city always missed
 - **Fix**: scan range -2..+4 (both directions)
 
+### BUG-9 FIX (P0): Brain second-pass for booklet extraction
+- Vision OCR cannot read handwritten Cyrillic — labels found but values garbage
+- Added `booklet` to `TARGETED_BRAIN_FIELDS` with middle_name, city_of_birth, province_of_birth
+- Added city_of_birth, province_of_birth to Brain FieldSchema
+- Added booklet-specific Brain prompt rules 21-25 (layout, oblasts, patronymics, settlement types)
+- Brain output goes through `@uscis-helper/knowledge` normalization, not directly to PDF
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
