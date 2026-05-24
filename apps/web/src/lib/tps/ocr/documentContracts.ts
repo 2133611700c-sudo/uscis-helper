@@ -30,6 +30,7 @@ export type SlotId =
   | 'ead_old'
   | 'tps_notice'
   | 'i797'  // alias for tps_notice — used as docTypeHint in OCR route
+  | 'i797_or_ead' // init-path combined slot: user uploads I-797 OR EAD
   | 'photo'
   | 'dl' // U.S. driver's license / state ID — used by re-parole wizard
 
@@ -317,6 +318,48 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'ead_expiration_date',
       'passport_number',
       'passport_expiration_date',
+    ],
+  },
+  // Combined I-797 / EAD slot (init path). User may upload either an
+  // I-797 notice (receipt/approval) OR an EAD card into this slot.
+  // P0 FIX (2026-05-24): this slot had NO contract entry → applyContract
+  // returned UNKNOWN_SLOT and killed ALL fields from Brain and rule modules.
+  // Allowed fields = union of i797 and ead contracts (minus address — only
+  // tps_notice carries USCIS mailing address, not generic I-797/EAD).
+  i797_or_ead: {
+    slot: 'i797_or_ead',
+    allowed_document_types: ['i797', 'ead'],
+    allowed_fields: [
+      // From I-797
+      'a_number',
+      'receipt_number',
+      'notice_date',
+      'received_date',
+      'notice_type',
+      'form_type',
+      'uscis_online_account',
+      // From EAD
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'country_of_birth',
+      // Identity (both may carry)
+      'family_name',
+      'given_name',
+      'dob',
+      'sex',
+    ],
+    forbidden_fields: [
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'last_entry_date',
+      'status_at_last_entry',
+      'passport_number',
+      'passport_expiration_date',
+      'passport_country_of_issuance',
+      'us_address_street',
+      'us_address_city',
+      'us_address_state',
+      'us_address_zip',
     ],
   },
   // Photo slot is just a 2x2 image carrier — no OCR fields expected.

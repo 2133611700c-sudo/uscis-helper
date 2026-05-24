@@ -1055,6 +1055,15 @@ const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
     'a_number', 'family_name', 'given_name', 'dob',
     'address', 'us_address_street', 'us_address_city', 'us_address_state', 'us_address_zip',
   ]),
+  // P0 FIX (2026-05-24): init-path combined slot had no entry → no
+  // client-side firewall on hydration → stale localStorage could
+  // resurrect forbidden fields.
+  i797_or_ead: new Set([
+    'a_number', 'receipt_number', 'uscis_online_account',
+    'ead_category_on_card', 'ead_expiration_date',
+    'country_of_birth',
+    'family_name', 'given_name', 'dob', 'sex',
+  ]),
   photo: new Set([]),
 }
 // TPS Stage I price displayed on the Pay button (single source of truth
