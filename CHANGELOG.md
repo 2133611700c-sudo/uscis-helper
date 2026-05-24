@@ -536,3 +536,4 @@ Over 2 days I created components but didn't wire them. SignatureStep existed as 
 - [ ] city_of_birth "смт." expansion in translation (forms OK via toWinAnsiSafe)
 - [ ] civil_registry_terms.json migration to knowledge
 - [ ] E2E with real upload (requires manual test)
+
