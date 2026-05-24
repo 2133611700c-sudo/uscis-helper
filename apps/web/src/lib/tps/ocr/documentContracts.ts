@@ -90,27 +90,37 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'us_address_zip',
     ],
   },
-  // Ukrainian internal passport-booklet (паспорт-книжка). Contains
-  // patronymic, city_of_birth, province_of_birth — fields the international
-  // passport does NOT carry. BUG-4 FIX (2026-05-24): slot was missing from
-  // contract registry → ALL booklet fields were rejected as UNKNOWN_SLOT.
+  // Ukrainian internal passport-booklet (паспорт-книжка).
+  // BUG-6 FIX (2026-05-24): booklet OCR extracts garbage for identity
+  // fields (family_name, given_name, dob, sex) because handwritten
+  // Cyrillic is unreliable. Month names end up as given_name, date
+  // fragments as surname. These fields are ALREADY extracted reliably
+  // from загранпаспорт MRZ — booklet should NOT touch them.
+  //
+  // Booklet's ONLY unique value: middle_name, city_of_birth,
+  // province_of_birth — fields that загранпаспорт does NOT carry.
+  // Everything else is noise that overwrites good MRZ data.
   booklet: {
     slot: 'booklet',
     allowed_document_types: ['passport'],
     allowed_fields: [
-      'family_name',
-      'given_name',
-      'middle_name',
-      'dob',
-      'sex',
-      'city_of_birth',
-      'province_of_birth',
+      'middle_name',         // ← PRIMARY reason booklet exists
+      'city_of_birth',       // ← PRIMARY reason booklet exists
+      'province_of_birth',   // ← PRIMARY reason booklet exists
       'country_of_birth',
       'country_of_nationality',
-      'passport_number',
       'passport_country_of_issuance',
     ],
     forbidden_fields: [
+      // Identity fields — загранпаспорт MRZ is authoritative.
+      // Booklet handwritten OCR produces garbage for these.
+      'family_name',
+      'given_name',
+      'dob',
+      'sex',
+      'passport_number',
+      'passport_expiration_date',
+      // Immigration fields — not in booklet
       'a_number',
       'i94_admission_number',
       'i94_class_of_admission',
@@ -118,7 +128,6 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'status_at_last_entry',
       'ead_category_on_card',
       'ead_expiration_date',
-      'passport_expiration_date',
       'address',
       'us_address_street',
       'us_address_city',
