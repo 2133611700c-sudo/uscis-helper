@@ -404,6 +404,39 @@ export async function POST(req: NextRequest) {
       moduleResult = runI797Module(result, { document_id })
       break
     }
+    // BUG-4c FIX (2026-05-24): wizard sends docHint='booklet' for the
+    // internal Ukrainian passport slot, but there was no case for it →
+    // booklet module NEVER ran → patronymic, city_of_birth, province
+    // were never extracted. The booklet module was only reachable as a
+    // fallback inside case 'passport' when MRZ failed.
+    case 'booklet': {
+      moduleResult = runPassportBookletModule(result, { document_id })
+      if (moduleResult.matched) {
+        const hasNumber = moduleResult.fields.some(
+          (f) => f.field === 'passport_number',
+        )
+        if (!hasNumber) {
+          for (const angle of [90, 180, 270] as const) {
+            try {
+              const sharp = (await import('sharp')).default
+              const rotatedBuffer = await sharp(imageBuffer).rotate(angle).jpeg({ quality: 85 }).toBuffer()
+              const rotatedResult = await googleVisionProvider.extractText({
+                imageBuffer: rotatedBuffer,
+                mimeType: 'image/jpeg',
+              })
+              if (isBlocked(rotatedResult)) continue
+              const tryBooklet = runPassportBookletModule(rotatedResult, { document_id })
+              if (tryBooklet.matched && tryBooklet.fields.some((f) => f.field === 'passport_number')) {
+                moduleResult = tryBooklet
+                effectiveOcrResult = rotatedResult
+                break
+              }
+            } catch { /* rotation failed — use what we have */ }
+          }
+        }
+      }
+      break
+    }
     default:
       moduleResult = null
   }
