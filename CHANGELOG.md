@@ -3,6 +3,38 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## Session 10 — 2026-05-24 | Session Docs Guard Enforcement
+SHA range: pending commit
+Production: unchanged runtime code (docs/guard infra only)
+
+### Done
+- Added `scripts/guards/require-session-docs.sh` to enforce:
+  - `STATUS.md`
+  - `HANDOFF.md`
+  - `CHANGELOG.md`
+- Added `.githooks/pre-commit` (tracked) to block staged commits without all 3 docs.
+- Added `scripts/setup-git-hooks.sh` to set `core.hooksPath=.githooks`.
+- Added CI workflow `.github/workflows/session-docs-guard.yml` on push/PR.
+- Added root npm script: `guard:session-docs`.
+- Updated `AGENTS.md` and `CLAUDE.md` with enforcement + setup note.
+
+### Verification
+- PASS: `--files STATUS.md HANDOFF.md CHANGELOG.md`
+- FAIL: `--files apps/web/src/foo.ts CHANGELOG.md`
+- FAIL: `--files STATUS.md HANDOFF.md`
+- PASS: `--commit 211540f`
+- FAIL: `--commit ccbbb1f`
+- FAIL as expected: pre-commit with staged non-doc file
+- CI simulation:
+  - PASS on `211540f^..211540f`
+  - FAIL on `ccbbb1f^..ccbbb1f`
+
+### Notes
+- macOS bash compatibility fixed (no `mapfile`, no `local -n`).
+- No TPS runtime/product logic changed in this session.
+
+---
+
 ## Session 9 — 2026-05-24 | Production Hardening + Signature + Dictionary + Audit
 SHA range: a296ee1 → ccbbb1f (9 commits)
 Production: messenginfo.com SHA ccbbb1f
