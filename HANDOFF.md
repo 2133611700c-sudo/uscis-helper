@@ -3,6 +3,32 @@ Last updated: 2026-05-24 05:12 UTC
 Session: 10
 Production SHA: ccbbb1f
 
+## 2026-05-24 (session 12) — runtime dual-proof instrumentation
+
+### What I changed
+1. `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
+   - Added `data-testid="tps-gate-error-container"` on Step 5 gate error block.
+
+2. `scripts/t3ps-runtime-dual-proof.mjs` (new)
+   - End-to-end dual-mode production probe with:
+     - selector contract check,
+     - slot-level OCR status/error capture,
+     - unpaid/paywall check,
+     - paid callback generate attempt,
+     - owner mode availability check,
+     - network/console/failed request exports.
+
+3. Updated tests/scripts to V2 selectors:
+   - `apps/web/src/lib/tps/__tests__/wizardV2RuntimeLock.test.ts`
+   - `scripts/t3ps-functional-closeout-browser.mjs`
+   - `scripts/t3ps-production-contour-clean.mjs`
+   - `scripts/t3ps-final-browser-audit.mjs`
+
+### Current truth
+- Dual-proof run shows selector contract present and OCR status 200 per required slot.
+- Owner mode remains blocked in automation due missing owner session.
+- Client mode currently stuck at step 5 until full required review corrections are satisfied.
+
 ## WHAT WAS DONE IN SESSION 10
 
 ### Goal

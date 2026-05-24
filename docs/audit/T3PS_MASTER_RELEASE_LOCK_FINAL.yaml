@@ -1,54 +1,40 @@
 report: T3PS_MASTER_RELEASE_LOCK_FINAL
-generated_at: "2026-05-16T22:34:00Z"
-status: GO_CONTROLLED_BETA_110_LOCKED
-local_head: "c2309c237d7157259c3b112d6f926032d88bd15d"
-origin_main: "c2309c237d7157259c3b112d6f926032d88bd15d"
-production_health_sha: "63e735629bfd8d453c06b19e7974adf231f3a60c"
-sha_status: DOCS_ONLY_DIVERGENCE
-gates:
-  typecheck: PASS
-  test: PASS
-  lint: PASS
-  guard: PASS
-  build: PASS
-ocr_matrix:
-  international_passport: PASS
-  ukrainian_internal_passport: PASS
-  i94: PASS
-  ead: PASS
-  uscis_notice: NOT_REQUIRED
-browser_ab:
-  scenario_a_i821_only: PASS
-  scenario_b_i821_i765: PASS
-  generate_200: true
-  zip_downloaded: true
-pdf_proof:
-  i821: PASS
-  i765: PASS
-  cyrillic_leak: NONE
-legal_risk:
-  criminal_yes: PASS
-  removal_yes: PASS
-  prior_denial_yes: PASS
+generated_at: "2026-05-24T05:45:00Z"
+repo:
+  local_head: "201ce5d746a8951d25d2613b1a74f1cb2f2d02a9"
+  origin_main: "201ce5d746a8951d25d2613b1a74f1cb2f2d02a9"
+  production_health_sha: "201ce5d746a8951d25d2613b1a74f1cb2f2d02a9"
+  sha_alignment:
+    local_equals_origin: true
+    origin_equals_health: true
+    docs_only_runtime_difference: false
+    explanation: "Production SHA matches runtime commit before this release-lock update."
+functional_evidence:
+  gates: PASS
+  ocr_matrix: PASS
+  browser_ab: PARTIAL
+  zip_pdf: MISSING
+  cyrillic_leak: UNKNOWN
+  real_doc_pilot: PARTIAL
+  evidence_paths:
+    selector_and_dual_probe: "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json"
+    network: "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_network.json"
+    failed_requests: "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_failed_requests.json"
+original_5_prompts:
+  status: PARTIAL_NON_BLOCKING
+  open_blocking_items_count: 0
 residual_gaps:
-  - id: T3PS-FINAL-GAP-001
-    priority: P1
-    blocker: false
-    accepted_risk: true
-    description: Telegram monitoring remains out of scope for Stage I.
-  - id: T3PS-FINAL-GAP-002
-    priority: P1
-    blocker: false
-    accepted_risk: true
-    description: /_vercel/insights 404 and CSP beacon blocks are non-blocking.
-  - id: T3PS-FINAL-GAP-003
-    priority: P2
-    blocker: false
-    accepted_risk: true
-    description: USCIS notice OCR not required in Stage I scope.
-final_verdict_reason: "All Stage I functional checks passed with fresh evidence and no open P0 blockers."
+  open_p0_count: 1
+  accepted_risks:
+    - "Telegram out of scope for Stage I."
+    - "Vercel insights/CSP noise non-blocking."
+  non_blocking_p1:
+    - "Owner-mode proof unavailable in current automation context (no owner session)."
+  blocking_p0:
+    - "Client contour did not reach generate 200/ZIP in current fresh dual-proof run."
 final_status:
-  controlled_beta: GO_CONTROLLED_BETA_110_LOCKED
+  controlled_beta: PARTIAL_RELEASE_ACCOUNTING
   paid_launch_ready: false
   public_beta_ready: false
   telegram_required_for_stage_i: false
+next_action: "Run a fresh production client contour with valid paid entitlement to obtain generate 200 + ZIP + PDF visual proof, then close P0."

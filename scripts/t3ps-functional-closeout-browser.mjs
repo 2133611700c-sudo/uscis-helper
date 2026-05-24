@@ -4,6 +4,7 @@ import path from 'node:path'
 import { chromium } from '@playwright/test'
 
 const scenario = (process.env.SCENARIO || 'A').toUpperCase() // A=i821 only, B=tps+ead+i94
+const paidCallback = process.env.PAID_CALLBACK === '1'
 const outRoot = path.resolve('docs/reports/evidence/t3ps-functional-closeout')
 const outDir = path.join(outRoot, scenario === 'B' ? 'scenario_B' : 'scenario_A')
 const shotsDir = path.join(outDir, 'screenshots')
@@ -19,8 +20,8 @@ const fixtureEad = path.resolve('test-fixtures/generated/synthetic-ead.jpg')
 const consoleLogs = []
 const networkLogs = []
 const failedRequests = []
-let ocrStatus = null
-let generateStatus = null
+let ocrStatuses = []
+let generateStatuses = []
 let downloadedFile = null
 let generateBytes = 0
 
@@ -44,7 +45,6 @@ await page.route('**/api/tps/generate-packet', async (route) => {
     }
     await route.fulfill({ response: resp, body: body || undefined })
   } catch {
-    // Browser context can close while request is still in flight.
     await route.continue()
   }
 })
@@ -59,8 +59,8 @@ page.on('response', async (r) => {
   }
   networkLogs.push(row)
   if (row.status >= 400) failedRequests.push(row)
-  if (row.url.includes('/api/tps/ocr/extract')) ocrStatus = row.status
-  if (row.url.includes('/api/tps/generate-packet')) generateStatus = row.status
+  if (row.url.includes('/api/tps/ocr/extract')) ocrStatuses.push(row.status)
+  if (row.url.includes('/api/tps/generate-packet')) generateStatuses.push(row.status)
 })
 
 const shot = async (name) => page.screenshot({ path: path.join(shotsDir, name), fullPage: true })
@@ -85,8 +85,7 @@ async function clickByText(candidates) {
 async function fillVisibleInputs() {
   await page.evaluate(() => {
     const setVal = (el, val) => {
-      const proto = Object.getPrototypeOf(el)
-      const desc = Object.getOwnPropertyDescriptor(proto, 'value')
+      const desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')
       if (desc?.set) desc.set.call(el, val)
       else el.value = val
       el.dispatchEvent(new Event('input', { bubbles: true }))
@@ -105,6 +104,13 @@ async function fillVisibleInputs() {
       else if (el.maxLength === 2) setVal(el, 'CA')
       else setVal(el, 'TEST')
     }
+    const selects = Array.from(document.querySelectorAll('select')).filter(visible)
+    for (const s of selects) {
+      if (!s.value && s.options.length > 1) {
+        s.selectedIndex = 1
+        s.dispatchEvent(new Event('change', { bubbles: true }))
+      }
+    }
   })
 }
 
@@ -114,82 +120,63 @@ try {
   await page.reload({ waitUntil: 'networkidle' })
   await shot('upload_screen.png')
 
-  await clickByText(['Подаю впервые', 'Подаю вперше', 'First filing'])
-  await wait(800)
+  await clickByText(['Впервые', 'Вперше', 'First time'])
+  await clickByText(['Онлайн', 'Online'])
+  if (scenario === 'B') await clickByText(['Да', 'Так', 'Yes'])
+  else await clickByText(['Нет', 'Ні', 'No'])
+  await wait(500)
+  await shot('step4_doc_slots.png')
+
+  const setIf = async (id, fp) => {
+    const input = page.locator(`[data-testid="tps-upload-input-${id}"]`).first()
+    if (await input.count()) await input.setInputFiles(fp)
+  }
+  await setIf('passport', fixturePassport)
+  await setIf('booklet', fixturePassport)
+  if (scenario === 'B') {
+    await setIf('i94', fixtureI94)
+    await setIf('i797_or_ead', fixtureEad)
+  }
+  await setIf('dl', fixturePassport)
+
+  await wait(4000)
   await page.locator('[data-testid="tps-ocr-cta"]').click()
-  await wait(700)
-
-  const passportSlot = page.locator('[data-testid="upload-slot-passport"] input[type="file"]').first()
-  if (await passportSlot.count()) await passportSlot.setInputFiles(fixturePassport)
-  if (scenario === 'B') {
-    const i94Slot = page.locator('[data-testid="upload-slot-i94"] input[type="file"]').first()
-    const eadSlot = page.locator('[data-testid="upload-slot-ead"] input[type="file"]').first()
-    if (await i94Slot.count()) await i94Slot.setInputFiles(fixtureI94)
-    if (await eadSlot.count()) await eadSlot.setInputFiles(fixtureEad)
-  }
-  await wait(3500)
-  await shot('ocr_result_nonzero.png')
-
-  await clickByText(['Дальше', 'Далі', 'Next'])
-  await wait(1000)
+  await wait(800)
   await shot('source_to_final_review.png')
-  const edit = page.locator('[data-testid^="review-edit-"]').first()
-  if (await edit.count()) {
-    await edit.click()
-    await wait(300)
-    await shot('edit_modal.png')
-    const txt = page.locator('[data-testid="ocr-edit-input-text"]').first()
-    if (await txt.count()) await txt.fill('TEST')
-    const save = page.locator('[data-testid="ocr-edit-save"]').first()
-    if (await save.count()) await save.click()
-  }
-  const reviewNext = page.locator('[data-testid="review-next"]').first()
-  if (await reviewNext.count() && await reviewNext.isEnabled()) await reviewNext.click()
-  await wait(700)
 
-  // Move to Step 6 quickly.
-  for (let i = 0; i < 5; i++) {
-    const ok = await clickByText(['Дальше', 'Далі', 'Next'])
-    if (!ok) break
-    await wait(500)
-  }
-  if (scenario === 'B') {
-    await page.evaluate(() => {
-      const key = 'wizard:tps-ukraine:state:v1'
-      const raw = localStorage.getItem(key)
-      const st = raw ? JSON.parse(raw) : { step: 6, answers: {} }
-      st.step = 6
-      st.answers = { ...(st.answers || {}), wants_ead: true, has_i94: true, filing_path: 'initial' }
-      localStorage.setItem(key, JSON.stringify(st))
-    })
-    await page.goto(`${startUrl}?continue=1`, { waitUntil: 'networkidle' })
-    await wait(800)
-  }
-  await clickByText(['PDF-пакет', 'PDF packet'])
-  await wait(900)
   await fillVisibleInputs()
+  const step6Next = page.locator('[data-testid="tps-step6-continue-cta"]').first()
+  if (await step6Next.count() && await step6Next.isEnabled()) {
+    await step6Next.click()
+  }
+  await wait(1000)
   await shot('step6_prefilled.png')
 
-  await clickByText(['Не женат', 'Не одружений', 'Single'])
-  const maritalSingle = page.locator('[data-testid="field-marital-status-single"]').first()
-  if (await maritalSingle.count()) await maritalSingle.click()
+  if (paidCallback) {
+    await page.goto(`${startUrl}?paid=1`, { waitUntil: 'networkidle' })
+    await wait(1200)
+    await shot('step6_paid_callback.png')
+  }
+
   const part7 = page.locator('[data-testid="part7-confirm-checkbox"]').first()
   if (await part7.count()) await part7.check()
-  await shot('part7_reviewed.png')
-  await shot('packet_checker_green.png')
-
   const att = page.locator('[data-testid="tps-attestation-checkbox"]').first()
   if (await att.count()) await att.check()
   await shot('attestation_checked.png')
 
-  const gen = page.locator('[data-testid="generate-btn"]').first()
-  if (await gen.count() && await gen.isEnabled()) await gen.click()
-  await wait(5000)
+  const gen = page.locator('[data-testid="tps-generate-cta"]').first()
+  if (await gen.count() && await gen.isEnabled()) {
+    const dlWait = page.waitForEvent('download', { timeout: 25000 }).catch(() => null)
+    await gen.click()
+    const dl = await dlWait
+    if (dl) {
+      const fp = path.join(dlDir, dl.suggestedFilename())
+      await dl.saveAs(fp)
+      downloadedFile = fp
+    }
+  }
+  await wait(2500)
   await shot('generate_success.png')
-
-  const dl = page.locator('[data-testid="download-zip"]').first()
-  if (await dl.count()) await dl.click()
-  await wait(1500)
   await shot('download_confirmed.png')
 } finally {
   await browser.close()
@@ -197,9 +184,10 @@ try {
 
 const summary = {
   scenario,
+  paid_callback: paidCallback,
   started_utc: new Date().toISOString(),
-  ocr_status: ocrStatus,
-  generate_status: generateStatus,
+  ocr_statuses: ocrStatuses,
+  generate_statuses: generateStatuses,
   zip_downloaded: Boolean(downloadedFile),
   zip_path: downloadedFile,
   zip_size_bytes: generateBytes,
