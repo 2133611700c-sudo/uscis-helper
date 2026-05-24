@@ -3,6 +3,49 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## Session 9 — 2026-05-24 | Production Hardening + Signature + Dictionary + Audit
+SHA range: a296ee1 → ccbbb1f (9 commits)
+Production: messenginfo.com SHA ccbbb1f
+
+### Done
+- Signature E2E: only for paper filing, hidden for online. /s/ NAME in PDF.
+- Signature [?]: inline tooltip (was: new tab to uscis.gov).
+- Signature blocking: screen without drawing = explicit error (4 langs).
+- _signature_mode type: paper | screen | online_myuscis.
+- Booklet upload slot: fixed for BOTH init AND rereg (was: init only, broke 3x).
+- Regex CRITICAL fix: mandatory dot for с./м./сел./хут. (was: stripped "Суми"→"уми").
+- Empty result guard: if prefix strip leaves empty, keep original.
+- Dictionary: +10 entries (хут, пгт, громада, округ). CZO/MFA verified.
+- Settlement type "смт" warning: abolished Jan 2024.
+- Tooltips: human language, 4 langs (was: "Part 8 I-821 — контактний телефон").
+- Placeholders: removed from all manual fields (was: "2131234567", "Kyiv", "JOHN DOE").
+- EAD subtitle: merged into [?] tooltip (was: shown as separate line).
+- OCR prefill: manual fields now show mergedFields data (was: always empty).
+- Personal data: removed from all code (real names → TESTENKO/IVAN).
+
+### Bugs found but NOT fixed
+- CRITICAL: last_entry_date required by gate but not in rereg review/manual.
+- CRITICAL: us_address_city/state/zip no manual input, only DL/I-797 OCR.
+- HIGH: passport_expiration_date no manual fallback.
+- HIGH: REREG+NOEAD path has no passport/I-94 slots.
+
+### Root causes of regressions
+1. Two separate if/else branches for init/rereg — adding to one, forgetting other.
+2. Regex copy-paste without edge-case testing.
+3. Claiming "done" before verifying production SHA on healthz.
+
+### Build failures
+- 959e761: missing locale prop → fixed in a296ee1.
+- e88cc91: TS2322 'online_myuscis' type → fixed in ccbbb1f.
+
+### Not proven
+- No real passport OCR test.
+- No PDF opened visually.
+- No ZIP generated.
+- No clean-session gate test in production.
+
+---
+
 ## 2026-05-23 | Knowledge Engine + Pipeline Wiring + Continuity System
 
 **Author:** Claude session (I-765 audit → knowledge engine → pipeline wiring)
