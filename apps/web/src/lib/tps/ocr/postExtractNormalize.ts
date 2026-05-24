@@ -136,6 +136,20 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       lowConf.push({ field: f.field, confidence: f.confidence })
     }
 
+    // P2 FIX: normalize date fields from US format (MM/DD/YYYY) to ISO
+    // (YYYY-MM-DD). Brain often outputs US format. Without this, dates
+    // pass through as "06/25/1986" instead of "1986-06-25".
+    if ((f.field === 'dob' || f.field === 'last_entry_date' || f.field === 'ead_expiration_date') && f.normalized_value) {
+      const v = f.normalized_value.trim()
+      const usMatch = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+      if (usMatch) {
+        const iso = `${usMatch[3]}-${usMatch[1].padStart(2, '0')}-${usMatch[2].padStart(2, '0')}`
+        normalizations.push(`${f.field}: "${v}" → "${iso}" (US→ISO)`)
+        f.normalized_value = iso
+        f.passes = [...f.passes, 'knowledge_date_us_to_iso']
+      }
+    }
+
     // Oblast genitive → nominative (DMS-verified English)
     if (f.field === 'province_of_birth' && (f.normalized_value || f.raw_value)) {
       // ROOT CAUSE FIX: Brain preserves original Cyrillic in raw_value
