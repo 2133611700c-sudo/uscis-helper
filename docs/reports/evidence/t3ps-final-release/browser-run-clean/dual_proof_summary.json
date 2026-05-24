@@ -1,0 +1,42 @@
+{
+  "started_utc": "2026-05-24T05:37:45.315Z",
+  "selector_contract": {
+    "ocr_cta": true,
+    "upload_slot_prefix": 5,
+    "upload_input_prefix": 5
+  },
+  "client_mode": {
+    "current_step": "step5",
+    "gate_error_text": null,
+    "paywall_visible": false,
+    "generate_visible_unpaid": false,
+    "generate_clicked_paid": false
+  },
+  "owner_mode": {
+    "owner_session": false,
+    "blocked_reason": "No owner session in automation context"
+  },
+  "ocr_by_slot": {
+    "passport": {
+      "status": 200
+    },
+    "booklet": {
+      "status": 200
+    },
+    "i797_or_ead": {
+      "status": 200
+    },
+    "i94": {
+      "status": 200
+    },
+    "dl": {
+      "status": 200
+    }
+  },
+  "generate_statuses": [],
+  "zip": {
+    "downloaded": false,
+    "path": null,
+    "bytes": 0
+  }
+}

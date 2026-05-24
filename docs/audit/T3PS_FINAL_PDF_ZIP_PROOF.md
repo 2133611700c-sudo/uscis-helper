@@ -1,26 +1,18 @@
-# T3PS Final PDF/ZIP Proof
+# T3PS Final PDF/ZIP Proof (Current Cycle)
 
-Generated: 2026-05-16T22:02:30Z  
-Source listing: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-pdf/zip_listing.json`
+Generated: 2026-05-24T05:45:00Z
 
-## Scenario A (I-821 only)
-- ZIP contains: `I-821.pdf`, `README.txt`
-- `I-765.pdf` absent (expected for no-EAD path)
-- I-821 filled fields: 64
-- Required key presence: family/given/dob/passport_number/passport_expiration/marital/Part7 => PRESENT
-- Cyrillic leak: NONE
+Status: **MISSING_FOR_CURRENT_CYCLE**
 
-## Scenario B (I-821 + I-765)
-- ZIP contains: `I-821.pdf`, `I-765.pdf`, `README.txt`
-- I-821 filled fields: 68
-- I-765 filled fields: 31
-- I-765 application type and identity/status fields present
-- Conditional A-number/I-94 fields present
-- Cyrillic leak: NONE (I-821 + I-765)
+## Reason
+- In the latest production dual-proof run, `generate-packet` did not execute (`generate_statuses=[]`), so no ZIP artifact was produced.
+- Without a fresh ZIP from this cycle, visual PDF verification cannot be claimed.
 
-## Redacted dumps
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-pdf/A_i821_only_i821_field_dump_redacted.txt`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-pdf/B_i821_i765_i821_field_dump_redacted.txt`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-pdf/B_i821_i765_i765_field_dump_redacted.txt`
+## Available Historical Evidence (Not Used as Current PASS)
+- Previous-cycle PDF proofs exist, but they are not treated as fresh closure for this cycle.
 
-Verdict: PASS
+## Required to Close
+1. `POST /api/tps/generate-packet = 200` in production.
+2. ZIP downloaded in same browser session.
+3. Redacted field dump + visual open of I-821/I-765 for this run.
+4. Confirm `cyrillic_leak=NONE`.

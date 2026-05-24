@@ -1,25 +1,25 @@
 report: T3PS_FINAL_RESIDUAL_GAPS_REGISTER
-generated_at: "2026-05-16T22:02:30Z"
-status: GO_CONTROLLED_BETA_110_LOCKED
+generated_at: "2026-05-24T05:45:00Z"
+status: DEGRADED
 residual_gaps:
-  - id: T3PS-FINAL-GAP-001
+  - id: T3PS-RUNTIME-P0-001
+    priority: P0
+    blocker: true
+    accepted_risk: false
+    description: "Current cycle lacks client-mode generate 200 + ZIP + PDF proof in one production run."
+  - id: T3PS-RUNTIME-P1-001
     priority: P1
     blocker: false
     accepted_risk: true
-    description: Telegram monitoring transport remains out of scope for this Stage I functional hardening task.
-  - id: T3PS-FINAL-GAP-002
+    description: "Owner-mode automation proof blocked by missing owner session context."
+  - id: T3PS-RUNTIME-P1-002
     priority: P1
     blocker: false
     accepted_risk: true
-    description: /_vercel/insights/script.js 404 and CSP Cloudflare beacon blocks are present but do not break TPS contour.
-  - id: T3PS-FINAL-GAP-003
-    priority: P2
+    description: "Vercel insights/CSP noise persists and is non-blocking for TPS flow."
+  - id: T3PS-RUNTIME-P1-003
+    priority: P1
     blocker: false
     accepted_risk: true
-    description: USCIS notice OCR is excluded from Stage I scope and marked NOT_REQUIRED.
-  - id: T3PS-FINAL-GAP-004
-    priority: P2
-    blocker: false
-    accepted_risk: true
-    description: I-912 generation remains out of scope for Stage I.
-open_p0_count: 0
+    description: "Telegram monitoring remains out of scope for Stage I functional closeout."
+open_p0_count: 1

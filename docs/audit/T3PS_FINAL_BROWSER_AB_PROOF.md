@@ -1,25 +1,31 @@
-# T3PS Final Browser A/B Proof
+# T3PS Final Browser A/B Proof (Current Cycle)
 
-Generated: 2026-05-16T22:02:30Z
+Generated: 2026-05-24T05:45:00Z
 
-## Scenario A (I-821 only)
-- Source: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json`
-- Result: `ocr_status=200`, `generate_status=200`
-- ZIP captured: `tps-packet-intercept-1778968825392.zip` (bytes: `1825484`)
-- Non-blocking noise: `/_vercel/insights/script.js` 404 and CSP block for Cloudflare beacon.
+## Scenario A/B Runtime Status
+- Source: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json`
+- Result: **PARTIAL**
 
-## Scenario B (TPS + EAD)
-- Source: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/browser_summary.json`
-- Result: `ocr_status=200`, `generate_status=200`, `zip_downloaded=true`
-- ZIP: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/downloaded_zip/tps-packet-1778968618232.zip`
-- ZIP bytes: `2590553`
-- Non-blocking noise: `/_vercel/insights/script.js` 404 and CSP block for Cloudflare beacon.
+### What Passed
+- Selector contract detected on live flow:
+  - `tps-ocr-cta=true`
+  - upload slot/input prefixes present
+- OCR requests succeeded for all required slots in the run:
+  - passport/booklet/i94/i797_or_ead/dl => `200`
 
-## Screenshots
-- A flow screenshots: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/`
-- B flow screenshots: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/screenshots/`
+### What Failed / Not Proven
+- Client contour stayed on Step 5 (`current_step=step5`) in the dual-proof run.
+- `generate-packet` was not called (`generate_statuses=[]`).
+- No ZIP download in same run (`zip.downloaded=false`).
+- Owner contour blocked (no owner session in automation context).
 
-## Important Note
-- A separate forced-state debug run at `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-browser/scenario_A_fresh/browser_summary.json` returned `422`.
-- That run injected synthetic state directly and is treated as non-authoritative diagnostic evidence.
-- Authoritative Scenario A evidence is the clean production contour run with `generate_status=200`.
+## Screenshots (Current Cycle)
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_step6_unpaid.png`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_step6_paid_callback.png`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_after_generate.png`
+
+## Network Evidence
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_network.json`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_failed_requests.json`
+
+Verdict: **DEGRADED** (browser generate/download proof not closed in this cycle).

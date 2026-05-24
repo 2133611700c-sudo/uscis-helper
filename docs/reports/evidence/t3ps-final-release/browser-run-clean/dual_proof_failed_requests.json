@@ -1,0 +1,57 @@
+[
+  {
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "method": "GET",
+    "error": "csp"
+  },
+  {
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "method": "GET",
+    "error": "net::ERR_ABORTED"
+  },
+  {
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "method": "GET",
+    "error": "csp"
+  },
+  {
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "method": "GET",
+    "error": "net::ERR_ABORTED"
+  },
+  {
+    "url": "https://messenginfo.com/ru?_rsc=6myxf",
+    "method": "GET",
+    "error": "net::ERR_ABORTED"
+  },
+  {
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "method": "GET",
+    "error": "csp"
+  },
+  {
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "method": "GET",
+    "error": "net::ERR_ABORTED"
+  },
+  {
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "method": "GET",
+    "error": "csp"
+  },
+  {
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "method": "GET",
+    "error": "net::ERR_ABORTED"
+  },
+  {
+    "url": "https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447",
+    "method": "GET",
+    "error": "csp"
+  },
+  {
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "method": "GET",
+    "error": "net::ERR_ABORTED"
+  }
+]

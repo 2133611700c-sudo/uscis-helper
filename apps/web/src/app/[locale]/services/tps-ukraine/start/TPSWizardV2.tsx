@@ -2581,6 +2581,7 @@ export default function TPSWizardV2({ locale }: Props) {
             />
             {errMsg && (
               <div
+                data-testid="tps-gate-error-container"
                 style={{
                   background: 'var(--error-bg, #fdecea)',
                   border: '1.5px solid var(--error-border, #d33)',

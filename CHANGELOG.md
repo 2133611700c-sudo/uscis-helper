@@ -3,6 +3,39 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## Session 12 — 2026-05-24 | Runtime Dual-Proof + Selector Contract Sync
+SHA range: pending commit
+Production: pending deploy
+
+### Added
+- `scripts/t3ps-runtime-dual-proof.mjs`:
+  - probes selector contract in live production,
+  - captures slot-level OCR statuses + errors,
+  - validates unpaid/paywall behavior,
+  - tests paid callback generate path,
+  - records owner-session availability and blocking reason,
+  - exports network/console/failed-request evidence.
+
+### Changed
+- `TPSWizardV2.tsx`:
+  - Step 5 gate error now has `data-testid="tps-gate-error-container"`.
+- Browser scripts synced to V2 selectors:
+  - `scripts/t3ps-functional-closeout-browser.mjs`
+  - `scripts/t3ps-production-contour-clean.mjs`
+  - `scripts/t3ps-final-browser-audit.mjs`
+- Added runtime lock tests:
+  - `apps/web/src/lib/tps/__tests__/wizardV2RuntimeLock.test.ts`
+
+### Verification
+- PASS: `pnpm --filter web test -- src/lib/tps/__tests__/wizardV2RuntimeLock.test.ts`
+- Dual proof result:
+  - selector contract visible on live step 4,
+  - OCR slot statuses 200 with improved fixtures,
+  - owner mode blocked without owner session,
+  - client contour still not reaching generate in current run.
+
+---
+
 ## Session 11 — 2026-05-24 | TPS Runtime Drift + False Readiness Hardening
 SHA range: pending commit
 Production: pending deploy
