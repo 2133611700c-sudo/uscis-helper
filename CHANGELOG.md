@@ -27,6 +27,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ### TypeScript: 0 errors after fixes
 
+### Cosmetic fix: passport hint text
+- passportRereg hint said "for identity verification when requesting EAD"
+- Now says "For identity verification. May be expired." (all 4 langs)
+- noindex/nofollow: confirmed INTENTIONAL and CORRECT (wizard pages only)
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md

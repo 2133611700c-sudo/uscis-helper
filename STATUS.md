@@ -1,7 +1,7 @@
 # STATUS.md
 Last updated: 2026-05-24 07:15 UTC
 Session: 14 (audit + hotfix)
-Production SHA: pending deploy
+Production SHA: pending deploy (session 14, commit 2)
 
 ## Product
 Messenginfo = self-help immigration information, document translation, and USCIS draft-form generation platform.

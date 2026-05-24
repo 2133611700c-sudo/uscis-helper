@@ -295,7 +295,7 @@ const T = {
       passportRereg: {
         ic: '🛂',
         lb: 'Закордонний паспорт',
-        ht: 'Для підтвердження особи при запиті EAD',
+        ht: 'Для підтвердження особи. Може бути прострочений.',
       },
       ead_old: {
         ic: '💳',
@@ -504,7 +504,7 @@ const T = {
       passportRereg: {
         ic: '🛂',
         lb: 'Загранпаспорт',
-        ht: 'Для подтверждения личности при запросе EAD',
+        ht: 'Для подтверждения личности. Может быть просрочен.',
       },
       ead_old: {
         ic: '💳',
@@ -712,7 +712,7 @@ const T = {
       passportRereg: {
         ic: '🛂',
         lb: 'International passport',
-        ht: 'For identity verification when requesting EAD',
+        ht: 'For identity verification. May be expired.',
       },
       ead_old: {
         ic: '💳',
@@ -921,7 +921,7 @@ const T = {
       passportRereg: {
         ic: '🛂',
         lb: 'Pasaporte internacional',
-        ht: 'Para verificar identidad al solicitar EAD',
+        ht: 'Para verificar identidad. Puede estar vencido.',
       },
       ead_old: {
         ic: '💳',
