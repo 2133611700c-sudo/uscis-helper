@@ -175,7 +175,7 @@ Return format:
     {
       "field": "surname",
       "raw_value": "Куропятник",
-      "normalized_value": "Kuropiatnyk",
+      "normalized_value": "Testenko",
       "ocr_ids": ["w_0012"],
       "source_label": "ПРІЗВИЩЕ",
       "source_zone": "top_personal_data",

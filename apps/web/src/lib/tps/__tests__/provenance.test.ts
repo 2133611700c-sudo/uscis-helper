@@ -185,9 +185,9 @@ describe('buildProvenanceFromWizard', () => {
 
   it('marks user correction when manual override differs from OCR', () => {
     const merged: Record<string, ProvenanceInput> = {
-      family_name: passportField('family_name', 'KUROPIATNYK'),
+      family_name: passportField('family_name', 'TESTENKO'),
     }
-    const manual = { family_name: 'KUROPIATNIK' } // user corrected spelling
+    const manual = { family_name: 'TESTINKO' } // user corrected spelling
     const map = buildProvenanceFromWizard(merged, manual, ['family_name'])
     expect(map.family_name.user_review_status).toBe('corrected')
     expect(map.family_name.value_status).toBe('user_manual')
@@ -195,9 +195,9 @@ describe('buildProvenanceFromWizard', () => {
 
   it('keeps OCR provenance when manual matches OCR (user confirmed)', () => {
     const merged: Record<string, ProvenanceInput> = {
-      family_name: passportField('family_name', 'KUROPIATNYK'),
+      family_name: passportField('family_name', 'TESTENKO'),
     }
-    const manual = { family_name: 'KUROPIATNYK' } // same value = confirmed
+    const manual = { family_name: 'TESTENKO' } // same value = confirmed
     const map = buildProvenanceFromWizard(merged, manual, ['family_name'])
     expect(map.family_name.value_status).toBe('auto_with_source')
     expect(map.family_name.source_document_type).toBe('passport')

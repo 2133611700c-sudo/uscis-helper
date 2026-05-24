@@ -252,7 +252,7 @@ describe('Phase 2 — isLikelyCyrillicLookalike', () => {
 
   it('returns false for Latin non-lookalike letters', () => {
     // 'Serhii' — S is not a Cyrillic lookalike, r is not
-    expect(isLikelyCyrillicLookalike('Serhii')).toBe(false)
+    expect(isLikelyCyrillicLookalike('Olena')).toBe(false)
   })
 
   it('returns false for empty string', () => {
@@ -293,12 +293,12 @@ describe('Phase 2 — normalizeName', () => {
     expect(normalizeName('ShEVChENKO')).toBe('Shevchenko')
   })
 
-  it('normalizes KUROPIATNYK → Kuropiatnyk', () => {
-    expect(normalizeName('KUROPIATNYK')).toBe('Kuropiatnyk')
+  it('normalizes TESTENKO → Testenko', () => {
+    expect(normalizeName('TESTENKO')).toBe('Testenko')
   })
 
-  it('normalizes serhii → Serhii', () => {
-    expect(normalizeName('serhii')).toBe('Serhii')
+  it('normalizes olena → Olena', () => {
+    expect(normalizeName('olena')).toBe('Olena')
   })
 
   it('preserves MVS abbreviation', () => {
@@ -337,13 +337,13 @@ describe('Phase 2 — analyseNameField', () => {
     expect(result.normalized).toBe('Shevchenko')
   })
 
-  it('does NOT flag normal Serhii as review_required', () => {
-    const result = analyseNameField('Serhii')
+  it('does NOT flag normal Olena as review_required', () => {
+    const result = analyseNameField('Olena')
     expect(result.review_required).toBe(false)
   })
 
-  it('does NOT flag normal Kuropiatnyk as review_required', () => {
-    const result = analyseNameField('Kuropiatnyk')
+  it('does NOT flag normal Testenko as review_required', () => {
+    const result = analyseNameField('Testenko')
     expect(result.review_required).toBe(false)
   })
 

@@ -3,8 +3,8 @@ import { runMailReadyGate } from '../mailReadyGate'
 import type { TPSAnswers } from '../answers'
 
 const COMPLETE: Partial<TPSAnswers> = {
-  family_name: 'Kuropiatnyk',
-  given_name: 'Serhii',
+  family_name: 'Testenko',
+  given_name: 'Ivan',
   dob: '1986-06-25',
   sex: 'M',
   country_of_birth: 'Ukraine',
@@ -49,7 +49,7 @@ describe('mailReadyGate', () => {
 
   it('blocks on unresolved spelling conflict', () => {
     const result = runMailReadyGate(COMPLETE, [
-      { field: 'family_name', reason: 'KUROPIATNYK vs Kuropyatnyk' },
+      { field: 'family_name', reason: 'TESTENKO vs Testinko' },
     ])
     expect(result.mail_ready).toBe(false)
     expect(result.blockers.some(b => b.reason === 'controlling_spelling_conflict')).toBe(true)
