@@ -43,6 +43,34 @@ User manual input: phone, email, marital status, SSN only. Everything else from 
 - [x] Personal data removed from codebase (real names → test data)
 - [x] 0 TS errors, 1959 tests pass
 
+## 2026-05-24 (session 10) — TPS runtime hardening in progress
+
+### VERIFIED
+- `local == origin/main == production health SHA` before this fix cycle.
+- Reproduced production selector drift: missing `[data-testid="tps-ocr-cta"]` in live UI.
+- Reproduced false-readiness path in clean session (could reach Step 6 shell before real packet generation proof).
+
+### CHANGED NOW
+- Added stable selector anchors in TPSWizardV2:
+  - `tps-ocr-cta`
+  - `tps-upload-slot-*`, `tps-upload-input-*`
+  - `tps-review-step-container`
+  - `tps-generate-cta`
+  - `tps-gate-error-container`
+  - `tps-signature-mode-block`
+  - `tps-paywall-state`
+  - `tps-package-ready-state`
+  - `tps-download-success-state`
+- Added Step-5 preflight gate before entering Step 6:
+  - blocks when extracted field count is zero
+  - runs `runMailReadyGate` and surfaces blockers immediately
+- Added generation truth-source manifest in UI (`generatedManifest`) after real `generate-packet` blob response.
+- Improved OCR error observability per slot (`ocr_http_status`, `ocr_error`).
+
+### OPEN
+- Deploy + live production rerun not finished yet in this section.
+- Final proof chain still required: review -> generate 200 -> ZIP -> opened PDFs.
+
 ## CRITICAL BUGS (open, not fixed)
 - [ ] **last_entry_date**: REQUIRED by gate unconditionally, but rereg review rows don't show it, no manual input exists. Rereg users blocked.
   - File: mailReadyGate.ts line 48, TPSWizardV2.tsx line 2849
