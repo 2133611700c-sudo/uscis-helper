@@ -3,6 +3,29 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## Session 13 — 2026-05-24 | Step 5 Gate/Data Path Fix
+SHA range: pending commit
+Production: pending deploy
+
+### Changed
+- `TPSWizardV2.tsx`:
+  - added explicit Step 5 manual inputs for `US Address (City/State/ZIP)`,
+  - added stable test ids:
+    - `tps-review-manual-address-street`
+    - `tps-review-manual-address-city`
+    - `tps-review-manual-address-state`
+    - `tps-review-manual-address-zip`
+    - `tps-review-manual-phone`
+    - `tps-review-manual-email`
+  - added Step 5 gate error selector token (`tps-gate-error-container`) for deterministic diagnostics.
+
+### Validation
+- PASS: `pnpm --filter web run typecheck`
+- PASS: `pnpm --filter web test -- src/lib/tps/__tests__/wizardV2RuntimeLock.test.ts`
+- PASS: `pnpm --filter web run lint`
+
+---
+
 ## Session 12 — 2026-05-24 | Runtime Dual-Proof + Selector Contract Sync
 SHA range: pending commit
 Production: pending deploy

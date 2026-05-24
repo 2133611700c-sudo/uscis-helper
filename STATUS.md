@@ -63,6 +63,16 @@ User manual input: phone, email, marital status, SSN only. Everything else from 
 - Owner-mode generate proof is blocked without owner session in automation context.
 - Client-mode still needs final `generate 200 + ZIP + PDF visual` closure in same evidence run.
 
+## 2026-05-24 (session 13) — gate/data path closure for Step 5
+
+### CHANGED NOW
+- Added explicit Step 5 manual fields for gate-required data:
+  - `us_address_city`
+  - `us_address_state`
+  - `us_address_zip`
+  - plus stable test ids for street/phone/email manual fields.
+- This removes hidden inconsistency where gate demanded fields the user could not input directly in current UI.
+
 ## 2026-05-24 (session 10) — TPS runtime hardening in progress
 
 ### VERIFIED
