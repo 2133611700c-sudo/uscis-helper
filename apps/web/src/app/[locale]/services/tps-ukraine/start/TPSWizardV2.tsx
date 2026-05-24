@@ -1827,8 +1827,26 @@ export default function TPSWizardV2({ locale }: Props) {
         const fx = u.fields[k]
         if (!fx || !fx.value) continue
         if (id === 'booklet' && !BOOKLET_WAVE1_FIELDS.has(k)) continue
+        // A4: BOOKLET = WEAK SOURCE. Handwritten OCR is unstable
+        // ("Trostianets" one run, "BiRHEROI" next). ALL booklet fields
+        // are review_required — user MUST verify before generation.
+        if (id === 'booklet') {
+          if (!merged[k]) {
+            merged[k] = { ...fx, requires_review: true }
+          }
+          // If passport/other already has it, booklet birthplace override
+          // happens below (separate block). Don't duplicate here.
+          continue
+        }
         if (!merged[k]) {
-          merged[k] = fx
+          // A2: If this is a STRONG IDENTITY field and source is NOT MRZ,
+          // mark as review_required — user must verify. Without passport MRZ
+          // backup, OCR/Brain values like "Saghi" could be garbage.
+          if (IDENTITY_FIELDS_AUTHORITATIVE.has(k) && fx.source !== 'ocr_mrz') {
+            merged[k] = { ...fx, requires_review: true }
+          } else {
+            merged[k] = fx
+          }
           continue
         }
         // Conflict: identity field with a different value than passport
@@ -1836,8 +1854,19 @@ export default function TPSWizardV2({ locale }: Props) {
           IDENTITY_FIELDS_AUTHORITATIVE.has(k) &&
           merged[k].value.toLowerCase().trim() !== fx.value.toLowerCase().trim()
         ) {
-          (conflicts[k] ||= []).push(`${id}:${fx.value}`)
-          merged[k] = { ...merged[k], requires_review: true }
+          // A2: MRZ IDENTITY LOCK — if the existing value came from MRZ,
+          // it is LOCKED. Weaker sources (EAD OCR, DL Brain, I-94 Brain)
+          // cannot degrade it. Don't mark MRZ truth as requires_review
+          // just because a garbage value like "Saghi" disagrees.
+          const existingIsMrz = merged[k].source === 'ocr_mrz'
+          if (existingIsMrz) {
+            // MRZ wins. Log conflict but do NOT flag for review.
+            (conflicts[k] ||= []).push(`${id}:${fx.value}:REJECTED_BY_MRZ_LOCK`)
+          } else {
+            // Both are non-MRZ — genuine conflict, flag for review.
+            (conflicts[k] ||= []).push(`${id}:${fx.value}`)
+            merged[k] = { ...merged[k], requires_review: true }
+          }
         }
       }
     }
@@ -1848,7 +1877,8 @@ export default function TPSWizardV2({ locale }: Props) {
     if (bookletFields) {
       for (const k of ['city_of_birth', 'province_of_birth'] as const) {
         const bk = bookletFields[k]
-        if (bk?.value) merged[k] = bk
+        // A4: booklet is weak source — always review_required
+        if (bk?.value) merged[k] = { ...bk, requires_review: true }
       }
     }
     // Alias: i94_class_of_admission → status_at_last_entry. Bug discovered in
