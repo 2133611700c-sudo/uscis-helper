@@ -127,7 +127,7 @@ try {
   await shot('01_start_fresh.png')
 
   // Step 1: select path and switch into OCR upload.
-  const pickedInitial = await clickFirst(['[data-testid="s1-path-initial"]'])
+  const pickedInitial = await clickFirst(['button:has-text("Впервые")', 'button:has-text("First time")'])
   if (!pickedInitial) {
     await clickButtonByText(['Подаю впервые', 'Подаю вперше', 'First filing', 'Primera presentación'])
   }
@@ -139,7 +139,7 @@ try {
 
   // Upload synthetic fixture if file input exists.
   const fixture = path.resolve('test-fixtures/synthetic-passport.jpg')
-  const fi = page.locator('[data-testid="upload-slot-passport"] input[type="file"]').first()
+  const fi = page.locator('[data-testid="tps-upload-input-passport"]').first()
   if (await fi.count()) {
     await fi.setInputFiles(fixture)
     await page.waitForTimeout(3500)
@@ -151,7 +151,7 @@ try {
   await page.mouse.wheel(0, 1600)
   await clickButtonByText(['Дальше', 'Далі', 'Next', 'Siguiente'])
   await page.waitForTimeout(1200)
-  await clickFirst(['[data-testid="review-next"]'])
+  await clickFirst(['[data-testid="tps-step6-continue-cta"]'])
   await page.waitForTimeout(1200)
   await shot('04_review_or_next.png')
 
@@ -229,7 +229,6 @@ try {
   await page.goto(`${startUrl}?continue=1`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(1200)
   await shot('04b_step6_attempt.png')
-  await clickButtonByText(['PDF-пакет', 'PDF packet', 'paquete PDF'])
   await page.waitForTimeout(800)
   await fillVisibleFormFields()
   await page.waitForTimeout(1200)
@@ -269,7 +268,7 @@ try {
 
   const dlPromise = page.waitForEvent('download', { timeout: 15000 }).catch(() => null)
   await page.evaluate(() => {
-    const btn = document.querySelector('[data-testid="generate-btn"]')
+    const btn = document.querySelector('[data-testid="tps-generate-cta"]')
     if (!btn) return
     btn.removeAttribute('disabled')
     btn.setAttribute('aria-disabled', 'false')

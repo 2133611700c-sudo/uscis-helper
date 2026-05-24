@@ -43,6 +43,26 @@ User manual input: phone, email, marital status, SSN only. Everything else from 
 - [x] Personal data removed from codebase (real names → test data)
 - [x] 0 TS errors, 1959 tests pass
 
+## 2026-05-24 (session 12) — dual-mode runtime proof hardening
+
+### VERIFIED
+- Production SHA aligned to `201ce5d...` before this patch cycle.
+- OCR slot-level diagnostics now reproducible via dual proof script.
+- OCR 422 root cause was fixture quality (overexposed); switching fixtures produced slot 200 responses in all required slots.
+
+### CHANGED NOW
+- Added `data-testid="tps-gate-error-container"` on Step 5 gate error surface (same contract token as Step 6).
+- Added `scripts/t3ps-runtime-dual-proof.mjs` for owner/client contour evidence:
+  - selector contract probe,
+  - slot-level OCR status/error capture,
+  - unpaid/paywall and paid-callback behavior capture,
+  - generate/ZIP capture when available.
+- Updated runtime lock tests and browser scripts to V2 selector contract.
+
+### OPEN
+- Owner-mode generate proof is blocked without owner session in automation context.
+- Client-mode still needs final `generate 200 + ZIP + PDF visual` closure in same evidence run.
+
 ## 2026-05-24 (session 10) — TPS runtime hardening in progress
 
 ### VERIFIED

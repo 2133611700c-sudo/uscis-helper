@@ -149,10 +149,10 @@ async function clickFirstVisible(locator) {
 }
 
 async function fillReviewDobIfMissing() {
-  const dobRow = page.locator('[data-testid="review-row-dob"]')
+  const dobRow = page.locator('[data-testid="tps-review-step-container"]')
   if (!(await dobRow.count())) return false
   if (!(await dobRow.getByText(/не найдено|not found|не знайдено/i).count())) return false
-  const edit = page.locator('[data-testid="review-edit-dob"]')
+  const edit = page.locator('[data-testid^="review-edit-"], button:has-text("Изменить"), button:has-text("Edit")')
   if (!(await edit.count())) return false
   await edit.first().click()
   await page.waitForTimeout(400)
@@ -184,13 +184,14 @@ try {
   await page.waitForTimeout(700)
   await shot('03_ocr_open.png')
 
-  const passportInput = page.locator('[data-testid="upload-slot-passport"] input[type="file"]')
+  const passportInput = page.locator('[data-testid="tps-upload-input-passport"]')
   if (await passportInput.count()) {
     await passportInput.setInputFiles(fixture)
     await page.waitForTimeout(3500)
   }
   await shot('04_passport_uploaded.png')
 
+  // already on review after recognize in V2
   await clickText(['Дальше', 'Далі', 'Next'])
   await page.waitForTimeout(1000)
   await shot('05_upload_next.png')
@@ -198,7 +199,7 @@ try {
   // If review has missing critical fields (e.g. DOB), fix through UI edit modal.
   await fillReviewDobIfMissing()
 
-  const reviewNext = page.locator('[data-testid="review-next"]')
+  const reviewNext = page.locator('[data-testid="tps-step6-continue-cta"]')
   if (await reviewNext.count() && await reviewNext.first().isEnabled()) {
     await reviewNext.first().click()
   }
@@ -213,7 +214,6 @@ try {
   }
   await shot('07_step6_screen.png')
 
-  await clickText(['PDF-пакет', 'PDF packet', 'paquete PDF'])
   await page.waitForTimeout(800)
 
   // Fill key required fields (stable test IDs first, then label fallback).
@@ -246,7 +246,7 @@ try {
   await shot('08_before_generate.png')
 
   let dlPromise = page.waitForEvent('download', { timeout: 20000 }).catch(() => null)
-  const gen = page.locator('[data-testid="generate-btn"]')
+  const gen = page.locator('[data-testid="tps-generate-cta"]')
   if (await gen.count() && await gen.first().isEnabled()) await gen.first().click()
   await page.waitForTimeout(6000)
   let dl = await dlPromise

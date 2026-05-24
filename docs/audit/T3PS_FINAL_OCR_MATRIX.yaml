@@ -1,36 +1,28 @@
 report: T3PS_FINAL_OCR_MATRIX
-generated_at: "2026-05-16T22:02:30Z"
-source: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-browser/ocr_matrix_fresh.json
-endpoint: https://messenginfo.com/api/tps/ocr/extract
+generated_at: "2026-05-24T05:45:00Z"
+source: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json"
+endpoint: "https://messenginfo.com/api/tps/ocr/extract"
 documents:
   international_passport:
     status: PASS
     http_status: 200
-    module: passport
-    field_count: 8
-    required_keys_present: true
+    slot: passport
   ukrainian_internal_passport:
     status: PASS
     http_status: 200
-    module: passport
-    field_count: 8
-    required_keys_present: true
+    slot: booklet
   i94:
     status: PASS
     http_status: 200
-    module: i94
-    field_count: 4
-    required_keys_present: true
+    slot: i94
   ead:
     status: PASS
     http_status: 200
-    module: ead
-    field_count: 3
-    required_keys_present: true
+    slot: i797_or_ead
   uscis_notice:
     status: NOT_REQUIRED
     reason: out_of_scope_stage_i
 checks:
-  final_value_cyrillic_leak: NONE
-  required_docs_field_count_gt_zero: true
-overall: PASS
+  required_slots_http_200: true
+  browser_review_to_generate_chain_closed: false
+overall: PARTIAL
