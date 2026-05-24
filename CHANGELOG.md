@@ -3,6 +3,30 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-24 — Session 15: P0 OCR Routing Fix (3 dead slots)
+
+### White-box audit findings
+- Independent code audit traced full pipeline: wizard → OCR route → contract → mergedFields → gate → PDF
+- Found P0: three wizard slot IDs (i797_or_ead, tps_notice, ead_old) had NO case in OCR route switch
+- i797_or_ead additionally had NO entry in documentContracts → ALL fields killed as UNKNOWN_SLOT
+- Net result: users uploading I-797, TPS notices, or previous EAD got zero extracted fields
+
+### P0 FIX: route cases + contract
+- route.ts: `case 'tps_notice'` → runI797Module (same doc family)
+- route.ts: `case 'i797_or_ead'` → try BOTH runI797Module + runEadModule, pick winner by field count
+- route.ts: `case 'ead_old'` → runEadModule with rotation retry (same as case 'ead')
+- documentContracts.ts: added 'i797_or_ead' to SlotId + contract (union of i797 + ead allowed_fields)
+- TPSWizardV2.tsx: added i797_or_ead to SLOT_ALLOWED_FIELDS (client-side hydration firewall)
+- TypeScript: 0 project errors
+
+### Also found (NOT fixed this session)
+- Part 7 background declaration never shown to user (P1 legal risk)
+- marital_status not in gate required list (P2)
+- province_of_birth missing from I-821 field map (P3)
+- receipt_number extracted but never reaches PDF (P3)
+
+---
+
 ## 2026-05-24 — Session 14: Production Audit + BUG-1/BUG-2 Hotfix
 
 ### Audit (Claude Opus — independent browser + code audit)
