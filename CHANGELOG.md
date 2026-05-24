@@ -47,6 +47,13 @@ Every work session appends here. Never delete entries. Newest first.
 - Also added `place_of_last_entry` to I-94 contract allowed_fields (was missing)
 - **Proven by**: real user ZIP readback — I-821 + I-765 had empty city/province/patronymic
 
+### BUG-4c FIX (P0): API route missing case 'booklet'
+- **Root cause #2**: `switch(docTypeHint)` in OCR API route had no `case 'booklet'`
+- When wizard sent `docHint='booklet'` → fell through to `default:` → `moduleResult=null`
+- **Impact**: booklet extraction module NEVER RAN for booklet uploads
+- **Fix**: Added `case 'booklet'` that runs `runPassportBookletModule()` with rotation retry
+- Combined with BUG-4 contract fix: now full chain wizard→API→module→contract→review→PDF works
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
