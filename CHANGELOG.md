@@ -594,3 +594,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 **Validation:**
 - Build: PASS
 - Tests: 57/57 files, 1968/1968 tests PASS
+### Session 15 commit 5: Brain threshold + EAD dup + contracts

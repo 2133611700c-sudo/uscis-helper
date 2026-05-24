@@ -1,6 +1,6 @@
 # STATUS.md
 Last updated: 2026-05-24 21:00 UTC
-Session: 15 (P0 routing + P1 Part7 + P2 marital)
+Session: 15 (P0+P1+P2 full pipeline fix)
 Production SHA: pending deploy (session 15)
 
 ## Product
