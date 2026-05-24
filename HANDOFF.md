@@ -29,6 +29,17 @@ Production SHA: ccbbb1f
 - Owner mode remains blocked in automation due missing owner session.
 - Client mode currently stuck at step 5 until full required review corrections are satisfied.
 
+## 2026-05-24 (session 13) — manual gate fields made explicit
+
+### What I changed
+- `TPSWizardV2.tsx`:
+  - added explicit manual inputs for `US Address (City/State/ZIP)`,
+  - added stable test ids for manual address/phone/email fields used by runtime probes.
+
+### Why
+- Dual-proof showed gate was blocking on city/state/zip while UI exposed only one combined address field.
+- This was a real UX/data contract inconsistency, now corrected.
+
 ## WHAT WAS DONE IN SESSION 10
 
 ### Goal
