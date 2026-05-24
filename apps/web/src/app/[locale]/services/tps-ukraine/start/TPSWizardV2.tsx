@@ -110,6 +110,10 @@ interface UploadEntry {
   knowledge_conflicts?: Array<{ field: string; reason: string }>
   /** Fields with OCR confidence below threshold. */
   knowledge_low_confidence?: Array<{ field: string; confidence: number }>
+  /** Last OCR HTTP status for this slot. */
+  ocr_http_status?: number
+  /** Last OCR error string for this slot (non-PII). */
+  ocr_error?: string
 }
 
 interface WizardData {
@@ -1227,6 +1231,7 @@ function UploadDrop({
   const err = entry?.status === 'error'
   return (
     <div
+      data-testid={`tps-upload-slot-${doc.id}`}
       onClick={() => inputRef.current?.click()}
       role="button"
       tabIndex={0}
@@ -1257,6 +1262,7 @@ function UploadDrop({
       </div>
       <input
         ref={inputRef}
+        data-testid={`tps-upload-input-${doc.id}`}
         type="file"
         accept="image/*,application/pdf"
         style={{ display: 'none' }}
@@ -1469,16 +1475,21 @@ function Nav({
   next,
   backLabel,
   nextLabel,
+  backTestId,
+  nextTestId,
 }: {
   back?: () => void
   next?: () => void
   backLabel: string
   nextLabel?: string
+  backTestId?: string
+  nextTestId?: string
 }) {
   return (
     <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
       {back && (
         <button
+          data-testid={backTestId}
           type="button"
           onClick={back}
           style={navBtn(false)}
@@ -1488,6 +1499,7 @@ function Nav({
       )}
       {next && nextLabel && (
         <button
+          data-testid={nextTestId}
           type="button"
           onClick={next}
           style={navBtn(true)}
@@ -1563,6 +1575,8 @@ export default function TPSWizardV2({ locale }: Props) {
   const [signatureData, setSignatureData] = useState<{ mode: 'screen' | 'paper'; dataUrl: string | null } | null>(null)
   const [ownerChecked, setOwnerChecked] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
+  const [preflightPassed, setPreflightPassed] = useState(false)
+  const [generatedManifest, setGeneratedManifest] = useState<{ at: string; zipBytes: number } | null>(null)
 
   // ── Persist to localStorage (without File objects) ───────────────────────
   //
@@ -1813,7 +1827,16 @@ export default function TPSWizardV2({ locale }: Props) {
         fd.append('file', file)
         fd.append('docHint', id)
         const r = await fetch('/api/tps/ocr/extract', { method: 'POST', body: fd })
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        if (!r.ok) {
+          let apiError = `HTTP ${r.status}`
+          try {
+            const body = await r.json()
+            if (typeof body?.error === 'string' && body.error.trim()) apiError = `${apiError}: ${body.error}`
+          } catch {
+            // keep default
+          }
+          throw new Error(apiError)
+        }
         const json = await r.json()
         // Backend contract:
         //   json.module.fields[] — TpsExtractedField shape, each with
@@ -1927,6 +1950,8 @@ export default function TPSWizardV2({ locale }: Props) {
               rejected_field_keys: rejectedKeys,
               knowledge_conflicts: Array.isArray(json?.knowledge_conflicts) ? json.knowledge_conflicts : [],
               knowledge_low_confidence: Array.isArray(json?.knowledge_low_confidence) ? json.knowledge_low_confidence : [],
+              ocr_http_status: r.status,
+              ocr_error: undefined,
             },
           },
         }))
@@ -1939,7 +1964,11 @@ export default function TPSWizardV2({ locale }: Props) {
               file,
               fileName: file.name,
               status: 'error',
-              errorMsg: t.ocrErr,
+              errorMsg: `${t.ocrErr}${e instanceof Error ? ` (${e.message})` : ''}`,
+              ocr_http_status: e instanceof Error && /HTTP\s+(\d+)/.test(e.message)
+                ? Number((e.message.match(/HTTP\s+(\d+)/) || [])[1])
+                : undefined,
+              ocr_error: e instanceof Error ? e.message : String(e),
             },
           },
         }))
@@ -1949,6 +1978,91 @@ export default function TPSWizardV2({ locale }: Props) {
   )
 
   // ── Generate packet (Step 6 after Pay) ───────────────────────────────────
+  const buildDraftAnswers = useCallback((): Partial<TPSAnswers> => {
+    const filing_path = data.type === 'init' ? 'initial' : 're_registration'
+    const ead = data.ead === 'ead'
+    const v = (k: string): string => mergedFields[k]?.value || ''
+    const aNumberDigits = v('a_number').replace(/\D/g, '')
+    return {
+      family_name: v('family_name') || v('surname'),
+      given_name: v('given_name') || v('first_name'),
+      middle_name: v('middle_name') || v('patronymic'),
+      dob: v('dob') || v('date_of_birth'),
+      sex: (v('sex') === 'F' ? 'F' : 'M') as TPSAnswers['sex'],
+      country_of_birth: normalizeCountryOfBirth(v('country_of_birth'), v('country_of_nationality')),
+      country_of_nationality: v('country_of_nationality') || 'Ukraine',
+      passport_number: v('passport_number'),
+      passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
+      passport_expiration_date: v('passport_expiration_date'),
+      a_number: aNumberDigits,
+      uscis_online_account: v('uscis_online_account'),
+      i94_admission_number: v('i94_admission_number'),
+      last_entry_date: v('last_entry_date'),
+      status_at_last_entry: v('status_at_last_entry'),
+      current_immigration_status: filing_path === 're_registration' ? 'TPS' : v('status_at_last_entry'),
+      filing_path,
+      wants_ead: ead,
+      ead_category: ead ? (data.type === 'init' ? 'c19' : 'a12') : null,
+      us_address_street: data.manual.us_address_street || v('us_address_street') || v('address'),
+      us_address_city: data.manual.us_address_city || v('us_address_city') || '',
+      us_address_state: data.manual.us_address_state || v('us_address_state') || '',
+      us_address_zip: data.manual.us_address_zip || v('us_address_zip') || '',
+      mailing_same_as_physical: true,
+      daytime_phone: data.manual.daytime_phone || '',
+      email: data.manual.email || '',
+      marital_status: data.manual.marital_status,
+      city_of_birth: data.manual.city_of_birth || v('city_of_birth') || '',
+      province_of_birth: (() => {
+        const raw = data.manual.province_of_birth || v('province_of_birth') || ''
+        const norm = raw ? normalizeOblastToNominative(raw) : null
+        return norm ? norm.transliterated : raw
+      })(),
+      place_of_last_entry: data.manual.place_of_last_entry || v('place_of_last_entry') || '',
+      us_address_in_care_of: data.manual.us_address_in_care_of || v('us_address_in_care_of')
+        || `${(v('given_name') || '').toUpperCase()} ${(v('family_name') || '').toUpperCase()}`.trim()
+        || '',
+      ssn: data.manual.ssn,
+      eye_color: (v('eye_color') || undefined) as TPSAnswers['eye_color'],
+      hair_color: (v('hair_color') || undefined) as TPSAnswers['hair_color'],
+      part7_reviewed: true,
+      has_criminal_concern: false,
+      has_prior_tps_denial: false,
+      left_us_without_advance_parole: false,
+    }
+  }, [data, mergedFields])
+
+  const runPreflightForStep6 = useCallback((): boolean => {
+    // Prevent false "ready" state before any usable extraction exists.
+    const extractedCount = Object.values(mergedFields).filter((f) => Boolean(f?.value?.trim())).length
+    if (extractedCount === 0) {
+      const msgs: Record<string, string> = {
+        uk: 'Ми не змогли розпізнати дані. Перевірте документи або введіть ключові поля вручну перед продовженням.',
+        ru: 'Мы не смогли распознать данные. Проверьте документы или заполните ключевые поля вручную перед продолжением.',
+        en: 'No usable fields were extracted. Check your documents or fill key fields manually before continuing.',
+        es: 'No se extrajeron campos utilizables. Revise sus documentos o complete los campos clave manualmente antes de continuar.',
+      }
+      setErrMsg(msgs[locale] || msgs.en)
+      setPreflightPassed(false)
+      return false
+    }
+    const allConflicts: Array<{ field: string; reason: string }> = []
+    const allLowConf: Array<{ field: string; confidence: number }> = []
+    for (const entry of Object.values(data.uploads)) {
+      if (entry.knowledge_conflicts) allConflicts.push(...entry.knowledge_conflicts)
+      if (entry.knowledge_low_confidence) allLowConf.push(...entry.knowledge_low_confidence)
+    }
+    const gateResult = runMailReadyGate(buildDraftAnswers(), allConflicts, allLowConf)
+    if (!gateResult.mail_ready) {
+      const loc = (locale === 'uk' || locale === 'ru') ? locale : 'en'
+      setErrMsg(gateResult.blockers.map((b) => b.user_message[loc]).join('\n'))
+      setPreflightPassed(false)
+      return false
+    }
+    setErrMsg(null)
+    setPreflightPassed(true)
+    return true
+  }, [buildDraftAnswers, data.uploads, locale, mergedFields])
+
   const handleGenerate = useCallback(async () => {
     setBusy(true)
     setErrMsg(null)
@@ -1961,71 +2075,9 @@ export default function TPSWizardV2({ locale }: Props) {
         if (entry.knowledge_low_confidence) allLowConf.push(...entry.knowledge_low_confidence)
       }
 
-      const filing_path = data.type === 'init' ? 'initial' : 're_registration'
-      const ead = data.ead === 'ead'
-      // Pull the value out of FieldExtraction; alias keeps the rest of this
-      // builder readable (no .value sprinkled everywhere).
       const v = (k: string): string => mergedFields[k]?.value || ''
-      // A-number reaches the PDF as digits only. Display can keep dashes;
-      // packetBuilder will fail-soft on an invalid shape.
-      const aNumberDigits = v('a_number').replace(/\D/g, '')
       const answers: Partial<TPSAnswers> = {
-        family_name: v('family_name') || v('surname'),
-        given_name: v('given_name') || v('first_name'),
-        middle_name: v('middle_name') || v('patronymic'),
-        dob: v('dob') || v('date_of_birth'),
-        sex: (v('sex') === 'F' ? 'F' : 'M') as TPSAnswers['sex'],
-        // country_of_birth: Ukrainian passports store PLACE of birth (oblast/city)
-        // in the visual zone, but USCIS forms ask for COUNTRY of birth.
-        // If the AI extracted an oblast or city + country pattern, normalize
-        // to just the country name. For Ukrainian nationals: always "Ukraine"
-        // unless the value explicitly names a different country.
-        country_of_birth: normalizeCountryOfBirth(v('country_of_birth'), v('country_of_nationality')),
-        country_of_nationality: v('country_of_nationality') || 'Ukraine',
-        passport_number: v('passport_number'),
-        passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
-        passport_expiration_date: v('passport_expiration_date'),
-        a_number: aNumberDigits,
-        uscis_online_account: v('uscis_online_account'),
-        i94_admission_number: v('i94_admission_number'),
-        last_entry_date: v('last_entry_date'),
-        status_at_last_entry: v('status_at_last_entry'),
-        // Current immigration status: re-registration = already has TPS;
-        // initial = whatever they entered with (usually UHP/humanitarian parole)
-        current_immigration_status: filing_path === 're_registration' ? 'TPS' : v('status_at_last_entry'),
-        filing_path,
-        wants_ead: ead,
-        ead_category: ead ? (data.type === 'init' ? 'c19' : 'a12') : null,
-        // 2026-05-20: fall back to OCR'd address parts when the user
-        // didn't manually override. DL slot extracts us_address_*
-        // into mergedFields; without these fallbacks, the I-131 Part 3
-        // city/state/zip stayed empty on the PDF even when the DL was
-        // uploaded.
-        us_address_street: data.manual.us_address_street || v('us_address_street') || v('address'),
-        us_address_city: data.manual.us_address_city || v('us_address_city') || '',
-        us_address_state: data.manual.us_address_state || v('us_address_state') || '',
-        us_address_zip: data.manual.us_address_zip || v('us_address_zip') || '',
-        mailing_same_as_physical: true,
-        daytime_phone: data.manual.daytime_phone || '',
-        email: data.manual.email || '',
-        marital_status: data.manual.marital_status,
-        city_of_birth: data.manual.city_of_birth || v('city_of_birth') || '',
-        province_of_birth: (() => {
-          const raw = data.manual.province_of_birth || v('province_of_birth') || ''
-          const norm = raw ? normalizeOblastToNominative(raw) : null
-          return norm ? norm.transliterated : raw
-        })(),
-        place_of_last_entry: data.manual.place_of_last_entry || v('place_of_last_entry') || '',
-        us_address_in_care_of: data.manual.us_address_in_care_of || v('us_address_in_care_of')
-          || `${(v('given_name') || '').toUpperCase()} ${(v('family_name') || '').toUpperCase()}`.trim()
-          || '',
-        ssn: data.manual.ssn,
-        eye_color: (v('eye_color') || undefined) as TPSAnswers['eye_color'],
-        hair_color: (v('hair_color') || undefined) as TPSAnswers['hair_color'],
-        part7_reviewed: true,
-        has_criminal_concern: false,
-        has_prior_tps_denial: false,
-        left_us_without_advance_parole: false,
+        ...buildDraftAnswers(),
 
         // Signature from step 6
         // BLOCK generation if user chose 'screen' but didn't actually draw
@@ -2103,6 +2155,7 @@ export default function TPSWizardV2({ locale }: Props) {
       })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const blob = await r.blob()
+      setGeneratedManifest({ at: new Date().toISOString(), zipBytes: blob.size })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -2113,10 +2166,11 @@ export default function TPSWizardV2({ locale }: Props) {
       URL.revokeObjectURL(url)
     } catch (e) {
       setErrMsg(t.packetErr)
+      setGeneratedManifest(null)
     } finally {
       setBusy(false)
     }
-  }, [data, mergedFields, t.packetErr])
+  }, [buildDraftAnswers, data, locale, mergedFields, signatureData, t.packetErr])
 
   // ── Restart helper ───────────────────────────────────────────────────────
   const restart = useCallback(() => {
@@ -2125,6 +2179,8 @@ export default function TPSWizardV2({ locale }: Props) {
     } catch {
       /* ignore */
     }
+    setPreflightPassed(false)
+    setGeneratedManifest(null)
     setData({ uploads: {}, manual: {}, paid: false, packetReady: false })
     setStep(1)
   }, [])
@@ -2310,6 +2366,7 @@ export default function TPSWizardV2({ locale }: Props) {
               next={() => goto(5)}
               backLabel={t.back}
               nextLabel={t.s4Recognize}
+              nextTestId="tps-ocr-cta"
             />
           </section>
         )}
@@ -2405,6 +2462,7 @@ export default function TPSWizardV2({ locale }: Props) {
             })()}
 
             <Card title={t.s5OcrTitle}>
+              <div data-testid="tps-review-step-container">
               <ReviewOcr
                 t={t}
                 type={data.type}
@@ -2483,6 +2541,7 @@ export default function TPSWizardV2({ locale }: Props) {
                   })
                 }}
               />
+              </div>
             </Card>
 
             <Card title={t.s5ManualTitle}>
@@ -2501,10 +2560,28 @@ export default function TPSWizardV2({ locale }: Props) {
 
             <Nav
               back={() => goto(4)}
-              next={() => goto(6)}
+              next={() => {
+                if (runPreflightForStep6()) goto(6)
+              }}
               backLabel={t.back}
               nextLabel={t.s5Generate}
+              nextTestId="tps-step6-continue-cta"
             />
+            {errMsg && (
+              <div
+                style={{
+                  background: 'var(--error-bg, #fdecea)',
+                  border: '1.5px solid var(--error-border, #d33)',
+                  borderRadius: 12,
+                  padding: 12,
+                  fontSize: 15,
+                  color: 'var(--error-text, #a33)',
+                  marginTop: 12,
+                }}
+                >
+                  {errMsg}
+                </div>
+              )}
           </section>
         )}
 
@@ -2512,15 +2589,19 @@ export default function TPSWizardV2({ locale }: Props) {
         {step === 6 && (
           <section>
             <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(6)}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>{t.s6q}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>
+              {generatedManifest ? t.s6q : (locale === 'ru' ? 'Завершение пакета' : locale === 'uk' ? 'Завершення пакета' : locale === 'es' ? 'Finalizar paquete' : 'Finalize your packet')}
+            </div>
 
             <Card title={t.s6PkgTitle}>
+              <div data-testid="tps-package-ready-state">
               <PackageList t={t} type={data.type} ead={data.ead} method={data.method} />
+              </div>
             </Card>
 
             {/* Signature block — ONLY for paper filing. Online = sign in myUSCIS */}
             {data.method === 'paper' && (
-            <div style={{ background: 'var(--surface-2, #1a1a2e)', border: '1px solid var(--border, #333)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div data-testid="tps-signature-mode-block" style={{ background: 'var(--surface-2, #1a1a2e)', border: '1px solid var(--border, #333)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>✍️ {locale === 'ru' ? 'Подпись' : locale === 'uk' ? 'Підпис' : locale === 'es' ? 'Firma' : 'Signature'}</span>
                 <Tip text={locale === 'ru'
@@ -2560,8 +2641,9 @@ export default function TPSWizardV2({ locale }: Props) {
             {!ownerChecked && (
               <div style={{ textAlign: 'center', padding: 20, color: TEXT_MUTED, fontSize: 15 }}>…</div>
             )}
-            {ownerChecked && !isOwner && !data.paid && (
+            {ownerChecked && !isOwner && !data.paid && preflightPassed && (
               <button
+                data-testid="tps-paywall-state"
                 type="button"
                 disabled={busy}
                 onClick={async () => {
@@ -2624,8 +2706,9 @@ export default function TPSWizardV2({ locale }: Props) {
               </button>
             )}
 
-            {ownerChecked && (isOwner || data.paid) && (
+            {ownerChecked && (isOwner || data.paid) && preflightPassed && (
               <button
+                data-testid="tps-generate-cta"
                 type="button"
                 onClick={handleGenerate}
                 disabled={busy}
@@ -2656,6 +2739,7 @@ export default function TPSWizardV2({ locale }: Props) {
 
             {errMsg && (
               <div
+                data-testid="tps-gate-error-container"
                 style={{
                   background: 'var(--error-bg, #fdecea)',
                   border: '1.5px solid var(--error-border, #d33)',
@@ -2667,6 +2751,23 @@ export default function TPSWizardV2({ locale }: Props) {
                 }}
               >
                 {errMsg}
+              </div>
+            )}
+
+            {generatedManifest && (
+              <div
+                data-testid="tps-download-success-state"
+                style={{
+                  background: 'var(--success-bg, #e6f4ea)',
+                  border: '1.5px solid var(--success-border, #2e7d32)',
+                  borderRadius: 12,
+                  padding: 10,
+                  fontSize: 13,
+                  color: 'var(--success-text, #1b5e20)',
+                  marginBottom: 12,
+                }}
+              >
+                ZIP bytes: {generatedManifest.zipBytes} · {generatedManifest.at}
               </div>
             )}
 
