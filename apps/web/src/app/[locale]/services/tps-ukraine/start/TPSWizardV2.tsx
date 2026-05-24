@@ -2037,8 +2037,9 @@ export default function TPSWizardV2({ locale }: Props) {
           : undefined,
       }
 
-      // ── Signature validation: block if user chose screen but didn't draw ──
-      if (signatureData?.mode === 'screen' && !signatureData?.dataUrl) {
+      // ── Signature validation: only for paper filing ──
+      // Online filing = user signs in myUSCIS, not in our forms
+      if (data.method === 'paper' && signatureData?.mode === 'screen' && !signatureData?.dataUrl) {
         const msgs: Record<string, string> = {
           uk: 'Ви обрали підпис на екрані, але не намалювали підпис. Намалюйте підпис або оберіть "На папері".',
           ru: 'Вы выбрали подпись на экране, но не нарисовали подпись. Нарисуйте подпись или выберите «На бумаге».',
@@ -2516,7 +2517,8 @@ export default function TPSWizardV2({ locale }: Props) {
               <PackageList t={t} type={data.type} ead={data.ead} method={data.method} />
             </Card>
 
-            {/* Compact signature block with [?] tooltip */}
+            {/* Signature block — ONLY for paper filing. Online = sign in myUSCIS */}
+            {data.method === 'paper' && (
             <div style={{ background: 'var(--surface-2, #1a1a2e)', border: '1px solid var(--border, #333)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>✍️ {locale === 'ru' ? 'Подпись' : locale === 'uk' ? 'Підпис' : locale === 'es' ? 'Firma' : 'Signature'}</span>
@@ -2544,6 +2546,7 @@ export default function TPSWizardV2({ locale }: Props) {
                 </div>
               )}
             </div>
+            )}
 
             {/* Gate on ownerChecked to prevent flash of Pay button for owners */}
             {!ownerChecked && (
