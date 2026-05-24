@@ -31,8 +31,10 @@ const BROKEN_SETTLEMENT_PREFIX_RE =
 const CITY_PREFIX_RE =
   /^(?:смт\.?|с-ще\.?|м\.|с\.|сел\.|хут\.|п\.?г\.?т\.?)\s*/iu
 
+// A3 FIX: "обл" (3 chars) added — Brain outputs "ОБЛ." not full "область".
+// Also added "obl" for Latin variant ("VINNYTSKA OBL.").
 const CITY_NOISE_RE =
-  /(?:date|birth|place|місц|мест|народжен|рожден|област|oblast|province)/iu
+  /(?:date|birth|place|місц|мест|народжен|рожден|област|обл[.:]?|oblast|obl[.:]?|province)/iu
 
 const PROVINCE_LATIN_MAP: Array<{ re: RegExp; value: string }> = [
   { re: /\bvin+yt+s?k\w*\s+obl(?:ast)?\.?$/iu, value: 'Vinnytsia Oblast' },
@@ -78,7 +80,10 @@ function validateCity(value: string): { ok: boolean; reason: string } {
   if (!/[A-Za-zА-Яа-яІіЇїЄєҐґ]/u.test(value)) return { ok: false, reason: 'no_letters' }
   if (/\d{4}/.test(value)) return { ok: false, reason: 'contains_year_fragment' }
   if (CITY_NOISE_RE.test(value)) return { ok: false, reason: 'contains_label_noise' }
-  if (/\b(?:обл|oblast|province)\b/iu.test(value)) return { ok: false, reason: 'looks_like_province' }
+  // A3 FIX: JavaScript \b does NOT work with Cyrillic — Cyrillic letters
+  // are \W (non-word), so \b never fires around them. Use explicit
+  // boundary: start/end of string, whitespace, or punctuation.
+  if (/(?:^|[\s.,;:!?])(?:обл|obl|oblast|province)(?:[\s.,;:!?]|$)/iu.test(value)) return { ok: false, reason: 'looks_like_province' }
   return { ok: true, reason: 'ok' }
 }
 
