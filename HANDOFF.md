@@ -1,7 +1,7 @@
 # HANDOFF.md
 Last updated: 2026-05-24 07:15 UTC
 Sessions: 9–14 consolidated
-Production SHA: pending deploy (session 14, commit 5)
+Production SHA: pending deploy (session 14, commit 6)
 
 ## CURRENT STATE
 Session 14: independent production audit (code + live browser) found and fixed two P0 bugs.

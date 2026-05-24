@@ -686,45 +686,99 @@ export function runPassportBookletModule(
   // I-765 Line 18a (city_of_birth) + Line 18b (province_of_birth).
   // Internal passport has "Місце народження / Место рождения" label
   // followed by locality + oblast, often on 2 separate lines.
-  const birthPlaceRaw = findField(['Місце народження', 'Место рождения', 'Place of birth'])
-  if (birthPlaceRaw) {
-    const rawText = birthPlaceRaw.value.trim()
-    // Try to split city and oblast. Common patterns:
-    //   "смт. Устинівка Вінницької області"
-    //   "м. Київ" (city only, no oblast)
-    //   Line 1: "смт Устинівка", Line 2: "Вінницької області"
-    const oblastMatch = rawText.match(/(.*?)\s*([\wА-ЯІЇЄҐа-яіїєґ']+(?:ської|ської|ської|зької|цької|ської|ської|ської|ської|ської|ської|ської|ської|ського|ського)\s+(?:обл(?:асті)?\.?))/iu)
-    if (oblastMatch) {
-      const cityPart = oblastMatch[1].trim()
-      const oblastPart = oblastMatch[2].trim()
-      if (cityPart) {
-        emit(
-          'city_of_birth',
-          cityPart,
-          cityPart,
-          birthPlaceRaw.sourceLine,
-          'booklet_label_birthplace_city',
-        )
-      }
-      emit(
-        'province_of_birth',
-        oblastPart,
-        oblastPart,
-        birthPlaceRaw.sourceLine,
-        'booklet_label_birthplace_oblast',
+  //
+  // BUG-5 FIX (2026-05-24): findValueNear returns only the FIRST
+  // adjacent line. When booklet has city and oblast on separate lines,
+  // only one was captured (usually oblast). Now we scan ALL adjacent
+  // lines and merge them.
+  const OBLAST_RE = /[\wА-ЯІЇЄҐа-яіїєґ']+(?:ської|зької|цької|ського)\s+(?:обл(?:асті)?\.?)/iu
+
+  // Find the label line index first
+  let birthLabelIdx = -1
+  for (const lc of lines) {
+    if (lineMatchesLabel(lc.text, 'Місце народження') ||
+        lineMatchesLabel(lc.text, 'Место рождения') ||
+        lineMatchesLabel(lc.text, 'Place of birth')) {
+      birthLabelIdx = lc.idx
+      break
+    }
+  }
+
+  if (birthLabelIdx >= 0) {
+    // Collect ALL non-label value lines near the label (up to 4 lines after)
+    const valueParts: string[] = []
+    for (let off = 0; off <= 4; off++) {
+      const candidate = lines[birthLabelIdx + off]
+      if (!candidate || candidate.text.length < 2) continue
+      if (off > 0 && looksLikeLabel(candidate.text)) continue
+      const cleaned = stripBilingualNoise(
+        off === 0
+          ? candidate.text.slice(candidate.text.toLowerCase().indexOf('народження') >= 0
+              ? candidate.text.toLowerCase().indexOf('народження') + 'народження'.length
+              : candidate.text.toLowerCase().indexOf('рождения') >= 0
+                ? candidate.text.toLowerCase().indexOf('рождения') + 'рождения'.length
+                : candidate.text.toLowerCase().indexOf('birth') >= 0
+                  ? candidate.text.toLowerCase().indexOf('birth') + 'birth'.length
+                  : 0)
+          : candidate.text,
       )
-    } else {
-      // No oblast pattern found — emit entire value as city_of_birth
+      if (cleaned && !isValueJunk(cleaned)) {
+        valueParts.push(cleaned)
+      }
+    }
+
+    // Now separate city and oblast from collected parts
+    const fullBirthText = valueParts.join(' ')
+    let foundCity: string | null = null
+    let foundOblast: string | null = null
+
+    // Check each part for oblast pattern
+    for (const part of valueParts) {
+      if (OBLAST_RE.test(part)) {
+        foundOblast = part.trim()
+      } else if (!foundCity && part.trim().length >= 2) {
+        foundCity = part.trim()
+      }
+    }
+
+    // Also try regex on full merged text (handles single-line "м. Вінниця Вінницької обл.")
+    if (!foundOblast || !foundCity) {
+      const oblastMatch = fullBirthText.match(/(.*?)\s*([\wА-ЯІЇЄҐа-яіїєґ']+(?:ської|зької|цької|ського)\s+(?:обл(?:асті)?\.?))/iu)
+      if (oblastMatch) {
+        if (!foundOblast) foundOblast = oblastMatch[2].trim()
+        if (!foundCity && oblastMatch[1].trim()) foundCity = oblastMatch[1].trim()
+      }
+    }
+
+    // Fallback: if only one part and no oblast → treat as city
+    if (!foundCity && !foundOblast && fullBirthText.length >= 2) {
+      foundCity = fullBirthText
+    }
+
+    const birthSourceLine = lines[birthLabelIdx]?.line ?? null
+
+    if (foundCity) {
       emit(
         'city_of_birth',
-        rawText,
-        rawText,
-        birthPlaceRaw.sourceLine,
-        'booklet_label_birthplace_full',
+        foundCity,
+        foundCity,
+        birthSourceLine,
+        'booklet_label_birthplace_city',
       )
     }
+    if (foundOblast) {
+      emit(
+        'province_of_birth',
+        foundOblast,
+        foundOblast,
+        birthSourceLine,
+        'booklet_label_birthplace_oblast',
+      )
+    }
+    if (!foundCity && !foundOblast) {
+      warnings.push('booklet_birth_place_unparseable')
+    }
   } else {
-    // Try to find oblast on a separate line near the birthplace label
     warnings.push('booklet_birth_place_missing')
   }
 

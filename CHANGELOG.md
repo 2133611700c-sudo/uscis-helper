@@ -54,6 +54,12 @@ Every work session appends here. Never delete entries. Newest first.
 - **Fix**: Added `case 'booklet'` that runs `runPassportBookletModule()` with rotation retry
 - Combined with BUG-4 contract fix: now full chain wizard→API→module→contract→review→PDF works
 
+### BUG-5 FIX: booklet multi-line birthplace parsing
+- **Root cause**: `findValueNear` returned only FIRST adjacent line after label
+- When booklet had city and oblast on separate lines, only oblast was captured → city_of_birth empty
+- **Fix**: Rewrote birthplace extraction to scan ALL adjacent lines (up to 4), separate city and oblast using OBLAST_RE pattern
+- Now handles: single-line ("м. Вінниця Вінницької обл."), multi-line (city on one line, oblast on next), city-only ("м. Київ")
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
