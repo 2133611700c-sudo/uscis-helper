@@ -30,7 +30,7 @@ const BASE = {
   has_criminal_concern: false,
   has_prior_tps_denial: false,
   left_us_without_advance_parole: false,
-} as TPSAnswers
+} as unknown as TPSAnswers
 
 describe('Signature PDF readback proof', () => {
   test('screen mode: /s/ IVAN TESTENKO appears in I-821 signature field', async () => {
