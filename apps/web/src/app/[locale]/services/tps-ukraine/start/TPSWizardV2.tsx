@@ -136,6 +136,7 @@ interface WizardData {
     place_of_last_entry?: string
     us_address_in_care_of?: string
     ssn?: string
+    passport_expiration_date?: string
   }
   paid: boolean
   packetReady: boolean
@@ -1993,7 +1994,7 @@ export default function TPSWizardV2({ locale }: Props) {
       country_of_nationality: v('country_of_nationality') || 'Ukraine',
       passport_number: v('passport_number'),
       passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
-      passport_expiration_date: v('passport_expiration_date'),
+      passport_expiration_date: data.manual.passport_expiration_date || v('passport_expiration_date'),
       a_number: aNumberDigits,
       uscis_online_account: v('uscis_online_account'),
       i94_admission_number: v('i94_admission_number'),
@@ -3211,6 +3212,13 @@ function ReviewManual({
         tip={locale === 'ru' ? 'Из I-94 (i94.cbp.dhs.gov). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З I-94 (i94.cbp.dhs.gov). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'De I-94 (i94.cbp.dhs.gov). Cargue en paso 4 → el robot lo llenará.' : 'From I-94 (i94.cbp.dhs.gov). Upload at step 4 → robot fills it.'}
         value={manual.place_of_last_entry || mergedFields?.place_of_last_entry?.value || ''}
         onChange={(v) => onChange({ place_of_last_entry: v })}
+      />
+      <FieldInput
+        label={locale === 'ru' ? 'Срок действия паспорта' : locale === 'uk' ? 'Термін дії паспорта' : locale === 'es' ? 'Fecha de vencimiento del pasaporte' : 'Passport Expiration Date'}
+        placeholder="MM/DD/YYYY"
+        tip={locale === 'ru' ? 'Из загранпаспорта. Обычно робот распознаёт из MRZ. Если нет — введите вручную.' : locale === 'uk' ? 'Із закордонного паспорта. Зазвичай робот розпізнає з MRZ. Якщо ні — введіть вручну.' : locale === 'es' ? 'Del pasaporte. Normalmente el robot lo lee del MRZ. Si no — ingréselo manualmente.' : 'From passport. Usually auto-detected from MRZ. If not — enter manually.'}
+        value={manual.passport_expiration_date || mergedFields?.passport_expiration_date?.value || ''}
+        onChange={(v) => onChange({ passport_expiration_date: v })}
       />
       <FieldInput
         label={t.label.in_care_of}
