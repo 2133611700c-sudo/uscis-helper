@@ -109,9 +109,11 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
     slot: 'booklet',
     allowed_document_types: ['passport'],
     allowed_fields: [
-      'middle_name',         // ← PRIMARY reason booklet exists
-      'city_of_birth',       // ← PRIMARY reason booklet exists
-      'province_of_birth',   // ← PRIMARY reason booklet exists
+      // Patronymic (middle_name) REMOVED — Vision cannot read handwritten
+      // Cyrillic reliably, and middle_name is OPTIONAL on USCIS forms.
+      // User enters manually if needed.
+      'city_of_birth',
+      'province_of_birth',
       'country_of_birth',
       'country_of_nationality',
       'passport_country_of_issuance',
@@ -121,6 +123,7 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       // Booklet handwritten OCR produces garbage for these.
       'family_name',
       'given_name',
+      'middle_name',  // optional on USCIS forms, manual entry only
       'dob',
       'sex',
       'passport_number',
