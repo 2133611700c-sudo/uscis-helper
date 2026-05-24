@@ -1,7 +1,7 @@
 # STATUS.md
 Last updated: 2026-05-24 07:15 UTC
 Session: 14 (audit + hotfix)
-Production SHA: pending deploy (session 14, commit 2)
+Production SHA: pending deploy (session 14, commit 3)
 
 ## Product
 Messenginfo = self-help immigration information, document translation, and USCIS draft-form generation platform.
@@ -65,11 +65,10 @@ Client-mode E2E closed with evidence. Owner-mode not proven (blocked by access).
 - [x] **REREG+NOEAD: no passport/I-94 slots** — fixed session 14. passport+I-94 were inside `if(ead)`.
 - [x] **last_entry_date hidden in rereg review** — fixed session 14. I-94 rows now show for all paths.
 
+- [x] **passport_expiration_date manual fallback** — fixed session 14. Manual input added + submit fallback.
+
 ## OPEN BUGS
-- [ ] **noindex, nofollow**: all pages have `<meta name="robots" content="noindex, nofollow"/>`. Zero Google visibility. Decision pending: intentional beta or bug?
-- [ ] **passport_expiration_date**: no manual fallback if OCR fails.
-  - Impact: low (MRZ extraction reliable), but no recovery path
-- [ ] **I-912 fee waiver form**: health reports `filled: false`. Paper+fee waiver users don't get pre-filled I-912.
+- [ ] **I-912 fee waiver form**: feature gap — needs income/household wizard module. Not a hotfix.
 - [ ] **Owner-mode**: not proven in automation (blocked by session access).
 
 ## DO NOT RE-LITIGATE

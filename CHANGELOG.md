@@ -32,6 +32,13 @@ Every work session appends here. Never delete entries. Newest first.
 - Now says "For identity verification. May be expired." (all 4 langs)
 - noindex/nofollow: confirmed INTENTIONAL and CORRECT (wizard pages only)
 
+### FIX-3: passport_expiration_date manual fallback (P2)
+- Added FieldInput in ReviewManual for passport expiration date (4 langs)
+- Added `passport_expiration_date` to WizardData.manual interface
+- Fixed buildDraftAnswers: now checks `data.manual.passport_expiration_date` before mergedFields
+- Previously: if MRZ OCR failed, no way to enter this field → gate blocker
+- I-912 fee waiver: confirmed as feature gap (needs income/household module), not a hotfix
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
