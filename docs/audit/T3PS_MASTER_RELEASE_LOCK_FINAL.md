@@ -1,6 +1,6 @@
 # T3PS Master Release Lock Final
 
-Generated: 2026-05-24T05:45:00Z
+Generated: 2026-05-24T05:58:00Z
 
 ## Executive Verdict
 - Controlled beta status: **PARTIAL_RELEASE_ACCOUNTING**
@@ -9,9 +9,9 @@ Generated: 2026-05-24T05:45:00Z
 - Telegram required for Stage I: **false**
 
 ## SHA Truth
-- local: `201ce5d746a8951d25d2613b1a74f1cb2f2d02a9`
-- origin/main: `201ce5d746a8951d25d2613b1a74f1cb2f2d02a9`
-- production health: `201ce5d746a8951d25d2613b1a74f1cb2f2d02a9`
+- local: `6f73aa3134ec4585213002f9f7a051101b4437e9`
+- origin/main: `6f73aa3134ec4585213002f9f7a051101b4437e9`
+- production health: `6f73aa3134ec4585213002f9f7a051101b4437e9`
 - Alignment: **MATCH**
 
 ## Verified in This Cycle
@@ -23,12 +23,14 @@ Generated: 2026-05-24T05:45:00Z
   - `i94=200`
   - `i797_or_ead=200`
   - `dl=200`
+- Client paid contour now reaches generate and artifact:
+  - `generate_statuses=[200]`
+  - ZIP downloaded and unpacked
+  - I-821/I-765 visual page renders captured
 - Gates pass (`typecheck`, `test`, `lint`, `guard`, `build`) for current repo state.
 
 ## Not Closed Yet
 - Owner mode not proven in automation: no owner session available.
-- Client contour did not reach `generate-packet=200` in current dual-proof run.
-- ZIP/PDF visual truth for this cycle is therefore **not proven**.
 
 ## Evidence Paths
 - `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json`
@@ -37,8 +39,7 @@ Generated: 2026-05-24T05:45:00Z
 
 ## Remaining Blocking Item (P0)
 1. Obtain a fresh **client paid-entitlement** production run with:
-   - `/api/tps/generate-packet = 200`
-   - ZIP downloaded in same session
-   - I-821/I-765 visual PDF verification
+   - done (`/api/tps/generate-packet = 200`, ZIP + PDF proof captured).
+2. Obtain an owner-session production run to close owner contour.
 
-Until this is captured, final status stays **DEGRADED/PARTIAL**.
+Until owner contour is proven, final status stays **DEGRADED/PARTIAL**.

@@ -73,6 +73,15 @@ User manual input: phone, email, marital status, SSN only. Everything else from 
   - plus stable test ids for street/phone/email manual fields.
 - This removes hidden inconsistency where gate demanded fields the user could not input directly in current UI.
 
+### VERIFIED AFTER DEPLOY
+- Production SHA: `6f73aa3134ec4585213002f9f7a051101b4437e9`.
+- Dual-proof client contour:
+  - `current_step=step6`
+  - `paywall_visible=true` (unpaid)
+  - paid callback path -> `generate_statuses=[200]`
+  - ZIP downloaded and unpacked with `I-821.pdf` + `I-765.pdf`.
+- Owner contour remains blocked in automation (`owner_session=false`).
+
 ## 2026-05-24 (session 10) — TPS runtime hardening in progress
 
 ### VERIFIED

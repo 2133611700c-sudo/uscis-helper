@@ -40,6 +40,15 @@ Production SHA: ccbbb1f
 - Dual-proof showed gate was blocking on city/state/zip while UI exposed only one combined address field.
 - This was a real UX/data contract inconsistency, now corrected.
 
+### Fresh production result after deploy
+- Health SHA updated to `6f73aa3134ec4585213002f9f7a051101b4437e9`.
+- Client mode proof closed:
+  - unpaid paywall visible,
+  - paid callback generate attempt returns `200`,
+  - ZIP downloaded with `I-821.pdf` and `I-765.pdf`,
+  - PDF pages rendered to PNG evidence.
+- Owner mode still blocked by missing owner session in automation.
+
 ## WHAT WAS DONE IN SESSION 10
 
 ### Goal
