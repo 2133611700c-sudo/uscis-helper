@@ -140,6 +140,9 @@ interface WizardData {
   }
   paid: boolean
   packetReady: boolean
+  /** User explicitly reviewed Part 7 background declaration (30 yes/no
+   *  questions). Required before generation — gate blocks without it. */
+  part7Reviewed: boolean
 }
 
 interface Props {
@@ -276,6 +279,11 @@ const T = {
       widowed: 'Widowed',
       annulled: 'Annulled',
       other: 'Other',
+    },
+    part7: {
+      title: '⚖️ Декларація Part 7 (I-821)',
+      body: 'Форма I-821 Part 7 містить 30 питань про кримінальне минуле, порушення імміграційного закону, депортації та інше. За замовчуванням усі відповіді — «Ні». Якщо якась відповідь «Так» — виправте на друкованій формі перед підписом.',
+      confirm: 'Я переглянув(ла) питання Part 7 і підтверджую, що всі відповіді — «Ні»',
     },
     doc: {
       passportInit: {
@@ -486,6 +494,11 @@ const T = {
       annulled: 'Annulled',
       other: 'Other',
     },
+    part7: {
+      title: '⚖️ Декларация Part 7 (I-821)',
+      body: 'Форма I-821 Part 7 содержит 30 вопросов о криминальном прошлом, нарушениях иммиграционного закона, депортациях и пр. По умолчанию все ответы — «Нет». Если какой-то ответ «Да» — исправьте на распечатанной форме перед подписью.',
+      confirm: 'Я просмотрел(а) вопросы Part 7 и подтверждаю, что все ответы — «Нет»',
+    },
     doc: {
       passportInit: {
         ic: '🛂',
@@ -693,6 +706,11 @@ const T = {
       widowed: 'Widowed',
       annulled: 'Annulled',
       other: 'Other',
+    },
+    part7: {
+      title: '⚖️ Background Declaration (Part 7)',
+      body: 'I-821 Part 7 contains 30 questions about criminal history, immigration violations, deportations, and more. All answers default to "No". If any answer should be "Yes", correct it on the printed form before signing.',
+      confirm: 'I have reviewed the Part 7 questions and confirm all answers are "No" for my case',
     },
     doc: {
       passportInit: {
@@ -902,6 +920,11 @@ const T = {
       widowed: 'Widowed',
       annulled: 'Annulled',
       other: 'Other',
+    },
+    part7: {
+      title: '⚖️ Declaración Part 7 (I-821)',
+      body: 'I-821 Part 7 contiene 30 preguntas sobre antecedentes penales, violaciones migratorias, deportaciones y más. Todas las respuestas son "No" por defecto. Si alguna respuesta es "Sí", corríjala en el formulario impreso antes de firmar.',
+      confirm: 'He revisado las preguntas de Part 7 y confirmo que todas las respuestas son "No"',
     },
     doc: {
       passportInit: {
@@ -1582,6 +1605,7 @@ export default function TPSWizardV2({ locale }: Props) {
     manual: {},
     paid: false,
     packetReady: false,
+    part7Reviewed: false,
   })
   const [busy, setBusy] = useState(false)
   const [errMsg, setErrMsg] = useState<string | null>(null)
@@ -2034,7 +2058,7 @@ export default function TPSWizardV2({ locale }: Props) {
       ssn: data.manual.ssn,
       eye_color: (v('eye_color') || undefined) as TPSAnswers['eye_color'],
       hair_color: (v('hair_color') || undefined) as TPSAnswers['hair_color'],
-      part7_reviewed: true,
+      part7_reviewed: data.part7Reviewed,
       has_criminal_concern: false,
       has_prior_tps_denial: false,
       left_us_without_advance_parole: false,
@@ -2203,7 +2227,7 @@ export default function TPSWizardV2({ locale }: Props) {
     }
     setPreflightPassed(false)
     setGeneratedManifest(null)
-    setData({ uploads: {}, manual: {}, paid: false, packetReady: false })
+    setData({ uploads: {}, manual: {}, paid: false, packetReady: false, part7Reviewed: false })
     setStep(1)
   }, [])
 
@@ -2579,6 +2603,47 @@ export default function TPSWizardV2({ locale }: Props) {
                 }
               />
             </Card>
+
+            {/* Part 7 background declaration — user must explicitly confirm
+                the 30 yes/no questions default to No. P1 legal fix: without
+                this, the user signs a declaration they never saw. */}
+            <div
+              data-testid="tps-part7-declaration"
+              style={{
+                background: WARN_BG,
+                border: `1.5px solid ${WARN_BORDER}`,
+                borderRadius: 14,
+                padding: 16,
+                marginBottom: 12,
+              }}
+            >
+              <div style={{ fontSize: 16, fontWeight: 800, color: WARN_TEXT, marginBottom: 8 }}>
+                {t.part7.title}
+              </div>
+              <div style={{ fontSize: 14, color: WARN_TEXT, lineHeight: 1.5, marginBottom: 12 }}>
+                {t.part7.body}
+              </div>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                  cursor: 'pointer',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: WARN_TEXT,
+                }}
+              >
+                <input
+                  data-testid="tps-part7-checkbox"
+                  type="checkbox"
+                  checked={data.part7Reviewed}
+                  onChange={(e) => setData((d) => ({ ...d, part7Reviewed: e.target.checked }))}
+                  style={{ width: 20, height: 20, marginTop: 2, accentColor: GREEN, flexShrink: 0 }}
+                />
+                <span>{t.part7.confirm}</span>
+              </label>
+            </div>
 
             <Nav
               back={() => goto(4)}

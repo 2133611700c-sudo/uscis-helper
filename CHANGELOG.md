@@ -20,10 +20,20 @@ Every work session appends here. Never delete entries. Newest first.
 - TypeScript: 0 project errors
 
 ### Also found (NOT fixed this session)
-- Part 7 background declaration never shown to user (P1 legal risk)
-- marital_status not in gate required list (P2)
+- Part 7 background declaration never shown to user (P1 legal risk) — FIXED same session
+- marital_status not in gate required list (P2) — FIXED same session
 - province_of_birth missing from I-821 field map (P3)
 - receipt_number extracted but never reaches PDF (P3)
+
+### P1 FIX: Part 7 background declaration review
+- Added Part 7 confirmation card to Step 5 (all 4 locales)
+- User must check "I reviewed Part 7 and all answers are No" before generating
+- Gate blocks generation if part7_reviewed is false
+- buildDraftAnswers reads part7Reviewed from wizard state instead of hardcoded true
+
+### P2 FIX: marital_status in gate required fields
+- Added marital_status to REQUIRED_FIELDS in mailReadyGate.ts
+- Gate now blocks generation if marital status not selected
 
 ---
 
