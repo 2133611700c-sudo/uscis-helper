@@ -1723,21 +1723,18 @@ export default function TPSWizardV2({ locale }: Props) {
       list.push({ id: 'i94', ...t.doc.i94 })
       list.push({ id: 'i797_or_ead', ...t.doc.i797_or_ead })
     } else {
+      // Re-registration path: passport and I-94 are needed for ALL rereg
+      // sub-paths (EAD and noEAD). Without them the gate blocks on
+      // family_name, dob, passport_number, last_entry_date, etc.
+      // BUG-1 FIX (2026-05-24): passport + I-94 were inside `if (ead)`
+      // which left rereg+noEAD with only 3 slots (tps_notice, booklet, dl).
       list.push({ id: 'tps_notice', ...t.doc.tps_notice })
       list.push({ id: 'booklet', ...t.doc.booklet })
+      list.push({ id: 'passport', ...t.doc.passportRereg })
       if (ead) {
-        list.push({ id: 'passport', ...t.doc.passportRereg })
         list.push({ id: 'ead_old', ...t.doc.ead_old })
-        list.push({ id: 'i94', ...t.doc.i94Rereg })
-        // 2026-05-21 SCOPE_FIX: removed 'photo' upload slot from re-registration
-        // paper+EAD scenario. Messenginfo's product is auto-filling USCIS PDF
-        // forms from OCR'd documents — we do NOT process passport-style 2×2
-        // photos and we do NOT decide what physical items the user puts in
-        // the USCIS envelope. Telling the user via a dashed-border upload
-        // card that they "need to upload a photo" confused users into
-        // thinking the system requires a photo to proceed. Photo guidance
-        // belongs on uscis.gov instructions, not in our wizard.
       }
+      list.push({ id: 'i94', ...t.doc.i94Rereg })
     }
     // Driver's license / state ID — OPTIONAL slot offered in every flow.
     // Slot contract (documentContracts.ts 'dl') extracts US address parts
@@ -2963,13 +2960,17 @@ function ReviewOcr({
     { key: 'passport_number', label: t.label.passport_number, expectedDoc: 'passport' },
     { key: 'country_of_nationality', label: t.label.country_of_nationality, expectedDoc: 'passport' },
   ]
-  if (init) {
-    rows.push(
-      { key: 'i94_admission_number', label: t.label.i94_admission_number, expectedDoc: 'i94' },
-      { key: 'last_entry_date', label: t.label.last_entry_date, expectedDoc: 'i94' },
-      { key: 'status_at_last_entry', label: t.label.status_at_last_entry, expectedDoc: 'i94' },
-    )
-  }
+  // I-94 fields are needed for ALL paths (init + rereg) — the gate
+  // requires last_entry_date unconditionally and I-94 is now an upload
+  // slot for every branch.
+  // BUG-2 FIX (2026-05-24): was `if (init)` only, which hid these rows
+  // from rereg review. Users couldn't see or edit last_entry_date →
+  // gate blocked them.
+  rows.push(
+    { key: 'i94_admission_number', label: t.label.i94_admission_number, expectedDoc: 'i94' },
+    { key: 'last_entry_date', label: t.label.last_entry_date, expectedDoc: 'i94' },
+    { key: 'status_at_last_entry', label: t.label.status_at_last_entry, expectedDoc: 'i94' },
+  )
   if (!init && wantsEad) {
     rows.push(
       { key: 'a_number', label: t.label.a_number, expectedDoc: 'ead' },
@@ -2977,7 +2978,10 @@ function ReviewOcr({
     )
   }
   if (!init && !wantsEad) {
-    rows.push({ key: 'address', label: t.label.address, expectedDoc: 'i797' })
+    rows.push(
+      { key: 'a_number', label: t.label.a_number, expectedDoc: 'i797' },
+      { key: 'address', label: t.label.address, expectedDoc: 'i797' },
+    )
   }
 
   // Map an ExtractionSource to a human-readable provenance string. This is
