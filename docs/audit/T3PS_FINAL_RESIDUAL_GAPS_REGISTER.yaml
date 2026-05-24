@@ -1,12 +1,12 @@
 report: T3PS_FINAL_RESIDUAL_GAPS_REGISTER
-generated_at: "2026-05-24T05:45:00Z"
+generated_at: "2026-05-24T05:58:00Z"
 status: DEGRADED
 residual_gaps:
-  - id: T3PS-RUNTIME-P0-001
+  - id: T3PS-RUNTIME-P0-OWNER-001
     priority: P0
     blocker: true
     accepted_risk: false
-    description: "Current cycle lacks client-mode generate 200 + ZIP + PDF proof in one production run."
+    description: "Owner-mode contour is not proven in current cycle because automation has no owner session."
   - id: T3PS-RUNTIME-P1-001
     priority: P1
     blocker: false
