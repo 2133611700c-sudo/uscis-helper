@@ -1,40 +1,44 @@
-# T3PS Stage I Final Functional Hardening — Master Release Lock
+# T3PS Master Release Lock Final
 
-Generated: 2026-05-16T22:34:00Z
+Generated: 2026-05-24T05:45:00Z
 
-## Final Verdict
-- Status: **GO_CONTROLLED_BETA_110_LOCKED**
-- Functional product status: **PASS**
+## Executive Verdict
+- Controlled beta status: **PARTIAL_RELEASE_ACCOUNTING**
+- Functional status: **DEGRADED** (not PASS)
 - Paid launch ready: **false**
 - Telegram required for Stage I: **false**
 
 ## SHA Truth
-- local: `c2309c237d7157259c3b112d6f926032d88bd15d`
-- origin: `c2309c237d7157259c3b112d6f926032d88bd15d`
-- health: `e402d9c2c4cd864f9e65840de298978ae56e68d3`
-- SHA status: `DOCS_ONLY_DIVERGENCE` (latest commit is docs-only reconciliation; runtime code SHA remains last deployed functional SHA)
+- local: `201ce5d746a8951d25d2613b1a74f1cb2f2d02a9`
+- origin/main: `201ce5d746a8951d25d2613b1a74f1cb2f2d02a9`
+- production health: `201ce5d746a8951d25d2613b1a74f1cb2f2d02a9`
+- Alignment: **MATCH**
 
-## Fresh Functional Evidence
-- Gates: PASS (`typecheck`, `test`, `lint`, `guard`, `build`)
-- OCR matrix: PASS (`international_passport`, `ukrainian_internal_passport`, `i94`, `ead`)
-- Browser Scenario A (I-821 only): PASS (`generate=200`, ZIP captured)
-- Browser Scenario B (I-821 + I-765): PASS (`generate=200`, ZIP downloaded)
-- PDF/ZIP proof: PASS (`I-821` + `I-765` key fields present, `cyrillic_leak=NONE`)
-- Part 7 legal-risk yes-cases: PASS (criminal/removal/prior_denial warning surfaces captured)
-- localStorage stale-data conflict: PASS (no hidden stale override before user review/edit)
+## Verified in This Cycle
+- Selector contract visible in live Step 4 (`tps-ocr-cta`, `tps-upload-slot-*`, `tps-upload-input-*`).
+- Runtime guard blocks false readiness progression in clean session (`ocrCalls=0`, `generateCalls=0` proof exists).
+- OCR slot diagnostics captured with root causes and statuses in one run:
+  - `passport=200`
+  - `booklet=200`
+  - `i94=200`
+  - `i797_or_ead=200`
+  - `dl=200`
+- Gates pass (`typecheck`, `test`, `lint`, `guard`, `build`) for current repo state.
 
-## Residual Gaps (Non-Blocking)
-- P0 open blockers: **0**
-- Accepted non-blocking:
-  - Telegram monitoring out of scope for this task
-  - `/_vercel/insights` 404/CSP noise without user-flow impact
-  - USCIS notice OCR marked NOT_REQUIRED for Stage I
+## Not Closed Yet
+- Owner mode not proven in automation: no owner session available.
+- Client contour did not reach `generate-packet=200` in current dual-proof run.
+- ZIP/PDF visual truth for this cycle is therefore **not proven**.
 
-## Evidence Pointers
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_TRUTH_BASELINE.yaml`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_GATES_RERUN.yaml`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_OCR_MATRIX.yaml`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_BROWSER_AB_PROOF.md`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_PDF_ZIP_PROOF.md`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_PART7_LEGAL_RISK_PROOF.md`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_STATE_CONFLICT_PROOF.md`
+## Evidence Paths
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_network.json`
+- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_failed_requests.json`
+
+## Remaining Blocking Item (P0)
+1. Obtain a fresh **client paid-entitlement** production run with:
+   - `/api/tps/generate-packet = 200`
+   - ZIP downloaded in same session
+   - I-821/I-765 visual PDF verification
+
+Until this is captured, final status stays **DEGRADED/PARTIAL**.
