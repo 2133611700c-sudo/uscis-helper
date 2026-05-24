@@ -313,6 +313,16 @@ const T = {
         lb: "Driver's License або State ID",
         ht: 'Допоможе автоматично заповнити адресу в США',
       },
+      booklet: {
+        ic: '📕',
+        lb: 'Внутрішній паспорт України',
+        ht: 'По батькові, місто народження, область. Сфотографуйте сторінки з даними.',
+      },
+      i797_or_ead: {
+        ic: '📋',
+        lb: 'I-797 / EAD (якщо є)',
+        ht: 'Receipt Number, A-Number, USCIS Account Number.',
+      },
     },
     uploadedSuffix: '✓ завантажено',
     package: {
@@ -512,6 +522,16 @@ const T = {
         lb: "Driver's License или State ID",
         ht: 'Поможет автоматически заполнить адрес в США',
       },
+      booklet: {
+        ic: '📕',
+        lb: 'Внутренний паспорт Украины',
+        ht: 'Отчество, город рождения, область. Сфотографируйте страницы с данными.',
+      },
+      i797_or_ead: {
+        ic: '📋',
+        lb: 'I-797 / EAD (если есть)',
+        ht: 'Receipt Number, A-Number, USCIS Account Number.',
+      },
     },
     uploadedSuffix: '✓ загружено',
     package: {
@@ -709,6 +729,16 @@ const T = {
         ic: '🪪',
         lb: "Driver's License or State ID",
         ht: 'Auto-fills your US address',
+      },
+      booklet: {
+        ic: '📕',
+        lb: 'Ukrainian Internal Passport',
+        ht: 'Patronymic, city of birth, province. Photo the pages with data.',
+      },
+      i797_or_ead: {
+        ic: '📋',
+        lb: 'I-797 / EAD (if available)',
+        ht: 'Receipt Number, A-Number, USCIS Account Number.',
       },
     },
     uploadedSuffix: '✓ uploaded',
@@ -908,6 +938,16 @@ const T = {
         ic: '🪪',
         lb: "Licencia de conducir o State ID",
         ht: 'Llena automáticamente la dirección en EE. UU.',
+      },
+      booklet: {
+        ic: '📕',
+        lb: 'Pasaporte interno de Ucrania',
+        ht: 'Patronímico, ciudad de nacimiento, provincia. Fotografíe las páginas con datos.',
+      },
+      i797_or_ead: {
+        ic: '📋',
+        lb: 'I-797 / EAD (si tiene)',
+        ht: 'Receipt Number, A-Number, USCIS Account Number.',
       },
     },
     uploadedSuffix: '✓ cargado',
@@ -1662,7 +1702,9 @@ export default function TPSWizardV2({ locale }: Props) {
     const paper = data.method === 'paper'
     if (init) {
       list.push({ id: 'passport', ...t.doc.passportInit })
+      list.push({ id: 'booklet', ...t.doc.booklet })
       list.push({ id: 'i94', ...t.doc.i94 })
+      list.push({ id: 'i797_or_ead', ...t.doc.i797_or_ead })
     } else {
       list.push({ id: 'tps_notice', ...t.doc.tps_notice })
       if (ead) {
@@ -1973,7 +2015,9 @@ export default function TPSWizardV2({ locale }: Props) {
           return norm ? norm.transliterated : raw
         })(),
         place_of_last_entry: data.manual.place_of_last_entry || v('place_of_last_entry') || '',
-        us_address_in_care_of: data.manual.us_address_in_care_of || v('us_address_in_care_of') || '',
+        us_address_in_care_of: data.manual.us_address_in_care_of || v('us_address_in_care_of')
+          || `${(v('given_name') || '').toUpperCase()} ${(v('family_name') || '').toUpperCase()}`.trim()
+          || '',
         ssn: data.manual.ssn,
         eye_color: (v('eye_color') || undefined) as TPSAnswers['eye_color'],
         hair_color: (v('hair_color') || undefined) as TPSAnswers['hair_color'],
@@ -2999,29 +3043,29 @@ function ReviewManual({
       />
       <FieldInput
         label={t.label.city_of_birth}
-        placeholder="Vinnytsya"
-        tip=""
+        placeholder="Kyiv"
+        tip={locale === 'ru' ? 'Из внутреннего паспорта (книжечка). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З внутрішнього паспорта (книжечка). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'Del pasaporte interno. Cargue en paso 4 → el robot lo llenará.' : 'From internal passport (booklet). Upload at step 4 → robot fills it.'}
         value={manual.city_of_birth || ''}
         onChange={(v) => onChange({ city_of_birth: v })}
       />
       <FieldInput
         label={t.label.province_of_birth ?? 'Oblast / Province of Birth'}
         placeholder="Vinnytsia Oblast"
-        tip=""
+        tip={locale === 'ru' ? 'Из внутреннего паспорта. Робот нормализует в формат USCIS.' : locale === 'uk' ? 'З внутрішнього паспорта. Робот нормалізує в формат USCIS.' : locale === 'es' ? 'Del pasaporte interno. El robot normaliza al formato USCIS.' : 'From internal passport. Robot normalizes to USCIS format.'}
         value={manual.province_of_birth || ''}
         onChange={(v) => onChange({ province_of_birth: v })}
       />
       <FieldInput
         label={t.label.place_of_entry}
         placeholder="Los Angeles, CA"
-        tip=""
+        tip={locale === 'ru' ? 'Из I-94 (i94.cbp.dhs.gov). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З I-94 (i94.cbp.dhs.gov). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'De I-94 (i94.cbp.dhs.gov). Cargue en paso 4 → el robot lo llenará.' : 'From I-94 (i94.cbp.dhs.gov). Upload at step 4 → robot fills it.'}
         value={manual.place_of_last_entry || ''}
         onChange={(v) => onChange({ place_of_last_entry: v })}
       />
       <FieldInput
         label={t.label.in_care_of}
         placeholder="JOHN DOE"
-        tip=""
+        tip={locale === 'ru' ? 'Кому доставить конверт с решением USCIS. Обычно ваше имя.' : locale === 'uk' ? 'Кому доставити конверт з рішенням USCIS. Зазвичай ваше ім\'я.' : locale === 'es' ? 'A quién entregar el sobre con la decisión de USCIS.' : 'Who receives the USCIS decision envelope. Usually your name.'}
         value={manual.us_address_in_care_of || ''}
         onChange={(v) => onChange({ us_address_in_care_of: v })}
       />
