@@ -1098,6 +1098,10 @@ const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
   ]),
   photo: new Set([]),
 }
+// P3 FIX: single module-level constant instead of two inline definitions
+// that could drift independently.
+const BOOKLET_WAVE1_FIELDS: ReadonlySet<string> = new Set(['city_of_birth', 'province_of_birth'])
+
 // TPS Stage I price displayed on the Pay button (single source of truth
 // for the UI label; the actual Stripe Price ID is set server-side).
 const TPS_TIER1_PRICE_DISPLAY = '$15'
@@ -1804,7 +1808,6 @@ export default function TPSWizardV2({ locale }: Props) {
   // near the top of this file) so React's exhaustive-deps lint stays
   // happy without a dep on a recreated Set per render.
   const mergedFields = useMemo(() => {
-    const BOOKLET_WAVE1_FIELDS = new Set(['city_of_birth', 'province_of_birth'])
     const merged: Record<string, FieldExtraction> = {}
     const conflicts: Record<string, string[]> = {}
     // Pass 1 — passport authoritative for identity fields.
@@ -1895,7 +1898,6 @@ export default function TPSWizardV2({ locale }: Props) {
         const knowledgeDiagByField = new Map(
           knowledgeDiagnostics.map((d) => [d.field, d]),
         )
-        const BOOKLET_WAVE1_FIELDS = new Set(['city_of_birth', 'province_of_birth'])
         // Backend contract:
         //   json.module.fields[] — TpsExtractedField shape, each with
         //     `field`, `raw_value`, `normalized_value`, `extraction_source`,

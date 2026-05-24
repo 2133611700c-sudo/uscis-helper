@@ -532,6 +532,18 @@ export async function POST(req: NextRequest) {
   let brainResult: DocumentBrainOutput | null = null
   const ruleFieldsCount = moduleResult?.fields?.length ?? 0
 
+  // P1 FIX: Brain threshold must account for contract filtering.
+  // Without this, I-94 module finds 5+ fields → Brain skips → contract
+  // kills some → only 4 survive → identity/place fields never extracted.
+  // Pre-compute how many fields will survive the contract to decide
+  // whether Brain should run.
+  const contractPreview = applyContract(
+    docTypeHint,
+    moduleResult ? moduleResult.fields.map((f) => f.field) : [],
+    null, // Brain hasn't run yet, no doc_type classification
+  )
+  const postContractFieldCount = contractPreview.accepted_field_keys.length
+
   // 2026-05-22: Targeted Brain Fill — high-value fields that rule modules
   // cannot extract from their primary structured source (e.g. MRZ for
   // passport has no middle_name or country_of_birth). If any of these
@@ -542,18 +554,26 @@ export async function POST(req: NextRequest) {
   // without lowering the global threshold.
   const TARGETED_BRAIN_FIELDS: Record<string, string[]> = {
     passport: ['middle_name', 'country_of_birth', 'province_of_birth'],
-    // BUG-9 FIX (2026-05-24): booklet handwritten OCR is garbage from
-    // Vision. Brain second-pass is the ONLY reliable extraction method
-    // for these fields. Rule module finds labels but values are mangled.
     booklet: ['city_of_birth', 'province_of_birth'],
+    // P2 FIX: I-94 rule module often misses name/place fields due to
+    // CBP format variations. Brain should fill identity + port of entry.
+    i94: ['place_of_last_entry', 'family_name', 'given_name'],
+    // P2 FIX: EAD rule module sometimes duplicates family_name as given_name.
+    ead: ['given_name'],
+    ead_old: ['given_name'],
   }
-  const ruleFieldKeys = new Set(moduleResult?.fields?.map((f) => f.field) ?? [])
+  // Use POST-CONTRACT field keys for targeted check — pre-contract keys
+  // include fields that contract will kill (false "already have it").
+  const postContractKeys = new Set(contractPreview.accepted_field_keys)
   const targetedMissing = (TARGETED_BRAIN_FIELDS[docTypeHint] ?? [])
-    .filter((f) => !ruleFieldKeys.has(f))
+    .filter((f) => !postContractKeys.has(f))
 
+  // P1 FIX: use postContractFieldCount instead of ruleFieldsCount.
+  // Before this fix, I-94 had 5+ pre-contract fields → Brain skipped →
+  // contract killed 1+ → only 4 fields survived → gaps never filled.
   const shouldTryBrain =
     isBrainEnabled() &&
-    (moduleResult === null || moduleResult.matched === false || ruleFieldsCount < 5 ||
+    (moduleResult === null || moduleResult.matched === false || postContractFieldCount < 5 ||
      targetedMissing.length > 0)
   if (shouldTryBrain) {
     try {
@@ -773,7 +793,7 @@ export async function POST(req: NextRequest) {
       ? 'off'
       : moduleResult === null || moduleResult.matched === false
         ? 'no_match'
-        : ruleFieldsCount < 5
+        : postContractFieldCount < 5
           ? 'threshold'
           : targetedMissing.length > 0
             ? 'targeted'
