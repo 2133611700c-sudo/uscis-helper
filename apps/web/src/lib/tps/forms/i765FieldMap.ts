@@ -206,5 +206,11 @@ export function buildI765Ops(a: TPSAnswers): I765Op[] {
     ops.push({ field: 'form1[0].Page3[0].Line18b_CityTownOfBirth[0]', kind: 'text', value: a.province_of_birth })
   }
 
+  // ── Part 3 — Signature + Date (Page 4) ─────────────────────────────────────
+  if (a._signature_mode === 'screen' && a._signature_name) {
+    ops.push({ field: 'form1[0].Page4[0].Pt3Line7a_Signature[0]', kind: 'text', value: `/s/ ${a._signature_name}` })
+    ops.push({ field: 'form1[0].Page4[0].Pt3Line7b_DateofSignature[0]', kind: 'text', value: a._signature_date || new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) })
+  }
+
   return ops
 }
