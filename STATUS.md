@@ -82,3 +82,14 @@ Client-mode E2E closed with evidence. Owner-mode not proven (blocked by access).
 - KMU-55 is the only transliteration standard
 - Existing pipeline is correct; extend, do not rebuild
 - смт abolished Jan 2024 but stays in dictionary for old documents
+
+## 2026-05-24 Runtime Addendum (RU internal passport, live)
+- [x] Production SHA pinned live: `3513eb3720d71421d18c8f1d65352f2b642fd449` (`/api/tps/health`)
+- [x] Live Chrome session: Step 4 confirms `Внутренний паспорт Украины ✓ загружено`
+- [x] After `Распознать документы` (Step 5), runtime values observed:
+  - `Город рождения` = `слет . Тростянець`
+  - `Область рождения` = `VINNYTSKA OBL.`
+  - `Отчество / Patronymic` not auto-filled (shown as missing from passport path)
+- [x] Evidence folder: `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/`
+
+Impact on status: normalization quality for internal-passport birthplace fields is failing in live RU runtime.
