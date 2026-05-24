@@ -97,6 +97,11 @@ export const DocumentBrainResultSchema = z.object({
       passport_number: FieldSchema.optional(),
       passport_country_of_issuance: FieldSchema.optional(),
       passport_expiration_date: FieldSchema.optional(),
+      // BUG-9 FIX (2026-05-24): booklet Brain extraction needs city/province
+      // of birth. These are the PRIMARY reason booklet exists — Vision OCR
+      // can't read handwritten text, so Brain interprets from context.
+      city_of_birth: FieldSchema.optional(),
+      province_of_birth: FieldSchema.optional(),
       i94_admission_number: FieldSchema.optional(),
       last_entry_date: FieldSchema.optional(),
       // 2026-05-20: added so Brain can surface I-94 "Admit Until Date"
@@ -721,6 +726,8 @@ Schema:
     "passport_number"?: { ... },
     "passport_country_of_issuance"?: { ... },
     "passport_expiration_date"?: { ... },   // MM/DD/YYYY
+    "city_of_birth"?: { ... },               // settlement name, transliterated
+    "province_of_birth"?: { ... },           // oblast in English, e.g. "Vinnytsia Oblast"
     "i94_admission_number"?: { ... },        // digits only, 9-11
     "last_entry_date"?: { ... },             // MM/DD/YYYY
     "i94_admit_until"?: { ... },             // MM/DD/YYYY or "D/S"
@@ -762,6 +769,27 @@ Ukrainian / Russian normalization (real-document gotchas):
 12. dob MUST be the date next to "Дата народження" / "Дата рождения" / "Date of birth". Do NOT use issue date ("Дата видачі") or expiration ("Дата закінчення") as dob — that is a critical safety rule.
 13. passport_number for Ukrainian international passports follows 2 letters + 6-7 digits (e.g. "EK790396", "FB1234567"). Strip any spaces.
 14. a_number digits-only, 7-9 digits. The "A" prefix is NEVER part of the value.
+
+Ukrainian internal passport booklet (паспорт-книжка / паспорт громадянина України):
+21. This is a bilingual handwritten document. Labels are printed BELOW handwritten values.
+    Layout (top to bottom): handwritten value → printed label → handwritten value → printed label.
+    Labels: "Прізвище"(surname), "Ім'я"(given name), "По батькові"(patronymic),
+    "Дата народження"(DOB), "Місце народження"(place of birth).
+22. For city_of_birth: look for text near "Місце народження" label. Common prefixes:
+    "м."(city), "смт."(urban-type settlement), "с."(village), "смт"/"пгт". Strip the prefix,
+    keep the settlement name in Cyrillic as source_value. For final_value, transliterate via KMU-55.
+23. For province_of_birth: look for oblast name near "Місце народження" — typically in genitive
+    form like "Вінницької області". Convert genitive to nominative English: "Vinnytsia Oblast".
+    The 24 Ukrainian oblasts: Вінницька, Волинська, Дніпропетровська, Донецька, Житомирська,
+    Закарпатська, Запорізька, Івано-Франківська, Київська, Кіровоградська, Луганська, Львівська,
+    Миколаївська, Одеська, Полтавська, Рівненська, Сумська, Тернопільська, Харківська,
+    Херсонська, Хмельницька, Черкаська, Чернівецька, Чернігівська. Plus "м. Київ" and "м. Севастополь".
+24. For middle_name (patronymic): the value above "По батькові" label. Ukrainian patronymics
+    end in -ович/-івич (male) or -івна/-ївна (female). source_value in Cyrillic, final_value KMU-55.
+25. Vision OCR often mangles handwritten Cyrillic to Latin look-alikes or garbage. Use context clues:
+    if text near "Прізвище" looks like a mangled surname, try to reconstruct it.
+    If text near "Місце народження" contains oblast-like fragments, map to the closest known oblast.
+    Set confidence < 0.7 and requires_review=true for any reconstructed values.
 
 U.S. Driver's License / State ID (when document_type is us_drivers_license, or when slot hint = "dl"):
 15. The card uses labelled abbreviations: DL, LN, FN, DOB, SEX, HGT, WGT, EYES, HAIR. Map them to dl_number, family_name, given_name, dob, sex, height, weight, eye_color, hair_color respectively. The DL label is the state license ID (alphanumeric, keep all characters).
