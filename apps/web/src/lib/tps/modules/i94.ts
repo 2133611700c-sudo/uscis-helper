@@ -409,7 +409,27 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
     /\b([A-Z][A-Za-z\s]{2,25})\b/,
   )
   if (country) {
-    const normalized = country.value.trim()
+    let normalized = country.value.trim()
+    // P2 FIX: reject values that ARE the label text itself. The regex
+    // captures "Country of Citizenship" from same-line match because
+    // the value pattern is too broad. If the value looks like a label,
+    // search the next line for the actual country name.
+    if (/\b(?:country|citizenship|nationality|of)\b/i.test(normalized)) {
+      let foundNext = false
+      for (let i = 0; i < ocr.lines.length; i++) {
+        if (ocr.lines[i].id !== country.lineId) continue
+        const next = ocr.lines[i + 1]
+        if (next) {
+          const m = next.text.trim().match(/^([A-Z][A-Za-z\s]{2,25})$/)
+          if (m && !/\b(?:country|citizenship|nationality|of|class|admission)\b/i.test(m[1])) {
+            normalized = m[1].trim()
+            foundNext = true
+          }
+        }
+        break
+      }
+      if (!foundNext) normalized = '' // give up
+    }
     if (normalized.length >= 3) {
       fields.push({
         ...base,
