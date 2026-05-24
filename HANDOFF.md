@@ -85,3 +85,25 @@ Part 7 declaration + marital_status gate added (session 15 commit 2).
 - Evidence: `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/`
 
 Status for this scope: FAIL (internal-passport normalization/field materialization quality).
+
+## Session 17 (2026-05-24) — Implemented Wave1 Runtime-Stable v1
+
+### Implemented
+- Guarded normalization/rejection for booklet birthplace path (`city_of_birth`, `province_of_birth`).
+- OCR API diagnostics expanded with `knowledge_rejected_fields` + `knowledge_diagnostics`.
+- Rejected birthplace values no longer flow into Step 5 as auto-ready OCR data.
+- Wizard merge hardened:
+  - booklet whitelist: birthplace only
+  - no raw fallback for rejected/missing normalized birthplace values
+  - warning banner for knowledge-rejected fields
+- Server-side review→payload parity lock in `generate-packet` for birthplace fields.
+- Document contract tightened for booklet slot to birthplace-only extraction.
+- New tests added for normalization rejection/parity checks.
+
+### Validation
+- `pnpm build` PASS
+- `pnpm test` PASS: 57/57 files, 1968/1968 tests
+
+### Still required for release verdict
+- Live strict evidence matrix (UI + network + generate + ZIP + PDF) on one SHA.
+- Owner mode OTP flow still can be marked BLOCKED only with hard evidence if access unavailable.
