@@ -25,6 +25,8 @@ const logs = {
 }
 const ocrBySlot = {}
 const generateStatuses = []
+let generateMissing = null
+let generateError = null
 let generatedZipPath = null
 let generatedZipBytes = 0
 
@@ -53,6 +55,13 @@ page.on('response', async (r) => {
   }
   if (rec.url.includes('/api/tps/generate-packet')) {
     generateStatuses.push(rec.status)
+    if (rec.status >= 400) {
+      try {
+        const body = await r.json()
+        if (Array.isArray(body?.missing)) generateMissing = body.missing
+        if (typeof body?.error === 'string') generateError = body.error
+      } catch {}
+    }
   }
 })
 
@@ -183,6 +192,7 @@ async function toStep6() {
   await setField('tps-review-manual-address-zip', '90001')
   await setField('tps-review-manual-phone', '2135551212')
   await setField('tps-review-manual-email', 'test@example.com')
+  await clickByText(['Single', 'Не женат', 'Неодружений'])
   const to6 = page.locator('[data-testid="tps-step6-continue-cta"]').first()
   if (await to6.count() && await to6.isEnabled()) await to6.click()
   await wait(1000)
@@ -272,6 +282,8 @@ try {
 } finally {
   summary.ocr_by_slot = ocrBySlot
   summary.generate_statuses = generateStatuses
+  summary.generate_missing = generateMissing
+  summary.generate_error = generateError
   summary.zip = {
     downloaded: Boolean(generatedZipPath),
     path: generatedZipPath,
