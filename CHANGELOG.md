@@ -60,6 +60,12 @@ Every work session appends here. Never delete entries. Newest first.
 - **Fix**: Rewrote birthplace extraction to scan ALL adjacent lines (up to 4), separate city and oblast using OBLAST_RE pattern
 - Now handles: single-line ("м. Вінниця Вінницької обл."), multi-line (city on one line, oblast on next), city-only ("м. Київ")
 
+### BUG-6 FIX (P0): booklet contract + validation lockdown
+- **Root cause**: booklet contract allowed identity fields (family_name, given_name, dob, sex, passport_number) which booklet handwritten OCR fills with garbage (month names as given_name, date fragments in surname)
+- **Fix 1**: Restricted booklet contract to ONLY 3 unique fields: middle_name, city_of_birth, province_of_birth. Identity fields moved to forbidden_fields.
+- **Fix 2**: Added validation guards: reject values containing digits, date month names, or unreasonable length before emitting middle_name/city/province
+- **Architecture rule**: загранпаспорт MRZ is authoritative for identity. Booklet is SUPPLEMENTARY for patronymic + birthplace only.
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
