@@ -1,53 +1,77 @@
 # STATUS.md
-Last updated: 2026-05-23 03:10 UTC
-Owner: Claude session (I-765 audit + knowledge engine build)
+Last updated: 2026-05-24 04:45 UTC
+Session: 9 (signature + tooltips + dictionary + regex + booklet + OCR prefill + audit)
+Production SHA: ccbbb1f
 
 ## Product
 Messenginfo = self-help immigration information, document translation, and USCIS draft-form generation platform.
 Not a law firm. No legal advice. User reviews, signs, and files independently.
 
 ## Current production goal
-Fully automatic: upload docs → OCR/vision → normalization → TPSAnswers → I-765/I-821 PDF → translation → review → clean export.
+Fully automatic: upload docs → OCR/vision → normalization → TPSAnswers → I-765/I-821 PDF → review → clean export.
 User manual input: phone, email, marital status, SSN only. Everything else from documents.
 
-## VERIFIED
-- [x] Canonical normalization package: `packages/knowledge/` — 74 tests, 0 failures
-- [x] TPS auto-fill rate: 94.4% (17/18 document-sourced fields) per Engineering Spec v1.1
-- [x] I-765 edition 08/21/25 field map: 40+ ops in `i765FieldMap.ts`
-- [x] I-821 edition 01/20/25 field map: exists in `i821FieldMap.ts`
-- [x] PDF prefill with XFA-strip: working, 181 readback fields, 0 mismatches
-- [x] 6 document modules: passport MRZ, passportBooklet, DL, I-94, EAD, I-797
-- [x] KMU-55 transliteration engine: ЗГ→Zgh, ALL-CAPS, apostrophe — 35 tests
-- [x] Oblast genitive→nominative: 24 oblasts, DMS-verified English names
-- [x] passportBooklet extracts: patronymic, city_of_birth, province_of_birth
-- [x] DL extracts: address(4), eye_color, hair_color — wired to TPSAnswers
-- [x] I-797 extracts: uscis_online_account (NEW) — wired to TPSAnswers
-- [x] Web app: 1932 tests pass, 0 type errors, 51 test files
-- [x] Workspace linked: `@uscis-helper/knowledge` in pnpm workspace
+## VERIFIED (with evidence)
+- [x] Production live: messenginfo.com, SHA ccbbb1f, healthz 200 OK
+- [x] Wizard: 6 steps, progress bar matches
+- [x] Booklet upload slot: BOTH init AND rereg paths (Chrome screenshot proof)
+- [x] 5 upload slots for init: passport, booklet, I-94, I-797/EAD, DL
+- [x] 4+ upload slots for rereg+EAD: tps_notice, booklet, passport, ead_old, i94, dl
+- [x] Signature: only for paper filing (hidden for online)
+- [x] Signature [?]: inline tooltip, not new tab
+- [x] Signature blocking: screen mode without drawing = explicit error in 4 languages
+- [x] Signature in PDF: /s/ NAME in I-821 + I-765 (readback test: 3 tests pass)
+- [x] Placeholders removed from manual fields (phone, email, city, province, place, in_care_of)
+- [x] Tooltips: human language in 4 langs, no "Part X I-821" references
+- [x] EAD subtitle "Устанавливается автоматически" moved inside [?]
+- [x] Regex: mandatory dot for с./м./сел./хут. — 15 edge cases pass
+- [x] Empty result guard: strip leaves empty → keep original
+- [x] Dictionary: 22 settlement types, CZO/MFA verified
+- [x] KMU-55 transliteration: Тростянець → Trostianets (confirmed CZO)
+- [x] pdfPrefiller: toWinAnsiSafe on ALL values (no Cyrillic crash)
+- [x] OCR prefill: manual fields show mergedFields data as fallback
+- [x] _signature_mode: paper | screen | online_myuscis (type in answers.ts)
+- [x] Province normalization: genitive → nominative → English (25/25 oblasts)
+- [x] Personal data removed from codebase (real names → test data)
+- [x] 0 TS errors, 1959 tests pass
 
-## OPEN
-- [ ] visionBridge.ts not called from live OCR API route
-- [ ] Translation module does not import `@uscis-helper/knowledge` at runtime
-- [ ] Mail-ready export gate: no block on unresolved spelling conflicts
-- [ ] E2E proof on production: internal passport upload → fields in review → PDF → translation
+## CRITICAL BUGS (open, not fixed)
+- [ ] **last_entry_date**: REQUIRED by gate unconditionally, but rereg review rows don't show it, no manual input exists. Rereg users blocked.
+  - File: mailReadyGate.ts line 48, TPSWizardV2.tsx line 2849
+  - Fix needed: add to rereg review OR make conditional on init only
+- [ ] **us_address_city/state/zip**: no manual input. Only from DL/I-797 OCR. Users without DL upload blocked.
+  - File: TPSWizardV2.tsx (ReviewManual), mailReadyGate.ts
+  - Fix needed: parse address string OR add separate manual inputs
+- [ ] **passport_expiration_date**: no manual fallback if OCR fails. Gate blocks.
+  - Fix needed: add manual input OR move to RECOMMENDED
+- [ ] **REREG+NOEAD path**: no passport/I-94 upload slots. Minimal flow.
+  - Fix needed: add passport slot OR evaluate if path is valid
 
-## RISKS
-- Dictionary v1.2 is in repo but not yet consumed by translation glossary
-- passportBooklet extraction depends on Google Vision OCR quality for handwritten text
-- Forms and translations may use different normalization if knowledge package is bypassed
+## OPEN (not proven)
+- [ ] PDF visual proof — no PDF opened and inspected
+- [ ] ZIP contents — no ZIP generated in this session
+- [ ] OCR real upload — no test with actual passport photo
+- [ ] Gate clean-session block — not tested in production UI
+- [ ] E2E: upload → review → PDF → ZIP complete flow
 
-## NEXT EXACT ACTION
-Wire `visionBridge.ts` into `/api/tps/ocr/extract` route so normalized fields from internal passport flow through the live pipeline to TPSAnswers, then verify in review UI + exported PDFs.
+## ROOT CAUSES OF SESSION 9 REGRESSIONS
+1. **Two separate branches for init/rereg** in doc list builder. Adding to one, forgetting the other. Happened 3 times.
+2. **Regex copy-paste without testing**. `^с\.?\s*` stripped "С" from "Суми". Caught only when owner said "проверь критически".
+3. **Claiming "done" before verifying production SHA**. Multiple times healthz showed old SHA.
+4. **localStorage masking changes**. Owner testing with cached state, not seeing new slots.
 
 ## DO NOT RE-LITIGATE
 - Dictionary v1.2 is canonical (ADR-002)
 - Patronymic ≠ Middle Name (blocklist enforced)
 - Historical Militsiya stays Militsiya (ADR-004)
-- Self-name on .gov.ua beats third-party references
+- KMU-55 is the only transliteration standard
 - Existing pipeline is correct; extend, do not rebuild
+- смт abolished Jan 2024 but stays in dictionary for old documents
 
 ## RELATED ADRs
 - `docs/adr/ADR-001-product-boundary.md`
 - `docs/adr/ADR-002-ukraine-dictionary-v1.2.md`
 - `docs/adr/ADR-003-tps-runtime-pipeline.md`
 - `docs/adr/ADR-004-historical-authority-policy.md`
+- `docs/adr/ADR-006-translation-bridge.md`
+- `docs/adr/ADR-007-signature-rules.md`
