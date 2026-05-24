@@ -1981,6 +1981,15 @@ export default function TPSWizardV2({ locale }: Props) {
         has_criminal_concern: false,
         has_prior_tps_denial: false,
         left_us_without_advance_parole: false,
+
+        // Signature from step 6
+        _signature_mode: signatureData?.mode || 'paper',
+        _signature_name: signatureData?.mode === 'screen'
+          ? `${(v('given_name') || '').toUpperCase()} ${(v('family_name') || '').toUpperCase()}`.trim()
+          : undefined,
+        _signature_date: signatureData?.mode === 'screen'
+          ? new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+          : undefined,
       }
 
       // ── Mail-ready gate ─────────────────────────────────────────────
