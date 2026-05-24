@@ -2063,6 +2063,18 @@ export default function TPSWizardV2({ locale }: Props) {
     return true
   }, [buildDraftAnswers, data.uploads, locale, mergedFields])
 
+  const isStep6Eligible = useMemo(() => {
+    const extractedCount = Object.values(mergedFields).filter((f) => Boolean(f?.value?.trim())).length
+    if (extractedCount === 0) return false
+    const allConflicts: Array<{ field: string; reason: string }> = []
+    const allLowConf: Array<{ field: string; confidence: number }> = []
+    for (const entry of Object.values(data.uploads)) {
+      if (entry.knowledge_conflicts) allConflicts.push(...entry.knowledge_conflicts)
+      if (entry.knowledge_low_confidence) allLowConf.push(...entry.knowledge_low_confidence)
+    }
+    return runMailReadyGate(buildDraftAnswers(), allConflicts, allLowConf).mail_ready
+  }, [buildDraftAnswers, data.uploads, mergedFields])
+
   const handleGenerate = useCallback(async () => {
     setBusy(true)
     setErrMsg(null)
@@ -2641,7 +2653,7 @@ export default function TPSWizardV2({ locale }: Props) {
             {!ownerChecked && (
               <div style={{ textAlign: 'center', padding: 20, color: TEXT_MUTED, fontSize: 15 }}>…</div>
             )}
-            {ownerChecked && !isOwner && !data.paid && preflightPassed && (
+            {ownerChecked && !isOwner && !data.paid && isStep6Eligible && (
               <button
                 data-testid="tps-paywall-state"
                 type="button"
@@ -2706,7 +2718,7 @@ export default function TPSWizardV2({ locale }: Props) {
               </button>
             )}
 
-            {ownerChecked && (isOwner || data.paid) && preflightPassed && (
+            {ownerChecked && (isOwner || data.paid) && isStep6Eligible && (
               <button
                 data-testid="tps-generate-cta"
                 type="button"
