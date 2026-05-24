@@ -726,9 +726,30 @@ export async function POST(req: NextRequest) {
   // returning to the wizard. This ensures oblast genitive→nominative,
   // settlement type expansion, and other canonical rules are applied
   // at extraction time, not deferred to PDF write time.
-  let normalizationMeta = { normalizations_applied: [] as string[], conflicts: [] as Array<{field:string;reason:string}>, low_confidence: [] as Array<{field:string;confidence:number}> }
+  let normalizationMeta = {
+    normalizations_applied: [] as string[],
+    conflicts: [] as Array<{ field: string; reason: string }>,
+    low_confidence: [] as Array<{ field: string; confidence: number }>,
+    rejected_fields: [] as string[],
+    diagnostics: [] as Array<{
+      field: string
+      status: 'normalized' | 'rejected' | 'passed'
+      reason: string
+      input_raw: string
+      input_normalized: string | null
+      output_normalized: string | null
+      manual_required: boolean
+    }>,
+  }
   if (mergedModule && mergedModule.fields.length > 0) {
     normalizationMeta = postExtractNormalize(mergedModule.fields)
+    if (normalizationMeta.rejected_fields.length > 0) {
+      const rejected = new Set(normalizationMeta.rejected_fields)
+      mergedModule = {
+        ...mergedModule,
+        fields: mergedModule.fields.filter((f) => !rejected.has(f.field)),
+      }
+    }
   }
 
   // ── Top-level diagnostics so the wizard, monitors, and audit scripts
@@ -826,6 +847,8 @@ export async function POST(req: NextRequest) {
       knowledge_normalizations: normalizationMeta.normalizations_applied,
       knowledge_conflicts: normalizationMeta.conflicts,
       knowledge_low_confidence: normalizationMeta.low_confidence,
+      knowledge_rejected_fields: normalizationMeta.rejected_fields,
+      knowledge_diagnostics: normalizationMeta.diagnostics,
       // DS.2 — Brain diagnostics surfaced to the client (UI never renders
       // raw_response_length; this is for /api/tps/health-style monitoring).
       brain: brainResult

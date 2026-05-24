@@ -18,6 +18,7 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { isMinimallyComplete, type TPSAnswers, defaultEadCategoryFor } from '@/lib/tps/answers'
 import { buildPacket, type TranslationOptions } from '@/lib/tps/packetBuilder'
 import type { ProvenanceMap } from '@/lib/tps/provenance'
+import { checkReviewPayloadParity, type ReviewSnapshot } from '@/lib/tps/reviewParity'
 import { isOwnerSession } from '@/lib/ownerAccess'
 
 // R1A Phase 6 — pre-PDF firewall.
@@ -143,6 +144,12 @@ export async function POST(req: NextRequest) {
       : null
   delete rawBody._translation
 
+  const reviewSnapshot: ReviewSnapshot | null =
+    rawBody._review_snapshot && typeof rawBody._review_snapshot === 'object'
+      ? (rawBody._review_snapshot as ReviewSnapshot)
+      : null
+  delete rawBody._review_snapshot
+
   // Normalize: fill ead_category from filing_path if missing.
   const answers = rawBody as unknown as TPSAnswers
   if (answers.wants_ead && !answers.ead_category) {
@@ -153,6 +160,21 @@ export async function POST(req: NextRequest) {
   if (!check.ok) {
     return NextResponse.json(
       { error: 'Missing required fields', missing: check.missing },
+      { status: 422 },
+    )
+  }
+
+  // Runtime parity lock (wave1):
+  // values shown to user on Step 5 must match values sent to packet generation.
+  const reviewPayloadMismatches = checkReviewPayloadParity(answers, reviewSnapshot)
+  if (reviewPayloadMismatches.length > 0) {
+    return NextResponse.json(
+      {
+        error: 'Review-to-payload parity mismatch',
+        reason: 'review_payload_parity_mismatch',
+        mismatches: reviewPayloadMismatches,
+        guidance: 'Refresh review step and regenerate. Do not proceed with mismatched birth-place fields.',
+      },
       { status: 422 },
     )
   }

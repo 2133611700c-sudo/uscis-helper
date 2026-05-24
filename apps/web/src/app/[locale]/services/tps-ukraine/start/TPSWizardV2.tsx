@@ -110,6 +110,15 @@ interface UploadEntry {
   knowledge_conflicts?: Array<{ field: string; reason: string }>
   /** Fields with OCR confidence below threshold. */
   knowledge_low_confidence?: Array<{ field: string; confidence: number }>
+  /** Fields rejected by canonical knowledge normalization. */
+  knowledge_rejected_fields?: string[]
+  /** Per-field normalization diagnostics for audit and UX hints. */
+  knowledge_diagnostics?: Array<{
+    field: string
+    status: 'normalized' | 'rejected' | 'passed'
+    reason: string
+    manual_required: boolean
+  }>
   /** Last OCR HTTP status for this slot. */
   ocr_http_status?: number
   /** Last OCR error string for this slot (non-PII). */
@@ -1795,6 +1804,7 @@ export default function TPSWizardV2({ locale }: Props) {
   // near the top of this file) so React's exhaustive-deps lint stays
   // happy without a dep on a recreated Set per render.
   const mergedFields = useMemo(() => {
+    const BOOKLET_WAVE1_FIELDS = new Set(['city_of_birth', 'province_of_birth'])
     const merged: Record<string, FieldExtraction> = {}
     const conflicts: Record<string, string[]> = {}
     // Pass 1 — passport authoritative for identity fields.
@@ -1813,6 +1823,7 @@ export default function TPSWizardV2({ locale }: Props) {
       for (const k of Object.keys(u.fields)) {
         const fx = u.fields[k]
         if (!fx || !fx.value) continue
+        if (id === 'booklet' && !BOOKLET_WAVE1_FIELDS.has(k)) continue
         if (!merged[k]) {
           merged[k] = fx
           continue
@@ -1872,6 +1883,19 @@ export default function TPSWizardV2({ locale }: Props) {
           throw new Error(apiError)
         }
         const json = await r.json()
+        const knowledgeDiagnostics: Array<{
+          field: string
+          status: 'normalized' | 'rejected' | 'passed'
+          reason: string
+          manual_required: boolean
+        }> = Array.isArray(json?.knowledge_diagnostics) ? json.knowledge_diagnostics : []
+        const knowledgeRejectedFields: string[] = Array.isArray(json?.knowledge_rejected_fields)
+          ? json.knowledge_rejected_fields.filter((v: unknown): v is string => typeof v === 'string')
+          : []
+        const knowledgeDiagByField = new Map(
+          knowledgeDiagnostics.map((d) => [d.field, d]),
+        )
+        const BOOKLET_WAVE1_FIELDS = new Set(['city_of_birth', 'province_of_birth'])
         // Backend contract:
         //   json.module.fields[] — TpsExtractedField shape, each with
         //     `field`, `raw_value`, `normalized_value`, `extraction_source`,
@@ -1882,8 +1906,23 @@ export default function TPSWizardV2({ locale }: Props) {
         const modFields = Array.isArray(json?.module?.fields) ? json.module.fields : []
         for (const f of modFields) {
           if (f && typeof f.field === 'string') {
+            if (id === 'booklet' && !BOOKLET_WAVE1_FIELDS.has(f.field)) continue
+            const diag = knowledgeDiagByField.get(f.field)
+            if (
+              id === 'booklet' &&
+              (knowledgeRejectedFields.includes(f.field) ||
+                diag?.status === 'rejected' ||
+                diag?.manual_required)
+            ) {
+              continue
+            }
+
+            const hasNormalizedValue =
+              typeof f.normalized_value === 'string' && f.normalized_value.trim().length > 0
             const v =
-              typeof f.normalized_value === 'string' && f.normalized_value
+              id === 'booklet' && BOOKLET_WAVE1_FIELDS.has(f.field)
+                ? (hasNormalizedValue ? f.normalized_value : '')
+                : typeof f.normalized_value === 'string' && f.normalized_value
                 ? f.normalized_value
                 : typeof f.raw_value === 'string'
                   ? f.raw_value
@@ -1986,6 +2025,8 @@ export default function TPSWizardV2({ locale }: Props) {
               knowledge_low_confidence: Array.isArray(json?.knowledge_low_confidence) ? json.knowledge_low_confidence : [],
               ocr_http_status: r.status,
               ocr_error: undefined,
+              knowledge_rejected_fields: knowledgeRejectedFields,
+              knowledge_diagnostics: knowledgeDiagnostics,
             },
           },
         }))
@@ -2185,6 +2226,17 @@ export default function TPSWizardV2({ locale }: Props) {
           return val !== undefined && val !== null && val !== ''
         }),
       )
+      const reviewSnapshot = {
+        city_of_birth:
+          (data.manual.city_of_birth || mergedFields.city_of_birth?.value || '').trim(),
+        // P1 FIX: must normalize the same way as buildDraftAnswers to avoid
+        // false parity mismatch when user enters Cyrillic province manually.
+        province_of_birth: (() => {
+          const raw = (data.manual.province_of_birth || mergedFields.province_of_birth?.value || '').trim()
+          const norm = raw ? normalizeOblastToNominative(raw) : null
+          return norm ? norm.transliterated : raw
+        })(),
+      }
 
       const r = await fetch('/api/tps/generate-packet', {
         method: 'POST',
@@ -2196,6 +2248,7 @@ export default function TPSWizardV2({ locale }: Props) {
         body: JSON.stringify({
           ...answers,
           _provenance: provenanceByField,
+          _review_snapshot: reviewSnapshot,
           // _translation: disabled until passport translation templates are approved
         }),
       })
@@ -2483,6 +2536,24 @@ export default function TPSWizardV2({ locale }: Props) {
                   banners.push(
                     <div key={`p-${slotId}`} style={{ background: INFO_BG, border: `1.5px solid ${INFO_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: INFO_TEXT, marginBottom: 12 }}>
                       {t.warn.poorImage} {u.fileName ? `(${u.fileName})` : ''}
+                    </div>,
+                  )
+                }
+                if (Array.isArray(u.knowledge_rejected_fields) && u.knowledge_rejected_fields.length > 0) {
+                  const msg =
+                    locale === 'ru'
+                      ? 'Некоторые поля из документа отклонены как ненадёжные. Проверьте и заполните вручную.'
+                      : locale === 'uk'
+                        ? 'Деякі поля з документа відхилено як ненадійні. Перевірте та заповніть вручну.'
+                        : locale === 'es'
+                          ? 'Algunos campos del documento fueron rechazados por baja confiabilidad. Revise y complete manualmente.'
+                          : 'Some document fields were rejected as unreliable. Please review and fill them manually.'
+                  banners.push(
+                    <div key={`k-${slotId}`} style={{ background: WARN_BG, border: `1.5px solid ${WARN_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: WARN_TEXT, marginBottom: 12 }}>
+                      {msg}
+                      <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
+                        {u.knowledge_rejected_fields.join(', ')}
+                      </div>
                     </div>,
                   )
                 }
