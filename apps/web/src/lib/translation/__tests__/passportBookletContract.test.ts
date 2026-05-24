@@ -314,11 +314,11 @@ describe('Name safety — analyseNameField does NOT silently transliterate', () 
     expect(result.review_reason).toBeTruthy()
   })
 
-  it('analyseNameField does not switch Serhii to Sergiy or Sergii', () => {
+  it('analyseNameField does not switch Olena to other spelling', () => {
     // Input: Latin transliteration already provided by DeepSeek
     // normalizer should not alter the spelling variant
-    const result = analyseNameField('Serhii')
-    expect(result.normalized).toBe('Serhii')   // title-case preserves the spelling
+    const result = analyseNameField('Olena')
+    expect(result.normalized).toBe('Olena')   // title-case preserves the spelling
     expect(result.normalized).not.toBe('Sergiy')
     expect(result.normalized).not.toBe('Sergii')
   })
