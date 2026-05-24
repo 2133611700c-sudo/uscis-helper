@@ -254,15 +254,15 @@ const T = {
       ssn: 'Якщо є',
     },
     tip: {
-      address: 'Part 4 форми I-821 — ваша поточна фізична адреса проживання в США',
-      phone: 'Part 8 I-821 — контактний телефон',
-      email: 'Part 8 I-821 — контактний email',
-      marital: 'Part 2, Item 9 форми I-821. Оберіть ваш поточний статус.',
-      ssn: "Part 2, Item 10 — необов'язково, але рекомендується якщо є",
+      address: 'Ваша поточна адреса проживання в США. Сюди прийде рішення USCIS.',
+      phone: '10 цифр, без пробілів і дужок. Наприклад: 2135550000',
+      email: 'USCIS надішле підтвердження на цю адресу.',
+      marital: 'Оберіть ваш поточний сімейний статус.',
+      ssn: "Якщо є SSN — вкажіть. Якщо немає — залиште порожнім.",
       eadInit:
-        'C19 — ваша заявка TPS ще на розгляді (pending). Після одобрення категорія зміниться на A12.',
-      eadRereg: 'A12 — ваш TPS вже одобрений. Це правильна категорія для продовження.',
-      eadAuto: 'Встановлюється автоматично',
+        'C19 — ваша заявка TPS ще на розгляді (pending). Після схвалення категорія зміниться на A12.',
+      eadRereg: 'A12 — ваш TPS вже схвалений. Це правильна категорія для продовження.',
+      eadAuto: 'Робот обирає автоматично за вашим типом подачі',
     },
     marital: {
       single: 'Single',
@@ -463,15 +463,15 @@ const T = {
       ssn: 'Если есть',
     },
     tip: {
-      address: 'Part 4 формы I-821 — ваш фактический адрес проживания в США',
-      phone: 'Part 8 I-821 — контактный телефон',
-      email: 'Part 8 I-821 — контактный email',
-      marital: 'Part 2, Item 9 формы I-821. Выберите ваш текущий статус.',
-      ssn: 'Part 2, Item 10 — необязательно, но рекомендуется если есть',
+      address: 'Ваш текущий адрес проживания в США. Сюда придёт решение USCIS.',
+      phone: '10 цифр, без пробелов и скобок. Например: 2135550000',
+      email: 'USCIS отправит подтверждение на этот адрес.',
+      marital: 'Выберите ваше текущее семейное положение.',
+      ssn: 'Если есть SSN — укажите. Если нет — оставьте пустым.',
       eadInit:
         'C19 — ваша заявка TPS ещё на рассмотрении (pending). После одобрения категория сменится на A12.',
       eadRereg: 'A12 — ваш TPS уже одобрен. Это правильная категория для продления.',
-      eadAuto: 'Устанавливается автоматически',
+      eadAuto: 'Робот выбирает автоматически по вашему типу подачи',
     },
     marital: {
       single: 'Single',
@@ -671,15 +671,15 @@ const T = {
       ssn: 'Optional',
     },
     tip: {
-      address: 'Part 4 of I-821 — your current physical US address',
-      phone: 'Part 8 I-821 — contact phone',
-      email: 'Part 8 I-821 — contact email',
-      marital: 'Part 2, Item 9 of I-821. Choose your current status.',
-      ssn: 'Part 2, Item 10 — optional, recommended if you have one',
+      address: 'Your current US address. USCIS will send the decision here.',
+      phone: '10 digits, no spaces or brackets. Example: 2135550000',
+      email: 'USCIS will send confirmation to this address.',
+      marital: 'Select your current marital status.',
+      ssn: 'If you have SSN — enter it. Otherwise leave blank.',
       eadInit:
         'C19 — your TPS application is still pending. After approval the category changes to A12.',
-      eadRereg: 'A12 — your TPS is already approved. This is the correct category for re-registration.',
-      eadAuto: 'Set automatically',
+      eadRereg: 'A12 — your TPS is already approved. Correct category for re-registration.',
+      eadAuto: 'Robot selects automatically based on your filing type',
     },
     marital: {
       single: 'Single',
@@ -880,15 +880,15 @@ const T = {
       ssn: 'Opcional',
     },
     tip: {
-      address: 'Parte 4 del I-821 — su dirección física actual en EE.UU.',
-      phone: 'Parte 8 I-821 — teléfono de contacto',
-      email: 'Parte 8 I-821 — email de contacto',
-      marital: 'Parte 2, Ítem 9 del I-821. Elija su estado actual.',
-      ssn: 'Parte 2, Ítem 10 — opcional, recomendado si lo tiene',
+      address: 'Su dirección actual en EE.UU. USCIS enviará la decisión aquí.',
+      phone: '10 dígitos, sin espacios ni paréntesis. Ejemplo: 2135550000',
+      email: 'USCIS enviará la confirmación a esta dirección.',
+      marital: 'Seleccione su estado civil actual.',
+      ssn: 'Si tiene SSN — ingréselo. Si no — déjelo vacío.',
       eadInit:
         'C19 — su solicitud TPS está pendiente. Tras la aprobación la categoría cambia a A12.',
-      eadRereg: 'A12 — su TPS ya está aprobado. Esta es la categoría correcta para re-registración.',
-      eadAuto: 'Se establece automáticamente',
+      eadRereg: 'A12 — su TPS ya está aprobado. Categoría correcta para re-registración.',
+      eadAuto: 'El robot selecciona automáticamente según su tipo de solicitud',
     },
     marital: {
       single: 'Single',
@@ -3094,9 +3094,8 @@ function ReviewManual({
           <div>
             <div style={{ fontSize: 15, color: TEXT_MUTED }}>
               {t.label.ead_category}{' '}
-              <Tip text={init ? t.tip.eadInit : t.tip.eadRereg} />
+              <Tip text={`${t.tip.eadAuto}. ${init ? t.tip.eadInit : t.tip.eadRereg}`} />
             </div>
-            <div style={{ fontSize: 13, color: TEXT_HINT }}>{t.tip.eadAuto}</div>
           </div>
           <div style={{ fontSize: 17, fontWeight: 700 }}>{init ? 'C19' : 'A12'}</div>
         </div>
