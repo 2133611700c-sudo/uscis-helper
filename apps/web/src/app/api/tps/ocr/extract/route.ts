@@ -463,6 +463,10 @@ export async function POST(req: NextRequest) {
   // without lowering the global threshold.
   const TARGETED_BRAIN_FIELDS: Record<string, string[]> = {
     passport: ['middle_name', 'country_of_birth'],
+    // BUG-9 FIX (2026-05-24): booklet handwritten OCR is garbage from
+    // Vision. Brain second-pass is the ONLY reliable extraction method
+    // for these fields. Rule module finds labels but values are mangled.
+    booklet: ['middle_name', 'city_of_birth', 'province_of_birth'],
   }
   const ruleFieldKeys = new Set(moduleResult?.fields?.map((f) => f.field) ?? [])
   const targetedMissing = (TARGETED_BRAIN_FIELDS[docTypeHint] ?? [])
