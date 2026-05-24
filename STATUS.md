@@ -1,8 +1,7 @@
 # STATUS.md
-Last updated: 2026-05-24 06:30 UTC
-Session: 13 (+ audit report)
-Production SHA: 61898e5
-Runtime SHA: 6f73aa3
+Last updated: 2026-05-24 07:15 UTC
+Session: 14 (audit + hotfix)
+Production SHA: pending deploy
 
 ## Product
 Messenginfo = self-help immigration information, document translation, and USCIS draft-form generation platform.
@@ -63,16 +62,14 @@ Client-mode E2E closed with evidence. Owner-mode not proven (blocked by access).
 - [x] us_address_city/state/zip: manual inputs added (session 13). Was blocking users without DL.
 - [x] Booklet slot missing in rereg: fixed (session 9). Was only in init branch.
 - [x] Regex stripping city names: fixed (session 9). "Суми"→"уми" bug.
+- [x] **REREG+NOEAD: no passport/I-94 slots** — fixed session 14. passport+I-94 were inside `if(ead)`.
+- [x] **last_entry_date hidden in rereg review** — fixed session 14. I-94 rows now show for all paths.
 
 ## OPEN BUGS
-- [ ] **last_entry_date**: REQUIRED by gate unconditionally, but rereg review doesn't show it.
-  - File: mailReadyGate.ts line 49, TPSWizardV2.tsx
-  - Impact: rereg users without I-94 upload are blocked
-  - Fix: add manual input OR make conditional on init
+- [ ] **noindex, nofollow**: all pages have `<meta name="robots" content="noindex, nofollow"/>`. Zero Google visibility. Decision pending: intentional beta or bug?
 - [ ] **passport_expiration_date**: no manual fallback if OCR fails.
   - Impact: low (MRZ extraction reliable), but no recovery path
-- [ ] **REREG+NOEAD path**: no passport/I-94 upload slots.
-  - Impact: rare path, but minimal functionality
+- [ ] **I-912 fee waiver form**: health reports `filled: false`. Paper+fee waiver users don't get pre-filled I-912.
 - [ ] **Owner-mode**: not proven in automation (blocked by session access).
 
 ## DO NOT RE-LITIGATE

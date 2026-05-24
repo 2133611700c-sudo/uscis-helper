@@ -3,6 +3,30 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-24 — Session 14: Production Audit + BUG-1/BUG-2 Hotfix
+
+### Audit (Claude Opus — independent browser + code audit)
+- Full production audit: desktop + mobile (390px) + code review
+- Confirmed: mobile and desktop show IDENTICAL upload slots (no viewport hiding)
+- Confirmed: booklet upload slot present on mobile for all paths
+- Confirmed: owner mode = paywall bypass only, no wizard drift
+- Confirmed: field maps I-821 + I-765 are complete for all required fields
+- Found: `noindex, nofollow` on all pages — zero Google visibility (decision pending)
+
+### BUG-1 FIX (P0): rereg+noEAD missing upload slots
+- **Root cause**: passport + I-94 slots were inside `if (ead)` guard in TPSWizardV2.tsx
+- **Impact**: rereg+noEAD users saw only 3 slots (tps_notice, booklet, dl) — no passport, no I-94
+- **Fix**: moved passport + I-94 outside `if (ead)`, only ead_old stays conditional
+- **Result**: rereg+noEAD now has 5 slots (tps_notice, booklet, passport, i94, dl)
+
+### BUG-2 FIX (P0): last_entry_date hidden from rereg review
+- **Root cause**: ReviewOcr showed I-94 fields only for `if (init)`, but mailReadyGate requires last_entry_date unconditionally
+- **Impact**: rereg users without I-94 upload were blocked with no way to see or edit last_entry_date
+- **Fix**: I-94 review rows (i94_admission_number, last_entry_date, status_at_last_entry) now show for ALL paths
+- **Bonus**: added a_number review row for rereg+noEAD (sourced from TPS notice)
+
+### TypeScript: 0 errors after fixes
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
