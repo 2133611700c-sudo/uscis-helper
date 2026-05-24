@@ -39,6 +39,14 @@ Every work session appends here. Never delete entries. Newest first.
 - Previously: if MRZ OCR failed, no way to enter this field → gate blocker
 - I-912 fee waiver: confirmed as feature gap (needs income/household module), not a hotfix
 
+### BUG-4 FIX (P0): booklet contract MISSING → ALL booklet OCR fields rejected
+- **Root cause**: `documentContracts.ts` had NO entry for `booklet` slot
+- `applyContract('booklet', ...)` returned `UNKNOWN_SLOT` for ALL fields
+- **Impact**: middle_name, city_of_birth, province_of_birth NEVER reached wizard from booklet
+- **Fix**: Added `booklet` to SlotId type + full contract (11 allowed fields)
+- Also added `place_of_last_entry` to I-94 contract allowed_fields (was missing)
+- **Proven by**: real user ZIP readback — I-821 + I-765 had empty city/province/patronymic
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
