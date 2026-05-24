@@ -65,6 +65,7 @@ User manual input: phone, email, marital status, SSN only. Everything else from 
   - blocks when extracted field count is zero
   - runs `runMailReadyGate` and surfaces blockers immediately
 - Added generation truth-source manifest in UI (`generatedManifest`) after real `generate-packet` blob response.
+- Replaced volatile Step-6 unlock dependency with deterministic eligibility check (`isStep6Eligible`) from current merged fields + mail-ready gate result.
 - Improved OCR error observability per slot (`ocr_http_status`, `ocr_error`).
 
 ### OPEN
