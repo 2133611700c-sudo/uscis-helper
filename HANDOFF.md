@@ -72,3 +72,4 @@ Part 7 declaration + marital_status gate added (session 15 commit 2).
 - **Session 11**: runtime drift fix, false-readiness block, OCR diagnostics
 - **Session 12**: dual-proof script, selector sync, owner/client mode probes
 - **Session 13**: address city/state/zip manual fields, E2E closure with ZIP+PDF evidence
+
