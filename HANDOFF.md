@@ -1,7 +1,7 @@
 # HANDOFF.md
-Last updated: 2026-05-24 06:20 UTC
-Sessions: 9–13 consolidated
-Production SHA: cc319ce (docs) / Runtime SHA: 6f73aa3
+Last updated: 2026-05-24 06:30 UTC
+Sessions: 9–13 consolidated + audit
+Production SHA: 61898e5 (docs) / Runtime SHA: 6f73aa3
 
 ## CURRENT STATE
 Client-mode TPS wizard works end-to-end with evidence.
