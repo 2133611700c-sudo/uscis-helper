@@ -185,6 +185,20 @@ export function runEadModule(ocr: OcrResult, opts: EadOptions): TpsModuleResult 
     })
   }
 
+  // P1 FIX: EAD OCR sometimes duplicates family_name as given_name
+  // (both extracted as the same ALL-CAPS surname). If they match,
+  // drop given_name so Brain can fill the correct value. Passport
+  // identity authority would override anyway, but standalone EAD
+  // users (no passport) would get wrong data without this guard.
+  const famField = fields.find((f) => f.field === 'family_name')
+  const givField = fields.find((f) => f.field === 'given_name')
+  if (famField && givField &&
+    famField.normalized_value?.toLowerCase().trim() === givField.normalized_value?.toLowerCase().trim()) {
+    const idx = fields.indexOf(givField)
+    if (idx >= 0) fields.splice(idx, 1)
+    warnings.push('EAD given_name identical to family_name — removed to avoid data corruption. Brain or manual entry needed.')
+  }
+
   const matched = fields.length >= 2  // need at least category + expiry OR name fields
   if (!matched) {
     return {
