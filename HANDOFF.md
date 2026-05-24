@@ -1,65 +1,73 @@
 # HANDOFF.md
-Session date: 2026-05-23
-Author: Claude session (full day: audit → knowledge engine → pipeline wiring → bypass elimination → gate wiring)
+Last updated: 2026-05-24 04:45 UTC
+Session: 9
+Production SHA: ccbbb1f
 
-## What was completed
-- [x] `@uscis-helper/knowledge` — canonical dictionary + KMU-55 + normalization (74 tests)
-- [x] OCR route: `postExtractNormalize` — normalizes extracted fields (oblast genitive→nominative) BEFORE returning to wizard
-- [x] OCR route: returns `knowledge_conflicts` + `knowledge_low_confidence` in response
-- [x] Wizard V2: stores knowledge metadata per upload
-- [x] Wizard V2: collects all conflicts/low_confidence from uploads
-- [x] Wizard V2: `runMailReadyGate(answers, allConflicts, allLowConf)` BEFORE generate-packet call
-- [x] Wizard V2: `province_of_birth` auto-normalizes genitive→nominative in merge
-- [x] Wizard V2: `uscis_online_account`, `eye_color`, `hair_color` wired to TPSAnswers
-- [x] GeneratePacketBlock (old wizard): also has mailReadyGate with conflict/confidence props
-- [x] mailReadyGate: 8 tests covering required fields, conflicts, OCR confidence, phone/email format
-- [x] agencyGlossary: bridges to knowledge for unknown abbreviations
-- [x] nominativeCaseRestorer: delegates transliteration to canonical KMU-55 (duplicate table removed)
-- [x] "Militia Department" → "Militsiya Department" in JSON + tests
-- [x] passportBooklet: extracts city_of_birth + province_of_birth
-- [x] I-797: extracts uscis_online_account
-- [x] ADR-001 through ADR-005
-- [x] Continuity system: STATUS/HANDOFF/SOURCE_OF_TRUTH/CHANGELOG/PROJECT_HISTORY/CLAUDE.md/AGENTS.md
+## WHAT WAS DONE IN SESSION 9
 
-## Evidence
-- TypeScript: 0 errors
-- Web tests: 1940 pass, 52 files
-- Knowledge tests: 74 pass (35+26+13)
-- Total: 2014 tests, 0 failures
-
-## Data flow proof (architecture)
+### Commits (9 total)
 ```
-Photo → Google Vision → OCR route
-  → module extraction (passportBooklet/passport/DL/I-94/EAD/I-797)
-  → postExtractNormalize (oblast genitive→nominative via @uscis-helper/knowledge)
-  → response with knowledge_conflicts + knowledge_low_confidence
-  → wizard stores per-upload metadata
-  → mergedFields resolves controlling spelling from DL
-  → province_of_birth auto-normalizes via normalizeOblastToNominative
-  → handleGenerate collects ALL conflicts/lowConf from ALL uploads
-  → runMailReadyGate(answers, conflicts, lowConf)
-  → if blockers: show user message in their language, STOP
-  → if clean: build provenance → fetch generate-packet → download ZIP
+ccbbb1f fix: add 'online_myuscis' to _signature_mode type
+e88cc91 fix: P0 — manual fields show OCR data as prefill + signature mode fix (build failed, fixed in ccbbb1f)
+ad9ed1a fix: booklet upload slot for BOTH init AND rereg
+bd38474 fix: signature [?] shows tooltip instead of opening new tab
+56f2286 fix: CRITICAL regex bug — mandatory dot for с./м./сел./хут. prefixes
+2e22bea feat: expanded settlement dictionary — verified against official sources
+1e6d8fc fix: signature block only for paper filing, not online
+9f6e93a fix: human-readable tooltips in [?] for all fields (4 languages)
+6d89c45 fix: remove all example placeholders from manual input fields
+a296ee1 fix: add missing locale prop to ReviewManual — fixes Vercel build
 ```
 
-## What was NOT completed
-- [ ] city_of_birth from passportBooklet: arrives as raw Cyrillic "смт. Устинівка", not normalized to Latin in postExtractNormalize (only province gets oblast normalization; city stays for pdfPrefiller toWinAnsiSafe)
-- [ ] civil_registry_terms.json not migrated to knowledge
-- [ ] generateTranslationHTML.ts has own KMU table (justified: handles Russian GOST, ADR-005)
-- [ ] Live production E2E: requires deployment + real photo upload + Google Vision
-- [ ] visionBridge.ts exists but postExtractNormalize serves the same purpose more cleanly — visionBridge may be deprecated
+### Key changes
+1. **Signature**: only for paper filing. Online = sign in myUSCIS. Screen mode blocking.
+2. **Booklet slot**: now in BOTH init and rereg branches.
+3. **Regex bugfix**: mandatory dot for с./м./сел./хут. — prevented stripping "Суми"→"уми".
+4. **Dictionary**: +10 entries (хут, пгт, громада, округ, full forms). CZO verified.
+5. **Tooltips**: human language (not "Part 8 I-821"), 4 languages.
+6. **Placeholders**: removed from all manual fields.
+7. **OCR prefill**: manual fields now show mergedFields data.
+8. **EAD subtitle**: merged into [?] tooltip.
+9. **Signature mode**: paper | screen | online_myuscis in TPSAnswers type.
 
-## Exact next task
-Deploy to Vercel. Upload real internal passport photo through production wizard. Verify:
-1. Patronymic appears in review UI
-2. Province shows "Vinnytsia Oblast" (not "Вінницької області")
-3. Same values in generated I-765 PDF (Line 1c, 18a, 18b)
-4. mailReadyGate blocks when required field is empty
-5. Export gate unblocks when user fills missing field
+### Build failures during session
+- `959e761` — ERROR: missing locale prop in ReviewManual. Fixed in `a296ee1`.
+- `e88cc91` — ERROR: TS2322 'online_myuscis' not in type. Fixed in `ccbbb1f`.
 
-## Do not re-investigate
-- Dictionary v1.2 is canonical (ADR-002)
-- Extend existing pipeline, not rebuild (ADR-003)
-- Historical authorities preserved (ADR-004)
-- Ukrainian→knowledge, Russian GOST→stays local (ADR-005)
-- Patronymic ≠ Middle Name (blocklist)
+## WHAT IS BROKEN (must fix next)
+
+### CRITICAL
+1. **last_entry_date gate block for rereg** — users can't complete rereg flow.
+   - mailReadyGate.ts requires it unconditionally
+   - ReviewManual doesn't show it for rereg paths
+   - No manual input field exists
+2. **us_address_city/state/zip** — no manual input, only DL/I-797 OCR.
+   - Users without DL upload can't pass gate.
+3. **passport_expiration_date** — no manual fallback if OCR fails.
+
+### HIGH
+4. **REREG+NOEAD path** — no passport/I-94 upload slots.
+5. **Edge-case regex tests** — inline only (node -e), not in test suite.
+
+## WHAT IS NOT PROVEN
+- No real passport photo uploaded and OCR'd this session
+- No PDF opened and visually inspected
+- No ZIP generated and contents verified
+- No clean-session gate test in production
+- No E2E flow completed end-to-end
+
+## NEXT SESSION PRIORITY
+1. Fix CRITICAL #1 (last_entry_date) and #2 (address split)
+2. Full E2E test with real passport photo
+3. Open generated PDF and verify every field
+4. Add load-bearing tests to CI
+
+## KEY FILE PATHS
+- Wizard: `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
+- Gate: `apps/web/src/lib/tps/mailReadyGate.ts`
+- Answers: `apps/web/src/lib/tps/answers.ts`
+- Field maps: `apps/web/src/lib/tps/forms/i821FieldMap.ts`, `i765FieldMap.ts`
+- PDF prefiller: `apps/web/src/lib/tps/pdfPrefiller.ts`
+- OCR normalize: `apps/web/src/lib/tps/ocr/postExtractNormalize.ts`
+- Dictionary: `packages/knowledge/src/dictionary.ts`
+- Transliterate: `packages/knowledge/src/transliterate.ts`
