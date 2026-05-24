@@ -19,6 +19,8 @@ const COMPLETE: Partial<TPSAnswers> = {
   email: 'test@example.com',
   last_entry_date: '2022-09-09',
   filing_path: 'initial',
+  marital_status: 'single',       // P2 FIX: now required by gate
+  part7_reviewed: true,            // P1 FIX: now required by gate
 }
 
 describe('mailReadyGate', () => {
