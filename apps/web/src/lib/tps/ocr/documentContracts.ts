@@ -80,6 +80,9 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       // Brain can extract province_of_birth from this printed text.
       // Much more reliable than booklet handwritten OCR.
       'province_of_birth',
+      // P2 FIX: city_of_birth also extractable from passport visible zone.
+      // Was rejected as FIELD_NOT_ALLOWED → Brain extraction killed.
+      'city_of_birth',
     ],
     forbidden_fields: [
       'a_number',
@@ -162,6 +165,9 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       // I-94 also carries country of citizenship — allowed read-only;
       // identity guard makes passport authoritative on conflict.
       'country_of_nationality',
+      // P2 FIX: I-94 module emits 'country_of_citizenship' (CBP field name)
+      // which was rejected because only 'country_of_nationality' was listed.
+      'country_of_citizenship',
       // I-94 mirrors a few passport-identity fields; allowed read-only,
       // but the identity conflict guard treats passport as authoritative.
       'passport_number',
