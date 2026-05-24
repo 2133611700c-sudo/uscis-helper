@@ -7,6 +7,7 @@ Production SHA: pending deploy (session 15)
 Session 15: white-box audit found P0 — three OCR slots (i797_or_ead, tps_notice, ead_old) had no route case and/or no contract entry. ALL fields from these uploads were killed. Fixed: route cases + contract added.
 Pending: deploy + live upload proof for all three slots.
 Status: DEGRADED → pending live verification.
+Part 7 declaration + marital_status gate added (session 15 commit 2).
 
 ## WHAT WORKS (proven)
 - Init + EAD + Paper: full E2E → ZIP with I-821 + I-765
