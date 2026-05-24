@@ -1,6 +1,6 @@
 # STATUS.md
-Last updated: 2026-05-24 04:45 UTC
-Session: 9 (signature + tooltips + dictionary + regex + booklet + OCR prefill + audit)
+Last updated: 2026-05-24 05:12 UTC
+Session: 10 (session docs guard enforcement: pre-commit + CI)
 Production SHA: ccbbb1f
 
 ## Product
@@ -12,6 +12,14 @@ Fully automatic: upload docs → OCR/vision → normalization → TPSAnswers →
 User manual input: phone, email, marital status, SSN only. Everything else from documents.
 
 ## VERIFIED (with evidence)
+- [x] Session docs enforcement added: every commit must include STATUS.md + HANDOFF.md + CHANGELOG.md
+- [x] Local git hook enabled via .githooks/pre-commit and scripts/setup-git-hooks.sh
+- [x] CI guard added: .github/workflows/session-docs-guard.yml checks each commit in push/PR range
+- [x] Guard script supports --staged, --files, --commit, --range, --ci
+- [x] Validation proof:
+  - commit 211540f PASS
+  - commit ccbbb1f FAIL (as expected)
+  - staged non-doc change FAIL (as expected)
 - [x] Production live: messenginfo.com, SHA ccbbb1f, healthz 200 OK
 - [x] Wizard: 6 steps, progress bar matches
 - [x] Booklet upload slot: BOTH init AND rereg paths (Chrome screenshot proof)

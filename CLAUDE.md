@@ -14,6 +14,10 @@ If you skip this step, you WILL waste time re-investigating solved problems.
 1. Update `HANDOFF.md` with: what you did, what you didn't, exact next task, evidence
 2. Update `STATUS.md` if any VERIFIED/OPEN items changed
 3. If you made an architecture decision, create a new ADR in `docs/adr/`
+4. Append `CHANGELOG.md` with session summary
+
+Enforcement: pre-commit + GitHub Actions require `STATUS.md`, `HANDOFF.md`, and `CHANGELOG.md` in every commit.
+Before first local use: run `bash scripts/setup-git-hooks.sh`.
 
 ## AFTER EVERY COMMIT — APPEND TO CHANGELOG:
 Add entry to `CHANGELOG.md` with: date, what changed, which files, test results.

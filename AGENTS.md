@@ -11,6 +11,10 @@ Before any code change, read in this exact order:
 After finishing work, update:
 1. HANDOFF.md — what you did, evidence, next task
 2. STATUS.md — if VERIFIED/OPEN items changed
+3. CHANGELOG.md — append session entry
+
+Enforcement: pre-commit + GitHub Actions require `STATUS.md`, `HANDOFF.md`, and `CHANGELOG.md` in every commit.
+Before first local use: run `bash scripts/setup-git-hooks.sh`.
 
 ## DO NOT
 - Create a second dictionary/normalization module (packages/knowledge is canonical)
