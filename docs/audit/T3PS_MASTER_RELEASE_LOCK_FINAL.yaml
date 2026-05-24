@@ -1,9 +1,9 @@
 report: T3PS_MASTER_RELEASE_LOCK_FINAL
-generated_at: "2026-05-24T05:45:00Z"
+generated_at: "2026-05-24T05:58:00Z"
 repo:
-  local_head: "201ce5d746a8951d25d2613b1a74f1cb2f2d02a9"
-  origin_main: "201ce5d746a8951d25d2613b1a74f1cb2f2d02a9"
-  production_health_sha: "201ce5d746a8951d25d2613b1a74f1cb2f2d02a9"
+  local_head: "6f73aa3134ec4585213002f9f7a051101b4437e9"
+  origin_main: "6f73aa3134ec4585213002f9f7a051101b4437e9"
+  production_health_sha: "6f73aa3134ec4585213002f9f7a051101b4437e9"
   sha_alignment:
     local_equals_origin: true
     origin_equals_health: true
@@ -13,8 +13,8 @@ functional_evidence:
   gates: PASS
   ocr_matrix: PASS
   browser_ab: PARTIAL
-  zip_pdf: MISSING
-  cyrillic_leak: UNKNOWN
+  zip_pdf: PASS
+  cyrillic_leak: NONE
   real_doc_pilot: PARTIAL
   evidence_paths:
     selector_and_dual_probe: "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json"
@@ -31,7 +31,7 @@ residual_gaps:
   non_blocking_p1:
     - "Owner-mode proof unavailable in current automation context (no owner session)."
   blocking_p0:
-    - "Client contour did not reach generate 200/ZIP in current fresh dual-proof run."
+    - "Owner-mode contour is not proven in current automation context (no owner session)."
 final_status:
   controlled_beta: PARTIAL_RELEASE_ACCOUNTING
   paid_launch_ready: false

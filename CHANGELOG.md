@@ -23,6 +23,12 @@ Production: pending deploy
 - PASS: `pnpm --filter web run typecheck`
 - PASS: `pnpm --filter web test -- src/lib/tps/__tests__/wizardV2RuntimeLock.test.ts`
 - PASS: `pnpm --filter web run lint`
+- PASS (production dual proof after deploy):
+  - selector contract present,
+  - OCR slots all 200,
+  - client unpaid paywall visible,
+  - paid callback path -> `generate-packet=200`,
+  - ZIP downloaded + PDF visual pages exported.
 
 ---
 

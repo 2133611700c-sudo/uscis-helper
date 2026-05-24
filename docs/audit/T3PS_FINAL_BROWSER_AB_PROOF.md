@@ -1,25 +1,23 @@
 # T3PS Final Browser A/B Proof (Current Cycle)
 
-Generated: 2026-05-24T05:45:00Z
+Generated: 2026-05-24T05:58:00Z
 
-## Scenario A/B Runtime Status
+## Client Mode
 - Source: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json`
-- Result: **PARTIAL**
+- Result: **PASS**
+  - selector contract present (`tps-ocr-cta`, upload slot/input prefixes),
+  - OCR per slot: `passport/booklet/i94/i797_or_ead/dl => 200`,
+  - unpaid step shows paywall (`paywall_visible=true`),
+  - paid callback path clicks generate (`generate_clicked_paid=true`),
+  - `generate_statuses=[200]`,
+  - ZIP downloaded in same run (`zip.downloaded=true`).
 
-### What Passed
-- Selector contract detected on live flow:
-  - `tps-ocr-cta=true`
-  - upload slot/input prefixes present
-- OCR requests succeeded for all required slots in the run:
-  - passport/booklet/i94/i797_or_ead/dl => `200`
+## Owner Mode
+- Result: **BLOCKED**
+  - `owner_session=false`
+  - blocking reason: no owner session available in automation context.
 
-### What Failed / Not Proven
-- Client contour stayed on Step 5 (`current_step=step5`) in the dual-proof run.
-- `generate-packet` was not called (`generate_statuses=[]`).
-- No ZIP download in same run (`zip.downloaded=false`).
-- Owner contour blocked (no owner session in automation context).
-
-## Screenshots (Current Cycle)
+## Screenshots
 - `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_step6_unpaid.png`
 - `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_step6_paid_callback.png`
 - `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_after_generate.png`
@@ -28,4 +26,4 @@ Generated: 2026-05-24T05:45:00Z
 - `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_network.json`
 - `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_failed_requests.json`
 
-Verdict: **DEGRADED** (browser generate/download proof not closed in this cycle).
+Verdict: **PARTIAL** (client contour closed; owner contour blocked by access context).

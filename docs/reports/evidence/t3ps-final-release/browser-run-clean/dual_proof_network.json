@@ -6,16 +6,22 @@
     "ct": "text/html; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/css/a5925cb612915fd0.css",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/css; charset=utf-8"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
     "status": 200,
     "method": "GET",
     "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/css/a5925cb612915fd0.css",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/css; charset=utf-8"
   },
   {
     "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
@@ -24,175 +30,19 @@
     "ct": "font/woff2"
   },
   {
+    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
     "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
     "status": 200,
     "method": "GET",
     "ct": "image/webp"
   },
   {
-    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/4366-b4a42e1398d120e1.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/2479-b14c2779171be299.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/3638-49cbfb795aae1407.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/7421-93b14f0b0b9eee14.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-7d3b0db97e27d74c.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/chunks/9620-6275325c1dcaeaca.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/ae4de36c-b2a168b1e13f0ae1.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_vercel/speed-insights/script.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_vercel/insights/script.js",
-    "status": 307,
-    "method": "GET",
-    "ct": "text/plain"
-  },
-  {
-    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/x-component"
-  },
-  {
-    "url": "https://messenginfo.com/ru/contact?_rsc=6myxf",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/x-component"
-  },
-  {
-    "url": "https://messenginfo.com/api/owner/status",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/json"
-  },
-  {
-    "url": "https://messenginfo.com/ru?_rsc=6myxf",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/x-component"
-  },
-  {
-    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
-    "status": 404,
-    "method": "GET",
-    "ct": "text/html; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/ru/services/tps-ukraine/start",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/html; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/css/a5925cb612915fd0.css",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/css; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/3638-49cbfb795aae1407.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -210,37 +60,7 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
-    "status": 200,
-    "method": "GET",
-    "ct": "image/webp"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -252,37 +72,7 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/7421-93b14f0b0b9eee14.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-7d3b0db97e27d74c.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/9620-6275325c1dcaeaca.js",
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -292,66 +82,6 @@
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_vercel/speed-insights/script.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_vercel/insights/script.js",
-    "status": 307,
-    "method": "GET",
-    "ct": "text/plain"
-  },
-  {
-    "url": "https://messenginfo.com/api/owner/status",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/json"
-  },
-  {
-    "url": "https://messenginfo.com/ru/contact?_rsc=6myxf",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/x-component"
-  },
-  {
-    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
-    "status": 404,
-    "method": "GET",
-    "ct": "text/html; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/ru?_rsc=6myxf",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/x-component"
-  },
-  {
-    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/x-component"
-  },
-  {
-    "url": "https://messenginfo.com/ru/services/tps-ukraine/start",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/html; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/css/a5925cb612915fd0.css",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/css; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
   },
   {
     "url": "https://messenginfo.com/_next/static/chunks/3638-49cbfb795aae1407.js",
@@ -360,67 +90,13 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/4366-b4a42e1398d120e1.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-7d3b0db97e27d74c.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/7421-93b14f0b0b9eee14.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/2479-b14c2779171be299.js",
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-11352768231c40e1.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -432,31 +108,19 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
-  },
-  {
-    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
-    "status": 200,
-    "method": "GET",
-    "ct": "image/webp"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/ae4de36c-b2a168b1e13f0ae1.js",
+    "url": "https://messenginfo.com/_next/static/chunks/7421-93b14f0b0b9eee14.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/9620-6275325c1dcaeaca.js",
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -510,49 +174,31 @@
     "ct": "text/html; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-7d3b0db97e27d74c.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/css/a5925cb612915fd0.css",
     "status": 200,
     "method": "GET",
     "ct": "text/css; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
+    "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
+    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
     "status": 200,
     "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
+    "ct": "font/woff2"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/4366-b4a42e1398d120e1.js",
+    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
     "status": 200,
     "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
+    "ct": "image/webp"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
+    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -564,7 +210,19 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
+    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/4366-b4a42e1398d120e1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -576,19 +234,7 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/chunks/3638-49cbfb795aae1407.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -600,10 +246,22 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
     "status": 200,
     "method": "GET",
-    "ct": "image/webp"
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
   },
   {
     "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
@@ -612,10 +270,22 @@
     "ct": "font/woff2"
   },
   {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-11352768231c40e1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
     "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
     "status": 200,
     "method": "GET",
     "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/ae4de36c-b2a168b1e13f0ae1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
   },
   {
     "url": "https://messenginfo.com/_next/static/chunks/9620-6275325c1dcaeaca.js",
@@ -624,7 +294,169 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
+    "url": "https://messenginfo.com/_vercel/speed-insights/script.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_vercel/insights/script.js",
+    "status": 307,
+    "method": "GET",
+    "ct": "text/plain"
+  },
+  {
+    "url": "https://messenginfo.com/api/owner/status",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/json"
+  },
+  {
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "status": 404,
+    "method": "GET",
+    "ct": "text/html; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/ru/contact?_rsc=6myxf",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/x-component"
+  },
+  {
+    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/x-component"
+  },
+  {
+    "url": "https://messenginfo.com/ru?_rsc=6myxf",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/x-component"
+  },
+  {
+    "url": "https://messenginfo.com/ru/services/tps-ukraine/start",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/html; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/css/a5925cb612915fd0.css",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/css; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/4366-b4a42e1398d120e1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/3638-49cbfb795aae1407.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/2479-b14c2779171be299.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
+    "status": 200,
+    "method": "GET",
+    "ct": "image/webp"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
     "url": "https://messenginfo.com/_next/static/chunks/ae4de36c-b2a168b1e13f0ae1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/7421-93b14f0b0b9eee14.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-11352768231c40e1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/9620-6275325c1dcaeaca.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -654,13 +486,175 @@
     "ct": "text/x-component"
   },
   {
+    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/x-component"
+  },
+  {
     "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
     "status": 404,
     "method": "GET",
     "ct": "text/html; charset=utf-8"
   },
   {
+    "url": "https://messenginfo.com/ru/contact?_rsc=6myxf",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/x-component"
+  },
+  {
+    "url": "https://messenginfo.com/ru/services/tps-ukraine/start",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/html; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/css/a5925cb612915fd0.css",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/css; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/main-app-f002351fe5ef7cf4.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/4366-b4a42e1398d120e1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/3638-49cbfb795aae1407.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/5999-030d1d095e3b18cf.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
+    "status": 200,
+    "method": "GET",
+    "ct": "image/webp"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/2479-b14c2779171be299.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/7421-93b14f0b0b9eee14.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/ae4de36c-b2a168b1e13f0ae1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-11352768231c40e1.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/9620-6275325c1dcaeaca.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_vercel/speed-insights/script.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_vercel/insights/script.js",
+    "status": 307,
+    "method": "GET",
+    "ct": "text/plain"
+  },
+  {
+    "url": "https://messenginfo.com/api/owner/status",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/json"
+  },
+  {
     "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/x-component"
+  },
+  {
+    "url": "https://messenginfo.com/ru?_rsc=6myxf",
     "status": 200,
     "method": "GET",
     "ct": "text/x-component"
@@ -672,7 +666,19 @@
     "ct": "text/x-component"
   },
   {
-    "url": "https://messenginfo.com/ru/services/re-parole-u4u?_rsc=6myxf",
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "status": 404,
+    "method": "GET",
+    "ct": "text/html; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/ru/services/ead-work-permit?_rsc=6myxf",
+    "status": 200,
+    "method": "GET",
+    "ct": "text/x-component"
+  },
+  {
+    "url": "https://messenginfo.com/ru/faq?_rsc=6myxf",
     "status": 200,
     "method": "GET",
     "ct": "text/x-component"
@@ -684,13 +690,7 @@
     "ct": "text/x-component"
   },
   {
-    "url": "https://messenginfo.com/ru/services/ead-work-permit?_rsc=6myxf",
-    "status": 200,
-    "method": "GET",
-    "ct": "text/x-component"
-  },
-  {
-    "url": "https://messenginfo.com/ru/faq?_rsc=6myxf",
+    "url": "https://messenginfo.com/ru/services/re-parole-u4u?_rsc=6myxf",
     "status": 200,
     "method": "GET",
     "ct": "text/x-component"
@@ -732,19 +732,19 @@
     "ct": "text/html; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
-    "status": 200,
-    "method": "GET",
-    "ct": "font/woff2"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/css/a5925cb612915fd0.css",
     "status": 200,
     "method": "GET",
     "ct": "text/css; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
+    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
+    "status": 200,
+    "method": "GET",
+    "ct": "image/webp"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -756,7 +756,25 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/webpack-b7558e2321408026.js",
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/page-1461393b961157c8.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/21350d82a1f187e9-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -768,10 +786,16 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+    "url": "https://messenginfo.com/_next/static/chunks/7421-93b14f0b0b9eee14.js",
     "status": 200,
     "method": "GET",
-    "ct": "font/woff2"
+    "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
+    "status": 200,
+    "method": "GET",
+    "ct": "application/javascript; charset=utf-8"
   },
   {
     "url": "https://messenginfo.com/_next/static/chunks/2479-b14c2779171be299.js",
@@ -786,30 +810,6 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/global-error-70dba19650f6fb08.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/error-4af4f417ad0fb521.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/layout-e0f491991c1973aa.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
-    "url": "https://messenginfo.com/_next/image?url=%2Fbrand%2Fmessenginfo-full.webp&w=3840&q=75",
-    "status": 200,
-    "method": "GET",
-    "ct": "image/webp"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/chunks/1925-e7f13c897d3b0f85.js",
     "status": 200,
     "method": "GET",
@@ -822,19 +822,13 @@
     "ct": "application/javascript; charset=utf-8"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/7421-93b14f0b0b9eee14.js",
-    "status": 200,
-    "method": "GET",
-    "ct": "application/javascript; charset=utf-8"
-  },
-  {
     "url": "https://messenginfo.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
     "status": 200,
     "method": "GET",
     "ct": "font/woff2"
   },
   {
-    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-7d3b0db97e27d74c.js",
+    "url": "https://messenginfo.com/_next/static/chunks/app/%5Blocale%5D/services/tps-ukraine/start/page-11352768231c40e1.js",
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
@@ -844,6 +838,12 @@
     "status": 200,
     "method": "GET",
     "ct": "application/javascript; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+    "status": 200,
+    "method": "GET",
+    "ct": "font/woff2"
   },
   {
     "url": "https://messenginfo.com/_next/static/chunks/ae4de36c-b2a168b1e13f0ae1.js",
@@ -876,12 +876,6 @@
     "ct": "text/x-component"
   },
   {
-    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
-    "status": 404,
-    "method": "GET",
-    "ct": "text/html; charset=utf-8"
-  },
-  {
     "url": "https://messenginfo.com/ru/contact?_rsc=6myxf",
     "status": 200,
     "method": "GET",
@@ -892,5 +886,17 @@
     "status": 200,
     "method": "GET",
     "ct": "text/x-component"
+  },
+  {
+    "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
+    "status": 404,
+    "method": "GET",
+    "ct": "text/html; charset=utf-8"
+  },
+  {
+    "url": "https://messenginfo.com/api/tps/generate-packet",
+    "status": 200,
+    "method": "POST",
+    "ct": "application/zip"
   }
 ]

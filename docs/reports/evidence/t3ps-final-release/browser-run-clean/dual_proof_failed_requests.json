@@ -5,6 +5,11 @@
     "error": "csp"
   },
   {
+    "url": "https://messenginfo.com/ru/services?_rsc=6myxf",
+    "method": "GET",
+    "error": "net::ERR_ABORTED"
+  },
+  {
     "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
     "method": "GET",
     "error": "net::ERR_ABORTED"
@@ -16,11 +21,6 @@
   },
   {
     "url": "https://messenginfo.com/ru/_vercel/insights/script.js",
-    "method": "GET",
-    "error": "net::ERR_ABORTED"
-  },
-  {
-    "url": "https://messenginfo.com/ru?_rsc=6myxf",
     "method": "GET",
     "error": "net::ERR_ABORTED"
   },
