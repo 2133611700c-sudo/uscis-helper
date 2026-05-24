@@ -101,8 +101,8 @@ export function hasAbnormalCasing(token: string): boolean {
  *
  * Examples:
  *   ShEVChENKO        → Shevchenko
- *   KUROPIATNYK       → Kuropiatnyk
- *   SERHII            → Serhii
+ *   TESTENKO          → Testenko
+ *   OLENA             → Olena
  *   MVS Kharkiv Oblast → MVS Kharkiv Oblast
  *   DMYTRO-IVAN       → Dmytro-Ivan
  */

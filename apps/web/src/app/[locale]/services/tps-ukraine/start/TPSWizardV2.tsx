@@ -3020,7 +3020,7 @@ function ReviewManual({
       />
       <FieldInput
         label={t.label.in_care_of}
-        placeholder="SERGII KUROPIATNYK"
+        placeholder="JOHN DOE"
         tip=""
         value={manual.us_address_in_care_of || ''}
         onChange={(v) => onChange({ us_address_in_care_of: v })}
