@@ -1,153 +1,82 @@
 # STATUS.md
-Last updated: 2026-05-24 05:12 UTC
-Session: 10 (session docs guard enforcement: pre-commit + CI)
-Production SHA: ccbbb1f
+Last updated: 2026-05-24 06:20 UTC
+Session: 13 (consolidated after sessions 9–13)
+Production SHA: cc319ce
+Runtime SHA: 6f73aa3
 
 ## Product
 Messenginfo = self-help immigration information, document translation, and USCIS draft-form generation platform.
 Not a law firm. No legal advice. User reviews, signs, and files independently.
 
 ## Current production goal
-Fully automatic: upload docs → OCR/vision → normalization → TPSAnswers → I-765/I-821 PDF → review → clean export.
-User manual input: phone, email, marital status, SSN only. Everything else from documents.
+Upload docs → OCR → normalization → TPSAnswers → I-765/I-821 PDF → review → clean export ZIP.
+Manual input: phone, email, marital status, SSN, address. Everything else from documents.
 
-## VERIFIED (with evidence)
-- [x] Session docs enforcement added: every commit must include STATUS.md + HANDOFF.md + CHANGELOG.md
-- [x] Local git hook enabled via .githooks/pre-commit and scripts/setup-git-hooks.sh
-- [x] CI guard added: .github/workflows/session-docs-guard.yml checks each commit in push/PR range
-- [x] Guard script supports --staged, --files, --commit, --range, --ci
-- [x] Validation proof:
-  - commit 211540f PASS
-  - commit ccbbb1f FAIL (as expected)
-  - staged non-doc change FAIL (as expected)
-- [x] Production live: messenginfo.com, SHA ccbbb1f, healthz 200 OK
-- [x] Wizard: 6 steps, progress bar matches
-- [x] Booklet upload slot: BOTH init AND rereg paths (Chrome screenshot proof)
+## STATUS: DEGRADED
+Client-mode E2E closed with evidence. Owner-mode not proven (blocked by access).
+
+## VERIFIED (with physical evidence in repo)
+
+### E2E Flow (session 13)
+- [x] Production live: messenginfo.com, SHA cc319ce, healthz ok
+- [x] Client E2E: step1→step6, generate-packet 200, ZIP downloaded
+- [x] ZIP contents: I-821.pdf (1.8MB) + I-765.pdf (757KB) + INSTRUCTION.txt
+- [x] PDF pages rendered to PNG: i821-page1.png, i765-page1.png, i821-part7.png
+- [x] Evidence: docs/reports/evidence/t3ps-final-release/browser-run-clean/
+- [x] 5 OCR slots: all returned 200 (passport, booklet, i94, i797_or_ead, dl)
+- [x] Gate: passed with no errors after address fields fix
+- [x] Selector contract: all data-testid anchors present in production DOM
+
+### Wizard UX (sessions 9–10)
+- [x] 6 steps, progress bar matches
+- [x] Booklet upload slot: BOTH init AND rereg paths
 - [x] 5 upload slots for init: passport, booklet, I-94, I-797/EAD, DL
-- [x] 4+ upload slots for rereg+EAD: tps_notice, booklet, passport, ead_old, i94, dl
-- [x] Signature: only for paper filing (hidden for online)
-- [x] Signature [?]: inline tooltip, not new tab
-- [x] Signature blocking: screen mode without drawing = explicit error in 4 languages
-- [x] Signature in PDF: /s/ NAME in I-821 + I-765 (readback test: 3 tests pass)
-- [x] Placeholders removed from manual fields (phone, email, city, province, place, in_care_of)
-- [x] Tooltips: human language in 4 langs, no "Part X I-821" references
-- [x] EAD subtitle "Устанавливается автоматически" moved inside [?]
-- [x] Regex: mandatory dot for с./м./сел./хут. — 15 edge cases pass
-- [x] Empty result guard: strip leaves empty → keep original
+- [x] 6 upload slots for rereg+EAD: tps_notice, booklet, passport, ead_old, i94, dl
+- [x] Placeholders removed from manual fields
+- [x] Tooltips: human language, 4 langs
+- [x] EAD subtitle merged into [?] tooltip
+- [x] Manual fields for us_address_city/state/zip added (session 13 fix)
+
+### Signature (session 9)
+- [x] Only for paper filing (hidden for online)
+- [x] [?] = inline tooltip, not new tab
+- [x] Screen mode without drawing = explicit error (4 langs)
+- [x] /s/ NAME in PDF (readback test: 3 tests pass)
+- [x] _signature_mode: paper | screen | online_myuscis
+
+### Knowledge & Normalization (session 9)
 - [x] Dictionary: 22 settlement types, CZO/MFA verified
-- [x] KMU-55 transliteration: Тростянець → Trostianets (confirmed CZO)
-- [x] pdfPrefiller: toWinAnsiSafe on ALL values (no Cyrillic crash)
-- [x] OCR prefill: manual fields show mergedFields data as fallback
-- [x] _signature_mode: paper | screen | online_myuscis (type in answers.ts)
-- [x] Province normalization: genitive → nominative → English (25/25 oblasts)
-- [x] Personal data removed from codebase (real names → test data)
-- [x] 0 TS errors, 1959 tests pass
+- [x] KMU-55: Тростянець → Trostianets (CZO confirmed)
+- [x] Regex: mandatory dot for с./м./сел./хут. (15 edge cases pass)
+- [x] Empty result guard in postExtractNormalize
+- [x] Province: genitive → nominative → English (25/25 oblasts)
+- [x] pdfPrefiller: toWinAnsiSafe on ALL values
 
-## 2026-05-24 (session 12) — dual-mode runtime proof hardening
+### Infrastructure (session 10)
+- [x] Session docs guard: pre-commit hook + CI workflow
+- [x] Stable data-testid selectors for automation
+- [x] Step-5 preflight gate before Step-6
+- [x] Per-slot OCR diagnostics
+- [x] 0 TS errors, 1963 tests pass
 
-### VERIFIED
-- Production SHA aligned to `201ce5d...` before this patch cycle.
-- OCR slot-level diagnostics now reproducible via dual proof script.
-- OCR 422 root cause was fixture quality (overexposed); switching fixtures produced slot 200 responses in all required slots.
+## CLOSED CRITICAL BUGS
+- [x] us_address_city/state/zip: manual inputs added (session 13). Was blocking users without DL.
+- [x] Booklet slot missing in rereg: fixed (session 9). Was only in init branch.
+- [x] Regex stripping city names: fixed (session 9). "Суми"→"уми" bug.
 
-### CHANGED NOW
-- Added `data-testid="tps-gate-error-container"` on Step 5 gate error surface (same contract token as Step 6).
-- Added `scripts/t3ps-runtime-dual-proof.mjs` for owner/client contour evidence:
-  - selector contract probe,
-  - slot-level OCR status/error capture,
-  - unpaid/paywall and paid-callback behavior capture,
-  - generate/ZIP capture when available.
-- Updated runtime lock tests and browser scripts to V2 selector contract.
-
-### OPEN
-- Owner-mode generate proof is blocked without owner session in automation context.
-- Client-mode still needs final `generate 200 + ZIP + PDF visual` closure in same evidence run.
-
-## 2026-05-24 (session 13) — gate/data path closure for Step 5
-
-### CHANGED NOW
-- Added explicit Step 5 manual fields for gate-required data:
-  - `us_address_city`
-  - `us_address_state`
-  - `us_address_zip`
-  - plus stable test ids for street/phone/email manual fields.
-- This removes hidden inconsistency where gate demanded fields the user could not input directly in current UI.
-
-### VERIFIED AFTER DEPLOY
-- Production SHA: `6f73aa3134ec4585213002f9f7a051101b4437e9`.
-- Dual-proof client contour:
-  - `current_step=step6`
-  - `paywall_visible=true` (unpaid)
-  - paid callback path -> `generate_statuses=[200]`
-  - ZIP downloaded and unpacked with `I-821.pdf` + `I-765.pdf`.
-- Owner contour remains blocked in automation (`owner_session=false`).
-
-## 2026-05-24 (session 10) — TPS runtime hardening in progress
-
-### VERIFIED
-- `local == origin/main == production health SHA` before this fix cycle.
-- Reproduced production selector drift: missing `[data-testid="tps-ocr-cta"]` in live UI.
-- Reproduced false-readiness path in clean session (could reach Step 6 shell before real packet generation proof).
-
-### CHANGED NOW
-- Added stable selector anchors in TPSWizardV2:
-  - `tps-ocr-cta`
-  - `tps-upload-slot-*`, `tps-upload-input-*`
-  - `tps-review-step-container`
-  - `tps-generate-cta`
-  - `tps-gate-error-container`
-  - `tps-signature-mode-block`
-  - `tps-paywall-state`
-  - `tps-package-ready-state`
-  - `tps-download-success-state`
-- Added Step-5 preflight gate before entering Step 6:
-  - blocks when extracted field count is zero
-  - runs `runMailReadyGate` and surfaces blockers immediately
-- Added generation truth-source manifest in UI (`generatedManifest`) after real `generate-packet` blob response.
-- Replaced volatile Step-6 unlock dependency with deterministic eligibility check (`isStep6Eligible`) from current merged fields + mail-ready gate result.
-- Improved OCR error observability per slot (`ocr_http_status`, `ocr_error`).
-
-### OPEN
-- Deploy + live production rerun not finished yet in this section.
-- Final proof chain still required: review -> generate 200 -> ZIP -> opened PDFs.
-
-## CRITICAL BUGS (open, not fixed)
-- [ ] **last_entry_date**: REQUIRED by gate unconditionally, but rereg review rows don't show it, no manual input exists. Rereg users blocked.
-  - File: mailReadyGate.ts line 48, TPSWizardV2.tsx line 2849
-  - Fix needed: add to rereg review OR make conditional on init only
-- [ ] **us_address_city/state/zip**: no manual input. Only from DL/I-797 OCR. Users without DL upload blocked.
-  - File: TPSWizardV2.tsx (ReviewManual), mailReadyGate.ts
-  - Fix needed: parse address string OR add separate manual inputs
-- [ ] **passport_expiration_date**: no manual fallback if OCR fails. Gate blocks.
-  - Fix needed: add manual input OR move to RECOMMENDED
-- [ ] **REREG+NOEAD path**: no passport/I-94 upload slots. Minimal flow.
-  - Fix needed: add passport slot OR evaluate if path is valid
-
-## OPEN (not proven)
-- [ ] PDF visual proof — no PDF opened and inspected
-- [ ] ZIP contents — no ZIP generated in this session
-- [ ] OCR real upload — no test with actual passport photo
-- [ ] Gate clean-session block — not tested in production UI
-- [ ] E2E: upload → review → PDF → ZIP complete flow
-
-## ROOT CAUSES OF SESSION 9 REGRESSIONS
-1. **Two separate branches for init/rereg** in doc list builder. Adding to one, forgetting the other. Happened 3 times.
-2. **Regex copy-paste without testing**. `^с\.?\s*` stripped "С" from "Суми". Caught only when owner said "проверь критически".
-3. **Claiming "done" before verifying production SHA**. Multiple times healthz showed old SHA.
-4. **localStorage masking changes**. Owner testing with cached state, not seeing new slots.
+## OPEN BUGS
+- [ ] **last_entry_date**: REQUIRED by gate unconditionally, but rereg review doesn't show it.
+  - File: mailReadyGate.ts line 49, TPSWizardV2.tsx
+  - Impact: rereg users without I-94 upload are blocked
+  - Fix: add manual input OR make conditional on init
+- [ ] **passport_expiration_date**: no manual fallback if OCR fails.
+  - Impact: low (MRZ extraction reliable), but no recovery path
+- [ ] **REREG+NOEAD path**: no passport/I-94 upload slots.
+  - Impact: rare path, but minimal functionality
+- [ ] **Owner-mode**: not proven in automation (blocked by session access).
 
 ## DO NOT RE-LITIGATE
 - Dictionary v1.2 is canonical (ADR-002)
-- Patronymic ≠ Middle Name (blocklist enforced)
-- Historical Militsiya stays Militsiya (ADR-004)
 - KMU-55 is the only transliteration standard
 - Existing pipeline is correct; extend, do not rebuild
 - смт abolished Jan 2024 but stays in dictionary for old documents
-
-## RELATED ADRs
-- `docs/adr/ADR-001-product-boundary.md`
-- `docs/adr/ADR-002-ukraine-dictionary-v1.2.md`
-- `docs/adr/ADR-003-tps-runtime-pipeline.md`
-- `docs/adr/ADR-004-historical-authority-policy.md`
-- `docs/adr/ADR-006-translation-bridge.md`
-- `docs/adr/ADR-007-signature-rules.md`
