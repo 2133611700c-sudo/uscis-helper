@@ -73,3 +73,15 @@ Part 7 declaration + marital_status gate added (session 15 commit 2).
 - **Session 12**: dual-proof script, selector sync, owner/client mode probes
 - **Session 13**: address city/state/zip manual fields, E2E closure with ZIP+PDF evidence
 
+
+## Session 16 addendum (2026-05-24, live browser runtime check)
+- Scope: black-box RU production runtime with real uploaded docs in user Chrome session.
+- Live SHA verified: `3513eb3720d71421d18c8f1d65352f2b642fd449`.
+- Confirmed in Step 4: internal passport slot uploaded.
+- Confirmed in Step 5 after recognize:
+  - `Город рождения`: `слет . Тростянець`
+  - `Область рождения`: `VINNYTSKA OBL.`
+  - `Patronymic` not auto-filled from internal passport path.
+- Evidence: `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/`
+
+Status for this scope: FAIL (internal-passport normalization/field materialization quality).
