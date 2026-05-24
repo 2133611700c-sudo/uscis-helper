@@ -1707,6 +1707,7 @@ export default function TPSWizardV2({ locale }: Props) {
       list.push({ id: 'i797_or_ead', ...t.doc.i797_or_ead })
     } else {
       list.push({ id: 'tps_notice', ...t.doc.tps_notice })
+      list.push({ id: 'booklet', ...t.doc.booklet })
       if (ead) {
         list.push({ id: 'passport', ...t.doc.passportRereg })
         list.push({ id: 'ead_old', ...t.doc.ead_old })
