@@ -155,18 +155,34 @@ export const GEO_CORRECTIONS: GeoCorrection[] = [
 // ── SETTLEMENT TYPES ─────────────────────────────────────────
 
 export const SETTLEMENT_TYPES: Record<string, { en: string; warning?: string }> = {
+  // Cities
   'м.': { en: 'city' },
+  'м': { en: 'city' },
   'місто': { en: 'city' },
-  'смт': { en: 'urban-type settlement', warning: 'NEVER translate as city or town' },
+
+  // Urban-type settlements (phased out Jan 24, 2024 — but still on old documents)
+  'смт': { en: 'urban-type settlement', warning: 'NEVER translate as city or town. Official category abolished Jan 2024 but appears on pre-2024 documents.' },
   'смт.': { en: 'urban-type settlement', warning: 'NEVER translate as city or town' },
+  'селище міського типу': { en: 'urban-type settlement', warning: 'NEVER translate as city or town' },
+  'п.г.т.': { en: 'urban-type settlement', warning: 'Russian abbreviation (посёлок городского типа)' },
+  'пгт': { en: 'urban-type settlement', warning: 'Russian abbreviation' },
+
+  // Villages and settlements
   'с.': { en: 'village' },
   'село': { en: 'village' },
   'с-ще': { en: 'settlement' },
   'селище': { en: 'settlement' },
+  'хут.': { en: 'hamlet' },
+  'хутір': { en: 'hamlet' },
+
+  // Administrative divisions
   'р-н': { en: 'district' },
   'район': { en: 'district' },
   'обл.': { en: 'Oblast' },
   'область': { en: 'Oblast' },
+  'окр.': { en: 'district' },
+  'округ': { en: 'district' },
+  'громада': { en: 'hromada', warning: 'Post-2020 decentralization administrative unit' },
 };
 
 // ── FIELD LABELS ─────────────────────────────────────────────
