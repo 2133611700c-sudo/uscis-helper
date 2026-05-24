@@ -1,7 +1,44 @@
 # HANDOFF.md
-Last updated: 2026-05-24 04:45 UTC
-Session: 9
+Last updated: 2026-05-24 05:12 UTC
+Session: 10
 Production SHA: ccbbb1f
+
+## WHAT WAS DONE IN SESSION 10
+
+### Goal
+Enforce mandatory session docs on every commit:
+- STATUS.md
+- HANDOFF.md
+- CHANGELOG.md
+
+### Implemented
+1. Added guard script:
+   - `scripts/guards/require-session-docs.sh`
+   - Modes: `--staged`, `--files`, `--commit`, `--range`, `--ci`
+2. Added tracked local hook:
+   - `.githooks/pre-commit`
+   - calls `scripts/guards/require-session-docs.sh --staged`
+3. Added hook setup script:
+   - `scripts/setup-git-hooks.sh`
+   - runs `git config core.hooksPath .githooks`
+4. Added CI workflow:
+   - `.github/workflows/session-docs-guard.yml`
+   - runs on `push` + `pull_request`
+   - validates every commit in range using `pnpm guard:session-docs`
+5. Added root script:
+   - `package.json` → `guard:session-docs`
+6. Updated agent rules:
+   - `AGENTS.md`, `CLAUDE.md`
+   - explicit enforcement note + setup command
+
+### Verification
+- `--files STATUS.md HANDOFF.md CHANGELOG.md` → PASS
+- `--files apps/web/src/foo.ts CHANGELOG.md` → FAIL
+- `--files STATUS.md HANDOFF.md` → FAIL
+- `--commit 211540f` → PASS
+- `--commit ccbbb1f` → FAIL
+- `.githooks/pre-commit` with staged non-doc file → FAIL
+- `pnpm guard:session-docs` in simulated PR/push ranges → PASS/FAIL as expected
 
 ## WHAT WAS DONE IN SESSION 9
 
