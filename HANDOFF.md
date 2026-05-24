@@ -108,3 +108,5 @@ Status for this scope: FAIL (internal-passport normalization/field materializati
 - Live strict evidence matrix (UI + network + generate + ZIP + PDF) on one SHA.
 - Owner mode OTP flow still can be marked BLOCKED only with hard evidence if access unavailable.
 
+
+
