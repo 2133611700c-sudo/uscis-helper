@@ -3,6 +3,43 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## Session 11 — 2026-05-24 | TPS Runtime Drift + False Readiness Hardening
+SHA range: pending commit
+Production: pending deploy
+
+### Done
+- Hardened `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`.
+- Added stable selector contract for automation/runtime:
+  - `tps-ocr-cta`
+  - `tps-upload-slot-*`, `tps-upload-input-*`
+  - `tps-review-step-container`
+  - `tps-generate-cta`
+  - `tps-gate-error-container`
+  - `tps-signature-mode-block`
+  - `tps-paywall-state`
+  - `tps-package-ready-state`
+  - `tps-download-success-state`
+- Added preflight gate on Step 5 before Step 6:
+  - blocks transition when no extracted fields,
+  - applies `runMailReadyGate` blockers before pay/download screen.
+- Added truth marker after real packet generation:
+  - `generatedManifest` stores timestamp + ZIP bytes.
+- Added OCR diagnostics in upload state:
+  - `ocr_http_status`
+  - `ocr_error`
+
+### Verification
+- PASS: `pnpm --filter web run typecheck`
+- PASS: `pnpm --filter web test`
+- PASS: `pnpm --filter web run lint`
+- PASS: `pnpm --filter web run guard`
+- PASS: `pnpm --filter web run build`
+
+### Notes
+- Production rerun still pending deploy of this commit.
+
+---
+
 ## Session 10 — 2026-05-24 | Session Docs Guard Enforcement
 SHA range: pending commit
 Production: unchanged runtime code (docs/guard infra only)
