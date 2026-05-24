@@ -1983,11 +1983,13 @@ export default function TPSWizardV2({ locale }: Props) {
         left_us_without_advance_parole: false,
 
         // Signature from step 6
-        _signature_mode: signatureData?.mode || 'paper',
-        _signature_name: signatureData?.mode === 'screen'
+        // BLOCK: if user chose 'screen' but didn't draw → treat as 'paper'
+        _signature_mode: (signatureData?.mode === 'screen' && signatureData?.dataUrl)
+          ? 'screen' : 'paper',
+        _signature_name: (signatureData?.mode === 'screen' && signatureData?.dataUrl)
           ? `${(v('given_name') || '').toUpperCase()} ${(v('family_name') || '').toUpperCase()}`.trim()
           : undefined,
-        _signature_date: signatureData?.mode === 'screen'
+        _signature_date: (signatureData?.mode === 'screen' && signatureData?.dataUrl)
           ? new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
           : undefined,
       }
