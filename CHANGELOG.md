@@ -3,9 +3,9 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
-## Session 13 — 2026-05-24 | Step 5 Gate/Data Path Fix
-SHA range: pending commit
-Production: pending deploy
+## Session 13 — 2026-05-24 | Step 5 Gate/Data Path Fix + E2E Closure
+SHA range: 6f73aa3 → cc319ce
+Production: cc319ce (verified healthz)
 
 ### Changed
 - `TPSWizardV2.tsx`:
@@ -33,8 +33,8 @@ Production: pending deploy
 ---
 
 ## Session 12 — 2026-05-24 | Runtime Dual-Proof + Selector Contract Sync
-SHA range: pending commit
-Production: pending deploy
+SHA: f3a3a05
+Production: deployed
 
 ### Added
 - `scripts/t3ps-runtime-dual-proof.mjs`:
@@ -66,8 +66,8 @@ Production: pending deploy
 ---
 
 ## Session 11 — 2026-05-24 | TPS Runtime Drift + False Readiness Hardening
-SHA range: pending commit
-Production: pending deploy
+SHA range: 9449fe6 → 201ce5d
+Production: deployed
 
 ### Done
 - Hardened `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`.
@@ -106,7 +106,7 @@ Production: pending deploy
 ---
 
 ## Session 10 — 2026-05-24 | Session Docs Guard Enforcement
-SHA range: pending commit
+SHA: f94f942
 Production: unchanged runtime code (docs/guard infra only)
 
 ### Done
