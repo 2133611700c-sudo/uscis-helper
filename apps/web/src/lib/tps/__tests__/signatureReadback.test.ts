@@ -3,7 +3,7 @@ import { buildPacket } from '../packetBuilder'
 import { PDFDocument } from 'pdf-lib'
 import type { TPSAnswers } from '../answers'
 
-const BASE: TPSAnswers = {
+const BASE = {
   filing_path: 'initial',
   filing_method: 'paper',
   wants_ead: true,
@@ -14,14 +14,19 @@ const BASE: TPSAnswers = {
   sex: 'M',
   country_of_nationality: 'Ukraine',
   passport_number: 'FE123456',
+  passport_country_of_issuance: 'Ukraine',
+  passport_expiration_date: '01/15/2030',
   us_address_street: '123 Main St',
   us_address_city: 'Los Angeles',
   us_address_state: 'CA',
   us_address_zip: '90001',
   daytime_phone: '2135550000',
   email: 'test@test.com',
-  marital_status: 'Single',
+  marital_status: 'single',
   country_of_birth: 'Ukraine',
+  mailing_same_as_physical: true,
+  last_entry_date: '03/15/2022',
+  ead_category: 'C19',
   has_criminal_concern: false,
   has_prior_tps_denial: false,
   left_us_without_advance_parole: false,
