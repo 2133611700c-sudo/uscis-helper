@@ -70,10 +70,10 @@ Client-mode E2E closed with evidence. Owner-mode not proven (blocked by access).
 - [x] **place_of_last_entry blocked by I-94 contract** — fixed session 14. Field added to I-94 allowed_fields.
 - [x] **BOOKLET ROUTE MISSING** — fixed session 14. API route had no `case 'booklet'` → module never ran.
 - [x] **P0: i797_or_ead / tps_notice / ead_old ROUTE+CONTRACT MISSING** — fixed session 15. Three wizard slot IDs had no case in OCR route switch AND i797_or_ead had no contract entry → ALL fields killed as UNKNOWN_SLOT. Added route cases + contract.
+- [x] **P1: Part 7 background declaration never shown** — fixed session 15. Added Part 7 confirmation card in Step 5. Gate now blocks generation without explicit user review.
+- [x] **P2: marital_status not gate-enforced** — fixed session 15. Added to REQUIRED_FIELDS in mailReadyGate.
 
 ## OPEN BUGS
-- [ ] **Part 7 background questions never shown to user** — 30 yes/no questions silently defaulted to No. P1 legal risk.
-- [ ] **marital_status not gate-enforced** — gate passes without it, I-821 checkboxes blank. P2.
 - [ ] **I-912 fee waiver form**: feature gap — needs income/household wizard module. Not a hotfix.
 - [ ] **Owner-mode**: not proven in automation (blocked by session access).
 
