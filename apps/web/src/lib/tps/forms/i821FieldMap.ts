@@ -359,5 +359,13 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
   ops.push({ field: 'form1[0].Page10[0].Part8_Item1_AppStmt[0]', kind: 'checkbox', value: eng })
   ops.push({ field: 'form1[0].Page10[0].Part8_Item1_AppStmt[1]', kind: 'checkbox', value: !eng })
 
+  // ── Part 8 — Signature + Date (Page 11) ─────────────────────────────────────
+  // If electronic signature provided, fill the signature text field with /s/ format
+  // and set the date. If paper mode, leave blank for handwritten signature.
+  if (a._signature_mode === 'screen' && a._signature_name) {
+    ops.push({ field: 'form1[0].Page11[0].Part8_Item6a_Signature[0]', kind: 'text', value: `/s/ ${a._signature_name}` })
+    ops.push({ field: 'form1[0].Page11[0].Part8_Item6b_DateofSignature[0]', kind: 'text', value: a._signature_date || new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) })
+  }
+
   return ops
 }

@@ -191,6 +191,12 @@ export interface TPSAnswers {
   has_criminal_concern: boolean
   has_prior_tps_denial: boolean
   left_us_without_advance_parole: boolean
+
+  // ── Signature (set by wizard SignaturePad) ──────────────────────────────────
+  _signature_mode?: 'screen' | 'paper'
+  _signature_name?: string           // e.g. "SERHII KUROPIATNYK" for /s/ format
+  _signature_date?: string           // MM/DD/YYYY
+  _signature_image_base64?: string   // PNG from SignaturePad (future: overlay)
 }
 
 /**
