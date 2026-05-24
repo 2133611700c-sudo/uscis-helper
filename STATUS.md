@@ -1,7 +1,7 @@
 # STATUS.md
 Last updated: 2026-05-24 07:15 UTC
 Session: 14 (audit + hotfix)
-Production SHA: pending deploy (session 14, commit 3)
+Production SHA: pending deploy (session 14, commit 4)
 
 ## Product
 Messenginfo = self-help immigration information, document translation, and USCIS draft-form generation platform.
@@ -66,6 +66,8 @@ Client-mode E2E closed with evidence. Owner-mode not proven (blocked by access).
 - [x] **last_entry_date hidden in rereg review** — fixed session 14. I-94 rows now show for all paths.
 
 - [x] **passport_expiration_date manual fallback** — fixed session 14. Manual input added + submit fallback.
+- [x] **BOOKLET CONTRACT MISSING** — fixed session 14. `booklet` slot had no entry in documentContracts → ALL booklet fields rejected as UNKNOWN_SLOT. Added contract with city_of_birth, province_of_birth, middle_name.
+- [x] **place_of_last_entry blocked by I-94 contract** — fixed session 14. Field added to I-94 allowed_fields.
 
 ## OPEN BUGS
 - [ ] **I-912 fee waiver form**: feature gap — needs income/household wizard module. Not a hotfix.
