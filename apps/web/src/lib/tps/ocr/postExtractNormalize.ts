@@ -50,16 +50,16 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
     // "с. Іванівка" → "Іванівка"
     if (f.field === 'city_of_birth' && f.normalized_value) {
       const cleaned = f.normalized_value
-        .replace(/^смт\.?\s*/i, '')    // селище міського типу → strip
-        .replace(/^с-ще\.?\s*/i, '')   // селище → strip
-        .replace(/^м\.?\s*/i, '')      // місто → strip
-        .replace(/^с\.?\s*/i, '')      // село → strip
-        .replace(/^сел\.?\s*/i, '')    // село → strip
-        .replace(/^хут\.?\s*/i, '')    // хутір → strip
-        .replace(/^п\.?г\.?т\.?\s*/i, '') // пгт (Russian) → strip
+        .replace(/^смт\.?\s*/i, '')    // смт / смт. → strip (3 chars, safe without dot)
+        .replace(/^с-ще\.?\s*/i, '')   // с-ще → strip (4 chars, safe)
+        .replace(/^м\.\s*/i, '')       // м. → strip (MANDATORY dot — "Миколаїв" must not be stripped)
+        .replace(/^с\.\s*/i, '')       // с. → strip (MANDATORY dot — "Суми" must not be stripped)
+        .replace(/^сел\.\s*/i, '')     // сел. → strip (MANDATORY dot — "Селидове" must not be stripped)
+        .replace(/^хут\.\s*/i, '')     // хут. → strip (MANDATORY dot)
+        .replace(/^п\.?г\.?т\.?\s*/i, '') // пгт / п.г.т. → strip (3 chars, safe)
         .replace(/^селище\s+міського\s+типу\s*/i, '') // full form → strip
         .trim()
-      if (cleaned !== f.normalized_value) {
+      if (cleaned && cleaned !== f.normalized_value) {
         normalizations.push(`city_of_birth: "${f.normalized_value}" → "${cleaned}"`)
         f.normalized_value = cleaned
         f.passes = [...f.passes, 'knowledge_city_prefix_stripped']
