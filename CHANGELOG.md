@@ -66,6 +66,11 @@ Every work session appends here. Never delete entries. Newest first.
 - **Fix 2**: Added validation guards: reject values containing digits, date month names, or unreasonable length before emitting middle_name/city/province
 - **Architecture rule**: загранпаспорт MRZ is authoritative for identity. Booklet is SUPPLEMENTARY for patronymic + birthplace only.
 
+### BUG-7 FIX (P0): booklet findValueNear search direction REVERSED
+- **Root cause**: Ukrainian booklet has handwritten value ABOVE the printed label. OCR reads top-to-bottom → value line comes BEFORE label in array. But `findValueNear` searched NEXT lines first (step 2) then PREVIOUS as "fallback" → grabbed the WRONG field's value every time. DOB ended up as given_name, given_name as patronymic.
+- **Fix**: Reversed search order → PREVIOUS lines first (primary), NEXT lines as fallback
+- **Verified against**: real Ukrainian booklet photo — handwritten layout confirmed value-above-label
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
