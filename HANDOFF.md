@@ -75,6 +75,7 @@ a296ee1 fix: add missing locale prop to ReviewManual — fixes Vercel build
    - Added stable data-testid selector contract for critical TPS path.
    - Added Step-5 preflight gate before Step-6 transition.
    - Added generated artifact truth marker (`generatedManifest`) after successful packet generation.
+   - Added deterministic Step-6 eligibility (`isStep6Eligible`) from real merged data + gate result (no volatile session flag dependency).
    - Added per-slot OCR diagnostics (`ocr_http_status`, `ocr_error`) to reduce silent 422 behavior.
 
 2. Session docs updated:

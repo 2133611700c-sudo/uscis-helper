@@ -27,6 +27,9 @@ Production: pending deploy
 - Added OCR diagnostics in upload state:
   - `ocr_http_status`
   - `ocr_error`
+- Added deterministic Step 6 eligibility (`isStep6Eligible`) computed from
+  extracted fields + `runMailReadyGate` result so `?paid=1` callback does not
+  depend on volatile in-memory preflight flags.
 
 ### Verification
 - PASS: `pnpm --filter web run typecheck`
