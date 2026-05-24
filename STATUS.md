@@ -93,3 +93,19 @@ Client-mode E2E closed with evidence. Owner-mode not proven (blocked by access).
 - [x] Evidence folder: `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/`
 
 Impact on status: normalization quality for internal-passport birthplace fields is failing in live RU runtime.
+
+## 2026-05-24 Wave1 Runtime-Stable v1 (booklet OCR→review→PDF lock)
+- [x] Guarded extraction implemented for `booklet` birthplace fields.
+- [x] `postExtractNormalize` now applies strict city/province validation + rejection diagnostics.
+- [x] OCR route now exposes additive diagnostics:
+  - `knowledge_rejected_fields`
+  - `knowledge_diagnostics`
+- [x] Rejected birthplace fields are removed from module output before Step 5 merge.
+- [x] Wizard merge now whitelists `booklet` to `city_of_birth`, `province_of_birth` only.
+- [x] Wizard now blocks raw fallback for booklet birthplace when normalized value is missing/rejected.
+- [x] Review→payload parity lock added for `city_of_birth` + `province_of_birth` in `/api/tps/generate-packet`.
+- [x] Contract tightened: booklet slot allows birthplace fields only.
+- [x] Tests: 1968/1968 pass, build passes.
+
+Status note:
+- Runtime matrix proof (EN/RU, mobile/desktop, owner/normal, ZIP/PDF per scenario) remains required for final PASS verdict.

@@ -110,14 +110,9 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
     slot: 'booklet',
     allowed_document_types: ['passport'],
     allowed_fields: [
-      // Patronymic (middle_name) REMOVED — Vision cannot read handwritten
-      // Cyrillic reliably, and middle_name is OPTIONAL on USCIS forms.
-      // User enters manually if needed.
+      // Wave1 guarded extraction: ONLY birthplace fields from booklet.
       'city_of_birth',
       'province_of_birth',
-      'country_of_birth',
-      'country_of_nationality',
-      'passport_country_of_issuance',
     ],
     forbidden_fields: [
       // Identity fields — загранпаспорт MRZ is authoritative.
@@ -129,6 +124,9 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'sex',
       'passport_number',
       'passport_expiration_date',
+      'country_of_birth',
+      'country_of_nationality',
+      'passport_country_of_issuance',
       // Immigration fields — not in booklet
       'a_number',
       'i94_admission_number',

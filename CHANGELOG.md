@@ -561,3 +561,36 @@ Captured production browser evidence for RU flow with uploaded internal passport
 - Live health SHA: `3513eb3720d71421d18c8f1d65352f2b642fd449`
 
 **Code changes:** none.
+
+---
+
+## 2026-05-24 (session 17) | Wave1 Runtime-Stable v1 implementation (booklet OCR)
+
+**Summary:**
+Implemented guarded extraction and parity lock for Ukrainian internal passport birthplace fields to stop OCR garbage from reaching review/PDF.
+
+**Changed behavior:**
+- `postExtractNormalize` now enforces strict validation for `city_of_birth` and `province_of_birth`.
+- Broken prefix/noise values are rejected and marked manual-required.
+- OCR response now includes additive diagnostics:
+  - `knowledge_rejected_fields`
+  - `knowledge_diagnostics`
+- OCR route removes rejected fields from module output before returning to wizard.
+- Wizard accepts booklet OCR only for `city_of_birth` and `province_of_birth` and only when normalized + non-rejected.
+- `generate-packet` now enforces review→payload parity for birthplace fields and blocks mismatches with `422`.
+- Booklet slot contract tightened to birthplace-only allowed fields.
+
+**Files (key):**
+- `apps/web/src/lib/tps/ocr/postExtractNormalize.ts`
+- `apps/web/src/app/api/tps/ocr/extract/route.ts`
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
+- `apps/web/src/app/api/tps/generate-packet/route.ts`
+- `apps/web/src/lib/tps/ocr/documentContracts.ts`
+- `apps/web/src/lib/tps/reviewParity.ts` (new)
+- tests:
+  - `apps/web/src/lib/tps/__tests__/postExtractNormalize.test.ts` (new)
+  - `apps/web/src/lib/tps/__tests__/reviewParity.test.ts` (new)
+
+**Validation:**
+- Build: PASS
+- Tests: 57/57 files, 1968/1968 tests PASS
