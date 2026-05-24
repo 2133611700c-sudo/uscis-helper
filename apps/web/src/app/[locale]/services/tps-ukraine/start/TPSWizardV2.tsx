@@ -2486,6 +2486,7 @@ export default function TPSWizardV2({ locale }: Props) {
             <Card title={t.s5ManualTitle}>
               <ReviewManual
                 t={t}
+                locale={locale}
                 type={data.type}
                 ead={data.ead}
                 manual={data.manual}
@@ -2963,6 +2964,7 @@ function ReviewOcr({
 
 function ReviewManual({
   t,
+  locale,
   type,
   ead,
   manual,
@@ -2970,6 +2972,7 @@ function ReviewManual({
   onChange,
 }: {
   t: (typeof T)[LocaleKey]
+  locale: string
   type?: FilingType
   ead?: EadChoice
   manual: WizardData['manual']
