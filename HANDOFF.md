@@ -1,14 +1,12 @@
 # HANDOFF.md
-Last updated: 2026-05-24 07:15 UTC
-Sessions: 9–14 consolidated
-Production SHA: pending deploy (session 14, commit 12)
+Last updated: 2026-05-24 21:00 UTC
+Sessions: 9–15 consolidated
+Production SHA: pending deploy (session 15)
 
 ## CURRENT STATE
-Session 14: independent production audit (code + live browser) found and fixed two P0 bugs.
-Client-mode TPS wizard works E2E for init+EAD and rereg+EAD paths.
-Rereg+noEAD was broken (no passport/I-94 slots) — FIXED this session.
-Owner-mode: paywall bypass only, no wizard drift (verified).
-Status: DEGRADED → pending deploy to verify fix in production.
+Session 15: white-box audit found P0 — three OCR slots (i797_or_ead, tps_notice, ead_old) had no route case and/or no contract entry. ALL fields from these uploads were killed. Fixed: route cases + contract added.
+Pending: deploy + live upload proof for all three slots.
+Status: DEGRADED → pending live verification.
 
 ## WHAT WORKS (proven)
 - Init + EAD + Paper: full E2E → ZIP with I-821 + I-765
