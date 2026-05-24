@@ -238,9 +238,16 @@ function isValueJunk(s: string): boolean {
 }
 
 /**
- * Find the value associated with a label. Strategy: look at the same line
- * (label may be followed by value), then look at the NEXT non-empty line.
- * Returns null if no plausible value found.
+ * Find the value associated with a label. 
+ * 
+ * BUG-7 FIX (2026-05-24): Ukrainian booklet layout has handwritten value
+ * ABOVE the printed label, not below it. The OCR reads top-to-bottom, so
+ * the value line comes BEFORE the label line in the array. Previous code
+ * checked NEXT lines first (step 2) then PREVIOUS as "fallback" (step 3).
+ * This caused every field to grab the WRONG value (the next field's value
+ * instead of the current one).
+ *
+ * Fixed order: same-line → PREVIOUS lines → NEXT lines.
  */
 function findValueNear(
   lines: LineCandidate[],
@@ -263,8 +270,20 @@ function findValueNear(
     }
   }
 
-  // 2) Look at the NEXT line (booklet layout: label printed on left, value
-  //    handwritten on the line below or to the right).
+  // 2) PREVIOUS lines — booklet standard layout: handwritten value ABOVE
+  //    the printed label. This is the PRIMARY search direction.
+  for (let off = 1; off <= 2; off++) {
+    const prev = lines[labelIdx - off]
+    if (!prev || prev.text.length < 2) continue
+    if (looksLikeLabel(prev.text)) continue
+    const cleaned = stripBilingualNoise(prev.text)
+    if (!isValueJunk(cleaned)) {
+      return { value: cleaned, sourceLine: prev.line }
+    }
+  }
+
+  // 3) Fallback: NEXT lines — for edge cases where Vision reorders lines
+  //    or the value wraps to the line after the label.
   for (let off = 1; off <= 3; off++) {
     const next = lines[labelIdx + off]
     if (!next || next.text.length < 2) continue
@@ -275,16 +294,6 @@ function findValueNear(
     }
   }
 
-  // 3) Fallback: previous line (rare layout where value sits above label).
-  for (let off = 1; off <= 2; off++) {
-    const prev = lines[labelIdx - off]
-    if (!prev || prev.text.length < 2) continue
-    if (looksLikeLabel(prev.text)) continue
-    const cleaned = stripBilingualNoise(prev.text)
-    if (!isValueJunk(cleaned)) {
-      return { value: cleaned, sourceLine: prev.line }
-    }
-  }
   return null
 }
 
