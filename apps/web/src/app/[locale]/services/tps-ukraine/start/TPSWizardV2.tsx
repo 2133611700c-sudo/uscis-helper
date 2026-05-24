@@ -1368,6 +1368,7 @@ function FieldInput({
   inputMode,
   maxLength,
   error,
+  dataTestId,
 }: {
   label: string
   placeholder: string
@@ -1377,6 +1378,7 @@ function FieldInput({
   inputMode?: 'text' | 'tel' | 'email' | 'numeric'
   maxLength?: number
   error?: string
+  dataTestId?: string
 }) {
   return (
     <div style={{ marginBottom: 2 }}>
@@ -1384,6 +1386,7 @@ function FieldInput({
         {label} <Tip text={tip} />
       </div>
       <input
+        data-testid={dataTestId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -3116,28 +3119,41 @@ function ReviewManual({
   const ocrAddrCity = mergedFields?.us_address_city?.value ?? ''
   const ocrAddrState = mergedFields?.us_address_state?.value ?? ''
   const ocrAddrZip = mergedFields?.us_address_zip?.value ?? ''
-  // USPS canonical format: "Street, City, ST ZIP" — comma between
-  // street and city, comma between city and state, but plain space
-  // between state and zip (USPS does NOT comma there). E.g.
-  //   "4341 Willow Brook Ave 111, Los Angeles, CA 90029"
-  const cityStateZip = ocrAddrCity && ocrAddrState
-    ? `${ocrAddrCity}, ${ocrAddrState}${ocrAddrZip ? ` ${ocrAddrZip}` : ''}`
-    : [ocrAddrCity, ocrAddrState, ocrAddrZip].filter(Boolean).join(' ')
-  const ocrAddrJoined = [ocrAddrStreet, cityStateZip]
-    .filter(Boolean)
-    .join(', ')
-    .trim()
   return (
     <>
-      {init && (
-        <FieldInput
-          label={t.label.address}
-          placeholder={t.placeholder.address}
-          tip={t.tip.address}
-          value={manual.us_address_street || ocrAddrJoined || ''}
-          onChange={(v) => onChange({ us_address_street: v })}
-        />
-      )}
+      <FieldInput
+        label={t.label.address}
+        placeholder={t.placeholder.address}
+        tip={t.tip.address}
+        value={manual.us_address_street || ocrAddrStreet || ''}
+        onChange={(v) => onChange({ us_address_street: v })}
+        dataTestId="tps-review-manual-address-street"
+      />
+      <FieldInput
+        label="US Address (City)"
+        placeholder=""
+        tip={locale === 'ru' ? 'Город в США из вашего почтового адреса.' : locale === 'uk' ? 'Місто у США з вашої поштової адреси.' : locale === 'es' ? 'Ciudad en EE. UU. de su dirección postal.' : 'US city from your mailing address.'}
+        value={manual.us_address_city || ocrAddrCity || ''}
+        onChange={(v) => onChange({ us_address_city: v })}
+        dataTestId="tps-review-manual-address-city"
+      />
+      <FieldInput
+        label="US Address (State)"
+        placeholder="CA"
+        tip={locale === 'ru' ? 'Двухбуквенный код штата (например, CA).' : locale === 'uk' ? 'Дволітерний код штату (наприклад, CA).' : locale === 'es' ? 'Código de estado de 2 letras (por ejemplo, CA).' : 'Two-letter state code (for example, CA).'}
+        value={manual.us_address_state || ocrAddrState || ''}
+        onChange={(v) => onChange({ us_address_state: v.toUpperCase().slice(0, 2) })}
+        maxLength={2}
+        dataTestId="tps-review-manual-address-state"
+      />
+      <FieldInput
+        label="US Address (ZIP)"
+        placeholder="90001"
+        tip={locale === 'ru' ? 'Почтовый индекс США.' : locale === 'uk' ? 'Поштовий індекс США.' : locale === 'es' ? 'Código postal de EE. UU.' : 'US ZIP code.'}
+        value={manual.us_address_zip || ocrAddrZip || ''}
+        onChange={(v) => onChange({ us_address_zip: v.replace(/[^\d-]/g, '').slice(0, 10) })}
+        dataTestId="tps-review-manual-address-zip"
+      />
       <FieldInput
         label={t.label.phone}
         placeholder=""
@@ -3147,6 +3163,7 @@ function ReviewManual({
         inputMode="tel"
         maxLength={10}
         error={manual.daytime_phone && manual.daytime_phone.replace(/\D/g, '').length !== 10 ? '10 digits required' : undefined}
+        dataTestId="tps-review-manual-phone"
       />
       <FieldInput
         label={t.label.email}
@@ -3154,6 +3171,7 @@ function ReviewManual({
         tip={t.tip.email}
         value={manual.email || ''}
         onChange={(v) => onChange({ email: v })}
+        dataTestId="tps-review-manual-email"
       />
       <SingleSelect
         label={t.label.marital}
