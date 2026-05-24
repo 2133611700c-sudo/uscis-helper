@@ -581,13 +581,24 @@ export function runPassportBookletModule(
   }
 
   if (middleName) {
-    emit(
-      'middle_name',
-      middleName.value,
-      titleCaseCyrillic(middleName.value),
-      middleName.sourceLine,
-      'booklet_label_patronymic',
-    )
+    // BUG-6 validation: reject garbage — name should not contain digits,
+    // should not be a date fragment, and should be reasonable length.
+    const mv = middleName.value.trim()
+    const hasDigits = /\d/.test(mv)
+    const tooShort = mv.length < 2
+    const tooLong = mv.length > 40
+    const looksLikeDate = /(?:січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня|января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/iu.test(mv)
+    if (!hasDigits && !tooShort && !tooLong && !looksLikeDate) {
+      emit(
+        'middle_name',
+        middleName.value,
+        titleCaseCyrillic(middleName.value),
+        middleName.sourceLine,
+        'booklet_label_patronymic',
+      )
+    } else {
+      warnings.push('booklet_patronymic_rejected_validation')
+    }
   }
 
   if (dobRaw) {
@@ -757,25 +768,31 @@ export function runPassportBookletModule(
 
     const birthSourceLine = lines[birthLabelIdx]?.line ?? null
 
-    if (foundCity) {
+    // BUG-6 validation: reject garbage city/province values
+    const cityValid = foundCity && foundCity.length >= 2 && foundCity.length <= 60
+      && !/\d{4}/.test(foundCity)  // no year-like sequences
+      && !/(?:січня|червня|серпня|жовтня|января|июня|августа)/iu.test(foundCity)
+    const oblastValid = foundOblast && foundOblast.length >= 4
+
+    if (cityValid) {
       emit(
         'city_of_birth',
-        foundCity,
-        foundCity,
+        foundCity!,
+        foundCity!,
         birthSourceLine,
         'booklet_label_birthplace_city',
       )
     }
-    if (foundOblast) {
+    if (oblastValid) {
       emit(
         'province_of_birth',
-        foundOblast,
-        foundOblast,
+        foundOblast!,
+        foundOblast!,
         birthSourceLine,
         'booklet_label_birthplace_oblast',
       )
     }
-    if (!foundCity && !foundOblast) {
+    if (!cityValid && !oblastValid) {
       warnings.push('booklet_birth_place_unparseable')
     }
   } else {
