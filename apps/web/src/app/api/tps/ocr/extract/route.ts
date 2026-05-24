@@ -462,7 +462,7 @@ export async function POST(req: NextRequest) {
   // win on conflicts. This targets the zero-manual-entry product goal
   // without lowering the global threshold.
   const TARGETED_BRAIN_FIELDS: Record<string, string[]> = {
-    passport: ['middle_name', 'country_of_birth'],
+    passport: ['middle_name', 'country_of_birth', 'province_of_birth'],
     // BUG-9 FIX (2026-05-24): booklet handwritten OCR is garbage from
     // Vision. Brain second-pass is the ONLY reliable extraction method
     // for these fields. Rule module finds labels but values are mangled.

@@ -83,6 +83,12 @@ Every work session appends here. Never delete entries. Newest first.
 - Added booklet-specific Brain prompt rules 21-25 (layout, oblasts, patronymics, settlement types)
 - Brain output goes through `@uscis-helper/knowledge` normalization, not directly to PDF
 
+### BUG-10 FIX: province_of_birth from загранпаспорт visible zone
+- Загранпаспорт has printed "ВІННИЦЬКА ОБЛ./UKR" in Place of birth — Brain reads this reliably
+- Was blocked by passport contract (only identity fields were allowed)
+- Added province_of_birth to passport allowed_fields + targeted brain fields
+- Strategy: province from загранпаспорт (printed), patronymic from booklet (handwritten), city manual
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
