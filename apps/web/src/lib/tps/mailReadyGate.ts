@@ -48,6 +48,9 @@ const REQUIRED_FIELDS: Array<{ key: keyof TPSAnswers; label: string }> = [
   { key: 'email', label: 'Email' },
   { key: 'last_entry_date', label: 'Last Entry Date' },
   { key: 'filing_path', label: 'Filing Type' },
+  // P2 FIX (2026-05-24): marital_status was missing from gate → blank
+  // checkboxes on I-821 Part 2 Item 17 → guaranteed USCIS RFE.
+  { key: 'marital_status', label: 'Marital Status' },
 ]
 
 // Fields that are important but not absolute blockers
@@ -88,6 +91,20 @@ export function runMailReadyGate(
         },
       })
     }
+  }
+
+  // P1 FIX (2026-05-24): Part 7 background declaration must be explicitly
+  // reviewed. Without this, the user signs 30 "No" answers they never saw.
+  if (!answers.part7_reviewed) {
+    blockers.push({
+      field: 'part7_reviewed',
+      reason: 'part7_not_reviewed',
+      user_message: {
+        en: 'Please review and confirm the Part 7 background declaration before generating.',
+        ru: 'Пожалуйста, проверьте и подтвердите декларацию Part 7 перед генерацией.',
+        uk: 'Будь ласка, перевірте та підтвердіть декларацію Part 7 перед генерацією.',
+      },
+    })
   }
 
   // Check recommended fields (warnings, not blockers)
