@@ -1841,6 +1841,16 @@ export default function TPSWizardV2({ locale }: Props) {
         }
       }
     }
+    // Birthplace override: booklet has the real city/province from
+    // "Місце народження" page. Passport Brain guesses oblasts as cities.
+    // If booklet extracted city_of_birth or province_of_birth, it WINS.
+    const bookletFields = data.uploads.booklet?.fields
+    if (bookletFields) {
+      for (const k of ['city_of_birth', 'province_of_birth'] as const) {
+        const bk = bookletFields[k]
+        if (bk?.value) merged[k] = bk
+      }
+    }
     // Alias: i94_class_of_admission → status_at_last_entry. Bug discovered in
     // the 2026-05-20 TPS_CLEAN_SESSION_REAL_UPLOAD_E2E_AUDIT — without this
     // bridge both I-821 Part 2 Item 19 and I-765 Line 23 shipped blank even

@@ -1,6 +1,6 @@
 # STATUS.md
 Last updated: 2026-05-24 21:00 UTC
-Session: 15 (P0+P1+P2 full pipeline fix)
+Session: 15 (full pipeline stabilization)
 Production SHA: pending deploy (session 15)
 
 ## Product
@@ -109,3 +109,4 @@ Impact on status: normalization quality for internal-passport birthplace fields 
 
 Status note:
 - Runtime matrix proof (EN/RU, mobile/desktop, owner/normal, ZIP/PDF per scenario) remains required for final PASS verdict.
+
