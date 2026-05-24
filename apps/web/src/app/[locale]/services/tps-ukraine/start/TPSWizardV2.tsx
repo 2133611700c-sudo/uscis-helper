@@ -32,7 +32,7 @@ import { normalizeOblastToNominative } from '@uscis-helper/knowledge'
 import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
 import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } from '@/lib/tps/provenance'
-import SignatureStep from '@/components/shared/SignatureStep'
+import SignaturePad from '@/components/shared/SignaturePad'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -149,7 +149,7 @@ const T = {
   uk: {
     h1: '🇺🇦 TPS для України',
     sub: 'Ми генеруємо форми USCIS — ви подаєте самостійно',
-    stepOf: (n: number) => `Крок ${n} з 7`,
+    stepOf: (n: number) => `Крок ${n} з 6`,
     s1q: 'Ви подаєте вперше чи продовжуєте?',
     s1h: 'Якщо раніше ніколи не мали TPS — «Вперше»',
     s1Init: 'Вперше',
@@ -347,7 +347,7 @@ const T = {
   ru: {
     h1: '🇺🇦 TPS для Украины',
     sub: 'Мы генерируем формы USCIS — вы подаёте сами',
-    stepOf: (n: number) => `Шаг ${n} из 7`,
+    stepOf: (n: number) => `Шаг ${n} из 6`,
     s1q: 'Вы подаёте впервые или продлеваете?',
     s1h: 'Если раньше не было TPS — «Впервые»',
     s1Init: 'Впервые',
@@ -546,7 +546,7 @@ const T = {
   en: {
     h1: '🇺🇦 TPS for Ukraine',
     sub: 'We generate USCIS forms — you file yourself',
-    stepOf: (n: number) => `Step ${n} of 7`,
+    stepOf: (n: number) => `Step ${n} of 6`,
     s1q: 'Filing for the first time or re-registering?',
     s1h: 'Pick «First time» if you have never had TPS before',
     s1Init: 'First time',
@@ -744,7 +744,7 @@ const T = {
   es: {
     h1: '🇺🇦 TPS para Ucrania',
     sub: 'Generamos los formularios de USCIS — usted los presenta',
-    stepOf: (n: number) => `Paso ${n} de 7`,
+    stepOf: (n: number) => `Paso ${n} de 6`,
     s1q: '¿Presenta por primera vez o re-registra?',
     s1h: 'Si nunca ha tenido TPS — «Por primera vez»',
     s1Init: 'Por primera vez',
@@ -2029,20 +2029,7 @@ export default function TPSWizardV2({ locale }: Props) {
         body: JSON.stringify({
           ...answers,
           _provenance: provenanceByField,
-          _translation: {
-            uploadedDocTypes: Object.values(data.uploads)
-              .map((u) => u.detected_document_type)
-              .filter(Boolean) as string[],
-            signerName: `${answers.given_name || ''} ${answers.family_name || ''}`.trim(),
-            signerAddress: [
-              answers.us_address_street,
-              answers.us_address_city,
-              answers.us_address_state,
-              answers.us_address_zip,
-            ].filter(Boolean).join(', '),
-            signatureDataUrl: signatureData?.dataUrl ?? null,
-            controllingSpellings: {},
-          },
+          // _translation: disabled until passport translation templates are approved
         }),
       })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
@@ -2139,7 +2126,7 @@ export default function TPSWizardV2({ locale }: Props) {
           </button>
         </div>
         <div style={{ display: 'flex', gap: 3, marginBottom: 20 }}>
-          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <span
               key={i}
               style={{
@@ -2451,29 +2438,44 @@ export default function TPSWizardV2({ locale }: Props) {
           </section>
         )}
 
-        {/* STEP 6 — signature */}
+        {/* STEP 6 — signature + result */}
         {step === 6 && (
           <section>
             <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(6)}</div>
-            <SignatureStep
-              locale={locale as 'uk' | 'ru' | 'en' | 'es'}
-              onSignature={(sig) => {
-                setSignatureData(sig)
-                goto(7)
-              }}
-            />
-          </section>
-        )}
-
-        {/* STEP 7 — result */}
-        {step === 7 && (
-          <section>
-            <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(7)}</div>
             <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>{t.s6q}</div>
 
             <Card title={t.s6PkgTitle}>
               <PackageList t={t} type={data.type} ead={data.ead} method={data.method} />
             </Card>
+
+            {/* Compact signature block with [?] tooltip */}
+            <div style={{ background: 'var(--surface-2, #1a1a2e)', border: '1px solid var(--border, #333)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 600 }}>✍️ {locale === 'ru' ? 'Подпись' : locale === 'uk' ? 'Підпис' : locale === 'es' ? 'Firma' : 'Signature'}</span>
+                <button type="button" onClick={() => window.open('https://www.uscis.gov/policy-manual/volume-1-part-b-chapter-2', '_blank')} style={{ background: 'none', border: '1px solid var(--border, #555)', borderRadius: '50%', width: 20, height: 20, fontSize: 12, cursor: 'pointer', color: 'var(--text-3)' }}>?</button>
+              </div>
+              {!signatureData ? (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={() => setSignatureData({ mode: 'screen', dataUrl: null })} style={{ flex: 1, padding: 10, border: '1px solid var(--border, #444)', borderRadius: 8, background: 'transparent', color: 'var(--text-1)', cursor: 'pointer', fontSize: 13 }}>
+                    ✍️ {locale === 'ru' ? 'На экране' : locale === 'uk' ? 'На екрані' : locale === 'es' ? 'En pantalla' : 'On screen'}
+                  </button>
+                  <button type="button" onClick={() => setSignatureData({ mode: 'paper', dataUrl: null })} style={{ flex: 1, padding: 10, border: '1px solid var(--border, #444)', borderRadius: 8, background: 'transparent', color: 'var(--text-1)', cursor: 'pointer', fontSize: 13 }}>
+                    🖨️ {locale === 'ru' ? 'На бумаге' : locale === 'uk' ? 'На папері' : locale === 'es' ? 'En papel' : 'On paper'}
+                  </button>
+                </div>
+              ) : signatureData.mode === 'screen' ? (
+                <div>
+                  <SignaturePad locale={locale as 'uk' | 'ru' | 'en' | 'es'} onSignatureChange={(url) => setSignatureData({ mode: 'screen', dataUrl: url })} height={120} />
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, color: 'var(--text-3)', padding: 8 }}>
+                  {locale === 'ru' ? '🖨️ Распечатайте и подпишите ручкой' : locale === 'uk' ? '🖨️ Роздрукуйте і підпишіть ручкою' : locale === 'es' ? '🖨️ Imprima y firme a mano' : '🖨️ Print and sign by hand'}
+                  <button type="button" onClick={() => setSignatureData(null)} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, textDecoration: 'underline' }}>
+                    {locale === 'ru' ? 'Изменить' : locale === 'uk' ? 'Змінити' : 'Change'}
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Gate on ownerChecked to prevent flash of Pay button for owners */}
             {!ownerChecked && (
