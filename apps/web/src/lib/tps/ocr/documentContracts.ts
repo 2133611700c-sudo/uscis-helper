@@ -74,6 +74,11 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'passport_number',
       'passport_country_of_issuance',
       'passport_expiration_date',
+      // BUG-10 FIX (2026-05-24): загранпаспорт visible zone has
+      // "Місце народження / Place of birth: ВІННИЦЬКА ОБЛ./UKR"
+      // Brain can extract province_of_birth from this printed text.
+      // Much more reliable than booklet handwritten OCR.
+      'province_of_birth',
     ],
     forbidden_fields: [
       'a_number',
