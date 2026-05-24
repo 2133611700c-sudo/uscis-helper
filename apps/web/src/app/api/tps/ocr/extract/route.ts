@@ -517,7 +517,7 @@ export async function POST(req: NextRequest) {
   // Brain's choice of source_value for name fields is non-deterministic on
   // passport scans where only part of the MRZ is OCR'd (rule passport
   // module fails its strict TD3 check, but the upper line "P<UKR..." is
-  // usually still in raw_text). Sergii observed "Sergi" vs "Serhii"
+  // usually still in raw_text). OCR observed "Sergi" vs "Serhii"
   // varying across runs of the same image. Fix: scan raw_text once for
   // any MRZ-shape line, pull surname + given Latin tokens directly, and
   // force-override Brain's name fields with that deterministic value.
