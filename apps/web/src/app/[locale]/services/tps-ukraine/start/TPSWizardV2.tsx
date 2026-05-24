@@ -1983,15 +1983,27 @@ export default function TPSWizardV2({ locale }: Props) {
         left_us_without_advance_parole: false,
 
         // Signature from step 6
-        // BLOCK: if user chose 'screen' but didn't draw → treat as 'paper'
-        _signature_mode: (signatureData?.mode === 'screen' && signatureData?.dataUrl)
-          ? 'screen' : 'paper',
+        // BLOCK generation if user chose 'screen' but didn't actually draw
+        _signature_mode: signatureData?.mode || 'paper',
         _signature_name: (signatureData?.mode === 'screen' && signatureData?.dataUrl)
           ? `${(v('given_name') || '').toUpperCase()} ${(v('family_name') || '').toUpperCase()}`.trim()
           : undefined,
         _signature_date: (signatureData?.mode === 'screen' && signatureData?.dataUrl)
           ? new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
           : undefined,
+      }
+
+      // ── Signature validation: block if user chose screen but didn't draw ──
+      if (signatureData?.mode === 'screen' && !signatureData?.dataUrl) {
+        const msgs: Record<string, string> = {
+          uk: 'Ви обрали підпис на екрані, але не намалювали підпис. Намалюйте підпис або оберіть "На папері".',
+          ru: 'Вы выбрали подпись на экране, но не нарисовали подпись. Нарисуйте подпись или выберите «На бумаге».',
+          en: 'You chose to sign on screen but did not draw a signature. Please draw your signature or choose "On paper".',
+          es: 'Eligió firmar en pantalla pero no dibujó la firma. Dibuje su firma o elija "En papel".',
+        }
+        setErrMsg(msgs[locale] || msgs.en)
+        setBusy(false)
+        return
       }
 
       // ── Mail-ready gate ─────────────────────────────────────────────
