@@ -1,18 +1,34 @@
 # HANDOFF.md
-Last updated: 2026-05-24 06:30 UTC
-Sessions: 9–13 consolidated + audit
-Production SHA: 61898e5 (docs) / Runtime SHA: 6f73aa3
+Last updated: 2026-05-24 07:15 UTC
+Sessions: 9–14 consolidated
+Production SHA: pending deploy (session 14 hotfix)
 
 ## CURRENT STATE
-Client-mode TPS wizard works end-to-end with evidence.
-Owner-mode blocked in automation (needs owner session).
-Status: DEGRADED (not PASS until owner-mode proven).
+Session 14: independent production audit (code + live browser) found and fixed two P0 bugs.
+Client-mode TPS wizard works E2E for init+EAD and rereg+EAD paths.
+Rereg+noEAD was broken (no passport/I-94 slots) — FIXED this session.
+Owner-mode: paywall bypass only, no wizard drift (verified).
+Status: DEGRADED → pending deploy to verify fix in production.
 
 ## WHAT WORKS (proven)
 - Init + EAD + Paper: full E2E → ZIP with I-821 + I-765
+- Rereg + EAD: upload slots correct (6 slots)
 - 5 upload slots with OCR (all 200)
 - Gate blocks missing required fields
 - Signature for paper only
+- Mobile and desktop: IDENTICAL slots and UI (verified at 390px)
+- Booklet slot: present on mobile for ALL paths
+
+## WHAT WAS FIXED (session 14)
+- BUG-1: rereg+noEAD had only 3 upload slots → now 5 (passport + I-94 added)
+- BUG-2: I-94 review rows (last_entry_date etc) hidden for rereg → now shown for all paths
+- Bonus: a_number review row added for rereg+noEAD
+
+## OPEN ISSUES
+- noindex/nofollow on all pages — zero Google visibility (decision needed)
+- passport_expiration_date: no manual fallback (P2)
+- I-912 fee waiver: not pre-filled (P2)
+- Owner-mode: not E2E proven in automation
 - Manual address city/state/zip fields
 - OCR prefill in review fields
 - Regex normalization for settlement types
@@ -20,16 +36,17 @@ Status: DEGRADED (not PASS until owner-mode proven).
 - 1963 tests, 0 TS errors
 
 ## WHAT DOESN'T WORK
-1. **last_entry_date for rereg** — gate requires it, no manual input in rereg path
-2. **passport_expiration_date** — no manual fallback
-3. **REREG+NOEAD** — minimal upload slots (no passport/I-94)
+1. **passport_expiration_date** — no manual fallback (P2, MRZ usually reliable)
+2. **I-912 fee waiver** — not pre-filled (P2)
+3. **noindex/nofollow** — blocking all SEO (decision needed)
 4. **Owner-mode** — not testable without owner session
 
 ## NEXT SESSION PRIORITIES
-1. Fix last_entry_date for rereg (add manual input or make conditional)
-2. Owner-mode test with real owner session
-3. Add edge-case regex tests to CI test suite (not just inline node -e)
+1. Deploy session 14 hotfix and verify rereg+noEAD in production
+2. Decide noindex/nofollow — remove if not intentional beta
+3. Owner-mode test with real owner session
 4. Consider passport_expiration_date manual fallback
+5. I-912 fee waiver pre-fill
 
 ## KEY FILES
 - Wizard: `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
