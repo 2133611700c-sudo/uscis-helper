@@ -89,6 +89,13 @@ Every work session appends here. Never delete entries. Newest first.
 - Added province_of_birth to passport allowed_fields + targeted brain fields
 - Strategy: province from загранпаспорт (printed), patronymic from booklet (handwritten), city manual
 
+### Remove middle_name from booklet extraction
+- Patronymic is OPTIONAL on USCIS forms (I-821, I-765)
+- Vision cannot read handwritten Cyrillic reliably for this field
+- Removed from booklet contract allowed_fields, added to forbidden_fields
+- Removed from Brain targeted fields
+- User enters manually if needed via ReviewManual FieldInput
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
