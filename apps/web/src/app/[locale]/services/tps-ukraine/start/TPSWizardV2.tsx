@@ -3015,7 +3015,7 @@ function ReviewManual({
       )}
       <FieldInput
         label={t.label.phone}
-        placeholder="2131234567"
+        placeholder=""
         tip={t.tip.phone}
         value={manual.daytime_phone || ''}
         onChange={(v) => onChange({ daytime_phone: v.replace(/\D/g, '').slice(0, 10) })}
@@ -3025,7 +3025,7 @@ function ReviewManual({
       />
       <FieldInput
         label={t.label.email}
-        placeholder={t.label.email}
+        placeholder=""
         tip={t.tip.email}
         value={manual.email || ''}
         onChange={(v) => onChange({ email: v })}
@@ -3046,28 +3046,28 @@ function ReviewManual({
       />
       <FieldInput
         label={t.label.city_of_birth}
-        placeholder="Kyiv"
+        placeholder=""
         tip={locale === 'ru' ? 'Из внутреннего паспорта (книжечка). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З внутрішнього паспорта (книжечка). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'Del pasaporte interno. Cargue en paso 4 → el robot lo llenará.' : 'From internal passport (booklet). Upload at step 4 → robot fills it.'}
         value={manual.city_of_birth || ''}
         onChange={(v) => onChange({ city_of_birth: v })}
       />
       <FieldInput
         label={t.label.province_of_birth ?? 'Oblast / Province of Birth'}
-        placeholder="Vinnytsia Oblast"
+        placeholder=""
         tip={locale === 'ru' ? 'Из внутреннего паспорта. Робот нормализует в формат USCIS.' : locale === 'uk' ? 'З внутрішнього паспорта. Робот нормалізує в формат USCIS.' : locale === 'es' ? 'Del pasaporte interno. El robot normaliza al formato USCIS.' : 'From internal passport. Robot normalizes to USCIS format.'}
         value={manual.province_of_birth || ''}
         onChange={(v) => onChange({ province_of_birth: v })}
       />
       <FieldInput
         label={t.label.place_of_entry}
-        placeholder="Los Angeles, CA"
+        placeholder=""
         tip={locale === 'ru' ? 'Из I-94 (i94.cbp.dhs.gov). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З I-94 (i94.cbp.dhs.gov). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'De I-94 (i94.cbp.dhs.gov). Cargue en paso 4 → el robot lo llenará.' : 'From I-94 (i94.cbp.dhs.gov). Upload at step 4 → robot fills it.'}
         value={manual.place_of_last_entry || ''}
         onChange={(v) => onChange({ place_of_last_entry: v })}
       />
       <FieldInput
         label={t.label.in_care_of}
-        placeholder="JOHN DOE"
+        placeholder=""
         tip={locale === 'ru' ? 'Кому доставить конверт с решением USCIS. Обычно ваше имя.' : locale === 'uk' ? 'Кому доставити конверт з рішенням USCIS. Зазвичай ваше ім\'я.' : locale === 'es' ? 'A quién entregar el sobre con la decisión de USCIS.' : 'Who receives the USCIS decision envelope. Usually your name.'}
         value={manual.us_address_in_care_of || ''}
         onChange={(v) => onChange({ us_address_in_care_of: v })}
