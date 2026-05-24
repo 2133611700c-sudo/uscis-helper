@@ -71,6 +71,11 @@ Every work session appends here. Never delete entries. Newest first.
 - **Fix**: Reversed search order → PREVIOUS lines first (primary), NEXT lines as fallback
 - **Verified against**: real Ukrainian booklet photo — handwritten layout confirmed value-above-label
 
+### BUG-8 FIX: birthplace parser must scan ABOVE AND BELOW label
+- City is ABOVE "Місце народження" label, oblast is BELOW it
+- Previous parser only scanned offsets 0..+4 (below) → city always missed
+- **Fix**: scan range -2..+4 (both directions)
+
 ## Audit — 2026-05-24 | Full TPS Production Audit Report
 SHA: docs-only commit
 File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
