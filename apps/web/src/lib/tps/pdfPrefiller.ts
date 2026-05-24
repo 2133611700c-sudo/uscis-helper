@@ -137,11 +137,13 @@ export async function prefill(
     // robust against minification because it walks the prototype chain.
     try {
       if (op.kind === 'text' && f instanceof PDFTextField) {
+        // Signature fields in some USCIS PDFs have maxLength=1, which blocks
+        // writing the full /s/ name. Remove the constraint for signature fields.
+        if (op.field.includes('Signature')) {
+          f.setMaxLength(undefined)
+        }
         // USCIS PDFs use WinAnsi (CP1252) font encoding which CANNOT render
         // Cyrillic. Transliterate Ukrainian Cyrillic to Latin per KMU-55
-        // (the same rule used on real Ukrainian passports). Latin input
-        // passes through untouched. Reproduces the encoding USCIS officers
-        // actually see when scanning real Ukrainian applicants' passports.
         f.setText(toWinAnsiSafe(String(op.value ?? '')))
         applied++
       } else if (op.kind === 'checkbox' && f instanceof PDFCheckBox) {
