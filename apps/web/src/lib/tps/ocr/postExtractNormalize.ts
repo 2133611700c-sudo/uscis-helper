@@ -55,6 +55,9 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
         .replace(/^м\.?\s*/i, '')      // місто → strip
         .replace(/^с\.?\s*/i, '')      // село → strip
         .replace(/^сел\.?\s*/i, '')    // село → strip
+        .replace(/^хут\.?\s*/i, '')    // хутір → strip
+        .replace(/^п\.?г\.?т\.?\s*/i, '') // пгт (Russian) → strip
+        .replace(/^селище\s+міського\s+типу\s*/i, '') // full form → strip
         .trim()
       if (cleaned !== f.normalized_value) {
         normalizations.push(`city_of_birth: "${f.normalized_value}" → "${cleaned}"`)
