@@ -24,6 +24,7 @@ import type { TpsDocType } from '@/lib/tps/types'
  */
 export type SlotId =
   | 'passport'
+  | 'booklet'
   | 'i94'
   | 'ead'
   | 'ead_old'
@@ -89,6 +90,42 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'us_address_zip',
     ],
   },
+  // Ukrainian internal passport-booklet (паспорт-книжка). Contains
+  // patronymic, city_of_birth, province_of_birth — fields the international
+  // passport does NOT carry. BUG-4 FIX (2026-05-24): slot was missing from
+  // contract registry → ALL booklet fields were rejected as UNKNOWN_SLOT.
+  booklet: {
+    slot: 'booklet',
+    allowed_document_types: ['passport'],
+    allowed_fields: [
+      'family_name',
+      'given_name',
+      'middle_name',
+      'dob',
+      'sex',
+      'city_of_birth',
+      'province_of_birth',
+      'country_of_birth',
+      'country_of_nationality',
+      'passport_number',
+      'passport_country_of_issuance',
+    ],
+    forbidden_fields: [
+      'a_number',
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'last_entry_date',
+      'status_at_last_entry',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'passport_expiration_date',
+      'address',
+      'us_address_street',
+      'us_address_city',
+      'us_address_state',
+      'us_address_zip',
+    ],
+  },
   i94: {
     slot: 'i94',
     allowed_document_types: ['i94'],
@@ -102,6 +139,10 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'i94_admit_until',
       'i94_class_of_admission',
       'status_at_last_entry',
+      // Port/place of last entry — I-94 carries this as "Port of Entry".
+      // BUG-4b FIX (2026-05-24): was missing → I-94 OCR couldn't deliver
+      // place_of_last_entry to the wizard.
+      'place_of_last_entry',
       // I-94 also carries country of citizenship — allowed read-only;
       // identity guard makes passport authoritative on conflict.
       'country_of_nationality',
