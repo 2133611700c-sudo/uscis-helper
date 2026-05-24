@@ -2522,7 +2522,14 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ background: 'var(--surface-2, #1a1a2e)', border: '1px solid var(--border, #333)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>✍️ {locale === 'ru' ? 'Подпись' : locale === 'uk' ? 'Підпис' : locale === 'es' ? 'Firma' : 'Signature'}</span>
-                <button type="button" onClick={() => window.open('https://www.uscis.gov/policy-manual/volume-1-part-b-chapter-2', '_blank')} style={{ background: 'none', border: '1px solid var(--border, #555)', borderRadius: '50%', width: 20, height: 20, fontSize: 12, cursor: 'pointer', color: 'var(--text-3)' }}>?</button>
+                <Tip text={locale === 'ru'
+                  ? 'USCIS принимает рукописную подпись или /s/ электронную. Печатный текст вместо подписи — причина отказа. Подробнее: uscis.gov → Policy Manual → Volume 1, Part B, Chapter 2'
+                  : locale === 'uk'
+                  ? 'USCIS приймає рукописний підпис або /s/ електронний. Друкований текст замість підпису — причина відмови. Детальніше: uscis.gov → Policy Manual → Volume 1, Part B, Chapter 2'
+                  : locale === 'es'
+                  ? 'USCIS acepta firma manuscrita o /s/ electrónica. Texto impreso en lugar de firma = motivo de rechazo. Más info: uscis.gov → Policy Manual → Volume 1, Part B, Chapter 2'
+                  : 'USCIS accepts handwritten or /s/ electronic signature. Typed text instead of signature = grounds for rejection. Details: uscis.gov → Policy Manual → Volume 1, Part B, Chapter 2'
+                } />
               </div>
               {!signatureData ? (
                 <div style={{ display: 'flex', gap: 8 }}>
