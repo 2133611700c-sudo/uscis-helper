@@ -725,23 +725,29 @@ export function runPassportBookletModule(
   }
 
   if (birthLabelIdx >= 0) {
-    // Collect ALL non-label value lines near the label (up to 4 lines after)
+    // BUG-8 FIX (2026-05-24): booklet layout has city ABOVE label and
+    // oblast BELOW label. Must scan BOTH directions.
+    // Scan from -2 (above label) through +4 (below label)
     const valueParts: string[] = []
-    for (let off = 0; off <= 4; off++) {
+    for (let off = -2; off <= 4; off++) {
       const candidate = lines[birthLabelIdx + off]
       if (!candidate || candidate.text.length < 2) continue
-      if (off > 0 && looksLikeLabel(candidate.text)) continue
-      const cleaned = stripBilingualNoise(
-        off === 0
-          ? candidate.text.slice(candidate.text.toLowerCase().indexOf('народження') >= 0
-              ? candidate.text.toLowerCase().indexOf('народження') + 'народження'.length
-              : candidate.text.toLowerCase().indexOf('рождения') >= 0
-                ? candidate.text.toLowerCase().indexOf('рождения') + 'рождения'.length
-                : candidate.text.toLowerCase().indexOf('birth') >= 0
-                  ? candidate.text.toLowerCase().indexOf('birth') + 'birth'.length
-                  : 0)
-          : candidate.text,
-      )
+      if (looksLikeLabel(candidate.text)) continue
+      let cleaned: string
+      if (off === 0) {
+        // Same line as label — strip the label text itself
+        const lowerText = candidate.text.toLowerCase()
+        const labelEnd = lowerText.indexOf('народження') >= 0
+          ? lowerText.indexOf('народження') + 'народження'.length
+          : lowerText.indexOf('рождения') >= 0
+            ? lowerText.indexOf('рождения') + 'рождения'.length
+            : lowerText.indexOf('birth') >= 0
+              ? lowerText.indexOf('birth') + 'birth'.length
+              : 0
+        cleaned = stripBilingualNoise(candidate.text.slice(labelEnd))
+      } else {
+        cleaned = stripBilingualNoise(candidate.text)
+      }
       if (cleaned && !isValueJunk(cleaned)) {
         valueParts.push(cleaned)
       }
