@@ -597,3 +597,10 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 ### Session 15 commit 5: Brain threshold + EAD dup + contracts
 ### Commit 6: birthplace merge + I-94 label-as-value + dob normalization
 
+
+### Phase A Stabilization (2026-05-24 Session 15)
+- A2: MRZ identity lock — strong fields can't be degraded by weak sources
+- A3: city/province Cyrillic \b regex fix — JS word boundary doesn't work with Cyrillic
+- A4: booklet weak source — all fields marked review_required
+- A5: honest STATUS/HANDOFF — no filler content
+- ROOT CAUSE: JS \b treats Cyrillic as \W → regex never matches "ОБЛ." in validateCity

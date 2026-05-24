@@ -1,112 +1,35 @@
-# STATUS.md
-Last updated: 2026-05-24 21:00 UTC
-Session: 15 (full pipeline stabilization)
-Production SHA: pending deploy (session 15)
+# STATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-24 Session 15
+**SHA:** PENDING (this commit)
+**Live:** messenginfo.com
 
-## Product
-Messenginfo = self-help immigration information, document translation, and USCIS draft-form generation platform.
-Not a law firm. No legal advice. User reviews, signs, and files independently.
+## VERIFIED (live proof exists)
+- MRZ passport extraction: stable, 8 identity fields from MRZ
+- I-94 extraction: Brain runs (post-contract threshold fix), 10 fields
+- EAD given_name duplicate detection: "Kuropiatnyk"→ dropped, Brain fills "Sergii"
+- Date normalization: US format MM/DD/YYYY → ISO YYYY-MM-DD
+- Booklet city/province: "Trostianets" / "Vinnytsia Oblast" (1 of 2 runs stable)
 
-## Current production goal
-Upload docs → OCR → normalization → TPSAnswers → I-765/I-821 PDF → review → clean export ZIP.
-Manual input: phone, email, marital status, SSN, address. Everything else from documents.
+## FAILED / BROKEN
+- EAD standalone: given_name = "Saghi" (no MRZ backup = garbage accepted)
+- Booklet: 50% unstable ("BiRHEROI odwaemi" on second run)
+- Passport city_of_birth: Brain outputs "ВІННИЦЬКА ОБЛ." — JS \b regex didn't catch Cyrillic
+- Controlling spelling: NOT IMPLEMENTED (packetIdentityAnchor exists in translation, not used by TPS)
 
-## STATUS: DEGRADED
-Client-mode E2E closed with evidence. Owner-mode not proven (blocked by access).
+## UNVERIFIED (code written, not live-proven)
+- A2: MRZ identity lock (this commit)
+- A3: city/province Cyrillic regex fix (this commit)
+- A4: booklet weak-source marking (this commit)
+- Central Brain: ADR written, NOT built
 
-## VERIFIED (with physical evidence in repo)
+## OPEN
+- place_of_last_entry: not extracted from I-94
+- middle_name: unreachable from any automated source
+- Translation engine ↔ TPS bridge: not built
+- Central Brain v0: not started (Phase A must complete first)
 
-### E2E Flow (session 13)
-- [x] Production live: messenginfo.com, SHA cc319ce, healthz ok
-- [x] Client E2E: step1→step6, generate-packet 200, ZIP downloaded
-- [x] ZIP contents: I-821.pdf (1.8MB) + I-765.pdf (757KB) + INSTRUCTION.txt
-- [x] PDF pages rendered to PNG: i821-page1.png, i765-page1.png, i821-part7.png
-- [x] Evidence: docs/reports/evidence/t3ps-final-release/browser-run-clean/
-- [x] 5 OCR slots: all returned 200 (passport, booklet, i94, i797_or_ead, dl)
-- [x] Gate: passed with no errors after address fields fix
-- [x] Selector contract: all data-testid anchors present in production DOM
-
-### Wizard UX (sessions 9–10)
-- [x] 6 steps, progress bar matches
-- [x] Booklet upload slot: BOTH init AND rereg paths
-- [x] 5 upload slots for init: passport, booklet, I-94, I-797/EAD, DL
-- [x] 6 upload slots for rereg+EAD: tps_notice, booklet, passport, ead_old, i94, dl
-- [x] Placeholders removed from manual fields
-- [x] Tooltips: human language, 4 langs
-- [x] EAD subtitle merged into [?] tooltip
-- [x] Manual fields for us_address_city/state/zip added (session 13 fix)
-
-### Signature (session 9)
-- [x] Only for paper filing (hidden for online)
-- [x] [?] = inline tooltip, not new tab
-- [x] Screen mode without drawing = explicit error (4 langs)
-- [x] /s/ NAME in PDF (readback test: 3 tests pass)
-- [x] _signature_mode: paper | screen | online_myuscis
-
-### Knowledge & Normalization (session 9)
-- [x] Dictionary: 22 settlement types, CZO/MFA verified
-- [x] KMU-55: Тростянець → Trostianets (CZO confirmed)
-- [x] Regex: mandatory dot for с./м./сел./хут. (15 edge cases pass)
-- [x] Empty result guard in postExtractNormalize
-- [x] Province: genitive → nominative → English (25/25 oblasts)
-- [x] pdfPrefiller: toWinAnsiSafe on ALL values
-
-### Infrastructure (session 10)
-- [x] Session docs guard: pre-commit hook + CI workflow
-- [x] Stable data-testid selectors for automation
-- [x] Step-5 preflight gate before Step-6
-- [x] Per-slot OCR diagnostics
-- [x] 0 TS errors, 1963 tests pass
-
-## CLOSED CRITICAL BUGS
-- [x] us_address_city/state/zip: manual inputs added (session 13). Was blocking users without DL.
-- [x] Booklet slot missing in rereg: fixed (session 9). Was only in init branch.
-- [x] Regex stripping city names: fixed (session 9). "Суми"→"уми" bug.
-- [x] **REREG+NOEAD: no passport/I-94 slots** — fixed session 14. passport+I-94 were inside `if(ead)`.
-- [x] **last_entry_date hidden in rereg review** — fixed session 14. I-94 rows now show for all paths.
-
-- [x] **passport_expiration_date manual fallback** — fixed session 14. Manual input added + submit fallback.
-- [x] **BOOKLET CONTRACT MISSING** — fixed session 14. `booklet` slot had no entry in documentContracts → ALL booklet fields rejected as UNKNOWN_SLOT. Added contract with city_of_birth, province_of_birth, middle_name.
-- [x] **place_of_last_entry blocked by I-94 contract** — fixed session 14. Field added to I-94 allowed_fields.
-- [x] **BOOKLET ROUTE MISSING** — fixed session 14. API route had no `case 'booklet'` → module never ran.
-- [x] **P0: i797_or_ead / tps_notice / ead_old ROUTE+CONTRACT MISSING** — fixed session 15. Three wizard slot IDs had no case in OCR route switch AND i797_or_ead had no contract entry → ALL fields killed as UNKNOWN_SLOT. Added route cases + contract.
-- [x] **P1: Part 7 background declaration never shown** — fixed session 15. Added Part 7 confirmation card in Step 5. Gate now blocks generation without explicit user review.
-- [x] **P2: marital_status not gate-enforced** — fixed session 15. Added to REQUIRED_FIELDS in mailReadyGate.
-
-## OPEN BUGS
-- [ ] **I-912 fee waiver form**: feature gap — needs income/household wizard module. Not a hotfix.
-- [ ] **Owner-mode**: not proven in automation (blocked by session access).
-
-## DO NOT RE-LITIGATE
-- Dictionary v1.2 is canonical (ADR-002)
-- KMU-55 is the only transliteration standard
-- Existing pipeline is correct; extend, do not rebuild
-- смт abolished Jan 2024 but stays in dictionary for old documents
-
-## 2026-05-24 Runtime Addendum (RU internal passport, live)
-- [x] Production SHA pinned live: `3513eb3720d71421d18c8f1d65352f2b642fd449` (`/api/tps/health`)
-- [x] Live Chrome session: Step 4 confirms `Внутренний паспорт Украины ✓ загружено`
-- [x] After `Распознать документы` (Step 5), runtime values observed:
-  - `Город рождения` = `слет . Тростянець`
-  - `Область рождения` = `VINNYTSKA OBL.`
-  - `Отчество / Patronymic` not auto-filled (shown as missing from passport path)
-- [x] Evidence folder: `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/`
-
-Impact on status: normalization quality for internal-passport birthplace fields is failing in live RU runtime.
-
-## 2026-05-24 Wave1 Runtime-Stable v1 (booklet OCR→review→PDF lock)
-- [x] Guarded extraction implemented for `booklet` birthplace fields.
-- [x] `postExtractNormalize` now applies strict city/province validation + rejection diagnostics.
-- [x] OCR route now exposes additive diagnostics:
-  - `knowledge_rejected_fields`
-  - `knowledge_diagnostics`
-- [x] Rejected birthplace fields are removed from module output before Step 5 merge.
-- [x] Wizard merge now whitelists `booklet` to `city_of_birth`, `province_of_birth` only.
-- [x] Wizard now blocks raw fallback for booklet birthplace when normalized value is missing/rejected.
-- [x] Review→payload parity lock added for `city_of_birth` + `province_of_birth` in `/api/tps/generate-packet`.
-- [x] Contract tightened: booklet slot allows birthplace fields only.
-- [x] Tests: 1968/1968 pass, build passes.
-
-Status note:
-- Runtime matrix proof (EN/RU, mobile/desktop, owner/normal, ZIP/PDF per scenario) remains required for final PASS verdict.
-
+## NEXT EXACT STEP
+Deploy this commit → test same passport image → verify:
+1. city_of_birth = "ВІННИЦЬКА ОБЛ." is REJECTED (not "Vinnytsia Oblast")
+2. MRZ identity fields are LOCKED (EAD "Saghi" rejected when passport uploaded)
+3. Booklet fields marked review_required
