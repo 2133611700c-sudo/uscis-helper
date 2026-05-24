@@ -537,3 +537,27 @@ Over 2 days I created components but didn't wire them. SignatureStep existed as 
 - [ ] civil_registry_terms.json migration to knowledge
 - [ ] E2E with real upload (requires manual test)
 
+
+---
+
+## 2026-05-24 (session 16) | Live RU internal-passport runtime evidence (no code changes)
+
+**Summary:**
+Captured production browser evidence for RU flow with uploaded internal passport. Verified step-4 upload state and step-5 post-recognize outputs in live user Chrome session.
+
+**Artifacts added:**
+- `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/01_step5_city_oblast_ru.png`
+- `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/02_step4_internal_passport_uploaded_ru.png`
+- `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/03_step5_conflict_top_ru.png`
+- `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/04_health_tps.json`
+- `docs/reports/evidence/t3ps-final-release/browser-run-clean/runtime-ukr-passport-20260524/RUNTIME_AUDIT_RU_INTERNAL_PASSPORT_2026-05-24.md`
+
+**Observed runtime facts:**
+- Step 4: internal passport uploaded (`Внутренний паспорт Украины ✓ загружено`)
+- Step 5 after recognize:
+  - city_of_birth rendered as `слет . Тростянець`
+  - province_of_birth rendered as `VINNYTSKA OBL.`
+  - Patronymic not auto-filled from internal passport path
+- Live health SHA: `3513eb3720d71421d18c8f1d65352f2b642fd449`
+
+**Code changes:** none.
