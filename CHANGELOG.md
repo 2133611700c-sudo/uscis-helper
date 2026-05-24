@@ -3,6 +3,19 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## Audit — 2026-05-24 | Full TPS Production Audit Report
+SHA: docs-only commit
+File: docs/audit/TPS_PRODUCTION_AUDIT_20260524.md
+
+### Findings
+- CRITICAL: REREG+NOEAD = dead path (7 required fields blocked, no passport/I-94 slots)
+- Only INIT+EAD+PAPER is E2E proven
+- Mobile: UNVERIFIED (cannot test via automation tools)
+- Owner vs Client: no drift except expected payment/translation difference
+- 9 bugs ranked by severity with fix order
+
+---
+
 ## Session 13 — 2026-05-24 | Step 5 Gate/Data Path Fix + E2E Closure
 SHA range: 6f73aa3 → cc319ce
 Production: cc319ce (verified healthz)
