@@ -173,6 +173,16 @@ async function toStep6() {
     }
   }
   await fillVisibleInputs()
+  const setField = async (id, value) => {
+    const inp = page.locator(`[data-testid="${id}"]`).first()
+    if (await inp.count()) await inp.fill(value)
+  }
+  await setField('tps-review-manual-address-street', '123 MAIN ST')
+  await setField('tps-review-manual-address-city', 'LOS ANGELES')
+  await setField('tps-review-manual-address-state', 'CA')
+  await setField('tps-review-manual-address-zip', '90001')
+  await setField('tps-review-manual-phone', '2135551212')
+  await setField('tps-review-manual-email', 'test@example.com')
   const to6 = page.locator('[data-testid="tps-step6-continue-cta"]').first()
   if (await to6.count() && await to6.isEnabled()) await to6.click()
   await wait(1000)
