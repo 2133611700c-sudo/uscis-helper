@@ -68,6 +68,35 @@ a296ee1 fix: add missing locale prop to ReviewManual — fixes Vercel build
 9. **Signature mode**: paper | screen | online_myuscis in TPSAnswers type.
 
 ### Build failures during session
+## 2026-05-24 (session 10) — runtime drift closure (active)
+
+### What I changed
+1. `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
+   - Added stable data-testid selector contract for critical TPS path.
+   - Added Step-5 preflight gate before Step-6 transition.
+   - Added generated artifact truth marker (`generatedManifest`) after successful packet generation.
+   - Added per-slot OCR diagnostics (`ocr_http_status`, `ocr_error`) to reduce silent 422 behavior.
+
+2. Session docs updated:
+   - `STATUS.md`
+   - `HANDOFF.md`
+   - `CHANGELOG.md`
+
+### What is verified right now
+- Local gates pass after patch: `typecheck`, `test`, `lint`, `guard`, `build`.
+- Original failure is still reproducible on production until deploy (expected): script timeout on missing `tps-ocr-cta`.
+
+### What must happen next (no shortcuts)
+1. Commit scoped changes and push.
+2. Wait for deployment readiness.
+3. Rerun production browser proof:
+   - selector presence,
+   - clean-session false-readiness blocked,
+   - OCR/upload statuses visible,
+   - generate `200`,
+   - ZIP downloaded,
+   - PDFs opened and visually checked.
+
 - `959e761` — ERROR: missing locale prop in ReviewManual. Fixed in `a296ee1`.
 - `e88cc91` — ERROR: TS2322 'online_myuscis' not in type. Fixed in `ccbbb1f`.
 
