@@ -119,12 +119,13 @@ const IDENTITY_PRIORITY: Record<string, number> = {
   i94_ocr_keyword: 2,         // CBP official Latin
   ead_ocr_keyword: 3,         // USCIS official Latin
   dl_ocr_keyword: 4,          // US state official Latin
-  passport_ai_brain: 5,       // Brain guess from passport
-  booklet_ai_brain: 6,        // Brain guess from booklet
-  ead_ai_brain: 7,            // Brain guess from EAD
-  i94_ai_brain: 8,            // Brain guess from I-94
-  dl_ai_brain: 9,             // Brain guess from DL
-  manual_manual: 10,          // User typed
+  booklet_dual_ocr_crossref: 5, // dual OCR crossref — better than Brain, below printed sources
+  passport_ai_brain: 6,       // Brain guess from passport
+  booklet_ai_brain: 7,        // Brain guess from booklet
+  ead_ai_brain: 8,            // Brain guess from EAD
+  i94_ai_brain: 9,            // Brain guess from I-94
+  dl_ai_brain: 10,            // Brain guess from DL
+  manual_manual: 11,          // User typed
   manual_user_corrected: 0,   // User explicitly corrected → highest
 }
 
@@ -146,10 +147,11 @@ const DOCUMENT_PRIORITY: Record<string, Record<string, number>> = {
 }
 
 const WEAK_PRIORITY: Record<string, number> = {
-  booklet_ocr_keyword: 1,     // booklet rule module (labels matched)
-  booklet_ai_brain: 2,        // booklet Brain extraction
-  passport_ai_brain: 3,       // passport Brain guess
-  manual_manual: 4,
+  booklet_dual_ocr_crossref: 1, // dual OCR (Vision+DocAI) + DeepSeek cross-ref — highest automated
+  booklet_ocr_keyword: 2,     // booklet rule module (labels matched)
+  booklet_ai_brain: 3,        // booklet Brain extraction
+  passport_ai_brain: 4,       // passport Brain guess
+  manual_manual: 5,
   manual_user_corrected: 0,   // user correction always wins
 }
 
