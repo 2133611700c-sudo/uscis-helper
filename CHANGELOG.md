@@ -618,3 +618,7 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Field Arbiter v0: source ranking, identity lock, rejectedCandidates, conflict flags
 - 10 load-bearing tests: MRZ lock, garbage rejection, source priority, batch resolution
 - Deduplicate address review card
+- FIELD ARBITER v0 WIRED INTO WIZARD MERGE
+- Old Pass 1 + Pass 2 replaced with resolveAllFields()
+- Source-ranked merge: MRZ(1) > CBP(2) > USCIS(3) > DL(4) > Brain(5-9) > manual(10)
+- Identity lock, conflict tracking, rejectedCandidates in audit trail
