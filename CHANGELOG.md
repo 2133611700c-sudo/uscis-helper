@@ -636,3 +636,8 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Brain schema: place_of_last_entry field added
 - Central Brain v0.1: Levenshtein fuzzy matching + name plausibility
 - Country field hallucination guard: rejects person names as country values
+- Google Document AI integration: client, provider, feature flag
+- DocAI adapter matches OcrResult interface — drop-in replacement for Vision
+- Feature flag: DOCAI_ENABLED=false (safe rollout, switchable)
+- Health endpoint shows docai_enabled + ocr_provider
+- Live proof: booklet processed via DocAI, pages=1, text_len=195
