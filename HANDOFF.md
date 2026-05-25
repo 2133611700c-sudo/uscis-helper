@@ -36,3 +36,4 @@ Phase A stabilization started. Three code changes:
 See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fix.txt
 - Booklet garbage-rejection guard: mixed-case, consonant clusters, word count checks
 - 7 new tests added: 1975 total
+- Address binding fix: full → split fallback
