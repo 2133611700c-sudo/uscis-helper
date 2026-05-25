@@ -1,0 +1,4 @@
+run,surname,city,province,patronymic,crossref_status,field_count,latency_ms,dob
+1,Kuropiatnyk,Trostianets,Vinnytsia Oblast,Serhiiovych,crossref_ok,4,16295,NOT_FOUND
+2,Kuropiatnyk,Trostianets,Vinnytsia Oblast,Serhiiovych,crossref_ok,4,17016,NOT_FOUND
+3,Kuropiatnyk,Trostianets,Vinnytsia Oblast,Serhiiovych,crossref_ok,4,15845,NOT_FOUND
