@@ -3,6 +3,41 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 18: booklet client-side whitelist drift fix
+
+### What was broken
+Session 17 declared the booklet `family_name` path "production verified" based on a `curl` against `/api/tps/ocr/extract`. The server contract (commit `ce12446`) did allow `family_name` for the booklet slot. The wizard client did not. **Three independent client-side filters were still on the wave1 = 3-field set and silently dropped `family_name` before it reached Step 5 review**:
+- `BOOKLET_WAVE1_FIELDS` (TPSWizardV2.tsx ~line 1121) — used twice, in the fetch handler and again in `mergedFields` useMemo.
+- `SLOT_ALLOWED_FIELDS.booklet` (TPSWizardV2.tsx ~line 1082) — `booklet` entry was missing entirely, so hydrating from localStorage stripped the field.
+- `ExtractionSource` / `SourceType` unions — `'dual_ocr_crossref'` (the new server source) was not in the unions. Source-type narrowing in the fetch handler downgraded it to `'ocr_visual'`, demoting priority and review semantics.
+
+Net result on prod: booklet-only TPS users still entered surname manually. "10/10 stable on canonical" measured the API response, not the user experience.
+
+### Fix
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+  - `BOOKLET_WAVE1_FIELDS`: 3 → 4 (`+family_name`).
+  - `SLOT_ALLOWED_FIELDS`: added `booklet` entry with the 4 wave-1+2 fields, mirroring server `documentContracts`.
+  - `ExtractionSource` union: added `'dual_ocr_crossref'`. Accepted by source-type narrowing in fetch handler.
+- `apps/web/src/lib/tps/fieldArbiter.ts`:
+  - `SourceType` union: added `'dual_ocr_crossref'`. Existing priority entries (`booklet_dual_ocr_crossref` in `IDENTITY_PRIORITY` and `WEAK_PRIORITY`) now reachable instead of dead code.
+- `scripts/wizard-simulation-test.mjs`: regression script that calls the OCR endpoint and mirrors the client filter to assert 4 fields survive on the canonical sample. **Honest caveat:** this script hardcodes the wave1 set; it does not yet import the actual `BOOKLET_WAVE1_FIELDS` from the .tsx at runtime, so future drift between server and these constants is not yet caught.
+- `reports/booklet-stability-20260525-*`: 10 stability runs from this session. Latest (133117) confirms `surname=REDACTED, city=Trostianets, province=Vinnytsia Oblast, patronymic=Serhiiovych, dob=NOT_FOUND, field_count=4, crossref_ok, latency=15.4s`. `dob=NOT_FOUND` is the server contract correctly refusing to surface `dob` from booklet (still on the forbidden list pending multi-sample benchmark).
+- `daily-briefing-2026-05-25.md`: routine USCIS policy monitor. Flags H.R.1 IFR effective 2026-05-29 — TPS EAD 1-year cap, no auto-extension. Content work, not pipeline work; surfaced here for visibility.
+
+### Verification
+- `pnpm typecheck` (apps/web): clean.
+- `pnpm test` (apps/web vitest): 1985/1985 in 12s.
+- Diff scope: 17 lines code + 3 session docs.
+- **Not yet verified:** browser-level end-to-end. The fix lands the structural change; the proper E2E gate (next session) needs Playwright or equivalent, plus PDF byte-grep of the generated I-821/I-765.
+
+### Structural debt acknowledged, not yet paid
+The booklet allowed-field list now lives in 5 places: 1 server contract (`documentContracts.booklet.allowed_fields`) + 2 client whitelists (`BOOKLET_WAVE1_FIELDS`, `SLOT_ALLOWED_FIELDS.booklet`) + 2 source-type unions (`ExtractionSource`, `SourceType`). Comments saying "mirrors server" are not a contract. Next-session P0 is to consolidate to one source, either via `/api/tps/contract/:slot` runtime fetch or build-time codegen.
+
+### Open product question
+`given_name` and `dob` are still in `forbidden_fields` for the booklet slot. For booklet-only TPS users (no foreign passport) this means manual entry of two more critical fields. Dual-OCR crossref proved itself on family_name, city, province, patronymic — but only on **one** canonical sample. Relaxing the contract for `given_name`/`dob` requires a multi-sample benchmark first. Do not skip that step.
+
+---
+
 ## 2026-05-25 — Session 17: family_name KMU-55 + Central Brain plan audit
 
 ### family_name KMU-55 transliteration
