@@ -255,7 +255,8 @@ export async function POST(req: NextRequest) {
                     normalized_value: cr.value,
                     confidence: cr.confidence === 'high' ? 0.9 : cr.confidence === 'medium' ? 0.7 : 0.5,
                     extraction_source: 'dual_ocr_crossref',
-                    review_required: cr.review_required,
+                    // Booklet handwritten Cyrillic: ALWAYS review-required
+                    review_required: true,
                     source_document_id: document_id,
                     source_zone: 'dual_ocr_crossref',
                     bbox: null,
@@ -529,7 +530,10 @@ export async function POST(req: NextRequest) {
                   const newField: TpsExtractedField = {
                     field: tpsKey, raw_value: cr.value, normalized_value: cr.value,
                     confidence: cr.confidence === 'high' ? 0.9 : cr.confidence === 'medium' ? 0.7 : 0.5,
-                    extraction_source: 'dual_ocr_crossref', review_required: cr.review_required,
+                    // Booklet handwritten Cyrillic: ALWAYS review-required regardless
+                    // of DeepSeek confidence. Crossref improves accuracy but cannot
+                    // eliminate the inherent risk of handwritten OCR misreads.
+                    extraction_source: 'dual_ocr_crossref', review_required: true,
                     source_document_id: document_id, source_zone: 'dual_ocr_crossref',
                     bbox: null, language_layer: 'cyrillic', ocr_word_ids: [],
                     passes: [], failures: [], user_corrected: false,
