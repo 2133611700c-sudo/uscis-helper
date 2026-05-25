@@ -1,8 +1,8 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-25 Session 18 — client whitelist drift killed + drift gate wired into CI + evidence report on what blocks `dob` and `given_name`
-**Live SHA:** 8bce911 (drift gate) on top of 794b86d (whitelist fix). Prod verified at simulation level.
+**Updated:** 2026-05-25 Session 18 — booklet drift killed (3 legs) + drift gate v2 + evidence report + zero-trust re-audit
+**Live SHA:** e1429ba (or drift gate v2 commit pending push). Prod verified at simulation level.
 **Tests:** 1985/1985
-**Commits this session:** 4 (`794b86d` client fix, `8bce911` drift gate, `249a5b4` evidence report, formulation correction pending push)
+**Commits this session:** 5 (`794b86d` client fix, `8bce911` drift gate v1, `249a5b4` evidence report, `e1429ba` formulation correction, drift gate v2 pending push)
 
 ## EVIDENCE REPORT (corrected after external review)
 `reports/BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md` — 28-run analysis with three-class evidence rule (officially claimed / verified on our data / not verified). Headline findings:

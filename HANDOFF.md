@@ -30,7 +30,20 @@ No code change. This is correcting the analytical record. Same lesson as Session
 - `reports/BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md`
 - `STATUS.md`, `HANDOFF.md`, `CHANGELOG.md`
 
-### Files changed (all four commits this session)
+### 5. Extended drift gate to cover source-type union drift — third leg of Session 17 bug (commit pending push)
+`scripts/check-booklet-contract-drift.mjs` v2 now also parses every `extraction_source: '...'` literal from `route.ts` and asserts each value appears in all three client unions (`TpsExtractionSource` in `types.ts`, local `ExtractionSource` in `TPSWizardV2.tsx`, `SourceType` in `fieldArbiter.ts`).
+
+Server currently emits 3 sources: `ai_brain`, `dual_ocr_crossref`, `ocr_mrz`. All 3 are members of all 3 unions → green. Synthetic test: removed `dual_ocr_crossref` from `types.ts` copy → gate fires with exact diagnostic `"TpsExtractionSource (lib/tps/types.ts) missing server-emitted sources: ['dual_ocr_crossref']"` and exit 1.
+
+Observation surfaced: `TpsExtractionSource` (shared) and local `ExtractionSource` in TPSWizardV2 are byte-for-byte identical duplicates. Should be consolidated via import.
+
+Honest scope of gate v2: still does NOT check `fieldArbiter` priority-map keys (`booklet_dual_ocr_crossref` style compound keys). Server doesn't currently emit any uncovered combo, so the risk is theoretical; filed as follow-up.
+
+### Files changed (this commit)
+- `scripts/check-booklet-contract-drift.mjs` (added source-type union check section)
+- `STATUS.md`, `HANDOFF.md`, `CHANGELOG.md`
+
+### Files changed (all five commits this session)
 - `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
 - `apps/web/src/lib/tps/fieldArbiter.ts`
 - `scripts/wizard-simulation-test.mjs` (regression script the predecessor wrote)
