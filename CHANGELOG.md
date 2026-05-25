@@ -641,3 +641,6 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Feature flag: DOCAI_ENABLED=false (safe rollout, switchable)
 - Health endpoint shows docai_enabled + ocr_provider
 - Live proof: booklet processed via DocAI, pages=1, text_len=195
+- Supabase migration: google_vision + google_docai added to extraction_runs provider CHECK
+- Booklet stability: 8/8 correct runs (city+province)
+- CRITICAL AUDIT: documented real gaps vs claimed
