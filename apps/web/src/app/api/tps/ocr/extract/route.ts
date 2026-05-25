@@ -27,6 +27,8 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { docAIProvider, isDocAIEnabled } from '@/lib/docai/provider'
 import { logOcrRun } from '@/lib/tps/ocrAudit'
+import { processDocument as processDocAI } from '@/lib/docai/client'
+import { runDualOcrCrossref } from '@/lib/tps/ai/dualOcrCrossref'
 import { isBlocked } from '@/lib/ocr/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { runPassportModule } from '@/lib/tps/modules/passport'
@@ -216,6 +218,56 @@ export async function POST(req: NextRequest) {
       if (!td3.matched) {
         booklet = runPassportBookletModule(result, { document_id })
       }
+
+      // ── Dual-OCR cross-reference for booklet handwritten Cyrillic ──
+      // When booklet matched: also call DocAI, then DeepSeek cross-ref.
+      // This proven approach reconstructs surname from two OCR readings.
+      if (booklet?.matched && process.env.DUAL_OCR_CROSSREF !== 'false') {
+        try {
+          const docaiResult = await processDocAI(imageBuffer, effectiveMime)
+          if (docaiResult.ok) {
+            const crossref = await runDualOcrCrossref(result.raw_text, docaiResult.text)
+            if (crossref.ok) {
+              // Merge high/medium confidence cross-ref fields into booklet
+              const fieldMap: Record<string, string> = {
+                surname: 'family_name', city_of_birth: 'city_of_birth',
+                province_of_birth: 'province_of_birth', patronymic: 'middle_name',
+                date_of_birth: 'dob',
+              }
+              for (const [crKey, tpsKey] of Object.entries(fieldMap)) {
+                const cr = (crossref as any)[crKey] as { value: string | null; confidence: string; review_required: boolean }
+                if (!cr?.value || cr.confidence === 'garbage') continue
+                const existing = booklet!.fields.find((f) => f.field === tpsKey)
+                // Only override if crossref has better value or existing is empty
+                if (!existing || !existing.normalized_value) {
+                  const newField: TpsExtractedField = {
+                    field: tpsKey,
+                    raw_value: cr.value,
+                    normalized_value: cr.value,
+                    confidence: cr.confidence === 'high' ? 0.9 : cr.confidence === 'medium' ? 0.7 : 0.5,
+                    extraction_source: 'dual_ocr_crossref',
+                    review_required: cr.review_required,
+                    source_document_id: document_id,
+                    source_zone: 'dual_ocr_crossref',
+                    bbox: null,
+                    language_layer: 'cyrillic',
+                    ocr_word_ids: [],
+                    passes: [],
+                    failures: [],
+                    user_corrected: false,
+                  }
+                  if (existing) {
+                    Object.assign(existing, newField)
+                  } else {
+                    booklet!.fields.push(newField)
+                  }
+                }
+              }
+            }
+          }
+        } catch { /* dual-OCR is enhancement, never crashes main path */ }
+      }
+
       const hasPassportNumberFromMrz = (mr: TpsModuleResult | null): boolean =>
         !!mr?.fields?.some(
           (f) => f.field === 'passport_number' && f.extraction_source === 'ocr_mrz',

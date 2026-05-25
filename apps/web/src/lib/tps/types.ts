@@ -34,6 +34,7 @@ export type TpsExtractionSource =
   | 'ocr_visual'      // OCR raw text near a labelled anchor
   | 'ocr_keyword'     // anchored to a keyword (e.g. "Class of Admission")
   | 'ai_brain'        // DeepSeek Document Brain — feature-flag gated, validators applied
+  | 'dual_ocr_crossref' // Vision+DocAI cross-referenced by DeepSeek (booklet handwriting)
   | 'user_input'      // user typed it directly
   | 'user_corrected'  // user edited an OCR'd value
   | 'inferred'        // derived from another field (e.g. ead_category from filing_path)
