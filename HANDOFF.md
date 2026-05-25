@@ -42,3 +42,4 @@ See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fi
 - passport_expiration_date now visible in review cards
 
 
+- Field Arbiter v0 built: fieldArbiter.ts + 10 tests
