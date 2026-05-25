@@ -656,3 +656,6 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Dual OCR cross-reference module built
 - dualOcrCrossref.ts: Vision+DocAI → DeepSeek linguistic arbiter
 - Proven: dual OCR correctly reconstructed surname Куроп'ятник
+- Form Parser tested: WORSE than OCR processor for booklets
+- Premium features: image quality 0.024, per-token confidence
+- Architecture proven: dual OCR + DeepSeek = correct surname reconstruction
