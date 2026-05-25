@@ -84,6 +84,39 @@ function validateCity(value: string): { ok: boolean; reason: string } {
   // are \W (non-word), so \b never fires around them. Use explicit
   // boundary: start/end of string, whitespace, or punctuation.
   if (/(?:^|[\s.,;:!?])(?:обл|obl|oblast|province)(?:[\s.,;:!?]|$)/iu.test(value)) return { ok: false, reason: 'looks_like_province' }
+
+  // ── BOOKLET GARBAGE-REJECTION GUARD ──────────────────────────────────────
+  // Brain sometimes hallucinates gibberish like "BiRHEROI odwaemi" with
+  // confidence 0.9. These checks catch OCR/AI garbage that LOOKS like text
+  // but is not a valid city name.
+
+  // 1. Mixed-case gibberish within a single word.
+  // Valid: "Trostianets" (Title), "KYIV" (ALL UPPER), "kyiv" (all lower)
+  // Invalid: "BiRHEROI" (B-i-R-H-E-R-O-I = random case mixing)
+  const latinWords = value.match(/[A-Za-z]{3,}/g) || []
+  for (const w of latinWords) {
+    const isAllUpper = w === w.toUpperCase()
+    const isAllLower = w === w.toLowerCase()
+    const isTitleCase = /^[A-Z][a-z]+$/.test(w)
+    if (!isAllUpper && !isAllLower && !isTitleCase) {
+      return { ok: false, reason: 'garbage_mixed_case' }
+    }
+  }
+
+  // 2. Gibberish consonant clusters — 5+ consonants in a row is not a
+  // plausible Ukrainian city name (even transliterated).
+  if (/[bcdfghjklmnpqrstvwxz]{5,}/i.test(value)) {
+    return { ok: false, reason: 'garbage_consonant_cluster' }
+  }
+
+  // 3. Too many words for a city name. Real Ukrainian cities: 1-3 words
+  // ("Bila Tserkva", "Ivano-Frankivsk"). 4+ words = likely garbage or
+  // label text that slipped through.
+  const wordCount = value.trim().split(/\s+/).length
+  if (wordCount > 3) {
+    return { ok: false, reason: 'garbage_too_many_words' }
+  }
+
   return { ok: true, reason: 'ok' }
 }
 
