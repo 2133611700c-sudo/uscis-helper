@@ -1,8 +1,8 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-25 Session 18 — client whitelist drift killed (BOOKLET_WAVE1_FIELDS, SLOT_ALLOWED_FIELDS.booklet, source-type unions)
-**Live SHA:** pending push (was b29ef3f)
+**Updated:** 2026-05-25 Session 18 — client whitelist drift killed + drift gate wired into CI
+**Live SHA:** 794b86d (Vercel deploy READY, prod verified via wizard-simulation-test.mjs: 4/4 fields surface from booklet, all sourced as dual_ocr_crossref)
 **Tests:** 1985/1985
-**Commits this session:** 1
+**Commits this session:** 2 (`794b86d` client fix, drift gate commit to follow)
 
 ## SESSION 18 — booklet family_name actually reaches the user
 
@@ -26,13 +26,19 @@ Net effect on prod (still live on b29ef3f as of now): booklet-only TPS users see
 - It does not address `given_name` or `dob` from booklet — those are still forbidden by the server contract, awaiting multi-sample benchmark.
 
 ## STRUCTURAL DEBT — booklet allowed-fields drift surface
-Server (`documentContracts.ts:106`) + 3 client filters in `TPSWizardV2.tsx` (1082, 1121, 1973) + 1 arbiter union in `fieldArbiter.ts:91` = **5 sync points**. Recommended fix: server emits the contract over `/api/tps/contract/booklet`, client fetches once and uses for all 3 filters. Queued for next session.
+Server (`documentContracts.ts:106`) + 3 client filters in `TPSWizardV2.tsx` (1082, 1121, 1973) + 1 arbiter union in `fieldArbiter.ts:91` = **5 sync points**.
+
+**Drift gate now wired into CI** (`guards.yml` → `scripts/check-booklet-contract-drift.mjs`): parses the three set literals out of source at build time and fails the workflow if they drift. This catches the Session-17 bug pattern. Not a structural fix — comments still say "mirrors server" — but it eliminates the silent-drift failure mode.
+
+Long-term fix still queued: server emits the contract over `/api/tps/contract/booklet`, client fetches once and uses for all 3 filters. After that the gate collapses to a typecheck.
 
 ## NEXT STEP
-1. Push this fix → verify on prod.
-2. Build the real integration gate: a CI script that imports `BOOKLET_WAVE1_FIELDS`, `SLOT_ALLOWED_FIELDS.booklet`, `documentContracts.booklet.allowed_fields` at runtime and asserts equality. Catches future drift.
-3. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
-4. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
+1. ✅ Pushed (794b86d) and verified on prod via simulation script.
+2. ✅ Drift gate `scripts/check-booklet-contract-drift.mjs` wired into `guards.yml`.
+3. Browser-level E2E (Playwright + PDF byte-grep) — still owed. Simulation script is not a substitute.
+4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
+5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
+6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
 
 
 

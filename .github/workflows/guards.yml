@@ -162,6 +162,26 @@ jobs:
       - name: TypeScript check
         run: pnpm --filter web typecheck
 
+      # ───────────────────────────────────────────────────────────────
+      # Booklet allowed-fields drift gate
+      #
+      # Session 17 (2026-05-25) shipped a server contract change that
+      # added family_name to documentContracts.booklet.allowed_fields,
+      # but did not update the three corresponding client filters
+      # (BOOKLET_WAVE1_FIELDS, SLOT_ALLOWED_FIELDS.booklet, and the
+      # ExtractionSource/SourceType unions). The server returned the
+      # field; the client silently dropped it; "10/10 production
+      # verified" measured the API, not the user.
+      #
+      # This step parses the three set literals out of source at CI
+      # time and fails the build on drift. The proper long-term fix is
+      # to refactor the client filters to import from
+      # documentContracts.ts directly, after which this gate collapses
+      # to a typecheck. Until then, this is the gate.
+      # ───────────────────────────────────────────────────────────────
+      - name: Guard — booklet contract drift (server vs client filters)
+        run: node scripts/check-booklet-contract-drift.mjs
+
       - name: Production build
         run: pnpm --filter web build
 
