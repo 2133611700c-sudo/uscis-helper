@@ -12,7 +12,7 @@
 
 ## FAILED / BROKEN
 - EAD standalone: given_name = "Saghi" (no MRZ backup = garbage accepted)
-- Booklet: 50% unstable ("BiRHEROI odwaemi" on second run)
+- Booklet: garbage-rejection guard added (BiRHEROI→rejected) ("BiRHEROI odwaemi" on second run)
 - Passport city_of_birth: Brain outputs "ВІННИЦЬКА ОБЛ." — JS \b regex didn't catch Cyrillic
 - Controlling spelling: NOT IMPLEMENTED (packetIdentityAnchor exists in translation, not used by TPS)
 

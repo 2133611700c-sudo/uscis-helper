@@ -604,3 +604,5 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - A4: booklet weak source — all fields marked review_required
 - A5: honest STATUS/HANDOFF — no filler content
 - ROOT CAUSE: JS \b treats Cyrillic as \W → regex never matches "ОБЛ." in validateCity
+- Booklet garbage-rejection guard: mixed-case, consonant clusters, word count
+- 7 new tests: BiRHEROI rejected, valid cities pass, MRZ unaffected
