@@ -498,6 +498,42 @@ export async function POST(req: NextRequest) {
           }
         }
       }
+      // ── Dual-OCR cross-reference for booklet handwritten Cyrillic ──
+      if (moduleResult?.matched && process.env.DUAL_OCR_CROSSREF !== 'false') {
+        crossrefStatus = 'attempted'
+        try {
+          const docaiResult = await processDocAI(imageBuffer, effectiveMime)
+          if (docaiResult.ok) {
+            crossrefStatus = 'docai_ok'
+            const crossref = await runDualOcrCrossref(effectiveOcrResult.raw_text, docaiResult.text)
+            if (crossref.ok) {
+              crossrefStatus = 'crossref_ok'
+              const fieldMap: Record<string, string> = {
+                surname: 'family_name', city_of_birth: 'city_of_birth',
+                province_of_birth: 'province_of_birth', patronymic: 'middle_name',
+                date_of_birth: 'dob',
+              }
+              for (const [crKey, tpsKey] of Object.entries(fieldMap)) {
+                const cr = (crossref as any)[crKey] as { value: string | null; confidence: string; review_required: boolean }
+                if (!cr?.value || cr.confidence === 'garbage') continue
+                const existing = moduleResult!.fields.find((f) => f.field === tpsKey)
+                if (!existing || !existing.normalized_value) {
+                  const newField: TpsExtractedField = {
+                    field: tpsKey, raw_value: cr.value, normalized_value: cr.value,
+                    confidence: cr.confidence === 'high' ? 0.9 : cr.confidence === 'medium' ? 0.7 : 0.5,
+                    extraction_source: 'dual_ocr_crossref', review_required: cr.review_required,
+                    source_document_id: document_id, source_zone: 'dual_ocr_crossref',
+                    bbox: null, language_layer: 'cyrillic', ocr_word_ids: [],
+                    passes: [], failures: [], user_corrected: false,
+                  }
+                  if (existing) Object.assign(existing, newField)
+                  else moduleResult!.fields.push(newField)
+                }
+              }
+            }
+          }
+        } catch (e: any) { console.error('[dual-ocr-crossref:booklet]', e?.message) }
+      }
       break
     }
     // ── P0 FIX (2026-05-24): three wizard slot IDs had NO case in this
