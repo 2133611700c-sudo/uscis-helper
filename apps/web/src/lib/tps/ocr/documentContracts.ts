@@ -119,11 +119,13 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'city_of_birth',
       'province_of_birth',
       'middle_name',
+      // Wave2: dual-OCR cross-reference can reconstruct surname from
+      // two OCR readings. Field Arbiter still gives MRZ priority.
+      'family_name',
     ],
     forbidden_fields: [
-      // Identity fields — загранпаспорт MRZ is authoritative.
-      // Booklet handwritten OCR produces garbage for these.
-      'family_name',
+      // given_name — загранпаспорт MRZ is authoritative.
+      // Booklet handwritten OCR produces garbage for given_name.
       'given_name',
       // 'middle_name' — MOVED TO ALLOWED (only source for patronymic)
       'dob',
