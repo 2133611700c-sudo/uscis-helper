@@ -34,3 +34,4 @@ Deploy this commit → test same passport image → verify:
 2. MRZ identity fields are LOCKED (EAD "Saghi" rejected when passport uploaded)
 3. Booklet fields marked review_required
 
+
