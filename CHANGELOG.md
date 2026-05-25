@@ -664,3 +664,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Form Parser tested and REJECTED (worse results)
 - Image enhancement tested and REJECTED (worse quality score)
 
+- maxDuration=60 for OCR route (dual-OCR needs ~15s)
