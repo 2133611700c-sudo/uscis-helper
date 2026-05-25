@@ -285,6 +285,39 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       continue
     }
 
+    // ── MIDDLE_NAME (PATRONYMIC) — booklet Cyrillic → Latin ─────────────
+    if (f.field === 'middle_name' && (f.normalized_value || f.raw_value)) {
+      const raw = (f.raw_value || '').trim()
+      const norm = (f.normalized_value || '').trim()
+      const input = norm || raw
+      const latinWords = input.match(/[A-Za-z]{3,}/g) || []
+      let isGarbage = false
+      for (const w of latinWords) {
+        const allUp = w === w.toUpperCase()
+        const allLo = w === w.toLowerCase()
+        const title = /^[A-Z][a-z]+$/.test(w)
+        if (!allUp && !allLo && !title) { isGarbage = true; break }
+      }
+      if (isGarbage || input.length < 2 || input.length > 50) {
+        rejected.add(f.field)
+        f.normalized_value = null
+        f.review_required = true
+        f.failures = [...f.failures, 'knowledge_patronymic_garbage']
+        diagnostics.push({ field: f.field, status: 'rejected', reason: 'patronymic_garbage',
+          input_raw: raw, input_normalized: input, output_normalized: null, manual_required: true })
+      } else {
+        const hasCyrillic = /[А-Яа-яІіЇїЄєҐґ]/.test(input)
+        const output = hasCyrillic ? transliterateKMU55(input) : input
+        f.normalized_value = output
+        f.passes = [...f.passes, `knowledge_patronymic:${hasCyrillic ? 'kmu55' : 'latin_passthrough'}`]
+        normalizations.push(`middle_name: "${input}" → "${output}"`)
+        diagnostics.push({ field: f.field, status: 'normalized',
+          reason: hasCyrillic ? 'kmu55_transliteration' : 'latin_passthrough',
+          input_raw: raw, input_normalized: input, output_normalized: output, manual_required: false })
+      }
+      continue
+    }
+
     // Track duplicate field values across documents for conflict detection
     // (e.g., name from passport MRZ vs name from DL)
     diagnostics.push({
