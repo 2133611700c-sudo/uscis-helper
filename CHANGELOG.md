@@ -622,3 +622,8 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Old Pass 1 + Pass 2 replaced with resolveAllFields()
 - Source-ranked merge: MRZ(1) > CBP(2) > USCIS(3) > DL(4) > Brain(5-9) > manual(10)
 - Identity lock, conflict tracking, rejectedCandidates in audit trail
+- BOOKLET: middle_name (patronymic) UNBLOCKED — was forbidden, now extracted + transliterated
+- Contract: middle_name moved from forbidden to allowed for booklet
+- Brain targeted: middle_name added for booklet slot
+- postExtractNormalize: patronymic garbage guard + KMU-55 Cyrillic→Latin transliteration
+- Arbiter: booklet_ocr_keyword priority added for weak fields

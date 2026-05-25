@@ -554,7 +554,7 @@ export async function POST(req: NextRequest) {
   // without lowering the global threshold.
   const TARGETED_BRAIN_FIELDS: Record<string, string[]> = {
     passport: ['middle_name', 'country_of_birth', 'province_of_birth'],
-    booklet: ['city_of_birth', 'province_of_birth'],
+    booklet: ['city_of_birth', 'province_of_birth', 'middle_name'],
     // P2 FIX: I-94 rule module often misses name/place fields due to
     // CBP format variations. Brain should fill identity + port of entry.
     i94: ['place_of_last_entry', 'family_name', 'given_name'],
