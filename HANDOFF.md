@@ -47,3 +47,4 @@ See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fi
 - Patronymic UNBLOCKED from booklet
 
 - Levenshtein cross-document matching + plausibility
+- Brain prompts improved for patronymic + place_of_last_entry

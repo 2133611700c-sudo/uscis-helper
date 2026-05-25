@@ -631,3 +631,7 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Patronymic guard: reject Cyrillic without -ович/-овна/-івна endings
 - 'Cepriticbur' now correctly REJECTED as garbage
 - Central Brain: Levenshtein fuzzy matching + name plausibility guard
+- Brain prompt: patronymic MUST be Cyrillic source_value, omit if garbage
+- Brain prompt: I-94 place_of_last_entry (Port of Entry) instruction added
+- Brain schema: place_of_last_entry field added
+- Central Brain v0.1: Levenshtein fuzzy matching + name plausibility
