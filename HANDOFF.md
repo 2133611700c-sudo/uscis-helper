@@ -15,7 +15,22 @@ The server contract for booklet (`documentContracts.booklet.allowed_fields`) alr
 
 This is the foundation for any future "relax the booklet contract" conversation. Don't have it without re-reading the report.
 
-### Files changed (both commits)
+### 4. Corrected evidence-report formulation after external review (commit pending push)
+External reader (vendor-strategy note) caught two too-absolute claims in the evidence report. The `given_name` section was titled "structural OCR limitation, not a contract issue" and concluded "not fixable from this sample" — both phrasings drift from "Vision+DocAI failed on our N=1 sample" to "OCR cannot do this".
+
+Added to the report:
+- A global evidence-classification rule (*officially claimed* / *verified on our data* / *not verified*) applied to every provider-capability claim.
+- Explicit acknowledgement that Azure Read and Yandex Vision were never benchmarked on Cyrillic handwritten booklets and could behave differently.
+- Image preprocessing + region cropping as a fourth investigation path (cheap, untried).
+- A "do not write absolute claims about provider capability based on N=1 sample" rule under "What you should NOT do".
+
+No code change. This is correcting the analytical record. Same lesson as Session 17's post-mortem, applied to vendor framing instead of pipeline framing: don't generalize from one sample to a capability claim.
+
+### Files changed (this commit)
+- `reports/BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md`
+- `STATUS.md`, `HANDOFF.md`, `CHANGELOG.md`
+
+### Files changed (all four commits this session)
 - `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
 - `apps/web/src/lib/tps/fieldArbiter.ts`
 - `scripts/wizard-simulation-test.mjs` (regression script the predecessor wrote)
