@@ -3291,7 +3291,7 @@ function ReviewOcr({
           />
         )
       })}
-      {hasAnyAddrPart && (
+      {hasAnyAddrPart && !mergedFields.address?.value && (
         <RW
           key="__us_address_composite"
           label={t.label.address}

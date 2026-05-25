@@ -614,3 +614,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Review cards: a_number/address for ALL filing types
 - passport_expiration_date added to review cards (4 locales)
 
+- Fix duplicate address card (composed address shows once, not twice)
