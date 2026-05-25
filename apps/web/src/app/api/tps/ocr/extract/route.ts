@@ -244,7 +244,11 @@ export async function POST(req: NextRequest) {
                 if (!cr?.value || cr.confidence === 'garbage') continue
                 const existing = booklet!.fields.find((f) => f.field === tpsKey)
                 // Only override if crossref has better value or existing is empty
-                if (!existing || !existing.normalized_value) {
+                // Override if: no existing, existing empty, or existing from weaker source
+                const weakSources = new Set(['ocr_keyword', 'ocr_visual', 'ai_brain'])
+                const shouldOverride = !existing || !existing.normalized_value ||
+                  weakSources.has(existing.extraction_source)
+                if (shouldOverride) {
                   const newField: TpsExtractedField = {
                     field: tpsKey,
                     raw_value: cr.value,
@@ -517,7 +521,11 @@ export async function POST(req: NextRequest) {
                 const cr = (crossref as any)[crKey] as { value: string | null; confidence: string; review_required: boolean }
                 if (!cr?.value || cr.confidence === 'garbage') continue
                 const existing = moduleResult!.fields.find((f) => f.field === tpsKey)
-                if (!existing || !existing.normalized_value) {
+                // Override if: no existing, existing empty, or existing from weaker source
+                const weakSources = new Set(['ocr_keyword', 'ocr_visual', 'ai_brain'])
+                const shouldOverride = !existing || !existing.normalized_value ||
+                  weakSources.has(existing.extraction_source)
+                if (shouldOverride) {
                   const newField: TpsExtractedField = {
                     field: tpsKey, raw_value: cr.value, normalized_value: cr.value,
                     confidence: cr.confidence === 'high' ? 0.9 : cr.confidence === 'medium' ? 0.7 : 0.5,
