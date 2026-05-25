@@ -653,3 +653,6 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - OCR route → Supabase audit write (fire-and-forget)
 - Health: deep DocAI verification (auth+processor)
 - fix: await logOcrRun on serverless (fire-and-forget exits too early)
+- Dual OCR cross-reference module built
+- dualOcrCrossref.ts: Vision+DocAI → DeepSeek linguistic arbiter
+- Proven: dual OCR correctly reconstructed surname REDACTED_NAME
