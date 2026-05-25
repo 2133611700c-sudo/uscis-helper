@@ -1,14 +1,14 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-25 Session 16 — Booklet Handwritten Cyrillic Completion
-**Live SHA:** 0ec7a8e
+**Updated:** 2026-05-25 Session 17 — family_name KMU-55 + Central Brain plan audit
+**Live SHA:** pending push
 **Tests:** 1985/1985
-**Commits this session:** 3
+**Commits this session:** 1
 
 ## EXTRACTION (API level — VERIFIED via curl on canonical dataset)
 
 | Field | Status | Source | Value |
 |-------|--------|--------|-------|
-| family_name | ✅ | passport MRZ | Kuropiatnyk |
+| family_name | ✅ | passport MRZ / booklet dual-OCR crossref | Kuropiatnyk (Latin via MRZ or KMU-55 from booklet) |
 | given_name | ✅ | passport MRZ | Sergii |
 | dob | ✅ | passport MRZ | 1986-06-25 |
 | sex | ✅ | passport MRZ | M |
@@ -45,12 +45,11 @@
 
 ## CANNOT FIX (honest)
 - place_of_last_entry: I-94 module + Brain don't extract port of entry
-- Booklet family_name stays Cyrillic for booklet-only users (no MRZ Latin source)
 - Controlling spelling: requires packetIdentityAnchor integration (future)
-- Single-dataset booklet proof: other handwriting styles may vary
+- Single-dataset booklet proof: other handwriting styles may vary (need 3-5 real booklets)
 
 ## NEXT STEP
-Add KMU-55 transliteration for family_name in postExtractNormalize (booklet-only users).
+Multi-sample booklet benchmark — need 3-5 real booklet images with known ground truth.
 
 
 

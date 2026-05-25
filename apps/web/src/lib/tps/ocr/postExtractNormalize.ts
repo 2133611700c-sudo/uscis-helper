@@ -310,6 +310,78 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       }
     }
 
+    // ── FAMILY_NAME — booklet-only users: Cyrillic → Latin KMU-55 ───────
+    // For users with загранпаспорт, MRZ already provides Latin family_name
+    // and the arbiter picks MRZ over booklet (priority 1 vs 5). For booklet-
+    // only users (no MRZ source), the surname stays Cyrillic without this
+    // rule. I-821 form requires Latin. KMU-55 is the official Ukrainian
+    // government transliteration standard for passports — same rules USCIS
+    // expects on the form.
+    if (f.field === 'family_name' && (f.normalized_value || f.raw_value)) {
+      const raw = (f.raw_value || '').trim()
+      const norm = (f.normalized_value || '').trim()
+      const input = norm || raw
+
+      // Skip if already Latin (MRZ or EAD/I-94 keyword extraction). Don't
+      // re-transliterate "Kuropiatnyk" — it would mangle the value.
+      const hasCyrillic = /[А-Яа-яІіЇїЄєҐґ]/.test(input)
+      if (!hasCyrillic) {
+        // Garbage guard: mixed-case Latin (e.g. "BiRHEROI" from broken OCR).
+        // Title case "Kuropiatnyk" and ALL CAPS "KUROPIATNYK" are both ok.
+        const latinWords = input.match(/[A-Za-z]{3,}/g) || []
+        let isGarbage = false
+        for (const w of latinWords) {
+          const allUp = w === w.toUpperCase()
+          const allLo = w === w.toLowerCase()
+          const title = /^[A-Z][a-z]+(?:[-'][A-Z][a-z]+)*$/.test(w)
+          if (!allUp && !allLo && !title) { isGarbage = true; break }
+        }
+        if (isGarbage || input.length < 2 || input.length > 50) {
+          rejected.add(f.field)
+          f.normalized_value = null
+          f.review_required = true
+          f.failures = [...f.failures, 'knowledge_family_name_garbage']
+          diagnostics.push({ field: f.field, status: 'rejected', reason: 'family_name_garbage',
+            input_raw: raw, input_normalized: input, output_normalized: null, manual_required: true })
+          continue
+        }
+        // Latin passthrough — but title-case if all caps (MRZ delivers ALL CAPS).
+        const output = input === input.toUpperCase()
+          ? input.toLowerCase().replace(/(^|[-\s'])([a-z])/g, (_, sep, c) => sep + c.toUpperCase())
+          : input
+        if (output !== input) {
+          f.normalized_value = output
+          f.passes = [...f.passes, 'knowledge_family_name:latin_titlecase']
+          normalizations.push(`family_name: "${input}" → "${output}"`)
+          diagnostics.push({ field: f.field, status: 'normalized', reason: 'latin_titlecase',
+            input_raw: raw, input_normalized: input, output_normalized: output, manual_required: false })
+        } else {
+          diagnostics.push({ field: f.field, status: 'passed', reason: 'latin_passthrough',
+            input_raw: raw, input_normalized: input, output_normalized: input, manual_required: false })
+        }
+        continue
+      }
+
+      // Cyrillic path (booklet-only users): KMU-55 transliteration.
+      // Garbage guard: surname must contain only letters, apostrophes, hyphens, spaces.
+      if (input.length < 2 || input.length > 50 || /\d/.test(input)) {
+        rejected.add(f.field)
+        f.normalized_value = null
+        f.review_required = true
+        f.failures = [...f.failures, 'knowledge_family_name_invalid_shape']
+        diagnostics.push({ field: f.field, status: 'rejected', reason: 'family_name_invalid_shape',
+          input_raw: raw, input_normalized: input, output_normalized: null, manual_required: true })
+        continue
+      }
+      const output = transliterateKMU55(input)
+      f.normalized_value = output
+      f.passes = [...f.passes, 'knowledge_family_name:kmu55']
+      normalizations.push(`family_name: "${input}" → "${output}"`)
+      diagnostics.push({ field: f.field, status: 'normalized', reason: 'kmu55_transliteration',
+        input_raw: raw, input_normalized: input, output_normalized: output, manual_required: false })
+      continue
+    }
+
     // ── MIDDLE_NAME (PATRONYMIC) — booklet Cyrillic → Latin ─────────────
     if (f.field === 'middle_name' && (f.normalized_value || f.raw_value)) {
       const raw = (f.raw_value || '').trim()
