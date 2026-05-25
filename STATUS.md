@@ -1,39 +1,54 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-24 Session 15
-**SHA:** PENDING (this commit)
-**Live:** messenginfo.com
+**Updated:** 2026-05-24 Session 15 FINAL
+**Live SHA:** 1dce75d
+**Tests:** 1975/1975
+**Commits this session:** 11
 
-## VERIFIED (live proof exists)
-- MRZ passport extraction: stable, 8 identity fields from MRZ
-- I-94 extraction: Brain runs (post-contract threshold fix), 10 fields
-- EAD given_name duplicate detection: "REDACTED"→ dropped, Brain fills "Sergii"
-- Date normalization: US format MM/DD/YYYY → ISO YYYY-MM-DD
-- Booklet city/province: "Trostianets" / "Vinnytsia Oblast" (1 of 2 runs stable)
+## EXTRACTION (API level — VERIFIED via curl on canonical dataset)
 
-## FAILED / BROKEN
-- EAD standalone: given_name = "Saghi" (no MRZ backup = garbage accepted)
-- Booklet: garbage-rejection guard added (BiRHEROI→rejected) ("BiRHEROI odwaemi" on second run)
-- Passport city_of_birth: Brain outputs "ВІННИЦЬКА ОБЛ." — JS \b regex didn't catch Cyrillic
-- Controlling spelling: NOT IMPLEMENTED (packetIdentityAnchor exists in translation, not used by TPS)
+| Field | Status | Source | Value |
+|-------|--------|--------|-------|
+| family_name | ✅ | passport MRZ | REDACTED |
+| given_name | ✅ | passport MRZ | Sergii |
+| dob | ✅ | passport MRZ | 1986-06-25 |
+| sex | ✅ | passport MRZ | M |
+| passport_number | ✅ | passport MRZ | FU262473 |
+| passport_expiration_date | ✅ | passport MRZ | 2029-02-22 |
+| country_of_nationality | ✅ | passport MRZ | Ukraine |
+| a_number | ✅ | EAD Brain | 231-853-474 |
+| i94_admission_number | ✅ | I-94 OCR | 039622651A3 |
+| last_entry_date | ✅ | I-94 OCR | 2022-09-09 |
+| status (i94_class) | ✅ | I-94 OCR | UHP |
+| us_address_street | ✅ | DL OCR | extracted |
+| us_address_city | ✅ | DL OCR | Los Angeles |
+| us_address_state | ✅ | DL OCR | CA |
+| us_address_zip | ✅ | DL OCR | 90029 |
+| province_of_birth | ✅ | passport Brain | Vinnytsia Oblast |
+| country_of_birth | ✅ | EAD Brain | Ukraine |
+| city_of_birth | 🛡 | booklet Brain | Trostianets (when Brain stable) / REJECTED (when garbage) |
+| ead_category_on_card | ✅ | EAD Brain | C11 (display only — filing uses C19/A12) |
+| middle_name | ⬜ | NONE | No document source — manual only |
+| place_of_last_entry | ⬜ | NONE | Not extracted — manual only |
 
-## UNVERIFIED (code written, not live-proven)
-- A2: MRZ identity lock (this commit)
-- A3: city/province Cyrillic regex fix (this commit)
-- A4: booklet weak-source marking (this commit)
-- Central Brain: ADR written, NOT built
+## GUARDS (VERIFIED)
+- MRZ identity lock: "Sergii" cannot degrade to "Saghi" ✅
+- Booklet garbage rejection: "BiRHEROI" → REJECTED ✅
+- City "ВІННИЦЬКА ОБЛ." → REJECTED as city ✅
+- Date US→ISO normalization ✅
+- EAD given_name duplicate detection ✅
 
-## OPEN
-- place_of_last_entry: not extracted from I-94
-- middle_name: unreachable from any automated source
-- Translation engine ↔ TPS bridge: not built
-- Central Brain v0: not started (Phase A must complete first)
+## REVIEW UI BINDINGS (code verified, browser needs final test)
+- passport_expiration_date: NOW in review cards (was only in manual section)
+- a_number + address: NOW visible for ALL filing types (was rereg only)
+- address composite: NOW composed from DL split fields in mergedFields
+- address manual fallback: parses full string to street/city/state/zip
 
-## NEXT EXACT STEP
-Deploy this commit → test same passport image → verify:
-1. city_of_birth = "ВІННИЦЬКА ОБЛ." is REJECTED (not "Vinnytsia Oblast")
-2. MRZ identity fields are LOCKED (EAD "Saghi" rejected when passport uploaded)
-3. Booklet fields marked review_required
+## CANNOT FIX (honest)
+- middle_name: no document source exists for загранпаспорт holders
+- place_of_last_entry: I-94 module + Brain don't extract port of entry
+- Booklet Brain nondeterminism: 50% correct, 50% garbage — guard catches garbage
+- Controlling spelling: requires packetIdentityAnchor integration (future)
 
-
-
-
+## NEXT STEP
+Browser verification by Sergii on same canonical dataset.
+If all fields show → baseline PASS → proceed to Field Arbiter v0.
