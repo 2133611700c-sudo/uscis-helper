@@ -31,6 +31,9 @@ const REPO = path.resolve(__dirname, '..')
 
 const CONTRACT_FILE = path.join(REPO, 'apps/web/src/lib/tps/ocr/documentContracts.ts')
 const WIZARD_FILE = path.join(REPO, 'apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx')
+const ROUTE_FILE = path.join(REPO, 'apps/web/src/app/api/tps/ocr/extract/route.ts')
+const TYPES_FILE = path.join(REPO, 'apps/web/src/lib/tps/types.ts')
+const ARBITER_FILE = path.join(REPO, 'apps/web/src/lib/tps/fieldArbiter.ts')
 
 /**
  * Parse documentContracts.booklet.allowed_fields out of the TS source.
@@ -102,6 +105,70 @@ function extractQuotedIdentifiers(body) {
   return new Set(matches.map((s) => s.slice(1, -1)))
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SOURCE-TYPE UNION DRIFT (the "third leg" of the Session 17 bug)
+//
+// Session 17 bug had THREE legs:
+//  (1) BOOKLET_WAVE1_FIELDS missing family_name
+//  (2) SLOT_ALLOWED_FIELDS.booklet missing the booklet entry
+//  (3) ExtractionSource / SourceType unions missing 'dual_ocr_crossref'
+//
+// Leg (3) was the silent killer: even when the server emitted a field with
+// source 'dual_ocr_crossref', the client union narrowing collapsed it to
+// 'ocr_visual' (the fallback), demoting its priority in the field arbiter.
+//
+// The original drift gate covers legs (1) and (2). This section covers
+// leg (3): every source value the server emits MUST be a member of all
+// three client unions, otherwise it silently degrades.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Parse all `extraction_source: '...'` string literals from route.ts.
+ * Returns the set of source values the server actually emits.
+ */
+function readServerEmittedSources() {
+  const src = fs.readFileSync(ROUTE_FILE, 'utf8')
+  const matches = src.match(/extraction_source:\s*['"]([a-zA-Z_][a-zA-Z0-9_]*)['"]/g) || []
+  return new Set(matches.map((m) => m.match(/['"]([^'"]+)['"]/)[1]))
+}
+
+/**
+ * Parse a TypeScript union type declaration by name out of source.
+ * Handles the pattern:
+ *   export type <Name> = 'a' | 'b' | 'c'
+ *   export type <Name> =
+ *     | 'a'
+ *     | 'b'
+ * Returns the set of string-literal members.
+ */
+function readUnionMembers(file, typeName) {
+  const src = fs.readFileSync(file, 'utf8')
+  // Anchor on `type <Name> =` to be precise. Capture until the next blank
+  // line OR until a non-union token (export, function, const, interface, etc.)
+  // appears at column 0.
+  const re = new RegExp(
+    `\\btype\\s+${typeName}\\s*=([\\s\\S]*?)(?:\\n\\n|\\n(?:export|function|const|interface|type|class|import|\\/\\*\\*))`,
+  )
+  const m = src.match(re)
+  if (!m) {
+    throw new Error(`Could not locate union "${typeName}" in ${file}.`)
+  }
+  // Strip comments, extract quoted identifiers, return as Set.
+  return extractQuotedIdentifiers(m[1])
+}
+
+function readTpsExtractionSourceUnion() {
+  return readUnionMembers(TYPES_FILE, 'TpsExtractionSource')
+}
+
+function readWizardExtractionSourceUnion() {
+  return readUnionMembers(WIZARD_FILE, 'ExtractionSource')
+}
+
+function readArbiterSourceTypeUnion() {
+  return readUnionMembers(ARBITER_FILE, 'SourceType')
+}
+
 function setsEqual(a, b) {
   if (a.size !== b.size) return false
   for (const x of a) if (!b.has(x)) return false
@@ -122,7 +189,7 @@ function main() {
     wave1 = readClientWave1Fields()
     slot = readClientSlotAllowedBooklet()
   } catch (e) {
-    console.error('PARSE ERROR:', e.message)
+    console.error('PARSE ERROR (allowed-fields):', e.message)
     console.error('A literal moved or was reshaped. Re-read the parsers in this script.')
     process.exit(2)
   }
@@ -156,14 +223,50 @@ function main() {
     fail = true
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // Source-type union membership (third leg of Session 17 bug)
+  // ─────────────────────────────────────────────────────────────────
+  console.log('\n=== Source-type union membership ===')
+  let emitted, sharedUnion, wizardUnion, arbiterUnion
+  try {
+    emitted = readServerEmittedSources()
+    sharedUnion = readTpsExtractionSourceUnion()
+    wizardUnion = readWizardExtractionSourceUnion()
+    arbiterUnion = readArbiterSourceTypeUnion()
+  } catch (e) {
+    console.error('PARSE ERROR (source-type unions):', e.message)
+    console.error('A type declaration moved or was reshaped. Re-read the parsers.')
+    process.exit(2)
+  }
+
+  console.log('Server emits sources:                            ', [...emitted].sort())
+  console.log('lib/tps/types.ts TpsExtractionSource union:      ', [...sharedUnion].sort())
+  console.log('TPSWizardV2 local ExtractionSource union:        ', [...wizardUnion].sort())
+  console.log('fieldArbiter SourceType union:                   ', [...arbiterUnion].sort())
+
+  // Every server-emitted source MUST be a member of all three unions.
+  // (Client unions are allowed to contain MORE values: user_input, manual, etc.)
+  for (const [unionName, union] of [
+    ['TpsExtractionSource (lib/tps/types.ts)', sharedUnion],
+    ['ExtractionSource (TPSWizardV2.tsx)', wizardUnion],
+    ['SourceType (fieldArbiter.ts)', arbiterUnion],
+  ]) {
+    const missing = [...emitted].filter((s) => !union.has(s))
+    if (missing.length) {
+      console.error(`\n❌ DRIFT: ${unionName} missing server-emitted sources: ${JSON.stringify(missing)}`)
+      console.error('  Effect: when server emits one of these, the client union narrowing will downgrade or drop it silently.')
+      fail = true
+    }
+  }
+
   if (fail) {
     console.error('\nThis is the Session 17 bug pattern. A field is being silently dropped between server response and user-visible review.')
-    console.error('Fix: update both client constants in TPSWizardV2.tsx AND the server contract together, then re-run.')
-    console.error('Better long-term fix: refactor client filters to import from documentContracts.ts so drift becomes impossible.')
+    console.error('Fix: update the offending constant(s) AND the server contract together, then re-run.')
+    console.error('Better long-term fix: refactor client filters to import from documentContracts.ts and unions to import from lib/tps/types.ts so drift becomes impossible.')
     process.exit(1)
   }
 
-  console.log('\n✅ All three sets match. No drift.')
+  console.log('\n✅ All allowed-field sets match AND all server-emitted sources are members of all three client unions. No drift.')
   process.exit(0)
 }
 

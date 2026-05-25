@@ -3,11 +3,44 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 18 (5th commit): drift gate v2 — covers source-type union drift (third leg of Session 17 bug)
+
+### What was added
+- `scripts/check-booklet-contract-drift.mjs`: new section that parses all `extraction_source: '...'` literals from `route.ts` and asserts each value is a member of all three client unions:
+  - `TpsExtractionSource` in `apps/web/src/lib/tps/types.ts`
+  - local `ExtractionSource` in `TPSWizardV2.tsx`
+  - `SourceType` in `apps/web/src/lib/tps/fieldArbiter.ts`
+
+### Why
+Session 17 bug had three legs. The first version of the drift gate covered two:
+  1. `BOOKLET_WAVE1_FIELDS` missing `family_name`
+  2. `SLOT_ALLOWED_FIELDS.booklet` missing the booklet entry
+
+This commit covers the third:
+  3. `ExtractionSource` / `SourceType` unions missing `'dual_ocr_crossref'`
+
+That leg was the silent killer in Session 17: even when the server emitted a field with source `'dual_ocr_crossref'`, the client narrowing collapsed it to `'ocr_visual'` (the fallback), demoting its arbiter priority and breaking the field's path to the user.
+
+The gate now enforces a one-way membership constraint: every server-emitted source value must appear in every client union. Client unions may contain MORE values (user_input, manual, etc.); the constraint is one-way.
+
+### Proof
+- Green path: `node scripts/check-booklet-contract-drift.mjs` → exit 0. Current state has all 3 server-emitted sources (`ai_brain`, `dual_ocr_crossref`, `ocr_mrz`) present in all 3 client unions.
+- Red path (synthetic): removed `dual_ocr_crossref` line from a COPY of `types.ts` only. Gate fired with exact diagnostic `"TpsExtractionSource (lib/tps/types.ts) missing server-emitted sources: ['dual_ocr_crossref']"` and exit 1.
+- Typecheck: clean.
+
+### Observation surfaced by this work
+The shared `TpsExtractionSource` (lib/tps/types.ts) and the local `ExtractionSource` in `TPSWizardV2.tsx` are **byte-for-byte identical** unions of the same 8 values. This is a duplicate. They can drift apart unless the gate enforces sync (it now does, transitively, since both must contain the server emit set). Proper fix is to delete the local copy and import from `lib/tps/types.ts`. Filed as cleanup, not in this commit because it touches more files than warranted for a no-op refactor.
+
+### Honest remaining scope
+- Gate still does NOT check the priority-map keys in `fieldArbiter.ts` (`booklet_dual_ocr_crossref` at lines 122, 150). Those are compound keys (`{slot}_{source}`), parsed differently. If a new combo is introduced server-side without adding its priority entry, the field arbiter falls through to default and may demote silently. Filed as follow-up; lower-priority than legs 1-3 because the server doesn't currently emit any uncovered combo.
+
+---
+
 ## 2026-05-25 — Session 18 (4th commit): evidence-report correction after external review
 
 External review caught two formulation errors in `BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md`:
 
-1. The `given_name` section was titled "structural OCR limitation, not a contract issue" and concluded with "not fixable from this sample". Both phrasings are too absolute. The verified fact is: Vision and DocAI both produced garbage on the given-name zone of ONE specific booklet sample over 28 runs. That is not the same as "OCR cannot extract handwritten Cyrillic given_name from booklets". The corrected section explicitly distinguishes *officially claimed* (Azure Read claims expanded Russian handwriting support; Google DocAI claims 200+ language handwriting support broadly) from *verified on our data* (Vision+DocAI fail on this sample) from *not verified* (other providers, image preprocessing, region cropping, multi-sample variance).
+1. The `given_name` section was titled "structural OCR limitation, not a contract issue" and concluded with "not fixable from this sample". Both phrasings are too absolute. The verified fact is: Vision and DocAI both produced garbage on the given-name zone of ONE specific booklet sample over 28 runs. That is not the same as "OCR cannot extract handwritten Cyrillic given_name from booklets". The corrected section explicitly distinguishes *officially claimed* (e.g. Azure Read documents an in-preview expansion of handwriting support to Russian; Google Document AI documents handwriting recognition for ~50 languages with Cyrillic among supported scripts — Ukrainian handwriting specifically is not in Azure's documented set in any tier) from *verified on our data* (Vision+DocAI fail on this sample) from *not verified* (other providers, image preprocessing, region cropping, multi-sample variance).
 2. Same correction principle applied less explicitly to the `dob` section.
 
 Added a global evidence-classification rule at the top of the report: every provider-capability claim must be tagged with one of the three classes. This is the rule that prevents the next iteration of the Session-17 "API success = user success" confusion, but applied to vendor-capability assertions instead of pipeline assertions.
