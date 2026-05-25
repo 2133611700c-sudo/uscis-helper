@@ -3,6 +3,29 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 18 (3rd commit): evidence report on what blocks dob and given_name
+
+### What was added
+- `reports/BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md` — analysis of 28 stability runs covering the canonical booklet sample.
+
+### Key findings
+- **`dob`: 28/28 runs the brain emits, 28/28 runs validation rejects "date not parseable".** Deterministic failure, not stochastic. The brain prompt (`documentBrain.ts:769`) instructs the model to recognize Ukrainian month abbreviations and emit MM/DD/YYYY, but for the booklet's date phrase "25 червня 1986 року" the brain evidently retains the trailing word `року` or otherwise emits a format `parseDate` can't handle. Brain raw `final_value` is not logged in `tps_ocr_audit`, so the exact emission can't be confirmed from existing data. Logging enhancement is queued.
+- **`given_name`: OCR garbage on the canonical sample.** Vision reads `"Behri"` where Cyrillic given name should be (handwritten `В` misread as Latin `B`, then Latin-confused). DocAI fails the same zone. Dual-OCR crossref cannot recover because both engines collapse to Latin garbage. Brain warning confirms it knows the data is bad. Not a contract issue — relaxing the contract would surface garbage. Manual entry is the honest path until a multi-sample benchmark shows different handwriting fares better.
+- **Other "forbidden" booklet fields are correct by design.** `country_of_nationality` and `passport_country_of_issuance` belong to passport MRZ. `sex` is not extracted from the canonical sample. `document_number`, `issue_date`, etc. — not yet attempted; manual.
+
+### Why this matters
+The product goal is "brain does everything, all data filled". This report distinguishes between three failure modes that look identical to a user staring at a Step 5 review:
+1. Field reaches the brain, brain returns it, contract strips it → **fixable by contract change** (after benchmark).
+2. Field reaches the brain, brain returns malformed data, validation rejects → **fixable by prompt/parser improvement** (after multi-sample evidence).
+3. OCR itself fails the zone → **not fixable from this sample**; requires better OCR or accepting manual entry.
+
+Without the report, all three look the same and lead to the same wrong instinct ("relax the contract"). With the report, we know the right intervention for each.
+
+### Not changed in this commit
+No code change. No contract change. The report is evidence, not action. Next-session work items are explicit in `STATUS.md` and `HANDOFF.md`.
+
+---
+
 ## 2026-05-25 — Session 18 (cont.): drift gate wired into CI
 
 ### What was added
