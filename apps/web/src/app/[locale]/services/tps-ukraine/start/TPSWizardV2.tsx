@@ -1881,6 +1881,30 @@ export default function TPSWizardV2({ locale }: Props) {
         if (bk?.value) merged[k] = { ...bk, requires_review: true }
       }
     }
+    // Compose full `address` from split DL fields when DL gives
+    // us_address_street/city/state/zip but no composite `address`.
+    // Without this, the review card row for 'address' shows "Не найдено"
+    // even though split fields exist and the composite card below shows them.
+    if (!merged.address && merged.us_address_street?.value) {
+      const parts = [
+        merged.us_address_street?.value,
+        [merged.us_address_city?.value,
+         [merged.us_address_state?.value, merged.us_address_zip?.value].filter(Boolean).join(' ')
+        ].filter(Boolean).join(', ')
+      ].filter(Boolean).join(', ')
+      if (parts) {
+        merged.address = {
+          value: parts,
+          source: merged.us_address_street.source,
+          requires_review: merged.us_address_street.requires_review,
+          doc_slot: merged.us_address_street.doc_slot,
+          source_document_id: merged.us_address_street.source_document_id,
+          source_zone: 'dl_address_composite',
+          raw_value: null,
+          confidence: merged.us_address_street.confidence ?? null,
+        }
+      }
+    }
     // Alias: i94_class_of_admission → status_at_last_entry. Bug discovered in
     // the 2026-05-20 TPS_CLEAN_SESSION_REAL_UPLOAD_E2E_AUDIT — without this
     // bridge both I-821 Part 2 Item 19 and I-765 Line 23 shipped blank even
