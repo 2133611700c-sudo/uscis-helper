@@ -20,6 +20,7 @@ import { PINNED_HASHES } from '@/lib/tps/formIntegrity'
 import { SNAPSHOT_DATE } from '@/lib/tps/filingGuidance'
 import { TPS_FORMS } from '@/lib/services/tps/config'
 import { isBrainEnabled } from '@/lib/tps/ai/documentBrain'
+import { isDocAIEnabled } from '@/lib/docai/provider'
 
 // Pulled from the single source at lib/services/tps/config.ts. The only
 // constant local to this module is I-131 — it belongs to the Re-Parole
@@ -68,6 +69,8 @@ export async function GET() {
       google_vision_configured: ocrConfigured,
       deepseek_configured: deepseekConfigured,
       tps_ai_brain_enabled: tpsAiBrainEnabled,
+      tps_docai_enabled: isDocAIEnabled(),
+      tps_ocr_provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
       brain_ready: brainReady,
       brain_misconfigured: brainMisconfigured,
       forms: {
