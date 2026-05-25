@@ -25,6 +25,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
+import { docAIProvider, isDocAIEnabled } from '@/lib/docai/provider'
 import { isBlocked } from '@/lib/ocr/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { runPassportModule } from '@/lib/tps/modules/passport'
@@ -161,8 +162,9 @@ export async function POST(req: NextRequest) {
   const imageBuffer = pre.buffer
   const effectiveMime = pre.mimeType
 
-  // ── Call OCR provider
-  const result = await googleVisionProvider.extractText({ imageBuffer, mimeType: effectiveMime })
+  // ── Call OCR provider (DocAI when enabled, Vision otherwise)
+  const ocrProvider = isDocAIEnabled() ? docAIProvider : googleVisionProvider
+  const result = await ocrProvider.extractText({ imageBuffer, mimeType: effectiveMime })
 
   if (isBlocked(result)) {
     return NextResponse.json(
@@ -224,7 +226,7 @@ export async function POST(req: NextRequest) {
           try {
             const sharp = (await import('sharp')).default
             const rotatedBuffer = await sharp(imageBuffer).rotate(angle).jpeg({ quality: 85 }).toBuffer()
-            const rotatedResult = await googleVisionProvider.extractText({
+            const rotatedResult = await ocrProvider.extractText({
               imageBuffer: rotatedBuffer,
               mimeType: 'image/jpeg',
             })
@@ -283,7 +285,7 @@ export async function POST(req: NextRequest) {
               .rotate(angle)
               .jpeg({ quality: 85 })
               .toBuffer()
-            const rotatedResult = await googleVisionProvider.extractText({
+            const rotatedResult = await ocrProvider.extractText({
               imageBuffer: rotatedBuffer,
               mimeType: 'image/jpeg',
             })
@@ -318,7 +320,7 @@ export async function POST(req: NextRequest) {
               .rotate(angle)
               .jpeg({ quality: 85 })
               .toBuffer()
-            const rotatedResult = await googleVisionProvider.extractText({
+            const rotatedResult = await ocrProvider.extractText({
               imageBuffer: rotatedBuffer,
               mimeType: 'image/jpeg',
             })
@@ -368,7 +370,7 @@ export async function POST(req: NextRequest) {
               .rotate(angle)
               .jpeg({ quality: 85 })
               .toBuffer()
-            const rotatedResult = await googleVisionProvider.extractText({
+            const rotatedResult = await ocrProvider.extractText({
               imageBuffer: rotatedBuffer,
               mimeType: 'image/jpeg',
             })
@@ -420,7 +422,7 @@ export async function POST(req: NextRequest) {
             try {
               const sharp = (await import('sharp')).default
               const rotatedBuffer = await sharp(imageBuffer).rotate(angle).jpeg({ quality: 85 }).toBuffer()
-              const rotatedResult = await googleVisionProvider.extractText({
+              const rotatedResult = await ocrProvider.extractText({
                 imageBuffer: rotatedBuffer,
                 mimeType: 'image/jpeg',
               })
@@ -462,7 +464,7 @@ export async function POST(req: NextRequest) {
             const sharp = (await import('sharp')).default
             const rotatedBuffer = await sharp(imageBuffer)
               .rotate(angle).jpeg({ quality: 85 }).toBuffer()
-            const rotatedResult = await googleVisionProvider.extractText({
+            const rotatedResult = await ocrProvider.extractText({
               imageBuffer: rotatedBuffer, mimeType: 'image/jpeg',
             })
             if (isBlocked(rotatedResult)) continue
@@ -500,7 +502,7 @@ export async function POST(req: NextRequest) {
             const sharp = (await import('sharp')).default
             const rotatedBuffer = await sharp(imageBuffer)
               .rotate(angle).jpeg({ quality: 85 }).toBuffer()
-            const rotatedResult = await googleVisionProvider.extractText({
+            const rotatedResult = await ocrProvider.extractText({
               imageBuffer: rotatedBuffer, mimeType: 'image/jpeg',
             })
             if (isBlocked(rotatedResult)) continue
@@ -581,7 +583,7 @@ export async function POST(req: NextRequest) {
       // that the passport rule module actually succeeded on.
       brainResult = await runBrain({
         raw_text: effectiveOcrResult.raw_text,
-        lines: effectiveOcrResult.lines.map((l) => l.text),
+        lines: effectiveOcrResult.lines.map((l: { text: string }) => l.text),
         doc_type_hint: docTypeHint || null,
       })
     } catch (e: unknown) {
@@ -813,6 +815,7 @@ export async function POST(req: NextRequest) {
       page_count: result.pages.length,
       word_count: result.words.length,
       line_count: result.lines.length,
+      ocr_provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
       // Flat extraction diagnostics — auditable at a glance.
       brain_status: brainStatus,
       brain_error_code: brainErrorCode,
