@@ -50,3 +50,4 @@ See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fi
 - Brain prompts improved for patronymic + place_of_last_entry
 - Country guard: 'KUROPIATNYK' as country → rejected
 - DocAI integration: client + provider + feature flag
+
