@@ -26,6 +26,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { docAIProvider, isDocAIEnabled } from '@/lib/docai/provider'
+import { logOcrRun } from '@/lib/tps/ocrAudit'
 import { isBlocked } from '@/lib/ocr/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { runPassportModule } from '@/lib/tps/modules/passport'
@@ -804,6 +805,20 @@ export async function POST(req: NextRequest) {
   // ── Successful OCR. Build a response with just what downstream agents
   //    need; we do NOT include the raw API response (could leak provider
   //    internals or echoed key).
+
+  // ── Audit: fire-and-forget write to Supabase tps_ocr_audit
+  logOcrRun({
+    provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
+    doc_type_hint: docTypeHint || null,
+    document_id,
+    text_length: result.raw_text.length,
+    page_count: result.pages.length,
+    field_count: finalFieldCount,
+    rejected_fields: normalizationMeta.rejected_fields,
+    success: true,
+    processing_ms: result.processing_ms,
+    brain_status: brainStatus,
+  }).catch(() => {}) // never await — don't block response
   return NextResponse.json(
     {
       ok: true,

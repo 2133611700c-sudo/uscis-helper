@@ -649,3 +649,6 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Supabase migration: APPLIED live — google_vision + google_docai providers
 - Patronymic manual input field added to 'Заполните вручную' section
 - middle_name: data.manual fallback in buildDraftAnswers
+- tps_ocr_audit table created in Supabase
+- OCR route → Supabase audit write (fire-and-forget)
+- Health: deep DocAI verification (auth+processor)
