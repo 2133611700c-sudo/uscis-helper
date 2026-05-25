@@ -108,6 +108,7 @@ export const DocumentBrainResultSchema = z.object({
       // (the parolee's status-expires date). Was previously dropped at
       // schema parse, then again at the slot contract filter.
       i94_admit_until: FieldSchema.optional(),
+      place_of_last_entry: FieldSchema.optional(),
       i94_class_of_admission: FieldSchema.optional(),
       a_number: FieldSchema.optional(),
       ead_category_on_card: FieldSchema.optional(),
@@ -732,6 +733,7 @@ Schema:
     "last_entry_date"?: { ... },             // MM/DD/YYYY
     "i94_admit_until"?: { ... },             // MM/DD/YYYY or "D/S"
     "i94_class_of_admission"?: { ... },      // short code like UH, B-2
+    "place_of_last_entry"?: { ... },         // US port of entry city (e.g. "New York", "Los Angeles")
     "a_number"?: { ... },                    // 7-9 digits, no 'A' prefix
     "ead_category_on_card"?: { ... },        // letter+digits, e.g. a12
     "ead_expiration_date"?: { ... },
@@ -784,12 +786,25 @@ Ukrainian internal passport booklet (паспорт-книжка / паспор�
     Закарпатська, Запорізька, Івано-Франківська, Київська, Кіровоградська, Луганська, Львівська,
     Миколаївська, Одеська, Полтавська, Рівненська, Сумська, Тернопільська, Харківська,
     Херсонська, Хмельницька, Черкаська, Чернівецька, Чернігівська. Plus "м. Київ" and "м. Севастополь".
-24. For middle_name (patronymic): the value above "По батькові" label. Ukrainian patronymics
-    end in -ович/-івич (male) or -івна/-ївна (female). source_value in Cyrillic, final_value KMU-55.
+24. For middle_name (patronymic): the value near "По батькові" label. Ukrainian patronymics
+    end in -ович/-івич (male) or -івна/-ївна (female). source_value MUST be in Cyrillic
+    (e.g. "Сергійович", NOT Latin garbage). final_value = KMU-55 transliteration (e.g. "Serhiiovych").
+    If the text near "По батькові" is unreadable garbage (random Latin characters, mixed-case nonsense),
+    DO NOT guess. Instead, omit middle_name entirely. A missing field is better than garbage.
+    confidence must be < 0.5 if handwriting is barely legible.
 25. Vision OCR often mangles handwritten Cyrillic to Latin look-alikes or garbage. Use context clues:
     if text near "Прізвище" looks like a mangled surname, try to reconstruct it.
     If text near "Місце народження" contains oblast-like fragments, map to the closest known oblast.
     Set confidence < 0.7 and requires_review=true for any reconstructed values.
+
+I-94 Arrival/Departure Record (when document_type is i94, or when slot hint = "i94"):
+26. The I-94 shows: Admission Number, Most Recent Date of Entry, Class of Admission,
+    Admit Until Date, and Port of Entry (the US city/airport where the person entered).
+27. For place_of_last_entry: look for "Port of Entry" or the city name near the entry date.
+    Common values: "NEW YORK, NY", "JFK AIRPORT", "LOS ANGELES", "NEWARK, NJ", "MIAMI, FL".
+    Extract just the city name for final_value (e.g., "New York", "Los Angeles", "Miami").
+28. For i94_class_of_admission: the 2-3 letter code like "UHP", "B-2", "F-1", "DT".
+    For Ukrainian parolees it's typically "UHP" (Ukraine Humanitarian Parolee) or "DT" (Deferred Action).
 
 U.S. Driver's License / State ID (when document_type is us_drivers_license, or when slot hint = "dl"):
 15. The card uses labelled abbreviations: DL, LN, FN, DOB, SEX, HGT, WGT, EYES, HAIR. Map them to dl_number, family_name, given_name, dob, sex, height, weight, eye_color, hair_color respectively. The DL label is the state license ID (alphanumeric, keep all characters).
