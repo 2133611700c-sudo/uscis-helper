@@ -1105,7 +1105,7 @@ const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
 }
 // P3 FIX: single module-level constant instead of two inline definitions
 // that could drift independently.
-const BOOKLET_WAVE1_FIELDS: ReadonlySet<string> = new Set(['city_of_birth', 'province_of_birth'])
+const BOOKLET_WAVE1_FIELDS: ReadonlySet<string> = new Set(['city_of_birth', 'province_of_birth', 'middle_name'])
 
 // TPS Stage I price displayed on the Pay button (single source of truth
 // for the UI label; the actual Stripe Price ID is set server-side).

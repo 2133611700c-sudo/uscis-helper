@@ -44,3 +44,4 @@ See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fi
 
 - Field Arbiter v0 built: fieldArbiter.ts + 10 tests
 - Arbiter WIRED into wizard merge — resolveAllFields() is now the single source of merged truth
+- Patronymic UNBLOCKED from booklet

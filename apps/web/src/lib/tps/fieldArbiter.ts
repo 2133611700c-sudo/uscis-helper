@@ -103,9 +103,10 @@ const DOCUMENT_PRIORITY: Record<string, Record<string, number>> = {
 }
 
 const WEAK_PRIORITY: Record<string, number> = {
-  booklet_ai_brain: 1,        // booklet is primary for birthplace
-  passport_ai_brain: 2,       // passport Brain guess
-  manual_manual: 3,
+  booklet_ocr_keyword: 1,     // booklet rule module (labels matched)
+  booklet_ai_brain: 2,        // booklet Brain extraction
+  passport_ai_brain: 3,       // passport Brain guess
+  manual_manual: 4,
   manual_user_corrected: 0,   // user correction always wins
 }
 

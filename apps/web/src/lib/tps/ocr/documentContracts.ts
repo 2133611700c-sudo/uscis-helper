@@ -113,16 +113,19 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
     slot: 'booklet',
     allowed_document_types: ['passport'],
     allowed_fields: [
-      // Wave1 guarded extraction: ONLY birthplace fields from booklet.
+      // Wave1 guarded extraction: birthplace + patronymic from booklet.
+      // Patronymic (По батькові) is NOT available from any other source —
+      // загранпаспорт MRZ doesn't carry it. Booklet is the ONLY automated source.
       'city_of_birth',
       'province_of_birth',
+      'middle_name',
     ],
     forbidden_fields: [
       // Identity fields — загранпаспорт MRZ is authoritative.
       // Booklet handwritten OCR produces garbage for these.
       'family_name',
       'given_name',
-      'middle_name',  // optional on USCIS forms, manual entry only
+      // 'middle_name' — MOVED TO ALLOWED (only source for patronymic)
       'dob',
       'sex',
       'passport_number',
