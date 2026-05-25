@@ -49,6 +49,7 @@ import { postExtractNormalize } from '@/lib/tps/ocr/postExtractNormalize'
 
 // Vision REST call needs full Node runtime (Buffer + fetch with timeout).
 export const runtime = 'nodejs'
+export const maxDuration = 60  // dual-OCR crossref: Vision ~5s + DocAI ~3s + DeepSeek ~7s + overhead
 export const dynamic = 'force-dynamic'
 
 // 10 MB hard limit per image. USCIS recommends pages < 5 MB.
