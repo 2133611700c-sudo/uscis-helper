@@ -647,3 +647,5 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - DocAI: dual auth mode — file path (local) + JSON string (Vercel)
 - Gate readiness: VERIFIED — blocks on missing required fields
 - Supabase migration: APPLIED live — google_vision + google_docai providers
+- Patronymic manual input field added to 'Заполните вручную' section
+- middle_name: data.manual fallback in buildDraftAnswers
