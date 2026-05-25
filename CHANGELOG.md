@@ -3,6 +3,35 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 16: Booklet Handwritten Cyrillic Completion
+
+### Arbiter priority fix
+- `fieldArbiter.ts`: added `booklet_dual_ocr_crossref` to IDENTITY_PRIORITY (rank 5) and WEAK_PRIORITY (rank 1)
+- Before: crossref extraction_source got default priority 99 (unranked)
+
+### Review-required enforcement
+- `route.ts`: forced `review_required: true` on ALL booklet crossref fields (both merge blocks)
+- Bug: DeepSeek crossref was overwriting booklet module's review_required=true with its own confidence value
+- Patronymic appeared as auto-confirmed — unacceptable for handwritten Cyrillic
+
+### 10-run stability proof
+- Canonical dataset: `qa-shots/private/booklet_test_resized.jpg` (MD5: 7b4fd182cb22098c15eceda5d8857415)
+- 10/10 local runs: identical results, zero variance
+- 1/1 production run: crossref_ok, all 4 fields correct
+- Avg latency: 16.8s local, 15.2s production
+
+### Results
+- family_name: REDACTED_NAME ✅ (10/10)
+- city_of_birth: Trostianets ✅ (10/10)
+- province_of_birth: Vinnytsia Oblast ✅ (10/10)
+- middle_name: Serhiiovych ✅ (10/10)
+
+### New files
+- `scripts/booklet-stability-test.sh` — automated 10-run canonical test
+- `reports/BOOKLET_COMPLETION_REPORT.md` — full completion report with truth maps
+
+---
+
 ## 2026-05-24 — Session 15: P0 OCR Routing Fix (3 dead slots)
 
 ### White-box audit findings
