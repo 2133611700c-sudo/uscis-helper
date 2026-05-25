@@ -42,6 +42,49 @@ export const FIELD_CLASS: Record<string, FieldClass> = {
   province_of_birth: 'WEAK_REVIEW',
 }
 
+// ── Levenshtein Distance — cross-document fuzzy name matching ──────────────
+// Detects OCR errors like "Saghi" vs "Sergii" (distance=3 → conflict)
+// Same-value check: distance ≤ 1 = same value, 2 = possible OCR error (flag),
+// ≥ 3 = material conflict (reject lower-priority source)
+export function levenshtein(a: string, b: string): number {
+  const la = a.length, lb = b.length
+  if (la === 0) return lb
+  if (lb === 0) return la
+  const matrix: number[][] = Array.from({ length: la + 1 }, (_, i) =>
+    Array.from({ length: lb + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
+  )
+  for (let i = 1; i <= la; i++) {
+    for (let j = 1; j <= lb; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,     // deletion
+        matrix[i][j - 1] + 1,     // insertion
+        matrix[i - 1][j - 1] + cost, // substitution
+      )
+    }
+  }
+  return matrix[la][lb]
+}
+
+// Name plausibility check — rejects obvious garbage
+export function isPlausibleName(value: string): boolean {
+  if (!value || value.length < 2 || value.length > 50) return false
+  // Must contain at least one vowel (real names do)
+  if (!/[aeiouAEIOUаеєиіїоуюяАЕЄИІЇОУЮЯ]/i.test(value)) return false
+  // Must not contain digits
+  if (/\d/.test(value)) return false
+  // Must not be all uppercase with mixed garbage
+  const words = value.split(/\s+/)
+  for (const w of words) {
+    if (w.length < 2) continue
+    const allUp = w === w.toUpperCase()
+    const allLo = w === w.toLowerCase()
+    const title = /^[A-ZА-ЯІЇЄҐ][a-zа-яіїєґ]+$/.test(w)
+    if (!allUp && !allLo && !title) return false // mixed-case garbage
+  }
+  return true
+}
+
 // ── Source Types ────────────────────────────────────────────────────────────
 
 export type SourceDoc = 'passport' | 'booklet' | 'i94' | 'ead' | 'i797' | 'dl' | 'manual'
@@ -151,6 +194,7 @@ export function resolveField(
   }
 
   // Sort by priority (lower = better)
+  const notes: string[] = []
   const sorted = [...candidates]
     .filter((c) => c.value !== null && c.value.trim() !== '')
     .sort((a, b) => {
@@ -177,14 +221,42 @@ export function resolveField(
   const losers = sorted.slice(1)
   const cls = FIELD_CLASS[field] ?? 'WEAK_REVIEW'
 
+  // Plausibility guard for identity fields: reject if winner fails
+  const isIdentity = cls === 'STRONG_IDENTITY'
+  if (isIdentity && winner.value && !isPlausibleName(winner.value)) {
+    // Winner itself is garbage — try next plausible candidate
+    const plausible = sorted.find((c) => c.value && isPlausibleName(c.value))
+    if (plausible) {
+      const idx = sorted.indexOf(plausible)
+      sorted.splice(idx, 1)
+      sorted.unshift(plausible)
+      notes.push(`plausibility_rejected:${winner.sourceDoc}=${winner.value}`)
+      // Reassign winner
+      const oldWinner = winner
+      const newWinner = plausible
+      losers.push(oldWinner)
+      return resolveField(field, [newWinner, ...sorted.slice(1)])
+    }
+  }
+
   // Lock: MRZ identity fields are immutable
   const locked = cls === 'STRONG_IDENTITY' && winner.sourceType === 'ocr_mrz'
 
-  // Conflict: any loser has a different value
+  // Conflict detection with Levenshtein fuzzy matching
+  // distance 0-1 = same value (case/typo), 2 = possible OCR error, ≥3 = material conflict
   const winVal = (winner.value ?? '').toLowerCase().trim()
-  const hasConflict = losers.some(
-    (l) => l.value && l.value.toLowerCase().trim() !== winVal,
-  )
+  let hasConflict = false
+  for (const l of losers) {
+    if (!l.value) continue
+    const lVal = l.value.toLowerCase().trim()
+    if (lVal === winVal) continue // exact match (case-insensitive)
+    const dist = levenshtein(winVal, lVal)
+    if (dist <= 1) continue // trivial difference (single char typo)
+    hasConflict = true
+    if (isIdentity && dist >= 3) {
+      notes.push(`fuzzy_conflict:${l.sourceDoc}="${l.value}"_dist=${dist}`)
+    }
+  }
 
   // Review required: weak fields always, or if conflict exists on non-locked
   const reviewRequired =
@@ -192,15 +264,17 @@ export function resolveField(
     (hasConflict && !locked) ||
     winner.reviewRequired
 
-  const notes: string[] = []
   if (locked) notes.push('mrz_locked')
   if (hasConflict) notes.push('conflict_detected')
   if (cls === 'WEAK_REVIEW') notes.push('weak_field_review_required')
 
-  // Rejected losers that had different values
-  const rejectedCandidates = losers.filter(
-    (l) => l.value && l.value.toLowerCase().trim() !== winVal,
-  )
+  // Rejected losers: different values (Levenshtein > 1)
+  const rejectedCandidates = losers.filter((l) => {
+    if (!l.value) return false
+    const lVal = l.value.toLowerCase().trim()
+    if (lVal === winVal) return false
+    return levenshtein(winVal, lVal) > 1
+  })
 
   // If locked and there are conflicts, annotate rejection reason
   if (locked && rejectedCandidates.length > 0) {
