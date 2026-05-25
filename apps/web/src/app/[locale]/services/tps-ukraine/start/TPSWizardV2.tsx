@@ -3159,18 +3159,13 @@ function ReviewOcr({
     { key: 'last_entry_date', label: t.label.last_entry_date, expectedDoc: 'i94' },
     { key: 'status_at_last_entry', label: t.label.status_at_last_entry, expectedDoc: 'i94' },
   )
-  if (!init && wantsEad) {
-    rows.push(
-      { key: 'a_number', label: t.label.a_number, expectedDoc: 'ead' },
-      { key: 'address', label: t.label.address, expectedDoc: 'i797_or_ead' },
-    )
-  }
-  if (!init && !wantsEad) {
-    rows.push(
-      { key: 'a_number', label: t.label.a_number, expectedDoc: 'i797' },
-      { key: 'address', label: t.label.address, expectedDoc: 'i797' },
-    )
-  }
+  // A-number and address visible for ALL filing types (init + rereg).
+  // Previous code only showed these for rereg, but init users often
+  // have EAD/A-number from prior status. DL address needed regardless.
+  rows.push(
+    { key: 'a_number', label: t.label.a_number, expectedDoc: wantsEad ? 'ead' : 'i797' },
+    { key: 'address', label: t.label.address, expectedDoc: 'i797_or_ead' },
+  )
 
   // Map an ExtractionSource to a human-readable provenance string. This is
   // what makes the "Паспорт → OCR" hardcoded label HONEST — when the AI

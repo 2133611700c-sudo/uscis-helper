@@ -37,3 +37,4 @@ See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fi
 - Booklet garbage-rejection guard: mixed-case, consonant clusters, word count checks
 - 7 new tests added: 1975 total
 - Address binding fix: full → split fallback
+- Review cards fix: a_number/address for all paths
