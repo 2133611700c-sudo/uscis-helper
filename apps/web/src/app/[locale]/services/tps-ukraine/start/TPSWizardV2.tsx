@@ -53,6 +53,7 @@ export type ExtractionSource =
   | 'ocr_mrz'
   | 'ocr_visual'
   | 'ocr_keyword'
+  | 'dual_ocr_crossref'
   | 'ai_brain'
   | 'user_input'
   | 'user_corrected'
@@ -1075,6 +1076,12 @@ const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
     'country_of_birth', 'country_of_nationality',
     'passport_number', 'passport_country_of_issuance', 'passport_expiration_date',
   ]),
+  // 2026-05-25: booklet hydration whitelist — mirrors server documentContracts.
+  // Without this, stale localStorage from older sessions could resurrect
+  // fields the server no longer allows. Matches BOOKLET_WAVE1_FIELDS scope.
+  booklet: new Set([
+    'family_name', 'middle_name', 'city_of_birth', 'province_of_birth',
+  ]),
   i94: new Set([
     'i94_admission_number', 'last_entry_date', 'i94_class_of_admission',
     'status_at_last_entry',
@@ -1106,7 +1113,12 @@ const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
 }
 // P3 FIX: single module-level constant instead of two inline definitions
 // that could drift independently.
-const BOOKLET_WAVE1_FIELDS: ReadonlySet<string> = new Set(['city_of_birth', 'province_of_birth', 'middle_name'])
+// Wave 1: city, province, patronymic (booklet uniquely provides these).
+// Wave 2 (2026-05-25): family_name from booklet dual-OCR crossref.
+//   Crossref reconstructs surname from two OCR readings with 10/10 stability
+//   on canonical dataset. Arbiter still prefers MRZ when загранпаспорт present;
+//   booklet family_name only surfaces for booklet-only TPS users.
+const BOOKLET_WAVE1_FIELDS: ReadonlySet<string> = new Set(['city_of_birth', 'province_of_birth', 'middle_name', 'family_name'])
 
 // TPS Stage I price displayed on the Pay button (single source of truth
 // for the UI label; the actual Stripe Price ID is set server-side).
@@ -2001,6 +2013,7 @@ export default function TPSWizardV2({ locale }: Props) {
               f.extraction_source === 'ocr_mrz' ||
               f.extraction_source === 'ocr_visual' ||
               f.extraction_source === 'ocr_keyword' ||
+              f.extraction_source === 'dual_ocr_crossref' ||
               f.extraction_source === 'ai_brain' ||
               f.extraction_source === 'user_input' ||
               f.extraction_source === 'user_corrected' ||
