@@ -3,6 +3,27 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 18 (cont.): drift gate wired into CI
+
+### What was added
+- `scripts/check-booklet-contract-drift.mjs`: parses the three set literals (`documentContracts.booklet.allowed_fields`, `BOOKLET_WAVE1_FIELDS`, `SLOT_ALLOWED_FIELDS.booklet`) out of source and fails non-zero if they don't match.
+- `.github/workflows/guards.yml`: new step "Guard — booklet contract drift" between typecheck and build. Workflow fails on PR/push if any of the three sets drift.
+
+### Why
+Session 18's first commit (`794b86d`) fixed the bug. This commit makes the same bug pattern unshippable. If a future change updates the server contract without touching the client filters (or vice versa), CI fails the PR with a diff of which set is missing which fields.
+
+### Honest limits
+- Script is regex-based. If someone reshapes the set literals (e.g. constructs them via map+spread), the regex won't find them — script throws PARSE ERROR with exit 2. Loud failure, not silent miss.
+- The drift gate enforces equality across the three sets. It does not yet verify the unions in `ExtractionSource` / `SourceType` include `'dual_ocr_crossref'`. That was the third leg of the Session-17 bug. Filed as a follow-up; for now the union shape is still maintained by hand.
+- Real long-term fix remains the contract-as-API refactor. After that, the gate collapses to a typecheck and this script is removed.
+
+### Verification
+- Local: `node scripts/check-booklet-contract-drift.mjs` → "✅ All three sets match. No drift."
+- Synthetic drift check: temporarily renamed `family_name` → `family_name_fake_drift` in a wizard copy; regex extracted the renamed identifier, set diff would have fired. Test was done out-of-tree, not via git modification.
+- Prod (794b86d): wizard-simulation-test.mjs against https://messenginfo.com → 4/4 fields surface from booklet with source `dual_ocr_crossref`. This proves the API contract; browser-level E2E still owed.
+
+---
+
 ## 2026-05-25 — Session 18: booklet client-side whitelist drift fix
 
 ### What was broken
