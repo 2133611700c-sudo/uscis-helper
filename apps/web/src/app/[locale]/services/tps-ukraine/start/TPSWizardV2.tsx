@@ -28,6 +28,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
+import { resolveAllFields, type ExtractedCandidate, type SourceDoc, type SourceType } from '@/lib/tps/fieldArbiter'
 import { normalizeOblastToNominative } from '@uscis-helper/knowledge'
 import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
@@ -1812,83 +1813,62 @@ export default function TPSWizardV2({ locale }: Props) {
   // near the top of this file) so React's exhaustive-deps lint stays
   // happy without a dep on a recreated Set per render.
   const mergedFields = useMemo(() => {
+    // ── FIELD ARBITER v0 WIRING ─────────────────────────────────────────
+    // Replaces old Pass 1 + Pass 2 merge with source-ranked arbiter.
+    // Every field goes through resolveAllFields() which picks the winner
+    // by source priority, locks MRZ identity, rejects weak conflicts.
+
+    // 1. Collect all candidates from all uploads
+    const arbiterUploads: Record<string, ExtractedCandidate[]> = {}
+    for (const [slotId, upload] of Object.entries(data.uploads)) {
+      if (!upload?.fields) continue
+      const candidates: ExtractedCandidate[] = []
+      for (const [fieldName, fx] of Object.entries(upload.fields)) {
+        if (!fx || !fx.value) continue
+        // Booklet filter: only allow wave1 fields
+        if (slotId === 'booklet' && !BOOKLET_WAVE1_FIELDS.has(fieldName)) continue
+        candidates.push({
+          field: fieldName,
+          value: fx.value,
+          sourceDoc: slotId as SourceDoc,
+          sourceType: (fx.source || 'ocr_keyword') as SourceType,
+          confidence: fx.confidence ?? null,
+          reviewRequired: fx.requires_review || false,
+        })
+      }
+      arbiterUploads[slotId] = candidates
+    }
+
+    // 2. Resolve all fields through arbiter
+    const arbiterResult = resolveAllFields({ uploads: arbiterUploads, manual: {} })
+
+    // 3. Convert ResolvedField → FieldExtraction for existing UI
     const merged: Record<string, FieldExtraction> = {}
     const conflicts: Record<string, string[]> = {}
-    // Pass 1 — passport authoritative for identity fields.
-    const passport = data.uploads.passport
-    if (passport?.fields) {
-      for (const k of Object.keys(passport.fields)) {
-        const fx = passport.fields[k]
-        if (fx && fx.value) merged[k] = fx
+    for (const [fieldName, resolved] of Object.entries(arbiterResult.resolvedFields)) {
+      if (!resolved.chosenValue) continue
+      // Find the original FieldExtraction from the winning upload
+      const winSlot = resolved.chosenSourceDoc
+      const origFx = winSlot ? data.uploads[winSlot]?.fields?.[fieldName] : undefined
+      merged[fieldName] = {
+        value: resolved.chosenValue,
+        source: (resolved.chosenSourceType || 'ocr_keyword') as ExtractionSource,
+        requires_review: resolved.reviewRequired,
+        doc_slot: winSlot || 'manual',
+        source_document_id: origFx?.source_document_id ?? null,
+        source_zone: origFx?.source_zone ?? null,
+        raw_value: origFx?.raw_value ?? null,
+        confidence: origFx?.confidence ?? null,
+      }
+      // Track conflicts for UI banner
+      if (resolved.conflict && resolved.rejectedCandidates.length > 0) {
+        conflicts[fieldName] = resolved.rejectedCandidates.map(
+          (r) => `${r.sourceDoc}:${r.value}${resolved.locked ? ':REJECTED_BY_MRZ_LOCK' : ''}`,
+        )
       }
     }
-    // Pass 2 — any other upload fills GAPS plus detects identity conflicts.
-    for (const id of Object.keys(data.uploads)) {
-      if (id === 'passport') continue
-      const u = data.uploads[id]
-      if (!u.fields) continue
-      for (const k of Object.keys(u.fields)) {
-        const fx = u.fields[k]
-        if (!fx || !fx.value) continue
-        if (id === 'booklet' && !BOOKLET_WAVE1_FIELDS.has(k)) continue
-        // A4: BOOKLET = WEAK SOURCE. Handwritten OCR is unstable
-        // ("Trostianets" one run, "BiRHEROI" next). ALL booklet fields
-        // are review_required — user MUST verify before generation.
-        if (id === 'booklet') {
-          if (!merged[k]) {
-            merged[k] = { ...fx, requires_review: true }
-          }
-          // If passport/other already has it, booklet birthplace override
-          // happens below (separate block). Don't duplicate here.
-          continue
-        }
-        if (!merged[k]) {
-          // A2: If this is a STRONG IDENTITY field and source is NOT MRZ,
-          // mark as review_required — user must verify. Without passport MRZ
-          // backup, OCR/Brain values like "Saghi" could be garbage.
-          if (IDENTITY_FIELDS_AUTHORITATIVE.has(k) && fx.source !== 'ocr_mrz') {
-            merged[k] = { ...fx, requires_review: true }
-          } else {
-            merged[k] = fx
-          }
-          continue
-        }
-        // Conflict: identity field with a different value than passport
-        if (
-          IDENTITY_FIELDS_AUTHORITATIVE.has(k) &&
-          merged[k].value.toLowerCase().trim() !== fx.value.toLowerCase().trim()
-        ) {
-          // A2: MRZ IDENTITY LOCK — if the existing value came from MRZ,
-          // it is LOCKED. Weaker sources (EAD OCR, DL Brain, I-94 Brain)
-          // cannot degrade it. Don't mark MRZ truth as requires_review
-          // just because a garbage value like "Saghi" disagrees.
-          const existingIsMrz = merged[k].source === 'ocr_mrz'
-          if (existingIsMrz) {
-            // MRZ wins. Log conflict but do NOT flag for review.
-            (conflicts[k] ||= []).push(`${id}:${fx.value}:REJECTED_BY_MRZ_LOCK`)
-          } else {
-            // Both are non-MRZ — genuine conflict, flag for review.
-            (conflicts[k] ||= []).push(`${id}:${fx.value}`)
-            merged[k] = { ...merged[k], requires_review: true }
-          }
-        }
-      }
-    }
-    // Birthplace override: booklet has the real city/province from
-    // "Місце народження" page. Passport Brain guesses oblasts as cities.
-    // If booklet extracted city_of_birth or province_of_birth, it WINS.
-    const bookletFields = data.uploads.booklet?.fields
-    if (bookletFields) {
-      for (const k of ['city_of_birth', 'province_of_birth'] as const) {
-        const bk = bookletFields[k]
-        // A4: booklet is weak source — always review_required
-        if (bk?.value) merged[k] = { ...bk, requires_review: true }
-      }
-    }
-    // Compose full `address` from split DL fields when DL gives
-    // us_address_street/city/state/zip but no composite `address`.
-    // Without this, the review card row for 'address' shows "Не найдено"
-    // even though split fields exist and the composite card below shows them.
+
+    // 4. Compose full `address` from split DL fields
     if (!merged.address && merged.us_address_street?.value) {
       const parts = [
         merged.us_address_street?.value,
@@ -1909,7 +1889,8 @@ export default function TPSWizardV2({ locale }: Props) {
         }
       }
     }
-    // Alias: i94_class_of_admission → status_at_last_entry. Bug discovered in
+
+    // 5. Alias: i94_class_of_admission → status_at_last_entry Bug discovered in
     // the 2026-05-20 TPS_CLEAN_SESSION_REAL_UPLOAD_E2E_AUDIT — without this
     // bridge both I-821 Part 2 Item 19 and I-765 Line 23 shipped blank even
     // though the I-94 OCR module had successfully extracted the class code.
