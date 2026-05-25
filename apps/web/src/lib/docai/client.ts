@@ -39,9 +39,31 @@ let authClient: GoogleAuth | null = null
 
 function getAuth(): GoogleAuth {
   if (!authClient) {
-    authClient = new GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-    })
+    // Support TWO auth modes:
+    // 1. GOOGLE_APPLICATION_CREDENTIALS (file path) — local dev
+    // 2. GOOGLE_DOCAI_CREDENTIALS_JSON (JSON string) — Vercel production
+    //    (serverless has no filesystem, can't read key file)
+    const credsJson = process.env.GOOGLE_DOCAI_CREDENTIALS_JSON
+    if (credsJson) {
+      // Vercel: parse JSON from env var
+      try {
+        const credentials = JSON.parse(credsJson)
+        authClient = new GoogleAuth({
+          credentials,
+          scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        })
+      } catch {
+        // Fall through to file-based auth
+        authClient = new GoogleAuth({
+          scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        })
+      }
+    } else {
+      // Local: uses GOOGLE_APPLICATION_CREDENTIALS file path (ADC)
+      authClient = new GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      })
+    }
   }
   return authClient
 }
