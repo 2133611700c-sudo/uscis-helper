@@ -1,52 +1,54 @@
-# HANDOFF — Session 16 (2026-05-25)
+# HANDOFF — Session 17 (2026-05-25)
 
 ## What was done
-Booklet handwritten Cyrillic pipeline completed end-to-end.
 
-### Fix 1: Arbiter priority for dual_ocr_crossref
-- File: `fieldArbiter.ts`
-- Added `booklet_dual_ocr_crossref` to IDENTITY_PRIORITY (rank 5) and WEAK_PRIORITY (rank 1)
-- Before: crossref fields got priority 99 (unranked)
+### family_name KMU-55 transliteration (booklet-only users)
+- File: `postExtractNormalize.ts`
+- Added family_name handler BEFORE middle_name handler
+- Two paths:
+  - **Cyrillic input** (from booklet dual_ocr_crossref) → `transliterateKMU55()`
+  - **Latin input** (from passport MRZ / EAD / I-94) → passthrough with garbage guard
+- Title-cases ALL-CAPS Latin input (MRZ delivers "KUROPIATNYK" → "Kuropiatnyk")
+- Garbage rejection for both paths
 
-### Fix 2: Enforce review_required on booklet crossref
-- File: `route.ts` (two merge blocks)
-- DeepSeek was overwriting booklet module's review_required=true
-- Patronymic appeared as auto-confirmed — now forced review_required=true
+### Result
+- Before: booklet-only users got Cyrillic "Куроп'ятник" in form
+- After: booklet-only users get Latin "Kuropiatnyk" in form
 
-### Stability proof
-- 10/10 identical local runs on canonical booklet dataset
-- 1/1 production run on messenginfo.com — crossref_ok
-- All 4 fields correct: surname, city, province, patronymic
-- Zero variance across runs
+### Central Brain plan audit
+- Plan proposed 10-phase rebuild
+- Honest mapping: 70% of plan already exists in different files
+  - "Central Brain" = fieldArbiter + documentContracts + postExtractNormalize + validateBrainField
+  - Dictionary bridge = @uscis-helper/knowledge (already single source)
+  - Booklet pipeline = already 10/10 stable
+- Real gaps identified:
+  1. family_name KMU-55 (FIXED in this session)
+  2. Multi-sample benchmark (need 3-5 real booklets)
+  3. Re-parole booklet — VERIFIED NOT NEEDED (re-parole uses passport MRZ only)
 
-### New artifacts
-- `scripts/booklet-stability-test.sh` — 10-run canonical test
-- `reports/BOOKLET_COMPLETION_REPORT.md` — full completion report
+### Verification
+- Booklet stability: 3/3 identical with surname=Kuropiatnyk
+- Passport MRZ regression: family_name=Kuropiatnyk preserved (no double-transliteration)
+- Test suite: 1985/1985 passing
+- Latency: 16.4s avg (unchanged)
 
 ## What is NOT done
-- family_name KMU-55 transliteration for booklet-only users
-- Multi-dataset validation (only one canonical booklet tested)
-- MRZ lock needs browser test: upload EAD with "Saghi" + passport, verify "Sergii" wins
+- Multi-sample booklet validation (need real samples from other Ukrainians)
+- Browser-level Step 5 review verification
 
 ## What must happen next
-1. Add KMU-55 transliteration for family_name in postExtractNormalize
-2. Test with a second canonical booklet (different handwriting)
-3. Browser test: upload booklet in wizard → verify fields in Step 5 review
+1. Collect 3-5 real booklet images with verified ground truth
+2. Run benchmark across all samples
+3. If accuracy holds → mark booklet pipeline production-stable across population
+4. If not → identify failure modes and add per-pattern handling
 
 ## Previous session context
-See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fix.txt
-- Booklet garbage-rejection guard: mixed-case, consonant clusters, word count checks
-- 7 new tests added: 1975 total
-- Address binding fix: full → split fallback
-- Review cards fix: a_number/address for all paths
-- Address composite fix + review cards for all types
-- passport_expiration_date now visible in review cards
+Session 16 fixed arbiter priority + review_required for booklet crossref.
+10/10 identical results on canonical booklet.
 
-
+## Earlier sessions
 - Field Arbiter v0 built: fieldArbiter.ts + 10 tests
-- Arbiter WIRED into wizard merge — resolveAllFields() is now the single source of merged truth
-- Patronymic UNBLOCKED from booklet
-
+- Arbiter WIRED into wizard merge — resolveAllFields() is single source of merged truth
 - Levenshtein cross-document matching + plausibility
 - Brain prompts improved for patronymic + place_of_last_entry
 - Country guard: 'KUROPIATNYK' as country → rejected
