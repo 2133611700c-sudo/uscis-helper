@@ -652,3 +652,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - tps_ocr_audit table created in Supabase
 - OCR route → Supabase audit write (fire-and-forget)
 - Health: deep DocAI verification (auth+processor)
+- fix: await logOcrRun on serverless (fire-and-forget exits too early)
