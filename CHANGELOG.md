@@ -644,3 +644,6 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Supabase migration: google_vision + google_docai added to extraction_runs provider CHECK
 - Booklet stability: 8/8 correct runs (city+province)
 - CRITICAL AUDIT: documented real gaps vs claimed
+- DocAI: dual auth mode — file path (local) + JSON string (Vercel)
+- Gate readiness: VERIFIED — blocks on missing required fields
+- Supabase migration: APPLIED live — google_vision + google_docai providers
