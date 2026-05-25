@@ -668,3 +668,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Fixed: dual-OCR wired into case 'booklet' (was only in case 'passport')
 - Booklet contract: family_name allowed (dual-OCR reconstructs correctly)
 - Fix: cross-ref overrides weak sources (ocr_keyword garbage)
+- Cross-ref prompt: added morpheme hybrid reconstruction hint
