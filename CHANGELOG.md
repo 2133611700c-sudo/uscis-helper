@@ -630,3 +630,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Patronymic guard: reject Latin without valid Ukrainian endings (-ovych/-ovna/-ivna)
 - Patronymic guard: reject Cyrillic without -ович/-овна/-івна endings
 - 'Cepriticbur' now correctly REJECTED as garbage
+- Central Brain: Levenshtein fuzzy matching + name plausibility guard
