@@ -1,8 +1,8 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-24 Session 15 FINAL
-**Live SHA:** 1dce75d
-**Tests:** 1975/1975
-**Commits this session:** 11
+**Updated:** 2026-05-25 Session 16 — Booklet Handwritten Cyrillic Completion
+**Live SHA:** 0ec7a8e
+**Tests:** 1985/1985
+**Commits this session:** 3
 
 ## EXTRACTION (API level — VERIFIED via curl on canonical dataset)
 
@@ -25,9 +25,9 @@
 | us_address_zip | ✅ | DL OCR | 90029 |
 | province_of_birth | ✅ | passport Brain | Vinnytsia Oblast |
 | country_of_birth | ✅ | EAD Brain | Ukraine |
-| city_of_birth | 🛡 | booklet Brain | Trostianets (when Brain stable) / REJECTED (when garbage) |
+| city_of_birth | ✅ | booklet dual-OCR crossref | Trostianets (10/10 stable) |
 | ead_category_on_card | ✅ | EAD Brain | C11 (display only — filing uses C19/A12) |
-| middle_name | ⬜ | NONE | No document source — manual only |
+| middle_name | ✅ | booklet dual-OCR crossref | Serhiiovych (10/10 stable, review_required) |
 | place_of_last_entry | ⬜ | NONE | Not extracted — manual only |
 
 ## GUARDS (VERIFIED)
@@ -44,14 +44,13 @@
 - address manual fallback: parses full string to street/city/state/zip
 
 ## CANNOT FIX (honest)
-- middle_name: no document source exists for загранпаспорт holders
 - place_of_last_entry: I-94 module + Brain don't extract port of entry
-- Booklet Brain nondeterminism: 50% correct, 50% garbage — guard catches garbage
+- Booklet family_name stays Cyrillic for booklet-only users (no MRZ Latin source)
 - Controlling spelling: requires packetIdentityAnchor integration (future)
+- Single-dataset booklet proof: other handwriting styles may vary
 
 ## NEXT STEP
-Browser verification by Sergii on same canonical dataset.
-If all fields show → baseline PASS → proceed to Field Arbiter v0.
+Add KMU-55 transliteration for family_name in postExtractNormalize (booklet-only users).
 
 
 
