@@ -659,3 +659,7 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Form Parser tested: WORSE than OCR processor for booklets
 - Premium features: image quality 0.024, per-token confidence
 - Architecture proven: dual OCR + DeepSeek = correct surname reconstruction
+- Dual OCR cross-reference WIRED into booklet module
+- dual_ocr_crossref extraction source added to TpsExtractionSource
+- Form Parser tested and REJECTED (worse results)
+- Image enhancement tested and REJECTED (worse quality score)
