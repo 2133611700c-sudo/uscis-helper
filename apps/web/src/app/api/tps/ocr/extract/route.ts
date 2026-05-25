@@ -806,8 +806,8 @@ export async function POST(req: NextRequest) {
   //    need; we do NOT include the raw API response (could leak provider
   //    internals or echoed key).
 
-  // ── Audit: fire-and-forget write to Supabase tps_ocr_audit
-  logOcrRun({
+  // ── Audit: write to Supabase tps_ocr_audit (must await on serverless)
+  await logOcrRun({
     provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
     doc_type_hint: docTypeHint || null,
     document_id,
@@ -818,7 +818,7 @@ export async function POST(req: NextRequest) {
     success: true,
     processing_ms: result.processing_ms,
     brain_status: brainStatus,
-  }).catch(() => {}) // never await — don't block response
+  })
   return NextResponse.json(
     {
       ok: true,
