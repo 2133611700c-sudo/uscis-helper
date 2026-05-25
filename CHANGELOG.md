@@ -3,6 +3,23 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 18 (4th commit): evidence-report correction after external review
+
+External review caught two formulation errors in `BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md`:
+
+1. The `given_name` section was titled "structural OCR limitation, not a contract issue" and concluded with "not fixable from this sample". Both phrasings are too absolute. The verified fact is: Vision and DocAI both produced garbage on the given-name zone of ONE specific booklet sample over 28 runs. That is not the same as "OCR cannot extract handwritten Cyrillic given_name from booklets". The corrected section explicitly distinguishes *officially claimed* (Azure Read claims expanded Russian handwriting support; Google DocAI claims 200+ language handwriting support broadly) from *verified on our data* (Vision+DocAI fail on this sample) from *not verified* (other providers, image preprocessing, region cropping, multi-sample variance).
+2. Same correction principle applied less explicitly to the `dob` section.
+
+Added a global evidence-classification rule at the top of the report: every provider-capability claim must be tagged with one of the three classes. This is the rule that prevents the next iteration of the Session-17 "API success = user success" confusion, but applied to vendor-capability assertions instead of pipeline assertions.
+
+Added a fourth investigation path for `given_name`: image preprocessing + region cropping. Both are cheap to try, neither has been tried, and either could change the outcome.
+
+Added a "What you should NOT do" item: "do not write absolute claims about provider capability based on N=1 sample".
+
+No code change. This is correcting the analytical record so the next session does not inherit a too-narrow framing.
+
+---
+
 ## 2026-05-25 — Session 18 (3rd commit): evidence report on what blocks dob and given_name
 
 ### What was added
