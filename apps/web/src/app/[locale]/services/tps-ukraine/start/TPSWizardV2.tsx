@@ -147,6 +147,7 @@ interface WizardData {
     us_address_in_care_of?: string
     ssn?: string
     passport_expiration_date?: string
+    middle_name?: string
   }
   paid: boolean
   packetReady: boolean
@@ -2112,7 +2113,7 @@ export default function TPSWizardV2({ locale }: Props) {
     return {
       family_name: v('family_name') || v('surname'),
       given_name: v('given_name') || v('first_name'),
-      middle_name: v('middle_name') || v('patronymic'),
+      middle_name: data.manual.middle_name || v('middle_name') || v('patronymic') || '',
       dob: v('dob') || v('date_of_birth'),
       sex: (v('sex') === 'F' ? 'F' : 'M') as TPSAnswers['sex'],
       country_of_birth: normalizeCountryOfBirth(v('country_of_birth'), v('country_of_nationality')),
@@ -3410,6 +3411,13 @@ function ReviewManual({
         ]}
         value={manual.marital_status}
         onPick={(id) => onChange({ marital_status: id as TPSAnswers['marital_status'] })}
+      />
+      <FieldInput
+        label={locale === 'ru' ? 'Отчество (по батькові)' : locale === 'uk' ? 'По батькові' : locale === 'es' ? 'Patronímico' : 'Patronymic / Middle Name'}
+        placeholder={locale === 'ru' ? 'Например: Serhiiovych' : locale === 'uk' ? 'Наприклад: Serhiiovych' : 'e.g. Serhiiovych'}
+        tip={locale === 'ru' ? 'Из внутреннего паспорта. Введите латиницей как в загранпаспорте или транслитерацией.' : locale === 'uk' ? 'З внутрішнього паспорта. Введіть латиницею.' : 'From internal passport. Enter in Latin script.'}
+        value={manual.middle_name || mergedFields?.middle_name?.value || ''}
+        onChange={(v) => onChange({ middle_name: v })}
       />
       <FieldInput
         label={t.label.city_of_birth}
