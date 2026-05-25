@@ -1,8 +1,14 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-25 Session 18 — client whitelist drift killed + drift gate wired into CI
-**Live SHA:** 794b86d (Vercel deploy READY, prod verified via wizard-simulation-test.mjs: 4/4 fields surface from booklet, all sourced as dual_ocr_crossref)
+**Updated:** 2026-05-25 Session 18 — client whitelist drift killed + drift gate wired into CI + evidence report on what blocks `dob` and `given_name`
+**Live SHA:** 8bce911 (drift gate) on top of 794b86d (whitelist fix). Prod verified at simulation level.
 **Tests:** 1985/1985
-**Commits this session:** 2 (`794b86d` client fix, drift gate commit to follow)
+**Commits this session:** 3 (`794b86d` client fix, `8bce911` drift gate, evidence report commit pending push)
+
+## EVIDENCE REPORT
+`reports/BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md` — 28-run analysis. Headline findings:
+- `dob`: brain emits unparseable format in 28/28 runs (`validated_skipped: "date not parseable"`). Brain prompt says to convert Ukrainian-month genitive forms but emission evidently retains trailing words like `року`. Fixable; not yet fixed.
+- `given_name`: raw OCR garbage (`"Behri"` from Cyrillic `В` misread as Latin `B`). Both Vision and DocAI fail the same zone. **Not fixable from OCR alone on this sample.** Manual entry is the honest path until multi-sample data says otherwise.
+- All other "missing" booklet fields are forbidden by design (passport MRZ is authoritative for those).
 
 ## SESSION 18 — booklet family_name actually reaches the user
 

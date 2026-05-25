@@ -5,8 +5,15 @@
 ### 1. Killed the client-side whitelist drift that ate `family_name` (commit 794b86d, prod live)
 The server contract for booklet (`documentContracts.booklet.allowed_fields`) already included `family_name` in commit `ce12446`. The wizard client did not. Three independent filters silently dropped the field before it reached Step 5 review. This commit updates those filters and extends the source-type unions so the server-emitted `dual_ocr_crossref` source survives the wire.
 
-### 2. Wired a CI drift gate so the same bug pattern can't ship again (commit pending push)
+### 2. Wired a CI drift gate so the same bug pattern can't ship again (commit 8bce911, pushed)
 `scripts/check-booklet-contract-drift.mjs` parses the three set literals at CI time and fails the workflow if they don't match. Added to `.github/workflows/guards.yml` between typecheck and build.
+
+### 3. Wrote evidence report on what blocks dob and given_name (commit pending push)
+`reports/BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md` — analysis of 28 stability runs. Distinguishes contract failures from validation failures from OCR failures. Key findings:
+- `dob`: brain emits unparseable format in 28/28 runs. Fixable via prompt/parser improvement + multi-sample benchmark + contract relaxation.
+- `given_name`: raw OCR garbage on the canonical sample (`"Behri"` from Cyrillic `В` misread as Latin `B`). Both Vision and DocAI fail the same zone. Manual entry is the honest path.
+
+This is the foundation for any future "relax the booklet contract" conversation. Don't have it without re-reading the report.
 
 ### Files changed (both commits)
 - `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
