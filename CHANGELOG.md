@@ -666,3 +666,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 
 - maxDuration=60 for OCR route (dual-OCR needs ~15s)
 - Fixed: dual-OCR wired into case 'booklet' (was only in case 'passport')
+- Booklet contract: family_name allowed (dual-OCR reconstructs correctly)
