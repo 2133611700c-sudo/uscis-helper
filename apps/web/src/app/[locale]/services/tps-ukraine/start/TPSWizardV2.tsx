@@ -3307,10 +3307,37 @@ function ReviewManual({
   // can still edit; on edit the value goes into manual.us_address_street
   // (the rest stays in mergedFields and the submit path falls back to
   // mergedFields for city/state/zip — see GeneratePacketBlock submit).
-  const ocrAddrStreet = mergedFields?.us_address_street?.value ?? ''
-  const ocrAddrCity = mergedFields?.us_address_city?.value ?? ''
-  const ocrAddrState = mergedFields?.us_address_state?.value ?? ''
-  const ocrAddrZip = mergedFields?.us_address_zip?.value ?? ''
+  // BINDING FIX: if split fields are empty, parse full address string
+  // from DL/I-797. Full address format: "Street, City, ST ZIP"
+  let ocrAddrStreet = mergedFields?.us_address_street?.value ?? ''
+  let ocrAddrCity = mergedFields?.us_address_city?.value ?? ''
+  let ocrAddrState = mergedFields?.us_address_state?.value ?? ''
+  let ocrAddrZip = mergedFields?.us_address_zip?.value ?? ''
+  if (!ocrAddrStreet && !ocrAddrCity) {
+    const fullAddr = mergedFields?.address?.value ?? ''
+    if (fullAddr) {
+      // Parse "1213 Gordon St APT 7, Los Angeles, CA 90038"
+      const parts = fullAddr.split(',').map((s: string) => s.trim())
+      if (parts.length >= 2) {
+        ocrAddrStreet = parts[0] // "1213 Gordon St APT 7"
+        const lastPart = parts[parts.length - 1] // "CA 90038"
+        const stateZip = lastPart.match(/^([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/)
+        if (stateZip) {
+          ocrAddrState = stateZip[1]
+          ocrAddrZip = stateZip[2]
+          // City is everything between street and state/zip
+          ocrAddrCity = parts.slice(1, -1).join(', ').trim()
+          if (!ocrAddrCity && parts.length === 2) {
+            // "Street, ST ZIP" — no separate city
+            ocrAddrCity = ''
+          }
+        } else {
+          // Can't parse state/zip — put rest in city
+          ocrAddrCity = parts.slice(1).join(', ')
+        }
+      }
+    }
+  }
   return (
     <>
       <FieldInput
