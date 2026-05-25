@@ -88,7 +88,7 @@ export function isPlausibleName(value: string): boolean {
 // ── Source Types ────────────────────────────────────────────────────────────
 
 export type SourceDoc = 'passport' | 'booklet' | 'i94' | 'ead' | 'i797' | 'dl' | 'manual'
-export type SourceType = 'ocr_mrz' | 'ocr_rule' | 'ocr_keyword' | 'ai_brain' | 'manual' | 'user_corrected'
+export type SourceType = 'ocr_mrz' | 'ocr_rule' | 'ocr_keyword' | 'dual_ocr_crossref' | 'ai_brain' | 'manual' | 'user_corrected'
 
 export interface ExtractedCandidate {
   field: string
