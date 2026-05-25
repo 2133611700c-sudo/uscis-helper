@@ -290,6 +290,8 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       const raw = (f.raw_value || '').trim()
       const norm = (f.normalized_value || '').trim()
       const input = norm || raw
+
+      // Guard 1: mixed-case gibberish (same as city)
       const latinWords = input.match(/[A-Za-z]{3,}/g) || []
       let isGarbage = false
       for (const w of latinWords) {
@@ -298,6 +300,27 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
         const title = /^[A-Z][a-z]+$/.test(w)
         if (!allUp && !allLo && !title) { isGarbage = true; break }
       }
+
+      // Guard 2: Ukrainian patronymic must end in known suffixes.
+      // Cyrillic: -ович, -овна, -івна, -ївна, -іч
+      // Latin: -ovych, -ovna, -ivna, -yivna, -ich
+      // If it's Latin text without a valid patronymic ending → garbage.
+      const hasCyrillic = /[А-Яа-яІіЇїЄєҐґ]/.test(input)
+      if (!hasCyrillic && !isGarbage) {
+        const lc = input.toLowerCase()
+        const validLatinEnding = /(?:ovych|ovich|ovna|ivna|yivna|ich|ych|vna)$/i.test(lc)
+        if (!validLatinEnding) {
+          isGarbage = true // "Cepriticbur" → no valid ending → reject
+        }
+      }
+      // Cyrillic patronymic ending check
+      if (hasCyrillic && !isGarbage) {
+        const validCyrEnding = /(?:ович|овна|івна|ївна|іч|ич)$/i.test(input)
+        if (!validCyrEnding) {
+          isGarbage = true
+        }
+      }
+
       if (isGarbage || input.length < 2 || input.length > 50) {
         rejected.add(f.field)
         f.normalized_value = null
@@ -306,7 +329,6 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
         diagnostics.push({ field: f.field, status: 'rejected', reason: 'patronymic_garbage',
           input_raw: raw, input_normalized: input, output_normalized: null, manual_required: true })
       } else {
-        const hasCyrillic = /[А-Яа-яІіЇїЄєҐґ]/.test(input)
         const output = hasCyrillic ? transliterateKMU55(input) : input
         f.normalized_value = output
         f.passes = [...f.passes, `knowledge_patronymic:${hasCyrillic ? 'kmu55' : 'latin_passthrough'}`]

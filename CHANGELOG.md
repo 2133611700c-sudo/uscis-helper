@@ -627,3 +627,6 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Brain targeted: middle_name added for booklet slot
 - postExtractNormalize: patronymic garbage guard + KMU-55 Cyrillic→Latin transliteration
 - Arbiter: booklet_ocr_keyword priority added for weak fields
+- Patronymic guard: reject Latin without valid Ukrainian endings (-ovych/-ovna/-ivna)
+- Patronymic guard: reject Cyrillic without -ович/-овна/-івна endings
+- 'Cepriticbur' now correctly REJECTED as garbage
