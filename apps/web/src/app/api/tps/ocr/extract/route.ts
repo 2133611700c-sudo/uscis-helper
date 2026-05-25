@@ -195,6 +195,7 @@ export async function POST(req: NextRequest) {
   //    identity document with photograph.
   const document_id = `doc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
   let moduleResult: TpsModuleResult | null = null
+  let crossrefStatus = 'not_applicable'
   // Track the OCR result actually used by the module — when we retry
   // with a rotated image, we want downstream Brain calls to see the
   // text from the successful rotation, not the first failed attempt.
@@ -223,11 +224,14 @@ export async function POST(req: NextRequest) {
       // When booklet matched: also call DocAI, then DeepSeek cross-ref.
       // This proven approach reconstructs surname from two OCR readings.
       if (booklet?.matched && process.env.DUAL_OCR_CROSSREF !== 'false') {
+        crossrefStatus = 'attempted'
         try {
           const docaiResult = await processDocAI(imageBuffer, effectiveMime)
           if (docaiResult.ok) {
+            crossrefStatus = 'docai_ok'
             const crossref = await runDualOcrCrossref(result.raw_text, docaiResult.text)
             if (crossref.ok) {
+              crossrefStatus = 'crossref_ok'
               // Merge high/medium confidence cross-ref fields into booklet
               const fieldMap: Record<string, string> = {
                 surname: 'family_name', city_of_birth: 'city_of_birth',
@@ -265,7 +269,10 @@ export async function POST(req: NextRequest) {
               }
             }
           }
-        } catch { /* dual-OCR is enhancement, never crashes main path */ }
+        } catch (crossrefErr: any) {
+          // Log but never crash
+          console.error('[dual-ocr-crossref] failed:', crossrefErr?.message || crossrefErr)
+        }
       }
 
       const hasPassportNumberFromMrz = (mr: TpsModuleResult | null): boolean =>
@@ -885,6 +892,7 @@ export async function POST(req: NextRequest) {
       ocr_provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
       // Flat extraction diagnostics — auditable at a glance.
       brain_status: brainStatus,
+      crossref_status: crossrefStatus,
       brain_error_code: brainErrorCode,
       brain_added_count: brainAddedCount,
       brain_trigger: brainTrigger,

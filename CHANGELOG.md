@@ -663,3 +663,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - dual_ocr_crossref extraction source added to TpsExtractionSource
 - Form Parser tested and REJECTED (worse results)
 - Image enhancement tested and REJECTED (worse quality score)
+
