@@ -635,3 +635,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Brain prompt: I-94 place_of_last_entry (Port of Entry) instruction added
 - Brain schema: place_of_last_entry field added
 - Central Brain v0.1: Levenshtein fuzzy matching + name plausibility
+- Country field hallucination guard: rejects person names as country values

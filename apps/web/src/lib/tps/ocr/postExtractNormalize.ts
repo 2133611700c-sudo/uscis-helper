@@ -285,6 +285,31 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       continue
     }
 
+    // ── COUNTRY FIELDS — reject hallucinated names as countries ───────────
+    // Brain sometimes puts surname as country_of_citizenship (e.g., "REDACTED").
+    // Country fields must be real country names, not person names.
+    if ((f.field === 'country_of_citizenship' || f.field === 'country_of_birth' ||
+         f.field === 'country_of_nationality' || f.field === 'passport_country_of_issuance') &&
+        (f.normalized_value || f.raw_value)) {
+      const val = ((f.normalized_value || f.raw_value) ?? '').trim()
+      const KNOWN_COUNTRIES = new Set([
+        'ukraine', 'united states', 'usa', 'us', 'russia', 'belarus', 'poland',
+        'moldova', 'romania', 'hungary', 'slovakia', 'czech republic', 'czechia',
+        'germany', 'france', 'italy', 'spain', 'united kingdom', 'uk', 'canada',
+        'mexico', 'brazil', 'argentina', 'china', 'japan', 'india', 'turkey',
+        'israel', 'georgia', 'armenia', 'azerbaijan', 'kazakhstan', 'uzbekistan',
+      ])
+      if (!KNOWN_COUNTRIES.has(val.toLowerCase())) {
+        rejected.add(f.field)
+        f.normalized_value = null
+        f.review_required = true
+        f.failures = [...f.failures, 'knowledge_country_not_recognized']
+        diagnostics.push({ field: f.field, status: 'rejected', reason: 'country_not_recognized',
+          input_raw: f.raw_value, input_normalized: val, output_normalized: null, manual_required: true })
+        continue
+      }
+    }
+
     // ── MIDDLE_NAME (PATRONYMIC) — booklet Cyrillic → Latin ─────────────
     if (f.field === 'middle_name' && (f.normalized_value || f.raw_value)) {
       const raw = (f.raw_value || '').trim()
