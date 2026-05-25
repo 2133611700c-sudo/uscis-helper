@@ -46,3 +46,4 @@ See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fi
 - Arbiter WIRED into wizard merge — resolveAllFields() is now the single source of merged truth
 - Patronymic UNBLOCKED from booklet
 
+- Levenshtein cross-document matching + plausibility
