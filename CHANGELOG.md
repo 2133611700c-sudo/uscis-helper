@@ -608,3 +608,5 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - 7 new tests: BiRHEROI rejected, valid cities pass, MRZ unaffected
 - Address binding fix: parse full DL address into split fields when split not available
 - Manual fields now fall back to mergedFields.address for DL auto-fill
+- Review cards: a_number + address visible for ALL filing types (not just rereg)
+- Address binding: full DL address parsed into street/city/state/zip fallback
