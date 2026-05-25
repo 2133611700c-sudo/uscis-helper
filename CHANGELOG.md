@@ -3,6 +3,38 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 17: family_name KMU-55 + Central Brain plan audit
+
+### family_name KMU-55 transliteration
+- `postExtractNormalize.ts`: added family_name handler before middle_name
+- Cyrillic input (booklet) → `transliterateKMU55()` — e.g. "REDACTED_NAME" → "REDACTED"
+- Latin input (passport MRZ / EAD / I-94) → passthrough with garbage guard
+- ALL-CAPS Latin input title-cased ("REDACTED" → "REDACTED")
+- Garbage rejection: mixed-case, length out of [2, 50], digits in name
+
+### Why
+- Before: booklet-only TPS users (no загранпаспорт) got Cyrillic surname in I-821 form — invalid for USCIS
+- After: surname is always Latin (KMU-55) regardless of source document
+
+### Central Brain plan audit
+- Plan proposed full rebuild as 10-phase project
+- Honest mapping showed 70% already exists:
+  - "Central Brain" responsibilities already split across fieldArbiter + documentContracts + postExtractNormalize + validateBrainField
+  - Dictionary bridge = @uscis-helper/knowledge (already single source)
+  - Booklet pipeline = 10/10 stable on canonical
+- Real gaps identified and prioritized:
+  - family_name KMU-55 (FIXED this session)
+  - Multi-sample booklet benchmark (TODO — need real samples)
+  - Re-parole booklet: VERIFIED NOT NEEDED (re-parole uses passport MRZ only)
+
+### Verification
+- 1985/1985 tests passed
+- Booklet stability: 3/3 identical with surname=REDACTED
+- Passport MRZ regression test: family_name=REDACTED preserved (no double-transliteration)
+- Latency: 16.4s avg (unchanged)
+
+---
+
 ## 2026-05-25 — Session 16: Booklet Handwritten Cyrillic Completion
 
 ### Arbiter priority fix
