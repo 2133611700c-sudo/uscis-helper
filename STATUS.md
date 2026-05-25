@@ -33,3 +33,4 @@ Deploy this commit → test same passport image → verify:
 1. city_of_birth = "ВІННИЦЬКА ОБЛ." is REJECTED (not "Vinnytsia Oblast")
 2. MRZ identity fields are LOCKED (EAD "Saghi" rejected when passport uploaded)
 3. Booklet fields marked review_required
+

@@ -606,3 +606,5 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - ROOT CAUSE: JS \b treats Cyrillic as \W → regex never matches "ОБЛ." in validateCity
 - Booklet garbage-rejection guard: mixed-case, consonant clusters, word count
 - 7 new tests: BiRHEROI rejected, valid cities pass, MRZ unaffected
+- Address binding fix: parse full DL address into split fields when split not available
+- Manual fields now fall back to mergedFields.address for DL auto-fill
