@@ -615,3 +615,6 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - passport_expiration_date added to review cards (4 locales)
 
 - Fix duplicate address card (composed address shows once, not twice)
+- Field Arbiter v0: source ranking, identity lock, rejectedCandidates, conflict flags
+- 10 load-bearing tests: MRZ lock, garbage rejection, source priority, batch resolution
+- Deduplicate address review card
