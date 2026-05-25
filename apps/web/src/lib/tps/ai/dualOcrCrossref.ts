@@ -63,6 +63,8 @@ KNOWN FACTS:
 - Cities are real Ukrainian cities
 - Province = one of 25 Ukrainian oblasts
 - Both OCR engines may read the SAME handwritten text differently — cross-reference helps
+- IMPORTANT: When two OCR readings differ, construct the BEST HYBRID by combining correctly-read parts from each. Example: if Vision reads "Кулоп'ятник" and DocAI reads "Куронятник", the correct hybrid might be "Куроп'ятник" (Куро- from DocAI + п'ятник from Vision), because "п'ятник" is a valid Ukrainian morpheme from "п'ять" (five).
+- Similarly for patronymics: if both readings start with "Cepr..." or "Серг...", consider that "Сергійович" is the standard patronymic from "Сергій".
 
 LINGUISTIC ANALYSIS: For each field, explain WHY your reconstruction is better than either raw reading.
 
