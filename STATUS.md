@@ -2,12 +2,12 @@
 **Updated:** 2026-05-25 Session 18 — client whitelist drift killed + drift gate wired into CI + evidence report on what blocks `dob` and `given_name`
 **Live SHA:** 8bce911 (drift gate) on top of 794b86d (whitelist fix). Prod verified at simulation level.
 **Tests:** 1985/1985
-**Commits this session:** 3 (`794b86d` client fix, `8bce911` drift gate, evidence report commit pending push)
+**Commits this session:** 4 (`794b86d` client fix, `8bce911` drift gate, `249a5b4` evidence report, formulation correction pending push)
 
-## EVIDENCE REPORT
-`reports/BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md` — 28-run analysis. Headline findings:
-- `dob`: brain emits unparseable format in 28/28 runs (`validated_skipped: "date not parseable"`). Brain prompt says to convert Ukrainian-month genitive forms but emission evidently retains trailing words like `року`. Fixable; not yet fixed.
-- `given_name`: raw OCR garbage (`"Behri"` from Cyrillic `В` misread as Latin `B`). Both Vision and DocAI fail the same zone. **Not fixable from OCR alone on this sample.** Manual entry is the honest path until multi-sample data says otherwise.
+## EVIDENCE REPORT (corrected after external review)
+`reports/BOOKLET_PIPELINE_EVIDENCE_REPORT_20260525.md` — 28-run analysis with three-class evidence rule (officially claimed / verified on our data / not verified). Headline findings:
+- `dob`: brain emits unparseable format in 28/28 runs (`validated_skipped: "date not parseable"`). Brain prompt says to convert Ukrainian-month genitive forms but emission evidently retains trailing words like `року`. Fixable on this stack; not yet fixed.
+- `given_name`: raw OCR garbage on N=1 booklet sample (`"Behri"` from Cyrillic `В` misread as Latin `B`). Vision and DocAI both fail. **NOT proven to fail across the population or across providers.** Azure Read claims expanded Russian handwriting support (officially); we have not benchmarked it. Image preprocessing and region cropping have not been tried. Honest current default: manual entry until multi-sample data says otherwise.
 - All other "missing" booklet fields are forbidden by design (passport MRZ is authoritative for those).
 
 ## SESSION 18 — booklet family_name actually reaches the user

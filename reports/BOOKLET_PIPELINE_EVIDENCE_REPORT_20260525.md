@@ -9,6 +9,20 @@ This report exists because Session 17 declared the booklet path "production veri
 
 ---
 
+## Evidence classification rule (added 2026-05-25 after external review)
+
+Every claim about OCR / translation provider capability in this report — and in any future report in this repo — must be tagged one of three ways:
+
+- **(officially claimed)** — vendor documentation states the capability. Reference required.
+- **(verified on our data)** — we have run the provider on a specific Messenginfo dataset and measured the result. Sample count and dataset reference required.
+- **(not verified)** — neither of the above; default state until proven otherwise.
+
+A claim like "Vendor X does not support handwritten Cyrillic" is almost always wrong as written — what we usually mean is "Vendor X failed on our N samples". The two statements have different consequences and different costs.
+
+This rule exists because the original draft of this report drifted into the second mistake on the `given_name` and `dob` analyses. The corrections below are deliberate.
+
+---
+
 ## Summary of evidence
 
 | Field | Brain emits? | Validation passes? | Contract allows? | Reaches user? | Root cause |
@@ -53,24 +67,33 @@ This report exists because Session 17 declared the booklet path "production veri
 - Multi-sample benchmark. One canonical sample proves nothing about variance in handwriting, OCR confidence, and brain interpretation.
 - Logging enhancement: capture the brain's raw `final_value` for `dob` in the audit table, so the next investigation isn't blind.
 
-### `given_name` — structural OCR limitation, not a contract issue
+### `given_name` — OCR garbage on the canonical sample, scope-limited finding
 
-**Evidence:**
+**Evidence (verified on our data, N=28 runs, 1 booklet sample):**
 - Raw Google Vision OCR of the given-name handwritten zone: `"Behri"` — Latin letters where Cyrillic should be (Vision misreads handwritten `В` as Latin `B`, then runs the rest through a Latin-confused decoder).
 - Brain warning (run 133117): `"Given name OCR is garbled (Behri) – likely 'В' misread as 'B', needs manual review"`.
-- DocAI OCR provides a second reading (the dual-OCR crossref module uses both), but no run shows successful given_name recovery.
+- DocAI OCR provides a second reading (dual-OCR crossref uses both). On THIS sample, the crossref does not produce a usable given_name.
 
-**Why this is fundamentally different from family_name:**
-- Family name and patronymic recovered via dual-OCR crossref BECAUSE one engine got most of the letters right and the other complemented it (Vision read `"REDACTED_NAME"`, DocAI read `"REDACTED_NAME"`, crossref hybrid = `"REDACTED_NAME"`).
-- For given_name, BOTH engines collapsed to Latin garbage on the same zone. There's no recoverable Cyrillic signal to hybrid.
-- The image-zone for given_name may be where the Vision OCR most consistently fails on this canonical sample. Different sample = different failure mode. Need multi-sample to know.
+**Why family_name recovered but given_name did not — on this sample:**
+- Family name and patronymic recovered via dual-OCR crossref because one engine got most of the letters right and the other complemented (Vision read `"REDACTED_NAME"`, DocAI read `"REDACTED_NAME"`, crossref hybrid = `"REDACTED_NAME"`).
+- For given_name, on this specific zone of this specific booklet, both Vision and DocAI collapsed to Latin garbage. There was no recoverable Cyrillic signal to hybrid.
 
-**Three possible paths, ordered by feasibility:**
-1. **Accept manual entry for given_name on booklet-only users.** Honest. Aligns with current contract. Doesn't degrade other fields.
-2. **Brain inference from patronymic.** A patronymic `Сергійович` strongly implies a father named `Сергій`. The given_name MIGHT be `Сергій`. **This is unsafe** — the patronymic refers to the FATHER, not the user. Multiple given names share the same patronymic form. Do not infer.
-3. **Improve OCR (different provider, image enhancement, fine-tuned model).** Out of scope for now. Document as a Phase 2 research item if booklet-only TPS users become a meaningful segment.
+**What this finding does NOT prove (added after external review):**
+- It does NOT prove that "OCR cannot extract handwritten Cyrillic given_name from booklets". One sample is not a population.
+- It does NOT prove that other providers (Azure Read, Yandex Vision) fail the same way. We have not benchmarked them on Cyrillic handwritten booklets. (Azure docs *officially claim* expanded handwriting support including Russian; status on Ukrainian handwritten booklet on our data: *not verified*.)
+- It does NOT prove that DocAI fails generically. Other approaches not yet tried: region-of-interest cropping to the given-name zone only, image preprocessing (deskew, contrast, dewarp) before OCR, different DocAI processor types, the Form Parser processor with a custom schema.
 
-**Recommendation: option 1.** Don't relax the contract. Show a clear "введите имя вручную" prompt at Step 5 for booklet-only users.
+**Honest current status:**
+- *Verified on our data (N=1 booklet, 28 OCR runs):* Vision + DocAI both produce garbage for given_name on this sample. Crossref does not recover. Manual entry is required for this user on this document.
+- *Not verified:* whether the failure mode holds across handwriting styles, image qualities, or other OCR providers.
+
+**Paths to investigate before treating this as a hard product limit:**
+1. **Multi-sample benchmark on current stack.** 3-5 real booklets, same Vision+DocAI pipeline. If given_name recovers on some samples and not others, the determining factor is handwriting / image quality, not the OCR provider.
+2. **Azure Read on the same canonical sample.** One-off API call, single image. Tells us whether the provider matters. (See `daily-briefing` not — there is no compliance blocker on running Azure for one test image with a synthetic / our own data.)
+3. **Image preprocessing.** Deskew, sharpen, contrast normalize → re-run Vision and DocAI. Cheap to try.
+4. **Region cropping.** Crop the given-name zone to its own image, send to OCR. Sometimes vendors do better when the region is unambiguously the one piece of text to recognize.
+
+**Until any of those four are tried:** manual entry for given_name on booklet-only TPS users is the honest default. Don't relax the contract. But don't write "not fixable" — write "not yet fixed on N=1 sample with one OCR stack configuration".
 
 ### Other forbidden fields — by design, not a bug
 
@@ -97,3 +120,4 @@ This report exists because Session 17 declared the booklet path "production veri
 - Do not relax the server contract for `dob` or `given_name` before steps 2 and 4. The lesson from Session 17 is that "the API returns the right thing on canonical" is not the same as "the user gets the right thing in their PDF across real-world variation."
 - Do not infer `given_name` from `patronymic`. The patronymic encodes the father's first name, not the user's.
 - Do not declare the pipeline "production-stable" without multi-sample evidence. One sample proves determinism, not generalization.
+- **Do not write absolute claims about provider capability based on N=1 sample.** "Provider X does not handle handwritten Cyrillic" is almost always wrong as written. The correct phrasing names the dataset and the sample count, and stays in one of the three classes (officially claimed / verified on our data / not verified).
