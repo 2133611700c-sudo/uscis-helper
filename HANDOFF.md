@@ -1,36 +1,37 @@
-# HANDOFF — Session 15 (2026-05-24)
+# HANDOFF — Session 16 (2026-05-25)
 
 ## What was done
-Phase A stabilization started. Three code changes:
+Booklet handwritten Cyrillic pipeline completed end-to-end.
 
-### A2: MRZ Identity Lock
-- File: `TPSWizardV2.tsx` merge logic
-- If merged field came from MRZ (`source === 'ocr_mrz'`), weaker sources cannot degrade it
-- Conflicts from weak sources logged but do NOT mark MRZ as requires_review
-- Identity fields from non-MRZ sources marked `requires_review: true`
+### Fix 1: Arbiter priority for dual_ocr_crossref
+- File: `fieldArbiter.ts`
+- Added `booklet_dual_ocr_crossref` to IDENTITY_PRIORITY (rank 5) and WEAK_PRIORITY (rank 1)
+- Before: crossref fields got priority 99 (unranked)
 
-### A3: City/Province Cyrillic Regex Fix
-- File: `postExtractNormalize.ts`
-- ROOT CAUSE: JavaScript `\b` word boundary does NOT work with Cyrillic (Cyrillic = `\W`)
-- `CITY_NOISE_RE`: added "обл" (3 chars) and "obl" — Brain outputs "ОБЛ." not full "область"
-- Replaced `\b` with explicit Unicode boundaries `(?:^|[\s.,;:!?])`
+### Fix 2: Enforce review_required on booklet crossref
+- File: `route.ts` (two merge blocks)
+- DeepSeek was overwriting booklet module's review_required=true
+- Patronymic appeared as auto-confirmed — now forced review_required=true
 
-### A4: Booklet Weak Source
-- File: `TPSWizardV2.tsx` merge logic
-- ALL booklet fields marked `requires_review: true`
-- Booklet birthplace override also marks review_required
+### Stability proof
+- 10/10 identical local runs on canonical booklet dataset
+- 1/1 production run on messenginfo.com — crossref_ok
+- All 4 fields correct: surname, city, province, patronymic
+- Zero variance across runs
 
-## What is NOT verified
-- All three changes are CODE ONLY — need live deployment + same-image test
-- The regex fix needs curl proof: "ВІННИЦЬКА ОБЛ." must be REJECTED as city
+### New artifacts
+- `scripts/booklet-stability-test.sh` — 10-run canonical test
+- `reports/BOOKLET_COMPLETION_REPORT.md` — full completion report
+
+## What is NOT done
+- family_name KMU-55 transliteration for booklet-only users
+- Multi-dataset validation (only one canonical booklet tested)
 - MRZ lock needs browser test: upload EAD with "Saghi" + passport, verify "Sergii" wins
 
 ## What must happen next
-1. Deploy this commit
-2. curl test passport: verify city_of_birth rejected
-3. Browser test: upload EAD → passport → verify merge
-4. If proven → Phase A items checked off
-5. If not → trace runtime and fix
+1. Add KMU-55 transliteration for family_name in postExtractNormalize
+2. Test with a second canonical booklet (different handwriting)
+3. Browser test: upload booklet in wizard → verify fields in Step 5 review
 
 ## Previous session context
 See /mnt/transcripts/2026-05-24-13-52-16-uscis-helper-full-pipeline-audit-and-fix.txt
