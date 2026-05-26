@@ -1,14 +1,14 @@
 # HANDOFF — Session 18 (2026-05-25)
 
-## Session 22 (2026-05-25) — pre-deploy patchset for runtime blockers
+## Session 22 (2026-05-25) — deployed patchset for runtime blockers
 
-### Landed locally (not yet live at this entry)
+### What shipped
 1. Step6 runtime now renders `PacketCompletenessChecker` in wizard v2:
    - file: `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
-   - expected effect: H.R.1 fee warning appears in Step6 UI for EN/RU/UK/ES.
+   - verified effect: H.R.1 fee warning appears in Step6 UI for EN/RU/UK/ES.
 2. Booklet city guard hardened:
    - file: `apps/web/src/lib/tps/ocr/postExtractNormalize.ts`
-   - effect: English settlement descriptors (`urban-type settlement` / `settlement`) are rejected and forced to manual entry.
+   - effect: English settlement descriptors (`urban-type settlement` / `settlement`) are rejected/manual.
 3. Booklet DOB weak-path cleanup:
    - file: `apps/web/src/app/api/tps/ocr/extract/route.ts`
    - effect: dual crossref no longer maps `date_of_birth -> dob` for booklet; prevents noisy DOB auto-fill attempts.
@@ -16,16 +16,20 @@
    - file: `apps/web/src/lib/tps/__tests__/postExtractNormalize.test.ts`
    - new case: rejects `Prostianets settlement`.
 
-### Local verification already done
+### Verification done
 - `pnpm --filter web typecheck` passed.
 - `pnpm --filter web test -- src/lib/tps/__tests__/postExtractNormalize.test.ts` passed (`1988/1988`).
-- `node scripts/check-booklet-contract-drift.mjs` passed.
+- drift gate green+red rerun passed (`red_exit=1`, `green_exit=0`).
+- live SHA confirmed: `692619ca62d47ecb8d3b23a10cf4b137b1351230`.
+- Playwright production E2E rerun passed with ZIP output (`phase22_booklet_review_artifacts`).
+- Step6 H.R.1 locale proof captured for EN/RU/UK/ES (`phase22_hr1_locale_results.json`).
+- synthetic `booklet_0` vs `booklet_270` rerun captured (`phase22_synthetic_270_summary.json`) — both returned `Trostianets`.
+- fresh Supabase audit rows captured (`phase22_recent_audit_rows.json`) with `has_brain_raw=true`.
 
-### Still required after deploy
-- Production SHA confirmation on `/api/tps/health`.
-- Repeat Playwright runtime chain + ZIP/PDF proof.
-- Re-run Step6 H.R.1 locale check (EN/RU/UK/ES) against live.
-- Re-run synthetic 270° booklet sample and confirm city no longer auto-propagates as truth.
+### Still open
+- owner-mode OTP full-chain remains `BLOCKED` without live OTP input.
+- full mandatory matrix coverage (all owner/normal mobile/desktop rows with generate+ZIP+PDF) remains `UNVERIFIED`.
+- multi-identity real booklet pack benchmark remains `UNVERIFIED`.
 
 ## Session 21 (2026-05-25) — finish-all truth-chain execution
 
