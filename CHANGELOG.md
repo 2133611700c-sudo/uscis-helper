@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Codex memory repair (docs only)
+- Restored historical project memory files from `HEAD` after accidental boilerplate replacement.
+- Added operational memory-read/update guardrails in `AGENTS.md` without deleting historical logs.
+- No app/runtime code changed.
+
 ## 2026-05-25 — Session 22: Step6 H.R.1 runtime wiring + booklet weak-field hardening
 
 ### Code changes
