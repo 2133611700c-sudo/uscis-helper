@@ -28,16 +28,17 @@
 - `supabase db push` → applied pending migrations (including `brain_raw`).
 
 ### Live truth right now
-- Live app SHA remains `71ef1731aac9539c68e3fa072a656e368c02cff9`.
+- Live app SHA is `2d0a626584925b88657381f32cad5793d7ab8da5`.
 - Supabase live `tps_ocr_audit` is receiving fresh rows.
-- Latest live rows are still old format:
-  - `brain_raw IS NOT NULL = false`
-  - `rejected_fields` type observed as `string` (legacy serialization), not array.
+- New post-deploy rows (`2026-05-26 01:08:30..01:08:44+00`) show:
+  - `brain_raw IS NOT NULL = true`
+  - `rejected_fields` type = `array`
+  - `validated_skipped_count` and `normalization_diag_count` populated in `brain_raw`.
+- Pre-deploy historical rows still have legacy shape (`brain_raw` null + `rejected_fields` string scalar).
 
 ### Not closed yet (why not PASS)
-- App runtime with new `brain_raw` wiring is not deployed to live SHA yet.
-- Therefore no live-row proof yet of new `brain_raw` content being written by the new code path.
-- In the verified E2E sample run, `city/province/middle` booklet auto-fill flags were false; only manual/higher-confidence fields are proven in generated PDFs.
+- In verified production E2E runs, booklet `city/province/middle` auto-fill flags are still false; only surname + core identity/address fields are proven in generated PDFs.
+- Because this mission required stable booklet OCR→review parity for those weak fields, overall status remains `DEGRADED`.
 
 ## What was done
 
