@@ -1,4 +1,34 @@
 # STATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-26 Session 19 — Playwright E2E + ZIP/PDF proof + audit wiring landed locally, remote DB migrations applied
+**Status:** DEGRADED
+**Live SHA:** `71ef1731aac9539c68e3fa072a656e368c02cff9` (verified via `/api/tps/health` on 2026-05-26)
+
+## Session 19 Truth (no fake pass)
+- `VERIFIED` browser E2E against production URL (`/en/services/tps-ukraine/start`) passes with real upload→OCR→review→generate flow.
+- `VERIFIED` ZIP artifact is real (`apps/web/test-results/booklet-review-artifacts/tps-packet.zip`, ~2.58MB).
+- `VERIFIED` PDF readback finds core values in generated PDFs:
+  - `Kuropiatnyk`, `FU262473`, `UHP`, `Los Angeles`, `90029`.
+- `VERIFIED` live Supabase `tps_ocr_audit` is actively receiving fresh rows (checked in Supabase UI and via linked SQL).
+- `VERIFIED` remote DB migrations are now synced through `20260526000001`.
+
+## Why status is still DEGRADED
+- `UNVERIFIED ON LIVE SHA`: new `brain_raw` audit payload wiring is local code only until deploy of new app SHA.
+- Current live rows still show old audit format:
+  - `brain_raw IS NOT NULL = false` on latest rows
+  - `rejected_fields` currently stored as JSON string scalar on live rows.
+- `UNVERIFIED`: city/province/patronymic booklet values were not auto-surfaced in this specific production E2E run (`extraction flags: city=false, province=false, middle=false`), so no claim of stable auto-fill is made.
+
+## Session 19 Evidence Paths
+- Playwright spec: `apps/web/tests/e2e/booklet-review.spec.ts`
+- Playwright screenshots:
+  - `apps/web/test-results/booklet-review-artifacts/step5-review.png`
+  - `apps/web/test-results/booklet-review-artifacts/step6-generated.png`
+- ZIP manifest: `apps/web/test-results/booklet-review-artifacts/zip-manifest.txt`
+- PDF text readback:
+  - `apps/web/test-results/booklet-review-artifacts/unzip/I-821.txt`
+  - `apps/web/test-results/booklet-review-artifacts/unzip/I-765.txt`
+  - `apps/web/test-results/booklet-review-artifacts/unzip/pdf-grep.txt`
+
 **Updated:** 2026-05-25 Session 18 — booklet drift killed (3 legs) + drift gate v2 + evidence report + zero-trust re-audit
 **Live SHA:** e1429ba (or drift gate v2 commit pending push). Prod verified at simulation level.
 **Tests:** 1985/1985
@@ -45,7 +75,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
 
 
 
