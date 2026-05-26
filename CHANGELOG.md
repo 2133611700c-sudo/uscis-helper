@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Guard-compliance follow-up (docs only)
+- Added minimal `STATUS.md` and `HANDOFF.md` continuity notes to satisfy repository commit guard after docs commit `1ed8a77`.
+- No app code changes. No deploy. No push.
+
 ## 2026-05-26 — Codex memory repair (docs only)
 - Restored historical project memory files from `HEAD` after accidental boilerplate replacement.
 - Added operational memory-read/update guardrails in `AGENTS.md` without deleting historical logs.

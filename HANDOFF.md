@@ -1,5 +1,18 @@
 # HANDOFF — Session 18 (2026-05-25)
 
+## Session 24 (2026-05-26) — guard-compliance repair for docs-only commit
+
+### What changed
+- Added minimal continuity notes to `STATUS.md` and `HANDOFF.md` so repository guard convention is satisfied after docs-only commit `1ed8a77`.
+
+### Verification
+- No app code changed.
+- No push performed.
+- No deploy performed.
+
+### Next action
+- Review this guard-compliant follow-up commit and push only if approved.
+
 ## Session 22 (2026-05-25) — deployed patchset for runtime blockers
 
 ### What shipped
