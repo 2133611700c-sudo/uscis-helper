@@ -3,6 +3,27 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Guard-compliant post-push status record (docs only)
+
+### Why this entry exists
+- Previous push range contained commit `1ed8a77` (docs-only) that omitted `STATUS.md` and `HANDOFF.md`.
+- Repo workflow `Session Docs Guard` validates each commit in range and failed on that commit even though a later commit (`d9e31a6`) was compliant.
+
+### Verified evidence
+- GitHub run `26461533247` (`Session Docs Guard`): `completed failure`
+  - log evidence: range `1d8e70a..d9e31a6`, `1ed8a77` missing `STATUS.md` and `HANDOFF.md`.
+- GitHub run `26461533323` (`Content & Brand Guards`): `completed success`.
+- Vercel latest production deployment for docs-only push: `Ready`
+  - deployment: `uscis-helper-k67x575l7-sergiis-projects-8a97ee0f.vercel.app`.
+
+### Repair action in this commit
+- Added full, operationally useful session notes to:
+  - `STATUS.md`
+  - `HANDOFF.md`
+  - `CHANGELOG.md`
+- No application/runtime code changes.
+- No manual deployment changes.
+
 ## 2026-05-26 — Guard-compliance follow-up (docs only)
 - Added minimal `STATUS.md` and `HANDOFF.md` continuity notes to satisfy repository commit guard after docs commit `1ed8a77`.
 - No app code changes. No deploy. No push.
