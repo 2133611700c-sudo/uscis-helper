@@ -1,4 +1,34 @@
 # STATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-25 Session 21 — finish-all truth-chain execution (strict evidence)
+**Status:** DEGRADED
+**Live SHA:** `3ec6920de5312a509b1c4bfef3ad24e90acfc103` (start/end matched in ledger)
+
+## Session 21 Truth (strict evidence only)
+- `VERIFIED` Phase A/B/C/F foundations:
+  - canonical dataset manifest frozen with hashes;
+  - drift gate green (`exit=0`) + synthetic red (`exit=1`) with clean restore;
+  - remote schema includes `20260526000001`, live audit rows write `brain_raw` + `rejected_fields=array`;
+  - `typecheck` + full tests `1987/1987` pass.
+- `VERIFIED` production E2E (`initial + paper + EAD yes`, EN normal):
+  - upload → OCR → review → gate → generate → ZIP → PDF readback.
+  - network proof includes `generate-network.json` with request/response metadata.
+- `VERIFIED` DocAI environment readiness:
+  - processor enabled + real `:process` request success.
+  - production runtime still reports `tps_docai_enabled=false`.
+- `VERIFIED` normal-mode Step4 slot matrix parity (EN/RU, desktop/mobile, 4 required scenarios):
+  - booklet slot present on mobile and desktop in all normal rows.
+
+## Critical runtime failures observed
+- `FAILED` H.R.1 wizard UI visibility (EN/RU/UK/ES): expected H.R.1 strings not found in Step6 runtime UI.
+- `VERIFIED` H.R.1 exists in generated `INSTRUCTION.txt` (runtime drift UI vs package text).
+- `FAILED` booklet DOB stability: canonical 5-run benchmark shows `dob=NOT_FOUND` in 5/5.
+- `FAILED` synthetic rotation robustness: 270° sample produced city drift (`Prostianets settlement`).
+
+## Blocked / unverified
+- `BLOCKED` owner-mode completion: `/api/owner/request-code` works, but OTP verification was not completed in-session.
+- `UNVERIFIED` full 8-row matrix end-to-end (OCR→review→gate→generate→ZIP→PDF) for every row.
+- `UNVERIFIED` multi-identity real-sample benchmark (only one real canonical identity + synthetic transforms executed in this run).
+
 **Updated:** 2026-05-25 Session 20 — independent re-check of items 1..6 + contract-as-API hardening
 **Status:** DEGRADED
 **Live SHA:** `1c14c197267032e373a1a4a59d4e7f3c2213d721` (verified via `/api/tps/health` on 2026-05-25)
@@ -105,7 +135,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
 
 
 
