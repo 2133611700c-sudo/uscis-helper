@@ -1,5 +1,39 @@
 # HANDOFF — Session 18 (2026-05-25)
 
+## Session 27 (2026-05-26) — repository hygiene policy for evidence artifacts
+
+### What changed
+- Updated root `.gitignore` with explicit guardrails for generated test outputs and sensitive-by-default raw evidence artifacts.
+- Added `docs/reports/retention-policy.md` with operational rules for:
+  - track vs ignore decisions,
+  - archive-outside-git guidance,
+  - PII/OCR/document handling boundaries,
+  - promotion workflow from local artifact to sanitized tracked evidence.
+- Updated `STATUS.md` and `CHANGELOG.md` to record verified scope, risk, and next checks.
+
+### What was intentionally preserved
+- No app/runtime source files changed.
+- No production logic changed.
+- No manual deployment or environment mutation performed.
+- Existing local evidence files were not deleted or moved.
+
+### Operator guidance (next session)
+1. Push this docs-only commit through normal guard flow.
+2. Verify post-push:
+   - `gh run list --limit 10`
+   - `Session Docs Guard` status for new run
+   - `Content & Brand Guards` status
+   - `vercel ls` (confirm latest production remains `Ready` or no relevant deploy trigger)
+3. If a guard fails:
+   - inspect failing run logs first,
+   - patch only required docs/policy deltas,
+   - avoid touching app/runtime code unless a separate product issue is explicitly opened.
+
+### Evidence expectation
+- Continue storing raw operational evidence locally or external archive by policy.
+- Track only sanitized decision-grade summaries in git.
+- No DONE/PASS claim without command/output evidence.
+
 ## Session 26 (2026-05-26) — persisted MacBook workstation execution policy
 
 ### What changed
