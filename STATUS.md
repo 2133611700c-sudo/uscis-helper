@@ -1,4 +1,38 @@
 # STATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-26 Session 27 — repository hygiene policy for evidence/test artifacts
+**Status:** PASS
+**Scope:** Documentation-only repository hygiene hardening; no app/runtime code changes.
+
+## Session 27 Repository Hygiene Policy (Verified)
+- `VERIFIED` root `.gitignore` now blocks accidental commits of generated Playwright/test artifacts:
+  - `apps/web/test-results/`
+  - `apps/web/playwright-report/`
+  - `playwright-report/`
+  - `test-results/`
+- `VERIFIED` root `.gitignore` now blocks sensitive-by-default raw evidence patterns under `docs/reports/evidence/`:
+  - binary/document artifacts (`.zip`, `.pdf`)
+  - screenshots (`.png`, `.jpg`, `.jpeg`, `.webp`)
+  - runtime/network traces (`.log`, `.trace`, `.har`)
+  - nested `playwright-report/` folders.
+- `VERIFIED` local debug benchmark folders are now ignored:
+  - `reports/booklet-stability-*/`
+- `VERIFIED` CSV reports remain intentionally unignored for controlled tracking when sanitized and decision-grade.
+- `VERIFIED` a permanent operational policy document exists at:
+  - `docs/reports/retention-policy.md`
+  - includes classification, sensitive-by-default categories, PII/OCR handling rules, and promotion workflow for sanitized tracked evidence.
+- `VERIFIED` no application logic, runtime behavior, deployment config, or product flow was changed.
+
+## Session 27 Remaining Risk
+- `DEGRADED` historical local raw evidence already present on operator machines may still contain sensitive payloads; `.gitignore` prevents new accidental adds but does not sanitize existing local files.
+- `UNVERIFIED` older branches/clones may not include this policy commit until merged/pulled.
+
+## Session 27 Exact Next Verification Step
+1. Push this docs-only commit through normal guard flow.
+2. Re-check:
+   - `Session Docs Guard`
+   - `Content & Brand Guards`
+3. Optionally run `git add -n .` to confirm raw evidence patterns are no longer staged by default in fresh sessions.
+
 **Updated:** 2026-05-26 Session 26 — persisted MacBook workstation policy into repo memory
 **Status:** PASS
 **Scope:** Documentation-only governance update; no app/runtime code touched.
@@ -218,7 +252,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
 
 
 
