@@ -1,20 +1,31 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-25 Session 22 — Step6 H.R.1 runtime wiring + booklet guard hardening (pending live proof)
+**Updated:** 2026-05-25 Session 22 — Step6 H.R.1 runtime wiring + booklet guard hardening (post-deploy rerun)
 **Status:** DEGRADED
-**Live SHA:** `3ec6920de5312a509b1c4bfef3ad24e90acfc103` (pre-deploy; new fixes not live yet)
+**Live SHA:** `692619ca62d47ecb8d3b23a10cf4b137b1351230`
 
-## Session 22 In Progress (pre-deploy truth)
-- `VERIFIED` local code changes:
+## Session 22 Truth (post-deploy)
+- `VERIFIED` shipped code changes:
   - Step6 now renders `PacketCompletenessChecker` in `TPSWizardV2` (H.R.1 warning source used by runtime UI).
   - booklet city normalization now rejects English settlement descriptors (`... settlement`) to prevent auto-garbage propagation.
   - booklet dual crossref no longer maps `date_of_birth -> dob` (manual fallback only for DOB on weak booklet path).
-- `VERIFIED` local gates:
+- `VERIFIED` code gates:
   - `pnpm --filter web typecheck` pass.
   - `pnpm --filter web test -- src/lib/tps/__tests__/postExtractNormalize.test.ts` pass (`1988/1988`).
-  - drift gate green pass.
-- `UNVERIFIED` until deploy + live rerun:
-  - Step6 H.R.1 visibility on production EN/RU/UK/ES.
-  - synthetic 270° city drift behavior on production runtime.
+  - drift gate green (`exit=0`) + synthetic red (`exit=1`) with clean restore.
+- `VERIFIED` live runtime on one SHA (`692619ca...`):
+  - production E2E pass: upload→OCR→review→gate→generate→ZIP (`/apps/web/tests/e2e/booklet-review.spec.ts`);
+  - PDF readback still shows core values in generated I-821/I-765;
+  - Step6 H.R.1 warning present in EN/RU/UK/ES runtime UI (`phase22_hr1_locale_results.json`);
+  - synthetic benchmark rerun (`booklet_0` vs `booklet_270`) now returns `city_of_birth=Trostianets` in both rows.
+- `VERIFIED` audit trail still writes fresh rows:
+  - `brain_raw` present,
+  - `rejected_fields` type `array`,
+  - `validated_skipped` keeps honest DOB fallback (`date not parseable`).
+
+## Why status remains DEGRADED
+- `BLOCKED` owner-mode full-chain verification still requires live OTP confirmation from owner mailbox.
+- `UNVERIFIED` full mandatory matrix end-to-end for every row (all 4 scenarios × EN/RU × mobile/desktop × owner/normal) is not closed in this single post-deploy rerun.
+- `UNVERIFIED` multi-sample benchmark on multiple real booklet identities is still missing (current run used canonical identity + synthetic transforms).
 
 **Updated:** 2026-05-25 Session 21 — finish-all truth-chain execution (strict evidence)
 **Status:** DEGRADED
@@ -152,7 +163,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
 
 
 
