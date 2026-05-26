@@ -1,17 +1,39 @@
 # HANDOFF — Session 18 (2026-05-25)
 
-## Session 24 (2026-05-26) — guard-compliance repair for docs-only commit
+## Session 25 (2026-05-26) — guard-compliant post-push documentation repair
 
 ### What changed
-- Added minimal continuity notes to `STATUS.md` and `HANDOFF.md` so repository guard convention is satisfied after docs-only commit `1ed8a77`.
+- Updated session docs to record verified post-push state with operational detail:
+  - `STATUS.md`: current CI/Vercel truth, root cause, risk, and exact re-check sequence.
+  - `HANDOFF.md`: operator instructions and decision path for the next push verification cycle.
+  - `CHANGELOG.md`: append-only evidence entry with GitHub run IDs and Vercel result.
 
-### Verification
+### Why this was required
+- Previous docs commit `1ed8a77` changed `AGENTS.md` + `CHANGELOG.md` without `STATUS.md` + `HANDOFF.md`.
+- Repo guard (`Session Docs Guard`) validates each commit in the pushed range, so it failed on `1ed8a77` even though `d9e31a6` was later compliant.
+- This commit creates a clean, guard-compliant docs update to be pushed as a fresh range.
+
+### Verified facts used in this handoff
+- `Session Docs Guard` run `26461533247`: `failed`; log explicitly identifies missing docs in commit `1ed8a77`.
+- `Content & Brand Guards` run `26461533323`: `success`.
+- Latest Vercel production deployment: `Ready` (`uscis-helper-k67x575l7-...`).
+
+### Scope safety
 - No app code changed.
-- No push performed.
-- No deploy performed.
+- No runtime/product logic changed.
+- No manual deploy required.
+- No push performed in this task step.
 
-### Next action
-- Review this guard-compliant follow-up commit and push only if approved.
+### Next operator action
+1. Push this commit normally to `origin/main`.
+2. Re-check GitHub runs:
+   - `gh run list --limit 10`
+   - `gh run view <new Session Docs Guard run> --log`
+3. Re-check Vercel:
+   - `vercel ls`
+4. If `Session Docs Guard` still fails:
+   - inspect the new failing run log first,
+   - do not edit code blindly before confirming exact failing commit/range and missing file list.
 
 ## Session 22 (2026-05-25) — deployed patchset for runtime blockers
 
