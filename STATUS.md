@@ -1,4 +1,21 @@
 # STATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-25 Session 22 — Step6 H.R.1 runtime wiring + booklet guard hardening (pending live proof)
+**Status:** DEGRADED
+**Live SHA:** `3ec6920de5312a509b1c4bfef3ad24e90acfc103` (pre-deploy; new fixes not live yet)
+
+## Session 22 In Progress (pre-deploy truth)
+- `VERIFIED` local code changes:
+  - Step6 now renders `PacketCompletenessChecker` in `TPSWizardV2` (H.R.1 warning source used by runtime UI).
+  - booklet city normalization now rejects English settlement descriptors (`... settlement`) to prevent auto-garbage propagation.
+  - booklet dual crossref no longer maps `date_of_birth -> dob` (manual fallback only for DOB on weak booklet path).
+- `VERIFIED` local gates:
+  - `pnpm --filter web typecheck` pass.
+  - `pnpm --filter web test -- src/lib/tps/__tests__/postExtractNormalize.test.ts` pass (`1988/1988`).
+  - drift gate green pass.
+- `UNVERIFIED` until deploy + live rerun:
+  - Step6 H.R.1 visibility on production EN/RU/UK/ES.
+  - synthetic 270° city drift behavior on production runtime.
+
 **Updated:** 2026-05-25 Session 21 — finish-all truth-chain execution (strict evidence)
 **Status:** DEGRADED
 **Live SHA:** `3ec6920de5312a509b1c4bfef3ad24e90acfc103` (start/end matched in ledger)
@@ -135,7 +152,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
 
 
 

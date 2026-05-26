@@ -3,6 +3,26 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 22: Step6 H.R.1 runtime wiring + booklet weak-field hardening
+
+### Code changes
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
+  - added `PacketCompletenessChecker` render on Step6.
+- `apps/web/src/lib/tps/ocr/postExtractNormalize.ts`
+  - added settlement-descriptor guard for `city_of_birth` (`... settlement` -> reject/manual).
+- `apps/web/src/app/api/tps/ocr/extract/route.ts`
+  - removed booklet dual-crossref mapping `date_of_birth -> dob`.
+- `apps/web/src/lib/tps/__tests__/postExtractNormalize.test.ts`
+  - added regression test for `Prostianets settlement` rejection.
+
+### Local verification
+- `pnpm --filter web typecheck` => pass.
+- `pnpm --filter web test -- src/lib/tps/__tests__/postExtractNormalize.test.ts` => pass (`1988/1988`).
+- `node scripts/check-booklet-contract-drift.mjs` => pass.
+
+### Truth status at this changelog point
+- `UNVERIFIED` in production until deploy + runtime rerun on live SHA.
+
 ## 2026-05-25 — Session 21: finish-all truth-chain execution (strict evidence)
 
 ### Added / changed
