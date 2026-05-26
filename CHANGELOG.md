@@ -3,6 +3,33 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Evidence/test artifact retention policy hardening (docs only)
+
+### What changed
+- Updated root `.gitignore` to prevent accidental commits of:
+  - generated Playwright/test outputs (`apps/web/test-results/`, `apps/web/playwright-report/`, `playwright-report/`, `test-results/`)
+  - raw sensitive evidence patterns under `docs/reports/evidence/**` (`.zip`, image files, `.pdf`, `.log`, `.trace`, `.har`, nested `playwright-report/`)
+  - local debug benchmark folders (`reports/booklet-stability-*/`)
+- Added `docs/reports/retention-policy.md` as the operational retention/tracking policy for evidence artifacts.
+- Updated `STATUS.md` and `HANDOFF.md` with verified scope, residual risk, and exact next verification step.
+
+### Why
+- Local workspace contained untracked generated evidence/test artifacts with sensitive-by-default risk.
+- The policy change reduces accidental staging risk while preserving intentional tracking of curated sanitized summaries.
+
+### Verification
+- `git status --short` before/after: only docs/policy files changed; no app/runtime file deltas introduced.
+- Ignore behavior verified with `git check-ignore -v` for:
+  - `apps/web/test-results`
+  - `docs/reports/evidence/finish-all-20260525-183306/e2e`
+  - `reports/booklet-stability-20260525-182233`
+
+### Scope safety
+- Documentation and ignore-policy update only.
+- No app/runtime code changes.
+- No file deletion/move.
+- No push/deploy in this step.
+
 ## 2026-05-26 — Persisted MacBook workstation policy (docs only)
 
 ### What was added
