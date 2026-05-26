@@ -3,6 +3,47 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 20: independent completion pass for items 1..6 + contract-as-API hardening
+
+### Code changes
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
+  - `ExtractionSource` now aliases shared `TpsExtractionSource`.
+  - `SLOT_ALLOWED_FIELDS` now derives from canonical `DOCUMENT_CONTRACTS` (no local duplicated whitelist).
+  - `BOOKLET_WAVE1_FIELDS` now points to `SLOT_ALLOWED_FIELDS.booklet`.
+- `scripts/check-booklet-contract-drift.mjs`
+  - supports both legacy literal mode and new contract-derived mode.
+  - supports alias mode (`type ExtractionSource = TpsExtractionSource`).
+
+### Verified runtime checks
+- Drift gate:
+  - green path exit 0.
+  - synthetic red path exit 1 with `dual_ocr_crossref` drift diagnostics.
+- Playwright E2E (production):
+  - `npx playwright test tests/e2e/booklet-review.spec.ts --reporter=list` => pass.
+  - real ZIP generated and downloaded.
+- PDF readback:
+  - `I-821.txt` and `I-765.txt` extracted with `pdftotext`; surname appears in both.
+- Audit logging:
+  - remote migration list includes `20260526000001_tps_ocr_audit_brain_raw`.
+  - fresh `tps_ocr_audit` rows show `brain_raw` populated and `rejected_fields` as JSON array.
+- H.R.1 package content:
+  - generated `INSTRUCTION.txt` contains H.R.1 fee and EAD-validity notes.
+
+### Benchmarks
+- Canonical booklet 5-run production rerun:
+  - stable: family_name/city/province/middle_name
+  - unstable/missing: `dob` (`NOT_FOUND` in 5/5)
+  - evidence: `reports/booklet-stability-20260525-182233/results.csv`
+- Synthetic multi-sample (rotations 0/90/180/270):
+  - 270° run produced city drift (`Prostianets`)
+  - evidence: `reports/booklet-synthetic-multisample-20260525-182452.csv`
+
+### Honest state
+- Session status remains `DEGRADED`:
+  - booklet DOB extraction still not reliable
+  - rotation robustness still weak for city
+  - non-EN runtime H.R.1 proof not fully closed in this session.
+
 ## 2026-05-26 — Session 19: real E2E+ZIP/PDF proof and audit wiring
 
 ### What landed

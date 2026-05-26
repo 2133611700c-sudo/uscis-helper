@@ -66,10 +66,15 @@ function readServerContractBookletAllowed() {
 function readClientWave1Fields() {
   const src = fs.readFileSync(WIZARD_FILE, 'utf8')
   const m = src.match(/const\s+BOOKLET_WAVE1_FIELDS[^=]*=\s*new\s+Set\(\s*\[([\s\S]*?)\]\s*\)/)
-  if (!m) {
-    throw new Error(`Could not locate BOOKLET_WAVE1_FIELDS in ${WIZARD_FILE}.`)
+  if (m) {
+    return extractQuotedIdentifiers(m[1])
   }
-  return extractQuotedIdentifiers(m[1])
+  // New contract-as-API path: BOOKLET_WAVE1_FIELDS aliases SLOT_ALLOWED_FIELDS.booklet.
+  // In this mode the client does not carry a second literal whitelist.
+  if (/const\s+BOOKLET_WAVE1_FIELDS[^=]*=\s*SLOT_ALLOWED_FIELDS\.booklet/.test(src)) {
+    return readClientSlotAllowedBooklet()
+  }
+  throw new Error(`Could not locate BOOKLET_WAVE1_FIELDS in ${WIZARD_FILE}.`)
 }
 
 /**
@@ -78,6 +83,14 @@ function readClientWave1Fields() {
  */
 function readClientSlotAllowedBooklet() {
   const src = fs.readFileSync(WIZARD_FILE, 'utf8')
+  // New contract-as-API path: SLOT_ALLOWED_FIELDS is derived from DOCUMENT_CONTRACTS.
+  // If this pattern is present, booklet whitelist equals server contract by construction.
+  if (
+    /const\s+SLOT_ALLOWED_FIELDS[^=]*=\s*Object\.fromEntries\(/.test(src) &&
+    src.includes('DOCUMENT_CONTRACTS')
+  ) {
+    return readServerContractBookletAllowed()
+  }
   // Anchor on SLOT_ALLOWED_FIELDS declaration to avoid matching unrelated
   // `booklet: new Set(...)` literals elsewhere in the file.
   const declMatch = src.match(/SLOT_ALLOWED_FIELDS[\s\S]*?=\s*\{([\s\S]*?)\n\}\s*\n/)
@@ -162,6 +175,11 @@ function readTpsExtractionSourceUnion() {
 }
 
 function readWizardExtractionSourceUnion() {
+  const src = fs.readFileSync(WIZARD_FILE, 'utf8')
+  // New contract-as-API path: wizard aliases the shared type directly.
+  if (/\btype\s+ExtractionSource\s*=\s*TpsExtractionSource\b/.test(src)) {
+    return readTpsExtractionSourceUnion()
+  }
   return readUnionMembers(WIZARD_FILE, 'ExtractionSource')
 }
 
