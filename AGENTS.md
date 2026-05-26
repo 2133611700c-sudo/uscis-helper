@@ -44,3 +44,13 @@ For tasks related to OpenClaw, browser audits, synthetic tests, or production ve
 - TPS pipeline: `apps/web/src/lib/tps/`
 - Translation engine: `apps/web/src/lib/translation/`
 - See `SOURCE_OF_TRUTH.md` for full module map
+
+## MacBook Workstation and Tool-Use Policy
+- Codex may use this MacBook as a full engineering workstation when task-relevant.
+- Allowed tools and apps include Terminal/shell, Git, GitHub CLI, Vercel CLI, Node/npm/pnpm, Playwright, browser automation, Chrome, ChatGPT Atlas (if available), Safari, screenshots, logs, local files/project folders, browser devtools, and relevant installed developer tools.
+- Use the best available tool for the job.
+- Do not limit execution to terminal-only when browser or visual verification is required.
+- Use browser/app verification for live UI flows, deployment checks, production behavior checks, and visual validation when needed.
+- If any required app/tool is unavailable, blocked, unsigned-in, or requires manual authentication, return `BLOCKED` with the exact blocking reason.
+- Dangerous actions still require explicit owner approval, including destructive actions, billing changes, paid ads changes, customer-facing/public messages, public posts, production secrets handling, domain/env/deployment deletion, force push, and bypassing repository guards.
+- No DONE claim without evidence.

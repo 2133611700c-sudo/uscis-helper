@@ -1,5 +1,25 @@
 # HANDOFF — Session 18 (2026-05-25)
 
+## Session 26 (2026-05-26) — persisted MacBook workstation execution policy
+
+### What changed
+- Added a permanent workstation/tool-use policy section to `AGENTS.md` so future operators can use this MacBook as a full engineering workstation when needed.
+- Updated `STATUS.md` and `CHANGELOG.md` to record the policy persistence and scope.
+
+### Operational expectation for next operators
+- Use CLI-first when sufficient, and use browser/app-level verification when the task requires live UI, deployment, production, or visual confirmation.
+- Prefer evidence-bearing workflows (logs, screenshots, run IDs, URLs, statuses) over assumption-based reporting.
+- Keep safety boundaries strict: explicit owner approval is required for destructive or high-impact operations.
+
+### Scope safety
+- No app code changed.
+- No runtime/product behavior changed.
+- No manual deploy required.
+- No push performed in this task step.
+
+### Next action
+- Push this docs commit normally when approved, then continue future tasks under the persisted workstation/tool-use policy.
+
 ## Session 25 (2026-05-26) — guard-compliant post-push documentation repair
 
 ### What changed
