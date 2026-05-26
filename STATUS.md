@@ -1,4 +1,35 @@
 # STATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-25 Session 20 — independent re-check of items 1..6 + contract-as-API hardening
+**Status:** DEGRADED
+**Live SHA:** `1c14c197267032e373a1a4a59d4e7f3c2213d721` (verified via `/api/tps/health` on 2026-05-25)
+
+## Session 20 Truth (strict verification)
+- `VERIFIED` Item 1 drift gate v2:
+  - green path: `node scripts/check-booklet-contract-drift.mjs` exit 0
+  - red path: synthetic removal of `'dual_ocr_crossref'` from `TpsExtractionSource` => exit 1 with explicit drift diagnostics.
+- `VERIFIED` Item 2 logging enhancement:
+  - remote migration list includes `20260526000001_tps_ocr_audit_brain_raw`
+  - fresh rows in `public.tps_ocr_audit` show `brain_raw is not null = true`
+  - fresh rows show `rejected_fields` JSON type `array`
+  - booklet row contains `validated_skipped` with `dob: date not parseable`.
+- `VERIFIED` Item 3 Playwright E2E:
+  - `npx playwright test tests/e2e/booklet-review.spec.ts --reporter=list` passed against production
+  - upload -> OCR -> review -> generate ZIP confirmed.
+- `VERIFIED` Item 4 H.R.1 content in generated package:
+  - generated `INSTRUCTION.txt` contains H.R.1 fee and EAD validity notes (effective 2026-05-29).
+- `VERIFIED` Item 5 contract-as-API consolidation (implemented locally, committed this session):
+  - `TPSWizardV2` now derives `SLOT_ALLOWED_FIELDS` from `DOCUMENT_CONTRACTS`
+  - `ExtractionSource` now aliases shared `TpsExtractionSource`
+  - drift guard script updated to support the new contract-derived shape.
+- `VERIFIED` Item 6 benchmark rerun:
+  - 5-run canonical stability on production: stable 4 fields (`family_name`, `city_of_birth`, `province_of_birth`, `middle_name`), `dob=NOT_FOUND` in 5/5
+  - synthetic multi-sample (0/90/180/270 rotation): 270° produced `Prostianets` (city drift), others `Trostianets`.
+
+## Why status remains DEGRADED
+- `UNVERIFIED`: full runtime parity for H.R.1 copy across RU/UK/ES wizard UI (only generated EN packet text is proven this session).
+- `FAILED` quality stability for booklet DOB (`NOT_FOUND` in canonical rerun) and city robustness under rotated sample (`Prostianets` at 270°).
+- `UNVERIFIED`: local contract-as-API hardening commit is not production-deployed yet.
+
 **Updated:** 2026-05-26 Session 19 — Playwright E2E + ZIP/PDF proof + audit wiring live on production SHA
 **Status:** DEGRADED
 **Live SHA:** `2d0a626584925b88657381f32cad5793d7ab8da5` (verified via `/api/tps/health` on 2026-05-26)
@@ -74,7 +105,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
 
 
 
