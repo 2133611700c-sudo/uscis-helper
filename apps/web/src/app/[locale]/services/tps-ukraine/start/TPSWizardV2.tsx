@@ -29,6 +29,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
 import { resolveAllFields, type ExtractedCandidate, type SourceDoc, type SourceType } from '@/lib/tps/fieldArbiter'
+import { DOCUMENT_CONTRACTS } from '@/lib/tps/ocr/documentContracts'
+import type { TpsExtractionSource } from '@/lib/tps/types'
 import { normalizeOblastToNominative } from '@uscis-helper/knowledge'
 import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
@@ -49,15 +51,7 @@ type EadChoice = 'ead' | 'noead'
  * speak the same language. UI maps these to localized human labels via
  * `t.sourceForExtraction()`.
  */
-export type ExtractionSource =
-  | 'ocr_mrz'
-  | 'ocr_visual'
-  | 'ocr_keyword'
-  | 'dual_ocr_crossref'
-  | 'ai_brain'
-  | 'user_input'
-  | 'user_corrected'
-  | 'inferred'
+export type ExtractionSource = TpsExtractionSource
 
 /**
  * One field's worth of trace data. We keep this richer than a bare string
@@ -1067,50 +1061,12 @@ const TEXT_FAINT = 'var(--text-3)'
 const STORAGE_SCHEMA = 3
 const STORAGE_KEY = 'wizard:tps-ukraine:v3:state'
 
-// Per-slot allowed-fields lookup so the wizard re-applies the same
-// firewall the API now enforces — old localStorage from a v2-era
-// session may still contain forbidden fields, this strips them on read.
-const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
-  passport: new Set([
-    'family_name', 'given_name', 'middle_name', 'dob', 'sex',
-    'country_of_birth', 'country_of_nationality',
-    'passport_number', 'passport_country_of_issuance', 'passport_expiration_date',
-  ]),
-  // 2026-05-25: booklet hydration whitelist — mirrors server documentContracts.
-  // Without this, stale localStorage from older sessions could resurrect
-  // fields the server no longer allows. Matches BOOKLET_WAVE1_FIELDS scope.
-  booklet: new Set([
-    'family_name', 'middle_name', 'city_of_birth', 'province_of_birth',
-  ]),
-  i94: new Set([
-    'i94_admission_number', 'last_entry_date', 'i94_class_of_admission',
-    'status_at_last_entry',
-    'passport_number', 'passport_country_of_issuance',
-    'family_name', 'given_name', 'dob',
-  ]),
-  ead: new Set([
-    'a_number', 'ead_category_on_card', 'ead_expiration_date',
-    'family_name', 'given_name', 'dob', 'sex',
-  ]),
-  ead_old: new Set([
-    'a_number', 'ead_category_on_card', 'ead_expiration_date',
-    'family_name', 'given_name', 'dob', 'sex',
-  ]),
-  tps_notice: new Set([
-    'a_number', 'family_name', 'given_name', 'dob',
-    'address', 'us_address_street', 'us_address_city', 'us_address_state', 'us_address_zip',
-  ]),
-  // P0 FIX (2026-05-24): init-path combined slot had no entry → no
-  // client-side firewall on hydration → stale localStorage could
-  // resurrect forbidden fields.
-  i797_or_ead: new Set([
-    'a_number', 'receipt_number', 'uscis_online_account',
-    'ead_category_on_card', 'ead_expiration_date',
-    'country_of_birth',
-    'family_name', 'given_name', 'dob', 'sex',
-  ]),
-  photo: new Set([]),
-}
+// Per-slot allowed-fields lookup pulled from the canonical API contract.
+// This removes duplicated whitelists in the client and prevents
+// silent server/client drift on hydration and booklet merge.
+const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = Object.fromEntries(
+  Object.entries(DOCUMENT_CONTRACTS).map(([slot, contract]) => [slot, new Set(contract.allowed_fields)]),
+) as Record<string, ReadonlySet<string>>
 // P3 FIX: single module-level constant instead of two inline definitions
 // that could drift independently.
 // Wave 1: city, province, patronymic (booklet uniquely provides these).
@@ -1118,7 +1074,7 @@ const SLOT_ALLOWED_FIELDS: Record<string, ReadonlySet<string>> = {
 //   Crossref reconstructs surname from two OCR readings with 10/10 stability
 //   on canonical dataset. Arbiter still prefers MRZ when загранпаспорт present;
 //   booklet family_name only surfaces for booklet-only TPS users.
-const BOOKLET_WAVE1_FIELDS: ReadonlySet<string> = new Set(['city_of_birth', 'province_of_birth', 'middle_name', 'family_name'])
+const BOOKLET_WAVE1_FIELDS: ReadonlySet<string> = SLOT_ALLOWED_FIELDS.booklet
 
 // TPS Stage I price displayed on the Pay button (single source of truth
 // for the UI label; the actual Stripe Price ID is set server-side).
