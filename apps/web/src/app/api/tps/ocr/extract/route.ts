@@ -907,8 +907,70 @@ export async function POST(req: NextRequest) {
         : postContractFieldCount < 5
           ? 'threshold'
           : targetedMissing.length > 0
-            ? 'targeted'
-            : 'not_needed'
+          ? 'targeted'
+          : 'not_needed'
+
+  const brainRejectedByField = new Map<string, string>()
+  for (const skipped of brainSkipped) {
+    brainRejectedByField.set(skipped.field, skipped.reason)
+  }
+
+  const brainRawAudit =
+    brainResult && brainResult.ok
+      ? {
+          provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
+          crossref_status: crossrefStatus,
+          brain_status: brainStatus,
+          brain_trigger: brainTrigger,
+          brain_document_type: brainResult.result.document_type,
+          brain_document_type_confidence: brainResult.result.document_type_confidence,
+          brain_needs_manual_review: brainResult.result.needs_manual_review,
+          brain_warnings: brainResult.result.warnings,
+          brain_fields: Object.entries(brainResult.result.fields).map(([field, value]) => {
+            if (!value) return { field, present: false }
+            const rejectedReason = brainRejectedByField.get(field) ?? null
+            return {
+              field,
+              present: true,
+              source_value: value.source_value,
+              final_value: value.final_value,
+              confidence: value.confidence,
+              requires_review: value.requires_review,
+              source_line: value.source_line ?? null,
+              inferred: !value.source_line,
+              validation_status: rejectedReason ? `rejected:${rejectedReason}` : 'passed',
+            }
+          }),
+          validated_skipped: brainSkipped,
+          contract_rejected_fields: contract.rejected_fields,
+          normalization_rejected_fields: normalizationMeta.rejected_fields,
+          normalization_diagnostics: normalizationMeta.diagnostics.map((d) => ({
+            field: d.field,
+            status: d.status,
+            reason: d.reason,
+            manual_required: d.manual_required,
+            input_raw: d.input_raw,
+            output_normalized: d.output_normalized,
+          })),
+        }
+      : {
+          provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
+          crossref_status: crossrefStatus,
+          brain_status: brainStatus,
+          brain_trigger: brainTrigger,
+          brain_error_code: brainErrorCode,
+          validated_skipped: brainSkipped,
+          contract_rejected_fields: contract.rejected_fields,
+          normalization_rejected_fields: normalizationMeta.rejected_fields,
+          normalization_diagnostics: normalizationMeta.diagnostics.map((d) => ({
+            field: d.field,
+            status: d.status,
+            reason: d.reason,
+            manual_required: d.manual_required,
+            input_raw: d.input_raw,
+            output_normalized: d.output_normalized,
+          })),
+        }
 
   // ── Successful OCR. Build a response with just what downstream agents
   //    need; we do NOT include the raw API response (could leak provider
@@ -926,6 +988,7 @@ export async function POST(req: NextRequest) {
     success: true,
     processing_ms: result.processing_ms,
     brain_status: brainStatus,
+    brain_raw: brainRawAudit,
   })
   return NextResponse.json(
     {

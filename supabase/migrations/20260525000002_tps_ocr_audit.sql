@@ -22,8 +22,19 @@ CREATE TABLE IF NOT EXISTS public.tps_ocr_audit (
 );
 
 ALTER TABLE public.tps_ocr_audit ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "svc_tps_ocr_audit" ON public.tps_ocr_audit
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'tps_ocr_audit'
+      AND policyname = 'svc_tps_ocr_audit'
+  ) THEN
+    CREATE POLICY "svc_tps_ocr_audit" ON public.tps_ocr_audit
+      FOR ALL TO service_role USING (true) WITH CHECK (true);
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_tps_ocr_created
   ON public.tps_ocr_audit (created_at DESC);

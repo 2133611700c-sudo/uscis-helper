@@ -3,6 +3,34 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Session 19: real E2E+ZIP/PDF proof and audit wiring
+
+### What landed
+- Added production Playwright E2E:
+  - `apps/web/playwright.config.ts`
+  - `apps/web/tests/e2e/booklet-review.spec.ts`
+- Added OCR audit payload wiring with migration-safe fallback:
+  - `apps/web/src/lib/tps/ocrAudit.ts`
+  - `apps/web/src/app/api/tps/ocr/extract/route.ts`
+- Added tests for fallback behavior:
+  - `apps/web/src/lib/tps/__tests__/ocrAudit.test.ts`
+- Hardened migration idempotency and applied remote migrations:
+  - `supabase/migrations/20260525000002_tps_ocr_audit.sql`
+  - `supabase/migrations/20260526000001_tps_ocr_audit_brain_raw.sql`
+
+### Verified outcomes
+- Playwright E2E pass against `https://messenginfo.com/en/services/tps-ukraine/start`.
+- Real ZIP generated and downloaded (`tps-packet.zip` non-empty).
+- `pdftotext` readback proves key fields present in generated PDFs (`Kuropiatnyk`, `FU262473`, `UHP`, `Los Angeles`, `90029`).
+- Remote Supabase migrations synced through `20260526000001`.
+
+### Honest limits
+- Live app SHA is still `71ef173...`; new audit-wiring code is not live yet.
+- Live `tps_ocr_audit` rows currently still show `brain_raw` as null/absent and legacy `rejected_fields` string shape.
+- Booklet `city/province/middle` were not auto-surfaced in the verified E2E run; no stability claim made for those fields.
+
+---
+
 ## 2026-05-25 — Session 18 (5th commit): drift gate v2 — covers source-type union drift (third leg of Session 17 bug)
 
 ### What was added
