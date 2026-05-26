@@ -202,6 +202,20 @@ test('booklet upload → review fields survive → generate ZIP', async ({ page,
 
   await page.getByTestId('tps-generate-cta').click()
   const zipResponse = await zipResponsePromise
+  const generateRequestBody = zipResponse.request().postData() || ''
+  const generateNetworkSummary = {
+    url: zipResponse.url(),
+    status: zipResponse.status(),
+    method: zipResponse.request().method(),
+    request_body_length: generateRequestBody.length,
+    request_body_preview: generateRequestBody.slice(0, 2000),
+    response_headers: zipResponse.headers(),
+  }
+  await fs.writeFile(
+    path.join(artifactsDir, 'generate-network.json'),
+    JSON.stringify(generateNetworkSummary, null, 2),
+    'utf8',
+  )
   const zipPath = path.join(artifactsDir, 'tps-packet.zip')
   const download = await downloadPromise
   await download.saveAs(zipPath)

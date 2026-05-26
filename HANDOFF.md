@@ -1,5 +1,38 @@
 # HANDOFF — Session 18 (2026-05-25)
 
+## Session 21 (2026-05-25) — finish-all truth-chain execution
+
+### Final evidence bundle (single source)
+- `docs/reports/evidence/finish-all-20260525-183306/`
+- Final report: `docs/reports/evidence/finish-all-20260525-183306/FINAL_RUNTIME_TRUTH_REPORT.md`
+
+### What is now VERIFIED
+1. Live SHA lock held start→end (`3ec6920...`) with ledger proof.
+2. Drift gate v2 still works (green pass + synthetic red fail + clean restore).
+3. Logging enhancement is live end-to-end:
+   - migration present remotely,
+   - fresh `tps_ocr_audit` rows contain `brain_raw` and `rejected_fields` array.
+4. Production E2E path for EN `initial+paper+EAD yes`:
+   - upload→OCR→review→gate→generate→ZIP→PDF confirmed.
+5. Runtime slot matrix (normal mode):
+   - EN/RU, desktop/mobile, all 4 required scenarios have verified Step4 slots.
+6. DocAI readiness independently verified:
+   - processor enabled,
+   - real `:process` call success.
+
+### Critical failures detected this session
+- H.R.1 runtime drift:
+  - wizard Step6 UI (EN/RU/UK/ES) did not show expected H.R.1 strings,
+  - generated `INSTRUCTION.txt` did contain H.R.1 notices.
+- Booklet DOB reliability remains broken (`NOT_FOUND` in canonical 5/5).
+- Synthetic rotation robustness issue remains (270° city drift).
+
+### BLOCKED / UNVERIFIED
+- Owner-mode full proof is blocked at OTP verification step:
+  - `/api/owner/request-code` returns 200, but code confirmation was not completed in-session.
+- Full end-to-end matrix for every row (all generate/ZIP/PDF combinations) remains unverified.
+- Multi-identity real-sample benchmark remains unverified (one real canonical identity used + synthetic transforms).
+
 ## Session 20 (2026-05-25) — independent completion pass for items 1..6
 
 ### What was re-verified live
