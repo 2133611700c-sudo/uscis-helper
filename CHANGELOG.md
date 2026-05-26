@@ -21,7 +21,13 @@ Every work session appends here. Never delete entries. Newest first.
 - `node scripts/check-booklet-contract-drift.mjs` => pass.
 
 ### Truth status at this changelog point
-- `UNVERIFIED` in production until deploy + runtime rerun on live SHA.
+- deployed on live SHA `692619ca62d47ecb8d3b23a10cf4b137b1351230`.
+- production rerun verified:
+  - Playwright E2E pass with ZIP generate (`phase22_booklet_review_artifacts`),
+  - Step6 H.R.1 visible in EN/RU/UK/ES (`phase22_hr1_locale_results.json`),
+  - synthetic `booklet_270` rerun returns `city_of_birth=Trostianets` (no observed drift in this run),
+  - fresh audit rows keep `brain_raw` and `rejected_fields=array`.
+- overall iteration status remains `DEGRADED` due owner OTP branch + full matrix + multi-identity benchmark still open.
 
 ## 2026-05-25 — Session 21: finish-all truth-chain execution (strict evidence)
 
