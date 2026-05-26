@@ -1,5 +1,44 @@
 # HANDOFF — Session 18 (2026-05-25)
 
+## Session 19 (2026-05-26) — hard facts only
+
+### Completed
+1. Playwright production E2E implemented and passing:
+   - `apps/web/playwright.config.ts`
+   - `apps/web/tests/e2e/booklet-review.spec.ts`
+   - Flow covers upload → OCR CTA → Step 5 review → Step 6 generate → ZIP download.
+2. Real ZIP/PDF proof captured:
+   - ZIP: `apps/web/test-results/booklet-review-artifacts/tps-packet.zip` (non-empty)
+   - PDF text extraction done with `pdftotext`; grep proof in `.../unzip/pdf-grep.txt`.
+3. Audit logging wiring implemented:
+   - `apps/web/src/lib/tps/ocrAudit.ts`: adds `brain_raw` payload + migration-safe fallback insert path when column absent.
+   - `apps/web/src/app/api/tps/ocr/extract/route.ts`: builds/passes structured `brain_raw` diagnostics (emitted fields, validated_skipped, normalization diagnostics, reject metadata).
+4. Migration path hardened and pushed to remote DB:
+   - `supabase/migrations/20260525000002_tps_ocr_audit.sql`: policy creation made idempotent.
+   - `supabase/migrations/20260526000001_tps_ocr_audit_brain_raw.sql`: applied remotely.
+   - `supabase migration list` now shows local/remote synced through `20260526000001`.
+5. New tests:
+   - `apps/web/src/lib/tps/__tests__/ocrAudit.test.ts` (brain_raw write + fallback retry coverage).
+
+### Verified commands (this session)
+- `npx playwright test tests/e2e/booklet-review.spec.ts --reporter=list` → pass.
+- `pnpm --filter web typecheck` → pass.
+- `pnpm --filter web test -- src/lib/tps/__tests__/ocrAudit.test.ts ...` → pass (1987 tests total in run output).
+- `node scripts/check-booklet-contract-drift.mjs` → pass.
+- `supabase db push` → applied pending migrations (including `brain_raw`).
+
+### Live truth right now
+- Live app SHA remains `71ef1731aac9539c68e3fa072a656e368c02cff9`.
+- Supabase live `tps_ocr_audit` is receiving fresh rows.
+- Latest live rows are still old format:
+  - `brain_raw IS NOT NULL = false`
+  - `rejected_fields` type observed as `string` (legacy serialization), not array.
+
+### Not closed yet (why not PASS)
+- App runtime with new `brain_raw` wiring is not deployed to live SHA yet.
+- Therefore no live-row proof yet of new `brain_raw` content being written by the new code path.
+- In the verified E2E sample run, `city/province/middle` booklet auto-fill flags were false; only manual/higher-confidence fields are proven in generated PDFs.
+
 ## What was done
 
 ### 1. Killed the client-side whitelist drift that ate `family_name` (commit 794b86d, prod live)

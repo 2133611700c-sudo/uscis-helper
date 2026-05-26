@@ -3431,6 +3431,7 @@ function ReviewManual({
         tip={locale === 'ru' ? 'Из внутреннего паспорта. Введите латиницей как в загранпаспорте или транслитерацией.' : locale === 'uk' ? 'З внутрішнього паспорта. Введіть латиницею.' : 'From internal passport. Enter in Latin script.'}
         value={manual.middle_name || mergedFields?.middle_name?.value || ''}
         onChange={(v) => onChange({ middle_name: v })}
+        dataTestId="tps-review-manual-middle-name"
       />
       <FieldInput
         label={t.label.city_of_birth}
@@ -3438,6 +3439,7 @@ function ReviewManual({
         tip={locale === 'ru' ? 'Из внутреннего паспорта (книжечка). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З внутрішнього паспорта (книжечка). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'Del pasaporte interno. Cargue en paso 4 → el robot lo llenará.' : 'From internal passport (booklet). Upload at step 4 → robot fills it.'}
         value={manual.city_of_birth || mergedFields?.city_of_birth?.value || ''}
         onChange={(v) => onChange({ city_of_birth: v })}
+        dataTestId="tps-review-manual-city-of-birth"
       />
       <FieldInput
         label={t.label.province_of_birth ?? 'Oblast / Province of Birth'}
@@ -3445,6 +3447,7 @@ function ReviewManual({
         tip={locale === 'ru' ? 'Из внутреннего паспорта. Робот нормализует в формат USCIS.' : locale === 'uk' ? 'З внутрішнього паспорта. Робот нормалізує в формат USCIS.' : locale === 'es' ? 'Del pasaporte interno. El robot normaliza al formato USCIS.' : 'From internal passport. Robot normalizes to USCIS format.'}
         value={manual.province_of_birth || mergedFields?.province_of_birth?.value || ''}
         onChange={(v) => onChange({ province_of_birth: v })}
+        dataTestId="tps-review-manual-province-of-birth"
       />
       <FieldInput
         label={t.label.place_of_entry}
@@ -3452,6 +3455,7 @@ function ReviewManual({
         tip={locale === 'ru' ? 'Из I-94 (i94.cbp.dhs.gov). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З I-94 (i94.cbp.dhs.gov). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'De I-94 (i94.cbp.dhs.gov). Cargue en paso 4 → el robot lo llenará.' : 'From I-94 (i94.cbp.dhs.gov). Upload at step 4 → robot fills it.'}
         value={manual.place_of_last_entry || mergedFields?.place_of_last_entry?.value || ''}
         onChange={(v) => onChange({ place_of_last_entry: v })}
+        dataTestId="tps-review-manual-place-of-last-entry"
       />
       <FieldInput
         label={locale === 'ru' ? 'Срок действия паспорта' : locale === 'uk' ? 'Термін дії паспорта' : locale === 'es' ? 'Fecha de vencimiento del pasaporte' : 'Passport Expiration Date'}
@@ -3459,6 +3463,7 @@ function ReviewManual({
         tip={locale === 'ru' ? 'Из загранпаспорта. Обычно робот распознаёт из MRZ. Если нет — введите вручную.' : locale === 'uk' ? 'Із закордонного паспорта. Зазвичай робот розпізнає з MRZ. Якщо ні — введіть вручну.' : locale === 'es' ? 'Del pasaporte. Normalmente el robot lo lee del MRZ. Si no — ingréselo manualmente.' : 'From passport. Usually auto-detected from MRZ. If not — enter manually.'}
         value={manual.passport_expiration_date || mergedFields?.passport_expiration_date?.value || ''}
         onChange={(v) => onChange({ passport_expiration_date: v })}
+        dataTestId="tps-review-manual-passport-expiration"
       />
       <FieldInput
         label={t.label.in_care_of}
@@ -3466,6 +3471,7 @@ function ReviewManual({
         tip={locale === 'ru' ? 'Кому доставить конверт с решением USCIS. Обычно ваше имя.' : locale === 'uk' ? 'Кому доставити конверт з рішенням USCIS. Зазвичай ваше ім\'я.' : locale === 'es' ? 'A quién entregar el sobre con la decisión de USCIS.' : 'Who receives the USCIS decision envelope. Usually your name.'}
         value={manual.us_address_in_care_of || ''}
         onChange={(v) => onChange({ us_address_in_care_of: v })}
+        dataTestId="tps-review-manual-in-care-of"
       />
       {init && (
         <FieldInput
@@ -3474,6 +3480,7 @@ function ReviewManual({
           tip={t.tip.ssn}
           value={manual.ssn || ''}
           onChange={(v) => onChange({ ssn: v })}
+          dataTestId="tps-review-manual-ssn"
         />
       )}
       {wantsEad && (
