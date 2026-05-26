@@ -237,7 +237,6 @@ export async function POST(req: NextRequest) {
               const fieldMap: Record<string, string> = {
                 surname: 'family_name', city_of_birth: 'city_of_birth',
                 province_of_birth: 'province_of_birth', patronymic: 'middle_name',
-                date_of_birth: 'dob',
               }
               for (const [crKey, tpsKey] of Object.entries(fieldMap)) {
                 const cr = (crossref as any)[crKey] as { value: string | null; confidence: string; review_required: boolean }
@@ -516,7 +515,6 @@ export async function POST(req: NextRequest) {
               const fieldMap: Record<string, string> = {
                 surname: 'family_name', city_of_birth: 'city_of_birth',
                 province_of_birth: 'province_of_birth', patronymic: 'middle_name',
-                date_of_birth: 'dob',
               }
               for (const [crKey, tpsKey] of Object.entries(fieldMap)) {
                 const cr = (crossref as any)[crKey] as { value: string | null; confidence: string; review_required: boolean }

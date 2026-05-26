@@ -88,6 +88,14 @@ describe('postExtractNormalize', () => {
     expect(result.rejected_fields).not.toContain('city_of_birth')
   })
 
+  it('rejects english settlement descriptor "Prostianets settlement"', () => {
+    const input = [mkField('city_of_birth', 'Prostianets settlement', 'Prostianets settlement')]
+    const result = postExtractNormalize(input)
+    expect(result.rejected_fields).toContain('city_of_birth')
+    expect(result.fields[0].normalized_value).toBeNull()
+    expect(result.diagnostics[0]?.reason).toBe('contains_settlement_descriptor')
+  })
+
   it('does not affect strong MRZ fields when booklet garbage is rejected', () => {
     const input = [
       mkField('family_name', 'REDACTED', 'REDACTED'),
@@ -98,4 +106,3 @@ describe('postExtractNormalize', () => {
     expect(result.rejected_fields).not.toContain('family_name')
   })
 })
-
