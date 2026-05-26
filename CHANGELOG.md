@@ -23,10 +23,13 @@ Every work session appends here. Never delete entries. Newest first.
 - Real ZIP generated and downloaded (`tps-packet.zip` non-empty).
 - `pdftotext` readback proves key fields present in generated PDFs (`REDACTED`, `FU262473`, `UHP`, `Los Angeles`, `90029`).
 - Remote Supabase migrations synced through `20260526000001`.
+- Production deploy verified on SHA `2d0a626584925b88657381f32cad5793d7ab8da5`.
+- Fresh live `tps_ocr_audit` rows now persist new format:
+  - `brain_raw` populated (`IS NOT NULL = true`)
+  - `rejected_fields` stored as JSON array.
 
 ### Honest limits
-- Live app SHA is still `71ef173...`; new audit-wiring code is not live yet.
-- Live `tps_ocr_audit` rows currently still show `brain_raw` as null/absent and legacy `rejected_fields` string shape.
+- Legacy historical rows (pre-deploy) still have old shape (`brain_raw` null + `rejected_fields` string scalar).
 - Booklet `city/province/middle` were not auto-surfaced in the verified E2E run; no stability claim made for those fields.
 
 ---

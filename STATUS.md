@@ -1,7 +1,7 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-26 Session 19 — Playwright E2E + ZIP/PDF proof + audit wiring landed locally, remote DB migrations applied
+**Updated:** 2026-05-26 Session 19 — Playwright E2E + ZIP/PDF proof + audit wiring live on production SHA
 **Status:** DEGRADED
-**Live SHA:** `71ef1731aac9539c68e3fa072a656e368c02cff9` (verified via `/api/tps/health` on 2026-05-26)
+**Live SHA:** `2d0a626584925b88657381f32cad5793d7ab8da5` (verified via `/api/tps/health` on 2026-05-26)
 
 ## Session 19 Truth (no fake pass)
 - `VERIFIED` browser E2E against production URL (`/en/services/tps-ukraine/start`) passes with real upload→OCR→review→generate flow.
@@ -9,13 +9,12 @@
 - `VERIFIED` PDF readback finds core values in generated PDFs:
   - `REDACTED`, `FU262473`, `UHP`, `Los Angeles`, `90029`.
 - `VERIFIED` live Supabase `tps_ocr_audit` is actively receiving fresh rows (checked in Supabase UI and via linked SQL).
-- `VERIFIED` remote DB migrations are now synced through `20260526000001`.
+- `VERIFIED` remote DB migrations are synced through `20260526000001`.
+- `VERIFIED` new runtime rows now persist `brain_raw` and `rejected_fields` as JSON array:
+  - latest rows around `2026-05-26 01:08:30..01:08:44+00` show `has_brain_raw=true` and `rejected_type=array`.
 
 ## Why status is still DEGRADED
-- `UNVERIFIED ON LIVE SHA`: new `brain_raw` audit payload wiring is local code only until deploy of new app SHA.
-- Current live rows still show old audit format:
-  - `brain_raw IS NOT NULL = false` on latest rows
-  - `rejected_fields` currently stored as JSON string scalar on live rows.
+- Historical rows before deploy still keep old shape (`brain_raw` null + `rejected_fields` string scalar). This is expected legacy data, not a new-write regression.
 - `UNVERIFIED`: city/province/patronymic booklet values were not auto-surfaced in this specific production E2E run (`extraction flags: city=false, province=false, middle=false`), so no claim of stable auto-fill is made.
 
 ## Session 19 Evidence Paths
@@ -75,7 +74,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
 
 
 
