@@ -1,5 +1,50 @@
 # HANDOFF — Session 18 (2026-05-25)
 
+## Session 20 (2026-05-25) — independent completion pass for items 1..6
+
+### What was re-verified live
+1. Drift gate v2 is operational:
+   - green: `node scripts/check-booklet-contract-drift.mjs` exit 0
+   - synthetic red: removing `'dual_ocr_crossref'` from `TpsExtractionSource` triggers exit 1 with explicit diagnostics.
+2. Audit logging migration is live and writing:
+   - remote migration includes `20260526000001_tps_ocr_audit_brain_raw`
+   - latest rows have `brain_raw != null`
+   - latest rows store `rejected_fields` as JSON array.
+3. Playwright E2E against production passed:
+   - `npx playwright test tests/e2e/booklet-review.spec.ts --reporter=list`
+   - run generated a real ZIP and two PDFs.
+4. H.R.1 output text proof:
+   - generated `INSTRUCTION.txt` includes H.R.1 fee/EAD-validity notices (effective 2026-05-29).
+5. Booklet benchmark rerun:
+   - 5/5 canonical runs stable on 4 fields, but `dob` missing in all 5
+   - synthetic rotation run found city drift at 270° (`Prostianets`).
+
+### New engineering change done this session
+- `TPSWizardV2` contract drift surface reduced:
+  - removed manual slot whitelist copy
+  - now derives `SLOT_ALLOWED_FIELDS` from `DOCUMENT_CONTRACTS`
+  - `ExtractionSource` now aliases shared `TpsExtractionSource`.
+- `scripts/check-booklet-contract-drift.mjs` updated to support both:
+  - legacy literal mode
+  - new contract-derived mode + type alias mode.
+
+### Evidence created this session
+- E2E artifacts:
+  - `apps/web/test-results/booklet-review-artifacts/step5-review.png`
+  - `apps/web/test-results/booklet-review-artifacts/step6-generated.png`
+  - `apps/web/test-results/booklet-review-artifacts/tps-packet.zip`
+  - `apps/web/test-results/booklet-review-artifacts/unzipped/I-821.txt`
+  - `apps/web/test-results/booklet-review-artifacts/unzipped/I-765.txt`
+  - `apps/web/test-results/booklet-review-artifacts/unzipped/INSTRUCTION.txt`
+- Benchmarks:
+  - `reports/booklet-stability-20260525-182233/results.csv`
+  - `reports/booklet-synthetic-multisample-20260525-182452.csv`
+
+### Open after Session 20
+- Booklet `dob` extraction remains unreliable (`NOT_FOUND` in 5/5 canonical rerun).
+- Synthetic rotation reveals weak city robustness (`Prostianets` at 270°).
+- RU/UK/ES runtime proof for H.R.1 copy is still unverified this session.
+
 ## Session 19 (2026-05-26) — hard facts only
 
 ### Completed
