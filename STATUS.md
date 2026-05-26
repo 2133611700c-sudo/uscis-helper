@@ -1,4 +1,15 @@
 # STATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-26 Session 26 — persisted MacBook workstation policy into repo memory
+**Status:** PASS
+**Scope:** Documentation-only governance update; no app/runtime code touched.
+
+## Session 26 Workstation Policy Persistence
+- `VERIFIED` repository memory now includes a permanent "MacBook Workstation and Tool-Use Policy" section in `AGENTS.md`.
+- `VERIFIED` policy explicitly permits CLI + browser/app/tool execution when task-relevant and mandates best-tool selection.
+- `VERIFIED` policy explicitly preserves safety boundaries for destructive and high-risk operations requiring owner approval.
+- `VERIFIED` no application logic, runtime code, build config, or production behavior was changed in this session.
+- `VERIFIED` this commit is intended to improve future operator consistency across terminal and app sessions.
+
 **Updated:** 2026-05-26 Session 25 — post-push guard status + clean-range repair commit
 **Status:** DEGRADED
 **Live SHA:** `d9e31a6254134d7840c3a54275067707f33be5d9`
@@ -207,7 +218,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
 
 
 
