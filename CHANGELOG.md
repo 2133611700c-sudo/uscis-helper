@@ -3,6 +3,19 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Persisted MacBook workstation policy (docs only)
+
+### What was added
+- Persisted a permanent "MacBook Workstation and Tool-Use Policy" in `AGENTS.md`.
+- Policy now explicitly allows full workstation usage (CLI + browser/app/devtools automation) when task-relevant.
+- Policy explicitly requires best-tool selection and evidence-backed verification.
+- Policy explicitly preserves owner-approval boundaries for destructive/high-impact actions.
+
+### Session scope
+- Documentation-only update to repository memory.
+- No application/runtime code changes.
+- No manual deployment actions.
+
 ## 2026-05-26 — Guard-compliant post-push status record (docs only)
 
 ### Why this entry exists
