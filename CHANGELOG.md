@@ -3,6 +3,41 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-25 — Session 21: finish-all truth-chain execution (strict evidence)
+
+### Added / changed
+- `apps/web/tests/e2e/booklet-review.spec.ts`
+  - now writes `generate-network.json` with live `generate-packet` request/response metadata.
+- Added one unified evidence bundle:
+  - `docs/reports/evidence/finish-all-20260525-183306/`
+  - final report: `FINAL_RUNTIME_TRUTH_REPORT.md`
+- Updated session truth docs:
+  - `STATUS.md`
+  - `HANDOFF.md`
+
+### Verified in this session
+- Live SHA lock held start→end (`3ec6920...`) — no mixed SHA.
+- Drift gate v2:
+  - green pass, synthetic red fail, clean file restore.
+- Logging enhancement:
+  - remote migration `20260526000001` present,
+  - fresh `tps_ocr_audit` rows include `brain_raw` and `rejected_fields=array`.
+- Production E2E (`EN initial+paper+EAD yes`) reached generate/ZIP/PDF with network capture.
+- PDF readback confirms key fields in generated forms.
+- Normal-mode Step4 matrix collected for EN/RU × mobile/desktop × 4 required scenarios.
+- DocAI readiness independently confirmed via live `:process` call.
+
+### Critical findings (not fixed in this session)
+- H.R.1 runtime drift:
+  - Step6 wizard UI (EN/RU/UK/ES) missing expected H.R.1 strings,
+  - generated INSTRUCTION contains H.R.1 notes.
+- Booklet DOB remains missing in canonical 5/5 benchmark (`NOT_FOUND`).
+- Synthetic rotation benchmark still drifts city at 270° (`Prostianets settlement`).
+- Owner mode cannot be marked verified without completed OTP confirmation.
+
+### Session status
+- `DEGRADED` (hard evidence bundle exists; full closure criteria not met).
+
 ## 2026-05-25 — Session 20: independent completion pass for items 1..6 + contract-as-API hardening
 
 ### Code changes
