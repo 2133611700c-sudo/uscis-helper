@@ -36,6 +36,7 @@ import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
 import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } from '@/lib/tps/provenance'
 import SignaturePad from '@/components/shared/SignaturePad'
+import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessChecker'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -2171,6 +2172,28 @@ export default function TPSWizardV2({ locale }: Props) {
     return runMailReadyGate(buildDraftAnswers(), allConflicts, allLowConf).mail_ready
   }, [buildDraftAnswers, data.uploads, mergedFields])
 
+  const packetCheckerFields = useMemo(() => {
+    const answers = buildDraftAnswers()
+    return {
+      family_name: answers.family_name || '',
+      given_name: answers.given_name || '',
+      dob: answers.dob || '',
+      sex: answers.sex || '',
+      country_of_birth: answers.country_of_birth || '',
+      passport_number: answers.passport_number || '',
+      passport_country_of_issuance: answers.passport_country_of_issuance || '',
+      passport_expiration_date: answers.passport_expiration_date || '',
+      us_address_street: answers.us_address_street || '',
+      us_address_city: answers.us_address_city || '',
+      us_address_state: answers.us_address_state || '',
+      us_address_zip: answers.us_address_zip || '',
+      last_entry_date: answers.last_entry_date || '',
+      marital_status: answers.marital_status || '',
+      daytime_phone: answers.daytime_phone || '',
+      email: answers.email || '',
+    }
+  }, [buildDraftAnswers])
+
   const handleGenerate = useCallback(async () => {
     setBusy(true)
     setErrMsg(null)
@@ -2778,6 +2801,14 @@ export default function TPSWizardV2({ locale }: Props) {
               <PackageList t={t} type={data.type} ead={data.ead} method={data.method} />
               </div>
             </Card>
+
+            <PacketCompletenessChecker
+              locale={(locale === 'uk' || locale === 'ru' || locale === 'es' ? locale : 'en')}
+              fields={packetCheckerFields}
+              wantsEad={data.ead === 'ead' ? true : data.ead === 'noead' ? false : null}
+              filingPath={data.type === 'init' ? 'initial' : data.type === 'rereg' ? 're_registration' : 'unselected'}
+              part7Reviewed={data.part7Reviewed}
+            />
 
             {/* Signature block — ONLY for paper filing. Online = sign in myUSCIS */}
             {data.method === 'paper' && (
