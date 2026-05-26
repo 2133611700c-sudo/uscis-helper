@@ -1,5 +1,32 @@
 # HANDOFF — Session 18 (2026-05-25)
 
+## Session 22 (2026-05-25) — pre-deploy patchset for runtime blockers
+
+### Landed locally (not yet live at this entry)
+1. Step6 runtime now renders `PacketCompletenessChecker` in wizard v2:
+   - file: `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
+   - expected effect: H.R.1 fee warning appears in Step6 UI for EN/RU/UK/ES.
+2. Booklet city guard hardened:
+   - file: `apps/web/src/lib/tps/ocr/postExtractNormalize.ts`
+   - effect: English settlement descriptors (`urban-type settlement` / `settlement`) are rejected and forced to manual entry.
+3. Booklet DOB weak-path cleanup:
+   - file: `apps/web/src/app/api/tps/ocr/extract/route.ts`
+   - effect: dual crossref no longer maps `date_of_birth -> dob` for booklet; prevents noisy DOB auto-fill attempts.
+4. Regression test:
+   - file: `apps/web/src/lib/tps/__tests__/postExtractNormalize.test.ts`
+   - new case: rejects `Prostianets settlement`.
+
+### Local verification already done
+- `pnpm --filter web typecheck` passed.
+- `pnpm --filter web test -- src/lib/tps/__tests__/postExtractNormalize.test.ts` passed (`1988/1988`).
+- `node scripts/check-booklet-contract-drift.mjs` passed.
+
+### Still required after deploy
+- Production SHA confirmation on `/api/tps/health`.
+- Repeat Playwright runtime chain + ZIP/PDF proof.
+- Re-run Step6 H.R.1 locale check (EN/RU/UK/ES) against live.
+- Re-run synthetic 270° booklet sample and confirm city no longer auto-propagates as truth.
+
 ## Session 21 (2026-05-25) — finish-all truth-chain execution
 
 ### Final evidence bundle (single source)
