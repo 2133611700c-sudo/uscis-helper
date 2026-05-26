@@ -34,7 +34,7 @@ const CITY_PREFIX_RE =
 // A3 FIX: "обл" (3 chars) added — Brain outputs "ОБЛ." not full "область".
 // Also added "obl" for Latin variant ("VINNYTSKA OBL.").
 const CITY_NOISE_RE =
-  /(?:date|birth|place|місц|мест|народжен|рожден|област|обл[.:]?|oblast|obl[.:]?|province)/iu
+  /(?:date|birth|place|місц|мест|народжен|рожден|област|обл[.:]?|oblast|obl[.:]?|province|settlement|urban-type|селище)/iu
 
 const PROVINCE_LATIN_MAP: Array<{ re: RegExp; value: string }> = [
   { re: /\bvin+yt+s?k\w*\s+obl(?:ast)?\.?$/iu, value: 'Vinnytsia Oblast' },
@@ -68,6 +68,7 @@ function cleanCityCandidate(raw: string): string {
     .trim()
     .replace(/^[.\-:,\s]+/u, '')
     .replace(BROKEN_SETTLEMENT_PREFIX_RE, '')
+    .replace(/\b(?:urban-type\s+settlement|settlement|селище(?:\s+міського\s+типу)?)\b/giu, ' ')
     .replace(CITY_PREFIX_RE, '')
     .replace(/\s+/gu, ' ')
     .trim()
@@ -237,6 +238,24 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
     // "м. Київ" → "Київ"
     // "с. Іванівка" → "Іванівка"
     if (f.field === 'city_of_birth' && (f.normalized_value || f.raw_value)) {
+      const rawInput = `${f.raw_value || ''} ${f.normalized_value || ''}`.trim()
+      if (/\b(?:urban-type\s+settlement|settlement)\b/iu.test(rawInput)) {
+        rejected.add(f.field)
+        f.normalized_value = null
+        f.review_required = true
+        f.failures = [...f.failures, 'knowledge_city_rejected:contains_settlement_descriptor']
+        diagnostics.push({
+          field: f.field,
+          status: 'rejected',
+          reason: 'contains_settlement_descriptor',
+          input_raw: f.raw_value,
+          input_normalized: f.normalized_value,
+          output_normalized: null,
+          manual_required: true,
+        })
+        continue
+      }
+
       // ROOT CAUSE FIX: Brain's raw_value preserves Cyrillic ("слет. Тростянець")
       // which cleanCityCandidate handles (strips settlement prefix).
       // Try raw_value first → clean → validate → transliterate via canonical path.
