@@ -1,5 +1,35 @@
 # HANDOFF — Session 32 (2026-05-26)
 
+## Province false-positive triple-fix (latest — this commit)
+
+### What was fixed
+Three separate bugs causing `province_of_birth` to be falsely flagged as hallucination risk after Central Brain normalization:
+
+1. **Oblast regex corruption** (`packages/knowledge/src/dictionary.ts` — committed `727e6ea`):
+   - Old: `/\s*(області|обл\.?)\s*/gi` — `обл\.?` matched `обл` as a prefix of `область`, corrupting "вінницька**область**" → "вінницька**асть**" (not found in dictionary).
+   - Fix: `/\s*(областей?|обл(?:асть|асті|\.?))\s*/gi` — anchored alternation, whole-word match only.
+
+2. **Double "Oblast" in normalizeProvince** (`apps/web/src/lib/tps/dictionaryBridge.ts`):
+   - Old: `` value: `${result.transliterated} Oblast` `` — `result.transliterated` already contains "Oblast" (e.g. "Vinnytsia Oblast"), producing "Vinnytsia Oblast Oblast".
+   - Fix: `value: result.transliterated` directly.
+
+3. **English "X Oblast" false-positive in checkGeography** (`apps/web/src/lib/tps/hallucinationGuard.ts`):
+   - Old: After normalization produced English "Vinnytsia Oblast", `checkGeography` ran `normalizeOblastToNominative()` on Latin text → returned null → flagged as `unknown-province` risk=high.
+   - Fix: Added early-return for strings matching `/^[A-Za-z][A-Za-z\s\-]*\s+Oblast$/i` before the Cyrillic dictionary check.
+
+### Verified
+- `pnpm --filter web test`: 2019/2019 pass.
+- `npx tsc --noEmit -p apps/web/tsconfig.json`: 0 errors.
+- Knowledge package tests: 6 oblast regression cases all pass.
+
+### Exact next task
+1. Verify production API after push: `province_of_birth` should return `hallucination_risk: 'none'` and value `"Vinnytsia Oblast"` (not "Vinnytsia Oblast Oblast") for input "Вінницька область".
+2. P2: DOB fixture proof — booklet image where handwritten date is OCR-readable.
+3. P3: Add direct Playwright network capture for `/api/tps/brain/merge` call.
+4. P4: Translation Bridge v0.
+
+---
+
 ## What was requested
 - Build Central Brain: 5 new files + 2 test files.
 - Fix 4 failing tests in hallucinationGuard and centralBrain test suites.
