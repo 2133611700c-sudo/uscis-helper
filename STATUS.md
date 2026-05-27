@@ -1,7 +1,13 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 39g (patch) — fix CI build errors (Link + exhaustive-deps)
-**Status:** PRODUCTION (auto-fill-only model live; all e2e tests passing on production)
+**Updated:** 2026-05-27 Session 39h — fix booklet-only E2E `tps-generate-cta` (manual-slot brain/merge routing)
+**Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
+
+## Session 39h (2026-05-27) — fix: booklet-only E2E `tps-generate-cta` not visible
+
+- `VERIFIED(local)` Central Brain: synthetic 'manual' upload slot now routed to `manualForBrain` (Step 2) instead of `brainUploads` (Step 1 with contract filter). Fixes `isStep6Eligible=false` after `?paid=1` reload when fields filled via `fillReviewRow`.
+- `VERIFIED(local)` 2098/2098 tests pass, 0 type errors
+- `UNVERIFIED` E2E `booklet-only-pdf-proof.spec.ts` — deploy pending
 
 ## Session 39d (2026-05-27) — fix: смт → "urban-type settlement" in translation
 

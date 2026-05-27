@@ -1,3 +1,30 @@
+# HANDOFF — Session 39h (2026-05-27)
+
+## Session 39h — fix: booklet-only E2E test failure (`tps-generate-cta` not visible)
+
+### Root cause
+`fillReviewRow` in the E2E test parks user-corrected fields (given_name, passport_number, dob, last_entry_date) under the synthetic `data.uploads['manual']` slot. The Central Brain server (`centralBrain.ts` line 115-119) skips any upload slot with no document contract — and `'manual'` has none. So all these fields were silently discarded server-side → `mergedFields` missing them → `runMailReadyGate` fails → `isStep6Eligible = false` → `tps-generate-cta` never rendered → test timeout.
+
+The `data.manual` record (ReviewManual text inputs) WAS processed by the server (Step 2, lines 163-175), but `fillReviewRow` writes to `data.uploads['manual']`, not `data.manual`.
+
+### Fix applied
+In `TPSWizardV2.tsx` brain/merge useEffect:
+1. Skip `'manual'` slot in `brainUploads` loop (was being ignored server-side anyway)
+2. Before building `manualForBrain` from `data.manual`, seed it with fields from `data.uploads['manual']` (lower priority — ReviewManual inputs override them)
+
+This routes all user-corrected fields through the server's manual path (Step 2 of Central Brain) which has no contract filtering.
+
+### Evidence
+- 2098/2098 unit tests pass, 0 type errors
+- E2E: `booklet-only-pdf-proof` should now pass — `tps-generate-cta` visible because given_name/dob/passport_number/last_entry_date reach `mergedFields` through `manualForBrain`
+
+### Next tasks
+1. booklet-only DOB: booklet OCR doesn't extract dob (has_dob=false) — still open
+2. `place_of_last_entry` no auto-extract from some I-94 formats — still open
+3. TASK-04/05/06 (Form Intelligence, Pain/FAQ DB, Monitoring Engine)
+
+---
+
 # HANDOFF — Session 39g patch (2026-05-27)
 
 ## Session 39g — CRITICAL fix: wizard crash on "Адрес отличается" checkbox
