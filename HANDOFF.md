@@ -99,6 +99,10 @@
 
 ## Session 37 hotfix (this commit)
 
+### Multi-sample count() race (this commit)
+- **Root cause**: `reviewBtn.count()` fired immediately after `page.goto('?paid=1')` — before React rehydrated + `/api/owner/status` resolved. All 5 docs failed.
+- **Fix**: replaced `if (count() === 0) throw` with `await expect(...).toBeVisible({ timeout: 20_000 })`.
+
 ### Stale closure fix in generatePacket (COMPLETE)
 - **Root cause**: `translationReviewConfirmed` missing from `generatePacket` useCallback deps array (line 2534). Callback captured `false` at mount → `_translation.reviewConfirmed` always sent as `false` → packetBuilder skipped translation in ZIP even after user confirmed Review Gate.
 - **Fix**: Added `translationReviewConfirmed` to deps array.

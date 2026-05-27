@@ -3,6 +3,17 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 37 hotfix 2: fix(e2e) — multi-sample immediate count() race after goto
+
+### What changed
+- `apps/web/tests/e2e/booklet-multi-sample.spec.ts`: replaced immediate `reviewBtn.count() === 0` check (no timeout) with `await expect(reviewBtn).toBeVisible({ timeout: 20_000 })`. After `page.goto('?paid=1')` the count() fired before React rehydrated + ownerChecked resolved — all 5 docs failed.
+
+### Test evidence
+- Unit tests: 2092/2092 pass
+- TypeScript: 0 errors
+
+---
+
 ## 2026-05-27 — Session 37 hotfix: fix(wizard) — stale closure reviewConfirmed in generatePacket
 
 ### What changed
