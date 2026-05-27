@@ -3,6 +3,17 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 33: P5+P6 — agency glossary expansion + intl passport translation
+
+### What changed
+- `apps/web/src/lib/translation/glossary/ukraine_agency_abbreviations.json`: 24 → 49 entries. Added: УВС, ГУВС, ОВС, ВОВС, РВ МВС, ВДДМС, СДМС, ТДМС, ВАЦС, ВП, ЦНАП, ЦНАПу, МЦНАП, ГУНП (was present), ГОВП, ВГНП, УВІР, ВУПР, ОМ, РМ, МВУ, КМ, МОУ, ФДМУ, ВСЗН, ВМУ
+- `apps/web/src/lib/tps/translationBridge.ts`: P6 — implemented 'internationalPassport' template in generateTPSTranslation. Was returning null. Now renders full HTML using passportBooklet renderer with "International Passport of Ukraine" title and intl-specific field map.
+
+### Verified
+- 2092/2092 tests pass, 0 type errors
+
+---
+
 ## 2026-05-27 — Session 33: P3 — TranslationReviewGate (8 CFR §103.2(b)(3) certification boundary)
 
 ### What changed
