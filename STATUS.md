@@ -1,7 +1,7 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 33 — P0.5–P2 translation pipeline complete
-**Status:** DEGRADED (P3 Review Gate not built — production blocker)
-**Scope:** Translation pipeline P0.5–P2 complete. 2092/2092 tests pass. 0 type errors. Not yet deployed.
+**Updated:** 2026-05-27 Session 33 — TPS Translation Pipeline v3.0 ALL PHASES COMPLETE
+**Status:** DEGRADED (browser e2e Playwright run for Review Gate flow not yet executed; deploy not yet approved)
+**Scope:** P0–P7 complete. 13/13 gates PASS. 2092/2092 tests pass. 0 type errors. Not yet deployed to production.
 
 ## Session 33 Verified Changes (2026-05-27)
 
@@ -19,7 +19,9 @@
 - `VERIFIED` P5: Agency glossary expanded from 24 → 49 entries (УВС, ГУВС, ОВС, ВОВС, РВ МВС, ВДДМС, СДМС, ТДМС, ВАЦС, ВП, ЦНАП, ГУНП, ГОВП, УВІР, ОМ, РМ, МОУ, КМ, ВСЗН etc.)
 - `VERIFIED` P6: International passport translation implemented in generateTPSTranslation ('internationalPassport' template path was null — now renders full HTML)
 - `OPEN` Image retention audit: temp files, Vercel logs, Supabase ZIP storage (ADR-009 OPEN items)
+- `VERIFIED` P7: G1-G13 gates verified (docs/reports/P7_GATES_VERIFICATION_2026-05-27.md). 13/13 PASS.
 - `OPEN` DeepSeek privacy disclosure UI (pre-production requirement)
+- `OPEN` P7 e2e Playwright verification: Review Gate full flow not yet tested in browser
 
 ## Session 31 Verified Changes
 
