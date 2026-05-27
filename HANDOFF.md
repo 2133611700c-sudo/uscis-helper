@@ -26,7 +26,12 @@ Three separate bugs causing `province_of_birth` to be falsely flagged as halluci
 1. ~~Verify production API after push~~ — done, SHA `d76345a` live.
 2. ~~P2: DOB fixture proof~~ — done, `passportBooklet.dob.test.ts` 14/14 pass.
 3. ~~P3: Add direct Playwright network capture~~ — done, brain-merge-summary.json + brain-merge-network.json artifacts, structural assertions on response.
-4. P4: Translation Bridge v0.
+4. ~~P4: Translation Bridge v0~~ — done. `translateBookletFromBrain()` in translationBridge.ts. 18/18 tests. Pipeline: CB merged → passportBooklet template → translation_html + certification_html. Not yet wired to generate-packet API (next step).
+
+## What remains after Session 32
+- Wire `translateBookletFromBrain` into generate-packet API when booklet slot is uploaded.
+- Playwright e2e: verify translation HTML file appears in generated ZIP.
+- UI: review screen showing translation draft before signer certification.
 
 ---
 
