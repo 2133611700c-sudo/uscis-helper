@@ -153,6 +153,10 @@ interface WizardData {
     mailing_state?: string
     mailing_zip?: string
     mailing_in_care_of?: string
+    given_name_manual?: string
+    dob_manual?: string
+    passport_number_manual?: string
+    last_entry_date_manual?: string
   }
   paid: boolean
   /** Stripe checkout session ID from ?cs= param after successful payment.
@@ -2258,19 +2262,19 @@ export default function TPSWizardV2({ locale }: Props) {
     const aNumberDigits = v('a_number').replace(/\D/g, '')
     return {
       family_name: v('family_name') || v('surname'),
-      given_name: v('given_name') || v('first_name'),
+      given_name: data.manual.given_name_manual || v('given_name') || v('first_name'),
       middle_name: data.manual.middle_name || v('middle_name') || v('patronymic') || '',
-      dob: v('dob') || v('date_of_birth'),
+      dob: data.manual.dob_manual || v('dob') || v('date_of_birth'),
       sex: (v('sex') === 'F' ? 'F' : 'M') as TPSAnswers['sex'],
       country_of_birth: normalizeCountryOfBirth(v('country_of_birth'), v('country_of_nationality')),
       country_of_nationality: v('country_of_nationality') || 'Ukraine',
-      passport_number: v('passport_number'),
+      passport_number: data.manual.passport_number_manual || v('passport_number'),
       passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
       passport_expiration_date: data.manual.passport_expiration_date || v('passport_expiration_date'),
       a_number: aNumberDigits,
       uscis_online_account: v('uscis_online_account'),
       i94_admission_number: v('i94_admission_number'),
-      last_entry_date: v('last_entry_date'),
+      last_entry_date: data.manual.last_entry_date_manual || v('last_entry_date'),
       status_at_last_entry: v('status_at_last_entry'),
       current_immigration_status: filing_path === 're_registration' ? 'TPS' : v('status_at_last_entry'),
       filing_path,
@@ -3637,6 +3641,46 @@ function ReviewManual({
   }
   return (
     <>
+      {!mergedFields?.given_name?.value && (
+        <FieldInput
+          label={locale === 'ru' ? 'Имя (First Name, Latin)' : locale === 'uk' ? "Ім'я (First Name, Latin)" : locale === 'es' ? 'Nombre (First Name, Latin)' : 'Given Name (Latin)'}
+          placeholder="e.g. Sergii"
+          tip={locale === 'ru' ? 'Не распознано из документов. Введите латиницей как в загранпаспорте или I-94.' : locale === 'uk' ? 'Не розпізнано з документів. Введіть латиницею як у закордонному паспорті або I-94.' : locale === 'es' ? 'No encontrado en documentos. Ingrese en caracteres latinos.' : 'Not found in documents. Enter as shown on international passport or I-94.'}
+          value={manual.given_name_manual || ''}
+          onChange={(v) => onChange({ given_name_manual: v })}
+          dataTestId="tps-review-manual-given-name"
+        />
+      )}
+      {!mergedFields?.dob?.value && (
+        <FieldInput
+          label={locale === 'ru' ? 'Дата рождения (MM/DD/YYYY)' : locale === 'uk' ? 'Дата народження (MM/DD/YYYY)' : locale === 'es' ? 'Fecha de nacimiento (MM/DD/YYYY)' : 'Date of Birth (MM/DD/YYYY)'}
+          placeholder="06/25/1986"
+          tip={locale === 'ru' ? 'Не распознано из документов. Введите в формате ММ/ДД/ГГГГ.' : locale === 'uk' ? 'Не розпізнано з документів. Введіть у форматі ММ/ДД/РРРР.' : locale === 'es' ? 'No encontrado en documentos. Ingrese en formato MM/DD/AAAA.' : 'Not found in documents. Enter as MM/DD/YYYY.'}
+          value={manual.dob_manual || ''}
+          onChange={(v) => onChange({ dob_manual: v })}
+          dataTestId="tps-review-manual-dob"
+        />
+      )}
+      {!mergedFields?.passport_number?.value && (
+        <FieldInput
+          label={locale === 'ru' ? 'Номер паспорта (загранпаспорт)' : locale === 'uk' ? 'Номер паспорта (закордонний)' : locale === 'es' ? 'Número de pasaporte (internacional)' : 'Passport Number (International Passport)'}
+          placeholder="e.g. FU262473"
+          tip={locale === 'ru' ? 'Из загранпаспорта. Не обнаружен автоматически — загрузите загранпаспорт или введите вручную.' : locale === 'uk' ? 'Із закордонного паспорта. Не знайдено автоматично — завантажте закордонний паспорт або введіть вручну.' : locale === 'es' ? 'Del pasaporte internacional. No detectado automáticamente.' : 'From international passport. Not auto-detected — upload international passport or enter manually.'}
+          value={manual.passport_number_manual || ''}
+          onChange={(v) => onChange({ passport_number_manual: v })}
+          dataTestId="tps-review-manual-passport-number"
+        />
+      )}
+      {!mergedFields?.last_entry_date?.value && (
+        <FieldInput
+          label={locale === 'ru' ? 'Дата последнего въезда в США (MM/DD/YYYY)' : locale === 'uk' ? 'Дата останнього в\'їзду в США (MM/DD/YYYY)' : locale === 'es' ? 'Fecha de última entrada a EE.UU. (MM/DD/YYYY)' : 'Last US Entry Date (MM/DD/YYYY)'}
+          placeholder="09/09/2022"
+          tip={locale === 'ru' ? 'Из I-94 или штампа в паспорте. Загрузите I-94 на шаге 4 или введите вручную.' : locale === 'uk' ? 'З I-94 або штампу в паспорті. Завантажте I-94 на кроці 4 або введіть вручну.' : locale === 'es' ? 'De I-94 o sello de pasaporte. Cargue I-94 en paso 4 o ingrese manualmente.' : 'From I-94 or passport stamp. Upload I-94 at step 4 or enter manually.'}
+          value={manual.last_entry_date_manual || ''}
+          onChange={(v) => onChange({ last_entry_date_manual: v })}
+          dataTestId="tps-review-manual-last-entry-date"
+        />
+      )}
       <FieldInput
         label={t.label.address}
         placeholder={t.placeholder.address}

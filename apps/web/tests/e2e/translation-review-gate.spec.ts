@@ -103,10 +103,7 @@ test('Review Gate: preview → block without checkbox → confirm → translatio
     await page.waitForTimeout(120)
   }
 
-  await fillReviewRow('Given name', 'Sergii')
-  await fillReviewRow('Passport number', 'FU262473')
-  await fillReviewRow('Date of birth', '06/25/1986')
-  await fillReviewRow('US entry date', '09/09/2022')
+  // OCR-editable rows (exist only when OCR extracted the field)
   await fillReviewRow('I-94 admission number', '039622651A3')
   await fillReviewRow('Status at entry', 'UHP')
 
@@ -116,6 +113,12 @@ test('Review Gate: preview → block without checkbox → confirm → translatio
     await expect(input).toBeVisible()
     if (!(await input.inputValue()).trim()) await input.fill(value)
   }
+
+  // Identity gate fields — shown as manual inputs when OCR missed them (booklet-only flow)
+  await fillIfEmpty('tps-review-manual-given-name', 'Sergii')
+  await fillIfEmpty('tps-review-manual-passport-number', 'FU262473')
+  await fillIfEmpty('tps-review-manual-dob', '06/25/1986')
+  await fillIfEmpty('tps-review-manual-last-entry-date', '09/09/2022')
 
   await fillIfEmpty('tps-review-manual-address-street', '4341 Willow Brook Ave 111')
   await fillIfEmpty('tps-review-manual-address-city', 'Los Angeles')
