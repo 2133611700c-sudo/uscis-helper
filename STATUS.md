@@ -39,7 +39,7 @@
 - `VERIFIED` Booklet-only Playwright proof: family_name + middle_name provenance=booklet, ZIP/PDF generated, I-821 readback confirmed.
 - `VERIFIED` Oblast regex fix: normalizeOblastToNominative("Вінницька область") returns "Vinnytsia Oblast" (was null before fix).
 - `VERIFIED` DOB fixture proof — 14 unit tests in passportBooklet.dob.test.ts prove parseUaDate chain for all formats (full UA/RU month, numeric, abbreviated bilingual "13 CEP / AUG 60", 2-digit year). All 14 pass.
-- `OPEN` Direct Playwright network capture for /api/tps/brain/merge call.
+- `VERIFIED` Direct Playwright network capture for /api/tps/brain/merge: listener + waitForResponse added to booklet-only-pdf-proof.spec.ts. Writes brain-merge-summary.json + brain-merge-network.json artifacts. Asserts status=200, booklet slot present, family_name in merged keys.
 - `OPEN` Translation Bridge v0.
 
 ## Session 31 Exact Next Steps

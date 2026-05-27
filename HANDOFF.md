@@ -25,7 +25,7 @@ Three separate bugs causing `province_of_birth` to be falsely flagged as halluci
 ### Exact next task
 1. ~~Verify production API after push~~ — done, SHA `d76345a` live.
 2. ~~P2: DOB fixture proof~~ — done, `passportBooklet.dob.test.ts` 14/14 pass.
-3. P3: Add direct Playwright network capture for `/api/tps/brain/merge` call.
+3. ~~P3: Add direct Playwright network capture~~ — done, brain-merge-summary.json + brain-merge-network.json artifacts, structural assertions on response.
 4. P4: Translation Bridge v0.
 
 ---
