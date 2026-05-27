@@ -27,13 +27,25 @@ import { promises as fs } from 'fs'
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const PRIVATE_DIR = path.join(REPO_ROOT, 'qa-shots', 'private')
 
-// Documents to test — IDs used in artifact filenames (NOT the original filenames)
+// Documents to test — IDs used in artifact filenames (NOT the original filenames).
+//
+// `identityPage: true`  → the main passport spread (photo + surname/name/DOB).
+//                         OCR must extract identity fields and the full
+//                         translation pipeline must produce a name-based draft.
+// `identityPage: false` → a SUPPLEMENTARY spread of the same passport that
+//                         carries NO identity data (issuing-authority page,
+//                         registration page, sideways photo). There is nothing
+//                         to translate; the app must instead surface the
+//                         "upload the main page" guidance and NOT offer a
+//                         translation. Verified by visual inspection of the
+//                         real images (2026-05-27): 3.jpg = issuing-authority
+//                         spread, 4.jpg = marital-status/registration spread.
 const BOOKLET_DOCS = [
-  { id: 'booklet_known',  file: 'booklet_test_resized.jpg' },
-  { id: 'booklet_doc1',   file: '1.jpg' },
-  { id: 'booklet_doc2',   file: '2.jpg' },
-  { id: 'booklet_doc3',   file: '3.jpg' },
-  { id: 'booklet_doc4',   file: '4.jpg' },
+  { id: 'booklet_known',  file: 'booklet_test_resized.jpg', identityPage: true },
+  { id: 'booklet_doc1',   file: '1.jpg',                    identityPage: true },
+  { id: 'booklet_doc2',   file: '2.jpg',                    identityPage: true },
+  { id: 'booklet_doc3',   file: '3.jpg',                    identityPage: false },
+  { id: 'booklet_doc4',   file: '4.jpg',                    identityPage: false },
 ]
 
 // Required manual fields that OCR cannot fill from booklet (form-contract blocked).
@@ -60,6 +72,12 @@ type SampleResult = {
   doc_id: string
   ocr_ok: boolean
   ocr_field_count: number
+  // DIAGNOSTIC (privacy-safe — field NAMES only, never values):
+  ocr_field_keys: string[]
+  cb_status: number
+  cb_merged_keys: string[]
+  cb_family_name_present: boolean
+  review_btn_appeared: boolean
   translation_preview_ok: boolean
   violations_count: number
   translation_bytes: number
@@ -95,6 +113,11 @@ for (const doc of BOOKLET_DOCS) {
       doc_id: doc.id,
       ocr_ok: false,
       ocr_field_count: 0,
+      ocr_field_keys: [],
+      cb_status: 0,
+      cb_merged_keys: [],
+      cb_family_name_present: false,
+      review_btn_appeared: false,
       translation_preview_ok: false,
       violations_count: -1,
       translation_bytes: 0,
@@ -115,7 +138,20 @@ for (const doc of BOOKLET_DOCS) {
           const json = await resp.json()
           const keys = json?.final_field_keys ?? Object.keys(json?.merged_fields ?? {})
           ocrFieldCount = Array.isArray(keys) ? keys.length : 0
+          result.ocr_field_keys = Array.isArray(keys) ? [...keys].sort() : []  // field NAMES only
           result.ocr_ok = resp.status() === 200
+        } catch { /* ignore */ }
+      })
+
+      // DIAGNOSTIC: track Central Brain merge — keys + family_name presence (no values)
+      page.on('response', async (resp) => {
+        if (!resp.url().includes('/api/tps/brain/merge') || resp.request().method() !== 'POST') return
+        try {
+          result.cb_status = resp.status()
+          const json = await resp.json()
+          const merged = (json?.merged ?? {}) as Record<string, { value?: string }>
+          result.cb_merged_keys = Object.keys(merged).sort()  // field NAMES only
+          result.cb_family_name_present = Boolean(merged?.family_name?.value)  // boolean, not the value
         } catch { /* ignore */ }
       })
 
@@ -153,6 +189,21 @@ for (const doc of BOOKLET_DOCS) {
       await expect(page.getByTestId('tps-ocr-cta')).toBeVisible({ timeout: 10_000 })
       await page.getByTestId('tps-ocr-cta').click()
       await expect(page.getByTestId('tps-review-step-container')).toBeVisible({ timeout: 30_000 })
+
+      // ── NON-IDENTITY PAGE: assert "upload the main page" guidance shows ──
+      // A supplementary spread (issuing authority / registration / sideways)
+      // has no surname → no translation is possible. The app must surface the
+      // re-upload warning on Step 5 and never offer a translation. We verify
+      // that here and finish — there is no name-based draft to check.
+      if (!doc.identityPage) {
+        await expect(page.getByTestId('tps-booklet-no-identity-warning'))
+          .toBeVisible({ timeout: 15_000 })
+        result.review_btn_appeared = false
+        const proofPath = path.join(artifactsDir, 'sample-proof.json')
+        await fs.writeFile(proofPath, JSON.stringify(result, null, 2), 'utf8')
+        console.log(`[${doc.id}] NON-IDENTITY page: no-identity warning shown, no translation offered (expected)`)
+        return
+      }
 
       // OCR-editable rows (only when OCR extracted the field)
       const fillDialogIfNeeded = async (label: string, value: string) => {
@@ -208,14 +259,16 @@ for (const doc of BOOKLET_DOCS) {
       }
       await page.goto('/en/services/tps-ukraine/start?paid=1')
 
-      // ── Translation Preview Gate ──────────────────────────────────────────
+      // ── Translation Preview Gate (identity pages only) ────────────────────
       // Must wait for React to rehydrate + ownerChecked to resolve after goto.
-      // count() fires immediately (no timeout) — use toBeVisible with timeout instead.
+      // The button is disabled until Central Brain is ready; toBeVisible passes
+      // while disabled, and click() auto-waits for the enabled state.
       const reviewBtn = page.getByTestId('tps-review-translation-btn')
       try {
-        await expect(reviewBtn).toBeVisible({ timeout: 20_000 })
+        await expect(reviewBtn).toBeVisible({ timeout: 25_000 })
+        result.review_btn_appeared = true
       } catch {
-        result.error = 'tps-review-translation-btn not found — translation not triggered (timeout 20s)'
+        result.error = 'tps-review-translation-btn not found — translation not triggered (timeout 25s)'
         throw new Error(result.error)
       }
 
@@ -269,8 +322,9 @@ for (const doc of BOOKLET_DOCS) {
     await fs.writeFile(proofPath, JSON.stringify(result, null, 2), 'utf8')
     console.log(`[${doc.id}] structural_pass=${result.structural_pass} ocr_fields=${result.ocr_field_count} violations=${result.violations_count} translation_bytes=${result.translation_bytes}`)
 
-    // ── Hard assertions ───────────────────────────────────────────────────
+    // ── Hard assertions (identity pages only — non-identity pages return early) ──
     expect(result.ocr_ok, `${doc.id}: OCR must return 200`).toBe(true)
+    expect(result.cb_family_name_present, `${doc.id}: identity page must yield a surname`).toBe(true)
     expect(result.violations_count, `${doc.id}: zero violations required`).toBe(0)
     expect(result.translation_bytes, `${doc.id}: translation HTML must be non-empty`).toBeGreaterThan(100)
     expect(result.has_patronymic_label, `${doc.id}: must use Patronymic label`).toBe(true)

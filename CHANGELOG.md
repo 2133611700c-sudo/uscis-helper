@@ -3,6 +3,35 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 37 audit: fix(translation) — CB-readiness race + non-identity page guidance
+
+### Audit trigger
+User requested full audit of Ukrainian passport translation. Multi-sample e2e (5 real booklet spreads of ONE passport) revealed three issues across the docs.
+
+### Findings (visual inspection of real images, 2026-05-27)
+- `1.jpg` (booklet_doc1): identity page, UA side — surname/name/DOB present → translation works
+- `2.jpg` (booklet_doc2): identity page, RU side — present → translation works
+- `booklet_test_resized.jpg`: identity page → translation works
+- `3.jpg` (booklet_doc3): **issuing-authority/signature spread (pp. 4-5)** — NO identity data
+- `4.jpg` (booklet_doc4): **marital-status/registration spread (pp. 10-11), rotated 90°** — NO identity data
+
+### Real bugs fixed (app)
+1. **CB-readiness race (140-byte placeholder)** — `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+   - The `Review Translation` button did not gate on Central Brain readiness. After the `?paid=1` Stripe-return reload, CB re-merges (loading→ready). If the user clicked during that window, `brainMerged` was null and `/api/tps/translation/preview` returned a 140-byte placeholder (`translation_bytes:140, cert_bytes:0, no Patronymic`). Non-deterministic — confirmed by booklet_known flipping pass/fail across runs.
+   - Fix: button `disabled` until `centralBrainStatus === 'ready'` (shows "Preparing translation…" / degraded label in 4 locales). `handleTranslationPreview` also guards defensively and shows a "still preparing" message. Playwright `click()` auto-waits for the enabled state.
+2. **No guidance for non-identity pages** — same file:
+   - When a booklet upload yields no `family_name` (user shot the wrong spread), the translation/generate buttons silently never appeared. Added a Step-5 warning banner (`data-testid="tps-booklet-no-identity-warning"`, 4 locales): "We couldn't find your surname on this passport page. Please upload the main page with your photo (pages 1–2)."
+
+### Test corrected
+- `apps/web/tests/e2e/booklet-multi-sample.spec.ts`: each doc now flagged `identityPage`. Identity pages assert full translation; non-identity pages (doc3/doc4) assert the no-identity warning shows and NO translation is offered (the correct behavior — there is no name to translate). Added privacy-safe diagnostics (`ocr_field_keys`, `cb_merged_keys`, `cb_family_name_present` — names/booleans only, never values).
+
+### Test evidence
+- Unit tests: 2092/2092 pass
+- TypeScript: 0 errors
+- e2e (pre-fix run): 3/3 identity pages pass full translation; 2 non-identity pages correctly have no surname
+
+---
+
 ## 2026-05-27 — Session 37 hotfix 3: fix(e2e) — multi-sample async response handler race for preview metrics
 
 ### What changed

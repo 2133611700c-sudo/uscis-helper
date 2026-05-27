@@ -2208,6 +2208,18 @@ export default function TPSWizardV2({ locale }: Props) {
 
   // ── Translation preview (P3 — Review Gate) ───────────────────────────────
   const handleTranslationPreview = useCallback(async () => {
+    // Defensive: translation needs Central Brain's normalized output. The
+    // button is disabled unless CB is ready, but guard here too so a
+    // programmatic/early click can never request a placeholder translation.
+    if (centralBrainStatus !== 'ready' || !centralBrainResult) {
+      setErrMsg(
+        locale === 'ru' ? 'Перевод ещё готовится. Подождите пару секунд и попробуйте снова.' :
+        locale === 'uk' ? 'Переклад ще готується. Зачекайте кілька секунд і спробуйте знову.' :
+        locale === 'es' ? 'La traducción aún se está preparando. Espere unos segundos e inténtelo de nuevo.' :
+        'Translation is still being prepared. Please wait a few seconds and try again.',
+      )
+      return
+    }
     setTranslationPreviewBusy(true)
     try {
       const SLOT_TO_DOC_TYPE: Record<string, TPSDocumentType> = {
@@ -2252,7 +2264,7 @@ export default function TPSWizardV2({ locale }: Props) {
     } finally {
       setTranslationPreviewBusy(false)
     }
-  }, [data, mergedFields, signatureData, centralBrainResult, centralBrainStatus])
+  }, [data, mergedFields, signatureData, centralBrainResult, centralBrainStatus, locale])
 
   // ── Generate packet (Step 6 after Pay) ───────────────────────────────────
   const buildDraftAnswers = useCallback((): Partial<TPSAnswers> => {
@@ -2772,6 +2784,30 @@ export default function TPSWizardV2({ locale }: Props) {
                     </div>,
                   )
                 }
+                // Booklet uploaded but no surname extracted → almost
+                // certainly NOT the main identity page (e.g. user shot the
+                // issuing-authority spread, the registration page, or a
+                // sideways photo). Translation needs the surname/DOB page,
+                // so guide the user to re-upload pages 1–2 (with the photo).
+                if (slotId === 'booklet') {
+                  const fieldsObj = u.fields || {}
+                  const hasFamilyName = Boolean(fieldsObj.family_name?.value?.trim())
+                  if (!hasFamilyName) {
+                    const msg =
+                      locale === 'ru'
+                        ? 'Не удалось найти фамилию на этой странице паспорта. Для перевода загрузите главную страницу с вашим фото (где от руки вписаны фамилия, имя и дата рождения).'
+                        : locale === 'uk'
+                          ? 'Не вдалося знайти прізвище на цій сторінці паспорта. Для перекладу завантажте головну сторінку з вашим фото (де від руки вписані прізвище, ім\'я та дата народження).'
+                          : locale === 'es'
+                            ? 'No se encontró el apellido en esta página del pasaporte. Para la traducción, suba la página principal con su foto (donde están escritos a mano el apellido, nombre y fecha de nacimiento).'
+                            : 'We couldn\'t find your surname on this passport page. For translation, please upload the main page with your photo (where your surname, given name and date of birth are handwritten — pages 1–2).'
+                    banners.push(
+                      <div key={`booklet-noid-${slotId}`} data-testid="tps-booklet-no-identity-warning" style={{ background: WARN_BG, border: `1.5px solid ${WARN_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: WARN_TEXT, marginBottom: 12 }}>
+                        {msg}
+                      </div>,
+                    )
+                  }
+                }
                 if (slotId === 'passport') {
                   const fieldsObj = u.fields || {}
                   const list = Object.values(fieldsObj)
@@ -3188,27 +3224,48 @@ export default function TPSWizardV2({ locale }: Props) {
                 type="button"
                 data-testid="tps-review-translation-btn"
                 onClick={handleTranslationPreview}
-                disabled={translationPreviewBusy}
+                // Translation REQUIRES Central Brain's normalized output
+                // (KMU-55 transliteration, oblast/agency normalization). When
+                // CB is still merging — e.g. right after the ?paid=1 reload
+                // from Stripe — brainMerged is null and the preview endpoint
+                // would return an empty placeholder. Disable until ready so a
+                // real user can never trigger that race. Playwright's click
+                // auto-waits for the enabled state.
+                disabled={translationPreviewBusy || centralBrainStatus !== 'ready'}
                 style={{
-                  background: '#1d4ed8',
+                  background: centralBrainStatus !== 'ready' ? '#94a3b8' : '#1d4ed8',
                   color: '#fff',
                   fontSize: 16,
                   padding: '14px 20px',
                   borderRadius: 10,
                   border: 'none',
                   width: '100%',
-                  cursor: translationPreviewBusy ? 'wait' : 'pointer',
+                  cursor: (translationPreviewBusy || centralBrainStatus !== 'ready') ? 'wait' : 'pointer',
                   fontWeight: 700,
                   marginBottom: 10,
-                  opacity: translationPreviewBusy ? 0.7 : 1,
+                  opacity: (translationPreviewBusy || centralBrainStatus !== 'ready') ? 0.7 : 1,
                   fontFamily: 'inherit',
                 }}
               >
-                {translationPreviewBusy ? '…' : (
-                  locale === 'ru' ? 'Проверить перевод документа (обязательно)' :
-                  locale === 'uk' ? 'Перевірити переклад документа (обов\'язково)' :
-                  'Review Document Translation (required)'
-                )}
+                {translationPreviewBusy ? '…' :
+                  centralBrainStatus === 'loading' || centralBrainStatus === 'idle' ? (
+                    locale === 'ru' ? 'Подготовка перевода…' :
+                    locale === 'uk' ? 'Підготовка перекладу…' :
+                    locale === 'es' ? 'Preparando traducción…' :
+                    'Preparing translation…'
+                  ) :
+                  centralBrainStatus === 'degraded' ? (
+                    locale === 'ru' ? 'Перевод временно недоступен — обновите страницу' :
+                    locale === 'uk' ? 'Переклад тимчасово недоступний — оновіть сторінку' :
+                    locale === 'es' ? 'Traducción no disponible — actualice la página' :
+                    'Translation temporarily unavailable — please refresh'
+                  ) : (
+                    locale === 'ru' ? 'Проверить перевод документа (обязательно)' :
+                    locale === 'uk' ? 'Перевірити переклад документа (обов\'язково)' :
+                    locale === 'es' ? 'Revisar traducción del documento (obligatorio)' :
+                    'Review Document Translation (required)'
+                  )
+                }
               </button>
             )}
 

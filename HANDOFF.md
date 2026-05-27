@@ -99,7 +99,13 @@
 
 ## Session 37 hotfix (this commit)
 
-### Multi-sample preview-capture async race (this commit)
+### Translation audit — CB race + non-identity guidance (this commit)
+- **Audit**: 5 real booklet spreads of ONE passport. Visual inspection: 1.jpg/2.jpg/booklet_known = identity pages (translate OK); 3.jpg = issuing-authority spread, 4.jpg = registration spread rotated 90° (NO identity data).
+- **Real bug 1 (CB race)**: `Review Translation` button didn't gate on `centralBrainStatus`. After `?paid=1` reload, CB re-merges; clicking during loading → `brainMerged` null → 140-byte placeholder. Fix: disable button until CB ready + defensive guard in handleTranslationPreview.
+- **Real bug 2 (no guidance)**: non-identity booklet page → buttons silently absent. Fix: Step-5 warning `tps-booklet-no-identity-warning`.
+- **Test**: `identityPage` flag added; non-identity docs assert the warning instead of translation.
+
+### Multi-sample preview-capture async race (prior commit)
 - **Root cause**: `page.on('response', async ...)` handler had `await resp.json()` inside. After `await previewRespPromise` the metrics line ran immediately — before handler finished. `violations_count` always read as -1.
 - **Fix**: removed the listener; parse directly from `waitForResponse` response object — synchronous after the await, no race.
 
