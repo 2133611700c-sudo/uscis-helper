@@ -3,6 +3,25 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 35: feat(ux) — mailing address UI (P1-UX TODO closed)
+
+### What changed
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+  - Added `mailing_different`, `mailing_street`, `mailing_city`, `mailing_state`, `mailing_zip` to `WizardData['manual']`
+  - `buildDraftAnswers()`: `mailing_same_as_physical` now driven by `data.manual.mailing_different`; mailing fields passed when flag is true
+  - `ReviewManual` component: checkbox "My mailing address is different" (4 locales) + collapsible mailing address fields (street/city/state/zip)
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/GeneratePacketBlock.tsx`:
+  - Added `mailing_different`, `mailing_street/city/state/zip` to `PersonalFields` interface + EMPTY constant
+  - Body construction: replaces hardcoded `mailing_same_as_physical: true` with dynamic value from field state
+  - UI: same checkbox + collapsible mailing fields (4 locales)
+  - TODO(P1-UX) comment removed
+
+### Verified
+- 2092/2092 tests pass, 0 type errors
+- i765FieldMap + i821FieldMap already handled separate mailing case — no server-side changes needed
+
+---
+
 ## 2026-05-27 — Session 34: security + audit closure
 
 ### What changed
