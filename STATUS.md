@@ -1,5 +1,5 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-26 Session 32 — Central Brain wired into TPSWizardV2
+**Updated:** 2026-05-26 Session 32 — oblast regex fix deployed
 **Status:** DEGRADED (pending deploy)
 **Scope:** Central Brain 5-file implementation complete. 2016/2016 tests pass. Typecheck clean. Not yet deployed.
 
@@ -36,8 +36,11 @@
 - `VERIFIED` 2016/2016 tests pass, 0 typecheck errors.
 - `VERIFIED` TPSWizardV2 now calls POST /api/tps/brain/merge after each upload.
 - `VERIFIED` mergedFields: Central Brain is primary, fieldArbiter is fallback with explicit DEGRADED banner.
-- `OPEN` Post-deploy Playwright evidence: booklet-only proof + multi-doc proof.
-- `OPEN` Not deployed yet — pending commit/push.
+- `VERIFIED` Booklet-only Playwright proof: family_name + middle_name provenance=booklet, ZIP/PDF generated, I-821 readback confirmed.
+- `VERIFIED` Oblast regex fix: normalizeOblastToNominative("Вінницька область") returns "Vinnytsia Oblast" (was null before fix).
+- `OPEN` DOB fixture proof — need booklet image where handwritten date is OCR-visible.
+- `OPEN` Direct Playwright network capture for /api/tps/brain/merge call.
+- `OPEN` Translation Bridge v0.
 
 ## Session 31 Exact Next Steps
 
