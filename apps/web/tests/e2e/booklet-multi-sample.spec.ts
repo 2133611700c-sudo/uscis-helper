@@ -52,6 +52,7 @@ const BOOKLET_DOCS = [
 // These are structurally needed to reach Step 6. NOT passport data.
 const WIZARD_GATE_VALUES = {
   givenName:      'Test',          // overridden by OCR if available; gate fill only
+  patronymic:     'Testovych',     // manual fallback when OCR misses the patronymic
   passportNumber: 'AA000000',      // gate fill — NOT a real passport number
   dob:            '01/01/1980',    // gate fill only
   usEntry:        '09/09/2022',
@@ -236,6 +237,10 @@ for (const doc of BOOKLET_DOCS) {
       await fillIfEmpty('tps-review-manual-passport-number', WIZARD_GATE_VALUES.passportNumber)
       await fillIfEmpty('tps-review-manual-dob', WIZARD_GATE_VALUES.dob)
       await fillIfEmpty('tps-review-manual-last-entry-date', WIZARD_GATE_VALUES.usEntry)
+      // Patronymic: pre-filled from OCR on the UA-side page; on the RU-side
+      // page the handwritten patronymic is often missed → user fills it.
+      // fillIfEmpty skips it when OCR already provided the value (doc1).
+      await fillIfEmpty('tps-review-manual-middle-name', WIZARD_GATE_VALUES.patronymic)
 
       await fillIfEmpty('tps-review-manual-address-street', WIZARD_GATE_VALUES.street)
       await fillIfEmpty('tps-review-manual-address-city', WIZARD_GATE_VALUES.city)
