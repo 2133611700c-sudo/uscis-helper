@@ -3,6 +3,30 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 32: P4 wire — translation enabled in generate-packet pipeline
+
+### What changed
+- `apps/web/src/lib/tps/packetBuilder.ts`:
+  - Added `brainMerged?: Record<string, MergedField> | null` to `TranslationOptions`.
+  - When `docType === 'passportBooklet'` and `brainMerged` is present: uses `translateBookletFromBrain` (CB primary path).
+  - Falls back to `generateTPSTranslation(answers, ...)` for legacy/non-CB requests.
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+  - Removed `// _translation: disabled` stub.
+  - Added live `_translation` payload: derives `uploadedDocTypes` from `data.uploads` (booklet→passportBooklet, passport→passport), includes `signerName`, `signerAddress`, `signatureDataUrl`, and `brainMerged` from CB when `centralBrainStatus === 'ready'`.
+  - Added import: `shouldTranslateForTPSPacket, type TPSDocumentType` from translationBridge.
+
+### Pipeline now live
+1. User uploads booklet → OCR → Central Brain merge
+2. User generates packet → wizard sends `_translation.brainMerged = centralBrainResult.merged`
+3. `packetBuilder` calls `translateBookletFromBrain(brainMerged, opts)`
+4. ZIP includes `Translation_Internal_Passport.html` + `Certification_Translation.html`
+5. Fallback: if CB not ready, `generateTPSTranslation(answers)` runs as before
+
+### Verified
+- 2051/2051 tests pass. 0 type errors.
+
+---
+
 ## 2026-05-27 — Session 32: P4 — Translation Bridge v0 (Central Brain → booklet translation draft)
 
 ### What changed
