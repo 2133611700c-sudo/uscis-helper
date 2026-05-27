@@ -3,6 +3,27 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39: test(e2e) — booklet-multi-sample 5/5 green, translation-review-gate 1/1 green
+
+### Fixes to e2e test suite
+- `booklet-multi-sample.spec.ts`: added sequential passport + I-94 uploads (with individual `waitForResponse`) before booklet upload. CB completes in <25s with full 3-doc set vs. 60s+ timeout with booklet-only data.
+- Added `tps-ocr-edit-family_name` visible wait in step 5 to confirm CB settled before clicking "Review Translation".
+- Added `toBeEnabled({ timeout: 60_000 })` wait for the review button (visible-but-disabled race eliminated).
+- Changed bookletOcr `waitForResponse` to accept any HTTP status (removed `&& r.status() === 200`) — non-identity OCR pages (issuing authority, doc3) return non-200, which previously caused 90s timeout.
+
+### Test results
+```
+booklet_known:  structural_pass=true violations=0 translation_bytes=2568 ✓
+booklet_doc1:   structural_pass=true violations=0 translation_bytes=2568 ✓
+booklet_doc2:   structural_pass=true violations=0 translation_bytes=2569 ✓
+booklet_doc3:   NON-IDENTITY — no-identity warning shown (expected) ✓
+booklet_doc4:   NON-IDENTITY — no-identity warning shown (expected) ✓
+5/5 passed (3.4m)
+translation-review-gate: 1/1 PASSED
+```
+
+---
+
 ## 2026-05-27 — Session 38: fix(wizard) — remove manual identity entry (auto-fill rule) + purge real PII from site
 
 ### Product principle restored (owner directive)
