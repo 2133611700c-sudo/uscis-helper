@@ -3,6 +3,26 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39c: feat(knowledge) — Ukraine terminology v1.3 + TPS requirements
+
+### packages/knowledge/src/dictionary.ts (v1.2 → v1.3)
+- +9 new AUTHORITIES: VIKONKOM, RDA, ODA, SILRADA, MISKRADA, NOTARY, PASSPORT_OFFICE, DILTNICHNYI
+- +8 new AUTHORITY_PATTERNS (виконком, РДА/ОДА, сільрада, нотаріус, паспортний стіл)
+- +DOCUMENT_TYPES export: 14 Ukrainian document types → English/USCIS names
+- AUTHORITY_PATTERNS reordered: specific before generic
+
+### packages/knowledge/src/tps_ukraine_requirements.ts (new file)
+- TPS eligibility dates: April 11, 2022 (re-reg) vs August 16, 2023 (new initial)
+- Filing types: initial / reregistration / late (good_cause required)
+- Fee schedule: I-821 $50, biometrics $30, I-765 $470/$750, H.R.1 $500-510 NON-WAIVABLE
+- EAD categories: A12 (approved) vs C19 (pending)
+- Common mistakes: stapler, A12/C19 confusion, re-reg with full docs, I-912 online
+
+### apps/web/src/lib/translation/glossary/ukraine_agency_abbreviations.json
+- +ВИКОНКОМ, РДА, ОДА, ТЦК, ДСНС, ДПСУ, ЦНАП (dedup from TPSWizard)
+
+---
+
 ## 2026-05-27 — Session 39b: fix(wizard) — booklet source label "Паспорт·OCR" → "Внутр. паспорт·OCR"
 
 `provenanceLabel()` в ReviewOcr не обрабатывал `actualSlot==='booklet'` — падал на `fallbackDoc==='passport'` → "Паспорт · OCR". Пользователь видел что фамилия взята из загранпаспорта, хотя это внутренний. Добавлен `t.source.booklet` во все 4 локали (uk/ru/en/es) и соответствующая ветка в `provenanceLabel`.
