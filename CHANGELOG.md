@@ -3,6 +3,26 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Session 32: oblast regex fix + regression tests
+
+### What changed
+- `packages/knowledge/src/dictionary.ts`:
+  - Fixed `normalizeOblastToNominative()` regex: `/\s*(областей?|обл(?:асть|асті|\.?))\s*/gi`
+  - Old regex `/\s*(області|обл\.?)\s*/gi` stripped "обл" as prefix of "область", leaving corrupted key "вінницькаасть" → function returned null for all nominative full forms ("Вінницька область" etc.)
+  - New regex matches "область"/"обл." as complete tokens safely.
+- `packages/knowledge/src/__tests__/normalize.test.ts`:
+  - Added 6 regression tests: nominative full, genitive full, abbreviated nominative, Kharkiv oblast, unknown foreign, lowercase.
+- `apps/web/src/lib/tps/__tests__/hallucinationGuard.test.ts`:
+  - Extended `checkGeography` tests: now asserts `risk='none'` for valid oblast forms (was only checking `should_block`).
+  - Added 3 new test cases: genitive full, abbreviated nominative, Kharkiv.
+
+### Verified
+- `npx tsx normalize.test.ts`: 36/36 pass.
+- `pnpm --filter web test`: 2019/2019 pass.
+- Typecheck: 0 errors.
+
+---
+
 ## 2026-05-26 — Session 32: Central Brain → TPSWizardV2 integration
 
 ### What changed
