@@ -1853,3 +1853,8 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 
 - Persistent restart button now hidden while stale session banner is showing (was duplicating the banner's own ↺ Начать заново button)
 - 2098/2098 pass, 0 type errors
+
+## 2026-05-27b — Security Advisor cleanup
+- auto_grant_on_new_table moved to extensions schema (not REST-exposed)
+- SET search_path on all public SECURITY DEFINER functions
+- Security Advisor: 0 errors
