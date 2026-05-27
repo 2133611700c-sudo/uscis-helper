@@ -8,6 +8,7 @@
 - `VERIFIED` Gate field manual fallback: `given_name_manual`, `dob_manual`, `passport_number_manual`, `last_entry_date_manual` added to `WizardData['manual']`. `buildDraftAnswers()` uses manual values with OCR fallback. ReviewManual shows conditional FieldInput blocks for each when OCR missed the value. Root cause: booklet form contract forbids these fields; booklet-only flow was always blocked at isStep6Eligible.
 - `VERIFIED` `translation-review-gate.spec.ts`: removed fragile `fillReviewRow` for gate identity fields; replaced with `fillIfEmpty` targeting new testids (tps-review-manual-given-name, tps-review-manual-passport-number, tps-review-manual-dob, tps-review-manual-last-entry-date)
 - `VERIFIED` `booklet-multi-sample.spec.ts`: same fix applied; spec covers all 5 real booklet documents
+- `VERIFIED` Multi-sample count() race fix: `booklet-multi-sample.spec.ts` replaced immediate `count()` after `page.goto('?paid=1')` with `expect().toBeVisible({ timeout: 20_000 })`. Root cause: count() fired before React rehydrated.
 - `VERIFIED` Stale closure fix: `translationReviewConfirmed` added to `generatePacket` useCallback deps. Was missing → callback captured `false` at mount → `reviewConfirmed` always sent as `false` in generate request.
 - `VERIFIED` 2092/2092 tests pass, 0 type errors
 
