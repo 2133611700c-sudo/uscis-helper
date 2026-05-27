@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39b: fix(wizard) — booklet source label "Паспорт·OCR" → "Внутр. паспорт·OCR"
+
+`provenanceLabel()` в ReviewOcr не обрабатывал `actualSlot==='booklet'` — падал на `fallbackDoc==='passport'` → "Паспорт · OCR". Пользователь видел что фамилия взята из загранпаспорта, хотя это внутренний. Добавлен `t.source.booklet` во все 4 локали (uk/ru/en/es) и соответствующая ветка в `provenanceLabel`.
+
+- `TPSWizardV2.tsx`: +`booklet: 'Внутр. паспорт · OCR'` в 4 locale source-блоках + `if (actualSlot === 'booklet') return t.source.booklet`
+- 0 type errors
+
+---
+
 ## 2026-05-27 — Session 39: test(e2e) — booklet-multi-sample 5/5 green, translation-review-gate 1/1 green
 
 ### Fixes to e2e test suite
