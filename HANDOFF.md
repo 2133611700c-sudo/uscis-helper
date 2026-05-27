@@ -1,3 +1,25 @@
+# HANDOFF — Session 39k (2026-05-27)
+
+## Session 39k — fix: booklet inferred fields + lineMatchesLabel false-positive
+
+### What changed
+1. **`passportBooklet.ts`** — Fixed `lineMatchesLabel` short-label false positive: "Пол" (3-char sex label) matched "Поліграфічний" (14-char printing company) because both share the "ПОЛ" prefix after normalization. New logic: for single-word labels ≤ 6 Cyrillic chars, split text into space tokens, require token.startsWith(label) AND token.length ≤ label+3. "ПОЛІГРАФІЧНИЙ" (14) > "ПОЛ" (3) + 3 = 6 → no match.
+2. **`passportBooklet.ts`** — Added `country_of_birth = 'Ukraine'` inferred emission. Booklet is always a Ukrainian document; now both nationality + birth country + issuing country are auto-emitted.
+3. **`documentContracts.ts`** — Moved `country_of_nationality`, `country_of_birth`, `passport_country_of_issuance`, `sex` from `forbidden_fields` → `allowed_fields` for booklet slot.
+
+### Evidence
+- 2101/2101 tests pass, 0 type errors
+- Production verify pending (deploy in progress)
+
+### Next tasks
+1. DEPLOY and verify: booklet OCR should now return country_of_nationality, country_of_birth, passport_country_of_issuance (all "Ukraine") + sex (if OCR finds the field)
+2. `passport_number` from booklet — still blocked (OCR can't reliably read perforated numbers). For booklet-only users this is their only ID. Consider allowing manual entry with a specific prompt.
+3. Full "zero manual entry" audit across all USCIS form fields
+4. Research best Cyrillic OCR approaches for Ukrainian documents
+5. TASK-04/05/06
+
+---
+
 # HANDOFF — Session 39j (2026-05-27)
 
 ## Session 39j — fix: booklet DOB fallback scan + given_name unblocked
