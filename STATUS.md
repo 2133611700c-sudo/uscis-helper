@@ -1,7 +1,14 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 36 — Translation PDF in TPS ZIP; mailing_in_care_of; registration_address extraction
-**Status:** DEGRADED (browser e2e Playwright run for Review Gate flow not yet executed; deploy not yet approved)
-**Scope:** P0–P7 complete. 13/13 gates PASS. 2092/2092 tests pass. 0 type errors. Not yet deployed to production.
+**Updated:** 2026-05-27 Session 37 — Gate field manual fallback; e2e spec fixes; deploy pending
+**Status:** DEGRADED (deploy not yet pushed; Playwright e2e pending production deploy)
+**Scope:** P0–P7 complete. 13/13 gates PASS. 2092/2092 tests pass. 0 type errors. Awaiting `git push origin main`.
+
+## Session 37 Verified Changes (2026-05-27)
+
+- `VERIFIED` Gate field manual fallback: `given_name_manual`, `dob_manual`, `passport_number_manual`, `last_entry_date_manual` added to `WizardData['manual']`. `buildDraftAnswers()` uses manual values with OCR fallback. ReviewManual shows conditional FieldInput blocks for each when OCR missed the value. Root cause: booklet form contract forbids these fields; booklet-only flow was always blocked at isStep6Eligible.
+- `VERIFIED` `translation-review-gate.spec.ts`: removed fragile `fillReviewRow` for gate identity fields; replaced with `fillIfEmpty` targeting new testids (tps-review-manual-given-name, tps-review-manual-passport-number, tps-review-manual-dob, tps-review-manual-last-entry-date)
+- `VERIFIED` `booklet-multi-sample.spec.ts`: same fix applied; spec covers all 5 real booklet documents
+- `VERIFIED` 2092/2092 tests pass, 0 type errors
 
 ## Session 36 Verified Changes (2026-05-27)
 

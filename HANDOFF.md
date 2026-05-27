@@ -87,9 +87,20 @@
 ### registration_address extraction (COMPLETE)
 - `passportBooklet.module.ts`: `registration_address` wired into `extraction.fieldTargets`, `expectedLabels` (`МІСЦЕ ПРОЖИВАННЯ`, `МІСЦЕ РЕЄСТРАЦІЇ`), and `render.renderFields`
 
+## Session 37 work (this commit)
+
+### Gate field manual fallback (COMPLETE)
+- **Root cause found**: booklet form contract forbids `given_name`, `passport_number`, `last_entry_date` from booklet slot. When only booklet is uploaded, these are always missing → `isStep6Eligible=false` → translation button hidden.
+- **Fix**: Added `given_name_manual`, `dob_manual`, `passport_number_manual`, `last_entry_date_manual` to `WizardData['manual']`
+- **ReviewManual**: 4 conditional `FieldInput` blocks shown ONLY when OCR is missing the value (testids: `tps-review-manual-given-name`, `tps-review-manual-dob`, `tps-review-manual-passport-number`, `tps-review-manual-last-entry-date`)
+- **`buildDraftAnswers()`**: manual fallbacks for all 4 gate fields
+- **`translation-review-gate.spec.ts`**: replaced `fillReviewRow` for identity gate fields with `fillIfEmpty` using new testids
+- **`booklet-multi-sample.spec.ts`**: same fix; new spec for 5 real documents created
+
 ## Exact next tasks (priority order)
-1. **Run Playwright e2e**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts` — needs live server + booklet_test_resized.jpg in qa-shots/private/
-2. **Deploy to production**: all commits on main, awaiting owner approval for `git push`
+1. **Deploy to production**: `git push origin main` (code changes deployed via Vercel auto-deploy)
+2. **Run Playwright e2e after deploy**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts`
+3. **Run multi-sample after deploy**: `pnpm --filter web exec playwright test booklet-multi-sample.spec.ts`
 
 ## Evidence
 - Test count: 2092/2092

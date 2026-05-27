@@ -3,6 +3,23 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 37: fix(wizard) — gate field manual fallback + Playwright e2e spec fixes
+
+### What changed
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+  - `WizardData.manual`: added `given_name_manual?`, `dob_manual?`, `passport_number_manual?`, `last_entry_date_manual?`
+  - `buildDraftAnswers()`: manual fallbacks for given_name, dob, passport_number, last_entry_date (fixes isStep6Eligible=false when only booklet uploaded)
+  - `ReviewManual`: 4 conditional FieldInputs shown when OCR missed the value (testids: `tps-review-manual-given-name`, `tps-review-manual-dob`, `tps-review-manual-passport-number`, `tps-review-manual-last-entry-date`)
+- `apps/web/tests/e2e/translation-review-gate.spec.ts`: replaced `fillReviewRow` for gate identity fields with `fillIfEmpty` using new testids
+- `apps/web/tests/e2e/booklet-multi-sample.spec.ts`: new multi-document e2e spec (5 real booklets); same fix applied
+
+### Test evidence
+- Unit tests: 2092/2092 pass
+- TypeScript: 0 errors
+- Root cause: booklet contract forbids given_name/passport_number/last_entry_date → gate blocked → translation button hidden → Playwright e2e failed
+
+---
+
 ## 2026-05-27 — Session 36: feat(translation) — PDF in TPS ZIP + mailing_in_care_of + registration_address
 
 ### What changed
