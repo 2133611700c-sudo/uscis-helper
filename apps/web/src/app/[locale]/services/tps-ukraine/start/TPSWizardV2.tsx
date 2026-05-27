@@ -38,6 +38,7 @@ import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } f
 import SignaturePad from '@/components/shared/SignaturePad'
 import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessChecker'
 import type { CentralBrainResult } from '@/lib/tps/centralBrain'
+import { shouldTranslateForTPSPacket, type TPSDocumentType } from '@/lib/tps/translationBridge'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -2400,7 +2401,32 @@ export default function TPSWizardV2({ locale }: Props) {
           ...answers,
           _provenance: provenanceByField,
           _review_snapshot: reviewSnapshot,
-          // _translation: disabled until passport translation templates are approved
+          _translation: (() => {
+            const SLOT_TO_DOC_TYPE: Record<string, TPSDocumentType> = {
+              booklet: 'passportBooklet',
+              passport: 'passport',
+            }
+            const uploadedDocTypes = Object.entries(data.uploads)
+              .filter(([, u]) => u?.status === 'done')
+              .map(([slotId]) => SLOT_TO_DOC_TYPE[slotId])
+              .filter((dt): dt is TPSDocumentType => dt !== undefined)
+              .filter(shouldTranslateForTPSPacket)
+            if (uploadedDocTypes.length === 0) return undefined
+            return {
+              uploadedDocTypes,
+              signerName: `${v('given_name')} ${v('family_name')}`.trim(),
+              signerAddress: [
+                data.manual.us_address_street || v('us_address_street'),
+                data.manual.us_address_city || v('us_address_city'),
+                data.manual.us_address_state || v('us_address_state'),
+                data.manual.us_address_zip || v('us_address_zip'),
+              ].filter(Boolean).join(', '),
+              signatureDataUrl: signatureData?.dataUrl ?? null,
+              brainMerged: centralBrainStatus === 'ready' && centralBrainResult
+                ? centralBrainResult.merged
+                : null,
+            }
+          })(),
         }),
       })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
