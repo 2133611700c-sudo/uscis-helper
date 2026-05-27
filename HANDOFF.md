@@ -437,3 +437,5 @@ translation-review-gate: 1/1 PASSED 56.3s (prior session)
 - Test count: 2092/2092
 - Type errors: 0
 - Gates: 13/13 PASS — docs/reports/P7_GATES_VERIFICATION_2026-05-27.md
+
+**Security patch 2026-05-27b:** auto_grant_on_new_table in extensions schema, search_path hardened.
