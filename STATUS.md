@@ -1,5 +1,5 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 39h — fix booklet-only E2E `tps-generate-cta` (manual-slot brain/merge routing)
+**Updated:** 2026-05-27 Session 39i — stale session banner + mobile UX fixes
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
