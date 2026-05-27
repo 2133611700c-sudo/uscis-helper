@@ -3,6 +3,24 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 32: DOB fixture proof — passportBooklet.dob.test.ts
+
+### What changed
+- New: `apps/web/src/lib/tps/modules/__tests__/passportBooklet.dob.test.ts`
+  - 14 unit tests proving `parseUaDate` + label-search pipeline for all booklet DOB formats:
+    - Full Ukrainian written-out month: `"25 червня 1986 року"` → `1986-06-25`
+    - Full Russian written-out month: `"13 августа 1960"` → `1960-08-13`
+    - Numeric DD.MM.YYYY / DD/MM/YYYY / DD-MM-YYYY
+    - Abbreviated bilingual OCR: `"13 CEP / AUG 60"` → `1960-08-13` (Vision look-alike)
+    - 2-digit year resolution (>30 = 1900s, ≤30 = 2000s)
+    - Missing/garbage/unparseable → warning emitted, no dob field
+  - Proves `passes=["date_parsed"]`, `review_required=true`, `source_zone="booklet_label_dob"`
+
+### Verified
+- 14/14 new tests pass. Total: 2033/2033.
+
+---
+
 ## 2026-05-26 — Session 32: province_of_birth double-fix (normalizeProvince + checkGeography)
 
 ### What changed
