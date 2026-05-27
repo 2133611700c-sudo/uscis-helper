@@ -1,7 +1,14 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 37 — Translation audit complete; all e2e GREEN on production
-**Status:** OPERATIONAL (deployed 6ddce4a; full Ukrainian passport translation verified end-to-end on production)
-**Scope:** P0–P7 complete. 13/13 gates PASS. 2092/2092 unit tests pass. 0 type errors. e2e: 5/5 multi-sample + review-gate GREEN.
+**Updated:** 2026-05-27 Session 38 — Removed manual identity entry (auto-fill rule) + purged real PII from site
+**Status:** DEPLOYING (auto-fill-only model; manual identity fields removed; e2e verification pending prod deploy)
+**Scope:** P0–P7 complete. 2092/2092 unit pass. 0 type errors.
+
+## Session 38 (2026-05-27)
+
+- `VERIFIED(local)` Removed real-PII example placeholders from live site (Sergii/FU262473/06-25-1986/Serhiiovych). Auto-fill product rule restored.
+- `VERIFIED(local)` Removed 4 manual identity FieldInputs (given_name/dob/passport_number/last_entry_date) from Step-5 ReviewManual — duplicated ReviewOcr rows which have "Изменить". Field→doc map: given_name/passport# ← загранпаспорт MRZ; dob ← passport/booklet/EAD; last_entry_date ← I-94; patronymic/birthplace ← booklet; address ← DL; phone/email/marital ← typed (not on docs).
+- `VERIFIED(local)` "Изменить" writes to synthetic 'manual' slot under base key → flows to gate/forms/translation. Fixes earlier *_manual key mismatch that lost the given name in translation.
+- `UNVERIFIED` e2e on prod — pending deploy. Test on site: upload загранпаспорт + I-94 + booklet at Step 4, confirm given_name auto-fills from MRZ and Step-5 has no blank manual identity boxes.
 
 ## Session 37 — Ukrainian passport translation: VERIFIED on production (2026-05-27)
 

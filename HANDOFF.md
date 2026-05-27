@@ -1,6 +1,14 @@
-# HANDOFF — Session 36 (2026-05-27)
+# HANDOFF — Session 38 (2026-05-27)
 
-## What was done this session
+## Session 38 — auto-fill-only model + PII purge (this commit)
+- **Owner directive**: everything auto-filled from documents; NO manual identity entry; only an "Изменить" button on recognized values. phone/email/marital_status stay typed (not on any document).
+- Removed real-PII placeholders from the LIVE site (Sergii/FU262473/06-25-1986/Serhiiovych) + from e2e test files → synthetic values.
+- Removed 4 manual identity FieldInputs from Step-5 ReviewManual (given_name/dob/passport_number/last_entry_date) — they duplicated ReviewOcr rows. Removed *_manual keys from WizardData.manual + buildDraftAnswers.
+- ReviewOcr edit buttons now have stable testids `tps-ocr-edit-<key>`; editing writes to synthetic 'manual' slot under base key → gate/forms/translation. Fixes the *_manual key mismatch that lost the given name in the translation.
+- **How to verify on prod after deploy**: Step 4 upload загранпаспорт (MRZ) + I-94 + booklet → Step 5 shows recognized values with "Изменить", NO blank identity inputs. given_name auto-fills from passport MRZ.
+- 2092/2092 unit, 0 type errors. e2e pending prod run.
+
+## What was done in Session 36
 
 ### P0 (COMPLETE — prior session, reconfirmed)
 - P0 Playwright e2e proof: fresh ZIP with Translation_Internal_Passport.html (2759 bytes) + Certification_Translation.html (1387 bytes). translation-proof.json written.
