@@ -814,6 +814,55 @@ export function runPassportBookletModule(
     warnings.push('booklet_birth_place_missing')
   }
 
+  // ── Issuing authority (Орган, що видав) ────────────────────────────
+  // Translation only — not a USCIS form field but required in USCIS-format translation.
+  // CB contract blocks this from the form path; translationExtractor picks it up.
+  const issuedByRaw = findField([
+    'Орган, що видав', 'Органщовидав', 'Орган що видав',
+    'Орган выдавший', 'Орган,выдавший',
+    'Authority', 'Issued by',
+  ])
+  if (issuedByRaw) {
+    const cleaned = stripBilingualNoise(issuedByRaw.value)
+    if (cleaned && cleaned.length >= 4 && cleaned.length <= 200) {
+      emit(
+        'issued_by',
+        cleaned,
+        cleaned,
+        issuedByRaw.sourceLine,
+        'booklet_label_issued_by',
+      )
+    } else {
+      warnings.push('booklet_issued_by_rejected_length')
+    }
+  } else {
+    warnings.push('booklet_issued_by_missing')
+  }
+
+  // ── Date of issue (Дата видачі) ─────────────────────────────────────
+  // Translation only — not a USCIS form field but required in USCIS-format translation.
+  const dateOfIssueRaw = findField([
+    'Дата видачі', 'Датавидачі', 'Дата видачи', 'Дата выдачи',
+    'Date of issue', 'Date issued',
+  ])
+  if (dateOfIssueRaw) {
+    const iso = parseUaDate(dateOfIssueRaw.value)
+    if (iso) {
+      emit(
+        'passport_date_of_issue',
+        dateOfIssueRaw.value,
+        iso,
+        dateOfIssueRaw.sourceLine,
+        'booklet_label_date_of_issue',
+        ['date_parsed'],
+      )
+    } else {
+      warnings.push('booklet_date_of_issue_unparseable')
+    }
+  } else {
+    warnings.push('booklet_date_of_issue_missing')
+  }
+
   // Nationality + issuing country are always Ukraine for this document.
   emit(
     'country_of_nationality',

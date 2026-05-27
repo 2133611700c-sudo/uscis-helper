@@ -3,6 +3,28 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 33: P0.5–P2 translation pipeline (extractor, safety guard, OCR fields, ADRs)
+
+### What changed
+- `docs/adr/ADR-008-provider-architecture.md` (NEW): Provider stack locked — Vision/DocAI/DeepSeek/CB/KMU-55/Renderer/ReviewGate roles and pipeline sequence
+- `docs/adr/ADR-009-provider-data-policy.md` (NEW): PII handling rules — image bytes only to Google; text only to DeepSeek; image retention OPEN items
+- `apps/web/src/lib/tps/translationExtractor.ts` (NEW): Translation Mode field extraction. Bypasses CB form contract (given_name/sex/passport_number valid for translation). Priority: cb_merged → cb_rejected → manual. formatDobForTranslation() handles all date formats.
+- `apps/web/src/lib/tps/translationCandidateSafetyGuard.ts` (NEW): Pre-renderer firewall. Blocks forbidden phrases, Militsiya→Police, Middle Name, Cyrillic leaks, label-as-value.
+- `apps/web/src/lib/tps/__tests__/translationExtractor.test.ts` (NEW): 21 tests
+- `apps/web/src/lib/tps/__tests__/translationCandidateSafetyGuard.test.ts` (NEW): 20 tests
+- `apps/web/src/lib/tps/translationBridge.ts`: wired translationExtractor + safety guard into translateBookletFromBrain. Fixed DOB format in fallback mapTPSToBookletFields path.
+- `apps/web/src/lib/tps/packetBuilder.ts`: added brainRejected + brainManual to TranslationOptions
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`: passes centralBrainResult.rejected + data.manual to _translation block
+- `apps/web/src/lib/tps/modules/passportBooklet.ts`: added issued_by + passport_date_of_issue label-based extraction
+- `apps/web/src/lib/tps/ocr/documentContracts.ts`: issued_by + passport_date_of_issue explicitly in booklet forbidden_fields (form contract stays strict; translationExtractor uses rejected[])
+- Updated test: translationBridge.brain.test.ts — DOB assertion updated from ISO to "June 25, 1986"
+
+### Verified
+- 2092/2092 tests pass
+- 0 type errors
+
+---
+
 ## 2026-05-27 — Session 32: translation e2e proof — unzip + HTML verification in Playwright
 
 ### What changed

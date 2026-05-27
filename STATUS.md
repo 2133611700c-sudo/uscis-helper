@@ -1,7 +1,23 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-26 Session 32 — province_of_birth fully fixed
-**Status:** DEGRADED (pending deploy)
-**Scope:** Central Brain 5-file implementation complete. 2016/2016 tests pass. Typecheck clean. Not yet deployed.
+**Updated:** 2026-05-27 Session 33 — P0.5–P2 translation pipeline complete
+**Status:** DEGRADED (P3 Review Gate not built — production blocker)
+**Scope:** Translation pipeline P0.5–P2 complete. 2092/2092 tests pass. 0 type errors. Not yet deployed.
+
+## Session 33 Verified Changes (2026-05-27)
+
+- `VERIFIED` ADR-008: Provider architecture locked (docs/adr/ADR-008-provider-architecture.md)
+- `VERIFIED` ADR-009: Provider data policy locked (docs/adr/ADR-009-provider-data-policy.md)
+- `VERIFIED` translationExtractor.ts: Translation Mode field extraction (P1)
+  - bypasses CB form contract for given_name/sex/passport_number (valid for translation)
+  - formatDobForTranslation: YYYY-MM-DD/MM/DD/YYYY/DD.MM.YYYY → "June 25, 1986"
+- `VERIFIED` translateBookletFromBrain: uses translationExtractor + rejected[] + manual{}
+- `VERIFIED` TranslationCandidateSafetyGuard: blocks forbidden phrases, Middle Name, Police, Cyrillic leak (P1.5)
+- `VERIFIED` passportBooklet.ts: issued_by (Орган що видав) + passport_date_of_issue (Дата видачі) extracted (P2)
+- `VERIFIED` documentContracts.ts: issued_by + passport_date_of_issue explicitly in booklet forbidden_fields (translationExtractor picks up from rejected[])
+- `VERIFIED` 2092/2092 tests pass, 0 type errors
+- `OPEN` P3: TranslationReviewGate (NOT BUILT — production blocker per 8 CFR §103.2(b)(3))
+- `OPEN` Image retention audit: temp files, Vercel logs, Supabase ZIP storage (ADR-009 OPEN items)
+- `OPEN` DeepSeek privacy disclosure UI (pre-production requirement)
 
 ## Session 31 Verified Changes
 
