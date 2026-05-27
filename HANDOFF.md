@@ -29,9 +29,9 @@ Three separate bugs causing `province_of_birth` to be falsely flagged as halluci
 4. ~~P4: Translation Bridge v0 + wire~~ — done. `translateBookletFromBrain()` built + wired into generate-packet pipeline. 2051/2051 tests. ZIP now contains translation HTML when booklet uploaded.
 
 ## What remains after Session 32
-- Playwright e2e: verify Translation_Internal_Passport.html appears in generated ZIP (unzip + grep for surname).
+- Run headed Playwright to get live translation-proof.json with real ZIP evidence.
 - UI: review screen showing translation draft before signer certification (P4 v1).
-- Content Guard check: verify no forbidden phrases in translation HTML output.
+- Content Guard: automated scan of translation output for forbidden phrases already enforced via `renderPassportBooklet` `forbidden_phrase_violations` check in packetBuilder.
 
 ---
 
