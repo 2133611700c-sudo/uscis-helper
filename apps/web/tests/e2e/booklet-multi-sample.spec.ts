@@ -218,12 +218,15 @@ for (const doc of BOOKLET_DOCS) {
       await page.goto('/en/services/tps-ukraine/start?paid=1')
 
       // ── Translation Preview Gate ──────────────────────────────────────────
+      // Must wait for React to rehydrate + ownerChecked to resolve after goto.
+      // count() fires immediately (no timeout) — use toBeVisible with timeout instead.
       const reviewBtn = page.getByTestId('tps-review-translation-btn')
-      if ((await reviewBtn.count()) === 0) {
-        result.error = 'tps-review-translation-btn not found — translation not triggered'
+      try {
+        await expect(reviewBtn).toBeVisible({ timeout: 20_000 })
+      } catch {
+        result.error = 'tps-review-translation-btn not found — translation not triggered (timeout 20s)'
         throw new Error(result.error)
       }
-      await expect(reviewBtn).toBeVisible({ timeout: 20_000 })
 
       const previewResp = page.waitForResponse(
         (r) => r.url().includes('/api/tps/translation/preview') && r.request().method() === 'POST',
