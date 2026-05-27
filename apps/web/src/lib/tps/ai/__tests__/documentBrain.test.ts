@@ -345,6 +345,32 @@ describe('validateBrainField — deterministic rules', () => {
     expect(f.final_value).toBe('07/13/1985')
   })
 
+  it('accepts DOB "25 червня 1986 року" (Ukrainian full month + optional year word)', () => {
+    const f = baseField('25 червня 1986 року')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('06/25/1986')
+  })
+
+  it('accepts DOB "25 червня 1986" (Ukrainian full month without year word)', () => {
+    const f = baseField('25 червня 1986')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(true)
+    expect(f.final_value).toBe('06/25/1986')
+  })
+
+  it('rejects DOB with invalid Ukrainian month word', () => {
+    const f = baseField('25 червеня 1986 року')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(false)
+  })
+
+  it('rejects out-of-range day for Ukrainian textual DOB', () => {
+    const f = baseField('32 червня 1986 року')
+    const res = validateBrainField('dob', f)
+    expect(res.ok).toBe(false)
+  })
+
   it('accepts DOB "01 ЯНВ 1985" (Russian Cyrillic month)', () => {
     const f = baseField('01 ЯНВ 1985')
     const res = validateBrainField('dob', f)

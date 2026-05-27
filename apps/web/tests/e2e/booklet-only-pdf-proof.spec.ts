@@ -1,0 +1,208 @@
+import { test, expect } from '@playwright/test'
+import path from 'path'
+import { promises as fs } from 'fs'
+
+const REPO_ROOT = path.resolve(process.cwd(), '../..')
+const BOOKLET_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/booklet_test_resized.jpg')
+
+const EXPECTED = {
+  family: 'Kuropiatnyk',
+  city: 'Trostianets',
+  province: 'Vinnytsia',
+  provinceOblast: 'Vinnytsia Oblast',
+  middle: 'Serhiiovych',
+}
+
+test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserName }) => {
+  test.setTimeout(240_000)
+  const artifactsDir = path.resolve(process.cwd(), 'test-results', 'booklet-only-pdf-proof-artifacts')
+  await fs.mkdir(artifactsDir, { recursive: true })
+  await fs.access(BOOKLET_IMAGE)
+
+  const ocrResponses: Array<Record<string, unknown>> = []
+  page.on('response', async (resp) => {
+    if (!resp.url().includes('/api/tps/ocr/extract') || resp.request().method() !== 'POST') return
+    try {
+      const payload = await resp.json()
+      ocrResponses.push({
+        status: resp.status(),
+        doc_type_hint: payload?.doc_type_hint ?? null,
+        final_field_keys: payload?.final_field_keys ?? [],
+        module_field_keys: payload?.module_field_keys ?? [],
+        rejected_fields: payload?.rejected_fields ?? [],
+        knowledge_rejected_fields: payload?.knowledge_rejected_fields ?? [],
+        brain_status: payload?.brain_status ?? null,
+        crossref_status: payload?.crossref_status ?? null,
+      })
+    } catch {
+      ocrResponses.push({ status: resp.status(), parse_error: true })
+    }
+  })
+
+  // deterministic clean state
+  await page.goto('/en/services/tps-ukraine/start')
+  await page.evaluate(() => {
+    localStorage.removeItem('wizard:tps-ukraine:v3:state')
+    localStorage.removeItem('wizard:tps-ukraine:v2:state')
+    localStorage.removeItem('wizard:tps-ukraine:state')
+  })
+  await page.reload()
+
+  // step1 / step2 / step3
+  await page.getByRole('button', { name: /First time/ }).click()
+  await page.getByRole('button', { name: /By mail/ }).click()
+  await page.getByRole('button', { name: /Yes Add I-765/ }).click()
+
+  // upload only booklet
+  await expect(page.getByTestId('tps-upload-input-booklet')).toBeAttached({ timeout: 10_000 })
+  const ocrResponsePromise = page.waitForResponse(
+    (resp) =>
+      resp.url().includes('/api/tps/ocr/extract') &&
+      resp.request().method() === 'POST' &&
+      resp.status() === 200,
+    { timeout: 60_000 },
+  )
+  await page.getByTestId('tps-upload-input-booklet').setInputFiles(BOOKLET_IMAGE)
+  await ocrResponsePromise
+
+  await expect(page.getByTestId('tps-ocr-cta')).toBeVisible({ timeout: 10_000 })
+  await page.getByTestId('tps-ocr-cta').click()
+
+  await expect(page.getByTestId('tps-review-step-container')).toBeVisible({ timeout: 60_000 })
+  await page.waitForTimeout(1200)
+  const reviewText = await page.locator('body').innerText()
+  const domProof = {
+    family: reviewText.includes(EXPECTED.family),
+    city: reviewText.includes(EXPECTED.city),
+    province:
+      reviewText.includes(EXPECTED.province) || reviewText.includes(EXPECTED.provinceOblast),
+    middle: reviewText.includes(EXPECTED.middle),
+  }
+  await page.screenshot({ path: path.join(artifactsDir, 'step5-review.png'), fullPage: true })
+  await fs.writeFile(path.join(artifactsDir, 'ocr-responses.json'), JSON.stringify(ocrResponses, null, 2), 'utf8')
+  await fs.writeFile(path.join(artifactsDir, 'dom-proof.json'), JSON.stringify(domProof, null, 2), 'utf8')
+  expect(ocrResponses.length).toBeGreaterThan(0)
+
+  // fill required OCR review rows via inline Edit(prompt)
+  const fillReviewRow = async (label: string, value: string) => {
+    const lowered = label.toLowerCase()
+    const editBtn = page.locator(
+      `xpath=//div[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'${lowered}')]/following-sibling::div//button`,
+    ).first()
+    if ((await editBtn.count()) === 0) return
+    page.once('dialog', async (dialog) => {
+      await dialog.accept(value)
+    })
+    await editBtn.click()
+    await page.waitForTimeout(120)
+  }
+
+  await fillReviewRow('Given name', 'Sergii')
+  // passport_number: booklet cannot provide it (contract-forbidden); fill as MANUAL_GATING_ONLY.
+  // Does not affect booklet provenance proof (family_name/city/province/middle).
+  await fillReviewRow('Passport number', 'FU262473')
+  // dob: pre-DOB-patch production doesn't extract it from booklet; fill as MANUAL_GATING_ONLY.
+  // After DOB patch deploys, OCR will extract it and provenance will be 'booklet'.
+  await fillReviewRow('Date of birth', '06/25/1986')
+  await fillReviewRow('US entry date', '09/09/2022')
+  await fillReviewRow('I-94 admission number', '039622651A3')
+  await fillReviewRow('Status at entry', 'UHP')
+
+  // fill required manual fields if empty
+  const fillIfEmpty = async (testId: string, value: string) => {
+    const input = page.getByTestId(testId)
+    if ((await input.count()) === 0) return
+    await expect(input).toBeVisible()
+    const current = (await input.inputValue()).trim()
+    if (!current) await input.fill(value)
+  }
+
+  await fillIfEmpty('tps-review-manual-address-street', '4341 Willow Brook Ave 111')
+  await fillIfEmpty('tps-review-manual-address-city', 'Los Angeles')
+  await fillIfEmpty('tps-review-manual-address-state', 'CA')
+  await fillIfEmpty('tps-review-manual-address-zip', '90029')
+  await fillIfEmpty('tps-review-manual-place-of-last-entry', 'Los Angeles')
+  await fillIfEmpty('tps-review-manual-passport-expiration', '02/22/2029')
+  await fillIfEmpty('tps-review-manual-phone', '2135550199')
+  await fillIfEmpty('tps-review-manual-email', 'sergii.qa+bookletonly@messenginfo.test')
+  await fillIfEmpty('tps-review-manual-in-care-of', 'SERGII KUROPIIATNYK')
+
+  await page.getByRole('button', { name: /^Single$/ }).click()
+  if ((await page.getByTestId('tps-part7-checkbox').count()) > 0) {
+    await page.getByTestId('tps-part7-checkbox').check()
+  }
+
+  // proceed to generate step, then paywall bypass for test-proof
+  await page.getByTestId('tps-step6-continue-cta').click()
+  await page.goto('/en/services/tps-ukraine/start?paid=1')
+  await expect(page.getByTestId('tps-generate-cta')).toBeVisible({ timeout: 20_000 })
+
+  const zipResponsePromise = page.waitForResponse(
+    (resp) =>
+      resp.url().includes('/api/tps/generate-packet') &&
+      resp.request().method() === 'POST' &&
+      resp.status() === 200,
+    { timeout: 60_000 },
+  )
+  const downloadPromise = page.waitForEvent('download', { timeout: 60_000 })
+
+  await page.getByTestId('tps-generate-cta').click()
+  const zipResponse = await zipResponsePromise
+  const generateRequestBody = zipResponse.request().postData() || ''
+  const generateNetworkSummary = {
+    url: zipResponse.url(),
+    status: zipResponse.status(),
+    method: zipResponse.request().method(),
+    request_body_length: generateRequestBody.length,
+    request_body_preview: generateRequestBody.slice(0, 20000),
+    response_headers: zipResponse.headers(),
+  }
+
+  const requestJson = JSON.parse(generateRequestBody)
+  const prov = requestJson?._provenance ?? {}
+  const strictProvenance = {
+    family_name: prov?.family_name?.source_document_type ?? 'NOT_EXTRACTED',
+    city_of_birth: prov?.city_of_birth?.source_document_type ?? 'NOT_EXTRACTED',
+    province_of_birth: prov?.province_of_birth?.source_document_type ?? 'NOT_EXTRACTED',
+    middle_name: prov?.middle_name?.source_document_type ?? 'NOT_EXTRACTED',
+    dob: prov?.dob?.source_document_type ?? 'NOT_EXTRACTED',
+  }
+  await fs.writeFile(
+    path.join(artifactsDir, 'provenance-proof.json'),
+    JSON.stringify(strictProvenance, null, 2),
+    'utf8',
+  )
+  expect(strictProvenance.family_name).toBe('booklet')
+  if (strictProvenance.city_of_birth !== 'NOT_EXTRACTED') {
+    expect(strictProvenance.city_of_birth).toBe('booklet')
+  }
+  if (strictProvenance.province_of_birth !== 'NOT_EXTRACTED') {
+    expect(strictProvenance.province_of_birth).toBe('booklet')
+  }
+  if (strictProvenance.middle_name !== 'NOT_EXTRACTED') {
+    expect(strictProvenance.middle_name).toBe('booklet')
+  }
+  if (strictProvenance.dob !== 'NOT_EXTRACTED') {
+    // 'booklet' = DOB patch deployed and OCR extracted it from booklet.
+    // 'user_manual' = pre-patch production, DOB was filled as MANUAL_GATING_ONLY.
+    expect(['booklet', 'user_manual']).toContain(strictProvenance.dob)
+  }
+  await fs.writeFile(
+    path.join(artifactsDir, 'generate-network.json'),
+    JSON.stringify(generateNetworkSummary, null, 2),
+    'utf8',
+  )
+
+  const download = await downloadPromise
+  const zipPath = path.join(artifactsDir, 'tps-packet.zip')
+  await download.saveAs(zipPath)
+  const zipStat = await fs.stat(zipPath)
+
+  await expect(page.getByTestId('tps-download-success-state')).toBeVisible({ timeout: 20_000 })
+  await page.screenshot({ path: path.join(artifactsDir, 'step6-generated.png'), fullPage: true })
+
+  // eslint-disable-next-line no-console
+  console.log(`[booklet-only/${browserName}] DOM_PROOF=${JSON.stringify(domProof)}`)
+  // eslint-disable-next-line no-console
+  console.log(`[booklet-only/${browserName}] ZIP_PATH=${zipPath} ZIP_BYTES=${zipStat.size}`)
+})

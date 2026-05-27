@@ -183,6 +183,29 @@ describe('buildProvenanceFromWizard', () => {
     expect(map.last_entry_date.confidence).toBe(0.85)
   })
 
+  it('preserves booklet OCR provenance for booklet slot fields', () => {
+    const merged: Record<string, ProvenanceInput> = {
+      family_name: {
+        value: 'Kuropiatnyk',
+        source: 'dual_ocr_crossref',
+        doc_slot: 'booklet',
+        confidence: 0.9,
+        source_field: 'family_name',
+      },
+      city_of_birth: {
+        value: 'Trostianets',
+        source: 'dual_ocr_crossref',
+        doc_slot: 'booklet',
+        confidence: 0.9,
+        source_field: 'city_of_birth',
+      },
+    }
+    const map = buildProvenanceFromWizard(merged, {}, ['family_name', 'city_of_birth'])
+    expect(map.family_name.source_document_type).toBe('booklet')
+    expect(map.city_of_birth.source_document_type).toBe('booklet')
+    expect(map.family_name.value_status).toBe('auto_with_source')
+  })
+
   it('marks user correction when manual override differs from OCR', () => {
     const merged: Record<string, ProvenanceInput> = {
       family_name: passportField('family_name', 'TESTENKO'),
