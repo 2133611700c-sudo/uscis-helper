@@ -1,5 +1,5 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 39f — e2e 10/10 GREEN on production; test flakiness fix for non-identity timeout
+**Updated:** 2026-05-27 Session 39g — CRITICAL: fix wizard crash on mailing_different checkbox
 **Status:** PRODUCTION (auto-fill-only model live; all e2e tests passing on production)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
