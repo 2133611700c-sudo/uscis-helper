@@ -66,6 +66,12 @@ export interface TranslationOptions {
   brainRejected?: RejectedField[] | null
   /** Manual wizard entries — lowest-priority fallback for translation fields. */
   brainManual?: Record<string, string> | null
+  /**
+   * User confirmed review of translation draft per 8 CFR §103.2(b)(3).
+   * Translation is EXCLUDED from ZIP when false or absent.
+   * Set by TranslationReviewGate component after user checks the certification checkbox.
+   */
+  reviewConfirmed?: boolean
 }
 
 export async function buildPacket(
@@ -169,7 +175,10 @@ export async function buildPacket(
                 signerOpts.signatureDataUrl,
                 translationOpts.controllingSpellings || {},
               )
-        if (result && result.violations.length === 0) {
+        // reviewConfirmed: true required per 8 CFR §103.2(b)(3) certification boundary.
+        // Translation EXCLUDED from ZIP until user reviews and confirms in TranslationReviewGate.
+        const reviewConfirmed = translationOpts.reviewConfirmed === true
+        if (result && result.violations.length === 0 && reviewConfirmed) {
           const filename = translationFileName(docType)
           // HTML format: professional layout, printable, includes certification
           zip.file(filename.replace('.pdf', '.html'), result.translation_html)

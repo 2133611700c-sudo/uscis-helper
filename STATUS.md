@@ -15,7 +15,7 @@
 - `VERIFIED` passportBooklet.ts: issued_by (Орган що видав) + passport_date_of_issue (Дата видачі) extracted (P2)
 - `VERIFIED` documentContracts.ts: issued_by + passport_date_of_issue explicitly in booklet forbidden_fields (translationExtractor picks up from rejected[])
 - `VERIFIED` 2092/2092 tests pass, 0 type errors
-- `OPEN` P3: TranslationReviewGate (NOT BUILT — production blocker per 8 CFR §103.2(b)(3))
+- `VERIFIED` P3: TranslationReviewGate built + wired. reviewConfirmed: true required in packetBuilder before translation enters ZIP. /api/tps/translation/preview endpoint added.
 - `OPEN` Image retention audit: temp files, Vercel logs, Supabase ZIP storage (ADR-009 OPEN items)
 - `OPEN` DeepSeek privacy disclosure UI (pre-production requirement)
 
