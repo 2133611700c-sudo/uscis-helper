@@ -27,6 +27,8 @@ import {
   type TPSDocumentType,
 } from './translationBridge'
 import type { MergedField, RejectedField } from './centralBrain'
+import { generateTranslationPDF } from '@/lib/packet/pdf'
+import type { PacketInput } from '@/lib/packet/types'
 
 // Edition dates verified against uscis.gov on 2026-05-10 and stamped on the
 // PDF footers. If USCIS publishes a new edition, scripts/uscis/refresh_tps_forms.sh
@@ -183,6 +185,21 @@ export async function buildPacket(
           // HTML format: professional layout, printable, includes certification
           zip.file(filename.replace('.pdf', '.html'), result.translation_html)
           zip.file(CERTIFICATION_FILENAME.replace('.pdf', '.html'), result.certification_html)
+          // PDF format: bureau-style 2-page PDF (translation + certification)
+          if (result._rawFields) {
+            try {
+              const pdfInput = buildTranslationPacketInput(
+                result._rawFields,
+                result._signerName ?? '',
+                result._signerAddress ?? '',
+                docType,
+              )
+              const pdfBuffer = await generateTranslationPDF(pdfInput)
+              zip.file(filename, pdfBuffer)
+            } catch (pdfErr) {
+              console.warn(`[packetBuilder] PDF generation failed for ${docType}, HTML only`, pdfErr)
+            }
+          }
           translations.push({ docType, filename })
         }
       } catch {
@@ -242,6 +259,48 @@ export async function buildPacket(
       : { applied: 0, skipped: 0, firstSkips: [] },
     auditSummary,
     translations,
+  }
+}
+
+function buildTranslationPacketInput(
+  rawFields: Record<string, string>,
+  signerName: string,
+  signerAddress: string,
+  docType: TPSDocumentType,
+): PacketInput {
+  const scopeMap: Partial<Record<TPSDocumentType, string>> = {
+    passportBooklet: 'Ukrainian Internal Passport (Book Format)',
+    passport: 'Ukrainian International Passport',
+  }
+  return {
+    scopeTitle: scopeMap[docType] ?? `Ukrainian Document (${docType})`,
+    documentType: 'ua_passport_booklet',
+    sessionId: `tps-pdf-${Date.now()}`,
+    fields: Object.entries(rawFields)
+      .filter(([, v]) => v && v.trim())
+      .map(([field, value]) => ({
+        field,
+        source_label: field,
+        source_zone: 'tps_packet',
+        bbox: [0, 0, 0, 0] as [number, number, number, number],
+        raw_value: value,
+        normalized_value: value,
+        language_layer: 'unknown' as const,
+        confidence: 1.0,
+        review_required: false,
+      })),
+    sourceTraces: [],
+    certificationRecord: {
+      signer_full_name: signerName,
+      language_pair_confirmed: true,
+      statement:
+        'I certify that I am competent in both the Ukrainian and English languages, and that the above is a true and accurate translation of the document submitted.',
+      signature_typed_name: signerName,
+      signed_at: new Date().toISOString(),
+      source_language: 'Ukrainian',
+      address: signerAddress,
+      certification_version: '8cfr_103_2_b_3_v1',
+    },
   }
 }
 
