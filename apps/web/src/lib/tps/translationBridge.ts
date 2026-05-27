@@ -287,6 +287,89 @@ ${sigBlock}
 </body></html>`
 }
 
+// ── Central Brain → Translation (v0) ─────────────────────────────────────────
+
+import type { MergedField } from './centralBrain'
+
+/**
+ * Build a booklet translation directly from Central Brain merged output.
+ *
+ * Central Brain already applied: KMU-55 transliteration, oblast normalization,
+ * agency glossary resolution, hallucination guard. Values in `merged` are
+ * already normalized English — no re-transliteration needed here.
+ *
+ * 8 CFR §103.2(b)(3): AI-generated output is a DRAFT. The signer certifies
+ * as translator. Messenginfo does NOT certify translations.
+ */
+export function translateBookletFromBrain(
+  merged: Record<string, MergedField>,
+  opts: {
+    signerName: string
+    signerAddress: string
+    signatureDataUrl?: string | null
+  },
+): {
+  translation_html: string
+  certification_html: string
+  violations: string[]
+} | null {
+  const get = (field: string): string => merged[field]?.value ?? ''
+
+  const city = get('city_of_birth')
+  const province = get('province_of_birth')
+  const placeOfBirth = [city, province, 'Ukraine'].filter(Boolean).join(', ')
+
+  const sex = get('sex')
+  const sexLabel = sex === 'M' ? 'Male' : sex === 'F' ? 'Female' : sex
+
+  const fieldMap: Record<string, string> = {
+    document_type:    'Internal Passport (Booklet) of Ukraine',
+    passport_number:  get('passport_number'),
+    surname:          get('family_name'),
+    given_name:       get('given_name'),
+    patronymic:       get('middle_name'),
+    date_of_birth:    get('dob'),
+    place_of_birth:   placeOfBirth,
+    sex:              sexLabel,
+    issuing_authority: get('issued_by'),
+    date_of_issue:    get('passport_date_of_issue'),
+  }
+
+  const fields: PassportBookletRenderField[] = Object.entries(fieldMap)
+    .filter(([, v]) => v && v.trim())
+    .map(([key, value]) => ({
+      field: key,
+      label: PASSPORT_BOOKLET_FIELD_LABELS[key] ?? key,
+      value,
+      confirmed: true,
+    }))
+
+  // Need at least surname + one other meaningful field to produce a useful translation
+  if (!fields.some((f) => f.field === 'surname')) return null
+
+  const input: PassportBookletRenderInput = {
+    session_id: `brain-${Date.now()}`,
+    fields,
+    translation_date: new Date().toLocaleDateString('en-US', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    }),
+    signer_full_name: opts.signerName,
+    signer_address: opts.signerAddress,
+    source_language: 'Ukrainian',
+  }
+
+  const result = renderPassportBooklet(input)
+  return {
+    translation_html: renderTranslationHTML(result, input, opts.signatureDataUrl ?? null),
+    certification_html: renderCertificationHTML(
+      input,
+      result.certification_block.join('\n'),
+      opts.signatureDataUrl ?? null,
+    ),
+    violations: result.forbidden_phrase_violations,
+  }
+}
+
 /**
  * Checks if the TPS packet is complete regarding translations.
  * Returns list of missing translations (empty = all good).
