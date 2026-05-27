@@ -23,8 +23,8 @@ Three separate bugs causing `province_of_birth` to be falsely flagged as halluci
 - Knowledge package tests: 6 oblast regression cases all pass.
 
 ### Exact next task
-1. Verify production API after push: `province_of_birth` should return `hallucination_risk: 'none'` and value `"Vinnytsia Oblast"` (not "Vinnytsia Oblast Oblast") for input "Вінницька область".
-2. P2: DOB fixture proof — booklet image where handwritten date is OCR-readable.
+1. ~~Verify production API after push~~ — done, SHA `d76345a` live.
+2. ~~P2: DOB fixture proof~~ — done, `passportBooklet.dob.test.ts` 14/14 pass.
 3. P3: Add direct Playwright network capture for `/api/tps/brain/merge` call.
 4. P4: Translation Bridge v0.
 
