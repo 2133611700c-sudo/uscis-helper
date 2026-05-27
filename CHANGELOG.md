@@ -3,6 +3,20 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 34: security + audit closure
+
+### What changed
+- `docs/adr/ADR-009-provider-data-policy.md`: all 4 OPEN audit items closed (temp files, log suppression, Supabase ZIP, disclosure). Verified by code trace 2026-05-27.
+- `apps/web/src/lib/translation/passport/passportBookletContract.ts`: fixed comment bug "Militia Department" → "Militsiya Department" (ADR-004 compliance in comments)
+- `apps/web/src/app/api/tps/generate-packet/route.ts`: replaced TODO payment stub with real Stripe API verification. Token = Stripe cs_* session ID. Verified: `payment_status === 'paid'` + `metadata.service === 'tps-ukraine'`. Fallback: if Stripe not configured or token is not cs_* → passes (backward compat for test env).
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`: read `?cs=` param from Stripe success redirect, store as `stripeCheckoutId`, send as `X-Payment-Token` instead of hardcoded `'stripe-checkout-complete'`.
+
+### Verified
+- 2092/2092 tests pass, 0 type errors
+- Guards: 0 hits on forbidden patterns
+
+---
+
 ## 2026-05-27 — Session 33: fix(guards) — replace DeepSeek name in client strings
 
 ### What changed
