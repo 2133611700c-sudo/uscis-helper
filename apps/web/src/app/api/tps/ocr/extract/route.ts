@@ -478,30 +478,6 @@ export async function POST(req: NextRequest) {
     // fallback inside case 'passport' when MRZ failed.
     case 'booklet': {
       moduleResult = runPassportBookletModule(result, { document_id })
-      if (moduleResult.matched) {
-        const hasNumber = moduleResult.fields.some(
-          (f) => f.field === 'passport_number',
-        )
-        if (!hasNumber) {
-          for (const angle of [90, 180, 270] as const) {
-            try {
-              const sharp = (await import('sharp')).default
-              const rotatedBuffer = await sharp(imageBuffer).rotate(angle).jpeg({ quality: 85 }).toBuffer()
-              const rotatedResult = await ocrProvider.extractText({
-                imageBuffer: rotatedBuffer,
-                mimeType: 'image/jpeg',
-              })
-              if (isBlocked(rotatedResult)) continue
-              const tryBooklet = runPassportBookletModule(rotatedResult, { document_id })
-              if (tryBooklet.matched && tryBooklet.fields.some((f) => f.field === 'passport_number')) {
-                moduleResult = tryBooklet
-                effectiveOcrResult = rotatedResult
-                break
-              }
-            } catch { /* rotation failed — use what we have */ }
-          }
-        }
-      }
       // ── Dual-OCR cross-reference for booklet handwritten Cyrillic ──
       if (moduleResult?.matched && process.env.DUAL_OCR_CROSSREF !== 'false') {
         crossrefStatus = 'attempted'

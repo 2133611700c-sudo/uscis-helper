@@ -9,6 +9,12 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 39L (2026-05-27) — fix: remove booklet rotation retry loop (upload hang)
+
+- `VERIFIED(local)` Removed 23-line rotation retry loop from `case 'booklet':` in `route.ts`. Loop ran 3 extra Vision calls (~15-20s) looking for `passport_number`, which is in `forbidden_fields` and gets discarded even if found. Booklet OCR now goes: runPassportBookletModule → dual-OCR crossref → done.
+- `VERIFIED(local)` 0 type errors
+- `UNVERIFIED` Production — deploy pending
+
 ## Session 39k (2026-05-27) — fix: booklet inferred fields + lineMatchesLabel false-positive
 
 - `VERIFIED(local)` `lineMatchesLabel`: "Пол" (sex) no longer matches "Поліграфічний" (printing co.) via short-label token fix

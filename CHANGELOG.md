@@ -3,6 +3,14 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39L: fix: remove booklet rotation retry loop (upload hang)
+
+- **`route.ts` `case 'booklet':`**: Removed 23-line rotation retry loop that ran 3 extra Google Vision calls (90°/180°/270°) looking for `passport_number`. `passport_number` is in booklet `forbidden_fields` — even if found, it's discarded. Loop added 15-20s of dead latency on every booklet upload, causing the UI to hang indefinitely.
+- Booklet OCR flow is now: `runPassportBookletModule` → dual-OCR crossref → break. Expected latency: ~12-15s (was ~35s).
+- **Tests**: 0 type errors.
+
+---
+
 ## 2026-05-27 — Session 39k: fix: booklet inferred fields + lineMatchesLabel false-positive
 
 - **`passportBooklet.ts`**: Added `country_of_birth = 'Ukraine'` inferred emission (alongside existing nationality + issuing country). Booklet module always knows it's a Ukrainian document.
