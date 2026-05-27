@@ -31,9 +31,14 @@
 - 2092/2092 tests pass
 - 0 type errors (npx tsc --noEmit)
 
+### P3 — TranslationReviewGate (COMPLETE)
+- **TranslationReviewGate.tsx**: 4-locale component. Shows translation + certification draft. Requires checkbox before `reviewConfirmed: true`. Back button available.
+- **/api/tps/translation/preview**: POST endpoint for generating translation HTML without ZIP (used by Review Gate)
+- **packetBuilder.ts**: `reviewConfirmed: true` required before translation enters ZIP
+- **TPSWizardV2.tsx**: "Review Translation" button → preview API → TranslationReviewGate modal → on confirm → `translationReviewConfirmed = true` → generate includes translation
+
 ## What was NOT done
 - P2.5: Google Vision/DocAI benchmark (needs 5 real documents — data task)
-- P3: TranslationReviewGate.tsx + packetBuilder integration (CRITICAL — production blocker)
 - P3.5: PDF output decision (HTML serves as-is for now)
 - P4: Multi-sample robustness (data task)
 - P5: Agency glossary expansion
