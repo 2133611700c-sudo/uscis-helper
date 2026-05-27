@@ -216,7 +216,7 @@ const T = {
     s5q: 'Перевірте дані',
     s5h: 'Натисніть «Змінити» якщо щось неправильно',
     s5OcrTitle: '📋 Розпізнані дані',
-    s5ManualTitle: '✏️ Заповніть вручну',
+    s5ManualTitle: '✏️ Перевірте і доповніть',
     s5Generate: 'Згенерувати пакет →',
     s6q: 'Ваш пакет готовий',
     s6PkgTitle: '📦 Що ви отримуєте',
@@ -433,7 +433,7 @@ const T = {
     s5q: 'Проверьте данные',
     s5h: 'Нажмите «Изменить» если что-то неправильно',
     s5OcrTitle: '📋 Распознанные данные',
-    s5ManualTitle: '✏️ Заполните вручную',
+    s5ManualTitle: '✏️ Проверьте и дополните',
     s5Generate: 'Сгенерировать пакет →',
     s6q: 'Ваш пакет готов',
     s6PkgTitle: '📦 Что вы получаете',
@@ -649,7 +649,7 @@ const T = {
     s5q: 'Review the data',
     s5h: 'Tap «Edit» if something is wrong',
     s5OcrTitle: '📋 Extracted data',
-    s5ManualTitle: '✏️ Fill in manually',
+    s5ManualTitle: '✏️ Review and complete',
     s5Generate: 'Generate packet →',
     s6q: 'Your packet is ready',
     s6PkgTitle: '📦 What you get',
@@ -866,7 +866,7 @@ const T = {
     s5q: 'Revise los datos',
     s5h: 'Toque «Editar» si algo está mal',
     s5OcrTitle: '📋 Datos extraídos',
-    s5ManualTitle: '✏️ Llene manualmente',
+    s5ManualTitle: '✏️ Revise y complete',
     s5Generate: 'Generar paquete →',
     s6q: 'Su paquete está listo',
     s6PkgTitle: '📦 Lo que recibe',
@@ -3876,7 +3876,7 @@ function ReviewManual({
       <FieldInput
         label={t.label.city_of_birth}
         placeholder=""
-        tip={locale === 'ru' ? 'Из внутреннего паспорта (книжечка). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З внутрішнього паспорта (книжечка). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'Del pasaporte interno. Cargue en paso 4 → el robot lo llenará.' : 'From internal passport (booklet). Upload at step 4 → robot fills it.'}
+        tip={locale === 'ru' ? 'Из внутреннего паспорта (книжечка). Для формы I-821 пишется без «смт/пгт» — тип поселения автоматически добавляется в перевод паспорта.' : locale === 'uk' ? 'З внутрішнього паспорта (книжечка). Для форми I-821 пишеться без «смт/пгт» — тип поселення автоматично додається до перекладу паспорта.' : locale === 'es' ? 'Del pasaporte interno. Para I-821 sin prefijo «смт/пгт» — el tipo de asentamiento se agrega automáticamente a la traducción.' : 'From internal passport (booklet). For I-821 the city name is written without «смт/пгт» prefix — settlement type is automatically added to the passport translation.'}
         value={manual.city_of_birth || mergedFields?.city_of_birth?.value || ''}
         onChange={(v) => onChange({ city_of_birth: v })}
         dataTestId="tps-review-manual-city-of-birth"
@@ -3892,7 +3892,7 @@ function ReviewManual({
       <FieldInput
         label={t.label.place_of_entry}
         placeholder=""
-        tip={locale === 'ru' ? 'Из I-94 (i94.cbp.dhs.gov). Загрузите на шаге 4 → робот заполнит.' : locale === 'uk' ? 'З I-94 (i94.cbp.dhs.gov). Завантажте на кроці 4 → робот заповнить.' : locale === 'es' ? 'De I-94 (i94.cbp.dhs.gov). Cargue en paso 4 → el robot lo llenará.' : 'From I-94 (i94.cbp.dhs.gov). Upload at step 4 → robot fills it.'}
+        tip={locale === 'ru' ? 'Город и штат въезда, например «Los Angeles, CA» или «New York, NY». Из I-94 (i94.cbp.dhs.gov) или из памяти.' : locale === 'uk' ? 'Місто та штат в\'їзду, наприклад «Los Angeles, CA». З I-94 (i94.cbp.dhs.gov) або з пам\'яті.' : locale === 'es' ? 'Ciudad y estado de entrada, p. ej. «Los Angeles, CA». Del I-94 o de memoria.' : 'City and state of entry, e.g. "Los Angeles, CA". From I-94 or from memory.'}
         value={manual.place_of_last_entry || mergedFields?.place_of_last_entry?.value || ''}
         onChange={(v) => onChange({ place_of_last_entry: v })}
         dataTestId="tps-review-manual-place-of-last-entry"
