@@ -40,7 +40,7 @@
 - `VERIFIED` Oblast regex fix: normalizeOblastToNominative("Вінницька область") returns "Vinnytsia Oblast" (was null before fix).
 - `VERIFIED` DOB fixture proof — 14 unit tests in passportBooklet.dob.test.ts prove parseUaDate chain for all formats (full UA/RU month, numeric, abbreviated bilingual "13 CEP / AUG 60", 2-digit year). All 14 pass.
 - `VERIFIED` Direct Playwright network capture for /api/tps/brain/merge: listener + waitForResponse added to booklet-only-pdf-proof.spec.ts. Writes brain-merge-summary.json + brain-merge-network.json artifacts. Asserts status=200, booklet slot present, family_name in merged keys.
-- `OPEN` Translation Bridge v0.
+- `VERIFIED` Translation Bridge v0: `translateBookletFromBrain(merged, opts)` in translationBridge.ts. 18/18 tests prove: surname/given/patronymic/DOB/place_of_birth/issuing_authority/sex/certification all correct. Violations=[] for clean input. No "certified by AI", "USCIS accepted", "guaranteed" in output.
 
 ## Session 31 Exact Next Steps
 
