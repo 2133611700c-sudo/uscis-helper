@@ -3,6 +3,22 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 32: P3 — direct Central Brain network capture in Playwright e2e
+
+### What changed
+- `apps/web/tests/e2e/booklet-only-pdf-proof.spec.ts`:
+  - Added `/api/tps/brain/merge` response listener (captures request slots, merged field keys, readiness, conflicts, rejected, warnings)
+  - Added `waitForResponse` for brain/merge after OCR upload (30s timeout, non-fatal on miss)
+  - Writes `brain-merge-summary.json` and `brain-merge-network.json` (sanitized — no PII values, only keys)
+  - Assertions when captured: status=200, `request_slots` contains 'booklet', `merged_field_keys.length > 0`, `family_name` present in merged keys
+- `apps/web/src/lib/tps/modules/__tests__/passportBooklet.dob.test.ts`:
+  - Fixed `OcrBoundingBox` mock: removed non-existent `normalized` field (coords must be 0–1 range)
+
+### Verified
+- Typecheck: 0 errors. Tests: 2033/2033 pass.
+
+---
+
 ## 2026-05-27 — Session 32: DOB fixture proof — passportBooklet.dob.test.ts
 
 ### What changed
