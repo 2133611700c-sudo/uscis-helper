@@ -166,4 +166,78 @@ describe('passportBooklet — DOB extraction', () => {
     expect(dobField?.extraction_source).toBe('ocr_keyword')
     expect(dobField?.source_zone).toBe('booklet_label_dob')
   })
+
+  // ── date_scan_fallback tests (label absent scenario) ─────────────────────────
+
+  it('fallback: extracts dob when "Дата народження" label is missing but date line is present', () => {
+    // Build OCR without any "Дата народження" / "Date of birth" label lines
+    const lines: OcrLine[] = [
+      line('l_01', 'Паспорт громадянина України'),
+      line('l_02', 'Шевченко'),
+      line('l_03', 'Прізвище'),
+      // Date line present but NO label — real Vision failure mode
+      line('l_04', '25 червня 1986 року'),
+    ]
+    const ocr: OcrResult = {
+      provider: 'google_vision',
+      raw_text: lines.map((l) => l.text).join('\n'),
+      pages: [{ page: 1, width: 800, height: 1200, lines, words: [] }],
+      lines,
+      words: [],
+      processing_ms: 0,
+      warnings: [],
+      created_at: '2026-05-27T00:00:00.000Z',
+    }
+    const result = runPassportBookletModule(ocr, { document_id: 'test_booklet' })
+    const dobField = result.fields.find((f) => f.field === 'dob')
+    expect(dobField?.normalized_value).toBe('1986-06-25')
+    expect(dobField?.source_zone).toBe('booklet_date_scan_fallback')
+    expect(dobField?.passes).toContain('date_parsed')
+    expect(dobField?.passes).toContain('label_scan_fallback')
+  })
+
+  it('fallback: emits booklet_dob_label_missing_used_date_scan warning when fallback is used', () => {
+    const lines: OcrLine[] = [
+      line('l_01', 'Паспорт громадянина України'),
+      line('l_02', 'Шевченко'),
+      line('l_03', 'Прізвище'),
+      line('l_04', '25 червня 1986 року'),
+    ]
+    const ocr: OcrResult = {
+      provider: 'google_vision',
+      raw_text: lines.map((l) => l.text).join('\n'),
+      pages: [{ page: 1, width: 800, height: 1200, lines, words: [] }],
+      lines,
+      words: [],
+      processing_ms: 0,
+      warnings: [],
+      created_at: '2026-05-27T00:00:00.000Z',
+    }
+    const result = runPassportBookletModule(ocr, { document_id: 'test_booklet' })
+    expect(result.warnings).toContain('booklet_dob_label_missing_used_date_scan')
+  })
+
+  it('fallback: emits booklet_dob_missing when two date-like lines exist (ambiguous)', () => {
+    // Two parseable date lines — fallback must NOT guess
+    const lines: OcrLine[] = [
+      line('l_01', 'Паспорт громадянина України'),
+      line('l_02', 'Шевченко'),
+      line('l_03', 'Прізвище'),
+      line('l_04', '25 червня 1986 року'),
+      line('l_05', '13 серпня 1960'),
+    ]
+    const ocr: OcrResult = {
+      provider: 'google_vision',
+      raw_text: lines.map((l) => l.text).join('\n'),
+      pages: [{ page: 1, width: 800, height: 1200, lines, words: [] }],
+      lines,
+      words: [],
+      processing_ms: 0,
+      warnings: [],
+      created_at: '2026-05-27T00:00:00.000Z',
+    }
+    const result = runPassportBookletModule(ocr, { document_id: 'test_booklet' })
+    expect(result.fields.find((f) => f.field === 'dob')).toBeUndefined()
+    expect(result.warnings).toContain('booklet_dob_missing')
+  })
 })
