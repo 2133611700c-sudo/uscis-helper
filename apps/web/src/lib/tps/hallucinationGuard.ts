@@ -107,8 +107,8 @@ export function detectGarbageString(
  *
  * If a higher-priority source (e.g. passport) provides a different name
  * from a lower-priority source (e.g. EAD), flag if distance > 2.
- * Distance ≤ 2 = possible OCR transcription error → low risk.
- * Distance > 2 = real conflict or hallucination → high risk.
+ * Distance ≤ 2 = possible OCR transcription error → risk=low.
+ * Distance > 2 = real conflict or hallucination → risk=high.
  */
 export function crossDocumentConflict(
   field: string,
