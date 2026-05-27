@@ -3,7 +3,19 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
-## 2026-05-27 — Session 39i: feat: stale session banner + mobile UX fixes
+### 2026-05-27 — DB: Supabase Oct 30 auto-grant fix
+
+- Ran full security audit on both Supabase projects (uscis-helper + Handy & Friend)
+- **uscis-helper**: Added explicit GRANT SELECT/INSERT/UPDATE/DELETE on all 34 public tables to anon + authenticated
+- **uscis-helper**: Installed event trigger `auto_grant_public_tables` — auto-grants any future CREATE TABLE in public schema forever
+- **Handy & Friend**: Fixed 12 tables with RLS enabled but 0 policies (silent access denial). Added service_role and admin-only policies.
+- **Handy & Friend**: Installed same auto-grant event trigger
+- Migration file: `supabase/migrations/20260527000001_explicit_grants_oct30.sql`
+- No manual action needed for future tables in either project.
+
+---
+
+# 2026-05-27 — Session 39i: feat: stale session banner + mobile UX fixes
 
 - **Stale session banner**: yellow banner when session ≥ 3 days old (step > 1). Auto-clear at ≥ 60 days.
 - **savedAt**: added to localStorage on every save — enables future stale detection.
