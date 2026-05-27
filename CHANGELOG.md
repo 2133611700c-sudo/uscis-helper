@@ -3,6 +3,24 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39g: fix: CRITICAL — wizard crash on "Адрес отличается" checkbox
+
+**Root cause** (fully traced): checking `mailing_different` checkbox sets `data.manual.mailing_different=true` (boolean) → brain/merge useEffect fires → sends `data.manual` verbatim → Zod schema `z.record(z.string(), z.string())` rejects the boolean → 422 returned → wizard doesn't check `r.ok` → parses 422 as valid `CentralBrainResult` → `Object.entries(centralBrainResult.merged)` crashes (`merged` is `undefined`) → React renders nothing → Next.js shows 500 page → `localStorage` still has `mailing_different:true` → **persistent 500 on every refresh**.
+
+**Files changed:**
+- `TPSWizardV2.tsx`:
+  - Filter non-string values from `data.manual` before sending to brain/merge
+  - Check `r.ok` in brain/merge fetch chain (throw on non-2xx)
+  - Guard `centralBrainResult.merged ?? {}` and `.conflicts ?? []`
+  - Restart button: pill with border (was invisible plain-text link)
+  - Add `↺ С начала` button inside errMsg blocks (step 5 + step 6)
+- `TPSWizardWithErrorBoundary.tsx` (new): wraps wizard with ErrorBoundary; clears localStorage and shows friendly restart screen on any React crash
+- `page.tsx`: use `TPSWizardWithErrorBoundary` instead of raw `TPSWizardV2`
+
+**Tests**: 2098/2098 pass, 0 type errors
+
+---
+
 ## 2026-05-27 — Session 39f: test(e2e) — 10/10 GREEN on prod; fix non-identity warning timeout flakiness
 
 - `booklet-multi-sample.spec.ts`: non-identity warning timeout 15s → 30s (CB settle + render takes 25-30s)
