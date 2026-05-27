@@ -1,7 +1,15 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 37 — Gate field manual fallback; e2e spec fixes; deploy pending
-**Status:** DEGRADED (deploy not yet pushed; Playwright e2e pending production deploy)
-**Scope:** P0–P7 complete. 13/13 gates PASS. 2092/2092 tests pass. 0 type errors. Awaiting `git push origin main`.
+**Updated:** 2026-05-27 Session 37 — Translation audit complete; all e2e GREEN on production
+**Status:** OPERATIONAL (deployed 6ddce4a; full Ukrainian passport translation verified end-to-end on production)
+**Scope:** P0–P7 complete. 13/13 gates PASS. 2092/2092 unit tests pass. 0 type errors. e2e: 5/5 multi-sample + review-gate GREEN.
+
+## Session 37 — Ukrainian passport translation: VERIFIED on production (2026-05-27)
+
+- `VERIFIED` e2e `booklet-multi-sample.spec.ts` 5/5 pass on production 6ddce4a:
+  - 3 identity pages (booklet_known, 1.jpg, 2.jpg) → full translation ~1821 bytes, Patronymic label, cert, 0 violations
+  - 2 non-identity pages (3.jpg issuing-authority, 4.jpg registration) → no-identity warning shown, no translation offered (correct)
+- `VERIFIED` e2e `translation-review-gate.spec.ts` 1/1 pass: full ZIP 2.58 MB, translation HTML + cert present, all safety assertions
+- `VERIFIED` Patronymic manual fallback flows into translation (RU-side OCR misses handwritten patronymic; manual entry covers it)
 
 ## Session 37 Verified Changes (2026-05-27)
 

@@ -118,10 +118,18 @@
 - **Fix**: Added `translationReviewConfirmed` to deps array.
 - **Found by**: Running `translation-review-gate.spec.ts` against production (gate 6 assertion: `reviewConfirmed` must be `true`).
 
+### Patronymic manual fallback (this commit)
+- doc2 (RU-side identity page): OCR missed the handwritten patronymic. Test now fills `tps-review-manual-middle-name` (fake value) only when OCR missed it. Flows into translation via extractTranslationFields manual path.
+
+## FINAL STATUS — Ukrainian passport translation VERIFIED (2026-05-27, prod 6ddce4a)
+- `booklet-multi-sample.spec.ts`: 5/5 GREEN (3 identity → full translation; 2 non-identity → warning, no translation)
+- `translation-review-gate.spec.ts`: 1/1 GREEN (full ZIP + safety assertions)
+- 2092/2092 unit, 0 type errors
+
 ## Exact next tasks (priority order)
-1. **Wait for deploy**: SHA to be determined after this push
-2. **Re-run Playwright e2e**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts`
-3. **Run multi-sample**: `pnpm --filter web exec playwright test booklet-multi-sample.spec.ts`
+1. **TASK-04/05/06** (Form Intelligence, Pain/FAQ DB, Monitoring Engine) — not started, codeable
+2. **Draft modules** (birth/marriage/divorce certs) — blocked on real sanitized fixtures
+3. **DeepSeek privacy disclosure UI** — required pre-production (separate from translation)
 
 ## Evidence
 - Test count: 2092/2092

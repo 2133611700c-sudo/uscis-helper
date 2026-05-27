@@ -25,10 +25,20 @@ User requested full audit of Ukrainian passport translation. Multi-sample e2e (5
 ### Test corrected
 - `apps/web/tests/e2e/booklet-multi-sample.spec.ts`: each doc now flagged `identityPage`. Identity pages assert full translation; non-identity pages (doc3/doc4) assert the no-identity warning shows and NO translation is offered (the correct behavior — there is no name to translate). Added privacy-safe diagnostics (`ocr_field_keys`, `cb_merged_keys`, `cb_family_name_present` — names/booleans only, never values).
 
+### Patronymic manual fallback (doc2)
+- `2.jpg` (RU-side identity page): OCR extracted family_name + city_of_birth but MISSED the handwritten patronymic (UA-side `1.jpg` got it). Translation rendered without a Patronymic row. This is an OCR coverage gap, not a pipeline bug — the product handles it via the existing `tps-review-manual-middle-name` field, which flows into the translation via `extractTranslationFields` manual fallback (verified in code).
+- Test now fills the manual patronymic (fake `Testovych`) only when OCR missed it (fillIfEmpty skips when OCR provided it on doc1).
+
+### FINAL e2e evidence (against production 6ddce4a)
+- `booklet-multi-sample.spec.ts`: **5/5 pass**
+  - identity pages (booklet_known, doc1, doc2): full translation ~1821 bytes, Patronymic label, no Middle Name, cert present, 0 violations
+  - non-identity pages (doc3, doc4): no-identity warning shown, no translation offered (correct)
+- `translation-review-gate.spec.ts`: **1/1 pass** — full ZIP (2.58 MB), translation 1821 bytes, cert present, Patronymic label, competency statement, no "certified by AI"
+- Privacy: proof artifacts under gitignored test-results/, contain only field NAMES + booleans + byte counts (zero values)
+
 ### Test evidence
 - Unit tests: 2092/2092 pass
 - TypeScript: 0 errors
-- e2e (pre-fix run): 3/3 identity pages pass full translation; 2 non-identity pages correctly have no surname
 
 ---
 
