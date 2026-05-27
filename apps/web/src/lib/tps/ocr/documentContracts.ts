@@ -101,7 +101,7 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
   },
   // Ukrainian internal passport-booklet (паспорт-книжка).
   // BUG-6 FIX (2026-05-24): booklet OCR extracts garbage for identity
-  // fields (family_name, given_name, dob, sex) because handwritten
+  // fields (family_name, given_name, sex) because handwritten
   // Cyrillic is unreliable. Month names end up as given_name, date
   // fragments as surname. These fields are ALREADY extracted reliably
   // from загранпаспорт MRZ — booklet should NOT touch them.
@@ -122,13 +122,16 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       // Wave2: dual-OCR cross-reference can reconstruct surname from
       // two OCR readings. Field Arbiter still gives MRZ priority.
       'family_name',
+      // 2026-05-26: explicit Ukrainian DOB parser normalizes
+      // "25 червня 1986 року" => "1986-06-25" before merge.
+      // Keep under review flow; invalid dates still reject.
+      'dob',
     ],
     forbidden_fields: [
       // given_name — загранпаспорт MRZ is authoritative.
       // Booklet handwritten OCR produces garbage for given_name.
       'given_name',
       // 'middle_name' — MOVED TO ALLOWED (only source for patronymic)
-      'dob',
       'sex',
       'passport_number',
       'passport_expiration_date',
