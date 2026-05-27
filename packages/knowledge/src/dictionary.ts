@@ -263,7 +263,10 @@ export const OBLAST_GENITIVE_TO_NOMINATIVE: Record<string, string> = {
  * Robot calls this automatically — no human intervention needed.
  */
 export function normalizeOblastToNominative(raw: string): { nominative_uk: string; transliterated: string } | null {
-  const lower = raw.toLowerCase().replace(/\s*(області|обл\.?)\s*/gi, '').trim();
+  // Strip oblast/obl suffix before lookup. Must match full words:
+  // "область", "обл.", "обл" — but NOT strip "обл" as a prefix of "область".
+  // Pattern: обл(?:асть|асті|\.?) covers all three forms safely.
+  const lower = raw.toLowerCase().replace(/\s*(областей?|обл(?:асть|асті|\.?))\s*/gi, '').trim();
 
   // DMS-verified English names for oblasts (from dmsu.gov.ua/en-home/contacts.html)
   const DMS_ENGLISH: Record<string, string> = {

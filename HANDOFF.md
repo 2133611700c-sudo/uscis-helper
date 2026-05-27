@@ -28,15 +28,16 @@
 - sourcePriority.ts unit tests.
 
 ## Session 32 integration (complete)
-- `TPSWizardV2.tsx` now calls `POST /api/tps/brain/merge` after each OCR upload.
-- `mergedFields` useMemo: Central Brain is the primary path. fieldArbiter is explicit fallback.
-- DEGRADED banner shown if CB fails — no silent unsafe fallback.
+- `TPSWizardV2.tsx` calls `POST /api/tps/brain/merge` after each OCR upload.
+- `mergedFields` useMemo: Central Brain is primary, fieldArbiter is explicit DEGRADED fallback.
+- Oblast regex fix: `normalizeOblastToNominative()` now accepts nominative full forms.
+- Post-deploy evidence collected (see CHANGELOG).
 
 ## Exact next task
-1. Push → Vercel deploy → verify SHA via https://messenginfo.com/api/healthz.
-2. Post-deploy Playwright: booklet-only proof (family_name source_document_type=booklet, ZIP/PDF generated).
-3. Post-deploy Playwright: multi-doc proof (sourcePriority winner, garbage rejected/flagged, conflicts visible).
-4. If browser e2e blocked by MachPort/headless: mark ENVIRONMENT_BLOCKED, proceed with API-level evidence only.
+1. Push (oblast fix) → verify production API: `province_of_birth` no longer flagged as hallucination.
+2. P2: DOB fixture proof — need booklet image where handwritten date is visible.
+3. P3: Add direct Playwright network capture for `/api/tps/brain/merge` call.
+4. P4: Translation Bridge v0 (Ukrainian booklet → English draft → review → certification-ready).
 
 ## Key contradiction resolved (from audit)
 - Prior session analysis claimed `dob` was simultaneously `validated_skipped` AND `FORBIDDEN_FIELD_FOR_DOCUMENT_SLOT`.
