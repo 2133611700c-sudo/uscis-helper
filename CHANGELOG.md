@@ -3,6 +3,19 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39h: fix: booklet-only E2E `tps-generate-cta` not visible
+
+**Root cause**: `fillReviewRow` writes corrected fields to `data.uploads['manual']` slot. Central Brain server (`centralBrain.ts:115`) skips upload slots with no document contract — 'manual' has none. Fields silently discarded → `mergedFields` incomplete → `isStep6Eligible=false` → button never rendered → 20s timeout.
+
+**Fix** (`TPSWizardV2.tsx` brain/merge useEffect):
+- Skip `'manual'` slot when building `brainUploads` (was wasted anyway)
+- Seed `manualForBrain` from `data.uploads['manual'].fields` before applying `data.manual` overrides
+- All user-corrected fields now flow through the Central Brain's manual path (Step 2, no contract filter)
+
+**Tests**: 2098/2098 pass, 0 type errors
+
+---
+
 ## 2026-05-27 — Session 39g (patch): fix CI build errors
 
 - `TPSWizardWithErrorBoundary.tsx`: replaced `<a href="/">` with Next.js `<Link>` (ESLint no-html-link-for-pages error)

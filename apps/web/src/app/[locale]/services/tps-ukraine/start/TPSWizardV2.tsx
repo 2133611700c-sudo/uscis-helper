@@ -1994,6 +1994,9 @@ export default function TPSWizardV2({ locale }: Props) {
       source_zone?: string; confidence?: number
     }>> = {}
     for (const [slotId, upload] of Object.entries(data.uploads)) {
+      // The synthetic 'manual' slot has no document contract so the Central
+      // Brain server would skip it. Route its fields to manualForBrain below.
+      if (slotId === 'manual') continue
       if (!upload?.fields) continue
       const fields = Object.entries(upload.fields).flatMap(([fieldName, fx]) => {
         if (!fx?.value) return []
@@ -2015,7 +2018,19 @@ export default function TPSWizardV2({ locale }: Props) {
 
     // Strip non-string values (e.g. mailing_different: boolean) before
     // sending — the brain/merge schema is z.record(z.string(), z.string()).
+    // Also include fields from the synthetic 'manual' upload slot (where
+    // fillReviewRow/onEdit parks values for fields absent from real uploads).
+    // The Central Brain server processes these via the manual path (Step 2)
+    // rather than the uploads path, which requires a document contract.
     const manualForBrain: Record<string, string> = {}
+    // Lower priority: synthetic manual upload slot (fillReviewRow → onEdit)
+    const manualSlotUpload = data.uploads['manual']
+    if (manualSlotUpload?.fields) {
+      for (const [k, fx] of Object.entries(manualSlotUpload.fields)) {
+        if (fx?.value && typeof fx.value === 'string') manualForBrain[k] = fx.value
+      }
+    }
+    // Higher priority: ReviewManual text inputs override synthetic slot values
     for (const [k, v] of Object.entries(data.manual)) {
       if (typeof v === 'string') manualForBrain[k] = v
     }
