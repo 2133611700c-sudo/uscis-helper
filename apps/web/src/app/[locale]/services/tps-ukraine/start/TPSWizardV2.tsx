@@ -37,6 +37,7 @@ import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValida
 import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } from '@/lib/tps/provenance'
 import SignaturePad from '@/components/shared/SignaturePad'
 import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessChecker'
+import type { CentralBrainResult } from '@/lib/tps/centralBrain'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1602,6 +1603,8 @@ export default function TPSWizardV2({ locale }: Props) {
   const [isOwner, setIsOwner] = useState(false)
   const [preflightPassed, setPreflightPassed] = useState(false)
   const [generatedManifest, setGeneratedManifest] = useState<{ at: string; zipBytes: number } | null>(null)
+  const [centralBrainResult, setCentralBrainResult] = useState<CentralBrainResult | null>(null)
+  const [centralBrainStatus, setCentralBrainStatus] = useState<'idle' | 'loading' | 'ready' | 'degraded'>('idle')
 
   // ── Persist to localStorage (without File objects) ───────────────────────
   //
@@ -1783,6 +1786,55 @@ export default function TPSWizardV2({ locale }: Props) {
   // near the top of this file) so React's exhaustive-deps lint stays
   // happy without a dep on a recreated Set per render.
   const mergedFields = useMemo(() => {
+    // ── PRIMARY PATH: Central Brain (server-side, when ready) ──────────
+    if (centralBrainResult && centralBrainStatus === 'ready') {
+      const cbMerged: Record<string, FieldExtraction> = {}
+      for (const [fieldName, mf] of Object.entries(centralBrainResult.merged)) {
+        if (!mf.value) continue
+        cbMerged[fieldName] = {
+          value: mf.value,
+          source: mf.source_type as ExtractionSource,
+          requires_review: mf.hallucination_risk !== 'none' || !mf.plausibility_passed,
+          doc_slot: mf.source_slot,
+          source_document_id: null,
+          source_zone: null,
+          raw_value: null,
+          confidence: mf.confidence,
+        }
+      }
+      // Compose address from DL split fields
+      if (!cbMerged.address && cbMerged.us_address_street?.value) {
+        const parts = [
+          cbMerged.us_address_street?.value,
+          [cbMerged.us_address_city?.value,
+           [cbMerged.us_address_state?.value, cbMerged.us_address_zip?.value].filter(Boolean).join(' ')
+          ].filter(Boolean).join(', ')
+        ].filter(Boolean).join(', ')
+        if (parts) {
+          cbMerged.address = {
+            value: parts,
+            source: cbMerged.us_address_street.source,
+            requires_review: cbMerged.us_address_street.requires_review,
+            doc_slot: cbMerged.us_address_street.doc_slot,
+            source_document_id: null,
+            source_zone: 'dl_address_composite',
+            raw_value: null,
+            confidence: cbMerged.us_address_street.confidence ?? null,
+          }
+        }
+      }
+      const cbAliased = applyI94StatusAlias(cbMerged)
+      const cbConflicts: Record<string, string[]> = {}
+      for (const conflict of centralBrainResult.conflicts) {
+        if (!cbConflicts[conflict.field]) cbConflicts[conflict.field] = []
+        cbConflicts[conflict.field].push(`${conflict.losing_slot}:${conflict.losing_value}:CB_CONFLICT`)
+      }
+      ;(cbAliased as Record<string, FieldExtraction> & { __conflicts?: Record<string, string[]> }).__conflicts =
+        Object.keys(cbConflicts).length > 0 ? cbConflicts : undefined
+      return cbAliased
+    }
+
+    // ── FALLBACK PATH: fieldArbiter (when Central Brain is loading/degraded) ─
     // ── FIELD ARBITER v0 WIRING ─────────────────────────────────────────
     // Replaces old Pass 1 + Pass 2 merge with source-ranked arbiter.
     // Every field goes through resolveAllFields() which picks the winner
@@ -1870,7 +1922,7 @@ export default function TPSWizardV2({ locale }: Props) {
     ;(aliased as Record<string, FieldExtraction> & { __conflicts?: typeof conflicts }).__conflicts =
       Object.keys(conflicts).length > 0 ? conflicts : undefined
     return aliased
-  }, [data.uploads])
+  }, [data.uploads, centralBrainResult, centralBrainStatus])
 
   // ── Step transitions ─────────────────────────────────────────────────────
   const goto = useCallback((n: number) => {
@@ -1878,6 +1930,61 @@ export default function TPSWizardV2({ locale }: Props) {
     setErrMsg(null)
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
+
+  // ── Central Brain merge — runs after any upload or manual change ─────────
+  useEffect(() => {
+    const hasAnyDoneUpload = Object.values(data.uploads).some((u) => u?.status === 'done')
+    if (!hasAnyDoneUpload) {
+      setCentralBrainResult(null)
+      setCentralBrainStatus('idle')
+      return
+    }
+
+    // Convert wizard FieldExtraction → brain API payload (7 fields, zod-validated)
+    const brainUploads: Record<string, Array<{
+      field: string; raw_value: string; normalized_value?: string
+      extraction_source: string; source_document_id?: string
+      source_zone?: string; confidence?: number
+    }>> = {}
+    for (const [slotId, upload] of Object.entries(data.uploads)) {
+      if (!upload?.fields) continue
+      const fields = Object.entries(upload.fields).flatMap(([fieldName, fx]) => {
+        if (!fx?.value) return []
+        return [{
+          field: fieldName,
+          raw_value: fx.raw_value ?? fx.value,
+          normalized_value: fx.value,
+          extraction_source: fx.source,
+          source_document_id: fx.source_document_id ?? slotId,
+          source_zone: fx.source_zone ?? 'unknown',
+          confidence: fx.confidence ?? undefined,
+        }]
+      })
+      if (fields.length > 0) brainUploads[slotId] = fields
+    }
+
+    const ac = new AbortController()
+    setCentralBrainStatus('loading')
+
+    fetch('/api/tps/brain/merge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uploads: brainUploads, manual: data.manual }),
+      signal: ac.signal,
+    })
+      .then((r) => r.json())
+      .then((result: CentralBrainResult) => {
+        setCentralBrainResult(result)
+        setCentralBrainStatus('ready')
+      })
+      .catch((err) => {
+        if ((err as Error).name === 'AbortError') return
+        setCentralBrainResult(null)
+        setCentralBrainStatus('degraded')
+      })
+
+    return () => ac.abort()
+  }, [data.uploads, data.manual])
 
   // ── Upload + OCR ─────────────────────────────────────────────────────────
   const handleUpload = useCallback(
@@ -2520,6 +2627,13 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ fontSize: 14, color: TEXT_FAINT, marginBottom: 4 }}>{t.stepOf(5)}</div>
             <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s5q}</div>
             <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s5h}</div>
+
+            {/* Central Brain status banner */}
+            {centralBrainStatus === 'degraded' && (
+              <div style={{ background: WARN_BG, border: `1.5px solid ${WARN_BORDER}`, borderRadius: 12, padding: 12, fontSize: 14, color: WARN_TEXT, marginBottom: 12 }}>
+                ⚠ Validation service unavailable — field merge shown without hallucination guard (DEGRADED). Review all fields carefully.
+              </div>
+            )}
 
             {/* R1A Phase 4: per-upload warning banners. Shown when the
                 firewall detected the file doesn't match the slot, when a

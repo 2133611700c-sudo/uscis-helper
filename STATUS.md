@@ -1,5 +1,5 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-26 Session 32 hotfix — CI guard fix
+**Updated:** 2026-05-26 Session 32 — Central Brain wired into TPSWizardV2
 **Status:** DEGRADED (pending deploy)
 **Scope:** Central Brain 5-file implementation complete. 2016/2016 tests pass. Typecheck clean. Not yet deployed.
 
@@ -34,8 +34,10 @@
 - `VERIFIED` sourcePriority.ts: SlottedField, toExtractedCandidate, hasControllingLatinSpelling.
 - `VERIFIED` /api/tps/brain/merge/route.ts: POST endpoint.
 - `VERIFIED` 2016/2016 tests pass, 0 typecheck errors.
-- `OPEN` Central Brain NOT yet wired into TPSWizardV2 (useMemo merge still active).
-- `OPEN` Not deployed to production yet.
+- `VERIFIED` TPSWizardV2 now calls POST /api/tps/brain/merge after each upload.
+- `VERIFIED` mergedFields: Central Brain is primary, fieldArbiter is fallback with explicit DEGRADED banner.
+- `OPEN` Post-deploy Playwright evidence: booklet-only proof + multi-doc proof.
+- `OPEN` Not deployed yet — pending commit/push.
 
 ## Session 31 Exact Next Steps
 
