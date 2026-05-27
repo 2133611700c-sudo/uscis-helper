@@ -3,6 +3,21 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Session 32: province_of_birth double-fix (normalizeProvince + checkGeography)
+
+### What changed
+- `apps/web/src/lib/tps/dictionaryBridge.ts`:
+  - Fixed `normalizeProvince`: `result.transliterated` already includes "Oblast", was incorrectly returned as `${result.transliterated} Oblast` → "Vinnytsia Oblast Oblast".
+  - Fix: return `result.transliterated` directly.
+- `apps/web/src/lib/tps/hallucinationGuard.ts`:
+  - Fixed `checkGeography` for `province_of_birth`: after dictionaryBridge normalization, value is English ("Vinnytsia Oblast"). Running `normalizeOblastToNominative` on Latin input returns null → false-positive high risk.
+  - Fix: if value matches `^[A-Za-z...]+ Oblast$`, accept it as already-validated English form before Cyrillic lookup.
+
+### Verified
+- Tests: 2019/2019 pass. Typecheck: 0 errors.
+
+---
+
 ## 2026-05-26 — Session 32: oblast regex fix + regression tests
 
 ### What changed
