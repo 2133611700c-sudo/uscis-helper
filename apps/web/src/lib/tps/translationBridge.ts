@@ -172,6 +172,9 @@ export function generateTPSTranslation(
   translation_html: string
   certification_html: string
   violations: string[]
+  _rawFields?: Record<string, string>
+  _signerName?: string
+  _signerAddress?: string
 } | null {
   const template = resolveTranslationTemplate(docType)
   if (!template) return null
@@ -219,6 +222,11 @@ export function generateTPSTranslation(
       translation_html: renderTranslationHTML(result, input, signatureDataUrl),
       certification_html: renderCertificationHTML(input, certText, signatureDataUrl),
       violations: result.forbidden_phrase_violations,
+      _rawFields: Object.fromEntries(
+        fields.filter((f) => f.value !== null).map((f) => [f.field, f.value as string]),
+      ),
+      _signerName: input.signer_full_name,
+      _signerAddress: input.signer_address,
     }
   }
 
@@ -288,6 +296,9 @@ export function generateTPSTranslation(
       translation_html: renderTranslationHTML(result, input, signatureDataUrl),
       certification_html: renderCertificationHTML(input, certText, signatureDataUrl),
       violations: result.forbidden_phrase_violations,
+      _rawFields: fieldMap,
+      _signerName: input.signer_full_name,
+      _signerAddress: input.signer_address,
     }
   }
 
@@ -393,6 +404,10 @@ export function translateBookletFromBrain(
   translation_html: string
   certification_html: string
   violations: string[]
+  /** Structured field data for PDF generation. Key = field name, value = English value. */
+  _rawFields?: Record<string, string>
+  _signerName?: string
+  _signerAddress?: string
 } | null {
   const tf = extractTranslationFields(
     merged,
@@ -458,6 +473,9 @@ export function translateBookletFromBrain(
       opts.signatureDataUrl ?? null,
     ),
     violations: result.forbidden_phrase_violations,
+    _rawFields: fieldMap,
+    _signerName: opts.signerName,
+    _signerAddress: opts.signerAddress,
   }
 }
 

@@ -1,4 +1,4 @@
-# HANDOFF — Session 35 (2026-05-27)
+# HANDOFF — Session 36 (2026-05-27)
 
 ## What was done this session
 
@@ -71,19 +71,27 @@
 - Payment verification: generate-packet verifies real Stripe cs_* session ID (was hardcoded string bypass)
 - Wizard stores `stripeCheckoutId` from `?cs=` URL param, sends as X-Payment-Token
 
-## Session 35 work (this commit)
-- **Mailing address UI**: checkbox "My mailing address is different from physical" + mailing street/city/state/zip inputs in `ReviewManual` (TPSWizardV2) and `GeneratePacketBlock` (legacy)
-- `WizardData['manual']` extended with `mailing_different`, `mailing_street/city/state/zip`
-- `buildDraftAnswers()` now passes `mailing_same_as_physical: data.manual.mailing_different !== true` + mailing fields when flag is true
-- Field maps (i765FieldMap, i821FieldMap) already handled the separate-mailing case — this was the only missing piece
-- TODO(P1-UX) comment removed from GeneratePacketBlock.tsx
+## Session 36 work (this commit)
+
+### Translation PDF in TPS ZIP (COMPLETE)
+- **translationBridge.ts**: `translateBookletFromBrain()` and `generateTPSTranslation()` return types extended with `_rawFields?: Record<string,string>`, `_signerName?: string`, `_signerAddress?: string`
+  - `passportBooklet` branch: `_rawFields = Object.fromEntries(fields.filter(non-null).map([field,value]))` + signer info
+  - `internationalPassport` branch: `_rawFields = fieldMap` + signer info
+- **packetBuilder.ts**: added imports `generateTranslationPDF` + `PacketInput`; added `buildTranslationPacketInput()` helper; when `result._rawFields` present — builds `PacketInput` from raw fields + signer info → calls `generateTranslationPDF()` → adds bureau-style PDF to ZIP as `Translation_Internal_Passport.pdf` alongside existing HTML. PDF generation failure is caught + logged; doesn't block the ZIP.
+
+### mailing_in_care_of (COMPLETE)
+- `WizardData['manual']` extended with `mailing_in_care_of`
+- `ReviewManual` component: FieldInput inside the `mailing_different` block
+- `buildDraftAnswers()` passes `mailing_in_care_of` when mailing flag is true
+
+### registration_address extraction (COMPLETE)
+- `passportBooklet.module.ts`: `registration_address` wired into `extraction.fieldTargets`, `expectedLabels` (`МІСЦЕ ПРОЖИВАННЯ`, `МІСЦЕ РЕЄСТРАЦІЇ`), and `render.renderFields`
 
 ## Exact next tasks (priority order)
 1. **Run Playwright e2e**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts` — needs live server + booklet_test_resized.jpg in qa-shots/private/
-2. **Stripe webhook: TPS payment record** — webhook logs TPS payment to `audit_log` only; no `tps_payments` table for query-based verification (currently Stripe API call handles it)
-3. **Deploy to production**: all commits on main, awaiting owner approval for `git push`
+2. **Deploy to production**: all commits on main, awaiting owner approval for `git push`
 
 ## Evidence
-- Commits: 36d1260 (P0.5–P2), 20b0c01 (P3), fba7ba4 (P5+P6)
 - Test count: 2092/2092
+- Type errors: 0
 - Gates: 13/13 PASS — docs/reports/P7_GATES_VERIFICATION_2026-05-27.md
