@@ -1817,3 +1817,9 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Booklet contract: family_name allowed (dual-OCR reconstructs correctly)
 - Fix: cross-ref overrides weak sources (ocr_keyword garbage)
 - Cross-ref prompt: added morpheme hybrid reconstruction hint
+---
+
+## 2026-05-27 — Session 39i (patch): fix duplicate ↺ button when stale banner visible
+
+- Persistent restart button now hidden while stale session banner is showing (was duplicating the banner's own ↺ Начать заново button)
+- 2098/2098 pass, 0 type errors

@@ -2750,7 +2750,7 @@ export default function TPSWizardV2({ locale }: Props) {
             marginBottom: 6,
           }}
         >
-          {step > 1 && (
+          {step > 1 && staleSessionDays < 3 && (
             <button
               type="button"
               onClick={() => {

@@ -1,4 +1,12 @@
-# HANDOFF — Session 39i (2026-05-27)
+# HANDOFF — Session 39i (patch) (2026-05-27)
+
+## Session 39i (patch) — fix duplicate restart button
+
+- When stale session banner is visible, persistent restart button is now hidden (was duplicating banner)
+- 2098/2098 pass, 0 type errors, deployed
+
+---
+
 
 ## Session 39i — feat: stale session banner + mobile UX fixes
 
