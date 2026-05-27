@@ -1,3 +1,28 @@
+# HANDOFF — Session 39g (2026-05-27)
+
+## Session 39g — CRITICAL fix: wizard crash on "Адрес отличается" checkbox
+
+### Root cause
+`data.manual.mailing_different` is a boolean. Brain/merge Zod schema is `z.record(z.string(), z.string())`. Sending `{mailing_different: true}` → 422. Wizard didn't check `r.ok` → parsed 422 as `CentralBrainResult` → `Object.entries(centralBrainResult.merged)` where `merged=undefined` → TypeError → React crash → Next.js 500 → no restart button → persistent error on every refresh.
+
+### Fixes applied
+1. Filter non-string from `data.manual` before brain/merge call
+2. Check `r.ok` in brain/merge fetch chain  
+3. Guard `.merged ?? {}` and `.conflicts ?? []`
+4. Restart button: now visible pill (was invisible text link)
+5. Restart button inside errMsg block (step 5 + step 6)
+6. `TPSWizardWithErrorBoundary.tsx`: wraps wizard with ErrorBoundary + localStorage clear + friendly restart screen
+
+### Tests
+2098/2098 unit pass, 0 type errors. Deploy: pending push.
+
+### Remaining open issues
+1. `has_dob=false` when booklet-only
+2. `place_of_last_entry` doesn't auto-extract from some I-94 formats
+3. TASK-04/05/06 (Form Intelligence, Pain/FAQ DB, Monitoring Engine)
+
+---
+
 # HANDOFF — Session 39f (2026-05-27)
 
 ## Session 39f — e2e 10/10 GREEN + test flakiness fix

@@ -1836,7 +1836,7 @@ export default function TPSWizardV2({ locale }: Props) {
     // ── PRIMARY PATH: Central Brain (server-side, when ready) ──────────
     if (centralBrainResult && centralBrainStatus === 'ready') {
       const cbMerged: Record<string, FieldExtraction> = {}
-      for (const [fieldName, mf] of Object.entries(centralBrainResult.merged)) {
+      for (const [fieldName, mf] of Object.entries(centralBrainResult.merged ?? {})) {
         if (!mf.value) continue
         cbMerged[fieldName] = {
           value: mf.value,
@@ -1872,7 +1872,7 @@ export default function TPSWizardV2({ locale }: Props) {
       }
       const cbAliased = applyI94StatusAlias(cbMerged)
       const cbConflicts: Record<string, string[]> = {}
-      for (const conflict of centralBrainResult.conflicts) {
+      for (const conflict of (centralBrainResult.conflicts ?? [])) {
         if (!cbConflicts[conflict.field]) cbConflicts[conflict.field] = []
         cbConflicts[conflict.field].push(`${conflict.losing_slot}:${conflict.losing_value}:CB_CONFLICT`)
       }
@@ -2013,13 +2013,23 @@ export default function TPSWizardV2({ locale }: Props) {
     const ac = new AbortController()
     setCentralBrainStatus('loading')
 
+    // Strip non-string values (e.g. mailing_different: boolean) before
+    // sending — the brain/merge schema is z.record(z.string(), z.string()).
+    const manualForBrain: Record<string, string> = {}
+    for (const [k, v] of Object.entries(data.manual)) {
+      if (typeof v === 'string') manualForBrain[k] = v
+    }
+
     fetch('/api/tps/brain/merge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uploads: brainUploads, manual: data.manual }),
+      body: JSON.stringify({ uploads: brainUploads, manual: manualForBrain }),
       signal: ac.signal,
     })
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`brain/merge HTTP ${r.status}`)
+        return r.json()
+      })
       .then((result: CentralBrainResult) => {
         setCentralBrainResult(result)
         setCentralBrainStatus('ready')
@@ -2639,14 +2649,15 @@ export default function TPSWizardV2({ locale }: Props) {
               if (ok) restart()
             }}
             style={{
-              background: 'none',
-              border: 'none',
+              background: 'var(--surface-2, #f1f5f9)',
+              border: '1.5px solid var(--border, #cbd5e1)',
+              borderRadius: 8,
               fontSize: 13,
-              color: TEXT_MUTED,
+              fontWeight: 600,
+              color: 'var(--text-2, #475569)',
               cursor: 'pointer',
-              textDecoration: 'underline',
               fontFamily: 'inherit',
-              padding: 0,
+              padding: '6px 12px',
             }}
           >
             {t.restart}
@@ -3079,6 +3090,25 @@ export default function TPSWizardV2({ locale }: Props) {
                 }}
                 >
                   {errMsg}
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      type="button"
+                      onClick={restart}
+                      style={{
+                        background: 'var(--error-border, #d33)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        padding: '8px 16px',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {t.restart}
+                    </button>
+                  </div>
                 </div>
               )}
           </section>
@@ -3343,6 +3373,25 @@ export default function TPSWizardV2({ locale }: Props) {
                 }}
               >
                 {errMsg}
+                <div style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={restart}
+                    style={{
+                      background: 'var(--error-border, #d33)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '8px 16px',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {t.restart}
+                  </button>
+                </div>
               </div>
             )}
 
