@@ -122,6 +122,11 @@ interface PersonalFields {
   us_address_city: string
   us_address_state: string
   us_address_zip: string
+  mailing_different: boolean
+  mailing_street: string
+  mailing_city: string
+  mailing_state: string
+  mailing_zip: string
   i94_admission_number: string
   last_entry_date: string  // YYYY-MM-DD
   daytime_phone: string
@@ -188,6 +193,7 @@ const EMPTY: PersonalFields = {
   country_of_birth: 'Ukraine',
   passport_number: '', passport_country_of_issuance: 'Ukraine', passport_expiration_date: '',
   us_address_street: '', us_address_city: '', us_address_state: '', us_address_zip: '',
+  mailing_different: false, mailing_street: '', mailing_city: '', mailing_state: '', mailing_zip: '',
   i94_admission_number: '', last_entry_date: '',
   daytime_phone: '', email: '',
   a_number: '', status_at_last_entry: '',
@@ -279,6 +285,8 @@ const COPY = {
     passport: 'Номер паспорта', passportCountry: 'Країна видачі паспорта', passportExp: 'Паспорт дійсний до',
     passportExpHint: 'Якщо в цьому документі немає строку дії, перевірте закордонний паспорт або введіть значення вручну, якщо воно відоме.',
     street: 'Адреса в США (вулиця, номер будинку)', city: 'Місто', state: 'Штат (2 літери, напр. CA)', zip: 'ZIP-код',
+    mailingDifferentLabel: 'Адреса для листування відрізняється від фізичної',
+    mailingStreet: 'Адреса для листування (вулиця)', mailingCity: 'Місто (листування)', mailingState: 'Штат (листування)', mailingZip: 'ZIP (листування)',
     i94: 'I-94 admission number (11 цифр)', entry: 'Дата останнього в\'їзду в США',
     phone: 'Денний телефон', email: 'Email',
     generate: 'Згенерувати PDF-пакет (чернетка)',
@@ -388,6 +396,8 @@ const COPY = {
     passport: 'Номер паспорта', passportCountry: 'Страна выдачи паспорта', passportExp: 'Паспорт действителен до',
     passportExpHint: 'Если в документе нет срока действия, проверьте ваш загранпаспорт или введите данные вручную, если они известны.',
     street: 'Адрес в США (улица, номер дома)', city: 'Город', state: 'Штат (2 буквы, напр. CA)', zip: 'ZIP-код',
+    mailingDifferentLabel: 'Адрес для корреспонденции отличается от физического',
+    mailingStreet: 'Адрес для корреспонденции (улица)', mailingCity: 'Город (корреспонденция)', mailingState: 'Штат (корреспонденция)', mailingZip: 'ZIP (корреспонденция)',
     i94: 'I-94 admission number (11 цифр)', entry: 'Дата последнего въезда в США',
     phone: 'Дневной телефон', email: 'Email',
     generate: 'Сгенерировать PDF-пакет (черновик)',
@@ -497,6 +507,8 @@ const COPY = {
     passport: 'Passport number', passportCountry: 'Country that issued passport', passportExp: 'Passport expires',
     passportExpHint: 'If this document does not show an expiration date, use your international passport or enter the value manually if known.',
     street: 'US address (street, house number)', city: 'City', state: 'State (2 letters, e.g. CA)', zip: 'ZIP code',
+    mailingDifferentLabel: 'My mailing address is different from my physical address',
+    mailingStreet: 'Mailing address (street)', mailingCity: 'Mailing city', mailingState: 'Mailing state', mailingZip: 'Mailing ZIP',
     i94: 'I-94 admission number (11 digits)', entry: 'Date of your last entry to the US',
     phone: 'Daytime phone', email: 'Email',
     generate: 'Generate PDF packet (draft)',
@@ -606,6 +618,8 @@ const COPY = {
     passport: 'Número de pasaporte', passportCountry: 'País emisor del pasaporte', passportExp: 'Pasaporte vence',
     passportExpHint: 'Si este documento no muestra fecha de vencimiento, use su pasaporte internacional o ingrésela manualmente si la conoce.',
     street: 'Dirección en EE.UU. (calle, número)', city: 'Ciudad', state: 'Estado (2 letras, ej. CA)', zip: 'Código ZIP',
+    mailingDifferentLabel: 'Mi dirección postal es diferente a la física',
+    mailingStreet: 'Dirección postal (calle)', mailingCity: 'Ciudad (postal)', mailingState: 'Estado (postal)', mailingZip: 'ZIP (postal)',
     i94: 'I-94 admission number (11 dígitos)', entry: 'Fecha de su última entrada a EE.UU.',
     phone: 'Teléfono diurno', email: 'Email',
     generate: 'Generar paquete PDF (borrador)',
@@ -815,11 +829,13 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
       us_address_city: fields.us_address_city,
       us_address_state: fields.us_address_state.toUpperCase(),
       us_address_zip: fields.us_address_zip,
-      // TODO(P1-UX): This wizard does not yet expose a separate mailing
-      // address UI. Until it does, mailing is always the same as physical.
-      // The field maps (i765FieldMap.ts) handle the separate-mailing case
-      // correctly — this hardcode is the only thing blocking that path.
-      mailing_same_as_physical: true,
+      mailing_same_as_physical: !fields.mailing_different,
+      ...(fields.mailing_different ? {
+        mailing_street: fields.mailing_street || undefined,
+        mailing_city: fields.mailing_city || undefined,
+        mailing_state: fields.mailing_state || undefined,
+        mailing_zip: fields.mailing_zip || undefined,
+      } : {}),
       last_entry_date: fields.last_entry_date,
       i94_admission_number: fields.i94_admission_number || undefined,
       // status_at_last_entry: OCR fills "UH" / "Parole" from I-94 class of
@@ -1069,6 +1085,28 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
           <input data-testid="field-us-address-zip" style={input} value={fields.us_address_zip} onChange={(e) => update('us_address_zip', e.target.value)} />
         </div>
       </div>
+      <div style={{ marginTop: 10, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          type="checkbox"
+          id="field-mailing-different"
+          data-testid="field-mailing-different"
+          checked={fields.mailing_different}
+          onChange={(e) => update('mailing_different', e.target.checked)}
+        />
+        <label htmlFor="field-mailing-different" style={{ fontSize: 14, cursor: 'pointer' }}>{c.mailingDifferentLabel}</label>
+      </div>
+      {fields.mailing_different && (
+        <div style={{ paddingLeft: 8, borderLeft: '2px solid #d1d5db' }}>
+          <label style={label}>{c.mailingStreet}</label>
+          <input data-testid="field-mailing-street" style={input} value={fields.mailing_street} onChange={(e) => update('mailing_street', e.target.value)} />
+          <label style={label}>{c.mailingCity}</label>
+          <input data-testid="field-mailing-city" style={input} value={fields.mailing_city} onChange={(e) => update('mailing_city', e.target.value)} />
+          <label style={label}>{c.mailingState}</label>
+          <input data-testid="field-mailing-state" style={input} maxLength={2} value={fields.mailing_state} onChange={(e) => update('mailing_state', e.target.value.toUpperCase())} />
+          <label style={label}>{c.mailingZip}</label>
+          <input data-testid="field-mailing-zip" style={input} value={fields.mailing_zip} onChange={(e) => update('mailing_zip', e.target.value)} />
+        </div>
+      )}
 
       <label style={label}>{c.i94}</label>
       <input style={input} value={fields.i94_admission_number} onChange={(e) => update('i94_admission_number', e.target.value)} />

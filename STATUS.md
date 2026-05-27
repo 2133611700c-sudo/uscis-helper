@@ -1,5 +1,5 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 33 — TPS Translation Pipeline v3.0 ALL PHASES COMPLETE
+**Updated:** 2026-05-27 Session 35 — Mailing address UI implemented (P1-UX TODO closed)
 **Status:** DEGRADED (browser e2e Playwright run for Review Gate flow not yet executed; deploy not yet approved)
 **Scope:** P0–P7 complete. 13/13 gates PASS. 2092/2092 tests pass. 0 type errors. Not yet deployed to production.
 
@@ -18,6 +18,7 @@
 - `VERIFIED` P3: TranslationReviewGate built + wired. reviewConfirmed: true required in packetBuilder before translation enters ZIP. /api/tps/translation/preview endpoint added.
 - `VERIFIED` P5: Agency glossary expanded from 24 → 49 entries (УВС, ГУВС, ОВС, ВОВС, РВ МВС, ВДДМС, СДМС, ТДМС, ВАЦС, ВП, ЦНАП, ГУНП, ГОВП, УВІР, ОМ, РМ, МОУ, КМ, ВСЗН etc.)
 - `VERIFIED` P6: International passport translation implemented in generateTPSTranslation ('internationalPassport' template path was null — now renders full HTML)
+- `VERIFIED` Mailing address UI: checkbox "different from physical" + mailing street/city/state/zip in ReviewManual (TPSWizardV2) and GeneratePacketBlock. buildDraftAnswers() uses mailing_different flag. Field maps already handled this — UI was the only missing piece. TODO comment removed.
 - `VERIFIED` Image retention audit CLOSED: all 4 ADR-009 OPEN items verified by code trace (2026-05-27). See ADR-009 audit table.
 - `VERIFIED` Payment verification hardened: generate-packet now verifies Stripe cs_* session ID against Stripe API (was hardcoded token bypass)
 - `VERIFIED` P7: G1-G13 gates verified (docs/reports/P7_GATES_VERIFICATION_2026-05-27.md). 13/13 PASS.
