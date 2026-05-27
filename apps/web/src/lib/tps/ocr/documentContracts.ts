@@ -138,6 +138,10 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'country_of_birth',
       'country_of_nationality',
       'passport_country_of_issuance',
+      // Translation-only fields — not USCIS form fields; flow via translationExtractor
+      // (picked up from CB rejected[] for translation path per ADR-008)
+      'issued_by',
+      'passport_date_of_issue',
       // Immigration fields — not in booklet
       'a_number',
       'i94_admission_number',

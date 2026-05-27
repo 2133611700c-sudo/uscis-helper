@@ -26,7 +26,7 @@ import {
   translateBookletFromBrain,
   type TPSDocumentType,
 } from './translationBridge'
-import type { MergedField } from './centralBrain'
+import type { MergedField, RejectedField } from './centralBrain'
 
 // Edition dates verified against uscis.gov on 2026-05-10 and stamped on the
 // PDF footers. If USCIS publishes a new edition, scripts/uscis/refresh_tps_forms.sh
@@ -62,6 +62,10 @@ export interface TranslationOptions {
   controllingSpellings?: Record<string, string>
   /** Central Brain merged output — when present, used as primary source for booklet translation. */
   brainMerged?: Record<string, MergedField> | null
+  /** CB rejected fields — includes booklet-slot fields blocked by form contract (used for translation). */
+  brainRejected?: RejectedField[] | null
+  /** Manual wizard entries — lowest-priority fallback for translation fields. */
+  brainManual?: Record<string, string> | null
 }
 
 export async function buildPacket(
@@ -152,7 +156,11 @@ export async function buildPacket(
         const brainMerged = translationOpts.brainMerged
         const result =
           docType === 'passportBooklet' && brainMerged
-            ? translateBookletFromBrain(brainMerged, signerOpts)
+            ? translateBookletFromBrain(brainMerged, {
+                ...signerOpts,
+                rejected: translationOpts.brainRejected ?? [],
+                manual: translationOpts.brainManual ?? {},
+              })
             : generateTPSTranslation(
                 answers,
                 docType,

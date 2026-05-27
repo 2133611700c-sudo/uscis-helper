@@ -110,6 +110,7 @@ import {
   type PassportBookletRenderField,
 } from '@/lib/translation/templates/passportBooklet.template'
 import type { TPSAnswers } from './answers'
+import { formatDobForTranslation } from './translationExtractor'
 
 /**
  * Maps TPSAnswers fields to passport booklet template fields.
@@ -125,17 +126,19 @@ function mapTPSToBookletFields(
   const placeOfBirth = [get('city_of_birth'), get('province_of_birth'), 'Ukraine']
     .filter(Boolean).join(', ')
 
+  const rawDob = get('dob')
+  const rawDateOfIssue = get('passport_date_of_issue')
   const fieldMap: Record<string, string> = {
     document_type: 'Internal Passport (Booklet) of Ukraine',
     passport_number: get('passport_number'),
     surname: get('family_name'),
     given_name: get('given_name'),
     patronymic: get('middle_name'),
-    date_of_birth: get('dob'),
+    date_of_birth: rawDob ? (formatDobForTranslation(rawDob) ?? rawDob) : '',
     place_of_birth: placeOfBirth,
     sex: get('sex') === 'M' ? 'Male' : get('sex') === 'F' ? 'Female' : get('sex'),
     issuing_authority: get('issuing_authority'),
-    date_of_issue: get('passport_date_of_issue') || '',
+    date_of_issue: rawDateOfIssue ? (formatDobForTranslation(rawDateOfIssue) ?? rawDateOfIssue) : '',
     marital_status: get('marital_status'),
   }
 
@@ -289,14 +292,20 @@ ${sigBlock}
 
 // ── Central Brain → Translation (v0) ─────────────────────────────────────────
 
-import type { MergedField } from './centralBrain'
+import type { MergedField, RejectedField } from './centralBrain'
+import { extractTranslationFields } from './translationExtractor'
+import {
+  guardTranslationCandidates,
+  collectViolationStrings,
+} from './translationCandidateSafetyGuard'
 
 /**
  * Build a booklet translation directly from Central Brain merged output.
  *
- * Central Brain already applied: KMU-55 transliteration, oblast normalization,
- * agency glossary resolution, hallucination guard. Values in `merged` are
- * already normalized English — no re-transliteration needed here.
+ * Uses translationExtractor to get ALL fields for translation — including
+ * fields that CB form contract blocks for the booklet slot (given_name, sex,
+ * passport_number). These are acceptable for translation since the user
+ * reviews before certifying (Review Gate, ADR-008).
  *
  * 8 CFR §103.2(b)(3): AI-generated output is a DRAFT. The signer certifies
  * as translator. Messenginfo does NOT certify translations.
@@ -307,32 +316,46 @@ export function translateBookletFromBrain(
     signerName: string
     signerAddress: string
     signatureDataUrl?: string | null
+    /** CB rejected fields — includes booklet-slot fields blocked by form contract */
+    rejected?: RejectedField[]
+    /** Manual wizard entries — lowest-priority fallback */
+    manual?: Record<string, string>
   },
 ): {
   translation_html: string
   certification_html: string
   violations: string[]
 } | null {
-  const get = (field: string): string => merged[field]?.value ?? ''
+  const tf = extractTranslationFields(
+    merged,
+    opts.rejected ?? [],
+    opts.manual ?? {},
+  )
 
-  const city = get('city_of_birth')
-  const province = get('province_of_birth')
-  const placeOfBirth = [city, province, 'Ukraine'].filter(Boolean).join(', ')
+  // Safety guard — blocks forbidden phrases, Cyrillic leaks, label-as-value
+  const guardResult = guardTranslationCandidates(tf)
+  if (!guardResult.safe) {
+    return {
+      translation_html: '',
+      certification_html: '',
+      violations: collectViolationStrings(guardResult),
+    }
+  }
 
-  const sex = get('sex')
-  const sexLabel = sex === 'M' ? 'Male' : sex === 'F' ? 'Female' : sex
+  const placeOfBirth = [tf.city_of_birth, tf.province_of_birth, 'Ukraine']
+    .filter(Boolean).join(', ')
 
   const fieldMap: Record<string, string> = {
-    document_type:    'Internal Passport (Booklet) of Ukraine',
-    passport_number:  get('passport_number'),
-    surname:          get('family_name'),
-    given_name:       get('given_name'),
-    patronymic:       get('middle_name'),
-    date_of_birth:    get('dob'),
-    place_of_birth:   placeOfBirth,
-    sex:              sexLabel,
-    issuing_authority: get('issued_by'),
-    date_of_issue:    get('passport_date_of_issue'),
+    document_type:     'Internal Passport (Booklet) of Ukraine',
+    passport_number:   tf.passport_number ?? '',
+    surname:           tf.family_name ?? '',
+    given_name:        tf.given_name ?? '',
+    patronymic:        tf.patronymic ?? '',
+    date_of_birth:     tf.date_of_birth ?? '',
+    place_of_birth:    placeOfBirth,
+    sex:               tf.sex ?? '',
+    issuing_authority: tf.issued_by ?? '',
+    date_of_issue:     tf.date_of_issue ?? '',
   }
 
   const fields: PassportBookletRenderField[] = Object.entries(fieldMap)
