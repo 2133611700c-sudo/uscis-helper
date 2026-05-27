@@ -1,7 +1,7 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-26 Session 31 — Ukrainian DOB parser + booklet dob contract + provenance fix
-**Status:** DEGRADED
-**Scope:** Commit of three code fixes (DOB parser, booklet dob contract, provenance mapping) + e2e test repair. No production deploy yet.
+**Updated:** 2026-05-26 Session 32 — Central Brain implementation
+**Status:** DEGRADED (pending deploy)
+**Scope:** Central Brain 5-file implementation complete. 2016/2016 tests pass. Typecheck clean. Not yet deployed.
 
 ## Session 31 Verified Changes
 
@@ -26,14 +26,16 @@
 - `UNVERIFIED` booklet-only e2e against production with DOB patch — needs deploy first.
 - `UNVERIFIED` strict provenance proof `_provenance.family_name.source_document_type === 'booklet'` against live production (requires deploy + e2e run).
 
-## Central Brain Gap (architectural, not patched)
+## Central Brain (Session 32 — COMPLETE, not yet wired to wizard)
 
-- TPS Pipeline and Translation Engine v5.0 are two separate systems, zero communication.
-- No plausibility guard → `BiRHEROI` passes without rejection.
-- No cross-document validation → EAD `Saghi` not caught against passport `Sergii`.
-- No hallucination detection, no controlling spelling in TPS wizard merge.
-- Spec claims 94.4%, live shows ~35% on booklet+EAD.
-- Next phase: `centralBrain.ts` + `hallucinationGuard.ts` (see CENTRAL_BRAIN_SPEC_2026-05-24.docx).
+- `VERIFIED` centralBrain.ts: mergeToCentralBrain() 5-step pipeline.
+- `VERIFIED` hallucinationGuard.ts: detectGarbageString, checkGeography, crossDocumentConflict, guardField.
+- `VERIFIED` dictionaryBridge.ts: normalize() unified entry point.
+- `VERIFIED` sourcePriority.ts: SlottedField, toExtractedCandidate, hasControllingLatinSpelling.
+- `VERIFIED` /api/tps/brain/merge/route.ts: POST endpoint.
+- `VERIFIED` 2016/2016 tests pass, 0 typecheck errors.
+- `OPEN` Central Brain NOT yet wired into TPSWizardV2 (useMemo merge still active).
+- `OPEN` Not deployed to production yet.
 
 ## Session 31 Exact Next Steps
 

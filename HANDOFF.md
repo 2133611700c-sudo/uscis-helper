@@ -1,32 +1,36 @@
-# HANDOFF — Session 31 (2026-05-26)
+# HANDOFF — Session 32 (2026-05-26)
 
 ## What was requested
-- Full project audit after reviewing CENTRAL_BRAIN_SPEC_2026-05-24.docx, TPS_ROBOT_ENGINEERING_SPEC_V1_1.docx, MESSENGINFO_AGENT_TASK_SYSTEM.md.
-- Check uncommitted changes and commit.
+- Build Central Brain: 5 new files + 2 test files.
+- Fix 4 failing tests in hallucinationGuard and centralBrain test suites.
 
 ## What changed (this commit)
-- Product code:
-  - `apps/web/src/lib/tps/ai/documentBrain.ts` — Ukrainian textual date parser.
-  - `apps/web/src/lib/tps/ocr/documentContracts.ts` — booklet `dob` allowed.
-  - `apps/web/src/lib/tps/provenance.ts` — `'booklet'` slot → `source_document_type='booklet'`.
-- Tests:
-  - `apps/web/src/lib/tps/ai/__tests__/documentBrain.test.ts`
-  - `apps/web/src/lib/tps/ocr/__tests__/documentContracts.test.ts`
-  - `apps/web/src/lib/tps/__tests__/provenance.test.ts`
-- E2E spec (new file, now tracked):
-  - `apps/web/tests/e2e/booklet-only-pdf-proof.spec.ts`
-  - Fixed: passport_number and dob filled as MANUAL_GATING_ONLY to unblock Step6 gate.
-  - DOB provenance assertion updated to accept user_manual (pre-patch) OR booklet (post-patch).
+- New files:
+  - `apps/web/src/lib/tps/sourcePriority.ts` — SlottedField, toExtractedCandidate, hasControllingLatinSpelling, slotToSourceDoc.
+  - `apps/web/src/lib/tps/hallucinationGuard.ts` — detectGarbageString, checkGeography, crossDocumentConflict, guardField, crossValidateField.
+  - `apps/web/src/lib/tps/dictionaryBridge.ts` — normalize() bridging @uscis-helper/knowledge + translation engine.
+  - `apps/web/src/lib/tps/centralBrain.ts` — mergeToCentralBrain() server-side coordinator.
+  - `apps/web/src/app/api/tps/brain/merge/route.ts` — POST /api/tps/brain/merge endpoint.
+  - `apps/web/src/lib/tps/__tests__/centralBrain.test.ts` — 7 integration tests.
+  - `apps/web/src/lib/tps/__tests__/hallucinationGuard.test.ts` — 9 unit tests.
+- Bug fixes in hallucinationGuard.ts:
+  - Removed overly-broad GARBAGE_PATTERN `/^[^letters]+$/` that blocked dob ('1990-03-15') and a_number ('123456789').
+  - Replaced `NAME_FIELDS` import (booklet field names) with local `TPS_NAME_FIELDS` set ('family_name', 'given_name', 'middle_name') — fixes isPlausibleName check running for TPS fields.
+- Bug fix in centralBrain.test.ts: added required TpsExtractedField properties to test helper (bbox, language_layer, review_required, ocr_word_ids, passes, failures, user_corrected).
 
 ## What was verified
 - Typecheck: 0 errors.
-- Unit tests: 1994/1994 pass.
-- Uncommitted changes correctly classified and committed cleanly.
+- Unit tests: 2016/2016 pass (22 new tests added).
 
 ## What was NOT done
-- Production deploy (auto via Vercel on push).
-- E2E against production with DOB patch active (needs deploy first).
-- Central Brain implementation (architectural, separate phase).
+- Integration of Central Brain into TPSWizardV2 (replace useMemo merge with /api/tps/brain/merge call).
+- dictionaryBridge.ts unit tests (normalizeProvince, normalizeCity, normalizeIssuedBy).
+- sourcePriority.ts unit tests.
+
+## Exact next task
+1. Push main → Vercel autodeploy → verify healthcheck at https://messenginfo.com/api/healthz.
+2. Wire Central Brain into TPSWizardV2: replace useMemo merge with POST /api/tps/brain/merge call.
+3. Smoke-test wizard v3 flow end-to-end.
 
 ## Key contradiction resolved (from audit)
 - Prior session analysis claimed `dob` was simultaneously `validated_skipped` AND `FORBIDDEN_FIELD_FOR_DOCUMENT_SLOT`.
