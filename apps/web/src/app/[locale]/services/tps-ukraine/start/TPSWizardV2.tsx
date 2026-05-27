@@ -149,6 +149,9 @@ interface WizardData {
     middle_name?: string
   }
   paid: boolean
+  /** Stripe checkout session ID from ?cs= param after successful payment.
+   *  Sent as X-Payment-Token for server-side payment verification. */
+  stripeCheckoutId?: string | null
   packetReady: boolean
   /** User explicitly reviewed Part 7 background declaration (30 yes/no
    *  questions). Required before generation — gate blocks without it. */
@@ -1703,7 +1706,8 @@ export default function TPSWizardV2({ locale }: Props) {
     if (typeof window !== 'undefined') {
       const sp = new URLSearchParams(window.location.search)
       if (sp.get('paid') === '1') {
-        setData((d) => ({ ...d, paid: true }))
+        const cs = sp.get('cs')
+        setData((d) => ({ ...d, paid: true, stripeCheckoutId: cs ?? null }))
         setStep(6)
       }
     }
@@ -2452,8 +2456,9 @@ export default function TPSWizardV2({ locale }: Props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Server-side entitlement: owner uses cookie, paid users send token
-          ...(data.paid ? { 'x-payment-token': 'stripe-checkout-complete' } : {}),
+          // Server-side entitlement: owner uses cookie, paid users send Stripe checkout ID.
+          // Falls back to legacy token when cs was not captured (e.g. deep-link or test env).
+          ...(data.paid ? { 'x-payment-token': data.stripeCheckoutId ?? 'stripe-checkout-complete' } : {}),
         },
         body: JSON.stringify({
           ...answers,
