@@ -2425,6 +2425,10 @@ export default function TPSWizardV2({ locale }: Props) {
               brainMerged: centralBrainStatus === 'ready' && centralBrainResult
                 ? centralBrainResult.merged
                 : null,
+              brainRejected: centralBrainStatus === 'ready' && centralBrainResult
+                ? centralBrainResult.rejected
+                : null,
+              brainManual: data.manual ?? null,
             }
           })(),
         }),

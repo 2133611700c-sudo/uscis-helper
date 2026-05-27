@@ -73,9 +73,11 @@ describe('translateBookletFromBrain', () => {
     expect(result.translation_html).not.toContain('Middle Name')
   })
 
-  it('translation_html contains DOB', () => {
+  it('translation_html contains DOB in human-readable format (Month DD, YYYY)', () => {
     const result = translateBookletFromBrain(KURO_MERGED, SIGNER_OPTS)!
-    expect(result.translation_html).toContain('1986-06-25')
+    // ISO "1986-06-25" must be converted to "June 25, 1986" for USCIS translation
+    expect(result.translation_html).toContain('June 25, 1986')
+    expect(result.translation_html).not.toContain('1986-06-25')
   })
 
   it('translation_html contains combined place of birth (city + oblast + Ukraine)', () => {
