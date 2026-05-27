@@ -1,3 +1,27 @@
+# HANDOFF — Session 39d (2026-05-27)
+
+## Session 39d — fix: смт → "urban-type settlement" in translation
+
+### Bug
+Translation showed "Trostianets" instead of "Trostianets urban-type settlement" for a city born in смт.
+
+### Root cause
+`postExtractNormalize.cleanCityCandidate()` strips "смт" prefix → passes "Тростянець" to `normalizePlace()` → "Trostianets" stored in `MergedField.value`. No record of original prefix survived to translation layer.
+
+### Fix
+- `centralBrain.ts`: `MergedField` got `raw_value?: string`; `winningCandidate.raw_value` threaded into merged record
+- `translationExtractor.ts`: `SETTLEMENT_SUFFIX_MAP` + `cityWithSettlementType(normalizedCity, rawValue)` helper; `city_of_birth` uses raw_value to detect смт/пгт/с./хут. → appends English suffix
+- USCIS form path unchanged — still uses `MergedField.value = "Trostianets"` (no suffix)
+
+### Tests
++6 new unit tests in `translationExtractor.test.ts`
+2098/2098 pass, 0 type errors
+
+### Next task
+Investigate why DOB is "Не найдено" when only booklet uploaded (booklet OCR should extract dob). Then TASK-04/05/06 (Form Intelligence, Pain/FAQ DB, Monitoring Engine).
+
+---
+
 # HANDOFF — Session 39c (2026-05-27)
 
 ## Session 39c — knowledge v1.3 ingested from three reference files
