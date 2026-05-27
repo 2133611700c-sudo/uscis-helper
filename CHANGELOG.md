@@ -3,6 +3,23 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Session 32: Central Brain → TPSWizardV2 integration
+
+### What changed
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+  - Added `import type { CentralBrainResult } from '@/lib/tps/centralBrain'`.
+  - Added `centralBrainResult` and `centralBrainStatus` state.
+  - Added `useEffect` that calls `POST /api/tps/brain/merge` after any upload completes. Converts `FieldExtraction` → brain API payload (7 fields). Cancels in-flight fetch with `AbortController` on dependency change.
+  - `mergedFields` useMemo: Central Brain result is now the primary path. Converts `MergedField` → `FieldExtraction` for UI compatibility (value, source, requires_review, confidence). Old `fieldArbiter` merge is now the explicit fallback when CB is loading or degraded.
+  - Step 5: added DEGRADED banner when `centralBrainStatus === 'degraded'` (service unavailable, no silent fallback).
+
+### Verified
+- Typecheck: 0 errors.
+- Unit tests: 2016/2016 pass.
+- Architecture: TPSWizardV2 now calls Central Brain. `buildDraftAnswers()` reads from CB-merged fields without changes.
+
+---
+
 ## 2026-05-26 — Session 32 hotfix: CI Content & Brand Guard fix
 
 ### What changed

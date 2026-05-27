@@ -27,14 +27,16 @@
 - dictionaryBridge.ts unit tests (normalizeProvince, normalizeCity, normalizeIssuedBy).
 - sourcePriority.ts unit tests.
 
-## Hotfix (after main commit)
-- CI Content & Brand Guard blocked on "high risk"/"low risk" literal strings in `apps/web/src`.
-- Fixed: rephrased to "risk=high"/"risk=low" in comments + test names. No logic change.
+## Session 32 integration (complete)
+- `TPSWizardV2.tsx` now calls `POST /api/tps/brain/merge` after each OCR upload.
+- `mergedFields` useMemo: Central Brain is the primary path. fieldArbiter is explicit fallback.
+- DEGRADED banner shown if CB fails — no silent unsafe fallback.
 
 ## Exact next task
-1. Push main → Vercel autodeploy → verify healthcheck at https://messenginfo.com/api/healthz.
-2. Wire Central Brain into TPSWizardV2: replace useMemo merge with POST /api/tps/brain/merge call.
-3. Smoke-test wizard v3 flow end-to-end.
+1. Push → Vercel deploy → verify SHA via https://messenginfo.com/api/healthz.
+2. Post-deploy Playwright: booklet-only proof (family_name source_document_type=booklet, ZIP/PDF generated).
+3. Post-deploy Playwright: multi-doc proof (sourcePriority winner, garbage rejected/flagged, conflicts visible).
+4. If browser e2e blocked by MachPort/headless: mark ENVIRONMENT_BLOCKED, proceed with API-level evidence only.
 
 ## Key contradiction resolved (from audit)
 - Prior session analysis claimed `dob` was simultaneously `validated_skipped` AND `FORBIDDEN_FIELD_FOR_DOCUMENT_SLOT`.
