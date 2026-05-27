@@ -1,3 +1,43 @@
+# HANDOFF — Session 39M (2026-05-27)
+
+## Session 39M — fix: rotation loops for ALL slots now guard on line count
+
+### Root cause
+Every document slot — passport, i94, ead, dl — had rotation retry loops that triggered when the OCR module found fewer fields than expected. These loops fired 3 extra Vision calls (~5s each = 15-20s) when:
+- Mobile photo was clear but document didn't have a readable MRZ (passport case)
+- Mobile photo was clear but I-94/EAD had <3 matching fields
+- DL photo didn't show an address
+
+None of these benefit from rotation — the image is upright, just doesn't match well. Rotation only helps when Vision reads very few lines (image is physically rotated).
+
+### Fix
+Added `result.lines.length < 8` guard to rotation loop conditions in all 4 cases:
+- `passport`: `!td3.matched && !mrzAlreadyFound` → `&& result.lines.length < 8`
+- `i94`: `i94FieldCount(i94Result) < 3` → `&& result.lines.length < 8`
+- `ead`: `eadFieldCount(eadResult) < 3` → `&& result.lines.length < 8`
+- `dl`: `!dlGood(dlResult)` → `&& result.lines.length < 8`
+
+Threshold logic: genuinely rotated image → Vision reads 0-5 fragmented lines. Clear upright image → Vision reads 15-20+ lines. Threshold 8 is safe.
+
+### Booklet (previous fix)
+Already fixed in Session 39L — rotation loop fully removed (passport_number is in forbidden_fields, finding it had zero value).
+
+### Expected result
+- Загранпаспорт (clear MRZ) → MRZ matches on first call → no rotation → unchanged
+- Загранпаспорт (blurry/rotated) → Vision reads <8 lines → rotation still runs
+- I-94 screenshot → Vision reads 20+ lines → NO rotation → ~5s (was ~35s)
+- EAD card clear photo → Vision reads 20+ lines → NO rotation → ~5s
+- DL (no address visible) → Vision reads 20+ lines → NO rotation → ~5s
+
+### Next tasks
+1. DEPLOY and verify mobile uploads complete in <15s
+2. Verify zagranpasport still recognized (MRZ path unaffected)
+3. `passport_number` from booklet — still needs decision (manual entry UI)
+4. Full "zero manual entry" audit
+5. TASK-04/05/06
+
+---
+
 # HANDOFF — Session 39L (2026-05-27)
 
 ## Session 39L — fix: remove booklet rotation retry loop (upload hang)

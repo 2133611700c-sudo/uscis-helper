@@ -3,6 +3,14 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39M: fix: rotation retry loops for all document slots now guard on OCR line count
+
+- **`route.ts`**: Added `result.lines.length < 8` condition to rotation retry loops in `passport`, `i94`, `ead`, and `dl` cases. Previously, every document that didn't match the expected module triggered 3 extra Vision calls (×5s = 15-20s). Now rotations only run when Vision reads <8 lines — meaning the image is likely physically rotated. Clear mobile photos with 15+ readable lines skip rotation immediately.
+- **Root cause**: Mobile photos are clear but Google Vision finds the document text without matching the module's expected field layout. Rotating a clear upright photo never helps; it just adds 15-20s of latency.
+- Combined with Session 39L fix (booklet rotation removed entirely), ALL document slots now avoid unnecessary rotation on clear upright photos.
+
+---
+
 ## 2026-05-27 — Session 39L: fix: remove booklet rotation retry loop (upload hang)
 
 - **`route.ts` `case 'booklet':`**: Removed 23-line rotation retry loop that ran 3 extra Google Vision calls (90°/180°/270°) looking for `passport_number`. `passport_number` is in booklet `forbidden_fields` — even if found, it's discarded. Loop added 15-20s of dead latency on every booklet upload, causing the UI to hang indefinitely.
