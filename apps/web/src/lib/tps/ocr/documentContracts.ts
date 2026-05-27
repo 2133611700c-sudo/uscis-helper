@@ -122,15 +122,16 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       // Wave2: dual-OCR cross-reference can reconstruct surname from
       // two OCR readings. Field Arbiter still gives MRZ priority.
       'family_name',
+      // Booklet-only users (no загранпаспорт uploaded) need given_name from
+      // somewhere — Brain extraction from OCR context is the primary source.
+      // When загранпаспорт IS present, Field Arbiter gives MRZ priority anyway.
+      'given_name',
       // 2026-05-26: explicit Ukrainian DOB parser normalizes
       // "25 червня 1986 року" => "1986-06-25" before merge.
       // Keep under review flow; invalid dates still reject.
       'dob',
     ],
     forbidden_fields: [
-      // given_name — загранпаспорт MRZ is authoritative.
-      // Booklet handwritten OCR produces garbage for given_name.
-      'given_name',
       // 'middle_name' — MOVED TO ALLOWED (only source for patronymic)
       'sex',
       'passport_number',

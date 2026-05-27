@@ -1,3 +1,24 @@
+# HANDOFF — Session 39j (2026-05-27)
+
+## Session 39j — fix: booklet DOB fallback scan + given_name unblocked
+
+### What changed
+1. **`passportBooklet.ts`** — DOB label-missing fallback: when `findField` returns null for "Дата народження" label (Google Vision drops it), scan ALL OCR lines. If exactly one line parses as a valid date (year 1920–currentYear-10), emit it as `source_zone='booklet_date_scan_fallback'`. Ambiguous (≥2 candidates) = still `booklet_dob_missing`.
+2. **`documentContracts.ts`** — `given_name` moved from `forbidden_fields` to `allowed_fields` for the booklet slot. Brain DID extract it but was blocked with `FORBIDDEN_FIELD_FOR_DOCUMENT_SLOT`. Now unblocked.
+3. **`passportBooklet.dob.test.ts`** — 3 new tests: fallback extracts correctly, warning emitted, ambiguous case not guessed.
+
+### Evidence
+- 2101/2101 unit tests pass (+3 new), 0 type errors
+
+### Next tasks
+1. DEPLOY and verify: call production OCR API against `booklet_test_resized.jpg` → confirm `dob` and `given_name` now appear in `final_field_keys`
+2. `passport_number` from internal booklet (e.g. "ЕА 991991") — still `forbidden`. For booklet-only users (no загранпаспорт), this is their only ID. Decision: allow it.
+3. Full "zero manual entry" audit — every field on USCIS form must either auto-extract from documents OR be provably unavailable in any document
+4. Research + apply best Cyrillic OCR approach (user rule: task only complete when everything auto-extracts)
+5. TASK-04/05/06
+
+---
+
 ## DB Security Patch — 2026-05-27
 
 **What was done:** Full Supabase security audit + auto-fix applied.

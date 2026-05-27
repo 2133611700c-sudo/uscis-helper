@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39j: fix: booklet DOB fallback scan + given_name contract unblock
+
+- **`passportBooklet.ts`**: Added label-missing fallback — when "Дата народження" label absent, scans all OCR lines for parseable dates. If exactly 1 candidate (year 1920–currentYear-10), emits as `booklet_date_scan_fallback`. Triggered by: Google Vision drops printed labels but reads handwritten values.
+- **`documentContracts.ts`**: Moved `given_name` from `forbidden_fields` to `allowed_fields` for booklet slot. Brain was extracting it but contract blocked with `FORBIDDEN_FIELD_FOR_DOCUMENT_SLOT`. Booklet-only users (no загранпаспорт) need given_name from booklet Brain extraction.
+- **`passportBooklet.dob.test.ts`**: +3 tests: fallback extracts `1986-06-25`, warning `booklet_dob_label_missing_used_date_scan` emitted, ambiguous (2 dates) → `booklet_dob_missing`.
+- **Tests**: 2101/2101 pass (+3 new), 0 type errors.
+
+---
+
 ### 2026-05-27 — DB: Supabase Oct 30 auto-grant fix
 
 - Ran full security audit on both Supabase projects (uscis-helper + Handy & Friend)
