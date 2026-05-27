@@ -147,6 +147,11 @@ interface WizardData {
     ssn?: string
     passport_expiration_date?: string
     middle_name?: string
+    mailing_different?: boolean
+    mailing_street?: string
+    mailing_city?: string
+    mailing_state?: string
+    mailing_zip?: string
   }
   paid: boolean
   /** Stripe checkout session ID from ?cs= param after successful payment.
@@ -2274,7 +2279,13 @@ export default function TPSWizardV2({ locale }: Props) {
       us_address_city: data.manual.us_address_city || v('us_address_city') || '',
       us_address_state: data.manual.us_address_state || v('us_address_state') || '',
       us_address_zip: data.manual.us_address_zip || v('us_address_zip') || '',
-      mailing_same_as_physical: true,
+      mailing_same_as_physical: data.manual.mailing_different !== true,
+      ...(data.manual.mailing_different ? {
+        mailing_street: data.manual.mailing_street || undefined,
+        mailing_city: data.manual.mailing_city || undefined,
+        mailing_state: data.manual.mailing_state || undefined,
+        mailing_zip: data.manual.mailing_zip || undefined,
+      } : {}),
       daytime_phone: data.manual.daytime_phone || '',
       email: data.manual.email || '',
       marital_status: data.manual.marital_status,
@@ -3657,6 +3668,58 @@ function ReviewManual({
         onChange={(v) => onChange({ us_address_zip: v.replace(/[^\d-]/g, '').slice(0, 10) })}
         dataTestId="tps-review-manual-address-zip"
       />
+      <div style={{ marginTop: 12, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          type="checkbox"
+          id="tps-mailing-different"
+          checked={manual.mailing_different === true}
+          onChange={(e) => onChange({ mailing_different: e.target.checked })}
+          data-testid="tps-review-mailing-different-checkbox"
+        />
+        <label htmlFor="tps-mailing-different" style={{ fontSize: 14, cursor: 'pointer', color: 'var(--text-2, #6b7280)' }}>
+          {locale === 'ru' ? 'Адрес для корреспонденции отличается от физического'
+            : locale === 'uk' ? 'Адреса для листування відрізняється від фізичної'
+            : locale === 'es' ? 'Mi dirección postal es diferente a la física'
+            : 'My mailing address is different from my physical address'}
+        </label>
+      </div>
+      {manual.mailing_different && (
+        <>
+          <FieldInput
+            label={locale === 'ru' ? 'Адрес для корреспонденции (улица)' : locale === 'uk' ? 'Адреса для листування (вулиця)' : locale === 'es' ? 'Dirección postal (calle)' : 'Mailing Address (Street)'}
+            placeholder="123 Main St"
+            tip={locale === 'ru' ? 'Куда USCIS вышлет ответ.' : locale === 'uk' ? 'Куди USCIS надішле відповідь.' : locale === 'es' ? 'A dónde USCIS enviará la respuesta.' : 'Where USCIS will send the response.'}
+            value={manual.mailing_street || ''}
+            onChange={(v) => onChange({ mailing_street: v })}
+            dataTestId="tps-review-mailing-street"
+          />
+          <FieldInput
+            label={locale === 'ru' ? 'Город (адрес для корреспонденции)' : locale === 'uk' ? 'Місто (адреса для листування)' : locale === 'es' ? 'Ciudad (dirección postal)' : 'Mailing City'}
+            placeholder=""
+            tip=""
+            value={manual.mailing_city || ''}
+            onChange={(v) => onChange({ mailing_city: v })}
+            dataTestId="tps-review-mailing-city"
+          />
+          <FieldInput
+            label={locale === 'ru' ? 'Штат (адрес для корреспонденции)' : locale === 'uk' ? 'Штат (адреса для листування)' : locale === 'es' ? 'Estado (dirección postal)' : 'Mailing State'}
+            placeholder="CA"
+            tip=""
+            value={manual.mailing_state || ''}
+            onChange={(v) => onChange({ mailing_state: v.toUpperCase().slice(0, 2) })}
+            maxLength={2}
+            dataTestId="tps-review-mailing-state"
+          />
+          <FieldInput
+            label={locale === 'ru' ? 'ZIP-код (адрес для корреспонденции)' : locale === 'uk' ? 'ZIP-код (адреса для листування)' : locale === 'es' ? 'ZIP (dirección postal)' : 'Mailing ZIP'}
+            placeholder="90001"
+            tip=""
+            value={manual.mailing_zip || ''}
+            onChange={(v) => onChange({ mailing_zip: v.replace(/[^\d-]/g, '').slice(0, 10) })}
+            dataTestId="tps-review-mailing-zip"
+          />
+        </>
+      )}
       <FieldInput
         label={t.label.phone}
         placeholder=""
