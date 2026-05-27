@@ -153,10 +153,6 @@ interface WizardData {
     mailing_state?: string
     mailing_zip?: string
     mailing_in_care_of?: string
-    given_name_manual?: string
-    dob_manual?: string
-    passport_number_manual?: string
-    last_entry_date_manual?: string
   }
   paid: boolean
   /** Stripe checkout session ID from ?cs= param after successful payment.
@@ -1324,6 +1320,7 @@ function RW({
   missing,
   onEdit,
   editLabel,
+  editTestId,
 }: {
   label: string
   /** Human-readable provenance e.g. "Паспорт · MRZ (высокая точность)". */
@@ -1342,6 +1339,8 @@ function RW({
   missing?: boolean
   onEdit: () => void
   editLabel: string
+  /** Stable testid for the edit button (e.g. tps-ocr-edit-given_name). */
+  editTestId?: string
 }) {
   return (
     <div
@@ -1381,6 +1380,7 @@ function RW({
         <button
           type="button"
           onClick={onEdit}
+          data-testid={editTestId}
           style={{
             background: 'none',
             border: 'none',
@@ -1582,6 +1582,24 @@ function normalizeCountryOfBirth(raw: string, nationality: string): string {
   if (raw.length <= 30 && !/[,\/]/.test(raw)) return raw
   // Contains slash or comma — likely "Oblast / Country" pattern
   return nationality || 'Ukraine'
+}
+
+/**
+ * String-only view of the manual map for the TRANSLATION path (matches the
+ * /preview brainManual zod schema — z.record(z.string())). Identity fields
+ * (given_name, dob, passport_number, last_entry_date) are NOT manual anymore:
+ * they come from documents via mergedFields, and any user correction goes
+ * through the ReviewOcr "Изменить" button into the synthetic 'manual' upload
+ * slot — which Central Brain already merges. So this only needs to forward the
+ * remaining string fields (middle_name, city_of_birth, province_of_birth, …)
+ * and drop non-string entries like mailing_different.
+ */
+function buildTranslationManual(manual: WizardData['manual']): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [k, val] of Object.entries(manual)) {
+    if (typeof val === 'string' && val.trim()) out[k] = val
+  }
+  return out
 }
 
 function navBtn(forward: boolean): React.CSSProperties {
@@ -2244,7 +2262,8 @@ export default function TPSWizardV2({ locale }: Props) {
         signatureDataUrl: signatureData?.dataUrl ?? null,
         brainMerged: centralBrainStatus === 'ready' && centralBrainResult ? centralBrainResult.merged : null,
         brainRejected: centralBrainStatus === 'ready' && centralBrainResult ? centralBrainResult.rejected : null,
-        brainManual: data.manual ?? null,
+        // *_manual identity keys mapped to base names the translation reads.
+        brainManual: buildTranslationManual(data.manual),
       }
       const r = await fetch('/api/tps/translation/preview', {
         method: 'POST',
@@ -2273,20 +2292,25 @@ export default function TPSWizardV2({ locale }: Props) {
     const v = (k: string): string => mergedFields[k]?.value || ''
     const aNumberDigits = v('a_number').replace(/\D/g, '')
     return {
+      // Identity comes from documents (passport MRZ / I-94 / booklet) via
+      // mergedFields. When OCR missed a value the user supplies it through the
+      // ReviewOcr "Изменить" button, which writes it into the synthetic
+      // 'manual' upload slot under the base key — so v() picks it up here too.
+      // No *_manual fallback fields anymore (auto-fill product rule).
       family_name: v('family_name') || v('surname'),
-      given_name: data.manual.given_name_manual || v('given_name') || v('first_name'),
+      given_name: v('given_name') || v('first_name'),
       middle_name: data.manual.middle_name || v('middle_name') || v('patronymic') || '',
-      dob: data.manual.dob_manual || v('dob') || v('date_of_birth'),
+      dob: v('dob') || v('date_of_birth'),
       sex: (v('sex') === 'F' ? 'F' : 'M') as TPSAnswers['sex'],
       country_of_birth: normalizeCountryOfBirth(v('country_of_birth'), v('country_of_nationality')),
       country_of_nationality: v('country_of_nationality') || 'Ukraine',
-      passport_number: data.manual.passport_number_manual || v('passport_number'),
+      passport_number: v('passport_number'),
       passport_country_of_issuance: v('passport_country_of_issuance') || 'Ukraine',
       passport_expiration_date: data.manual.passport_expiration_date || v('passport_expiration_date'),
       a_number: aNumberDigits,
       uscis_online_account: v('uscis_online_account'),
       i94_admission_number: v('i94_admission_number'),
-      last_entry_date: data.manual.last_entry_date_manual || v('last_entry_date'),
+      last_entry_date: v('last_entry_date'),
       status_at_last_entry: v('status_at_last_entry'),
       current_immigration_status: filing_path === 're_registration' ? 'TPS' : v('status_at_last_entry'),
       filing_path,
@@ -2520,7 +2544,8 @@ export default function TPSWizardV2({ locale }: Props) {
               brainRejected: centralBrainStatus === 'ready' && centralBrainResult
                 ? centralBrainResult.rejected
                 : null,
-              brainManual: data.manual ?? null,
+              // *_manual identity keys mapped to base names the translation reads.
+              brainManual: buildTranslationManual(data.manual),
               reviewConfirmed: translationReviewConfirmed,
             }
           })(),
@@ -3608,6 +3633,7 @@ function ReviewOcr({
               reviewBadge={fx.requires_review || fx.source === 'ai_brain' ? t.reviewBadge : null}
               onEdit={() => onEdit(r.key, r.label, fx?.value ?? '')}
               editLabel={t.edit}
+              editTestId={`tps-ocr-edit-${r.key}`}
             />
           )
         }
@@ -3622,6 +3648,7 @@ function ReviewOcr({
             missing
             onEdit={() => onEdit(r.key, r.label, '')}
             editLabel={t.edit}
+            editTestId={`tps-ocr-edit-${r.key}`}
           />
         )
       })}
@@ -3634,6 +3661,7 @@ function ReviewOcr({
           reviewBadge={addrRequiresReview ? t.reviewBadge : null}
           onEdit={() => onEdit('us_address_street', t.label.address, addrStreet?.value ?? '')}
           editLabel={t.edit}
+          editTestId="tps-ocr-edit-us_address_street"
         />
       )}
     </>
@@ -3698,46 +3726,14 @@ function ReviewManual({
   }
   return (
     <>
-      {!mergedFields?.given_name?.value && (
-        <FieldInput
-          label={locale === 'ru' ? 'Имя (First Name, Latin)' : locale === 'uk' ? "Ім'я (First Name, Latin)" : locale === 'es' ? 'Nombre (First Name, Latin)' : 'Given Name (Latin)'}
-          placeholder="e.g. Sergii"
-          tip={locale === 'ru' ? 'Не распознано из документов. Введите латиницей как в загранпаспорте или I-94.' : locale === 'uk' ? 'Не розпізнано з документів. Введіть латиницею як у закордонному паспорті або I-94.' : locale === 'es' ? 'No encontrado en documentos. Ingrese en caracteres latinos.' : 'Not found in documents. Enter as shown on international passport or I-94.'}
-          value={manual.given_name_manual || ''}
-          onChange={(v) => onChange({ given_name_manual: v })}
-          dataTestId="tps-review-manual-given-name"
-        />
-      )}
-      {!mergedFields?.dob?.value && (
-        <FieldInput
-          label={locale === 'ru' ? 'Дата рождения (MM/DD/YYYY)' : locale === 'uk' ? 'Дата народження (MM/DD/YYYY)' : locale === 'es' ? 'Fecha de nacimiento (MM/DD/YYYY)' : 'Date of Birth (MM/DD/YYYY)'}
-          placeholder="06/25/1986"
-          tip={locale === 'ru' ? 'Не распознано из документов. Введите в формате ММ/ДД/ГГГГ.' : locale === 'uk' ? 'Не розпізнано з документів. Введіть у форматі ММ/ДД/РРРР.' : locale === 'es' ? 'No encontrado en documentos. Ingrese en formato MM/DD/AAAA.' : 'Not found in documents. Enter as MM/DD/YYYY.'}
-          value={manual.dob_manual || ''}
-          onChange={(v) => onChange({ dob_manual: v })}
-          dataTestId="tps-review-manual-dob"
-        />
-      )}
-      {!mergedFields?.passport_number?.value && (
-        <FieldInput
-          label={locale === 'ru' ? 'Номер паспорта (загранпаспорт)' : locale === 'uk' ? 'Номер паспорта (закордонний)' : locale === 'es' ? 'Número de pasaporte (internacional)' : 'Passport Number (International Passport)'}
-          placeholder="e.g. FU262473"
-          tip={locale === 'ru' ? 'Из загранпаспорта. Не обнаружен автоматически — загрузите загранпаспорт или введите вручную.' : locale === 'uk' ? 'Із закордонного паспорта. Не знайдено автоматично — завантажте закордонний паспорт або введіть вручну.' : locale === 'es' ? 'Del pasaporte internacional. No detectado automáticamente.' : 'From international passport. Not auto-detected — upload international passport or enter manually.'}
-          value={manual.passport_number_manual || ''}
-          onChange={(v) => onChange({ passport_number_manual: v })}
-          dataTestId="tps-review-manual-passport-number"
-        />
-      )}
-      {!mergedFields?.last_entry_date?.value && (
-        <FieldInput
-          label={locale === 'ru' ? 'Дата последнего въезда в США (MM/DD/YYYY)' : locale === 'uk' ? 'Дата останнього в\'їзду в США (MM/DD/YYYY)' : locale === 'es' ? 'Fecha de última entrada a EE.UU. (MM/DD/YYYY)' : 'Last US Entry Date (MM/DD/YYYY)'}
-          placeholder="09/09/2022"
-          tip={locale === 'ru' ? 'Из I-94 или штампа в паспорте. Загрузите I-94 на шаге 4 или введите вручную.' : locale === 'uk' ? 'З I-94 або штампу в паспорті. Завантажте I-94 на кроці 4 або введіть вручну.' : locale === 'es' ? 'De I-94 o sello de pasaporte. Cargue I-94 en paso 4 o ingrese manualmente.' : 'From I-94 or passport stamp. Upload I-94 at step 4 or enter manually.'}
-          value={manual.last_entry_date_manual || ''}
-          onChange={(v) => onChange({ last_entry_date_manual: v })}
-          dataTestId="tps-review-manual-last-entry-date"
-        />
-      )}
+      {/* given_name / dob / passport_number / last_entry_date are NOT manual
+          inputs. They come from documents (international passport MRZ, I-94)
+          and are shown — with their recognized value and an "Изменить" button —
+          in the ReviewOcr block above. Editing there writes to the synthetic
+          'manual' upload slot under the base key, which flows into the gate,
+          the forms, AND the translation. Duplicating them here as blank inputs
+          (with real-name placeholders) violated the auto-fill product rule and
+          broke the translation (key mismatch). Removed 2026-05-27. */}
       <FieldInput
         label={t.label.address}
         placeholder={t.placeholder.address}
@@ -3866,8 +3862,8 @@ function ReviewManual({
       />
       <FieldInput
         label={locale === 'ru' ? 'Отчество (по батькові)' : locale === 'uk' ? 'По батькові' : locale === 'es' ? 'Patronímico' : 'Patronymic / Middle Name'}
-        placeholder={locale === 'ru' ? 'Например: Serhiiovych' : locale === 'uk' ? 'Наприклад: Serhiiovych' : 'e.g. Serhiiovych'}
-        tip={locale === 'ru' ? 'Из внутреннего паспорта. Введите латиницей как в загранпаспорте или транслитерацией.' : locale === 'uk' ? 'З внутрішнього паспорта. Введіть латиницею.' : 'From internal passport. Enter in Latin script.'}
+        placeholder=""
+        tip={locale === 'ru' ? 'Из внутреннего паспорта — робот распознаёт автоматически. Поправьте, если нужно.' : locale === 'uk' ? 'З внутрішнього паспорта — робот розпізнає автоматично. Виправте за потреби.' : locale === 'es' ? 'Del pasaporte interno — el robot lo reconoce automáticamente.' : 'From internal passport — auto-recognized by the robot. Correct if needed.'}
         value={manual.middle_name || mergedFields?.middle_name?.value || ''}
         onChange={(v) => onChange({ middle_name: v })}
         dataTestId="tps-review-manual-middle-name"
