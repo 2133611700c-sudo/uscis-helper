@@ -9,6 +9,13 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 39j (2026-05-27) — fix: booklet DOB fallback + given_name unblocked
+
+- `VERIFIED(local)` `passportBooklet.ts`: DOB fallback scan when "Дата народження" label absent — scans all lines, emits if exactly 1 date candidate.
+- `VERIFIED(local)` `documentContracts.ts`: `given_name` moved from `forbidden_fields` → `allowed_fields` for booklet slot.
+- `VERIFIED(local)` 2101/2101 tests pass (+3 new), 0 type errors
+- `UNVERIFIED` Production verify: call OCR on `booklet_test_resized.jpg` to confirm `dob` and `given_name` in `final_field_keys`
+
 ## Session 39h (2026-05-27) — fix: booklet-only E2E `tps-generate-cta` not visible
 
 - `VERIFIED(local)` Central Brain: synthetic 'manual' upload slot now routed to `manualForBrain` (Step 2) instead of `brainUploads` (Step 1 with contract filter). Fixes `isStep6Eligible=false` after `?paid=1` reload when fields filled via `fillReviewRow`.

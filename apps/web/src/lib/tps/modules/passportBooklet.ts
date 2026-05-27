@@ -634,7 +634,37 @@ export function runPassportBookletModule(
       warnings.push('booklet_dob_unparseable')
     }
   } else {
-    warnings.push('booklet_dob_missing')
+    // Label "Дата народження" was NOT found by OCR — scan ALL lines for any
+    // line that parses as a valid date (booklet_date_scan_fallback).
+    // Real booklet failure mode: Vision reads "25 червня 1986 року" but drops
+    // the "Дата народження" label entirely, so findField returns null.
+    const currentYear = new Date().getUTCFullYear()
+    const dateCandidates: Array<{ lc: LineCandidate; iso: string }> = []
+    for (const lc of lines) {
+      if (looksLikeLabel(lc.text)) continue
+      const cleaned = stripBilingualNoise(lc.text)
+      const iso = parseUaDate(cleaned)
+      if (!iso) continue
+      const year = parseInt(iso.slice(0, 4), 10)
+      if (year >= 1920 && year <= currentYear - 10) {
+        dateCandidates.push({ lc, iso })
+      }
+    }
+    if (dateCandidates.length === 1) {
+      const { lc, iso } = dateCandidates[0]
+      emit(
+        'dob',
+        lc.text,
+        iso,
+        lc.line,
+        'booklet_date_scan_fallback',
+        ['date_parsed', 'label_scan_fallback'],
+        [],
+      )
+      warnings.push('booklet_dob_label_missing_used_date_scan')
+    } else {
+      warnings.push('booklet_dob_missing')
+    }
   }
 
   // Try labelled extraction as a FALLBACK when perforation pattern
