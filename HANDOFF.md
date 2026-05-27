@@ -1,3 +1,27 @@
+# HANDOFF — Session 39L (2026-05-27)
+
+## Session 39L — fix: remove booklet rotation retry loop (upload hang)
+
+### What changed
+1. **`apps/web/src/app/api/tps/ocr/extract/route.ts`** — Removed 23-line rotation retry loop from `case 'booklet':`. The loop ran 3 extra Google Vision calls (at 90°/180°/270°) looking for `passport_number`, which is in `forbidden_fields` for booklet and gets discarded even if found. It added 15-20s of dead wait on every booklet upload. Booklet case now goes directly from `runPassportBookletModule` to the dual-OCR crossref section.
+
+### Root cause evidence
+- Vercel runtime logs showed 3 consecutive OCR calls at 23:14:32, 23:14:43, 23:14:56 — matching the loop latency.
+- `passport_number` is in `documentContracts.ts` booklet `forbidden_fields` → found value is discarded immediately after — loop served no purpose.
+
+### Expected result after deploy
+- Booklet OCR: ~12-15s (was ~35s)
+- Mobile/web upload no longer hangs
+
+### Next tasks
+1. DEPLOY and verify latency drop (check Vercel logs for single OCR call)
+2. `passport_number` from booklet — still not extractable (perforated OCR fails). Booklet-only users need manual entry. Consider dedicated prompt/UI guidance.
+3. Full "zero manual entry" audit across all USCIS form fields
+4. Research best Cyrillic OCR approach for Ukrainian documents
+5. TASK-04/05/06
+
+---
+
 # HANDOFF — Session 39k (2026-05-27)
 
 ## Session 39k — fix: booklet inferred fields + lineMatchesLabel false-positive
