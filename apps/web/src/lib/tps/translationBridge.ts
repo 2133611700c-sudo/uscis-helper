@@ -222,7 +222,75 @@ export function generateTPSTranslation(
     }
   }
 
-  // internationalPassport template — Phase 2
+  if (template === 'internationalPassport') {
+    // International passport (загранпаспорт): fields come from MRZ (Latin names already).
+    // Uses passportBooklet renderer with international document title.
+    const get = (key: string): string =>
+      controllingSpellings[key] || (answers as unknown as Record<string, string>)[key] || ''
+
+    const rawDob = get('dob')
+    const rawExpiry = get('passport_expiration_date')
+    const rawIssue = get('passport_date_of_issue')
+
+    const fieldMap: Record<string, string> = {
+      document_type:    'International Passport of Ukraine',
+      passport_number:  get('passport_number'),
+      surname:          get('family_name'),
+      given_name:       get('given_name'),
+      patronymic:       get('middle_name'),
+      date_of_birth:    rawDob ? (formatDobForTranslation(rawDob) ?? rawDob) : '',
+      sex:              get('sex') === 'M' ? 'Male' : get('sex') === 'F' ? 'Female' : get('sex'),
+      issuing_authority: get('issuing_authority') || get('issued_by'),
+      date_of_issue:    rawIssue ? (formatDobForTranslation(rawIssue) ?? rawIssue) : '',
+      date_of_issue_expiry: rawExpiry ? (formatDobForTranslation(rawExpiry) ?? rawExpiry) : '',
+    }
+
+    const fields: PassportBookletRenderField[] = Object.entries(fieldMap)
+      .filter(([, v]) => v && v.trim())
+      .map(([key, value]) => ({
+        field: key,
+        label: PASSPORT_BOOKLET_FIELD_LABELS[key] ?? key.replace(/_/g, ' '),
+        value,
+        confirmed: true,
+      }))
+
+    if (!fields.some((f) => f.field === 'surname')) return null
+
+    const input: PassportBookletRenderInput = {
+      session_id: `tps-intl-${Date.now()}`,
+      fields,
+      translation_date: new Date().toLocaleDateString('en-US', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      }),
+      signer_full_name: signerName || `${answers.given_name || ''} ${answers.family_name || ''}`.trim(),
+      signer_address: signerAddress || [
+        answers.us_address_street,
+        answers.us_address_city,
+        answers.us_address_state,
+        answers.us_address_zip,
+      ].filter(Boolean).join(', '),
+      source_language: 'Ukrainian',
+    }
+
+    const result = renderPassportBooklet(input)
+    const certLines = result.certification_block
+    let certText = certLines.join('\n')
+    if (signatureDataUrl) {
+      certText = certText.replace(
+        'Signature:  ____________________________',
+        `Signature:  [SIGNED ELECTRONICALLY — image embedded]`,
+      )
+    }
+
+    return {
+      translation_text: [result.title, '', ...result.field_lines].join('\n'),
+      certification_text: certText,
+      translation_html: renderTranslationHTML(result, input, signatureDataUrl),
+      certification_html: renderCertificationHTML(input, certText, signatureDataUrl),
+      violations: result.forbidden_phrase_violations,
+    }
+  }
+
   return null
 }
 
