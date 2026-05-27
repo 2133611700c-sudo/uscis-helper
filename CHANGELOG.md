@@ -3,6 +3,14 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39N: fix: crossref OCR quality — Prostianets→Trostianets, reject short patronymic
+
+- **`dualOcrCrossref.ts`**: Added HANDWRITING CONFUSION RULES to DeepSeek prompt: Т/П letter confusion + specific known correction (Простянець→Тростянець). Added PATRONYMIC COMPLETENESS RULE: a valid Ukrainian patronymic is ≥8 chars; OCR suffix fragments like "Yovych" (6 chars) must return null, not be shown as a real value.
+- **`route.ts`**: Added `crKey === 'patronymic' && cr.value.length < 8 → continue` guard in both dual-OCR crossref apply blocks (passport case and booklet case). Prevents partial suffix fragments from overwriting the patronymic field.
+- **Tests**: 2101/2101 pass, 0 type errors.
+
+---
+
 ## 2026-05-27 — Session 39M: fix: rotation retry loops for all document slots now guard on OCR line count
 
 - **`route.ts`**: Added `result.lines.length < 8` condition to rotation retry loops in `passport`, `i94`, `ead`, and `dl` cases. Previously, every document that didn't match the expected module triggered 3 extra Vision calls (×5s = 15-20s). Now rotations only run when Vision reads <8 lines — meaning the image is likely physically rotated. Clear mobile photos with 15+ readable lines skip rotation immediately.

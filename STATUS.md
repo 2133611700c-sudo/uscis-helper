@@ -9,6 +9,13 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 39N (2026-05-27) — fix: crossref OCR quality — Prostianets→Trostianets, reject short patronymic
+
+- `VERIFIED(local)` `dualOcrCrossref.ts` prompt: added Т/П handwriting confusion rule + specific correction Простянець→Тростянець. Added patronymic completeness rule: value < 8 chars = suffix fragment, return null.
+- `VERIFIED(local)` `route.ts`: added `crKey==='patronymic' && cr.value.length < 8 → continue` guard in BOTH crossref apply blocks (passport case + booklet case). "Yovych" (6 chars) now rejected instead of written to field.
+- `VERIFIED(local)` 2101/2101 tests pass, 0 type errors.
+- `UNVERIFIED` Production — deploy pending.
+
 ## Session 39M (2026-05-27) — fix: rotation loops for ALL slots guard on line count
 
 - `VERIFIED(local)` Added `result.lines.length < 8` condition to rotation retry loops in passport / i94 / ead / dl cases. Loops now skip if Vision already reads 8+ lines (image is upright but doesn't match the module). Prevents 15-20s hang on ALL document types when mobile photo is clear but module doesn't match.
