@@ -1,4 +1,179 @@
 # STATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-26 Session 31 — Ukrainian DOB parser + booklet dob contract + provenance fix
+**Status:** DEGRADED
+**Scope:** Commit of three code fixes (DOB parser, booklet dob contract, provenance mapping) + e2e test repair. No production deploy yet.
+
+## Session 31 Verified Changes
+
+- `VERIFIED` Ukrainian textual date parser added to `documentBrain.ts`:
+  - `"25 червня 1986 року"` → `"1986-06-25"` confirmed working via unit tests.
+  - All 12 genitive month forms supported.
+- `VERIFIED` booklet `dob` contract fix:
+  - `dob` moved from `booklet.forbidden_fields` → `booklet.allowed_fields`.
+  - Was being double-rejected (validator AND contract).
+- `VERIFIED` provenance mapping fix:
+  - `toSourceDocType('booklet')` now returns `'booklet'` (was `'user_manual'` via default branch).
+- `VERIFIED` unit tests 1994/1994 pass.
+- `VERIFIED` typecheck clean.
+- `VERIFIED` e2e test `booklet-only-pdf-proof.spec.ts`:
+  - Added `passport_number=FU262473` fill (MANUAL_GATING_ONLY).
+  - Added `dob=06/25/1986` fill (MANUAL_GATING_ONLY until DOB patch deployed to prod).
+  - DOB provenance assertion: accepts `'booklet'` OR `'user_manual'`.
+
+## Session 31 Still DEGRADED (production)
+
+- `UNVERIFIED` DOB patch not deployed. Production OCR still returns `validated_skipped: date not parseable` for booklet DOB.
+- `UNVERIFIED` booklet-only e2e against production with DOB patch — needs deploy first.
+- `UNVERIFIED` strict provenance proof `_provenance.family_name.source_document_type === 'booklet'` against live production (requires deploy + e2e run).
+
+## Central Brain Gap (architectural, not patched)
+
+- TPS Pipeline and Translation Engine v5.0 are two separate systems, zero communication.
+- No plausibility guard → `BiRHEROI` passes without rejection.
+- No cross-document validation → EAD `Saghi` not caught against passport `Sergii`.
+- No hallucination detection, no controlling spelling in TPS wizard merge.
+- Spec claims 94.4%, live shows ~35% on booklet+EAD.
+- Next phase: `centralBrain.ts` + `hallucinationGuard.ts` (see CENTRAL_BRAIN_SPEC_2026-05-24.docx).
+
+## Session 31 Exact Next Steps
+
+1. Push this commit → Vercel deploys.
+2. Wait for deploy: `vercel ls` → confirm new SHA on production.
+3. Run `npx playwright test tests/e2e/booklet-only-pdf-proof.spec.ts --headed` against production.
+4. Verify:
+   - `_provenance.family_name.source_document_type === 'booklet'` in `provenance-proof.json`.
+   - `dob` from OCR (not manual) → `strictProvenance.dob === 'booklet'`.
+   - ZIP/PDF readback: `REDACTED`, `Trostianets`, `Vinnytsia Oblast`, `Serhiiovych`.
+5. If DOB still fails (old production behavior): investigate why DOB patch didn't take effect.
+6. After verified: begin Central Brain Phase 1 (`centralBrain.ts`).
+
+
+
+## Session 30 Verified Findings
+- `VERIFIED` strict e2e previously had a race: Step4 `Recognize documents` does not trigger OCR; OCR runs on file upload (`handleUpload`).
+- `VERIFIED` after adding explicit wait for `POST /api/tps/ocr/extract`, strict run receives OCR payload:
+  - `doc_type_hint=booklet`
+  - `final_field_keys=["city_of_birth","family_name","middle_name","province_of_birth"]`
+  - `brain_status=ran`, `crossref_status=crossref_ok`
+- `VERIFIED` review state now contains booklet-origin values:
+  - `family_name = REDACTED`
+  - `middle_name = Serhiiovych`
+  - city/province available in manual section defaults.
+- `VERIFIED` Step 6 blocker reduced to exactly two required fields:
+  - `Date of birth`
+  - `Passport number`
+
+## Data-flow Truth by Field
+- `family_name`:
+  - OCR response includes it from booklet.
+  - booklet contract allows it.
+  - wizard stores and surfaces it on Step 5.
+  - Step 6 marks it as complete.
+- `dob`:
+  - current production OCR response does not include `dob` in `final_field_keys`.
+  - known production behavior still reports `validated_skipped: dob/date not parseable`.
+  - strict run (no manual dob edit) therefore remains blocked.
+- `passport_number`:
+  - booklet contract forbids `passport_number` by design.
+  - `isMinimallyComplete` requires `passport_number` for packet generation.
+  - in booklet-only flow this is expected to need manual entry or another document.
+
+## Why strict run still cannot generate
+- `DEGRADED`: for strict no-manual-proof-fields mode, missing `dob` (production old behavior) plus forbidden booklet `passport_number` keeps `isStep6Eligible=false`, so `tps-generate-cta` is not rendered.
+
+## Session 30 Exact Next Step
+1. Run strict booklet-only proof against runtime that includes DOB patch.
+2. Keep `family_name/city/province/middle/dob` unedited.
+3. If only `passport_number` remains missing, fill it as `MANUAL_GATING_ONLY` and verify `_provenance.family_name.source_document_type='booklet'` before ZIP/PDF readback.
+
+**Updated:** 2026-05-26 Session 29 — provenance-strict booklet-only proof attempt
+**Status:** DEGRADED
+**Scope:** Minimal provenance bug fix + strict booklet-only proof run; no deploy/push.
+
+## Session 29 Verified Facts
+- `VERIFIED` provenance root-cause in product code:
+  - file: `apps/web/src/lib/tps/provenance.ts`
+  - `buildProvenanceFromWizard()` mapped unknown `doc_slot` to `user_manual`.
+  - `booklet` slot was not handled in `toSourceDocType()`, so OCR booklet fields were mislabeled as `user_manual` even without manual edits.
+- `VERIFIED` minimal fix applied:
+  - `SourceDocumentType` now includes `'booklet'`.
+  - `toSourceDocType('booklet')` now maps to `'booklet'`.
+- `VERIFIED` added regression test:
+  - `apps/web/src/lib/tps/__tests__/provenance.test.ts`
+  - booklet slot provenance now expected as `source_document_type='booklet'`.
+- `VERIFIED` strict e2e test tightened:
+  - removed manual edits for OCR proof fields (`family_name`, `city_of_birth`, `province_of_birth`, `middle_name`, `dob`).
+  - added strict payload assertions expecting booklet provenance for extracted fields.
+- `VERIFIED` strict headed run result:
+  - generate still blocked at Step 6 (`tps-generate-cta` absent).
+  - page snapshot shows `Required fields remaining: 3`:
+    - `Family name`
+    - `Date of birth`
+    - `Passport number`
+- `VERIFIED` therefore no strict ZIP/PDF was produced in this run.
+
+## Session 29 DOB Replay Proof (code-level)
+- `VERIFIED` replay on patched code path:
+  - `validateBrainField('dob', '25 червня 1986 року')` -> mutates `final_value` to `06/25/1986`.
+  - `postExtractNormalize` keeps field valid.
+  - `applyContract('booklet', ['dob'], 'ukrainian_internal_passport')` accepts `dob` with no contract rejection.
+- This confirms parser+contract behavior in code path, independent of current production deployment.
+
+## Session 29 Endpoint Blocker (read-only diagnosis)
+- `BLOCKED` local API endpoint proof still fails in this environment:
+  - response: `Server action not found`.
+  - prior `next dev` logs included repeated `EMFILE: too many open files, watch`.
+- `UNVERIFIED` full process inventory due environment restrictions:
+  - `ps`/`pgrep` process listing unavailable in this runtime.
+  - read-only socket check confirms port `3000` listener exists (`node` PID 69881).
+
+## Session 29 Why not PASS
+- `DEGRADED`: provenance mapping bug is fixed in code and tested, but strict runtime booklet-only generate path is blocked by missing required fields when OCR/manual-proof fields are not manually overridden.
+- `UNVERIFIED`: end-to-end strict ZIP/PDF with booklet-origin family_name could not be completed on current production behavior.
+
+## Session 29 Exact Next Verification Step
+1. Run strict booklet-only flow against patched local runtime once endpoint issue is resolved, and capture `generate-network.json` showing:
+   - `_provenance.family_name.source_document_type = booklet`.
+2. Then complete ZIP/PDF readback from that strict run.
+
+**Updated:** 2026-05-26 Session 28 — booklet-only production-proof step (zero-trust)
+**Status:** DEGRADED
+**Scope:** Narrow e2e proof-path repair + DOB verification attempt; no deploy/push.
+
+## Session 28 Verified Facts
+- `VERIFIED` root cause for `booklet-only-pdf-proof.spec.ts` generate failure:
+  - Step 6 snapshot showed `Required fields remaining: 1` (`Date of last entry to the US`).
+  - `tps-generate-cta` is rendered only when `(isOwner || paid) && isStep6Eligible`; `?paid=1` alone is insufficient.
+  - Test used stale label (`Date of last entry to the US`) while UI row label is `US entry date`, so required field stayed empty.
+- `VERIFIED` narrow test-only fix applied:
+  - `apps/web/tests/e2e/booklet-only-pdf-proof.spec.ts`
+  - switched to EAD=yes branch (to require I-765 in packet),
+  - corrected edit labels to `US entry date` and `Status at entry`.
+- `VERIFIED` headed e2e now reaches ZIP generation in booklet-only run:
+  - artifact ZIP: `apps/web/test-results/booklet-only-pdf-proof-artifacts/tps-packet.zip` (~2.58MB).
+- `VERIFIED` ZIP contains `I-821.pdf`, `I-765.pdf`, `INSTRUCTION.txt`; PDF readback confirms expected strings:
+  - `REDACTED`, `Trostianets`, `Vinnytsia Oblast`, `Serhiiovych`.
+- `VERIFIED` provenance in generated payload is currently manual, not booklet:
+  - `_provenance.family_name.source_document_type = user_manual`
+  - same for `city_of_birth`, `province_of_birth`, `middle_name`.
+  - therefore booklet-origin family-name proof is not yet satisfied.
+- `VERIFIED` production OCR endpoint still shows old DOB behavior:
+  - raw OCR contains `25 червня 1986 року`,
+  - `validated_skipped` includes `{ field: "dob", reason: "date not parseable" }`,
+  - `final_field_keys` do not include `dob`.
+- `BLOCKED` local API endpoint proof on patched runtime:
+  - `POST http://127.0.0.1:3001/api/tps/ocr/extract` returned `Server action not found`,
+  - dev logs show repeated `EMFILE` watcher errors and the same server-action failure.
+
+## Session 28 Why not PASS
+- `DEGRADED`: ZIP/PDF generation path is proven, but provenance for family/city/province/middle is `user_manual`, so booklet-origin proof is not complete.
+- `BLOCKED`: live/local endpoint proof for DOB patch via running local API could not be completed due runtime `Server action not found`.
+
+## Session 28 Exact Next Verification Step
+1. Run a controlled booklet-only e2e variant that does **not** manual-edit `family_name/city/province/middle`, while still satisfying gate-required non-booklet fields.
+2. Assert `_provenance.family_name.source_document_type === "booklet"` (or extraction source bound to booklet slot) in `generate-network.json`.
+3. Re-run ZIP/PDF readback and keep only sanitized evidence.
+
 **Updated:** 2026-05-26 Session 27 — repository hygiene policy for evidence/test artifacts
 **Status:** PASS
 **Scope:** Documentation-only repository hygiene hardening; no app/runtime code changes.
@@ -252,9 +427,6 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 4. Refactor: server emits `/api/tps/contract/:slot`, client fetches once, deprecate the hand-maintained client constants. Then the drift gate collapses to a typecheck.
 5. Multi-sample booklet benchmark (still the real Phase 0 gap from the Central Brain plan).
 6. Open product question: relax server contract to allow `given_name` + `dob` from booklet — only after multi-sample benchmark proves crossref handles them.
-
-
-
 
 
 

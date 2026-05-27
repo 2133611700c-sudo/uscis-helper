@@ -87,6 +87,15 @@ describe('applyContract — i94 slot', () => {
   })
 })
 
+describe('applyContract — booklet slot', () => {
+  it('passes booklet DOB when parser/validator produced it', () => {
+    const r = applyContract('booklet', ['family_name', 'dob', 'city_of_birth'], 'passport')
+    expect(r.accepted_field_keys.sort()).toEqual(['city_of_birth', 'dob', 'family_name'])
+    expect(r.rejected_fields).toEqual([])
+    expect(r.slot_mismatch).toBe(false)
+  })
+})
+
 describe('applyContract — ead slot', () => {
   it('passes a_number / category / expiration', () => {
     const r = applyContract(
