@@ -241,6 +241,8 @@ export async function POST(req: NextRequest) {
               for (const [crKey, tpsKey] of Object.entries(fieldMap)) {
                 const cr = (crossref as any)[crKey] as { value: string | null; confidence: string; review_required: boolean }
                 if (!cr?.value || cr.confidence === 'garbage') continue
+                // Reject partial patronymic fragments (e.g. "Yovych" = just "-ович" suffix, no name root)
+                if (crKey === 'patronymic' && cr.value.length < 8) continue
                 const existing = booklet!.fields.find((f) => f.field === tpsKey)
                 // Only override if crossref has better value or existing is empty
                 // Override if: no existing, existing empty, or existing from weaker source
@@ -495,6 +497,8 @@ export async function POST(req: NextRequest) {
               for (const [crKey, tpsKey] of Object.entries(fieldMap)) {
                 const cr = (crossref as any)[crKey] as { value: string | null; confidence: string; review_required: boolean }
                 if (!cr?.value || cr.confidence === 'garbage') continue
+                // Reject partial patronymic fragments (e.g. "Yovych" = just "-ович" suffix, no name root)
+                if (crKey === 'patronymic' && cr.value.length < 8) continue
                 const existing = moduleResult!.fields.find((f) => f.field === tpsKey)
                 // Override if: no existing, existing empty, or existing from weaker source
                 const weakSources = new Set(['ocr_keyword', 'ocr_visual', 'ai_brain'])
