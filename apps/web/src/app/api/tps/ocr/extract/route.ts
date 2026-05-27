@@ -286,7 +286,7 @@ export async function POST(req: NextRequest) {
         )
       const mrzAlreadyFound =
         hasPassportNumberFromMrz(td3) || hasPassportNumberFromMrz(booklet)
-      if (!td3.matched && !mrzAlreadyFound) {
+      if (!td3.matched && !mrzAlreadyFound && result.lines.length < 8) {
         for (const angle of [90, 180, 270] as const) {
           try {
             const sharp = (await import('sharp')).default
@@ -342,7 +342,7 @@ export async function POST(req: NextRequest) {
       // try 90/180/270 and pick the rotation with the most fields.
       let i94Result = runI94Module(result, { document_id })
       const i94FieldCount = (mr: TpsModuleResult | null): number => mr?.fields?.length ?? 0
-      if (i94FieldCount(i94Result) < 3) {
+      if (i94FieldCount(i94Result) < 3 && result.lines.length < 8) {
         for (const angle of [90, 180, 270] as const) {
           try {
             const sharp = (await import('sharp')).default
@@ -377,7 +377,7 @@ export async function POST(req: NextRequest) {
       // breaks anchor matching; retry at 90/180/270.
       let eadResult = runEadModule(result, { document_id })
       const eadFieldCount = (mr: TpsModuleResult | null): number => mr?.fields?.length ?? 0
-      if (eadFieldCount(eadResult) < 3) {
+      if (eadFieldCount(eadResult) < 3 && result.lines.length < 8) {
         for (const angle of [90, 180, 270] as const) {
           try {
             const sharp = (await import('sharp')).default
@@ -427,7 +427,7 @@ export async function POST(req: NextRequest) {
         !!mr?.fields?.some((f) => f.field === 'us_address_street')
       const dlGood = (mr: TpsModuleResult | null): boolean =>
         !!mr && mr.matched && dlHasAddressStreet(mr)
-      if (!dlGood(dlResult)) {
+      if (!dlGood(dlResult) && result.lines.length < 8) {
         for (const angle of [90, 180, 270] as const) {
           try {
             const sharp = (await import('sharp')).default
