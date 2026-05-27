@@ -2582,7 +2582,7 @@ export default function TPSWizardV2({ locale }: Props) {
     } finally {
       setBusy(false)
     }
-  }, [buildDraftAnswers, data, locale, mergedFields, signatureData, t.packetErr, translationReviewConfirmed])
+  }, [buildDraftAnswers, centralBrainResult, centralBrainStatus, data, locale, mergedFields, signatureData, t.packetErr, translationReviewConfirmed])
 
   // ── Restart helper ───────────────────────────────────────────────────────
   const restart = useCallback(() => {

@@ -1,4 +1,4 @@
-# HANDOFF — Session 39g (2026-05-27)
+# HANDOFF — Session 39g patch (2026-05-27)
 
 ## Session 39g — CRITICAL fix: wizard crash on "Адрес отличается" checkbox
 
