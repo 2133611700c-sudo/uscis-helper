@@ -1,5 +1,11 @@
-# STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 39i (patch) — fix duplicate restart button
+# ST
+## DB Security Patch (2026-05-27)
+- `VERIFIED` Event trigger `auto_grant_public_tables` active on uscis-helper
+- `VERIFIED` Event trigger `auto_grant_public_tables` active on Handy & Friend  
+- `VERIFIED` All 34 uscis-helper tables have explicit GRANT to anon+authenticated
+- `VERIFIED` All 31 Handy & Friend tables have RLS policies (was: 12 with 0 policies)
+ATUS — Messenginfo TPS Robot
+**Updated:** 2026-05-27 DB patch — Supabase auto-grant trigger installed
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 

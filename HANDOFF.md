@@ -1,3 +1,19 @@
+## DB Security Patch — 2026-05-27
+
+**What was done:** Full Supabase security audit + auto-fix applied.
+
+**uscis-helper (rtfxrlountkoegsseukx):**
+- Explicit GRANT on all 34 tables (anon + authenticated)
+- Event trigger `auto_grant_public_tables` installed — any new table gets GRANT automatically
+
+**Handy & Friend (taqlarevwifgfnjxilfh):**
+- 12 tables had RLS enabled but 0 policies (silent denial). Fixed.
+- Event trigger `auto_grant_public_tables` installed
+
+**Nothing to do manually.** Both databases self-maintain going forward.
+
+---
+
 # HANDOFF — Session 39i (patch) (2026-05-27)
 
 ## Session 39i (patch) — fix duplicate restart button
