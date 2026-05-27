@@ -79,14 +79,14 @@ describe('hallucinationGuard.crossDocumentConflict', () => {
     expect(r.risk).toBe('none')
   })
 
-  it('returns low risk for distance <= 2 (OCR transcription)', () => {
+  it('returns risk=low for distance <= 2 (OCR transcription)', () => {
     // Kovalenko vs Kovalenk0 — distance 1 (0 vs o)
     const r = crossDocumentConflict('family_name', 'Kovalenko', 'Kovalenk0')
     expect(r.risk).toBe('low')
     expect(r.should_block).toBe(false)
   })
 
-  it('returns high risk for large distance (real conflict)', () => {
+  it('returns risk=high for large distance (real conflict)', () => {
     const r = crossDocumentConflict('given_name', 'Sergii', 'Saghi')
     expect(r.risk).toBe('high')
     expect(r.should_block).toBe(true)

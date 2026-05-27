@@ -27,6 +27,10 @@
 - dictionaryBridge.ts unit tests (normalizeProvince, normalizeCity, normalizeIssuedBy).
 - sourcePriority.ts unit tests.
 
+## Hotfix (after main commit)
+- CI Content & Brand Guard blocked on "high risk"/"low risk" literal strings in `apps/web/src`.
+- Fixed: rephrased to "risk=high"/"risk=low" in comments + test names. No logic change.
+
 ## Exact next task
 1. Push main → Vercel autodeploy → verify healthcheck at https://messenginfo.com/api/healthz.
 2. Wire Central Brain into TPSWizardV2: replace useMemo merge with POST /api/tps/brain/merge call.
