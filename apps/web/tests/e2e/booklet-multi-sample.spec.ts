@@ -119,19 +119,10 @@ for (const doc of BOOKLET_DOCS) {
         } catch { /* ignore */ }
       })
 
-      // Track translation preview
+      // previewCapture populated directly from waitForResponse (avoids async-handler race)
       const previewCapture: { violations_count: number; translation_bytes: number; cert_bytes: number } = {
         violations_count: -1, translation_bytes: 0, cert_bytes: 0,
       }
-      page.on('response', async (resp) => {
-        if (!resp.url().includes('/api/tps/translation/preview') || resp.request().method() !== 'POST') return
-        try {
-          const json = await resp.json()
-          previewCapture.violations_count = (json?.violations ?? []).length
-          previewCapture.translation_bytes = (json?.translation_html ?? '').length
-          previewCapture.cert_bytes = (json?.certification_html ?? '').length
-        } catch { /* ignore */ }
-      })
 
       // Clean state
       await page.goto('/en/services/tps-ukraine/start')
@@ -228,12 +219,19 @@ for (const doc of BOOKLET_DOCS) {
         throw new Error(result.error)
       }
 
-      const previewResp = page.waitForResponse(
+      const previewRespPromise = page.waitForResponse(
         (r) => r.url().includes('/api/tps/translation/preview') && r.request().method() === 'POST',
         { timeout: 30_000 },
       )
       await reviewBtn.click()
-      await previewResp
+      const previewRespObj = await previewRespPromise
+      // Parse directly from response — avoids race with async page.on('response') handler
+      try {
+        const json = await previewRespObj.json()
+        previewCapture.violations_count = (json?.violations ?? []).length
+        previewCapture.translation_bytes = (json?.translation_html ?? '').length
+        previewCapture.cert_bytes = (json?.certification_html ?? '').length
+      } catch { /* ignore */ }
 
       // Collect preview metrics (no values, only sizes/counts)
       result.translation_preview_ok = previewCapture.violations_count === 0 && previewCapture.translation_bytes > 0
