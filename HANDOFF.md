@@ -1,4 +1,4 @@
-# HANDOFF — Session 33 (2026-05-27)
+# HANDOFF — Session 35 (2026-05-27)
 
 ## What was done this session
 
@@ -71,9 +71,17 @@
 - Payment verification: generate-packet verifies real Stripe cs_* session ID (was hardcoded string bypass)
 - Wizard stores `stripeCheckoutId` from `?cs=` URL param, sends as X-Payment-Token
 
+## Session 35 work (this commit)
+- **Mailing address UI**: checkbox "My mailing address is different from physical" + mailing street/city/state/zip inputs in `ReviewManual` (TPSWizardV2) and `GeneratePacketBlock` (legacy)
+- `WizardData['manual']` extended with `mailing_different`, `mailing_street/city/state/zip`
+- `buildDraftAnswers()` now passes `mailing_same_as_physical: data.manual.mailing_different !== true` + mailing fields when flag is true
+- Field maps (i765FieldMap, i821FieldMap) already handled the separate-mailing case — this was the only missing piece
+- TODO(P1-UX) comment removed from GeneratePacketBlock.tsx
+
 ## Exact next tasks (priority order)
 1. **Run Playwright e2e**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts` — needs live server + booklet_test_resized.jpg in qa-shots/private/
 2. **Stripe webhook: TPS payment record** — webhook logs TPS payment to `audit_log` only; no `tps_payments` table for query-based verification (currently Stripe API call handles it)
+3. **Deploy to production**: all commits on main, awaiting owner approval for `git push`
 
 ## Evidence
 - Commits: 36d1260 (P0.5–P2), 20b0c01 (P3), fba7ba4 (P5+P6)
