@@ -16,6 +16,8 @@
 - `VERIFIED` documentContracts.ts: issued_by + passport_date_of_issue explicitly in booklet forbidden_fields (translationExtractor picks up from rejected[])
 - `VERIFIED` 2092/2092 tests pass, 0 type errors
 - `VERIFIED` P3: TranslationReviewGate built + wired. reviewConfirmed: true required in packetBuilder before translation enters ZIP. /api/tps/translation/preview endpoint added.
+- `VERIFIED` P5: Agency glossary expanded from 24 → 49 entries (УВС, ГУВС, ОВС, ВОВС, РВ МВС, ВДДМС, СДМС, ТДМС, ВАЦС, ВП, ЦНАП, ГУНП, ГОВП, УВІР, ОМ, РМ, МОУ, КМ, ВСЗН etc.)
+- `VERIFIED` P6: International passport translation implemented in generateTPSTranslation ('internationalPassport' template path was null — now renders full HTML)
 - `OPEN` Image retention audit: temp files, Vercel logs, Supabase ZIP storage (ADR-009 OPEN items)
 - `OPEN` DeepSeek privacy disclosure UI (pre-production requirement)
 

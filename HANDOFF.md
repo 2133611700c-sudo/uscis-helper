@@ -37,6 +37,15 @@
 - **packetBuilder.ts**: `reviewConfirmed: true` required before translation enters ZIP
 - **TPSWizardV2.tsx**: "Review Translation" button → preview API → TranslationReviewGate modal → on confirm → `translationReviewConfirmed = true` → generate includes translation
 
+### P5 — Agency Glossary Expansion (COMPLETE)
+- `ukraine_agency_abbreviations.json`: 24 → 49 entries
+- Added post-2015 police units (ВП, ГОВП, ГУНП), DMS variants (ВДДМС, СДМС, ТДМС), civil registry (ВАЦС), admin service centers (ЦНАП, МЦНАП), historical units (УВС, ГУВС, ОВС, ОМ, РМ, КМ)
+
+### P6 — International Passport Translation (COMPLETE)
+- `generateTPSTranslation` now handles 'passport' docType via 'internationalPassport' template
+- Renders full HTML with "International Passport of Ukraine" title
+- Was returning null — now produces translation + certification HTML
+
 ## What was NOT done
 - P2.5: Google Vision/DocAI benchmark (needs 5 real documents — data task)
 - P3.5: PDF output decision (HTML serves as-is for now)
