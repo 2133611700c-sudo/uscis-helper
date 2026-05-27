@@ -3,6 +3,23 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 32: P4 — Translation Bridge v0 (Central Brain → booklet translation draft)
+
+### What changed
+- `apps/web/src/lib/tps/translationBridge.ts`:
+  - Added `translateBookletFromBrain(merged, opts)` — new entry point that takes Central Brain `Record<string, MergedField>` directly.
+  - Central Brain values are already KMU-55 transliterated + oblast normalized + agency glossary resolved. No re-processing needed.
+  - Maps: family_name→surname, given_name→given_name, middle_name→patronymic, dob→date_of_birth, city+province→place_of_birth, issued_by→issuing_authority, passport_number, passport_date_of_issue, sex M/F→Male/Female.
+  - Returns translation_html + certification_html + violations[]. Returns null if surname absent.
+  - Certification block: self-certify language ("competent to translate", "complete and accurate"). No "certified by AI", no "USCIS accepted".
+- New: `apps/web/src/lib/tps/__tests__/translationBridge.brain.test.ts`
+  - 18 tests proving all 8 target fields, place_of_birth concatenation, sex normalization, certification text, violations=[], null-guard, minimal-data path.
+
+### Verified
+- 2051/2051 tests pass. 0 type errors.
+
+---
+
 ## 2026-05-27 — Session 32: P3 — direct Central Brain network capture in Playwright e2e
 
 ### What changed
