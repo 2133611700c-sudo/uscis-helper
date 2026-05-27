@@ -230,6 +230,9 @@ const T = {
       'Messenginfo не подає документи за вас. Ми не юридична фірма. Не гарантуємо прийняття USCIS. Перевіряйте дати на ',
     back: '← Назад',
     restart: '↺ Спочатку',
+    staleSession: (days: number) => `⏱ Збережено ${days} дн. тому`,
+    continueSession: 'Продовжити',
+    freshStart: '↺ Почати знову',
     edit: 'Змінити',
     notSet: '—',
     notFound: 'Не знайдено — введіть вручну',
@@ -447,6 +450,9 @@ const T = {
       'Messenginfo не подаёт документы за вас. Мы не юридическая фирма. Не гарантируем приём USCIS. Проверяйте даты на ',
     back: '← Назад',
     restart: '↺ С начала',
+    staleSession: (days: number) => `⏱ Сохранено ${days} дн. назад`,
+    continueSession: 'Продолжить',
+    freshStart: '↺ Начать заново',
     edit: 'Изменить',
     notSet: '—',
     notFound: 'Не найдено — введите вручную',
@@ -663,6 +669,9 @@ const T = {
       'Messenginfo does not file on your behalf. We are not a law firm. We do not guarantee USCIS acceptance. Verify dates at ',
     back: '← Back',
     restart: '↺ Restart',
+    staleSession: (days: number) => `⏱ Saved ${days} day${days === 1 ? '' : 's'} ago`,
+    continueSession: 'Continue',
+    freshStart: '↺ Start fresh',
     edit: 'Edit',
     notSet: '—',
     notFound: 'Not found — enter manually',
@@ -880,6 +889,9 @@ const T = {
       'Messenginfo no presenta documentos por usted. No somos un bufete. No garantizamos aceptación de USCIS. Verifique fechas en ',
     back: '← Atrás',
     restart: '↺ Reiniciar',
+    staleSession: (days: number) => `⏱ Guardado hace ${days} día${days === 1 ? '' : 's'}`,
+    continueSession: 'Continuar',
+    freshStart: '↺ Empezar de nuevo',
     edit: 'Editar',
     notSet: '—',
     notFound: 'No encontrado — escriba a mano',
@@ -1387,14 +1399,16 @@ function RW({
           data-testid={editTestId}
           style={{
             background: 'none',
-            border: 'none',
-            fontSize: 14,
+            border: '1px solid var(--border, #cbd5e1)',
+            borderRadius: 6,
+            fontSize: 13,
             color: GREEN,
             cursor: 'pointer',
-            textDecoration: 'underline',
             fontFamily: 'inherit',
-            padding: 0,
+            padding: '6px 12px',
+            minHeight: 36,
             whiteSpace: 'nowrap',
+            fontWeight: 600,
           }}
         >
           {editLabel}
@@ -1480,7 +1494,8 @@ function SingleSelect({
               type="button"
               onClick={() => onPick(o.id)}
               style={{
-                padding: '8px 14px',
+                padding: '10px 16px',
+                minHeight: 44,
                 border: `1.5px solid ${active ? GREEN : BORDER}`,
                 borderRadius: 8,
                 cursor: 'pointer',
@@ -1651,6 +1666,8 @@ export default function TPSWizardV2({ locale }: Props) {
   const [translationDraft, setTranslationDraft] = useState<{ html: string; certHtml: string } | null>(null)
   const [showTranslationReview, setShowTranslationReview] = useState(false)
   const [translationPreviewBusy, setTranslationPreviewBusy] = useState(false)
+  // > 0 = stale session banner shown (value = days since last save)
+  const [staleSessionDays, setStaleSessionDays] = useState(0)
 
   // ── Persist to localStorage (without File objects) ───────────────────────
   //
@@ -1727,6 +1744,21 @@ export default function TPSWizardV2({ locale }: Props) {
           } = parsed
           setData((d) => ({ ...d, ...rest, uploads: rebuiltUploads }))
           if (typeof parsed.lastStep === 'number') setStep(parsed.lastStep)
+
+          // Stale session detection: if savedAt is older than 3 days and the
+          // user was past step 1, show a banner so they can start fresh.
+          if (typeof parsed.savedAt === 'string' && (parsed.lastStep ?? 1) > 1) {
+            const ageMs = Date.now() - new Date(parsed.savedAt).getTime()
+            const ageDays = Math.floor(ageMs / 86_400_000)
+            if (ageDays >= 60) {
+              // Auto-clear very old sessions silently.
+              try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+              setData({ uploads: {}, manual: {}, paid: false, packetReady: false, part7Reviewed: false })
+              setStep(1)
+            } else if (ageDays >= 3) {
+              setStaleSessionDays(ageDays)
+            }
+          }
         }
       }
     } catch {
@@ -1776,6 +1808,7 @@ export default function TPSWizardV2({ locale }: Props) {
           ...rest,
           lastStep: step,
           uploadsMeta: uploadsSafe,
+          savedAt: new Date().toISOString(),
         }),
       )
     } catch {
@@ -2643,10 +2676,72 @@ export default function TPSWizardV2({ locale }: Props) {
           {t.sub}
         </p>
 
-        {/* Progress bar + persistent restart link.
-            The restart link lives above the progress bar so the user can
-            wipe stale OCR / personal data from any step — critical when
-            the firewall logic has evolved between sessions. */}
+        {/* Stale session banner — shown when user returns to a session
+            that was saved 3+ days ago. Gives a clear choice: continue or
+            start fresh. Auto-dismissed on either action. */}
+        {staleSessionDays >= 3 && (
+          <div
+            style={{
+              background: 'var(--warn-bg, #fffbeb)',
+              border: '1.5px solid var(--warn-border, #f59e0b)',
+              borderRadius: 12,
+              padding: '12px 16px',
+              marginBottom: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1, #111)' }}>
+              {t.staleSession(staleSessionDays)}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setStaleSessionDays(0)}
+                style={{
+                  flex: 1,
+                  minWidth: 120,
+                  padding: '10px 16px',
+                  background: GREEN,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  minHeight: 44,
+                }}
+              >
+                {t.continueSession}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setStaleSessionDays(0); restart() }}
+                style={{
+                  flex: 1,
+                  minWidth: 120,
+                  padding: '10px 16px',
+                  background: 'transparent',
+                  color: 'var(--text-2, #555)',
+                  border: '1.5px solid var(--border, #cbd5e1)',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  minHeight: 44,
+                }}
+              >
+                {t.freshStart}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Progress bar + restart button.
+            Button hidden at step 1 (nothing to restart yet). */}
         <div
           style={{
             display: 'flex',
@@ -2655,28 +2750,31 @@ export default function TPSWizardV2({ locale }: Props) {
             marginBottom: 6,
           }}
         >
-          <button
-            type="button"
-            onClick={() => {
-              const ok = typeof window === 'undefined'
-                ? true
-                : window.confirm(t.restart + '?')
-              if (ok) restart()
-            }}
-            style={{
-              background: 'var(--surface-2, #f1f5f9)',
-              border: '1.5px solid var(--border, #cbd5e1)',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text-2, #475569)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              padding: '6px 12px',
-            }}
-          >
-            {t.restart}
-          </button>
+          {step > 1 && (
+            <button
+              type="button"
+              onClick={() => {
+                const ok = typeof window === 'undefined'
+                  ? true
+                  : window.confirm(t.freshStart + '?')
+                if (ok) { setStaleSessionDays(0); restart() }
+              }}
+              style={{
+                background: 'transparent',
+                border: '1.5px solid var(--border, #cbd5e1)',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--text-2, #64748b)',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                padding: '6px 14px',
+                minHeight: 36,
+              }}
+            >
+              {t.freshStart}
+            </button>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 3, marginBottom: 20 }}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
