@@ -56,7 +56,7 @@ const WIZARD_GATE_VALUES = {
   passportNumber: 'AA000000',      // gate fill — NOT a real passport number
   dob:            '01/01/1980',    // gate fill only
   usEntry:        '09/09/2022',
-  i94:            '039622651A3',
+  i94:            '000000000A0',
   statusAtEntry:  'UHP',
   street:         '1213 Gordon St',
   city:           'Los Angeles',
@@ -206,24 +206,21 @@ for (const doc of BOOKLET_DOCS) {
         return
       }
 
-      // OCR-editable rows (only when OCR extracted the field)
-      const fillDialogIfNeeded = async (label: string, value: string) => {
-        const lowered = label.toLowerCase()
-        const editBtn = page.locator(
-          `xpath=//div[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'${lowered}')]/following-sibling::div//button`,
-        ).first()
-        if ((await editBtn.count()) === 0) return
-        const rowText = await page.locator(
-          `xpath=//div[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'${lowered}')]`,
-        ).first().textContent().catch(() => '')
-        if (rowText && !/required|—|missing/i.test(rowText)) return
+      // Identity + document fields are recognized rows in ReviewOcr, each with
+      // an "Изменить" edit button (data-testid tps-ocr-edit-<key>). Editing
+      // writes to the synthetic 'manual' upload slot under the base key, which
+      // flows into the gate, the forms, AND the translation. No separate manual
+      // inputs for these (auto-fill product rule). All values are SYNTHETIC.
+      const editOcrField = async (key: string, value: string) => {
+        const btn = page.getByTestId(`tps-ocr-edit-${key}`)
+        if ((await btn.count()) === 0) return
         page.once('dialog', async (dialog) => dialog.accept(value))
-        await editBtn.click()
-        await page.waitForTimeout(100)
+        await btn.click()
+        await page.waitForTimeout(150)
       }
 
-      await fillDialogIfNeeded('i-94 admission', WIZARD_GATE_VALUES.i94)
-      await fillDialogIfNeeded('status at entry', WIZARD_GATE_VALUES.statusAtEntry)
+      await editOcrField('i94_admission_number', WIZARD_GATE_VALUES.i94)
+      await editOcrField('status_at_last_entry', WIZARD_GATE_VALUES.statusAtEntry)
 
       const fillIfEmpty = async (testId: string, value: string) => {
         const input = page.getByTestId(testId)
@@ -232,11 +229,11 @@ for (const doc of BOOKLET_DOCS) {
         if (!(await input.inputValue()).trim()) await input.fill(value)
       }
 
-      // Identity gate fields — shown as manual inputs when OCR missed them
-      await fillIfEmpty('tps-review-manual-given-name', WIZARD_GATE_VALUES.givenName)
-      await fillIfEmpty('tps-review-manual-passport-number', WIZARD_GATE_VALUES.passportNumber)
-      await fillIfEmpty('tps-review-manual-dob', WIZARD_GATE_VALUES.dob)
-      await fillIfEmpty('tps-review-manual-last-entry-date', WIZARD_GATE_VALUES.usEntry)
+      // Identity gate fields via the recognized-row edit button (SYNTHETIC).
+      await editOcrField('given_name', WIZARD_GATE_VALUES.givenName)
+      await editOcrField('passport_number', WIZARD_GATE_VALUES.passportNumber)
+      await editOcrField('dob', WIZARD_GATE_VALUES.dob)
+      await editOcrField('last_entry_date', WIZARD_GATE_VALUES.usEntry)
       // Patronymic: pre-filled from OCR on the UA-side page; on the RU-side
       // page the handwritten patronymic is often missed → user fills it.
       // fillIfEmpty skips it when OCR already provided the value (doc1).

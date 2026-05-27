@@ -165,7 +165,7 @@ test('booklet upload → review fields survive → generate ZIP', async ({ page,
   await fillIfEmpty('tps-review-manual-phone', '2135550199')
   await fillIfEmpty('tps-review-manual-email', 'sergii.qa+docai@messenginfo.test')
   await fillIfEmpty('tps-review-manual-passport-expiration', '02/22/2029')
-  await fillIfEmpty('tps-review-manual-in-care-of', 'SERGII KUROPIIATNYK')
+  await fillIfEmpty('tps-review-manual-in-care-of', 'QA TEST')
   if ((await page.getByTestId('tps-review-manual-passport-expiration').count()) === 0) {
     const passportExpFallback = page.getByPlaceholder('MM/DD/YYYY').first()
     if ((await passportExpFallback.count()) > 0) {
