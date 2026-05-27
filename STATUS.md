@@ -1,5 +1,5 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-26 Session 32 — oblast regex fix deployed
+**Updated:** 2026-05-26 Session 32 — province_of_birth fully fixed
 **Status:** DEGRADED (pending deploy)
 **Scope:** Central Brain 5-file implementation complete. 2016/2016 tests pass. Typecheck clean. Not yet deployed.
 

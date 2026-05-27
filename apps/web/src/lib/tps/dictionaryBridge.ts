@@ -45,8 +45,9 @@ export function normalizeProvince(raw: string): NormalizeResult {
 
   const result = normalizeOblastToNominative(trimmed)
   if (result) {
+    // result.transliterated already includes "Oblast" (e.g. "Vinnytsia Oblast")
     return {
-      value: `${result.transliterated} Oblast`,
+      value: result.transliterated,
       source: 'knowledge',
       notes: [`nominative_uk=${result.nominative_uk}`],
     }

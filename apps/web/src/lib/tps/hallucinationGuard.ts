@@ -151,6 +151,11 @@ export function checkGeography(
   if (!trimmed) return { risk: 'none', reasons: [], should_block: false }
 
   if (field === 'province_of_birth') {
+    // Accept English-normalized "X Oblast" forms (post-dictionaryBridge output e.g. "Vinnytsia Oblast").
+    // These are already validated — re-running the Cyrillic dictionary check on Latin input would fail.
+    if (/^[A-Za-z][A-Za-z\s\-]*\s+Oblast$/i.test(trimmed)) {
+      return { risk: 'none', reasons: [], should_block: false }
+    }
     const normalized = normalizeOblastToNominative(trimmed)
     if (!normalized) {
       reasons.push(`unknown-province: "${trimmed}" not recognized as a Ukrainian oblast`)
