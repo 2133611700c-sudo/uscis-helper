@@ -40,7 +40,7 @@
 - `VERIFIED` Oblast regex fix: normalizeOblastToNominative("Вінницька область") returns "Vinnytsia Oblast" (was null before fix).
 - `VERIFIED` DOB fixture proof — 14 unit tests in passportBooklet.dob.test.ts prove parseUaDate chain for all formats (full UA/RU month, numeric, abbreviated bilingual "13 CEP / AUG 60", 2-digit year). All 14 pass.
 - `VERIFIED` Direct Playwright network capture for /api/tps/brain/merge: listener + waitForResponse added to booklet-only-pdf-proof.spec.ts. Writes brain-merge-summary.json + brain-merge-network.json artifacts. Asserts status=200, booklet slot present, family_name in merged keys.
-- `VERIFIED` Translation Bridge v0 + wire: `translateBookletFromBrain` live in generate-packet pipeline. ZIP now includes Translation_Internal_Passport.html + Certification_Translation.html when booklet uploaded + CB ready. Fallback to generateTPSTranslation when CB not available. 2051/2051 tests, 0 type errors.
+- `VERIFIED` Translation Bridge v0 + wire + e2e proof: `translateBookletFromBrain` live. ZIP includes Translation_Internal_Passport.html + Certification_Translation.html. Playwright e2e unzips and asserts: surname, Patronymic label (not Middle Name), Internal Passport, competency statement, no "certified by AI". translation-proof.json artifact written. 2051/2051 tests.
 
 ## Session 31 Exact Next Steps
 
