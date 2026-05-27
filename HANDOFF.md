@@ -1,3 +1,26 @@
+# HANDOFF — Session 39e (2026-05-27)
+
+## Session 39e — fix: UX confusion + I-94 port patterns
+
+### Issues fixed
+1. **Секция "Заполните вручную"** → переименована в "Проверьте и дополните" (ru/uk/en/es). Была причиной путаницы — адрес авто-заполняется из прав, но заголовок кричал "заполните вручную".
+2. **Подсказка city_of_birth** → объясняет что смт/пгт убирается из формы I-821 намеренно, а тип поселения добавляется в перевод паспорта.
+3. **Подсказка place_of_last_entry** → честная: "Город и штат въезда, напр. 'Los Angeles, CA'" вместо обманчивого "робот заполнит".
+4. **I-94 port of entry OCR** → добавлено 3 новых паттерна меток (place of entry, entry port, last entry port) + value regex принимает апостроф, дефис, полное имя штата.
+
+### Files changed
+- `TPSWizardV2.tsx`: s5ManualTitle 4 locales + city_of_birth tip + place_of_entry tip
+- `i94.ts`: expanded port-of-entry label + value regex patterns
+
+### Tests
+2098/2098, 0 type errors
+
+### Next tasks
+- Investigate DOB "Не найдено" when booklet-only uploaded
+- TASK-04/05/06 (Form Intelligence, Pain/FAQ DB, Monitoring Engine)
+
+---
+
 # HANDOFF — Session 39d (2026-05-27)
 
 ## Session 39d — fix: смт → "urban-type settlement" in translation
