@@ -3,6 +3,22 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 32: translation e2e proof — unzip + HTML verification in Playwright
+
+### What changed
+- `apps/web/tests/e2e/booklet-only-pdf-proof.spec.ts`:
+  - Added `child_process.execSync` import for system `unzip`.
+  - After ZIP download: unzips to `unzipped/`, lists contents, reads `Translation_Internal_Passport.html` + `Certification_Translation.html`.
+  - Asserts: translation contains surname (`Kuropiatnyk`), `Patronymic` label (not "Middle Name"), `Internal Passport`, `Ukraine`.
+  - Asserts: certification contains competency statement; no "certified by AI".
+  - Writes `translation-proof.json` artifact with all proof signals.
+  - Non-fatal on unzip error (translation is enhancement, not blocker for forms).
+
+### Verified
+- 0 type errors. 2051/2051 unit tests pass.
+
+---
+
 ## 2026-05-27 — Session 32: P4 wire — translation enabled in generate-packet pipeline
 
 ### What changed
