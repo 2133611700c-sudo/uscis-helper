@@ -60,11 +60,14 @@
 - Image retention audit: temp files, Vercel logs, Supabase ZIP storage (ADR-009 OPEN items)
 - Deploy to production: all commits on main, awaiting owner approval for `git push`
 
+## Post-P7 work (this commit)
+- DeepSeek privacy disclosure UI: `aiDisclosure` key in 4 locales + 🔒 box in Step 4
+- Review Gate testids added (translation-review-gate, checkbox, confirm, back buttons)
+- `translation-review-gate.spec.ts`: full 7-gate Playwright e2e proof spec written
+
 ## Exact next tasks (priority order)
-1. **Deploy approval** — owner must approve `git push origin main` to trigger Vercel deploy
-2. **DeepSeek privacy disclosure UI** — add disclosure text to wizard upload step before OCR triggers
-3. **Playwright e2e for Review Gate** — verify full review→confirm→generate flow in live browser
-4. **Image retention audit** — trace temp files, Vercel function logs, Supabase ZIP storage
+1. **Run Playwright e2e**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts` — needs live server + booklet_test_resized.jpg in qa-shots/private/
+2. **Image retention audit** — trace temp files, Vercel function logs, Supabase ZIP storage (ADR-009 OPEN items)
 
 ## Evidence
 - Commits: 36d1260 (P0.5–P2), 20b0c01 (P3), fba7ba4 (P5+P6)
