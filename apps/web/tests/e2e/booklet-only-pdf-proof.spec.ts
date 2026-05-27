@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'path'
 import { promises as fs } from 'fs'
+import { execSync } from 'child_process'
 
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const BOOKLET_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/booklet_test_resized.jpg')
@@ -289,8 +290,75 @@ test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserN
   await expect(page.getByTestId('tps-download-success-state')).toBeVisible({ timeout: 20_000 })
   await page.screenshot({ path: path.join(artifactsDir, 'step6-generated.png'), fullPage: true })
 
+  // ── Translation proof: verify Translation_Internal_Passport.html is in ZIP ──
+  const unzipDir = path.join(artifactsDir, 'unzipped')
+  await fs.mkdir(unzipDir, { recursive: true })
+  const translationProof: Record<string, unknown> = { zip_bytes: zipStat.size }
+  try {
+    execSync(`unzip -o "${zipPath}" -d "${unzipDir}"`, { stdio: 'pipe' })
+    const zipContents = execSync(`unzip -l "${zipPath}"`, { encoding: 'utf8' })
+    translationProof.zip_contents = zipContents.split('\n').map((l) => l.trim()).filter(Boolean)
+
+    const translationFile = path.join(unzipDir, 'Translation_Internal_Passport.html')
+    const certFile = path.join(unzipDir, 'Certification_Translation.html')
+
+    let translationHtml = ''
+    try {
+      translationHtml = await fs.readFile(translationFile, 'utf8')
+      translationProof.translation_file_present = true
+      translationProof.translation_bytes = translationHtml.length
+    } catch {
+      translationProof.translation_file_present = false
+    }
+
+    let certHtml = ''
+    try {
+      certHtml = await fs.readFile(certFile, 'utf8')
+      translationProof.certification_file_present = true
+      translationProof.certification_bytes = certHtml.length
+    } catch {
+      translationProof.certification_file_present = false
+    }
+
+    if (translationHtml) {
+      translationProof.has_surname = translationHtml.includes(EXPECTED.family)
+      translationProof.has_city = translationHtml.includes(EXPECTED.city)
+      translationProof.has_province = translationHtml.includes(EXPECTED.province)
+      translationProof.has_patronymic = translationHtml.includes(EXPECTED.middle)
+      translationProof.has_patronymic_label = translationHtml.includes('Patronymic')
+      translationProof.no_middle_name_label = !translationHtml.includes('Middle Name')
+      translationProof.has_ukraine = translationHtml.includes('Ukraine')
+      translationProof.has_internal_passport = translationHtml.includes('Internal Passport')
+
+      // Core assertions: surname must appear in translation
+      expect(translationHtml).toContain(EXPECTED.family)
+      expect(translationHtml).toContain('Patronymic')
+      expect(translationHtml).not.toContain('Middle Name')
+      expect(translationHtml).toContain('Internal Passport')
+    }
+
+    if (certHtml) {
+      translationProof.cert_has_competency = /competent to translate|complete and accurate/i.test(certHtml)
+      translationProof.cert_no_ai_cert = !(/certified by AI/i.test(certHtml))
+      expect(certHtml).toMatch(/competent to translate|complete and accurate/i)
+    }
+  } catch (e) {
+    translationProof.unzip_error = String(e)
+    // Non-fatal: translation is an enhancement, not blocking forms
+    // eslint-disable-next-line no-console
+    console.warn(`[booklet-only/${browserName}] TRANSLATION_PROOF_ERROR=${String(e)}`)
+  }
+
+  await fs.writeFile(
+    path.join(artifactsDir, 'translation-proof.json'),
+    JSON.stringify(translationProof, null, 2),
+    'utf8',
+  )
+
   // eslint-disable-next-line no-console
   console.log(`[booklet-only/${browserName}] DOM_PROOF=${JSON.stringify(domProof)}`)
   // eslint-disable-next-line no-console
   console.log(`[booklet-only/${browserName}] ZIP_PATH=${zipPath} ZIP_BYTES=${zipStat.size}`)
+  // eslint-disable-next-line no-console
+  console.log(`[booklet-only/${browserName}] TRANSLATION_PROOF=${JSON.stringify(translationProof)}`)
 })
