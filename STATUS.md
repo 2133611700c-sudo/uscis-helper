@@ -3,6 +3,12 @@
 **Status:** PRODUCTION (auto-fill-only model live; all e2e tests passing on production)
 **Scope:** P0–P7 complete. 2092/2092 unit pass. 0 type errors.
 
+## Session 39b (2026-05-27) — fix: booklet source label shows "Паспорт · OCR" instead of "Внутр. паспорт · OCR"
+
+- `VERIFIED(local)` `provenanceLabel()` now has explicit `booklet` branch — `actualSlot==='booklet'` → `t.source.booklet` (all 4 locales). Previously fell through to `fallbackDoc==='passport'` → "Паспорт · OCR", confusing users into thinking data came from the international passport.
+- `VERIFIED(local)` 0 type errors after fix.
+- `UNVERIFIED` Production deploy — pending push.
+
 ## Session 39 (2026-05-27) — e2e green on production
 
 - `VERIFIED(prod)` `booklet-multi-sample.spec.ts` 5/5 PASS: booklet_known/doc1/doc2 full translation (violations=0, bytes 2568-2569), doc3/doc4 non-identity warning (expected).

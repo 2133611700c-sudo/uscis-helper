@@ -268,6 +268,7 @@ const T = {
     },
     source: {
       passport: 'Паспорт → OCR',
+      booklet: 'Внутр. паспорт · OCR',
       i94: 'I-94 → OCR',
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
@@ -484,6 +485,7 @@ const T = {
     },
     source: {
       passport: 'Паспорт → OCR',
+      booklet: 'Внутр. паспорт · OCR',
       i94: 'I-94 → OCR',
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
@@ -699,6 +701,7 @@ const T = {
     },
     source: {
       passport: 'Passport → OCR',
+      booklet: 'Internal Passport · OCR',
       i94: 'I-94 → OCR',
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
@@ -915,6 +918,7 @@ const T = {
     },
     source: {
       passport: 'Pasaporte → OCR',
+      booklet: 'Pasaporte interno · OCR',
       i94: 'I-94 → OCR',
       ead: 'EAD → OCR',
       i797: 'I-797 → OCR',
@@ -3584,6 +3588,7 @@ function ReviewOcr({
       if (actualSlot === 'ead') return t.source.ead
       if (actualSlot === 'i797') return t.source.i797
       if (actualSlot === 'passport') return t.source.visual
+      if (actualSlot === 'booklet') return t.source.booklet
       // No slot recorded — fall back to the row's expected document.
       if (fallbackDoc === 'passport') return t.source.visual
       if (fallbackDoc === 'i94') return t.source.i94

@@ -1,3 +1,24 @@
+# HANDOFF — Session 39b (2026-05-27)
+
+## Session 39b — fix: booklet source label bug
+
+### Bug found by user manual testing
+Fields extracted from the internal passport (буклет) were showing "Паспорт · OCR" as source label — same as international passport. Root cause: `provenanceLabel()` had no handler for `actualSlot === 'booklet'`, fell through to `fallbackDoc === 'passport'` → `t.source.visual` = "Паспорт · OCR".
+
+### Fix
+Added `booklet: 'Внутр. паспорт · OCR'` to `t.source` in all 4 locales (uk/ru/en/es) and `if (actualSlot === 'booklet') return t.source.booklet` in `provenanceLabel()`.
+
+### Second issue: OCR misread "REDACTED" → "Khlopiatnyk"
+This is Vision API OCR accuracy on the real uploaded image — not a code bug. The "Изменить" button is there to correct it. Cannot be fixed in code without image quality improvements on the user's side.
+
+### What was NOT done
+OCR accuracy improvement — requires image preprocessing or alternative OCR provider for handwritten fields.
+
+### Next task
+Investigate why DOB is "Не найдено" when only booklet uploaded (booklet OCR should extract dob).
+
+---
+
 # HANDOFF — Session 39 (2026-05-27)
 
 ## Session 39 — e2e tests fully green (booklet-multi-sample 5/5, translation-review-gate 1/1)
