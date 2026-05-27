@@ -1,3 +1,25 @@
+# HANDOFF — Session 39c (2026-05-27)
+
+## Session 39c — knowledge v1.3 ingested from three reference files
+
+### Source files
+- `/Users/sergiikuropiatnyk/Downloads/UKRAINE_TERMINOLOGY_DICTIONARY.md`
+- `/Users/sergiikuropiatnyk/Downloads/TPS_UKRAINE_OFFICIAL_REQUIREMENTS.html`
+- `/Users/sergiikuropiatnyk/Downloads/TPS_UKRAINE_VERIFIED_REQUIREMENTS.html`
+
+### What was already in the knowledge base (not duplicated)
+KMU-55 full table, all 25 oblast genitive→nominative, all GEO_CORRECTIONS, MVS/MFA/MINJUST/DMS/NPU/MILITSIYA/SBGSU/CIVIL_REGISTRY/DAI/UMVS/GUMVS, settlement types, sex map, ЗАГС/РАЦС/ДРАЦС, 49 agency abbreviations.
+
+### What was added
+- dictionary.ts: 9 new authorities (виконком, РДА, ОДА, сільрада, міська рада, нотаріус, паспортний стіл, дільничний інспектор), DOCUMENT_TYPES (14 doc types), reordered AUTHORITY_PATTERNS
+- tps_ukraine_requirements.ts (new): eligibility 2022-04-11 (rereg) / 2023-08-16 (new initial), H.R.1 NON-WAIVABLE $500-510, EAD A12/C19, submission rules, common mistakes
+- ukraine_agency_abbreviations.json: +ВИКОНКОМ, РДА, ОДА, ТЦК, ДСНС, ДПСУ, ЦНАП
+
+### Next task
+Investigate why booklet OCR misses DOB field (`has_dob: false` in single-booklet verify test).
+
+---
+
 # HANDOFF — Session 39b (2026-05-27)
 
 ## Session 39b — fix: booklet source label bug

@@ -368,6 +368,64 @@
       "confidence": "medium",
       "era": "1991-present",
       "review_required": false
+    },
+    "ВИКОНКОМ": {
+      "uk_full": "Виконавчий комітет",
+      "en": "Executive Committee",
+      "confidence": "high",
+      "era": "1991-present",
+      "review_required": false
+    },
+    "РДА": {
+      "uk_full": "Районна державна адміністрація",
+      "en": "District State Administration",
+      "confidence": "high",
+      "era": "1991-present",
+      "review_required": false
+    },
+    "ОДА": {
+      "uk_full": "Обласна державна адміністрація",
+      "en": "Regional State Administration",
+      "confidence": "high",
+      "era": "1991-present",
+      "review_required": false
+    },
+    "МЖК": {
+      "uk_full": "Міжнародний жіночий клуб / Міжрайонне житлово-комунальне",
+      "en": "Inter-District Housing Committee",
+      "confidence": "low",
+      "era": "1991-present",
+      "review_required": true
+    },
+    "ЦНАП": {
+      "uk_full": "Центр надання адміністративних послуг",
+      "en": "Administrative Services Center",
+      "confidence": "high",
+      "era": "2014-present",
+      "note": "Post-2014 one-stop government services. Issues passports, registers residence.",
+      "review_required": false
+    },
+    "ТЦК": {
+      "uk_full": "Територіальний центр комплектування та соціальної підтримки",
+      "en": "Territorial Recruitment and Social Support Center",
+      "confidence": "high",
+      "era": "2022-present",
+      "note": "Military conscription and social support centers, post-2022.",
+      "review_required": false
+    },
+    "ДСНС": {
+      "uk_full": "Державна служба надзвичайних ситуацій України",
+      "en": "State Emergency Service of Ukraine",
+      "confidence": "high",
+      "era": "2012-present",
+      "review_required": false
+    },
+    "ДПСУ": {
+      "uk_full": "Державна прикордонна служба України",
+      "en": "State Border Guard Service of Ukraine",
+      "confidence": "high",
+      "era": "2003-present",
+      "review_required": false
     }
   }
 }

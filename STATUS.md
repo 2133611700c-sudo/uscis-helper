@@ -3,6 +3,13 @@
 **Status:** PRODUCTION (auto-fill-only model live; all e2e tests passing on production)
 **Scope:** P0–P7 complete. 2092/2092 unit pass. 0 type errors.
 
+## Session 39c (2026-05-27) — feat: knowledge v1.3 — missing agencies + DOCUMENT_TYPES + TPS requirements
+
+- `VERIFIED(local)` dictionary.ts v1.3: +9 authorities (VIKONKOM/RDA/ODA/SILRADA/MISKRADA/NOTARY/PASSPORT_OFFICE/DILTNICHNYI), +14 DOCUMENT_TYPES, AUTHORITY_PATTERNS reordered
+- `VERIFIED(local)` tps_ukraine_requirements.ts: eligibility dates, fees ($500-510 H.R.1 non-waivable), EAD A12/C19, common mistakes
+- `VERIFIED(local)` ukraine_agency_abbreviations.json: +ВИКОНКОМ, РДА, ОДА, ТЦК, ДСНС, ДПСУ
+- 2092/2092 unit tests pass, 0 type errors
+
 ## Session 39b (2026-05-27) — fix: booklet source label shows "Паспорт · OCR" instead of "Внутр. паспорт · OCR"
 
 - `VERIFIED(local)` `provenanceLabel()` now has explicit `booklet` branch — `actualSlot==='booklet'` → `t.source.booklet` (all 4 locales). Previously fell through to `fallbackDoc==='passport'` → "Паспорт · OCR", confusing users into thinking data came from the international passport.
