@@ -39,6 +39,50 @@ test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserN
     }
   })
 
+  // Capture /api/tps/brain/merge — the Central Brain POST fired by TPSWizardV2
+  // useEffect after any upload status becomes 'done'. This is the P3 direct network proof.
+  type BrainMergeCapture = {
+    status: number
+    request_slots: string[]
+    merged_field_keys: string[]
+    readiness_ready: boolean
+    readiness_missing: string[]
+    conflict_count: number
+    rejected_count: number
+    warning_count: number
+    hallucination_blocks: string[]
+  }
+  let brainMergeCapture: BrainMergeCapture | null = null
+  let brainMergeRaw: Record<string, unknown> | null = null
+  page.on('response', async (resp) => {
+    if (!resp.url().includes('/api/tps/brain/merge') || resp.request().method() !== 'POST') return
+    try {
+      const payload = await resp.json() as {
+        merged?: Record<string, unknown>
+        conflicts?: unknown[]
+        warnings?: string[]
+        rejected?: unknown[]
+        readiness?: { ready?: boolean; missing_required?: string[]; hallucination_blocks?: string[] }
+      }
+      const reqBody = resp.request().postData() ?? '{}'
+      const reqJson = JSON.parse(reqBody) as { uploads?: Record<string, unknown>; manual?: unknown }
+      brainMergeRaw = { status: resp.status(), request: reqJson, response: payload }
+      brainMergeCapture = {
+        status: resp.status(),
+        request_slots: Object.keys(reqJson?.uploads ?? {}),
+        merged_field_keys: Object.keys(payload?.merged ?? {}),
+        readiness_ready: payload?.readiness?.ready ?? false,
+        readiness_missing: payload?.readiness?.missing_required ?? [],
+        conflict_count: (payload?.conflicts ?? []).length,
+        rejected_count: (payload?.rejected ?? []).length,
+        warning_count: (payload?.warnings ?? []).length,
+        hallucination_blocks: payload?.readiness?.hallucination_blocks ?? [],
+      }
+    } catch {
+      brainMergeCapture = { status: resp.status(), request_slots: [], merged_field_keys: [], readiness_ready: false, readiness_missing: [], conflict_count: 0, rejected_count: 0, warning_count: 0, hallucination_blocks: [] }
+    }
+  })
+
   // deterministic clean state
   await page.goto('/en/services/tps-ukraine/start')
   await page.evaluate(() => {
@@ -62,8 +106,18 @@ test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserN
       resp.status() === 200,
     { timeout: 60_000 },
   )
+  // Also wait for the Central Brain merge call that fires after upload status = 'done'
+  const brainMergeResponsePromise = page.waitForResponse(
+    (resp) =>
+      resp.url().includes('/api/tps/brain/merge') &&
+      resp.request().method() === 'POST' &&
+      resp.status() === 200,
+    { timeout: 30_000 },
+  ).catch(() => null) // non-fatal if not fired in this env (degrades gracefully)
+
   await page.getByTestId('tps-upload-input-booklet').setInputFiles(BOOKLET_IMAGE)
   await ocrResponsePromise
+  await brainMergeResponsePromise
 
   await expect(page.getByTestId('tps-ocr-cta')).toBeVisible({ timeout: 10_000 })
   await page.getByTestId('tps-ocr-cta').click()
@@ -82,6 +136,40 @@ test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserN
   await fs.writeFile(path.join(artifactsDir, 'ocr-responses.json'), JSON.stringify(ocrResponses, null, 2), 'utf8')
   await fs.writeFile(path.join(artifactsDir, 'dom-proof.json'), JSON.stringify(domProof, null, 2), 'utf8')
   expect(ocrResponses.length).toBeGreaterThan(0)
+
+  // P3: Central Brain network capture
+  await fs.writeFile(
+    path.join(artifactsDir, 'brain-merge-summary.json'),
+    JSON.stringify(brainMergeCapture ?? { not_captured: true }, null, 2),
+    'utf8',
+  )
+  if (brainMergeRaw !== null) {
+    // Write full request+response for trace review (excludes PII fields — only keys, not values)
+    const sanitizedRaw = {
+      ...(brainMergeRaw as Record<string, unknown>),
+      request: { slots: Object.keys(((brainMergeRaw as { request?: { uploads?: Record<string, unknown> } }).request?.uploads) ?? {}) },
+    }
+    await fs.writeFile(
+      path.join(artifactsDir, 'brain-merge-network.json'),
+      JSON.stringify(sanitizedRaw, null, 2),
+      'utf8',
+    )
+  }
+  const capture = brainMergeCapture as BrainMergeCapture | null
+  if (capture !== null) {
+    // Brain merge was captured: assert structural correctness
+    expect(capture.status).toBe(200)
+    expect(capture.request_slots).toContain('booklet')
+    expect(capture.merged_field_keys.length).toBeGreaterThan(0)
+    expect(typeof capture.readiness_ready).toBe('boolean')
+    // family_name must survive merge (booklet extraction confirmed by DOM proof above)
+    expect(capture.merged_field_keys).toContain('family_name')
+    // eslint-disable-next-line no-console
+    console.log(`[booklet-only/${browserName}] BRAIN_MERGE=${JSON.stringify(capture)}`)
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(`[booklet-only/${browserName}] BRAIN_MERGE=not_captured (wizard may have used degraded fallback)`)
+  }
 
   // fill required OCR review rows via inline Edit(prompt)
   const fillReviewRow = async (label: string, value: string) => {

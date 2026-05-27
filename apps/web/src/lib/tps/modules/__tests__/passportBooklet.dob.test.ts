@@ -20,7 +20,7 @@ function line(id: string, text: string): OcrLine {
     id,
     text,
     page: 1,
-    bbox: { x: 0, y: 0, width: 100, height: 20, normalized: false },
+    bbox: { x: 0, y: 0, width: 0.1, height: 0.02 },
     words: [],
     confidence: 0.9,
     source: 'google_vision',
