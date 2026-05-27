@@ -280,7 +280,7 @@ export const PASSPORT_BOOKLET_CRITICAL_FIELDS: readonly PassportFieldContract[] 
     validators:        ['agency_glossary'],
     review_policy:     'if_validator_flag',
     on_missing:        'block',
-    notes:             'agencyGlossary resolves abbreviations. Pre-2015 УМВС/МВС units: "Militia Department", NOT "Police". НПУ before 2015 → review_required. Geographic qualifiers (Київський РВ etc.) do not trigger review.',
+    notes:             'agencyGlossary resolves abbreviations. Pre-2015 УМВС/МВС units: "Militsiya Department", NOT "Police" (ADR-004). НПУ before 2015 → review_required. Geographic qualifiers (Київський РВ etc.) do not trigger review.',
   },
 
   {
