@@ -38,7 +38,7 @@
 - `VERIFIED` mergedFields: Central Brain is primary, fieldArbiter is fallback with explicit DEGRADED banner.
 - `VERIFIED` Booklet-only Playwright proof: family_name + middle_name provenance=booklet, ZIP/PDF generated, I-821 readback confirmed.
 - `VERIFIED` Oblast regex fix: normalizeOblastToNominative("Вінницька область") returns "Vinnytsia Oblast" (was null before fix).
-- `OPEN` DOB fixture proof — need booklet image where handwritten date is OCR-visible.
+- `VERIFIED` DOB fixture proof — 14 unit tests in passportBooklet.dob.test.ts prove parseUaDate chain for all formats (full UA/RU month, numeric, abbreviated bilingual "13 CEP / AUG 60", 2-digit year). All 14 pass.
 - `OPEN` Direct Playwright network capture for /api/tps/brain/merge call.
 - `OPEN` Translation Bridge v0.
 
