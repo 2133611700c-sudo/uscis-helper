@@ -190,7 +190,7 @@ const T = {
     s4q: 'Завантажте документи',
     s4h: 'Ми розпізнаємо дані і автоматично заповнимо форми USCIS',
     s4Recognize: 'Розпізнати документи →',
-    aiDisclosure: 'Зображення документа надсилається до Google Vision для розпізнавання. Витягнутий текст (без зображень) аналізується DeepSeek AI. Зображення не зберігаються після обробки.',
+    aiDisclosure: 'Зображення документа надсилається до Google Vision для розпізнавання. Витягнутий текст (без зображень) аналізується AI-асистентом. Зображення не зберігаються після обробки.',
     s4NoPassport: 'Немає закордонного паспорта?',
     s4NoPassportBody:
       'Якщо у вас немає закордонного паспорта, USCIS може прийняти інший документ, що підтверджує особу та громадянство:',
@@ -406,7 +406,7 @@ const T = {
     s4q: 'Загрузите документы',
     s4h: 'Мы распознаем данные и автоматически заполним формы USCIS',
     s4Recognize: 'Распознать документы →',
-    aiDisclosure: 'Изображение документа отправляется в Google Vision для распознавания. Извлечённый текст (без изображений) анализируется DeepSeek AI. Изображения не хранятся после обработки.',
+    aiDisclosure: 'Изображение документа отправляется в Google Vision для распознавания. Извлечённый текст (без изображений) анализируется AI-ассистентом. Изображения не хранятся после обработки.',
     s4NoPassport: 'Нет загранпаспорта?',
     s4NoPassportBody:
       'Если у вас нет загранпаспорта, USCIS может принять другой документ, подтверждающий личность и гражданство:',
@@ -621,7 +621,7 @@ const T = {
     s4q: 'Upload your documents',
     s4h: 'We extract the data and auto-fill USCIS forms',
     s4Recognize: 'Recognize documents →',
-    aiDisclosure: 'Your document image is sent to Google Vision for text extraction. The extracted text (no images) is analyzed by DeepSeek AI to fill your forms. Document images are not stored after processing.',
+    aiDisclosure: 'Your document image is sent to Google Vision for text extraction. The extracted text (no images) is analyzed by an AI assistant to fill your forms. Document images are not stored after processing.',
     s4NoPassport: 'No international passport?',
     s4NoPassportBody:
       'If you don\'t have an international passport, USCIS may accept another document confirming identity and nationality:',
@@ -837,7 +837,7 @@ const T = {
     s4q: 'Cargue sus documentos',
     s4h: 'Extraemos los datos y rellenamos los formularios de USCIS',
     s4Recognize: 'Reconocer documentos →',
-    aiDisclosure: 'La imagen del documento se envía a Google Vision para extraer el texto. El texto extraído (sin imágenes) es analizado por DeepSeek AI para completar sus formularios. Las imágenes no se almacenan después del procesamiento.',
+    aiDisclosure: 'La imagen del documento se envía a Google Vision para extraer el texto. El texto extraído (sin imágenes) es analizado por un asistente de IA para completar sus formularios. Las imágenes no se almacenan después del procesamiento.',
     s4NoPassport: '¿No tiene pasaporte internacional?',
     s4NoPassportBody:
       'Si no tiene pasaporte internacional, USCIS puede aceptar otro documento que confirme identidad y nacionalidad:',
@@ -2688,7 +2688,7 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s4q}</div>
             <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 12 }}>{t.s4h}</div>
 
-            {/* DeepSeek AI data processing disclosure — ADR-009 requirement */}
+            {/* AI data processing disclosure — ADR-009 requirement */}
             <div style={{ background: 'var(--surface-2, #f3f4f6)', border: '1px solid var(--border-1, #e5e7eb)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--text-2, #6b7280)', marginBottom: 16, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <span style={{ flexShrink: 0, marginTop: 1 }}>🔒</span>
               <span>{t.aiDisclosure}</span>
