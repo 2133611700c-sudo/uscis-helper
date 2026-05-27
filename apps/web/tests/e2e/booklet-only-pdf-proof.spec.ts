@@ -186,15 +186,16 @@ test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserN
     await page.waitForTimeout(120)
   }
 
-  await fillReviewRow('Given name', 'Sergii')
+  // All values below are SYNTHETIC (never real document data). They only need
+  // to be non-empty to pass the mail-ready gate; the booklet provenance proof
+  // asserts OCR-derived fields (family_name/city/province/middle), not these.
+  await fillReviewRow('Given name', 'Testname')
   // passport_number: booklet cannot provide it (contract-forbidden); fill as MANUAL_GATING_ONLY.
-  // Does not affect booklet provenance proof (family_name/city/province/middle).
-  await fillReviewRow('Passport number', 'FU262473')
+  await fillReviewRow('Passport number', 'AA000000')
   // dob: pre-DOB-patch production doesn't extract it from booklet; fill as MANUAL_GATING_ONLY.
-  // After DOB patch deploys, OCR will extract it and provenance will be 'booklet'.
-  await fillReviewRow('Date of birth', '06/25/1986')
+  await fillReviewRow('Date of birth', '01/01/1980')
   await fillReviewRow('US entry date', '09/09/2022')
-  await fillReviewRow('I-94 admission number', '039622651A3')
+  await fillReviewRow('I-94 admission number', '000000000A0')
   await fillReviewRow('Status at entry', 'UHP')
 
   // fill required manual fields if empty
@@ -206,7 +207,7 @@ test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserN
     if (!current) await input.fill(value)
   }
 
-  await fillIfEmpty('tps-review-manual-address-street', '4341 Willow Brook Ave 111')
+  await fillIfEmpty('tps-review-manual-address-street', '1213 Gordon St')
   await fillIfEmpty('tps-review-manual-address-city', 'Los Angeles')
   await fillIfEmpty('tps-review-manual-address-state', 'CA')
   await fillIfEmpty('tps-review-manual-address-zip', '90029')
@@ -214,7 +215,7 @@ test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserN
   await fillIfEmpty('tps-review-manual-passport-expiration', '02/22/2029')
   await fillIfEmpty('tps-review-manual-phone', '2135550199')
   await fillIfEmpty('tps-review-manual-email', 'sergii.qa+bookletonly@messenginfo.test')
-  await fillIfEmpty('tps-review-manual-in-care-of', 'SERGII REDACTED')
+  await fillIfEmpty('tps-review-manual-in-care-of', 'QA TEST')
 
   await page.getByRole('button', { name: /^Single$/ }).click()
   if ((await page.getByTestId('tps-part7-checkbox').count()) > 0) {

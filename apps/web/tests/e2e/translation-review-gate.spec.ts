@@ -21,11 +21,17 @@ import { execSync } from 'child_process'
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const BOOKLET_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/booklet_test_resized.jpg')
 
+// family/city/province/middle come from OCR of the real booklet image (the
+// image is gitignored). `given` is the SYNTHETIC value we type via the
+// ReviewOcr edit button — it MUST appear in the translation (regression guard
+// for the 2026-05-27 bug where the manually-supplied given name never reached
+// the translation due to a *_manual key mismatch).
 const EXPECTED = {
   family: 'REDACTED',
   city: 'Trostianets',
   province: 'Vinnytsia',
   middle: 'Serhiiovych',
+  given: 'Testname',
 }
 
 test('Review Gate: preview → block without checkbox → confirm → translation in ZIP', async ({ page, browserName }) => {
@@ -91,21 +97,27 @@ test('Review Gate: preview → block without checkbox → confirm → translatio
   await page.getByTestId('tps-ocr-cta').click()
   await expect(page.getByTestId('tps-review-step-container')).toBeVisible({ timeout: 60_000 })
 
-  // Fill required review fields
-  const fillReviewRow = async (label: string, value: string) => {
-    const lowered = label.toLowerCase()
-    const editBtn = page.locator(
-      `xpath=//div[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'${lowered}')]/following-sibling::div//button`,
-    ).first()
-    if ((await editBtn.count()) === 0) return
+  // Identity + document fields are recognized rows in ReviewOcr, each with an
+  // "Изменить" (edit) button (data-testid tps-ocr-edit-<key>). Editing writes
+  // the value into the synthetic 'manual' upload slot under the base key, which
+  // flows into the gate, the forms, AND the translation. There is NO separate
+  // manual-entry section for these (auto-fill product rule). All values below
+  // are SYNTHETIC — never real document data.
+  const editOcrField = async (key: string, value: string) => {
+    const btn = page.getByTestId(`tps-ocr-edit-${key}`)
+    if ((await btn.count()) === 0) return
     page.once('dialog', async (dialog) => dialog.accept(value))
-    await editBtn.click()
-    await page.waitForTimeout(120)
+    await btn.click()
+    await page.waitForTimeout(150)
   }
 
-  // OCR-editable rows (exist only when OCR extracted the field)
-  await fillReviewRow('I-94 admission number', '039622651A3')
-  await fillReviewRow('Status at entry', 'UHP')
+  await editOcrField('i94_admission_number', '000000000A0')
+  await editOcrField('status_at_last_entry', 'UHP')
+  // Identity gate fields via the recognized-row edit button (SYNTHETIC values).
+  await editOcrField('given_name', 'Testname')
+  await editOcrField('passport_number', 'AA000000')
+  await editOcrField('dob', '01/01/1980')
+  await editOcrField('last_entry_date', '09/09/2022')
 
   const fillIfEmpty = async (testId: string, value: string) => {
     const input = page.getByTestId(testId)
@@ -114,21 +126,16 @@ test('Review Gate: preview → block without checkbox → confirm → translatio
     if (!(await input.inputValue()).trim()) await input.fill(value)
   }
 
-  // Identity gate fields — shown as manual inputs when OCR missed them (booklet-only flow)
-  await fillIfEmpty('tps-review-manual-given-name', 'Sergii')
-  await fillIfEmpty('tps-review-manual-passport-number', 'FU262473')
-  await fillIfEmpty('tps-review-manual-dob', '06/25/1986')
-  await fillIfEmpty('tps-review-manual-last-entry-date', '09/09/2022')
-
-  await fillIfEmpty('tps-review-manual-address-street', '4341 Willow Brook Ave 111')
+  // Remaining ReviewManual inputs — all SYNTHETIC values, no real PII.
+  await fillIfEmpty('tps-review-manual-address-street', '1213 Gordon St')
   await fillIfEmpty('tps-review-manual-address-city', 'Los Angeles')
   await fillIfEmpty('tps-review-manual-address-state', 'CA')
-  await fillIfEmpty('tps-review-manual-address-zip', '90029')
+  await fillIfEmpty('tps-review-manual-address-zip', '90038')
   await fillIfEmpty('tps-review-manual-place-of-last-entry', 'Los Angeles')
-  await fillIfEmpty('tps-review-manual-passport-expiration', '02/22/2029')
+  await fillIfEmpty('tps-review-manual-passport-expiration', '01/01/2030')
   await fillIfEmpty('tps-review-manual-phone', '2135550199')
-  await fillIfEmpty('tps-review-manual-email', 'sergii.qa+reviewgate@messenginfo.test')
-  await fillIfEmpty('tps-review-manual-in-care-of', 'SERGII REDACTED')
+  await fillIfEmpty('tps-review-manual-email', 'qa+reviewgate@messenginfo.test')
+  await fillIfEmpty('tps-review-manual-in-care-of', 'QA TEST')
 
   await page.getByRole('button', { name: /^Single$/ }).click()
   if ((await page.getByTestId('tps-part7-checkbox').count()) > 0) {
@@ -237,12 +244,18 @@ test('Review Gate: preview → block without checkbox → confirm → translatio
 
     if (translationHtml) {
       translationProof.has_surname = translationHtml.includes(EXPECTED.family)
+      translationProof.has_given_name = translationHtml.includes(EXPECTED.given)
+      translationProof.has_given_name_label = translationHtml.includes('Given Name')
       translationProof.has_city = translationHtml.includes(EXPECTED.city)
       translationProof.has_patronymic_label = translationHtml.includes('Patronymic')
       translationProof.no_middle_name_label = !translationHtml.includes('Middle Name')
 
       // Core safety assertions
       expect(translationHtml).toContain(EXPECTED.family)
+      // Regression guard: the synthetic given name supplied via the ReviewOcr
+      // edit button MUST reach the translation (Given Name row present).
+      expect(translationHtml).toContain('Given Name')
+      expect(translationHtml).toContain(EXPECTED.given)
       expect(translationHtml).toContain('Patronymic')
       expect(translationHtml).not.toContain('Middle Name')
       expect(translationHtml).toContain('Internal Passport')
