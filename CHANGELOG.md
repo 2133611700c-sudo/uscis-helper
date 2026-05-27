@@ -3,6 +3,19 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 33: fix(guards) — replace DeepSeek name in client strings
+
+### What changed
+- `TPSWizardV2.tsx`: replaced "DeepSeek AI" with "AI assistant" / "AI-асистент" / "asistente de IA" in all 4 locale `aiDisclosure` strings
+- Removed "DeepSeek AI" from JSX comment in Step 4
+- Root cause: Content & Brand Guards CI step blocks `DeepSeek` in `apps/web/src/app/[locale]`
+
+### Verified
+- Guard pattern `DeepSeek|deepseek-(chat|reasoner|ocr|v4)` in client paths: 0 hits
+- 0 type errors
+
+---
+
 ## 2026-05-27 — Session 33: P-post7 — DeepSeek disclosure UI + Review Gate testids + Playwright e2e
 
 ### What changed
