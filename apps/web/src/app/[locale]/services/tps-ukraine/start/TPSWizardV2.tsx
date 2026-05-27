@@ -37,6 +37,7 @@ import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValida
 import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } from '@/lib/tps/provenance'
 import SignaturePad from '@/components/shared/SignaturePad'
 import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessChecker'
+import { TranslationReviewGate } from '@/components/tps/TranslationReviewGate'
 import type { CentralBrainResult } from '@/lib/tps/centralBrain'
 import { shouldTranslateForTPSPacket, type TPSDocumentType } from '@/lib/tps/translationBridge'
 
@@ -1606,6 +1607,11 @@ export default function TPSWizardV2({ locale }: Props) {
   const [generatedManifest, setGeneratedManifest] = useState<{ at: string; zipBytes: number } | null>(null)
   const [centralBrainResult, setCentralBrainResult] = useState<CentralBrainResult | null>(null)
   const [centralBrainStatus, setCentralBrainStatus] = useState<'idle' | 'loading' | 'ready' | 'degraded'>('idle')
+  // P3 — Translation Review Gate (8 CFR §103.2(b)(3) certification boundary)
+  const [translationReviewConfirmed, setTranslationReviewConfirmed] = useState(false)
+  const [translationDraft, setTranslationDraft] = useState<{ html: string; certHtml: string } | null>(null)
+  const [showTranslationReview, setShowTranslationReview] = useState(false)
+  const [translationPreviewBusy, setTranslationPreviewBusy] = useState(false)
 
   // ── Persist to localStorage (without File objects) ───────────────────────
   //
@@ -2182,6 +2188,54 @@ export default function TPSWizardV2({ locale }: Props) {
     [t.ocrErr],
   )
 
+  // ── Translation preview (P3 — Review Gate) ───────────────────────────────
+  const handleTranslationPreview = useCallback(async () => {
+    setTranslationPreviewBusy(true)
+    try {
+      const SLOT_TO_DOC_TYPE: Record<string, TPSDocumentType> = {
+        booklet: 'passportBooklet', passport: 'passport',
+      }
+      const bookletUploaded = Object.entries(data.uploads)
+        .filter(([, u]) => u?.status === 'done')
+        .some(([slotId]) => SLOT_TO_DOC_TYPE[slotId] !== undefined &&
+          shouldTranslateForTPSPacket(SLOT_TO_DOC_TYPE[slotId] as TPSDocumentType))
+      if (!bookletUploaded) return
+
+      const v = (k: string): string => mergedFields[k]?.value || ''
+      const body = {
+        docType: 'passportBooklet' as TPSDocumentType,
+        signerName: `${v('given_name')} ${v('family_name')}`.trim(),
+        signerAddress: [
+          data.manual.us_address_street || v('us_address_street'),
+          data.manual.us_address_city || v('us_address_city'),
+          data.manual.us_address_state || v('us_address_state'),
+          data.manual.us_address_zip || v('us_address_zip'),
+        ].filter(Boolean).join(', '),
+        signatureDataUrl: signatureData?.dataUrl ?? null,
+        brainMerged: centralBrainStatus === 'ready' && centralBrainResult ? centralBrainResult.merged : null,
+        brainRejected: centralBrainStatus === 'ready' && centralBrainResult ? centralBrainResult.rejected : null,
+        brainManual: data.manual ?? null,
+      }
+      const r = await fetch('/api/tps/translation/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!r.ok) throw new Error(`preview HTTP ${r.status}`)
+      const result = await r.json() as { translation_html: string; certification_html: string; violations: string[] }
+      if (result.violations && result.violations.length > 0) {
+        setErrMsg(`Translation safety check failed: ${result.violations[0]}`)
+        return
+      }
+      setTranslationDraft({ html: result.translation_html, certHtml: result.certification_html })
+      setShowTranslationReview(true)
+    } catch {
+      setErrMsg('Failed to load translation preview. Please try again.')
+    } finally {
+      setTranslationPreviewBusy(false)
+    }
+  }, [data, mergedFields, signatureData, centralBrainResult, centralBrainStatus])
+
   // ── Generate packet (Step 6 after Pay) ───────────────────────────────────
   const buildDraftAnswers = useCallback((): Partial<TPSAnswers> => {
     const filing_path = data.type === 'init' ? 'initial' : 're_registration'
@@ -2429,6 +2483,7 @@ export default function TPSWizardV2({ locale }: Props) {
                 ? centralBrainResult.rejected
                 : null,
               brainManual: data.manual ?? null,
+              reviewConfirmed: translationReviewConfirmed,
             }
           })(),
         }),
@@ -3058,6 +3113,69 @@ export default function TPSWizardV2({ locale }: Props) {
                 onMouseOut={(e) => !busy && (e.currentTarget.style.background = PAY_BLUE)}
               >
                 {busy ? '…' : `${t.s6Pay} — ${TPS_TIER1_PRICE_DISPLAY}`}
+              </button>
+            )}
+
+            {/* P3 — Translation Review Gate overlay */}
+            {showTranslationReview && translationDraft && (
+              <div style={{
+                position: 'fixed', inset: 0, zIndex: 9000,
+                background: 'rgba(0,0,0,0.6)',
+                overflowY: 'auto',
+                display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                padding: '24px 16px',
+              }}>
+                <div style={{
+                  background: 'var(--surface-1, #fff)',
+                  borderRadius: 12,
+                  width: '100%', maxWidth: 780,
+                  padding: '24px',
+                  boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+                }}>
+                  <TranslationReviewGate
+                    translationHtml={translationDraft.html}
+                    certificationHtml={translationDraft.certHtml}
+                    locale={locale as 'en' | 'ru' | 'uk' | 'es'}
+                    onConfirm={() => {
+                      setTranslationReviewConfirmed(true)
+                      setShowTranslationReview(false)
+                    }}
+                    onBack={() => setShowTranslationReview(false)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* P3 — Review Translation prompt (shown when translation docs uploaded, not yet confirmed) */}
+            {ownerChecked && (isOwner || data.paid) && isStep6Eligible &&
+              Object.entries(data.uploads).some(([slotId, u]) => {
+                const SLOT_DOC: Record<string, TPSDocumentType> = { booklet: 'passportBooklet', passport: 'passport' }
+                return u?.status === 'done' && SLOT_DOC[slotId] && shouldTranslateForTPSPacket(SLOT_DOC[slotId] as TPSDocumentType)
+              }) && !translationReviewConfirmed && (
+              <button
+                type="button"
+                onClick={handleTranslationPreview}
+                disabled={translationPreviewBusy}
+                style={{
+                  background: '#1d4ed8',
+                  color: '#fff',
+                  fontSize: 16,
+                  padding: '14px 20px',
+                  borderRadius: 10,
+                  border: 'none',
+                  width: '100%',
+                  cursor: translationPreviewBusy ? 'wait' : 'pointer',
+                  fontWeight: 700,
+                  marginBottom: 10,
+                  opacity: translationPreviewBusy ? 0.7 : 1,
+                  fontFamily: 'inherit',
+                }}
+              >
+                {translationPreviewBusy ? '…' : (
+                  locale === 'ru' ? 'Проверить перевод документа (обязательно)' :
+                  locale === 'uk' ? 'Перевірити переклад документа (обов\'язково)' :
+                  'Review Document Translation (required)'
+                )}
               </button>
             )}
 
