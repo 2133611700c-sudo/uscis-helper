@@ -3,6 +3,19 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 33: P3 — TranslationReviewGate (8 CFR §103.2(b)(3) certification boundary)
+
+### What changed
+- `apps/web/src/components/tps/TranslationReviewGate.tsx` (NEW): Mandatory review gate. Shows translation draft + certification block. Requires checkbox "I have reviewed and certify this translation is complete and accurate." 4-locale support (en/ru/uk/es). reviewConfirmed:true passed on confirm.
+- `apps/web/src/app/api/tps/translation/preview/route.ts` (NEW): POST /api/tps/translation/preview — generates translation HTML without ZIP. Used by wizard to show review gate before packet generation.
+- `apps/web/src/lib/tps/packetBuilder.ts`: added reviewConfirmed?: boolean to TranslationOptions. Translation EXCLUDED from ZIP when false or absent. 8 CFR §103.2(b)(3) enforcement.
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`: added translationReviewConfirmed, translationDraft, showTranslationReview state. handleTranslationPreview callback calls /api/tps/translation/preview. "Review Translation" button shown when booklet uploaded and not yet confirmed. TranslationReviewGate rendered as modal overlay.
+
+### Verified
+- 2092/2092 tests pass, 0 type errors
+
+---
+
 ## 2026-05-27 — Session 33: P0.5–P2 translation pipeline (extractor, safety guard, OCR fields, ADRs)
 
 ### What changed
