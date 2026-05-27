@@ -99,6 +99,10 @@
 
 ## Session 37 hotfix (this commit)
 
+### Multi-sample preview-capture async race (this commit)
+- **Root cause**: `page.on('response', async ...)` handler had `await resp.json()` inside. After `await previewRespPromise` the metrics line ran immediately — before handler finished. `violations_count` always read as -1.
+- **Fix**: removed the listener; parse directly from `waitForResponse` response object — synchronous after the await, no race.
+
 ### Multi-sample count() race (this commit)
 - **Root cause**: `reviewBtn.count()` fired immediately after `page.goto('?paid=1')` — before React rehydrated + `/api/owner/status` resolved. All 5 docs failed.
 - **Fix**: replaced `if (count() === 0) throw` with `await expect(...).toBeVisible({ timeout: 20_000 })`.

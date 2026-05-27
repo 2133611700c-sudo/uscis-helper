@@ -3,6 +3,18 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 37 hotfix 3: fix(e2e) — multi-sample async response handler race for preview metrics
+
+### What changed
+- `apps/web/tests/e2e/booklet-multi-sample.spec.ts`: removed `page.on('response')` for preview capture; parse response directly from `waitForResponse` object. The listener had `await resp.json()` inside which is async — `violations_count` was read before the handler finished, always staying -1.
+
+### Test evidence
+- Unit tests: 2092/2092 pass
+- TypeScript: 0 errors
+- Root cause: async handler race — parse directly, no race possible
+
+---
+
 ## 2026-05-27 — Session 37 hotfix 2: fix(e2e) — multi-sample immediate count() race after goto
 
 ### What changed
