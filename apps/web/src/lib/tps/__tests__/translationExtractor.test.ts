@@ -14,9 +14,9 @@ import type { MergedField, RejectedField } from '../centralBrain'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function mf(field: string, value: string): MergedField {
+function mf(field: string, value: string, raw_value?: string): MergedField {
   return {
-    field, value,
+    field, value, raw_value,
     source_slot: 'booklet', source_type: 'ocr_keyword',
     confidence: 0.9,
     controlling_spelling_applied: false, cross_validated: false,
@@ -169,5 +169,57 @@ describe('extractTranslationFields', () => {
     const merged = { ...baseMerged, passport_date_of_issue: mf('passport_date_of_issue', '2019-08-12') }
     const result = extractTranslationFields(merged, [], {})
     expect(result.date_of_issue).toBe('August 12, 2019')
+  })
+
+  // ── Settlement type expansion (смт → "urban-type settlement") ─────────────
+  it('expands смт prefix to "urban-type settlement" in city_of_birth', () => {
+    const merged = {
+      ...baseMerged,
+      city_of_birth: mf('city_of_birth', 'Trostianets', 'смт Тростянець'),
+    }
+    const result = extractTranslationFields(merged, [], {})
+    expect(result.city_of_birth).toBe('Trostianets urban-type settlement')
+  })
+
+  it('expands смт. prefix (with dot) to "urban-type settlement"', () => {
+    const merged = {
+      ...baseMerged,
+      city_of_birth: mf('city_of_birth', 'Ustynivka', 'смт. Устинівка'),
+    }
+    const result = extractTranslationFields(merged, [], {})
+    expect(result.city_of_birth).toBe('Ustynivka urban-type settlement')
+  })
+
+  it('expands пгт prefix to "urban-type settlement"', () => {
+    const merged = {
+      ...baseMerged,
+      city_of_birth: mf('city_of_birth', 'Vilshanka', 'пгт Вільшанка'),
+    }
+    const result = extractTranslationFields(merged, [], {})
+    expect(result.city_of_birth).toBe('Vilshanka urban-type settlement')
+  })
+
+  it('expands с. prefix to "village"', () => {
+    const merged = {
+      ...baseMerged,
+      city_of_birth: mf('city_of_birth', 'Ivanivka', 'с. Іванівка'),
+    }
+    const result = extractTranslationFields(merged, [], {})
+    expect(result.city_of_birth).toBe('Ivanivka village')
+  })
+
+  it('leaves city unchanged when raw_value has no settlement prefix (city)', () => {
+    const merged = {
+      ...baseMerged,
+      city_of_birth: mf('city_of_birth', 'Kyiv', 'м. Київ'),
+    }
+    const result = extractTranslationFields(merged, [], {})
+    // м. = city — no suffix appended per map
+    expect(result.city_of_birth).toBe('Kyiv')
+  })
+
+  it('leaves city unchanged when no raw_value stored', () => {
+    const result = extractTranslationFields(baseMerged, [], {})
+    expect(result.city_of_birth).toBe('Trostianets')
   })
 })

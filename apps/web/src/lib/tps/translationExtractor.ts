@@ -97,6 +97,27 @@ export interface TranslationFieldSet {
   _sources: Record<string, 'cb_merged' | 'cb_rejected' | 'manual'>
 }
 
+// ── Settlement type expansion ─────────────────────────────────────────────────
+
+// CLAUDE.md rule: "смт" = "urban-type settlement", NEVER "city" or "town"
+// USCIS form needs bare city name; translation needs full type.
+// We recover the type from raw_value which is preserved through OCR → CB pipeline.
+const SETTLEMENT_SUFFIX_MAP: Array<{ re: RegExp; suffix: string }> = [
+  { re: /^(?:смт\.?|с-ще\.?|п\.?г\.?т\.?|пгт\.?|сел\.\s+міськ)/iu, suffix: 'urban-type settlement' },
+  { re: /^с\.\s/iu, suffix: 'village' },
+  { re: /^хут\./iu, suffix: 'khutor' },
+  { re: /^сел\./iu, suffix: 'settlement' },
+]
+
+function cityWithSettlementType(normalizedCity: string, rawValue?: string): string {
+  if (!rawValue) return normalizedCity
+  const trimmed = rawValue.trim()
+  for (const { re, suffix } of SETTLEMENT_SUFFIX_MAP) {
+    if (re.test(trimmed)) return `${normalizedCity} ${suffix}`
+  }
+  return normalizedCity
+}
+
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 function normalizeSex(raw: string | null): string | null {
@@ -160,7 +181,11 @@ export function extractTranslationFields(
     date_of_birth:   rawDob ? (formatDobForTranslation(rawDob) ?? rawDob) : null,
     sex:             normalizeSex(get('sex')),
     passport_number: get('passport_number'),
-    city_of_birth:   get('city_of_birth'),
+    city_of_birth:   (() => {
+      const val = get('city_of_birth')
+      if (!val) return null
+      return cityWithSettlementType(val, merged['city_of_birth']?.raw_value)
+    })(),
     province_of_birth: get('province_of_birth'),
     issued_by:       get('issued_by'),
     date_of_issue:   rawDateOfIssue ? (formatDobForTranslation(rawDateOfIssue) ?? rawDateOfIssue) : null,
