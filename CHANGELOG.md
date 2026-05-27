@@ -3,6 +3,18 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39f: test(e2e) — 10/10 GREEN on prod; fix non-identity warning timeout flakiness
+
+- `booklet-multi-sample.spec.ts`: non-identity warning timeout 15s → 30s (CB settle + render takes 25-30s)
+- `booklet-multi-sample.spec.ts`: added `warning_showed` flag; hard assertions guarded by `if (doc.identityPage)` — prevents non-identity timeout from bleeding into translation assertions
+- **Evidence**: 10/10 e2e tests pass on production messenginfo.com:
+  - booklet_known/doc1/doc2: violations=0, 2555-2569 bytes translation
+  - booklet_doc3/doc4: non-identity warning shown (expected)
+  - review-gate: ZIP 2591649 bytes, translation present
+  - verify-each-doc: all 4 per-document checks pass
+
+---
+
 ## 2026-05-27 — Session 39e: fix(ux) — "Заполните вручную" → "Проверьте и дополните" + city tip + I-94 port patterns
 
 - `TPSWizardV2.tsx`: `s5ManualTitle` переименован во всех 4 локалях — убрана путаница с авто-заполненным адресом
