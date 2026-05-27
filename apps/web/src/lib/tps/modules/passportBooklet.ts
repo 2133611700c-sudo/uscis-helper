@@ -110,16 +110,31 @@ function lineMatchesLabel(text: string, label: string): boolean {
     [/I/g, 'І'], [/K/g, 'К'], [/M/g, 'М'], [/O/g, 'О'], [/P/g, 'Р'],
     [/T/g, 'Т'], [/X/g, 'Х'], [/Y/g, 'У'],
   ]
-  const norm = (s: string) => {
+  const normChunk = (s: string) => {
     let t = s.toUpperCase().replace(/['ʼ`’]/g, '')
     for (const [re, repl] of SUBS) t = t.replace(re, repl)
     // Drop everything that isn't a Cyrillic letter — strips slashes,
     // English label residue ("Surname"), whitespace, etc.
     return t.replace(/[^А-ЯІЇЄҐ]/gu, '')
   }
-  const t = norm(text)
-  const l = norm(label)
-  return l.length > 0 && t.includes(l)
+  const l = normChunk(label)
+  if (!l.length) return false
+  // Short single-word labels (≤ 6 Cyrillic chars, no slash/space) use
+  // token-level matching to prevent false positives where the label
+  // is a prefix of a longer unrelated word. Example: "Пол" (sex, 3 chars)
+  // must NOT match "Поліграфічний" (printing company, 14 chars).
+  // Each space-separated token is normalized independently; the match
+  // requires the token to start with the label AND be ≤ label+3 chars
+  // (allows declension endings).
+  if (!label.includes('/') && !label.includes(' ') && l.length <= 6) {
+    return text.split(/\s+/).some(chunk => {
+      const c = normChunk(chunk)
+      return c.startsWith(l) && c.length <= l.length + 3
+    })
+  }
+  // Long or compound labels: full normalized-text substring match.
+  const t = normChunk(text)
+  return t.includes(l)
 }
 
 /**
@@ -893,13 +908,22 @@ export function runPassportBookletModule(
     warnings.push('booklet_date_of_issue_missing')
   }
 
-  // Nationality + issuing country are always Ukraine for this document.
+  // Nationality, birth country, and issuing country are always Ukraine
+  // for this document type. Emit as inferred (not from OCR).
   emit(
     'country_of_nationality',
     'Ukraine',
     'Ukraine',
     null,
     'booklet_inferred_nationality',
+    ['inferred_from_document_type'],
+  )
+  emit(
+    'country_of_birth',
+    'Ukraine',
+    'Ukraine',
+    null,
+    'booklet_inferred_birth_country',
     ['inferred_from_document_type'],
   )
   emit(
