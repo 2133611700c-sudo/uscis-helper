@@ -1,3 +1,34 @@
+# HANDOFF — Session 39 (2026-05-27)
+
+## Session 39 — e2e tests fully green (booklet-multi-sample 5/5, translation-review-gate 1/1)
+
+### What was done
+- Fixed `booklet-multi-sample.spec.ts`: added passport + I-94 sequential uploads (same as review-gate test) so CB completes in <25s instead of timing out at 60s with booklet-only data.
+- Fixed doc3 (issuing-authority page) timeout: changed bookletOcr `waitForResponse` to accept any HTTP status (removed `&& r.status() === 200`) — OCR returns non-200 for non-identity pages, causing the status===200 filter to never match.
+- All 5/5 booklet-multi-sample tests GREEN: booklet_known ✓, booklet_doc1 ✓, booklet_doc2 ✓ (translation_bytes 2564-2569, violations=0), booklet_doc3 ✓ (non-identity, expected), booklet_doc4 ✓ (non-identity, expected).
+- `translation-review-gate.spec.ts`: 1/1 GREEN (confirmed in prior session).
+
+### What was NOT done
+- TASK-04/05/06 (Form Intelligence, Pain/FAQ DB, Monitoring Engine) — not started
+- Draft modules (birth/marriage/divorce certs) — blocked on real sanitized fixtures
+- DeepSeek privacy disclosure UI — required pre-production
+
+### Exact next task
+Commit the e2e test changes to git. Then proceed to TASK-04 (Form Intelligence) per the product roadmap.
+
+### Evidence
+```
+booklet_known: structural_pass=true ocr_fields=4 violations=0 translation_bytes=2568 ✓
+booklet_doc1: structural_pass=true ocr_fields=4 violations=0 translation_bytes=2568 ✓
+booklet_doc2: structural_pass=true ocr_fields=4 violations=0 translation_bytes=2569 ✓
+booklet_doc3: NON-IDENTITY page: no-identity warning shown (expected) ✓
+booklet_doc4: NON-IDENTITY page: no-identity warning shown (expected) ✓
+5 passed (3.4m)
+translation-review-gate: 1/1 PASSED 56.3s (prior session)
+```
+
+---
+
 # HANDOFF — Session 38 (2026-05-27)
 
 ## Session 38 — auto-fill-only model + PII purge (this commit)

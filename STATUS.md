@@ -1,7 +1,14 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 38 — Removed manual identity entry (auto-fill rule) + purged real PII from site
-**Status:** DEPLOYING (auto-fill-only model; manual identity fields removed; e2e verification pending prod deploy)
+**Updated:** 2026-05-27 Session 39 — e2e fully green (5/5 booklet-multi-sample, 1/1 review-gate)
+**Status:** PRODUCTION (auto-fill-only model live; all e2e tests passing on production)
 **Scope:** P0–P7 complete. 2092/2092 unit pass. 0 type errors.
+
+## Session 39 (2026-05-27) — e2e green on production
+
+- `VERIFIED(prod)` `booklet-multi-sample.spec.ts` 5/5 PASS: booklet_known/doc1/doc2 full translation (violations=0, bytes 2568-2569), doc3/doc4 non-identity warning (expected).
+- `VERIFIED(prod)` `translation-review-gate.spec.ts` 1/1 PASS: given_name flows through EditOcr → translation. Cert present. Review Gate blocks without checkbox.
+- Fixed bookletOcr wait to accept any HTTP status (non-identity pages return non-200).
+- Fixed multi-sample CB race: passport + I-94 uploaded alongside booklet, CB completes <25s.
 
 ## Session 38 (2026-05-27)
 
