@@ -65,9 +65,15 @@
 - Review Gate testids added (translation-review-gate, checkbox, confirm, back buttons)
 - `translation-review-gate.spec.ts`: full 7-gate Playwright e2e proof spec written
 
+## Session 34 work (this commit)
+- ADR-009 audit closure: all 4 open items verified by code trace, table updated
+- Comment bug fixed: passportBookletContract.ts "Militia Department" → "Militsiya Department"
+- Payment verification: generate-packet verifies real Stripe cs_* session ID (was hardcoded string bypass)
+- Wizard stores `stripeCheckoutId` from `?cs=` URL param, sends as X-Payment-Token
+
 ## Exact next tasks (priority order)
 1. **Run Playwright e2e**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts` — needs live server + booklet_test_resized.jpg in qa-shots/private/
-2. **Image retention audit** — trace temp files, Vercel function logs, Supabase ZIP storage (ADR-009 OPEN items)
+2. **Stripe webhook: TPS payment record** — webhook logs TPS payment to `audit_log` only; no `tps_payments` table for query-based verification (currently Stripe API call handles it)
 
 ## Evidence
 - Commits: 36d1260 (P0.5–P2), 20b0c01 (P3), fba7ba4 (P5+P6)

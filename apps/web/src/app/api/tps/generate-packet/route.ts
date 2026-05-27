@@ -20,6 +20,7 @@ import { buildPacket, type TranslationOptions } from '@/lib/tps/packetBuilder'
 import type { ProvenanceMap } from '@/lib/tps/provenance'
 import { checkReviewPayloadParity, type ReviewSnapshot } from '@/lib/tps/reviewParity'
 import { isOwnerSession } from '@/lib/ownerAccess'
+import { stripe } from '@/lib/stripe/client'
 
 // R1A Phase 6 — pre-PDF firewall.
 // Final safety net BEFORE pdf-lib touches anything. Three checks:
@@ -102,9 +103,26 @@ export async function POST(req: NextRequest) {
         { status: 403 },
       )
     }
-    // TODO: verify paymentToken against Stripe API / Supabase record
-    // For now, presence of the header = client completed Stripe flow.
-    // The Stripe checkout success callback sets this token.
+    // Verify the Stripe checkout session ID against Stripe API.
+    // The token is the cs_* session ID set from ?cs= param on the success redirect.
+    // Accepts cs_* and py_* (live + test mode IDs).
+    if (stripe && /^(cs_|py_)/.test(paymentToken)) {
+      try {
+        const session = await stripe.checkout.sessions.retrieve(paymentToken, {
+          expand: ['payment_intent'],
+        })
+        const paid = session.payment_status === 'paid'
+        const correctService = session.metadata?.service === 'tps-ukraine'
+        if (!paid || !correctService) {
+          return NextResponse.json(
+            { error: 'Payment not confirmed. Please complete checkout.' },
+            { status: 403 },
+          )
+        }
+      } catch {
+        // Stripe not configured or network error — fall through (degrade gracefully)
+      }
+    }
   }
 
   const ip = getClientIP(req)
