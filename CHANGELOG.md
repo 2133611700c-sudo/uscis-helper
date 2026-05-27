@@ -3,6 +3,31 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 33: P-post7 — DeepSeek disclosure UI + Review Gate testids + Playwright e2e
+
+### What changed
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+  - Added `aiDisclosure` translation key in all 4 locales (uk/ru/en/es)
+  - Step 4 upload screen: added disclosure box (🔒) explaining Google Vision → text → DeepSeek pipeline (ADR-009 requirement)
+  - Added `data-testid="tps-review-translation-btn"` to Review Translation button
+- `apps/web/src/components/tps/TranslationReviewGate.tsx`:
+  - Added `data-testid="translation-review-gate"` on root
+  - Added `data-testid="translation-review-checkbox"` on checkbox input
+  - Added `data-testid="translation-review-confirm-btn"` on confirm button
+  - Added `data-testid="translation-review-back-btn"` on back button
+- `apps/web/tests/e2e/translation-review-gate.spec.ts` (NEW): 7-gate Playwright e2e proof of P3 Review Gate flow:
+  - Preview API called on button click
+  - Modal appears with gate UI
+  - Confirm without checkbox shows validation error (gate BLOCKS)
+  - Confirm with checkbox closes modal, removes Review button
+  - Generate packet includes reviewConfirmed: true
+  - ZIP contains Translation HTML + safety assertions (no "Middle Name", "Patronymic" label, surname, etc.)
+
+### Verified
+- 2092/2092 tests pass, 0 type errors
+
+---
+
 ## 2026-05-27 — Session 33: P7 — Gates verification (G1-G13 all PASS) + session docs
 
 ### What changed
