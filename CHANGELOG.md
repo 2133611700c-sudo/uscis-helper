@@ -3,6 +3,18 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39i: feat: stale session banner + mobile UX fixes
+
+- **Stale session banner**: yellow banner when session ≥ 3 days old (step > 1). Auto-clear at ≥ 60 days.
+- **savedAt**: added to localStorage on every save — enables future stale detection.
+- **Restart button**: hidden at step 1; visible only at step > 1 with border. Uses `freshStart` key.
+- **Mobile "Изменить" button**: was `padding: 0` (untappable). Now `padding: '6px 12px', minHeight: 36, border`.
+- **Mobile SingleSelect**: `padding: '8px 14px'` → `'10px 16px', minHeight: 44`.
+- **i18n**: `staleSession(days)`, `continueSession`, `freshStart` added to all 4 locales (uk/ru/en/es).
+- **Tests**: 2098/2098 pass, 0 type errors.
+
+---
+
 ## 2026-05-27 — Session 39h: fix: booklet-only E2E `tps-generate-cta` not visible
 
 **Root cause**: `fillReviewRow` writes corrected fields to `data.uploads['manual']` slot. Central Brain server (`centralBrain.ts:115`) skips upload slots with no document contract — 'manual' has none. Fields silently discarded → `mergedFields` incomplete → `isStep6Eligible=false` → button never rendered → 20s timeout.
