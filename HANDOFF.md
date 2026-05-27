@@ -1,3 +1,34 @@
+# HANDOFF — Session 39N (2026-05-27)
+
+## Session 39N — fix: crossref OCR quality — Prostianets, short patronymic
+
+### User reported
+Step 5 review showed: city_of_birth="Prostianets" (wrong, should be Trostianets), middle_name="Yovych" (wrong, just a suffix fragment of "Serhiiovych").
+
+### Root cause
+1. **Prostianets**: Handwritten "Т" in "Тростянець" misread as "П" → "Простянець" by both Vision and DocAI → DeepSeek crossref confirmed wrong value.
+2. **Yovych**: DeepSeek could only read the "-ович" suffix of "Сергійович" from both OCR outputs, returned "Yovych" as the patronymic value.
+
+### Fixes
+1. **`dualOcrCrossref.ts` prompt improvements**:
+   - Added HANDWRITING CONFUSION RULES section: Т/П confusion explicit + specific correction "Простянець/Prostianets → Тростянець/Trostianets (real city in Vinnytsia Oblast)".
+   - Added PATRONYMIC COMPLETENESS RULE: minimum 8 chars, suffix-only fragments return null.
+2. **`route.ts` guard** (both crossref apply blocks):
+   - `if (crKey === 'patronymic' && cr.value.length < 8) continue` — "Yovych" (6 chars) is now rejected before it reaches the field.
+
+### Other issues from user report
+- Passport expiry "2020-02-22" — likely correct (old/expired document). Not a bug.
+- Place of last entry empty — I-94 not uploaded. User needs to upload I-94.
+
+### Next tasks
+1. DEPLOY and verify: city shows "Trostianets" (not "Prostianets"), patronymic shows empty/blank (not "Yovych") → user enters "Serhiiovych" manually via "Изменить"
+2. Consider: is there a way to infer patronymic from Ukrainian given name? (Серг → Сергійович) — could be a future feature
+3. `passport_number` from booklet — still needs manual entry UI
+4. Full "zero manual entry" audit
+5. TASK-04/05/06
+
+---
+
 # HANDOFF — Session 39M (2026-05-27)
 
 ## Session 39M — fix: rotation loops for ALL slots now guard on line count
