@@ -3,6 +3,19 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 37 hotfix: fix(wizard) — stale closure reviewConfirmed in generatePacket
+
+### What changed
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+  - Added `translationReviewConfirmed` to `generatePacket` useCallback dependency array. Was missing → callback captured `false` at mount → `_translation.reviewConfirmed` always sent as `false` in generate request even after user confirmed review gate.
+
+### Test evidence
+- Unit tests: 2092/2092 pass
+- TypeScript: 0 errors
+- Root cause: React stale closure — useState value not captured in deps array
+
+---
+
 ## 2026-05-27 — Session 37: fix(wizard) — gate field manual fallback + Playwright e2e spec fixes
 
 ### What changed
