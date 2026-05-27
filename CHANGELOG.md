@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39e: fix(ux) — "Заполните вручную" → "Проверьте и дополните" + city tip + I-94 port patterns
+
+- `TPSWizardV2.tsx`: `s5ManualTitle` переименован во всех 4 локалях — убрана путаница с авто-заполненным адресом
+- `TPSWizardV2.tsx`: `city_of_birth` tip объясняет что смт/пгт убирается из формы намеренно, идёт в перевод
+- `TPSWizardV2.tsx`: `place_of_last_entry` tip честный — пример формата вместо ложного "робот заполнит"
+- `i94.ts`: +3 label паттерна (place of entry, entry port, last entry port) + value regex: апостроф/дефис/полный штат
+
+---
+
 ## 2026-05-27 — Session 39d: fix(translation) — смт → "urban-type settlement" in translation city_of_birth
 
 ### Root cause

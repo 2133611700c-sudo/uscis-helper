@@ -470,10 +470,20 @@ export function runI94Module(ocr: OcrResult, opts: I94Options): TpsModuleResult 
 
   // ── 9. Port / Place of Entry ──────────────────────────────────────────────
   // CBP I-94 shows "Port of Entry" or "Arrival Port", e.g. "LOS ANGELES, CA"
+  // Added: "port of last entry", "place of entry", "entry port", "last entry port"
+  // Value pattern extended: apostrophes, hyphens, full state names allowed
   const portOfEntry = findLabelledValue(
     ocr,
-    [/port\s*of\s*entry/i, /arrival\s*port/i, /port\s*of\s*arrival/i, /entered\s*at/i],
-    /([A-Z][A-Za-z\s.]+,\s*[A-Z]{2})/,
+    [
+      /port\s*of\s*(?:last\s*)?entry/i,
+      /arrival\s*port/i,
+      /port\s*of\s*arrival/i,
+      /entered\s*at/i,
+      /place\s*of\s*(?:last\s*)?entry/i,
+      /entry\s*port/i,
+      /last\s*entry\s*port/i,
+    ],
+    /([A-Z][A-Za-z\s.'"\-]+,\s*[A-Z]{2,})/,
   )
   if (portOfEntry) {
     fields.push({
