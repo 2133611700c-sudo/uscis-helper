@@ -1,3 +1,25 @@
+# HANDOFF — Session 39i (2026-05-27)
+
+## Session 39i — feat: stale session banner + mobile UX fixes
+
+### Changes
+1. **Stale session banner** — when user returns to a session saved 3+ days ago, a yellow banner appears with "Сохранено X дн. назад" + [Продолжить] / [Начать заново] buttons. Sessions older than 60 days are auto-cleared.
+2. **savedAt** — localStorage now saves `savedAt: ISO timestamp` on every change.
+3. **Restart button** — hidden at step 1 (nothing to restart). Now shows only at step > 1 with visible border. Uses `freshStart` translation.
+4. **Mobile: "Изменить" button** — was `padding: 0` (impossible to tap on mobile). Now `padding: '6px 12px', minHeight: 36, border` — visible bordered button.
+5. **Mobile: SingleSelect** — `padding: '8px 14px'` → `padding: '10px 16px', minHeight: 44` (WCAG touch target).
+6. **Translations** — added `staleSession(days)`, `continueSession`, `freshStart` for all 4 locales (uk/ru/en/es).
+
+### Tests
+2098/2098 unit pass, 0 type errors
+
+### Next tasks
+1. booklet-only DOB still missing from OCR
+2. place_of_last_entry no auto-extract from some I-94 formats
+3. TASK-04/05/06
+
+---
+
 # HANDOFF — Session 39h (2026-05-27)
 
 ## Session 39h — fix: booklet-only E2E test failure (`tps-generate-cta` not visible)
