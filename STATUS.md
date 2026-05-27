@@ -1,5 +1,5 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 39i — stale session banner + mobile UX fixes
+**Updated:** 2026-05-27 Session 39i (patch) — fix duplicate restart button
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
