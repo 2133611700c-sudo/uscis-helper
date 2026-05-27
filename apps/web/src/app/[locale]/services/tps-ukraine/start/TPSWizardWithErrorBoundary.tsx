@@ -6,6 +6,7 @@
  */
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import TPSWizard from './TPSWizardV2'
 
@@ -81,12 +82,12 @@ function WizardCrashFallback({ locale }: { locale: string }) {
       >
         {m.cta}
       </button>
-      <a
+      <Link
         href="/"
         style={{ fontSize: 13, color: 'var(--text-3, #888)', textDecoration: 'underline' }}
       >
         ← {locale === 'ru' ? 'На главную' : locale === 'uk' ? 'На головну' : locale === 'es' ? 'Inicio' : 'Home'}
-      </a>
+      </Link>
     </div>
   )
 }

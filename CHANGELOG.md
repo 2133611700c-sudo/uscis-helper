@@ -3,6 +3,14 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39g (patch): fix CI build errors
+
+- `TPSWizardWithErrorBoundary.tsx`: replaced `<a href="/">` with Next.js `<Link>` (ESLint no-html-link-for-pages error)
+- `TPSWizardV2.tsx`: added `centralBrainResult, centralBrainStatus` to `handleGenerate` useCallback deps (exhaustive-deps warning treated as error in CI)
+- 2098/2098 tests pass, 0 type errors
+
+---
+
 ## 2026-05-27 — Session 39g: fix: CRITICAL — wizard crash on "Адрес отличается" checkbox
 
 **Root cause** (fully traced): checking `mailing_different` checkbox sets `data.manual.mailing_different=true` (boolean) → brain/merge useEffect fires → sends `data.manual` verbatim → Zod schema `z.record(z.string(), z.string())` rejects the boolean → 422 returned → wizard doesn't check `r.ok` → parses 422 as valid `CentralBrainResult` → `Object.entries(centralBrainResult.merged)` crashes (`merged` is `undefined`) → React renders nothing → Next.js shows 500 page → `localStorage` still has `mailing_different:true` → **persistent 500 on every refresh**.
