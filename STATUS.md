@@ -9,6 +9,14 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 39k (2026-05-27) — fix: booklet inferred fields + lineMatchesLabel false-positive
+
+- `VERIFIED(local)` `lineMatchesLabel`: "Пол" (sex) no longer matches "Поліграфічний" (printing co.) via short-label token fix
+- `VERIFIED(local)` `country_of_birth = 'Ukraine'` added to booklet inferred emissions
+- `VERIFIED(local)` `country_of_nationality`, `country_of_birth`, `passport_country_of_issuance`, `sex` moved to `allowed_fields` in booklet contract
+- `VERIFIED(local)` 2101/2101 tests pass, 0 type errors
+- `UNVERIFIED` Production — deploy pending
+
 ## Session 39j (2026-05-27) — fix: booklet DOB fallback + given_name unblocked
 
 - `VERIFIED(local)` `passportBooklet.ts`: DOB fallback scan when "Дата народження" label absent — scans all lines, emits if exactly 1 date candidate.

@@ -100,15 +100,13 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
     ],
   },
   // Ukrainian internal passport-booklet (паспорт-книжка).
-  // BUG-6 FIX (2026-05-24): booklet OCR extracts garbage for identity
-  // fields (family_name, given_name, sex) because handwritten
-  // Cyrillic is unreliable. Month names end up as given_name, date
-  // fragments as surname. These fields are ALREADY extracted reliably
-  // from загранпаспорт MRZ — booklet should NOT touch them.
-  //
-  // Booklet's ONLY unique value: middle_name, city_of_birth,
-  // province_of_birth — fields that загранпаспорт does NOT carry.
-  // Everything else is noise that overwrites good MRZ data.
+  // When загранпаспорт IS uploaded, Field Arbiter gives MRZ priority for
+  // identity fields (family_name, given_name, dob). Booklet values remain
+  // as fallback.
+  // Booklet-ONLY users (no загранпаспорт): booklet is the sole source for
+  // all identity fields — Brain extraction + DOB fallback scan cover most.
+  // Inferred constants (country_of_nationality, country_of_birth,
+  // passport_country_of_issuance) are hardcoded "Ukraine" by the module.
   booklet: {
     slot: 'booklet',
     allowed_document_types: ['passport'],
@@ -130,15 +128,20 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       // "25 червня 1986 року" => "1986-06-25" before merge.
       // Keep under review flow; invalid dates still reject.
       'dob',
+      // Inferred constants — every Ukrainian internal passport is Ukraine-issued.
+      // Module emits hardcoded 'Ukraine' (not from OCR), so always reliable.
+      // Field Arbiter still gives загранпаспорт MRZ priority when present.
+      'country_of_nationality',
+      'country_of_birth',
+      'passport_country_of_issuance',
+      // Sex: single Cyrillic char (Ч/Ж) — simpler than names; normalization
+      // maps to M/F. Booklet-only users have no other source for this field.
+      'sex',
     ],
     forbidden_fields: [
       // 'middle_name' — MOVED TO ALLOWED (only source for patronymic)
-      'sex',
       'passport_number',
       'passport_expiration_date',
-      'country_of_birth',
-      'country_of_nationality',
-      'passport_country_of_issuance',
       // Translation-only fields — not USCIS form fields; flow via translationExtractor
       // (picked up from CB rejected[] for translation path per ADR-008)
       'issued_by',

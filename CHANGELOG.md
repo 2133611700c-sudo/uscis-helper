@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39k: fix: booklet inferred fields + lineMatchesLabel false-positive
+
+- **`passportBooklet.ts`**: Added `country_of_birth = 'Ukraine'` inferred emission (alongside existing nationality + issuing country). Booklet module always knows it's a Ukrainian document.
+- **`passportBooklet.ts`**: Fixed `lineMatchesLabel` short-label false positive. "Пол" (3-char sex label) was matching "Поліграфічний" (printing company) because both start with "ПОЛ" in normalized form. New logic: for single-word labels ≤ 6 Cyrillic chars, split text into space-separated tokens and require each token to start with the label AND be ≤ label+3 chars long.
+- **`documentContracts.ts`**: Moved `country_of_nationality`, `country_of_birth`, `passport_country_of_issuance`, `sex` from `forbidden_fields` to `allowed_fields` for booklet slot. These were hardcoded inferred values (always "Ukraine") but blocked by contract.
+- **Tests**: 2101/2101 pass, 0 type errors.
+
+---
+
 ## 2026-05-27 — Session 39j: fix: booklet DOB fallback scan + given_name contract unblock
 
 - **`passportBooklet.ts`**: Added label-missing fallback — when "Дата народження" label absent, scans all OCR lines for parseable dates. If exactly 1 candidate (year 1920–currentYear-10), emits as `booklet_date_scan_fallback`. Triggered by: Google Vision drops printed labels but reads handwritten values.
