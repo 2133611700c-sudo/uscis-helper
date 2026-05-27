@@ -1,7 +1,14 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 35 — Mailing address UI implemented (P1-UX TODO closed)
+**Updated:** 2026-05-27 Session 36 — Translation PDF in TPS ZIP; mailing_in_care_of; registration_address extraction
 **Status:** DEGRADED (browser e2e Playwright run for Review Gate flow not yet executed; deploy not yet approved)
 **Scope:** P0–P7 complete. 13/13 gates PASS. 2092/2092 tests pass. 0 type errors. Not yet deployed to production.
+
+## Session 36 Verified Changes (2026-05-27)
+
+- `VERIFIED` Translation PDF in TPS ZIP: `generateTranslationPDF()` now called in `packetBuilder.ts` when `_rawFields` is present. Bureau-style 2-page PDF (translation + cert) added to ZIP as `Translation_Internal_Passport.pdf` alongside existing HTML. Both `generateTPSTranslation()` and `translateBookletFromBrain()` return types extended with `_rawFields`, `_signerName`, `_signerAddress`.
+- `VERIFIED` mailing_in_care_of: added to `WizardData['manual']`, exposed in ReviewManual mailing section, passed through `buildDraftAnswers()`
+- `VERIFIED` registration_address extraction: wired `registration_address` optional field into `extraction.fieldTargets`, `expectedLabels` (`МІСЦЕ ПРОЖИВАННЯ`, `МІСЦЕ РЕЄСТРАЦІЇ`), and `render.renderFields` in `passportBooklet.module.ts`
+- `VERIFIED` 2092/2092 tests pass, 0 type errors
 
 ## Session 33 Verified Changes (2026-05-27)
 

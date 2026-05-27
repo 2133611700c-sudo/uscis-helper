@@ -152,6 +152,7 @@ interface WizardData {
     mailing_city?: string
     mailing_state?: string
     mailing_zip?: string
+    mailing_in_care_of?: string
   }
   paid: boolean
   /** Stripe checkout session ID from ?cs= param after successful payment.
@@ -2285,6 +2286,7 @@ export default function TPSWizardV2({ locale }: Props) {
         mailing_city: data.manual.mailing_city || undefined,
         mailing_state: data.manual.mailing_state || undefined,
         mailing_zip: data.manual.mailing_zip || undefined,
+        mailing_in_care_of: data.manual.mailing_in_care_of || undefined,
       } : {}),
       daytime_phone: data.manual.daytime_phone || '',
       email: data.manual.email || '',
@@ -3717,6 +3719,14 @@ function ReviewManual({
             value={manual.mailing_zip || ''}
             onChange={(v) => onChange({ mailing_zip: v.replace(/[^\d-]/g, '').slice(0, 10) })}
             dataTestId="tps-review-mailing-zip"
+          />
+          <FieldInput
+            label={locale === 'ru' ? 'Получатель (корреспонденция) — необязательно' : locale === 'uk' ? 'Одержувач (листування) — необов\'язково' : locale === 'es' ? 'A nombre de (correo) — opcional' : 'In care of (mailing) — optional'}
+            placeholder=""
+            tip={locale === 'ru' ? 'Если конверт нужно адресовать другому лицу.' : locale === 'uk' ? 'Якщо конверт потрібно адресувати іншій особі.' : locale === 'es' ? 'Si el sobre debe dirigirse a otra persona.' : 'If the envelope should be addressed to another person.'}
+            value={manual.mailing_in_care_of || ''}
+            onChange={(v) => onChange({ mailing_in_care_of: v })}
+            dataTestId="tps-review-mailing-in-care-of"
           />
         </>
       )}
