@@ -19,6 +19,7 @@
 
 export type SourceDocumentType =
   | 'passport'
+  | 'booklet'
   | 'i94'
   | 'ead'
   | 'i797'
@@ -336,6 +337,7 @@ function toExtractionMethod(source: string): ExtractionMethod {
 function toSourceDocType(docSlot: string): SourceDocumentType {
   switch (docSlot) {
     case 'passport': return 'passport'
+    case 'booklet': return 'booklet'
     case 'i94': return 'i94'
     case 'ead': return 'ead'
     case 'i797': return 'i797'

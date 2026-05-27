@@ -596,9 +596,43 @@ function parseDate(s: string): Date | null {
     const cutoff = (new Date().getFullYear() % 100) + 10
     return yy > cutoff ? 1900 + yy : 2000 + yy
   }
+  const normalizeCyr = (x: string): string =>
+    x
+      .toLowerCase()
+      .replace(/[’'`]/g, '')
+      .replace(/\.$/, '')
+      .replace(/ґ/g, 'г')
+      .replace(/ё/g, 'е')
+
+  const MONTHS_UA_FULL: Record<string, number> = {
+    'січня': 1,
+    'лютого': 2,
+    'березня': 3,
+    'квітня': 4,
+    'травня': 5,
+    'червня': 6,
+    'липня': 7,
+    'серпня': 8,
+    'вересня': 9,
+    'жовтня': 10,
+    'листопада': 11,
+    'грудня': 12,
+  }
+
+  // Ukrainian textual date (explicit parser, no Date.parse locale magic):
+  //  "25 червня 1986 року" / "25 червня 1986"
+  let m = t.match(
+    /^(\d{1,2})\s+([А-Яа-яІіЇїЄєҐґ'’`.-]+)\s+(\d{4})(?:\s+(?:року|р\.?|г\.?))?$/u,
+  )
+  if (m) {
+    const day = +m[1]
+    const month = MONTHS_UA_FULL[normalizeCyr(m[2])]
+    const year = +m[3]
+    if (month) return mkUtc(year, month, day)
+  }
 
   // YYYY-MM-DD
-  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
   if (m) return mkUtc(+m[1], +m[2], +m[3])
 
   // MM/DD/YYYY or M/D/YYYY (US format — wins when month <=12 and day <=12 ambiguity)
