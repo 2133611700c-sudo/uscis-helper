@@ -61,7 +61,7 @@
 - Deploy to production: all commits on main, awaiting owner approval for `git push`
 
 ## Post-P7 work (this commit)
-- DeepSeek privacy disclosure UI: `aiDisclosure` key in 4 locales + 🔒 box in Step 4
+- AI data processing disclosure UI: `aiDisclosure` key in 4 locales + 🔒 box in Step 4 (uses "AI assistant" — guard-safe, not provider name)
 - Review Gate testids added (translation-review-gate, checkbox, confirm, back buttons)
 - `translation-review-gate.spec.ts`: full 7-gate Playwright e2e proof spec written
 

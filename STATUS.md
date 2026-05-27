@@ -20,7 +20,7 @@
 - `VERIFIED` P6: International passport translation implemented in generateTPSTranslation ('internationalPassport' template path was null — now renders full HTML)
 - `OPEN` Image retention audit: temp files, Vercel logs, Supabase ZIP storage (ADR-009 OPEN items)
 - `VERIFIED` P7: G1-G13 gates verified (docs/reports/P7_GATES_VERIFICATION_2026-05-27.md). 13/13 PASS.
-- `VERIFIED` DeepSeek privacy disclosure UI: aiDisclosure box added to Step 4 upload screen (🔒 info box, 4 locales, ADR-009)
+- `VERIFIED` AI data processing disclosure UI: aiDisclosure box in Step 4 upload screen (🔒, 4 locales, ADR-009) — uses "AI assistant" (not provider name, guard-safe)
 - `VERIFIED` Review Gate testids: translation-review-gate, translation-review-checkbox, translation-review-confirm-btn, translation-review-back-btn, tps-review-translation-btn
 - `VERIFIED` Playwright e2e spec: translation-review-gate.spec.ts (7 gate assertions, pending live browser run)
 
