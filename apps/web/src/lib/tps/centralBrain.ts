@@ -38,6 +38,8 @@ import { normalize } from '@/lib/tps/dictionaryBridge'
 export interface MergedField {
   field: string
   value: string
+  /** Original OCR text before normalization — used by translation mode to recover settlement type prefixes (смт → "urban-type settlement") */
+  raw_value?: string
   source_slot: SlotId | 'manual'
   source_type: string
   confidence: number
@@ -222,6 +224,7 @@ export function mergeToCentralBrain(input: CentralBrainInput): CentralBrainResul
     merged[field] = {
       field,
       value: chosenValue,
+      raw_value: winningCandidate.raw_value,
       source_slot: winningCandidate.slot,
       source_type: resolved.chosenSourceType ?? winningCandidate.extraction_source,
       confidence: winningCandidate.confidence,
