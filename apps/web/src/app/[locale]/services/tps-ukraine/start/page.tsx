@@ -21,7 +21,7 @@
  */
 
 import type { Metadata } from 'next'
-import TPSWizard from './TPSWizardV2'
+import TPSWizardWithErrorBoundary from './TPSWizardWithErrorBoundary'
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -55,5 +55,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TpsUkraineStartPage({ params }: Props) {
   const { locale } = await params
-  return <TPSWizard locale={locale} />
+  return <TPSWizardWithErrorBoundary locale={locale} />
 }
