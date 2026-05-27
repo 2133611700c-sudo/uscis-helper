@@ -23,8 +23,10 @@ import {
   translationFileName,
   CERTIFICATION_FILENAME,
   generateTPSTranslation,
+  translateBookletFromBrain,
   type TPSDocumentType,
 } from './translationBridge'
+import type { MergedField } from './centralBrain'
 
 // Edition dates verified against uscis.gov on 2026-05-10 and stamped on the
 // PDF footers. If USCIS publishes a new edition, scripts/uscis/refresh_tps_forms.sh
@@ -58,6 +60,8 @@ export interface TranslationOptions {
   signatureDataUrl?: string | null
   /** Controlling spellings from DL/MRZ that override Cyrillic transliteration */
   controllingSpellings?: Record<string, string>
+  /** Central Brain merged output — when present, used as primary source for booklet translation. */
+  brainMerged?: Record<string, MergedField> | null
 }
 
 export async function buildPacket(
@@ -138,14 +142,25 @@ export async function buildPacket(
       if (!shouldTranslateForTPSPacket(docType)) continue
 
       try {
-        const result = generateTPSTranslation(
-          answers,
-          docType,
-          translationOpts.signerName || '',
-          translationOpts.signerAddress || '',
-          translationOpts.signatureDataUrl ?? null,
-          translationOpts.controllingSpellings || {},
-        )
+        const signerOpts = {
+          signerName: translationOpts.signerName || '',
+          signerAddress: translationOpts.signerAddress || '',
+          signatureDataUrl: translationOpts.signatureDataUrl ?? null,
+        }
+        // Primary: use Central Brain merged fields when available (already normalized English).
+        // Fallback: derive from TPSAnswers (legacy path for pre-CB requests).
+        const brainMerged = translationOpts.brainMerged
+        const result =
+          docType === 'passportBooklet' && brainMerged
+            ? translateBookletFromBrain(brainMerged, signerOpts)
+            : generateTPSTranslation(
+                answers,
+                docType,
+                signerOpts.signerName,
+                signerOpts.signerAddress,
+                signerOpts.signatureDataUrl,
+                translationOpts.controllingSpellings || {},
+              )
         if (result && result.violations.length === 0) {
           const filename = translationFileName(docType)
           // HTML format: professional layout, printable, includes certification
