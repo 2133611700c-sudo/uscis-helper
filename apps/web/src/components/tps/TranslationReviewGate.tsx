@@ -110,7 +110,7 @@ export function TranslationReviewGate({
   }
 
   return (
-    <div style={{ maxWidth: 740, margin: '0 auto', padding: '0 16px' }}>
+    <div data-testid="translation-review-gate" style={{ maxWidth: 740, margin: '0 auto', padding: '0 16px' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{
@@ -202,6 +202,7 @@ export function TranslationReviewGate({
       }}>
         <input
           type="checkbox"
+          data-testid="translation-review-checkbox"
           checked={checked}
           onChange={(e) => {
             setChecked(e.target.checked)
@@ -228,6 +229,7 @@ export function TranslationReviewGate({
       <div style={{ display: 'flex', gap: 12, marginTop: 20, paddingBottom: 32 }}>
         <button
           type="button"
+          data-testid="translation-review-back-btn"
           onClick={onBack}
           style={{
             padding: '10px 20px',
@@ -243,6 +245,7 @@ export function TranslationReviewGate({
         </button>
         <button
           type="button"
+          data-testid="translation-review-confirm-btn"
           onClick={handleConfirm}
           style={{
             padding: '10px 24px',
