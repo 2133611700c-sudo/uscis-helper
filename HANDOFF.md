@@ -97,10 +97,17 @@
 - **`translation-review-gate.spec.ts`**: replaced `fillReviewRow` for identity gate fields with `fillIfEmpty` using new testids
 - **`booklet-multi-sample.spec.ts`**: same fix; new spec for 5 real documents created
 
+## Session 37 hotfix (this commit)
+
+### Stale closure fix in generatePacket (COMPLETE)
+- **Root cause**: `translationReviewConfirmed` missing from `generatePacket` useCallback deps array (line 2534). Callback captured `false` at mount → `_translation.reviewConfirmed` always sent as `false` → packetBuilder skipped translation in ZIP even after user confirmed Review Gate.
+- **Fix**: Added `translationReviewConfirmed` to deps array.
+- **Found by**: Running `translation-review-gate.spec.ts` against production (gate 6 assertion: `reviewConfirmed` must be `true`).
+
 ## Exact next tasks (priority order)
-1. **Deploy to production**: `git push origin main` (code changes deployed via Vercel auto-deploy)
-2. **Run Playwright e2e after deploy**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts`
-3. **Run multi-sample after deploy**: `pnpm --filter web exec playwright test booklet-multi-sample.spec.ts`
+1. **Wait for deploy**: SHA to be determined after this push
+2. **Re-run Playwright e2e**: `pnpm --filter web exec playwright test translation-review-gate.spec.ts`
+3. **Run multi-sample**: `pnpm --filter web exec playwright test booklet-multi-sample.spec.ts`
 
 ## Evidence
 - Test count: 2092/2092
