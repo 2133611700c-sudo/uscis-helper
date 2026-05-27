@@ -3,6 +3,50 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 38: fix(wizard) — remove manual identity entry (auto-fill rule) + purge real PII from site
+
+### Product principle restored (owner directive)
+The service auto-fills ALL form data from uploaded documents. Manual entry of
+identity fields violates that — a 30–80yo non-technical user must not retype
+Latin names. Only an "Изменить" (edit) button on already-recognized values is
+allowed. phone / email / marital_status stay manual (not printed on any
+document — owner confirmed).
+
+### Privacy (removed from the live site)
+- Deleted real-person example placeholders that were SHIPPING on prod:
+  `Sergii`, `PASSPORT-REDACTED`, `06/25/1986`, `09/09/2022`, `Serhiiovych` (lines were
+  in ReviewManual FieldInput placeholders). No example names anywhere now.
+- Purged the same real PII from e2e test files (given name, passport #, DOB,
+  address, in-care-of) → replaced with synthetic values (`Testname`,
+  `AA000000`, `QA TEST`, `1213 Gordon St`).
+
+### Step-5 redundancy removed
+- Removed 4 manual identity FieldInputs from `ReviewManual`: given_name, dob,
+  passport_number, last_entry_date. They duplicated rows already shown in
+  `ReviewOcr` (recognized value + "Изменить"). Field→document map:
+  given_name/passport_number/passport_expiration ← international passport MRZ;
+  dob ← passport/booklet/EAD; last_entry_date ← I-94; patronymic/birthplace ←
+  internal booklet; US address ← driver's license; phone/email/marital ← typed.
+- Removed `given_name_manual` / `dob_manual` / `passport_number_manual` /
+  `last_entry_date_manual` from `WizardData.manual` and `buildDraftAnswers`.
+- `ReviewOcr` edit buttons now have stable testids `tps-ocr-edit-<key>`.
+
+### Translation bug fixed as a side effect
+- Editing an identity field via "Изменить" writes to the synthetic 'manual'
+  upload slot under the BASE key (given_name, not given_name_manual) → flows
+  into Central Brain merge → mergedFields → gate, forms, AND translation. The
+  earlier *_manual key mismatch (translation lost the given name) is gone.
+  e2e regression guard added: translation must contain the Given Name row.
+
+### Files
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`
+- `apps/web/tests/e2e/{translation-review-gate,booklet-multi-sample,booklet-only-pdf-proof,booklet-review}.spec.ts`
+
+### Test evidence
+- 2092/2092 unit pass, 0 type errors. e2e verification pending production deploy.
+
+---
+
 ## 2026-05-27 — Session 37 audit: fix(translation) — CB-readiness race + non-identity page guidance
 
 ### Audit trigger
