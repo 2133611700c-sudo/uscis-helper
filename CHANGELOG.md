@@ -3,6 +3,22 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 39d: fix(translation) — смт → "urban-type settlement" in translation city_of_birth
+
+### Root cause
+`postExtractNormalize` stripped settlement prefix ("смт") via `cleanCityCandidate()` before passing to `normalizePlace()`. The clean name ("Trostianets") was stored in `MergedField.value` with no record of the original prefix. USCIS form got "Trostianets" (correct); translation also got "Trostianets" (wrong — CLAUDE.md: "смт" = "urban-type settlement").
+
+### Fix
+- `centralBrain.ts`: added `raw_value?: string` to `MergedField`; threads `winningCandidate.raw_value` into merged record
+- `translationExtractor.ts`: added `SETTLEMENT_SUFFIX_MAP` + `cityWithSettlementType()` helper; `city_of_birth` now checks `merged['city_of_birth'].raw_value` for смт/пгт/с./хут. prefix and appends English suffix
+- Result: "смт Тростянець" → USCIS form: "Trostianets" ✓ | Translation: "Trostianets urban-type settlement" ✓
+
+### Tests
+- `translationExtractor.test.ts`: +6 settlement type expansion tests (смт, смт., пгт, с., м., no-prefix)
+- 2098/2098 unit tests pass; 0 type errors
+
+---
+
 ## 2026-05-27 — Session 39c: feat(knowledge) — Ukraine terminology v1.3 + TPS requirements
 
 ### packages/knowledge/src/dictionary.ts (v1.2 → v1.3)

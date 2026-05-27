@@ -1,7 +1,15 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 39 — e2e fully green (5/5 booklet-multi-sample, 1/1 review-gate)
+**Updated:** 2026-05-27 Session 39d — fix: смт → "urban-type settlement" in translation city_of_birth
 **Status:** PRODUCTION (auto-fill-only model live; all e2e tests passing on production)
-**Scope:** P0–P7 complete. 2092/2092 unit pass. 0 type errors.
+**Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
+
+## Session 39d (2026-05-27) — fix: смт → "urban-type settlement" in translation
+
+- `VERIFIED(local)` `MergedField.raw_value?` threaded from `winningCandidate.raw_value` in `centralBrain.ts`
+- `VERIFIED(local)` `cityWithSettlementType()` in `translationExtractor.ts`: смт/пгт → "urban-type settlement", с. → "village", хут. → "khutor"
+- `VERIFIED(local)` USCIS form still receives bare "Trostianets"; translation receives "Trostianets urban-type settlement"
+- `VERIFIED(local)` +6 unit tests; 2098/2098 pass, 0 type errors
+- `UNVERIFIED` Production deploy — pending push
 
 ## Session 39c (2026-05-27) — feat: knowledge v1.3 — missing agencies + DOCUMENT_TYPES + TPS requirements
 
