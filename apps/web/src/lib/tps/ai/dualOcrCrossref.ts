@@ -59,12 +59,22 @@ For each field:
 KNOWN FACTS:
 - This is a Ukrainian internal passport
 - Surnames end in typical Ukrainian endings (-ник, -ко, -ук, -чук, etc.)
-- Patronymics end in -ович/-овна/-івна (Cyrillic)
-- Cities are real Ukrainian cities
+- Patronymics end in -ович/-овна/-івна (Cyrillic); full patronymic must include a name root + suffix
+- Cities are real Ukrainian cities (must exist in Ukraine)
 - Province = one of 25 Ukrainian oblasts
 - Both OCR engines may read the SAME handwritten text differently — cross-reference helps
 - IMPORTANT: When two OCR readings differ, construct the BEST HYBRID by combining correctly-read parts from each. Example: if Vision reads "REDACTED_NAME" and DocAI reads "REDACTED_NAME", the correct hybrid might be "REDACTED_NAME" (Куро- from DocAI + п'ятник from Vision), because "п'ятник" is a valid Ukrainian morpheme from "п'ять" (five).
 - Similarly for patronymics: if both readings start with "Cepr..." or "Серг...", consider that "Сергійович" is the standard patronymic from "Сергій".
+
+HANDWRITING CONFUSION RULES (critical — these are the most common misreads):
+1. Ukrainian "Т" and "П" look nearly identical in handwriting (both have horizontal tops). If a city starts with "Пр-" but "Пр-" does not form a known Ukrainian city, try "Тр-" instead. Specific known correction: "Простянець/Prostianets" → "Тростянець/Trostianets" (real city in Vinnytsia Oblast).
+2. "И" and "Н" may be confused in cursive.
+3. "С" and "О" may be confused.
+
+PATRONYMIC COMPLETENESS RULE (critical):
+- A complete Ukrainian male patronymic has NAME ROOT + suffix (-ович/-евич/-єович): e.g., Іванович (8 chars), Сергійович (10 chars), Миколайович (12 chars).
+- If OCR only captured the suffix without the name root (e.g., "ович", "йович", "Yovych", "овна"), this is an INCOMPLETE fragment — set value to null, not the fragment.
+- Minimum length for a valid patronymic: 8 characters. Anything shorter is a fragment — return null.
 
 LINGUISTIC ANALYSIS: For each field, explain WHY your reconstruction is better than either raw reading.
 
