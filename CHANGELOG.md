@@ -3,6 +3,26 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-26 — Session 32: Central Brain (5 files) + hallucination guard fixes
+
+### What changed
+- **New**: `apps/web/src/lib/tps/sourcePriority.ts` — SlottedField interface, slot-priority helpers, toExtractedCandidate, hasControllingLatinSpelling.
+- **New**: `apps/web/src/lib/tps/hallucinationGuard.ts` — detectGarbageString, checkGeography, crossDocumentConflict, guardField, crossValidateField. HallucinationResult type.
+- **New**: `apps/web/src/lib/tps/dictionaryBridge.ts` — normalize() unified entry point bridging @uscis-helper/knowledge (oblasts, GEO_CORRECTIONS, SETTLEMENT_TYPES) + translation engine (restoreNominative, resolveIssuedBy).
+- **New**: `apps/web/src/lib/tps/centralBrain.ts` — mergeToCentralBrain() server-side 5-step pipeline: contract → hallucination guard → normalize → resolve priority → readiness gate.
+- **New**: `apps/web/src/app/api/tps/brain/merge/route.ts` — POST /api/tps/brain/merge (zod-validated, returns CentralBrainResult JSON).
+- **New**: `apps/web/src/lib/tps/__tests__/centralBrain.test.ts` — 7 integration tests.
+- **New**: `apps/web/src/lib/tps/__tests__/hallucinationGuard.test.ts` — 9 unit tests.
+- **Fix**: hallucinationGuard: removed `/^[^letters]+$/` GARBAGE_PATTERN (was blocking `dob:'1990-03-15'` and `a_number:'123456789'`).
+- **Fix**: hallucinationGuard: replaced `NAME_FIELDS` (booklet field names) with local `TPS_NAME_FIELDS` set — `isPlausibleName` now runs for TPS `family_name`/`given_name`/`middle_name`.
+- **Fix**: centralBrain.test.ts: added required TpsExtractedField fields to test helper (typecheck was failing).
+
+### Verified
+- Typecheck: 0 errors.
+- Unit tests: 2016/2016 pass (22 new tests, 0 regressions).
+
+---
+
 ## 2026-05-26 — Session 31: Ukrainian DOB parser + booklet dob contract + provenance fix
 
 ### What changed

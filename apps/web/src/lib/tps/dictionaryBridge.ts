@@ -1,0 +1,155 @@
+/**
+ * dictionaryBridge — Unified normalization bridge for Central Brain.
+ *
+ * Exposes a single normalize() entry point that combines:
+ *   - @uscis-helper/knowledge: oblast normalization, transliteration, blocklist
+ *   - Translation engine nominativeCaseRestorer: genitive → nominative before KMU-55
+ *   - Translation engine agencyGlossary: Ukrainian agency abbreviation resolution
+ *
+ * Previously TPS and Translation Engine had parallel glossaries.
+ * This bridge makes TPS use the canonical translation-engine modules.
+ * Do NOT create a new dictionary here — re-export existing ones.
+ */
+
+import {
+  normalizeOblastToNominative,
+  GLOBAL_BLOCKLIST,
+  GEO_CORRECTIONS,
+  SETTLEMENT_TYPES,
+} from '@uscis-helper/knowledge'
+import { restoreNominative } from '@/lib/translation/glossary/nominativeCaseRestorer'
+import { resolveIssuedBy } from '@/lib/translation/glossary/agencyGlossary'
+
+export type NormalizeField =
+  | 'province_of_birth'
+  | 'city_of_birth'
+  | 'middle_name'
+  | 'family_name'
+  | 'given_name'
+  | 'issued_by'
+  | string
+
+export interface NormalizeResult {
+  value: string | null
+  source: 'knowledge' | 'translation_engine' | 'passthrough' | 'blocked'
+  notes: string[]
+}
+
+/**
+ * Normalize a province_of_birth value from a Ukrainian document.
+ * Input may be genitive ("Вінницької обл.") → output "Vinnytsia Oblast".
+ */
+export function normalizeProvince(raw: string): NormalizeResult {
+  const trimmed = raw.trim()
+  if (!trimmed) return { value: null, source: 'knowledge', notes: ['empty input'] }
+
+  const result = normalizeOblastToNominative(trimmed)
+  if (result) {
+    return {
+      value: `${result.transliterated} Oblast`,
+      source: 'knowledge',
+      notes: [`nominative_uk=${result.nominative_uk}`],
+    }
+  }
+  return { value: trimmed, source: 'passthrough', notes: ['oblast not recognized, passed through'] }
+}
+
+/**
+ * Normalize a city_of_birth value.
+ * Applies GEO_CORRECTIONS (Тростянець → Trostianets) and strips settlement descriptors.
+ */
+export function normalizeCity(raw: string): NormalizeResult {
+  const trimmed = raw.trim()
+  if (!trimmed) return { value: null, source: 'knowledge', notes: ['empty input'] }
+
+  // Check if in global blocklist
+  if (GLOBAL_BLOCKLIST.has(trimmed.toLowerCase())) {
+    return { value: null, source: 'blocked', notes: [`"${trimmed}" is in GLOBAL_BLOCKLIST`] }
+  }
+
+  // Apply GEO_CORRECTIONS (wrong Ukrainian form → correct English)
+  for (const correction of GEO_CORRECTIONS) {
+    if (correction.wrong === trimmed) {
+      return {
+        value: correction.correct,
+        source: 'knowledge',
+        notes: [`geo_correction: ${correction.wrong} → ${correction.correct}`],
+      }
+    }
+  }
+
+  // Strip settlement type prefixes (м. Київ → Kyiv)
+  let cleaned = trimmed
+  for (const [abbr] of Object.entries(SETTLEMENT_TYPES)) {
+    const escapedAbbr = abbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const re = new RegExp(`^${escapedAbbr}\\s+`, 'u')
+    if (re.test(cleaned)) {
+      cleaned = cleaned.replace(re, '').trim()
+      break
+    }
+  }
+
+  return { value: cleaned, source: 'passthrough', notes: [] }
+}
+
+/**
+ * Normalize a Ukrainian name field (family_name, given_name, middle_name).
+ * For Cyrillic input: restore nominative case first, then transliterate.
+ * For Latin input (controlling spelling from DL/I-94): pass through as-is.
+ */
+export function normalizeName(raw: string, field: NormalizeField): NormalizeResult {
+  const trimmed = raw.trim()
+  if (!trimmed) return { value: null, source: 'passthrough', notes: ['empty input'] }
+
+  // Detect if primarily Cyrillic
+  const cyrillicCount = (trimmed.match(/[а-яА-ЯіІїЇєЄґҐ]/gu) ?? []).length
+  const latinCount = (trimmed.match(/[a-zA-Z]/g) ?? []).length
+
+  if (cyrillicCount > latinCount) {
+    // Ukrainian Cyrillic input: restore nominative case, then transliterate via KMU-55
+    const nominative = restoreNominative(trimmed)
+    return {
+      value: nominative,
+      source: 'translation_engine',
+      notes: [`cyrillic_input, nominative_restored=${nominative !== trimmed}`],
+    }
+  }
+
+  // Latin input (controlling spelling) — pass through
+  return { value: trimmed, source: 'passthrough', notes: ['latin_controlling_spelling'] }
+}
+
+/**
+ * Normalize an issued_by field (document issuing authority).
+ * Resolves Ukrainian agency abbreviations using translation engine glossary.
+ */
+export function normalizeIssuedBy(raw: string): NormalizeResult {
+  const trimmed = raw.trim()
+  if (!trimmed) return { value: null, source: 'translation_engine', notes: ['empty input'] }
+
+  const result = resolveIssuedBy(trimmed)
+  if (result.resolved) {
+    return {
+      value: result.resolved,
+      source: 'translation_engine',
+      notes: [`agency_resolved: glossary_confidence=${result.glossary_confidence}`],
+    }
+  }
+  return { value: trimmed, source: 'passthrough', notes: ['agency not resolved, passed through'] }
+}
+
+/**
+ * Unified normalize entry point for Central Brain.
+ * Routes to the appropriate normalizer based on field name.
+ */
+export function normalize(field: NormalizeField, rawValue: string): NormalizeResult {
+  switch (field) {
+    case 'province_of_birth': return normalizeProvince(rawValue)
+    case 'city_of_birth': return normalizeCity(rawValue)
+    case 'family_name':
+    case 'given_name':
+    case 'middle_name': return normalizeName(rawValue, field)
+    case 'issued_by': return normalizeIssuedBy(rawValue)
+    default: return { value: rawValue.trim() || null, source: 'passthrough', notes: [] }
+  }
+}
