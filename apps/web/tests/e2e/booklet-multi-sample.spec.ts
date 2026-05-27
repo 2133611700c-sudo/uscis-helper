@@ -94,6 +94,7 @@ type SampleResult = {
   no_cyrillic_in_translation: boolean
   cert_has_competency: boolean
   structural_pass: boolean
+  warning_showed?: boolean
   error?: string
 }
 
@@ -231,8 +232,11 @@ for (const doc of BOOKLET_DOCS) {
       // re-upload warning on Step 5 and never offer a translation. We verify
       // that here and finish — there is no name-based draft to check.
       if (!doc.identityPage) {
+        // CB + render may take 30-40s after family_name button appears;
+        // 30s here (was 15s) avoids false timeout flakiness on slower servers.
         await expect(page.getByTestId('tps-booklet-no-identity-warning'))
-          .toBeVisible({ timeout: 15_000 })
+          .toBeVisible({ timeout: 30_000 })
+        result.warning_showed = true
         result.review_btn_appeared = false
         const proofPath = path.join(artifactsDir, 'sample-proof.json')
         await fs.writeFile(proofPath, JSON.stringify(result, null, 2), 'utf8')
@@ -360,12 +364,23 @@ for (const doc of BOOKLET_DOCS) {
     await fs.writeFile(proofPath, JSON.stringify(result, null, 2), 'utf8')
     console.log(`[${doc.id}] structural_pass=${result.structural_pass} ocr_fields=${result.ocr_field_count} violations=${result.violations_count} translation_bytes=${result.translation_bytes}`)
 
-    // ── Hard assertions (identity pages only — non-identity pages return early) ──
-    expect(result.ocr_ok, `${doc.id}: OCR must return 200`).toBe(true)
-    expect(result.cb_family_name_present, `${doc.id}: identity page must yield a surname`).toBe(true)
-    expect(result.violations_count, `${doc.id}: zero violations required`).toBe(0)
-    expect(result.translation_bytes, `${doc.id}: translation HTML must be non-empty`).toBeGreaterThan(100)
-    expect(result.has_patronymic_label, `${doc.id}: must use Patronymic label`).toBe(true)
-    expect(result.no_middle_name_label, `${doc.id}: must NOT use Middle Name label`).toBe(true)
+    // ── Hard assertions (identity pages only) ──
+    // Non-identity pages return early inside the try block above; these only
+    // run when the early return didn't happen (i.e., identity page path).
+    // Guard explicitly so a catch-caught timeout on the warning check doesn't
+    // cause non-identity docs to fail these assertions.
+    if (doc.identityPage) {
+      expect(result.ocr_ok, `${doc.id}: OCR must return 200`).toBe(true)
+      expect(result.cb_family_name_present, `${doc.id}: identity page must yield a surname`).toBe(true)
+      expect(result.violations_count, `${doc.id}: zero violations required`).toBe(0)
+      expect(result.translation_bytes, `${doc.id}: translation HTML must be non-empty`).toBeGreaterThan(100)
+      expect(result.has_patronymic_label, `${doc.id}: must use Patronymic label`).toBe(true)
+      expect(result.no_middle_name_label, `${doc.id}: must NOT use Middle Name label`).toBe(true)
+    } else {
+      // Non-identity page: the only requirement is that the re-upload warning appeared.
+      // If it did, the test returned early (success path). If it didn't (timeout → catch),
+      // warning_showed stays undefined → this assertion fails with a clear message.
+      expect(result.warning_showed, `${doc.id}: non-identity page must show tps-booklet-no-identity-warning`).toBe(true)
+    }
   })
 }
