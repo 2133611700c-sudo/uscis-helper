@@ -8,6 +8,7 @@ import {
   normalizeAuthority, normalizePlace, validateOutput,
   type NormalizationContext, type ControllingSpelling,
 } from '../normalize';
+import { normalizeOblastToNominative } from '../dictionary';
 
 let pass = 0;
 let fail = 0;
@@ -191,6 +192,43 @@ assert(blocked.review_required === true,
   'Blocklist catches "Ministry of Interior of Ukraine"');
 assert(blocked.confidence === 0,
   'Blocked term sets confidence to 0');
+
+// ── normalizeOblastToNominative REGRESSION ───────────────
+// BUG: old regex /\s*(області|обл\.?)\s*/gi stripped "обл" prefix
+// from "область", leaving corrupted keys like "вінницькаасть".
+// Fix: use /\s*(областей?|обл(?:асть|асті|\.?))\s*/gi
+
+{
+  const vinnytsia = normalizeOblastToNominative('Вінницька область');
+  assert(vinnytsia !== null, 'normalizeOblastToNominative: nominative full form not null');
+  assert(vinnytsia?.transliterated === 'Vinnytsia Oblast',
+    'normalizeOblastToNominative: nominative → Vinnytsia Oblast',
+    `got: ${vinnytsia?.transliterated}`);
+
+  const vinnytsiaGen = normalizeOblastToNominative('Вінницької області');
+  assert(vinnytsiaGen !== null, 'normalizeOblastToNominative: genitive full form not null');
+  assert(vinnytsiaGen?.transliterated === 'Vinnytsia Oblast',
+    'normalizeOblastToNominative: genitive → Vinnytsia Oblast',
+    `got: ${vinnytsiaGen?.transliterated}`);
+
+  const vinnytsiaAbbr = normalizeOblastToNominative('Вінницька обл.');
+  assert(vinnytsiaAbbr !== null, 'normalizeOblastToNominative: abbreviated nominative not null');
+  assert(vinnytsiaAbbr?.transliterated === 'Vinnytsia Oblast',
+    'normalizeOblastToNominative: abbrev → Vinnytsia Oblast',
+    `got: ${vinnytsiaAbbr?.transliterated}`);
+
+  const kharkiv = normalizeOblastToNominative('Харківська область');
+  assert(kharkiv !== null, 'normalizeOblastToNominative: Kharkiv oblast not null');
+  assert(kharkiv?.transliterated === 'Kharkiv Oblast',
+    'normalizeOblastToNominative: Харківська область → Kharkiv Oblast',
+    `got: ${kharkiv?.transliterated}`);
+
+  const foreign = normalizeOblastToNominative('SomewhereUnknown');
+  assert(foreign === null, 'normalizeOblastToNominative: unknown returns null');
+
+  const direct = normalizeOblastToNominative('вінницька область');
+  assert(direct !== null, 'normalizeOblastToNominative: lowercase nominative not null (was corrupt before fix)');
+}
 
 // ── RESULTS ──────────────────────────────────────────────
 

@@ -50,9 +50,28 @@ describe('hallucinationGuard.detectGarbageString', () => {
 })
 
 describe('hallucinationGuard.checkGeography', () => {
-  it('accepts a known Ukrainian oblast', () => {
+  it('accepts a known Ukrainian oblast — nominative full form', () => {
     const r = checkGeography('province_of_birth', 'Вінницька область')
     expect(r.should_block).toBe(false)
+    expect(r.risk).toBe('none') // regression: was incorrectly 'high' before oblast regex fix
+  })
+
+  it('accepts a known Ukrainian oblast — genitive full form', () => {
+    const r = checkGeography('province_of_birth', 'Вінницької області')
+    expect(r.should_block).toBe(false)
+    expect(r.risk).toBe('none')
+  })
+
+  it('accepts a known Ukrainian oblast — abbreviated nominative', () => {
+    const r = checkGeography('province_of_birth', 'Вінницька обл.')
+    expect(r.should_block).toBe(false)
+    expect(r.risk).toBe('none')
+  })
+
+  it('accepts a different oblast — Kharkiv', () => {
+    const r = checkGeography('province_of_birth', 'Харківська область')
+    expect(r.should_block).toBe(false)
+    expect(r.risk).toBe('none')
   })
 
   it('flags an unknown province with low/none risk (foreign possible)', () => {
