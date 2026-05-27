@@ -20,6 +20,8 @@ import { execSync } from 'child_process'
 
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const BOOKLET_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/booklet_test_resized.jpg')
+const PASSPORT_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/Passport Sergii Kuropiatnyk .jpg')
+const I94_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/I94 Sergii Kuropiatnyk .jpg')
 
 // family/city/province/middle come from OCR of the real booklet image (the
 // image is gitignored). `given` is the SYNTHETIC value we type via the
@@ -39,7 +41,9 @@ test('Review Gate: preview → block without checkbox → confirm → translatio
 
   const artifactsDir = path.resolve(process.cwd(), 'test-results', 'translation-review-gate-artifacts')
   await fs.mkdir(artifactsDir, { recursive: true })
-  await fs.access(BOOKLET_IMAGE)
+  for (const f of [BOOKLET_IMAGE, PASSPORT_IMAGE, I94_IMAGE]) {
+    await fs.access(f)
+  }
 
   // Track /api/tps/translation/preview calls
   const previewResponses: Array<Record<string, unknown>> = []
@@ -83,19 +87,41 @@ test('Review Gate: preview → block without checkbox → confirm → translatio
   await page.getByRole('button', { name: /By mail/ }).click()
   await page.getByRole('button', { name: /Yes Add I-765/ }).click()
 
-  // Upload booklet — triggers OCR
-  await expect(page.getByTestId('tps-upload-input-booklet')).toBeAttached({ timeout: 10_000 })
-  const ocrDone = page.waitForResponse(
+  // Upload passport + booklet + I-94 sequentially, waiting for each OCR response
+  // before uploading the next. Passport provides given_name/passport_number
+  // (booklet OCR cannot — they're in the forbidden list). I-94 provides last_entry_date.
+  // All three are needed for gate eligibility; booklet is the translation source.
+  await expect(page.getByTestId('tps-upload-input-passport')).toBeAttached({ timeout: 10_000 })
+
+  const passportOcr = page.waitForResponse(
     (r) => r.url().includes('/api/tps/ocr/extract') && r.request().method() === 'POST' && r.status() === 200,
-    { timeout: 60_000 },
+    { timeout: 90_000 },
+  )
+  await page.getByTestId('tps-upload-input-passport').setInputFiles(PASSPORT_IMAGE)
+  await passportOcr
+
+  const bookletOcr = page.waitForResponse(
+    (r) => r.url().includes('/api/tps/ocr/extract') && r.request().method() === 'POST' && r.status() === 200,
+    { timeout: 90_000 },
   )
   await page.getByTestId('tps-upload-input-booklet').setInputFiles(BOOKLET_IMAGE)
-  await ocrDone
+  await bookletOcr
 
-  // Proceed to Step 5
+  const i94Ocr = page.waitForResponse(
+    (r) => r.url().includes('/api/tps/ocr/extract') && r.request().method() === 'POST' && r.status() === 200,
+    { timeout: 90_000 },
+  )
+  await page.getByTestId('tps-upload-input-i94').setInputFiles(I94_IMAGE)
+  await i94Ocr
+
+  // CTA is always visible in step 4 (just the "Next" button)
   await expect(page.getByTestId('tps-ocr-cta')).toBeVisible({ timeout: 10_000 })
   await page.getByTestId('tps-ocr-cta').click()
   await expect(page.getByTestId('tps-review-step-container')).toBeVisible({ timeout: 60_000 })
+
+  // Wait for the booklet family_name row to appear — this confirms the CB merge
+  // has completed with booklet data before we start editing fields.
+  await expect(page.locator('body')).toContainText(EXPECTED.family, { timeout: 60_000 })
 
   // Identity + document fields are recognized rows in ReviewOcr, each with an
   // "Изменить" (edit) button (data-testid tps-ocr-edit-<key>). Editing writes

@@ -26,6 +26,12 @@ import { promises as fs } from 'fs'
 
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const PRIVATE_DIR = path.join(REPO_ROOT, 'qa-shots', 'private')
+// Fixed supporting docs uploaded alongside each booklet — provide gate-required
+// fields (given_name/passport_number from passport MRZ, last_entry_date from I-94).
+// The translation output is still booklet-specific; these only satisfy gate eligibility
+// and give the CB a complete dataset so it completes within the test timeout.
+const PASSPORT_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/Passport Sergii Kuropiatnyk .jpg')
+const I94_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/I94 Sergii Kuropiatnyk .jpg')
 
 // Documents to test — IDs used in artifact filenames (NOT the original filenames).
 //
@@ -97,11 +103,13 @@ for (const doc of BOOKLET_DOCS) {
 
     const imagePath = path.join(PRIVATE_DIR, doc.file)
 
-    // Skip if file doesn't exist (don't fail — just record)
+    // Skip if booklet file doesn't exist (don't fail — just record)
     try {
       await fs.access(imagePath)
+      await fs.access(PASSPORT_IMAGE)
+      await fs.access(I94_IMAGE)
     } catch {
-      console.log(`[${doc.id}] SKIP: file not found at ${imagePath}`)
+      console.log(`[${doc.id}] SKIP: file not found at ${imagePath} (or passport/i94)`)
       return
     }
 
@@ -175,14 +183,34 @@ for (const doc of BOOKLET_DOCS) {
       await page.getByRole('button', { name: /By mail/ }).click()
       await page.getByRole('button', { name: /Yes Add I-765/ }).click()
 
-      // Upload document — triggers OCR
-      await expect(page.getByTestId('tps-upload-input-booklet')).toBeAttached({ timeout: 10_000 })
-      const ocrDone = page.waitForResponse(
+      // Upload passport + booklet + I-94 sequentially (each awaited).
+      // Passport provides given_name/passport_number; I-94 provides last_entry_date.
+      // Without them the CB stays in loading state for 60+ s (booklet-only
+      // gives the CB too little data and triggers a slow DeepSeek path).
+      await expect(page.getByTestId('tps-upload-input-passport')).toBeAttached({ timeout: 10_000 })
+
+      const passportOcr = page.waitForResponse(
         (r) => r.url().includes('/api/tps/ocr/extract') && r.request().method() === 'POST' && r.status() === 200,
         { timeout: 90_000 },
       )
+      await page.getByTestId('tps-upload-input-passport').setInputFiles(PASSPORT_IMAGE)
+      await passportOcr
+
+      // Accept any status code from booklet OCR — non-identity pages may return
+      // non-200 (e.g. 422) which would cause a status===200 wait to time out.
+      const bookletOcr = page.waitForResponse(
+        (r) => r.url().includes('/api/tps/ocr/extract') && r.request().method() === 'POST',
+        { timeout: 90_000 },
+      )
       await page.getByTestId('tps-upload-input-booklet').setInputFiles(imagePath)
-      await ocrDone
+      await bookletOcr
+
+      const i94Ocr = page.waitForResponse(
+        (r) => r.url().includes('/api/tps/ocr/extract') && r.request().method() === 'POST' && r.status() === 200,
+        { timeout: 90_000 },
+      )
+      await page.getByTestId('tps-upload-input-i94').setInputFiles(I94_IMAGE)
+      await i94Ocr
 
       result.ocr_field_count = ocrFieldCount
 
@@ -190,6 +218,12 @@ for (const doc of BOOKLET_DOCS) {
       await expect(page.getByTestId('tps-ocr-cta')).toBeVisible({ timeout: 10_000 })
       await page.getByTestId('tps-ocr-cta').click()
       await expect(page.getByTestId('tps-review-step-container')).toBeVisible({ timeout: 30_000 })
+
+      // Wait for CB to complete on step 5 — family_name edit button confirms the
+      // booklet OCR produced a surname AND the CB merged it. Without this wait,
+      // CB is still loading when we navigate to ?paid=1, which causes the
+      // "Review Translation" button to stay disabled for 30+ s (CB-readiness race).
+      await expect(page.getByTestId('tps-ocr-edit-family_name')).toBeVisible({ timeout: 60_000 })
 
       // ── NON-IDENTITY PAGE: assert "upload the main page" guidance shows ──
       // A supplementary spread (issuing authority / registration / sideways)
@@ -269,14 +303,16 @@ for (const doc of BOOKLET_DOCS) {
       try {
         await expect(reviewBtn).toBeVisible({ timeout: 25_000 })
         result.review_btn_appeared = true
+        // Button is disabled while CB is loading; wait for it to be enabled
+        await expect(reviewBtn).toBeEnabled({ timeout: 60_000 })
       } catch {
-        result.error = 'tps-review-translation-btn not found — translation not triggered (timeout 25s)'
+        result.error = 'tps-review-translation-btn not visible/enabled — CB may not have settled (timeout)'
         throw new Error(result.error)
       }
 
       const previewRespPromise = page.waitForResponse(
         (r) => r.url().includes('/api/tps/translation/preview') && r.request().method() === 'POST',
-        { timeout: 30_000 },
+        { timeout: 60_000 },
       )
       await reviewBtn.click()
       const previewRespObj = await previewRespPromise
