@@ -1,7 +1,8 @@
 /**
- * Ukraine Terminology Dictionary v1.2 — TypeScript module
+ * Ukraine Terminology Dictionary v1.3 — TypeScript module
  * Sources: mvs.gov.ua, dmsu.gov.ua, czo.gov.ua, KMU Resolution No.55
- * 
+ *          MFA #CorrectUA campaign, FamilySearch Ukraine Civil Registration
+ *
  * Every entity supports 3 output modes:
  *   official_en        — legal accuracy (certified translations)
  *   normalized_uscis_en — USCIS-friendly (form fills, USCIS correspondence)
@@ -114,20 +115,97 @@ export const AUTHORITIES: Record<string, AuthorityEntry> = {
     plain_en_alias: 'main MIA directorate',
     historical_mode: true,
   },
+
+  // ── Local government / administrative bodies ────────────────
+  VIKONKOM: {
+    uk: 'Виконавчий комітет',
+    official_en: 'Executive Committee',
+    normalized_uscis_en: 'Executive Committee',
+    plain_en_alias: 'city or village executive committee',
+  },
+  RDA: {
+    uk: 'Районна державна адміністрація',
+    official_en: 'District State Administration',
+    normalized_uscis_en: 'District State Administration',
+    plain_en_alias: 'district administration',
+    do_not_use: ['District State Council', 'District Administration Office'],
+  },
+  ODA: {
+    uk: 'Обласна державна адміністрація',
+    official_en: 'Regional State Administration',
+    normalized_uscis_en: 'Regional State Administration',
+    plain_en_alias: 'regional administration',
+    do_not_use: ['Oblast State Administration'],
+  },
+  SILRADA: {
+    uk: 'Сільська рада',
+    official_en: 'Village Council',
+    normalized_uscis_en: 'Village Council',
+    plain_en_alias: 'village council (silrada)',
+  },
+  MISKRADA: {
+    uk: 'Міська рада',
+    official_en: 'City Council',
+    normalized_uscis_en: 'City Council',
+    plain_en_alias: 'city council',
+  },
+
+  // ── Notarial / passport services ────────────────────────────
+  NOTARY: {
+    uk: 'Нотаріус / Державна нотаріальна контора',
+    official_en: 'Notary Public',
+    normalized_uscis_en: 'Notary Public',
+    plain_en_alias: 'notary',
+  },
+  PASSPORT_OFFICE: {
+    uk: 'Паспортний стіл',
+    official_en: 'Passport Office',
+    normalized_uscis_en: 'Passport Office',
+    plain_en_alias: 'passport office (historical pre-DMS)',
+    historical_mode: true,
+    valid_until: '2012-01-01',
+  },
+
+  // ── Historical law enforcement ───────────────────────────────
+  DILTNICHNYI: {
+    uk: 'Дільничний інспектор',
+    official_en: 'District Inspector',
+    normalized_uscis_en: 'District Inspector',
+    plain_en_alias: 'local beat officer (historical pre-2015)',
+    historical_mode: true,
+    valid_until: '2015-07-04',
+    do_not_use: ['District Police Officer', 'Local Police Inspector'],
+  },
 };
 
-// Patterns to match authority text from OCR (lowercase matching)
+// Patterns to match authority text from OCR (checked in order — put more specific first)
 export const AUTHORITY_PATTERNS: [RegExp, string][] = [
+  // Law enforcement (must precede generic МВС match)
   [/міліці[яії]/i, 'MILITSIYA'],
+  [/дільничн.*інспект/i, 'DILTNICHNYI'],
   [/національн[аоіїє]\s*поліці/i, 'NPU'],
   [/поліці[яії]/i, 'NPU'],
+  // Civil registry
   [/(загс|рацс|драцс|реєстрац.*цивільн)/i, 'CIVIL_REGISTRY'],
+  // MIA hierarchy (most specific first)
   [/даі|автомобільн.*інспекці/i, 'DAI'],
   [/гумвс|головн.*управлінн.*мвс/i, 'GUMVS'],
   [/умвс|управлінн.*мвс/i, 'UMVS'],
   [/мвс|внутрішн.*справ/i, 'MVS'],
+  // Migration / border
   [/міграційн.*служб/i, 'DMS'],
   [/прикордонн/i, 'SBGSU'],
+  // Local government (виконком before generic рада)
+  [/виконав.*комітет|виконком/i, 'VIKONKOM'],
+  [/обласн.*держав.*адмін|ода\b/i, 'ODA'],
+  [/районн.*держав.*адмін|рда\b/i, 'RDA'],
+  [/сільськ.*рад|сільрад/i, 'SILRADA'],
+  [/міськ.*рад/i, 'MISKRADA'],
+  // Notarial / passport
+  [/паспортний стіл|паспортн.*стол/i, 'PASSPORT_OFFICE'],
+  [/нотаріальн.*контор|державн.*нотаріальн/i, 'NOTARY'],
+  [/нотаріус/i, 'NOTARY'],
+  // Ministries (generic, last)
   [/закордонн.*справ/i, 'MFA'],
   [/юстиці/i, 'MINJUST'],
 ];
@@ -254,6 +332,77 @@ export const OBLAST_GENITIVE_TO_NOMINATIVE: Record<string, string> = {
   'черкаської': 'Черкаська',
   'чернівецької': 'Чернівецька',
   'чернігівської': 'Чернігівська',
+};
+
+// ── DOCUMENT TYPES ───────────────────────────────────────────
+// Maps Ukrainian document names (lowercase) to English equivalents.
+// Used for translation headers and document-type detection.
+
+export interface DocumentTypeEntry {
+  en: string;           // for translations and display
+  uscis_en: string;     // preferred phrasing in USCIS submissions
+  abbrev?: string;      // common Ukrainian abbreviation
+}
+
+export const DOCUMENT_TYPES: Record<string, DocumentTypeEntry> = {
+  'закордонний паспорт': {
+    en: 'International Passport',
+    uscis_en: 'International Passport (Travel Document)',
+    abbrev: 'закордонний паспорт',
+  },
+  'внутрішній паспорт': {
+    en: 'Internal Passport',
+    uscis_en: 'Internal (Domestic) Passport',
+    abbrev: 'внутрішній паспорт',
+  },
+  'паспорт громадянина україни': {
+    en: 'Passport of a Citizen of Ukraine',
+    uscis_en: 'Internal (Domestic) Passport',
+  },
+  'id-картка': {
+    en: 'National ID Card',
+    uscis_en: 'National ID Card',
+  },
+  'свідоцтво про народження': {
+    en: 'Birth Certificate',
+    uscis_en: 'Birth Certificate',
+  },
+  'свідоцтво про шлюб': {
+    en: 'Marriage Certificate',
+    uscis_en: 'Marriage Certificate',
+  },
+  'свідоцтво про розірвання шлюбу': {
+    en: 'Divorce Certificate',
+    uscis_en: 'Certificate of Dissolution of Marriage',
+  },
+  'свідоцтво про смерть': {
+    en: 'Death Certificate',
+    uscis_en: 'Death Certificate',
+  },
+  'свідоцтво про зміну імені': {
+    en: 'Name Change Certificate',
+    uscis_en: 'Name Change Certificate',
+  },
+  'довідка про несудимість': {
+    en: 'Criminal Record Certificate',
+    uscis_en: 'Criminal Record Certificate / Police Clearance',
+  },
+  'військовий квиток': {
+    en: 'Military Service Record',
+    uscis_en: 'Military Service Record',
+  },
+  'атестат': {
+    en: 'Secondary School Diploma',
+    uscis_en: 'Secondary School Diploma',
+  },
+  'диплом': {
+    en: 'Diploma',
+    uscis_en: 'Diploma / Degree Certificate',
+  },
+  'трудова книжка': {
+    en: 'Employment Record Book',
+    uscis_en: 'Employment Record Book',
+  },
 };
 
 /**
