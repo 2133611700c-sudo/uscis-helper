@@ -1,5 +1,5 @@
 # STATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 Session 39d — fix: смт → "urban-type settlement" in translation city_of_birth
+**Updated:** 2026-05-27 Session 39e — fix: UX "Заполните вручную" → "Проверьте и дополните"; city tip; I-94 port patterns
 **Status:** PRODUCTION (auto-fill-only model live; all e2e tests passing on production)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
