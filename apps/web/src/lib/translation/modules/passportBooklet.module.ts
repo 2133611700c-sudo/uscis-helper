@@ -203,7 +203,6 @@ export const passportBookletModule: DocumentModule = {
       evidenceRequired: 'optional',
       fallbackIfMissing: 'skip',
     },
-    // Planned optional fields — not yet extracted
     {
       key: 'registration_address',
       label: {
@@ -232,9 +231,11 @@ export const passportBookletModule: DocumentModule = {
     'ДАТА НАРОДЖЕННЯ':['date_of_birth'],
     'МІСЦЕ НАРОДЖЕННЯ':['place_of_birth'],
     'СТАТЬ':          ['sex'],
-    'ОРГАН ВИДАЧІ':   ['issued_by'],
-    'ВИДАНИЙ':        ['issued_by'],
-    'ДАТА ВИДАЧІ':    ['date_of_issue'],
+    'ОРГАН ВИДАЧІ':        ['issued_by'],
+    'ВИДАНИЙ':             ['issued_by'],
+    'ДАТА ВИДАЧІ':         ['date_of_issue'],
+    'МІСЦЕ ПРОЖИВАННЯ':    ['registration_address'],
+    'МІСЦЕ РЕЄСТРАЦІЇ':    ['registration_address'],
   },
 
   glossaryModules: ['ukraine_agency_abbreviations'],
@@ -261,8 +262,8 @@ export const passportBookletModule: DocumentModule = {
       // 11 critical
       'document_type', 'series', 'number', 'surname', 'given_names',
       'patronymic', 'date_of_birth', 'place_of_birth', 'sex', 'issued_by', 'date_of_issue',
-      // 3 extended
-      'nationality', 'date_of_expiry', 'record_number',
+      // 4 extended
+      'nationality', 'date_of_expiry', 'record_number', 'registration_address',
     ],
     timeoutMs: 45_000,
   },
@@ -272,6 +273,7 @@ export const passportBookletModule: DocumentModule = {
     renderFields: [
       'document_type', 'series', 'number', 'surname', 'given_names',
       'patronymic', 'date_of_birth', 'place_of_birth', 'sex', 'issued_by', 'date_of_issue',
+      'registration_address',
     ],
     certificationTemplate: 'self_cert_8cfr_v1',
     twoPageLayout: true,

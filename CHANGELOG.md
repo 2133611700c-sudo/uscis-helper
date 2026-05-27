@@ -3,6 +3,26 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 36: feat(translation) — PDF in TPS ZIP + mailing_in_care_of + registration_address
+
+### What changed
+- `apps/web/src/lib/tps/translationBridge.ts`:
+  - `translateBookletFromBrain()`: return type extended with `_rawFields`, `_signerName`, `_signerAddress`; both passportBooklet branch returns now include these values
+  - `generateTPSTranslation()`: same extension — return type + both template branches (`passportBooklet`, `internationalPassport`) now return `_rawFields`/`_signerName`/`_signerAddress`
+- `apps/web/src/lib/tps/packetBuilder.ts`:
+  - Added imports: `generateTranslationPDF` from `@/lib/packet/pdf`, `PacketInput` from `@/lib/packet/types`
+  - Added `buildTranslationPacketInput()`: converts `_rawFields` + signer info into a minimal `PacketInput` for `generateTranslationPDF`
+  - Translation block: when `result._rawFields` is present, generates a bureau-style 2-page PDF and adds it to ZIP as `Translation_Internal_Passport.pdf`; HTML files remain alongside; PDF failure is logged but doesn't block the ZIP
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`:
+  - `mailing_in_care_of` added to `WizardData['manual']`, wired in `buildDraftAnswers()`, FieldInput in ReviewManual mailing section
+- `apps/web/src/lib/translation/modules/passportBooklet.module.ts`:
+  - `registration_address` added to `extraction.fieldTargets`, `expectedLabels` (`МІСЦЕ ПРОЖИВАННЯ`/`МІСЦЕ РЕЄСТРАЦІЇ`), `render.renderFields`
+
+### Verified
+- 2092/2092 tests pass, 0 type errors
+
+---
+
 ## 2026-05-27 — Session 35: feat(ux) — mailing address UI (P1-UX TODO closed)
 
 ### What changed
