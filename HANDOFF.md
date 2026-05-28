@@ -1,4 +1,16 @@
-# HANDOFF — Session 50 (2026-05-28)
+# HANDOFF — Session 51 (2026-05-28)
+
+## Session 51 — Mobile/desktop parity audit + 3 fixes
+
+Owner asked to verify every Session-50 innovation works the same on mobile and web. Audited 15 surface areas; 3 mismatches found and fixed:
+
+- **Page-remove × button**: 28×28 → 36×36 (matches TPS tap target).
+- **Drag-drop**: CSS existed but no JS handlers — wired real `onDragOver/Leave/Drop` to both the empty upload zone and the populated page grid so desktop users can drop additional pages onto the thumbnail strip.
+- **Tap feedback on mobile**: globally killed the iOS default grey overlay via `-webkit-tap-highlight-color: transparent`, then added `:active` states (scale 0.97-0.98 + green tint) on every primary surface so the tap is still visibly registered.
+
+**Mobile gap NOT fixed (documented for next session):** iOS HEIC photo uploads return 415 because backend only accepts JPEG/PNG/WebP. Needs server-side HEIF decode.
+
+**Evidence:** 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS.
 
 ## Session 50 — Translation wizard: edit-button + multi-page + contrast fix
 
