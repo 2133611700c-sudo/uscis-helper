@@ -9,6 +9,11 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 46 (2026-05-27) — P4: v5 spec into repo + memory reconciliation
+
+- `VERIFIED` `docs/translation/DOCUMENT_TRANSLATION_ENGINE_V5.pdf` committed (was only in owner's Downloads); MD index updated with source-artifact pointer.
+- `VERIFIED` Memory reconciled: v3 (`project_tps_constitution_v3`) marked superseded for standalone-translator scope by v5 (`translation_engine_v5_canon`); MEMORY.md index updated. v3 keeps the TPS-embedded translation lineage; v5 governs the standalone product.
+
 ## Session 46 (2026-05-27) — P3: EAD now generates real filled I-765 PDF (parity with TPS/ReParole)
 
 - `VERIFIED(local)` New `lib/ead/i765FieldMap.ts` (categories c11/c08/a12 supported; "other" → Item 27 left blank), `lib/ead/packetBuilder.ts` (loads shared `public/uscis/tps/i-765.pdf`, integrity check, prefill with EAD-DRAFT watermark), `api/ead/generate-packet/route.ts` (rate-limited, no payment — free service). `EADWizard` now offers PDF as PRIMARY action (44-48px tap targets, locale-aware labels en/uk/ru/es), HTML worksheet demoted to secondary.
