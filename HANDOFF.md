@@ -1,3 +1,32 @@
+# HANDOFF — Session 40 (2026-05-27)
+
+## Session 40 — Phase 0: single readinessPolicy (OCR stabilization plan)
+
+### Context
+After a full architecture audit (`docs/reports/DOCUMENT_RULE_COVERAGE_AUDIT.md`) and OCR-provider research (`OCR_PROVIDER_BENCHMARK_PLAN.md`, `OCR_PROVIDER_COST_MATRIX.md`, `EXECUTION_PLAN_OCR_STABILIZATION.md`), the agreed first move is Phase 0: kill the three conflicting "required fields" definitions. This is done.
+
+### What changed
+1. **New `lib/tps/readinessPolicy.ts`** — single source of truth. Each field declares `requiredAt: ('merge'|'generate'|'mail')[]` + optional `recommendedAt` + `conditional` (e.g. ead_category only if wants_ead). Selectors: `requiredFieldKeys`, `requiredFieldsWithLabels`, `recommendedFieldsWithLabels`.
+2. **`centralBrain.ts`** — `REQUIRED_FOR_GENERATE = new Set(requiredFieldKeys('merge'))`. Literal removed.
+3. **`mailReadyGate.ts`** — `REQUIRED_FIELDS`/`RECOMMENDED_FIELDS` derived from policy ('mail' stage). part7_reviewed keeps its dedicated i18n blocker block (excluded from generic loop).
+4. **`answers.ts` isMinimallyComplete** — iterates `requiredRules('generate', a)`; `v !== false` preserves the part7_reviewed boolean check.
+5. **`readinessPolicy.test.ts`** — +7 behavior-pinning tests. Fail if policy diverges from the historical lists.
+
+### Behavior
+Preserved byte-for-byte. All three stages reproduce the exact historical field sets. 2108/2108 tests pass (+7), 0 type errors.
+
+### KNOWN INCONSISTENCIES (documented, NOT changed — owner decision)
+- **[KI-1]** `status_at_last_entry`: required at merge, only recommended at mail → a user can mail without it. Likely should be mail-required.
+- **[KI-2]** `passport_country_of_issuance`: required at generate, absent from mail entirely.
+Both flagged in `readinessPolicy.ts`. Decide before they bite.
+
+### Next (do NOT start without prerequisites)
+1. **Phase 1 — Gemini vision arbiter** behind `TPS_GEMINI_VISION_ARBITER_ENABLED=false`. Needs: (a) `GEMINI_API_KEY` paid tier, (b) ADR-009 image-retention sign-off, (c) booklet handwritten fields scope. Insertion point: `route.ts:484` (replace DeepSeek text crossref internals). Crop via normalized bbox × page px + sharp.
+2. **Phase 2 — proof** on fixtures. BLOCKER: current fixtures are N=1 (one person, owner). Need ≥3 different people's booklets + ground-truth JSON before any "works for clients" claim. Flag stays OFF in prod until then.
+3. **[KI-1]/[KI-2]** owner decision on the two readiness inconsistencies.
+
+---
+
 # HANDOFF — Session 39N (2026-05-27)
 
 ## Session 39N — fix: crossref OCR quality — Prostianets, short patronymic
