@@ -29,6 +29,7 @@ import { docAIProvider, isDocAIEnabled } from '@/lib/docai/provider'
 import { logOcrRun } from '@/lib/tps/ocrAudit'
 import { processDocument as processDocAI } from '@/lib/docai/client'
 import { runDualOcrCrossref } from '@/lib/tps/ai/dualOcrCrossref'
+import { readBookletViaVision, visionReadsToFields } from '@/lib/tps/ai/geminiVisionArbiter'
 import { isBlocked } from '@/lib/ocr/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { runPassportModule } from '@/lib/tps/modules/passport'
@@ -197,6 +198,7 @@ export async function POST(req: NextRequest) {
   const document_id = `doc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
   let moduleResult: TpsModuleResult | null = null
   let crossrefStatus = 'not_applicable'
+  let visionArbiterStatus = process.env.TPS_GEMINI_VISION_ARBITER_ENABLED === 'true' ? 'enabled' : 'off'
   // Track the OCR result actually used by the module — when we retry
   // with a rotated image, we want downstream Brain calls to see the
   // text from the successful rotation, not the first failed attempt.
@@ -523,6 +525,31 @@ export async function POST(req: NextRequest) {
             }
           }
         } catch (e: any) { console.error('[dual-ocr-crossref:booklet]', e?.message) }
+      }
+      // ── Gemini vision arbiter (flag-gated, OFF by default) ──
+      // Reads handwritten Cyrillic directly from the IMAGE and merges
+      // KMU-55-transliterated candidates. Vision-on-pixels beats text crossref,
+      // so it overrides all sources EXCEPT user edits and MRZ. Candidate-only
+      // (review_required=true) → Central Brain + Review Gate decide. Fail → keep
+      // existing fields (never block). PAID Gemini tier required for client PII.
+      if (process.env.TPS_GEMINI_VISION_ARBITER_ENABLED === 'true' && moduleResult?.matched) {
+        try {
+          const vision = await readBookletViaVision(imageBuffer, effectiveMime)
+          if (vision.ok) {
+            const protectedSources = new Set(['user_corrected', 'user_input', 'ocr_mrz'])
+            for (const vf of visionReadsToFields(vision.fields, document_id)) {
+              const existing = moduleResult.fields.find((f) => f.field === vf.field)
+              if (!existing) { moduleResult.fields.push(vf); continue }
+              if (!protectedSources.has(existing.extraction_source)) Object.assign(existing, vf)
+            }
+            visionArbiterStatus = `ok:${vision.model}:${vision.ms}ms`
+          } else {
+            visionArbiterStatus = `failed:${vision.error ?? 'unknown'}`
+          }
+        } catch (e: any) {
+          console.error('[gemini-vision-arbiter:booklet]', e?.message)
+          visionArbiterStatus = 'error'
+        }
       }
       break
     }
@@ -898,6 +925,7 @@ export async function POST(req: NextRequest) {
       ? {
           provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
           crossref_status: crossrefStatus,
+          vision_arbiter_status: visionArbiterStatus,
           brain_status: brainStatus,
           brain_trigger: brainTrigger,
           brain_document_type: brainResult.result.document_type,
@@ -934,6 +962,7 @@ export async function POST(req: NextRequest) {
       : {
           provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
           crossref_status: crossrefStatus,
+          vision_arbiter_status: visionArbiterStatus,
           brain_status: brainStatus,
           brain_trigger: brainTrigger,
           brain_error_code: brainErrorCode,
@@ -983,6 +1012,7 @@ export async function POST(req: NextRequest) {
       // Flat extraction diagnostics — auditable at a glance.
       brain_status: brainStatus,
       crossref_status: crossrefStatus,
+      vision_arbiter_status: visionArbiterStatus,
       brain_error_code: brainErrorCode,
       brain_added_count: brainAddedCount,
       brain_trigger: brainTrigger,
