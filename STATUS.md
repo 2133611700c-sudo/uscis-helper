@@ -9,6 +9,12 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 46 (2026-05-27) — P3: EAD now generates real filled I-765 PDF (parity with TPS/ReParole)
+
+- `VERIFIED(local)` New `lib/ead/i765FieldMap.ts` (categories c11/c08/a12 supported; "other" → Item 27 left blank), `lib/ead/packetBuilder.ts` (loads shared `public/uscis/tps/i-765.pdf`, integrity check, prefill with EAD-DRAFT watermark), `api/ead/generate-packet/route.ts` (rate-limited, no payment — free service). `EADWizard` now offers PDF as PRIMARY action (44-48px tap targets, locale-aware labels en/uk/ru/es), HTML worksheet demoted to secondary.
+- `VERIFIED(local)` 9 unit tests for the field map. 2145 pass + 1 skip, 0 type errors, drift green.
+- Owner's "EAD = 0" finding closed: EAD lifted from HTML-worksheet-only to real filled I-765 PDF.
+
 ## Session 46 (2026-05-27) — P1: translation payment gate (Severity-1 liability closed)
 
 - `VERIFIED(local)` New `lib/stripe/verifyPayment.ts` — single source of truth for "is this Stripe session paid for the expected service". Used by `/api/translation/generate-pdf` (was hardcoding `payment_confirmed:true`).
