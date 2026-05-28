@@ -5,9 +5,17 @@
 - `VERIFIED` All 34 uscis-helper tables have explicit GRANT to anon+authenticated
 - `VERIFIED` All 31 Handy & Friend tables have RLS policies (was: 12 with 0 policies)
 ATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-28 — Strip 🇺🇸/🇺🇦 from review rows (Windows + a11y safeguard)
+**Updated:** 2026-05-28 — Production wizard now reachable via real flow (GEMINI_API_KEY + landing redirect)
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2124/2124 unit pass + 1 skip. 0 type errors.
+
+## Session 53 (2026-05-28) — Real diagnosis: stale landing + missing GEMINI_API_KEY
+
+- `VERIFIED(prod)` `/ru/services/translate-document` (the URL every menu link points at) was serving the OLD Tailwind-blue landing with $14.99/$19.99/$29.99 trio. Replaced with `redirect()` to `/start`. Owner's "сайт старый" reports were correct — only `/start` had the new wizard, but no link from the menu went there directly.
+- `VERIFIED(prod)` Added free `GEMINI_API_KEY` to Vercel Production env, redeployed. Production OCR endpoint now returns 200 with real Gemini fields. Without this, the wizard always fell into the "manual review" notice branch and the new layout never rendered.
+- `VERIFIED(prod)` curl + headed-Playwright on messenginfo.com production: full Welcome → DocType → Upload → Processing → Review → Edit flow works with real OCR. Synthetic passport fixture returned TESTSURNAME / TESTGIVEN / 1985-07-12; Edit button opened native prompt and badged the corrected row with «ИСПРАВЛЕНО».
+- `KNOWN GAP` Free Gemini tier trains on data. Owner accepted this temporarily; swap to paid AQ key once owner enables billing on the AQ project.
+- `VERIFIED(local)` 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS.
 
 ## Session 52 (2026-05-28) — Strip flag emojis from review row (Windows + a11y)
 
