@@ -9,6 +9,13 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 48 (2026-05-28) — Translation wizard FULL REWRITE per owner's prototype
+
+- `VERIFIED(local)` Rewrote `TranslateWizard.tsx` faithfully under owner's navy/gold prototype: 7-screen flow (Welcome → DocType → Upload → Processing → Review → Pay → Success), doc-type-FIRST routing (booklet/passport/birth/marriage/ID/other; non-booklet → manual-review notice), preview-BEFORE-pay per v5 §21, side-by-side translation table, watermarked cert preview, Playfair Display + Nunito fonts. CSS scoped under `.tw-root` — no global bleed.
+- `VERIFIED(local)` Backend reused 1:1: `/api/translation/vision-extract` (real docintel/Gemini), `/api/stripe/checkout` (real Stripe), `/api/translation/generate-pdf` with X-Payment-Token gate.
+- `VERIFIED(local)` v5 §31 compliance: "принимается USCIS" / "accepted by USCIS" → "для подачи в USCIS" / "formatted for USCIS submission". Old structural test (`wizardScopeAndDeadCode`) replaced with focused v5 §31 forbidden-phrase guard + auto:false routing pin.
+- `VERIFIED(local)` 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS (193 pages), drift gate green.
+
 ## Session 47 (2026-05-28) — P2: real OCR in translation wizard (no more Shevchenko mock)
 
 - `VERIFIED(local)` New `/api/translation/vision-extract` — accepts uploaded image, runs through `docintel.readDocument` (Gemini vision + KMU-55), returns canonical extracted fields. Rate-limited 8/min/IP. Owner-set GEMINI_API_KEY required for prod (PAID tier per v5 §30 + memory `provider-routing-policy`).

@@ -3,6 +3,19 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 48: Translation wizard FULL REWRITE per owner-provided prototype
+
+The owner provided a complete HTML+CSS+JS prototype (navy/gold premium theme, Playfair Display + Nunito fonts, 7-screen flow, doc-type-FIRST grid, preview-BEFORE-pay per v5 §21, side-by-side translation table, watermarked cert preview, single $14.99 tariff). The previous wizard kept the old chaotic flow with TPS-green styling — not what was asked for. Rewritten faithfully:
+
+- **`TranslateWizard.tsx`**: ~1000-line clean rewrite. 7 screens: Welcome / DocType (6-tile grid, popular badge on internal passport) / Upload (camera+file+drag) / Processing (5-step animation while real OCR runs) / Review (side-by-side orig/eng + watermarked cert preview — BEFORE payment per v5 §21) / Payment (single $14.99 tariff, Stripe) / Success (signature canvas + PDF download). All CSS scoped under `.tw-root` — no global bleed. Playfair Display + Nunito loaded via `@import` in scoped CSS.
+- **Backend reuse**: `/api/translation/vision-extract` (real Gemini docintel), `/api/stripe/checkout` (real Stripe basic plan), `/api/translation/generate-pdf` (Stripe-gated). signature canvas, Stripe `cs` capture, sessionStorage draft, all preserved.
+- **i18n**: primary Russian (matching prototype), English overrides via T_OVERRIDES. UK/ES fall back to RU until full translation done.
+- **v5 §31 compliance**: "принимается USCIS" → "для подачи в USCIS"; "accepted by USCIS" → "formatted for USCIS submission". No "USCIS-accepted", "certified by AI", "guaranteed", "approved translation".
+- **`wizardScopeAndDeadCode.test.ts`** replaced: old structural assertions (testids, screen names, "Birth Certificate" forbidden) obsolete. New focused guard enforces: legacy dead-files gone, v5 §31 forbidden phrases absent, demoted modules (birth/marriage/other) declared auto:false in DOC_TYPES, classifier still routes them to manual review.
+- **Verified**: 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS (193 pages), drift gate green.
+
+---
+
 ## 2026-05-28 — Session 47: P2 — real OCR in translation wizard (kills the Shevchenko mock)
 
 - **New `app/api/translation/vision-extract/route.ts`**: accepts a multipart image upload, runs it through `docintel.readDocument` (Gemini vision → KMU-55 deterministic transliteration), returns canonical extracted fields. Rate-limited 8/min/IP. Reads `GEMINI_API_KEY` from env — production MUST be PAID tier (free tier trains on PII, v5 §30 + memory `provider-routing-policy`).
