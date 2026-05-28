@@ -3,6 +3,16 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 45 (self-audit correction)
+
+- **Critical self-check found two real errors in my own session-45 work**, fixed:
+  1. Code comment + audit report claimed TPS brand color is `#0d5a34`. Verified globals.css: actual `--accent` is **`#10a37f`** (light + dark). The `#0d5a34` in my fallback was dead code never reached at runtime. The unification is functionally correct (both wizards now resolve `--accent` to `#10a37f` via the global var); only the documented hex was wrong. Corrected in `TranslateWizard.tsx` comment and `SYSTEM_AUDIT_4_PRODUCTS.md`.
+  2. `MEMORY.md` index typo "Prostionets" → fixed to "Prostianets" (memory body was already correct).
+- EAD=0 claim re-verified DIRECTLY (not via sub-agent): `EADWizard.tsx:166,240,314,388` all download `.html`; no `/api/ead` route exists. Solid.
+- Tests still green (2128 pass + 1 skip, 0 type errors).
+
+---
+
 ## 2026-05-27 — Session 45: 4-product audit + Translation UI unified with TPS
 
 - **Audit** (`docs/reports/SYSTEM_AUDIT_4_PRODUCTS.md`): TPS (I-821+I-765+I-912 ✅), ReParole (I-131 ✅), **EAD outputs HTML preparation worksheet only — no filled I-765 PDF ("0" confirmed)**, Translation generates PDF but from mock-hardcoded review data (separate finding).

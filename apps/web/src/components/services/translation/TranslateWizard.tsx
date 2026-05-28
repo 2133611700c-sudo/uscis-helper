@@ -432,9 +432,13 @@ const WIZARD_CSS = `
   background:var(--background,#faf9f7);
   color:var(--text-1,#1a1714);
   -webkit-font-smoothing:antialiased;
-  /* ── Brand tokens — aligned with TPS (was local #1a6b4a) ── */
-  --acc:var(--accent,#0d5a34);
-  --acc-h:var(--accent-hover,#08391f);
+  /* ── Brand tokens — aligned with TPS via the global --accent var.
+     Globally defined in globals.css as #10a37f (light + dark mode). Translation
+     wizard was previously a LITERAL #1a6b4a that ignored the global — that was
+     the visual mismatch. Fallback hex below is dead code at runtime (--accent
+     is always set globally) but kept defensively. ── */
+  --acc:var(--accent,#10a37f);
+  --acc-h:var(--accent-hover,#0e8f70);
   --acc-l:var(--accent-light,#e8f5ee);
   /* ── Warning + info — same CSS vars TPS uses ── */
   --gold:var(--warning-border,#ffc107);
