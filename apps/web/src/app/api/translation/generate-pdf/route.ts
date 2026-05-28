@@ -13,6 +13,8 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
 import { buildCertificationRecord } from '@/lib/translation/certificationRecord'
 import { ExtractedField, SourceTrace } from '@/lib/translation/types'
+import { isOwnerSession } from '@/lib/ownerAccess'
+import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +46,32 @@ export async function POST(req: NextRequest) {
     payload = await req.json()
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  // ── Payment gate (Severity-1 liability fix, 2026-05-27) ────────────────────
+  //   This endpoint previously hardcoded payment_confirmed:true and never
+  //   verified the Stripe session — anyone could POST and receive a translation
+  //   PDF + email for free. Now: owner-bypass OR a valid Stripe checkout session
+  //   whose payment_status==='paid' AND metadata.service==='translation'.
+  //   Stripe checkout id is the cs_* set by ?cs={CHECKOUT_SESSION_ID} on the
+  //   success redirect; the wizard sends it in the X-Payment-Token header
+  //   (parity with TPS) or, as a fallback, in payload.session_id.
+  const owner = await isOwnerSession(req)
+  if (!owner.verified) {
+    const token = req.headers.get('x-payment-token') || payload.session_id || ''
+    if (!token) {
+      return NextResponse.json(
+        { ok: false, error: 'payment_required', detail: 'Complete checkout before generating translation.' },
+        { status: 402 },
+      )
+    }
+    const v = await verifyStripeSessionPaid(token, { expectedService: 'translation' })
+    if (!v.paid || !v.correctService) {
+      return NextResponse.json(
+        { ok: false, error: 'payment_not_confirmed', reason: v.reason },
+        { status: 402 },
+      )
+    }
   }
 
   const { profile, selectedPlan, signedAt, certificationTextVersion, session_id } = payload
