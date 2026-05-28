@@ -17,25 +17,20 @@ import { buildFinalDocument } from '@/lib/translation/bureauStyleRenderer'
 import { validateCertificationRecord } from '@/lib/translation/certificationRecord'
 import { PacketState } from '@/lib/translation/types'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
-import Stripe from 'stripe'
 import {
   getCriticalFieldsForDocumentType,
   getEvidenceRequiredFieldsForDocumentType,
 } from '@/lib/translation/modules/adapters'
 import { getOpenManualReviewForSession } from '@/lib/translation/manualReview/integrations'
+import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
 
 export const dynamic = 'force-dynamic'
 
+// DRY: use the shared single source of truth (was a local copy of this
+// function). Behaviour-preserving — render does not require expectedService.
 async function verifyStripePayment(checkoutId: string): Promise<boolean> {
-  const secretKey = process.env.STRIPE_SECRET_KEY
-  if (!secretKey) return false
-  try {
-    const stripe = new Stripe(secretKey, { apiVersion: '2026-04-22.dahlia' })
-    const session = await stripe.checkout.sessions.retrieve(checkoutId)
-    return session.payment_status === 'paid'
-  } catch {
-    return false
-  }
+  const v = await verifyStripeSessionPaid(checkoutId)
+  return v.paid
 }
 
 export async function POST(req: NextRequest) {

@@ -1,5 +1,8 @@
 # HANDOFF — Session 46 (2026-05-27)
 
+## Session 46-corr — gap-fix on today's plan
+Self-audit closed 4 of 8 gaps: (1) EAD packetBuilder integration test now actually exercises pdf-lib end-to-end (was only field-map unit test); (2) `/api/translation/render` uses the shared Stripe verify util (DRY); (3) `pnpm build` production build verified; (4) all gap-fixes committed. Open and HONEST: EADFormData captures only ~10 of ~25 I-765 fields (needs wizard expansion); Stripe end-to-end live test not run; TranslateWizard CSS not visually verified; P2 still deferred.
+
 ## Session 46 — P4 of critical-fixes plan: v5 spec into repo + memory reconciliation
 - v5 PDF committed at canonical path (`docs/translation/DOCUMENT_TRANSLATION_ENGINE_V5.pdf` per §36).
 - Memory v3 marked superseded for standalone-translator scope; new memory `translation-engine-v5-canon` points at the repo doc. v3 retains the TPS-embedded translation lineage.

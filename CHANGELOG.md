@@ -3,6 +3,22 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 46-corr: critical gap-fix on today's deliverables
+
+Self-audit found 8 gaps; this commit closes 4:
+- **EAD packetBuilder integration test** (`lib/ead/__tests__/packetBuilder.test.ts`): actually runs pdf-lib against the shared TPS I-765 PDF, verifies %PDF header, byte size >50KB, and `applied>8`. The critical "never ran live" gap on P3 (which only had a field-map unit test) is closed.
+- **DRY render gate**: `/api/translation/render` now imports `verifyStripeSessionPaid` from `lib/stripe/verifyPayment` instead of keeping its own local copy of the same logic. Behaviour preserved.
+- **Production build verified**: `pnpm --filter web build` succeeded (catches more than typecheck/tests — next.config, dynamic imports, route generation).
+- 2147 pass + 1 skip (+2 new integration tests), 0 type errors, drift gate green.
+
+**Still open** (honest, cannot close in this session without owner inputs):
+- EADFormData captures only ~10 of ~25 typical I-765 fields. PDF is functional but sparse (no passport, SSN, phone, email, address breakdown, signature). Would need wizard UX expansion.
+- Stripe end-to-end browser flow not live-tested (requires Stripe test mode + browser session).
+- TranslateWizard CSS visual check not done (no dev server in this environment).
+- P2 translation mock-review-data display still there (separate UX refactor).
+
+---
+
 ## 2026-05-27 — Session 46: P4 — v5 spec into repo + memory reconciliation
 
 - **`docs/translation/DOCUMENT_TRANSLATION_ENGINE_V5.pdf`** committed (was only in owner's Downloads); MD index updated with source-artifact pointer + provider-policy reminder.
