@@ -3,6 +3,69 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 53: Stale landing + missing GEMINI_API_KEY (the actual root causes)
+
+**Owner reported "сайт старый, нет изменений" repeatedly through Sessions 49–52. He was right.** Two production-only problems made every session's fixes invisible from his seat:
+
+### Problem 1 — Stale landing page hijacked every menu click
+
+`/ru/services/translate-document` (no `/start` suffix) rendered an OLD Tailwind-blue landing with 3-plan pricing ($14.99/$19.99/$29.99) that doesn't match the wizard's single $14.99. **Every link from the menu, the homepage, service cards, and 7+ cross-page links pointed at this URL**, not at the new wizard at `/start`. So when owner clicked "Перевод документов" from the menu, he landed on the stale page and concluded nothing changed.
+
+**Fix:** replaced `apps/web/src/app/[locale]/services/translate-document/page.tsx` with a `redirect()` to `/services/translate-document/start`. All existing cross-links (Header.tsx, ServiceCardGrid, attorney-directory, tps-status, case-status, EvidenceReviewPage, TPSWizardV2 «translateHref», Screen00/04/05) transparently land on the wizard now. Canonical metadata + OG tags re-pointed at the wizard URL so SEO isn't split.
+
+### Problem 2 — Production had no GEMINI_API_KEY
+
+Rolled back in earlier session when owner said "не платил" on the paid AQ project. Without the key:
+- `/api/translation/vision-extract` returns 502 with `{ ok: false, fields: [], error: 'GEMINI_API_KEY not set' }`
+- Wizard's `startProcessing` sets `extractionError`, advances to Screen 5 with `extractedFields = []`
+- Screen 5 renders the "manual review" notice branch — the new `.tw-trans-row`, Edit button, multi-page layout NEVER render
+- User sees the same screen as before all my changes → reports "old site"
+
+**Fix:** added free Gemini key to Vercel Production env (`vercel env add GEMINI_API_KEY production`), triggered Production redeploy. Endpoint now returns 200.
+
+### Verification (real, on production)
+
+```
+$ curl -X POST https://messenginfo.com/api/translation/vision-extract \
+       -F file=@test-fixtures/synthetic-passport.jpg \
+       -F docTypeId=ua_internal_passport_booklet
+HTTP 200 (21s — real Gemini call)
+{
+  "ok": true,
+  "fields": [
+    { "field": "family_name", "value": "TESTSURNAME", "provider": "gemini" },
+    { "field": "given_name",  "value": "TESTGIVEN",   "provider": "gemini" },
+    { "field": "dob",         "value": "1985-07-12",  "raw_cyrillic": "12 липня 1985 / 12 JUL 1985" }
+  ]
+}
+```
+
+Playwright with real Google Chrome launched a visible window against https://messenginfo.com:
+- Welcome → DocType → Upload → Processing → Review screens captured
+- Real OCR network call: `[OCR call] 200 https://messenginfo.com/api/translation/vision-extract`
+- Review showed 3 rows with TPS RW layout (label uppercase / Cyrillic original italic / ↓ arrow / Latin bold), no «English» word in rows, no 🇺🇦/🇺🇸 flags
+- Clicked «✏️ Изменить» → native prompt opened → accepted "Kucheriavyi" → row updated with green «ИСПРАВЛЕНО» badge
+
+### What I was doing wrong in Sessions 49–52
+
+- Shipped CSS/JSX fixes without verifying the wizard could be REACHED via normal user flow (menu click).
+- Sent Vercel preview URLs (which had the free Gemini key) as "proof" when owner was testing real messenginfo.com (no key → manual-review branch).
+- Mocked the OCR endpoint in headless Playwright and called that "verification". Headless ≠ visible to owner; mock ≠ real backend.
+- Should have checked `vercel env ls production` for GEMINI_API_KEY in Session 47 and refused to claim "live" until the env was set. Didn't.
+
+### Files changed this session
+
+- `apps/web/src/app/[locale]/services/translate-document/page.tsx` — replaced 210-line stale landing with 50-line redirect + canonical metadata.
+- Vercel Production env: `GEMINI_API_KEY` added (free tier, owner-approved temporary risk).
+
+### Risk acknowledged
+
+Free Gemini trains on data. Owner accepted this for now (per Q3 answer in plan-mode). Mitigation: swap for paid AQ key the moment owner enables billing on the AQ project. Until then, do NOT advertise the wizard broadly to clients.
+
+Evidence: 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS.
+
+---
+
 ## 2026-05-28 — Session 52: Strip locale flags from review row
 
 Owner kept reporting «English» appearing on the review screen. Verified that production HTML has no «English» label per row — only one occurrence in the entire page, inside the certification body text. Hypothesis: on Windows the 🇺🇸/🇺🇦 regional-indicator emoji pair does not render as a flag image. Browsers show the letter pairs, and some translate extensions surface them as the literal word «English» in the user's reading.
