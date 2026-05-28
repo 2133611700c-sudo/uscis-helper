@@ -1,3 +1,28 @@
+# HANDOFF — Session 44 (2026-05-27)
+
+## Session 44 — Document Intelligence Layer (permanent shared spine)
+
+### Built `apps/web/src/lib/docintel/`
+The canonical base TPS/ReParole/EAD/Translation unify on (audit said this was the missing infra):
+- `types.ts` — DocTypeSpec/DocFieldSpec/FieldKind/VisionProvider/ExtractedDocField/DocumentReadResult.
+- `documentRegistry.ts` — 6 UA doc types (booklet, international passport, birth/marriage/divorce cert, ID card), each with fields + `consumers` (tps/reparole/ead/translation) + `vision_anchor`. Add docs/fields HERE only.
+- `transliterationPolicy.ts` — single Cyrillic→Latin authority: names/city KMU-55, oblast→nominative+Oblast, date→ISO, doc_number preserved; `stripSettlementPrefix` handles смт/с.м.т./м. The LLM never transliterates names.
+- `providers/geminiVisionProvider.ts` — vendor-agnostic VisionProvider; prompt built from the doc spec; 503/429 retry + model fallback + timeout; reads GEMINI_API_KEY.
+- `documentFieldReader.ts` — `readDocument(image, mime, docTypeId)` = the one entry point → ExtractedDocField[].
+- `geminiVisionArbiter.ts` (TPS) refactored to a thin facade over the spine. Route + tests unchanged.
+
+### Verified
+- 2126 pass + 1 skip, 0 type errors, drift gate green.
+- LIVE through the spine (owner booklet): REDACTED/Serhii/Serhiiovych/1986-06-25/Trostianets/Vinnytsia Oblast. Settlement prefix "с.м.т." (live Gemini variant) correctly stripped → bare city for the form; raw Cyrillic preserved for translation.
+- Arch: `docs/architecture/DOCUMENT_INTELLIGENCE_LAYER.md`.
+
+### Next (adoption — each is now small, the spine is done)
+1. **Translation**: call `readDocument(image, 'ua_birth_certificate'|'ua_marriage_certificate'|...)`; map ExtractedDocField[] into bureauStyleRenderer + certificationRecord. Promote those modules from draft after real-fixture E2E.
+2. **ReParole / EAD**: same `readDocument`, adapt to their forms (registry already lists them as consumers).
+3. **Owner inputs still required for prod**: ≥3 distinct people per doc type + ground truth; PAID Gemini tier (rotate free key); D1 v3/v5 canon; D2 gate mock translate-document page.
+
+---
+
 # HANDOFF — Session 43 (2026-05-27)
 
 ## Session 43 — P3 latency: vision-first booklet flow

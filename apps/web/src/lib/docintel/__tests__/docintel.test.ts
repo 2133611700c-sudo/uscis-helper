@@ -1,0 +1,101 @@
+import { describe, it, expect } from 'vitest'
+import { DOCUMENT_TYPES, getDocTypeSpec, docTypesForConsumer } from '../documentRegistry'
+import { toCanonicalValue } from '../transliterationPolicy'
+import { readDocument } from '../documentFieldReader'
+import type { VisionProvider, VisionFieldRead } from '../types'
+
+describe('docintel/documentRegistry', () => {
+  it('declares all 6 UA document types with required structure', () => {
+    expect(Object.keys(DOCUMENT_TYPES).length).toBeGreaterThanOrEqual(6)
+    for (const spec of Object.values(DOCUMENT_TYPES)) {
+      expect(spec.id).toBeTruthy()
+      expect(spec.fields.length).toBeGreaterThan(0)
+      expect(spec.consumers.length).toBeGreaterThan(0)
+      // vision_anchor must be a real field of the doc
+      expect(spec.fields.some((f) => f.field === spec.vision_anchor)).toBe(true)
+    }
+  })
+
+  it('maps consumers → document types (one base serves all products)', () => {
+    expect(docTypesForConsumer('tps')).toContain('ua_internal_passport_booklet')
+    expect(docTypesForConsumer('translation')).toContain('ua_birth_certificate')
+    expect(docTypesForConsumer('reparole')).toContain('ua_marriage_certificate')
+    expect(docTypesForConsumer('ead')).toContain('ua_international_passport')
+  })
+})
+
+describe('docintel/transliterationPolicy (KMU-55, never LLM)', () => {
+  const read = (cyrillic: string, iso?: string): VisionFieldRead => ({
+    field: 'x', cyrillic, iso_date: iso ?? null, can_read: true, confidence: 1, reason: '',
+  })
+
+  it('names → exact KMU-55 Latin', () => {
+    expect(toCanonicalValue(read("REDACTED_NAME"), 'name')).toBe('REDACTED')
+    expect(toCanonicalValue(read('Сергійович'), 'name')).toBe('Serhiiovych')
+  })
+  it('city → KMU-55 (Trostianets, not Prostianets/Troshchianets)', () => {
+    expect(toCanonicalValue(read('Тростянець'), 'place_city')).toBe('Trostianets')
+  })
+  it('oblast → nominative + Oblast', () => {
+    expect(toCanonicalValue(read('Вінницька область'), 'place_oblast')).toBe('Vinnytsia Oblast')
+  })
+  it('city strips settlement-type prefix (смт / с.м.т. / м.) → bare city for the form', () => {
+    expect(toCanonicalValue(read('смт Тростянець'), 'place_city')).toBe('Trostianets')
+    expect(toCanonicalValue(read('с.м.т. Тростянець'), 'place_city')).toBe('Trostianets') // live Gemini variant
+    expect(toCanonicalValue(read('м. Київ'), 'place_city')).toBe('Kyiv')
+  })
+  it('date → ISO only when well-formed, else null (no guessing)', () => {
+    expect(toCanonicalValue(read('25 червня 1986', '1986-06-25'), 'date')).toBe('1986-06-25')
+    expect(toCanonicalValue(read('June 25', 'June 25'), 'date')).toBeNull()
+  })
+})
+
+describe('docintel/documentFieldReader (orchestration with a mock provider)', () => {
+  const mockProvider: VisionProvider = {
+    name: 'mock',
+    async readFields() {
+      return {
+        ok: true,
+        model: 'mock-1',
+        ms: 5,
+        fields: [
+          { field: 'family_name', cyrillic: "REDACTED_NAME", can_read: true, confidence: 1, reason: '' },
+          { field: 'middle_name', cyrillic: 'Сергійович', can_read: true, confidence: 1, reason: '' },
+          { field: 'city_of_birth', cyrillic: 'Тростянець', can_read: true, confidence: 0.9, reason: '' },
+          { field: 'dob', cyrillic: '', iso_date: '1986-06-25', can_read: true, confidence: 1, reason: '' },
+          { field: 'given_name', cyrillic: '', can_read: false, confidence: 0, reason: 'illegible' },
+        ],
+      }
+    },
+  }
+
+  it('reads booklet → canonical fields, KMU-55 applied, anchor detected', async () => {
+    const r = await readDocument(Buffer.from('x'), 'image/jpeg', 'ua_internal_passport_booklet', { provider: mockProvider })
+    expect(r.ok).toBe(true)
+    expect(r.anchor_read).toBe(true) // family_name read
+    const by = Object.fromEntries(r.fields.map((f) => [f.field, f.value]))
+    expect(by.family_name).toBe('REDACTED')
+    expect(by.middle_name).toBe('Serhiiovych')
+    expect(by.city_of_birth).toBe('Trostianets')
+    expect(by.dob).toBe('1986-06-25')
+    expect(by.given_name).toBeUndefined() // can_read=false skipped
+  })
+
+  it('handwritten fields are always review_required', async () => {
+    const r = await readDocument(Buffer.from('x'), 'image/jpeg', 'ua_internal_passport_booklet', { provider: mockProvider })
+    for (const f of r.fields) expect(f.review_required).toBe(true)
+  })
+
+  it('unknown doc type → ok:false, never throws', async () => {
+    const r = await readDocument(Buffer.from('x'), 'image/jpeg', 'nope', { provider: mockProvider })
+    expect(r.ok).toBe(false)
+    expect(r.status).toBe('unknown_document_type')
+  })
+
+  it('provider failure → ok:false with status', async () => {
+    const failing: VisionProvider = { name: 'fail', async readFields() { return { ok: false, fields: [], model: null, ms: 1, error: 'timeout' } } }
+    const r = await readDocument(Buffer.from('x'), 'image/jpeg', 'ua_birth_certificate', { provider: failing })
+    expect(r.ok).toBe(false)
+    expect(r.status).toContain('vision_failed')
+  })
+})
