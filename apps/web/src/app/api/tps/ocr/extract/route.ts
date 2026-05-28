@@ -482,8 +482,42 @@ export async function POST(req: NextRequest) {
     // fallback inside case 'passport' when MRZ failed.
     case 'booklet': {
       moduleResult = runPassportBookletModule(result, { document_id })
-      // ── Dual-OCR cross-reference for booklet handwritten Cyrillic ──
-      if (moduleResult?.matched && process.env.DUAL_OCR_CROSSREF !== 'false') {
+
+      // ── Gemini vision arbiter (flag-gated, OFF by default) — VISION-FIRST ──
+      // Reads handwritten Cyrillic directly from the IMAGE; KMU-55 transliterates.
+      // Vision-on-pixels beats the text crossref, so when it reads the page
+      // (anchor = family_name) we SKIP the slower DocAI+DeepSeek crossref below
+      // (~10s saved). Candidate-only (review_required); overrides all sources
+      // except user edits and MRZ; failure → fall through to crossref. PAID
+      // Gemini tier required for client PII.
+      let visionReadPage = false
+      if (process.env.TPS_GEMINI_VISION_ARBITER_ENABLED === 'true' && moduleResult?.matched) {
+        try {
+          const vision = await readBookletViaVision(imageBuffer, effectiveMime)
+          if (vision.ok) {
+            const protectedSources = new Set(['user_corrected', 'user_input', 'ocr_mrz'])
+            const vfields = visionReadsToFields(vision.fields, document_id)
+            for (const vf of vfields) {
+              const existing = moduleResult.fields.find((f) => f.field === vf.field)
+              if (!existing) { moduleResult.fields.push(vf); continue }
+              if (!protectedSources.has(existing.extraction_source)) Object.assign(existing, vf)
+            }
+            // Anchor: if vision read the surname, it read the page → skip crossref.
+            visionReadPage = vfields.some((f) => f.field === 'family_name')
+            visionArbiterStatus = `ok:${vision.model}:${vision.ms}ms:${vfields.length}f`
+          } else {
+            visionArbiterStatus = `failed:${vision.error ?? 'unknown'}`
+          }
+        } catch (e: any) {
+          console.error('[gemini-vision-arbiter:booklet]', e?.message)
+          visionArbiterStatus = 'error'
+        }
+      }
+
+      // ── Dual-OCR cross-reference — fallback when vision did NOT read the page
+      //    (flag OFF, vision failed, or surname unreadable). Skipped when vision
+      //    succeeded, saving the DocAI + DeepSeek round-trips.
+      if (!visionReadPage && moduleResult?.matched && process.env.DUAL_OCR_CROSSREF !== 'false') {
         crossrefStatus = 'attempted'
         try {
           const docaiResult = await processDocAI(imageBuffer, effectiveMime)
@@ -525,31 +559,6 @@ export async function POST(req: NextRequest) {
             }
           }
         } catch (e: any) { console.error('[dual-ocr-crossref:booklet]', e?.message) }
-      }
-      // ── Gemini vision arbiter (flag-gated, OFF by default) ──
-      // Reads handwritten Cyrillic directly from the IMAGE and merges
-      // KMU-55-transliterated candidates. Vision-on-pixels beats text crossref,
-      // so it overrides all sources EXCEPT user edits and MRZ. Candidate-only
-      // (review_required=true) → Central Brain + Review Gate decide. Fail → keep
-      // existing fields (never block). PAID Gemini tier required for client PII.
-      if (process.env.TPS_GEMINI_VISION_ARBITER_ENABLED === 'true' && moduleResult?.matched) {
-        try {
-          const vision = await readBookletViaVision(imageBuffer, effectiveMime)
-          if (vision.ok) {
-            const protectedSources = new Set(['user_corrected', 'user_input', 'ocr_mrz'])
-            for (const vf of visionReadsToFields(vision.fields, document_id)) {
-              const existing = moduleResult.fields.find((f) => f.field === vf.field)
-              if (!existing) { moduleResult.fields.push(vf); continue }
-              if (!protectedSources.has(existing.extraction_source)) Object.assign(existing, vf)
-            }
-            visionArbiterStatus = `ok:${vision.model}:${vision.ms}ms`
-          } else {
-            visionArbiterStatus = `failed:${vision.error ?? 'unknown'}`
-          }
-        } catch (e: any) {
-          console.error('[gemini-vision-arbiter:booklet]', e?.message)
-          visionArbiterStatus = 'error'
-        }
       }
       break
     }
