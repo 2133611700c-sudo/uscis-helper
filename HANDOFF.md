@@ -1,4 +1,25 @@
-# HANDOFF — Session 52 (2026-05-28)
+# HANDOFF — Session 53 (2026-05-28)
+
+## Session 53 — Real diagnosis: stale landing + missing GEMINI_API_KEY on production
+
+Owner repeatedly reported "сайт старый, нет изменений" after Sessions 49–52. He was right and I was wrong.
+
+**Two root causes shipped this session:**
+
+1. **`/ru/services/translate-document` (no `/start` suffix)** rendered an OLD Tailwind-blue landing page with stale 3-plan pricing ($14.99/$19.99/$29.99) that doesn't match the wizard's single $14.99. This is the URL every menu link, every service card, and every cross-link points to. Fixed: replaced with `redirect()` to `/services/translate-document/start` so any incoming click lands on the new wizard transparently.
+
+2. **Production env had no `GEMINI_API_KEY`** (rolled back in earlier session when owner said "не платил"). Without the key, the OCR endpoint returned 502, the wizard hit the "manual review" notice branch, and the new `.tw-trans-row` / Edit-button / multi-page layout was never instantiated. Fixed: added the free Gemini key to Vercel Production env, redeployed. Owner accepted the privacy risk (free tier trains on data) until billing is enabled on the paid AQ project.
+
+**Verified end-to-end on REAL messenginfo.com:**
+- `curl -X POST https://messenginfo.com/api/translation/vision-extract -F file=@test-fixtures/synthetic-passport.jpg -F docTypeId=ua_internal_passport_booklet` → HTTP 200, real Gemini fields.
+- Playwright (real Chrome) walked Welcome → DocType → Upload → Processing → Review on messenginfo.com production. Returned `TESTSURNAME / TESTGIVEN / 1985-07-12` from the fixture. Clicking «✏️ Изменить» opened a native prompt; accepted value populated the row with the green «ИСПРАВЛЕНО» badge.
+
+**What I was doing wrong in sessions 49–52:**
+- Shipping CSS/JSX fixes without verifying the wizard could actually be REACHED through normal user flow.
+- Sending Vercel preview URLs (with the free Gemini key) as "proof" when the owner was testing the real messenginfo.com (no key, falls into manual-review).
+- Mocking the OCR endpoint in Playwright and calling that "verification".
+
+Evidence: 2124 pass + 1 skip, 0 type errors, prod build SUCCESS.
 
 ## Session 52 — Strip locale flags from review row
 
