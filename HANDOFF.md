@@ -10,6 +10,7 @@ The canonical base TPS/ReParole/EAD/Translation unify on (audit said this was th
 - `providers/geminiVisionProvider.ts` — vendor-agnostic VisionProvider; prompt built from the doc spec; 503/429 retry + model fallback + timeout; reads GEMINI_API_KEY.
 - `documentFieldReader.ts` — `readDocument(image, mime, docTypeId)` = the one entry point → ExtractedDocField[].
 - `geminiVisionArbiter.ts` (TPS) refactored to a thin facade over the spine. Route + tests unchanged.
+- Coverage guard (rule auditor): CI test fails if a registry field kind is unhandled by transliterationPolicy — prevents spine drift.
 
 ### Verified
 - 2126 pass + 1 skip, 0 type errors, drift gate green.
