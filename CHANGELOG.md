@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 43: P3 latency — vision-first booklet flow
+
+- **`route.ts` booklet case**: restructured to vision-first. Gemini vision runs before the dual-OCR crossref; when it reads the page (anchor = family_name), the DocAI+DeepSeek crossref is skipped (~10s saved, ~17s→~7s with flag ON). Crossref remains the fallback when vision fails, is disabled, or can't read the surname. Flag OFF → behavior identical to before. 2115 pass + 1 skip, 0 type errors.
+
+---
+
 ## 2026-05-27 — Session 42: P3 — Gemini vision arbiter wired behind flag (OFF)
 
 - **New `apps/web/src/lib/tps/ai/geminiVisionArbiter.ts`**: `readBookletViaVision()` reads handwritten Cyrillic from the image (503/429 retry, model fallback, 8s timeout); `visionReadsToFields()` transliterates via KMU-55 (names/city) + normalizeProvince (oblast) + ISO dob — never the LLM's own transliteration (v5 §13). Candidate-only, review_required=true.
