@@ -9,6 +9,15 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 42 (2026-05-27) — P3: Gemini vision arbiter WIRED behind flag (OFF)
+
+- `VERIFIED(local)` New `geminiVisionArbiter.ts`: reads handwritten Cyrillic from image, KMU-55 transliterates (names/city), normalizeProvince for oblast, ISO for dob. Candidate-only, review_required=true. 503/429 retry + model fallback + 8s timeout.
+- `VERIFIED(local)` Wired into `route.ts` booklet case behind `TPS_GEMINI_VISION_ARBITER_ENABLED` (default OFF → prod unchanged). Vision overrides all sources except user_corrected/user_input/ocr_mrz; fail→keep existing (never block). `vision_arbiter_status` surfaced in response.
+- `VERIFIED(unit)` visionReadsToFields → exact KMU-55: REDACTED / Serhii / Serhiiovych / Trostianets.
+- `VERIFIED(LIVE, N=1)` End-to-end through production code on owner booklet: Gemini→KMU-55 produced REDACTED/Serhiiovych/Trostianets (was Yovych/Prostianets). Live test self-skips in CI (RUN_LIVE_VISION=1 to run).
+- `VERIFIED(local)` 2115 pass + 1 skip, 0 type errors, drift gate green (reused dual_ocr_crossref source).
+- `NOT ENABLED in prod` — needs ≥3 distinct people + ground truth + PAID tier (v5 §29/§32/§30).
+
 ## Session 41 (2026-05-27) — P1 PROOF: Gemini vision reads handwritten Cyrillic (N=1)
 
 - `VERIFIED(live)` Gemini 2.5 Flash reading the booklet IMAGE (not OCR text) returned correct Cyrillic for ALL 5 identity fields on owner's fixture: REDACTED_NAME, Сергій, **Сергійович** (prod was "Yovych"), 25 червня 1986, **Тростянець** (prod was "Prostianets"). 6.85s, ~0.12¢.
