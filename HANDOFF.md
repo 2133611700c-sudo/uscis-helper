@@ -1,3 +1,28 @@
+# HANDOFF — Session 42 (2026-05-27)
+
+## Session 42 — P3: Gemini vision arbiter wired behind flag (OFF)
+
+### Built
+- `apps/web/src/lib/tps/ai/geminiVisionArbiter.ts` — `readBookletViaVision()` (image→Cyrillic, retry+fallback+timeout) and `visionReadsToFields()` (Cyrillic→KMU-55 Latin for names/city, normalizeProvince for oblast, ISO dob; candidate-only, review_required, source_zone='gemini_vision', reuses extraction_source 'dual_ocr_crossref' to avoid union drift).
+- Wired into `route.ts` booklet case behind `TPS_GEMINI_VISION_ARBITER_ENABLED` (default OFF). Runs AFTER dual-OCR crossref; overrides all sources except user_corrected/user_input/ocr_mrz; fail→keep existing. `vision_arbiter_status` in response.
+- Tests: `geminiVisionArbiter.test.ts` (unit, exact KMU-55 values) + `geminiVisionArbiter.live.test.ts` (live, self-skips unless RUN_LIVE_VISION=1).
+
+### Verified
+- Unit: KMU-55 → REDACTED / Serhii / Serhiiovych / Trostianets (exact).
+- LIVE (N=1, owner booklet, through production code): same correct output. Fixes prod Yovych/Prostianets.
+- 2115 pass + 1 skip, 0 type errors, drift gate green. Prod behavior unchanged (flag OFF).
+
+### To enable in production (do NOT until all true)
+1. ≥3 distinct people's booklets + ground-truth JSON; before/after + manual-review-rate measured (v5 §29/§32).
+2. PAID Gemini tier (free trains on PII — v5 §30). Rotate the current free test key.
+3. Latency: when flag ON, vision runs after crossref (~17s). Optimize: skip DeepSeek text crossref when vision succeeds (follow-up).
+4. ADR-009 image-retention sign-off for sending crops to Gemini.
+
+### Still open (owner)
+- D1 reconcile v3 constitution vs v5 standard. D2 gate mock translate-document page. Commit v5 spec to repo (§36).
+
+---
+
 # HANDOFF — Session 41 (2026-05-27)
 
 ## Session 41 — P1 PROOF: Gemini vision reads handwritten Cyrillic

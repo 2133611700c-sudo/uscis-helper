@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 42: P3 — Gemini vision arbiter wired behind flag (OFF)
+
+- **New `apps/web/src/lib/tps/ai/geminiVisionArbiter.ts`**: `readBookletViaVision()` reads handwritten Cyrillic from the image (503/429 retry, model fallback, 8s timeout); `visionReadsToFields()` transliterates via KMU-55 (names/city) + normalizeProvince (oblast) + ISO dob — never the LLM's own transliteration (v5 §13). Candidate-only, review_required=true.
+- **`route.ts` booklet case**: wired behind `TPS_GEMINI_VISION_ARBITER_ENABLED` (default OFF → production unchanged). Vision overrides all sources except user_corrected/user_input/ocr_mrz; failure → keep existing fields (never block). `vision_arbiter_status` surfaced in response.
+- **Tests**: unit (exact KMU-55: REDACTED/Serhii/Serhiiovych/Trostianets) + live integration (self-skips in CI; RUN_LIVE_VISION=1 to run). LIVE on owner booklet through production code reproduced correct output, fixing prod Yovych/Prostianets. 2115 pass + 1 skip, 0 type errors, drift gate green.
+- **Not enabled in prod**: requires ≥3 distinct people + ground truth + PAID Gemini tier (v5 §29/§32/§30). Free test key to be rotated.
+
+---
+
 ## 2026-05-27 — Session 41: P1 proof — Gemini vision reads handwritten Cyrillic (N=1)
 
 - Added `docs/translation/ENGINEERING_PLAN_VISION_ARBITER.md` (Amazon-style design doc, conforms to Translation Engine v5 standard).
