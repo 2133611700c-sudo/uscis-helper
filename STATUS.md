@@ -9,6 +9,13 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 45 (2026-05-27) — 4-product audit + Translation UI unified with TPS
+
+- `VERIFIED` Audit: TPS (I-821+I-765 ✅), ReParole (I-131 ✅), **EAD (HTML worksheet ❌, no filled I-765 PDF — "0" confirmed)**, Translation (PDF generated but from mock data — separate bug).
+- `VERIFIED(local)` `TranslateWizard.tsx` CSS rebuilt to share TPS tokens: `--acc:var(--accent,#0d5a34)` (was local #1a6b4a), body 17px (was 15), H1 28px (was 26), container 760px (was 440), buttons 48/44px tap targets with focus outlines, plan/upload borders 2.5px. WCAG 2.5.5 + 30-80yo readability. Zero behavior change.
+- `VERIFIED(local)` 2128 pass + 1 skip, 0 type errors, drift gate green, content guards pass.
+- Report: `docs/reports/SYSTEM_AUDIT_4_PRODUCTS.md`. Flagged separately: EAD needs I-765 PDF generation; translation wizard mock-data + ungated PDF (owner D2).
+
 ## Session 44 (2026-05-27) — Document Intelligence Layer (permanent shared spine)
 
 - `VERIFIED(local)` New `lib/docintel/` — canonical pipeline TPS/ReParole/EAD/Translation all rest on: `types.ts`, `documentRegistry.ts` (6 UA doc types + consumers), `transliterationPolicy.ts` (KMU-55, one place; strips смт/с.м.т./м. prefixes), `providers/geminiVisionProvider.ts` (vendor-agnostic, prompt built from spec), `documentFieldReader.ts` (`readDocument()` entry).

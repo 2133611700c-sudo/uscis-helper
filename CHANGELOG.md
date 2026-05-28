@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 45: 4-product audit + Translation UI unified with TPS
+
+- **Audit** (`docs/reports/SYSTEM_AUDIT_4_PRODUCTS.md`): TPS (I-821+I-765+I-912 ✅), ReParole (I-131 ✅), **EAD outputs HTML preparation worksheet only — no filled I-765 PDF ("0" confirmed)**, Translation generates PDF but from mock-hardcoded review data (separate finding).
+- **`TranslateWizard.tsx`**: CSS rebuilt to share the TPS design system. Identical brand green via `var(--accent, #0d5a34)` (was local `#1a6b4a`), warning/info palettes via the same CSS vars TPS uses, body 17px (was 15), H1 28px (was 26), H2 20px (was 18), container 760px (was 440), primary buttons 48px min-height + 18px/800, small buttons 44px min-height + 14px (was 12), back/edit links elevated to 44px tap targets, plan/upload borders 2.5px (was 2), inputs 48px min-height + 17px + focus ring, visible 3px focus outlines everywhere. Tuned for 30-80yo readability (WCAG 2.5.5 throughout). Pure CSS, no behavior or JSX change.
+- **Verified**: 2128 pass + 1 skip, 0 type errors, drift gate green, content guards green.
+- **Open** (owner decisions): EAD needs real I-765 PDF generation (~1-2 days, parity with TPS/ReParole pattern); translation wizard's mock-data + ungated `/api/translation/generate-pdf` path (D2 — pretty UI on mock data is a worse liability, must be wired to real OCR via `docintel.readDocument()` or gated).
+
+---
+
 ## 2026-05-27 — Session 44: Document Intelligence Layer — permanent shared spine
 
 - **New `apps/web/src/lib/docintel/`**: the canonical document pipeline TPS/ReParole/EAD/Translation all rest on. `types.ts` (canonical types), `documentRegistry.ts` (6 UA doc types + per-type `consumers`), `transliterationPolicy.ts` (single Cyrillic→Latin authority — KMU-55 for names/city, nominative+Oblast for province, ISO dates, settlement-prefix stripping смт/с.м.т./м.), `providers/geminiVisionProvider.ts` (vendor-agnostic; prompt built from the doc spec; retry/fallback/timeout), `documentFieldReader.ts` (`readDocument()` single entry point).
