@@ -1,5 +1,15 @@
 # HANDOFF — Session 46 (2026-05-27)
 
+## Session 47 — P2 done: translation wizard wired to real OCR
+
+The "Shevchenko/1814" mock is gone. `handleUpload` captures the user's actual file; after they declare the booklet doc-type the wizard POSTs the image to a new `/api/translation/vision-extract` endpoint that runs `docintel.readDocument` (Gemini vision + KMU-55) and returns canonical fields. The review screen shows the user's real Cyrillic + Latin values; the same fields are sent to `/api/translation/generate-pdf` so the certified PDF contains real data, not placeholders.
+
+**To make this work in production**, set `GEMINI_API_KEY` in Vercel env (PAID tier — free tier trains on PII, v5 §30 + memory `provider-routing-policy`). Without the key, the endpoint returns 500 and the wizard falls through to payment with empty extraction — no regression vs the prior mock, but no real-data win either. Verify by uploading a booklet on a deployed preview after setting the env var.
+
+Plan tasks: #6 ✅ baseline · #7 ✅ P1 payment gate · #8 ✅ P3 EAD I-765 · #9 ✅ P4 v5+memory · **#10 ✅ P2 done**.
+
+---
+
 ## Session 46-corr — gap-fix on today's plan
 Self-audit closed 4 of 8 gaps: (1) EAD packetBuilder integration test now actually exercises pdf-lib end-to-end (was only field-map unit test); (2) `/api/translation/render` uses the shared Stripe verify util (DRY); (3) `pnpm build` production build verified; (4) all gap-fixes committed. Open and HONEST: EADFormData captures only ~10 of ~25 I-765 fields (needs wizard expansion); Stripe end-to-end live test not run; TranslateWizard CSS not visually verified; P2 still deferred.
 

@@ -3,6 +3,18 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 47: P2 — real OCR in translation wizard (kills the Shevchenko mock)
+
+- **New `app/api/translation/vision-extract/route.ts`**: accepts a multipart image upload, runs it through `docintel.readDocument` (Gemini vision → KMU-55 deterministic transliteration), returns canonical extracted fields. Rate-limited 8/min/IP. Reads `GEMINI_API_KEY` from env — production MUST be PAID tier (free tier trains on PII, v5 §30 + memory `provider-routing-policy`).
+- **`TranslateWizard.tsx`** rewired:
+  - `handleUpload` actually captures the file the user picked (was: ignored the event, never stored).
+  - `handlePickDocType` (booklet path) now POSTs the file to `/api/translation/vision-extract` and replaces the previous setTimeout-based fake animation that hardcoded `"SHEVCHENKO TARAS HRYHOROVYCH"`. Tick states (1→4) still advance during the network call so the user sees progress.
+  - On successful extraction, `extractedName` and `payForm.name` are set from the real `family_name + given_name` (KMU-55 Latin); review screen's `reviewFields` is replaced from the real fields. Static `REVIEW_FIELDS` (Shevchenko/Моринці/1814) used only as initial state — overwritten the moment real fields arrive.
+  - `handleGeneratePdf` body now includes the real `fields[]` (raw_value + normalized_value + source_label) so `/api/translation/generate-pdf` can render a PDF based on the user's actual document, not a skeleton.
+- **Verified**: 2147 pass + 1 skip, 0 type errors, `pnpm --filter web build` success, drift gate green.
+
+---
+
 ## 2026-05-27 — Session 46-corr: critical gap-fix on today's deliverables
 
 Self-audit found 8 gaps; this commit closes 4:
