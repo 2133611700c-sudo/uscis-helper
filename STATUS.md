@@ -9,6 +9,14 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 44 (2026-05-27) — Document Intelligence Layer (permanent shared spine)
+
+- `VERIFIED(local)` New `lib/docintel/` — canonical pipeline TPS/ReParole/EAD/Translation all rest on: `types.ts`, `documentRegistry.ts` (6 UA doc types + consumers), `transliterationPolicy.ts` (KMU-55, one place; strips смт/с.м.т./м. prefixes), `providers/geminiVisionProvider.ts` (vendor-agnostic, prompt built from spec), `documentFieldReader.ts` (`readDocument()` entry).
+- `VERIFIED(local)` `geminiVisionArbiter.ts` refactored into a thin TPS/booklet FACADE over the spine (no parallel logic; shared provider + transliteration). Route + existing tests unchanged.
+- `VERIFIED(LIVE)` End-to-end through the spine on owner booklet: REDACTED / Serhii / Serhiiovych / 1986-06-25 / **Trostianets** (settlement prefix "с.м.т." correctly stripped) / Vinnytsia Oblast.
+- `VERIFIED(local)` 2126 pass + 1 skip, 0 type errors, drift gate green.
+- Arch doc: `docs/architecture/DOCUMENT_INTELLIGENCE_LAYER.md`. Other doc types declared + mock-tested; need real fixtures before prod. Flag OFF.
+
 ## Session 43 (2026-05-27) — P3 latency: vision-first (skip crossref when vision reads page)
 
 - `VERIFIED(local)` Restructured booklet case to VISION-FIRST: Gemini vision runs first; if it reads the page (anchor=family_name) the DocAI+DeepSeek crossref is SKIPPED (~10s saved, ~17s→~7s when flag ON). Crossref still runs as fallback when vision fails/disabled. Flag OFF → behavior identical to before (crossref only).
