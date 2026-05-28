@@ -3,6 +3,39 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 51: Wizard — mobile/desktop parity audit + fixes
+
+Owner asked: "compare your work for mobile and web functionality! all innovations must work the same!"
+
+Audited every Session-50 feature (edit button, multi-page upload, page remove, contrast, drag-drop, tap feedback) across mobile (iOS Safari + Android Chrome) and desktop. Parity table identified 3 real mismatches:
+
+1. **`.tw-page-remove` was 28×28 px** — below TPS's 36-px tap-target standard and Apple HIG's 44-pt minimum. Fixed: 36×36 with `:active` scale feedback.
+2. **Drag-drop was dead code** — CSS `.tw-upload-zone.tw-dragging` existed but no `onDragOver/onDragLeave/onDrop` handlers ever applied the class. Fixed: real handlers on the upload zone AND on the page grid (so user can drop more pages onto the thumbnail strip after the first upload).
+3. **No `-webkit-tap-highlight-color`** — iOS showed default grey overlay on every tap, no on-brand feedback. Fixed: transparent tap-highlight globally inside `.tw-root`, plus `:active` states (scale 0.97-0.98 + green tint) on every primary surface (`.tw-btn-primary`, `.tw-btn-upload`, `.tw-doc-tile`, `.tw-trans-edit-btn`, `.tw-page-remove`) so users still see the tap register.
+
+Verdict matrix (every NEW feature):
+| Feature                  | Mobile | Desktop | Parity |
+|--------------------------|--------|---------|--------|
+| Edit button (window.prompt) | native | native | ✅ functionally identical (matches TPS pattern) |
+| Multi-page picker (gallery) | iOS Photos / Android, multi | OS picker, multi | ✅ |
+| Multi-page picker (camera)  | camera 1-shot | falls back to picker | ✅ (capture=environment standard) |
+| Page remove × tap target    | 36×36 | 36×36 | ✅ (was 28; fixed this session) |
+| Drag-drop                   | N/A (no DnD API) | works | ✅ (was dead code; fixed this session) |
+| Tap feedback                | :active + no-highlight | hover | ✅ (was missing on mobile; fixed) |
+| TPS contrast                | identical CSS | identical CSS | ✅ |
+| Review row layout           | grid 1fr auto | grid 1fr auto | ✅ |
+| Signature canvas            | touch events | mouse events | ✅ (both already wired) |
+| Stripe checkout             | redirect | redirect | ✅ |
+| PDF download                | blob + a.download | blob + a.download | ✅ |
+
+**Known mobile gap (NOT fixed this session, documented):** iOS HEIC uploads → backend returns 415. Users with default iOS Camera settings will hit this. Requires server-side HEIF decode (sharp + libheif) or a client-side converter — deferred.
+
+**Files changed:** `apps/web/src/components/services/translation/TranslateWizard.tsx` only (CSS + drag-drop handlers + 1 new state `isDragging`).
+
+**Evidence:** 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS (193 pages).
+
+---
+
 ## 2026-05-28 — Session 50: Wizard — edit-button + multi-page + contrast fix
 
 Owner reported 4 specific defects after Session 49's TPS-restyle: «English» leaking per-row, no way to correct OCR errors, bad contrast, single-page only. Plan → brick-by-brick TPS comparison → root-cause for each → applied minimal fixes.
