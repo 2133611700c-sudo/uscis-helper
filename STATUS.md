@@ -5,9 +5,14 @@
 - `VERIFIED` All 34 uscis-helper tables have explicit GRANT to anon+authenticated
 - `VERIFIED` All 31 Handy & Friend tables have RLS policies (was: 12 with 0 policies)
 ATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-27 DB patch — Supabase auto-grant trigger installed
+**Updated:** 2026-05-28 — Translation wizard restyled to TPS design system
 **Status:** PRODUCTION (auto-fill-only model live)
-**Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
+**Scope:** P0–P7 complete. 2124/2124 unit pass + 1 skip. 0 type errors.
+
+## Session 49 (2026-05-28) — Translation wizard restyled 1:1 to TPS design system
+
+- `VERIFIED(local)` `TranslateWizard.tsx` CSS rewritten: prototype structure (7 screens, 6 doc-type tiles, side-by-side review, watermarked cert) preserved; visual language flipped to TPS — `var(--accent, #10a37f)` green, `var(--surface-1)` white cards, Inter (`var(--font-inter)`), 14px radius, 48px tap targets, `0 1px 4px rgba(0,0,0,.05)` shadow. Legacy prototype vars (`--gold`, `--navy*`) re-aliased to TPS-equivalents → JSX unchanged. Body-bg dark override removed. Cert preview kept paper-white (theme-independent document mockup).
+- `VERIFIED(local)` 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS, drift gate green.
 
 ## Session 48 (2026-05-28) — Translation wizard FULL REWRITE per owner's prototype
 
