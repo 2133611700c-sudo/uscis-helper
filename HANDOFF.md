@@ -1,3 +1,14 @@
+# HANDOFF — Session 45-corr (2026-05-27)
+
+## Session 45-corr — self-audit corrections
+Critical self-check on session-45 work found and fixed two documentation errors:
+- Actual TPS brand color is `#10a37f` (`globals.css:90,153`), not `#0d5a34`. The unification is functionally correct (both wizards resolve `var(--accent)` to `#10a37f`); only my hex claim and code comment were wrong. Corrected.
+- `MEMORY.md` typo "Prostionets" → "Prostianets" (memory body was correct).
+- EAD=0 re-verified directly (`EADWizard.tsx:166-388` all `.html`; no `/api/ead`). Solid.
+- No code logic touched, 2128 pass + 1 skip, 0 type errors.
+
+---
+
 # HANDOFF — Session 45 (2026-05-27)
 
 ## Session 45 — 4-product audit + Translation UI unified with TPS
