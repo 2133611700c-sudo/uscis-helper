@@ -1,5 +1,9 @@
 # HANDOFF — Session 46 (2026-05-27)
 
+## Session 48 — Translation wizard rewritten under owner's prototype
+
+`TranslateWizard.tsx` fully rewritten to match the owner-provided dark-navy/gold prototype: 7 screens (Welcome → DocType → Upload → Processing → **Review BEFORE pay (v5 §21)** → Pay → Success), doc-type-FIRST grid (6 tiles), side-by-side translation table, watermarked cert preview, Playfair/Nunito fonts. CSS scoped under `.tw-root`. Backend untouched and fully reused: real Gemini OCR via `/api/translation/vision-extract`, real Stripe checkout, payment-gated `/api/translation/generate-pdf`, signature canvas. v5 §31 forbidden phrases removed ("принимается USCIS" → "для подачи в USCIS"); old structural guard replaced with focused forbidden-phrase + auto:false routing guard. 2124 pass, 0 type errors, prod build OK.
+
 ## Session 47 — P2 done: translation wizard wired to real OCR
 
 The "Shevchenko/1814" mock is gone. `handleUpload` captures the user's actual file; after they declare the booklet doc-type the wizard POSTs the image to a new `/api/translation/vision-extract` endpoint that runs `docintel.readDocument` (Gemini vision + KMU-55) and returns canonical fields. The review screen shows the user's real Cyrillic + Latin values; the same fields are sent to `/api/translation/generate-pdf` so the certified PDF contains real data, not placeholders.
