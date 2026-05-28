@@ -3,6 +3,20 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 52: Strip locale flags from review row
+
+Owner kept reporting «English» appearing on the review screen. Verified that production HTML has no «English» label per row — only one occurrence in the entire page, inside the certification body text. Hypothesis: on Windows the 🇺🇸/🇺🇦 regional-indicator emoji pair does not render as a flag image. Browsers show the letter pairs, and some translate extensions surface them as the literal word «English» in the user's reading.
+
+**Fix:** strip the 🇺🇸/🇺🇦 prefixes from per-row values entirely. The structure (label → italic-muted original → ↓ arrow → bold-dark translation) is self-explanatory without any icon. `aria-hidden` on the arrow so screen readers voice only the label + the two values, no locale name.
+
+**Bonus:** removed dead `s5_col_orig`/`s5_col_trans` i18n keys (defined but never referenced after Session 50 dropped the side-by-side column headers).
+
+**Files changed:** `apps/web/src/components/services/translation/TranslateWizard.tsx` only.
+
+**Evidence:** 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS (193 pages).
+
+---
+
 ## 2026-05-28 — Session 51: Wizard — mobile/desktop parity audit + fixes
 
 Owner asked: "compare your work for mobile and web functionality! all innovations must work the same!"
