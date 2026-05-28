@@ -5,9 +5,18 @@
 - `VERIFIED` All 34 uscis-helper tables have explicit GRANT to anon+authenticated
 - `VERIFIED` All 31 Handy & Friend tables have RLS policies (was: 12 with 0 policies)
 ATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-28 — Translation wizard: edit-button + multi-page + contrast fix
+**Updated:** 2026-05-28 — Mobile/desktop parity audit + 3 fixes
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2124/2124 unit pass + 1 skip. 0 type errors.
+
+## Session 51 (2026-05-28) — Mobile/desktop parity audit + fixes
+
+- `VERIFIED(local)` Audit table covering every Session-50 innovation × {mobile, desktop}. 12 features ✅ parity; 3 mismatches found.
+- `VERIFIED(local)` Page-remove × bumped 28→36 px (matches TPS edit-button tap-target standard).
+- `VERIFIED(local)` Drag-drop CSS was dead code — wired real handlers to upload zone + page grid.
+- `VERIFIED(local)` Mobile tap feedback: `-webkit-tap-highlight-color: transparent` globally + `:active` states on every primary surface (no more iOS grey overlay; consistent green tap feedback).
+- `KNOWN GAP` iOS HEIC uploads return 415 (backend only accepts JPEG/PNG/WebP). Deferred — needs server-side HEIF decode.
+- `VERIFIED(local)` 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS.
 
 ## Session 50 (2026-05-28) — Wizard: edit-button + multi-page + contrast 1:1 with TPS
 
