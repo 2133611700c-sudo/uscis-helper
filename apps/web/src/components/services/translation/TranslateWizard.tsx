@@ -373,6 +373,16 @@ const WIZARD_CSS = `
 }
 .tw-root *, .tw-root *::before, .tw-root *::after { box-sizing: border-box; }
 
+/* Mobile tap feedback: kill the iOS 300ms highlight on every interactive
+   surface so taps feel instant and on-brand. Buttons supply their own
+   :active state for visible feedback (the global tap-highlight removal
+   means we MUST add :active to keep the tap visible). */
+.tw-root button, .tw-root label.tw-btn-upload, .tw-root label.tw-upload-zone,
+.tw-root .tw-doc-tile, .tw-root .tw-page-tile, .tw-root .tw-back-btn,
+.tw-root .tw-edit-btn, .tw-root .tw-trans-edit-btn {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Header — TPS card-on-light */
 .tw-header {
   background: var(--card);
@@ -443,6 +453,7 @@ const WIZARD_CSS = `
   box-shadow: var(--shadow);
 }
 .tw-doc-tile:hover { border-color: var(--acc); }
+.tw-doc-tile:active { border-color: var(--acc); background: var(--acc-l); transform: scale(0.98); }
 .tw-doc-tile.tw-selected { border-color: var(--acc); background: var(--acc-l); }
 .tw-doc-tile.popular { border-color: var(--acc); }
 .tw-doc-icon { font-size: 36px; }
@@ -472,6 +483,7 @@ const WIZARD_CSS = `
   gap: 6px; transition: all 0.15s; min-height: 48px; font-family: inherit;
 }
 .tw-btn-upload:hover { border-color: var(--acc); color: var(--acc); }
+.tw-btn-upload:active { border-color: var(--acc); color: var(--acc); background: var(--acc-l); }
 .tw-btn-camera { background: var(--card); color: var(--text); }
 .tw-btn-camera:hover { border-color: var(--acc); color: var(--acc); }
 .tw-btn-file { background: var(--card); color: var(--text); }
@@ -484,6 +496,14 @@ const WIZARD_CSS = `
 .tw-page-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
   margin-bottom: 12px;
+  border-radius: 12px;
+  transition: outline 0.15s, background 0.15s;
+  outline: 2px dashed transparent;
+  outline-offset: 4px;
+}
+.tw-page-grid.tw-dragging {
+  outline-color: var(--acc);
+  background: var(--acc-l);
 }
 .tw-page-tile {
   position: relative; border-radius: 12px; overflow: hidden;
@@ -502,14 +522,17 @@ const WIZARD_CSS = `
 }
 .tw-page-remove {
   position: absolute; top: 6px; right: 6px;
-  width: 28px; height: 28px; border-radius: 50%;
-  background: rgba(0,0,0,0.55); color: #fff;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(0,0,0,0.6); color: #fff;
   border: none; cursor: pointer;
-  font-size: 18px; font-weight: 700; line-height: 1;
+  font-size: 20px; font-weight: 700; line-height: 1;
   display: flex; align-items: center; justify-content: center;
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
 }
-.tw-page-remove:hover { background: rgba(0,0,0,0.75); }
+.tw-page-remove:hover { background: rgba(0,0,0,0.78); }
+.tw-page-remove:active { background: rgba(0,0,0,0.85); transform: scale(0.92); }
 .tw-page-remove:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
 /* Primary button — TPS navBtn(forward): green, 18px, 800 weight, 48px tap */
@@ -523,6 +546,7 @@ const WIZARD_CSS = `
   font-family: inherit;
 }
 .tw-btn-primary:hover:not(:disabled) { background: var(--acc-h); }
+.tw-btn-primary:active:not(:disabled) { background: var(--acc-h); transform: scale(0.98); }
 .tw-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 .tw-btn-primary:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
 
@@ -628,6 +652,7 @@ const WIZARD_CSS = `
   transition: all 0.15s;
 }
 .tw-trans-edit-btn:hover { background: var(--acc-l); border-color: var(--acc); }
+.tw-trans-edit-btn:active { background: var(--acc-l); border-color: var(--acc); transform: scale(0.97); }
 .tw-trans-edit-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
 /* Cert preview — KEEP white (paper document mockup, theme-independent) */
@@ -842,6 +867,21 @@ export function TranslateWizard() {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index))
   }, [])
+
+  // Desktop drag-drop. Mobile has no drag-and-drop API so these handlers
+  // are silent no-ops there; tap-to-upload via the file picker covers
+  // mobile, giving feature parity at the *outcome* level (files added).
+  const [isDragging, setIsDragging] = useState(false)
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    if (e.dataTransfer.types?.includes('Files')) setIsDragging(true)
+  }, [])
+  const handleDragLeave = useCallback(() => setIsDragging(false), [])
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    handleFiles(e.dataTransfer.files)
+  }, [handleFiles])
 
   // ── Processing: REAL /api/translation/vision-extract over all pages ──
   // The endpoint accepts repeated `file` keys and merges fields server-side,
@@ -1228,7 +1268,12 @@ export function TranslateWizard() {
           <p className="tw-subtitle">{t.s3_subtitle}</p>
 
           {previewUrls.length > 0 && (
-            <div className="tw-page-grid">
+            <div
+              className={`tw-page-grid ${isDragging ? 'tw-dragging' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               {previewUrls.map((url, i) => (
                 <div className="tw-page-tile" key={`${url.slice(0, 32)}-${i}`}>
                   <img src={url} alt={`${t.s3_page_n} ${i + 1}`} />
@@ -1245,7 +1290,12 @@ export function TranslateWizard() {
           )}
 
           {previewUrls.length === 0 && (
-            <label className="tw-upload-zone">
+            <label
+              className={`tw-upload-zone ${isDragging ? 'tw-dragging' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <div className="tw-upload-icon">📸</div>
               <div className="tw-upload-main">{t.s3_drop_main}</div>
               <div className="tw-upload-sub">{t.s3_drop_sub}</div>
