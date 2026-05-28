@@ -1,3 +1,25 @@
+# HANDOFF — Session 41 (2026-05-27)
+
+## Session 41 — P1 PROOF: Gemini vision reads handwritten Cyrillic
+
+### Done
+- Wrote Amazon-style engineering plan: `docs/translation/ENGINEERING_PLAN_VISION_ARBITER.md`.
+- Built `scripts/vision-arbiter-proof.mjs` and ran it LIVE against Gemini 2.5 Flash on the owner's booklet image.
+- **Result:** Gemini read the IMAGE and returned correct Cyrillic for all 5 fields, fixing the two production failures (patronymic "Yovych"→Сергійович, city "Prostianets"→Тростянець) and recovering given_name (Сергій) that booklet-only OCR never got. 6.85s, ~0.12¢.
+- **Key finding:** Gemini Cyrillic correct, transliteration WRONG (Kurop'iatnyk, Troshchianets). Architecture: Gemini reads Cyrillic → KMU-55 (`transliterate.ts`) does Latin. Confirms v5 §13. Proof: `docs/translation/VISION_ARBITER_PROOF_N1.md`.
+
+### Honest limits
+- N=1 (owner's own handwriting). Proves CAPABILITY, not client-readiness. v5 §29/§32 require ≥3 distinct people + ground truth before flag-ON.
+- Free-tier key (test-only, owner doc, gitignored, rotate after). Production needs PAID tier (free tier trains on PII).
+
+### Next
+1. **P3 wiring** (no prod enable): geminiVisionProvider.ts behind `TPS_GEMINI_VISION_ARBITER_ENABLED=false`; pipeline Gemini-Cyrillic → KMU-55 → Central Brain → Review Gate; parallel calls, 8s timeout, fail→fallback; cost-log to tps_ocr_audit.
+2. **P2 data**: collect ≥3 distinct people's booklets + birth certs + ground-truth JSON (owner provides). Measure before/after + manual-review rate.
+3. **Owner decisions (plan §14):** D1 reconcile v3 constitution vs v5 standard; D2 gate the mock translate-document page (violates v5 §21/§23/§31); D3 provision paid Gemini tier.
+4. Commit v5 spec into repo at `docs/translation/DOCUMENT_TRANSLATION_ENGINE_V5.md` (per its own §36); currently only in owner's Downloads.
+
+---
+
 # HANDOFF — Session 40 (2026-05-27)
 
 ## Session 40 — Phase 0: single readinessPolicy (OCR stabilization plan)
