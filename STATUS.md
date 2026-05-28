@@ -5,9 +5,19 @@
 - `VERIFIED` All 34 uscis-helper tables have explicit GRANT to anon+authenticated
 - `VERIFIED` All 31 Handy & Friend tables have RLS policies (was: 12 with 0 policies)
 ATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-28 — Production wizard now reachable via real flow (GEMINI_API_KEY + landing redirect)
+**Updated:** 2026-05-28 — Session 54: 784 PII files purged from HEAD per post-audit directive
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2124/2124 unit pass + 1 skip. 0 type errors.
+
+## Session 54 (2026-05-28) — Post-audit PII purge from HEAD
+
+- `VERIFIED(local)` `git rm` 784 files purged from HEAD: full `docs/reports/evidence/` (741), `reports/BOOKLET_*` + `booklet-synthetic-*` + `booklet-stability-*` (42), `qa-shots/ua_passport_real.png` (1).
+- `VERIFIED(local)` `.gitignore` rewritten to block-everything for evidence + reports/ root (old policy whitelisted .txt/.json/.csv allowing 784 files to slip through).
+- `VERIFIED(local)` Production-code redaction: TPSWizardV2.tsx:3872 hardcoded owner address → generic example.
+- `VERIFIED(local)` Typecheck 0 errors, 2124 pass + 1 skip, `git grep Kuropiatnyk` 160 → 34 remaining (tests + intentional code + narrative docs, all reviewed).
+- `KNOWN GAP` Git history still contains the 784 PII files in prior commits. Full purge needs git-filter-repo + force-push + GitHub Support ticket. Owner-decision (destructive, irreversible).
+- `KNOWN GAP` 14 narrative docs still quote owner's name in prose (STATUS/HANDOFF/audit MDs). Acceptable as engineering memory; redactable on request.
+- `KNOWN GAP` (continued from Session 53) Free Gemini key on production. Owner kept it; swap to paid AQ when billing enabled.
 
 ## Session 53 (2026-05-28) — Real diagnosis: stale landing + missing GEMINI_API_KEY
 

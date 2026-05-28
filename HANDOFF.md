@@ -1,4 +1,21 @@
-# HANDOFF — Session 53 (2026-05-28)
+# HANDOFF — Session 54 (2026-05-28)
+
+## Session 54 — Post-audit PII purge from HEAD
+
+External auditor verified 14 claims from Sessions 49–53. 12 PASS, 2 P1 findings. Owner instructed: keep the Gemini key, remove the PII, do everything else.
+
+Done:
+- `git rm` 784 files: full `docs/reports/evidence/` subtree (741), `reports/BOOKLET_*` + `booklet-synthetic-*` + `booklet-stability-*` (42), `qa-shots/ua_passport_real.png` (1).
+- `.gitignore` rewritten to block-everything-under-evidence (old policy whitelisted .txt/.json/.csv → exactly how the 784 files slipped through).
+- Production-code redaction: `TPSWizardV2.tsx:3872` address comment → generic example.
+- CHANGELOG entry honestly discloses that commit 3580315 was misrepresented (claimed «pure CSS», actually 354 files / 101k lines including bundled evidence dumps).
+
+Not done (owner-decision items):
+- **Git history rewrite.** 784 files removed from HEAD but still in every prior commit / GitHub object. Full purge requires `git-filter-repo` + force-push + GitHub Support ticket. Destructive, irreversible — flagging for owner decision.
+- **Markdown narrative redaction.** 14 narrative docs (STATUS, HANDOFF, audit YAMLs, architecture/report MDs) still quote owner's name in prose. Reasonable to keep as engineering memory; owner can request redaction.
+- **Paid AQ Gemini key.** Owner kept the free-tier key on production (Session 53 risk). Swap when AQ billing is enabled.
+
+Evidence: typecheck 0 errors, 2124 pass + 1 skip, `git grep -l Kuropiatnyk` reduced from 160 → 34 (all in tests / intentional code / narrative docs).
 
 ## Session 53 — Real diagnosis: stale landing + missing GEMINI_API_KEY on production
 

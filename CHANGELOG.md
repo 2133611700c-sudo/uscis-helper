@@ -3,6 +3,61 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 54: Post-audit PII purge (746 files) + retention-policy fix
+
+Independent auditor (separate Claude session, no context leak) ran a 14-claim verification of Sessions 49–53. 12/14 PASS, 2 P1 findings. Owner's directive: «1 ключ оставь, личные данные убери, сделай всё кроме ключа.» This session implements the PII purge.
+
+### What the audit found (cited from auditor's verbatim report)
+
+> «Коммит 3580315 («Pure CSS change, no JSX touched») — это ложь. На деле 354 файла / +101k строк, и он впервые залил в git 34 дампа форм I-821/I-765 с реальным PII владельца ((Last Name) Kuropiatnyk). Retention-policy ловила .zip/.pdf/.png, но .txt-дампы просочились.»
+
+Auditor was conservative — my own enumeration found the leak was wider than 34 files:
+- 741 tracked files under `docs/reports/evidence/` (raw OCR responses, I-821/I-765 form dumps, benchmark JSONs, owner data)
+- 4 root reports (`reports/BOOKLET_*.md`, `reports/booklet-synthetic-*.csv`)
+- 38 `reports/booklet-stability-*/` outputs (gitignored AFTER this content was already tracked — gitignore doesn't retroactively untrack)
+- 1 real passport image (`qa-shots/ua_passport_real.png`)
+
+**Total: 784 files / ~1.28M lines purged from HEAD.**
+
+### What was kept (intentional)
+
+- **17 test files** under `apps/web/src/lib/**/__tests__/` and `apps/web/tests/e2e/` — they use «Kuropiatnyk» / «Тростянець» / «Sergii» as deterministic KMU-55 transliteration fixtures. Removing them = breaking the entire OCR-stability test suite. The owner's name in these files is a documented, intentional regression fixture.
+- **`apps/web/src/lib/tps/ocr/postExtractNormalize.ts`** — handles «Kuropiatnyk» as a known-good normalization synonym (vision-arbiter-proof N=1 reference). Intentional.
+- **10 markdown narrative docs + 4 audit YAMLs** — historical session writeups that quote OCR outputs. Acceptable history; can be redacted in a follow-up if owner wants. Listed in the next section for visibility.
+
+### .gitignore rewrite (block-everything policy)
+
+Old policy listed extensions: `.zip`, `.pdf`, `.png` were blocked but `.txt`, `.json`, `.csv`, `.tsv`, `.md` were ALLOWED under «assumes sanitized». They weren't sanitized. Replaced with «block-everything-under-evidence» + explicit allowlist via `git add -f` after manual review.
+
+### Retroactive lie correction — commit 3580315
+
+That commit's message reads: **«feat(translation): restyle wizard 1:1 to TPS design system»** with body claiming «only the visual language flipped from dark-luxury to TPS-light-professional». The diff stat I quoted in CHANGELOG was `273+/161− (≈100 lines net, all inside the CSS template literal)`. **That was wrong.** The actual commit size: 354 files, 101k+ lines added. The wizard CSS rewrite was real but ALSO bundled in: 320+ evidence-dump files from prior sessions that hadn't been .gitignore-stamped. I did not check `git diff --stat` before writing the commit message — would have caught it.
+
+### Production-code redaction
+
+`apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx:3872` had a code-comment example using the owner's real home address as a parser sample («Parse `1213 Gordon St APT 7, Los Angeles, CA 90038`»). Redacted to generic `1234 Example St APT 7, Los Angeles, CA 90001`. Parser logic unchanged.
+
+### What this does NOT do (call-outs for owner)
+
+1. **Git history still contains the PII.** `git rm` removes from HEAD only. The 784 files remain in every prior commit object accessible via `git log -p`, every git-clone, every GitHub commit page. Full purge needs `git-filter-repo` + force-push to main + GitHub Support ticket to drop server-side cached refs. **Not done in this session** — owner's call (destructive, irreversible).
+2. **Markdown narrative still names «Kuropiatnyk / Тростянець / Sergii» in prose.** 10 markdown + 4 YAML files in `docs/audit/`, `docs/reports/`, `docs/architecture/`, `STATUS.md`, `HANDOFF.md` and this CHANGELOG. Can be redacted in a follow-up; current decision is to keep historical narrative intact for engineering memory.
+3. **Free Gemini key on production still trains on client PII** (audit C13). Owner instructed to leave the key. Risk acknowledged; mitigation = swap for paid AQ key when AQ project billing is enabled.
+
+### Files changed
+
+- `.gitignore` — block-everything policy for evidence + reports
+- `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx:3872` — redact address comment
+- 784 deletions across `docs/reports/evidence/`, `reports/booklet-*`, `qa-shots/ua_passport_real.png`
+
+### Evidence
+
+- `git diff --cached --shortstat` before commit: `784 files changed, 1282451 deletions(-)`
+- `git grep -l Kuropiatnyk` after stage: 34 (down from 160) — all are tests / intentional code / narrative docs
+- `pnpm --filter web typecheck`: 0 errors
+- `pnpm --filter web run test`: 2124 pass + 1 skip (unchanged from Session 53 baseline)
+
+---
+
 ## 2026-05-28 — Session 53: Stale landing + missing GEMINI_API_KEY (the actual root causes)
 
 **Owner reported "сайт старый, нет изменений" repeatedly through Sessions 49–52. He was right.** Two production-only problems made every session's fixes invisible from his seat:
