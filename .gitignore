@@ -15,30 +15,43 @@ apps/web/playwright-report/
 playwright-report/
 test-results/
 
-# Raw evidence artifacts (sensitive-by-default, local-only)
-docs/reports/evidence/**/playwright-report/
-docs/reports/evidence/**/*.zip
-docs/reports/evidence/**/*.png
-docs/reports/evidence/**/*.jpg
-docs/reports/evidence/**/*.jpeg
-docs/reports/evidence/**/*.webp
-docs/reports/evidence/**/*.pdf
-docs/reports/evidence/**/*.log
-docs/reports/evidence/**/*.trace
-docs/reports/evidence/**/*.har
+# ──────────────────────────────────────────────────────────────────────
+# Evidence + reports — BLOCK-EVERYTHING policy (Session 54, post-audit)
+#
+# Previous policy listed individual extensions (.zip, .pdf, .png, …) and
+# DELIBERATELY allowed text formats (.txt, .json, .csv, .tsv, .md) under
+# the assumption they'd be sanitized. They weren't: the audit found
+# 746 tracked files under docs/reports/evidence/ + reports/ containing
+# raw OCR responses, I-821/I-765 form dumps, and the owner's real PII
+# (name, address, DOB, A-number, SSN-pattern).
+#
+# New policy: ALL evidence content is sensitive by default. The folder
+# may exist for local runs, but NOTHING under it ships in commits unless
+# explicitly force-added with `git add -f` after manual sanitization
+# review by the owner. Same rule for reports/ root.
+# ──────────────────────────────────────────────────────────────────────
 
-# Local booklet/debug evidence folders
+# docs/reports/evidence/ — entire subtree blocked
+docs/reports/evidence/
+# (Keep the folder marker so future runs have a place to write to.)
+!docs/reports/evidence/.gitkeep
+!docs/reports/evidence/README.md
+
+# reports/ root — booklet OCR runs, benchmark CSVs, owner test outputs
 reports/booklet-stability-*/
+reports/booklet-synthetic-*
+reports/booklet-multi-sample-*
+reports/BOOKLET_*.md
+reports/*-response.json
+reports/owner_*
 
-# Allowlist policy notes (manual review required before tracking):
-# - docs/reports/evidence/**/FINAL_*_REPORT.md
-# - docs/reports/evidence/**/README.md
-# - reports/*.csv only if sanitized and decision-grade (no PII/raw OCR payloads)
+# Real user documents — PII, never committed
+qa-shots/private/
+qa-shots/ua_passport_real.*
+qa-shots/booklet_*
+test-fixtures/owner/
+docs/audit/REAL_DOC_GROUND_TRUTH.local.yaml
 
 # Build artifacts
 apps/web/tsconfig.tsbuildinfo
 apps/web/public/brand/archive/
-
-# Real user documents — PII, never committed
-qa-shots/private/
-docs/audit/REAL_DOC_GROUND_TRUTH.local.yaml
