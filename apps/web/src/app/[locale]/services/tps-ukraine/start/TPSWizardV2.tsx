@@ -3869,10 +3869,10 @@ function ReviewManual({
   if (!ocrAddrStreet && !ocrAddrCity) {
     const fullAddr = mergedFields?.address?.value ?? ''
     if (fullAddr) {
-      // Parse "1213 Gordon St APT 7, Los Angeles, CA 90038"
+      // Parse e.g. "1234 Example St APT 7, Los Angeles, CA 90001"
       const parts = fullAddr.split(',').map((s: string) => s.trim())
       if (parts.length >= 2) {
-        ocrAddrStreet = parts[0] // "1213 Gordon St APT 7"
+        ocrAddrStreet = parts[0] // street + optional unit, e.g. "1234 Example St APT 7"
         const lastPart = parts[parts.length - 1] // "CA 90038"
         const stateZip = lastPart.match(/^([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/)
         if (stateZip) {
