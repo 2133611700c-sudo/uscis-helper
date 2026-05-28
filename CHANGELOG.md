@@ -3,6 +3,16 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 44: Document Intelligence Layer — permanent shared spine
+
+- **New `apps/web/src/lib/docintel/`**: the canonical document pipeline TPS/ReParole/EAD/Translation all rest on. `types.ts` (canonical types), `documentRegistry.ts` (6 UA doc types + per-type `consumers`), `transliterationPolicy.ts` (single Cyrillic→Latin authority — KMU-55 for names/city, nominative+Oblast for province, ISO dates, settlement-prefix stripping смт/с.м.т./м.), `providers/geminiVisionProvider.ts` (vendor-agnostic; prompt built from the doc spec; retry/fallback/timeout), `documentFieldReader.ts` (`readDocument()` single entry point).
+- **`lib/tps/ai/geminiVisionArbiter.ts`** refactored from a booklet point-solution into a thin TPS facade over the spine — no parallel logic; shares the provider + transliteration policy. OCR route and existing tests unchanged.
+- **Settlement-type fix**: live Gemini returned "с.м.т. Тростянець"; `stripSettlementPrefix` now yields the bare "Trostianets" for the form (raw Cyrillic preserved for translation's "urban-type settlement").
+- **Arch doc**: `docs/architecture/DOCUMENT_INTELLIGENCE_LAYER.md`.
+- **Verified**: 2126 pass + 1 skip, 0 type errors, drift gate green. LIVE end-to-end through the spine on owner booklet correct on all 6 fields. Other doc types declared + mock-tested; need real fixtures + PAID tier before prod. Vision stays behind flag OFF.
+
+---
+
 ## 2026-05-27 — Session 43: P3 latency — vision-first booklet flow
 
 - **`route.ts` booklet case**: restructured to vision-first. Gemini vision runs before the dual-OCR crossref; when it reads the page (anchor = family_name), the DocAI+DeepSeek crossref is skipped (~10s saved, ~17s→~7s with flag ON). Crossref remains the fallback when vision fails, is disabled, or can't read the surname. Flag OFF → behavior identical to before. 2115 pass + 1 skip, 0 type errors.
