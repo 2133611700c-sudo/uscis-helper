@@ -11,6 +11,8 @@
  * I-601, online filing through my.uscis.gov.
  */
 
+import { requiredRules } from './readinessPolicy'
+
 export type FilingPath = 'initial' | 're_registration'
 
 /**
@@ -206,22 +208,16 @@ export interface TPSAnswers {
  */
 export function isMinimallyComplete(a: TPSAnswers): { ok: boolean; missing: string[] } {
   const missing: string[] = []
-  const need: Array<keyof TPSAnswers> = [
-    'family_name', 'given_name', 'dob', 'sex',
-    'country_of_birth', 'country_of_nationality',
-    'passport_number', 'passport_country_of_issuance', 'passport_expiration_date',
-    'us_address_street', 'us_address_city', 'us_address_state', 'us_address_zip',
-    'last_entry_date',
-    'filing_path',
-    'daytime_phone', 'email',
-  ]
-  for (const k of need) {
-    const v = a[k]
-    if (v === undefined || v === null || v === '') missing.push(String(k))
+  // Required-field list comes from the single readinessPolicy ('generate'
+  // stage), with conditionals applied (e.g. ead_category only if wants_ead).
+  // No local literal here — it can never drift from centralBrain / mailReadyGate.
+  for (const r of requiredRules('generate', a)) {
+    const v = a[r.field]
+    // "Present" = has a real value. `v !== false` preserves the original
+    // boolean check for part7_reviewed (false = not reviewed = missing).
+    const present = v !== undefined && v !== null && v !== '' && v !== false
+    if (!present) missing.push(String(r.field))
   }
-  if (a.wants_ead && !a.ead_category) missing.push('ead_category')
-  if (!a.marital_status) missing.push('marital_status')
-  if (!a.part7_reviewed) missing.push('part7_reviewed')
   return { ok: missing.length === 0, missing }
 }
 
