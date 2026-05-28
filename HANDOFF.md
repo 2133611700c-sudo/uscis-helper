@@ -1,4 +1,14 @@
-# HANDOFF — Session 51 (2026-05-28)
+# HANDOFF — Session 52 (2026-05-28)
+
+## Session 52 — Strip locale flags from review row
+
+User reported the word «English» still appearing on the review screen. Verified via `curl messenginfo.com` that the **only** occurrence of «English» in deployed HTML is inside the certification body text («competent in Ukrainian and English languages»). No per-row label says «English».
+
+Hypothesis: on Windows the 🇺🇸/🇺🇦 regional-indicator emoji pair does not render as a flag — Windows shows the underlying letter pair, and some translate browser extensions surface that as the word «English». Removing the flags eliminates that possibility entirely.
+
+Changes: per-row layout is now pure stacked text — original (italic muted) → ↓ arrow (aria-hidden) → translation (bold dark). No icons. Visual hierarchy alone makes direction obvious. Removed dead `s5_col_orig`/`s5_col_trans` i18n keys.
+
+Evidence: 2124 pass + 1 skip, 0 type errors, build SUCCESS.
 
 ## Session 51 — Mobile/desktop parity audit + 3 fixes
 
