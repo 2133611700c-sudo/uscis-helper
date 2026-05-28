@@ -3,6 +3,13 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 46: P4 — v5 spec into repo + memory reconciliation
+
+- **`docs/translation/DOCUMENT_TRANSLATION_ENGINE_V5.pdf`** committed (was only in owner's Downloads); MD index updated with source-artifact pointer + provider-policy reminder.
+- **Memory reconciled**: v3 (`tps-translation-constitution-v3`) marked SUPERSEDED for standalone-translator scope; new memory `translation-engine-v5-canon` points to the repo doc + records key v5 decisions (controlled autonomy, pluggable vision provider, §13 KMU-55 transliteration, §21 verify-before-pay, §15 admin terms, §28/§32 acceptance bar). MEMORY.md index updated. v3 keeps the TPS-embedded translation lineage; v5 governs the standalone document-translation product.
+
+---
+
 ## 2026-05-27 — Session 46: P3 — EAD now generates real filled I-765 PDF (closes "EAD = 0")
 
 - **New `lib/ead/i765FieldMap.ts`**: builds I-765 PDF operations from `EadFieldData` (EAD wizard's data shape). Categories `c11` (re-parole), `c08` (asylum pending), `a12` (TPS) mapped to Page 3 Item 27 segments; "other"/null leaves Item 27 blank for the user. Same field-name strings as TPS — the USCIS form is identical, only the eligibility category differs per product.
