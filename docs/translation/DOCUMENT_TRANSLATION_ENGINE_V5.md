@@ -6,6 +6,13 @@ UKRAINE_PASSPORT_BOOKLET_RULES, UKRAINE_GLOSSARY, TRANSLITERATION_PRIORITY,
 NUMERIC_ACCURACY_PROTOCOL, TRANSLATION_QA_AND_VERSIONING_PROTOCOL,
 SERVICE_CLAIMS_POLICY, MODULE_ACCEPTANCE_MATRIX, MANUAL_REVIEW_QUEUE.
 
+**Source artifact:** `DOCUMENT_TRANSLATION_ENGINE_V5.pdf` beside this file —
+the original 14-page formatted PDF that supersedes the older "TPS Translation
+Pipeline v3.0" memory note for the standalone document-translation scope.
+This `.md` is the implementation-aligned summary; the `.pdf` is authoritative
+for any phrasing dispute. Provider-policy reminder: DeepSeek-first for
+AI/API; **vision provider remains pluggable** (exercised by `lib/docintel`).
+
 **Core rule.** A translation is not finished when it looks good. It is
 finished only when every critical field is traceable back to the original
 document AND a competent human signs the certification.

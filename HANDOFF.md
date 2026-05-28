@@ -1,5 +1,11 @@
 # HANDOFF — Session 46 (2026-05-27)
 
+## Session 46 — P4 of critical-fixes plan: v5 spec into repo + memory reconciliation
+- v5 PDF committed at canonical path (`docs/translation/DOCUMENT_TRANSLATION_ENGINE_V5.pdf` per §36).
+- Memory v3 marked superseded for standalone-translator scope; new memory `translation-engine-v5-canon` points at the repo doc. v3 retains the TPS-embedded translation lineage.
+
+Plan recap: #6 ✅ baseline · #7 ✅ P1 payment gate · #8 ✅ P3 EAD I-765 · #9 ✅ P4 v5+memory · #10 still DEFERRED (translation wizard real-OCR wiring — substantial UX refactor).
+
 ## Session 46 — P3 of critical-fixes plan: EAD real I-765 PDF
 
 `lib/ead/i765FieldMap.ts` + `lib/ead/packetBuilder.ts` + `/api/ead/generate-packet/route.ts`. Categories c11/c08/a12 (and "other" → blank for manual fill). `EADWizard` Step 6 now offers PDF as primary action (44-48px tap targets, locale-aware en/uk/ru/es labels); the legacy HTML worksheet is kept as a secondary download for users who want a printable checklist. Free service — no Stripe (per page docstring). 9 unit tests. EAD "0" finding closed.
