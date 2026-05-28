@@ -686,6 +686,8 @@ export function EADWizard({ locale }: EADWizardProps) {
   const [step, setStep] = useState(0)
   const [data, setData] = useState<EADFormData>(EMPTY)
   const [downloaded, setDownloaded] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfDownloaded, setPdfDownloaded] = useState(false)
 
   function patch(partial: Partial<EADFormData>) {
     setData(prev => ({ ...prev, ...partial }))
@@ -708,6 +710,47 @@ export function EADWizard({ locale }: EADWizardProps) {
     downloadHtmlFile(html, 'i765-preparation-worksheet.html')
     setDownloaded(true)
   }
+
+  // ── Primary action: download a REAL filled I-765 PDF (parity with TPS / ReParole)
+  async function handleDownloadPdf() {
+    if (pdfLoading) return
+    setPdfLoading(true)
+    try {
+      const res = await fetch('/api/ead/generate-packet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({} as { error?: string }))
+        alert(err.error ?? 'PDF generation failed. Try again.')
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `I-765-draft-${(data.lastName || 'applicant').replace(/[^A-Za-z0-9]/g, '')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      setPdfDownloaded(true)
+    } catch (e) {
+      console.error('[EAD download PDF]', e)
+      alert('Network error — try again.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
+  const PDF_LABELS: Record<string, { primary: string; loading: string; done: string; hint: string }> = {
+    en: { primary: '⬇ Download Filled I-765 PDF', loading: 'Generating PDF…', done: '✓ PDF downloaded', hint: 'Filled with your data. Review, sign, and mail per USCIS instructions at uscis.gov/i-765.' },
+    uk: { primary: '⬇ Завантажити заповнений I-765 (PDF)', loading: 'Генеруємо PDF…',     done: '✓ PDF завантажено', hint: 'Заповнено вашими даними. Перевірте, підпишіть та надішліть за інструкціями USCIS на uscis.gov/i-765.' },
+    ru: { primary: '⬇ Скачать заполненный I-765 (PDF)',    loading: 'Создаём PDF…',      done: '✓ PDF скачан',     hint: 'Заполнен вашими данными. Проверьте, подпишите и отправьте по инструкциям USCIS на uscis.gov/i-765.' },
+    es: { primary: '⬇ Descargar I-765 Rellenado (PDF)',    loading: 'Generando PDF…',    done: '✓ PDF descargado', hint: 'Rellenado con sus datos. Revise, firme y envíelo según las instrucciones de USCIS en uscis.gov/i-765.' },
+  }
+  const pdfL = PDF_LABELS[locale] ?? PDF_LABELS.en
 
   // ── Step 0: App type ──────────────────────────────────────────────────────
   function Step0() {
@@ -1001,13 +1044,39 @@ export function EADWizard({ locale }: EADWizardProps) {
           <p className="text-[14px] text-[var(--text-2)] mt-2 max-w-md mx-auto">{ui.step6Sub}</p>
         </div>
 
+        {/* PRIMARY: real filled I-765 PDF (parity with TPS / ReParole) */}
+        {!pdfDownloaded ? (
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            className="w-full py-3 px-6 bg-green-600 hover:bg-green-700 disabled:opacity-50 active:scale-[0.98] text-white font-bold text-[15px] rounded-2xl transition-all flex items-center justify-center gap-2 min-h-[48px]"
+          >
+            <Download size={18} />
+            {pdfLoading ? pdfL.loading : pdfL.primary}
+          </button>
+        ) : (
+          <div className="flex items-start gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-950 border border-green-300">
+            <CheckCircle size={20} className="text-green-600 flex-shrink-0" />
+            <div>
+              <div className="font-bold text-green-800 dark:text-green-200">{pdfL.done}</div>
+              <div className="text-sm text-green-700 dark:text-green-300 mt-0.5">{pdfL.hint}</div>
+              <button type="button" onClick={handleDownloadPdf} disabled={pdfLoading}
+                className="mt-2 py-2 px-4 border-2 border-green-300 rounded-xl text-[14px] font-semibold text-green-800 dark:text-green-200 hover:border-green-500 transition-colors disabled:opacity-50 min-h-[40px]">
+                {pdfLoading ? pdfL.loading : pdfL.primary}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SECONDARY: legacy HTML preparation worksheet (kept for users who want a printable reference list) */}
         {!downloaded ? (
           <button
             type="button"
             onClick={handleDownload}
-            className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-[15px] rounded-2xl transition-all flex items-center justify-center gap-2"
+            className="w-full py-2 px-4 border-2 border-[var(--border)] hover:border-blue-400 text-[var(--text-1)] text-[14px] font-semibold rounded-2xl transition-all flex items-center justify-center gap-2 min-h-[44px]"
           >
-            <Download size={18} />
+            <Download size={16} />
             {ui.downloadBtn}
           </button>
         ) : (
