@@ -1,5 +1,0 @@
-{
-  "status": 200,
-  "url": "https://messenginfo.com/api/tps/generate-packet",
-  "request_body_preview": "{\"family_name\":\"Kuropiatnyk\",\"given_name\":\"Sergii\",\"middle_name\":\"Serhiiovych\",\"dob\":\"1986-06-25\",\"sex\":\"M\",\"country_of_birth\":\"Ukraine\",\"country_of_nationality\":\"Ukraine\",\"passport_number\":\"FU262473\",\"passport_country_of_issuance\":\"Ukraine\",\"passport_expiration_date\":\"02/22/2029\",\"a_number\":\"231853474\",\"uscis_online_account\":\"\",\"i94_admission_number\":\"039622651A3\",\"last_entry_date\":\"2022-09-09\",\"status_at_last_entry\":\"UHP\",\"current_immigration_status\":\"UHP\",\"filing_path\":\"initial\",\"wants_ead\":true,\"ead_category\":\"c19\",\"us_address_street\":\"4341 Willow Brook Ave 111\",\"us_address_city\":\"Los Angeles\",\"us_address_state\":\"CA\",\"us_address_zip\":\"90029\",\"mailing_same_as_physical\":true,\"daytime_phone\":\"2135550199\",\"email\":\"sergii.qa+matrix-initial_online_ead_yes__ru__mobile__normal@messenginfo.test"
-}

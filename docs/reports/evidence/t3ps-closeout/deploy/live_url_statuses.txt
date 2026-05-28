@@ -1,4 +1,0 @@
-403 /ru/services/tps-ukraine/start
-403 /ru/services/tps-ukraine
-403 /ru/services/tps-ukraine/sources
-200 /api/tps/health

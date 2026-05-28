@@ -1,3 +1,0 @@
-200 https://messenginfo.com/ru/services/tps-ukraine/start
-200 https://messenginfo.com/ru/services/tps-ukraine
-200 https://messenginfo.com/ru/services/tps-ukraine/sources

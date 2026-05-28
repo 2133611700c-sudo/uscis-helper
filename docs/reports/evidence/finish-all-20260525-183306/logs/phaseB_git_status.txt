@@ -1,5 +1,0 @@
-?? apps/web/test-results/
-?? docs/reports/evidence/finish-all-20260525-183306/
-?? reports/booklet-stability-20260525-182233/
-?? reports/booklet-synthetic-multisample-20260525-182417.csv
-?? reports/booklet-synthetic-multisample-20260525-182452.csv
