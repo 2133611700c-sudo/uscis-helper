@@ -1,3 +1,24 @@
+# HANDOFF — Session 45 (2026-05-27)
+
+## Session 45 — 4-product audit + Translation UI unified with TPS
+
+### Audited (file:line evidence in `docs/reports/SYSTEM_AUDIT_4_PRODUCTS.md`)
+- **TPS Ukraine** — 6-step wizard, generates I-821+I-765+I-912 via pdf-lib. **Working.**
+- **ReParole U4U** — 5-step wizard, generates I-131. **Working.**
+- **EAD work-permit** — 7-step wizard, **outputs only an HTML preparation worksheet, no filled I-765 PDF.** Owner's "0" confirmed. To fix parity: add `lib/ead/i765FieldMap.ts` (or reuse TPS map) + `api/ead/generate-packet/route.ts`. ~1-2 days. Awaiting owner priority.
+- **Translation** — wizard generates PDF, but review fields use mock-hardcoded Shevchenko/1814 and `/api/translation/generate-pdf` has no payment verification (separate `TRANSLATION_ENGINE_REALITY.md` finding). Needs D2.
+
+### Built
+- `TranslateWizard.tsx` CSS unified with TPS design tokens. Identical brand green via `var(--accent, #0d5a34)`, identical typography hierarchy (28/20/17), WCAG 2.5.5 tap targets (44-48px) everywhere, visible focus outlines (3px + 2px offset), thicker prominence borders (2.5px), wider readable container (760px). Tuned for 30-80yo: 17px body, 13-14px secondary text (no 11-12px micro-print), 24×24px checkboxes, larger icons.
+- Pure CSS change. No JSX/logic touched. 2128 pass + 1 skip, 0 type errors, drift gate + content guards green.
+
+### Open (owner decisions / next iteration)
+1. **D2** — gate the mock translate-document page (mock data + ungated PDF endpoint). Pretty styling on a mock-data path is worse liability, not better.
+2. **EAD I-765 PDF generation** — bring EAD to parity with TPS/ReParole.
+3. **Wire docintel `readDocument()` into translation flow** — replace mock review fields with real OCR (the spine is ready; the wiring is the missing link).
+
+---
+
 # HANDOFF — Session 44 (2026-05-27)
 
 ## Session 44 — Document Intelligence Layer (permanent shared spine)
