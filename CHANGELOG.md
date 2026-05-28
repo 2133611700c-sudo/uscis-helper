@@ -3,6 +3,18 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 40: Phase 0 — single readinessPolicy (kills 3 conflicting required-field gates)
+
+- **New `lib/tps/readinessPolicy.ts`**: one source of truth for required fields per stage (merge / generate / mail), with per-field stage tags, `recommendedAt`, and conditionals (ead_category only if wants_ead). Root cause it fixes: `centralBrain.REQUIRED_FOR_GENERATE`, `answers.isMinimallyComplete`, and `mailReadyGate.REQUIRED_FIELDS` had three different lists → the generate/review button "appeared and disappeared" unpredictably (documented in DOCUMENT_RULE_COVERAGE_AUDIT.md §4.A).
+- **`centralBrain.ts`**: `REQUIRED_FOR_GENERATE` now derived from `requiredFieldKeys('merge')`. Literal removed.
+- **`mailReadyGate.ts`**: `REQUIRED_FIELDS`/`RECOMMENDED_FIELDS` derived from policy ('mail' stage). part7_reviewed keeps its dedicated i18n blocker.
+- **`answers.ts`**: `isMinimallyComplete` iterates `requiredRules('generate', a)`; `v !== false` preserves part7_reviewed boolean semantics.
+- **Behavior preserved byte-for-byte** — each stage reproduces the exact historical field set. KNOWN INCONSISTENCIES (status_at_last_entry [KI-1], passport_country_of_issuance [KI-2]) documented in-file, NOT changed (owner decision pending).
+- **`readinessPolicy.test.ts`**: +7 anti-drift tests pinning behavior. 2108/2108 pass, 0 type errors.
+- Part of OCR stabilization plan: see `docs/reports/EXECUTION_PLAN_OCR_STABILIZATION.md`. Phase 1 (Gemini vision arbiter) not started — needs API key + multi-person fixtures.
+
+---
+
 ## 2026-05-27 — Session 39N: fix: crossref OCR quality — Prostianets→Trostianets, reject short patronymic
 
 - **`dualOcrCrossref.ts`**: Added HANDWRITING CONFUSION RULES to DeepSeek prompt: Т/П letter confusion + specific known correction (Простянець→Тростянець). Added PATRONYMIC COMPLETENESS RULE: a valid Ukrainian patronymic is ≥8 chars; OCR suffix fragments like "Yovych" (6 chars) must return null, not be shown as a real value.

@@ -11,6 +11,7 @@
 
 import type { TPSAnswers } from './answers'
 import { checkTranslationCompleteness, type TPSDocumentType } from './translationBridge'
+import { requiredFieldsWithLabels, recommendedFieldsWithLabels } from './readinessPolicy'
 
 export interface GateResult {
   mail_ready: boolean
@@ -30,39 +31,16 @@ export interface GateWarning {
   user_message: { en: string; ru: string; uk: string }
 }
 
-// Fields that MUST be filled for I-765 + I-821 mail filing
-const REQUIRED_FIELDS: Array<{ key: keyof TPSAnswers; label: string }> = [
-  { key: 'family_name', label: 'Last Name' },
-  { key: 'given_name', label: 'First Name' },
-  { key: 'dob', label: 'Date of Birth' },
-  { key: 'sex', label: 'Sex' },
-  { key: 'country_of_birth', label: 'Country of Birth' },
-  { key: 'country_of_nationality', label: 'Country of Nationality' },
-  { key: 'passport_number', label: 'Passport Number' },
-  { key: 'passport_expiration_date', label: 'Passport Expiration Date' },
-  { key: 'us_address_street', label: 'US Address (Street)' },
-  { key: 'us_address_city', label: 'US Address (City)' },
-  { key: 'us_address_state', label: 'US Address (State)' },
-  { key: 'us_address_zip', label: 'US Address (ZIP)' },
-  { key: 'daytime_phone', label: 'Phone Number' },
-  { key: 'email', label: 'Email' },
-  { key: 'last_entry_date', label: 'Last Entry Date' },
-  { key: 'filing_path', label: 'Filing Type' },
-  // P2 FIX (2026-05-24): marital_status was missing from gate → blank
-  // checkboxes on I-821 Part 2 Item 17 → guaranteed USCIS RFE.
-  { key: 'marital_status', label: 'Marital Status' },
-]
+// Fields that MUST be filled for I-765 + I-821 mail filing — derived from the
+// single readinessPolicy ('mail' stage). part7_reviewed is also mail-required
+// in the policy but keeps its own dedicated blocker block below (custom i18n
+// message), so it is excluded from this generic loop to avoid a duplicate.
+const REQUIRED_FIELDS: Array<{ key: keyof TPSAnswers; label: string }> =
+  requiredFieldsWithLabels('mail').filter((f) => f.key !== 'part7_reviewed')
 
-// Fields that are important but not absolute blockers
-const RECOMMENDED_FIELDS: Array<{ key: keyof TPSAnswers; label: string }> = [
-  { key: 'middle_name', label: 'Patronymic / Middle Name' },
-  { key: 'a_number', label: 'A-Number' },
-  { key: 'i94_admission_number', label: 'I-94 Number' },
-  { key: 'city_of_birth', label: 'City of Birth' },
-  { key: 'province_of_birth', label: 'Province of Birth' },
-  { key: 'status_at_last_entry', label: 'Status at Last Entry' },
-  { key: 'ssn', label: 'SSN' },
-]
+// Fields that are important but not absolute blockers — from the same policy.
+const RECOMMENDED_FIELDS: Array<{ key: keyof TPSAnswers; label: string }> =
+  recommendedFieldsWithLabels('mail')
 
 /**
  * Run the mail-ready gate. Call this BEFORE generating the final ZIP.
