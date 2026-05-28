@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 46: P1 — translation payment gate (Severity-1 liability fix)
+
+- **New `lib/stripe/verifyPayment.ts`** — single source of truth: `verifyStripeSessionPaid(checkoutId, {expectedService})` returns `{paid, correctService, reason}`. Used by `/api/translation/generate-pdf` (the route that previously hardcoded `payment_confirmed:true`).
+- **`/api/translation/generate-pdf`**: now gates on owner-bypass OR Stripe verification (`payment_status==='paid'` AND `metadata.service==='translation'`); returns **402** otherwise. The wizard previously sent only profile/signature without the Stripe session id; a direct POST or back-navigation would generate a free PDF + email.
+- **`TranslateWizard.tsx`**: captures `cs={CHECKOUT_SESSION_ID}` from Stripe's success_url, persists it in `sessionStorage`, and sends it as `X-Payment-Token` header (parity with TPS) plus `session_id` body fallback.
+- **8 unit tests** for the util (paid/unpaid/wrong-service/invalid-format/empty/py_*/no-expectedService/API error). 2136 pass + 1 skip, 0 type errors.
+
+---
+
 ## 2026-05-27 — Session 45 (self-audit correction)
 
 - **Critical self-check found two real errors in my own session-45 work**, fixed:

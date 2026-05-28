@@ -9,6 +9,12 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 46 (2026-05-27) — P1: translation payment gate (Severity-1 liability closed)
+
+- `VERIFIED(local)` New `lib/stripe/verifyPayment.ts` — single source of truth for "is this Stripe session paid for the expected service". Used by `/api/translation/generate-pdf` (was hardcoding `payment_confirmed:true`).
+- `VERIFIED(local)` `/api/translation/generate-pdf`: owner-bypass OR Stripe-verified `paid` + `metadata.service==='translation'`; 402 otherwise. `TranslateWizard.tsx` captures `cs` from Stripe success redirect, persists in sessionStorage, sends as `X-Payment-Token` header.
+- `VERIFIED(local)` 8 unit tests for the util (paid/unpaid/wrong-service/format/api-error/no-config). 2136 pass + 1 skip, 0 type errors. No drift.
+
 ## Session 45-corr (2026-05-27) — self-audit correction (no functional change)
 
 - Two real errors in session-45 documentation/comments fixed: (1) actual brand color is **`#10a37f`** (verified `globals.css:90,153`), not `#0d5a34` as I'd claimed — the unification is functionally correct, only the documented hex was wrong; (2) `MEMORY.md` typo "Prostionets" → "Prostianets". EAD=0 re-verified directly.

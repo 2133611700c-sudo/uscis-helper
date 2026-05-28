@@ -1,3 +1,13 @@
+# HANDOFF — Session 46 (2026-05-27)
+
+## Session 46 — P1 of critical-fixes plan: translation payment gate
+
+Closed Severity-1 liability where `/api/translation/generate-pdf` hardcoded `payment_confirmed:true` and never verified the Stripe session — direct POSTs (or back-navigation) generated a PDF + email without payment. Now: owner-bypass OR `verifyStripeSessionPaid` with `metadata.service==='translation'`; 402 otherwise. Wizard captures `cs={CHECKOUT_SESSION_ID}` from Stripe's success_url and sends it as `X-Payment-Token`. 8 new unit tests for the util.
+
+Plan tasks: #6 ✅ baseline, #7 ✅ P1, #8 next (EAD I-765), #9 (v5 spec), #10 (deferred — translation real-OCR wiring is a separate substantial refactor).
+
+---
+
 # HANDOFF — Session 45-corr (2026-05-27)
 
 ## Session 45-corr — self-audit corrections
