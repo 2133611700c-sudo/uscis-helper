@@ -10,6 +10,7 @@ Every work session appends here. Never delete entries. Newest first.
 - **Settlement-type fix**: live Gemini returned "с.м.т. Тростянець"; `stripSettlementPrefix` now yields the bare "Trostianets" for the form (raw Cyrillic preserved for translation's "urban-type settlement").
 - **Arch doc**: `docs/architecture/DOCUMENT_INTELLIGENCE_LAYER.md`.
 - **Verified**: 2126 pass + 1 skip, 0 type errors, drift gate green. LIVE end-to-end through the spine on owner booklet correct on all 6 fields. Other doc types declared + mock-tested; need real fixtures + PAID tier before prod. Vision stays behind flag OFF.
+- **Coverage guard** (rule auditor): `docintel.test.ts` now fails CI if any registry field's `kind` is not handled by `transliterationPolicy` — locks the spine against fragmentation drift. 2128 pass + 1 skip.
 
 ---
 
