@@ -9,6 +9,12 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 47 (2026-05-28) — P2: real OCR in translation wizard (no more Shevchenko mock)
+
+- `VERIFIED(local)` New `/api/translation/vision-extract` — accepts uploaded image, runs through `docintel.readDocument` (Gemini vision + KMU-55), returns canonical extracted fields. Rate-limited 8/min/IP. Owner-set GEMINI_API_KEY required for prod (PAID tier per v5 §30 + memory `provider-routing-policy`).
+- `VERIFIED(local)` `TranslateWizard.tsx`: `handleUpload` now actually captures the file. `handlePickDocType` for booklet POSTs the file to the new endpoint and renders the resulting fields. The hardcoded "SHEVCHENKO TARAS HRYHOROVYCH" name and the static `REVIEW_FIELDS` (Shevchenko/1814) are replaced by real KMU-55 values when extraction succeeds. Fields passed to `/api/translation/generate-pdf` so the PDF can render real data.
+- `VERIFIED(local)` 2147 pass + 1 skip, 0 type errors, **`pnpm build` success**, drift gate green.
+
 ## Session 46-corr (2026-05-27) — critical gap-fix on today's plan
 
 Self-audit found 8 gaps in earlier P1/P3 deliverables; closed 4 of them:
