@@ -648,22 +648,36 @@ export function TranslateWizard() {
     }
   }, [screen, selectedPlan, spanishCopy, profile, payForm])
 
-  // ── Handle return from Stripe checkout (?paid=1&plan=basic|plus|premium) ──
+  // Stripe checkout session id (cs_*) captured from the success redirect,
+  // sent later to /api/translation/generate-pdf as X-Payment-Token so the
+  // server can verify payment_status==='paid' before generating the PDF.
+  // Persisted in sessionStorage so an accidental refresh doesn't lose it.
+  const [stripeCheckoutId, setStripeCheckoutId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try { return sessionStorage.getItem('tw:stripeCheckoutId') } catch { return null }
+  })
+
+  // ── Handle return from Stripe checkout (?paid=1&plan=basic|plus|premium&cs=cs_…) ──
   useEffect(() => {
     const paid = searchParams?.get('paid')
     const planParam = searchParams?.get('plan') as Plan | null
+    const cs = searchParams?.get('cs') // Stripe checkout session id for server-side payment verification
     if (paid === '1') {
-      // Restore plan from URL param (Stripe success redirects here with ?paid=1&plan=X)
       if (planParam && ['basic', 'plus', 'premium'].includes(planParam)) {
         setSelectedPlan(planParam)
       }
-      // Advance to review screen (payment confirmed)
+      if (cs && /^(cs_|py_)/.test(cs)) {
+        setStripeCheckoutId(cs)
+        try { sessionStorage.setItem('tw:stripeCheckoutId', cs) } catch {}
+      }
+      // Advance to review screen (payment confirmed by Stripe — server will re-verify before PDF render)
       setScreen('review')
       // Clean up URL params without full reload
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href)
         url.searchParams.delete('paid')
         url.searchParams.delete('plan')
+        url.searchParams.delete('cs')
         window.history.replaceState({}, '', url.toString())
       }
     }
@@ -872,7 +886,12 @@ export function TranslateWizard() {
     try {
       const res = await fetch('/api/translation/generate-pdf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Stripe checkout session id (cs_*) for server-side payment verification.
+          // Server rejects (402) when missing or not paid — see /api/translation/generate-pdf.
+          ...(stripeCheckoutId ? { 'X-Payment-Token': stripeCheckoutId } : {}),
+        },
         body: JSON.stringify({
           profile,
           selectedPlan,
@@ -882,6 +901,7 @@ export function TranslateWizard() {
           signatureMethod: manualSig ? 'manual_wet_signature' : 'drawn_on_screen',
           signedAt: new Date().toISOString(),
           certificationTextVersion: 'self_cert_8cfr_v1',
+          session_id: stripeCheckoutId, // fallback for the server gate when header is stripped
         }),
       })
       if (res.ok) {
@@ -899,7 +919,7 @@ export function TranslateWizard() {
     } finally {
       setPdfLoading(false)
     }
-  }, [profile, selectedPlan, spanishCopy, locale, hasDrawn, manualSig, pdfLoading, goTo])
+  }, [profile, selectedPlan, spanishCopy, locale, hasDrawn, manualSig, pdfLoading, goTo, stripeCheckoutId])
 
   // ── Reset ──
   const handleReset = useCallback(() => {
