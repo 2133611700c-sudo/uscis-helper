@@ -1,7 +1,0 @@
-Doc	Filename	SHA256	MD5	MIME	Notes
-passport_main	qa-shots/private/Passport Sergii Kuropiatnyk .jpg	ec2de594c234f064cd9261a757a552bc8a26fb0d4db4d3e986dd688ff430641f	64337c4720dedf82d32e036eac7db7fc	image/jpeg	canonical international passport
-booklet_main	qa-shots/private/booklet_test_resized.jpg	07848f1582ed16767c6aa9b07ccf667bee58ad38075c6f3f0e7ab9905bc25dd7	7b4fd182cb22098c15eceda5d8857415	image/jpeg	canonical internal passport booklet
-i94_main	qa-shots/private/I94 Sergii Kuropiatnyk .jpg	34e921bc51c351ff61f64716179cc7cc7f5639d51755cb6a9ec0a3485f371490	949bfbf2a71e5627e39669e05d6bd226	image/jpeg	canonical I-94
-ead_main	qa-shots/private/Ead1.jpg	99426b52d5a94a5c397b8c2484330bb955715c37d9830723802537b68af6a8f2	210d8b0790e3f32d091e262008fa9b2e	image/jpeg	canonical EAD
-dl_main	qa-shots/private/DL.jpg	589919ce71ed8d99ef4487967bde29355f8b7fbb5dc03ac586c515dbb64ec785	ba3d32e933e302eaa5a070db1db89f0e	image/jpeg	canonical driver license
-i797_main	MISSING	MISSING	MISSING	MISSING	no local real i797 sample

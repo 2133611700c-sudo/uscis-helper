@@ -1,8 +1,0 @@
-Archive:  docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-downloads/tps-packet-1779602194928.zip
-  Length      Date    Time    Name
----------  ---------- -----   ----
-  1809724  05-24-2026 05:56   I-821.pdf
-   757498  05-24-2026 05:56   I-765.pdf
-    11113  05-24-2026 05:56   INSTRUCTION.txt
----------                     -------
-  2578335                     3 files

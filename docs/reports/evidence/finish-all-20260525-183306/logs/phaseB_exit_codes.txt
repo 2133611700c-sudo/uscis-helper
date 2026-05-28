@@ -1,2 +1,0 @@
-green_exit=0
-red_exit=1
