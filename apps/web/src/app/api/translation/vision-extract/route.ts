@@ -1,20 +1,30 @@
 /**
  * POST /api/translation/vision-extract
  *
- * Accepts a Ukrainian booklet image (multipart/form-data `file`).
- * Reads it via the docintel spine (Gemini vision → KMU-55 transliteration)
- * and returns the canonical extracted fields the translation wizard renders
- * on its review screen.
+ * Accepts ONE OR MORE Ukrainian document images (multipart/form-data
+ * with repeated `file` key — up to MAX_PAGES). Each page is run through
+ * the docintel spine (Gemini vision → KMU-55 transliteration); resulting
+ * fields are merged across pages preferring the earliest non-empty value
+ * for each field name. The translation wizard renders the merged set on
+ * its review screen.
+ *
+ * Multi-page rationale: a Ukrainian internal-passport booklet has at least
+ * an identity page + a registration/photo page; a birth certificate may be
+ * a single double-sided sheet; users may upload front + back as separate
+ * photos. The OCR call accepts them all in one request so the user is not
+ * forced to pre-merge images.
  *
  * This is the REAL replacement for the wizard's previous fake-detection
  * animation that hardcoded "SHEVCHENKO TARAS HRYHOROVYCH". The user now sees
- * fields actually read from their own document.
+ * fields actually read from their own document(s).
  *
  * Privacy: free Gemini tier trains on data. Callers must use PAID Gemini for
  * real client PII — server reads GEMINI_API_KEY from env; production must set
  * the paid-tier key. v5 §30.
  *
- * Rate-limited (8/min/IP) — vision calls are paid; protect against abuse.
+ * Rate-limited (8 requests/min/IP — each request may span up to MAX_PAGES
+ * pages, so cost is bounded). Backward compatible: a single `file` request
+ * still works exactly as before.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -24,7 +34,18 @@ import { readDocument } from '@/lib/docintel/documentFieldReader'
 export const dynamic = 'force-dynamic'
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
-const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
+const MAX_BYTES = 10 * 1024 * 1024 // 10 MB per page
+const MAX_PAGES = 6                  // hard cap matching the wizard
+
+type FieldOut = {
+  field: string
+  value: string | null
+  raw_cyrillic: string | null
+  confidence: number
+  review_required: boolean
+  kind: string
+  source_page?: number
+}
 
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req)
@@ -40,50 +61,89 @@ export async function POST(req: NextRequest) {
   try {
     form = await req.formData()
   } catch {
-    return NextResponse.json({ ok: false, error: 'Expected multipart/form-data with "file".' }, { status: 400 })
+    return NextResponse.json({ ok: false, error: 'Expected multipart/form-data with one or more "file" entries.' }, { status: 400 })
   }
 
-  const file = form.get('file')
   const docTypeId = (form.get('docTypeId') as string | null) ?? 'ua_internal_passport_booklet'
 
-  if (!file || typeof file === 'string') {
+  // Collect all `file` entries (repeated key supports multi-page upload).
+  const rawFiles = form.getAll('file').filter((v) => v && typeof v !== 'string') as File[]
+  if (rawFiles.length === 0) {
     return NextResponse.json({ ok: false, error: 'Missing "file" field.' }, { status: 400 })
   }
-  const mime = file.type || 'image/jpeg'
-  if (!ALLOWED_MIME.has(mime)) {
-    return NextResponse.json({ ok: false, error: `Unsupported image type: ${mime}. Use JPEG, PNG, or WebP.` }, { status: 415 })
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ ok: false, error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB. Maximum 10 MB.` }, { status: 413 })
-  }
-
-  const buffer = Buffer.from(await file.arrayBuffer())
-
-  try {
-    const result = await readDocument(buffer, mime, docTypeId, { timeoutMs: 15_000 })
-    return NextResponse.json({
-      ok: result.ok,
-      doc_type_id: result.doc_type_id,
-      fields: result.fields.map((f) => ({
-        field: f.field,
-        value: f.value,
-        raw_cyrillic: f.raw_cyrillic,
-        confidence: f.confidence,
-        review_required: f.review_required,
-        kind: f.kind,
-      })),
-      anchor_read: result.anchor_read,
-      provider: result.provider,
-      model: result.model,
-      ms: result.ms,
-      status: result.status,
-      ...(result.error ? { error: result.error } : {}),
-    }, { status: result.ok ? 200 : 502 })
-  } catch (e: any) {
-    console.error('[translation/vision-extract]', e?.message ?? e)
+  if (rawFiles.length > MAX_PAGES) {
     return NextResponse.json(
-      { ok: false, error: 'Vision extraction failed', detail: e?.message ?? 'unknown' },
-      { status: 500 },
+      { ok: false, error: `Too many pages: ${rawFiles.length}. Max ${MAX_PAGES}.` },
+      { status: 413 },
     )
   }
+  // Validate every page before spending any vision budget.
+  for (const file of rawFiles) {
+    const mime = file.type || 'image/jpeg'
+    if (!ALLOWED_MIME.has(mime)) {
+      return NextResponse.json(
+        { ok: false, error: `Unsupported image type: ${mime}. Use JPEG, PNG, or WebP.` },
+        { status: 415 },
+      )
+    }
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json(
+        { ok: false, error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB. Max 10 MB per page.` },
+        { status: 413 },
+      )
+    }
+  }
+
+  // Run all pages sequentially (Gemini free tier rate-limits parallel calls
+  // hard; sequential is more reliable + simpler to reason about for a 1-6
+  // page job). Merge field-by-field, keeping the earliest non-empty value.
+  const merged = new Map<string, FieldOut>()
+  const pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; provider?: string; error?: string }> = []
+  let lastResult: Awaited<ReturnType<typeof readDocument>> | null = null
+
+  for (let i = 0; i < rawFiles.length; i++) {
+    const file = rawFiles[i]
+    const mime = file.type || 'image/jpeg'
+    const buffer = Buffer.from(await file.arrayBuffer())
+    try {
+      const r = await readDocument(buffer, mime, docTypeId, { timeoutMs: 15_000 })
+      lastResult = r
+      pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
+      if (r.ok && Array.isArray(r.fields)) {
+        for (const f of r.fields) {
+          const existing = merged.get(f.field)
+          // Keep the earliest non-empty value. If existing entry has no
+          // value but this page does, upgrade it.
+          if (!existing) {
+            merged.set(f.field, { ...f, source_page: i + 1 })
+          } else if (!existing.value && f.value) {
+            merged.set(f.field, { ...f, source_page: i + 1 })
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error('[translation/vision-extract page', i + 1, ']', e?.message ?? e)
+      pageResults.push({ page: i + 1, ok: false, status: 'error', ms: 0, error: e?.message ?? 'unknown' })
+    }
+  }
+
+  // Any field at all? Then the request is considered ok even if some pages
+  // failed (e.g. user uploaded one good page + one blurry one).
+  const fields = Array.from(merged.values())
+  const ok = fields.length > 0
+
+  return NextResponse.json({
+    ok,
+    doc_type_id: docTypeId,
+    fields,
+    pages: pageResults,
+    page_count: rawFiles.length,
+    // Backward compat: keep the single-call shape too for legacy clients.
+    anchor_read: lastResult?.anchor_read ?? null,
+    provider: lastResult?.provider ?? null,
+    model: lastResult?.model ?? null,
+    ms: pageResults.reduce((s, p) => s + p.ms, 0),
+    status: ok ? 'ok' : (lastResult?.status ?? 'no_fields'),
+    ...(ok ? {} : { error: lastResult?.error ?? 'No fields extracted across all pages.' }),
+  }, { status: ok ? 200 : 502 })
 }

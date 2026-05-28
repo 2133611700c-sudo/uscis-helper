@@ -3,6 +3,44 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 50: Wizard — edit-button + multi-page + contrast fix
+
+Owner reported 4 specific defects after Session 49's TPS-restyle: «English» leaking per-row, no way to correct OCR errors, bad contrast, single-page only. Plan → brick-by-brick TPS comparison → root-cause for each → applied minimal fixes.
+
+**Root causes identified:**
+| # | Bug | Cause |
+|---|---|---|
+| 1 | «English» leaked to every Сергій row | `<div>English</div>` hardcoded per row in right cell — column header duplicated as per-row label |
+| 2 | No edit on OCR errors | Review rendered read-only; no `onEdit` callback or `<button>` in row |
+| 3 | Bad contrast on translated cell | `.tw-trans-cell.translated` had green text (`#10a37f`) on green bg (`#e6f4ed`) = 2.5:1 (WCAG fail) |
+| 4 | Single-page only | `image: File \| null` single state; `<input type="file">` without `multiple` attribute |
+
+**Files changed:**
+- `apps/web/src/components/services/translation/TranslateWizard.tsx`
+  - Review row → TPS RW pattern: ONE label per row, two values (🇺🇦 Cyrillic / 🇺🇸 English) stacked on white card, dark text, Edit button on right. No more side-by-side cells with duplicate column labels.
+  - `handleEditField(key, label, current)` callback: `window.prompt()` exactly like TPSWizardV2 line 3052. Sets `kind:'user_corrected'`; corrected row gets green «Исправлено» badge.
+  - State: `uploadedFile/previewUrl` → `uploadedFiles/previewUrls` (File[] / string[]). `MAX_PAGES = 6`.
+  - Upload screen: 2-col thumbnail grid with × remove buttons; «➕ Добавить ещё страницу» button; count-aware primary CTA («Распознать 3 стр. →»).
+  - `<input multiple>` on file pickers; drop-zone accepts multiple.
+  - New CSS: `.tw-page-grid`, `.tw-page-tile`, `.tw-page-no`, `.tw-page-remove`; rewrote `.tw-trans-row` to TPS RW shape.
+  - Removed: `.tw-trans-cell`, `.tw-trans-cell.translated`, `.tw-trans-header`, `.tw-trans-col-label`, `.tw-col-orig`, `.tw-col-trans` (the side-by-side that caused both the label leak and the contrast bug).
+  - New i18n keys (RU + EN): `s5_edit`, `s5_edit_aria`, `s5_corrected`, `s3_add_more`, `s3_max_pages`, `s3_page_n`, `s3_remove_aria`, `s3_cta_n`.
+- `apps/web/src/app/api/translation/vision-extract/route.ts`
+  - Accepts repeated `file` keys (1..6). Validates ALL pages before any vision call (returns 415/413 cleanly). Runs them sequentially through `docintel.readDocument`; merges fields per name preferring earliest non-empty (page 1 wins for booklets). Returns `pages: [{page, ok, ms, provider, ...}]` per-page diagnostics + `page_count`. Backward compatible: single `file` requests still work.
+
+**Evidence:**
+- `pnpm --filter web typecheck`: 0 errors
+- `pnpm --filter web run test`: 2124 pass + 1 skip
+- `pnpm --filter web build`: SUCCESS, 193 pages
+
+**Why each fix matters:**
+- Edit button → user no longer locked into OCR mistakes; the legal cert reflects user-verified data, not raw OCR (correctness + liability win).
+- Contrast → readable for 30-80yo target users on every device (WCAG AA, AAA on dark-on-white pairs).
+- Multi-page → booklet upload is now realistic (identity page + photo page + registration). Birth/marriage cert front+back works. Owner can later add doc-type-specific page templates without re-architecting.
+- No more «English» label leak → cleaner reading flow in any locale.
+
+---
+
 ## 2026-05-28 — Session 49: Translation wizard restyled 1:1 to TPS design system
 
 Owner asked for unified visual language across products — "сравни с TPS и сделай в таком же стиле один в 1". Session 48 had shipped the prototype's *structure* (7 screens, doc tiles, side-by-side review) on a dark-navy/gold theme; this session flips the *visual language* to TPS-identical while keeping every screen, button, and flow intact.
