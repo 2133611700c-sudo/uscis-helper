@@ -5,9 +5,16 @@
 - `VERIFIED` All 34 uscis-helper tables have explicit GRANT to anon+authenticated
 - `VERIFIED` All 31 Handy & Friend tables have RLS policies (was: 12 with 0 policies)
 ATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-28 — Mobile/desktop parity audit + 3 fixes
+**Updated:** 2026-05-28 — Strip 🇺🇸/🇺🇦 from review rows (Windows + a11y safeguard)
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2124/2124 unit pass + 1 skip. 0 type errors.
+
+## Session 52 (2026-05-28) — Strip flag emojis from review row (Windows + a11y)
+
+- `VERIFIED(local)` Removed 🇺🇸/🇺🇦 prefixes from per-row values. On Windows the US/UA regional-indicator pairs do not render as flags — they show the letter pairs, and some translate extensions surface those as the literal word «English» in the user's reading. Stripping the icons removes ANY possible reading of «English» on the review row.
+- `VERIFIED(local)` Visual hierarchy strengthened (no icons needed): original = 15px italic muted; ↓ arrow with aria-hidden; translation = 19px weight 800 dark.
+- `VERIFIED(local)` Dead i18n keys `s5_col_orig`/`s5_col_trans` removed (declared but never referenced after Session 50).
+- `VERIFIED(local)` 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS.
 
 ## Session 51 (2026-05-28) — Mobile/desktop parity audit + fixes
 
