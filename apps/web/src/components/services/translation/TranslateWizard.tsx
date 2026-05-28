@@ -616,10 +616,46 @@ export function TranslateWizard() {
   const [manualSig, setManualSig] = useState(false)
   const [hasDrawn, setHasDrawn] = useState(false)
   const [reviewFields, setReviewFields] = useState(REVIEW_FIELDS.map(f => ({ ...f, editVal: f.val, editing: false })))
+
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   // Detection animation state
   const [detectStep, setDetectStep] = useState(0) // 0=loading, 1=doctype, 2=lang, 3=quality
+  // Real-OCR (P2): the file the user actually uploaded + extraction result.
+  // Replaces the previous mock animation that hardcoded "SHEVCHENKO TARAS HRYHOROVYCH".
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [extractionError, setExtractionError] = useState<string | null>(null)
+  // Real fields extracted from the uploaded image via /api/translation/vision-extract
+  // (docintel.readDocument → Gemini vision → KMU-55). Empty until extraction completes.
+  const [extractedFields, setExtractedFields] = useState<Array<{
+    field: string; value: string | null; raw_cyrillic: string | null; confidence: number; kind: string
+  }>>([])
+
+  // When real extraction completes, REPLACE the mock review fields with the
+  // user's actual data. Mapping covers the booklet identity scope; fields the
+  // booklet doesn't carry (act number, father/mother — birth-cert only) are
+  // dropped rather than left as Shevchenko-1814 placeholders.
+  useEffect(() => {
+    if (!extractedFields || extractedFields.length === 0) return
+    const KEY_BY_FIELD: Record<string, string> = {
+      family_name: 'r.surname',
+      given_name: 'r.name',
+      middle_name: 'r.patr',
+      dob: 'r.dob',
+      city_of_birth: 'r.pob',
+      province_of_birth: 'r.pob',
+    }
+    const mapped = extractedFields
+      .filter((f) => f.value && KEY_BY_FIELD[f.field])
+      .map((f) => ({
+        labelKey: KEY_BY_FIELD[f.field],
+        orig: f.raw_cyrillic ?? '',
+        val: f.value ?? '',
+        editVal: f.value ?? '',
+        editing: false,
+      }))
+    if (mapped.length > 0) setReviewFields(mapped)
+  }, [extractedFields])
 
   // ── Restore draft on mount ──
   useEffect(() => {
@@ -716,36 +752,78 @@ export function TranslateWizard() {
   // Production truth: only ua_internal_passport_booklet may auto-PDF.
   // We don't pretend to auto-detect — we ask the user to declare what they
   // uploaded so non-passport documents go to manual review BEFORE payment.
-  const handleUpload = useCallback(() => {
+  // Capture the file the user actually picked. We don't run OCR yet — first we
+  // ask them to declare the doc type (so non-booklet uploads route to manual
+  // review BEFORE we spend a vision call on them).
+  const handleUpload = useCallback((e?: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e?.target?.files?.[0]
+    if (file) setUploadedFile(file)
+    setExtractionError(null)
+    setExtractedFields([])
     setDocTypeChoice(null)
     setDetectStep(0)
     goTo('doctype-picker')
   }, [goTo])
 
-  // ── Doctype picker → either detect+payment or manual-review-info ──
-  const handlePickDocType = useCallback((choice: DocTypeChoice) => {
+  // ── Doctype picker → either REAL vision extraction (booklet) or manual-review ──
+  const handlePickDocType = useCallback(async (choice: DocTypeChoice) => {
     setDocTypeChoice(choice)
     if (choice !== 'ua_internal_passport_booklet') {
       // Anything other than the passport booklet routes to manual review.
-      // No Stripe checkout, no instant-PDF promise.
       goTo('manual-review-info')
       return
     }
-    // Passport booklet → existing self-review/payment path.
+    if (!uploadedFile) {
+      // No file captured — send the user back to upload (defensive).
+      goTo('upload')
+      return
+    }
     setDetectStep(0)
+    setExtractionError(null)
     goTo('detect')
-    // Animate detection cards one by one: doctype → lang → quality → name
-    setTimeout(() => setDetectStep(1), 700)
-    setTimeout(() => setDetectStep(2), 1300)
-    setTimeout(() => setDetectStep(3), 1900)
-    setTimeout(() => {
+    // Run REAL vision extraction via docintel (Gemini → KMU-55). Replaces the
+    // prior fake setTimeout animation that hardcoded "SHEVCHENKO TARAS HRYHOROVYCH".
+    try {
+      // Tick the animation steps while the network call is in flight so the
+      // user sees progress instead of a frozen screen.
+      const t1 = setTimeout(() => setDetectStep(1), 600)
+      const t2 = setTimeout(() => setDetectStep(2), 1400)
+      const t3 = setTimeout(() => setDetectStep(3), 2200)
+      const form = new FormData()
+      form.append('file', uploadedFile)
+      form.append('docTypeId', 'ua_internal_passport_booklet')
+      const res = await fetch('/api/translation/vision-extract', { method: 'POST', body: form })
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3)
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        setExtractionError(json?.error ?? `Vision extraction failed (HTTP ${res.status})`)
+        setDetectStep(4)
+        // Fall through to the existing payment screen — user can still
+        // proceed (review screen will show the empty extraction warning),
+        // OR step back to upload if they prefer.
+        setTimeout(() => goTo('payment'), 1200)
+        return
+      }
+      const fields = Array.isArray(json.fields) ? json.fields : []
+      setExtractedFields(fields)
+      // Surface the family/given name as the default profile name (kept short:
+      // surname + first given). Real Latin values from KMU-55.
+      const surname = fields.find((f: { field: string; value: string | null }) => f.field === 'family_name')?.value ?? ''
+      const given = fields.find((f: { field: string; value: string | null }) => f.field === 'given_name')?.value ?? ''
+      const composed = [given, surname].filter(Boolean).join(' ').toUpperCase()
+      if (composed) {
+        setExtractedName(composed)
+        setPayForm((f) => ({ ...f, name: composed }))
+      }
       setDetectStep(4)
-      const extracted = 'SHEVCHENKO TARAS HRYHOROVYCH'
-      setExtractedName(extracted)
-      setPayForm(f => ({ ...f, name: extracted }))
-    }, 2500)
-    setTimeout(() => goTo('payment'), 3500)
-  }, [goTo])
+      setTimeout(() => goTo('payment'), 700)
+    } catch (e: unknown) {
+      console.error('[TranslateWizard vision-extract]', e)
+      setExtractionError(e instanceof Error ? e.message : 'Network error')
+      setDetectStep(4)
+      setTimeout(() => goTo('payment'), 1200)
+    }
+  }, [goTo, uploadedFile])
 
   // ── Plan select ──
   const handleSelectPlan = useCallback((p: Plan) => {
@@ -902,6 +980,25 @@ export function TranslateWizard() {
           signedAt: new Date().toISOString(),
           certificationTextVersion: 'self_cert_8cfr_v1',
           session_id: stripeCheckoutId, // fallback for the server gate when header is stripped
+          // P2: pass REAL extracted fields (from /api/translation/vision-extract via
+          // docintel + KMU-55) into the PDF generator instead of nothing. Adapter
+          // shape kept loose — generate-pdf normalises before rendering.
+          doc_type: 'ua_internal_passport_booklet',
+          scope_title: 'English Translation of Ukrainian Internal Passport',
+          fields: (extractedFields ?? [])
+            .filter((f) => f.value)
+            .map((f) => ({
+              field: f.field,
+              raw_value: f.raw_cyrillic ?? '',
+              normalized_value: f.value ?? '',
+              source_label: f.raw_cyrillic ?? '',
+              source_zone: 'identity_page',
+              language_layer: 'cyrillic',
+              confidence: f.confidence,
+              review_required: true,
+              passes: ['gemini_vision_read'],
+              ocr_ids: [],
+            })),
         }),
       })
       if (res.ok) {
@@ -919,7 +1016,7 @@ export function TranslateWizard() {
     } finally {
       setPdfLoading(false)
     }
-  }, [profile, selectedPlan, spanishCopy, locale, hasDrawn, manualSig, pdfLoading, goTo, stripeCheckoutId])
+  }, [profile, selectedPlan, spanishCopy, locale, hasDrawn, manualSig, pdfLoading, goTo, stripeCheckoutId, extractedFields])
 
   // ── Reset ──
   const handleReset = useCallback(() => {
