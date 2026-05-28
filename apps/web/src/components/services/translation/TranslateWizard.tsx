@@ -102,9 +102,14 @@ const T = {
     s3_drop_sub: 'Принимаем: JPG, PNG\nМакс. размер: 10 МБ',
     s3_camera: '📷 Сфотографировать',
     s3_file: '📂 Выбрать файл',
+    s3_add_more: '➕ Добавить ещё страницу',
+    s3_max_pages: 'Можно загрузить до 6 страниц.',
+    s3_page_n: 'Страница',
+    s3_remove_aria: 'Удалить страницу',
     s3_tip_t: 'Советы для хорошего фото:',
-    s3_tip_b: 'снимайте при дневном свете, держите телефон ровно, все буквы должны быть чёткими.',
+    s3_tip_b: 'снимайте при дневном свете, держите телефон ровно, все буквы должны быть чёткими. Книжку загружайте обеими развёрнутыми страницами или сделайте отдельные фото.',
     s3_cta: 'Распознать документ →',
+    s3_cta_n: 'Распознать %COUNT% стр. →',
     // Screen 4 — Processing
     s4_title_1: 'AI читает', s4_title_2: 'ваш документ...',
     s4_subtitle: 'Пожалуйста, подождите. Это займёт несколько секунд.',
@@ -117,9 +122,12 @@ const T = {
     ],
     // Screen 5 — Preview
     s5_title: 'Перевод готов!',
-    s5_subtitle: 'Проверьте данные. Если всё верно — оплатите и скачайте PDF.',
+    s5_subtitle: 'Проверьте данные. Если что-то неправильно — нажмите «Изменить» и поправьте. Затем оплатите и скачайте PDF.',
     s5_col_orig: '🇺🇦 Оригинал',
     s5_col_trans: '🇺🇸 Перевод',
+    s5_edit: '✏️ Изменить',
+    s5_edit_aria: 'Изменить значение',
+    s5_corrected: 'Исправлено',
     s5_mismatch: 'Данные не совпадают?',
     s5_reupload: 'Загрузить другое фото',
     s5_sample_badge: '📄 ОБРАЗЕЦ ПЕРЕВОДА',
@@ -200,9 +208,14 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s3_drop_sub: 'Accepts: JPG, PNG\nMax size: 10 MB',
     s3_camera: '📷 Take a photo',
     s3_file: '📂 Choose file',
+    s3_add_more: '➕ Add another page',
+    s3_max_pages: 'Up to 6 pages.',
+    s3_page_n: 'Page',
+    s3_remove_aria: 'Remove page',
     s3_tip_t: 'Tips for a good photo:',
-    s3_tip_b: 'shoot in daylight, hold the phone level, every letter must be sharp.',
+    s3_tip_b: 'shoot in daylight, hold the phone level, every letter must be sharp. For a booklet, photograph both open pages together or upload separate photos for each side.',
     s3_cta: 'Recognize document →',
+    s3_cta_n: 'Recognize %COUNT% pages →',
     s4_title_1: 'AI is reading', s4_title_2: 'your document…',
     s4_subtitle: 'Please wait. This takes a few seconds.',
     s4_steps: [
@@ -213,9 +226,12 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
       'Building certificate',
     ],
     s5_title: 'Translation ready!',
-    s5_subtitle: 'Review the data. If everything is correct, pay and download the PDF.',
+    s5_subtitle: 'Review the data. If anything is wrong, tap «Edit» and fix it. Then pay and download the PDF.',
     s5_col_orig: '🇺🇦 Original',
     s5_col_trans: '🇺🇸 Translation',
+    s5_edit: '✏️ Edit',
+    s5_edit_aria: 'Edit value',
+    s5_corrected: 'Edited',
     s5_mismatch: 'Data does not match?',
     s5_reupload: 'Upload a different photo',
     s5_sample_badge: '📄 SAMPLE TRANSLATION',
@@ -463,6 +479,39 @@ const WIZARD_CSS = `
 
 .tw-preview-img { width: 100%; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px; max-height: 280px; object-fit: cover; display: block; }
 
+/* Multi-page preview grid (Screen 3): each page as a thumbnail tile with
+   page-number badge and remove button. Sized for 2 thumbs/row on mobile. */
+.tw-page-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-bottom: 12px;
+}
+.tw-page-tile {
+  position: relative; border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--border); background: var(--card);
+  box-shadow: var(--shadow);
+}
+.tw-page-tile img {
+  width: 100%; height: 150px; object-fit: cover; display: block;
+}
+.tw-page-no {
+  position: absolute; bottom: 6px; left: 6px;
+  background: var(--card); color: var(--text);
+  font-size: 12px; font-weight: 700;
+  padding: 3px 8px; border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.tw-page-remove {
+  position: absolute; top: 6px; right: 6px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(0,0,0,0.55); color: #fff;
+  border: none; cursor: pointer;
+  font-size: 18px; font-weight: 700; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+.tw-page-remove:hover { background: rgba(0,0,0,0.75); }
+.tw-page-remove:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
 /* Primary button — TPS navBtn(forward): green, 18px, 800 weight, 48px tap */
 .tw-btn-primary {
   display: block; width: 100%;
@@ -530,24 +579,56 @@ const WIZARD_CSS = `
   flex-shrink: 0; margin-left: 5px;
 }
 
-/* Translation table — TPS-style review row layout, light cards */
-.tw-trans-header { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-.tw-trans-col-label {
-  font-size: 12px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
-  padding: 8px 14px; border-radius: 10px; text-align: center;
-}
-.tw-col-orig { background: var(--info-bg); color: var(--info-tx); border: 1px solid var(--info-bd); }
-.tw-col-trans { background: var(--acc-l); color: var(--acc); border: 1px solid var(--acc); }
-.tw-trans-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; animation: tw-fadeUp 0.3s ease forwards; opacity: 0; }
-.tw-trans-cell {
+/* Review rows — TPS RW pattern 1:1 (single label per row + stacked values
+   on white card, dark text, Edit button on right). No green-on-green
+   tinting that hurt contrast in the previous layout. */
+.tw-trans-row {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px; padding: 12px 14px;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  animation: tw-fadeUp 0.3s ease forwards;
+  opacity: 0;
+  box-shadow: var(--shadow);
 }
-.tw-trans-cell.translated { background: var(--acc-l); border-color: var(--acc); }
-.tw-trans-label { font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
-.tw-trans-value { font-size: 16px; font-weight: 700; color: var(--text); word-break: break-word; }
-.tw-trans-cell.translated .tw-trans-value { color: var(--acc); }
+.tw-trans-row.user-edited { border-color: var(--acc); }
+.tw-trans-label {
+  font-size: 14px; color: var(--text-2, #374151);
+  font-weight: 600; margin-bottom: 6px;
+}
+.tw-trans-stack { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tw-trans-orig {
+  font-size: 15px; color: var(--text-2, #374151);
+  font-weight: 500; word-break: break-word;
+}
+.tw-trans-arrow { color: var(--text-3, #6b7280); font-size: 14px; user-select: none; }
+.tw-trans-eng {
+  font-size: 18px; color: var(--text-1, #111827);
+  font-weight: 700; word-break: break-word;
+}
+.tw-trans-eng .corrected-badge {
+  display: inline-block; margin-left: 8px;
+  background: var(--acc-l); color: var(--acc);
+  font-size: 11px; font-weight: 800; padding: 2px 8px;
+  border-radius: 12px; border: 1px solid var(--acc);
+  text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle;
+}
+.tw-trans-edit-btn {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--acc);
+  cursor: pointer; padding: 8px 14px;
+  font-size: 13px; font-weight: 700;
+  min-height: 36px; min-width: 88px;
+  font-family: inherit; white-space: nowrap;
+  transition: all 0.15s;
+}
+.tw-trans-edit-btn:hover { background: var(--acc-l); border-color: var(--acc); }
+.tw-trans-edit-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
 /* Cert preview — KEEP white (paper document mockup, theme-independent) */
 .tw-cert-preview {
@@ -669,8 +750,11 @@ export function TranslateWizard() {
 
   const [screen, setScreen] = useState<Screen>(1)
   const [selectedDocType, setSelectedDocType] = useState<DocTypeChoice | null>(null)
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  // Multi-page support: a document may span multiple pages (booklet identity
+  // page, then registration, then photo page; or birth-cert front + back).
+  // We collect all pages here in upload order and send them all to OCR.
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([])
   const [extractionError, setExtractionError] = useState<string | null>(null)
   const [paymentLoading, setPaymentLoading] = useState(false)
@@ -678,6 +762,7 @@ export function TranslateWizard() {
   const [pdfDownloaded, setPdfDownloaded] = useState(false)
   const [sigSaved, setSigSaved] = useState(false)
   const [procStep, setProcStep] = useState(0) // 0-5 — which step is currently active
+  const MAX_PAGES = 6 // hard cap to keep OCR cost predictable (~$0.001/page)
   const [stripeCheckoutId, setStripeCheckoutId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null
     try { return sessionStorage.getItem('tw:cs') } catch { return null }
@@ -728,35 +813,55 @@ export function TranslateWizard() {
     } catch { /* */ }
   }, [screen, selectedDocType, extractedFields])
 
-  // ── File handling ──
-  const handleFile = useCallback((file: File | null | undefined) => {
-    if (!file) return
-    setUploadedFile(file)
+  // ── File handling (multi-page) ──
+  // Append-mode: every drop/pick adds pages to the existing list (capped at
+  // MAX_PAGES). The user can remove individual pages on screen 3. Each page
+  // gets a preview URL via FileReader for the thumbnail grid.
+  const handleFiles = useCallback((files: FileList | File[] | null | undefined) => {
+    if (!files) return
+    const incoming = Array.from(files).filter((f) => f.type.startsWith('image/'))
+    if (incoming.length === 0) return
     setExtractionError(null)
     setExtractedFields([])
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      reader.onload = (e) => setPreviewUrl(e.target?.result as string)
-      reader.readAsDataURL(file)
-    } else {
-      setPreviewUrl(null)
-    }
+    setUploadedFiles((prev) => {
+      const next = [...prev, ...incoming].slice(0, MAX_PAGES)
+      // Only generate previews for the slice we actually kept.
+      const acceptedNew = next.slice(prev.length)
+      acceptedNew.forEach((f) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const url = e.target?.result as string
+          setPreviewUrls((p) => [...p, url])
+        }
+        reader.readAsDataURL(f)
+      })
+      return next
+    })
+  }, [])
+  const handleRemoveFile = useCallback((index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
-  // ── Processing: REAL /api/translation/vision-extract while animating steps ──
+  // ── Processing: REAL /api/translation/vision-extract over all pages ──
+  // The endpoint accepts repeated `file` keys and merges fields server-side,
+  // preferring the earliest non-empty value per field name. Booklet identity
+  // page typically wins; later pages fill in anything page 1 missed.
   const startProcessing = useCallback(async () => {
-    if (!uploadedFile || !selectedDocType) return
+    if (uploadedFiles.length === 0 || !selectedDocType) return
     setProcStep(1)
     goTo(4)
     setExtractionError(null)
     setExtractedFields([])
 
-    // Tick the visible steps while the network call is in flight.
+    // Tick visible steps while the network call is in flight. Multi-page
+    // calls take longer (≈ 2-3 s per page) so we stretch the ticker.
+    const perPage = Math.max(700, Math.min(1500, uploadedFiles.length * 600))
     const tickers = [
-      setTimeout(() => setProcStep(2), 700),
-      setTimeout(() => setProcStep(3), 1500),
-      setTimeout(() => setProcStep(4), 2300),
-      setTimeout(() => setProcStep(5), 3100),
+      setTimeout(() => setProcStep(2), perPage),
+      setTimeout(() => setProcStep(3), perPage * 2),
+      setTimeout(() => setProcStep(4), perPage * 3),
+      setTimeout(() => setProcStep(5), perPage * 4),
     ]
     const meta = DOC_TYPES.find((d) => d.id === selectedDocType)
     const registryId = meta?.registryId
@@ -765,14 +870,14 @@ export function TranslateWizard() {
       if (!meta?.auto || !registryId) {
         // Manual-review path: skip the API call. We still advance to review with
         // empty fields — the review screen shows an honest "manual review" notice.
-        await new Promise((r) => setTimeout(r, 3800))
+        await new Promise((r) => setTimeout(r, perPage * 4 + 500))
         tickers.forEach(clearTimeout)
         setProcStep(5)
         goTo(5)
         return
       }
       const form = new FormData()
-      form.append('file', uploadedFile)
+      for (const f of uploadedFiles) form.append('file', f)
       form.append('docTypeId', registryId)
       const res = await fetch('/api/translation/vision-extract', { method: 'POST', body: form })
       tickers.forEach(clearTimeout)
@@ -792,7 +897,25 @@ export function TranslateWizard() {
       setProcStep(5)
       goTo(5)
     }
-  }, [uploadedFile, selectedDocType, goTo])
+  }, [uploadedFiles, selectedDocType, goTo])
+
+  // ── Edit a single field (TPS RW pattern: native prompt for max a11y) ──
+  // Mirrors TPSWizardV2's approach: window.prompt is universally accessible
+  // (screen readers, 35-80yo users on older browsers) and ships without a
+  // modal dep. The corrected value is stamped with source 'user_corrected' so
+  // the PDF cert reflects user-verified data, not raw OCR.
+  const handleEditField = useCallback((fieldKey: string, promptLabel: string, currentEng: string) => {
+    if (typeof window === 'undefined') return
+    const next = window.prompt(promptLabel, currentEng)
+    if (next === null) return // cancelled
+    const trimmed = next.trim()
+    if (trimmed === currentEng.trim()) return
+    setExtractedFields((prev) => prev.map((f) =>
+      f.field === fieldKey
+        ? { ...f, value: trimmed, kind: 'user_corrected', confidence: 1 }
+        : f,
+    ))
+  }, [])
 
   // ── Real Stripe checkout (replaces prototype's simulatePayment) ──
   const handlePayment = useCallback(async () => {
@@ -962,8 +1085,8 @@ export function TranslateWizard() {
 
   const resetAll = useCallback(() => {
     setSelectedDocType(null)
-    setUploadedFile(null)
-    setPreviewUrl(null)
+    setUploadedFiles([])
+    setPreviewUrls([])
     setExtractedFields([])
     setExtractionError(null)
     setPdfDownloaded(false)
@@ -972,19 +1095,28 @@ export function TranslateWizard() {
   }, [])
 
   // ── Translation table rows: REAL fields if present, else honest sample ──
+  // `fieldKey` + `kind` carry through so the review screen can wire the Edit
+  // button to the right extractedFields entry and flag user-corrected rows.
   const translationRows = (() => {
     if (extractedFields.length > 0) {
       return extractedFields
         .filter((f) => UKR_LABEL_BY_FIELD[f.field])
         .map((f) => ({
+          fieldKey: f.field,
           ukr: UKR_LABEL_BY_FIELD[f.field],
           val_ukr: f.raw_cyrillic ?? '—',
           val_eng: f.value ?? '—',
+          kind: f.kind,
         }))
     }
     return [] // empty → review screen renders the manual-review notice
   })()
-  const certRowsForPreview = translationRows.length > 0 ? translationRows : SAMPLE_ROWS[selectedDocType ?? 'other']
+  // Cert-preview shape doesn't need fieldKey/kind — strip to the older shape
+  // so SAMPLE_ROWS (which lacks them) is structurally compatible.
+  const certRowsForPreview: Array<{ ukr: string; val_ukr: string; val_eng: string }> =
+    translationRows.length > 0
+      ? translationRows.map((r) => ({ ukr: r.ukr, val_ukr: r.val_ukr, val_eng: r.val_eng }))
+      : SAMPLE_ROWS[selectedDocType ?? 'other']
   const certTitle = CERT_TITLES_EN[selectedDocType ?? 'other']
   const certDateLine = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 
@@ -1089,13 +1221,30 @@ export function TranslateWizard() {
           </div>
         </div>
 
-        {/* SCREEN 3 — Upload */}
+        {/* SCREEN 3 — Upload (multi-page) */}
         <div className={`tw-screen ${screen === 3 ? 'tw-active' : ''}`}>
           <button type="button" className="tw-back-btn" onClick={() => goTo(2)}>{t.back}</button>
           <h2 className="tw-h2">{t.s3_title_1}<br />{t.s3_title_2}</h2>
           <p className="tw-subtitle">{t.s3_subtitle}</p>
-          {previewUrl && <img className="tw-preview-img" src={previewUrl} alt="" />}
-          {!previewUrl && (
+
+          {previewUrls.length > 0 && (
+            <div className="tw-page-grid">
+              {previewUrls.map((url, i) => (
+                <div className="tw-page-tile" key={`${url.slice(0, 32)}-${i}`}>
+                  <img src={url} alt={`${t.s3_page_n} ${i + 1}`} />
+                  <div className="tw-page-no">{t.s3_page_n} {i + 1}</div>
+                  <button
+                    type="button"
+                    className="tw-page-remove"
+                    aria-label={`${t.s3_remove_aria} ${i + 1}`}
+                    onClick={() => handleRemoveFile(i)}
+                  >×</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {previewUrls.length === 0 && (
             <label className="tw-upload-zone">
               <div className="tw-upload-icon">📸</div>
               <div className="tw-upload-main">{t.s3_drop_main}</div>
@@ -1103,38 +1252,57 @@ export function TranslateWizard() {
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 style={{ display: 'none' }}
-                onChange={(e) => handleFile(e.target.files?.[0])}
+                onChange={(e) => { handleFiles(e.target.files); e.currentTarget.value = '' }}
               />
             </label>
           )}
-          <div className="tw-upload-btns">
-            <label className="tw-btn-upload tw-btn-camera">
-              {t.s3_camera}
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                style={{ display: 'none' }}
-                onChange={(e) => handleFile(e.target.files?.[0])}
-              />
-            </label>
-            <label className="tw-btn-upload tw-btn-file">
-              {t.s3_file}
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={(e) => handleFile(e.target.files?.[0])}
-              />
-            </label>
-          </div>
+
+          {previewUrls.length < MAX_PAGES ? (
+            <div className="tw-upload-btns">
+              <label className="tw-btn-upload tw-btn-camera">
+                {previewUrls.length > 0 ? t.s3_add_more : t.s3_camera}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={(e) => { handleFiles(e.target.files); e.currentTarget.value = '' }}
+                />
+              </label>
+              <label className="tw-btn-upload tw-btn-file">
+                {t.s3_file}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={(e) => { handleFiles(e.target.files); e.currentTarget.value = '' }}
+                />
+              </label>
+            </div>
+          ) : (
+            <div className="tw-reassurance" style={{ marginTop: 12 }}>
+              <div className="tw-reassurance-icon">📄</div>
+              <div className="tw-reassurance-text">{t.s3_max_pages}</div>
+            </div>
+          )}
+
           <div className="tw-reassurance" style={{ marginTop: 16 }}>
             <div className="tw-reassurance-icon">💡</div>
             <div className="tw-reassurance-text"><strong>{t.s3_tip_t}</strong> {t.s3_tip_b}</div>
           </div>
           <div style={{ marginTop: 20 }}>
-            <button className="tw-btn-primary" disabled={!uploadedFile} onClick={startProcessing}>{t.s3_cta}</button>
+            <button
+              className="tw-btn-primary"
+              disabled={uploadedFiles.length === 0}
+              onClick={startProcessing}
+            >
+              {uploadedFiles.length > 1
+                ? t.s3_cta_n.replace('%COUNT%', String(uploadedFiles.length))
+                : t.s3_cta}
+            </button>
           </div>
         </div>
 
@@ -1170,23 +1338,35 @@ export function TranslateWizard() {
 
           {translationRows.length > 0 ? (
             <>
-              <div className="tw-trans-header">
-                <div className="tw-trans-col-label tw-col-orig">{t.s5_col_orig}</div>
-                <div className="tw-trans-col-label tw-col-trans">{t.s5_col_trans}</div>
-              </div>
               <div>
-                {translationRows.map((row, i) => (
-                  <div key={`${row.ukr}-${i}`} className="tw-trans-row" style={{ animationDelay: `${i * 0.08}s` }}>
-                    <div className="tw-trans-cell">
-                      <div className="tw-trans-label">{row.ukr}</div>
-                      <div className="tw-trans-value">{row.val_ukr}</div>
+                {translationRows.map((row, i) => {
+                  const isEdited = row.kind === 'user_corrected'
+                  return (
+                    <div
+                      key={`${row.fieldKey}-${i}`}
+                      className={`tw-trans-row ${isEdited ? 'user-edited' : ''}`}
+                      style={{ animationDelay: `${i * 0.08}s` }}
+                    >
+                      <div className="tw-trans-stack">
+                        <div className="tw-trans-label">{row.ukr}</div>
+                        <div className="tw-trans-orig">🇺🇦 {row.val_ukr}</div>
+                        <div className="tw-trans-arrow">↓</div>
+                        <div className="tw-trans-eng">
+                          🇺🇸 {row.val_eng}
+                          {isEdited && <span className="corrected-badge">{t.s5_corrected}</span>}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="tw-trans-edit-btn"
+                        onClick={() => handleEditField(row.fieldKey, row.ukr, row.val_eng)}
+                        aria-label={`${t.s5_edit_aria} ${row.ukr}`}
+                      >
+                        {t.s5_edit}
+                      </button>
                     </div>
-                    <div className="tw-trans-cell translated">
-                      <div className="tw-trans-label">English</div>
-                      <div className="tw-trans-value">{row.val_eng}</div>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
               <div className="tw-confirm-edit">
                 <span>⚠️</span>

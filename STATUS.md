@@ -5,9 +5,16 @@
 - `VERIFIED` All 34 uscis-helper tables have explicit GRANT to anon+authenticated
 - `VERIFIED` All 31 Handy & Friend tables have RLS policies (was: 12 with 0 policies)
 ATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-28 — Translation wizard restyled to TPS design system
+**Updated:** 2026-05-28 — Translation wizard: edit-button + multi-page + contrast fix
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2124/2124 unit pass + 1 skip. 0 type errors.
+
+## Session 50 (2026-05-28) — Wizard: edit-button + multi-page + contrast 1:1 with TPS
+
+- `VERIFIED(local)` Review row redesigned to TPS RW pattern: ONE label per row, two values stacked on white card with dark text. No more green-on-green contrast issue (was ~2.5:1, now ≥7:1). Edit button per row uses `window.prompt()` exactly like TPSWizardV2 — universally accessible.
+- `VERIFIED(local)` `extractedFields` updates with `kind:'user_corrected'` on edit; corrected row shows green «Исправлено» badge so the user knows their fix took.
+- `VERIFIED(local)` Multi-page upload: state `image:File|null` → `images:File[]` (cap 6). Upload screen has 2-col thumbnail grid with × remove + «➕ Добавить страницу». CTA shows count («Распознать 3 стр. →»). Backend accepts repeated `file` keys; merges per-field preferring earliest non-empty across pages.
+- `VERIFIED(local)` 2124 pass + 1 skip, 0 type errors, `pnpm build` SUCCESS (193 pages).
 
 ## Session 49 (2026-05-28) — Translation wizard restyled 1:1 to TPS design system
 
