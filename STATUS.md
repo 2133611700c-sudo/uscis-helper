@@ -9,6 +9,20 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 46-corr (2026-05-27) — critical gap-fix on today's plan
+
+Self-audit found 8 gaps in earlier P1/P3 deliverables; closed 4 of them:
+- `VERIFIED(live)` `buildEadPacket()` integration test: pdf-lib + integrity check + shared TPS I-765 actually produce a real PDF (~50KB+, `applied>8`, %PDF header verified). Closes the critical "never ran live" gap on P3.
+- `VERIFIED(local)` `/api/translation/render` now uses shared `verifyStripeSessionPaid` (DRY — was its own local copy).
+- `VERIFIED(local)` 2147 pass + 1 skip (+2 new integration tests), 0 type errors.
+- `VERIFIED(prod-build)` `pnpm --filter web build` succeeded — catches more than typecheck, all routes built including `/api/ead/generate-packet`.
+
+Still open (cannot close without owner inputs):
+- EADFormData captures only ~10 of ~25 I-765 fields (no passport/SSN/phone/email/address breakdown/signature). PDF is functional but sparse. Expanding requires wizard UX changes (owner scope).
+- Stripe end-to-end browser test (requires Stripe test mode + manual session).
+- TranslateWizard visual layout (requires dev server / browser).
+- P2 translation mock-data display (deferred).
+
 ## Session 46 (2026-05-27) — P4: v5 spec into repo + memory reconciliation
 
 - `VERIFIED` `docs/translation/DOCUMENT_TRANSLATION_ENGINE_V5.pdf` committed (was only in owner's Downloads); MD index updated with source-artifact pointer.
