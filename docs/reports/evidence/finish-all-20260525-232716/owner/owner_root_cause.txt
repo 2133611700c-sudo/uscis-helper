@@ -1,0 +1,3 @@
+Root cause: request-code API returns ok:true for both owner and non-owner addresses.
+Runtime OWNER_EMAILS in production did not include the previously tested address.
+Owner session was created only when verify-code used the runtime-configured owner email.

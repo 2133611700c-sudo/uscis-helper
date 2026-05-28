@@ -1,0 +1,28 @@
+{
+  "name": "projects/537268475735/locations/us/processors/d207a62dc88ed12c",
+  "type": "OCR_PROCESSOR",
+  "displayName": "messenginfo-docai-ocr-primary-us",
+  "state": "ENABLED",
+  "processEndpoint": "https://us-documentai.googleapis.com/v1/projects/537268475735/locations/us/processors/d207a62dc88ed12c:process",
+  "createTime": "2026-05-25T08:40:54.071954Z",
+  "defaultProcessorVersion": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/pretrained-ocr-v2.1-2024-08-07",
+  "processorVersionAliases": [
+    {
+      "alias": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/pretrained",
+      "processorVersion": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/pretrained-ocr-v1.0-2020-09-23"
+    },
+    {
+      "alias": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/pretrained-next",
+      "processorVersion": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/pretrained-ocr-v1.1-2022-09-12"
+    },
+    {
+      "alias": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/rc",
+      "processorVersion": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/pretrained-ocr-v1.2-2022-11-10"
+    },
+    {
+      "alias": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/stable",
+      "processorVersion": "projects/537268475735/locations/us/processors/d207a62dc88ed12c/processorVersions/pretrained-ocr-v2.1-2024-08-07"
+    }
+  ],
+  "satisfiesPzs": true
+}

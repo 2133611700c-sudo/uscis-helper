@@ -1,0 +1,81 @@
+[
+  {
+    "status": 200,
+    "doc_type_hint": "dl",
+    "final_field_keys": [
+      "dl_number",
+      "dob",
+      "eye_color",
+      "family_name",
+      "given_name",
+      "hair_color",
+      "height",
+      "sex",
+      "us_address_city",
+      "us_address_state",
+      "us_address_street",
+      "us_address_zip",
+      "weight"
+    ],
+    "brain_status": "skipped",
+    "crossref_status": "not_applicable"
+  },
+  {
+    "status": 200,
+    "doc_type_hint": "tps_notice",
+    "final_field_keys": [
+      "a_number",
+      "dob",
+      "family_name",
+      "given_name"
+    ],
+    "brain_status": "ran",
+    "crossref_status": "not_applicable"
+  },
+  {
+    "status": 200,
+    "doc_type_hint": "i94",
+    "final_field_keys": [
+      "country_of_nationality",
+      "dob",
+      "family_name",
+      "given_name",
+      "i94_admission_number",
+      "i94_admit_until",
+      "i94_class_of_admission",
+      "last_entry_date",
+      "passport_number"
+    ],
+    "brain_status": "ran",
+    "crossref_status": "not_applicable"
+  },
+  {
+    "status": 200,
+    "doc_type_hint": "passport",
+    "final_field_keys": [
+      "country_of_nationality",
+      "dob",
+      "family_name",
+      "given_name",
+      "passport_country_of_issuance",
+      "passport_expiration_date",
+      "passport_number",
+      "province_of_birth",
+      "sex"
+    ],
+    "brain_status": "ran",
+    "crossref_status": "not_applicable"
+  },
+  {
+    "status": 200,
+    "doc_type_hint": "booklet",
+    "final_field_keys": [
+      "city_of_birth",
+      "family_name",
+      "middle_name",
+      "province_of_birth"
+    ],
+    "brain_status": "ran",
+    "crossref_status": "crossref_ok"
+  }
+]
