@@ -1,3 +1,19 @@
+# HANDOFF — Session 43 (2026-05-27)
+
+## Session 43 — P3 latency: vision-first booklet flow
+
+- `route.ts` booklet case restructured to vision-first: Gemini vision runs before the crossref; if vision reads the surname (page anchor), the DocAI+DeepSeek crossref is skipped (~10s saved). Crossref remains the fallback (vision failed / flag OFF / surname unreadable). Flag OFF → identical to prior behavior.
+- 2115 pass + 1 skip, 0 type errors.
+
+### Limit of safe autonomous progress reached
+Everything buildable WITHOUT owner inputs is now done (P0 readinessPolicy, P1 proof, P3 wiring + latency). Further requires:
+- **≥3 distinct people's booklets + ground-truth JSON** (owner) → P2 validation → flag-ON in prod
+- **PAID Gemini tier** (owner) + rotate free test key
+- **D1** v3/v5 canon, **D2** gate mock translate-document page, **ADR-009** sign-off
+- Printed-certificate translator (birth/marriage/divorce) — modules exist but need real certificate fixtures to validate (owner)
+
+---
+
 # HANDOFF — Session 42 (2026-05-27)
 
 ## Session 42 — P3: Gemini vision arbiter wired behind flag (OFF)

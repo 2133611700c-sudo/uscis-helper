@@ -9,6 +9,11 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 43 (2026-05-27) — P3 latency: vision-first (skip crossref when vision reads page)
+
+- `VERIFIED(local)` Restructured booklet case to VISION-FIRST: Gemini vision runs first; if it reads the page (anchor=family_name) the DocAI+DeepSeek crossref is SKIPPED (~10s saved, ~17s→~7s when flag ON). Crossref still runs as fallback when vision fails/disabled. Flag OFF → behavior identical to before (crossref only).
+- `VERIFIED(local)` 2115 pass + 1 skip, 0 type errors.
+
 ## Session 42 (2026-05-27) — P3: Gemini vision arbiter WIRED behind flag (OFF)
 
 - `VERIFIED(local)` New `geminiVisionArbiter.ts`: reads handwritten Cyrillic from image, KMU-55 transliterates (names/city), normalizeProvince for oblast, ISO for dob. Candidate-only, review_required=true. 503/429 retry + model fallback + 8s timeout.
