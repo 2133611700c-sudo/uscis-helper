@@ -27,8 +27,8 @@
 
 | Token / property | Before | After (matches TPS) |
 |---|---|---|
-| Primary accent | `#1a6b4a` (local) | `var(--accent, #0d5a34)` — **same as TPS** |
-| Hover accent | `#145a3d` (local) | `var(--accent-hover, #08391f)` |
+| Primary accent | LITERAL `#1a6b4a` (ignored global) | `var(--accent)` — globally **`#10a37f`** (same as TPS) |
+| Hover accent | LITERAL `#145a3d` | `var(--accent-hover)` — globally `#0e8f70` (light) / `#13b890` (dark) |
 | Warning palette | `--gold:#c59a3a` (local) | `var(--warning-{bg,border,text})` — TPS vars |
 | Info palette | — | `var(--info-{bg,border,text})` added |
 | Container width | 440px (phone-narrow) | **760px** (TPS, more readable for older eyes) |
@@ -61,6 +61,14 @@
 3. **EAD does not generate a filled I-765 PDF** — only HTML worksheet (§A above).
 
 These three are separate from the design-unification work and need owner decisions / a follow-up engineering iteration.
+
+## C.bis Self-audit corrections (2026-05-27, post-commit)
+
+Two real errors found by critical self-review:
+1. **Actual brand color is `#10a37f`** (set globally in `apps/web/src/app/globals.css:90,153`), not `#0d5a34` as the earlier table suggested. The unification is functionally correct (both wizards now resolve `--accent` to `#10a37f`); the table was describing dead-code fallback values instead of the runtime color. Corrected above.
+2. Memory index `MEMORY.md` had typo "Prostionets" → fixed to "Prostianets".
+
+EAD = 0 verified directly (not via agent): `EADWizard.tsx:166,240,314,388` all download `.html`; no `/api/ead` route exists.
 
 ## D. Honest scope of this change
 

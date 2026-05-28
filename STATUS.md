@@ -9,6 +9,11 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 45-corr (2026-05-27) — self-audit correction (no functional change)
+
+- Two real errors in session-45 documentation/comments fixed: (1) actual brand color is **`#10a37f`** (verified `globals.css:90,153`), not `#0d5a34` as I'd claimed — the unification is functionally correct, only the documented hex was wrong; (2) `MEMORY.md` typo "Prostionets" → "Prostianets". EAD=0 re-verified directly.
+- 2128 pass + 1 skip, 0 type errors.
+
 ## Session 45 (2026-05-27) — 4-product audit + Translation UI unified with TPS
 
 - `VERIFIED` Audit: TPS (I-821+I-765 ✅), ReParole (I-131 ✅), **EAD (HTML worksheet ❌, no filled I-765 PDF — "0" confirmed)**, Translation (PDF generated but from mock data — separate bug).
