@@ -9,6 +9,14 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 41 (2026-05-27) — P1 PROOF: Gemini vision reads handwritten Cyrillic (N=1)
+
+- `VERIFIED(live)` Gemini 2.5 Flash reading the booklet IMAGE (not OCR text) returned correct Cyrillic for ALL 5 identity fields on owner's fixture: Куроп'ятник, Сергій, **Сергійович** (prod was "Yovych"), 25 червня 1986, **Тростянець** (prod was "Prostianets"). 6.85s, ~0.12¢.
+- `VERIFIED(live)` Critical finding: Gemini Cyrillic is correct but its TRANSLITERATION is wrong (Kurop'iatnyk, Troshchianets) → confirms v5 §13: Gemini reads Cyrillic, KMU-55 transliterates. Never LLM for names' Latin.
+- `N=1 ONLY` — owner's own handwriting. NOT client-validated; needs ≥3 distinct people (v5 §29/§32) before flag-ON.
+- Engineering plan: `docs/translation/ENGINEERING_PLAN_VISION_ARBITER.md`. Proof: `docs/translation/VISION_ARBITER_PROOF_N1.md`. Harness: `scripts/vision-arbiter-proof.mjs`.
+- Free-tier key used for owner-doc test only (gitignored .env.local); to be rotated; PAID tier required for prod PII.
+
 ## Session 40 (2026-05-27) — Phase 0: single readinessPolicy (kills 3 conflicting gates)
 
 - `VERIFIED(local)` New `readinessPolicy.ts` — single source of truth for required fields per stage (merge/generate/mail). centralBrain, isMinimallyComplete, mailReadyGate now all derive from it; no local required-field literals remain.
