@@ -3,6 +3,17 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 46: P3 — EAD now generates real filled I-765 PDF (closes "EAD = 0")
+
+- **New `lib/ead/i765FieldMap.ts`**: builds I-765 PDF operations from `EadFieldData` (EAD wizard's data shape). Categories `c11` (re-parole), `c08` (asylum pending), `a12` (TPS) mapped to Page 3 Item 27 segments; "other"/null leaves Item 27 blank for the user. Same field-name strings as TPS — the USCIS form is identical, only the eligibility category differs per product.
+- **New `lib/ead/packetBuilder.ts`**: server-only; loads shared `public/uscis/tps/i-765.pdf`, runs `assertFormIntegrity`, prefills via `lib/tps/pdfPrefiller` with "EAD DRAFT — review before signing" watermark and edition 08/21/25.
+- **New `app/api/ead/generate-packet/route.ts`**: rate-limited (10/min/IP), no payment gate (free service per the page docstring), returns `application/pdf` directly with `X-I765-Edition`/`X-Fields-Applied` headers.
+- **`EADWizard.tsx`**: Step 6 now offers the filled I-765 PDF as the PRIMARY action (green button, 44-48px tap targets, locale-aware labels en/uk/ru/es). Legacy HTML preparation worksheet kept as a secondary download for users wanting a printable checklist.
+- **9 unit tests** covering category mapping, app-type checkboxes, DOB ISO→MM/DD/YYYY, gender exclusivity, Line 29 prev-filed logic, optional A-Number. 2145 pass + 1 skip, 0 type errors, drift gate green.
+- Owner's "EAD = 0" finding closed — EAD now reaches feature parity with TPS / ReParole on PDF generation.
+
+---
+
 ## 2026-05-27 — Session 46: P1 — translation payment gate (Severity-1 liability fix)
 
 - **New `lib/stripe/verifyPayment.ts`** — single source of truth: `verifyStripeSessionPaid(checkoutId, {expectedService})` returns `{paid, correctService, reason}`. Used by `/api/translation/generate-pdf` (the route that previously hardcoded `payment_confirmed:true`).

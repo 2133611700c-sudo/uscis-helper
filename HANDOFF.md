@@ -1,5 +1,9 @@
 # HANDOFF — Session 46 (2026-05-27)
 
+## Session 46 — P3 of critical-fixes plan: EAD real I-765 PDF
+
+`lib/ead/i765FieldMap.ts` + `lib/ead/packetBuilder.ts` + `/api/ead/generate-packet/route.ts`. Categories c11/c08/a12 (and "other" → blank for manual fill). `EADWizard` Step 6 now offers PDF as primary action (44-48px tap targets, locale-aware en/uk/ru/es labels); the legacy HTML worksheet is kept as a secondary download for users who want a printable checklist. Free service — no Stripe (per page docstring). 9 unit tests. EAD "0" finding closed.
+
 ## Session 46 — P1 of critical-fixes plan: translation payment gate
 
 Closed Severity-1 liability where `/api/translation/generate-pdf` hardcoded `payment_confirmed:true` and never verified the Stripe session — direct POSTs (or back-navigation) generated a PDF + email without payment. Now: owner-bypass OR `verifyStripeSessionPaid` with `metadata.service==='translation'`; 402 otherwise. Wizard captures `cs={CHECKOUT_SESSION_ID}` from Stripe's success_url and sends it as `X-Payment-Token`. 8 new unit tests for the util.
