@@ -32,6 +32,7 @@ import {
 } from '@/lib/tps/sourcePriority'
 import { guardField, crossValidateField } from '@/lib/tps/hallucinationGuard'
 import { normalize } from '@/lib/tps/dictionaryBridge'
+import { requiredFieldKeys } from '@/lib/tps/readinessPolicy'
 
 // ── Output types ──────────────────────────────────────────────────────────────
 
@@ -82,13 +83,10 @@ export interface CentralBrainResult {
   readiness: ReadinessGate
 }
 
-// Required fields for a minimally complete TPS packet.
-const REQUIRED_FOR_GENERATE: ReadonlySet<string> = new Set([
-  'family_name', 'given_name', 'dob', 'sex',
-  'passport_number', 'passport_expiration_date',
-  'country_of_nationality',
-  'last_entry_date', 'status_at_last_entry',
-])
+// Required fields for document-merge readiness. Single source of truth lives in
+// readinessPolicy (stage 'merge') — no local literal, so this can never drift
+// from mailReadyGate / isMinimallyComplete again.
+const REQUIRED_FOR_GENERATE: ReadonlySet<string> = new Set(requiredFieldKeys('merge'))
 
 // ── Main entry point ──────────────────────────────────────────────────────────
 

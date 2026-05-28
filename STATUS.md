@@ -9,6 +9,13 @@ ATUS — Messenginfo TPS Robot
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2098/2098 unit pass. 0 type errors.
 
+## Session 40 (2026-05-27) — Phase 0: single readinessPolicy (kills 3 conflicting gates)
+
+- `VERIFIED(local)` New `readinessPolicy.ts` — single source of truth for required fields per stage (merge/generate/mail). centralBrain, isMinimallyComplete, mailReadyGate now all derive from it; no local required-field literals remain.
+- `VERIFIED(local)` Behavior preserved byte-for-byte: each stage reproduces the exact historical field list. KNOWN INCONSISTENCIES (status_at_last_entry, passport_country_of_issuance) documented in-file as [KI-1]/[KI-2], NOT changed (owner decision pending).
+- `VERIFIED(local)` +7 anti-drift tests (readinessPolicy.test.ts) pin behavior — fail if policy diverges from historical lists. 2108/2108 pass, 0 type errors.
+- Part of OCR stabilization plan — see `docs/reports/EXECUTION_PLAN_OCR_STABILIZATION.md`. Phase 1 (Gemini vision arbiter) NOT started — needs API key + multi-person fixtures.
+
 ## Session 39N (2026-05-27) — fix: crossref OCR quality — Prostianets→Trostianets, reject short patronymic
 
 - `VERIFIED(local)` `dualOcrCrossref.ts` prompt: added Т/П handwriting confusion rule + specific correction Простянець→Тростянець. Added patronymic completeness rule: value < 8 chars = suffix fragment, return null.
