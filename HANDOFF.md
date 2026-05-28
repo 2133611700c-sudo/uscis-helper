@@ -1,4 +1,22 @@
-# HANDOFF — Session 49 (2026-05-28)
+# HANDOFF — Session 50 (2026-05-28)
+
+## Session 50 — Translation wizard: edit-button + multi-page + contrast fix
+
+Owner reported 4 specific issues with the restyled wizard:
+1. «English» label leaked into each row of the RU UI (next to Сергій)
+2. No way to edit a wrong OCR result — user is stuck with whatever OCR produced
+3. Bad contrast — green text on green background hurt readability
+4. Only one page could be uploaded — useless for booklets and multi-page docs
+
+Brick-by-brick TPS comparison surfaced the root cause for each: per-row `<div>English</div>` hardcode (issue 1); review row was rendered read-only with no `onEdit` callback (issue 2); `.tw-trans-cell.translated` had `background:var(--acc-l); color:var(--acc)` — 2.5:1 contrast (issue 3); `image:File|null` single-file state (issue 4).
+
+**Applied:**
+- Review row redesigned to TPS RW pattern: ONE label per row, two values stacked (🇺🇦 Cyrillic + 🇺🇸 English) on white card with dark text, Edit button on the right. No green-on-green tinting → contrast ≥7:1.
+- New `handleEditField(fieldKey, label, currentEng)` — uses `window.prompt(label, current)` exactly like TPS does (universally accessible, no modal dep). Updates `extractedFields` with `kind:'user_corrected'`; the corrected row gets a green «Исправлено» badge so the user sees their fix took.
+- State changed from `uploadedFile/previewUrl` (single) to `uploadedFiles/previewUrls` (arrays, MAX_PAGES=6). Upload screen now shows a 2-column thumbnail grid with × remove button, an «➕ Добавить ещё страницу» button, and a count-aware CTA («Распознать 3 стр. →»).
+- Backend `/api/translation/vision-extract` now accepts repeated `file` keys: validates ALL pages before spending any vision budget, runs them sequentially through `docintel.readDocument`, merges fields preferring the earliest non-empty value per field name (page 1 typically wins). Returns `pages: [{page, ok, ms, provider, ...}]` per-page diagnostics + `page_count` total. Backward compatible: single-file requests still work as before.
+
+**Evidence:** 2124 pass + 1 skip, 0 type errors, prod build SUCCESS (193 pages).
 
 ## Session 49 — Translation wizard restyled 1:1 to TPS design system
 
