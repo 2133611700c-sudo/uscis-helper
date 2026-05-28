@@ -1,4 +1,8 @@
-# HANDOFF — Session 46 (2026-05-27)
+# HANDOFF — Session 49 (2026-05-28)
+
+## Session 49 — Translation wizard restyled 1:1 to TPS design system
+
+After Session 48 shipped the prototype's structure (7 screens, doc tiles, side-by-side review) on a dark-navy/gold theme, owner asked for unified visual language: **same look as TPS**. The wizard now reads the exact same global CSS tokens TPSWizardV2 uses — `var(--accent, #10a37f)` green, `var(--surface-1)` white cards, `var(--border)` light borders, `var(--text-1/2/3)` typography, Inter font (`var(--font-inter)`), 14px radius, 48px button tap targets, `0 1px 4px rgba(0,0,0,.05)` subtle shadow. All legacy prototype vars (`--gold`, `--navy`, `--navy2`, `--navy3`) re-aliased to TPS-equivalents inside `.tw-root` so the JSX didn't need to change — only the CSS block was rewritten. Cert preview kept paper-white (it's a document mockup, theme-independent). Body-bg dark-navy override removed. **Structure preserved** (7 screens, 6 doc-type tiles, processing animation, side-by-side review, watermarked cert, payment, success+signature) — only the visual language flipped from dark-luxury to TPS-light-professional. 2124 pass, 0 type errors, prod build OK (193 pages).
 
 ## Session 48 — Translation wizard rewritten under owner's prototype
 

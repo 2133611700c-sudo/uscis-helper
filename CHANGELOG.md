@@ -3,6 +3,34 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 49: Translation wizard restyled 1:1 to TPS design system
+
+Owner asked for unified visual language across products — "сравни с TPS и сделай в таком же стиле один в 1". Session 48 had shipped the prototype's *structure* (7 screens, doc tiles, side-by-side review) on a dark-navy/gold theme; this session flips the *visual language* to TPS-identical while keeping every screen, button, and flow intact.
+
+**What changed:**
+- `apps/web/src/components/services/translation/TranslateWizard.tsx` — full rewrite of the `WIZARD_CSS` constant. New `.tw-root` reads the exact globals TPSWizardV2 reads: `var(--accent, #10a37f)` (green), `var(--surface-1)` (white card), `var(--border)` (light grey), `var(--text-1/2/3)` (typography), `var(--font-inter)` (Inter), 14px radius, 48px button min-height, `0 1px 4px rgba(0,0,0,.05)` subtle shadow.
+- Legacy prototype CSS variables (`--gold`, `--gold-light`, `--navy`, `--navy2`, `--navy3`, `--green`, `--green-light`) re-aliased inside `.tw-root` to TPS-equivalents — so all existing JSX inline styles (`color:'var(--gold)'`, `background:'var(--navy3)'`, etc.) automatically render TPS green / TPS white without touching the JSX.
+- Removed Playfair Display + Nunito Google Fonts `@import` — Inter via `var(--font-inter)` only.
+- Removed the dark `document.body.style.background = '#0B1628'` override useEffect — light theme matches site-wide background.
+- Cert preview kept hardcoded paper-white (`background:#fff; color:#1a1a2e`) since it's a document mockup, theme-independent.
+- All button shapes/sizes/radii/shadows now identical to TPS's `navBtn`, `Card`, `UploadDrop`, `SingleSelect` styles.
+
+**What did NOT change:**
+- Backend untouched (vision-extract, Stripe checkout, generate-pdf with payment gate).
+- Screen flow untouched (Welcome → DocType → Upload → Processing → Review-BEFORE-pay → Pay → Success).
+- DOC_TYPES, T dictionary, T_OVERRIDES, v5 §31 phrasing — all unchanged.
+- Signature canvas, watermark, side-by-side review structure — unchanged.
+
+**Evidence:**
+- `pnpm --filter web run test`: **2124 pass, 1 skip, 0 fail** (71 test files, 1 skipped file)
+- `pnpm --filter web typecheck`: 0 errors
+- `pnpm --filter web build`: SUCCESS, 193 pages compiled
+- Diff: `apps/web/src/components/services/translation/TranslateWizard.tsx` 273+/161− (≈100 lines net, all inside the CSS template literal)
+
+**Why this matters:** A user who completes TPS sees the same color/font/button shapes when they open translation. One brand, one visual identity, lower cognitive cost. CSS vars are global so dark-mode automatically works on the wizard now too (when site dark mode lands).
+
+---
+
 ## 2026-05-28 — Session 48: Translation wizard FULL REWRITE per owner-provided prototype
 
 The owner provided a complete HTML+CSS+JS prototype (navy/gold premium theme, Playfair Display + Nunito fonts, 7-screen flow, doc-type-FIRST grid, preview-BEFORE-pay per v5 §21, side-by-side translation table, watermarked cert preview, single $14.99 tariff). The previous wizard kept the old chaotic flow with TPS-green styling — not what was asked for. Rewritten faithfully:
