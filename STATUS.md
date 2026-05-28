@@ -16,6 +16,7 @@ ATUS — Messenginfo TPS Robot
 - `VERIFIED(LIVE)` End-to-end through the spine on owner booklet: REDACTED / Serhii / Serhiiovych / 1986-06-25 / **Trostianets** (settlement prefix "с.м.т." correctly stripped) / Vinnytsia Oblast.
 - `VERIFIED(local)` 2126 pass + 1 skip, 0 type errors, drift gate green.
 - Arch doc: `docs/architecture/DOCUMENT_INTELLIGENCE_LAYER.md`. Other doc types declared + mock-tested; need real fixtures before prod. Flag OFF.
+- `VERIFIED(local)` Coverage guard added: CI test fails if a registry field's kind is not handled by transliterationPolicy (drift-prevention / "rule auditor"). 2128 pass + 1 skip.
 
 ## Session 43 (2026-05-27) — P3 latency: vision-first (skip crossref when vision reads page)
 
