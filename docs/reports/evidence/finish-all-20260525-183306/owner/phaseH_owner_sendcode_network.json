@@ -1,0 +1,8 @@
+[
+  {
+    "url": "https://messenginfo.com/api/owner/status",
+    "status": 200,
+    "method": "GET",
+    "body": "{\"owner\":false}"
+  }
+]

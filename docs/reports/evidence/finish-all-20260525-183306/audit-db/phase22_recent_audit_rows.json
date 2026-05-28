@@ -1,0 +1,114 @@
+{
+  "since": "2026-05-26T05:46:19.771Z",
+  "row_count": 7,
+  "rows": [
+    {
+      "id": "40d777db-023e-4ea0-8c55-b04090c00851",
+      "created_at": "2026-05-26T06:15:14.465546+00:00",
+      "doc_type_hint": "booklet",
+      "brain_status": "ran",
+      "crossref_status": "crossref_ok",
+      "has_brain_raw": true,
+      "rejected_type": "array",
+      "rejected_count": 0,
+      "normalization_diag_count": 4,
+      "validated_skipped": [
+        {
+          "field": "dob",
+          "reason": "date not parseable"
+        }
+      ]
+    },
+    {
+      "id": "56f37d59-c021-4400-add9-1f7241fbfa69",
+      "created_at": "2026-05-26T06:14:55.462223+00:00",
+      "doc_type_hint": "booklet",
+      "brain_status": "ran",
+      "crossref_status": "crossref_ok",
+      "has_brain_raw": true,
+      "rejected_type": "array",
+      "rejected_count": 0,
+      "normalization_diag_count": 4,
+      "validated_skipped": [
+        {
+          "field": "dob",
+          "reason": "date not parseable"
+        }
+      ]
+    },
+    {
+      "id": "18a74fb2-31c9-4127-9320-9ddc2b5a2e4a",
+      "created_at": "2026-05-26T06:13:44.329566+00:00",
+      "doc_type_hint": "booklet",
+      "brain_status": "ran",
+      "crossref_status": "crossref_ok",
+      "has_brain_raw": true,
+      "rejected_type": "array",
+      "rejected_count": 0,
+      "normalization_diag_count": 4,
+      "validated_skipped": [
+        {
+          "field": "dob",
+          "reason": "date not parseable"
+        }
+      ]
+    },
+    {
+      "id": "61f932e2-50d2-4238-9d3e-0415386721b9",
+      "created_at": "2026-05-26T06:13:34.657645+00:00",
+      "doc_type_hint": "i797_or_ead",
+      "brain_status": "ran",
+      "crossref_status": "not_applicable",
+      "has_brain_raw": true,
+      "rejected_type": "array",
+      "rejected_count": 0,
+      "normalization_diag_count": 8,
+      "validated_skipped": []
+    },
+    {
+      "id": "94f1d631-a204-4435-a528-46d1e11dd032",
+      "created_at": "2026-05-26T06:13:34.058462+00:00",
+      "doc_type_hint": "passport",
+      "brain_status": "ran",
+      "crossref_status": "not_applicable",
+      "has_brain_raw": true,
+      "rejected_type": "array",
+      "rejected_count": 1,
+      "normalization_diag_count": 10,
+      "validated_skipped": [
+        {
+          "field": "dob",
+          "reason": "date not parseable"
+        },
+        {
+          "field": "passport_expiration_date",
+          "reason": "date not parseable"
+        }
+      ]
+    },
+    {
+      "id": "1b6aacff-4893-4e41-80e2-3a7e52236c54",
+      "created_at": "2026-05-26T06:13:32.99425+00:00",
+      "doc_type_hint": "i94",
+      "brain_status": "ran",
+      "crossref_status": "not_applicable",
+      "has_brain_raw": true,
+      "rejected_type": "array",
+      "rejected_count": 1,
+      "normalization_diag_count": 11,
+      "validated_skipped": []
+    },
+    {
+      "id": "25cd0505-846e-4dc6-b360-ffc98dcff1f4",
+      "created_at": "2026-05-26T06:13:29.137177+00:00",
+      "doc_type_hint": "dl",
+      "brain_status": "skipped",
+      "crossref_status": "not_applicable",
+      "has_brain_raw": true,
+      "rejected_type": "array",
+      "rejected_count": 0,
+      "normalization_diag_count": 13,
+      "validated_skipped": []
+    }
+  ]
+}

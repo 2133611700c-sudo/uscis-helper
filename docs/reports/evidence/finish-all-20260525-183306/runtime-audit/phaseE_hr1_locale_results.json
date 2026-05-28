@@ -1,0 +1,22 @@
+[
+  {
+    "locale": "en",
+    "ok": false,
+    "expect": "Fees required by H.R.1 (effective May 29, 2026)"
+  },
+  {
+    "locale": "ru",
+    "ok": false,
+    "expect": "Сборы, установленные законом H.R.1 (с 29 мая 2026)"
+  },
+  {
+    "locale": "uk",
+    "ok": false,
+    "expect": "Збори, встановлені законом H.R.1 (з 29 травня 2026)"
+  },
+  {
+    "locale": "es",
+    "ok": false,
+    "expect": "Las tarifas exigidas por H.R.1 (vigentes desde el 29 may 2026)"
+  }
+]

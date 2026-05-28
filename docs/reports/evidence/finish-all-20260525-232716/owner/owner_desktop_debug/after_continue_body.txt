@@ -1,0 +1,126 @@
+Services
+Documents
+FAQ
+Sources
+EN
+→ RU
+Sign in
+Check Status
+🇺🇦 TPS for Ukraine
+
+We generate USCIS forms — you file yourself
+
+↺ Restart
+Step 5 of 6
+Review the data
+Tap «Edit» if something is wrong
+📋 Extracted data
+Surname / Family name
+Driver License → OCR
+Kuropiatnyk
+review AI
+Edit
+Given name
+Driver License → OCR
+Sergii
+review AI
+Edit
+Patronymic
+Not on international passport — fill in next step
+Edit
+Date of birth
+Driver License → OCR
+1986-06-25
+Edit
+Sex
+Driver License → OCR
+M
+Edit
+Passport number
+Not found — enter manually
+Edit
+Passport expiration
+Not found — enter manually
+Edit
+Nationality
+Not found — enter manually
+Edit
+I-94 Admission Number
+Not found — enter manually
+Edit
+US entry date
+Not found — enter manually
+Edit
+Status at entry
+Not found — enter manually
+Edit
+A-Number
+Not found — enter manually
+Edit
+US address
+Driver License → OCR
+4341 Willow Brook Ave 111, Los Angeles, CA 90029
+review AI
+Edit
+✏️ Fill in manually
+US address ?
+US Address (City) ?
+US Address (State) ?
+US Address (ZIP) ?
+Phone ?
+Email ?
+Marital status ?
+Single
+Married
+Divorced
+Widowed
+Annulled
+Other
+Patronymic / Middle Name ?
+City of Birth ?
+Oblast / Province of Birth ?
+Place of Last Entry into US ?
+Passport Expiration Date ?
+In Care Of (mail recipient) ?
+SSN ?
+EAD category ?
+C19
+⚖️ Background Declaration (Part 7)
+I-821 Part 7 contains 30 questions about criminal history, immigration violations, deportations, and more. All answers default to "No". If any answer should be "Yes", correct it on the printed form before signing.
+I have reviewed the Part 7 questions and confirm all answers are "No" for my case
+← Back
+Generate packet →
+No usable fields were extracted. Check your documents or fill key fields manually before continuing.
+uscis.gov/i-821 · uscis.gov/i-765 · TPS Ukraine
+
+About
+
+Official-source immigration information for Ukrainians in the U.S. Not a law firm.
+
+Services
+
+Browse All Services
+Re-parole (U4U)
+EAD Work Permit
+TPS Ukraine
+
+Resources
+
+Official Links
+FAQ
+Contact
+Pricing
+
+Legal
+
+Privacy Policy
+Terms of Service
+Disclaimer
+© 2026 Messenginfo
+EN
+·
+RU
+·
+UK
+·
+ES

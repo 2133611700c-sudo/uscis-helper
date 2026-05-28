@@ -1,0 +1,30 @@
+[
+  {
+    "locale": "en",
+    "has_hr1": true,
+    "has_fee_line": true,
+    "screenshot": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/finish-all-20260525-183306/runtime-audit/phase22_hr1_en.png",
+    "text": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/finish-all-20260525-183306/runtime-audit/phase22_hr1_en.txt"
+  },
+  {
+    "locale": "ru",
+    "has_hr1": true,
+    "has_fee_line": true,
+    "screenshot": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/finish-all-20260525-183306/runtime-audit/phase22_hr1_ru.png",
+    "text": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/finish-all-20260525-183306/runtime-audit/phase22_hr1_ru.txt"
+  },
+  {
+    "locale": "uk",
+    "has_hr1": true,
+    "has_fee_line": true,
+    "screenshot": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/finish-all-20260525-183306/runtime-audit/phase22_hr1_uk.png",
+    "text": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/finish-all-20260525-183306/runtime-audit/phase22_hr1_uk.txt"
+  },
+  {
+    "locale": "es",
+    "has_hr1": true,
+    "has_fee_line": true,
+    "screenshot": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/finish-all-20260525-183306/runtime-audit/phase22_hr1_es.png",
+    "text": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/finish-all-20260525-183306/runtime-audit/phase22_hr1_es.txt"
+  }
+]

@@ -1,0 +1,7 @@
+parse_mode=tolerant
+ok=True
+brain_status=ran
+crossref_status=crossref_ok
+final_field_count=4
+final_field_keys=['city_of_birth', 'family_name', 'middle_name', 'province_of_birth']
+knowledge_rejected_fields=[]

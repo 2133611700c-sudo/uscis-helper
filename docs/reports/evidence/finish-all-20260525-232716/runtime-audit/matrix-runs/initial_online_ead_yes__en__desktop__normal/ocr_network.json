@@ -1,0 +1,20 @@
+[
+  {
+    "status": 200,
+    "doc_type_hint": "i94",
+    "final_field_keys": [
+      "country_of_nationality",
+      "dob",
+      "family_name",
+      "given_name",
+      "i94_admission_number",
+      "i94_admit_until",
+      "i94_class_of_admission",
+      "last_entry_date",
+      "passport_country_of_issuance",
+      "passport_number"
+    ],
+    "brain_status": "ran",
+    "crossref_status": "not_applicable"
+  }
+]

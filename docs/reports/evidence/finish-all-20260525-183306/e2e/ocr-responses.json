@@ -1,0 +1,24 @@
+[
+  {
+    "status": 200,
+    "doc_type_hint": "dl",
+    "document_id": "doc_1779759426386_3c9gc1",
+    "final_field_keys": [
+      "dl_number",
+      "dob",
+      "eye_color",
+      "family_name",
+      "given_name",
+      "hair_color",
+      "height",
+      "sex",
+      "us_address_city",
+      "us_address_state",
+      "us_address_street",
+      "us_address_zip",
+      "weight"
+    ],
+    "knowledge_rejected_fields": [],
+    "brain_status": "skipped"
+  }
+]

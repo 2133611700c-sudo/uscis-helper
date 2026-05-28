@@ -1,0 +1,157 @@
+╔══════════════════════════════════════════════════════════╗
+║          INSTRUCTION / ІНСТРУКЦІЯ / ИНСТРУКЦИЯ           ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║  This file contains instructions in 3 languages:         ║
+║                                                          ║
+║  🇺🇸  ENGLISH .............. scroll down / see below      ║
+║  🇷🇺  РУССКИЙ .............. search: "ИНСТРУКЦИЯ"         ║
+║  🇺🇦  УКРАЇНСЬКА ........... search: "ІНСТРУКЦІЯ"         ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+
+🇺🇸  ENGLISH
+════════════════════════════════════════════════════════════
+
+Messenginfo — TPS Ukraine packet draft
+Generated: 2026-05-26T07:12:03.822Z
+
+WHAT THIS IS
+  Two PDFs prefilled with the data you typed into the wizard:
+    I-821 (Application for TPS) — edition 01/20/25, 127 AcroForm cells written
+    I-765 was not generated (you chose not to request an EAD).
+
+WHAT TO DO
+  1. Open each PDF in Adobe Acrobat Reader or Preview.
+  2. Carefully review every prefilled field. Correct anything that is wrong.
+  3. Complete every field that we could not fill (signature, certain Part 3/4 items).
+  4. Print, sign in INK (black or blue pen), and assemble your supporting documents.
+     *** SIGNATURE WARNING — APPLIES TO THIS PRINTED PAPER PACKET (MAIL FILING) ONLY ***
+     (Federal Register doc 2026-09289, effective 2026-07-10)
+     USCIS may DENY your application AND RETAIN YOUR FILING FEE if it later finds
+     an invalid signature on forms I-821 / I-765. Invalid = copy-pasted image,
+     typed name, software-generated, or stamped. Sign BY HAND on the printed paper.
+     No cure is allowed. NOTE: This rule applies to the USCIS form signatures only.
+     It does NOT apply to document translations or any other attachments.
+  5. Pay the correct USCIS government fee (see FEE section below).
+     Note: fees required by H.R.1 (TPS employment authorization fee, I-94 fee)
+     CANNOT be waived via Form I-912 — they are non-waivable by statute.
+  6. Mail the package to the address shown below.
+
+WHERE TO MAIL (resolved for state: CA)
+  USCIS Phoenix Lockbox
+
+  By U.S. Postal Service:
+    U.S. Citizenship and Immigration Services
+    Attn: TPS Ukraine
+    P.O. Box 24047
+    Phoenix, AZ 85074-4047
+
+  By FedEx, UPS, or DHL (street address — NOT for USPS):
+    U.S. Citizenship and Immigration Services
+    Attn: TPS Ukraine (Box 24047)
+    2108 E. Elliot Rd.
+    Tempe, AZ 85284-1806
+
+  Source: https://www.uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine
+  Snapshot date: 2026-05-12. Verify before mailing — addresses can change.
+
+GOVERNMENT FEES (verify current amounts on uscis.gov before mailing)
+  • I-821 — TPS re-registration application
+    https://www.uscis.gov/g-1055?form=I-821
+  • biometrics — Biometrics may apply (age 14+ generally)
+    https://www.uscis.gov/g-1055
+  Note: The exact dollar amounts can change. Always verify the current fee on the official USCIS Fee Schedule (G-1055) before mailing: https://www.uscis.gov/g-1055
+  Note: EAD VALIDITY RULE (H.R.1, effective 2026-05-29): TPS-based EADs issued or renewed on or after 2026-05-29 are valid for 1 year (or remaining TPS period, whichever is shorter). Verify current EAD validity rules on the official USCIS TPS Ukraine page.
+
+IF YOU ARE FILING ONLINE (myUSCIS)
+  If you choose to file online instead of by mail:
+  1. Log in to your myUSCIS account at my.uscis.gov yourself.
+  2. Use the generated PDF forms as a reference — open them side by side.
+  3. Type each field value into the online form independently.
+  4. Upload required evidence and passport-style photo as the online form requests.
+  5. Review everything on screen before submitting.
+  6. Submit independently — Messenginfo does not submit for you.
+  Note: online filing availability depends on USCIS. Check uscis.gov for current status.
+
+WHAT WE DID NOT DO
+  - We did NOT submit anything to USCIS on your behalf.
+  - We did NOT give you legal advice.
+  - We did NOT determine your eligibility — please verify on uscis.gov.
+
+SOURCE FORMS
+  These PDFs were generated from the official USCIS PDFs verified against
+  uscis.gov pages and PDF footer edition stamps on 2026-05-12.
+  Official TPS Ukraine page: https://www.uscis.gov/humanitarian/temporary-protected-status/TPS-Ukraine
+  See messenginfo.com/services/tps-ukraine/sources for all source links.
+
+If a field looks wrong, do NOT mail the form. Edit it in Adobe first or
+come back to messenginfo.com and re-run the wizard with corrected data.
+
+════════════════════════════════════════════════════════════
+
+Messenginfo — TPS Ukraine packing checklist
+Generated: 2026-05-26T07:12:03.822Z
+
+Before mailing (or before starting online filing), confirm you have each item:
+
+  [ ] 1. Form I-821 — printed, reviewed, and SIGNED in ink (black or blue pen).
+  [ ] 2. Photocopy of your passport identity page (the page with your photo and MRZ).
+  [ ] 3. Photocopy or printout of your I-94 record (from i94.cbp.dhs.gov or paper copy).
+  [ ] 4. Photocopy of your EAD card or I-797 notice (front and back) showing your A-Number.
+  [ ] 5. Two (2) identical passport-style photographs (2" x 2"), with your name and A-Number (if any) written lightly in pencil on the back.
+  [ ] 6. Government filing fee — check or money order payable to "U.S. Department of Homeland Security". Verify the current amount on uscis.gov before mailing.
+  [ ] 7. Any additional supporting evidence you believe strengthens your application (optional).
+  [ ] 8. Final review: re-read every field on each form before sealing the envelope.
+
+IMPORTANT REMINDERS
+  - Messenginfo does NOT file this package for you. You mail or submit it yourself.
+  - Messenginfo does NOT provide legal advice.
+  - Double-check the mailing address in README.txt before sending.
+  - Keep a photocopy of everything you mail for your records.
+
+════════════════════════════════════════════════════════════
+
+🇷🇺  РУССКИЙ
+════════════════════════════════════════════════════════════
+📋 ИНСТРУКЦИЯ
+ЧТО НАХОДИТСЯ В ЭТОМ ПАКЕТЕ
+  • Form I-821 (PDF) — заявление на TPS, заполнено вашими данными
+  • Этот файл с инструкциями
+ЧТО НУЖНО СДЕЛАТЬ
+  1. Откройте каждую PDF-форму и внимательно проверьте ВСЕ заполненные поля.
+  2. Если что-то неправильно — исправьте в Adobe Acrobat Reader.
+  3. Распечатайте обе формы.
+  4. Подпишите РУЧКОЙ (чёрной или синей) — в каждой форме есть строка для подписи.
+     ⚠️  ВНИМАНИЕ: USCIS может ОТКЛОНИТЬ заявление и НЕ ВЕРНУТЬ ПОШЛИНУ,
+     если подпись не от руки (напечатанная, скопированная или поставленная штампом).
+  5. Соберите все документы (см. чек-лист выше на английском).
+  6. Оплатите госпошлину USCIS (проверьте актуальную сумму на uscis.gov/g-1055).
+  7. Отправьте пакет почтой по адресу, указанному выше.
+ВАЖНО
+  • Messenginfo НЕ подаёт документы за вас. Вы подаёте самостоятельно.
+  • Messenginfo НЕ является юридической фирмой и НЕ даёт юридических советов.
+  • Проверьте все данные перед отправкой.
+  • Сохраните копии всех документов для себя.
+════════════════════════════════════════════════════════════
+🇺🇦  УКРАЇНСЬКА
+════════════════════════════════════════════════════════════
+📋 ІНСТРУКЦІЯ
+ЩО ЗНАХОДИТЬСЯ В ЦЬОМУ ПАКЕТІ
+  • Form I-821 (PDF) — заява на TPS, заповнена вашими даними
+  • Цей файл з інструкціями
+ЩО ПОТРІБНО ЗРОБИТИ
+  1. Відкрийте кожну PDF-форму та уважно перевірте ВСІ заповнені поля.
+  2. Якщо щось неправильно — виправте в Adobe Acrobat Reader.
+  3. Роздрукуйте обидві форми.
+  4. Підпишіть РУЧКОЮ (чорною або синьою) — у кожній формі є рядок для підпису.
+     ⚠️  УВАГА: USCIS може ВІДХИЛИТИ заяву і НЕ ПОВЕРНУТИ МИТО,
+     якщо підпис не від руки (надрукований, скопійований або поставлений штампом).
+  5. Зберіть усі документи (див. чек-лист вище англійською).
+  6. Сплатіть держмито USCIS (перевірте актуальну суму на uscis.gov/g-1055).
+  7. Відправте пакет поштою за адресою, вказаною вище.
+ВАЖЛИВО
+  • Messenginfo НЕ подає документи за вас. Ви подаєте самостійно.
+  • Messenginfo НЕ є юридичною фірмою і НЕ надає юридичних порад.
+  • Перевірте всі дані перед відправкою.
+  • Збережіть копії всіх документів для себе.

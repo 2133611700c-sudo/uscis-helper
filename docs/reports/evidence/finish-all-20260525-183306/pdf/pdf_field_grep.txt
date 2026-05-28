@@ -1,0 +1,16 @@
+--- I-821 field grep ---
+102:(Last Name) Kuropiatnyk
+104:(First Name) Sergii
+213:4.d. City or Town Los Angeles
+220:ZIP Code 90029
+333:UHP
+385:FU262473
+--- I-765 field grep ---
+106:(Last Name) Kuropiatnyk
+108:(First Name) Sergii
+156:Los Angeles
+162:ZIP Code 90029
+258:Vinnytsia Oblast
+298:FU262473
+328:UHP
+332:UHP
