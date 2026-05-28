@@ -123,8 +123,6 @@ const T = {
     // Screen 5 — Preview
     s5_title: 'Перевод готов!',
     s5_subtitle: 'Проверьте данные. Если что-то неправильно — нажмите «Изменить» и поправьте. Затем оплатите и скачайте PDF.',
-    s5_col_orig: '🇺🇦 Оригинал',
-    s5_col_trans: '🇺🇸 Перевод',
     s5_edit: '✏️ Изменить',
     s5_edit_aria: 'Изменить значение',
     s5_corrected: 'Исправлено',
@@ -227,8 +225,6 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     ],
     s5_title: 'Translation ready!',
     s5_subtitle: 'Review the data. If anything is wrong, tap «Edit» and fix it. Then pay and download the PDF.',
-    s5_col_orig: '🇺🇦 Original',
-    s5_col_trans: '🇺🇸 Translation',
     s5_edit: '✏️ Edit',
     s5_edit_aria: 'Edit value',
     s5_corrected: 'Edited',
@@ -622,18 +618,24 @@ const WIZARD_CSS = `
 }
 .tw-trans-row.user-edited { border-color: var(--acc); }
 .tw-trans-label {
-  font-size: 14px; color: var(--text-2, #374151);
-  font-weight: 600; margin-bottom: 6px;
+  font-size: 13px; color: var(--text-3, #6b7280);
+  font-weight: 700; margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.5px;
 }
-.tw-trans-stack { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tw-trans-stack { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tw-trans-orig {
-  font-size: 15px; color: var(--text-2, #374151);
+  font-size: 15px; color: var(--text-3, #6b7280);
   font-weight: 500; word-break: break-word;
+  font-style: italic;
 }
-.tw-trans-arrow { color: var(--text-3, #6b7280); font-size: 14px; user-select: none; }
+.tw-trans-arrow {
+  color: var(--text-3, #6b7280); font-size: 16px;
+  user-select: none; line-height: 1; margin: 2px 0;
+  font-weight: 700;
+}
 .tw-trans-eng {
-  font-size: 18px; color: var(--text-1, #111827);
-  font-weight: 700; word-break: break-word;
+  font-size: 19px; color: var(--text-1, #111827);
+  font-weight: 800; word-break: break-word; line-height: 1.3;
 }
 .tw-trans-eng .corrected-badge {
   display: inline-block; margin-left: 8px;
@@ -1399,10 +1401,10 @@ export function TranslateWizard() {
                     >
                       <div className="tw-trans-stack">
                         <div className="tw-trans-label">{row.ukr}</div>
-                        <div className="tw-trans-orig">🇺🇦 {row.val_ukr}</div>
-                        <div className="tw-trans-arrow">↓</div>
+                        <div className="tw-trans-orig">{row.val_ukr}</div>
+                        <div className="tw-trans-arrow" aria-hidden="true">↓</div>
                         <div className="tw-trans-eng">
-                          🇺🇸 {row.val_eng}
+                          {row.val_eng}
                           {isEdited && <span className="corrected-badge">{t.s5_corrected}</span>}
                         </div>
                       </div>
