@@ -24,6 +24,35 @@ describe('docintel/documentRegistry', () => {
   })
 })
 
+describe('docintel — coverage guard (rule auditor: registry ↔ transliteration)', () => {
+  // Locks the spine against the fragmentation disease: if someone adds a field
+  // whose kind the transliteration policy does not handle, this FAILS in CI.
+  const HANDLED_KINDS = new Set(['name', 'place_city', 'place_oblast', 'date', 'doc_number', 'agency', 'text'])
+
+  it('every field kind in the registry is handled by transliterationPolicy', () => {
+    for (const spec of Object.values(DOCUMENT_TYPES)) {
+      for (const f of spec.fields) {
+        expect(HANDLED_KINDS.has(f.kind), `${spec.id}.${f.field} kind "${f.kind}" not handled`).toBe(true)
+        // toCanonicalValue must not throw for any declared kind
+        const v = toCanonicalValue(
+          { field: f.field, cyrillic: 'Тест', iso_date: '2000-01-01', can_read: true, confidence: 1, reason: '' },
+          f.kind,
+        )
+        expect(v === null || typeof v === 'string').toBe(true)
+      }
+    }
+  })
+
+  it('every required field is reachable (has a label and canonical field id)', () => {
+    for (const spec of Object.values(DOCUMENT_TYPES)) {
+      for (const f of spec.fields) {
+        expect(f.field.length).toBeGreaterThan(0)
+        expect(f.label_uk.length).toBeGreaterThan(0)
+      }
+    }
+  })
+})
+
 describe('docintel/transliterationPolicy (KMU-55, never LLM)', () => {
   const read = (cyrillic: string, iso?: string): VisionFieldRead => ({
     field: 'x', cyrillic, iso_date: iso ?? null, can_read: true, confidence: 1, reason: '',
