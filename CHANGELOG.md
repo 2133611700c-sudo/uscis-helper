@@ -3,6 +3,16 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-27 — Session 41: P1 proof — Gemini vision reads handwritten Cyrillic (N=1)
+
+- Added `docs/translation/ENGINEERING_PLAN_VISION_ARBITER.md` (Amazon-style design doc, conforms to Translation Engine v5 standard).
+- Added `scripts/vision-arbiter-proof.mjs` — de-risk harness: sends a booklet IMAGE to Gemini and reads handwritten identity fields. Key read from gitignored .env.local; never hardcoded.
+- **Live proof (Gemini 2.5 Flash, owner's booklet):** all 5 identity fields read correctly in Cyrillic — Куроп'ятник / Сергій / Сергійович / 25 червня 1986 / Тростянець. Fixes the two production failures (patronymic "Yovych", city "Prostianets") and recovers given_name. 6.85s, ~0.12¢/doc.
+- **Architecture finding:** Gemini Cyrillic correct, transliteration wrong (Kurop'iatnyk, Troshchianets) → Gemini reads Cyrillic, KMU-55 transliterates (v5 §13). Never LLM for name Latin.
+- Proof report: `docs/translation/VISION_ARBITER_PROOF_N1.md`. N=1 only (owner's handwriting) — not client-validated; needs ≥3 distinct people before any production flag-ON. No production code path changed. Free-tier key test-only, to be rotated; prod requires paid tier.
+
+---
+
 ## 2026-05-27 — Session 40: Phase 0 — single readinessPolicy (kills 3 conflicting required-field gates)
 
 - **New `lib/tps/readinessPolicy.ts`**: one source of truth for required fields per stage (merge / generate / mail), with per-field stage tags, `recommendedAt`, and conditionals (ead_category only if wants_ead). Root cause it fixes: `centralBrain.REQUIRED_FOR_GENERATE`, `answers.isMinimallyComplete`, and `mailReadyGate.REQUIRED_FIELDS` had three different lists → the generate/review button "appeared and disappeared" unpredictably (documented in DOCUMENT_RULE_COVERAGE_AUDIT.md §4.A).
