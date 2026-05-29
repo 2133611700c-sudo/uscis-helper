@@ -3,6 +3,18 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 56: Unified recognition engine + Central Brain spine + official UA forms layer (all LOCAL, not deployed)
+
+NOTHING deployed — local checkpoint of cross-product engine work.
+
+- **Recognition engine** `apps/web/src/lib/engine/` — consensus (anti-hallucination + open-name systematic-error guard), models (Gemini/GPT-4o/Vertex/Transkribus readers), htr (Transkribus TrpServer/PyLaia — VERIFIED working flow), docTypes (field-class), orchestrator (D1→consensus→D2 KMU-55/gazetteer/patronymic), terminologist (date→EN + glossary), translator (DeepSeek prose, locked tokens), assembler+renderPdf (D6). **29/29 tests.**
+- **Central Brain** `apps/web/src/lib/central-brain/` — unified contract + migration-state + analyze() returns `delegated_to_legacy` for un-migrated products (TPS untouched). **3/3 tests.**
+- **knowledge** +`patronymic.ts` (26/26; kills "Yovych" fragment), +`gazetteer.ts` (Простянець→Тростянець generalized).
+- **Official UA forms layer** `docs/official-forms/ukraine/` — source-ledger (8 groups/15 types, current+historical: КМУ 1025/353/302/152…), README rule, marriage schema + types (5/5).
+- **Architecture** `docs/architecture/MESSENGINFO_CENTRAL_BRAIN_SYSTEM.md` + `RECOGNITION_ORG_CHART.md`.
+- **Proven live:** vision LLMs FABRICATE handwriting (Gemini→"Хроменчук Олег", GPT-4o→"Людмила Анатольевна" on same 1986 birth cert). Transkribus reads PRINTED (usable) not faded handwritten Soviet docs. Verdict: printed=auto, handwritten=human-assist.
+- Test set `test-fixtures/real-docs/` (gitignored, 9 docs/multiple people).
+
 ## 2026-05-28 — Session 55: Post-audit P2 items — SEO canonicalization + live Cyrillic OCR chain
 
 Closed all remaining P2 audit findings (owner directive: «добей все»).
