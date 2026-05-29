@@ -32,6 +32,7 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 // Central Brain (flag-gated, default OFF → prod behavior unchanged)
 import { analyze } from '@/lib/central-brain'
+import { deepseekProseTranslator } from '@/lib/engine/translator'
 import { DOC_TYPES } from '@/lib/engine/docTypes'
 
 export const dynamic = 'force-dynamic'
@@ -111,7 +112,12 @@ export async function POST(req: NextRequest) {
         const docs = await Promise.all(rawFiles.map(async (f) => ({
           docTypeId, mime: f.type || 'image/jpeg', image: Buffer.from(await f.arrayBuffer()),
         })))
-        const br = await analyze({ product: 'translation', locale: 'en', documents: docs }, { geminiApiKey: gem, gvApiKey: gv })
+        // D3b prose translator (#10): free text the glossary didn't cover (e.g. a
+        // registry office's full name) is translated by DeepSeek with names/numbers
+        // LOCKED, instead of being dropped. Fails open (keeps original + review).
+        const ds = process.env.DEEPSEEK_API_KEY || process.env.DEEPSEEK_CHAT_API_KEY
+        const proseTranslator = ds ? deepseekProseTranslator({ apiKey: ds }) : undefined
+        const br = await analyze({ product: 'translation', locale: 'en', documents: docs }, { geminiApiKey: gem, gvApiKey: gv, proseTranslator })
         const fields: FieldOut[] = br.recognizedFields.map((f) => ({
           field: f.field, value: f.value || null, raw_cyrillic: f.cyrillic || null,
           confidence: f.can_read ? 0.9 : 0, review_required: f.review_required, kind: f.source,

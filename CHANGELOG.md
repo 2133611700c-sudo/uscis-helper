@@ -28,6 +28,8 @@ Every work session appends here. Never delete entries. Newest first.
 
 **G3 (partial):** registry.csv expanded to 49 rows — all 24 oblasts (genitive→nominative, incl. Kirovohrad Oblast kept while city renamed Kropyvnytskyi) + major cities (Kyiv/Kharkiv/Odesa/Dnipro/Lviv), each with source_url. Regenerated runtime. Full KOATUU (~28k settlements) remains a data-pipeline task.
 
+**#10 prose translator wired:** vision-extract now passes a DeepSeek proseTranslator (names/numbers LOCKED) into analyze → free text the glossary did not cover (e.g. a registry office full name) is translated instead of dropped. Fails open (keeps original + review). Uses DEEPSEEK_API_KEY.
+
 **#5 manual-review ticket (audit #5):** TranslateWizard now POSTs to /api/translation/manual-review when a MANUAL document is PAID with no auto-fields (was: payment taken, no ticket). Reads persisted draft (race-safe), idempotent per checkout id, fire-and-forget (never blocks success). Endpoint already existed.
 
 **#3 MRZ / controlling-Latin:** `packages/knowledge/src/mrz.ts` — TD3 passport MRZ parser with ICAO 7-3-1 check digits (4 tests; real passport REDACTED/SERGII/FU262473/1986-06-25). Wired into presence.ts: for `ua_international_passport`, MRZ name/number/DOB/expiry OVERRIDE KMU-55 re-transliteration (HARD RULE: controlling Latin beats re-translit → matches client's EAD/I-94). Failed check digit → review.
