@@ -3,6 +3,24 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 57: paid Gemini key, model bench, recognition audit, D-GLOSSARY G1+G2
+
+**Recognition / models (live API benches; reports in docs/reports/):**
+- Paid Gemini project wired; prod key var is `GEMINI_API_KEY_PAY` (code reads it first, falls back to `GEMINI_API_KEY`).
+- Bench across real docs (passport MRZ + handwritten 1986 birth cert + military ID), scored vs ground truth: **gemini-3.1-pro-preview = best 20/22**, only model that reads handwriting (8/9). 2.5-pro FABRICATES a fake identity on handwriting (1/9). GPT-5.5/4o collapse on handwriting (1/9). DeepSeek API rejects images (text-only). Transkribus blocked (plan/token). → default model switched to `gemini-3.1-pro-preview` (env-driven, fallback 3.5-flash); timeout 8s→45s, maxOutputTokens 8192; `vision-extract` maxDuration=60.
+- Fixed presence-confirm bug: Google Vision OCR garbles handwriting, so the GV presence gate discarded ~6/7 correct handwriting reads. Now handwritten fields are KEPT with `review_required`; only machine-printed fields are GV-guarded.
+- Architecture audit (9-agent workflow) → `docs/reports/RECOGNITION_TRANSLATION_AUDIT_2026-05-29.md`: core recognition is honest; the danger is the delivery layer (PDF drops empty fields silently, wizard hardcodes review flags, names re-transliterated vs MRZ, fake email, manual-review takes payment without ticket, no preprocessing). 6 critical gaps + brick plan.
+
+**D-GLOSSARY (single Glossary Registry):**
+- G1 — `packages/knowledge/src/registry/` (schema, registry.csv human source, loader+validate, index, lookup, tests). One source → two representations (CSV for humans, generated TS for runtime; serverless-safe, no fs). Every row carries source_url (CI gate). Era-gating via valid_from/valid_until.
+- G2 — wired into the LIVE `engine/orchestrator.ts::normalize` (place_city/place_oblast/text), documentDate threaded from presence.ts. Registry first, legacy fallback. смт→"Trostianets (urban-type settlement)"; oblast→"Vinnytsia Oblast"; міліція@1986→Militsiya (not Police). +4 integration tests.
+- Doc: `docs/architecture/departments/D-GLOSSARY.md`.
+
+**Evidence:** web suite 2182 pass + 1 skip, 0 type errors (web + knowledge). Registry 11/11. Glossary-wiring 4/4.
+**Not done yet:** G3 (full KOATUU + civil-registry into CSV), G4 (catalog on health + CI gate), P0 honest-PDF, EAD/Re-Parole route wiring. test-fixtures/real-docs + keys remain gitignored.
+
+---
+
 ## 2026-05-29 — Session 56: Unified recognition engine + Central Brain spine + official UA forms layer (all LOCAL, not deployed)
 
 NOTHING deployed — local checkpoint of cross-product engine work.
