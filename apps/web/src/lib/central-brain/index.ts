@@ -1,26 +1,58 @@
 /**
- * Central Brain — single entry point for all products. Phase 5 migration:
- * products not yet migrated return `delegated_to_legacy` (their existing pipeline
- * stays untouched — TPS never breaks). Migrated products run through the shared
- * recognition engine (apps/web/src/lib/engine).
+ * Central Brain — single entry point for all products. Migrated products run
+ * through the shared recognition engine; un-migrated return delegated_to_legacy
+ * (their existing pipeline untouched — TPS never breaks).
  */
+import { extractDocument } from '../engine/orchestrator'
+import type { NamedReader } from '../engine/consensus'
+import type { ProseTranslator } from '../engine/translator'
 import { MIGRATION_STATE, brainHealth } from './health'
-import type { BrainRequest, BrainResult } from './types'
+import type { BrainRequest, BrainResult, BrainField } from './types'
 export { brainHealth }
 export type { BrainRequest, BrainResult, Product } from './types'
 
-export async function analyze(req: BrainRequest): Promise<BrainResult> {
+const OFFICIAL_SOURCE: Record<string, string> = {
+  ua_marriage_certificate: 'КМУ №1025 (10.11.2010)',
+  ua_birth_certificate: 'КМУ №1025 (10.11.2010)',
+  ua_divorce_certificate: 'КМУ №1025 (10.11.2010)',
+  ua_internal_passport_booklet: 'КМУ №353 (1994) / ВРУ №2503-XII (1992)',
+}
+
+export interface BrainDeps { readers?: NamedReader[]; proseTranslator?: ProseTranslator }
+
+export async function analyze(req: BrainRequest, deps: BrainDeps = {}): Promise<BrainResult> {
   const state = MIGRATION_STATE[req.product]
   if (!state) throw new Error(`unknown product: ${req.product}`)
+  const docTypes = req.documents.map((d) => d.docTypeId)
+
   if (!state.migrated) {
-    // SAFE: do not intercept un-migrated products — their legacy flow runs as-is.
-    return {
-      product: req.product, migrated: false, docTypes: req.documents.map((d) => d.docTypeId),
-      recognizedFields: [], reviewRequiredFields: [], missingRequiredFields: [],
-      productReadiness: 'delegated_to_legacy', officialSourcesUsed: [], auditId: null,
-      riskFlags: [`product not migrated (step ${state.step}): ${state.note}`],
+    return { product: req.product, migrated: false, docTypes, recognizedFields: [],
+      reviewRequiredFields: [], missingRequiredFields: [], productReadiness: 'delegated_to_legacy',
+      officialSourcesUsed: [], auditId: null,
+      riskFlags: [`product not migrated (step ${state.step}): ${state.note}`] }
+  }
+
+  // ── translation (MIGRATED): readers → consensus → D2 → D3 ──
+  if (!deps.readers || deps.readers.length < 2) {
+    throw new Error('translation requires ≥2 independent readers (single reader = hallucination risk)')
+  }
+  const fields: BrainField[] = []
+  const sources = new Set<string>()
+  for (const doc of req.documents) {
+    const r = await extractDocument(doc.image, doc.mime, doc.docTypeId, deps.readers, { proseTranslator: deps.proseTranslator })
+    if (OFFICIAL_SOURCE[doc.docTypeId]) sources.add(OFFICIAL_SOURCE[doc.docTypeId])
+    for (const f of r.fields) {
+      fields.push({ field: f.field, value: f.latin, cyrillic: f.cyrillic,
+        can_read: f.can_read, review_required: f.review_required, source: f.source })
     }
   }
-  // (migrated products will run the engine here — wired per-product in Phase 5)
-  throw new Error(`migrated product ${req.product} has no engine adapter wired yet`)
+  const reviewRequiredFields = fields.filter((f) => f.review_required).map((f) => f.field)
+  const missingRequiredFields = fields.filter((f) => !f.can_read).map((f) => f.field)
+  const productReadiness = missingRequiredFields.length ? 'incomplete'
+    : reviewRequiredFields.length ? 'needs_review' : 'ready'
+
+  return { product: req.product, migrated: true, docTypes, recognizedFields: fields,
+    reviewRequiredFields, missingRequiredFields, productReadiness,
+    officialSourcesUsed: [...sources], auditId: null,
+    riskFlags: ['audit ledger (D7) not wired yet'] }
 }
