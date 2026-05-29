@@ -24,27 +24,35 @@ const EN_MONTHS = ['', 'January', 'February', 'March', 'April', 'May', 'June',
  * "25.06.1986", "1986-06-25", "26 июня 1965". Returns null if not parseable
  * (caller keeps it for human review — never guesses).
  */
+/** Real-calendar check: month 1-12, day valid for that month (+leap), plausible
+ *  year. No future guard here — a passport expiry is legitimately in the future;
+ *  DOB/issue future checks belong to the field-level caller. */
+function isValidDmy(d: number, mo: number, y: number): boolean {
+  if (mo < 1 || mo > 12) return false
+  if (y < 1900 || y > 2100) return false
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
+  const dim = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]
+  return d >= 1 && d <= dim
+}
+
 export function formatDateEn(raw: string): string | null {
   const s = (raw ?? '').trim()
   if (!s) return null
 
   // ISO YYYY-MM-DD
   let m = s.match(/(\d{4})-(\d{2})-(\d{2})/)
-  if (m) return `${+m[3]} ${EN_MONTHS[+m[2]]} ${m[1]}`
+  if (m && isValidDmy(+m[3], +m[2], +m[1])) return `${+m[3]} ${EN_MONTHS[+m[2]]} ${m[1]}`
 
   // numeric DD.MM.YYYY (or / -)
   m = s.match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/)
-  if (m) {
-    const mo = +m[2]
-    if (mo >= 1 && mo <= 12) return `${+m[1]} ${EN_MONTHS[mo]} ${m[3]}`
-  }
+  if (m && isValidDmy(+m[1], +m[2], +m[3])) return `${+m[1]} ${EN_MONTHS[+m[2]]} ${m[3]}`
 
   // textual "25 <month> 2011"
   m = s.match(/(\d{1,2})\s+([а-яіїєґ']+)\s+(\d{4})/iu)
   if (m) {
     const mon = m[2].toLocaleLowerCase('uk')
     const mo = UA_MONTHS[mon] ?? RU_MONTHS[mon]
-    if (mo) return `${+m[1]} ${EN_MONTHS[mo]} ${m[3]}`
+    if (mo && isValidDmy(+m[1], mo, +m[3])) return `${+m[1]} ${EN_MONTHS[mo]} ${m[3]}`
   }
   return null
 }
