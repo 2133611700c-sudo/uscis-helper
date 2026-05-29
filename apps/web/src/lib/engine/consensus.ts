@@ -82,6 +82,13 @@ export function readingsAgree(a: string, b: string, tol = 0.25): boolean {
   const y = norm(b)
   if (!x || !y) return false
   if (x === y) return true
+  // Partial read of the SAME value: one reader (e.g. OCR) captured only a
+  // fragment/prefix that the other contains → agreement, not disagreement.
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x]
+  if (short.length >= 4 && long.includes(short)) return true
+  // Number fields: same digit core ("294" vs "за№294", "№153243" vs "153243").
+  const dx = x.replace(/\D/g, ''), dy = y.replace(/\D/g, '')
+  if (dx.length >= 2 && dx === dy) return true
   const dist = confusionDistance(x, y)
   return dist / Math.max(x.length, y.length) <= tol
 }
