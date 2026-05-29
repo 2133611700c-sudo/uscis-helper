@@ -1,3 +1,38 @@
+# HANDOFF — Session 55 (2026-05-28)
+
+## Session 55 — Post-audit P2 items: SEO fixes + live Cyrillic OCR verification
+
+Completed all 3 remaining P2 audit items (post-Session-54 directive "добей все"):
+
+**P2.1 — sitemap.ts canonical URL fix**
+`SERVICE_SLUGS` had `'translate-document'` which maps to a 307-redirect. Changed to `'translate-document/start'` so sitemap emits the canonical destination directly — crawlers skip the redirect hop and the indexed URL matches `canonical` in metadata.
+
+**P2.2 — Explicit OG + hreflang on /start page**
+Added `openGraph` block (per-locale title/description/url/locale), `twitter: {card:'summary'}`, and `alternates.languages` for all 4 locales. Without this, Next.js falls back to root layout's generic «Помощь с USCIS» OG title for share previews.
+Changed `robots: {index:false}` → `{index:true, follow:true}` — /start is now the canonical landing (old /translate-document 307s here), marking it noindex created an SEO regression.
+
+**P2.3 — Live Cyrillic OCR chain verification on production**
+Generated synthetic Cyrillic passport (Тарас Шевченко, 1814 — historical public figure, can't be confused with real client). POSTed to `https://messenginfo.com/api/translation/vision-extract`.
+
+All 6 fields matched expected KMU-55 output exactly:
+- ШЕВЧЕНКО → SHEVCHENKO ✅
+- ТАРАС → TARAS ✅
+- ГРИГОРОВИЧ → HRYHOROVYCH ✅
+- 09 БЕРЕЗНЯ 1814 → 1814-03-09 ✅
+- МОРИНЦІ → MORYNTSI ✅
+- ЧЕРКАСЬКА обл. → Cherkasy Oblast ✅
+
+Gemini reads Cyrillic correctly from a live production image; KMU-55 transliterates deterministically. Chain is end-to-end verified.
+
+Evidence: 0 type errors, 2124 pass + 1 skip.
+
+Not done (ongoing owner-decision items from Session 54):
+- Git history rewrite (destructive, needs owner sign-off)
+- Markdown narrative redaction (14 docs still quote owner name in prose)
+- Swap free Gemini key → paid AQ key (when AQ billing enabled)
+
+---
+
 # HANDOFF — Session 54 (2026-05-28)
 
 ## Session 54 — Post-audit PII purge from HEAD

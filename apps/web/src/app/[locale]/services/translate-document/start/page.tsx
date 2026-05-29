@@ -14,7 +14,9 @@
  * All v11 product logic preserved in TranslateWizard.tsx.
  * Back buttons on every wizard screen navigate to /{locale}/services/translate-document.
  *
- * Not indexed — wizard is a transactional flow, not a content page.
+ * Indexable — after the 2026-05-28 redirect change, /translate-document
+ * (the old landing) 307-forwards here, so /start is the canonical landing
+ * page for the service. Marking it noindex would create a SEO regression.
  */
 
 import type { Metadata } from 'next'
@@ -43,13 +45,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     en: 'Self-service translation for the Ukrainian internal passport booklet for USCIS purposes. Other Ukrainian documents are accepted through manual review by our team. Not legal advice.',
     es: 'Traducción autoservicio del pasaporte interno ucraniano para USCIS. Otros documentos ucranianos se procesan mediante revisión manual de nuestro equipo. No es asesoramiento legal.',
   }
+  const title = titles[locale] ?? titles.en
+  const description = descs[locale] ?? descs.en
+  const ogLocale = locale === 'uk' ? 'uk_UA'
+    : locale === 'ru' ? 'ru_RU'
+    : locale === 'es' ? 'es_ES'
+    : 'en_US'
   return {
-    title: titles[locale] ?? titles.en,
-    description: descs[locale] ?? descs.en,
+    title,
+    description,
     metadataBase: new URL('https://messenginfo.com'),
-    robots: { index: false, follow: false },
+    robots: { index: true, follow: true },
     alternates: {
       canonical: `https://messenginfo.com/${locale}/services/translate-document/start`,
+      languages: {
+        uk: 'https://messenginfo.com/uk/services/translate-document/start',
+        ru: 'https://messenginfo.com/ru/services/translate-document/start',
+        en: 'https://messenginfo.com/en/services/translate-document/start',
+        es: 'https://messenginfo.com/es/services/translate-document/start',
+      },
+    },
+    // Explicit openGraph block — without this, Next.js falls back to the
+    // root layout's generic «Помощь с USCIS …» OG title for share previews.
+    openGraph: {
+      title,
+      description,
+      url: `https://messenginfo.com/${locale}/services/translate-document/start`,
+      locale: ogLocale,
+      type: 'website',
+      siteName: 'Messenginfo',
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
     },
   }
 }

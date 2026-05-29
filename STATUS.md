@@ -5,9 +5,17 @@
 - `VERIFIED` All 34 uscis-helper tables have explicit GRANT to anon+authenticated
 - `VERIFIED` All 31 Handy & Friend tables have RLS policies (was: 12 with 0 policies)
 ATUS — Messenginfo TPS Robot
-**Updated:** 2026-05-28 — Session 54: 784 PII files purged from HEAD per post-audit directive
+**Updated:** 2026-05-28 — Session 55: P2 audit items closed (SEO + live Cyrillic OCR chain verified)
 **Status:** PRODUCTION (auto-fill-only model live)
 **Scope:** P0–P7 complete. 2124/2124 unit pass + 1 skip. 0 type errors.
+
+## Session 55 (2026-05-28) — Post-audit P2 items: SEO + Cyrillic OCR chain
+
+- `VERIFIED(prod)` Live Cyrillic OCR chain: synthetic Тарас Шевченко passport → ШЕВЧЕНКО→SHEVCHENKO, ТАРАС→TARAS, ГРИГОРОВИЧ→HRYHOROVYCH, 09 БЕРЕЗНЯ 1814→1814-03-09, МОРИНЦІ→MORYNTSI, ЧЕРКАСЬКА→Cherkasy Oblast. All 6 fields exact KMU-55 match.
+- `VERIFIED(local)` sitemap.ts: `'translate-document'` → `'translate-document/start'` in SERVICE_SLUGS. Crawlers now index canonical URL directly, not the 307-redirect.
+- `VERIFIED(local)` `/start/page.tsx`: `robots` noindex→index, explicit `openGraph` per locale, `twitter` card, `alternates.languages` hreflang for 4 locales.
+- `KNOWN GAP` (continued) Git history still has 784 PII files. Owner-decision needed for filter-repo + force-push.
+- `KNOWN GAP` (continued) Free Gemini key on prod. Swap to paid AQ when billing enabled.
 
 ## Session 54 (2026-05-28) — Post-audit PII purge from HEAD
 
