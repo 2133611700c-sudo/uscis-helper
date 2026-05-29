@@ -77,8 +77,14 @@ export function normalize(spec: DocFieldSpec, cf: ConsensusField, ctx: { sex: Se
       return en ? { latin: en, source: 'date→EN', review: cf.review_required }
                 : { latin: '', source: 'date-unparseable', review: true }
     }
-    case 'sex':
-      return { latin: /ж|f/i.test(cf.value) ? 'Female' : 'Male', source: 'sex-map', review: cf.review_required }
+    case 'sex': {
+      const v = cf.value.toLocaleLowerCase('uk')
+      if (/ж|f|жін|жен/.test(v)) return { latin: 'Female', source: 'sex-map', review: cf.review_required }
+      if (/^ч|\bч|m|чол|муж/.test(v)) return { latin: 'Male', source: 'sex-map', review: cf.review_required }
+      // NEVER default to Male on an unreadable value — would put the wrong sex (and
+      // a wrong-gendered patronymic) on the document.
+      return { latin: '', source: 'sex-unreadable', review: true }
+    }
     case 'text': {
       // D-GLOSSARY: authority → civil-registry term → passport authority, all
       // era-gated + with provenance. On a miss, leave latin empty for the optional
@@ -91,7 +97,14 @@ export function normalize(spec: DocFieldSpec, cf: ConsensusField, ctx: { sex: Se
       return auth ? { latin: auth, source: 'glossary', review: cf.review_required }
                   : { latin: '', source: 'needs-prose-translation', review: cf.review_required }
     }
-    case 'number':
+    case 'number': {
+      // Filing-critical identifier. A Cyrillic homoglyph left inside the digit run
+      // (О/З/І for 0/3/1) = a confidently-wrong number. Don't rewrite (could corrupt
+      // a legitimate Cyrillic series prefix) — flag for human confirmation.
+      const digitPart = cf.value.replace(/^[А-ЯІЇЄҐA-Z]{1,3}[\s№#-]*/u, '')
+      const homoglyphSuspect = /\d/.test(cf.value) && /[А-Яа-яІіЇїЄєҐґ]/.test(digitPart)
+      return { latin: cf.value, source: 'number', review: cf.review_required || homoglyphSuspect }
+    }
     default:
       return { latin: cf.value, source: spec.kind, review: cf.review_required }
   }
