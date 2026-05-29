@@ -2302,3 +2302,4 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - Security Advisor: 0 errors
 
 _(Session 56 cont. 2026-05-29: Translation migrated to central-brain via consensus; schema-driven official PDF renderer (KMU-1025); 4 product contracts added. Branch feat/central-brain, not deployed.)_
+_(Session 56 cont.2: Re-Parole migrated as intake-only via central-brain; +ua_international_passport docType; ADR-010..014 recorded. routing 5/5. Branch feat/central-brain.)_

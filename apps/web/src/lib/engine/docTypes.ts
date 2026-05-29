@@ -111,6 +111,24 @@ export const DOC_TYPES: Record<string, DocTypeSpec> = {
       NUM('series_number', ['Серія', '№']),
     ],
   },
+
+  // International (foreign) passport — PRINTED, controlling Latin spelling from MRZ.
+  // Used by Re-Parole / EAD / TPS for identity. Names are printed (not handwritten).
+  ua_international_passport: {
+    id: 'ua_international_passport',
+    title_en: 'International Passport of Ukraine',
+    fields: [
+      { key: 'family_name', label_uk: ['Прізвище', 'Surname'], kind: 'name', cls: 'printed', handwritten: false },
+      { key: 'given_name', label_uk: ["Ім'я", 'Given name'], kind: 'name', cls: 'printed', handwritten: false },
+      NUM('passport_number', ['Номер паспорта', 'Passport No', '№']),
+      D('date_of_birth', ['Дата народження', 'Date of birth'], false),
+      { key: 'sex', label_uk: ['Стать', 'Sex'], kind: 'sex', cls: 'closed', handwritten: false },
+      { key: 'nationality', label_uk: ['Громадянство', 'Nationality'], kind: 'text', cls: 'closed', handwritten: false },
+      D('date_of_issue', ['Дата видачі', 'Date of issue'], false),
+      D('date_of_expiry', ['Дійсний до', 'Date of expiry'], false),
+      { key: 'authority', label_uk: ['Орган', 'Authority'], kind: 'text', cls: 'closed', handwritten: false },
+    ],
+  },
 }
 
 /** Convenience selectors used by the orchestrator. */
