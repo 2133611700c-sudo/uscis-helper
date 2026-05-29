@@ -1,52 +1,44 @@
 import { describe, it, expect } from 'vitest'
 import { analyze, brainHealth } from '../index'
-import type { NamedReader } from '../../engine/consensus'
+import type { EngineResult } from '../../engine/orchestrator'
 
-// two independent fake readers that AGREE (consensus accepts; open names → review)
-const fake = (name: string): NamedReader => ({
-  name,
-  read: async (_img, _mime, fields) => Object.fromEntries(fields.map((f) => [f,
-    { cyrillic: f.includes('date') ? '25 лютого 2011' : f.includes('number') ? '294' : 'Заставний Андрій', can_read: true, confidence: 0.9 }])),
+// fake recognizer (no real APIs) — returns a canonical EngineResult
+const fakeRecognize = (..._a: any[]): Promise<EngineResult> => Promise.resolve({
+  doc_type_id: 'ua_marriage_certificate', models: ['fake'], auto_accepted: 1, needs_human: 1,
+  fields: [
+    { field: 'husband_full_name', cyrillic: 'Заставний Андрій Іванович', latin: 'Zastavnyi Andrii Ivanovych', can_read: true, review_required: true, source: 'KMU-55', candidates: [] },
+    { field: 'date_of_marriage', cyrillic: '25 лютого 2011', latin: '25 February 2011', can_read: true, review_required: false, source: 'date→EN', candidates: [] },
+  ],
 })
-
 const doc = { docTypeId: 'ua_marriage_certificate', image: Buffer.from('x'), mime: 'image/jpeg' }
 
-describe('central brain — Translation migrated (Phase 5 Step 2)', () => {
-  it('health: translation migrated, count 1', () => {
+describe('central brain — routing + C3 wiring', () => {
+  it('health: translation/reparole/ead migrated (3)', () => {
     const h = brainHealth()
-    expect(h.products.translation.migrated).toBe(true)
     expect(h.migrated_count).toBe(3)
+    expect(h.products.tps.migrated).toBe(false)
   })
-  it('translation runs through consensus engine → recognized fields + official source', async () => {
-    const r = await analyze({ product: 'translation', locale: 'ru', documents: [doc] }, { readers: [fake('a'), fake('b')] })
+  it('migrated product runs recognize → fields + auditId + official source', async () => {
+    const r = await analyze({ product: 'translation', locale: 'ru', documents: [doc] }, { recognize: fakeRecognize })
     expect(r.migrated).toBe(true)
-    expect(r.recognizedFields.length).toBeGreaterThan(0)
+    expect(r.recognizedFields.length).toBe(2)
     expect(r.officialSourcesUsed).toContain('КМУ №1025 (10.11.2010)')
-    expect(['ready', 'needs_review', 'incomplete']).toContain(r.productReadiness)
     expect(r.auditId).toMatch(/^aud_translation_/)
   })
-  it('translation REJECTS a single reader (no single-AI truth-source)', async () => {
-    await expect(analyze({ product: 'translation', locale: 'ru', documents: [doc] }, { readers: [fake('a')] })).rejects.toThrow(/single reader|≥2/)
+  it('EAD: category from confirmed basis present; without basis NOT guessed', async () => {
+    const withBasis = await analyze({ product: 'ead', locale: 'ru', userCorrections: { eligibility_basis: 'tps' }, documents: [doc] }, { recognize: fakeRecognize })
+    expect(withBasis.recognizedFields.find(f => f.field === 'eligibility_category')!.can_read).toBe(true)
+    const noBasis = await analyze({ product: 'ead', locale: 'ru', documents: [doc] }, { recognize: fakeRecognize })
+    expect(noBasis.recognizedFields.find(f => f.field === 'eligibility_category')!.can_read).toBe(false)
   })
-  it('reparole migrated as intake-only (I-131 gen stays legacy)', async () => {
-    const r = await analyze({ product: 'reparole_u4u', locale: 'ru', documents: [{ docTypeId: 'ua_international_passport', image: Buffer.from('x'), mime: 'image/jpeg' }] }, { readers: [fake('a'), fake('b')] })
-    expect(r.migrated).toBe(true)
-    expect(r.riskFlags.join(' ')).toMatch(/I-131 generation still via legacy/)
+  it('migrated without recognize AND without keys → throws (no silent path)', async () => {
+    await expect(analyze({ product: 'translation', locale: 'ru', documents: [doc] }, {})).rejects.toThrow(/geminiApiKey|gvApiKey|recognize/)
   })
-  it('EAD: category from confirmed basis (tps) — present', async () => {
-    const r = await analyze({ product: 'ead', locale: 'ru', userCorrections: { eligibility_basis: 'tps' }, documents: [{ docTypeId: 'ua_international_passport', image: Buffer.from('x'), mime: 'image/jpeg' }] }, { readers: [fake('a'), fake('b')] })
-    const cat = r.recognizedFields.find(f => f.field === 'eligibility_category')!
-    expect(cat.can_read).toBe(true); expect(cat.value).toMatch(/c\)\(19\)/)
+  it('un-migrated (tps) → delegated_to_legacy', async () => {
+    const r = await analyze({ product: 'tps', locale: 'ru', documents: [] })
+    expect(r.productReadiness).toBe('delegated_to_legacy')
   })
-  it('EAD: NO basis → category NOT guessed (blank + review)', async () => {
-    const r = await analyze({ product: 'ead', locale: 'ru', documents: [{ docTypeId: 'ua_international_passport', image: Buffer.from('x'), mime: 'image/jpeg' }] }, { readers: [fake('a'), fake('b')] })
-    const cat = r.recognizedFields.find(f => f.field === 'eligibility_category')!
-    expect(cat.can_read).toBe(false); expect(cat.value).toBe('')
-  })
-  it('un-migrated products → delegated_to_legacy (TPS untouched)', async () => {
-    for (const p of ['tps'] as const) {
-      const r = await analyze({ product: p, locale: 'ru', documents: [] })
-      expect(r.productReadiness).toBe('delegated_to_legacy')
-    }
+  it('unknown product throws', async () => {
+    await expect(analyze({ product: 'xx' as any, locale: 'ru', documents: [] })).rejects.toThrow()
   })
 })

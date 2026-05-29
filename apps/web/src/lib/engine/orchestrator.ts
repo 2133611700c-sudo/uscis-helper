@@ -42,7 +42,7 @@ function sexFromField(fields: Record<string, ConsensusField>): Sex {
 }
 
 /** D2 normalization for one consensus field → Latin/English canonical value. */
-function normalize(spec: DocFieldSpec, cf: ConsensusField, ctx: { sex: Sex; givenName?: string }): { latin: string; source: string; review: boolean } {
+export function normalize(spec: DocFieldSpec, cf: ConsensusField, ctx: { sex: Sex; givenName?: string }): { latin: string; source: string; review: boolean } {
   if (!cf.can_read || !cf.value) return { latin: '', source: cf.reason, review: true }
 
   switch (spec.kind) {
