@@ -24,6 +24,8 @@ Every work session appends here. Never delete entries. Newest first.
 
 **Field guards (audit #7/#8/#9):** terminologist.formatDateEn now calendar-validates (rejects 32.02.1986, Feb-29 non-leap; year 1900-2100; no future-guard since expiry is legitimately future). normalize sex never defaults to Male (unreadable → review). number fields flag a Cyrillic homoglyph left in the digit run (О/З/І) without rewriting. 7 tests.
 
+**#12 no silent degrade:** when CENTRAL_BRAIN_TRANSLATION is ON but the brain errors, vision-extract no longer silently serves the guard-less legacy single-reader as if normal — it forces review_required on every field and returns degraded:true + provider "legacy-fallback:…". Default-OFF prod behaviour unchanged.
+
 **#5 manual-review ticket (audit #5):** TranslateWizard now POSTs to /api/translation/manual-review when a MANUAL document is PAID with no auto-fields (was: payment taken, no ticket). Reads persisted draft (race-safe), idempotent per checkout id, fire-and-forget (never blocks success). Endpoint already existed.
 
 **#3 MRZ / controlling-Latin:** `packages/knowledge/src/mrz.ts` — TD3 passport MRZ parser with ICAO 7-3-1 check digits (4 tests; real passport REDACTED/SERGII/FU262473/1986-06-25). Wired into presence.ts: for `ua_international_passport`, MRZ name/number/DOB/expiry OVERRIDE KMU-55 re-transliteration (HARD RULE: controlling Latin beats re-translit → matches client's EAD/I-94). Failed check digit → review.
