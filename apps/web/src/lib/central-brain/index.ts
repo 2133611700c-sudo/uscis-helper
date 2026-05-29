@@ -16,6 +16,7 @@ const OFFICIAL_SOURCE: Record<string, string> = {
   ua_birth_certificate: 'КМУ №1025 (10.11.2010)',
   ua_divorce_certificate: 'КМУ №1025 (10.11.2010)',
   ua_internal_passport_booklet: 'КМУ №353 (1994) / ВРУ №2503-XII (1992)',
+  ua_international_passport: 'КМУ №152 (2014)',
 }
 
 export interface BrainDeps { readers?: NamedReader[]; proseTranslator?: ProseTranslator }
@@ -54,5 +55,5 @@ export async function analyze(req: BrainRequest, deps: BrainDeps = {}): Promise<
   return { product: req.product, migrated: true, docTypes, recognizedFields: fields,
     reviewRequiredFields, missingRequiredFields, productReadiness,
     officialSourcesUsed: [...sources], auditId: null,
-    riskFlags: ['audit ledger (D7) not wired yet'] }
+    riskFlags: ['audit ledger (D7) not wired yet', ...(req.product==='reparole_u4u'?['intake/recognition only — I-131 generation still via legacy generate-packet']:[])] }
 }
