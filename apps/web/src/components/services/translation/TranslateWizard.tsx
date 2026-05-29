@@ -822,6 +822,32 @@ export function TranslateWizard() {
         try { sessionStorage.setItem('tw:cs', cs) } catch { /* */ }
       }
       setScreen(7)
+
+      // #5: a MANUAL-review document was PAID but no auto-fields were extracted —
+      // create a staff ticket so the paid work is actually queued (was: payment
+      // taken, no ticket). Read the persisted draft (reliable across the Stripe
+      // round-trip), idempotent per checkout id, fire-and-forget — never blocks success.
+      try {
+        if (cs && !sessionStorage.getItem(`tw:ticket:${cs}`)) {
+          const raw = sessionStorage.getItem(DRAFT_KEY)
+          const draft = raw ? (JSON.parse(raw) as DraftState) : null
+          const docTypeId = draft?.selectedDocType ?? selectedDocType
+          const fieldsLen = Array.isArray(draft?.extractedFields) ? draft!.extractedFields.length : extractedFields.length
+          if (fieldsLen === 0 && docTypeId) {
+            sessionStorage.setItem(`tw:ticket:${cs}`, '1')
+            void fetch('/api/translation/manual-review', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: cs,
+                doc_type: DOC_TYPES.find((d) => d.id === docTypeId)?.registryId ?? docTypeId ?? 'other',
+                source_lang: locale === 'uk' ? 'uk' : locale === 'en' ? 'en' : 'ru',
+                reason: 'manual_document_type',
+                confidence: 0,
+              }),
+            }).catch(() => { try { sessionStorage.removeItem(`tw:ticket:${cs}`) } catch { /* */ } })
+          }
+        }
+      } catch { /* never block the success screen */ }
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href)
         url.searchParams.delete('paid'); url.searchParams.delete('plan'); url.searchParams.delete('cs')
