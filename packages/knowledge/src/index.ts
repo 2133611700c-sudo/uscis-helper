@@ -5,6 +5,16 @@
 export { transliterateKMU55, convertDateToUSCIS } from './transliterate';
 export type { OutputMode } from './transliterate';
 
+// D2 Validator — patronymic (по батькові) engine: validate a read, reconstruct
+// from given name + sex, reject OCR suffix fragments ("ович"/"Yovych").
+export { isValidPatronymic, generatePatronymic, reconcilePatronymic } from './patronymic';
+export type { Sex, PatronymicResult } from './patronymic';
+
+// D2 Validator — gazetteer: snap a handwriting-OCR place reading to a real
+// Ukrainian place via Cyrillic-confusion-weighted edit distance.
+export { snapCity, confusionDistance, GAZETTEER } from './gazetteer';
+export type { PlaceMatch } from './gazetteer';
+
 // Civil registry terminology (birth/marriage/divorce certificates)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export { default as civilRegistryTerms } from './civil_registry_terms.json';

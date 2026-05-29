@@ -1,4 +1,10 @@
 # ST
+## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)
+- `VERIFIED(local)` recognition engine `apps/web/src/lib/engine/` 29/29; central-brain `apps/web/src/lib/central-brain/` 3/3 (delegated_to_legacy → TPS untouched); knowledge patronymic 26/26 + gazetteer.
+- `VERIFIED(live API)` vision LLMs fabricate handwriting; Transkribus reads PRINTED not faded handwritten Soviet docs → printed=auto, handwritten=human-assist.
+- `OFFICIAL SOURCES` UA forms ledger `docs/official-forms/ukraine/` (КМУ 1025/353/302/152…).
+- `NOT DEPLOYED` engine not wired to any live product; prod translation still single Gemini Flash. Next: wire Translation to central-brain.
+
 ## DB Security Patch (2026-05-27)
 - `VERIFIED` Event trigger `auto_grant_public_tables` active on uscis-helper
 - `VERIFIED` Event trigger `auto_grant_public_tables` active on Handy & Friend  
