@@ -22,6 +22,8 @@ Every work session appends here. Never delete entries. Newest first.
 
 **B3 preprocessing (audit #6, "#1 accuracy lever"):** `engine/preprocess.ts` — sharp pass (auto-orient, grayscale, contrast-normalize, downscale ≤2000px) + `assessQuality` gate (low-res/too-dark/overexposed). Wired into presence.ts before the Gemini+GV calls. Lazy sharp import (server-only), fails OPEN (original image on any error). 5 tests using synthesized images.
 
+**Field guards (audit #7/#8/#9):** terminologist.formatDateEn now calendar-validates (rejects 32.02.1986, Feb-29 non-leap; year 1900-2100; no future-guard since expiry is legitimately future). normalize sex never defaults to Male (unreadable → review). number fields flag a Cyrillic homoglyph left in the digit run (О/З/І) without rewriting. 7 tests.
+
 **#5 manual-review ticket (audit #5):** TranslateWizard now POSTs to /api/translation/manual-review when a MANUAL document is PAID with no auto-fields (was: payment taken, no ticket). Reads persisted draft (race-safe), idempotent per checkout id, fire-and-forget (never blocks success). Endpoint already existed.
 
 **#3 MRZ / controlling-Latin:** `packages/knowledge/src/mrz.ts` — TD3 passport MRZ parser with ICAO 7-3-1 check digits (4 tests; real passport KUROPIATNYK/SERGII/FU262473/1986-06-25). Wired into presence.ts: for `ua_international_passport`, MRZ name/number/DOB/expiry OVERRIDE KMU-55 re-transliteration (HARD RULE: controlling Latin beats re-translit → matches client's EAD/I-94). Failed check digit → review.
