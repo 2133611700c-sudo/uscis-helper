@@ -23,6 +23,7 @@ describe('central brain — Translation migrated (Phase 5 Step 2)', () => {
     expect(r.recognizedFields.length).toBeGreaterThan(0)
     expect(r.officialSourcesUsed).toContain('КМУ №1025 (10.11.2010)')
     expect(['ready', 'needs_review', 'incomplete']).toContain(r.productReadiness)
+    expect(r.auditId).toMatch(/^aud_translation_/)
   })
   it('translation REJECTS a single reader (no single-AI truth-source)', async () => {
     await expect(analyze({ product: 'translation', locale: 'ru', documents: [doc] }, { readers: [fake('a')] })).rejects.toThrow(/single reader|≥2/)
