@@ -16,8 +16,10 @@ Every work session appends here. Never delete entries. Newest first.
 - G2 — wired into the LIVE `engine/orchestrator.ts::normalize` (place_city/place_oblast/text), documentDate threaded from presence.ts. Registry first, legacy fallback. смт→"Trostianets (urban-type settlement)"; oblast→"Vinnytsia Oblast"; міліція@1986→Militsiya (not Police). +4 integration tests.
 - Doc: `docs/architecture/departments/D-GLOSSARY.md`.
 
-**Evidence:** web suite 2182 pass + 1 skip, 0 type errors (web + knowledge). Registry 11/11. Glossary-wiring 4/4.
-**Not done yet:** G3 (full KOATUU + civil-registry into CSV), G4 (catalog on health + CI gate), P0 honest-PDF, EAD/Re-Parole route wiring. test-fixtures/real-docs + keys remain gitignored.
+**P0 honest-PDF (audit gap #1):** `pdf.ts::planTranslationRows()` — an unread field is no longer silently dropped (`continue`); it renders as a visible `________ [enter from document]` MISSING row, any missing field makes the draft `certifiable=false` + an INCOMPLETE banner. Pure + unit-tested (honest-pdf.test.ts).
+
+**Evidence:** web suite 2184 pass + 1 skip, 0 type errors (web + knowledge). Registry 11/11. Glossary-wiring 4/4. Honest-PDF 2/2.
+**Not done yet:** G3 (full KOATUU + civil-registry into CSV), G4 (catalog on health + CI gate), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring. test-fixtures/real-docs + keys remain gitignored.
 
 ---
 
