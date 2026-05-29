@@ -733,3 +733,5 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 
 ## Security patch update (2026-05-27b)
 - auto_grant moved to extensions schema, search_path fixed on all public functions
+
+_(Session 56 cont. 2026-05-29: Translation migrated to central-brain via consensus; schema-driven official PDF renderer (KMU-1025); 4 product contracts added. Branch feat/central-brain, not deployed.)_
