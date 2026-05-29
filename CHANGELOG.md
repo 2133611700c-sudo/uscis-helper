@@ -3,6 +3,18 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 56: Unified recognition engine + Central Brain spine + official UA forms layer (all LOCAL, not deployed)
+
+NOTHING deployed — local checkpoint of cross-product engine work.
+
+- **Recognition engine** `apps/web/src/lib/engine/` — consensus (anti-hallucination + open-name systematic-error guard), models (Gemini/GPT-4o/Vertex/Transkribus readers), htr (Transkribus TrpServer/PyLaia — VERIFIED working flow), docTypes (field-class), orchestrator (D1→consensus→D2 KMU-55/gazetteer/patronymic), terminologist (date→EN + glossary), translator (DeepSeek prose, locked tokens), assembler+renderPdf (D6). **29/29 tests.**
+- **Central Brain** `apps/web/src/lib/central-brain/` — unified contract + migration-state + analyze() returns `delegated_to_legacy` for un-migrated products (TPS untouched). **3/3 tests.**
+- **knowledge** +`patronymic.ts` (26/26; kills "Yovych" fragment), +`gazetteer.ts` (Простянець→Тростянець generalized).
+- **Official UA forms layer** `docs/official-forms/ukraine/` — source-ledger (8 groups/15 types, current+historical: КМУ 1025/353/302/152…), README rule, marriage schema + types (5/5).
+- **Architecture** `docs/architecture/MESSENGINFO_CENTRAL_BRAIN_SYSTEM.md` + `RECOGNITION_ORG_CHART.md`.
+- **Proven live:** vision LLMs FABRICATE handwriting (Gemini→"Хроменчук Олег", GPT-4o→"Людмила Анатольевна" on same 1986 birth cert). Transkribus reads PRINTED (usable) not faded handwritten Soviet docs. Verdict: printed=auto, handwritten=human-assist.
+- Test set `test-fixtures/real-docs/` (gitignored, 9 docs/multiple people).
+
 ## 2026-05-28 — Session 55: Post-audit P2 items — SEO canonicalization + live Cyrillic OCR chain
 
 Closed all remaining P2 audit findings (owner directive: «добей все»).
@@ -2288,3 +2300,13 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - auto_grant_on_new_table moved to extensions schema (not REST-exposed)
 - SET search_path on all public SECURITY DEFINER functions
 - Security Advisor: 0 errors
+
+_(Session 56 cont. 2026-05-29: Translation migrated to central-brain via consensus; schema-driven official PDF renderer (KMU-1025); 4 product contracts added. Branch feat/central-brain, not deployed.)_
+_(Session 56 cont.2: Re-Parole migrated as intake-only via central-brain; +ua_international_passport docType; ADR-010..014 recorded. routing 5/5. Branch feat/central-brain.)_
+_(Session 56 cont.3: EAD migrated as intake + rules-based I-765 category (c8/c11/c19; never guessed; gen legacy). 45/45 engine+brain+schema. Branch feat/central-brain.)_
+_(Session 56 cont.4: MASTER_BACKLOG consolidated; read-only /api/central-brain/health route; birth-certificate schema (KMU 1025), schema tests 7/7. Branch feat/central-brain.)_
+_(Session 56 cont.5: googleVisionReader (2nd prod reader for consensus); /api/translation/vision-extract wired to central-brain behind flag CENTRAL_BRAIN_TRANSLATION (default off → prod unchanged, error→legacy fallback). 47/47 + tsc clean. Branch feat/central-brain.)_
+_(Session 56 cont.6: generic schema-driven renderer (renderOfficialTranslation) for all civil-status; divorce/death/name-change schemas; D7 audit ledger wired (auditId per output); D0-D8 department docs (Phase 6). New-system suite green, 0 tsc errors in new code. Branch feat/central-brain.)_
+_(Session 56 cont.7: verified live consensus path (Gemini+Google Vision) — found false-disagreements from reader granularity; fixed readingsAgree (containment + digit-core); live 6/8 accepted (was 2/8), guard intact. googleVisionReader works live. 16/16 consensus. Branch feat/central-brain.)_
+_(Session 56 cont.8: preview deploy of feat/central-brain — central-brain/health live (200); enabling CENTRAL_BRAIN_TRANSLATION=on for Preview to verify consensus path on deployed preview. Prod untouched.)_
+_(Session 56 cont.9: deployed feat/central-brain to PREVIEW (prod untouched); verified central-brain consensus LIVE on preview (provider=central-brain:consensus, guard works). Found+fixed D5 data blocker: wizard dropped guarded empty fields; now keeps review_required fields as editable rows. Prod flip deferred until wizard review UX browser-verified — my engineering call.)_
