@@ -32,10 +32,10 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 // Central Brain (flag-gated, default OFF → prod behavior unchanged)
 import { analyze } from '@/lib/central-brain'
-import { geminiReader, googleVisionReader } from '@/lib/engine/models'
 import { DOC_TYPES } from '@/lib/engine/docTypes'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60 // gemini-2.5-pro vision ~16-40s/page (handwriting) — default 15s would abort it
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
 const MAX_BYTES = 10 * 1024 * 1024 // 10 MB per page
@@ -104,17 +104,13 @@ export async function POST(req: NextRequest) {
   if (process.env.CENTRAL_BRAIN_TRANSLATION === 'on') {
     try {
       const spec = DOC_TYPES[docTypeId]
-      const gem = process.env.GEMINI_API_KEY
+      const gem = process.env.GEMINI_API_KEY_PAY || process.env.GEMINI_API_KEY
       const gv = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY
       if (spec && gem && gv) {
-        const readers = [
-          geminiReader({ apiKey: gem, docTypeEn: spec.title_en }),
-          googleVisionReader({ apiKey: gv, spec }),
-        ]
         const docs = await Promise.all(rawFiles.map(async (f) => ({
           docTypeId, mime: f.type || 'image/jpeg', image: Buffer.from(await f.arrayBuffer()),
         })))
-        const br = await analyze({ product: 'translation', locale: 'en', documents: docs }, { readers })
+        const br = await analyze({ product: 'translation', locale: 'en', documents: docs }, { geminiApiKey: gem, gvApiKey: gv })
         const fields: FieldOut[] = br.recognizedFields.map((f) => ({
           field: f.field, value: f.value || null, raw_cyrillic: f.cyrillic || null,
           confidence: f.can_read ? 0.9 : 0, review_required: f.review_required, kind: f.source,
