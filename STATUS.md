@@ -1,4 +1,11 @@
-# ST
+# STATUS — Messenginfo
+## Session 57 (2026-05-29) — Paid Gemini, model bench, recognition audit, D-GLOSSARY G1+G2 (branch feat/c3-presence)
+- `VERIFIED(live API)` Best recognizer = **gemini-3.1-pro-preview** (20/22; handwriting 8/9, the ONLY model that reads it). 2.5-pro fabricates on handwriting (1/9); GPT-5.5/4o collapse (1/9); DeepSeek = text-only (no vision); Transkribus blocked. Default switched to 3.1-pro (env-driven, fallback 3.5-flash); prod key var = `GEMINI_API_KEY_PAY`.
+- `VERIFIED(local)` presence-confirm fix: GV garbles handwriting → no longer discards handwriting reads (keep+review); only printed fields GV-guarded.
+- `VERIFIED(local)` **D-GLOSSARY G1+G2**: unified registry `packages/knowledge/src/registry/` (CSV source + generated runtime, every row has source_url, era-gating). Wired into LIVE `normalize` (place_city/oblast/authority) with documentDate. смт→"urban-type settlement", oblast→DMS EN, міліція@1986→Militsiya. Web 2182 pass, 0 type errors; registry 11/11; wiring 4/4.
+- `AUDIT` `docs/reports/RECOGNITION_TRANSLATION_AUDIT_2026-05-29.md` — danger is the DELIVERY layer (PDF drops empty fields, wizard hardcodes review, names vs MRZ, fake email, manual-review no ticket, no preprocessing).
+- `NOT DEPLOYED / OPEN` G3 (full KOATUU/civil-registry), G4 (catalog+CI gate), P0 honest-PDF, EAD/Re-Parole route wiring. On Vercel confirm `GEMINI_API_KEY_PAY` set + deploy.
+
 ## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)
 - `VERIFIED(local)` recognition engine `apps/web/src/lib/engine/` 29/29; central-brain `apps/web/src/lib/central-brain/` 3/3 (delegated_to_legacy → TPS untouched); knowledge patronymic 26/26 + gazetteer.
 - `VERIFIED(live API)` vision LLMs fabricate handwriting; Transkribus reads PRINTED not faded handwritten Soviet docs → printed=auto, handwritten=human-assist.

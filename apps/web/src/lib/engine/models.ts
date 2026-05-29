@@ -54,7 +54,7 @@ export function geminiReader(opts: { apiKey: string; model?: string; docTypeEn: 
         method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: buildPrompt(opts.docTypeEn, fields) }, { inline_data: { mime_type: mime, data: image.toString('base64') } }] }],
-          generationConfig: { temperature: 0, response_mime_type: 'application/json' },
+          generationConfig: { temperature: 0, response_mime_type: 'application/json', maxOutputTokens: 8192 },
         }),
       })
       // SURFACE quota/HTTP errors instead of silently returning empty fields

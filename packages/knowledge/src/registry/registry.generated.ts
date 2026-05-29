@@ -1,0 +1,387 @@
+/* AUTO-GENERATED from registry.csv by scripts/gen-registry.mjs — DO NOT EDIT BY HAND.
+   Edit registry.csv (human source) then re-run the generator. */
+import type { RegistryRow } from './registry.schema'
+
+export const REGISTRY_ROWS: RegistryRow[] = [
+  {
+    "category": "settlement_type",
+    "key_uk": "смт",
+    "key_ru": "посёлок городского типа",
+    "official_en": "urban-type settlement",
+    "aliases": [
+      "смт.",
+      "с-ще міського типу"
+    ],
+    "valid_from": null,
+    "valid_until": "2024-01-01",
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Мінрегіон",
+    "source_act": "Наказ №290 від 26.11.2020 (КАТОТТГ)",
+    "confidence_rule": "high",
+    "review_rule": "keep_type",
+    "warning": "NEVER translate as city or town; category abolished Jan 2024 but appears on pre-2024 documents",
+    "notes": ""
+  },
+  {
+    "category": "settlement_type",
+    "key_uk": "пгт",
+    "key_ru": "посёлок городского типа",
+    "official_en": "urban-type settlement",
+    "aliases": [
+      "п.г.т.",
+      "пгт."
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Мінрегіон",
+    "source_act": "Наказ №290 (КАТОТТГ)",
+    "confidence_rule": "high",
+    "review_rule": "keep_type",
+    "warning": "Russian abbreviation; NEVER city or town",
+    "notes": ""
+  },
+  {
+    "category": "settlement_type",
+    "key_uk": "село",
+    "key_ru": "село",
+    "official_en": "village",
+    "aliases": [
+      "с.",
+      "c-ще"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Мінрегіон",
+    "source_act": "Наказ №290 (КАТОТТГ)",
+    "confidence_rule": "high",
+    "review_rule": "keep_type",
+    "warning": "NEVER town",
+    "notes": ""
+  },
+  {
+    "category": "settlement_type",
+    "key_uk": "місто",
+    "key_ru": "город",
+    "official_en": "city",
+    "aliases": [
+      "м."
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Мінрегіон",
+    "source_act": "Наказ №290 (КАТОТТГ)",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "authority",
+    "key_uk": "міліція",
+    "key_ru": "милиция",
+    "official_en": "Militsiya",
+    "aliases": [
+      "міліції",
+      "міліцією"
+    ],
+    "valid_from": null,
+    "valid_until": "2015-11-07",
+    "source_url": "https://zakon.rada.gov.ua/laws/show/565-2015-п",
+    "source_authority": "МВС",
+    "source_act": "Постанова про ліквідацію міліції",
+    "confidence_rule": "high",
+    "review_rule": "historical_lock",
+    "warning": "Historical Soviet/early-UA police; NEVER Police, Militia, or National Police",
+    "notes": ""
+  },
+  {
+    "category": "authority",
+    "key_uk": "національна поліція",
+    "key_ru": "национальная полиция",
+    "official_en": "National Police of Ukraine",
+    "aliases": [
+      "поліція",
+      "нацполіція",
+      "поліції"
+    ],
+    "valid_from": "2015-07-04",
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/580-19",
+    "source_authority": "ВРУ",
+    "source_act": "Закон №580-VIII «Про Національну поліцію»",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "authority",
+    "key_uk": "міністерство внутрішніх справ",
+    "key_ru": "министерство внутренних дел",
+    "official_en": "Ministry of Internal Affairs of Ukraine",
+    "aliases": [
+      "мвс"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://mvs.gov.ua/en",
+    "source_authority": "МВС",
+    "source_act": "",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "do not use Ministry of Interior",
+    "notes": ""
+  },
+  {
+    "category": "authority",
+    "key_uk": "міністерство юстиції",
+    "key_ru": "министерство юстиции",
+    "official_en": "Ministry of Justice of Ukraine",
+    "aliases": [
+      "мінюст"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://minjust.gov.ua/en",
+    "source_authority": "Мінюст",
+    "source_act": "",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "passport_authority",
+    "key_uk": "державна міграційна служба",
+    "key_ru": "государственная миграционная служба",
+    "official_en": "State Migration Service of Ukraine",
+    "aliases": [
+      "дмс"
+    ],
+    "valid_from": "2011-12-09",
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home",
+    "source_authority": "ДМС",
+    "source_act": "КМУ №1058 (2011)",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "civil_registry_term",
+    "key_uk": "державний реєстр актів цивільного стану",
+    "key_ru": "государственный реестр актов гражданского состояния",
+    "official_en": "Civil Registry Office",
+    "aliases": [
+      "драцс",
+      "відділ драцс",
+      "рацс"
+    ],
+    "valid_from": "2013-01-01",
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/1025-2010-п",
+    "source_authority": "Мінюст",
+    "source_act": "КМУ №1025 (10.11.2010)",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "civil_registry_term",
+    "key_uk": "відділ запису актів цивільного стану",
+    "key_ru": "отдел записи актов гражданского состояния",
+    "official_en": "Civil Registry Office (ZAGS)",
+    "aliases": [
+      "загс",
+      "загсу"
+    ],
+    "valid_from": null,
+    "valid_until": "2012-12-31",
+    "source_url": "https://zakon.rada.gov.ua/laws/show/1025-2010-п",
+    "source_authority": "Мінюст",
+    "source_act": "КМУ №1025; historical ZAGS",
+    "confidence_rule": "high",
+    "review_rule": "historical_lock",
+    "warning": "Soviet/early form ЗАГС; keep ZAGS note on pre-2013 documents",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "вінницька",
+    "key_ru": "винницкая",
+    "official_en": "Vinnytsia Oblast",
+    "aliases": [
+      "вінницької",
+      "вінницькій",
+      "вінницьку"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "settlement",
+    "key_uk": "тростянець",
+    "key_ru": "тростянец",
+    "official_en": "Trostianets",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Держстат/Мінрегіон",
+    "source_act": "КАТОТТГ / КОАТУУ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": "Vinnytsia Oblast"
+  },
+  {
+    "category": "settlement",
+    "key_uk": "вінниця",
+    "key_ru": "винница",
+    "official_en": "Vinnytsia",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Держстат",
+    "source_act": "КОАТУУ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": "Vinnytsia Oblast"
+  },
+  {
+    "category": "settlement",
+    "key_uk": "кропивницький",
+    "key_ru": "кропивницкий",
+    "official_en": "Kropyvnytskyi",
+    "aliases": [],
+    "valid_from": "2016-07-14",
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/1351-19",
+    "source_authority": "ВРУ",
+    "source_act": "Постанова №1351 про перейменування Кіровограда",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": "renamed from Kirovohrad in 2016"
+  },
+  {
+    "category": "settlement",
+    "key_uk": "кіровоград",
+    "key_ru": "кировоград",
+    "official_en": "Kirovohrad",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": "2016-07-14",
+    "source_url": "https://zakon.rada.gov.ua/laws/show/1351-19",
+    "source_authority": "ВРУ",
+    "source_act": "historical name until 2016",
+    "confidence_rule": "high",
+    "review_rule": "historical_lock",
+    "warning": "Historical name; renamed Kropyvnytskyi 2016 — do NOT modernise on older documents",
+    "notes": ""
+  },
+  {
+    "category": "abbreviation",
+    "key_uk": "обл.",
+    "key_ru": "обл.",
+    "official_en": "oblast",
+    "aliases": [
+      "область",
+      "обл"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Мінрегіон",
+    "source_act": "КАТОТТГ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "abbreviation",
+    "key_uk": "р-н",
+    "key_ru": "р-н",
+    "official_en": "raion",
+    "aliases": [
+      "район",
+      "району"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Мінрегіон",
+    "source_act": "КАТОТТГ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "military_authority",
+    "key_uk": "територіальний центр комплектування",
+    "key_ru": "территориальный центр комплектования",
+    "official_en": "Territorial Recruitment Center",
+    "aliases": [
+      "тцк",
+      "військовий комісаріат",
+      "військкомат"
+    ],
+    "valid_from": "2022-07-30",
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/2470-20",
+    "source_authority": "МОУ",
+    "source_act": "reform 2022 (former military commissariat)",
+    "confidence_rule": "medium",
+    "review_rule": "auto",
+    "warning": "former Military Commissariat",
+    "notes": ""
+  },
+  {
+    "category": "document_type",
+    "key_uk": "свідоцтво про народження",
+    "key_ru": "свидетельство о рождении",
+    "official_en": "Birth Certificate",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/1025-2010-п",
+    "source_authority": "Мінюст",
+    "source_act": "КМУ №1025",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "field_label",
+    "key_uk": "прізвище",
+    "key_ru": "фамилия",
+    "official_en": "Surname",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/1025-2010-п",
+    "source_authority": "Мінюст",
+    "source_act": "КМУ №1025",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  }
+] as RegistryRow[]
