@@ -1,4 +1,21 @@
-# HANDOFF — Session 55 (2026-05-28)
+# HANDOFF — Session 56 (2026-05-29)
+
+## Session 56 — Unified recognition engine + Central Brain spine (LOCAL, not deployed)
+
+Built the cross-product recognition/translation engine and the official UA forms layer; proved the handwriting reality. **Nothing deployed — local checkpoint commit.**
+
+**Done:** `apps/web/src/lib/engine/` (consensus/models/htr/docTypes/orchestrator/terminologist/translator/assembler/renderPdf, 29/29); `apps/web/src/lib/central-brain/` (unified contract, analyze→delegated_to_legacy so TPS untouched, 3/3); `packages/knowledge/{patronymic,gazetteer}.ts` (26/26 + tests); `docs/official-forms/ukraine/` source-ledger (8 groups/15 types, КМУ 1025/353/302/152…) + marriage schema (5/5); `docs/architecture/MESSENGINFO_CENTRAL_BRAIN_SYSTEM.md`.
+
+**Proven (live API):** general vision LLMs fabricate handwriting (Gemini→"Хроменчук Олег", GPT-4o→"Людмила Анатольевна" on the same 1986 birth cert). Transkribus reads PRINTED docs (usable) but NOT faded handwritten Soviet docs. **Verdict: printed=auto-fill, handwritten=human-assist; no engine auto-reads old handwriting.** Real end-to-end PDF produced for printed marriage cert (`~/Downloads/Translation_Marriage_Zastavnyi.pdf`).
+
+**System map:** brain is TPS-only on prod; Re-Parole=OCR-no-brain; EAD=HTML-no-AI; Translation=single Gemini Flash (hallucination risk). The new engine is the unifying spine, NOT yet wired to any live product.
+
+**Exact next task:** Phase 5 Step 2 — wire Translation into central-brain (engine adapter) + `renderMarriageCertificateTranslation.ts` from the official schema; regenerate visible PDF. Then Re-Parole, EAD, TPS-last. Write product contracts (Phase 2) + ADRs. Generalize audit (D7).
+
+**Evidence:** 32/32 new tests (29 engine + 3 brain) + 26 patronymic + 5 schema. test-fixtures/real-docs gitignored.
+
+---
+
 
 ## Session 55 — Post-audit P2 items: SEO fixes + live Cyrillic OCR verification
 
