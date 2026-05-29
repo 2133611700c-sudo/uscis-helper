@@ -8,6 +8,7 @@
  */
 import { parseMrz } from '@uscis-helper/knowledge'
 import { geminiReader, googleVisionFullText } from './models'
+import { preprocessImage } from './preprocess'
 import { normalize, type EngineField, type EngineResult } from './orchestrator'
 import type { ConsensusField } from './consensus'
 import type { Sex } from '@uscis-helper/knowledge'
@@ -33,9 +34,15 @@ export async function extractDocumentPresence(
   const printed = new Set(printedFields(spec))
   const openNames = new Set(openNameFields(spec))
 
+  // D0 intake: clean the pixels before any model sees them (auto-orient, grayscale,
+  // contrast-normalize, downscale). Fails open → original image on any error.
+  const pre = await preprocessImage(image, mime)
+  const img = pre.image
+  const imgMime = pre.mime
+
   const [gem, ft] = await Promise.all([
-    geminiReader({ apiKey: opts.geminiApiKey, model: opts.geminiModel ?? process.env.GEMINI_MODEL, docTypeEn: spec.title_en }).read(image, mime, keys),
-    googleVisionFullText(image, opts.gvApiKey),
+    geminiReader({ apiKey: opts.geminiApiKey, model: opts.geminiModel ?? process.env.GEMINI_MODEL, docTypeEn: spec.title_en }).read(img, imgMime, keys),
+    googleVisionFullText(img, opts.gvApiKey),
   ])
   const ftNorm = norm(ft)
 
