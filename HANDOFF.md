@@ -1,4 +1,21 @@
-# HANDOFF — Session 55 (2026-05-28)
+# HANDOFF — Session 56 (2026-05-29)
+
+## Session 56 — Unified recognition engine + Central Brain spine (LOCAL, not deployed)
+
+Built the cross-product recognition/translation engine and the official UA forms layer; proved the handwriting reality. **Nothing deployed — local checkpoint commit.**
+
+**Done:** `apps/web/src/lib/engine/` (consensus/models/htr/docTypes/orchestrator/terminologist/translator/assembler/renderPdf, 29/29); `apps/web/src/lib/central-brain/` (unified contract, analyze→delegated_to_legacy so TPS untouched, 3/3); `packages/knowledge/{patronymic,gazetteer}.ts` (26/26 + tests); `docs/official-forms/ukraine/` source-ledger (8 groups/15 types, КМУ 1025/353/302/152…) + marriage schema (5/5); `docs/architecture/MESSENGINFO_CENTRAL_BRAIN_SYSTEM.md`.
+
+**Proven (live API):** general vision LLMs fabricate handwriting (Gemini→"Хроменчук Олег", GPT-4o→"Людмила Анатольевна" on the same 1986 birth cert). Transkribus reads PRINTED docs (usable) but NOT faded handwritten Soviet docs. **Verdict: printed=auto-fill, handwritten=human-assist; no engine auto-reads old handwriting.** Real end-to-end PDF produced for printed marriage cert (`~/Downloads/Translation_Marriage_Zastavnyi.pdf`).
+
+**System map:** brain is TPS-only on prod; Re-Parole=OCR-no-brain; EAD=HTML-no-AI; Translation=single Gemini Flash (hallucination risk). The new engine is the unifying spine, NOT yet wired to any live product.
+
+**Exact next task:** Phase 5 Step 2 — wire Translation into central-brain (engine adapter) + `renderMarriageCertificateTranslation.ts` from the official schema; regenerate visible PDF. Then Re-Parole, EAD, TPS-last. Write product contracts (Phase 2) + ADRs. Generalize audit (D7).
+
+**Evidence:** 32/32 new tests (29 engine + 3 brain) + 26 patronymic + 5 schema. test-fixtures/real-docs gitignored.
+
+---
+
 
 ## Session 55 — Post-audit P2 items: SEO fixes + live Cyrillic OCR verification
 
@@ -838,3 +855,13 @@ translation-review-gate: 1/1 PASSED 56.3s (prior session)
 - Gates: 13/13 PASS — docs/reports/P7_GATES_VERIFICATION_2026-05-27.md
 
 **Security patch 2026-05-27b:** auto_grant_on_new_table in extensions schema, search_path hardened.
+
+_(Session 56 cont. 2026-05-29: Translation migrated to central-brain via consensus; schema-driven official PDF renderer (KMU-1025); 4 product contracts added. Branch feat/central-brain, not deployed.)_
+_(Session 56 cont.2: Re-Parole migrated as intake-only via central-brain; +ua_international_passport docType; ADR-010..014 recorded. routing 5/5. Branch feat/central-brain.)_
+_(Session 56 cont.3: EAD migrated as intake + rules-based I-765 category (c8/c11/c19; never guessed; gen legacy). 45/45 engine+brain+schema. Branch feat/central-brain.)_
+_(Session 56 cont.4: MASTER_BACKLOG consolidated; read-only /api/central-brain/health route; birth-certificate schema (KMU 1025), schema tests 7/7. Branch feat/central-brain.)_
+_(Session 56 cont.5: googleVisionReader (2nd prod reader for consensus); /api/translation/vision-extract wired to central-brain behind flag CENTRAL_BRAIN_TRANSLATION (default off → prod unchanged, error→legacy fallback). 47/47 + tsc clean. Branch feat/central-brain.)_
+_(Session 56 cont.6: generic schema-driven renderer (renderOfficialTranslation) for all civil-status; divorce/death/name-change schemas; D7 audit ledger wired (auditId per output); D0-D8 department docs (Phase 6). New-system suite green, 0 tsc errors in new code. Branch feat/central-brain.)_
+_(Session 56 cont.7: verified live consensus path (Gemini+Google Vision) — found false-disagreements from reader granularity; fixed readingsAgree (containment + digit-core); live 6/8 accepted (was 2/8), guard intact. googleVisionReader works live. 16/16 consensus. Branch feat/central-brain.)_
+_(Session 56 cont.8: preview deploy of feat/central-brain — central-brain/health live (200); enabling CENTRAL_BRAIN_TRANSLATION=on for Preview to verify consensus path on deployed preview. Prod untouched.)_
+_(Session 56 cont.9: deployed feat/central-brain to PREVIEW (prod untouched); verified central-brain consensus LIVE on preview (provider=central-brain:consensus, guard works). Found+fixed D5 data blocker: wizard dropped guarded empty fields; now keeps review_required fields as editable rows. Prod flip deferred until wizard review UX browser-verified — my engineering call.)_
