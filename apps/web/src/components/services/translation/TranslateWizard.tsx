@@ -930,7 +930,12 @@ export function TranslateWizard() {
         goTo(5)
         return
       }
-      const fields = Array.isArray(json.fields) ? (json.fields as ExtractedField[]).filter((f) => f.value) : []
+      // Keep guarded/empty fields that the engine flagged for review — the user
+      // fills them in (the central-brain returns value:null + review_required when
+      // readers disagree; dropping them hid the field instead of asking the human).
+      const fields = Array.isArray(json.fields)
+        ? (json.fields as ExtractedField[]).filter((f) => f.value || (f as any).review_required)
+        : []
       setExtractedFields(fields)
       goTo(5)
     } catch (e: unknown) {
