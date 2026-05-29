@@ -14,6 +14,10 @@ const BASE_PAGES = [
   '/services',
 ] as const;
 
+// Service slug → final URL slug. `translate-document` is a 307-redirect
+// to `/translate-document/start` (the wizard); sitemap emits the canonical
+// destination directly so crawlers don't waste a hop and the indexed URL
+// is the one our metadata's `canonical` actually points at.
 const SERVICE_SLUGS = [
   'parole-expires-soon',
   're-parole-u4u',
@@ -26,7 +30,7 @@ const SERVICE_SLUGS = [
   'payment-problem',
   'biometrics',
   'rfe-denial',
-  'translate-document',
+  'translate-document/start',
   'form-draft-helper',
   'official-sources',
   'attorney-directory',
