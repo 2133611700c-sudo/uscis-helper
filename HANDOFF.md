@@ -13,6 +13,7 @@
 
 **P0 DONE:** honest-PDF — pdf.ts::planTranslationRows stops silent-drop of empty fields (visible MISSING + certifiable=false), unit-tested.
 **G4 (partial) DONE:** brainHealth().glossary self-describes the registry (categories/total/provenance_complete) + guard test.
+**Wizard #2a+#4 DONE:** real per-field review_required propagated (TranslateWizard.tsx ~1087, no more hardcoded true); false "sent to email" copy removed (ru+en). Next: #2b hard gate (disable Download until no MISSING/unconfirmed-review) + optional email collection.
 
 **Exact next task:** gap #2 (TranslateWizard.tsx:1087 stop hardcoding review_required=true; propagate real per-field flag + block generate/download until missing/review resolved), then G3 (full KOATUU + civil_registry into registry.csv), G4 (registryCatalog on brain health + validateRegistry CI gate), MRZ/controlling-Latin (#3), wire EAD/Re-Parole routes to analyze(). On Vercel: confirm `GEMINI_API_KEY_PAY` + deploy. Rotate the OpenAI key (was pasted in chat).
 
