@@ -8,6 +8,7 @@ import { eligibilityCategory } from '../engine/eadCategory'
 import type { NamedReader } from '../engine/consensus'
 import type { ProseTranslator } from '../engine/translator'
 import { MIGRATION_STATE, brainHealth } from './health'
+import { recordAudit } from './audit/ledger'
 import type { BrainRequest, BrainResult, BrainField } from './types'
 export { brainHealth }
 export type { BrainRequest, BrainResult, Product } from './types'
@@ -62,6 +63,7 @@ export async function analyze(req: BrainRequest, deps: BrainDeps = {}): Promise<
 
   return { product: req.product, migrated: true, docTypes, recognizedFields: fields,
     reviewRequiredFields, missingRequiredFields, productReadiness,
-    officialSourcesUsed: [...sources], auditId: null,
-    riskFlags: ['audit ledger (D7) not wired yet', ...(req.product==='reparole_u4u'?['intake/recognition only — I-131 generation still via legacy generate-packet']:[]), ...(req.product==='ead'?['I-765 generation still via legacy generate-packet; category by rules not AI']:[])] }
+    officialSourcesUsed: [...sources],
+    auditId: recordAudit({ product: req.product, officialSources: [...sources], fields: fields.map((f) => ({ field: f.field, value: f.value, source: f.source, can_read: f.can_read, review_required: f.review_required })) }),
+    riskFlags: [...(req.product==='reparole_u4u'?['intake/recognition only — I-131 generation still via legacy generate-packet']:[]), ...(req.product==='ead'?['I-765 generation still via legacy generate-packet; category by rules not AI']:[])] }
 }
