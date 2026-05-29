@@ -15,7 +15,7 @@ describe('central brain — Translation migrated (Phase 5 Step 2)', () => {
   it('health: translation migrated, count 1', () => {
     const h = brainHealth()
     expect(h.products.translation.migrated).toBe(true)
-    expect(h.migrated_count).toBe(1)
+    expect(h.migrated_count).toBe(2)
   })
   it('translation runs through consensus engine → recognized fields + official source', async () => {
     const r = await analyze({ product: 'translation', locale: 'ru', documents: [doc] }, { readers: [fake('a'), fake('b')] })
@@ -27,8 +27,13 @@ describe('central brain — Translation migrated (Phase 5 Step 2)', () => {
   it('translation REJECTS a single reader (no single-AI truth-source)', async () => {
     await expect(analyze({ product: 'translation', locale: 'ru', documents: [doc] }, { readers: [fake('a')] })).rejects.toThrow(/single reader|≥2/)
   })
+  it('reparole migrated as intake-only (I-131 gen stays legacy)', async () => {
+    const r = await analyze({ product: 'reparole_u4u', locale: 'ru', documents: [{ docTypeId: 'ua_international_passport', image: Buffer.from('x'), mime: 'image/jpeg' }] }, { readers: [fake('a'), fake('b')] })
+    expect(r.migrated).toBe(true)
+    expect(r.riskFlags.join(' ')).toMatch(/I-131 generation still via legacy/)
+  })
   it('un-migrated products → delegated_to_legacy (TPS untouched)', async () => {
-    for (const p of ['tps', 'reparole_u4u', 'ead'] as const) {
+    for (const p of ['tps', 'ead'] as const) {
       const r = await analyze({ product: p, locale: 'ru', documents: [] })
       expect(r.productReadiness).toBe('delegated_to_legacy')
     }
