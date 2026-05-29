@@ -18,6 +18,13 @@ describe('central brain — routing + C3 wiring', () => {
     expect(h.migrated_count).toBe(3)
     expect(h.products.tps.migrated).toBe(false)
   })
+
+  it('health: D-GLOSSARY catalog present with full provenance', () => {
+    const h = brainHealth()
+    expect(h.glossary.total).toBeGreaterThan(15)
+    expect(h.glossary.provenance_complete).toBe(true) // every entry has a source_url
+    expect(h.glossary.categories.length).toBeGreaterThan(5)
+  })
   it('migrated product runs recognize → fields + auditId + official source', async () => {
     const r = await analyze({ product: 'translation', locale: 'ru', documents: [doc] }, { recognize: fakeRecognize })
     expect(r.migrated).toBe(true)

@@ -18,7 +18,9 @@ Every work session appends here. Never delete entries. Newest first.
 
 **P0 honest-PDF (audit gap #1):** `pdf.ts::planTranslationRows()` — an unread field is no longer silently dropped (`continue`); it renders as a visible `________ [enter from document]` MISSING row, any missing field makes the draft `certifiable=false` + an INCOMPLETE banner. Pure + unit-tested (honest-pdf.test.ts).
 
-**Evidence:** web suite 2184 pass + 1 skip, 0 type errors (web + knowledge). Registry 11/11. Glossary-wiring 4/4. Honest-PDF 2/2.
+**G4 (partial):** `brainHealth()` now self-describes the glossary — `glossary.categories/total/provenance_complete` — so the brain "knows where everything is". Guard test added.
+
+**Evidence:** web suite 2185 pass + 1 skip, 0 type errors (web + knowledge). Registry 11/11. Glossary-wiring 4/4. Honest-PDF 2/2.
 **Not done yet:** G3 (full KOATUU + civil-registry into CSV), G4 (catalog on health + CI gate), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring. test-fixtures/real-docs + keys remain gitignored.
 
 ---
