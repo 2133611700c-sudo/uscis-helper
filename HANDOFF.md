@@ -857,3 +857,4 @@ translation-review-gate: 1/1 PASSED 56.3s (prior session)
 **Security patch 2026-05-27b:** auto_grant_on_new_table in extensions schema, search_path hardened.
 
 _(Session 56 cont. 2026-05-29: Translation migrated to central-brain via consensus; schema-driven official PDF renderer (KMU-1025); 4 product contracts added. Branch feat/central-brain, not deployed.)_
+_(Session 56 cont.2: Re-Parole migrated as intake-only via central-brain; +ua_international_passport docType; ADR-010..014 recorded. routing 5/5. Branch feat/central-brain.)_
