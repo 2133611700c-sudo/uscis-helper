@@ -3,6 +3,46 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-28 — Session 55: Post-audit P2 items — SEO canonicalization + live Cyrillic OCR chain
+
+Closed all remaining P2 audit findings (owner directive: «добей все»).
+
+### P2.1 — sitemap.ts canonical URL
+`apps/web/src/app/sitemap.ts`: `'translate-document'` → `'translate-document/start'` in SERVICE_SLUGS. The `/translate-document` URL 307-redirects; sitemap must emit the final destination directly so crawlers index the canonical URL and don't waste a redirect hop.
+
+### P2.2 — /start page: index + explicit OG + hreflang
+`apps/web/src/app/[locale]/services/translate-document/start/page.tsx`:
+- `robots: {index:false}` → `{index:true, follow:true}` — /start is now the canonical service landing; noindex was an SEO regression.
+- Added `openGraph` block with per-locale `title`, `description`, `url`, `locale`, `type:'website'`, `siteName`.
+- Added `twitter: {card:'summary', title, description}`.
+- Added `alternates.languages` hreflang for all 4 locales (uk/ru/en/es) + canonical URL per locale.
+Without the explicit OG block, Next.js fell back to the root layout's generic «Помощь с USCIS…» title in share previews.
+
+### P2.3 — Live Cyrillic OCR chain verified on production
+Generated synthetic passport image (Тарас Шевченко, 1814 — historical public figure): 1500×1000 JPEG, Cyrillic fields only. Posted to `https://messenginfo.com/api/translation/vision-extract`.
+
+All 6 expected KMU-55 outputs confirmed:
+| Field | Cyrillic in | Expected | Got |
+|---|---|---|---|
+| family_name | ШЕВЧЕНКО | SHEVCHENKO | ✅ |
+| given_name | ТАРАС | TARAS | ✅ |
+| middle_name | ГРИГОРОВИЧ | HRYHOROVYCH | ✅ |
+| dob | 09 БЕРЕЗНЯ 1814 | 1814-03-09 | ✅ |
+| city_of_birth | МОРИНЦІ | MORYNTSI | ✅ |
+| province_of_birth | ЧЕРКАСЬКА обл. | Cherkasy Oblast | ✅ |
+
+Gemini vision + KMU-55 deterministic transliteration is end-to-end live on production.
+
+### Evidence
+- `pnpm --filter web run test`: 2124 pass + 1 skip
+- `npx tsc --noEmit`: 0 errors
+
+### Files changed
+- `apps/web/src/app/sitemap.ts`
+- `apps/web/src/app/[locale]/services/translate-document/start/page.tsx`
+
+---
+
 ## 2026-05-28 — Session 54: Post-audit PII purge (746 files) + retention-policy fix
 
 Independent auditor (separate Claude session, no context leak) ran a 14-claim verification of Sessions 49–53. 12/14 PASS, 2 P1 findings. Owner's directive: «1 ключ оставь, личные данные убери, сделай всё кроме ключа.» This session implements the PII purge.
