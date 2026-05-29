@@ -4,6 +4,7 @@
  * (their existing pipeline untouched — TPS never breaks).
  */
 import { extractDocument } from '../engine/orchestrator'
+import { eligibilityCategory } from '../engine/eadCategory'
 import type { NamedReader } from '../engine/consensus'
 import type { ProseTranslator } from '../engine/translator'
 import { MIGRATION_STATE, brainHealth } from './health'
@@ -47,6 +48,13 @@ export async function analyze(req: BrainRequest, deps: BrainDeps = {}): Promise<
         can_read: f.can_read, review_required: f.review_required, source: f.source })
     }
   }
+  // EAD: eligibility category is chosen by rules from a CONFIRMED basis, never guessed.
+  if (req.product === 'ead') {
+    const cat = eligibilityCategory(req.userCorrections?.eligibility_basis)
+    fields.push(cat
+      ? { field: 'eligibility_category', value: `${cat.code} — ${cat.label}`, cyrillic: '', can_read: true, review_required: true, source: 'rules:confirmed-basis' }
+      : { field: 'eligibility_category', value: '', cyrillic: '', can_read: false, review_required: true, source: 'rules:basis-not-confirmed (must be selected, not guessed)' })
+  }
   const reviewRequiredFields = fields.filter((f) => f.review_required).map((f) => f.field)
   const missingRequiredFields = fields.filter((f) => !f.can_read).map((f) => f.field)
   const productReadiness = missingRequiredFields.length ? 'incomplete'
@@ -55,5 +63,5 @@ export async function analyze(req: BrainRequest, deps: BrainDeps = {}): Promise<
   return { product: req.product, migrated: true, docTypes, recognizedFields: fields,
     reviewRequiredFields, missingRequiredFields, productReadiness,
     officialSourcesUsed: [...sources], auditId: null,
-    riskFlags: ['audit ledger (D7) not wired yet', ...(req.product==='reparole_u4u'?['intake/recognition only — I-131 generation still via legacy generate-packet']:[])] }
+    riskFlags: ['audit ledger (D7) not wired yet', ...(req.product==='reparole_u4u'?['intake/recognition only — I-131 generation still via legacy generate-packet']:[]), ...(req.product==='ead'?['I-765 generation still via legacy generate-packet; category by rules not AI']:[])] }
 }

@@ -15,7 +15,7 @@ describe('central brain — Translation migrated (Phase 5 Step 2)', () => {
   it('health: translation migrated, count 1', () => {
     const h = brainHealth()
     expect(h.products.translation.migrated).toBe(true)
-    expect(h.migrated_count).toBe(2)
+    expect(h.migrated_count).toBe(3)
   })
   it('translation runs through consensus engine → recognized fields + official source', async () => {
     const r = await analyze({ product: 'translation', locale: 'ru', documents: [doc] }, { readers: [fake('a'), fake('b')] })
@@ -32,8 +32,18 @@ describe('central brain — Translation migrated (Phase 5 Step 2)', () => {
     expect(r.migrated).toBe(true)
     expect(r.riskFlags.join(' ')).toMatch(/I-131 generation still via legacy/)
   })
+  it('EAD: category from confirmed basis (tps) — present', async () => {
+    const r = await analyze({ product: 'ead', locale: 'ru', userCorrections: { eligibility_basis: 'tps' }, documents: [{ docTypeId: 'ua_international_passport', image: Buffer.from('x'), mime: 'image/jpeg' }] }, { readers: [fake('a'), fake('b')] })
+    const cat = r.recognizedFields.find(f => f.field === 'eligibility_category')!
+    expect(cat.can_read).toBe(true); expect(cat.value).toMatch(/c\)\(19\)/)
+  })
+  it('EAD: NO basis → category NOT guessed (blank + review)', async () => {
+    const r = await analyze({ product: 'ead', locale: 'ru', documents: [{ docTypeId: 'ua_international_passport', image: Buffer.from('x'), mime: 'image/jpeg' }] }, { readers: [fake('a'), fake('b')] })
+    const cat = r.recognizedFields.find(f => f.field === 'eligibility_category')!
+    expect(cat.can_read).toBe(false); expect(cat.value).toBe('')
+  })
   it('un-migrated products → delegated_to_legacy (TPS untouched)', async () => {
-    for (const p of ['tps', 'ead'] as const) {
+    for (const p of ['tps'] as const) {
       const r = await analyze({ product: p, locale: 'ru', documents: [] })
       expect(r.productReadiness).toBe('delegated_to_legacy')
     }
