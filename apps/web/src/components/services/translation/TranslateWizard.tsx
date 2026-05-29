@@ -123,6 +123,7 @@ const T = {
     // Screen 5 — Preview
     s5_title: 'Перевод готов!',
     s5_subtitle: 'Проверьте данные. Если что-то неправильно — нажмите «Изменить» и поправьте. Затем оплатите и скачайте PDF.',
+    s5_source_doc: 'Ваш документ — сверяйтесь с оригиналом и заполняйте пустые поля',
     s5_edit: '✏️ Изменить',
     s5_edit_aria: 'Изменить значение',
     s5_corrected: 'Исправлено',
@@ -225,6 +226,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     ],
     s5_title: 'Translation ready!',
     s5_subtitle: 'Review the data. If anything is wrong, tap «Edit» and fix it. Then pay and download the PDF.',
+    s5_source_doc: 'Your document — check against the original and fill in any empty fields',
     s5_edit: '✏️ Edit',
     s5_edit_aria: 'Edit value',
     s5_corrected: 'Edited',
@@ -1392,6 +1394,19 @@ export function TranslateWizard() {
             <h2 className="tw-h2" style={{ margin: 0 }}>{t.s5_title}</h2>
           </div>
           <p className="tw-subtitle">{t.s5_subtitle}</p>
+
+          {previewUrls.length > 0 && (
+            <div className="tw-card" style={{ padding: 10, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>{t.s5_source_doc}</div>
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                {previewUrls.map((url, i) => (
+                  <a key={`src-${i}`} href={url} target="_blank" rel="noopener noreferrer" style={{ flex: '0 0 auto', display: 'block' }} aria-label={`${t.s5_source_doc} ${i + 1}`}>
+                    <img src={url} alt={`${t.s5_source_doc} ${i + 1}`} style={{ height: 240, maxWidth: '100%', objectFit: 'contain', borderRadius: 8, border: '1px solid var(--border)', background: '#fff' }} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {translationRows.length > 0 ? (
             <>
