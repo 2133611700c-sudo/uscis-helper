@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { marriageCertificateSchema as s } from '../marriage-certificate.schema'
+import { birthCertificateSchema as birth } from '../birth-certificate.schema'
 
 describe('official form schema — marriage (KMU 1025)', () => {
   it('carries an official source URL (no template without source)', () => {
@@ -31,5 +32,16 @@ describe('official form schema — marriage (KMU 1025)', () => {
     expect(s.layoutSections).toContain('header')
     expect(s.layoutSections).toContain('certification')
     expect(s.layoutSections).toContain('seals')
+  })
+})
+
+describe('official form schema — birth (KMU 1025)', () => {
+  it('has source + name fields use KMU-55', () => {
+    expect(birth.officialSource.url).toMatch(/zakon\.rada/)
+    const names = birth.fields.filter((f) => /surname|given_name|patronymic|father|mother/.test(f.key))
+    for (const n of names) expect(n.translationRule).toBe('transliterate_kmu55')
+  })
+  it('act/series locked verbatim', () => {
+    for (const k of ['act_record_number','series_number']) expect(birth.fields.find((x)=>x.key===k)!.translationRule).toBe('locked_verbatim')
   })
 })

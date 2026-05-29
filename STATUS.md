@@ -737,3 +737,4 @@ Long-term fix still queued: server emits the contract over `/api/tps/contract/bo
 _(Session 56 cont. 2026-05-29: Translation migrated to central-brain via consensus; schema-driven official PDF renderer (KMU-1025); 4 product contracts added. Branch feat/central-brain, not deployed.)_
 _(Session 56 cont.2: Re-Parole migrated as intake-only via central-brain; +ua_international_passport docType; ADR-010..014 recorded. routing 5/5. Branch feat/central-brain.)_
 _(Session 56 cont.3: EAD migrated as intake + rules-based I-765 category (c8/c11/c19; never guessed; gen legacy). 45/45 engine+brain+schema. Branch feat/central-brain.)_
+_(Session 56 cont.4: MASTER_BACKLOG consolidated; read-only /api/central-brain/health route; birth-certificate schema (KMU 1025), schema tests 7/7. Branch feat/central-brain.)_
