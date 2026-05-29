@@ -18,6 +18,7 @@
 **B3 DONE:** engine/preprocess.ts (sharp + quality-gate) wired into presence.ts before Gemini+GV. Next: #5 manual-ticket, #2b download gate, G3 data.
 **#5 DONE:** wizard POSTs /api/translation/manual-review on paid manual docs (idempotent, draft-based). Next: #2b download gate, G3 data, EAD/Re-Parole wiring.
 **#7/#8/#9 DONE:** date calendar validation, sex tri-state (no Male default), number homoglyph guard (field-guards.test.ts). Next: #2b download gate, G3 data, EAD/Re-Parole route wiring, P4 renderers.
+**#12 DONE:** vision-extract degraded-fallback flags degraded + forces review (no silent guard-less path).
 Next: #2b hard Download gate (block until no MISSING/unconfirmed-review) + optional email collection; #5 manual-review ticket (wizard POSTs /api/translation/manual-review on manual path — currently takes payment without a ticket); G3 (full KOATUU/civil-registry into registry.csv); B3 sharp preprocessing; EAD/Re-Parole route wiring.
 
 **Exact next task:** gap #2 (TranslateWizard.tsx:1087 stop hardcoding review_required=true; propagate real per-field flag + block generate/download until missing/review resolved), then G3 (full KOATUU + civil_registry into registry.csv), G4 (registryCatalog on brain health + validateRegistry CI gate), MRZ/controlling-Latin (#3), wire EAD/Re-Parole routes to analyze(). On Vercel: confirm `GEMINI_API_KEY_PAY` + deploy. Rotate the OpenAI key (was pasted in chat).

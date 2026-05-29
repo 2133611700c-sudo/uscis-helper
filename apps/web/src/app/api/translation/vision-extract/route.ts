@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
   // ── Central Brain path (flag-gated; default OFF = unchanged legacy below) ──
   // Replaces the single-Gemini reader with a 2-reader consensus
   // (Gemini + Google Vision) so a single AI is never the truth-source.
+  let degradedFromBrain = false // true ⇒ brain was ON but errored → we fell to the guard-less legacy path
   if (process.env.CENTRAL_BRAIN_TRANSLATION === 'on') {
     try {
       const spec = DOC_TYPES[docTypeId]
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
       }
     } catch (e: any) {
       console.error('[central-brain translation] fell back to legacy:', e?.message ?? e)
+      degradedFromBrain = true
       // fall through to legacy path below — never break the endpoint
     }
   }
@@ -163,7 +165,11 @@ export async function POST(req: NextRequest) {
 
   // Any field at all? Then the request is considered ok even if some pages
   // failed (e.g. user uploaded one good page + one blurry one).
-  const fields = Array.from(merged.values())
+  // #12: if we got here because the central brain ERRORED (not because the flag is
+  // off), this is a DEGRADED path (single reader, no consensus guard) → force every
+  // field to human review and tell the client, so a degraded read is never trusted.
+  const fields = Array.from(merged.values()).map((f) =>
+    degradedFromBrain ? { ...f, review_required: true } : f)
   const ok = fields.length > 0
 
   return NextResponse.json({
@@ -174,10 +180,11 @@ export async function POST(req: NextRequest) {
     page_count: rawFiles.length,
     // Backward compat: keep the single-call shape too for legacy clients.
     anchor_read: lastResult?.anchor_read ?? null,
-    provider: lastResult?.provider ?? null,
+    provider: degradedFromBrain ? `legacy-fallback:${lastResult?.provider ?? 'gemini'}` : (lastResult?.provider ?? null),
     model: lastResult?.model ?? null,
     ms: pageResults.reduce((s, p) => s + p.ms, 0),
-    status: ok ? 'ok' : (lastResult?.status ?? 'no_fields'),
+    ...(degradedFromBrain ? { degraded: true, degraded_reason: 'central-brain unavailable — used legacy single reader; verify every field against the document' } : {}),
+    status: ok ? (degradedFromBrain ? 'ok:degraded-legacy' : 'ok') : (lastResult?.status ?? 'no_fields'),
     ...(ok ? {} : { error: lastResult?.error ?? 'No fields extracted across all pages.' }),
   }, { status: ok ? 200 : 502 })
 }
