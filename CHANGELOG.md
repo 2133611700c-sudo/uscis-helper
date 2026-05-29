@@ -2300,3 +2300,5 @@ Implemented guarded extraction and parity lock for Ukrainian internal passport b
 - auto_grant_on_new_table moved to extensions schema (not REST-exposed)
 - SET search_path on all public SECURITY DEFINER functions
 - Security Advisor: 0 errors
+
+_(Session 56 cont. 2026-05-29: Translation migrated to central-brain via consensus; schema-driven official PDF renderer (KMU-1025); 4 product contracts added. Branch feat/central-brain, not deployed.)_
