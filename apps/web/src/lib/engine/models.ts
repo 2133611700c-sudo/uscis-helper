@@ -10,6 +10,8 @@
  */
 
 import type { FieldRead, ModelReader, NamedReader } from './consensus'
+import { mapLinesToFields } from './htr'
+import type { DocTypeSpec } from './docTypes'
 
 function buildPrompt(docTypeEn: string, fields: string[]): string {
   return `You are reading a ${docTypeEn}. It may be handwritten Cyrillic (Ukrainian or Russian), often old and faded. The IMAGE is the only ground truth — read EXACTLY what is visibly written, letter by letter.
@@ -108,4 +110,31 @@ export function openaiReader(opts: { apiKey: string; model?: string; docTypeEn: 
     } finally { clearTimeout(t) }
   }
   return { name: `openai:${model}`, read }
+}
+
+/** Google Cloud Vision (DOCUMENT_TEXT_DETECTION) — a structurally DIFFERENT reader
+ *  (OCR, not an LLM) → text lines → label-mapped to fields. Available in prod
+ *  (GOOGLE_CLOUD_VISION_API_KEY). Diversity vs LLMs breaks shared co-hallucination. */
+export function googleVisionReader(opts: { apiKey: string; spec: DocTypeSpec; timeoutMs?: number }): NamedReader {
+  const read: ModelReader = async (image, _mime, _fields) => {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 20000)
+    try {
+      const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${opts.apiKey}`, {
+        method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ requests: [{
+          image: { content: image.toString('base64') },
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+          imageContext: { languageHints: ['uk', 'ru', 'en'] },
+        }] }),
+      })
+      const j = await res.json()
+      const text: string = j?.responses?.[0]?.fullTextAnnotation?.text ?? ''
+      const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+      return mapLinesToFields(lines, opts.spec)
+    } catch {
+      return Object.fromEntries(opts.spec.fields.map((f) => [f.key, { cyrillic: '', can_read: false, confidence: 0 } as FieldRead]))
+    } finally { clearTimeout(t) }
+  }
+  return { name: 'google-vision', read }
 }
