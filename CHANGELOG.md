@@ -20,6 +20,8 @@ Every work session appends here. Never delete entries. Newest first.
 
 **G4 (partial):** `brainHealth()` now self-describes the glossary — `glossary.categories/total/provenance_complete` — so the brain "knows where everything is". Guard test added.
 
+**#3 MRZ / controlling-Latin:** `packages/knowledge/src/mrz.ts` — TD3 passport MRZ parser with ICAO 7-3-1 check digits (4 tests; real passport REDACTED/SERGII/FU262473/1986-06-25). Wired into presence.ts: for `ua_international_passport`, MRZ name/number/DOB/expiry OVERRIDE KMU-55 re-transliteration (HARD RULE: controlling Latin beats re-translit → matches client's EAD/I-94). Failed check digit → review.
+
 **Wizard honesty (audit #2a + #4):** TranslateWizard no longer hardcodes `review_required: true` on every PDF field — it propagates the engine's real per-field flag (empty value also flagged). Removed the false "PDF sent to your email" copy (ru+en) since no email is collected — now truthful download-only wording. (#2b hard generate/download gate + email collection = follow-up.)
 
 **Evidence:** web suite 2185 pass + 1 skip, 0 type errors (web + knowledge). Registry 11/11. Glossary-wiring 4/4. Honest-PDF 2/2.
