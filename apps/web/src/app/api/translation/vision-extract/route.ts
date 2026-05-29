@@ -30,6 +30,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
+// Central Brain (flag-gated, default OFF → prod behavior unchanged)
+import { analyze } from '@/lib/central-brain'
+import { geminiReader, googleVisionReader } from '@/lib/engine/models'
+import { DOC_TYPES } from '@/lib/engine/docTypes'
 
 export const dynamic = 'force-dynamic'
 
@@ -91,6 +95,40 @@ export async function POST(req: NextRequest) {
         { ok: false, error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB. Max 10 MB per page.` },
         { status: 413 },
       )
+    }
+  }
+
+  // ── Central Brain path (flag-gated; default OFF = unchanged legacy below) ──
+  // Replaces the single-Gemini reader with a 2-reader consensus
+  // (Gemini + Google Vision) so a single AI is never the truth-source.
+  if (process.env.CENTRAL_BRAIN_TRANSLATION === 'on') {
+    try {
+      const spec = DOC_TYPES[docTypeId]
+      const gem = process.env.GEMINI_API_KEY
+      const gv = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY
+      if (spec && gem && gv) {
+        const readers = [
+          geminiReader({ apiKey: gem, docTypeEn: spec.title_en }),
+          googleVisionReader({ apiKey: gv, spec }),
+        ]
+        const docs = await Promise.all(rawFiles.map(async (f) => ({
+          docTypeId, mime: f.type || 'image/jpeg', image: Buffer.from(await f.arrayBuffer()),
+        })))
+        const br = await analyze({ product: 'translation', locale: 'en', documents: docs }, { readers })
+        const fields: FieldOut[] = br.recognizedFields.map((f) => ({
+          field: f.field, value: f.value || null, raw_cyrillic: f.cyrillic || null,
+          confidence: f.can_read ? 0.9 : 0, review_required: f.review_required, kind: f.source,
+        }))
+        return NextResponse.json({
+          ok: fields.length > 0, doc_type_id: docTypeId, fields,
+          pages: [], page_count: rawFiles.length, provider: 'central-brain:consensus',
+          model: 'gemini+google-vision', readiness: br.productReadiness,
+          official_sources: br.officialSourcesUsed, status: 'ok:central-brain',
+        }, { status: fields.length ? 200 : 502 })
+      }
+    } catch (e: any) {
+      console.error('[central-brain translation] fell back to legacy:', e?.message ?? e)
+      // fall through to legacy path below — never break the endpoint
     }
   }
 
