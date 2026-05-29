@@ -1,3 +1,20 @@
+# HANDOFF — Session 57 (2026-05-29)
+
+## Session 57 — Paid Gemini + model bench + recognition audit + D-GLOSSARY G1/G2 (branch feat/c3-presence, NOT deployed)
+
+**Done:**
+- Paid Gemini wired; prod key var `GEMINI_API_KEY_PAY` (code reads it first). Default model → `gemini-3.1-pro-preview` (env `GEMINI_MODEL`, fallback 3.5-flash); timeout 45s; maxOutputTokens 8192; `vision-extract` maxDuration=60.
+- Live bench (docs/reports/: GEMINI_MODEL_BENCH, GEMINI_ENSEMBLE_BENCH, GPT_BENCH, TRANSKRIBUS_LIVE_TEST): 3.1-pro=20/22 & only handwriting reader (8/9); 2.5-pro fabricates (1/9); GPT-5.5/4o collapse (1/9); DeepSeek no vision; Transkribus blocked. Re-runnable scripts in apps/web/scripts/*.mjs.
+- presence.ts fix: handwriting reads kept+review instead of discarded by the GV presence gate.
+- 9-agent architecture audit → docs/reports/RECOGNITION_TRANSLATION_AUDIT_2026-05-29.md (delivery layer is the danger; 6 critical gaps + brick plan B1–B12).
+- **D-GLOSSARY G1** packages/knowledge/src/registry/ (schema/csv/loader/index/lookup/generated/tests) + **G2** wired into engine/orchestrator.ts::normalize with documentDate (presence.ts). docs/architecture/departments/D-GLOSSARY.md.
+
+**Evidence:** web 2182 pass +1 skip, 0 type errors (web+knowledge); registry 11/11; glossary-wiring 4/4.
+
+**Exact next task:** P0 honest-PDF (pdf.ts stop silent-drop of empty fields + propagate real review flags + assembler semantics), then G3 (full KOATUU + civil_registry into registry.csv), G4 (registryCatalog on brain health + validateRegistry CI gate), then wire EAD/Re-Parole routes to analyze(). On Vercel: confirm `GEMINI_API_KEY_PAY` + deploy. Rotate the OpenAI key (was pasted in chat).
+
+---
+
 # HANDOFF — Session 56 (2026-05-29)
 
 ## Session 56 — Unified recognition engine + Central Brain spine (LOCAL, not deployed)

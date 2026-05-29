@@ -33,25 +33,47 @@ export async function extractDocumentPresence(
   const openNames = new Set(openNameFields(spec))
 
   const [gem, ft] = await Promise.all([
-    geminiReader({ apiKey: opts.geminiApiKey, model: opts.geminiModel, docTypeEn: spec.title_en }).read(image, mime, keys),
+    geminiReader({ apiKey: opts.geminiApiKey, model: opts.geminiModel ?? process.env.GEMINI_MODEL, docTypeEn: spec.title_en }).read(image, mime, keys),
     googleVisionFullText(image, opts.gvApiKey),
   ])
   const ftNorm = norm(ft)
 
   const sex: Sex = /ж|f/i.test(gem['sex']?.cyrillic ?? '') ? 'F' : 'M'
   const givenName = gem['given_name']?.cyrillic || (gem['child_full_name']?.cyrillic ?? '').split(/\s+/)[1]
+  // Document era for glossary era-gating: latest 4-digit year seen across reads
+  // (issue year for IDs, the single year on old certificates). Drives "do not
+  // modernise a historical authority/place name".
+  const years = (Object.values(gem).map((g) => g?.cyrillic ?? '').join(' ').match(/\b(?:19|20)\d{2}\b/g) ?? [])
+  const documentDate = years.length ? String(Math.max(...years.map(Number))) : undefined
 
   const fields: EngineField[] = spec.fields.map((spc) => {
     const g = gem[spc.key]
     const read = !!g?.can_read && !!g?.cyrillic
     const present = read && isPresent(g!.cyrillic, ftNorm)
-    const cf: ConsensusField = present
-      ? { field: spc.key, value: g!.cyrillic, can_read: true, confidence: 0.9,
-          review_required: openNames.has(spc.key) || printed.has(spc.key),
-          reason: 'gemini read + confirmed on page (OCR presence)', candidates: [] }
-      : { field: spc.key, value: '', can_read: false, confidence: 0, review_required: true,
-          reason: read ? 'gemini value NOT confirmed on page (guarded)' : 'gemini could not read', candidates: [] }
-    const n = normalize(spc, cf, { sex, givenName })
+    // Google Vision OCR confirms PRINTED text reliably but garbles HANDWRITING.
+    // So presence-confirm may only DISCARD machine-printed fields (where GV is a
+    // trustworthy fabrication check). For handwritten fields GV cannot confirm —
+    // discarding there would throw away the reader's correct handwriting reads
+    // (proven 2026-05-29: gate kept only 1/7 correct reads on a handwritten cert).
+    // Instead: keep the read, force human review (handwriting is never auto-final).
+    const machinePrinted = spc.handwritten === false
+    let cf: ConsensusField
+    if (present) {
+      cf = { field: spc.key, value: g!.cyrillic, can_read: true, confidence: 0.9,
+        review_required: openNames.has(spc.key) || printed.has(spc.key),
+        reason: 'gemini read + OCR-confirmed on page', candidates: [] }
+    } else if (read && !machinePrinted) {
+      cf = { field: spc.key, value: g!.cyrillic, can_read: true, confidence: 0.55,
+        review_required: true,
+        reason: 'gemini read handwriting; OCR could not confirm → human review required', candidates: [] }
+    } else if (read && machinePrinted) {
+      cf = { field: spc.key, value: '', can_read: false, confidence: 0, review_required: true,
+        reason: 'printed field not found in OCR — guarded as possible fabrication', candidates: [] }
+    } else {
+      cf = { field: spc.key, value: '', can_read: false, confidence: 0, review_required: true,
+        reason: 'gemini could not read', candidates: [] }
+    }
+    const n = normalize(spc, cf, { sex, givenName, documentDate })
     return { field: spc.key, cyrillic: cf.can_read ? cf.value : '', latin: n.latin,
       can_read: cf.can_read, review_required: n.review, source: n.source, candidates: [] }
   })

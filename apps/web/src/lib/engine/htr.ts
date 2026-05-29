@@ -1,17 +1,26 @@
 /**
  * engine/htr.ts — D1 HTR reader: Transkribus.
  *
- * VERIFIED LIVE 2026-05-29 (see docs/reports + memory transkribus-integration-state):
- *   - The Metagrapho "Processing API" (transkribus.eu/processing/v1) rejects our
- *     tokens (401). The WORKING path is the TrpServer REST API + the PyLaia
- *     recognition endpoint, authenticated with a password-grant token
- *     (client_id=processing-api-client, aud=TrpServer).
- *   - Flow: token → POST /uploads → PUT image → poll ingest job → POST
- *     /pylaia/{colId}/{modelId}/recognition?doLineDetection=true (body {docId,pageList})
- *     → poll job → GET /collections/{colId}/{docId}/fulldoc → transcript URL → PAGE XML.
- *   - EMPIRICAL RESULT: reads PRINTED Ukrainian docs (real content, with noise →
- *     usable after D2 cleanup). Does NOT read faded handwritten Soviet docs
- *     (garbage/empty) — those need human transcription. No engine fabricates here.
+ * ⚠ ACCURACY STATUS (corrected 2026-05-29): NOT runtime-verified. NO transcript
+ * has ever been produced by this code. Any prior "reads printed / garbage on
+ * handwriting" claim was an OVERCLAIM — there is no test behind it. Evidence:
+ *   - The owner's Transkribus account is Google-OAuth federated (NO password),
+ *     so the `grant_type=password` (client_id=processing-api-client) flow that
+ *     the metagrapho/Processing API needs cannot mint a token for us.
+ *   - The browser ("webui") token we captured has audience [TrpServer], NOT the
+ *     processing audience → the metagrapho Processing API returns 401.
+ *   - The legacy TrpServer PyLaia trigger returned HTTP 500 (ClassCastException
+ *     on DocumentSelectionDescriptor — wrong body shape). See /tmp/run.txt.
+ *
+ * CORRECT API (authoritative, from a working reference client + metagrapho docs):
+ *   POST {BASE}/processes  body {config:{textRecognition:{htrId},lineDetection:{modelId}}, image:{base64}}
+ *   → {processId}; GET {BASE}/processes/{id} → {status}; GET .../page → PAGE XML.
+ *   BASE = https://transkribus.eu/processing/v1 (v2 same shape). Bearer token.
+ *   This is base64-inline — NO upload/ingest dance. The legacy TrpServer path
+ *   below is retained only for reference; the metagrapho path is the live one.
+ *
+ * To get REAL numbers: owner sets a readcoop password (Google-federated accounts
+ * can add one) + has metagrapho credits → run apps/web/scripts/transkribus-bench.mjs.
  *
  * The line→field mapper (`mapLinesToFields`) is deterministic and unit-tested.
  */
@@ -149,11 +158,62 @@ export async function transkribusTranscribe(
   return { lines }
 }
 
-/** Wrap Transkribus as a consensus voter (best for PRINTED docs). */
+/** Wrap Transkribus (legacy TrpServer) as a consensus voter. UNVERIFIED — see header. */
 export function transkribusReader(opts: { colId: number; modelId: number; reauth: () => Promise<string>; spec: DocTypeSpec }): NamedReader {
   const read: ModelReader = async (image) => {
     const { lines } = await transkribusTranscribe(image, { colId: opts.colId, modelId: opts.modelId, reauth: opts.reauth })
     return mapLinesToFields(lines, opts.spec)
   }
   return { name: `transkribus:${opts.modelId}`, read }
+}
+
+// ── metagrapho / Processing API (base64-inline, the CORRECT path) ────────────
+
+const META_BASE = 'https://transkribus.eu/processing/v1'
+
+/**
+ * Run one image through the metagrapho Processing API with a given HTR model and
+ * return the recognized text lines (from PAGE XML). Single base64 POST + poll —
+ * no TrpServer upload/ingest. `token` must carry the processing audience (minted
+ * by client_id=processing-api-client; a webui/TrpServer token will 401 here).
+ */
+export async function metagraphoTranscribe(
+  image: Buffer,
+  opts: { htrId: number; lineDetectionId?: number; token: string; mime?: string; timeoutMs?: number; pollMs?: number },
+): Promise<{ lines: string[]; processId: number }> {
+  const deadline = Date.now() + (opts.timeoutMs ?? 180000)
+  const headers = { authorization: `Bearer ${opts.token}`, 'content-type': 'application/json' }
+  const config: Record<string, any> = { textRecognition: { htrId: opts.htrId } }
+  if (opts.lineDetectionId) config.lineDetection = { modelId: opts.lineDetectionId }
+
+  const start = await fetch(`${META_BASE}/processes`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ config, image: { base64: image.toString('base64') } }),
+  })
+  if (!start.ok) throw new Error(`metagrapho ${start.status}${start.status === 401 ? ' WRONG_AUDIENCE_OR_EXPIRED' : ''}: ${(await start.text().catch(() => '')).slice(0, 200)}`)
+  const processId = (await start.json())?.processId
+  if (!processId) throw new Error('metagrapho: no processId')
+
+  while (Date.now() < deadline) {
+    const s = await (await fetch(`${META_BASE}/processes/${processId}`, { headers: { authorization: headers.authorization } })).json().catch(() => ({}))
+    const st = String(s?.status ?? '').toUpperCase()
+    if (st === 'FINISHED' || st === 'COMPLETED') break
+    if (st === 'FAILED' || st === 'ERROR') throw new Error(`metagrapho process ${st}`)
+    await new Promise((r) => setTimeout(r, opts.pollMs ?? 5000))
+  }
+
+  const xml = await (await fetch(`${META_BASE}/processes/${processId}/page`, { headers: { authorization: headers.authorization } })).text()
+  const lines = Array.from(xml.matchAll(/<Unicode>([\s\S]*?)<\/Unicode>/g))
+    .map((m) => m[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim())
+    .filter(Boolean)
+  return { lines, processId }
+}
+
+/** Wrap the metagrapho Processing API as a consensus voter. */
+export function metagraphoReader(opts: { htrId: number; lineDetectionId?: number; token: string; spec: DocTypeSpec }): NamedReader {
+  const read: ModelReader = async (image) => {
+    const { lines } = await metagraphoTranscribe(image, { htrId: opts.htrId, lineDetectionId: opts.lineDetectionId, token: opts.token })
+    return mapLinesToFields(lines, opts.spec)
+  }
+  return { name: `metagrapho:${opts.htrId}`, read }
 }
