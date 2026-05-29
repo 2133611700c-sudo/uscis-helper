@@ -20,6 +20,8 @@ Every work session appends here. Never delete entries. Newest first.
 
 **G4 (partial):** `brainHealth()` now self-describes the glossary — `glossary.categories/total/provenance_complete` — so the brain "knows where everything is". Guard test added.
 
+**Wizard honesty (audit #2a + #4):** TranslateWizard no longer hardcodes `review_required: true` on every PDF field — it propagates the engine's real per-field flag (empty value also flagged). Removed the false "PDF sent to your email" copy (ru+en) since no email is collected — now truthful download-only wording. (#2b hard generate/download gate + email collection = follow-up.)
+
 **Evidence:** web suite 2185 pass + 1 skip, 0 type errors (web + knowledge). Registry 11/11. Glossary-wiring 4/4. Honest-PDF 2/2.
 **Not done yet:** G3 (full KOATUU + civil-registry into CSV), G4 (catalog on health + CI gate), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring. test-fixtures/real-docs + keys remain gitignored.
 

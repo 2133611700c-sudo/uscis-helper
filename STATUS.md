@@ -6,6 +6,7 @@
 - `AUDIT` `docs/reports/RECOGNITION_TRANSLATION_AUDIT_2026-05-29.md` — danger is the DELIVERY layer (PDF drops empty fields, wizard hardcodes review, names vs MRZ, fake email, manual-review no ticket, no preprocessing).
 - `VERIFIED(local)` **P0 honest-PDF** (audit #1): `pdf.ts::planTranslationRows` — unread field → visible MISSING placeholder, never dropped; missing → `certifiable=false`. 2/2 tests. Web 2184 pass.
 - `VERIFIED(local)` **G4 (partial)**: `brainHealth().glossary` self-describes categories/total/provenance. Guard test.
+- `VERIFIED(local)` **Wizard honesty (#2a+#4)**: real per-field review flag propagated (no more hardcoded true); false "sent to email" copy removed (email not collected). i18n drift 0.
 - `NOT DEPLOYED / OPEN` G3 (full KOATUU/civil-registry into CSV), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring, official renderers (P4), product contracts (P5). On Vercel confirm `GEMINI_API_KEY_PAY` set + deploy. Rotate OpenAI key (pasted in chat).
 
 ## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)
