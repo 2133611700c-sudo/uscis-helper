@@ -12,6 +12,7 @@
 - `VERIFIED(local)` **#5 manual-ticket**: wizard creates a manual-review ticket on paid manual docs (was payment without ticket). i18n/tsc clean.
 - `VERIFIED(local)` **Field guards #7/#8/#9**: dates calendar-validated, sex never defaults Male, number homoglyph flagged. 7 tests.
 - `VERIFIED(local)` **#12 no silent degrade**: brain-error fallback flags degraded + forces review on all fields.
+- `VERIFIED(local)` **G3 (partial)**: registry 49 rows — all 24 oblasts + major cities, provenance 100%. Full KOATUU = pipeline TODO.
 - `NOT DEPLOYED / OPEN` G3 (full KOATUU/civil-registry into CSV), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring, official renderers (P4), product contracts (P5). On Vercel confirm `GEMINI_API_KEY_PAY` set + deploy. Rotate OpenAI key (pasted in chat).
 
 ## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)
