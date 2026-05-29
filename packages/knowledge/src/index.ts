@@ -53,3 +53,7 @@ export {
   resolveAbbreviation, registryCatalog,
 } from './registry/registryLookup';
 export type { RegistryCategory, LookupResult, LookupOptions, RegistryRow } from './registry/registry.schema';
+
+// MRZ (passport machine-readable zone) — controlling Latin name/number/DOB.
+export { parseMrz, checkDigit, findMrzLines } from './mrz';
+export type { MrzResult } from './mrz';

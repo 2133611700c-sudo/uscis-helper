@@ -6,6 +6,7 @@
  * is not in the OCR → rejected → 0 accepted). Then D2 normalize (KMU-55/gazetteer/
  * patronymic/date/glossary), same as the consensus path.
  */
+import { parseMrz } from '@uscis-helper/knowledge'
 import { geminiReader, googleVisionFullText } from './models'
 import { normalize, type EngineField, type EngineResult } from './orchestrator'
 import type { ConsensusField } from './consensus'
@@ -77,6 +78,28 @@ export async function extractDocumentPresence(
     return { field: spc.key, cyrillic: cf.can_read ? cf.value : '', latin: n.latin,
       can_read: cf.can_read, review_required: n.review, source: n.source, candidates: [] }
   })
+
+  // CONTROLLING LATIN (HARD RULE): for an international passport the MRZ is the
+  // authoritative Latin spelling of the name/number/DOB — it must beat KMU-55
+  // re-transliteration so the translation matches the client's EAD/I-94.
+  if (docTypeId === 'ua_international_passport') {
+    const mrz = parseMrz(ft)
+    if (mrz.ok) {
+      const override: Record<string, { v: string; review: boolean }> = {
+        family_name: { v: mrz.surname, review: mrz.review_required },
+        given_name: { v: mrz.given_names, review: mrz.review_required },
+        passport_number: { v: mrz.passport_no, review: !mrz.checks.passport_no },
+        date_of_birth: { v: mrz.date_of_birth ?? '', review: !mrz.checks.dob },
+        nationality: { v: mrz.nationality, review: false },
+        date_of_expiry: { v: mrz.expiry ?? '', review: !mrz.checks.expiry },
+        sex: { v: mrz.sex === 'M' ? 'Male' : mrz.sex === 'F' ? 'Female' : '', review: !mrz.sex },
+      }
+      for (const f of fields) {
+        const o = override[f.field]
+        if (o && o.v) { f.latin = o.v; f.can_read = true; f.review_required = o.review; f.source = 'mrz:controlling-latin' }
+      }
+    }
+  }
 
   if (opts.proseTranslator) {
     const locked = fields.filter((f) => f.latin && /name|number/.test(spec.fields.find((s) => s.key === f.field)?.kind ?? '')).map((f) => f.cyrillic)
