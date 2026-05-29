@@ -16,6 +16,17 @@ describe('readingsAgree', () => {
   it('printed number variants agree (428069 / № 428069)', () => {
     expect(readingsAgree('428069', '№ 428069')).toBe(true)
   })
+  it('partial OCR read agrees (fragment contained in full)', () => {
+    expect(readingsAgree('Заставний', 'Заставний Андрій Іванович')).toBe(true)
+    expect(readingsAgree('Центральний відділ державної реєстрації шлюбів', 'Центральний відділ державної реєстрації шлюбів м. Києва з державним Центром')).toBe(true)
+  })
+  it('number digit-core agrees despite label prefix', () => {
+    expect(readingsAgree('за № 294', '294')).toBe(true)
+    expect(readingsAgree('I-БК № 153243', '153243')).toBe(true)
+  })
+  it('different fabrications still DISAGREE (guard intact)', () => {
+    expect(readingsAgree('Хроменчук Олег Васильович', 'після реєстрації шлюбу')).toBe(false)
+  })
   it('empty never agrees', () => {
     expect(readingsAgree('', 'Сергій')).toBe(false)
   })
