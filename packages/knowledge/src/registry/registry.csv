@@ -20,3 +20,31 @@ abbreviation,р-н,р-н,raion,район|району,,,https://zakon.rada.gov.
 military_authority,територіальний центр комплектування,территориальный центр комплектования,Territorial Recruitment Center,тцк|військовий комісаріат|військкомат,2022-07-30,,https://zakon.rada.gov.ua/laws/show/2470-20,МОУ,reform 2022 (former military commissariat),medium,auto,former Military Commissariat,
 document_type,свідоцтво про народження,свидетельство о рождении,Birth Certificate,,,,https://zakon.rada.gov.ua/laws/show/1025-2010-п,Мінюст,КМУ №1025,high,auto,,
 field_label,прізвище,фамилия,Surname,,,,https://zakon.rada.gov.ua/laws/show/1025-2010-п,Мінюст,КМУ №1025,high,auto,,
+oblast,волинська,волынская,Volyn Oblast,волинської|волинській,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,дніпропетровська,днепропетровская,Dnipropetrovsk Oblast,дніпропетровської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,донецька,донецкая,Donetsk Oblast,донецької,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,житомирська,житомирская,Zhytomyr Oblast,житомирської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,закарпатська,закарпатская,Zakarpattia Oblast,закарпатської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,запорізька,запорожская,Zaporizhzhia Oblast,запорізької,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,івано-франківська,ивано-франковская,Ivano-Frankivsk Oblast,івано-франківської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,київська,киевская,Kyiv Oblast,київської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,кіровоградська,кировоградская,Kirovohrad Oblast,кіровоградської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,oblast kept name; city renamed Kropyvnytskyi 2016,
+oblast,луганська,луганская,Luhansk Oblast,луганської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,львівська,львовская,Lviv Oblast,львівської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,миколаївська,николаевская,Mykolaiv Oblast,миколаївської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,одеська,одесская,Odesa Oblast,одеської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,полтавська,полтавская,Poltava Oblast,полтавської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,рівненська,ровенская,Rivne Oblast,рівненської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,сумська,сумская,Sumy Oblast,сумської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,тернопільська,тернопольская,Ternopil Oblast,тернопільської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,харківська,харьковская,Kharkiv Oblast,харківської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,херсонська,херсонская,Kherson Oblast,херсонської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,хмельницька,хмельницкая,Khmelnytskyi Oblast,хмельницької,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,черкаська,черкасская,Cherkasy Oblast,черкаської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,чернівецька,черновицкая,Chernivtsi Oblast,чернівецької,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+oblast,чернігівська,черниговская,Chernihiv Oblast,чернігівської,,,https://dmsu.gov.ua/en-home/contacts.html,ДМС,DMS official English oblast names,high,auto,genitive to nominative,
+settlement,київ,киев,Kyiv,,,,https://zakon.rada.gov.ua/laws/show/z1456-20,Держстат,КАТОТТГ/КОАТУУ,high,auto,,capital
+settlement,харків,харьков,Kharkiv,,,,https://zakon.rada.gov.ua/laws/show/z1456-20,Держстат,КАТОТТГ/КОАТУУ,high,auto,,Kharkiv Oblast
+settlement,одеса,одесса,Odesa,,,,https://zakon.rada.gov.ua/laws/show/z1456-20,Держстат,КАТОТТГ/КОАТУУ,high,auto,,Odesa Oblast
+settlement,дніпро,днепр,Dnipro,дніпропетровськ,,,https://zakon.rada.gov.ua/laws/show/z1456-20,Держстат,КАТОТТГ/КОАТУУ,high,auto,,renamed from Dnipropetrovsk 2016
+settlement,львів,львов,Lviv,,,,https://zakon.rada.gov.ua/laws/show/z1456-20,Держстат,КАТОТТГ/КОАТУУ,high,auto,,Lviv Oblast

@@ -383,5 +383,502 @@ export const REGISTRY_ROWS: RegistryRow[] = [
     "review_rule": "auto",
     "warning": "",
     "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "волинська",
+    "key_ru": "волынская",
+    "official_en": "Volyn Oblast",
+    "aliases": [
+      "волинської",
+      "волинській"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "дніпропетровська",
+    "key_ru": "днепропетровская",
+    "official_en": "Dnipropetrovsk Oblast",
+    "aliases": [
+      "дніпропетровської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "донецька",
+    "key_ru": "донецкая",
+    "official_en": "Donetsk Oblast",
+    "aliases": [
+      "донецької"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "житомирська",
+    "key_ru": "житомирская",
+    "official_en": "Zhytomyr Oblast",
+    "aliases": [
+      "житомирської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "закарпатська",
+    "key_ru": "закарпатская",
+    "official_en": "Zakarpattia Oblast",
+    "aliases": [
+      "закарпатської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "запорізька",
+    "key_ru": "запорожская",
+    "official_en": "Zaporizhzhia Oblast",
+    "aliases": [
+      "запорізької"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "івано-франківська",
+    "key_ru": "ивано-франковская",
+    "official_en": "Ivano-Frankivsk Oblast",
+    "aliases": [
+      "івано-франківської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "київська",
+    "key_ru": "киевская",
+    "official_en": "Kyiv Oblast",
+    "aliases": [
+      "київської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "кіровоградська",
+    "key_ru": "кировоградская",
+    "official_en": "Kirovohrad Oblast",
+    "aliases": [
+      "кіровоградської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "oblast kept name; city renamed Kropyvnytskyi 2016",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "луганська",
+    "key_ru": "луганская",
+    "official_en": "Luhansk Oblast",
+    "aliases": [
+      "луганської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "львівська",
+    "key_ru": "львовская",
+    "official_en": "Lviv Oblast",
+    "aliases": [
+      "львівської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "миколаївська",
+    "key_ru": "николаевская",
+    "official_en": "Mykolaiv Oblast",
+    "aliases": [
+      "миколаївської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "одеська",
+    "key_ru": "одесская",
+    "official_en": "Odesa Oblast",
+    "aliases": [
+      "одеської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "полтавська",
+    "key_ru": "полтавская",
+    "official_en": "Poltava Oblast",
+    "aliases": [
+      "полтавської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "рівненська",
+    "key_ru": "ровенская",
+    "official_en": "Rivne Oblast",
+    "aliases": [
+      "рівненської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "сумська",
+    "key_ru": "сумская",
+    "official_en": "Sumy Oblast",
+    "aliases": [
+      "сумської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "тернопільська",
+    "key_ru": "тернопольская",
+    "official_en": "Ternopil Oblast",
+    "aliases": [
+      "тернопільської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "харківська",
+    "key_ru": "харьковская",
+    "official_en": "Kharkiv Oblast",
+    "aliases": [
+      "харківської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "херсонська",
+    "key_ru": "херсонская",
+    "official_en": "Kherson Oblast",
+    "aliases": [
+      "херсонської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "хмельницька",
+    "key_ru": "хмельницкая",
+    "official_en": "Khmelnytskyi Oblast",
+    "aliases": [
+      "хмельницької"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "черкаська",
+    "key_ru": "черкасская",
+    "official_en": "Cherkasy Oblast",
+    "aliases": [
+      "черкаської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "чернівецька",
+    "key_ru": "черновицкая",
+    "official_en": "Chernivtsi Oblast",
+    "aliases": [
+      "чернівецької"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "oblast",
+    "key_uk": "чернігівська",
+    "key_ru": "черниговская",
+    "official_en": "Chernihiv Oblast",
+    "aliases": [
+      "чернігівської"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://dmsu.gov.ua/en-home/contacts.html",
+    "source_authority": "ДМС",
+    "source_act": "DMS official English oblast names",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "genitive to nominative",
+    "notes": ""
+  },
+  {
+    "category": "settlement",
+    "key_uk": "київ",
+    "key_ru": "киев",
+    "official_en": "Kyiv",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Держстат",
+    "source_act": "КАТОТТГ/КОАТУУ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": "capital"
+  },
+  {
+    "category": "settlement",
+    "key_uk": "харків",
+    "key_ru": "харьков",
+    "official_en": "Kharkiv",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Держстат",
+    "source_act": "КАТОТТГ/КОАТУУ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": "Kharkiv Oblast"
+  },
+  {
+    "category": "settlement",
+    "key_uk": "одеса",
+    "key_ru": "одесса",
+    "official_en": "Odesa",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Держстат",
+    "source_act": "КАТОТТГ/КОАТУУ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": "Odesa Oblast"
+  },
+  {
+    "category": "settlement",
+    "key_uk": "дніпро",
+    "key_ru": "днепр",
+    "official_en": "Dnipro",
+    "aliases": [
+      "дніпропетровськ"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Держстат",
+    "source_act": "КАТОТТГ/КОАТУУ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": "renamed from Dnipropetrovsk 2016"
+  },
+  {
+    "category": "settlement",
+    "key_uk": "львів",
+    "key_ru": "львов",
+    "official_en": "Lviv",
+    "aliases": [],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://zakon.rada.gov.ua/laws/show/z1456-20",
+    "source_authority": "Держстат",
+    "source_act": "КАТОТТГ/КОАТУУ",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": "Lviv Oblast"
   }
 ] as RegistryRow[]
