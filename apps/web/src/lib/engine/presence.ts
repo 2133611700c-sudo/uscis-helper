@@ -15,13 +15,26 @@ import type { Sex } from '@uscis-helper/knowledge'
 import { DOC_TYPES, openNameFields, printedFields } from './docTypes'
 import type { ProseTranslator } from './translator'
 
-const norm = (s: string) => (s ?? '').toLocaleLowerCase('uk').replace(/[^a-zа-яіїєґ0-9]/giu, '')
+/** Normalize to space-separated words (preserves word boundaries for presence).
+ *  Apostrophes are REMOVED (join), so Ukrainian "Куроп'ятник" stays ONE word. */
+const normWords = (s: string) => (s ?? '').toLocaleLowerCase('uk')
+  .replace(/['ʼ`‘’]/g, '')
+  .replace(/[^a-zа-яіїєґ0-9]+/giu, ' ').trim()
 
-/** Is the LLM-read value actually present in the page's OCR text? */
-export function isPresent(value: string, fullTextNorm: string): boolean {
-  const v = norm(value)
-  if (v.length < 3) return !!v && fullTextNorm.includes(v)
-  return fullTextNorm.includes(v.slice(0, Math.min(10, v.length)))
+/**
+ * Is the LLM-read value actually present in the page's OCR text? WORD-AWARE:
+ * the value matches only as a whole word-sequence, or every (≥3-char) word of it
+ * is a WHOLE word in the OCR text. This kills the prefix/substring false-positives
+ * of the old 10-char-prefix check — "куроп" no longer confirms "куропятник", and
+ * "центр" no longer confirms "централізовано". `ocrWords` = normWords(fullText).
+ */
+export function isPresent(value: string, ocrWords: string): boolean {
+  const v = normWords(value)
+  if (!v) return false
+  const hay = ` ${ocrWords} `
+  if (hay.includes(` ${v} `)) return true
+  const words = v.split(' ').filter((w) => w.length >= 3)
+  return words.length > 0 && words.every((w) => hay.includes(` ${w} `))
 }
 
 export async function extractDocumentPresence(
@@ -44,7 +57,7 @@ export async function extractDocumentPresence(
     geminiReader({ apiKey: opts.geminiApiKey, model: opts.geminiModel ?? process.env.GEMINI_MODEL, docTypeEn: spec.title_en }).read(img, imgMime, keys),
     googleVisionFullText(img, opts.gvApiKey),
   ])
-  const ftNorm = norm(ft)
+  const ftWords = normWords(ft)
 
   const sex: Sex = /ж|f/i.test(gem['sex']?.cyrillic ?? '') ? 'F' : 'M'
   const givenName = gem['given_name']?.cyrillic || (gem['child_full_name']?.cyrillic ?? '').split(/\s+/)[1]
@@ -57,7 +70,7 @@ export async function extractDocumentPresence(
   const fields: EngineField[] = spec.fields.map((spc) => {
     const g = gem[spc.key]
     const read = !!g?.can_read && !!g?.cyrillic
-    const present = read && isPresent(g!.cyrillic, ftNorm)
+    const present = read && isPresent(g!.cyrillic, ftWords)
     // Google Vision OCR confirms PRINTED text reliably but garbles HANDWRITING.
     // So presence-confirm may only DISCARD machine-printed fields (where GV is a
     // trustworthy fabrication check). For handwritten fields GV cannot confirm —
