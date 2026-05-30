@@ -1,4 +1,16 @@
-# HANDOFF — Session 79 (2026-05-30)
+# HANDOFF — Session 80 (2026-05-30)
+
+## Session 80 — Live ONE_BRAIN_SHADOW wiring in TPS route (branch `feat/canonical-shadow-wiring`, off main)
+
+The first LIVE wiring of the canonical core — observe-only, default OFF. New pure helper `apps/web/src/lib/canonical/liveShadow.ts` (`summarizeTpsReviewShift`) builds the canonical from the SAME live `TpsExtractedField[]` and returns a PII-free one-line review-shift summary (`+review[keys]` the canonical adds, `-review` always 0 by the never-lower-a-flag invariant). The TPS extract route (`apps/web/src/app/api/tps/ocr/extract/route.ts`) logs `[ONE_BRAIN_SHADOW] <summary>` just before the main success return, guarded by `if (mergedModule && isShadowEnabled())` AND `try/catch` — it can never throw into the response and never runs unless the flag is on. With `ONE_BRAIN_SHADOW` unset, extraction is byte-for-byte unchanged.
+
+**Evidence:** `liveShadow.test.ts` 4/4 + source-level `shadowWiring.test.ts` 3/3 (flag-gated, try/catch-wrapped, single call). Full web 2320 pass, tsc 0, content-guard 0. Report: `docs/reports/P2_3W_LIVE_SHADOW_WIRING.md`.
+
+**How to collect parity:** set `ONE_BRAIN_SHADOW=1` in a canary/non-prod env, run real TPS documents, read the `[ONE_BRAIN_SHADOW]` lines — `+review` rate on critical fields shows the canonical brain is stricter (expected); the keys show which fields.
+
+**Next per Master Plan:** cross-stack shadow (run the same image through the Translation reader too, both→canonical, `diffCanonical`) — owner-gated, costs an extra AI call; then a parity threshold → per-product migration behind the flag → consolidation (remove 2nd brain) → evidence-ledger table + hash chain. Independent safe items also open: Phase-5 PII-redaction CI grep test; TPS per-documentSessionId state reset.
+
+---
 
 ## Session 79 — P2.2-translation adapter + cross-brain parity (branch `feat/canonical-adapter-translation`, off main)
 
