@@ -1,3 +1,11 @@
+# HANDOFF — Session 74 (2026-05-30)
+
+## Session 74 — Full recognition-engine inventory (branch `docs/recognition-inventory`, off main)
+
+Exhaustive inventory of every recognition engine/brain/provider across all products (3 parallel code scans). Confirms the two-stack reality behind the owner-reported two-brain bug: Stack A (Translation) = Gemini-docintel + engine/orchestrator + central-brain; Stack B (TPS + Re-Parole) = Google Vision + keyword modules + tps/centralBrain (own dictionaryBridge/guard/arbiter). The most capable engine (engine/orchestrator) is NOT wired to TPS. Geography/authority/transliteration are normalized two different ways. Dead: engine/assembler, knowledge/normalize.ts. EAD = manual, no OCR. Document: `docs/architecture/RECOGNITION_ENGINES_FULL_INVENTORY.md`. Drives ADR-016 (#44) unification (B1–B5).
+
+---
+
 # HANDOFF — Session 71 (2026-05-30)
 
 ## Session 71 — Booklet orientation auto-rotate (branch `fix/booklet-orientation`, off main)
