@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 66 (2026-05-30) — Zero-trust verification of cert/audit/source work (branch verify/post-certification)
+- `VERIFIED` prod sha == main sha 84e4284; all 6 PRs (#31–#36) landed. Review-Gate v2 13/13, certifier UX 6/6, PDF output (statement+Name/Address/Date+signature image, no [CONFIRM], no silent-strip) 4/4, source-verifier (КМУ-1025/152/302 verified) 4/4.
+- `🔴 FAIL FOUND` Audit metadata is NOT persisted: `translation_orders` lacks `certification_record`/`session_id`/etc. columns → route upsert silently fails (try/catch) → 0 rendered rows, newest row 2026-05-08. attestation built in code but never reaches DB. My earlier "in DB" claim was FALSE.
+- `DEGRADED` overall. Report: `docs/reports/POST_CERTIFICATION_ZERO_TRUST_VERIFICATION.md`. next: FIX translation_orders persistence (migration/remap) then re-verify with a live row; G7 owner visual for birth pilot.
 ## Session 68 (2026-05-30) — FIX DB persistence: certification audit now stored (branch fix/translation-audit-db-persistence)
 - `FIXED(HIGH)` `/api/translation/generate-pdf` order/attestation write was silently failing (upsert referenced nonexistent columns; supabase-js returns {error}, never thrown). Live DB had 0 rendered rows. Now: `translation_orders` insert remapped to REAL columns (status=signed per CHECK; email=`` per NOT NULL); attestation → new `translation_certification_audit` table (migration applied to prod). DB errors no longer swallowed (logged + DEGRADED warning).
 - `VERIFIED(live)` probe insert+readback into both tables OK, then cleaned. attestation 5/5, full web pass, tsc 0, content-guard 0.
