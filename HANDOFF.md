@@ -1,4 +1,16 @@
-# HANDOFF — Session 74 (2026-05-30)
+# HANDOFF — Session 75 (2026-05-30)
+
+## Session 75 — UX wizard reset + Back/Start-over (branch `feat/wizard-reset-startover`, off main)
+
+The user-facing complement to the session-isolation fix. The live-failure investigation showed a user could be stuck on a bad recognition with no clean recovery: the review screen (5) had no top Back button and there was no full "Start over" except on success. Added: a top **Back** (→ re-upload screen 3) and a **Start over** button on screen 5; a new `startOver` that confirms data loss, resets, and returns to doc-type (2). Strengthened the existing `resetAll` to clear EVERY piece of session state — it previously left `certifierAddress`/`dataReviewed`/`accuracyAttested`/`procStep`/`stripeCheckoutId` and the persisted `tw:cs` checkout id behind, so a "reset" could inherit stale data; now it also removes both `tw:v2:draft` and `tw:cs`. i18n strings added to RU base + EN override (UK/ES fall back to RU). The success-screen "Translate another" (`s7_restart`) already called `resetAll` and benefits from the fuller reset.
+
+**Evidence:** `wizardResetStartOver.test.ts` 4/4 (source-level, same node-env style as sessionIsolation.test). Full web 2276 pass, tsc 0, content-guard 0. Report: `docs/reports/UX_WIZARD_RESET_STARTOVER.md`.
+
+**Remaining (written):** `window.confirm` is unstyled (later modal polish); UK/ES show RU "Start over" copy via fallback (trivial follow-up); source-level test locks wiring not pixels.
+
+**Next per Master Plan:** Phase 2 — CanonicalDocumentResult + CanonicalField types (contract-first; the path to one recognition brain). Phase-1 safety (S1+S2+S3) and this UX item are done.
+
+---
 
 ## Session 74 — S3 Name No-Silent-Recase (branch `fix/name-no-silent-recase`, off main)
 
