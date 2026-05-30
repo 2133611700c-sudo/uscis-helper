@@ -911,3 +911,5 @@ Architecture: extend typed schema (not 7-JSON-per-doc). birth-cert: official К�
 ## КАТОТТГ official provenance: data.gov.ua/Мінрегіон, minregion kodyfikator.xlsx (403 from env). Owner download to byte-verify mirror. Next: correct official URLs for military/diploma/pension acts.
 
 ## Agent Document Rules (constitution) committed. official-docs branch now: 5 civil schemas contracted + birth mapping + verified sources + КАТОТТГ official provenance + agent charter. Next: correct URLs for mil/diploma/pension (sites block env — owner may help) OR wire mapping→renderOfficialTranslation behind flag + owner visual approval.
+
+## bureau-PDF wired (flag BUREAU_PDF, default OFF) + golden test. Owner: set BUREAU_PDF=on on a PREVIEW, visually approve the bureau birth-cert PDF, then enable prod. Next: per-doc mappings for marriage/divorce (full-name split), correct official URLs (mil/diploma/pension).
