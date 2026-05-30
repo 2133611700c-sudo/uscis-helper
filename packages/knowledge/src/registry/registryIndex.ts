@@ -3,6 +3,7 @@
  * Built ONCE (lazy singleton). The CSV is the human source; this is the machine view.
  */
 import { REGISTRY_ROWS } from './registry.generated'
+import { SETTLEMENT_ROWS } from './settlements.generated' // КАТОТТГ city layer (machine-generated)
 import { type RegistryRow, type RegistryCategory, REGISTRY_CATEGORIES } from './registry.schema'
 
 /** Normalize a Cyrillic key for matching: lowercase (uk), trim, collapse spaces. */
@@ -36,9 +37,10 @@ export function buildIndex(rows: RegistryRow[]): RegistryIndex {
 }
 
 let _index: RegistryIndex | null = null
-/** Lazy singleton index built from the generated rows (no fs at runtime → serverless-safe). */
+/** Lazy singleton index. Human-curated rows FIRST (priority on exact-key conflicts),
+ *  then the КАТОТТГ city layer. No fs at runtime → serverless-safe. */
 export function getIndex(): RegistryIndex {
-  if (!_index) _index = buildIndex(REGISTRY_ROWS)
+  if (!_index) _index = buildIndex([...REGISTRY_ROWS, ...SETTLEMENT_ROWS])
   return _index
 }
 /** Test hook: build an index from explicit rows (no disk read). */

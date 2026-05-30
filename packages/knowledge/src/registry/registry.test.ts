@@ -99,6 +99,18 @@ describe('G1 Glossary Registry', () => {
     expect(r.official_en).toBe('Vinnytsia Oblast')
   })
 
+  // KOATUU/КАТОТТГ machine layer
+  it('КАТОТТГ city layer: 400+ cities, every row has source_url', async () => {
+    const { SETTLEMENT_ROWS } = await import('./settlements.generated')
+    expect(SETTLEMENT_ROWS.length).toBeGreaterThan(400)
+    expect(SETTLEMENT_ROWS.every((r) => !!r.source_url && !!r.official_en)).toBe(true)
+    expect(validateRegistry(SETTLEMENT_ROWS as any)).toEqual([])
+  })
+  it('a КАТОТТГ city resolves through the registry (Бахчисарай → Bakhchysarai)', () => {
+    expect(lookupSettlement('Бахчисарай').official_en).toBe('Bakhchysarai')
+    expect(lookupSettlement('м. Біла Церква').official_en).toBe('Bila Tserkva')
+  })
+
   it('catalog reports categories with full source coverage', () => {
     const cat = registryCatalog()
     expect(cat.length).toBeGreaterThan(5)
