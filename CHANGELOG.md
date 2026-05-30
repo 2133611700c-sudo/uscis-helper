@@ -30,6 +30,8 @@ Every work session appends here. Never delete entries. Newest first.
 
 **#10 prose translator wired:** vision-extract now passes a DeepSeek proseTranslator (names/numbers LOCKED) into analyze → free text the glossary did not cover (e.g. a registry office full name) is translated instead of dropped. Fails open (keeps original + review). Uses DEEPSEEK_API_KEY.
 
+**#16 download/signature gate:** the success-screen Download is now disabled until a REAL signature exists (drawn AND confirmed); handleDownloadPdf hard-guards (no silent manual_wet_signature bypass); the Confirm button only saves the signature if something was actually drawn. A hint tells the client to sign first. MISSING fields stay as visible PDF placeholders (intended for hand-completion), not a hard block.
+
 **#5 manual-review ticket (audit #5):** TranslateWizard now POSTs to /api/translation/manual-review when a MANUAL document is PAID with no auto-fields (was: payment taken, no ticket). Reads persisted draft (race-safe), idempotent per checkout id, fire-and-forget (never blocks success). Endpoint already existed.
 
 **#3 MRZ / controlling-Latin:** `packages/knowledge/src/mrz.ts` — TD3 passport MRZ parser with ICAO 7-3-1 check digits (4 tests; real passport KUROPIATNYK/SERGII/FU262473/1986-06-25). Wired into presence.ts: for `ua_international_passport`, MRZ name/number/DOB/expiry OVERRIDE KMU-55 re-transliteration (HARD RULE: controlling Latin beats re-translit → matches client's EAD/I-94). Failed check digit → review.
