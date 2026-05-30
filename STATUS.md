@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 63 (2026-05-30) — Attestation audit trail in DB (branch feat/attestation-audit-trail)
+- `FIXED(plan gap)` Route now persists the internal attestation/audit record (8 CFR §103.2(b)(3)): both checkboxes, signature presence + method, signer name/address presence, sha256 document hash, certification version, recorded_at. Stored inside the `certification_record` jsonb — NO schema migration. Not shown on the customer PDF. `attestation.ts` + `attestation.test.ts` 5/5.
+- `VERIFIED` full web pass, tsc 0, content-guard 0.
+
 ## Session 62 (2026-05-30) — Silent-strip cleanup on main + regression guard (branch fix/silent-strip-cleanup-main)
 - `FIXED` Landed the no-silent-strip fix on main (was only on official-docs). `renderValue.ts` (`pdfSafe`: KMU-55 transliterate + symbol map + visible marker, never delete) replaces `replace(/[^\x00-\xFF]/g,'')` in `renderOfficialTranslation.ts` + `renderMarriageCertificateTranslation.ts`. Both renderers are UNWIRED on main → zero runtime risk; removes the dormant landmine + adds the CI guard.
 - `GUARD` `noSilentStrip.guard.test.ts` now on main — fails if any production PDF renderer reintroduces a silent non-ASCII strip.

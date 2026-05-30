@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 63: Attestation audit trail persisted (branch feat/attestation-audit-trail)
+
+The route verified the review gate but never persisted the attestation. `buildAttestationRecord()` now records both checkboxes, signature presence + method, signer name/address presence, sha256 document hash, certification version, recorded_at — inside the `certification_record` jsonb (no migration), internal only. `attestation.ts` + `attestation.test.ts` 5/5; full web pass; tsc 0; content-guard 0.
+
+
 ## 2026-05-30 — Session 62: Silent-strip cleanup on main + regression guard (branch fix/silent-strip-cleanup-main)
 
 main's PDF renderers still carried the silent `replace(/[^\x00-\xFF]/g,'')` strip (fix lived only on the unmerged official-docs). Both are UNWIRED on main → zero-runtime-risk cleanup that removes the dormant data-loss landmine and adds the CI guard.

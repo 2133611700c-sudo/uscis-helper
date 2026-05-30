@@ -1,3 +1,13 @@
+# HANDOFF — Session 63 (2026-05-30)
+
+## Session 63 — Attestation audit trail persisted (branch `feat/attestation-audit-trail`, off main)
+
+Closed a plan gap (cert-prompt #10): the route verified the review gate but never persisted WHAT was attested. Now `buildAttestationRecord()` records both checkboxes, signature presence + method, signer name/address presence, a sha256 content hash, certification version, and recorded_at — stored inside the `certification_record` jsonb (no migration). Internal only (not on the PDF). `attestation.ts` + `attestation.test.ts` 5/5; full web pass; tsc 0; content-guard 0.
+
+**Next plan items (autonomous):** glossary ПФУ/МОН/МОЗ (+sources); Prompt 3 source-verifier script; Prompt 6 agent-permissions ADR; Prompt 10 release-gate checklist.
+
+---
+
 # HANDOFF — Session 62 (2026-05-30)
 
 ## Session 62 — Silent-strip cleanup on main + regression guard (branch `fix/silent-strip-cleanup-main`, off main)
