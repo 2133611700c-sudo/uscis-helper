@@ -110,6 +110,24 @@ function wrapText(text: string, maxWidth: number, font: PDFFont, size: number): 
   return lines
 }
 
+/** A planned English-translation row. status drives how it renders (and whether
+ *  the draft is certifiable). A field with no value is NEVER dropped — it becomes
+ *  a visible MISSING placeholder the client must complete from the document. */
+export interface TranslationRow { label: string; value: string; status: 'ok' | 'review' | 'missing' }
+
+export function planTranslationRows(
+  fields: Array<{ field: string; normalized_value?: string | null; review_required?: boolean }>,
+): { rows: TranslationRow[]; missingCount: number; reviewCount: number; certifiable: boolean } {
+  const rows: TranslationRow[] = fields.map((f) => {
+    const label = f.field.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    if (!f.normalized_value) return { label, value: '________________  [enter from document]', status: 'missing' }
+    return { label, value: f.normalized_value, status: f.review_required ? 'review' : 'ok' }
+  })
+  const missingCount = rows.filter((r) => r.status === 'missing').length
+  const reviewCount = rows.filter((r) => r.status === 'review').length
+  return { rows, missingCount, reviewCount, certifiable: missingCount === 0 }
+}
+
 export async function generateTranslationPDF(input: PacketInput): Promise<Buffer> {
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
@@ -148,20 +166,26 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   page.drawText('ENGLISH TRANSLATION', { x: MARGIN, y, size: 12, font: bold, color: TEXT_DARK })
   y -= SECTION_GAP
 
-  for (const field of input.fields) {
-    if (!field.normalized_value) continue
+  // HONEST RENDER (P0): a field that could not be read is NEVER silently dropped —
+  // it is shown as a visible blank line the client must complete from the document.
+  // An empty required field makes the draft NOT ready to certify.
+  const { rows, missingCount } = planTranslationRows(input.fields as any)
+  for (const row of rows) {
     if (y < MARGIN + 40) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); y = PAGE_H - MARGIN }
-
-    const label = field.field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    page.drawText(label + ':', { x: MARGIN, y, size: 10, font: bold, color: TEXT_DARK })
-    const endY = drawText(page, ctx, sanitizeWinAnsi(clampText(field.normalized_value, 80)), MARGIN + 180, y, { size: 10 })
-    if (field.review_required) {
-      page.drawText('! review', { x: PAGE_W - MARGIN - 60, y, size: 8, font, color: WARN_ORANGE })
-    }
+    page.drawText(row.label + ':', { x: MARGIN, y, size: 10, font: bold, color: TEXT_DARK })
+    const text = row.status === 'missing' ? row.value : sanitizeWinAnsi(clampText(row.value, 80))
+    const endY = drawText(page, ctx, text, MARGIN + 180, y, { size: 10, ...(row.status === 'missing' ? { color: WARN_ORANGE } : {}) })
+    if (row.status === 'missing') page.drawText('! MISSING', { x: PAGE_W - MARGIN - 70, y, size: 8, font, color: WARN_ORANGE })
+    else if (row.status === 'review') page.drawText('! review', { x: PAGE_W - MARGIN - 60, y, size: 8, font, color: WARN_ORANGE })
     y = Math.min(y - LINE_H, endY) - 4
   }
 
   y -= SECTION_GAP
+  if (missingCount > 0) {
+    y = drawText(page, ctx, `INCOMPLETE DRAFT — ${missingCount} field(s) could not be read and are shown blank above. Complete them from your original document; this translation is NOT ready to certify until every field is filled and reviewed.`,
+      MARGIN, y, { size: 9, color: WARN_ORANGE, maxWidth: PAGE_W - MARGIN * 2 })
+    y -= 8
+  }
   drawHRule(page, y); y -= 14
 
   // Disclaimer
