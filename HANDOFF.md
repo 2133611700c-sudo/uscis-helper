@@ -1,4 +1,12 @@
-# HANDOFF — Session 76h (2026-05-30)
+# HANDOFF — Session 76i (2026-05-30)
+
+## Session 76i — Tracker: contradiction detector (#62) + legal-copy-freeze (#63) (branch `docs/engineering-master-plan`)
+
+Marked the Cross-Document Contradiction Detector `[x]` (#62) and Legal Copy Freeze `[x]` (#63). **This closes the safe/low-risk code-completable scope of the plan** — 18 PRs this cycle (#48–#63): Phase-1 safety (S1+S2+S3), UX, the full canonical core (contract + both adapters + parity + live shadow + manual-override + doc-gate + quarantine + contradiction detector), and the Phase-5/quality guards (PII-log, TPS reset, prompt-injection, legal-copy-freeze). Suite 1930→2354 green, tsc 0, content-guard 0, every change additive/default-OFF.
+
+**Remaining tracker items are NOT quick safe PRs:** (a) gated on real-traffic data — migration → consolidation (turn on `ONE_BRAIN_SHADOW=1` in a canary, read parity, then migrate); (b) large redesign — data-minimization (crop+label) needing owner buy-in + before/after validation; (c) Phase 4 (finalization lock / two-layer PDF proof / evidence-ledger DB) — careful series after migration; (d) Phase 6 ops (review queue / metrics / status board) — sequenced last; (e) owner-gated (official military/diploma/pension URLs, КАТОТТГ byte-verify, birth-cert visual approval, live rotated-photo); (f) administrative (incident log, regression corpus, cost firewall, coverage matrix). **Exact next owner decision:** enable the canary shadow run to unblock migration, OR pick a gated/administrative workstream.
+
+---
 
 ## Session 76h — Tracker: Phase-5 safety items done (#59/#60/#61) (branch `docs/engineering-master-plan`)
 
