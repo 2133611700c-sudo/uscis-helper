@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 65: Plan tooling — source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)
+
+Closed playbook Prompts 3/6/10. `scripts/verify-ukraine-sources.mjs` (fetch /print → verify act number+keywords; ran live: КМУ-1025/152/302 verified, military/diploma/pension invalid_url; report json). `docs/adr/ADR-AGENT-PERMISSIONS.md` (8-role matrix). `docs/reports/PRODUCTION_RELEASE_GATE.md` (G1–G12 live status). Matcher tests 4/4; full web pass; tsc 0; content-guard 0.
+
+
 ## 2026-05-30 — Session 64: Glossary — 5 missing agencies added (branch data/glossary-missing-agencies)
 
 Added ПФУ (Pension Fund of Ukraine), КМУ (Cabinet of Ministers), МОН (Education & Science), МОЗ (Health), Мінрегіон (Communities & Territories Development) to the D-GLOSSARY registry with official .gov.ua/en source URLs (ADR-013). Regenerated registry.generated.ts (54 rows). lookupAuthority resolves all five + abbreviations; validateRegistry 0 errors; web suite + tsc 0 + content-guard 0.
