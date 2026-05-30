@@ -1,3 +1,20 @@
+# HANDOFF — Session 61 (2026-05-30)
+
+## Session 61 — Embed the drawn signature image in the PDF (branch `feat/signature-image-in-pdf`, off main)
+
+Closed the "не доделал" item from Session 60: the wizard collected a finger/stylus signature (`signatureDataUrl`) but the PDF only printed a typed name. Now the drawn signature PNG is embedded in the certification block (150×≤48px, above the typed line).
+
+- `apps/web/src/lib/packet/types.ts`: `PacketInput.signatureDataUrl?`.
+- `apps/web/src/lib/packet/pdf.ts`: `embedPng` the data URL into the signer block; try/catch falls back to the typed signature on a corrupt/oversized image.
+- `generate-pdf/route.ts`: passes `payload.signatureDataUrl` through.
+- `signatureImage.test.ts` 3/3; full web 2230 pass +4 skip; tsc 0; content-guard 0.
+
+**Verify:** generate a real translation on the preview/prod — the drawn signature should appear above "Signature (typed): …". Visual placement is fixed-coordinate (low risk); unit test proves the image embeds and never crashes the render.
+
+**Remaining optional:** "another person signs" toggle (deferred — default self-cert covers the common case); official-docs bureau birth-pilot still gated on owner visual approval of `birth_certificate.pilot.signed.png`.
+
+---
+
 # HANDOFF — Session 60 (2026-05-30)
 
 ## Session 60 — USCIS translator-certification UX + Review-Gate v2 (branch `feat/translator-certification`, off main)

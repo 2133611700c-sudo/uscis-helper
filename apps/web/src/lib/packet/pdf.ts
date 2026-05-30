@@ -226,6 +226,20 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   // Signature line
   drawHRule(page, y)
   y -= 14
+  // Drawn signature image (finger/stylus), if provided — rendered above the typed
+  // name so the certifier's actual signature appears on the document.
+  const sigUrl = input.signatureDataUrl
+  if (sigUrl && sigUrl.startsWith('data:image/png;base64,')) {
+    try {
+      const png = await pdfDoc.embedPng(Buffer.from(sigUrl.split(',', 2)[1], 'base64'))
+      const w = 150
+      const h = Math.min(48, (png.height / png.width) * w || 40)
+      page.drawImage(png, { x: MARGIN, y: y - h, width: w, height: h })
+      y -= h + 6
+    } catch {
+      // Corrupt/oversized image → fall back to the typed signature only.
+    }
+  }
   page.drawText('Signature (typed): ' + cert.signature_typed_name, { x: MARGIN, y, size: 11, font, color: TEXT_DARK })
   y -= LINE_H
   page.drawText('Certification Version: ' + cert.certification_version, { x: MARGIN, y, size: 8, font, color: MUTED })
