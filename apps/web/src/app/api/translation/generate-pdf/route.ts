@@ -15,6 +15,7 @@ import { buildCertificationRecord } from '@/lib/translation/certificationRecord'
 import { ExtractedField, SourceTrace } from '@/lib/translation/types'
 import { isOwnerSession } from '@/lib/ownerAccess'
 import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
+import { assertReviewGate } from '@/lib/translation/reviewGate'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,8 @@ interface LegacyPdfPayload {
   source_traces?: SourceTrace[]
   doc_type?: string
   scope_title?: string
+  /** TranslationReviewGate checkbox — explicit human confirmation of the draft. */
+  reviewConfirmed?: boolean
 }
 
 const PLAN_LABEL: Record<string, string> = {
@@ -75,6 +78,35 @@ export async function POST(req: NextRequest) {
   }
 
   const { profile, selectedPlan, signedAt, certificationTextVersion, session_id } = payload
+
+  // ── Review Gate (hard block, 8 CFR §103.2(b)(3)) ───────────────────────────
+  //   A certified translation may only be rendered after a human reviewed the
+  //   machine draft and signed the certification. This endpoint previously
+  //   rendered certified output from raw machine fields with only a payment
+  //   check — a machine-only POST yielded a "certified" PDF. The gate is passed
+  //   by an explicit reviewConfirmed checkbox OR a completed signature, and in
+  //   both cases signer name + address are mandatory. Applies to the owner too:
+  //   certification is a legal boundary, not a payment one.
+  const gate = assertReviewGate({
+    reviewConfirmed: payload.reviewConfirmed,
+    signerName: profile?.name,
+    signerAddress: profile?.addr,
+    signedAt,
+    signatureMethod: payload.signatureMethod,
+    signatureDataUrl: payload.signatureDataUrl,
+  })
+  if (!gate.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'review_required', gate: 'review', reason: gate.reason, detail: gate.detail },
+      { status: 403 },
+    )
+  }
+  if (gate.warnings.length) {
+    // Non-blocking compliance gaps. signer_address_missing: the live TranslateWizard
+    // does not yet collect the translator address — render proceeds but the defect
+    // is recorded for follow-up (wire an address field, then promote to a hard gate).
+    console.warn('[generate-pdf] review-gate warnings:', gate.warnings.join(', '))
+  }
 
   // Build certification record
   const certRecord = buildCertificationRecord({

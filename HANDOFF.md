@@ -1,4 +1,23 @@
-# HANDOFF — Session 56 (2026-05-29)
+# HANDOFF — Session 57 (2026-05-29)
+
+## Session 57 — Review-Gate hard block + zero-trust platform coverage audit (branch `fix/review-gate-hard-block`, off main)
+
+Owner verdict accepted: official-docs is NOT acceptance-ready; STOP adding features; stabilize merge chain; produce a coverage matrix, not "what next?". Executed the playbook's first safe, non-scope-creeping steps in parallel (I coded the gate; 2 read-only agents audited routes + glossary concurrently).
+
+**Done (code, this branch):**
+- `apps/web/src/lib/translation/reviewGate.ts` — single-source Review Gate. HARD block: review-confirmation (reviewConfirmed===true OR completed signature) + signerName. SOFT warning: signerAddress (live wizard sends empty addr — blocking it would break prod).
+- `apps/web/src/app/api/translation/generate-pdf/route.ts` — wired the gate AFTER payment, BEFORE render. Closed the hole where a machine-only paid POST got a "certified" PDF. Logs address-missing warning.
+- `reviewGate.test.ts` 13/13. Translation suite 1701 pass. 0 type errors.
+
+**Done (audit, `docs/reports/`):** DOCUMENT_PLATFORM_COVERAGE (0 active; birth=only pilot), BRANCH_STABILIZATION (#26→#27→rebase official-docs; official-docs lacks КАТОТТГ), ROUTE_INVENTORY (no payment bypass; only generate-pdf review hole — closed here), GLOSSARY_GEOGRAPHY (missing ПФУ/КМУ/Мінрегіон/МОН/МОЗ; 458 КАТОТТГ cities stranded on koatuu).
+
+**Why this branch is off main:** the review hole exists in PRODUCTION (main's generate-pdf). Fixing on a main-based branch merges independently of the unmerged official-docs stack — no building on sand.
+
+**Exact next task (owner-gated first):** (1) owner runs Preview E2E + merges #26, then #27; (2) rebase official-docs on main (inherits КАТОТТГ), audit `git diff main...official-docs`; (3) accept ADR-015; (4) birth-cert pilot: bureau-PDF visual approval + fixture E2E; (5) wire signer-address field into TranslateWizard, then promote address to a hard gate. NO new document types until birth pilot passes.
+
+**Evidence:** 13/13 reviewGate, 1701 translation pass, tsc 0. Two background audit agents (route inventory, glossary/geo) — reports committed.
+
+---
 
 ## Session 56 — Unified recognition engine + Central Brain spine (LOCAL, not deployed)
 
