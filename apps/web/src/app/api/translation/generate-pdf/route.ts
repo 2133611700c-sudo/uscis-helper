@@ -16,6 +16,7 @@ import { ExtractedField, SourceTrace } from '@/lib/translation/types'
 import { isOwnerSession } from '@/lib/ownerAccess'
 import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
 import { assertReviewGate } from '@/lib/translation/reviewGate'
+import { buildAttestationRecord } from '@/lib/translation/attestation'
 
 export const dynamic = 'force-dynamic'
 
@@ -134,6 +135,23 @@ export async function POST(req: NextRequest) {
     console.error('[generate-pdf] PDF generation failed:', err)
   }
 
+  // Internal attestation/audit trail (8 CFR §103.2(b)(3)) — WHAT was attested and
+  // WHEN. Stored inside the certification_record jsonb (no schema migration). Not
+  // shown on the customer PDF.
+  const attestation = buildAttestationRecord({
+    dataReviewed: payload.dataReviewed,
+    accuracyAttested: payload.accuracyAttested,
+    reviewConfirmed: payload.reviewConfirmed,
+    signerName: profile?.name,
+    signerAddress: profile?.addr,
+    signedAt,
+    signatureMethod: payload.signatureMethod,
+    signatureDataUrl: payload.signatureDataUrl,
+    certificationVersion: certificationTextVersion,
+    content: payload.fields ?? [],
+    recordedAt: new Date().toISOString(),
+  })
+
   // Save order record
   try {
     const supabase = createAdminSupabaseClient()
@@ -142,7 +160,7 @@ export async function POST(req: NextRequest) {
       status: 'rendered',
       document_type: payload.doc_type ?? 'other',
       payment_confirmed: true,
-      certification_record: certRecord,
+      certification_record: { ...certRecord, attestation },
       scope_title: payload.scope_title ?? '',
       locale: payload.locale ?? 'en',
       updated_at: new Date().toISOString(),
