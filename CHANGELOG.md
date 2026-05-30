@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 80: Live ONE_BRAIN_SHADOW wiring in TPS route (branch feat/canonical-shadow-wiring)
+
+First live wiring of the canonical core, observe-only + default OFF. New pure liveShadow.ts (summarizeTpsReviewShift: builds canonical from live TpsExtractedField[], PII-free review-shift one-liner). TPS extract route logs [ONE_BRAIN_SHADOW] before success return, guarded by isShadowEnabled() AND try/catch — never affects the response, never runs without the flag. New liveShadow.test.ts 4/4 + source-level shadowWiring.test.ts 3/3; full web 2320 pass; tsc 0; content-guard 0. Report `docs/reports/P2_3W_LIVE_SHADOW_WIRING.md`. Files: canonical/liveShadow.ts, canonical/index.ts, api/tps/ocr/extract/route.ts, api/tps/ocr/__tests__/shadowWiring.test.ts, canonical/__tests__/liveShadow.test.ts, report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 79: P2.2-translation adapter + cross-brain parity (branch feat/canonical-adapter-translation)
 
 Second half of the canonical adapter. New `apps/web/src/lib/canonical/adapterTranslation.ts`: readCanonicalDocumentFromTranslation maps Translation ExtractedField[] → CanonicalDocumentResult (same policy + invariants as TPS). Source inferred (user_corrected→manual, mrz zone→mrz, else ai_vision). Both brains now emit one canonical shape → diffCanonical measures them. New adapterTranslation.test.ts 5/5 incl. 2 cross-brain parity cases (agree→1.0; family_name disagree→criticalDisagreements 1). Additive/unwired. Full web 2313 pass; tsc 0; content-guard 0. Report `docs/reports/P2_2T_CANONICAL_ADAPTER_TRANSLATION.md`. Files: canonical/adapterTranslation.ts, canonical/index.ts, canonical/__tests__/adapterTranslation.test.ts, report, STATUS/HANDOFF/CHANGELOG.
