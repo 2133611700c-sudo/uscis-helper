@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 74: S3 Name No-Silent-Recase (branch fix/name-no-silent-recase)
+
+Fixed the last silent value-mutation among the S3 critical fields. EAD + passport modules built `normalized_value` via naive `s[0]+slice(1).toLowerCase()` with `review_required:false`, corrupting names: O'BRIEN→O'brien, PETRENKO-VASYL→Petrenko-vasyl, VAN DER BERG→Van der berg, McDonald→Mcdonald. New shared `packages/knowledge/src/formatName.ts` (`formatLatinName`): preserves deliberate mixed-case; title-cases each segment split on space/hyphen/apostrophe for all-caps reads. Wired into ead.ts + passport.ts (4 sites); raw_value + review logic unchanged. Audited the other categories — patronymic/authority/date/series already preserve raw + flag review on uncertainty (no change). New `nameNoSilentRecase.test.ts` 6/6; full web 2272 pass; tsc 0; content-guard 0. Report `docs/reports/S3_NAME_NO_SILENT_RECASE.md`. Files: formatName.ts, knowledge index.ts, ead.ts, passport.ts, nameNoSilentRecase.test.ts, S3 report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 73: S2 Audit Persistence Hard-Fail (branch fix/audit-persist-hard-fail)
 
 Made certification-audit persistence a hard gate in `generate-pdf`. New `apps/web/src/lib/translation/persistCertification.ts` inserts order + audit with one retry each; returns ok only if BOTH stored. The route now fails closed on failure: emits the full signed attestation as a structured `AUDIT_RECONCILE` log line (never lost) and returns HTTP 503 — no PDF, no email — instead of the prior 200-with-degraded-warning (a signed doc with no audit trail). Retry absorbs transient blips; idempotent Stripe session → retry does not re-charge. New `persistCertification.test.ts` 5/5; full web 2266 pass; tsc 0; content-guard 0. Report `docs/reports/S2_AUDIT_PERSIST_HARD_FAIL.md`. Files: persistCertification.ts, persistCertification.test.ts, generate-pdf/route.ts, S2 report, STATUS/HANDOFF/CHANGELOG.

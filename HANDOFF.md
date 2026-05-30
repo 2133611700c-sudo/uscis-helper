@@ -1,3 +1,19 @@
+# HANDOFF — Session 74 (2026-05-30)
+
+## Session 74 — S3 Name No-Silent-Recase (branch `fix/name-no-silent-recase`, off main)
+
+Third safety item. Audited all five S3 categories (name/patronymic/authority/date/series). Four already preserve raw + flag `review_required=true` on uncertainty (verified by reading `reconcilePatronymic`, `normalizeAuthority` normalize.ts:146, `normalizeDate` normalize.ts:95, `validatePassportPerforation`). Only NAME still silently mutated: the EAD + passport modules built `normalized_value` with a naive `s[0] + s.slice(1).toLowerCase()` and `review_required:false`, corrupting the controlling Latin spelling — `O'BRIEN→O'brien`, `PETRENKO-VASYL→Petrenko-vasyl`, `VAN DER BERG→Van der berg` (EAD never split on spaces), `McDonald→Mcdonald`.
+
+Fix: new shared `formatLatinName` (`packages/knowledge/src/formatName.ts`, exported from index) — preserves a deliberately mixed-case read; for all-caps/all-lower reads title-cases each alphabetic segment (`\p{L}+` splits on space/hyphen/apostrophe) so each part keeps its initial capital. Wired into `ead.ts` (family+given) and `passport.ts` (family+given), replacing the naive casts. `raw_value` and the passport MRZ-gated `review_required` are unchanged — this fixes the value corruption itself.
+
+**Evidence:** `nameNoSilentRecase.test.ts` 6/6 — O'Brien, hyphenated, multi-word, mixed-case preserved, all-caps no-regression, trim/empty. Full web 2272 pass, tsc 0, content-guard 0. Report: `docs/reports/S3_NAME_NO_SILENT_RECASE.md`.
+
+**Remaining (written):** all-caps "MCDONALD" → "Mcdonald" residual (internal capital unrecoverable from caps; raw preserved for the reviewer; surname-particle dictionary out of scope). Translation stack renders names via its own path; if a name cast is later found there, reuse `formatLatinName`. Master Plan tracker (PR #47) to update: S3 → [x] with this PR#.
+
+**Next per Master Plan:** Phase-1 safety (S1+S2+S3) complete — move to UX (Translation wizard reset + Back/Start-over), then the CanonicalDocumentResult contract (Phase 2).
+
+---
+
 # HANDOFF — Session 73 (2026-05-30)
 
 ## Session 73 — S2 Audit Persistence Hard-Fail (branch `fix/audit-persist-hard-fail`, off main)
