@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 74: Full recognition-engine inventory (branch docs/recognition-inventory)
+
+RECOGNITION_ENGINES_FULL_INVENTORY.md (3 parallel scans): all OCR/vision/AI providers + 26 brain/normalizer components (wired vs dead) + per-product pipelines + cross-product divergence. Two recognition stacks; orchestrator unwired to TPS; geography normalized 2 ways; dead engine/assembler + knowledge/normalize.ts. Companion to ADR-016.
+
+
 ## 2026-05-30 — Session 71: Booklet orientation auto-rotate (branch fix/booklet-orientation)
 
 Extended the TPS OCR rotation (previously MRZ-only) to the internal passport booklet (no MRZ): trigger rotation when booklet has <2 identity fields; pick the rotation with the most identity fields; adopt if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0. Caveat: needs a live rotated-booklet repro to confirm (additive/safe — only adopts a strictly-better rotation).
