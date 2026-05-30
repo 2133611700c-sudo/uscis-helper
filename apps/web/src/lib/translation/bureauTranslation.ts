@@ -8,6 +8,7 @@
  * split) → FieldValue map (value/review/canRead) → official bureau PDF.
  */
 import { renderOfficialTranslation, type FieldValue } from './pdf/templates/ukraine/renderOfficialTranslation'
+import { renderValueForPdf } from './pdf/renderValue'
 import type { OfficialFormSchema } from './forms/ukraine/schemas/types'
 import { birthCertificateSchema } from './forms/ukraine/schemas/birth-certificate.schema'
 import { marriageCertificateSchema } from './forms/ukraine/schemas/marriage-certificate.schema'
@@ -63,15 +64,20 @@ export async function renderBureauTranslation(
   let missingRequired = 0
   for (const spec of schema.fields) {
     const m = mapped[spec.key]
-    const value = m?.value ?? ''
+    // PDF-safe, no silent loss: KMU-55 transliterate Cyrillic, mark unrenderable.
+    // A value that still carried Cyrillic at this layer was NOT resolved upstream
+    // (controlled name/glossary/geography), so it is flagged for human review.
+    const rv = renderValueForPdf(m?.value ?? '')
+    const value = rv.text
     const canRead = !!value
     if (!canRead && spec.required) missingRequired++
     values[spec.key] = {
       value,
       canRead,
       // review if the mapping flagged it, OR the recognizer flagged the raw field,
-      // OR the field-contract conditions apply (handwriting/etc. are surfaced upstream).
-      review: (m?.reviewRequired ?? false) || (reviewByKey[spec.key] ?? false),
+      // OR the field-contract conditions apply (handwriting/etc. are surfaced upstream),
+      // OR the value needed transliteration / contained unrenderable source text.
+      review: (m?.reviewRequired ?? false) || (reviewByKey[spec.key] ?? false) || rv.transliterated || rv.unrenderable,
     }
   }
 

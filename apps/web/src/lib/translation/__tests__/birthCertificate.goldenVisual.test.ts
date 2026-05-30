@@ -79,12 +79,16 @@ describe('Birth certificate — golden PDF protocol (pilot)', () => {
     expect(text).not.toMatch(/Father:\s*[A-Z][a-z]+/)
   })
 
-  // KNOWN GAP (visual pass 2026-05-29): renderOfficialTranslation `safe()` strips
-  // any char > U+00FF, so Cyrillic series letters are SILENTLY dropped — "I-АМ"
-  // renders as "I-". The fix is upstream KMU-55 transliteration of series letters
-  // (А→A, М→M) before render, not a silent strip. Pilot blocker; see
-  // docs/reports/GOLDEN_PDF_PROTOCOL_birth.md.
-  it.todo('transliterate Cyrillic series letters (I-АМ → I-AM) instead of silently stripping')
+  it('renders Cyrillic series letters via KMU-55, never silently stripped (I-АМ → I-AM)', async () => {
+    const { res, text } = await render([
+      { field: 'child_full_name', normalized_value: 'REDACTED Serhii Serhiiovych', review_required: true },
+      { field: 'series_number', normalized_value: 'I-АМ 428069', review_required: false },
+    ])
+    expect(res).not.toBeNull()
+    expect(text).toContain('I-AM')           // letters transliterated, not dropped
+    expect(text).toContain('428069')
+    expect(text).not.toMatch(/I-\s+428069/)  // the "АМ" was NOT silently deleted
+  })
 
   // Artifact writer for owner visual approval (synthetic data only — no PII).
   // Run: GEN_ARTIFACT=1 vitest run …goldenVisual… ; then pdftoppm → PNG.

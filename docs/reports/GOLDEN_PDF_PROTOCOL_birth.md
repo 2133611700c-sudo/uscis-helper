@@ -17,18 +17,20 @@ this pass proves why.
 - Missing required field → honest `[enter from document]` placeholder; not certifiable; no fabricated parent.
 
 ## Owner visual pass (zero-trust) — findings
-| # | Severity | Finding | Fix owner / next |
+| # | Severity | Finding | Status |
 |---|---|---|---|
-| 1 | 🔴 **BLOCKER** | **Cyrillic series letters silently stripped.** Input series `I-АМ 000001` renders as `I- 000001`. Root cause: `renderOfficialTranslation` `safe()` = `replace(/[^\x00-\xFF]/g,'')` deletes anything > U+00FF. This is **silent data loss** (violates the no-silent rule). | Transliterate series letters via KMU-55 (А→A, М→M) **upstream** before render; renderer must never silently drop. Tracked as `it.todo` in the golden visual test. |
-| 2 | 🟠 | Translator **Address line empty** on the certification. Matches the review-gate finding — the live TranslateWizard does not collect signer address. | Wire an address field into the wizard, then promote signerAddress to a hard gate. |
-| 3 | 🟠 | **UNZR / RNOKPP** rendered as placeholders on an 1814-era synthetic doc. These registry numbers did not exist pre-2019; era-gating should suppress them when documentDate precludes them. | Era-gate UNZR/RNOKPP on documentDate in the schema variant selection. |
+| 1 | 🔴 **BLOCKER** | **Cyrillic series letters silently stripped.** Input `I-АМ 000001` rendered as `I- 000001`. Root cause: `renderOfficialTranslation` `safe()` = `replace(/[^\x00-\xFF]/g,'')` deleted anything > U+00FF — silent data loss. | ✅ **FIXED** — `renderValue.ts` `pdfSafe()`: per-Cyrillic-run KMU-55 transliteration + symbol map + visible `[?]` marker; never deletes. Series now renders `I-AM 000001` **and** is review-flagged. Two self-introduced regressions (lost apostrophe in `TRANSLATOR'S`, all-caps leak in act line) caught in a second visual pass and fixed via per-run transliteration. |
+| 2 | 🟠 | Translator **Address line empty** on the certification (live wizard sends `addr:''`). | Open — wire address field into wizard, then promote signerAddress to a hard gate (P3). |
+| 3 | 🟠 | **UNZR / RNOKPP** shown on a pre-2019-era synthetic doc; era-gating should suppress them. | Open — era-gate on documentDate in variant selection. |
 
 ## Verdict
-**birth_certificate is NOT visually approved yet.** Blocker #1 (silent Cyrillic strip)
-must be fixed before the pilot can go active. The machine golden tests passed because
-they used Latin "AM"; the realistic Cyrillic series exposed the defect — exactly why
-visual approval is mandatory. Owner sign-off checkbox below.
+Blocker #1 **resolved and re-rendered** (`birth_certificate.pilot-1.png` shows `I-AM`,
+intact `TRANSLATOR'S`, correct-case act line). Machine golden tests passed earlier only
+because they used Latin "AM" — the realistic Cyrillic series exposed the defect, exactly
+why visual approval is mandatory and readback alone is insufficient. **birth_certificate
+still requires OWNER visual approval + the two open 🟠 items before `active`.**
 
 - [ ] Owner reviewed `birth_certificate.pilot-1.png` and approves the bureau layout
-- [ ] Blocker #1 (Cyrillic series transliteration) fixed and re-rendered
+- [x] Blocker #1 (Cyrillic series transliteration) fixed and re-rendered
 - [ ] Address line resolved (wizard collects signer address)
+- [ ] UNZR/RNOKPP era-gated
