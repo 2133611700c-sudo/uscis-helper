@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 76f: Tracker — UX (#51) + P2.1 canonical core (#52) (branch docs/engineering-master-plan)
+
+Marked UX wizard reset/Back/Start-over [x] (PR #51) and the P2.1 canonical items [x] (PR #52): CanonicalDocumentResult+CanonicalField types, Field Confidence Contract, Provider Disagreement Policy, Source Authority Ranking. Next Phase-2: P2.2 readCanonicalDocument adapter, P2.3 ONE_BRAIN_SHADOW parity. File: docs/ENGINEERING_MASTER_PLAN.md, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 76d: Tracker — S3 done → Phase-1 safety complete (branch docs/engineering-master-plan)
 
 Marked S3 (PR #50) [x] in the tracker with evidence; recorded the audit of patronymic/authority/date/series as already-flagged. All three Phase-1 safety items (S1 geography, S2 audit, S3 name) now complete. File: docs/ENGINEERING_MASTER_PLAN.md, STATUS/HANDOFF/CHANGELOG.
