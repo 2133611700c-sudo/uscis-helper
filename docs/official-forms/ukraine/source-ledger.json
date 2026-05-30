@@ -20,7 +20,11 @@
       "kmu_353_booklet": "act officially states 'Додаток не наводиться' — booklet blank NOT published here; use ВРУ №2503-XII / МВС №456.",
       "kmu_1367_2002 / vru_2503_xii": "body JS-rendered, not extracted via /print; need DOC export or alternate official endpoint."
     },
-    "geography_source_status": { "katottg_layer": "UNOFFICIAL_MIRROR — current 458-city layer was generated from a GitHub mirror (kaminarifox/katottg-json), NOT the official mtu.gov.ua KATOTTH file. MUST re-source from mtu.gov.ua before treating as official." },
+    "geography_source_status": {
+      "katottg_layer": "DERIVED_FROM_MIRROR — current 458-city layer generated from a GitHub mirror (kaminarifox/katottg-json, orderDate 2024-01-19) via KMU-55.",
+      "official_source_identified": { "authority": "Міністерство розвитку громад та територій (Мінрегіон)", "portal": "data.gov.ua (official open-data)", "dataset_id": "43c2a113-a032-4c8a-a409-3b5e16...", "file": "https://www.minregion.gov.ua/wp-content/uploads/2021/10/kodyfikator.xlsx", "legal_basis": "Наказ Мінрегіону №290 від 26.11.2020" },
+      "verification_status": "OFFICIAL_SOURCE_FOUND, DIRECT_DOWNLOAD_BLOCKED — minregion.gov.ua returns HTTP 403 to this environment; owner can download the official XLSX to byte-verify the mirror. Mirror sample (Бахчисарай/Тростянець/Вінниця/Кропивницький) is structurally consistent with КАТОТТГ."
+    },
     "series_letters_by_oblast_kmu1025": { "_note": "official series letter-pair per oblast (Додаток 'СЕРІЇ БЛАНКІВ', КМУ №1025) — verifies a certificate's oblast from its series; III-АМ confirms Вінницька", "АП":"Автономна Республіка Крим","АМ":"Вінницька","ЕГ":"Волинська","КИ":"Дніпропетровська","НО":"Донецька","ТП":"Житомирська","ФМ":"Закарпатська","ЖС":"Запорізька","НМ":"Івано-Франківська","ОК":"Київська","ОЛ":"Кіровоградська","ЕД":"Луганська","СГ":"Львівська","ФП":"Миколаївська","ЖД":"Одеська","КЕ":"Полтавська","ГЮ":"Рівненська","БП":"Сумська","ИД":"Тернопільська","ВЛ":"Харківська","КГ":"Херсонська","БВ":"Хмельницька","СР":"Черкаська","МИ":"Чернівецька","ЕЛ":"Чернігівська","БК":"м. Київ","АС":"м. Севастополь" }
   },
   "documents": [

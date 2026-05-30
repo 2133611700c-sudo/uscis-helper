@@ -907,3 +907,5 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 Architecture: extend typed schema (not 7-JSON-per-doc). birth-cert: official КМУ-1025 fields + Field Contract + era variants + canonical mapping (child_full_name split) + source-ledger validation/verified/invalid/mirror/series. Next: marriage/divorce/death same pattern; re-source КАТОТТГ official + correct URLs for mil/diploma/pension; then wire mapping→renderOfficialTranslation behind flag + owner visual approval.
 
 ## official-docs — 5 civil-status schemas contracted DONE. Next: re-source КАТОТТГ official (mtu.gov.ua) + correct URLs (mil/diploma/pension); then wire mapping→renderOfficialTranslation behind flag + owner approval.
+
+## КАТОТТГ official provenance: data.gov.ua/Мінрегіон, minregion kodyfikator.xlsx (403 from env). Owner download to byte-verify mirror. Next: correct official URLs for military/diploma/pension acts.

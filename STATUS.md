@@ -773,3 +773,5 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - `VERIFIED(official)` КМУ №1025/152/302 downloaded+analyzed (zakon.rada /print). birth schema upgraded to official structure (issuing-authority/УНЗР/РНОКПП/head + era variants + field contract) + canonical mapping + ledger validation. Schema/tests only. web 2218 pass.
 
 ## official-docs — all 5 civil-status schemas under Field Contract (2238 pass)
+
+## official-docs — КАТОТТГ official source identified (data.gov.ua/Мінрегіон); direct DL 403, owner byte-verify pending

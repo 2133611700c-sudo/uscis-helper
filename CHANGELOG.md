@@ -2396,3 +2396,6 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
   (sourceRule+canGuess, variants, issuing/head present, Patronymic≠Middle Name).
 - web 2238 pass +4 skip, 0 type errors. Schema/tests only — renderer untouched (render
   tests still green).
+
+## 2026-05-29 — official-docs: КАТОТТГ official provenance established (data.gov.ua/Мінрегіон)
+- Found the OFFICIAL КАТОТТГ source: data.gov.ua dataset by Міністерство розвитку громад та територій (Мінрегіон), file minregion.gov.ua/.../kodyfikator.xlsx (Наказ №290). Direct download HTTP 403 from this env → owner can byte-verify. Ledger geography_source_status upgraded from UNOFFICIAL_MIRROR → OFFICIAL_SOURCE_FOUND + official pointer.
