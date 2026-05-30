@@ -1,4 +1,7 @@
 # STATUS — Messenginfo
+## Session 71 (2026-05-30) — Booklet orientation: rotate by identity-field count (branch fix/booklet-orientation)
+- `DONE` TPS OCR route already rotated for passport MRZ; extended ADDITIVELY for the INTERNAL passport booklet (no MRZ to anchor on): trigger rotation when booklet matched with <2 identity fields; in the loop track the rotation with the most identity fields; adopt it if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0.
+- `HONEST CAVEAT` cannot verify with a LIVE rotated booklet image here (no fixture upload). Logic is additive/safe (only adopts a rotation with strictly more identity fields). Owner live-repro of a rotated booklet recommended to confirm pick.
 ## Session 70 (2026-05-30) — Owner mode site-wide: free testing of all products (branch feat/owner-mode-site-wide)
 - `DONE` Translation wizard now honours owner mode (was the only paid product without it): checks `/api/owner/status` on mount; owner → skips Stripe → straight to sign/download; CTA shows "Owner — continue free". generate-pdf route already bypasses payment for the owner cookie. TPS already had owner mode; EAD + Re-Parole are free. Owner-login UI exists at `/[locale]/owner`. → owner can run EVERY product without payment. `ownerMode.test.ts` 3/3, full web pass, tsc 0, guard 0.
 
