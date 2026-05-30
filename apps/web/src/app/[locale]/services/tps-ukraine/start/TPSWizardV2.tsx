@@ -31,6 +31,7 @@ import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
 import { resolveAllFields, type ExtractedCandidate, type SourceDoc, type SourceType } from '@/lib/tps/fieldArbiter'
 import { DOCUMENT_CONTRACTS } from '@/lib/tps/ocr/documentContracts'
 import type { TpsExtractionSource } from '@/lib/tps/types'
+import { clearTpsDocumentState } from '@/lib/tps/documentState'
 import { normalizeOblastToNominative, isGarbageValue } from '@uscis-helper/knowledge'
 import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
@@ -2643,6 +2644,9 @@ export default function TPSWizardV2({ locale }: Props) {
     } catch {
       /* ignore */
     }
+    // Per-document isolation: a NEW document must not inherit the previous
+    // person's attestation / legal-risk / Part-7 answers (the stale-state class).
+    clearTpsDocumentState()
     setPreflightPassed(false)
     setGeneratedManifest(null)
     setData({ uploads: {}, manual: {}, paid: false, packetReady: false, part7Reviewed: false })
