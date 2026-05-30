@@ -1,4 +1,10 @@
-# HANDOFF — Session 76b (2026-05-30)
+# HANDOFF — Session 76c (2026-05-30)
+
+## Session 76c — Tracker: S2 done + audit item resolved (branch `docs/engineering-master-plan`)
+
+S2 (audit persistence hard-fail) shipped as safety PR **#49** off main. Tracker updated: S2 → `[x]` with PR# + evidence/risk; the `[~]` "Audit DB persistence" item flipped to `[x]` (resolved). Both Phase-1 safety items S1+S2 now done. Exact next task: **S3 — no-silent-correction** for name / patronymic / authority / date / series (apply the S1 principle: a low-confidence normalization becomes a suggestion + review_required, never a silent replacement). Then UX reset/back-start-over in the Translation wizard, then the CanonicalDocumentResult contract (Phase 2).
+
+---
 
 ## Session 76b — Tracker update: S1 done + constitution docs + phase-completion gate (branch `docs/engineering-master-plan`)
 

@@ -1,4 +1,6 @@
 # STATUS — Messenginfo
+## Session 76c (2026-05-30) — Tracker: S2 [x] + audit item resolved (branch docs/engineering-master-plan)
+- `TRACKER` Marked **S2 [x]** with PR #49 + evidence (persistCertification.test 5/5, prod-impact + risk). Flipped the `[~]` "Audit DB persistence" item to `[x]` (resolved by S2). Next safety item: S3 no-silent-correction for name/patronymic/authority/date/series.
 ## Session 76b (2026-05-30) — Tracker update: S1 [x] + 5 constitution docs + phase-completion gate (branch docs/engineering-master-plan)
 - `TRACKER` Marked **S1 [x]** with PR #48 + evidence (geographyNoSilentSnap.test 3/3, prod-impact + remaining risk recorded). Added the 5 constitution docs (DOCUMENT_SESSION_CONTRACT, EVIDENCE_LEDGER_SPEC, FIELD_CONFIDENCE_AND_CRITICALITY_POLICY, PRODUCT_STATUS_AND_LAUNCH_GATES, AGENT_WORK_ORDER_PROTOCOL) → `[x]`. Added the owner's **phase-completion gate** to §7: no `[x]` without (1) test blocking the exact failure, (2) prod-impact stated, (3) remaining risk written, (4) no unrelated scope, (5) report file. Next: S2 audit hard-fail.
 ## Session 76 (2026-05-30) — Engineering Master Plan + tracker (branch docs/engineering-master-plan)
