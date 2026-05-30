@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 75: UX wizard reset + Back/Start-over (branch feat/wizard-reset-startover)
+
+Added recovery UX to the Translation wizard. Review screen (5) gains a top Back (→ re-upload screen 3) and a Start-over button; new `startOver` confirms data loss, resets, returns to doc-type (2). Strengthened `resetAll` to clear ALL session state (certifierAddress/dataReviewed/accuracyAttested/paymentLoading/pdfLoading/procStep/stripeCheckoutId) and remove BOTH `tw:v2:draft` and `tw:cs` — previously the attestation inputs + checkout id survived a reset. i18n: start_over + start_over_confirm in RU base + EN override. New `wizardResetStartOver.test.ts` 4/4 (source-level); full web 2276 pass; tsc 0; content-guard 0. Report `docs/reports/UX_WIZARD_RESET_STARTOVER.md`. Files: TranslateWizard.tsx, wizardResetStartOver.test.ts, UX report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 74: S3 Name No-Silent-Recase (branch fix/name-no-silent-recase)
 
 Fixed the last silent value-mutation among the S3 critical fields. EAD + passport modules built `normalized_value` via naive `s[0]+slice(1).toLowerCase()` with `review_required:false`, corrupting names: O'BRIEN→O'brien, PETRENKO-VASYL→Petrenko-vasyl, VAN DER BERG→Van der berg, McDonald→Mcdonald. New shared `packages/knowledge/src/formatName.ts` (`formatLatinName`): preserves deliberate mixed-case; title-cases each segment split on space/hyphen/apostrophe for all-caps reads. Wired into ead.ts + passport.ts (4 sites); raw_value + review logic unchanged. Audited the other categories — patronymic/authority/date/series already preserve raw + flag review on uncertainty (no change). New `nameNoSilentRecase.test.ts` 6/6; full web 2272 pass; tsc 0; content-guard 0. Report `docs/reports/S3_NAME_NO_SILENT_RECASE.md`. Files: formatName.ts, knowledge index.ts, ead.ts, passport.ts, nameNoSilentRecase.test.ts, S3 report, STATUS/HANDOFF/CHANGELOG.
