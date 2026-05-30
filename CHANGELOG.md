@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 71: Booklet orientation auto-rotate (branch fix/booklet-orientation)
+
+Extended the TPS OCR rotation (previously MRZ-only) to the internal passport booklet (no MRZ): trigger rotation when booklet has <2 identity fields; pick the rotation with the most identity fields; adopt if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0. Caveat: needs a live rotated-booklet repro to confirm (additive/safe — only adopts a strictly-better rotation).
+
+
 ## 2026-05-30 — Session 67: Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
 
 `docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full inventory + responsibility map + phased P1–P5 consolidation plan (dictionaries/functions/agents/documents; two-brain split: engine→registry vs live modules→parallel glossary). P1 DONE: deleted the byte-identical duplicate glossary/civil_registry_terms.json (proven dead — declarative metadata only, canonical resolution via knowledge translateCivilRegistryTerm). Module tests 498 pass, full web pass, tsc 0, content-guard 0.

@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 71 (2026-05-30) — Booklet orientation: rotate by identity-field count (branch fix/booklet-orientation)
+- `DONE` TPS OCR route already rotated for passport MRZ; extended ADDITIVELY for the INTERNAL passport booklet (no MRZ to anchor on): trigger rotation when booklet matched with <2 identity fields; in the loop track the rotation with the most identity fields; adopt it if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0.
+- `HONEST CAVEAT` cannot verify with a LIVE rotated booklet image here (no fixture upload). Logic is additive/safe (only adopts a rotation with strictly more identity fields). Owner live-repro of a rotated booklet recommended to confirm pick.
+
 ## Session 67 (2026-05-30) — Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
 - `INVENTORY` `docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full map: dictionaries (canonical knowledge vs parallel apps/web), functions (who resolves what), agents (ADR roles), documents (8 modules, all draft except passportBooklet), dependency map (TWO brains: engine→registry, live modules→parallel glossary), and a phased P1–P5 consolidation plan.
 - `P1 DONE` Deleted the byte-identical duplicate `apps/web/.../glossary/civil_registry_terms.json` — proven DEAD data (no import, no dynamic loader; canonical resolution is knowledge `translateCivilRegistryTerm`). Module tests 498 pass, full web pass, tsc 0, content-guard 0.
