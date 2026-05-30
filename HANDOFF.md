@@ -1,3 +1,15 @@
+# HANDOFF — Session 82 (2026-05-30)
+
+## Session 82 — Doc-Type Confidence Gate + Provider Output Quarantine (branch `feat/canonical-doc-gate`, off main)
+
+Two more canonical-core policy items. `apps/web/src/lib/canonical/documentGate.ts`: `applyDocumentTypeGate(doc, docTypeConfidence, {threshold=0.7})` — below threshold (we're not confident WHAT the document is / unknown page) it forces every field to `reviewRequired` with reason `unknown_document_type` and sets `requiresReview` (a confident value on an unknown page is a lie); at/above threshold it returns the result unchanged; idempotent. `partitionQuarantine(doc)` → `{accepted, quarantined}` — accepted = needs-no-review fields (safe to auto-use), quarantined = candidates still needing confirmation; after a failed gate, `accepted` is empty. Pure, additive, unwired.
+
+**Evidence:** `documentGate.test.ts` 6/6. Full web 2331 pass, tsc 0, content-guard 0. Report: `docs/reports/P2_DOCTYPE_GATE_QUARANTINE.md`.
+
+**Canonical core is now fully contract-complete:** types + policy + TPS adapter + Translation adapter + parity diff + live shadow + manual override + doc-type gate + quarantine — all additive, tested, unwired. The remaining plan work is genuinely gated and NOT code-deferrable-now: (1) collect real-traffic parity (`ONE_BRAIN_SHADOW=1` canary) → parity threshold → per-product migration behind the flag → consolidation (remove the 2nd brain); (2) Phase 4 finalization-lock / two-layer PDF proof / evidence-ledger DB table; (3) Phase 6 ops (review queue, metrics, status board) — last; (4) owner-gated (official military/diploma/pension URLs, КАТОТТГ byte-verify, birth-cert visual approval, live rotated-photo).
+
+---
+
 # HANDOFF — Session 81 (2026-05-30)
 
 ## Session 80 — Live ONE_BRAIN_SHADOW wiring in TPS route (branch `feat/canonical-shadow-wiring`, merged #56)

@@ -54,3 +54,7 @@ export type { TpsShadowMeta } from './liveShadow'
 
 // Manual Override Contract — user correction (lowest authority, preserves prior).
 export { applyManualOverride } from './manualOverride'
+
+// Document-Type Confidence Gate + Provider Output Quarantine.
+export { applyDocumentTypeGate, partitionQuarantine, DOC_TYPE_GATE_THRESHOLD } from './documentGate'
+export type { QuarantinePartition } from './documentGate'
