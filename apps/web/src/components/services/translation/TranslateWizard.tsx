@@ -74,6 +74,8 @@ const T = {
     legal: 'Мы не являемся адвокатами. Услуга — информационная помощь по 8 CFR §103.2(b)(3).',
     back: '← Назад',
     next: 'Далее →',
+    start_over: '↺ Начать заново',
+    start_over_confirm: 'Начать заново? Загруженные файлы и распознанные данные будут удалены.',
     // Screen 1 — Welcome
     s1_title_1: 'Перевод', s1_title_2: 'документов',
     s1_subtitle: 'Загрузите фото документа — мы переведём на английский и оформим официальный сертификат для USCIS',
@@ -190,6 +192,8 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     legal: 'We are not attorneys. Service is informational assistance per 8 CFR §103.2(b)(3).',
     back: '← Back',
     next: 'Next →',
+    start_over: '↺ Start over',
+    start_over_confirm: 'Start over? Your uploaded files and recognized data will be cleared.',
     s1_title_1: 'Document', s1_title_2: 'translation',
     s1_subtitle: 'Upload a photo — we translate to English and issue an official USCIS-style certification.',
     s1_card_time_t: '5–10 minutes', s1_card_time_s: 'For a Ukrainian passport',
@@ -1211,16 +1215,38 @@ export function TranslateWizard() {
     }
   }, [pdfLoading, sigSaved, dataReviewed, accuracyAttested, certifierAddress, extractedFields, stripeCheckoutId, locale, selectedDocType])
 
+  // Full reset for "Start over" / "Translate another". Clears EVERY piece of
+  // session state — including the attestation inputs and the persisted Stripe
+  // checkout id — so a fresh start cannot inherit stale data (the live-failure
+  // class). Pairs with the session-isolation guard (no draft restore on a plain
+  // visit): this is the explicit, user-driven reset.
   const resetAll = useCallback(() => {
     setSelectedDocType(null)
     setUploadedFiles([])
     setPreviewUrls([])
     setExtractedFields([])
     setExtractionError(null)
+    setCertifierAddress('')
+    setDataReviewed(false)
+    setAccuracyAttested(false)
+    setPaymentLoading(false)
+    setPdfLoading(false)
     setPdfDownloaded(false)
     setSigSaved(false)
-    try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* */ }
+    setProcStep(0)
+    setStripeCheckoutId(null)
+    try {
+      sessionStorage.removeItem(DRAFT_KEY)
+      sessionStorage.removeItem('tw:cs')
+    } catch { /* */ }
   }, [])
+
+  // "Start over" from mid-flow: confirm (data loss), reset, return to doc-type.
+  const startOver = useCallback(() => {
+    if (typeof window !== 'undefined' && !window.confirm(t.start_over_confirm)) return
+    resetAll()
+    goTo(2)
+  }, [resetAll, goTo, t])
 
   // ── Translation table rows: REAL fields if present, else honest sample ──
   // `fieldKey` + `kind` carry through so the review screen can wire the Edit
@@ -1468,6 +1494,10 @@ export function TranslateWizard() {
 
         {/* SCREEN 5 — Translation preview (BEFORE payment, v5 §21) */}
         <div className={`tw-screen ${screen === 5 ? 'tw-active' : ''}`}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <button type="button" className="tw-back-btn" onClick={() => goTo(3)}>{t.back}</button>
+            <button type="button" className="tw-back-btn" onClick={startOver}>{t.start_over}</button>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <span style={{ fontSize: 28 }}>✅</span>
             <h2 className="tw-h2" style={{ margin: 0 }}>{t.s5_title}</h2>
