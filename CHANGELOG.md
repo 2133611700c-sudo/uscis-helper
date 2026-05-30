@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 75: Full repo inventory + architecture audit (branch docs/full-repo-audit)
+
+6 read-only reports (docs/reports/): FULL_REPO_INVENTORY(.md/.csv), ARCHITECTURE_DEPENDENCY_MAP, DEAD_CODE_AND_DUPLICATES, PRODUCT_FLOW_MATRIX, RISK_REGISTER_BY_FILE. From census (1423 files, 47 routes, 26 migrations, 20 tables) + 2 parallel agents. Critical: two recognition stacks (legal divergence); audit/order DB continues-on-failure; [CONFIRM] in signed bureau PDF; snapCity over-match; stale TPS state; central_brain_audit drift; 5 packet endpoints; dead code. No code changes. Highest-leverage fix = ADR-016 one brain.
+
+
 ## 2026-05-30 — Session 71: Booklet orientation auto-rotate (branch fix/booklet-orientation)
 
 Extended the TPS OCR rotation (previously MRZ-only) to the internal passport booklet (no MRZ): trigger rotation when booklet has <2 identity fields; pick the rotation with the most identity fields; adopt if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0. Caveat: needs a live rotated-booklet repro to confirm (additive/safe — only adopts a strictly-better rotation).
