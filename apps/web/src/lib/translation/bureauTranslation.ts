@@ -47,7 +47,7 @@ export interface RecognizedField { field: string; normalized_value?: string | nu
 export async function renderBureauTranslation(
   docType: string,
   fields: RecognizedField[],
-  opts: { signerName?: string } = {},
+  opts: { signerName?: string; signerAddress?: string; reviewConfirmed?: boolean } = {},
 ): Promise<{ pdf: Buffer; unresolved: string[]; certifiable: boolean } | null> {
   const schema = bureauSchemaFor(docType)
   if (!schema) return null
@@ -81,6 +81,10 @@ export async function renderBureauTranslation(
     }
   }
 
-  const { pdf, unresolved } = await renderOfficialTranslation(schema, values, { signerName: opts.signerName })
+  const { pdf, unresolved } = await renderOfficialTranslation(schema, values, {
+    signerName: opts.signerName,
+    signerAddress: opts.signerAddress,
+    reviewConfirmed: opts.reviewConfirmed,
+  })
   return { pdf, unresolved, certifiable: missingRequired === 0 }
 }

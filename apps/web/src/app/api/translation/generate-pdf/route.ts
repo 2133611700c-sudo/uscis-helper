@@ -127,7 +127,14 @@ export async function POST(req: NextRequest) {
   try {
     if (process.env.BUREAU_PDF === 'on') {
       const { renderBureauTranslation } = await import('@/lib/translation/bureauTranslation')
-      const bureau = await renderBureauTranslation(payload.doc_type ?? '', (payload.fields ?? []) as any, { signerName: profile.name })
+      // The review gate above guarantees a human reviewed + signed, so [CONFIRM]
+      // pre-review markers are stripped (signer attests accuracy); missing fields
+      // still render as visible placeholders.
+      const bureau = await renderBureauTranslation(payload.doc_type ?? '', (payload.fields ?? []) as any, {
+        signerName: profile.name,
+        signerAddress: profile.addr,
+        reviewConfirmed: true,
+      })
       if (bureau) pdfBuffer = bureau.pdf
     }
     if (!pdfBuffer) {
