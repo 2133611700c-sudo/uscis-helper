@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 76e: P2.1 Canonical contract (branch feat/canonical-contract)
+
+Phase 2 step 1 (two-brain fix, contract-first). New `apps/web/src/lib/canonical/`: `types.ts` (CanonicalDocumentResult, CanonicalField, FieldConfidence, SourceKind, hash chain) + `policy.ts` pure rules (computeFinalConfidence final≤min(applicable); criticalityOf/CRITICAL_FIELDS; materiallyDifferent no-silent-correction; sourceRank/higherAuthority; resolveDisagreement; decideReviewRequired). Codifies S1+S3 as general rules. Additive — no product wired, zero behavior change. New `policy.test.ts` 16/16 (per policy §F); full web 2292 pass; tsc 0; content-guard 0. Report `docs/reports/P2_1_CANONICAL_CONTRACT.md`. Files: canonical/types.ts, canonical/policy.ts, canonical/index.ts, canonical/__tests__/policy.test.ts, P2.1 report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 75: UX wizard reset + Back/Start-over (branch feat/wizard-reset-startover)
 
 Added recovery UX to the Translation wizard. Review screen (5) gains a top Back (→ re-upload screen 3) and a Start-over button; new `startOver` confirms data loss, resets, returns to doc-type (2). Strengthened `resetAll` to clear ALL session state (certifierAddress/dataReviewed/accuracyAttested/paymentLoading/pdfLoading/procStep/stripeCheckoutId) and remove BOTH `tw:v2:draft` and `tw:cs` — previously the attestation inputs + checkout id survived a reset. i18n: start_over + start_over_confirm in RU base + EN override. New `wizardResetStartOver.test.ts` 4/4 (source-level); full web 2276 pass; tsc 0; content-guard 0. Report `docs/reports/UX_WIZARD_RESET_STARTOVER.md`. Files: TranslateWizard.tsx, wizardResetStartOver.test.ts, UX report, STATUS/HANDOFF/CHANGELOG.
