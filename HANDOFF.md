@@ -1,3 +1,18 @@
+# HANDOFF — Session 59a (2026-05-30)
+
+## Session 59a — [CONFIRM]-strip after reviewConfirmed (branch `official-docs`)
+
+Implemented the owner-requested rule: `[CONFIRM]` is a PRE-review marker and must not remain in the signed certified text. `renderOfficialTranslation`, `bureauTranslation`, and `generate-pdf/route.ts` now thread `reviewConfirmed`. The route passes `reviewConfirmed: true` after the review gate passes (gate guarantees a human reviewed + signed). Effect:
+- present + flagged field, pre-review → `value [CONFIRM]` (warn);
+- present + flagged field, after confirm → `value` clean (signer attests accuracy), banner → "reviewed and signed by the certifier";
+- missing field → `[enter from document]` regardless (never invented; still not certifiable).
+
+Behind BUREAU_PDF (default OFF) → zero prod impact. Visually verified both artifacts (`birth_certificate.pilot.signed.png` = clean; `…pilot.png` = pre-review draft). Tests: golden visual +3 cases, full web 2270 pass, tsc 0, content-guard clean.
+
+**Exact next task:** P3 signerAddress — wire an address field into the live `TranslateWizard` (it currently sends `addr:''`), then promote `signerAddress` from warning to hard-gate in `reviewGate` + API, with E2E proving empty address blocks. (Touches the live wizard — production UX change.) Then owner: visual-approve `birth_certificate.pilot.signed.png` → allowlist birth in the coverage generator (still behind BUREAU_PDF).
+
+---
+
 # HANDOFF — Session 59 (2026-05-30)
 
 ## Session 59 — Autonomous branch stabilization (4 PRs merged, official-docs synced)

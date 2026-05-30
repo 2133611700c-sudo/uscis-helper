@@ -3,6 +3,14 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 59a: [CONFIRM]-strip after reviewConfirmed (branch official-docs)
+
+`[CONFIRM]` is a pre-review marker; it must not remain in the signed certified text. `renderOfficialTranslation` / `bureauTranslation` / `generate-pdf/route.ts` now thread `reviewConfirmed` (route passes `true` after the review gate passes). After confirmation: present values render clean (signer attests accuracy), banner → "reviewed and signed by the certifier"; missing fields still render `[enter from document]` (never invented; still not certifiable). Behind BUREAU_PDF (default OFF) → zero prod impact.
+
+- New golden-visual cases: pre-review shows [CONFIRM]; after reviewConfirmed no [CONFIRM] + clean values; missing still flagged.
+- Artifacts: `docs/reports/artifacts/birth_certificate.pilot.signed.{pdf,png}` (clean signed) + `…pilot.{pdf,png}` (pre-review draft). Visually verified.
+- Full web 2270 pass +5 skip, tsc 0, content-guard 0 violations.
+
 ## 2026-05-30 — Session 59: Autonomous branch stabilization (4 PRs merged; official-docs synced)
 
 Owner granted full autonomy; executed the merge queue.

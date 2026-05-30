@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 59a (2026-05-30) — [CONFIRM]-strip after reviewConfirmed (branch official-docs)
+- `VERIFIED(local+visual)` Bureau renderer now strips the `[CONFIRM]` pre-review marker once the human reviewed+signed: `renderOfficialTranslation`/`bureauTranslation`/`generate-pdf` thread `reviewConfirmed`. After confirm → present values render CLEAN (signer attests accuracy), banner → "reviewed and signed by the certifier"; MISSING fields still show `[enter from document]` (never invented). Behind BUREAU_PDF (OFF) — no prod impact.
+- `ARTIFACTS` `docs/reports/artifacts/birth_certificate.pilot.signed.{pdf,png}` (clean signed version) + `…pilot.{pdf,png}` (pre-review draft with markers). Visually verified: signed = no [CONFIRM], values clean, missing still flagged.
+- `VERIFIED` full web 2270 pass +5 skip, tsc 0, content-guard 0 violations.
+
 ## Session 59 (2026-05-30) — Branch stabilization: 4 PRs merged to main, official-docs synced (autonomous)
 - `MERGED→main` PR #28 (review-gate hard block, **LIVE in prod** healthz sha 9e05c1a→), #29 (ADR-015), #26 (recognition+D-GLOSSARY, merge-commit to keep stack), #30 (=reopened #27 koatuu КАТОТТГ 458 cities). main HEAD 9ee56f2.
 - `SYNCED` merged main → official-docs: now carries review-gate + КАТОТТГ. route.ts auto-merge correct (payment→review-gate→BUREAU_PDF; default OFF). Recovered a `git reset --hard` slip (stale origin) via reflog — no work lost.

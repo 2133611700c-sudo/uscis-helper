@@ -18,8 +18,12 @@ const safe = pdfSafe
 
 export async function renderOfficialTranslation(
   schema: OfficialFormSchema, values: Record<string, FieldValue>,
-  opts: { signerName?: string; signerAddress?: string } = {},
+  opts: { signerName?: string; signerAddress?: string; reviewConfirmed?: boolean } = {},
 ): Promise<{ pdf: Buffer; unresolved: string[] }> {
+  // reviewConfirmed: the human reviewed the draft and signed the certification.
+  // [CONFIRM] is a PRE-review marker — once confirmed, present values render clean
+  // (the signer has attested their accuracy). Missing fields still show as missing.
+  const reviewConfirmed = opts.reviewConfirmed === true
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
@@ -33,7 +37,9 @@ export async function renderOfficialTranslation(
 
   C('UKRAINE', 13, bold); C('[ State Emblem (Coat of Arms) of Ukraine ]', 8, ital, gray)
   C(schema.titleEn, 16, bold); y -= 2
-  C('English translation - AI-assisted draft, pending human review & signature', 8, ital, gray); HR()
+  C(reviewConfirmed
+    ? 'English translation - reviewed and signed by the certifier'
+    : 'English translation - AI-assisted draft, pending human review & signature', 8, ital, gray); HR()
 
   const groups = [...new Set(schema.fields.map((f) => f.fieldGroup))]
   for (const g of groups) {
@@ -42,8 +48,11 @@ export async function renderOfficialTranslation(
     L(GROUP_TITLE[g] ?? g.toUpperCase(), 10, bold, gray)
     for (const f of flds) {
       const v = values[f.key]
-      if (v && v.canRead && v.value && !v.review) L(`  ${f.sourceLabelEn}: ${v.value}`, 10)
+      // present + (not flagged OR human-confirmed) → clean value, no marker
+      if (v && v.canRead && v.value && (!v.review || reviewConfirmed)) L(`  ${f.sourceLabelEn}: ${v.value}`, 10)
+      // present + flagged + NOT yet confirmed → pre-review [CONFIRM] marker
       else if (v && v.canRead && v.value) { L(`  ${f.sourceLabelEn}: ${v.value}    [CONFIRM]`, 10, font, warn); unresolved.push(f.key) }
+      // absent → visible missing marker (even after confirmation — cannot invent)
       else { L(`  ${f.sourceLabelEn}: ____________________  [enter from document]`, 10, font, warn); unresolved.push(f.key) }
     }
     y -= 3

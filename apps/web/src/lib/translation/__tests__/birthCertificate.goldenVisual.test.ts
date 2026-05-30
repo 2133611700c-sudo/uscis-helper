@@ -34,8 +34,11 @@ function pdfText(buf: Buffer): string {
 const REQUIRED_LABELS = ['BIRTH CERTIFICATE', 'Surname', 'Patronymic', 'Date of birth', 'Place of birth']
 const FORBIDDEN_LABELS = ['Middle Name', 'Militia', 'Police']
 
-async function render(fields: Parameters<typeof renderBureauTranslation>[1]) {
-  const res = await renderBureauTranslation('ua_birth_certificate', fields, { signerName: 'Test Translator' })
+async function render(
+  fields: Parameters<typeof renderBureauTranslation>[1],
+  opts: { reviewConfirmed?: boolean } = {},
+) {
+  const res = await renderBureauTranslation('ua_birth_certificate', fields, { signerName: 'Test Translator', ...opts })
   return { res, text: res ? pdfText(res.pdf) : '' }
 }
 
@@ -90,20 +93,51 @@ describe('Birth certificate — golden PDF protocol (pilot)', () => {
     expect(text).not.toMatch(/I-\s+428069/)  // the "АМ" was NOT silently deleted
   })
 
+  // ── [CONFIRM]-strip after reviewConfirmed ──────────────────────────────────
+  const PILOT = [
+    { field: 'child_full_name', normalized_value: 'Shevchenko Taras Hryhorovych', review_required: true },
+    { field: 'place_of_birth', normalized_value: 'Moryntsi (village)', review_required: true },
+  ]
+
+  it('pre-review (default): flagged fields carry the [CONFIRM] marker', async () => {
+    const { text } = await render(PILOT)
+    expect(text).toContain('[CONFIRM]')
+    expect(text).toContain('pending human review')
+  })
+
+  it('after reviewConfirmed: NO [CONFIRM] marker — present values render clean (signer attests)', async () => {
+    const { text } = await render(PILOT, { reviewConfirmed: true })
+    expect(text).not.toContain('[CONFIRM]')          // marker stripped from signed text
+    expect(text).toContain('Shevchenko')             // value still present, clean
+    expect(text).toContain('Moryntsi (village)')
+    expect(text).toContain('reviewed and signed')    // banner updated
+    expect(text).not.toContain('pending human review')
+  })
+
+  it('after reviewConfirmed: a MISSING field is STILL shown as missing (cannot invent)', async () => {
+    const { res, text } = await render(PILOT, { reviewConfirmed: true })
+    expect(text.toLowerCase()).toContain('enter from document') // act_record etc. absent
+    expect(res!.certifiable).toBe(false)                        // still not certifiable
+  })
+
   // Artifact writer for owner visual approval (synthetic data only — no PII).
   // Run: GEN_ARTIFACT=1 vitest run …goldenVisual… ; then pdftoppm → PNG.
-  it.runIf(process.env.GEN_ARTIFACT)('writes the pilot PDF artifact for visual approval', async () => {
-    const { res } = await render([
+  it.runIf(process.env.GEN_ARTIFACT)('writes the pilot PDF artifacts (pre-review + signed) for visual approval', async () => {
+    const sample = [
       { field: 'child_full_name', normalized_value: 'Shevchenko Taras Hryhorovych', review_required: true },
       { field: 'date_of_birth', normalized_value: 'March 9, 1814', review_required: false },
       { field: 'place_of_birth', normalized_value: 'Moryntsi (village)', review_required: true },
       { field: 'oblast_of_birth', normalized_value: 'Cherkasy Oblast', review_required: false },
       { field: 'series_number', normalized_value: 'I-АМ 000001', review_required: false },
       // act_record_number deliberately absent → exercises the honest placeholder
-    ])
-    expect(res).not.toBeNull()
+    ]
     const dir = join(process.cwd(), '..', '..', 'docs', 'reports', 'artifacts')
     mkdirSync(dir, { recursive: true })
-    writeFileSync(join(dir, 'birth_certificate.pilot.pdf'), res!.pdf)
+    // pre-review draft (shows [CONFIRM] markers)
+    const draft = await render(sample)
+    writeFileSync(join(dir, 'birth_certificate.pilot.pdf'), draft.res!.pdf)
+    // signed/confirmed (markers stripped — this is the final certified output)
+    const signed = await render(sample, { reviewConfirmed: true })
+    writeFileSync(join(dir, 'birth_certificate.pilot.signed.pdf'), signed.res!.pdf)
   })
 })
