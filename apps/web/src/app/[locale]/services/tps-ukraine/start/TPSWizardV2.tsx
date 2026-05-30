@@ -31,7 +31,7 @@ import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
 import { resolveAllFields, type ExtractedCandidate, type SourceDoc, type SourceType } from '@/lib/tps/fieldArbiter'
 import { DOCUMENT_CONTRACTS } from '@/lib/tps/ocr/documentContracts'
 import type { TpsExtractionSource } from '@/lib/tps/types'
-import { normalizeOblastToNominative } from '@uscis-helper/knowledge'
+import { normalizeOblastToNominative, isGarbageValue } from '@uscis-helper/knowledge'
 import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
 import { isStrictValidValue, normalizeAndValidate } from '@/lib/tps/strictValidators'
 import { buildProvenanceFromWizard, type ProvenanceInput, type ProvenanceMap } from '@/lib/tps/provenance'
@@ -1724,6 +1724,8 @@ export default function TPSWizardV2({ locale }: Props) {
               for (const fk of Object.keys(m.fields)) {
                 const fx = m.fields[fk]
                 if (!fx || typeof fx.value !== 'string') continue
+                // Drop OCR garbage/label-as-value on restore (session-isolation safety).
+                if (isGarbageValue(fx.value)) continue
                 // Drop any field the slot contract doesn't allow.
                 if (allowed && !allowed.has(fk)) continue
                 cleanFields[fk] = fx
@@ -1948,7 +1950,9 @@ export default function TPSWizardV2({ locale }: Props) {
     const merged: Record<string, FieldExtraction> = {}
     const conflicts: Record<string, string[]> = {}
     for (const [fieldName, resolved] of Object.entries(arbiterResult.resolvedFields)) {
-      if (!resolved.chosenValue) continue
+      // GARBAGE GUARD: never surface an OCR label/garbage value ("„ Пріз", a field
+      // label, punctuation-only) — drop it so the field shows as manual-entry.
+      if (!resolved.chosenValue || isGarbageValue(resolved.chosenValue)) continue
       // Find the original FieldExtraction from the winning upload
       const winSlot = resolved.chosenSourceDoc
       const origFx = winSlot ? data.uploads[winSlot]?.fields?.[fieldName] : undefined
