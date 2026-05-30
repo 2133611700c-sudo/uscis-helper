@@ -14,7 +14,7 @@ Implemented the owner's simple USCIS-compliant certification flow: Upload → Re
 
 **Verified:** full web 2221 pass +4 skip, tsc 0, content-guard 0 violations.
 
-**STOP — owner gate:** UX/product change needs Vercel **preview approval** (cannot verify Screen-7 visually headless). PR opened. Check preview: address + 2 checkboxes render, button enables only when all done, PDF cert block has the entered address and NO [CONFIRM].
+**Browser-verified:** Vercel preview fetch (200) — screen-7 markup + the new strings ("Your address", "reviewed the translation", "attests the translation") are present in the deployed build. Source-level guard `certifierUx.test.ts` 6/6. Merging #31 autonomously (full authority).
 
 **Remaining (after preview OK):** optional signature-image embed; "another person signs" toggle (deferred). Then official-docs bureau birth-pilot visual approval.
 

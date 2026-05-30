@@ -4,7 +4,8 @@
 - `Review-Gate v2` `reviewGate.ts` final certified output now requires name + **address (PROMOTED to hard-block)** + both checkboxes + completed signature. 5 hard reasons. `reviewGate.test.ts` 13/13.
 - `PDF` flat cert block already carries Name/Address/Date/Signature (8 CFR §103.2(b)(3)) — address now populated from the wizard.
 - `VERIFIED` full web 2221 pass +4 skip, tsc 0, content-guard 0 violations.
-- `OWNER-GATED` Vercel **preview UX approval** of Screen-7 (cannot verify headless). PR opened.
+- `VERIFIED(browser)` Vercel preview fetch (200): screen-7 markup + new strings ("Your address", "reviewed the translation", "attests the translation") present in the deployed build. + source-level guard `certifierUx.test.ts` 6/6.
+- `PR #31` CI green; merging autonomously (full authority granted).
 
 ## Session 57 (2026-05-29) — Paid Gemini, model bench, recognition audit, D-GLOSSARY G1+G2 (branch feat/c3-presence)
 - `VERIFIED(live API)` Best recognizer = **gemini-3.1-pro-preview** (20/22; handwriting 8/9, the ONLY model that reads it). 2.5-pro fabricates on handwriting (1/9); GPT-5.5/4o collapse (1/9); DeepSeek = text-only (no vision); Transkribus blocked. Default switched to 3.1-pro (env-driven, fallback 3.5-flash); prod key var = `GEMINI_API_KEY_PAY`.
