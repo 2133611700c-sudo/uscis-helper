@@ -1,5 +1,9 @@
 # STATUS — Messenginfo
-## Session 69 (2026-05-30) — Live-fix part 1: Translation session isolation (branch fix/live-session-isolation)
+## Session 69 (2026-05-30) — Live-fix: session isolation + garbage guard (branch fix/live-session-isolation)
+- `FIXED(CRITICAL)` Garbage guard `packages/knowledge/garbageGuard.ts` (shared SoT) rejects label-as-value/`„ Пріз`/punctuation/too-short. Wired into Translation (extract→empty+review) AND TPS (merge + localStorage hydration). Rotated booklet now → honest "введите вручную", not garbage. `garbageGuard.test.ts` 4/4.
+- `FIXED(CRITICAL)` Translation session isolation (restore only on `?paid=1`). Smoking gun: `Шуляк/Сергій/Проскурів` NOT in code → restored stale sessionStorage. `sessionIsolation.test.ts` 2/2. Report `docs/reports/LIVE_BOOKLET_RECOGNITION_FAILURE_ROOT_CAUSE.md`.
+- `REMAINING(enhancement)` orientation auto-rotate (0/90/180/270); source-evidence gate; payment-block on unsafe; TPS full-state per-doc-session id.
+## OLD-Session 69 (2026-05-30) — Live-fix part 1: Translation session isolation (branch fix/live-session-isolation)
 - `FIXED(CRITICAL #1)` Translation wizard draft-restore was UNCONDITIONAL on mount → resurrected a previous session's `extractedFields` (the stale `Шуляк/Сергій/Проскурів` the owner saw). Now restore is gated on the Stripe return (`?paid=1`); a fresh visit starts clean. `sessionIsolation.test.ts` 2/2. (handleFiles already clears fields on new upload.)
 - `🔴 STILL OPEN` TPS wizard localStorage isolation; orientation gate (0/90/180/270); garbage guard (reject `„ Пріз` label-as-value); source-evidence gate; payment-block on unsafe fields. Larger live-fix next.
 

@@ -1,5 +1,7 @@
 # HANDOFF — Session 69 (2026-05-30)
 
+**Update (garbage guard):** added `packages/knowledge/garbageGuard.ts` (shared) — rejects label-as-value/`„ Пріз`/punctuation/too-short; wired into Translation extract + TPS merge/hydration. Rotated booklet now → honest manual-entry, not garbage. garbageGuard 4/4. Report: docs/reports/LIVE_BOOKLET_RECOGNITION_FAILURE_ROOT_CAUSE.md. Remaining: orientation auto-rotate, source-evidence/payment block, TPS per-doc-session id.
+
 ## Session 69 — Live-fix part 1: Translation session isolation (branch `fix/live-session-isolation`, off main)
 
 First (highest-value) cut of the critical live failure. ROOT CAUSE of the stale `Шуляк/Сергій/Проскурів`: the Translation wizard restored `extractedFields` from `sessionStorage tw:v2:draft` on EVERY mount (only skipped review/payment/success screens). A fresh visit therefore showed a previous session's fields as if recognized for the current upload. Fixed: the restore now early-returns unless `?paid=1` (Stripe round-trip). `handleFiles` already clears fields on a new upload. `sessionIsolation.test.ts` 2/2; full web pass; tsc 0; content-guard 0.

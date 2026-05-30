@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 69b: garbage guard wired (both wizards)
+
+Added shared garbageGuard (knowledge): rejects label-as-value/`„ Пріз`/punctuation/too-short. Wired into Translation extract (garbage→empty+review) and TPS (field-merge drop + localStorage hydration drop). Combined with the Translation session-isolation fix, the rotated booklet now yields honest manual-entry instead of garbage/stale data. garbageGuard 4/4, sessionIsolation 2/2, full web pass, tsc 0, guard 0.
+
+
 ## 2026-05-30 — Session 69: Live-fix part 1 — Translation session isolation (branch fix/live-session-isolation)
 
 Root cause of the stale Шуляк/Сергій/Проскурів: the Translation wizard restored extractedFields from sessionStorage on every mount. Fixed: restore now gated on the Stripe return (?paid=1); fresh visit starts clean (handleFiles already clears on new upload). sessionIsolation.test.ts 2/2; full web pass; tsc 0; content-guard 0. REMAINING: TPS localStorage isolation, orientation gate, garbage guard, source-evidence gate, payment-block on unsafe fields.

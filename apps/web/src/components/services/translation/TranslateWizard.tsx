@@ -18,6 +18,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
+import { isGarbageValue } from '@uscis-helper/knowledge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -985,8 +986,14 @@ export function TranslateWizard() {
       // Keep guarded/empty fields that the engine flagged for review — the user
       // fills them in (the central-brain returns value:null + review_required when
       // readers disagree; dropping them hid the field instead of asking the human).
+      // GARBAGE GUARD: an OCR label/garbage value ("„ Пріз", punctuation, a field
+      // label) must never be shown as recognized — downgrade it to empty + review.
       const fields = Array.isArray(json.fields)
-        ? (json.fields as ExtractedField[]).filter((f) => f.value || (f as any).review_required)
+        ? (json.fields as ExtractedField[])
+            .map((f) => (f.value && isGarbageValue(f.value)
+              ? ({ ...f, value: '', review_required: true } as ExtractedField)
+              : f))
+            .filter((f) => f.value || (f as any).review_required)
         : []
       setExtractedFields(fields)
       goTo(5)
