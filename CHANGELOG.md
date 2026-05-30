@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 72: S1 Geography No-Silent-Snap (branch fix/geography-no-silent-snap)
+
+Safety-only fix of the owner's live legal failure: `snapCity('с.м.т. Ярошенець')` silently returned `Тростянець` as a confirmed value. The fuzzy branch in `packages/knowledge/src/gazetteer.ts` now preserves the RAW read as `value`, returns the nearest gazetteer entry as `suggestedValue` only, with `matched=false` and `review_required=true`. Exact match unchanged (normalizes, no review); unknown geography keeps the raw read + review. `PlaceMatch` gained `suggestedValue?: string | null`. One behavior change, no dictionary rewrite, TPS dictionaryBridge untouched. New `geographyNoSilentSnap.test.ts` 3/3; full web 2261 pass; tsc 0; content-guard 0. Report `docs/reports/S1_GEOGRAPHY_NO_SILENT_SNAP.md`. Files: gazetteer.ts, geographyNoSilentSnap.test.ts, S1 report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 71: Booklet orientation auto-rotate (branch fix/booklet-orientation)
 
 Extended the TPS OCR rotation (previously MRZ-only) to the internal passport booklet (no MRZ): trigger rotation when booklet has <2 identity fields; pick the rotation with the most identity fields; adopt if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0. Caveat: needs a live rotated-booklet repro to confirm (additive/safe — only adopts a strictly-better rotation).
