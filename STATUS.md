@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 58 (2026-05-29) — Deterministic coverage generator (branch official-docs)
+- `VERIFIED(local)` `scripts/document-platform-coverage.mjs` derives the coverage matrix from code (schemas/mappings/bureau registry/live-E2E/source-ledger) — no hand-written matrix, no manual PASS. Emits `docs/reports/DOCUMENT_PLATFORM_COVERAGE.generated.{md,json}`.
+- `RESULT` 0 active; birth_certificate = full/contract/mapping/doc-renderer/live-fixture, ONLY blocker = review_gate (lives on branch fix/review-gate-hard-block) → birth is the pilot pending review-gate merge + visual approval. 4 civil = DRAFT (no mapping, generic renderer, no live fixture). passport/id = no schema. military/booklet/diploma/pension = invalid source. КАТОТТГ=0 here (on koatuu), agency=8.
+- `RULES enforced by script` synthetic≠fixture_e2e; generic renderer≠doc-specific; invalid source blocks active; active forbidden unless all gates + allowlist + BUREAU_PDF on (allowlist empty by design).
+
 ## Session 57 (2026-05-29) — Paid Gemini, model bench, recognition audit, D-GLOSSARY G1+G2 (branch feat/c3-presence)
 - `VERIFIED(live API)` Best recognizer = **gemini-3.1-pro-preview** (20/22; handwriting 8/9, the ONLY model that reads it). 2.5-pro fabricates on handwriting (1/9); GPT-5.5/4o collapse (1/9); DeepSeek = text-only (no vision); Transkribus blocked. Default switched to 3.1-pro (env-driven, fallback 3.5-flash); prod key var = `GEMINI_API_KEY_PAY`.
 - `VERIFIED(local)` presence-confirm fix: GV garbles handwriting → no longer discards handwriting reads (keep+review); only printed fields GV-guarded.

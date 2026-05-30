@@ -1,0 +1,233 @@
+{
+  "generated_by": "scripts/document-platform-coverage.mjs",
+  "branch_note": "statuses reflect the CURRENT branch; review_gate + КАТОТТГ depend on branch",
+  "bureau_pdf_default_off": true,
+  "review_gate_enforced_here": false,
+  "katottg_cities": 0,
+  "agency_entries": 8,
+  "active_documents_count": 0,
+  "red_items_count": 4,
+  "yellow_items_count": 7,
+  "documents": [
+    {
+      "doc_type": "ua_birth_certificate",
+      "source_status": "verified",
+      "schema_status": "full",
+      "field_contract_status": "present",
+      "mapping_status": "complete",
+      "renderer_status": "document_specific",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "live",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "review_gate_not_enforced_on_this_branch"
+      ]
+    },
+    {
+      "doc_type": "ua_marriage_certificate",
+      "source_status": "verified",
+      "schema_status": "full",
+      "field_contract_status": "present",
+      "mapping_status": "absent",
+      "renderer_status": "generic_only",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "none_or_synthetic",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "canonical_mapping",
+        "renderer:generic_only",
+        "review_gate_not_enforced_on_this_branch",
+        "live_fixture_e2e"
+      ]
+    },
+    {
+      "doc_type": "ua_divorce_certificate",
+      "source_status": "verified",
+      "schema_status": "full",
+      "field_contract_status": "present",
+      "mapping_status": "absent",
+      "renderer_status": "generic_only",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "none_or_synthetic",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "canonical_mapping",
+        "renderer:generic_only",
+        "review_gate_not_enforced_on_this_branch",
+        "live_fixture_e2e"
+      ]
+    },
+    {
+      "doc_type": "ua_death_certificate",
+      "source_status": "verified",
+      "schema_status": "full",
+      "field_contract_status": "present",
+      "mapping_status": "absent",
+      "renderer_status": "generic_only",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "none_or_synthetic",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "canonical_mapping",
+        "renderer:generic_only",
+        "review_gate_not_enforced_on_this_branch",
+        "live_fixture_e2e"
+      ]
+    },
+    {
+      "doc_type": "ua_name_change_certificate",
+      "source_status": "verified",
+      "schema_status": "full",
+      "field_contract_status": "present",
+      "mapping_status": "absent",
+      "renderer_status": "generic_only",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "none_or_synthetic",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "canonical_mapping",
+        "renderer:generic_only",
+        "review_gate_not_enforced_on_this_branch",
+        "live_fixture_e2e"
+      ]
+    },
+    {
+      "doc_type": "ua_international_passport",
+      "source_status": "verified",
+      "schema_status": "absent",
+      "field_contract_status": "absent",
+      "mapping_status": "absent",
+      "renderer_status": "none",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "live",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "schema:absent",
+        "field_contract",
+        "canonical_mapping",
+        "renderer:none",
+        "review_gate_not_enforced_on_this_branch"
+      ]
+    },
+    {
+      "doc_type": "ua_id_card",
+      "source_status": "verified",
+      "schema_status": "absent",
+      "field_contract_status": "absent",
+      "mapping_status": "absent",
+      "renderer_status": "none",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "none_or_synthetic",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "schema:absent",
+        "field_contract",
+        "canonical_mapping",
+        "renderer:none",
+        "review_gate_not_enforced_on_this_branch",
+        "live_fixture_e2e"
+      ]
+    },
+    {
+      "doc_type": "ua_internal_passport_booklet",
+      "source_status": "invalid_or_incomplete",
+      "schema_status": "absent",
+      "field_contract_status": "absent",
+      "mapping_status": "absent",
+      "renderer_status": "none",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "none_or_synthetic",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "source:invalid_or_incomplete",
+        "schema:absent",
+        "field_contract",
+        "canonical_mapping",
+        "renderer:none",
+        "review_gate_not_enforced_on_this_branch",
+        "live_fixture_e2e"
+      ]
+    },
+    {
+      "doc_type": "ua_military_id",
+      "source_status": "invalid_or_incomplete",
+      "schema_status": "absent",
+      "field_contract_status": "absent",
+      "mapping_status": "absent",
+      "renderer_status": "none",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "live",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "source:invalid_or_incomplete",
+        "schema:absent",
+        "field_contract",
+        "canonical_mapping",
+        "renderer:none",
+        "review_gate_not_enforced_on_this_branch"
+      ]
+    },
+    {
+      "doc_type": "ua_education_diploma",
+      "source_status": "invalid_or_incomplete",
+      "schema_status": "absent",
+      "field_contract_status": "absent",
+      "mapping_status": "absent",
+      "renderer_status": "none",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "none_or_synthetic",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "source:invalid_or_incomplete",
+        "schema:absent",
+        "field_contract",
+        "canonical_mapping",
+        "renderer:none",
+        "review_gate_not_enforced_on_this_branch",
+        "live_fixture_e2e"
+      ]
+    },
+    {
+      "doc_type": "ua_pension_certificate",
+      "source_status": "invalid_or_incomplete",
+      "schema_status": "absent",
+      "field_contract_status": "absent",
+      "mapping_status": "absent",
+      "renderer_status": "none",
+      "review_gate_status": "missing",
+      "fixture_e2e_status": "none_or_synthetic",
+      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "agency_glossary_coverage": "8 agency entries",
+      "active_status": false,
+      "blockers": [
+        "source:invalid_or_incomplete",
+        "schema:absent",
+        "field_contract",
+        "canonical_mapping",
+        "renderer:none",
+        "review_gate_not_enforced_on_this_branch",
+        "live_fixture_e2e"
+      ]
+    }
+  ]
+}

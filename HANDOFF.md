@@ -1,3 +1,19 @@
+# HANDOFF — Session 58 (2026-05-29)
+
+## Session 58 — Deterministic coverage generator (branch `official-docs`, playbook step 5 / Prompt 5)
+
+Built `scripts/document-platform-coverage.mjs` so the platform coverage matrix is **derived from the repository**, not hand-written — kills the "green tests = ready" self-deception. Reads schemas, mappings, the bureau registry, the live-E2E fixtures, and the source ledger; applies the playbook rules (synthetic≠fixture; generic renderer≠doc-specific; invalid source blocks active; active forbidden unless every gate passes AND on the ACTIVE allowlist AND BUREAU_PDF on — allowlist empty by design). Emits `docs/reports/DOCUMENT_PLATFORM_COVERAGE.generated.{md,json}`.
+
+**Result (this branch):** 0 active. `ua_birth_certificate` passes every gate EXCEPT review_gate (which lives on `fix/review-gate-hard-block`) — so it is the pilot, pending that merge + owner visual approval. The 4 other civil certs are DRAFT (no canonical mapping, generic renderer, no live fixture). passport/id have no bureau schema. military/booklet/diploma/pension have invalid sources. КАТОТТГ=0 here (it's on `koatuu`).
+
+**Note:** the report is branch-sensitive on purpose — `review_gate` lights up once `fix/review-gate-hard-block` merges; КАТОТТГ lights up once `koatuu` (#27) merges and official-docs rebases. Re-run the script after each merge.
+
+**Exact next task (owner-gated):** owner runs Preview E2E + merges #26 then #27; I rebase official-docs on main and re-run the generator (КАТОТТГ + review_gate should flip); then birth pilot — bureau-PDF visual approval + per-schema golden test (Prompt 9). NO new document types until birth pilot passes.
+
+**Evidence:** generator runs clean → 0 active, 4 red (bad source), 7 yellow (verified-source, not active). No app code changed → no test delta.
+
+---
+
 # HANDOFF — Session 57 (2026-05-29)
 
 ## Session 57 — Paid Gemini + model bench + recognition audit + D-GLOSSARY G1/G2 (branch feat/c3-presence, NOT deployed)

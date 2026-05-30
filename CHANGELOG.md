@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 58: Deterministic document-platform coverage generator (branch official-docs)
+
+Playbook step 5 / Prompt 5. `scripts/document-platform-coverage.mjs` (NEW) derives the coverage matrix from the repo — schemas, mappings, bureau registry, live-E2E fixtures, source ledger — so the matrix can never be a hand-written optimistic claim again.
+
+- **Rules enforced in code:** synthetic/golden tests do NOT count as fixture_e2e; the generic 1:1 renderer does NOT count as a document-specific renderer; an invalid/incomplete source blocks active; `active=true` is forbidden unless every critical gate passes AND the doc type is on the ACTIVE allowlist (empty by design) AND BUREAU_PDF is on.
+- **Output:** `docs/reports/DOCUMENT_PLATFORM_COVERAGE.generated.{md,json}`.
+- **Result (official-docs):** 0 active · 4 red (bad source) · 7 yellow. `ua_birth_certificate` clears every gate except review_gate (which is on branch `fix/review-gate-hard-block`) — confirming it as the single pilot pending that merge + owner visual approval. 4 other civil certs DRAFT; passport/id no schema; military/booklet/diploma/pension invalid source; КАТОТТГ=0 on this branch (it's on `koatuu`).
+- Branch-sensitive by design: re-run after `fix/review-gate-hard-block` and `#27 koatuu` merge. No app code changed → no test delta.
+
 ## 2026-05-29 â Session 57: paid Gemini key, model bench, recognition audit, D-GLOSSARY G1+G2
 
 **Recognition / models (live API benches; reports in docs/reports/):**
