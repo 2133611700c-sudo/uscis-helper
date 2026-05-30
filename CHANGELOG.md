@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 78: P2.3 Canonical shadow parity (branch feat/canonical-shadow)
+
+Phase 2 step 3. New `apps/web/src/lib/canonical/shadow.ts`: diffCanonical(left,right) → ParityReport (agree/disagree/left_only/right_only, criticalDisagreements, parityRate) via the no-silent-correction comparator; isShadowEnabled (ONE_BRAIN_SHADOW, default OFF, only 1/true, gates logging never output); summarizeParity PII-free one-liner (counts + critical keys, never values). The instrument to prove/disprove the two-brain problem with numbers. Additive/observe-only/unwired. New shadow.test.ts 8/8; full web 2308 pass; tsc 0; content-guard 0. Report `docs/reports/P2_3_CANONICAL_SHADOW.md`. Files: canonical/shadow.ts, canonical/index.ts, canonical/__tests__/shadow.test.ts, P2.3 report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 77: P2.2 Canonical adapter (branch feat/canonical-adapter)
 
 Phase 2 step 2. New `apps/web/src/lib/canonical/adapter.ts`: readCanonicalDocumentFromTps maps TpsExtractedField[] → CanonicalDocumentResult via P2.1 policy. toCanonicalField (source→authority, honest split confidence: ocr=provider, source_match only for MRZ check-digit 0.99/0.3, unknown layers null); mergeCanonicalByKey (group same-key readings, keep all evidence, highest-authority primary, disagreement→review). Invariants: never lower a module's review flag; never drop a candidate. Renamed result readyForReview→requiresReview (unused). Additive/unwired. New adapter.test.ts 8/8; full web 2300 pass; tsc 0; content-guard 0. Report `docs/reports/P2_2_CANONICAL_ADAPTER.md`. Files: canonical/adapter.ts, canonical/types.ts, canonical/index.ts, canonical/__tests__/adapter.test.ts, P2.2 report, STATUS/HANDOFF/CHANGELOG.
