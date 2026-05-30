@@ -1,4 +1,6 @@
 # STATUS — Messenginfo
+## Session 76d (2026-05-30) — Tracker: S3 [x] → Phase-1 safety COMPLETE (branch docs/engineering-master-plan)
+- `TRACKER` Marked **S3 [x]** with PR #50 + evidence (nameNoSilentRecase.test 6/6; audit of the other 4 categories recorded as already-flagged). All three Phase-1 safety items (S1 geography, S2 audit, S3 name) now done. Next per plan: UX (Translation wizard reset + Back/Start-over), then Phase 2 CanonicalDocumentResult contract.
 ## Session 76c (2026-05-30) — Tracker: S2 [x] + audit item resolved (branch docs/engineering-master-plan)
 - `TRACKER` Marked **S2 [x]** with PR #49 + evidence (persistCertification.test 5/5, prod-impact + risk). Flipped the `[~]` "Audit DB persistence" item to `[x]` (resolved by S2). Next safety item: S3 no-silent-correction for name/patronymic/authority/date/series.
 ## Session 76b (2026-05-30) — Tracker update: S1 [x] + 5 constitution docs + phase-completion gate (branch docs/engineering-master-plan)
