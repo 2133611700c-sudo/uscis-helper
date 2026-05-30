@@ -2402,3 +2402,7 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 
 ## 2026-05-29 — official-docs: Agent Document Rules (constitution for document agents)
 - docs/architecture/AGENT_DOCUMENT_RULES.md — single human/agent-readable charter: where truth lives (no re-invent), 10 hard rules, per-role job cards (CivilStatusExtraction/Passport/SourceVerification), era variants, pipeline, official source status. Answers the owner's point-1 (official instructions for virtual employees).
+
+## 2026-05-29 — official-docs: bureau-PDF wired end-to-end behind BUREAU_PDF flag (default OFF)
+- bureauTranslation.ts: recognized fields → canonical mapping (child_full_name split) → official schema values → renderOfficialTranslation (pdf-lib bureau-style). Golden test (hex-readback): REDACTED/Serhii split, смт→urban-type settlement, missing→placeholder, not-certifiable when required field absent, unknown docType→null.
+- generate-pdf route: flag-gated branch (BUREAU_PDF=on) renders the official bureau PDF for civil-status docs, falls back to the flat PDF on miss/error. DEFAULT OFF — changes the signed document, so it stays off until owner visual approval. web 2243 pass, 0 type errors, content-guards 0.

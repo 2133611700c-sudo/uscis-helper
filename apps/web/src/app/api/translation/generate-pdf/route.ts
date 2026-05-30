@@ -86,17 +86,28 @@ export async function POST(req: NextRequest) {
     signatureTypedName: profile.name,
   })
 
-  // Generate real PDF
+  // Generate real PDF.
+  // BUREAU_PDF flag (default OFF): for civil-status docs with an official schema,
+  // render the official bureau-style translation (schema-driven, КМУ-1025). Falls
+  // back to the existing flat PDF on miss or any error. Changes the SIGNED document,
+  // so it stays OFF until the owner visually approves.
   let pdfBuffer: Buffer | null = null
   try {
-    pdfBuffer = await generateTranslationPDF({
-      scopeTitle: payload.scope_title ?? `English Translation of Ukrainian Document`,
-      documentType: payload.doc_type ?? 'other',
-      fields: payload.fields ?? [],
-      sourceTraces: payload.source_traces ?? [],
-      certificationRecord: certRecord,
-      sessionId: session_id ?? 'legacy',
-    })
+    if (process.env.BUREAU_PDF === 'on') {
+      const { renderBureauTranslation } = await import('@/lib/translation/bureauTranslation')
+      const bureau = await renderBureauTranslation(payload.doc_type ?? '', (payload.fields ?? []) as any, { signerName: profile.name })
+      if (bureau) pdfBuffer = bureau.pdf
+    }
+    if (!pdfBuffer) {
+      pdfBuffer = await generateTranslationPDF({
+        scopeTitle: payload.scope_title ?? `English Translation of Ukrainian Document`,
+        documentType: payload.doc_type ?? 'other',
+        fields: payload.fields ?? [],
+        sourceTraces: payload.source_traces ?? [],
+        certificationRecord: certRecord,
+        sessionId: session_id ?? 'legacy',
+      })
+    }
   } catch (err) {
     console.error('[generate-pdf] PDF generation failed:', err)
   }

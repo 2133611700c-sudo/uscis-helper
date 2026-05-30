@@ -777,3 +777,5 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 ## official-docs — КАТОТТГ official source identified (data.gov.ua/Мінрегіон); direct DL 403, owner byte-verify pending
 
 ## official-docs — Agent Document Rules constitution added
+
+## official-docs — bureau-PDF wired behind BUREAU_PDF flag (OFF); golden readback proven. Owner flips on after visual approval.
