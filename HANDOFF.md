@@ -1,4 +1,14 @@
-# HANDOFF — Session 82 (2026-05-30)
+# HANDOFF — Session 83 (2026-05-30)
+
+## Session 83 — Phase-5 PII-redaction CI guard (branch `feat/pii-log-guard`, off main)
+
+Independent Phase-5 safety item (no real-traffic data needed). `apps/web/src/lib/security/__tests__/noPiiLogging.test.ts` is a CI grep guard that fails the build if any source `console.*` line interpolates a PII-bearing expression (`.raw_value`, `.normalized_value`, `rawValue`, `normalizedValue`, `profile.name|email|addr|phone`, `signerName`, `signerAddress`, `signatureDataUrl`, `certifierAddress`). It walks all `apps/web/src/**/*.ts(x)` (excluding tests), reports `file:line` offenders, and self-tests that it catches a planted `console.error('leak', profile.email)`. Codebase audited CLEAN (0 offenders); confirmed the two structured logs I added earlier are PII-free by design (`AUDIT_RECONCILE` logs the presence-boolean/`document_hash` attestation, not values; shadow logs only keys + counts).
+
+**Evidence:** `noPiiLogging.test.ts` 2/2. Full web 2333 pass, tsc 0, content-guard 0. Report: `docs/reports/P5_PII_LOG_GUARD.md`. Test-only, zero runtime impact.
+
+**Remaining (still gated / independent):** Phase-5 data-minimization (send crop+label not whole image) + retention policy; TPS per-`documentSessionId` state reset; prompt-injection defense; then the gated migration/Phase-4/Phase-6 work that needs real-traffic parity + owner decisions.
+
+---
 
 ## Session 82 — Doc-Type Confidence Gate + Provider Output Quarantine (branch `feat/canonical-doc-gate`, off main)
 

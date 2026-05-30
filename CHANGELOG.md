@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 83: Phase-5 PII-redaction CI guard (branch feat/pii-log-guard)
+
+New `apps/web/src/lib/security/__tests__/noPiiLogging.test.ts` — CI grep guard failing the build if any console.* interpolates a PII value (raw_value/normalized_value/profile.name|email|addr|phone/signerName/signerAddress/signatureDataUrl/certifierAddress); walks all src .ts(x), reports file:line, self-tests a planted violation. Codebase audited clean (AUDIT_RECONCILE logs only presence-booleans/hash attestation; shadow logs only keys/counts). Test-only. noPiiLogging.test.ts 2/2; full web 2333 pass; tsc 0; content-guard 0. Report `docs/reports/P5_PII_LOG_GUARD.md`. Files: security/__tests__/noPiiLogging.test.ts, report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 82: Doc-Type Confidence Gate + Provider Output Quarantine (branch feat/canonical-doc-gate)
 
 Two more canonical-core policy items. New `apps/web/src/lib/canonical/documentGate.ts`: applyDocumentTypeGate (below doc-type-confidence threshold → quarantine every field with unknown_document_type + requiresReview; at/above → unchanged; idempotent) + partitionQuarantine (accepted vs quarantined candidates). Pure/additive/unwired. New documentGate.test.ts 6/6; full web 2331 pass; tsc 0; content-guard 0. Report `docs/reports/P2_DOCTYPE_GATE_QUARANTINE.md`. Canonical core now fully contract-complete. Files: canonical/documentGate.ts, canonical/index.ts, canonical/__tests__/documentGate.test.ts, report, STATUS/HANDOFF/CHANGELOG.
