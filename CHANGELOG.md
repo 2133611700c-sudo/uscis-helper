@@ -4,6 +4,27 @@ Every work session appends here. Never delete entries. Newest first.
 ---
 
 ## 2026-05-29 â Session 57: paid Gemini key, model bench, recognition audit, D-GLOSSARY G1+G2
+## 2026-05-29 — Session 57b: Accept ADR-015 separately (branch docs/accept-adr-015)
+
+Playbook step 4. `docs/adr/ADR-015-pdf-output-architecture.md` existed only on `spike/pdf-readback`; landed the **ADR document only** (decoupled from spike test/code) onto a main-based branch as an independent merge unit, per owner's "accept ADR-015 separately".
+
+- **Decision:** pdf-lib is the single rendering engine. Track A USCIS forms = AcroForm fill; Track B bureau translations = `renderOfficialTranslation` (schema-driven). React-PDF / Puppeteer / Apple PDFKit REJECTED as core — spike proved the bureau renderer's English output is hex-extractable (`<hex> Tj`), so golden text-readback works today without a new dependency.
+- **Real remaining work** named in the ADR: field-key mapping (recognized→schema keys) + Document/Source Registry wiring + per-schema golden tests + owner visual approval before enabling BUREAU_PDF. Not a new renderer.
+- No code change → no test delta. ADR status: Accepted (spike-validated) · 2026-05-29.
+## 2026-05-29 — Session 57a: Safety PR #28 + content-guard fix (branch fix/review-gate-hard-block)
+
+Pushed the review-gate safety fix as independent PR #28 (base main, NOT merged). CI content-guard Rule 4 flagged the literal "certified translation" (product claim) in `route.ts` and `reviewGate.ts` comments/strings; reworded to "signed translation" / "translation certification" (meaning unchanged). Guard now CLEAN, reviewGate 13/13, tsc 0. ADR-015 acceptance is a separate PR #29. No runtime behaviour change — wording only.
+
+## 2026-05-29 — Session 57: Review-Gate hard block + zero-trust platform coverage audit (branch fix/review-gate-hard-block)
+
+Owner verdict accepted (official-docs NOT acceptance-ready; stop features; stabilize merge chain; deliver coverage matrix). Executed playbook's first safe steps; used parallel read-only agents for the audits while coding the gate.
+
+- **Review Gate hard block** `apps/web/src/lib/translation/reviewGate.ts` (NEW) + wired into `apps/web/src/app/api/translation/generate-pdf/route.ts` AFTER payment, BEFORE render. Closes the hole: a machine-only paid POST previously received a "certified" PDF with no review/signature. HARD block = review-confirmation (reviewConfirmed===true OR completed signature) + signerName. SOFT warning = signerAddress (the live `TranslateWizard` hardcodes `addr:''`; hard-blocking it would break prod — logged + flagged as follow-up to wire an address field, then promote to hard gate). `reviewGate.test.ts` 13/13.
+- **No regression:** translation suite 1701 pass; `tsc` 0 errors.
+- **Audit reports** `docs/reports/`: `DOCUMENT_PLATFORM_COVERAGE_2026-05-29.md` (0 documents active; birth_certificate = only pilot, other 4 civil = DRAFT), `BRANCH_STABILIZATION_2026-05-29.md` (merge #26→#27→rebase official-docs; official-docs carries NO КАТОТТГ — it's on koatuu), `ROUTE_INVENTORY_2026-05-29.md` (no payment-bypass routes; generate-pdf review hole was the only one — closed here), `GLOSSARY_GEOGRAPHY_AUDIT_2026-05-29.md` (agency missing ПФУ/КМУ/Мінрегіон/МОН/МОЗ; 458-city КАТОТТГ stranded on koatuu; КОАТУУ legacy absent).
+- **Owner-gated next:** merge #26/#27 (Preview E2E), rebase official-docs, accept ADR-015, birth-cert visual+fixture pilot, wire signer-address into wizard, correct official URLs (military/diploma/pension), КАТОТТГ byte-verify.
+
+## 2026-05-29 — Session 56: Unified recognition engine + Central Brain spine + official UA forms layer (all LOCAL, not deployed)
 
 **Recognition / models (live API benches; reports in docs/reports/):**
 - Paid Gemini project wired; prod key var is `GEMINI_API_KEY_PAY` (code reads it first, falls back to `GEMINI_API_KEY`).
