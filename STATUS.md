@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 72 (2026-05-30) — Production truth audit (branch verify/production-truth)
+- `RESOLVED` SHA contradiction: healthz=main=49da20e (5/5 fresh); `56dcf07` was an OLD ancestor commit (stale browser/CDN read), NOT a mismatch.
+- `PASS` all fixes present in deployed artifact 49da20e (garbageGuard, attestation, owner-mode, session-isolation, garbage-wired both, orientation, audit-DB-insert, review-gate v2).
+- `UNVERIFIED` DB audit live — insert shape proven via probe, but 0 real rows (translation_certification_audit empty; orders only 2 old 2026-05-08 rows) → no full generation since deploy.
+- `DEGRADED` TPS stale (no per-doc-session id); `FAIL` source-evidence gate (not implemented); `BLOCKED` orientation live (needs owner rotated photo). Report: docs/reports/PRODUCTION_TRUTH_AND_LIVE_FIX_VERIFICATION.md.
+
 ## Session 71 (2026-05-30) — Booklet orientation: rotate by identity-field count (branch fix/booklet-orientation)
 - `DONE` TPS OCR route already rotated for passport MRZ; extended ADDITIVELY for the INTERNAL passport booklet (no MRZ to anchor on): trigger rotation when booklet matched with <2 identity fields; in the loop track the rotation with the most identity fields; adopt it if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0.
 - `HONEST CAVEAT` cannot verify with a LIVE rotated booklet image here (no fixture upload). Logic is additive/safe (only adopts a rotation with strictly more identity fields). Owner live-repro of a rotated booklet recommended to confirm pick.
