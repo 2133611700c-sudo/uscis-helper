@@ -15,6 +15,10 @@ export type { Sex, PatronymicResult } from './patronymic';
 export { snapCity, confusionDistance, GAZETTEER } from './gazetteer';
 export type { PlaceMatch } from './gazetteer';
 
+// S3 no-silent-correction — format a Latin person name without corrupting its
+// controlling spelling (O'Brien / hyphenated / multi-word / deliberate mixed case).
+export { formatLatinName } from './formatName';
+
 // Civil registry terminology (birth/marriage/divorce certificates)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export { default as civilRegistryTerms } from './civil_registry_terms.json';
