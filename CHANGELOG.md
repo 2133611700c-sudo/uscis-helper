@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 77: P2.2 Canonical adapter (branch feat/canonical-adapter)
+
+Phase 2 step 2. New `apps/web/src/lib/canonical/adapter.ts`: readCanonicalDocumentFromTps maps TpsExtractedField[] → CanonicalDocumentResult via P2.1 policy. toCanonicalField (source→authority, honest split confidence: ocr=provider, source_match only for MRZ check-digit 0.99/0.3, unknown layers null); mergeCanonicalByKey (group same-key readings, keep all evidence, highest-authority primary, disagreement→review). Invariants: never lower a module's review flag; never drop a candidate. Renamed result readyForReview→requiresReview (unused). Additive/unwired. New adapter.test.ts 8/8; full web 2300 pass; tsc 0; content-guard 0. Report `docs/reports/P2_2_CANONICAL_ADAPTER.md`. Files: canonical/adapter.ts, canonical/types.ts, canonical/index.ts, canonical/__tests__/adapter.test.ts, P2.2 report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 76e: P2.1 Canonical contract (branch feat/canonical-contract)
 
 Phase 2 step 1 (two-brain fix, contract-first). New `apps/web/src/lib/canonical/`: `types.ts` (CanonicalDocumentResult, CanonicalField, FieldConfidence, SourceKind, hash chain) + `policy.ts` pure rules (computeFinalConfidence final≤min(applicable); criticalityOf/CRITICAL_FIELDS; materiallyDifferent no-silent-correction; sourceRank/higherAuthority; resolveDisagreement; decideReviewRequired). Codifies S1+S3 as general rules. Additive — no product wired, zero behavior change. New `policy.test.ts` 16/16 (per policy §F); full web 2292 pass; tsc 0; content-guard 0. Report `docs/reports/P2_1_CANONICAL_CONTRACT.md`. Files: canonical/types.ts, canonical/policy.ts, canonical/index.ts, canonical/__tests__/policy.test.ts, P2.1 report, STATUS/HANDOFF/CHANGELOG.
