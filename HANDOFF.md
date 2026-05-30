@@ -1,3 +1,15 @@
+# HANDOFF — Session 75 (2026-05-30)
+
+## Session 75 — Full repository inventory + architecture audit (branch `docs/full-repo-audit`, off main)
+
+Delivered the owner-requested full repo audit (READ-ONLY, no code changes): 6 reports in `docs/reports/` — FULL_REPO_INVENTORY(.md/.csv), ARCHITECTURE_DEPENDENCY_MAP (mermaid: TPS/Translation/OCR-brain/PDF/DB flows), DEAD_CODE_AND_DUPLICATES, PRODUCT_FLOW_MATRIX, RISK_REGISTER_BY_FILE. Built from a file census (1423 tracked files; 47 API routes; 40 pages; 26 migrations; 20 DB tables touched; ~20 storage keys; providers per route) plus two parallel Explore agents (test-reality+dead-code; PDF+state+DB).
+
+**Top critical findings:** (1) TWO recognition stacks (engine/docintel vs tps/*) → divergent fields on the same document (legal); (2) translation_orders + translation_certification_audit insert errors LOGGED but route returns 200 → certified PDF with no audit trail; (3) [CONFIRM] can render into a signed bureau PDF; (4) snapCity threshold 0.34 silently replaces distant places (Ярошенець→Trostianets); (5) stale TPS state (tps:legal-risk:v1 persists cross-document); (6) central_brain_audit table referenced but not in migrations (drift); (7) 5 packet endpoints + 2 legacy OCR endpoints; (8) dead engine/assembler + knowledge/normalize + renderMarriageCertificateTranslation + broken Transkribus.
+
+**Highest-leverage next:** ADR-016 (one brain) removes the top critical + several high/medium at once. Then: block-or-DEGRADE on audit DB failure; reset stale TPS state; dictionary P2; consolidate endpoints. NO deletes until callers proven gone.
+
+---
+
 # HANDOFF — Session 71 (2026-05-30)
 
 ## Session 71 — Booklet orientation auto-rotate (branch `fix/booklet-orientation`, off main)
