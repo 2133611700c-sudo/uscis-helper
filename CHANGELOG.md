@@ -6,6 +6,22 @@ Every work session appends here. Never delete entries. Newest first.
 ## 2026-05-30 — Session 67: Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
 
 `docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full inventory + responsibility map + phased P1–P5 consolidation plan (dictionaries/functions/agents/documents; two-brain split: engine→registry vs live modules→parallel glossary). P1 DONE: deleted the byte-identical duplicate glossary/civil_registry_terms.json (proven dead — declarative metadata only, canonical resolution via knowledge translateCivilRegistryTerm). Module tests 498 pass, full web pass, tsc 0, content-guard 0.
+## 2026-05-30 — Session 69b: garbage guard wired (both wizards)
+
+Added shared garbageGuard (knowledge): rejects label-as-value/`„ Пріз`/punctuation/too-short. Wired into Translation extract (garbage→empty+review) and TPS (field-merge drop + localStorage hydration drop). Combined with the Translation session-isolation fix, the rotated booklet now yields honest manual-entry instead of garbage/stale data. garbageGuard 4/4, sessionIsolation 2/2, full web pass, tsc 0, guard 0.
+
+
+## 2026-05-30 — Session 69: Live-fix part 1 — Translation session isolation (branch fix/live-session-isolation)
+
+Root cause of the stale Шуляк/Сергій/Проскурів: the Translation wizard restored extractedFields from sessionStorage on every mount. Fixed: restore now gated on the Stripe return (?paid=1); fresh visit starts clean (handleFiles already clears on new upload). sessionIsolation.test.ts 2/2; full web pass; tsc 0; content-guard 0. REMAINING: TPS localStorage isolation, orientation gate, garbage guard, source-evidence gate, payment-block on unsafe fields.
+
+
+## 2026-05-30 — Session 66: Zero-trust verification of cert/audit/source work (branch verify/post-certification)
+
+DEGRADED. PASS: prod==main 84e4284; Review-Gate v2 13/13; Screen-7 6/6; PDF output (statement+Name/Address/Date+signature image, no [CONFIRM], no silent-strip) via new certificationPdf.verify.test.ts 4/4; source-verifier (КМУ-1025/152/302 verified live). 🔴 FAIL: audit metadata NOT persisted — translation_orders schema mismatch makes the route upsert silently fail (0 rendered rows, newest 2026-05-08). Report: docs/reports/POST_CERTIFICATION_ZERO_TRUST_VERIFICATION.md. Next: fix translation_orders persistence + re-verify; G7 owner visual.
+## 2026-05-30 — Session 68: FIX certification audit DB persistence (branch fix/translation-audit-db-persistence)
+
+The generate-pdf order/attestation write silently failed (upsert referenced nonexistent translation_orders columns; supabase-js returns {error}, not thrown). Fix: new translation_certification_audit table (migration applied to prod); route remapped to real columns (status=signed per CHECK, email=`` per NOT NULL); attestation written to the audit table; DB errors checked + logged (DEGRADED warning, no silent swallow). Verified live: probe insert+readback OK then cleaned. attestation 5/5, full web pass, tsc 0, content-guard 0. Report: docs/reports/TRANSLATION_AUDIT_DB_PERSISTENCE_FIX.md. STILL OPEN (critical): live rotated-booklet OCR/stale-state failure — root cause found (sessionStorage/localStorage draft restore + no orientation/garbage/evidence gate), fix next.
 
 
 ## 2026-05-30 — Session 65: Plan tooling — source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)

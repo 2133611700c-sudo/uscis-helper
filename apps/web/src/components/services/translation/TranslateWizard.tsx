@@ -18,6 +18,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
+import { isGarbageValue } from '@uscis-helper/knowledge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -818,16 +819,19 @@ export function TranslateWizard() {
     try { return sessionStorage.getItem('tw:cs') } catch { return null }
   })
 
-  // Restore draft after Stripe round-trip.
+  // Restore draft ONLY when returning from the Stripe round-trip (?paid=1).
+  // SESSION ISOLATION: a fresh visit must NOT resurrect a previous session's
+  // fields — doing so showed stale/foreign data (e.g. "Шуляк/Сергій/Проскурів")
+  // as if it were recognized for the CURRENT upload. On a plain visit, start clean.
   useEffect(() => {
+    if (searchParams?.get('paid') !== '1') return // not a Stripe return → no stale restore
     try {
       const raw = sessionStorage.getItem(DRAFT_KEY)
       if (!raw) return
       const draft = JSON.parse(raw) as DraftState
-      // Only restore if we're returning to the same flow (e.g. after Stripe).
       if (['review', 'payment', 'success'].includes(String(draft.screen))) return
-      // We restore selectedDocType + extractedFields so the success-screen PDF
-      // call still has them. Screen is set by the ?paid=1 handler below.
+      // Restore selectedDocType + extractedFields so the success-screen PDF call
+      // still has them after payment. Screen is set by the ?paid=1 handler below.
       if (draft.selectedDocType) setSelectedDocType(draft.selectedDocType)
       if (Array.isArray(draft.extractedFields)) setExtractedFields(draft.extractedFields)
     } catch { /* ignore */ }
@@ -982,8 +986,14 @@ export function TranslateWizard() {
       // Keep guarded/empty fields that the engine flagged for review — the user
       // fills them in (the central-brain returns value:null + review_required when
       // readers disagree; dropping them hid the field instead of asking the human).
+      // GARBAGE GUARD: an OCR label/garbage value ("„ Пріз", punctuation, a field
+      // label) must never be shown as recognized — downgrade it to empty + review.
       const fields = Array.isArray(json.fields)
-        ? (json.fields as ExtractedField[]).filter((f) => f.value || (f as any).review_required)
+        ? (json.fields as ExtractedField[])
+            .map((f) => (f.value && isGarbageValue(f.value)
+              ? ({ ...f, value: '', review_required: true } as ExtractedField)
+              : f))
+            .filter((f) => f.value || (f as any).review_required)
         : []
       setExtractedFields(fields)
       goTo(5)
