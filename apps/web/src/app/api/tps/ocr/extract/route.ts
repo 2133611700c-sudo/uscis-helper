@@ -290,7 +290,14 @@ export async function POST(req: NextRequest) {
         )
       const mrzAlreadyFound =
         hasPassportNumberFromMrz(td3) || hasPassportNumberFromMrz(booklet)
-      if (!td3.matched && !mrzAlreadyFound && result.lines.length < 8) {
+      // Count booklet identity fields (non-empty values) — used to pick the best
+      // rotation for an INTERNAL passport booklet, which has no MRZ to anchor on.
+      const bookletFieldCount = (mr: TpsModuleResult | null): number =>
+        mr?.fields?.filter((f) => (f.normalized_value ?? '').trim().length >= 2).length ?? 0
+      let bestRot: { booklet: TpsModuleResult; ocr: typeof result } | null = null
+      // Rotate when the MRZ was not found (sparse OCR) OR a booklet matched but
+      // carries almost no identity fields (rotated internal-passport booklet).
+      if (!td3.matched && !mrzAlreadyFound && (result.lines.length < 8 || (booklet?.matched && bookletFieldCount(booklet) < 2))) {
         for (const angle of [90, 180, 270] as const) {
           try {
             const sharp = (await import('sharp')).default
@@ -312,12 +319,22 @@ export async function POST(req: NextRequest) {
               effectiveOcrResult = rotatedResult
               break
             }
+            // Booklet without MRZ: remember the rotation with the most identity fields.
+            if (bookletFieldCount(tryBooklet) > (bestRot ? bookletFieldCount(bestRot.booklet) : 0)) {
+              bestRot = { booklet: tryBooklet, ocr: rotatedResult }
+            }
             // Booklet matched but still no MRZ — keep trying other angles.
           } catch {
             // sharp unavailable / Vision failure — stop trying rotations.
             break
           }
         }
+      }
+
+      // Adopt the best rotation for an MRZ-less booklet if it beats the upright read.
+      if (!td3.matched && bestRot && bookletFieldCount(bestRot.booklet) > bookletFieldCount(booklet)) {
+        booklet = bestRot.booklet
+        effectiveOcrResult = bestRot.ocr
       }
 
       if (td3.matched) {
