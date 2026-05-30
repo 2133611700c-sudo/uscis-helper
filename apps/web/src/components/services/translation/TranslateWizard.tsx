@@ -163,6 +163,13 @@ const T = {
     s7_sig_clear: 'Очистить',
     s7_sig_save: 'Подтвердить подпись ✓',
     s7_sig_saved: '✅ Подпись сохранена',
+    s7_cert_title: '🖊️ Подтверждение и подпись',
+    s7_addr_label: 'Ваш адрес (для сертификации перевода)',
+    s7_addr_ph: 'Улица, город, штат, индекс',
+    s7_check1: 'Я проверил(а) перевод, данные верные.',
+    s7_check2: 'Я понимаю, что своей подписью подтверждаю, что перевод полный и точный.',
+    s7_need_addr: 'Укажите адрес.',
+    s7_need_checks: 'Отметьте оба пункта.',
     s7_sign_first: '✏️ Сначала поставьте подпись ниже — без неё перевод нельзя сертифицировать.',
     s7_next_title: '📋 Что делать дальше?',
     s7_next_steps: [
@@ -264,6 +271,13 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s7_sig_clear: 'Clear',
     s7_sig_save: 'Confirm signature ✓',
     s7_sig_saved: '✅ Signature saved',
+    s7_cert_title: '🖊️ Confirm & sign',
+    s7_addr_label: 'Your address (for the translation certification)',
+    s7_addr_ph: 'Street, city, state, ZIP',
+    s7_check1: 'I reviewed the translation and the data is correct.',
+    s7_check2: 'I understand my signature attests the translation is complete and accurate.',
+    s7_need_addr: 'Enter your address.',
+    s7_need_checks: 'Check both boxes.',
     s7_sign_first: '✏️ Sign below first — a translation cannot be certified without your signature.',
     s7_next_title: '📋 What next?',
     s7_next_steps: [
@@ -786,6 +800,11 @@ export function TranslateWizard() {
   // We collect all pages here in upload order and send them all to OCR.
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
+  // Translator/certifier attestation (USCIS 8 CFR §103.2(b)(3)). Address + the two
+  // checkboxes are required before the final certified PDF can be generated.
+  const [certifierAddress, setCertifierAddress] = useState('')
+  const [dataReviewed, setDataReviewed] = useState(false)
+  const [accuracyAttested, setAccuracyAttested] = useState(false)
   const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([])
   const [extractionError, setExtractionError] = useState<string | null>(null)
   const [paymentLoading, setPaymentLoading] = useState(false)
@@ -1099,6 +1118,8 @@ export function TranslateWizard() {
     // generate/download without a real on-screen signature (drawn AND confirmed).
     // No silent manual_wet_signature bypass.
     if (!sigSaved || !hasDrawnRef.current) return
+    // Certification preconditions (client mirror of the server review-gate).
+    if (!dataReviewed || !accuracyAttested || !certifierAddress.trim()) return
     setPdfLoading(true)
     try {
       const c = canvasRef.current
@@ -1129,7 +1150,9 @@ export function TranslateWizard() {
           ...(stripeCheckoutId ? { 'X-Payment-Token': stripeCheckoutId } : {}),
         },
         body: JSON.stringify({
-          profile: { name: profileName, email: '', phone: '', addr: '' },
+          profile: { name: profileName, email: '', phone: '', addr: certifierAddress.trim() },
+          dataReviewed,
+          accuracyAttested,
           selectedPlan: 'basic',
           spanishCopy: false,
           locale,
@@ -1164,7 +1187,7 @@ export function TranslateWizard() {
     } finally {
       setPdfLoading(false)
     }
-  }, [pdfLoading, sigSaved, extractedFields, stripeCheckoutId, locale, selectedDocType])
+  }, [pdfLoading, sigSaved, dataReviewed, accuracyAttested, certifierAddress, extractedFields, stripeCheckoutId, locale, selectedDocType])
 
   const resetAll = useCallback(() => {
     setSelectedDocType(null)
@@ -1567,14 +1590,36 @@ export function TranslateWizard() {
               type="button"
               className="tw-btn-primary tw-btn-green"
               onClick={handleDownloadPdf}
-              disabled={pdfLoading || !sigSaved}
+              disabled={pdfLoading || !sigSaved || !dataReviewed || !accuracyAttested || !certifierAddress.trim()}
               style={{ marginBottom: 0 }}
             >
               {pdfLoading ? t.s7_downloading : pdfDownloaded ? t.s7_downloaded : t.s7_download}
             </button>
-            {!sigSaved && (
-              <div style={{ fontSize: 13, color: 'var(--gold)', marginTop: 10, fontWeight: 600 }}>{t.s7_sign_first}</div>
+            {(!certifierAddress.trim() || !dataReviewed || !accuracyAttested || !sigSaved) && (
+              <div style={{ fontSize: 13, color: 'var(--gold)', marginTop: 10, fontWeight: 600 }}>
+                {!certifierAddress.trim() ? t.s7_need_addr : (!dataReviewed || !accuracyAttested) ? t.s7_need_checks : t.s7_sign_first}
+              </div>
             )}
+          </div>
+          <div className="tw-card">
+            <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14 }}>{t.s7_cert_title}</div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{t.s7_addr_label}</label>
+            <input
+              type="text"
+              value={certifierAddress}
+              onChange={(e) => setCertifierAddress(e.target.value)}
+              placeholder={t.s7_addr_ph}
+              autoComplete="street-address"
+              style={{ width: '100%', padding: 14, fontSize: 16, minHeight: 48, borderRadius: 10, border: '1px solid var(--border)', marginBottom: 16, boxSizing: 'border-box' }}
+            />
+            <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 15, marginBottom: 12, cursor: 'pointer' }}>
+              <input type="checkbox" checked={dataReviewed} onChange={(e) => setDataReviewed(e.target.checked)} style={{ width: 22, height: 22, marginTop: 1, flexShrink: 0 }} />
+              <span>{t.s7_check1}</span>
+            </label>
+            <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 15, cursor: 'pointer' }}>
+              <input type="checkbox" checked={accuracyAttested} onChange={(e) => setAccuracyAttested(e.target.checked)} style={{ width: 22, height: 22, marginTop: 1, flexShrink: 0 }} />
+              <span>{t.s7_check2}</span>
+            </label>
           </div>
           <div className="tw-card">
             <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14 }}>{t.s7_sig_title}</div>
