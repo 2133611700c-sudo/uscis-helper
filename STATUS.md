@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 61 (2026-05-30) — Drawn signature image embedded in PDF (branch feat/signature-image-in-pdf)
+- `IMPLEMENTED` The finger/stylus signature (PNG data URL) is now embedded in the certification block of the translation PDF (above the typed name). Was collected by the wizard but never rendered. `PacketInput.signatureDataUrl`; route passes `payload.signatureDataUrl`; corrupt/oversized image falls back to typed signature (no crash).
+- `VERIFIED` `signatureImage.test.ts` 3/3 (image embedded when present, none when absent, no crash on corrupt) + pdf-readback e2e green; full web 2230 pass +4 skip, tsc 0, content-guard 0.
+
 ## Session 60 (2026-05-30) — USCIS translator-certification UX + Review-Gate v2 (branch feat/translator-certification)
 - `IMPLEMENTED` Simple USCIS-compliant certification: wizard Screen-7 now has a "Confirm & sign" card — address input + 2 checkboxes (data-reviewed, accuracy-attested) + finger signature. Download button hard-gated on all + dynamic hint. Sends `dataReviewed`/`accuracyAttested`/`profile.addr`.
 - `Review-Gate v2` `reviewGate.ts` final certified output now requires name + **address (PROMOTED to hard-block)** + both checkboxes + completed signature. 5 hard reasons. `reviewGate.test.ts` 13/13.
