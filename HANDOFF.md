@@ -1,3 +1,17 @@
+# HANDOFF — Session 73 (2026-05-30)
+
+## Session 73 — S2 Audit Persistence Hard-Fail (branch `fix/audit-persist-hard-fail`, off main)
+
+Second safety item from the Master Plan. `generate-pdf` was persisting the order + the 8 CFR §103.2(b)(3) certification attestation best-effort, then returning HTTP 200 + the signed PDF **even when that write failed** — a signed translation with no audit record (a compliance gap, previously tracked `[~]`). New testable helper `apps/web/src/lib/translation/persistCertification.ts` inserts both rows with one retry each (transient-blip tolerance) and returns `{ok, orderErr, auditErr}`, `ok` true only if BOTH stored. The route now, on `!ok`: (1) emits the full signed attestation as a structured `AUDIT_RECONCILE` log line so a signed record is never lost, (2) fails closed — **503, no PDF, no email**. The user already paid + signed; payment is an idempotent Stripe session so a retry does not re-charge (response says so).
+
+**Evidence:** `persistCertification.test.ts` 5/5 — audit-fail-after-retry → ok=false; transient → recovers; thrown error → ok=false; order-fail → ok=false; both-ok → ok=true. Full web 2266 pass, tsc 0, content-guard 0. Report: `docs/reports/S2_AUDIT_PERSIST_HARD_FAIL.md`.
+
+**Remaining (written):** the reconcile log is a durable fallback, not an auto-replay queue (a reconciliation job is Phase 6 ops). The fail-closed UX is deliberate (owner-approved "no 200 on DB failure") and reversible by flag if deliver-on-degrade is later preferred — the attestation is preserved in logs either way. Master Plan tracker (PR #47) to update: S2 → [x] with this PR#, audit `[~]` → resolved.
+
+**Next per Master Plan:** S3 — no-silent-correction for name / patronymic / authority / date / series (extend the S1 principle beyond geography).
+
+---
+
 # HANDOFF — Session 72 (2026-05-30)
 
 ## Session 72 — S1 Geography No-Silent-Snap (branch `fix/geography-no-silent-snap`, off main)

@@ -17,6 +17,7 @@ import { isOwnerSession } from '@/lib/ownerAccess'
 import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
 import { assertReviewGate } from '@/lib/translation/reviewGate'
 import { buildAttestationRecord } from '@/lib/translation/attestation'
+import { persistCertification } from '@/lib/translation/persistCertification'
 
 export const dynamic = 'force-dynamic'
 
@@ -152,16 +153,14 @@ export async function POST(req: NextRequest) {
     recordedAt: new Date().toISOString(),
   })
 
-  // Persist the order to its REAL schema + the attestation audit trail to its own
-  // table. supabase-js does NOT throw on a DB error — it returns { error } — so we
-  // CHECK and LOG it (code + message, no PII) instead of swallowing. (Prior code
-  // referenced columns that do not exist on translation_orders — session_id /
-  // document_type / certification_record / scope_title / updated_at — so the entire
-  // write silently failed and nothing, including the attestation, was ever stored.)
-  let auditPersisted = false
-  try {
-    const supabase = createAdminSupabaseClient()
-    const { error: orderErr } = await supabase.from('translation_orders').insert({
+  // S2 — Audit persistence is a HARD requirement, not best-effort. The
+  // translation_certification_audit row IS our 8 CFR §103.2(b)(3) compliance
+  // artifact: if it is not stored we must NOT return a "signed" PDF as if the
+  // certification had been recorded. persistCertification inserts order + audit
+  // with one retry each (transient-blip tolerance). (Prior code logged a warning
+  // and returned the PDF anyway → a signed document with no audit trail.)
+  const persist = await persistCertification(createAdminSupabaseClient(), {
+    orderRow: {
       name: profile.name,                 // NOT NULL — review gate guarantees signer name
       email: profile.email || '',         // NOT NULL — wizard sends '' (no email collected)
       phone: profile.phone || null,
@@ -174,10 +173,8 @@ export async function POST(req: NextRequest) {
       certification_version: certificationTextVersion,
       status: 'signed',                   // CHECK: one of signed | emailed | failed
       stripe_checkout_id: session_id ?? null,
-    })
-    if (orderErr) console.error('[generate-pdf] translation_orders insert failed:', orderErr.code, orderErr.message)
-
-    const { error: auditErr } = await supabase.from('translation_certification_audit').insert({
+    },
+    auditRow: {
       stripe_checkout_id: session_id ?? null,
       locale: payload.locale ?? 'en',
       document_type: payload.doc_type ?? 'other',
@@ -192,16 +189,31 @@ export async function POST(req: NextRequest) {
       certification_version: attestation.certification_version,
       signed_at: signedAt || null,
       audit_payload: attestation,
-    })
-    if (auditErr) console.error('[generate-pdf] certification audit insert failed:', auditErr.code, auditErr.message)
-    else auditPersisted = true
-  } catch (err) {
-    console.error('[generate-pdf] Supabase persist threw:', err instanceof Error ? err.message : String(err))
-  }
-  if (!auditPersisted) {
-    // DEGRADED: the PDF is already produced, but the audit trail did not persist.
-    // Surfaced in logs (no "audit complete" claim) so it is monitorable.
-    console.warn('[generate-pdf] DEGRADED — certification audit NOT persisted for', session_id ?? 'legacy')
+    },
+  })
+
+  if (!persist.ok) {
+    // Never lose a signed attestation: emit the full record as a structured
+    // RECONCILE line (retained in logs) so it can be replayed into the DB. Then
+    // fail closed — non-200, no PDF, no email, no "complete." The user already
+    // paid + signed; the payment is verified by an idempotent Stripe session, so
+    // a retry does NOT re-charge.
+    console.error('[generate-pdf] AUDIT_RECONCILE', JSON.stringify({
+      session_id: session_id ?? 'legacy',
+      orderErr: persist.orderErr,
+      auditErr: persist.auditErr,
+      attestation,
+    }))
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'audit_persist_failed',
+        status: 'degraded',
+        detail: 'Your signature was recorded, but the system could not save the certification record. You will not be charged again — please retry in a moment. If this keeps happening, contact support.',
+        session_id: session_id ?? null,
+      },
+      { status: 503 },
+    )
   }
 
   // Send confirmation email (text, not HTML attachment)
