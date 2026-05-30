@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 87: Legal Copy Freeze (branch feat/legal-copy-freeze)
+
+New `apps/web/src/lib/translation/__tests__/legalCopyFreeze.test.ts` — pins CERTIFICATION_VERSION (v1.0-8cfr-2026) + sha256 of CERTIFICATION_STATEMENT (the signed 8 CFR §103.2(b)(3) legal text); a silent edit fails the build with ADR/version/pin instructions; asserts the statement still cites the regulation. Test-only. legalCopyFreeze.test.ts 3/3; full web 2354 pass; tsc 0; content-guard 0. Report `docs/reports/LEGAL_COPY_FREEZE.md`. Files: lib/translation/__tests__/legalCopyFreeze.test.ts, report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 86: Cross-Document Contradiction Detector (branch feat/cross-doc-contradictions)
 
 Canonical-core Quality item. New `apps/web/src/lib/canonical/contradictions.ts`: findCrossDocumentContradictions reports when the same field key has materially-different values across documents (passport/I-94/EAD/DL); critical/high → blocking; candidates ordered by source authority; hasBlockingContradiction convenience. Complements mergeCanonicalByKey (resolve) with a reporter (surface). Pure/additive/unwired. New contradictions.test.ts 6/6; full web 2351 pass; tsc 0; content-guard 0. Report `docs/reports/P2_CROSS_DOC_CONTRADICTIONS.md`. Files: canonical/contradictions.ts, canonical/index.ts, canonical/__tests__/contradictions.test.ts, report, STATUS/HANDOFF/CHANGELOG.
