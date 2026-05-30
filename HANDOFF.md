@@ -1,3 +1,23 @@
+# HANDOFF — Session 58d (2026-05-29)
+
+## Session 58d — Post-fix QA + class-level guard (branch `official-docs`)
+
+QA of the cyrillic fix (bbf26ed). Did NOT just rubber-stamp — the grep audit found and I closed a real second instance, and added a guard so the bug class can't return.
+
+**QA PASS:** readback of the committed artifact shows `Series and No.: I-AM 000001`, `Patronymic` (no `Middle Name`), `TRANSLATOR'S` apostrophe intact, missing fields visible, `[CONFIRM]` only where review-required. BUREAU_PDF opt-in only; birth NOT active; marriage/divorce/death/name-change untouched. Report: `docs/reports/BUREAU_PDF_CYRILLIC_FIX_QA.md`.
+
+**Engineering deviation (justified):** grep found the identical silent-strip `replace(/[^\x00-\xFF]/g,'')` in `renderMarriageCertificateTranslation.ts:18`. It has **0 importers** — dead code, superseded by the generic `renderOfficialTranslation` that all 5 civil types render through. Rather than leave a copy of a just-fixed data-loss bug as a landmine, I consolidated its `safe`→shared `pdfSafe` (zero runtime risk, not a marriage feature, does not break the marriage freeze). Recommend deleting the file (owner decision).
+
+**Hardening:** `noSilentStrip.guard.test.ts` fails CI if any production PDF renderer reintroduces a silent non-ASCII strip — prevents the whole class.
+
+**Agreed next-stage defect (NOT done now):** `[CONFIRM]` must be stripped from the SIGNED certified text after `reviewConfirmed` — it is a Review-Gate marker, not final certified text. To implement when birth pilot wiring resumes.
+
+**Exact next task (owner-gated):** owner reviews PNG + Preview E2E + merge #26/#27; then rebase official-docs, re-run coverage generator, then P3 signerAddress, then `[CONFIRM]`-strip-after-review. NO new document types; BUREAU_PDF stays OFF.
+
+**Evidence:** renderValue 5/5, class guard, birth goldenVisual, full web suite green, tsc 0.
+
+---
+
 # HANDOFF — Session 58c (2026-05-29)
 
 ## Session 58c — FIX bureau-PDF Cyrillic silent-strip blocker (branch `official-docs`)
