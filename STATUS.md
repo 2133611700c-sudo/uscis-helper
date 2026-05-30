@@ -1,4 +1,7 @@
 # STATUS — Messenginfo
+## Session 87 (2026-05-30) — Legal Copy Freeze (branch feat/legal-copy-freeze)
+- `COMPLIANCE` `apps/web/src/lib/translation/__tests__/legalCopyFreeze.test.ts` — pins `CERTIFICATION_VERSION` (v1.0-8cfr-2026) + sha256 of `CERTIFICATION_STATEMENT` (the signed 8 CFR §103.2(b)(3) legal text). Any silent edit fails the build with instructions: write an ADR, bump version, update the pin. Asserts the statement still cites 8 CFR §103.2(b)(3).
+- `EVIDENCE` `legalCopyFreeze.test.ts` 3/3. Full web 2354 pass, tsc 0, guard 0. Report `docs/reports/LEGAL_COPY_FREEZE.md`. Test-only.
 ## Session 86 (2026-05-30) — Cross-Document Contradiction Detector (branch feat/cross-doc-contradictions)
 - `PHASE2` `apps/web/src/lib/canonical/contradictions.ts` — `findCrossDocumentContradictions(fields)` reports when the same field key has materially-different values across documents (passport/I-94/EAD/DL); critical/high → `blocking`; candidates ordered by source authority. `hasBlockingContradiction` convenience. Complements the adapter merge (resolve) with a reporter (surface). Pure/additive/unwired.
 - `EVIDENCE` `contradictions.test.ts` 6/6 (agree→none; critical DOB conflict→blocking+MRZ-first; low→non-blocking; case/ws→none; single→none; canonicalizer). Full web 2351 pass, tsc 0, guard 0. Report `docs/reports/P2_CROSS_DOC_CONTRADICTIONS.md`.
