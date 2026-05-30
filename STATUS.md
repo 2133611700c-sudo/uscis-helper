@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 69 (2026-05-30) — Live-fix part 1: Translation session isolation (branch fix/live-session-isolation)
+- `FIXED(CRITICAL #1)` Translation wizard draft-restore was UNCONDITIONAL on mount → resurrected a previous session's `extractedFields` (the stale `Шуляк/Сергій/Проскурів` the owner saw). Now restore is gated on the Stripe return (`?paid=1`); a fresh visit starts clean. `sessionIsolation.test.ts` 2/2. (handleFiles already clears fields on new upload.)
+- `🔴 STILL OPEN` TPS wizard localStorage isolation; orientation gate (0/90/180/270); garbage guard (reject `„ Пріз` label-as-value); source-evidence gate; payment-block on unsafe fields. Larger live-fix next.
+
 ## Session 66 (2026-05-30) — Zero-trust verification of cert/audit/source work (branch verify/post-certification)
 - `VERIFIED` prod sha == main sha 84e4284; all 6 PRs (#31–#36) landed. Review-Gate v2 13/13, certifier UX 6/6, PDF output (statement+Name/Address/Date+signature image, no [CONFIRM], no silent-strip) 4/4, source-verifier (КМУ-1025/152/302 verified) 4/4.
 - `🔴 FAIL FOUND` Audit metadata is NOT persisted: `translation_orders` lacks `certification_record`/`session_id`/etc. columns → route upsert silently fails (try/catch) → 0 rendered rows, newest row 2026-05-08. attestation built in code but never reaches DB. My earlier "in DB" claim was FALSE.

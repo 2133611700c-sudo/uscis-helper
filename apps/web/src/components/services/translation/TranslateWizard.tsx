@@ -818,16 +818,19 @@ export function TranslateWizard() {
     try { return sessionStorage.getItem('tw:cs') } catch { return null }
   })
 
-  // Restore draft after Stripe round-trip.
+  // Restore draft ONLY when returning from the Stripe round-trip (?paid=1).
+  // SESSION ISOLATION: a fresh visit must NOT resurrect a previous session's
+  // fields — doing so showed stale/foreign data (e.g. "Шуляк/Сергій/Проскурів")
+  // as if it were recognized for the CURRENT upload. On a plain visit, start clean.
   useEffect(() => {
+    if (searchParams?.get('paid') !== '1') return // not a Stripe return → no stale restore
     try {
       const raw = sessionStorage.getItem(DRAFT_KEY)
       if (!raw) return
       const draft = JSON.parse(raw) as DraftState
-      // Only restore if we're returning to the same flow (e.g. after Stripe).
       if (['review', 'payment', 'success'].includes(String(draft.screen))) return
-      // We restore selectedDocType + extractedFields so the success-screen PDF
-      // call still has them. Screen is set by the ?paid=1 handler below.
+      // Restore selectedDocType + extractedFields so the success-screen PDF call
+      // still has them after payment. Screen is set by the ?paid=1 handler below.
       if (draft.selectedDocType) setSelectedDocType(draft.selectedDocType)
       if (Array.isArray(draft.extractedFields)) setExtractedFields(draft.extractedFields)
     } catch { /* ignore */ }
