@@ -42,6 +42,27 @@ Playbook step 5 / Prompt 5. `scripts/document-platform-coverage.mjs` (NEW) deriv
 - Branch-sensitive by design: re-run after `fix/review-gate-hard-block` and `#27 koatuu` merge. No app code changed → no test delta.
 
 ## 2026-05-29 â Session 57: paid Gemini key, model bench, recognition audit, D-GLOSSARY G1+G2
+## 2026-05-29 — Session 57b: Accept ADR-015 separately (branch docs/accept-adr-015)
+
+Playbook step 4. `docs/adr/ADR-015-pdf-output-architecture.md` existed only on `spike/pdf-readback`; landed the **ADR document only** (decoupled from spike test/code) onto a main-based branch as an independent merge unit, per owner's "accept ADR-015 separately".
+
+- **Decision:** pdf-lib is the single rendering engine. Track A USCIS forms = AcroForm fill; Track B bureau translations = `renderOfficialTranslation` (schema-driven). React-PDF / Puppeteer / Apple PDFKit REJECTED as core — spike proved the bureau renderer's English output is hex-extractable (`<hex> Tj`), so golden text-readback works today without a new dependency.
+- **Real remaining work** named in the ADR: field-key mapping (recognized→schema keys) + Document/Source Registry wiring + per-schema golden tests + owner visual approval before enabling BUREAU_PDF. Not a new renderer.
+- No code change → no test delta. ADR status: Accepted (spike-validated) · 2026-05-29.
+## 2026-05-29 — Session 57a: Safety PR #28 + content-guard fix (branch fix/review-gate-hard-block)
+
+Pushed the review-gate safety fix as independent PR #28 (base main, NOT merged). CI content-guard Rule 4 flagged the literal "certified translation" (product claim) in `route.ts` and `reviewGate.ts` comments/strings; reworded to "signed translation" / "translation certification" (meaning unchanged). Guard now CLEAN, reviewGate 13/13, tsc 0. ADR-015 acceptance is a separate PR #29. No runtime behaviour change — wording only.
+
+## 2026-05-29 — Session 57: Review-Gate hard block + zero-trust platform coverage audit (branch fix/review-gate-hard-block)
+
+Owner verdict accepted (official-docs NOT acceptance-ready; stop features; stabilize merge chain; deliver coverage matrix). Executed playbook's first safe steps; used parallel read-only agents for the audits while coding the gate.
+
+- **Review Gate hard block** `apps/web/src/lib/translation/reviewGate.ts` (NEW) + wired into `apps/web/src/app/api/translation/generate-pdf/route.ts` AFTER payment, BEFORE render. Closes the hole: a machine-only paid POST previously received a "certified" PDF with no review/signature. HARD block = review-confirmation (reviewConfirmed===true OR completed signature) + signerName. SOFT warning = signerAddress (the live `TranslateWizard` hardcodes `addr:''`; hard-blocking it would break prod — logged + flagged as follow-up to wire an address field, then promote to hard gate). `reviewGate.test.ts` 13/13.
+- **No regression:** translation suite 1701 pass; `tsc` 0 errors.
+- **Audit reports** `docs/reports/`: `DOCUMENT_PLATFORM_COVERAGE_2026-05-29.md` (0 documents active; birth_certificate = only pilot, other 4 civil = DRAFT), `BRANCH_STABILIZATION_2026-05-29.md` (merge #26→#27→rebase official-docs; official-docs carries NO КАТОТТГ — it's on koatuu), `ROUTE_INVENTORY_2026-05-29.md` (no payment-bypass routes; generate-pdf review hole was the only one — closed here), `GLOSSARY_GEOGRAPHY_AUDIT_2026-05-29.md` (agency missing ПФУ/КМУ/Мінрегіон/МОН/МОЗ; 458-city КАТОТТГ stranded on koatuu; КОАТУУ legacy absent).
+- **Owner-gated next:** merge #26/#27 (Preview E2E), rebase official-docs, accept ADR-015, birth-cert visual+fixture pilot, wire signer-address into wizard, correct official URLs (military/diploma/pension), КАТОТТГ byte-verify.
+
+## 2026-05-29 — Session 56: Unified recognition engine + Central Brain spine + official UA forms layer (all LOCAL, not deployed)
 
 **Recognition / models (live API benches; reports in docs/reports/):**
 - Paid Gemini project wired; prod key var is `GEMINI_API_KEY_PAY` (code reads it first, falls back to `GEMINI_API_KEY`).
@@ -2444,3 +2465,9 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 ## 2026-05-29 — official-docs: bureau-PDF wired end-to-end behind BUREAU_PDF flag (default OFF)
 - bureauTranslation.ts: recognized fields → canonical mapping (child_full_name split) → official schema values → renderOfficialTranslation (pdf-lib bureau-style). Golden test (hex-readback): REDACTED/Serhii split, смт→urban-type settlement, missing→placeholder, not-certifiable when required field absent, unknown docType→null.
 - generate-pdf route: flag-gated branch (BUREAU_PDF=on) renders the official bureau PDF for civil-status docs, falls back to the flat PDF on miss/error. DEFAULT OFF — changes the signed document, so it stays off until owner visual approval. web 2243 pass, 0 type errors, content-guards 0.
+## 2026-05-29 — koatuu branch: КАТОТТГ city layer (G3 full, stacked on feat/c3-presence)
+
+- `packages/knowledge/scripts/gen-settlements.mts` — generator: official КАТОТТГ (Наказ Мінрегіону №290, 26.11.2020; mtu.gov.ua) → registry settlement rows via KMU-55 transliteration. Ingests categories M+K (459 cities; смт abolished as a category Jan 2024). Source JSON kept out of repo; regenerable.
+- `settlements.generated.ts` — 458 cities, each with source_url + valid_from (КАТОТТГ). Machine layer kept SEPARATE from human-curated registry.csv; merged in registryIndex (curated first → priority on key conflicts).
+- Tests: КАТОТТГ provenance (validateRegistry on all rows) + city resolution (Бахчисарай→Bakhchysarai, Біла Церква→Bila Tserkva). Villages (C, 27k) keep the fuzzy gazetteer.
+- knowledge tsc 0, web tsc 0; registry 14/14; web 2208 pass +4 skip.
