@@ -19,6 +19,7 @@
 - `CI` content-guard Rule 4 fixed (reworded comment); re-pushed.
 - `VERIFIED(local)` **#21 word-aware presence**: no prefix/substring false confirmations.
 - `VERIFIED(live API)` **integrated pipeline E2E** on real military ID → Kuropiatnyk + Trostianets(urban-type settlement). Caught+fixed lookupSettlement city+oblast bug.
+- `VERIFIED(live API)` passport MRZ path (KUROPIATNYK/FU262473) + handwritten birth cert proven live; 3-doc gated E2E.
 - `NOT DEPLOYED / OPEN` G3 (full KOATUU/civil-registry into CSV), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring, official renderers (P4), product contracts (P5). On Vercel confirm `GEMINI_API_KEY_PAY` set + deploy. Rotate OpenAI key (pasted in chat).
 
 ## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)
