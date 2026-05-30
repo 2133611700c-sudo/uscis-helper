@@ -1095,8 +1095,9 @@ export function TranslateWizard() {
   // ── Real PDF generation (replaces simulateDownload) ──
   const handleDownloadPdf = useCallback(async () => {
     if (pdfLoading) return
-    // #16 gate: a certified translation must be SIGNED — never generate/download one
-    // without a real on-screen signature (drawn AND confirmed). No silent wet-sign bypass.
+    // #16 gate: the translation draft must be SIGNED before download — never
+    // generate/download without a real on-screen signature (drawn AND confirmed).
+    // No silent manual_wet_signature bypass.
     if (!sigSaved || !hasDrawnRef.current) return
     setPdfLoading(true)
     try {
