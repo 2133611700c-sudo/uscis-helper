@@ -1,4 +1,6 @@
 # STATUS — Messenginfo
+## Session 76g (2026-05-30) — Tracker: canonical core COMPLETE (#52–#58) (branch docs/engineering-master-plan)
+- `TRACKER` Marked the ENTIRE canonical core `[x]`: adapter (#53/#55), Doc-Type Gate + Quarantine (#58), Manual Override (#57), ONE_BRAIN_SHADOW flag+live wiring (#54/#56) — plus the P2.1 items already done (#52). Added a CURRENT STATE banner: Phase-1 safety + UX + canonical core all merged (#48–#58); the remaining items are GATED (migration needs real-traffic parity; Phase 4 PDF/ledger; Phase 6 ops; owner-gated). The two-brain fix + its measurement instrument are in place.
 ## Session 76f (2026-05-30) — Tracker: UX [x] (#51) + P2.1 canonical [x] (#52) (branch docs/engineering-master-plan)
 - `TRACKER` Marked UX wizard reset/Back/Start-over `[x]` (PR #51); canonical-core P2.1 items `[x]` (PR #52): CanonicalDocumentResult+CanonicalField types, Field Confidence Contract, Provider Disagreement Policy, Source Authority Ranking. Remaining Phase-2: P2.2 readCanonicalDocument adapter (next), P2.3 ONE_BRAIN_SHADOW parity, Document-Type Gate, Quarantine, Manual-Override flow.
 ## Session 76d (2026-05-30) — Tracker: S3 [x] → Phase-1 safety COMPLETE (branch docs/engineering-master-plan)

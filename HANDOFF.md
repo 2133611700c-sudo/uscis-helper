@@ -1,4 +1,10 @@
-# HANDOFF — Session 76f (2026-05-30)
+# HANDOFF — Session 76g (2026-05-30)
+
+## Session 76g — Tracker: canonical core COMPLETE (#52–#58) (branch `docs/engineering-master-plan`)
+
+Marked the entire canonical core `[x]` in the tracker with PR#s + evidence: readCanonicalDocument adapter (#53 TPS, #55 Translation), Field Confidence Contract / Provider Disagreement Policy / Source Authority Ranking (#52), Document-Type Confidence Gate + Provider Output Quarantine (#58), Manual Override Contract (#57), ONE_BRAIN_SHADOW flag + parity + live wiring (#54, #56). Added a CURRENT STATE banner at the top of §5: Phase-1 safety + UX + the full canonical core are merged (#48–#58, ~50 tests, suite green, all additive/default-OFF); the remaining tracker items are GATED — migration/consolidation need real-traffic parity (`ONE_BRAIN_SHADOW=1` canary → read numbers → migrate), Phase 4 (finalization lock / two-layer PDF proof / evidence-ledger DB) is a later careful series, Phase 6 ops is last, owner-gated items need the owner. **Exact next task (owner decision):** turn on `ONE_BRAIN_SHADOW=1` in a canary to collect parity, OR direct the next gated workstream.
+
+---
 
 ## Session 76f — Tracker: UX (#51) + P2.1 canonical core (#52) (branch `docs/engineering-master-plan`)
 
