@@ -809,6 +809,9 @@ export function TranslateWizard() {
   const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([])
   const [extractionError, setExtractionError] = useState<string | null>(null)
   const [paymentLoading, setPaymentLoading] = useState(false)
+  // Owner mode: the site owner can run every product without payment (server
+  // routes already honour the owner cookie). Checked on mount; NOT persisted.
+  const [isOwner, setIsOwner] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfDownloaded, setPdfDownloaded] = useState(false)
   const [sigSaved, setSigSaved] = useState(false)
@@ -1026,6 +1029,10 @@ export function TranslateWizard() {
   // ── Real Stripe checkout (replaces prototype's simulatePayment) ──
   const handlePayment = useCallback(async () => {
     if (paymentLoading) return
+    // OWNER MODE: the site owner tests every product WITHOUT payment. The
+    // generate-pdf route already bypasses the payment gate for a verified owner
+    // cookie, so skip Stripe and go straight to the sign/download screen.
+    if (isOwner) { saveDraft(); setScreen(7); return }
     setPaymentLoading(true)
     // Persist draft so we can rebuild state after the Stripe round-trip.
     saveDraft()
@@ -1048,7 +1055,12 @@ export function TranslateWizard() {
       alert('Network error. Please try again.')
       setPaymentLoading(false)
     }
-  }, [paymentLoading, saveDraft, locale])
+  }, [paymentLoading, saveDraft, locale, isOwner])
+
+  // Owner-mode check (mount): unlocks free testing of the full flow.
+  useEffect(() => {
+    fetch('/api/owner/status').then((r) => r.json()).then((d) => { if (d?.owner) setIsOwner(true) }).catch(() => {})
+  }, [])
 
   // ── Signature canvas ──
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -1577,7 +1589,7 @@ export function TranslateWizard() {
             disabled={paymentLoading}
             style={{ fontSize: 21, padding: 22 }}
           >
-            {paymentLoading ? t.s6_cta_loading : t.s6_cta}
+            {isOwner ? '🔑 Owner — continue free' : paymentLoading ? t.s6_cta_loading : t.s6_cta}
           </button>
           <div className="tw-reassurance" style={{ marginTop: 16 }}>
             <div className="tw-reassurance-icon">🔒</div>
