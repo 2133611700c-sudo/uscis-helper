@@ -80,6 +80,13 @@ describe('G1 Glossary Registry', () => {
     }
   })
 
+  // live-E2E found: recognition dumps the whole place line into one field
+  it('place line with city + oblast still resolves to the city + type', () => {
+    const r = lookupSettlement('смт. Тростянець Вінницької обл.')
+    expect(r.official_en).toBe('Trostianets')
+    expect(r.settlementType).toBe('urban-type settlement')
+  })
+
   it('settlement type alone resolves with keep_type warning', () => {
     const t = normalizeSettlementType('смт')
     expect(t.matched).toBe(true)
