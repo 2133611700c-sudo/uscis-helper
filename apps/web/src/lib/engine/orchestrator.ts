@@ -13,7 +13,7 @@
  *   4. Emit canonical fields with provenance + review flags. NEVER guesses.
  */
 
-import { transliterateKMU55, snapCity, reconcilePatronymic, normalizeOblastToNominative, type Sex } from '@uscis-helper/knowledge'
+import { transliterateKMU55, snapCity, reconcilePatronymic, normalizeOblastToNominative, lookupSettlement, normalizeOblastRegistry, lookupAuthority, translateCivilRegistryTerm, type Sex } from '@uscis-helper/knowledge'
 import { consensusRead, type NamedReader, type ConsensusField } from './consensus'
 import { DOC_TYPES, printedFields, openNameFields, type DocFieldSpec } from './docTypes'
 import { formatDateEn, translateAuthority } from './terminologist'
@@ -42,8 +42,9 @@ function sexFromField(fields: Record<string, ConsensusField>): Sex {
 }
 
 /** D2 normalization for one consensus field → Latin/English canonical value. */
-function normalize(spec: DocFieldSpec, cf: ConsensusField, ctx: { sex: Sex; givenName?: string }): { latin: string; source: string; review: boolean } {
+export function normalize(spec: DocFieldSpec, cf: ConsensusField, ctx: { sex: Sex; givenName?: string; documentDate?: string }): { latin: string; source: string; review: boolean } {
   if (!cf.can_read || !cf.value) return { latin: '', source: cf.reason, review: true }
+  const docDate = ctx.documentDate
 
   switch (spec.kind) {
     case 'name': {
@@ -54,10 +55,19 @@ function normalize(spec: DocFieldSpec, cf: ConsensusField, ctx: { sex: Sex; give
       return { latin: transliterateKMU55(cf.value), source: 'KMU-55', review: cf.review_required }
     }
     case 'place_city': {
+      // D-GLOSSARY first: registry preserves the settlement TYPE (смт→urban-type
+      // settlement) and era + provenance. Fall back to the gazetteer on a miss.
+      const reg = lookupSettlement(cf.value, undefined, docDate)
+      if (reg.matched) {
+        const en = reg.settlementType ? `${reg.official_en} (${reg.settlementType})` : reg.official_en
+        return { latin: en, source: `registry:settlement:${reg.source_url}`, review: reg.review_required || cf.review_required }
+      }
       const m = snapCity(cf.value)
       return { latin: m.value ? transliterateKMU55(m.value) : '', source: m.reason, review: m.review_required || cf.review_required }
     }
     case 'place_oblast': {
+      const reg = normalizeOblastRegistry(cf.value, docDate)
+      if (reg.matched) return { latin: reg.official_en, source: `registry:oblast:${reg.source_url}`, review: reg.review_required || cf.review_required }
       const o = normalizeOblastToNominative(cf.value)
       return o ? { latin: o.transliterated, source: 'oblast→nominative+DMS', review: cf.review_required }
                : { latin: transliterateKMU55(cf.value), source: 'oblast:raw-translit', review: true }
@@ -67,16 +77,34 @@ function normalize(spec: DocFieldSpec, cf: ConsensusField, ctx: { sex: Sex; give
       return en ? { latin: en, source: 'date→EN', review: cf.review_required }
                 : { latin: '', source: 'date-unparseable', review: true }
     }
-    case 'sex':
-      return { latin: /ж|f/i.test(cf.value) ? 'Female' : 'Male', source: 'sex-map', review: cf.review_required }
+    case 'sex': {
+      const v = cf.value.toLocaleLowerCase('uk')
+      if (/ж|f|жін|жен/.test(v)) return { latin: 'Female', source: 'sex-map', review: cf.review_required }
+      if (/^ч|\bч|m|чол|муж/.test(v)) return { latin: 'Male', source: 'sex-map', review: cf.review_required }
+      // NEVER default to Male on an unreadable value — would put the wrong sex (and
+      // a wrong-gendered patronymic) on the document.
+      return { latin: '', source: 'sex-unreadable', review: true }
+    }
     case 'text': {
-      // D3a glossary first (authorities, historical locks). If no match, leave
-      // latin empty so the optional D3b prose translator (DeepSeek) fills it.
-      const auth = translateAuthority(cf.value)
+      // D-GLOSSARY: authority → civil-registry term → passport authority, all
+      // era-gated + with provenance. On a miss, leave latin empty for the optional
+      // D3b prose translator (never silently drop — review_required stays true).
+      const reg = lookupAuthority(cf.value, docDate)
+      if (reg.matched) return { latin: reg.official_en, source: `registry:authority:${reg.source_url}`, review: reg.review_required || cf.review_required }
+      const cr = translateCivilRegistryTerm(cf.value, docDate)
+      if (cr.matched) return { latin: cr.official_en, source: `registry:civil_registry:${cr.source_url}`, review: cr.review_required || cf.review_required }
+      const auth = translateAuthority(cf.value) // legacy fallback
       return auth ? { latin: auth, source: 'glossary', review: cf.review_required }
                   : { latin: '', source: 'needs-prose-translation', review: cf.review_required }
     }
-    case 'number':
+    case 'number': {
+      // Filing-critical identifier. A Cyrillic homoglyph left inside the digit run
+      // (О/З/І for 0/3/1) = a confidently-wrong number. Don't rewrite (could corrupt
+      // a legitimate Cyrillic series prefix) — flag for human confirmation.
+      const digitPart = cf.value.replace(/^[А-ЯІЇЄҐA-Z]{1,3}[\s№#-]*/u, '')
+      const homoglyphSuspect = /\d/.test(cf.value) && /[А-Яа-яІіЇїЄєҐґ]/.test(digitPart)
+      return { latin: cf.value, source: 'number', review: cf.review_required || homoglyphSuspect }
+    }
     default:
       return { latin: cf.value, source: spec.kind, review: cf.review_required }
   }
