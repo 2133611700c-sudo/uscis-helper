@@ -1,99 +1,73 @@
 /**
- * reviewGate.test.ts — the Translation Review Gate hard block.
- * Proves a certified translation can only render after a human confirmed the
- * review (explicit checkbox OR completed signature) with signer identity present.
+ * reviewGate.test.ts — the Translation Review Gate hard block (v2).
+ * Final certified output requires name + address + 2 attestation checkboxes +
+ * a completed signature. Anything missing → refusal.
  */
 import { describe, it, expect } from 'vitest'
 import { assertReviewGate, isSignatureComplete } from '../reviewGate'
 
-const SIGNER = { signerName: 'Serhii REDACTED', signerAddress: '1213 Gordon St, Los Angeles, CA 90038' }
+const ID = { signerName: 'Serhii REDACTED', signerAddress: '1213 Gordon St, Los Angeles, CA 90038' }
+const SIG = { signedAt: '2026-05-30T12:00:00.000Z', signatureMethod: 'drawn_on_screen' as const, signatureDataUrl: 'data:image/png;base64,iVBORw0KGgo=' }
+const CHECKS = { dataReviewed: true, accuracyAttested: true }
 
-describe('assertReviewGate — hard block', () => {
-  it('blocks machine-only request (no review, no signature)', () => {
-    const r = assertReviewGate({ ...SIGNER })
-    expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.reason).toBe('review_not_confirmed')
-  })
-
-  it('blocks reviewConfirmed=false and unsigned', () => {
-    const r = assertReviewGate({ ...SIGNER, reviewConfirmed: false })
-    expect(r.ok).toBe(false)
-  })
-
-  it('blocks reviewConfirmed=true but signerName missing', () => {
-    const r = assertReviewGate({ reviewConfirmed: true, signerAddress: SIGNER.signerAddress })
+describe('assertReviewGate v2 — hard block', () => {
+  it('blocks a machine-only request (no name)', () => {
+    const r = assertReviewGate({})
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.reason).toBe('signer_name_required')
   })
 
-  it('allows reviewConfirmed=true with name but missing address — WARNS, does not block (live wizard sends empty addr)', () => {
-    const r = assertReviewGate({ reviewConfirmed: true, signerName: SIGNER.signerName })
-    expect(r.ok).toBe(true)
-    if (r.ok) expect(r.warnings).toContain('signer_address_missing')
-  })
-
-  it('allows reviewConfirmed=true + full signer data with no warnings', () => {
-    const r = assertReviewGate({ ...SIGNER, reviewConfirmed: true })
-    expect(r.ok).toBe(true)
-    if (r.ok) expect(r.warnings).toEqual([])
-  })
-
-  it('allows a completed drawn signature with signer data (legit wizard path)', () => {
-    const r = assertReviewGate({
-      ...SIGNER,
-      signedAt: '2026-05-29T12:00:00.000Z',
-      signatureMethod: 'drawn_on_screen',
-      signatureDataUrl: 'data:image/png;base64,iVBORw0KGgo=',
-    })
-    expect(r.ok).toBe(true)
-  })
-
-  it('allows a manual wet signature with signer data', () => {
-    const r = assertReviewGate({
-      ...SIGNER,
-      signedAt: '2026-05-29T12:00:00.000Z',
-      signatureMethod: 'manual_wet_signature',
-    })
-    expect(r.ok).toBe(true)
-  })
-
-  it('blocks a drawn signature that has no data URL (incomplete act)', () => {
-    const r = assertReviewGate({
-      ...SIGNER,
-      signedAt: '2026-05-29T12:00:00.000Z',
-      signatureMethod: 'drawn_on_screen',
-      signatureDataUrl: '',
-    })
+  it('blocks name present but address missing', () => {
+    const r = assertReviewGate({ signerName: ID.signerName, ...CHECKS, ...SIG })
     expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.reason).toBe('signer_address_required')
   })
 
-  it('blocks whitespace-only signer name', () => {
-    const r = assertReviewGate({ signerName: '   ', signerAddress: '  ', reviewConfirmed: true })
+  it('blocks when checkbox 1 (data reviewed) is missing', () => {
+    const r = assertReviewGate({ ...ID, accuracyAttested: true, ...SIG })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.reason).toBe('data_not_reviewed')
+  })
+
+  it('blocks when checkbox 2 (accuracy attested) is missing', () => {
+    const r = assertReviewGate({ ...ID, dataReviewed: true, ...SIG })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.reason).toBe('accuracy_not_attested')
+  })
+
+  it('blocks when signature is missing', () => {
+    const r = assertReviewGate({ ...ID, ...CHECKS })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.reason).toBe('signature_required')
+  })
+
+  it('blocks a drawn signature with no data URL', () => {
+    const r = assertReviewGate({ ...ID, ...CHECKS, signedAt: SIG.signedAt, signatureMethod: 'drawn_on_screen', signatureDataUrl: '' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.reason).toBe('signature_required')
+  })
+
+  it('ALLOWS name + address + both checkboxes + drawn signature', () => {
+    expect(assertReviewGate({ ...ID, ...CHECKS, ...SIG }).ok).toBe(true)
+  })
+
+  it('ALLOWS a wet signature', () => {
+    expect(assertReviewGate({ ...ID, ...CHECKS, signedAt: SIG.signedAt, signatureMethod: 'manual_wet_signature' }).ok).toBe(true)
+  })
+
+  it('back-compat: reviewConfirmed=true satisfies both checkboxes', () => {
+    expect(assertReviewGate({ ...ID, reviewConfirmed: true, ...SIG }).ok).toBe(true)
+  })
+
+  it('blocks whitespace-only name', () => {
+    const r = assertReviewGate({ signerName: '   ', signerAddress: ID.signerAddress, ...CHECKS, ...SIG })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.reason).toBe('signer_name_required')
-  })
-
-  it('models the live TranslateWizard payload (drawn sig, name, empty addr) → render allowed + address warning', () => {
-    const r = assertReviewGate({
-      signerName: 'Serhii REDACTED',
-      signerAddress: '',
-      signedAt: '2026-05-29T12:00:00.000Z',
-      signatureMethod: 'drawn_on_screen',
-      signatureDataUrl: 'data:image/png;base64,iVBORw0KGgo=',
-    })
-    expect(r.ok).toBe(true)
-    if (r.ok) expect(r.warnings).toContain('signer_address_missing')
   })
 })
 
 describe('isSignatureComplete', () => {
-  it('false without signedAt', () => {
-    expect(isSignatureComplete({ signatureMethod: 'manual_wet_signature' })).toBe(false)
-  })
-  it('true for wet signature with signedAt', () => {
-    expect(isSignatureComplete({ signedAt: '2026-05-29T12:00:00Z', signatureMethod: 'manual_wet_signature' })).toBe(true)
-  })
-  it('false for drawn without data url', () => {
-    expect(isSignatureComplete({ signedAt: '2026-05-29T12:00:00Z', signatureMethod: 'drawn_on_screen' })).toBe(false)
-  })
+  it('false without signedAt', () => { expect(isSignatureComplete({ signatureMethod: 'manual_wet_signature' })).toBe(false) })
+  it('true for wet signature with signedAt', () => { expect(isSignatureComplete({ signedAt: SIG.signedAt, signatureMethod: 'manual_wet_signature' })).toBe(true) })
+  it('false for drawn without data url', () => { expect(isSignatureComplete({ signedAt: SIG.signedAt, signatureMethod: 'drawn_on_screen' })).toBe(false) })
 })
