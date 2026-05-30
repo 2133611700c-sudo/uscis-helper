@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 58b: Golden PDF + visual protocol for birth pilot (branch official-docs)
+
+Playbook step 8 / Prompt 9 (pilot doc only). `birthCertificate.goldenVisual.test.ts` (NEW, 4 tests + 1 todo) + generated visual artifact `docs/reports/artifacts/birth_certificate.pilot.{pdf,png}` (synthetic, no PII) + `docs/reports/GOLDEN_PDF_PROTOCOL_birth.md`.
+
+- **Machine checks PASS:** required English labels present; forbidden labels (`Middle Name`/`Police`) absent; overflow-length name survives without silent drop; missing field → honest `[enter from document]` placeholder, not certifiable, no fabricated parent.
+- **🔴 BLOCKER found by zero-trust visual pass (machine tests missed it):** `renderOfficialTranslation` `safe()` = `replace(/[^\x00-\xFF]/g,'')` silently strips all chars > U+00FF, dropping Cyrillic series letters — `I-АМ 000001` renders as `I- 000001`. Silent data loss. Fix = KMU-55 transliterate series letters upstream before render. Tracked as `it.todo`. Proves readback ≠ visual approval.
+- 🟠 Also flagged: empty translator address line (wizard gap), UNZR/RNOKPP shown on a pre-2019 era doc (era-gating gap).
+- **birth pilot NOT visually approved** until blocker #1 fixed. Tests: 1728 pass +1 skip +1 todo; tsc 0.
+
 ## 2026-05-29 — Session 58: Deterministic document-platform coverage generator (branch official-docs)
 
 Playbook step 5 / Prompt 5. `scripts/document-platform-coverage.mjs` (NEW) derives the coverage matrix from the repo — schemas, mappings, bureau registry, live-E2E fixtures, source ledger — so the matrix can never be a hand-written optimistic claim again.
