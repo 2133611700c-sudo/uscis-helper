@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 67 (2026-05-30) — Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
+- `INVENTORY` `docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full map: dictionaries (canonical knowledge vs parallel apps/web), functions (who resolves what), agents (ADR roles), documents (8 modules, all draft except passportBooklet), dependency map (TWO brains: engine→registry, live modules→parallel glossary), and a phased P1–P5 consolidation plan.
+- `P1 DONE` Deleted the byte-identical duplicate `apps/web/.../glossary/civil_registry_terms.json` — proven DEAD data (no import, no dynamic loader; canonical resolution is knowledge `translateCivilRegistryTerm`). Module tests 498 pass, full web pass, tsc 0, content-guard 0.
+- `NEXT` P2 agency JSON→registry; P3 glossaryLoader→registry; P4 dictionary.ts→registry; P5 single resolver.
 ## Session 69 (2026-05-30) — Live-fix: session isolation + garbage guard (branch fix/live-session-isolation)
 - `FIXED(CRITICAL)` Garbage guard `packages/knowledge/garbageGuard.ts` (shared SoT) rejects label-as-value/`„ Пріз`/punctuation/too-short. Wired into Translation (extract→empty+review) AND TPS (merge + localStorage hydration). Rotated booklet now → honest "введите вручную", not garbage. `garbageGuard.test.ts` 4/4.
 - `FIXED(CRITICAL)` Translation session isolation (restore only on `?paid=1`). Smoking gun: `Шуляк/Сергій/Проскурів` NOT in code → restored stale sessionStorage. `sessionIsolation.test.ts` 2/2. Report `docs/reports/LIVE_BOOKLET_RECOGNITION_FAILURE_ROOT_CAUSE.md`.
