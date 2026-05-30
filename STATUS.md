@@ -775,3 +775,5 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 ## official-docs — all 5 civil-status schemas under Field Contract (2238 pass)
 
 ## official-docs — КАТОТТГ official source identified (data.gov.ua/Мінрегіон); direct DL 403, owner byte-verify pending
+
+## official-docs — Agent Document Rules constitution added
