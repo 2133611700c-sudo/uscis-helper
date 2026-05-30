@@ -44,3 +44,16 @@ export {
   DOCUMENT_TYPES,
 } from './dictionary';
 export type { AuthorityEntry, GeoCorrection, FieldLabel, DocumentTypeEntry } from './dictionary';
+
+// D-GLOSSARY — unified Glossary Registry (G1/G2). Single source of truth with
+// provenance + era-gating. Runtime-safe (no fs; reads the generated rows).
+export {
+  lookupRegistry, lookupAuthority, lookupSettlement, normalizeSettlementType,
+  normalizeOblastRegistry, translateCivilRegistryTerm, translatePassportAuthority,
+  resolveAbbreviation, registryCatalog,
+} from './registry/registryLookup';
+export type { RegistryCategory, LookupResult, LookupOptions, RegistryRow } from './registry/registry.schema';
+
+// MRZ (passport machine-readable zone) — controlling Latin name/number/DOB.
+export { parseMrz, checkDigit, findMrzLines } from './mrz';
+export type { MrzResult } from './mrz';

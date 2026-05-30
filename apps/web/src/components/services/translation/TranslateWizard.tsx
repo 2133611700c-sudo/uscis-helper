@@ -143,7 +143,7 @@ const T = {
       'Официальный PDF-перевод с сертификатом',
       'Сертификация по 8 CFR §103.2(b)(3) — для подачи в USCIS',
       'Цифровая подпись прямо в браузере',
-      'PDF отправим на email (и можно скачать сразу)',
+      'PDF можно скачать сразу',
       'Бесплатные исправления в течение 7 дней',
     ],
     s6_cta: '💳 Оплатить $14.99',
@@ -154,7 +154,7 @@ const T = {
     s7_title: 'Готово!',
     s7_subtitle: 'Ваш официальный перевод оформлен и готов к подаче в USCIS',
     s7_pdf_title: '📄 Ваш перевод',
-    s7_pdf_sub: 'Файл также отправлен на ваш email',
+    s7_pdf_sub: 'Скачайте файл ниже',
     s7_download: '⬇️ Скачать PDF',
     s7_downloading: '⏳ Готовим PDF…',
     s7_downloaded: '✅ PDF скачан!',
@@ -163,6 +163,7 @@ const T = {
     s7_sig_clear: 'Очистить',
     s7_sig_save: 'Подтвердить подпись ✓',
     s7_sig_saved: '✅ Подпись сохранена',
+    s7_sign_first: '✏️ Сначала поставьте подпись ниже — без неё перевод нельзя сертифицировать.',
     s7_next_title: '📋 Что делать дальше?',
     s7_next_steps: [
       'Распечатайте PDF (цветной принтер не нужен)',
@@ -244,7 +245,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
       'Official PDF translation with certification',
       'Certification per 8 CFR §103.2(b)(3) — formatted for USCIS submission',
       'Digital signature right in your browser',
-      'PDF sent to your email (and downloadable immediately)',
+      'Download your PDF immediately',
       'Free corrections within 7 days',
     ],
     s6_cta: '💳 Pay $14.99',
@@ -254,7 +255,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s7_title: 'Done!',
     s7_subtitle: 'Your official translation is prepared and ready to file with USCIS',
     s7_pdf_title: '📄 Your translation',
-    s7_pdf_sub: 'The file was also sent to your email',
+    s7_pdf_sub: 'Download your file below',
     s7_download: '⬇️ Download PDF',
     s7_downloading: '⏳ Preparing PDF…',
     s7_downloaded: '✅ PDF downloaded!',
@@ -263,6 +264,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s7_sig_clear: 'Clear',
     s7_sig_save: 'Confirm signature ✓',
     s7_sig_saved: '✅ Signature saved',
+    s7_sign_first: '✏️ Sign below first — a translation cannot be certified without your signature.',
     s7_next_title: '📋 What next?',
     s7_next_steps: [
       'Print the PDF (color printer not required)',
@@ -822,6 +824,32 @@ export function TranslateWizard() {
         try { sessionStorage.setItem('tw:cs', cs) } catch { /* */ }
       }
       setScreen(7)
+
+      // #5: a MANUAL-review document was PAID but no auto-fields were extracted —
+      // create a staff ticket so the paid work is actually queued (was: payment
+      // taken, no ticket). Read the persisted draft (reliable across the Stripe
+      // round-trip), idempotent per checkout id, fire-and-forget — never blocks success.
+      try {
+        if (cs && !sessionStorage.getItem(`tw:ticket:${cs}`)) {
+          const raw = sessionStorage.getItem(DRAFT_KEY)
+          const draft = raw ? (JSON.parse(raw) as DraftState) : null
+          const docTypeId = draft?.selectedDocType ?? selectedDocType
+          const fieldsLen = Array.isArray(draft?.extractedFields) ? draft!.extractedFields.length : extractedFields.length
+          if (fieldsLen === 0 && docTypeId) {
+            sessionStorage.setItem(`tw:ticket:${cs}`, '1')
+            void fetch('/api/translation/manual-review', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: cs,
+                doc_type: DOC_TYPES.find((d) => d.id === docTypeId)?.registryId ?? docTypeId ?? 'other',
+                source_lang: locale === 'uk' ? 'uk' : locale === 'en' ? 'en' : 'ru',
+                reason: 'manual_document_type',
+                confidence: 0,
+              }),
+            }).catch(() => { try { sessionStorage.removeItem(`tw:ticket:${cs}`) } catch { /* */ } })
+          }
+        }
+      } catch { /* never block the success screen */ }
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href)
         url.searchParams.delete('paid'); url.searchParams.delete('plan'); url.searchParams.delete('cs')
@@ -1067,6 +1095,10 @@ export function TranslateWizard() {
   // ── Real PDF generation (replaces simulateDownload) ──
   const handleDownloadPdf = useCallback(async () => {
     if (pdfLoading) return
+    // #16 gate: the translation draft must be SIGNED before download — never
+    // generate/download without a real on-screen signature (drawn AND confirmed).
+    // No silent manual_wet_signature bypass.
+    if (!sigSaved || !hasDrawnRef.current) return
     setPdfLoading(true)
     try {
       const c = canvasRef.current
@@ -1084,7 +1116,9 @@ export function TranslateWizard() {
         source_zone: 'identity_page',
         language_layer: 'cyrillic',
         confidence: f.confidence,
-        review_required: true,
+        // Use the engine's REAL per-field flag (was hardcoded true → alert-fatigue,
+        // hid which fields are actually unverified). Empty value also needs attention.
+        review_required: Boolean((f as any).review_required) || !f.value,
         passes: ['gemini_vision_read'],
         ocr_ids: [],
       }))
@@ -1130,7 +1164,7 @@ export function TranslateWizard() {
     } finally {
       setPdfLoading(false)
     }
-  }, [pdfLoading, extractedFields, stripeCheckoutId, locale, selectedDocType])
+  }, [pdfLoading, sigSaved, extractedFields, stripeCheckoutId, locale, selectedDocType])
 
   const resetAll = useCallback(() => {
     setSelectedDocType(null)
@@ -1533,11 +1567,14 @@ export function TranslateWizard() {
               type="button"
               className="tw-btn-primary tw-btn-green"
               onClick={handleDownloadPdf}
-              disabled={pdfLoading}
+              disabled={pdfLoading || !sigSaved}
               style={{ marginBottom: 0 }}
             >
               {pdfLoading ? t.s7_downloading : pdfDownloaded ? t.s7_downloaded : t.s7_download}
             </button>
+            {!sigSaved && (
+              <div style={{ fontSize: 13, color: 'var(--gold)', marginTop: 10, fontWeight: 600 }}>{t.s7_sign_first}</div>
+            )}
           </div>
           <div className="tw-card">
             <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14 }}>{t.s7_sig_title}</div>
@@ -1549,7 +1586,7 @@ export function TranslateWizard() {
               </button>
               <button
                 type="button"
-                onClick={() => setSigSaved(true)}
+                onClick={() => { if (hasDrawnRef.current) setSigSaved(true) }}
                 className="tw-btn-primary"
                 style={{ flex: 2, background: sigSaved ? 'var(--green)' : 'var(--gold)', color: sigSaved ? '#fff' : 'var(--navy)' }}
               >

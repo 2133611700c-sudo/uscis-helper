@@ -1,3 +1,35 @@
+# HANDOFF — Session 57 (2026-05-29)
+
+## Session 57 — Paid Gemini + model bench + recognition audit + D-GLOSSARY G1/G2 (branch feat/c3-presence, NOT deployed)
+
+**Done:**
+- Paid Gemini wired; prod key var `GEMINI_API_KEY_PAY` (code reads it first). Default model → `gemini-3.1-pro-preview` (env `GEMINI_MODEL`, fallback 3.5-flash); timeout 45s; maxOutputTokens 8192; `vision-extract` maxDuration=60.
+- Live bench (docs/reports/: GEMINI_MODEL_BENCH, GEMINI_ENSEMBLE_BENCH, GPT_BENCH, TRANSKRIBUS_LIVE_TEST): 3.1-pro=20/22 & only handwriting reader (8/9); 2.5-pro fabricates (1/9); GPT-5.5/4o collapse (1/9); DeepSeek no vision; Transkribus blocked. Re-runnable scripts in apps/web/scripts/*.mjs.
+- presence.ts fix: handwriting reads kept+review instead of discarded by the GV presence gate.
+- 9-agent architecture audit → docs/reports/RECOGNITION_TRANSLATION_AUDIT_2026-05-29.md (delivery layer is the danger; 6 critical gaps + brick plan B1–B12).
+- **D-GLOSSARY G1** packages/knowledge/src/registry/ (schema/csv/loader/index/lookup/generated/tests) + **G2** wired into engine/orchestrator.ts::normalize with documentDate (presence.ts). docs/architecture/departments/D-GLOSSARY.md.
+
+**Evidence:** web 2182 pass +1 skip, 0 type errors (web+knowledge); registry 11/11; glossary-wiring 4/4.
+
+**P0 DONE:** honest-PDF — pdf.ts::planTranslationRows stops silent-drop of empty fields (visible MISSING + certifiable=false), unit-tested.
+**G4 (partial) DONE:** brainHealth().glossary self-describes the registry (categories/total/provenance_complete) + guard test.
+**Wizard #2a+#4 DONE:** real per-field review_required propagated (TranslateWizard.tsx ~1087, no more hardcoded true); false "sent to email" copy removed (ru+en).
+**#3 MRZ DONE:** knowledge/mrz.ts TD3 parser (check digits, 4 tests) + presence.ts override for ua_international_passport (controlling Latin beats KMU-55).
+**B3 DONE:** engine/preprocess.ts (sharp + quality-gate) wired into presence.ts before Gemini+GV. Next: #5 manual-ticket, #2b download gate, G3 data.
+**#5 DONE:** wizard POSTs /api/translation/manual-review on paid manual docs (idempotent, draft-based). Next: #2b download gate, G3 data, EAD/Re-Parole wiring.
+**#7/#8/#9 DONE:** date calendar validation, sex tri-state (no Male default), number homoglyph guard (field-guards.test.ts). Next: #2b download gate, G3 data, EAD/Re-Parole route wiring, P4 renderers.
+**#12 DONE:** vision-extract degraded-fallback flags degraded + forces review (no silent guard-less path).
+**G3 (partial) DONE:** all 24 oblasts + major cities in registry.csv (49 rows). Next: full KOATUU import pipeline, EAD/Re-Parole route wiring, #2b/#16 download+signature gate, official renderers (P4).
+**#10 DONE:** DeepSeek proseTranslator wired into vision-extract central-brain path (free text translated, not dropped).
+**#16 DONE:** download gated on real signature (drawn+confirmed); no silent wet-sign bypass.
+**Preview DONE:** PR #26 open, pdf-readback E2E test + RELEASE_CHECKLIST committed. Next: owner runs Preview E2E → merge → prod smoke. Then bureau-PDF renderers, spatial-GV, KOATUU.
+**CI:** fixed content-guard Rule 4 (reworded #16 comment). Watching PR #26 re-run.
+**#21 DONE:** word-aware isPresent (presence-isPresent.test.ts). Next: bureau-PDF behind flag (owner decision on format), #15 print/hw routing, full KOATUU.
+**Live E2E DONE:** gated pipeline.live.e2e (LIVE_E2E=1) proved real chain; caught+fixed lookupSettlement bug (city+oblast in one field). Next after merge: koatuu.
+**Live E2E extended:** 3 docs (military+passport+birth) all PASS live; no new bugs.
+Next: #2b hard Download gate (block until no MISSING/unconfirmed-review) + optional email collection; #5 manual-review ticket (wizard POSTs /api/translation/manual-review on manual path — currently takes payment without a ticket); G3 (full KOATUU/civil-registry into registry.csv); B3 sharp preprocessing; EAD/Re-Parole route wiring.
+
+**Exact next task:** gap #2 (TranslateWizard.tsx:1087 stop hardcoding review_required=true; propagate real per-field flag + block generate/download until missing/review resolved), then G3 (full KOATUU + civil_registry into registry.csv), G4 (registryCatalog on brain health + validateRegistry CI gate), MRZ/controlling-Latin (#3), wire EAD/Re-Parole routes to analyze(). On Vercel: confirm `GEMINI_API_KEY_PAY` + deploy. Rotate the OpenAI key (was pasted in chat).
 # HANDOFF — Session 57b (2026-05-29)
 
 ## Session 57b — Accept ADR-015 separately (branch `docs/accept-adr-015`, off main)
@@ -911,3 +943,4 @@ _(Session 56 cont.8: preview deploy of feat/central-brain — central-brain/heal
 _(Session 56 cont.9: deployed feat/central-brain to PREVIEW (prod untouched); verified central-brain consensus LIVE on preview (provider=central-brain:consensus, guard works). Found+fixed D5 data blocker: wizard dropped guarded empty fields; now keeps review_required fields as editable rows. Prod flip deferred until wizard review UX browser-verified — my engineering call.)_
 _(Session 56 cont.10: MERGED to main → prod deploy of Central Brain (code live on messenginfo.com, /api/central-brain/health 200). Activating CENTRAL_BRAIN_TRANSLATION=on in production — translation now via 2-reader consensus (Gemini+Google Vision), anti-fabrication guard, legacy fallback on error. Revert = flag off.)_
 _(Session 56 cont.11: D5 — review screen now shows the uploaded document image (responsive, web+mobile) so the user fills empty consensus fields against their original. On branch feat/d5-review-image; build OK; verifying web/mobile before prod merge.)_
+_(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real docs. Findings: GPT-4o fabricates handwriting (Курочинський Олег @0.95); Google Vision OCR contains all printed values; C4 3-way best (4/5); my earlier C3/6-8 numbers were UNRELIABLE (free-tier Gemini 20/day quota exhausted → silent empties). FIXED: geminiReader now surfaces 429 (was masquerading as cant-read). Wired C3 presence-confirm + recognize-injection (42 tests, 0 tsc) on branch feat/c3-presence — NOT deployed, runtime-unverified pending quota reset. #1 BLOCKER: prod runs on exhausted free key → needs PAID Gemini/Vertex billing.)_

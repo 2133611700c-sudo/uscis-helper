@@ -5,7 +5,16 @@ export const MIGRATION_STATE: Record<string, { migrated: boolean; step: number; 
   ead: { migrated: true, step: 4, note: 'MIGRATED (intake + rules-based I-765 category) — gen legacy' },
   tps: { migrated: false, step: 5, note: 'has its own brain; move into common wrapper LAST, behavior-preserving' },
 }
+import { registryCatalog } from '@uscis-helper/knowledge'
+
 export function brainHealth() {
+  const glossary = registryCatalog()
   return { ok: true, spine: 'apps/web/src/lib/engine (29 tests)', products: MIGRATION_STATE,
-    migrated_count: Object.values(MIGRATION_STATE).filter((p) => p.migrated).length }
+    migrated_count: Object.values(MIGRATION_STATE).filter((p) => p.migrated).length,
+    // D-GLOSSARY self-description — "the brain knows where everything is"
+    glossary: {
+      categories: glossary,
+      total: glossary.reduce((a, c) => a + c.count, 0),
+      provenance_complete: glossary.every((c) => c.withSource === c.count),
+    } }
 }
