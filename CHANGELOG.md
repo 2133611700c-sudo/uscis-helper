@@ -3,6 +3,9 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 67: Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
+
+`docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full inventory + responsibility map + phased P1–P5 consolidation plan (dictionaries/functions/agents/documents; two-brain split: engine→registry vs live modules→parallel glossary). P1 DONE: deleted the byte-identical duplicate glossary/civil_registry_terms.json (proven dead — declarative metadata only, canonical resolution via knowledge translateCivilRegistryTerm). Module tests 498 pass, full web pass, tsc 0, content-guard 0.
 ## 2026-05-30 — Session 69b: garbage guard wired (both wizards)
 
 Added shared garbageGuard (knowledge): rejects label-as-value/`„ Пріз`/punctuation/too-short. Wired into Translation extract (garbage→empty+review) and TPS (field-merge drop + localStorage hydration drop). Combined with the Translation session-isolation fix, the rotated booklet now yields honest manual-entry instead of garbage/stale data. garbageGuard 4/4, sessionIsolation 2/2, full web pass, tsc 0, guard 0.
