@@ -2,6 +2,27 @@
   "_rule": "Assume an official source existed for every doc type & period. Not found on first pass = SOURCE_SEARCH_INCOMPLETE, never 'no source'. Keep current + historical editions. Renderer allowed when source basis documented; if no visual blank, TEMPLATE_BASIS=official_description_not_visual_blank. Names=KMU-55 (never translated); numbers/dates/series locked; seals=[bracketed]; no 'certified' claim.",
   "access_date": "2026-05-29",
   "status_taxonomy": ["CURRENT_SOURCE_FOUND","HISTORICAL_SOURCE_FOUND","OFFICIAL_DESCRIPTION_FOUND","ARCHIVE_SEARCH_NEEDED","SOURCE_SEARCH_INCOMPLETE"],
+  "validation_protocol": {
+    "rule": "A source is OFFICIAL_VERIFIED only if a downloaded /print page's <title> + document number + adoption date match the requested act. ON ANY MISMATCH → status=INVALID, do NOT use, even if the URL looks right.",
+    "known_risk": "zakon.rada.gov.ua serves a stale CDN page of a DIFFERENT act on first fetch (observed repeatedly 2026-05-29 — often returned КМУ №152). MANDATORY: re-fetch and verify <title> before trusting any extraction.",
+    "fetch_recipe": "curl -sL -A '<browser UA>' 'https://zakon.rada.gov.ua/laws/show/<id>/print' ; strip HTML ; verify title."
+  },
+  "official_verification_2026_05_29": {
+    "verified_official_print": {
+      "ua_kmu_1025_2010": { "status": "OFFICIAL_VERIFIED", "title_ok": true, "scope": ["birth","marriage","divorce","death","name_change"], "blank": "аркуш 180×250мм; кольори: народження=блакитний, смерть=темно-сірий, шлюб=рожевий, розірвання=сірий, зміна імені=жовтий; текст укр.", "post_2019": "УНЗР+РНОКПП added on birth blank (ред. КМУ №691, 10.07.2019)" },
+      "ua_kmu_152_2014": { "status": "OFFICIAL_VERIFIED", "doc": "foreign passport, book 88×125мм, bilingual data-page labels + MRZ" },
+      "ua_kmu_302_2015": { "status": "OFFICIAL_VERIFIED", "doc": "internal ID card, ID-1 53.98×85.6мм, bilingual zone labels" }
+    },
+    "INVALID_URLs_need_resourcing": {
+      "military_id": "z0502-17 → Фонд держмайна (WRONG act). Need correct official source for військовий квиток.",
+      "education_diploma": "z0156-21 → securities commission (WRONG act). Need correct МОН act URL.",
+      "pension_certificate": "z1426-17 → МОН subjects list (WRONG act). Need correct ПФУ act URL.",
+      "kmu_353_booklet": "act officially states 'Додаток не наводиться' — booklet blank NOT published here; use ВРУ №2503-XII / МВС №456.",
+      "kmu_1367_2002 / vru_2503_xii": "body JS-rendered, not extracted via /print; need DOC export or alternate official endpoint."
+    },
+    "geography_source_status": { "katottg_layer": "UNOFFICIAL_MIRROR — current 458-city layer was generated from a GitHub mirror (kaminarifox/katottg-json), NOT the official mtu.gov.ua KATOTTH file. MUST re-source from mtu.gov.ua before treating as official." },
+    "series_letters_by_oblast_kmu1025": { "_note": "official series letter-pair per oblast (Додаток 'СЕРІЇ БЛАНКІВ', КМУ №1025) — verifies a certificate's oblast from its series; III-АМ confirms Вінницька", "АП":"Автономна Республіка Крим","АМ":"Вінницька","ЕГ":"Волинська","КИ":"Дніпропетровська","НО":"Донецька","ТП":"Житомирська","ФМ":"Закарпатська","ЖС":"Запорізька","НМ":"Івано-Франківська","ОК":"Київська","ОЛ":"Кіровоградська","ЕД":"Луганська","СГ":"Львівська","ФП":"Миколаївська","ЖД":"Одеська","КЕ":"Полтавська","ГЮ":"Рівненська","БП":"Сумська","ИД":"Тернопільська","ВЛ":"Харківська","КГ":"Херсонська","БВ":"Хмельницька","СР":"Черкаська","МИ":"Чернівецька","ЕЛ":"Чернігівська","БК":"м. Київ","АС":"м. Севастополь" }
+  },
   "documents": [
     {
       "doc_type": "civil_status_birth", "authority": "КМУ / Мінюст",
