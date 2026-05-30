@@ -16,6 +16,7 @@
 
 import type { OcrResult } from '@/lib/ocr/types'
 import type { TpsExtractedField, TpsModuleResult } from '@/lib/tps/types'
+import { formatLatinName } from '@uscis-helper/knowledge'
 
 const EAD_MODULE = 'ead' as const
 
@@ -152,7 +153,7 @@ export function runEadModule(ocr: OcrResult, opts: EadOptions): TpsModuleResult 
       ...base,
       field: 'family_name',
       raw_value: surname.value.trim(),
-      normalized_value: surname.value.trim().charAt(0) + surname.value.trim().slice(1).toLowerCase(),
+      normalized_value: formatLatinName(surname.value),
       source_zone: 'ead_surname',
       bbox: surname.bbox,
       confidence: surname.confidence,
@@ -174,7 +175,7 @@ export function runEadModule(ocr: OcrResult, opts: EadOptions): TpsModuleResult 
       ...base,
       field: 'given_name',
       raw_value: given.value.trim(),
-      normalized_value: given.value.trim().charAt(0) + given.value.trim().slice(1).toLowerCase(),
+      normalized_value: formatLatinName(given.value),
       source_zone: 'ead_given_name',
       bbox: given.bbox,
       confidence: given.confidence,

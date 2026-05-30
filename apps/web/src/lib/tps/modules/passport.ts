@@ -31,6 +31,7 @@ import type {
   TpsDocType,
 } from '@/lib/tps/types'
 import { parseTd3 } from '@/lib/translation/identity/mrzParser'
+import { formatLatinName } from '@uscis-helper/knowledge'
 
 const PASSPORT_MODULE: TpsDocType = 'passport'
 
@@ -257,7 +258,7 @@ export function runPassportModule(
       ...baseProvenance,
       field: 'family_name',
       raw_value: parsed.surname,
-      normalized_value: parsed.surname.charAt(0).toUpperCase() + parsed.surname.slice(1).toLowerCase(),
+      normalized_value: formatLatinName(parsed.surname),
       source_zone: 'mrz_line_1_surname',
       bbox: located.line1.bbox,
       confidence: located.line1.confidence ?? null,
@@ -272,7 +273,7 @@ export function runPassportModule(
       ...baseProvenance,
       field: 'given_name',
       raw_value: parsed.givenNames,
-      normalized_value: parsed.givenNames.split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' '),
+      normalized_value: formatLatinName(parsed.givenNames),
       source_zone: 'mrz_line_1_given',
       bbox: located.line1.bbox,
       confidence: located.line1.confidence ?? null,
