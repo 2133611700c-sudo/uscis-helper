@@ -4,6 +4,7 @@
  * Field order/groups mirror the official state blank.
  */
 import type { OfficialFormSchema } from './types'
+import { applyCivilContract } from './contract'
 
 const name = (key: string, uk: string, en: string, group: string, required = true) => ({
   key, sourceLabelUk: uk, sourceLabelEn: en, required, fieldGroup: group,
@@ -11,7 +12,7 @@ const name = (key: string, uk: string, en: string, group: string, required = tru
   lockedEntity: true, evidenceRequired: true,
 })
 
-export const marriageCertificateSchema: OfficialFormSchema = {
+export const marriageCertificateSchema: OfficialFormSchema = applyCivilContract({
   docType: 'ua_marriage_certificate',
   titleEn: 'MARRIAGE CERTIFICATE',
   officialSource: {
@@ -47,4 +48,4 @@ export const marriageCertificateSchema: OfficialFormSchema = {
     { key: 'date_of_issue', sourceLabelUk: 'Дата видачі', sourceLabelEn: 'Date of issue', required: false, fieldGroup: 'issuing', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
   ],
   layoutSections: ['header', 'personFields', 'actRecord', 'issuingAuthority', 'seals', 'signatures', 'certification'],
-}
+})
