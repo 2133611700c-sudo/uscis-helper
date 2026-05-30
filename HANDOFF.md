@@ -26,6 +26,7 @@
 **CI:** fixed content-guard Rule 4 (reworded #16 comment). Watching PR #26 re-run.
 **#21 DONE:** word-aware isPresent (presence-isPresent.test.ts). Next: bureau-PDF behind flag (owner decision on format), #15 print/hw routing, full KOATUU.
 **Live E2E DONE:** gated pipeline.live.e2e (LIVE_E2E=1) proved real chain; caught+fixed lookupSettlement bug (city+oblast in one field). Next after merge: koatuu.
+**Live E2E extended:** 3 docs (military+passport+birth) all PASS live; no new bugs.
 Next: #2b hard Download gate (block until no MISSING/unconfirmed-review) + optional email collection; #5 manual-review ticket (wizard POSTs /api/translation/manual-review on manual path — currently takes payment without a ticket); G3 (full KOATUU/civil-registry into registry.csv); B3 sharp preprocessing; EAD/Re-Parole route wiring.
 
 **Exact next task:** gap #2 (TranslateWizard.tsx:1087 stop hardcoding review_required=true; propagate real per-field flag + block generate/download until missing/review resolved), then G3 (full KOATUU + civil_registry into registry.csv), G4 (registryCatalog on brain health + validateRegistry CI gate), MRZ/controlling-Latin (#3), wire EAD/Re-Parole routes to analyze(). On Vercel: confirm `GEMINI_API_KEY_PAY` + deploy. Rotate the OpenAI key (was pasted in chat).
