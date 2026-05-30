@@ -7,6 +7,7 @@
  */
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { marriageCertificateSchema as SCHEMA } from '../../../forms/ukraine/schemas/marriage-certificate.schema'
+import { pdfSafe } from '../../renderValue'
 
 export interface FieldValue { value: string; review: boolean; canRead: boolean }
 const SECTION: Record<string, { title: string; groups: string[] }> = {
@@ -15,7 +16,8 @@ const SECTION: Record<string, { title: string; groups: string[] }> = {
   marriage: { title: 'MARRIAGE', groups: ['marriage', 'actRecord'] },
   issuing: { title: 'STATE REGISTRATION', groups: ['issuing'] },
 }
-const safe = (t: string) => (t ?? '').replace(/[^\x00-\xFF]/g, '')
+// PDF-safe rendering with NO silent data loss (was: silent strip). See renderValue.ts.
+const safe = pdfSafe
 
 export async function renderMarriageCertificateTranslation(
   values: Record<string, FieldValue>,
