@@ -54,9 +54,15 @@ export function geminiReader(opts: { apiKey: string; model?: string; docTypeEn: 
         method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: buildPrompt(opts.docTypeEn, fields) }, { inline_data: { mime_type: mime, data: image.toString('base64') } }] }],
-          generationConfig: { temperature: 0, response_mime_type: 'application/json' },
+          generationConfig: { temperature: 0, response_mime_type: 'application/json', maxOutputTokens: 8192 },
         }),
       })
+      // SURFACE quota/HTTP errors instead of silently returning empty fields
+      // (free-tier 429 previously masqueraded as "can_read:false" — 4-agent bench 2026-05-29).
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        throw new Error(`gemini ${res.status}${res.status === 429 ? ' QUOTA_EXCEEDED' : ''}: ${body.slice(0, 160)}`)
+      }
       const j = await res.json()
       const txt = j?.candidates?.[0]?.content?.parts?.[0]?.text
       return coerce(txt ? JSON.parse(txt) : {}, fields)
@@ -110,6 +116,21 @@ export function openaiReader(opts: { apiKey: string; model?: string; docTypeEn: 
     } finally { clearTimeout(t) }
   }
   return { name: `openai:${model}`, read }
+}
+
+/** Google Cloud Vision raw full-text OCR — used as a PRESENCE CONFIRMER (does a
+ *  value the LLM read actually appear on the page?), not as a field mapper. */
+export async function googleVisionFullText(image: Buffer, apiKey: string, timeoutMs = 25000): Promise<string> {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+      method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ requests: [{ image: { content: image.toString('base64') }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }], imageContext: { languageHints: ['uk', 'ru', 'en'] } }] }),
+    })
+    const j = await res.json()
+    return j?.responses?.[0]?.fullTextAnnotation?.text ?? ''
+  } catch { return '' } finally { clearTimeout(t) }
 }
 
 /** Google Cloud Vision (DOCUMENT_TEXT_DETECTION) — a structurally DIFFERENT reader

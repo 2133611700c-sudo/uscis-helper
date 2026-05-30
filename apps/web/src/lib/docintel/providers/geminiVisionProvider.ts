@@ -14,7 +14,20 @@
 
 import type { DocTypeSpec, VisionFieldRead, VisionProvider, VisionReadResult } from '../types'
 
-const MODEL_FALLBACK = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'] as const
+// Model order is env-driven so prod can flip models WITHOUT a code redeploy.
+// 2026-05-29 ensemble bench (docs/reports/GEMINI_ENSEMBLE_BENCH.md), 3 docs incl. a
+// handwritten 1986 UkrSSR birth cert, scored vs ground truth:
+//   gemini-3.1-pro-preview 19/22 (best) · 3.5-flash 16/22 · 2.5-pro 13/22.
+//   2.5-pro CATASTROPHICALLY FABRICATED a fake identity on the handwritten cert
+//   ("Кудрявцев Олег" instead of "REDACTED_NAME Сергей") → 1/9 there. So 2.5-pro is
+//   NOT a safe default. 3.1-pro-preview leads; flash is the fast fallback.
+//   The robust answer is the 3-model consensus (E4: 19/22, and it OUTVOTES the
+//   2.5-pro fabrication) — see report. NOTE: 3.1-pro is a PREVIEW model.
+// pro+thinking on a large scan runs ~20-40s → keep timeoutMs high + Vercel maxDuration.
+function modelFallback(): string[] {
+  const primary = process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview'
+  return [...new Set([primary, 'gemini-3.5-flash', 'gemini-2.5-flash'])]
+}
 
 function buildPrompt(spec: DocTypeSpec): string {
   const lines = spec.fields.map((f) => {
@@ -60,7 +73,7 @@ async function callGemini(
         signal: ctrl.signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: imageB64 } }] }],
-          generationConfig: { temperature: 0, response_mime_type: 'application/json' },
+          generationConfig: { temperature: 0, response_mime_type: 'application/json', maxOutputTokens: 8192 },
         }),
       },
     )
@@ -81,17 +94,21 @@ export class GeminiVisionProvider implements VisionProvider {
     opts: { timeoutMs?: number; attemptsPerModel?: number } = {},
   ): Promise<VisionReadResult> {
     const t0 = Date.now()
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'GEMINI_API_KEY not set' }
+    // Prod (Vercel) stores the PAID key as GEMINI_API_KEY_PAY; fall back to the
+    // plain name for local/dev. (2026-05-29: prod var is GEMINI_API_KEY_PAY.)
+    const apiKey = process.env.GEMINI_API_KEY_PAY || process.env.GEMINI_API_KEY
+    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'GEMINI_API_KEY(_PAY) not set' }
 
-    const timeoutMs = opts.timeoutMs ?? 8000
+    // 2.5-pro + thinking on a full-page scan runs ~20-40s; the old 8s default
+    // would abort it every time. Default high; callers can still override.
+    const timeoutMs = opts.timeoutMs ?? 45000
     const attempts = opts.attemptsPerModel ?? 2
     const prompt = buildPrompt(spec)
     const imageB64 = imageBuffer.toString('base64')
     const allowed = new Set(spec.fields.map((f) => f.field))
     let lastErr = 'unknown'
 
-    for (const model of MODEL_FALLBACK) {
+    for (const model of modelFallback()) {
       for (let a = 0; a < attempts; a++) {
         try {
           const { ok, status, json } = await callGemini(model, apiKey, imageB64, mimeType, prompt, timeoutMs)
