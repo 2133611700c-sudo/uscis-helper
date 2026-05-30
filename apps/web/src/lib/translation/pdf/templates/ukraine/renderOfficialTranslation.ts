@@ -1,8 +1,10 @@
 /** Generic D6 renderer for ANY official UA schema (marriage/birth/divorce/death/...).
  *  Sections from schema.layoutSections; labels from sourceLabelEn; uncertain→blank/[CONFIRM];
- *  seals=[bracketed]; English PDF, non-WinAnsi stripped. */
+ *  seals=[bracketed]; English PDF. Non-WinAnsi is KMU-55 transliterated, then visibly
+ *  marked — NEVER silently stripped (see renderValue.ts). */
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import type { OfficialFormSchema } from '../../../forms/ukraine/schemas/types'
+import { pdfSafe } from '../../renderValue'
 
 export interface FieldValue { value: string; review: boolean; canRead: boolean }
 const GROUP_TITLE: Record<string, string> = {
@@ -10,7 +12,9 @@ const GROUP_TITLE: Record<string, string> = {
   person: 'PERSON', marriage: 'MARRIAGE', dissolution: 'DISSOLUTION', actRecord: 'ACT RECORD',
   issuing: 'STATE REGISTRATION',
 }
-const safe = (t: string) => (t ?? '').replace(/[^\x00-\xFF]/g, '')
+// PDF-safe rendering with NO silent data loss: KMU-55 transliterate Cyrillic,
+// map typographic symbols, mark anything still unrenderable. (was: silent strip)
+const safe = pdfSafe
 
 export async function renderOfficialTranslation(
   schema: OfficialFormSchema, values: Record<string, FieldValue>,

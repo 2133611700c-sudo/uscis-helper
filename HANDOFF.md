@@ -1,3 +1,25 @@
+# HANDOFF — Session 58c (2026-05-29)
+
+## Session 58c — FIX bureau-PDF Cyrillic silent-strip blocker (branch `official-docs`)
+
+Closed the blocker the visual pass found, strictly in scope (renderer/sanitisation only — no new doc types, BUREAU_PDF still default OFF, no Stripe/OCR/schema changes).
+
+**Fix:** `apps/web/src/lib/translation/pdf/renderValue.ts` (NEW). The old `safe()` did `replace(/[^\x00-\xFF]/g,'')` — silent deletion. New `pdfSafe()` / `renderValueForPdf()`:
+1. transliterate ONLY Cyrillic runs in place via KMU-55 (single source `@uscis-helper/knowledge` — no parallel dictionary), so `АМ`→`AM` while Latin/punctuation are untouched;
+2. map typographic symbols (`№`→`No.`, dashes, curly quotes);
+3. any still-unrenderable char → visible `[?]` marker, NEVER deleted.
+Renderer `renderOfficialTranslation` now uses it. `bureauTranslation` is field-aware: a value that needed transliteration / had unrenderable text is flagged `review` (so an un-glossaried Cyrillic agency name appears visibly AND is sent to human review).
+
+**Zero-trust caught my own regressions:** routing all strings through the name-transliterator first ate the apostrophe in `TRANSLATOR'S` and uppercased the act line (`КМУ` triggered the all-caps heuristic). Fixed by per-Cyrillic-run transliteration. Re-rendered PNG confirms `I-AM`, intact apostrophe, correct case.
+
+**Tests:** renderValue 5/5 (incl. `I-АМ № 428069`→`I-AM No. 428069`, KMU-55 name, CJK→`[?]`, no-empty-on-Cyrillic); birth goldenVisual series test (was `it.todo`, now real); full web 2253 pass +5 skip; tsc 0.
+
+**birth pilot verdict:** blocker #1 RESOLVED; still needs OWNER visual approval + signerAddress (P3) + UNZR/RNOKPP era-gate before `active`.
+
+**Exact next task (owner-gated):** owner reviews PNG + runs Preview E2E + merges #26/#27; then I rebase official-docs on main, re-run coverage generator (review_gate + КАТОТТГ should flip), and address P3 signerAddress. NO new document types until birth pilot passes.
+
+---
+
 # HANDOFF — Session 58b (2026-05-29)
 
 ## Session 58b — Golden PDF + visual protocol for the birth pilot (branch `official-docs`, playbook step 8 / Prompt 9)

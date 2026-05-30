@@ -3,6 +3,16 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 58c: FIX bureau-PDF Cyrillic silent-strip blocker (branch official-docs)
+
+Closed the data-loss blocker the visual pass found, strictly in scope (renderer/sanitisation path only).
+
+- **`apps/web/src/lib/translation/pdf/renderValue.ts` (NEW)** replaces the silent `safe()` = `replace(/[^\x00-\xFF]/g,'')`. `renderValueForPdf()`/`pdfSafe()`: (1) transliterate ONLY Cyrillic runs in place via KMU-55 (single source `@uscis-helper/knowledge` — no parallel dictionary), so `АМ`→`AM` and Latin/punctuation untouched; (2) typographic symbol map (`№`→`No.`, dashes, curly quotes); (3) any still-unrenderable char → visible `[?]` marker, never deleted. Returns `{transliterated, unrenderable}` flags.
+- **`renderOfficialTranslation.ts`** now uses `pdfSafe`. **`bureauTranslation.ts`** is field-aware: a value that needed transliteration or had unrenderable text is flagged `review` (un-glossaried Cyrillic agency → visible + human review).
+- **Self-introduced regressions caught by a 2nd visual pass and fixed:** routing all strings through the name-transliterator first dropped the apostrophe in `TRANSLATOR'S` and uppercased the act line (`КМУ` triggered the all-caps heuristic). Per-Cyrillic-run transliteration fixes both. Re-rendered `docs/reports/artifacts/birth_certificate.pilot.{pdf,png}` confirms `Series and No.: I-AM 000001 [CONFIRM]`, intact apostrophe, correct case.
+- **Tests:** `renderValue.test.ts` 5/5 (incl. `I-АМ № 428069`→`I-AM No. 428069`, KMU-55 name, CJK→`[?]`, no-empty-on-Cyrillic); birth goldenVisual series test (was `it.todo` → real); full web 2253 pass +5 skip; tsc 0.
+- Scope held: no new doc types, BUREAU_PDF default OFF, no Stripe/OCR/schema changes. birth blocker #1 RESOLVED; still needs owner visual approval + signerAddress (P3) + UNZR/RNOKPP era-gate before active.
+
 ## 2026-05-29 — Session 58b: Golden PDF + visual protocol for birth pilot (branch official-docs)
 
 Playbook step 8 / Prompt 9 (pilot doc only). `birthCertificate.goldenVisual.test.ts` (NEW, 4 tests + 1 todo) + generated visual artifact `docs/reports/artifacts/birth_certificate.pilot.{pdf,png}` (synthetic, no PII) + `docs/reports/GOLDEN_PDF_PROTOCOL_birth.md`.

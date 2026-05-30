@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 58c (2026-05-29) — FIX Cyrillic silent-strip blocker (branch official-docs)
+- `VERIFIED(local)` `apps/web/src/lib/translation/pdf/renderValue.ts` replaces the silent `safe()` strip. `pdfSafe()`: per-Cyrillic-run KMU-55 transliteration (single source `@uscis-helper/knowledge`) + typographic symbol map (`№`→`No.`) + visible `[?]` marker for truly unrenderable. NEVER deletes. Series `I-АМ`→`I-AM`; field-aware review-flag when a value needed transliteration.
+- `VERIFIED(visual)` regenerated `birth_certificate.pilot.png`: `Series and No.: I-AM 000001 [CONFIRM]`, `TRANSLATOR'S` apostrophe intact, `KMU Resolution No. 1025` correct-case. Caught + fixed 2 self-introduced regressions (apostrophe drop, all-caps leak) via per-run transliteration.
+- `VERIFIED(local)` renderValue 5/5 + goldenVisual series test; full web 2253 pass +5 skip; tsc 0.
+- `OWNER-GATED` birth visual approval; signerAddress (P3); UNZR/RNOKPP era-gate. Scope held: no new doc types, BUREAU_PDF still OFF, no Stripe/OCR/schema change.
+
 ## Session 58b (2026-05-29) — Golden PDF + visual protocol for birth pilot (branch official-docs)
 - `VERIFIED(local)` birthCertificate.goldenVisual.test.ts 4/4 + 1 todo: required labels present, forbidden `Middle Name`/`Police` absent, overflow-name survives, missing→honest placeholder. Generated visual artifact `docs/reports/artifacts/birth_certificate.pilot.{pdf,png}` (synthetic, no PII).
 - `BLOCKER(found by visual pass)` 🔴 renderOfficialTranslation `safe()` strips chars > U+00FF → **Cyrillic series letters silently dropped** (`I-АМ`→`I-`). SILENT DATA LOSS. Fix = KMU-55 transliterate series upstream before render. Golden tests missed it (used Latin AM) — proves readback ≠ visual approval. Tracked: `it.todo` + `docs/reports/GOLDEN_PDF_PROTOCOL_birth.md`.
