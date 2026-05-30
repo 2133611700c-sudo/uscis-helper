@@ -1,4 +1,16 @@
-# HANDOFF — Session 71 (2026-05-30)
+# HANDOFF — Session 72 (2026-05-30)
+
+## Session 72 — S1 Geography No-Silent-Snap (branch `fix/geography-no-silent-snap`, off main)
+
+First execution item from the Engineering Master Plan (PR #47), done strictly as a safety-only PR. The owner's live failure: a place reading `с.м.т. Ярошенець` was silently rewritten to `Тростянець` and presented as recognized — a legal error (wrong place on a signed document). Root cause: `snapCity`'s fuzzy branch returned `value: GAZETTEER[bestIdx]`, promoting a within-threshold (0.34 confusion-distance) *suggestion* to the *final value*. Fix: the fuzzy branch now keeps the RAW cleaned read as `value`, returns the nearest entry as `suggestedValue` only, sets `matched=false` and `review_required=true` (callers already honour `review_required`). Exact match unchanged; unknown geography → raw + review, no suggestion. `PlaceMatch` gained `suggestedValue?: string | null`. ONE behavior change in `packages/knowledge/src/gazetteer.ts` — no dictionary rewrite, TPS `dictionaryBridge` untouched (it was not the source; `GEO_CORRECTIONS` has no `Ярошенець`).
+
+**Evidence:** `geographyNoSilentSnap.test.ts` 3/3 — Ярошенець must NOT silently become Тростянець; Тростянець exact may normalize (no review); unknown gibberish → raw + review. Full web 2261 pass, tsc 0, content-guard 0. Report: `docs/reports/S1_GEOGRAPHY_NO_SILENT_SNAP.md`.
+
+**Remaining (written, honest):** seed GAZETTEER is ~70 places — a real village absent from the seed returns `unknown_geography` + review (safe, no silent replace) but offers no suggestion; full KOATUU load is a separate data task. The UI must present `suggestedValue` and block until reviewed — the contract is now correct; a dedicated geo review-surface is the UX phase. Master Plan tracker (PR #47) to be updated: S1 → [x] with this PR#, plus the "no phase [x] without 5 conditions" rule.
+
+**Next per Master Plan:** S2 (audit persistence hard-fail → non-200 on DB failure), then S3 (no-silent-correction for name/patronymic/authority/date/series).
+
+---
 
 ## Session 71 — Booklet orientation auto-rotate (branch `fix/booklet-orientation`, off main)
 

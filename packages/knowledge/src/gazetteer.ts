@@ -18,14 +18,17 @@
  */
 
 export interface PlaceMatch {
-  /** Best Cyrillic place name (snapped or, if no confident match, the cleaned input). */
+  /** The value to USE. NEVER a silent fuzzy replacement: on an EXACT match it is the
+   *  gazetteer name; on a fuzzy/no match it is the RAW cleaned read (preserved). */
   value: string
-  /** True when we snapped to a gazetteer entry (vs. kept the raw read). */
+  /** True ONLY on an exact gazetteer match. A fuzzy candidate is NOT a match. */
   matched: boolean
-  /** Weighted edit distance to the matched entry (0 = exact). */
+  /** Weighted edit distance to the nearest entry (0 = exact). */
   distance: number
-  /** Human should confirm (snapped-by-correction or no confident match). */
+  /** Human must confirm (any fuzzy candidate or no confident match). */
   review_required: boolean
+  /** Fuzzy candidate to SUGGEST (never silently applied). null on exact/unknown. */
+  suggestedValue?: string | null
   reason: string
 }
 
@@ -106,12 +109,12 @@ function cleanPlace(raw: string): string {
 export function snapCity(raw: string, opts: { threshold?: number } = {}): PlaceMatch {
   const threshold = opts.threshold ?? 0.34
   const cleaned = cleanPlace(raw ?? '')
-  if (!cleaned) return { value: '', matched: false, distance: Infinity, review_required: true, reason: 'empty' }
+  if (!cleaned) return { value: '', matched: false, distance: Infinity, review_required: true, suggestedValue: null, reason: 'empty' }
 
   const lower = cleaned.toLocaleLowerCase('uk')
   const exactIdx = GAZ_LOWER.indexOf(lower)
   if (exactIdx >= 0) {
-    return { value: GAZETTEER[exactIdx], matched: true, distance: 0, review_required: false, reason: 'exact gazetteer match' }
+    return { value: GAZETTEER[exactIdx], matched: true, distance: 0, review_required: false, suggestedValue: null, reason: 'exact gazetteer match' }
   }
 
   let best = Infinity
@@ -123,16 +126,21 @@ export function snapCity(raw: string, opts: { threshold?: number } = {}): PlaceM
 
   const norm = best / Math.max(lower.length, GAZ_LOWER[bestIdx]?.length ?? 1)
   if (bestIdx >= 0 && norm <= threshold) {
+    // S1 NO-SILENT-SNAP: a fuzzy candidate is a SUGGESTION, never a silent final
+    // value. Keep the RAW read; surface the nearest entry as suggestedValue; force
+    // review. (Was: value = GAZETTEER[bestIdx] → "Ярошенець" silently became
+    // "Тростянець".) matched=false because we did NOT replace.
     return {
-      value: GAZETTEER[bestIdx],
-      matched: true,
+      value: cleaned,
+      matched: false,
       distance: best,
-      review_required: best > 0.0001, // any correction wants a human glance
-      reason: `snapped to nearest gazetteer entry (weighted dist ${best.toFixed(2)})`,
+      review_required: true,
+      suggestedValue: GAZETTEER[bestIdx],
+      reason: 'fuzzy_geography_match',
     }
   }
 
   // No confident match — keep the cleaned read, flag for review (could be a
   // village not yet in the seed gazetteer; production KOATUU would catch it).
-  return { value: cleaned, matched: false, distance: best, review_required: true, reason: 'no confident gazetteer match — kept raw read' }
+  return { value: cleaned, matched: false, distance: best, review_required: true, suggestedValue: null, reason: 'unknown_geography' }
 }
