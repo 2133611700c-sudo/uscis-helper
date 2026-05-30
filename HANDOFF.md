@@ -1,4 +1,12 @@
-# HANDOFF — Session 76g (2026-05-30)
+# HANDOFF — Session 76h (2026-05-30)
+
+## Session 76h — Tracker: Phase-5 safety items done (#59/#60/#61) (branch `docs/engineering-master-plan`)
+
+Marked three more tracker items `[x]`: PII-redaction CI grep guard (#59), TPS per-document state reset (#60), Prompt-Injection Defense (#61). 
+
+**State of the plan (honest):** the code-completable scope is essentially done — Phase-1 safety (S1+S2+S3), UX, the entire canonical core (#52–#58), plus these three Phase-5 safety guards (#59–#61). 16 PRs this cycle, all additive/tested, suite green. The **remaining tracker items are not "just more code now"**: (1) **Data Minimization** (send crop+label not whole image) is a real extraction-pipeline redesign that could affect recognition — needs owner buy-in + careful validation, not a quick PR; (2) **migration → consolidation** (remove the 2nd brain) is gated on real-traffic parity — turn on `ONE_BRAIN_SHADOW=1` in a canary, read the numbers, then migrate; (3) **Phase 4** (finalization lock / two-layer PDF proof / evidence-ledger DB table) is a careful series after migration; (4) **Phase 6 ops** (review queue, metrics, status board) is sequenced last; (5) **owner-gated** items (official military/diploma/pension URLs, КАТОТТГ byte-verify, birth-cert visual approval, live rotated-photo) need the owner. **Exact next owner decision:** enable `ONE_BRAIN_SHADOW=1` in a canary to collect parity, OR pick the next gated workstream.
+
+---
 
 ## Session 76g — Tracker: canonical core COMPLETE (#52–#58) (branch `docs/engineering-master-plan`)
 
