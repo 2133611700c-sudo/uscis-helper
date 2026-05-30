@@ -1,4 +1,18 @@
-# HANDOFF — Session 78 (2026-05-30)
+# HANDOFF — Session 79 (2026-05-30)
+
+## Session 79 — P2.2-translation adapter + cross-brain parity (branch `feat/canonical-adapter-translation`, off main)
+
+The second half of the adapter. `apps/web/src/lib/canonical/adapterTranslation.ts`: `readCanonicalDocumentFromTranslation(input)` maps the Translation reader output (`ExtractedField[]`) into the SAME `CanonicalDocumentResult` shape using the P2.1 policy and the same two invariants. Source is inferred (Translation has no explicit source enum): `user_corrected`→`manual_user_entry`, MRZ `source_zone`→`mrz`, else `ai_vision` (ranked below document OCR — a vision guess must not outrank a labelled read). Honest confidence: ocr=provider, source_match only for an MRZ zone with a check-digit pass, unknown layers null. Reuses `mergeCanonicalByKey`.
+
+**The payoff:** the test runs the first real two-brain measurement — build a TPS-canonical and a Translation-canonical for the same document and `diffCanonical` them: agreement → parityRate 1.0, criticalDisagreements 0; a `family_name` disagreement → disagree 1, criticalDisagreements 1 (surfaced, not silently reconciled).
+
+**ADDITIVE / unwired — no behavior change.**
+
+**Evidence:** `adapterTranslation.test.ts` 5/5 (incl. 2 cross-brain cases). Full web 2313 pass, tsc 0, content-guard 0. Report: `docs/reports/P2_2T_CANONICAL_ADAPTER_TRANSLATION.md`.
+
+**Next per Master Plan:** live shadow wiring — behind `ONE_BRAIN_SHADOW=1`, run the canonical adapter alongside the live TPS/Translation extraction and `console.info(summarizeParity(...))` (observe-only, no output change) to collect real-traffic parity numbers; then a parity threshold → per-product migration behind the flag → consolidation (remove 2nd brain) → evidence-ledger table + hash chain.
+
+---
 
 ## Session 78 — P2.3 Canonical shadow parity (branch `feat/canonical-shadow`, off main)
 
