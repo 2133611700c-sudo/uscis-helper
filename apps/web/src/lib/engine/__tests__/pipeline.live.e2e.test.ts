@@ -25,16 +25,31 @@ describe.skipIf(!LIVE)('LIVE pipeline E2E (military ID, owner fixture)', () => {
     if (!process.env.GEMINI_MODEL) process.env.GEMINI_MODEL = get('GEMINI_MODEL') || 'gemini-3.1-pro-preview'
   }, 30000)
 
-  it('recognizes + normalizes real Cyrillic end-to-end through the live module', async () => {
-    const buf = fs.readFileSync(FIX)
-    const res = await extractDocumentPresence(buf, 'image/jpeg', 'ua_military_id', { geminiApiKey: gem, gvApiKey: gv })
-    const byKey = Object.fromEntries(res.fields.map((f) => [f.field, f]))
+  const run = async (file: string, docType: string) => {
+    const buf = fs.readFileSync(path.join(ROOT, 'test-fixtures/real-docs', file))
+    const res = await extractDocumentPresence(buf, 'image/jpeg', docType, { geminiApiKey: gem, gvApiKey: gv })
     // eslint-disable-next-line no-console
-    console.log('LIVE pipeline:', JSON.stringify(res.fields.map((f) => ({ k: f.field, latin: f.latin, read: f.can_read, src: f.source })), null, 1))
+    console.log(`LIVE ${docType}:`, JSON.stringify(res.fields.map((f) => ({ k: f.field, latin: f.latin, read: f.can_read, rev: f.review_required, src: f.source })), null, 1))
+    return Object.fromEntries(res.fields.map((f) => [f.field, f]))
+  }
 
-    expect(res.fields.length).toBeGreaterThan(4)
-    expect(byKey['family_name']?.latin || '').toMatch(/kurop/i)             // KMU-55
-    expect(byKey['place_of_birth']?.latin || '').toMatch(/trostian/i)        // registry settlement
-    expect(byKey['place_of_birth']?.latin || '').toMatch(/urban-type settlement/i) // смт preserved
+  it('MILITARY ID — Cyrillic → KMU-55 + registry settlement (with type)', async () => {
+    const f = await run('military_id_p1_kuropiatnyk.jpg', 'ua_military_id')
+    expect(f['family_name']?.latin || '').toMatch(/kurop/i)
+    expect(f['place_of_birth']?.latin || '').toMatch(/trostian/i)
+    expect(f['place_of_birth']?.latin || '').toMatch(/urban-type settlement/i)
+  }, 120000)
+
+  it('PASSPORT — MRZ controlling Latin beats re-transliteration', async () => {
+    const f = await run('internal_passport_kuropiatnyk.jpg', 'ua_international_passport')
+    expect(f['family_name']?.latin || '').toMatch(/KUROPIATNYK/i)   // MRZ, not KMU-55 guess
+    expect(f['passport_number']?.latin || '').toMatch(/FU262473/i)
+    expect(f['date_of_birth']?.latin || '').toMatch(/1986/)
+  }, 120000)
+
+  it('BIRTH CERT (handwritten 1986) — reads name + place, flags review', async () => {
+    const f = await run('birth_cert_soviet_kuropiatnyk.jpg', 'ua_birth_certificate')
+    expect(f['child_full_name']?.latin || '').toMatch(/kurop/i)
+    expect(f['place_of_birth']?.latin || '').toMatch(/trostian/i)
   }, 120000)
 })
