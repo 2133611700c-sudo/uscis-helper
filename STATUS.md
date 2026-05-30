@@ -1,4 +1,7 @@
 # STATUS — Messenginfo
+## Session 74 (2026-05-30) — Full recognition-engine inventory (branch docs/recognition-inventory)
+- `INVENTORY` `docs/architecture/RECOGNITION_ENGINES_FULL_INVENTORY.md` (3 parallel scans): all OCR/vision/AI providers (Google Vision, DocAI, Gemini 3.1-pro/Vertex 2.5-pro, GPT-4o, DeepSeek, Transkribus); 26 brain/normalizer components (wired vs dead); per-product pipelines (TPS/Translation/Re-Parole/EAD); divergence — TWO stacks (Gemini-docintel+engine vs GoogleVision+modules+tps/centralBrain), orchestrator NOT wired to TPS, geography normalized 2 ways, dead engine/assembler + knowledge/normalize.ts. Companion to ADR-016 (#44).
+
 ## Session 71 (2026-05-30) — Booklet orientation: rotate by identity-field count (branch fix/booklet-orientation)
 - `DONE` TPS OCR route already rotated for passport MRZ; extended ADDITIVELY for the INTERNAL passport booklet (no MRZ to anchor on): trigger rotation when booklet matched with <2 identity fields; in the loop track the rotation with the most identity fields; adopt it if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0.
 - `HONEST CAVEAT` cannot verify with a LIVE rotated booklet image here (no fixture upload). Logic is additive/safe (only adopts a rotation with strictly more identity fields). Owner live-repro of a rotated booklet recommended to confirm pick.
