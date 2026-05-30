@@ -1,4 +1,16 @@
-# HANDOFF — Session 77 (2026-05-30)
+# HANDOFF — Session 78 (2026-05-30)
+
+## Session 78 — P2.3 Canonical shadow parity (branch `feat/canonical-shadow`, off main)
+
+Phase 2 step 3: the instrument that settles the two-brain problem with numbers. `apps/web/src/lib/canonical/shadow.ts`: `diffCanonical(left, right, canonicalize?)` returns a `ParityReport` (per-key agree/disagree/left_only/right_only, `criticalDisagreements` for critical+high fields, `parityRate`) using the same `materiallyDifferent` comparator as the no-silent-correction rule; a present-on-both field where one side lacks a value counts as a real disagreement (not silently equal). `isShadowEnabled(env?)` reads `ONE_BRAIN_SHADOW` — only `1`/`true` enables, default OFF, gates LOGGING only (never output). `summarizeParity` is a PII-free one-liner (counts + disagreeing critical keys, never values).
+
+**ADDITIVE / observe-only — unwired, no behavior change.**
+
+**Evidence:** `canonical/__tests__/shadow.test.ts` 8/8. Full web 2308 pass, tsc 0, content-guard 0. Report: `docs/reports/P2_3_CANONICAL_SHADOW.md`.
+
+**Next per Master Plan:** (1) a Translation-side adapter `readCanonicalDocumentFromTranslation` so BOTH stacks emit the same canonical shape — that pair is the actual input to `diffCanonical` (the real two-brain measurement); (2) live shadow wiring behind `ONE_BRAIN_SHADOW=1` (run canonical alongside the live path, `console.info(summarizeParity(...))`, observe-only) — owner-visible, held separate to stay additive; (3) parity threshold gate → per-product migration → consolidation (remove 2nd brain) → evidence-ledger table.
+
+---
 
 ## Session 77 — P2.2 Canonical adapter (branch `feat/canonical-adapter`, off main)
 
