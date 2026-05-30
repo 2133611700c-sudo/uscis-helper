@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 73 (2026-05-30) — Two-brain divergence found + ADR-016 (branch docs/adr-016-one-brain)
+- `🔴 CRITICAL (owner live)` Same passport → TPS read ONLY surname; Translation read everything. Root: TWO engines — Translation=`/vision-extract` (Gemini docintel + central-brain, GOOD); TPS=`/tps/ocr/extract` (Google Vision + keyword modules, WEAK). + geography normalized differently (snapCity threshold 0.34 too loose: `Ярошенець→Trostianets`). Legal-accuracy defect.
+- `DECISION` ADR-016: ONE recognition brain = Gemini-vision docintel + central-brain; TPS modules become validators over the SAME read, not a 2nd engine. Phased B1–B5. Also: Translation wizard needs back + start-over buttons (owner UX).
+- `NEXT` execute B1 (TPS uses the same reader) phased with a fixture parity test. NOT p2.
+
 ## Session 71 (2026-05-30) — Booklet orientation: rotate by identity-field count (branch fix/booklet-orientation)
 - `DONE` TPS OCR route already rotated for passport MRZ; extended ADDITIVELY for the INTERNAL passport booklet (no MRZ to anchor on): trigger rotation when booklet matched with <2 identity fields; in the loop track the rotation with the most identity fields; adopt it if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0.
 - `HONEST CAVEAT` cannot verify with a LIVE rotated booklet image here (no fixture upload). Logic is additive/safe (only adopts a rotation with strictly more identity fields). Owner live-repro of a rotated booklet recommended to confirm pick.
