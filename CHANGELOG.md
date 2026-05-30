@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 79: P2.2-translation adapter + cross-brain parity (branch feat/canonical-adapter-translation)
+
+Second half of the canonical adapter. New `apps/web/src/lib/canonical/adapterTranslation.ts`: readCanonicalDocumentFromTranslation maps Translation ExtractedField[] → CanonicalDocumentResult (same policy + invariants as TPS). Source inferred (user_corrected→manual, mrz zone→mrz, else ai_vision). Both brains now emit one canonical shape → diffCanonical measures them. New adapterTranslation.test.ts 5/5 incl. 2 cross-brain parity cases (agree→1.0; family_name disagree→criticalDisagreements 1). Additive/unwired. Full web 2313 pass; tsc 0; content-guard 0. Report `docs/reports/P2_2T_CANONICAL_ADAPTER_TRANSLATION.md`. Files: canonical/adapterTranslation.ts, canonical/index.ts, canonical/__tests__/adapterTranslation.test.ts, report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 78: P2.3 Canonical shadow parity (branch feat/canonical-shadow)
 
 Phase 2 step 3. New `apps/web/src/lib/canonical/shadow.ts`: diffCanonical(left,right) → ParityReport (agree/disagree/left_only/right_only, criticalDisagreements, parityRate) via the no-silent-correction comparator; isShadowEnabled (ONE_BRAIN_SHADOW, default OFF, only 1/true, gates logging never output); summarizeParity PII-free one-liner (counts + critical keys, never values). The instrument to prove/disprove the two-brain problem with numbers. Additive/observe-only/unwired. New shadow.test.ts 8/8; full web 2308 pass; tsc 0; content-guard 0. Report `docs/reports/P2_3_CANONICAL_SHADOW.md`. Files: canonical/shadow.ts, canonical/index.ts, canonical/__tests__/shadow.test.ts, P2.3 report, STATUS/HANDOFF/CHANGELOG.

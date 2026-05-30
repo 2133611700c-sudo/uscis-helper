@@ -40,3 +40,10 @@ export type { ReadCanonicalInput } from './adapter'
 // P2.3 shadow — diff two CanonicalDocumentResults; ONE_BRAIN_SHADOW flag (OFF).
 export { diffCanonical, isShadowEnabled, summarizeParity } from './shadow'
 export type { ParityReport, FieldParity, ParityStatus } from './shadow'
+
+// Translation-stack adapter — the second half of P2.2 (enables the two-brain diff).
+export {
+  toCanonicalFieldFromTranslation,
+  readCanonicalDocumentFromTranslation,
+} from './adapterTranslation'
+export type { ReadCanonicalTranslationInput } from './adapterTranslation'
