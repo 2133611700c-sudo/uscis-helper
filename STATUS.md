@@ -15,6 +15,7 @@
 - `VERIFIED(local)` **G3 (partial)**: registry 49 rows — all 24 oblasts + major cities, provenance 100%. Full KOATUU = pipeline TODO.
 - `VERIFIED(local)` **#10 prose wired**: free-text fields translated by DeepSeek (locked tokens), no longer dropped.
 - `VERIFIED(local)` **#16 download gate**: Download blocked until a real signature; no unsigned certified PDF. i18n/tsc clean.
+- `PREVIEW` PR #26 open (feat/c3-presence). E2E readback test + RELEASE_CHECKLIST. Do NOT merge until Preview E2E passes.
 - `NOT DEPLOYED / OPEN` G3 (full KOATUU/civil-registry into CSV), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring, official renderers (P4), product contracts (P5). On Vercel confirm `GEMINI_API_KEY_PAY` set + deploy. Rotate OpenAI key (pasted in chat).
 
 ## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)

@@ -22,6 +22,7 @@
 **G3 (partial) DONE:** all 24 oblasts + major cities in registry.csv (49 rows). Next: full KOATUU import pipeline, EAD/Re-Parole route wiring, #2b/#16 download+signature gate, official renderers (P4).
 **#10 DONE:** DeepSeek proseTranslator wired into vision-extract central-brain path (free text translated, not dropped).
 **#16 DONE:** download gated on real signature (drawn+confirmed); no silent wet-sign bypass.
+**Preview DONE:** PR #26 open, pdf-readback E2E test + RELEASE_CHECKLIST committed. Next: owner runs Preview E2E → merge → prod smoke. Then bureau-PDF renderers, spatial-GV, KOATUU.
 Next: #2b hard Download gate (block until no MISSING/unconfirmed-review) + optional email collection; #5 manual-review ticket (wizard POSTs /api/translation/manual-review on manual path — currently takes payment without a ticket); G3 (full KOATUU/civil-registry into registry.csv); B3 sharp preprocessing; EAD/Re-Parole route wiring.
 
 **Exact next task:** gap #2 (TranslateWizard.tsx:1087 stop hardcoding review_required=true; propagate real per-field flag + block generate/download until missing/review resolved), then G3 (full KOATUU + civil_registry into registry.csv), G4 (registryCatalog on brain health + validateRegistry CI gate), MRZ/controlling-Latin (#3), wire EAD/Re-Parole routes to analyze(). On Vercel: confirm `GEMINI_API_KEY_PAY` + deploy. Rotate the OpenAI key (was pasted in chat).
