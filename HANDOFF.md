@@ -1,15 +1,14 @@
-# HANDOFF — Session 65 (2026-05-30)
+# HANDOFF — Session 68 (2026-05-30)
 
-## Session 65 — Plan tooling (Prompts 3/6/10) (branch `feat/plan-tooling-prompts-3-6-10`, off main)
+## Session 68 — FIX certification audit DB persistence (branch `fix/translation-audit-db-persistence`, off main)
 
-Closed three playbook gaps I had flagged as "мог сделать, не сделал":
-- **Prompt 3:** `scripts/verify-ukraine-sources.mjs` deterministically verifies sources (fetch /print → act number + keywords). Ran live: КМУ-1025/152/302 verified, military/diploma/pension invalid_url. Report at `docs/official-forms/ukraine/source-verification-report.json`. Matcher tests 4/4.
-- **Prompt 6:** `docs/adr/ADR-AGENT-PERMISSIONS.md` — 8-role permission matrix; only ReleaseManager flips active/flags.
-- **Prompt 10:** `docs/reports/PRODUCTION_RELEASE_GATE.md` — G1–G12 with live status.
+Fixed the HIGH defect zero-trust verification found: the generate-pdf order/attestation write silently failed because the upsert referenced columns absent from `translation_orders` (and supabase-js returns `{error}` rather than throwing, so the try/catch hid it).
 
-full web pass; tsc 0; content-guard 0.
+**Done:** migration `supabase/migrations/20260530000001_translation_certification_audit.sql` (new `translation_certification_audit` table, **applied to prod**). Route remaps `translation_orders` to its REAL columns (NOT NULL email→``, status `signed` per CHECK), writes the attestation to the audit table, and **checks `.error`** (logs code+message, DEGRADED warning if audit not persisted). **Verified live:** probe insert+readback into both tables OK (order_rows=1, audit fields present), then cleaned. Report: `docs/reports/TRANSLATION_AUDIT_DB_PERSISTENCE_FIX.md`.
 
-**Remaining (honest):** military/diploma/pension official URLs (owner — blocked from env); КАТОТТГ byte-verify (download blocked); official-docs merge + birth-pilot activation (G7 owner visual); ZIP output + "another person signs" toggle (deferred). civil schemas 2–5 stay DRAFT.
+**🔴 NEXT — CRITICAL live failure (root cause found, fix pending):** owner live-tested a rotated UA internal-passport booklet → TPS showed garbage (`„ Пріз`, `Akulenko`) + stale `Serhiiovych`; Translation showed unrelated `Шуляк/Сергій/Проскурів`. Those strings are NOT in code (grep clean) → they are **stale state restored from sessionStorage `tw:v2:draft` / localStorage `wizard:tps-ukraine:v2:state`** (both wizards persist+restore `extractedFields`). Plus: no orientation gate (0/90/180/270), no garbage guard (label `„ Пріз` accepted as name), no source-evidence gate. Fix = session isolation per upload + orientation/page gate + garbage guard + evidence requirement + block payment on unsafe fields. Report to write: `docs/reports/LIVE_BOOKLET_RECOGNITION_FAILURE_ROOT_CAUSE.md`.
+
+**Queue:** PR #37 (zero-trust report) merge · this PR (db fix) · live-failure fix · then PR #38 inventory/P1 · P2.
 
 ---
 
