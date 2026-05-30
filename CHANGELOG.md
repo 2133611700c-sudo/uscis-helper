@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 73: S2 Audit Persistence Hard-Fail (branch fix/audit-persist-hard-fail)
+
+Made certification-audit persistence a hard gate in `generate-pdf`. New `apps/web/src/lib/translation/persistCertification.ts` inserts order + audit with one retry each; returns ok only if BOTH stored. The route now fails closed on failure: emits the full signed attestation as a structured `AUDIT_RECONCILE` log line (never lost) and returns HTTP 503 — no PDF, no email — instead of the prior 200-with-degraded-warning (a signed doc with no audit trail). Retry absorbs transient blips; idempotent Stripe session → retry does not re-charge. New `persistCertification.test.ts` 5/5; full web 2266 pass; tsc 0; content-guard 0. Report `docs/reports/S2_AUDIT_PERSIST_HARD_FAIL.md`. Files: persistCertification.ts, persistCertification.test.ts, generate-pdf/route.ts, S2 report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 72: S1 Geography No-Silent-Snap (branch fix/geography-no-silent-snap)
 
 Safety-only fix of the owner's live legal failure: `snapCity('с.м.т. Ярошенець')` silently returned `Тростянець` as a confirmed value. The fuzzy branch in `packages/knowledge/src/gazetteer.ts` now preserves the RAW read as `value`, returns the nearest gazetteer entry as `suggestedValue` only, with `matched=false` and `review_required=true`. Exact match unchanged (normalizes, no review); unknown geography keeps the raw read + review. `PlaceMatch` gained `suggestedValue?: string | null`. One behavior change, no dictionary rewrite, TPS dictionaryBridge untouched. New `geographyNoSilentSnap.test.ts` 3/3; full web 2261 pass; tsc 0; content-guard 0. Report `docs/reports/S1_GEOGRAPHY_NO_SILENT_SNAP.md`. Files: gazetteer.ts, geographyNoSilentSnap.test.ts, S1 report, STATUS/HANDOFF/CHANGELOG.
