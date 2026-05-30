@@ -136,8 +136,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Internal attestation/audit trail (8 CFR §103.2(b)(3)) — WHAT was attested and
-  // WHEN. Stored inside the certification_record jsonb (no schema migration). Not
-  // shown on the customer PDF.
+  // WHEN. Persisted to translation_certification_audit (its own table). Not shown
+  // on the customer PDF.
   const attestation = buildAttestationRecord({
     dataReviewed: payload.dataReviewed,
     accuracyAttested: payload.accuracyAttested,
@@ -152,21 +152,56 @@ export async function POST(req: NextRequest) {
     recordedAt: new Date().toISOString(),
   })
 
-  // Save order record
+  // Persist the order to its REAL schema + the attestation audit trail to its own
+  // table. supabase-js does NOT throw on a DB error — it returns { error } — so we
+  // CHECK and LOG it (code + message, no PII) instead of swallowing. (Prior code
+  // referenced columns that do not exist on translation_orders — session_id /
+  // document_type / certification_record / scope_title / updated_at — so the entire
+  // write silently failed and nothing, including the attestation, was ever stored.)
+  let auditPersisted = false
   try {
     const supabase = createAdminSupabaseClient()
-    await supabase.from('translation_orders').upsert({
-      session_id: session_id ?? `legacy-${Date.now()}`,
-      status: 'rendered',
-      document_type: payload.doc_type ?? 'other',
-      payment_confirmed: true,
-      certification_record: { ...certRecord, attestation },
-      scope_title: payload.scope_title ?? '',
+    const { error: orderErr } = await supabase.from('translation_orders').insert({
+      name: profile.name,                 // NOT NULL — review gate guarantees signer name
+      email: profile.email || '',         // NOT NULL — wizard sends '' (no email collected)
+      phone: profile.phone || null,
+      address: profile.addr || null,
+      plan: selectedPlan,
+      spanish_copy: !!payload.spanishCopy,
       locale: payload.locale ?? 'en',
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'session_id' })
+      signed_at: signedAt || null,
+      signature_method: payload.signatureMethod,
+      certification_version: certificationTextVersion,
+      status: 'signed',                   // CHECK: one of signed | emailed | failed
+      stripe_checkout_id: session_id ?? null,
+    })
+    if (orderErr) console.error('[generate-pdf] translation_orders insert failed:', orderErr.code, orderErr.message)
+
+    const { error: auditErr } = await supabase.from('translation_certification_audit').insert({
+      stripe_checkout_id: session_id ?? null,
+      locale: payload.locale ?? 'en',
+      document_type: payload.doc_type ?? 'other',
+      certifier_name_present: attestation.certifier_name_present,
+      certifier_address_present: attestation.certifier_address_present,
+      signature_present: attestation.signature_present,
+      signature_method: attestation.signature_method,
+      data_reviewed: attestation.data_reviewed,
+      accuracy_attested: attestation.accuracy_attested,
+      review_confirmed: attestation.review_confirmed,
+      document_hash: attestation.document_hash,
+      certification_version: attestation.certification_version,
+      signed_at: signedAt || null,
+      audit_payload: attestation,
+    })
+    if (auditErr) console.error('[generate-pdf] certification audit insert failed:', auditErr.code, auditErr.message)
+    else auditPersisted = true
   } catch (err) {
-    console.error('[generate-pdf] Supabase persist failed:', err)
+    console.error('[generate-pdf] Supabase persist threw:', err instanceof Error ? err.message : String(err))
+  }
+  if (!auditPersisted) {
+    // DEGRADED: the PDF is already produced, but the audit trail did not persist.
+    // Surfaced in logs (no "audit complete" claim) so it is monitorable.
+    console.warn('[generate-pdf] DEGRADED — certification audit NOT persisted for', session_id ?? 'legacy')
   }
 
   // Send confirmation email (text, not HTML attachment)
