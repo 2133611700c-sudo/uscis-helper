@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 85: Prompt-injection defense (branch feat/prompt-injection-defense)
+
+OCR text fed to the Document Brain LLM is untrusted and was dropped raw into the prompt. New `apps/web/src/lib/tps/ai/untrustedText.ts`: fenceUntrustedText (wraps in unguessable markers + strips forged markers to block break-out) + UNTRUSTED_TEXT_SYSTEM_RULE. Wired into documentBrain.buildUserMessage (OCR + LINES fenced) + SYSTEM_PROMPT (no-follow-instructions + extract-only). Fencing not blacklisting. Legitimate extraction unchanged. New untrustedText.test.ts 8/8 (incl. break-out-blocked + source guards); full web 2339 pass; tsc 0; content-guard 0. Report `docs/reports/SEC_PROMPT_INJECTION_DEFENSE.md`. Files: lib/tps/ai/untrustedText.ts, lib/tps/ai/documentBrain.ts, lib/tps/ai/__tests__/untrustedText.test.ts, report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 84: TPS per-document state reset (branch feat/tps-doc-state-reset)
 
 Closed the TPS-side stale-state hazard. The wizard restart cleared personal fields but left tps:attest:v1 / tps:legal-risk:v1 / Part-7 in localStorage, so person A's attestation + legal-risk answers carried into person B's packet. New `apps/web/src/lib/tps/documentState.ts` (clearTpsDocumentState removes the 3 per-document keys; never throws) wired into TPSWizardV2.restart. Same-document refresh unaffected. New documentState.test.ts 4/4; full web 2335 pass; tsc 0; content-guard 0. Report `docs/reports/TPS_DOC_STATE_RESET.md`. Files: lib/tps/documentState.ts, TPSWizardV2.tsx, lib/tps/__tests__/documentState.test.ts, report, STATUS/HANDOFF/CHANGELOG.
