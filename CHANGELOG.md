@@ -3,6 +3,9 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 66: Zero-trust verification of cert/audit/source work (branch verify/post-certification)
+
+DEGRADED. PASS: prod==main 84e4284; Review-Gate v2 13/13; Screen-7 6/6; PDF output (statement+Name/Address/Date+signature image, no [CONFIRM], no silent-strip) via new certificationPdf.verify.test.ts 4/4; source-verifier (КМУ-1025/152/302 verified live). 🔴 FAIL: audit metadata NOT persisted — translation_orders schema mismatch makes the route upsert silently fail (0 rendered rows, newest 2026-05-08). Report: docs/reports/POST_CERTIFICATION_ZERO_TRUST_VERIFICATION.md. Next: fix translation_orders persistence + re-verify; G7 owner visual.
 ## 2026-05-30 — Session 68: FIX certification audit DB persistence (branch fix/translation-audit-db-persistence)
 
 The generate-pdf order/attestation write silently failed (upsert referenced nonexistent translation_orders columns; supabase-js returns {error}, not thrown). Fix: new translation_certification_audit table (migration applied to prod); route remapped to real columns (status=signed per CHECK, email=`` per NOT NULL); attestation written to the audit table; DB errors checked + logged (DEGRADED warning, no silent swallow). Verified live: probe insert+readback OK then cleaned. attestation 5/5, full web pass, tsc 0, content-guard 0. Report: docs/reports/TRANSLATION_AUDIT_DB_PERSISTENCE_FIX.md. STILL OPEN (critical): live rotated-booklet OCR/stale-state failure — root cause found (sessionStorage/localStorage draft restore + no orientation/garbage/evidence gate), fix next.
