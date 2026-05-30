@@ -1,4 +1,14 @@
-# HANDOFF — Session 85 (2026-05-30)
+# HANDOFF — Session 86 (2026-05-30)
+
+## Session 86 — Cross-Document Contradiction Detector (branch `feat/cross-doc-contradictions`, off main)
+
+Canonical-core Quality item. `apps/web/src/lib/canonical/contradictions.ts`: `findCrossDocumentContradictions(fields, canonicalize?)` reports when the SAME field key is read with materially-different values across documents (passport MRZ vs I-94 vs EAD vs DL) — a critical/high contradiction is `blocking` and must be resolved by review (never silently reconciled). Each `Contradiction` carries the criticality + the distinct candidates (value + source + provider, highest-authority first). `hasBlockingContradiction` is a convenience gate. Complements `mergeCanonicalByKey` (resolve) with a reporter (surface). Pure, additive, unwired.
+
+**Evidence:** `contradictions.test.ts` 6/6. Full web 2351 pass, tsc 0, content-guard 0. Report: `docs/reports/P2_CROSS_DOC_CONTRADICTIONS.md`.
+
+**Remaining (gated / larger):** data-minimization (extraction redesign — needs owner buy-in); migration/consolidation (real-traffic parity via `ONE_BRAIN_SHADOW=1` canary); Phase 4 (finalization lock / PDF proof / evidence-ledger DB); Phase 6 ops; owner-gated source/visual items.
+
+---
 
 ## Session 85 — Prompt-injection defense (branch `feat/prompt-injection-defense`, off main)
 

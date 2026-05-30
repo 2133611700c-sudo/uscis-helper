@@ -58,3 +58,7 @@ export { applyManualOverride } from './manualOverride'
 // Document-Type Confidence Gate + Provider Output Quarantine.
 export { applyDocumentTypeGate, partitionQuarantine, DOC_TYPE_GATE_THRESHOLD } from './documentGate'
 export type { QuarantinePartition } from './documentGate'
+
+// Cross-Document Contradiction Detector (passport vs I-94 vs EAD vs DL).
+export { findCrossDocumentContradictions, hasBlockingContradiction } from './contradictions'
+export type { Contradiction, ContradictionCandidate } from './contradictions'
