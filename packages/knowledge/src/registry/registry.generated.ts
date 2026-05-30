@@ -880,5 +880,97 @@ export const REGISTRY_ROWS: RegistryRow[] = [
     "review_rule": "auto",
     "warning": "",
     "notes": "Lviv Oblast"
+  },
+  {
+    "category": "authority",
+    "key_uk": "пенсійний фонд",
+    "key_ru": "пенсионный фонд",
+    "official_en": "Pension Fund of Ukraine",
+    "aliases": [
+      "пфу",
+      "пенсійний фонд україни"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://www.pfu.gov.ua/en/",
+    "source_authority": "ПФУ",
+    "source_act": "",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "authority",
+    "key_uk": "кабінет міністрів",
+    "key_ru": "кабинет министров",
+    "official_en": "Cabinet of Ministers of Ukraine",
+    "aliases": [
+      "кму",
+      "кабмін"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://www.kmu.gov.ua/en",
+    "source_authority": "КМУ",
+    "source_act": "",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "authority",
+    "key_uk": "міністерство освіти і науки",
+    "key_ru": "министерство образования и науки",
+    "official_en": "Ministry of Education and Science of Ukraine",
+    "aliases": [
+      "мон"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://mon.gov.ua/en",
+    "source_authority": "МОН",
+    "source_act": "",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "authority",
+    "key_uk": "міністерство охорони здоровя",
+    "key_ru": "министерство здравоохранения",
+    "official_en": "Ministry of Health of Ukraine",
+    "aliases": [
+      "моз"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://moz.gov.ua/en",
+    "source_authority": "МОЗ",
+    "source_act": "",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
+  },
+  {
+    "category": "authority",
+    "key_uk": "міністерство розвитку громад та територій",
+    "key_ru": "министерство развития общин и территорий",
+    "official_en": "Ministry of Communities and Territories Development of Ukraine",
+    "aliases": [
+      "мінрегіон"
+    ],
+    "valid_from": null,
+    "valid_until": null,
+    "source_url": "https://www.minregion.gov.ua/en/",
+    "source_authority": "Мінрегіон",
+    "source_act": "",
+    "confidence_rule": "high",
+    "review_rule": "auto",
+    "warning": "",
+    "notes": ""
   }
 ] as RegistryRow[]

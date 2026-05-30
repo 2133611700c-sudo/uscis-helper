@@ -48,3 +48,8 @@ settlement,харків,харьков,Kharkiv,,,,https://zakon.rada.gov.ua/laws
 settlement,одеса,одесса,Odesa,,,,https://zakon.rada.gov.ua/laws/show/z1456-20,Держстат,КАТОТТГ/КОАТУУ,high,auto,,Odesa Oblast
 settlement,дніпро,днепр,Dnipro,дніпропетровськ,,,https://zakon.rada.gov.ua/laws/show/z1456-20,Держстат,КАТОТТГ/КОАТУУ,high,auto,,renamed from Dnipropetrovsk 2016
 settlement,львів,львов,Lviv,,,,https://zakon.rada.gov.ua/laws/show/z1456-20,Держстат,КАТОТТГ/КОАТУУ,high,auto,,Lviv Oblast
+authority,пенсійний фонд,пенсионный фонд,Pension Fund of Ukraine,пфу|пенсійний фонд україни,,,https://www.pfu.gov.ua/en/,ПФУ,,high,auto,,
+authority,кабінет міністрів,кабинет министров,Cabinet of Ministers of Ukraine,кму|кабмін,,,https://www.kmu.gov.ua/en,КМУ,,high,auto,,
+authority,міністерство освіти і науки,министерство образования и науки,Ministry of Education and Science of Ukraine,мон,,,https://mon.gov.ua/en,МОН,,high,auto,,
+authority,міністерство охорони здоровя,министерство здравоохранения,Ministry of Health of Ukraine,моз,,,https://moz.gov.ua/en,МОЗ,,high,auto,,
+authority,міністерство розвитку громад та територій,министерство развития общин и территорий,Ministry of Communities and Territories Development of Ukraine,мінрегіон,,,https://www.minregion.gov.ua/en/,Мінрегіон,,high,auto,,
