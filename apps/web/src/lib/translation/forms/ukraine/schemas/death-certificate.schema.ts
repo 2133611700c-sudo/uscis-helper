@@ -1,7 +1,8 @@
 /** Death Certificate (Свідоцтво про смерть). Source: KMU No.1025 (10.11.2010). */
 import type { OfficialFormSchema } from './types'
+import { applyCivilContract } from './contract'
 const tr=(k:string,uk:string,en:string,g:string,req=true)=>({key:k,sourceLabelUk:uk,sourceLabelEn:en,required:req,fieldGroup:g,expectedScript:'cyrillic' as const,translationRule:'transliterate_kmu55' as const,lockedEntity:true,evidenceRequired:true})
-export const deathCertificateSchema: OfficialFormSchema = {
+export const deathCertificateSchema: OfficialFormSchema = applyCivilContract({
   docType:'ua_death_certificate', titleEn:'DEATH CERTIFICATE',
   officialSource:{act:'КМУ Resolution No. 1025, 10.11.2010',url:'https://zakon.rada.gov.ua/laws/show/1025-2010-%D0%BF',authority:'Cabinet of Ministers of Ukraine / Ministry of Justice',effectiveDate:'2010-11-10'},
   fields:[
@@ -16,4 +17,4 @@ export const deathCertificateSchema: OfficialFormSchema = {
     {key:'series_number',sourceLabelUk:'Серія та номер',sourceLabelEn:'Series and No.',required:true,fieldGroup:'issuing',expectedScript:'mixed',translationRule:'locked_verbatim',lockedEntity:true,evidenceRequired:true},
   ],
   layoutSections:['header','personFields','actRecord','issuingAuthority','seals','signatures','certification'],
-}
+})

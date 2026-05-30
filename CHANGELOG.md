@@ -2385,3 +2385,14 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - Tests: contract integrity (every field sourceRule+canGuess=false), Patronymic≠Middle
   Name, era non-blocking, full-name split, series АМ→Вінницька. Schema/tests ONLY — no
   runtime generate-pdf change. web 2218 pass, 0 type errors.
+
+## 2026-05-29 — official-docs: marriage/divorce/death/name-change under the Field Contract
+
+- DRY `applyCivilContract()`: applies the official Field Contract to ALL civil-status
+  schemas — canGuess=false + sourceRule on every field, era variants (modern + legacy
+  Soviet bilingual), and ensures the КМУ-1025 official issuing-authority + head-of-
+  authority fields on each certificate. No per-field hand-editing.
+- marriage/divorce/death/name-change schemas wrapped. Shared contract test loops all 5
+  (sourceRule+canGuess, variants, issuing/head present, Patronymic≠Middle Name).
+- web 2238 pass +4 skip, 0 type errors. Schema/tests only — renderer untouched (render
+  tests still green).
