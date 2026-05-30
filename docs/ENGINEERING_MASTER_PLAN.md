@@ -121,15 +121,15 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 - [x] S3 No-silent-correction for name/patronymic/authority/date/series — **PR #50**; audited all 5: patronymic/authority/date/series already preserve raw + flag review on uncertainty (verified at the named functions); NAME was the only silent value-mutator — EAD+passport naive title-cast corrupted O'Brien/hyphen/multi-word/mixed-case with review=false. New shared `formatLatinName` (knowledge) preserves deliberate mixed-case + segment-aware title-casing; wired into ead.ts+passport.ts (4 sites). Verified by `nameNoSilentRecase.test.ts` 6/6, full web 2272 pass, tsc 0, guard 0; report `docs/reports/S3_NAME_NO_SILENT_RECASE.md`. Prod-impact: was LIVE in TPS EAD+passport; now non-corrupting. Risk: all-caps Mc/Mac/De residual (raw preserved). No unrelated scope. **→ Phase-1 safety (S1+S2+S3) COMPLETE.**
 
 ### Canonical core (Phase 2–3)
-- [ ] CanonicalDocumentResult + CanonicalField types
-- [ ] readCanonicalDocument adapter (over strongest reader)
-- [ ] Field Confidence Contract (ocr/field_match/normalization/source_match/final; final ≤ weakest)
+- [x] CanonicalDocumentResult + CanonicalField types — **PR #52** (P2.1); `apps/web/src/lib/canonical/types.ts`; additive, unwired; policy.test 16/16.
+- [ ] readCanonicalDocument adapter (over strongest reader) — **P2.2 (next)**
+- [x] Field Confidence Contract (ocr/field_match/normalization/source_match/final; final ≤ weakest) — **PR #52** `computeFinalConfidence` (null layer excluded; derived, never provider-set); tested.
 - [ ] Document-Type Confidence Gate (unknown_page blocks recognized fields; anchor scoring)
-- [ ] Provider Disagreement Policy (critical-field disagreement → review_required)
+- [x] Provider Disagreement Policy (critical-field disagreement → review_required) — **PR #52** `resolveDisagreement` + `decideReviewRequired`; tested.
 - [ ] Provider Output Quarantine (candidates until gates pass)
-- [ ] Source Authority Ranking (MRZ>visual>I-94>EAD>DL>manual; manual only after confirm)
-- [ ] Manual Override Contract (source='manual_user_entry', preserves prior + rejected reason)
-- [ ] ONE_BRAIN_SHADOW flag + TPS/Translation shadow + parity test + diff report
+- [x] Source Authority Ranking (MRZ>visual>I-94>EAD>DL>manual; manual only after confirm) — **PR #52** `sourceRank`/`higherAuthority`; tested. (Manual-override full flow still pending below.)
+- [ ] Manual Override Contract (source='manual_user_entry', preserves prior + rejected reason) — type fields exist (`rejectedReason`, `manual_user_entry`); flow pending
+- [ ] ONE_BRAIN_SHADOW flag + TPS/Translation shadow + parity test + diff report — **P2.3 (after adapter)**
 
 ### Finalization & PDF (Phase 4)
 - [ ] Finalization Lock (reviewSnapshotHash; PDF only from frozen snapshot; no re-extraction)
@@ -153,7 +153,7 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 - [ ] Official Source Version Pinning (url/retrievedAt/hash/effectiveDate/status; amended→needs_review)
 - [ ] No-Cross-Product-Memory (no field shared without documentSessionId + fileHash + explicit action)
 - [ ] State reset: clear tps:legal-risk:v1 / tps:attest:v1 on new upload; per-documentSessionId
-- [ ] Translation wizard Back + Start-over buttons (UX)
+- [x] Translation wizard Back + Start-over buttons (UX) — **PR #51**; review-screen Back(→re-upload) + Start-over; `resetAll` clears ALL state + both `tw:v2:draft`/`tw:cs`; `wizardResetStartOver.test` 4/4.
 - [ ] PII Redaction in logs — CI grep test (passport#/A-number/DOB/address/phone/email/full name → FAIL)
 - [ ] Data Minimization (send crop+label, not whole image) + Retention policy
 - [ ] Human Review Queue spec (owner, SLA, field checklist, accept/reject, audit)
