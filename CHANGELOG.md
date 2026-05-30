@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 76g: Tracker — canonical core COMPLETE (#52–#58) (branch docs/engineering-master-plan)
+
+Marked the entire canonical core [x] (adapter #53/#55, Doc-Type Gate + Quarantine #58, Manual Override #57, ONE_BRAIN_SHADOW flag+live wiring #54/#56, plus #52 contract/policy). Added CURRENT STATE banner to §5: Phase-1 safety + UX + canonical core all merged (#48–#58); remaining items are gated (migration needs real-traffic parity; Phase 4 PDF/ledger; Phase 6 ops; owner-gated). File: docs/ENGINEERING_MASTER_PLAN.md, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 76f: Tracker — UX (#51) + P2.1 canonical core (#52) (branch docs/engineering-master-plan)
 
 Marked UX wizard reset/Back/Start-over [x] (PR #51) and the P2.1 canonical items [x] (PR #52): CanonicalDocumentResult+CanonicalField types, Field Confidence Contract, Provider Disagreement Policy, Source Authority Ranking. Next Phase-2: P2.2 readCanonicalDocument adapter, P2.3 ONE_BRAIN_SHADOW parity. File: docs/ENGINEERING_MASTER_PLAN.md, STATUS/HANDOFF/CHANGELOG.
