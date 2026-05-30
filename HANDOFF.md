@@ -1,4 +1,10 @@
-# HANDOFF — Session 76c (2026-05-30)
+# HANDOFF — Session 76d (2026-05-30)
+
+## Session 76d — Tracker: S3 done → Phase-1 safety COMPLETE (branch `docs/engineering-master-plan`)
+
+S3 (name no-silent-recase) shipped as safety PR **#50** off main. Tracker updated: S3 → `[x]` with PR# + evidence; the audit of patronymic/authority/date/series (already-flagged) recorded inline. **All three Phase-1 safety items (S1+S2+S3) are now complete.** Exact next task: UX — Translation wizard reset + explicit Back / Start-over controls (the live-failure follow-up so a user can recover from a bad recognition without the stale-state hazard), then Phase 2 CanonicalDocumentResult + CanonicalField types (contract-first, the path to one recognition brain).
+
+---
 
 ## Session 76c — Tracker: S2 done + audit item resolved (branch `docs/engineering-master-plan`)
 
