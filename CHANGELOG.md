@@ -3,6 +3,14 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 61: Embed the drawn signature image in the translation PDF (branch feat/signature-image-in-pdf)
+
+Closed a Session-60 gap: the wizard collected a finger/stylus signature but the PDF only printed a typed name.
+
+- `PacketInput.signatureDataUrl?` (types.ts); `generateTranslationPDF` embeds the PNG data URL in the certification block (150×≤48px, above the typed line) via pdf-lib `embedPng`, with a try/catch fallback to the typed signature on a corrupt/oversized image.
+- `generate-pdf/route.ts` passes `payload.signatureDataUrl` through.
+- `signatureImage.test.ts` 3/3 (embeds when present, none when absent, no crash on corrupt). Full web 2230 pass +4 skip, tsc 0, content-guard 0.
+
 ## 2026-05-30 — Session 60: USCIS translator-certification UX + Review-Gate v2 (branch feat/translator-certification)
 
 Simple USCIS-compliant certification flow (Upload → Review → 2 checkboxes → finger signature → PDF). Found the wizard collected NO translator identity (name auto-derived from the document subject, address empty), so a small certifier step was required.

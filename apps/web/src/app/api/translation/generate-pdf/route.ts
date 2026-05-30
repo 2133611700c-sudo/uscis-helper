@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
       sourceTraces: payload.source_traces ?? [],
       certificationRecord: certRecord,
       sessionId: session_id ?? 'legacy',
+      signatureDataUrl: payload.signatureDataUrl,
     })
   } catch (err) {
     console.error('[generate-pdf] PDF generation failed:', err)
