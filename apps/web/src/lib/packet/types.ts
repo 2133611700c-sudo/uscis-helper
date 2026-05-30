@@ -13,6 +13,8 @@ export interface PacketInput {
   certificationRecord: CertificationRecord
   sessionId: string
   qaWarnings?: string[]
+  /** Drawn signature as a PNG data URL — embedded as an image in the cert block. */
+  signatureDataUrl?: string | null
 
   // Legacy fields (used by index.ts / docx.ts)
   order_id?: string
