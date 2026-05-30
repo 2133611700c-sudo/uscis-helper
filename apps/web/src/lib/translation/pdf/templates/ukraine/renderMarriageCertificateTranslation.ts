@@ -3,10 +3,19 @@
  * schema (KMU No.1025), NOT by eye. Sections follow schema.layoutSections;
  * labels from schema.sourceLabelEn; official source printed for traceability.
  * Uncertain → blank/[CONFIRM] (never guessed); seals = [bracketed notes].
- * English PDF: any stray non-WinAnsi (Cyrillic) char is stripped via safe().
+ * English PDF: non-WinAnsi is KMU-55 transliterated then visibly marked via the
+ * shared pdfSafe() — NEVER silently stripped (see renderValue.ts).
+ *
+ * NOTE (2026-05-29): this renderer is UNWIRED (0 importers) — superseded by the
+ * generic schema-driven renderOfficialTranslation, which all 5 civil-status types
+ * (incl. marriage) render through. Kept only for reference; recommend deletion.
+ * The silent-strip safe() it carried was the same data-loss bug fixed in the
+ * generic renderer; consolidated here to the shared helper so dead code can't
+ * become a landmine when someone re-wires it.
  */
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { marriageCertificateSchema as SCHEMA } from '../../../forms/ukraine/schemas/marriage-certificate.schema'
+import { pdfSafe } from '../../renderValue'
 
 export interface FieldValue { value: string; review: boolean; canRead: boolean }
 const SECTION: Record<string, { title: string; groups: string[] }> = {
@@ -15,7 +24,7 @@ const SECTION: Record<string, { title: string; groups: string[] }> = {
   marriage: { title: 'MARRIAGE', groups: ['marriage', 'actRecord'] },
   issuing: { title: 'STATE REGISTRATION', groups: ['issuing'] },
 }
-const safe = (t: string) => (t ?? '').replace(/[^\x00-\xFF]/g, '')
+const safe = pdfSafe
 
 export async function renderMarriageCertificateTranslation(
   values: Record<string, FieldValue>,

@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 58d (2026-05-29) — Post-fix QA + class-guard (branch official-docs)
+- `VERIFIED` QA of cyrillic fix (bbf26ed) PASS: readback shows `Series and No.: I-AM 000001`, `Patronymic` (no Middle Name), apostrophe intact, BUREAU_PDF opt-in only, birth NOT active. Report `docs/reports/BUREAU_PDF_CYRILLIC_FIX_QA.md`.
+- `FIXED(deviation, justified)` grep-audit found the SAME silent-strip in `renderMarriageCertificateTranslation.ts` — but it has **0 importers (dead code, superseded by generic renderOfficialTranslation)**, so I consolidated its `safe`→shared `pdfSafe` (zero runtime risk, not a marriage feature). Recommend deleting the file.
+- `HARDENED` `noSilentStrip.guard.test.ts` — class-level CI guard: fails if any production PDF renderer reintroduces a silent non-ASCII strip. Kills the bug class.
+- `TRACKED next-stage` 🟠 `[CONFIRM]` must be stripped from the SIGNED certified text after reviewConfirmed (it's a Review-Gate marker, not final text). signerAddress (P3); UNZR/RNOKPP era-gate.
+- `VERIFIED` full web suite green, tsc 0.
+
 ## Session 58c (2026-05-29) — FIX Cyrillic silent-strip blocker (branch official-docs)
 - `VERIFIED(local)` `apps/web/src/lib/translation/pdf/renderValue.ts` replaces the silent `safe()` strip. `pdfSafe()`: per-Cyrillic-run KMU-55 transliteration (single source `@uscis-helper/knowledge`) + typographic symbol map (`№`→`No.`) + visible `[?]` marker for truly unrenderable. NEVER deletes. Series `I-АМ`→`I-AM`; field-aware review-flag when a value needed transliteration.
 - `VERIFIED(visual)` regenerated `birth_certificate.pilot.png`: `Series and No.: I-AM 000001 [CONFIRM]`, `TRANSLATOR'S` apostrophe intact, `KMU Resolution No. 1025` correct-case. Caught + fixed 2 self-introduced regressions (apostrophe drop, all-caps leak) via per-run transliteration.

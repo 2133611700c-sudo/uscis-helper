@@ -3,6 +3,16 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 58d: Post-fix Cyrillic QA + class-level silent-strip guard (branch official-docs)
+
+QA of the cyrillic fix (bbf26ed), with two improvements beyond a read-only pass.
+
+- **QA PASS** (`docs/reports/BUREAU_PDF_CYRILLIC_FIX_QA.md`): readback shows `Series and No.: I-AM 000001`, `Patronymic` (no `Middle Name`), intact `TRANSLATOR'S` apostrophe, correct-case act line, `[CONFIRM]` only on review fields. BUREAU_PDF opt-in only; birth NOT active.
+- **Closed a second instance of the bug (justified deviation from report-only):** grep found the identical `replace(/[^\x00-\xFF]/g,'')` in `renderMarriageCertificateTranslation.ts:18`. That file has **0 importers** (dead code, superseded by the generic `renderOfficialTranslation`), so consolidating its `safe`→shared `pdfSafe` is zero-runtime-risk and removes the landmine. Recommend deleting the dead file.
+- **`noSilentStrip.guard.test.ts` (NEW):** class-level CI guard — fails if any production PDF renderer reintroduces a silent non-ASCII strip.
+- **Tracked next-stage defect:** `[CONFIRM]` must be stripped from the SIGNED certified text after `reviewConfirmed` (it is a Review-Gate marker, not final text). Not done now.
+- Scope held: no new doc types, BUREAU_PDF default OFF, no Stripe/OCR/Review-Gate/schema changes, no branch merge/rebase. Tests: renderValue 5/5, class guard, birth goldenVisual, full web suite green, tsc 0.
+
 ## 2026-05-29 — Session 58c: FIX bureau-PDF Cyrillic silent-strip blocker (branch official-docs)
 
 Closed the data-loss blocker the visual pass found, strictly in scope (renderer/sanitisation path only).
