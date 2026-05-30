@@ -44,6 +44,18 @@
 - `VERIFIED(live API)` **integrated pipeline E2E** on real military ID → REDACTED + Trostianets(urban-type settlement). Caught+fixed lookupSettlement city+oblast bug.
 - `VERIFIED(live API)` passport MRZ path (REDACTED/FU262473) + handwritten birth cert proven live; 3-doc gated E2E.
 - `NOT DEPLOYED / OPEN` G3 (full KOATUU/civil-registry into CSV), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring, official renderers (P4), product contracts (P5). On Vercel confirm `GEMINI_API_KEY_PAY` set + deploy. Rotate OpenAI key (pasted in chat).
+# ST
+## Session 57b (2026-05-29) — Accept ADR-015 (branch docs/accept-adr-015)
+- `ACCEPTED` ADR-015 PDF Output Architecture landed on main-line (was only on spike/pdf-readback). Decision: pdf-lib is the single engine — Track A USCIS forms (AcroForm fill), Track B bureau translations (`renderOfficialTranslation`). React-PDF/Puppeteer/Apple REJECTED as core (spike-validated: bureau renderer output is hex-extractable, golden readback works today). Decoupled from spike code — doc only, independent merge unit.
+## Session 57a (2026-05-29) — Safety PR #28 + content-guard fix (branch fix/review-gate-hard-block)
+- `PR` #28 opened (base main, NOT merged) — review-gate hard block as an independent safety PR. ADR-015 = separate PR #29.
+- `FIXED(CI)` content-guard Rule 4 ('certified translation' product claim) tripped in `route.ts`/`reviewGate.ts` → reworded to 'signed translation' / 'translation certification'. Guard CLEAN, reviewGate 13/13, tsc 0.
+
+## Session 57 (2026-05-29) — Review-Gate hard block + platform coverage audit (branch fix/review-gate-hard-block)
+- `VERIFIED(local)` Review-Gate hard block on `/api/translation/generate-pdf`: certified PDF refused unless review-confirmation (checkbox OR completed signature) + signerName. Was payment-only → machine-only POST got "certified" PDF. `reviewGate.ts` 13/13. signerAddress = non-blocking WARNING (live TranslateWizard sends empty addr — `KNOWN GAP`, wire address field next).
+- `VERIFIED(local)` No regression: translation suite 1701 pass, 0 type errors.
+- `AUDIT` 4 reports in `docs/reports/`: DOCUMENT_PLATFORM_COVERAGE (0 docs active; birth=only pilot, other 4 civil=DRAFT), BRANCH_STABILIZATION (merge #26→#27→rebase official-docs; official-docs has NO КАТОТТГ), ROUTE_INVENTORY (no payment bypass; generate-pdf review hole = closed here), GLOSSARY_GEOGRAPHY (missing ПФУ/КМУ/Мінрегіон/МОН/МОЗ; 458-city КАТОТТГ stranded on koatuu).
+- `OWNER-GATED` merge #26/#27 (Preview E2E), correct official URLs (military/diploma/pension), КАТОТТГ byte-verify, bureau-PDF visual approval, wire signer-address into wizard.
 
 ## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)
 - `VERIFIED(local)` recognition engine `apps/web/src/lib/engine/` 29/29; central-brain `apps/web/src/lib/central-brain/` 3/3 (delegated_to_legacy → TPS untouched); knowledge patronymic 26/26 + gazetteer.
@@ -802,3 +814,5 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 ## official-docs — Agent Document Rules constitution added
 
 ## official-docs — bureau-PDF wired behind BUREAU_PDF flag (OFF); golden readback proven. Owner flips on after visual approval.
+## koatuu branch (2026-05-29) — КАТОТТГ city layer
+- `VERIFIED(local)` 458 official cities from КАТОТТГ merged into registry (provenance 100%, KMU-55). Generator regenerable from mtu.gov.ua source. Stacked on feat/c3-presence.
