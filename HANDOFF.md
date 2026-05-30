@@ -1,4 +1,10 @@
-# HANDOFF — Session 76d (2026-05-30)
+# HANDOFF — Session 76f (2026-05-30)
+
+## Session 76f — Tracker: UX (#51) + P2.1 canonical core (#52) (branch `docs/engineering-master-plan`)
+
+Tracker updated: UX wizard reset/Back/Start-over → `[x]` (PR #51); the P2.1 canonical items → `[x]` (PR #52) — CanonicalDocumentResult+CanonicalField types, Field Confidence Contract, Provider Disagreement Policy, Source Authority Ranking. Phase-1 safety (S1+S2+S3) + UX + P2.1 all merged to main. Exact next task: **P2.2 — `readCanonicalDocument` adapter** that maps the strongest existing reader's output (e.g. `TpsExtractedField[]`) into a `CanonicalDocumentResult` using the P2.1 policy (criticality, buildConfidence, decideReviewRequired; never lowers a source module's review flag). Still additive/unwired. Then P2.3 `ONE_BRAIN_SHADOW` parity harness (default OFF).
+
+---
 
 ## Session 76d — Tracker: S3 done → Phase-1 safety COMPLETE (branch `docs/engineering-master-plan`)
 
