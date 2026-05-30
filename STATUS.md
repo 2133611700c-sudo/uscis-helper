@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 59 (2026-05-30) — Branch stabilization: 4 PRs merged to main, official-docs synced (autonomous)
+- `MERGED→main` PR #28 (review-gate hard block, **LIVE in prod** healthz sha 9e05c1a→), #29 (ADR-015), #26 (recognition+D-GLOSSARY, merge-commit to keep stack), #30 (=reopened #27 koatuu КАТОТТГ 458 cities). main HEAD 9ee56f2.
+- `SYNCED` merged main → official-docs: now carries review-gate + КАТОТТГ. route.ts auto-merge correct (payment→review-gate→BUREAU_PDF; default OFF). Recovered a `git reset --hard` slip (stale origin) via reflog — no work lost.
+- `COVERAGE flipped (from code)` review_gate_enforced=True, katottg=458; **birth_certificate clears ALL gates except `owner_visual_approval`** (source/schema/contract/mapping/renderer/review_gate/fixture_e2e all pass). active_count=0 (gated on owner visual + allowlist).
+- `VERIFIED` full web 2267 pass +5 skip, tsc 0, content-guard clean.
+- `OWNER-GATED next` visual approval of `docs/reports/artifacts/birth_certificate.pilot.png` → then birth pilot can be allowlisted. Then P3 signerAddress hard-gate + strip [CONFIRM] after reviewConfirmed.
+
 ## Session 58d (2026-05-29) — Post-fix QA + class-guard (branch official-docs)
 - `VERIFIED` QA of cyrillic fix (bbf26ed) PASS: readback shows `Series and No.: I-AM 000001`, `Patronymic` (no Middle Name), apostrophe intact, BUREAU_PDF opt-in only, birth NOT active. Report `docs/reports/BUREAU_PDF_CYRILLIC_FIX_QA.md`.
 - `FIXED(deviation, justified)` grep-audit found the SAME silent-strip in `renderMarriageCertificateTranslation.ts` — but it has **0 importers (dead code, superseded by generic renderOfficialTranslation)**, so I consolidated its `safe`→shared `pdfSafe` (zero runtime risk, not a marriage feature). Recommend deleting the file.
