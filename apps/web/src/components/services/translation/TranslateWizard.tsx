@@ -163,6 +163,7 @@ const T = {
     s7_sig_clear: 'Очистить',
     s7_sig_save: 'Подтвердить подпись ✓',
     s7_sig_saved: '✅ Подпись сохранена',
+    s7_sign_first: '✏️ Сначала поставьте подпись ниже — без неё перевод нельзя сертифицировать.',
     s7_next_title: '📋 Что делать дальше?',
     s7_next_steps: [
       'Распечатайте PDF (цветной принтер не нужен)',
@@ -263,6 +264,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s7_sig_clear: 'Clear',
     s7_sig_save: 'Confirm signature ✓',
     s7_sig_saved: '✅ Signature saved',
+    s7_sign_first: '✏️ Sign below first — a translation cannot be certified without your signature.',
     s7_next_title: '📋 What next?',
     s7_next_steps: [
       'Print the PDF (color printer not required)',
@@ -1093,6 +1095,9 @@ export function TranslateWizard() {
   // ── Real PDF generation (replaces simulateDownload) ──
   const handleDownloadPdf = useCallback(async () => {
     if (pdfLoading) return
+    // #16 gate: a certified translation must be SIGNED — never generate/download one
+    // without a real on-screen signature (drawn AND confirmed). No silent wet-sign bypass.
+    if (!sigSaved || !hasDrawnRef.current) return
     setPdfLoading(true)
     try {
       const c = canvasRef.current
@@ -1158,7 +1163,7 @@ export function TranslateWizard() {
     } finally {
       setPdfLoading(false)
     }
-  }, [pdfLoading, extractedFields, stripeCheckoutId, locale, selectedDocType])
+  }, [pdfLoading, sigSaved, extractedFields, stripeCheckoutId, locale, selectedDocType])
 
   const resetAll = useCallback(() => {
     setSelectedDocType(null)
@@ -1561,11 +1566,14 @@ export function TranslateWizard() {
               type="button"
               className="tw-btn-primary tw-btn-green"
               onClick={handleDownloadPdf}
-              disabled={pdfLoading}
+              disabled={pdfLoading || !sigSaved}
               style={{ marginBottom: 0 }}
             >
               {pdfLoading ? t.s7_downloading : pdfDownloaded ? t.s7_downloaded : t.s7_download}
             </button>
+            {!sigSaved && (
+              <div style={{ fontSize: 13, color: 'var(--gold)', marginTop: 10, fontWeight: 600 }}>{t.s7_sign_first}</div>
+            )}
           </div>
           <div className="tw-card">
             <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14 }}>{t.s7_sig_title}</div>
@@ -1577,7 +1585,7 @@ export function TranslateWizard() {
               </button>
               <button
                 type="button"
-                onClick={() => setSigSaved(true)}
+                onClick={() => { if (hasDrawnRef.current) setSigSaved(true) }}
                 className="tw-btn-primary"
                 style={{ flex: 2, background: sigSaved ? 'var(--green)' : 'var(--gold)', color: sigSaved ? '#fff' : 'var(--navy)' }}
               >
