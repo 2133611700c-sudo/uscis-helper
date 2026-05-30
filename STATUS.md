@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 66 (2026-05-30) — Zero-trust verification of cert/audit/source work (branch verify/post-certification)
+- `VERIFIED` prod sha == main sha 84e4284; all 6 PRs (#31–#36) landed. Review-Gate v2 13/13, certifier UX 6/6, PDF output (statement+Name/Address/Date+signature image, no [CONFIRM], no silent-strip) 4/4, source-verifier (КМУ-1025/152/302 verified) 4/4.
+- `🔴 FAIL FOUND` Audit metadata is NOT persisted: `translation_orders` lacks `certification_record`/`session_id`/etc. columns → route upsert silently fails (try/catch) → 0 rendered rows, newest row 2026-05-08. attestation built in code but never reaches DB. My earlier "in DB" claim was FALSE.
+- `DEGRADED` overall. Report: `docs/reports/POST_CERTIFICATION_ZERO_TRUST_VERIFICATION.md`. next: FIX translation_orders persistence (migration/remap) then re-verify with a live row; G7 owner visual for birth pilot.
+
 ## Session 65 (2026-05-30) — Plan tooling: source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)
 - `DONE(Prompt 3)` `scripts/verify-ukraine-sources.mjs` — fetches each /print source, verifies act number+keywords; writes `source-verification-report.json` (КМУ-1025/152/302 VERIFIED live; military/diploma/pension invalid_url). Pure-matcher tests 4/4.
 - `DONE(Prompt 6)` `docs/adr/ADR-AGENT-PERMISSIONS.md` — 8 roles, allowed/forbidden files, only ReleaseManager flips active/flags.

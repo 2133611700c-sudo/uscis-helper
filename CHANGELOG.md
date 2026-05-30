@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 66: Zero-trust verification of cert/audit/source work (branch verify/post-certification)
+
+DEGRADED. PASS: prod==main 84e4284; Review-Gate v2 13/13; Screen-7 6/6; PDF output (statement+Name/Address/Date+signature image, no [CONFIRM], no silent-strip) via new certificationPdf.verify.test.ts 4/4; source-verifier (КМУ-1025/152/302 verified live). 🔴 FAIL: audit metadata NOT persisted — translation_orders schema mismatch makes the route upsert silently fail (0 rendered rows, newest 2026-05-08). Report: docs/reports/POST_CERTIFICATION_ZERO_TRUST_VERIFICATION.md. Next: fix translation_orders persistence + re-verify; G7 owner visual.
+
+
 ## 2026-05-30 — Session 65: Plan tooling — source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)
 
 Closed playbook Prompts 3/6/10. `scripts/verify-ukraine-sources.mjs` (fetch /print → verify act number+keywords; ran live: КМУ-1025/152/302 verified, military/diploma/pension invalid_url; report json). `docs/adr/ADR-AGENT-PERMISSIONS.md` (8-role matrix). `docs/reports/PRODUCTION_RELEASE_GATE.md` (G1–G12 live status). Matcher tests 4/4; full web pass; tsc 0; content-guard 0.
