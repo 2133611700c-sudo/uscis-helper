@@ -3,6 +3,7 @@
  *  seals=[bracketed]; English PDF, non-WinAnsi stripped. */
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import type { OfficialFormSchema } from '../../../forms/ukraine/schemas/types'
+import { pdfSafe } from '../../renderValue'
 
 export interface FieldValue { value: string; review: boolean; canRead: boolean }
 const GROUP_TITLE: Record<string, string> = {
@@ -10,7 +11,9 @@ const GROUP_TITLE: Record<string, string> = {
   person: 'PERSON', marriage: 'MARRIAGE', dissolution: 'DISSOLUTION', actRecord: 'ACT RECORD',
   issuing: 'STATE REGISTRATION',
 }
-const safe = (t: string) => (t ?? '').replace(/[^\x00-\xFF]/g, '')
+// PDF-safe rendering with NO silent data loss: KMU-55 transliterate Cyrillic,
+// map typographic symbols, mark anything still unrenderable. (was: silent strip)
+const safe = pdfSafe
 
 export async function renderOfficialTranslation(
   schema: OfficialFormSchema, values: Record<string, FieldValue>,

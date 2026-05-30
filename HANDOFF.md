@@ -1,3 +1,20 @@
+# HANDOFF — Session 62 (2026-05-30)
+
+## Session 62 — Silent-strip cleanup on main + regression guard (branch `fix/silent-strip-cleanup-main`, off main)
+
+Closed the last "не доделал" item: main's PDF renderers still carried the silent `replace(/[^\x00-\xFF]/g,'')` strip (the fix lived only on the unmerged `official-docs`). Both renderers are UNWIRED on main (no callers — `bureauTranslation` is official-docs only), so this is zero-runtime-risk debt cleanup that removes the dormant data-loss landmine and adds the CI guard so it can't return — without waiting for the gated bureau pilot to merge.
+
+- Brought `renderValue.ts` (self-contained — depends only on `@uscis-helper/knowledge` KMU-55) to main.
+- `renderOfficialTranslation.ts` + `renderMarriageCertificateTranslation.ts`: `safe` → shared `pdfSafe` (transliterate + symbol map + visible marker, never delete).
+- `noSilentStrip.guard.test.ts` + `renderValue.test.ts` on main.
+- Verified: 11/11 targeted, full web 2236 pass +4 skip, tsc 0, content-guard 0; grep confirms no executable silent-strip remains. `render.test.ts` feeds no Cyrillic so output is unchanged.
+
+**Production state (verified):** main `75ae190` LIVE — review-gate v2 + USCIS certifier UX + drawn-signature-image-in-PDF all deployed (healthz sha 75ae190; prod page 200 with the new strings; gate POST→402).
+
+**Remaining:** "another person signs" toggle (deferred — default self-cert covers the common case); official-docs bureau birth-pilot still gated on owner visual approval of `birth_certificate.pilot.signed.png`.
+
+---
+
 # HANDOFF — Session 61 (2026-05-30)
 
 ## Session 61 — Embed the drawn signature image in the PDF (branch `feat/signature-image-in-pdf`, off main)
