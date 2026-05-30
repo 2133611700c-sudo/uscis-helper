@@ -3,6 +3,15 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 62: Silent-strip cleanup on main + regression guard (branch fix/silent-strip-cleanup-main)
+
+main's PDF renderers still carried the silent `replace(/[^\x00-\xFF]/g,'')` strip (fix lived only on the unmerged official-docs). Both are UNWIRED on main → zero-runtime-risk cleanup that removes the dormant data-loss landmine and adds the CI guard.
+
+- Brought `renderValue.ts` (self-contained, KMU-55 via @uscis-helper/knowledge) to main; `renderOfficialTranslation.ts` + `renderMarriageCertificateTranslation.ts` now use shared `pdfSafe` (transliterate + symbol map + visible marker, never delete).
+- `noSilentStrip.guard.test.ts` + `renderValue.test.ts` on main.
+- 11/11 targeted, full web 2236 pass +4 skip, tsc 0, content-guard 0; grep confirms no executable silent-strip remains.
+- Production verified: main 75ae190 LIVE (review-gate v2 + USCIS certifier UX + drawn-signature-in-PDF all deployed; healthz 75ae190, prod page 200 with new strings, gate POST→402).
+
 ## 2026-05-30 — Session 61: Embed the drawn signature image in the translation PDF (branch feat/signature-image-in-pdf)
 
 Closed a Session-60 gap: the wizard collected a finger/stylus signature but the PDF only printed a typed name.
