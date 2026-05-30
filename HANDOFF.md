@@ -1,4 +1,14 @@
-# HANDOFF — Session 86 (2026-05-30)
+# HANDOFF — Session 87 (2026-05-30)
+
+## Session 87 — Legal Copy Freeze (branch `feat/legal-copy-freeze`, off main)
+
+Compliance guard. `apps/web/src/lib/translation/__tests__/legalCopyFreeze.test.ts` pins the 8 CFR §103.2(b)(3) certification legal text: `CERTIFICATION_VERSION === 'v1.0-8cfr-2026'` + `sha256(CERTIFICATION_STATEMENT)` to a known hash. Any silent edit to the signed legal text fails the build, with a message instructing: write an ADR, bump the version, update the pin. Also asserts the statement still cites the regulation. Test-only, zero runtime impact.
+
+**Evidence:** `legalCopyFreeze.test.ts` 3/3. Full web 2354 pass, tsc 0, content-guard 0. Report: `docs/reports/LEGAL_COPY_FREEZE.md`.
+
+**State of the plan:** the safe/low-risk code-completable scope is now genuinely exhausted — Phase-1 safety, UX, the full canonical core (contract + 2 adapters + parity + live shadow + manual-override + doc-gate + quarantine + contradiction detector), and the Phase-5 guards (PII-log, TPS reset, prompt-injection, legal-copy-freeze). **What is left is gated:** (1) data-minimization — a real extraction-pipeline redesign needing owner buy-in; (2) migration → consolidation — needs real-traffic parity (`ONE_BRAIN_SHADOW=1` canary); (3) Phase 4 (finalization lock / PDF proof / evidence-ledger DB); (4) Phase 6 ops; (5) owner-gated source/visual items. **Next owner decision:** enable the canary shadow run, or pick the next gated workstream.
+
+---
 
 ## Session 86 — Cross-Document Contradiction Detector (branch `feat/cross-doc-contradictions`, off main)
 
