@@ -111,6 +111,6 @@ export interface CanonicalDocumentResult {
   hashes: CanonicalHashChain
   /** ISO-8601 UTC. Caller stamps it (Date is not available in some contexts). */
   createdAt: string
-  /** True only if no field still blocks finalization (all reviewRequired resolved). */
-  readyForReview: boolean
+  /** True if ANY field still needs human review before it can be finalized. */
+  requiresReview: boolean
 }
