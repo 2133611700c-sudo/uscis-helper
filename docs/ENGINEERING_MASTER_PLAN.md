@@ -102,6 +102,8 @@ evidence/safety gates, parity tests, source/audit fixes, dead-path isolation (no
 ## 5. CONTROL TRACKER (the full checklist — every owner recommendation + agent items)
 Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B] blocked-on-owner
 
+> **CURRENT STATE (2026-05-30):** Phase-1 safety (S1+S2+S3), the UX recovery item, and the **entire canonical core** are merged to main (PRs #48–#58): the `CanonicalDocumentResult` contract + full review policy, BOTH stack adapters (TPS + Translation) into one shape, the `diffCanonical` parity instrument, the live `ONE_BRAIN_SHADOW` hook in the TPS route (observe-only, **default OFF**), the manual-override contract, and the doc-type gate + quarantine. All additive, ~50 new tests, suite green. **The remaining items below are GATED, not code-deferrable now:** the migration/consolidation needs real-traffic parity data (turn `ONE_BRAIN_SHADOW=1` in a canary → read the numbers → then migrate); Phase 4 (finalization lock / PDF proof / evidence-ledger DB) is its own careful series after migration; Phase 6 (ops) is sequenced last; the owner-gated items need the owner.
+
 ### Already shipped to prod this cycle
 - [x] Review-Gate v2 (name+address+2 checkboxes+signature) — LIVE
 - [x] Attestation record built (8 CFR) — code
@@ -122,14 +124,14 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 
 ### Canonical core (Phase 2–3)
 - [x] CanonicalDocumentResult + CanonicalField types — **PR #52** (P2.1); `apps/web/src/lib/canonical/types.ts`; additive, unwired; policy.test 16/16.
-- [ ] readCanonicalDocument adapter (over strongest reader) — **P2.2 (next)**
+- [x] readCanonicalDocument adapter (over strongest reader) — **PR #53** (TPS) + **#55** (Translation); both stacks → one CanonicalDocumentResult; never lowers a module review flag, never drops a candidate; adapter.test 8/8 + adapterTranslation.test 5/5 (incl. cross-brain parity).
 - [x] Field Confidence Contract (ocr/field_match/normalization/source_match/final; final ≤ weakest) — **PR #52** `computeFinalConfidence` (null layer excluded; derived, never provider-set); tested.
-- [ ] Document-Type Confidence Gate (unknown_page blocks recognized fields; anchor scoring)
+- [x] Document-Type Confidence Gate (unknown_page blocks recognized fields; anchor scoring) — **PR #58** `applyDocumentTypeGate` (below threshold → quarantine every field `unknown_document_type`); documentGate.test 6/6.
 - [x] Provider Disagreement Policy (critical-field disagreement → review_required) — **PR #52** `resolveDisagreement` + `decideReviewRequired`; tested.
-- [ ] Provider Output Quarantine (candidates until gates pass)
-- [x] Source Authority Ranking (MRZ>visual>I-94>EAD>DL>manual; manual only after confirm) — **PR #52** `sourceRank`/`higherAuthority`; tested. (Manual-override full flow still pending below.)
-- [ ] Manual Override Contract (source='manual_user_entry', preserves prior + rejected reason) — type fields exist (`rejectedReason`, `manual_user_entry`); flow pending
-- [ ] ONE_BRAIN_SHADOW flag + TPS/Translation shadow + parity test + diff report — **P2.3 (after adapter)**
+- [x] Provider Output Quarantine (candidates until gates pass) — **PR #58** `partitionQuarantine` (accepted vs quarantined); tested.
+- [x] Source Authority Ranking (MRZ>visual>I-94>EAD>DL>manual; manual only after confirm) — **PR #52** `sourceRank`/`higherAuthority`; tested.
+- [x] Manual Override Contract (source='manual_user_entry', preserves prior + rejected reason) — **PR #57** `applyManualOverride` (lowest authority, preserves prior in evidence + rejectedReason, clears review); manualOverride.test 5/5.
+- [x] ONE_BRAIN_SHADOW flag + TPS/Translation shadow + parity test + diff report — **PR #54** (`diffCanonical`/`isShadowEnabled`/`summarizeParity`) + **#56** (live TPS-route wiring, observe-only, default OFF); shadow.test 8/8 + liveShadow.test 4/4 + shadowWiring.test 3/3.
 
 ### Finalization & PDF (Phase 4)
 - [ ] Finalization Lock (reviewSnapshotHash; PDF only from frozen snapshot; no re-extraction)
