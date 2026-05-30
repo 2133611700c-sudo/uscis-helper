@@ -1,4 +1,7 @@
 # STATUS — Messenginfo
+## Session 64 (2026-05-30) — Glossary: 5 missing agencies added (branch data/glossary-missing-agencies)
+- `FIXED(plan gap)` Added ПФУ (Pension Fund), КМУ (Cabinet of Ministers), МОН (Education & Science), МОЗ (Health), Мінрегіон (Communities & Territories Dev.) to the D-GLOSSARY registry with official .gov.ua/en source URLs (ADR-013 satisfied). Regenerated registry.generated.ts (54 rows). lookupAuthority resolves all 5 (+abbr); validateRegistry 0 errors; web suite + tsc 0 + content-guard 0.
+
 ## Session 63 (2026-05-30) — Attestation audit trail in DB (branch feat/attestation-audit-trail)
 - `FIXED(plan gap)` Route now persists the internal attestation/audit record (8 CFR §103.2(b)(3)): both checkboxes, signature presence + method, signer name/address presence, sha256 document hash, certification version, recorded_at. Stored inside the `certification_record` jsonb — NO schema migration. Not shown on the customer PDF. `attestation.ts` + `attestation.test.ts` 5/5.
 - `VERIFIED` full web pass, tsc 0, content-guard 0.
