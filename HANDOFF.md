@@ -1,4 +1,10 @@
-# HANDOFF — Session 76 (2026-05-30)
+# HANDOFF — Session 76b (2026-05-30)
+
+## Session 76b — Tracker update: S1 done + constitution docs + phase-completion gate (branch `docs/engineering-master-plan`)
+
+S1 (geography no-silent-snap) shipped as its own safety PR **#48** off main. This branch (the tracker, PR #47) is updated to record it: S1 → `[x]` with PR# and full evidence/risk; the 5 constitution docs landed here and flipped to `[x]`; the owner's **phase-completion gate** added to §7 (no `[x]` without test+prod-impact+risk+scope-discipline+report). Exact next task: **S2 — audit persistence hard-fail** (generate-pdf must return non-200/DEGRADED when the order/audit DB write fails, instead of 200).
+
+---
 
 ## Session 76 — Engineering Master Plan + tracker (branch `docs/engineering-master-plan`, off main)
 
