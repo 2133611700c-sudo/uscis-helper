@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 76: Engineering Master Plan + tracker (branch docs/engineering-master-plan)
+
+`docs/ENGINEERING_MASTER_PLAN.md` — single living source of truth: 3 laws, target architecture, phases 0–6, and a full control tracker ([x]/[~]/[ ]/[B]) consolidating all owner recommendations + the agent analysis/plan. Priority: S1 geography no-silent-snap → S2 audit hard-fail → S3 no-silent-correction → UX → constitution docs → canonical contract → shadow parity → controlled migration → consolidate → ops → P2 last.
+
+
 ## 2026-05-30 — Session 71: Booklet orientation auto-rotate (branch fix/booklet-orientation)
 
 Extended the TPS OCR rotation (previously MRZ-only) to the internal passport booklet (no MRZ): trigger rotation when booklet has <2 identity fields; pick the rotation with the most identity fields; adopt if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0. Caveat: needs a live rotated-booklet repro to confirm (additive/safe — only adopts a strictly-better rotation).
