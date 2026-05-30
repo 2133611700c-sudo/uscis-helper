@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 75 (2026-05-30) — FULL repo inventory + architecture audit (branch docs/full-repo-audit)
+- `AUDIT` 6 read-only reports in docs/reports/: FULL_REPO_INVENTORY(.md/.csv), ARCHITECTURE_DEPENDENCY_MAP (mermaid TPS/Translation/OCR/PDF/DB), DEAD_CODE_AND_DUPLICATES, PRODUCT_FLOW_MATRIX, RISK_REGISTER_BY_FILE. From census (1423 files, 47 API routes, 26 migrations, 20 DB tables, ~20 storage keys) + 2 parallel agents (tests/dead-code; PDF/state/DB).
+- `CRITICAL findings` 2 recognition stacks (legal divergence); audit/order DB write continues-on-failure (returns 200); [CONFIRM] can reach signed bureau PDF; snapCity over-match (Ярошенець→Trostianets); stale TPS legal-risk state; central_brain_audit table drift; 5 packet endpoints; dead engine/assembler+knowledge/normalize+marriage renderer.
+- `NO code changes` (read-only). Highest-leverage fix = ADR-016 one brain.
+
 ## Session 71 (2026-05-30) — Booklet orientation: rotate by identity-field count (branch fix/booklet-orientation)
 - `DONE` TPS OCR route already rotated for passport MRZ; extended ADDITIVELY for the INTERNAL passport booklet (no MRZ to anchor on): trigger rotation when booklet matched with <2 identity fields; in the loop track the rotation with the most identity fields; adopt it if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0.
 - `HONEST CAVEAT` cannot verify with a LIVE rotated booklet image here (no fixture upload). Logic is additive/safe (only adopts a rotation with strictly more identity fields). Owner live-repro of a rotated booklet recommended to confirm pick.

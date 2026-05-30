@@ -1,0 +1,32 @@
+file_path,area,runtime_status,entrypoint,imports,providers,db_tables,storage_keys,legal_risk,pii_risk,tests,risk_level,notes
+apps/web/src/app/api/translation/generate-pdf/route.ts,Translation,ACTIVE,yes,reviewGate;attestation;packet/pdf;stripe,Stripe;Supabase,translation_orders;translation_certification_audit,,yes,definite,reviewGate;attestation;certificationPdf,critical,"audit insert logged but route returns 200 on failure; payment+review gate live"
+apps/web/src/app/api/translation/vision-extract/route.ts,Translation,ACTIVE,yes,docintel/readDocument;central-brain/analyze;engine/translator,Gemini;Google Vision,extracted_fields;extraction_runs;audit_logs,,yes,possible,engine/pipeline.live(gated),high,Translation recognition brain (STRONG stack)
+apps/web/src/app/api/tps/ocr/extract/route.ts,TPS/OCR,ACTIVE,yes,ocr/google-vision;docai;tps/modules;tps/ai,Google Vision;DocAI;Gemini;DeepSeek,tps_ocr_audit,,yes,possible,tps modules;geminiVisionArbiter(+live),high,"TPS recognition brain (WEAK stack); rotation; flagged brain"
+apps/web/src/app/api/tps/brain/merge/route.ts,TPS/CentralBrain,ACTIVE,yes,tps/centralBrain,Supabase,central_brain_audit(?),,yes,possible,centralBrain,high,parallel normalize to engine; central_brain_audit table maybe drift
+apps/web/src/app/api/tps/generate-packet/route.ts,TPS/PDF,ACTIVE,yes,tps/packetBuilder;forms i821/i765,Stripe;Supabase,packets,,yes,possible,packetBuilder,high,ZIP I-821+I-765; owner bypass + Stripe
+apps/web/src/app/api/reparole/generate-packet/route.ts,ReParole/PDF,ACTIVE,yes,reparole/packetBuilder,Stripe,generated_packets,,yes,possible,reparole/packetBuilder,medium,ZIP I-131
+apps/web/src/app/api/ead/generate-packet/route.ts,EAD/PDF,ACTIVE,yes,ead/packetBuilder;i765FieldMap,none,,,yes,none,ead/packetBuilder;i765FieldMap,medium,free; manual entry; no OCR
+apps/web/src/app/api/translation/render/route.ts,Translation,ACTIVE,yes,bureauStyleRenderer;packet/pdf;reviewGate,Supabase,translation_sessions;extracted_fields;certification_records;final_renders,,yes,definite,render,high,strong gates (payment/cert/critical-fields/QA)
+apps/web/src/app/api/translation/process/route.ts,Translation,DEAD?,yes,generateFullPacket,Supabase,,,yes,possible,,medium,legacy v0; unclear payment lineage
+apps/web/src/app/api/owner/status|verify-code|request-code|logout,OwnerMode,ACTIVE,yes,ownerAccess,Supabase,,,,possible,,medium,owner-mode infra
+apps/web/src/app/api/stripe/checkout|webhook,Billing,ACTIVE,yes,stripe,Stripe,,,,possible,,high,webhook HMAC; checkout success_url leaks cs in URL
+apps/web/src/components/services/translation/TranslateWizard.tsx,Translation,ACTIVE,yes,knowledge/isGarbageValue;owner/status,,,tw:v2:draft;tw:cs;tw:ticket,yes,possible,sessionIsolation;garbageGuard;ownerMode;certifierUx,high,"draft gated on ?paid=1; SAMPLE_ROWS shown if no fields; owner-mode"
+apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx,TPS,ACTIVE,yes,knowledge/isGarbageValue;owner/status,,,wizard:tps-ukraine:v2:state;tps:legal-risk:v1;tps:attest:v1,yes,definite,(playwright e2e),high,"localStorage restore (no per-doc-session id); legal-risk persists cross-doc"
+apps/web/src/app/[locale]/services/re-parole-u4u/start/ReparoleWizardV2.tsx,ReParole,ACTIVE,yes,,,,wizard:re-parole-u4u:v3:state,yes,possible,,medium,reuses TPS OCR
+apps/web/src/lib/packet/pdf.ts,PDF,ACTIVE,no,toWinAnsiSafe;embedPng,,,,,definite,honest-pdf;pdf-readback;signatureImage;certificationPdf,critical,live translation PDF + cert block + signature image
+apps/web/src/lib/translation/pdf/templates/ukraine/renderOfficialTranslation.ts,PDF,FLAGGED,no,renderValue/pdfSafe,,,,,possible,render;bureauTranslation.golden,high,bureau path (BUREAU_PDF off); [CONFIRM] strip after reviewConfirmed
+apps/web/src/lib/translation/pdf/templates/ukraine/renderMarriageCertificateTranslation.ts,PDF,DEAD,no,renderValue/pdfSafe,,,,,none,noSilentStrip,low,0 importers; superseded by renderOfficialTranslation
+apps/web/src/lib/engine/orchestrator.ts,Engine,UNWIRED,no,knowledge/*;consensus;terminologist,,,,,,terminologist;consensus;presence;pipeline.live,high,MOST CAPABLE brain but NOT wired to TPS
+apps/web/src/lib/engine/assembler.ts,Engine,DEAD,no,,,,,,,assembler,low,no caller
+apps/web/src/lib/central-brain/index.ts,CentralBrain,FLAGGED,no,engine/orchestrator;docintel,,central_brain_audit,,yes,possible,central-brain,high,partial bridge; analyze()
+apps/web/src/lib/tps/centralBrain.ts,TPS/CentralBrain,ACTIVE,no,dictionaryBridge;hallucinationGuard;fieldArbiter,,,,yes,possible,centralBrain,high,parallel normalize stack
+apps/web/src/lib/tps/dictionaryBridge.ts,Glossary,ACTIVE,no,knowledge/dictionary,,,,yes,none,,medium,parallel geography/authority normalize
+apps/web/src/lib/tps/transliterate.ts,Glossary,ACTIVE,no,(reimpl),,,,yes,none,,medium,duplicate of knowledge/transliterate — REPLACE
+apps/web/src/lib/translation/glossary/ukraine_agency_abbreviations.json,Glossary,ACTIVE,no,(data),,,,yes,none,,medium,57 agency abbr — parallel to registry (consolidate P2)
+apps/web/src/lib/translation/glossary/glossaryLoader.ts,Glossary,ACTIVE,no,(inline),,,,yes,none,,medium,inline FULL_GLOSSARY — parallel
+packages/knowledge/src/registry/registryLookup.ts,Glossary,ACTIVE,no,registry.generated,,,,,none,registry,medium,D-GLOSSARY canonical (source-gated)
+packages/knowledge/src/gazetteer.ts,Geography,ACTIVE,no,,,,,,yes,none,(via knowledge tests),medium,snapCity threshold 0.34 over-matches (Ярошенець→Trostianets); only wired to engine
+packages/knowledge/src/normalize.ts,Glossary,DEAD,no,,,,,,none,normalize,low,superseded; no caller in app/api
+apps/web/src/lib/translation/mockOCR.ts,Translation,TEST_ONLY,no,,,,,,none,,low,Translation Lab demo only
+apps/web/src/lib/engine/htr.ts,OCR,DEAD,no,Transkribus,Transkribus,,,,,htr,medium,broken (OAuth); not runtime-verified
+supabase/migrations/20260530000001_translation_certification_audit.sql,DB,ACTIVE,no,,Supabase,translation_certification_audit,,yes,definite,,high,applied to prod; audit table
