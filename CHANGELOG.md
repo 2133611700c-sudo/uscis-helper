@@ -3,6 +3,14 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 57b: Accept ADR-015 separately (branch docs/accept-adr-015)
+
+Playbook step 4. `docs/adr/ADR-015-pdf-output-architecture.md` existed only on `spike/pdf-readback`; landed the **ADR document only** (decoupled from spike test/code) onto a main-based branch as an independent merge unit, per owner's "accept ADR-015 separately".
+
+- **Decision:** pdf-lib is the single rendering engine. Track A USCIS forms = AcroForm fill; Track B bureau translations = `renderOfficialTranslation` (schema-driven). React-PDF / Puppeteer / Apple PDFKit REJECTED as core — spike proved the bureau renderer's English output is hex-extractable (`<hex> Tj`), so golden text-readback works today without a new dependency.
+- **Real remaining work** named in the ADR: field-key mapping (recognized→schema keys) + Document/Source Registry wiring + per-schema golden tests + owner visual approval before enabling BUREAU_PDF. Not a new renderer.
+- No code change → no test delta. ADR status: Accepted (spike-validated) · 2026-05-29.
+
 ## 2026-05-29 — Session 56: Unified recognition engine + Central Brain spine + official UA forms layer (all LOCAL, not deployed)
 
 NOTHING deployed — local checkpoint of cross-product engine work.

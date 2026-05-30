@@ -1,3 +1,17 @@
+# HANDOFF — Session 57b (2026-05-29)
+
+## Session 57b — Accept ADR-015 separately (branch `docs/accept-adr-015`, off main)
+
+Playbook step 4 (S2 acceptance). ADR-015 "PDF Output Architecture" existed only on `spike/pdf-readback`. Per owner's instruction "accept ADR-015 separately", landed **only the ADR document** onto a main-based branch — decoupled from the spike test/code — so it is an independent merge unit.
+
+**Decision recorded:** pdf-lib is the single rendering engine. Track A = official USCIS forms (AcroForm fill). Track B = bureau-style certified translations (`renderOfficialTranslation`, schema-driven). React-PDF / Puppeteer / Apple PDFKit REJECTED as core (spike-validated: bureau output is `<hex> Tj`, fully extractable — golden readback works today; no new dependency). Remaining real work is field-key mapping + template selection, NOT a new renderer.
+
+**Exact next task:** Playbook step 5 — Prompt 5 deterministic coverage-report generator (`scripts/document-platform-coverage.mjs` → `docs/reports/DOCUMENT_PLATFORM_COVERAGE.generated.{md,json}`), so the matrix is derived from code, not hand-written. Then owner-gated: merge #26/#27 → rebase official-docs → birth pilot.
+
+**Evidence:** ADR doc landed (59 lines), status Accepted. No code change → no test delta.
+
+---
+
 # HANDOFF — Session 56 (2026-05-29)
 
 ## Session 56 — Unified recognition engine + Central Brain spine (LOCAL, not deployed)

@@ -1,4 +1,7 @@
 # ST
+## Session 57b (2026-05-29) — Accept ADR-015 (branch docs/accept-adr-015)
+- `ACCEPTED` ADR-015 PDF Output Architecture landed on main-line (was only on spike/pdf-readback). Decision: pdf-lib is the single engine — Track A USCIS forms (AcroForm fill), Track B bureau translations (`renderOfficialTranslation`). React-PDF/Puppeteer/Apple REJECTED as core (spike-validated: bureau renderer output is hex-extractable, golden readback works today). Decoupled from spike code — doc only, independent merge unit.
+
 ## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)
 - `VERIFIED(local)` recognition engine `apps/web/src/lib/engine/` 29/29; central-brain `apps/web/src/lib/central-brain/` 3/3 (delegated_to_legacy → TPS untouched); knowledge patronymic 26/26 + gazetteer.
 - `VERIFIED(live API)` vision LLMs fabricate handwriting; Transkribus reads PRINTED not faded handwritten Soviet docs → printed=auto, handwritten=human-assist.
