@@ -145,13 +145,13 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 - [ ] Customer-safe failure mode (no evidence→blank; wrong page→ask; conflict→manual; never guess)
 - [ ] Unknown-field policy (blank + plain reason to user, exact reason in audit)
 - [ ] Adversarial Document Test Matrix (rotated/cropped/blurred/wrong-page/multi-doc/low-light/screenshot)
-- [ ] Cross-Document Contradiction Detector (passport vs I-94 vs EAD vs DL → review)
+- [x] Cross-Document Contradiction Detector (passport vs I-94 vs EAD vs DL → review) — **PR #62** `findCrossDocumentContradictions` (reports same-key conflicts across docs; critical/high → blocking) + `hasBlockingContradiction`; contradictions.test 6/6.
 - [x] Prompt-Injection Defense (OCR text = untrusted data; LLM extract-only, no tools/approve/certify/pay/finalize) — **PR #61** `fenceUntrustedText` (fence + strip forged markers → block break-out) wired into documentBrain buildUserMessage + SYSTEM_PROMPT (no-follow + extract-only); untrustedText.test 8/8.
 - [ ] Cost Firewall (per-doc provider-call + cost cap; over-budget → manual review/ask photo)
 - [ ] Regression Corpus + "every incident → fixture+test before closed"
 - [ ] Incident Log (structured, not chat)
 - [ ] Canary Production Test post-deploy (healthz sha, owner mode, no-review reject, reset, garbage reject)
-- [ ] Legal Copy Freeze + versioned/hash-pinned certification text (change only via ADR)
+- [x] Legal Copy Freeze + versioned/hash-pinned certification text (change only via ADR) — **PR #63** `legalCopyFreeze.test.ts` pins CERTIFICATION_VERSION + sha256(CERTIFICATION_STATEMENT); silent edit fails the build; 3/3.
 - [ ] Official Source Version Pinning (url/retrievedAt/hash/effectiveDate/status; amended→needs_review)
 - [ ] No-Cross-Product-Memory (no field shared without documentSessionId + fileHash + explicit action)
 - [x] State reset: clear tps:legal-risk:v1 / tps:attest:v1 on new upload; per-documentSessionId — **PR #60** `clearTpsDocumentState` wired into TPSWizardV2.restart (clears attest/legal-risk/Part-7 so a new document can't inherit person A's answers); documentState.test 4/4.
