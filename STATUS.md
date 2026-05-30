@@ -1,4 +1,14 @@
 # ST
+## Session 57a (2026-05-29) — Safety PR #28 + content-guard fix (branch fix/review-gate-hard-block)
+- `PR` #28 opened (base main, NOT merged) — review-gate hard block as an independent safety PR. ADR-015 = separate PR #29.
+- `FIXED(CI)` content-guard Rule 4 ('certified translation' product claim) tripped in `route.ts`/`reviewGate.ts` → reworded to 'signed translation' / 'translation certification'. Guard CLEAN, reviewGate 13/13, tsc 0.
+
+## Session 57 (2026-05-29) — Review-Gate hard block + platform coverage audit (branch fix/review-gate-hard-block)
+- `VERIFIED(local)` Review-Gate hard block on `/api/translation/generate-pdf`: certified PDF refused unless review-confirmation (checkbox OR completed signature) + signerName. Was payment-only → machine-only POST got "certified" PDF. `reviewGate.ts` 13/13. signerAddress = non-blocking WARNING (live TranslateWizard sends empty addr — `KNOWN GAP`, wire address field next).
+- `VERIFIED(local)` No regression: translation suite 1701 pass, 0 type errors.
+- `AUDIT` 4 reports in `docs/reports/`: DOCUMENT_PLATFORM_COVERAGE (0 docs active; birth=only pilot, other 4 civil=DRAFT), BRANCH_STABILIZATION (merge #26→#27→rebase official-docs; official-docs has NO КАТОТТГ), ROUTE_INVENTORY (no payment bypass; generate-pdf review hole = closed here), GLOSSARY_GEOGRAPHY (missing ПФУ/КМУ/Мінрегіон/МОН/МОЗ; 458-city КАТОТТГ stranded on koatuu).
+- `OWNER-GATED` merge #26/#27 (Preview E2E), correct official URLs (military/diploma/pension), КАТОТТГ byte-verify, bureau-PDF visual approval, wire signer-address into wizard.
+
 ## Session 56 (2026-05-29) — Unified recognition engine + Central Brain (LOCAL)
 - `VERIFIED(local)` recognition engine `apps/web/src/lib/engine/` 29/29; central-brain `apps/web/src/lib/central-brain/` 3/3 (delegated_to_legacy → TPS untouched); knowledge patronymic 26/26 + gazetteer.
 - `VERIFIED(live API)` vision LLMs fabricate handwriting; Transkribus reads PRINTED not faded handwritten Soviet docs → printed=auto, handwritten=human-assist.
