@@ -1,3 +1,23 @@
+# HANDOFF — Session 59 (2026-05-30)
+
+## Session 59 — Autonomous branch stabilization (4 PRs merged, official-docs synced)
+
+Owner granted full autonomy. Executed the merge queue end-to-end.
+
+**Merged to main (in order):**
+1. **#28** review-gate hard block (safety) — squash. **Deployed to production** (healthz confirms sha 9e05c1a live; machine-only certified PDF now blocked).
+2. **#29** ADR-015 PDF architecture — squash (docs). Session-doc conflict union-resolved.
+3. **#26** recognition + D-GLOSSARY + presence/MRZ — **merge-commit** (preserves the 18 commits so the stacked koatuu branch stays clean). Merged on green CI; recognition *visual* quality not human-verified headless — direction is safer-than-prod (closes 6 gaps), low runtime risk (engine largely unwired).
+4. **#30** = koatuu КАТОТТГ 458 cities. GitHub auto-CLOSED the original #27 when its base `feat/c3-presence` was deleted on #26 merge; reopened as new PR #30 (base main) and squash-merged.
+
+**official-docs synced:** merged main in → now has review-gate + КАТОТТГ. `generate-pdf/route.ts` auto-merged correctly (payment → review-gate → BUREAU_PDF, default OFF; guard-clean wording). **Recovered a mistake:** `git reset --hard origin/official-docs` reset to a stale origin (70ce1d8) and dropped 4 unpushed commits; restored via reflog to bc98d07 — no work lost.
+
+**Coverage matrix (regenerated from code):** review_gate_enforced=True, katottg=458. **`ua_birth_certificate` now clears every gate except `owner_visual_approval`.** active_count still 0 (correct — gated on owner visual + the empty ACTIVE allowlist). Full web 2267 pass, tsc 0.
+
+**Exact next task (owner-gated):** owner visually approves `docs/reports/artifacts/birth_certificate.pilot.png` → then birth can be added to the ACTIVE allowlist (still behind BUREAU_PDF). Then P3: wire signerAddress into TranslateWizard + promote to hard-gate; strip `[CONFIRM]` from signed text after reviewConfirmed. NO new document types.
+
+---
+
 # HANDOFF — Session 58d (2026-05-29)
 
 ## Session 58d — Post-fix QA + class-level guard (branch `official-docs`)

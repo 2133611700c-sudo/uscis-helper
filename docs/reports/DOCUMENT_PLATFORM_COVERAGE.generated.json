@@ -2,8 +2,8 @@
   "generated_by": "scripts/document-platform-coverage.mjs",
   "branch_note": "statuses reflect the CURRENT branch; review_gate + КАТОТТГ depend on branch",
   "bureau_pdf_default_off": true,
-  "review_gate_enforced_here": false,
-  "katottg_cities": 0,
+  "review_gate_enforced_here": true,
+  "katottg_cities": 458,
   "agency_entries": 8,
   "active_documents_count": 0,
   "red_items_count": 4,
@@ -16,13 +16,13 @@
       "field_contract_status": "present",
       "mapping_status": "complete",
       "renderer_status": "document_specific",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "live",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
-        "review_gate_not_enforced_on_this_branch"
+        "owner_visual_approval (not on allowlist)"
       ]
     },
     {
@@ -32,15 +32,14 @@
       "field_contract_status": "present",
       "mapping_status": "absent",
       "renderer_status": "generic_only",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "none_or_synthetic",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
         "canonical_mapping",
         "renderer:generic_only",
-        "review_gate_not_enforced_on_this_branch",
         "live_fixture_e2e"
       ]
     },
@@ -51,15 +50,14 @@
       "field_contract_status": "present",
       "mapping_status": "absent",
       "renderer_status": "generic_only",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "none_or_synthetic",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
         "canonical_mapping",
         "renderer:generic_only",
-        "review_gate_not_enforced_on_this_branch",
         "live_fixture_e2e"
       ]
     },
@@ -70,15 +68,14 @@
       "field_contract_status": "present",
       "mapping_status": "absent",
       "renderer_status": "generic_only",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "none_or_synthetic",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
         "canonical_mapping",
         "renderer:generic_only",
-        "review_gate_not_enforced_on_this_branch",
         "live_fixture_e2e"
       ]
     },
@@ -89,15 +86,14 @@
       "field_contract_status": "present",
       "mapping_status": "absent",
       "renderer_status": "generic_only",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "none_or_synthetic",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
         "canonical_mapping",
         "renderer:generic_only",
-        "review_gate_not_enforced_on_this_branch",
         "live_fixture_e2e"
       ]
     },
@@ -108,17 +104,16 @@
       "field_contract_status": "absent",
       "mapping_status": "absent",
       "renderer_status": "none",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "live",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
         "schema:absent",
         "field_contract",
         "canonical_mapping",
-        "renderer:none",
-        "review_gate_not_enforced_on_this_branch"
+        "renderer:none"
       ]
     },
     {
@@ -128,9 +123,9 @@
       "field_contract_status": "absent",
       "mapping_status": "absent",
       "renderer_status": "none",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "none_or_synthetic",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
@@ -138,7 +133,6 @@
         "field_contract",
         "canonical_mapping",
         "renderer:none",
-        "review_gate_not_enforced_on_this_branch",
         "live_fixture_e2e"
       ]
     },
@@ -149,9 +143,9 @@
       "field_contract_status": "absent",
       "mapping_status": "absent",
       "renderer_status": "none",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "none_or_synthetic",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
@@ -160,7 +154,6 @@
         "field_contract",
         "canonical_mapping",
         "renderer:none",
-        "review_gate_not_enforced_on_this_branch",
         "live_fixture_e2e"
       ]
     },
@@ -171,9 +164,9 @@
       "field_contract_status": "absent",
       "mapping_status": "absent",
       "renderer_status": "none",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "live",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
@@ -181,8 +174,7 @@
         "schema:absent",
         "field_contract",
         "canonical_mapping",
-        "renderer:none",
-        "review_gate_not_enforced_on_this_branch"
+        "renderer:none"
       ]
     },
     {
@@ -192,9 +184,9 @@
       "field_contract_status": "absent",
       "mapping_status": "absent",
       "renderer_status": "none",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "none_or_synthetic",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
@@ -203,7 +195,6 @@
         "field_contract",
         "canonical_mapping",
         "renderer:none",
-        "review_gate_not_enforced_on_this_branch",
         "live_fixture_e2e"
       ]
     },
@@ -214,9 +205,9 @@
       "field_contract_status": "absent",
       "mapping_status": "absent",
       "renderer_status": "none",
-      "review_gate_status": "missing",
+      "review_gate_status": "enforced",
       "fixture_e2e_status": "none_or_synthetic",
-      "geography_coverage": "0 КАТОТТГ cities (NOT byte-verified)",
+      "geography_coverage": "458 КАТОТТГ cities (NOT byte-verified)",
       "agency_glossary_coverage": "8 agency entries",
       "active_status": false,
       "blockers": [
@@ -225,7 +216,6 @@
         "field_contract",
         "canonical_mapping",
         "renderer:none",
-        "review_gate_not_enforced_on_this_branch",
         "live_fixture_e2e"
       ]
     }

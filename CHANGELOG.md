@@ -3,6 +3,16 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 59: Autonomous branch stabilization (4 PRs merged; official-docs synced)
+
+Owner granted full autonomy; executed the merge queue.
+
+- **Merged to main:** #28 review-gate hard block (squash; **deployed to production**, healthz sha 9e05c1a — machine-only certified PDF now blocked) · #29 ADR-015 (squash, docs) · #26 recognition+D-GLOSSARY+presence/MRZ (**merge-commit** to preserve the stack) · #30 (=reopened koatuu) КАТОТТГ 458 cities (squash). Original #27 was auto-closed by GitHub when base `feat/c3-presence` was deleted on #26 merge → reopened as #30 against main.
+- **Conflict handling:** all merge conflicts were session-docs only (STATUS/HANDOFF/CHANGELOG), union-resolved. `generate-pdf/route.ts` auto-merged correctly (payment → review-gate → BUREAU_PDF default OFF).
+- **Recovery:** a `git reset --hard origin/official-docs` hit a stale origin (70ce1d8) and dropped 4 unpushed commits; restored from reflog to bc98d07 — no work lost.
+- **official-docs synced** with main (review-gate + КАТОТТГ inherited). Coverage matrix regenerated from code: review_gate_enforced=True, katottg=458, **`ua_birth_certificate` clears every gate except owner_visual_approval**; active_count=0 (still gated). Full web 2267 pass, tsc 0, content-guard clean.
+- **Next (owner-gated):** owner visual approval of the birth pilot PNG → allowlist birth (behind BUREAU_PDF) → P3 signerAddress hard-gate + strip [CONFIRM] after reviewConfirmed.
+
 ## 2026-05-29 — Session 58d: Post-fix Cyrillic QA + class-level silent-strip guard (branch official-docs)
 
 QA of the cyrillic fix (bbf26ed), with two improvements beyond a read-only pass.
