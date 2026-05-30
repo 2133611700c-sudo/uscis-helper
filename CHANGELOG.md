@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 73: Two-brain divergence + ADR-016 one recognition brain (branch docs/adr-016-one-brain)
+
+Owner live test: same passport → TPS read only surname, Translation read everything. Root: two engines (Translation=Gemini docintel+central-brain; TPS=Google Vision+keyword modules) + divergent geography (snapCity 0.34 over-match Ярошенець→Trostianets). ADR-016: one brain = Gemini-vision docintel + central-brain; TPS modules become validators over the same read; phased B1–B5 with a fixture parity test. Also: Translation wizard back + start-over buttons. Next: execute B1 (not p2).
+
+
 ## 2026-05-30 — Session 71: Booklet orientation auto-rotate (branch fix/booklet-orientation)
 
 Extended the TPS OCR rotation (previously MRZ-only) to the internal passport booklet (no MRZ): trigger rotation when booklet has <2 identity fields; pick the rotation with the most identity fields; adopt if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0. Caveat: needs a live rotated-booklet repro to confirm (additive/safe — only adopts a strictly-better rotation).
