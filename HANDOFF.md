@@ -909,3 +909,5 @@ Architecture: extend typed schema (not 7-JSON-per-doc). birth-cert: official К�
 ## official-docs — 5 civil-status schemas contracted DONE. Next: re-source КАТОТТГ official (mtu.gov.ua) + correct URLs (mil/diploma/pension); then wire mapping→renderOfficialTranslation behind flag + owner approval.
 
 ## КАТОТТГ official provenance: data.gov.ua/Мінрегіон, minregion kodyfikator.xlsx (403 from env). Owner download to byte-verify mirror. Next: correct official URLs for military/diploma/pension acts.
+
+## Agent Document Rules (constitution) committed. official-docs branch now: 5 civil schemas contracted + birth mapping + verified sources + КАТОТТГ official provenance + agent charter. Next: correct URLs for mil/diploma/pension (sites block env — owner may help) OR wire mapping→renderOfficialTranslation behind flag + owner visual approval.
