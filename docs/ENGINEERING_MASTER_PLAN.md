@@ -146,7 +146,7 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 - [ ] Unknown-field policy (blank + plain reason to user, exact reason in audit)
 - [ ] Adversarial Document Test Matrix (rotated/cropped/blurred/wrong-page/multi-doc/low-light/screenshot)
 - [ ] Cross-Document Contradiction Detector (passport vs I-94 vs EAD vs DL → review)
-- [ ] Prompt-Injection Defense (OCR text = untrusted data; LLM extract-only, no tools/approve/certify/pay/finalize)
+- [x] Prompt-Injection Defense (OCR text = untrusted data; LLM extract-only, no tools/approve/certify/pay/finalize) — **PR #61** `fenceUntrustedText` (fence + strip forged markers → block break-out) wired into documentBrain buildUserMessage + SYSTEM_PROMPT (no-follow + extract-only); untrustedText.test 8/8.
 - [ ] Cost Firewall (per-doc provider-call + cost cap; over-budget → manual review/ask photo)
 - [ ] Regression Corpus + "every incident → fixture+test before closed"
 - [ ] Incident Log (structured, not chat)
@@ -154,9 +154,9 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 - [ ] Legal Copy Freeze + versioned/hash-pinned certification text (change only via ADR)
 - [ ] Official Source Version Pinning (url/retrievedAt/hash/effectiveDate/status; amended→needs_review)
 - [ ] No-Cross-Product-Memory (no field shared without documentSessionId + fileHash + explicit action)
-- [ ] State reset: clear tps:legal-risk:v1 / tps:attest:v1 on new upload; per-documentSessionId
+- [x] State reset: clear tps:legal-risk:v1 / tps:attest:v1 on new upload; per-documentSessionId — **PR #60** `clearTpsDocumentState` wired into TPSWizardV2.restart (clears attest/legal-risk/Part-7 so a new document can't inherit person A's answers); documentState.test 4/4.
 - [x] Translation wizard Back + Start-over buttons (UX) — **PR #51**; review-screen Back(→re-upload) + Start-over; `resetAll` clears ALL state + both `tw:v2:draft`/`tw:cs`; `wizardResetStartOver.test` 4/4.
-- [ ] PII Redaction in logs — CI grep test (passport#/A-number/DOB/address/phone/email/full name → FAIL)
+- [x] PII Redaction in logs — CI grep test (passport#/A-number/DOB/address/phone/email/full name → FAIL) — **PR #59** `noPiiLogging.test.ts` (fails build if any console.* interpolates a PII value; self-test + clean audit); 2/2.
 - [ ] Data Minimization (send crop+label, not whole image) + Retention policy
 - [ ] Human Review Queue spec (owner, SLA, field checklist, accept/reject, audit)
 - [ ] Operational metrics (OCR success, correction rate, rejection rate, disagreement, audit fails, PDF fails, restart rate, cost/doc)

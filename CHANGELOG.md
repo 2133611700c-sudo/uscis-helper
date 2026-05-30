@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 76h: Tracker — Phase-5 safety items done (#59/#60/#61) (branch docs/engineering-master-plan)
+
+Marked [x]: PII-redaction CI guard (#59), TPS per-document state reset (#60), Prompt-Injection Defense (#61). Code-completable plan scope essentially done (safety + UX + full canonical core + 3 Phase-5 guards, 16 PRs). Remaining items are gated: data-minimization (extraction redesign), migration/consolidation (needs real-traffic parity), Phase 4 (PDF/ledger), Phase 6 (ops), owner-gated. File: docs/ENGINEERING_MASTER_PLAN.md, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 76g: Tracker — canonical core COMPLETE (#52–#58) (branch docs/engineering-master-plan)
 
 Marked the entire canonical core [x] (adapter #53/#55, Doc-Type Gate + Quarantine #58, Manual Override #57, ONE_BRAIN_SHADOW flag+live wiring #54/#56, plus #52 contract/policy). Added CURRENT STATE banner to §5: Phase-1 safety + UX + canonical core all merged (#48–#58); remaining items are gated (migration needs real-traffic parity; Phase 4 PDF/ledger; Phase 6 ops; owner-gated). File: docs/ENGINEERING_MASTER_PLAN.md, STATUS/HANDOFF/CHANGELOG.

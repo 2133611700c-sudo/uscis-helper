@@ -1,4 +1,6 @@
 # STATUS — Messenginfo
+## Session 76h (2026-05-30) — Tracker: Phase-5 safety items done (#59/#60/#61) (branch docs/engineering-master-plan)
+- `TRACKER` Marked 3 more `[x]`: PII-redaction CI guard (#59), TPS per-document state reset (#60), Prompt-Injection Defense (#61). With the canonical core (#52–#58) + safety (S1–S3) + UX, the code-completable plan items are essentially done. Genuinely-remaining: data-minimization (real extraction redesign — not a quick PR); migration/consolidation (needs real-traffic parity via ONE_BRAIN_SHADOW=1 canary); Phase 4 (finalization lock/PDF proof/ledger DB); Phase 6 ops; owner-gated items.
 ## Session 76g (2026-05-30) — Tracker: canonical core COMPLETE (#52–#58) (branch docs/engineering-master-plan)
 - `TRACKER` Marked the ENTIRE canonical core `[x]`: adapter (#53/#55), Doc-Type Gate + Quarantine (#58), Manual Override (#57), ONE_BRAIN_SHADOW flag+live wiring (#54/#56) — plus the P2.1 items already done (#52). Added a CURRENT STATE banner: Phase-1 safety + UX + canonical core all merged (#48–#58); the remaining items are GATED (migration needs real-traffic parity; Phase 4 PDF/ledger; Phase 6 ops; owner-gated). The two-brain fix + its measurement instrument are in place.
 ## Session 76f (2026-05-30) — Tracker: UX [x] (#51) + P2.1 canonical [x] (#52) (branch docs/engineering-master-plan)
