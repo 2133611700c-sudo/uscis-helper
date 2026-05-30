@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 82: Doc-Type Confidence Gate + Provider Output Quarantine (branch feat/canonical-doc-gate)
+
+Two more canonical-core policy items. New `apps/web/src/lib/canonical/documentGate.ts`: applyDocumentTypeGate (below doc-type-confidence threshold → quarantine every field with unknown_document_type + requiresReview; at/above → unchanged; idempotent) + partitionQuarantine (accepted vs quarantined candidates). Pure/additive/unwired. New documentGate.test.ts 6/6; full web 2331 pass; tsc 0; content-guard 0. Report `docs/reports/P2_DOCTYPE_GATE_QUARANTINE.md`. Canonical core now fully contract-complete. Files: canonical/documentGate.ts, canonical/index.ts, canonical/__tests__/documentGate.test.ts, report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 80: Live ONE_BRAIN_SHADOW wiring in TPS route (branch feat/canonical-shadow-wiring)
 
 First live wiring of the canonical core, observe-only + default OFF. New pure liveShadow.ts (summarizeTpsReviewShift: builds canonical from live TpsExtractedField[], PII-free review-shift one-liner). TPS extract route logs [ONE_BRAIN_SHADOW] before success return, guarded by isShadowEnabled() AND try/catch — never affects the response, never runs without the flag. New liveShadow.test.ts 4/4 + source-level shadowWiring.test.ts 3/3; full web 2320 pass; tsc 0; content-guard 0. Report `docs/reports/P2_3W_LIVE_SHADOW_WIRING.md`. Files: canonical/liveShadow.ts, canonical/index.ts, api/tps/ocr/extract/route.ts, api/tps/ocr/__tests__/shadowWiring.test.ts, canonical/__tests__/liveShadow.test.ts, report, STATUS/HANDOFF/CHANGELOG.
