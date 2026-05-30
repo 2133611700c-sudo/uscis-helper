@@ -1,4 +1,6 @@
 # ST
+## Session 57b (2026-05-29) — Accept ADR-015 (branch docs/accept-adr-015)
+- `ACCEPTED` ADR-015 PDF Output Architecture landed on main-line (was only on spike/pdf-readback). Decision: pdf-lib is the single engine — Track A USCIS forms (AcroForm fill), Track B bureau translations (`renderOfficialTranslation`). React-PDF/Puppeteer/Apple REJECTED as core (spike-validated: bureau renderer output is hex-extractable, golden readback works today). Decoupled from spike code — doc only, independent merge unit.
 ## Session 57a (2026-05-29) — Safety PR #28 + content-guard fix (branch fix/review-gate-hard-block)
 - `PR` #28 opened (base main, NOT merged) — review-gate hard block as an independent safety PR. ADR-015 = separate PR #29.
 - `FIXED(CI)` content-guard Rule 4 ('certified translation' product claim) tripped in `route.ts`/`reviewGate.ts` → reworded to 'signed translation' / 'translation certification'. Guard CLEAN, reviewGate 13/13, tsc 0.
