@@ -88,11 +88,11 @@ evidence/safety gates, parity tests, source/audit fixes, dead-path isolation (no
 ---
 
 ## 4. REQUIRED CONSTITUTION DOCUMENTS (must exist)
-- [ ] DOCUMENT_SESSION_CONTRACT.md — lifecycle IDs/hashes, reset rules, stale-state prevention
-- [ ] EVIDENCE_LEDGER_SPEC.md — uploadHash→canonicalHash→reviewSnapshotHash→pdfHash→auditId
-- [ ] FIELD_CONFIDENCE_AND_CRITICALITY_POLICY.md — split confidence + legal criticality matrix
-- [ ] PRODUCT_STATUS_AND_LAUNCH_GATES.md — status board + launch gate
-- [ ] AGENT_WORK_ORDER_PROTOCOL.md — scope/allowed/forbidden/acceptance/stop-conditions
+- [x] DOCUMENT_SESSION_CONTRACT.md — lifecycle IDs/hashes, reset rules, stale-state prevention
+- [x] EVIDENCE_LEDGER_SPEC.md — uploadHash→canonicalHash→reviewSnapshotHash→pdfHash→auditId
+- [x] FIELD_CONFIDENCE_AND_CRITICALITY_POLICY.md — split confidence + legal criticality matrix
+- [x] PRODUCT_STATUS_AND_LAUNCH_GATES.md — status board + launch gate
+- [x] AGENT_WORK_ORDER_PROTOCOL.md — scope/allowed/forbidden/acceptance/stop-conditions
 - [x] ADR-016 one recognition brain (PR #44/45)
 - [x] RECOGNITION_ENGINES_FULL_INVENTORY.md + NORMATIVE_BASE_INVENTORY.md
 - [x] FULL_REPO_INVENTORY + ARCHITECTURE_DEPENDENCY_MAP + DEAD_CODE + PRODUCT_FLOW_MATRIX + RISK_REGISTER (PR #46)
@@ -116,7 +116,7 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 - [~] Audit DB persistence — table created + insert works, BUT route continues on failure → **S2**
 
 ### Safety (Phase 1)
-- [ ] S1 Geography no-silent-snap (raw kept, fuzzy → review)
+- [x] S1 Geography no-silent-snap (raw kept, fuzzy → suggestion + review) — **PR #48**; verified by `geographyNoSilentSnap.test.ts` 3/3 (Ярошенець NOT→Тростянець; exact normalizes; unknown→review), full web 2261 pass, tsc 0, guard 0; report `docs/reports/S1_GEOGRAPHY_NO_SILENT_SNAP.md`. Prod-impact: was LIVE in Translation orchestrator + any TPS snapCity reader; now no silent replace. Risk: seed gazetteer ~70 places + UI must show suggestion (UX phase). No unrelated scope.
 - [ ] S2 Audit persistence hard-fail (no 200 on DB failure)
 - [ ] S3 No-silent-correction for name/patronymic/authority/date/series
 
@@ -194,3 +194,13 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 - An item is only "done" when its acceptance + a regression test + (if user-facing) a
   canary/live proof exist. Unit-green alone is `[~]`, not `[x]`.
 - Agent Stop Conditions apply: stop and report BLOCKED rather than writing "done."
+
+### Phase-completion gate (mandatory — owner rule)
+No phase may be marked `[x]` unless ALL five hold:
+1. A test proves the exact owner-reported failure is blocked.
+2. Production-impact status is stated (was it live? affected what? now what?).
+3. Remaining risk is written down.
+4. No unrelated scope was changed.
+5. A report file exists under `docs/reports/`.
+
+Anything missing a condition is `[~]` (degraded/unverified), never `[x]`.
