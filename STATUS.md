@@ -1,3 +1,26 @@
+# STATUS — Messenginfo
+## Session 57 (2026-05-29) — Paid Gemini, model bench, recognition audit, D-GLOSSARY G1+G2 (branch feat/c3-presence)
+- `VERIFIED(live API)` Best recognizer = **gemini-3.1-pro-preview** (20/22; handwriting 8/9, the ONLY model that reads it). 2.5-pro fabricates on handwriting (1/9); GPT-5.5/4o collapse (1/9); DeepSeek = text-only (no vision); Transkribus blocked. Default switched to 3.1-pro (env-driven, fallback 3.5-flash); prod key var = `GEMINI_API_KEY_PAY`.
+- `VERIFIED(local)` presence-confirm fix: GV garbles handwriting → no longer discards handwriting reads (keep+review); only printed fields GV-guarded.
+- `VERIFIED(local)` **D-GLOSSARY G1+G2**: unified registry `packages/knowledge/src/registry/` (CSV source + generated runtime, every row has source_url, era-gating). Wired into LIVE `normalize` (place_city/oblast/authority) with documentDate. смт→"urban-type settlement", oblast→DMS EN, міліція@1986→Militsiya. Web 2182 pass, 0 type errors; registry 11/11; wiring 4/4.
+- `AUDIT` `docs/reports/RECOGNITION_TRANSLATION_AUDIT_2026-05-29.md` — danger is the DELIVERY layer (PDF drops empty fields, wizard hardcodes review, names vs MRZ, fake email, manual-review no ticket, no preprocessing).
+- `VERIFIED(local)` **P0 honest-PDF** (audit #1): `pdf.ts::planTranslationRows` — unread field → visible MISSING placeholder, never dropped; missing → `certifiable=false`. 2/2 tests. Web 2184 pass.
+- `VERIFIED(local)` **G4 (partial)**: `brainHealth().glossary` self-describes categories/total/provenance. Guard test.
+- `VERIFIED(local)` **Wizard honesty (#2a+#4)**: real per-field review flag propagated (no more hardcoded true); false "sent to email" copy removed (email not collected). i18n drift 0.
+- `VERIFIED(local)` **#3 MRZ controlling-Latin**: `knowledge/mrz.ts` TD3 parser (check digits, 4 tests) wired into presence for ua_international_passport — MRZ name/number/DOB beats KMU-55 re-translit (HARD RULE).
+- `VERIFIED(local)` **B3 preprocessing**: sharp clean (orient/grayscale/normalize/downscale) + quality-gate, wired into presence before vision calls, fails-open, 5 tests.
+- `VERIFIED(local)` **#5 manual-ticket**: wizard creates a manual-review ticket on paid manual docs (was payment without ticket). i18n/tsc clean.
+- `VERIFIED(local)` **Field guards #7/#8/#9**: dates calendar-validated, sex never defaults Male, number homoglyph flagged. 7 tests.
+- `VERIFIED(local)` **#12 no silent degrade**: brain-error fallback flags degraded + forces review on all fields.
+- `VERIFIED(local)` **G3 (partial)**: registry 49 rows — all 24 oblasts + major cities, provenance 100%. Full KOATUU = pipeline TODO.
+- `VERIFIED(local)` **#10 prose wired**: free-text fields translated by DeepSeek (locked tokens), no longer dropped.
+- `VERIFIED(local)` **#16 download gate**: Download blocked until a real signature; no unsigned certified PDF. i18n/tsc clean.
+- `PREVIEW` PR #26 open (feat/c3-presence). E2E readback test + RELEASE_CHECKLIST. Do NOT merge until Preview E2E passes.
+- `CI` content-guard Rule 4 fixed (reworded comment); re-pushed.
+- `VERIFIED(local)` **#21 word-aware presence**: no prefix/substring false confirmations.
+- `VERIFIED(live API)` **integrated pipeline E2E** on real military ID → REDACTED + Trostianets(urban-type settlement). Caught+fixed lookupSettlement city+oblast bug.
+- `VERIFIED(live API)` passport MRZ path (REDACTED/FU262473) + handwritten birth cert proven live; 3-doc gated E2E.
+- `NOT DEPLOYED / OPEN` G3 (full KOATUU/civil-registry into CSV), wizard real review-flag propagation (#2), MRZ/controlling-Latin (#3), EAD/Re-Parole route wiring, official renderers (P4), product contracts (P5). On Vercel confirm `GEMINI_API_KEY_PAY` set + deploy. Rotate OpenAI key (pasted in chat).
 # ST
 ## Session 57b (2026-05-29) — Accept ADR-015 (branch docs/accept-adr-015)
 - `ACCEPTED` ADR-015 PDF Output Architecture landed on main-line (was only on spike/pdf-readback). Decision: pdf-lib is the single engine — Track A USCIS forms (AcroForm fill), Track B bureau translations (`renderOfficialTranslation`). React-PDF/Puppeteer/Apple REJECTED as core (spike-validated: bureau renderer output is hex-extractable, golden readback works today). Decoupled from spike code — doc only, independent merge unit.
@@ -757,3 +780,4 @@ _(Session 56 cont.8: preview deploy of feat/central-brain — central-brain/heal
 _(Session 56 cont.9: deployed feat/central-brain to PREVIEW (prod untouched); verified central-brain consensus LIVE on preview (provider=central-brain:consensus, guard works). Found+fixed D5 data blocker: wizard dropped guarded empty fields; now keeps review_required fields as editable rows. Prod flip deferred until wizard review UX browser-verified — my engineering call.)_
 _(Session 56 cont.10: MERGED to main → prod deploy of Central Brain (code live on messenginfo.com, /api/central-brain/health 200). Activating CENTRAL_BRAIN_TRANSLATION=on in production — translation now via 2-reader consensus (Gemini+Google Vision), anti-fabrication guard, legacy fallback on error. Revert = flag off.)_
 _(Session 56 cont.11: D5 — review screen now shows the uploaded document image (responsive, web+mobile) so the user fills empty consensus fields against their original. On branch feat/d5-review-image; build OK; verifying web/mobile before prod merge.)_
+_(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real docs. Findings: GPT-4o fabricates handwriting (Курочинський Олег @0.95); Google Vision OCR contains all printed values; C4 3-way best (4/5); my earlier C3/6-8 numbers were UNRELIABLE (free-tier Gemini 20/day quota exhausted → silent empties). FIXED: geminiReader now surfaces 429 (was masquerading as cant-read). Wired C3 presence-confirm + recognize-injection (42 tests, 0 tsc) on branch feat/c3-presence — NOT deployed, runtime-unverified pending quota reset. #1 BLOCKER: prod runs on exhausted free key → needs PAID Gemini/Vertex billing.)_
