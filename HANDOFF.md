@@ -1,3 +1,25 @@
+# HANDOFF — Session 60 (2026-05-30)
+
+## Session 60 — USCIS translator-certification UX + Review-Gate v2 (branch `feat/translator-certification`, off main)
+
+Implemented the owner's simple USCIS-compliant certification flow: Upload → Review → 2 checkboxes → finger signature → PDF. No legal lecture for the user.
+
+**Critical finding first:** the wizard had NO translator-identity collection — signerName was auto-derived from the document subject, address was hardcoded empty. So "add address" required a real (small) certifier step.
+
+**Done:**
+- `reviewGate.ts` v2: final certified output now requires certifier **name + address (promoted from warning to hard-block) + checkbox1 (data reviewed) + checkbox2 (accuracy attested) + completed signature**. Back-compat: `reviewConfirmed:true` satisfies both checkboxes. 5 hard reasons. Tests rewritten 13/13.
+- `generate-pdf/route.ts`: payload accepts `dataReviewed`/`accuracyAttested`; passes them + `profile.addr` to the gate; removed the old address-warning branch.
+- `TranslateWizard.tsx` Screen-7: new "Confirm & sign" card (address input + 2 checkboxes), download button hard-gated, dynamic hint; sends the new fields + `profile.addr=certifierAddress`. i18n added to ru + en.
+- Flat PDF cert block already renders Name / Address / Date / Signature; address now populated.
+
+**Verified:** full web 2221 pass +4 skip, tsc 0, content-guard 0 violations.
+
+**STOP — owner gate:** UX/product change needs Vercel **preview approval** (cannot verify Screen-7 visually headless). PR opened. Check preview: address + 2 checkboxes render, button enables only when all done, PDF cert block has the entered address and NO [CONFIRM].
+
+**Remaining (after preview OK):** optional signature-image embed; "another person signs" toggle (deferred). Then official-docs bureau birth-pilot visual approval.
+
+---
+
 # HANDOFF — Session 57 (2026-05-29)
 
 ## Session 57 — Paid Gemini + model bench + recognition audit + D-GLOSSARY G1/G2 (branch feat/c3-presence, NOT deployed)

@@ -3,6 +3,16 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 60: USCIS translator-certification UX + Review-Gate v2 (branch feat/translator-certification)
+
+Simple USCIS-compliant certification flow (Upload → Review → 2 checkboxes → finger signature → PDF). Found the wizard collected NO translator identity (name auto-derived from the document subject, address empty), so a small certifier step was required.
+
+- **`reviewGate.ts` v2:** final certified output requires certifier name + **address (promoted to hard-block)** + checkbox1 (data reviewed) + checkbox2 (accuracy attested) + completed signature. 5 hard reasons; `reviewConfirmed:true` back-compat satisfies both checkboxes. Tests 13/13.
+- **`generate-pdf/route.ts`:** accepts `dataReviewed`/`accuracyAttested`, passes them + `profile.addr` to the gate; removed the address-warning branch.
+- **`TranslateWizard.tsx` Screen-7:** new "Confirm & sign" card (address input + 2 checkboxes), download button hard-gated with a dynamic hint; sends the new fields. i18n strings added to ru + en.
+- Flat PDF cert block already renders Name / Address / Date / Signature (8 CFR §103.2(b)(3)); address now populated.
+- Full web 2221 pass +4 skip, tsc 0, content-guard 0 violations. UX needs Vercel preview approval (own PR; not merged).
+
 ## 2026-05-29 â Session 57: paid Gemini key, model bench, recognition audit, D-GLOSSARY G1+G2
 ## 2026-05-29 — Session 57b: Accept ADR-015 separately (branch docs/accept-adr-015)
 
