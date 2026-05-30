@@ -1,15 +1,14 @@
-# HANDOFF — Session 65 (2026-05-30)
+# HANDOFF — Session 67 (2026-05-30)
 
-## Session 65 — Plan tooling (Prompts 3/6/10) (branch `feat/plan-tooling-prompts-3-6-10`, off main)
+## Session 67 — Normative-base inventory + glossary consolidation P1 (branch `refactor/consolidate-glossary-p1`, off main)
 
-Closed three playbook gaps I had flagged as "мог сделать, не сделал":
-- **Prompt 3:** `scripts/verify-ukraine-sources.mjs` deterministically verifies sources (fetch /print → act number + keywords). Ran live: КМУ-1025/152/302 verified, military/diploma/pension invalid_url. Report at `docs/official-forms/ukraine/source-verification-report.json`. Matcher tests 4/4.
-- **Prompt 6:** `docs/adr/ADR-AGENT-PERMISSIONS.md` — 8-role permission matrix; only ReleaseManager flips active/flags.
-- **Prompt 10:** `docs/reports/PRODUCTION_RELEASE_GATE.md` — G1–G12 with live status.
+Owner asked to inventory the whole normative base, map responsibilities, then consolidate per the SoT mandate.
 
-full web pass; tsc 0; content-guard 0.
+**Inventory:** `docs/architecture/NORMATIVE_BASE_INVENTORY.md` — every dictionary (canonical `packages/knowledge` vs parallel `apps/web/.../glossary` + `tps/dictionaryBridge`), every function (lookupAuthority/translateCivilRegistryTerm/transliterateKMU55/agencyGlossary/…), agents (ADR roles), documents (8 modules — all draft except passportBooklet active), the dependency map (TWO brains: engine→registry vs live modules→parallel glossary), and the phased P1–P5 consolidation plan with per-phase acceptance.
 
-**Remaining (honest):** military/diploma/pension official URLs (owner — blocked from env); КАТОТТГ byte-verify (download blocked); official-docs merge + birth-pilot activation (G7 owner visual); ZIP output + "another person signs" toggle (deferred). civil schemas 2–5 stay DRAFT.
+**P1 DONE:** deleted the byte-identical duplicate `glossary/civil_registry_terms.json`. Proven DEAD: `glossaryFiles:[...]` is declarative metadata only — no importer, no dynamic file loader; the live resolution is knowledge `translateCivilRegistryTerm`. Module tests 498 pass, full web pass, tsc 0, content-guard 0.
+
+**NEXT (phased, each green):** P2 migrate `ukraine_agency_abbreviations.json` (57) into `registry.csv` + repoint `agencyGlossary` to registry; P3 `glossaryLoader` FULL_GLOSSARY → registry; P4 `dictionary.ts`/`dictionaryBridge` data → registry; P5 single `registryLookup` resolver for engine + modules.
 
 ---
 

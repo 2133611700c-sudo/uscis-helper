@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 67: Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
+
+`docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full inventory + responsibility map + phased P1–P5 consolidation plan (dictionaries/functions/agents/documents; two-brain split: engine→registry vs live modules→parallel glossary). P1 DONE: deleted the byte-identical duplicate glossary/civil_registry_terms.json (proven dead — declarative metadata only, canonical resolution via knowledge translateCivilRegistryTerm). Module tests 498 pass, full web pass, tsc 0, content-guard 0.
+
+
 ## 2026-05-30 — Session 65: Plan tooling — source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)
 
 Closed playbook Prompts 3/6/10. `scripts/verify-ukraine-sources.mjs` (fetch /print → verify act number+keywords; ran live: КМУ-1025/152/302 verified, military/diploma/pension invalid_url; report json). `docs/adr/ADR-AGENT-PERMISSIONS.md` (8-role matrix). `docs/reports/PRODUCTION_RELEASE_GATE.md` (G1–G12 live status). Matcher tests 4/4; full web pass; tsc 0; content-guard 0.

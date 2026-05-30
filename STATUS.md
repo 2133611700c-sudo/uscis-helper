@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 67 (2026-05-30) — Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
+- `INVENTORY` `docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full map: dictionaries (canonical knowledge vs parallel apps/web), functions (who resolves what), agents (ADR roles), documents (8 modules, all draft except passportBooklet), dependency map (TWO brains: engine→registry, live modules→parallel glossary), and a phased P1–P5 consolidation plan.
+- `P1 DONE` Deleted the byte-identical duplicate `apps/web/.../glossary/civil_registry_terms.json` — proven DEAD data (no import, no dynamic loader; canonical resolution is knowledge `translateCivilRegistryTerm`). Module tests 498 pass, full web pass, tsc 0, content-guard 0.
+- `NEXT` P2 agency JSON→registry; P3 glossaryLoader→registry; P4 dictionary.ts→registry; P5 single resolver.
+
 ## Session 65 (2026-05-30) — Plan tooling: source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)
 - `DONE(Prompt 3)` `scripts/verify-ukraine-sources.mjs` — fetches each /print source, verifies act number+keywords; writes `source-verification-report.json` (КМУ-1025/152/302 VERIFIED live; military/diploma/pension invalid_url). Pure-matcher tests 4/4.
 - `DONE(Prompt 6)` `docs/adr/ADR-AGENT-PERMISSIONS.md` — 8 roles, allowed/forbidden files, only ReleaseManager flips active/flags.
