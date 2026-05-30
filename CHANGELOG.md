@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-29 — Session 57a: Safety PR #28 + content-guard fix (branch fix/review-gate-hard-block)
+
+Pushed the review-gate safety fix as independent PR #28 (base main, NOT merged). CI content-guard Rule 4 flagged the literal "certified translation" (product claim) in `route.ts` and `reviewGate.ts` comments/strings; reworded to "signed translation" / "translation certification" (meaning unchanged). Guard now CLEAN, reviewGate 13/13, tsc 0. ADR-015 acceptance is a separate PR #29. No runtime behaviour change — wording only.
+
 ## 2026-05-29 — Session 57: Review-Gate hard block + zero-trust platform coverage audit (branch fix/review-gate-hard-block)
 
 Owner verdict accepted (official-docs NOT acceptance-ready; stop features; stabilize merge chain; deliver coverage matrix). Executed playbook's first safe steps; used parallel read-only agents for the audits while coding the gate.

@@ -54,7 +54,7 @@ export type ReviewGateResult =
 
 const DETAIL: Record<ReviewGateReason, string> = {
   signer_name_required:
-    'Signer name is required before a certified translation can be rendered.',
+    'Signer name is required before the translation certification can be rendered.',
   review_not_confirmed:
     'Translation review was not confirmed. The user must review the draft and sign the certification before render.',
 }

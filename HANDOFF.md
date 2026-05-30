@@ -1,3 +1,13 @@
+# HANDOFF — Session 57a (2026-05-29)
+
+## Session 57a — Safety PR #28 push + content-guard fix (branch `fix/review-gate-hard-block`)
+
+Pushed the review-gate safety fix as independent PR #28 (base main, NOT merged). CI's content-guard Rule 4 flagged the literal "certified translation" (product-claim) in two comments/strings (`route.ts`, `reviewGate.ts`). Reworded to "signed translation" / "translation certification" — meaning unchanged, guard now CLEAN. ADR-015 acceptance is a separate PR #29 (different risk class). No code behaviour changed; only wording. reviewGate 13/13, content-guard CLEAN, tsc 0.
+
+**Exact next task (owner-gated):** owner reviews + merges PR #28 (safety) first, then PR #29 (ADR), then Preview E2E #26 → #27, then rebase official-docs.
+
+---
+
 # HANDOFF — Session 57 (2026-05-29)
 
 ## Session 57 — Review-Gate hard block + zero-trust platform coverage audit (branch `fix/review-gate-hard-block`, off main)

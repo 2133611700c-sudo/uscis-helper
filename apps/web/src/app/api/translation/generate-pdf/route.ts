@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   const { profile, selectedPlan, signedAt, certificationTextVersion, session_id } = payload
 
   // ── Review Gate (hard block, 8 CFR §103.2(b)(3)) ───────────────────────────
-  //   A certified translation may only be rendered after a human reviewed the
+  //   A signed translation may only be rendered after a human reviewed the
   //   machine draft and signed the certification. This endpoint previously
   //   rendered certified output from raw machine fields with only a payment
   //   check — a machine-only POST yielded a "certified" PDF. The gate is passed
