@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 65 (2026-05-30) — Plan tooling: source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)
+- `DONE(Prompt 3)` `scripts/verify-ukraine-sources.mjs` — fetches each /print source, verifies act number+keywords; writes `source-verification-report.json` (КМУ-1025/152/302 VERIFIED live; military/diploma/pension invalid_url). Pure-matcher tests 4/4.
+- `DONE(Prompt 6)` `docs/adr/ADR-AGENT-PERMISSIONS.md` — 8 roles, allowed/forbidden files, only ReleaseManager flips active/flags.
+- `DONE(Prompt 10)` `docs/reports/PRODUCTION_RELEASE_GATE.md` — G1–G12 checklist with live status (only blocker for birth pilot = G7 owner visual + landing official-docs).
+- `VERIFIED` full web pass, tsc 0, content-guard 0.
+
 ## Session 64 (2026-05-30) — Glossary: 5 missing agencies added (branch data/glossary-missing-agencies)
 - `FIXED(plan gap)` Added ПФУ (Pension Fund), КМУ (Cabinet of Ministers), МОН (Education & Science), МОЗ (Health), Мінрегіон (Communities & Territories Dev.) to the D-GLOSSARY registry with official .gov.ua/en source URLs (ADR-013 satisfied). Regenerated registry.generated.ts (54 rows). lookupAuthority resolves all 5 (+abbr); validateRegistry 0 errors; web suite + tsc 0 + content-guard 0.
 
