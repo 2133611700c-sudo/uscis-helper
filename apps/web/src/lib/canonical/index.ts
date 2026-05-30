@@ -47,3 +47,7 @@ export {
   readCanonicalDocumentFromTranslation,
 } from './adapterTranslation'
 export type { ReadCanonicalTranslationInput } from './adapterTranslation'
+
+// Live single-stack shadow summary (used behind ONE_BRAIN_SHADOW in the TPS route).
+export { summarizeTpsReviewShift } from './liveShadow'
+export type { TpsShadowMeta } from './liveShadow'
