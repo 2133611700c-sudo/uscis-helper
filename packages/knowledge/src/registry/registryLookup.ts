@@ -148,7 +148,17 @@ export function lookupAuthority(input: string, documentDate?: string): LookupRes
 
 export function lookupSettlement(input: string, oblast?: string, documentDate?: string): LookupResult {
   const { typeRes, rest } = stripLeadingType(input)
-  const city = lookupRegistry('settlement', rest || input, { documentDate, oblast })
+  // Recognition often dumps the WHOLE place line into one field ("смт Тростянець
+  // Вінницької обл."). Try the full rest first, then progressively shorter leading
+  // word-groups, then the first token (the city) — so the oblast tail doesn't block
+  // the settlement match (live E2E 2026-05-29).
+  const words = (rest || input).split(/\s+/).filter(Boolean)
+  const candidates: string[] = []
+  for (let n = words.length; n >= 1; n--) candidates.push(words.slice(0, n).join(' '))
+  let city = lookupRegistry('settlement', candidates[0] || input, { documentDate, oblast })
+  for (let i = 1; i < candidates.length && !city.matched; i++) {
+    city = lookupRegistry('settlement', candidates[i], { documentDate, oblast })
+  }
   if (typeRes) {
     city.settlementType = typeRes.official_en
     city.warning = [typeRes.warning, city.warning].filter(Boolean).join(' | ')
