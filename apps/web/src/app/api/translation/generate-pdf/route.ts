@@ -33,8 +33,12 @@ interface LegacyPdfPayload {
   source_traces?: SourceTrace[]
   doc_type?: string
   scope_title?: string
-  /** TranslationReviewGate checkbox — explicit human confirmation of the draft. */
+  /** Back-compat single confirmation flag (true ⇒ both checkboxes). */
   reviewConfirmed?: boolean
+  /** Checkbox 1 — user reviewed the data and it is correct. */
+  dataReviewed?: boolean
+  /** Checkbox 2 — user understands the signature attests accuracy. */
+  accuracyAttested?: boolean
 }
 
 const PLAN_LABEL: Record<string, string> = {
@@ -89,6 +93,8 @@ export async function POST(req: NextRequest) {
   //   certification is a legal boundary, not a payment one.
   const gate = assertReviewGate({
     reviewConfirmed: payload.reviewConfirmed,
+    dataReviewed: payload.dataReviewed,
+    accuracyAttested: payload.accuracyAttested,
     signerName: profile?.name,
     signerAddress: profile?.addr,
     signedAt,
@@ -100,12 +106,6 @@ export async function POST(req: NextRequest) {
       { ok: false, error: 'review_required', gate: 'review', reason: gate.reason, detail: gate.detail },
       { status: 403 },
     )
-  }
-  if (gate.warnings.length) {
-    // Non-blocking compliance gaps. signer_address_missing: the live TranslateWizard
-    // does not yet collect the translator address — render proceeds but the defect
-    // is recorded for follow-up (wire an address field, then promote to a hard gate).
-    console.warn('[generate-pdf] review-gate warnings:', gate.warnings.join(', '))
   }
 
   // Build certification record

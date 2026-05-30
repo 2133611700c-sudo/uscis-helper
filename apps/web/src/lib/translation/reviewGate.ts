@@ -2,36 +2,30 @@
  * reviewGate.ts — single source of truth for the Translation Review Gate.
  *
  * Legal boundary (8 CFR §103.2(b)(3)): a certified English translation may only
- * be rendered/delivered after a human has reviewed the machine draft and signed
- * the certification. Messenginfo does NOT certify — the user self-certifies.
+ * be rendered/delivered after a human reviewed the machine draft, attested it is
+ * complete and accurate, and signed. Messenginfo does NOT certify — the user
+ * (applicant or a named certifier) self-certifies.
  *
- * This guard closes the runtime hole where /api/translation/generate-pdf rendered
- * a certified PDF from raw machine fields with only a payment check — no review,
- * no signature, no signer identity. A machine-only POST must NOT yield certified
- * output.
+ * FINAL certified output is refused unless ALL of these are present:
+ *   1. certifier name,
+ *   2. certifier address,
+ *   3. checkbox 1 — the user reviewed the data and it is correct,
+ *   4. checkbox 2 — the user understands their signature attests accuracy,
+ *   5. a completed signature (drawn-on-screen with data, or wet).
  *
- * HARD block (renders are refused) — both required:
- *   1. signerName present, AND
- *   2. the user confirmed the draft: reviewConfirmed === true OR a completed
- *      signature certification act (signedAt + a real signature).
- *
- * SOFT warning (render proceeds, defect surfaced) — currently signerAddress:
- *   The live TranslateWizard does not yet collect the signer address (it sends an
- *   empty string), so blocking on it would break the production download. A USCIS
- *   certification SHOULD carry the translator's address, so its absence is
- *   reported as a non-blocking warning and tracked as a follow-up (wire an address
- *   field into the wizard, then promote this to a hard requirement).
- *
- * The legitimate wizard already sends signedAt + signatureMethod + name, so the
- * hard block does not break the live flow; it only refuses machine-only / unsigned
- * / nameless requests.
+ * `reviewConfirmed` is kept as a back-compat alias: when true it satisfies both
+ * checkboxes (older callers that sent a single confirmation flag).
  */
 
 export type SignatureMethod = 'drawn_on_screen' | 'manual_wet_signature'
 
 export interface ReviewGateInput {
-  /** Explicit confirmation from the TranslationReviewGate checkbox. */
+  /** Back-compat single-flag confirmation; true ⇒ both checkboxes satisfied. */
   reviewConfirmed?: boolean | null
+  /** Checkbox 1 — "I reviewed the translation, the data is correct." */
+  dataReviewed?: boolean | null
+  /** Checkbox 2 — "I understand my signature attests the translation is accurate." */
+  accuracyAttested?: boolean | null
   signerName?: string | null
   signerAddress?: string | null
   /** ISO timestamp recorded when the user signed the certification. */
@@ -43,20 +37,21 @@ export interface ReviewGateInput {
 
 export type ReviewGateReason =
   | 'signer_name_required'
-  | 'review_not_confirmed'
-
-/** Non-blocking compliance gaps surfaced to the caller/owner. */
-export type ReviewGateWarning = 'signer_address_missing'
+  | 'signer_address_required'
+  | 'data_not_reviewed'
+  | 'accuracy_not_attested'
+  | 'signature_required'
 
 export type ReviewGateResult =
-  | { ok: true; warnings: ReviewGateWarning[] }
+  | { ok: true }
   | { ok: false; gate: 'review'; reason: ReviewGateReason; detail: string }
 
 const DETAIL: Record<ReviewGateReason, string> = {
-  signer_name_required:
-    'Signer name is required before the translation certification can be rendered.',
-  review_not_confirmed:
-    'Translation review was not confirmed. The user must review the draft and sign the certification before render.',
+  signer_name_required: 'Certifier name is required before the translation can be certified.',
+  signer_address_required: 'Certifier address is required before the translation can be certified.',
+  data_not_reviewed: 'Confirm you reviewed the translation and the data is correct.',
+  accuracy_not_attested: 'Confirm you understand your signature attests the translation is accurate.',
+  signature_required: 'A signature is required before the translation can be certified.',
 }
 
 /** True when the payload carries a completed signature certification act. */
@@ -70,23 +65,28 @@ export function isSignatureComplete(input: ReviewGateInput): boolean {
 }
 
 /**
- * Hard gate. Returns { ok: true, warnings } only when a human has confirmed the
- * review (explicit checkbox OR completed signature) AND a signer name is present.
- * Missing signer address is a non-blocking warning, not a refusal (see file head).
+ * Hard gate for FINAL certified output. Returns { ok: true } only when name,
+ * address, both attestation checkboxes, and a completed signature are present.
  * Never throws — callers branch on .ok and return 403 on failure.
  */
 export function assertReviewGate(input: ReviewGateInput): ReviewGateResult {
   const name = (input.signerName ?? '').trim()
-  if (!name) {
-    return { ok: false, gate: 'review', reason: 'signer_name_required', detail: DETAIL.signer_name_required }
-  }
+  if (!name) return fail('signer_name_required')
 
-  const confirmed = input.reviewConfirmed === true || isSignatureComplete(input)
-  if (!confirmed) {
-    return { ok: false, gate: 'review', reason: 'review_not_confirmed', detail: DETAIL.review_not_confirmed }
-  }
+  const address = (input.signerAddress ?? '').trim()
+  if (!address) return fail('signer_address_required')
 
-  const warnings: ReviewGateWarning[] = []
-  if (!(input.signerAddress ?? '').trim()) warnings.push('signer_address_missing')
-  return { ok: true, warnings }
+  const dataReviewed = input.dataReviewed === true || input.reviewConfirmed === true
+  if (!dataReviewed) return fail('data_not_reviewed')
+
+  const accuracyAttested = input.accuracyAttested === true || input.reviewConfirmed === true
+  if (!accuracyAttested) return fail('accuracy_not_attested')
+
+  if (!isSignatureComplete(input)) return fail('signature_required')
+
+  return { ok: true }
+}
+
+function fail(reason: ReviewGateReason): ReviewGateResult {
+  return { ok: false, gate: 'review', reason, detail: DETAIL[reason] }
 }
