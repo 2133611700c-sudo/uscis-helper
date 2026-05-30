@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 64: Glossary — 5 missing agencies added (branch data/glossary-missing-agencies)
+
+Added ПФУ (Pension Fund of Ukraine), КМУ (Cabinet of Ministers), МОН (Education & Science), МОЗ (Health), Мінрегіон (Communities & Territories Development) to the D-GLOSSARY registry with official .gov.ua/en source URLs (ADR-013). Regenerated registry.generated.ts (54 rows). lookupAuthority resolves all five + abbreviations; validateRegistry 0 errors; web suite + tsc 0 + content-guard 0.
+
+
 ## 2026-05-30 — Session 63: Attestation audit trail persisted (branch feat/attestation-audit-trail)
 
 The route verified the review gate but never persisted the attestation. `buildAttestationRecord()` now records both checkboxes, signature presence + method, signer name/address presence, sha256 document hash, certification version, recorded_at — inside the `certification_record` jsonb (no migration), internal only. `attestation.ts` + `attestation.test.ts` 5/5; full web pass; tsc 0; content-guard 0.
