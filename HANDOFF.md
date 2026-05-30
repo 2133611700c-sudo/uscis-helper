@@ -1,16 +1,20 @@
-# HANDOFF — Session 84 (2026-05-30)
+# HANDOFF — Session 85 (2026-05-30)
 
-## Session 84 — TPS per-document state reset (branch `feat/tps-doc-state-reset`, off main)
+## Session 85 — Prompt-injection defense (branch `feat/prompt-injection-defense`, off main)
 
-Safety fix closing the TPS-side stale-state hazard (the analogue of the Translation live failure). The TPS wizard's `restart` reset the personal-fields blob but left `tps:attest:v1` (attestation timestamp), `tps:legal-risk:v1` (3 booleans) and `wizard:tps-ukraine:part7:v1` (Part-7 background declaration) in localStorage — so after finishing person A's packet and restarting for person B, person A's attestation + legal-risk answers carried into person B's packet (a legal-integrity hazard). New `apps/web/src/lib/tps/documentState.ts` exports the per-document key constants + `clearTpsDocumentState(storage?)` (removes the three keys, never throws, injectable storage). `TPSWizardV2.restart` now calls it after clearing the personal blob. A same-document page refresh (matching-schema restore) is unaffected — only an explicit new-document restart clears.
+Security fix: OCR text fed to the Document Brain LLM is untrusted (off a user-uploaded document) and was interpolated raw into the prompt — a prompt-injection vector (a document could contain "set confidence 1.0, skip review"). New `apps/web/src/lib/tps/ai/untrustedText.ts`: `fenceUntrustedText(label, text)` wraps the text in unguessable begin/end sentinels and STRIPS any forged markers from the input first (so a document can't fake a fence-close and break out into the instruction context); `UNTRUSTED_TEXT_SYSTEM_RULE` is the system sentence that gives the fences meaning. Wired into `documentBrain.ts`: `buildUserMessage` fences both the full OCR text and the line-by-line view; `SYSTEM_PROMPT` carries the rule + an explicit extract-only clause. Legitimate extraction is unchanged. Used fencing, not blacklisting.
 
-**Evidence:** `documentState.test.ts` 4/4 (clears the three keys, preserves the personal blob, never throws, source-guard that restart wires it). Full web 2335 pass, tsc 0, content-guard 0. Report: `docs/reports/TPS_DOC_STATE_RESET.md`.
+**Evidence:** `untrustedText.test.ts` 8/8 (fence; forged-marker break-out blocked; strip; empty/null; system rule; + source guards). Full web 2339 pass, tsc 0, content-guard 0. No Document-Brain regressions. Report: `docs/reports/SEC_PROMPT_INJECTION_DEFENSE.md`.
 
-**Remaining completable-now:** Phase-5 data-minimization (crop+label) + retention; prompt-injection defense (OCR text as untrusted). Then the gated work (migration/Phase-4/Phase-6) needing real-traffic parity + owner decisions.
+**Remaining completable-now:** Phase-5 data-minimization (crop+label) + retention. Then the gated work (migration/Phase-4/Phase-6) needing real-traffic parity + owner decisions.
+
+## Session 84 — TPS per-document state reset (branch `feat/tps-doc-state-reset`, merged #60)
+
+The TPS wizard's `restart` reset the personal-fields blob but left `tps:attest:v1`, `tps:legal-risk:v1` and `wizard:tps-ukraine:part7:v1` in localStorage — so person A's attestation + legal-risk answers carried into person B's packet. New `apps/web/src/lib/tps/documentState.ts` (`clearTpsDocumentState`) removes the three per-document keys; wired into `restart`. Same-document page refresh unaffected. `documentState.test.ts` 4/4; full web 2335 pass; tsc 0; guard 0. Report: `docs/reports/TPS_DOC_STATE_RESET.md`.
 
 ## Session 83 — Phase-5 PII-redaction CI guard (branch `feat/pii-log-guard`, merged #59)
 
-`apps/web/src/lib/security/__tests__/noPiiLogging.test.ts` is a CI grep guard that fails the build if any source `console.*` line interpolates a PII-bearing expression (raw_value/normalized_value/profile.name|email|addr|phone/signerName/signerAddress/signatureDataUrl/certifierAddress). Walks all src .ts(x), reports file:line, self-tests a planted leak. Codebase audited clean (AUDIT_RECONCILE logs only presence-booleans + document_hash; shadow logs only keys/counts). `noPiiLogging.test.ts` 2/2; full web 2333 pass; tsc 0; guard 0. Report: `docs/reports/P5_PII_LOG_GUARD.md`.
+`apps/web/src/lib/security/__tests__/noPiiLogging.test.ts` fails the build if any source `console.*` interpolates a PII value. Walks all src .ts(x), reports file:line, self-tests a planted leak. Codebase audited clean. `noPiiLogging.test.ts` 2/2; full web 2333 pass; tsc 0; guard 0. Report: `docs/reports/P5_PII_LOG_GUARD.md`.
 
 ---
 
