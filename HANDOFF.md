@@ -1,3 +1,15 @@
+# HANDOFF — Session 76 (2026-05-30)
+
+## Session 76 — Engineering Master Plan + tracker (branch `docs/engineering-master-plan`, off main)
+
+Collected all owner recommendations + my critical analysis + the plan into ONE living tracker: `docs/ENGINEERING_MASTER_PLAN.md`. It encodes the THREE LAWS (no evidence→no field; no review snapshot→no PDF; one document→one CanonicalDocumentResult→all products), the target architecture (Document Core → product adapters → review gate → finalization lock → PDF → evidence ledger), phases 0–6, and a full control checklist with status markers ([x] done, [~] degraded, [ ] todo, [B] owner-blocked).
+
+Key agent stance (recorded in the doc): the owner input is senior-grade; my earlier "go B1" was raw and would have created a third brain — the correct path is contract-first + shadow-parity, with small safety PRs (geography no-silent-snap, audit hard-fail) FIRST. Operational layer (review-queue product, retention, dashboards) is sequenced LAST, after canonical+safety.
+
+**Exact next task:** S1 — block silent geography snapping (snapCity fuzzy → suggestion + review_required, keep raw value; exact match still normalizes). Then S2 audit hard-fail. Follow and update the tracker after each PR (flip [ ]→[x]/[~] with PR# + proof). Agent Stop Conditions apply — never mark done without proof.
+
+---
+
 # HANDOFF — Session 71 (2026-05-30)
 
 ## Session 71 — Booklet orientation auto-rotate (branch `fix/booklet-orientation`, off main)

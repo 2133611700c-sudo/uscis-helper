@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 76 (2026-05-30) — Engineering Master Plan + tracker (branch docs/engineering-master-plan)
+- `PLAN` `docs/ENGINEERING_MASTER_PLAN.md` — single source of truth: 3 laws (no evidence→no field; no review snapshot→no PDF; one doc→one canonical→all products), target architecture (Document Core + product adapters), phases 0–6, and a FULL control tracker ([x]/[~]/[ ]/[B]) covering all owner recommendations + agent items. Priority: S1 geography no-silent-snap → S2 audit hard-fail → S3 no-silent-correction → UX → constitution docs → canonical contract → shadow parity → migration → consolidate → ops → P2 last.
+- `NEXT` execute S1 (geography no-silent-snap) — small PR, large safety ROI.
+
 ## Session 71 (2026-05-30) — Booklet orientation: rotate by identity-field count (branch fix/booklet-orientation)
 - `DONE` TPS OCR route already rotated for passport MRZ; extended ADDITIVELY for the INTERNAL passport booklet (no MRZ to anchor on): trigger rotation when booklet matched with <2 identity fields; in the loop track the rotation with the most identity fields; adopt it if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0.
 - `HONEST CAVEAT` cannot verify with a LIVE rotated booklet image here (no fixture upload). Logic is additive/safe (only adopts a rotation with strictly more identity fields). Owner live-repro of a rotated booklet recommended to confirm pick.
