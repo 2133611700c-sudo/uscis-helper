@@ -40,6 +40,8 @@ import { runDlModule } from '@/lib/tps/modules/dl'
 import { runI797Module } from '@/lib/tps/modules/i797'
 import type { TpsModuleResult, TpsExtractedField } from '@/lib/tps/types'
 import { applyContract } from '@/lib/tps/ocr/documentContracts'
+import { isShadowEnabled } from '@/lib/canonical'
+import { summarizeTpsReviewShift } from '@/lib/canonical/liveShadow'
 import {
   runBrain,
   validateBrainField,
@@ -1023,6 +1025,27 @@ export async function POST(req: NextRequest) {
     brain_status: brainStatus,
     brain_raw: brainRawAudit,
   })
+
+  // ── ONE_BRAIN_SHADOW (default OFF) — observe-only. Build the canonical result
+  //    from the SAME live fields and log how the canonical review policy would
+  //    differ from the live module flags. NEVER affects the response: flag-gated
+  //    AND fully try/catch-guarded. This collects the real-traffic parity signal
+  //    we need before any migration onto the single canonical brain.
+  if (mergedModule && isShadowEnabled()) {
+    try {
+      console.info(
+        '[ONE_BRAIN_SHADOW]',
+        summarizeTpsReviewShift(mergedModule.fields, {
+          documentSessionId: document_id,
+          docType: contract.detected_document_type ?? docTypeHint ?? 'unknown',
+          createdAt: new Date().toISOString(),
+        }),
+      )
+    } catch {
+      /* shadow must never affect extraction */
+    }
+  }
+
   return NextResponse.json(
     {
       ok: true,
