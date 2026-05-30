@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 70: Owner mode site-wide (branch feat/owner-mode-site-wide)
+
+Translation wizard now honours owner mode (the only paid product without it): checks /api/owner/status on mount; owner skips Stripe → sign/download; CTA "Owner — continue free". generate-pdf route already bypasses payment for the owner cookie. TPS already had it; EAD + Re-Parole are free; owner-login UI at /[locale]/owner. Owner can now run every product without payment. ownerMode.test.ts 3/3, full web pass, tsc 0, guard 0.
+
+
 ## 2026-05-30 — Session 67: Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
 
 `docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full inventory + responsibility map + phased P1–P5 consolidation plan (dictionaries/functions/agents/documents; two-brain split: engine→registry vs live modules→parallel glossary). P1 DONE: deleted the byte-identical duplicate glossary/civil_registry_terms.json (proven dead — declarative metadata only, canonical resolution via knowledge translateCivilRegistryTerm). Module tests 498 pass, full web pass, tsc 0, content-guard 0.

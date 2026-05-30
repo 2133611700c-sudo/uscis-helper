@@ -1,4 +1,7 @@
 # STATUS — Messenginfo
+## Session 70 (2026-05-30) — Owner mode site-wide: free testing of all products (branch feat/owner-mode-site-wide)
+- `DONE` Translation wizard now honours owner mode (was the only paid product without it): checks `/api/owner/status` on mount; owner → skips Stripe → straight to sign/download; CTA shows "Owner — continue free". generate-pdf route already bypasses payment for the owner cookie. TPS already had owner mode; EAD + Re-Parole are free. Owner-login UI exists at `/[locale]/owner`. → owner can run EVERY product without payment. `ownerMode.test.ts` 3/3, full web pass, tsc 0, guard 0.
+
 ## Session 67 (2026-05-30) — Normative-base inventory + glossary consolidation P1 (branch refactor/consolidate-glossary-p1)
 - `INVENTORY` `docs/architecture/NORMATIVE_BASE_INVENTORY.md` — full map: dictionaries (canonical knowledge vs parallel apps/web), functions (who resolves what), agents (ADR roles), documents (8 modules, all draft except passportBooklet), dependency map (TWO brains: engine→registry, live modules→parallel glossary), and a phased P1–P5 consolidation plan.
 - `P1 DONE` Deleted the byte-identical duplicate `apps/web/.../glossary/civil_registry_terms.json` — proven DEAD data (no import, no dynamic loader; canonical resolution is knowledge `translateCivilRegistryTerm`). Module tests 498 pass, full web pass, tsc 0, content-guard 0.
