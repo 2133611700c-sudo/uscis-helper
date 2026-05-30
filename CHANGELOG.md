@@ -40,6 +40,8 @@ Every work session appends here. Never delete entries. Newest first.
 
 **Live E2E + settlement bug:** added a GATED live integrated-pipeline test (pipeline.live.e2e.test.ts, LIVE_E2E=1) — ran the REAL preprocess→3.1-pro→GoogleVision→registry chain on the real military ID. It caught a real bug units missed: when recognition dumps the whole place line ("смт Тростянець Вінницької обл.") into one field, lookupSettlement failed → lost the type + leaked the oblast. Fixed: lookupSettlement now tries progressively shorter leading word-groups down to the city token. Now: REDACTED + "Trostianets (urban-type settlement)" end-to-end. +offline guard test.
 
+**Live E2E extended (3 docs):** pipeline.live.e2e now covers military + international passport (MRZ controlling-Latin: REDACTED/FU262473) + handwritten 1986 birth cert. All PASS live — no new bugs. Gated (LIVE_E2E=1), skips in CI.
+
 **#5 manual-review ticket (audit #5):** TranslateWizard now POSTs to /api/translation/manual-review when a MANUAL document is PAID with no auto-fields (was: payment taken, no ticket). Reads persisted draft (race-safe), idempotent per checkout id, fire-and-forget (never blocks success). Endpoint already existed.
 
 **#3 MRZ / controlling-Latin:** `packages/knowledge/src/mrz.ts` â TD3 passport MRZ parser with ICAO 7-3-1 check digits (4 tests; real passport REDACTED/SERGII/FU262473/1986-06-25). Wired into presence.ts: for `ua_international_passport`, MRZ name/number/DOB/expiry OVERRIDE KMU-55 re-transliteration (HARD RULE: controlling Latin beats re-translit â matches client's EAD/I-94). Failed check digit â review.
