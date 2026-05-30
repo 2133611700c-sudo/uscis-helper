@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 84: TPS per-document state reset (branch feat/tps-doc-state-reset)
+
+Closed the TPS-side stale-state hazard. The wizard restart cleared personal fields but left tps:attest:v1 / tps:legal-risk:v1 / Part-7 in localStorage, so person A's attestation + legal-risk answers carried into person B's packet. New `apps/web/src/lib/tps/documentState.ts` (clearTpsDocumentState removes the 3 per-document keys; never throws) wired into TPSWizardV2.restart. Same-document refresh unaffected. New documentState.test.ts 4/4; full web 2335 pass; tsc 0; content-guard 0. Report `docs/reports/TPS_DOC_STATE_RESET.md`. Files: lib/tps/documentState.ts, TPSWizardV2.tsx, lib/tps/__tests__/documentState.test.ts, report, STATUS/HANDOFF/CHANGELOG.
+
 ## 2026-05-30 — Session 83: Phase-5 PII-redaction CI guard (branch feat/pii-log-guard)
 
 New `apps/web/src/lib/security/__tests__/noPiiLogging.test.ts` — CI grep guard failing the build if any console.* interpolates a PII value (raw_value/normalized_value/profile.name|email|addr|phone/signerName/signerAddress/signatureDataUrl/certifierAddress); walks all src .ts(x), reports file:line, self-tests a planted violation. Codebase audited clean (AUDIT_RECONCILE logs only presence-booleans/hash attestation; shadow logs only keys/counts). Test-only. noPiiLogging.test.ts 2/2; full web 2333 pass; tsc 0; content-guard 0. Report `docs/reports/P5_PII_LOG_GUARD.md`. Files: security/__tests__/noPiiLogging.test.ts, report, STATUS/HANDOFF/CHANGELOG.

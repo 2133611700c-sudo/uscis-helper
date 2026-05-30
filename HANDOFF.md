@@ -1,12 +1,16 @@
-# HANDOFF — Session 83 (2026-05-30)
+# HANDOFF — Session 84 (2026-05-30)
 
-## Session 83 — Phase-5 PII-redaction CI guard (branch `feat/pii-log-guard`, off main)
+## Session 84 — TPS per-document state reset (branch `feat/tps-doc-state-reset`, off main)
 
-Independent Phase-5 safety item (no real-traffic data needed). `apps/web/src/lib/security/__tests__/noPiiLogging.test.ts` is a CI grep guard that fails the build if any source `console.*` line interpolates a PII-bearing expression (`.raw_value`, `.normalized_value`, `rawValue`, `normalizedValue`, `profile.name|email|addr|phone`, `signerName`, `signerAddress`, `signatureDataUrl`, `certifierAddress`). It walks all `apps/web/src/**/*.ts(x)` (excluding tests), reports `file:line` offenders, and self-tests that it catches a planted `console.error('leak', profile.email)`. Codebase audited CLEAN (0 offenders); confirmed the two structured logs I added earlier are PII-free by design (`AUDIT_RECONCILE` logs the presence-boolean/`document_hash` attestation, not values; shadow logs only keys + counts).
+Safety fix closing the TPS-side stale-state hazard (the analogue of the Translation live failure). The TPS wizard's `restart` reset the personal-fields blob but left `tps:attest:v1` (attestation timestamp), `tps:legal-risk:v1` (3 booleans) and `wizard:tps-ukraine:part7:v1` (Part-7 background declaration) in localStorage — so after finishing person A's packet and restarting for person B, person A's attestation + legal-risk answers carried into person B's packet (a legal-integrity hazard). New `apps/web/src/lib/tps/documentState.ts` exports the per-document key constants + `clearTpsDocumentState(storage?)` (removes the three keys, never throws, injectable storage). `TPSWizardV2.restart` now calls it after clearing the personal blob. A same-document page refresh (matching-schema restore) is unaffected — only an explicit new-document restart clears.
 
-**Evidence:** `noPiiLogging.test.ts` 2/2. Full web 2333 pass, tsc 0, content-guard 0. Report: `docs/reports/P5_PII_LOG_GUARD.md`. Test-only, zero runtime impact.
+**Evidence:** `documentState.test.ts` 4/4 (clears the three keys, preserves the personal blob, never throws, source-guard that restart wires it). Full web 2335 pass, tsc 0, content-guard 0. Report: `docs/reports/TPS_DOC_STATE_RESET.md`.
 
-**Remaining (still gated / independent):** Phase-5 data-minimization (send crop+label not whole image) + retention policy; TPS per-`documentSessionId` state reset; prompt-injection defense; then the gated migration/Phase-4/Phase-6 work that needs real-traffic parity + owner decisions.
+**Remaining completable-now:** Phase-5 data-minimization (crop+label) + retention; prompt-injection defense (OCR text as untrusted). Then the gated work (migration/Phase-4/Phase-6) needing real-traffic parity + owner decisions.
+
+## Session 83 — Phase-5 PII-redaction CI guard (branch `feat/pii-log-guard`, merged #59)
+
+`apps/web/src/lib/security/__tests__/noPiiLogging.test.ts` is a CI grep guard that fails the build if any source `console.*` line interpolates a PII-bearing expression (raw_value/normalized_value/profile.name|email|addr|phone/signerName/signerAddress/signatureDataUrl/certifierAddress). Walks all src .ts(x), reports file:line, self-tests a planted leak. Codebase audited clean (AUDIT_RECONCILE logs only presence-booleans + document_hash; shadow logs only keys/counts). `noPiiLogging.test.ts` 2/2; full web 2333 pass; tsc 0; guard 0. Report: `docs/reports/P5_PII_LOG_GUARD.md`.
 
 ---
 
