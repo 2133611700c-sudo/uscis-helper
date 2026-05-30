@@ -1,4 +1,16 @@
-# HANDOFF — Session 75 (2026-05-30)
+# HANDOFF — Session 76e (2026-05-30)
+
+## Session 76e — P2.1 Canonical contract (branch `feat/canonical-contract`, off main)
+
+First step of Phase 2 (the real fix for the two-brain problem): define ONE recognition output shape + ONE set of review rules, contract-first, before any migration. New `apps/web/src/lib/canonical/`: `types.ts` (`CanonicalDocumentResult`, `CanonicalField` with rawValue-always-preserved + split `FieldConfidence` + `evidence[]` + `reviewRequired`/reasons + hash chain) and `policy.ts` (pure rules grounded in the constitution docs): `computeFinalConfidence` (final ≤ min of applicable layers, null excluded, derived never provider-set), `criticalityOf`/`CRITICAL_FIELDS` (§B matrix), `materiallyDifferent` (no-silent-correction), `sourceRank`/`higherAuthority` (MRZ>...>manual), `resolveDisagreement` (material disagreement on critical/high → review, both retained), `decideReviewRequired` (combines all into {reviewRequired, reasons}). Codifies S1+S3 as general rules.
+
+**ADDITIVE — imported by nothing in the live flow. Zero behavior change, zero risk to TPS/Translation/EAD/Re-Parole.**
+
+**Evidence:** `canonical/__tests__/policy.test.ts` 16/16 (one per `FIELD_CONFIDENCE_AND_CRITICALITY_POLICY.md §F` bullet). Full web 2292 pass, tsc 0, content-guard 0. Report: `docs/reports/P2_1_CANONICAL_CONTRACT.md`.
+
+**Next per Master Plan (Phase 2–3, sequenced):** P2.2 `readCanonicalDocument` adapter over the strongest existing reader (build a CanonicalDocumentResult from current extraction output, still unwired); P2.3 `ONE_BRAIN_SHADOW` flag + run TPS+Translation through the adapter in shadow, diff vs live, emit parity report (default OFF); then per-product migration behind the flag; then consolidation (remove the 2nd brain); then the evidence-ledger table. Hash-chain fields exist on the type but are not yet populated (P2.2+).
+
+---
 
 ## Session 75 — UX wizard reset + Back/Start-over (branch `feat/wizard-reset-startover`, off main)
 
