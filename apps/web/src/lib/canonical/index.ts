@@ -28,3 +28,11 @@ export {
   resolveDisagreement,
   decideReviewRequired,
 } from './policy'
+
+// P2.2 adapter — build a CanonicalDocumentResult from the existing TPS reader.
+export {
+  toCanonicalField,
+  mergeCanonicalByKey,
+  readCanonicalDocumentFromTps,
+} from './adapter'
+export type { ReadCanonicalInput } from './adapter'

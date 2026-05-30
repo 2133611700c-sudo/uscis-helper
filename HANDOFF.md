@@ -1,4 +1,16 @@
-# HANDOFF — Session 76e (2026-05-30)
+# HANDOFF — Session 77 (2026-05-30)
+
+## Session 77 — P2.2 Canonical adapter (branch `feat/canonical-adapter`, off main)
+
+Phase 2 step 2: `apps/web/src/lib/canonical/adapter.ts` — `readCanonicalDocumentFromTps(input)` maps the existing TPS reader output (`TpsExtractedField[]`) into one `CanonicalDocumentResult` using the P2.1 policy. `toCanonicalField` maps source→authority + derives split confidence honestly (ocr=provider confidence; source_match only where real — MRZ check digit 0.99 pass / 0.3 fail; field_match/normalization null = excluded from `final` min). `mergeCanonicalByKey` groups same-key readings (e.g. family_name from MRZ + EAD), keeps ALL candidates as evidence, picks highest-authority primary, forces review on material critical/high disagreement. Two invariants tested: (1) never lower a module's `review_required`; (2) never drop a candidate. Also renamed the result type's always-false `readyForReview` → `requiresReview` (added in #52, consumed by nothing).
+
+**ADDITIVE — unwired, zero behavior change.**
+
+**Evidence:** `canonical/__tests__/adapter.test.ts` 8/8. Full web 2300 pass, tsc 0, content-guard 0. Report: `docs/reports/P2_2_CANONICAL_ADAPTER.md`.
+
+**Next per Master Plan:** P2.3 — `ONE_BRAIN_SHADOW` flag (default OFF) + run TPS through the adapter in shadow and emit a parity report; then a Translation-side adapter so both stacks produce the same canonical shape (the actual two-brain diff); then hash-chain + evidence ledger; then per-product migration behind the flag; then consolidation.
+
+---
 
 ## Session 76e — P2.1 Canonical contract (branch `feat/canonical-contract`, off main)
 
