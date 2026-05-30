@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 72: Production truth audit (branch verify/production-truth)
+
+SHA contradiction resolved: healthz=main=49da20e (5/5 fresh); 56dcf07 was an old ancestor (stale read). All fixes present in deployed 49da20e (git show verified). DB audit live UNVERIFIED (shape proven via probe, 0 real rows — no generation since deploy). TPS stale DEGRADED (no per-doc-session id); source-evidence gate FAIL (not implemented); orientation live BLOCKED (needs owner rotated photo). Report: docs/reports/PRODUCTION_TRUTH_AND_LIVE_FIX_VERIFICATION.md.
+
+
 ## 2026-05-30 — Session 71: Booklet orientation auto-rotate (branch fix/booklet-orientation)
 
 Extended the TPS OCR rotation (previously MRZ-only) to the internal passport booklet (no MRZ): trigger rotation when booklet has <2 identity fields; pick the rotation with the most identity fields; adopt if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0. Caveat: needs a live rotated-booklet repro to confirm (additive/safe — only adopts a strictly-better rotation).
