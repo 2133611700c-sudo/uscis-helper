@@ -113,11 +113,11 @@ Legend: [x] done&verified · [~] done-but-degraded/unverified · [ ] todo · [B]
 - [x] Source verifier script (P3) · agent-permissions ADR (P6) · release gate (P10)
 - [x] Glossary +5 agencies (ПФУ/КМУ/МОН/МОЗ/Мінрегіон) · glossary P1 dedup
 - [x] Booklet orientation auto-rotate (additive) — LIVE [~] needs live rotated-photo proof
-- [~] Audit DB persistence — table created + insert works, BUT route continues on failure → **S2**
+- [x] Audit DB persistence — RESOLVED by S2 (PR #49): route now fails closed on write failure (was the `[~]` gap)
 
 ### Safety (Phase 1)
 - [x] S1 Geography no-silent-snap (raw kept, fuzzy → suggestion + review) — **PR #48**; verified by `geographyNoSilentSnap.test.ts` 3/3 (Ярошенець NOT→Тростянець; exact normalizes; unknown→review), full web 2261 pass, tsc 0, guard 0; report `docs/reports/S1_GEOGRAPHY_NO_SILENT_SNAP.md`. Prod-impact: was LIVE in Translation orchestrator + any TPS snapCity reader; now no silent replace. Risk: seed gazetteer ~70 places + UI must show suggestion (UX phase). No unrelated scope.
-- [ ] S2 Audit persistence hard-fail (no 200 on DB failure)
+- [x] S2 Audit persistence hard-fail (no 200 on DB failure) — **PR #49**; verified by `persistCertification.test.ts` 5/5 (audit-fail→ok=false; retry recovers; thrown→ok=false; order-fail→ok=false), full web 2266 pass, tsc 0, guard 0; report `docs/reports/S2_AUDIT_PERSIST_HARD_FAIL.md`. Prod-impact: was LIVE — signed PDF returned with no audit row on write failure; now fails closed (503, no PDF) + signed attestation logged for reconcile. Risk: reconcile log is fallback not auto-replay (Phase 6); fail-closed UX reversible by flag. No unrelated scope.
 - [ ] S3 No-silent-correction for name/patronymic/authority/date/series
 
 ### Canonical core (Phase 2–3)
