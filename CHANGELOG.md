@@ -3,6 +3,9 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 71: Booklet orientation auto-rotate (branch fix/booklet-orientation)
+
+Extended the TPS OCR rotation (previously MRZ-only) to the internal passport booklet (no MRZ): trigger rotation when booklet has <2 identity fields; pick the rotation with the most identity fields; adopt if it beats upright. Passport MRZ path untouched. tsc 0, TPS 370 pass, full web pass, guard 0. Caveat: needs a live rotated-booklet repro to confirm (additive/safe — only adopts a strictly-better rotation).
 ## 2026-05-30 — Session 70: Owner mode site-wide (branch feat/owner-mode-site-wide)
 
 Translation wizard now honours owner mode (the only paid product without it): checks /api/owner/status on mount; owner skips Stripe → sign/download; CTA "Owner — continue free". generate-pdf route already bypasses payment for the owner cookie. TPS already had it; EAD + Re-Parole are free; owner-login UI at /[locale]/owner. Owner can now run every product without payment. ownerMode.test.ts 3/3, full web pass, tsc 0, guard 0.
