@@ -3,6 +3,11 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 68: FIX certification audit DB persistence (branch fix/translation-audit-db-persistence)
+
+The generate-pdf order/attestation write silently failed (upsert referenced nonexistent translation_orders columns; supabase-js returns {error}, not thrown). Fix: new translation_certification_audit table (migration applied to prod); route remapped to real columns (status=signed per CHECK, email=`` per NOT NULL); attestation written to the audit table; DB errors checked + logged (DEGRADED warning, no silent swallow). Verified live: probe insert+readback OK then cleaned. attestation 5/5, full web pass, tsc 0, content-guard 0. Report: docs/reports/TRANSLATION_AUDIT_DB_PERSISTENCE_FIX.md. STILL OPEN (critical): live rotated-booklet OCR/stale-state failure — root cause found (sessionStorage/localStorage draft restore + no orientation/garbage/evidence gate), fix next.
+
+
 ## 2026-05-30 — Session 65: Plan tooling — source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)
 
 Closed playbook Prompts 3/6/10. `scripts/verify-ukraine-sources.mjs` (fetch /print → verify act number+keywords; ran live: КМУ-1025/152/302 verified, military/diploma/pension invalid_url; report json). `docs/adr/ADR-AGENT-PERMISSIONS.md` (8-role matrix). `docs/reports/PRODUCTION_RELEASE_GATE.md` (G1–G12 live status). Matcher tests 4/4; full web pass; tsc 0; content-guard 0.

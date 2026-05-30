@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 68 (2026-05-30) — FIX DB persistence: certification audit now stored (branch fix/translation-audit-db-persistence)
+- `FIXED(HIGH)` `/api/translation/generate-pdf` order/attestation write was silently failing (upsert referenced nonexistent columns; supabase-js returns {error}, never thrown). Live DB had 0 rendered rows. Now: `translation_orders` insert remapped to REAL columns (status=signed per CHECK; email=`` per NOT NULL); attestation → new `translation_certification_audit` table (migration applied to prod). DB errors no longer swallowed (logged + DEGRADED warning).
+- `VERIFIED(live)` probe insert+readback into both tables OK, then cleaned. attestation 5/5, full web pass, tsc 0, content-guard 0.
+- `🔴 STILL OPEN (CRITICAL)` live OCR/stale-state failure (rotated booklet → garbage + stale `Шуляк/Сергій/Проскурів` from sessionStorage/localStorage draft restore; no orientation/garbage/evidence gate). Root cause found, fix NEXT.
+
 ## Session 65 (2026-05-30) — Plan tooling: source-verifier + agent-permissions ADR + release gate (branch feat/plan-tooling-prompts-3-6-10)
 - `DONE(Prompt 3)` `scripts/verify-ukraine-sources.mjs` — fetches each /print source, verifies act number+keywords; writes `source-verification-report.json` (КМУ-1025/152/302 VERIFIED live; military/diploma/pension invalid_url). Pure-matcher tests 4/4.
 - `DONE(Prompt 6)` `docs/adr/ADR-AGENT-PERMISSIONS.md` — 8 roles, allowed/forbidden files, only ReleaseManager flips active/flags.
