@@ -2363,3 +2363,25 @@ _(Session 56 cont.9: deployed feat/central-brain to PREVIEW (prod untouched); ve
 _(Session 56 cont.10: MERGED to main â prod deploy of Central Brain (code live on messenginfo.com, /api/central-brain/health 200). Activating CENTRAL_BRAIN_TRANSLATION=on in production â translation now via 2-reader consensus (Gemini+Google Vision), anti-fabrication guard, legacy fallback on error. Revert = flag off.)_
 _(Session 56 cont.11: D5 â review screen now shows the uploaded document image (responsive, web+mobile) so the user fills empty consensus fields against their original. On branch feat/d5-review-image; build OK; verifying web/mobile before prod merge.)_
 _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real docs. Findings: GPT-4o fabricates handwriting (ÐÑÑÐ¾ÑÐ¸Ð½ÑÑÐºÐ¸Ð¹ ÐÐ»ÐµÐ³ @0.95); Google Vision OCR contains all printed values; C4 3-way best (4/5); my earlier C3/6-8 numbers were UNRELIABLE (free-tier Gemini 20/day quota exhausted â silent empties). FIXED: geminiReader now surfaces 429 (was masquerading as cant-read). Wired C3 presence-confirm + recognize-injection (42 tests, 0 tsc) on branch feat/c3-presence â NOT deployed, runtime-unverified pending quota reset. #1 BLOCKER: prod runs on exhausted free key â needs PAID Gemini/Vertex billing.)_
+## 2026-05-29 — official-docs: birth-certificate Field Contract + mapping (КМУ №1025 verified)
+
+- Downloaded + analyzed OFFICIAL sources (zakon.rada /print): КМУ №1025 (all 5 civil
+  certs, verified structure), КМУ №152 (foreign passport), КМУ №302 (ID card).
+  docs/official-forms/ukraine/EXTRACTED_OFFICIAL_2026-05-29.json.
+- ARCHITECTURE DECISION (mentor): NOT a parallel 7-JSON-files-per-doc registry (re-
+  fragments what D-GLOSSARY just unified). Instead EXTEND the existing typed schema:
+  FormFieldSpec gains a Field Contract (canGuess=false, sourceRule, reviewRequiredIf,
+  eraDependent); OfficialFormSchema gains era `variants`.
+- birth-certificate.schema upgraded to the OFFICIAL КМУ-1025 structure: added the
+  separate `certificate_issuing_authority`, post-2019 `unzr`/`rnokpp` (era-dependent,
+  non-blocking on legacy), `head_of_authority`; full per-field source_rule; 3 era
+  variants (modern / post-2019 / legacy Soviet bilingual).
+- Canonical mapping layer (birthCertificate.mapping.ts): recognized child_full_name →
+  child_surname/given/patronymic (split, always review) — closes the spike gap.
+- source-ledger: validation_protocol (title/hash, INVALIDATE on mismatch — the rada
+  CDN stale-cache bug), OFFICIAL_VERIFIED for 1025/152/302, INVALID URLs flagged for
+  military/diploma/pension, КАТОТТГ marked UNOFFICIAL_MIRROR, official series-by-oblast
+  table (АМ=Вінницька verifies III-АМ № 428069).
+- Tests: contract integrity (every field sourceRule+canGuess=false), Patronymic≠Middle
+  Name, era non-blocking, full-name split, series АМ→Вінницька. Schema/tests ONLY — no
+  runtime generate-pdf change. web 2218 pass, 0 type errors.
