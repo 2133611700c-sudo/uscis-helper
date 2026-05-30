@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 58b (2026-05-29) — Golden PDF + visual protocol for birth pilot (branch official-docs)
+- `VERIFIED(local)` birthCertificate.goldenVisual.test.ts 4/4 + 1 todo: required labels present, forbidden `Middle Name`/`Police` absent, overflow-name survives, missing→honest placeholder. Generated visual artifact `docs/reports/artifacts/birth_certificate.pilot.{pdf,png}` (synthetic, no PII).
+- `BLOCKER(found by visual pass)` 🔴 renderOfficialTranslation `safe()` strips chars > U+00FF → **Cyrillic series letters silently dropped** (`I-АМ`→`I-`). SILENT DATA LOSS. Fix = KMU-55 transliterate series upstream before render. Golden tests missed it (used Latin AM) — proves readback ≠ visual approval. Tracked: `it.todo` + `docs/reports/GOLDEN_PDF_PROTOCOL_birth.md`.
+- `OWNER-GATED` visual approval of birth PNG; era-gate UNZR/RNOKPP; wizard signer-address.
+
 ## Session 58 (2026-05-29) — Deterministic coverage generator (branch official-docs)
 - `VERIFIED(local)` `scripts/document-platform-coverage.mjs` derives the coverage matrix from code (schemas/mappings/bureau registry/live-E2E/source-ledger) — no hand-written matrix, no manual PASS. Emits `docs/reports/DOCUMENT_PLATFORM_COVERAGE.generated.{md,json}`.
 - `RESULT` 0 active; birth_certificate = full/contract/mapping/doc-renderer/live-fixture, ONLY blocker = review_gate (lives on branch fix/review-gate-hard-block) → birth is the pilot pending review-gate merge + visual approval. 4 civil = DRAFT (no mapping, generic renderer, no live fixture). passport/id = no schema. military/booklet/diploma/pension = invalid source. КАТОТТГ=0 here (on koatuu), agency=8.

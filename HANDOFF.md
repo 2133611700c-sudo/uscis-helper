@@ -1,3 +1,19 @@
+# HANDOFF — Session 58b (2026-05-29)
+
+## Session 58b — Golden PDF + visual protocol for the birth pilot (branch `official-docs`, playbook step 8 / Prompt 9)
+
+Added `birthCertificate.goldenVisual.test.ts` (4 tests + 1 todo): required English labels present, forbidden labels (`Middle Name`/`Police`) absent, overflow-length name survives without silent drop, missing field → honest placeholder + not certifiable + no fabricated parent. Generated a real visual artifact (`docs/reports/artifacts/birth_certificate.pilot.{pdf,png}`, synthetic Shevchenko data — no PII) and reviewed it myself.
+
+**Zero-trust visual pass caught a real BLOCKER the machine tests missed:** `renderOfficialTranslation`'s `safe()` strips every char > U+00FF, so **Cyrillic series letters are silently dropped** — input `I-АМ 000001` renders as `I- 000001`. Silent data loss. The golden tests passed only because they used Latin "AM". Fix = transliterate series letters (KMU-55) upstream before render; the renderer must never silently strip. Tracked as `it.todo` + `docs/reports/GOLDEN_PDF_PROTOCOL_birth.md`. Also flagged: empty translator address line (wizard gap), UNZR/RNOKPP shown on an era where they didn't exist (era-gating gap).
+
+**birth pilot verdict:** NOT visually approved — blocker #1 must be fixed first.
+
+**Exact next task (owner-gated):** owner reviews the PNG + merges #26/#27; then fix Cyrillic-series transliteration, re-render, re-run coverage generator. NO new document types until birth pilot passes.
+
+**Evidence:** translation suite 1728 pass +1 skip +1 todo; tsc 0. Artifact PNG inspected.
+
+---
+
 # HANDOFF — Session 58 (2026-05-29)
 
 ## Session 58 — Deterministic coverage generator (branch `official-docs`, playbook step 5 / Prompt 5)
