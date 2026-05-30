@@ -1,3 +1,13 @@
+# HANDOFF — Session 64 (2026-05-30)
+
+## Session 64 — Glossary: 5 missing agencies (branch `data/glossary-missing-agencies`, off main)
+
+Closed the glossary gap I flagged in my own audit: added ПФУ, КМУ, МОН, МОЗ, Мінрегіон as `authority` entries in `registry.csv` with official `.gov.ua/en` source URLs (ADR-013), regenerated `registry.generated.ts`. lookupAuthority resolves all five (+abbreviations); validateRegistry 0 errors; web suite + tsc 0 + content-guard 0.
+
+**Next plan items:** Prompt 3 source-verifier script; Prompt 6 agent-permissions ADR; Prompt 10 release-gate checklist.
+
+---
+
 # HANDOFF — Session 63 (2026-05-30)
 
 ## Session 63 — Attestation audit trail persisted (branch `feat/attestation-audit-trail`, off main)
