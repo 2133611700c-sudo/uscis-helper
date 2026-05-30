@@ -36,3 +36,7 @@ export {
   readCanonicalDocumentFromTps,
 } from './adapter'
 export type { ReadCanonicalInput } from './adapter'
+
+// P2.3 shadow — diff two CanonicalDocumentResults; ONE_BRAIN_SHADOW flag (OFF).
+export { diffCanonical, isShadowEnabled, summarizeParity } from './shadow'
+export type { ParityReport, FieldParity, ParityStatus } from './shadow'
