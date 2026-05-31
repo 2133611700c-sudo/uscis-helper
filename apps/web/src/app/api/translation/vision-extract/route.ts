@@ -30,6 +30,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
+import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 // Central Brain (flag-gated, default OFF → prod behavior unchanged)
 import { analyze } from '@/lib/central-brain'
 import { deepseekProseTranslator } from '@/lib/engine/translator'
@@ -106,9 +107,7 @@ export async function POST(req: NextRequest) {
   if (process.env.CENTRAL_BRAIN_TRANSLATION === 'on') {
     try {
       const spec = DOC_TYPES[docTypeId]
-      // Read the key under any of the names the owner uses in Vercel
-      // (GEMINI_API_KEY_066 is the current temporary one; _PAY is canonical).
-      const gem = process.env.GEMINI_API_KEY_066 || process.env.GEMINI_API_KEY_PAY || process.env.GEMINI_API_KEY
+      const gem = getGeminiApiKey() // any GEMINI_API_KEY* name the owner uses
       const gv = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY
       if (spec && gem && gv) {
         const docs = await Promise.all(rawFiles.map(async (f) => ({
