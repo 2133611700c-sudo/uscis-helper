@@ -6,7 +6,7 @@
 
 **Root cause of "ничего не распознаётся" found + verified.** Prod `/api/translation/vision-extract` returns **502** on real Ukrainian documents (Vercel logs confirm). The code reads the Gemini key ONLY from `GEMINI_API_KEY_PAY` / `GEMINI_API_KEY` (`vision-extract/route.ts:109`, `geminiVisionProvider.ts:99`). The owner uploaded the WORKING key to Vercel under the name **`GEMINI_API_KEY_066`** → the app never reads it → it uses the old dead/restricted key → central-brain consensus Gemini call fails / reads 0 fields → the route returns **502 by design** (`route.ts:130`: `status: fields.length ? 200 : 502`).
 
-**Fix (this PR):** both reads now `GEMINI_API_KEY_066 || GEMINI_API_KEY_PAY || GEMINI_API_KEY`. tsc 0.
+**Fix (this PR):** new `apps/web/src/lib/gemini/apiKey.ts` `getGeminiApiKey()` resolves the key from ANY `GEMINI_API_KEY*` env name (the owner kept renaming: `GEMINI_API_KEY_066` → `GEMINI_API_KEY2` → …; suffixed names preferred over the bare `GEMINI_API_KEY`). Wired into both `vision-extract/route.ts` and `geminiVisionProvider.ts`. **Verified end-to-end:** with the local var named exactly `GEMINI_API_KEY2` (mirroring Vercel), `readDocument` reads the real booklet correctly (ok=true, 4 fields). `apiKey.test.ts` 6/6, tsc 0, full web 2383 pass, guard 0. This ends the name-mismatch class of failure for good.
 
 **Proven on real data:** with the working key (set locally), a SINGLE Gemini read (`docintel.readDocument`) reads BOTH owner documents correctly — internal booklet (KUROPIATNYK / SERHII / 1986-06-25 / Vinnytsia Oblast, 25s) and birth cert (10 fields, 8.6s). The single read WORKS where the central-brain consensus returns 0 → 502. This directly validates the one-brain single-read Core as the fix.
 
