@@ -1,0 +1,17 @@
+{
+  "document_id": "ua-international-passport-SAMPLE",
+  "doc_type": "ua_international_passport",
+  "_note": "Hand-verified truth for ONE real document. You read the document with your eyes and write the CORRECT values here. The benchmark scores each reader (Gemini / Vision+DeepSeek / MRZ) and the Core against this. 'critical' defaults from the field criticality if omitted. Values: dates as YYYY-MM-DD; Latin names as printed in MRZ; Cyrillic fields as printed.",
+  "fields": {
+    "family_name": { "value": "Kovalenko", "critical": true },
+    "given_name": { "value": "Serhii", "critical": true },
+    "patronymic": { "value": "Ivanovych", "critical": true },
+    "date_of_birth": { "value": "1985-07-12", "critical": true },
+    "sex": { "value": "M" },
+    "passport_number": { "value": "EK123456", "critical": true },
+    "date_of_expiry": { "value": "2030-04-01" },
+    "country_of_nationality": { "value": "Ukraine" },
+    "place_of_birth": { "value": "Lviv" },
+    "issuing_authority": { "value": "1234" }
+  }
+}
