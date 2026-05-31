@@ -1,3 +1,25 @@
+> ⭐ **ONE BRAIN — READ FIRST:** the locked architecture for the single Document Core is `docs/architecture/ONE_BRAIN_DECISION.md`. One brain = one Core arbiter (NOT one AI) that drives all readers → one `CanonicalDocumentResult`; 5 products consume it via adapters. v1 spine is built in `apps/web/src/lib/canonical/core/` (arbitration + readDocumentCore + benchmark + ground-truth format), pure + tested, **NOT wired to any product, no flags**. Next real step needs OWNER-PROVIDED real documents + hand-verified ground truth (`core/groundTruth.example.json`) for the reader benchmark. NO product migration without explicit owner approval.
+
+# HANDOFF — Session 88 (2026-05-30)
+
+## Session 88 — One Brain v1 spine: Document Core (branch `feat/one-brain-v1-spine`, off main)
+
+Built the v1 spine of the single Document Core per `docs/architecture/ONE_BRAIN_DECISION.md` (owner-approved). New `apps/web/src/lib/canonical/core/`:
+- `arbitration.ts` — the Core's judge (minimal authority policy): valid MRZ controls passport fields; **invalid MRZ → review** (not silent fallback); critical field with **no MRZ anchor → review**; material conflict on critical/high → review; fuzzy → review; **no candidate → no field**. Reuses `policy.ts` (criticalityOf/materiallyDifferent/sourceRank).
+- `readDocumentCore.ts` — the one entrypoint: quality gate → visual read (Gemini, injected) → MRZ read if passport → minimal arbitration → one `CanonicalDocumentResult`, or `needs_better_photo` (never garbage). Readers injected (testable; real OCR wiring is a thin call later).
+- `benchmark.ts` — scorer vs hand-verified ground truth; locked metric `critical_wrong_count` (critical field auto-filled wrong & not review-flagged → must be 0). `parseGroundTruth`.
+- `groundTruth.example.json` — the format the owner fills by reading a real document.
+
+**Evidence:** `core/__tests__/core.test.ts` 16/16. Full web 2370 pass, tsc 0, content-guard 0.
+
+**What is BUILT:** the Core spine (arbitration + entrypoint + benchmark + ground-truth format), pure + tested.
+**What is NOT live:** nothing consumes the Core — no product migrated, no flags, no UI/payment touched. "One brain" is NOT done (done only when a product consumes Core in production).
+**What requires real input:** owner-provided real documents (≥1 passport with MRZ, ≥1 internal booklet) + hand-verified ground truth → reader benchmark → derive empirical knobs → core benchmark → THEN (with approval) migrate the first product.
+
+**Next (needs owner):** provide real documents/ground truth, OR approve the reader-benchmark wiring (calling the real Gemini docintel + MRZ reader on a real doc). Product route migration = manual approval only.
+
+---
+
 # HANDOFF — Session 87 (2026-05-30)
 
 ## Session 87 — Legal Copy Freeze (branch `feat/legal-copy-freeze`, off main)

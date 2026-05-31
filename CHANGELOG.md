@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-05-30 — Session 88: One Brain v1 spine — Document Core (branch feat/one-brain-v1-spine)
+
+Locked the one-brain architecture in `docs/architecture/ONE_BRAIN_DECISION.md` (one Core arbiter, NOT one AI; readers = tools; arbitration = judge → one CanonicalDocumentResult; 5 products consume via adapters). Built the v1 spine `apps/web/src/lib/canonical/core/`: arbitration.ts (minimal authority policy — valid-MRZ wins / invalid-MRZ→review / critical-no-anchor→review / conflict→review / fuzzy→review / no-source→no-field), readDocumentCore.ts (quality→visual(Gemini, injected)→MRZ-if-passport→arbitrate→one result OR needs_better_photo), benchmark.ts (metric critical_wrong_count + parseGroundTruth), groundTruth.example.json. Pure, injected readers, NOT wired to any product, no flags, no UI/payment touched. New core.test.ts 16/16; full web 2370 pass; tsc 0; content-guard 0. NOT LIVE — one brain is not "done" (done only when a product consumes Core). Needs owner real documents + ground truth for the reader benchmark; product migration requires manual approval. Files: docs/architecture/ONE_BRAIN_DECISION.md, lib/canonical/core/{types,arbitration,readDocumentCore,benchmark}.ts, core/groundTruth.example.json, core/__tests__/core.test.ts, HANDOFF/STATUS/CHANGELOG.
+
 ## 2026-05-30 — Session 87: Legal Copy Freeze (branch feat/legal-copy-freeze)
 
 New `apps/web/src/lib/translation/__tests__/legalCopyFreeze.test.ts` — pins CERTIFICATION_VERSION (v1.0-8cfr-2026) + sha256 of CERTIFICATION_STATEMENT (the signed 8 CFR §103.2(b)(3) legal text); a silent edit fails the build with ADR/version/pin instructions; asserts the statement still cites the regulation. Test-only. legalCopyFreeze.test.ts 3/3; full web 2354 pass; tsc 0; content-guard 0. Report `docs/reports/LEGAL_COPY_FREEZE.md`. Files: lib/translation/__tests__/legalCopyFreeze.test.ts, report, STATUS/HANDOFF/CHANGELOG.
