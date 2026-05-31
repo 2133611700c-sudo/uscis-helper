@@ -16,7 +16,9 @@
 
 **Instant owner option (no merge needed):** in Vercel rename `GEMINI_API_KEY_066` → `GEMINI_API_KEY_PAY` (and optionally set `CENTRAL_BRAIN_TRANSLATION` off → uses the proven legacy single-read path) → prod recognition works immediately.
 
-**Gate:** PR not merged (manual approval). Also recommend fixing `route.ts:130` to degrade to single-read on 0 fields instead of 502 (separate).
+**Also fixed `route.ts:130` (same PR):** when central-brain consensus reads 0 fields, the route now DEGRADES to the legacy single-read path (which uses the same key resolver and is proven to read real docs) instead of returning a hard 502. So merging #67 makes prod recognition work even if central-brain yields nothing. tsc 0, full web 2383 pass.
+
+**Gate:** PR #67 not merged (manual approval). After merge, prod recognition should work (reads GEMINI_API_KEY2 + degrades instead of 502).
 
 ---
 
