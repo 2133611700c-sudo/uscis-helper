@@ -123,12 +123,20 @@ export async function POST(req: NextRequest) {
           field: f.field, value: f.value || null, raw_cyrillic: f.cyrillic || null,
           confidence: f.can_read ? 0.9 : 0, review_required: f.review_required, kind: f.source,
         }))
-        return NextResponse.json({
-          ok: fields.length > 0, doc_type_id: docTypeId, fields,
-          pages: [], page_count: rawFiles.length, provider: 'central-brain:consensus',
-          model: 'gemini+google-vision', readiness: br.productReadiness,
-          official_sources: br.officialSourcesUsed, status: 'ok:central-brain',
-        }, { status: fields.length ? 200 : 502 })
+        // Only return the consensus result when it actually read something. When it
+        // reads 0 fields, DEGRADE to the legacy single-read path below (proven to
+        // read real Ukrainian docs) instead of hard-failing with a 502.
+        if (fields.length > 0) {
+          return NextResponse.json({
+            ok: true, doc_type_id: docTypeId, fields,
+            pages: [], page_count: rawFiles.length, provider: 'central-brain:consensus',
+            model: 'gemini+google-vision', readiness: br.productReadiness,
+            official_sources: br.officialSourcesUsed, status: 'ok:central-brain',
+          }, { status: 200 })
+        }
+        console.warn('[central-brain translation] 0 fields — degrading to legacy single-read')
+        degradedFromBrain = true
+        // fall through to legacy path below
       }
     } catch (e: any) {
       console.error('[central-brain translation] fell back to legacy:', e?.message ?? e)
