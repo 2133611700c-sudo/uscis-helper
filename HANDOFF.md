@@ -1,5 +1,22 @@
 > ⭐ **ONE BRAIN — READ FIRST:** the locked architecture for the single Document Core is `docs/architecture/ONE_BRAIN_DECISION.md`. One brain = one Core arbiter (NOT one AI) that drives all readers → one `CanonicalDocumentResult`; 5 products consume it via adapters. v1 spine is built in `apps/web/src/lib/canonical/core/` (arbitration + readDocumentCore + benchmark + ground-truth format), pure + tested, **NOT wired to any product, no flags**. Next real step needs OWNER-PROVIDED real documents + hand-verified ground truth (`core/groundTruth.example.json`) for the reader benchmark. NO product migration without explicit owner approval.
 
+# HANDOFF — Session 90 (2026-05-30)
+
+## Session 90 — Live benchmark runner scaffold (branch `feat/live-benchmark-runner`, off main; #65 merged)
+
+Merged #65 (benchmark infrastructure only). Built the live-runner SCAFFOLD per owner spec (no product migration, no flags, no UI/payment):
+- `apps/web/src/lib/canonical/core/benchmark/liveRunner.ts` — `runLiveBenchmark(truth, callers)`: runs whatever real readers are available (injected callers) → scores via the benchmark → report + PII-free summary. **BLOCKED (never false PASS) if no reader produced output.** Unit-tested with fakes.
+- `scripts/run-live-reader-benchmark.mjs` — CLI: `--image --ground-truth --doc-type`. **BLOCKED (exit 2) on missing image/ground-truth/GEMINI key.** Wires Gemini docintel (`readDocument`) + Core (`readDocumentCore` over the Gemini read) as real callers; MRZ + old-TPS callers are honest follow-ups (MRZ needs `locateMrzLines` exported; TPS is a Next route → call via a dev endpoint). Writes the FULL report (PII) to `qa-private/reports/<ts>.json` and a sanitized summary to `docs/reports/live-reader-benchmark/<ts>.md`.
+- **Data safety:** `.gitignore` now has `qa-private/**` (real docs / ground truth / full PII reports never committed — verified ignored). Only the sanitized summary is committable.
+
+**Evidence:** `liveRunner.test.ts` 4/4 (fixtures + BLOCKED). `.mjs` BLOCKED paths verified (exit 2). Full web 2381 pass, tsc 0, content-guard 0.
+
+**Honest status:** #64=Core spine, #65=benchmark infra, #66(this)=live-runner scaffold. **One brain live = NO. Real benchmark = NO. Product migration = NO.** The runner runs but produces nothing without a real document + GEMINI_API_KEY_PAY.
+**Next real step:** owner fills `core/groundTruth.example.json` from a real passport (into `qa-private/ground-truth/`), puts the image in `qa-private/real-docs/`, sets `GEMINI_API_KEY_PAY`, runs the .mjs → first REAL `critical_wrong_count` per reader. Then (with approval) wire MRZ baseline (expose `locateMrzLines`) + old-TPS endpoint for the full 4-way comparison.
+**Gate:** product migration = explicit owner approval only. PR not merged.
+
+---
+
 # HANDOFF — Session 89 (2026-05-30)
 
 ## Session 89 — Reader-benchmark harness (branch `feat/reader-benchmark`, off main; #64 merged)
