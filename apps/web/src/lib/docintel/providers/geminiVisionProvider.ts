@@ -94,10 +94,12 @@ export class GeminiVisionProvider implements VisionProvider {
     opts: { timeoutMs?: number; attemptsPerModel?: number } = {},
   ): Promise<VisionReadResult> {
     const t0 = Date.now()
-    // Prod (Vercel) stores the PAID key as GEMINI_API_KEY_PAY; fall back to the
-    // plain name for local/dev. (2026-05-29: prod var is GEMINI_API_KEY_PAY.)
-    const apiKey = process.env.GEMINI_API_KEY_PAY || process.env.GEMINI_API_KEY
-    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'GEMINI_API_KEY(_PAY) not set' }
+    // Prod (Vercel) PAID key. Owner currently stores a working key under
+    // GEMINI_API_KEY_066 (temporary, rotates); GEMINI_API_KEY_PAY is the canonical
+    // name; GEMINI_API_KEY is the local/dev fallback. Read all three so a key
+    // uploaded under any of these names is picked up.
+    const apiKey = process.env.GEMINI_API_KEY_066 || process.env.GEMINI_API_KEY_PAY || process.env.GEMINI_API_KEY
+    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'GEMINI_API_KEY(_PAY/_066) not set' }
 
     // 2.5-pro + thinking on a full-page scan runs ~20-40s; the old 8s default
     // would abort it every time. Default high; callers can still override.
