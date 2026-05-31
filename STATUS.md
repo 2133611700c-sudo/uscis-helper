@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 88 (2026-05-30) — One Brain v1 spine: Document Core (branch feat/one-brain-v1-spine)
+- `ARCH` Locked decision `docs/architecture/ONE_BRAIN_DECISION.md`: one brain = one Core arbiter (NOT one AI); readers (Gemini visual / MRZ math / Vision-evidence+degradation / DeepSeek text-helper / KMU-55 normalizer) are tools; arbitration is judge → one CanonicalDocumentResult; 5 products consume via adapters.
+- `PHASE2` v1 spine in `apps/web/src/lib/canonical/core/`: `arbitration.ts` (minimal policy: valid-MRZ wins, invalid-MRZ→review, critical-no-anchor→review, conflict→review, fuzzy→review, no-source→no-field), `readDocumentCore.ts` (quality→visual→MRZ→arbitrate→one result, or needs_better_photo), `benchmark.ts` (metric `critical_wrong_count`), `groundTruth.example.json`. Pure, injected readers. NOT wired, NO flags.
+- `EVIDENCE` `core/__tests__/core.test.ts` 16/16. Full web 2370 pass, tsc 0, guard 0. NOT LIVE: no product consumes Core. NEEDS owner real documents + ground truth for reader benchmark before any migration (manual approval).
 ## Session 87 (2026-05-30) — Legal Copy Freeze (branch feat/legal-copy-freeze)
 - `COMPLIANCE` `apps/web/src/lib/translation/__tests__/legalCopyFreeze.test.ts` — pins `CERTIFICATION_VERSION` (v1.0-8cfr-2026) + sha256 of `CERTIFICATION_STATEMENT` (the signed 8 CFR §103.2(b)(3) legal text). Any silent edit fails the build with instructions: write an ADR, bump version, update the pin. Asserts the statement still cites 8 CFR §103.2(b)(3).
 - `EVIDENCE` `legalCopyFreeze.test.ts` 3/3. Full web 2354 pass, tsc 0, guard 0. Report `docs/reports/LEGAL_COPY_FREEZE.md`. Test-only.
