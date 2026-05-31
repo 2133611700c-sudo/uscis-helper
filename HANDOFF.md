@@ -1,5 +1,27 @@
 > ⭐ **ONE BRAIN — READ FIRST:** the locked architecture for the single Document Core is `docs/architecture/ONE_BRAIN_DECISION.md`. One brain = one Core arbiter (NOT one AI) that drives all readers → one `CanonicalDocumentResult`; 5 products consume it via adapters. v1 spine is built in `apps/web/src/lib/canonical/core/` (arbitration + readDocumentCore + benchmark + ground-truth format), pure + tested, **NOT wired to any product, no flags**. Next real step needs OWNER-PROVIDED real documents + hand-verified ground truth (`core/groundTruth.example.json`) for the reader benchmark. NO product migration without explicit owner approval.
 
+# HANDOFF — Session 89 (2026-05-30)
+
+## Session 89 — Reader-benchmark harness (branch `feat/reader-benchmark`, off main; #64 merged)
+
+Merged #64 (one-brain v1 spine, foundation). Built the reader-benchmark instrument the owner asked for: compare **old TPS reader / old Translation (docintel) / MRZ parser / new Document Core** against a hand-filled ground truth; metric = `critical_wrong_count` (must be 0; coverage secondary). Built against VERIFIED real signatures (3 parallel agents confirmed `readDocument`, `parseTd3` + per-field `checkResults`, `preprocessImage`).
+
+New `apps/web/src/lib/canonical/core/benchmark/`:
+- `passportTruth.ts` — the owner's flat passport ground-truth schema (latin+cyrillic split: family/given/patronymic _latin/_cyrillic, dob, sex, passport_number, expiry_date, citizenship, place_of_birth_raw/english, province) + criticality + `passportTruthToGroundTruth` (empty fields excluded).
+- `mappers.ts` — `mapMrz`/`mapTranslation`/`mapTps`/`mapCore`: each reader's NATIVE output → common `ProducedField[]` keyed to the truth fields (MRZ "D Month YYYY"→ISO, per-field check-digit→review; docintel value→latin + raw_cyrillic→cyrillic; TPS/Core normalized_value→latin). MRZ has no Cyrillic/patronymic/place by design (shows its gap).
+- `runReaderBenchmark.ts` — scores all readers vs one truth → side-by-side `critical_wrong`/`coverage` + PII-free `summarizeBenchmark`.
+- updated `core/groundTruth.example.json` to the owner's flat schema.
+
+**Evidence:** `core/__tests__/benchmark.test.ts` 7/7 (+ spine core.test 16/16). Full web 2377 pass, tsc 0, content-guard 0.
+
+**BUILT:** the reader-benchmark scorer + mappers + runner (pure, tested with synthetic reader outputs).
+**NOT LIVE / NOT DONE:** no product migrated, no flags. The harness scores PROVIDED reader outputs — it does NOT yet call the live engines.
+**NEEDS REAL INPUT:** (1) owner fills `groundTruth.example.json` from a real passport (and a booklet); (2) a small live runner that calls Gemini `readDocument` + `parseTd3` + the TPS route on that real image to PRODUCE the four outputs to feed the benchmark (needs GEMINI_API_KEY_PAY + a real doc). Then we get the actual `critical_wrong_count` per reader.
+
+**Gate:** product route migration = explicit owner approval only. PR for this = NOT merged (manual approval).
+
+---
+
 # HANDOFF — Session 88 (2026-05-30)
 
 ## Session 88 — One Brain v1 spine: Document Core (branch `feat/one-brain-v1-spine`, off main)
