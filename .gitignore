@@ -49,6 +49,11 @@ reports/owner_*
 qa-shots/private/
 qa-shots/ua_passport_real.*
 qa-shots/booklet_*
+
+# One-Brain reader benchmark: real documents, ground truth, and full reports with
+# PII live here and are NEVER committed. Only the sanitized summary under
+# docs/reports/live-reader-benchmark/ is committable. See ONE_BRAIN_DECISION.md.
+qa-private/**
 test-fixtures/owner/
 docs/audit/REAL_DOC_GROUND_TRUTH.local.yaml
 
