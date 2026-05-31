@@ -1,5 +1,25 @@
 > ⭐ **ONE BRAIN — READ FIRST:** the locked architecture for the single Document Core is `docs/architecture/ONE_BRAIN_DECISION.md`. One brain = one Core arbiter (NOT one AI) that drives all readers → one `CanonicalDocumentResult`; 5 products consume it via adapters. v1 spine is built in `apps/web/src/lib/canonical/core/` (arbitration + readDocumentCore + benchmark + ground-truth format), pure + tested, **NOT wired to any product, no flags**. Next real step needs OWNER-PROVIDED real documents + hand-verified ground truth (`core/groundTruth.example.json`) for the reader benchmark. NO product migration without explicit owner approval.
 
+# HANDOFF — Session 91 (2026-05-31)
+
+## Session 91 — PROD HOTFIX: Gemini key name mismatch + recognition root cause (branch `fix/gemini-key-066-name`, off main)
+
+**Root cause of "ничего не распознаётся" found + verified.** Prod `/api/translation/vision-extract` returns **502** on real Ukrainian documents (Vercel logs confirm). The code reads the Gemini key ONLY from `GEMINI_API_KEY_PAY` / `GEMINI_API_KEY` (`vision-extract/route.ts:109`, `geminiVisionProvider.ts:99`). The owner uploaded the WORKING key to Vercel under the name **`GEMINI_API_KEY_066`** → the app never reads it → it uses the old dead/restricted key → central-brain consensus Gemini call fails / reads 0 fields → the route returns **502 by design** (`route.ts:130`: `status: fields.length ? 200 : 502`).
+
+**Fix (this PR):** both reads now `GEMINI_API_KEY_066 || GEMINI_API_KEY_PAY || GEMINI_API_KEY`. tsc 0.
+
+**Proven on real data:** with the working key (set locally), a SINGLE Gemini read (`docintel.readDocument`) reads BOTH owner documents correctly — internal booklet (REDACTED / SERHII / 1986-06-25 / Vinnytsia Oblast, 25s) and birth cert (10 fields, 8.6s). The single read WORKS where the central-brain consensus returns 0 → 502. This directly validates the one-brain single-read Core as the fix.
+
+**Two real-data bugs found for the Core** (next fixes, grounded not theoretical): (1) reader field-key vocabulary mismatch (Gemini emits `dob`, birth-cert keys like `child_family_name`) → Core's `criticalityOf` misses them → mis-criticalized; (2) the reader's `review_required` is not carried into the Core candidate → Core under-flagged the birth cert. Fix = a reader→canonical key normalizer + carry `review_required` into the candidate.
+
+**Local key:** the owner's temporary key is in `apps/web/.env.local` (gitignored, NOT committed); owner will rotate it. Local 403 on the previous key was because it was IP/referrer-restricted to Vercel.
+
+**Instant owner option (no merge needed):** in Vercel rename `GEMINI_API_KEY_066` → `GEMINI_API_KEY_PAY` (and optionally set `CENTRAL_BRAIN_TRANSLATION` off → uses the proven legacy single-read path) → prod recognition works immediately.
+
+**Gate:** PR not merged (manual approval). Also recommend fixing `route.ts:130` to degrade to single-read on 0 fields instead of 502 (separate).
+
+---
+
 # HANDOFF — Session 89 (2026-05-30)
 
 ## Session 89 — Reader-benchmark harness (branch `feat/reader-benchmark`, off main; #64 merged)
