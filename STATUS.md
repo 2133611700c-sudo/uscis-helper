@@ -1,4 +1,14 @@
 # STATUS — Messenginfo
+## Session 98 (2026-06-03) — MRZ AUTHORITY COMPLETE (feat/mrz-passport-authority)
+- `MRZ_AUTHORITY` `canonical/core/mrzAuthority.ts`: wraps `parseMrz` → `FieldCandidate[]` for `CoreReaders.mrzRead`.
+- `VALID MRZ` mrzCheckValid=true, confidence=0.99, reviewRequired=false → Core arbitration gives MRZ absolute authority.
+- `INVALID MRZ` mrzCheckValid=false, confidence=0.3, reviewRequired=true (NOT silent fallback).
+- `MISSING MRZ` empty array → Core uses visual candidates with existing critical-field review triggers.
+- `CONTROLLED` passport_number, date_of_birth, sex, date_of_expiry, family_name, given_name, nationality.
+- `FORBIDDEN` i94, a_number, ead_category, address, patronymic, place_of_birth, issuing_authority, eligibility — never emitted.
+- `TESTS` 36 new; full suite 2646/2646; tsc 0.
+- `FIXTURE` qa-private/ground-truth/passport_international_kuropiatnyk.json status=MISSING — no live doc verified.
+- `NEXT` Owner fills ground truth → wire mrzReadFromOcrText into TPS/Re-Parole routes for ua_international_passport.
 ## Session 97 (2026-06-03) — B4 UI WIRING COMPLETE (feat/b4-ead-core, PR #73)
 - `B4 UI WIRED` `EADWizard.tsx`: upload prefill step behind `NEXT_PUBLIC_ONE_CORE_EAD_ENABLED` flag.
 - `FLAG OFF` wizard is unchanged — old 7-step manual form, 0 behavior change.
