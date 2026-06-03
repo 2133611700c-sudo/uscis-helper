@@ -54,6 +54,14 @@ import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
+// POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
+import {
+  checkImageQuality,
+  applyHardCaseReviewOverride,
+  applyCertificateRoleGuard,
+  tpsHintToDocumentClass,
+  isUkrainianIdentityDoc,
+} from '@/lib/canonical/core/documentClassPolicy'
 
 // Vision REST call needs full Node runtime (Buffer + fetch with timeout).
 export const runtime = 'nodejs'
@@ -173,6 +181,33 @@ export async function POST(req: NextRequest) {
   // no global cache, no logging, GC eligible after response.
   const imageBuffer = pre.buffer
   const effectiveMime = pre.mimeType
+
+  // ── POLICY_WIRED: checkImageQuality — document-class size guard ─────────
+  // Runs BEFORE OCR/Vision call. Blocks 82KB marriage apostille (proved insufficient).
+  // Warns on images >2MB (503 risk on Gemini). Only applies to Ukrainian identity docs.
+  if (isUkrainianIdentityDoc(docTypeHint)) {
+    const docClass = tpsHintToDocumentClass(docTypeHint)
+    const qualityCheck = checkImageQuality(docClass, imageBuffer.byteLength)
+    if (qualityCheck.action === 'needs_better_scan') {
+      console.warn('[documentClassPolicy] needs_better_scan:', qualityCheck.reason, 'hint:', docTypeHint)
+      return NextResponse.json(
+        {
+          status: 'needs_better_scan',
+          review_required: true,
+          reason: qualityCheck.reason,
+          fields: null,
+          ok: false,
+          error: 'Image quality insufficient for reliable extraction. Please upload a higher-resolution scan.',
+          quality_error: { code: 'needs_better_scan', message: qualityCheck.reason },
+        },
+        { status: 200 },
+      )
+    }
+    if (qualityCheck.action === 'resize') {
+      // Log resize warning — do not block extraction, but flag for monitoring
+      console.warn('[documentClassPolicy] image_large_resize_recommended:', qualityCheck.reason, 'hint:', docTypeHint)
+    }
+  }
 
   // ── Call OCR provider (DocAI when enabled, Vision otherwise)
   const ocrProvider = isDocAIEnabled() ? docAIProvider : googleVisionProvider
@@ -961,6 +996,53 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── POLICY_WIRED: post-extraction document-class guards ─────────────────
+  // Guards run AFTER all extraction/normalization, BEFORE response.
+  // Only applied to Ukrainian identity documents. US-form slots are excluded.
+  let policyGuardStatus: 'not_applicable' | 'applied' | 'role_guard_triggered' = 'not_applicable'
+  if (mergedModule && isUkrainianIdentityDoc(docTypeHint)) {
+    const docClass = tpsHintToDocumentClass(docTypeHint)
+
+    // Wire 2: applyHardCaseReviewOverride — forces review_required=true on
+    // all fields for hard-case classes (birth certs, marriage apostille, unknown).
+    // Benchmark evidence: gemini-2.5-pro set review_required=false while returning
+    // wrong person on birth_cert_soviet — most dangerous failure mode observed.
+    if (isUkrainianIdentityDoc(docTypeHint)) {
+      const hardCaseCheck = applyHardCaseReviewOverride(docClass, { review_required: false })
+      if ('override_reason' in hardCaseCheck) {
+        // Hard case: force review_required=true on ALL fields
+        console.info('[documentClassPolicy] applyHardCaseReviewOverride applied:', docClass, hardCaseCheck.override_reason)
+        mergedModule = {
+          ...mergedModule,
+          fields: mergedModule.fields.map((f) => ({ ...f, review_required: true })),
+          manual_review_required: true,
+        }
+        policyGuardStatus = 'applied'
+      }
+    }
+
+    // Wire 3: applyCertificateRoleGuard — rejects generic family_name without role
+    // grounding on certificate documents (birth/marriage).
+    const fieldRecord: Record<string, unknown> = {}
+    for (const f of mergedModule.fields) {
+      fieldRecord[f.field] = f.normalized_value ?? f.raw_value
+    }
+    const roleCheck = applyCertificateRoleGuard(docClass, fieldRecord)
+    if (!roleCheck.safe) {
+      console.warn('[documentClassPolicy] applyCertificateRoleGuard triggered:', roleCheck.reason, 'forced review on:', roleCheck.forcedReviewFields)
+      // Force review_required=true on the fields that lack role grounding
+      const forcedSet = new Set(roleCheck.forcedReviewFields)
+      mergedModule = {
+        ...mergedModule,
+        fields: mergedModule.fields.map((f) =>
+          forcedSet.has(f.field) ? { ...f, review_required: true } : f
+        ),
+        manual_review_required: true,
+      }
+      policyGuardStatus = 'role_guard_triggered'
+    }
+  }
+
   // ── Top-level diagnostics so the wizard, monitors, and audit scripts
   // can see at a glance what happened to extraction without parsing the
   // nested brain object. No PII surfaced — counts and codes only.
@@ -1105,6 +1187,8 @@ export async function POST(req: NextRequest) {
       ocr_provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
       // ONE BRAIN B1 diagnostics (shows Core path result even when flag OFF)
       core_status: coreStatus,
+      // POLICY_WIRED: document-class policy guard diagnostics
+      policy_guard_status: policyGuardStatus,
       // Flat extraction diagnostics — auditable at a glance.
       brain_status: brainStatus,
       crossref_status: crossrefStatus,

@@ -1,8 +1,12 @@
 # STATUS — Messenginfo
-## Session 95 (2026-06-03) — Document-class OCR policy (POLICY_BUILT_NOT_WIRED)
-- `POLICY` `canonical/core/documentClassPolicy.ts`: 6 document classes, hard-case guards, wrong-person guard, image quality guard. 31 tests passing, tsc 0. NOT YET WIRED to routes.
-- `EVIDENCE` 2438 pass / 0 fail. Reports: `docs/reports/CYRILLIC_DOCUMENT_CLASS_POLICY.md`, `docs/reports/FAILED_CYRILLIC_GROUND_TRUTH_ADJUDICATION.md`.
-- `NEXT` Wire guards into live extraction path (checkImageQuality before Gemini, applyHardCaseReviewOverride + applyCertificateRoleGuard before response).
+## Session 95 (2026-06-03) — Document-class OCR policy WIRED (POLICY_WIRED)
+- `WIRED` Guards live in 2 routes: `tps/ocr/extract/route.ts` + `translation/vision-extract/route.ts`.
+- `GUARD 1` `checkImageQuality()` called before OCR/Gemini — blocks tiny images (needs_better_scan), warns on large images.
+- `GUARD 2` `applyHardCaseReviewOverride()` called after extraction — forces review_required=true on hard-case classes (birth certs, marriage apostille, unknown_document) regardless of model output.
+- `GUARD 3` `applyCertificateRoleGuard()` called after extraction — rejects generic family_name without role grounding on certificate docs.
+- `MAPPING` `docintelIdToDocumentClass()` + `tpsHintToDocumentClass()` + `isUkrainianIdentityDoc()` added to policy for route integration.
+- `EVIDENCE` 2462 pass / 0 fail (+24 new wiring tests). tsc 0. Branch: feat/wire-document-class-policy.
+- `NOT DONE` Ground truth (owner must fill). Re-Parole/EAD migration (forbidden). BUREAU_PDF/P2.
 ## Session 94 (2026-06-03) — B2: Translation Core adapter (branch feat/b2-translation-core; PR pending)
 - `B2 CODE` `translationAdapter.ts`: `buildCyrillicMap()` preserves original Cyrillic before KMU-55 erases it. `toTranslationRows(fields, cyrillicMap)` = B2 named adapter. `canonicalToFieldOut` updated to accept optional cyrillicMap.
 - `B2 ROUTE` `vision-extract/route.ts` Core path builds cyrillicMap from docintel output, calls `toTranslationRows`. Logs `[ONE_BRAIN_CORE B2]`.

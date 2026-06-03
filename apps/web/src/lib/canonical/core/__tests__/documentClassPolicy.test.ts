@@ -12,6 +12,9 @@ import {
   applyHardCaseReviewOverride,
   applyCertificateRoleGuard,
   checkImageQuality,
+  docintelIdToDocumentClass,
+  tpsHintToDocumentClass,
+  isUkrainianIdentityDoc,
 } from '../documentClassPolicy'
 
 describe('document class policy — hard case invariants', () => {
@@ -198,5 +201,126 @@ describe('image quality guard', () => {
   test('reason string is set for too-large images', () => {
     const result = checkImageQuality('internal_passport_booklet', 5_000_000)
     expect(result.reason).toContain('image_too_large')
+  })
+})
+
+describe('document type ID mapping — docintelIdToDocumentClass', () => {
+  test('ua_birth_certificate maps to birth_certificate_handwritten (conservative)', () => {
+    expect(docintelIdToDocumentClass('ua_birth_certificate')).toBe('birth_certificate_handwritten')
+  })
+
+  test('ua_marriage_certificate maps to marriage_apostille', () => {
+    expect(docintelIdToDocumentClass('ua_marriage_certificate')).toBe('marriage_apostille')
+  })
+
+  test('ua_internal_passport_booklet maps to internal_passport_booklet', () => {
+    expect(docintelIdToDocumentClass('ua_internal_passport_booklet')).toBe('internal_passport_booklet')
+  })
+
+  test('ua_international_passport maps to internal_passport_booklet (same model policy)', () => {
+    expect(docintelIdToDocumentClass('ua_international_passport')).toBe('internal_passport_booklet')
+  })
+
+  test('ua_military_id maps to military_id', () => {
+    expect(docintelIdToDocumentClass('ua_military_id')).toBe('military_id')
+  })
+
+  test('unknown docTypeId maps to unknown_document', () => {
+    expect(docintelIdToDocumentClass('something_unknown')).toBe('unknown_document')
+  })
+})
+
+describe('TPS hint mapping — tpsHintToDocumentClass', () => {
+  test('passport maps to internal_passport_booklet', () => {
+    expect(tpsHintToDocumentClass('passport')).toBe('internal_passport_booklet')
+  })
+
+  test('booklet maps to internal_passport_booklet', () => {
+    expect(tpsHintToDocumentClass('booklet')).toBe('internal_passport_booklet')
+  })
+
+  test('i94 maps to unknown_document (US form, not Ukrainian doc)', () => {
+    expect(tpsHintToDocumentClass('i94')).toBe('unknown_document')
+  })
+
+  test('ead maps to unknown_document (US form, not Ukrainian doc)', () => {
+    expect(tpsHintToDocumentClass('ead')).toBe('unknown_document')
+  })
+})
+
+describe('isUkrainianIdentityDoc — route guard', () => {
+  test('passport is Ukrainian identity doc', () => {
+    expect(isUkrainianIdentityDoc('passport')).toBe(true)
+  })
+
+  test('booklet is Ukrainian identity doc', () => {
+    expect(isUkrainianIdentityDoc('booklet')).toBe(true)
+  })
+
+  test('ua_birth_certificate is Ukrainian identity doc', () => {
+    expect(isUkrainianIdentityDoc('ua_birth_certificate')).toBe(true)
+  })
+
+  test('ua_marriage_certificate is Ukrainian identity doc', () => {
+    expect(isUkrainianIdentityDoc('ua_marriage_certificate')).toBe(true)
+  })
+
+  test('i94 is NOT a Ukrainian identity doc — policy does not apply', () => {
+    expect(isUkrainianIdentityDoc('i94')).toBe(false)
+  })
+
+  test('ead is NOT a Ukrainian identity doc — policy does not apply', () => {
+    expect(isUkrainianIdentityDoc('ead')).toBe(false)
+  })
+
+  test('dl is NOT a Ukrainian identity doc', () => {
+    expect(isUkrainianIdentityDoc('dl')).toBe(false)
+  })
+})
+
+describe('wiring invariants — guards must produce correct behavior for live routes', () => {
+  test('hard-case birth cert forces review even if model returns review_required=false', () => {
+    // Simulates what the route does: applyHardCaseReviewOverride on docClass
+    const docClass = docintelIdToDocumentClass('ua_birth_certificate')
+    const result = applyHardCaseReviewOverride(docClass, { review_required: false, family_name: 'Тест' })
+    expect(result.review_required).toBe(true)
+  })
+
+  test('generic family_name on certificate is flagged by role guard', () => {
+    // Simulates applyCertificateRoleGuard on extracted fields without role grounding
+    const docClass = docintelIdToDocumentClass('ua_birth_certificate')
+    const roleCheck = applyCertificateRoleGuard(docClass, { family_name: 'TEST' })
+    expect(roleCheck.safe).toBe(false)
+    expect(roleCheck.forcedReviewFields).toContain('family_name')
+  })
+
+  test('low-quality image (50KB) triggers needs_better_scan for birth cert', () => {
+    // Simulates checkImageQuality check before Gemini API call
+    const docClass = docintelIdToDocumentClass('ua_birth_certificate')
+    const result = checkImageQuality(docClass, 50_000)
+    expect(result.action).toBe('needs_better_scan')
+    expect(result.ok).toBe(false)
+  })
+
+  test('model review_required=false is overridden for birth_certificate_handwritten', () => {
+    // Direct unit test — confirms the invariant used in the wired route
+    const result = applyHardCaseReviewOverride('birth_certificate_handwritten', { review_required: false })
+    expect(result.review_required).toBe(true)
+    expect((result as any).override_reason).toContain('birth_certificate_handwritten')
+  })
+
+  test('marriage cert (ua_marriage_certificate) → marriage_apostille → is hard case', () => {
+    const docClass = docintelIdToDocumentClass('ua_marriage_certificate')
+    expect(isHardCase(docClass)).toBe(true)
+  })
+
+  test('passport (booklet TPS hint) → internal_passport_booklet → NOT hard case', () => {
+    const docClass = tpsHintToDocumentClass('booklet')
+    expect(isHardCase(docClass)).toBe(false)
+  })
+
+  test('passport (booklet TPS hint) → internal_passport_booklet → auto-fill allowed', () => {
+    const docClass = tpsHintToDocumentClass('booklet')
+    expect(isAutoFillAllowed(docClass)).toBe(true)
   })
 })
