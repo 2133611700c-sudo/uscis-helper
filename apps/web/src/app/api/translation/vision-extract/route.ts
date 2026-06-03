@@ -36,8 +36,9 @@ import { analyze } from '@/lib/central-brain'
 import { deepseekProseTranslator } from '@/lib/engine/translator'
 import { DOC_TYPES } from '@/lib/engine/docTypes'
 // ONE BRAIN Core arbitration (flag-gated: ONE_BRAIN_CORE_ENABLED=1, default OFF)
+// B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
 import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
-import { docintelToCandidate, canonicalToFieldOut } from '@/lib/canonical/core/translationAdapter'
+import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/canonical/core/translationAdapter'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // gemini-2.5-pro vision ~16-40s/page (handwriting) — default 15s would abort it
@@ -148,39 +149,49 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── ONE BRAIN Core path (flag-gated; ONE_BRAIN_CORE_ENABLED=1, default OFF) ──
-  // Reads each page via docintel then routes ALL candidates through the Core
-  // arbitration policy instead of a naive "earliest non-empty" merge. This is
-  // the first product wiring of readDocumentCore — observe output in logs.
+  // ── ONE BRAIN Core path — B2: Translation consumes same Core as TPS ──────
+  // (flag: ONE_BRAIN_CORE_ENABLED=1, default OFF)
+  //
+  // Flow: readDocument (Gemini docintel) → buildCyrillicMap → docintelToCandidate
+  //       → arbitrateDocument (Core judge) → toTranslationRows (B2 adapter)
+  //
+  // raw_cyrillic is preserved via cyrillicMap: KMU-55 transliteration produces the
+  // English value, but the original Cyrillic text is kept separately for display.
+  // Falls through to legacy if Core returns 0 fields or errors.
   if (process.env.ONE_BRAIN_CORE_ENABLED === '1') {
     try {
       const allCandidates: ReturnType<typeof docintelToCandidate>[] = []
+      const cyrillicMap = new Map<string, string>()
       const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
       for (let i = 0; i < rawFiles.length; i++) {
         const file = rawFiles[i]
         const buffer = Buffer.from(await file.arrayBuffer())
-        const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 15_000 })
+        const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 20_000 })
         corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
         if (r.ok && Array.isArray(r.fields)) {
+          // Preserve Cyrillic BEFORE conversion to candidates (KMU-55 erases it)
+          buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
           allCandidates.push(...r.fields.map((f) => docintelToCandidate(f, i + 1)))
         }
       }
       const canonicalFields = arbitrateDocument(allCandidates)
       if (canonicalFields.length > 0) {
-        const fields = canonicalFields.map(canonicalToFieldOut)
+        // B2: toTranslationRows = named adapter, maps canonical → Translation FieldOut
+        const fields = toTranslationRows(canonicalFields, cyrillicMap)
         const requiresReview = fields.some((f) => f.review_required)
-        console.info('[ONE_BRAIN_CORE] arbitrated', fields.length, 'fields; requiresReview=', requiresReview)
+        console.info('[ONE_BRAIN_CORE B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview, 'cyrillicPreserved=', cyrillicMap.size)
         return NextResponse.json({
           ok: true, doc_type_id: docTypeId, fields,
           pages: corePageResults, page_count: rawFiles.length,
-          provider: 'one-brain-core:arbitration',
-          model: 'gemini-docintel+core-arbiter',
-          status: 'ok:core',
+          provider: 'one-brain-core:translation-b2',
+          model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+          status: 'ok:core-b2',
+          core_version: 'b2',
         }, { status: 200 })
       }
-      console.warn('[ONE_BRAIN_CORE] 0 fields after arbitration — falling through to legacy')
+      console.warn('[ONE_BRAIN_CORE B2] 0 fields after arbitration — falling through to legacy')
     } catch (e: any) {
-      console.error('[ONE_BRAIN_CORE] error, falling through to legacy:', e?.message ?? e)
+      console.error('[ONE_BRAIN_CORE B2] error, falling through to legacy:', e?.message ?? e)
     }
   }
 
