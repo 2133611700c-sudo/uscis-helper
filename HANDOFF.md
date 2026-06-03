@@ -2,31 +2,37 @@
 >
 > 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2610 tests passing, tsc 0.
 >
-> 🔒 **MRZ AUTHORITY (feat/mrz-passport-authority):** `mrzAuthority.ts` wired. Valid MRZ → `FieldCandidate[]` with `mrzCheckValid=true` → Core arbitration gives MRZ absolute authority over 7 passport fields. Invalid MRZ → `reviewRequired=true`, NOT silent fallback. Missing MRZ → empty array, Core uses visual candidates. 36 new tests. 2646/2646 full suite. tsc 0.
+> 🔒 **MRZ_AUTHORITY_WIRED_CODE_READY (feat/mrz-passport-authority, PR #74):** `mrzCandidatesFromText` connected to TPS (ONE_CORE_TPS_ENABLED path) and Re-Parole (ONE_CORE_REPAROLE_ENABLED path) Core routes for `ua_international_passport`. Valid MRZ wins for 7 controlled fields. Invalid MRZ → reviewRequired=true + mrz_check_failed. Missing MRZ → visual fallthrough + critical_no_mrz_anchor review. 18 new mrzWiringProof.test.ts arbitration-level proof tests. 2664/2664 full suite. tsc 0. NOT DONE: live smoke test requires PR merge + Vercel deploy.
+
+# HANDOFF — Session 99 (2026-06-03)
+
+## Session 99 — MRZ_AUTHORITY_WIRED_CODE_READY: wire mrzCandidatesFromText into TPS + Re-Parole Core routes
+
+**What was done:**
+- **TPS route** (`/api/tps/ocr/extract`): In the `ONE_CORE_TPS_ENABLED=1` block, after `readDocument` (Gemini docintel) succeeds for `ua_international_passport`, calls `mrzCandidatesFromText(result.raw_text)` using the Google Vision OCR text already obtained in-route. MRZ candidates pushed into `candidates[]` before `arbitrateDocument`. Import added: `mrzCandidatesFromText` from `@/lib/canonical/core/mrzAuthority`.
+- **Re-Parole route** (`/api/reparole/ocr/extract`): For `ua_international_passport` hint, runs `googleVisionProvider.extractText()` in parallel with `readDocument` using `Promise.all`. Vision OCR provides raw text for `mrzCandidatesFromText`. MRZ candidates pushed into `candidates[]` before `arbitrateDocument`. Imports added: `googleVisionProvider` + `isBlocked` (for OCR result type guard) + `mrzCandidatesFromText`.
+- **Both routes**: MRZ injection guarded on `docintelId === 'ua_international_passport'`. EAD/booklet/i94/dl/i797 not affected. MRZ never populates i94, a_number, ead_category, us_address, eligibility, patronymic.
+- **New test file**: `canonical/core/__tests__/mrzWiringProof.test.ts` — 18 arbitration-level proof tests: valid MRZ wins over Gemini (7 fields), invalid MRZ forces review, missing MRZ visual fallthrough, 5 forbidden fields checked, EAD not affected, conflict preserved in evidence, PASSPORT_MRZ_FIELDS alignment.
+- Full suite: 2664/2664 passing. tsc: 0 errors.
+
+**What was NOT done:**
+- Live smoke test — `MRZ_AUTHORITY_LIVE_CONFIRMED` requires PR #74 merge + Vercel deploy + real international passport upload.
+- Ground truth fixture (`qa-private/ground-truth/passport_international_redacted.json`) still MISSING — owner must fill.
+- PR #74 not merged (task contract says do NOT merge).
+
+**Next exact task:**
+1. Owner reviews PR #74 (`feat/mrz-passport-authority`) and merges.
+2. Vercel deploy (auto on merge to main).
+3. Upload real international passport via TPS wizard (ONE_CORE_TPS_ENABLED=1) — verify `_mrz_source` in Core response.
+4. Owner fills ground truth fixture.
 
 # HANDOFF — Session 98 (2026-06-03)
 
 ## Session 98 — MRZ international passport authority for Document Core
 
 **What was done:**
-- Created `apps/web/src/lib/canonical/core/mrzAuthority.ts` — wraps `parseMrz` from `@uscis-helper/knowledge` into a `FieldCandidate[]` producer compatible with `CoreReaders.mrzRead`.
-- Authority logic: valid MRZ (all check digits pass) → 7 `FieldCandidate[]` with `source='mrz'`, `mrzCheckValid=true`, `confidence=0.99`, `reviewRequired=false`. Invalid MRZ → candidates with `mrzCheckValid=false`, `confidence=0.3`, `reviewRequired=true`, `reviewReasons=['mrz_check_failed']`. Missing MRZ → empty array.
-- MRZ-controlled fields: `passport_number`, `date_of_birth`, `sex`, `date_of_expiry`, `family_name`, `given_name`, `nationality` — all in arbitration.ts `PASSPORT_MRZ_FIELDS`.
-- MRZ-forbidden fields: `i94_admission_number`, `i94_date_of_entry`, `i94_class_of_admission`, `a_number`, `ead_category`, `us_address`, `patronymic`, `place_of_birth`, `issuing_authority`, `eligibility` — never emitted.
-- Exports `mrzReadFromOcrText` — the async `CoreReaders.mrzRead` implementation. Accepts raw OCR text as `file` param.
-- Created `apps/web/src/lib/canonical/core/__tests__/mrzAuthority.test.ts` — 36 tests: valid/invalid/missing MRZ, all 7 controlled fields verified, 10 forbidden fields checked, sex edge cases, MRZ_CONTROLLED_FIELDS alignment with PASSPORT_MRZ_FIELDS, async interface, invented_fields_count=0.
-- No existing code changed. Core arbitration (`arbitration.ts`) already handles `mrzCheckValid` — module is additive.
-- Full suite: 2646/2646 passing (was 2610 + 36 new). tsc: 0 errors.
-
-**What was NOT done:**
-- `mrzReadFromOcrText` not wired as default in any product route — callers must explicitly set `readers.mrzRead = mrzReadFromOcrText` and `req.expectMrz = true`. This is by design (injection pattern).
-- Ground truth for `qa-private/ground-truth/passport_international_redacted.json` still has `ground_truth_status: MISSING` — no real document fields to verify against.
-- PR not yet merged (branch: `feat/mrz-passport-authority`).
-
-**Next exact task:**
-1. Owner fills ground truth in `qa-private/ground-truth/passport_international_redacted.json`.
-2. Wire `mrzReadFromOcrText` into TPS/Re-Parole OCR routes for `ua_international_passport` hint.
-3. Merge PR #73 (EAD Core) + enable flags in Vercel + smoke test all 4 products.
+- Created `apps/web/src/lib/canonical/core/mrzAuthority.ts`.
+- Full suite: 2646/2646 passing. tsc: 0 errors.
 
 # HANDOFF — Session 97 (2026-06-03)
 
