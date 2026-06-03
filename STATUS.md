@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 95b (2026-06-03) — B3: Re-Parole consumes Core (ONE_BRAIN_PARTIAL_3_PRODUCTS)
+- `B3 CODE` `canonical/core/reParoleAdapter.ts`: `toReParoleCoreAnswers()` — pure adapter, no I/O, no Gemini.
+- `B3 ROUTE` `/api/reparole/ocr/extract`: Core-first when `ONE_CORE_REPAROLE_ENABLED=true` (default: false).
+- `TESTS` 29 new adapter tests; full suite 2491/2491; tsc 0.
+- `NOT LIVE` `ONE_CORE_REPAROLE_ENABLED=true` NOT set in Vercel (owner decision).
+- `NOT DONE` EAD (B4), ONE_BRAIN complete requires B4.
+- `OLD PATH` Re-Parole wizard still calls `/api/tps/ocr/extract` — unchanged.
 ## Session 95 (2026-06-03) — Document-class OCR policy WIRED (POLICY_WIRED)
 - `WIRED` Guards live in 2 routes: `tps/ocr/extract/route.ts` + `translation/vision-extract/route.ts`.
 - `GUARD 1` `checkImageQuality()` called before OCR/Gemini — blocks tiny images (needs_better_scan), warns on large images.
