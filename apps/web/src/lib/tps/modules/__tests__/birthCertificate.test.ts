@@ -56,21 +56,21 @@ describe('extractBirthCertificate — review_required', () => {
   })
 
   it('all module fields have review_required=true', () => {
-    const module = runBirthCertificateModule(
+    const result = runBirthCertificateModule(
       { raw_text: TYPICAL_BIRTH_CERT_OCR, lines: TYPICAL_BIRTH_CERT_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
-    for (const field of module.fields) {
+    for (const field of result.fields) {
       expect(field.review_required).toBe(true)
     }
   })
 
   it('module manual_review_required is always true', () => {
-    const module = runBirthCertificateModule(
+    const result = runBirthCertificateModule(
       { raw_text: TYPICAL_BIRTH_CERT_OCR, lines: TYPICAL_BIRTH_CERT_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
-    expect(module.manual_review_required).toBe(true)
+    expect(result.manual_review_required).toBe(true)
   })
 })
 
@@ -120,7 +120,7 @@ describe('extractBirthCertificate — parent name must not become child_family_n
   })
 
   it('generic family_name field is NOT emitted (must use child_family_name)', () => {
-    const module = runBirthCertificateModule(
+    const result = runBirthCertificateModule(
       { raw_text: TYPICAL_BIRTH_CERT_OCR, lines: TYPICAL_BIRTH_CERT_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
@@ -133,7 +133,7 @@ describe('extractBirthCertificate — parent name must not become child_family_n
 
 describe('extractBirthCertificate — immigration fields forbidden', () => {
   it('does not populate I-94, A-number, or EAD fields', () => {
-    const module = runBirthCertificateModule(
+    const result = runBirthCertificateModule(
       { raw_text: TYPICAL_BIRTH_CERT_OCR, lines: TYPICAL_BIRTH_CERT_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
@@ -180,7 +180,7 @@ describe('extractBirthCertificate — field extraction', () => {
 
 describe('runBirthCertificateModule — match detection', () => {
   it('matches typical birth certificate OCR', () => {
-    const module = runBirthCertificateModule(
+    const result = runBirthCertificateModule(
       { raw_text: TYPICAL_BIRTH_CERT_OCR, lines: TYPICAL_BIRTH_CERT_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
@@ -189,7 +189,7 @@ describe('runBirthCertificateModule — match detection', () => {
 
   it('does not match unrelated document (passport text)', () => {
     const passportText = 'PASSPORT\nFAMILY NAME: KOVALENKO\nGIVEN NAME: IVAN'
-    const module = runBirthCertificateModule(
+    const result = runBirthCertificateModule(
       { raw_text: passportText, lines: passportText.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
