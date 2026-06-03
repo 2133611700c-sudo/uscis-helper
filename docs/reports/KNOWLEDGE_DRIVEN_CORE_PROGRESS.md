@@ -106,6 +106,38 @@ Existing `mrzCandidatesFromText()` and `mrzReadFromOcrText()` unchanged.
 - No live benchmark with real documents — requires owner upload.
 - `patronymic` extraction in militaryId.ts still relies on label anchor ("По батькові") — OCR misreads ("По батьков", "По батьковим") may miss it. Improvement needed: regex-based pattern matching of partial label strings.
 
+---
+
+## Session 102 Update (2026-06-03) — Branch: feat/knowledge-core-stabilize
+
+### What Was Done
+
+**Phase 1 — militaryId.ts guards:**
+- Added `isLikelyPatronymicOrLabel(text)` — rejects given_name if it starts with "по батьк", contains "батькові/батьков/отчест", exceeds 35 chars, or contains unusual chars. Applied to both label-anchor and proximity paths.
+- Added `isAuthorityOcrGarbage(text)` — rejects authority if no Cyrillic, too short/long, or contains a single Cyrillic token ≥20 chars (OCR garble heuristic). Correctly rejects "гровоградськельковим" (20 chars), accepts "Дніпропетровський ОВК" (longest token 17 chars).
+- Guard applied to proximity-fallback path too (both functions exported for testing).
+
+**Phase 2 — birthCertificate tests:**
+- Two exact task-spec tests added: labels-only OCR → null, actual value after label → extracted.
+
+**Phase 3 — MRZ debug in route:**
+- `parseMrzFromText` imported and conditionally called for `passport`/`booklet` doc hints.
+- Three non-PII fields added to response: `_mrz_debug_status`, `_mrz_lines_found`, `_mrz_valid`.
+
+**Phase 5 — Agency registry tests in militaryId.test.ts:**
+- `lookupAuthority('Міліція', '1986')` → `'Militsiya'` (not "Police"), with era-mismatch on 2020.
+
+**Tests:** 2771 passing, 0 failing | tsc: 0 errors | build: passes
+
+### Files Changed (Session 102)
+```
+apps/web/src/lib/tps/modules/militaryId.ts               MODIFIED (guards added)
+apps/web/src/lib/tps/modules/__tests__/militaryId.test.ts MODIFIED (+20 tests)
+apps/web/src/lib/tps/modules/__tests__/birthCertificate.test.ts MODIFIED (+2 tests)
+apps/web/src/app/api/tps/ocr/extract/route.ts             MODIFIED (MRZ debug)
+docs/reports/KNOWLEDGE_DRIVEN_CORE_PROGRESS.md            UPDATED
+```
+
 ## Files Changed
 
 ```
