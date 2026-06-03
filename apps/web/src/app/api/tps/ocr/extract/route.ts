@@ -38,6 +38,8 @@ import { runI94Module } from '@/lib/tps/modules/i94'
 import { runEadModule } from '@/lib/tps/modules/ead'
 import { runDlModule } from '@/lib/tps/modules/dl'
 import { runI797Module } from '@/lib/tps/modules/i797'
+import { runMilitaryIdModule } from '@/lib/tps/modules/militaryId'
+import { runBirthCertificateModule } from '@/lib/tps/modules/birthCertificate'
 import type { TpsModuleResult, TpsExtractedField } from '@/lib/tps/types'
 import { applyContract } from '@/lib/tps/ocr/documentContracts'
 import { isShadowEnabled } from '@/lib/canonical'
@@ -753,6 +755,20 @@ export async function POST(req: NextRequest) {
         }
       }
       moduleResult = eadOldResult
+      break
+    }
+    case 'military_id': {
+      // Ukrainian military booklet (Військовий квиток).
+      // Hard-case: review_required=true on every field always.
+      // Never populates I-94/A-number/EAD — slot firewall enforces this.
+      moduleResult = runMilitaryIdModule(result, { document_id })
+      break
+    }
+    case 'birth_certificate': {
+      // Ukrainian birth certificate (Свідоцтво про народження).
+      // Hard-case: review_required=true ALWAYS. Role-grounded extraction.
+      // wrong_person_risk flag is set when child/parent blocks are ambiguous.
+      moduleResult = runBirthCertificateModule(result, { document_id })
       break
     }
     default:

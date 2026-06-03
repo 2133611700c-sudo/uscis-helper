@@ -508,3 +508,8 @@ Closed the owner request: test every product without payment. Inventory: TPS wiz
 
 ---
 
+
+## 2026-06-03 | Wire military/birth modules
+- Wired military_id + birth_certificate into TPS OCR route switch
+- Fixed TS errors in test files
+- Next: commit + deploy + live test
