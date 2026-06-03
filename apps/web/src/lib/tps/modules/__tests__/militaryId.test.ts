@@ -11,7 +11,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { extractMilitaryId, parseUkrainianDate, runMilitaryIdModule } from '../militaryId'
+import { extractMilitaryId, parseUkrainianDate, runMilitaryIdModule, isLikelyPatronymicOrLabel, isAuthorityOcrGarbage } from '../militaryId'
+import { lookupAuthority } from '@uscis-helper/knowledge'
 
 // Typical military ID identity page OCR text (from real document test)
 const TYPICAL_IDENTITY_OCR = `ВІЙСЬКОВИЙ КВИТОК
@@ -129,6 +130,125 @@ describe('extractMilitaryId — service page does not overwrite identity fields'
     // Birth year 2005 is outside plausible range (< 1920 || > 2010 in birth-year filter)
     // so dob should be null
     expect(result.date_of_birth).toBeNull()
+  })
+})
+
+// ── PHASE 1 guards: given_name rejection + authority quality ─────────────────
+
+describe('isLikelyPatronymicOrLabel — guard for OCR-label-as-given-name', () => {
+  it('rejects "По батьковим Сергійови" (patronymic label OCR confusion)', () => {
+    expect(isLikelyPatronymicOrLabel('По батьковим Сергійови')).toBe(true)
+  })
+
+  it('rejects "По батькові" (label text)', () => {
+    expect(isLikelyPatronymicOrLabel('По батькові')).toBe(true)
+  })
+
+  it('rejects "по батьков" prefix variants', () => {
+    expect(isLikelyPatronymicOrLabel('по батьков')).toBe(true)
+  })
+
+  it('accepts "Сергій" (normal given name)', () => {
+    expect(isLikelyPatronymicOrLabel('Сергій')).toBe(false)
+  })
+
+  it('accepts "Василь" (normal given name)', () => {
+    expect(isLikelyPatronymicOrLabel('Василь')).toBe(false)
+  })
+
+  it('rejects text longer than 35 chars (too long for a given name)', () => {
+    expect(isLikelyPatronymicOrLabel('АБВГДЄЖЗИІЙКЛМНОПРСТУФХЦЧШЩЬЮЯАБВГДа')).toBe(true)
+  })
+})
+
+describe('given_name guard: patronymic OCR confusion rejected in extraction', () => {
+  it('given_name "По батьковим Сергійови" is not emitted by extraction (inline tail)', () => {
+    // OCR where "ім'я" label and patronymic text land on the same line (inline confusion)
+    const ocr = `ВІЙСЬКОВИЙ КВИТОК
+Серія Со № 845621
+Куроп'ятник
+ім'я По батьковим Сергійови
+25 червня 1986 р.
+Виданий Тростянецьким РВК`
+    const result = runMilitaryIdModule(
+      { raw_text: ocr, lines: ocr.split('\n').filter(Boolean).map(t => ({ text: t })) },
+      { document_id: 'test' }
+    )
+    const fn = result.fields.find(f => f.field === 'given_name')
+    // Must not store the patronymic label confusion
+    if (fn) {
+      expect(fn.raw_value).not.toMatch(/по батьк/i)
+      expect(fn.raw_value).not.toMatch(/батьков/i)
+    }
+    // Warning must be emitted
+    expect(result.warnings).toContain('military_id_given_name_rejected_patronymic_or_label')
+  })
+
+  it('given_name "Сергій" is accepted and emitted', () => {
+    const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
+    expect(result.given_name_cyrillic).toBe('Сергій')
+  })
+})
+
+describe('isAuthorityOcrGarbage — guard for bad OCR authority text', () => {
+  it('rejects "гровоградськельковим" (OCR garbled single token)', () => {
+    expect(isAuthorityOcrGarbage('гровоградськельковим')).toBe(true)
+  })
+
+  it('rejects empty string', () => {
+    expect(isAuthorityOcrGarbage('')).toBe(true)
+  })
+
+  it('rejects text shorter than 5 chars', () => {
+    expect(isAuthorityOcrGarbage('РВК')).toBe(true)
+  })
+
+  it('accepts "Тростянецький РВК" (known good authority)', () => {
+    expect(isAuthorityOcrGarbage('Тростянецький РВК')).toBe(false)
+  })
+
+  it('accepts "ТЦК Вінниці" (short valid format)', () => {
+    expect(isAuthorityOcrGarbage('ТЦК Вінниці')).toBe(false)
+  })
+
+  it('rejects a concatenated Cyrillic word longer than 20 chars (OCR noise pattern)', () => {
+    expect(isAuthorityOcrGarbage('кіровоградськельковим додаток')).toBe(true)
+  })
+})
+
+describe('dob normalization: "25 червня 1986 р." → "1986-06-25"', () => {
+  it('parseUkrainianDate normalizes dob from military booklet format', () => {
+    expect(parseUkrainianDate('25 червня 1986 р.')).toBe('1986-06-25')
+  })
+
+  it('runMilitaryIdModule correctly normalizes dob field', () => {
+    const result = runMilitaryIdModule(
+      { raw_text: TYPICAL_IDENTITY_OCR, lines: TYPICAL_IDENTITY_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
+      { document_id: 'test' }
+    )
+    const dob = result.fields.find(f => f.field === 'dob')
+    expect(dob?.normalized_value).toBe('1986-06-25')
+  })
+})
+
+// ── PHASE 5: Agency registry — historical Militsiya must not become "Police" ──
+
+describe('agency registry: Міліція → Militsiya (not Police)', () => {
+  it('historical Міліція (1986 doc) → "Militsiya", never "Police"', () => {
+    const result = lookupAuthority('Міліція', '1986')
+    if (result.matched && result.official_en) {
+      expect(result.official_en).toBe('Militsiya')
+      expect(result.official_en).not.toMatch(/police/i)
+      expect(result.official_en).not.toMatch(/militia/i) // USCIS uses "Militsiya" not "Militia"
+    } else {
+      // If not matched, review_required must be true — never silently wrong
+      expect(result.review_required).toBe(true)
+    }
+  })
+
+  it('2020 doc with "Міліція" → era mismatch flagged, review_required=true', () => {
+    const result = lookupAuthority('Міліція', '2020')
+    expect(result.review_required).toBe(true)
   })
 })
 
