@@ -1,3 +1,5 @@
+> 🎯 **DOCUMENT_UNDERSTANDING_GAP_CLOSURE (feat/document-understanding-schemas):** Military ID + birth certificate schemas created+wired. docHint=military_id and docHint=birth_certificate now give structured fields. 22 new tests. 2717/2717 full suite. tsc 0. Gazetteer BLOCKED_NO_SOURCE (no KOATUU data). MRZ not confirmed (need загранпаспорт data page). See docs/reports/DOCUMENT_UNDERSTANDING_GAP_CLOSURE.md.
+
 > ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core. **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (PR #72): Re-Parole calls Core route. **B4 UI WIRED** (feat/b4-ead-core, PR #73): EAD wizard calls Core route behind flag. **ONE_BRAIN_COMPLETE_CODE_READY** — all 4 products wired. NEXT: merge PR #73 + set flags in Vercel + redeploy + smoke test.
 >
 > 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2610 tests passing, tsc 0.
@@ -508,3 +510,8 @@ Closed the owner request: test every product without payment. Inventory: TPS wiz
 
 ---
 
+
+## 2026-06-03 | ESLint fix
+Fixed: renamed `module` var to `result` in militaryId + birthCertificate test files.
+Cause: @next/next/no-assign-module-variable blocked Vercel build.
+Next: merge PR #76 after CI green.
