@@ -196,3 +196,62 @@ describe('runBirthCertificateModule — match detection', () => {
     expect(result.matched).toBe(false)
   })
 })
+
+// ── PHASE 2 regression tests: label/value extractor integration ───────────────
+// These tests guard the specific bug where label text was returned as field values.
+// "child_family_name: прізвищ" → must be null (прізвищ IS a label)
+// "child_given_name: ім'я, отчество, по батькові" → must be null (all labels)
+
+describe('extractBirthCertificate — label-as-value regression (Phase 2)', () => {
+  it('label text not returned as child_family_name when only bare labels present', () => {
+    // прізвищ is a label — must NOT appear as child_family_name
+    const r = runBirthCertificateModule(
+      { raw_text: 'СВІДОЦТВО\nПрізвище\nімя\n', lines: [] },
+      { document_id: 't' }
+    )
+    const fn = r.fields.find(f => f.field === 'child_family_name')
+    // Value must be null or field absent — NOT 'прізвищ' or 'ім\'я'
+    expect(fn?.raw_value ?? null).toBeNull()
+  })
+
+  it('actual surname extracted when present on next line after label', () => {
+    const r = runBirthCertificateModule(
+      {
+        raw_text: "СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище\nКуроп'ятник\nім'я\nСергій\nБатько: Test\nМати: Test2",
+        lines: [],
+      },
+      { document_id: 't' }
+    )
+    const fn = r.fields.find(f => f.field === 'child_family_name')
+    expect(fn?.raw_value).toBe("Куроп'ятник")
+  })
+
+  it('given_name not returned as label when bilingual label line used', () => {
+    // OCR form: "ім'я, отчество, по батькові" is a trilingual label header
+    const r = runBirthCertificateModule(
+      {
+        raw_text: "СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище / Прізвищ\nім'я, отчество, по батькові\nБатько: X\nМати: Y",
+        lines: [],
+      },
+      { document_id: 't' }
+    )
+    const gn = r.fields.find(f => f.field === 'child_given_name')
+    // Must be null — label strings must not become values
+    expect(gn?.raw_value ?? null).toBeNull()
+    const fn = r.fields.find(f => f.field === 'child_family_name')
+    expect(fn?.raw_value ?? null).toBeNull()
+  })
+
+  it('does not return "прізвищ" as child_family_name', () => {
+    // OCR prints "прізвищ" (truncated label) on the next line after "Прізвище"
+    const r = extractBirthCertificate('СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище\nпрізвищ\nБатько: Test\nМати: Test2')
+    expect(r.child_family_name).toBeNull()
+  })
+
+  it('does not return label-only content as given_name', () => {
+    const r = extractBirthCertificate("СВІДОЦТВО\nПрізвище\nім'я\nпо батькові\nБатько: X\nМати: Y")
+    // Entire child block is just labels — all must be null
+    expect(r.child_family_name).toBeNull()
+    expect(r.child_given_name).toBeNull()
+  })
+})

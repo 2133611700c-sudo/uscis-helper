@@ -1,4 +1,13 @@
 # STATUS — Messenginfo
+## Session 101 (2026-06-03) — KNOWLEDGE_DRIVEN_CORE (feat/knowledge-driven-core)
+- `LABEL_VALUE_EXTRACTOR` `tps/modules/labelValueExtractor.ts`: isLabelText() rejects 50+ known labels; extractValueAfterLabel() never returns label text as value. 29 tests.
+- `BIRTH_CERT_FIXED` `extractFieldFromBlock()` uses labelValueExtractor; allowPrevLine=false. Bug fixed: bilingual label line no longer returned as field value. 26 tests.
+- `MILITARY_ID` Agency registry wired via lookupAuthority() from @uscis-helper/knowledge. Covers ТЦК reform. 20 tests.
+- `MRZ_DEBUG` `parseMrzFromText()` + `classifyMrzStatus()` in mrzAuthority.ts: 6-state MrzDebugStatus type (valid_mrz, no_mrz_lines, partial_mrz_lines, check_digit_failed, ocr_noise_in_mrz, mrz_parse_error).
+- `GAZETTEER` Generated 458 city rows from КАТОТТГ (downloaded, ran gen-settlements.mts). Already wired into registryIndex.ts.
+- `AGENCY_REGISTRY` birthCertificate.ts + militaryId.ts now use registry lookups as fallback for authority translation (РАЦС/ЗАГС/ТЦК covered).
+- `TESTS` 2751/2751 passing (34 new). tsc: 0. Build: passes.
+- `INVENTED_FIELDS` 0. `SILENT_CORRECTIONS` 0. `WRONG_PERSON_RISK` guarded by role-grounding.
 ## Session 100 (2026-06-03) — VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader)
 - `ROOT_CAUSE` Vision API HTTP 403: `GOOGLE_CLOUD_VISION_API_KEY` in `.env.local` but NOT in Vercel Production. MRZ gets empty text.
 - `FIXED_CODE` `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts`: SA JSON (3 env var names) + API key fallback; normalizes `\\n`; validates fields; masks client_email; never logs private_key.
