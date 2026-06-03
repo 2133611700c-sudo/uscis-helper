@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — Session 94: B2 — Translation consumes same Core as TPS (branch feat/b2-translation-core)
+
+Cyrillic is the INPUT LAYER for all products, not a Translation feature. B2 wires Translation to the same Document Core as TPS. Key fix: raw_cyrillic was lost after KMU-55 transliteration. Fix: buildCyrillicMap() preserves original Cyrillic BEFORE conversion to FieldCandidate; toTranslationRows() named adapter maps CanonicalField[] → Translation FieldOut[] with raw_cyrillic restored from cyrillicMap. vision-extract route Core path updated: builds cyrillicMap, calls toTranslationRows(canonicalFields, cyrillicMap) instead of simple canonicalToFieldOut. Logs [ONE_BRAIN_CORE B2]. B2 proof: internal_passport booklet, gemini-2.5-flash, 7.3s — cyrillic_preserved 5/6, latin_produced 5/6, critical_wrong_count=0, b2_proof=PASS. Next: set ONE_BRAIN_CORE_ENABLED=1 in Vercel, deploy, confirm Translation uses Core. Evidence: tsc 0, 2407/2407.
+
 ## 2026-06-03 — Session 93b: Paid Gemini key test + ONE BRAIN live in TPS prod
 
 Tested new paid Gemini API key (project 732980155584). gemini-2.5-flash ✅ (5-9s/doc), gemini-3.5-flash ✅. gemini-3.1-pro-preview/gemini-2.0-flash quota-exceeded. All 4 real docs tested: birth_cert_handwritten 4/4 critical ✅, birth_cert_soviet 4/4 ✅, military_id 4/4 ✅. Updated Vercel: GEMINI_API_KEY_PAY (new key), GEMINI_MODEL=gemini-2.5-flash, ONE_CORE_TPS_ENABLED=1. PROD TPS Core test SHA 084137c: core_status=ok, 4 fields (family_name/given_name/dob/province_of_birth), src=canonical_core, critical_wrong_count=0. ONE BRAIN LIVE IN TPS PRODUCTION. Fixed session docs guard: unbound variable crash on empty commits.
