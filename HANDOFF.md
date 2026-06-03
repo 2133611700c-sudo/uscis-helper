@@ -1,6 +1,38 @@
 > ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core. **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (PR #72): Re-Parole calls Core route. **B4 UI WIRED** (feat/b4-ead-core, PR #73): EAD wizard calls Core route behind flag. **ONE_BRAIN_COMPLETE_CODE_READY** — all 4 products wired. NEXT: merge PR #73 + set flags in Vercel + redeploy + smoke test.
 >
 > 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2610 tests passing, tsc 0.
+>
+> 🔒 **MRZ_AUTHORITY_WIRED_CODE_READY (feat/mrz-passport-authority, PR #74):** `mrzCandidatesFromText` connected to TPS (ONE_CORE_TPS_ENABLED path) and Re-Parole (ONE_CORE_REPAROLE_ENABLED path) Core routes for `ua_international_passport`. Valid MRZ wins for 7 controlled fields. Invalid MRZ → reviewRequired=true + mrz_check_failed. Missing MRZ → visual fallthrough + critical_no_mrz_anchor review. 18 new mrzWiringProof.test.ts arbitration-level proof tests. 2664/2664 full suite. tsc 0. NOT DONE: live smoke test requires PR merge + Vercel deploy.
+
+# HANDOFF — Session 99 (2026-06-03)
+
+## Session 99 — MRZ_AUTHORITY_WIRED_CODE_READY: wire mrzCandidatesFromText into TPS + Re-Parole Core routes
+
+**What was done:**
+- **TPS route** (`/api/tps/ocr/extract`): In the `ONE_CORE_TPS_ENABLED=1` block, after `readDocument` (Gemini docintel) succeeds for `ua_international_passport`, calls `mrzCandidatesFromText(result.raw_text)` using the Google Vision OCR text already obtained in-route. MRZ candidates pushed into `candidates[]` before `arbitrateDocument`. Import added: `mrzCandidatesFromText` from `@/lib/canonical/core/mrzAuthority`.
+- **Re-Parole route** (`/api/reparole/ocr/extract`): For `ua_international_passport` hint, runs `googleVisionProvider.extractText()` in parallel with `readDocument` using `Promise.all`. Vision OCR provides raw text for `mrzCandidatesFromText`. MRZ candidates pushed into `candidates[]` before `arbitrateDocument`. Imports added: `googleVisionProvider` + `isBlocked` (for OCR result type guard) + `mrzCandidatesFromText`.
+- **Both routes**: MRZ injection guarded on `docintelId === 'ua_international_passport'`. EAD/booklet/i94/dl/i797 not affected. MRZ never populates i94, a_number, ead_category, us_address, eligibility, patronymic.
+- **New test file**: `canonical/core/__tests__/mrzWiringProof.test.ts` — 18 arbitration-level proof tests: valid MRZ wins over Gemini (7 fields), invalid MRZ forces review, missing MRZ visual fallthrough, 5 forbidden fields checked, EAD not affected, conflict preserved in evidence, PASSPORT_MRZ_FIELDS alignment.
+- Full suite: 2664/2664 passing. tsc: 0 errors.
+
+**What was NOT done:**
+- Live smoke test — `MRZ_AUTHORITY_LIVE_CONFIRMED` requires PR #74 merge + Vercel deploy + real international passport upload.
+- Ground truth fixture (`qa-private/ground-truth/passport_international_redacted.json`) still MISSING — owner must fill.
+- PR #74 not merged (task contract says do NOT merge).
+
+**Next exact task:**
+1. Owner reviews PR #74 (`feat/mrz-passport-authority`) and merges.
+2. Vercel deploy (auto on merge to main).
+3. Upload real international passport via TPS wizard (ONE_CORE_TPS_ENABLED=1) — verify `_mrz_source` in Core response.
+4. Owner fills ground truth fixture.
+
+# HANDOFF — Session 98 (2026-06-03)
+
+## Session 98 — MRZ international passport authority for Document Core
+
+**What was done:**
+- Created `apps/web/src/lib/canonical/core/mrzAuthority.ts`.
+- Full suite: 2646/2646 passing. tsc: 0 errors.
 
 # HANDOFF — Session 97 (2026-06-03)
 
