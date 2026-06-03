@@ -30,6 +30,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
+import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 // Central Brain (flag-gated, default OFF → prod behavior unchanged)
 import { analyze } from '@/lib/central-brain'
 import { deepseekProseTranslator } from '@/lib/engine/translator'
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
   if (process.env.CENTRAL_BRAIN_TRANSLATION === 'on') {
     try {
       const spec = DOC_TYPES[docTypeId]
-      const gem = process.env.GEMINI_API_KEY_PAY || process.env.GEMINI_API_KEY
+      const gem = getGeminiApiKey() // any GEMINI_API_KEY* name the owner uses
       const gv = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY
       if (spec && gem && gv) {
         const docs = await Promise.all(rawFiles.map(async (f) => ({
@@ -125,12 +126,20 @@ export async function POST(req: NextRequest) {
           field: f.field, value: f.value || null, raw_cyrillic: f.cyrillic || null,
           confidence: f.can_read ? 0.9 : 0, review_required: f.review_required, kind: f.source,
         }))
-        return NextResponse.json({
-          ok: fields.length > 0, doc_type_id: docTypeId, fields,
-          pages: [], page_count: rawFiles.length, provider: 'central-brain:consensus',
-          model: 'gemini+google-vision', readiness: br.productReadiness,
-          official_sources: br.officialSourcesUsed, status: 'ok:central-brain',
-        }, { status: fields.length ? 200 : 502 })
+        // Only return the consensus result when it actually read something. When it
+        // reads 0 fields, DEGRADE to the legacy single-read path below (proven to
+        // read real Ukrainian docs) instead of hard-failing with a 502.
+        if (fields.length > 0) {
+          return NextResponse.json({
+            ok: true, doc_type_id: docTypeId, fields,
+            pages: [], page_count: rawFiles.length, provider: 'central-brain:consensus',
+            model: 'gemini+google-vision', readiness: br.productReadiness,
+            official_sources: br.officialSourcesUsed, status: 'ok:central-brain',
+          }, { status: 200 })
+        }
+        console.warn('[central-brain translation] 0 fields — degrading to legacy single-read')
+        degradedFromBrain = true
+        // fall through to legacy path below
       }
     } catch (e: any) {
       console.error('[central-brain translation] fell back to legacy:', e?.message ?? e)
