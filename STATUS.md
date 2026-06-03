@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 97 (2026-06-03) — B4 UI WIRING COMPLETE (feat/b4-ead-core, PR #73)
+- `B4 UI WIRED` `EADWizard.tsx`: upload prefill step behind `NEXT_PUBLIC_ONE_CORE_EAD_ENABLED` flag.
+- `FLAG OFF` wizard is unchanged — old 7-step manual form, 0 behavior change.
+- `FLAG ON` upload step appears at step 2 (after category); user uploads passport/EAD/I-94 → `/api/ead/ocr/extract` → prefill identity fields.
+- `PREFILL` family_name→lastName, given_name→firstName, date_of_birth→dob, sex→gender, country_of_birth→countryOfBirth, a_number→alienNumber (source-gated by Core adapter).
+- `GATES` a_number/alienNumber: null when source is not EAD/I-797; i94 fields not exposed in wizard prefill (not in form); us_address: not prefilled (no DL step); invented_fields_count=0.
+- `TESTS` 45 new UI wiring tests; full suite 2610/2610; tsc 0.
+- `NEXT` Merge PR #73, set ONE_CORE_EAD_ENABLED=true + NEXT_PUBLIC_ONE_CORE_EAD_ENABLED=true in Vercel, force redeploy, smoke test all 4 products.
 ## Session 96 (2026-06-03) — B4: EAD consumes Core (ONE_BRAIN_COMPLETE_CODE_READY)
 - `B4 ADAPTER` `canonical/core/eadAdapter.ts`: `toEadAnswers()` — pure, source-gated field mapping, no I/O.
 - `B4 ROUTE` `/api/ead/ocr/extract`: Core-first when `ONE_CORE_EAD_ENABLED=true` (default: false).
