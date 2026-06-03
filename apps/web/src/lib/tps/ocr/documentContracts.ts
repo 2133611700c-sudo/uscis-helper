@@ -33,6 +33,8 @@ export type SlotId =
   | 'i797_or_ead' // init-path combined slot: user uploads I-797 OR EAD
   | 'photo'
   | 'dl' // U.S. driver's license / state ID — used by re-parole wizard
+  | 'military_id' // Ukrainian military ID booklet (Військовий квиток)
+  | 'birth_certificate' // Ukrainian birth certificate (Свідоцтво про народження)
 
 export interface DocumentSlotContract {
   /** Wizard slot id this contract applies to. */
@@ -376,6 +378,94 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       'passport_number',
       'passport_expiration_date',
       'passport_country_of_issuance',
+      'us_address_street',
+      'us_address_city',
+      'us_address_state',
+      'us_address_zip',
+    ],
+  },
+  // Ukrainian military ID booklet (Військовий квиток).
+  // Hard-case document class: review_required=true on all fields always.
+  // Does NOT allow immigration fields (I-94, A-number, EAD) — military ID
+  // is an identity-only document.
+  military_id: {
+    slot: 'military_id',
+    allowed_document_types: ['unknown'],
+    allowed_fields: [
+      'family_name',
+      'given_name',
+      'middle_name',       // patronymic
+      'dob',
+      'military_id_number',
+      'military_id_series',
+      'issuing_authority',
+      'issuing_authority_english',
+      'military_id_source_page',
+      'city_of_birth',
+      'country_of_nationality', // always Ukraine
+    ],
+    forbidden_fields: [
+      // Immigration fields — military ID cannot produce these
+      'a_number',
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'i94_admit_until',
+      'last_entry_date',
+      'status_at_last_entry',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'passport_number',
+      'passport_expiration_date',
+      'passport_country_of_issuance',
+      'address',
+      'us_address_street',
+      'us_address_city',
+      'us_address_state',
+      'us_address_zip',
+    ],
+  },
+  // Ukrainian birth certificate (Свідоцтво про народження).
+  // Hard-case document class: review_required=true ALWAYS.
+  // Role-grounded: child_* fields never populated with parent names.
+  // wrong_person_risk flag set when structure ambiguous.
+  birth_certificate: {
+    slot: 'birth_certificate',
+    allowed_document_types: ['unknown'],
+    allowed_fields: [
+      // Child block — role-grounded (child prefix required)
+      'child_family_name',
+      'child_given_name',
+      'child_patronymic',
+      'dob',               // child date of birth
+      'city_of_birth',     // child place of birth
+      // Parent block — role-grounded (parent namespace)
+      'father_full_name',
+      'mother_full_name',
+      // Registration block
+      'act_record_number',
+      'date_of_issue',
+      'issuing_authority',
+      'issuing_authority_english',
+      'certificate_series_number',
+    ],
+    forbidden_fields: [
+      // These must NEVER appear on a birth certificate extraction
+      // (would mean parent name contaminated child block)
+      'family_name',       // must be child_family_name
+      'given_name',        // must be child_given_name
+      // Immigration fields — birth cert cannot produce these
+      'a_number',
+      'i94_admission_number',
+      'i94_class_of_admission',
+      'i94_admit_until',
+      'last_entry_date',
+      'status_at_last_entry',
+      'ead_category_on_card',
+      'ead_expiration_date',
+      'passport_number',
+      'passport_expiration_date',
+      'passport_country_of_issuance',
+      'address',
       'us_address_street',
       'us_address_city',
       'us_address_state',
