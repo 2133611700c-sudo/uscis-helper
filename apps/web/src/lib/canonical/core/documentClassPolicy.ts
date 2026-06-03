@@ -80,6 +80,67 @@ export const DOCUMENT_CLASS_POLICY = {
 
 export type DocumentClass = keyof typeof DOCUMENT_CLASS_POLICY
 
+// ---------------------------------------------------------------------------
+// Document-type ID → DocumentClass mapping helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps a docintel document type ID (used by Translation and Core paths)
+ * to a DocumentClass key for policy lookup.
+ *
+ * docintel IDs: ua_internal_passport_booklet, ua_international_passport,
+ * ua_birth_certificate, ua_marriage_certificate, etc.
+ *
+ * Handwritten vs. Soviet-bilingual distinction is not yet in the docintel ID —
+ * all birth certificates default to the stricter handwritten class until
+ * the docintel registry distinguishes them.
+ */
+export function docintelIdToDocumentClass(docTypeId: string): DocumentClass {
+  const map: Record<string, DocumentClass> = {
+    ua_internal_passport_booklet: 'internal_passport_booklet',
+    ua_international_passport: 'internal_passport_booklet', // international = same model policy as booklet
+    ua_birth_certificate: 'birth_certificate_handwritten',  // conservative: assume handwritten until schema says otherwise
+    ua_marriage_certificate: 'marriage_apostille',
+    ua_military_id: 'military_id',
+  }
+  return map[docTypeId] ?? 'unknown_document'
+}
+
+/**
+ * Maps a TPS wizard docHint (passport/booklet/i94/ead/dl/i797/tps_notice...)
+ * to a DocumentClass key for policy lookup.
+ *
+ * US-form slots (i94/ead/dl/i797/tps_notice) are not Ukrainian identity docs
+ * and are not covered by the Cyrillic benchmark. They map to 'unknown_document'
+ * so the policy does not accidentally apply hard-case treatment to US forms.
+ * The auto-fill guard (isAutoFillAllowed) will return false for unknown_document
+ * which is the safe default — but review_required is not forced for these
+ * because they have their own per-slot policies in documentContracts.ts.
+ */
+export function tpsHintToDocumentClass(hint: string): DocumentClass {
+  const map: Record<string, DocumentClass> = {
+    passport: 'internal_passport_booklet', // international passport (TD3)
+    booklet: 'internal_passport_booklet',  // Ukrainian internal passport-booklet
+    // US-form slots — not Ukrainian identity docs, policy does not apply
+    // Return unknown_document but callers must check isUkrainianIdentityDoc first
+  }
+  return map[hint] ?? 'unknown_document'
+}
+
+/**
+ * Returns true if the docHint or docTypeId is a Ukrainian identity document
+ * that should be subject to the documentClassPolicy guards.
+ * US-form slots (i94/ead/dl/i797/tps_notice) are excluded.
+ */
+export function isUkrainianIdentityDoc(hintOrTypeId: string): boolean {
+  const ukrainian = new Set([
+    'passport', 'booklet',
+    'ua_internal_passport_booklet', 'ua_international_passport',
+    'ua_birth_certificate', 'ua_marriage_certificate', 'ua_military_id',
+  ])
+  return ukrainian.has(hintOrTypeId)
+}
+
 export function isHardCase(docClass: DocumentClass): boolean {
   return DOCUMENT_CLASS_POLICY[docClass].always_review === true
 }
