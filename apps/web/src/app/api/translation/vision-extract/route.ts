@@ -104,11 +104,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── ONE BRAIN Core takes priority — runs BEFORE central brain ───────────────
+  // Core path must be checked first: if it returns fields, central brain and
+  // legacy are skipped entirely. This ensures Translation uses the same Core
+  // as TPS (B2 requirement), not a separate decision-maker.
+  // (flag: ONE_BRAIN_CORE_ENABLED=1, default OFF — see Core block below)
+
   // ── Central Brain path (flag-gated; default OFF = unchanged legacy below) ──
   // Replaces the single-Gemini reader with a 2-reader consensus
   // (Gemini + Google Vision) so a single AI is never the truth-source.
   let degradedFromBrain = false // true ⇒ brain was ON but errored → we fell to the guard-less legacy path
-  if (process.env.CENTRAL_BRAIN_TRANSLATION === 'on') {
+  if (process.env.CENTRAL_BRAIN_TRANSLATION === 'on' && process.env.ONE_BRAIN_CORE_ENABLED !== '1') {
     try {
       const spec = DOC_TYPES[docTypeId]
       const gem = getGeminiApiKey() // any GEMINI_API_KEY* name the owner uses
