@@ -3,6 +3,22 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — KNOWLEDGE_CORE_STABILIZE: militaryId guards + MRZ debug route exposure + agency registry proof
+
+**militaryId.ts** (guards added): isLikelyPatronymicOrLabel() rejects given_name when OCR reads patronymic label inline with im'ya. isAuthorityOcrGarbage() rejects authority when longest Cyrillic token >= 20 chars (e.g. garbled 20-char tokens correctly rejected). Both guards applied in label-anchor and proximity-fallback paths. DOB "25 cervnya 1986 r." to "1986-06-25" confirmed working.
+
+**route.ts** (MRZ debug exposed): parseMrzFromText now imported. For passport/booklet doc hints, response includes _mrz_debug_status, _mrz_lines_found, _mrz_valid — metadata only, no PII, no raw MRZ string.
+
+**militaryId.test.ts** (+20 tests): isLikelyPatronymicOrLabel unit tests, isAuthorityOcrGarbage unit tests, given_name inline rejection proof, DOB normalization proof, agency registry Militsiya->Militsiya confirmation.
+
+**birthCertificate.test.ts** (+2 tests): labels-only OCR returns null, actual value after label is extracted.
+
+Tests: 2771 passing, 0 failing, 4 skipped. tsc: 0 errors. build: passes.
+
+---
+
+
+
 ## 2026-06-03 — KNOWLEDGE_DRIVEN_CORE: label/value extractor + role-grounded birth cert + MRZ debug + gazetteer + agency registry wired
 
 **labelValueExtractor.ts** (new): shared module rejects label-text-as-value in Ukrainian/Russian OCR. isLabelText() knows 50+ label strings incl bilingual variants. extractValueAfterLabel() strips label remnants from inline tails, stops at next label boundary, returns null+review_required instead of label text. 29 unit tests.
