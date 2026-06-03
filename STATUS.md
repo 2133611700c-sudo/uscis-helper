@@ -1,9 +1,11 @@
 # STATUS — Messenginfo
+## Session 93b (2026-06-03) — ONE BRAIN LIVE IN TPS PRODUCTION (SHA 084137c)
+- `LIVE ✅` TPS OCR `/api/tps/ocr/extract` → Core path active. `core_status: ok` on real Ukrainian booklet. `src=canonical_core`. `critical_wrong_count=0`. Fields: family_name, given_name, dob, province_of_birth.
+- `KEY` GEMINI_API_KEY_PAY = new paid key (project 732980155584). GEMINI_MODEL=gemini-2.5-flash (gemini-3.1-pro-preview quota-exceeded on this key). All 4 real docs tested: birth_cert/military_id 4/4 critical ✅.
+- `FIXED` Session docs guard: unbound variable on empty commits.
+- `NEXT` B2: Translation also through Core (toTranslationRows adapter, shared CanonicalDocumentResult).
 ## Session 93 (2026-06-03) — B1: TPS → Core behind flag (branch feat/b1-tps-core-flag; PR #69)
-- `B0 PARTIAL` PR #67 SHA 1c0261c in prod. Gemini key resolves. Route responds. Real-doc: UNVERIFIED.
-- `B1 CODE DONE` `ONE_CORE_TPS_ENABLED=1` flag in TPS OCR route. Core path: Gemini docintel → arbitration → tpsAdapter → existing contract/normalize. Flag OFF = prod unchanged. tpsAdapter.test 12/12; full web 2407 pass; tsc 0.
-- `B1 NOT LIVE` Flag not set in Vercel. Needs real-doc proof before merge.
-- `BLOCKING` Need real Ukrainian document + ONE_CORE_TPS_ENABLED=1 in Vercel to complete B1 proof.
+- `B1 COMPLETE` PR #69 merged. ONE_CORE_TPS_ENABLED=1 in Vercel. tpsAdapter.test 12/12; full web 2407 pass; tsc 0.
 ## Session 92 (2026-06-02) — Core field-vocab fixes + review carry-through + Translation wiring (branch feat/core-wire-translation)
 - `FIXED(Core bug 1)` `criticalityOf('dob')` returned 'low' — Gemini docintel emits `dob`, Core was auto-filling date of birth without review. Fixed: `dob` added as critical alias. Birth-cert child fields (`child_family_name`, `child_given_name`, `child_patronymic`, `child_dob`, `child_date_of_birth`) now critical. Files: `canonical/policy.ts`.
 - `FIXED(Core bug 2)` Reader `review_required` signal was silently dropped when converting to `FieldCandidate`. Core could output 'confident' values on unreadable/blurry fields. Fixed: `reviewRequired`/`reviewReasons` added to `FieldCandidate` type; `arbitrateField` carries the signal as `reader_review_required`. Files: `canonical/core/types.ts`, `canonical/core/arbitration.ts`.
