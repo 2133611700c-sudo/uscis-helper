@@ -33,6 +33,9 @@ import { toReParoleCoreAnswers } from '@/lib/canonical/core/reParoleAdapter'
 import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { isBlocked } from '@/lib/ocr/types'
+// MRZ_WIRED: inject MRZ authority for international passport
+import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
+import { mrzCandidatesFromText } from '@/lib/canonical/core/mrzAuthority'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -167,8 +170,24 @@ export async function POST(req: NextRequest) {
   // ── Core path: docintel → arbitration → Re-Parole adapter ───────────────
   const document_id = `reparole_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
   try {
-    // 1. Visual read (Gemini docintel) — the only I/O call in this route
-    const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000 })
+    // 1. For international passport: run Vision OCR in parallel with Gemini docintel
+    //    to obtain raw text for MRZ parsing. MRZ_WIRED: the MRZ (machine-readable zone)
+    //    carries authoritative values for passport identity fields.
+    //    Vision OCR is lightweight (text detection only) and runs concurrently.
+    //    If Vision OCR fails, MRZ candidates are simply not injected (graceful degradation).
+    const mrzRawTextPromise: Promise<string> =
+      docintelId === 'ua_international_passport'
+        ? googleVisionProvider
+            .extractText({ imageBuffer, mimeType: effectiveMime })
+            .then((r) => (!isBlocked(r) ? r.raw_text : ''))
+            .catch(() => '')
+        : Promise.resolve('')
+
+    // 2. Visual read (Gemini docintel) and Vision OCR run in parallel
+    const [coreRead, mrzRawText] = await Promise.all([
+      readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000 }),
+      mrzRawTextPromise,
+    ])
 
     if (!coreRead.ok || !Array.isArray(coreRead.fields) || coreRead.fields.length === 0) {
       console.warn('[B3/ReParole/Core] docintel returned no fields:', {
@@ -190,10 +209,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 2. Convert docintel output → Core FieldCandidates
+    // 3. Convert docintel output → Core FieldCandidates
     const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
 
-    // 3. Arbitrate: candidates → CanonicalField[] (Core's single judgment)
+    // 4. MRZ_WIRED: inject MRZ authority candidates for international passport.
+    //    Valid MRZ: confidence=0.99, wins over Gemini for controlled fields.
+    //    Invalid MRZ: confidence=0.3, reviewRequired=true — never silently falls back.
+    //    Missing MRZ: empty array — arbitrateDocument sees no MRZ candidates.
+    if (docintelId === 'ua_international_passport' && mrzRawText) {
+      const mrzCandidates = mrzCandidatesFromText(mrzRawText)
+      if (mrzCandidates.length > 0) {
+        candidates.push(...mrzCandidates)
+        console.info('[B3/ReParole/Core] MRZ_WIRED: injected', mrzCandidates.length,
+          'MRZ candidates, mrzCheckValid:', mrzCandidates[0]?.mrzCheckValid)
+      }
+    }
+
+    // 5. Arbitrate: candidates → CanonicalField[] (Core's single judgment)
     const canonicalFields = arbitrateDocument(candidates)
 
     if (canonicalFields.length === 0) {
@@ -210,7 +242,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 4. Build CanonicalDocumentResult
+    // 6. Build CanonicalDocumentResult
     const canonical: CanonicalDocumentResult = {
       documentSessionId: document_id,
       product: 'reparole',
@@ -221,7 +253,7 @@ export async function POST(req: NextRequest) {
       requiresReview: canonicalFields.some((f) => f.reviewRequired),
     }
 
-    // 5. Map to Re-Parole answers (pure, no I/O)
+    // 7. Map to Re-Parole answers (pure, no I/O)
     const reParoleAnswers = toReParoleCoreAnswers(canonical)
 
     // Log for monitoring (no PII — counts and codes only)
