@@ -121,6 +121,8 @@ export function tpsHintToDocumentClass(hint: string): DocumentClass {
   const map: Record<string, DocumentClass> = {
     passport: 'internal_passport_booklet', // international passport (TD3)
     booklet: 'internal_passport_booklet',  // Ukrainian internal passport-booklet
+    military_id: 'military_id',            // Ukrainian military booklet
+    birth_certificate: 'birth_certificate_handwritten', // birth cert (conservative default)
     // US-form slots — not Ukrainian identity docs, policy does not apply
     // Return unknown_document but callers must check isUkrainianIdentityDoc first
   }
@@ -137,6 +139,7 @@ export function isUkrainianIdentityDoc(hintOrTypeId: string): boolean {
     'passport', 'booklet',
     'ua_internal_passport_booklet', 'ua_international_passport',
     'ua_birth_certificate', 'ua_marriage_certificate', 'ua_military_id',
+    'military_id', 'birth_certificate', // TPS wizard docHint values
   ])
   return ukrainian.has(hintOrTypeId)
 }

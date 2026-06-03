@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 101 (2026-06-03) — DOCUMENT_UNDERSTANDING_GAP_CLOSURE (feat/document-understanding-schemas)
+- `MILITARY_ID_SCHEMA` `militaryId.ts` created + wired into extract route + documentContracts.ts slot. docHint=military_id now gives structured fields.
+- `BIRTH_CERT_SCHEMA` `birthCertificate.ts` created + wired. Role-grounded (child/parent blocks). review_required=true always. wrong_person_risk flag.
+- `TESTS` 22 new tests; full suite 2717/2717; tsc 0.
+- `GAZETTEER` BLOCKED_NO_SOURCE — seed set exists, full KOATUU data not available.
+- `MRZ_STATUS` CHECK_DIGITS_NOT_CONFIRMED — tested with booklet (no MRZ), need загранпаспорт data page.
+- `MODEL_ROUTING` clean — gemini-2.0-flash not in any runtime path.
+- `DOCS` `docs/reports/DOCUMENT_UNDERSTANDING_GAP_CLOSURE.md`
 ## Session 100 (2026-06-03) — VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader)
 - `ROOT_CAUSE` Vision API HTTP 403: `GOOGLE_CLOUD_VISION_API_KEY` in `.env.local` but NOT in Vercel Production. MRZ gets empty text.
 - `FIXED_CODE` `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts`: SA JSON (3 env var names) + API key fallback; normalizes `\\n`; validates fields; masks client_email; never logs private_key.
