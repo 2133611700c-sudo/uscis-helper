@@ -29,6 +29,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 // Central Brain (flag-gated, default OFF → prod behavior unchanged)
@@ -251,9 +252,14 @@ export async function POST(req: NextRequest) {
   for (let i = 0; i < rawFiles.length; i++) {
     const file = rawFiles[i]
     const mime = file.type || 'image/jpeg'
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const rawBuffer = Buffer.from(await file.arrayBuffer())
+    // Auto-rotate (EXIF), resize >2048px, normalize orientation.
+    // Fixes upside-down/rotated phone photos of birth certs, marriage certs, etc.
+    const pre = await preprocessImage(rawBuffer, mime).catch(() => null)
+    const buffer = pre?.ok ? pre.buffer : rawBuffer
+    const effectiveMime = pre?.ok ? pre.mimeType : mime
     try {
-      const r = await readDocument(buffer, mime, docTypeId, { timeoutMs: 15_000 })
+      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 15_000 })
       lastResult = r
       pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
       if (r.ok && Array.isArray(r.fields)) {
