@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — Document-class OCR policy (Cyrillic benchmark findings → Core)
+
+Converted 2026-06-02 Cyrillic benchmark adjudication into enforceable Core policy. New file: `canonical/core/documentClassPolicy.ts`. Policy encodes: (1) DOCUMENT_CLASS_POLICY const — 6 classes with auto_fill_allowed, always_review, model_candidate, reason fields; (2) isHardCase() / isAutoFillAllowed() guard functions; (3) applyCertificateRoleGuard() — rejects generic name fields on certificate docs (benchmark showed wrong person when model didn't role-ground child/parent fields); (4) applyHardCaseReviewOverride() — forces review_required=true on hard-case classes regardless of model output (gemini-2.5-pro set review_required=false while wrong — most dangerous failure mode); (5) checkImageQuality() — guards 82KB marriage apostille (proved insufficient) and 2MB+ images (causes 503). Also: geminiVisionProvider.ts comment updated to document gemini-2.0-flash as deprecated (HTTP 404). Tests: 31 new tests in documentClassPolicy.test.ts — all passing. Full suite 2438 pass / 0 fail. tsc 0. Report: docs/reports/CYRILLIC_DOCUMENT_CLASS_POLICY.md. Hard-case classes: birth_certificate_handwritten, birth_certificate_soviet_bilingual, marriage_apostille, unknown_document. Auto-fill classes: internal_passport_booklet, military_id. NOT migrated: Re-Parole, EAD, payment/UI/BUREAU_PDF/P2 (per task constraint).
+
 ## 2026-06-03 — Session 94 (fix): Core has priority over central-brain in Translation route
 
 When ONE_BRAIN_CORE_ENABLED=1, central-brain path is now skipped (added `&& process.env.ONE_BRAIN_CORE_ENABLED !== '1'` condition). Ensures Translation uses same Core as TPS without central-brain intercepting. central-brain was failing anyway (Vision API error) and forcing degraded=true on all fields.
