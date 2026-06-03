@@ -2639,3 +2639,10 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - Added УКРАЇНА/УКРАЇНА to military label filter
 - Prevents country header from being picked as family_name
 - 20/20 tests passing
+
+## 2026-06-03 | fix: add preprocessImage to translation vision-extract route
+
+- Rotated/upside-down documents now auto-corrected before Gemini call
+- EXIF rotation fix + resize for phone photos of birth certs, marriage certs, etc.
+- Fixes: перевёрнутое свидетельство не читается в переводе
+- TPS route already had this — now parity
