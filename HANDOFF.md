@@ -513,3 +513,8 @@ Closed the owner request: test every product without payment. Inventory: TPS wiz
 - Wired military_id + birth_certificate into TPS OCR route switch
 - Fixed TS errors in test files
 - Next: commit + deploy + live test
+
+## 2026-06-03 | militaryId regex fix
+- Fixed: УКРАЇНА was being extracted as family_name (header text before serial number)
+- Fix: added to looksLikeMilitaryLabel filter
+- Tests: 20/20 passing

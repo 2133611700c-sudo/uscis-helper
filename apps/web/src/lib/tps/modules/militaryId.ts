@@ -175,10 +175,14 @@ function extractAfterLabel(lines: string[], labelPatterns: RegExp[]): string | n
 
 function looksLikeMilitaryLabel(text: string): boolean {
   const compact = text.replace(/\s+/g, '').toLowerCase()
+  // Also skip country headers, document titles, and single ALL-CAPS country words
+  const upper = text.trim().toUpperCase()
+  if (/^[A-ZА-ЯІЇЄҐ]{3,}$/.test(upper) && ['УКРАЇНА', 'UKRAINE', 'РОСІЯ', 'РОССИЯ'].includes(upper)) return true
   return [
     'прізвище', 'імя', 'ім\'я', 'побатькові', 'датанародження',
-    'місценародження', 'військовийквиток', 'серія', 'виданий',
-    'органщовидав', 'орган', 'підпис',
+    'місценародження', 'військовийквиток', 'військовий', 'квиток',
+    'серія', 'виданий', 'органщовидав', 'орган', 'підпис',
+    'особистий', 'ukraine', 'україна',
   ].some((h) => compact.includes(h))
 }
 
