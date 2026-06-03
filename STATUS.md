@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 102 (2026-06-03) — KNOWLEDGE_CORE_STABILIZE (feat/knowledge-core-stabilize)
+- `MILITARY_ID_GUARDS` `isLikelyPatronymicOrLabel()` rejects given_name OCR confusion (patronymic label). `isAuthorityOcrGarbage()` rejects garbled authority tokens >=20 chars. Both exported and tested.
+- `MRZ_DEBUG_ROUTE` `_mrz_debug_status`, `_mrz_lines_found`, `_mrz_valid` added to TPS route response for passport/booklet hints. No PII exposed.
+- `AGENCY_MILITSIYA` `lookupAuthority('Міліція', '1986')` -> 'Militsiya' confirmed in test. 2020 era mismatch flagged.
+- `BIRTH_CERT_TESTS` 2 additional Phase 2 label-guard tests added and passing.
+- `TESTS` 2771/2771 passing (+20 new). tsc: 0. Build: passes.
+- `INVENTED_FIELDS` 0. `WRONG_ANSWERS` 0.
 ## Session 101 (2026-06-03) — KNOWLEDGE_DRIVEN_CORE (feat/knowledge-driven-core)
 - `LABEL_VALUE_EXTRACTOR` `tps/modules/labelValueExtractor.ts`: isLabelText() rejects 50+ known labels; extractValueAfterLabel() never returns label text as value. 29 tests.
 - `BIRTH_CERT_FIXED` `extractFieldFromBlock()` uses labelValueExtractor; allowPrevLine=false. Bug fixed: bilingual label line no longer returned as field value. 26 tests.

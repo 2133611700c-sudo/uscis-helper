@@ -107,6 +107,47 @@ function translateAuthority(raw: string): string | null {
 }
 
 /**
+ * Reject given_name if it looks like a patronymic label or label text that OCR
+ * mistook for the given name field (e.g. "По батьковим Сергійови").
+ * Better to return null + review than to store a label as a name.
+ */
+export function isLikelyPatronymicOrLabel(text: string): boolean {
+  if (!text) return false
+  const lower = text.toLowerCase().trim()
+  return (
+    lower.startsWith('по батьк') ||     // "По батькові", "По батьковим"
+    lower.startsWith('по отч') ||
+    lower.includes('батькові') ||
+    lower.includes('батьков') ||
+    lower.includes('отчест') ||
+    lower.length > 35 ||               // Suspiciously long for a given name
+    /[,;!@#$%^&*()=+\[\]{}<>]/.test(text) // Contains unusual chars
+  )
+}
+
+/**
+ * Reject issuing authority if OCR clearly produced garbage.
+ * Known good patterns: "Тростянецький РВК", "ТЦК Вінниці", "ОМВК"
+ * Garbage: random consonant clusters, OCR noise like "гровоградськельковим"
+ * Returns true when text should be rejected (not trusted).
+ */
+export function isAuthorityOcrGarbage(text: string): boolean {
+  if (!text || text.trim().length < 5) return true
+  // Must have recognizable Cyrillic (at least one run of 3+ Cyrillic chars)
+  const hasCyrillic = /[А-ЯІЇЄҐа-яіїєґ]{3,}/u.test(text)
+  if (!hasCyrillic) return true
+  // Too long to be a real authority name
+  if (text.length > 80) return true
+  // Known-bad OCR pattern: concatenated words without spaces that are too long
+  // e.g. "гровоградськельковим" (20 chars) = OCR garbled multi-word into one. Heuristic:
+  // a Cyrillic token >= 20 chars with no spaces is almost certainly OCR noise
+  // (the longest real Ukrainian authority word is typically < 20 chars).
+  const longestToken = text.split(/\s+/).reduce((max, tok) => tok.length > max ? tok.length : max, 0)
+  if (longestToken >= 20) return true
+  return false
+}
+
+/**
  * Extract the military ID series and number from text.
  * Format: "Серія Со № 845621" → series="Со", number="Со 845621"
  */
@@ -311,13 +352,21 @@ export function runMilitaryIdModule(
   // ── Given name (Ім'я) ─────────────────────────────────────────────────────
   // Military IDs often omit the "Ім'я" label entirely — the given name
   // appears as a standalone line immediately after the family name.
-  const givenName = extractAfterLabel(uniqueLines, [
+  const givenNameRaw = extractAfterLabel(uniqueLines, [
     /^ім['ʼ'`]?я\s*[:.]?/iu,
     /^имя\s*[:.]?/iu,
   ])
-  if (givenName) {
-    emit('given_name', givenName, givenName, 'military_id_label_given_name', ['label_anchor'])
+  // Guard: reject if OCR confused a patronymic label with the given name
+  const givenNameFromLabel = (givenNameRaw && isLikelyPatronymicOrLabel(givenNameRaw))
+    ? null
+    : givenNameRaw
+  if (givenNameFromLabel) {
+    emit('given_name', givenNameFromLabel, givenNameFromLabel, 'military_id_label_given_name', ['label_anchor'])
   } else {
+    if (givenNameRaw && isLikelyPatronymicOrLabel(givenNameRaw)) {
+      // Rejected — emit null and warn rather than store garbage
+      warnings.push('military_id_given_name_rejected_patronymic_or_label')
+    }
     // Fallback: given name is the standalone Cyrillic line immediately AFTER
     // the family name line (military booklet layout — no explicit label)
     const familyNameField = fields.find(f => f.field === 'family_name')
@@ -333,6 +382,7 @@ export function runMilitaryIdModule(
             candidate.length <= 40 &&
             /^[А-ЯІЇЄҐа-яіїєґ''\-]+$/u.test(candidate.replace(/\s/g, '')) &&
             !looksLikeMilitaryLabel(candidate) &&
+            !isLikelyPatronymicOrLabel(candidate) &&  // Guard applied to proximity candidate too
             !extractSerialNumber(candidate).number  // not another serial
           ) {
             emit('given_name', candidate, candidate, 'military_id_name_proximity', ['proximity_heuristic'])
@@ -408,24 +458,30 @@ export function runMilitaryIdModule(
     /орган\s+видачі/iu,
   ])
   if (authorityRaw && authorityRaw.length >= 4) {
-    const authorityEn = translateAuthority(authorityRaw)
-    emit(
-      'issuing_authority',
-      authorityRaw,
-      authorityRaw,
-      'military_id_label_authority',
-      ['label_anchor'],
-    )
-    if (authorityEn) {
-      emit(
-        'issuing_authority_english',
-        authorityEn,
-        authorityEn,
-        'military_id_authority_glossary',
-        ['glossary_match'],
-      )
+    // Guard: reject authority if OCR quality is clearly bad
+    if (isAuthorityOcrGarbage(authorityRaw)) {
+      warnings.push('military_id_authority_ocr_uncertain')
+      // Do NOT emit — garbage is worse than null
     } else {
-      warnings.push('military_id_authority_not_in_glossary')
+      const authorityEn = translateAuthority(authorityRaw)
+      emit(
+        'issuing_authority',
+        authorityRaw,
+        authorityRaw,
+        'military_id_label_authority',
+        ['label_anchor'],
+      )
+      if (authorityEn) {
+        emit(
+          'issuing_authority_english',
+          authorityEn,
+          authorityEn,
+          'military_id_authority_glossary',
+          ['glossary_match'],
+        )
+      } else {
+        warnings.push('military_id_authority_not_in_glossary')
+      }
     }
   } else {
     warnings.push('military_id_authority_not_found')
