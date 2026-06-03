@@ -1003,3 +1003,4 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - `VERIFIED(local)` 458 official cities from КАТОТТГ merged into registry (provenance 100%, KMU-55). Generator regenerable from mtu.gov.ua source. Stacked on feat/c3-presence.
 
 
+
