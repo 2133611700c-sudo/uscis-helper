@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 95c (2026-06-03) — B3 UI WIRING COMPLETE (feat/b3-reparole-core)
+- `B3 UI WIRED` `ReparoleWizardV2.tsx`: OCR route selected by `NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED` flag.
+- `FLAG OFF` wizard → `/api/tps/ocr/extract` (unchanged, old behavior 100% preserved)
+- `FLAG ON` passport/booklet → `/api/reparole/ocr/extract` (Core path, ReParoleCoreAnswers parsed)
+- `US SLOTS` i94/ead/dl always → old path (Core doesn't cover them yet)
+- `I-94` null when no I-94 source — not invented
+- `TESTS` 12 new UI wiring tests; full suite 2503/2503; tsc 0
+- `STATUS` ONE_BRAIN_PARTIAL_3_PRODUCTS when owner sets NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED=true in Vercel
 ## Session 95b (2026-06-03) — B3: Re-Parole consumes Core (ONE_BRAIN_PARTIAL_3_PRODUCTS)
 - `B3 CODE` `canonical/core/reParoleAdapter.ts`: `toReParoleCoreAnswers()` — pure adapter, no I/O, no Gemini.
 - `B3 ROUTE` `/api/reparole/ocr/extract`: Core-first when `ONE_CORE_REPAROLE_ENABLED=true` (default: false).
