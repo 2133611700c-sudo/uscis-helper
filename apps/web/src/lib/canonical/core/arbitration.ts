@@ -85,6 +85,14 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
     reasons.push('low_confidence')
   }
 
+  // carry through reader-level review signals — if the reader already flagged
+  // this candidate as needing review, the Core inherits that signal.
+  if (primary.reviewRequired && primary.reviewReasons?.length) {
+    for (const r of primary.reviewReasons) if (!reasons.includes(r)) reasons.push(r)
+  } else if (primary.reviewRequired) {
+    reasons.push('reader_review_required')
+  }
+
   return field(key, primary.value, primary.source, crit, reasons.length > 0, reasons, evidence, conf)
 }
 
