@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 95 (2026-06-03) — Document-class OCR policy (POLICY_BUILT_NOT_WIRED)
+- `POLICY` `canonical/core/documentClassPolicy.ts`: 6 document classes, hard-case guards, wrong-person guard, image quality guard. 31 tests passing, tsc 0. NOT YET WIRED to routes.
+- `EVIDENCE` 2438 pass / 0 fail. Reports: `docs/reports/CYRILLIC_DOCUMENT_CLASS_POLICY.md`, `docs/reports/FAILED_CYRILLIC_GROUND_TRUTH_ADJUDICATION.md`.
+- `NEXT` Wire guards into live extraction path (checkImageQuality before Gemini, applyHardCaseReviewOverride + applyCertificateRoleGuard before response).
 ## Session 94 (2026-06-03) — B2: Translation Core adapter (branch feat/b2-translation-core; PR pending)
 - `B2 CODE` `translationAdapter.ts`: `buildCyrillicMap()` preserves original Cyrillic before KMU-55 erases it. `toTranslationRows(fields, cyrillicMap)` = B2 named adapter. `canonicalToFieldOut` updated to accept optional cyrillicMap.
 - `B2 ROUTE` `vision-extract/route.ts` Core path builds cyrillicMap from docintel output, calls `toTranslationRows`. Logs `[ONE_BRAIN_CORE B2]`.

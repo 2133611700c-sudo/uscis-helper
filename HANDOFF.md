@@ -1,4 +1,6 @@
 > ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core (SHA 084137c, `ONE_CORE_TPS_ENABLED=1`). **B2 CODE READY** (feat/b2-translation-core, PR #70): Translation uses same Core. Core runs BEFORE central-brain (central-brain skipped when ONE_BRAIN_CORE_ENABLED=1). `buildCyrillicMap`+`toTranslationRows` preserves raw_cyrillic. After merge: set `ONE_BRAIN_CORE_ENABLED=1` in Vercel. **IDEOLOGY**: Cyrillic = input layer for ALL products. Next: B3 (Re-Parole → Core).
+>
+> 📋 **DOCUMENT CLASS POLICY IN CORE:** `canonical/core/documentClassPolicy.ts` — benchmark findings converted to enforceable policy. Hard cases: birth_cert_handwritten, birth_cert_soviet_bilingual, marriage_apostille, unknown_document. Auto-fill: internal_passport_booklet, military_id. Wrong-person guard + review override + image quality guard implemented. 31 tests passing. Ground truth files still MISSING — owner must fill from physical documents before cert benchmark can be scored.
 
 # HANDOFF — Session 93 (2026-06-03)
 
