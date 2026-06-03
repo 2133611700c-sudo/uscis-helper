@@ -39,6 +39,14 @@ import { DOC_TYPES } from '@/lib/engine/docTypes'
 // B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
 import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
 import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/canonical/core/translationAdapter'
+// POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
+import {
+  checkImageQuality,
+  applyHardCaseReviewOverride,
+  applyCertificateRoleGuard,
+  docintelIdToDocumentClass,
+  isUkrainianIdentityDoc,
+} from '@/lib/canonical/core/documentClassPolicy'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // gemini-2.5-pro vision ~16-40s/page (handwriting) — default 15s would abort it
@@ -101,6 +109,38 @@ export async function POST(req: NextRequest) {
         { ok: false, error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB. Max 10 MB per page.` },
         { status: 413 },
       )
+    }
+  }
+
+  // ── POLICY_WIRED: checkImageQuality — document-class size guard ──────────
+  // Runs BEFORE any Gemini/Vision call. Blocks tiny images (82KB marriage
+  // apostille proved insufficient). Warns on >2MB images (503 risk).
+  // Only applies to Ukrainian identity documents (not US forms).
+  if (isUkrainianIdentityDoc(docTypeId)) {
+    const docClass = docintelIdToDocumentClass(docTypeId)
+    // Use largest file for the size check — if any page is too small, block all
+    const largestFile = rawFiles.reduce((max, f) => f.size > max.size ? f : max, rawFiles[0])
+    const smallestFile = rawFiles.reduce((min, f) => f.size < min.size ? f : min, rawFiles[0])
+    // Block if the smallest file is below the minimum (every page must be readable)
+    const qualityCheck = checkImageQuality(docClass, smallestFile.size)
+    if (qualityCheck.action === 'needs_better_scan') {
+      console.warn('[documentClassPolicy] needs_better_scan:', qualityCheck.reason, 'docTypeId:', docTypeId)
+      return NextResponse.json(
+        {
+          ok: false,
+          status: 'needs_better_scan',
+          review_required: true,
+          reason: qualityCheck.reason,
+          fields: null,
+          error: 'Image quality insufficient for reliable extraction. Please upload a higher-resolution scan.',
+          doc_type_id: docTypeId,
+        },
+        { status: 200 },
+      )
+    }
+    if (checkImageQuality(docClass, largestFile.size).action === 'resize') {
+      console.warn('[documentClassPolicy] image_large_resize_recommended:', largestFile.size, 'bytes, docTypeId:', docTypeId)
+      // Continue — do not block, but log for monitoring
     }
   }
 
@@ -239,14 +279,43 @@ export async function POST(req: NextRequest) {
   // #12: if we got here because the central brain ERRORED (not because the flag is
   // off), this is a DEGRADED path (single reader, no consensus guard) → force every
   // field to human review and tell the client, so a degraded read is never trusted.
-  const fields = Array.from(merged.values()).map((f) =>
+  let fields = Array.from(merged.values()).map((f) =>
     degradedFromBrain ? { ...f, review_required: true } : f)
   const ok = fields.length > 0
+
+  // ── POLICY_WIRED: post-extraction document-class guards ───────────────────
+  // Applied AFTER extraction, BEFORE response. Only for Ukrainian identity docs.
+  let translationPolicyGuardStatus: 'not_applicable' | 'applied' | 'role_guard_triggered' = 'not_applicable'
+  if (ok && isUkrainianIdentityDoc(docTypeId)) {
+    const docClass = docintelIdToDocumentClass(docTypeId)
+
+    // Wire 2: applyHardCaseReviewOverride — forces review_required=true on hard-case classes
+    const hardCaseCheck = applyHardCaseReviewOverride(docClass, { review_required: false })
+    if ('override_reason' in hardCaseCheck) {
+      console.info('[documentClassPolicy] applyHardCaseReviewOverride applied (translation):', docClass, hardCaseCheck.override_reason)
+      fields = fields.map((f) => ({ ...f, review_required: true }))
+      translationPolicyGuardStatus = 'applied'
+    }
+
+    // Wire 3: applyCertificateRoleGuard — rejects generic family_name without role grounding
+    const fieldRecord: Record<string, unknown> = {}
+    for (const f of fields) {
+      fieldRecord[f.field] = f.value
+    }
+    const roleCheck = applyCertificateRoleGuard(docClass, fieldRecord)
+    if (!roleCheck.safe) {
+      console.warn('[documentClassPolicy] applyCertificateRoleGuard triggered (translation):', roleCheck.reason, 'fields:', roleCheck.forcedReviewFields)
+      const forcedSet = new Set(roleCheck.forcedReviewFields)
+      fields = fields.map((f) => forcedSet.has(f.field) ? { ...f, review_required: true } : f)
+      translationPolicyGuardStatus = 'role_guard_triggered'
+    }
+  }
 
   return NextResponse.json({
     ok,
     doc_type_id: docTypeId,
     fields,
+    policy_guard_status: translationPolicyGuardStatus,
     pages: pageResults,
     page_count: rawFiles.length,
     // Backward compat: keep the single-call shape too for legacy clients.
