@@ -1,6 +1,37 @@
-> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core (SHA 084137c, `ONE_CORE_TPS_ENABLED=1`). **B2 CODE READY** (feat/b2-translation-core, PR #70): Translation uses same Core. Core runs BEFORE central-brain (central-brain skipped when ONE_BRAIN_CORE_ENABLED=1). `buildCyrillicMap`+`toTranslationRows` preserves raw_cyrillic. After merge: set `ONE_BRAIN_CORE_ENABLED=1` in Vercel. **IDEOLOGY**: Cyrillic = input layer for ALL products. Next: B3 (Re-Parole → Core).
+> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core (`ONE_CORE_TPS_ENABLED=1`). **B2 CODE READY** (PR #70): Translation uses Core. **B3 CODE READY** (feat/b3-reparole-core): Re-Parole uses Core. ONE_BRAIN_PARTIAL_3_PRODUCTS defined but not active (all flags OFF by default). Next: B4 (EAD → Core) to complete ONE_BRAIN.
 >
-> 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2462 tests passing, tsc 0. Branch: feat/wire-document-class-policy → PR created.
+> 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2491 tests passing, tsc 0.
+
+# HANDOFF — Session 95 (2026-06-03)
+
+## Session 95 — B3: Re-Parole consumes CanonicalDocumentResult (ONE_BRAIN_PARTIAL_3_PRODUCTS)
+
+**What was done:**
+- Created `canonical/core/reParoleAdapter.ts`: pure `toReParoleCoreAnswers()` function — no OCR, no Gemini, no API calls inside; pure field mapping canonical → ReParoleCoreAnswers
+- Created `app/api/reparole/ocr/extract/route.ts`: new dedicated Re-Parole OCR route behind `ONE_CORE_REPAROLE_ENABLED=true` flag (default: false)
+- Created 29 adapter tests in `canonical/core/__tests__/reParoleAdapter.test.ts`: identity mapping, I-94 non-invention, review_required propagation, uncertain_fields, core_status, adapter purity
+- All 29 tests pass; full suite 2491/2491; tsc 0 errors
+
+**What was NOT done:**
+- `ONE_CORE_REPAROLE_ENABLED=true` NOT set in Vercel (owner decision)
+- EAD → Core (B4) — not done
+- Certificate ground truth
+- UI changes (Re-Parole wizard still calls `/api/tps/ocr/extract`)
+
+**Architecture:**
+- Re-Parole wizard calls `/api/tps/ocr/extract` for OCR (unchanged)
+- New route `/api/reparole/ocr/extract` is Core-first when flag=true; returns `ReParoleCoreAnswers`
+- Old path completely unchanged when flag=false
+- Adapter: `CanonicalDocumentResult.fields[]` → `ReParoleCoreAnswers` (field-key lookup, no invention)
+- Fields: family_name, given_name, dob (alias dob), sex, passport_number, country_of_birth/nationality, date_of_expiry, i94_admission_number, last_entry_date, i94_class_of_admission, a_number
+- I-94 fields stay null for passport source (no invention)
+
+**Next task:**
+1. Owner merges PR #70 (B2 Translation) and enables `ONE_BRAIN_CORE_ENABLED=1`
+2. Owner enables `ONE_CORE_REPAROLE_ENABLED=true` when ready to test Re-Parole Core path
+3. B4: EAD → Core to complete ONE_BRAIN
+
+**Evidence:** 29 tests passing, full suite 2491 passing, tsc 0
 
 # HANDOFF — Session 93 (2026-06-03)
 
