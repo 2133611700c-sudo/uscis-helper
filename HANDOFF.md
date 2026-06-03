@@ -1,4 +1,4 @@
-> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE (2026-06-03)**: TPS uses Core in production (SHA 084137c, `ONE_CORE_TPS_ENABLED=1`). Proven on real Ukrainian booklet: core_status=ok, critical_wrong_count=0. GEMINI_MODEL=gemini-2.5-flash, GEMINI_API_KEY_PAY updated. Next: B2 (Translation → Core), B3 (Re-Parole → Core).
+> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core (SHA 084137c, `ONE_CORE_TPS_ENABLED=1`). **B2 CODE READY** (feat/b2-translation-core, PR #70): Translation uses same Core. Core runs BEFORE central-brain (central-brain skipped when ONE_BRAIN_CORE_ENABLED=1). `buildCyrillicMap`+`toTranslationRows` preserves raw_cyrillic. After merge: set `ONE_BRAIN_CORE_ENABLED=1` in Vercel. **IDEOLOGY**: Cyrillic = input layer for ALL products. Next: B3 (Re-Parole → Core).
 
 # HANDOFF — Session 93 (2026-06-03)
 
