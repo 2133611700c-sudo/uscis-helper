@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — Session 94 (fix): Core has priority over central-brain in Translation route
+
+When ONE_BRAIN_CORE_ENABLED=1, central-brain path is now skipped (added `&& process.env.ONE_BRAIN_CORE_ENABLED !== '1'` condition). Ensures Translation uses same Core as TPS without central-brain intercepting. central-brain was failing anyway (Vision API error) and forcing degraded=true on all fields.
+
 ## 2026-06-03 — Session 94: B2 — Translation consumes same Core as TPS (branch feat/b2-translation-core)
 
 Cyrillic is the INPUT LAYER for all products, not a Translation feature. B2 wires Translation to the same Document Core as TPS. Key fix: raw_cyrillic was lost after KMU-55 transliteration. Fix: buildCyrillicMap() preserves original Cyrillic BEFORE conversion to FieldCandidate; toTranslationRows() named adapter maps CanonicalField[] → Translation FieldOut[] with raw_cyrillic restored from cyrillicMap. vision-extract route Core path updated: builds cyrillicMap, calls toTranslationRows(canonicalFields, cyrillicMap) instead of simple canonicalToFieldOut. Logs [ONE_BRAIN_CORE B2]. B2 proof: internal_passport booklet, gemini-2.5-flash, 7.3s — cyrillic_preserved 5/6, latin_produced 5/6, critical_wrong_count=0, b2_proof=PASS. Next: set ONE_BRAIN_CORE_ENABLED=1 in Vercel, deploy, confirm Translation uses Core. Evidence: tsc 0, 2407/2407.
