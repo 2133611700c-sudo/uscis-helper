@@ -26,6 +26,7 @@
 
 import type { OcrResult } from '@/lib/ocr/types'
 import type { TpsExtractedField, TpsModuleResult } from '@/lib/tps/types'
+import { lookupAuthority } from '@uscis-helper/knowledge'
 
 // ── Ukrainian month names (genitive — as printed in dates) ────────────────────
 const UA_MONTH_MAP: Record<string, string> = {
@@ -86,16 +87,22 @@ export function parseUkrainianDate(s: string): string | null {
 /**
  * Translate issuing authority via glossary only. Returns null if not found.
  * NEVER uses LLM for translation.
+ * Uses: 1) hardcoded AGENCY_GLOSSARY (highest confidence), then
+ *        2) knowledge registry authority lookup (military_authority + authority categories).
  */
 function translateAuthority(raw: string): string | null {
   if (!raw) return null
   const trimmed = raw.trim()
-  // Exact match first
+  // Exact match first (hardcoded glossary)
   if (AGENCY_GLOSSARY[trimmed]) return AGENCY_GLOSSARY[trimmed]
-  // Partial match — check if glossary key is substring of raw
+  // Partial match in hardcoded glossary
   for (const [key, value] of Object.entries(AGENCY_GLOSSARY)) {
     if (trimmed.includes(key)) return value
   }
+  // Knowledge registry: covers ТЦК (Territorial Recruitment Center, from 2022 reform)
+  // and general authority entries (МВС, МЗС, etc.)
+  const regResult = lookupAuthority(trimmed)
+  if (regResult.matched && regResult.official_en) return regResult.official_en
   return null
 }
 
