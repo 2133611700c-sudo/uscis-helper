@@ -993,3 +993,4 @@ _(Session 56 cont.11: D5 — review screen now shows the uploaded document image
 _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real docs. Findings: GPT-4o fabricates handwriting (Курочинський Олег @0.95); Google Vision OCR contains all printed values; C4 3-way best (4/5); my earlier C3/6-8 numbers were UNRELIABLE (free-tier Gemini 20/day quota exhausted → silent empties). FIXED: geminiReader now surfaces 429 (was masquerading as cant-read). Wired C3 presence-confirm + recognize-injection (42 tests, 0 tsc) on branch feat/c3-presence — NOT deployed, runtime-unverified pending quota reset. #1 BLOCKER: prod runs on exhausted free key → needs PAID Gemini/Vertex billing.)_
 ## koatuu branch (2026-05-29) — КАТОТТГ city layer
 - `VERIFIED(local)` 458 official cities from КАТОТТГ merged into registry (provenance 100%, KMU-55). Generator regenerable from mtu.gov.ua source. Stacked on feat/c3-presence.
+
