@@ -13,6 +13,7 @@
  */
 
 import type { DocTypeSpec, VisionFieldRead, VisionProvider, VisionReadResult } from '../types'
+import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 
 // Model order is env-driven so prod can flip models WITHOUT a code redeploy.
 // 2026-05-29 ensemble bench (docs/reports/GEMINI_ENSEMBLE_BENCH.md), 3 docs incl. a
@@ -94,10 +95,9 @@ export class GeminiVisionProvider implements VisionProvider {
     opts: { timeoutMs?: number; attemptsPerModel?: number } = {},
   ): Promise<VisionReadResult> {
     const t0 = Date.now()
-    // Prod (Vercel) stores the PAID key as GEMINI_API_KEY_PAY; fall back to the
-    // plain name for local/dev. (2026-05-29: prod var is GEMINI_API_KEY_PAY.)
-    const apiKey = process.env.GEMINI_API_KEY_PAY || process.env.GEMINI_API_KEY
-    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'GEMINI_API_KEY(_PAY) not set' }
+    // Resolve the key from ANY GEMINI_API_KEY* env name (owner rotates names).
+    const apiKey = getGeminiApiKey()
+    if (!apiKey) return { ok: false, fields: [], model: null, ms: 0, error: 'no GEMINI_API_KEY* set' }
 
     // 2.5-pro + thinking on a full-page scan runs ~20-40s; the old 8s default
     // would abort it every time. Default high; callers can still override.
