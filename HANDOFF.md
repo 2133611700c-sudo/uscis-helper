@@ -1,6 +1,44 @@
-> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core (`ONE_CORE_TPS_ENABLED=1`). **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (feat/b3-reparole-core, PR #72): Re-Parole wizard calls Core route when `NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED=true`. ONE_BRAIN_PARTIAL_3_PRODUCTS active when owner sets that flag. Next: B4 (EAD → Core) to complete ONE_BRAIN.
+> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core. **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (PR #72): Re-Parole calls Core route. **B4 CODE READY** (feat/b4-ead-core, PR open): EAD adapter + route. **ONE_BRAIN_COMPLETE_CODE_READY** — all 4 products wired. Not live until flags enabled + smoke test.
 >
-> 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2503 tests passing, tsc 0.
+> 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2565 tests passing, tsc 0.
+
+# HANDOFF — Session 96 (2026-06-03)
+
+## Session 96 — B4: EAD consumes CanonicalDocumentResult (ONE_BRAIN_COMPLETE_CODE_READY)
+
+**What was done:**
+- Created `apps/web/src/lib/canonical/core/eadAdapter.ts`: pure `toEadAnswers()` adapter — no OCR, no Gemini, no API calls; source-gated field mapping canonical → EadCoreAnswers
+  - Identity fields: mapped from any document
+  - EAD/USCIS fields (a_number, ead_category, uscis_number, card_number, ead_validity_*): **null unless source is ead_card/i766/i797/uscis_notice/us_ead**
+  - I-94 fields (i94_admission_number, i94_date_of_entry, i94_class_of_admission, i94_place_of_entry): **null unless source is i94/us_i94/arrival_departure_record**
+  - us_address: **null unless source is drivers_license/dl/state_id** (never inferred from passport)
+  - invented_fields_count: always 0 (hard-coded, compile-time type `0`)
+- Created `apps/web/src/app/api/ead/ocr/extract/route.ts`: new EAD OCR route behind `ONE_CORE_EAD_ENABLED=true` flag (default: false); same pattern as B3 Re-Parole route
+- Created `apps/web/src/lib/canonical/core/__tests__/eadAdapter.test.ts`: 74 tests — all green
+  - Passport-only proof case: all 11 gated fields are null ✅
+  - EAD source: a_number, ead_category, card_number, ead_validity_* mapped ✅
+  - I-94 source: i94_* fields mapped ✅
+  - DL source: us_address mapped ✅
+  - invented_fields_count: 0 in all cases ✅
+
+**What was NOT done:**
+- `ONE_CORE_EAD_ENABLED=true` NOT set in Vercel (owner decision)
+- `NEXT_PUBLIC_ONE_CORE_EAD_ENABLED` — EAD wizard (EADWizard.tsx) is currently client-side only (no existing OCR path in it); the new `/api/ead/ocr/extract` route is the new Core path when enabled
+- ONE_BRAIN_FINAL_SMOKE_TEST (all 4 products live simultaneously)
+- Certificate ground truth (owner responsibility)
+
+**Architecture:**
+- Flag OFF (default): `/api/ead/ocr/extract` returns 503 — EAD wizard unaffected (it had no OCR before)
+- Flag ON: image → readDocument → arbitrateDocument → toEadAnswers → EadCoreAnswers JSON
+- Source gates strictly enforced in adapter (no runtime checks needed — logic self-contained)
+
+**To go live (owner):**
+1. Set `ONE_CORE_EAD_ENABLED=true` in Vercel
+2. Merge PR feat/b4-ead-core
+3. EAD wizard integration: wire Step 2 (personal info) to call `/api/ead/ocr/extract` with passport upload
+4. ONE_BRAIN_FINAL_SMOKE_TEST: TPS + Translation + Re-Parole + EAD on real passport
+
+**Evidence:** 74 new adapter tests + 2565/2565 full suite passing; tsc 0
 
 # HANDOFF — Session 95c (2026-06-03)
 

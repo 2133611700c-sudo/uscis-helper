@@ -1,4 +1,13 @@
 # STATUS — Messenginfo
+## Session 96 (2026-06-03) — B4: EAD consumes Core (ONE_BRAIN_COMPLETE_CODE_READY)
+- `B4 ADAPTER` `canonical/core/eadAdapter.ts`: `toEadAnswers()` — pure, source-gated field mapping, no I/O.
+- `B4 ROUTE` `/api/ead/ocr/extract`: Core-first when `ONE_CORE_EAD_ENABLED=true` (default: false).
+- `GATES` EAD/I-797 fields null unless source is ead/i766/i797. I-94 fields null unless i94. Address null unless DL.
+- `PROOF` passport-only → a_number=null, ead_category=null, i94=null, us_address=null ✅
+- `invented_fields_count` always 0 ✅
+- `TESTS` 74 new adapter tests; full suite 2565 passing; tsc 0.
+- `NOT LIVE` `ONE_CORE_EAD_ENABLED=true` NOT set in Vercel (owner decision).
+- `STATUS` ONE_BRAIN_COMPLETE_CODE_READY: TPS(B1) + Translation(B2) + Re-Parole(B3) + EAD(B4) all code complete.
 ## Session 95c (2026-06-03) — B3 UI WIRING COMPLETE (feat/b3-reparole-core)
 - `B3 UI WIRED` `ReparoleWizardV2.tsx`: OCR route selected by `NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED` flag.
 - `FLAG OFF` wizard → `/api/tps/ocr/extract` (unchanged, old behavior 100% preserved)
