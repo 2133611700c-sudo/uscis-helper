@@ -1,4 +1,24 @@
-> ⭐ **ONE BRAIN — READ FIRST:** the locked architecture for the single Document Core is `docs/architecture/ONE_BRAIN_DECISION.md`. One brain = one Core arbiter (NOT one AI) that drives all readers → one `CanonicalDocumentResult`; 5 products consume it via adapters. v1 spine is built in `apps/web/src/lib/canonical/core/` (arbitration + readDocumentCore + benchmark + ground-truth format), pure + tested, **NOT wired to any product, no flags**. Next real step needs OWNER-PROVIDED real documents + hand-verified ground truth (`core/groundTruth.example.json`) for the reader benchmark. NO product migration without explicit owner approval.
+> ⭐ **ONE BRAIN — READ FIRST:** the locked architecture for the single Document Core is `docs/architecture/ONE_BRAIN_DECISION.md`. One brain = one Core arbiter (NOT one AI) that drives all readers → one `CanonicalDocumentResult`; 5 products consume it via adapters. v1 spine is in `apps/web/src/lib/canonical/core/` — **NOW WIRED to Translation behind `ONE_BRAIN_CORE_ENABLED=1` (Session 92).** To activate: merge PR #67 first, then set `ONE_BRAIN_CORE_ENABLED=1` in Vercel. NO product migration without explicit owner approval.
+
+# HANDOFF — Session 92 (2026-06-02)
+
+## Session 92 — Core field-vocab fixes + review carry-through + Translation wiring (branch feat/core-wire-translation)
+
+**Three real-data bugs fixed** (found during Session 91 real-document testing):
+
+**(1) `criticalityOf('dob')` returned 'low'** — Gemini docintel emits `dob`, not `date_of_birth`. Core treated date of birth as low-criticality and could auto-fill without review. Fix: `dob` added as critical alias. Birth-cert child fields also added as critical.
+
+**(2) Reader `review_required` silently dropped** — `FieldCandidate` had no `reviewRequired` field. Docintel flags (blurry handwriting) were discarded by the Core. Fix: field added to type; `arbitrateField` carries the signal as `reader_review_required`.
+
+**(3) Core wired to Translation** — First live wiring via `canonical/core/translationAdapter.ts` + `ONE_BRAIN_CORE_ENABLED=1` path in `vision-extract/route.ts`. Flag OFF = byte-for-byte identical to legacy. Logs `[ONE_BRAIN_CORE] arbitrated N fields`.
+
+**Evidence:** `coreFixes.test.ts` 12/12. Full web 2389 pass, tsc 0.
+
+**Gate:** PR pending. Owner action needed: (1) merge PR #67, (2) merge this PR, (3) set `ONE_BRAIN_CORE_ENABLED=1` in Vercel.
+
+**Next:** provide real documents + ground truth → reader benchmark → wire Core to TPS.
+
+---
 
 # HANDOFF — Session 91 (2026-05-31)
 
