@@ -3,6 +3,35 @@
 > 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2610 tests passing, tsc 0.
 >
 > 🔒 **MRZ_AUTHORITY_WIRED_CODE_READY (feat/mrz-passport-authority, PR #74):** `mrzCandidatesFromText` connected to TPS (ONE_CORE_TPS_ENABLED path) and Re-Parole (ONE_CORE_REPAROLE_ENABLED path) Core routes for `ua_international_passport`. Valid MRZ wins for 7 controlled fields. Invalid MRZ → reviewRequired=true + mrz_check_failed. Missing MRZ → visual fallthrough + critical_no_mrz_anchor review. 18 new mrzWiringProof.test.ts arbitration-level proof tests. 2664/2664 full suite. tsc 0. NOT DONE: live smoke test requires PR merge + Vercel deploy.
+>
+> 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
+
+# HANDOFF — Session 100 (2026-06-03)
+
+## Session 100 — VISION_CREDENTIALS_LOADER: fix Google Vision 403, add diagnostic endpoint
+
+**What was done:**
+- **Root cause identified**: Vision API returns HTTP 403 in Vercel Production because `GOOGLE_CLOUD_VISION_API_KEY` (set in `.env.local`) was never added to Vercel environment variables. Provider returns empty OcrResult → MRZ parser gets empty text → `_mrz_source=NOT_PRESENT`.
+- **`loadVisionCredentials()`** created in `apps/web/src/lib/canonical/vision/visionCredentials.ts`:
+  - Checks 3 SA JSON env var names in priority order: `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` > `GOOGLE_CLOUD_CREDENTIALS` > `GOOGLE_APPLICATION_CREDENTIALS_JSON`
+  - Falls back to API key: `GOOGLE_CLOUD_VISION_API_KEY` | `GOOGLE_VISION_API_KEY`
+  - Normalizes `private_key` `\\n` → real newlines (Vercel stores escaped)
+  - Validates required fields; returns typed error codes
+  - Masks `client_email` in status; NEVER exposes `private_key`
+- **Vision provider** (`apps/web/src/lib/ocr/providers/google-vision.ts`) updated to call `loadVisionCredentials()`. When SA JSON found: uses `google-auth-library` (`GoogleAuth`) to get Bearer token. API key path unchanged.
+- **Diagnostic endpoint** `apps/web/src/app/api/_diag/vision/route.ts`: `GET /api/_diag/vision`, protected by `X-Internal-Diag-Token` header. Sends 1×1 synthetic PNG (no PII), returns sanitized status. Error codes: `VISION_AUTH_403`, `VISION_API_DISABLED_OR_PERMISSION_DENIED`, `VISION_BILLING_OR_QUOTA`, etc.
+- **Tests**: `canonical/vision/__tests__/visionCredentials.test.ts` — 12 tests, all pass. Full suite: 2680/2680. tsc: 0.
+- **Owner instructions**: `docs/reports/VISION_MRZ_AUTH_DIAGNOSTIC.md`
+
+**What was NOT done:**
+- Vision is not verified live — owner must add credentials to Vercel + redeploy
+- MRZ live confirmation (`_mrz_source=ocr_mrz`) pending Vision working in Production
+
+**Next exact task:**
+1. Owner: add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` (SA JSON) or `GOOGLE_CLOUD_VISION_API_KEY` to Vercel Production env
+2. Owner: redeploy
+3. Call `/api/_diag/vision` to confirm `vision_ok: true`
+4. Upload real passport; verify `_mrz_source=ocr_mrz` in response
 
 # HANDOFF — Session 99 (2026-06-03)
 

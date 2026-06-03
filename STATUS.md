@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 100 (2026-06-03) — VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader)
+- `ROOT_CAUSE` Vision API HTTP 403: `GOOGLE_CLOUD_VISION_API_KEY` in `.env.local` but NOT in Vercel Production. MRZ gets empty text.
+- `FIXED_CODE` `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts`: SA JSON (3 env var names) + API key fallback; normalizes `\\n`; validates fields; masks client_email; never logs private_key.
+- `VISION_PROVIDER` `lib/ocr/providers/google-vision.ts` wired to `loadVisionCredentials()`; SA JSON → Bearer token via google-auth-library.
+- `DIAG_ENDPOINT` `GET /api/_diag/vision` (X-Internal-Diag-Token protected): sends 1x1 PNG, returns sanitized Vision status.
+- `TESTS` 12 new visionCredentials tests; full suite 2680/2680; tsc 0.
+- `BLOCKED` `MRZ_AUTHORITY_LIVE_CONFIRMED` — owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy + call /api/_diag/vision.
+- `DOCS` `docs/reports/VISION_MRZ_AUTH_DIAGNOSTIC.md`
 ## Session 99 (2026-06-03) — MRZ_AUTHORITY_WIRED_CODE_READY (feat/mrz-passport-authority)
 - `MRZ_WIRED_TPS` `/api/tps/ocr/extract` ONE_CORE_TPS_ENABLED path: `mrzCandidatesFromText(result.raw_text)` injected before `arbitrateDocument` for `ua_international_passport`.
 - `MRZ_WIRED_REPAROLE` `/api/reparole/ocr/extract`: Vision OCR runs in parallel with Gemini docintel; MRZ candidates injected before `arbitrateDocument` for `ua_international_passport`.

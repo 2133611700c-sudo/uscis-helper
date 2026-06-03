@@ -1,16 +1,25 @@
 /**
  * Google Cloud Vision — DOCUMENT_TEXT_DETECTION provider
  *
- * Uses the REST API (no SDK dependency) with an API key.
+ * Supports two auth modes (in priority order):
+ *   1. Service account JSON (preferred for Vercel/serverless):
+ *        GOOGLE_VISION_SERVICE_ACCOUNT_JSON
+ *        GOOGLE_CLOUD_CREDENTIALS
+ *        GOOGLE_APPLICATION_CREDENTIALS_JSON
+ *   2. API key (legacy, simpler setup):
+ *        GOOGLE_CLOUD_VISION_API_KEY  |  GOOGLE_VISION_API_KEY
+ *
+ * Uses the REST API (no heavy SDK) with Bearer token (SA) or ?key= (API key).
  * Returns every word with a stable ID (w_NNNN) and a normalised bbox.
  *
- * Required env var: GOOGLE_CLOUD_VISION_API_KEY
- * If missing → returns OcrBlockedResult (not an error) so the route
- * can surface a 503 with actionable guidance.
+ * If no credentials found → returns OcrBlockedResult (not an error) so the
+ * route can surface a 503 with actionable guidance.
  *
- * Do NOT log the API key. Do NOT expose raw response to the client.
+ * Do NOT log the API key or private_key. Do NOT expose raw response to client.
  */
+import { GoogleAuth } from 'google-auth-library'
 import type { OcrProvider, OcrResult, OcrBlockedResult, OcrWord, OcrLine, OcrPage, OcrBoundingBox } from '../types'
+import { loadVisionCredentials } from '@/lib/canonical/vision/visionCredentials'
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate'
 const VISION_TIMEOUT_MS = 12_000   // Google Vision: typically 1–5s; 12s safety margin
@@ -87,22 +96,47 @@ function wordText(gw: GWord): string {
 
 // ── Provider implementation ───────────────────────────────────────────────────
 
+// ── GoogleAuth singleton for service account mode ──────────────────────────
+// Lazily instantiated; reset if credentials change between test runs.
+let _googleAuth: GoogleAuth | null = null
+
+function getGoogleAuth(credentials: Record<string, unknown>): GoogleAuth {
+  if (!_googleAuth) {
+    _googleAuth = new GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    })
+  }
+  return _googleAuth
+}
+
 export const googleVisionProvider: OcrProvider = {
   async extractText({ imageBuffer, mimeType }): Promise<OcrResult | OcrBlockedResult> {
-    // Accept either env-var name — historically the Translation Engine
-    // used GOOGLE_CLOUD_VISION_API_KEY while ops set GOOGLE_VISION_API_KEY
-    // in repo .env.local. Reading both keeps every deploy working without
-    // a flag-day rename.
-    const apiKey =
-      process.env.GOOGLE_CLOUD_VISION_API_KEY ||
-      process.env.GOOGLE_VISION_API_KEY
-    if (!apiKey) {
+    // ── Resolve credentials ──────────────────────────────────────────────────
+    const { credentials, apiKey, status } = loadVisionCredentials()
+
+    if (!status.present) {
+      console.error('[google-vision] No credentials found:', status.error)
       return {
         blocked: true,
         reason:
-          'Google Cloud Vision API key is not configured. ' +
-          'Add GOOGLE_CLOUD_VISION_API_KEY (or GOOGLE_VISION_API_KEY) to your environment variables.',
-        required_env_vars: ['GOOGLE_CLOUD_VISION_API_KEY'],
+          'Google Cloud Vision credentials are not configured. ' +
+          'Add GOOGLE_VISION_SERVICE_ACCOUNT_JSON (service account JSON) or ' +
+          'GOOGLE_CLOUD_VISION_API_KEY (API key) to your environment variables.',
+        required_env_vars: [
+          'GOOGLE_VISION_SERVICE_ACCOUNT_JSON',
+          'GOOGLE_CLOUD_VISION_API_KEY',
+        ],
+      }
+    }
+
+    if (!credentials && !apiKey) {
+      // Should not happen after status.present=true, but guard defensively
+      console.error('[google-vision] Credentials status present but both credentials and apiKey are null:', status.error)
+      return {
+        blocked: true,
+        reason: `Google Cloud Vision credentials error: ${status.error ?? 'UNKNOWN'}`,
+        required_env_vars: ['GOOGLE_VISION_SERVICE_ACCOUNT_JSON'],
       }
     }
 
@@ -119,11 +153,39 @@ export const googleVisionProvider: OcrProvider = {
       }],
     }
 
+    // ── Build fetch URL and headers based on auth method ────────────────────
+    let fetchUrl: string
+    let fetchHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+
+    if (credentials) {
+      // Service account: get Bearer token via google-auth-library
+      try {
+        const auth = getGoogleAuth(credentials as Record<string, unknown>)
+        const client = await auth.getClient()
+        const tokenRes = await client.getAccessToken()
+        const token = tokenRes.token
+        if (!token) {
+          console.error('[google-vision] Service account token acquisition returned empty token')
+          return buildEmptyResult(Date.now() - startMs, ['VISION_SA_TOKEN_EMPTY'])
+        }
+        fetchUrl = VISION_API_URL
+        fetchHeaders = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+        console.info('[google-vision] Auth: service_account, project:', status.project_id, 'sa:', status.client_email_masked)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('[google-vision] Service account token error:', msg.slice(0, 200))
+        return buildEmptyResult(Date.now() - startMs, [`VISION_SA_AUTH_ERROR: ${msg.slice(0, 100)}`])
+      }
+    } else {
+      // API key: append to URL
+      fetchUrl = `${VISION_API_URL}?key=${apiKey}`
+    }
+
     let gResponse: GAnnotateResponse
     try {
-      const res = await fetch(`${VISION_API_URL}?key=${apiKey}`, {
+      const res = await fetch(fetchUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: fetchHeaders,
         body: JSON.stringify(requestBody),
         signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
       })
