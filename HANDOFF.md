@@ -1,6 +1,49 @@
-> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core (`ONE_CORE_TPS_ENABLED=1`). **B2 CODE READY** (PR #70): Translation uses Core. **B3 CODE READY** (feat/b3-reparole-core): Re-Parole uses Core. ONE_BRAIN_PARTIAL_3_PRODUCTS defined but not active (all flags OFF by default). Next: B4 (EAD → Core) to complete ONE_BRAIN.
+> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core (`ONE_CORE_TPS_ENABLED=1`). **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (feat/b3-reparole-core, PR #72): Re-Parole wizard calls Core route when `NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED=true`. ONE_BRAIN_PARTIAL_3_PRODUCTS active when owner sets that flag. Next: B4 (EAD → Core) to complete ONE_BRAIN.
 >
-> 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2491 tests passing, tsc 0.
+> 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2503 tests passing, tsc 0.
+
+# HANDOFF — Session 95c (2026-06-03)
+
+## Session 95c — B3 UI WIRING: Re-Parole wizard calls Core route behind flag
+
+**What was done:**
+- Modified `apps/web/src/app/[locale]/services/re-parole-u4u/start/ReparoleWizardV2.tsx`:
+  - Added `REPAROLE_CORE_ENABLED` constant from `NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED` env var
+  - Added `CORE_COVERED_SLOTS = new Set(['passport', 'booklet'])` (US slots always use old path)
+  - Changed `handleUpload`: OCR route selected by flag AND slot coverage
+  - When flag ON + passport/booklet: calls `/api/reparole/ocr/extract`, parses `ReParoleCoreAnswers` shape
+  - When flag OFF OR i94/ead/dl: calls `/api/tps/ocr/extract` (old path, unchanged)
+  - `date_of_birth` (Core key) → `dob` (wizard key) aliased in CORE_FIELD_MAP
+  - `review_required` and `uncertain_fields` from Core response drive `requires_review` per field
+  - I-94 fields: null → not added to fields object (not invented)
+- Created `apps/web/src/app/api/reparole/ocr/extract/__tests__/uiWiring.test.ts`:
+  - 8 source-level wiring tests (flag constant, CORE_COVERED_SLOTS, route selection, response shape)
+  - 4 functional response parsing tests (Core shape mapping, review_required, i94 null, fallback_used)
+  - 12 total new tests, all passing
+
+**What was NOT done:**
+- `NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED=true` NOT set in Vercel (owner decision)
+- EAD → Core (B4) — not done
+- ONE_CORE_REPAROLE_ENABLED (server-side, for the route itself) still needs owner to enable separately
+- i94/ead/dl slots not yet wired to Core (Core doesn't cover them)
+
+**Architecture:**
+- Flag OFF (default): wizard → `/api/tps/ocr/extract` — byte-for-byte identical to before
+- Flag ON, slot passport/booklet: wizard → `/api/reparole/ocr/extract` → Core → `ReParoleCoreAnswers`
+- Flag ON, slot i94/ead/dl: wizard → `/api/tps/ocr/extract` (Core fallback, unchanged)
+- Response parsing: Core JSON top-level fields → wizard `FieldExtraction` records
+- Backend route also gated by `ONE_CORE_REPAROLE_ENABLED` (server-side, separate from frontend flag)
+
+**To go live (owner):**
+1. Set `NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED=true` in Vercel (client-side flag)
+2. Set `ONE_CORE_REPAROLE_ENABLED=true` in Vercel (server-side flag for the route)
+3. Merge PR #72 and deploy
+4. Upload passport in Re-Parole wizard → should call `/api/reparole/ocr/extract`
+5. Verify `family_name`/`given_name`/`dob` populated in form
+
+**Next task:** B4 — EAD → Core
+
+**Evidence:** 12 new tests passing, full suite 2503 passing, tsc 0
 
 # HANDOFF — Session 95 (2026-06-03)
 
