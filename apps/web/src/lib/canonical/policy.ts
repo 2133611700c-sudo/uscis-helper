@@ -19,9 +19,16 @@ export const CRITICAL_FIELDS: ReadonlySet<string> = new Set([
   'given_name',
   'patronymic',
   'date_of_birth',
+  'dob',                  // alias: Gemini docintel emits this key
   'passport_number',
   'a_number',
   'uscis_number',
+  // birth certificate child identity (same criticality as adult fields)
+  'child_family_name',
+  'child_given_name',
+  'child_patronymic',
+  'child_dob',
+  'child_date_of_birth',
 ])
 
 /** Criticality matrix (policy §B). Unlisted keys default to 'low'. */
@@ -30,9 +37,16 @@ const CRITICALITY: Record<string, Criticality> = {
   given_name: 'critical',
   patronymic: 'critical',
   date_of_birth: 'critical',
+  dob: 'critical',               // alias: Gemini docintel emits this key
   passport_number: 'critical',
   a_number: 'critical',
   uscis_number: 'critical',
+  // birth certificate child identity fields
+  child_family_name: 'critical',
+  child_given_name: 'critical',
+  child_patronymic: 'critical',
+  child_dob: 'critical',
+  child_date_of_birth: 'critical',
   issuing_authority: 'high',
   place_of_birth: 'high',
   date_of_issue: 'high',

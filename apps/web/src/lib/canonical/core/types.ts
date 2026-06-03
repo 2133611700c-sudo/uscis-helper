@@ -26,6 +26,10 @@ export interface FieldCandidate {
   fuzzy?: boolean
   /** Free-form reader/zone id for provenance (v1 "evidence" = provenance). */
   provider: string
+  /** The originating reader already flagged this field as needing human review. */
+  reviewRequired?: boolean
+  /** Reasons the reader set reviewRequired (carried into the arbitrated field). */
+  reviewReasons?: string[]
 }
 
 /** The Core result, or an explicit "ask for a better photo" (never garbage). */
