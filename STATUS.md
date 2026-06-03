@@ -1,4 +1,13 @@
 # STATUS — Messenginfo
+## Session 99 (2026-06-03) — MRZ_AUTHORITY_WIRED_CODE_READY (feat/mrz-passport-authority)
+- `MRZ_WIRED_TPS` `/api/tps/ocr/extract` ONE_CORE_TPS_ENABLED path: `mrzCandidatesFromText(result.raw_text)` injected before `arbitrateDocument` for `ua_international_passport`.
+- `MRZ_WIRED_REPAROLE` `/api/reparole/ocr/extract`: Vision OCR runs in parallel with Gemini docintel; MRZ candidates injected before `arbitrateDocument` for `ua_international_passport`.
+- `VALID MRZ` wins for: passport_number, date_of_birth, sex, date_of_expiry, family_name, given_name, nationality. reviewRequired=false.
+- `INVALID MRZ` reviewRequired=true + mrz_check_failed. Never silent fallback.
+- `MISSING MRZ` empty array — visual fallthrough with critical-no-mrz-anchor review.
+- `FORBIDDEN` i94, a_number, ead_category, us_address, eligibility, patronymic — never emitted.
+- `TESTS` 18 new mrzWiringProof tests; full suite 2664/2664; tsc 0.
+- `NOT DONE` MRZ_AUTHORITY_LIVE_CONFIRMED: requires PR merge + Vercel deploy + real passport upload.
 ## Session 98 (2026-06-03) — MRZ AUTHORITY COMPLETE (feat/mrz-passport-authority)
 - `MRZ_AUTHORITY` `canonical/core/mrzAuthority.ts`: wraps `parseMrz` → `FieldCandidate[]` for `CoreReaders.mrzRead`.
 - `VALID MRZ` mrzCheckValid=true, confidence=0.99, reviewRequired=false → Core arbitration gives MRZ absolute authority.
