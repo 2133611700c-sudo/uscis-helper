@@ -1,3 +1,5 @@
+> 🧠 **KNOWLEDGE_DRIVEN_CORE (feat/knowledge-driven-core):** labelValueExtractor.ts: label text never returned as value. birthCertificate.ts: bug fixed — bilingual label lines rejected. militaryId.ts: agency registry wired. mrzAuthority.ts: MrzDebugStatus 6-state classification. Gazetteer: 458 cities generated from КАТОТТГ. 2751/2751 tests, tsc 0, build passes.
+>
 > ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core. **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (PR #72): Re-Parole calls Core route. **B4 UI WIRED** (feat/b4-ead-core, PR #73): EAD wizard calls Core route behind flag. **ONE_BRAIN_COMPLETE_CODE_READY** — all 4 products wired. NEXT: merge PR #73 + set flags in Vercel + redeploy + smoke test.
 >
 > 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2610 tests passing, tsc 0.
@@ -5,6 +7,60 @@
 > 🔒 **MRZ_AUTHORITY_WIRED_CODE_READY (feat/mrz-passport-authority, PR #74):** `mrzCandidatesFromText` connected to TPS (ONE_CORE_TPS_ENABLED path) and Re-Parole (ONE_CORE_REPAROLE_ENABLED path) Core routes for `ua_international_passport`. Valid MRZ wins for 7 controlled fields. Invalid MRZ → reviewRequired=true + mrz_check_failed. Missing MRZ → visual fallthrough + critical_no_mrz_anchor review. 18 new mrzWiringProof.test.ts arbitration-level proof tests. 2664/2664 full suite. tsc 0. NOT DONE: live smoke test requires PR merge + Vercel deploy.
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
+
+# HANDOFF — Session 101 (2026-06-03)
+
+## Session 101 — KNOWLEDGE_DRIVEN_CORE: label/value extractor, birth cert fix, MRZ debug, gazetteer, agency registry
+
+**What was done:**
+
+### PHASE 1 — labelValueExtractor.ts (NEW)
+- Created `apps/web/src/lib/tps/modules/labelValueExtractor.ts`
+- `isLabelText()`: knows 50+ Ukrainian/Russian label strings; rejects bilingual variants ("прізвищ", "ім'я, отчество, по батькові"); detects all-caps Cyrillic headers; detects multi-label lines (2+ labels = header row).
+- `isCyrillicValue()`: accepts real Cyrillic values, rejects anything `isLabelText()` returns true for.
+- `extractValueAfterLabel()`: inline tail stripped + label-checked before accepting; prev-line and next-line scanning stops at label boundaries; null+review_required when no value found; review_required=true when multiple candidates.
+- 29 unit tests in `__tests__/labelValueExtractor.test.ts` — all pass.
+
+### PHASE 2 — birthCertificate.ts (FIXED)
+- `extractFieldFromBlock()` now delegates to `extractValueAfterLabel` with `allowPrevLine=false`.
+- Bug fixed: "Прізвище / Прізвищ" → `child_family_name=null` (was returning "/ Прізвищ").
+- Bug fixed: "ім'я, отчество, по батькові" → `child_given_name=null` (was returning the label string).
+- Imported `translateCivilRegistryTerm` + `lookupAuthority` from `@uscis-helper/knowledge` — `translateAuthority()` now tries registry as fallback after hardcoded glossary.
+- 5 new Phase 2 regression tests added to `birthCertificate.test.ts` (26 total, all pass).
+- `looksLikeBirthCertLabel` function is now dead code (kept, not called).
+
+### PHASE 3 — militaryId.ts (agency registry wired)
+- `translateAuthority()` now calls `lookupAuthority()` from registry as fallback.
+- Covers ТЦК (Territorial Recruitment Center, the post-2022 name for military commissariats).
+- All 20 existing tests pass.
+
+### PHASE 4 — mrzAuthority.ts (MRZ debug classification)
+- Added `MrzDebugStatus` type: 6 states — valid_mrz, no_mrz_lines, partial_mrz_lines, check_digit_failed, ocr_noise_in_mrz, mrz_parse_error.
+- `classifyMrzStatus(rawText, parsedOk, checks)` — inspects raw OCR for TD3/TD1 line patterns.
+- `parseMrzFromText(rawText)` — returns `MrzParseResult` with valid, debug_status, mrz_lines_found, candidates, check_digits_pass.
+- Existing `mrzCandidatesFromText()` and `mrzReadFromOcrText()` unchanged.
+
+### PHASE 5 — Gazetteer
+- Downloaded КАТОТТГ JSON from GitHub (5.7 MB, orderDate 2024-01-19).
+- Ran `gen-settlements.mts` — generated 458 city rows → `packages/knowledge/src/registry/settlements.generated.ts`.
+- Already wired into `registryIndex.ts` lazy singleton (SETTLEMENT_ROWS merged with REGISTRY_ROWS).
+
+### PHASE 6 — Agency registry
+- Confirmed: registry.csv already has РАЦС, ЗАГС, МВС, поліція, міліція, ДМС, ТЦК with source_url proofs.
+- Wired into `birthCertificate.ts` and `militaryId.ts` authority translation as registry fallback.
+
+**Tests: 2751/2751 passing (34 new). tsc: 0 errors. Build: passes.**
+
+**What was NOT done:**
+- MRZ debug status not yet wired into OCR route response (routes still return FieldCandidate[] only; MrzParseResult available but not called in routes). Non-blocking — routes can call parseMrzFromText() instead of mrzCandidatesFromText() when they want debug info.
+- No new live benchmark run (no real document uploaded).
+- `looksLikeBirthCertLabel` dead code in birthCertificate.ts not removed (safe, TypeScript doesn't error on unused functions in non-strict unused-locals mode).
+
+**Next exact task:**
+1. Merge this PR (feat/knowledge-driven-core).
+2. Update OCR routes to call `parseMrzFromText()` instead of `mrzCandidatesFromText()` to surface `debug_status` in API responses.
+3. Owner: upload real birth certificate to verify label-as-value fix.
+4. Owner: upload real military ID to verify agency registry hit for authority field.
 
 # HANDOFF — Session 100 (2026-06-03)
 

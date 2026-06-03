@@ -24,6 +24,68 @@ import { parseMrz } from '@uscis-helper/knowledge'
 import type { FieldCandidate } from './types'
 
 // ---------------------------------------------------------------------------
+// MRZ debug status classification
+// ---------------------------------------------------------------------------
+
+/**
+ * Debug status for MRZ parsing — surfaces specific failure reasons so that
+ * routes can return targeted diagnostics instead of a generic NOT_PRESENT.
+ *
+ * valid_mrz              — all check digits pass; MRZ is trusted.
+ * no_mrz_lines           — no 44-char (TD3) or 30-char (TD1) lines found in OCR.
+ * partial_mrz_lines      — found 1 of the 2 required lines (truncated OCR, line wrap).
+ * check_digit_failed     — MRZ lines found but at least one check digit is invalid.
+ * ocr_noise_in_mrz       — looks like MRZ zone but contains invalid characters.
+ * mrz_parse_error        — parser threw (malformed input, internal error).
+ */
+export type MrzDebugStatus =
+  | 'valid_mrz'
+  | 'no_mrz_lines'
+  | 'partial_mrz_lines'
+  | 'check_digit_failed'
+  | 'ocr_noise_in_mrz'
+  | 'mrz_parse_error'
+
+/**
+ * Classify the MRZ debug status from raw OCR text BEFORE parsing.
+ * Returns a status string that explains WHY the MRZ was not found or was invalid.
+ */
+export function classifyMrzStatus(rawText: string, parsedOk: boolean, parsedChecks?: {
+  passport_no: boolean; dob: boolean; expiry: boolean
+}): MrzDebugStatus {
+  if (parsedOk && parsedChecks?.passport_no && parsedChecks?.dob && parsedChecks?.expiry) {
+    return 'valid_mrz'
+  }
+
+  // Detect potential MRZ lines: TD3 = 44 chars, TD1 = 30 chars
+  const lines = rawText.split(/\r?\n/)
+  const td3Lines = lines.filter(l => /^[A-Z0-9<]{44}$/.test(l.trim()))
+  const td1Lines = lines.filter(l => /^[A-Z0-9<]{30}$/.test(l.trim()))
+
+  // Lines that look like MRZ but have invalid chars (OCR noise)
+  const mrzLike44 = lines.filter(l => /^[A-Z0-9<\s]{40,48}$/.test(l.trim()) && /[^A-Z0-9<\s]/.test(l.trim()))
+  const mrzLike30 = lines.filter(l => /^[A-Z0-9<\s]{27,33}$/.test(l.trim()) && /[^A-Z0-9<\s]/.test(l.trim()))
+
+  if (td3Lines.length >= 2 || td1Lines.length >= 3) {
+    // Lines look valid but check digits failed
+    if (parsedChecks && (!parsedChecks.passport_no || !parsedChecks.dob || !parsedChecks.expiry)) {
+      return 'check_digit_failed'
+    }
+    return 'check_digit_failed' // check digits failed (parsedOk=false means parser ran but failed checks)
+  }
+
+  if (td3Lines.length === 1 || td1Lines.length === 1 || td1Lines.length === 2) {
+    return 'partial_mrz_lines'
+  }
+
+  if (mrzLike44.length >= 1 || mrzLike30.length >= 2) {
+    return 'ocr_noise_in_mrz'
+  }
+
+  return 'no_mrz_lines'
+}
+
+// ---------------------------------------------------------------------------
 // Fields that MRZ is authoritative for (must match arbitration.ts PASSPORT_MRZ_FIELDS)
 // ---------------------------------------------------------------------------
 
@@ -116,6 +178,78 @@ export function mrzCandidatesFromText(rawText: string): FieldCandidate[] {
   }
 
   return candidates
+}
+
+/**
+ * Extended MRZ parse result with debug classification.
+ * Used by routes that need to return specific failure reasons.
+ */
+export interface MrzParseResult {
+  valid: boolean
+  debug_status: MrzDebugStatus
+  mrz_lines_found: number
+  candidates: FieldCandidate[]
+  check_digits_pass: {
+    passport_no: boolean
+    dob: boolean
+    expiry: boolean
+  }
+}
+
+/**
+ * Parse MRZ from raw OCR text and return an extended result with debug status.
+ *
+ * This is the recommended function for routes/endpoints that need to surface
+ * the specific reason why MRZ was not found or invalid:
+ *
+ *   valid_mrz           → all checks pass, candidates have mrzCheckValid=true
+ *   no_mrz_lines        → no MRZ-like lines found at all
+ *   partial_mrz_lines   → found 1 of 2 required lines (OCR truncation?)
+ *   check_digit_failed  → lines found but check digits bad (OCR quality?)
+ *   ocr_noise_in_mrz    → MRZ zone has invalid characters (OCR noise)
+ *   mrz_parse_error     → parser threw
+ *
+ * Use `candidates` from this result instead of calling mrzCandidatesFromText separately.
+ */
+export function parseMrzFromText(rawText: string): MrzParseResult {
+  let mrz: ReturnType<typeof parseMrz>
+  try {
+    mrz = parseMrz(rawText)
+  } catch {
+    return {
+      valid: false,
+      debug_status: 'mrz_parse_error',
+      mrz_lines_found: 0,
+      candidates: [],
+      check_digits_pass: { passport_no: false, dob: false, expiry: false },
+    }
+  }
+
+  const candidates = mrzCandidatesFromText(rawText)
+  const allChecksPass = mrz.checks.passport_no && mrz.checks.dob && mrz.checks.expiry
+  const noCandidates = !mrz.ok && !mrz.surname && !mrz.passport_no
+
+  // Count MRZ-like lines for debug classification
+  const lines = rawText.split(/\r?\n/)
+  const td3Lines = lines.filter(l => /^[A-Z0-9<]{44}$/.test(l.trim())).length
+  const td1Lines = lines.filter(l => /^[A-Z0-9<]{30}$/.test(l.trim())).length
+  const mrzLinesFound = td3Lines + td1Lines
+
+  const debugStatus = noCandidates
+    ? classifyMrzStatus(rawText, false, undefined)
+    : classifyMrzStatus(rawText, allChecksPass, mrz.checks)
+
+  return {
+    valid: allChecksPass && !noCandidates,
+    debug_status: debugStatus,
+    mrz_lines_found: mrzLinesFound,
+    candidates,
+    check_digits_pass: {
+      passport_no: mrz.checks.passport_no,
+      dob: mrz.checks.dob,
+      expiry: mrz.checks.expiry,
+    },
+  }
 }
 
 /**
