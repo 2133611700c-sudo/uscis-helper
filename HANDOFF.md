@@ -1,4 +1,4 @@
-> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. B1 branch `feat/b1-tps-core-flag` (PR #69) adds `ONE_CORE_TPS_ENABLED=1` flag to TPS OCR route — TPS → Core (Gemini docintel) → arbitration → toTPSAnswers adapter. Flag OFF = old path unchanged. PROOF needed on real Ukrainian document before merge. One brain is NOT live until PR #69 is merged and real-document proof completed.
+> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE (2026-06-03)**: TPS uses Core in production (SHA 084137c, `ONE_CORE_TPS_ENABLED=1`). Proven on real Ukrainian booklet: core_status=ok, critical_wrong_count=0. GEMINI_MODEL=gemini-2.5-flash, GEMINI_API_KEY_PAY updated. Next: B2 (Translation → Core), B3 (Re-Parole → Core).
 
 # HANDOFF — Session 93 (2026-06-03)
 

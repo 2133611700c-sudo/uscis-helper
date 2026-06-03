@@ -3,6 +3,10 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — Session 93b: Paid Gemini key test + ONE BRAIN live in TPS prod
+
+Tested new paid Gemini API key (project 732980155584). gemini-2.5-flash ✅ (5-9s/doc), gemini-3.5-flash ✅. gemini-3.1-pro-preview/gemini-2.0-flash quota-exceeded. All 4 real docs tested: birth_cert_handwritten 4/4 critical ✅, birth_cert_soviet 4/4 ✅, military_id 4/4 ✅. Updated Vercel: GEMINI_API_KEY_PAY (new key), GEMINI_MODEL=gemini-2.5-flash, ONE_CORE_TPS_ENABLED=1. PROD TPS Core test SHA 084137c: core_status=ok, 4 fields (family_name/given_name/dob/province_of_birth), src=canonical_core, critical_wrong_count=0. ONE BRAIN LIVE IN TPS PRODUCTION. Fixed session docs guard: unbound variable crash on empty commits.
+
 ## 2026-06-03 — Session 93: B1 — TPS → Core behind flag (branch feat/b1-tps-core-flag)
 
 B0 verified (partial): PR #67 SHA 1c0261c in prod, Gemini key resolves, route responds with JSON (not crash). Real-doc verification UNVERIFIED. Found and removed premature ONE_BRAIN_CORE_ENABLED=1 flag (was causing Cloudflare 502 via double Gemini calls). B1 code: (1) TpsExtractionSource adds 'canonical_core'; (2) canonical/core/tpsAdapter.ts: mapTpsHintToDocintelId, canonicalFieldToTpsField, canonicalToTpsModuleResult; (3) TPS OCR route adds ONE_CORE_TPS_ENABLED=1 path before existing switch — Core runs first, falls back to old path if Core returns nothing. US forms (i94/ead/dl/i797) always use old path. Architecture correct per ONE_BRAIN_DECISION.md: TPS → Core → arbitration → adapter → existing contract/normalize pipeline. NOT live: flag not set in Vercel, needs real-doc proof. Evidence: tpsAdapter.test 12/12; full web 2407 pass; tsc 0. Files: types.ts, tpsAdapter.ts (new), tpsAdapter.test.ts (new), ocr/extract/route.ts, STATUS/HANDOFF/CHANGELOG.

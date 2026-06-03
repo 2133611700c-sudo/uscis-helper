@@ -138,6 +138,11 @@ case "$mode" in
     while IFS= read -r line; do
       staged_files+=("$line")
     done < <(git diff --cached --name-only)
+    # Empty commit (no staged files) — skip guard (e.g. chore: redeploy, merge commits)
+    if [[ ${#staged_files[@]} -eq 0 ]]; then
+      echo "OK: empty commit (no staged files) — session docs guard skipped"
+      exit 0
+    fi
     check_file_list "staged changes" "${staged_files[@]}"
     ;;
   --files)
