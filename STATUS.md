@@ -3,6 +3,7 @@
 - `B2 CODE` `translationAdapter.ts`: `buildCyrillicMap()` preserves original Cyrillic before KMU-55 erases it. `toTranslationRows(fields, cyrillicMap)` = B2 named adapter. `canonicalToFieldOut` updated to accept optional cyrillicMap.
 - `B2 ROUTE` `vision-extract/route.ts` Core path builds cyrillicMap from docintel output, calls `toTranslationRows`. Logs `[ONE_BRAIN_CORE B2]`.
 - `B2 PROOF` internal_passport, gemini-2.5-flash, 7.3s: cyrillic_preserved=5/6, latin_produced=5/6, critical_wrong_count=0 ✅
+- `FIX` Core path now runs BEFORE central-brain. When ONE_BRAIN_CORE_ENABLED=1, central-brain is skipped (was failing anyway + degrading all fields). Core has priority.
 - `NOT LIVE` ONE_BRAIN_CORE_ENABLED not yet set for Translation. Set in Vercel after PR merge.
 ## Session 93b (2026-06-03) — ONE BRAIN LIVE IN TPS PRODUCTION (SHA 084137c)
 - `LIVE ✅` TPS OCR `/api/tps/ocr/extract` → Core path active. `core_status: ok` on real Ukrainian booklet. `src=canonical_core`. `critical_wrong_count=0`. Fields: family_name, given_name, dob, province_of_birth.
