@@ -2600,3 +2600,8 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - Added switch cases: 'military_id', 'birth_certificate'
 - Fixed test file: duplicate result var + stale module.fields references
 - tsc: 0 errors
+
+## 2026-06-03 | fix: militaryId looksLikeMilitaryLabel — skip УКРАЇНА header
+- Added УКРАЇНА/УКРАЇНА to military label filter
+- Prevents country header from being picked as family_name
+- 20/20 tests passing
