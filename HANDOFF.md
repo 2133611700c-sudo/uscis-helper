@@ -576,3 +576,8 @@ Closed the owner request: test every product without payment. Inventory: TPS wiz
 - Fixed: УКРАЇНА was being extracted as family_name (header text before serial number)
 - Fix: added to looksLikeMilitaryLabel filter
 - Tests: 20/20 passing
+
+## 2026-06-03 | translation rotation fix
+- Added preprocessImage to translation/vision-extract/route.ts
+- Fixes upside-down document not being read in translation flow
+- tsc: 0 errors
