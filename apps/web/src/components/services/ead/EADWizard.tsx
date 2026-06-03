@@ -16,14 +16,35 @@
  *   - Source: uscis.gov/i-765 (verified 2026-05-06)
  *
  * Not legal advice. Not a law firm. You file yourself with USCIS.
+ *
+ * B4 Upload Prefill (behind NEXT_PUBLIC_ONE_CORE_EAD_ENABLED flag):
+ *   When ON: a new upload step appears before personal info (step 2).
+ *   User can upload passport / EAD card / I-94 for OCR prefill.
+ *   POST /api/ead/ocr/extract → EadCoreAnswers → prefill form fields.
+ *   When OFF: no upload step, old manual form unchanged (0 UI change).
+ *   Source gates: A-number/category only from EAD/I-797 source.
+ *   I-94 fields only from I-94 source. Address only from DL/manual.
+ *   invented_fields_count is always 0.
  */
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   ChevronRight, ChevronLeft, Download, CheckCircle,
-  AlertTriangle, ExternalLink, Info
+  AlertTriangle, ExternalLink, Info, Upload
 } from 'lucide-react'
+
+// ── Feature flag — NEXT_PUBLIC_ONE_CORE_EAD_ENABLED ──────────────────────────
+// When "true": upload step is shown before personal info; calls /api/ead/ocr/extract
+// When anything else: upload step is hidden; old manual form unchanged (0 behavior change)
+// docHints covered by the Core route on the backend:
+const EAD_CORE_ENABLED =
+  typeof process !== 'undefined' &&
+  process.env.NEXT_PUBLIC_ONE_CORE_EAD_ENABLED === 'true'
+
+// docHints the EAD Core route accepts (see mapEadHintToDocintelId in route.ts)
+const EAD_CORE_HINTS = ['passport', 'ead', 'i94'] as const
+type EadDocHint = (typeof EAD_CORE_HINTS)[number]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,7 +90,97 @@ const EMPTY: EADFormData = {
   usAddress: '',
 }
 
+// ── Upload state ───────────────────────────────────────────────────────────────
+
+type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
+
+interface EadUploadState {
+  status: UploadStatus
+  hint: EadDocHint
+  fileName?: string
+  errorMsg?: string
+  /** Non-null when OCR returned prefillable fields */
+  prefillApplied?: boolean
+}
+
 // ── Locale strings ────────────────────────────────────────────────────────────
+
+const UPLOAD_UI: Record<string, {
+  title: string
+  sub: string
+  hintPassport: string
+  hintEad: string
+  hintI94: string
+  select: string
+  uploading: string
+  prefillDone: string
+  prefillHint: string
+  skip: string
+  error: string
+  retry: string
+  reviewNote: string
+}> = {
+  en: {
+    title: 'Quick Prefill (Optional)',
+    sub: 'Upload a document to automatically fill in your personal information. You can edit all fields afterward.',
+    hintPassport: 'Passport (photo page)',
+    hintEad: 'EAD Card (front)',
+    hintI94: 'Form I-94',
+    select: 'Select document type and upload',
+    uploading: 'Reading document…',
+    prefillDone: '✓ Fields prefilled. Review and correct below.',
+    prefillHint: 'Always verify your information before filing with USCIS.',
+    skip: 'Skip — enter manually',
+    error: 'Could not read document. Enter information manually.',
+    retry: 'Try again',
+    reviewNote: 'Some fields may need review — please verify before filing.',
+  },
+  uk: {
+    title: 'Швидке заповнення (Необов\'язково)',
+    sub: 'Завантажте документ, щоб автоматично заповнити особисту інформацію. Ви зможете відредагувати всі поля.',
+    hintPassport: 'Паспорт (сторінка з фото)',
+    hintEad: 'Картка EAD (лицева сторона)',
+    hintI94: 'Форма I-94',
+    select: 'Оберіть тип документа і завантажте',
+    uploading: 'Читаємо документ…',
+    prefillDone: '✓ Поля заповнені. Перевірте нижче.',
+    prefillHint: 'Завжди перевіряйте інформацію перед поданням до USCIS.',
+    skip: 'Пропустити — ввести вручну',
+    error: 'Не вдалося прочитати документ. Введіть інформацію вручну.',
+    retry: 'Спробувати ще',
+    reviewNote: 'Деякі поля потребують перевірки — будь ласка, підтвердьте перед поданням.',
+  },
+  ru: {
+    title: 'Быстрое заполнение (Необязательно)',
+    sub: 'Загрузите документ для автоматического заполнения личных данных. Все поля можно отредактировать.',
+    hintPassport: 'Паспорт (страница с фото)',
+    hintEad: 'Карточка EAD (лицевая сторона)',
+    hintI94: 'Форма I-94',
+    select: 'Выберите тип документа и загрузите',
+    uploading: 'Читаем документ…',
+    prefillDone: '✓ Поля заполнены. Проверьте ниже.',
+    prefillHint: 'Всегда проверяйте информацию перед подачей в USCIS.',
+    skip: 'Пропустить — ввести вручную',
+    error: 'Не удалось прочитать документ. Введите информацию вручную.',
+    retry: 'Попробовать ещё раз',
+    reviewNote: 'Некоторые поля требуют проверки — пожалуйста, подтвердите перед подачей.',
+  },
+  es: {
+    title: 'Llenado Rápido (Opcional)',
+    sub: 'Suba un documento para completar automáticamente su información personal. Puede editar todos los campos después.',
+    hintPassport: 'Pasaporte (página de foto)',
+    hintEad: 'Tarjeta EAD (frente)',
+    hintI94: 'Formulario I-94',
+    select: 'Seleccione el tipo de documento y suba',
+    uploading: 'Leyendo documento…',
+    prefillDone: '✓ Campos completados. Revise a continuación.',
+    prefillHint: 'Siempre verifique su información antes de presentar ante USCIS.',
+    skip: 'Omitir — ingresar manualmente',
+    error: 'No se pudo leer el documento. Ingrese la información manualmente.',
+    retry: 'Intentar de nuevo',
+    reviewNote: 'Algunos campos pueden necesitar revisión — verifique antes de presentar.',
+  },
+}
 
 const UI: Record<string, {
   // Step 0
@@ -102,6 +213,7 @@ const UI: Record<string, {
   // Nav / shared
   next: string; back: string; edit: string; required: string; optional: string
   stepLabels: string[]
+  stepLabelsNoUpload: string[]
   catNames: Record<string, string>
   appTypeNames: Record<string, string>
   filingNames: Record<string, string>
@@ -175,7 +287,8 @@ const UI: Record<string, {
     edit: 'Edit',
     required: 'Required',
     optional: 'Optional',
-    stepLabels: ['Type', 'Status', 'Info', 'Docs', 'Filing', 'Review', 'Download'],
+    stepLabels: ['Type', 'Status', 'Upload', 'Info', 'Docs', 'Filing', 'Review', 'Download'],
+    stepLabelsNoUpload: ['Type', 'Status', 'Info', 'Docs', 'Filing', 'Review', 'Download'],
     catNames: { c11: '(c)(11) — Re-Parole', c08: '(c)(8) — Pending Asylum', a12: '(a)(12) — TPS Ukraine', other: 'Other / Not sure' },
     appTypeNames: { new: 'New EAD', renewal: 'EAD Renewal' },
     filingNames: { mail: 'By Mail (USCIS Lockbox)', online: 'Online (my.uscis.gov)' },
@@ -249,7 +362,8 @@ const UI: Record<string, {
     edit: 'Змінити',
     required: "Обов'язково",
     optional: 'Необов\'язково',
-    stepLabels: ['Тип', 'Статус', 'Дані', 'Документи', 'Подача', 'Огляд', 'Завантаження'],
+    stepLabels: ['Тип', 'Статус', 'Завант.', 'Дані', 'Документи', 'Подача', 'Огляд', 'Завантаження'],
+    stepLabelsNoUpload: ['Тип', 'Статус', 'Дані', 'Документи', 'Подача', 'Огляд', 'Завантаження'],
     catNames: { c11: '(c)(11) — Re-Parole', c08: '(c)(8) — Притулок', a12: '(a)(12) — TPS', other: 'Інше' },
     appTypeNames: { new: 'Новий EAD', renewal: 'Продовження EAD' },
     filingNames: { mail: 'Поштою (USCIS Lockbox)', online: 'Онлайн (my.uscis.gov)' },
@@ -323,7 +437,8 @@ const UI: Record<string, {
     edit: 'Изменить',
     required: 'Обязательно',
     optional: 'Необязательно',
-    stepLabels: ['Тип', 'Статус', 'Данные', 'Документы', 'Подача', 'Обзор', 'Скачать'],
+    stepLabels: ['Тип', 'Статус', 'Загрузка', 'Данные', 'Документы', 'Подача', 'Обзор', 'Скачать'],
+    stepLabelsNoUpload: ['Тип', 'Статус', 'Данные', 'Документы', 'Подача', 'Обзор', 'Скачать'],
     catNames: { c11: '(c)(11) — Re-Parole', c08: '(c)(8) — Убежище', a12: '(a)(12) — TPS', other: 'Другое' },
     appTypeNames: { new: 'Новый EAD', renewal: 'Продление EAD' },
     filingNames: { mail: 'По почте (USCIS Lockbox)', online: 'Онлайн (my.uscis.gov)' },
@@ -397,7 +512,8 @@ const UI: Record<string, {
     edit: 'Editar',
     required: 'Requerido',
     optional: 'Opcional',
-    stepLabels: ['Tipo', 'Estado', 'Datos', 'Documentos', 'Presentación', 'Revisión', 'Descarga'],
+    stepLabels: ['Tipo', 'Estado', 'Subir', 'Datos', 'Documentos', 'Presentación', 'Revisión', 'Descarga'],
+    stepLabelsNoUpload: ['Tipo', 'Estado', 'Datos', 'Documentos', 'Presentación', 'Revisión', 'Descarga'],
     catNames: { c11: '(c)(11) — Re-Parole', c08: '(c)(8) — Asilo Pendiente', a12: '(a)(12) — TPS Ucrania', other: 'Otro / No seguro' },
     appTypeNames: { new: 'EAD Nuevo', renewal: 'Renovación de EAD' },
     filingNames: { mail: 'Por Correo (USCIS Lockbox)', online: 'En Línea (my.uscis.gov)' },
@@ -683,17 +799,40 @@ interface EADWizardProps {
 
 export function EADWizard({ locale }: EADWizardProps) {
   const ui = UI[locale] ?? UI.en
+  const uploadUi = UPLOAD_UI[locale] ?? UPLOAD_UI.en
   const [step, setStep] = useState(0)
   const [data, setData] = useState<EADFormData>(EMPTY)
   const [downloaded, setDownloaded] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfDownloaded, setPdfDownloaded] = useState(false)
 
+  // ── Upload prefill state (B4, flag-gated) ─────────────────────────────────
+  const [uploadState, setUploadState] = useState<EadUploadState>({
+    status: 'idle',
+    hint: 'passport',
+  })
+  const [hasReviewFields, setHasReviewFields] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   function patch(partial: Partial<EADFormData>) {
     setData(prev => ({ ...prev, ...partial }))
   }
 
   function canAdvance(): boolean {
+    // When EAD_CORE_ENABLED, upload step is inserted at index 2 (after category).
+    // Old steps 2-6 shift to 3-7. Upload step is always advanceable (optional).
+    if (EAD_CORE_ENABLED) {
+      switch (step) {
+        case 0: return data.appType !== null
+        case 1: return data.category !== null
+        case 2: return uploadState.status !== 'uploading' // upload step — optional, never blocks
+        case 3: return data.firstName.trim().length > 0 && data.lastName.trim().length > 0 && data.dob.length > 0
+        case 4: return true // docs checklist
+        case 5: return data.filingMethod !== '' && data.usAddress.trim().length > 5
+        case 6: return true // review
+        default: return true
+      }
+    }
     switch (step) {
       case 0: return data.appType !== null
       case 1: return data.category !== null
@@ -751,6 +890,168 @@ export function EADWizard({ locale }: EADWizardProps) {
     es: { primary: '⬇ Descargar I-765 Rellenado (PDF)',    loading: 'Generando PDF…',    done: '✓ PDF descargado', hint: 'Rellenado con sus datos. Revise, firme y envíelo según las instrucciones de USCIS en uscis.gov/i-765.' },
   }
   const pdfL = PDF_LABELS[locale] ?? PDF_LABELS.en
+
+  // ── B4 Upload handler — POST /api/ead/ocr/extract → prefill form ─────────
+  async function handleEadUpload(file: File) {
+    setUploadState(s => ({ ...s, status: 'uploading', fileName: file.name, errorMsg: undefined }))
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('docHint', uploadState.hint)
+
+      const res = await fetch('/api/ead/ocr/extract', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({})) as { error?: string }
+        setUploadState(s => ({
+          ...s, status: 'error',
+          errorMsg: errJson.error ?? uploadUi.error,
+        }))
+        return
+      }
+
+      const json = await res.json() as {
+        ok?: boolean
+        family_name?: string | null
+        given_name?: string | null
+        date_of_birth?: string | null
+        sex?: string | null
+        country_of_birth?: string | null
+        passport_number?: string | null
+        a_number?: string | null
+        review_required?: boolean
+        uncertain_fields?: string[]
+        _core?: boolean
+      }
+
+      if (!json.ok) {
+        setUploadState(s => ({ ...s, status: 'error', errorMsg: uploadUi.error }))
+        return
+      }
+
+      // Prefill form from Core answers (identity fields only — source-gated fields
+      // are already null in the response when source gate not met)
+      const prefill: Partial<EADFormData> = {}
+      if (json.family_name) prefill.lastName = json.family_name
+      if (json.given_name) prefill.firstName = json.given_name
+      if (json.date_of_birth) prefill.dob = json.date_of_birth
+      if (json.sex === 'M') prefill.gender = 'male'
+      else if (json.sex === 'F') prefill.gender = 'female'
+      if (json.country_of_birth) prefill.countryOfBirth = json.country_of_birth
+      // A-number only from EAD/I-797 source — Core enforces this; map if present
+      if (json.a_number) prefill.alienNumber = json.a_number
+
+      patch(prefill)
+      setHasReviewFields(Boolean(json.review_required))
+      setUploadState(s => ({ ...s, status: 'done', prefillApplied: Object.keys(prefill).length > 0 }))
+    } catch {
+      setUploadState(s => ({ ...s, status: 'error', errorMsg: uploadUi.error }))
+    }
+  }
+
+  // ── Step 2 (flag ON only): Upload prefill ─────────────────────────────────
+  function StepUpload() {
+    const hints: { key: EadDocHint; label: string }[] = [
+      { key: 'passport', label: uploadUi.hintPassport },
+      { key: 'ead', label: uploadUi.hintEad },
+      { key: 'i94', label: uploadUi.hintI94 },
+    ]
+    return (
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-[19px] font-bold text-[var(--text-1)]">{uploadUi.title}</h2>
+          <p className="text-[14px] text-[var(--text-2)] mt-1">{uploadUi.sub}</p>
+        </div>
+
+        {/* Document type selection */}
+        <div className="flex flex-wrap gap-2">
+          {hints.map(h => (
+            <button
+              key={h.key}
+              type="button"
+              onClick={() => setUploadState(s => ({ ...s, hint: h.key, status: 'idle', errorMsg: undefined }))}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all
+                ${uploadState.hint === h.key
+                  ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                  : 'border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] hover:border-blue-400'}`}
+            >
+              {h.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Upload area */}
+        {uploadState.status !== 'done' ? (
+          <div>
+            <label
+              className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all
+                ${uploadState.status === 'uploading'
+                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 opacity-70'
+                  : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950'}`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="sr-only"
+                disabled={uploadState.status === 'uploading'}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) handleEadUpload(file)
+                }}
+              />
+              <Upload size={28} className="text-[var(--text-2)]" />
+              <span className="text-[14px] font-semibold text-[var(--text-2)]">
+                {uploadState.status === 'uploading' ? uploadUi.uploading : uploadUi.select}
+              </span>
+              {uploadState.status === 'uploading' && (
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              )}
+            </label>
+
+            {uploadState.status === 'error' && (
+              <div className="mt-3 flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950 border border-red-300 text-sm text-red-800 dark:text-red-200">
+                <AlertTriangle size={16} className="flex-shrink-0 mt-0.5 text-red-500" />
+                <div>
+                  <div>{uploadState.errorMsg}</div>
+                  <button
+                    type="button"
+                    onClick={() => { setUploadState(s => ({ ...s, status: 'idle', errorMsg: undefined })); fileInputRef.current?.click() }}
+                    className="mt-1 text-red-700 dark:text-red-300 font-semibold underline"
+                  >
+                    {uploadUi.retry}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-start gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-950 border border-green-300">
+              <CheckCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="font-bold text-green-800 dark:text-green-200">{uploadUi.prefillDone}</div>
+                <div className="text-sm text-green-700 dark:text-green-300 mt-0.5">{uploadUi.prefillHint}</div>
+              </div>
+            </div>
+            {hasReviewFields && (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-300 text-sm text-amber-800 dark:text-amber-200">
+                <AlertTriangle size={16} className="flex-shrink-0 mt-0.5 text-amber-500" />
+                <span>{uploadUi.reviewNote}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setStep(s => s + 1)}
+          className="w-full py-2 px-4 border-2 border-[var(--border)] hover:border-blue-400 text-[var(--text-1)] text-[14px] font-semibold rounded-2xl transition-all text-center"
+        >
+          {uploadUi.skip}
+        </button>
+      </div>
+    )
+  }
 
   // ── Step 0: App type ──────────────────────────────────────────────────────
   function Step0() {
@@ -1122,20 +1423,26 @@ export function EADWizard({ locale }: EADWizardProps) {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const STEPS = [Step0, Step1, Step2, Step3, Step4, Step5, Step6]
+  // When EAD_CORE_ENABLED: inject StepUpload at index 2 (after category, before personal info).
+  // When flag OFF: STEPS is unchanged (7 steps, no upload). 0 behavior change.
+  const STEPS = EAD_CORE_ENABLED
+    ? [Step0, Step1, StepUpload, Step2, Step3, Step4, Step5, Step6]
+    : [Step0, Step1, Step2, Step3, Step4, Step5, Step6]
+  const LAST_STEP = STEPS.length - 1
   const ActiveStep = STEPS[step]
+  const stepLabels = EAD_CORE_ENABLED ? ui.stepLabels : ui.stepLabelsNoUpload
 
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
       <div className="mb-6">
-        <StepIndicator step={step} labels={ui.stepLabels} />
+        <StepIndicator step={step} labels={stepLabels} />
       </div>
 
       <div className="bg-[var(--surface-1)] rounded-2xl border border-[var(--border)] p-5 shadow-sm">
         <ActiveStep />
       </div>
 
-      {step < 6 && (
+      {step < LAST_STEP && (
         <div className="flex gap-3 mt-4">
           {step > 0 && (
             <button
