@@ -49,6 +49,11 @@ import {
   type DocumentBrainOutput,
 } from '@/lib/tps/ai/documentBrain'
 import { postExtractNormalize } from '@/lib/tps/ocr/postExtractNormalize'
+// ONE BRAIN B1: TPS → Core behind flag (ONE_CORE_TPS_ENABLED=1, default OFF)
+import { readDocument } from '@/lib/docintel/documentFieldReader'
+import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
+import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
+import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
 
 // Vision REST call needs full Node runtime (Buffer + fetch with timeout).
 export const runtime = 'nodejs'
@@ -205,6 +210,45 @@ export async function POST(req: NextRequest) {
   // with a rotated image, we want downstream Brain calls to see the
   // text from the successful rotation, not the first failed attempt.
   let effectiveOcrResult = result
+
+  // ── ONE BRAIN B1: Core path (flag-gated; ONE_CORE_TPS_ENABLED=1, default OFF) ──
+  // TPS → readDocumentCore(Gemini visual) → arbitration → toTPSAnswers adapter.
+  // Covers Ukrainian identity documents (passport, booklet) only.
+  // US-form slots (i94/ead/dl/i797) fall through to old path unchanged.
+  // Falls back to old path on any error — prod safety guaranteed.
+  let coreStatus: 'off' | 'skipped_no_mapping' | 'skipped_no_fields' | 'ok' | 'error' = 'off'
+  let oldModuleForComparison: TpsModuleResult | null = null
+  if (process.env.ONE_CORE_TPS_ENABLED === '1') {
+    const docintelId = mapTpsHintToDocintelId(docTypeHint)
+    if (!docintelId) {
+      coreStatus = 'skipped_no_mapping'
+    } else {
+      try {
+        const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000 })
+        if (coreRead.ok && Array.isArray(coreRead.fields) && coreRead.fields.length > 0) {
+          const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
+          const canonicalFields = arbitrateDocument(candidates)
+          if (canonicalFields.length > 0) {
+            moduleResult = canonicalToTpsModuleResult(canonicalFields, docTypeHint, document_id)
+            coreStatus = 'ok'
+            console.info('[ONE_CORE_TPS] used Core for', docTypeHint, 'fields:', moduleResult.fields.length,
+              'review_required:', moduleResult.fields.filter(f => f.review_required).length)
+          } else {
+            coreStatus = 'skipped_no_fields'
+          }
+        } else {
+          coreStatus = 'skipped_no_fields'
+        }
+      } catch (e: any) {
+        console.error('[ONE_CORE_TPS] error, falling back to old path:', e?.message ?? e)
+        coreStatus = 'error'
+        moduleResult = null // ensure we fall through to old path
+      }
+    }
+  }
+
+  // Old path: runs when Core is OFF, not applicable, or failed.
+  if (moduleResult === null) {
   switch (docTypeHint) {
     case 'passport': {
       let td3 = runPassportModule(result, { document_id })
@@ -663,6 +707,7 @@ export async function POST(req: NextRequest) {
     default:
       moduleResult = null
   }
+  } // end: if (moduleResult === null) — old path
 
   // ── DS.2 — Optional AI Brain fallback. Runs ONLY when:
   //   (a) operator has set TPS_AI_BRAIN_ENABLED=1 in the environment, AND
@@ -1058,6 +1103,8 @@ export async function POST(req: NextRequest) {
       word_count: result.words.length,
       line_count: result.lines.length,
       ocr_provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
+      // ONE BRAIN B1 diagnostics (shows Core path result even when flag OFF)
+      core_status: coreStatus,
       // Flat extraction diagnostics — auditable at a glance.
       brain_status: brainStatus,
       crossref_status: crossrefStatus,
