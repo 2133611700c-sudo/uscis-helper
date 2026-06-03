@@ -1,4 +1,36 @@
-> ⭐ **ONE BRAIN — READ FIRST:** the locked architecture for the single Document Core is `docs/architecture/ONE_BRAIN_DECISION.md`. One brain = one Core arbiter (NOT one AI) that drives all readers → one `CanonicalDocumentResult`; 5 products consume it via adapters. v1 spine is in `apps/web/src/lib/canonical/core/` — **NOW WIRED to Translation behind `ONE_BRAIN_CORE_ENABLED=1` (Session 92).** To activate: merge PR #67 first, then set `ONE_BRAIN_CORE_ENABLED=1` in Vercel. NO product migration without explicit owner approval.
+> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. B1 branch `feat/b1-tps-core-flag` (PR #69) adds `ONE_CORE_TPS_ENABLED=1` flag to TPS OCR route — TPS → Core (Gemini docintel) → arbitration → toTPSAnswers adapter. Flag OFF = old path unchanged. PROOF needed on real Ukrainian document before merge. One brain is NOT live until PR #69 is merged and real-document proof completed.
+
+# HANDOFF — Session 93 (2026-06-03)
+
+## Session 93 — B0 verification + B1: TPS → Core behind flag (branch feat/b1-tps-core-flag)
+
+**B0 verified (partial):** PR #67 SHA `1c0261c` in prod (healthz confirmed). Gemini key `GEMINI_API_KEY2` resolves via `getGeminiApiKey()`. Route responds with JSON (not crash). Synthetic 1×1 JPEG test returns `vision_failed:HTTP 400` — expected (blank image). Real document: UNVERIFIED (no test document available). `CENTRAL_BRAIN_TRANSLATION=on` causes every request to degrade (all fields `review_required=true`) — known issue, not blocking.
+
+**B0 mistake found and fixed:** `ONE_BRAIN_CORE_ENABLED=1` was set too early (before real-doc verification) → added 2× Gemini calls → Cloudflare timeout. Removed immediately.
+
+**B1 implementation (this PR):**
+- `TpsExtractionSource` gets new value `'canonical_core'` (types.ts)
+- New `canonical/core/tpsAdapter.ts`: `mapTpsHintToDocintelId` (passport→ua_international_passport, booklet→ua_internal_passport_booklet, US forms→null), `canonicalFieldToTpsField`, `canonicalToTpsModuleResult`
+- TPS `/api/tps/ocr/extract` route: adds `ONE_CORE_TPS_ENABLED=1` path BEFORE existing switch. If Core returns fields → uses them. If Core fails/returns nothing → old switch path runs unchanged. Response includes `core_status` field for diagnostics.
+- US form slots (i94/ead/dl/i797): `core_status='skipped_no_mapping'`, old path runs
+- Architecture correct: TPS → Core → arbitration → toTPSAnswers → existing contract/normalize pipeline
+
+**Evidence:** `tpsAdapter.test.ts` 12/12. Full web 2407 pass. tsc 0.
+
+**PROOF NEEDED before declaring B1 done:**
+1. Set `ONE_CORE_TPS_ENABLED=1` in Vercel
+2. Upload real Ukrainian passport (booklet or international) to TPS wizard
+3. Check response: `core_status: 'ok'`, `final_field_keys` populated, `critical_wrong_count = 0`
+4. Compare with Translation result on same document: same `family_name`, `given_name`, etc.
+5. Gate: critical fields must not be wrong, uncertain → `review_required`
+
+**What is NOT done:**
+- MRZ injection into Core (passport MRZ fields not yet wired into Core readers)
+- Re-Parole, EAD not migrated (separate PRs after B1 proven)
+- Translation not yet sharing same Core path as TPS (B2)
+- `CENTRAL_BRAIN_TRANSLATION` degrading Translation — investigate why Vision API fails
+
+---
 
 # HANDOFF — Session 92 (2026-06-02)
 

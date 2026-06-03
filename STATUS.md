@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 93 (2026-06-03) — B1: TPS → Core behind flag (branch feat/b1-tps-core-flag; PR #69)
+- `B0 PARTIAL` PR #67 SHA 1c0261c in prod. Gemini key resolves. Route responds. Real-doc: UNVERIFIED.
+- `B1 CODE DONE` `ONE_CORE_TPS_ENABLED=1` flag in TPS OCR route. Core path: Gemini docintel → arbitration → tpsAdapter → existing contract/normalize. Flag OFF = prod unchanged. tpsAdapter.test 12/12; full web 2407 pass; tsc 0.
+- `B1 NOT LIVE` Flag not set in Vercel. Needs real-doc proof before merge.
+- `BLOCKING` Need real Ukrainian document + ONE_CORE_TPS_ENABLED=1 in Vercel to complete B1 proof.
 ## Session 92 (2026-06-02) — Core field-vocab fixes + review carry-through + Translation wiring (branch feat/core-wire-translation)
 - `FIXED(Core bug 1)` `criticalityOf('dob')` returned 'low' — Gemini docintel emits `dob`, Core was auto-filling date of birth without review. Fixed: `dob` added as critical alias. Birth-cert child fields (`child_family_name`, `child_given_name`, `child_patronymic`, `child_dob`, `child_date_of_birth`) now critical. Files: `canonical/policy.ts`.
 - `FIXED(Core bug 2)` Reader `review_required` signal was silently dropped when converting to `FieldCandidate`. Core could output 'confident' values on unreadable/blurry fields. Fixed: `reviewRequired`/`reviewReasons` added to `FieldCandidate` type; `arbitrateField` carries the signal as `reader_review_required`. Files: `canonical/core/types.ts`, `canonical/core/arbitration.ts`.
