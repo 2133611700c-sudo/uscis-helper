@@ -1,6 +1,32 @@
 > ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core. **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (PR #72): Re-Parole calls Core route. **B4 UI WIRED** (feat/b4-ead-core, PR #73): EAD wizard calls Core route behind flag. **ONE_BRAIN_COMPLETE_CODE_READY** — all 4 products wired. NEXT: merge PR #73 + set flags in Vercel + redeploy + smoke test.
 >
 > 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2610 tests passing, tsc 0.
+>
+> 🔒 **MRZ AUTHORITY (feat/mrz-passport-authority):** `mrzAuthority.ts` wired. Valid MRZ → `FieldCandidate[]` with `mrzCheckValid=true` → Core arbitration gives MRZ absolute authority over 7 passport fields. Invalid MRZ → `reviewRequired=true`, NOT silent fallback. Missing MRZ → empty array, Core uses visual candidates. 36 new tests. 2646/2646 full suite. tsc 0.
+
+# HANDOFF — Session 98 (2026-06-03)
+
+## Session 98 — MRZ international passport authority for Document Core
+
+**What was done:**
+- Created `apps/web/src/lib/canonical/core/mrzAuthority.ts` — wraps `parseMrz` from `@uscis-helper/knowledge` into a `FieldCandidate[]` producer compatible with `CoreReaders.mrzRead`.
+- Authority logic: valid MRZ (all check digits pass) → 7 `FieldCandidate[]` with `source='mrz'`, `mrzCheckValid=true`, `confidence=0.99`, `reviewRequired=false`. Invalid MRZ → candidates with `mrzCheckValid=false`, `confidence=0.3`, `reviewRequired=true`, `reviewReasons=['mrz_check_failed']`. Missing MRZ → empty array.
+- MRZ-controlled fields: `passport_number`, `date_of_birth`, `sex`, `date_of_expiry`, `family_name`, `given_name`, `nationality` — all in arbitration.ts `PASSPORT_MRZ_FIELDS`.
+- MRZ-forbidden fields: `i94_admission_number`, `i94_date_of_entry`, `i94_class_of_admission`, `a_number`, `ead_category`, `us_address`, `patronymic`, `place_of_birth`, `issuing_authority`, `eligibility` — never emitted.
+- Exports `mrzReadFromOcrText` — the async `CoreReaders.mrzRead` implementation. Accepts raw OCR text as `file` param.
+- Created `apps/web/src/lib/canonical/core/__tests__/mrzAuthority.test.ts` — 36 tests: valid/invalid/missing MRZ, all 7 controlled fields verified, 10 forbidden fields checked, sex edge cases, MRZ_CONTROLLED_FIELDS alignment with PASSPORT_MRZ_FIELDS, async interface, invented_fields_count=0.
+- No existing code changed. Core arbitration (`arbitration.ts`) already handles `mrzCheckValid` — module is additive.
+- Full suite: 2646/2646 passing (was 2610 + 36 new). tsc: 0 errors.
+
+**What was NOT done:**
+- `mrzReadFromOcrText` not wired as default in any product route — callers must explicitly set `readers.mrzRead = mrzReadFromOcrText` and `req.expectMrz = true`. This is by design (injection pattern).
+- Ground truth for `qa-private/ground-truth/passport_international_redacted.json` still has `ground_truth_status: MISSING` — no real document fields to verify against.
+- PR not yet merged (branch: `feat/mrz-passport-authority`).
+
+**Next exact task:**
+1. Owner fills ground truth in `qa-private/ground-truth/passport_international_redacted.json`.
+2. Wire `mrzReadFromOcrText` into TPS/Re-Parole OCR routes for `ua_international_passport` hint.
+3. Merge PR #73 (EAD Core) + enable flags in Vercel + smoke test all 4 products.
 
 # HANDOFF — Session 97 (2026-06-03)
 
