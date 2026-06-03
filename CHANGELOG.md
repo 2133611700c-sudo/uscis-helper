@@ -3,6 +3,24 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — KNOWLEDGE_DRIVEN_CORE: label/value extractor + role-grounded birth cert + MRZ debug + gazetteer + agency registry wired
+
+**labelValueExtractor.ts** (new): shared module rejects label-text-as-value in Ukrainian/Russian OCR. isLabelText() knows 50+ label strings incl bilingual variants. extractValueAfterLabel() strips label remnants from inline tails, stops at next label boundary, returns null+review_required instead of label text. 29 unit tests.
+
+**birthCertificate.ts** (fixed): extractFieldFromBlock() now delegates to extractValueAfterLabel with allowPrevLine=false. Bug fixed: "Прізвище / Прізвищ" → child_family_name=null. "ім'я, отчество, по батькові" → child_given_name=null. 5 new Phase 2 regression tests. Now uses translateCivilRegistryTerm + lookupAuthority from @uscis-helper/knowledge for authority translation fallback.
+
+**militaryId.ts** (agency registry wired): translateAuthority() now calls lookupAuthority() from @uscis-helper/knowledge after hardcoded glossary. Covers ТЦК (Territorial Recruitment Center, 2022 reform).
+
+**mrzAuthority.ts** (MRZ debug classification): MrzDebugStatus type with 6 states: valid_mrz, no_mrz_lines, partial_mrz_lines, check_digit_failed, ocr_noise_in_mrz, mrz_parse_error. classifyMrzStatus() + parseMrzFromText() added. Routes can return specific failure reasons instead of generic NOT_PRESENT.
+
+**Gazetteer**: Downloaded КАТОТТГ JSON, generated 458 city rows → packages/knowledge/src/registry/settlements.generated.ts. Already wired into registryIndex.ts.
+
+**Agency registry**: Already in registry.csv (РАЦС, ЗАГС, МВС, поліція, міліція, ДМС, ТЦК). Now wired into birthCertificate.ts + militaryId.ts authority translation as fallback.
+
+Tests: 2751/2751 passing (34 new vs 2717 baseline). tsc: 0 errors. Build: passes. Branch: feat/knowledge-driven-core.
+
+---
+
 ## 2026-06-03 — VISION_CREDENTIALS_LOADER: robust Google Vision auth + diagnostic endpoint
 
 Root cause of Vision 403 in Production: `GOOGLE_CLOUD_VISION_API_KEY` present in `.env.local` but not set in Vercel Production. New `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` supports service account JSON (3 env var names in priority order: `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` > `GOOGLE_CLOUD_CREDENTIALS` > `GOOGLE_APPLICATION_CREDENTIALS_JSON`) with API key fallback. Normalizes `private_key` newlines (Vercel escaping fix). Vision provider (`lib/ocr/providers/google-vision.ts`) updated to call `loadVisionCredentials()` and use `google-auth-library` Bearer token for SA JSON auth. Diagnostic endpoint `app/api/_diag/vision/route.ts`: `GET /api/_diag/vision`, protected by `X-Internal-Diag-Token`, sends 1x1 synthetic PNG, returns sanitized JSON with error codes. 12 new tests in `canonical/vision/__tests__/visionCredentials.test.ts` (all pass). Owner instructions in `docs/reports/VISION_MRZ_AUTH_DIAGNOSTIC.md`. Full suite: 2680/2680. tsc: 0. Branch: fix/vision-credentials-loader. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy + verify via `/api/_diag/vision`.

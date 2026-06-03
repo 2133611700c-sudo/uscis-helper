@@ -29,6 +29,8 @@
 
 import type { OcrResult } from '@/lib/ocr/types'
 import type { TpsExtractedField, TpsModuleResult } from '@/lib/tps/types'
+import { extractValueAfterLabel, isLabelText } from './labelValueExtractor'
+import { translateCivilRegistryTerm, lookupAuthority } from '@uscis-helper/knowledge'
 
 // ── Ukrainian month names (genitive) ─────────────────────────────────────────
 const UA_MONTH_MAP: Record<string, string> = {
@@ -94,10 +96,17 @@ function parseDate(s: string): string | null {
 function translateAuthority(raw: string): string | null {
   if (!raw) return null
   const trimmed = raw.trim()
+  // 1. Try inline hardcoded glossary first (highest-confidence exact entries)
   if (REGISTRY_GLOSSARY[trimmed]) return REGISTRY_GLOSSARY[trimmed]
   for (const [key, value] of Object.entries(REGISTRY_GLOSSARY)) {
     if (trimmed.includes(key)) return value
   }
+  // 2. Try knowledge registry (civil_registry_term + general authority categories)
+  // translateCivilRegistryTerm covers РАЦС/ЗАГС/ДРАЦС abbreviations
+  const civilResult = translateCivilRegistryTerm(trimmed)
+  if (civilResult.matched && civilResult.official_en) return civilResult.official_en
+  const authorityResult = lookupAuthority(trimmed)
+  if (authorityResult.matched && authorityResult.official_en) return authorityResult.official_en
   return null
 }
 
@@ -179,35 +188,26 @@ function splitDocumentBlocks(lines: string[]): {
 
 /**
  * Extract a named field from a block of lines by label anchor.
- * Returns null if not found.
+ * Delegates to extractValueAfterLabel which rejects label-as-value.
+ * Returns null if not found or if found value IS a label (the core bug fix).
+ *
+ * CRITICAL FIX (2026-06-03):
+ *   Previous implementation returned label text as values, e.g.:
+ *   "Прізвище / Прізвищ" → returned "/ Прізвищ" as family_name.
+ *   "Ім'я, отчество, по батькові" → returned label string as given_name.
+ *   extractValueAfterLabel() rejects all label text via isLabelText().
  */
 function extractFieldFromBlock(blockLines: string[], labelPatterns: RegExp[]): string | null {
-  for (let i = 0; i < blockLines.length; i++) {
-    const line = blockLines[i].trim()
-    for (const pattern of labelPatterns) {
-      if (pattern.test(line)) {
-        // Same-line tail
-        const tail = line.replace(pattern, '').trim().replace(/^[:.\-—\s]+/, '').trim()
-        if (tail.length >= 2 && /[А-ЯІЇЄҐа-яіїєґ]/u.test(tail)) return tail
-        // Previous line (value ABOVE label in printed forms)
-        for (let off = 1; off <= 2; off++) {
-          const prev = blockLines[i - off]?.trim()
-          if (prev && prev.length >= 2 && /[А-ЯІЇЄҐа-яіїєґ]/u.test(prev) && !looksLikeBirthCertLabel(prev)) {
-            return prev
-          }
-        }
-        // Next lines
-        for (let off = 1; off <= 3; off++) {
-          const next = blockLines[i + off]?.trim()
-          if (next && next.length >= 2 && /[А-ЯІЇЄҐа-яіїєґ]/u.test(next) && !looksLikeBirthCertLabel(next)) {
-            return next
-          }
-        }
-        break
-      }
-    }
-  }
-  return null
+  // allowPrevLine=false: Ukrainian birth certificate printed forms always put the
+  // label first (or inline), never value-above-label. Enabling prev-line lookup
+  // caused cross-contamination between adjacent fields (e.g. family_name appearing
+  // as given_name because the previous line was the already-found surname).
+  const result = extractValueAfterLabel(blockLines, labelPatterns, {
+    maxLinesAfter: 3,
+    allowInline: true,
+    allowPrevLine: false,
+  })
+  return result.raw_value
 }
 
 /**
