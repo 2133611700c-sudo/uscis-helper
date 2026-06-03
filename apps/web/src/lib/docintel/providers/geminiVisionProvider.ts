@@ -24,9 +24,16 @@ import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 //   NOT a safe default. 3.1-pro-preview leads; flash is the fast fallback.
 //   The robust answer is the 3-model consensus (E4: 19/22, and it OUTVOTES the
 //   2.5-pro fabrication) — see report. NOTE: 3.1-pro is a PREVIEW model.
+// 2026-06-02 CYRILLIC BENCHMARK adjudication (docs/reports/FAILED_CYRILLIC_GROUND_TRUTH_ADJUDICATION.md):
+//   gemini-2.5-pro + gemini-2.5-flash DISQUALIFIED for certificate docs — returned
+//   wrong person identity. gemini-3.1-flash-image is the per-class candidate for certs.
+//   gemini-2.0-flash / gemini-2.0-flash-lite: DEPRECATED — HTTP 404.
+//   gemini-3.1-flash-image: NOT a global default — per-class candidate only.
+//   Fallback chain updated: gemini-2.0-flash removed (404 deprecated).
 // pro+thinking on a large scan runs ~20-40s → keep timeoutMs high + Vercel maxDuration.
 function modelFallback(): string[] {
   const primary = process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview'
+  // gemini-2.0-flash removed from fallback: deprecated (HTTP 404) as of 2026-06.
   return [...new Set([primary, 'gemini-3.5-flash', 'gemini-2.5-flash'])]
 }
 
