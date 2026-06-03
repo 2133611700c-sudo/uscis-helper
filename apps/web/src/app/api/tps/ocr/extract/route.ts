@@ -54,6 +54,8 @@ import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
+// MRZ_WIRED: inject MRZ authority for international passport in Core path
+import { mrzCandidatesFromText } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
 import {
   checkImageQuality,
@@ -262,6 +264,20 @@ export async function POST(req: NextRequest) {
         const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000 })
         if (coreRead.ok && Array.isArray(coreRead.fields) && coreRead.fields.length > 0) {
           const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
+          // MRZ_WIRED: inject MRZ authority for international passport.
+          // result.raw_text is the Google Vision OCR text obtained above (before Core).
+          // mrzCandidatesFromText is pure (no I/O) and safe to call on every passport.
+          // Valid MRZ: confidence=0.99, wins over Gemini for controlled fields.
+          // Invalid MRZ: confidence=0.3, reviewRequired=true — never silently falls back.
+          // Missing MRZ: empty array — arbitrateDocument sees no MRZ candidates.
+          if (docintelId === 'ua_international_passport') {
+            const mrzCandidates = mrzCandidatesFromText(result.raw_text ?? '')
+            if (mrzCandidates.length > 0) {
+              candidates.push(...mrzCandidates)
+              console.info('[ONE_CORE_TPS] MRZ_WIRED: injected', mrzCandidates.length,
+                'MRZ candidates, mrzCheckValid:', mrzCandidates[0]?.mrzCheckValid)
+            }
+          }
           const canonicalFields = arbitrateDocument(candidates)
           if (canonicalFields.length > 0) {
             moduleResult = canonicalToTpsModuleResult(canonicalFields, docTypeHint, document_id)
