@@ -57,7 +57,7 @@ import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
 // MRZ_WIRED: inject MRZ authority for international passport in Core path
-import { mrzCandidatesFromText } from '@/lib/canonical/core/mrzAuthority'
+import { mrzCandidatesFromText, parseMrzFromText } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
 import {
   checkImageQuality,
@@ -1221,6 +1221,20 @@ export async function POST(req: NextRequest) {
       core_status: coreStatus,
       // POLICY_WIRED: document-class policy guard diagnostics
       policy_guard_status: policyGuardStatus,
+      // MRZ_DEBUG: parse status for passport slots — metadata only, no PII, no raw MRZ string.
+      // Helps diagnose why MRZ was not used (no lines found, bad check digits, OCR noise, etc.)
+      // Only computed for passport / booklet hints to avoid wasted CPU on non-passport slots.
+      ...(docTypeHint === 'passport' || docTypeHint === 'booklet'
+        ? (() => {
+            const mrzDbg = parseMrzFromText(result.raw_text ?? '')
+            return {
+              _mrz_debug_status: mrzDbg.debug_status,
+              _mrz_lines_found: mrzDbg.mrz_lines_found,
+              _mrz_valid: mrzDbg.valid,
+            }
+          })()
+        : {}
+      ),
       // Flat extraction diagnostics — auditable at a glance.
       brain_status: brainStatus,
       crossref_status: crossrefStatus,
