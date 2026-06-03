@@ -1,6 +1,36 @@
-> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core. **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (PR #72): Re-Parole calls Core route. **B4 CODE READY** (feat/b4-ead-core, PR open): EAD adapter + route. **ONE_BRAIN_COMPLETE_CODE_READY** — all 4 products wired. Not live until flags enabled + smoke test.
+> ⭐ **ONE BRAIN — READ FIRST:** Architecture in `docs/architecture/ONE_BRAIN_DECISION.md`. **B1 LIVE**: TPS uses Core. **B2 CODE READY** (PR #70): Translation uses Core. **B3 UI WIRED** (PR #72): Re-Parole calls Core route. **B4 UI WIRED** (feat/b4-ead-core, PR #73): EAD wizard calls Core route behind flag. **ONE_BRAIN_COMPLETE_CODE_READY** — all 4 products wired. NEXT: merge PR #73 + set flags in Vercel + redeploy + smoke test.
 >
-> 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2565 tests passing, tsc 0.
+> 📋 **DOCUMENT CLASS POLICY WIRED (POLICY_WIRED):** Guards live in `tps/ocr/extract` + `translation/vision-extract`. checkImageQuality blocks tiny images before OCR call. applyHardCaseReviewOverride forces review_required=true on hard-case docs. applyCertificateRoleGuard rejects generic names on certs. 2610 tests passing, tsc 0.
+
+# HANDOFF — Session 97 (2026-06-03)
+
+## Session 97 — B4 UI WIRING: EAD wizard calls /api/ead/ocr/extract when flag ON
+
+**What was done:**
+- Wired `EADWizard.tsx` to call `/api/ead/ocr/extract` behind `NEXT_PUBLIC_ONE_CORE_EAD_ENABLED=true` flag.
+- Added `StepUpload` component (injected at step index 2 when flag ON; skipped entirely when OFF).
+- Upload supports: passport, EAD card, I-94. User selects doc type → uploads image → Core extracts fields → form prefilled.
+- Prefill mapping: family_name→lastName, given_name→firstName, date_of_birth→dob, sex→gender M/F, country_of_birth→countryOfBirth, a_number→alienNumber (source-gated by Core adapter; null if source not EAD/I-797).
+- `Skip — enter manually` button always visible — upload step never blocks navigation.
+- `hasReviewFields` state: shows amber warning when `review_required=true` from Core.
+- Flag OFF: wizard unchanged — old 7-step manual form, no upload, no API call.
+- Created `apps/web/src/components/services/ead/__tests__/eadWizardUiWiring.test.ts`: 45 new tests — flag wiring, route reference, docHints, prefill mapping, source gates, review_required, architecture contract markers, invented_fields_count=0.
+- Full suite: 2610/2610. tsc: 0 errors.
+
+**What was NOT done:**
+- `ONE_CORE_EAD_ENABLED=true` NOT set in Vercel yet — needs owner to merge PR #73 first
+- `NEXT_PUBLIC_ONE_CORE_EAD_ENABLED=true` NOT set — requires fresh Vercel build after flag change
+- ONE_BRAIN_FINAL_SMOKE_TEST not yet run
+- PR #73 not yet merged
+
+**Next exact task (ONE_BRAIN_COMPLETE_LIVE path):**
+1. `gh pr merge 73 --merge --repo 2133611700c-sudo/uscis-helper` — after CI green
+2. `vercel env add ONE_CORE_EAD_ENABLED production` = true
+3. `vercel env add NEXT_PUBLIC_ONE_CORE_EAD_ENABLED production` = true
+4. `vercel deploy --prod --force` — NEXT_PUBLIC_* requires fresh build
+5. Smoke test all 4: `/api/tps/health`, `/api/translation/vision-extract`, `/api/reparole/ocr/extract`, `/api/ead/ocr/extract`
+
+**Architecture:**
 
 # HANDOFF — Session 96 (2026-06-03)
 
