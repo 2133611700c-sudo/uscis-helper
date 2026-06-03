@@ -510,3 +510,8 @@ Closed the owner request: test every product without payment. Inventory: TPS wiz
 
 ---
 
+
+## 2026-06-03 | ESLint fix
+Fixed: renamed `module` var to `result` in militaryId + birthCertificate test files.
+Cause: @next/next/no-assign-module-variable blocked Vercel build.
+Next: merge PR #76 after CI green.

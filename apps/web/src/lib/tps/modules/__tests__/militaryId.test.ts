@@ -86,11 +86,11 @@ describe('extractMilitaryId — immigration fields must not be populated', () =>
     const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
     // extractMilitaryId returns structured fields — no immigration slots exist
     // Verify by checking TpsModuleResult from runMilitaryIdModule
-    const module = runMilitaryIdModule(
+    const result = runMilitaryIdModule(
       { raw_text: TYPICAL_IDENTITY_OCR, lines: TYPICAL_IDENTITY_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
-    const fieldNames = module.fields.map(f => f.field)
+    const fieldNames = result.fields.map(f => f.field)
     expect(fieldNames).not.toContain('i94_admission_number')
     expect(fieldNames).not.toContain('a_number')
     expect(fieldNames).not.toContain('ead_category_on_card')
@@ -99,21 +99,21 @@ describe('extractMilitaryId — immigration fields must not be populated', () =>
   })
 
   it('all module fields have review_required=true', () => {
-    const module = runMilitaryIdModule(
+    const result = runMilitaryIdModule(
       { raw_text: TYPICAL_IDENTITY_OCR, lines: TYPICAL_IDENTITY_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
-    for (const field of module.fields) {
+    for (const field of result.fields) {
       expect(field.review_required).toBe(true)
     }
   })
 
   it('module manual_review_required is always true', () => {
-    const module = runMilitaryIdModule(
+    const result = runMilitaryIdModule(
       { raw_text: TYPICAL_IDENTITY_OCR, lines: TYPICAL_IDENTITY_OCR.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
     )
-    expect(module.manual_review_required).toBe(true)
+    expect(result.manual_review_required).toBe(true)
   })
 })
 
