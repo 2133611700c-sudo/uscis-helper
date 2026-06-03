@@ -10,10 +10,17 @@
  *
  * Backend reuse — NO new infrastructure for OCR or PDF:
  *   POST /api/tps/ocr/extract           — same Vision + Brain + slot
- *                                          firewall used by TPS
+ *                                          firewall used by TPS (flag OFF)
+ *   POST /api/reparole/ocr/extract      — Core path (flag ON)
  *   POST /api/reparole/generate-packet  — direct ReParoleAnswers → ZIP
  *                                          (new thin route mirroring TPS)
  *   POST /api/stripe/checkout           — product='re-parole-u4u' Tier 1 $15
+ *
+ * Flag: NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED
+ *   - "true"  → UI calls /api/reparole/ocr/extract (Core path)
+ *   - anything else → UI calls /api/tps/ocr/extract (old path, unchanged)
+ *   - For docHints not covered by Core (i94, ead, dl), always falls back
+ *     to /api/tps/ocr/extract regardless of flag state.
  *
  * Architecture mirrors TPSWizardV2:
  *   - localStorage key wizard:re-parole-u4u:v3:state, schema version
@@ -27,6 +34,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
+
+// ─── Feature flag — set NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED=true in Vercel ─
+// When ON: passport/booklet → /api/reparole/ocr/extract (Core path, B3)
+// When OFF: all slots → /api/tps/ocr/extract (old path, unchanged)
+// US-form slots (i94, ead, dl) always fall back to old path (Core doesn't cover them yet).
+const REPAROLE_CORE_ENABLED = process.env.NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED === 'true'
+
+// docHints covered by the Core route (mapReParoleHintToDocintelId in the backend)
+const CORE_COVERED_SLOTS = new Set(['passport', 'booklet'])
 
 // ─── Brand tokens — CSS variables for dark mode ─────────────────────────────
 const GREEN = 'var(--accent, #0d5a34)'
@@ -578,31 +594,78 @@ export default function ReparoleWizardV2({ locale }: Props) {
     try {
       const fd = new FormData()
       fd.append('file', file); fd.append('docHint', id)
-      const r = await fetch('/api/tps/ocr/extract', { method: 'POST', body: fd })
+
+      // ── Route selection (B3) ─────────────────────────────────────────────
+      // Core path only when flag ON AND the slot is covered (passport/booklet).
+      // i94, ead, dl always go to the old TPS route — Core doesn't cover them yet.
+      const useCoreRoute = REPAROLE_CORE_ENABLED && CORE_COVERED_SLOTS.has(id)
+      const ocrRoute = useCoreRoute ? '/api/reparole/ocr/extract' : '/api/tps/ocr/extract'
+
+      const r = await fetch(ocrRoute, { method: 'POST', body: fd })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const json = await r.json()
+
       const fields: Record<string, FieldExtraction> = {}
-      const modFields = Array.isArray(json?.module?.fields) ? json.module.fields : []
-      for (const f of modFields) {
-        if (f && typeof f.field === 'string') {
-          const v = typeof f.normalized_value === 'string' && f.normalized_value
-            ? f.normalized_value
-            : typeof f.raw_value === 'string' ? f.raw_value : ''
-          if (!v) continue
-          const src: ExtractionSource =
-            ['ocr_mrz', 'ocr_visual', 'ocr_keyword', 'ai_brain',
-             'user_input', 'user_corrected', 'inferred'].includes(f.extraction_source)
-              ? (f.extraction_source as ExtractionSource) : 'ocr_visual'
-          fields[f.field] = { value: v, source: src, requires_review: Boolean(f.review_required), doc_slot: id }
+
+      if (useCoreRoute && json?._core === true) {
+        // ── Core response shape: ReParoleCoreAnswers ─────────────────────
+        // Top-level string fields → wizard FieldExtraction records.
+        // date_of_birth (Core) maps to dob (wizard key).
+        const CORE_FIELD_MAP: Record<string, string> = {
+          family_name: 'family_name',
+          given_name: 'given_name',
+          middle_name: 'middle_name',
+          date_of_birth: 'dob',
+          sex: 'sex',
+          country_of_birth: 'country_of_birth',
+          country_of_nationality: 'country_of_nationality',
+          passport_number: 'passport_number',
+          passport_expiration_date: 'passport_expiration_date',
+          i94_admission_number: 'i94_admission_number',
+          last_entry_date: 'last_entry_date',
+          i94_class_of_admission: 'i94_class_of_admission',
+          a_number: 'a_number',
+        }
+        const uncertainSet = new Set<string>(
+          Array.isArray(json.uncertain_fields) ? json.uncertain_fields : [],
+        )
+        for (const [coreKey, wizardKey] of Object.entries(CORE_FIELD_MAP)) {
+          const v = json[coreKey]
+          if (typeof v !== 'string' || !v) continue
+          const needsReview = Boolean(json.review_required) || uncertainSet.has(coreKey)
+          fields[wizardKey] = {
+            value: v,
+            source: 'ai_brain',
+            requires_review: needsReview,
+            doc_slot: id,
+          }
+        }
+      } else {
+        // ── Old TPS response shape: json.module.fields array ─────────────
+        const modFields = Array.isArray(json?.module?.fields) ? json.module.fields : []
+        for (const f of modFields) {
+          if (f && typeof f.field === 'string') {
+            const v = typeof f.normalized_value === 'string' && f.normalized_value
+              ? f.normalized_value
+              : typeof f.raw_value === 'string' ? f.raw_value : ''
+            if (!v) continue
+            const src: ExtractionSource =
+              ['ocr_mrz', 'ocr_visual', 'ocr_keyword', 'ai_brain',
+               'user_input', 'user_corrected', 'inferred'].includes(f.extraction_source)
+                ? (f.extraction_source as ExtractionSource) : 'ocr_visual'
+            fields[f.field] = { value: v, source: src, requires_review: Boolean(f.review_required), doc_slot: id }
+          }
         }
       }
+
       setData((d) => ({
         ...d, uploads: { ...d.uploads, [id]: {
           file, fileName: file.name, status: 'done', fields,
-          detected_document_type: json?.detected_document_type ?? null,
-          slot_mismatch: Boolean(json?.slot_mismatch),
-          vision_text_length: typeof json?.vision_text_length === 'number' ? json.vision_text_length : undefined,
-          brain_status: typeof json?.brain_status === 'string' ? json.brain_status as UploadEntry['brain_status'] : undefined,
+          // Core path doesn't return these diagnostic fields; keep undefined for Core.
+          detected_document_type: useCoreRoute ? (json?.doc_type_hint ?? null) : (json?.detected_document_type ?? null),
+          slot_mismatch: useCoreRoute ? false : Boolean(json?.slot_mismatch),
+          vision_text_length: useCoreRoute ? undefined : (typeof json?.vision_text_length === 'number' ? json.vision_text_length : undefined),
+          brain_status: useCoreRoute ? 'ran' : (typeof json?.brain_status === 'string' ? json.brain_status as UploadEntry['brain_status'] : undefined),
         } },
       }))
     } catch {
