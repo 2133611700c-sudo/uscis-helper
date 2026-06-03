@@ -254,4 +254,28 @@ describe('extractBirthCertificate — label-as-value regression (Phase 2)', () =
     expect(r.child_family_name).toBeNull()
     expect(r.child_given_name).toBeNull()
   })
+
+  // ── Phase 2 exact tests from task spec ─────────────────────────────────────
+  it('raw OCR with only labels returns null child_family_name', () => {
+    const rawText = "СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище\nімя\nпо батькові\n"
+    const result = runBirthCertificateModule({ raw_text: rawText, lines: [] }, { document_id: 'test' })
+    const fn = result.fields.find(f => f.field === 'child_family_name')
+    // Must be null or not present — NOT 'прізвище' or 'імя'
+    if (fn) {
+      expect(fn.raw_value).not.toBe('прізвище')
+      expect(fn.raw_value).not.toBe('прізвищ')
+      expect(fn.raw_value).not.toBe("ім'я")
+      expect(fn.raw_value).not.toMatch(/^им[яо]/i)
+    } else {
+      // Preferred: field is absent entirely when value is only labels
+      expect(fn).toBeUndefined()
+    }
+  })
+
+  it('actual value extracted when present after label (REDACTED\'ятник)', () => {
+    const rawText = "СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище\nREDACTED_NAME\nім'я\nСергій\nБатько: Test\nМати: Test2"
+    const result = runBirthCertificateModule({ raw_text: rawText, lines: [] }, { document_id: 'test' })
+    const fn = result.fields.find(f => f.field === 'child_family_name')
+    expect(fn?.raw_value).toBe("REDACTED_NAME")
+  })
 })
