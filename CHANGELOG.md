@@ -2594,3 +2594,9 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - `settlements.generated.ts` — 458 cities, each with source_url + valid_from (КАТОТТГ). Machine layer kept SEPARATE from human-curated registry.csv; merged in registryIndex (curated first → priority on key conflicts).
 - Tests: КАТОТТГ provenance (validateRegistry on all rows) + city resolution (Бахчисарай→Bakhchysarai, Біла Церква→Bila Tserkva). Villages (C, 27k) keep the fuzzy gazetteer.
 - knowledge tsc 0, web tsc 0; registry 14/14; web 2208 pass +4 skip.
+
+## 2026-06-03 | fix: wire military_id + birth_certificate modules into TPS route
+- Added imports: runMilitaryIdModule, runBirthCertificateModule to route.ts
+- Added switch cases: 'military_id', 'birth_certificate'
+- Fixed test file: duplicate result var + stale module.fields references
+- tsc: 0 errors
