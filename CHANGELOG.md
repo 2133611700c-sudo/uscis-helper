@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs: architecture inventory verdict + OneBrain target
+
+PASS_AS_TRUTH_INVENTORY / DEGRADED_AS_TARGET. Raw: consensus.ts dormant (no /api caller; central-brain skipped when ONE_BRAIN_CORE_ENABLED=1); HTR not live (htr.ts 0 transcripts, Transkribus auth blocked); live = 1 Gemini read + arbitrateDocument + gates. Target = OneBrain single field-decision center (decideField schema) — readers/dictionaries(as signal, not silent rewrite)/normalization/validators/anti-fab/self-consistency/quality/audit inside; no dead consensus branch; real consensus = different independent readers. Decisions: SMART_NORMALIZE DO_NOT_ENABLE, HTR DO_NOT_BUILD, model DO_NOT_SWITCH, gate PREPARE_CANARY only. Priorities L0 verdict→L1 OneBrain contract→L2 fold gate in→L3 expand GT→L4 second reader/HTR if justified. docs/reports/ARCHITECTURE_INVENTORY_VERDICT.md + OWNER_QUEUE. docs-only; no prod env/flags/deploy/PII.
+
+---
+
 ## 2026-06-04 — accuracy OFF-vs-ON measured vs owner GT (sanitized)
 
 Ran 2 docs × modes A/B/C × {gemini-2.5-flash, gemini-3.1-pro-preview} = 12 cells, scored vs 6 owner-verified GT fields (raw in qa-private, ignored). Result: mode C (anti-fab+self-consistency) → false_negative_review=0 in all cells; without gate 2.5-flash = 5 wrong identity fields review=false + DOB month-mismatch (GT 06 / read 02) MISSED, CAUGHT in C with self_consistency=mismatch. SMART_NORMALIZE: no accuracy gain (B==A) + a false-positive review → DO_NOT_ENABLE/NEEDS_MORE_DATA. 3.1-pro safer than 2.5-flash on hard-case but gate mandatory; firm model choice NEEDS_MORE_DATA. Caveat: RU-document vs UA-GT language layer inflates 'wrong'; owner to clarify GT language intent; N=2/one-person=signal not proof. Reports: ACCURACY_OFFON_RESULTS.md + SMART_NORMALIZE_DECISION.md. Genericized RU/UA example in OWNER_QUEUE (no gratuitous real name). No prod env; no flags enabled; no code push.
