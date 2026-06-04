@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 104 (2026-06-03) — P2.2 patronymic reconcile + canon YAML repair (feat/knowledge-core-stabilize)
+- `YAML_FIXED` `docs/MIGRATION_BRIEF.yaml` was BROKEN (Ruby `Psych::SyntaxError` at line 116:93). Cause: flow-mapping values with embedded colons (`orchestrator.ts:65`) on lines 116–120. Quoted them. `ruby -ryaml YAML.load_file` → `YAML_OK`.
+- `P2.2` `docintel/patronymicReconcile.ts` (NEW, pure): validates patronymic fields (`middle_name`, `child_patronymic`) — sex inferred from the patronymic's own suffix; malformed/undeterminable → `review_required=true`, value kept (NO silent correction, NEVER lowers an existing flag).
+- `SCOPE_DECISION` Did NOT regenerate from a sibling given name: `reconcilePatronymic`'s `givenName` arg is the FATHER's given name; our field set has the HOLDER's `given_name` — passing it would fabricate. Registry has no `sex` field. So P2.2 is a validation pass (`givenName=''`), not regeneration. Honest, zero-wrong-answer.
+- `WIRED` `documentFieldReader.ts` runs the pass only when `process.env.SMART_NORMALIZE_ENABLED === '1'` (default OFF → byte-identical). Flag default OFF confirmed.
+- `GROUND_TRUTH` `test-fixtures/real-docs/` is gitignored (PII). Added versioned PII-free templates `docs/templates/ground-truth/{birth_cert_soviet,birth_cert_handwritten,military_id_p1}.template.json` + README; new `OWNER_QUEUE.md` points owner to copy→fill locally, never commit filled. PII scan CLEAN.
+- `TESTS` `patronymicReconcile.test.ts` 8/8 (incl. flag OFF vs ON gating via stub provider); docintel+canonical/core 268/268; P2.1 snapCity 4/4. typecheck PASS.
+- `NOT_DONE` No live doc / no accuracy delta (owner must fill ground truth). P2.3/P2.4/P2.5 not started. Pre-existing in-flight gemini/model.ts changes left untouched (separate work). Not pushed.
 ## Session 103 (2026-06-03) — SOURCE_CODE_ONLY_CORE_AUDIT
 - `AUDIT_SCOPE` Source-code-only audit completed for TPS, Translation, Re-Parole, and EAD. Ignored `.next`, `node_modules`, `dist`, `coverage`, `.turbo`.
 - `CORE_VERDICT` `FAIL`: one uniform central Document Core across all 4 products is NOT proven by current runtime source.

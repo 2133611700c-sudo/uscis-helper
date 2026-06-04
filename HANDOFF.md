@@ -10,6 +10,29 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104 (2026-06-03)
+
+## Session 104 — P2.2 patronymic reconcile (behind SMART_NORMALIZE_ENABLED) + canon YAML repair
+
+**Context:** resumed after the prior session HUNG in the P2.2 loop. First recovered state, then implemented P2.2 correctly.
+
+**What was done:**
+1. **Canon YAML repair** — `docs/MIGRATION_BRIEF.yaml` failed `ruby -ryaml YAML.load_file` (`Psych::SyntaxError` at line 116 col 93). Root cause: inside flow mappings `{...}`/`[...]`, values like `orchestrator.ts:65` contain a colon YAML reads as a key/value separator. Quoted the 5 offending values (lines 116–120). Re-validated → `YAML_OK`. Block-style `key: …ts:100` lines (69–104) are valid (colon not followed by space) — left as-is.
+2. **P2.2 implemented** — `apps/web/src/lib/docintel/patronymicReconcile.ts` (NEW, pure, exported `reconcilePatronymicFields(fields)`). Runs as a POST-PASS over the full `ExtractedDocField[]` (the per-field `toCanonicalValue` has no sibling context — that mismatch is likely what hung the prior run). For `middle_name`/`child_patronymic`: infers sex from the patronymic's own suffix via `isValidPatronymic`, calls `reconcilePatronymic(patrCy, '', sex)`. Well-formed → kept; malformed/undeterminable → `review_required=true`, value preserved. Never silent-corrects, never lowers an existing flag.
+3. **Scope decision (important, do NOT re-litigate without a fix):** P2.2 is a VALIDATION pass, not regeneration. `reconcilePatronymic`'s `givenName` is the FATHER's given name; the canonical field set only has the HOLDER's `given_name`/`child_given_name`, and the registry has NO `sex` field. Feeding the holder's name would fabricate a wrong patronymic — violates the zero-wrong-answer rule. So `givenName=''`. A real regeneration would need reliable father-given-name parsing (birth cert `father_full_name`) — future P5 enhancement.
+4. **Wiring** — `documentFieldReader.ts` calls the pass only when `process.env.SMART_NORMALIZE_ENABLED === '1'`. Default OFF → byte-identical to before.
+5. **Ground-truth templates** — `test-fixtures/real-docs/` is gitignored (holds filled PII GT). Added versioned PII-free blank templates under `docs/templates/ground-truth/` + README, and `OWNER_QUEUE.md` instructing the owner to copy→fill locally and NOT commit filled files. PII scan of the new files: CLEAN.
+
+**Evidence:** `patronymicReconcile.test.ts` 8/8 (incl. flag OFF→no-flag vs ON→flag gating via a stub provider). docintel + canonical/core 268/268. P2.1 `dictionaryBridge.snapCity.test.ts` 4/4. `npm --prefix apps/web run typecheck` → PASS (0 errors).
+
+**What was NOT done:**
+- No live document run; no accuracy delta measured (blocked on owner-filled ground truth — see OWNER_QUEUE.md). No accuracy claim made.
+- P2.3 (authority/issued_by), P2.4 (settlement), P2.5 (server-side classifyGarbage) NOT started.
+- Pre-existing uncommitted in-flight work (`gemini/model.ts` + vision/presence/route edits) left UNTOUCHED — separate from P2.2, not bundled.
+- Not pushed. `SMART_NORMALIZE_ENABLED` NOT set anywhere (stays OFF).
+
+**Next exact task:** owner fills the 3 GT templates locally → run the P2-relevant fixtures `SMART_NORMALIZE_ENABLED=OFF` vs `ON` → report per-field delta (first real "better" proof). Then decide P2.3.
+
 # HANDOFF — Session 101 (2026-06-03)
 
 ## Session 101 — KNOWLEDGE_DRIVEN_CORE: label/value extractor, birth cert fix, MRZ debug, gazetteer, agency registry

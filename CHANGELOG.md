@@ -3,6 +3,20 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — P2.2 patronymic reconcile (flag-gated) + canon YAML repair + GT templates
+
+**docs/MIGRATION_BRIEF.yaml** (FIXED): was invalid YAML — `Psych::SyntaxError` at line 116 col 93. Flow-mapping values with embedded colons (`orchestrator.ts:65`) on lines 116–120 quoted. `ruby -ryaml YAML.load_file` → YAML_OK.
+
+**apps/web/src/lib/docintel/patronymicReconcile.ts** (NEW): pure `reconcilePatronymicFields()` post-pass. Validates `middle_name`/`child_patronymic`; sex inferred from the patronymic suffix; malformed/undeterminable → review_required=true, value kept. No silent correction; never lowers a flag. Validation-only (givenName=''): the holder's given name is NOT the father's given name and there is no `sex` field — regenerating would fabricate.
+
+**apps/web/src/lib/docintel/documentFieldReader.ts**: runs the pass only when `SMART_NORMALIZE_ENABLED === '1'` (default OFF → unchanged).
+
+**docs/templates/ground-truth/** (NEW) + **OWNER_QUEUE.md** (NEW): versioned PII-free GT templates (`test-fixtures/real-docs/` is gitignored); owner copies→fills locally, never commits filled. PII scan CLEAN.
+
+**Tests:** patronymicReconcile.test.ts 8/8 (flag OFF/ON gating incl.); docintel+canonical/core 268/268; P2.1 snapCity 4/4; typecheck PASS. Not pushed. SMART_NORMALIZE_ENABLED stays OFF.
+
+---
+
 ## 2026-06-03 — KNOWLEDGE_CORE_STABILIZE: militaryId guards + MRZ debug route exposure + agency registry proof
 
 **militaryId.ts** (guards added): isLikelyPatronymicOrLabel() rejects given_name when OCR reads patronymic label inline with im'ya. isAuthorityOcrGarbage() rejects authority when longest Cyrillic token >= 20 chars (e.g. garbled 20-char tokens correctly rejected). Both guards applied in label-anchor and proximity-fallback paths. DOB "25 cervnya 1986 r." to "1986-06-25" confirmed working.
