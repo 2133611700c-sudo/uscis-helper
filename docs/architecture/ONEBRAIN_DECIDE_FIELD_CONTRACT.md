@@ -27,7 +27,7 @@ by the reader layer and handed in as `self_consistency`.)
   "criticality": "critical",                // critical | high | low  (identity fields = critical)
   "reads": [                                // raw reader outputs (1..N independent reads)
     { "reader": "gemini", "model": "gemini-2.5-flash", "run": 1,
-      "raw": "Куроп...", "iso_date": null, "confidence": 0.93, "can_read": true }
+      "raw": "<cyr-surname>", "iso_date": null, "confidence": 0.93, "can_read": true }
     // future: { "reader": "gpt4o", ... }, { "reader": "htr", ... }
   ],
   "quality": {                              // D0 preprocess signals (optional)
@@ -36,7 +36,7 @@ by the reader layer and handed in as `self_consistency`.)
   "dictionary_signals": [                   // D2 — SIGNAL ONLY (never an applied value)
     { "kind": "gazetteer", "matched": false, "suggested_value": "…", "review_required": true,
       "reason": "fuzzy/unknown city" },
-    { "kind": "kmu55", "normalized_value": "Kurop...", "matched": true },
+    { "kind": "kmu55", "normalized_value": "<lat-surname>", "matched": true },
     { "kind": "patronymic", "well_formed": true, "review_required": false },
     { "kind": "authority_registry", "matched": false }
   ],
@@ -65,8 +65,8 @@ prefixes leave the boundary.
 ```jsonc
 {
   "field_id": "child_family_name",
-  "value": "Куроп...",                      // chosen RAW reader value (or strong-anchor value)
-  "normalized_value": "Kurop...",           // D2/D3 normalized (KMU/ISO) — separate from value
+  "value": "<cyr-surname>",                      // chosen RAW reader value (or strong-anchor value)
+  "normalized_value": "<lat-surname>",           // D2/D3 normalized (KMU/ISO) — separate from value
   "confidence": 0.62,                       // final, ≤ min(applicable layer confidences)
   "decision": "force_review",               // accept | accept_low_confidence | force_review | reject
   "review_required": true,
