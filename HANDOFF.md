@@ -1,3 +1,16 @@
+# HANDOFF — Session 105b (2026-06-04)
+
+## Session 105b — L2 SCAFFOLD: decideField() (not wired; prod byte-identical)
+
+Implemented OneBrain `decideField()` as a standalone pure module — NOT wired into any live path, so prod is byte-identical. Report: `docs/reports/ONEBRAIN_L2_SCAFFOLD.md`.
+
+- `oneBrain/decideField.ts`: pure `decideField(input)→FieldDecision` per the L1 contract (value from reads/strong-anchor; normalized_value from kmu55 signal ONLY, separate; decision accept|accept_low_confidence|force_review|reject; review_reasons; source_trace; safety_flags; sha256 audit_hash). + types + `scoredForAccuracy()`.
+- **Byte-identical proof:** grep `NO_LIVE_CALLER` — nothing in /api or documentFieldReader imports it. Reserved flag `ONEBRAIN_DECIDE_FIELD_ENABLED` (default OFF) is read by nothing yet.
+- Rules tested (decideField.test.ts): (1) dictionary never overwrites value; (2) critical+review-signal→force_review, no accept_low_confidence w/o anchor; (3) self-consistency mismatch/incomplete/insufficient→force_review + instability flag, model confidence can't override; (4) scoredForAccuracy = owner_verified && !candidate_not_verified; (5) not-wired/pure; + MRZ anchor→accept; no-source→reject.
+- typecheck PASS; 83 tests (decideField + docintel) pass; synthetic test values (no PII).
+
+**Deferred:** L2-WIRE (route decideField through readDocument behind flag, shadow-first) = separate owner-gated step; threshold NUMBERS = L3 (PLACEHOLDER {critical:0.97,high:0.9,low:0.8}); 2nd reader/HTR = L4. consensus.ts untouched; SMART/HTR/model unchanged; no prod env; no flags enabled; no deploy. Pre-existing PII in arch docs (DOCUMENT_INTELLIGENCE_LAYER.md) = Session-54 sweep, not touched.
+
 # HANDOFF — Session 105 (2026-06-04)
 
 ## Session 105 — L1: OneBrain decideField() contract (design-only)
