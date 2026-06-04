@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 104v (2026-06-04) — PR #80 opened (durability; merge owner-gated)
+- `PR_OPEN` https://github.com/2133611700c-sudo/uscis-helper/pull/80 — base `main` ← `feat/knowledge-core-stabilize` @ a896212. PII-free body. NOT merged.
+- `MERGE_GATED` merge → main triggers Vercel auto-deploy of main to messenginfo.com = owner decision (also closes prod==main durability). Agent opened PR only; did not merge.
+- `PIPELINE` durability push ✅ → PR ✅ → merge (owner) → GT fill (owner) → accuracy OFF/ON (agent) → SMART_NORMALIZE decision (after accuracy). Behavior flags OFF; GT MISSING; no prod env change this step.
 ## Session 104u (2026-06-04) — durability: branch pushed to GitHub (no merge/PR)
 - `PUSHED` `git push origin feat/knowledge-core-stabilize --force-with-lease` → `31353a7..8b9a0d2`. origin/feat == local HEAD (verified). The prod-deployed code now exists in GitHub, not only locally.
 - `SAFETY` Pre-push: tracked working tree clean; `qa-private/`+`reports/` ignored; `docs/reports/` NOT ignored; 0 tracked private files; **0 actual-credential matches** in diff (no API key/private key/token). PII note: `FU262473`/surname are PRE-EXISTING in origin/main (17 files) — push adds 3 incremental occurrences of the same already-published value, NOT a new leak (Session-54-class accepted reality).
