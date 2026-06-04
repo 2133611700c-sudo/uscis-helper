@@ -14,10 +14,10 @@ Agents do NOT perform these. Newest first.
 - ✅ GT filled (VERIFIED_BY_OWNER, 6 identity fields) + accuracy OFF-vs-ON run (see `ACCURACY_OFFON_RESULTS.md`).
 
 **OPEN — owner only:**
-1. **Clarify GT language intent:** should ground-truth be "as written on the document" (Russian, e.g.
-   Сергей/Сергеевич) or "canonical Ukrainian" (Сергій/Сергійович)? The test docs are Russian-language;
-   exact-match scoring currently counts RU↔UA spelling as "wrong". This changes which per-field misses are
-   real errors vs expected transliteration.
+1. **Clarify GT language intent:** should ground-truth be "as written on the document" (Russian spelling)
+   or "canonical Ukrainian" (Ukrainian spelling)? The test docs are Russian-language; exact-match scoring
+   currently counts the RU↔UA given/patronymic spelling difference as "wrong". This changes which per-field
+   misses are real errors vs expected transliteration. (No real names quoted here — see GT files.)
 2. **Provide more/varied GT** (different people, Ukrainian-language docs). Current evidence = N=2/one-person
    = signal, not a prod-grade verdict.
 3. **Flag decisions (after more GT):** `SMART_NORMALIZE_ENABLED` = **DO_NOT_ENABLE** on current evidence
