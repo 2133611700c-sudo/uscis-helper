@@ -17,6 +17,8 @@ import {
   GEO_CORRECTIONS,
   SETTLEMENT_TYPES,
   snapCity,
+  translateCivilRegistryTerm,
+  lookupAuthority,
 } from '@uscis-helper/knowledge'
 import { restoreNominative } from '@/lib/translation/glossary/nominativeCaseRestorer'
 import { resolveIssuedBy } from '@/lib/translation/glossary/agencyGlossary'
@@ -185,4 +187,43 @@ export function normalize(field: NormalizeField, rawValue: string): NormalizeRes
     case 'issued_by': return normalizeIssuedBy(rawValue)
     default: return { value: rawValue.trim() || null, source: 'passthrough', notes: [] }
   }
+}
+
+/**
+ * P2.3 (SMART_NORMALIZE_ENABLED): resolve a document issuing authority from its
+ * raw Cyrillic into the canonical English name using the sourced registry —
+ * civil-registry terms first (РАЦС/ЗАГС/ДРАЦС), then the authority registry
+ * (МВС/міліція/…). Returns the registry's official English + its review flag
+ * and warning verbatim (e.g. ЗАГС → review on pre-2013 docs; міліція → Militsiya,
+ * NEVER Police). On no match → passthrough (caller keeps its transliteration).
+ *
+ * Pure. `documentDate` (optional) drives the registry's era-gating. This is the
+ * canonical resolver; the legacy per-module authority maps in militaryId.ts /
+ * birthCertificate.ts are slated to be removed in P5.
+ */
+export function resolveAuthority(rawCyrillic: string, documentDate?: string): NormalizeResult {
+  const trimmed = (rawCyrillic ?? '').trim()
+  if (!trimmed) return { value: null, source: 'passthrough', notes: ['empty input'] }
+
+  const civil = translateCivilRegistryTerm(trimmed, documentDate)
+  if (civil.matched) {
+    return {
+      value: civil.official_en,
+      source: 'knowledge',
+      notes: [`civil_registry: ${civil.reason}`, ...(civil.warning ? [civil.warning] : [])],
+      review_required: civil.review_required,
+    }
+  }
+
+  const auth = lookupAuthority(trimmed, documentDate)
+  if (auth.matched) {
+    return {
+      value: auth.official_en,
+      source: 'knowledge',
+      notes: [`authority: ${auth.reason}`, ...(auth.warning ? [auth.warning] : [])],
+      review_required: auth.review_required,
+    }
+  }
+
+  return { value: trimmed, source: 'passthrough', notes: ['no registry match'] }
 }

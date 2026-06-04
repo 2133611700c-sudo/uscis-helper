@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 104b (2026-06-03) — P2.3 authority/issued_by registry resolution (feat/knowledge-core-stabilize)
+- `P2.3` `dictionaryBridge.resolveAuthority(rawCyrillic, documentDate?)` (NEW, pure): civil-registry terms first (РАЦС/ЗАГС/ДРАЦС → "Civil Registry Office[...]") then authority registry (МВС/міліція → Militsiya). Returns registry `official_en` + its `review_required` + warning verbatim. No match → passthrough.
+- `DOOR_ALIGNED` `docintel/authorityResolve.ts` (NEW) post-pass over `kind:'agency'` fields, wired into `documentFieldReader` in the SAME `SMART_NORMALIZE_ENABLED` block as P2.2 → reaches all 4 products via the shared `readDocument` door (this time aligned by design, lesson from the P2.2 door-trace). Carries registry review flag (ЗАГС/міліція → review); never lowers; passthrough keeps the transliteration (no silent loss).
+- `WHY_POST_PASS` Same reason as P2.2: per-field `toCanonicalValue` returns a bare string and drops the registry `review_required`. Document-level pass preserves it.
+- `LEGACY_DUP` Per-module authority maps in `militaryId.ts`/`birthCertificate.ts` left in place — dedup is P5 (canon note).
+- `TESTS` `authorityResolve.test.ts` 13/13 (РАЦС/ДРАЦС no-review; ЗАГС review; Міліція→Militsiya review; unknown passthrough; flag OFF/ON gating via stub provider; non-agency untouched). Broad run docintel+canonical/core+tps 768 pass / 1 skip. typecheck PASS.
+- `NOT_DONE` No live doc / no accuracy delta (owner ground truth). P2.4/P2.5 not started. Not pushed. Flag OFF everywhere.
 ## Session 104 (2026-06-03) — P2.2 patronymic reconcile + canon YAML repair (feat/knowledge-core-stabilize)
 - `YAML_FIXED` `docs/MIGRATION_BRIEF.yaml` was BROKEN (Ruby `Psych::SyntaxError` at line 116:93). Cause: flow-mapping values with embedded colons (`orchestrator.ts:65`) on lines 116–120. Quoted them. `ruby -ryaml YAML.load_file` → `YAML_OK`.
 - `P2.2` `docintel/patronymicReconcile.ts` (NEW, pure): validates patronymic fields (`middle_name`, `child_patronymic`) — sex inferred from the patronymic's own suffix; malformed/undeterminable → `review_required=true`, value kept (NO silent correction, NEVER lowers an existing flag).

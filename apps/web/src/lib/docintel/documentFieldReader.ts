@@ -16,6 +16,7 @@ import { getDocTypeSpec } from './documentRegistry'
 import { defaultVisionProvider } from './providers/geminiVisionProvider'
 import { toCanonicalValue } from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
+import { resolveAuthorityFields } from './authorityResolve'
 import type {
   DocumentReadResult,
   ExtractedDocField,
@@ -76,12 +77,16 @@ export async function readDocument(
     })
   }
 
-  // P2.2 (SMART_NORMALIZE_ENABLED, default OFF): reconcile patronymic fields
-  // against the sibling given name + inferred sex. A post-pass because it needs
-  // the full field set (the per-field toCanonicalValue has no sibling context).
-  // No silent correction — any change forces review. Flag OFF → fields untouched.
+  // SMART_NORMALIZE_ENABLED (default OFF): document-level post-passes that need
+  // the full field set (the per-field toCanonicalValue has no sibling context
+  // and returns a bare string, dropping any review signal).
+  //   P2.2 — reconcile patronymic vs sibling given name + inferred sex.
+  //   P2.3 — resolve issuing authority (agency) via the sourced registry.
+  // No silent correction; never lowers a review flag. Flag OFF → fields untouched.
   const finalFields =
-    process.env.SMART_NORMALIZE_ENABLED === '1' ? reconcilePatronymicFields(fields) : fields
+    process.env.SMART_NORMALIZE_ENABLED === '1'
+      ? resolveAuthorityFields(reconcilePatronymicFields(fields))
+      : fields
 
   return {
     ok: true, doc_type_id: docTypeId, fields: finalFields, anchor_read: anchorRead,
