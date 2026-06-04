@@ -1,3 +1,9 @@
+# HANDOFF — Session 105e (2026-06-04)
+
+## Session 105e — GT-fill execution pack + i94/ead templates (docs only)
+
+BLOCKED accepted (ready=2/26). Did NOT rerun on the old 2 docs. Prepared the fill pack + built the 2 missing templates from REAL adapter fields (eadAdapter/reParole), no invention: `docs/templates/ground-truth/i94.template.json`, `ead.template.json`. All 8 category templates now exist. fastest_to_fill_now = passport/id/ua-printed-birth/military (templates ready); i94/ead now ready too. Owner needs +4 new VERIFIED files to reach ≥6. No accuracy run; L2-WIRE HOLD; no runtime/flags/model/SMART/HTR/prod; filled GT stays in qa-private (gitignored, tracked=0).
+
 # HANDOFF — Session 105d (2026-06-04)
 
 ## Session 105d — Owner GT-batch fill checklist (docs only)
