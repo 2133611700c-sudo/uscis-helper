@@ -1,4 +1,6 @@
 # STATUS — Messenginfo
+## Session 105d (2026-06-04) — owner GT-batch fill checklist (docs only)
+- `CHECKLIST` docs/reports/GT_BATCH_FILL_CHECKLIST.md — docs to collect (6–10, categories), owner_verified vs candidate fields, fill steps (hand / gt_intake.mjs), PII-free readiness-count check. L2-WIRE HOLD until batch filled + thresholds calibrated. No runtime/flags/model/prod.
 ## Session 105c (2026-06-04) — L3: GT-language intent + calibration plan + templates (docs only)
 - `GT_LANGUAGE` DECIDED: value = AS-WRITTEN on document; normalized_value = canonical (KMU/ISO/UA); dictionary = hint/conflict, NEVER silent overwrite. Fixes the RU-doc-vs-UA-GT scoring artifact. `docs/reports/GT_LANGUAGE_INTENT.md`.
 - `CALIBRATION_PLAN` `docs/reports/ONEBRAIN_L3_GT_CALIBRATION_PLAN.md`: 6–10 docs across categories (soviet/UA-printed/UA-handwritten birth, passport/ID, EAD, I-94); critical fields; always-force_review signals vs lower-confidence-only; metrics before canary (false_negative_review=0 target, false_positive, DOB/name/place caught, review_rate_by_doc_type, missing_rate, model_disagreement later).
