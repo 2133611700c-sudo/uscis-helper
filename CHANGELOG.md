@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs: PRELIMINARY accuracy N=2 (signal only, not calibration)
+
+Owner-authorized partial rerun on the same 2 birth certs (0 new GT categories). value=as-written scoring, owner_verified_fields only. Mode C → false_negative_review=0 all cells + DOB month-mismatch caught; A/B FN high; SMART no gain. Reproduces prior N=2, adds no new GT data. Decisions unchanged: calibration BLOCKED, L2-WIRE BLOCKED, SMART DO_NOT_ENABLE, gate BLOCKED_NEEDS_GT_BATCH, model NEEDS_MORE_DATA. docs/reports/ACCURACY_PRELIM_N2.md (sanitized); raw qa-private (ignored). No runtime/flags/model/SMART/HTR/prod; decideField not wired.
+
+---
+
 ## 2026-06-04 — docs: GT-fill execution pack + i94/ead templates
 
 Readiness=2/26 (only the 2 birth certs VERIFIED, already scored) → BLOCKED for accuracy, no rerun. Built 2 missing GT templates from real adapter fields (no invention): docs/templates/ground-truth/{i94,ead}.template.json. All 8 category templates ready. Execution pack: fastest_to_fill_now (passport/id/ua-printed-birth/military), i94/ead now ready, optional_later (divorce/marriage/degraded/dl/booklet). Owner needs +4 new VERIFIED files for ≥6. No accuracy; L2-WIRE HOLD; no runtime/flags/model/SMART/HTR/prod; qa-private tracked=0.
