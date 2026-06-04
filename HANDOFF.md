@@ -10,6 +10,42 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104r (2026-06-04)
+
+## Session 104r — self-consistency gate IMPLEMENTED (commit 2 of 2; flag OFF)
+
+`docintel/selfConsistency.ts` (NEW) — instability detector, NOT a majority vote and NOT a
+correctness proof. `identityHash(rawFields)` hashes the RAW (pre-KMU) identity tuple
+(family/given/patronymic/dob/place) — `normalizeForCompare` only (NFC/apostrophe/ws/lowercase),
+deliberately NO KMU/dictionary so a normalizer can't hide a real model disagreement.
+`decideStatus`: <2 fields→insufficient; a failed re-read→incomplete; differing hash→mismatch;
+else agree. `applySelfConsistencyOutcome`: mismatch/incomplete/insufficient → force review on
+identity fields + reason; agree → unchanged. Never changes values, never lowers a flag, never
+claims correctness.
+
+Wired in `readDocument`: runs ONLY when `SELF_CONSISTENCY_GATE_ENABLED=1` AND
+`ANTI_FABRICATION_GATE_ENABLED=1` AND docClass ∈ handwritten allowlist (birth handwritten /
+soviet). Re-reads the SAME image with the SAME provider (`SELF_CONSISTENCY_RUNS` default 2,
+clamp 2–4; `SELF_CONSISTENCY_TIMEOUT_MS`). NO second read for passport / printed marriage /
+unknown. PII-free outcome on `DocumentReadResult.self_consistency` (status / instability /
+hash-prefix / runs).
+
+Honest note: on today's narrow allowlist the anti-fabrication class gate ALREADY forces identity
+review, so self-consistency's marginal effect now is the added instability signal + reason
+(triage/evidence), not a new review. Its review effect grows when the trigger later broadens.
+
+Tests: `selfConsistency.test.ts` (hash equality/diff; decideStatus; outcome value-unchanged;
+readDocument gating: flags OFF→1 call/no block, anti-fab OFF→no 2nd read, agree, mismatch+
+instability+reason, passport→no 2nd read, hash-prefix is hex-no-PII) + `documentClassMetric.test.ts`.
+docintel+canonical/core 317 pass; typecheck PASS.
+
+Test fixtures use synthetic name tokens (no owner surname) per the PII discipline.
+
+NOT done: different-model fanout (separate owner decision); flags not enabled anywhere; no prod
+env; model default unchanged; P2.4/P2.5 frozen; not pushed; accuracy not claimed (no GT). Next:
+owner enables `DOCUMENT_CLASS_METRICS_ENABLED` to collect allowlist_traffic_share, then decides
+on enabling the gates in a canary.
+
 # HANDOFF — Session 104q (2026-06-04)
 
 ## Session 104q — document_class metric (commit 1 of 2; PII-free, flag OFF)
