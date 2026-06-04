@@ -177,7 +177,7 @@ export function extractTranslationFields(
   return {
     family_name:     get('family_name'),
     given_name:      get('given_name'),
-    patronymic:      get('middle_name'),
+    patronymic:      get('patronymic') || get('middle_name'),
     date_of_birth:   rawDob ? (formatDobForTranslation(rawDob) ?? rawDob) : null,
     sex:             normalizeSex(get('sex')),
     passport_number: get('passport_number'),

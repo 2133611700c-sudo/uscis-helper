@@ -80,7 +80,7 @@ function stubProvider(): VisionProvider {
           { field: 'family_name', cyrillic: 'Куропʼятник', can_read: true, confidence: 0.99, reason: '' },
           { field: 'given_name', cyrillic: 'Сергій', can_read: true, confidence: 0.99, reason: '' },
           // garbled patronymic at HIGH confidence: review would be false without P2.2
-          { field: 'middle_name', cyrillic: 'ович', can_read: true, confidence: 0.99, reason: '' },
+          { field: 'patronymic', cyrillic: 'ович', can_read: true, confidence: 0.99, reason: '' },
         ],
       }
     },
@@ -95,14 +95,14 @@ describe('readDocument — SMART_NORMALIZE_ENABLED gating for patronymic', () =>
   it('flag OFF: garbled high-confidence patronymic is NOT review-flagged (unchanged behavior)', async () => {
     delete process.env.SMART_NORMALIZE_ENABLED
     const res = await readDocument(Buffer.from('x'), 'image/jpeg', 'ua_id_card', { provider: stubProvider() })
-    const p = res.fields.find((f) => f.field === 'middle_name')!
+    const p = res.fields.find((f) => f.field === 'patronymic')!
     expect(p.review_required).toBe(false)
   })
 
   it('flag ON: garbled patronymic IS review-flagged', async () => {
     process.env.SMART_NORMALIZE_ENABLED = '1'
     const res = await readDocument(Buffer.from('x'), 'image/jpeg', 'ua_id_card', { provider: stubProvider() })
-    const p = res.fields.find((f) => f.field === 'middle_name')!
+    const p = res.fields.find((f) => f.field === 'patronymic')!
     expect(p.review_required).toBe(true)
   })
 })
