@@ -1,4 +1,14 @@
 # STATUS — Messenginfo
+## Session 104p (2026-06-04) — Self-consistency gate DESIGN (no code)
+- `DESIGN` `docs/reports/SELF_CONSISTENCY_DESIGN.md` — real fabrication detector: re-read same image, force review when extracted IDENTITY disagrees across reads (the signal that actually tracks the confirmed failure).
+- `INSERTION` `readDocument` (provider call at documentFieldReader.ts:43; arbitrateDocument:100 only judges candidates → too late; route-level = 4× dup). Covers all 4 products.
+- `TRIGGER` narrow handwritten allowlist (birth_certificate_handwritten/_soviet_bilingual). NOT blurScore (calibration: doesn't discriminate), NOT all-hard-case, NOT printed marriage/passport.
+- `IDENTITY` tuple = family/given/patronymic/dob/place; normalize for compare (trim/lower/ws/apostrophe), NO KMU/dictionary before hashing (would mask disagreement); sha256, public = prefix only. Disagree → instability + force identity review (reason self_consistency_identity_mismatch); agree → don't lower, don't claim correct; run error → incomplete → force review, don't block.
+- `RUNS` N=2 same model first; N=3 optional escalation; different-model later (Gemini×Gemini not independent — disagreement is the signal).
+- `COST` incremental = allowlist_traffic_share × 1 extra call (N=2). allowlist_traffic_share = UNKNOWN (no per-class metric → needs logging; not guessed).
+- `FLAGS` SELF_CONSISTENCY_GATE_ENABLED (def OFF) + RUNS/MAX_EXTRA/TIMEOUT; acts ONLY when ANTI_FABRICATION_GATE_ENABLED ON (no hidden second reads).
+- `QUALITY_RESCAN` separated into its own usability domain (QUALITY_RESCAN_PROMPT_ENABLED, def OFF) — user guidance only, never forces identity review / anti-fabrication.
+- `FROZEN` no code; flags OFF; no prod env; model default unchanged; no API runs; P2.4/P2.5 frozen; not pushed; accuracy not claimed (no GT).
 ## Session 104o (2026-06-04) — Quality-signal calibration: blurScore NOT a fabrication detector
 - `CALIBRATED` Ran preprocessImage (local, no API) over 27 real fixtures. `docs/reports/QUALITY_SIGNAL_CALIBRATION.md`. Raw in qa-private (ignored).
 - `RESULT` blur 25.89–62.11; assessment good×22/acceptable×5/**poor×0**; only high_brightness warnings. The CONFIRMED-fabricating birth_soviet scores blur=36.41 `good` — SHARPER than the reliable passport (blur=25.89). Dangerous doc ranks ABOVE safe doc.

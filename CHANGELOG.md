@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(core): design self-consistency gate for handwritten documents
+
+Design (`docs/reports/SELF_CONSISTENCY_DESIGN.md`) for the real fabrication detector: re-read the same image, force review when extracted identity disagrees across reads. Raw: readDocument calls provider.readFields once (documentFieldReader.ts:43) = cheapest second-read point; arbitrateDocument (arbitration.ts:100) only judges candidates (too late); sha256 available. Insertion = readDocument (one door/all 4; not route=4× dup; not arbitrate). Trigger = narrow handwritten allowlist (NOT blurScore — calibration disproved; not all-hard-case; not printed marriage/passport). Identity tuple = family/given/patronymic/dob/place, normalized for compare with NO KMU/dictionary before hashing (would mask disagreement), sha256, public=prefix only. Disagree → instability + force identity review (self_consistency_identity_mismatch); agree → don't lower/don't claim correct; error → incomplete → force review, don't block. Runs N=2 same model first, N=3 optional, different-model later. Cost = allowlist_traffic_share × 1 extra (N=2); share UNKNOWN (needs per-class metric, not guessed). Flags SELF_CONSISTENCY_GATE_ENABLED (def OFF)+RUNS/MAX_EXTRA/TIMEOUT, dependent on ANTI_FABRICATION_GATE_ENABLED. Quality rescan prompt split into own usability flag (never touches safety path). No code; flags OFF; no prod env; no API runs; P2.4/P2.5 frozen; not pushed.
+
+---
+
 ## 2026-06-04 — docs(core): calibrate runtime image quality signals
 
 Ran preprocessImage locally (no API/OCR/text) over 27 real fixtures to test blurScore/assessment as a low_quality_scan trigger. Result: blur 25.89–62.11; assessment good×22/acceptable×5/poor×0; only high_brightness warnings. The CONFIRMED-fabricating birth_soviet scores blur=36.41 'good' — SHARPER than the reliable passport (blur=25.89) → dangerous doc ranks above safe doc. Verdict: blurScore/assessment do NOT discriminate fabrication-risk (sharp photo of handwritten/bilingual content fabricates yet reads 'good'); corpus has no degraded samples → threshold uncalibratable. Reco: do NOT wire low_quality_scan as a gate trigger; keep quality logging/provenance + rescan-prompt only; real detector = self-consistency + class allowlist. Report docs/reports/QUALITY_SIGNAL_CALIBRATION.md (sanitized); raw in qa-private (ignored). No code; flags OFF; no prod env; P2.4/P2.5 frozen; not pushed; accuracy not claimed (N=27, no GT).
