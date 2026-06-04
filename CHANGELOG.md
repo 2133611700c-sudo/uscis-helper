@@ -15,6 +15,8 @@ Every work session appends here. Never delete entries. Newest first.
 
 **Tests:** patronymicReconcile.test.ts 8/8 (flag OFF/ON gating incl.); docintel+canonical/core 268/268; P2.1 snapCity 4/4; typecheck PASS. Not pushed. SMART_NORMALIZE_ENABLED stays OFF.
 
+**Door trace (raw):** `readDocument` (patronymic guard) is called by all 4 product routes (TPS/Translation/Re-Parole/EAD) → not TPS-only. `snapCity` additionally reaches the TPS-only booklet facade `visionReadsToFields`, which already hardcodes `review_required:true` on every field → adding the patronymic guard there = zero delta. Doors functionally aligned; no code move. D2 «По батькові» recorded as VALIDATION-ONLY, goal block DEFERRED (no father-given-name + sex context).
+
 ---
 
 ## 2026-06-03 — KNOWLEDGE_CORE_STABILIZE: militaryId guards + MRZ debug route exposure + agency registry proof
