@@ -9,7 +9,7 @@ Designed the single per-field decision contract for OneBrain. Artifacts:
 - Binding rules: (1) dictionary never silently overwrites value — signal only, may set separate normalized_value/raise review; (2) critical identity stricter, never accept w/o strong anchor under any review signal; (3) self-consistency mismatch on DOB/name/place → force_review, model review=false can't override; (4) candidate_not_verified excluded from accuracy penalties; (5) no raw PII in artifacts; (6) strong-anchor (MRZ) precedence; (7) never lower a flag / never blank a value.
 - Maps onto EXISTING live code (readDocument/arbitrateDocument/dictionaryBridge/selfConsistency/antiFabricationGate/preprocess) → L2 is consolidation, not rewrite. consensus.ts left dormant (not removed, per constraints).
 
-No runtime change; no code; no flags; no prod env; no model/HTR/consensus change; no PII. Open: GT-language intent + threshold calibration = L3. Next (owner-gated): L2 implement decideField behind flags (default OFF), prod byte-identical.
+No runtime change; no code; no flags; no prod env; no model/HTR/consensus change; no PII (contract example values genericized to <surname> placeholders). Open: GT-language intent + threshold calibration = L3. Next (owner-gated): L2 implement decideField behind flags (default OFF), prod byte-identical.
 
 # HANDOFF — Session 104z (2026-06-04)
 
