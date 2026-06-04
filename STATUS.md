@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 104y (2026-06-04) — ACCURACY OFF-vs-ON done; gate proven; SMART no gain
+- `RAN` 2 birth-cert docs × modes A/B/C × {2.5-flash, 3.1-pro} = 12 cells (all ok), local, scored vs 6 owner-verified GT fields. Raw → qa-private (ignored).
+- `SAFETY_WIN` mode C (anti-fab+self-consistency) → **false_negative_review=0 in EVERY cell**. Without gate (A/B), 2.5-flash = 5 wrong identity fields review=false + DOB month-mismatch MISSED; mode C CAUGHT it (self_consistency=mismatch).
+- `DOB_TESTCASE` GT month=06; 2.5-flash read 02, 3.1-pro read 07 — both wrong+unstable. Gate caught in C (2.5) / throughout (pro self-flagged).
+- `SMART_NO_GAIN` B vs A: zero accuracy improvement (0/5=0/5; 1/4=1/4); B added a false_positive_review. → SMART_NORMALIZE = DO_NOT_ENABLE now / NEEDS_MORE_DATA.
+- `MODEL` 3.1-pro safer than 2.5-flash on hard-case (1/5 + self-flags DOB vs 0/5 + FN=5); gate mandatory regardless; firm choice = NEEDS_MORE_DATA.
+- `CAVEAT` low raw accuracy partly RU-document vs UA-GT language layer (not pure fabrication) — owner must clarify GT language intent. N=2/one-person = signal, not proof.
+- `REPORTS` ACCURACY_OFFON_RESULTS.md + SMART_NORMALIZE_DECISION.md (sanitized). No prod env; no flags enabled; behavior flags OFF.
 ## Session 104x (2026-06-04) — ETAP1: GT-fill prep for owner (no GT fabricated)
 - `OPENED` both birth-cert images (Preview) + both GT JSON templates for the owner.
 - `HINTS` docs/reports/GT_FILL_HINTS.md — structural blank-layout guidance + formats (YYYY-MM-DD, M/F, null+notes), NO real values. Refusal note on why model can't fill GT.
