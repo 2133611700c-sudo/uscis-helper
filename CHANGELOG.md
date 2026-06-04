@@ -3,6 +3,16 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — P2.3 authority/issued_by registry resolution (flag-gated)
+
+**apps/web/src/lib/tps/dictionaryBridge.ts** (`resolveAuthority`, NEW): resolves issuing authority via the sourced registry — civil-registry terms (РАЦС/ЗАГС/ДРАЦС) then authority registry (МВС/міліція). Returns registry `official_en` + `review_required` + warning. No match → passthrough.
+
+**apps/web/src/lib/docintel/authorityResolve.ts** (NEW): `resolveAuthorityFields()` post-pass over `kind:'agency'`; match → official_en + carry review flag (never lower); no match → untouched. Wired into documentFieldReader in the same `SMART_NORMALIZE_ENABLED` block as P2.2. Lives in the shared `readDocument` door → all 4 products (door-aligned by design).
+
+**Tests:** authorityResolve.test.ts 13/13 (РАЦС/ДРАЦС no-review, ЗАГС review, Міліція→Militsiya review, unknown passthrough, flag OFF/ON gating, non-agency untouched). docintel+canonical/core+tps 768 pass/1 skip; typecheck PASS. Legacy militaryId/birthCertificate authority maps left for P5 dedup. Not pushed. Flag OFF.
+
+---
+
 ## 2026-06-03 — P2.2 patronymic reconcile (flag-gated) + canon YAML repair + GT templates
 
 **docs/MIGRATION_BRIEF.yaml** (FIXED): was invalid YAML — `Psych::SyntaxError` at line 116 col 93. Flow-mapping values with embedded colons (`orchestrator.ts:65`) on lines 116–120 quoted. `ruby -ryaml YAML.load_file` → YAML_OK.
