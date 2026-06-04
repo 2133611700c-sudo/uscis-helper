@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 104o (2026-06-04) — Quality-signal calibration: blurScore NOT a fabrication detector
+- `CALIBRATED` Ran preprocessImage (local, no API) over 27 real fixtures. `docs/reports/QUALITY_SIGNAL_CALIBRATION.md`. Raw in qa-private (ignored).
+- `RESULT` blur 25.89–62.11; assessment good×22/acceptable×5/**poor×0**; only high_brightness warnings. The CONFIRMED-fabricating birth_soviet scores blur=36.41 `good` — SHARPER than the reliable passport (blur=25.89). Dangerous doc ranks ABOVE safe doc.
+- `VERDICT` blurScore/assessment do NOT discriminate fabrication-risk (a sharp photo of handwritten/bilingual content fabricates yet scores `good`). Corpus also has NO degraded samples → threshold uncalibratable here.
+- `RECO` Do NOT wire low_quality_scan as a gate trigger. Keep quality = logging/provenance + rescan-prompt only. Fabrication risk stays on class allowlist + (future) self-consistency. low_quality_scan ≠ handwritten; blurScore does not detect handwriting.
+- `FROZEN` no code; flags OFF; no prod env; model default unchanged; no self-consistency yet; P2.4/P2.5 frozen; not pushed; accuracy not claimed (N=27, no GT).
 ## Session 104n (2026-06-04) — Runtime quality-signal DESIGN (no code)
 - `DESIGN` `docs/reports/RUNTIME_QUALITY_SIGNAL_DESIGN.md` — thread image quality/degradation from preprocessImage into readDocument so the anti-fabrication gate can trigger on runtime low-quality, not just the class allowlist.
 - `RAW` All 4 routes call `preprocessImage` before readDocument (TPS:165, Translation:259, Re-Parole:138, EAD:136) but DROP `quality{}`. `PreprocessResult.quality` has brightness/blurScore/assessment/warnings + resized/scaleFactor. NO rotation/EXIF flag reported (applied silently at :85); NO handwritten detector. readDocument opts = {provider,timeoutMs,attemptsPerModel} → quality NOT received.
