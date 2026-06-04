@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — accuracy OFF-vs-ON measured vs owner GT (sanitized)
+
+Ran 2 docs × modes A/B/C × {gemini-2.5-flash, gemini-3.1-pro-preview} = 12 cells, scored vs 6 owner-verified GT fields (raw in qa-private, ignored). Result: mode C (anti-fab+self-consistency) → false_negative_review=0 in all cells; without gate 2.5-flash = 5 wrong identity fields review=false + DOB month-mismatch (GT 06 / read 02) MISSED, CAUGHT in C with self_consistency=mismatch. SMART_NORMALIZE: no accuracy gain (B==A) + a false-positive review → DO_NOT_ENABLE/NEEDS_MORE_DATA. 3.1-pro safer than 2.5-flash on hard-case but gate mandatory; firm model choice NEEDS_MORE_DATA. Caveat: RU-document vs UA-GT language layer inflates 'wrong'; owner to clarify GT language intent; N=2/one-person=signal not proof. Reports: ACCURACY_OFFON_RESULTS.md + SMART_NORMALIZE_DECISION.md. No prod env; no flags enabled; no code push.
+
+---
+
 ## 2026-06-04 — ETAP1: GT-fill prep for owner (hints + intake helper; no fabrication)
 
 Opened both birth-cert images + GT templates. docs/reports/GT_FILL_HINTS.md (structural hints + formats, no values). scripts/gt_intake.mjs (scratch, gitignored): owner types/dictates {field:value} → validates keys/ISO-date/M-F → writes + sets VERIFIED_BY_OWNER; smoke-tested on temp copy; real GT untouched. ETAP2-4 accuracy gated on VERIFIED_BY_OWNER. No GT fabricated; flags OFF; no prod env; no code push.
