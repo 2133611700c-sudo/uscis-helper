@@ -3,6 +3,17 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-04 — OPEN: durability of the prod metric deploy + GT fill
+- **Prod is ahead of main.** `vercel --prod` (2026-06-04) shipped the local branch
+  `feat/knowledge-core-stabilize` (22 commits, unpushed). Prod runs `sha f60d73f`, NOT in `main`.
+  A future push-to-main auto-deploy would ROLL BACK the metric + gate code. **Owner action:** push
+  the branch + open a PR + merge to `main` so prod is durable + reviewed-of-record.
+- **GT fill (still MISSING):** fill `qa-private/ground-truth/birth_cert_soviet_*.json` +
+  `birth_cert_handwritten_*.json` → `VERIFIED_BY_OWNER` per `docs/reports/GT_OWNER_FILL_GUIDE.md`.
+  Then the agent runs local accuracy. Do NOT fill from model output.
+- **Metric verification:** after a real document is processed in prod, the agent can confirm the
+  `[document_class_metric]` line via Vercel runtime logs (PII-free).
+
 ## 2026-06-03 — P2 ground-truth (BLOCKS the OFF-vs-ON accuracy delta) — STILL OPEN
 
 **Verified 2026-06-03 (raw):** the OFF-vs-ON harness was requested but CANNOT run —
