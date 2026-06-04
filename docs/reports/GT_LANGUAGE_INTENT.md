@@ -1,5 +1,14 @@
 # GT Language Intent (decision) — value = as-written, normalized = canonical
 
+> **CORRECTION 2026-06-04 (owner, hard):** the product's documents are **Ukrainian**. So "as-written" =
+> **Ukrainian** text. If the model returns a **Russian form** of a Ukrainian name/patronymic/place (e.g.
+> a `-ій` name as `-ей`, a dropped apostrophe `ʼ`, `і/ї/є/ґ` Russianized, a Ukrainian month misread), that
+> is a **WRONG read / language substitution = a real model ERROR to penalize**, NOT a normalization choice.
+> The earlier wording below ("a Soviet/Russian-language certificate stores the Russian form") is the
+> exception case, not the rule — for these Ukrainian docs, GT is Ukrainian, full stop. Recognition is
+> Ukrainian → English; KMU-55 transliteration happens only AFTER a correct Ukrainian read.
+
+
 **Date:** 2026-06-04  **Status:** DECIDED (owner). Binds all future GT fills + accuracy scoring +
 the OneBrain `decideField` contract. docs-only; no runtime change.
 
