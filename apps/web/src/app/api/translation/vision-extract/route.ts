@@ -32,6 +32,7 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
+import { normalizeGeminiModel } from '@/lib/gemini/model'
 // Central Brain (flag-gated, default OFF → prod behavior unchanged)
 import { analyze } from '@/lib/central-brain'
 import { deepseekProseTranslator } from '@/lib/engine/translator'
@@ -231,7 +232,7 @@ export async function POST(req: NextRequest) {
           ok: true, doc_type_id: docTypeId, fields,
           pages: corePageResults, page_count: rawFiles.length,
           provider: 'one-brain-core:translation-b2',
-          model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+          model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
           status: 'ok:core-b2',
           core_version: 'b2',
         }, { status: 200 })
