@@ -8,7 +8,7 @@ Measured (owner GT, N=2 hard-case birth certs): identity ≈0–1/5 → critical
 
 Artifacts: GT_LANGUAGE_INTENT.md corrected; docs/reports/UKRAINIAN_OCR_FAILURE_ANALYSIS.md (failure classes, layer responsibilities) + docs/reports/ANTI_FAB_GATE_CANARY_PLAN.md (flag, target classes only, rollout, rollback command, metrics, stop condition — PREPARE only). Decisions: SMART DO_NOT_ENABLE; ANTI_FABRICATION_GATE READY_FOR_CANARY_PREP (not executed; pre-canary gates = GT≥6 + calibration + rollback rehearsal, not yet met); hard-case model UNRESOLVED_BLOCKER; human review required for hard-case UA/Soviet/handwritten.
 
-No flags enabled; no prod env/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs (failure classes illustrated with neutral linguistic patterns, not the owner's name). Next: owner fills GT batch (4 skeletons ready) → calibration → canary execution (separate command).
+No flags enabled; no prod env/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs (failure classes illustrated with neutral linguistic patterns, not the owner's name; one gratuitous given-name example scrubbed post-commit). Next: owner fills GT batch (4 skeletons ready) → calibration → canary execution (separate command).
 
 # HANDOFF — Session 105g (2026-06-04)
 
