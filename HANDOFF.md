@@ -1,3 +1,9 @@
+# HANDOFF — Session 105d (2026-06-04)
+
+## Session 105d — Owner GT-batch fill checklist (docs only)
+
+Line status: L1 ✅ / L2-SCAFFOLD ✅ / L3 ✅ / L2-WIRE HOLD. Real blocker = expanded GT batch (owner). Wrote `docs/reports/GT_BATCH_FILL_CHECKLIST.md`: which docs (6–10, categories 1–8; I-94/EAD template TBD — adapter fields, not invented), which fields owner verifies vs candidate_not_verified, how to fill (hand or scripts/gt_intake.mjs), value=as-written rule, PII-free readiness-count check. No runtime/flags/model/SMART/HTR/prod. Next: owner fills batch → 'GT batch filled' → agent reruns accuracy + calibrates thresholds → then L2-WIRE (shadow-first).
+
 # HANDOFF — Session 105c (2026-06-04)
 
 ## Session 105c — L3: GT-language intent + calibration plan + templates (docs/GT-workflow only)
