@@ -10,6 +10,36 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104t (2026-06-04)
+
+## Session 104t — Enabled DOCUMENT_CLASS_METRICS_ENABLED in prod + redeploy (autonomous)
+
+Owner authorized (principal mode) enabling the safe metric flag + redeploy. Done via the
+locally-authenticated, project-linked Vercel CLI:
+- `DOCUMENT_CLASS_METRICS_ENABLED=1` added to Production (verified present). Behavior flags
+  (`ANTI_FABRICATION`/`SELF_CONSISTENCY`/`SMART_NORMALIZE`) confirmed ABSENT/OFF — NOT touched.
+- `vercel --prod` succeeded → `uscis-helper-2190dsx5b`, aliased to **messenginfo.com**. healthz
+  `status:ok`, `sha:f60d73f`. Clean build.
+
+**⚠️ Important truth (recorded, not hidden):** `vercel --prod` shipped the LOCAL branch, which is
+**22 commits ahead of origin (unpushed/unmerged)**. Prod now runs code NOT in `main`. Consequence:
+any future deploy of `main` (the repo's normal auto-deploy-on-push pipeline) would ROLL BACK these
+22 commits. To make this durable + reviewed, push the branch + open a PR + merge to main (owner
+decision; push was forbidden this session, so I did not). Behavior delta vs prior prod ≈ PII-free
+metric logging only — all behavior gates remain OFF, so client extraction behaviour is unchanged.
+
+**Metric logs:** NOT_OBSERVED_YET — the metric emits only on a real document extraction
+(`readDocument`); no client upload since deploy. Verified empty via Vercel runtime logs. It will
+appear on the first real OCR request as a `[document_class_metric]` line (PII-free:
+product/doc_type_id/doc_class/eligibility only).
+
+**Ground-truth:** still `MISSING` (1/19 both). Accuracy verification remains blocked. Added
+`docs/reports/GT_OWNER_FILL_GUIDE.md` (human-fill guide; do NOT fabricate from model; file paths
+use `<surname>` placeholder — no real surname in committed docs).
+
+**Not done / owner:** push+merge branch (durability); fill GT → then I run local accuracy by the
+`GT_ACCURACY_VERIFICATION.md` contract. Behavior flags stay OFF; no model change; P2.4/P2.5 frozen.
+
 # HANDOFF — Session 104s (2026-06-04)
 
 ## Session 104s — GT accuracy verification contract (docs only; schema-mismatch gap fixed)
