@@ -10,6 +10,35 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104n (2026-06-04)
+
+## Session 104n — Runtime quality-signal design (DESIGN ONLY, no code)
+
+Designed the next brick: thread `preprocessImage` quality/degradation into `readDocument`
+so the anti-fabrication gate can trigger on runtime low-quality scans, not just the static
+class allowlist. Report: `docs/reports/RUNTIME_QUALITY_SIGNAL_DESIGN.md`.
+
+**Raw (file:line):** all 4 routes call `preprocessImage` right before `readDocument`
+(TPS:165, Translation:259, Re-Parole:138, EAD:136) but DROP the `quality` object.
+`PreprocessResult.quality` = brightness/blurScore/assessment/warnings (+resized/scaleFactor).
+NO rotation/EXIF flag is reported (`.rotate()` applied silently, image-preprocess.ts:85);
+NO handwritten detector exists. `readDocument` opts carry no quality → signal never arrives.
+
+**Recommendation:** Option A — add an optional `DocumentRuntimeSignals` to `readDocument`
+opts (one door → all 4 products), behind a dedicated `RUNTIME_QUALITY_SIGNALS_ENABLED`
+(default OFF), acted on only when `ANTI_FABRICATION_GATE_ENABLED` is on. Class allowlist
+stays PRIMARY; `low_quality_scan` (assessment=poor / blur below threshold) is a SECONDARY
+trigger that forces review on identity fields ONLY (never changes values), reason
+`low_quality_scan`; no blanket `unknown_document`; thresholds conservative + uncalibrated
+(no GT). Derivable now: blur_score/assessment/low_quality_scan/oversized_resized.
+`rotated_input`/`possible_handwritten` NOT available → not fabricated (rotation would need
+`image-preprocess` to report it).
+
+**No code; flags OFF; no prod env; model default unchanged; no self-consistency; P2.4/P2.5
+frozen; not pushed.** Next (owner-approved code step): (1) optionally report rotation in
+preprocess; (2) add the optional opt to readDocument; (3) routes pass `pre.quality`;
+(4) gate consumes `low_quality_scan`.
+
 # HANDOFF — Session 104m (2026-06-04)
 
 ## Session 104m — Narrowed the shipped anti-fabrication gate to handwritten risk (code)
