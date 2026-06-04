@@ -58,3 +58,7 @@ apps/web/public/brand/archive/
 
 # Real client/owner documents — PII, NEVER commit
 test-fixtures/real-docs/
+
+# Private QA data — PII / ground-truth / benchmark raw, NEVER commit
+qa-private/
+reports/
