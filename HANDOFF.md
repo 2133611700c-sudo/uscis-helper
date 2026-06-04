@@ -1,3 +1,15 @@
+# HANDOFF — Session 105h (2026-06-04)
+
+## Session 105h — CORRECTION: Ukrainian source language + UA-OCR failure analysis + gate canary plan
+
+Owner hard correction accepted (memory: ukrainian-source-language): the documents are UKRAINIAN; recognition is UA→English. A model returning a Russian form of a Ukrainian name/patronymic/place (dropped apostrophe ʼ, -ій→-ей, і/ї/є/ґ Russianized, wrong UA month) is a WRONG read / language substitution = a real model ERROR to penalize, NOT a normalization artifact. My earlier RU-vs-UA 'artifact' framing is corrected. KMU-55 transliteration applies ONLY after a correct Ukrainian read; dictionaries are signal/conflict, never silent rewrite; Unicode NFC is for compare/hash and does not fix Russianization.
+
+Measured (owner GT, N=2 hard-case birth certs): identity ≈0–1/5 → critical failure; mode C gate forces review (FN→0) and catches the month error. Printed UA/US docs are NOT owner-GT-scored — no accuracy % claimed for them.
+
+Artifacts: GT_LANGUAGE_INTENT.md corrected; docs/reports/UKRAINIAN_OCR_FAILURE_ANALYSIS.md (failure classes, layer responsibilities) + docs/reports/ANTI_FAB_GATE_CANARY_PLAN.md (flag, target classes only, rollout, rollback command, metrics, stop condition — PREPARE only). Decisions: SMART DO_NOT_ENABLE; ANTI_FABRICATION_GATE READY_FOR_CANARY_PREP (not executed; pre-canary gates = GT≥6 + calibration + rollback rehearsal, not yet met); hard-case model UNRESOLVED_BLOCKER; human review required for hard-case UA/Soviet/handwritten.
+
+No flags enabled; no prod env/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs (failure classes illustrated with neutral linguistic patterns, not the owner's name). Next: owner fills GT batch (4 skeletons ready) → calibration → canary execution (separate command).
+
 # HANDOFF — Session 105g (2026-06-04)
 
 ## Session 105g — Auto-prepped GT skeletons + owner fill pack (max agent work, no GT fabrication)
