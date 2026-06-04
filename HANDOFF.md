@@ -10,6 +10,38 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104p (2026-06-04)
+
+## Session 104p — Self-consistency gate design (DESIGN ONLY, no code)
+
+Designed the REAL anti-fabrication detector (after blurScore was ruled out): re-read the same
+image and force review when the extracted IDENTITY disagrees across reads. Report:
+`docs/reports/SELF_CONSISTENCY_DESIGN.md`.
+
+**Raw basis (file:line):** `readDocument` calls `provider.readFields` once
+(`documentFieldReader.ts:43`) — cheapest place for a second read (spec/docType/provider in
+scope). `arbitrateDocument` (`arbitration.ts:100`) only judges candidates → too late.
+`crypto.createHash('sha256')` available. ⇒ insertion = `readDocument` (one door, all 4 products);
+NOT route-level (4× dup); NOT arbitrate.
+
+**Design:** trigger = narrow handwritten allowlist (NOT blurScore — calibration disproved it;
+NOT all-hard-case; NOT printed marriage/passport). Identity tuple = family/given/patronymic/dob/
+place, normalized for compare (NO KMU/dictionary before hashing, or it would mask the
+disagreement), sha256, public = hash prefix only. Disagree → `hard_case_model_instability` +
+force review on all identity fields (reason `self_consistency_identity_mismatch`); agree → don't
+lower / don't claim correctness; run error/timeout → `self_consistency_incomplete` + force
+review, don't block upload. Runs: N=2 same model first, N=3 optional, different-model later.
+Cost = `allowlist_traffic_share × 1` extra call (N=2) — share UNKNOWN (needs a per-class metric;
+NOT guessed). Flags: `SELF_CONSISTENCY_GATE_ENABLED` (default OFF) + RUNS/MAX_EXTRA/TIMEOUT,
+dependent on `ANTI_FABRICATION_GATE_ENABLED` (no hidden second reads). Quality rescan prompt
+split into its own usability flag — never touches the safety path.
+
+**No code; flags OFF; no prod env; model default unchanged; no API runs; P2.4/P2.5 frozen; not
+pushed; accuracy not claimed (no GT).**
+
+**Next:** owner approves contract + flags, then a small `readDocument` code step + a
+`document_class_count` metric (to learn allowlist_traffic_share before judging cost).
+
 # HANDOFF — Session 104o (2026-06-04)
 
 ## Session 104o — Quality-signal calibration: blurScore is NOT a fabrication detector
