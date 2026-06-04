@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(core): anti-fabrication gate design (no code)
+
+Design for a hard-case forced-review gate (`docs/reports/ANTI_FABRICATION_GATE_DESIGN.md`). Raw finding: `documentClassPolicy.ts` already has the primitives (hard-case classes, isHardCase:147, applyHardCaseReviewOverride:209, role guard:167, checkImageQuality:234) but they're wired ONLY in tps + translation routes — reparole + ead routes have 0 calls (2/4 products uncovered), and the guards sit in the route layer not the shared readDocument door. Missing: self-consistency/multi-read identity-hash detector; blur/rotation signal; identity-field-level force. Reco: insert at documentFieldReader (covers all 4) behind ANTI_FABRICATION_GATE_ENABLED (default OFF); class gate baseline + 2× same-model read on hard-case identity (disagree → instability + force review); MRZ precedence for passports; only raises review, never changes values. Honest: 3.5-flash N=1 = risk signal not proof; no prod-default change; gate needed regardless of model. P2.4/P2.5 frozen; SMART_NORMALIZE OFF; no prod env; not pushed.
+
+---
+
 ## 2026-06-04 — docs(model): hard-case stability finding (fabrication CONFIRMED)
 
 Re-checked with raw runs: `readDocument`×3/model on the faded Soviet birth cert, SMART OFF. **gemini-2.5-flash → 2 distinct identities in 3 runs, all identity fields review_required=false** (confident fabrication). **gemini-3.5-flash → 1 identity ×3 (stable)**. True identity UNKNOWN (no verified GT) → stability finding, not accuracy. Passport (clean printed) identical+correct across models. Sanitized report `docs/reports/MODEL_STABILITY_FINDING.md` (hashes, no PII); raw in `qa-private/reports/model-stability/` (gitignored). Reco (no code): anti-fabrication gate (identity differs across models/runs ⇒ force review on all identity fields; hard-case ⇒ forced review unless stronger source). Anti-fabrication > P2 dictionaries. SMART_NORMALIZE OFF; P2.4/P2.5 frozen. Not pushed. Also fixed .gitignore: anchored `/qa-private/` + `/reports/` to root (the unanchored `reports/` had silently swallowed `docs/reports/`).

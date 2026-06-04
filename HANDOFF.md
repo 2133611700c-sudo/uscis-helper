@@ -10,6 +10,38 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104j (2026-06-04)
+
+## Session 104j — Anti-fabrication / hard-case forced-review gate (DESIGN ONLY)
+
+Designed the gate that became the top priority (above P2.4/P2.5) after the confirmed
+identity-fabrication finding. Report: `docs/reports/ANTI_FABRICATION_GATE_DESIGN.md`.
+
+**Key discovery (raw, file:line):** much of the gate ALREADY EXISTS in
+`canonical/core/documentClassPolicy.ts` — hard-case classes, `isHardCase()` (:147),
+`applyHardCaseReviewOverride()` (:209, explicitly distrusts model `review_required=false`),
+`applyCertificateRoleGuard()` (:167), `checkImageQuality()` (:234, size-only). It even
+documents the exact failure ("review_required=false while returning the wrong person").
+
+**The real gaps (raw):**
+1. Guards wired ONLY in `tps/ocr/extract` + `translation/vision-extract`. `reparole` and
+   `ead` routes call them ZERO times → 2 of 4 products UNCOVERED.
+2. Guards live in the ROUTE layer, not in the shared `readDocument` door.
+3. No self-consistency / multi-read identity-hash instability detector.
+4. Image-quality is byte-size only — no blur/rotation hard-case trigger.
+
+**Recommendation:** put the gate in `documentFieldReader` (the door all 4 routes call)
+behind `ANTI_FABRICATION_GATE_ENABLED` (default OFF). Baseline = existing class gate for
+all 4; hard-case identity with no strong anchor → 2× same-model read + identity-hash
+compare → disagreement ⇒ instability flag + force review on all identity fields. MRZ takes
+precedence for passports. Gate ONLY raises review — never changes/invents values.
+
+**Honest scope:** 3.5-flash N=1 = risk signal, NOT proof; do not change prod default on
+N=1; hard-case gate required regardless of model; model `review=false` not trusted on hard-case.
+
+**Frozen:** P2.4/P2.5; SMART_NORMALIZE OFF; model default unchanged; no prod env; not pushed.
+Implementation is a separate code step requiring owner approval.
+
 # HANDOFF — Session 104i (2026-06-04)
 
 ## Session 104i — Model-stability finding (hard-case fabrication) — read-only + report
