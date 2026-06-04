@@ -31,6 +31,10 @@
 - Pre-existing uncommitted in-flight work (`gemini/model.ts` + vision/presence/route edits) left UNTOUCHED — separate from P2.2, not bundled.
 - Not pushed. `SMART_NORMALIZE_ENABLED` NOT set anywhere (stays OFF).
 
+**Door-alignment check (raw call-graph):** `readDocument` (the docintel door where `patronymicReconcile` runs) is invoked by ALL 4 product routes — TPS `route.ts:266`, Translation `:217/:263`, Re-Parole `:188`, EAD `:170` — so the patronymic guard is NOT TPS-only. `snapCity` (via `normalizeCity` ← `toCanonicalValue`) runs in `readDocument` (all 4) AND additionally in the TPS-only booklet facade `geminiVisionArbiter.visionReadsToFields` (flag `TPS_GEMINI_VISION_ARBITER_ENABLED`). That facade hardcodes `review_required:true` on every field (`geminiVisionArbiter.ts:60`), so the patronymic is already under review there — adding the guard would be zero behavioral delta (churn). **Verdict: doors functionally aligned, no move made.** snapCity differs only because it is a value transform (functional there) vs patronymic being a review guard (already maxed there). Both gated by the same `SMART_NORMALIZE_ENABLED`. The deeper Core-bypass (TPS `readDocument` only on `ONE_CORE_TPS_ENABLED` + UA-identity classes) is pre-existing One-Brain debt (Session 103) and hits BOTH dictionaries equally.
+
+**D2 status:** «По батькові» = VALIDATION-ONLY review guard, NOT reconstruction. Goal block NOT closed — DEFERRED (no father-given-name + sex context in the field set; regenerating from the holder's name would fabricate). Future: parse `father_full_name` on birth certs (P5).
+
 **Next exact task:** owner fills the 3 GT templates locally → run the P2-relevant fixtures `SMART_NORMALIZE_ENABLED=OFF` vs `ON` → report per-field delta (first real "better" proof). Then decide P2.3.
 
 # HANDOFF — Session 101 (2026-06-03)
