@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — on rails: prod==main verified; holding for owner GT (no code)
+
+Post-merge holding-state verification (no new functionality). origin/main 46a0912 (Merge PR #80); healthz ok sha 46a0912; prod deploy Ready → prod==main, durability closed. DOCUMENT_CLASS_METRICS_ENABLED=1 in prod (code in main; payload class/eligibility only, PII-free; logs NOT_OBSERVED_YET). Behavior flags OFF (dictionaries/gates dormant in prod code). GT still MISSING → accuracy not run. OWNER_QUEUE refreshed (durability/PR/merge/metric marked DONE; open = GT fill → accuracy → SMART decision → PII sweep). Next blocker = owner GT; no new code until accuracy loop closes.
+
+---
+
 ## 2026-06-04 — chore(git): open PR #80 (durability; merge owner-gated)
 
 Opened PR #80 (base main ← feat/knowledge-core-stabilize @ a896212, PII-free body) — review-of-record for the already-prod-deployed branch. Did NOT merge (merge→main auto-deploys to messenginfo.com = owner decision; also closes prod==main durability). Pipeline: push ✅ → PR ✅ → merge (owner) → GT (owner) → accuracy (agent) → SMART decision. Behavior flags OFF; GT MISSING; prod env untouched.

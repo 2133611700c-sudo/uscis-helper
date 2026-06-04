@@ -3,20 +3,27 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
-## 2026-06-04 — OPEN: durability of the prod metric deploy + GT fill
-- **Branch PUSHED to GitHub** (`feat/knowledge-core-stabilize` @ `8b9a0d2`, force-with-lease) — the
-  prod-deployed code is no longer local-only. ✅ first half done.
-- **STILL OPEN — merge to main.** Prod runs `8b9a0d2` (was f60d73f at deploy), NOT in `main`. A deploy
-  of `main` would still ROLL BACK the metric/gate code. **Owner action:** open PR for
-  `feat/knowledge-core-stabilize` → review → merge to `main` so prod is durable + reviewed-of-record.
-  (Agent did not open the PR / merge — forbidden this task.)
-- **GT fill (still MISSING):** fill `qa-private/ground-truth/birth_cert_soviet_*.json` +
-  `birth_cert_handwritten_*.json` → `VERIFIED_BY_OWNER` per `docs/reports/GT_OWNER_FILL_GUIDE.md`.
-  Then the agent runs local accuracy. Do NOT fill from model output.
-- **Metric verification:** after a real document is processed in prod, the agent can confirm the
-  `[document_class_metric]` line via Vercel runtime logs (PII-free).
+## 2026-06-04 — current owner-gates (after PR #80 merge)
 
-## 2026-06-03 — P2 ground-truth (BLOCKS the OFF-vs-ON accuracy delta) — STILL OPEN
+**DONE (no longer owner-blocked):**
+- ✅ Durability: branch pushed → PR #80 → **MERGED** → `prod == main` (origin/main `46a0912`; healthz ok sha `46a0912`).
+- ✅ `DOCUMENT_CLASS_METRICS_ENABLED=1` set in Production (metric code now in prod via main).
+- ✅ Prod health verified (messenginfo.com ok, latest deploy Ready).
+
+**OPEN — owner only:**
+1. **Fill ground-truth** (human transcription, NOT model output) for
+   `qa-private/ground-truth/birth_cert_soviet_*.json` + `birth_cert_handwritten_*.json` →
+   `ground_truth_status: VERIFIED_BY_OWNER`. Guide: `docs/reports/GT_OWNER_FILL_GUIDE.md`.
+2. After GT: tell the agent → it runs the local OFF-vs-ON accuracy verification (no prod).
+3. After accuracy: decide whether to enable `SMART_NORMALIZE_ENABLED` (and later anti-fab/self-consistency)
+   in a canary — owner authorization required; agent will not enable behavior flags alone.
+4. Later: PII history sweep before sharing the repo externally (surname/`FU262473`/DOB are pervasive in
+   main history — Session-54 debt; not a blocker for internal work).
+
+**Agent can do autonomously (not owner-gated):** verify the `[document_class_metric]` line via Vercel
+runtime logs once a real document is processed in prod (currently NOT_OBSERVED_YET — no extraction since deploy).
+
+## 2026-06-03 — P2 ground-truth — SUPERSEDED (the "no images" claim below was FALSE; images exist)
 
 **Verified 2026-06-03 (raw):** the OFF-vs-ON harness was requested but CANNOT run —
 precondition not met:
