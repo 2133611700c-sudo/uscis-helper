@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 104e (2026-06-03) — P2 OFF-vs-ON harness BLOCKED (precondition not met)
+- `BLOCKED` Requested OFF-vs-ON accuracy harness NOT run — precondition fails (raw): GT files all `ground_truth_status="NEEDS_OWNER"`, 0 filled fields (0/11, 0/11, 0/7); NO document images in `test-fixtures/real-docs/`. `readDocument` has nothing to read.
+- `NO_HARNESS_CODE` Did not write a harness that cannot run / cannot be validated. No accuracy claimed.
+- `OWNER_GATE` `OWNER_QUEUE.md` updated: owner must supply (1) document IMAGES → `test-fixtures/real-docs/` (gitignored) AND (2) filled GT values + `VERIFIED_BY_OWNER`. Then harness runs.
+- `PROD_GATE` `SMART_NORMALIZE_ENABLED` in prod stays FORBIDDEN until the delta is measured (Core already ON in prod).
+- `UNCHANGED` HEAD code `21e90c6`. P2.4/P2.5 frozen. Not pushed.
 ## Session 104d (2026-06-03) — P2 dictionary-in-live-path checkpoint (docs only)
 - `P2_CHECKPOINT` `docs/reports/P2_DICTIONARY_IN_LIVE_PATH_CHECKPOINT.md` — architecture fix of P2.1–P2.3 as dictionaries inside the live `readDocument` path (goal: document → readDocument → normalization/dictionaries → document-level validation → arbitrateDocument → product adapters → human → PDF).
 - `P2.1` snapCity = city/place normalization; flag `SMART_NORMALIZE_ENABLED`; exact→normalize, fuzzy/unknown→review+suggested_value, NO silent correction. COMMITTED.
