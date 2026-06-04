@@ -31,15 +31,19 @@ NOT "fix" this silently — that would be dictionary-fabrication. It may only si
 - **Anti-fabrication + self-consistency gate** — forces review on hard-case identity; mode C drove
   false_negative_review to 0 on the measured pair and caught the month error the bare model missed.
 
-## Status by class (honest)
-- **Printed US / Ukrainian printed docs:** suspected usable (passport read correctly + stably in liveness),
-  **NOT yet owner-GT-scored** — do not assert a percentage without verified GT.
-- **Hard-case Ukrainian / Soviet / handwritten birth certs:** **critical failure** (≈0–1/5 vs owner GT) →
-  must route to human review; the model cannot be trusted unaided here.
+## Status by class (honest — updated 2026-06-04)
+- **Ukrainian internal passport (printed):** **first owner-GT datapoint** through the live door @ 3.1-pro —
+  3/3 of the read identity fields correct (family/given/DOB), but the reader **dropped patronymic**
+  (`middle_name` not emitted) → coverage gap, not a wrong value. N=1; encouraging, not a verdict.
+- **EAD / I-94 / military_id:** owner GT exists but **not yet live-scorable** (US docs have no UA-reader
+  path; military has no registry doc type; no upright real EAD/I-94 image) — no measured accuracy.
+- **Hard-case Ukrainian / Soviet / handwritten birth certs:** **critical failure** — 1/4 identity fields
+  correct even on 3.1-pro (only family_name; given/patronymic/DOB wrong, re-confirmed vs owner GT this
+  session) → must route to human review; the model cannot be trusted unaided here.
 
 ## Decisions
 - `SMART_NORMALIZE_ENABLED`: **DO_NOT_ENABLE** (no accuracy gain; cannot fix a reading failure).
-- `ANTI_FABRICATION_GATE_ENABLED`: **READY_FOR_CANARY_PREP** (evidence-supported; see ANTI_FAB_GATE_CANARY_PLAN.md) — NOT executed.
+- `ANTI_FABRICATION_GATE_ENABLED`: **READY_FOR_OWNER_APPROVED_CANARY** (evidence-supported; GT≥6 gate met; see ANTI_FAB_GATE_CANARY_PLAN.md) — NOT executed. Prod enable = separate owner command.
 - hard-case model: **UNRESOLVED_BLOCKER** (neither 2.5-flash nor 3.1-pro reads UA hard-case reliably; a
   better Ukrainian reader / HTR / multi-reader is a separate, metrics-gated investigation).
 - self-consistency: a safety SIGNAL (instability), not proof of truth.

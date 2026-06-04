@@ -66,3 +66,6 @@ test-fixtures/real-docs/
 
 # scratch owner-intake helper (not for commit)
 scripts/gt_intake.mjs
+
+# session-54 accuracy rerun harness (scratch, gitignored)
+/apps/web/src/lib/docintel/__rerun__/
