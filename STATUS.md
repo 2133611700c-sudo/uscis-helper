@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 104f (2026-06-03) — fix(gemini): normalize GEMINI_MODEL env (live-risk, Core ON)
+- `LIVE_FIX` New `gemini/model.ts` `normalizeGeminiModel()` trims whitespace/`\n` from `GEMINI_MODEL`. A trailing newline changes the REST URL → first request 404s before fallback. Core is ON in prod → `GEMINI_MODEL` is read on the live path, so this hardens prod.
+- `WIRED` `geminiVisionProvider.modelFallback()` primary + `translation/vision-extract` response `model:` metadata field. Both preserve the SAME pre-existing defaults (gemini-3.1-pro-preview / gemini-2.5-flash) — trim only, no default change, no runtime routing change.
+- `PRESENCE_EXCLUDED` `engine/presence.ts` in-flight edit ALSO introduces a new explicit default model (`?? env` → `normalizeGeminiModel(..., 'gemini-2.5-flash')`) = semantic change → NOT committed; deferred for separate review.
+- `TESTS` model.test 4/4; docintel suite green (38 in model+docintel run); typecheck PASS.
+- `NOT_COMMITTED` presence.ts, visionCredentials ADC (+test), tsconfig.tsbuildinfo — left in working tree. Not pushed. No prod env, no SMART_NORMALIZE.
 ## Session 104e (2026-06-03) — P2 OFF-vs-ON harness BLOCKED (precondition not met)
 - `BLOCKED` Requested OFF-vs-ON accuracy harness NOT run — precondition fails (raw): GT files all `ground_truth_status="NEEDS_OWNER"`, 0 filled fields (0/11, 0/11, 0/7); NO document images in `test-fixtures/real-docs/`. `readDocument` has nothing to read.
 - `NO_HARNESS_CODE` Did not write a harness that cannot run / cannot be validated. No accuracy claimed.

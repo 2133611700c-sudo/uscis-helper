@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — fix(gemini): normalize GEMINI_MODEL env (Group A triage landed)
+
+Closed the live `GEMINI_MODEL` whitespace/newline risk (Core is ON in prod → env model id read on the live Gemini path; a trailing `\n` changes the REST URL → 404 before fallback). New `gemini/model.ts` `normalizeGeminiModel(value, fallback)` (pure trim, 4 tests). Wired into `geminiVisionProvider.modelFallback()` (default gemini-3.1-pro-preview unchanged) and `translation/vision-extract` response `model:` metadata (default gemini-2.5-flash unchanged; no routing change). `engine/presence.ts` EXCLUDED — its edit also adds a new explicit default model (semantic change, deferred). Vision ADC + tsconfig.tsbuildinfo left in tree. Guards: NO_SECRETS / NO_SMART_NORMALIZE / NO_VISION_ADC / NO_DEFAULT_MODEL_CHANGE. typecheck PASS; model 4/4; docintel green. Not pushed.
+
+---
+
 ## 2026-06-03 — P2 OFF-vs-ON harness BLOCKED on owner inputs (docs only, no code)
 
 Requested to measure the P2.1–P2.3 OFF-vs-ON accuracy delta vs ground truth. **Precondition not met → stopped** (raw): GT files all `ground_truth_status="NEEDS_OWNER"`, 0 filled fields (0/11, 0/11, 0/7); no document images in `test-fixtures/real-docs/` (`NO_IMAGES_FOUND`). `readDocument` has nothing to read; nothing to compare. Did NOT write an unrunnable harness; NO accuracy claim. `OWNER_QUEUE.md` updated: owner must supply (1) document images → `test-fixtures/real-docs/` (gitignored) + (2) filled GT values + `VERIFIED_BY_OWNER`. Enabling `SMART_NORMALIZE_ENABLED` in prod stays FORBIDDEN (Core already ON). STATUS/HANDOFF updated. Docs only. HEAD 21e90c6. Not pushed.
