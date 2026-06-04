@@ -4,10 +4,12 @@ Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
 ## 2026-06-04 — OPEN: durability of the prod metric deploy + GT fill
-- **Prod is ahead of main.** `vercel --prod` (2026-06-04) shipped the local branch
-  `feat/knowledge-core-stabilize` (22 commits, unpushed). Prod runs `sha f60d73f`, NOT in `main`.
-  A future push-to-main auto-deploy would ROLL BACK the metric + gate code. **Owner action:** push
-  the branch + open a PR + merge to `main` so prod is durable + reviewed-of-record.
+- **Branch PUSHED to GitHub** (`feat/knowledge-core-stabilize` @ `8b9a0d2`, force-with-lease) — the
+  prod-deployed code is no longer local-only. ✅ first half done.
+- **STILL OPEN — merge to main.** Prod runs `8b9a0d2` (was f60d73f at deploy), NOT in `main`. A deploy
+  of `main` would still ROLL BACK the metric/gate code. **Owner action:** open PR for
+  `feat/knowledge-core-stabilize` → review → merge to `main` so prod is durable + reviewed-of-record.
+  (Agent did not open the PR / merge — forbidden this task.)
 - **GT fill (still MISSING):** fill `qa-private/ground-truth/birth_cert_soviet_*.json` +
   `birth_cert_handwritten_*.json` → `VERIFIED_BY_OWNER` per `docs/reports/GT_OWNER_FILL_GUIDE.md`.
   Then the agent runs local accuracy. Do NOT fill from model output.
