@@ -507,6 +507,43 @@ The user-facing complement to the session-isolation fix. The live-failure invest
 
 ---
 
+## Session 103 — Source-code-only Core audit (2026-06-03)
+
+Completed the requested source-code-only audit proving whether the project truly uses one central Document Core across TPS, Translation, Re-Parole, and EAD. Conclusion from source: **it does not yet**. The live system is a hybrid: shared docintel/arbitration substrate exists, but runtime routing remains fragmented by feature flags and legacy slot/document-class bypasses.
+
+### What changed
+
+- Added four audit artifacts:
+  - `docs/reports/ACTUAL_PRODUCT_CALL_GRAPH.md`
+  - `docs/reports/CORE_LIBRARY_RUNTIME_AUDIT.md`
+  - `docs/reports/DOCUMENT_CLASS_EXTRACTION_MATRIX.md`
+  - `docs/reports/CODEX_SPY_PROJECT_AUDIT.md`
+
+### Verified evidence
+
+- `readDocumentCore()` exists but is not called by product routes.
+- Runtime "DocumentProfile" abstraction is absent; actual shared runtime profile is `DocTypeSpec` via `getDocTypeSpec()`.
+- `CanonicalDocumentResult` is built in Re-Parole and EAD routes, but not uniformly in TPS or Translation live Core paths.
+- TPS still bypasses Core for `i94`, `ead`, `dl`, `i797`, `tps_notice`, `i797_or_ead`, `ead_old`, `military_id`, `birth_certificate`.
+- Re-Parole still bypasses `i94`, `ead`, `dl` to `/api/tps/ocr/extract`.
+- Translation can run shared docintel, central-brain, or optional Core arbitration path; not one single path.
+
+### Verification commands
+
+- `npm --prefix apps/web run typecheck` → PASS
+- `npm --prefix apps/web test -- src/lib/docintel/__tests__/docintel.test.ts src/lib/canonical/core/__tests__/documentClassPolicy.test.ts src/lib/canonical/core/__tests__/mrzAuthority.test.ts src/lib/canonical/core/__tests__/tpsAdapter.test.ts src/lib/canonical/core/__tests__/reParoleAdapter.test.ts src/lib/canonical/core/__tests__/eadAdapter.test.ts src/lib/tps/modules/__tests__/birthCertificate.test.ts src/lib/tps/modules/__tests__/militaryId.test.ts src/lib/tps/modules/__tests__/labelValueExtractor.test.ts` → 9 files, 302 tests PASS
+
+### Exact next action
+
+1. Decide whether the target architecture is:
+   - truly route all four products through `readDocumentCore()`, or
+   - delete/replace the dead abstraction and standardize on `readDocument() + arbitrateDocument()`.
+2. If unification is desired, first PR should wire one explicit shared profile/result contract:
+   - `DocTypeSpec`/profile layer
+   - one canonical result shape
+   - route-level document-class guards in Re-Parole and EAD
+3. After that, migrate `military_id` and `birth_certificate` off legacy TPS-only extraction or mark them intentionally outside Core.
+
 ## Session 74 — S3 Name No-Silent-Recase (branch `fix/name-no-silent-recase`, off main)
 
 Third safety item. Audited all five S3 categories (name/patronymic/authority/date/series). Four already preserve raw + flag `review_required=true` on uncertainty (verified by reading `reconcilePatronymic`, `normalizeAuthority` normalize.ts:146, `normalizeDate` normalize.ts:95, `validatePassportPerforation`). Only NAME still silently mutated: the EAD + passport modules built `normalized_value` with a naive `s[0] + s.slice(1).toLowerCase()` and `review_required:false`, corrupting the controlling Latin spelling — `O'BRIEN→O'brien`, `PETRENKO-VASYL→Petrenko-vasyl`, `VAN DER BERG→Van der berg` (EAD never split on spaces), `McDonald→Mcdonald`.
@@ -581,3 +618,143 @@ Closed the owner request: test every product without payment. Inventory: TPS wiz
 - Added preprocessImage to translation/vision-extract/route.ts
 - Fixes upside-down document not being read in translation flow
 - tsc: 0 errors
+
+## 2026-06-03 | architecture map follow-up
+- Added source-only architecture docs:
+  - `PROJECT_ARCHITECTURE_MAP.md`
+  - `PRODUCT_RUNTIME_ARCHITECTURE.md`
+  - `KNOWLEDGE_ASSET_ARCHITECTURE.md` + `.csv`
+  - `DOCUMENT_CLASS_ARCHITECTURE.md`
+  - `OCR_AI_ARCHITECTURE.md`
+  - `ENV_FLAGS_ARCHITECTURE.md`
+  - `LEGACY_BYPASS_ARCHITECTURE.md`
+  - `CYRILLIC_HANDLING_ARCHITECTURE.md`
+  - `PROJECT_ARCHITECTURE_VERDICT.md`
+- Verified outcome:
+  - intended one-reader file `canonical/core/readDocumentCore.ts` is still not wired to product routes
+  - live shared path is `docintel/documentFieldReader.ts` plus route-local arbitration/policy wiring
+  - Translation still has 3 runtime branches
+  - Re-Parole still bypasses its own core route for `i94`, `ead`, `dl`
+  - EAD core route exists but is off by default unless both client/server flags are enabled
+- Verification:
+  - `npm --prefix apps/web run typecheck` PASS
+  - restored `apps/web/tsconfig.tsbuildinfo` to `HEAD` afterward
+
+## 2026-06-03 | Phase 1 runtime baseline
+- Closed the remaining Phase 1 UNKNOWNs without changing product behavior.
+- `tps/centralBrain.ts` is confirmed live as a TPS merge/translation path:
+  - UI calls `/api/tps/brain/merge` from `TPSWizardV2.tsx`
+  - route calls `mergeToCentralBrain()`
+  - booklet translation preview + packet builder consume `brainMerged`
+- Ran live engine baseline:
+  - command: `LIVE_E2E=1 npm test -- --run src/lib/engine/__tests__/pipeline.live.e2e.test.ts`
+  - result: 2/3 pass, 1 fail
+  - fail: passport fixture in `engine/presence.ts` produced empty Latin fields after OCR-confirm guard; assertion on `KUROPIATNYK` failed
+- Ran direct route-handler smoke against real booklet fixture with `.env.local` loaded:
+  - TPS: route logged `used Core for booklet fields: 4 review_required: 4`
+  - Translation: `200`, `status=ok:core-b2`, `provider=one-brain-core:translation-b2`, `fields=4`, `review_required=4`
+  - Re-Parole: `200`, `_core=true`, `core_status=ok`, `uncertain_fields=13`
+  - EAD: `200`, `_core=true`, `core_status=ok`, `invented_fields_count=0`
+  - Google Vision during this smoke returned `HTTP 403`
+- Local `next dev` API smoke is `DEGRADED` on this workstation:
+  - `GET /api/central-brain/health` → `404`
+  - `POST /api/tps/ocr/extract`, `/api/translation/vision-extract`, `/api/reparole/ocr/extract`, `/api/ead/ocr/extract` → `404`
+  - log showed `Failed to find Server Action` plus repeated `EMFILE` watcher errors
+  - conclusion: direct route invocation is more trustworthy than localhost app-router in current local state
+- Cleanup done:
+  - temporary test harness deleted
+  - `apps/web/.next` removed again
+  - `apps/web/tsconfig.tsbuildinfo` restored to `HEAD`
+
+Next action:
+- Stop after Phase 1 as requested.
+- If owner wants to proceed, Phase 2 starts with `SMART_NORMALIZE_ENABLED` scaffolding and first brick = `snapCity` into the live dictionary door.
+
+## 2026-06-03 | P1.5.1 Vision auth gate
+- Followed `docs/MIGRATION_BRIEF.yaml`, phase `P1.5.1` only.
+- Diagnosis:
+  - local `.env.local` exposes `GOOGLE_APPLICATION_CREDENTIALS` by name
+  - referenced ADC file exists locally
+  - file contains a valid service-account JSON shape
+  - existing Vision loader ignored ADC file-path mode entirely and fell back to API key
+- Code change:
+  - added ADC file-path support to `apps/web/src/lib/canonical/vision/visionCredentials.ts`
+  - gated behind `VISION_ADC_FILE_ENABLED` (default OFF, no prod behavior change)
+  - added tests in `apps/web/src/lib/canonical/vision/__tests__/visionCredentials.test.ts`
+- Verification:
+  - `npx vitest run src/lib/canonical/vision/__tests__/visionCredentials.test.ts` → 14/14 PASS
+  - direct live Vision probe with `VISION_ADC_FILE_ENABLED=1` switched auth mode to service account:
+    - project detected: `messenginfo`
+    - service account detected masked: `messenginfo-docai-ocr-sa@***.iam.gserviceaccount.com`
+  - sanitized diag still returned `VISION_AUTH_403` with exact cause:
+    - `This API method requires billing to be enabled ... project #537268475735`
+- Conclusion:
+  - loader bug is fixed
+  - phase is still `BLOCKED` on billing, not on code
+  - `P1.5.3` full baseline matrix must NOT run until Vision billing is enabled
+- Cleanup:
+  - temporary probe tests removed
+  - `apps/web/tsconfig.tsbuildinfo` restored to `HEAD`
+
+Next action:
+- Owner enables billing for Google Vision on project `537268475735` or supplies a Vision-enabled project/credential path.
+- After that, rerun `P1.5.1` probe once, then continue to `P1.5.3` full baseline matrix. Do not skip directly to Phase 2.
+
+## 2026-06-03 | P1.5.3 partial baseline matrix (Gemini-core subset)
+- Corrected the phase logic from `docs/MIGRATION_BRIEF.yaml` with source proof: Vision billing is **not** required for the Gemini-core subset baseline.
+- Added report: `docs/reports/BASELINE_MATRIX.md`
+  - code-derived matrix for every `product x class` row from the brief
+  - runtime rows only for live-core + real-fixture pairs
+- Runtime harness:
+  - temporary out-of-repo `tsx` script under `/tmp`
+  - direct `POST()` route-handler invocation only
+  - `.env.local` loaded by name
+  - forced flags for local truthing:
+    - `ONE_CORE_TPS_ENABLED=1`
+    - `ONE_CORE_REPAROLE_ENABLED=true`
+    - `ONE_CORE_EAD_ENABLED=true`
+    - `ONE_BRAIN_CORE_ENABLED=1`
+- Verified runtime rows:
+  - TPS `internal_booklet` -> `core_status=ok`, `final_field_count=4`, `module_field_count=4`
+  - Translation `internal_booklet` -> `ok:core-b2`, 4 fields, all under review
+  - Translation `birth_certificate` -> `ok:core-b2`, 10 fields, all under review
+  - Translation `soviet_birth_certificate` -> `ok:core-b2`, 10 fields, 9 under review; note: generic `ua_birth_certificate` spec
+  - Translation `divorce_certificate` -> `ok:core-b2`, 1 field
+  - Re-Parole `internal_booklet` -> `_core=true`, `X-Core-Fields=4`, `core_status=ok`
+  - EAD `internal_booklet` -> `_core=true`, `X-Core-Fields=4`, `core_status=ok`, `invented_fields_count=0`
+- Degraded row:
+  - Translation `marriage_certificate` blocked before OCR by policy guard (`needs_better_scan`, 136226 bytes < 300000 byte minimum)
+- Critical truth:
+  - `Vision billing` is not a blocker for booklet/birth/divorce Gemini-core baseline.
+  - It remains relevant only for passport MRZ-augmented parity and legacy/Vision-text branches.
+  - `us_ead`, `us_i94`, `us_i797` are not billing-blocked; they are `NOT_ON_LIVE_CORE` because the route maps them but docintel has no registry entry.
+
+Next action:
+- If continuing `P1.5.3`, do **not** go back to billing first.
+- First fill the remaining Gemini-only gaps:
+  - add or locate real fixtures for `international_passport` and `id_card`
+  - rerun the same route-handler harness
+- Keep passport rows separate as `Gemini core / MRZ parity unverified under Vision 403`.
+- Treat `us_ead`, `us_i94`, `us_i797`, `driver_license`, and TPS/Re-Parole non-core classes as coverage gaps, not OCR-billing gaps.
+
+## 2026-06-03 | P1.5.4 booklet ground-truth gate
+- Added report: `docs/reports/P1_5_4_BOOKLET_GROUND_TRUTH_GATE.md`
+- Purpose: define the exact owner-gated contract required before booklet quality can be measured honestly.
+- Verified hard blocker:
+  - `test-fixtures/real-docs/` currently has only one booklet fixture: `internal_passport_kuropiatnyk.jpg`
+  - there are not `3-4` booklet fixtures in that folder today
+- Verified the repo already expects owner-filled ground truth for risky Cyrillic docs:
+  - `docs/reports/FAILED_CYRILLIC_GROUND_TRUTH_ADJUDICATION.md`
+  - `docs/reports/CYRILLIC_DOCUMENT_CLASS_POLICY.md`
+- Prepared the exact JSON shape and suggested path pattern for booklet truth files:
+  - `qa-private/ground-truth/booklet/<fixture_basename>.json`
+- Did **not** fabricate any field values and did not inspect private PII values.
+
+Next action:
+- Owner adds `3-4` booklet fixtures or explicitly accepts `N=1`.
+- Owner fills one truth JSON per booklet fixture using the contract in `P1_5_4_BOOKLET_GROUND_TRUTH_GATE.md`.
+- Only after that does booklet “baseline did not worsen” become measurable for `P2`.
+
+## 2026-06-03 | YAML sync + start Path A
+- Synced canon YAML to current state
+- Next autonomous brick: P1.5.4 ground-truth templates, then P2.1 snapCity
