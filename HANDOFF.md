@@ -10,6 +10,29 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104u (2026-06-04)
+
+## Session 104u — Pushed branch to GitHub to close the durability debt (no merge/PR)
+
+The prod deploy (104t) shipped local code that wasn't in GitHub → a main-only deploy would roll
+it back. Closed the first half of that gap: pushed the branch.
+
+- `git push origin feat/knowledge-core-stabilize --force-with-lease` → `31353a7..8b9a0d2`
+  (origin/feat was the stale `31353a7`; lease matched). Verified origin/feat == local HEAD `8b9a0d2`.
+- Pre-push safety: clean tracked tree; `qa-private/`+`reports/` ignored; `docs/reports/` not ignored;
+  0 tracked private files; **0 actual credentials** in the diff. PII: `FU262473`/surname/DOB are
+  PRE-EXISTING in origin/main (17 files) — this push adds 3 incremental occurrences of the same
+  already-published value, not a new disclosure (Session-54-class accepted condition).
+- No merge, no PR (forbidden this task); `main` untouched (HEAD..origin/main = only the prior PR #79
+  merge `832ee55`).
+
+**Durability status:** branch is now in GitHub (no longer local-only). FULL durability (prod == `main`)
+still requires an OWNER decision to merge this branch to `main`; until then a deploy of `main` would
+still roll back the metric/gate code. Push was the authorized step; merge is the owner's.
+
+**Unchanged:** prod env not touched this step; no vercel deploy; behavior flags OFF; no model change;
+GT still MISSING; metric logs NOT_OBSERVED_YET; P2.4/P2.5 frozen.
+
 # HANDOFF — Session 104t (2026-06-04)
 
 ## Session 104t — Enabled DOCUMENT_CLASS_METRICS_ENABLED in prod + redeploy (autonomous)
