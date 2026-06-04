@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs: UA source-language correction + UA-OCR failure analysis + gate canary plan
+
+Owner hard correction: docs are Ukrainian (UA→English); model Russianizing UA text = a reading ERROR to penalize, not normalization. Corrected GT_LANGUAGE_INTENT.md. Added UKRAINIAN_OCR_FAILURE_ANALYSIS.md (failure classes: UA→RU substitution, dropped apostrophe, UA month misread, RU patronymic, stable-wrong-uncaught; layer responsibilities — NFC for compare not a fix, KMU-55 after correct read, dict=signal) and ANTI_FAB_GATE_CANARY_PLAN.md (flag, hard-case target classes only, rollout, rollback command, metrics, stop condition — PREPARE only, not executed). Measured N=2 hard-case ≈0–1/5; printed not GT-scored (no % claim). Decisions: SMART DO_NOT_ENABLE; ANTI_FABRICATION_GATE READY_FOR_CANARY_PREP; hard-case model UNRESOLVED_BLOCKER; human review required hard-case. No flags/prod/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no PII.
+
+---
+
 ## 2026-06-04 — docs: GT owner fill pack + 4 private skeletons (no fabrication)
 
 Auto-prepped 4 value-free private GT skeletons in qa-private/ground-truth/ (international_passport/id_card/i94/ead _owner_fill.json, status=OWNER_INPUT_REQUIRED, real adapter/template field names, no_model_gt=true) — gitignored, not committed. Added docs/reports/GT_OWNER_NEXT_4_FILL_PACK.md (which files, fields, where on document, value=as-written, readiness command). Did NOT set VERIFIED_BY_OWNER (model output != GT). ready 2→target≥6. accuracy/calibration/L2-WIRE BLOCKED; no runtime/flags/model/SMART/HTR/prod; qa-private tracked=0.
