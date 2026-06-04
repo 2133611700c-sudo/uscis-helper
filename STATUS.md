@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 104u (2026-06-04) — durability: branch pushed to GitHub (no merge/PR)
+- `PUSHED` `git push origin feat/knowledge-core-stabilize --force-with-lease` → `31353a7..8b9a0d2`. origin/feat == local HEAD (verified). The prod-deployed code now exists in GitHub, not only locally.
+- `SAFETY` Pre-push: tracked working tree clean; `qa-private/`+`reports/` ignored; `docs/reports/` NOT ignored; 0 tracked private files; **0 actual-credential matches** in diff (no API key/private key/token). PII note: `FU262473`/surname are PRE-EXISTING in origin/main (17 files) — push adds 3 incremental occurrences of the same already-published value, NOT a new leak (Session-54-class accepted reality).
+- `NO_MERGE` HEAD..origin/main = only `832ee55` (PR #79 merge, expected). No new merge, main untouched.
+- `DURABILITY` Branch is safe in GitHub now. FULL durability (prod == main) still needs an owner merge of this branch to `main` — until then a main-only deploy would still roll back. Push was the authorized step; merge is owner's.
+- `METRIC_LOGS` still NOT_OBSERVED_YET (no real OCR request since deploy; verified empty via runtime logs).
+- `UNCHANGED` prod env not touched this step; behavior flags OFF; no vercel deploy; no model change; P2.4/P2.5 frozen; GT still MISSING.
 ## Session 104t (2026-06-04) — DOCUMENT_CLASS_METRICS_ENABLED live in prod (metric-only)
 - `PROD_ENV` Added `DOCUMENT_CLASS_METRICS_ENABLED=1` to Vercel Production (verified present). Behavior flags `ANTI_FABRICATION_GATE_ENABLED`/`SELF_CONSISTENCY_GATE_ENABLED`/`SMART_NORMALIZE_ENABLED` confirmed ABSENT (OFF). Core flags (ONE_CORE_*, ONE_BRAIN_CORE) present (ON).
 - `DEPLOY` `vercel --prod` succeeded → `uscis-helper-2190dsx5b`, aliased to messenginfo.com. healthz `status:ok`, `sha:f60d73f`. Build clean (ESLint warnings only).
