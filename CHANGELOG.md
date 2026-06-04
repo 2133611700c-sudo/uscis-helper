@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — ops: enable DOCUMENT_CLASS_METRICS_ENABLED in prod + redeploy
+
+Owner-authorized (principal mode). Added `DOCUMENT_CLASS_METRICS_ENABLED=1` to Vercel Production via the linked, authed CLI (behavior flags ANTI_FABRICATION/SELF_CONSISTENCY/SMART_NORMALIZE confirmed ABSENT/OFF — not touched). `vercel --prod` succeeded → uscis-helper-2190dsx5b, aliased to messenginfo.com; healthz ok, sha f60d73f, clean build. ⚠️ This shipped the LOCAL branch (22 commits ahead of origin, unpushed/unmerged) → prod is ahead of main; a future main deploy would roll these back; durability needs push+PR+merge (owner; push forbidden this session). Behavior delta ≈ PII-free metric logging only (gates OFF). Metric logs NOT_OBSERVED_YET (emits on first real extraction; verified empty via runtime logs). GT still MISSING → accuracy still blocked; added docs/reports/GT_OWNER_FILL_GUIDE.md (paths use `<surname>` placeholder, no real surname committed). No model change; not pushed; P2.4/P2.5 frozen.
+
+---
+
 ## 2026-06-04 — docs(core): GT accuracy verification contract (schema-mismatch gap fixed)
 
 Found (raw) that GT JSON keys ≠ readDocument field ids → an accuracy run would report false misses without a map. Wrote `docs/reports/GT_ACCURACY_VERIFICATION.md`: GT-key→read-field-id map (cyrillic=raw_cyrillic, latin/date=value; both birth-cert images share docTypeId ua_birth_certificate), N/A fields (sex/province/passport_number/military_id not emitted; father/mother_full_name = GT gap), normalize rules, run matrix, metrics (accuracy/review_delta/false_positive_review/false_negative_review/instability), PII rule. Honest framing: accuracy only vs human GT; self_consistency agree ≠ correctness; false_negative_review is the dangerous metric. Pending owner GT (VERIFIED_BY_OWNER) → then local accuracy run. No code; no prod env; behavior flags OFF; not pushed.
