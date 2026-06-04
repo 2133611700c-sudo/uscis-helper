@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — chore(git): open PR #80 (durability; merge owner-gated)
+
+Opened PR #80 (base main ← feat/knowledge-core-stabilize @ a896212, PII-free body) — review-of-record for the already-prod-deployed branch. Did NOT merge (merge→main auto-deploys to messenginfo.com = owner decision; also closes prod==main durability). Pipeline: push ✅ → PR ✅ → merge (owner) → GT (owner) → accuracy (agent) → SMART decision. Behavior flags OFF; GT MISSING; prod env untouched.
+
+---
+
 ## 2026-06-04 — chore(git): push branch to GitHub (durability; no merge/PR)
 
 Closed the first half of the durability debt from the prod deploy. `git push origin feat/knowledge-core-stabilize --force-with-lease` → 31353a7..8b9a0d2 (origin/feat was stale 31353a7; lease matched; origin/feat now == local HEAD). Pre-push safety: clean tracked tree; qa-private/+reports/ ignored; docs/reports/ not ignored; 0 tracked private files; 0 actual-credential matches in diff; FU262473/surname/DOB are pre-existing in origin/main (17 files) so push adds only incremental occurrences, not a new disclosure. No merge, no PR, main untouched (HEAD..origin/main = only prior PR #79 merge 832ee55). FULL durability (prod==main) still needs owner merge. prod env not touched this step; behavior flags OFF; no model change; metric logs NOT_OBSERVED_YET; P2.4/P2.5 frozen.
