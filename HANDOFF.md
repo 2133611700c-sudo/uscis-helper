@@ -1,3 +1,14 @@
+# HANDOFF — Session 104x (2026-06-04)
+
+## Session 104x — ETAP1: simplified GT fill for owner (no fabrication)
+
+Prepared everything so the owner spends minimum time but the truth stays human:
+- Opened both birth-cert images + both GT JSON templates locally.
+- `docs/reports/GT_FILL_HINTS.md`: where each field sits on soviet/handwritten blanks, formats, null-handling, and the refusal rationale. No real values.
+- `scripts/gt_intake.mjs` (SCRATCH, now gitignored): owner can type OR dictate `{field:value}`; it validates keys/ISO-date/M-F, writes, and sets `VERIFIED_BY_OWNER`. Smoke-tested on a temp copy; real GT untouched (status still MISSING).
+
+**ETAP 2-4 (accuracy OFF/P2/full-gate + SMART decision) run ONLY after the owner sets `VERIFIED_BY_OWNER`** (>=4 identity fields/file). No GT fabricated; no prod behavior flags; no model change; no push of code.
+
 # HANDOFF — Session 104w (2026-06-04)
 
 ## Session 104w — On rails: prod==main confirmed; holding for owner GT (no new code)

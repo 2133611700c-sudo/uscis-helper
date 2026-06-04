@@ -63,3 +63,6 @@ test-fixtures/real-docs/
 # Root-anchored: must NOT match docs/reports/ (public sanitized reports live there).
 /qa-private/
 /reports/
+
+# scratch owner-intake helper (not for commit)
+scripts/gt_intake.mjs
