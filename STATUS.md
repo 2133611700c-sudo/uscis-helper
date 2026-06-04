@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 104i (2026-06-04) — MODEL STABILITY: hard-case fabrication CONFIRMED (read-only)
+- `FINDING` On `birth_cert_soviet` (faded Soviet handwritten), `readDocument`×3 per model, SMART OFF: **gemini-2.5-flash → 2 distinct identities in 3 runs, ALL identity fields review_required=false** (confident fabrication). **gemini-3.5-flash → 1 identity ×3 (stable)**. True identity UNKNOWN (no verified GT) → stability finding, NOT accuracy.
+- `CONTRAST` International passport read identically+correctly across models/runs (REDACTED/FU262473/1986-06-25, review=false). Instability is hard-case-specific.
+- `REPORT` `docs/reports/MODEL_STABILITY_FINDING.md` (sanitized, hashes not PII). Raw in `qa-private/reports/model-stability/` (gitignored).
+- `RECO` (no code yet) anti-fabrication gate: identity differs across models/runs → force review on ALL identity fields; hard-case docs → forced review unless stronger source (MRZ/2nd model). Don't let 2.5-flash serve identity-critical hard-case reads without review.
+- `PRIORITY` Anti-fabrication gate > P2 dictionaries (P2 OFF-vs-ON already showed zero delta on real docs). SMART_NORMALIZE stays OFF; P2.4/P2.5 frozen. Not pushed.
+- `GITIGNORE_FIX` Step-1's unanchored `reports/` had silently matched `docs/reports/` too (swallowed the public report). Anchored to `/qa-private/` + `/reports/` (root only); `docs/reports/` confirmed NOT ignored.
 ## Session 104h (2026-06-04) — PII hygiene + images-exist correction
 - `PII_IGNORED` `qa-private/` and `reports/` were NOT_IGNORED (qa-private holds filled PII ground-truth). Added both to `.gitignore` (:63/:64). qa-private had 0 tracked files (ls-files empty) — nothing was ever committed. `qa-shots/private/` already ignored (:49).
 - `DS_STORE_UNTRACKED` `git rm --cached qa-shots/.DS_Store` (tracked junk removed from index; file kept on disk).
