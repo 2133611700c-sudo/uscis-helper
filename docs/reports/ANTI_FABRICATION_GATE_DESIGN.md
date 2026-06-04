@@ -146,3 +146,39 @@ Birth certificates have no MRZ → default hard-case identity review.
 Owner approves the design + flag, then implementation (separate, code step) wires the
 gate at insertion point A behind `ANTI_FABRICATION_GATE_ENABLED` (default OFF). Until
 then: SMART_NORMALIZE OFF, P2.4/P2.5 frozen, model default unchanged, no prod env.
+
+---
+
+# Revision 2 (2026-06-04) — Owner fabrication-scope reconnaissance update
+
+New owner-verified facts (treat as inputs; true identity still UNKNOWN — stability not accuracy):
+
+- **handwritten_birth:** gemini-2.5-flash → 3 distinct identity hashes / 3 runs; gemini-3.5-flash → **3 distinct / 3 runs too**. `confidence_low=false` / model `review=false` on all. ⇒ switching to 3.5-flash does NOT fix handwritten fabrication.
+- **marriage_1939 (old but PRINTED):** gemini-2.5-flash → 1 identity hash / 3 runs (stable). ⇒ "old/faded" ≠ unstable. The killer signal is **handwriting / handwritten zones**, not age.
+- **confidence_low / model self-reported `review_required` is NOT a detector** — cannot build safety on model confidence.
+- **passport not measured this run** (connection crash) — claim nothing new about passport; the existing rule stands: valid MRZ = strong anchor.
+
+## Raw signal reconnaissance (file:line)
+
+1. **Document class** — `documentClassPolicy.ts:98` `docintelIdToDocumentClass(docTypeId)` (by docTypeId only; no runtime handwriting/quality detection at class level).
+2. **Handwritten signal** — EXISTS per-field: `DocFieldSpec.handwritten` (`docintel/types.ts`); `readDocument` ALREADY forces review on `handwritten:true` fields (`documentFieldReader.ts:75`, helper :107). **BUT** every birth/marriage cert field is `handwritten: false` in the registry (`documentRegistry.ts:8-17`, `:29-34`) → the docs that actually fabricate are NOT flagged handwritten. No doc-level handwritten flag on `DocTypeSpec`.
+3. **Image quality / rotation** — a REAL runtime signal EXISTS in `preprocessImage` (`lib/ocr/image-preprocess.ts`): `quality.blurScore` (Laplacian stdev), `warnings[]`, codes `too_blurry`/`too_dark`/…, EXIF auto-rotate (:85). **BUT it is NOT threaded into `readDocument`** (the reader gets only the buffer — `grep`: NONE). So blur/rotation cannot trigger the gate today without wiring that signal in.
+4/5. **Insertion point** — remains `documentFieldReader` (the one door all 4 routes call). CONFIRMED still best. Caveat: to trigger on real handwriting/blur (not just doc-class), the gate needs either (a) corrected per-field `handwritten` flags for birth/marriage, and/or (b) `preprocessImage.quality` passed into `readDocument`.
+
+## Revised design (supersedes the blanket "all hard-case" trigger)
+
+**A. Trigger logic (revised):**
+- PRIMARY trigger = **handwritten document / handwritten zones / intrinsically-handwritten class** (`birth_certificate_handwritten`, `birth_certificate_soviet_bilingual`). NOT blanket "all hard-case".
+- Old/faded/Soviet **printed** docs (e.g. `marriage_apostille`, marriage_1939) are RISK signals but **not enough alone** for forced review — escalate only on low-quality/ambiguity (blur signal) OR detected instability.
+- Birth/marriage without MRZ still warrant caution, but **stable printed docs must not be punished blindly**.
+
+**B. Mechanism:**
+1. Handwritten trigger → force `review_required=true` on identity-critical fields; values unchanged; reasons `handwritten_document` / `model_instability_risk` / `no_strong_identity_anchor`.
+2. Optional self-consistency (handwritten / ambiguous only): run same model N=2–3, compare identity tuple hash (`family_name+given_name+patronymic+date_of_birth+place_of_birth`); disagreement → `hard_case_model_instability=true` + force review on ALL identity fields. Same-model agreement ≠ proof; disagreement = proof of instability.
+3. Model policy: do NOT switch global default to 3.5-flash (it ALSO fabricated on handwritten_birth, 3/3). Gate is model-independent; default model change is not a solution.
+4. Confidence policy: model `review=false`/`confidence_low=false` cannot override the gate; on handwritten zones model confidence is advisory and untrusted.
+5. Strong anchors: valid MRZ anchors passport MRZ-controlled fields; I-94 anchors admission only; EAD/I-797 anchors A-number/category only; birth/marriage certs have NO MRZ → no strong machine anchor.
+
+**C. Discrepancy with the shipped minimal gate (`4f75bfa`):** the implemented `applyAntiFabricationGate` triggers on ALL `isHardCase` classes — which INCLUDES `marriage_apostille` (printed) and `unknown_document`. Per this revision that is TOO BROAD (printed marriage should not be blanket-forced). **Required narrowing (future code step):** restrict the blanket force to the handwritten classes; route printed-but-old classes through the low-quality/self-consistency path instead. Flag stays default OFF, so no prod effect in the interim.
+
+**D/E/F.** No code this revision. No prod env. SMART_NORMALIZE OFF. P2.4/P2.5 frozen. Not pushed.

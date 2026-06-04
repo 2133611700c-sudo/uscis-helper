@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(core): refine anti-fabrication gate for handwritten instability
+
+Revision 2 of the design (no code). Owner recon: handwritten_birth unstable on BOTH 2.5-flash AND 3.5-flash (3 distinct identities/3 runs each, model review=false) → model switch doesn't fix handwritten fabrication; marriage_1939 (printed) stable on 2.5-flash → killer signal = handwriting, not age; model confidence not a detector. Raw signals: class by docTypeId (documentClassPolicy.ts:98); handwritten per-field flag exists + readDocument forces review on it (documentFieldReader.ts:75) but birth/marriage fields are all handwritten:false in registry; blur/rotation signal exists in preprocessImage but not threaded into readDocument. Revised trigger = handwritten classes only (not blanket hard-case); printed-old = risk→escalate via blur/self-consistency; self-consistency (same-model N=2-3 identity-hash) is the model-independent detector; model default unchanged. DISCREPANCY recorded: shipped gate 4f75bfa triggers on all isHardCase (incl. printed marriage) → too broad, narrow in a future code step (flag default OFF → no prod effect). SMART_NORMALIZE OFF; P2.4/P2.5 frozen; no prod env; not pushed.
+
+---
+
 ## 2026-06-04 — feat(core): hard-case identity force-review gate (flag default OFF)
 
 Minimal anti-fabrication class gate. New `docintel/antiFabricationGate.ts` `applyAntiFabricationGate(fields, docTypeId)`: on hard-case classes (isHardCase), forces review_required=true on identity-critical fields (family/given/patronymic/middle_name, *_full_name, dob/date_of_birth, place_of_birth/place_city, issuing_authority + role-grounded variants) and attaches reasons (hard_case_document/model_instability_risk/no_strong_identity_anchor). Never changes values, never lowers a flag, no invention. Wired in `documentFieldReader` behind `ANTI_FABRICATION_GATE_ENABLED` (default OFF → byte-identical) at the shared door → all 4 products covered (closes Re-Parole/EAD gap). Passports (internal_passport_booklet, not hard-case) untouched → MRZ fields not blanket-forced. Added optional `review_reasons?` to ExtractedDocField. Tests: antiFabricationGate.test.ts (pure + readDocument OFF/ON gating + 4-route coverage); docintel 46 pass; canonical/core 247 pass; typecheck PASS. Two-read self-consistency + blur/rotation NOT implemented; flag not enabled; model default unchanged; SMART_NORMALIZE OFF; P2.4/P2.5 frozen; not pushed.
