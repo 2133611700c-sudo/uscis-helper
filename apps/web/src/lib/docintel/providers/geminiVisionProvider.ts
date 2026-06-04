@@ -14,6 +14,7 @@
 
 import type { DocTypeSpec, VisionFieldRead, VisionProvider, VisionReadResult } from '../types'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
+import { normalizeGeminiModel } from '@/lib/gemini/model'
 
 // Model order is env-driven so prod can flip models WITHOUT a code redeploy.
 // 2026-05-29 ensemble bench (docs/reports/GEMINI_ENSEMBLE_BENCH.md), 3 docs incl. a
@@ -32,7 +33,7 @@ import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 //   Fallback chain updated: gemini-2.0-flash removed (404 deprecated).
 // pro+thinking on a large scan runs ~20-40s → keep timeoutMs high + Vercel maxDuration.
 function modelFallback(): string[] {
-  const primary = process.env.GEMINI_MODEL || 'gemini-3.1-pro-preview'
+  const primary = normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview')
   // gemini-2.0-flash removed from fallback: deprecated (HTTP 404) as of 2026-06.
   return [...new Set([primary, 'gemini-3.5-flash', 'gemini-2.5-flash'])]
 }
