@@ -1,3 +1,16 @@
+# HANDOFF — Session 104w (2026-06-04)
+
+## Session 104w — On rails: prod==main confirmed; holding for owner GT (no new code)
+
+Verified the system is in the correct holding state after PR #80 merge — did NOT build new functionality (per directive).
+
+- **Durability CLOSED:** origin/main `46a0912` (Merge PR #80); messenginfo.com healthz status=ok sha=`46a0912`; latest prod deploy Ready. prod==main → no future-deploy rollback.
+- **Metric:** DOCUMENT_CLASS_METRICS_ENABLED=1 in prod, code now in main; payload is class/eligibility only (PII-free, re-verified). Runtime logs NOT_OBSERVED_YET (no real document extraction since deploy).
+- **Behavior flags OFF** (ANTI_FABRICATION / SELF_CONSISTENCY / SMART_NORMALIZE absent in prod). Dictionaries + gates are in prod code but dormant.
+- **GT still MISSING** (status=MISSING). Images present, guide ready. Accuracy NOT run (no GT → would be fabrication/liveness-as-accuracy).
+
+**Next (owner):** fill GT (VERIFIED_BY_OWNER) → agent runs local OFF-vs-ON accuracy → SMART_NORMALIZE decision. No new code, no prod behavior flags, no model change until that loop closes.
+
 > 🛡️ **KNOWLEDGE_CORE_STABILIZE (feat/knowledge-core-stabilize):** militaryId.ts: isLikelyPatronymicOrLabel guard rejects given_name OCR confusion; isAuthorityOcrGarbage guard rejects garbled authority text. MRZ debug (_mrz_debug_status/_mrz_lines_found/_mrz_valid) exposed in route for passport/booklet. Agency registry: Militsiya→Militsiya confirmed. Birth cert: 2 additional label-guard tests. 2771/2771 tests, tsc 0, build passes.
 >
 > 🧠 **KNOWLEDGE_DRIVEN_CORE (feat/knowledge-driven-core):** labelValueExtractor.ts: label text never returned as value. birthCertificate.ts: bug fixed — bilingual label lines rejected. militaryId.ts: agency registry wired. mrzAuthority.ts: MrzDebugStatus 6-state classification. Gazetteer: 458 cities generated from КАТОТТГ. 2751/2751 tests, tsc 0, build passes.

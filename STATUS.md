@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 104w (2026-06-04) — ON RAILS: prod==main verified; holding for owner GT
+- `DURABILITY_CLOSED` origin/main `46a0912` (Merge PR #80); healthz status=ok sha=`46a0912`; latest prod deploy Ready. prod==main → future main deploys ship this code (no rollback).
+- `METRIC` DOCUMENT_CLASS_METRICS_ENABLED=1 in prod; code in main; payload = class/eligibility only (no PII, verified). Logs NOT_OBSERVED_YET (no real extraction since deploy).
+- `BEHAVIOR_FLAGS_OFF` ANTI_FABRICATION / SELF_CONSISTENCY / SMART_NORMALIZE absent in prod (OFF). Dictionaries+gates built & in prod code but DORMANT.
+- `GT` still MISSING (status=MISSING, 1 nonempty each); images present (2); guide ready. Accuracy NOT run (nothing to compare; no fabrication).
+- `NEXT_BLOCKER` owner GT fill → then local accuracy OFF-vs-ON → then SMART decision. No new code until accuracy loop closes.
 ## Session 104v (2026-06-04) — PR #80 opened (durability; merge owner-gated)
 - `PR_OPEN` https://github.com/2133611700c-sudo/uscis-helper/pull/80 — base `main` ← `feat/knowledge-core-stabilize` @ a896212. PII-free body. NOT merged.
 - `MERGE_GATED` merge → main triggers Vercel auto-deploy of main to messenginfo.com = owner decision (also closes prod==main durability). Agent opened PR only; did not merge.
