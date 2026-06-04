@@ -10,10 +10,16 @@ arbitration + gates (consensus.ts dormant, HTR not live). Target = OneBrain sing
 
 Priorities (do NOT build all at once):
 - **L0** (done in docs): inventory verdict + status/handoff.
-- **L1** ✅ DONE (design-only): OneBrain `decideField()` contract + field-decision schema +
-  design review. See `docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md` +
-  `docs/reports/ONEBRAIN_L1_DESIGN_REVIEW.md`. No runtime change. **Owner action:** review the
-  contract; confirm GT-language intent (RU as-written vs UA canonical) — it gates threshold calibration.
+- **L1** ✅ DONE (design): OneBrain `decideField()` contract + design review.
+- **L2-SCAFFOLD** ✅ DONE (code, not wired): `oneBrain/decideField.ts` pure module + tests; prod byte-identical.
+- **L3** ✅ DONE (docs + GT workflow): GT-language intent DECIDED (value = as-written; normalized = canonical;
+  dictionary = hint, never overwrite — `docs/reports/GT_LANGUAGE_INTENT.md`); calibration plan
+  (`docs/reports/ONEBRAIN_L3_GT_CALIBRATION_PLAN.md`); 3 new PII-free templates added
+  (`docs/templates/ground-truth/{birth_cert_ua_printed,international_passport,id_card}.template.json`).
+  **Owner action (the real unblock):** fill a 6–10 doc GT batch across categories (soviet/UA-printed/
+  UA-handwritten birth, passport/ID, EAD, I-94) — copy a template into `qa-private/ground-truth/`, fill
+  `value` AS-WRITTEN, set `VERIFIED_BY_OWNER` + `owner_verified_fields`. Then agent calibrates thresholds.
+- **L2-WIRE** (after L3 calibration): route decideField through readDocument behind flag, shadow-first, prod byte-identical.
 - **L2** (agent, behind flags OFF): integrate the proven anti-fabrication/self-consistency gate INTO OneBrain.
 - **L3** (owner): expand GT (different people + Ukrainian-language docs); resolve GT-language intent (RU as-written vs UA canonical); rerun accuracy.
 - **L4** (later, metrics-gated): second independent reader (true consensus) / HTR / model switch.
