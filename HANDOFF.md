@@ -10,6 +10,12 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104v (2026-06-04)
+
+## Session 104v — Opened PR #80 (durability; merge owner-gated)
+
+Next step after the branch push: opened PR #80 (base `main` ← `feat/knowledge-core-stabilize` @ a896212, PII-free body) so there is a review-of-record and the diff is visible. **Did NOT merge** — merging to `main` triggers Vercel auto-deploy of main to messenginfo.com (the canonical prod release) and is the owner's review+ship decision; it also closes prod==main durability. Pipeline: durability push ✅ → PR ✅ → merge (owner) → GT fill (owner) → accuracy OFF/ON (agent, after GT) → SMART_NORMALIZE decision (after accuracy). Behavior flags OFF; GT still MISSING; prod env untouched this step.
+
 # HANDOFF — Session 104u (2026-06-04)
 
 ## Session 104u — Pushed branch to GitHub to close the durability debt (no merge/PR)
