@@ -16,6 +16,7 @@ import {
   GLOBAL_BLOCKLIST,
   GEO_CORRECTIONS,
   SETTLEMENT_TYPES,
+  snapCity,
 } from '@uscis-helper/knowledge'
 import { restoreNominative } from '@/lib/translation/glossary/nominativeCaseRestorer'
 import { resolveIssuedBy } from '@/lib/translation/glossary/agencyGlossary'
@@ -31,8 +32,13 @@ export type NormalizeField =
 
 export interface NormalizeResult {
   value: string | null
-  source: 'knowledge' | 'translation_engine' | 'passthrough' | 'blocked'
+  source: 'knowledge' | 'translation_engine' | 'passthrough' | 'blocked' | 'gazetteer'
   notes: string[]
+  // P2.1 (SMART_NORMALIZE_ENABLED): gazetteer signal. Optional — additive, does
+  // not break existing callers. review_required=true means "fuzzy/unknown, do NOT
+  // trust the value as final" (NO silent correction). suggested_value is a hint only.
+  review_required?: boolean
+  suggested_value?: string | null
 }
 
 /**
@@ -87,6 +93,32 @@ export function normalizeCity(raw: string): NormalizeResult {
     if (re.test(cleaned)) {
       cleaned = cleaned.replace(re, '').trim()
       break
+    }
+  }
+
+  // ── P2.1 SMART_NORMALIZE_ENABLED (default OFF): gazetteer snap ──────────────
+  // Runs AFTER GEO_CORRECTIONS + settlement strip, BEFORE downstream KMU-55.
+  // Moves the previously-orphaned snapCity (was only in dead orchestrator.ts)
+  // into the live door. Hard rule: matched=false → review_required, NEVER a
+  // silent replacement (a fuzzy guess is a suggestion, not truth).
+  if (process.env.SMART_NORMALIZE_ENABLED === '1' && cleaned) {
+    const snapped = snapCity(cleaned)
+    if (snapped.matched) {
+      // Exact gazetteer hit — trust it.
+      return {
+        value: snapped.value,
+        source: 'gazetteer',
+        notes: [`snapCity exact: "${cleaned}" → "${snapped.value}"`],
+        review_required: false,
+      }
+    }
+    // Fuzzy or unknown — keep RAW cleaned value, force review, surface suggestion.
+    return {
+      value: cleaned,
+      source: 'passthrough',
+      notes: [`snapCity no exact match (${snapped.reason}); review_required`],
+      review_required: true,
+      suggested_value: snapped.suggestedValue ?? null,
     }
   }
 

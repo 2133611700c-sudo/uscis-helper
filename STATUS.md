@@ -1084,3 +1084,5 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - `STATUS` Until owner adds more booklet fixtures and fills ground-truth JSON, booklet comparisons remain at best `N=1, DIRECTION ONLY`.
 
 2026-06-03: MIGRATION_BRIEF synced, P1.5 CLOSED-SMART, starting Path A (P2 dict wiring behind SMART_NORMALIZE_ENABLED)
+
+2026-06-03: P2.1 snapCity wired (SMART_NORMALIZE_ENABLED OFF). Next: P2.2 patronymic.
