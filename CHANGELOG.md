@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs: GT-fill execution pack + i94/ead templates
+
+Readiness=2/26 (only the 2 birth certs VERIFIED, already scored) → BLOCKED for accuracy, no rerun. Built 2 missing GT templates from real adapter fields (no invention): docs/templates/ground-truth/{i94,ead}.template.json. All 8 category templates ready. Execution pack: fastest_to_fill_now (passport/id/ua-printed-birth/military), i94/ead now ready, optional_later (divorce/marriage/degraded/dl/booklet). Owner needs +4 new VERIFIED files for ≥6. No accuracy; L2-WIRE HOLD; no runtime/flags/model/SMART/HTR/prod; qa-private tracked=0.
+
+---
+
 ## 2026-06-04 — docs: owner GT-batch fill checklist
 
 Added docs/reports/GT_BATCH_FILL_CHECKLIST.md (owner-facing): documents to collect (6–10, categories; I-94/EAD template TBD = adapter fields, not invented), owner_verified vs candidate_not_verified fields, fill steps (hand / gt_intake.mjs), value=as-written, PII-free readiness-count check. L2-WIRE stays HOLD until batch filled + thresholds calibrated. No runtime/flags/model/SMART/HTR/prod.

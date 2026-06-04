@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 105e (2026-06-04) — GT-fill execution pack + i94/ead templates (docs only)
+- `READINESS` ready_for_scoring=2/26 (only soviet+handwritten birth, already scored). Need ≥6 → +4 new owner-verified files.
+- `TEMPLATES` +2 from adapter fields (no invention): i94.template.json, ead.template.json. All 8 templates ready (soviet/handwritten/ua_printed/military/passport/id/i94/ead).
+- `PACK` fastest_to_fill_now = international_passport, id_card, birth_cert_ua_printed, military_id_p1 (templates exist). needs_template_first = i94/ead (NOW READY). optional_later = divorce/marriage/degraded/dl/booklet.
+- `BLOCKED` accuracy NOT run; L2-WIRE HOLD. No runtime/flags/model/SMART/HTR/prod; qa-private tracked=0.
 ## Session 105d (2026-06-04) — owner GT-batch fill checklist (docs only)
 - `CHECKLIST` docs/reports/GT_BATCH_FILL_CHECKLIST.md — docs to collect (6–10, categories), owner_verified vs candidate fields, fill steps (hand / gt_intake.mjs), PII-free readiness-count check. L2-WIRE HOLD until batch filled + thresholds calibrated. No runtime/flags/model/prod.
 ## Session 105c (2026-06-04) — L3: GT-language intent + calibration plan + templates (docs only)
