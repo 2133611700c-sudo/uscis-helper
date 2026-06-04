@@ -2,6 +2,16 @@
 
 **Date:** 2026-06-04  **Type:** design, NO code change, NO prod env, flag default OFF.
 
+> **IMPLEMENTED (minimal class gate) — 2026-06-04:** the baseline (Option 1, class gate)
+> is now wired behind `ANTI_FABRICATION_GATE_ENABLED` (default OFF) at insertion point A
+> (`documentFieldReader`). New `docintel/antiFabricationGate.ts` forces review on
+> identity-critical fields for hard-case classes (never changes values, never lowers a
+> flag), with reasons `hard_case_document` / `model_instability_risk` /
+> `no_strong_identity_anchor`. Non-hard-case (passports) untouched → MRZ fields not
+> blanket-forced. Two-read self-consistency (Option 2) and blur/rotation signals are NOT
+> implemented yet (separate, costed steps). Tests: `antiFabricationGate.test.ts` (pure +
+> readDocument OFF/ON gating + 4-route coverage). typecheck PASS.
+
 ## Goal
 
 Stop the system from TRUSTING identity fields on hard-case documents where a
