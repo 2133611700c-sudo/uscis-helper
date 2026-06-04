@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 104t (2026-06-04) — DOCUMENT_CLASS_METRICS_ENABLED live in prod (metric-only)
+- `PROD_ENV` Added `DOCUMENT_CLASS_METRICS_ENABLED=1` to Vercel Production (verified present). Behavior flags `ANTI_FABRICATION_GATE_ENABLED`/`SELF_CONSISTENCY_GATE_ENABLED`/`SMART_NORMALIZE_ENABLED` confirmed ABSENT (OFF). Core flags (ONE_CORE_*, ONE_BRAIN_CORE) present (ON).
+- `DEPLOY` `vercel --prod` succeeded → `uscis-helper-2190dsx5b`, aliased to messenginfo.com. healthz `status:ok`, `sha:f60d73f`. Build clean (ESLint warnings only).
+- `⚠️ PROD_AHEAD_OF_MAIN` This deploy shipped the LOCAL branch (22 commits ahead of origin, NOT pushed/merged). Prod now runs code not in `main` → ANY future deploy of main would ROLL BACK these 22 commits. Durable fix = push + PR + merge (owner; push was forbidden this session). New behavior delta vs prior prod ≈ PII-free metric logging only (all behavior gates OFF).
+- `METRIC_LOGS` NOT_OBSERVED_YET — metric emits only on a real document extraction; no upload since deploy. Verified via Vercel runtime logs (empty). Will appear on first real OCR request.
+- `GT` still MISSING (1/19 both birth files) → accuracy still blocked. `docs/reports/GT_OWNER_FILL_GUIDE.md` added.
+- `NOT_DONE` accuracy verification (needs owner GT); behavior flags stay OFF; not pushed; no model change; P2.4/P2.5 frozen.
+- `PII` GT_OWNER_FILL_GUIDE paths genericized to `<surname>` (no real surname in committed docs).
 ## Session 104s (2026-06-04) — GT accuracy verification CONTRACT (docs only; gap fixed)
 - `GAP_FOUND` (raw) GT JSON keys ≠ readDocument field ids → an accuracy run without a map would report false misses. GT uses `family_name_cyrillic`/`date_of_birth`/`place_of_birth_raw`/`issuing_authority_raw`/`issue_date`; readDocument emits `child_family_name`/`dob`/`place_of_birth_city`/`issuing_authority`/`date_of_issue`. Both birth-cert images share docTypeId `ua_birth_certificate` → one map.
 - `CONTRACT` `docs/reports/GT_ACCURACY_VERIFICATION.md` — GT-key→read-field-id map (cyrillic=raw_cyrillic, latin/date=value), N/A fields (sex/province/passport_number/military_id — not emitted; father/mother_full_name = GT gap), normalize rules, run matrix, metrics (accuracy/review_delta/false_pos/false_neg/instability), PII rule. Honest: accuracy only vs human GT, self_consistency agree ≠ correctness, false_negative_review is the dangerous metric.
