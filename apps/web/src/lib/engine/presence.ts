@@ -14,6 +14,7 @@ import type { ConsensusField } from './consensus'
 import type { Sex } from '@uscis-helper/knowledge'
 import { DOC_TYPES, openNameFields, printedFields } from './docTypes'
 import type { ProseTranslator } from './translator'
+import { normalizeGeminiModel } from '@/lib/gemini/model'
 
 /** Normalize to space-separated words (preserves word boundaries for presence).
  *  Apostrophes are REMOVED (join), so Ukrainian "REDACTED_NAME" stays ONE word. */
@@ -54,7 +55,11 @@ export async function extractDocumentPresence(
   const imgMime = pre.mime
 
   const [gem, ft] = await Promise.all([
-    geminiReader({ apiKey: opts.geminiApiKey, model: opts.geminiModel ?? process.env.GEMINI_MODEL, docTypeEn: spec.title_en }).read(img, imgMime, keys),
+    geminiReader({
+      apiKey: opts.geminiApiKey,
+      model: normalizeGeminiModel(opts.geminiModel ?? process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
+      docTypeEn: spec.title_en,
+    }).read(img, imgMime, keys),
     googleVisionFullText(img, opts.gvApiKey),
   ])
   const ftWords = normWords(ft)

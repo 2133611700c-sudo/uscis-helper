@@ -100,6 +100,8 @@ export interface ExtractedDocField {
   review_required: boolean
   source: 'vision'
   provider: string
+  /** Optional machine-readable reasons review was forced (e.g. anti-fabrication gate). */
+  review_reasons?: string[]
 }
 
 export interface DocumentReadResult {
@@ -113,4 +115,11 @@ export interface DocumentReadResult {
   ms: number
   status: string
   error?: string
+  /** Self-consistency gate outcome (only set when the gate ran). PII-free. */
+  self_consistency?: {
+    status: 'agree' | 'mismatch' | 'incomplete' | 'insufficient_identity_fields'
+    instability: boolean
+    identity_hash_prefix?: string
+    runs?: number
+  }
 }
