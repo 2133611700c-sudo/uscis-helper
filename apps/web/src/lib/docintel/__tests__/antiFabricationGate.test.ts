@@ -5,6 +5,7 @@ import {
   applyAntiFabricationGate,
   isIdentityCriticalField,
   ANTI_FABRICATION_REASONS,
+  HANDWRITTEN_FABRICATION_RISK_CLASSES,
 } from '../antiFabricationGate'
 import { readDocument } from '../documentFieldReader'
 import type { ExtractedDocField, VisionProvider, VisionReadResult } from '../types'
@@ -31,8 +32,28 @@ describe('isIdentityCriticalField', () => {
   })
 })
 
+describe('trigger scope', () => {
+  it('allowlist = handwritten birth classes only (excludes printed marriage + unknown)', () => {
+    expect(HANDWRITTEN_FABRICATION_RISK_CLASSES.has('birth_certificate_handwritten')).toBe(true)
+    expect(HANDWRITTEN_FABRICATION_RISK_CLASSES.has('birth_certificate_soviet_bilingual')).toBe(true)
+    expect(HANDWRITTEN_FABRICATION_RISK_CLASSES.has('marriage_apostille')).toBe(false)
+    expect(HANDWRITTEN_FABRICATION_RISK_CLASSES.has('unknown_document')).toBe(false)
+    expect(HANDWRITTEN_FABRICATION_RISK_CLASSES.has('internal_passport_booklet')).toBe(false)
+  })
+
+  it('printed marriage_apostille (ua_marriage_certificate) is NOT forced', () => {
+    const input = [field({ field: 'spouse_1_full_name', value: 'X', review_required: false })]
+    expect(applyAntiFabricationGate(input, 'ua_marriage_certificate')).toEqual(input)
+  })
+
+  it('unknown_document is NOT forced', () => {
+    const input = [field({ field: 'family_name', value: 'X', review_required: false })]
+    expect(applyAntiFabricationGate(input, 'some_unmapped_doc_id')).toEqual(input)
+  })
+})
+
 describe('applyAntiFabricationGate (pure)', () => {
-  it('hard-case (birth cert): forces review on identity, keeps value, adds reasons', () => {
+  it('handwritten birth cert: forces review on identity, keeps value, adds reasons', () => {
     const out = applyAntiFabricationGate([
       field({ field: 'child_family_name', value: 'REDACTED', review_required: false }),
       field({ field: 'act_record_number', value: '87', review_required: false }),
@@ -104,7 +125,7 @@ describe('readDocument — ANTI_FABRICATION_GATE_ENABLED gating', () => {
     const res = await readDocument(Buffer.from('x'), 'image/jpeg', 'ua_birth_certificate', { provider: stub() })
     const n = res.fields.find((f) => f.field === 'child_family_name')!
     expect(n.review_required).toBe(true)
-    expect(n.review_reasons).toContain('hard_case_document')
+    expect(n.review_reasons).toContain('handwritten_document')
     const act = res.fields.find((f) => f.field === 'act_record_number')!
     expect(act.review_required).toBe(false) // non-identity untouched
   })

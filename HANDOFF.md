@@ -10,6 +10,41 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104m (2026-06-04)
+
+## Session 104m — Narrowed the shipped anti-fabrication gate to handwritten risk (code)
+
+Aligned the implementation (`4f75bfa`, too broad) with the revised design.
+
+**Raw signal inventory (file:line):**
+- registry `handwritten:true` exists ONLY for `ua_internal_passport_booklet` (`documentRegistry.ts:25-30`);
+  birth/marriage/divorce/id fields are all `handwritten:false` → a handwritten-flag trigger
+  would fire on the booklet and MISS the birth certs that fabricate. `handwritten_signal_exists: PARTIAL`.
+- quality signal exists (`PreprocessResult.quality.blurScore`+warnings+EXIF rotate,
+  `image-preprocess.ts:36-50,85`) but `readDocument` does NOT receive it →
+  `quality_reaches_reader: NO`, `usable_now: NO`.
+
+**Change:** trigger is now an explicit allowlist `HANDWRITTEN_FABRICATION_RISK_CLASSES`
+= {`birth_certificate_handwritten`, `birth_certificate_soviet_bilingual`}, replacing the
+blanket `isHardCase`. So `marriage_apostille` (printed), `unknown_document`, booklet, military
+are NO LONGER blanket-forced. Reason `hard_case_document` → `handwritten_document`. Only raises
+review; values untouched; never lowers a flag.
+
+**Honest gaps (recorded, NOT silently included):** military_id handwritten zones (not in docintel
+registry, TPS-legacy); truly-handwritten marriage / blur / rotation (no signal reaches the reader);
+soviet_bilingual kept forward-compatible (no docTypeId maps to it today). Closing the blur/rotation
+gap needs threading `preprocessImage.quality` into `readDocument` — a separate step.
+
+**Tests:** `antiFabricationGate.test.ts` 49 pass — added scope tests (marriage/unknown NOT forced,
+allowlist membership), reasons=handwritten_document. docintel 49; typecheck PASS.
+
+**Unchanged:** `ANTI_FABRICATION_GATE_ENABLED` default OFF (no prod effect); model default unchanged;
+SMART_NORMALIZE OFF; P2.4/P2.5 frozen; not pushed; accuracy UNKNOWN (no GT).
+
+**Next:** owner picks — (a) thread preprocess quality (blur/rotation) into readDocument for a
+runtime degraded-doc trigger; (b) add self-consistency (N=2-3 identity-hash) for handwritten/ambiguous;
+(c) correct registry per-field handwritten flags for birth/marriage.
+
 # HANDOFF — Session 104l (2026-06-04)
 
 ## Session 104l — Anti-fabrication design REVISED for handwriting (no code)
