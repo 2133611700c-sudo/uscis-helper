@@ -2646,3 +2646,63 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - EXIF rotation fix + resize for phone photos of birth certs, marriage certs, etc.
 - Fixes: перевёрнутое свидетельство не читается в переводе
 - TPS route already had this — now parity
+
+## 2026-06-03 | audit: source-code-only central-core runtime truth
+
+- Added `docs/reports/ACTUAL_PRODUCT_CALL_GRAPH.md`
+- Added `docs/reports/CORE_LIBRARY_RUNTIME_AUDIT.md`
+- Added `docs/reports/DOCUMENT_CLASS_EXTRACTION_MATRIX.md`
+- Added `docs/reports/CODEX_SPY_PROJECT_AUDIT.md`
+- Verified from source that one uniform runtime Document Core across TPS, Translation, Re-Parole, and EAD is NOT yet proven
+- Verified `readDocumentCore()` is not used by product routes
+- Verified targeted tests: 9 files / 302 tests passing
+- Verified `npm --prefix apps/web run typecheck` passes
+
+## 2026-06-03 | docs: exact architecture map
+
+- Added `docs/reports/PROJECT_ARCHITECTURE_MAP.md`
+- Added `docs/reports/PRODUCT_RUNTIME_ARCHITECTURE.md`
+- Added `docs/reports/KNOWLEDGE_ASSET_ARCHITECTURE.md`
+- Added `docs/reports/KNOWLEDGE_ASSET_ARCHITECTURE.csv`
+- Added `docs/reports/DOCUMENT_CLASS_ARCHITECTURE.md`
+- Added `docs/reports/OCR_AI_ARCHITECTURE.md`
+- Added `docs/reports/ENV_FLAGS_ARCHITECTURE.md`
+- Added `docs/reports/LEGACY_BYPASS_ARCHITECTURE.md`
+- Added `docs/reports/CYRILLIC_HANDLING_ARCHITECTURE.md`
+- Added `docs/reports/PROJECT_ARCHITECTURE_VERDICT.md`
+- Source-only verdict: runtime remains partial multi-brain, not one fully proven central document core
+
+## 2026-06-03 | phase 1 runtime baseline
+
+- Closed Phase 1 runtime UNKNOWNs without behavior changes. Confirmed `lib/tps/centralBrain.ts` is live as a TPS post-OCR merge/translation path (`TPSWizardV2.tsx` → `/api/tps/brain/merge` → `mergeToCentralBrain()`), not the shared OCR core. Ran live engine baseline on owner fixtures: `src/lib/engine/__tests__/pipeline.live.e2e.test.ts` passed 2/3 and failed the passport assertion because `engine/presence.ts` guarded all printed fields as not OCR-confirmed. Ran direct route-handler smoke with `.env.local` loaded against real booklet fixture: TPS Core logged `used Core for booklet fields: 4 review_required: 4`; Translation returned `200 ok:core-b2` with 4/4 non-empty fields all under review; Re-Parole returned `_core=true core_status=ok uncertain_fields=13`; EAD returned `_core=true core_status=ok invented_fields_count=0`. Observed runtime constraints: Google Vision returned `HTTP 403` in this environment, and local `next dev` API smoke was degraded by `EMFILE` watcher pressure plus `Failed to find Server Action` / `404` responses on `/api/*`, so direct route invocation was used as the trustworthy local runtime probe. Cleaned up `.next`, deleted the temporary test harness, restored `apps/web/tsconfig.tsbuildinfo` to `HEAD`.
+
+## 2026-06-03 | p1.5.1 vision auth gate
+
+- Followed `docs/MIGRATION_BRIEF.yaml` Phase `P1.5.1`. Added local-harness ADC file-path support to `apps/web/src/lib/canonical/vision/visionCredentials.ts` behind `VISION_ADC_FILE_ENABLED` (default OFF, prod behavior unchanged). Reason: local `.env.local` had `GOOGLE_APPLICATION_CREDENTIALS`, the file existed and contained a valid service-account JSON, but the Vision loader previously ignored file-path ADC and fell back to API key mode. Added tests to `apps/web/src/lib/canonical/vision/__tests__/visionCredentials.test.ts`: default-OFF still uses API key fallback; flag ON loads `GOOGLE_APPLICATION_CREDENTIALS` as service-account JSON. Tests: 14/14 PASS. Live diagnostic result after the fix: auth mode switched to service account successfully, but Google Vision still returned `403`; sanitized diag proved exact blocker = billing not enabled for project `537268475735`. Therefore `P1.5.1` is code-fixed but runtime-`BLOCKED` on owner billing, and full baseline matrix must wait.
+
+## 2026-06-03 | p1.5.3 partial baseline matrix without vision billing
+
+- Added `docs/reports/BASELINE_MATRIX.md`.
+- Proved from source that the live core reader path is Gemini-based and that Vision billing is not required for the Gemini-core subset baseline.
+- Ran direct route-handler baseline on real fixtures with core flags ON and `.env.local` loaded:
+  - TPS `internal_booklet`: `core_status=ok`, `final_field_count=4`
+  - Translation `internal_booklet`: `ok:core-b2`, 4 fields, all review
+  - Translation `birth_certificate`: `ok:core-b2`, 10 fields, all review
+  - Translation `soviet_birth_certificate`: `ok:core-b2`, 10 fields, 9 review
+  - Translation `divorce_certificate`: `ok:core-b2`, 1 field
+  - Re-Parole `internal_booklet`: `_core=true`, `X-Core-Fields=4`
+  - EAD `internal_booklet`: `_core=true`, `X-Core-Fields=4`, `invented_fields_count=0`
+- Translation `marriage_certificate` degraded at the policy gate before OCR: `needs_better_scan` because the available fixture is below the configured byte minimum.
+- Marked `international_passport`, `id_card`, `i94`, `ead`, `i797`, `driver_license` rows as fixture/coverage blocked instead of billing blocked where appropriate.
+
+## 2026-06-03 | p1.5.4 booklet ground-truth gate
+
+- Added `docs/reports/P1_5_4_BOOKLET_GROUND_TRUTH_GATE.md`.
+- Verified current blocker: `test-fixtures/real-docs/` contains only one booklet fixture (`internal_passport_kuropiatnyk.jpg`), not the desired `3-4`.
+- Captured the exact owner-filled JSON contract needed to make booklet quality measurable.
+- Explicitly kept this phase `BLOCKED(owner_gate)`; no field values were invented and no private truth data was created automatically.
+
+## 2026-06-03 | sync MIGRATION_BRIEF: P1.5 CLOSED-SMART + P1.5.4 + non_stop_protocol
+- P1.5 marked CLOSED-SMART (Vision billing not needed, live core reads via Gemini)
+- Added P1.5.4 brick (booklet ground-truth, owner-gate)
+- Added non_stop_protocol section (AUTONOMOUS/OWNER_GATE lanes)

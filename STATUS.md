@@ -1,4 +1,14 @@
 # STATUS — Messenginfo
+## Session 103 (2026-06-03) — SOURCE_CODE_ONLY_CORE_AUDIT
+- `AUDIT_SCOPE` Source-code-only audit completed for TPS, Translation, Re-Parole, and EAD. Ignored `.next`, `node_modules`, `dist`, `coverage`, `.turbo`.
+- `CORE_VERDICT` `FAIL`: one uniform central Document Core across all 4 products is NOT proven by current runtime source.
+- `CONFIRMED_SHARED` `documentRegistry.ts` + `documentFieldReader.ts` + `transliterationPolicy.ts` + `arbitrateDocument()` + product adapters are real shared runtime pieces.
+- `NOT_CONFIRMED` `readDocumentCore()` is not called by product routes. Named runtime `DocumentProfile` not present; live equivalent is `DocTypeSpec` via `getDocTypeSpec()`.
+- `BYPASSES` TPS bypasses Core for `i94/ead/dl/i797/tps_notice/i797_or_ead/ead_old/military_id/birth_certificate`; Translation can bypass to central-brain/legacy; Re-Parole bypasses `i94/ead/dl` to TPS route; EAD is flag-gated.
+- `LIBRARIES` Runtime-used: KMU-55, MRZ(partial), agency registry(legacy TPS), gazetteer/city normalization(split), documentClassPolicy(TPS+Translation), labelValueExtractor(TPS birth cert only). Not runtime-used in shared OCR/Core flow: `birthCertificateSchema`, any shared military schema, `readDocumentCore()`.
+- `REPORTS` `docs/reports/ACTUAL_PRODUCT_CALL_GRAPH.md`, `docs/reports/CORE_LIBRARY_RUNTIME_AUDIT.md`, `docs/reports/DOCUMENT_CLASS_EXTRACTION_MATRIX.md`, `docs/reports/CODEX_SPY_PROJECT_AUDIT.md`
+- `TESTS` targeted vitest: 9 files / 302 tests PASS. `typecheck`: PASS (`npm --prefix apps/web run typecheck`).
+- `NOT_DONE` No unification/fix PR in this session. No production/browser verification. No PII inspection under `qa-private`.
 ## Session 102 (2026-06-03) — KNOWLEDGE_CORE_STABILIZE (feat/knowledge-core-stabilize)
 - `MILITARY_ID_GUARDS` `isLikelyPatronymicOrLabel()` rejects given_name OCR confusion (patronymic label). `isAuthorityOcrGarbage()` rejects garbled authority tokens >=20 chars. Both exported and tested.
 - `MRZ_DEBUG_ROUTE` `_mrz_debug_status`, `_mrz_lines_found`, `_mrz_valid` added to TPS route response for passport/booklet hints. No PII exposed.
@@ -1002,5 +1012,75 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 ## koatuu branch (2026-05-29) — КАТОТТГ city layer
 - `VERIFIED(local)` 458 official cities from КАТОТТГ merged into registry (provenance 100%, KMU-55). Generator regenerable from mtu.gov.ua source. Stacked on feat/c3-presence.
 
+## 2026-06-03 | source-only architecture map
+- Added architecture reports:
+  - `docs/reports/PROJECT_ARCHITECTURE_MAP.md`
+  - `docs/reports/PRODUCT_RUNTIME_ARCHITECTURE.md`
+  - `docs/reports/KNOWLEDGE_ASSET_ARCHITECTURE.md`
+  - `docs/reports/KNOWLEDGE_ASSET_ARCHITECTURE.csv`
+  - `docs/reports/DOCUMENT_CLASS_ARCHITECTURE.md`
+  - `docs/reports/OCR_AI_ARCHITECTURE.md`
+  - `docs/reports/ENV_FLAGS_ARCHITECTURE.md`
+  - `docs/reports/LEGACY_BYPASS_ARCHITECTURE.md`
+  - `docs/reports/CYRILLIC_HANDLING_ARCHITECTURE.md`
+  - `docs/reports/PROJECT_ARCHITECTURE_VERDICT.md`
+- Verified from source that the live shared OCR entrypoint in product routes is `readDocument()` / `DocTypeSpec`, not `readDocumentCore()`.
+- Verified Translation still has multiple runtime branches and Re-Parole/EAD remain flag-gated.
+- Verified `npm --prefix apps/web run typecheck` passes.
 
+## 2026-06-03 | Phase 1 runtime baseline
+- `PASS(read-only)` `lib/tps/centralBrain.ts` is live as TPS post-OCR merge/translation path, not as the shared OCR core. Proven chain: `TPSWizardV2.tsx` → `/api/tps/brain/merge` → `mergeToCentralBrain()` → booklet translation preview/packet.
+- `PASS(runtime)` live engine baseline: `LIVE_E2E=1` on `src/lib/engine/__tests__/pipeline.live.e2e.test.ts` ran against owner fixtures. Result: 2/3 tests passed; `ua_international_passport` failed because `engine/presence.ts` returned all printed fields as `printed field not found in OCR — guarded as possible fabrication`.
+- `PASS(runtime)` direct route-handler smoke on real booklet fixture with `.env.local` loaded:
+  - TPS Core logged `used Core for booklet fields: 4 review_required: 4`
+  - Translation returned `status=ok:core-b2`, `provider=one-brain-core:translation-b2`, `fields=4`, `review_required=4`
+  - Re-Parole returned `_core=true`, `core_status=ok`, `uncertain_fields=13`
+  - EAD returned `_core=true`, `core_status=ok`, `invented_fields_count=0`
+- `DEGRADED(local-dev)` `next dev` API smoke is not trustworthy in this workstation state: `/api/*` calls returned `404` / `Failed to find Server Action` under `EMFILE` watcher pressure. Direct `POST()` invocation was required to get route-level runtime evidence.
+- `DEGRADED(runtime)` Google Vision path in this environment responded `HTTP 403` during the direct route smoke; TPS still produced booklet Core output, but MRZ/Vision-assisted branches are not fully verified here.
 
+## 2026-06-03 | P1.5.1 Vision auth gate
+- `PASS(code)` Added local-harness-only ADC file-path support to Vision credentials loader behind `VISION_ADC_FILE_ENABLED` (default OFF). File: `apps/web/src/lib/canonical/vision/visionCredentials.ts`.
+- `PASS(test)` `apps/web/src/lib/canonical/vision/__tests__/visionCredentials.test.ts` now covers:
+  - default-OFF behavior still falls back to API key
+  - `VISION_ADC_FILE_ENABLED=1` enables `GOOGLE_APPLICATION_CREDENTIALS` file-path loading
+- `PASS(diagnostic)` Local `.env.local` contains `GOOGLE_APPLICATION_CREDENTIALS`, the referenced file exists, and the JSON has the expected service-account keys.
+- `BLOCKED(runtime)` Vision still returns `403` even with service-account auth. Sanitized diag proved the exact cause: `This API method requires billing to be enabled` for project `537268475735`. This is an owner/billing gate, not a loader bug.
+- `STATUS` Phase `P1.5.1` is `BLOCKED` pending billing enablement for the Vision project. Do NOT trust baseline matrix until this gate is cleared.
+
+## 2026-06-03 | P1.5.3 partial baseline matrix without Vision billing
+- `PASS(source)` Proved from code that live `ONE_CORE` reader is Gemini-based (`readDocument()` -> `geminiVisionProvider`) and that Google Vision is not on the critical path for the Gemini subset.
+- `PASS(source)` Proved `Vision billing` is **not** a universal blocker for `P1.5.3`:
+  - TPS/Re-Parole passport use Vision only as optional MRZ/text augmentation.
+  - Translation core and booklet-style routes read through Gemini core directly.
+  - EAD route reads through Gemini core for mapped docs, but `us_ead`, `us_i94`, `us_i797` still lack registry specs.
+- `PASS(runtime)` Added evidence report `docs/reports/BASELINE_MATRIX.md` with:
+  - full code-derived `product x class` live-core coverage matrix
+  - real-fixture route-handler baseline for the Gemini-only subset
+- `PASS(runtime)` Executed billing-free Gemini subset on real fixtures:
+  - TPS `internal_booklet`: `core_status=ok`, `final_field_count=4`
+  - Translation `internal_booklet`: `ok:core-b2`, `field_count=4`, `review_required_count=4`
+  - Translation `birth_certificate`: `ok:core-b2`, `field_count=10`, `review_required_count=10`
+  - Translation `soviet_birth_certificate` via generic `ua_birth_certificate`: `ok:core-b2`, `field_count=10`, `review_required_count=9`
+  - Translation `divorce_certificate`: `ok:core-b2`, `field_count=1`
+  - Re-Parole `internal_booklet`: `_core=true`, `X-Core-Fields=4`, `core_status=ok`
+  - EAD `internal_booklet`: `_core=true`, `X-Core-Fields=4`, `core_status=ok`, `invented_fields_count=0`
+- `DEGRADED(runtime)` Translation `marriage_certificate` fixture was blocked before OCR by policy guard:
+  - `needs_better_scan`
+  - reason: `image_too_small:136226bytes — minimum 300000bytes for marriage_apostille`
+- `BLOCKED(fixture)` No real `international_passport`, `id_card`, `i94`, `ead`, `i797`, or `driver_license` fixture exists in `test-fixtures/real-docs/`.
+- `NOT_ON_LIVE_CORE(source)` TPS non-booklet/passport slots, Re-Parole US-form slots, and EAD `us_ead/us_i94/us_i797` are not valid live-core baseline targets right now.
+
+## 2026-06-03 | P1.5.4 booklet ground-truth gate
+- `BLOCKED(owner_gate)` Booklet quality is not yet measurable against human truth.
+- `PASS(source)` Added report `docs/reports/P1_5_4_BOOKLET_GROUND_TRUTH_GATE.md`.
+- `PASS(source)` Verified current fixture reality:
+  - `test-fixtures/real-docs/` contains **one** booklet fixture only: `internal_passport_kuropiatnyk.jpg`
+  - there are not `3-4` booklet fixtures in that folder today
+- `PASS(source)` Verified the repo already treats owner-filled ground truth as required for high-risk Cyrillic classes:
+  - `docs/reports/FAILED_CYRILLIC_GROUND_TRUTH_ADJUDICATION.md`
+  - `docs/reports/CYRILLIC_DOCUMENT_CLASS_POLICY.md`
+- `BLOCKED(owner_input)` No owner-verified booklet JSON truth file was established in this pass.
+- `STATUS` Until owner adds more booklet fixtures and fills ground-truth JSON, booklet comparisons remain at best `N=1, DIRECTION ONLY`.
+
+2026-06-03: MIGRATION_BRIEF synced, P1.5 CLOSED-SMART, starting Path A (P2 dict wiring behind SMART_NORMALIZE_ENABLED)
