@@ -1,3 +1,17 @@
+# HANDOFF — Session 104z (2026-06-04)
+
+## Session 104z — Inventory verdict + OneBrain target architecture (docs-only)
+
+Accepted the architecture inventory as TRUTH, rejected '1 reader + gate' as the destination. Report:
+`docs/reports/ARCHITECTURE_INVENTORY_VERDICT.md`.
+
+- **Current live truth (raw):** consensus.ts exists+tested but DORMANT (no /api caller; central-brain branch skipped under ONE_BRAIN_CORE_ENABLED=1). HTR not live (htr.ts self-documents 0 transcripts, Transkribus auth blocked). Live = one Gemini read → arbitrateDocument → gates.
+- **Target = OneBrain/DocumentBrain:** the ONLY field-decision center. Readers, dictionaries (SIGNAL only, never silent rewrite), normalization, validators, anti-fabrication, self-consistency, quality, and one audit trail all live INSIDE it. No parallel dead consensus branch. Real consensus later = different independent readers, not 3× the same model. Field-decision schema documented (value/confidence/source/normalized_value/dictionary_match/validation_status/review_required/review_reason; verdict accept|accept_with_low_confidence|force_review|reject).
+- **Decisions:** SMART_NORMALIZE DO_NOT_ENABLE; HTR DO_NOT_BUILD; model DO_NOT_SWITCH; gate PREPARE_CANARY only.
+- **Priorities:** L0 verdict (done) → L1 design OneBrain contract (no behavior change) → L2 fold proven gate into OneBrain behind flags → L3 expand GT + rerun accuracy → L4 second reader/HTR if metrics justify.
+
+Why this matters: arbitrateDocument is already a nascent decision center — OneBrain = formalize it into an explicit decideField() and consolidate readDocument/gates/dictionaries there, retiring the dormant consensus stack. docs-only; no prod env; no flags; no deploy; no PII.
+
 # HANDOFF — Session 104y (2026-06-04)
 
 ## Session 104y — Accuracy OFF-vs-ON measured (gate proven; SMART no gain)

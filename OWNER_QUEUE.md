@@ -3,6 +3,21 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-04 — OneBrain target + priorities (see ARCHITECTURE_INVENTORY_VERDICT.md)
+
+Verdict: PASS_AS_TRUTH_INVENTORY / DEGRADED_AS_TARGET_ARCHITECTURE. Current live = 1 Gemini reader +
+arbitration + gates (consensus.ts dormant, HTR not live). Target = OneBrain single field-decision center.
+
+Priorities (do NOT build all at once):
+- **L0** (done in docs): inventory verdict + status/handoff.
+- **L1** (agent, design only): OneBrain `decideField()` contract + field-decision schema. No behavior change.
+- **L2** (agent, behind flags OFF): integrate the proven anti-fabrication/self-consistency gate INTO OneBrain.
+- **L3** (owner): expand GT (different people + Ukrainian-language docs); resolve GT-language intent (RU as-written vs UA canonical); rerun accuracy.
+- **L4** (later, metrics-gated): second independent reader (true consensus) / HTR / model switch.
+
+Flag decisions (owner-gated to flip): SMART_NORMALIZE = DO_NOT_ENABLE; HTR = DO_NOT_BUILD; model = DO_NOT_SWITCH;
+gate = PREPARE_CANARY only (no prod enable without owner approval + rollback).
+
 ## 2026-06-04 — current owner-gates (after PR #80 merge)
 
 **DONE (no longer owner-blocked):**
