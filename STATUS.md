@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 104g (2026-06-03) — hygiene: presence.ts trim committed; Vision ADC + tsbuildinfo discarded
+- `PRESENCE_COMMITTED` `engine/presence.ts` normalizeGeminiModel wrap KEPT — proven safe: `geminiReader` internal default is `opts.model ?? 'gemini-2.5-flash'` (models.ts:48); the new explicit fallback `'gemini-2.5-flash'` is IDENTICAL to prior effective behavior → trim-only, NO semantic default change.
+- `VISION_ADC_DISCARDED` `git checkout` reverted `visionCredentials.ts` (+test) — dead-until-harness, harness blocked (no images + no GT). New credential path with no immediate use = risk without benefit.
+- `TSBUILDINFO_DISCARDED` reverted build artifact; already in `.gitignore:56` (tracked-but-ignored; `git rm --cached` is a separate optional hygiene step, not done).
+- `TESTS` typecheck PASS; engine suite 58 pass/3 skip.
+- `WORKING_TREE` clean of tracked changes after this (only out-of-scope untracked docs/reports/qa-private remain). Not pushed.
 ## Session 104f (2026-06-03) — fix(gemini): normalize GEMINI_MODEL env (live-risk, Core ON)
 - `LIVE_FIX` New `gemini/model.ts` `normalizeGeminiModel()` trims whitespace/`\n` from `GEMINI_MODEL`. A trailing newline changes the REST URL → first request 404s before fallback. Core is ON in prod → `GEMINI_MODEL` is read on the live path, so this hardens prod.
 - `WIRED` `geminiVisionProvider.modelFallback()` primary + `translation/vision-extract` response `model:` metadata field. Both preserve the SAME pre-existing defaults (gemini-3.1-pro-preview / gemini-2.5-flash) — trim only, no default change, no runtime routing change.

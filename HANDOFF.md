@@ -10,6 +10,36 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104g (2026-06-03)
+
+## Session 104g — Working-tree hygiene after Group A (3 tails closed)
+
+**(a) presence.ts — KEPT & committed.** Resolved the earlier "semantic default" doubt
+with raw evidence: `geminiReader` (`engine/models.ts:48`) already defaults
+`opts.model ?? 'gemini-2.5-flash'`. The in-flight presence edit's explicit
+`normalizeGeminiModel(..., 'gemini-2.5-flash')` resolves to the SAME value when env is
+unset → `identical: YES`. So the change is a pure trim of the existing model value, no
+behavior change. Committed separately.
+
+**(b) Vision ADC — DISCARDED.** `git checkout -- visionCredentials.ts (+test)`. It is a
+new credential-loading path (`GOOGLE_APPLICATION_CREDENTIALS` file behind
+`VISION_ADC_FILE_ENABLED`) that only exists to support the local OFF-vs-ON harness —
+which is blocked (no document images + no verified ground truth). Dead-until-harness →
+risk without benefit. Reintroduce only when the harness is actually built.
+
+**(c) tsconfig.tsbuildinfo — DISCARDED.** Build artifact; already in `.gitignore:56`
+(tracked-but-ignored — a `git rm --cached` to fully untrack is a separate optional step,
+not done here).
+
+**Checks:** typecheck PASS; engine suite 58 pass/3 skip. Not pushed.
+
+**Working tree:** clean of tracked changes; only out-of-scope untracked remain
+(`docs/reports/*`, `qa-private/`, `reports/`, `daily-briefing-2026-06-02.md`).
+
+**Next (owner / separate):** triage the untracked `docs/reports/*` dump; optional
+`git rm --cached tsconfig.tsbuildinfo`. Harness still blocked on owner images + GT.
+Not P2.4/P2.5; SMART_NORMALIZE stays OFF.
+
 # HANDOFF — Session 104f (2026-06-03)
 
 ## Session 104f — Group A triage landed: normalize GEMINI_MODEL env (live-risk fix)
