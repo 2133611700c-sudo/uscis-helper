@@ -1,3 +1,9 @@
+# HANDOFF — Session 105f (2026-06-04)
+
+## Session 105f — PRELIMINARY accuracy (N=2, owner-authorized) — signal only
+
+Owner allowed a partial rerun on the existing 2 birth certs (no new GT). Scored value=as-written, owner_verified_fields only. Mode C (anti-fab + self-consistency, N=3) → false_negative_review=0 in all 4 cells, DOB month-mismatch CAUGHT; modes A/B leave FN high (2.5-flash misses DOB); SMART no accuracy gain. Reproduces the prior N=2 → NO new ground-truth data. Decisions UNCHANGED: calibration BLOCKED, L2-WIRE BLOCKED, SMART DO_NOT_ENABLE, gate BLOCKED_NEEDS_GT_BATCH (signal positive but N=2 can't authorize wiring), model NEEDS_MORE_DATA. Report: docs/reports/ACCURACY_PRELIM_N2.md (sanitized); raw in qa-private (ignored). No runtime/flags/model/SMART/HTR/prod change; decideField not wired. Next: owner fills +4 new VERIFIED GT files → real calibration.
+
 # HANDOFF — Session 105e (2026-06-04)
 
 ## Session 105e — GT-fill execution pack + i94/ead templates (docs only)
