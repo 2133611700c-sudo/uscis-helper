@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < rawFiles.length; i++) {
         const file = rawFiles[i]
         const buffer = Buffer.from(await file.arrayBuffer())
-        const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 20_000 })
+        const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 20_000, product: 'translation' })
         corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
         if (r.ok && Array.isArray(r.fields)) {
           // Preserve Cyrillic BEFORE conversion to candidates (KMU-55 erases it)
@@ -260,7 +260,7 @@ export async function POST(req: NextRequest) {
     const buffer = pre?.ok ? pre.buffer : rawBuffer
     const effectiveMime = pre?.ok ? pre.mimeType : mime
     try {
-      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 15_000 })
+      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 15_000, product: 'translation' })
       lastResult = r
       pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
       if (r.ok && Array.isArray(r.fields)) {
