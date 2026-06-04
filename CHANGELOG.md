@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — feat(onebrain): L2 scaffold decideField() (not wired; prod byte-identical)
+
+New docintel/oneBrain/decideField.ts (pure) + types + scoredForAccuracy(), implementing the L1 contract: value(reads/strong-anchor), separate normalized_value(kmu55 signal only), decision accept|accept_low_confidence|force_review|reject, review_reasons, source_trace, safety_flags, sha256 audit_hash. NOT wired (NO_LIVE_CALLER — no /api route nor documentFieldReader imports it) → prod byte-identical; reserved flag ONEBRAIN_DECIDE_FIELD_ENABLED default OFF read by nothing. Tests (decideField.test.ts): dict never overwrites value; critical+review-signal→force_review; self-consistency mismatch→force_review (model conf can't override); scoredForAccuracy honors owner_verified+candidate_not_verified; reject on no source; pure. typecheck PASS; 83 tests pass; synthetic values (no PII). Deferred: wiring (L2-wire, shadow-first), threshold numbers (L3 PLACEHOLDER), 2nd reader/HTR (L4). consensus.ts untouched; SMART/HTR/model unchanged; no prod env/flags/deploy.
+
+---
+
 ## 2026-06-04 — docs(arch): L1 OneBrain decideField() contract (design-only)
 
 Designed the single per-field decision contract: docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md + docs/reports/ONEBRAIN_L1_DESIGN_REVIEW.md. decideField(input)→FieldDecision (accept/accept_low_confidence/force_review/reject) with source_trace + audit_hash. Rules: dictionary=signal never silent-rewrite (separate normalized_value); critical identity stricter + no accept w/o strong anchor under review signals; self-consistency mismatch on DOB/name/place→force_review (model review=false can't override); candidate_not_verified excluded from accuracy penalties; strong-anchor precedence; never lower flag/never blank; no raw PII in artifacts. Maps onto existing live code → L2=consolidation not rewrite; consensus.ts left dormant (not removed). Thresholds + second reader deferred to L3/L4. No runtime change; no flags; no prod env; no PII (example values genericized to <surname>); no code push.

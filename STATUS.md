@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 105b (2026-06-04) — L2 SCAFFOLD: decideField() implemented, NOT wired (prod byte-identical)
+- `SCAFFOLD` `docintel/oneBrain/decideField.ts` (NEW, pure) + types + `scoredForAccuracy()`. Implements L1 contract: value(reads/anchor) + separate normalized_value(dict signal) + decision(accept/accept_low_confidence/force_review/reject) + reasons + source_trace + safety_flags + sha256 audit_hash.
+- `BYTE_IDENTICAL` decideField imported by NO /api route and NOT by documentFieldReader (grep NO_LIVE_CALLER) → prod byte-identical. Reserved flag `ONEBRAIN_DECIDE_FIELD_ENABLED` (default OFF) read by nothing yet.
+- `RULES_TESTED` dict never overwrites value; critical+review-signal→force_review; self-consistency mismatch→force_review (model conf can't override); scoredForAccuracy honors owner_verified+candidate_not_verified; reject on no source; pure (stable audit_hash, no mutation); MRZ anchor→accept.
+- `EVIDENCE` typecheck PASS; decideField + docintel = 83 tests pass; synthetic values (no PII).
+- `DEFERRED` wiring into readDocument = separate L2-wire step (shadow-first, owner-gated); threshold numbers = L3 (PLACEHOLDER now); 2nd reader/HTR = L4. consensus.ts untouched; SMART/HTR/model unchanged; no prod env; no flags; no deploy.
 ## Session 105 (2026-06-04) — L1: OneBrain decideField() contract (design-only)
 - `L1_DONE` `docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md` + `docs/reports/ONEBRAIN_L1_DESIGN_REVIEW.md`. Pure decideField(input)→FieldDecision; decision enum accept/accept_low_confidence/force_review/reject; source_trace + audit_hash.
 - `RULES` dictionary=signal never silent-rewrite (separate normalized_value); critical identity stricter + never accept w/o strong anchor under any review signal; self-consistency mismatch on DOB/name/place → force_review (model review=false can't override); candidate_not_verified excluded from accuracy penalties; no raw PII in artifacts.
