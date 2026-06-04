@@ -1,3 +1,9 @@
+# HANDOFF — Session 105g (2026-06-04)
+
+## Session 105g — Auto-prepped GT skeletons + owner fill pack (max agent work, no GT fabrication)
+
+Took all technical prep off the owner: created 4 private, value-free GT skeletons in qa-private/ground-truth/ (international_passport/id_card/i94/ead _owner_fill.json) from the real templates — status=OWNER_INPUT_REQUIRED, value_rule=as_written, normalized=canonical-only, dictionary=hint-only, no_model_gt=true, owner_must_confirm=true. Used REAL template/adapter field names (not the slightly-different names in the request, per 'do not invent'). Skeletons are gitignored, NOT committed (qa-private tracked=0). Wrote docs/reports/GT_OWNER_NEXT_4_FILL_PACK.md: the 4 files, exact owner_verified_fields per file, where to look on each document, value=as-written rule, null+note, hand/gt_intake fill, PII-free readiness command. **Did NOT set VERIFIED_BY_OWNER** — model output is not ground truth; only the owner's eyes on the originals can verify. ready 2 → target ≥6 (need +4). accuracy/calibration/L2-WIRE remain BLOCKED; no runtime/flags/model/SMART/HTR/prod change. Next: owner types values into the 4 skeletons + sets VERIFIED_BY_OWNER → 'GT batch filled'.
+
 # HANDOFF — Session 105f (2026-06-04)
 
 ## Session 105f — PRELIMINARY accuracy (N=2, owner-authorized) — signal only
