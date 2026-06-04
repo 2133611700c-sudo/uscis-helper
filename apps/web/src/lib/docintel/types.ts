@@ -100,6 +100,8 @@ export interface ExtractedDocField {
   review_required: boolean
   source: 'vision'
   provider: string
+  /** Optional machine-readable reasons review was forced (e.g. anti-fabrication gate). */
+  review_reasons?: string[]
 }
 
 export interface DocumentReadResult {

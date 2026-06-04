@@ -17,6 +17,7 @@ import { defaultVisionProvider } from './providers/geminiVisionProvider'
 import { toCanonicalValue } from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
+import { applyAntiFabricationGate } from './antiFabricationGate'
 import type {
   DocumentReadResult,
   ExtractedDocField,
@@ -83,10 +84,18 @@ export async function readDocument(
   //   P2.2 — reconcile patronymic vs sibling given name + inferred sex.
   //   P2.3 — resolve issuing authority (agency) via the sourced registry.
   // No silent correction; never lowers a review flag. Flag OFF → fields untouched.
-  const finalFields =
+  let finalFields =
     process.env.SMART_NORMALIZE_ENABLED === '1'
       ? resolveAuthorityFields(reconcilePatronymicFields(fields))
       : fields
+
+  // ANTI_FABRICATION_GATE_ENABLED (default OFF): on hard-case document classes,
+  // force review on identity/document-critical fields (the model's own
+  // review_required=false is not trusted there). Only raises review; never
+  // changes values. Applied here so all 4 products inherit it via this one door.
+  if (process.env.ANTI_FABRICATION_GATE_ENABLED === '1') {
+    finalFields = applyAntiFabricationGate(finalFields, docTypeId)
+  }
 
   return {
     ok: true, doc_type_id: docTypeId, fields: finalFields, anchor_read: anchorRead,
