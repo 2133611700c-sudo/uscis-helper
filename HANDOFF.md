@@ -10,6 +10,8 @@ Owner filled GT (VERIFIED_BY_OWNER, 6 identity fields). Ran the accuracy matrix 
 - **Model:** 3.1-pro safer than 2.5-flash on hard-case (self-flags DOB; 2.5-flash reads a different person, FN=5). Gate mandatory regardless. Firm model choice = NEEDS_MORE_DATA.
 - **Caveat:** docs are Russian-language, GT is Ukrainian-canonical → some 'wrong' is RU↔UA spelling, not fabrication. Owner must clarify GT language intent. N=2/one-person = signal not proof.
 
+**PII scrub:** genericized the RU/UA example in OWNER_QUEUE (removed gratuitous real name).
+
 **Decision pointer:** the high-value safety lever is the anti-fabrication/self-consistency GATE, NOT SMART_NORMALIZE. Enabling any behavior flag remains an owner decision and wants more GT. No prod env touched; no flags enabled; no model change; no push of code.
 
 # HANDOFF — Session 104x (2026-06-04)
