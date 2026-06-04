@@ -10,6 +10,23 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104b (2026-06-03)
+
+## Session 104b — P2.3 authority/issued_by registry resolution (behind SMART_NORMALIZE_ENABLED)
+
+**What was done:**
+1. **`dictionaryBridge.resolveAuthority(rawCyrillic, documentDate?)`** (NEW, pure) — resolves an issuing authority via the sourced registry: `translateCivilRegistryTerm` first (РАЦС/ЗАГС/ДРАЦС), then `lookupAuthority` (МВС/міліція/…). Returns the registry's `official_en` + its `review_required` + warning verbatim. No match → passthrough (value = input). `documentDate` optional → drives era-gating; we don't have it in this path so it defaults (acceptable — registry still resolves the term, era-warnings like ЗАGS/міліція still raise review).
+2. **`docintel/authorityResolve.ts`** (NEW) — `resolveAuthorityFields(fields)` post-pass over `kind:'agency'` fields. Match → replace value with `official_en` + carry `review_required` (never lower). No match → field untouched (keeps the transliteration `toCanonicalValue` produced — no silent loss).
+3. **Wiring** — added to `documentFieldReader` in the SAME `SMART_NORMALIZE_ENABLED==='1'` block as P2.2: `resolveAuthorityFields(reconcilePatronymicFields(fields))`. Default OFF → byte-identical.
+
+**Door alignment (applied lesson from P2.2 trace):** this pass lives in `readDocument`, which all 4 product routes call (TPS/Translation/Re-Parole/EAD) — so authority resolution reaches all 4 by design. Chosen as a document-level post-pass (not the per-field `toCanonicalValue` 'agency' branch) because that branch returns a bare string and would drop the registry's `review_required` (ЗАГС/міліція must raise review).
+
+**Legacy:** per-module authority maps in `militaryId.ts`/`birthCertificate.ts` left untouched — dedup is P5 (canon note on P2.3).
+
+**Evidence:** `authorityResolve.test.ts` 13/13 (РАЦС/ДРАЦС→Civil Registry Office no-review; ЗАГС→review; Міліція→Militsiya review; unknown→passthrough; flag OFF→transliterate vs ON→resolve+review via stub provider; non-agency untouched). Broad: docintel+canonical/core+tps 768 pass / 1 skip. typecheck PASS.
+
+**What was NOT done:** no live doc / no accuracy delta (owner ground truth). P2.4 (settlement) / P2.5 (server-side classifyGarbage) not started. Not pushed. `SMART_NORMALIZE_ENABLED` stays OFF. `documentDate` not threaded into the authority pass (era-gating uses registry defaults) — enhancement if a doc-date is later available in the field set.
+
 # HANDOFF — Session 104 (2026-06-03)
 
 ## Session 104 — P2.2 patronymic reconcile (behind SMART_NORMALIZE_ENABLED) + canon YAML repair
