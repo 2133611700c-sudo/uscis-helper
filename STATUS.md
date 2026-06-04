@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 105g (2026-06-04) — auto-prepped 4 GT skeletons + owner fill pack (no fabrication)
+- `SKELETONS` created 4 private value-free skeletons in qa-private/ground-truth/ (international_passport/id_card/i94/ead _owner_fill.json), status=OWNER_INPUT_REQUIRED, real template/adapter field names, no_model_gt=true, owner_must_confirm=true. NOT committed (qa-private ignored, tracked=0).
+- `PACK` docs/reports/GT_OWNER_NEXT_4_FILL_PACK.md — which 4 files, fields per file, where on document, value=as-written, null+note, readiness command. Owner only types values + sets VERIFIED_BY_OWNER.
+- `STATUS` ready 2→target≥6 (need +4). Agent did NOT set VERIFIED_BY_OWNER (model output ≠ GT). accuracy/calibration/L2-WIRE still BLOCKED; no runtime/flags/model/SMART/HTR/prod.
 ## Session 105f (2026-06-04) — PRELIMINARY accuracy N=2 (signal only; calibration+L2-WIRE BLOCKED)
 - `PRELIM` owner-authorized rerun on the SAME 2 docs (0 new GT categories). Mode C → false_negative_review=0 (all cells), DOB month-mismatch CAUGHT; A/B FN high; SMART no gain. Reproduces prior N=2 — adds NO new GT data.
 - `DECISIONS_UNCHANGED` calibration BLOCKED, L2-WIRE BLOCKED, SMART DO_NOT_ENABLE, gate BLOCKED_NEEDS_GT_BATCH, model NEEDS_MORE_DATA. Report docs/reports/ACCURACY_PRELIM_N2.md (sanitized); raw qa-private (ignored).
