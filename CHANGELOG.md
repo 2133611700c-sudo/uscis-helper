@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs: GT owner fill pack + 4 private skeletons (no fabrication)
+
+Auto-prepped 4 value-free private GT skeletons in qa-private/ground-truth/ (international_passport/id_card/i94/ead _owner_fill.json, status=OWNER_INPUT_REQUIRED, real adapter/template field names, no_model_gt=true) — gitignored, not committed. Added docs/reports/GT_OWNER_NEXT_4_FILL_PACK.md (which files, fields, where on document, value=as-written, readiness command). Did NOT set VERIFIED_BY_OWNER (model output != GT). ready 2→target≥6. accuracy/calibration/L2-WIRE BLOCKED; no runtime/flags/model/SMART/HTR/prod; qa-private tracked=0.
+
+---
+
 ## 2026-06-04 — docs: PRELIMINARY accuracy N=2 (signal only, not calibration)
 
 Owner-authorized partial rerun on the same 2 birth certs (0 new GT categories). value=as-written scoring, owner_verified_fields only. Mode C → false_negative_review=0 all cells + DOB month-mismatch caught; A/B FN high; SMART no gain. Reproduces prior N=2, adds no new GT data. Decisions unchanged: calibration BLOCKED, L2-WIRE BLOCKED, SMART DO_NOT_ENABLE, gate BLOCKED_NEEDS_GT_BATCH, model NEEDS_MORE_DATA. docs/reports/ACCURACY_PRELIM_N2.md (sanitized); raw qa-private (ignored). No runtime/flags/model/SMART/HTR/prod; decideField not wired.
