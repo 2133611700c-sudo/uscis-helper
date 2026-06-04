@@ -1,4 +1,8 @@
 # STATUS — Messenginfo
+## Session 105f (2026-06-04) — PRELIMINARY accuracy N=2 (signal only; calibration+L2-WIRE BLOCKED)
+- `PRELIM` owner-authorized rerun on the SAME 2 docs (0 new GT categories). Mode C → false_negative_review=0 (all cells), DOB month-mismatch CAUGHT; A/B FN high; SMART no gain. Reproduces prior N=2 — adds NO new GT data.
+- `DECISIONS_UNCHANGED` calibration BLOCKED, L2-WIRE BLOCKED, SMART DO_NOT_ENABLE, gate BLOCKED_NEEDS_GT_BATCH, model NEEDS_MORE_DATA. Report docs/reports/ACCURACY_PRELIM_N2.md (sanitized); raw qa-private (ignored).
+- `UNCHANGED` no runtime/flags/model/SMART/HTR/prod; decideField not wired; qa-private tracked=0. Next: owner fills +4 GT.
 ## Session 105e (2026-06-04) — GT-fill execution pack + i94/ead templates (docs only)
 - `READINESS` ready_for_scoring=2/26 (only soviet+handwritten birth, already scored). Need ≥6 → +4 new owner-verified files.
 - `TEMPLATES` +2 from adapter fields (no invention): i94.template.json, ead.template.json. All 8 templates ready (soviet/handwritten/ua_printed/military/passport/id/i94/ead).
