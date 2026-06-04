@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — fix(core): narrow anti-fabrication gate to handwritten risk
+
+Aligned shipped gate (4f75bfa, too broad) with the revised design. Trigger changed from blanket `isHardCase` → explicit `HANDWRITTEN_FABRICATION_RISK_CLASSES` = {birth_certificate_handwritten, birth_certificate_soviet_bilingual}. Printed `marriage_apostille` + `unknown_document` + booklet/military NO LONGER blanket-forced. Reason `hard_case_document`→`handwritten_document`. Raw basis: registry `handwritten:true` only on booklet (documentRegistry.ts:25-30) → flag trigger would miss birth certs; quality/blur/rotation signal exists in preprocessImage but does NOT reach readDocument → not usable now. Gaps recorded (not silently included): military_id zones (not in docintel registry); handwritten-marriage/blur/rotation (no reader signal); soviet_bilingual forward-compat. Tests: antiFabricationGate.test.ts 49 pass (marriage/unknown NOT forced, allowlist membership, reasons=handwritten_document); typecheck PASS. ANTI_FABRICATION_GATE_ENABLED default OFF; model default unchanged; SMART_NORMALIZE OFF; P2.4/P2.5 frozen; not pushed.
+
+---
+
 ## 2026-06-04 — docs(core): refine anti-fabrication gate for handwritten instability
 
 Revision 2 of the design (no code). Owner recon: handwritten_birth unstable on BOTH 2.5-flash AND 3.5-flash (3 distinct identities/3 runs each, model review=false) → model switch doesn't fix handwritten fabrication; marriage_1939 (printed) stable on 2.5-flash → killer signal = handwriting, not age; model confidence not a detector. Raw signals: class by docTypeId (documentClassPolicy.ts:98); handwritten per-field flag exists + readDocument forces review on it (documentFieldReader.ts:75) but birth/marriage fields are all handwritten:false in registry; blur/rotation signal exists in preprocessImage but not threaded into readDocument. Revised trigger = handwritten classes only (not blanket hard-case); printed-old = risk→escalate via blur/self-consistency; self-consistency (same-model N=2-3 identity-hash) is the model-independent detector; model default unchanged. DISCREPANCY recorded: shipped gate 4f75bfa triggers on all isHardCase (incl. printed marriage) → too broad, narrow in a future code step (flag default OFF → no prod effect). SMART_NORMALIZE OFF; P2.4/P2.5 frozen; no prod env; not pushed.

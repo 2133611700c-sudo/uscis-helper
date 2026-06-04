@@ -10,23 +10,40 @@
  * model's own review flag is not trustworthy for identity fields.
  *
  * What this does (and ONLY this):
- *   - For HARD-CASE document classes (isHardCase), force review_required=true on
- *     identity/document-critical fields and attach machine-readable reasons.
+ *   - For confirmed HANDWRITTEN-FABRICATION-RISK classes (narrow allowlist below),
+ *     force review_required=true on identity/document-critical fields + attach reasons.
  *   - NEVER changes a value, NEVER invents, NEVER normalizes, NEVER LOWERS a flag.
- *   - Non-hard-case classes (e.g. passports → internal_passport_booklet) are
- *     untouched, so MRZ-controlled passport fields are not blanket-forced.
+ *   - Everything else (passports/booklet, military, PRINTED marriage_apostille,
+ *     unknown_document) is untouched → MRZ-controlled passport fields not blanket-forced,
+ *     stable printed docs not punished.
  *
  * Runs as a document-level post-pass in readDocument — the single door all four
  * products call — so coverage is uniform (TPS / Translation / Re-Parole / EAD).
  * Two-read self-consistency is NOT implemented here (separate, costed step).
  */
 
-import { docintelIdToDocumentClass, isHardCase } from '@/lib/canonical/core/documentClassPolicy'
+import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 import type { ExtractedDocField } from './types'
 
-/** Reasons attached when the gate forces review on a hard-case identity field. */
+/**
+ * Classes that carry handwritten identity zones and have CONFIRMED model-fabrication
+ * risk (different person across runs, model review_required=false). This is a NARROW
+ * allowlist, NOT all hard-case classes:
+ *   - marriage_apostille is PRINTED (its hard-case reason is image-size, not handwriting)
+ *     and an old-but-printed marriage read stably in testing → excluded.
+ *   - unknown_document is unknown, not specifically handwritten → excluded.
+ * The trigger is class-name based because the only runtime handwriting signal in the
+ * registry (DocFieldSpec.handwritten) is set for the booklet ONLY — birth/marriage cert
+ * fields are all handwritten:false — so it cannot distinguish these classes today.
+ */
+export const HANDWRITTEN_FABRICATION_RISK_CLASSES: ReadonlySet<string> = new Set([
+  'birth_certificate_handwritten',
+  'birth_certificate_soviet_bilingual',
+])
+
+/** Reasons attached when the gate forces review on a handwritten-risk identity field. */
 export const ANTI_FABRICATION_REASONS = [
-  'hard_case_document',
+  'handwritten_document',
   'model_instability_risk',
   'no_strong_identity_anchor',
 ] as const
@@ -63,7 +80,10 @@ export function applyAntiFabricationGate(
   docTypeId: string,
 ): ExtractedDocField[] {
   const docClass = docintelIdToDocumentClass(docTypeId)
-  if (!isHardCase(docClass)) return fields // passports/military/etc. — untouched
+  // NARROW trigger: only confirmed handwritten-fabrication-risk classes. Passports
+  // (internal_passport_booklet), military, printed marriage_apostille and
+  // unknown_document are NOT blanket-forced here.
+  if (!HANDWRITTEN_FABRICATION_RISK_CLASSES.has(docClass)) return fields
 
   return fields.map((f) => {
     if (!isIdentityCriticalField(f.field)) return f // non-identity → unchanged
