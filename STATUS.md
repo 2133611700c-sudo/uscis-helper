@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 104q (2026-06-04) — document_class metric (PII-free, flag OFF) [commit 1/2]
+- `METRIC` `docintel/documentClassMetric.ts` (NEW): `recordDocumentClassMetric({product,docTypeId})` emits a PII-FREE `document_class_count` line (product/doc_type_id/doc_class/allowlist_eligible/self_consistency_eligible) ONLY when `DOCUMENT_CLASS_METRICS_ENABLED=1` (default OFF → silent). Signature makes PII unrepresentable (no names/dob/address/text/filename).
+- `WIRED` Emitted from inside `readDocument` (one door = all 4) via new optional `opts.product`; 4 routes pass product ('tps'/'translation'/'reparole'/'ead'). Logging only, no behavior change, never throws.
+- `WHY` Collect real `allowlist_traffic_share` to judge self-consistency cost from data, not guesses.
+- `TESTS` documentClassMetric.test.ts (eligibility correct; record has ONLY class/eligibility keys, no PII; emit gating/no-throw); docintel 54 pass; typecheck PASS.
+- `NEXT` commit 2 = self-consistency gate. Owner may enable DOCUMENT_CLASS_METRICS_ENABLED to start collecting. No prod env; flags OFF; P2.4/P2.5 frozen; not pushed.
 ## Session 104p (2026-06-04) — Self-consistency gate DESIGN (no code)
 - `DESIGN` `docs/reports/SELF_CONSISTENCY_DESIGN.md` — real fabrication detector: re-read same image, force review when extracted IDENTITY disagrees across reads (the signal that actually tracks the confirmed failure).
 - `INSERTION` `readDocument` (provider call at documentFieldReader.ts:43; arbitrateDocument:100 only judges candidates → too late; route-level = 4× dup). Covers all 4 products.

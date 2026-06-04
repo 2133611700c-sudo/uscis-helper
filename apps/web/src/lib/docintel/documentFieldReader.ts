@@ -18,6 +18,7 @@ import { toCanonicalValue } from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
 import { applyAntiFabricationGate } from './antiFabricationGate'
+import { recordDocumentClassMetric, type MetricProduct } from './documentClassMetric'
 import type {
   DocumentReadResult,
   ExtractedDocField,
@@ -28,7 +29,7 @@ export async function readDocument(
   imageBuffer: Buffer,
   mimeType: string,
   docTypeId: string,
-  opts: { provider?: VisionProvider; timeoutMs?: number; attemptsPerModel?: number } = {},
+  opts: { provider?: VisionProvider; timeoutMs?: number; attemptsPerModel?: number; product?: MetricProduct } = {},
 ): Promise<DocumentReadResult> {
   const spec = getDocTypeSpec(docTypeId)
   if (!spec) {
@@ -38,6 +39,9 @@ export async function readDocument(
       error: `No registry entry for "${docTypeId}"`,
     }
   }
+
+  // PII-free document-class metric (logging only; silent unless flag on).
+  if (opts.product) recordDocumentClassMetric({ product: opts.product, docTypeId })
 
   const provider = opts.provider ?? defaultVisionProvider
   const read = await provider.readFields(imageBuffer, mimeType, spec, {

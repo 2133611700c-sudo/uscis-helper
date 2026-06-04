@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Visual read (Gemini docintel) and Vision OCR run in parallel
     const [coreRead, mrzRawText] = await Promise.all([
-      readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000 }),
+      readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000, product: 'reparole' }),
       mrzRawTextPromise,
     ])
 
