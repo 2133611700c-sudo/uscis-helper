@@ -2706,3 +2706,12 @@ _(Session 56 cont.12: 4 INDEPENDENT parallel agents re-verified engines on real 
 - P1.5 marked CLOSED-SMART (Vision billing not needed, live core reads via Gemini)
 - Added P1.5.4 brick (booklet ground-truth, owner-gate)
 - Added non_stop_protocol section (AUTONOMOUS/OWNER_GATE lanes)
+
+## 2026-06-03 | P2.1: snapCity (gazetteer) wired into live door behind SMART_NORMALIZE_ENABLED
+- dictionaryBridge.normalizeCity now calls snapCity after GEO_CORRECTIONS+strip, before KMU-55
+- flag SMART_NORMALIZE_ENABLED default OFF — behavior unchanged when unset
+- exact gazetteer hit -> snapped; fuzzy/unknown -> review_required + suggestion (NO silent replace)
+- NormalizeResult gained optional review_required?/suggested_value? (additive)
+- moves snapCity OUT of dead orchestrator INTO live brain door
+- tests: 4 new + 239 dictionaryBridge regression PASS; tsc 0
+- P1.5.4: 3 ground-truth templates created (owner-gate to fill)
