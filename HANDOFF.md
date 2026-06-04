@@ -10,6 +10,42 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104i (2026-06-04)
+
+## Session 104i — Model-stability finding (hard-case fabrication) — read-only + report
+
+Re-checked the earlier claim with raw runs (not taken on faith). `readDocument` × 3 per
+model on the faded Soviet birth certificate, `SMART_NORMALIZE_ENABLED` OFF (measuring
+the model, not the dictionaries). Identity = SHA1(family|given|patronymic|dob); no PII
+printed.
+
+**Confirmed:**
+- `gemini-2.5-flash` → **2 distinct identities across 3 runs**, every identity field
+  `review_required=false` → confident fabrication on a hard case.
+- `gemini-3.5-flash` → **1 identity across 3 runs** (stable; flags dob).
+- True identity UNKNOWN (no verified GT for this fixture) → this is a STABILITY finding,
+  not an accuracy claim.
+- The international passport (clean printed) read identically + correctly across all
+  models/runs → instability is hard-case-specific.
+
+**Artifacts:** `docs/reports/MODEL_STABILITY_FINDING.md` (sanitized). Raw per-run JSON in
+`qa-private/reports/model-stability/` (gitignored — not committed).
+
+**Recommendations (no code changed):** anti-fabrication gate — identity differing across
+models/runs ⇒ force `review_required` on ALL identity fields; hard-case docs (handwritten/
+faded/Soviet/low-q/rotated) ⇒ forced review unless a stronger source (MRZ / agreeing 2nd
+model) confirms; do not let `gemini-2.5-flash` serve identity-critical hard-case reads
+without review. SMART_NORMALIZE stays OFF until verified GT + stability gate. P2.4/P2.5 frozen.
+
+**This is the real priority** — above the P2 dictionaries (OFF-vs-ON already showed zero
+delta on real docs). Next decision (owner): design the anti-fabrication / hard-case review
+gate. Not pushed; no prod env.
+
+**Gitignore fix (caught in this session):** Step-1 added an UNANCHORED `reports/`, which
+gitignore matches at any depth — so it silently ignored `docs/reports/` too (the public
+report didn't commit on the first try). Fixed: anchored to `/qa-private/` and `/reports/`
+(repo-root only); `docs/reports/` verified NOT ignored.
+
 # HANDOFF — Session 104h (2026-06-04)
 
 ## Session 104h — PII hygiene + correction of the false "no images" claim

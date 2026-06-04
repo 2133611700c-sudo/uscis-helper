@@ -60,5 +60,6 @@ apps/web/public/brand/archive/
 test-fixtures/real-docs/
 
 # Private QA data — PII / ground-truth / benchmark raw, NEVER commit
-qa-private/
-reports/
+# Root-anchored: must NOT match docs/reports/ (public sanitized reports live there).
+/qa-private/
+/reports/
