@@ -10,6 +10,38 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104c (2026-06-03)
+
+## Session 104c — DOOR_ALIGNMENT_TRACE (documentation checkpoint, NO code)
+
+Resolved the "two doors" architectural question raised after P2.1–P2.3. Full raw
+call-graph + verdict in `docs/reports/DOOR_ALIGNMENT_TRACE.md`.
+
+**Verdict:** `readDocument` is the canonical door. It runs Door A (per-field
+`toCanonicalValue` → snapCity) then Door B (document-level post-passes
+patronymic + authority) in sequence, so on the Core path all three smart
+dictionaries fire for all 4 products (TPS/Translation/Re-Parole/EAD). The
+divergence is per-PATH, not per-product.
+
+**Exceptions (documented):** (1) TPS legacy booklet arbiter `visionReadsToFields`
+— Door A only, flag-off, and it already over-reviews so patronymic adds nothing;
+only authority value-resolution is absent there. (2) centralBrain side-path
+(`normalize()` ← `centralBrain.ts:152`) — snapCity only; do-not-touch/retire.
+(3) Re-Parole i94/ead/dl fall back to `/api/tps`.
+
+**Prod reality:** all Core flags + `SMART_NORMALIZE_ENABLED` are OFF → none of
+P2.1/2.2/2.3 affects production today.
+
+**Decision:** keep `readDocument` as the one door now (this checkpoint). Defer the
+true single-door cleanup (retire the arbiter + centralBrain side-path, dedup the
+legacy authority maps in militaryId/birthCertificate, close the Session-103
+Core-bypass) to **P5 — owner-gated migration**, NOT now: dirty working tree
+(in-flight Gemini/Vision), no owner-filled ground truth, flags OFF → premature.
+
+**This checkpoint:** docs only. No code change. HEAD `21e90c6` (P2.3) unchanged.
+Not pushed. P2.4/P2.5 frozen. Next big move is NOT P2.4 — it is to clean up the
+in-flight Gemini/Vision changes and the owner ground-truth, then revisit P5.
+
 # HANDOFF — Session 104b (2026-06-03)
 
 ## Session 104b — P2.3 authority/issued_by registry resolution (behind SMART_NORMALIZE_ENABLED)
