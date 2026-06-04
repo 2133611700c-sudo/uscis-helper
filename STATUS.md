@@ -4,7 +4,7 @@
 - `MEASURED` owner GT N=2 hard-case birth certs: identity ≈0–1/5 → critical failure. Mode C gate → FN_review=0 (need). Printed UA/US NOT GT-scored → no % claim.
 - `REPORTS` GT_LANGUAGE_INTENT corrected; UKRAINIAN_OCR_FAILURE_ANALYSIS.md + ANTI_FAB_GATE_CANARY_PLAN.md (PREPARE only). 
 - `DECISIONS` SMART=DO_NOT_ENABLE; ANTI_FABRICATION_GATE=READY_FOR_CANARY_PREP (NOT executed; flag/class/rollback/metrics/stop-cond documented); hard-case model=UNRESOLVED_BLOCKER; self-consistency=safety signal not truth; human review required hard-case.
-- `UNCHANGED` no flags/prod/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs.
+- `UNCHANGED` no flags/prod/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs (scrubbed a gratuitous given-name example from the failure-analysis report).
 ## Session 105g (2026-06-04) — auto-prepped 4 GT skeletons + owner fill pack (no fabrication)
 - `SKELETONS` created 4 private value-free skeletons in qa-private/ground-truth/ (international_passport/id_card/i94/ead _owner_fill.json), status=OWNER_INPUT_REQUIRED, real template/adapter field names, no_model_gt=true, owner_must_confirm=true. NOT committed (qa-private ignored, tracked=0).
 - `PACK` docs/reports/GT_OWNER_NEXT_4_FILL_PACK.md — which 4 files, fields per file, where on document, value=as-written, null+note, readiness command. Owner only types values + sets VERIFIED_BY_OWNER.
