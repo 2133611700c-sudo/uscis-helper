@@ -1,0 +1,138 @@
+# Anti-Fabrication / Hard-Case Forced-Review Gate — DESIGN ONLY
+
+**Date:** 2026-06-04  **Type:** design, NO code change, NO prod env, flag default OFF.
+
+## Goal
+
+Stop the system from TRUSTING identity fields on hard-case documents where a
+multimodal model can fabricate a plausible-but-wrong person and self-report
+`review_required=false`. CONFIRMED failure (this session, raw): `gemini-2.5-flash`
+on `birth_cert_soviet` produced 2 distinct identities across 3 runs, all identity
+fields `review_required=false`.
+
+## Known (raw, file:line)
+
+- `apps/web/src/lib/canonical/core/documentClassPolicy.ts`:
+  - hard-case classes `birth_certificate_handwritten` (:40), `birth_certificate_soviet_bilingual` (:51), `marriage_apostille`, `unknown_document`. The soviet class note already records "review_required=false while returning the wrong person — most dangerous failure mode".
+  - `isHardCase()` :147, `isAutoFillAllowed()` :151, `applyCertificateRoleGuard()` :167, `applyHardCaseReviewOverride()` :209 (explicitly distrusts model `review_required=false`), `checkImageQuality()` :234 (SIZE-based only), `docintelIdToDocumentClass()` :98 (conservative: `ua_birth_certificate → birth_certificate_handwritten`).
+- Wired in 2 routes: `tps/ocr/extract/route.ts` (:63-65, :189-194, :1038-1064) and `translation/vision-extract/route.ts` (:46-49, :117-143, :297-314).
+- The shared door `readDocument` (`documentFieldReader.ts`) is called by ALL 4 routes (TPS :266, Translation :217/:263, Re-Parole :188, EAD :170 — from `DOOR_ALIGNMENT_TRACE.md`).
+
+```
+hard_case_classifier_exists: PARTIAL (exists + wired in 2/4 routes, NOT in readDocument)
+signals_available:
+  - doc_type:        YES  (docTypeId → getDocTypeSpec)
+  - doc_class_policy: YES (documentClassPolicy.ts)
+  - image_quality:   PARTIAL (checkImageQuality — SIZE bytes only; no blur/contrast)
+  - rotation:        NO as a hard-case trigger (preprocess auto-rotates but emits no "was-rotated/low-q" class signal)
+  - MRZ:             YES for passport (canonical/core/mrzAuthority)
+  - source_anchor:   YES (DocTypeSpec.vision_anchor)
+missing_signals:
+  - self-consistency / multi-read identity-hash detector (does NOT exist)
+  - real image-quality (blur/contrast/resolution) hard-case trigger
+  - identity-field-level forced-review (current override is a single top-level flag)
+  - coverage in Re-Parole + EAD routes (0 calls — CONFIRMED by grep absence)
+```
+
+## Not confirmed / UNKNOWN
+
+- Whether `birth_cert_soviet`'s true identity is X — UNKNOWN (no verified GT).
+- Whether `gemini-3.5-flash` is globally safe — UNKNOWN (N=1; stability ≠ proof).
+- Whether rotation/low-quality reliably triggers a hard-case class today — NOT_CONFIRMED.
+
+## Force-review insertion point — options
+
+| Option | Pros | Cons | 4-product coverage | dup risk | legacy-miss risk | "one brain" |
+|---|---|---|---|---|---|---|
+| A `documentFieldReader` after readDocument | one place; all 4 routes call it; field-level access; carries review into every adapter | touches the shared reader | **ALL 4** | low | legacy TPS booklet arbiter (`visionReadsToFields`) bypasses readDocument | **closest** |
+| B `arbitrateDocument` | central arbiter | not all live paths arbitrate uniformly (Session-103); Translation/TPS Core paths differ | partial | low | high | medium |
+| C DocTypeSpec/registry | declarative | static; can't see runtime reads/instability | n/a | low | high | low |
+| D product adapters | per-product tuning | 4× duplication = today's gap (Re-Parole/EAD missing) | only where added | **high** | high | far |
+| E route layer (current) | already there for 2 | duplicated per route; Re-Parole/EAD NOT covered | **2/4 today** | high | high | far |
+
+```
+recommended_insertion_point: A — documentFieldReader (the shared door), after fields are built
+why: it is the single point all 4 product routes already call; fixes the current
+     Re-Parole/EAD coverage gap in ONE place; has field-level access to force review on
+     identity fields and attach reasons; aligns with the "one live brain" model.
+     (Legacy TPS booklet arbiter visionReadsToFields bypasses readDocument and is flag-gated
+      legacy — note it as a known residual, retire in P5.)
+rollback_flag: ANTI_FABRICATION_GATE_ENABLED (default OFF)
+```
+
+## Self-consistency / fabrication detector — options
+
+| Option | API cost | catches | misses | where to apply |
+|---|---|---|---|---|
+| 1 single read + class-based forced review | 1× | hard-case by class (uses existing policy) | instability on non-classified docs; consistent-but-wrong | baseline, everywhere (cheap) |
+| 2 two reads same model, compare identity hash | 2× | nondeterminism / hallucination instability (EXACTLY the confirmed failure) | consistent-but-wrong (same wrong answer twice) | hard-case identity only (cost) |
+| 3 two different models, compare identity hash | 2× + complexity | model-specific bias; stronger disagreement signal | Gemini×Gemini not truly independent | hard-case identity when budget allows |
+| 4 MRZ / stronger-source verification | ~0 when present | authoritative identity (passport) | N/A where no MRZ (birth certs) | passports / docs with a strong anchor |
+
+```
+self_consistency_options: 1 (baseline) + 2 (hard-case identity) + 4 (MRZ precedence); 3 optional
+recommended_policy:
+  - Baseline: Option 1 — class gate ALWAYS (already exists; just consolidate + cover all 4).
+  - Hard-case identity with NO strong anchor: Option 2 — 2× same-model read, compare identity
+    hash; on disagreement → hard_case_model_instability=true + force review on ALL identity fields.
+  - Passports/strong-anchor: Option 4 — MRZ controls; do NOT blanket-force MRZ-controlled fields.
+  - Birth certificates have NO MRZ → default to class gate (+ optional Option 2).
+  Note: same-model self-consistency is NOT an independent source; agreement ≠ correctness.
+  But DISAGREEMENT is a strong instability signal (proven this session).
+```
+
+## Honest scope
+
+- `gemini-3.5-flash` stable on N=1 = **risk signal, NOT proof**.
+- **Do NOT** change the global production default model on N=1.
+- A hard-case forced-review gate is **required regardless of model**.
+- Model self-reported `review_required=false` on hard-case identity = **NOT trusted** (this is already the documented policy at documentClassPolicy.ts:204-209).
+
+## Proposed flag
+
+`ANTI_FABRICATION_GATE_ENABLED` (default OFF). When ON, in the shared door:
+- hard-case identity fields → `review_required=true` with reason ∈ {`hard_case_document`, `model_instability_risk`, `no_strong_identity_anchor`}.
+- if identity hashes disagree across repeated/model reads → `hard_case_model_instability=true` + force review on ALL identity fields.
+- **only raises review** — NO value changes, NO invention, NO normalization.
+
+Identity-critical fields: `family_name`, `given_name`, `patronymic`/`middle_name`,
+`date_of_birth`, `place_of_birth`, `issuing_authority` (when identity/origin-relevant);
+plus role-grounded variants (`child_*`, `spouse*_*`).
+
+Strong anchors (suppress blanket force on the anchored fields): valid MRZ (passport),
+I-94 (admission), EAD/I-797 (A-number/category), human-verified GT / user review.
+Birth certificates have no MRZ → default hard-case identity review.
+
+## Test plan (no implementation)
+
+- flag OFF → behavior byte-identical to current.
+- flag ON + `birth_cert_soviet` → identity fields `review_required=true`.
+- flag ON + `birth_cert_handwritten` → identity fields `review_required=true`.
+- passport with valid MRZ → MRZ-controlled fields NOT blanket-forced.
+- values unchanged; reasons/provenance added.
+- same-model repeated reads with identity mismatch → `hard_case_model_instability` + all identity review.
+- model `review_required=false` cannot override the hard-case force.
+- coverage proof: the gate fires for all 4 products (TPS/Translation/Re-Parole/EAD) from the one insertion point.
+
+## Bottlenecks
+
+- Option 2 doubles API cost on hard-case docs (acceptable: hard-case is the minority + safety-critical).
+- No verified hard-case GT → can prove SAFETY (forced review) but NOT accuracy.
+- Legacy TPS booklet arbiter bypasses readDocument (residual; P5).
+- Real image-quality (blur/rotation) signal absent → hard-case currently keyed on doc-class, not visual degradation.
+
+## Risks
+
+| Risk | Control |
+|---|---|
+| Over-review (everything → review) | gate scoped to hard-case classes + identity fields; clean printed docs unaffected |
+| Trusting model review=false | documented + enforced: not trusted on hard-case |
+| Re-Parole/EAD stay uncovered | insertion point A (shared door) covers all 4 |
+| N=1 model conclusions | gate is model-independent; no default change |
+| Same-model agreement read as proof | only DISAGREEMENT used as signal; agreement ≠ correct |
+
+## Next action
+
+Owner approves the design + flag, then implementation (separate, code step) wires the
+gate at insertion point A behind `ANTI_FABRICATION_GATE_ENABLED` (default OFF). Until
+then: SMART_NORMALIZE OFF, P2.4/P2.5 frozen, model default unchanged, no prod env.

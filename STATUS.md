@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 104j (2026-06-04) — Anti-fabrication gate DESIGN (no code)
+- `DESIGN` `docs/reports/ANTI_FABRICATION_GATE_DESIGN.md` — hard-case forced-review gate to stop identity fabrication.
+- `EXISTS_PARTIAL` `documentClassPolicy.ts` ALREADY has the gate primitives: hard-case classes + `isHardCase()`:147, `applyHardCaseReviewOverride()`:209 (distrusts model review=false), role guard:167, `checkImageQuality()`:234 (size-only).
+- `COVERAGE_GAP` (raw): guards wired ONLY in `tps/ocr/extract` + `translation/vision-extract`. `reparole/ocr/extract` + `ead/ocr/extract` = 0 calls → 2 of 4 products UNCOVERED. Guards live in route layer, NOT in shared `readDocument`.
+- `MISSING` self-consistency/multi-read identity-hash detector; blur/rotation hard-case signal; identity-field-level force (current override = single top flag).
+- `RECO` insertion point = `documentFieldReader` (shared door, all 4) behind new `ANTI_FABRICATION_GATE_ENABLED` (default OFF); baseline class-gate + 2× same-model read on hard-case identity (disagree → instability + force review); MRZ precedence for passports; only raises review, never changes values.
+- `HONEST` 3.5-flash N=1 = risk signal NOT proof; do NOT change prod default on N=1; hard-case gate needed regardless of model; model review=false NOT trusted on hard-case.
+- `FROZEN` P2.4/P2.5; SMART_NORMALIZE OFF; model default unchanged; no prod env; not pushed. Implementation needs owner approval.
 ## Session 104i (2026-06-04) — MODEL STABILITY: hard-case fabrication CONFIRMED (read-only)
 - `FINDING` On `birth_cert_soviet` (faded Soviet handwritten), `readDocument`×3 per model, SMART OFF: **gemini-2.5-flash → 2 distinct identities in 3 runs, ALL identity fields review_required=false** (confident fabrication). **gemini-3.5-flash → 1 identity ×3 (stable)**. True identity UNKNOWN (no verified GT) → stability finding, NOT accuracy.
 - `CONTRAST` International passport read identically+correctly across models/runs (KUROPIATNYK/FU262473/1986-06-25, review=false). Instability is hard-case-specific.
