@@ -10,6 +10,29 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104q (2026-06-04)
+
+## Session 104q — document_class metric (commit 1 of 2; PII-free, flag OFF)
+
+`docintel/documentClassMetric.ts` (NEW): `recordDocumentClassMetric({product, docTypeId})`
+emits a PII-free `document_class_count` record (product / doc_type_id / doc_class /
+anti_fabrication_allowlist_eligible / self_consistency_eligible) via console.info ONLY when
+`DOCUMENT_CLASS_METRICS_ENABLED=1` (default OFF → silent). The signature accepts no identity
+fields, so PII is unrepresentable. Emitted from inside `readDocument` (one door → all 4
+products) via a new optional `opts.product`; the 4 routes pass their product id. Logging only,
+no behavior change, never throws into the request. Purpose: learn the real
+`allowlist_traffic_share` to judge self-consistency cost from data, not guesses.
+
+Tests: `documentClassMetric.test.ts` — eligibility (birth=eligible; passport/marriage/unknown=not);
+record contains ONLY class/eligibility keys (no PII); emit gating + no-throw. docintel 54 pass;
+typecheck PASS.
+
+Design note (honest): the spec said "call the helper in the 4 routes"; I instead emit from inside
+`readDocument` with `product` via opts — same coverage, far less route-edit risk, better one-door
+alignment. Owner may set `DOCUMENT_CLASS_METRICS_ENABLED=1` to start collecting (their env decision).
+
+Commit 2 (next): the self-consistency gate itself. No prod env; flags OFF; P2.4/P2.5 frozen; not pushed.
+
 # HANDOFF — Session 104p (2026-06-04)
 
 ## Session 104p — Self-consistency gate design (DESIGN ONLY, no code)

@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — feat(metrics): record document class counts without PII
+
+New `docintel/documentClassMetric.ts`: `recordDocumentClassMetric({product, docTypeId})` emits a PII-free `document_class_count` record (product/doc_type_id/doc_class/anti_fabrication_allowlist_eligible/self_consistency_eligible) only when `DOCUMENT_CLASS_METRICS_ENABLED=1` (default OFF → silent). Signature accepts no identity fields → PII unrepresentable. Emitted from inside readDocument (one door → all 4) via new optional opts.product; 4 routes pass their product. Logging only, no behavior change, never throws. Purpose: learn real allowlist_traffic_share to judge self-consistency cost from data. Tests: documentClassMetric.test.ts (eligibility; record keys are class/eligibility only, no PII; emit gating/no-throw); docintel 54 pass; typecheck PASS. Flag OFF; no prod env; not pushed. (commit 1 of 2)
+
+---
+
 ## 2026-06-04 — docs(core): design self-consistency gate for handwritten documents
 
 Design (`docs/reports/SELF_CONSISTENCY_DESIGN.md`) for the real fabrication detector: re-read the same image, force review when extracted identity disagrees across reads. Raw: readDocument calls provider.readFields once (documentFieldReader.ts:43) = cheapest second-read point; arbitrateDocument (arbitration.ts:100) only judges candidates (too late); sha256 available. Insertion = readDocument (one door/all 4; not route=4× dup; not arbitrate). Trigger = narrow handwritten allowlist (NOT blurScore — calibration disproved; not all-hard-case; not printed marriage/passport). Identity tuple = family/given/patronymic/dob/place, normalized for compare with NO KMU/dictionary before hashing (would mask disagreement), sha256, public=prefix only. Disagree → instability + force identity review (self_consistency_identity_mismatch); agree → don't lower/don't claim correct; error → incomplete → force review, don't block. Runs N=2 same model first, N=3 optional, different-model later. Cost = allowlist_traffic_share × 1 extra (N=2); share UNKNOWN (needs per-class metric, not guessed). Flags SELF_CONSISTENCY_GATE_ENABLED (def OFF)+RUNS/MAX_EXTRA/TIMEOUT, dependent on ANTI_FABRICATION_GATE_ENABLED. Quality rescan prompt split into own usability flag (never touches safety path). No code; flags OFF; no prod env; no API runs; P2.4/P2.5 frozen; not pushed.
