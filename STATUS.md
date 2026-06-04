@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 104z (2026-06-04) — Architecture inventory verdict + OneBrain target (docs)
+- `VERDICT` PASS_AS_TRUTH_INVENTORY / DEGRADED_AS_TARGET. Raw: consensus.ts DORMANT (no /api caller; central-brain skipped when ONE_BRAIN_CORE_ENABLED=1); HTR NOT live (htr.ts: 0 transcripts, Transkribus auth blocked); live = 1 Gemini read + arbitrateDocument + gates.
+- `TARGET` OneBrain/DocumentBrain = single field-decision center (decideField schema): readers + dictionaries(as SIGNAL not silent rewrite) + normalization + validators + anti-fab + self-consistency + quality + one audit trail INSIDE; no dead consensus branch; real consensus = different independent readers (not 3× same model).
+- `DECISIONS` SMART_NORMALIZE=DO_NOT_ENABLE; HTR=DO_NOT_BUILD; model=DO_NOT_SWITCH; gate=PREPARE_CANARY only (owner approval+rollback).
+- `PRIORITIES` L0 verdict ✅ → L1 OneBrain contract (design) → L2 fold proven gate into OneBrain (flags OFF) → L3 expand GT+rerun → L4 second reader/HTR if metrics justify.
+- `DOCS_ONLY` no prod env; no flags; no deploy; no model change; no PII; raw in qa-private. Report: docs/reports/ARCHITECTURE_INVENTORY_VERDICT.md.
 ## Session 104y (2026-06-04) — ACCURACY OFF-vs-ON done; gate proven; SMART no gain
 - `RAN` 2 birth-cert docs × modes A/B/C × {2.5-flash, 3.1-pro} = 12 cells (all ok), local, scored vs 6 owner-verified GT fields. Raw → qa-private (ignored).
 - `SAFETY_WIN` mode C (anti-fab+self-consistency) → **false_negative_review=0 in EVERY cell**. Without gate (A/B), 2.5-flash = 5 wrong identity fields review=false + DOB month-mismatch MISSED; mode C CAUGHT it (self_consistency=mismatch).
