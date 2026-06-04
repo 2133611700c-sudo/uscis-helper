@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(model): hard-case stability finding (fabrication CONFIRMED)
+
+Re-checked with raw runs: `readDocument`×3/model on the faded Soviet birth cert, SMART OFF. **gemini-2.5-flash → 2 distinct identities in 3 runs, all identity fields review_required=false** (confident fabrication). **gemini-3.5-flash → 1 identity ×3 (stable)**. True identity UNKNOWN (no verified GT) → stability finding, not accuracy. Passport (clean printed) identical+correct across models. Sanitized report `docs/reports/MODEL_STABILITY_FINDING.md` (hashes, no PII); raw in `qa-private/reports/model-stability/` (gitignored). Reco (no code): anti-fabrication gate (identity differs across models/runs ⇒ force review on all identity fields; hard-case ⇒ forced review unless stronger source). Anti-fabrication > P2 dictionaries. SMART_NORMALIZE OFF; P2.4/P2.5 frozen. Not pushed. Also fixed .gitignore: anchored `/qa-private/` + `/reports/` to root (the unanchored `reports/` had silently swallowed `docs/reports/`).
+
+---
+
 ## 2026-06-04 — chore(git): protect private QA data + correct "no images" claim
 
 `qa-private/` (filled PII ground-truth) and `reports/` were NOT gitignored → added both to `.gitignore` (qa-private had 0 tracked files — no history leak). `git rm --cached qa-shots/.DS_Store`. `qa-shots/private/` already ignored. **Correction:** prior `NO_IMAGES_FOUND` was false (broken zsh glob) — real originals exist under `test-fixtures/real-docs/` + `qa-shots/private/` (both ignored); the real P2-accuracy blocker is missing VERIFIED ground-truth for hard-case docs, not images. typecheck PASS. Not pushed. SMART_NORMALIZE OFF; P2.4/P2.5 frozen.
