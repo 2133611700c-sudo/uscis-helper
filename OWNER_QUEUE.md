@@ -2,6 +2,38 @@
 
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
+
+## 2026-06-04 — GT=6 verified · accuracy reconciled · gate = READY_FOR_OWNER_APPROVED_CANARY
+
+**Verified by agent from raw (no values printed):**
+- GT ready = **6/30** `VERIFIED_BY_OWNER` (soviet 6/6, handwritten 6/6, internal_passport 5/5, military_id_p1 6/6, i94 6/6, ead 6/6). **GT-count blocker CLEARED.**
+- BUT live-door-scorable = **3** (2 hard-case birth + internal_passport). `military_id_p1` has **no registry doc type** (`ua_military_id` absent); `ead`/`i94` are **US docs with no upright real image** → not scorable. Owner's "accuracy on 6 docs" is not evidence-backed; real coverage = 3.
+- Hard-case = **1/4 correct even on 3.1-pro** → UNRESOLVED_BLOCKER. Mode C drives `false_negative_review`→0 on both. Passport = 3/3 read fields correct (patronymic dropped — coverage gap).
+- Calibration = **BLOCKED_INSUFFICIENT_N** (~11 fields can't set numeric thresholds).
+
+**Owner-only — to scale evidence (the real unblock for calibration):**
+1. Provide an **upright real EAD and I-94 image** (matching the filled GT) into `test-fixtures/real-docs/` (gitignored) so they become scorable.
+2. Add a **`ua_military_id` registry doc type** (or tell agent to) so `military_id_p1` is routable — code task, needs owner OK.
+3. Expand GT to **different people** + more UA-printed docs (current N is 1 person).
+
+**Owner-only — enable the anti-fabrication gate (DO NOT run until rollback rehearsal done; agent will NOT run these):**
+```
+# canary FIRST (preview/slice), observe metrics, only then production:
+vercel env add ANTI_FABRICATION_GATE_ENABLED production   # value: 1
+vercel env add SELF_CONSISTENCY_GATE_ENABLED  production   # value: 1  (mode C; needs the former)
+# redeploy main (NOT a feature branch)
+```
+**Rollback (must be ready before enabling):**
+```
+vercel env rm ANTI_FABRICATION_GATE_ENABLED production
+vercel env rm SELF_CONSISTENCY_GATE_ENABLED  production
+# redeploy main → behavior returns byte-identical (no data migration)
+```
+**Stop-conditions (hard — rollback/block immediately):**
+- ANY critical identity field wrong WITHOUT review (`false_negative_review` > 0 on critical identity) → rollback/block.
+- Review-rate spike beyond the agreed ceiling with no safety payoff → pause + retune.
+- `SMART_NORMALIZE_ENABLED` stays **OFF** (no gain). Model switch / HTR / L2-WIRE / P2.4-P2.5 = NOT in this scope.
+
 ## 2026-06-04 — UA correction + gate canary prep
 - Source docs are UKRAINIAN; Russianized output = model error (memory ukrainian-source-language). KMU-55/dict only after correct UA read.
 - ANTI_FABRICATION_GATE = READY_FOR_CANARY_PREP (plan: docs/reports/ANTI_FAB_GATE_CANARY_PLAN.md). NOT enabled. Pre-canary gates unmet: GT≥6 + calibration + rollback rehearsal.

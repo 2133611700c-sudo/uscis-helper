@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 105i (2026-06-04) — VERIFY-FIRST sync: GT=6 confirmed, accuracy reconciled, gate=READY_FOR_OWNER_APPROVED_CANARY
+- `VERIFIED` GT ready = **6/30** `VERIFIED_BY_OWNER` (raw-read, no values): soviet 6/6, handwritten 6/6, internal_passport 5/5, military_id_p1 6/6, i94 6/6, ead 6/6. **GT-count blocker CLEARED.**
+- `RECONCILED` Owner's "accuracy on 6 docs" NOT evidence-backed. Live-door-scorable = **3** (2 hard-case birth + passport). `military_id_p1`=no registry type (`ua_military_id` absent); `ead`/`i94`=US docs, no upright real image → NOT scorable.
+- `MEASURED(3.1-pro)` Hard-case birth = **1/4 correct** (family_name only; given/patronymic/DOB WRONG) → UNRESOLVED_BLOCKER. Mode C → `false_negative_review`=0 on BOTH (handwritten needs C not B). NEW: internal_passport = **3/3 read fields correct**, patronymic `not_read` (coverage gap; reader drops `middle_name`).
+- `CALIBRATION` **BLOCKED_INSUFFICIENT_N** — ~11 scorable fields can't fit numeric thresholds (0.97/0.9/0.8). Gate *rules* validated; *numbers* not. decideField still scaffold (0 callers, feat-branch only).
+- `DECISIONS` SMART=DO_NOT_ENABLE; ANTI_FABRICATION_GATE=**READY_FOR_OWNER_APPROVED_CANARY** (NOT executed; OWNER_QUEUE has enable+rollback+stop-cond; pre-canary: GT≥6 ✅, calibration thin, rollback-rehearsal ⏳); hard-case model=UNRESOLVED_BLOCKER; L2-WIRE=HOLD.
+- `LATENT` passport booklet field named `middle_name` collides with CLAUDE.md hard-rule (Patronymic ≠ Middle Name) — flagged, not fixed.
+- `UNCHANGED` no flags/prod/deploy/model/SMART/HTR/L2-WIRE; rerun was LOCAL (gitignored harness, removed after); qa-private tracked=0; no PII in docs.
 ## Session 105h (2026-06-04) — CORRECTION: UA source language; UA-OCR failure analysis + gate canary plan
 - `CORE_CORRECTION` Docs are UKRAINIAN (UA→English). Model Russianizing UA names/patronymics/places (drop apostrophe, -ій→-ей, і/ї/є/ґ→и/е/г, wrong month) = WRONG READ / language substitution = real model ERROR, NOT normalization. KMU-55/dict only AFTER correct UA read; dict = signal, never silent rewrite.
 - `MEASURED` owner GT N=2 hard-case birth certs: identity ≈0–1/5 → critical failure. Mode C gate → FN_review=0 (need). Printed UA/US NOT GT-scored → no % claim.

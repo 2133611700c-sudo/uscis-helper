@@ -1,4 +1,19 @@
-# HANDOFF — Session 105h (2026-06-04)
+# HANDOFF — Session 105i (2026-06-04)
+
+## Session 105i — VERIFY-FIRST sync (GT=6), accuracy reconciled, gate = READY_FOR_OWNER_APPROVED_CANARY
+
+Owner said GT ready = 6 and accuracy was run on 6 docs. **Verified from raw, did not take on faith.**
+
+GT readiness (read `qa-private/ground-truth/*.json` `_meta`, no values printed): exactly **6/30** are `VERIFIED_BY_OWNER` with all `owner_verified_fields` filled — soviet 6/6, handwritten 6/6, internal_passport 5/5, military_id_p1 6/6, i94 6/6, ead 6/6. **GT-count blocker CLEARED** (was 2).
+
+Accuracy reconciliation (this is where the owner's claim breaks): "6 docs scored" is NOT evidence-backed. The existing raw (`accuracy-offon/raw.json`) covers only the **2 hard-case birth certs** (× 2 models × modes A/B/C). Of the other 4 ready docs only **internal_passport** is live-door-scorable (registry `ua_internal_passport_booklet` + real image); `military_id_p1` has **no registry doc type** (`ua_military_id` absent), and `ead`/`i94` are **US docs with no upright real image** (only rotated `*_rot*` variants). So live-door-scorable = **3 of 6**.
+
+Did a LOCAL rerun for the one new scorable doc via a gitignored vitest harness (`__rerun__/`, removed after; raw → `qa-private/reports/accuracy-offon/passport_rerun_raw.json`), flags OFF, model pinned `gemini-3.1-pro-preview`. Result: **internal_passport 3/3 read fields correct** (family/given/DOB), patronymic `not_read` (reader drops `middle_name` — coverage gap, not a wrong value), sex not emitted. Also re-scored the 2 hard-case from raw vs GT: **1/4 correct on 3.1-pro** (family_name only; given/patronymic/DOB wrong), and **mode C drives `false_negative_review` to 0 on both** (handwritten needs C, not B). Confirms: hard-case model = UNRESOLVED_BLOCKER; gate evidence holds.
+
+Reports updated (sanitized): ACCURACY_OFFON_RESULTS.md (corrected the wrong "RU-vs-UA language artifact" caveat → these are real UA errors; added reconciliation + passport datapoint), UKRAINIAN_OCR_FAILURE_ANALYSIS.md, ANTI_FAB_GATE_CANARY_PLAN.md (→ READY_FOR_OWNER_APPROVED_CANARY, pre-canary gate status), OWNER_QUEUE.md (enable + rollback + stop-condition commands — NOT executed). Calibration = **BLOCKED_INSUFFICIENT_N** (~11 scorable fields can't fit numeric thresholds). decideField still scaffold (0 callers, feat-branch only). Latent bug flagged: passport booklet field `middle_name` violates Patronymic≠Middle Name hard-rule.
+
+No flags enabled; no prod/deploy/model/SMART/HTR/L2-WIRE; rerun was local; qa-private tracked=0; no PII in docs. **Next (owner):** upright real EAD+I-94 images + a `ua_military_id` registry type (or authorize agent to add it) to grow scorable coverage; more people in GT; then calibration; gate canary is a separate owner command after rollback rehearsal.
+
 
 ## Session 105h — CORRECTION: Ukrainian source language + UA-OCR failure analysis + gate canary plan
 
