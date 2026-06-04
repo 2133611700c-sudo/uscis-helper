@@ -10,6 +10,45 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104l (2026-06-04)
+
+## Session 104l — Anti-fabrication design REVISED for handwriting (no code)
+
+New owner-verified recon refines the gate (Revision 2 in
+`docs/reports/ANTI_FABRICATION_GATE_DESIGN.md`):
+
+- **handwritten_birth:** BOTH gemini-2.5-flash AND gemini-3.5-flash unstable — 3 distinct
+  identity hashes / 3 runs each, model `review=false`. ⇒ a model switch does NOT fix
+  handwritten fabrication.
+- **marriage_1939 (printed):** 2.5-flash stable (1 identity / 3 runs). ⇒ "old/faded" alone
+  is not the killer; **handwriting** is.
+- Model confidence (`review=false`/`confidence_low=false`) is NOT a usable detector.
+- True identity still UNKNOWN — stability, not accuracy.
+
+**Raw signal recon (file:line):**
+- class by docTypeId only (`documentClassPolicy.ts:98`).
+- handwritten signal EXISTS per-field (`DocFieldSpec.handwritten`); `readDocument` already
+  forces review on `handwritten:true` (`documentFieldReader.ts:75`) — BUT birth/marriage
+  fields are ALL `handwritten:false` in the registry (`documentRegistry.ts:8-17,:29-34`),
+  so the fabricating docs aren't flagged.
+- blur/rotation signal EXISTS in `preprocessImage` (`quality.blurScore`, warnings, EXIF
+  rotate) but is NOT threaded into `readDocument`.
+
+**Revised trigger:** handwritten classes (birth_certificate_handwritten / soviet_bilingual),
+NOT blanket hard-case. Printed-but-old (marriage) = risk only → escalate via blur or
+self-consistency, never blanket-force. Self-consistency (same model N=2–3, identity-hash
+disagreement) is the model-independent detector. Model default UNCHANGED. Insertion point
+stays `documentFieldReader` (confirmed).
+
+**Discrepancy to fix in a future code step:** the shipped minimal gate (`4f75bfa`) triggers
+on ALL `isHardCase` classes — including PRINTED `marriage_apostille` + `unknown_document` —
+which is broader than this revision. Narrow it to handwritten classes; route printed/old via
+blur/self-consistency. Flag default OFF → no prod effect meanwhile.
+
+**No code this turn. SMART_NORMALIZE OFF; P2.4/P2.5 frozen; model default unchanged; no prod
+env; not pushed.** Next: owner picks (a) narrow the gate to handwritten, (b) thread
+preprocess quality into readDocument, (c) add self-consistency.
+
 # HANDOFF — Session 104k (2026-06-04)
 
 ## Session 104k — Anti-fabrication class gate IMPLEMENTED (minimal, flag default OFF)
