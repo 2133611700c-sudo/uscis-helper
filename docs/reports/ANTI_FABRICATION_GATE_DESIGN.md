@@ -182,3 +182,38 @@ New owner-verified facts (treat as inputs; true identity still UNKNOWN — stabi
 **C. Discrepancy with the shipped minimal gate (`4f75bfa`):** the implemented `applyAntiFabricationGate` triggers on ALL `isHardCase` classes — which INCLUDES `marriage_apostille` (printed) and `unknown_document`. Per this revision that is TOO BROAD (printed marriage should not be blanket-forced). **Required narrowing (future code step):** restrict the blanket force to the handwritten classes; route printed-but-old classes through the low-quality/self-consistency path instead. Flag stays default OFF, so no prod effect in the interim.
 
 **D/E/F.** No code this revision. No prod env. SMART_NORMALIZE OFF. P2.4/P2.5 frozen. Not pushed.
+
+---
+
+# Revision 3 (2026-06-04) — shipped gate NARROWED to handwritten risk (code)
+
+Raw signal inventory (file:line) drove the trigger choice:
+- `handwritten:true` exists in the registry ONLY for `ua_internal_passport_booklet` fields
+  (`documentRegistry.ts:25-30`); birth/marriage/divorce/id-card fields are all
+  `handwritten:false` (31 occurrences). ⇒ a `handwritten:true`-based trigger would fire on
+  the booklet and MISS the birth certs that actually fabricate. `handwritten_signal_exists: PARTIAL`.
+- A real quality signal exists — `PreprocessResult.quality.blurScore` + `warnings[]` + EXIF
+  auto-rotate (`lib/ocr/image-preprocess.ts:36-50,85`) — but `readDocument(buffer, mime, docTypeId, opts)`
+  does NOT receive it (`grep`: none). `quality_reaches_documentFieldReader: NO`,
+  `rotation_reaches: NO`, `usable_now_for_gate: NO` (would need threading the signal in — new wiring).
+
+**Selected trigger: option A — explicit class allowlist** `HANDWRITTEN_FABRICATION_RISK_CLASSES`
+= {`birth_certificate_handwritten`, `birth_certificate_soviet_bilingual`}. Replaced the blanket
+`isHardCase(docClass)` trigger. Now:
+- FORCES review on `birth_certificate_handwritten` (and soviet_bilingual if a mapping emits it).
+- Does NOT force `marriage_apostille` (printed — stable in testing), `unknown_document`,
+  `internal_passport_booklet`, `military_id`.
+- Reasons renamed `hard_case_document → handwritten_document`.
+
+**Honest gaps (TODO, not silently included):**
+- `military_id` has handwritten zones in reality but is not in the docintel registry (TPS-legacy)
+  and `military_id` class is `always_review:false` → not gated here. Recorded, not auto-included.
+- Truly-handwritten marriage / blur / rotation cannot be detected at the reader today (no signal
+  reaches `readDocument`). Closing this needs either corrected per-field `handwritten` flags or
+  threading `preprocessImage.quality` into `readDocument` (separate code step).
+- `birth_certificate_soviet_bilingual` is in the allowlist but no current `docTypeId` maps to it
+  (`ua_birth_certificate → birth_certificate_handwritten`); kept for forward-compatibility.
+
+`ANTI_FABRICATION_GATE_ENABLED` stays default OFF. No prod env. Model default unchanged.
+Tests: `antiFabricationGate.test.ts` updated (scope: marriage/unknown NOT forced; allowlist
+membership; reasons=handwritten_document). docintel 49 pass; typecheck PASS.
