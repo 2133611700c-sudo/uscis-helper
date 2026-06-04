@@ -10,6 +10,637 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104v (2026-06-04)
+
+## Session 104v — Opened PR #80 (durability; merge owner-gated)
+
+Next step after the branch push: opened PR #80 (base `main` ← `feat/knowledge-core-stabilize` @ a896212, PII-free body) so there is a review-of-record and the diff is visible. **Did NOT merge** — merging to `main` triggers Vercel auto-deploy of main to messenginfo.com (the canonical prod release) and is the owner's review+ship decision; it also closes prod==main durability. Pipeline: durability push ✅ → PR ✅ → merge (owner) → GT fill (owner) → accuracy OFF/ON (agent, after GT) → SMART_NORMALIZE decision (after accuracy). Behavior flags OFF; GT still MISSING; prod env untouched this step.
+
+# HANDOFF — Session 104u (2026-06-04)
+
+## Session 104u — Pushed branch to GitHub to close the durability debt (no merge/PR)
+
+The prod deploy (104t) shipped local code that wasn't in GitHub → a main-only deploy would roll
+it back. Closed the first half of that gap: pushed the branch.
+
+- `git push origin feat/knowledge-core-stabilize --force-with-lease` → `31353a7..8b9a0d2`
+  (origin/feat was the stale `31353a7`; lease matched). Verified origin/feat == local HEAD `8b9a0d2`.
+- Pre-push safety: clean tracked tree; `qa-private/`+`reports/` ignored; `docs/reports/` not ignored;
+  0 tracked private files; **0 actual credentials** in the diff. PII: `FU262473`/surname/DOB are
+  PRE-EXISTING in origin/main (17 files) — this push adds 3 incremental occurrences of the same
+  already-published value, not a new disclosure (Session-54-class accepted condition).
+- No merge, no PR (forbidden this task); `main` untouched (HEAD..origin/main = only the prior PR #79
+  merge `832ee55`).
+
+**Durability status:** branch is now in GitHub (no longer local-only). FULL durability (prod == `main`)
+still requires an OWNER decision to merge this branch to `main`; until then a deploy of `main` would
+still roll back the metric/gate code. Push was the authorized step; merge is the owner's.
+
+**Unchanged:** prod env not touched this step; no vercel deploy; behavior flags OFF; no model change;
+GT still MISSING; metric logs NOT_OBSERVED_YET; P2.4/P2.5 frozen.
+
+# HANDOFF — Session 104t (2026-06-04)
+
+## Session 104t — Enabled DOCUMENT_CLASS_METRICS_ENABLED in prod + redeploy (autonomous)
+
+Owner authorized (principal mode) enabling the safe metric flag + redeploy. Done via the
+locally-authenticated, project-linked Vercel CLI:
+- `DOCUMENT_CLASS_METRICS_ENABLED=1` added to Production (verified present). Behavior flags
+  (`ANTI_FABRICATION`/`SELF_CONSISTENCY`/`SMART_NORMALIZE`) confirmed ABSENT/OFF — NOT touched.
+- `vercel --prod` succeeded → `uscis-helper-2190dsx5b`, aliased to **messenginfo.com**. healthz
+  `status:ok`, `sha:f60d73f`. Clean build.
+
+**⚠️ Important truth (recorded, not hidden):** `vercel --prod` shipped the LOCAL branch, which is
+**22 commits ahead of origin (unpushed/unmerged)**. Prod now runs code NOT in `main`. Consequence:
+any future deploy of `main` (the repo's normal auto-deploy-on-push pipeline) would ROLL BACK these
+22 commits. To make this durable + reviewed, push the branch + open a PR + merge to main (owner
+decision; push was forbidden this session, so I did not). Behavior delta vs prior prod ≈ PII-free
+metric logging only — all behavior gates remain OFF, so client extraction behaviour is unchanged.
+
+**Metric logs:** NOT_OBSERVED_YET — the metric emits only on a real document extraction
+(`readDocument`); no client upload since deploy. Verified empty via Vercel runtime logs. It will
+appear on the first real OCR request as a `[document_class_metric]` line (PII-free:
+product/doc_type_id/doc_class/eligibility only).
+
+**Ground-truth:** still `MISSING` (1/19 both). Accuracy verification remains blocked. Added
+`docs/reports/GT_OWNER_FILL_GUIDE.md` (human-fill guide; do NOT fabricate from model; file paths
+use `<surname>` placeholder — no real surname in committed docs).
+
+**Not done / owner:** push+merge branch (durability); fill GT → then I run local accuracy by the
+`GT_ACCURACY_VERIFICATION.md` contract. Behavior flags stay OFF; no model change; P2.4/P2.5 frozen.
+
+# HANDOFF — Session 104s (2026-06-04)
+
+## Session 104s — GT accuracy verification contract (docs only; schema-mismatch gap fixed)
+
+Before the owner hand-fills GT, surfaced a gap that would have wasted the effort: the GT JSON
+schema and the field ids `readDocument` emits are different vocabularies. Without a map, an
+accuracy run compares e.g. `family_name_cyrillic` (GT) against nothing → false "all wrong".
+
+Wrote `docs/reports/GT_ACCURACY_VERIFICATION.md` (CONTRACT, no results yet):
+- GT-key → read-field-id map (cyrillic = `raw_cyrillic`, latin/date = `value`), covering both
+  birth-cert images (both `docTypeId = ua_birth_certificate`).
+- N/A fields the spec can't score: `sex`, `province`, `passport_number`, `military_id_number`
+  (not emitted) and `father_full_name`/`mother_full_name` (emitted but absent from GT template).
+- Normalize rules, run matrix (OFF / anti-fab / +self-consistency; SMART stays OFF), metrics
+  (accuracy, review_delta, false_positive_review, false_negative_review, instability), PII rule.
+- Honest framing: accuracy only vs human GT; self_consistency `agree` ≠ correctness;
+  false_negative_review (wrong value, not flagged) is the dangerous metric, false_positive is UX cost.
+
+The owner's fill list matches the existing GT file keys → fill the file as-is; the MAP is the
+verifier's job, now documented.
+
+No code; no prod env; behavior flags OFF; model unchanged; P2.4/P2.5 frozen; not pushed. Next:
+owner fills GT (VERIFIED_BY_OWNER) → local accuracy run fills the Results section.
+
+# HANDOFF — Session 104r (2026-06-04)
+
+## Session 104r — self-consistency gate IMPLEMENTED (commit 2 of 2; flag OFF)
+
+`docintel/selfConsistency.ts` (NEW) — instability detector, NOT a majority vote and NOT a
+correctness proof. `identityHash(rawFields)` hashes the RAW (pre-KMU) identity tuple
+(family/given/patronymic/dob/place) — `normalizeForCompare` only (NFC/apostrophe/ws/lowercase),
+deliberately NO KMU/dictionary so a normalizer can't hide a real model disagreement.
+`decideStatus`: <2 fields→insufficient; a failed re-read→incomplete; differing hash→mismatch;
+else agree. `applySelfConsistencyOutcome`: mismatch/incomplete/insufficient → force review on
+identity fields + reason; agree → unchanged. Never changes values, never lowers a flag, never
+claims correctness.
+
+Wired in `readDocument`: runs ONLY when `SELF_CONSISTENCY_GATE_ENABLED=1` AND
+`ANTI_FABRICATION_GATE_ENABLED=1` AND docClass ∈ handwritten allowlist (birth handwritten /
+soviet). Re-reads the SAME image with the SAME provider (`SELF_CONSISTENCY_RUNS` default 2,
+clamp 2–4; `SELF_CONSISTENCY_TIMEOUT_MS`). NO second read for passport / printed marriage /
+unknown. PII-free outcome on `DocumentReadResult.self_consistency` (status / instability /
+hash-prefix / runs).
+
+Honest note: on today's narrow allowlist the anti-fabrication class gate ALREADY forces identity
+review, so self-consistency's marginal effect now is the added instability signal + reason
+(triage/evidence), not a new review. Its review effect grows when the trigger later broadens.
+
+Tests: `selfConsistency.test.ts` (hash equality/diff; decideStatus; outcome value-unchanged;
+readDocument gating: flags OFF→1 call/no block, anti-fab OFF→no 2nd read, agree, mismatch+
+instability+reason, passport→no 2nd read, hash-prefix is hex-no-PII) + `documentClassMetric.test.ts`.
+docintel+canonical/core 317 pass; typecheck PASS.
+
+Test fixtures use synthetic name tokens (no owner surname) per the PII discipline.
+
+NOT done: different-model fanout (separate owner decision); flags not enabled anywhere; no prod
+env; model default unchanged; P2.4/P2.5 frozen; not pushed; accuracy not claimed (no GT). Next:
+owner enables `DOCUMENT_CLASS_METRICS_ENABLED` to collect allowlist_traffic_share, then decides
+on enabling the gates in a canary.
+
+# HANDOFF — Session 104q (2026-06-04)
+
+## Session 104q — document_class metric (commit 1 of 2; PII-free, flag OFF)
+
+`docintel/documentClassMetric.ts` (NEW): `recordDocumentClassMetric({product, docTypeId})`
+emits a PII-free `document_class_count` record (product / doc_type_id / doc_class /
+anti_fabrication_allowlist_eligible / self_consistency_eligible) via console.info ONLY when
+`DOCUMENT_CLASS_METRICS_ENABLED=1` (default OFF → silent). The signature accepts no identity
+fields, so PII is unrepresentable. Emitted from inside `readDocument` (one door → all 4
+products) via a new optional `opts.product`; the 4 routes pass their product id. Logging only,
+no behavior change, never throws into the request. Purpose: learn the real
+`allowlist_traffic_share` to judge self-consistency cost from data, not guesses.
+
+Tests: `documentClassMetric.test.ts` — eligibility (birth=eligible; passport/marriage/unknown=not);
+record contains ONLY class/eligibility keys (no PII); emit gating + no-throw. docintel 54 pass;
+typecheck PASS.
+
+Design note (honest): the spec said "call the helper in the 4 routes"; I instead emit from inside
+`readDocument` with `product` via opts — same coverage, far less route-edit risk, better one-door
+alignment. Owner may set `DOCUMENT_CLASS_METRICS_ENABLED=1` to start collecting (their env decision).
+
+Commit 2 (next): the self-consistency gate itself. No prod env; flags OFF; P2.4/P2.5 frozen; not pushed.
+
+# HANDOFF — Session 104p (2026-06-04)
+
+## Session 104p — Self-consistency gate design (DESIGN ONLY, no code)
+
+Designed the REAL anti-fabrication detector (after blurScore was ruled out): re-read the same
+image and force review when the extracted IDENTITY disagrees across reads. Report:
+`docs/reports/SELF_CONSISTENCY_DESIGN.md`.
+
+**Raw basis (file:line):** `readDocument` calls `provider.readFields` once
+(`documentFieldReader.ts:43`) — cheapest place for a second read (spec/docType/provider in
+scope). `arbitrateDocument` (`arbitration.ts:100`) only judges candidates → too late.
+`crypto.createHash('sha256')` available. ⇒ insertion = `readDocument` (one door, all 4 products);
+NOT route-level (4× dup); NOT arbitrate.
+
+**Design:** trigger = narrow handwritten allowlist (NOT blurScore — calibration disproved it;
+NOT all-hard-case; NOT printed marriage/passport). Identity tuple = family/given/patronymic/dob/
+place, normalized for compare (NO KMU/dictionary before hashing, or it would mask the
+disagreement), sha256, public = hash prefix only. Disagree → `hard_case_model_instability` +
+force review on all identity fields (reason `self_consistency_identity_mismatch`); agree → don't
+lower / don't claim correctness; run error/timeout → `self_consistency_incomplete` + force
+review, don't block upload. Runs: N=2 same model first, N=3 optional, different-model later.
+Cost = `allowlist_traffic_share × 1` extra call (N=2) — share UNKNOWN (needs a per-class metric;
+NOT guessed). Flags: `SELF_CONSISTENCY_GATE_ENABLED` (default OFF) + RUNS/MAX_EXTRA/TIMEOUT,
+dependent on `ANTI_FABRICATION_GATE_ENABLED` (no hidden second reads). Quality rescan prompt
+split into its own usability flag — never touches the safety path.
+
+**No code; flags OFF; no prod env; model default unchanged; no API runs; P2.4/P2.5 frozen; not
+pushed; accuracy not claimed (no GT).**
+
+**Next:** owner approves contract + flags, then a small `readDocument` code step + a
+`document_class_count` metric (to learn allowlist_traffic_share before judging cost).
+
+# HANDOFF — Session 104o (2026-06-04)
+
+## Session 104o — Quality-signal calibration: blurScore is NOT a fabrication detector
+
+Ran `preprocessImage` locally (sharp, NO API, NO OCR, NO text) over all 27 real fixtures to
+test whether `blurScore`/`assessment` can serve as a `low_quality_scan` secondary gate trigger.
+Report: `docs/reports/QUALITY_SIGNAL_CALIBRATION.md`. Raw: `qa-private/reports/quality-calibration/`
+(gitignored).
+
+**Decisive result:** blur 25.89–62.11; assessment good×22 / acceptable×5 / **poor×0**; only
+`high_brightness` warnings. The CONFIRMED-fabricating `birth_soviet` scores blur **36.41 / good**
+— SHARPER than the reliably-correct passport (blur **25.89**). The dangerous doc ranks ABOVE the
+safe one. blurScore measures visual sharpness, not handwriting/content ambiguity; a sharp photo
+of a handwritten Soviet cert fabricates yet reads `good`. The corpus also has NO genuinely
+degraded samples (nothing near the 2.5 reject floor) → a threshold can't even be calibrated here.
+
+**Recommendation:** do NOT wire `low_quality_scan` as an anti-fabrication trigger. Keep the
+quality signal as logging/provenance + a rescan prompt for truly degraded uploads only. The real
+anti-fabrication detector for handwritten/ambiguous docs is **self-consistency** (multi-read
+identity-hash disagreement) + the existing class allowlist — prioritize that over a blur threshold.
+
+**No code; flags OFF; no prod env; model default unchanged; no self-consistency yet; P2.4/P2.5
+frozen; not pushed; accuracy not claimed (N=27, no GT).**
+
+**Next:** owner decides — keep quality logging-only (recommended) and design/implement
+self-consistency (N=2-3 identity-hash) as the real detector for handwritten/ambiguous docs.
+
+# HANDOFF — Session 104n (2026-06-04)
+
+## Session 104n — Runtime quality-signal design (DESIGN ONLY, no code)
+
+Designed the next brick: thread `preprocessImage` quality/degradation into `readDocument`
+so the anti-fabrication gate can trigger on runtime low-quality scans, not just the static
+class allowlist. Report: `docs/reports/RUNTIME_QUALITY_SIGNAL_DESIGN.md`.
+
+**Raw (file:line):** all 4 routes call `preprocessImage` right before `readDocument`
+(TPS:165, Translation:259, Re-Parole:138, EAD:136) but DROP the `quality` object.
+`PreprocessResult.quality` = brightness/blurScore/assessment/warnings (+resized/scaleFactor).
+NO rotation/EXIF flag is reported (`.rotate()` applied silently, image-preprocess.ts:85);
+NO handwritten detector exists. `readDocument` opts carry no quality → signal never arrives.
+
+**Recommendation:** Option A — add an optional `DocumentRuntimeSignals` to `readDocument`
+opts (one door → all 4 products), behind a dedicated `RUNTIME_QUALITY_SIGNALS_ENABLED`
+(default OFF), acted on only when `ANTI_FABRICATION_GATE_ENABLED` is on. Class allowlist
+stays PRIMARY; `low_quality_scan` (assessment=poor / blur below threshold) is a SECONDARY
+trigger that forces review on identity fields ONLY (never changes values), reason
+`low_quality_scan`; no blanket `unknown_document`; thresholds conservative + uncalibrated
+(no GT). Derivable now: blur_score/assessment/low_quality_scan/oversized_resized.
+`rotated_input`/`possible_handwritten` NOT available → not fabricated (rotation would need
+`image-preprocess` to report it).
+
+**No code; flags OFF; no prod env; model default unchanged; no self-consistency; P2.4/P2.5
+frozen; not pushed.** Next (owner-approved code step): (1) optionally report rotation in
+preprocess; (2) add the optional opt to readDocument; (3) routes pass `pre.quality`;
+(4) gate consumes `low_quality_scan`.
+
+# HANDOFF — Session 104m (2026-06-04)
+
+## Session 104m — Narrowed the shipped anti-fabrication gate to handwritten risk (code)
+
+Aligned the implementation (`4f75bfa`, too broad) with the revised design.
+
+**Raw signal inventory (file:line):**
+- registry `handwritten:true` exists ONLY for `ua_internal_passport_booklet` (`documentRegistry.ts:25-30`);
+  birth/marriage/divorce/id fields are all `handwritten:false` → a handwritten-flag trigger
+  would fire on the booklet and MISS the birth certs that fabricate. `handwritten_signal_exists: PARTIAL`.
+- quality signal exists (`PreprocessResult.quality.blurScore`+warnings+EXIF rotate,
+  `image-preprocess.ts:36-50,85`) but `readDocument` does NOT receive it →
+  `quality_reaches_reader: NO`, `usable_now: NO`.
+
+**Change:** trigger is now an explicit allowlist `HANDWRITTEN_FABRICATION_RISK_CLASSES`
+= {`birth_certificate_handwritten`, `birth_certificate_soviet_bilingual`}, replacing the
+blanket `isHardCase`. So `marriage_apostille` (printed), `unknown_document`, booklet, military
+are NO LONGER blanket-forced. Reason `hard_case_document` → `handwritten_document`. Only raises
+review; values untouched; never lowers a flag.
+
+**Honest gaps (recorded, NOT silently included):** military_id handwritten zones (not in docintel
+registry, TPS-legacy); truly-handwritten marriage / blur / rotation (no signal reaches the reader);
+soviet_bilingual kept forward-compatible (no docTypeId maps to it today). Closing the blur/rotation
+gap needs threading `preprocessImage.quality` into `readDocument` — a separate step.
+
+**Tests:** `antiFabricationGate.test.ts` 49 pass — added scope tests (marriage/unknown NOT forced,
+allowlist membership), reasons=handwritten_document. docintel 49; typecheck PASS.
+
+**Unchanged:** `ANTI_FABRICATION_GATE_ENABLED` default OFF (no prod effect); model default unchanged;
+SMART_NORMALIZE OFF; P2.4/P2.5 frozen; not pushed; accuracy UNKNOWN (no GT).
+
+**Next:** owner picks — (a) thread preprocess quality (blur/rotation) into readDocument for a
+runtime degraded-doc trigger; (b) add self-consistency (N=2-3 identity-hash) for handwritten/ambiguous;
+(c) correct registry per-field handwritten flags for birth/marriage.
+
+# HANDOFF — Session 104l (2026-06-04)
+
+## Session 104l — Anti-fabrication design REVISED for handwriting (no code)
+
+New owner-verified recon refines the gate (Revision 2 in
+`docs/reports/ANTI_FABRICATION_GATE_DESIGN.md`):
+
+- **handwritten_birth:** BOTH gemini-2.5-flash AND gemini-3.5-flash unstable — 3 distinct
+  identity hashes / 3 runs each, model `review=false`. ⇒ a model switch does NOT fix
+  handwritten fabrication.
+- **marriage_1939 (printed):** 2.5-flash stable (1 identity / 3 runs). ⇒ "old/faded" alone
+  is not the killer; **handwriting** is.
+- Model confidence (`review=false`/`confidence_low=false`) is NOT a usable detector.
+- True identity still UNKNOWN — stability, not accuracy.
+
+**Raw signal recon (file:line):**
+- class by docTypeId only (`documentClassPolicy.ts:98`).
+- handwritten signal EXISTS per-field (`DocFieldSpec.handwritten`); `readDocument` already
+  forces review on `handwritten:true` (`documentFieldReader.ts:75`) — BUT birth/marriage
+  fields are ALL `handwritten:false` in the registry (`documentRegistry.ts:8-17,:29-34`),
+  so the fabricating docs aren't flagged.
+- blur/rotation signal EXISTS in `preprocessImage` (`quality.blurScore`, warnings, EXIF
+  rotate) but is NOT threaded into `readDocument`.
+
+**Revised trigger:** handwritten classes (birth_certificate_handwritten / soviet_bilingual),
+NOT blanket hard-case. Printed-but-old (marriage) = risk only → escalate via blur or
+self-consistency, never blanket-force. Self-consistency (same model N=2–3, identity-hash
+disagreement) is the model-independent detector. Model default UNCHANGED. Insertion point
+stays `documentFieldReader` (confirmed).
+
+**Discrepancy to fix in a future code step:** the shipped minimal gate (`4f75bfa`) triggers
+on ALL `isHardCase` classes — including PRINTED `marriage_apostille` + `unknown_document` —
+which is broader than this revision. Narrow it to handwritten classes; route printed/old via
+blur/self-consistency. Flag default OFF → no prod effect meanwhile.
+
+**No code this turn. SMART_NORMALIZE OFF; P2.4/P2.5 frozen; model default unchanged; no prod
+env; not pushed.** Next: owner picks (a) narrow the gate to handwritten, (b) thread
+preprocess quality into readDocument, (c) add self-consistency.
+
+# HANDOFF — Session 104k (2026-06-04)
+
+## Session 104k — Anti-fabrication class gate IMPLEMENTED (minimal, flag default OFF)
+
+Implemented the cheapest safety layer from the design (Option 1, class gate).
+
+**Code:**
+- `docintel/antiFabricationGate.ts` (NEW): `applyAntiFabricationGate(fields, docTypeId)`.
+  On hard-case classes (`isHardCase` via `docintelIdToDocumentClass`), forces
+  `review_required=true` on identity-critical fields and attaches reasons
+  (`hard_case_document`/`model_instability_risk`/`no_strong_identity_anchor`). Pure;
+  **never changes a value, never lowers a flag, no invention**. `isIdentityCriticalField`
+  matches by substring so role-grounded variants (child_*, spouse_*) are covered.
+- `documentFieldReader.ts`: applies the gate after the field-build loop (and after the
+  SMART post-passes) only when `ANTI_FABRICATION_GATE_ENABLED === '1'` (default OFF →
+  byte-identical). Insertion point A = the shared door all 4 routes call → uniform
+  coverage; closes the earlier Re-Parole/EAD route-layer gap.
+- `types.ts`: added optional `review_reasons?: string[]` to `ExtractedDocField` (additive).
+
+**Safety properties:** passports map to `internal_passport_booklet` (NOT hard-case) → the
+gate doesn't touch them → MRZ-controlled fields are not blanket-forced. Only review is
+raised; values are untouched.
+
+**Tests:** `antiFabricationGate.test.ts` — pure (identity matcher, force+reasons,
+value-unchanged, model review=false can't survive, passport untouched, never-lower) +
+readDocument OFF/ON gating (stub provider) + 4-route coverage (each route calls
+readDocument). docintel 46 pass; canonical/core 247 pass; typecheck PASS.
+
+**NOT done:** two-read self-consistency (Option 2) + blur/rotation hard-case signal (separate
+costed steps); flag not enabled anywhere; model default unchanged; SMART_NORMALIZE OFF;
+P2.4/P2.5 frozen; not pushed; no prod env. Accuracy not claimed (no hard-case GT).
+
+**Next:** owner decides whether to (a) enable the flag in a canary, (b) add Option 2
+two-read instability detection, (c) add a real image-quality (blur/rotation) hard-case signal.
+
+# HANDOFF — Session 104j (2026-06-04)
+
+## Session 104j — Anti-fabrication / hard-case forced-review gate (DESIGN ONLY)
+
+Designed the gate that became the top priority (above P2.4/P2.5) after the confirmed
+identity-fabrication finding. Report: `docs/reports/ANTI_FABRICATION_GATE_DESIGN.md`.
+
+**Key discovery (raw, file:line):** much of the gate ALREADY EXISTS in
+`canonical/core/documentClassPolicy.ts` — hard-case classes, `isHardCase()` (:147),
+`applyHardCaseReviewOverride()` (:209, explicitly distrusts model `review_required=false`),
+`applyCertificateRoleGuard()` (:167), `checkImageQuality()` (:234, size-only). It even
+documents the exact failure ("review_required=false while returning the wrong person").
+
+**The real gaps (raw):**
+1. Guards wired ONLY in `tps/ocr/extract` + `translation/vision-extract`. `reparole` and
+   `ead` routes call them ZERO times → 2 of 4 products UNCOVERED.
+2. Guards live in the ROUTE layer, not in the shared `readDocument` door.
+3. No self-consistency / multi-read identity-hash instability detector.
+4. Image-quality is byte-size only — no blur/rotation hard-case trigger.
+
+**Recommendation:** put the gate in `documentFieldReader` (the door all 4 routes call)
+behind `ANTI_FABRICATION_GATE_ENABLED` (default OFF). Baseline = existing class gate for
+all 4; hard-case identity with no strong anchor → 2× same-model read + identity-hash
+compare → disagreement ⇒ instability flag + force review on all identity fields. MRZ takes
+precedence for passports. Gate ONLY raises review — never changes/invents values.
+
+**Honest scope:** 3.5-flash N=1 = risk signal, NOT proof; do not change prod default on
+N=1; hard-case gate required regardless of model; model `review=false` not trusted on hard-case.
+
+**Frozen:** P2.4/P2.5; SMART_NORMALIZE OFF; model default unchanged; no prod env; not pushed.
+Implementation is a separate code step requiring owner approval.
+
+# HANDOFF — Session 104i (2026-06-04)
+
+## Session 104i — Model-stability finding (hard-case fabrication) — read-only + report
+
+Re-checked the earlier claim with raw runs (not taken on faith). `readDocument` × 3 per
+model on the faded Soviet birth certificate, `SMART_NORMALIZE_ENABLED` OFF (measuring
+the model, not the dictionaries). Identity = SHA1(family|given|patronymic|dob); no PII
+printed.
+
+**Confirmed:**
+- `gemini-2.5-flash` → **2 distinct identities across 3 runs**, every identity field
+  `review_required=false` → confident fabrication on a hard case.
+- `gemini-3.5-flash` → **1 identity across 3 runs** (stable; flags dob).
+- True identity UNKNOWN (no verified GT for this fixture) → this is a STABILITY finding,
+  not an accuracy claim.
+- The international passport (clean printed) read identically + correctly across all
+  models/runs → instability is hard-case-specific.
+
+**Artifacts:** `docs/reports/MODEL_STABILITY_FINDING.md` (sanitized). Raw per-run JSON in
+`qa-private/reports/model-stability/` (gitignored — not committed).
+
+**Recommendations (no code changed):** anti-fabrication gate — identity differing across
+models/runs ⇒ force `review_required` on ALL identity fields; hard-case docs (handwritten/
+faded/Soviet/low-q/rotated) ⇒ forced review unless a stronger source (MRZ / agreeing 2nd
+model) confirms; do not let `gemini-2.5-flash` serve identity-critical hard-case reads
+without review. SMART_NORMALIZE stays OFF until verified GT + stability gate. P2.4/P2.5 frozen.
+
+**This is the real priority** — above the P2 dictionaries (OFF-vs-ON already showed zero
+delta on real docs). Next decision (owner): design the anti-fabrication / hard-case review
+gate. Not pushed; no prod env.
+
+**Gitignore fix (caught in this session):** Step-1 added an UNANCHORED `reports/`, which
+gitignore matches at any depth — so it silently ignored `docs/reports/` too (the public
+report didn't commit on the first try). Fixed: anchored to `/qa-private/` and `/reports/`
+(repo-root only); `docs/reports/` verified NOT ignored.
+
+# HANDOFF — Session 104h (2026-06-04)
+
+## Session 104h — PII hygiene + correction of the false "no images" claim
+
+**PII hygiene (Step 1):**
+- `qa-private/` and `reports/` were NOT gitignored — `qa-private/` holds filled PII
+  ground-truth. Added both to `.gitignore`. `git ls-files qa-private/` was EMPTY →
+  nothing had ever been committed (no history leak). `qa-shots/private/` was already
+  ignored; left untouched.
+- `git rm --cached qa-shots/.DS_Store` — removed tracked junk from the index.
+
+**Correction (raw-verified):** my earlier `NO_IMAGES_FOUND` / "harness blocked: no
+images" was FALSE — a broken zsh glob (`*.jpeg`) made one command error and I reported
+its output as fact. The real document originals exist:
+- `test-fixtures/real-docs/` (ignored): internal_passport, birth_cert_handwritten,
+  birth_cert_soviet, military_id_p1/p2, divorce x2, marriage x4.
+- `qa-shots/private/` (ignored): US Passport / I-94 / EAD (real).
+The actual P2-accuracy blocker is **missing VERIFIED ground-truth** for birth_cert /
+hard-case docs (only passport+booklet GT is VERIFIED), NOT missing images.
+
+**typecheck PASS. Not pushed.** No prod env; SMART_NORMALIZE OFF; P2.4/P2.5 frozen.
+Step 2 (model-stability re-check) follows.
+
+# HANDOFF — Session 104g (2026-06-03)
+
+## Session 104g — Working-tree hygiene after Group A (3 tails closed)
+
+**(a) presence.ts — KEPT & committed.** Resolved the earlier "semantic default" doubt
+with raw evidence: `geminiReader` (`engine/models.ts:48`) already defaults
+`opts.model ?? 'gemini-2.5-flash'`. The in-flight presence edit's explicit
+`normalizeGeminiModel(..., 'gemini-2.5-flash')` resolves to the SAME value when env is
+unset → `identical: YES`. So the change is a pure trim of the existing model value, no
+behavior change. Committed separately.
+
+**(b) Vision ADC — DISCARDED.** `git checkout -- visionCredentials.ts (+test)`. It is a
+new credential-loading path (`GOOGLE_APPLICATION_CREDENTIALS` file behind
+`VISION_ADC_FILE_ENABLED`) that only exists to support the local OFF-vs-ON harness —
+which is blocked (no document images + no verified ground truth). Dead-until-harness →
+risk without benefit. Reintroduce only when the harness is actually built.
+
+**(c) tsconfig.tsbuildinfo — DISCARDED.** Build artifact; already in `.gitignore:56`
+(tracked-but-ignored — a `git rm --cached` to fully untrack is a separate optional step,
+not done here).
+
+**Checks:** typecheck PASS; engine suite 58 pass/3 skip. Not pushed.
+
+**Working tree:** clean of tracked changes; only out-of-scope untracked remain
+(`docs/reports/*`, `qa-private/`, `reports/`, `daily-briefing-2026-06-02.md`).
+
+**Next (owner / separate):** triage the untracked `docs/reports/*` dump; optional
+`git rm --cached tsconfig.tsbuildinfo`. Harness still blocked on owner images + GT.
+Not P2.4/P2.5; SMART_NORMALIZE stays OFF.
+
+# HANDOFF — Session 104f (2026-06-03)
+
+## Session 104f — Group A triage landed: normalize GEMINI_MODEL env (live-risk fix)
+
+Closed the live `GEMINI_MODEL` whitespace/newline risk (Core is ON in prod, so the
+env model id is read on the live Gemini path).
+
+**Committed (Group A, 4 files):**
+- `gemini/model.ts` + `__tests__/model.test.ts` — pure `normalizeGeminiModel(value, fallback)` trim helper (4 tests).
+- `geminiVisionProvider.ts` — `modelFallback()` primary wrapped; default `gemini-3.1-pro-preview` UNCHANGED.
+- `translation/vision-extract/route.ts` — response `model:` metadata field wrapped; default `gemini-2.5-flash` UNCHANGED; no runtime routing change.
+
+**Deliberately NOT committed:**
+- `engine/presence.ts` — its in-flight edit ALSO adds a new explicit default model
+  (`?? process.env.GEMINI_MODEL` → `normalizeGeminiModel(..., 'gemini-2.5-flash')`),
+  a semantic default change → excluded per the Group-A rule; needs separate review
+  (confirm the new default matches geminiReader's prior internal default).
+- Vision ADC loader (`visionCredentials.ts` +test), `tsconfig.tsbuildinfo` — left in tree.
+
+**Guards before commit:** NO_SECRETS_IN_DIFF, NO_SMART_NORMALIZE, NO_VISION_ADC,
+NO_FORBIDDEN_PATHS, NO_DEFAULT_MODEL_CHANGE (the two model literals in the diff are
+the pre-existing defaults, only moved into the fallback arg). typecheck PASS; model
+4/4; docintel green. Not pushed.
+
+**Next (owner decision):** (a) presence.ts default-model question; (b) Vision ADC
+commit-or-discard; (c) discard tsconfig.tsbuildinfo + gitignore. Not P2.4/P2.5.
+
+# HANDOFF — Session 104e (2026-06-03)
+
+## Session 104e — P2 OFF-vs-ON accuracy harness: BLOCKED on owner inputs
+
+Asked to measure the P2.1–P2.3 OFF-vs-ON delta against ground truth. **Precondition
+not met → stopped before any run** (per the task's own gate).
+
+**Raw check:**
+- `test-fixtures/real-docs/ground-truth/*.json`: all `ground_truth_status="NEEDS_OWNER"`,
+  filled fields 0/11, 0/11, 0/7.
+- `test-fixtures/real-docs/`: no document images (`NO_IMAGES_FOUND`).
+
+So `readDocument` cannot run on a real doc and there is nothing to compare against.
+I did NOT write a harness that cannot run or be validated, and made NO accuracy claim.
+
+**Unblock (owner, both required):** (1) put the document IMAGES into
+`test-fixtures/real-docs/` (gitignored); (2) fill the GT JSON values and set
+`ground_truth_status=VERIFIED_BY_OWNER`. Recorded in `OWNER_QUEUE.md`.
+
+**Then:** harness runs each doc through `readDocument` twice (`SMART_NORMALIZE_ENABLED`
+unset vs `=1`), emits a per-field table (OFF / ON / GT / verdict improved|same|regressed|→review),
+flags any regression (correct-OFF → wrong-ON), counts review escalations, and gives a
+go/no-go on enabling the flag in prod — with numbers.
+
+**Gate unchanged:** enabling `SMART_NORMALIZE_ENABLED` in prod FORBIDDEN until that
+delta is measured (Core already ON in prod). HEAD code `21e90c6`. P2.4/P2.5 frozen. Not pushed.
+
+# HANDOFF — Session 104d (2026-06-03)
+
+## Session 104d — P2 dictionary-in-live-path checkpoint (documentation only, NO code)
+
+Architecture fix of the three P2 dictionary bricks as part of ONE live brain.
+Report: `docs/reports/P2_DICTIONARY_IN_LIVE_PATH_CHECKPOINT.md`.
+
+**Locked facts:**
+- P2.1 snapCity (city/place), P2.2 patronymic (VALIDATION/review-guard ONLY — not
+  reconstruction), P2.3 authority (registry resolver, review preserved, no silent
+  downgrade) — all COMMITTED. HEAD `21e90c6`.
+- All three gated ONLY by `SMART_NORMALIZE_ENABLED` and nothing else (raw:
+  `dictionaryBridge.ts:106` snapCity; `documentFieldReader.ts:87` patronymic+authority;
+  `patronymicReconcile.ts`/`authorityResolve.ts` read no env). **Absent in prod → OFF.**
+- **PROD CORRECTION:** Core flags ARE ON in prod (all 4 routes live). If
+  `SMART_NORMALIZE_ENABLED=1` were set tomorrow, all 3 dictionaries would touch REAL
+  client fields immediately (place_city / patronymic / issuing-authority). Enabling
+  it in prod is **FORBIDDEN** until owner ground-truth + measured OFF-vs-ON delta
+  (owner-only; agents must not set it).
+- Accuracy NOT claimed — no owner ground truth yet.
+- Door model: Door A (per-field, dictionaryBridge/toCanonicalValue) + Door B
+  (document-level post-passes, documentFieldReader) run in sequence on the
+  `readDocument` path → all 3 dictionaries for all 4 products. Exceptions: legacy
+  TPS arbiter, centralBrain side-path, Re-Parole fallback classes. True single-door
+  = P5 consolidation, deferred (owner-gated, premature now).
+
+**Checks:** YAML_OK; typecheck PASS; snapCity 4/4 + patronymic 8/8 + authority 13/13
+= 25/25.
+
+**Frozen / not done:** P2.4 (settlement) + P2.5 (server classifyGarbage) FROZEN.
+Not pushed. Owner ground-truth still missing.
+
+**Next before P2.4 (NOT a brick):** triage the dirty working tree — the in-flight
+Gemini/Vision changes (`gemini/model.ts`, `visionCredentials.ts` ADC,
+`vision-extract/route.ts`, `presence.ts`, `geminiVisionProvider.ts`) — land or
+revert them; and obtain owner-filled ground truth. Both are owner decisions.
+
+# HANDOFF — Session 104c (2026-06-03)
+
+## Session 104c — DOOR_ALIGNMENT_TRACE (documentation checkpoint, NO code)
+
+Resolved the "two doors" architectural question raised after P2.1–P2.3. Full raw
+call-graph + verdict in `docs/reports/DOOR_ALIGNMENT_TRACE.md`.
+
+**Verdict:** `readDocument` is the canonical door. It runs Door A (per-field
+`toCanonicalValue` → snapCity) then Door B (document-level post-passes
+patronymic + authority) in sequence, so on the Core path all three smart
+dictionaries fire for all 4 products (TPS/Translation/Re-Parole/EAD). The
+divergence is per-PATH, not per-product.
+
+**Exceptions (documented):** (1) TPS legacy booklet arbiter `visionReadsToFields`
+— Door A only, flag-off, and it already over-reviews so patronymic adds nothing;
+only authority value-resolution is absent there. (2) centralBrain side-path
+(`normalize()` ← `centralBrain.ts:152`) — snapCity only; do-not-touch/retire.
+(3) Re-Parole i94/ead/dl fall back to `/api/tps`.
+
+**Prod reality (CORRECTED 2026-06-03):** Core flags are ON in prod (owner-verified
+from Vercel: `ONE_CORE_TPS_ENABLED=1`, `ONE_BRAIN_CORE_ENABLED=1`,
+`ONE_CORE_REPAROLE_ENABLED=true`, `ONE_CORE_EAD_ENABLED=true`) → the live
+`readDocument → arbitrate` brain serves clients NOW on all 4 products. ONLY
+`SMART_NORMALIZE_ENABLED` is absent (OFF) → the 3 P2 dictionary branches are dark.
+(The earlier "all Core OFF" claim was wrong — read a local `.env`, not prod.)
+
+**Decision:** keep `readDocument` as the one door now (this checkpoint). Defer the
+true single-door cleanup (retire the arbiter + centralBrain side-path, dedup the
+legacy authority maps in militaryId/birthCertificate, close the Session-103
+Core-bypass) to **P5 — owner-gated migration**, NOT now: dirty working tree
+(in-flight Gemini/Vision), no owner-filled ground truth, flags OFF → premature.
+
+**This checkpoint:** docs only. No code change. HEAD `21e90c6` (P2.3) unchanged.
+Not pushed. P2.4/P2.5 frozen. Next big move is NOT P2.4 — it is to clean up the
+in-flight Gemini/Vision changes and the owner ground-truth, then revisit P5.
+
+# HANDOFF — Session 104b (2026-06-03)
+
+## Session 104b — P2.3 authority/issued_by registry resolution (behind SMART_NORMALIZE_ENABLED)
+
+**What was done:**
+1. **`dictionaryBridge.resolveAuthority(rawCyrillic, documentDate?)`** (NEW, pure) — resolves an issuing authority via the sourced registry: `translateCivilRegistryTerm` first (РАЦС/ЗАГС/ДРАЦС), then `lookupAuthority` (МВС/міліція/…). Returns the registry's `official_en` + its `review_required` + warning verbatim. No match → passthrough (value = input). `documentDate` optional → drives era-gating; we don't have it in this path so it defaults (acceptable — registry still resolves the term, era-warnings like ЗАGS/міліція still raise review).
+2. **`docintel/authorityResolve.ts`** (NEW) — `resolveAuthorityFields(fields)` post-pass over `kind:'agency'` fields. Match → replace value with `official_en` + carry `review_required` (never lower). No match → field untouched (keeps the transliteration `toCanonicalValue` produced — no silent loss).
+3. **Wiring** — added to `documentFieldReader` in the SAME `SMART_NORMALIZE_ENABLED==='1'` block as P2.2: `resolveAuthorityFields(reconcilePatronymicFields(fields))`. Default OFF → byte-identical.
+
+**Door alignment (applied lesson from P2.2 trace):** this pass lives in `readDocument`, which all 4 product routes call (TPS/Translation/Re-Parole/EAD) — so authority resolution reaches all 4 by design. Chosen as a document-level post-pass (not the per-field `toCanonicalValue` 'agency' branch) because that branch returns a bare string and would drop the registry's `review_required` (ЗАГС/міліція must raise review).
+
+**Legacy:** per-module authority maps in `militaryId.ts`/`birthCertificate.ts` left untouched — dedup is P5 (canon note on P2.3).
+
+**Evidence:** `authorityResolve.test.ts` 13/13 (РАЦС/ДРАЦС→Civil Registry Office no-review; ЗАГС→review; Міліція→Militsiya review; unknown→passthrough; flag OFF→transliterate vs ON→resolve+review via stub provider; non-agency untouched). Broad: docintel+canonical/core+tps 768 pass / 1 skip. typecheck PASS.
+
+**What was NOT done:** no live doc / no accuracy delta (owner ground truth). P2.4 (settlement) / P2.5 (server-side classifyGarbage) not started. Not pushed. `SMART_NORMALIZE_ENABLED` stays OFF. `documentDate` not threaded into the authority pass (era-gating uses registry defaults) — enhancement if a doc-date is later available in the field set.
+
+# HANDOFF — Session 104 (2026-06-03)
+
+## Session 104 — P2.2 patronymic reconcile (behind SMART_NORMALIZE_ENABLED) + canon YAML repair
+
+**Context:** resumed after the prior session HUNG in the P2.2 loop. First recovered state, then implemented P2.2 correctly.
+
+**What was done:**
+1. **Canon YAML repair** — `docs/MIGRATION_BRIEF.yaml` failed `ruby -ryaml YAML.load_file` (`Psych::SyntaxError` at line 116 col 93). Root cause: inside flow mappings `{...}`/`[...]`, values like `orchestrator.ts:65` contain a colon YAML reads as a key/value separator. Quoted the 5 offending values (lines 116–120). Re-validated → `YAML_OK`. Block-style `key: …ts:100` lines (69–104) are valid (colon not followed by space) — left as-is.
+2. **P2.2 implemented** — `apps/web/src/lib/docintel/patronymicReconcile.ts` (NEW, pure, exported `reconcilePatronymicFields(fields)`). Runs as a POST-PASS over the full `ExtractedDocField[]` (the per-field `toCanonicalValue` has no sibling context — that mismatch is likely what hung the prior run). For `middle_name`/`child_patronymic`: infers sex from the patronymic's own suffix via `isValidPatronymic`, calls `reconcilePatronymic(patrCy, '', sex)`. Well-formed → kept; malformed/undeterminable → `review_required=true`, value preserved. Never silent-corrects, never lowers an existing flag.
+3. **Scope decision (important, do NOT re-litigate without a fix):** P2.2 is a VALIDATION pass, not regeneration. `reconcilePatronymic`'s `givenName` is the FATHER's given name; the canonical field set only has the HOLDER's `given_name`/`child_given_name`, and the registry has NO `sex` field. Feeding the holder's name would fabricate a wrong patronymic — violates the zero-wrong-answer rule. So `givenName=''`. A real regeneration would need reliable father-given-name parsing (birth cert `father_full_name`) — future P5 enhancement.
+4. **Wiring** — `documentFieldReader.ts` calls the pass only when `process.env.SMART_NORMALIZE_ENABLED === '1'`. Default OFF → byte-identical to before.
+5. **Ground-truth templates** — `test-fixtures/real-docs/` is gitignored (holds filled PII GT). Added versioned PII-free blank templates under `docs/templates/ground-truth/` + README, and `OWNER_QUEUE.md` instructing the owner to copy→fill locally and NOT commit filled files. PII scan of the new files: CLEAN.
+
+**Evidence:** `patronymicReconcile.test.ts` 8/8 (incl. flag OFF→no-flag vs ON→flag gating via a stub provider). docintel + canonical/core 268/268. P2.1 `dictionaryBridge.snapCity.test.ts` 4/4. `npm --prefix apps/web run typecheck` → PASS (0 errors).
+
+**What was NOT done:**
+- No live document run; no accuracy delta measured (blocked on owner-filled ground truth — see OWNER_QUEUE.md). No accuracy claim made.
+- P2.3 (authority/issued_by), P2.4 (settlement), P2.5 (server-side classifyGarbage) NOT started.
+- Pre-existing uncommitted in-flight work (`gemini/model.ts` + vision/presence/route edits) left UNTOUCHED — separate from P2.2, not bundled.
+- Not pushed. `SMART_NORMALIZE_ENABLED` NOT set anywhere (stays OFF).
+
+**Door-alignment check (raw call-graph):** `readDocument` (the docintel door where `patronymicReconcile` runs) is invoked by ALL 4 product routes — TPS `route.ts:266`, Translation `:217/:263`, Re-Parole `:188`, EAD `:170` — so the patronymic guard is NOT TPS-only. `snapCity` (via `normalizeCity` ← `toCanonicalValue`) runs in `readDocument` (all 4) AND additionally in the TPS-only booklet facade `geminiVisionArbiter.visionReadsToFields` (flag `TPS_GEMINI_VISION_ARBITER_ENABLED`). That facade hardcodes `review_required:true` on every field (`geminiVisionArbiter.ts:60`), so the patronymic is already under review there — adding the guard would be zero behavioral delta (churn). **Verdict: doors functionally aligned, no move made.** snapCity differs only because it is a value transform (functional there) vs patronymic being a review guard (already maxed there). Both gated by the same `SMART_NORMALIZE_ENABLED`. The deeper Core-bypass (TPS `readDocument` only on `ONE_CORE_TPS_ENABLED` + UA-identity classes) is pre-existing One-Brain debt (Session 103) and hits BOTH dictionaries equally.
+
+**D2 status:** «По батькові» = VALIDATION-ONLY review guard, NOT reconstruction. Goal block NOT closed — DEFERRED (no father-given-name + sex context in the field set; regenerating from the holder's name would fabricate). Future: parse `father_full_name` on birth certs (P5).
+
+**Next exact task:** owner fills the 3 GT templates locally → run the P2-relevant fixtures `SMART_NORMALIZE_ENABLED=OFF` vs `ON` → report per-field delta (first real "better" proof). Then decide P2.3.
+
 # HANDOFF — Session 101 (2026-06-03)
 
 ## Session 101 — KNOWLEDGE_DRIVEN_CORE: label/value extractor, birth cert fix, MRZ debug, gazetteer, agency registry
@@ -507,6 +1138,43 @@ The user-facing complement to the session-isolation fix. The live-failure invest
 
 ---
 
+## Session 103 — Source-code-only Core audit (2026-06-03)
+
+Completed the requested source-code-only audit proving whether the project truly uses one central Document Core across TPS, Translation, Re-Parole, and EAD. Conclusion from source: **it does not yet**. The live system is a hybrid: shared docintel/arbitration substrate exists, but runtime routing remains fragmented by feature flags and legacy slot/document-class bypasses.
+
+### What changed
+
+- Added four audit artifacts:
+  - `docs/reports/ACTUAL_PRODUCT_CALL_GRAPH.md`
+  - `docs/reports/CORE_LIBRARY_RUNTIME_AUDIT.md`
+  - `docs/reports/DOCUMENT_CLASS_EXTRACTION_MATRIX.md`
+  - `docs/reports/CODEX_SPY_PROJECT_AUDIT.md`
+
+### Verified evidence
+
+- `readDocumentCore()` exists but is not called by product routes.
+- Runtime "DocumentProfile" abstraction is absent; actual shared runtime profile is `DocTypeSpec` via `getDocTypeSpec()`.
+- `CanonicalDocumentResult` is built in Re-Parole and EAD routes, but not uniformly in TPS or Translation live Core paths.
+- TPS still bypasses Core for `i94`, `ead`, `dl`, `i797`, `tps_notice`, `i797_or_ead`, `ead_old`, `military_id`, `birth_certificate`.
+- Re-Parole still bypasses `i94`, `ead`, `dl` to `/api/tps/ocr/extract`.
+- Translation can run shared docintel, central-brain, or optional Core arbitration path; not one single path.
+
+### Verification commands
+
+- `npm --prefix apps/web run typecheck` → PASS
+- `npm --prefix apps/web test -- src/lib/docintel/__tests__/docintel.test.ts src/lib/canonical/core/__tests__/documentClassPolicy.test.ts src/lib/canonical/core/__tests__/mrzAuthority.test.ts src/lib/canonical/core/__tests__/tpsAdapter.test.ts src/lib/canonical/core/__tests__/reParoleAdapter.test.ts src/lib/canonical/core/__tests__/eadAdapter.test.ts src/lib/tps/modules/__tests__/birthCertificate.test.ts src/lib/tps/modules/__tests__/militaryId.test.ts src/lib/tps/modules/__tests__/labelValueExtractor.test.ts` → 9 files, 302 tests PASS
+
+### Exact next action
+
+1. Decide whether the target architecture is:
+   - truly route all four products through `readDocumentCore()`, or
+   - delete/replace the dead abstraction and standardize on `readDocument() + arbitrateDocument()`.
+2. If unification is desired, first PR should wire one explicit shared profile/result contract:
+   - `DocTypeSpec`/profile layer
+   - one canonical result shape
+   - route-level document-class guards in Re-Parole and EAD
+3. After that, migrate `military_id` and `birth_certificate` off legacy TPS-only extraction or mark them intentionally outside Core.
+
 ## Session 74 — S3 Name No-Silent-Recase (branch `fix/name-no-silent-recase`, off main)
 
 Third safety item. Audited all five S3 categories (name/patronymic/authority/date/series). Four already preserve raw + flag `review_required=true` on uncertainty (verified by reading `reconcilePatronymic`, `normalizeAuthority` normalize.ts:146, `normalizeDate` normalize.ts:95, `validatePassportPerforation`). Only NAME still silently mutated: the EAD + passport modules built `normalized_value` with a naive `s[0] + s.slice(1).toLowerCase()` and `review_required:false`, corrupting the controlling Latin spelling — `O'BRIEN→O'brien`, `PETRENKO-VASYL→Petrenko-vasyl`, `VAN DER BERG→Van der berg` (EAD never split on spaces), `McDonald→Mcdonald`.
@@ -581,3 +1249,147 @@ Closed the owner request: test every product without payment. Inventory: TPS wiz
 - Added preprocessImage to translation/vision-extract/route.ts
 - Fixes upside-down document not being read in translation flow
 - tsc: 0 errors
+
+## 2026-06-03 | architecture map follow-up
+- Added source-only architecture docs:
+  - `PROJECT_ARCHITECTURE_MAP.md`
+  - `PRODUCT_RUNTIME_ARCHITECTURE.md`
+  - `KNOWLEDGE_ASSET_ARCHITECTURE.md` + `.csv`
+  - `DOCUMENT_CLASS_ARCHITECTURE.md`
+  - `OCR_AI_ARCHITECTURE.md`
+  - `ENV_FLAGS_ARCHITECTURE.md`
+  - `LEGACY_BYPASS_ARCHITECTURE.md`
+  - `CYRILLIC_HANDLING_ARCHITECTURE.md`
+  - `PROJECT_ARCHITECTURE_VERDICT.md`
+- Verified outcome:
+  - intended one-reader file `canonical/core/readDocumentCore.ts` is still not wired to product routes
+  - live shared path is `docintel/documentFieldReader.ts` plus route-local arbitration/policy wiring
+  - Translation still has 3 runtime branches
+  - Re-Parole still bypasses its own core route for `i94`, `ead`, `dl`
+  - EAD core route exists but is off by default unless both client/server flags are enabled
+- Verification:
+  - `npm --prefix apps/web run typecheck` PASS
+  - restored `apps/web/tsconfig.tsbuildinfo` to `HEAD` afterward
+
+## 2026-06-03 | Phase 1 runtime baseline
+- Closed the remaining Phase 1 UNKNOWNs without changing product behavior.
+- `tps/centralBrain.ts` is confirmed live as a TPS merge/translation path:
+  - UI calls `/api/tps/brain/merge` from `TPSWizardV2.tsx`
+  - route calls `mergeToCentralBrain()`
+  - booklet translation preview + packet builder consume `brainMerged`
+- Ran live engine baseline:
+  - command: `LIVE_E2E=1 npm test -- --run src/lib/engine/__tests__/pipeline.live.e2e.test.ts`
+  - result: 2/3 pass, 1 fail
+  - fail: passport fixture in `engine/presence.ts` produced empty Latin fields after OCR-confirm guard; assertion on `KUROPIATNYK` failed
+- Ran direct route-handler smoke against real booklet fixture with `.env.local` loaded:
+  - TPS: route logged `used Core for booklet fields: 4 review_required: 4`
+  - Translation: `200`, `status=ok:core-b2`, `provider=one-brain-core:translation-b2`, `fields=4`, `review_required=4`
+  - Re-Parole: `200`, `_core=true`, `core_status=ok`, `uncertain_fields=13`
+  - EAD: `200`, `_core=true`, `core_status=ok`, `invented_fields_count=0`
+  - Google Vision during this smoke returned `HTTP 403`
+- Local `next dev` API smoke is `DEGRADED` on this workstation:
+  - `GET /api/central-brain/health` → `404`
+  - `POST /api/tps/ocr/extract`, `/api/translation/vision-extract`, `/api/reparole/ocr/extract`, `/api/ead/ocr/extract` → `404`
+  - log showed `Failed to find Server Action` plus repeated `EMFILE` watcher errors
+  - conclusion: direct route invocation is more trustworthy than localhost app-router in current local state
+- Cleanup done:
+  - temporary test harness deleted
+  - `apps/web/.next` removed again
+  - `apps/web/tsconfig.tsbuildinfo` restored to `HEAD`
+
+Next action:
+- Stop after Phase 1 as requested.
+- If owner wants to proceed, Phase 2 starts with `SMART_NORMALIZE_ENABLED` scaffolding and first brick = `snapCity` into the live dictionary door.
+
+## 2026-06-03 | P1.5.1 Vision auth gate
+- Followed `docs/MIGRATION_BRIEF.yaml`, phase `P1.5.1` only.
+- Diagnosis:
+  - local `.env.local` exposes `GOOGLE_APPLICATION_CREDENTIALS` by name
+  - referenced ADC file exists locally
+  - file contains a valid service-account JSON shape
+  - existing Vision loader ignored ADC file-path mode entirely and fell back to API key
+- Code change:
+  - added ADC file-path support to `apps/web/src/lib/canonical/vision/visionCredentials.ts`
+  - gated behind `VISION_ADC_FILE_ENABLED` (default OFF, no prod behavior change)
+  - added tests in `apps/web/src/lib/canonical/vision/__tests__/visionCredentials.test.ts`
+- Verification:
+  - `npx vitest run src/lib/canonical/vision/__tests__/visionCredentials.test.ts` → 14/14 PASS
+  - direct live Vision probe with `VISION_ADC_FILE_ENABLED=1` switched auth mode to service account:
+    - project detected: `messenginfo`
+    - service account detected masked: `messenginfo-docai-ocr-sa@***.iam.gserviceaccount.com`
+  - sanitized diag still returned `VISION_AUTH_403` with exact cause:
+    - `This API method requires billing to be enabled ... project #537268475735`
+- Conclusion:
+  - loader bug is fixed
+  - phase is still `BLOCKED` on billing, not on code
+  - `P1.5.3` full baseline matrix must NOT run until Vision billing is enabled
+- Cleanup:
+  - temporary probe tests removed
+  - `apps/web/tsconfig.tsbuildinfo` restored to `HEAD`
+
+Next action:
+- Owner enables billing for Google Vision on project `537268475735` or supplies a Vision-enabled project/credential path.
+- After that, rerun `P1.5.1` probe once, then continue to `P1.5.3` full baseline matrix. Do not skip directly to Phase 2.
+
+## 2026-06-03 | P1.5.3 partial baseline matrix (Gemini-core subset)
+- Corrected the phase logic from `docs/MIGRATION_BRIEF.yaml` with source proof: Vision billing is **not** required for the Gemini-core subset baseline.
+- Added report: `docs/reports/BASELINE_MATRIX.md`
+  - code-derived matrix for every `product x class` row from the brief
+  - runtime rows only for live-core + real-fixture pairs
+- Runtime harness:
+  - temporary out-of-repo `tsx` script under `/tmp`
+  - direct `POST()` route-handler invocation only
+  - `.env.local` loaded by name
+  - forced flags for local truthing:
+    - `ONE_CORE_TPS_ENABLED=1`
+    - `ONE_CORE_REPAROLE_ENABLED=true`
+    - `ONE_CORE_EAD_ENABLED=true`
+    - `ONE_BRAIN_CORE_ENABLED=1`
+- Verified runtime rows:
+  - TPS `internal_booklet` -> `core_status=ok`, `final_field_count=4`, `module_field_count=4`
+  - Translation `internal_booklet` -> `ok:core-b2`, 4 fields, all under review
+  - Translation `birth_certificate` -> `ok:core-b2`, 10 fields, all under review
+  - Translation `soviet_birth_certificate` -> `ok:core-b2`, 10 fields, 9 under review; note: generic `ua_birth_certificate` spec
+  - Translation `divorce_certificate` -> `ok:core-b2`, 1 field
+  - Re-Parole `internal_booklet` -> `_core=true`, `X-Core-Fields=4`, `core_status=ok`
+  - EAD `internal_booklet` -> `_core=true`, `X-Core-Fields=4`, `core_status=ok`, `invented_fields_count=0`
+- Degraded row:
+  - Translation `marriage_certificate` blocked before OCR by policy guard (`needs_better_scan`, 136226 bytes < 300000 byte minimum)
+- Critical truth:
+  - `Vision billing` is not a blocker for booklet/birth/divorce Gemini-core baseline.
+  - It remains relevant only for passport MRZ-augmented parity and legacy/Vision-text branches.
+  - `us_ead`, `us_i94`, `us_i797` are not billing-blocked; they are `NOT_ON_LIVE_CORE` because the route maps them but docintel has no registry entry.
+
+Next action:
+- If continuing `P1.5.3`, do **not** go back to billing first.
+- First fill the remaining Gemini-only gaps:
+  - add or locate real fixtures for `international_passport` and `id_card`
+  - rerun the same route-handler harness
+- Keep passport rows separate as `Gemini core / MRZ parity unverified under Vision 403`.
+- Treat `us_ead`, `us_i94`, `us_i797`, `driver_license`, and TPS/Re-Parole non-core classes as coverage gaps, not OCR-billing gaps.
+
+## 2026-06-03 | P1.5.4 booklet ground-truth gate
+- Added report: `docs/reports/P1_5_4_BOOKLET_GROUND_TRUTH_GATE.md`
+- Purpose: define the exact owner-gated contract required before booklet quality can be measured honestly.
+- Verified hard blocker:
+  - `test-fixtures/real-docs/` currently has only one booklet fixture: `internal_passport_kuropiatnyk.jpg`
+  - there are not `3-4` booklet fixtures in that folder today
+- Verified the repo already expects owner-filled ground truth for risky Cyrillic docs:
+  - `docs/reports/FAILED_CYRILLIC_GROUND_TRUTH_ADJUDICATION.md`
+  - `docs/reports/CYRILLIC_DOCUMENT_CLASS_POLICY.md`
+- Prepared the exact JSON shape and suggested path pattern for booklet truth files:
+  - `qa-private/ground-truth/booklet/<fixture_basename>.json`
+- Did **not** fabricate any field values and did not inspect private PII values.
+
+Next action:
+- Owner adds `3-4` booklet fixtures or explicitly accepts `N=1`.
+- Owner fills one truth JSON per booklet fixture using the contract in `P1_5_4_BOOKLET_GROUND_TRUTH_GATE.md`.
+- Only after that does booklet “baseline did not worsen” become measurable for `P2`.
+
+## 2026-06-03 | YAML sync + start Path A
+- Synced canon YAML to current state
+- Next autonomous brick: P1.5.4 ground-truth templates, then P2.1 snapCity
+
+## 2026-06-03 | P2.1 done
+- snapCity in live door (flag OFF). Next autonomous: P2.2 reconcilePatronymic
+- OWNER_QUEUE: fill ground-truth (OG-1) to enable P2 accuracy delta
