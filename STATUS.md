@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 104x (2026-06-04) — ETAP1: GT-fill prep for owner (no GT fabricated)
+- `OPENED` both birth-cert images (Preview) + both GT JSON templates for the owner.
+- `HINTS` docs/reports/GT_FILL_HINTS.md — structural blank-layout guidance + formats (YYYY-MM-DD, M/F, null+notes), NO real values. Refusal note on why model can't fill GT.
+- `INTAKE` scripts/gt_intake.mjs (SCRATCH, gitignored): owner types/dictates {field:value} → validates keys/ISO-date/M-F → writes + sets VERIFIED_BY_OWNER. Smoke-tested on temp copy (valid writes; bad date & unknown key rejected); REAL GT untouched (still MISSING).
+- `STOP` ETAP2-4 (accuracy + SMART decision) run ONLY after owner sets VERIFIED_BY_OWNER. No GT fabricated; behavior flags OFF; no prod env; no push of code.
 ## Session 104w (2026-06-04) — ON RAILS: prod==main verified; holding for owner GT
 - `DURABILITY_CLOSED` origin/main `46a0912` (Merge PR #80); healthz status=ok sha=`46a0912`; latest prod deploy Ready. prod==main → future main deploys ship this code (no rollback).
 - `METRIC` DOCUMENT_CLASS_METRICS_ENABLED=1 in prod; code in main; payload = class/eligibility only (no PII, verified). Logs NOT_OBSERVED_YET (no real extraction since deploy).
