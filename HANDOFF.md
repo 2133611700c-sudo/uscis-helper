@@ -10,6 +10,30 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104s (2026-06-04)
+
+## Session 104s — GT accuracy verification contract (docs only; schema-mismatch gap fixed)
+
+Before the owner hand-fills GT, surfaced a gap that would have wasted the effort: the GT JSON
+schema and the field ids `readDocument` emits are different vocabularies. Without a map, an
+accuracy run compares e.g. `family_name_cyrillic` (GT) against nothing → false "all wrong".
+
+Wrote `docs/reports/GT_ACCURACY_VERIFICATION.md` (CONTRACT, no results yet):
+- GT-key → read-field-id map (cyrillic = `raw_cyrillic`, latin/date = `value`), covering both
+  birth-cert images (both `docTypeId = ua_birth_certificate`).
+- N/A fields the spec can't score: `sex`, `province`, `passport_number`, `military_id_number`
+  (not emitted) and `father_full_name`/`mother_full_name` (emitted but absent from GT template).
+- Normalize rules, run matrix (OFF / anti-fab / +self-consistency; SMART stays OFF), metrics
+  (accuracy, review_delta, false_positive_review, false_negative_review, instability), PII rule.
+- Honest framing: accuracy only vs human GT; self_consistency `agree` ≠ correctness;
+  false_negative_review (wrong value, not flagged) is the dangerous metric, false_positive is UX cost.
+
+The owner's fill list matches the existing GT file keys → fill the file as-is; the MAP is the
+verifier's job, now documented.
+
+No code; no prod env; behavior flags OFF; model unchanged; P2.4/P2.5 frozen; not pushed. Next:
+owner fills GT (VERIFIED_BY_OWNER) → local accuracy run fills the Results section.
+
 # HANDOFF — Session 104r (2026-06-04)
 
 ## Session 104r — self-consistency gate IMPLEMENTED (commit 2 of 2; flag OFF)
