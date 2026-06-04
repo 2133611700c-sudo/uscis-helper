@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(core): calibrate runtime image quality signals
+
+Ran preprocessImage locally (no API/OCR/text) over 27 real fixtures to test blurScore/assessment as a low_quality_scan trigger. Result: blur 25.89–62.11; assessment good×22/acceptable×5/poor×0; only high_brightness warnings. The CONFIRMED-fabricating birth_soviet scores blur=36.41 'good' — SHARPER than the reliable passport (blur=25.89) → dangerous doc ranks above safe doc. Verdict: blurScore/assessment do NOT discriminate fabrication-risk (sharp photo of handwritten/bilingual content fabricates yet reads 'good'); corpus has no degraded samples → threshold uncalibratable. Reco: do NOT wire low_quality_scan as a gate trigger; keep quality logging/provenance + rescan-prompt only; real detector = self-consistency + class allowlist. Report docs/reports/QUALITY_SIGNAL_CALIBRATION.md (sanitized); raw in qa-private (ignored). No code; flags OFF; no prod env; P2.4/P2.5 frozen; not pushed; accuracy not claimed (N=27, no GT).
+
+---
+
 ## 2026-06-04 — docs(core): design runtime quality signals for anti-fabrication gate
 
 Design (`docs/reports/RUNTIME_QUALITY_SIGNAL_DESIGN.md`) to thread preprocessImage quality/degradation into readDocument so the gate triggers on runtime low-quality, not only the class allowlist. Raw: all 4 routes call preprocessImage before readDocument (TPS:165/Translation:259/Re-Parole:138/EAD:136) but drop quality{}; PreprocessResult.quality = brightness/blurScore/assessment/warnings (+resized); NO rotation/EXIF flag reported (applied silently :85); NO handwritten detector; readDocument opts carry no quality. Reco: Option A — optional DocumentRuntimeSignals via readDocument opts (one door=all 4) behind RUNTIME_QUALITY_SIGNALS_ENABLED (default OFF), acted on only when ANTI_FABRICATION_GATE_ENABLED on; class allowlist stays primary; low_quality_scan = identity-only secondary trigger (raises review, never changes values); rotated_input/possible_handwritten NOT available → not fabricated; thresholds uncalibrated (no GT). No code; flags OFF; no prod env; P2.4/P2.5 frozen; not pushed.
