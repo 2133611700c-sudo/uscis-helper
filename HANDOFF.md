@@ -10,6 +10,33 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104o (2026-06-04)
+
+## Session 104o — Quality-signal calibration: blurScore is NOT a fabrication detector
+
+Ran `preprocessImage` locally (sharp, NO API, NO OCR, NO text) over all 27 real fixtures to
+test whether `blurScore`/`assessment` can serve as a `low_quality_scan` secondary gate trigger.
+Report: `docs/reports/QUALITY_SIGNAL_CALIBRATION.md`. Raw: `qa-private/reports/quality-calibration/`
+(gitignored).
+
+**Decisive result:** blur 25.89–62.11; assessment good×22 / acceptable×5 / **poor×0**; only
+`high_brightness` warnings. The CONFIRMED-fabricating `birth_soviet` scores blur **36.41 / good**
+— SHARPER than the reliably-correct passport (blur **25.89**). The dangerous doc ranks ABOVE the
+safe one. blurScore measures visual sharpness, not handwriting/content ambiguity; a sharp photo
+of a handwritten Soviet cert fabricates yet reads `good`. The corpus also has NO genuinely
+degraded samples (nothing near the 2.5 reject floor) → a threshold can't even be calibrated here.
+
+**Recommendation:** do NOT wire `low_quality_scan` as an anti-fabrication trigger. Keep the
+quality signal as logging/provenance + a rescan prompt for truly degraded uploads only. The real
+anti-fabrication detector for handwritten/ambiguous docs is **self-consistency** (multi-read
+identity-hash disagreement) + the existing class allowlist — prioritize that over a blur threshold.
+
+**No code; flags OFF; no prod env; model default unchanged; no self-consistency yet; P2.4/P2.5
+frozen; not pushed; accuracy not claimed (N=27, no GT).**
+
+**Next:** owner decides — keep quality logging-only (recommended) and design/implement
+self-consistency (N=2-3 identity-hash) as the real detector for handwritten/ambiguous docs.
+
 # HANDOFF — Session 104n (2026-06-04)
 
 ## Session 104n — Runtime quality-signal design (DESIGN ONLY, no code)
