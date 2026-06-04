@@ -10,6 +10,41 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104k (2026-06-04)
+
+## Session 104k — Anti-fabrication class gate IMPLEMENTED (minimal, flag default OFF)
+
+Implemented the cheapest safety layer from the design (Option 1, class gate).
+
+**Code:**
+- `docintel/antiFabricationGate.ts` (NEW): `applyAntiFabricationGate(fields, docTypeId)`.
+  On hard-case classes (`isHardCase` via `docintelIdToDocumentClass`), forces
+  `review_required=true` on identity-critical fields and attaches reasons
+  (`hard_case_document`/`model_instability_risk`/`no_strong_identity_anchor`). Pure;
+  **never changes a value, never lowers a flag, no invention**. `isIdentityCriticalField`
+  matches by substring so role-grounded variants (child_*, spouse_*) are covered.
+- `documentFieldReader.ts`: applies the gate after the field-build loop (and after the
+  SMART post-passes) only when `ANTI_FABRICATION_GATE_ENABLED === '1'` (default OFF →
+  byte-identical). Insertion point A = the shared door all 4 routes call → uniform
+  coverage; closes the earlier Re-Parole/EAD route-layer gap.
+- `types.ts`: added optional `review_reasons?: string[]` to `ExtractedDocField` (additive).
+
+**Safety properties:** passports map to `internal_passport_booklet` (NOT hard-case) → the
+gate doesn't touch them → MRZ-controlled fields are not blanket-forced. Only review is
+raised; values are untouched.
+
+**Tests:** `antiFabricationGate.test.ts` — pure (identity matcher, force+reasons,
+value-unchanged, model review=false can't survive, passport untouched, never-lower) +
+readDocument OFF/ON gating (stub provider) + 4-route coverage (each route calls
+readDocument). docintel 46 pass; canonical/core 247 pass; typecheck PASS.
+
+**NOT done:** two-read self-consistency (Option 2) + blur/rotation hard-case signal (separate
+costed steps); flag not enabled anywhere; model default unchanged; SMART_NORMALIZE OFF;
+P2.4/P2.5 frozen; not pushed; no prod env. Accuracy not claimed (no hard-case GT).
+
+**Next:** owner decides whether to (a) enable the flag in a canary, (b) add Option 2
+two-read instability detection, (c) add a real image-quality (blur/rotation) hard-case signal.
+
 # HANDOFF — Session 104j (2026-06-04)
 
 ## Session 104j — Anti-fabrication / hard-case forced-review gate (DESIGN ONLY)

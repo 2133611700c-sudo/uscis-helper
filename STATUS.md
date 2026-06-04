@@ -1,4 +1,12 @@
 # STATUS — Messenginfo
+## Session 104k (2026-06-04) — Anti-fabrication class gate IMPLEMENTED (flag default OFF)
+- `IMPL` `docintel/antiFabricationGate.ts` (NEW): `applyAntiFabricationGate(fields, docTypeId)` — on hard-case classes (`isHardCase`), forces `review_required=true` on identity-critical fields + attaches reasons (hard_case_document/model_instability_risk/no_strong_identity_anchor). NEVER changes values, NEVER lowers a flag, NO invention.
+- `WIRED` `documentFieldReader` after field build, behind `ANTI_FABRICATION_GATE_ENABLED === '1'` (default OFF → byte-identical). Insertion point A = the shared door → all 4 products inherit it (TPS/Translation/Re-Parole/EAD) — closes the prior route-layer coverage gap.
+- `IDENTITY_FIELDS` family/given/patronymic/middle_name, *_full_name, date_of_birth/dob, place_of_birth/place_city, issuing_authority (+ role-grounded child_/spouse_ variants via substring match).
+- `PASSPORT_SAFE` non-hard-case classes (passport→internal_passport_booklet) untouched → MRZ-controlled fields not blanket-forced.
+- `TYPE` added optional `review_reasons?: string[]` to ExtractedDocField (additive).
+- `TESTS` `antiFabricationGate.test.ts` (pure + readDocument OFF/ON gating + 4-route coverage); docintel 46 pass; canonical/core 247 pass; typecheck PASS.
+- `NOT_DONE` two-read self-consistency (Option 2) + blur/rotation signal NOT implemented; flag NOT enabled anywhere; model default unchanged; SMART_NORMALIZE OFF; P2.4/P2.5 frozen; not pushed.
 ## Session 104j (2026-06-04) — Anti-fabrication gate DESIGN (no code)
 - `DESIGN` `docs/reports/ANTI_FABRICATION_GATE_DESIGN.md` — hard-case forced-review gate to stop identity fabrication.
 - `EXISTS_PARTIAL` `documentClassPolicy.ts` ALREADY has the gate primitives: hard-case classes + `isHardCase()`:147, `applyHardCaseReviewOverride()`:209 (distrusts model review=false), role guard:167, `checkImageQuality()`:234 (size-only).
