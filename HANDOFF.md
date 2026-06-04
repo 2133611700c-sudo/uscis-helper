@@ -758,3 +758,7 @@ Next action:
 ## 2026-06-03 | YAML sync + start Path A
 - Synced canon YAML to current state
 - Next autonomous brick: P1.5.4 ground-truth templates, then P2.1 snapCity
+
+## 2026-06-03 | P2.1 done
+- snapCity in live door (flag OFF). Next autonomous: P2.2 reconcilePatronymic
+- OWNER_QUEUE: fill ground-truth (OG-1) to enable P2 accuracy delta
