@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — DOOR_ALIGNMENT_TRACE (documentation checkpoint, no code)
+
+**docs/reports/DOOR_ALIGNMENT_TRACE.md** (NEW): raw call-graph of the 3 smart dictionaries (snapCity / patronymic / authority) across all 4 products. Verdict: `readDocument` is the canonical door — it runs Door A (per-field `toCanonicalValue`→snapCity) then Door B (document-level post-passes patronymic+authority), so the Core path of all 4 products applies all 3 dictionaries; divergence is per-PATH not per-product. Exceptions: TPS legacy booklet arbiter (`visionReadsToFields`, Door A only), centralBrain side-path (snapCity only), Re-Parole i94/ead/dl fallback. Prod reality: all Core flags + SMART_NORMALIZE_ENABLED OFF → no prod effect today. Recommendation: keep readDocument as the one door now; true single-door cleanup = P5 owner-gated migration, deferred (dirty tree + no ground truth + in-flight Gemini/Vision). STATUS/HANDOFF updated. Docs only — no code change. HEAD 21e90c6. Not pushed.
+
+---
+
 ## 2026-06-03 — P2.3 authority/issued_by registry resolution (flag-gated)
 
 **apps/web/src/lib/tps/dictionaryBridge.ts** (`resolveAuthority`, NEW): resolves issuing authority via the sourced registry — civil-registry terms (РАЦС/ЗАГС/ДРАЦС) then authority registry (МВС/міліція). Returns registry `official_en` + `review_required` + warning. No match → passthrough.
