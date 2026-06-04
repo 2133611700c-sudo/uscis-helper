@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(core): GT accuracy verification contract (schema-mismatch gap fixed)
+
+Found (raw) that GT JSON keys ≠ readDocument field ids → an accuracy run would report false misses without a map. Wrote `docs/reports/GT_ACCURACY_VERIFICATION.md`: GT-key→read-field-id map (cyrillic=raw_cyrillic, latin/date=value; both birth-cert images share docTypeId ua_birth_certificate), N/A fields (sex/province/passport_number/military_id not emitted; father/mother_full_name = GT gap), normalize rules, run matrix, metrics (accuracy/review_delta/false_positive_review/false_negative_review/instability), PII rule. Honest framing: accuracy only vs human GT; self_consistency agree ≠ correctness; false_negative_review is the dangerous metric. Pending owner GT (VERIFIED_BY_OWNER) → then local accuracy run. No code; no prod env; behavior flags OFF; not pushed.
+
+---
+
 ## 2026-06-04 — feat(core): add self-consistency gate for handwritten documents
 
 New `docintel/selfConsistency.ts`: instability detector (NOT majority vote / NOT correctness). identityHash over raw pre-KMU tuple (family/given/patronymic/dob/place; normalizeForCompare only — no KMU/dictionary, so a normalizer can't mask disagreement); decideStatus (insufficient/incomplete/mismatch/agree); applySelfConsistencyOutcome (mismatch/incomplete/insufficient → force identity review + reason; agree → unchanged; never changes values/never claims correct). Wired in readDocument: runs ONLY when SELF_CONSISTENCY_GATE_ENABLED=1 AND ANTI_FABRICATION_GATE_ENABLED=1 AND docClass ∈ handwritten allowlist; re-reads same image (SELF_CONSISTENCY_RUNS default 2, clamp 2–4; SELF_CONSISTENCY_TIMEOUT_MS); no second read for passport/printed-marriage/unknown. PII-free DocumentReadResult.self_consistency (status/instability/hash-prefix/runs). Honest: on the current narrow allowlist the class gate already forces identity review → marginal effect now = instability signal+reason, not a new review. Tests: selfConsistency.test.ts + documentClassMetric.test.ts (synthetic name fixtures, no PII); docintel+canonical/core 317 pass; typecheck PASS. Different-model fanout NOT done. Flags default OFF; no prod env; model default unchanged; P2.4/P2.5 frozen; not pushed. (commit 2 of 2)
