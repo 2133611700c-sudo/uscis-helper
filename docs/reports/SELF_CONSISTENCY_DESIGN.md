@@ -2,6 +2,22 @@
 
 **Date:** 2026-06-04  **Type:** design, NO code, NO flag enable, NO prod env, NO API runs, NO push.
 
+> **IMPLEMENTED 2026-06-04 (flag default OFF):** `docintel/selfConsistency.ts` +
+> orchestration in `readDocument`. `SELF_CONSISTENCY_GATE_ENABLED` (default OFF) acts ONLY
+> when `ANTI_FABRICATION_GATE_ENABLED` is also ON AND docClass ∈ handwritten allowlist;
+> re-reads the same image (`SELF_CONSISTENCY_RUNS`, default 2; `SELF_CONSISTENCY_TIMEOUT_MS`),
+> hashes the raw identity tuple (pre-KMU), and on mismatch/incomplete/insufficient forces
+> review on identity fields + adds the reason; agreement never lowers review / never claims
+> correctness. Result surfaced PII-free in `DocumentReadResult.self_consistency`
+> (status/instability/hash-prefix). Also shipped: `document_class_count` metric
+> (`documentClassMetric.ts`, `DOCUMENT_CLASS_METRICS_ENABLED` default OFF) to learn
+> `allowlist_traffic_share`. **Honest note:** on the current narrow allowlist the
+> anti-fabrication class gate ALREADY forces identity review, so self-consistency's marginal
+> effect today is the added instability SIGNAL + reason (evidence/triage), not a new review;
+> its review effect grows when the trigger later broadens beyond the allowlist. Tests:
+> `selfConsistency.test.ts` + `documentClassMetric.test.ts`; docintel+canonical/core 317 pass;
+> typecheck PASS. Different-model fanout NOT done (separate owner decision).
+
 ## Goal
 
 A REAL fabrication detector for handwritten/ambiguous documents: read the same image more
