@@ -1,4 +1,20 @@
-# HANDOFF — Session 105i (2026-06-04)
+# HANDOFF — Session 105j (2026-06-04)
+
+## Session 105j — live-door scorable coverage blockers (no prod flags)
+
+Owner task: make GT docs scorable through the live `readDocument` path without changing production behavior or enabling flags. Did 3 things, full suite green (2851 passed / 4 skipped / 0 fail, 0 type errors).
+
+**1. Added `ua_military_id` registry type** — identity-page civil fields (family_name, given_name, patronymic, dob, doc_number). military_id_p1 now routes through `readDocument` → **live-door scorable 3 → 4 of 6**. Live proof (gemini-3.1-pro, flags OFF, gitignored harness removed after): **5/5 scored fields correct**. No `sex` field because there is no `sex` FieldKind in the reader contract (documented; sex unscored, not wrong). Type is inert for prod — no caller passes `ua_military_id` today (TPS military still uses its regex module); this only enables the scorable + future-routing path.
+
+**2. Patronymic naming fix** — renamed the source field for «По батькові» `middle_name` → `patronymic` on `ua_internal_passport_booklet` and `ua_id_card` (birth cert already used `child_patronymic`). Enforces the CLAUDE.md hard-rule (Patronymic ≠ Middle Name) at the SOURCE layer. The USCIS **form** field stays `middle_name` (TPSAnswers.middle_name — a real I-765/I-821/I-131 box); the source→form mapping bridges patronymic into it. Behavior-preserving via backward-compat fallbacks `get('patronymic') || get('middle_name')` in documentContracts allow-list, postExtractNormalize guard, translationBridge (×2), translationExtractor; ead/reParole adapters + gates (selfConsistency/antiFabricationGate/patronymicReconcile) already aliased both. Updated 4 tests that asserted the old source key. Added 2 tests (ua_military_id registry shape; a guard that no source field is named `middle_name`).
+
+**3. Vision-prompt note:** the prompt sends `- <field> (<label_uk>)`, so the key change is neutral-to-clearer for the model; the «По батькові» label is unchanged. On re-running the passport booklet, patronymic is still `not_read` — the model returns no patronymic value on that image. So the passport patronymic gap is a **vision/image limitation, NOT a naming bug** (military read its patronymic 5/5). family/given/dob unchanged 3/3.
+
+**Still BLOCKED — EAD + I-94:** the docintel registry is UA-only (no US doc types) and there is no upright real image (only rotated `*_rot*` in qa-shots/private). To make them scorable, owner must (1) provide upright real EAD + I-94 images into test-fixtures/real-docs/ (gitignored), and (2) decide a US-doc read path (add US registry types or an explicit US reader). Raw API reads of these must NOT be counted as product accuracy. Report: docs/reports/LIVE_DOOR_SCORABLE_COVERAGE.md.
+
+No flags enabled; no prod env/deploy; no model switch; no SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs. **Next (owner):** upright EAD/I-94 fixtures + US-doc read-path decision → coverage 6/6; then threshold calibration (still BLOCKED_INSUFFICIENT_N); gate canary stays a separate owner command after rollback rehearsal.
+
+
 
 ## Session 105i — VERIFY-FIRST sync (GT=6), accuracy reconciled, gate = READY_FOR_OWNER_APPROVED_CANARY
 

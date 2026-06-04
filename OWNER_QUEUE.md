@@ -3,6 +3,22 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-04 — live-door coverage now 4/6; EAD+I-94 need owner inputs
+
+Agent fixed the small coverage blockers (added `ua_military_id` registry type → military_id_p1 scorable, 5/5
+correct live; patronymic naming corrected at source, behavior-preserving). **Live-door scorable = 4/6.**
+
+**Owner-only to reach 6/6 (then calibration can use 6 docs):**
+1. **Upright real EAD image** → `test-fixtures/real-docs/` (gitignored). Only rotated `ead_rot*` exist now.
+2. **Upright real I-94 image** → same. Only `i94_rot*` exist now.
+3. **US-doc read-path decision:** the docintel registry is UA-only. Either authorize the agent to add US doc
+   types (us_ead / us_i94) to the registry + a US-doc read path, or keep EAD/I-94 out of live-door scoring.
+   Until decided, EAD/I-94 raw API reads are NOT product accuracy and stay excluded.
+
+Calibration remains BLOCKED_INSUFFICIENT_N until coverage + more people. Gate canary unchanged
+(READY_FOR_OWNER_APPROVED_CANARY; separate command after rollback rehearsal).
+
+
 ## 2026-06-04 — GT=6 verified · accuracy reconciled · gate = READY_FOR_OWNER_APPROVED_CANARY
 
 **Verified by agent from raw (no values printed):**

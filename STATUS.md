@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 105j (2026-06-04) — live-door scorable coverage 3→4: +ua_military_id, patronymic naming fix (no prod flags)
+- `COVERAGE` Live-door scorable = **4/6** (was 3): added `ua_military_id` registry type → military_id_p1 now routes through `readDocument`. EAD/I-94 remain **BLOCKED** (UA-only registry + no upright real image).
+- `MILITARY(3.1-pro live)` ua_military_id = **5/5 scored fields correct** (family/given/patronymic/dob/doc_number). No `sex` field (no `sex` FieldKind) → sex unscored, documented. Type inert for prod (no caller passes this id; TPS military still uses regex module).
+- `PATRONYMIC_FIX` source field «По батькові» renamed `middle_name`→`patronymic` on booklet+id_card (birth cert already `child_patronymic`) — enforces CLAUDE.md Patronymic≠Middle_Name at source. USCIS **form** field stays `middle_name` (real I-765/I-821/I-131 field); source→form bridge handles it. Backward-compat fallback `patronymic||middle_name` added in contracts/postExtract/bridges; adapters+gates already aliased.
+- `PASSPORT` patronymic still `not_read` on the booklet image → **vision/image limitation, NOT naming** (military read its patronymic fine). family/given/dob = 3/3.
+- `EVIDENCE` typecheck 0; full suite **2851 passed / 4 skipped / 0 fail** (+2 new tests: ua_military_id registry, patronymic-not-middle_name guard). Live reads via gitignored harness (removed after); raw → qa-private; report docs/reports/LIVE_DOOR_SCORABLE_COVERAGE.md.
+- `UNCHANGED` no flags enabled, no prod env/deploy, no model switch, no SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs. Rule reaffirmed: raw API call ≠ product accuracy.
 ## Session 105i (2026-06-04) — VERIFY-FIRST sync: GT=6 confirmed, accuracy reconciled, gate=READY_FOR_OWNER_APPROVED_CANARY
 - `VERIFIED` GT ready = **6/30** `VERIFIED_BY_OWNER` (raw-read, no values): soviet 6/6, handwritten 6/6, internal_passport 5/5, military_id_p1 6/6, i94 6/6, ead 6/6. **GT-count blocker CLEARED.**
 - `RECONCILED` Owner's "accuracy on 6 docs" NOT evidence-backed. Live-door-scorable = **3** (2 hard-case birth + passport). `military_id_p1`=no registry type (`ua_military_id` absent); `ead`/`i94`=US docs, no upright real image → NOT scorable.
