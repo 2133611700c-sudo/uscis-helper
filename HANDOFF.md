@@ -10,6 +10,33 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104f (2026-06-03)
+
+## Session 104f — Group A triage landed: normalize GEMINI_MODEL env (live-risk fix)
+
+Closed the live `GEMINI_MODEL` whitespace/newline risk (Core is ON in prod, so the
+env model id is read on the live Gemini path).
+
+**Committed (Group A, 4 files):**
+- `gemini/model.ts` + `__tests__/model.test.ts` — pure `normalizeGeminiModel(value, fallback)` trim helper (4 tests).
+- `geminiVisionProvider.ts` — `modelFallback()` primary wrapped; default `gemini-3.1-pro-preview` UNCHANGED.
+- `translation/vision-extract/route.ts` — response `model:` metadata field wrapped; default `gemini-2.5-flash` UNCHANGED; no runtime routing change.
+
+**Deliberately NOT committed:**
+- `engine/presence.ts` — its in-flight edit ALSO adds a new explicit default model
+  (`?? process.env.GEMINI_MODEL` → `normalizeGeminiModel(..., 'gemini-2.5-flash')`),
+  a semantic default change → excluded per the Group-A rule; needs separate review
+  (confirm the new default matches geminiReader's prior internal default).
+- Vision ADC loader (`visionCredentials.ts` +test), `tsconfig.tsbuildinfo` — left in tree.
+
+**Guards before commit:** NO_SECRETS_IN_DIFF, NO_SMART_NORMALIZE, NO_VISION_ADC,
+NO_FORBIDDEN_PATHS, NO_DEFAULT_MODEL_CHANGE (the two model literals in the diff are
+the pre-existing defaults, only moved into the fallback arg). typecheck PASS; model
+4/4; docintel green. Not pushed.
+
+**Next (owner decision):** (a) presence.ts default-model question; (b) Vision ADC
+commit-or-discard; (c) discard tsconfig.tsbuildinfo + gitignore. Not P2.4/P2.5.
+
 # HANDOFF — Session 104e (2026-06-03)
 
 ## Session 104e — P2 OFF-vs-ON accuracy harness: BLOCKED on owner inputs
