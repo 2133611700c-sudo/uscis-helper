@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs: owner GT-batch fill checklist
+
+Added docs/reports/GT_BATCH_FILL_CHECKLIST.md (owner-facing): documents to collect (6–10, categories; I-94/EAD template TBD = adapter fields, not invented), owner_verified vs candidate_not_verified fields, fill steps (hand / gt_intake.mjs), value=as-written, PII-free readiness-count check. L2-WIRE stays HOLD until batch filled + thresholds calibrated. No runtime/flags/model/SMART/HTR/prod.
+
+---
+
 ## 2026-06-04 — docs(onebrain): L3 GT-language intent + calibration plan + templates
 
 GT-language intent DECIDED (GT_LANGUAGE_INTENT.md): value = as-written on document; normalized_value = canonical; dictionary = hint, never silent overwrite (fixes RU-doc-vs-UA-GT scoring artifact). Calibration plan (ONEBRAIN_L3_GT_CALIBRATION_PLAN.md): 6–10 doc GT batch across categories, field criticality, always-force_review vs lower-confidence-only signal policy, pre-canary metrics (false_negative_review=0 target + false_positive/DOB-name-place-caught/review_rate_by_doc_type/missing_rate/model_disagreement-later), threshold-tuning procedure. +3 PII-free versioned templates (birth_cert_ua_printed, international_passport, id_card); EAD/I-94 deferred (adapter fields, no invention). Real unblock = owner fills expanded GT batch. No wiring; no /api change; no flag; no model/SMART/HTR; no prod env; no deploy; no PII.
