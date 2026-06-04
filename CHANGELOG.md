@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — ETAP1: GT-fill prep for owner (hints + intake helper; no fabrication)
+
+Opened both birth-cert images + GT templates. docs/reports/GT_FILL_HINTS.md (structural hints + formats, no values). scripts/gt_intake.mjs (scratch, gitignored): owner types/dictates {field:value} → validates keys/ISO-date/M-F → writes + sets VERIFIED_BY_OWNER; smoke-tested on temp copy; real GT untouched. ETAP2-4 accuracy gated on VERIFIED_BY_OWNER. No GT fabricated; flags OFF; no prod env; no code push.
+
+---
+
 ## 2026-06-04 — on rails: prod==main verified; holding for owner GT (no code)
 
 Post-merge holding-state verification (no new functionality). origin/main 46a0912 (Merge PR #80); healthz ok sha 46a0912; prod deploy Ready → prod==main, durability closed. DOCUMENT_CLASS_METRICS_ENABLED=1 in prod (code in main; payload class/eligibility only, PII-free; logs NOT_OBSERVED_YET). Behavior flags OFF (dictionaries/gates dormant in prod code). GT still MISSING → accuracy not run. OWNER_QUEUE refreshed (durability/PR/merge/metric marked DONE; open = GT fill → accuracy → SMART decision → PII sweep). Next blocker = owner GT; no new code until accuracy loop closes.
