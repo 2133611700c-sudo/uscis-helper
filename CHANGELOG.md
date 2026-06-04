@@ -3,6 +3,20 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — P2 dictionary checkpoint + PROD-FLAG CORRECTION (docs only, no code)
+
+**Correction:** the prior DOOR_ALIGNMENT_TRACE / Session-104 entries claimed "all Core flags OFF / zero prod effect" — WRONG (read a local .env, not prod). Owner pulled prod env from Vercel: `ONE_CORE_TPS_ENABLED=1`, `ONE_BRAIN_CORE_ENABLED=1`, `ONE_CORE_REPAROLE_ENABLED=true`, `ONE_CORE_EAD_ENABLED=true` — Core is ON; the live `readDocument → arbitrate` brain serves clients NOW on all 4 products. ONLY `SMART_NORMALIZE_ENABLED` is ABSENT (OFF) → the 3 P2 dictionary branches are dark while the live path runs.
+
+**Raw gating proof:** all three dictionaries hang ONLY on `SMART_NORMALIZE_ENABLED` — snapCity `dictionaryBridge.ts:106`; patronymic+authority post-passes `documentFieldReader.ts:87`; `patronymicReconcile.ts`/`authorityResolve.ts` read no env.
+
+**If SMART_NORMALIZE_ENABLED=1 in prod (Core already ON):** all 3 would touch real client fields immediately — snapCity on place_city, patronymic review-guard on middle_name/child_patronymic, authority resolve on kind:'agency'. Real behavioral change, not a no-op.
+
+**Gate:** enabling SMART_NORMALIZE in prod is FORBIDDEN until owner ground-truth + measured OFF-vs-ON delta. No accuracy claim before then. Owner-only.
+
+**docs/reports/P2_DICTIONARY_IN_LIVE_PATH_CHECKPOINT.md** (NEW): P2.1/P2.2/P2.3 as dictionaries inside the live path; goal/known/not-confirmed/decision/door-model/exceptions/risks. DOOR_ALIGNMENT_TRACE.md + STATUS + HANDOFF corrected. Checks: YAML_OK, typecheck PASS, snapCity 4/4 + patronymic 8/8 + authority 13/13 = 25/25. HEAD 21e90c6. Docs only. Not pushed. P2.4/P2.5 frozen.
+
+---
+
 ## 2026-06-03 — DOOR_ALIGNMENT_TRACE (documentation checkpoint, no code)
 
 **docs/reports/DOOR_ALIGNMENT_TRACE.md** (NEW): raw call-graph of the 3 smart dictionaries (snapCity / patronymic / authority) across all 4 products. Verdict: `readDocument` is the canonical door — it runs Door A (per-field `toCanonicalValue`→snapCity) then Door B (document-level post-passes patronymic+authority), so the Core path of all 4 products applies all 3 dictionaries; divergence is per-PATH not per-product. Exceptions: TPS legacy booklet arbiter (`visionReadsToFields`, Door A only), centralBrain side-path (snapCity only), Re-Parole i94/ead/dl fallback. Prod reality: all Core flags + SMART_NORMALIZE_ENABLED OFF → no prod effect today. Recommendation: keep readDocument as the one door now; true single-door cleanup = P5 owner-gated migration, deferred (dirty tree + no ground truth + in-flight Gemini/Vision). STATUS/HANDOFF updated. Docs only — no code change. HEAD 21e90c6. Not pushed.
