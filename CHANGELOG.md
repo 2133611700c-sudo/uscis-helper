@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — feat(core): hard-case identity force-review gate (flag default OFF)
+
+Minimal anti-fabrication class gate. New `docintel/antiFabricationGate.ts` `applyAntiFabricationGate(fields, docTypeId)`: on hard-case classes (isHardCase), forces review_required=true on identity-critical fields (family/given/patronymic/middle_name, *_full_name, dob/date_of_birth, place_of_birth/place_city, issuing_authority + role-grounded variants) and attaches reasons (hard_case_document/model_instability_risk/no_strong_identity_anchor). Never changes values, never lowers a flag, no invention. Wired in `documentFieldReader` behind `ANTI_FABRICATION_GATE_ENABLED` (default OFF → byte-identical) at the shared door → all 4 products covered (closes Re-Parole/EAD gap). Passports (internal_passport_booklet, not hard-case) untouched → MRZ fields not blanket-forced. Added optional `review_reasons?` to ExtractedDocField. Tests: antiFabricationGate.test.ts (pure + readDocument OFF/ON gating + 4-route coverage); docintel 46 pass; canonical/core 247 pass; typecheck PASS. Two-read self-consistency + blur/rotation NOT implemented; flag not enabled; model default unchanged; SMART_NORMALIZE OFF; P2.4/P2.5 frozen; not pushed.
+
+---
+
 ## 2026-06-04 — docs(core): anti-fabrication gate design (no code)
 
 Design for a hard-case forced-review gate (`docs/reports/ANTI_FABRICATION_GATE_DESIGN.md`). Raw finding: `documentClassPolicy.ts` already has the primitives (hard-case classes, isHardCase:147, applyHardCaseReviewOverride:209, role guard:167, checkImageQuality:234) but they're wired ONLY in tps + translation routes — reparole + ead routes have 0 calls (2/4 products uncovered), and the guards sit in the route layer not the shared readDocument door. Missing: self-consistency/multi-read identity-hash detector; blur/rotation signal; identity-field-level force. Reco: insert at documentFieldReader (covers all 4) behind ANTI_FABRICATION_GATE_ENABLED (default OFF); class gate baseline + 2× same-model read on hard-case identity (disagree → instability + force review); MRZ precedence for passports; only raises review, never changes values. Honest: 3.5-flash N=1 = risk signal not proof; no prod-default change; gate needed regardless of model. P2.4/P2.5 frozen; SMART_NORMALIZE OFF; no prod env; not pushed.
