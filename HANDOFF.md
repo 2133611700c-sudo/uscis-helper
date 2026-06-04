@@ -10,6 +10,43 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104d (2026-06-03)
+
+## Session 104d — P2 dictionary-in-live-path checkpoint (documentation only, NO code)
+
+Architecture fix of the three P2 dictionary bricks as part of ONE live brain.
+Report: `docs/reports/P2_DICTIONARY_IN_LIVE_PATH_CHECKPOINT.md`.
+
+**Locked facts:**
+- P2.1 snapCity (city/place), P2.2 patronymic (VALIDATION/review-guard ONLY — not
+  reconstruction), P2.3 authority (registry resolver, review preserved, no silent
+  downgrade) — all COMMITTED. HEAD `21e90c6`.
+- All three gated ONLY by `SMART_NORMALIZE_ENABLED` and nothing else (raw:
+  `dictionaryBridge.ts:106` snapCity; `documentFieldReader.ts:87` patronymic+authority;
+  `patronymicReconcile.ts`/`authorityResolve.ts` read no env). **Absent in prod → OFF.**
+- **PROD CORRECTION:** Core flags ARE ON in prod (all 4 routes live). If
+  `SMART_NORMALIZE_ENABLED=1` were set tomorrow, all 3 dictionaries would touch REAL
+  client fields immediately (place_city / patronymic / issuing-authority). Enabling
+  it in prod is **FORBIDDEN** until owner ground-truth + measured OFF-vs-ON delta
+  (owner-only; agents must not set it).
+- Accuracy NOT claimed — no owner ground truth yet.
+- Door model: Door A (per-field, dictionaryBridge/toCanonicalValue) + Door B
+  (document-level post-passes, documentFieldReader) run in sequence on the
+  `readDocument` path → all 3 dictionaries for all 4 products. Exceptions: legacy
+  TPS arbiter, centralBrain side-path, Re-Parole fallback classes. True single-door
+  = P5 consolidation, deferred (owner-gated, premature now).
+
+**Checks:** YAML_OK; typecheck PASS; snapCity 4/4 + patronymic 8/8 + authority 13/13
+= 25/25.
+
+**Frozen / not done:** P2.4 (settlement) + P2.5 (server classifyGarbage) FROZEN.
+Not pushed. Owner ground-truth still missing.
+
+**Next before P2.4 (NOT a brick):** triage the dirty working tree — the in-flight
+Gemini/Vision changes (`gemini/model.ts`, `visionCredentials.ts` ADC,
+`vision-extract/route.ts`, `presence.ts`, `geminiVisionProvider.ts`) — land or
+revert them; and obtain owner-filled ground truth. Both are owner decisions.
+
 # HANDOFF — Session 104c (2026-06-03)
 
 ## Session 104c — DOOR_ALIGNMENT_TRACE (documentation checkpoint, NO code)
@@ -29,8 +66,12 @@ only authority value-resolution is absent there. (2) centralBrain side-path
 (`normalize()` ← `centralBrain.ts:152`) — snapCity only; do-not-touch/retire.
 (3) Re-Parole i94/ead/dl fall back to `/api/tps`.
 
-**Prod reality:** all Core flags + `SMART_NORMALIZE_ENABLED` are OFF → none of
-P2.1/2.2/2.3 affects production today.
+**Prod reality (CORRECTED 2026-06-03):** Core flags are ON in prod (owner-verified
+from Vercel: `ONE_CORE_TPS_ENABLED=1`, `ONE_BRAIN_CORE_ENABLED=1`,
+`ONE_CORE_REPAROLE_ENABLED=true`, `ONE_CORE_EAD_ENABLED=true`) → the live
+`readDocument → arbitrate` brain serves clients NOW on all 4 products. ONLY
+`SMART_NORMALIZE_ENABLED` is absent (OFF) → the 3 P2 dictionary branches are dark.
+(The earlier "all Core OFF" claim was wrong — read a local `.env`, not prod.)
 
 **Decision:** keep `readDocument` as the one door now (this checkpoint). Defer the
 true single-door cleanup (retire the arbiter + centralBrain side-path, dedup the

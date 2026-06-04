@@ -41,12 +41,12 @@ the full field set and must preserve a `review_required` signal that the bare-st
 
 `readDocument` is called by all 4 product routes, each behind its own flag:
 
-| Product | call site | flag (default OFF) | coverage |
-|---|---|---|---|
-| TPS | `tps/ocr/extract/route.ts:266` | `ONE_CORE_TPS_ENABLED==='1'` | only docs mapping to passport/booklet (else `skipped_no_mapping`) |
-| Translation | `translation/vision-extract/route.ts:217,263` | `ONE_BRAIN_CORE_ENABLED==='1'` | all pages |
-| Re-Parole | `reparole/ocr/extract/route.ts:188` | `ONE_CORE_REPAROLE_ENABLED==='true'` | passport/booklet; i94/ead/dl fall back to `/api/tps` |
-| EAD | `ead/ocr/extract/route.ts:170` | `ONE_CORE_EAD_ENABLED==='true'` | — |
+| Product | call site | flag (code default OFF) | PROD value (owner-verified 2026-06-03) | coverage |
+|---|---|---|---|---|
+| TPS | `tps/ocr/extract/route.ts:266` | `ONE_CORE_TPS_ENABLED==='1'` | **ON (=1)** | only docs mapping to passport/booklet (else `skipped_no_mapping`) |
+| Translation | `translation/vision-extract/route.ts:217,263` | `ONE_BRAIN_CORE_ENABLED==='1'` | **ON (=1)** | all pages |
+| Re-Parole | `reparole/ocr/extract/route.ts:188` | `ONE_CORE_REPAROLE_ENABLED==='true'` | **ON (=true)** | passport/booklet; i94/ead/dl fall back to `/api/tps` |
+| EAD | `ead/ocr/extract/route.ts:170` | `ONE_CORE_EAD_ENABLED==='true'` | **ON (=true)** | — |
 
 **Verdict:** the divergence is NOT per-product. It is per-PATH. On the
 `readDocument` (canonical) path, all 4 products run both doors → all three
@@ -68,13 +68,26 @@ dictionaries apply. `readDocument` is the canonical door.
    falls back to `/api/tps/ocr/extract`. Those classes never reach `readDocument`
    here regardless of door.
 
-## Production reality
+## Production reality (CORRECTED 2026-06-03 — owner pulled prod env from Vercel)
 
-ALL Core flags are OFF in prod (`ONE_CORE_TPS_ENABLED`, `ONE_BRAIN_CORE_ENABLED`,
-`ONE_CORE_REPAROLE_ENABLED`, `ONE_CORE_EAD_ENABLED`) and so is `SMART_NORMALIZE_ENABLED`.
-**None of P2.1/P2.2/P2.3 affects production today.** "One door for all 4" is provable
-only on the flag-gated Core paths, which are not live. This is the pre-existing
-One-Brain debt recorded in Session 103.
+**The Core flags are ON in production**, owner-verified directly from Vercel:
+`ONE_CORE_TPS_ENABLED=1`, `ONE_BRAIN_CORE_ENABLED=1`, `ONE_CORE_REPAROLE_ENABLED=true`,
+`ONE_CORE_EAD_ENABLED=true`. So the live brain `readDocument → arbitrateDocument`
+**is running for real clients NOW** on all 4 products (for the doc classes each
+route maps to Core).
+
+`SMART_NORMALIZE_ENABLED` is **ABSENT (OFF)** in prod. So the P2.1/P2.2/P2.3
+dictionary branches are the ONLY part that is dark — the live path itself runs,
+but inside it: `normalizeCity` runs without the snapCity sub-branch, and
+`documentFieldReader` runs without the patronymic + authority post-passes.
+
+> Earlier versions of this report (and the Session-104 STATUS) claimed "all Core
+> flags OFF / zero prod effect" — that was WRONG (read a local `.env`, not prod).
+> Corrected here.
+
+The remaining One-Brain debt (Session 103: per-class Core-bypass, legacy arbiter,
+centralBrain side-path) is unchanged — but it sits ALONGSIDE a live Core, not
+instead of one.
 
 ## Architecture recommendation
 
