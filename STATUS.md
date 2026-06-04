@@ -1,4 +1,10 @@
 # STATUS — Messenginfo
+## Session 105c (2026-06-04) — L3: GT-language intent + calibration plan + templates (docs only)
+- `GT_LANGUAGE` DECIDED: value = AS-WRITTEN on document; normalized_value = canonical (KMU/ISO/UA); dictionary = hint/conflict, NEVER silent overwrite. Fixes the RU-doc-vs-UA-GT scoring artifact. `docs/reports/GT_LANGUAGE_INTENT.md`.
+- `CALIBRATION_PLAN` `docs/reports/ONEBRAIN_L3_GT_CALIBRATION_PLAN.md`: 6–10 docs across categories (soviet/UA-printed/UA-handwritten birth, passport/ID, EAD, I-94); critical fields; always-force_review signals vs lower-confidence-only; metrics before canary (false_negative_review=0 target, false_positive, DOB/name/place caught, review_rate_by_doc_type, missing_rate, model_disagreement later).
+- `TEMPLATES` +3 PII-free versioned: birth_cert_ua_printed, international_passport, id_card (docs/templates/ground-truth/). EAD/I-94 templates TBD from adapters (no field invention).
+- `BLOCKER` real unblock = owner fills expanded GT batch (value as-written, VERIFIED_BY_OWNER). Then agent calibrates thresholds → L2-WIRE shadow-first.
+- `UNCHANGED` no decideField wiring; no /api change; no flag; no model/SMART/HTR; no prod env; no deploy; no PII.
 ## Session 105b (2026-06-04) — L2 SCAFFOLD: decideField() implemented, NOT wired (prod byte-identical)
 - `SCAFFOLD` `docintel/oneBrain/decideField.ts` (NEW, pure) + types + `scoredForAccuracy()`. Implements L1 contract: value(reads/anchor) + separate normalized_value(dict signal) + decision(accept/accept_low_confidence/force_review/reject) + reasons + source_trace + safety_flags + sha256 audit_hash.
 - `BYTE_IDENTICAL` decideField imported by NO /api route and NOT by documentFieldReader (grep NO_LIVE_CALLER) → prod byte-identical. Reserved flag `ONEBRAIN_DECIDE_FIELD_ENABLED` (default OFF) read by nothing yet.
