@@ -27,7 +27,7 @@ NOT "fix" this silently — that would be dictionary-fabrication. It may only si
 - **KMU-55 transliteration (Cabinet Resolution №55, 2010-01-27)** — the sourced UA→Latin rule, applied
   ONLY AFTER a correct Ukrainian read. Not a guess, not a repair for a wrong read.
 - **Dictionaries / gazetteer / authority resolver** — SIGNAL/conflict/provenance only; never silently
-  rewrite a name (Сергей→Сергій would be fabrication-by-dictionary).
+  rewrite a name into its Russian↔Ukrainian counterpart — that would be fabrication-by-dictionary.
 - **Anti-fabrication + self-consistency gate** — forces review on hard-case identity; mode C drove
   false_negative_review to 0 on the measured pair and caught the month error the bare model missed.
 
