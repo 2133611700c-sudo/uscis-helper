@@ -115,4 +115,11 @@ export interface DocumentReadResult {
   ms: number
   status: string
   error?: string
+  /** Self-consistency gate outcome (only set when the gate ran). PII-free. */
+  self_consistency?: {
+    status: 'agree' | 'mismatch' | 'incomplete' | 'insufficient_identity_fields'
+    instability: boolean
+    identity_hash_prefix?: string
+    runs?: number
+  }
 }
