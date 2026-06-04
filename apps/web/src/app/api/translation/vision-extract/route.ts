@@ -32,6 +32,7 @@ import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
+import { normalizeGeminiModel } from '@/lib/gemini/model'
 // Central Brain (flag-gated, default OFF → prod behavior unchanged)
 import { analyze } from '@/lib/central-brain'
 import { deepseekProseTranslator } from '@/lib/engine/translator'
@@ -213,7 +214,7 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < rawFiles.length; i++) {
         const file = rawFiles[i]
         const buffer = Buffer.from(await file.arrayBuffer())
-        const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 20_000 })
+        const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 20_000, product: 'translation' })
         corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
         if (r.ok && Array.isArray(r.fields)) {
           // Preserve Cyrillic BEFORE conversion to candidates (KMU-55 erases it)
@@ -231,7 +232,7 @@ export async function POST(req: NextRequest) {
           ok: true, doc_type_id: docTypeId, fields,
           pages: corePageResults, page_count: rawFiles.length,
           provider: 'one-brain-core:translation-b2',
-          model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+          model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
           status: 'ok:core-b2',
           core_version: 'b2',
         }, { status: 200 })
@@ -259,7 +260,7 @@ export async function POST(req: NextRequest) {
     const buffer = pre?.ok ? pre.buffer : rawBuffer
     const effectiveMime = pre?.ok ? pre.mimeType : mime
     try {
-      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 15_000 })
+      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 15_000, product: 'translation' })
       lastResult = r
       pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
       if (r.ok && Array.isArray(r.fields)) {
