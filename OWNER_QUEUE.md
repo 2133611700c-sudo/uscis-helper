@@ -10,15 +10,23 @@ Agents do NOT perform these. Newest first.
 - ✅ `DOCUMENT_CLASS_METRICS_ENABLED=1` set in Production (metric code now in prod via main).
 - ✅ Prod health verified (messenginfo.com ok, latest deploy Ready).
 
+**DONE:**
+- ✅ GT filled (VERIFIED_BY_OWNER, 6 identity fields) + accuracy OFF-vs-ON run (see `ACCURACY_OFFON_RESULTS.md`).
+
 **OPEN — owner only:**
-1. **Fill ground-truth** (human transcription, NOT model output) for
-   `qa-private/ground-truth/birth_cert_soviet_*.json` + `birth_cert_handwritten_*.json` →
-   `ground_truth_status: VERIFIED_BY_OWNER`. Guide: `docs/reports/GT_OWNER_FILL_GUIDE.md`.
-2. After GT: tell the agent → it runs the local OFF-vs-ON accuracy verification (no prod).
-3. After accuracy: decide whether to enable `SMART_NORMALIZE_ENABLED` (and later anti-fab/self-consistency)
-   in a canary — owner authorization required; agent will not enable behavior flags alone.
-4. Later: PII history sweep before sharing the repo externally (surname/`FU262473`/DOB are pervasive in
-   main history — Session-54 debt; not a blocker for internal work).
+1. **Clarify GT language intent:** should ground-truth be "as written on the document" (Russian, e.g.
+   Сергей/Сергеевич) or "canonical Ukrainian" (Сергій/Сергійович)? The test docs are Russian-language;
+   exact-match scoring currently counts RU↔UA spelling as "wrong". This changes which per-field misses are
+   real errors vs expected transliteration.
+2. **Provide more/varied GT** (different people, Ukrainian-language docs). Current evidence = N=2/one-person
+   = signal, not a prod-grade verdict.
+3. **Flag decisions (after more GT):** `SMART_NORMALIZE_ENABLED` = **DO_NOT_ENABLE** on current evidence
+   (no accuracy gain, small UX cost). The evidence-supported safety lever is instead the
+   `ANTI_FABRICATION_GATE_ENABLED` (+ optional `SELF_CONSISTENCY_GATE_ENABLED`) — mode C drove
+   false_negative_review to 0 in all cells — but enabling it is an owner decision and still wants more GT.
+   See `SMART_NORMALIZE_DECISION.md`.
+4. Later: PII history sweep before sharing the repo externally (surname/`FU262473`/DOB pervasive in main
+   history — Session-54 debt; not a blocker for internal work).
 
 **Agent can do autonomously (not owner-gated):** verify the `[document_class_metric]` line via Vercel
 runtime logs once a real document is processed in prod (currently NOT_OBSERVED_YET — no extraction since deploy).
