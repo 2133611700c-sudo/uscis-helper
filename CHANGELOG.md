@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — feat(core): add self-consistency gate for handwritten documents
+
+New `docintel/selfConsistency.ts`: instability detector (NOT majority vote / NOT correctness). identityHash over raw pre-KMU tuple (family/given/patronymic/dob/place; normalizeForCompare only — no KMU/dictionary, so a normalizer can't mask disagreement); decideStatus (insufficient/incomplete/mismatch/agree); applySelfConsistencyOutcome (mismatch/incomplete/insufficient → force identity review + reason; agree → unchanged; never changes values/never claims correct). Wired in readDocument: runs ONLY when SELF_CONSISTENCY_GATE_ENABLED=1 AND ANTI_FABRICATION_GATE_ENABLED=1 AND docClass ∈ handwritten allowlist; re-reads same image (SELF_CONSISTENCY_RUNS default 2, clamp 2–4; SELF_CONSISTENCY_TIMEOUT_MS); no second read for passport/printed-marriage/unknown. PII-free DocumentReadResult.self_consistency (status/instability/hash-prefix/runs). Honest: on the current narrow allowlist the class gate already forces identity review → marginal effect now = instability signal+reason, not a new review. Tests: selfConsistency.test.ts + documentClassMetric.test.ts (synthetic name fixtures, no PII); docintel+canonical/core 317 pass; typecheck PASS. Different-model fanout NOT done. Flags default OFF; no prod env; model default unchanged; P2.4/P2.5 frozen; not pushed. (commit 2 of 2)
+
+---
+
 ## 2026-06-04 — feat(metrics): record document class counts without PII
 
 New `docintel/documentClassMetric.ts`: `recordDocumentClassMetric({product, docTypeId})` emits a PII-free `document_class_count` record (product/doc_type_id/doc_class/anti_fabrication_allowlist_eligible/self_consistency_eligible) only when `DOCUMENT_CLASS_METRICS_ENABLED=1` (default OFF → silent). Signature accepts no identity fields → PII unrepresentable. Emitted from inside readDocument (one door → all 4) via new optional opts.product; 4 routes pass their product. Logging only, no behavior change, never throws. Purpose: learn real allowlist_traffic_share to judge self-consistency cost from data. Tests: documentClassMetric.test.ts (eligibility; record keys are class/eligibility only, no PII; emit gating/no-throw); docintel 54 pass; typecheck PASS. Flag OFF; no prod env; not pushed. (commit 1 of 2)
