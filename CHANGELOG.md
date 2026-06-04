@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(onebrain): L3 GT-language intent + calibration plan + templates
+
+GT-language intent DECIDED (GT_LANGUAGE_INTENT.md): value = as-written on document; normalized_value = canonical; dictionary = hint, never silent overwrite (fixes RU-doc-vs-UA-GT scoring artifact). Calibration plan (ONEBRAIN_L3_GT_CALIBRATION_PLAN.md): 6–10 doc GT batch across categories, field criticality, always-force_review vs lower-confidence-only signal policy, pre-canary metrics (false_negative_review=0 target + false_positive/DOB-name-place-caught/review_rate_by_doc_type/missing_rate/model_disagreement-later), threshold-tuning procedure. +3 PII-free versioned templates (birth_cert_ua_printed, international_passport, id_card); EAD/I-94 deferred (adapter fields, no invention). Real unblock = owner fills expanded GT batch. No wiring; no /api change; no flag; no model/SMART/HTR; no prod env; no deploy; no PII.
+
+---
+
 ## 2026-06-04 — feat(onebrain): L2 scaffold decideField() (not wired; prod byte-identical)
 
 New docintel/oneBrain/decideField.ts (pure) + types + scoredForAccuracy(), implementing the L1 contract: value(reads/strong-anchor), separate normalized_value(kmu55 signal only), decision accept|accept_low_confidence|force_review|reject, review_reasons, source_trace, safety_flags, sha256 audit_hash. NOT wired (NO_LIVE_CALLER — no /api route nor documentFieldReader imports it) → prod byte-identical; reserved flag ONEBRAIN_DECIDE_FIELD_ENABLED default OFF read by nothing. Tests (decideField.test.ts): dict never overwrites value; critical+review-signal→force_review; self-consistency mismatch→force_review (model conf can't override); scoredForAccuracy honors owner_verified+candidate_not_verified; reject on no source; pure. typecheck PASS; 83 tests pass; synthetic values (no PII). Deferred: wiring (L2-wire, shadow-first), threshold numbers (L3 PLACEHOLDER), 2nd reader/HTR (L4). consensus.ts untouched; SMART/HTR/model unchanged; no prod env/flags/deploy.

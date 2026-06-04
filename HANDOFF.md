@@ -1,3 +1,15 @@
+# HANDOFF — Session 105c (2026-06-04)
+
+## Session 105c — L3: GT-language intent + calibration plan + templates (docs/GT-workflow only)
+
+- **GT-language intent DECIDED** (`GT_LANGUAGE_INTENT.md`): `value` = AS WRITTEN on the document (RU doc → RU form); `normalized_value` = canonical (KMU-55 Latin / ISO / UA); dictionary = hint/conflict, never a silent overwrite. This removes the accuracy artifact where a correct Russian read was penalized vs a Ukrainian GT. Matches the decideField value/normalized split exactly.
+- **Calibration plan** (`ONEBRAIN_L3_GT_CALIBRATION_PLAN.md`): GT batch (6–10 docs, categories a–f), field criticality, signal→decision policy (always-force_review vs lower-confidence-only), pre-canary metrics (false_negative_review must be 0; + false_positive, DOB/name/place caught, review_rate_by_doc_type, missing_rate, model_disagreement later), and the procedure to tune ACCEPT_THRESHOLD (PLACEHOLDER → calibrated).
+- **Templates** (+3, PII-free, versioned under docs/templates/ground-truth/): birth_cert_ua_printed, international_passport, id_card. EAD/I-94 deferred (fields from eadAdapter/reParole, not invented).
+
+**Real unblock = owner fills the expanded GT batch** (copy template → qa-private, fill value as-written, VERIFIED_BY_OWNER + owner_verified_fields). Then: agent runs accuracy on the batch → calibrate thresholds → ONLY then L2-WIRE (shadow-first, flag OFF, prod byte-identical).
+
+No decideField wiring; no /api change; no flag enabled; no model/SMART/HTR; no prod env; no deploy; no PII; filled GT stays in qa-private (gitignored).
+
 # HANDOFF — Session 105b (2026-06-04)
 
 ## Session 105b — L2 SCAFFOLD: decideField() (not wired; prod byte-identical)
