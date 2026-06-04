@@ -118,6 +118,9 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       // загранпаспорт MRZ doesn't carry it. Booklet is the ONLY automated source.
       'city_of_birth',
       'province_of_birth',
+      // patronymic = the source-doc field («По батькові»); middle_name kept as a
+      // backward-compat alias (legacy module / older reads still emit middle_name).
+      'patronymic',
       'middle_name',
       // Wave2: dual-OCR cross-reference can reconstruct surname from
       // two OCR readings. Field Arbiter still gives MRZ priority.

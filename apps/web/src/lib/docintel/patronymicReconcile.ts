@@ -27,7 +27,7 @@ import type { Sex } from '@uscis-helper/knowledge'
 import type { ExtractedDocField } from './types'
 
 /** Field ids that hold a single-token patronymic, per the document registry. */
-const PATRONYMIC_FIELDS = new Set(['middle_name', 'child_patronymic'])
+const PATRONYMIC_FIELDS = new Set(['patronymic', 'middle_name', 'child_patronymic'])
 
 /** Infer sex from the patronymic's own suffix (ович/ич → M, івна/ічна → F). */
 function inferSexFromPatronymic(cyrillic: string): Sex | null {
