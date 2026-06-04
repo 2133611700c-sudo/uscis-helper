@@ -1,3 +1,17 @@
+# HANDOFF — Session 104y (2026-06-04)
+
+## Session 104y — Accuracy OFF-vs-ON measured (gate proven; SMART no gain)
+
+Owner filled GT (VERIFIED_BY_OWNER, 6 identity fields). Ran the accuracy matrix locally: 2 docs × A/B/C × {2.5-flash, 3.1-pro} = 12 cells, scored only the 6 owner-verified fields. Raw → qa-private (ignored); sanitized reports `ACCURACY_OFFON_RESULTS.md` + `SMART_NORMALIZE_DECISION.md`.
+
+**Key results:**
+- **Gate works:** mode C (anti-fab + self-consistency) → `false_negative_review = 0` in ALL 12 cells. Without it, 2.5-flash ships 5 wrong identity fields review=false and MISSES the DOB month error (GT 06, read 02); mode C CAUGHT it, self_consistency=mismatch.
+- **SMART_NORMALIZE: no accuracy gain** (B==A) + one false-positive review → **DO_NOT_ENABLE** now; NEEDS_MORE_DATA to revisit.
+- **Model:** 3.1-pro safer than 2.5-flash on hard-case (self-flags DOB; 2.5-flash reads a different person, FN=5). Gate mandatory regardless. Firm model choice = NEEDS_MORE_DATA.
+- **Caveat:** docs are Russian-language, GT is Ukrainian-canonical → some 'wrong' is RU↔UA spelling, not fabrication. Owner must clarify GT language intent. N=2/one-person = signal not proof.
+
+**Decision pointer:** the high-value safety lever is the anti-fabrication/self-consistency GATE, NOT SMART_NORMALIZE. Enabling any behavior flag remains an owner decision and wants more GT. No prod env touched; no flags enabled; no model change; no push of code.
+
 # HANDOFF — Session 104x (2026-06-04)
 
 ## Session 104x — ETAP1: simplified GT fill for owner (no fabrication)
