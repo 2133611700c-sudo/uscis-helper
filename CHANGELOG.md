@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-03 — P2 OFF-vs-ON harness BLOCKED on owner inputs (docs only, no code)
+
+Requested to measure the P2.1–P2.3 OFF-vs-ON accuracy delta vs ground truth. **Precondition not met → stopped** (raw): GT files all `ground_truth_status="NEEDS_OWNER"`, 0 filled fields (0/11, 0/11, 0/7); no document images in `test-fixtures/real-docs/` (`NO_IMAGES_FOUND`). `readDocument` has nothing to read; nothing to compare. Did NOT write an unrunnable harness; NO accuracy claim. `OWNER_QUEUE.md` updated: owner must supply (1) document images → `test-fixtures/real-docs/` (gitignored) + (2) filled GT values + `VERIFIED_BY_OWNER`. Enabling `SMART_NORMALIZE_ENABLED` in prod stays FORBIDDEN (Core already ON). STATUS/HANDOFF updated. Docs only. HEAD 21e90c6. Not pushed.
+
+---
+
 ## 2026-06-03 — P2 dictionary checkpoint + PROD-FLAG CORRECTION (docs only, no code)
 
 **Correction:** the prior DOOR_ALIGNMENT_TRACE / Session-104 entries claimed "all Core flags OFF / zero prod effect" — WRONG (read a local .env, not prod). Owner pulled prod env from Vercel: `ONE_CORE_TPS_ENABLED=1`, `ONE_BRAIN_CORE_ENABLED=1`, `ONE_CORE_REPAROLE_ENABLED=true`, `ONE_CORE_EAD_ENABLED=true` — Core is ON; the live `readDocument → arbitrate` brain serves clients NOW on all 4 products. ONLY `SMART_NORMALIZE_ENABLED` is ABSENT (OFF) → the 3 P2 dictionary branches are dark while the live path runs.
