@@ -3,11 +3,28 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
-## 2026-06-03 — P2 ground-truth (blocks P2 accuracy proof)
+## 2026-06-03 — P2 ground-truth (BLOCKS the OFF-vs-ON accuracy delta) — STILL OPEN
 
-P2 (`SMART_NORMALIZE_ENABLED`, default OFF) is wired and tests pass, but
-"better" cannot be claimed without verified ground-truth. Blank, PII-free
-templates are versioned at **`docs/templates/ground-truth/`**:
+**Verified 2026-06-03 (raw):** the OFF-vs-ON harness was requested but CANNOT run —
+precondition not met:
+- `test-fixtures/real-docs/ground-truth/*.json` → all `ground_truth_status="NEEDS_OWNER"`,
+  `0` filled fields (birth_cert_handwritten 0/11, birth_cert_soviet 0/11, military_id_p1 0/7).
+- No document images in `test-fixtures/real-docs/` (`NO_IMAGES_FOUND`) — `readDocument`
+  has nothing to read.
+
+**Two things are needed from the owner to unblock the accuracy measurement:**
+1. The DOCUMENT IMAGES (birth cert soviet / handwritten, military id p1) placed in
+   `test-fixtures/real-docs/` (gitignored) — needed to run `readDocument`.
+2. The GROUND-TRUTH VALUES filled into the JSONs + `ground_truth_status=VERIFIED_BY_OWNER`.
+
+Once both exist, the harness runs each doc through `readDocument` twice
+(`SMART_NORMALIZE_ENABLED` unset vs `=1`) and reports the per-field delta. **Until
+then, enabling `SMART_NORMALIZE_ENABLED` in prod stays FORBIDDEN** (Core is already
+ON in prod — see `docs/reports/P2_DICTIONARY_IN_LIVE_PATH_CHECKPOINT.md`).
+
+---
+
+Blank, PII-free templates are versioned at **`docs/templates/ground-truth/`**:
 
 - `birth_cert_soviet.template.json`
 - `birth_cert_handwritten.template.json`

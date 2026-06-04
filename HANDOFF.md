@@ -10,6 +10,33 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104e (2026-06-03)
+
+## Session 104e — P2 OFF-vs-ON accuracy harness: BLOCKED on owner inputs
+
+Asked to measure the P2.1–P2.3 OFF-vs-ON delta against ground truth. **Precondition
+not met → stopped before any run** (per the task's own gate).
+
+**Raw check:**
+- `test-fixtures/real-docs/ground-truth/*.json`: all `ground_truth_status="NEEDS_OWNER"`,
+  filled fields 0/11, 0/11, 0/7.
+- `test-fixtures/real-docs/`: no document images (`NO_IMAGES_FOUND`).
+
+So `readDocument` cannot run on a real doc and there is nothing to compare against.
+I did NOT write a harness that cannot run or be validated, and made NO accuracy claim.
+
+**Unblock (owner, both required):** (1) put the document IMAGES into
+`test-fixtures/real-docs/` (gitignored); (2) fill the GT JSON values and set
+`ground_truth_status=VERIFIED_BY_OWNER`. Recorded in `OWNER_QUEUE.md`.
+
+**Then:** harness runs each doc through `readDocument` twice (`SMART_NORMALIZE_ENABLED`
+unset vs `=1`), emits a per-field table (OFF / ON / GT / verdict improved|same|regressed|→review),
+flags any regression (correct-OFF → wrong-ON), counts review escalations, and gives a
+go/no-go on enabling the flag in prod — with numbers.
+
+**Gate unchanged:** enabling `SMART_NORMALIZE_ENABLED` in prod FORBIDDEN until that
+delta is measured (Core already ON in prod). HEAD code `21e90c6`. P2.4/P2.5 frozen. Not pushed.
+
 # HANDOFF — Session 104d (2026-06-03)
 
 ## Session 104d — P2 dictionary-in-live-path checkpoint (documentation only, NO code)
