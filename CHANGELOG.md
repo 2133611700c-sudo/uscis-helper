@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(arch): L1 OneBrain decideField() contract (design-only)
+
+Designed the single per-field decision contract: docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md + docs/reports/ONEBRAIN_L1_DESIGN_REVIEW.md. decideField(input)→FieldDecision (accept/accept_low_confidence/force_review/reject) with source_trace + audit_hash. Rules: dictionary=signal never silent-rewrite (separate normalized_value); critical identity stricter + no accept w/o strong anchor under review signals; self-consistency mismatch on DOB/name/place→force_review (model review=false can't override); candidate_not_verified excluded from accuracy penalties; strong-anchor precedence; never lower flag/never blank; no raw PII in artifacts. Maps onto existing live code → L2=consolidation not rewrite; consensus.ts left dormant (not removed). Thresholds + second reader deferred to L3/L4. No runtime change; no flags; no prod env; no PII; no code push.
+
+---
+
 ## 2026-06-04 — docs: architecture inventory verdict + OneBrain target
 
 PASS_AS_TRUTH_INVENTORY / DEGRADED_AS_TARGET. Raw: consensus.ts dormant (no /api caller; central-brain skipped when ONE_BRAIN_CORE_ENABLED=1); HTR not live (htr.ts 0 transcripts, Transkribus auth blocked); live = 1 Gemini read + arbitrateDocument + gates. Target = OneBrain single field-decision center (decideField schema) — readers/dictionaries(as signal, not silent rewrite)/normalization/validators/anti-fab/self-consistency/quality/audit inside; no dead consensus branch; real consensus = different independent readers. Decisions: SMART_NORMALIZE DO_NOT_ENABLE, HTR DO_NOT_BUILD, model DO_NOT_SWITCH, gate PREPARE_CANARY only. Priorities L0 verdict→L1 OneBrain contract→L2 fold gate in→L3 expand GT→L4 second reader/HTR if justified. docs/reports/ARCHITECTURE_INVENTORY_VERDICT.md + OWNER_QUEUE. docs-only; no prod env/flags/deploy/PII.
