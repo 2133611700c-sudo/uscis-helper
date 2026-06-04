@@ -401,8 +401,9 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       continue
     }
 
-    // ── MIDDLE_NAME (PATRONYMIC) — booklet Cyrillic → Latin ─────────────
-    if (f.field === 'middle_name' && (f.normalized_value || f.raw_value)) {
+    // ── PATRONYMIC («По батькові») — booklet Cyrillic → Latin ─────────────
+    // Accept both the correct source key `patronymic` and the legacy `middle_name`.
+    if ((f.field === 'patronymic' || f.field === 'middle_name') && (f.normalized_value || f.raw_value)) {
       const raw = (f.raw_value || '').trim()
       const norm = (f.normalized_value || '').trim()
       const input = norm || raw
