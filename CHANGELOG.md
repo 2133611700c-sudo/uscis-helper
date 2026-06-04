@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — chore(git): protect private QA data + correct "no images" claim
+
+`qa-private/` (filled PII ground-truth) and `reports/` were NOT gitignored → added both to `.gitignore` (qa-private had 0 tracked files — no history leak). `git rm --cached qa-shots/.DS_Store`. `qa-shots/private/` already ignored. **Correction:** prior `NO_IMAGES_FOUND` was false (broken zsh glob) — real originals exist under `test-fixtures/real-docs/` + `qa-shots/private/` (both ignored); the real P2-accuracy blocker is missing VERIFIED ground-truth for hard-case docs, not images. typecheck PASS. Not pushed. SMART_NORMALIZE OFF; P2.4/P2.5 frozen.
+
+---
+
 ## 2026-06-03 — hygiene: presence.ts trim committed; Vision ADC + tsbuildinfo discarded
 
 **presence.ts KEPT & committed:** the in-flight edit's explicit `normalizeGeminiModel(..., 'gemini-2.5-flash')` is proven identical to prior behavior — `geminiReader` already defaults `opts.model ?? 'gemini-2.5-flash'` (`engine/models.ts:48`). So it's a pure trim, no semantic default change. **Vision ADC DISCARDED** (`visionCredentials.ts` +test) — dead-until-harness, harness blocked (no images + no GT). **tsconfig.tsbuildinfo DISCARDED** — build artifact, already in `.gitignore:56`. typecheck PASS; engine 58 pass/3 skip. Working tree clean of tracked changes. Not pushed.
