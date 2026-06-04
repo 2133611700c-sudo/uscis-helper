@@ -1,4 +1,4 @@
-# Anti-Fabrication Gate — Canary Plan (PREPARE only; NOT executed)
+# Anti-Fabrication Gate — Canary Plan (READY_FOR_OWNER_APPROVED_CANARY; NOT executed)
 
 **Date:** 2026-06-04. Plan only — the agent does NOT enable any flag. Owner executes via the commands
 below when ready. Evidence: hard-case Ukrainian birth certs read ≈0–1/5 vs owner GT; mode C
@@ -47,10 +47,21 @@ Rollback = flag OFF → behavior returns to byte-identical current. No data migr
 - Review rate so high it breaks the product UX with no safety payoff → pause, retune (or invest in a better
   Ukrainian reader / HTR — the unresolved model blocker).
 
-## Pre-canary gates (NOT yet met)
-- Owner GT batch ≥6 across categories + threshold calibration (currently N=2, BLOCKED).
-- A rollback rehearsal.
-- `document_class_metric` collecting in prod (flag set; emits on first real extraction).
+## Status: READY_FOR_OWNER_APPROVED_CANARY (still NOT executed by the agent)
+Enabling the flag in prod is a **separate explicit owner command** after the gates below. The agent only
+prepares; it does not flip flags.
+
+## Pre-canary gates (status 2026-06-04)
+- ✅ **Owner GT batch ≥6** — MET. 6 files `VERIFIED_BY_OWNER` (verified from `qa-private/ground-truth/`). But
+  only **3** are live-door-scorable (2 hard-case birth + passport); military/EAD/I-94 are GT-ready but not
+  scorable (no registry type / US doc / no upright image). See `ACCURACY_OFFON_RESULTS.md`.
+- ⚠ **Threshold calibration** — `BLOCKED_INSUFFICIENT_N`. ~11 scorable fields can't fit numeric confidence
+  thresholds. The gate's decision *rules* are evidence-validated (mode C → false_negative_review 0 on both
+  hard-case docs, re-confirmed this session); the numeric thresholds are not. The gate does **not** depend
+  on those thresholds to function (it forces review on the hard-case allowlist), so this does not block the
+  canary — but it does block tuning `false_positive_review` precisely.
+- ⏳ **Rollback rehearsal** — NOT done. Required before enabling.
+- ⏳ **`document_class_metric` collecting in prod** — flag set; emits on first real extraction (NOT_OBSERVED_YET).
 
 ## What this plan does NOT do
 No flag enabled, no prod env change, no deploy, no model switch, no SMART/HTR, no L2-WIRE. Execution is a
