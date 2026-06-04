@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 105 (2026-06-04) — L1: OneBrain decideField() contract (design-only)
+- `L1_DONE` `docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md` + `docs/reports/ONEBRAIN_L1_DESIGN_REVIEW.md`. Pure decideField(input)→FieldDecision; decision enum accept/accept_low_confidence/force_review/reject; source_trace + audit_hash.
+- `RULES` dictionary=signal never silent-rewrite (separate normalized_value); critical identity stricter + never accept w/o strong anchor under any review signal; self-consistency mismatch on DOB/name/place → force_review (model review=false can't override); candidate_not_verified excluded from accuracy penalties; no raw PII in artifacts.
+- `MAPPING` formalizes existing live pieces (readDocument reads, arbitrateDocument, dictionaryBridge signals, selfConsistency, antiFabricationGate, preprocess quality) → L2 = consolidation not rewrite. consensus.ts NOT removed (dormant).
+- `DEFERRED` threshold numbers + second reader = L3/L4. No runtime change; no flags; no prod env; no PII.
 ## Session 104z (2026-06-04) — Architecture inventory verdict + OneBrain target (docs)
 - `VERDICT` PASS_AS_TRUTH_INVENTORY / DEGRADED_AS_TARGET. Raw: consensus.ts DORMANT (no /api caller; central-brain skipped when ONE_BRAIN_CORE_ENABLED=1); HTR NOT live (htr.ts: 0 transcripts, Transkribus auth blocked); live = 1 Gemini read + arbitrateDocument + gates.
 - `TARGET` OneBrain/DocumentBrain = single field-decision center (decideField schema): readers + dictionaries(as SIGNAL not silent rewrite) + normalization + validators + anti-fab + self-consistency + quality + one audit trail INSIDE; no dead consensus branch; real consensus = different independent readers (not 3× same model).

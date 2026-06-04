@@ -1,3 +1,16 @@
+# HANDOFF — Session 105 (2026-06-04)
+
+## Session 105 — L1: OneBrain decideField() contract (design-only)
+
+Designed the single per-field decision contract for OneBrain. Artifacts:
+`docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md` (the contract) + `docs/reports/ONEBRAIN_L1_DESIGN_REVIEW.md` (review).
+
+- `decideField(input) → FieldDecision`, pure/deterministic, no I/O inside. Inputs: reads[] (1..N independent readers), quality, dictionary_signals, validation_signals, self_consistency, strong_anchor, optional eval_context. Output: value, normalized_value (separate), confidence, decision (accept|accept_low_confidence|force_review|reject), review_required, review_reasons[], source_trace[], dictionary_signals[], validation_signals[], safety_flags[], audit_hash.
+- Binding rules: (1) dictionary never silently overwrites value — signal only, may set separate normalized_value/raise review; (2) critical identity stricter, never accept w/o strong anchor under any review signal; (3) self-consistency mismatch on DOB/name/place → force_review, model review=false can't override; (4) candidate_not_verified excluded from accuracy penalties; (5) no raw PII in artifacts; (6) strong-anchor (MRZ) precedence; (7) never lower a flag / never blank a value.
+- Maps onto EXISTING live code (readDocument/arbitrateDocument/dictionaryBridge/selfConsistency/antiFabricationGate/preprocess) → L2 is consolidation, not rewrite. consensus.ts left dormant (not removed, per constraints).
+
+No runtime change; no code; no flags; no prod env; no model/HTR/consensus change; no PII. Open: GT-language intent + threshold calibration = L3. Next (owner-gated): L2 implement decideField behind flags (default OFF), prod byte-identical.
+
 # HANDOFF — Session 104z (2026-06-04)
 
 ## Session 104z — Inventory verdict + OneBrain target architecture (docs-only)

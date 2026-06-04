@@ -10,7 +10,10 @@ arbitration + gates (consensus.ts dormant, HTR not live). Target = OneBrain sing
 
 Priorities (do NOT build all at once):
 - **L0** (done in docs): inventory verdict + status/handoff.
-- **L1** (agent, design only): OneBrain `decideField()` contract + field-decision schema. No behavior change.
+- **L1** ✅ DONE (design-only): OneBrain `decideField()` contract + field-decision schema +
+  design review. See `docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md` +
+  `docs/reports/ONEBRAIN_L1_DESIGN_REVIEW.md`. No runtime change. **Owner action:** review the
+  contract; confirm GT-language intent (RU as-written vs UA canonical) — it gates threshold calibration.
 - **L2** (agent, behind flags OFF): integrate the proven anti-fabrication/self-consistency gate INTO OneBrain.
 - **L3** (owner): expand GT (different people + Ukrainian-language docs); resolve GT-language intent (RU as-written vs UA canonical); rerun accuracy.
 - **L4** (later, metrics-gated): second independent reader (true consensus) / HTR / model switch.
