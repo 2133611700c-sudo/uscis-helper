@@ -7,6 +7,7 @@
 - `MODEL` 3.1-pro safer than 2.5-flash on hard-case (1/5 + self-flags DOB vs 0/5 + FN=5); gate mandatory regardless; firm choice = NEEDS_MORE_DATA.
 - `CAVEAT` low raw accuracy partly RU-document vs UA-GT language layer (not pure fabrication) — owner must clarify GT language intent. N=2/one-person = signal, not proof.
 - `REPORTS` ACCURACY_OFFON_RESULTS.md + SMART_NORMALIZE_DECISION.md (sanitized). No prod env; no flags enabled; behavior flags OFF.
+- `PII_SCRUB` Genericized the RU/UA example in OWNER_QUEUE (removed a gratuitous real given/patronymic). Pre-existing surname/FU262473 in main = Session-54 PII-sweep item.
 ## Session 104x (2026-06-04) — ETAP1: GT-fill prep for owner (no GT fabricated)
 - `OPENED` both birth-cert images (Preview) + both GT JSON templates for the owner.
 - `HINTS` docs/reports/GT_FILL_HINTS.md — structural blank-layout guidance + formats (YYYY-MM-DD, M/F, null+notes), NO real values. Refusal note on why model can't fill GT.
