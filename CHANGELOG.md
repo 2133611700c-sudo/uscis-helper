@@ -3,6 +3,12 @@ Every work session appends here. Never delete entries. Newest first.
 
 ---
 
+## 2026-06-04 — docs(core): design runtime quality signals for anti-fabrication gate
+
+Design (`docs/reports/RUNTIME_QUALITY_SIGNAL_DESIGN.md`) to thread preprocessImage quality/degradation into readDocument so the gate triggers on runtime low-quality, not only the class allowlist. Raw: all 4 routes call preprocessImage before readDocument (TPS:165/Translation:259/Re-Parole:138/EAD:136) but drop quality{}; PreprocessResult.quality = brightness/blurScore/assessment/warnings (+resized); NO rotation/EXIF flag reported (applied silently :85); NO handwritten detector; readDocument opts carry no quality. Reco: Option A — optional DocumentRuntimeSignals via readDocument opts (one door=all 4) behind RUNTIME_QUALITY_SIGNALS_ENABLED (default OFF), acted on only when ANTI_FABRICATION_GATE_ENABLED on; class allowlist stays primary; low_quality_scan = identity-only secondary trigger (raises review, never changes values); rotated_input/possible_handwritten NOT available → not fabricated; thresholds uncalibrated (no GT). No code; flags OFF; no prod env; P2.4/P2.5 frozen; not pushed.
+
+---
+
 ## 2026-06-04 — fix(core): narrow anti-fabrication gate to handwritten risk
 
 Aligned shipped gate (4f75bfa, too broad) with the revised design. Trigger changed from blanket `isHardCase` → explicit `HANDWRITTEN_FABRICATION_RISK_CLASSES` = {birth_certificate_handwritten, birth_certificate_soviet_bilingual}. Printed `marriage_apostille` + `unknown_document` + booklet/military NO LONGER blanket-forced. Reason `hard_case_document`→`handwritten_document`. Raw basis: registry `handwritten:true` only on booklet (documentRegistry.ts:25-30) → flag trigger would miss birth certs; quality/blur/rotation signal exists in preprocessImage but does NOT reach readDocument → not usable now. Gaps recorded (not silently included): military_id zones (not in docintel registry); handwritten-marriage/blur/rotation (no reader signal); soviet_bilingual forward-compat. Tests: antiFabricationGate.test.ts 49 pass (marriage/unknown NOT forced, allowlist membership, reasons=handwritten_document); typecheck PASS. ANTI_FABRICATION_GATE_ENABLED default OFF; model default unchanged; SMART_NORMALIZE OFF; P2.4/P2.5 frozen; not pushed.
