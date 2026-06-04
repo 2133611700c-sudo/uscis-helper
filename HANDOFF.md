@@ -10,6 +10,29 @@
 >
 > 🔑 **VISION_CREDENTIALS_LOADER (fix/vision-credentials-loader):** Root cause of Vision 403: `GOOGLE_CLOUD_VISION_API_KEY` not set in Vercel Production. Fixed: `loadVisionCredentials()` in `canonical/vision/visionCredentials.ts` — supports SA JSON (3 env var names) + API key fallback. Normalizes `\\n` in private_key (Vercel escaping). Vision provider updated to use SA Bearer token when JSON present. Diagnostic endpoint: `/api/_diag/vision` (token-protected). 12/12 new tests. 2680 full suite. tsc 0. BLOCKED: owner must add `GOOGLE_VISION_SERVICE_ACCOUNT_JSON` to Vercel Production + redeploy.
 
+# HANDOFF — Session 104h (2026-06-04)
+
+## Session 104h — PII hygiene + correction of the false "no images" claim
+
+**PII hygiene (Step 1):**
+- `qa-private/` and `reports/` were NOT gitignored — `qa-private/` holds filled PII
+  ground-truth. Added both to `.gitignore`. `git ls-files qa-private/` was EMPTY →
+  nothing had ever been committed (no history leak). `qa-shots/private/` was already
+  ignored; left untouched.
+- `git rm --cached qa-shots/.DS_Store` — removed tracked junk from the index.
+
+**Correction (raw-verified):** my earlier `NO_IMAGES_FOUND` / "harness blocked: no
+images" was FALSE — a broken zsh glob (`*.jpeg`) made one command error and I reported
+its output as fact. The real document originals exist:
+- `test-fixtures/real-docs/` (ignored): internal_passport, birth_cert_handwritten,
+  birth_cert_soviet, military_id_p1/p2, divorce x2, marriage x4.
+- `qa-shots/private/` (ignored): US Passport / I-94 / EAD (real).
+The actual P2-accuracy blocker is **missing VERIFIED ground-truth** for birth_cert /
+hard-case docs (only passport+booklet GT is VERIFIED), NOT missing images.
+
+**typecheck PASS. Not pushed.** No prod env; SMART_NORMALIZE OFF; P2.4/P2.5 frozen.
+Step 2 (model-stability re-check) follows.
+
 # HANDOFF — Session 104g (2026-06-03)
 
 ## Session 104g — Working-tree hygiene after Group A (3 tails closed)

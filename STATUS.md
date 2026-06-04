@@ -1,4 +1,9 @@
 # STATUS — Messenginfo
+## Session 104h (2026-06-04) — PII hygiene + images-exist correction
+- `PII_IGNORED` `qa-private/` and `reports/` were NOT_IGNORED (qa-private holds filled PII ground-truth). Added both to `.gitignore` (:63/:64). qa-private had 0 tracked files (ls-files empty) — nothing was ever committed. `qa-shots/private/` already ignored (:49).
+- `DS_STORE_UNTRACKED` `git rm --cached qa-shots/.DS_Store` (tracked junk removed from index; file kept on disk).
+- `IMAGES_EXIST_CORRECTION` Prior `NO_IMAGES_FOUND` / "harness blocked: no images" was FALSE — caused by a broken zsh glob (`*.jpeg`). Real document originals DO exist: `test-fixtures/real-docs/` (ignored) — passport, booklets, birth certs, military, marriage, divorce; `qa-shots/private/` (ignored) — US passport/I-94/EAD. The REAL blocker for P2 accuracy is missing VERIFIED ground-truth for birth_cert / hard-case docs (passport+booklet GT VERIFIED; rest MISSING), NOT missing images.
+- `TYPECHECK` PASS. Not pushed. No prod env, SMART_NORMALIZE stays OFF, P2.4/P2.5 frozen.
 ## Session 104g (2026-06-03) — hygiene: presence.ts trim committed; Vision ADC + tsbuildinfo discarded
 - `PRESENCE_COMMITTED` `engine/presence.ts` normalizeGeminiModel wrap KEPT — proven safe: `geminiReader` internal default is `opts.model ?? 'gemini-2.5-flash'` (models.ts:48); the new explicit fallback `'gemini-2.5-flash'` is IDENTICAL to prior effective behavior → trim-only, NO semantic default change.
 - `VISION_ADC_DISCARDED` `git checkout` reverted `visionCredentials.ts` (+test) — dead-until-harness, harness blocked (no images + no GT). New credential path with no immediate use = risk without benefit.
