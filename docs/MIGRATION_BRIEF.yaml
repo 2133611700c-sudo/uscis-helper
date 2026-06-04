@@ -113,11 +113,11 @@ confirmed:
       - GLOBAL_BLOCKLIST     # ~24
       - SETTLEMENT_TYPES     # ~21
     NOT_in_brain:        # написаны, но висят в мёртвом orchestrator / legacy / клиенте
-      snapCity_gazetteer: {file: packages/knowledge/src/gazetteer.ts, entries: 25, used_in: orchestrator.ts:65}
-      reconcilePatronymic: {file: packages/knowledge/src/patronymic.ts, used_in: orchestrator.ts:52}
-      lookupSettlement_registry: {file: packages/knowledge/src/registry/registryLookup.ts, entries: 54, used_in: orchestrator.ts:60}
-      lookupAuthority: {used_in: [orchestrator.ts:92, legacy_modules militaryId.ts/birthCertificate.ts]}
-      translateCivilRegistryTerm: {used_in: [orchestrator.ts:94, legacy birthCertificate.ts]}
+      snapCity_gazetteer: {file: packages/knowledge/src/gazetteer.ts, entries: 25, used_in: "orchestrator.ts:65"}
+      reconcilePatronymic: {file: packages/knowledge/src/patronymic.ts, used_in: "orchestrator.ts:52"}
+      lookupSettlement_registry: {file: packages/knowledge/src/registry/registryLookup.ts, entries: 54, used_in: "orchestrator.ts:60"}
+      lookupAuthority: {used_in: ["orchestrator.ts:92", "legacy_modules militaryId.ts/birthCertificate.ts"]}
+      translateCivilRegistryTerm: {used_in: ["orchestrator.ts:94", "legacy birthCertificate.ts"]}
       classifyGarbage_server: {used_in: NONE}   # isGarbageValue только клиент (TPSWizardV2, TranslateWizard)
   legacy_callable_routes:
     - apps/web/src/app/api/ocr/extract/route.ts
