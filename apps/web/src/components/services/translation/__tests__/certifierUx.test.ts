@@ -24,11 +24,24 @@ describe('TranslateWizard — USCIS certifier step (Screen 7)', () => {
   })
 
   it('hard-gates the download button on signature + both checkboxes + address', () => {
-    expect(SRC).toMatch(/disabled=\{pdfLoading \|\| !sigSaved \|\| !dataReviewed \|\| !accuracyAttested \|\| !certifierAddress\.trim\(\)\}/)
+    expect(SRC).toMatch(/disabled=\{pdfLoading \|\| hasUnresolvedReviewFields \|\| !sigSaved \|\| !dataReviewed \|\| !accuracyAttested \|\| !certifierAddress\.trim\(\)\}/)
   })
 
   it('also guards inside the download handler (defence in depth)', () => {
+    expect(SRC).toMatch(/if \(hasUnresolvedReviewFields\) return/)
     expect(SRC).toMatch(/if \(!dataReviewed \|\| !accuracyAttested \|\| !certifierAddress\.trim\(\)\) return/)
+  })
+
+  it('blocks payment until OCR review-required fields are resolved', () => {
+    expect(SRC).toMatch(/if \(paymentLoading \|\| !canProceedToCertifiedOutput\) return/)
+    expect(SRC).toMatch(/disabled=\{paymentLoading \|\| !canProceedToCertifiedOutput\}/)
+    expect(SRC).toMatch(/disabled=\{!canProceedToCertifiedOutput\}/)
+  })
+
+  it('lets the user explicitly confirm a flagged OCR value', () => {
+    expect(SRC).toMatch(/const handleConfirmField = useCallback/)
+    expect(SRC).toMatch(/review_required: false/)
+    expect(SRC).toMatch(/s5_confirm:/)
   })
 
   it('sends the certifier fields + address to the API', () => {
