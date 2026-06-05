@@ -1,10 +1,43 @@
-# Anti-Fabrication Gate — Canary Plan (READY_FOR_OWNER_APPROVED_CANARY; NOT executed)
+# Anti-Fabrication Gate — Canary Runbook (READY_FOR_OWNER_APPROVED_CANARY; NOT executed)
 
 **Date:** 2026-06-04. Plan only — the agent does NOT enable any flag. Owner executes via the commands
 below when ready. Evidence: hard-case Ukrainian birth certs read ≈0–1/5 vs owner GT; mode C
 (anti-fabrication + self-consistency) drove `false_negative_review` to 0 and caught the month error.
 That proves the NEED for a forced-review gate on hard-case classes; enabling still goes through canary +
 rollback + metrics (not a blind flip).
+
+## ▶ TURNKEY EXECUTION — owner runs ONE sequence; everything else is prepared & test-proven
+
+**Pre-flight (status 2026-06-04):**
+| check | state | evidence |
+|---|---|---|
+| Gate wired into the single door (all 4 products) | ✅ | `antiFabricationGate.test.ts` route-coverage block |
+| Gate fires on hard-case via live `readDocument` | ✅ | `readDocument — ANTI_FABRICATION_GATE_ENABLED gating` test |
+| **Rollback = byte-identical** (the rehearsal) | ✅ **proven by test** | `canary safety contract` → "rollback is byte-identical" |
+| Value immutability (ON never changes a value) | ✅ proven by test | `canary safety contract` → "value immutability" |
+| Target classes = handwritten/soviet birth only | ✅ | `HANDWRITTEN_FABRICATION_RISK_CLASSES` + trigger-scope tests |
+| `document_class_metric` flag set in prod | ✅ | `DOCUMENT_CLASS_METRICS_ENABLED=1` (emits on first real extraction) |
+| Code in prod (main), flag OFF | ✅ | gate code merged; behavior byte-identical until flag flips |
+| Owner enable command + observation | ⏳ **owner action** | the one step below |
+
+**Known precision caveat (must watch in canary):** `ua_birth_certificate` maps conservatively to
+`birth_certificate_handwritten`, so the gate force-reviews identity on **ALL** birth certs, including printed
+modern ones (the registry can't yet tell printed from handwritten). Safety = total (no false negatives);
+precision = coarse. `false_positive_review` will be driven by how many birth certs are printed-and-correct.
+Test `canary safety contract → coarse precision is DOCUMENTED` pins this.
+
+**The one sequence (canary first, observe, then prod):**
+```
+# 1) canary/preview slice — enable, observe metrics below before prod
+vercel env add ANTI_FABRICATION_GATE_ENABLED preview      # value: 1
+# (optional second layer — mode C; requires the first)
+vercel env add SELF_CONSISTENCY_GATE_ENABLED  preview      # value: 1
+# redeploy the preview from main; run real hard-case docs; watch metrics.
+# 2) only if metrics hold → production
+vercel env add ANTI_FABRICATION_GATE_ENABLED production    # value: 1
+vercel env add SELF_CONSISTENCY_GATE_ENABLED  production    # value: 1
+```
+Rollback is the inverse (proven byte-identical) — see "Rollback command" below. SMART_NORMALIZE stays OFF.
 
 ## Flag
 - `ANTI_FABRICATION_GATE_ENABLED` (default OFF). Optionally `SELF_CONSISTENCY_GATE_ENABLED` (requires the

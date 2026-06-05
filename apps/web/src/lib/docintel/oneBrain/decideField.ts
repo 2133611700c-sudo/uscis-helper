@@ -1,6 +1,19 @@
 /**
  * docintel/oneBrain/decideField — OneBrain field-decision SCAFFOLD (L2).
  *
+ * ┌─ PARKED 2026-06-04 ──────────────────────────────────────────────────────┐
+ * │ Deliberately NOT progressed (see docs/adr/ADR-016-hard-case-human-review │
+ * │ -and-onebrain-park.md). Reasons:                                          │
+ * │  • 0 live callers; the working safety architecture is already            │
+ * │    reader → arbitrate → anti-fabrication/self-consistency gate (review).  │
+ * │    decideField solves a problem we do not have yet.                       │
+ * │  • Its numeric thresholds are PLACEHOLDERS and cannot be calibrated: GT   │
+ * │    today is ~1 person / a few docs (BLOCKED_INSUFFICIENT_N).              │
+ * │ Revisit gate: resume only when GT spans ≥ ~50 fields across DIFFERENT     │
+ * │ people. Until then keep inert — do NOT wire it, do NOT trust the numbers. │
+ * │ Kept (not deleted) as a design reference only.                           │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
  * Pure, deterministic per-field decision center. Contract:
  * docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md.
  *
