@@ -13,11 +13,14 @@ the coarse-precision caveat (gate force-reviews ALL birth certs, printed too): `
 → "TURNKEY EXECUTION". **Owner action:** run the canary sequence when ready (still your explicit command; agent
 will not flip the flag). SMART_NORMALIZE stays OFF.
 
-**2. PII in git history — needs a yes/no.** Owner's own name / `FU262473` / DOB are pervasive in main history
-(Session-54). **Decide:** will this repo EVER be shared outside the owner? If **yes** → schedule a
-`git filter-repo` history rewrite (destructive, force-push, coordinate clones) — agent can prepare the exact
-runbook on command. If **no** → record "internal-only forever" and we stop re-raising it. Not done now (no
-filter-repo this session).
+**2. PII in git history — runbook PREPARED, needs a yes/no.** Survey done (read-only): repo is **PRIVATE**
+(not publicly exposed); `docs/reports/evidence/` already gitignored (no new leak); what remains is **51 real
+USCIS-packet blobs in history** + the name as an intentional fixture in 26 test files + ID tokens in narrative
+docs. Full two-phase runbook (Phase A current-tree scrub = non-destructive; Phase B filter-repo history rewrite
+= destructive, force-push) with exact commands, classification, and verification:
+**`docs/reports/PII_HISTORY_REWRITE_RUNBOOK.md`** — PREPARED, NOT executed. **Decide:** will this repo EVER be
+shared outside the owner? **yes** → run Phase A now, schedule Phase B in a maintenance window; **no** → record
+"internal-only forever" and stop re-raising (since it's private + evidence already ignored, urgency is low).
 
 **3. GT breadth — the only thing that unblocks calibration.** Calibration is BLOCKED_INSUFFICIENT_N because all
 GT is ~1 person. Need GT from **different people** (any UA docs). Not more docs from the same person.
