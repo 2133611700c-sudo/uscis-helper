@@ -26,11 +26,12 @@ workflow file after the window (docs/CI-only PR).
 **Return:** RESULT, files, tests_pass, flag_default_off_confirmed, prod_unchanged.
 **STOP** with flag OFF; owner decides any prod enable later.
 
-## Prompt C — ReaderResult contract (Phase 3)
-**Context:** one Gemini reader; need a reader abstraction before any second reader.
+## Prompt C — ReaderResult contract (Phase 3) — GEMINI-FIRST
+**Context:** one Gemini reader; need a reader abstraction. Strategy is **Gemini-first** — near-term reader work
+stays within the Gemini family; a second provider is NOT near-term.
 **Goal:** formalize `ReaderResult` interface; wrap the current Gemini provider as `reader_1`. No fan-out, no behavior change.
-**Allowed:** pure interface + adapter; GPT-4o/HTR = disabled stubs only.
-**Forbidden:** GPT-4o/HTR live; consensus revival; any change to readDocument's output shape.
+**Allowed:** pure interface + adapter; any second reader = a provider-agnostic DISABLED stub (NOT GPT-4o-specific).
+**Forbidden:** any second provider live; fan-out; consensus revival; any change to readDocument's output shape.
 **Files:** new `lib/docintel/readers/ReaderResult.ts` + adapter.
 **Tests:** Gemini output maps losslessly to ReaderResult; readDocument output unchanged (snapshot).
 **Return:** RESULT, interface_file, mapping_test_pass, prod_byte_identical.

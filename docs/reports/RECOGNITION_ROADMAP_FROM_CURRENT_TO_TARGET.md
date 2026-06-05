@@ -26,17 +26,20 @@
 ## 2. Target Architecture
 
 ```
-D0 quality/preprocess → D1 independent readers (Gemini + GPT-4o + HTR) 
+D0 quality/preprocess → D1 readers (Gemini-first; provider-agnostic DISABLED slot for a future reader)
 → OneBrain.decideField() → D2 dictionaries as signal → D3 translation 
 → D4 validators → D5 review UI → D6 PDF → Auditor
 ```
+> **Reader strategy = GEMINI-FIRST (correction 2026-06-05):** near-term reader work stays within the Gemini
+> family (top versions/benchmarks). A second provider (GPT-4o/Claude) or HTR is **research-only**, gated on GT
+> breadth from different people + owner decision + cost/privacy/accuracy evidence. No fan-out until ROI proven.
 
 ## 3. Gap List (target minus current)
 
 | Gap | Severity | Effort | Blocked by |
 |-----|----------|--------|------------|
 | Runtime verification of gates | HIGH | LOW (1 upload) | Owner action |
-| GPT-4o as second reader | HIGH | MEDIUM | OpenAI key + wiring |
+| 2nd independent reader (provider-agnostic; NOT near-term) | LOW (deferred) | MEDIUM | GT breadth + owner decision + ROI (Gemini-first until then) |
 | Quality signal to readDocument | LOW | LOW | Nothing |
 | HTR for handwritten | MEDIUM | HIGH | A/B decision + infra |
 | OneBrain wired | LOW | MEDIUM | GT≥50 + calibration |
@@ -71,11 +74,12 @@ D0 quality/preprocess → D1 independent readers (Gemini + GPT-4o + HTR)
 - Path B: TrOCR — privacy better, own infra, needs fine-tune for UA/RU
 - Decision criteria: hard-case review rate too high for UX
 
-### Wave E — OneBrain/multi-reader (after GT≥50)
-- Wire GPT-4o as second reader → real cross-model consensus
-- Wire decideField into readDocument (shadow first, then live)
-- Calibrate thresholds on GT≥50
-- Only after Waves A-C proven
+### Wave E — OneBrain / second reader (after GT≥50 from different people)
+- Wire decideField into readDocument (shadow first, then live) — Gemini-first.
+- A second independent reader (provider-agnostic — GPT-4o/Claude only as candidates, NOT a commitment) is
+  evaluated as research ONLY if GT breadth + metrics + owner decision justify it. No fan-out until ROI proven.
+- Calibrate thresholds on GT≥50.
+- Only after Waves A-C proven.
 
 ## 5. Parking
 
