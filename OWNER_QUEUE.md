@@ -3,6 +3,19 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-05 — recognition structure roadmap accepted (map + phased plan, docs-only)
+
+Next recommended sequence: close Wave D monitoring (24–48h) → Phase 2 (D0 quality/reshoot) → Phase 3
+(ReaderResult contract) → Phase 4 (OneBrain shadow-only) → D2/D3/D4 → Auditor. Maps + phased plan + copy-paste
+prompts are in: `docs/reports/RECOGNITION_SYSTEM_TRUTH_MAP.md`, `docs/architecture/RECOGNITION_TARGET_ARCHITECTURE_D0_D6.md`,
+`docs/reports/RECOGNITION_BUILD_PLAN_PHASES.md`, `docs/reports/NEXT_AGENT_PROMPTS_RECOGNITION_STRUCTURE.md`.
+
+**Blocked on owner (gate the deep layers):**
+- **GT from DIFFERENT people** — the single unblock for OneBrain calibration (Phase 4 stays shadow until then).
+- **HTR A/B business decision** (Phase 10) — Transkribus (third-party PII/DPA) vs TrOCR (own infra) — later, ROI-gated.
+- **PII history externalization decision** — only if the repo ever leaves private mode (runbook ready).
+- **Delete the temp monitor workflow** after the 48h window.
+
 ## 2026-06-05 — Wave D monitoring active (PASS_RUNTIME_VERIFIED reached)
 
 Gate verification COMPLETE; safety-wrapper working in prod. Now 24–48h monitoring.
