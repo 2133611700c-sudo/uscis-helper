@@ -102,6 +102,11 @@ export async function POST(req: NextRequest) {
     signedAt,
     signatureMethod: payload.signatureMethod,
     signatureDataUrl: payload.signatureDataUrl,
+    extractedFields: (payload.fields ?? []).map((field) => ({
+      field: field.field,
+      normalized_value: field.normalized_value,
+      review_required: field.review_required,
+    })),
   })
   if (!gate.ok) {
     return NextResponse.json(
