@@ -22,6 +22,26 @@ describe('docintel/documentRegistry', () => {
     expect(docTypesForConsumer('reparole')).toContain('ua_marriage_certificate')
     expect(docTypesForConsumer('ead')).toContain('ua_international_passport')
   })
+
+  it('registers ua_military_id (identity page) with civil-identity fields', () => {
+    const spec = getDocTypeSpec('ua_military_id')
+    expect(spec).not.toBeNull()
+    expect(spec!.vision_anchor).toBe('family_name')
+    const fieldKeys = spec!.fields.map((f) => f.field)
+    expect(fieldKeys).toEqual(['family_name', 'given_name', 'patronymic', 'dob', 'doc_number'])
+    // Military civil identity is consumable by translation (and tps/reparole as evidence).
+    expect(docTypesForConsumer('translation')).toContain('ua_military_id')
+  })
+
+  it('uses `patronymic` (NOT `middle_name`) for «По батькові» source fields (CLAUDE.md hard-rule)', () => {
+    for (const spec of Object.values(DOCUMENT_TYPES)) {
+      // no source field may be named middle_name — that is a USCIS *form* field, not a source field
+      expect(spec.fields.some((f) => f.field === 'middle_name'), `${spec.id} must not use middle_name`).toBe(false)
+      // any «По батькові» field is named patronymic / *_patronymic
+      const poBatkovi = spec.fields.filter((f) => f.label_uk === 'По батькові')
+      for (const f of poBatkovi) expect(f.field === 'patronymic' || f.field.endsWith('patronymic')).toBe(true)
+    }
+  })
 })
 
 describe('docintel — coverage guard (rule auditor: registry ↔ transliteration)', () => {
@@ -89,7 +109,7 @@ describe('docintel/documentFieldReader (orchestration with a mock provider)', ()
         ms: 5,
         fields: [
           { field: 'family_name', cyrillic: "REDACTED_NAME", can_read: true, confidence: 1, reason: '' },
-          { field: 'middle_name', cyrillic: 'Сергійович', can_read: true, confidence: 1, reason: '' },
+          { field: 'patronymic', cyrillic: 'Сергійович', can_read: true, confidence: 1, reason: '' },
           { field: 'city_of_birth', cyrillic: 'Тростянець', can_read: true, confidence: 0.9, reason: '' },
           { field: 'dob', cyrillic: '', iso_date: '1986-06-25', can_read: true, confidence: 1, reason: '' },
           { field: 'given_name', cyrillic: '', can_read: false, confidence: 0, reason: 'illegible' },
@@ -104,7 +124,7 @@ describe('docintel/documentFieldReader (orchestration with a mock provider)', ()
     expect(r.anchor_read).toBe(true) // family_name read
     const by = Object.fromEntries(r.fields.map((f) => [f.field, f.value]))
     expect(by.family_name).toBe('REDACTED')
-    expect(by.middle_name).toBe('Serhiiovych')
+    expect(by.patronymic).toBe('Serhiiovych') // «По батькові» = patronymic, not middle_name
     expect(by.city_of_birth).toBe('Trostianets')
     expect(by.dob).toBe('1986-06-25')
     expect(by.given_name).toBeUndefined() // can_read=false skipped

@@ -9,7 +9,7 @@ describe('geminiVisionArbiter — visionReadsToFields (KMU-55 transliteration)',
   const reads: VisionFieldRead[] = [
     { field: 'family_name', cyrillic: "REDACTED_NAME", can_read: true, confidence: 1, reason: '' },
     { field: 'given_name', cyrillic: 'Сергій', can_read: true, confidence: 1, reason: '' },
-    { field: 'middle_name', cyrillic: 'Сергійович', can_read: true, confidence: 1, reason: '' },
+    { field: 'patronymic', cyrillic: 'Сергійович', can_read: true, confidence: 1, reason: '' },
     { field: 'dob', cyrillic: '25 червня 1986 року', iso_date: '1986-06-25', can_read: true, confidence: 1, reason: '' },
     { field: 'city_of_birth', cyrillic: 'Тростянець', can_read: true, confidence: 0.9, reason: '' },
     { field: 'province_of_birth', cyrillic: 'Вінницька область', can_read: true, confidence: 0.9, reason: '' },
@@ -21,7 +21,7 @@ describe('geminiVisionArbiter — visionReadsToFields (KMU-55 transliteration)',
   it('transliterates names via KMU-55, not the LLM (exact official spelling)', () => {
     expect(byField.family_name.normalized_value).toBe('REDACTED')
     expect(byField.given_name.normalized_value).toBe('Serhii')
-    expect(byField.middle_name.normalized_value).toBe('Serhiiovych') // full word, not "Yovych" suffix
+    expect(byField.patronymic.normalized_value).toBe('Serhiiovych') // «По батькові» = patronymic; full word, not "Yovych" suffix
   })
 
   it('city is transliterated to Latin (Trostianets, NOT Cyrillic, NOT Prostianets)', () => {

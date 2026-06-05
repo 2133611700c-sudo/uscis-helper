@@ -24,7 +24,10 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
     fields: [
       { field: 'family_name', label_uk: 'Прізвище', kind: 'name', handwritten: true, required: true },
       { field: 'given_name', label_uk: "Ім'я", kind: 'name', handwritten: true, required: true },
-      { field: 'middle_name', label_uk: 'По батькові', kind: 'name', handwritten: true, required: false },
+      // "По батькові" = patronymic (a father-derived name), NOT a Western middle name.
+      // CLAUDE.md hard-rule: Patronymic ≠ Middle Name. The downstream USCIS-form field
+      // is still "Middle Name" (TPSAnswers.middle_name); the source→form mapping bridges it.
+      { field: 'patronymic', label_uk: 'По батькові', kind: 'name', handwritten: true, required: false },
       { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: true, required: true },
       { field: 'city_of_birth', label_uk: 'Місце народження', kind: 'place_city', handwritten: true, required: false },
       { field: 'province_of_birth', label_uk: 'Місце народження (область)', kind: 'place_oblast', handwritten: true, required: false },
@@ -111,9 +114,31 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
     fields: [
       { field: 'family_name', label_uk: 'Прізвище', kind: 'name', handwritten: false, required: true },
       { field: 'given_name', label_uk: "Ім'я", kind: 'name', handwritten: false, required: true },
-      { field: 'middle_name', label_uk: 'По батькові', kind: 'name', handwritten: false, required: false },
+      // "По батькові" = patronymic, NOT a Western middle name (CLAUDE.md hard-rule).
+      { field: 'patronymic', label_uk: 'По батькові', kind: 'name', handwritten: false, required: false },
       { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: false, required: true },
       { field: 'doc_number', label_uk: 'Номер', kind: 'doc_number', handwritten: false, required: false },
+    ],
+  },
+
+  // ── Ukrainian military ID (Військовий квиток) — identity page (page 1) ──
+  // Civil-identity fields only (name/patronymic/dob/series-number). Rank, unit,
+  // and speciality are deliberately NOT extracted — not USCIS form fields and
+  // not civil identity. Hard-case class: every field defaults to review_required.
+  // No `sex` field: there is no `sex` FieldKind in the reader contract today, so
+  // sex stays unscored for this type (documented limitation, not a wrong value).
+  ua_military_id: {
+    id: 'ua_military_id',
+    title_en: 'Ukrainian Military ID (identity page)',
+    script: 'cyrillic',
+    consumers: ['translation', 'reparole', 'tps'],
+    vision_anchor: 'family_name',
+    fields: [
+      { field: 'family_name', label_uk: 'Прізвище', kind: 'name', handwritten: true, required: true },
+      { field: 'given_name', label_uk: "Ім'я", kind: 'name', handwritten: true, required: true },
+      { field: 'patronymic', label_uk: 'По батькові', kind: 'name', handwritten: true, required: false },
+      { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: true, required: true },
+      { field: 'doc_number', label_uk: 'Серія та номер', kind: 'doc_number', handwritten: true, required: false },
     ],
   },
 }
