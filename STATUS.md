@@ -1,5 +1,10 @@
 # STATUS (2026-06-05 — honest, no overclaiming)
 
+## Recognition structure roadmap accepted (docs-only; build = next, phased)
+- Truth map + target D0–D6 + 10-phase build plan + 5 next-prompts written (see CHANGELOG / OWNER_QUEUE).
+- Order: monitoring closeout → D0 quality → ReaderResult contract → OneBrain shadow → D2/D3/D4 → Auditor;
+  HTR/GPT-4o research only AFTER GT from different people. Still a safety wrapper, NOT a full brain.
+
 ## Wave D monitoring ACTIVE (PASS_RUNTIME_VERIFIED reached; PR #86 merged)
 - Read-only healthz workflow `.github/workflows/prod-safety-monitor.yml` (every 6h, no secrets, self-no-ops
   after 2026-06-07 — delete after window) + manual runbook `docs/reports/PROD_SAFETY_MONITORING_24H_RUNBOOK.md`.
