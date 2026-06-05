@@ -1,4 +1,13 @@
-# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED · roadmap · GEMINI-FIRST locked)
+# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED · GEMINI-FIRST · agent rails set)
+
+**Operating rails (this turn, docs-only):** PR #89 merged (Gemini-first in main). Created the project law:
+`docs/architecture/AGENT_OPERATING_CONTRACT.md` (live vs target, may-do vs must-stop-and-ask, evidence
+contract, phase order), `docs/reports/RECOGNITION_PHASE_GATES_CHECKLIST.md` (Gates 0–6), and the copy-paste
+`docs/reports/NEXT_PROMPT_B_D0_QUALITY_RESHOOT.md`. **Next code step = D0 quality/reshoot, flag default OFF,
+ONLY after a clean 24–48h monitor + owner "start D0".** HTR / second provider / OneBrain stay gated on GT from
+different people + owner decision. No code/flag/prod change this turn.
+
+
 
 **Gemini-first correction (this turn, docs-only follow-up PR):** removed near-term GPT-4o framing from all
 roadmap docs. D1 near-term = Gemini family (top versions); second reader = provider-agnostic DISABLED slot
