@@ -19,6 +19,12 @@
 
 export type SignatureMethod = 'drawn_on_screen' | 'manual_wet_signature'
 
+export interface ReviewGateField {
+  field: string
+  normalized_value?: string | null
+  review_required?: boolean | null
+}
+
 export interface ReviewGateInput {
   /** Back-compat single-flag confirmation; true ⇒ both checkboxes satisfied. */
   reviewConfirmed?: boolean | null
@@ -33,6 +39,8 @@ export interface ReviewGateInput {
   signatureMethod?: SignatureMethod | string | null
   /** Data URL of a drawn signature (required when method === 'drawn_on_screen'). */
   signatureDataUrl?: string | null
+  /** Legacy public wizard fields — any unresolved OCR review must block output. */
+  extractedFields?: ReviewGateField[] | null
 }
 
 export type ReviewGateReason =
@@ -40,6 +48,7 @@ export type ReviewGateReason =
   | 'signer_address_required'
   | 'data_not_reviewed'
   | 'accuracy_not_attested'
+  | 'ocr_review_unresolved'
   | 'signature_required'
 
 export type ReviewGateResult =
@@ -51,6 +60,7 @@ const DETAIL: Record<ReviewGateReason, string> = {
   signer_address_required: 'Certifier address is required before the translation can be certified.',
   data_not_reviewed: 'Confirm you reviewed the translation and the data is correct.',
   accuracy_not_attested: 'Confirm you understand your signature attests the translation is accurate.',
+  ocr_review_unresolved: 'Resolve every OCR field marked for review before certifying the translation.',
   signature_required: 'A signature is required before the translation can be certified.',
 }
 
@@ -62,6 +72,17 @@ export function isSignatureComplete(input: ReviewGateInput): boolean {
     return !!input.signatureDataUrl && String(input.signatureDataUrl).trim().length > 0
   }
   return false
+}
+
+export function getUnresolvedReviewFields(fields?: ReviewGateField[] | null): string[] {
+  if (!Array.isArray(fields)) return []
+  const unresolved = new Set<string>()
+  for (const field of fields) {
+    if (!field?.field) continue
+    const normalized = (field.normalized_value ?? '').trim()
+    if (field.review_required === true || !normalized) unresolved.add(field.field)
+  }
+  return [...unresolved]
 }
 
 /**
@@ -81,6 +102,10 @@ export function assertReviewGate(input: ReviewGateInput): ReviewGateResult {
 
   const accuracyAttested = input.accuracyAttested === true || input.reviewConfirmed === true
   if (!accuracyAttested) return fail('accuracy_not_attested')
+
+  if (getUnresolvedReviewFields(input.extractedFields).length > 0) {
+    return fail('ocr_review_unresolved')
+  }
 
   if (!isSignatureComplete(input)) return fail('signature_required')
 
