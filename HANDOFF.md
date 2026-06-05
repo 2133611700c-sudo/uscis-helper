@@ -1,4 +1,12 @@
-# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED · Wave D monitoring active)
+# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED · roadmap accepted)
+
+**Recognition structure roadmap (docs-only, this turn):** PR #87 merged (monitoring baseline). Wrote truth map
+(LIVE/PARKED/LEGACY/TARGET), target D0–D6 architecture, 10-phase build plan, and 5 copy-paste next-prompts —
+see CHANGELOG. Build order: monitoring closeout → D0 quality → ReaderResult contract → OneBrain shadow → D2/D3/D4
+→ Auditor; HTR/GPT-4o research only after GT from different people. No code/flag/prod change. Still a safety
+wrapper, not a full brain. Next concrete agent step = Prompt B (D0 quality, flag default OFF) after monitoring is clean.
+
+
 
 **Monitoring set up (this turn):** PR #86 merged (origin/main 08b183a). Read-only healthz workflow
 `.github/workflows/prod-safety-monitor.yml` (every 6h, no secrets, self-no-ops after 2026-06-07 — delete after
