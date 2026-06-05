@@ -1,9 +1,13 @@
-# HANDOFF (2026-06-05)
+# HANDOFF (2026-06-05 — re-verified from runtime)
 
-Gates enabled in prod env. Code deployed. NO runtime event yet (0 docs processed since deploy).
-Status = ENABLED_BY_ENV, not RUNTIME_VERIFIED. One controlled upload needed.
-See STATUS.md for honest state. See RECOGNITION_ROADMAP for waves A-E.
-Rollback: `vercel env rm ANTI_FABRICATION_GATE_ENABLED production --yes`
+Prod = `2d2a391` = origin/main (healthz verified). Review-gate fix (e298d97, PR #84) IS in prod. PRs #80–#84 merged.
+Real extractions DID run in prod ~01:01–01:03 (3× vision-extract + 2× tps/ocr/extract, all 200, 0 errors in 3h)
+→ `document_class_metric` emitted ×3 → **DOCUMENT_CLASS_METRICS runtime VERIFIED**; deployed safety code = no regression.
+STILL UNCONFIRMED by agent: (1) env flag VALUES — no Vercel env-read tool, owner runs `vercel env ls production`;
+(2) anti-fab/self-consistency actually FORCING review — gates emit no log; owner's "8/10 review=true" is owner-observed,
+not visible to agent. To prove the gate, capture one hard-case extraction RESPONSE (review fields), not just logs.
+Independent fix re-verify: tsc 0, full suite 2859 passed / 4 skipped (matches claim).
+See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FABRICATION_GATE_ENABLED production --yes`
 
 ## 2026-06-04 — translation public wizard hardening
 
@@ -68,3 +72,15 @@ Rollback: `vercel env rm ANTI_FABRICATION_GATE_ENABLED production --yes`
 - Reading rule after this correction:
   - absent != flag-gated
   - parked != unreachable
+
+## 2026-06-04 — project understanding master
+
+- Added `docs/reports/PROJECT_UNDERSTANDING_MASTER_2026-06-04.md`.
+- Purpose: establish one code-backed understanding of what this project actually is.
+- Verified outcome:
+  - this is not just an OCR subsystem; it is a multi-product USCIS workflow app
+  - repo contains legacy TPS/product OCR, a current shared docintel/canonical spine, and a parked OneBrain/consensus target layer
+  - accepted ADRs and current live code do not describe a single clean final architecture yet
+- Practical implication:
+  - future changes must be explicit about which architectural plane they touch
+  - "brain", "core", and "central brain" are not interchangeable terms in this repo
