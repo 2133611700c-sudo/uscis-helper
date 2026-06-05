@@ -1,4 +1,13 @@
-# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED · GEMINI-FIRST · agent rails set)
+# HANDOFF (2026-06-05 — D0 quality/reshoot built behind flag OFF)
+
+**D0 done (first real brick):** PR #90 merged (rails in main). Implemented `lib/docintel/quality/documentImageQuality.ts`
+(pure: metrics → ACCEPT/DEGRADED_REVIEW/RESHOOT_REQUIRED + reshoot keys), reusing existing preprocess metrics;
+guarded inert hook in translation vision-extract route (flag `QUALITY_GATE_ENABLED` default OFF → byte-identical;
+ON → reshoot before OCR). Blur never a fabrication signal. tsc 0; D0 16 tests; full suite 2875 passed. Report:
+docs/reports/D0_QUALITY_RESHOOT_IMPLEMENTATION.md. **Not enabled in prod.** Next code = Gate 2 ReaderResult.
+Enabling D0 in prod (canary) = separate owner decision after a local/browser proof. PR opened (docs-only PRs ended).
+
+
 
 **Operating rails (this turn, docs-only):** PR #89 merged (Gemini-first in main). Created the project law:
 `docs/architecture/AGENT_OPERATING_CONTRACT.md` (live vs target, may-do vs must-stop-and-ask, evidence
