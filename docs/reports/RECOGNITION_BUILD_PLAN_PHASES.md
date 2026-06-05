@@ -17,7 +17,7 @@ calling the TARGET the CURRENT reality.
 | 7 | D4 validators | block release on critical inconsistency | code | — |
 | 8 | D5/D6 generalized review/PDF | one shared review+PDF gate across products | code | — |
 | 9 | Auditor/correction loop | corrections → GT candidates, PII-free | code | — |
-| 10 | HTR / GPT-4o research | second reader, only if ROI | research | GT from diff people |
+| 10 | 2nd reader / HTR research | provider-agnostic 2nd reader + HTR, only if ROI | research | GT diff people + owner decision |
 
 ---
 
@@ -40,9 +40,9 @@ calling the TARGET the CURRENT reality.
 ### Phase 3 — ReaderResult contract
 - **Objective:** formalize `ReaderResult`; map Gemini onto it. No fan-out, no behavior change.
 - **Files:** new `lib/docintel/readers/ReaderResult.ts`; adapter wrapping geminiVisionProvider.
-- **Allowed:** pure interface + adapter; GPT-4o/HTR = disabled stubs.
+- **Allowed:** pure interface + adapter; any second reader = a provider-agnostic DISABLED stub (NOT GPT-4o-specific).
 - **Tests:** Gemini output maps to ReaderResult losslessly; no change to readDocument output.
-- **Stop:** prod byte-identical. **NOT:** no GPT-4o/HTR live; no consensus revival.
+- **Stop:** prod byte-identical. **NOT:** no second provider live; no fan-out; no consensus revival. Gemini-first.
 
 ### Phase 4 — OneBrain shadow-only
 - **Objective:** wire `decideField` to RECEIVE reads+signals and WRITE a sanitized decision comparison, while
@@ -80,7 +80,9 @@ calling the TARGET the CURRENT reality.
 - **Files:** audit writer; private GT-candidate store (gitignored).
 - **Tests:** correction recorded {before, after, reason, doc_class, reader_id}; NO PII in public logs.
 
-### Phase 10 — HTR / GPT-4o research (only after GT breadth)
-- A/B: Transkribus (faster, third-party PII/DPA/egress risk) vs TrOCR (privacy better, own infra/fine-tune).
-- Decision criterion: hard-case review rate too high for UX AND GT from different people exists.
-- **NOT a production commitment** — research/benchmark only.
+### Phase 10 — second reader / HTR research (only after GT breadth + owner decision)
+- **Gemini-first holds:** near-term reader work stays within the Gemini family (top versions, benchmarked
+  prompts). A second independent reader is **provider-agnostic** — GPT-4o/Claude are only candidates, NOT a plan.
+- HTR A/B: Transkribus (faster, third-party PII/DPA/egress risk) vs TrOCR (privacy better, own infra/fine-tune).
+- Decision criterion: hard-case review rate too high for UX AND GT from different people exists AND owner says go.
+- **NOT a production commitment** — research/benchmark only. No multi-provider fan-out until ROI is proven.
