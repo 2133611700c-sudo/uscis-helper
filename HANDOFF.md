@@ -1,4 +1,9 @@
-# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED)
+# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED · Wave D monitoring active)
+
+**Monitoring set up (this turn):** PR #86 merged (origin/main 08b183a). Read-only healthz workflow
+`.github/workflows/prod-safety-monitor.yml` (every 6h, no secrets, self-no-ops after 2026-06-07 — delete after
+window) + manual runbook `docs/reports/PROD_SAFETY_MONITORING_24H_RUNBOOK.md` (vercel logs/env, what-to-watch,
+rollback policy: self-consistency first). No code/flag/env change. Next real unblock = GT from different people.
 
 **Status: PASS_RUNTIME_VERIFIED.** prod == main == `7c6068c` (healthz ok, deploy READY). PRs #80–#85 merged.
 Anti-fab gate firing is **prod-runtime-observed** (owner controlled hard-case upload: 8/10 review=true, ALL
