@@ -1,8 +1,10 @@
 # STATUS (2026-06-05 — honest, no overclaiming)
 
-## Translation hardening (local fix verified, production pending deploy)
+## Translation hardening — NOW IN PROD (verified 2026-06-05 01:43)
 
-- Public Translation Wizard false-readiness gap CLOSED locally:
+- ✅ **Live in prod**: PR #84 merged; `origin/main` = `2d2a391`; review-gate commit `e298d97` is an ancestor
+  of main; prod `healthz` sha = `2d2a391` == main. The fix that was "local only" last entry IS now deployed.
+- (history) Public Translation Wizard false-readiness gap CLOSED:
   - OCR `review_required` fields now block payment and PDF download
   - user can explicitly confirm unchanged flagged OCR values
   - `/api/translation/generate-pdf` now rejects unresolved OCR review fields from the legacy public wizard payload
@@ -18,16 +20,24 @@
     - `confirmButtonsAfter=0`
     - `payDisabledAfter=false`
 - Evidence: `docs/reports/TRANSLATION_REVIEW_HARDENING_2026-06-04.md`
-- Truth boundary: PRODUCTION NOT YET RE-VERIFIED AFTER THIS FIX.
+- Independent re-verify (agent, raw): tsc 0 errors; full suite **2859 passed / 4 skipped** (matches claim);
+  server gate logic + wizard block + tests read and correct. Build NOT re-run by agent (tsc+suite = proxy).
 
-## Production Safety Gates
+## Production Safety Gates (re-verified from runtime logs 2026-06-05 01:44)
 
 | Gate | Env | Runtime Observed | Evidence |
 |------|-----|-----------------|----------|
-| ANTI_FABRICATION_GATE | ON (27 min ago) | **NO** (0 docs processed) | Local liveness proven, prod awaiting first event |
-| SELF_CONSISTENCY_GATE | ON (20 min ago) | **NO** (0 docs processed) | Local liveness proven, prod awaiting first event |
-| DOCUMENT_CLASS_METRICS | ON (16h ago) | **NO** (metric_count=0) | No extraction since deploy |
+| ANTI_FABRICATION_GATE | claimed ON (env not readable by agent) | **NOT INDEPENDENTLY CONFIRMED** | gate emits NO log; metric line truncated; owner reports 8/10 review=true via curl — agent cannot see field-level review in logs |
+| SELF_CONSISTENCY_GATE | claimed ON (env not readable by agent) | **NOT INDEPENDENTLY CONFIRMED** | same — no log signal |
+| DOCUMENT_CLASS_METRICS | **ON — RUNTIME VERIFIED** | **YES** | 3× `[document_class_metric]` emitted on real `POST /api/translation/vision-extract` 200 at 01:01–01:03; proves the metric flag is active at runtime |
+| (extraction path) | — | **HEALTHY** | 3 vision-extract + 2 tps/ocr/extract = 200; **0 error/fatal in 3h**. No regression from deployed safety code. |
 | SMART_NORMALIZE | OFF | N/A | DO_NOT_ENABLE |
+
+> Honest boundary: env VALUES cannot be read with the available tools (no Vercel env-list MCP tool) — owner
+> confirms with `vercel env ls production`. The anti-fab/self-consistency gates emit no runtime log, so their
+> *firing* is not visible in logs; the metric proves extractions ran + the metric flag is active, not that the
+> identity gate forced review. To prove the gate itself, capture one hard-case extraction's RESPONSE (review
+> fields), not just logs.
 
 ## What is NOT live (do not claim otherwise)
 
@@ -104,3 +114,20 @@ This is the ONLY way to change status from ENABLED_BY_ENV to RUNTIME_VERIFIED.
 - Strong corrected truth:
   - "not wired at all" was too rough for several D2 / gate components
   - more exact status = wired, but flag-gated and OFF by default
+
+## 2026-06-04 — PROJECT UNDERSTANDING MASTER
+
+- Report added: `docs/reports/PROJECT_UNDERSTANDING_MASTER_2026-06-04.md`
+- Full-project understanding pass completed across:
+  - startup truth docs (`AGENTS.md`, `STATUS.md`, `HANDOFF.md`, `SOURCE_OF_TRUTH.md`, `CHANGELOG.md`)
+  - accepted ADRs
+  - top-level repo structure
+  - `apps/web/src/lib/*`
+  - product OCR routes
+- Strongest verified understanding:
+  - this repo contains **three architectural eras at once**
+    1. legacy TPS/product-specific pipelines
+    2. current shared live `docintel` + `canonical/core` spine
+    3. parked / target `central-brain` + `engine/consensus` layer
+  - project understanding must distinguish these planes instead of flattening them into one claim
+  - TPS merge brain (`lib/tps/centralBrain.ts`) is a separate live plane, not dead code
