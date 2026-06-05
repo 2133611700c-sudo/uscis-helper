@@ -5,7 +5,8 @@
 contract, phase order), `docs/reports/RECOGNITION_PHASE_GATES_CHECKLIST.md` (Gates 0–6), and the copy-paste
 `docs/reports/NEXT_PROMPT_B_D0_QUALITY_RESHOOT.md`. **Next code step = D0 quality/reshoot, flag default OFF,
 ONLY after a clean 24–48h monitor + owner "start D0".** HTR / second provider / OneBrain stay gated on GT from
-different people + owner decision. No code/flag/prod change this turn.
+different people + owner decision. Refined the contract: Gemini-first ≠ fan-out; HTR research ≠ implementation;
+a Gemini top-version benchmark must precede any non-Gemini provider discussion. No code/flag/prod change.
 
 
 
