@@ -1,5 +1,15 @@
-# HANDOFF (2026-06-05 — re-verified from runtime)
+# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED)
 
+**Status: PASS_RUNTIME_VERIFIED.** prod == main == `7c6068c` (healthz ok, deploy READY). PRs #80–#85 merged.
+Anti-fab gate firing is **prod-runtime-observed** (owner controlled hard-case upload: 8/10 review=true, ALL
+identity protected; corroborated by logs — vision-extract 200 + metric, 0 errors) AND independently reproduced
+by the agent's local real-model proof (5/5 identity forced, values unchanged, self_consistency mismatch) — the
+two agree field-for-field. env flags present (`vercel env ls`); SMART absent. This is a **safety wrapper working
+in prod**, NOT a full OneBrain (HTR/GPT-4o/consensus/OneBrain still NOT live, parked). **Next: monitor 24–48h**
+(5xx, review_rate, self-consistency latency/cost, UI/PDF block, support). Rollback ready (env rm + redeploy,
+self-consistency first if cost rises). Report: docs/reports/POST_RUNTIME_GATE_VERIFICATION.md.
+
+--- prior (superseded) ---
 Prod = `2d2a391` = origin/main (healthz verified). Review-gate fix (e298d97, PR #84) IS in prod. PRs #80–#84 merged.
 Real extractions DID run in prod ~01:01–01:03 (3× vision-extract + 2× tps/ocr/extract, all 200, 0 errors in 3h)
 → `document_class_metric` emitted ×3 → **DOCUMENT_CLASS_METRICS runtime VERIFIED**; deployed safety code = no regression.
