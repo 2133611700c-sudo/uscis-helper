@@ -14,6 +14,8 @@ Owner asked for an Amazon-level turnkey pass on my own critical plan. Did everyt
 
 Files: antiFabricationGate.test.ts (+canary contract), oneBrain/decideField.ts (PARKED header), docs/adr/ADR-016-*, docs/reports/ANTI_FAB_GATE_CANARY_PLAN.md, docs/reports/LIVE_DOOR_SCORABLE_COVERAGE.md, STATUS/HANDOFF/CHANGELOG/OWNER_QUEUE. No flags enabled; no prod env/deploy; no model switch; no SMART/HTR/L2-WIRE; qa-private tracked=0; no new PII in docs. **Next (owner): the 3 decisions above.**
 
+**Follow-up (owner picked "PII runbook, safe, now"):** ran a read-only PII survey and PREPARED (did NOT execute) `docs/reports/PII_HISTORY_REWRITE_RUNBOOK.md`. Key finding: repo is **PRIVATE** (not publicly exposed) and `docs/reports/evidence/` is already gitignored, so urgency is low and the decision is purely "will it ever be shared externally?". Scope: 51 real USCIS-packet blobs in history (worst leak); the owner's name is an INTENTIONAL KMU-55 fixture in 26 test files (so a naive replace-all would break tests). Runbook is two-phase: Phase A = current-tree scrub (non-destructive, migrate fixtures to a synthetic identity, redact ID tokens) doable any time; Phase B = git filter-repo history purge + force-push (destructive), gated on the external decision + a maintenance window. No values printed; real→synthetic map lives only in a local gitignored pii-replacements.txt. Nothing deleted/rewritten/pushed.
+
 
 
 ## Session 105j — live-door scorable coverage blockers (no prod flags)
