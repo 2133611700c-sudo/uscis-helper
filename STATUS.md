@@ -1,5 +1,10 @@
 # STATUS (2026-06-05 — honest, no overclaiming)
 
+## Reader strategy = GEMINI-FIRST (locked 2026-06-05)
+- Near-term reader work stays within the Gemini family (top versions/benchmarks). A second reader = a
+  provider-agnostic DISABLED slot — GPT-4o/Claude NOT near-term; HTR research-only. No fan-out until ROI proven.
+  All gated on GT breadth from different people + owner decision. (Roadmap docs corrected via follow-up PR.)
+
 ## Recognition structure roadmap accepted (docs-only; build = next, phased)
 - Truth map + target D0–D6 + 10-phase build plan + 5 next-prompts written (see CHANGELOG / OWNER_QUEUE).
 - Order: monitoring closeout → D0 quality → ReaderResult contract → OneBrain shadow → D2/D3/D4 → Auditor;
