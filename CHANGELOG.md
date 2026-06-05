@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-05 (D0 closeout — PR #91 merged + flag-ON proof, agent)
+- merge: PR #91 (D0 quality/reshoot) MERGED → origin/main 5266ca1. D0 now in main behind QUALITY_GATE_ENABLED (OFF in prod).
+- proof (local, flag ON, synthetic images via sharp, no PII/OCR/prod): real preprocess→decide path —
+  noise 2000×1500 → ACCEPT; tiny 400×300 → RESHOOT_REQUIRED/photo_low_resolution (gate fires); solid/dark were
+  hard-rejected by existing preprocess BEFORE the D0 hook (correct layering). No fabrication/identity leak. Harness removed.
+- verified: PR #91 = 3 runtime files only (module+test+one guarded route hook); no env/qa-private/model/HTR/OneBrain/SMART.
+- QUALITY_GATE_ENABLED stays OFF in prod (not enabled). Next = local/browser proof → owner canary decision; then Gate 2 ReaderResult.
+
 ## 2026-06-05 (D0 quality/reshoot — first real brick, behind flag OFF, agent)
 - merge: PR #90 (operating contract) MERGED → origin/main 3d9d566 (rails locked in main).
 - feat(D0): `lib/docintel/quality/documentImageQuality.ts` — pure decision module: image metrics
