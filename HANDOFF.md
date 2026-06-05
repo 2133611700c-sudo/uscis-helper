@@ -3,10 +3,13 @@
 Prod = `2d2a391` = origin/main (healthz verified). Review-gate fix (e298d97, PR #84) IS in prod. PRs #80–#84 merged.
 Real extractions DID run in prod ~01:01–01:03 (3× vision-extract + 2× tps/ocr/extract, all 200, 0 errors in 3h)
 → `document_class_metric` emitted ×3 → **DOCUMENT_CLASS_METRICS runtime VERIFIED**; deployed safety code = no regression.
-STILL UNCONFIRMED by agent: (1) env flag VALUES — no Vercel env-read tool, owner runs `vercel env ls production`;
-(2) anti-fab/self-consistency actually FORCING review — gates emit no log; owner's "8/10 review=true" is owner-observed,
-not visible to agent. To prove the gate, capture one hard-case extraction RESPONSE (review fields), not just logs.
-Independent fix re-verify: tsc 0, full suite 2859 passed / 4 skipped (matches claim).
+NOW CONFIRMED by agent (this turn): (1) env flags PRESENT in prod via `vercel env ls production` (CLI authed) —
+ANTI_FABRICATION + SELF_CONSISTENCY + DOCUMENT_CLASS_METRICS present, SMART_NORMALIZE absent (ls shows presence
+not the literal value); (2) gate FIRING proven on the identical readDocument code path locally (real Soviet birth
+cert + gemini-3.1-pro + flags ON) → 5/5 identity forced review + reasons + values unchanged + self_consistency
+mismatch caught. Report: docs/reports/POST_RUNTIME_GATE_VERIFICATION.md.
+ONE residual (owner-only): a literal PROD HTTP hard-case extraction RESPONSE (needs a PII upload the agent won't do)
+— flips gate from local-runtime-proven to prod-runtime-observed. Independent fix re-verify: tsc 0, suite 2859 passed.
 See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FABRICATION_GATE_ENABLED production --yes`
 
 ## 2026-06-04 — translation public wizard hardening
