@@ -1,5 +1,11 @@
 # STATUS (2026-06-05 — honest, no overclaiming)
 
+## D0 quality/reshoot — IMPLEMENTED behind flag OFF (first real brick)
+- `lib/docintel/quality/documentImageQuality.ts`: image metrics → ACCEPT / DEGRADED_REVIEW / RESHOOT_REQUIRED
+  + reshoot messages. Flag `QUALITY_GATE_ENABLED` default OFF → prod byte-identical. Inert hook in translation
+  vision-extract route. Blur is NEVER a fabrication signal. tsc 0; D0 16 tests; full suite 2875 passed.
+- NOT enabled in prod. Next (Gate 2) = ReaderResult interface. Enabling D0 in prod = separate owner decision.
+
 ## Agent rails in place (operating contract + phase gates + D0 start pack)
 - Refined: Gemini-first guardrails hardened — "Gemini-first ≠ fan-out", "HTR research ≠ implementation",
   and a Gemini top-version benchmark must precede ANY non-Gemini provider discussion.

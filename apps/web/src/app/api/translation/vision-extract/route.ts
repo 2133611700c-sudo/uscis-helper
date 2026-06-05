@@ -30,6 +30,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
+import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
@@ -259,6 +260,24 @@ export async function POST(req: NextRequest) {
     const pre = await preprocessImage(rawBuffer, mime).catch(() => null)
     const buffer = pre?.ok ? pre.buffer : rawBuffer
     const effectiveMime = pre?.ok ? pre.mimeType : mime
+    // ── D0 intake quality gate (QUALITY_GATE_ENABLED, default OFF) ──────────
+    // Flag OFF ⇒ this whole block is skipped ⇒ byte-identical to current prod.
+    // Flag ON ⇒ a too-blurry/dark/small photo is bounced back for a reshoot BEFORE
+    // any model spend. Quality is image-usability only — NEVER a fabrication signal.
+    if (isQualityGateEnabled() && pre?.ok) {
+      const q = decideImageQuality(metricsFromPreprocess(pre))
+      if (q.reshoot_required) {
+        return NextResponse.json({
+          ok: false,
+          status: 'reshoot_required',
+          reshoot: true,
+          page: i + 1,
+          message_key: q.user_message_key,
+          quality_decision: q.decision,
+          signals: q.signals,
+        }, { status: 200 })
+      }
+    }
     try {
       const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 15_000, product: 'translation' })
       lastResult = r
