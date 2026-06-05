@@ -25,6 +25,8 @@ D4 validators → D5 review → D6 PDF → Auditor`. The target is a destination
 - self-consistency ≠ truth; agreement ≠ truth (it's an instability detector).
 - dictionary signal ≠ silent correction (a dictionary signals/raises review, never rewrites a value).
 - **Ukrainian source text as-written = truth; a Russianized output = a model error to penalize.**
+- Gemini-first ≠ multi-provider fan-out (near-term = top Gemini versions only; no second provider live).
+- HTR research ≠ HTR implementation (research/benchmark only; building HTR now is forbidden).
 
 ## 4. Agent autonomy
 
@@ -60,6 +62,9 @@ A claim is only "verified" with raw evidence (command output / test / log). No c
 - Order: **Monitoring clean → D0 quality → ReaderResult → OneBrain shadow → D2/D3/D4 → Auditor.**
 - No live-output change until shadow evidence exists.
 - HTR / any second provider only after **GT from different people** + owner business decision. Gemini-first until then.
+- **Gemini top-version benchmarking must happen BEFORE any non-Gemini provider discussion** — a second provider
+  is only on the table if Gemini's best versions are benchmarked and demonstrably insufficient, or a clear
+  business need is proven. Until then, the answer to "add GPT-4o/Claude/HTR" is no.
 - Any new behavior ships behind a flag default OFF; flag OFF must be byte-identical to current prod.
 
 ## 7. Hard rules carried from CLAUDE.md / ADRs (do not relitigate)

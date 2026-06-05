@@ -4,7 +4,7 @@
 Each gate lists the evidence required. No gate is "passed" without raw evidence. See `AGENT_OPERATING_CONTRACT.md`.
 
 ## Gate 0 — Monitoring stable (current)
-- [ ] PR #87 monitoring merged · PASS_RUNTIME_VERIFIED reached.
+- [ ] PR #87 monitoring merged · PR #89 Gemini-first merged · PASS_RUNTIME_VERIFIED reached.
 - [ ] 24–48h: no 5xx / error / fatal spike (healthz ok; `vercel logs --since 24h`).
 - [ ] document_class_metric still emitting on real traffic.
 - [ ] no review / payment / PDF-block complaints; no false-positive-review storm on printed birth certs.
@@ -43,6 +43,8 @@ Each gate lists the evidence required. No gate is "passed" without raw evidence.
 - [ ] provenance attached; NO PII in public logs; GT-candidate pipeline writes to a gitignored store.
 
 ## Gate 6 — Future HTR / second provider research (deferred)
+- [ ] **Gemini top-version benchmark done FIRST** — a non-Gemini provider is only discussed if Gemini's best
+  versions are benchmarked and demonstrably insufficient, OR a clear business need is proven.
 - [ ] GT from DIFFERENT people exists.
 - [ ] cost / privacy(egress/DPA) / latency plan written.
 - [ ] owner business approval.

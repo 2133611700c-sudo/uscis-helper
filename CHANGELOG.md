@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-05 (operating contract refinements — Gemini-first guardrails, docs-only, agent)
+- refine AGENT_OPERATING_CONTRACT §3: + "Gemini-first ≠ multi-provider fan-out", "HTR research ≠ HTR implementation".
+- refine §6 + Phase Gate 6: Gemini top-version benchmark must precede ANY non-Gemini provider discussion.
+- Phase Gate 0: + PR #89 Gemini-first merged. OWNER_QUEUE: + owner command before any non-Gemini provider discussion.
+- Docs-only; no runtime/flag/env change; no PII; qa-private=0. Applied to the open agent-operating-contract PR.
+
 ## 2026-06-05 (agent operating contract + phase gates + D0 start pack — docs-only, agent)
 - merge: PR #89 (Gemini-first correction) MERGED → origin/main 50ee030 (prod deploy catching up, docs-only).
 - docs: created the project "rails" so future agents don't confuse live/target or jump to HTR/GPT/OneBrain:
