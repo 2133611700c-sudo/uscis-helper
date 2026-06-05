@@ -81,4 +81,5 @@ Results section below. No behavior flags in prod; no prod env; no push.
 
 ## Results
 
-_(empty — pending owner GT)_
+Done 2026-06-04 — see `docs/reports/ACCURACY_OFFON_RESULTS.md` (sanitized) + `SMART_NORMALIZE_DECISION.md`.
+Headline: mode C (anti-fab + self-consistency) → false_negative_review=0 in all 12 cells; SMART_NORMALIZE no accuracy gain; DOB month-mismatch caught by the gate, missed without it. N=2/one-person + RU-doc-vs-UA-GT caveat → signal, not prod-grade proof.
