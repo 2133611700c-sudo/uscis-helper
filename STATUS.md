@@ -1,5 +1,11 @@
 # STATUS (2026-06-05 — honest, no overclaiming)
 
+## Agent rails in place (operating contract + phase gates + D0 start pack)
+- `docs/architecture/AGENT_OPERATING_CONTRACT.md` = the law (live vs target, autonomy boundaries, evidence
+  contract, phase-gate order). `docs/reports/RECOGNITION_PHASE_GATES_CHECKLIST.md` = Gates 0–6.
+- Next CODE step = D0 quality/reshoot (`docs/reports/NEXT_PROMPT_B_D0_QUALITY_RESHOOT.md`), flag default OFF,
+  ONLY after clean 24–48h monitor + owner "start D0". HTR/2nd provider/OneBrain stay gated.
+
 ## Reader strategy = GEMINI-FIRST (locked 2026-06-05)
 - Near-term reader work stays within the Gemini family (top versions/benchmarks). A second reader = a
   provider-agnostic DISABLED slot — GPT-4o/Claude NOT near-term; HTR research-only. No fan-out until ROI proven.
