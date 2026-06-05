@@ -146,3 +146,56 @@ describe('route coverage — all 4 products call readDocument (gate inherited)',
     })
   }
 })
+
+// ── CANARY SAFETY CONTRACT ─────────────────────────────────────────────────
+// The engineering proof a production canary stands on. Three guarantees:
+//   1. ROLLBACK = byte-identical: flag ON → OFF returns EXACTLY the no-flag output.
+//      (Removing ANTI_FABRICATION_GATE_ENABLED is a complete, lossless rollback.)
+//   2. VALUE IMMUTABILITY: turning the gate ON never alters any field VALUE — it
+//      only raises review_required (+ reasons). No fabrication, no rewrite.
+//   3. SAFETY DIRECTION: the gate can only ADD review on identity fields; it never
+//      removes review and never touches non-identity fields. Worst case = more
+//      human review, never a silent wrong value.
+describe('canary safety contract (rollback + value immutability)', () => {
+  afterEach(() => { delete process.env.ANTI_FABRICATION_GATE_ENABLED })
+
+  async function read() {
+    return readDocument(Buffer.from('x'), 'image/jpeg', 'ua_birth_certificate', { provider: stub() })
+  }
+
+  it('rollback is byte-identical: OFF → ON → OFF returns the original output', async () => {
+    delete process.env.ANTI_FABRICATION_GATE_ENABLED
+    const baseline = await read()
+    process.env.ANTI_FABRICATION_GATE_ENABLED = '1'
+    const enabled = await read()
+    delete process.env.ANTI_FABRICATION_GATE_ENABLED
+    const rolledBack = await read()
+    // enabling MUST change something (else the gate is inert) ...
+    expect(JSON.stringify(enabled.fields)).not.toBe(JSON.stringify(baseline.fields))
+    // ... and rolling back MUST restore the exact pre-gate output.
+    expect(JSON.stringify(rolledBack.fields)).toBe(JSON.stringify(baseline.fields))
+  })
+
+  it('value immutability: every field VALUE is identical OFF vs ON (only review changes)', async () => {
+    delete process.env.ANTI_FABRICATION_GATE_ENABLED
+    const off = await read()
+    process.env.ANTI_FABRICATION_GATE_ENABLED = '1'
+    const on = await read()
+    const offByField = new Map(off.fields.map((f) => [f.field, f.value]))
+    for (const f of on.fields) {
+      expect(f.value, `value of ${f.field} must not change`).toBe(offByField.get(f.field))
+    }
+  })
+
+  it('coarse precision is DOCUMENTED: gate fires on ALL birth certs (printed too)', () => {
+    // ua_birth_certificate maps conservatively to birth_certificate_handwritten, so the
+    // gate cannot today distinguish a printed modern birth cert from a handwritten one —
+    // it force-reviews identity on BOTH. That is the false_positive_review surface the
+    // canary must watch. Safety (no false negatives) is total; precision is coarse.
+    const printedLikeBirthCert = applyAntiFabricationGate(
+      [field({ field: 'child_family_name', value: 'X', review_required: false })],
+      'ua_birth_certificate',
+    )
+    expect(printedLikeBirthCert[0].review_required).toBe(true)
+  })
+})
