@@ -1,6 +1,8 @@
 # STATUS (2026-06-05 — honest, no overclaiming)
 
 ## Agent rails in place (operating contract + phase gates + D0 start pack)
+- Refined: Gemini-first guardrails hardened — "Gemini-first ≠ fan-out", "HTR research ≠ implementation",
+  and a Gemini top-version benchmark must precede ANY non-Gemini provider discussion.
 - `docs/architecture/AGENT_OPERATING_CONTRACT.md` = the law (live vs target, autonomy boundaries, evidence
   contract, phase-gate order). `docs/reports/RECOGNITION_PHASE_GATES_CHECKLIST.md` = Gates 0–6.
 - Next CODE step = D0 quality/reshoot (`docs/reports/NEXT_PROMPT_B_D0_QUALITY_RESHOOT.md`), flag default OFF,
