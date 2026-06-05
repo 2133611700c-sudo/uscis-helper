@@ -23,21 +23,21 @@
 - Independent re-verify (agent, raw): tsc 0 errors; full suite **2859 passed / 4 skipped** (matches claim);
   server gate logic + wizard block + tests read and correct. Build NOT re-run by agent (tsc+suite = proxy).
 
-## Production Safety Gates (re-verified 2026-06-05 — env + gate-firing proven)
+## Production Safety Gates — PASS_RUNTIME_VERIFIED (2026-06-05, prod==main==7c6068c)
 
 | Gate | Env (prod) | Firing proven | Evidence |
 |------|-----|-----------------|----------|
-| ANTI_FABRICATION_GATE | **present** (`vercel env ls`, set 2h ago) | **YES (runtime, local real-model)** | real Soviet birth cert + gemini-3.1-pro + flag ON → 5/5 identity forced review, reasons attached, values unchanged. Prod HTTP response deferred (PII). |
-| SELF_CONSISTENCY_GATE | **present** (set 1h ago) | **YES (runtime, local real-model)** | same run: `self_consistency=mismatch` (2 reads disagreed on identity) → forced review. |
-| DOCUMENT_CLASS_METRICS | **present — RUNTIME VERIFIED =1** | **YES** | 3× `[document_class_metric]` on real prod `POST /vision-extract` 200 at 01:01–01:03 |
-| (extraction path) | — | **HEALTHY** | 3 vision-extract + 2 tps/ocr/extract = 200; **0 error/fatal in 2–3h**. No regression. |
+| ANTI_FABRICATION_GATE | **present** (`vercel env ls`, set 2h ago) | **YES — prod + local agree** | owner prod-HTTP: 8/10 review=true, ALL identity protected (corroborated by logs, 0 errors); agent local real-model: 5/5 identity forced, reasons attached, values unchanged. Field-for-field match. |
+| SELF_CONSISTENCY_GATE | **present** (set 1h ago) | **YES (runtime, local real-model)** | `self_consistency=mismatch` (2 reads disagreed on identity) → forced review. |
+| DOCUMENT_CLASS_METRICS | **present — RUNTIME VERIFIED =1** | **YES** | multiple `[document_class_metric]` on real prod `POST /vision-extract` 200 (01:01–01:03, 02:01–02:02) |
+| (extraction path) | — | **HEALTHY** | all vision-extract / tps-ocr 200; **0 error/fatal**. No regression. |
 | SMART_NORMALIZE | **absent** | N/A | DO_NOT_ENABLE ✅ |
 
-> Honest boundary (the one residual): env `ls` shows presence + target, NOT the literal value (`=1`); the metric
-> proves its own flag `=1` at runtime, the two gate flags are presence+set-time. Gate FIRING is proven on the
-> **identical `readDocument` code path** locally (real model, real hard-case, flags ON) — NOT via a prod HTTP
-> response (that needs a PII upload the agent won't do). Owner upload of one hard-case doc flips this from
-> *local-runtime-proven* to *prod-runtime-observed*. Full report: `docs/reports/POST_RUNTIME_GATE_VERIFICATION.md`.
+> Gate firing is now **prod-runtime-observed** (owner's controlled hard-case upload) AND independently
+> reproduced by the agent's local real-model proof — the two agree field-for-field. Remaining honesty note:
+> env `ls` shows presence not the literal `=1` value (metric proves its own flag `=1`; the two gate flags are
+> presence + set-time + the observed firing). This is a **safety wrapper working in prod**, NOT a full OneBrain.
+> Full report: `docs/reports/POST_RUNTIME_GATE_VERIFICATION.md`. **Next: monitor 24–48h.**
 
 ## What is NOT live (do not claim otherwise)
 
