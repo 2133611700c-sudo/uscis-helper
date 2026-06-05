@@ -1,4 +1,20 @@
-# HANDOFF — Session 105j (2026-06-04)
+# HANDOFF — Session 105k (2026-06-04)
+
+## Session 105k — TURNKEY professional pass (zero prod change)
+
+Owner asked for an Amazon-level turnkey pass on my own critical plan. Did everything that does NOT touch prod (enabling a flag stays the owner's single command). Full suite 2854 passed / 4 skipped / 0 fail, tsc 0.
+
+**1. Gate canary is now turnkey + the rollback is PROVEN by test.** Added a `canary safety contract` block to `antiFabricationGate.test.ts`: (a) rollback is byte-identical — OFF→ON→OFF restores the exact pre-gate output (this IS the rollback rehearsal, now automated/repeatable); (b) value immutability — turning the gate ON never changes any field VALUE, only `review_required`; (c) a test that pins the coarse-precision reality. Upgraded `ANTI_FAB_GATE_CANARY_PLAN.md` with a "TURNKEY EXECUTION" section: green pre-flight table + the one owner command sequence (canary→observe→prod) + rollback. Owner runs one sequence; agent does not flip the flag.
+
+**2. Surfaced a critical caveat I had not stated plainly:** `docintelIdToDocumentClass('ua_birth_certificate')` maps conservatively to `birth_certificate_handwritten`, so the gate force-reviews identity on ALL birth certs — including printed modern ones (the registry can't yet distinguish printed vs handwritten birth certs). Safety is total (no false negatives); precision is coarse. That is the `false_positive_review` surface the canary must watch. Documented + test-pinned.
+
+**3. ADR-016 (accepted):** hard-case UA = mandatory human-review BY POLICY (stop gating it on "more accuracy data"; 1/4 won't improve by measuring). No prod threshold/model decision from single-person GT (FROZEN). OneBrain `decideField` PARKED — added a prominent PARKED header (0 callers, placeholder thresholds uncalibratable at current N; revisit at GT ≥ ~50 fields across different people; kept as design reference, not deleted). EAD/I-94 declared OUT OF SCOPE for UA-door scoring — they are US/Latin docs read by the controlling-Latin path; "make them scorable / reach 6/6" was a category error, withdrawn. Reframed the coverage report + OWNER_QUEUE accordingly (UA coverage = 4/4 of UA docs with a real image).
+
+**4. Owner decisions queued (OWNER_QUEUE, newest entry):** (1) run the canary when ready; (2) PII-in-history yes/no — will the repo ever be shared externally? yes → schedule filter-repo (agent prepares runbook on command), no → record internal-only and stop re-raising; (3) GT from different people — the only real unblock for calibration.
+
+Files: antiFabricationGate.test.ts (+canary contract), oneBrain/decideField.ts (PARKED header), docs/adr/ADR-016-*, docs/reports/ANTI_FAB_GATE_CANARY_PLAN.md, docs/reports/LIVE_DOOR_SCORABLE_COVERAGE.md, STATUS/HANDOFF/CHANGELOG/OWNER_QUEUE. No flags enabled; no prod env/deploy; no model switch; no SMART/HTR/L2-WIRE; qa-private tracked=0; no new PII in docs. **Next (owner): the 3 decisions above.**
+
+
 
 ## Session 105j — live-door scorable coverage blockers (no prod flags)
 
