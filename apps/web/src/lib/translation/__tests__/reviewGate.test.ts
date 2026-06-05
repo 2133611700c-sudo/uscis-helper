@@ -4,7 +4,7 @@
  * a completed signature. Anything missing → refusal.
  */
 import { describe, it, expect } from 'vitest'
-import { assertReviewGate, isSignatureComplete } from '../reviewGate'
+import { assertReviewGate, getUnresolvedReviewFields, isSignatureComplete } from '../reviewGate'
 
 const ID = { signerName: 'Serhii Kuropiatnyk', signerAddress: '1213 Gordon St, Los Angeles, CA 90038' }
 const SIG = { signedAt: '2026-05-30T12:00:00.000Z', signatureMethod: 'drawn_on_screen' as const, signatureDataUrl: 'data:image/png;base64,iVBORw0KGgo=' }
@@ -41,6 +41,20 @@ describe('assertReviewGate v2 — hard block', () => {
     if (!r.ok) expect(r.reason).toBe('signature_required')
   })
 
+  it('blocks when OCR review_required fields are still unresolved', () => {
+    const r = assertReviewGate({
+      ...ID,
+      ...CHECKS,
+      ...SIG,
+      extractedFields: [
+        { field: 'family_name', normalized_value: 'Kuropiatnyk', review_required: false },
+        { field: 'given_name', normalized_value: 'Serhii', review_required: true },
+      ],
+    })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.reason).toBe('ocr_review_unresolved')
+  })
+
   it('blocks a drawn signature with no data URL', () => {
     const r = assertReviewGate({ ...ID, ...CHECKS, signedAt: SIG.signedAt, signatureMethod: 'drawn_on_screen', signatureDataUrl: '' })
     expect(r.ok).toBe(false)
@@ -70,4 +84,21 @@ describe('isSignatureComplete', () => {
   it('false without signedAt', () => { expect(isSignatureComplete({ signatureMethod: 'manual_wet_signature' })).toBe(false) })
   it('true for wet signature with signedAt', () => { expect(isSignatureComplete({ signedAt: SIG.signedAt, signatureMethod: 'manual_wet_signature' })).toBe(true) })
   it('false for drawn without data url', () => { expect(isSignatureComplete({ signedAt: SIG.signedAt, signatureMethod: 'drawn_on_screen' })).toBe(false) })
+})
+
+describe('getUnresolvedReviewFields', () => {
+  it('returns review_required fields and blank values', () => {
+    expect(getUnresolvedReviewFields([
+      { field: 'family_name', normalized_value: 'Kuropiatnyk', review_required: false },
+      { field: 'given_name', normalized_value: '', review_required: false },
+      { field: 'dob', normalized_value: '1990-01-01', review_required: true },
+    ])).toEqual(['given_name', 'dob'])
+  })
+
+  it('returns empty array when every field is resolved', () => {
+    expect(getUnresolvedReviewFields([
+      { field: 'family_name', normalized_value: 'Kuropiatnyk', review_required: false },
+      { field: 'given_name', normalized_value: 'Serhii', review_required: false },
+    ])).toEqual([])
+  })
 })
