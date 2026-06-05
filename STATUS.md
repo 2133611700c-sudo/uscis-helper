@@ -23,21 +23,21 @@
 - Independent re-verify (agent, raw): tsc 0 errors; full suite **2859 passed / 4 skipped** (matches claim);
   server gate logic + wizard block + tests read and correct. Build NOT re-run by agent (tsc+suite = proxy).
 
-## Production Safety Gates (re-verified from runtime logs 2026-06-05 01:44)
+## Production Safety Gates (re-verified 2026-06-05 — env + gate-firing proven)
 
-| Gate | Env | Runtime Observed | Evidence |
+| Gate | Env (prod) | Firing proven | Evidence |
 |------|-----|-----------------|----------|
-| ANTI_FABRICATION_GATE | claimed ON (env not readable by agent) | **NOT INDEPENDENTLY CONFIRMED** | gate emits NO log; metric line truncated; owner reports 8/10 review=true via curl — agent cannot see field-level review in logs |
-| SELF_CONSISTENCY_GATE | claimed ON (env not readable by agent) | **NOT INDEPENDENTLY CONFIRMED** | same — no log signal |
-| DOCUMENT_CLASS_METRICS | **ON — RUNTIME VERIFIED** | **YES** | 3× `[document_class_metric]` emitted on real `POST /api/translation/vision-extract` 200 at 01:01–01:03; proves the metric flag is active at runtime |
-| (extraction path) | — | **HEALTHY** | 3 vision-extract + 2 tps/ocr/extract = 200; **0 error/fatal in 3h**. No regression from deployed safety code. |
-| SMART_NORMALIZE | OFF | N/A | DO_NOT_ENABLE |
+| ANTI_FABRICATION_GATE | **present** (`vercel env ls`, set 2h ago) | **YES (runtime, local real-model)** | real Soviet birth cert + gemini-3.1-pro + flag ON → 5/5 identity forced review, reasons attached, values unchanged. Prod HTTP response deferred (PII). |
+| SELF_CONSISTENCY_GATE | **present** (set 1h ago) | **YES (runtime, local real-model)** | same run: `self_consistency=mismatch` (2 reads disagreed on identity) → forced review. |
+| DOCUMENT_CLASS_METRICS | **present — RUNTIME VERIFIED =1** | **YES** | 3× `[document_class_metric]` on real prod `POST /vision-extract` 200 at 01:01–01:03 |
+| (extraction path) | — | **HEALTHY** | 3 vision-extract + 2 tps/ocr/extract = 200; **0 error/fatal in 2–3h**. No regression. |
+| SMART_NORMALIZE | **absent** | N/A | DO_NOT_ENABLE ✅ |
 
-> Honest boundary: env VALUES cannot be read with the available tools (no Vercel env-list MCP tool) — owner
-> confirms with `vercel env ls production`. The anti-fab/self-consistency gates emit no runtime log, so their
-> *firing* is not visible in logs; the metric proves extractions ran + the metric flag is active, not that the
-> identity gate forced review. To prove the gate itself, capture one hard-case extraction's RESPONSE (review
-> fields), not just logs.
+> Honest boundary (the one residual): env `ls` shows presence + target, NOT the literal value (`=1`); the metric
+> proves its own flag `=1` at runtime, the two gate flags are presence+set-time. Gate FIRING is proven on the
+> **identical `readDocument` code path** locally (real model, real hard-case, flags ON) — NOT via a prod HTTP
+> response (that needs a PII upload the agent won't do). Owner upload of one hard-case doc flips this from
+> *local-runtime-proven* to *prod-runtime-observed*. Full report: `docs/reports/POST_RUNTIME_GATE_VERIFICATION.md`.
 
 ## What is NOT live (do not claim otherwise)
 
