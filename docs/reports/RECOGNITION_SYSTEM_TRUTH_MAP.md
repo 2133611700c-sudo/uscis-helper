@@ -42,7 +42,8 @@ flags, not 0).
 | TPS product-specific OCR modules | `lib/tps/modules/*` (militaryId, passportBooklet, visionBridge) | reachable via TPS paths | the pre-docintel era; keep until fully migrated |
 
 ## TARGET (planned, not built) — see `docs/architecture/RECOGNITION_TARGET_ARCHITECTURE_D0_D6.md`
-D0 quality/reshoot · D1 independent readers (Gemini + GPT-4o + HTR) via a ReaderResult contract · OneBrain
+D0 quality/reshoot · D1 readers — **Gemini-first** (top Gemini versions near-term; a provider-agnostic DISABLED
+slot for a future independent reader — GPT-4o/Claude/HTR are NOT near-term) via a ReaderResult contract · OneBrain
 decideField wired (shadow-first) · D2 knowledge as signal · D3 translation lock · D4 validators · D5 generalized
 review · D6 PDF · Auditor/provenance + correction→GT loop.
 

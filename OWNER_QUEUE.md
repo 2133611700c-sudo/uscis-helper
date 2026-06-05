@@ -3,6 +3,15 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-05 — GEMINI-FIRST locked + follow-up PR awaiting owner merge
+
+Reader strategy correction: **Gemini-first**. Roadmap docs no longer frame GPT-4o as a near-term step.
+- **Follow-up PR `recognition-roadmap-gemini-first-correction`** (docs-only) is OPEN — agent did NOT auto-merge
+  it (per owner boundary: follow-up PRs need explicit owner go). **Owner: merge it** to lock Gemini-first in main.
+- Near-term reader work = top Gemini versions/benchmarks only. A second provider (GPT-4o/Claude) + HTR =
+  research-only, gated on **GT from different people** + owner decision + cost/privacy/accuracy evidence.
+- Next code step stays **Prompt B (D0 quality, flag OFF)** — only after a clean 24–48h monitor + owner "start D0".
+
 ## 2026-06-05 — recognition structure roadmap accepted (map + phased plan, docs-only)
 
 Next recommended sequence: close Wave D monitoring (24–48h) → Phase 2 (D0 quality/reshoot) → Phase 3
