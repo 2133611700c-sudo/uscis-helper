@@ -1,4 +1,11 @@
-# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED · roadmap accepted)
+# HANDOFF (2026-06-05 — PASS_RUNTIME_VERIFIED · roadmap · GEMINI-FIRST locked)
+
+**Gemini-first correction (this turn, docs-only follow-up PR):** removed near-term GPT-4o framing from all
+roadmap docs. D1 near-term = Gemini family (top versions); second reader = provider-agnostic DISABLED slot
+(GPT-4o/Claude NOT near-term); HTR research-only; no fan-out until ROI. Gated on GT breadth + owner decision.
+PR #88 was already merged → this is a follow-up PR (NOT auto-merged per owner boundary). No code/flag/prod change.
+
+
 
 **Recognition structure roadmap (docs-only, this turn):** PR #87 merged (monitoring baseline). Wrote truth map
 (LIVE/PARKED/LEGACY/TARGET), target D0–D6 architecture, 10-phase build plan, and 5 copy-paste next-prompts —
