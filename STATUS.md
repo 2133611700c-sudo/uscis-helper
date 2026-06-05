@@ -1,4 +1,92 @@
 # STATUS — Messenginfo
+## Session 105k (2026-06-04) — TURNKEY pro pass: gate canary test-proven, OneBrain parked, EAD/I-94 out of scope (no prod change)
+- `CANARY_TURNKEY` Gate canary made one-command for owner. **Rollback PROVEN byte-identical by automated test** (`canary safety contract`: OFF→ON→OFF restores exact output; value-immutability: ON never changes a value). Pre-flight all green except owner's enable step. Runbook: ANTI_FAB_GATE_CANARY_PLAN.md → "TURNKEY EXECUTION".
+- `CRITICAL_CAVEAT` `ua_birth_certificate`→`birth_certificate_handwritten` (conservative), so the gate force-reviews identity on **ALL** birth certs incl. printed → that is the `false_positive_review` surface (safety total, precision coarse). Pinned by a test.
+- `ADR-016` Hard-case UA = **mandatory human-review by policy** (not by metric — 1/4 won't improve by measuring). No prod threshold/model decision from single-person GT (FROZEN). **OneBrain decideField PARKED** (0 callers, placeholders uncalibratable; revisit at GT≥~50 fields/diff people; kept as reference). **EAD/I-94 out of scope** (US/Latin docs → controlling-Latin path, NOT the UA brain) — the "6/6 coverage" goal was a category error, withdrawn.
+- `COVERAGE` UA live-door = **4/4 of UA docs with a real image** (2 birth, passport, military). EAD/I-94 not counted by design.
+- `OWNER_DECISIONS` (OWNER_QUEUE): (1) run canary when ready; (2) PII history yes/no — **runbook PREPARED** (`PII_HISTORY_REWRITE_RUNBOOK.md`); repo is **PRIVATE** + evidence/ already gitignored → urgency low, decision = "ever shared externally?"; (3) GT from different people (only unblock for calibration).
+- `PII_RUNBOOK` Read-only survey: 51 real USCIS-packet blobs in history; name = intentional fixture in 26 tests; two-phase plan (A current-tree scrub non-destructive, B filter-repo destructive). NOT executed.
+- `EVIDENCE` tsc 0; full suite **2854 passed / 4 skipped / 0 fail** (+3 canary-contract tests). No flags/prod/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no new PII in docs.
+## Session 105j (2026-06-04) — live-door scorable coverage 3→4: +ua_military_id, patronymic naming fix (no prod flags)
+- `COVERAGE` Live-door scorable = **4/6** (was 3): added `ua_military_id` registry type → military_id_p1 now routes through `readDocument`. EAD/I-94 remain **BLOCKED** (UA-only registry + no upright real image).
+- `MILITARY(3.1-pro live)` ua_military_id = **5/5 scored fields correct** (family/given/patronymic/dob/doc_number). No `sex` field (no `sex` FieldKind) → sex unscored, documented. Type inert for prod (no caller passes this id; TPS military still uses regex module).
+- `PATRONYMIC_FIX` source field «По батькові» renamed `middle_name`→`patronymic` on booklet+id_card (birth cert already `child_patronymic`) — enforces CLAUDE.md Patronymic≠Middle_Name at source. USCIS **form** field stays `middle_name` (real I-765/I-821/I-131 field); source→form bridge handles it. Backward-compat fallback `patronymic||middle_name` added in contracts/postExtract/bridges; adapters+gates already aliased.
+- `PASSPORT` patronymic still `not_read` on the booklet image → **vision/image limitation, NOT naming** (military read its patronymic fine). family/given/dob = 3/3.
+- `EVIDENCE` typecheck 0; full suite **2851 passed / 4 skipped / 0 fail** (+2 new tests: ua_military_id registry, patronymic-not-middle_name guard). Live reads via gitignored harness (removed after); raw → qa-private; report docs/reports/LIVE_DOOR_SCORABLE_COVERAGE.md.
+- `UNCHANGED` no flags enabled, no prod env/deploy, no model switch, no SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs. Rule reaffirmed: raw API call ≠ product accuracy.
+## Session 105i (2026-06-04) — VERIFY-FIRST sync: GT=6 confirmed, accuracy reconciled, gate=READY_FOR_OWNER_APPROVED_CANARY
+- `VERIFIED` GT ready = **6/30** `VERIFIED_BY_OWNER` (raw-read, no values): soviet 6/6, handwritten 6/6, internal_passport 5/5, military_id_p1 6/6, i94 6/6, ead 6/6. **GT-count blocker CLEARED.**
+- `RECONCILED` Owner's "accuracy on 6 docs" NOT evidence-backed. Live-door-scorable = **3** (2 hard-case birth + passport). `military_id_p1`=no registry type (`ua_military_id` absent); `ead`/`i94`=US docs, no upright real image → NOT scorable.
+- `MEASURED(3.1-pro)` Hard-case birth = **1/4 correct** (family_name only; given/patronymic/DOB WRONG) → UNRESOLVED_BLOCKER. Mode C → `false_negative_review`=0 on BOTH (handwritten needs C not B). NEW: internal_passport = **3/3 read fields correct**, patronymic `not_read` (coverage gap; reader drops `middle_name`).
+- `CALIBRATION` **BLOCKED_INSUFFICIENT_N** — ~11 scorable fields can't fit numeric thresholds (0.97/0.9/0.8). Gate *rules* validated; *numbers* not. decideField still scaffold (0 callers, feat-branch only).
+- `DECISIONS` SMART=DO_NOT_ENABLE; ANTI_FABRICATION_GATE=**READY_FOR_OWNER_APPROVED_CANARY** (NOT executed; OWNER_QUEUE has enable+rollback+stop-cond; pre-canary: GT≥6 ✅, calibration thin, rollback-rehearsal ⏳); hard-case model=UNRESOLVED_BLOCKER; L2-WIRE=HOLD.
+- `LATENT` passport booklet field named `middle_name` collides with CLAUDE.md hard-rule (Patronymic ≠ Middle Name) — flagged, not fixed.
+- `UNCHANGED` no flags/prod/deploy/model/SMART/HTR/L2-WIRE; rerun was LOCAL (gitignored harness, removed after); qa-private tracked=0; no PII in docs.
+## Session 105h (2026-06-04) — CORRECTION: UA source language; UA-OCR failure analysis + gate canary plan
+- `CORE_CORRECTION` Docs are UKRAINIAN (UA→English). Model Russianizing UA names/patronymics/places (drop apostrophe, -ій→-ей, і/ї/є/ґ→и/е/г, wrong month) = WRONG READ / language substitution = real model ERROR, NOT normalization. KMU-55/dict only AFTER correct UA read; dict = signal, never silent rewrite.
+- `MEASURED` owner GT N=2 hard-case birth certs: identity ≈0–1/5 → critical failure. Mode C gate → FN_review=0 (need). Printed UA/US NOT GT-scored → no % claim.
+- `REPORTS` GT_LANGUAGE_INTENT corrected; UKRAINIAN_OCR_FAILURE_ANALYSIS.md + ANTI_FAB_GATE_CANARY_PLAN.md (PREPARE only). 
+- `DECISIONS` SMART=DO_NOT_ENABLE; ANTI_FABRICATION_GATE=READY_FOR_CANARY_PREP (NOT executed; flag/class/rollback/metrics/stop-cond documented); hard-case model=UNRESOLVED_BLOCKER; self-consistency=safety signal not truth; human review required hard-case.
+- `UNCHANGED` no flags/prod/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no PII in docs (scrubbed a gratuitous given-name example from the failure-analysis report).
+## Session 105g (2026-06-04) — auto-prepped 4 GT skeletons + owner fill pack (no fabrication)
+- `SKELETONS` created 4 private value-free skeletons in qa-private/ground-truth/ (international_passport/id_card/i94/ead _owner_fill.json), status=OWNER_INPUT_REQUIRED, real template/adapter field names, no_model_gt=true, owner_must_confirm=true. NOT committed (qa-private ignored, tracked=0).
+- `PACK` docs/reports/GT_OWNER_NEXT_4_FILL_PACK.md — which 4 files, fields per file, where on document, value=as-written, null+note, readiness command. Owner only types values + sets VERIFIED_BY_OWNER.
+- `STATUS` ready 2→target≥6 (need +4). Agent did NOT set VERIFIED_BY_OWNER (model output ≠ GT). accuracy/calibration/L2-WIRE still BLOCKED; no runtime/flags/model/SMART/HTR/prod.
+## Session 105f (2026-06-04) — PRELIMINARY accuracy N=2 (signal only; calibration+L2-WIRE BLOCKED)
+- `PRELIM` owner-authorized rerun on the SAME 2 docs (0 new GT categories). Mode C → false_negative_review=0 (all cells), DOB month-mismatch CAUGHT; A/B FN high; SMART no gain. Reproduces prior N=2 — adds NO new GT data.
+- `DECISIONS_UNCHANGED` calibration BLOCKED, L2-WIRE BLOCKED, SMART DO_NOT_ENABLE, gate BLOCKED_NEEDS_GT_BATCH, model NEEDS_MORE_DATA. Report docs/reports/ACCURACY_PRELIM_N2.md (sanitized); raw qa-private (ignored).
+- `UNCHANGED` no runtime/flags/model/SMART/HTR/prod; decideField not wired; qa-private tracked=0. Next: owner fills +4 GT.
+## Session 105e (2026-06-04) — GT-fill execution pack + i94/ead templates (docs only)
+- `READINESS` ready_for_scoring=2/26 (only soviet+handwritten birth, already scored). Need ≥6 → +4 new owner-verified files.
+- `TEMPLATES` +2 from adapter fields (no invention): i94.template.json, ead.template.json. All 8 templates ready (soviet/handwritten/ua_printed/military/passport/id/i94/ead).
+- `PACK` fastest_to_fill_now = international_passport, id_card, birth_cert_ua_printed, military_id_p1 (templates exist). needs_template_first = i94/ead (NOW READY). optional_later = divorce/marriage/degraded/dl/booklet.
+- `BLOCKED` accuracy NOT run; L2-WIRE HOLD. No runtime/flags/model/SMART/HTR/prod; qa-private tracked=0.
+## Session 105d (2026-06-04) — owner GT-batch fill checklist (docs only)
+- `CHECKLIST` docs/reports/GT_BATCH_FILL_CHECKLIST.md — docs to collect (6–10, categories), owner_verified vs candidate fields, fill steps (hand / gt_intake.mjs), PII-free readiness-count check. L2-WIRE HOLD until batch filled + thresholds calibrated. No runtime/flags/model/prod.
+## Session 105c (2026-06-04) — L3: GT-language intent + calibration plan + templates (docs only)
+- `GT_LANGUAGE` DECIDED: value = AS-WRITTEN on document; normalized_value = canonical (KMU/ISO/UA); dictionary = hint/conflict, NEVER silent overwrite. Fixes the RU-doc-vs-UA-GT scoring artifact. `docs/reports/GT_LANGUAGE_INTENT.md`.
+- `CALIBRATION_PLAN` `docs/reports/ONEBRAIN_L3_GT_CALIBRATION_PLAN.md`: 6–10 docs across categories (soviet/UA-printed/UA-handwritten birth, passport/ID, EAD, I-94); critical fields; always-force_review signals vs lower-confidence-only; metrics before canary (false_negative_review=0 target, false_positive, DOB/name/place caught, review_rate_by_doc_type, missing_rate, model_disagreement later).
+- `TEMPLATES` +3 PII-free versioned: birth_cert_ua_printed, international_passport, id_card (docs/templates/ground-truth/). EAD/I-94 templates TBD from adapters (no field invention).
+- `BLOCKER` real unblock = owner fills expanded GT batch (value as-written, VERIFIED_BY_OWNER). Then agent calibrates thresholds → L2-WIRE shadow-first.
+- `UNCHANGED` no decideField wiring; no /api change; no flag; no model/SMART/HTR; no prod env; no deploy; no PII.
+## Session 105b (2026-06-04) — L2 SCAFFOLD: decideField() implemented, NOT wired (prod byte-identical)
+- `SCAFFOLD` `docintel/oneBrain/decideField.ts` (NEW, pure) + types + `scoredForAccuracy()`. Implements L1 contract: value(reads/anchor) + separate normalized_value(dict signal) + decision(accept/accept_low_confidence/force_review/reject) + reasons + source_trace + safety_flags + sha256 audit_hash.
+- `BYTE_IDENTICAL` decideField imported by NO /api route and NOT by documentFieldReader (grep NO_LIVE_CALLER) → prod byte-identical. Reserved flag `ONEBRAIN_DECIDE_FIELD_ENABLED` (default OFF) read by nothing yet.
+- `RULES_TESTED` dict never overwrites value; critical+review-signal→force_review; self-consistency mismatch→force_review (model conf can't override); scoredForAccuracy honors owner_verified+candidate_not_verified; reject on no source; pure (stable audit_hash, no mutation); MRZ anchor→accept.
+- `EVIDENCE` typecheck PASS; decideField + docintel = 83 tests pass; synthetic values (no PII).
+- `DEFERRED` wiring into readDocument = separate L2-wire step (shadow-first, owner-gated); threshold numbers = L3 (PLACEHOLDER now); 2nd reader/HTR = L4. consensus.ts untouched; SMART/HTR/model unchanged; no prod env; no flags; no deploy.
+## Session 105 (2026-06-04) — L1: OneBrain decideField() contract (design-only)
+- `L1_DONE` `docs/architecture/ONEBRAIN_DECIDE_FIELD_CONTRACT.md` + `docs/reports/ONEBRAIN_L1_DESIGN_REVIEW.md`. Pure decideField(input)→FieldDecision; decision enum accept/accept_low_confidence/force_review/reject; source_trace + audit_hash.
+- `RULES` dictionary=signal never silent-rewrite (separate normalized_value); critical identity stricter + never accept w/o strong anchor under any review signal; self-consistency mismatch on DOB/name/place → force_review (model review=false can't override); candidate_not_verified excluded from accuracy penalties; no raw PII in artifacts.
+- `MAPPING` formalizes existing live pieces (readDocument reads, arbitrateDocument, dictionaryBridge signals, selfConsistency, antiFabricationGate, preprocess quality) → L2 = consolidation not rewrite. consensus.ts NOT removed (dormant).
+- `DEFERRED` threshold numbers + second reader = L3/L4. No runtime change; no flags; no prod env; no PII.
+- `PII_SCRUB` contract example values genericized to <surname> placeholders (no real PII in artifacts, per its own rule 5).
+## Session 104z (2026-06-04) — Architecture inventory verdict + OneBrain target (docs)
+- `VERDICT` PASS_AS_TRUTH_INVENTORY / DEGRADED_AS_TARGET. Raw: consensus.ts DORMANT (no /api caller; central-brain skipped when ONE_BRAIN_CORE_ENABLED=1); HTR NOT live (htr.ts: 0 transcripts, Transkribus auth blocked); live = 1 Gemini read + arbitrateDocument + gates.
+- `TARGET` OneBrain/DocumentBrain = single field-decision center (decideField schema): readers + dictionaries(as SIGNAL not silent rewrite) + normalization + validators + anti-fab + self-consistency + quality + one audit trail INSIDE; no dead consensus branch; real consensus = different independent readers (not 3× same model).
+- `DECISIONS` SMART_NORMALIZE=DO_NOT_ENABLE; HTR=DO_NOT_BUILD; model=DO_NOT_SWITCH; gate=PREPARE_CANARY only (owner approval+rollback).
+- `PRIORITIES` L0 verdict ✅ → L1 OneBrain contract (design) → L2 fold proven gate into OneBrain (flags OFF) → L3 expand GT+rerun → L4 second reader/HTR if metrics justify.
+- `DOCS_ONLY` no prod env; no flags; no deploy; no model change; no PII; raw in qa-private. Report: docs/reports/ARCHITECTURE_INVENTORY_VERDICT.md.
+## Session 104y (2026-06-04) — ACCURACY OFF-vs-ON done; gate proven; SMART no gain
+- `RAN` 2 birth-cert docs × modes A/B/C × {2.5-flash, 3.1-pro} = 12 cells (all ok), local, scored vs 6 owner-verified GT fields. Raw → qa-private (ignored).
+- `SAFETY_WIN` mode C (anti-fab+self-consistency) → **false_negative_review=0 in EVERY cell**. Without gate (A/B), 2.5-flash = 5 wrong identity fields review=false + DOB month-mismatch MISSED; mode C CAUGHT it (self_consistency=mismatch).
+- `DOB_TESTCASE` GT month=06; 2.5-flash read 02, 3.1-pro read 07 — both wrong+unstable. Gate caught in C (2.5) / throughout (pro self-flagged).
+- `SMART_NO_GAIN` B vs A: zero accuracy improvement (0/5=0/5; 1/4=1/4); B added a false_positive_review. → SMART_NORMALIZE = DO_NOT_ENABLE now / NEEDS_MORE_DATA.
+- `MODEL` 3.1-pro safer than 2.5-flash on hard-case (1/5 + self-flags DOB vs 0/5 + FN=5); gate mandatory regardless; firm choice = NEEDS_MORE_DATA.
+- `CAVEAT` low raw accuracy partly RU-document vs UA-GT language layer (not pure fabrication) — owner must clarify GT language intent. N=2/one-person = signal, not proof.
+- `REPORTS` ACCURACY_OFFON_RESULTS.md + SMART_NORMALIZE_DECISION.md (sanitized). No prod env; no flags enabled; behavior flags OFF.
+- `PII_SCRUB` Genericized the RU/UA example in OWNER_QUEUE (removed a gratuitous real given/patronymic). Pre-existing surname/FU262473 in main = Session-54 PII-sweep item.
+## Session 104x (2026-06-04) — ETAP1: GT-fill prep for owner (no GT fabricated)
+- `OPENED` both birth-cert images (Preview) + both GT JSON templates for the owner.
+- `HINTS` docs/reports/GT_FILL_HINTS.md — structural blank-layout guidance + formats (YYYY-MM-DD, M/F, null+notes), NO real values. Refusal note on why model can't fill GT.
+- `INTAKE` scripts/gt_intake.mjs (SCRATCH, gitignored): owner types/dictates {field:value} → validates keys/ISO-date/M-F → writes + sets VERIFIED_BY_OWNER. Smoke-tested on temp copy (valid writes; bad date & unknown key rejected); REAL GT untouched (still MISSING).
+- `STOP` ETAP2-4 (accuracy + SMART decision) run ONLY after owner sets VERIFIED_BY_OWNER. No GT fabricated; behavior flags OFF; no prod env; no push of code.
+## Session 104w (2026-06-04) — ON RAILS: prod==main verified; holding for owner GT
+- `DURABILITY_CLOSED` origin/main `46a0912` (Merge PR #80); healthz status=ok sha=`46a0912`; latest prod deploy Ready. prod==main → future main deploys ship this code (no rollback).
+- `METRIC` DOCUMENT_CLASS_METRICS_ENABLED=1 in prod; code in main; payload = class/eligibility only (no PII, verified). Logs NOT_OBSERVED_YET (no real extraction since deploy).
+- `BEHAVIOR_FLAGS_OFF` ANTI_FABRICATION / SELF_CONSISTENCY / SMART_NORMALIZE absent in prod (OFF). Dictionaries+gates built & in prod code but DORMANT.
+- `GT` still MISSING (status=MISSING, 1 nonempty each); images present (2); guide ready. Accuracy NOT run (nothing to compare; no fabrication).
+- `NEXT_BLOCKER` owner GT fill → then local accuracy OFF-vs-ON → then SMART decision. No new code until accuracy loop closes.
 ## Session 104v (2026-06-04) — PR #80 opened (durability; merge owner-gated)
 - `PR_OPEN` https://github.com/2133611700c-sudo/uscis-helper/pull/80 — base `main` ← `feat/knowledge-core-stabilize` @ a896212. PII-free body. NOT merged.
 - `MERGE_GATED` merge → main triggers Vercel auto-deploy of main to messenginfo.com = owner decision (also closes prod==main durability). Agent opened PR only; did not merge.

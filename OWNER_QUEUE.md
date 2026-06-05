@@ -3,20 +3,124 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
-## 2026-06-04 — OPEN: durability of the prod metric deploy + GT fill
-- **Branch PUSHED to GitHub** (`feat/knowledge-core-stabilize` @ `8b9a0d2`, force-with-lease) — the
-  prod-deployed code is no longer local-only. ✅ first half done.
-- **STILL OPEN — merge to main.** Prod runs `8b9a0d2` (was f60d73f at deploy), NOT in `main`. A deploy
-  of `main` would still ROLL BACK the metric/gate code. **Owner action:** open PR for
-  `feat/knowledge-core-stabilize` → review → merge to `main` so prod is durable + reviewed-of-record.
-  (Agent did not open the PR / merge — forbidden this task.)
-- **GT fill (still MISSING):** fill `qa-private/ground-truth/birth_cert_soviet_*.json` +
-  `birth_cert_handwritten_*.json` → `VERIFIED_BY_OWNER` per `docs/reports/GT_OWNER_FILL_GUIDE.md`.
-  Then the agent runs local accuracy. Do NOT fill from model output.
-- **Metric verification:** after a real document is processed in prod, the agent can confirm the
-  `[document_class_metric]` line via Vercel runtime logs (PII-free).
+## 2026-06-04 — TURNKEY: gate canary test-proven · OneBrain parked · EAD/I-94 out of scope · decisions for owner
 
-## 2026-06-03 — P2 ground-truth (BLOCKS the OFF-vs-ON accuracy delta) — STILL OPEN
+Agent did the full professional pass that does NOT touch prod (ADR-016). Three owner decisions remain:
+
+**1. Gate canary — now turnkey (one owner sequence).** Rollback is PROVEN byte-identical by an automated test
+(`canary safety contract`); pre-flight is all green except your enable step. Runbook with the exact commands +
+the coarse-precision caveat (gate force-reviews ALL birth certs, printed too): `ANTI_FAB_GATE_CANARY_PLAN.md`
+→ "TURNKEY EXECUTION". **Owner action:** run the canary sequence when ready (still your explicit command; agent
+will not flip the flag). SMART_NORMALIZE stays OFF.
+
+**2. PII in git history — runbook PREPARED, needs a yes/no.** Survey done (read-only): repo is **PRIVATE**
+(not publicly exposed); `docs/reports/evidence/` already gitignored (no new leak); what remains is **51 real
+USCIS-packet blobs in history** + the name as an intentional fixture in 26 test files + ID tokens in narrative
+docs. Full two-phase runbook (Phase A current-tree scrub = non-destructive; Phase B filter-repo history rewrite
+= destructive, force-push) with exact commands, classification, and verification:
+**`docs/reports/PII_HISTORY_REWRITE_RUNBOOK.md`** — PREPARED, NOT executed. **Decide:** will this repo EVER be
+shared outside the owner? **yes** → run Phase A now, schedule Phase B in a maintenance window; **no** → record
+"internal-only forever" and stop re-raising (since it's private + evidence already ignored, urgency is low).
+
+**3. GT breadth — the only thing that unblocks calibration.** Calibration is BLOCKED_INSUFFICIENT_N because all
+GT is ~1 person. Need GT from **different people** (any UA docs). Not more docs from the same person.
+
+**Withdrawn (no longer an owner task):** "make EAD/I-94 scorable / reach 6/6." Per ADR-016 these are US/Latin
+docs read by the controlling-Latin path, not the UA brain — out of scope by design, a category error, not a
+missing fixture. UA live-door coverage is 4/4 of the UA docs that have a real image.
+
+
+## 2026-06-04 — GT=6 verified · accuracy reconciled · gate = READY_FOR_OWNER_APPROVED_CANARY
+
+**Verified by agent from raw (no values printed):**
+- GT ready = **6/30** `VERIFIED_BY_OWNER` (soviet 6/6, handwritten 6/6, internal_passport 5/5, military_id_p1 6/6, i94 6/6, ead 6/6). **GT-count blocker CLEARED.**
+- BUT live-door-scorable = **3** (2 hard-case birth + internal_passport). `military_id_p1` has **no registry doc type** (`ua_military_id` absent); `ead`/`i94` are **US docs with no upright real image** → not scorable. Owner's "accuracy on 6 docs" is not evidence-backed; real coverage = 3.
+- Hard-case = **1/4 correct even on 3.1-pro** → UNRESOLVED_BLOCKER. Mode C drives `false_negative_review`→0 on both. Passport = 3/3 read fields correct (patronymic dropped — coverage gap).
+- Calibration = **BLOCKED_INSUFFICIENT_N** (~11 fields can't set numeric thresholds).
+
+**Owner-only — to scale evidence (the real unblock for calibration):**
+1. Provide an **upright real EAD and I-94 image** (matching the filled GT) into `test-fixtures/real-docs/` (gitignored) so they become scorable.
+2. Add a **`ua_military_id` registry doc type** (or tell agent to) so `military_id_p1` is routable — code task, needs owner OK.
+3. Expand GT to **different people** + more UA-printed docs (current N is 1 person).
+
+**Owner-only — enable the anti-fabrication gate (DO NOT run until rollback rehearsal done; agent will NOT run these):**
+```
+# canary FIRST (preview/slice), observe metrics, only then production:
+vercel env add ANTI_FABRICATION_GATE_ENABLED production   # value: 1
+vercel env add SELF_CONSISTENCY_GATE_ENABLED  production   # value: 1  (mode C; needs the former)
+# redeploy main (NOT a feature branch)
+```
+**Rollback (must be ready before enabling):**
+```
+vercel env rm ANTI_FABRICATION_GATE_ENABLED production
+vercel env rm SELF_CONSISTENCY_GATE_ENABLED  production
+# redeploy main → behavior returns byte-identical (no data migration)
+```
+**Stop-conditions (hard — rollback/block immediately):**
+- ANY critical identity field wrong WITHOUT review (`false_negative_review` > 0 on critical identity) → rollback/block.
+- Review-rate spike beyond the agreed ceiling with no safety payoff → pause + retune.
+- `SMART_NORMALIZE_ENABLED` stays **OFF** (no gain). Model switch / HTR / L2-WIRE / P2.4-P2.5 = NOT in this scope.
+
+## 2026-06-04 — UA correction + gate canary prep
+- Source docs are UKRAINIAN; Russianized output = model error (memory ukrainian-source-language). KMU-55/dict only after correct UA read.
+- ANTI_FABRICATION_GATE = READY_FOR_CANARY_PREP (plan: docs/reports/ANTI_FAB_GATE_CANARY_PLAN.md). NOT enabled. Pre-canary gates unmet: GT≥6 + calibration + rollback rehearsal.
+- hard-case model = UNRESOLVED_BLOCKER (neither 2.5-flash nor 3.1-pro reads UA hard-case reliably).
+- SMART_NORMALIZE = DO_NOT_ENABLE.
+
+
+## 2026-06-04 — OneBrain target + priorities (see ARCHITECTURE_INVENTORY_VERDICT.md)
+
+Verdict: PASS_AS_TRUTH_INVENTORY / DEGRADED_AS_TARGET_ARCHITECTURE. Current live = 1 Gemini reader +
+arbitration + gates (consensus.ts dormant, HTR not live). Target = OneBrain single field-decision center.
+
+Priorities (do NOT build all at once):
+- **L0** (done in docs): inventory verdict + status/handoff.
+- **L1** ✅ DONE (design): OneBrain `decideField()` contract + design review.
+- **L2-SCAFFOLD** ✅ DONE (code, not wired): `oneBrain/decideField.ts` pure module + tests; prod byte-identical.
+- **L3** ✅ DONE (docs + GT workflow): GT-language intent DECIDED (value = as-written; normalized = canonical;
+  dictionary = hint, never overwrite — `docs/reports/GT_LANGUAGE_INTENT.md`); calibration plan
+  (`docs/reports/ONEBRAIN_L3_GT_CALIBRATION_PLAN.md`); 3 new PII-free templates added
+  (`docs/templates/ground-truth/{birth_cert_ua_printed,international_passport,id_card}.template.json`).
+  **Owner action (the real unblock):** fill a 6–10 doc GT batch across categories (soviet/UA-printed/
+  UA-handwritten birth, passport/ID, EAD, I-94) — copy a template into `qa-private/ground-truth/`, fill
+  `value` AS-WRITTEN, set `VERIFIED_BY_OWNER` + `owner_verified_fields`. Then agent calibrates thresholds.
+- **L2-WIRE** (after L3 calibration): route decideField through readDocument behind flag, shadow-first, prod byte-identical.
+- **L2** (agent, behind flags OFF): integrate the proven anti-fabrication/self-consistency gate INTO OneBrain.
+- **L3** (owner): expand GT (different people + Ukrainian-language docs); resolve GT-language intent (RU as-written vs UA canonical); rerun accuracy.
+- **L4** (later, metrics-gated): second independent reader (true consensus) / HTR / model switch.
+
+Flag decisions (owner-gated to flip): SMART_NORMALIZE = DO_NOT_ENABLE; HTR = DO_NOT_BUILD; model = DO_NOT_SWITCH;
+gate = PREPARE_CANARY only (no prod enable without owner approval + rollback).
+
+## 2026-06-04 — current owner-gates (after PR #80 merge)
+
+**DONE (no longer owner-blocked):**
+- ✅ Durability: branch pushed → PR #80 → **MERGED** → `prod == main` (origin/main `46a0912`; healthz ok sha `46a0912`).
+- ✅ `DOCUMENT_CLASS_METRICS_ENABLED=1` set in Production (metric code now in prod via main).
+- ✅ Prod health verified (messenginfo.com ok, latest deploy Ready).
+
+**DONE:**
+- ✅ GT filled (VERIFIED_BY_OWNER, 6 identity fields) + accuracy OFF-vs-ON run (see `ACCURACY_OFFON_RESULTS.md`).
+
+**OPEN — owner only:**
+1. **Clarify GT language intent:** should ground-truth be "as written on the document" (Russian spelling)
+   or "canonical Ukrainian" (Ukrainian spelling)? The test docs are Russian-language; exact-match scoring
+   currently counts the RU↔UA given/patronymic spelling difference as "wrong". This changes which per-field
+   misses are real errors vs expected transliteration. (No real names quoted here — see GT files.)
+2. **Provide more/varied GT** (different people, Ukrainian-language docs). Current evidence = N=2/one-person
+   = signal, not a prod-grade verdict.
+3. **Flag decisions (after more GT):** `SMART_NORMALIZE_ENABLED` = **DO_NOT_ENABLE** on current evidence
+   (no accuracy gain, small UX cost). The evidence-supported safety lever is instead the
+   `ANTI_FABRICATION_GATE_ENABLED` (+ optional `SELF_CONSISTENCY_GATE_ENABLED`) — mode C drove
+   false_negative_review to 0 in all cells — but enabling it is an owner decision and still wants more GT.
+   See `SMART_NORMALIZE_DECISION.md`.
+4. Later: PII history sweep before sharing the repo externally (surname/`FU262473`/DOB pervasive in main
+   history — Session-54 debt; not a blocker for internal work).
+
+**Agent can do autonomously (not owner-gated):** verify the `[document_class_metric]` line via Vercel
+runtime logs once a real document is processed in prod (currently NOT_OBSERVED_YET — no extraction since deploy).
+
+## 2026-06-03 — P2 ground-truth — SUPERSEDED (the "no images" claim below was FALSE; images exist)
 
 **Verified 2026-06-03 (raw):** the OFF-vs-ON harness was requested but CANNOT run —
 precondition not met:
