@@ -19,6 +19,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { isGarbageValue } from '@uscis-helper/knowledge'
+import { getUnresolvedReviewFields } from '@/lib/translation/reviewGate'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -56,6 +57,7 @@ interface ExtractedField {
   raw_cyrillic: string | null
   confidence: number
   kind: string
+  review_required?: boolean
 }
 
 interface DraftState {
@@ -130,8 +132,11 @@ const T = {
     s5_edit: '✏️ Изменить',
     s5_edit_aria: 'Изменить значение',
     s5_corrected: 'Исправлено',
+    s5_confirm: 'Подтвердить',
     s5_mismatch: 'Данные не совпадают?',
     s5_reupload: 'Загрузить другое фото',
+    s5_review_needed: 'Требует проверки',
+    s5_review_block: 'Есть поля, которые нужно проверить вручную. Исправьте или подтвердите каждое отмеченное поле перед оплатой.',
     s5_sample_badge: '📄 ОБРАЗЕЦ ПЕРЕВОДА',
     s5_cert_intro: 'I, the undersigned, hereby certify that I am competent in Ukrainian and English languages, and that the above is a true and accurate translation of the Ukrainian document.',
     s5_cta: 'Оплатить и получить PDF — $14.99 →',
@@ -151,6 +156,7 @@ const T = {
     ],
     s6_cta: '💳 Оплатить $14.99',
     s6_cta_loading: '⏳ Переход к Stripe…',
+    s6_review_block: 'Сначала закройте все поля, отмеченные как требующие проверки.',
     s6_stripe: 'Оплата через Stripe — мировой лидер платёжных систем. Ваша карта в безопасности. Мы не видим и не храним данные карты.',
     s6_terms: 'Нажимая «Оплатить», вы соглашаетесь с условиями использования. Возврат в течение 7 дней если результат неверный.',
     // Screen 7 — Success
@@ -171,6 +177,7 @@ const T = {
     s7_addr_ph: 'Улица, город, штат, индекс',
     s7_check1: 'Я проверил(а) перевод, данные верные.',
     s7_check2: 'Я понимаю, что своей подписью подтверждаю, что перевод полный и точный.',
+    s7_review_block: 'Сначала закройте все OCR-поля, отмеченные для проверки.',
     s7_need_addr: 'Укажите адрес.',
     s7_need_checks: 'Отметьте оба пункта.',
     s7_sign_first: '✏️ Сначала поставьте подпись ниже — без неё перевод нельзя сертифицировать.',
@@ -243,8 +250,11 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s5_edit: '✏️ Edit',
     s5_edit_aria: 'Edit value',
     s5_corrected: 'Edited',
+    s5_confirm: 'Confirm',
     s5_mismatch: 'Data does not match?',
     s5_reupload: 'Upload a different photo',
+    s5_review_needed: 'Needs review',
+    s5_review_block: 'Some OCR fields still require human review. Edit or confirm each flagged field before payment.',
     s5_sample_badge: '📄 SAMPLE TRANSLATION',
     s5_cta: 'Pay and get PDF — $14.99 →',
     s5_payment_note: 'Payment via Stripe. Secure. PDF available immediately after payment.',
@@ -262,6 +272,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     ],
     s6_cta: '💳 Pay $14.99',
     s6_cta_loading: '⏳ Redirecting to Stripe…',
+    s6_review_block: 'Resolve all fields marked for review before payment.',
     s6_stripe: 'Payment via Stripe — global leader in payment systems. Your card is safe. We never see or store card data.',
     s6_terms: 'By clicking «Pay» you agree to the terms. Refund within 7 days if the result is incorrect.',
     s7_title: 'Done!',
@@ -281,6 +292,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s7_addr_ph: 'Street, city, state, ZIP',
     s7_check1: 'I reviewed the translation and the data is correct.',
     s7_check2: 'I understand my signature attests the translation is complete and accurate.',
+    s7_review_block: 'Resolve all OCR fields marked for review before download.',
     s7_need_addr: 'Enter your address.',
     s7_need_checks: 'Check both boxes.',
     s7_sign_first: '✏️ Sign below first — a translation cannot be certified without your signature.',
@@ -1022,17 +1034,47 @@ export function TranslateWizard() {
     const next = window.prompt(promptLabel, currentEng)
     if (next === null) return // cancelled
     const trimmed = next.trim()
-    if (trimmed === currentEng.trim()) return
+    if (trimmed === currentEng.trim()) {
+      if (!trimmed) return
+      setExtractedFields((prev) => prev.map((f) =>
+        f.field === fieldKey
+          ? { ...f, kind: 'user_confirmed', confidence: 1, review_required: false }
+          : f,
+      ))
+      return
+    }
     setExtractedFields((prev) => prev.map((f) =>
       f.field === fieldKey
-        ? { ...f, value: trimmed, kind: 'user_corrected', confidence: 1 }
+        ? { ...f, value: trimmed, kind: 'user_corrected', confidence: 1, review_required: false }
         : f,
     ))
   }, [])
 
+  const handleConfirmField = useCallback((fieldKey: string) => {
+    setExtractedFields((prev) => prev.map((f) =>
+      f.field === fieldKey && (f.value ?? '').trim()
+        ? { ...f, kind: 'user_confirmed', confidence: 1, review_required: false }
+        : f,
+    ))
+  }, [])
+
+  const currentDocMeta = DOC_TYPES.find((d) => d.id === selectedDocType) ?? null
+  const unresolvedReviewFields = currentDocMeta?.auto
+    ? getUnresolvedReviewFields(
+        extractedFields.map((f) => ({
+          field: f.field,
+          normalized_value: f.value,
+          review_required: Boolean(f.review_required),
+        })),
+      )
+    : []
+  const hasUnresolvedReviewFields = unresolvedReviewFields.length > 0
+  const canProceedToCertifiedOutput =
+    !currentDocMeta?.auto || (extractedFields.length > 0 && !hasUnresolvedReviewFields)
+
   // ── Real Stripe checkout (replaces prototype's simulatePayment) ──
   const handlePayment = useCallback(async () => {
-    if (paymentLoading) return
+    if (paymentLoading || !canProceedToCertifiedOutput) return
     // OWNER MODE: the site owner tests every product WITHOUT payment. The
     // generate-pdf route already bypasses the payment gate for a verified owner
     // cookie, so skip Stripe and go straight to the sign/download screen.
@@ -1059,7 +1101,7 @@ export function TranslateWizard() {
       alert('Network error. Please try again.')
       setPaymentLoading(false)
     }
-  }, [paymentLoading, saveDraft, locale, isOwner])
+  }, [paymentLoading, canProceedToCertifiedOutput, saveDraft, locale, isOwner])
 
   // Owner-mode check (mount): unlocks free testing of the full flow.
   useEffect(() => {
@@ -1140,6 +1182,7 @@ export function TranslateWizard() {
   // ── Real PDF generation (replaces simulateDownload) ──
   const handleDownloadPdf = useCallback(async () => {
     if (pdfLoading) return
+    if (hasUnresolvedReviewFields) return
     // #16 gate: the translation draft must be SIGNED before download — never
     // generate/download without a real on-screen signature (drawn AND confirmed).
     // No silent manual_wet_signature bypass.
@@ -1213,7 +1256,7 @@ export function TranslateWizard() {
     } finally {
       setPdfLoading(false)
     }
-  }, [pdfLoading, sigSaved, dataReviewed, accuracyAttested, certifierAddress, extractedFields, stripeCheckoutId, locale, selectedDocType])
+  }, [pdfLoading, hasUnresolvedReviewFields, sigSaved, dataReviewed, accuracyAttested, certifierAddress, extractedFields, stripeCheckoutId, locale, selectedDocType])
 
   // Full reset for "Start over" / "Translate another". Clears EVERY piece of
   // session state — including the attestation inputs and the persisted Stripe
@@ -1260,7 +1303,9 @@ export function TranslateWizard() {
           ukr: UKR_LABEL_BY_FIELD[f.field],
           val_ukr: f.raw_cyrillic ?? '—',
           val_eng: f.value ?? '—',
+          current_eng: f.value ?? '',
           kind: f.kind,
+          requiresReview: Boolean(f.review_required),
         }))
     }
     return [] // empty → review screen renders the manual-review notice
@@ -1519,6 +1564,12 @@ export function TranslateWizard() {
 
           {translationRows.length > 0 ? (
             <>
+              {hasUnresolvedReviewFields && (
+                <div className="tw-confirm-edit" style={{ marginBottom: 12 }}>
+                  <span>⚠️</span>
+                  <div style={{ flex: 1 }}>{t.s5_review_block}</div>
+                </div>
+              )}
               <div>
                 {translationRows.map((row, i) => {
                   const isEdited = row.kind === 'user_corrected'
@@ -1535,16 +1586,29 @@ export function TranslateWizard() {
                         <div className="tw-trans-eng">
                           {row.val_eng}
                           {isEdited && <span className="corrected-badge">{t.s5_corrected}</span>}
+                          {row.requiresReview && <span className="corrected-badge" style={{ background: 'rgba(201,168,76,0.18)', color: 'var(--gold-light)' }}>{t.s5_review_needed}</span>}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="tw-trans-edit-btn"
-                        onClick={() => handleEditField(row.fieldKey, row.ukr, row.val_eng)}
-                        aria-label={`${t.s5_edit_aria} ${row.ukr}`}
-                      >
-                        {t.s5_edit}
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <button
+                          type="button"
+                          className="tw-trans-edit-btn"
+                          onClick={() => handleEditField(row.fieldKey, row.ukr, row.current_eng)}
+                          aria-label={`${t.s5_edit_aria} ${row.ukr}`}
+                        >
+                          {t.s5_edit}
+                        </button>
+                        {row.requiresReview && row.current_eng.trim() && (
+                          <button
+                            type="button"
+                            className="tw-trans-edit-btn"
+                            onClick={() => handleConfirmField(row.fieldKey)}
+                            aria-label={`${t.s5_confirm} ${row.ukr}`}
+                          >
+                            {t.s5_confirm}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
@@ -1585,7 +1649,7 @@ export function TranslateWizard() {
           </div>
 
           <div style={{ marginTop: 24 }}>
-            <button className="tw-btn-primary" onClick={() => goTo(6)}>{t.s5_cta}</button>
+            <button className="tw-btn-primary" onClick={() => goTo(6)} disabled={!canProceedToCertifiedOutput}>{t.s5_cta}</button>
             <div className="tw-legal-note" style={{ marginTop: 12 }}>{t.s5_payment_note}</div>
           </div>
         </div>
@@ -1616,11 +1680,14 @@ export function TranslateWizard() {
             type="button"
             className="tw-btn-primary tw-btn-green"
             onClick={handlePayment}
-            disabled={paymentLoading}
+            disabled={paymentLoading || !canProceedToCertifiedOutput}
             style={{ fontSize: 21, padding: 22 }}
           >
             {isOwner ? '🔑 Owner — continue free' : paymentLoading ? t.s6_cta_loading : t.s6_cta}
           </button>
+          {!canProceedToCertifiedOutput && (
+            <div className="tw-legal-note" style={{ marginTop: 12 }}>{t.s6_review_block}</div>
+          )}
           <div className="tw-reassurance" style={{ marginTop: 16 }}>
             <div className="tw-reassurance-icon">🔒</div>
             <div className="tw-reassurance-text">{t.s6_stripe}</div>
@@ -1642,11 +1709,16 @@ export function TranslateWizard() {
               type="button"
               className="tw-btn-primary tw-btn-green"
               onClick={handleDownloadPdf}
-              disabled={pdfLoading || !sigSaved || !dataReviewed || !accuracyAttested || !certifierAddress.trim()}
+              disabled={pdfLoading || hasUnresolvedReviewFields || !sigSaved || !dataReviewed || !accuracyAttested || !certifierAddress.trim()}
               style={{ marginBottom: 0 }}
             >
               {pdfLoading ? t.s7_downloading : pdfDownloaded ? t.s7_downloaded : t.s7_download}
             </button>
+            {hasUnresolvedReviewFields && (
+              <div style={{ fontSize: 13, color: 'var(--gold)', marginTop: 10, fontWeight: 600 }}>
+                {t.s7_review_block}
+              </div>
+            )}
             {(!certifierAddress.trim() || !dataReviewed || !accuracyAttested || !sigSaved) && (
               <div style={{ fontSize: 13, color: 'var(--gold)', marginTop: 10, fontWeight: 600 }}>
                 {!certifierAddress.trim() ? t.s7_need_addr : (!dataReviewed || !accuracyAttested) ? t.s7_need_checks : t.s7_sign_first}
