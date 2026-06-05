@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-06-05 (agent operating contract + phase gates + D0 start pack — docs-only, agent)
+- merge: PR #89 (Gemini-first correction) MERGED → origin/main 50ee030 (prod deploy catching up, docs-only).
+- docs: created the project "rails" so future agents don't confuse live/target or jump to HTR/GPT/OneBrain:
+  - `docs/architecture/AGENT_OPERATING_CONTRACT.md` — current live reality, target, forbidden confusions,
+    agent autonomy (may-do-without-asking vs must-stop-and-ask), evidence contract, phase-gate rules, hard rules.
+  - `docs/reports/RECOGNITION_PHASE_GATES_CHECKLIST.md` — Gates 0–6 with required evidence; no phase starts
+    until prior is PASS; HTR/second provider only after GT from different people + owner decision.
+  - `docs/reports/NEXT_PROMPT_B_D0_QUALITY_RESHOOT.md` — copy-paste D0 prompt (flag default OFF; blur never a
+    fabrication signal; reshoot UI; tests) — NOT started (waits for clean monitor + owner "start D0").
+- No runtime/flag/env change; no code; no PII; qa-private=0. Next code step = D0, owner-gated.
+
 ## 2026-06-05 (Gemini-first roadmap correction — docs-only, agent)
 - correction (owner): reader strategy = GEMINI-FIRST. Removed all near-term GPT-4o framing from the roadmap docs.
   D1 near-term work stays within the Gemini family (top versions/benchmarks); a second reader is a
