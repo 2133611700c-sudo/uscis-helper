@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-06-05 (D0 quality/reshoot — first real brick, behind flag OFF, agent)
+- merge: PR #90 (operating contract) MERGED → origin/main 3d9d566 (rails locked in main).
+- feat(D0): `lib/docintel/quality/documentImageQuality.ts` — pure decision module: image metrics
+  (brightness/blurScore/resolution, reused from lib/ocr/image-preprocess) → ACCEPT / DEGRADED_REVIEW /
+  RESHOOT_REQUIRED + signals + reshoot message keys (RU). Flag `QUALITY_GATE_ENABLED` default OFF.
+- wiring: guarded inert block in app/api/translation/vision-extract/route.ts — flag OFF ⇒ byte-identical;
+  flag ON ⇒ a too-blurry/dark/small photo returns a reshoot instruction before OCR.
+- hard rule: blur is NEVER an anti-fabrication signal (test asserts no fabrication/identity text in output).
+- evidence: tsc 0 errors; D0 tests 16 passed; full suite 2875 passed / 4 skipped (flag OFF = nothing broke).
+  Report: docs/reports/D0_QUALITY_RESHOOT_IMPLEMENTATION.md.
+- no prod flag enabled; no model/provider/HTR/OneBrain/SMART change; no prod env/deploy; no PII; qa-private=0.
+
 ## 2026-06-05 (operating contract refinements — Gemini-first guardrails, docs-only, agent)
 - refine AGENT_OPERATING_CONTRACT §3: + "Gemini-first ≠ multi-provider fan-out", "HTR research ≠ HTR implementation".
 - refine §6 + Phase Gate 6: Gemini top-version benchmark must precede ANY non-Gemini provider discussion.

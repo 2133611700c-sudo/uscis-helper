@@ -3,6 +3,15 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-05 — D0 built (flag OFF); owner decisions
+
+- **D0 quality/reshoot is implemented behind `QUALITY_GATE_ENABLED` (default OFF)** — prod byte-identical, not
+  enabled. **Owner:** after a local/browser proof, you may approve a `QUALITY_GATE_ENABLED` **canary** (agent
+  will not flip the prod flag). Review the PR.
+- Next code step (agent, no owner needed): **Gate 2 — ReaderResult interface** (Gemini-first, no behavior change).
+- Still gated on owner: prod flag/env changes; GT from different people (for any 2nd provider/HTR); "start" for
+  any phase that changes live behavior.
+
 ## 2026-06-05 — agent rails set; owner commands needed to advance
 
 Operating contract + phase gates + D0 start pack are in (PR #89 Gemini-first merged). **Owner commands required:**
