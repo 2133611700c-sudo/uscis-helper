@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-05 (Gemini-first roadmap correction — docs-only, agent)
+- correction (owner): reader strategy = GEMINI-FIRST. Removed all near-term GPT-4o framing from the roadmap docs.
+  D1 near-term work stays within the Gemini family (top versions/benchmarks); a second reader is a
+  provider-agnostic DISABLED slot (GPT-4o/Claude NOT near-term); HTR research-only — all gated on GT breadth +
+  owner decision + cost/privacy/accuracy evidence; no multi-provider fan-out until ROI proven.
+- files patched (docs-only): RECOGNITION_TARGET_ARCHITECTURE_D0_D6.md (D1 Gemini-first block), RECOGNITION_SYSTEM_TRUTH_MAP.md,
+  RECOGNITION_BUILD_PLAN_PHASES.md (Phase 3 + Phase 10), NEXT_AGENT_PROMPTS_RECOGNITION_STRUCTURE.md (Prompt C),
+  RECOGNITION_ROADMAP_FROM_CURRENT_TO_TARGET.md (target diagram, gap list, Wave E — removed "Wire GPT-4o").
+- PR #88 already merged → this is a follow-up correction PR. No runtime/flag/env change; no PII; qa-private=0.
+
 ## 2026-06-05 (recognition structure roadmap — docs-only, agent)
 - merge: PR #87 (monitoring) MERGED → origin/main 951d4f6 (monitoring baseline locked before architecture work).
 - docs: read-only repo classification → 4 architecture docs (NO code/flag/prod change):
