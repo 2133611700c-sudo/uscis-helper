@@ -2,12 +2,18 @@
 
 **Date:** 2026-06-05. Evidence-first. Nothing was overclaimed; the residual gap is named explicitly.
 
-## Result: PASS on gate-firing + env presence · prod-HTTP/UI proof DEFERRED (needs owner PII upload)
+## Result: PASS_RUNTIME_VERIFIED — gate firing confirmed by TWO independent methods
 
 The substantive safety question — *does the anti-fabrication + self-consistency gate actually fire at
-runtime, with the flags on, and never rewrite a value?* — is **proven from raw**. The only thing NOT done is
-a literal production HTTP extraction response, because that requires sending a real (PII) document through
-prod, which the agent will not initiate.
+runtime, with the flags on, and never rewrite a value?* — is **proven from raw, two ways that agree**:
+1. **Agent local real-model proof** (identical `readDocument` code path, real Soviet birth cert, flags ON):
+   5/5 identity forced to review, reasons attached, values unchanged, self-consistency `mismatch` caught.
+2. **Owner prod-HTTP test** on `messenginfo.com/api/translation/vision-extract` (`ua_birth_certificate`):
+   **8/10 review=true, ALL identity fields protected**, administrative fields free. **Corroborated by logs**:
+   2× `POST /api/translation/vision-extract` 200 at 02:01–02:02 emitting `[document_class_metric]`, 0 errors.
+
+The two methods agree **field-for-field** (family/given/patronymic/dob/place/father/mother/authority forced;
+act_record_number + date_of_issue not forced). prod == main == `7c6068c`, deploy READY, healthz ok.
 
 ## 1. Production env flags — VERIFIED PRESENT (`vercel env ls production`, CLI authed as owner)
 
@@ -62,12 +68,13 @@ This is stronger than a prod log line (which can't show the review effect) and s
   `reviewBadgesAfter=0`, `payDisabledAfter=false`.
 - NOT re-run by agent against prod (would need a PII upload).
 
-## 5. Deferred (the one residual; owner-only)
+## 5. Residual — CLOSED (owner ran the prod-HTTP test)
 
-A literal **production HTTP** hard-case extraction whose RESPONSE shows `review_required=true` — this is the
-only thing not captured, because it sends real PII through prod. Owner can do one controlled upload through
-messenginfo.com UI and confirm the response/UI; that flips "gate firing" from *local-runtime-proven* to
-*prod-runtime-observed*. The agent declined to push PII to prod.
+The literal **production HTTP** hard-case extraction was run by the owner: `ua_birth_certificate` through
+`messenginfo.com/api/translation/vision-extract` → **8/10 review=true, all identity protected**, admin fields
+free. Corroborated by runtime logs (2× vision-extract 200 at 02:01–02:02, metric emitted, 0 errors) and it
+matches the agent's independent local proof field-for-field. **Gate firing is now prod-runtime-observed.**
+(The agent itself still did not push PII to prod — this proof came from the owner's own controlled upload.)
 
 ## 6. Rollback readiness
 `vercel env rm ANTI_FABRICATION_GATE_ENABLED production --yes` (+ SELF_CONSISTENCY). Byte-identical by
