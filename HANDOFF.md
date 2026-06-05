@@ -1,4 +1,11 @@
-# HANDOFF (2026-06-05 — D0 quality/reshoot built behind flag OFF)
+# HANDOFF (2026-06-05 — D0 MERGED behind flag OFF; flag-ON proof passed)
+
+**D0 closed:** PR #91 merged (origin/main 5266ca1). Local flag-ON proof (synthetic images, no PII/OCR/prod):
+noise→ACCEPT, tiny→RESHOOT_REQUIRED (gate fires); solid/dark hard-rejected by existing preprocess first
+(correct layering). `QUALITY_GATE_ENABLED` OFF in prod (byte-identical). Next: optional D0 browser proof →
+owner canary decision; then **Gate 2 = ReaderResult** (Gemini-first, no behavior change) — separate task.
+
+
 
 **D0 done (first real brick):** PR #90 merged (rails in main). Implemented `lib/docintel/quality/documentImageQuality.ts`
 (pure: metrics → ACCEPT/DEGRADED_REVIEW/RESHOOT_REQUIRED + reshoot keys), reusing existing preprocess metrics;

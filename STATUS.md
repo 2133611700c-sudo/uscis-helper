@@ -1,5 +1,10 @@
 # STATUS (2026-06-05 — honest, no overclaiming)
 
+## D0 quality/reshoot — MERGED (PR #91) behind flag OFF; flag-ON proof passed
+- In main (origin/main 5266ca1), `QUALITY_GATE_ENABLED` OFF in prod → byte-identical. Local flag-ON proof
+  (synthetic images): noise→ACCEPT, tiny→RESHOOT_REQUIRED (gate fires); no PII/OCR/prod. Not enabled in prod.
+- Next: optional D0 browser proof → owner canary decision. Then Gate 2 = ReaderResult (Gemini-first).
+
 ## D0 quality/reshoot — IMPLEMENTED behind flag OFF (first real brick)
 - `lib/docintel/quality/documentImageQuality.ts`: image metrics → ACCEPT / DEGRADED_REVIEW / RESHOOT_REQUIRED
   + reshoot messages. Flag `QUALITY_GATE_ENABLED` default OFF → prod byte-identical. Inert hook in translation

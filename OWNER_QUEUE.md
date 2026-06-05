@@ -3,7 +3,13 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
-## 2026-06-05 — D0 built (flag OFF); owner decisions
+## 2026-06-05 — D0 MERGED (flag OFF); owner decisions
+
+- **D0 is in main (PR #91)** behind `QUALITY_GATE_ENABLED` (OFF in prod). Local flag-ON proof passed. **Owner:**
+  optionally do a browser proof, then decide a `QUALITY_GATE_ENABLED` **canary** (agent won't flip the prod flag).
+- Next code step (agent, no owner needed): **Gate 2 — ReaderResult interface** — say "go Gate 2" when ready.
+
+## 2026-06-05 — D0 built (flag OFF); owner decisions [superseded by closeout above]
 
 - **D0 quality/reshoot is implemented behind `QUALITY_GATE_ENABLED` (default OFF)** — prod byte-identical, not
   enabled. **Owner:** after a local/browser proof, you may approve a `QUALITY_GATE_ENABLED` **canary** (agent
