@@ -3,6 +3,18 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-05 — agent rails set; owner commands needed to advance
+
+Operating contract + phase gates + D0 start pack are in (PR #89 Gemini-first merged). **Owner commands required:**
+- **"start D0"** — to begin the next CODE step (D0 quality/reshoot, flag default OFF). Only after a clean
+  24–48h monitor window. The prompt is ready in `docs/reports/NEXT_PROMPT_B_D0_QUALITY_RESHOOT.md`.
+- **Any prod flag/env change** — agent never flips a prod flag itself.
+- **GT from DIFFERENT people** — the gate for any second provider (GPT-4o/Claude) or HTR decision (Gemini-first until then).
+- **Owner command required before ANY non-Gemini provider discussion** — and only after a Gemini top-version
+  benchmark shows Gemini's best is insufficient (or a clear business need). No fan-out by default.
+- **Delete the temp monitor workflow** after the 48h window.
+- Merge the agent-operating-contract PR (docs-only) to lock the rails in main.
+
 ## 2026-06-05 — GEMINI-FIRST locked + follow-up PR awaiting owner merge
 
 Reader strategy correction: **Gemini-first**. Roadmap docs no longer frame GPT-4o as a near-term step.
