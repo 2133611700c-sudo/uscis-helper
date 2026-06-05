@@ -1,4 +1,11 @@
 # STATUS — Messenginfo
+## Session 105k (2026-06-04) — TURNKEY pro pass: gate canary test-proven, OneBrain parked, EAD/I-94 out of scope (no prod change)
+- `CANARY_TURNKEY` Gate canary made one-command for owner. **Rollback PROVEN byte-identical by automated test** (`canary safety contract`: OFF→ON→OFF restores exact output; value-immutability: ON never changes a value). Pre-flight all green except owner's enable step. Runbook: ANTI_FAB_GATE_CANARY_PLAN.md → "TURNKEY EXECUTION".
+- `CRITICAL_CAVEAT` `ua_birth_certificate`→`birth_certificate_handwritten` (conservative), so the gate force-reviews identity on **ALL** birth certs incl. printed → that is the `false_positive_review` surface (safety total, precision coarse). Pinned by a test.
+- `ADR-016` Hard-case UA = **mandatory human-review by policy** (not by metric — 1/4 won't improve by measuring). No prod threshold/model decision from single-person GT (FROZEN). **OneBrain decideField PARKED** (0 callers, placeholders uncalibratable; revisit at GT≥~50 fields/diff people; kept as reference). **EAD/I-94 out of scope** (US/Latin docs → controlling-Latin path, NOT the UA brain) — the "6/6 coverage" goal was a category error, withdrawn.
+- `COVERAGE` UA live-door = **4/4 of UA docs with a real image** (2 birth, passport, military). EAD/I-94 not counted by design.
+- `OWNER_DECISIONS` (OWNER_QUEUE): (1) run canary when ready; (2) PII history yes/no (ever shared externally? → schedule filter-repo, else record internal-only); (3) GT from different people (only unblock for calibration).
+- `EVIDENCE` tsc 0; full suite **2854 passed / 4 skipped / 0 fail** (+3 canary-contract tests). No flags/prod/deploy/model/SMART/HTR/L2-WIRE; qa-private tracked=0; no new PII in docs.
 ## Session 105j (2026-06-04) — live-door scorable coverage 3→4: +ua_military_id, patronymic naming fix (no prod flags)
 - `COVERAGE` Live-door scorable = **4/6** (was 3): added `ua_military_id` registry type → military_id_p1 now routes through `readDocument`. EAD/I-94 remain **BLOCKED** (UA-only registry + no upright real image).
 - `MILITARY(3.1-pro live)` ua_military_id = **5/5 scored fields correct** (family/given/patronymic/dob/doc_number). No `sex` field (no `sex` FieldKind) → sex unscored, documented. Type inert for prod (no caller passes this id; TPS military still uses regex module).

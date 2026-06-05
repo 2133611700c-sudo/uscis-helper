@@ -48,16 +48,20 @@
   **vision/image limitation, not a naming bug** — the rename was the right correctness fix but does not, by
   itself, make the model read «По батькові» on this booklet. family/given/dob = 3/3 correct (unchanged).
 
-## Still BLOCKED — exact missing inputs (owner-only)
+## EAD + I-94 — goal WITHDRAWN, not blocked (ADR-016)
 
-- **EAD + I-94**: the docintel registry is **UA-only** (no US doc types) and there is **no upright real
-  image** (only rotated `*_rot*` variants in qa-shots/private). To make these scorable: (1) place an upright
-  real EAD and I-94 image into `test-fixtures/real-docs/` (gitignored), AND (2) decide a US-doc read path
-  (add US doc types to the registry, or an explicit US-doc reader). Until then they are NOT product-scorable
-  and their raw API reads must NOT be counted as product accuracy.
+Earlier framed as a "blocker." That was a category error. EAD and I-94 are **English/Latin US documents the
+client already holds**; the controlling-Latin rule reads their MRZ/printed Latin directly. They do NOT belong
+in the **Ukrainian** reader brain, and "scorable through the UA door" is the wrong target. So this is not a
+missing fixture — it is a withdrawn goal. Their raw model reads are NOT product accuracy and are excluded
+from UA-door scoring. If a US-document accuracy path is ever wanted, it is a **separate Latin pipeline**
+(its own ADR), not an addition to the UA registry. Net effect: live-door UA coverage = **4/4 of the
+UA documents that have a real image** (2 hard-case birth, passport, military); the 2 US docs are out of scope
+by design.
 
 ## Net
-- Coverage 3 → 4 of 6. Military now scores 5/5 on the live door.
+- UA live-door coverage = **4/4 of the UA docs that have a real image** (2 hard-case birth, passport,
+  military). Was 3 (military was unroutable); now 4. Military scores 5/5 on the live door.
 - Patronymic naming corrected at the source layer, behavior-preserving.
-- EAD/I-94 remain BLOCKED on owner-supplied upright fixtures + a US-doc read-path decision.
+- EAD/I-94: **out of scope by design** (US/Latin docs — ADR-016), not a blocker. No false "6/6" target.
 - No flags enabled, no prod env change, no deploy, no model switch, no SMART/HTR/L2-WIRE.
