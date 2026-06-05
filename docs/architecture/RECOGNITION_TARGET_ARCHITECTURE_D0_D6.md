@@ -17,14 +17,23 @@ The 80-year-old uploads a photo; the system decides if it is readable BEFORE any
   (blur ≠ fabrication). UI shows a plain instruction ("photo is blurry / document is cropped / retake").
 - Current: `sharp`/preprocess computes some signals but they do NOT reach `readDocument`. Gap to close.
 
-## D1 — Reader layer (not "one Gemini forever")
+## D1 — Reader layer (Gemini-first; not "one Gemini forever", but not multi-provider yet either)
 A formal `ReaderResult` contract so adding a reader is additive, not a rewrite. NO prod fan-out yet.
 ```
 ReaderResult { reader_id, provider/model, document_class, fields[], confidence, raw_text?,
                source_spans/crops?, errors[], cost, latency_ms }
 ```
-- Gemini = reader_1 (live). GPT-4o = adapter stub (disabled). HTR = adapter stub (disabled).
-- Phase 3 only formalizes the interface + maps the current Gemini output onto it (no behavior change).
+**Reader strategy = GEMINI-FIRST (binding):**
+- **Current live reader:** Gemini.
+- **Near-term reader work stays WITHIN the Gemini family** — top Gemini versions + benchmarked prompts/settings.
+  No other provider in the near term.
+- **Future independent reader = a provider-agnostic, DISABLED slot.** GPT-4o / Claude / other vision readers are
+  **NOT near-term**, must NOT be wired or fanned out, and are gated behind a separate owner decision + GT breadth
+  from different people + cost/latency budget + privacy review + OFF/ON accuracy evidence.
+- **HTR** (Transkribus/TrOCR/any handwriting OCR) is **research-only** — blocked until GT breadth + a
+  privacy/egress/cost decision + owner approval. Do NOT build HTR in current roadmap phases.
+- Phase 3 only formalizes the interface + maps the current Gemini output onto it (no behavior change); any
+  second reader is a disabled stub, provider-agnostic, not GPT-4o-specific.
 
 ## OneBrain — field decision center (one judge, not three brains)
 `decideField(reads[], quality, dictionarySignals, validationSignals, selfConsistency, antiFab)` →
@@ -62,5 +71,7 @@ HTR/model evaluation. Never auto-promotes model output to ground truth.
 
 ## What gates the deep layers
 - OneBrain wiring + calibration is BLOCKED on **GT from different people** (current N ≈ 1 person).
-- HTR / GPT-4o second reader = research only, justified by metrics (hard-case review rate), AFTER GT breadth.
+- A second independent reader (any provider — provider-agnostic; GPT-4o/Claude are only examples, NOT a plan)
+  and HTR are **research only**, justified by metrics (hard-case review rate), AFTER GT breadth + owner decision.
+  Near-term reader strategy stays **Gemini-first**.
 - SMART_NORMALIZE stays OFF. No model switch without owner GT + traffic metrics.
