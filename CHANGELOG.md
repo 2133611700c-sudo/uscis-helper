@@ -1,5 +1,50 @@
 # CHANGELOG
 
+## 2026-06-05 (translation public wizard hardening — local runtime verified, agent)
+- fix: closed the real public Translation Wizard false-readiness gap in the legacy contour:
+  unresolved OCR `review_required` fields now block payment and final PDF download, and
+  `/api/translation/generate-pdf` now rejects unresolved OCR review fields from the wizard payload.
+- ux: added an explicit `Confirm` action for unchanged OCR-flagged values, so a user can
+  human-confirm a correct value without faking an edit; editing or confirming clears the
+  local review flag and re-enables the payment path only when all flagged fields are resolved.
+- verify: `pnpm --filter web exec tsc --noEmit --pretty false` PASS; `pnpm --filter web test` PASS;
+  `pnpm --filter web run build` PASS.
+- live local proof on `/en/services/translate-document/start` with real booklet fixture:
+  `reviewBadgesBefore=4`, `confirmButtonsBefore=4`, `payDisabledBefore=true`,
+  then after explicit confirms `reviewBadgesAfter=0`, `confirmButtonsAfter=0`,
+  `payDisabledAfter=false`.
+- evidence: `docs/reports/TRANSLATION_REVIEW_HARDENING_2026-06-04.md`
+- truth boundary: production still needs one post-deploy reverify for this exact fix.
+
+## 2026-06-04 (target recognition scheme verification, agent)
+- verify (read-only): added `docs/reports/TARGET_RECOGNITION_SCHEME_FILE_VERIFICATION_2026-06-04.md`
+  to reconcile the requested D0..D6 + Auditor recognition scheme against the actual repository file-by-file.
+- confirmed: the scheme exists as architecture docs and as parked `engine/*` + `central-brain/*` code.
+- confirmed: the live default product spine is still `docintel/documentFieldReader.ts` + Gemini provider + canonical arbitration, not `consensus.ts` multi-reader control.
+- confirmed: D0 preprocess is real; D1 Gemini reader is live; D2 KMU-55 is live; gazetteer/patronymic exist but are not universally active by default; review/PDF/audit pieces exist but are split.
+- verdict: repo contains most target building blocks, but the project does NOT yet match the exact target scheme in live runtime. No behavior change; no flag change; no prod mutation.
+
+## 2026-06-04 (latest audit / inventory reconciliation, agent)
+- verify (read-only): added `docs/reports/LATEST_AUDIT_INVENTORY_RECONCILIATION_2026-06-04.md`
+  to check the newest inventory / audit / matrix / verdict reports against current code.
+- confirmed: the freshest truth-layer reports are mostly internally consistent and align with code:
+  live spine = `readDocument()` + Gemini provider + arbitration/gates.
+- confirmed: older snapshot reports are now partially stale; specifically, reports claiming `ua_military_id`
+  absent are outdated because `docintel/documentRegistry.ts` now defines `ua_military_id`.
+- clarified: `ROUTE_INVENTORY_2026-05-29.md` remains valid for payment/review-bypass risk, but it does not
+  answer the newer "which brain is live" architecture question.
+- no behavior change; no test run; no prod mutation.
+
+## 2026-06-04 (critical live-door re-verify, agent)
+- verify (read-only): added `docs/reports/CRITICAL_REVERIFY_LIVE_DOOR_2026-06-04.md`
+  to correct earlier over-broad claims about what is "not wired" vs "wired behind flags".
+- confirmed against code:
+  - `snapCity`, patronymic reconcile, authority resolve are already wired into the live `readDocument()` path
+  - anti-fabrication and self-consistency are already wired into `readDocument()`
+  - `garbageGuard` is runtime-used in UI/review layers, but not server-side in the live reader
+- corrected truth: several D2 / verification pieces are present in the live door already; the accurate
+  distinction is default-OFF flag-gated behavior versus absent behavior. No behavior change; no prod mutation.
+
 ## 2026-06-05 (UX review chain — CODE-VERIFIED, agent)
 - verify (read-only, Translation flagship): the review→correct→PDF safety chain is wired correctly in code:
   (a) `EvidenceReviewPage.tsx` surfaces review — "Needs review" label + ⚠ + "verify the value is correct",
