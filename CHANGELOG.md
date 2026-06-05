@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-05 (post-runtime re-verification, agent — raw evidence)
+- verify: review-gate fix NOW IN PROD — PR #84 merged; origin/main=2d2a391; e298d97 ancestor of main; healthz sha=2d2a391==main. (Was feat-only/not-deployed in the prior entry.)
+- verify: independent re-run of the fix — tsc 0 errors; full suite **2859 passed / 4 skipped** (exact match to claim); reviewGate.ts server block + generate-pdf wiring + TranslateWizard client block + new tests all read and correct.
+- verify (runtime logs): real prod extractions ran ~01:01–01:03 — 3× POST /api/translation/vision-extract 200 each emitting `[document_class_metric]`, + 2× POST /api/tps/ocr/extract 200; **0 error/fatal in 3h**. → DOCUMENT_CLASS_METRICS = RUNTIME VERIFIED; deployed safety code = no regression.
+- GAP (unchanged): env flag VALUES not readable (no Vercel env-list MCP tool) → owner `vercel env ls production`. Anti-fab/self-consistency FIRING not independently confirmable (gates emit no log; metric line truncated; owner's "8/10 review=true" is owner-observed). To prove the gate: capture one hard-case extraction RESPONSE, not logs.
+- no code change; no flag touched; no PII upload performed by agent.
+
 ## 2026-06-05 (translation public wizard hardening — local runtime verified, agent)
 - fix: closed the real public Translation Wizard false-readiness gap in the legacy contour:
   unresolved OCR `review_required` fields now block payment and final PDF download, and
@@ -44,6 +51,16 @@
   - `garbageGuard` is runtime-used in UI/review layers, but not server-side in the live reader
 - corrected truth: several D2 / verification pieces are present in the live door already; the accurate
   distinction is default-OFF flag-gated behavior versus absent behavior. No behavior change; no prod mutation.
+
+## 2026-06-04 (project understanding master, agent)
+- verify (read-only): added `docs/reports/PROJECT_UNDERSTANDING_MASTER_2026-06-04.md`
+  after a full-project understanding pass across startup docs, accepted ADRs, repo structure, `lib/*`, and
+  product OCR routes.
+- confirmed: the repo is best understood as three coexisting architecture layers:
+  legacy TPS/product-specific OCR, current shared `docintel` + `canonical/core` live spine, and parked/target
+  `central-brain` + `engine/consensus` direction.
+- clarified: TPS merge brain (`lib/tps/centralBrain.ts`) is a separate live plane, not dead code.
+- no behavior change; no test run; no prod mutation.
 
 ## 2026-06-05 (UX review chain — CODE-VERIFIED, agent)
 - verify (read-only, Translation flagship): the review→correct→PDF safety chain is wired correctly in code:
