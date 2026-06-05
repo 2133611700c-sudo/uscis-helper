@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-06-05 (UX review chain — CODE-VERIFIED, agent)
+- verify (read-only, Translation flagship): the review→correct→PDF safety chain is wired correctly in code:
+  (a) `EvidenceReviewPage.tsx` surfaces review — "Needs review" label + ⚠ + "verify the value is correct",
+  driven by `field.is_critical && field.review_required`; (b) `correct-field` route records a `user_corrections`
+  row + updates `normalized_value` (user can fix); (c) `generate-pdf` route RETURNS `review_required` gate →
+  **PDF is blocked while review is pending** (uncertain fields never flow silently into the PDF); (d) `render`
+  route enforces "Final PDF fields must match the confirmed DB values" with a PII-safe source-to-final audit.
+- So the gate→review_required→UI→PDF-block→confirmed-value chain is connected STRUCTURALLY. Still NOT proven in
+  live runtime (no extraction processed). Roadmap Wave B updated to "code-verified, runtime pending".
+- re-confirmed infra: healthz sha=73e7505 == main, ok @ 00:48; no new errors. No code change; no flag touched; no PII upload.
+
 ## 2026-06-05 (post-deploy verification, agent — raw evidence)
 - verify: prod healthz sha=73e7505 == origin/main HEAD; PRs #80/#81/#82 MERGED; latest prod deploy dpl_7GbX READY. Code live.
 - verify: 0 error/fatal runtime logs in 3h; 6h prod traffic = only /api/healthz 200 + /robots.txt. No regression.
