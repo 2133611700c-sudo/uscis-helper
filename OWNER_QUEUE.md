@@ -3,20 +3,28 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
-## 2026-06-04 — live-door coverage now 4/6; EAD+I-94 need owner inputs
+## 2026-06-04 — TURNKEY: gate canary test-proven · OneBrain parked · EAD/I-94 out of scope · decisions for owner
 
-Agent fixed the small coverage blockers (added `ua_military_id` registry type → military_id_p1 scorable, 5/5
-correct live; patronymic naming corrected at source, behavior-preserving). **Live-door scorable = 4/6.**
+Agent did the full professional pass that does NOT touch prod (ADR-016). Three owner decisions remain:
 
-**Owner-only to reach 6/6 (then calibration can use 6 docs):**
-1. **Upright real EAD image** → `test-fixtures/real-docs/` (gitignored). Only rotated `ead_rot*` exist now.
-2. **Upright real I-94 image** → same. Only `i94_rot*` exist now.
-3. **US-doc read-path decision:** the docintel registry is UA-only. Either authorize the agent to add US doc
-   types (us_ead / us_i94) to the registry + a US-doc read path, or keep EAD/I-94 out of live-door scoring.
-   Until decided, EAD/I-94 raw API reads are NOT product accuracy and stay excluded.
+**1. Gate canary — now turnkey (one owner sequence).** Rollback is PROVEN byte-identical by an automated test
+(`canary safety contract`); pre-flight is all green except your enable step. Runbook with the exact commands +
+the coarse-precision caveat (gate force-reviews ALL birth certs, printed too): `ANTI_FAB_GATE_CANARY_PLAN.md`
+→ "TURNKEY EXECUTION". **Owner action:** run the canary sequence when ready (still your explicit command; agent
+will not flip the flag). SMART_NORMALIZE stays OFF.
 
-Calibration remains BLOCKED_INSUFFICIENT_N until coverage + more people. Gate canary unchanged
-(READY_FOR_OWNER_APPROVED_CANARY; separate command after rollback rehearsal).
+**2. PII in git history — needs a yes/no.** Owner's own name / `FU262473` / DOB are pervasive in main history
+(Session-54). **Decide:** will this repo EVER be shared outside the owner? If **yes** → schedule a
+`git filter-repo` history rewrite (destructive, force-push, coordinate clones) — agent can prepare the exact
+runbook on command. If **no** → record "internal-only forever" and we stop re-raising it. Not done now (no
+filter-repo this session).
+
+**3. GT breadth — the only thing that unblocks calibration.** Calibration is BLOCKED_INSUFFICIENT_N because all
+GT is ~1 person. Need GT from **different people** (any UA docs). Not more docs from the same person.
+
+**Withdrawn (no longer an owner task):** "make EAD/I-94 scorable / reach 6/6." Per ADR-016 these are US/Latin
+docs read by the controlling-Latin path, not the UA brain — out of scope by design, a category error, not a
+missing fixture. UA live-door coverage is 4/4 of the UA docs that have a real image.
 
 
 ## 2026-06-04 — GT=6 verified · accuracy reconciled · gate = READY_FOR_OWNER_APPROVED_CANARY
