@@ -159,3 +159,12 @@ P2 OFF-vs-ON delta is measured afterward.
 
 > The passport booklet ground-truth is already VERIFIED at
 > `qa-private/ground-truth/internal_passport_<surname>.json` (gitignored).
+
+## 2026-06-05 — PII DECISION: INTERNAL-ONLY FOREVER (CLOSED)
+
+**Decision:** Repository is PRIVATE (verified `isPrivate: true`). It will NOT be shared externally.
+PII in git history (surname, FU262473, DOB, 51 USCIS packets) = accepted risk for internal-only repo.
+`docs/reports/evidence/` already gitignored — no new leaks forward.
+Phase A/B from PII_HISTORY_REWRITE_RUNBOOK.md = NOT NEEDED unless repo goes external (re-open then).
+**This topic is CLOSED. Do not re-raise.**
+
