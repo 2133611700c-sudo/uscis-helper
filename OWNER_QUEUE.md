@@ -3,6 +3,19 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-05 — Wave D monitoring active (PASS_RUNTIME_VERIFIED reached)
+
+Gate verification COMPLETE; safety-wrapper working in prod. Now 24–48h monitoring.
+- **Automated:** `.github/workflows/prod-safety-monitor.yml` watches public healthz every 6h (read-only, no
+  secrets). **Owner: delete this workflow file after the window** (it self-no-ops after 2026-06-07; remove to
+  avoid toggle debt). It can't read Vercel logs (no `VERCEL_TOKEN` secret).
+- **Manual (owner, ~daily):** run `docs/reports/PROD_SAFETY_MONITORING_24H_RUNBOOK.md` — `vercel env ls` +
+  `vercel logs --since 24h` for errors/metric/review_rate; watch printed-birth-cert false-positive review.
+- **Rollback (owner decision):** if self-consistency raises latency/cost → `vercel env rm
+  SELF_CONSISTENCY_GATE_ENABLED production --yes` (keep ANTI_FAB ON); byte-identical by test.
+- **Next real unblock (owner):** GT from DIFFERENT people — the only thing that lets calibration proceed.
+  No new architecture (HTR/OneBrain/GPT-4o/SMART/L2-WIRE stay parked).
+
 ## 2026-06-04 — TURNKEY: gate canary test-proven · OneBrain parked · EAD/I-94 out of scope · decisions for owner
 
 Agent did the full professional pass that does NOT touch prod (ADR-016). Three owner decisions remain:
