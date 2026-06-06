@@ -27,6 +27,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 
 // ─── Document field templates ─────────────────────────────────────────────────
 
@@ -305,6 +306,14 @@ export async function POST(req: NextRequest) {
     const hasImage = typeof image_base64 === 'string' && image_base64.length > 100
     const openAIVisionEnabled = process.env.ENABLE_OPENAI_VISION === 'true'
 
+    // ── C3: legacy reader = UNTRUSTED for final critical values (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
+    // OFF ⇒ {} ⇒ byte-identical. ON ⇒ annotate the response so consumers treat critical identity/document
+    // fields from this legacy (DeepSeek/OpenAI, ungated) path as candidate-only, never auto-final.
+    const legacySafety = isOcrFieldSafetyEnabled()
+      ? { ocr_field_safety: { legacy_reader: true, critical_fields_candidate_only: true,
+          policy: 'legacy reader — critical identity/document values are candidates; confirm before final use' } }
+      : {}
+
     // ── Priority 1: DeepSeek text parse (Tesseract.js path) ──────────────────
     if (hasRawText) {
       const result = await parseTextWithDeepSeek(raw_text!, normalizedDocType)
@@ -315,6 +324,7 @@ export async function POST(req: NextRequest) {
           provider: 'deepseek',
           extractedFields: result.fields,
           confidence: result.confidence,
+          ...legacySafety,
           warnings:
             result.confidence < 0.4
               ? ['Low confidence — OCR text may be unclear, please verify fields']
@@ -334,6 +344,7 @@ export async function POST(req: NextRequest) {
           provider: 'openai',
           extractedFields: result.fields,
           confidence: result.confidence,
+          ...legacySafety,
           warnings:
             result.confidence < 0.5
               ? ['Low confidence OCR — please verify all fields']

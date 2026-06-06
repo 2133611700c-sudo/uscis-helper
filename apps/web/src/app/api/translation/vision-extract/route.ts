@@ -31,6 +31,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
+import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
@@ -337,10 +338,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── C3: Global OCR field safety guard (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
+  // OFF ⇒ this block is skipped ⇒ byte-identical. ON ⇒ unsafe critical reads (hard-case,
+  // source/stale mismatch, low conf, zero recognition) become candidate-only + review/manual,
+  // never shown as the final value. Pure guard; no content changed, no PII.
+  let ocrFieldSafety: { applied: boolean; unresolved_critical?: boolean } = { applied: false }
+  if (isOcrFieldSafetyEnabled()) {
+    const res = applyOcrFieldSafety(fields as never[], {
+      flow: 'translation_public',
+      document_class: docintelIdToDocumentClass(docTypeId),
+    }, { zeroRecognition: !ok })
+    fields = res.fields as typeof fields
+    ocrFieldSafety = { applied: true, unresolved_critical: res.anyUnresolvedCritical }
+  }
+
   return NextResponse.json({
     ok,
     doc_type_id: docTypeId,
     fields,
+    ocr_field_safety: ocrFieldSafety,
     policy_guard_status: translationPolicyGuardStatus,
     pages: pageResults,
     page_count: rawFiles.length,
