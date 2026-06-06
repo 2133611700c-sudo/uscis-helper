@@ -1,4 +1,11 @@
 # STATUS (2026-06-06 — OCR INCIDENT / NOT TRUSTED; P0 forensic audit done)
+
+## ✅ Containment guard built (ocrFieldSafetyGate) — pure, tested, NOT yet wired
+- `lib/documentSafety/ocrFieldSafetyGate.ts`: one global guard, PII-free by construction (no value in/out),
+  enforces the 10-rule contract (candidate≠final; zero-recognition≠success; source/stale/hard-case/legacy/low-conf
+  → not final). + `hasUnresolvedCriticalForOutput` (shared PDF/payment gate). tsc 0; 18 guard tests; full suite
+  2893 passed. Pure/unwired → prod byte-identical. **Next: wire into Translation/TPS/legacy/PDF behind
+  `OCR_FIELD_SAFETY_ENABLED` (default OFF), per-flow + tests.** D0/ReaderResult/OneBrain still HELD.
 <!-- P0 docs PII-scrubbed: incident identity values replaced by placeholders -->
 
 ## ⛔ Global OCR / Recognition = INCIDENT / NOT TRUSTED (2026-06-06)
