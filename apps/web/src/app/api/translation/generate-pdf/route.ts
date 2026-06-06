@@ -16,6 +16,8 @@ import { ExtractedField, SourceTrace } from '@/lib/translation/types'
 import { isOwnerSession } from '@/lib/ownerAccess'
 import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
 import { assertReviewGate } from '@/lib/translation/reviewGate'
+import { hasUnresolvedCriticalForOutput } from '@/lib/documentSafety/ocrFieldSafetyGate'
+import { classifyCriticality, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { buildAttestationRecord } from '@/lib/translation/attestation'
 import { persistCertification } from '@/lib/translation/persistCertification'
 
@@ -113,6 +115,26 @@ export async function POST(req: NextRequest) {
       { ok: false, error: 'review_required', gate: 'review', reason: gate.reason, detail: gate.detail },
       { status: 403 },
     )
+  }
+
+  // ── C3: unified critical-field output gate (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
+  // OFF ⇒ skipped (byte-identical; reviewGate above already blocks). ON ⇒ block the PDF when any
+  // CRITICAL identity/document field is still review/manual and not confirmed (admin fields don't block).
+  if (isOcrFieldSafetyEnabled()) {
+    const unresolved = hasUnresolvedCriticalForOutput(
+      (payload.fields ?? []).map((f) => ({
+        criticality: classifyCriticality(f.field),
+        review_required: f.review_required,
+        manual_required: (f as { manual_required?: boolean }).manual_required,
+        confirmed: (f as { confirmed?: boolean }).confirmed,
+      })),
+    )
+    if (unresolved) {
+      return NextResponse.json(
+        { ok: false, error: 'review_required', gate: 'ocr_field_safety', reason: 'unresolved_critical_field' },
+        { status: 403 },
+      )
+    }
   }
 
   // Build certification record

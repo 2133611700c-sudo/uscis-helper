@@ -56,6 +56,8 @@ import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
+import { classifyCriticality, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
+import { protectOcrField } from '@/lib/documentSafety/ocrFieldSafetyGate'
 // MRZ_WIRED: inject MRZ authority for international passport in Core path
 import { mrzCandidatesFromText, parseMrzFromText } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
@@ -1202,6 +1204,38 @@ export async function POST(req: NextRequest) {
       )
     } catch {
       /* shadow must never affect extraction */
+    }
+  }
+
+  // ── C3: Global OCR field safety guard (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
+  // OFF ⇒ skipped (byte-identical). ON ⇒ an unsafe critical field loses its FINAL value
+  // (normalized_value→null; raw_value preserved as the candidate) and is forced to review +
+  // manual. Legacy (non-Core) reads are untrusted for critical identity/document fields.
+  if (isOcrFieldSafetyEnabled() && mergedModule) {
+    const safetyDocClass = tpsHintToDocumentClass(docTypeHint)
+    let anyUnsafeCritical = false
+    const guardedFields = mergedModule.fields.map((f) => {
+      const criticality = classifyCriticality(f.field)
+      if (criticality !== 'critical_identity' && criticality !== 'critical_document') return f
+      const r = protectOcrField({
+        flow: coreStatus === 'ok' ? 'tps_core' : 'tps_legacy',
+        field_name: f.field,
+        criticality,
+        document_class: safetyDocClass,
+        value_present: (f.normalized_value ?? '').trim() !== '',
+        candidate_value_present: ((f.normalized_value ?? f.raw_value) ?? '').trim() !== '',
+        review_required: f.review_required === true,
+        legacy_reader: coreStatus !== 'ok',
+        strong_source_anchor: f.extraction_source === 'ocr_mrz',
+      })
+      if (r.final_value_allowed) return f
+      anyUnsafeCritical = true
+      return { ...f, normalized_value: null, review_required: true }
+    })
+    mergedModule = {
+      ...mergedModule,
+      fields: guardedFields,
+      manual_review_required: mergedModule.manual_review_required || anyUnsafeCritical,
     }
   }
 
