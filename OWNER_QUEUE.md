@@ -3,6 +3,12 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-06 — OWNER must run the real-document canary proofs (flag is ON, clean)
+- OCR_FIELD_SAFETY_ENABLED is ON in prod and clean. Agent proved all it can (Translation gate live, zero-recognition safe, no 5xx). The remaining proofs need a real document + Stripe and CANNOT be done by the agent.
+- **Owner action for PASS_CANARY_FULL:** (1) upload ONE real hard-case birth cert via Translation (flag ON) → unsafe critical is candidate/review, NOT final; (2) one controlled TPS upload → source-mismatch/legacy critical not final, admin not over-blocked; (3) one Translation→review→PDF/payment flow → unresolved critical BLOCKS the PDF, confirmed/corrected then PASSES. Fill the sanitized table in OCR_FIELD_SAFETY_OWNER_PROOF_RESULT.md (booleans/reasons only, NO values).
+- **Rollback immediately** on unsafe-final / PDF-passes-unresolved / 5xx / PII: vercel env rm OCR_FIELD_SAFETY_ENABLED production --yes + redeploy.
+- ReaderResult/OneBrain HOLD until PASS_CANARY_FULL.
+
 ## 2026-06-06 — finish OCR field-safety canary to full PASS (flag is ON in prod)
 - OCR_FIELD_SAFETY_ENABLED=1 is now ON in prod and CLEAN (gate live, 200, zero-recognition safe, no 5xx). Agent proved everything it can without PII/Stripe.
 - **Owner action for full PASS:** (1) upload ONE real hard-case document via Translation with flag ON → confirm an unsafe critical field is candidate/review, NOT final; (2) run one Translation→review→PDF/payment flow → confirm unresolved critical BLOCKS the PDF and a confirmed/corrected field then PASSES (no over-block of paying users/admin fields); (3) watch vercel logs 24-48h.
