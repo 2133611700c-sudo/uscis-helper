@@ -1,4 +1,10 @@
 # HANDOFF (2026-06-06 — OCR INCIDENT; P0 forensic audit done, code frozen)
+**C3 FULL + flag-ON proof:** all 4 flows wired (Translation/TPS/legacy/PDF) behind OCR_FIELD_SAFETY_ENABLED=OFF; c3FlowSafety.proof.test proves flag-ON outcomes per flow. tsc 0; documentSafety 38 tests; full suite 2913. OFF=byte-identical. Owner: merge #94→#95→#96, browser-proof flag ON, canary.
+
+**C3 wiring COMPLETE:** guard wired into all 4 flows (Translation public, TPS merge, legacy boundary, PDF/payment) behind `OCR_FIELD_SAFETY_ENABLED` (OFF=byte-identical). tsc 0; 28 documentSafety tests; full suite 2903. candidate≠final, zero-recognition≠success enforced when ON. Prod flag NOT enabled; D0/ReaderResult/OneBrain HELD. Owner enables after browser proof.
+
+**C3 wiring (increment 1):** guard wired into Translation public (`vision-extract`) behind `OCR_FIELD_SAFETY_ENABLED` (OFF=byte-identical). Helper `applyOcrFieldSafety` reusable. tsc 0; 28 documentSafety tests; full suite 2903 passed. Remaining C3 (same helper): TPS merge, legacy boundary, PDF/payment. Prod flag NOT enabled; D0/ReaderResult/OneBrain HELD.
+
 **Containment guard built (C1+C2):** `documentSafety/ocrFieldSafetyGate.ts` (pure, PII-free, 10-rule contract)
 + `hasUnresolvedCriticalForOutput`. tsc 0; 18 tests; full suite 2893 passed; pure/unwired = byte-identical. NOT
 wired into flows yet (C3, behind `OCR_FIELD_SAFETY_ENABLED` OFF, per-flow + tests). D0/ReaderResult/OneBrain HELD.
