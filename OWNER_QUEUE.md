@@ -3,6 +3,13 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-06 — C3 merged; owner canary for OCR_FIELD_SAFETY_ENABLED
+- C3 global OCR field safety wired into all 4 flows + merged to main (#94/#95/#96). Flag ABSENT/OFF in prod.
+- **Owner action:** run the canary per `docs/reports/OCR_FIELD_SAFETY_CANARY_RUNBOOK.md` — enable
+  `OCR_FIELD_SAFETY_ENABLED=1` (preview first), do one controlled upload per flow, verify candidate≠final /
+  PDF-block / admin-not-overblocked, then production. Agent will NOT flip the prod flag.
+- D0/ReaderResult/OneBrain stay HELD until canary stable.
+
 ## 2026-06-05 — D0 built (flag OFF); owner decisions
 
 - **D0 quality/reshoot is implemented behind `QUALITY_GATE_ENABLED` (default OFF)** — prod byte-identical, not
