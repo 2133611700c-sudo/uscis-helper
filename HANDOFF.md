@@ -1,4 +1,6 @@
 # HANDOFF (2026-06-06 — OCR INCIDENT; P0 forensic audit done, code frozen)
+**C3 MERGED:** stack #94→#95→#96 in main (0d3d82b). All 4 flows wired behind OCR_FIELD_SAFETY_ENABLED (absent/OFF in prod). tsc 0; suite 2913; flag-ON proof + canary runbook written. Prod deploy of 0d3d82b catching up (flag OFF=byte-identical). Owner: enable canary per OCR_FIELD_SAFETY_CANARY_RUNBOOK.md (agent will not flip prod flag). D0/ReaderResult/OneBrain HELD until canary stable.
+
 **C3 FULL + flag-ON proof:** all 4 flows wired (Translation/TPS/legacy/PDF) behind OCR_FIELD_SAFETY_ENABLED=OFF; c3FlowSafety.proof.test proves flag-ON outcomes per flow. tsc 0; documentSafety 38 tests; full suite 2913. OFF=byte-identical. Owner: merge #94→#95→#96, browser-proof flag ON, canary.
 
 **C3 wiring COMPLETE:** guard wired into all 4 flows (Translation public, TPS merge, legacy boundary, PDF/payment) behind `OCR_FIELD_SAFETY_ENABLED` (OFF=byte-identical). tsc 0; 28 documentSafety tests; full suite 2903. candidate≠final, zero-recognition≠success enforced when ON. Prod flag NOT enabled; D0/ReaderResult/OneBrain HELD. Owner enables after browser proof.
