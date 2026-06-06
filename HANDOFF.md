@@ -1,4 +1,8 @@
 # HANDOFF (2026-06-06 — OCR INCIDENT; P0 forensic audit done, code frozen)
+**Containment guard built (C1+C2):** `documentSafety/ocrFieldSafetyGate.ts` (pure, PII-free, 10-rule contract)
++ `hasUnresolvedCriticalForOutput`. tsc 0; 18 tests; full suite 2893 passed; pure/unwired = byte-identical. NOT
+wired into flows yet (C3, behind `OCR_FIELD_SAFETY_ENABLED` OFF, per-flow + tests). D0/ReaderResult/OneBrain HELD.
+
 (STATUS bug-label genericized too.)
 (P0 docs PII-scrubbed: incident identity values → placeholders.)
 
