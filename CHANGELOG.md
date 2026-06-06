@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-06 (C3 stack merged + proof + canary runbook, agent)
+- merge: #94 (audit) → #95 (guard) → #96 (C3 wiring) all MERGED to main (0d3d82b). tsc 0; full suite 2913 passed / 4 skipped on merged main.
+- verify: OCR_FIELD_SAFETY_ENABLED ABSENT (OFF) in prod (vercel env ls). prod deploy of 0d3d82b catching up through stacked merges (flag OFF = byte-identical).
+- docs: C3_OCR_FIELD_SAFETY_PROOF.md (flag-ON logic proof per flow) + OCR_FIELD_SAFETY_CANARY_RUNBOOK.md (owner enable/rollback/checks/stop-conditions).
+- no prod env/flag change; no model/provider/HTR/OneBrain/SMART; no PII; qa-private=0. Canary = owner step; D0/ReaderResult/OneBrain HELD.
+
 ## 2026-06-06 (C3 FULL verified + flag-ON proof, agent)
 - verified all 4 flows wired (grep): translation vision-extract, tps/ocr/extract, legacy ocr/extract, generate-pdf — all behind OCR_FIELD_SAFETY_ENABLED (OFF).
 - added c3FlowSafety.proof.test.ts: flag-ON logic proof per flow (hard-case→candidate; zero-recognition→manual; legacy/source-mismatch→not final; PDF gate blocks unresolved critical, admin passes).
