@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 2026-06-06 (C3 FULL verified + flag-ON proof, agent)
+- verified all 4 flows wired (grep): translation vision-extract, tps/ocr/extract, legacy ocr/extract, generate-pdf — all behind OCR_FIELD_SAFETY_ENABLED (OFF).
+- added c3FlowSafety.proof.test.ts: flag-ON logic proof per flow (hard-case→candidate; zero-recognition→manual; legacy/source-mismatch→not final; PDF gate blocks unresolved critical, admin passes).
+- evidence: tsc 0; documentSafety 38 tests; full suite 2913 passed / 4 skipped. OFF byte-identical. Prod flag NOT enabled; no env/model/provider/HTR/OneBrain/SMART; no PII; qa-private=0.
+
+## 2026-06-06 (C3 wiring COMPLETE: all 4 flows behind OFF flag, agent)
+- wire: TPS merge (tps/ocr/extract — mergedModule.fields through guard, legacy untrusted, normalized_value→null for unsafe critical), legacy boundary (/api/ocr/extract — legacy_reader/candidate-only annotation), PDF/payment (generate-pdf — hasUnresolvedCriticalForOutput blocks unresolved critical; admin passes). Translation public wired earlier this branch.
+- all behind OCR_FIELD_SAFETY_ENABLED (default OFF). evidence: tsc 0; documentSafety 28 tests; full suite 2903 passed / 4 skipped — OFF byte-identical, zero regression.
+- prod flag NOT enabled; no env/model/provider/HTR/OneBrain/SMART change; no PII; qa-private=0. Report docs/reports/C3_OCR_FIELD_SAFETY_WIRING.md.
+
+## 2026-06-06 (C3 wiring inc.1: global OCR field safety wired into Translation public, OFF flag, agent)
+- feat: applyOcrFieldSafety helper (classifyCriticality + apply guard to field list) + isOcrFieldSafetyEnabled (OCR_FIELD_SAFETY_ENABLED default OFF).
+- wire: /api/translation/vision-extract — guarded block; OFF=byte-identical; ON ⇒ unsafe critical (hard-case/source-mismatch/stale/low-conf/zero-recognition) → candidate-only + review/manual, never final value; response carries ocr_field_safety.
+- fix: guard manual_required now set for candidate_only too (contract 2.5: unsafe critical needs human action).
+- evidence: tsc 0; documentSafety 28 tests (RED→GREEN); full suite 2903 passed / 4 skipped (flag OFF, zero regression).
+- remaining C3 (same helper, next): TPS merge, legacy boundary, PDF/payment. Report docs/reports/C3_OCR_FIELD_SAFETY_WIRING.md.
+- prod flag NOT enabled; no env/model/provider/HTR/OneBrain/SMART change; no PII; qa-private=0.
+
 ## 2026-06-06 (containment: global OCR field safety guard — built+tested, not wired, agent)
 - feat: `apps/web/src/lib/documentSafety/ocrFieldSafetyGate.ts` — single global guard enforcing GLOBAL_OCR_FIELD_SAFETY_CONTRACT (candidate≠final, zero-recognition≠success, source/stale/hard-case/legacy/low-conf→not final, review/manual monotonic). PII-free by construction (takes value_present booleans, never the value). + hasUnresolvedCriticalForOutput shared PDF/payment gate.
 - evidence: tsc 0; 18 guard tests (RED→GREEN equiv, incl. no-PII assertion); full suite 2893 passed / 4 skipped — guard pure/unwired = byte-identical, zero regression.
