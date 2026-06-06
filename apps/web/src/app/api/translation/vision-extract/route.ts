@@ -368,5 +368,15 @@ export async function POST(req: NextRequest) {
     ...(degradedFromBrain ? { degraded: true, degraded_reason: 'central-brain unavailable — used legacy single reader; verify every field against the document' } : {}),
     status: ok ? (degradedFromBrain ? 'ok:degraded-legacy' : 'ok') : (lastResult?.status ?? 'no_fields'),
     ...(ok ? {} : { error: lastResult?.error ?? 'No fields extracted across all pages.' }),
-  }, { status: ok ? 200 : 502 })
+    // Zero recognition is review_required even without the C3 flag, so the client
+    // always treats a no-fields read as "needs your review", never silent success.
+    ...(ok ? {} : { review_required: true }),
+    // HTTP 200 always. "No fields recognized" / per-page provider error are EXPECTED
+    // operational outcomes communicated by ok:false + status + error in the body — NOT
+    // gateway errors. Returning 502 here was the P0 incident: it made Cloudflare mask the
+    // JSON with a generic "error code: 502" page and the client show "HTTP 502" instead of
+    // a real message, for every hard-case doc that read 0 fields. This matches the route's
+    // other non-fatal returns (needs_better_scan / reshoot_required also return 200). True
+    // unhandled exceptions still surface as a platform 500. (P0 triage 2026-06-06.)
+  }, { status: 200 })
 }

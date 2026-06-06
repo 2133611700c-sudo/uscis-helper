@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2026-06-06 (P0 vision-extract 502 triage + fix, agent)
+- runtime proof (preview deploy of fix branch): ead no-fields probe → HTTP 200 {ok:false,status:unknown_document_type,review_required:true} (identical request = 502 on prod); blank ua_birth_certificate → 200 all fields value:null+review_required (no 502, no fabrication). PR #99.
+- root cause: /api/translation/vision-extract returned HTTP 502 on every zero-field read — final return was `status: ok ? 200 : 502`. Proved by hitting the Vercel origin directly (bypassing Cloudflare): full valid JSON body returned WITH status 502, server=Vercel, x-vercel-id present, no crash, safety gate ran. Through Cloudflare the body was masked as bare "error code: 502". 502 in ~0.5-1.3s ⇒ not a timeout (maxDuration=60). This is the original "translator 0 results" incident; affects real hard-case docs that read 0 fields.
+- fix: final return → status 200 always; added review_required:true to the no-fields body (zero recognition never silent success). 400/413/415/429 unchanged. True unhandled exceptions still 500.
+- tests: NEW visionExtract502.test.ts (6 source-level guards). tsc 0; full suite 2919 passed / 4 skipped (was 2913+6). C3 documentSafety green.
+- no prod env/flag change; no model/provider; no PII (synthetic inputs); qa-private=0. Branch fix/vision-extract-502-triage, PR open. Re-run OCR field-safety canary only after merge; ReaderResult/OneBrain HOLD.
+
+## 2026-06-06 (OCR field-safety canary — DEGRADED, rolled back, agent)
+- canary: enabled OCR_FIELD_SAFETY_ENABLED=1 in prod + code-free redeploy (commit 0d3d82b). Route proof blocked: every Translation vision-extract request reaching the Gemini model-read path returned 502 (synthetic non-PII images, all sizes/docTypes). Early quality-guard path returned 200 (route healthy).
+- disambiguation: rolled back flag to OFF + redeploy; identical probe STILL 502 → 502 is PRE-EXISTING and flag-independent (gate runs post-read, never executed; no exception/stack logged — gateway timeout signature).
+- rollback: OCR_FIELD_SAFETY_ENABLED ABSENT/OFF (verified). prod==main==0d3d82b, healthz ok. anti-fab/self-consistency/SMART/D0/model/provider untouched. No PII (synthetic inputs). qa-private=0.
+- docs: OCR_FIELD_SAFETY_CANARY_RESULT.md. NEW finding (out of C3 scope, NOT proven for real uploads): vision-extract read-path 502 on synthetic requests — separate triage. C3 code-ready/prod OFF; D0/ReaderResult/OneBrain HOLD.
+
+## 2026-06-06 (C3 stack merged + proof + canary runbook, agent)
+- merge: #94 (audit) → #95 (guard) → #96 (C3 wiring) all MERGED to main (0d3d82b). tsc 0; full suite 2913 passed / 4 skipped on merged main.
+- verify: OCR_FIELD_SAFETY_ENABLED ABSENT (OFF) in prod (vercel env ls). prod deploy of 0d3d82b catching up through stacked merges (flag OFF = byte-identical).
+- docs: C3_OCR_FIELD_SAFETY_PROOF.md (flag-ON logic proof per flow) + OCR_FIELD_SAFETY_CANARY_RUNBOOK.md (owner enable/rollback/checks/stop-conditions).
+- no prod env/flag change; no model/provider/HTR/OneBrain/SMART; no PII; qa-private=0. Canary = owner step; D0/ReaderResult/OneBrain HELD.
+
 ## 2026-06-06 (C3 FULL verified + flag-ON proof, agent)
 - verified all 4 flows wired (grep): translation vision-extract, tps/ocr/extract, legacy ocr/extract, generate-pdf — all behind OCR_FIELD_SAFETY_ENABLED (OFF).
 - added c3FlowSafety.proof.test.ts: flag-ON logic proof per flow (hard-case→candidate; zero-recognition→manual; legacy/source-mismatch→not final; PDF gate blocks unresolved critical, admin passes).

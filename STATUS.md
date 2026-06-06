@@ -1,5 +1,18 @@
 # STATUS (2026-06-06 — OCR INCIDENT / NOT TRUSTED; P0 forensic audit done)
 
+## P0 FIX: vision-extract 502 root-caused + fixed (the original "0 results" incident)
+- RUNTIME PROOF (preview): ead no-fields probe → HTTP 200 (was 502 on prod); blank birth-cert → 200 all-review, no fabrication. PR #99.
+- Root cause: route returned HTTP 502 whenever it recognized ZERO fields (final return `status: ok ? 200 : 502`). NOT a crash/timeout/provider issue — direct-origin probe returned the full valid JSON body with a 502 status; Cloudflare masked it as "error code: 502". Affects real hard-case docs that read 0 fields. Fix: return 200 with ok:false+status+error+review_required (matches the route's other non-fatal returns). tsc 0; suite 2919/4. See docs/reports/VISION_EXTRACT_502_TRIAGE_2026-06-06.md.
+- C3 merged but canary BLOCKED by this 502 (now fixed, PR open). OCR_FIELD_SAFETY_ENABLED remains OFF. Re-run canary only AFTER this fix merges. ReaderResult/OneBrain HOLD.
+
+## OCR field-safety canary = DEGRADED (rolled back); pre-existing vision-extract 502 found
+- Canary run 2026-06-06: enabled OCR_FIELD_SAFETY_ENABLED=1 + redeploy → route proof blocked by a 502 on the Translation model-read path. 502 REPRODUCES with flag OFF (two redeploys, commit 0d3d82b) → pre-existing, flag-independent; the safety gate never ran. Rolled back to OFF (proven-safe baseline). See docs/reports/OCR_FIELD_SAFETY_CANARY_RESULT.md.
+- prod==main==0d3d82b, healthz ok, flag ABSENT/OFF. NEW finding (out of C3 scope, NOT proven for real uploads): vision-extract returns 502 on synthetic gate-reaching requests — needs separate triage. C3 stays code-ready/prod OFF. D0/ReaderResult/OneBrain HOLD until a real-document canary is clean.
+
+## C3 MERGED to main — global OCR field safety code-ready; canary = owner
+- Stack #94→#95→#96 MERGED (origin/main 0d3d82b). Guard wired into all 4 flows behind `OCR_FIELD_SAFETY_ENABLED` (ABSENT/OFF in prod — verified vercel env ls). tsc 0; full suite 2913. Flag-ON proof: docs/reports/C3_OCR_FIELD_SAFETY_PROOF.md. Canary runbook: docs/reports/OCR_FIELD_SAFETY_CANARY_RUNBOOK.md.
+- Prod deploy of 0d3d82b catching up through the 3 stacked merges (flag OFF = byte-identical). D0/ReaderResult/OneBrain HELD until owner canary. No model/provider/prod-env change.
+
 ## C3 wiring COMPLETE — guard wired into all 4 flows behind OFF flag
 - `OCR_FIELD_SAFETY_ENABLED` (default OFF). Wired: Translation public (vision-extract), TPS merge (tps/ocr/extract), legacy boundary (/api/ocr/extract), PDF/payment (generate-pdf via hasUnresolvedCriticalForOutput).
 - candidate≠final enforced; zero-recognition≠success; unsafe critical → candidate-only+review/manual; PDF blocks unresolved critical. tsc 0; documentSafety 28 tests; full suite 2913 passed (incl. flag-ON proof). OFF=byte-identical. Prod flag NOT enabled; D0/ReaderResult/OneBrain HELD.
