@@ -30,6 +30,9 @@
 4. PDF/payment (`generate-pdf`) — unified critical gate via `hasUnresolvedCriticalForOutput` (blocks only CRITICAL unresolved; admin passes); complements the existing reviewGate. ✅
 All behind `OCR_FIELD_SAFETY_ENABLED` (OFF). Wired one flow at a time, full suite green after each. Flag OFF = zero prod impact.
 
+## Flag-ON local proof (logic-level; route HTTP/browser = owner canary)
+`c3FlowSafety.proof.test.ts` — with OCR_FIELD_SAFETY_ENABLED=1, proves per wired flow: Translation hard-case → candidate-only+manual; zero-recognition → manual (not success); TPS legacy/source-mismatch critical → not final; legacy boundary critical → candidate, admin passes; PDF gate blocks unresolved critical, admin passes. documentSafety 38 tests; full suite 2913 passed. Route-level HTTP/browser proof = owner canary step.
+
 ## Guardrails
 No prod env/flag change; `OCR_FIELD_SAFETY_ENABLED` unset in prod; no model/provider/HTR/OneBrain/ReaderResult/
 SMART; no PII (guard is PII-free by construction); qa-private=0.
