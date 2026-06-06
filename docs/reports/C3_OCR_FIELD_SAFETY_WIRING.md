@@ -23,17 +23,12 @@
 - **Evidence:** tsc 0 errors; documentSafety 28/28; **full web suite 2903 passed / 4 skipped** — flag OFF =
   vision-extract byte-identical, zero regression.
 
-## Remaining C3 sub-increments (next, same helper, one PR-able step each + tests)
-These reuse `applyOcrFieldSafety` / `hasUnresolvedCriticalForOutput`; each behind the same OFF flag:
-2. **TPS merge plane** (`tps/ocr/extract` + `centralBrain`): run OCR-derived critical fields through the guard
-   before they become final TPS state; forbid an internal-passport source label on birth-cert fields; block stale-session bleed.
-3. **Legacy OCR boundary** (`/api/ocr/extract` → `/api/ocr/translate`): mark `legacy_reader=true` → critical
-   candidate-only/manual; no direct final write.
-4. **PDF/payment block** (`generate-pdf` / `render` / `tps/generate-packet`): reuse `hasUnresolvedCriticalForOutput`
-   (note: `generate-pdf` already blocks unresolved OCR review via `reviewGate` from PR #84 — this adds the unified gate).
-
-Wired one flow at a time (not all-at-once) deliberately — wiring 4 live routes in one shot is the exact risk
-that caused the incident. Flag OFF means zero prod impact at every step.
+## All 4 flows wired (C3 COMPLETE, behind OFF flag)
+1. Translation public (`vision-extract`) — guard applied to fields. ✅
+2. TPS merge (`tps/ocr/extract`) — `mergedModule.fields` guarded before response; legacy reads (non-Core) treated untrusted; normalized_value→null for unsafe critical, raw_value kept as candidate, manual_review_required set. ✅
+3. Legacy OCR boundary (`/api/ocr/extract`) — response annotated `legacy_reader/critical_fields_candidate_only` so consumers never auto-finalize. ✅
+4. PDF/payment (`generate-pdf`) — unified critical gate via `hasUnresolvedCriticalForOutput` (blocks only CRITICAL unresolved; admin passes); complements the existing reviewGate. ✅
+All behind `OCR_FIELD_SAFETY_ENABLED` (OFF). Wired one flow at a time, full suite green after each. Flag OFF = zero prod impact.
 
 ## Guardrails
 No prod env/flag change; `OCR_FIELD_SAFETY_ENABLED` unset in prod; no model/provider/HTR/OneBrain/ReaderResult/
