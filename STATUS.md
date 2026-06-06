@@ -1,5 +1,10 @@
 # STATUS (2026-06-06 — OCR INCIDENT / NOT TRUSTED; P0 forensic audit done)
 
+## C3 wiring started — guard wired into Translation public behind OFF flag
+- `OCR_FIELD_SAFETY_ENABLED` (default OFF). Helper `applyOcrFieldSafety` + `classifyCriticality` wired into
+  `/api/translation/vision-extract`: ON ⇒ unsafe critical → candidate-only + review/manual (value never shown as final). OFF ⇒ byte-identical.
+- tsc 0; documentSafety 28 tests; full suite 2903 passed. Remaining C3: TPS merge, legacy boundary, PDF/payment (same helper, next). D0/ReaderResult/OneBrain HELD. Prod flag NOT enabled.
+
 ## ✅ Containment guard built (ocrFieldSafetyGate) — pure, tested, NOT yet wired
 - `lib/documentSafety/ocrFieldSafetyGate.ts`: one global guard, PII-free by construction (no value in/out),
   enforces the 10-rule contract (candidate≠final; zero-recognition≠success; source/stale/hard-case/legacy/low-conf
