@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-06 (containment: global OCR field safety guard — built+tested, not wired, agent)
+- feat: `apps/web/src/lib/documentSafety/ocrFieldSafetyGate.ts` — single global guard enforcing GLOBAL_OCR_FIELD_SAFETY_CONTRACT (candidate≠final, zero-recognition≠success, source/stale/hard-case/legacy/low-conf→not final, review/manual monotonic). PII-free by construction (takes value_present booleans, never the value). + hasUnresolvedCriticalForOutput shared PDF/payment gate.
+- evidence: tsc 0; 18 guard tests (RED→GREEN equiv, incl. no-PII assertion); full suite 2893 passed / 4 skipped — guard pure/unwired = byte-identical, zero regression.
+- NOT wired into product flows yet (next C3 increment, behind OCR_FIELD_SAFETY_ENABLED default OFF, per-flow + tests). Report docs/reports/GLOBAL_OCR_FIELD_SAFETY_CONTAINMENT.md.
+- no prod env/flag change; no model/provider/HTR/OneBrain/ReaderResult/SMART; no PII; qa-private=0.
+
 - 2026-06-06: scrubbed incident-document identity values from P0 docs → generic placeholders (no PII in docs).
 - 2026-06-06: also genericized the legacy "Yovych" bug-label in STATUS incident block.
 
