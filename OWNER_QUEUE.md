@@ -3,6 +3,12 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-06 — merge vision-extract 502 fix, then re-run OCR canary
+- P0 vision-extract 502 root-caused (status: ok ? 200 : 502 on zero-field reads) and FIXED on branch fix/vision-extract-502-triage (PR open). Affects real hard-case docs that read 0 fields = the original "0 results" incident.
+- **Owner action:** review + merge the fix → prod redeploy → confirm a no-fields upload returns 200 (not 502/"HTTP 502").
+- **Then:** re-run the OCR field-safety canary (blocker removed) per OCR_FIELD_SAFETY_CANARY_RUNBOOK.md — owner uploads one real hard-case doc with OCR_FIELD_SAFETY_ENABLED=1.
+- ReaderResult/OneBrain HOLD until canary PASS.
+
 ## 2026-06-06 — canary DEGRADED: owner real-document canary needed + vision-extract 502 triage
 - OCR field-safety canary could not be route-proven: the Translation read path returns 502 (pre-existing, flag-independent — reproduced with flag OFF). Flag rolled back to OFF. Gate never ran on real content.
 - **Owner action 1:** upload ONE real hard-case document through Translation/TPS UI with OCR_FIELD_SAFETY_ENABLED=1 (per OCR_FIELD_SAFETY_CANARY_RUNBOOK.md) — only path that exercises the gate on real content + the payment-gated PDF flow. Agent cannot (no PII upload, no Stripe token).
