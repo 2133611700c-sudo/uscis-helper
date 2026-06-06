@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-06 (OCR field-safety owner-proof + monitoring, agent)
+- preflight: prod==main==03eb30f, healthz ok, OCR_FIELD_SAFETY_ENABLED ON, SMART/D0 absent. Logs: no 5xx, no error/fatal in last 1h; only agent synthetic vision-extract probes (200) — NO real document upload occurred.
+- RESULT DEGRADED_MONITORING: Translation gate proven live earlier (200, applied=true, zero-recognition safe); the owner-assisted proofs (real hard-case Translation, TPS, payment-gated PDF block, candidate!=final on real content) are PENDING owner action — agent cannot upload PII/drive browser/create Stripe sessions. Flag LEFT ON under monitoring (nothing failed). Armed session healthz monitor; owner owns 24-48h log/complaint monitoring.
+- no model/provider/SMART/D0/ReaderResult/OneBrain change; no PII (synthetic); qa-private=0. docs: OCR_FIELD_SAFETY_OWNER_PROOF_RESULT.md. Rollback ready.
+
 ## 2026-06-06 (merge #99 + re-run OCR field-safety canary, agent)
 - merged PR #99 (vision-extract 502 fix) → main/prod 03eb30f. Verified no-fields probe returns 200 on prod (flag OFF), confirmed by logs (502 pre-fix → 200 post-fix on identical 0-fields condition).
 - enabled OCR_FIELD_SAFETY_ENABLED=1 + redeploy. Canary (flag ON): Translation 200, ocr_field_safety.applied=true (gate LIVE in prod), zero-recognition→ok:false+review_required+0 fields (no fabrication, no silent success), no 5xx/error/fatal/PII in logs.
