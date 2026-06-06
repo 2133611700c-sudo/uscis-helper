@@ -1,5 +1,17 @@
 # CHANGELOG
 
+- 2026-06-06: scrubbed incident-document identity values from P0 docs → generic placeholders (no PII in docs).
+- 2026-06-06: also genericized the legacy "Yovych" bug-label in STATUS incident block.
+
+## 2026-06-06 (P0 OCR forensic audit — docs-only, agent)
+- OCR/recognition reclassified INCIDENT / NOT TRUSTED after owner birth-cert incident (translator 0 results; TPS wrong/flagged patronymic + blanks).
+- Read-only forensic map: 6 reader paths / 4 safety regimes (Gemini-gated docintel; TPS-core gated; TPS-legacy-modules ungated; translation-session=DeepSeek ungated conf<0.70; translation-public=Gemini gated but skipped when docType auto:false; legacy /api/ocr/extract=gpt-4o-mini ungated, called by /api/ocr/translate).
+- Root causes: RC-1 public translator birth auto:false → skip API → 0 results (config, not crash; commit fca0582); RC-2 candidate≠final not enforced → wrong value ("Yovych" truncated patronymic, DOB month) shown AS value with only a review flag; RC-3 six paths/four regimes (no global contract); RC-4 TPS multi-doc aggregation; RC-5 TPS core→legacy fallback ungated.
+- Ruled out: D0 (QUALITY_GATE_ENABLED absent in prod), anti-fab/self-consistency gates (keep values), server crash (0 error/fatal/5xx), Supabase.
+- Artifacts: docs/reports/P0_OCR_FLOW_INVENTORY.md, P0_FIELD_LIFECYCLE_MAP.md, P0_ROOT_CAUSE_ANALYSIS.md, P0_OCR_SAFETY_TEST_PLAN.md; docs/architecture/GLOBAL_OCR_FIELD_SAFETY_CONTRACT.md (10 rules).
+- FROZEN until containment: D0 prod / ReaderResult / OneBrain / HTR / 2nd provider / SMART / model. No code/flag/env/prod change; no PII; qa-private=0.
+
+
 ## 2026-06-05 (D0 quality/reshoot — first real brick, behind flag OFF, agent)
 - merge: PR #90 (operating contract) MERGED → origin/main 3d9d566 (rails locked in main).
 - feat(D0): `lib/docintel/quality/documentImageQuality.ts` — pure decision module: image metrics
