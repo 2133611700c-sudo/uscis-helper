@@ -1,5 +1,9 @@
 # STATUS (2026-06-06 — OCR INCIDENT / NOT TRUSTED; P0 forensic audit done)
 
+## CANARY (after 502 fix): gate LIVE in prod, flag ON, DEGRADED-clean
+- PR #99 merged (main/prod=03eb30f). no-fields probe now 200 (was 502). OCR_FIELD_SAFETY_ENABLED=1 ENABLED: Translation returns 200, ocr_field_safety.applied=true, zero-recognition→review_required, no 5xx/errors/PII. Flag LEFT ON (clean, nothing failed). See docs/reports/OCR_FIELD_SAFETY_CANARY_RESULT_AFTER_502_FIX.md.
+- NOT agent-provable (owner real-doc/Stripe): candidate!=final on real content, TPS/legacy routes, payment-gated PDF block. ReaderResult/OneBrain HOLD until full canary PASS. No model/SMART/D0 change.
+
 ## P0 FIX: vision-extract 502 root-caused + fixed (the original "0 results" incident)
 - RUNTIME PROOF (preview): ead no-fields probe → HTTP 200 (was 502 on prod); blank birth-cert → 200 all-review, no fabrication. PR #99.
 - Root cause: route returned HTTP 502 whenever it recognized ZERO fields (final return `status: ok ? 200 : 502`). NOT a crash/timeout/provider issue — direct-origin probe returned the full valid JSON body with a 502 status; Cloudflare masked it as "error code: 502". Affects real hard-case docs that read 0 fields. Fix: return 200 with ok:false+status+error+review_required (matches the route's other non-fatal returns). tsc 0; suite 2919/4. See docs/reports/VISION_EXTRACT_502_TRIAGE_2026-06-06.md.
