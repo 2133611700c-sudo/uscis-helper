@@ -161,7 +161,9 @@ export function protectOcrField(input: OcrFieldSafetyInput): OcrFieldSafetyOutpu
   const candidate_allowed = decision === 'candidate_only' || (!final_value_allowed && !!input.candidate_value_present)
   // monotonic: never lower an incoming flag
   const review_required = (input.review_required === true) || decision !== 'accept_final'
-  const manual_required = (input.manual_required === true) || decision === 'manual_required' || decision === 'block'
+  // Contract 2.5: an unsafe critical field requires human action (confirm/correct) — candidate_only,
+  // manual_required and block all set manual_required; only accept_final leaves it as the incoming value.
+  const manual_required = (input.manual_required === true) || decision !== 'accept_final'
   const blocked_for_pdf = decision !== 'accept_final'
   const blocked_for_payment = blocked_for_pdf
 
