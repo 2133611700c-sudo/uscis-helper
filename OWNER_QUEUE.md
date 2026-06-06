@@ -3,6 +3,12 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-06 — finish OCR field-safety canary to full PASS (flag is ON in prod)
+- OCR_FIELD_SAFETY_ENABLED=1 is now ON in prod and CLEAN (gate live, 200, zero-recognition safe, no 5xx). Agent proved everything it can without PII/Stripe.
+- **Owner action for full PASS:** (1) upload ONE real hard-case document via Translation with flag ON → confirm an unsafe critical field is candidate/review, NOT final; (2) run one Translation→review→PDF/payment flow → confirm unresolved critical BLOCKS the PDF and a confirmed/corrected field then PASSES (no over-block of paying users/admin fields); (3) watch vercel logs 24-48h.
+- **Rollback if fail:** vercel env rm OCR_FIELD_SAFETY_ENABLED production --yes + redeploy.
+- ReaderResult/OneBrain stay HOLD until full canary PASS.
+
 ## 2026-06-06 — merge vision-extract 502 fix, then re-run OCR canary
 - P0 vision-extract 502 root-caused (status: ok ? 200 : 502 on zero-field reads) and FIXED on branch fix/vision-extract-502-triage (PR open). Affects real hard-case docs that read 0 fields = the original "0 results" incident.
 - **Owner action:** review + merge the fix → prod redeploy → confirm a no-fields upload returns 200 (not 502/"HTTP 502").

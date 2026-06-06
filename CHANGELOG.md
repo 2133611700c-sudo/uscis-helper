@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-06 (merge #99 + re-run OCR field-safety canary, agent)
+- merged PR #99 (vision-extract 502 fix) → main/prod 03eb30f. Verified no-fields probe returns 200 on prod (flag OFF), confirmed by logs (502 pre-fix → 200 post-fix on identical 0-fields condition).
+- enabled OCR_FIELD_SAFETY_ENABLED=1 + redeploy. Canary (flag ON): Translation 200, ocr_field_safety.applied=true (gate LIVE in prod), zero-recognition→ok:false+review_required+0 fields (no fabrication, no silent success), no 5xx/error/fatal/PII in logs.
+- RESULT DEGRADED-clean: flag LEFT ON (per "if clean keep ON + monitor"; nothing failed). NOT agent-provable (needs owner real doc/Stripe): candidate!=final on real content, TPS/legacy routes, payment-gated PDF block (logic-proven green).
+- no model/provider/SMART/D0/ReaderResult/OneBrain change; no PII (synthetic); qa-private=0. docs: OCR_FIELD_SAFETY_CANARY_RESULT_AFTER_502_FIX.md.
+
 ## 2026-06-06 (P0 vision-extract 502 triage + fix, agent)
 - runtime proof (preview deploy of fix branch): ead no-fields probe → HTTP 200 {ok:false,status:unknown_document_type,review_required:true} (identical request = 502 on prod); blank ua_birth_certificate → 200 all fields value:null+review_required (no 502, no fabrication). PR #99.
 - root cause: /api/translation/vision-extract returned HTTP 502 on every zero-field read — final return was `status: ok ? 200 : 502`. Proved by hitting the Vercel origin directly (bypassing Cloudflare): full valid JSON body returned WITH status 502, server=Vercel, x-vercel-id present, no crash, safety gate ran. Through Cloudflare the body was masked as bare "error code: 502". 502 in ~0.5-1.3s ⇒ not a timeout (maxDuration=60). This is the original "translator 0 results" incident; affects real hard-case docs that read 0 fields.
