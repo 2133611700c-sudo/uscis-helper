@@ -3,6 +3,25 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-06 — merge vision-extract 502 fix, then re-run OCR canary
+- P0 vision-extract 502 root-caused (status: ok ? 200 : 502 on zero-field reads) and FIXED on branch fix/vision-extract-502-triage (PR open). Affects real hard-case docs that read 0 fields = the original "0 results" incident.
+- **Owner action:** review + merge the fix → prod redeploy → confirm a no-fields upload returns 200 (not 502/"HTTP 502").
+- **Then:** re-run the OCR field-safety canary (blocker removed) per OCR_FIELD_SAFETY_CANARY_RUNBOOK.md — owner uploads one real hard-case doc with OCR_FIELD_SAFETY_ENABLED=1.
+- ReaderResult/OneBrain HOLD until canary PASS.
+
+## 2026-06-06 — canary DEGRADED: owner real-document canary needed + vision-extract 502 triage
+- OCR field-safety canary could not be route-proven: the Translation read path returns 502 (pre-existing, flag-independent — reproduced with flag OFF). Flag rolled back to OFF. Gate never ran on real content.
+- **Owner action 1:** upload ONE real hard-case document through Translation/TPS UI with OCR_FIELD_SAFETY_ENABLED=1 (per OCR_FIELD_SAFETY_CANARY_RUNBOOK.md) — only path that exercises the gate on real content + the payment-gated PDF flow. Agent cannot (no PII upload, no Stripe token).
+- **Owner/triage action 2:** investigate the pre-existing vision-extract 502 on gate-reaching requests — confirm whether REAL uploads are affected or only synthetic/low-content images. May relate to function maxDuration vs Gemini latency. (Agent must not change model/provider.)
+- D0/ReaderResult/OneBrain HOLD until a real-document canary is clean.
+
+## 2026-06-06 — C3 merged; owner canary for OCR_FIELD_SAFETY_ENABLED
+- C3 global OCR field safety wired into all 4 flows + merged to main (#94/#95/#96). Flag ABSENT/OFF in prod.
+- **Owner action:** run the canary per `docs/reports/OCR_FIELD_SAFETY_CANARY_RUNBOOK.md` — enable
+  `OCR_FIELD_SAFETY_ENABLED=1` (preview first), do one controlled upload per flow, verify candidate≠final /
+  PDF-block / admin-not-overblocked, then production. Agent will NOT flip the prod flag.
+- D0/ReaderResult/OneBrain stay HELD until canary stable.
+
 ## 2026-06-05 — D0 built (flag OFF); owner decisions
 
 - **D0 quality/reshoot is implemented behind `QUALITY_GATE_ENABLED` (default OFF)** — prod byte-identical, not
