@@ -1,3 +1,21 @@
+# STATUS (2026-06-06 — OCR INCIDENT / NOT TRUSTED; P0 forensic audit done)
+<!-- P0 docs PII-scrubbed: incident identity values replaced by placeholders -->
+
+## ⛔ Global OCR / Recognition = INCIDENT / NOT TRUSTED (2026-06-06)
+Owner uploaded a birth cert → translator gave **0 results**; TPS showed a wrong/flagged patronymic (a truncated patronymic suffix)
++ many blank fields. Prior narrow PASS verdicts were per-endpoint, NOT global. **All next brain layers FROZEN**
+(D0 prod / ReaderResult / OneBrain / HTR / 2nd provider / SMART / model work).
+**P0 forensic audit COMPLETE (docs-only, no code changed):**
+- `docs/reports/P0_OCR_FLOW_INVENTORY.md` — 6 reader paths, 4 safety regimes (Gemini-gated / DeepSeek-ungated /
+  TPS-legacy-modules-ungated / gpt-4o-mini-ungated).
+- `docs/reports/P0_FIELD_LIFECYCLE_MAP.md` — per-field origin/flag/final/PDF trace; where safety is lost.
+- `docs/reports/P0_ROOT_CAUSE_ANALYSIS.md` — RC-1 birth `auto:false`→0 results; RC-2 wrong value shown AS value
+  (candidate≠final not enforced — "a truncated patronymic"); RC-3 six paths/four regimes; RC-4 TPS multi-doc; RC-5 core→legacy fallback ungated.
+- `docs/architecture/GLOBAL_OCR_FIELD_SAFETY_CONTRACT.md` — 10 binding rules.
+- `docs/reports/P0_OCR_SAFETY_TEST_PLAN.md` — RED-first regression tests.
+Ruled out: NOT my D0 (flag absent in prod), NOT the gates (keep values), NOT a crash (0 errors), NOT Supabase.
+**Next phase:** adopt the contract → build shared `ocrFieldSafetyGate` + RED tests → only then resume D0/ReaderResult/OneBrain.
+
 # STATUS (2026-06-05 — honest, no overclaiming)
 
 ## D0 quality/reshoot — IMPLEMENTED behind flag OFF (first real brick)
