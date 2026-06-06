@@ -1,3 +1,19 @@
+# HANDOFF (2026-06-06 — OCR INCIDENT; P0 forensic audit done, code frozen)
+(STATUS bug-label genericized too.)
+(P0 docs PII-scrubbed: incident identity values → placeholders.)
+
+**P0 forensic audit complete (docs-only).** Global OCR = NOT TRUSTED after the birth-cert incident. Mapped 6
+reader paths / 4 safety regimes; root causes: RC-1 public translator birth `auto:false`→0 results; RC-2 wrong
+value shown AS value (candidate≠final not enforced — "Yovych" truncated patronymic, DOB month); RC-3 six paths
+four regimes (Gemini-gated vs DeepSeek vs TPS-legacy-modules vs gpt-4o-mini, all ungated except docintel); RC-4
+TPS multi-doc aggregation (blank fields need other docs); RC-5 TPS core→legacy fallback re-introduces ungated reads.
+Ruled out: my D0 (flag absent), the gates (keep values), a crash (0 errors), Supabase. Docs: P0_OCR_FLOW_INVENTORY,
+P0_FIELD_LIFECYCLE_MAP, P0_ROOT_CAUSE_ANALYSIS, GLOBAL_OCR_FIELD_SAFETY_CONTRACT, P0_OCR_SAFETY_TEST_PLAN.
+**FROZEN:** D0 prod / ReaderResult / OneBrain / HTR / 2nd provider / SMART / model work.
+**Next phase:** adopt contract → shared `ocrFieldSafetyGate` + RED tests → then resume. No code changed in P0.
+
+---
+
 # HANDOFF (2026-06-05 — D0 quality/reshoot built behind flag OFF)
 
 **D0 done (first real brick):** PR #90 merged (rails in main). Implemented `lib/docintel/quality/documentImageQuality.ts`
