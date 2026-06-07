@@ -3,6 +3,11 @@
 Items here are blocked on a human (PII, real documents, prod env, billing).
 Agents do NOT perform these. Newest first.
 
+## 2026-06-07 — OCR field-safety canary CLOSED (flag OFF); resume needs owner real-doc proof
+- Flag rolled back to OFF (precautionary — proof could not be completed without your upload). 502 fix + C3 stay merged; prod safe at 03eb30f.
+- **To finish the canary later (owner):** re-enable `printf "1" | vercel env add OCR_FIELD_SAFETY_ENABLED production --force` + redeploy, then upload ONE real hard-case doc (Translation) + run TPS + a PDF/payment flow; confirm unsafe critical is candidate/review (not final), PDF blocks unresolved critical and proceeds after confirm. Steps in OCR_FIELD_SAFETY_FINAL_OWNER_PROOF.md.
+- ReaderResult/OneBrain HOLD until that canary PASSes.
+
 ## 2026-06-06 — OWNER must run the real-document canary proofs (flag is ON, clean)
 - OCR_FIELD_SAFETY_ENABLED is ON in prod and clean. Agent proved all it can (Translation gate live, zero-recognition safe, no 5xx). The remaining proofs need a real document + Stripe and CANNOT be done by the agent.
 - **Owner action for PASS_CANARY_FULL:** (1) upload ONE real hard-case birth cert via Translation (flag ON) → unsafe critical is candidate/review, NOT final; (2) one controlled TPS upload → source-mismatch/legacy critical not final, admin not over-blocked; (3) one Translation→review→PDF/payment flow → unresolved critical BLOCKS the PDF, confirmed/corrected then PASSES. Fill the sanitized table in OCR_FIELD_SAFETY_OWNER_PROOF_RESULT.md (booleans/reasons only, NO values).
