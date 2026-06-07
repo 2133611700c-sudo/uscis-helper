@@ -1,5 +1,8 @@
 # STATUS (2026-06-06 — OCR INCIDENT / NOT TRUSTED; P0 forensic audit done)
 
+## CANARY CLOSED — flag ROLLED BACK to OFF (precautionary); 502 fix + C3 stay merged
+- 2026-06-07: owner-proof not completed (no real upload; agent cannot do PII/browser/Stripe). Per owner "делай сам", rolled OCR_FIELD_SAFETY_ENABLED back to OFF (proven-safe baseline). prod==main==03eb30f, healthz ok, flag ABSENT, no 5xx/errors/PII. 502 fix PERSISTS with flag OFF (no-fields probe=200). C3 wiring merged/code-ready. Resume canary = re-enable + owner real-doc proof. See docs/reports/OCR_FIELD_SAFETY_FINAL_OWNER_PROOF.md. ReaderResult/OneBrain HOLD.
+
 ## CANARY owner-proof = DEGRADED_MONITORING (flag ON, prod clean)
 - Preflight 2026-06-06: prod==main==03eb30f, healthz ok, OCR_FIELD_SAFETY_ENABLED ON, SMART/D0 absent, no 5xx/errors/PII, NO real upload yet (only agent synthetic probes). Translation gate proven live (200, applied=true, zero-recognition safe). Real-doc/TPS/PDF proofs PENDING owner upload (agent cannot do PII/browser/Stripe). Flag LEFT ON under monitoring. See docs/reports/OCR_FIELD_SAFETY_OWNER_PROOF_RESULT.md.
 - Rollback ready: vercel env rm OCR_FIELD_SAFETY_ENABLED production --yes. ReaderResult/OneBrain HOLD until PASS_CANARY_FULL.

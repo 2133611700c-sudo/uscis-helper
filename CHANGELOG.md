@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-07 (OCR field-safety canary CLOSED — precautionary rollback, agent)
+- owner-assisted proof (real hard-case Translation / TPS / payment-gated PDF) not completed: no real upload in logs; agent cannot upload PII/drive browser/create Stripe sessions. Per owner instruction "делай сам всё и принимай решение".
+- decision: rolled OCR_FIELD_SAFETY_ENABLED back to OFF (proven-safe baseline) + redeploy. NOT a safety failure — nothing failed; precautionary close to avoid leaving a partially-proven safety flag ON with no validating traffic (PDF over-block risk unverified on real traffic).
+- verified: prod==main==03eb30f, healthz ok, flag ABSENT/OFF; no-fields probe still 200 (ocr_field_safety.applied=false) → 502 fix is PERMANENT in code, independent of the flag; no 5xx/error/fatal/PII. Stopped canary health monitor.
+- C3 wiring (#94/#95/#96) + 502 fix (#99) remain merged/code-ready. Resume = re-enable flag + owner real-doc proof. no model/provider/SMART/D0 change; qa-private=0. docs: OCR_FIELD_SAFETY_FINAL_OWNER_PROOF.md. ReaderResult/OneBrain HOLD.
+
 ## 2026-06-06 (OCR field-safety owner-proof + monitoring, agent)
 - preflight: prod==main==03eb30f, healthz ok, OCR_FIELD_SAFETY_ENABLED ON, SMART/D0 absent. Logs: no 5xx, no error/fatal in last 1h; only agent synthetic vision-extract probes (200) — NO real document upload occurred.
 - RESULT DEGRADED_MONITORING: Translation gate proven live earlier (200, applied=true, zero-recognition safe); the owner-assisted proofs (real hard-case Translation, TPS, payment-gated PDF block, candidate!=final on real content) are PENDING owner action — agent cannot upload PII/drive browser/create Stripe sessions. Flag LEFT ON under monitoring (nothing failed). Armed session healthz monitor; owner owns 24-48h log/complaint monitoring.
