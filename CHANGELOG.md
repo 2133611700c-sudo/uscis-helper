@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: deterministic date-role guard, CODE, agent)
+- NEW dateRoleGuard.ts in readDocument (all products, no flag): role-conflation (same date in dob and date_of_issue → both review + date_role_conflict) and sequence conflict (issue before birth → date_sequence_conflict). Only raises review, never edits values or lowers flags. Addresses the observed model bug of copying one date into two role fields, and a spec requirement. +10 tests; suite green.
+
 ## 2026-06-10 (feat: Russian as-written transliterator + script detection, CODE, agent)
 - Critical analysis of a ChatGPT spec found a REAL gap: only KMU-55 (Ukrainian) existed, so a Russian-script Soviet-doc line (Сергей) was KMU-55-ed to Serhei. NEW transliterateRussian (Сергей→Sergey, Сергеевич→Sergeevich, Леонидович→Leonidovich, Наталья→Natalia — matches owner-approved outputs) + detectNameScript (ua/ru/unknown). Wired into transliterationPolicy name-kind behind RU_TRANSLIT_ENABLED (default OFF): clearly-Russian script → Russian system; unknown → KMU-55 (never guess). +14 tests; 3079 passed.
 - LIMITATION (honest): ambiguous names with no distinctive letter (Сергей has no ы/э/ё/ъ) → unknown → stay KMU-55; routing them needs DOCUMENT-level language context (next step).

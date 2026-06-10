@@ -16,6 +16,7 @@ import { getDocTypeSpec } from './documentRegistry'
 import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVisionProvider'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { autoOrient } from './orientation/autoOrient'
+import { applyDateRoleGuard } from './dates/dateRoleGuard'
 import { toCanonicalValue } from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
@@ -193,6 +194,15 @@ export async function readDocument(
       identity_hash_prefix: first.hash.slice(0, 12),
       runs,
     }
+  }
+
+  // DATE-ROLE GUARD (deterministic, no flag): catch role conflation (one date
+  // copied into two role fields) and sequence conflicts (issue before birth).
+  // Only raises review; never edits a value or lowers a flag. All products inherit it.
+  const dateGuard = applyDateRoleGuard(finalFields)
+  finalFields = dateGuard.fields
+  if (dateGuard.conflicts.length) {
+    console.info('[date_role_guard]', JSON.stringify({ doc_type_id: docTypeId, conflicts: dateGuard.conflicts }))
   }
 
   return {
