@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-10 (fix: ensemble date detection by NAME not kind (was silenced), CODE, agent)
+- BUG: response FieldOut.kind carries the SOURCE ('ai_vision'), not the data type, so the ensemble guard `kind==='date'` NEVER matched → ensemble silently never ran on dates. Fixed: detect date fields by NAME (`isDateFieldName`: dob/date_of_*). Route guard + applyDateEnsemble both updated. +1 test (16 ensemble).
+- ENSEMBLE_DATE_ENABLED=1 flipped in prod + redeployed; this fix makes it actually fire on handwritten date fields.
+
 ## 2026-06-10 (feat: review UI surfaces ensemble second-reading on date conflict, CODE, agent)
 - TranslateWizard: ExtractedField carries ensemble_candidate + review_reasons; review screen shows the second engine's date reading ('Second reading (Google Vision): X — please verify') under the English value when Gemini & Vision disagreed. i18n keys added (RU/EN).
 - Completes the user-facing half of the handwritten-date ensemble: when flag ON, the human sees Vision's (correct) month next to Gemini's, and confirms. tsc 0; 3057 passed; content-guard 0.
