@@ -1,3 +1,22 @@
+# HANDOFF (2026-06-10 — ADR-018 model matrix locked, fallback review guard live)
+
+## What was done
+1. **ADR-018** (`docs/adr/ADR-018-model-matrix.md`): permanent model-to-operation matrix. Verified against code:
+   - gemini-3.1-pro-preview = THE reader (prod env clean, smoke PASS) ✓
+   - flash = fallback-only; 2.5-flash DISQUALIFIED on certificates ✓
+   - Google Vision = technical eye (SA primary; API key = BROKEN_FALLBACK, never activates) ✓
+   - DeepSeek = prose + legacy TPS text-structuring (never sees image; its final_value ALWAYS overwritten from source_value by documentBrain sanitizer) ✓
+   - D2/C3/validators/PDF = deterministic code, no AI ✓
+2. **Safety gap closed (CODE):** silent pro→flash fallback on Cyrillic/mixed docs now forces review on every field (`fallback_model_used`). `documentFieldReader.ts` + `primaryGeminiModel()` export. No flag — not optional.
+3. Tests: +5 (`fallbackModelReview.test.ts`); 3 old mocks fixed. **2997/4/0, tsc 0.**
+
+## Deviation matrix rule (do not re-litigate)
+Any change to model assignments requires a NEW ADR + owner GT benchmark. See ADR-018 "Not allowed" section.
+
+## Next task
+Owner-gated: OCR_FIELD_SAFETY_ENABLED canary / hard-case autoread flip — originals exist in qa-shots/private/ + GT in qa-private/ground-truth/.
+
+---
 # HANDOFF (2026-06-10 — housekeeping: Vercel dead flags + branch cleanup + payment fix)
 
 ## What was done (full session cleanup)

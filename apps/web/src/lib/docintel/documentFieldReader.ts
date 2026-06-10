@@ -13,7 +13,7 @@
  */
 
 import { getDocTypeSpec } from './documentRegistry'
-import { defaultVisionProvider } from './providers/geminiVisionProvider'
+import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVisionProvider'
 import { toCanonicalValue } from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
@@ -104,6 +104,18 @@ export async function readDocument(
       source: 'vision',
       provider: provider.name,
     })
+  }
+
+  // MODEL MATRIX (ADR-018): only the configured primary model is a trusted
+  // reader for Cyrillic documents. When the provider fell back (primary
+  // timeout/5xx → flash), every field becomes review-required: gemini-2.5-flash
+  // was DISQUALIFIED on certificate docs (read a DIFFERENT person — 2026-06-02
+  // adjudication). Deterministic, no flag: a fallback read is never silent.
+  if (spec.script !== 'latin' && read.model !== null && read.model !== primaryGeminiModel()) {
+    for (const f of fields) {
+      f.review_required = true
+      f.review_reasons = [...(f.review_reasons ?? []), 'fallback_model_used']
+    }
   }
 
   // SMART_NORMALIZE_ENABLED (default OFF): document-level post-passes that need
