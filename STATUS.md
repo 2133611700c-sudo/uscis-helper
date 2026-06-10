@@ -1,4 +1,17 @@
-# STATUS (2026-06-09 — REBUILD: ONE Gemini brain (ADR-017); Phase 1 started)
+# STATUS (2026-06-09 — REBUILD: ONE Gemini brain (ADR-017); Phase 2.0 DONE)
+
+## Phase 2.0 DONE (2026-06-09, CODE — rawCyrillic threaded + D2 sees Cyrillic + 4 bug fixes)
+- **GAP A FIXED:** rawCyrillic now threads ExtractedDocField → FieldCandidate.rawCyrillic → CanonicalField.rawCyrillic. `docintelToCandidate` sets `rawCyrillic: f.raw_cyrillic`. `canonicalToFieldOut` prefers `f.rawCyrillic` over cyrillicMap.
+- **GAP B FIXED:** `applyKnowledge()` feeds D2 with `f.rawCyrillic ?? f.normalizedValue ?? f.rawValue`. D2 Cyrillic rules (gazetteer, RU/UA spelling, normalizeName, patronymicReconcile) now fire on ORIGINAL Cyrillic text. Phase 1 `knowledgeBrain` at arbitration now receives Cyrillic and is effectively at the right level.
+- **Bug A FIXED:** ISO YYYY-MM-DD dates accepted without false review (`date.iso_to_uscis`); already-USCIS MM/DD/YYYY pass-through.
+- **Bug B FIXED:** `sourceBasis` in `KnowledgeNormalizeCtx` distinguishes MRZ/EAD/I-94 controlling Latin (evidence 0.99) from derived KMU-55 Latin (0.6).
+- **Bug C FIXED:** `documentFieldReader.ts` emits review field (`canonical_value_unresolved`) instead of silent drop when `toCanonicalValue()` returns null but `r.cyrillic` non-empty.
+- tsc 0; full suite 2961/4 (was 2937; +24 new tests, 0 regressions). Proof: PHASE_2_0_CYRILLIC_D2_DOOR_PROOF.md.
+- **Prod untouched. KNOWLEDGE_BRAIN_ENABLED default OFF. cyrillicMap kept as fallback. No PII.**
+- GAP C (flag consolidation SMART_NORMALIZE vs KNOWLEDGE_BRAIN → ONE flag) = Phase 2.0b (future).
+- GAP D (explicit final_value + C3 single writer) = Phase 3 (future).
+- **Next code step: Phase 2.1a — Translator hard-case unbypass (auto:false → Core + review + C3).**
+
 
 ## ⚠️ SELF-CHECK CORRECTION (2026-06-09, agent): Core flags ARE present in prod
 - My earlier claim "Gemini-Core is parked behind flags nobody flips / Knowledge canary is a no-op until Phase 2" was **WRONG** — my `vercel env ls` grep pattern missed `ONE_CORE_*`. Full check: **ONE_BRAIN_CORE_ENABLED, ONE_CORE_TPS_ENABLED, ONE_CORE_REPAROLE_ENABLED, ONE_CORE_EAD_ENABLED (+NEXT_PUBLIC twins), CENTRAL_BRAIN_TRANSLATION, DOCAI_ENABLED are ALL PRESENT in prod** (values unverified by `ls`; P2 checkpoint 06-03 records owner-verified ON). ⇒ the Core arbitration path is LIVE for all 4 products; `KNOWLEDGE_BRAIN_ENABLED=1` in prod would fire IMMEDIATELY on live traffic (not a no-op). Phase 2 reframed: not "flip Core on" but "harden the already-live Core + retire legacy fallbacks". Extra care on any dictionary flag.

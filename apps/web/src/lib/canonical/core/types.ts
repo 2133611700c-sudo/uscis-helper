@@ -15,8 +15,14 @@ import type { SourceKind, CanonicalDocumentResult } from '../types'
  */
 export interface FieldCandidate {
   key: string
-  /** The read value (raw Cyrillic OR Latin, depending on the field/reader). */
+  /** The read value (KMU-55 Latin for names/places, ISO for dates, exact for numbers). */
   value: string
+  /**
+   * Original Cyrillic as the vision provider read it — the D2 knowledge layer operates
+   * on this, NOT on the already-transliterated `value`. Thread from ExtractedDocField.raw_cyrillic.
+   * GAP A fix (Phase 2.0): was dropped by docintelToCandidate, now carried forward.
+   */
+  rawCyrillic?: string
   source: SourceKind
   /** Provider confidence 0..1, or null if unknown. */
   confidence: number | null
