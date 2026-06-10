@@ -17,6 +17,8 @@
  * Returns Cyrillic; KMU-55 transliteration happens downstream.
  */
 
+import { SETTLEMENT_ROWS } from './registry/settlements.generated'
+
 export interface PlaceMatch {
   /** The value to USE. NEVER a silent fuzzy replacement: on an EXACT match it is the
    *  gazetteer name; on a fuzzy/no match it is the RAW cleaned read (preserved). */
@@ -73,10 +75,11 @@ export function confusionDistance(a: string, b: string): number {
 }
 
 /**
- * Seed gazetteer. Cyrillic nominative. EXTEND with full KOATUU in production.
- * Includes the real-document set: Тростянець, Шаргород, Енергодар, Коломия.
+ * Curated seed. Cyrillic nominative. Kept as a high-priority core: 24 oblast
+ * centres + the project's real-document set + common raion centres — these are
+ * the confusion-test anchors (Тростянець, Шаргород, Енергодар, Коломия).
  */
-export const GAZETTEER: string[] = [
+const CURATED_SEED: string[] = [
   // 24 oblast centres + Kyiv
   'Київ', 'Харків', 'Одеса', 'Дніпро', 'Львів', 'Запоріжжя', 'Кривий Ріг',
   'Миколаїв', 'Маріуполь', 'Вінниця', 'Херсон', 'Полтава', 'Чернігів',
@@ -90,6 +93,25 @@ export const GAZETTEER: string[] = [
   'Самбір', 'Стрий', 'Нововолинськ', 'Ковель', 'Конотоп', 'Шостка',
   'Умань', 'Сміла', 'Ніжин', 'Прилуки', 'Лубни', 'Кременчук', 'Горішні Плавні',
 ]
+
+/**
+ * Official КАТОТТГ settlement layer (Наказ Мінрегіону №290 від 26.11.2020,
+ * mtu.gov.ua) — machine-generated, sourced, the SAME registry the agent's exact
+ * lookup uses. Wiring it here is the expansion the file's header mandated
+ * ("Production MUST load the full ... the matcher does not change, only the
+ * data"): the handwriting fuzzy-matcher now scores against the real settlement
+ * vocabulary, not just the 60-item seed. HONEST SCOPE: this generated layer is
+ * the city/UTS tier (~hundreds), NOT the full ~28k-village KATOTTH — extending
+ * to villages = re-run scripts/gen-settlements.mts against the full source.
+ */
+const REGISTRY_SETTLEMENTS: string[] = SETTLEMENT_ROWS
+  .filter((r) => r.category === 'settlement')
+  .map((r) => r.key_uk)
+  .filter((k): k is string => !!k && k.trim().length > 0)
+
+/** Seed core + official settlement registry, de-duplicated (seed entries win on
+ *  identity by appearing first). Cyrillic nominative; KMU-55 happens downstream. */
+export const GAZETTEER: string[] = Array.from(new Set([...CURATED_SEED, ...REGISTRY_SETTLEMENTS]))
 
 const GAZ_LOWER = GAZETTEER.map((c) => c.toLocaleLowerCase('uk'))
 
