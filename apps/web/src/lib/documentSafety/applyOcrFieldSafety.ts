@@ -44,7 +44,16 @@ const DOCNUM = [
   'i94_class_of_admission',
 ]
 
-/** Map a field name → criticality. Identity/document numbers are critical; addresses/contact are admin. */
+/**
+ * Map a field name → criticality. Identity/document numbers are critical; addresses/contact are admin.
+ *
+ * NOTE (ADR-021, 2026-06-10): this substring heuristic is being SUPERSEDED by the
+ * per-(docType, field) tier matrix in `certifierAuthority.fieldTier` — the single
+ * source of truth for authority (TIER 1/2/3). This function remains as the FALLBACK
+ * used by `fieldTier` for unmapped (docType, field) pairs and by the existing C3
+ * safety gate; it is intentionally unchanged here to avoid a silent prod-behavior
+ * change. Do NOT add new doc-type-specific logic here — extend the tier matrix instead.
+ */
 export function classifyCriticality(fieldName: string): OcrFieldCriticality {
   const f = (fieldName || '').toLowerCase()
   if (IDENTITY.some((s) => f.includes(s))) return 'critical_identity'
