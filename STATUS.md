@@ -1,4 +1,16 @@
-# STATUS (2026-06-09 — REBUILD: ONE Gemini brain (ADR-017); Phase 2.0 DONE)
+# STATUS (2026-06-09 — REBUILD: ONE Gemini brain (ADR-017); Phases 2.2–2.6 DONE)
+
+## Phase 2.2–2.6 DONE (2026-06-09, CODE — All One-Core flag gates removed, GPT deleted)
+- **Phase 2.2:** TPS OCR (`apps/web/src/app/api/tps/ocr/extract/route.ts`) — `ONE_BRAIN_CORE_ENABLED` flag gate removed. Core B1 is now the unconditional default for UA identity docs.
+- **Phase 2.2a:** documentRegistry (`apps/web/src/lib/docintel/documentRegistry.ts`) — added `us_ead`, `us_i94`, `us_i797` specs with `script: 'latin'` (EAD route can now look up these doc types).
+- **Phase 2.3:** ReParole OCR (`apps/web/src/app/api/reparole/ocr/extract/route.ts`) — `ONE_CORE_REPAROLE_ENABLED` server-side flag gate removed. Route always runs Core.
+- **Phase 2.4:** EAD OCR (`apps/web/src/app/api/ead/ocr/extract/route.ts`) — `ONE_CORE_EAD_ENABLED` server-side flag gate removed. Route always runs Core.
+- **Phase 2.5:** `/api/ocr/extract` — no live callers confirmed; DeepSeek text-parse path retained per ADR-017.
+- **Phase 2.6:** `attemptOpenAIVision` (gpt-4o-mini) removed from `/api/ocr/extract`; `openaiReader` (gpt-4o) removed from `lib/engine/models.ts`. GPT fully gone per ADR-017.
+- **Wizard cleanup:** `ReparoleWizardV2.tsx` — `REPAROLE_CORE_ENABLED` constant removed; `useCoreRoute = CORE_COVERED_SLOTS.has(id)` (always Core for passport/booklet). `EADWizard.tsx` — `EAD_CORE_ENABLED` constant removed; upload step always present (8-step flow).
+- Tests: 2974 passed | 4 skipped | 0 failed. tsc: 0 errors.
+- Prod untouched. All One-Core flags were already ON in prod; behavior unchanged.
+- **Next: Phase 3 — explicit `final_value` + C3 as single writer. Or KNOWLEDGE_BRAIN_ENABLED canary (owner GT-gated).**
 
 ## Phase 2.1 DONE (2026-06-09, CODE — Translation Core unconditional)
 - `ONE_BRAIN_CORE_ENABLED` flag gate removed from Translation vision-extract route. Core B2 is now the unconditional default.

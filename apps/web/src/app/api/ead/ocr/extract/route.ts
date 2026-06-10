@@ -74,21 +74,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // ── Feature flag gate ────────────────────────────────────────────────────
-  // Default: false. Owner enables via ONE_CORE_EAD_ENABLED=true in Vercel env.
-  const flagOn = process.env.ONE_CORE_EAD_ENABLED === 'true'
-  if (!flagOn) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: 'ONE_CORE_EAD_ENABLED is not active. EAD Core OCR path is disabled.',
-        _flag: 'ONE_CORE_EAD_ENABLED',
-        _core: false,
-      },
-      { status: 503 },
-    )
-  }
-
   // ── Parse multipart form ─────────────────────────────────────────────────
   let form: FormData
   try {

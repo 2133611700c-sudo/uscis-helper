@@ -96,27 +96,6 @@ export function vertexGeminiReader(opts: { accessToken: string; project: string;
   return { name: `vertex:${model}`, read }
 }
 
-/** OpenAI GPT-4o vision. */
-export function openaiReader(opts: { apiKey: string; model?: string; docTypeEn: string; timeoutMs?: number }): NamedReader {
-  const model = opts.model ?? 'gpt-4o'
-  const read: ModelReader = async (image, mime, fields) => {
-    const ctrl = new AbortController()
-    const t = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 40000)
-    try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST', signal: ctrl.signal, headers: { authorization: `Bearer ${opts.apiKey}`, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model, temperature: 0, response_format: { type: 'json_object' },
-          messages: [{ role: 'user', content: [{ type: 'text', text: buildPrompt(opts.docTypeEn, fields) }, { type: 'image_url', image_url: { url: `data:${mime};base64,${image.toString('base64')}` } }] }],
-        }),
-      })
-      const j = await res.json()
-      const txt = j?.choices?.[0]?.message?.content
-      return coerce(txt ? JSON.parse(txt) : {}, fields)
-    } finally { clearTimeout(t) }
-  }
-  return { name: `openai:${model}`, read }
-}
 
 /** Google Cloud Vision raw full-text OCR — used as a PRESENCE CONFIRMER (does a
  *  value the LLM read actually appear on the page?), not as a field mapper. */

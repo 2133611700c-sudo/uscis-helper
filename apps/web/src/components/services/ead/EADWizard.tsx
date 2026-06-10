@@ -17,11 +17,10 @@
  *
  * Not legal advice. Not a law firm. You file yourself with USCIS.
  *
- * B4 Upload Prefill (behind NEXT_PUBLIC_ONE_CORE_EAD_ENABLED flag):
- *   When ON: a new upload step appears before personal info (step 2).
+ * B4 Upload Prefill (Phase 2.4: unconditional — flag removed):
+ *   Upload step (step 2) always shown before personal info.
  *   User can upload passport / EAD card / I-94 for OCR prefill.
  *   POST /api/ead/ocr/extract → EadCoreAnswers → prefill form fields.
- *   When OFF: no upload step, old manual form unchanged (0 UI change).
  *   Source gates: A-number/category only from EAD/I-797 source.
  *   I-94 fields only from I-94 source. Address only from DL/manual.
  *   invented_fields_count is always 0.
@@ -34,15 +33,8 @@ import {
   AlertTriangle, ExternalLink, Info, Upload
 } from 'lucide-react'
 
-// ── Feature flag — NEXT_PUBLIC_ONE_CORE_EAD_ENABLED ──────────────────────────
-// When "true": upload step is shown before personal info; calls /api/ead/ocr/extract
-// When anything else: upload step is hidden; old manual form unchanged (0 behavior change)
-// docHints covered by the Core route on the backend:
-const EAD_CORE_ENABLED =
-  typeof process !== 'undefined' &&
-  process.env.NEXT_PUBLIC_ONE_CORE_EAD_ENABLED === 'true'
-
 // docHints the EAD Core route accepts (see mapEadHintToDocintelId in route.ts)
+// Phase 2.4: upload step always shown — Core unconditional.
 const EAD_CORE_HINTS = ['passport', 'ead', 'i94'] as const
 type EadDocHint = (typeof EAD_CORE_HINTS)[number]
 
@@ -819,27 +811,15 @@ export function EADWizard({ locale }: EADWizardProps) {
   }
 
   function canAdvance(): boolean {
-    // When EAD_CORE_ENABLED, upload step is inserted at index 2 (after category).
-    // Old steps 2-6 shift to 3-7. Upload step is always advanceable (optional).
-    if (EAD_CORE_ENABLED) {
-      switch (step) {
-        case 0: return data.appType !== null
-        case 1: return data.category !== null
-        case 2: return uploadState.status !== 'uploading' // upload step — optional, never blocks
-        case 3: return data.firstName.trim().length > 0 && data.lastName.trim().length > 0 && data.dob.length > 0
-        case 4: return true // docs checklist
-        case 5: return data.filingMethod !== '' && data.usAddress.trim().length > 5
-        case 6: return true // review
-        default: return true
-      }
-    }
+    // Step 2 = upload (optional, never blocks). Steps 3-7 = personal info / docs / filing / review.
     switch (step) {
       case 0: return data.appType !== null
       case 1: return data.category !== null
-      case 2: return data.firstName.trim().length > 0 && data.lastName.trim().length > 0 && data.dob.length > 0
-      case 3: return true // docs checklist — advisory only
-      case 4: return data.filingMethod !== '' && data.usAddress.trim().length > 5
-      case 5: return true
+      case 2: return uploadState.status !== 'uploading'
+      case 3: return data.firstName.trim().length > 0 && data.lastName.trim().length > 0 && data.dob.length > 0
+      case 4: return true
+      case 5: return data.filingMethod !== '' && data.usAddress.trim().length > 5
+      case 6: return true
       default: return true
     }
   }
@@ -1423,14 +1403,10 @@ export function EADWizard({ locale }: EADWizardProps) {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  // When EAD_CORE_ENABLED: inject StepUpload at index 2 (after category, before personal info).
-  // When flag OFF: STEPS is unchanged (7 steps, no upload). 0 behavior change.
-  const STEPS = EAD_CORE_ENABLED
-    ? [Step0, Step1, StepUpload, Step2, Step3, Step4, Step5, Step6]
-    : [Step0, Step1, Step2, Step3, Step4, Step5, Step6]
+  const STEPS = [Step0, Step1, StepUpload, Step2, Step3, Step4, Step5, Step6]
   const LAST_STEP = STEPS.length - 1
   const ActiveStep = STEPS[step]
-  const stepLabels = EAD_CORE_ENABLED ? ui.stepLabels : ui.stepLabelsNoUpload
+  const stepLabels = ui.stepLabels
 
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
