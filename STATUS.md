@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- KIT 1 BUILT: auto-orientation (autoOrient.ts) wired into readDocument behind AUTO_ORIENT_ENABLED. PROVEN on rotated birth cert: day 26→25 (correct), place fuller. Detects content rotation (Gemini thumbnail) + self-verify loop + fail-open.
 - EXHAUSTIVE: Gemini, Vision line-seg, Vision multi-crop voting (0/5), HF-TrOCR — ALL fail the handwritten month. Names readable (11/12). Date-month needs a TRAINED HTR (Transkribus/TrOCR) → owner must provide a token. Then ensemble wires it.
 - PROVEN WALL: Gemini cannot read this handwritten month (липень/травень never червень, 3 prompts) NOR localize the date line (39% box). Auto-reading handwritten dates needs Vision-tuning (key rotation) or Transkribus HTR (owner creds). Names work; dates stay human-reviewed.
 - STOP: ensemble flag turned OFF in prod (full-width band timed out; tight crop garbled month). Infra complete+tested+observable but Vision-reads-month not reliable on auto-crops. Dates already review-gated (safety intact). Crop bounded to avoid timeout.
