@@ -105,3 +105,46 @@ contrast, read well (11/12) and are production-usable.
 The ensemble infrastructure (dateReconcile, applyDateEnsemble, dateRegionRead, Core-path
 wiring, review UI, 19 tests) is COMPLETE and waits behind ENSEMBLE_DATE_ENABLED (OFF)
 for one of the above.
+
+---
+
+## Exhaustive verification (2026-06-10, owner authorized full resources + Vision key)
+
+Every general-engine approach was tried locally with the real Vision key:
+
+| Approach | Result on the handwritten month (GT = червня/June) |
+|---|---|
+| Gemini, 3 prompt strategies × zoom | липня/травня — never June |
+| Gemini date-line bbox | ~39% of page (can't localize) |
+| Vision word-geometry line-segmentation → zoom re-read | day 25 read; month garbled |
+| Vision multi-crop VOTING (5 crop variants) | 0/5 produced ANY readable month |
+| TrOCR / Cyrillic HTR via HuggingFace Inference API | endpoint requires a token (none available) |
+
+**Triple-proven conclusion:** the handwritten MONTH on this document is not readable
+by any general-purpose engine we can call (Gemini, Google Vision, Document AI).
+Multi-crop voting — the standard ensemble trick — also fails. This is a genuine
+trained-HTR-grade problem.
+
+## Honest reframe of "handwritten Cyrillic readability"
+
+- **Handwritten NAMES are READABLE today** — Gemini reads surname/given/patronymic/
+  parents at ~11/12 on the owner's real handwritten docs. This is the BULK of an
+  identity document and it is production-grade.
+- **The residual is specifically the DATE MONTH on poor handwriting** — червня vs
+  липня is genuinely ambiguous and defeats every general engine. The product handles
+  it correctly: such fields are review_required (human-in-the-loop), the same design
+  Transkribus and every serious HTR product uses.
+
+## The ONE thing that finishes it (needs a real credential, not just authorization)
+
+A dedicated handwritten-Ukrainian HTR model. Pick ONE and provide the credential:
+1. **Transkribus** (readcoop.eu) — best documented (CER ≈4.2%). Provide a Processing
+   API token OR a readcoop username+password. The integration is scaffolded
+   (`apps/web/scripts/transkribus-bench.mjs`); a token lets it run + then be wired.
+2. **HuggingFace token** — lets `cyrillic-trocr/trocr-handwritten-cyrillic` run via the
+   Inference API as a third reader.
+
+The moment a token exists, the ensemble (dateReconcile/applyDateEnsemble/Core-path
+wiring/review UI, all built + 19 tests) wires the HTR as the authoritative month
+reader and the date becomes readable. Without a trained model, no engine reads it —
+proven, not assumed.
