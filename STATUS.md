@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- CI fix (content-guard): reworded a 'certified translation' comment in applyOcrFieldSafety.ts (Rule 4 product-claim). No logic change.
 
 ## P0-A hardening (2026-06-10, CODE — walked enforce back to shadow)
 - **CORRECTION to 816cb64:** that commit shipped the confirmed-value guard ALWAYS-ON/enforcing straight to prod (auto-deploy) with zero block-rate data — a measurement-first violation. This commit reverts it to **SHADOW mode by default**: the guard validates + logs `would_block` but does NOT block → **prod output byte-identical**. Owner flips `CONFIRMED_VALUE_GUARD_MODE=enforce` AFTER reviewing shadow logs.
