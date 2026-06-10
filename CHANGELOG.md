@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: Russian as-written transliterator + script detection, CODE, agent)
+- Critical analysis of a ChatGPT spec found a REAL gap: only KMU-55 (Ukrainian) existed, so a Russian-script Soviet-doc line (Сергей) was KMU-55-ed to Serhei. NEW transliterateRussian (Сергей→Sergey, Сергеевич→Sergeevich, Леонидович→Leonidovich, Наталья→Natalia — matches owner-approved outputs) + detectNameScript (ua/ru/unknown). Wired into transliterationPolicy name-kind behind RU_TRANSLIT_ENABLED (default OFF): clearly-Russian script → Russian system; unknown → KMU-55 (never guess). +14 tests; 3079 passed.
+- LIMITATION (honest): ambiguous names with no distinctive letter (Сергей has no ы/э/ё/ъ) → unknown → stay KMU-55; routing them needs DOCUMENT-level language context (next step).
+- REJECTED from the spec: the *why I read 25 June* narrative = post-hoc fabrication; the month is illegible-as-June to every engine + a human (verified). Privacy rule followed: synthetic example names only.
+
 ## 2026-06-10 (feat: KIT 2 verify — passport MRZ is the DOB authority, test, agent)
 - The handwritten birth-cert month is illegible-as-June to every engine + a human; the international passport MRZ encodes it with a check digit → 1986-06-25 (June). Verified mrzAuthority decodes it correctly (conf 0.99, check_digits dob=true) and the existing fieldArbiter ranks passport_ocr_mrz #1, so in multi-doc flows (TPS/reparole) the MRZ DOB overrides the handwriting. +2 tests.
 
