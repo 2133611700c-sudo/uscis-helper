@@ -29,6 +29,7 @@ const EDGE_BODY_LIMIT = 4_000_000 // Vercel serverless request-body cap (~4.5MB)
 const DOCS = [
   { fixture: 'test-fixtures/real-docs/internal_passport_redacted.jpg', gt: 'qa-private/ground-truth/internal_passport_redacted.json', docTypeId: 'ua_internal_passport_booklet', label: 'internal_passport_booklet (handwritten)' },
   { fixture: 'test-fixtures/real-docs/birth_cert_handwritten_redacted.jpg', gt: 'qa-private/ground-truth/birth_cert_handwritten_redacted.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (handwritten)' },
+  { fixture: 'test-fixtures/real-docs/birth_cert_soviet_redacted.jpg', gt: 'qa-private/ground-truth/birth_cert_soviet_redacted.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (Soviet bilingual)' },
   { fixture: 'test-fixtures/real-docs/military_id_p1_redacted.jpg', gt: 'qa-private/ground-truth/military_id_p1_redacted.json', docTypeId: 'ua_military_id', label: 'military_id_p1 (printed+hw)' },
 ]
 

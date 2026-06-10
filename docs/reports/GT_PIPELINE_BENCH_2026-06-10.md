@@ -30,6 +30,19 @@ Sample = 1 doc/class → **EXPLORATORY ONLY** per GT_BENCHMARK_EXIT_CRITERIA (<3
 
 **Latin accuracy: 0/2 verified fields exact.**
 
+## birth_certificate (Soviet bilingual)
+- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 10 · downscaled from 7.1MB (>4MB edge limit)
+
+| field | present | latin✓ | cyrillic✓ | review |
+|---|---|---|---|---|
+| child_family_name | ✓ | — | ✓ | review |
+| child_given_name | ✓ | — | ✗ | review |
+| child_patronymic | ✓ | — | ✗ | review |
+| dob | ✓ | ✗ | — | review |
+| sex | ✗ | ✗ | — | — |
+
+**Latin accuracy: 0/2 verified fields exact.**
+
 ## military_id_p1 (printed+hw)
 - http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 5 · downscaled from 4.8MB (>4MB edge limit)
 
