@@ -17,7 +17,7 @@ import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVis
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { autoOrient } from './orientation/autoOrient'
 import { applyDateRoleGuard } from './dates/dateRoleGuard'
-import { toCanonicalValue } from './transliterationPolicy'
+import { toCanonicalValue, isNameSourceScriptAmbiguous } from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
@@ -110,6 +110,13 @@ export async function readDocument(
       continue
     }
     if (r.field === spec.vision_anchor) anchorRead = true
+    // SOURCE-SCRIPT GATE (owner-locked 2026-06-10): a name whose VISIBLE source
+    // script is not confirmed (no distinctive UA і/ї/є/ґ nor RU ы/э/ё/ъ) is
+    // AMBIGUOUS — visible source controls transliteration, ambiguity blocks final.
+    // `value` stays a best-effort KMU-55 candidate (screen isn't empty), but we
+    // force review + reason so C3 will not finalize it until the script is
+    // confirmed. Better a noisy review than a clean PDF with the wrong name.
+    const ambiguousScript = kind === 'name' && isNameSourceScriptAmbiguous(r.cyrillic ?? '')
     fields.push({
       field: r.field,
       kind,
@@ -117,10 +124,12 @@ export async function readDocument(
       value,
       confidence: Math.max(0, Math.min(1, r.confidence)),
       // Handwritten fields ALWAYS require human confirmation; printed fields
-      // require it below high confidence (v5 §19 critical-field gate).
-      review_required: isHandwritten(spec, r.field) ? true : r.confidence < 0.95,
+      // require it below high confidence (v5 §19 critical-field gate);
+      // ambiguous source script always reviews (source_script_ambiguous).
+      review_required: isHandwritten(spec, r.field) || ambiguousScript ? true : r.confidence < 0.95,
       source: 'vision',
       provider: provider.name,
+      ...(ambiguousScript ? { review_reasons: ['source_script_ambiguous'] } : {}),
     })
   }
 
