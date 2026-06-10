@@ -12,6 +12,7 @@
  * No engine I/O here — the caller passes the second engine's full text in.
  */
 import { parseDateText, reconcileDate, extractDateCandidatesFromText } from './dateReconcile'
+export { extractDateCandidatesFromText } from './dateReconcile'
 
 export interface EnsembleField {
   field: string
