@@ -98,9 +98,11 @@ describe('generate-pdf route — guard is wired and PII-safe', () => {
   })
 
   it('guard returns 422 Unprocessable Entity, not 403 (content invalid ≠ auth failure)', () => {
-    // Find the confirmed_value_guard response and confirm its status is 422.
-    const guardBlock = src.slice(src.indexOf('gate: \'confirmed_value_guard\''))
-    expect(guardBlock.slice(0, 120)).toContain('status: 422')
+    // Find the confirmed_value_guard RESPONSE (anchored to the response-only
+    // `, field: f.field` so a metrics call sharing the gate name doesn't match) and
+    // confirm its status is 422.
+    const guardBlock = src.slice(src.indexOf('gate: \'confirmed_value_guard\', field: f.field'))
+    expect(guardBlock.slice(0, 160)).toContain('status: 422')
   })
 
   it('REGRESSION (agent-A ghost): guard has NO confirmed-flag gate — validates ALL release values', () => {
