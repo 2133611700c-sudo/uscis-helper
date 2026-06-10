@@ -16,6 +16,7 @@ import {
   recordCertifierOverride,
   type AuthorityInput,
 } from './certifierAuthority'
+import { persistCertifierAudit } from './persistCertifierAudit'
 
 export interface CertifierOverridePayload {
   reason_code: AuthorityInput
@@ -61,10 +62,10 @@ export interface OverrideBlock {
  * the FIRST block encountered (anchor conflict or invalid authority) for the route to
  * turn into a 422. No override / disabled ⇒ fields untouched, block=null.
  */
-export function applyCertifierOverrides(
+export async function applyCertifierOverrides(
   fields: FieldWithMaybeOverride[],
   ctx: ApplyCtx,
-): { fields: FieldWithMaybeOverride[]; block: OverrideBlock | null } {
+): Promise<{ fields: FieldWithMaybeOverride[]; block: OverrideBlock | null }> {
   if (!ctx.enabled) return { fields, block: null }
 
   for (const f of fields) {
@@ -83,22 +84,23 @@ export function applyCertifierOverrides(
     })
 
     // Audit EVERY decision (finalize, refusal, block, reject) — no silent overrides.
-    recordCertifierOverride(
-      buildCertifierAuditRecord({
-        authority: ov.reason_code,
-        tier: result.tier,
-        field: f.field,
-        documentClass: ctx.documentClass,
-        previousValue: f.final_value ?? (f.normalized_value ?? null),
-        newValue: result.finalValue,
-        certifierId: ov.certifier_id,
-        timestampUtc: ctx.timestampUtc,
-        sessionId: ctx.sessionId,
-        linkedPdfDocId: ctx.linkedPdfDocId ?? null,
-        crossDocAnchorId: ov.cross_doc_anchor_id ?? null,
-        decision: result.decision,
-      }),
-    )
+    const auditRecord = buildCertifierAuditRecord({
+      authority: ov.reason_code,
+      tier: result.tier,
+      field: f.field,
+      documentClass: ctx.documentClass,
+      previousValue: f.final_value ?? (f.normalized_value ?? null),
+      newValue: result.finalValue,
+      certifierId: ov.certifier_id,
+      timestampUtc: ctx.timestampUtc,
+      sessionId: ctx.sessionId,
+      linkedPdfDocId: ctx.linkedPdfDocId ?? null,
+      crossDocAnchorId: ov.cross_doc_anchor_id ?? null,
+      decision: result.decision,
+    })
+    recordCertifierOverride(auditRecord) // console fallback (always)
+    // L3 T0: durable append-only persistence (CERTIFIER_AUDIT_PERSIST_ENABLED, OFF=no-op).
+    await persistCertifierAudit(auditRecord, { note: ov.note ?? null })
 
     switch (result.decision) {
       case 'finalize':
