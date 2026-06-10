@@ -93,7 +93,38 @@ describe('generate-pdf route — guard is wired and PII-safe', () => {
   })
 
   it('route never echoes the rejected value (PII rule — field name only)', () => {
-    // The 403 response object for the guard must carry `field:` but not the value.
+    // The response object for the guard must carry `field:` but not the value.
     expect(src).toContain('gate: \'confirmed_value_guard\', field: f.field')
+  })
+
+  it('guard returns 422 Unprocessable Entity, not 403 (content invalid ≠ auth failure)', () => {
+    // Find the confirmed_value_guard response and confirm its status is 422.
+    const guardBlock = src.slice(src.indexOf('gate: \'confirmed_value_guard\''))
+    expect(guardBlock.slice(0, 120)).toContain('status: 422')
+  })
+
+  it('REGRESSION (agent-A ghost): guard has NO confirmed-flag gate — validates ALL release values', () => {
+    // Agent A keyed the loop on `f.confirmed !== true` (a flag the client never
+    // sends → dead code). Ensure no such gate reappears before validation.
+    expect(src).not.toMatch(/if\s*\(\s*f\.confirmed\s*!==\s*true\s*\)\s*continue/)
+    // The only `continue` inside the guard loop must be the non-critical drop path.
+  })
+
+  it('ships in SHADOW mode by default (measurement-first; prod byte-identical until enforced)', () => {
+    expect(src).toContain('CONFIRMED_VALUE_GUARD_MODE')
+    expect(src).toContain("?? 'shadow'")
+    // shadow path must NOT block: a would_block branch that continues without mutating output.
+    expect(src).toContain('would_block')
+    expect(src).toMatch(/if\s*\(!enforce\)\s*continue/)
+  })
+
+  it('has a single env knob with off = emergency kill-switch (no flag sprawl)', () => {
+    expect(src).toContain("guardMode === 'off'")
+    expect(src).toContain('degraded safety')
+  })
+
+  it('guard-block emits a PII-free structured log (field + reason, never the value)', () => {
+    expect(src).toContain('[confirmed_value_guard]')
+    expect(src).toContain('field: f.field, criticality, reason: verdict.reason')
   })
 })

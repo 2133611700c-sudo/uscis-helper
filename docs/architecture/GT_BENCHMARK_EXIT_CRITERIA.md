@@ -20,6 +20,13 @@ Current reality: we have ~1 owner document per class (`qa-private/ground-truth/`
 That is exploratory only. Today's runs measure *regression direction*, not
 canary-readiness. State this in every report.
 
+> **BINDING ON THE RUNNER (not just this doc):** the `< 30 docs/class →
+> EXPLORATORY ONLY` rule MUST be enforced in the benchmark runner CODE, not only
+> here in markdown. The runner must compute per-class N and stamp the verdict
+> `EXPLORATORY` (never `PASS`/`canary-approved`) whenever N < 30. Otherwise someone
+> issues a PASS verdict on N=22 in three months. A markdown rule no one runs is
+> not a control.
+
 ## Per-class accuracy thresholds (critical fields, from CRITICAL_FIELDS_CONTRACT.md)
 
 | Class | Min per-critical-field accuracy | Extra rule |
