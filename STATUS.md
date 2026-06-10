@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- Review UI now surfaces the ensemble second-reading on a date conflict (Gemini+Vision both shown, human picks). Handwritten-date ensemble is end-to-end (backend+UI) behind ENSEMBLE_DATE_ENABLED=OFF. Remaining: owner rotate key + flip; optional date-crop booster.
 - WIRED handwritten-date ensemble into translation route (ENSEMBLE_DATE_ENABLED, default OFF): Gemini+Vision 2nd-read, date disagreement→review+candidate. +7 tests (3057). Remaining: review UI surfacing + date-crop; OWNER rotate Vision key + flip flag.
 - HANDWRITTEN DATES: PROVEN ensemble fix — Gemini misreads month, Google Vision reads it right; cross-check recovers the date. Built dateReconcile core (+8 tests). Remaining: wire Vision 2nd-read+crop+review UI. OWNER: ROTATE the Vision SA key pasted in chat.
 - HONEST handwritten probe (3 runs): NAMES read well+stable; DATES stably WRONG on birth certs (month/day misread + dob/issue conflation). Real target = handwritten dates, not printed. All review-flagged.
