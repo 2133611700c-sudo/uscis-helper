@@ -1,3 +1,27 @@
+# HANDOFF (2026-06-10 — P0 design lock + P0-A output-door sanitation)
+
+## What was done
+1. **P0-A: D5→server C3 re-run (output door closed).** `confirmedValueGuard.ts` validates every release value before a certified PDF renders. ALWAYS ON (legal input sanitation, not behind OCR_FIELD_SAFETY). Critical fail→403 (field name only); non-critical→nulled; pass→finalValue. **This is a deliberate prod behavior change** — defects that previously reached the PDF are now blocked; legitimate Latin values unaffected.
+2. **Fixed Agent-A bug:** it keyed the guard on `confirmed===true`, a flag the current TranslateWizard NEVER sends → guard was dead code. Re-keyed to validate actual release values (signing = confirmation).
+3. **classifyCriticality reconciled** to the locked CRITICAL_FIELDS_CONTRACT (dates, authorities, categories, nationality were silently `optional`).
+4. **Observability:** PII-free fallback_model_used log.
+5. **5 design-lock contracts** (the artifacts that prevent rework): CRITICAL_FIELDS_CONTRACT, C3_USER_CORRECTION_CONTRACT, PAYMENT_REFUND_LEGACY_GATE_CONTRACT, GT_BENCHMARK_EXIT_CRITERIA, ADR-019-audit-trail-persistence.
+6. tsc 0; 3011 passed / 4 skipped / 0 failed.
+
+## OWNER DECISIONS NEEDED (blocking next steps — see the contract docs)
+- **Refund/legacy policy** (PAYMENT_REFUND_LEGACY_GATE_CONTRACT): what happens when a paid user hits a 403 post-charge — manual review / refund / admin override?
+- **Audit-trail PII tier + retention** (ADR-019): Tier 0 hashes-only (recommended, shippable now) vs Tier 1 store values (needs legal).
+- **GT sample sourcing** (GT_BENCHMARK_EXIT_CRITERIA): need docs from DIFFERENT real people to detect wrong-person fabrication; 1-per-class = exploratory only.
+- **Manual-override path** (C3_USER_CORRECTION_CONTRACT): policy for possible-but-unprovable user values.
+- **Military rank criticality**, place_of_birth granularity (CRITICAL_FIELDS_CONTRACT open points).
+
+## NEXT (agent-actionable, no owner gate)
+- GT benchmark runner (Agent B — retry when spend resets; originals in qa-shots/private/, GT in qa-private/ground-truth/).
+- BUG C / BUG D debt tests (not yet written this wave — spend limit cut the agents).
+- Audit-trail Tier-0 persistence (ONLY after owner picks tier).
+- Vision bbox ADR-020 (research already gathered in this session's agent C output).
+
+---
 # HANDOFF (2026-06-10 — ADR-018 model matrix locked, fallback review guard live)
 
 ## What was done

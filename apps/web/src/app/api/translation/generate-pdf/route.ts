@@ -18,6 +18,7 @@ import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
 import { assertReviewGate } from '@/lib/translation/reviewGate'
 import { hasUnresolvedCriticalForOutput } from '@/lib/documentSafety/ocrFieldSafetyGate'
 import { classifyCriticality, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
+import { validateConfirmedValue } from '@/lib/documentSafety/confirmedValueGuard'
 import { buildAttestationRecord } from '@/lib/translation/attestation'
 import { persistCertification } from '@/lib/translation/persistCertification'
 
@@ -135,9 +136,45 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // ── C3: unified critical-field output gate (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
-  // OFF ⇒ skipped (byte-identical; reviewGate above already blocks). ON ⇒ block the PDF when any
-  // CRITICAL identity/document field is still review/manual and not confirmed (admin fields don't block).
+  // ── Phase 3.1 (ADR-017): D5 release values re-enter C3 server-side (ALWAYS ON) ──
+  // "A confirmed field CAN become final — via C3, never by bypassing it."
+  // The act of signing the certification IS the confirmation: every value the
+  // user reviewed/edited on the review screen arrives here as normalized_value
+  // and is about to be rendered into a LEGAL certified English translation.
+  // Until now that release value went into the PDF with zero server-side
+  // validation — Cyrillic, control chars, garbage. This guard is deterministic
+  // INPUT SANITATION for a legal document, not an AI-safety experiment: it runs
+  // unconditionally (NOT behind OCR_FIELD_SAFETY_ENABLED). Release values are
+  // Latin post-KMU-55, so legitimate flows are unaffected; only genuine defects
+  // (Cyrillic/control/over-length/bad-date) are caught.
+  //   - CRITICAL field fails → 403 (field NAME only, never the value — PII rule)
+  //   - non-critical fails   → value nulled (renders as MISSING), continue
+  //   - pass                 → final_value set (the C3 re-run writing the release value)
+  for (const f of payload.fields ?? []) {
+    const verdict = validateConfirmedValue(f.field, f.normalized_value)
+    const criticality = classifyCriticality(f.field)
+    const critical = criticality === 'critical_identity' || criticality === 'critical_document'
+    if (!verdict.ok) {
+      if (critical) {
+        return NextResponse.json(
+          // PII rule: field NAME only — the rejected value is NEVER echoed.
+          { ok: false, error: 'review_required', gate: 'confirmed_value_guard', field: f.field, reason: verdict.reason },
+          { status: 403 },
+        )
+      }
+      f.final_value = null      // non-critical: drop the bad value, render as missing
+      f.normalized_value = ''   // belt-and-suspenders: no other consumer can read it
+      continue
+    }
+    f.final_value = (f.normalized_value ?? '').trim() || null // C3 accepts the release value as final
+  }
+
+  // ── C3: machine-read critical-field output gate (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
+  // Separate concern from the confirmed-value guard above: this gates the
+  // MACHINE-read candidate safety (a critical field the model read but the user
+  // never confirmed). OFF ⇒ skipped (reviewGate already blocks unconfirmed
+  // review_required fields). ON (canary) ⇒ block when any critical field is
+  // still review/manual and not confirmed.
   if (isOcrFieldSafetyEnabled()) {
     const unresolved = hasUnresolvedCriticalForOutput(
       (payload.fields ?? []).map((f) => ({
