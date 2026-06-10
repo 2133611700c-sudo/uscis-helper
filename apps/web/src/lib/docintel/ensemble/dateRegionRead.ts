@@ -97,15 +97,18 @@ export async function readDateRegionsWithVision(opts: {
 
     const texts: string[] = []
     for (const b of boxes) {
-      const pad = 0.04
-      const left = Math.max(0, Math.round((Math.min(b.xmin, b.xmax) / 1000 - pad) * W))
-      const top = Math.max(0, Math.round((Math.min(b.ymin, b.ymax) / 1000 - pad) * H))
-      const w = Math.min(W - left, Math.max(1, Math.round((Math.abs(b.xmax - b.xmin) / 1000 + 2 * pad) * W)))
-      const h = Math.min(H - top, Math.max(1, Math.round((Math.abs(b.ymax - b.ymin) / 1000 + 2 * pad) * H)))
-      if (w < 8 || h < 8) continue
+      // FULL-WIDTH horizontal band at the date's vertical position. A tight bbox
+      // clipped the handwritten month (Vision read the year but garbled the month —
+      // month_hits=0 in prod); the whole line gives Vision the context to read it.
+      const vpad = 0.03
+      const top = Math.max(0, Math.round((Math.min(b.ymin, b.ymax) / 1000 - vpad) * H))
+      const h = Math.min(H - top, Math.max(1, Math.round((Math.abs(b.ymax - b.ymin) / 1000 + 2 * vpad) * H)))
+      const left = 0
+      const w = W
+      if (h < 8) continue
       const crop = await sharp(base)
         .extract({ left, top, width: w, height: h })
-        .resize({ width: Math.min(2000, w * 5), withoutEnlargement: false })
+        .resize({ width: Math.min(2600, w * 2), withoutEnlargement: false })
         .sharpen()
         .jpeg({ quality: 95 })
         .toBuffer()
