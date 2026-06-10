@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (findings: PROVEN wall on auto-reading handwritten dates, docs, agent)
+- Local Gemini experiments + prod diag prove: Gemini cannot read this handwritten month (3 prompts × 2 runs → липня/травня, never червня) NOR give a tight date-line bbox (~39% of page). Vision reads the month only on a manual tight crop Gemini cannot produce. Conclusion: no deployable automated approach auto-reads this handwritten date; product is correct (dates review_required, human-in-loop). Finishing needs owner action: rotate Vision key for local tuning, or Transkribus/TrOCR HTR. Appended to HANDWRITTEN_DATE_ENSEMBLE report.
+
 ## 2026-06-10 (stop: ensemble flag OFF in prod; bound the date crop, CODE+env, agent)
 - HONEST: the date ensemble infra is complete, Core-path-wired, tested, observable, fail-safe — but it is NOT yet delivering a reliable second reading: Vision garbles the handwritten month on tight auto-crops (month_hits=0), and full-width bands time out the route. Turned ENSEMBLE_DATE_ENABLED OFF in prod (dates are already review_required, so safety unchanged). Bounded the crop (≤2 regions, padded bbox, capped resize) so the code is timeout-safe when re-enabled. Finishing needs local Vision iteration (after key rotation) or Transkribus HTR.
 
