@@ -35,7 +35,7 @@ import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafe
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked } from '@/lib/ocr/types'
-import { applyDateEnsemble, isDateFieldName } from '@/lib/docintel/ensemble/applyDateEnsemble'
+import { applyDateEnsemble, isDateFieldName, extractDateCandidatesFromText } from '@/lib/docintel/ensemble/applyDateEnsemble'
 import { readDateRegionsWithVision } from '@/lib/docintel/ensemble/dateRegionRead'
 import { HANDWRITTEN_FABRICATION_RISK_CLASSES } from '@/lib/docintel/antiFabricationGate'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
@@ -107,9 +107,13 @@ async function runDateEnsemble<T extends {
       if (!isBlocked(full)) { secondText = full.raw_text ?? ''; diag = { ...diag, fallback_chars: secondText.length } }
     }
     if (secondText) {
+      // PII-free diagnostics: do month words / years appear, and how many date candidates parsed?
+      const monthHits = (secondText.match(/січ|лют|берез|квіт|трав|черв|лип|серп|вер|жовт|листоп|груд|январ|феврал|март|апрел|ма[йя]|июн|июл|август|сентябр|октябр|ноябр|декабр/gi) || []).length
+      const yearHits = (secondText.match(/\b(1[89]\d{2}|20\d{2})\b/g) || []).length
+      const cands = extractDateCandidatesFromText(secondText).length
       const outcome = applyDateEnsemble(fields, secondText)
       if (outcome.disagreements.length) console.info('[date_ensemble] disagreement', JSON.stringify({ doc_type_id: docTypeId, fields: outcome.disagreements }))
-      return { fields: outcome.fields, diag: { ...diag, status: outcome.applied ? 'applied' : 'no_dates', disagreements: outcome.disagreements.length } }
+      return { fields: outcome.fields, diag: { ...diag, status: outcome.applied ? 'applied' : 'no_dates', disagreements: outcome.disagreements.length, month_hits: monthHits, year_hits: yearHits, cands } }
     }
     return { fields, diag: { ...diag, status: 'no_dates' } }
   } catch (e) {
