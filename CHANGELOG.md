@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-10 (fix: client-side downscale before upload — GT bench finding A, CODE, agent)
+- `TranslateWizard.tsx`: NEW `downscaleImageForUpload` — images >3.8MB downscaled in-browser (longest edge ≤2400px, JPEG q0.82) before POST to vision-extract. Fixes HTTP 413 at the ~4.5MB Vercel edge cap (real phone photos 4–12MB never reached the brain). Fail-open: any error sends the original. Bench: 7.1MB→1.5MB, no accuracy loss.
+- +3 source-assertion tests. tsc 0; 3029 passed / 4 skipped / 0 failed.
+- Follow-up: same 413 risk in reparole/ead/tps OCR uploads (mostly Latin US docs) — not yet fixed.
+
 ## 2026-06-10 (bench: live GT pipeline measurement on real Cyrillic docs, infra+report, agent)
 - NEW `apps/web/scripts/gt-pipeline-bench.mjs` — re-runnable; POSTs owner fixtures to PROD vision-extract (real gemini-3.1-pro-preview path), scores per-field vs owner GT, auto-downscales >4MB, doc-class-aware field map. Raw→gitignored qa-private; sanitized scorecard→docs/reports.
 - Results (EXPLORATORY, 1 doc/class): military(printed) 4/4 readable exact; booklet(hw) family+given+dob ✓, patronymic missed; birth(hw) surname-cyr ✓, given/patronymic/dob wrong — ALL review-flagged (no silent bad output).
