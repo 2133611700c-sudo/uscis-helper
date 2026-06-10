@@ -1,3 +1,13 @@
+# STATUS (2026-06-10 — ADR-018 model matrix LOCKED: fallback-model reads of Cyrillic docs force review)
+
+## ADR-018 Model Matrix DONE (2026-06-10, CODE + ADR)
+- **ADR-018 created** (`docs/adr/ADR-018-model-matrix.md`): iron matrix — gemini-3.1-pro-preview = THE reader; flash = fallback-only; Vision = technical eye; DeepSeek = prose + sanitized TPS text-structuring (never sees image, final_value always overwritten from source); D2/C3/validators/PDF = code, no AI.
+- **Safety gap CLOSED:** provider chain silently fell back pro→flash on timeout/5xx — gemini-2.5-flash is DISQUALIFIED on certificate docs (read a different person, 2026-06-02). Now: `documentFieldReader.ts` forces `review_required=true` + `fallback_model_used` on EVERY field when `spec.script !== 'latin'` AND `read.model !== primaryGeminiModel()`. Deterministic, no flag.
+- Latin US forms (us_ead/us_i94/us_i797) exempt — flash never disqualified on Latin print.
+- `primaryGeminiModel()` exported from geminiVisionProvider.
+- New tests: `fallbackModelReview.test.ts` (5). Three existing test mocks updated to report primary model.
+- tsc 0; **2997 passed | 4 skipped | 0 failed** (was 2992, +5).
+
 # STATUS (2026-06-10 — housekeeping: Vercel dead flags removed, branches cleaned, 0 open PRs)
 
 ## Housekeeping DONE (2026-06-10)

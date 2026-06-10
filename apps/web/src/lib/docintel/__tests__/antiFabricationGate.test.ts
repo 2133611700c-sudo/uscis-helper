@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
+import { primaryGeminiModel } from '../providers/geminiVisionProvider'
 import {
   applyAntiFabricationGate,
   isIdentityCriticalField,
@@ -99,7 +100,7 @@ function stub(): VisionProvider {
     name: 'stub',
     async readFields(): Promise<VisionReadResult> {
       return {
-        ok: true, model: 'stub', ms: 1,
+        ok: true, model: primaryGeminiModel(), ms: 1,
         fields: [
           { field: 'child_family_name', cyrillic: 'Куропятник', can_read: true, confidence: 0.99, reason: '' },
           { field: 'act_record_number', cyrillic: '87', can_read: true, confidence: 0.99, reason: '' },
