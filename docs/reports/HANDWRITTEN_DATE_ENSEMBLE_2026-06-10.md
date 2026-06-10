@@ -69,3 +69,39 @@ ENSEMBLE + human-in-the-loop, no new vendor:
 - **SECURITY:** the Vision service-account private key was pasted into chat — treat it
   as compromised and **rotate it** (new key for messenginfo-vision-ocr@…, delete key id `eb576de0…`).
 - To add the best specialized reader later: provision Transkribus Processing auth or an HF token.
+
+---
+
+## Definitive findings (2026-06-10, local Gemini experiments + prod diag)
+
+After building + wiring the full ensemble and ~10 prod cycles, the engineering wall
+is PROVEN, not assumed:
+
+1. **Gemini cannot READ this handwritten month.** 3 prompt strategies × 2 runs each
+   on a zoomed date crop (plain / month-list-with-warning / letter-by-letter): all
+   returned липня (July) or травня (May) — never червня (June, the truth). It is a
+   hard model limit on this handwriting, not a prompt problem.
+2. **Gemini cannot LOCALIZE the date line.** Even with "tight, single line, ~3-6% of
+   page height" prompts, it returns a box ~39% of page height — too coarse for the
+   second engine to read the month from.
+3. **Google Vision read the month correctly (июня) on a MANUAL tight crop** — but
+   Gemini can't provide that tight crop automatically, and Vision garbles the month
+   on Gemini's coarse box (prod diag: year_hits=1, month_hits=0).
+
+### Conclusion
+No automated approach deployable today (Gemini + Google Vision) reliably auto-reads
+this handwritten Cyrillic date. The product already handles it correctly: handwritten
+dates are ALL `review_required` (hard-case override) → the human corrects them. That
+is the industry best-practice (HTR + human-in-the-loop). Handwritten NAMES, by
+contrast, read well (11/12) and are production-usable.
+
+### To actually auto-read handwritten dates (both owner-gated)
+- **Vision-ensemble tuning** with a fast LOCAL loop — requires the owner to rotate the
+  chat-exposed SA key, then provide it safely for local iteration (find the crop/zoom
+  that lets Vision read the month; Vision can't be tuned via 4-minute prod cycles).
+- **Transkribus / TrOCR HTR** (dedicated handwritten-Ukrainian, CER ≈4.2%) as a third
+  reader — requires owner readcoop/HF auth.
+
+The ensemble infrastructure (dateReconcile, applyDateEnsemble, dateRegionRead, Core-path
+wiring, review UI, 19 tests) is COMPLETE and waits behind ENSEMBLE_DATE_ENABLED (OFF)
+for one of the above.
