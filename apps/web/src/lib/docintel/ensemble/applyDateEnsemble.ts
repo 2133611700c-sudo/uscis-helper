@@ -24,6 +24,18 @@ export interface EnsembleField {
   ensemble_candidate?: string | null
 }
 
+/**
+ * A date field — detected by NAME, not by `kind`. In the live response `kind`
+ * carries the SOURCE ('ai_vision'), not the data type, so a kind-based check
+ * never matched (the bug that silenced the ensemble). Names are the schema's
+ * own keys: dob, date_of_birth, date_of_issue, date_of_marriage, date_of_divorce…
+ */
+export function isDateFieldName(field: string, kind?: string): boolean {
+  if (kind === 'date') return true
+  const f = (field || '').toLowerCase()
+  return f === 'dob' || /(?:^|_)date(?:_|$)/.test(f) || f.includes('date_of')
+}
+
 export interface DateEnsembleOutcome<T extends EnsembleField> {
   fields: T[]
   applied: boolean
@@ -52,7 +64,7 @@ export function applyDateEnsemble<T extends EnsembleField>(
 
   const disagreements: string[] = []
   const out = fields.map((f) => {
-    if (f.kind !== 'date') return f
+    if (!isDateFieldName(f.field, f.kind)) return f
     const primaryText = primaryDateText(f)
     const primary = parseDateText(primaryText)
     if (primary.year == null && primary.month == null && primary.day == null) return f
