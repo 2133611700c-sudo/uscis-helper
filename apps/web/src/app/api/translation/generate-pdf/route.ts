@@ -23,6 +23,8 @@ import { classifyCriticality, isOcrFieldSafetyEnabled } from '@/lib/documentSafe
 import { validateConfirmedValue } from '@/lib/documentSafety/confirmedValueGuard'
 import { buildAttestationRecord } from '@/lib/translation/attestation'
 import { persistCertification } from '@/lib/translation/persistCertification'
+import { applyCertifierOverrides, type FieldWithMaybeOverride } from '@/lib/documentSafety/certifierOverrideApply'
+import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,6 +62,28 @@ export async function POST(req: NextRequest) {
     payload = await req.json()
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  // ── Certifier override (CERTIFIER_OVERRIDE_ENABLED, default OFF) ────────────
+  // ADR-021 / LAW 2#5: a certifier attests a critical field from the source. Runs
+  // BEFORE the review check so a finalized override clears that field's review flag.
+  // OFF ⇒ skipped entirely (byte-identical prod). A block (anchor conflict / invalid
+  // authority, e.g. user_clarified on TIER 1) → 422; every decision is audited.
+  if (process.env.CERTIFIER_OVERRIDE_ENABLED === '1' && payload.fields?.length) {
+    const { block } = applyCertifierOverrides(payload.fields as unknown as FieldWithMaybeOverride[], {
+      enabled: true,
+      docType: payload.doc_type ?? '',
+      documentClass: docintelIdToDocumentClass(payload.doc_type ?? ''),
+      sessionId: payload.session_id ?? 'legacy',
+      timestampUtc: new Date().toISOString(),
+    })
+    if (block) {
+      return NextResponse.json(
+        // PII rule: field NAME + reason only — never the value.
+        { ok: false, error: 'certifier_override_blocked', gate: 'certifier_override', field: block.field, reason: block.reason },
+        { status: 422 },
+      )
+    }
   }
 
   // ── Pre-payment review check ───────────────────────────────────────────────
