@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- CI infra: bumped GitHub Actions to Node-24 majors (checkout v6 / setup-node v6 / cache v5 / pnpm-action-setup v6) — clears 2026-06-16 Node-20 deprecation.
 - CI fix (content-guard): reworded a 'certified translation' comment in applyOcrFieldSafety.ts (Rule 4 product-claim). No logic change.
 
 ## P0-A hardening (2026-06-10, CODE — walked enforce back to shadow)
