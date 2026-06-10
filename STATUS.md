@@ -1,4 +1,4 @@
-# STATUS (2026-06-10 — Phase 2 split merged to main; PR-F timeouts; awaiting owner model flip)
+# STATUS (2026-06-10 — Phase 2 split FULLY MERGED #104-#109; awaiting owner GEMINI_MODEL flip)
 ## PR-F DONE (2026-06-10, CODE — Core read timeouts raised for pro-model)
 - readDocument `timeoutMs` 20s→40s in all 4 product routes; reparole/EAD `maxDuration` 30→60.
 - Reason: PR104 audit timeout_status CONFLICT — pro observed 28s, 20s cap silently degraded pro→flash.
