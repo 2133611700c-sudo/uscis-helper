@@ -52,6 +52,37 @@ tests. Provenance (`knowledgeRule` / `knowledgeProvenance` on each field) feeds 
 This is a managed control, not a belief: behind a flag, measured by tests now and by review-rate/conflict
 metrics on traffic later; prod cutover stays owner-gated.
 
+## BINDING CONTRACT — D2 / C3 / final_value (owner-approved 2026-06-09)
+
+The primary risk is no longer the reader (Gemini) — it is **downstream bypass** (a value reaching the PDF without
+passing the gate). The structural defense is: **`final_value` is null until C3 (or a human confirmation that
+re-runs C3) grants it.** This contract is binding; Phase 2 may not start until it is recorded here.
+
+1. **D2 = annotation / authority layer only.** D2 (`knowledgeNormalize`) returns
+   `{ normalized_value, suggested_value, action, rule_id, provenance, evidence_strength, reason_codes }`.
+   **D2 never writes `final_value`.**
+2. **C3 = the single output gate.** Only C3 writes `final_value`.
+   `accept_final` ⇒ `final_value = normalized_value`. `candidate | review | block | manual` ⇒ `final_value = null`.
+   *(Refinement A — the gate is the only writer, but it runs again after a D5 user confirmation: a confirmation
+   creates provenance, re-runs C3, and C3 may then set `final_value`. So a confirmed field CAN become final — via
+   C3, never by bypassing it.)*
+3. **D6 / PDF reads only `final_value`.** A **critical** field with `final_value = null` ⇒ block. No consumer may
+   read `normalized_value` as a release value. *(Refinement B — only CRITICAL null blocks; admin/optional null does
+   not block, matching `hasUnresolvedCriticalForOutput`.)*
+4. **D5 review UI reads `normalized_value` + `suggested_value` + `reason_codes`.** Crop/source UI comes later via
+   ReaderResult/Vision bbox; **crop does not block the safety MVP.**
+5. **ONE criticality taxonomy** shared by D2 and C3. No two separate critical-field tables. (Consolidate D2's
+   field routing onto C3's `classifyCriticality` — single source.)
+6. **Adapters MUST NOT drop**: `suggested_value`, `rule_id`, `provenance`, `reason_codes`, `evidence_strength`,
+   `review_required`. (Today `suggestedValue` is dropped — fixed in Phase 2/3.)
+7. **Phase order (binding):** 1.4 local fixture proofs → Phase 2 Core-default/consolidation (one product at a time)
+   → Phase 3 explicit `final_value` + C3 as the final writer → Phase 4 Knowledge canary (only after Core-default)
+   → ReaderResult/crop later.
+
+Status: `final_value` is NOT yet a field on `CanonicalField` (Phase 3 adds it). Until then the de-facto gate is
+`normalized_value` + `review_required`; Phase 3 makes the null-until-granted invariant structural. Phase 2 is
+built to this contract so the migration is additive.
+
 ## Why NOT the consensus org-chart
 
 - The 2026-06-06 incident did not break because readers disagreed. It broke from: HTTP 502 on zero fields, `candidate≠final` not enforced, six ungated reader regimes. Consensus voting fixes none of these; a single gated pipeline + field contract + knowledge truth fixes all of them.

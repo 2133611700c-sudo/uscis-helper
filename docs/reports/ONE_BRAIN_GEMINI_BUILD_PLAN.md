@@ -5,6 +5,8 @@ Constraints (owner): Gemini = recognition (all keys/models); DeepSeek = retained
 
 Rule for every phase: behavior-changing code ships behind a flag (default OFF) → tests → preview proof → owner flips prod. tsc 0 + full suite green every commit. No PII; qa-private untouched.
 
+**BINDING CONTRACT (ADR-017, owner-approved 2026-06-09):** D2 annotates only (never writes `final_value`); **C3 is the single writer of `final_value`** (`accept_final`→`final_value=normalized_value`, else null; a D5 user confirmation re-runs C3); **D6/PDF reads only `final_value`**, a critical `final_value=null` blocks; one criticality taxonomy for D2+C3; adapters must not drop `suggested_value`/`rule_id`/`provenance`/`reason_codes`/`evidence_strength`/`review_required`. **The primary risk is downstream bypass; the defense is `final_value=null until C3/confirmation`.** Phase 2 was unblocked only by recording this in ADR-017.
+
 ## Phase 1 — Dictionary IN the brain  (CODE, no prod)
 The accuracy fix. Knowledge applied to the FINAL value for ALL products, in one place.
 - [x] **1.1** `canonical/core/knowledgeNormalize.ts` — pure deterministic normalizer. **DONE**.
@@ -12,26 +14,37 @@ The accuracy fix. Knowledge applied to the FINAL value for ALL products, in one 
 - [x] **1.3** **DONE — ONE shared helper, not four forks.** `canonical/core/knowledgeBrain.ts` (`isKnowledgeBrainEnabled` / `buildKnowledgeContext` / `applyKnowledgeBrainIfEnabled`). Wired translation/tps/reparole/ead at the arbitration seam via the helper (1-line diff each, no route-local dictionary logic). OFF deep-equals bare arbitration; ON = conflict→review. 18 helper/normalize tests; full suite 2937/4; tsc 0. Legacy `/api/ocr/extract` + generate-pdf are NOT arbitration seams (no D2 fork added). Proof: docs/reports/KNOWLEDGE_BRAIN_PHASE_1_3_WIRING_PROOF.md.
 - [ ] **1.4** Local proof on real fixtures (Militsiya, oblast genitive, patronymic, gazetteer) with KNOWLEDGE_BRAIN_ENABLED=1, like the C3 real-doc proof.
 
-## Phase 2 — One pipeline (consolidation)  (CODE + owner flip)
-Kill fragmentation. Make Gemini-Core the default reader for every product; retire forks.
-- [ ] **2.1** Make `ONE_CORE_*` the DEFAULT path (flag still allows fallback) for Translation/TPS/Reparole/EAD; preview-prove each product reads + builds its PDF.
-- [ ] **2.2** Retire the legacy ungated `/api/ocr/extract` DeepSeek+gpt path (RC-3). Confirm no live caller, then remove.
-- [ ] **2.3** **Remove GPT-4o/gpt-4o-mini** code + `ENABLE_OPENAI_VISION` (owner: GPT not used).
-- [ ] **2.4** Reparole: extend Core to i94/ead/dl (today they fall back to TPS).
+## Phase 2 — One pipeline (Core-default / consolidation)  (CODE + owner flip)
+Kill fragmentation. Make Gemini-Core the default reader, ONE product at a time. Built to the binding contract
+(so the Phase-3 `final_value` migration is additive). Each product: OFF=identical, preview-prove reads + PDF,
+owner flips. Do NOT do all four at once.
+- [ ] **2.1** Translation → Core default (preview-prove read + review + PDF; OFF=identical).
+- [ ] **2.2** TPS → Core default for UA identity docs (preview-prove vs current rule-modules — "not worse").
+- [ ] **2.3** Reparole → Core default (passport/booklet); then extend Core to i94/ead/dl.
+- [ ] **2.4** EAD → Core default.
+- [ ] **2.5** Retire legacy ungated `/api/ocr/extract` (DeepSeek+gpt, RC-3) — confirm no live caller, then remove.
+- [ ] **2.6** **Remove GPT-4o/gpt-4o-mini** + `ENABLE_OPENAI_VISION` (owner: GPT not used).
 
-## Phase 3 — Safety gate ON  (owner flip, already built)
-- [ ] **3.1** Field-safety (C3, `OCR_FIELD_SAFETY_ENABLED`) default-on after Phase 1/2 (candidate≠final proven on real docs locally 2026-06-09).
-- [ ] **3.2** Self-consistency as instability detector (disagree→review), not a vote.
+## Phase 3 — Explicit `final_value` + C3 as the single final writer  (CODE — the structural defense)
+The anti-bypass invariant becomes structural, not a comment.
+- [ ] **3.1** Add `finalValue: string | null` to `CanonicalField` (default null). One criticality taxonomy shared
+  by D2 + C3 (consolidate D2 routing onto C3 `classifyCriticality`).
+- [ ] **3.2** Make C3 the ONLY writer of `finalValue`: `accept_final`→`finalValue=normalizedValue`, else null. D2
+  stays annotation-only. A D5 user confirmation re-runs C3 → may set `finalValue`.
+- [ ] **3.3** Adapters carry the full record (no dropping `suggested_value`/`rule_id`/`provenance`/`reason_codes`/
+  `evidence_strength`/`review_required`).
+- [ ] **3.4** D6/PDF reads ONLY `finalValue`; critical `finalValue=null` → block. Migrate output consumers off
+  `normalizedValue`. C3 (`OCR_FIELD_SAFETY_ENABLED`) default-on. Self-consistency = instability detector (not a vote).
 
-## Phase 4 — Provenance / audit log  (CODE)
-- [ ] **4.1** Persist per-field origin (reader / dictionary / MRZ / user_corrected) + review reasons; surface "source" in the review UI. Enables trust + future calibration.
+## Phase 4 — Knowledge canary (after Core-default) + provenance/auditor  (owner flip + CODE)
+- [ ] **4.1** `KNOWLEDGE_BRAIN_ENABLED` canary in prod — ONLY meaningful after Phase 2 (else no-op). Measure review-rate/conflict.
+- [ ] **4.2** Provenance/audit log: persist per-field origin (reader/dictionary/MRZ/user_corrected) + reason codes;
+  booleans only, NO PII. Feeds QA + future GT/HTR.
 
-## Phase 5 — Tabs, professional pass  (CODE/UX, per product)
-From the surface maps, finish each product's tabs:
-- [ ] Translator (7-step): wire Lab "upload your own" (currently "coming soon"); ensure review gate uses the knowledge-normalized value.
-- [ ] TPS (6-step): confirm Core path + knowledge on review screen.
-- [ ] Reparole (5-step): wire Part 1 Item 1.e Re-Parole checkbox in the I-131 field map; family-member/travel rows.
-- [ ] Shared: review surfaces show field + crop; uncertain → empty until pay (anti-screenshot).
+## Phase 5 — Tabs, professional pass + D5 review UI  (CODE/UX, per product)
+- [ ] Translator/TPS/Reparole tabs finished (Lab upload; I-131 1.e checkbox; review screen uses the gated value).
+- [ ] D5: review surfaces show field + reason + manual correction; uncertain → empty until pay (anti-screenshot).
+- [ ] (later) Crop/source in D5 via **ReaderResult/Vision bbox** — does NOT block the safety MVP.
 
 ## PARKED (do not build until GT from different people justifies)
 - HTR (Transkribus PII/DPA vs own TrOCR). Gemini-pro reads handwriting today.
