@@ -1,3 +1,14 @@
+# STATUS (2026-06-10 — P0 DESIGN LOCK + P0-A output-door sanitation shipped)
+
+## P0 Design Lock + P0-A (2026-06-10, CODE + 5 contract docs)
+- **P0-A output door CLOSED (prod behavior change, deliberate):** `generate-pdf` now runs `validateConfirmedValue` on EVERY release value UNCONDITIONALLY (not behind OCR_FIELD_SAFETY_ENABLED) — Cyrillic/control/over-length/bad-date in a certified English PDF is a legal defect with zero legitimate-flow regression. Critical fail → 403 (field NAME only, no PII); non-critical → nulled→missing; pass → finalValue set. Fixed Agent-A keying bug (it keyed on a `confirmed` flag the client never sends; now keys on real release values).
+- **classifyCriticality reconciled** to CRITICAL_FIELDS_CONTRACT: added validity DATES (issue/expiry/marriage), issuing_authority, ead_category/class_of_admission, nationality. Previously fell through to `optional` (real gap).
+- **Observability (P1 start):** PII-free `[ADR018] fallback_model_used` log (ids+counts only).
+- **5 design-lock contracts created:** CRITICAL_FIELDS_CONTRACT, C3_USER_CORRECTION_CONTRACT, PAYMENT_REFUND_LEGACY_GATE_CONTRACT, GT_BENCHMARK_EXIT_CRITERIA (docs/architecture/), ADR-019-audit-trail-persistence (docs/adr/).
+- tsc 0; **3011 passed | 4 skipped | 0 failed** (+14: confirmedValueGuard tests).
+- **OWNER DECISIONS PENDING (marked in docs):** refund/legacy policy, audit-trail PII tier+retention, manual-override path, GT sample sourcing (need docs from different real people), military rank criticality.
+- **NOT done (owner-gated/blocked):** GT benchmark runner (Agent B hit spend limit), audit-trail persistence code (ADR only), canary (blocked on GT Tier-1 sample), Vision bbox ADR-020 (research gathered).
+
 # STATUS (2026-06-10 — ADR-018 model matrix LOCKED: fallback-model reads of Cyrillic docs force review)
 
 ## ADR-018 Model Matrix DONE (2026-06-10, CODE + ADR)
