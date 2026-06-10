@@ -42,7 +42,10 @@ export function canonicalFieldToTpsField(
   return {
     field:              f.key,
     raw_value:          f.rawValue ?? '',
-    normalized_value:   f.normalizedValue ?? f.rawValue ?? null,
+    // Phase 3 (ADR-017 C3 contract): use finalValue when C3 has run.
+    // finalValue=string → C3 accepted. finalValue=null → C3 rejected (block).
+    // finalValue=undefined → C3 not run (flag OFF); fall back to normalizedValue for backward compat.
+    normalized_value:   f.finalValue !== undefined ? f.finalValue : (f.normalizedValue ?? f.rawValue ?? null),
     extraction_source:  'canonical_core',
     source_document_id: documentId,
     source_zone:        f.source,

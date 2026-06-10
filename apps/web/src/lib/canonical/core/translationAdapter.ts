@@ -70,7 +70,10 @@ export function canonicalToFieldOut(
 ): FieldOut {
   return {
     field: f.key,
-    value: f.normalizedValue ?? f.rawValue ?? null,
+    // Phase 3 (ADR-017 C3 contract): use finalValue when C3 has run.
+    // finalValue=string → C3 accepted (release). finalValue=null → C3 rejected (block).
+    // finalValue=undefined → C3 not run (flag OFF); fall back to normalizedValue for backward compat.
+    value: f.finalValue !== undefined ? f.finalValue : (f.normalizedValue ?? f.rawValue ?? null),
     raw_cyrillic: f.rawCyrillic ?? cyrillicMap?.get(f.key) ?? null,
     confidence: f.confidence.final ?? 0,
     review_required: f.reviewRequired,

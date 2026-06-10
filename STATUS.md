@@ -1,3 +1,22 @@
+# STATUS (2026-06-09 — Phase 3 DONE: CanonicalField.finalValue + C3 as only writer)
+
+## Phase 3 DONE (2026-06-09, CODE — CanonicalField.finalValue + C3 as only writer)
+- **finalValue added to CanonicalField** (`apps/web/src/lib/canonical/types.ts`): `undefined` = C3 not run, `null` = rejected, `string` = accepted.
+- **C3 is now the only writer** (`applyOcrFieldSafety.ts`): accept path sets `finalValue=string`, reject/block path sets `finalValue=null`.
+- **3 adapters updated** (finalValue-first pattern, backward compat):
+  - `translationAdapter.ts` (`canonicalToFieldOut`): `finalValue !== undefined ? finalValue : normalizedValue ?? rawValue`
+  - `tpsAdapter.ts` (`canonicalFieldToTpsField`): same pattern for `normalized_value`
+  - `eadAdapter.ts` (`getValue` helper): same pattern
+- **pdf.ts updated** (`planTranslationRows`): `final_value !== undefined ? final_value : normalized_value`
+- **D2 verified**: does NOT write `CanonicalField.finalValue` — writes `normalizedValue` only (D2's DECISION struct's internal `finalValue` is a different concept).
+- **Tests:** 2992 passed | 4 skipped | 0 failed (18 new Phase 3 contract tests).
+- **tsc:** 0 errors.
+- **Backward compat:** flag OFF → `finalValue=undefined` → all adapters fall back to `normalizedValue` → byte-identical to Phase 2.
+- **Prod untouched.** No env changes. `OCR_FIELD_SAFETY_ENABLED` stays OFF in prod.
+- **Payment ordering bug noted** (review gate 403 fires after payment gate 402 in `generate-pdf/route.ts`) — separate issue, not fixed here.
+- **Proof:** `docs/reports/PHASE_3_FINAL_VALUE_C3_WRITER_PROOF.md`
+- **Next:** Owner choice — enable `OCR_FIELD_SAFETY_ENABLED` canary OR PR cleanup (dead env flags) first.
+
 # STATUS (2026-06-10 — PASS_PROD_MODEL_SMOKE: prod on gemini-3.1-pro-preview, Phase 3 UNBLOCKED)
 
 ## PROD MODEL FLIP + SMOKE: PASS (2026-06-10)

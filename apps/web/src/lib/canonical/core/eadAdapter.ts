@@ -122,7 +122,10 @@ function findField(fields: CanonicalField[], key: string): CanonicalField | null
 
 function getValue(field: CanonicalField | null): string | null {
   if (!field) return null
-  const v = field.normalizedValue ?? field.rawValue
+  // Phase 3 (ADR-017 C3 contract): use finalValue when C3 has run.
+  // finalValue=string → C3 accepted (release). finalValue=null → C3 rejected (block → return null).
+  // finalValue=undefined → C3 not run (flag OFF); fall back to normalizedValue for backward compat.
+  const v = field.finalValue !== undefined ? field.finalValue : (field.normalizedValue ?? field.rawValue)
   if (!v || v.trim() === '') return null
   return v
 }
