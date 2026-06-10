@@ -73,6 +73,17 @@ export interface CanonicalField {
   rawValue: string | null
   /** The normalized/display value. If it materially differs from raw → suggestion. */
   normalizedValue: string | null
+  /**
+   * Phase 3 (ADR-017 C3 contract): written ONLY by applyOcrFieldSafety (C3).
+   * - undefined  → C3 has not run (OCR_FIELD_SAFETY_ENABLED=OFF or field not processed).
+   *               Adapters MUST fall back to normalizedValue for backward compat.
+   * - null       → C3 ran and rejected / flagged review (value must NOT be released).
+   * - string     → C3 accepted; this is the release value. D6/PDF reads this, not normalizedValue.
+   *
+   * D2 (arbitration) MUST NOT write this field — D2's internal DECISION.finalValue is
+   * a different concept (D2's proposal), never stored here.
+   */
+  finalValue?: string | null
   /** A fuzzy/alternative suggestion surfaced for review (S1-style), never auto-applied. */
   suggestedValue?: string | null
   criticality: Criticality
