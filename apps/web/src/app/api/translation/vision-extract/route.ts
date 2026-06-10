@@ -35,12 +35,7 @@ import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafe
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
-// Central Brain (flag-gated, default OFF → prod behavior unchanged)
-import { analyze } from '@/lib/central-brain'
-import { deepseekProseTranslator } from '@/lib/engine/translator'
-import { DOC_TYPES } from '@/lib/engine/docTypes'
-// ONE BRAIN Core arbitration (flag-gated: ONE_BRAIN_CORE_ENABLED=1, default OFF)
-// B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
+// ONE BRAIN Core — B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/canonical/core/translationAdapter'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
@@ -148,104 +143,49 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── ONE BRAIN Core takes priority — runs BEFORE central brain ───────────────
-  // Core path must be checked first: if it returns fields, central brain and
-  // legacy are skipped entirely. This ensures Translation uses the same Core
-  // as TPS (B2 requirement), not a separate decision-maker.
-  // (flag: ONE_BRAIN_CORE_ENABLED=1, default OFF — see Core block below)
-
-  // ── Central Brain path (flag-gated; default OFF = unchanged legacy below) ──
-  // Replaces the single-Gemini reader with a 2-reader consensus
-  // (Gemini + Google Vision) so a single AI is never the truth-source.
-  let degradedFromBrain = false // true ⇒ brain was ON but errored → we fell to the guard-less legacy path
-  if (process.env.CENTRAL_BRAIN_TRANSLATION === 'on' && process.env.ONE_BRAIN_CORE_ENABLED !== '1') {
-    try {
-      const spec = DOC_TYPES[docTypeId]
-      const gem = getGeminiApiKey() // any GEMINI_API_KEY* name the owner uses
-      const gv = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_VISION_API_KEY
-      if (spec && gem && gv) {
-        const docs = await Promise.all(rawFiles.map(async (f) => ({
-          docTypeId, mime: f.type || 'image/jpeg', image: Buffer.from(await f.arrayBuffer()),
-        })))
-        // D3b prose translator (#10): free text the glossary didn't cover (e.g. a
-        // registry office's full name) is translated by DeepSeek with names/numbers
-        // LOCKED, instead of being dropped. Fails open (keeps original + review).
-        const ds = process.env.DEEPSEEK_API_KEY || process.env.DEEPSEEK_CHAT_API_KEY
-        const proseTranslator = ds ? deepseekProseTranslator({ apiKey: ds }) : undefined
-        const br = await analyze({ product: 'translation', locale: 'en', documents: docs }, { geminiApiKey: gem, gvApiKey: gv, proseTranslator })
-        const fields: FieldOut[] = br.recognizedFields.map((f) => ({
-          field: f.field, value: f.value || null, raw_cyrillic: f.cyrillic || null,
-          confidence: f.can_read ? 0.9 : 0, review_required: f.review_required, kind: f.source,
-        }))
-        // Only return the consensus result when it actually read something. When it
-        // reads 0 fields, DEGRADE to the legacy single-read path below (proven to
-        // read real Ukrainian docs) instead of hard-failing with a 502.
-        if (fields.length > 0) {
-          return NextResponse.json({
-            ok: true, doc_type_id: docTypeId, fields,
-            pages: [], page_count: rawFiles.length, provider: 'central-brain:consensus',
-            model: 'gemini+google-vision', readiness: br.productReadiness,
-            official_sources: br.officialSourcesUsed, status: 'ok:central-brain',
-          }, { status: 200 })
-        }
-        console.warn('[central-brain translation] 0 fields — degrading to legacy single-read')
-        degradedFromBrain = true
-        // fall through to legacy path below
-      }
-    } catch (e: any) {
-      console.error('[central-brain translation] fell back to legacy:', e?.message ?? e)
-      degradedFromBrain = true
-      // fall through to legacy path below — never break the endpoint
-    }
-  }
-
-  // ── ONE BRAIN Core path — B2: Translation consumes same Core as TPS ──────
-  // (flag: ONE_BRAIN_CORE_ENABLED=1, default OFF)
+  // ── ONE BRAIN Core — default path (Phase 2.1) ────────────────────────────
   //
   // Flow: readDocument (Gemini docintel) → buildCyrillicMap → docintelToCandidate
   //       → arbitrateDocument (Core judge) → toTranslationRows (B2 adapter)
   //
-  // raw_cyrillic is preserved via cyrillicMap: KMU-55 transliteration produces the
-  // English value, but the original Cyrillic text is kept separately for display.
-  // Falls through to legacy if Core returns 0 fields or errors.
-  if (process.env.ONE_BRAIN_CORE_ENABLED === '1') {
-    try {
-      const allCandidates: ReturnType<typeof docintelToCandidate>[] = []
-      const cyrillicMap = new Map<string, string>()
-      const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
-      for (let i = 0; i < rawFiles.length; i++) {
-        const file = rawFiles[i]
-        const buffer = Buffer.from(await file.arrayBuffer())
-        const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 20_000, product: 'translation' })
-        corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
-        if (r.ok && Array.isArray(r.fields)) {
-          // Preserve Cyrillic BEFORE conversion to candidates (KMU-55 erases it)
-          buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
-          allCandidates.push(...r.fields.map((f) => docintelToCandidate(f, i + 1)))
-        }
+  // raw_cyrillic threaded from ExtractedDocField → FieldCandidate.rawCyrillic
+  // → CanonicalField.rawCyrillic → FieldOut.raw_cyrillic (Phase 2.0).
+  // cyrillicMap kept as display fallback only.
+  // 0 fields → legacy reader (with preprocessing) as fallback; errors → legacy.
+  try {
+    const allCandidates: ReturnType<typeof docintelToCandidate>[] = []
+    const cyrillicMap = new Map<string, string>()
+    const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
+    for (let i = 0; i < rawFiles.length; i++) {
+      const file = rawFiles[i]
+      const buffer = Buffer.from(await file.arrayBuffer())
+      const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 20_000, product: 'translation' })
+      corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
+      if (r.ok && Array.isArray(r.fields)) {
+        buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
+        allCandidates.push(...r.fields.map((f) => docintelToCandidate(f, i + 1)))
       }
-      const canonicalFields = applyKnowledgeBrainIfEnabled(
-        allCandidates,
-        buildKnowledgeContext({ docTypeId, product: 'translation' }),
-      )
-      if (canonicalFields.length > 0) {
-        // B2: toTranslationRows = named adapter, maps canonical → Translation FieldOut
-        const fields = toTranslationRows(canonicalFields, cyrillicMap)
-        const requiresReview = fields.some((f) => f.review_required)
-        console.info('[ONE_BRAIN_CORE B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview, 'cyrillicPreserved=', cyrillicMap.size)
-        return NextResponse.json({
-          ok: true, doc_type_id: docTypeId, fields,
-          pages: corePageResults, page_count: rawFiles.length,
-          provider: 'one-brain-core:translation-b2',
-          model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
-          status: 'ok:core-b2',
-          core_version: 'b2',
-        }, { status: 200 })
-      }
-      console.warn('[ONE_BRAIN_CORE B2] 0 fields after arbitration — falling through to legacy')
-    } catch (e: any) {
-      console.error('[ONE_BRAIN_CORE B2] error, falling through to legacy:', e?.message ?? e)
     }
+    const canonicalFields = applyKnowledgeBrainIfEnabled(
+      allCandidates,
+      buildKnowledgeContext({ docTypeId, product: 'translation' }),
+    )
+    if (canonicalFields.length > 0) {
+      const fields = toTranslationRows(canonicalFields, cyrillicMap)
+      const requiresReview = fields.some((f) => f.review_required)
+      console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview)
+      return NextResponse.json({
+        ok: true, doc_type_id: docTypeId, fields,
+        pages: corePageResults, page_count: rawFiles.length,
+        provider: 'one-brain-core:translation-b2',
+        model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
+        status: 'ok:core-b2',
+        core_version: 'b2',
+      }, { status: 200 })
+    }
+    console.warn('[Core B2] 0 fields — falling through to legacy reader (with preprocessing)')
+  } catch (e: any) {
+    console.error('[Core B2] error, falling through to legacy reader:', e?.message ?? e)
   }
 
   // Run all pages sequentially (Gemini free tier rate-limits parallel calls
@@ -306,11 +246,8 @@ export async function POST(req: NextRequest) {
 
   // Any field at all? Then the request is considered ok even if some pages
   // failed (e.g. user uploaded one good page + one blurry one).
-  // #12: if we got here because the central brain ERRORED (not because the flag is
-  // off), this is a DEGRADED path (single reader, no consensus guard) → force every
-  // field to human review and tell the client, so a degraded read is never trusted.
-  let fields = Array.from(merged.values()).map((f) =>
-    degradedFromBrain ? { ...f, review_required: true } : f)
+  // Reaching here means Core returned 0 fields or errored — legacy reader ran.
+  let fields = Array.from(merged.values())
   const ok = fields.length > 0
 
   // ── POLICY_WIRED: post-extraction document-class guards ───────────────────
@@ -365,11 +302,10 @@ export async function POST(req: NextRequest) {
     page_count: rawFiles.length,
     // Backward compat: keep the single-call shape too for legacy clients.
     anchor_read: lastResult?.anchor_read ?? null,
-    provider: degradedFromBrain ? `legacy-fallback:${lastResult?.provider ?? 'gemini'}` : (lastResult?.provider ?? null),
+    provider: lastResult?.provider ?? null,
     model: lastResult?.model ?? null,
     ms: pageResults.reduce((s, p) => s + p.ms, 0),
-    ...(degradedFromBrain ? { degraded: true, degraded_reason: 'central-brain unavailable — used legacy single reader; verify every field against the document' } : {}),
-    status: ok ? (degradedFromBrain ? 'ok:degraded-legacy' : 'ok') : (lastResult?.status ?? 'no_fields'),
+    status: ok ? 'ok:legacy-reader' : (lastResult?.status ?? 'no_fields'),
     ...(ok ? {} : { error: lastResult?.error ?? 'No fields extracted across all pages.' }),
     // Zero recognition is review_required even without the C3 flag, so the client
     // always treats a no-fields read as "needs your review", never silent success.

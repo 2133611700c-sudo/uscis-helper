@@ -1,5 +1,14 @@
 # STATUS (2026-06-09 — REBUILD: ONE Gemini brain (ADR-017); Phase 2.0 DONE)
 
+## Phase 2.1 DONE (2026-06-09, CODE — Translation Core unconditional)
+- `ONE_BRAIN_CORE_ENABLED` flag gate removed from Translation vision-extract route. Core B2 is now the unconditional default.
+- Dead `CENTRAL_BRAIN_TRANSLATION` consensus block (~40 lines) removed. Dead imports removed (`analyze`, `deepseekProseTranslator`, `DOC_TYPES`).
+- `degradedFromBrain` variable and all ternaries removed. Response `status`: Core = `ok:core-b2`; legacy fallback = `ok:legacy-reader`.
+- Legacy reader (with preprocessing) stays as fallback for Core errors / 0 fields.
+- tsc 0; 2975/4 (0 regressions). Prod untouched (ONE_BRAIN_CORE_ENABLED=1 was already ON in prod → behavior unchanged).
+- Phase 2.0b: `gemini-2.0-flash` was already removed from fallback chain in a prior session. Only appears in comments.
+- **Next: Phase 2.2 — TPS → Core default for UA-identity docs (booklet/birth/military).**
+
 ## Phase 2.1a DONE (2026-06-09, CODE — Translator hard-case unbypass)
 - **Translator birth/marriage** (`auto:false`, incident RC-1 STILL TRUE in prod) now route through vision-extract + review gate when `NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED=1` (default OFF).
 - Flag OFF: byte-identical to current behaviour. No vision call, no gate, manual specialist path unchanged.

@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-09 (Phase 2.1: Translation Core unconditional + CENTRAL_BRAIN dead code removed, CODE, agent)
+- `ONE_BRAIN_CORE_ENABLED` flag gate removed from `apps/web/src/app/api/translation/vision-extract/route.ts`. Core B2 is now the unconditional default path.
+- Dead `CENTRAL_BRAIN_TRANSLATION` consensus block (~40 lines, `CENTRAL_BRAIN_TRANSLATION === 'on' && ONE_BRAIN_CORE_ENABLED !== '1'` condition) removed. Was unreachable when ONE_BRAIN_CORE_ENABLED=1 (already ON in prod).
+- Dead imports removed: `analyze` (central-brain), `deepseekProseTranslator` (engine/translator), `DOC_TYPES` (engine/docTypes).
+- `degradedFromBrain` variable removed. Response `status` field: Core emits `ok:core-b2` (unchanged); legacy fallback now emits `ok:legacy-reader` (was `ok:degraded-legacy`). `degraded`/`degraded_reason` response fields removed.
+- Legacy reader (with D0 preprocessing + quality gate) stays as fallback for Core errors + 0-field fallthrough.
+- Phase 2.0b confirmed already done: `gemini-2.0-flash` removed from fallback chain in prior session.
+- tsc 0; 2975/4 (0 regressions, 0 new tests — code-only cleanup). Prod untouched (ONE_BRAIN_CORE_ENABLED=1 already ON → behavior unchanged). Branch feat/one-brain-gemini-core (PR #104).
+
 ## 2026-06-09 (Phase 2.1a: Translator hard-case unbypass, CODE, agent)
 - **RC-1 unblocked (flag-gated):** birth/marriage docs (`auto:false`) now route through vision-extract + hard-case review gate when `NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED=1`. Default OFF = byte-identical.
 - 3-way state machine: flag OFF → manual unchanged; flag ON + 0 fields → falls through to manual; flag ON + fields → `hardCaseHasFields=true`, `needsReviewGate=true`, all fields `review_required`, payment blocked until all confirmed.
