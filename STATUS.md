@@ -1,3 +1,10 @@
+# STATUS (2026-06-10 — housekeeping: Vercel dead flags removed, branches cleaned, 0 open PRs)
+
+## Housekeeping DONE (2026-06-10)
+- 7 dead Vercel prod env flags removed: ONE_BRAIN_CORE_ENABLED, ONE_CORE_TPS_ENABLED, ONE_CORE_REPAROLE_ENABLED (+NEXT_PUBLIC), ONE_CORE_EAD_ENABLED (+NEXT_PUBLIC), CENTRAL_BRAIN_TRANSLATION.
+- 68 stale local git branches deleted. Only `main` remains.
+- All GitHub PRs closed (0 open). Canary docs applied to main.
+
 # STATUS (2026-06-10 — payment ordering bug FIXED in generate-pdf/route.ts)
 
 ## Payment ordering bug FIXED (2026-06-10)
