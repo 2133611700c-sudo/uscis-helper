@@ -71,3 +71,15 @@ create policy certifier_audit_read_admin_or_own on public.certifier_override_aud
     (certifier_id = (select auth.uid()))
     or exists (select 1 from public.profiles where profiles.id = (select auth.uid()) and profiles.role = 'admin')
   );
+
+-- COMMENTs verbatim from prod (parity — closes the comment-only diff gap).
+comment on table public.certifier_override_audit is
+  'L3 T0 audit persistence: hash-based durable chain for certifier_override decisions. T0=hashes only (operational fraud-detection); T1 (raw values for legal subpoena) requires separate ADR-019 owner approval. Append-only by trigger.';
+comment on column public.certifier_override_audit.certifier_id is
+  'Soft reference to certifier identity (uuid). Owner-only transitional phase: validated by app layer against OWNER_CERTIFIER_ID env. Hard FK to certifiers table will be restored when ADR-021 delegated role lands.';
+comment on column public.certifier_override_audit.tier is
+  'Criticality tier from CRITICAL_FIELDS_CONTRACT: 1=applicant identity, 2=related/validity, 3=non-critical';
+comment on column public.certifier_override_audit.cross_doc_anchor_id is
+  'ADR-021 Q3: marks parent/spouse fields to enable future case-level anchor reconciliation without retrofit';
+comment on column public.certifier_override_audit.immutable_signature is
+  'sha256 of canonical row content; verifies record has not been tampered. Computed by app layer before insert.';
