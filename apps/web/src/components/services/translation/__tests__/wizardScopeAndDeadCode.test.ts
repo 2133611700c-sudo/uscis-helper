@@ -100,18 +100,13 @@ describe('classifyToModule self-serve eligibility (server-side truth)', () => {
 describe('TranslateWizard — large photos are downscaled before vision-extract', () => {
   const src = fs.readFileSync(ACTIVE_WIZARD, 'utf-8')
 
-  it('defines downscaleImageForUpload with an edge-cap threshold', () => {
+  it('imports the shared downscale helper (not a local copy)', () => {
+    expect(src).toContain("from '@/lib/upload/downscaleImage'")
     expect(src).toContain('downscaleImageForUpload')
-    expect(src).toContain('UPLOAD_DOWNSCALE_THRESHOLD')
   })
 
   it('applies the downscale in the vision-extract upload loop (not raw files)', () => {
     expect(src).toMatch(/await downscaleImageForUpload\(f\)/)
     expect(src).toMatch(/form\.append\('file', blob, f\.name\)/)
-  })
-
-  it('fail-open: the helper falls back to the original file on error', () => {
-    // a try/catch returning the original file must be present so a bad image never blocks upload
-    expect(src).toMatch(/catch\s*\{\s*\n?\s*return file/)
   })
 })

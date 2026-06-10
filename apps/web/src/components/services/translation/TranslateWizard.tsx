@@ -20,6 +20,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { isGarbageValue } from '@uscis-helper/knowledge'
 import { getUnresolvedReviewFields } from '@/lib/translation/reviewGate'
+import { downscaleImageForUpload } from '@/lib/upload/downscaleImage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -817,37 +818,6 @@ const WIZARD_CSS = `
   .tw-doc-name { font-size: 14px; }
 }
 `
-
-// ─── Client-side downscale before upload ──────────────────────────────────────
-// Vercel serverless caps the request body at ~4.5 MB. Real phone photos are
-// commonly 4–12 MB, so an unmodified upload hits HTTP 413 BEFORE the read ever
-// runs (GT bench 2026-06-10, finding A). Downscale large images in the browser:
-// longest edge ≤ 2400 px, JPEG q≈0.82 — bench showed 7.1MB→1.5MB with no field
-// accuracy loss. Fail-open: any error returns the original file (never block upload).
-const UPLOAD_DOWNSCALE_THRESHOLD = 3_800_000 // leave headroom under the ~4.5MB edge cap
-const UPLOAD_MAX_EDGE = 2400
-
-async function downscaleImageForUpload(file: File): Promise<Blob> {
-  if (!file.type.startsWith('image/') || file.size <= UPLOAD_DOWNSCALE_THRESHOLD) return file
-  try {
-    const bitmap = await createImageBitmap(file)
-    const scale = Math.min(1, UPLOAD_MAX_EDGE / Math.max(bitmap.width, bitmap.height))
-    const w = Math.round(bitmap.width * scale)
-    const h = Math.round(bitmap.height * scale)
-    const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
-    const ctx = canvas.getContext('2d')
-    if (!ctx) { bitmap.close?.(); return file }
-    ctx.drawImage(bitmap, 0, 0, w, h)
-    bitmap.close?.()
-    const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.82))
-    // Only use the downscaled blob if it actually came out smaller.
-    return blob && blob.size < file.size ? blob : file
-  } catch {
-    return file // fail-open: corrupt/unsupported → send original, let the server decide
-  }
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function TranslateWizard() {
