@@ -91,6 +91,60 @@ export function transliterateKMU55(input: string): string {
   return isAllCaps ? output.toUpperCase() : output;
 }
 
+// ── Russian as-written romanization ─────────────────────────────────────────
+// A Soviet/bilingual document line written in RUSSIAN must be transliterated with
+// a RUSSIAN system, NOT KMU-55 (which is for Ukrainian and would turn г→h, и→y).
+// This matches the project's required outputs (owner-approved examples):
+//   Сергей→Sergey · Сергеевич→Sergeevich · Леонидович→Leonidovich
+//   Наталья→Natalia · Степановна→Stepanovna
+// Key choices: г→g, и→i, й→y, е→e, я→ia, ю→iu, ё→e, ъ/ь→omit. (Owner may swap the
+// standard later; the routing — Russian script → Russian system — is what matters.)
+const RU_MAP: Record<string, string> = {
+  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+  'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+  'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+  'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+  'ы': 'y', 'э': 'e', 'ю': 'iu', 'я': 'ia',
+}
+const RU_SKIP = new Set(['ъ', 'ь'])
+
+/** Transliterate RUSSIAN Cyrillic to Latin (as-written, for RU lines on Soviet docs). */
+export function transliterateRussian(input: string): string {
+  if (!input) return ''
+  const out: string[] = []
+  for (const ch of input) {
+    const lower = ch.toLowerCase()
+    if (RU_SKIP.has(lower)) continue
+    const mapped = RU_MAP[lower]
+    if (mapped === undefined) { out.push(ch); continue } // pass through non-Cyrillic
+    // Preserve case: if the source char is uppercase, capitalize the first letter.
+    out.push(ch === ch.toUpperCase() && ch !== ch.toLowerCase()
+      ? mapped.charAt(0).toUpperCase() + mapped.slice(1)
+      : mapped)
+  }
+  return out.join('')
+}
+
+/** Cyrillic letters that exist ONLY in Russian (not Ukrainian) — a script signal. */
+const RU_ONLY = /[ыэёъ]/i
+/** Ukrainian-only letters (not Russian) — a script signal. */
+const UA_ONLY = /[іїєґ]/i
+
+/**
+ * Decide which transliteration system a name line should use, by its SOURCE script.
+ * Returns 'ru' for Russian-script lines, 'ua' for Ukrainian, 'unknown' when ambiguous.
+ * NOTE: ambiguity (shared letters) is NOT auto-resolved here — the caller should
+ * review rather than guess (the project's as-written, no-harmonize rule).
+ */
+export function detectNameScript(input: string): 'ua' | 'ru' | 'unknown' {
+  const s = input ?? ''
+  const ua = UA_ONLY.test(s)
+  const ru = RU_ONLY.test(s)
+  if (ua && !ru) return 'ua'
+  if (ru && !ua) return 'ru'
+  return 'unknown' // both or neither distinctive letter → caller decides/reviews
+}
+
 /**
  * Convert Ukrainian date string to USCIS format (MM/DD/YYYY).
  * Input: "25 червня 1986 року" or "25.06.1986"

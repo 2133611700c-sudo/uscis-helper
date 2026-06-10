@@ -6,7 +6,7 @@
  * Тростянець). Every product flow gets identical canonical values from here.
  */
 
-import { transliterateKMU55 } from '@uscis-helper/knowledge'
+import { transliterateKMU55, transliterateRussian, detectNameScript } from '@uscis-helper/knowledge'
 import { normalizeProvince, normalizeCity } from '@/lib/tps/dictionaryBridge'
 import type { FieldKind, VisionFieldRead } from './types'
 
@@ -37,9 +37,19 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
       // Dates: trust only a well-formed ISO from the model; never guess.
       return read.iso_date && /^\d{4}-\d{2}-\d{2}$/.test(read.iso_date) ? read.iso_date : null
 
-    case 'name':
-      // Names: KMU-55 ONLY. Never the LLM's own Latin.
-      return cy ? transliterateKMU55(cy) || null : null
+    case 'name': {
+      // Names: KMU-55 (Ukrainian). Never the LLM's own Latin.
+      if (!cy) return null
+      // RU_TRANSLIT_ENABLED (default OFF): a name line written in clearly-RUSSIAN
+      // script (ы/э/ё/ъ present) is transliterated with the Russian system, not
+      // KMU-55 — Soviet/bilingual docs are as-written, never harmonized to Ukrainian.
+      // 'unknown' (no distinctive letter) stays KMU-55: do NOT guess the script.
+      // (For the APPLICANT's own name, MRZ/passport remains controlling upstream.)
+      if (process.env.RU_TRANSLIT_ENABLED === '1' && detectNameScript(cy) === 'ru') {
+        return transliterateRussian(cy) || null
+      }
+      return transliterateKMU55(cy) || null
+    }
 
     case 'place_city': {
       // City: strip the settlement-type prefix so the canonical value is the
