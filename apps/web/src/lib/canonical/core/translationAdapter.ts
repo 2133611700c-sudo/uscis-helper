@@ -26,6 +26,9 @@ export interface FieldOut {
   review_required: boolean
   kind: string
   source_page?: number
+  /** ENSEMBLE_DATE: reasons + the second engine's date reading on a cross-engine conflict. */
+  review_reasons?: string[]
+  ensemble_candidate?: string | null
 }
 
 /**

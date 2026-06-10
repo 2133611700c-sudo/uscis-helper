@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- ROOT CAUSE FOUND: ensemble was wired into the legacy path but reads return via the CORE path (ok:core-b2, early return) — ensemble never ran. Now wired into Core path via shared runDateEnsemble helper.
 - DEBUG: exposed date_ensemble diagnostics in response (boxes/crops/chars/status) to find why the 2nd reading isnt surfacing in prod.
 - FIX: ensemble extractor required day+month+year; Vision OCR drops the day → no candidate → no surfacing. Day now optional. Re-deploy+smoke.
 - FIX: ensemble required shared-year anchor → suppressed the real case (Gemini gets year, Vision gets month, no shared component). Relaxed: any date diff on the cropped region surfaces.
