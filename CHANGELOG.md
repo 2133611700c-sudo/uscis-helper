@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-06-09 (Phase 2.0: rawCyrillic threaded + D2 sees Cyrillic + 4 bug fixes, CODE, agent)
+- **GAP A fixed:** rawCyrillic threads ExtractedDocField → FieldCandidate.rawCyrillic (new field) → CanonicalField.rawCyrillic (new field). No longer dropped by docintelToCandidate.
+- **GAP B fixed:** `applyKnowledge()` in arbitration.ts now feeds D2 with `f.rawCyrillic ?? normalizedValue ?? rawValue`. D2 Cyrillic rules (gazetteer, RU/UA spelling, patronymicReconcile, normalizeName) now fire on original Cyrillic text instead of derived Latin.
+- **Bug A fixed:** `knowledgeNormalize.ts` date handler: ISO YYYY-MM-DD → USCIS MM/DD/YYYY without false review; already-USCIS MM/DD/YYYY pass-through.
+- **Bug B fixed:** `sourceBasis` field added to `KnowledgeNormalizeCtx`; derived KMU-55 Latin gets evidenceStrength 0.6 vs MRZ/EAD/I-94 controlling Latin (0.99).
+- **Bug C fixed:** `documentFieldReader.ts` — emit review (canonical_value_unresolved) instead of silently dropping field when `toCanonicalValue()` returns null but `r.cyrillic` is non-empty.
+- `canonicalToFieldOut`: prefers `f.rawCyrillic` over cyrillicMap (map kept for backward compat).
+- Files changed: `canonical/core/types.ts`, `canonical/types.ts`, `canonical/core/translationAdapter.ts`, `canonical/core/arbitration.ts`, `docintel/documentFieldReader.ts`, `canonical/core/knowledgeNormalize.ts`.
+- New test file: `canonical/core/__tests__/phase20CyrillicD2Door.test.ts` (24 tests).
+- tsc 0; full suite 2961/4 (was 2937, +24 new, 0 regressions). Prod untouched. KNOWLEDGE_BRAIN_ENABLED default OFF. Branch feat/one-brain-gemini-core (PR #104).
+- Proof: docs/reports/PHASE_2_0_CYRILLIC_D2_DOOR_PROOF.md.
+
 ## 2026-06-09 (product readiness comparison TPS/Translator/Reparole/EAD, docs-only, agent)
 - read latest audits (PRODUCT_RUNTIME_ARCHITECTURE, ONE_BRAIN_FINAL_STATUS, ACTUAL_PRODUCT_CALL_GRAPH + session surface maps + zero-trust) and wrote PRODUCT_READINESS_COMPARISON_2026-06-09.md.
 - alignment to Constitution: Reparole 85% (reference) > EAD 80% (clean arch; US-doc registry specs UNPROVEN, no scorable fixtures, thinnest UX) > Translator 60% (3 branches) > TPS 40% (default Vision/DocAI+rule modules).

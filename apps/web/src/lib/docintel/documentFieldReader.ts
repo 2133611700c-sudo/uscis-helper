@@ -68,7 +68,29 @@ export async function readDocument(
     const kind = kindByField.get(r.field)
     if (!kind) continue
     const value = toCanonicalValue(r, kind)
-    if (!value) continue
+    if (!value) {
+      // Phase 2.0 bug-C fix: do NOT silently drop a field when toCanonicalValue
+      // fails (e.g. date with no iso_date, agency with no Cyrillic in later fields).
+      // If the vision provider DID read something (r.cyrillic non-empty), emit the
+      // field as a review-required candidate with the raw Cyrillic as fallback value.
+      // D2 will have a chance to normalize it; human review is always required.
+      // When r.cyrillic is also empty there is nothing to emit — skip normally.
+      if (r.cyrillic) {
+        if (r.field === spec.vision_anchor) anchorRead = true
+        fields.push({
+          field: r.field,
+          kind,
+          raw_cyrillic: r.cyrillic,
+          value: r.cyrillic,  // unresolved canonical; D2 may normalize from Cyrillic
+          confidence: Math.max(0, Math.min(1, r.confidence)),
+          review_required: true,
+          source: 'vision',
+          provider: provider.name,
+          review_reasons: ['canonical_value_unresolved'],
+        })
+      }
+      continue
+    }
     if (r.field === spec.vision_anchor) anchorRead = true
     fields.push({
       field: r.field,
