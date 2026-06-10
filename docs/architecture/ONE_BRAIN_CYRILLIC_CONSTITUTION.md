@@ -127,16 +127,54 @@ proposed a resolution to a conflict between two owner rules; the owner may veto 
 
 ## LAW 2 — SOURCE OF TRUTH (precedence when sources conflict)
 1. **MRZ / official-Latin field** controls the APPLICANT's own identity SPELLING/romanization where MRZ provides that field.
-   **⚠ OWNER-CONFIRM:** "controls" = romanization authority for the applicant; it does NOT license filling an
-   *illegible field on another document* from MRZ — there MRZ is candidate-only (LAW 4 / visual-evidence rule wins).
+   "controls" = romanization authority for the applicant; it does NOT license filling an *illegible field on another
+   document* from MRZ — there MRZ is candidate-only (LAW 4 / visual-evidence rule wins). (RULED 2026-06-10.)
 2. **Visible source line** controls relatives / parents / spouses (as-written, per their line's script).
 3. **`raw_cyrillic`** controls transliteration (never the model's own Latin).
 4. **D2 dictionaries** suggest / validate (never final).
-5. **User correction** is evidence C3 weighs — not automatic truth.
-   **⚠ OWNER-CONFIRM:** when user confirmation is the ONLY source for an otherwise-`null` field (illegible, no machine
-   anchor), C3 MAY final on it with `provenance=user_confirmed`; it never overrides a strong machine anchor (MRZ).
+5. **User correction** is evidence C3 weighs — authority depends on field criticality (LAW 2#5 RULING below).
 6. **C3** decides `final_value`.
 7. If conflict remains → `final_value=null`.
+
+### LAW 2#5 RULING — tiered user/certifier authority (owner, RULED 2026-06-10)
+Two inputs look identical to C3 — (a) illegible-to-machine-but-legible-to-human (user types the true value) and
+(b) illegible-to-everyone (user types whatever). On critical identity, (b) is a direct immigration-fraud vector, and
+certified translation means the CERTIFIER attests "complete and accurate", not the applicant. So authority is tiered:
+
+```
+User confirmation = evidence weighted by C3. Authority depends on field criticality:
+
+  Non-critical fields (issuing office, secondary witness, registration number):
+    user_confirmed CAN finalize an otherwise-null field
+      + provenance=user_confirmed
+      + audit event (timestamp, session, IP)
+      + PDF metadata flags the field
+      + certification text acknowledges user-provided fields
+
+  Critical identity fields (applicant DOB, surname, given name, document number, nationality):
+    user_confirmed CANNOT finalize alone
+    Path to finalize = certifier_override
+      (authorized certifier confirms reading from the source document,
+       takes attribution on the certification line,
+       audit trail records certifier identity)
+
+  Cross-document anchor (MRZ from passport, machine fields from EAD):
+    ALWAYS overrides user_confirmed on critical identity fields
+    Conflict between user_confirmed and anchor → block, escalate
+    (passport says SERHII, user typed OLEKSANDR → block, NOT override)
+
+  Transitional: certifier role = owner-only until a delegated certifier role is
+  designed and approved (separate ADR-021). Owner-only is a launch mechanism,
+  NOT permanent architecture — it is a throughput bottleneck at scale.
+```
+
+**OPEN SUB-QUESTION (agent-flagged, for ADR-021):** the critical-identity list above names the APPLICANT's own fields.
+Do relatives/parents/spouses (father/mother on a birth cert) require `certifier_override`, or are they `user_confirmed`?
+A wrong parent name is a weaker fraud vector but still a certified-accuracy defect. Not decided here.
+
+This maps to USCIS-grade practice: the translator/certifier signs "complete and accurate" (8 CFR 103.2(b)(3)) — the
+significant claim is the certifier's, not the client's. The user confirms they provided the original; the certifier
+confirms they read it. The mirror PDF's TRANSLATOR'S CERTIFICATION block is where `certifier_override` attribution lands.
 
 ## LAW 3 — HANDWRITING
 - A handwritten CRITICAL field cannot be silently final.
