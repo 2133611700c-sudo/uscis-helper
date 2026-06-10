@@ -32,8 +32,15 @@ import { normalizeGeminiModel } from '@/lib/gemini/model'
 //   gemini-3.1-flash-image: NOT a global default — per-class candidate only.
 //   Fallback chain updated: gemini-2.0-flash removed (404 deprecated).
 // pro+thinking on a large scan runs ~20-40s → keep timeoutMs high + Vercel maxDuration.
+/** The configured primary reader model (ADR-018 model matrix). Exported so
+ *  documentFieldReader can detect when a read came from a FALLBACK model —
+ *  fallback reads of Cyrillic docs are never released without review. */
+export function primaryGeminiModel(): string {
+  return normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview')
+}
+
 function modelFallback(): string[] {
-  const primary = normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview')
+  const primary = primaryGeminiModel()
   // gemini-2.0-flash removed from fallback: deprecated (HTTP 404) as of 2026-06.
   return [...new Set([primary, 'gemini-3.5-flash', 'gemini-2.5-flash'])]
 }

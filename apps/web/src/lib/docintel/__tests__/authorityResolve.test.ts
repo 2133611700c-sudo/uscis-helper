@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
+import { primaryGeminiModel } from '../providers/geminiVisionProvider'
 import { resolveAuthorityFields } from '../authorityResolve'
 import { resolveAuthority } from '@/lib/tps/dictionaryBridge'
 import { readDocument } from '../documentFieldReader'
@@ -103,7 +104,7 @@ function stubProvider(authorityCyrillic: string): VisionProvider {
     async readFields(): Promise<VisionReadResult> {
       return {
         ok: true,
-        model: 'stub-model',
+        model: primaryGeminiModel(),
         ms: 1,
         fields: [
           { field: 'issuing_authority', cyrillic: authorityCyrillic, can_read: true, confidence: 0.99, reason: '' },
