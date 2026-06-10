@@ -27,7 +27,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
-import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
+import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { toReParoleCoreAnswers } from '@/lib/canonical/core/reParoleAdapter'
 import type { CanonicalDocumentResult } from '@/lib/canonical/types'
@@ -225,8 +225,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5. Arbitrate: candidates → CanonicalField[] (Core's single judgment)
-    const canonicalFields = arbitrateDocument(candidates)
+    // 5. Arbitrate: candidates → CanonicalField[] (Core's single judgment).
+    //    Knowledge Brain applied via the shared helper (D2 authority, flag-gated, OFF=identical).
+    const canonicalFields = applyKnowledgeBrainIfEnabled(
+      candidates,
+      buildKnowledgeContext({ docTypeId: docintelId, product: 'reparole' }),
+    )
 
     if (canonicalFields.length === 0) {
       return NextResponse.json(
