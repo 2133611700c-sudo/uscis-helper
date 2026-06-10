@@ -16,7 +16,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type EmailType = 'contact' | 'packet_ready' | 'admin_notification' | 'magic_link' | 'translation_email'
+export type EmailType = 'contact' | 'packet_ready' | 'admin_notification' | 'magic_link' | 'translation_email' | 'payment_failure_ack'
 
 export interface SendEmailParams {
   to: string

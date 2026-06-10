@@ -132,6 +132,8 @@ export type ManualReviewReason =
   | 'glossary_unresolved'
   | 'user_requested_human_help'
   | 'system_error'
+  // a request that FAILED after the customer already paid (L1 A-full triage; PII-free)
+  | 'paid_request_failed'
 
 export const MANUAL_REVIEW_REASONS: readonly ManualReviewReason[] = [
   'unknown_document_type',
@@ -152,6 +154,7 @@ export const MANUAL_REVIEW_REASONS: readonly ManualReviewReason[] = [
   'glossary_unresolved',
   'user_requested_human_help',
   'system_error',
+  'paid_request_failed',
 ] as const
 
 /**
