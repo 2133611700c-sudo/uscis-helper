@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-09 (self-check: corrections to my own claims + 4 design bugs found, docs-only, agent)
+- FACT CORRECTION: full `vercel env ls` (earlier grep missed ONE_CORE_*): ONE_BRAIN_CORE/ONE_CORE_TPS/ONE_CORE_REPAROLE/ONE_CORE_EAD (+NEXT_PUBLIC twins), CENTRAL_BRAIN_TRANSLATION, DOCAI_ENABLED are ALL PRESENT in prod → Core arbitration is LIVE for all 4 products; KNOWLEDGE_BRAIN_ENABLED=1 in prod would fire immediately (NOT a no-op as I claimed). "Core parked behind unflipped flags" narrative corrected; Phase 2 = harden live Core + retire legacy fallbacks, not "flip Core on".
+- DESIGN BUGS found in my Phase-1 D2 (all fix-in-2.0, flag still OFF so inert): (1) convertDateToUSCIS rejects ISO yyyy-mm-dd → correctly-read dates flagged date_unparsed (false review noise, seen in 1.4 run); (2) "preserve Latin" conflates derived KMU-55 Latin with controlling Latin — controlling must be source-based (mrz/ead/i94), not script-based; (3) documentFieldReader.ts:71 silently DROPS fields when toCanonicalValue→null (raw_cyrillic lost, no candidate/review); (4) RU-spelling-on-UA framing wrong for Soviet bilingual docs (RU spelling may be literally as-written; review stays, but reason/era context must distinguish — GT_LANGUAGE_INTENT: value=as-written).
+- docs-only; no code/prod change; flags OFF. Branch feat/one-brain-gemini-core (PR #104).
+
 ## 2026-06-09 (Cyrillic Constitution assembled + mapped to real code, docs-only, agent)
 - per owner: analyzed the full Cyrillic data highway (read code, not docs) and assembled the owner's iron constitution into ONE product schema: docs/architecture/ONE_BRAIN_CYRILLIC_CONSTITUTION.md (canonical architecture).
 - code-grounded trace: Gemini reads VisionFieldRead.cyrillic; documentFieldReader.ts:70 runs toCanonicalValue IN the read loop → ExtractedDocField.value = KMU-55 Latin, raw_cyrillic kept alongside (:76); docintelToCandidate (translationAdapter.ts:50) drops raw_cyrillic (FieldCandidate.value=Latin; Cyrillic only in side cyrillicMap for display). Core/D2/C3/audit see Latin.
