@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (fix: ensemble extracts month+year without a day, CODE, agent)
+- Vision OCR of the zoomed date region often drops a clean day digit → the strict day+month+year regex matched nothing → no second-engine candidate → month disagreement never surfaced. Day now optional. +2 tests; 3061 passed.
+
 ## 2026-06-10 (fix: ensemble surfaces any date diff on cropped region, CODE, agent)
 - Required shared-year anchor wrongly suppressed the real handwritten case (Gemini reads the year, Vision the month — no shared component). Since the 2nd engine reads the cropped DATE region, surface ANY difference. +relaxed test. tsc 0; 17 ensemble tests.
 
