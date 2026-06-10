@@ -9,9 +9,25 @@ code exists anywhere.** L1 closes this operational blind spot. REUSE existing in
 TASK: Build L1 operations layer. Reuse existing infra. TDD where logic exists.
 
 ANTI-DRIFT: The constitution + ADR-021 are RULED. Refund TERMS are an OWNER business
-decision (see Q below) — draft, do not invent. Synthetic data only; no real PII in
+decision (RULED below) — do not re-open. Synthetic data only; no real PII in
 code/tests/logs. The generate-pdf route is the payment path — minimal surface, behind
 flags, byte-identical when OFF.
+
+STOP-ON-AMBIGUITY (owner directive 2026-06-10): if something unexpected surfaces during
+wiring — e.g. 503 auto-retry conflicting with Stripe idempotency, or ack-routing needing
+a webhook path not planned for — STOP, do NOT guess, open a mentor-discussion with the
+owner. Stopping at ambiguity is what separates a safe refactor from a dangerous one.
+
+AFTER L1 (do NOT skip to new capability): the next priority is L2 — the GT benchmark with
+the OWNER's fixtures (35-49 real docs per class, encrypted, GT-labeled). Until L2 exists,
+the L1 dashboard numbers describe an UNKNOWN baseline, not quality. Resist the instinct to
+jump to HTR / new document classes / new languages after L1 — that is the recurring
+prioritization trap. L2 is owner-time and cannot be delegated.
+
+TURNKEY NOTE: resolve these two as the FIRST code step so nothing downstream guesses —
+(1) the `failure_type` enum (the single key that drives BOTH the triage and the ack
+routing); (2) the persistence table for guard-block events + open-ticket state (pattern:
+translation_quality_log / manual_review_queue). Everything else hangs off these two.
 
 REUSE (mapped 2026-06-10 — do not rebuild):
 - Email: apps/web/src/lib/email/resend.ts  sendEmail()
