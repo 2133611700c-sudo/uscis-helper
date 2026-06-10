@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-09 (Phase 2.1a: Translator hard-case unbypass, CODE, agent)
+- **RC-1 unblocked (flag-gated):** birth/marriage docs (`auto:false`) now route through vision-extract + hard-case review gate when `NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED=1`. Default OFF = byte-identical.
+- 3-way state machine: flag OFF → manual unchanged; flag ON + 0 fields → falls through to manual; flag ON + fields → `hardCaseHasFields=true`, `needsReviewGate=true`, all fields `review_required`, payment blocked until all confirmed.
+- `autoread?: boolean` on DocTypeMeta (birth + marriage); `hardCaseHasFields` state (useState false, cleared on resetAll); `needsReviewGate = currentDocMeta?.auto || hardCaseHasFields`; `unresolvedReviewFields` and `canProceedToCertifiedOutput` use `needsReviewGate`.
+- Screen 2 UI: autoread docs show gold "hard case" notice; manual docs show specialist notice. I18n keys: `s2_hard_case_note` (RU + EN).
+- Files: `apps/web/src/components/services/translation/TranslateWizard.tsx`, new `apps/web/src/components/services/translation/__tests__/hardCaseAutoread.test.ts` (14 tests, pure logic, no React render).
+- tsc 0; full suite 2975/4 (was 2961, +14 new, 0 regressions). Prod untouched. No model/provider/payment/PDF/PII change. Branch feat/one-brain-gemini-core (PR #104).
+
 ## 2026-06-09 (Phase 2.0: rawCyrillic threaded + D2 sees Cyrillic + 4 bug fixes, CODE, agent)
 - **GAP A fixed:** rawCyrillic threads ExtractedDocField → FieldCandidate.rawCyrillic (new field) → CanonicalField.rawCyrillic (new field). No longer dropped by docintelToCandidate.
 - **GAP B fixed:** `applyKnowledge()` in arbitration.ts now feeds D2 with `f.rawCyrillic ?? normalizedValue ?? rawValue`. D2 Cyrillic rules (gazetteer, RU/UA spelling, patronymicReconcile, normalizeName) now fire on original Cyrillic text instead of derived Latin.
