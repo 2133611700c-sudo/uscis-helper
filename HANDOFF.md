@@ -1,4 +1,27 @@
-# HANDOFF (2026-06-10 — fix: pre-payment review check in generate-pdf/route.ts)
+# HANDOFF (2026-06-10 — housekeeping: Vercel dead flags + branch cleanup + payment fix)
+
+## What was done (full session cleanup)
+1. **Vercel dead flags removed:** ONE_BRAIN_CORE_ENABLED, ONE_CORE_TPS_ENABLED, ONE_CORE_REPAROLE_ENABLED (+NEXT_PUBLIC), ONE_CORE_EAD_ENABLED (+NEXT_PUBLIC), CENTRAL_BRAIN_TRANSLATION — 7 flags. Phase 2 made all gates unconditional; flags were noise.
+2. **Local branches cleaned:** 68 stale branches deleted. Only `main` remains.
+3. **GitHub PR cleanup:** PRs #100–#102 canary docs applied to main; #25, #43–47, #66, #92, #93, #103 closed as superseded. 0 open PRs.
+4. **Payment ordering fix:** `generate-pdf/route.ts` — pre-payment 400 `fields_require_review` check added BEFORE Stripe call. User can no longer be charged for a PDF blocked by reviewGate.
+5. **Phase 3 done (previous):** `CanonicalField.finalValue` + C3 as only writer + 3 adapters + pdf.ts. 2992 tests / 0 failed / tsc 0.
+6. **PASS_PROD_MODEL_SMOKE:** prod on `gemini-3.1-pro-preview` confirmed live.
+
+## What remains (owner-gated or future)
+- `OCR_FIELD_SAFETY_ENABLED` canary: requires owner GT documents + OFF/ON accuracy delta before enabling
+- `NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED` canary (#106): same owner-GT gate
+- `KNOWLEDGE_BRAIN_ENABLED` canary: same gate + SMART/KNOWLEDGE flag consolidation (GAP C)
+- `GOOGLE_CLOUD_VISION_API_KEY`: 403 billing disabled — BROKEN_FALLBACK classification; fix or remove needs owner decision on GCP project #537268475735
+- BUG C test (direct unit for `documentFieldReader.ts:72-92`) — residual test debt
+- BUG D test (Soviet bilingual RU tolerance) — residual test debt
+
+## Next task (when ready)
+Owner decides: OCR_FIELD_SAFETY_ENABLED canary OR hard-case autoread flag flip.
+Both require real document ground-truth comparison (OFF vs ON accuracy).
+
+---
+# Previous HANDOFF (2026-06-10 — fix: pre-payment review check in generate-pdf/route.ts)
 
 ## What was done this session
 1. Fixed payment ordering bug in `apps/web/src/app/api/translation/generate-pdf/route.ts`.

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-10 (housekeeping: Vercel dead flags removed + local branch cleanup, env+infra, agent)
+- Removed 7 dead Vercel prod env flags (code no longer reads them after Phase 2): ONE_BRAIN_CORE_ENABLED, ONE_CORE_TPS_ENABLED, ONE_CORE_REPAROLE_ENABLED, NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED, ONE_CORE_EAD_ENABLED, NEXT_PUBLIC_ONE_CORE_EAD_ENABLED, CENTRAL_BRAIN_TRANSLATION.
+- Deleted 68 stale local git branches. Only `main` remains.
+- Closed 10 stale/superseded GitHub PRs (#25, #43–#47, #66, #92, #93, #103) with explanation.
+- No code or prod behavior change.
+
 ## 2026-06-10 (fix: pre-payment review check — block before Stripe if fields unresolved, CODE, agent)
 - `apps/web/src/app/api/translation/generate-pdf/route.ts`: added pre-payment review check block before Stripe gate.
   - Filters `payload.fields` for `review_required === true`; returns 400 `fields_require_review` if any found.
