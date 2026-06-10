@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (findings: exhaustive proof — handwritten month needs trained HTR, docs, agent)
+- With the owner Vision key + full resources, tried every general approach: Gemini prompts/zoom, Vision word-geometry line-segmentation, Vision multi-crop voting (0/5 readable months), HF-TrOCR (endpoint needs token). ALL fail the handwritten month (червня). Names read well (11/12) — the bulk of handwritten Cyrillic is already readable. Date-month is a trained-HTR-grade problem; finishing needs an owner-provided Transkribus or HuggingFace token, then the built ensemble wires the HTR as the month reader.
+
 ## 2026-06-10 (findings: PROVEN wall on auto-reading handwritten dates, docs, agent)
 - Local Gemini experiments + prod diag prove: Gemini cannot read this handwritten month (3 prompts × 2 runs → липня/травня, never червня) NOR give a tight date-line bbox (~39% of page). Vision reads the month only on a manual tight crop Gemini cannot produce. Conclusion: no deployable automated approach auto-reads this handwritten date; product is correct (dates review_required, human-in-loop). Finishing needs owner action: rotate Vision key for local tuning, or Transkribus/TrOCR HTR. Appended to HANDWRITTEN_DATE_ENSEMBLE report.
 
