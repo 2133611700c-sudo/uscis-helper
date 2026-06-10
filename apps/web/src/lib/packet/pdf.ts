@@ -116,12 +116,16 @@ function wrapText(text: string, maxWidth: number, font: PDFFont, size: number): 
 export interface TranslationRow { label: string; value: string; status: 'ok' | 'review' | 'missing' }
 
 export function planTranslationRows(
-  fields: Array<{ field: string; normalized_value?: string | null; review_required?: boolean }>,
+  fields: Array<{ field: string; normalized_value?: string | null; final_value?: string | null; review_required?: boolean }>,
 ): { rows: TranslationRow[]; missingCount: number; reviewCount: number; certifiable: boolean } {
   const rows: TranslationRow[] = fields.map((f) => {
     const label = f.field.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-    if (!f.normalized_value) return { label, value: '________________  [enter from document]', status: 'missing' }
-    return { label, value: f.normalized_value, status: f.review_required ? 'review' : 'ok' }
+    // Phase 3 (ADR-017 C3 contract): prefer final_value when C3 has run.
+    // final_value=string → C3 accepted (release value). final_value=null → C3 rejected (treat as missing).
+    // final_value=undefined → C3 not run (flag OFF); fall back to normalized_value for backward compat.
+    const releaseValue = f.final_value !== undefined ? f.final_value : f.normalized_value
+    if (!releaseValue) return { label, value: '________________  [enter from document]', status: 'missing' }
+    return { label, value: releaseValue, status: f.review_required ? 'review' : 'ok' }
   })
   const missingCount = rows.filter((r) => r.status === 'missing').length
   const reviewCount = rows.filter((r) => r.status === 'review').length

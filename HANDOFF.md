@@ -1,3 +1,36 @@
+# HANDOFF (2026-06-09 — Phase 3 DONE: CanonicalField.finalValue + C3 as only writer)
+
+## What was done this session
+1. Added `finalValue?: string | null` to `CanonicalField` in `canonical/types.ts` — full ADR-017 C3 contract comment included.
+2. Updated `applyOcrFieldSafety.ts` (C3): added `finalValue` to `SafeField` interface; accept path writes `finalValue=string`, reject/block path writes `finalValue=null`.
+3. Updated `translationAdapter.ts` (`canonicalToFieldOut`): finalValue-first pattern with backward compat fallback.
+4. Updated `tpsAdapter.ts` (`canonicalFieldToTpsField`): same finalValue-first pattern for `normalized_value`.
+5. Updated `eadAdapter.ts` (`getValue` helper): same finalValue-first pattern.
+6. Updated `pdf.ts` (`planTranslationRows`): `final_value !== undefined ? final_value : normalized_value` pattern.
+7. Verified D2 (`arbitrateDocument`) does NOT write `CanonicalField.finalValue` — test #10 confirms.
+8. Created 18-test contract suite: `documentSafety/__tests__/finalValueContract.test.ts`.
+9. tsc 0 errors. 2992 passed | 0 failed | 4 skipped.
+
+## What was NOT done
+- **Payment ordering bug** (`generate-pdf/route.ts`): review gate (403) fires AFTER payment gate (402). Noted, out of scope.
+- `OCR_FIELD_SAFETY_ENABLED` NOT enabled in prod (stays OFF per constraint).
+- `KNOWLEDGE_BRAIN_ENABLED` NOT enabled (owner GT-gated).
+- Dead One-Core env flags in Vercel NOT cleaned up (non-blocking).
+- No PR opened.
+
+## Next task (owner choice)
+**Option A:** Enable `OCR_FIELD_SAFETY_ENABLED=1` canary in prod (requires owner approval + monitoring plan).
+**Option B:** PR cleanup — remove dead env flags (`ONE_BRAIN_CORE_ENABLED`, `ONE_CORE_*`) from Vercel.
+**Option C:** Fix payment ordering bug (separate scope, low risk).
+
+## Evidence
+- tsc: `npx tsc --noEmit -p apps/web/tsconfig.json` → no output (0 errors)
+- Tests: `pnpm --filter web run test` → `Tests 2992 passed | 4 skipped (2996)`
+- 18 new: `vitest run src/lib/documentSafety/__tests__/finalValueContract.test.ts` → all pass
+- Proof report: `docs/reports/PHASE_3_FINAL_VALUE_C3_WRITER_PROOF.md`
+
+---
+
 # HANDOFF (2026-06-10 — PASS_PROD_MODEL_SMOKE: prod on gemini-3.1-pro-preview, Phase 3 UNBLOCKED)
 
 ## What was done this session

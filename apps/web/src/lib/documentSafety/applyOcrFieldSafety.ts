@@ -65,6 +65,14 @@ export interface SafeField {
   manual_required?: boolean
   safety_decision?: string
   safety_reason_codes?: OcrSafetyReason[]
+  /**
+   * Phase 3 (ADR-017 C3 contract): C3 is the ONLY writer of this field.
+   * accept_final  → string  (the release value: normalizedValue or rawValue).
+   * review/block  → null    (value rejected; adapters must NOT release it).
+   * When C3 has not run (flag OFF), this field is absent (undefined) and adapters
+   * fall back to normalizedValue for backward compat.
+   */
+  finalValue?: string | null
   [k: string]: unknown
 }
 
@@ -105,9 +113,20 @@ export function applyOcrFieldSafety<T extends SafeField>(
     }
     if (r.final_value_allowed) {
       // safe → keep as-is, only ensure review flag isn't lowered
-      return { ...f, review_required: f.review_required === true || r.review_required, manual_required: r.manual_required }
+      // C3 ONLY writer: set finalValue to the release value (normalizedValue preferred, fall back to value/rawValue)
+      const acceptedValue: string | null =
+        (f as Record<string, unknown>).normalizedValue != null
+          ? ((f as Record<string, unknown>).normalizedValue as string)
+          : f.value ?? null
+      return {
+        ...f,
+        review_required: f.review_required === true || r.review_required,
+        manual_required: r.manual_required,
+        finalValue: acceptedValue,
+      }
     }
     // unsafe → candidate-only: value out of the value slot, kept as candidate
+    // C3 ONLY writer: set finalValue=null to signal rejection (adapters must not release value)
     return {
       ...f,
       candidate_value: f.value ?? f.raw_cyrillic ?? null,
@@ -116,6 +135,7 @@ export function applyOcrFieldSafety<T extends SafeField>(
       manual_required: r.manual_required,
       safety_decision: r.decision,
       safety_reason_codes: r.reason_codes,
+      finalValue: null,
     }
   })
   return { fields: out, anyUnresolvedCritical }

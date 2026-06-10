@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-06-09 (Phase 3: CanonicalField.finalValue + C3 as only writer, CODE, agent)
+- `apps/web/src/lib/canonical/types.ts`: added `finalValue?: string | null` to `CanonicalField` — 3-state contract: `undefined`=C3 not run, `null`=rejected, `string`=accepted (ADR-017 §C3).
+- `apps/web/src/lib/documentSafety/applyOcrFieldSafety.ts`: added `finalValue` to `SafeField` interface; C3 accept path writes `finalValue=string`, reject/block path writes `finalValue=null`.
+- `apps/web/src/lib/canonical/core/translationAdapter.ts`: `canonicalToFieldOut` — `value` uses finalValue-first pattern (backward compat: `undefined` falls back to `normalizedValue`).
+- `apps/web/src/lib/canonical/core/tpsAdapter.ts`: `canonicalFieldToTpsField` — `normalized_value` uses same finalValue-first pattern.
+- `apps/web/src/lib/canonical/core/eadAdapter.ts`: `getValue` helper — same finalValue-first pattern.
+- `apps/web/src/lib/packet/pdf.ts`: `planTranslationRows` type + logic — `final_value !== undefined ? final_value : normalized_value`.
+- `apps/web/src/lib/documentSafety/__tests__/finalValueContract.test.ts`: 18 new contract tests (all 3 states, all 3 adapters, D2 boundary).
+- tsc 0 errors. 2992 passed | 4 skipped | 0 failed (was 2974).
+- Prod untouched. `OCR_FIELD_SAFETY_ENABLED` stays OFF. No env changes.
+- Proof: `docs/reports/PHASE_3_FINAL_VALUE_C3_WRITER_PROOF.md`
+
 ## 2026-06-10 (PASS_PROD_MODEL_SMOKE: prod model flipped to gemini-3.1-pro-preview, env-only, agent)
 - **No code change.** Prod env-only operation.
 - Removed dirty `GEMINI_MODEL="gemini-2.5-flash\n"` (embedded literal `\n` made flash the effective prod model since Phase 1).
