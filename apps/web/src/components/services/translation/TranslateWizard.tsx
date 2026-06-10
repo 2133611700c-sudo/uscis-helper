@@ -32,23 +32,36 @@ type DocTypeChoice =
   | 'other'
 type Locale = 'en' | 'uk' | 'ru' | 'es'
 
+// Phase 2.1a (feat/one-brain-gemini-core): try auto-reading hard-case docs
+// (birth/marriage) behind a flag. OFF (default) → manual ticket, same as before.
+// ON → vision-extract is called; all fields come back review_required=true (hard-case
+// policy); user must confirm each field before payment; 0-field fallback → manual path.
+const HARD_CASE_AUTOREAD = process.env.NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED === '1'
+
 interface DocTypeMeta {
   id: DocTypeChoice
   icon: string
   popular?: boolean
-  /** Whether docintel has a validated module — drives auto-vs-manual routing. */
+  /** Whether docintel has a validated module — drives auto-vs-manual routing (payment gate). */
   auto: boolean
+  /**
+   * Phase 2.1a: try to auto-read via vision-extract even when `auto=false`.
+   * When the API returns 0 fields the flow falls back to the manual path (user can pay
+   * immediately, specialist handles it). When fields are returned they all carry
+   * review_required=true (hard-case policy); the user must confirm each one.
+   */
+  autoread?: boolean
   /** docintel registry id (lib/docintel/documentRegistry.ts). */
   registryId: string | null
 }
 
 const DOC_TYPES: DocTypeMeta[] = [
-  { id: 'passport_internal', icon: '🇺🇦', popular: true, auto: true,  registryId: 'ua_internal_passport_booklet' },
-  { id: 'passport_foreign',  icon: '✈️',                  auto: true,  registryId: 'ua_international_passport' },
-  { id: 'birth',             icon: '👶',                  auto: false, registryId: 'ua_birth_certificate' },
-  { id: 'marriage',          icon: '💍',                  auto: false, registryId: 'ua_marriage_certificate' },
-  { id: 'id_card',           icon: '💳',                  auto: true,  registryId: 'ua_id_card' },
-  { id: 'other',             icon: '📄',                  auto: false, registryId: null },
+  { id: 'passport_internal', icon: '🇺🇦', popular: true, auto: true,                          registryId: 'ua_internal_passport_booklet' },
+  { id: 'passport_foreign',  icon: '✈️',                  auto: true,                          registryId: 'ua_international_passport' },
+  { id: 'birth',             icon: '👶',                  auto: false, autoread: HARD_CASE_AUTOREAD, registryId: 'ua_birth_certificate' },
+  { id: 'marriage',          icon: '💍',                  auto: false, autoread: HARD_CASE_AUTOREAD, registryId: 'ua_marriage_certificate' },
+  { id: 'id_card',           icon: '💳',                  auto: true,                          registryId: 'ua_id_card' },
+  { id: 'other',             icon: '📄',                  auto: false,                         registryId: null },
 ]
 
 interface ExtractedField {
@@ -92,6 +105,7 @@ const T = {
     s2_subtitle: 'Выберите один документ',
     s2_popular: 'Самый частый',
     s2_manual_note: 'Этот тип документа обработает наш специалист. Срок: 1–2 рабочих дня. Цена та же — $14.99.',
+    s2_hard_case_note: 'Сложный документ: AI попробует прочитать, все поля потребуют вашего подтверждения. Если AI не сможет — наш специалист обработает вручную. Срок тот же.',
     doc: {
       passport_internal: { name: 'Паспорт Украины', hint: 'Внутренний, книжка' },
       passport_foreign:  { name: 'Загранпаспорт',   hint: 'Биометрический' },
@@ -213,6 +227,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s2_subtitle: 'Pick one document',
     s2_popular: 'Most common',
     s2_manual_note: 'This document type will be processed by our specialist. Turnaround: 1–2 business days. Same price: $14.99.',
+    s2_hard_case_note: 'Complex document: AI will attempt to read it; all fields require your confirmation. If AI cannot extract — a specialist handles it manually at the same price.',
     doc: {
       passport_internal: { name: 'Ukrainian Passport', hint: 'Internal, booklet' },
       passport_foreign:  { name: 'International Passport', hint: 'Biometric' },
@@ -824,6 +839,10 @@ export function TranslateWizard() {
   const [accuracyAttested, setAccuracyAttested] = useState(false)
   const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([])
   const [extractionError, setExtractionError] = useState<string | null>(null)
+  // Phase 2.1a: true when we called vision-extract for a hard-case doc (autoread=true)
+  // AND the API returned >0 fields. In that state the review gate is enforced even though
+  // the doc has auto=false. False (default) → manual path or 0-field fallback.
+  const [hardCaseHasFields, setHardCaseHasFields] = useState(false)
   const [paymentLoading, setPaymentLoading] = useState(false)
   // Owner mode: the site owner can run every product without payment (server
   // routes already honour the owner cookie). Checked on mount; NOT persisted.
@@ -980,25 +999,33 @@ export function TranslateWizard() {
     const meta = DOC_TYPES.find((d) => d.id === selectedDocType)
     const registryId = meta?.registryId
 
+    // Phase 2.1a: hard-case docs (birth/marriage) can opt into autoread via flag.
+    // If autoread is true, call vision-extract and surface fields for review.
+    // 0-field result → fall through to the manual path (no fields = specialist handles it).
+    const shouldCallVisionExtract = (meta?.auto || meta?.autoread) && !!registryId
+
     try {
-      if (!meta?.auto || !registryId) {
+      if (!shouldCallVisionExtract) {
         // Manual-review path: skip the API call. We still advance to review with
         // empty fields — the review screen shows an honest "manual review" notice.
         await new Promise((r) => setTimeout(r, perPage * 4 + 500))
         tickers.forEach(clearTimeout)
+        setHardCaseHasFields(false)
         setProcStep(5)
         goTo(5)
         return
       }
       const form = new FormData()
       for (const f of uploadedFiles) form.append('file', f)
-      form.append('docTypeId', registryId)
+      form.append('docTypeId', registryId!)
       const res = await fetch('/api/translation/vision-extract', { method: 'POST', body: form })
       tickers.forEach(clearTimeout)
       setProcStep(5)
       const json = await res.json().catch(() => ({} as { ok?: boolean; fields?: ExtractedField[]; error?: string }))
       if (!res.ok || !json?.ok) {
         setExtractionError(json?.error ?? `HTTP ${res.status}`)
+        // For hard-case autoread: a read failure falls through to manual path (no review gate).
+        setHardCaseHasFields(false)
         goTo(5)
         return
       }
@@ -1015,10 +1042,15 @@ export function TranslateWizard() {
             .filter((f) => f.value || (f as any).review_required)
         : []
       setExtractedFields(fields)
+      // Phase 2.1a: if we called vision-extract for a hard-case doc (autoread=true,
+      // auto=false) AND got back >0 fields → enforce the review gate.
+      // 0 fields → treat as manual (no gate; specialist handles it).
+      setHardCaseHasFields(!meta?.auto && !!meta?.autoread && fields.length > 0)
       goTo(5)
     } catch (e: unknown) {
       tickers.forEach(clearTimeout)
       setExtractionError(e instanceof Error ? e.message : 'Network error')
+      setHardCaseHasFields(false)
       setProcStep(5)
       goTo(5)
     }
@@ -1059,7 +1091,10 @@ export function TranslateWizard() {
   }, [])
 
   const currentDocMeta = DOC_TYPES.find((d) => d.id === selectedDocType) ?? null
-  const unresolvedReviewFields = currentDocMeta?.auto
+  // Phase 2.1a: review gate is enforced for auto docs (passport/id) AND for hard-case
+  // docs when autoread returned >0 fields. Pure manual path (flag OFF or 0 fields) → no gate.
+  const needsReviewGate = currentDocMeta?.auto || hardCaseHasFields
+  const unresolvedReviewFields = needsReviewGate
     ? getUnresolvedReviewFields(
         extractedFields.map((f) => ({
           field: f.field,
@@ -1070,7 +1105,7 @@ export function TranslateWizard() {
     : []
   const hasUnresolvedReviewFields = unresolvedReviewFields.length > 0
   const canProceedToCertifiedOutput =
-    !currentDocMeta?.auto || (extractedFields.length > 0 && !hasUnresolvedReviewFields)
+    !needsReviewGate || (extractedFields.length > 0 && !hasUnresolvedReviewFields)
 
   // ── Real Stripe checkout (replaces prototype's simulatePayment) ──
   const handlePayment = useCallback(async () => {
@@ -1269,6 +1304,7 @@ export function TranslateWizard() {
     setPreviewUrls([])
     setExtractedFields([])
     setExtractionError(null)
+    setHardCaseHasFields(false)
     setCertifierAddress('')
     setDataReviewed(false)
     setAccuracyAttested(false)
@@ -1409,12 +1445,23 @@ export function TranslateWizard() {
               </button>
             ))}
           </div>
-          {selectedDocType && !DOC_TYPES.find((d) => d.id === selectedDocType)?.auto && (
-            <div className="tw-reassurance" style={{ marginTop: 16 }}>
-              <div className="tw-reassurance-icon">👨‍💼</div>
-              <div className="tw-reassurance-text">{t.s2_manual_note}</div>
-            </div>
-          )}
+          {selectedDocType && (() => {
+            const m = DOC_TYPES.find((d) => d.id === selectedDocType)
+            if (!m || m.auto) return null
+            // Phase 2.1a: hard-case autoread shows a different notice (AI tries, confirm required)
+            if (m.autoread) return (
+              <div className="tw-reassurance" style={{ marginTop: 16, borderColor: 'rgba(201,168,76,0.3)', background: 'rgba(201,168,76,0.08)' }}>
+                <div className="tw-reassurance-icon">🔍</div>
+                <div className="tw-reassurance-text" style={{ color: 'var(--gold-light)' }}>{t.s2_hard_case_note}</div>
+              </div>
+            )
+            return (
+              <div className="tw-reassurance" style={{ marginTop: 16 }}>
+                <div className="tw-reassurance-icon">👨‍💼</div>
+                <div className="tw-reassurance-text">{t.s2_manual_note}</div>
+              </div>
+            )
+          })()}
           <div style={{ marginTop: 20 }}>
             <button className="tw-btn-primary" disabled={!selectedDocType} onClick={() => goTo(3)}>{t.next}</button>
           </div>
