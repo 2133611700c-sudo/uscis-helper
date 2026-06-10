@@ -1,4 +1,8 @@
-# STATUS (2026-06-09 — REBUILD: ONE Gemini brain (ADR-017); Phases 2.2–2.6 DONE)
+# STATUS (2026-06-10 — Phase 2 split merged to main; PR-F timeouts; awaiting owner model flip)
+## PR-F DONE (2026-06-10, CODE — Core read timeouts raised for pro-model)
+- readDocument `timeoutMs` 20s→40s in all 4 product routes; reparole/EAD `maxDuration` 30→60.
+- Reason: PR104 audit timeout_status CONFLICT — pro observed 28s, 20s cap silently degraded pro→flash.
+- Unblocks owner action: flip prod `GEMINI_MODEL` → `gemini-3.1-pro-preview` (clean value, no \n).
 
 ## Phase 2.2–2.6 DONE (2026-06-09, CODE — All One-Core flag gates removed, GPT deleted)
 - **Phase 2.2:** TPS OCR (`apps/web/src/app/api/tps/ocr/extract/route.ts`) — `ONE_BRAIN_CORE_ENABLED` flag gate removed. Core B1 is now the unconditional default for UA identity docs.
