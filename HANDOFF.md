@@ -1,4 +1,5 @@
 # HANDOFF (2026-06-10 — P0-A guard reverted to SHADOW; enforce is an owner env-flip)
+> 2026-06-10: FIXED the real reason ensemble never fired — it was in the legacy branch; the Core path returns early (ok:core-b2). Extracted runDateEnsemble helper, wired into BOTH paths. Re-deploy+smoke with date_ensemble diag.
 > 2026-06-10: added date_ensemble diagnostics to response to debug live (boxes/crops/chars). TEMPORARY — remove after fixed.
 > 2026-06-10: ensemble extractor day now optional (Vision crop OCR drops the day → month+year alone surfaces the month disagreement). Re-deploy+smoke.
 > 2026-06-10: relaxed ensemble anchor — surface ANY date difference on the cropped region (handwritten engines often share no component). Re-deploy+smoke.
