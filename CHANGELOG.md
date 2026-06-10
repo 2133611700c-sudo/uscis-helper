@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-10 (PASS_PROD_MODEL_SMOKE: prod model flipped to gemini-3.1-pro-preview, env-only, agent)
+- **No code change.** Prod env-only operation.
+- Removed dirty `GEMINI_MODEL="gemini-2.5-flash\n"` (embedded literal `\n` made flash the effective prod model since Phase 1).
+- Set clean `GEMINI_MODEL=gemini-3.1-pro-preview` via `printf | vercel env add` (no trailing newline).
+- Redeploy: Vercel build OK, SHA `203b572`, aliased `messenginfo.com`. Healthz OK.
+- Live smoke confirmed: `POST /api/translation/vision-extract` (1×1 PNG, no PII) → `model: gemini-3.1-pro-preview`, 4554ms, no fallback.
+- Result: `PASS_PROD_MODEL_SMOKE`. Phase 3 UNBLOCKED.
+- Report: `docs/reports/PROD_GEMINI_MODEL_FLIP_SMOKE_2026-06-10.md`
+
 ## 2026-06-10 (Phase 2 split EXECUTED: PRs #104-#109 all merged, docs, agent)
 - Sequential split-merge per PR104 audit OPTION B: #104 (1.3) -> #105 (2.0) -> #106 (2.1a) -> #107 (2.1) -> #108 (2.2-2.6 two-part label) -> #109 (PR-F timeouts). Green checks before every merge.
 - Added docs/reports/PR104_PHASE2_INTEGRATION_AUDIT.md to main (was local-only) + execution outcome appended.
