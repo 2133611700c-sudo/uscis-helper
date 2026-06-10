@@ -24,6 +24,10 @@ create index if not exists idx_guard_block_events_gate_created
 alter table public.guard_block_events enable row level security;
 -- service_role only by design (no client policy; INFO advisor rls_enabled_no_policy is expected).
 
+-- COMMENT verbatim from prod (parity).
+comment on table public.guard_block_events is
+  'PII-free observability events for guard blocks. would_block=true counts even when flag OFF (shadow baseline).';
+
 -- Alert-escalation state on the manual-review queue (L1 escalation timer suppression).
 alter table public.manual_review_queue
   add column if not exists last_alert_stage text,      -- 'created' | 'second_alert' | 'third_channel'
