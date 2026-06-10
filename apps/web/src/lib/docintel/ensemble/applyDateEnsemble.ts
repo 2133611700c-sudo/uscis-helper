@@ -86,10 +86,13 @@ export function applyDateEnsemble<T extends EnsembleField>(
       { source: 'gemini', text: primaryText },
       { source: secondSource, text: best.text },
     ])
-    // Only act on a real conflict where the two share a year anchor (same date),
-    // so an unrelated date elsewhere on the page can't trigger a false flag.
-    const sharesYear = parseDateText(best.text).year != null && parseDateText(best.text).year === primary.year
-    if (!rec.agree && sharesYear && rec.reasonCodes.length > 0) {
+    // The second engine read the SAME region (we crop the date area), so any
+    // difference is a real signal — surface it. On handwritten dates the engines
+    // often disagree with NO shared component (Gemini gets the year, Vision the
+    // month/day) — requiring a shared anchor wrongly suppressed exactly that case.
+    const bestParsed = parseDateText(best.text)
+    const secondIsComplete = bestParsed.day != null || bestParsed.month != null
+    if (!rec.agree && secondIsComplete) {
       disagreements.push(f.field)
       return {
         ...f,
