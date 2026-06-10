@@ -25,6 +25,7 @@ import { buildAttestationRecord } from '@/lib/translation/attestation'
 import { persistCertification } from '@/lib/translation/persistCertification'
 import { applyCertifierOverrides, type FieldWithMaybeOverride } from '@/lib/documentSafety/certifierOverrideApply'
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
+import { postPaymentFailure } from '@/lib/documentSafety/paymentFailureRouteAdapter'
 
 export const dynamic = 'force-dynamic'
 
@@ -205,6 +206,11 @@ export async function POST(req: NextRequest) {
       }))
       if (!enforce) continue // shadow: measured, but do NOT alter output
       if (critical) {
+        // L1 A-full (REFUND_AUTOTICKET_ENABLED, default OFF): this 422 is POST-payment →
+        // send the correction acknowledgment (422 = user-input, user must fix in D5). Best-effort.
+        await postPaymentFailure('user_input_invalid', {
+          sessionId: payload.session_id ?? 'legacy', email: payload.profile?.email ?? null, docType: payload.doc_type ?? null,
+        })
         return NextResponse.json(
           // PII rule: field NAME only — the rejected value is NEVER echoed.
           { ok: false, error: 'unprocessable_field', gate: 'confirmed_value_guard', field: f.field, reason: verdict.reason },
@@ -234,6 +240,10 @@ export async function POST(req: NextRequest) {
       })),
     )
     if (unresolved) {
+      // L1 A-full: POST-payment guard block → review-flow + owner alert (best-effort, OFF by default).
+      await postPaymentFailure('guard_block', {
+        sessionId: payload.session_id ?? 'legacy', email: payload.profile?.email ?? null, docType: payload.doc_type ?? null,
+      })
       return NextResponse.json(
         { ok: false, error: 'review_required', gate: 'ocr_field_safety', reason: 'unresolved_critical_field' },
         { status: 403 },
@@ -363,6 +373,11 @@ export async function POST(req: NextRequest) {
       auditErr: persist.auditErr,
       attestation,
     }))
+    // L1 A-full: POST-payment infra failure → auto-retry-class ack + owner alert EVERY case
+    // (it's an infra bug to investigate). Best-effort, OFF by default.
+    await postPaymentFailure('backend_persist_failure', {
+      sessionId: session_id ?? 'legacy', email: profile.email || null, docType: payload.doc_type ?? null,
+    })
     return NextResponse.json(
       {
         ok: false,
@@ -407,6 +422,12 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('[generate-pdf] Email failed:', err)
+    // L1 A-full: delivery failure → "check spam / we'll auto-resend" ack, NO refund.
+    // Best-effort, OFF by default. (Itself sent via the same Resend — if that's the
+    // outage, it no-ops gracefully; resend retry logic is a later item.)
+    await postPaymentFailure('delivery_failure', {
+      sessionId: session_id ?? 'legacy', email: profile.email || null, docType: payload.doc_type ?? null,
+    })
   }
 
   // Return PDF directly if generated
