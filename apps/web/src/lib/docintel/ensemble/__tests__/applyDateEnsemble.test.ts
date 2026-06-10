@@ -62,9 +62,17 @@ describe('applyDateEnsemble — cross-engine date conflict', () => {
     expect(name.review_required).toBe(false)
   })
 
-  it('an unrelated date on the page (different year) does not false-flag', () => {
-    // Vision sees only a 2010 date; the dob is 1990 → no shared-year anchor → no flag.
-    const out = applyDateEnsemble(fields, 'якась інша дата 02 березня 2010')
+  it('different year still surfaces (the real handwritten case: Vision gets month, Gemini gets year)', () => {
+    // We crop the DATE region, so the second engine reads THIS date — a difference
+    // with no shared component (e.g. Vision misreads the year but reads the month)
+    // must still surface, not be suppressed.
+    const out = applyDateEnsemble(fields, 'родился 14 июня 1996')
+    expect(out.disagreements).toContain('dob')
+    expect(out.fields.find((f) => f.field === 'dob')!.ensemble_candidate).toBe('14 июня 1996')
+  })
+
+  it('no second-engine date at all → no flag (nothing to compare)', () => {
+    const out = applyDateEnsemble(fields, 'no date here, just words and a stamp')
     expect(out.disagreements).toEqual([])
   })
 

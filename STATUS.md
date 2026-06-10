@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- FIX: ensemble required shared-year anchor → suppressed the real case (Gemini gets year, Vision gets month, no shared component). Relaxed: any date diff on the cropped region surfaces.
 - FIX: Gemini bbox returned malformed JSON → boxes empty → ensemble fell back to garbled full-page Vision. Now requests ARRAY boxes + salvages malformed JSON.
 - Ensemble now reads date REGIONS zoomed (Vision garbles month on full page, reads it on crop — prod proof). dateRegionRead wired. Live in prod. Re-smoke pending.
 - FIX: ensemble date-field detection by NAME (FieldOut.kind is source not type, silenced it). ENSEMBLE_DATE_ENABLED=1 LIVE in prod. Re-smoke pending.
