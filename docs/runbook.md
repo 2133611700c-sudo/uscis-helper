@@ -42,6 +42,16 @@ switch is needed routinely, add `NEXT_PUBLIC_TPS_DISABLED=1` env var
 and gate the TPS routes/components in a single commit — but until that
 ships, the runbook path is rollback.
 
+### Per-feature rollback handles (each new safety/UX layer has one)
+
+| Layer | Commit | Rollback handle | Effect of rollback |
+|---|---|---|---|
+| Source-script gate (ambiguous name → review) | 8cc7c72 | `vercel env rm RU_TRANSLIT_ENABLED production` + redeploy | Reverts to legacy KMU-55-for-all (no ambiguity review, no RU romanization). Env flip, no code revert. |
+| Geo gazetteer → КАТОТТГ (458) | 02871f5 | `git revert 02871f5 && git push` | Restores the 60-item seed. NOTE: currently INERT in prod — snapCity fires only behind `SMART_NORMALIZE_ENABLED` (OFF). |
+| Mirror translation PDF | 892d404 | `vercel env rm MIRROR_PDF_ENABLED production` + redeploy | Clients get the generic certification PDF for all doc types. Env flip, no code revert. |
+
+These are env-flip-first by design: only the gazetteer needs a code revert, and it is currently inert in prod anyway.
+
 ### Known good commits (update on each ship)
 
 - `bdddaf0` — CB.1 privacy fixes (cleanup cron + Clear-data button)

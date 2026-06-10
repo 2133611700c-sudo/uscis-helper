@@ -1,7 +1,19 @@
 # Mirror Translation Architecture — English mirror of a Ukrainian official document
 
 Date: 2026-06-10
-Status: BUILT, wired behind `MIRROR_PDF_ENABLED` (default OFF). Owner reviews a sample, then flips.
+Status: ENABLED in prod (`MIRROR_PDF_ENABLED=1`, commit 892d404). Route is fail-open: any mirror-render error falls back to the generic certification PDF. Visual layout/font/stamp-position review on a synthetic doc still PENDING owner sign-off (text content verified by extraction; visual not).
+
+## SEMANTIC CLASSIFICATION (read before relying on this)
+
+**The Mirror PDF is an ADVISORY TRANSPARENCY / UX layer — NOT a validation control.**
+It renders, line-by-line, whatever the extraction produced (marking uncertain →
+`[CONFIRM]`, missing → `[enter from document]`, never inventing). It does NOT
+verify, gate, or guarantee correctness, and the route deliberately fails open to
+the generic PDF — so it is OUTSIDE the safety chain. All safety guarantees live in:
+`confirmedValueGuard` + the source-script gate (`isNameSourceScriptAmbiguous`) +
+the C3 `finalValue` contract (`applyOcrFieldSafety`). Do NOT reason "we have the
+mirror, so the value is validated" — that is a semantic-drift error. The mirror
+shows the read; the guards decide what may be released.
 
 ## Goal
 
