@@ -1,4 +1,18 @@
-# HANDOFF (2026-06-09 — Phase 3 DONE: CanonicalField.finalValue + C3 as only writer)
+# HANDOFF (2026-06-10 — PR cleanup: canary docs applied, stale PRs closed)
+
+## What was done this session
+1. Applied OCR field safety canary docs (PRs #100, #101, #102) directly to main — PRs had conflicts in CHANGELOG/HANDOFF/STATUS only; unique report files extracted and committed.
+2. Closed superseded PRs #25, #43, #44, #45, #46, #47, #66, #92, #93 with "Superseded" comment.
+3. PR #103 (zero-trust audit) evaluated — closed as superseded by current STATUS.md + audit reports.
+
+## What was NOT done
+- PRs #100, #101, #102 not merged via GitHub UI (conflict in shared state files); content applied via direct commit.
+
+## Next task
+- Phase 3 follow-up per previous HANDOFF.
+
+---
+# Previous HANDOFF (2026-06-09 — Phase 3 DONE: CanonicalField.finalValue + C3 as only writer)
 
 ## What was done this session
 1. Added `finalValue?: string | null` to `CanonicalField` in `canonical/types.ts` — full ADR-017 C3 contract comment included.
