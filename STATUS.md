@@ -1,4 +1,4 @@
-# STATUS (2026-06-09 — Phase 3 DONE: CanonicalField.finalValue + C3 as only writer)
+# STATUS (2026-06-10 — PR cleanup done; Phase 3 DONE: CanonicalField.finalValue + C3 as only writer)
 
 ## Phase 3 DONE (2026-06-09, CODE — CanonicalField.finalValue + C3 as only writer)
 - **finalValue added to CanonicalField** (`apps/web/src/lib/canonical/types.ts`): `undefined` = C3 not run, `null` = rejected, `string` = accepted.

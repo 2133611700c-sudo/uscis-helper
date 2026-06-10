@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-10 (docs: OCR field safety canary full record applied to main, docs-only, agent)
+- Added 3 canary report files from PRs #100, #101, #102 (squashed; shared state files already on main).
+- `docs/reports/OCR_FIELD_SAFETY_CANARY_RESULT_AFTER_502_FIX.md` — canary re-run after 502 fix, DEGRADED-clean result.
+- `docs/reports/OCR_FIELD_SAFETY_OWNER_PROOF_RESULT.md` — owner proof run result.
+- `docs/reports/OCR_FIELD_SAFETY_FINAL_OWNER_PROOF.md` — canary closeout, precautionary rollback to OFF.
+- PRs #100, #101, #102 closed after content applied.
+
 ## 2026-06-09 (Phase 3: CanonicalField.finalValue + C3 as only writer, CODE, agent)
 - `apps/web/src/lib/canonical/types.ts`: added `finalValue?: string | null` to `CanonicalField` — 3-state contract: `undefined`=C3 not run, `null`=rejected, `string`=accepted (ADR-017 §C3).
 - `apps/web/src/lib/documentSafety/applyOcrFieldSafety.ts`: added `finalValue` to `SafeField` interface; C3 accept path writes `finalValue=string`, reject/block path writes `finalValue=null`.
