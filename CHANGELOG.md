@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-09 (zero-trust recognition state audit — docs-only, agent)
+- independent verification (no trust of STATUS/HANDOFF): prod==origin/main==03eb30f, healthz ok; flags via vercel env ls — OCR_FIELD_SAFETY/SMART/QUALITY ABSENT(OFF), ANTI_FAB/SELF_CONS/DOC_CLASS_METRICS/ONE_BRAIN_CORE present (values UNVERIFIED by ls); tsc 0; full suite 2919 passed/4 skipped; documentSafety 38; HEAD vs origin/main = docs-only diff (tested code == prod code).
+- PRs: #94–#99 MERGED, #100/#101/#102 OPEN (canary closeout trail not landed on main). Local main STALE (0d3d82b).
+- DEGRADED finding: ALL scheduled GitHub Actions on main = startup_failure (06-08→06-09) → automated prod monitoring NOT running (root cause UNVERIFIED; gh reports generic workflow-file issue, empty workflow name). temp prod-safety-monitor.yml overdue for deletion.
+- canary = CLOSED_DEGRADED (flag OFF); candidate≠final proven LOCAL only (06-09); real/TPS/payment-PDF owner proofs NOT done → not PASS_CANARY_FULL. brain matrix: guard CODE_READY_FLAG_OFF x4; D0 CODE_READY_FLAG_OFF; canonical/core arbitration LIVE_UNVERIFIED; OneBrain decideField PARKED; ReaderResult NOT_BUILT; HTR PARKED.
+- no prod env/flag change; no code change; no PII; qa-private untouched. RESULT=DEGRADED. report: docs/reports/ZERO_TRUST_RECOGNITION_STATE_AUDIT.md.
+
 ## 2026-06-06 (P0 vision-extract 502 triage + fix, agent)
 - runtime proof (preview deploy of fix branch): ead no-fields probe → HTTP 200 {ok:false,status:unknown_document_type,review_required:true} (identical request = 502 on prod); blank ua_birth_certificate → 200 all fields value:null+review_required (no 502, no fabrication). PR #99.
 - root cause: /api/translation/vision-extract returned HTTP 502 on every zero-field read — final return was `status: ok ? 200 : 502`. Proved by hitting the Vercel origin directly (bypassing Cloudflare): full valid JSON body returned WITH status 502, server=Vercel, x-vercel-id present, no crash, safety gate ran. Through Cloudflare the body was masked as bare "error code: 502". 502 in ~0.5-1.3s ⇒ not a timeout (maxDuration=60). This is the original "translator 0 results" incident; affects real hard-case docs that read 0 fields.
