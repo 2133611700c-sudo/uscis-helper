@@ -26,6 +26,7 @@ import { persistCertification } from '@/lib/translation/persistCertification'
 import { applyCertifierOverrides, type FieldWithMaybeOverride } from '@/lib/documentSafety/certifierOverrideApply'
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 import { postPaymentFailure } from '@/lib/documentSafety/paymentFailureRouteAdapter'
+import { recordGuardBlock } from '@/lib/documentSafety/recordGuardBlock'
 
 export const dynamic = 'force-dynamic'
 
@@ -204,6 +205,9 @@ export async function POST(req: NextRequest) {
       console.warn(`[confirmed_value_guard] ${enforce ? 'block' : 'would_block'}`, JSON.stringify({
         field: f.field, criticality, reason: verdict.reason, doc_type: payload.doc_type ?? null,
       }))
+      // L1 baseline (GUARD_BLOCK_METRICS_ENABLED, default OFF): count would-be/actual
+      // blocks PII-free so the rate threshold can be calibrated. Records in shadow too.
+      await recordGuardBlock({ gate: 'confirmed_value_guard', failureType: 'user_input_invalid', docType: payload.doc_type ?? null, sessionId: payload.session_id ?? null })
       if (!enforce) continue // shadow: measured, but do NOT alter output
       if (critical) {
         // L1 A-full (REFUND_AUTOTICKET_ENABLED, default OFF): this 422 is POST-payment →
@@ -240,6 +244,7 @@ export async function POST(req: NextRequest) {
       })),
     )
     if (unresolved) {
+      await recordGuardBlock({ gate: 'ocr_field_safety', failureType: 'guard_block', docType: payload.doc_type ?? null, sessionId: payload.session_id ?? null })
       // L1 A-full: POST-payment guard block → review-flow + owner alert (best-effort, OFF by default).
       await postPaymentFailure('guard_block', {
         sessionId: payload.session_id ?? 'legacy', email: payload.profile?.email ?? null, docType: payload.doc_type ?? null,
