@@ -6,7 +6,17 @@
  */
 import { describe, it, expect } from 'vitest'
 import { extractDateCandidatesFromText } from '../dateReconcile'
-import { applyDateEnsemble, type EnsembleField } from '../applyDateEnsemble'
+import { applyDateEnsemble, isDateFieldName, type EnsembleField } from '../applyDateEnsemble'
+
+describe('isDateFieldName — detect by NAME (live kind is the source, not the type)', () => {
+  it('detects date fields regardless of kind (the silenced-ensemble bug)', () => {
+    expect(isDateFieldName('dob', 'ai_vision')).toBe(true)
+    expect(isDateFieldName('date_of_issue', 'ai_vision')).toBe(true)
+    expect(isDateFieldName('date_of_marriage', 'ai_vision')).toBe(true)
+    expect(isDateFieldName('child_family_name', 'ai_vision')).toBe(false)
+    expect(isDateFieldName('issuing_authority', 'ai_vision')).toBe(false)
+  })
+})
 
 describe('extractDateCandidatesFromText', () => {
   it('pulls Ukrainian/Russian word-month dates and ISO from OCR noise', () => {
