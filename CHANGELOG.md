@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: review UI surfaces ensemble second-reading on date conflict, CODE, agent)
+- TranslateWizard: ExtractedField carries ensemble_candidate + review_reasons; review screen shows the second engine's date reading ('Second reading (Google Vision): X — please verify') under the English value when Gemini & Vision disagreed. i18n keys added (RU/EN).
+- Completes the user-facing half of the handwritten-date ensemble: when flag ON, the human sees Vision's (correct) month next to Gemini's, and confirms. tsc 0; 3057 passed; content-guard 0.
+- Still OFF until owner rotates Vision key + confirms prod SA + flips ENSEMBLE_DATE_ENABLED.
+
 ## 2026-06-10 (feat: WIRE handwritten-date ensemble into translation route, CODE, agent)
 - `docintel/ensemble/dateReconcile.ts`: added extractDateCandidatesFromText (pull dates from OCR full-text).
 - NEW `docintel/ensemble/applyDateEnsemble.ts`: field-level cross-engine date check — reconciles each date field vs the 2nd engine's readings; disagreement (shared-year anchor) → force review + reason `date_ensemble_disagreement` + attach `ensemble_candidate`; never overwrites, never lowers review. +7 tests.

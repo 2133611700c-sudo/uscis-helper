@@ -72,6 +72,9 @@ interface ExtractedField {
   confidence: number
   kind: string
   review_required?: boolean
+  /** ENSEMBLE_DATE: a second engine's reading of this date when the two disagree. */
+  ensemble_candidate?: string | null
+  review_reasons?: string[]
 }
 
 interface DraftState {
@@ -151,6 +154,8 @@ const T = {
     s5_mismatch: 'Данные не совпадают?',
     s5_reupload: 'Загрузить другое фото',
     s5_review_needed: 'Требует проверки',
+    s5_second_reading: 'Второе прочтение (Google Vision)',
+    s5_second_reading_verify: 'сверьте дату',
     s5_review_block: 'Есть поля, которые нужно проверить вручную. Исправьте или подтвердите каждое отмеченное поле перед оплатой.',
     s5_sample_badge: '📄 ОБРАЗЕЦ ПЕРЕВОДА',
     s5_cert_intro: 'I, the undersigned, hereby certify that I am competent in Ukrainian and English languages, and that the above is a true and accurate translation of the Ukrainian document.',
@@ -270,6 +275,8 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s5_mismatch: 'Data does not match?',
     s5_reupload: 'Upload a different photo',
     s5_review_needed: 'Needs review',
+    s5_second_reading: 'Second reading (Google Vision)',
+    s5_second_reading_verify: 'please verify the date',
     s5_review_block: 'Some OCR fields still require human review. Edit or confirm each flagged field before payment.',
     s5_sample_badge: '📄 SAMPLE TRANSLATION',
     s5_cta: 'Pay and get PDF — $14.99 →',
@@ -1347,6 +1354,8 @@ export function TranslateWizard() {
           current_eng: f.value ?? '',
           kind: f.kind,
           requiresReview: Boolean(f.review_required),
+          // ENSEMBLE_DATE: second engine's reading when the two disagreed on a date.
+          ensembleCandidate: f.ensemble_candidate ?? null,
         }))
     }
     return [] // empty → review screen renders the manual-review notice
@@ -1640,6 +1649,14 @@ export function TranslateWizard() {
                           {isEdited && <span className="corrected-badge">{t.s5_corrected}</span>}
                           {row.requiresReview && <span className="corrected-badge" style={{ background: 'rgba(201,168,76,0.18)', color: 'var(--gold-light)' }}>{t.s5_review_needed}</span>}
                         </div>
+                        {row.ensembleCandidate && (
+                          <div
+                            className="tw-trans-ensemble"
+                            style={{ fontSize: 12, color: 'var(--gold-light)', marginTop: 4, lineHeight: 1.4 }}
+                          >
+                            {t.s5_second_reading}: <b>{row.ensembleCandidate}</b> — {t.s5_second_reading_verify}
+                          </div>
+                        )}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <button
