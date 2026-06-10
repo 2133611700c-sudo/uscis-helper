@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- Ensemble now reads date REGIONS zoomed (Vision garbles month on full page, reads it on crop — prod proof). dateRegionRead wired. Live in prod. Re-smoke pending.
 - FIX: ensemble date-field detection by NAME (FieldOut.kind is source not type, silenced it). ENSEMBLE_DATE_ENABLED=1 LIVE in prod. Re-smoke pending.
 - Review UI now surfaces the ensemble second-reading on a date conflict (Gemini+Vision both shown, human picks). Handwritten-date ensemble is end-to-end (backend+UI) behind ENSEMBLE_DATE_ENABLED=OFF. Remaining: owner rotate key + flip; optional date-crop booster.
 - WIRED handwritten-date ensemble into translation route (ENSEMBLE_DATE_ENABLED, default OFF): Gemini+Vision 2nd-read, date disagreement→review+candidate. +7 tests (3057). Remaining: review UI surfacing + date-crop; OWNER rotate Vision key + flip flag.
