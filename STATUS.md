@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- PROVEN WALL: Gemini cannot read this handwritten month (липень/травень never червень, 3 prompts) NOR localize the date line (39% box). Auto-reading handwritten dates needs Vision-tuning (key rotation) or Transkribus HTR (owner creds). Names work; dates stay human-reviewed.
 - STOP: ensemble flag turned OFF in prod (full-width band timed out; tight crop garbled month). Infra complete+tested+observable but Vision-reads-month not reliable on auto-crops. Dates already review-gated (safety intact). Crop bounded to avoid timeout.
 - TUNING: tight bbox clipped the handwritten month (Vision: year ok, month garbled). Now crop FULL-WIDTH horizontal band at the date line. One targeted attempt.
 - DEBUG2: ensemble runs (3 boxes/3 crops/375 chars) but extracts 0 dates. Added month_hits/year_hits/cands diag to see if Vision garbles the month on crops.
