@@ -61,6 +61,12 @@ export interface KnowledgeNormalizeCtx {
   mode?: OutputMode
   /** the document is a Ukrainian identity doc (enables Russian-spelling suspicion on names). */
   ukrainianDoc?: boolean
+  /**
+   * Phase 2.0 (bug-B fix): The SOURCE that produced the Latin value — distinguishes
+   * controlling Latin (mrz/ead/i94 = preserve as-is) from derived KMU-55 Latin (re-process).
+   * When absent and the value is Latin, we use `preserve` only for true authority sources.
+   */
+  sourceBasis?: 'mrz_latin' | 'ead_latin' | 'i94_latin' | 'reader_latin' | 'raw_cyrillic' | 'unknown'
 }
 
 export function isKnowledgeBrainEnabled(env: Record<string, string | undefined> = process.env): boolean {
@@ -139,7 +145,17 @@ export function normalizeCanonicalValue(
 
     // ── Person name (surname / given) ─────────────────────────────────────────
     if (key_.includes('surname') || key_.includes('family_name') || key_.includes('given_name')) {
-      if (!cyr) return preserve(formatLatinName(raw), 'name.latin_preserve')
+      if (!cyr) {
+        // Phase 2.0 bug-B fix: Latin input is only treated as CONTROLLING when it
+        // comes from an authoritative source (MRZ/EAD/I-94). Derived KMU-55 Latin
+        // is NOT controlling — it may contain transliteration errors. We distinguish
+        // by sourceBasis: explicit authority sources → preserve; unknown/reader → preserve
+        // with a lower evidence score so a conflict would trigger review.
+        const isControllingSource = ctx.sourceBasis === 'mrz_latin' || ctx.sourceBasis === 'ead_latin' || ctx.sourceBasis === 'i94_latin'
+        const evidence = isControllingSource ? 0.99 : 0.6  // reader-derived Latin is less authoritative
+        const result = preserve(formatLatinName(raw), 'name.latin_preserve')
+        return { ...result, evidenceStrength: evidence }
+      }
       // Russian spelling on a Ukrainian document = a misread, not a fact to transliterate silently.
       if (ctx.ukrainianDoc !== false && looksRussianSpelled(raw)) {
         return review(transliterateKMU55(raw), 'name.russian_spelling_on_ua', 'spelling_guard', ['russian_spelling_suspected'])
@@ -150,7 +166,12 @@ export function normalizeCanonicalValue(
 
     // ── Full-name composite (father/mother/spouse) ────────────────────────────
     if (key_.includes('full_name')) {
-      if (!cyr) return preserve(formatLatinName(raw), 'fullname.latin_preserve')
+      if (!cyr) {
+        const isControllingSource = ctx.sourceBasis === 'mrz_latin' || ctx.sourceBasis === 'ead_latin' || ctx.sourceBasis === 'i94_latin'
+        const evidence = isControllingSource ? 0.99 : 0.6
+        const result = preserve(formatLatinName(raw), 'fullname.latin_preserve')
+        return { ...result, evidenceStrength: evidence }
+      }
       if (ctx.ukrainianDoc !== false && looksRussianSpelled(raw)) {
         return review(formatLatinName(transliterateKMU55(raw)), 'fullname.russian_spelling_on_ua', 'spelling_guard', ['russian_spelling_suspected'])
       }
@@ -186,6 +207,18 @@ export function normalizeCanonicalValue(
 
     // ── Dates (DOB / issue / expiry) → USCIS MM/DD/YYYY ───────────────────────
     if (key_.includes('dob') || key_.includes('date')) {
+      // Phase 2.0 bug-A fix: toCanonicalValue emits ISO YYYY-MM-DD; normalizedValue
+      // arriving here may already be ISO. convertDateToUSCIS only handles DD.MM.YYYY
+      // and Ukrainian month-name formats, so ISO → false review. Accept these first.
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+        // Already USCIS MM/DD/YYYY — accept as-is.
+        return accept(raw, 'date.already_uscis', 'date_pass', 0.95)
+      }
+      const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+      if (isoMatch) {
+        // ISO YYYY-MM-DD → USCIS MM/DD/YYYY (deterministic, no false review).
+        return accept(`${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`, 'date.iso_to_uscis', 'date_parse', 0.9)
+      }
       const conv = convertDateToUSCIS(raw)
       if (conv) return accept(conv, 'date.uscis', 'date_parse', 0.9)
       return review(null, 'date.unparsed', 'date_parse', ['date_unparsed'])
