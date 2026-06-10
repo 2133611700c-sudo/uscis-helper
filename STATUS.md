@@ -1,3 +1,12 @@
+# STATUS (2026-06-10 — payment ordering bug FIXED in generate-pdf/route.ts)
+
+## Payment ordering bug FIXED (2026-06-10)
+- **Bug:** Stripe charge (402) fired before review gate (403) — user could be charged for blocked PDF.
+- **Fix:** Pre-payment 400 `fields_require_review` check inserted before Stripe block in `generate-pdf/route.ts`.
+- **Applies to:** all users (owner included — certification is legal not financial).
+- **tsc:** 0 errors. Tests: 2992 passed | 4 skipped | 0 failed.
+- **Prod:** deployed via Vercel on push to main.
+
 # STATUS (2026-06-10 — PR cleanup done; Phase 3 DONE: CanonicalField.finalValue + C3 as only writer)
 
 ## Phase 3 DONE (2026-06-09, CODE — CanonicalField.finalValue + C3 as only writer)
