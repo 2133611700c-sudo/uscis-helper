@@ -91,36 +91,50 @@ export function transliterateKMU55(input: string): string {
   return isAllCaps ? output.toUpperCase() : output;
 }
 
-// ── Russian as-written romanization ─────────────────────────────────────────
-// A Soviet/bilingual document line written in RUSSIAN must be transliterated with
-// a RUSSIAN system, NOT KMU-55 (which is for Ukrainian and would turn г→h, и→y).
-// This matches the project's required outputs (owner-approved examples):
-//   Сергей→Sergey · Сергеевич→Sergeevich · Леонидович→Leonidovich
-//   Наталья→Natalia · Степановна→Stepanovna
-// Key choices: г→g, и→i, й→y, е→e, я→ia, ю→iu, ё→e, ъ/ь→omit. (Owner may swap the
-// standard later; the routing — Russian script → Russian system — is what matters.)
-const RU_MAP: Record<string, string> = {
-  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+// ── Russian as-written romanization — BGN/PCGN (owner-approved 2026-06-10) ────
+// A Soviet/bilingual line written in RUSSIAN uses BGN/PCGN simplified Russian, NOT
+// KMU-55 (Ukrainian, which would give г→h, и→y). Required outputs:
+//   Сергей→Sergey · Сергеевич→Sergeyevich · Леонидович→Leonidovich
+//   Наталья→Natalya · Степановна→Stepanovna · Иваненко→Ivanenko
+// BGN/PCGN rule that matters here: е/ё → "ye"/"yё" at word start, after a vowel,
+// or after ъ/ь; "e"/"ё→e" after a consonant. я→ya, ю→yu, й→y, ы→y, э→e, ъ/ь→omit.
+const RU_BASE: Record<string, string> = {
+  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
   'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
   'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
   'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
-  'ы': 'y', 'э': 'e', 'ю': 'iu', 'я': 'ia',
+  'ы': 'y', 'э': 'e', 'ю': 'yu', 'я': 'ya',
 }
 const RU_SKIP = new Set(['ъ', 'ь'])
+const RU_VOWELS = new Set(['а', 'е', 'ё', 'и', 'о', 'у', 'ы', 'э', 'ю', 'я'])
 
-/** Transliterate RUSSIAN Cyrillic to Latin (as-written, for RU lines on Soviet docs). */
+/** Transliterate RUSSIAN Cyrillic to Latin per BGN/PCGN simplified (as-written). */
 export function transliterateRussian(input: string): string {
   if (!input) return ''
   const out: string[] = []
-  for (const ch of input) {
+  const chars = [...input]
+  for (let k = 0; k < chars.length; k++) {
+    const ch = chars[k]
     const lower = ch.toLowerCase()
+    const isUpper = ch === ch.toUpperCase() && ch !== ch.toLowerCase()
+
     if (RU_SKIP.has(lower)) continue
-    const mapped = RU_MAP[lower]
+
+    // е/ё are position-dependent: "ye" at start / after vowel / after ъ,ь; else "e".
+    if (lower === 'е' || lower === 'ё') {
+      // find the previous source char (skipping ъ/ь, which we drop)
+      let j = k - 1
+      while (j >= 0 && RU_SKIP.has(chars[j].toLowerCase())) j--
+      const prev = j >= 0 ? chars[j].toLowerCase() : null
+      const yeForm = prev === null || RU_VOWELS.has(prev) || (k - 1 >= 0 && RU_SKIP.has(chars[k - 1].toLowerCase()))
+      const base = yeForm ? 'ye' : 'e'
+      out.push(isUpper ? base.charAt(0).toUpperCase() + base.slice(1) : base)
+      continue
+    }
+
+    const mapped = RU_BASE[lower]
     if (mapped === undefined) { out.push(ch); continue } // pass through non-Cyrillic
-    // Preserve case: if the source char is uppercase, capitalize the first letter.
-    out.push(ch === ch.toUpperCase() && ch !== ch.toLowerCase()
-      ? mapped.charAt(0).toUpperCase() + mapped.slice(1)
-      : mapped)
+    out.push(isUpper ? mapped.charAt(0).toUpperCase() + mapped.slice(1) : mapped)
   }
   return out.join('')
 }

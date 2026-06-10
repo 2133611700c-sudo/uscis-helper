@@ -9,18 +9,18 @@
 import { describe, it, expect } from 'vitest'
 import { transliterateKMU55, transliterateRussian, detectNameScript } from '@uscis-helper/knowledge'
 
-describe('transliterateRussian — Russian source → Russian output', () => {
+describe('transliterateRussian — BGN/PCGN simplified (owner-approved 2026-06-10)', () => {
   it('Сергей → Sergey (not Serhii)', () => {
     expect(transliterateRussian('Сергей')).toBe('Sergey')
   })
-  it('Сергеевич → Sergeevich', () => {
-    expect(transliterateRussian('Сергеевич')).toBe('Sergeevich')
+  it('Сергеевич → Sergeyevich (BGN/PCGN: е after a vowel → ye)', () => {
+    expect(transliterateRussian('Сергеевич')).toBe('Sergeyevich')
   })
   it('Леонидович → Leonidovich (not Leonidovych)', () => {
     expect(transliterateRussian('Леонидович')).toBe('Leonidovich')
   })
-  it('Наталья → Natalia', () => {
-    expect(transliterateRussian('Наталья')).toBe('Natalia')
+  it('Наталья → Natalya (BGN/PCGN: я → ya, ь omitted)', () => {
+    expect(transliterateRussian('Наталья')).toBe('Natalya')
   })
   it('Степановна → Stepanovna', () => {
     expect(transliterateRussian('Степановна')).toBe('Stepanovna')
@@ -39,6 +39,22 @@ describe('Ukrainian source still uses KMU-55 (no harmonization)', () => {
   })
   it('Леонідович → Leonidovych (not Leonidovich)', () => {
     expect(transliterateKMU55('Леонідович')).toBe('Leonidovych')
+  })
+})
+
+describe('mixed child/father lines — transliterate each as written, NEVER harmonize', () => {
+  it('Ukrainian child + Russian father → two systems, no unification (synthetic)', () => {
+    // Child line is Ukrainian, father line is Russian — a real Soviet-doc pattern.
+    const childGiven = transliterateKMU55('Сергій')        // applicant per UA doc
+    const childPatr = transliterateKMU55('Сергійович')
+    const fatherGiven = transliterateRussian('Сергей')      // parent line, as written (RU)
+    const fatherPatr = transliterateRussian('Леонидович')
+    expect(childGiven).toBe('Serhii')
+    expect(childPatr).toBe('Serhiiovych')
+    expect(fatherGiven).toBe('Sergey')
+    expect(fatherPatr).toBe('Leonidovich')
+    // the same given-name root must NOT be harmonized across the two lines
+    expect(fatherGiven).not.toBe(childGiven)
   })
 })
 
