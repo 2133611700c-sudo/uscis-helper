@@ -25,14 +25,42 @@ REUSE (mapped 2026-06-10 — do not rebuild):
 - Cron pattern: .github/workflows/federal-register-monitor.yml (scheduled → Supabase → email)
 - Tables: translation_quality_log, monitoring_alerts, manual_review_queue
 
-L1 SCOPE (owner-ruled):
-1. REFUND + auto-ticket on any post-payment block/failure.
-   - At the post-payment failure points in generate-pdf (confirmed_value_guard 422,
-     ocr_field_safety 403, persistCertification 503, email-failure), call
-     createManualReviewTicket(reason='paid_request_failed_<gate>') + notifyOwnerAlert().
-   - Behind REFUND_AUTOTICKET_ENABLED (default OFF → byte-identical) until measured.
-   - Refund EXECUTION: see owner Q below (auto stripe.refunds.create vs ticket-only+manual).
-   - Write docs/policy/REFUND_POLICY.md from the owner ruling.
+L1 SCOPE (owner-ruled A-full + per-failure-type triage):
+1. POST-PAYMENT FAILURE HANDLING — NOT a blanket refund. Each of the 4 failure types
+   gets its CORRECT response (a blanket "refund" over-refunds user-input/retry cases =
+   double loss: refund + lost conversion). Behind REFUND_AUTOTICKET_ENABLED (default OFF).
+
+   TRIAGE (owner RULED 2026-06-10):
+     confirmed_value_guard 422  (user-input issue)
+        → correction-flow (user fixes in D5); refund ONLY if user abandons.
+     ocr_field_safety 403       (guard block)
+        → review-flow + manual decision per case; refund if unresolvable after N tries.
+     persistCertification 503   (backend/infra bug)
+        → auto-retry 3x exponential backoff; refund ONLY if persistent (>3); owner-alert EVERY case.
+     email-failure (silent 200) (delivery)
+        → auto-RESEND; refund NEVER (user wants the PDF, not the money); ticket if 2nd resend fails.
+
+   ALL 4 types also get (the A-full structure — without these, A = "Telegram alert + hope"):
+     (2) Owner-alert: notifyOwnerAlert() (Telegram + email) — reuse existing.
+     (3) Customer-facing acknowledgment email (template below) — without it the user
+         thinks the payment is lost and opens a chargeback.
+     (4) Escalation timer: ticket >4h no action → 2nd owner alert; >12h → 3rd channel.
+     (5) Daily reconciliation cron (federal-register-monitor pattern): open tickets >24h → digest.
+
+   Refund EXECUTION = manual via Stripe dashboard by the owner, applied ONLY when a case
+   is explicitly classified "irrecoverable" or "user-requested". NOT auto (B rejected for now:
+   autonomous money movement is the highest-risk path; needs fail-type enum + dry-run + cap +
+   immutable audit + legal accounting review = 2-3 sessions + legal; A-full gives 80% of the
+   user benefit in 1 session). Write docs/policy/REFUND_POLICY.md from this ruling.
+
+   CUSTOMER ACKNOWLEDGMENT TEMPLATE (English, client-facing; SLA = 24h, see owner ruling):
+     "We've received your payment and your document is being finalized by our review team.
+      Most cases are completed within a few hours; we'll respond within 24 hours at the latest.
+      Your payment is secure — no action is needed from you right now."
+     SLA = 24 hours (owner business commitment): honest given owner-only transitional ops,
+     beatable (internal escalation at 4h/12h → typically resolved far sooner), competitive
+     (human-reviewed certified translation norm is 24-48h). Tighten later if a monitoring
+     cadence or a delegated certifier is added.
 2. RATE-ALERT on guard-block frequency.
    - Guard-block console logs are NOT consumed today (no log drain). Persist each block
      to a small table (pattern: translation_quality_log), then a GH-cron rate-checker
@@ -60,11 +88,10 @@ DEFINITION OF DONE:
 - tsc 0, content-guard 0, full suite green. STATUS/HANDOFF/CHANGELOG updated.
 ```
 
-## OWNER RULING NEEDED BEFORE L1 CODE (business decision — draft, don't invent)
-**Refund execution on a post-payment failure:** which path?
-- (A) **Ticket-only + manual refund** (transitional, owner refunds via Stripe dashboard) — simplest, safest, matches the owner-only-certifier transitional stance.
-- (B) **Auto `stripe.refunds.create()`** on specific deterministic failures (e.g. persist 503) — faster for the user, but auto-moving money needs guardrails (idempotency, which failures qualify).
-- Recommendation: **(A) now** (ticket + owner alert + manual refund), (B) later for narrow deterministic cases. Confirm.
+## OWNER RULINGS (RESOLVED 2026-06-10)
+- Refund execution = **A-full with per-failure-type triage** (above). NOT a blanket refund; NOT auto (B deferred).
+- Customer-facing acknowledgment SLA = **24 hours** (agent-recommended working default with reasoning; owner confirms/tightens — it is a business commitment). Template above.
+- Escalation timer + daily reconciliation cron are MANDATORY parts of A-full, not optional.
 
 ## TEMPO RECOMMENDATION
 Fresh session for L1 implementation. Reason: context is dense after the L0 build, and item 1 wires the **payment route** — the same sensitivity that warranted a fresh session for the L0 primitive. The map above makes the fresh session start from code, not assumptions.
