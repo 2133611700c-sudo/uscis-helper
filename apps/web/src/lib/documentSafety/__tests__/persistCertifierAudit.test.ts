@@ -69,6 +69,13 @@ describe('buildAuditRow — constraint defense-in-depth', () => {
     expect(buildAuditRow(rec(), { ownerCertifierId: 'owner' })).toEqual({ ok: false, reason: 'missing_owner_certifier_uuid' })
   })
 
+  it('Path B: an ARBITRARY uuid is accepted (FK→profiles dropped, soft reference)', () => {
+    // placeholder owner certifier id — valid after the transitional FK drop
+    const r = buildAuditRow(rec(), { ownerCertifierId: '00000000-0000-0000-0000-000000000001' })
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.row.certifier_id).toBe('00000000-0000-0000-0000-000000000001')
+  })
+
   it('coerces non-uuid session/pdf/anchor ids to null (uuid columns)', () => {
     const r = buildAuditRow(rec({ session_id: 'legacy', cross_doc_anchor_id: 'case-1' }), { ownerCertifierId: OWNER })
     expect(r.ok).toBe(true)
