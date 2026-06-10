@@ -1,4 +1,5 @@
 # HANDOFF (2026-06-10 — P0-A guard reverted to SHADOW; enforce is an owner env-flip)
+> 2026-06-10 GT bench: measurement keystone built+run. Core read: printed=reliable, handwritten=review-gated (safe). Top owner-actionable findings: (A) client downscale for >4MB, (B) handwritten birth-cert review path, (C) sex spec. Canary still needs GT from DIFFERENT people.
 > 2026-06-10: BUG C/D debt tests landed (+10, 3026 green). Real gap found: composite RU full_name without an orthographic signal isn't flagged — single-token is. Needs owner GT before tightening.
 > CI infra 2026-06-10: bumped all 8 workflows to Node-24 action majors before the 2026-06-16 forced cutover. action-setup v6 reads packageManager (pnpm@10.33.2); no version input needed.
 

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-10 (bench: live GT pipeline measurement on real Cyrillic docs, infra+report, agent)
+- NEW `apps/web/scripts/gt-pipeline-bench.mjs` — re-runnable; POSTs owner fixtures to PROD vision-extract (real gemini-3.1-pro-preview path), scores per-field vs owner GT, auto-downscales >4MB, doc-class-aware field map. Raw→gitignored qa-private; sanitized scorecard→docs/reports.
+- Results (EXPLORATORY, 1 doc/class): military(printed) 4/4 readable exact; booklet(hw) family+given+dob ✓, patronymic missed; birth(hw) surname-cyr ✓, given/patronymic/dob wrong — ALL review-flagged (no silent bad output).
+- 4 findings (GT_PIPELINE_BENCH_FINDINGS): (A) >4MB images 413 at edge before brain; (B) ua_birth_certificate fields mislabeled handwritten:false on the most dangerous class; (C) sex not in booklet/birth/military specs; (D) pro misses handwritten patronymic.
+- No code/prod/env change. No PII in committed files.
+
 ## 2026-06-10 (test: close BUG C + BUG D debt; pin a real RU-spelling gap, CODE, agent)
 - NEW `canonicalValueUnresolved.test.ts` (BUG C, 4): date with no iso_date + non-empty cyrillic → emitted review `canonical_value_unresolved`, not dropped; empty cyrillic → dropped.
 - NEW `sovietBilingualTolerance.test.ts` (BUG D, 6): pins doc-origin distinction — `ukrainianDoc===false` skips the RU-spelling review; `!==false` flags `russian_spelling_suspected`.
