@@ -21,13 +21,29 @@ interface BBox { ymin: number; xmin: number; ymax: number; xmax: number }
 const GEMINI_URL = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
 
+/** Coerce one box from either an array [ymin,xmin,ymax,xmax] or a keyed object. */
+function coerceBox(b: unknown): BBox | null {
+  if (Array.isArray(b) && b.length >= 4 && b.slice(0, 4).every((n) => typeof n === 'number')) {
+    return { ymin: b[0], xmin: b[1], ymax: b[2], xmax: b[3] }
+  }
+  if (b && typeof b === 'object') {
+    const o = b as Record<string, unknown>
+    const vals = [o.ymin, o.xmin, o.ymax, o.xmax]
+    if (vals.every((n) => typeof n === 'number')) return { ymin: o.ymin as number, xmin: o.xmin as number, ymax: o.ymax as number, xmax: o.xmax as number }
+  }
+  return null
+}
+
 async function geminiDateBoxes(imageB64: string, mime: string, model: string, key: string): Promise<BBox[]> {
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), 25_000)
   try {
+    // Ask for ARRAY boxes [ymin,xmin,ymax,xmax] — arrays come back far more reliably
+    // than keyed objects (the model returned malformed keyed JSON otherwise).
     const prompt =
       'Find EVERY handwritten or printed DATE on this document (date of birth, date of issue, etc.). ' +
-      'Return ONLY JSON: {"boxes":[{"ymin":n,"xmin":n,"ymax":n,"xmax":n}]} with coordinates normalized 0-1000. Max 4 boxes.'
+      'Return ONLY strict JSON: {"boxes":[[ymin,xmin,ymax,xmax]]} — each box an array of 4 integers ' +
+      'normalized 0-1000 (top-left y, top-left x, bottom-right y, bottom-right x). Max 4 boxes.'
     const res = await fetch(GEMINI_URL(model, key), {
       method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -38,9 +54,14 @@ async function geminiDateBoxes(imageB64: string, mime: string, model: string, ke
     if (!res.ok) return []
     const j = await res.json()
     const txt = j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
-    const parsed = JSON.parse(txt)
-    const boxes = Array.isArray(parsed?.boxes) ? parsed.boxes : []
-    return boxes.filter((b: BBox) => [b.ymin, b.xmin, b.ymax, b.xmax].every((n) => typeof n === 'number')).slice(0, 4)
+    let parsed: unknown
+    try { parsed = JSON.parse(txt) } catch {
+      // salvage: pull every [a,b,c,d] quartet out of malformed JSON
+      const quartets = [...txt.matchAll(/\[?\s*(\d{1,4})\s*,\s*(\d{1,4})\s*,\s*(\d{1,4})\s*,\s*(\d{1,4})\s*\]?/g)]
+      parsed = { boxes: quartets.map((m) => [(+m[1]), +m[2], +m[3], +m[4]]) }
+    }
+    const raw = Array.isArray((parsed as { boxes?: unknown })?.boxes) ? (parsed as { boxes: unknown[] }).boxes : []
+    return raw.map(coerceBox).filter((b): b is BBox => b !== null).slice(0, 4)
   } catch { return [] } finally { clearTimeout(t) }
 }
 

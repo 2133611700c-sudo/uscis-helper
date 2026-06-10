@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (fix: ensemble date-bbox parse — array boxes + salvage malformed JSON, CODE, agent)
+- Gemini returned malformed keyed JSON for date bboxes → empty → ensemble fell back to full-page Vision (garbled month). Now requests array boxes [ymin,xmin,ymax,xmax] + salvages malformed JSON via quartet regex. tsc 0.
+
 ## 2026-06-10 (feat: date-region ZOOM crop for ensemble second-read — the working fix, CODE, agent)
 - Prod smoke revealed Vision garbles the handwritten month on the FULL page; it reads it correctly only on a ZOOMED date-region crop. NEW `dateRegionRead.ts`: Gemini returns date bboxes → crop+zoom×5 each → Google Vision OCR on the crop → combined text for the reconciler. Geometric only (no tonal). Fail-open.
 - Route ensemble now uses readDateRegionsWithVision (zoom) with full-page Vision as fallback. tsc 0; 3058 passed; guard 0. Live behind ENSEMBLE_DATE_ENABLED=1 (prod).
