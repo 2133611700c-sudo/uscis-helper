@@ -1,4 +1,5 @@
 # HANDOFF (2026-06-10 — P0-A guard reverted to SHADOW; enforce is an owner env-flip)
+> 2026-06-10: tested scanner-mode preprocessing — REJECTED by data (greyscale/B&W kills handwritten Cyrillic 3/3→0/3; printed unaffected). Send original color. Only geometric crop/deskew is a future bench-gated candidate. See PREPROCESS_AB_DECISION.
 > 2026-06-10: bench +Soviet bilingual (4/5 classes); finding B corrected (protection real via always_review+route override, policy unit-tested; spec flag cosmetic). Intl-passport GT MISSING — owner to fill for full coverage.
 > 2026-06-10: finding A fully closed — shared downscale util wired into all 5 upload paths (was flagship-only). reparole/ead/tps no longer at 413 risk.
 > 2026-06-10: fixed GT finding A — client downscale in TranslateWizard (>3.8MB → resize before vision-extract). reparole/ead/tps OCR uploads still carry the same 413 risk (follow-up, mostly Latin docs).
