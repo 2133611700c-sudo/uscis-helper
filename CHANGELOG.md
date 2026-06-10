@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-09 (Phase 1.3 — wire Knowledge Brain through ONE shared helper, agent)
+- owner directive: wire through one shared helper, not four route forks. Created `canonical/core/knowledgeBrain.ts`: isKnowledgeBrainEnabled / buildKnowledgeContext (central doc-class/ukrainianDoc/historical derivation) / applyKnowledgeBrainIfEnabled (arbitrate, apply D2 only when flag ON).
+- wired all 4 Core arbitration callers (translation/tps/reparole/ead) via the helper — 1-line diff each; removed direct arbitrateDocument imports from routes; no route-local KMU/gazetteer/patronymic logic.
+- OFF proof: applyKnowledgeBrainIfEnabled deep-equals arbitrateDocument(candidates) (knowledgeBrain.test.ts); canonical 329/329 unchanged; full suite 2937 passed/4 skipped; tsc 0. ON proof (vi.stubEnv): Russian-on-UA→review+suggestedValue (read kept), clean UA→accept, provenance present.
+- legacy /api/ocr/extract + generate-pdf are NOT arbitration seams → intentionally not D2-forked (legacy retires Phase 2; PDF inherits D2 + C3 gate). 6 new tests (knowledgeBrain.test.ts).
+- no prod/env/model/provider/SMART/D0/ReaderResult/OneBrain/HTR/GPT change; KNOWLEDGE_BRAIN_ENABLED default OFF; no PII (provenance = rule ids only); qa-private untouched. Branch feat/one-brain-gemini-core. Report: docs/reports/KNOWLEDGE_BRAIN_PHASE_1_3_WIRING_PROOF.md.
+
 ## 2026-06-09 (Phase 1.2 — D2 authority contract, safe no-silent-override, agent)
 - owner AI-risk review (ACCEPT_PHASE_1_ONLY) correctly rejected "dictionary silently overrides reader": that just trades a Gemini hallucination for a dictionary one. Rebuilt knowledgeNormalize.ts as a managed AUTHORITY LAYER before any wiring.
 - `knowledgeNormalize` now returns a DECISION {action: accept|preserve|suggest|review|block, finalValue, candidateValue, ruleId, reasonCodes, provenance, evidenceStrength} — never a silent value. `arbitrateDocument(candidates, knowledge?)`: accept/preserve→deterministic final; suggest/review/block→keep READ value, set `suggestedValue`, force review_required (critical identity never silently finalized from D2). `isKnowledgeBrainEnabled()` gates callers (KNOWLEDGE_BRAIN_ENABLED, default OFF). `CanonicalField.knowledgeRule/knowledgeProvenance` added (Phase-4 audit).
