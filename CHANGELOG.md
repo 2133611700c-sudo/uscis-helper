@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-10 (fix: shared client-side downscale across ALL upload paths, CODE, agent)
+- NEW `apps/web/src/lib/upload/downscaleImage.ts` — shared helper (>3.8MB → ≤2400px JPEG q0.82, fail-open, browser-only).
+- Wired into all 5 client upload paths: translation (vision-extract), EAD, TPS DocumentUploadScreen, TPSWizardV2, ReparoleWizardV2 — every OCR/vision upload now clears the ~4.5MB Vercel edge cap. TranslateWizard local copy replaced by the shared import.
+- NEW `downscaleImage.test.ts` (5 fail-safe unit tests). tsc 0; 3033 passed / 4 skipped / 0 failed.
+
 ## 2026-06-10 (fix: client-side downscale before upload — GT bench finding A, CODE, agent)
 - `TranslateWizard.tsx`: NEW `downscaleImageForUpload` — images >3.8MB downscaled in-browser (longest edge ≤2400px, JPEG q0.82) before POST to vision-extract. Fixes HTTP 413 at the ~4.5MB Vercel edge cap (real phone photos 4–12MB never reached the brain). Fail-open: any error sends the original. Bench: 7.1MB→1.5MB, no accuracy loss.
 - +3 source-assertion tests. tsc 0; 3029 passed / 4 skipped / 0 failed.

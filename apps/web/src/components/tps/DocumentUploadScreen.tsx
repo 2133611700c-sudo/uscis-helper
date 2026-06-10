@@ -24,6 +24,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type { TpsExtractedField, TpsDocType, TpsModuleResult } from '@/lib/tps/types'
 import { ManualHelpModal } from '@/components/tps/ManualHelpModal'
+import { downscaleImageForUpload } from '@/lib/upload/downscaleImage'
 
 export type Locale = 'uk' | 'ru' | 'en' | 'es'
 
@@ -326,7 +327,7 @@ export function DocumentUploadScreen({ locale, onComplete, onBack, onSkipAll }: 
       updateSlot(doc_type, { kind: 'uploading', fileName: file.name })
       try {
         const fd = new FormData()
-        fd.append('file', file)
+        fd.append('file', await downscaleImageForUpload(file), file.name)
         fd.append('doc_type_hint', doc_type)
         const res = await fetch('/api/tps/ocr/extract', { method: 'POST', body: fd })
         const data = (await res.json()) as {
