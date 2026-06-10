@@ -42,12 +42,15 @@ export function buildCyrillicMap(fields: ExtractedDocField[]): Map<string, strin
 
 /**
  * Convert one docintel output field into a Core FieldCandidate.
- * Uses the KMU-55 Latin value as the candidate value (Core sees English).
+ * Uses the KMU-55 Latin value as the candidate value (Core arbitrates Latin).
+ * Phase 2.0 (GAP A fix): rawCyrillic is now threaded so D2 sees original Cyrillic,
+ * not the already-transliterated value.
  */
 export function docintelToCandidate(f: ExtractedDocField, page: number): FieldCandidate {
   return {
     key: f.field,
     value: f.value ?? '',           // KMU-55 Latin — what the Core arbitrates
+    rawCyrillic: f.raw_cyrillic ?? undefined,  // original Cyrillic for D2 authority layer
     source: 'ai_vision',
     confidence: f.confidence,
     provider: `docintel:${f.provider}:page${page}`,
@@ -58,8 +61,8 @@ export function docintelToCandidate(f: ExtractedDocField, page: number): FieldCa
 
 /**
  * Convert Core output to the FieldOut shape vision-extract returns.
- * cyrillicMap (from buildCyrillicMap) restores the original Cyrillic that
- * was stripped by KMU-55 transliteration.
+ * Phase 2.0: prefer f.rawCyrillic (threaded from FieldCandidate) over cyrillicMap
+ * — the map remains for backward compat when rawCyrillic is absent.
  */
 export function canonicalToFieldOut(
   f: CanonicalField,
@@ -68,7 +71,7 @@ export function canonicalToFieldOut(
   return {
     field: f.key,
     value: f.normalizedValue ?? f.rawValue ?? null,
-    raw_cyrillic: cyrillicMap?.get(f.key) ?? f.rawValue ?? null,
+    raw_cyrillic: f.rawCyrillic ?? cyrillicMap?.get(f.key) ?? null,
     confidence: f.confidence.final ?? 0,
     review_required: f.reviewRequired,
     kind: f.source,

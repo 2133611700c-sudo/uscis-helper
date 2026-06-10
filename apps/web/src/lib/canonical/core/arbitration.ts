@@ -56,6 +56,7 @@ function toEvidence(c: FieldCandidate): FieldEvidence {
 /**
  * Resolve ONE field from its candidates per the minimal authority policy.
  * Returns null when there is no usable candidate (no source → no field).
+ * Phase 2.0: carries rawCyrillic from the winning candidate into CanonicalField.
  */
 export function arbitrateField(key: string, candidates: FieldCandidate[]): CanonicalField | null {
   const usable = candidates.filter((c) => (c.value ?? '').trim() !== '')
@@ -70,11 +71,12 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
   if (PASSPORT_MRZ_FIELDS.has(key) && mrz) {
     if (mrz.mrzCheckValid === true) {
       // valid MRZ = math authority → it wins; disagreement does not override it.
-      return field(key, mrz.value, mrz.source, crit, false, [], evidence, mrz.confidence ?? 0.99)
+      // MRZ source has no Cyrillic (it is Latin by definition).
+      return field(key, mrz.value, mrz.source, crit, false, [], evidence, mrz.confidence ?? 0.99, undefined)
     }
     // invalid MRZ = red flag (bad photo / OCR / tampering) → must be reviewed.
     reasons.push('mrz_check_failed')
-    return field(key, mrz.value, mrz.source, crit, true, reasons, evidence, 0.3)
+    return field(key, mrz.value, mrz.source, crit, true, reasons, evidence, 0.3, undefined)
   }
 
   // ── No MRZ anchor: pick the highest-authority candidate ────────────────────
@@ -108,7 +110,7 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
     reasons.push('reader_review_required')
   }
 
-  return field(key, primary.value, primary.source, crit, reasons.length > 0, reasons, evidence, conf)
+  return field(key, primary.value, primary.source, crit, reasons.length > 0, reasons, evidence, conf, primary.rawCyrillic)
 }
 
 /**
@@ -143,8 +145,12 @@ export function arbitrateDocument(
 
 /**
  * Apply a D2 decision to one arbitrated field WITHOUT silent substitution.
+ * Phase 2.0 (GAP A+B fix): D2 now receives rawCyrillic (original Cyrillic), not the
+ * already-transliterated normalizedValue. This makes Cyrillic-dependent rules (gazetteer /
+ * RU-vs-UA spelling / normalizeName) fire correctly. When rawCyrillic is absent (e.g. MRZ),
+ * we fall back to normalizedValue which is Latin — D2 then uses the preserve path.
  * accept/preserve ⇒ take the deterministic value. suggest/review/block ⇒ keep the read value,
- * surface the dictionary's candidate as `suggestedValue`, and force review (conflict → human).
+ * surface the dictionary's candidate as `suggestedValue`, and force review.
  */
 function applyKnowledge(
   f: CanonicalField,
@@ -152,7 +158,12 @@ function applyKnowledge(
   sex: Sex | null,
   givenNameCyrillic: string | null,
 ): CanonicalField {
-  const d = normalizeCanonicalValue(f.key, f.normalizedValue ?? f.rawValue ?? '', {
+  // Feed D2 the ORIGINAL Cyrillic (not the already-transliterated Latin).
+  // This is the GAP A+B fix: D2 now runs its Cyrillic rules (gazetteer, RU/UA detection,
+  // patronymic reconcile) on the actual source text, not on derived Latin.
+  const inputForD2 = f.rawCyrillic ?? f.normalizedValue ?? f.rawValue ?? ''
+
+  const d = normalizeCanonicalValue(f.key, inputForD2, {
     documentClass: ctx.documentClass ?? null,
     sourceDoc: ctx.documentClass ?? undefined,
     sex,
@@ -215,6 +226,7 @@ function field(
   reviewReasons: string[],
   evidence: FieldEvidence[],
   finalConf: number,
+  rawCyrillic: string | undefined,
 ): CanonicalField {
   return {
     key,
@@ -222,6 +234,9 @@ function field(
     // v1: arbitration picks the value; KMU-55 normalization of a Cyrillic
     // candidate is a downstream step, not the arbiter's job.
     normalizedValue: value,
+    // Phase 2.0 (GAP A fix): rawCyrillic is now carried from the winning candidate
+    // so D2 and downstream consumers (C3, audit) see the original Cyrillic.
+    rawCyrillic: rawCyrillic ?? null,
     criticality,
     confidence: buildConfidence({ ocr: finalConf, field_match: null, normalization: null, source_match: null }),
     source,
