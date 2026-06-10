@@ -65,9 +65,15 @@ async function geminiDateBoxes(imageB64: string, mime: string, model: string, ke
   } catch { return [] } finally { clearTimeout(t) }
 }
 
+export interface DateRegionReadResult {
+  text: string
+  /** PII-free diagnostics (no values): how far the pipeline got. */
+  diag: { boxes: number; crops: number; chars: number; error?: string }
+}
+
 /**
  * Read the document's date regions with a zoomed second-engine pass.
- * Returns combined OCR text from the zoomed date crops (or '' on any failure).
+ * Returns combined OCR text from the zoomed date crops + PII-free diagnostics.
  */
 export async function readDateRegionsWithVision(opts: {
   imageBuffer: Buffer
@@ -75,17 +81,19 @@ export async function readDateRegionsWithVision(opts: {
   geminiApiKey: string
   geminiModel: string
   vision: OcrProvider
-}): Promise<string> {
+}): Promise<DateRegionReadResult> {
+  const diag = { boxes: 0, crops: 0, chars: 0 } as DateRegionReadResult['diag']
   try {
     // sharp is server-only; import lazily so the module is edge-safe.
     const sharp = (await import('sharp')).default
     const base = await sharp(opts.imageBuffer).rotate().toBuffer()
     const meta = await sharp(base).metadata()
     const W = meta.width ?? 0, H = meta.height ?? 0
-    if (!W || !H) return ''
+    if (!W || !H) { diag.error = 'no_dims'; return { text: '', diag } }
 
     const boxes = await geminiDateBoxes(base.toString('base64'), opts.mimeType, opts.geminiModel, opts.geminiApiKey)
-    if (boxes.length === 0) return ''
+    diag.boxes = boxes.length
+    if (boxes.length === 0) { diag.error = 'no_boxes'; return { text: '', diag } }
 
     const texts: string[] = []
     for (const b of boxes) {
@@ -102,8 +110,11 @@ export async function readDateRegionsWithVision(opts: {
         .jpeg({ quality: 95 })
         .toBuffer()
       const r = await opts.vision.extractText({ imageBuffer: crop, mimeType: 'image/jpeg' })
+      diag.crops++
       if (!isBlocked(r) && r.raw_text) texts.push(r.raw_text)
     }
-    return texts.join('\n')
-  } catch { return '' }
+    const text = texts.join('\n')
+    diag.chars = text.length
+    return { text, diag }
+  } catch (e) { diag.error = e instanceof Error ? e.message.slice(0, 60) : 'err'; return { text: '', diag } }
 }
