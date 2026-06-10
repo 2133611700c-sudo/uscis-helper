@@ -1,5 +1,7 @@
 # HANDOFF (2026-06-10 — P0-A guard reverted to SHADOW; enforce is an owner env-flip)
 
+> CI note 2026-06-10: guards.yml content-guard caught 'certified translation' literal in an applyOcrFieldSafety.ts comment (Rule 4 product-claim). Reworded, no logic change. Lesson: comments/docs are scanned too — avoid bare 'certified translation'.
+
 ## What this session corrected
 Commit 816cb64 shipped the confirmed-value guard **enforcing, always-on, to prod**
 (Vercel auto-deploy) with no block-rate data — a measurement-first violation I
