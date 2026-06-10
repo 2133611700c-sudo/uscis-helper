@@ -35,7 +35,7 @@ import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafe
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked } from '@/lib/ocr/types'
-import { applyDateEnsemble } from '@/lib/docintel/ensemble/applyDateEnsemble'
+import { applyDateEnsemble, isDateFieldName } from '@/lib/docintel/ensemble/applyDateEnsemble'
 import { HANDWRITTEN_FABRICATION_RISK_CLASSES } from '@/lib/docintel/antiFabricationGate'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
@@ -296,7 +296,7 @@ export async function POST(req: NextRequest) {
     ok && process.env.ENSEMBLE_DATE_ENABLED === '1' &&
     isUkrainianIdentityDoc(docTypeId) &&
     HANDWRITTEN_FABRICATION_RISK_CLASSES.has(docintelIdToDocumentClass(docTypeId)) &&
-    fields.some((f) => f.kind === 'date')
+    fields.some((f) => isDateFieldName(f.field, f.kind))
   ) {
     try {
       const visionRead = await googleVisionProvider.extractText({
