@@ -645,3 +645,6 @@
 - ops: DOCUMENT_CLASS_METRICS_ENABLED=1 in production
 - GT: 6/30 VERIFIED_BY_OWNER (birth_cert x2, passport, i94, ead, military)
 - accuracy: hard-case 25%, printed ~100%, false_negative_review=0 in mode C
+
+## 2026-06-10 (docs: clarify activation checklist — 3 distinct secret-sets, DOCS, agent)
+- Independent catch on the owner activation plan: the drift-guard secrets (SUPABASE_ACCESS_TOKEN/PROJECT_REF/DB_PASSWORD) were being conflated with L1 baseline activation. They are separate and do NOT enable the baseline. Clarified docs/ops/L1_T0_ACTIVATION_CHECKLIST.md: L1 baseline DATA collection needs only GUARD_BLOCK_METRICS_ENABLED=1 in Vercel (the route writes via the already-set SUPABASE_URL/SERVICE_ROLE_KEY); the cron secrets are a separate GitHub set for alerting (silent until GUARD_BLOCK_RATE_THRESHOLD is set); the drift-guard secrets are a third separate set; OWNER_CERTIFIER_ID is Step 3 (L3), not the baseline. Docs only, no code.
