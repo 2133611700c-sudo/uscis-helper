@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-09 (REBUILD: ADR-017 ONE Gemini brain + Phase 1.1 dictionary-in-brain, agent)
+- mentor verdict on owner's "consensus org-chart": 70% right (D0→D6 + Auditor pipeline) but center wrong — consensus voting fixes none of the incident root causes and is a committee of one (GPT out, HTR dead). Decided ADR-017: ONE Gemini brain + deterministic knowledge truth (D2 can override reader) + review gate; one shared pipeline for all products. Real cause of "3 weeks → 0" = fragmentation (4 products / 4 regimes / Core parked behind unflipped flags).
+- scope locked by owner: Gemini = recognition (all keys/models); DeepSeek retained fully (prose/Mia/crossref); GPT removed; HTR parked; keys/prod owner-managed.
+- 5 read-only surface-map agents run (Translator/TPS/Reparole/Knowledge/model-inventory): Gemini already primary reader (gemini-3.1-pro-preview→flash); TPS default=Google Vision+rules; knowledge layer strong but only partly wired to outputs (Translator path misses normalizePlace/oblast/patronymic — the accuracy gap).
+- Phase 1.1 (CODE): `apps/web/src/lib/canonical/core/knowledgeNormalize.ts` — pure deterministic dictionary-in-brain (KMU-55/gazetteer/patronymic/oblast→nominative/authority on FINAL value; Latin/MRZ preserved; never-silent fuzzy→review). 8 tests RED→GREEN; tsc 0. Pure/unwired = byte-identical.
+- docs: ADR-017-one-gemini-brain-not-consensus.md; ONE_BRAIN_GEMINI_BUILD_PLAN.md. Branch feat/one-brain-gemini-core off origin/main 03eb30f. No prod/env/keys/PII/qa-private change. SECURITY: owner pasted live Gemini+service-account keys in chat → flagged, must rotate; repo tracked files verified clean (only test placeholder 'key123').
+
 ## 2026-06-06 (P0 vision-extract 502 triage + fix, agent)
 - runtime proof (preview deploy of fix branch): ead no-fields probe → HTTP 200 {ok:false,status:unknown_document_type,review_required:true} (identical request = 502 on prod); blank ua_birth_certificate → 200 all fields value:null+review_required (no 502, no fabrication). PR #99.
 - root cause: /api/translation/vision-extract returned HTTP 502 on every zero-field read — final return was `status: ok ? 200 : 502`. Proved by hitting the Vercel origin directly (bypassing Cloudflare): full valid JSON body returned WITH status 502, server=Vercel, x-vercel-id present, no crash, safety gate ran. Through Cloudflare the body was masked as bare "error code: 502". 502 in ~0.5-1.3s ⇒ not a timeout (maxDuration=60). This is the original "translator 0 results" incident; affects real hard-case docs that read 0 fields.

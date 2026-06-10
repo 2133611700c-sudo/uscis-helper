@@ -1,4 +1,9 @@
-# STATUS (2026-06-06 — OCR INCIDENT / NOT TRUSTED; P0 forensic audit done)
+# STATUS (2026-06-09 — REBUILD: ONE Gemini brain (ADR-017); Phase 1 started)
+
+## ARCHITECTURE DECISION ADR-017 + Phase 1 brick #1 (2026-06-09)
+- Owner mandate: recognition via Gemini (all keys/models); DeepSeek retained fully; GPT removed; HTR parked; "сделай как должно быть". Decided (ADR-017): core = ONE Gemini brain + deterministic knowledge truth + review gate, NOT multi-reader consensus (consensus fixes none of the incident root causes; with GPT out + HTR dead it is a committee of one). Plan: docs/reports/ONE_BRAIN_GEMINI_BUILD_PLAN.md.
+- **Phase 1.1 DONE (code):** `canonical/core/knowledgeNormalize.ts` — pure "dictionary in the brain": KMU-55 / gazetteer / patronymic / oblast→nominative / authority applied to the FINAL value, Latin/MRZ preserved, never-silent (fuzzy→review). 8 tests green; tsc 0. NOT yet wired (Phase 1.2 behind KNOWLEDGE_BRAIN_ENABLED default OFF → byte-identical). Branch feat/one-brain-gemini-core off origin/main 03eb30f. No prod/keys/PII change.
+- Next: wire knowledgeNormalize into arbitration (1.2), pass doc-class/sex/given-name context (1.3), real-fixture proof (1.4). Then Phase 2 consolidation (one Core path for all products; remove GPT/legacy forks).
 
 ## P0 FIX: vision-extract 502 root-caused + fixed (the original "0 results" incident)
 - RUNTIME PROOF (preview): ead no-fields probe → HTTP 200 (was 502 on prod); blank birth-cert → 200 all-review, no fabrication. PR #99.
