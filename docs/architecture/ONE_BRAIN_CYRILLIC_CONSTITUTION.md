@@ -225,4 +225,13 @@ Rule: **do not build layer N+1 until N is ≥80% closed.** Building HTR (an L4 c
 | **L3** Legal/audit | audit persistence, retention, PII-at-rest, subpoena export, DPA | ~5% | persistence (ADR-019) + legal review |
 | **L4** Continuous safety | adversarial suite, drift detection, quarterly review | 0% | not yet — after L1–L3 |
 
-**Next session opens with L1, not HTR.** HTR stays behind ADR-020 (data-handling) and a real prod-failure number, which does not yet exist (no telemetry on % handwritten-date failures — itself an L1 gap).
+**Next session opens with L0/L1, not HTR.**
+
+### HTR ROLLOUT THRESHOLD (defined NOW, before it is approached — owner 2026-06-10)
+> HTR rollout is considered ONLY when handwriting-related field-failures exceed **15%** of total critical-field
+> failures over a rolling **100-document** window, **AND** ADR-020 (HTR data-handling) is locked.
+
+The number exists BEFORE we approach it, so "enough" is a threshold decision, not a retrospective self-justification.
+15% / 100-doc are owner business numbers (adjustable by the owner, not the agent). This also creates a concrete L1
+instrumentation requirement: we must COUNT handwriting-related critical-field failures per rolling window — which today
+we do not (the telemetry gap that makes any HTR-priority claim unprovable right now).
