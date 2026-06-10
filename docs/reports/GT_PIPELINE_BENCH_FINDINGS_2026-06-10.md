@@ -13,11 +13,11 @@ Sanitized scorecard: `GT_PIPELINE_BENCH_2026-06-10.md`. Raw values: gitignored
 - **Handwritten (internal-passport booklet): PARTIAL.** Surname + given name + DOB
   read correctly; the model did NOT return patronymic at all. All returned fields
   review-flagged.
-- **Handwritten (birth certificate): UNRELIABLE — as expected.** Surname Cyrillic
-  correct; given name + patronymic Cyrillic misread; DOB wrong. **Every field was
-  review-flagged → no silent bad output.** This matches the standing finding: no
-  model is safe on handwritten birth certs ⇒ always-review is mandatory (the safety
-  stack held here).
+- **Handwritten + Soviet-bilingual (birth certificates): UNRELIABLE — as expected.**
+  Both: surname Cyrillic correct; given name + patronymic Cyrillic misread; DOB wrong.
+  **Every field was review-flagged → no silent bad output.** Identical failure pattern
+  on both danger classes. Matches the standing finding: no model is safe on these ⇒
+  always-review is mandatory (the safety stack held on both).
 
 Conclusion: the architecture is sound — printed Cyrillic is production-reliable;
 handwritten is caught by the always-review gate, not released silently.
@@ -33,16 +33,18 @@ cryptic error.
 a client resize (longest edge ~2400px, JPEG q≈75 brought 7.1MB→1.5MB here with no
 accuracy loss). [verify, then fix]
 
-### B. `ua_birth_certificate` fields are marked `handwritten: false`  [SAFETY SPEC]
-The registry spec marks all birth-cert fields as printed, but handwritten birth
-certs are the single most dangerous class (historic wrong-person fabrication). The
-per-field `handwritten → review_required` trigger therefore does NOT fire from the
-spec; review currently depends on confidence<0.95. On this run everything was
-review-flagged anyway, but the safeguard is mislabeled and fragile.
-→ **Action (owner decision):** a birth cert can be printed OR handwritten — a single
-spec can't be both. Options: (1) route handwritten birth certs through the
-anti-fabrication gate (force-review hard-case classes), or (2) a separate
-`ua_birth_certificate_handwritten` spec. Either way, do not rely on confidence alone.
+### B. `ua_birth_certificate` registry `handwritten: false` flag is cosmetic-misleading — but the class IS protected  [CORRECTED 2026-06-10]
+Correction to the initial read: the protection does NOT depend on the spec flag.
+`docintelIdToDocumentClass('ua_birth_certificate')` → `birth_certificate_handwritten`,
+which is `always_review: true` (so is `birth_certificate_soviet_bilingual`). The
+translation route applies `applyHardCaseReviewOverride` **unconditionally** for UA
+identity docs + `applyCertificateRoleGuard` (wrong-person role grounding). The bench
+confirmed: every field on BOTH birth certs came back review-flagged. The policy layer
+is already unit-tested (`documentClassPolicy.test.ts`: isHardCase, override, mapping).
+→ **Residual (not urgent):** the spec's `handwritten: false` is misleading and the
+force-review is route-level (translation), not at the shared `readDocument` door — so
+other products don't auto-inherit it. Birth certs aren't consumed by TPS/reparole/ead
+today, so no live exposure. Owner may still want the spec flag corrected for clarity.
 
 ### C. `sex` is not extractable for booklet / birth / military  [SPEC GAP]
 GT verifies `sex`, but no `sex` field exists in those registry specs, so the
@@ -56,7 +58,14 @@ is the hardest token; the answer is the review gate, not a code fix. Tracked, no
 
 ## What this unblocks
 
-This is the measurement keystone. To move from EXPLORATORY to a canary-grade
-verdict (≥30 docs/class), the binding gap is **GT documents from different real
-people** (a single owner's docs cannot detect wrong-person fabrication). That is an
-owner-sourcing decision (see GT_BENCHMARK_EXIT_CRITERIA).
+This is the measurement keystone. Coverage now spans 4 of the 5 core UA identity
+classes: internal-passport booklet (hw), birth cert (hw), birth cert (Soviet
+bilingual), military (printed). **Gap:** the international-passport GT file is
+status `MISSING` (no verified fields, no paired fixture) — it cannot be benched until
+the owner fills it; this is the printed+MRZ class we'd expect to score highest, so
+it's worth completing.
+
+To move from EXPLORATORY to a canary-grade verdict (≥30 docs/class), the binding gap
+is **GT documents from different real people** (a single owner's docs cannot detect
+wrong-person fabrication). That is an owner-sourcing decision (see
+GT_BENCHMARK_EXIT_CRITERIA).
