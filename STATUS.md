@@ -1,8 +1,17 @@
-# STATUS (2026-06-10 — Phase 2 split FULLY MERGED #104-#109; awaiting owner GEMINI_MODEL flip)
+# STATUS (2026-06-10 — PASS_PROD_MODEL_SMOKE: prod on gemini-3.1-pro-preview, Phase 3 UNBLOCKED)
+
+## PROD MODEL FLIP + SMOKE: PASS (2026-06-10)
+- **GEMINI_MODEL flipped:** removed dirty `"gemini-2.5-flash\n"` → set clean `gemini-3.1-pro-preview` (no embedded \n).
+- **Redeploy:** Vercel build OK, SHA `203b572` (main is current), aliased `messenginfo.com`.
+- **Healthz:** `{"status":"ok","sha":"203b572","environment":"production"}` — OK.
+- **Model smoke (live Gemini call):** `model: gemini-3.1-pro-preview` confirmed in `/api/translation/vision-extract` response at 4554ms. No 5xx, no timeout, no fallback to flash.
+- **Result: PASS_PROD_MODEL_SMOKE.** Phase 3 is UNBLOCKED.
+- Report: `docs/reports/PROD_GEMINI_MODEL_FLIP_SMOKE_2026-06-10.md`
+
 ## PR-F DONE (2026-06-10, CODE — Core read timeouts raised for pro-model)
 - readDocument `timeoutMs` 20s→40s in all 4 product routes; reparole/EAD `maxDuration` 30→60.
 - Reason: PR104 audit timeout_status CONFLICT — pro observed 28s, 20s cap silently degraded pro→flash.
-- Unblocks owner action: flip prod `GEMINI_MODEL` → `gemini-3.1-pro-preview` (clean value, no \n).
+- Unblocks owner action: flip prod `GEMINI_MODEL` → `gemini-3.1-pro-preview` (clean value, no \n). **DONE.**
 
 ## Phase 2.2–2.6 DONE (2026-06-09, CODE — All One-Core flag gates removed, GPT deleted)
 - **Phase 2.2:** TPS OCR (`apps/web/src/app/api/tps/ocr/extract/route.ts`) — `ONE_BRAIN_CORE_ENABLED` flag gate removed. Core B1 is now the unconditional default for UA identity docs.
