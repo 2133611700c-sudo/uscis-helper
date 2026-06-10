@@ -33,6 +33,10 @@ import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
 import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
+import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
+import { isBlocked } from '@/lib/ocr/types'
+import { applyDateEnsemble } from '@/lib/docintel/ensemble/applyDateEnsemble'
+import { HANDWRITTEN_FABRICATION_RISK_CLASSES } from '@/lib/docintel/antiFabricationGate'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
 // ONE BRAIN Core — B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
@@ -62,6 +66,9 @@ type FieldOut = {
   review_required: boolean
   kind: string
   source_page?: number
+  /** ENSEMBLE_DATE: reasons + the second engine's date reading on a cross-engine conflict. */
+  review_reasons?: string[]
+  ensemble_candidate?: string | null
 }
 
 export async function POST(req: NextRequest) {
@@ -277,6 +284,41 @@ export async function POST(req: NextRequest) {
       translationPolicyGuardStatus = 'role_guard_triggered'
     }
   }
+
+  // ── ENSEMBLE_DATE_ENABLED (default OFF): cross-engine date check ───────────
+  // The proven handwritten-date fix (2026-06-10): Gemini misreads the handwritten
+  // month; Google Vision reads it correctly. For handwritten-risk classes, run a
+  // SECOND read with Google Vision and reconcile DATE fields — any disagreement
+  // forces review and surfaces the second engine's reading (never overwrites the
+  // primary, never lowers review). OFF ⇒ skipped (byte-identical, no extra cost).
+  let dateEnsembleStatus: 'off' | 'no_dates' | 'applied' | 'error' = 'off'
+  if (
+    ok && process.env.ENSEMBLE_DATE_ENABLED === '1' &&
+    isUkrainianIdentityDoc(docTypeId) &&
+    HANDWRITTEN_FABRICATION_RISK_CLASSES.has(docintelIdToDocumentClass(docTypeId)) &&
+    fields.some((f) => f.kind === 'date')
+  ) {
+    try {
+      const visionRead = await googleVisionProvider.extractText({
+        imageBuffer: Buffer.from(await rawFiles[0].arrayBuffer()),
+        mimeType: rawFiles[0].type || 'image/jpeg',
+      })
+      if (!isBlocked(visionRead) && visionRead.raw_text) {
+        const outcome = applyDateEnsemble(fields, visionRead.raw_text)
+        fields = outcome.fields
+        dateEnsembleStatus = outcome.applied ? 'applied' : 'no_dates'
+        if (outcome.disagreements.length) {
+          console.info('[date_ensemble] disagreement', JSON.stringify({ doc_type_id: docTypeId, fields: outcome.disagreements }))
+        }
+      } else {
+        dateEnsembleStatus = 'no_dates'
+      }
+    } catch (e) {
+      dateEnsembleStatus = 'error'
+      console.warn('[date_ensemble] second-read failed:', e instanceof Error ? e.message : 'unknown')
+    }
+  }
+  void dateEnsembleStatus
 
   // ── C3: Global OCR field safety guard (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
   // OFF ⇒ this block is skipped ⇒ byte-identical. ON ⇒ unsafe critical reads (hard-case,
