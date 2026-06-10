@@ -2,8 +2,10 @@
  * uiWiring.test.ts — B3 UI wiring guard.
  *
  * Validates that ReparoleWizardV2 correctly routes to /api/reparole/ocr/extract
- * when NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED=true and falls back to
- * /api/tps/ocr/extract when flag is OFF or slot is not covered by Core.
+ * for passport/booklet slots and falls back to /api/tps/ocr/extract for
+ * US-form slots (i94, ead, dl) which Core doesn't cover.
+ *
+ * Phase 2.3: NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED flag removed — Core is unconditional.
  *
  * Uses source-level inspection (same approach as shadowWiring.test.ts) so
  * this test runs in Node without mounting the React component.
@@ -18,9 +20,13 @@ const WIZARD_PATH = path.resolve(
 )
 const SRC = fs.readFileSync(WIZARD_PATH, 'utf-8')
 
-describe('ReparoleWizardV2 — B3 UI wiring', () => {
-  it('declares REPAROLE_CORE_ENABLED from NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED env var', () => {
-    expect(SRC).toMatch(/REPAROLE_CORE_ENABLED\s*=\s*process\.env\.NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED\s*===\s*['"]true['"]/)
+describe('ReparoleWizardV2 — B3 UI wiring (Phase 2.3: flag removed)', () => {
+  it('REPAROLE_CORE_ENABLED flag constant is gone (removed in Phase 2.3)', () => {
+    expect(SRC).not.toMatch(/REPAROLE_CORE_ENABLED/)
+  })
+
+  it('NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED env var reference is gone', () => {
+    expect(SRC).not.toContain('NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED')
   })
 
   it('defines CORE_COVERED_SLOTS with passport and booklet', () => {
@@ -29,34 +35,29 @@ describe('ReparoleWizardV2 — B3 UI wiring', () => {
     expect(SRC).toMatch(/['"]booklet['"]/)
   })
 
-  it('routes to /api/reparole/ocr/extract when flag ON and slot covered', () => {
+  it('routes to /api/reparole/ocr/extract for covered slots', () => {
     expect(SRC).toMatch(/\/api\/reparole\/ocr\/extract/)
-    // The ocrRoute selection logic must include both routes
     expect(SRC).toMatch(/useCoreRoute\s*\?\s*['"]\/api\/reparole\/ocr\/extract['"]/)
   })
 
-  it('falls back to /api/tps/ocr/extract when flag OFF (old path unchanged)', () => {
-    // The old route must still appear as the fallback
+  it('falls back to /api/tps/ocr/extract for non-covered slots (i94/ead/dl)', () => {
     expect(SRC).toMatch(/\/api\/tps\/ocr\/extract['"]/)
   })
 
-  it('uses REPAROLE_CORE_ENABLED AND CORE_COVERED_SLOTS.has(id) for route selection', () => {
-    expect(SRC).toMatch(/REPAROLE_CORE_ENABLED && CORE_COVERED_SLOTS\.has\(id\)/)
+  it('useCoreRoute depends only on CORE_COVERED_SLOTS.has(id) (no flag)', () => {
+    expect(SRC).toMatch(/useCoreRoute\s*=\s*CORE_COVERED_SLOTS\.has\(id\)/)
   })
 
   it('handles Core response shape when _core===true (maps date_of_birth to dob)', () => {
     expect(SRC).toMatch(/json\?\._core\s*===\s*true/)
-    // date_of_birth → dob mapping must exist
     expect(SRC).toMatch(/date_of_birth.*dob/)
   })
 
-  it('handles old TPS response shape (json.module.fields) when flag OFF', () => {
+  it('handles old TPS response shape (json.module.fields) for non-covered slots', () => {
     expect(SRC).toMatch(/json\?\.module\?\.fields/)
   })
 
-  it('does not call /api/reparole/ocr/extract for i94 slot (Core does not cover it)', () => {
-    // The route selection logic must check CORE_COVERED_SLOTS — i94 is NOT in that set
-    // so the wizard will always use old path for i94
+  it('does not call /api/reparole/ocr/extract for i94 slot (not in CORE_COVERED_SLOTS)', () => {
     const coreSetDef = SRC.match(/CORE_COVERED_SLOTS\s*=\s*new Set\(\[([^\]]*)\]\)/)
     expect(coreSetDef).not.toBeNull()
     const setContents = coreSetDef?.[1] ?? ''

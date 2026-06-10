@@ -51,7 +51,7 @@ import {
   type DocumentBrainOutput,
 } from '@/lib/tps/ai/documentBrain'
 import { postExtractNormalize } from '@/lib/tps/ocr/postExtractNormalize'
-// ONE BRAIN B1: TPS → Core behind flag (ONE_CORE_TPS_ENABLED=1, default OFF)
+// ONE BRAIN B1: TPS → Core default for UA-identity docs (Phase 2.2)
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
@@ -252,60 +252,51 @@ export async function POST(req: NextRequest) {
   // text from the successful rotation, not the first failed attempt.
   let effectiveOcrResult = result
 
-  // ── ONE BRAIN B1: Core path (flag-gated; ONE_CORE_TPS_ENABLED=1, default OFF) ──
-  // TPS → readDocumentCore(Gemini visual) → arbitration → toTPSAnswers adapter.
-  // Covers Ukrainian identity documents (passport, booklet) only.
-  // US-form slots (i94/ead/dl/i797) fall through to old path unchanged.
-  // Falls back to old path on any error — prod safety guaranteed.
-  let coreStatus: 'off' | 'skipped_no_mapping' | 'skipped_no_fields' | 'ok' | 'error' = 'off'
+  // ── ONE BRAIN B1: Core — default for UA-identity docs (Phase 2.2) ──────────
+  // UA: passport, booklet, birth, military → Core (readDocument → arbitration → tpsAdapter).
+  // US-form slots (i94/ead/dl/i797): no docintelId mapping → old path unchanged.
+  // Errors: coreStatus='error', moduleResult=null → falls through to old path.
+  let coreStatus: 'skipped_no_mapping' | 'skipped_no_fields' | 'ok' | 'error' = 'skipped_no_mapping'
   let oldModuleForComparison: TpsModuleResult | null = null
-  if (process.env.ONE_CORE_TPS_ENABLED === '1') {
-    const docintelId = mapTpsHintToDocintelId(docTypeHint)
-    if (!docintelId) {
-      coreStatus = 'skipped_no_mapping'
-    } else {
-      try {
-        const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000, product: 'tps' })
-        if (coreRead.ok && Array.isArray(coreRead.fields) && coreRead.fields.length > 0) {
-          const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
-          // MRZ_WIRED: inject MRZ authority for international passport.
-          // result.raw_text is the Google Vision OCR text obtained above (before Core).
-          // mrzCandidatesFromText is pure (no I/O) and safe to call on every passport.
-          // Valid MRZ: confidence=0.99, wins over Gemini for controlled fields.
-          // Invalid MRZ: confidence=0.3, reviewRequired=true — never silently falls back.
-          // Missing MRZ: empty array — arbitrateDocument sees no MRZ candidates.
-          if (docintelId === 'ua_international_passport') {
-            const mrzCandidates = mrzCandidatesFromText(result.raw_text ?? '')
-            if (mrzCandidates.length > 0) {
-              candidates.push(...mrzCandidates)
-              console.info('[ONE_CORE_TPS] MRZ_WIRED: injected', mrzCandidates.length,
-                'MRZ candidates, mrzCheckValid:', mrzCandidates[0]?.mrzCheckValid)
-            }
+  const docintelId = mapTpsHintToDocintelId(docTypeHint)
+  if (!docintelId) {
+    coreStatus = 'skipped_no_mapping'
+  } else {
+    try {
+      const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000, product: 'tps' })
+      if (coreRead.ok && Array.isArray(coreRead.fields) && coreRead.fields.length > 0) {
+        const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
+        if (docintelId === 'ua_international_passport') {
+          const mrzCandidates = mrzCandidatesFromText(result.raw_text ?? '')
+          if (mrzCandidates.length > 0) {
+            candidates.push(...mrzCandidates)
+            console.info('[Core/TPS] MRZ_WIRED: injected', mrzCandidates.length,
+              'MRZ candidates, mrzCheckValid:', mrzCandidates[0]?.mrzCheckValid)
           }
-          const canonicalFields = applyKnowledgeBrainIfEnabled(
-            candidates,
-            buildKnowledgeContext({ docTypeId: docintelId, product: 'tps' }),
-          )
-          if (canonicalFields.length > 0) {
-            moduleResult = canonicalToTpsModuleResult(canonicalFields, docTypeHint, document_id)
-            coreStatus = 'ok'
-            console.info('[ONE_CORE_TPS] used Core for', docTypeHint, 'fields:', moduleResult.fields.length,
-              'review_required:', moduleResult.fields.filter(f => f.review_required).length)
-          } else {
-            coreStatus = 'skipped_no_fields'
-          }
+        }
+        const canonicalFields = applyKnowledgeBrainIfEnabled(
+          candidates,
+          buildKnowledgeContext({ docTypeId: docintelId, product: 'tps' }),
+        )
+        if (canonicalFields.length > 0) {
+          moduleResult = canonicalToTpsModuleResult(canonicalFields, docTypeHint, document_id)
+          coreStatus = 'ok'
+          console.info('[Core/TPS] used Core for', docTypeHint, 'fields:', moduleResult.fields.length,
+            'review_required:', moduleResult.fields.filter(f => f.review_required).length)
         } else {
           coreStatus = 'skipped_no_fields'
         }
-      } catch (e: any) {
-        console.error('[ONE_CORE_TPS] error, falling back to old path:', e?.message ?? e)
-        coreStatus = 'error'
-        moduleResult = null // ensure we fall through to old path
+      } else {
+        coreStatus = 'skipped_no_fields'
       }
+    } catch (e: any) {
+      console.error('[Core/TPS] error, falling back to old path:', e?.message ?? e)
+      coreStatus = 'error'
+      moduleResult = null
     }
   }
 
-  // Old path: runs when Core is OFF, not applicable, or failed.
+  // Old path: runs when Core is not applicable (US-form slots) or failed.
   if (moduleResult === null) {
   switch (docTypeHint) {
     case 'passport': {

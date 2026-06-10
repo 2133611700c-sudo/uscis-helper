@@ -9,18 +9,16 @@
  * wizard owns everything inside the page body.
  *
  * Backend reuse — NO new infrastructure for OCR or PDF:
- *   POST /api/tps/ocr/extract           — same Vision + Brain + slot
- *                                          firewall used by TPS (flag OFF)
- *   POST /api/reparole/ocr/extract      — Core path (flag ON)
+ *   POST /api/tps/ocr/extract           — US-form slots (i94, ead, dl) not
+ *                                          covered by Core
+ *   POST /api/reparole/ocr/extract      — Core path (Phase 2.3: unconditional)
  *   POST /api/reparole/generate-packet  — direct ReParoleAnswers → ZIP
  *                                          (new thin route mirroring TPS)
  *   POST /api/stripe/checkout           — product='re-parole-u4u' Tier 1 $15
  *
- * Flag: NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED
- *   - "true"  → UI calls /api/reparole/ocr/extract (Core path)
- *   - anything else → UI calls /api/tps/ocr/extract (old path, unchanged)
- *   - For docHints not covered by Core (i94, ead, dl), always falls back
- *     to /api/tps/ocr/extract regardless of flag state.
+ * Route selection (Phase 2.3: flag removed):
+ *   passport/booklet → /api/reparole/ocr/extract (Core, unconditional)
+ *   i94/ead/dl       → /api/tps/ocr/extract (no Core mapping exists)
  *
  * Architecture mirrors TPSWizardV2:
  *   - localStorage key wizard:re-parole-u4u:v3:state, schema version
@@ -35,13 +33,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 
-// ─── Feature flag — set NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED=true in Vercel ─
-// When ON: passport/booklet → /api/reparole/ocr/extract (Core path, B3)
-// When OFF: all slots → /api/tps/ocr/extract (old path, unchanged)
-// US-form slots (i94, ead, dl) always fall back to old path (Core doesn't cover them yet).
-const REPAROLE_CORE_ENABLED = process.env.NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED === 'true'
-
-// docHints covered by the Core route (mapReParoleHintToDocintelId in the backend)
+// docHints covered by /api/reparole/ocr/extract (Phase 2.3: flag removed, Core unconditional)
+// US-form slots (i94, ead, dl) go to /api/tps/ocr/extract — no reparole mapping exists.
 const CORE_COVERED_SLOTS = new Set(['passport', 'booklet'])
 
 // ─── Brand tokens — CSS variables for dark mode ─────────────────────────────
@@ -595,10 +588,9 @@ export default function ReparoleWizardV2({ locale }: Props) {
       const fd = new FormData()
       fd.append('file', file); fd.append('docHint', id)
 
-      // ── Route selection (B3) ─────────────────────────────────────────────
-      // Core path only when flag ON AND the slot is covered (passport/booklet).
-      // i94, ead, dl always go to the old TPS route — Core doesn't cover them yet.
-      const useCoreRoute = REPAROLE_CORE_ENABLED && CORE_COVERED_SLOTS.has(id)
+      // ── Route selection (B3, Phase 2.3) ─────────────────────────────────────
+      // passport/booklet → Core route; i94/ead/dl → TPS route (no mapping exists).
+      const useCoreRoute = CORE_COVERED_SLOTS.has(id)
       const ocrRoute = useCoreRoute ? '/api/reparole/ocr/extract' : '/api/tps/ocr/extract'
 
       const r = await fetch(ocrRoute, { method: 'POST', body: fd })
