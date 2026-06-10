@@ -26,6 +26,29 @@ export function stripSettlementPrefix(cy: string): string {
 }
 
 /**
+ * Owner-locked source-script rule (2026-06-10): VISIBLE source script controls
+ * transliteration. A name line is AMBIGUOUS when its script is not visually
+ * confirmed — no distinctive Ukrainian letter (і/ї/є/ґ) AND no distinctive
+ * Russian letter (ы/э/ё/ъ). Old Soviet/bilingual docs legitimately mix UA and RU
+ * lines, so we never guess the document's language: an ambiguous name must go to
+ * review (review_required=true, reason_code=source_script_ambiguous) and must NOT
+ * be finalized by C3 until the source script is confirmed or the user/admin
+ * confirms. D2 may still surface a best-effort KMU-55 candidate for the screen.
+ *
+ * Only active behind RU_TRANSLIT_ENABLED (the RU/UA routing feature); when OFF we
+ * keep the legacy KMU-55-for-all behavior and do not raise this flag.
+ */
+export function isNameSourceScriptAmbiguous(
+  cy: string,
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  if (env.RU_TRANSLIT_ENABLED !== '1') return false
+  const s = (cy ?? '').trim()
+  if (!s) return false
+  return detectNameScript(s) === 'unknown'
+}
+
+/**
  * Convert one vision read to its canonical value by field kind.
  * Returns null when there is nothing trustworthy to emit (no guessing).
  */
@@ -43,8 +66,11 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
       // RU_TRANSLIT_ENABLED (default OFF): a name line written in clearly-RUSSIAN
       // script (ы/э/ё/ъ present) is transliterated with the Russian system, not
       // KMU-55 — Soviet/bilingual docs are as-written, never harmonized to Ukrainian.
-      // 'unknown' (no distinctive letter) stays KMU-55: do NOT guess the script.
-      // (For the APPLICANT's own name, MRZ/passport remains controlling upstream.)
+      // 'unknown' (no distinctive letter) yields a best-effort KMU-55 CANDIDATE so
+      // the review screen isn't empty — but the reader flags it ambiguous and C3
+      // must not finalize it (see isNameSourceScriptAmbiguous + the source-script
+      // gate in documentFieldReader). Visible source controls translit; ambiguity
+      // blocks final. (For the APPLICANT's own name, MRZ/passport stays controlling.)
       if (process.env.RU_TRANSLIT_ENABLED === '1' && detectNameScript(cy) === 'ru') {
         return transliterateRussian(cy) || null
       }
