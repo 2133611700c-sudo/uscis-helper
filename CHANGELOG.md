@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (debug: expose date_ensemble diagnostics in response, CODE, agent)
+- TEMPORARY: response carries date_ensemble {status, boxes, crops, chars, disagreements} (PII-free counts) to diagnose why the live ensemble isnt surfacing the 2nd reading after multiple fixes. Remove once fixed.
+
 ## 2026-06-10 (fix: ensemble extracts month+year without a day, CODE, agent)
 - Vision OCR of the zoomed date region often drops a clean day digit → the strict day+month+year regex matched nothing → no second-engine candidate → month disagreement never surfaced. Day now optional. +2 tests; 3061 passed.
 
