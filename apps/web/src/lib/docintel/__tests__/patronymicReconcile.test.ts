@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
+import { primaryGeminiModel } from '../providers/geminiVisionProvider'
 import { reconcilePatronymicFields } from '../patronymicReconcile'
 import { readDocument } from '../documentFieldReader'
 import type { ExtractedDocField, VisionProvider, VisionReadResult } from '../types'
@@ -74,7 +75,7 @@ function stubProvider(): VisionProvider {
     async readFields(): Promise<VisionReadResult> {
       return {
         ok: true,
-        model: 'stub-model',
+        model: primaryGeminiModel(),
         ms: 1,
         fields: [
           { field: 'family_name', cyrillic: 'Куропʼятник', can_read: true, confidence: 0.99, reason: '' },
