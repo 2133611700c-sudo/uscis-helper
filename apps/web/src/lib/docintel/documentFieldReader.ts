@@ -116,6 +116,11 @@ export async function readDocument(
       f.review_required = true
       f.review_reasons = [...(f.review_reasons ?? []), 'fallback_model_used']
     }
+    // Observability (P1): PII-free signal — ids + counts only, never field values.
+    // Lets prod monitors see fallback-rate without exposing any document content.
+    console.warn('[ADR018] fallback_model_used', JSON.stringify({
+      doc_type_id: docTypeId, model: read.model, primary: primaryGeminiModel(), fields: fields.length,
+    }))
   }
 
   // SMART_NORMALIZE_ENABLED (default OFF): document-level post-passes that need

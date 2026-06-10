@@ -122,6 +122,14 @@ export interface ExtractedField {
   bbox_status?: BboxStatus
   user_corrected?: boolean
   correction_class?: 'controlling_spelling' | 'ocr_error' | 'one_document_exception'
+  // ── Phase 3.1 (ADR-017 C3): user confirmation re-enters C3 server-side ─────
+  /** User explicitly confirmed/corrected this value on the review screen. */
+  confirmed?: boolean
+  /**
+   * C3 release value (server-written ONLY — see confirmedValueGuard / applyOcrFieldSafety).
+   * string → C3 accepted; null → C3 rejected (render as missing); undefined → C3 not run.
+   */
+  final_value?: string | null
 }
 
 export interface CertificationRecord {

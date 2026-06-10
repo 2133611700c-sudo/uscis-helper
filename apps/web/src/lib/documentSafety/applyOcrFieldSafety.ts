@@ -20,16 +20,28 @@ export function isOcrFieldSafetyEnabled(env: Record<string, string | undefined> 
   return env.OCR_FIELD_SAFETY_ENABLED === '1'
 }
 
+// CRITICAL_IDENTITY — names, birth facts, sex, nationality, and the DATES that
+// define a document's validity. Reconciled to docs/architecture/CRITICAL_FIELDS_CONTRACT.md
+// (P0 design lock 2026-06-10): dates of birth/issue/expiry are identity-critical
+// in a certified translation — a wrong expiry or marriage date is a legal defect.
 const IDENTITY = [
   'family_name', 'surname', 'given_name', 'patronymic', 'middle_name',
   'child_family_name', 'child_given_name', 'child_patronymic',
   'father_full_name', 'mother_full_name', 'spouse_1_full_name', 'spouse_2_full_name',
   'dob', 'date_of_birth', 'place_of_birth', 'place_of_birth_city', 'place_city',
-  'city_of_birth', 'province_of_birth', 'place_of_birth_region', 'sex', 'citizenship',
+  'city_of_birth', 'province_of_birth', 'place_of_birth_region', 'place_of_marriage',
+  'sex', 'citizenship', 'nationality', 'country_of_nationality',
+  // dates that define validity / vital events (CRITICAL_FIELDS_CONTRACT.md):
+  'issue_date', 'date_of_issue', 'expiration_date', 'passport_expiration_date',
+  'expiry_date', 'valid_from', 'valid_to', 'marriage_date', 'date_of_marriage',
 ]
 const DOCNUM = [
   'passport_number', 'doc_number', 'document_number', 'act_record_number',
-  'a_number', 'i94_admission_number', 'i94_admission', 'military_id_number',
+  'certificate_number', 'a_number', 'i94_admission_number', 'i94_admission',
+  'military_id_number', 'series_number',
+  // issuing authority + admission category are document-defining (contract):
+  'issuing_authority', 'agency', 'ead_category', 'category', 'class_of_admission',
+  'i94_class_of_admission',
 ]
 
 /** Map a field name → criticality. Identity/document numbers are critical; addresses/contact are admin. */
