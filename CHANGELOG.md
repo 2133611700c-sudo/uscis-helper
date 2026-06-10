@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: handwritten-date ENSEMBLE — Gemini+Vision cross-check (proven), CODE, agent)
+- Research: best handwritten-Ukrainian = Transkribus (CER 4.2%, owner-auth needed); Azure excludes Cyrillic handwriting; DocAI weak. Field uses HTR+ensemble+human-in-loop.
+- PROVEN live on a real handwritten birth cert: Gemini misreads the month, Google Vision (SA) reads it CORRECTLY; zoomed date-region crop recovers the day. Neither engine alone is right; together they contain every correct component.
+- BUILT the deterministic core: `docintel/ensemble/dateReconcile.ts` — parse UA/RU word-months + ISO/MDY (червня=June vs липня=July), reconcile component-wise; agreement→ISO, any disagreement→review + both candidates, never silent-picks. +8 tests (synthetic dates, no PII).
+- Remaining (defined): wire Vision second-read into translation path for handwritten classes; zoomed date crop; review UI dual-candidate; later Transkribus/TrOCR third reader.
+- SECURITY: a Vision SA private key was pasted in chat → owner must ROTATE it. Report: docs/reports/HANDWRITTEN_DATE_ENSEMBLE_2026-06-10.md.
+
 ## 2026-06-10 (probe: HONEST handwritten Cyrillic multi-run — names work, DATES fail, docs, agent)
 - 3 runs each on 3 handwritten owner docs vs GT. RESULT: handwritten NAMES read well+stable (11/12); handwritten DATES stably WRONG (0/3 both birth certs). Corrects earlier print-emphasis.
 - Failure mode: model misreads handwritten month word + day digit and copies one date into both dob & date_of_issue. All review-flagged (safety holds) but machine is wrong on dates.
