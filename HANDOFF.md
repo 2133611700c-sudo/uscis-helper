@@ -1,4 +1,5 @@
 # HANDOFF (2026-06-10 — P0-A guard reverted to SHADOW; enforce is an owner env-flip)
+> 2026-06-10: relaxed ensemble anchor — surface ANY date difference on the cropped region (handwritten engines often share no component). Re-deploy+smoke.
 > 2026-06-10: fixed ensemble bbox parse (Gemini returned malformed keyed JSON; now arrays + salvage). Re-deploy+smoke.
 > 2026-06-10: ensemble upgraded to ZOOM the date region for the 2nd-engine read (Vision needs zoom for the month). dateRegionRead.ts: Gemini bbox→crop→Vision. Live in prod (ENSEMBLE_DATE_ENABLED=1). OWNER: rotate the chat-exposed Vision SA key.
 > 2026-06-10: ensemble now LIVE in prod (ENSEMBLE_DATE_ENABLED=1). Fixed the silencing bug (kind='ai_vision' not 'date' → detect dates by NAME). OWNER STILL must rotate the chat-exposed Vision SA key.
