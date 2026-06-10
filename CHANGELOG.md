@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-10 (decision: NO tonal preprocessing before vision read — A/B data, docs, agent)
+- Tested orig(color) vs greyscale+contrast vs hard B&W on real Cyrillic docs via live prod read. Handwritten birth cert: 3/3→0/3 Cyrillic when preprocessed; printed unaffected. Tonal preprocessing DESTROYS faint handwriting (our danger class).
+- DECIDED: send original color (geometric resize only, already shipped). Geometric crop/deskew may help but must be bench-measured first; never greyscale/binarize. Official PDF is built from extracted text, not a scan → no PDF benefit either.
+- Report: docs/reports/PREPROCESS_AB_DECISION_2026-06-10.md. No code/prod change; no PII.
+
 ## 2026-06-10 (bench: add Soviet-bilingual birth cert; correct overstated finding B, docs, agent)
 - Extended GT bench to the Soviet-bilingual birth cert (danger class): same pattern as handwritten — surname Cyrillic ✓, given/patronymic Cyrillic ✗, dob wrong, ALL review-flagged. Coverage now 4/5 core UA classes.
 - CORRECTED finding B (was overstated): ua_birth_certificate IS protected — docintelIdToDocumentClass→birth_certificate_handwritten (always_review:true) + route applyHardCaseReviewOverride (unconditional) + role guard; policy already unit-tested. The handwritten:false spec flag is cosmetic-misleading, not a live danger. Residual: protection is route-level (translation), not at the shared readDocument door.
