@@ -1,5 +1,15 @@
 # STATUS (2026-06-09 — REBUILD: ONE Gemini brain (ADR-017); Phase 2.0 DONE)
 
+## Phase 2.1a DONE (2026-06-09, CODE — Translator hard-case unbypass)
+- **Translator birth/marriage** (`auto:false`, incident RC-1 STILL TRUE in prod) now route through vision-extract + review gate when `NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED=1` (default OFF).
+- Flag OFF: byte-identical to current behaviour. No vision call, no gate, manual specialist path unchanged.
+- Flag ON + 0 fields: falls through to manual (no gate breakage — hardCaseHasFields=false).
+- Flag ON + fields: `hardCaseHasFields=true → needsReviewGate=true` → all fields review_required, payment blocked until all confirmed.
+- `autoread?: boolean` on DocTypeMeta (separate from `auto`, does NOT change `auto:false`). `hardCaseHasFields` state cleared on `resetAll`.
+- Files: `TranslateWizard.tsx`; new test `hardCaseAutoread.test.ts` (14 pure-logic tests).
+- tsc 0; full suite 2975/4 (was 2961, +14 new, 0 regressions). Prod untouched. No PII. Branch feat/one-brain-gemini-core (PR #104).
+- **Next code step: Phase 2.0b — remove deprecated `gemini-2.0-flash` (HTTP 404) from geminiVisionProvider fallback chain.**
+
 ## Phase 2.0 DONE (2026-06-09, CODE — rawCyrillic threaded + D2 sees Cyrillic + 4 bug fixes)
 - **GAP A FIXED:** rawCyrillic now threads ExtractedDocField → FieldCandidate.rawCyrillic → CanonicalField.rawCyrillic. `docintelToCandidate` sets `rawCyrillic: f.raw_cyrillic`. `canonicalToFieldOut` prefers `f.rawCyrillic` over cyrillicMap.
 - **GAP B FIXED:** `applyKnowledge()` feeds D2 with `f.rawCyrillic ?? f.normalizedValue ?? f.rawValue`. D2 Cyrillic rules (gazetteer, RU/UA spelling, normalizeName, patronymicReconcile) now fire on ORIGINAL Cyrillic text. Phase 1 `knowledgeBrain` at arbitration now receives Cyrillic and is effectively at the right level.
