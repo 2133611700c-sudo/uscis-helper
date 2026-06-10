@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-10 (fix: pre-payment review check — block before Stripe if fields unresolved, CODE, agent)
+- `apps/web/src/app/api/translation/generate-pdf/route.ts`: added pre-payment review check block before Stripe gate.
+  - Filters `payload.fields` for `review_required === true`; returns 400 `fields_require_review` if any found.
+  - Prevents charge-before-block ordering bug (user charged → PDF blocked 403).
+- tsc: 0 errors. 2992 passed | 4 skipped | 0 failed (unchanged from Phase 3 baseline).
+
 ## 2026-06-10 (docs: OCR field safety canary full record applied to main, docs-only, agent)
 - Added 3 canary report files from PRs #100, #101, #102 (squashed; shared state files already on main).
 - `docs/reports/OCR_FIELD_SAFETY_CANARY_RESULT_AFTER_502_FIX.md` — canary re-run after 502 fix, DEGRADED-clean result.
