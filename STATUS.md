@@ -1,5 +1,10 @@
 # STATUS (2026-06-06 — OCR INCIDENT / NOT TRUSTED; P0 forensic audit done)
 
+## ZERO-TRUST AUDIT 2026-06-09 → DEGRADED (prod safe; monitoring + governance broken)
+- Verified independently (git/GitHub/Vercel/tests): prod_sha==origin/main==03eb30f, healthz ok, OCR_FIELD_SAFETY/SMART/QUALITY flags ABSENT (OFF); tsc 0; full suite 2919 passed/4 skipped; documentSafety 38. Guard wired x4 flows behind OFF flag. ONE_BRAIN_CORE/ANTI_FAB/SELF_CONS/DOC_CLASS_METRICS present in prod (values UNVERIFIED by `ls`).
+- **DEGRADED finding:** ALL scheduled GitHub Actions on main = startup_failure (continuous 06-08→06-09) → automated prod monitoring NOT running (root cause UNVERIFIED). Governance debt: local main STALE (0d3d82b); PRs #100/#101/#102 OPEN (canary closeout not landed on main); temp prod-safety-monitor.yml overdue for deletion; ~30 untracked report files.
+- Canary = CLOSED_DEGRADED (flag OFF); candidate≠final proven LOCAL only; real/TPS/PDF owner proofs NOT done → not PASS_CANARY_FULL. No prod/code/env change in this audit. Report: docs/reports/ZERO_TRUST_RECOGNITION_STATE_AUDIT.md.
+
 ## P0 FIX: vision-extract 502 root-caused + fixed (the original "0 results" incident)
 - RUNTIME PROOF (preview): ead no-fields probe → HTTP 200 (was 502 on prod); blank birth-cert → 200 all-review, no fabrication. PR #99.
 - Root cause: route returned HTTP 502 whenever it recognized ZERO fields (final return `status: ok ? 200 : 502`). NOT a crash/timeout/provider issue — direct-origin probe returned the full valid JSON body with a 502 status; Cloudflare masked it as "error code: 502". Affects real hard-case docs that read 0 fields. Fix: return 200 with ok:false+status+error+review_required (matches the route's other non-fatal returns). tsc 0; suite 2919/4. See docs/reports/VISION_EXTRACT_502_TRIAGE_2026-06-06.md.
