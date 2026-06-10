@@ -36,6 +36,7 @@ import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked } from '@/lib/ocr/types'
 import { applyDateEnsemble, isDateFieldName } from '@/lib/docintel/ensemble/applyDateEnsemble'
+import { readDateRegionsWithVision } from '@/lib/docintel/ensemble/dateRegionRead'
 import { HANDWRITTEN_FABRICATION_RISK_CLASSES } from '@/lib/docintel/antiFabricationGate'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
@@ -299,12 +300,26 @@ export async function POST(req: NextRequest) {
     fields.some((f) => isDateFieldName(f.field, f.kind))
   ) {
     try {
-      const visionRead = await googleVisionProvider.extractText({
-        imageBuffer: Buffer.from(await rawFiles[0].arrayBuffer()),
-        mimeType: rawFiles[0].type || 'image/jpeg',
-      })
-      if (!isBlocked(visionRead) && visionRead.raw_text) {
-        const outcome = applyDateEnsemble(fields, visionRead.raw_text)
+      const apiKey = getGeminiApiKey()
+      const imageBuffer = Buffer.from(await rawFiles[0].arrayBuffer())
+      const mimeType = rawFiles[0].type || 'image/jpeg'
+      // Read the DATE REGIONS with a zoomed second-engine pass — Vision garbles the
+      // handwritten month on the full page but reads it on a zoomed crop (prod proof).
+      let secondText = ''
+      if (apiKey) {
+        secondText = await readDateRegionsWithVision({
+          imageBuffer, mimeType, geminiApiKey: apiKey,
+          geminiModel: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview'),
+          vision: googleVisionProvider,
+        })
+      }
+      // Fallback: if region-crop yielded nothing, try Vision on the full page.
+      if (!secondText) {
+        const full = await googleVisionProvider.extractText({ imageBuffer, mimeType })
+        if (!isBlocked(full)) secondText = full.raw_text ?? ''
+      }
+      if (secondText) {
+        const outcome = applyDateEnsemble(fields, secondText)
         fields = outcome.fields
         dateEnsembleStatus = outcome.applied ? 'applied' : 'no_dates'
         if (outcome.disagreements.length) {

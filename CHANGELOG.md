@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: date-region ZOOM crop for ensemble second-read — the working fix, CODE, agent)
+- Prod smoke revealed Vision garbles the handwritten month on the FULL page; it reads it correctly only on a ZOOMED date-region crop. NEW `dateRegionRead.ts`: Gemini returns date bboxes → crop+zoom×5 each → Google Vision OCR on the crop → combined text for the reconciler. Geometric only (no tonal). Fail-open.
+- Route ensemble now uses readDateRegionsWithVision (zoom) with full-page Vision as fallback. tsc 0; 3058 passed; guard 0. Live behind ENSEMBLE_DATE_ENABLED=1 (prod).
+
 ## 2026-06-10 (fix: ensemble date detection by NAME not kind (was silenced), CODE, agent)
 - BUG: response FieldOut.kind carries the SOURCE ('ai_vision'), not the data type, so the ensemble guard `kind==='date'` NEVER matched → ensemble silently never ran on dates. Fixed: detect date fields by NAME (`isDateFieldName`: dob/date_of_*). Route guard + applyDateEnsemble both updated. +1 test (16 ensemble).
 - ENSEMBLE_DATE_ENABLED=1 flipped in prod + redeployed; this fix makes it actually fire on handwritten date fields.
