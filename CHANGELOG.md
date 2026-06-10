@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-10 (P0-A hardening: revert enforce→shadow, 403→422, kill-switch, runbook, CODE, agent)
+- **Walked back 816cb64's always-on enforce** (which auto-deployed to prod with no data) to SHADOW mode default. `CONFIRMED_VALUE_GUARD_MODE` = shadow|enforce|off (one knob, no flag sprawl). Shadow = validate+log `would_block`, do NOT block → prod byte-identical. Owner flips enforce after reviewing shadow logs.
+- `generate-pdf/route.ts`: guard block 403 → 422 (content invalid ≠ auth; frontend verified to only alert error string). PII-free structured log `[confirmed_value_guard] would_block|block {field,criticality,reason,doc_type}`.
+- NEW `docs/architecture/CERTIFIED_DOC_INCIDENT.md` — incident runbook, MODE=off kill-switch, interim post-charge refund policy.
+- Contract sharpening: C3_USER_CORRECTION_CONTRACT (DeepSeek-never-final; P0-A.1 vs P0-A.2 = anchor-check not gazetteer re-run; shadow rollout); ADR-019 (Tier-0 hashes ≠ legal evidence, breach-liability note); GT_BENCHMARK_EXIT_CRITERIA (N<30 must be enforced in runner code).
+- New guard tests updated for shadow-default + regression on the removed f.confirmed flag. tsc 0; 3016 passed / 4 skipped / 0 failed.
+
 ## 2026-06-10 (P0 design lock + P0-A output-door sanitation, CODE+5 docs, agent)
 - NEW `apps/web/src/lib/documentSafety/confirmedValueGuard.ts` — deterministic release-value sanitation (Cyrillic/control/length/date).
 - `generate-pdf/route.ts` — guard wired ALWAYS-ON (legal sanitation, not behind OCR_FIELD_SAFETY). Fixed dead-code bug from prior agent (keyed on never-sent `confirmed` flag → now validates real release values). Deliberate prod behavior change: defects blocked, legitimate Latin unaffected.

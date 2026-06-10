@@ -1,7 +1,16 @@
-# STATUS (2026-06-10 — P0 DESIGN LOCK + P0-A output-door sanitation shipped)
+# STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+
+## P0-A hardening (2026-06-10, CODE — walked enforce back to shadow)
+- **CORRECTION to 816cb64:** that commit shipped the confirmed-value guard ALWAYS-ON/enforcing straight to prod (auto-deploy) with zero block-rate data — a measurement-first violation. This commit reverts it to **SHADOW mode by default**: the guard validates + logs `would_block` but does NOT block → **prod output byte-identical**. Owner flips `CONFIRMED_VALUE_GUARD_MODE=enforce` AFTER reviewing shadow logs.
+- ONE env knob, three modes (no flag sprawl): `shadow` (default) | `enforce` | `off` (emergency kill-switch, loudly logged). Collapsed the separate EMERGENCY_GUARD_BYPASS into `off`.
+- `403 → 422` for the guard block (content invalid ≠ auth failure; verified frontend just alerts the error string, no breakage).
+- PII-free structured log on every would_block/block: `{field, criticality, reason, doc_type}` — no values.
+- Added `CERTIFIED_DOC_INCIDENT.md` runbook (kill-switch steps, interim refund policy, SEV levels).
+- Contract additions: DeepSeek-never-writes-finalValue (C3 contract); P0-A.1-vs-P0-A.2 scoping (A.2 = MRZ anchor cross-check, NOT full gazetteer re-run); Tier-0≠legal-evidence warning (ADR-019); N<30-binding-in-runner-code (GT criteria).
+- tsc 0; **3016 passed | 4 skipped | 0 failed**.
 
 ## P0 Design Lock + P0-A (2026-06-10, CODE + 5 contract docs)
-- **P0-A output door CLOSED (prod behavior change, deliberate):** `generate-pdf` now runs `validateConfirmedValue` on EVERY release value UNCONDITIONALLY (not behind OCR_FIELD_SAFETY_ENABLED) — Cyrillic/control/over-length/bad-date in a certified English PDF is a legal defect with zero legitimate-flow regression. Critical fail → 403 (field NAME only, no PII); non-critical → nulled→missing; pass → finalValue set. Fixed Agent-A keying bug (it keyed on a `confirmed` flag the client never sends; now keys on real release values).
+- **P0-A output door (now SHADOW-default):** `generate-pdf` runs `validateConfirmedValue` on EVERY release value (not behind OCR_FIELD_SAFETY_ENABLED) — Cyrillic/control/over-length/bad-date in a certified English PDF is a legal defect. Fixed Agent-A keying bug (it keyed on a `confirmed` flag the client never sends; now keys on real release values).
 - **classifyCriticality reconciled** to CRITICAL_FIELDS_CONTRACT: added validity DATES (issue/expiry/marriage), issuing_authority, ead_category/class_of_admission, nationality. Previously fell through to `optional` (real gap).
 - **Observability (P1 start):** PII-free `[ADR018] fallback_model_used` log (ids+counts only).
 - **5 design-lock contracts created:** CRITICAL_FIELDS_CONTRACT, C3_USER_CORRECTION_CONTRACT, PAYMENT_REFUND_LEGACY_GATE_CONTRACT, GT_BENCHMARK_EXIT_CRITERIA (docs/architecture/), ADR-019-audit-trail-persistence (docs/adr/).

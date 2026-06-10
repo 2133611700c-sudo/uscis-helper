@@ -34,6 +34,19 @@ certified-PDF generation. One row per signed translation.
 - **Tier 0 (default, safe to ship):** hashes + reason codes + flags only. No names, no values. Proves the *process* ran and *which* fields were machine vs human, without storing personal data.
 - **Tier 1 (needs owner + legal):** store actual final values (the certified output) for dispute defense. This is PII; requires retention policy, user consent language, access control, deletion path (we already have a `/delete-confirmed` flow — integrate).
 
+> **WARNING — Tier 0 is NOT sufficient for a USCIS subpoena / audit response.**
+> A hash proves an event occurred; it does NOT prove WHAT was delivered to the
+> client. For certified-translation dispute defense you need the actual output.
+> Tier 0 covers operational/fraud-detection only. Do not choose Tier 0 believing
+> it satisfies legal evidence — it does not.
+>
+> Independent note (breach liability): Tier 1 storing field values makes us a
+> holder of immigration PII and a breach target with deletion obligations. A
+> lower-liability alternative to evaluate: store the **generated PDF itself**
+> (the thing actually delivered) in encrypted cold storage + its hash, rather
+> than per-field values. The PDF is the evidence; the user already has a copy.
+> Owner/legal to weigh evidence-need vs breach-liability.
+
 Default to Tier 0 now. Tier 1 only on explicit owner+legal approval.
 
 ### Retention — [OWNER DECISION]

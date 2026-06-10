@@ -1,4 +1,33 @@
-# HANDOFF (2026-06-10 — P0 design lock + P0-A output-door sanitation)
+# HANDOFF (2026-06-10 — P0-A guard reverted to SHADOW; enforce is an owner env-flip)
+
+## What this session corrected
+Commit 816cb64 shipped the confirmed-value guard **enforcing, always-on, to prod**
+(Vercel auto-deploy) with no block-rate data — a measurement-first violation I
+caught before piling more on. This hardening commit:
+1. **SHADOW mode by default** — guard validates + logs `would_block`, does NOT
+   block. Prod is byte-identical again. `CONFIRMED_VALUE_GUARD_MODE` = shadow|enforce|off.
+2. 403 → **422** (content invalid ≠ auth; frontend verified safe — it only alerts the error).
+3. PII-free structured log on every would_block/block.
+4. `CERTIFIED_DOC_INCIDENT.md` runbook (kill-switch = `MODE=off`, interim refund policy).
+5. Contract sharpening: DeepSeek-never-final, P0-A.1 vs P0-A.2 (anchor-check not full re-run), Tier-0≠legal, N<30-in-runner-code.
+
+## OWNER ACTION to actually enforce the guard
+After the shadow window, review prod logs `[confirmed_value_guard] would_block`
+(grep by field/reason/doc_type — all PII-free). If the over-block rate is
+acceptable: set `CONFIRMED_VALUE_GUARD_MODE=enforce` in Vercel prod env + redeploy.
+Emergency revert anytime: `CONFIRMED_VALUE_GUARD_MODE=off`.
+
+## Where I PUSHED BACK on the owner's last critique (not all accepted)
+- Owner ranked kill-switch as "#1 most dangerous." Disagreed: the guard is
+  FAIL-SAFE (over-blocks → availability, never releases a defect). The real danger
+  is false-NEGATIVE (point 2), not the fail-safe's off-switch. Reordered severity.
+- Owner's "full C3 re-run on corrected values" — partly wrong: running D2/gazetteer
+  on a user override re-introduces forbidden dictionary-overwrites-user. P0-A.2 is
+  an MRZ/controlling-anchor cross-check ONLY. Documented as such.
+- Owner's point-3 claim "403 → frontend re-login redirect" — false for OUR client
+  (it only `alert()`s the error). Changed to 422 for infra-monitor correctness, not UX.
+- Owner's exact regression test name referenced the REMOVED `f.confirmed` flag —
+  would test a ghost. Wrote the real invariant test instead (no confirmed-gate exists).
 
 ## What was done
 1. **P0-A: D5→server C3 re-run (output door closed).** `confirmedValueGuard.ts` validates every release value before a certified PDF renders. ALWAYS ON (legal input sanitation, not behind OCR_FIELD_SAFETY). Critical fail→403 (field name only); non-critical→nulled; pass→finalValue. **This is a deliberate prod behavior change** — defects that previously reached the PDF are now blocked; legitimate Latin values unaffected.
