@@ -1,6 +1,6 @@
 # HANDOFF (2026-06-10 — Phase 2 split executed: PRs #105-#108 merged, PR-F timeouts)
 
-**"делай" executed.** PR #104 merged (Phase 1.3). Split per audit: #105 (2.0 rawCyrillic) MERGED, #106 (2.1a unbypass) MERGED, #107 (2.1 Translation Core) MERGED, #108 (2.2-2.6 gates+GPT, explicit two-part label) — this branch. PR-F (this commit): timeoutMs 20s→40s ×4 routes, maxDuration 30→60 reparole/EAD.
+**"делай" executed.** PR #104 merged (Phase 1.3). Split per audit: #105 (2.0 rawCyrillic) MERGED, #106 (2.1a unbypass) MERGED, #107 (2.1 Translation Core) MERGED, #108 (2.2-2.6 gates+GPT, explicit two-part label) — this branch. PR-F #109 MERGED: timeoutMs 20s→40s ×4 routes, maxDuration 30→60 reparole/EAD. ALL SIX PRs (#104-#109) are on main; prod deploys behavior-identical code under current env.
 
 **OWNER ACTION UNBLOCKED after PR-F merges:** flip prod GEMINI_MODEL → gemini-3.1-pro-preview (clean value, no \n). Command: `vercel env rm GEMINI_MODEL production && printf 'gemini-3.1-pro-preview' | vercel env add GEMINI_MODEL production`.
 
