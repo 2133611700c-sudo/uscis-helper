@@ -1,0 +1,17 @@
+{
+  "docId": "synthetic-birth-cyrillic-in-output-01",
+  "documentClass": "birth_certificate_handwritten",
+  "_worked_example": "ADVERSARIAL — cyrillic-in-output. A Latin-only critical field whose only available value still contains Cyrillic must be BLOCKED, not finalized. SYNTHETIC only.",
+  "_adversarial_categories": ["cyrillic_in_output"],
+  "_mock_ocr_output": {
+    "note": "the user-corrected value for a Latin-only critical field still contains a Cyrillic character.",
+    "fields": { "issuing_authority": "Вінницький РАЦС (cyrillic left in a Latin-only field)" }
+  },
+  "_expected_behavior": "confirmedValueGuard must fire → finalValue stays null, the route returns 422. expected=null here (must not finalize); a non-null finalization with Cyrillic in it = the guard failed and the verdict catches it as critical_wrong.",
+  "fields": [
+    { "field": "child_family_name", "expected": "IVANENKO", "critical": true },
+    { "field": "child_given_name", "expected": "TARAS", "critical": true },
+    { "field": "dob", "expected": "1990-01-01", "critical": true },
+    { "field": "issuing_authority", "expected": null, "critical": true }
+  ]
+}
