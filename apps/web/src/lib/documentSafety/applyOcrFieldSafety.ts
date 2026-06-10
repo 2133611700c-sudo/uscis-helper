@@ -23,7 +23,7 @@ export function isOcrFieldSafetyEnabled(env: Record<string, string | undefined> 
 // CRITICAL_IDENTITY — names, birth facts, sex, nationality, and the DATES that
 // define a document's validity. Reconciled to docs/architecture/CRITICAL_FIELDS_CONTRACT.md
 // (P0 design lock 2026-06-10): dates of birth/issue/expiry are identity-critical
-// in a certified translation — a wrong expiry or marriage date is a legal defect.
+// in the user's signed translation output — a wrong expiry or marriage date is a legal defect.
 const IDENTITY = [
   'family_name', 'surname', 'given_name', 'patronymic', 'middle_name',
   'child_family_name', 'child_given_name', 'child_patronymic',

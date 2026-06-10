@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (ci: content-guard fix — reword 'certified translation' comment, agent)
+- `applyOcrFieldSafety.ts` comment reworded ('certified translation' literal tripped Rule 4 product-claim guard in CI). No logic change. tsc 0.
+
 ## 2026-06-10 (P0-A hardening: revert enforce→shadow, 403→422, kill-switch, runbook, CODE, agent)
 - **Walked back 816cb64's always-on enforce** (which auto-deployed to prod with no data) to SHADOW mode default. `CONFIRMED_VALUE_GUARD_MODE` = shadow|enforce|off (one knob, no flag sprawl). Shadow = validate+log `would_block`, do NOT block → prod byte-identical. Owner flips enforce after reviewing shadow logs.
 - `generate-pdf/route.ts`: guard block 403 → 422 (content invalid ≠ auth; frontend verified to only alert error string). PII-free structured log `[confirmed_value_guard] would_block|block {field,criticality,reason,doc_type}`.
