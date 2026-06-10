@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-10 (probe: HONEST handwritten Cyrillic multi-run — names work, DATES fail, docs, agent)
+- 3 runs each on 3 handwritten owner docs vs GT. RESULT: handwritten NAMES read well+stable (11/12); handwritten DATES stably WRONG (0/3 both birth certs). Corrects earlier print-emphasis.
+- Failure mode: model misreads handwritten month word + day digit and copies one date into both dob & date_of_issue. All review-flagged (safety holds) but machine is wrong on dates.
+- Next target = handwritten DATES: disambiguate dob vs issue date; test zoomed field-region crop (geometric, OFF/ON benched). Report: docs/reports/HANDWRITTEN_CYRILLIC_PROBE_2026-06-10.md.
+- Also generated a real mirror-PDF sample to gitignored qa-private (birth cert) to validate the format. No code/prod change; no PII committed.
+
 ## 2026-06-10 (feat: mirror translation PDF — wire official schemas to live flow, CODE, agent)
 - FOUNDATIONAL: the English-mirror capability existed as orphaned scaffolding (5 KMU-sourced schemas + renderOfficialTranslation) fed ONLY by mockOCR. Built the 3 missing bricks to drive it from REAL extracted fields:
   - `forms/ukraine/schemas/registry.ts` — getOfficialSchema(docType) for the 5 cert types.

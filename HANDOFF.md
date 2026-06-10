@@ -1,4 +1,5 @@
 # HANDOFF (2026-06-10 — P0-A guard reverted to SHADOW; enforce is an owner env-flip)
+> 2026-06-10: honest handwritten probe — names OK, DATES the real failure (stable wrong, dob/issue conflated). Next: disambiguate date fields + test zoomed date-region crop (geometric, benched). Mirror-PDF sample in gitignored qa-private.
 > 2026-06-10: mirror translation PDF wired (official schemas → real fields → renderOfficialTranslation) behind MIRROR_PDF_ENABLED=OFF. Owner: review a birth-cert sample, then flip. Marriage/divorce extraction is sparse (mostly manual fields); death/name-change have no extraction spec. See MIRROR_TRANSLATION_ARCHITECTURE.
 > 2026-06-10: tested scanner-mode preprocessing — REJECTED by data (greyscale/B&W kills handwritten Cyrillic 3/3→0/3; printed unaffected). Send original color. Only geometric crop/deskew is a future bench-gated candidate. See PREPROCESS_AB_DECISION.
 > 2026-06-10: bench +Soviet bilingual (4/5 classes); finding B corrected (protection real via always_review+route override, policy unit-tested; spec flag cosmetic). Intl-passport GT MISSING — owner to fill for full coverage.
