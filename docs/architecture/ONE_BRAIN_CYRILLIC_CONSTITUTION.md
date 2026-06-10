@@ -227,11 +227,24 @@ Rule: **do not build layer N+1 until N is ≥80% closed.** Building HTR (an L4 c
 
 **Next session opens with L0/L1, not HTR.**
 
-### HTR ROLLOUT THRESHOLD (defined NOW, before it is approached — owner 2026-06-10)
-> HTR rollout is considered ONLY when handwriting-related field-failures exceed **15%** of total critical-field
-> failures over a rolling **100-document** window, **AND** ADR-020 (HTR data-handling) is locked.
+### HTR ROLLOUT THRESHOLD (defined NOW, before it is approached — owner RULED 2026-06-10)
+A bare "15%/100" is gameable without defining *what counts* as a handwriting-failure and without a clean (post-L1)
+baseline. The gate is ALL SIX conditions:
 
-The number exists BEFORE we approach it, so "enough" is a threshold decision, not a retrospective self-justification.
-15% / 100-doc are owner business numbers (adjustable by the owner, not the agent). This also creates a concrete L1
-instrumentation requirement: we must COUNT handwriting-related critical-field failures per rolling window — which today
-we do not (the telemetry gap that makes any HTR-priority claim unprovable right now).
+```
+HTR rollout considered ONLY when ALL hold:
+  1. L1 closed (rate-alert + refund + observability live in prod)
+  2. L2 first PASS verdict on ≥3 doc classes (a statistical baseline exists)
+  3. Rolling 100-doc window measured POST-L1 (pre-L1 noise excluded)
+  4. handwriting_field_failure DEFINED as:
+       field is critical AND Gemini confidence < 0.7 AND
+       visual_evidence_score indicates handwritten origin AND
+       final disposition was review_required (not finalized by another path)
+  5. handwriting_field_failure rate > 15% of total critical-field failures in the window
+  6. ADR-020 (HTR data-handling) is LOCKED
+```
+
+15% stays (owner business number). **ADDITION C (agent-flagged): condition 4 presumes signals we do NOT emit today** —
+there is no handwritten-origin classifier and no `visual_evidence_score`. So building the threshold counter first
+requires building those two signals (an L1/L2 instrumentation task), then the rolling counter. "Build the counter" is
+not one step; it is: handwritten-origin classifier → visual_evidence_score → per-window counter → the 6-condition gate.
