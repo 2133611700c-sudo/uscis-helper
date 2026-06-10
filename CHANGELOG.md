@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: KIT 1 auto-orientation infrastructure, CODE, agent)
+- Reading the docs myself revealed the handwritten birth cert was photographed SIDEWAYS (content rotated 90); every engine read cursive sideways. NEW autoOrient.ts: detect content rotation via a Gemini thumbnail + self-verify loop (90<->270 unstable) + fail-open, geometric only. Wired into readDocument (all products) behind AUTO_ORIENT_ENABLED (default OFF). A/B on the real birth cert: dob day 26->25 (correct), place_of_birth fuller (+district). +2 fail-open tests.
+
 ## 2026-06-10 (findings: exhaustive proof — handwritten month needs trained HTR, docs, agent)
 - With the owner Vision key + full resources, tried every general approach: Gemini prompts/zoom, Vision word-geometry line-segmentation, Vision multi-crop voting (0/5 readable months), HF-TrOCR (endpoint needs token). ALL fail the handwritten month (червня). Names read well (11/12) — the bulk of handwritten Cyrillic is already readable. Date-month is a trained-HTR-grade problem; finishing needs an owner-provided Transkribus or HuggingFace token, then the built ensemble wires the HTR as the month reader.
 
