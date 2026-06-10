@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-10 (bench: add Soviet-bilingual birth cert; correct overstated finding B, docs, agent)
+- Extended GT bench to the Soviet-bilingual birth cert (danger class): same pattern as handwritten — surname Cyrillic ✓, given/patronymic Cyrillic ✗, dob wrong, ALL review-flagged. Coverage now 4/5 core UA classes.
+- CORRECTED finding B (was overstated): ua_birth_certificate IS protected — docintelIdToDocumentClass→birth_certificate_handwritten (always_review:true) + route applyHardCaseReviewOverride (unconditional) + role guard; policy already unit-tested. The handwritten:false spec flag is cosmetic-misleading, not a live danger. Residual: protection is route-level (translation), not at the shared readDocument door.
+- Noted gap: international-passport GT is MISSING (owner to fill) — the printed+MRZ class we'd expect highest.
+- No code/prod change. No PII in committed files.
+
 ## 2026-06-10 (fix: shared client-side downscale across ALL upload paths, CODE, agent)
 - NEW `apps/web/src/lib/upload/downscaleImage.ts` — shared helper (>3.8MB → ≤2400px JPEG q0.82, fail-open, browser-only).
 - Wired into all 5 client upload paths: translation (vision-extract), EAD, TPS DocumentUploadScreen, TPSWizardV2, ReparoleWizardV2 — every OCR/vision upload now clears the ~4.5MB Vercel edge cap. TranslateWizard local copy replaced by the shared import.
