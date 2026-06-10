@@ -5,6 +5,14 @@ verified (the owner applied the 4 migrations via Supabase MCP; certifier_overrid
 append-only with the 5 ADR-021 CHECK constraints; the certifier_id→profiles FK is dropped =
 Path B, so any uuid is accepted). Go in this order — do NOT skip the baseline.
 
+**WHERE each variable lives (two different runtimes):**
+- **Vercel env** (the Next.js app / route reads these): `OWNER_CERTIFIER_ID`,
+  `GUARD_BLOCK_METRICS_ENABLED`, `REFUND_AUTOTICKET_ENABLED`, `CERTIFIER_AUDIT_PERSIST_ENABLED`,
+  `CERTIFIER_OVERRIDE_ENABLED`. Set under Vercel → Project → Settings → Environment Variables (Production).
+- **GitHub Actions** (the cron scripts read these): secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+  `RESEND_API_KEY`, `CONTACT_EMAIL_DESTINATION`, `TELEGRAM_OWNER_WEBHOOK_URL`; variable `GUARD_BLOCK_RATE_THRESHOLD`.
+  Set under GitHub → repo → Settings → Secrets and variables → Actions.
+
 ## Step 0 — prerequisites (one-time)
 - [ ] GitHub repo secrets exist: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
       `RESEND_API_KEY`, `CONTACT_EMAIL_DESTINATION`, `TELEGRAM_OWNER_WEBHOOK_URL`.
@@ -24,7 +32,8 @@ Path B, so any uuid is accepted). Go in this order — do NOT skip the baseline.
       → a paid 422/403/503/email-fail now sends the correct per-type customer ack +
         (for 403/503) creates a manual-review ticket + alerts you on Telegram.
 - [ ] The `escalation-tick` (every 30 min) and `daily-reconciliation` (06:00 UTC) crons
-      run automatically — confirm they appear under GitHub → Actions.
+      run automatically. They appear under GitHub → Actions after their first scheduled run;
+      to verify immediately, open each workflow and click **Run workflow** (workflow_dispatch).
 
 ## Step 3 — L3 T0 durable audit (after L0 is wired, canary)
 - [ ] Confirm `OWNER_CERTIFIER_ID` is set (Step 0).
