@@ -1,3 +1,31 @@
+# HANDOFF (2026-06-09 — Phases 2.2–2.6 DONE: All flag gates removed, GPT deleted)
+
+**Phases 2.2–2.6 DONE (CODE, 2026-06-09).** One commit covers all remaining Phase 2 work.
+
+**Phase 2.2:** TPS OCR route — `ONE_BRAIN_CORE_ENABLED` flag gate removed. Core B1 (UA identity docs: passport/booklet/birth/military) now unconditional. US-form slots (i94/ead/dl/i797) still use old path (no docintelId mapping). `coreStatus` type no longer includes `'off'`.
+
+**Phase 2.2a:** `documentRegistry.ts` — added `us_ead`, `us_i94`, `us_i797` doc type specs (script: 'latin'). EAD route's `mapEadHintToDocintelId` now resolves to real registry entries.
+
+**Phase 2.3:** ReParole OCR route — `ONE_CORE_REPAROLE_ENABLED` server-side flag gate block removed (was: if !flagOn → return 503). Route always runs Core. `_flag` label in JSON responses kept for log tracing only.
+
+**Phase 2.4:** EAD OCR route — `ONE_CORE_EAD_ENABLED` server-side flag gate block removed (same pattern). Route always runs Core.
+
+**Phase 2.5:** `/api/ocr/extract` — no live callers confirmed (grep zero hits). DeepSeek text-parse path retained per ADR-017. Route updated to remove OpenAI references.
+
+**Phase 2.6:** Removed `attemptOpenAIVision()` (gpt-4o-mini) from `/api/ocr/extract` + `ENABLE_OPENAI_VISION` flag logic. Removed `openaiReader()` (gpt-4o) from `lib/engine/models.ts` (not imported anywhere). GPT fully gone from the codebase.
+
+**Wizard cleanup:** `ReparoleWizardV2.tsx` — `REPAROLE_CORE_ENABLED = process.env.NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED === 'true'` removed; `useCoreRoute = CORE_COVERED_SLOTS.has(id)` (Core for passport/booklet; TPS for i94/ead/dl). `EADWizard.tsx` — `EAD_CORE_ENABLED` removed; `STEPS` always `[Step0, Step1, StepUpload, Step2, Step3, Step4, Step5, Step6]` (8 steps).
+
+**Tests updated:** `eadWizardUiWiring.test.ts` — replaced flag-existence assertions with Phase 2.4 unconditional assertions. `uiWiring.test.ts` (ReParole) — replaced `REPAROLE_CORE_ENABLED` assertions with Phase 2.3 assertions.
+
+**Evidence:** tsc 0 errors. 2974 passed | 4 skipped | 0 failed (was 2975 before test update; new tests added for Phase 2.3/2.4 unconditional behavior).
+
+**What did NOT change:** No model/provider changes. No payment/PDF behavior change. No PII in logs. KNOWLEDGE_BRAIN_ENABLED still OFF. No Vercel env changes.
+
+**NEXT TASK:** Phase 3 — explicit `final_value` field on CanonicalField + C3 as the single writer of `final_value`. Or owner provides ground-truth docs → KNOWLEDGE_BRAIN_ENABLED canary.
+
+---
+
 # HANDOFF (2026-06-09 — Phase 2.1a: Translator hard-case unbypass DONE)
 
 **Phase 2.1 DONE (CODE).** ONE_BRAIN_CORE_ENABLED flag gate removed from Translation vision-extract route; Core B2 is now the unconditional default. Dead `CENTRAL_BRAIN_TRANSLATION` consensus block (~40 lines) removed. Dead imports removed (`analyze`, `deepseekProseTranslator`, `DOC_TYPES`). `degradedFromBrain` variable and all its ternaries removed from route logic and response shape. Legacy reader (with preprocessing) stays as fallback for Core errors + 0-field fallthrough. Response `status` field: Core path emits `ok:core-b2`, legacy fallback emits `ok:legacy-reader`. tsc 0; 2975/4 (0 regressions). Prod untouched (ONE_BRAIN_CORE_ENABLED=1 was already ON → prod behavior unchanged). Branch feat/one-brain-gemini-core (PR #104).

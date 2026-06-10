@@ -1,25 +1,25 @@
 /**
  * POST /api/ocr/extract
  *
- * Document field extraction endpoint.
+ * Document field extraction endpoint (DeepSeek text-parse path only).
+ * Phase 2.6: OpenAI/GPT vision path removed per ADR-017.
  *
- * Architecture (priority order):
- *   1. "text_parse"  — raw_text provided (Tesseract.js client-side OCR) →
- *                      DeepSeek-V3 text model parses fields (DEFAULT, ~$0.001/doc)
- *   2. "ocr"         — vision API call (ENABLE_OPENAI_VISION=true + image_base64)
- *   3. "manual_review_required" — fallback, returns empty field template
+ * Architecture:
+ *   1. "text_parse"          — raw_text (Tesseract.js) → DeepSeek-V3 parses fields
+ *   2. "manual_review_required" — fallback when raw_text absent or DeepSeek fails
+ *
+ * Note: No live callers in prod as of Phase 2.5. DeepSeek path retained per ADR-017.
  *
  * Request body (JSON):
  *   session_id?    string   Optional wizard session ID
  *   member_id?     string   Optional family member ID
  *   doc_type       string   'passport' | 'i94' | 'i797' | 'ead' | 'drivers_license' | 'birth_cert' | 'other'
- *   raw_text?      string   Raw OCR text from Tesseract.js (preferred path)
- *   image_base64?  string   Base64 image — used ONLY if ENABLE_OPENAI_VISION=true
+ *   raw_text?      string   Raw OCR text from Tesseract.js
  *
  * Response:
  *   ok:              boolean
- *   mode:            'text_parse' | 'ocr' | 'manual_review_required'
- *   provider:        'deepseek' | 'openai' | null
+ *   mode:            'text_parse' | 'manual_review_required'
+ *   provider:        'deepseek' | null
  *   extractedFields: Record<string, string | null>
  *   confidence:      number (0–1)
  *   warnings:        string[]
@@ -184,82 +184,6 @@ Rules:
   }
 }
 
-// ─── Mode 2 (EXPLICIT FLAG): OpenAI vision — only if ENABLE_OPENAI_VISION=true ─
-
-async function attemptOpenAIVision(
-  imageBase64: string,
-  docType: DocType
-): Promise<{ ok: boolean; fields: Record<string, string | null>; confidence: number }> {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return { ok: false, fields: emptyFields(docType), confidence: 0 }
-
-  const model = process.env.OPENAI_VISION_MODEL ?? 'gpt-4o-mini'
-  const fieldList = (FIELD_TEMPLATES[docType] ?? FIELD_TEMPLATES.other).join(', ')
-  const prompt = `Extract these fields from this ${docType.replace(/_/g, ' ')} image: ${fieldList}.
-Return ONLY valid JSON. Use null for unreadable fields. Never hallucinate.
-Dates: MM/DD/YYYY. Names: as printed.`
-
-  try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 35_000)
-
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 600,
-        temperature: 0.05,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: { url: `data:image/jpeg;base64,${imageBase64}`, detail: 'high' },
-              },
-              { type: 'text', text: prompt },
-            ],
-          },
-        ],
-      }),
-      signal: controller.signal,
-    })
-
-    clearTimeout(timer)
-
-    if (!res.ok) {
-      const err = await res.text().catch(() => '')
-      console.error(`[ocr/openai] error ${res.status}:`, err.slice(0, 200))
-      return { ok: false, fields: emptyFields(docType), confidence: 0 }
-    }
-
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>
-    }
-    const content = data.choices?.[0]?.message?.content ?? ''
-
-    let extracted: Record<string, unknown>
-    try {
-      extracted = JSON.parse(content) as Record<string, unknown>
-    } catch {
-      const jsonMatch = content.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) return { ok: false, fields: emptyFields(docType), confidence: 0 }
-      extracted = JSON.parse(jsonMatch[0]) as Record<string, unknown>
-    }
-
-    const { fields, confidence } = mergeExtracted(extracted, emptyFields(docType))
-    return { ok: true, fields, confidence }
-  } catch (err) {
-    console.error('[ocr/openai] vision call failed:', err)
-    return { ok: false, fields: emptyFields(docType), confidence: 0 }
-  }
-}
-
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -284,10 +208,9 @@ export async function POST(req: NextRequest) {
       member_id?: string
       doc_type?: string
       raw_text?: string
-      image_base64?: string
     }
 
-    const { doc_type, raw_text, image_base64 } = body
+    const { doc_type, raw_text } = body
 
     if (!doc_type || typeof doc_type !== 'string') {
       return NextResponse.json({ ok: false, error: 'doc_type is required' }, { status: 400 })
@@ -303,18 +226,15 @@ export async function POST(req: NextRequest) {
 
     const warnings: string[] = []
     const hasRawText = typeof raw_text === 'string' && raw_text.trim().length > 20
-    const hasImage = typeof image_base64 === 'string' && image_base64.length > 100
-    const openAIVisionEnabled = process.env.ENABLE_OPENAI_VISION === 'true'
 
     // ── C3: legacy reader = UNTRUSTED for final critical values (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
-    // OFF ⇒ {} ⇒ byte-identical. ON ⇒ annotate the response so consumers treat critical identity/document
-    // fields from this legacy (DeepSeek/OpenAI, ungated) path as candidate-only, never auto-final.
+    // OFF ⇒ {} ⇒ byte-identical. ON ⇒ annotate response so consumers treat fields as candidate-only.
     const legacySafety = isOcrFieldSafetyEnabled()
       ? { ocr_field_safety: { legacy_reader: true, critical_fields_candidate_only: true,
           policy: 'legacy reader — critical identity/document values are candidates; confirm before final use' } }
       : {}
 
-    // ── Priority 1: DeepSeek text parse (Tesseract.js path) ──────────────────
+    // ── DeepSeek text parse (Tesseract.js path) ───────────────────────────────
     if (hasRawText) {
       const result = await parseTextWithDeepSeek(raw_text!, normalizedDocType)
       if (result.ok) {
@@ -334,36 +254,7 @@ export async function POST(req: NextRequest) {
       warnings.push('DeepSeek text parse failed — falling back')
     }
 
-    // ── Priority 2: OpenAI vision (explicit feature flag only) ───────────────
-    if (hasImage && openAIVisionEnabled) {
-      const result = await attemptOpenAIVision(image_base64!, normalizedDocType)
-      if (result.ok) {
-        return NextResponse.json({
-          ok: true,
-          mode: 'ocr',
-          provider: 'openai',
-          extractedFields: result.fields,
-          confidence: result.confidence,
-          ...legacySafety,
-          warnings:
-            result.confidence < 0.5
-              ? ['Low confidence OCR — please verify all fields']
-              : warnings,
-        })
-      }
-      warnings.push('OpenAI vision OCR failed — switching to manual review')
-    }
-
     // ── Fallback: manual review ───────────────────────────────────────────────
-    if (hasImage && !openAIVisionEnabled && !hasRawText) {
-      warnings.push(
-        'Image received but vision OCR is disabled. ' +
-        'Use Tesseract.js in the browser to extract text first, ' +
-        'then send raw_text. ' +
-        'To enable vision: set ENABLE_OPENAI_VISION=true in Vercel env vars.'
-      )
-    }
-
     return NextResponse.json({
       ok: true,
       mode: 'manual_review_required',
