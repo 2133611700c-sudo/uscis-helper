@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-09 (Phase 1.4 — real-doc Knowledge Brain proof + Cyrillic-bypass finding, agent)
+- ran real Soviet + handwritten birth certs through readDocument (real Gemini gemini-3.1-pro-preview) → applyKnowledgeBrainIfEnabled (KNOWLEDGE_BRAIN_ENABLED=1) via a temp harness (created→run→DELETED, suite count untouched). SANITIZED output only (field name + action/rule/provenance/booleans, NO values/PII).
+- safety PASS: D2 provenance on every field; conflict→review+suggestedValue (child_patronymic→patronymic.fragment; issuing_authority/date_of_issue→authority.unknown); no silent override; no Cyrillic leaks in accepted finals.
+- FINDING: D2's Cyrillic-dependent rules (gazetteer / RU-spelling / normalizeName-on-Cyrillic) are bypassed on the live pipeline — docintel KMU-55-transliterates to Latin BEFORE arbitration (translationAdapter candidate.value = KMU-55 Latin; Cyrillic in separate cyrillicMap; FieldCandidate has no rawCyrillic). Safe, but accuracy value not yet delivered. Added Phase 2.0 prerequisite (thread rawCyrillic to D2; eventual: D2 = single transliteration authority).
+- docs/plan only; no product code change; no prod/env/keys/PII; flags OFF; ReaderResult/OneBrain HOLD. Branch feat/one-brain-gemini-core (PR #104).
+
 ## 2026-06-09 (binding D2/C3/final_value contract recorded in ADR-017 — Phase 2 gate, docs-only, agent)
 - owner verdict APPROVE_CONTRACT_BEFORE_PHASE_2. Recorded the binding contract in ADR-017 §"BINDING CONTRACT — D2/C3/final_value" + restructured ONE_BRAIN_GEMINI_BUILD_PLAN.md phase order.
 - contract: (1) D2 annotates only, never writes final_value; (2) C3 is the SINGLE writer of final_value (accept_final→final_value=normalized_value, else null; D5 confirmation re-runs C3 so confirmed fields can become final via C3, not by bypass); (3) D6/PDF reads only final_value, critical null→block (admin/optional null does not block); (4) D5 reads normalized+suggested+reasons, crop later via ReaderResult/Vision bbox (non-blocking); (5) ONE criticality taxonomy for D2+C3; (6) adapters must not drop suggested_value/rule_id/provenance/reason_codes/evidence_strength/review_required; (7) phase order 1.4→2(Core-default per product)→3(explicit final_value + C3 final writer)→4(Knowledge canary after Core-default)→ReaderResult/crop later.
