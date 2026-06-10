@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-09 (Cyrillic Constitution assembled + mapped to real code, docs-only, agent)
+- per owner: analyzed the full Cyrillic data highway (read code, not docs) and assembled the owner's iron constitution into ONE product schema: docs/architecture/ONE_BRAIN_CYRILLIC_CONSTITUTION.md (canonical architecture).
+- code-grounded trace: Gemini reads VisionFieldRead.cyrillic; documentFieldReader.ts:70 runs toCanonicalValue IN the read loop → ExtractedDocField.value = KMU-55 Latin, raw_cyrillic kept alongside (:76); docintelToCandidate (translationAdapter.ts:50) drops raw_cyrillic (FieldCandidate.value=Latin; Cyrillic only in side cyrillicMap for display). Core/D2/C3/audit see Latin.
+- GAPS: A=raw_cyrillic dropped from Core record; B=D2 partial at toCanonicalValue (city/oblast on Cyrillic, but name=bare KMU-55 no RU/UA check, no KnowledgeDecision); C=3 D2 sites/2 flags (Door A toCanonicalValue + Door B documentFieldReader post-pass SMART_NORMALIZE + my arbitration knowledgeNormalize KNOWLEDGE_BRAIN); D=no final_value, C3 post-adapter on Latin. documentFieldReader = the one shared door (anti-fab/self-consistency already centralize there).
+- realization (unified, supersedes "3rd layer"): D2 = ONE layer at the one door on raw_cyrillic (toCanonicalValue+Door B emit KnowledgeDecision, retire arbitration dup, one flag); carry rawCyrillic+decision forward into FieldCandidate/CanonicalField; final_value + C3 single writer; PDF reads final_value only.
+- docs-only; no code/prod/env/keys/PII; flags OFF; ReaderResult/OneBrain HOLD. Branch feat/one-brain-gemini-core (PR #104).
+
 ## 2026-06-09 (knowledge inventory + audit synthesis — Phase 2.0 reconciled, docs-only, agent)
 - per owner ("inventory the dictionaries + read audits first"): read live data inventory + 4 prior audits (KNOWLEDGE_CORE_INVENTORY 06-03, CYRILLIC_HANDLING_ARCHITECTURE 06-03, P2_DICTIONARY_IN_LIVE_PATH_CHECKPOINT 06-03, FAILED_CYRILLIC_GROUND_TRUTH 06-02).
 - FINDING 1 (architecture): a dictionary-in-path layer ALREADY exists at the right place (raw Cyrillic) — SMART_NORMALIZE_ENABLED P2.1-P2.3 (Door A toCanonicalValue→snapCity; Door B documentFieldReader patronymic/authority, tests 25/25). My Phase-1 knowledgeBrain at arbitration duplicates it at the WRONG layer (post-KMU-55 Latin). → Phase 2.0 reframed: RECONCILE to ONE layer at Door A/B keeping my KnowledgeDecision contract; retire the arbitration duplication. Supersedes "thread rawCyrillic".
