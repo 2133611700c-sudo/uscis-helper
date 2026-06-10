@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-10 (PR-F: raise Core read timeouts for pro-model, CODE, agent)
+- `timeoutMs: 20_000 → 40_000` for readDocument in 4 routes (translation/tps/reparole/ead) — gemini-3.1-pro-preview observed at 28s on handwritten birth cert; 20s cap silently degraded pro reads to flash (PR104 audit, timeout_status: CONFLICT).
+- `maxDuration: 30 → 60` on reparole + EAD routes (translation/TPS already 60).
+- Prerequisite for owner flipping prod GEMINI_MODEL → gemini-3.1-pro-preview. tsc 0.
+
 ## 2026-06-09 (Phases 2.2–2.6: All flag gates removed, GPT-4o deleted, wizard cleanup, CODE, agent)
 - **Phase 2.2** `apps/web/src/app/api/tps/ocr/extract/route.ts`: removed `ONE_BRAIN_CORE_ENABLED` flag gate; Core B1 unconditional for UA identity docs. `coreStatus` initial value `'skipped_no_mapping'` (was `'off'`). Logs `[ONE_CORE_TPS]` → `[Core/TPS]`.
 - **Phase 2.2a** `apps/web/src/lib/docintel/documentRegistry.ts`: added `us_ead`, `us_i94`, `us_i797` specs (script `latin`; consumers `ead`/`reparole`/`tps`).

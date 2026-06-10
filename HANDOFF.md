@@ -1,3 +1,13 @@
+# HANDOFF (2026-06-10 — Phase 2 split executed: PRs #105-#108 merged, PR-F timeouts)
+
+**"делай" executed.** PR #104 merged (Phase 1.3). Split per audit: #105 (2.0 rawCyrillic) MERGED, #106 (2.1a unbypass) MERGED, #107 (2.1 Translation Core) MERGED, #108 (2.2-2.6 gates+GPT, explicit two-part label) — this branch. PR-F (this commit): timeoutMs 20s→40s ×4 routes, maxDuration 30→60 reparole/EAD.
+
+**OWNER ACTION UNBLOCKED after PR-F merges:** flip prod GEMINI_MODEL → gemini-3.1-pro-preview (clean value, no \n). Command: `vercel env rm GEMINI_MODEL production && printf 'gemini-3.1-pro-preview' | vercel env add GEMINI_MODEL production`.
+
+**NEXT TASK:** after owner model flip — prod smoke (healthz + one translation read, expect provider model = pro). Then Phase 3 (final_value + C3 single writer) is UNBLOCKED.
+
+---
+
 # HANDOFF (2026-06-09 — Phases 2.2–2.6 DONE: All flag gates removed, GPT deleted)
 
 **Phases 2.2–2.6 DONE (CODE, 2026-06-09).** One commit covers all remaining Phase 2 work.
