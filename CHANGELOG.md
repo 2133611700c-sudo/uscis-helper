@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-10 (test: close BUG C + BUG D debt; pin a real RU-spelling gap, CODE, agent)
+- NEW `canonicalValueUnresolved.test.ts` (BUG C, 4): date with no iso_date + non-empty cyrillic → emitted review `canonical_value_unresolved`, not dropped; empty cyrillic → dropped.
+- NEW `sovietBilingualTolerance.test.ts` (BUG D, 6): pins doc-origin distinction — `ukrainianDoc===false` skips the RU-spelling review; `!==false` flags `russian_spelling_suspected`.
+- **GAP pinned (not hidden):** `looksRussianSpelled` matches a composite full_name against the SINGLE-name set, so a multi-word RU name without ё/э/ы/ъ (e.g. 'Сергей Иванович') is NOT flagged even on a UA doc. Single-token 'Сергей' IS caught. Tightening needs owner GT + rule change.
+- tsc 0; 3026 passed / 4 skipped / 0 failed (+10).
+
 ## 2026-06-10 (ci: bump GitHub Actions to Node-24 majors, infra, agent)
 - checkout v4→v6, setup-node v4→v6, cache v4→v5, pnpm/action-setup v4→v6 across all 8 workflows. Clears the Node.js-20 deprecation (forced to Node 24 on 2026-06-16). No `version:` inputs → action-setup v6 reads `packageManager: pnpm@10.33.2`. YAML validated.
 
