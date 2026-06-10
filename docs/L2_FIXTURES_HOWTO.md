@@ -4,6 +4,20 @@ The L2 benchmark code is built and tested. It is **blocked only on your ground-t
 fixtures**. This is the one keystone that unblocks: L2 PASS → L0 prod wiring → a measured
 false-positive rate → the whole quality chain. ~8–16h of your time; it cannot be delegated.
 
+## Worked examples (copy these shapes)
+
+Three fully-filled SYNTHETIC examples live in
+`apps/web/src/lib/canonical/core/benchmark/examples/`:
+- `passport_ua_normal.example.json` — a clean baseline (all fields finalize).
+- `birth_cert_silent_substitution.example.json` — adversarial: a parent name that must NOT be
+  silently rewritten across scripts (`expected: null` = must go to review).
+- `birth_cert_cyrillic_in_output.example.json` — adversarial: a Latin-only field with Cyrillic
+  left in it must be blocked (`expected: null`).
+
+Each carries `_worked_example` / `_mock_ocr_output` / `_expected_behavior` documentation keys
+(the parser ignores `_`-prefixed keys) so you can see the full picture. The L2 runner is
+smoke-tested against these end-to-end (`__tests__/l2RunnerSmoke.test.ts`).
+
 ## What a fixture is
 
 One JSON file per **real document** = its ground truth (what the translation SHOULD say).

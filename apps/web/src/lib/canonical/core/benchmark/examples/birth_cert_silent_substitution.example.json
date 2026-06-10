@@ -1,0 +1,18 @@
+{
+  "docId": "synthetic-birth-silent-substitution-01",
+  "documentClass": "birth_certificate_handwritten",
+  "_worked_example": "ADVERSARIAL — silent substitution. A Ukrainian-script parent name must NOT be silently rewritten across script systems. SYNTHETIC only.",
+  "_adversarial_categories": ["silent_substitution"],
+  "_mock_ocr_output": {
+    "note": "the reader sees the Cyrillic 'Сергій' in the mother's given name.",
+    "fields": { "mother_full_name": "Сергій (raw cyrillic, ambiguous-without-confirmation)" }
+  },
+  "_expected_behavior": "the source-script gate must fire → review_required, finalValue=null. It must NOT be silently finalized. If the certifier confirms, the as-written romanization is 'Sergii' (KMU-55 for UA source) — NEVER a cross-script harmonization. So expected=null here (must not finalize without confirmation); a non-null finalization = a SILENT SUBSTITUTION the verdict catches as critical_wrong.",
+  "fields": [
+    { "field": "child_family_name", "expected": "IVANENKO", "critical": true },
+    { "field": "child_given_name", "expected": "TARAS", "critical": true },
+    { "field": "dob", "expected": "1990-01-01", "critical": true },
+    { "field": "mother_full_name", "expected": null, "critical": true },
+    { "field": "father_full_name", "expected": "PETRO IVANENKO", "critical": true }
+  ]
+}
