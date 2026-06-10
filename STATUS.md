@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- HANDWRITTEN DATES: PROVEN ensemble fix — Gemini misreads month, Google Vision reads it right; cross-check recovers the date. Built dateReconcile core (+8 tests). Remaining: wire Vision 2nd-read+crop+review UI. OWNER: ROTATE the Vision SA key pasted in chat.
 - HONEST handwritten probe (3 runs): NAMES read well+stable; DATES stably WRONG on birth certs (month/day misread + dob/issue conflation). Real target = handwritten dates, not printed. All review-flagged.
 - BUILT mirror translation PDF: official KMU schemas now wired to real extraction (was mockOCR-only). registry+buildMirrorValues+orchestrator, behind MIRROR_PDF_ENABLED (default OFF). Birth cert = strong; marriage/divorce sparse extraction; +9 tests.
 - DECIDED (A/B data): no scanner-style greyscale/B&W preprocessing — it collapses handwritten Cyrillic (3/3→0/3); send original color. Geometric crop/deskew = future measured candidate only.
