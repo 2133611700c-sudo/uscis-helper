@@ -82,6 +82,25 @@ export function parseDateText(text: string): ParsedDate {
   }
 }
 
+const ALL_MONTH_STEMS = Object.values(MONTH_STEMS).flat().join('|')
+const WORD_DATE_RE = new RegExp(`\\b(\\d{1,2})\\s+\\p{L}*(?:${ALL_MONTH_STEMS})\\p{L}*\\s+(1[89]\\d{2}|20\\d{2})`, 'giu')
+const ISO_DATE_RE = /\b\d{4}-\d{1,2}-\d{1,2}\b/g
+const NUM_DATE_RE = /\b\d{1,2}[./]\d{1,2}[./]\d{4}\b/g
+
+/**
+ * Pull every date-like substring out of an OCR full-text blob (e.g. Google
+ * Vision raw_text). Used to feed a SECOND engine's date readings into
+ * reconcileDate. Returns the raw matched strings (parseDateText handles them).
+ */
+export function extractDateCandidatesFromText(text: string): string[] {
+  const t = text ?? ''
+  const out = new Set<string>()
+  for (const re of [WORD_DATE_RE, ISO_DATE_RE, NUM_DATE_RE]) {
+    for (const m of t.matchAll(re)) out.add(m[0].trim().replace(/\s+/g, ' '))
+  }
+  return [...out]
+}
+
 function resolveComponent(vals: Array<{ source: string; v: number | null }>): Resolved {
   const present = vals.filter((x) => x.v != null)
   if (present.length === 0) return { value: null, agreed: false, sources: [] }

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: WIRE handwritten-date ensemble into translation route, CODE, agent)
+- `docintel/ensemble/dateReconcile.ts`: added extractDateCandidatesFromText (pull dates from OCR full-text).
+- NEW `docintel/ensemble/applyDateEnsemble.ts`: field-level cross-engine date check — reconciles each date field vs the 2nd engine's readings; disagreement (shared-year anchor) → force review + reason `date_ensemble_disagreement` + attach `ensemble_candidate`; never overwrites, never lowers review. +7 tests.
+- WIRED into translation/vision-extract behind `ENSEMBLE_DATE_ENABLED` (default OFF): for handwritten-risk classes with date fields, runs googleVisionProvider 2nd-read → applyDateEnsemble. OFF = byte-identical, no extra cost. FieldOut carries review_reasons + ensemble_candidate.
+- tsc 0; 3057 passed / 4 skipped / 0 failed. Remaining: review UI to surface ensemble_candidate; zoomed date-crop booster; OWNER rotate Vision key + confirm prod SA + flip flag after sample.
+
 ## 2026-06-10 (feat: handwritten-date ENSEMBLE — Gemini+Vision cross-check (proven), CODE, agent)
 - Research: best handwritten-Ukrainian = Transkribus (CER 4.2%, owner-auth needed); Azure excludes Cyrillic handwriting; DocAI weak. Field uses HTR+ensemble+human-in-loop.
 - PROVEN live on a real handwritten birth cert: Gemini misreads the month, Google Vision (SA) reads it CORRECTLY; zoomed date-region crop recovers the day. Neither engine alone is right; together they contain every correct component.
