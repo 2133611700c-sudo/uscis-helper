@@ -1,10 +1,33 @@
-# HANDOFF (2026-06-10 — Phase 2 split executed: PRs #105-#108 merged, PR-F timeouts)
+# HANDOFF (2026-06-10 — PASS_PROD_MODEL_SMOKE: prod on gemini-3.1-pro-preview, Phase 3 UNBLOCKED)
 
-**"делай" executed.** PR #104 merged (Phase 1.3). Split per audit: #105 (2.0 rawCyrillic) MERGED, #106 (2.1a unbypass) MERGED, #107 (2.1 Translation Core) MERGED, #108 (2.2-2.6 gates+GPT, explicit two-part label) — this branch. PR-F #109 MERGED: timeoutMs 20s→40s ×4 routes, maxDuration 30→60 reparole/EAD. ALL SIX PRs (#104-#109) are on main; prod deploys behavior-identical code under current env.
+## What was done this session
+1. **Prod GEMINI_MODEL flip:** verified dirty value `"gemini-2.5-flash\n"` (literal embedded `\n`, made flash the effective prod model). Removed and replaced with clean `gemini-3.1-pro-preview` via `vercel env rm` + `printf | vercel env add`.
+2. **Redeploy:** `npx vercel --prod --yes` — build completed, SHA `203b572`, aliased `messenginfo.com`.
+3. **Healthz:** `{"status":"ok","sha":"203b572","environment":"production"}` — OK.
+4. **Live smoke:** `POST /api/translation/vision-extract` (1×1 PNG, `docTypeId=us_i94`, no PII) → response `model: gemini-3.1-pro-preview` confirmed, 4554ms, no 5xx, no fallback.
+5. **Result: PASS_PROD_MODEL_SMOKE.**
 
-**OWNER ACTION UNBLOCKED after PR-F merges:** flip prod GEMINI_MODEL → gemini-3.1-pro-preview (clean value, no \n). Command: `vercel env rm GEMINI_MODEL production && printf 'gemini-3.1-pro-preview' | vercel env add GEMINI_MODEL production`.
+## What was NOT done (out of scope per STOP constraints)
+- No code changes
+- No Phase 3 started
+- KNOWLEDGE_BRAIN_ENABLED still OFF
+- NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED still OFF
+- Stripe untouched
+- No PII in any log or doc
+- Dead One-Core env flags (ONE_BRAIN_CORE_ENABLED, ONE_CORE_*) still in Vercel — harmless (Phase 2 removed all gates); cleanup is optional/non-blocking
 
-**NEXT TASK:** after owner model flip — prod smoke (healthz + one translation read, expect provider model = pro). Then Phase 3 (final_value + C3 single writer) is UNBLOCKED.
+## Next task: Phase 3 — explicit `final_value` + C3 as single writer
+
+**Phase 3 design (ADR-017 §D2/C3 binding contract):**
+- Add `final_value: string | null` to `CanonicalField` type
+- `applyOcrFieldSafety` (C3) is the SINGLE writer of `final_value`
+  - C3 accept → `final_value = normalized_value`
+  - C3 reject / review / block → `final_value = null`
+- D6 (PDF prefill) reads ONLY `final_value`; `critical` field with `final_value=null` → block PDF generation
+- D2 (knowledge/arbitration) annotates only — NEVER writes `final_value`
+- Adapters (toTranslationRows, toEadAnswers, etc.) must not drop `suggested_value` / `rule_id` / `provenance` / `reason_codes` / `evidence_strength` / `review_required`
+
+**Phase 3 is UNBLOCKED.** No owner actions required before starting.
 
 ---
 
