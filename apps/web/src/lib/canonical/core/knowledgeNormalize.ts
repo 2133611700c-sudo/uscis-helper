@@ -1,22 +1,22 @@
 /**
- * canonical/core/knowledgeNormalize.ts — "dictionary in the brain" (ADR-017 §D2).
+ * canonical/core/knowledgeNormalize.ts — D2 knowledge as an AUTHORITY LAYER (ADR-017 §D2).
  *
- * Deterministic D2 knowledge applied INSIDE the Core, to the arbitrated value, so EVERY product
- * (Translation / TPS / Reparole / EAD) gets identical, correct Ukrainian normalization on the
- * FINAL value — instead of re-implementing it per product (the gap the 2026-06-09 audit found:
- * TPS normalizes places/authorities, the Translation path does not → "Міліція"/genitive oblast
- * could reach the user).
+ * The dictionary is NOT an auto-replace of the reader's value. It returns a DECISION with
+ * provenance + a rule id + an action, and it NEVER silently substitutes a critical value on a
+ * conflict — a conflict surfaces a `candidateValue` for human review, the read value is kept.
  *
- * Contract (facts > opinion, NEVER silent):
- *  - Cyrillic name/place/authority → KMU-55 / gazetteer / dictionary normalized.
- *  - Latin value (MRZ / controlling spelling) → preserved; only formatLatinName cleanup.
- *    HARD RULE (CLAUDE.md): controlling Latin spelling beats re-transliteration.
- *  - Patronymic → reconciled (rejects OCR fragments like "ович"); NEVER becomes "Middle Name".
- *  - A fuzzy / unresolved / historical-authority / oblast-uncertain case → review_required=true,
- *    value PRESERVED, never auto-replaced.
+ * Action contract:
+ *   - accept   : deterministic, safe transform of the read (KMU-55 of clean Cyrillic, oblast
+ *                genitive→nominative, known authority, gazetteer EXACT, date parse). finalValue set.
+ *   - preserve : Latin / controlling spelling (MRZ) — keep as-is, only case cleanup. finalValue set.
+ *   - suggest  : the dictionary has a DIFFERENT value than the read but cannot prove it (gazetteer
+ *                fuzzy, generated patronymic). finalValue=null; candidateValue offered; review.
+ *   - review   : cannot validate / suspicious (Russian spelling on a UA doc, patronymic fragment,
+ *                unknown authority, unparsed date). finalValue=null; review. (candidate optional)
+ *   - block    : nothing usable. finalValue=null.
  *
- * Pure: no I/O, no env, no flags. Unwired by itself → importing it changes nothing until the
- * arbiter calls it (Phase 1 step 2, behind KNOWLEDGE_BRAIN_ENABLED, default OFF).
+ * Pure: no I/O, no env, no flags. The arbiter (gated on KNOWLEDGE_BRAIN_ENABLED) decides what to do
+ * with the decision; OFF ⇒ this is never called ⇒ byte-identical.
  */
 import {
   transliterateKMU55,
@@ -35,146 +35,167 @@ import {
   type NormalizationContext,
 } from '@uscis-helper/knowledge'
 
-export interface KnowledgeNormalizeCtx {
-  documentClass?: string | null
-  /** source-document tag passed to the knowledge layer (e.g. 'birth_certificate'). */
-  sourceDoc?: string
-  /** subject sex — used to reconstruct/validate a patronymic when known. */
-  sex?: Sex | null
-  /** subject given name in Cyrillic — used to reconstruct a missing patronymic. */
-  givenNameCyrillic?: string | null
-  /** old document → authority names are historical (Міліція, not Police). */
-  isHistorical?: boolean
-  /** output register; defaults to USCIS-normalized. */
-  mode?: OutputMode
+export type KnowledgeAction = 'accept' | 'preserve' | 'suggest' | 'review' | 'block'
+
+export interface KnowledgeDecision {
+  action: KnowledgeAction
+  /** Value safe to use as the FINAL value (accept/preserve only). null ⇒ do not finalize from D2. */
+  finalValue: string | null
+  /** The dictionary's proposal when it must NOT silently replace the read (suggest/review). */
+  candidateValue: string | null
+  /** Machine-readable rule that fired (provenance + audit). */
+  ruleId: string
+  reasonCodes: string[]
+  /** Where the decision came from (kmu55 / gazetteer_exact / mrz_preserved / authority_dict / ...). */
+  provenance: string
+  /** Deterministic confidence in the transform, 0..1. */
+  evidenceStrength: number
 }
 
-export interface KnowledgeNormalizeResult {
-  /** the value to USE (normalized when safe, otherwise the preserved raw read). */
-  value: string
-  /** human must confirm before this is final (fuzzy/unresolved/historical/conflict). */
-  reviewRequired: boolean
-  reviewReason?: string
-  /** machine-readable note for the provenance/audit log. */
-  rule: string
+export interface KnowledgeNormalizeCtx {
+  documentClass?: string | null
+  sourceDoc?: string
+  sex?: Sex | null
+  givenNameCyrillic?: string | null
+  isHistorical?: boolean
+  mode?: OutputMode
+  /** the document is a Ukrainian identity doc (enables Russian-spelling suspicion on names). */
+  ukrainianDoc?: boolean
+}
+
+export function isKnowledgeBrainEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.KNOWLEDGE_BRAIN_ENABLED === '1'
 }
 
 const CYRILLIC = /[Ѐ-ӿ]/
+/** Letters that exist in Russian but NOT in Ukrainian orthography. */
+const RUSSIAN_ONLY_LETTERS = /[ыэёъ]/i
+/**
+ * High-frequency Russian spellings of given names whose Ukrainian form differs but which share all
+ * letters (no orthographic signal). Conservative seed — expand with ground-truth, do NOT treat as
+ * exhaustive. Presence ⇒ SUSPECT (review), never an auto-rewrite.
+ */
+const RU_SPELLED_GIVEN = new Set([
+  'сергей', 'андрей', 'алексей', 'николай', 'дмитрий', 'евгений', 'геннадий', 'юрий', 'валерий',
+  'анатолий', 'григорий', 'михаил', 'наталья', 'татьяна', 'екатерина', 'елена', 'софья', 'мария',
+])
+
+function looksRussianSpelled(value: string): boolean {
+  if (RUSSIAN_ONLY_LETTERS.test(value)) return true
+  return RU_SPELLED_GIVEN.has(value.trim().toLowerCase())
+}
 
 function k(key: string): string {
   return (key || '').toLowerCase()
 }
 
-function fromField(nf: NormalizedField, ruleTag: string): KnowledgeNormalizeResult {
-  return {
-    value: nf.normalized_value,
-    reviewRequired: nf.review_required === true,
-    reviewReason: nf.review_reason,
-    rule: nf.rule_applied || ruleTag,
+const accept = (finalValue: string, ruleId: string, provenance: string, evidence = 0.9): KnowledgeDecision =>
+  ({ action: 'accept', finalValue, candidateValue: null, ruleId, reasonCodes: [], provenance, evidenceStrength: evidence })
+const preserve = (finalValue: string, ruleId: string): KnowledgeDecision =>
+  ({ action: 'preserve', finalValue, candidateValue: null, ruleId, reasonCodes: [], provenance: 'controlling_latin', evidenceStrength: 0.95 })
+const suggest = (candidate: string | null, ruleId: string, provenance: string, reasons: string[]): KnowledgeDecision =>
+  ({ action: 'suggest', finalValue: null, candidateValue: candidate, ruleId, reasonCodes: reasons, provenance, evidenceStrength: 0.4 })
+const review = (candidate: string | null, ruleId: string, provenance: string, reasons: string[]): KnowledgeDecision =>
+  ({ action: 'review', finalValue: null, candidateValue: candidate, ruleId, reasonCodes: reasons, provenance, evidenceStrength: 0.2 })
+
+/** Map a knowledge NormalizedField → a decision: clean ⇒ accept, review_required ⇒ suggest. */
+function fromField(nf: NormalizedField, ruleId: string, provenance: string): KnowledgeDecision {
+  if (nf.review_required) {
+    return suggest(nf.normalized_value, ruleId, provenance, [nf.review_reason ?? 'knowledge_uncertain'])
   }
+  return accept(nf.normalized_value, ruleId, provenance)
 }
 
 /**
- * Apply the deterministic knowledge layer to ONE arbitrated field value.
- * Returns the value to use plus whether a human must confirm it. Never throws.
+ * Decide what D2 says about ONE arbitrated field value. Pure; never throws; never returns a silent
+ * critical substitution (conflict ⇒ suggest/review with a candidate, not a final).
  */
 export function normalizeCanonicalValue(
   key: string,
   rawValue: string,
   ctx: KnowledgeNormalizeCtx = {},
-): KnowledgeNormalizeResult {
+): KnowledgeDecision {
   const raw = (rawValue ?? '').trim()
-  if (raw === '') return { value: '', reviewRequired: false, rule: 'empty' }
+  if (raw === '') return { action: 'block', finalValue: null, candidateValue: null, ruleId: 'empty', reasonCodes: ['empty_value'], provenance: 'none', evidenceStrength: 0 }
 
   const key_ = k(key)
   const cyr = CYRILLIC.test(raw)
   const sourceDoc = ctx.sourceDoc ?? ctx.documentClass ?? 'document'
-  const nctx: NormalizationContext = {
-    mode: ctx.mode ?? 'uscis_normalized',
-    is_historical_document: ctx.isHistorical === true,
-  }
+  const nctx: NormalizationContext = { mode: ctx.mode ?? 'uscis_normalized', is_historical_document: ctx.isHistorical === true }
 
   try {
     // ── Patronymic (по батькові) — never "Middle Name"; reject OCR fragments ──
     if (key_.includes('patronymic')) {
-      // Reconcile against the given name + sex when we have them; else validate the read.
       if (ctx.sex === 'M' || ctx.sex === 'F') {
         const r = reconcilePatronymic(raw, ctx.givenNameCyrillic ?? null, ctx.sex)
-        const value = r.value ? transliterateKMU55(r.value) : raw
-        return {
-          value: r.value ? value : raw,
-          reviewRequired: r.review_required || r.source === 'unresolved',
-          reviewReason: r.reason,
-          rule: `patronymic:${r.source}`,
-        }
+        if (r.source === 'read_valid') return accept(transliterateKMU55(r.value), 'patronymic.read_valid', 'patronymic_reconcile', 0.85)
+        if (r.value) return suggest(transliterateKMU55(r.value), `patronymic.${r.source}`, 'patronymic_reconcile', [r.reason])
+        return review(null, 'patronymic.unresolved', 'patronymic_reconcile', [r.reason || 'patronymic_unresolved'])
       }
-      const ok = isValidPatronymic(raw)
-      return {
-        value: cyr ? transliterateKMU55(raw) : raw,
-        reviewRequired: !ok,
-        reviewReason: ok ? undefined : 'patronymic_unverified_no_sex',
-        rule: ok ? 'patronymic:read_valid' : 'patronymic:needs_review',
-      }
+      // No sex context: validate the read; a fragment → review, never silent.
+      if (isValidPatronymic(raw)) return accept(transliterateKMU55(raw), 'patronymic.read_valid', 'patronymic_reconcile', 0.7)
+      return review(cyr ? transliterateKMU55(raw) : raw, 'patronymic.fragment', 'patronymic_reconcile', ['patronymic_fragment_or_unverified'])
     }
 
-    // ── Person name (surname / given) — controlling Latin beats re-translit ──
-    if (key_.includes('surname') || key_.includes('family_name') || key_.endsWith('given_name') || key_.includes('given_name')) {
-      if (!cyr) {
-        // Latin (MRZ / controlling) — preserve, only fix case per segment.
-        return { value: formatLatinName(raw), reviewRequired: false, rule: 'name:latin_preserved' }
+    // ── Person name (surname / given) ─────────────────────────────────────────
+    if (key_.includes('surname') || key_.includes('family_name') || key_.includes('given_name')) {
+      if (!cyr) return preserve(formatLatinName(raw), 'name.latin_preserve')
+      // Russian spelling on a Ukrainian document = a misread, not a fact to transliterate silently.
+      if (ctx.ukrainianDoc !== false && looksRussianSpelled(raw)) {
+        return review(transliterateKMU55(raw), 'name.russian_spelling_on_ua', 'spelling_guard', ['russian_spelling_suspected'])
       }
       const fieldType = (key_.includes('surname') || key_.includes('family_name')) ? 'surname' : 'given_name'
-      return fromField(normalizeName(raw, fieldType, sourceDoc, nctx), `name:${fieldType}`)
+      return fromField(normalizeName(raw, fieldType, sourceDoc, nctx), `name.${fieldType}`, 'kmu55_name')
     }
 
-    // ── Full-name composite fields (father/mother/spouse) ─────────────────────
+    // ── Full-name composite (father/mother/spouse) ────────────────────────────
     if (key_.includes('full_name')) {
-      return {
-        value: cyr ? formatLatinName(transliterateKMU55(raw)) : formatLatinName(raw),
-        reviewRequired: false,
-        rule: cyr ? 'fullname:transliterated' : 'fullname:latin_preserved',
+      if (!cyr) return preserve(formatLatinName(raw), 'fullname.latin_preserve')
+      if (ctx.ukrainianDoc !== false && looksRussianSpelled(raw)) {
+        return review(formatLatinName(transliterateKMU55(raw)), 'fullname.russian_spelling_on_ua', 'spelling_guard', ['russian_spelling_suspected'])
       }
+      return accept(formatLatinName(transliterateKMU55(raw)), 'fullname.transliterate', 'kmu55_name', 0.75)
     }
 
-    // ── Place (city / province / oblast / place_of_birth / settlement) ────────
+    // ── Place (city / oblast / province / place_of_birth / settlement) ────────
     if (/place|city|province|oblast|settlement|region/.test(key_)) {
-      const placed = fromField(normalizePlace(raw, key, sourceDoc, nctx), 'place')
-      // For city fields, run the gazetteer to catch handwriting confusions
-      // (Простянець→Тростянець). NEVER silent: a fuzzy match → review, value kept.
+      // City fields: gazetteer on the RAW Cyrillic. EXACT ⇒ accept; FUZZY ⇒ suggest (never overwrite).
       if ((key_.includes('city') || key_.endsWith('place_of_birth')) && cyr) {
-        const snap = snapCity(placed.value || raw)
-        if (snap.matched) {
-          return { value: transliterateKMU55(snap.value), reviewRequired: placed.reviewRequired, rule: 'place:gazetteer_exact' }
-        }
-        if (snap.review_required) {
-          return { value: placed.value, reviewRequired: true, reviewReason: 'place_fuzzy_unconfirmed', rule: 'place:gazetteer_fuzzy' }
-        }
+        const snap = snapCity(raw)
+        if (snap.matched) return accept(transliterateKMU55(snap.value), 'place.gazetteer_exact', 'gazetteer_exact', 0.9)
+        if (snap.review_required) return suggest(snap.value ? transliterateKMU55(snap.value) : null, 'place.gazetteer_fuzzy', 'gazetteer_fuzzy', ['place_fuzzy_unconfirmed'])
       }
-      return placed
+      return fromField(normalizePlace(raw, key, sourceDoc, nctx), 'place.normalize', 'place_dict')
     }
 
-    // ── Issuing authority (Міліція → Militsiya, never Police) ─────────────────
+    // ── Issuing authority (Міліція → Militsiya; unknown → do not invent) ───────
     if (key_.includes('authority') || key_.includes('issu')) {
-      return fromField(normalizeAuthority(raw, sourceDoc, nctx), 'authority')
+      const a = normalizeAuthority(raw, sourceDoc, nctx)
+      if (!a.review_required && a.rule_applied && a.rule_applied !== 'no_match' && a.rule_applied !== 'passthrough') {
+        return accept(a.normalized_value, `authority.${a.rule_applied}`, 'authority_dict')
+      }
+      // Unknown authority: do NOT invent a final; offer the transliteration as a candidate, review.
+      return review(cyr ? transliterateKMU55(raw) : raw, 'authority.unknown', 'authority_dict', ['authority_unverified'])
     }
 
     // ── Sex ───────────────────────────────────────────────────────────────────
     if (key_ === 'sex' || key_.includes('gender')) {
-      return fromField(normalizeSex(raw, sourceDoc), 'sex')
+      const s = normalizeSex(raw, sourceDoc)
+      return s.review_required ? review(s.normalized_value, 'sex.uncertain', 'sex_dict', [s.review_reason ?? 'sex_uncertain']) : accept(s.normalized_value, 'sex.normalize', 'sex_dict')
     }
 
     // ── Dates (DOB / issue / expiry) → USCIS MM/DD/YYYY ───────────────────────
     if (key_.includes('dob') || key_.includes('date')) {
       const conv = convertDateToUSCIS(raw)
-      if (conv) return { value: conv, reviewRequired: false, rule: 'date:uscis' }
-      return { value: raw, reviewRequired: true, reviewReason: 'date_unparsed', rule: 'date:needs_review' }
+      if (conv) return accept(conv, 'date.uscis', 'date_parse', 0.9)
+      return review(null, 'date.unparsed', 'date_parse', ['date_unparsed'])
     }
 
-    // ── Default: transliterate any Cyrillic, preserve Latin ───────────────────
-    if (cyr) return { value: transliterateKMU55(raw), reviewRequired: false, rule: 'kmu55_default' }
-    return { value: raw, reviewRequired: false, rule: 'passthrough' }
-  } catch (e) {
-    // Knowledge layer must never break recognition — preserve raw, force review.
-    return { value: raw, reviewRequired: true, reviewReason: 'knowledge_normalize_error', rule: 'error_preserved' }
+    // ── Default: transliterate Cyrillic (safe representation), preserve Latin ──
+    if (cyr) return accept(transliterateKMU55(raw), 'default.kmu55', 'kmu55_default', 0.8)
+    return preserve(raw, 'default.passthrough')
+  } catch {
+    // Knowledge must never break recognition — keep the read, force review.
+    return review(null, 'error.preserved', 'error', ['knowledge_normalize_error'])
   }
 }

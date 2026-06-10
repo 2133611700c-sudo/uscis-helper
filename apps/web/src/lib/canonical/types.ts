@@ -86,6 +86,10 @@ export interface CanonicalField {
   evidence: FieldEvidence[]
   /** If a value was rejected in favor of another, why (manual override contract). */
   rejectedReason?: string
+  /** D2 knowledge rule that fired on this value (ADR-017 provenance, optional). */
+  knowledgeRule?: string
+  /** D2 knowledge provenance tag (kmu55 / gazetteer_exact / authority_dict / ...). */
+  knowledgeProvenance?: string
 }
 
 /** The product surfaces a canonical result can feed. */

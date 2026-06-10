@@ -28,6 +28,30 @@ The owner's reference design ("org chart") put a **consensus engine over 3 indep
 6. **DeepSeek stays** (prose translation, Mia FAQ, dual-OCR linguistic crossref). **GPT-4o/gpt-4o-mini is removed.** **HTR (Transkribus/TrOCR) is explicitly PARKED** — Gemini-pro already reads handwriting; revisit only if ground-truth from DIFFERENT people proves Gemini insufficient.
 7. **Provenance/audit log built early** (cheap, enables trust): per-field origin (reader / dictionary / MRZ / user). Auditor→HTR-training deferred.
 
+## §D2 authority contract (AI-risk control — binding)
+
+The dictionary may influence a value ONLY as an auditable authority layer, NEVER as a silent auto-replace
+(else a Gemini hallucination is just traded for a dictionary hallucination — e.g. a gazetteer rewriting a real
+place to a "similar" one). `knowledgeNormalize` returns a DECISION, not a value:
+`{ action, finalValue, candidateValue, ruleId, reasonCodes, provenance, evidenceStrength }`.
+
+- **accept / preserve** — a deterministic, evidenced transform (KMU-55 of clean Ukrainian Cyrillic; controlling
+  Latin/MRZ preserved; oblast genitive→nominative known map; known authority pattern; gazetteer EXACT; date
+  parse). The transform becomes the final value.
+- **suggest / review / block** — any CONFLICT or unproven case (Russian spelling on a UA doc; gazetteer FUZZY;
+  generated/garbled patronymic; unknown authority; unparsed date). The Core **keeps the read value**, surfaces
+  the dictionary's proposal as `suggestedValue`, and forces `review_required` with `reasonCodes`. A critical
+  identity field is **never** silently finalized from D2.
+
+Wiring rule: `KNOWLEDGE_BRAIN_ENABLED=OFF` ⇒ arbitration is byte-identical (D2 not invoked). `ON` ⇒ accept the
+safe transforms, route every conflict to candidate+review. Proven by `knowledgeNormalize.test.ts` (conflict
+cases: Russian-on-UA → review; clean UA → accept; gazetteer exact → accept; gazetteer fuzzy → suggest;
+patronymic fragment → review; MRZ Latin → preserve; unknown authority → review) + arbitration OFF=identical/ON
+tests. Provenance (`knowledgeRule` / `knowledgeProvenance` on each field) feeds the Phase-4 audit log.
+
+This is a managed control, not a belief: behind a flag, measured by tests now and by review-rate/conflict
+metrics on traffic later; prod cutover stays owner-gated.
+
 ## Why NOT the consensus org-chart
 
 - The 2026-06-06 incident did not break because readers disagreed. It broke from: HTTP 502 on zero fields, `candidate≠final` not enforced, six ungated reader regimes. Consensus voting fixes none of these; a single gated pipeline + field contract + knowledge truth fixes all of them.

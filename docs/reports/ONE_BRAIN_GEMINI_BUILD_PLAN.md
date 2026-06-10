@@ -7,10 +7,10 @@ Rule for every phase: behavior-changing code ships behind a flag (default OFF) �
 
 ## Phase 1 — Dictionary IN the brain  (CODE, no prod)
 The accuracy fix. Knowledge applied to the FINAL value for ALL products, in one place.
-- [x] **1.1** `canonical/core/knowledgeNormalize.ts` — pure deterministic normalizer (KMU-55 / gazetteer / patronymic / oblast→nominative / authority / Latin-preserve). 8 tests. **DONE** (this commit).
-- [ ] **1.2** Wire it into `canonical/core/arbitration.ts` (`normalizedValue` = `normalizeCanonicalValue(...)`) behind `KNOWLEDGE_BRAIN_ENABLED` (default OFF → byte-identical). Tests: off=identical, on=rules enforced.
-- [ ] **1.3** Pass doc-class + sex + given-name context from each adapter (translation/tps/reparole/ead) into arbitration so patronymic/place get full context.
-- [ ] **1.4** Local proof on real fixtures (Militsiya, oblast, patronymic) like the C3 real-doc proof.
+- [x] **1.1** `canonical/core/knowledgeNormalize.ts` — pure deterministic normalizer. **DONE**.
+- [x] **1.2** **D2 AUTHORITY CONTRACT (AI-risk control) — DONE.** Redesigned per review: `knowledgeNormalize` returns a DECISION `{action, finalValue, candidateValue, ruleId, reasonCodes, provenance, evidenceStrength}`, never a silent override. `arbitrateDocument(candidates, knowledge?)` applies it: accept/preserve → final; suggest/review/block → keep read value + `suggestedValue` + review (conflict never silently finalized). `isKnowledgeBrainEnabled` (KNOWLEDGE_BRAIN_ENABLED, default OFF). `CanonicalField.knowledgeRule/knowledgeProvenance` added. 12 conflict-case tests; canonical suite 329; full suite 2931; tsc 0. OFF = byte-identical (canonical suite proves it).
+- [ ] **1.3** Gate the wiring in each caller: `arbitrateDocument(candidates, isKnowledgeBrainEnabled() ? { documentClass, isHistorical, ukrainianDoc } : undefined)` in translation/tps/reparole/ead routes + readDocumentCore. OFF=identical.
+- [ ] **1.4** Local proof on real fixtures (Militsiya, oblast genitive, patronymic, gazetteer) with KNOWLEDGE_BRAIN_ENABLED=1, like the C3 real-doc proof.
 
 ## Phase 2 — One pipeline (consolidation)  (CODE + owner flip)
 Kill fragmentation. Make Gemini-Core the default reader for every product; retire forks.

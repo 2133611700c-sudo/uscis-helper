@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-09 (Phase 1.2 — D2 authority contract, safe no-silent-override, agent)
+- owner AI-risk review (ACCEPT_PHASE_1_ONLY) correctly rejected "dictionary silently overrides reader": that just trades a Gemini hallucination for a dictionary one. Rebuilt knowledgeNormalize.ts as a managed AUTHORITY LAYER before any wiring.
+- `knowledgeNormalize` now returns a DECISION {action: accept|preserve|suggest|review|block, finalValue, candidateValue, ruleId, reasonCodes, provenance, evidenceStrength} — never a silent value. `arbitrateDocument(candidates, knowledge?)`: accept/preserve→deterministic final; suggest/review/block→keep READ value, set `suggestedValue`, force review_required (critical identity never silently finalized from D2). `isKnowledgeBrainEnabled()` gates callers (KNOWLEDGE_BRAIN_ENABLED, default OFF). `CanonicalField.knowledgeRule/knowledgeProvenance` added (Phase-4 audit).
+- conflict-case tests (12): Russian-spelling-on-UA→review (candidate offered, not silent "Sergey"); clean UA→accept (KMU-55); gazetteer exact→accept, fuzzy→suggest (never overwrite); patronymic fragment→review; MRZ Latin→preserve; unknown authority→review (do not invent); arbitration OFF=byte-identical / ON=conflict→review. tsc 0; canonical suite 329/329 (OFF identical proven); full suite 2931 passed / 4 skipped.
+- ADR-017 updated with binding §D2 authority contract. No prod/env/keys/PII change (prod 03eb30f, flag OFF). ReaderResult/OneBrain runtime HOLD per owner verdict. Branch feat/one-brain-gemini-core.
+
 ## 2026-06-09 (REBUILD: ADR-017 ONE Gemini brain + Phase 1.1 dictionary-in-brain, agent)
 - mentor verdict on owner's "consensus org-chart": 70% right (D0→D6 + Auditor pipeline) but center wrong — consensus voting fixes none of the incident root causes and is a committee of one (GPT out, HTR dead). Decided ADR-017: ONE Gemini brain + deterministic knowledge truth (D2 can override reader) + review gate; one shared pipeline for all products. Real cause of "3 weeks → 0" = fragmentation (4 products / 4 regimes / Core parked behind unflipped flags).
 - scope locked by owner: Gemini = recognition (all keys/models); DeepSeek retained fully (prose/Mia/crossref); GPT removed; HTR parked; keys/prod owner-managed.
