@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-10 (ADR-018 model matrix locked + fallback-model review guard, CODE+ADR, agent)
+- `docs/adr/ADR-018-model-matrix.md` — iron model matrix per owner directive: pro-preview = reader, flash = fallback-only, Vision = technical eye, DeepSeek = prose (+sanitized TPS text gap-fill), D2/C3/PDF = code.
+- `geminiVisionProvider.ts` — `primaryGeminiModel()` exported.
+- `documentFieldReader.ts` — NEW deterministic guard (no flag): fallback-model read of any non-Latin doc ⇒ all fields `review_required=true` + `fallback_model_used`. Closes the silent pro→flash degradation hole (2.5-flash disqualified on certificates).
+- New `fallbackModelReview.test.ts` (5 tests); 3 existing docintel test mocks updated to report primary model.
+- tsc 0; 2997 passed | 4 skipped | 0 failed (+5).
+
 ## 2026-06-10 (housekeeping: Vercel dead flags removed + local branch cleanup, env+infra, agent)
 - Removed 7 dead Vercel prod env flags (code no longer reads them after Phase 2): ONE_BRAIN_CORE_ENABLED, ONE_CORE_TPS_ENABLED, ONE_CORE_REPAROLE_ENABLED, NEXT_PUBLIC_ONE_CORE_REPAROLE_ENABLED, ONE_CORE_EAD_ENABLED, NEXT_PUBLIC_ONE_CORE_EAD_ENABLED, CENTRAL_BRAIN_TRANSLATION.
 - Deleted 68 stale local git branches. Only `main` remains.
