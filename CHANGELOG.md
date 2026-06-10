@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-06-09 (Phases 2.2–2.6: All flag gates removed, GPT-4o deleted, wizard cleanup, CODE, agent)
+- **Phase 2.2** `apps/web/src/app/api/tps/ocr/extract/route.ts`: removed `ONE_BRAIN_CORE_ENABLED` flag gate; Core B1 unconditional for UA identity docs. `coreStatus` initial value `'skipped_no_mapping'` (was `'off'`). Logs `[ONE_CORE_TPS]` → `[Core/TPS]`.
+- **Phase 2.2a** `apps/web/src/lib/docintel/documentRegistry.ts`: added `us_ead`, `us_i94`, `us_i797` specs (script `latin`; consumers `ead`/`reparole`/`tps`).
+- **Phase 2.3** `apps/web/src/app/api/reparole/ocr/extract/route.ts`: removed `ONE_CORE_REPAROLE_ENABLED` flag gate (was: if !flagOn → 503). Route always runs Core.
+- **Phase 2.4** `apps/web/src/app/api/ead/ocr/extract/route.ts`: removed `ONE_CORE_EAD_ENABLED` flag gate (same pattern).
+- **Phase 2.5** `apps/web/src/app/api/ocr/extract/route.ts`: removed OpenAI vision block, `ENABLE_OPENAI_VISION` flag, `image_base64` param. DeepSeek text-parse retained. No live callers confirmed.
+- **Phase 2.6** `apps/web/src/lib/engine/models.ts`: removed `openaiReader()` (gpt-4o). GPT fully removed per ADR-017.
+- **Wizard** `ReparoleWizardV2.tsx`: removed `REPAROLE_CORE_ENABLED`; `useCoreRoute = CORE_COVERED_SLOTS.has(id)`.
+- **Wizard** `EADWizard.tsx`: removed `EAD_CORE_ENABLED`; STEPS always 8 with StepUpload.
+- Tests updated (2 files): replaced flag-existence assertions with Phase 2.3/2.4 unconditional assertions.
+- tsc 0 errors. 2974 passed | 4 skipped | 0 failed.
+
 ## 2026-06-09 (Phase 2.1: Translation Core unconditional + CENTRAL_BRAIN dead code removed, CODE, agent)
 - `ONE_BRAIN_CORE_ENABLED` flag gate removed from `apps/web/src/app/api/translation/vision-extract/route.ts`. Core B2 is now the unconditional default path.
 - Dead `CENTRAL_BRAIN_TRANSLATION` consensus block (~40 lines, `CENTRAL_BRAIN_TRANSLATION === 'on' && ONE_BRAIN_CORE_ENABLED !== '1'` condition) removed. Was unreachable when ONE_BRAIN_CORE_ENABLED=1 (already ON in prod).

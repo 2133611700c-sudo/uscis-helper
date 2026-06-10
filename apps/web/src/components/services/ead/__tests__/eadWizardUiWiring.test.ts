@@ -2,9 +2,9 @@
  * eadWizardUiWiring.test.ts — B4 UI wiring verification.
  *
  * Verifies at the source-code level (no DOM, no browser):
- *  - Flag constant is wired correctly: NEXT_PUBLIC_ONE_CORE_EAD_ENABLED
- *  - When flag ON: EAD wizard references /api/ead/ocr/extract
- *  - When flag OFF: EAD wizard does NOT call Core route (no upload step)
+ *  - Phase 2.4: EAD Core is unconditional — NEXT_PUBLIC_ONE_CORE_EAD_ENABLED flag removed
+ *  - Upload step always shown (StepUpload unconditionally in STEPS)
+ *  - EAD wizard references /api/ead/ocr/extract unconditionally
  *  - docHints covered by Core: passport, ead, i94
  *  - Source-gate comments are present (architecture contract)
  *  - invented_fields_count guarded (adapter never invents)
@@ -73,25 +73,25 @@ function makeCanonical(
   }
 }
 
-// ── Feature flag wiring ───────────────────────────────────────────────────────
+// ── Phase 2.4: flag removed — Core is unconditional ──────────────────────────
 
-describe('EADWizard — feature flag wiring (NEXT_PUBLIC_ONE_CORE_EAD_ENABLED)', () => {
-  it('wizard reads NEXT_PUBLIC_ONE_CORE_EAD_ENABLED', () => {
-    expect(wizardSrc).toContain('NEXT_PUBLIC_ONE_CORE_EAD_ENABLED')
+describe('EADWizard — Phase 2.4: NEXT_PUBLIC_ONE_CORE_EAD_ENABLED flag removed', () => {
+  it('flag constant EAD_CORE_ENABLED is gone (flag removed in Phase 2.4)', () => {
+    expect(wizardSrc).not.toContain('EAD_CORE_ENABLED')
   })
 
-  it('flag constant is named EAD_CORE_ENABLED', () => {
-    expect(wizardSrc).toContain('EAD_CORE_ENABLED')
+  it('NEXT_PUBLIC_ONE_CORE_EAD_ENABLED env var is gone (flag removed)', () => {
+    expect(wizardSrc).not.toContain('NEXT_PUBLIC_ONE_CORE_EAD_ENABLED')
   })
 
-  it('flag is compared to string "true"', () => {
-    expect(wizardSrc).toContain("=== 'true'")
+  it('StepUpload is always in STEPS unconditionally', () => {
+    expect(wizardSrc).toContain('Step0, Step1, StepUpload, Step2')
   })
 })
 
-// ── Core route reference (flag ON path) ──────────────────────────────────────
+// ── Core route reference (unconditional) ─────────────────────────────────────
 
-describe('EADWizard — Core route reference when flag ON', () => {
+describe('EADWizard — Core route reference (unconditional, Phase 2.4)', () => {
   it('wizard references /api/ead/ocr/extract', () => {
     expect(wizardSrc).toContain('/api/ead/ocr/extract')
   })
@@ -100,23 +100,8 @@ describe('EADWizard — Core route reference when flag ON', () => {
     expect(wizardSrc).toContain("fetch('/api/ead/ocr/extract'")
   })
 
-  it('Core route is behind EAD_CORE_ENABLED check', () => {
-    // The StepUpload function only exists in the conditional STEPS array when flag ON
+  it('StepUpload component exists in wizard', () => {
     expect(wizardSrc).toContain('StepUpload')
-    expect(wizardSrc).toContain('EAD_CORE_ENABLED')
-  })
-})
-
-// ── Flag OFF path — old flow unchanged ───────────────────────────────────────
-
-describe('EADWizard — flag OFF: old manual form unchanged', () => {
-  it('upload step is NOT in STEPS when flag OFF (conditional injection)', () => {
-    // The STEPS array is conditionally built — when OFF, StepUpload is not included
-    expect(wizardSrc).toContain('EAD_CORE_ENABLED\n    ? [Step0, Step1, StepUpload')
-  })
-
-  it('flag OFF path falls back to original 7 steps', () => {
-    expect(wizardSrc).toContain(': [Step0, Step1, Step2, Step3, Step4, Step5, Step6]')
   })
 })
 
@@ -296,7 +281,8 @@ describe('EAD wizard + adapter: review_required preserved', () => {
 // ── Architecture contract markers in source ───────────────────────────────────
 
 describe('EAD wizard + route — architecture contract markers', () => {
-  it('route has ONE_CORE_EAD_ENABLED flag gate', () => {
+  it('route still labels responses with _flag ONE_CORE_EAD_ENABLED for observability', () => {
+    // _flag label in JSON responses is kept for log tracing — not a live gate
     expect(routeSrc).toContain('ONE_CORE_EAD_ENABLED')
   })
 
