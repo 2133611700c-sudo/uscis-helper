@@ -96,21 +96,21 @@ export async function readDateRegionsWithVision(opts: {
     if (boxes.length === 0) { diag.error = 'no_boxes'; return { text: '', diag } }
 
     const texts: string[] = []
-    for (const b of boxes) {
-      // FULL-WIDTH horizontal band at the date's vertical position. A tight bbox
-      // clipped the handwritten month (Vision read the year but garbled the month —
-      // month_hits=0 in prod); the whole line gives Vision the context to read it.
-      const vpad = 0.03
+    for (const b of boxes.slice(0, 2)) { // cap at 2 regions to bound latency
+      // Widen the bbox horizontally (the handwritten month spreads past a tight
+      // box) but stay bounded so the request can't time out. Tight crops garbled
+      // the month (month_hits=0); full-width bands timed out — this is the middle.
+      const hpad = 0.10, vpad = 0.03
+      const left = Math.max(0, Math.round((Math.min(b.xmin, b.xmax) / 1000 - hpad) * W))
       const top = Math.max(0, Math.round((Math.min(b.ymin, b.ymax) / 1000 - vpad) * H))
+      const w = Math.min(W - left, Math.max(1, Math.round((Math.abs(b.xmax - b.xmin) / 1000 + 2 * hpad) * W)))
       const h = Math.min(H - top, Math.max(1, Math.round((Math.abs(b.ymax - b.ymin) / 1000 + 2 * vpad) * H)))
-      const left = 0
-      const w = W
-      if (h < 8) continue
+      if (w < 8 || h < 8) continue
       const crop = await sharp(base)
         .extract({ left, top, width: w, height: h })
-        .resize({ width: Math.min(2600, w * 2), withoutEnlargement: false })
+        .resize({ width: Math.min(1800, w * 4), withoutEnlargement: false })
         .sharpen()
-        .jpeg({ quality: 95 })
+        .jpeg({ quality: 92 })
         .toBuffer()
       const r = await opts.vision.extractText({ imageBuffer: crop, mimeType: 'image/jpeg' })
       diag.crops++
