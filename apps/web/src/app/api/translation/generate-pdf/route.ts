@@ -147,26 +147,49 @@ export async function POST(req: NextRequest) {
   // unconditionally (NOT behind OCR_FIELD_SAFETY_ENABLED). Release values are
   // Latin post-KMU-55, so legitimate flows are unaffected; only genuine defects
   // (Cyrillic/control/over-length/bad-date) are caught.
-  //   - CRITICAL field fails → 403 (field NAME only, never the value — PII rule)
+  //   - CRITICAL field fails → 422 Unprocessable Entity (field NAME only — PII rule)
   //   - non-critical fails   → value nulled (renders as MISSING), continue
   //   - pass                 → final_value set (the C3 re-run writing the release value)
+  // 422 not 403: the content is semantically invalid, NOT an auth failure — infra
+  // monitors must not treat a bad field value as an authorization problem.
+  //
+  // MEASUREMENT-FIRST: this is a NEW blocking behavior on a live payment/PDF route.
+  // It ships in SHADOW mode by default — it validates and logs what it WOULD block
+  // but does NOT block, so prod output is byte-identical and we collect the real
+  // block-rate before enforcing. ONE env knob, three modes (no flag sprawl):
+  //   CONFIRMED_VALUE_GUARD_MODE = 'shadow' (default) | 'enforce' | 'off'
+  //     shadow  → validate + log '[confirmed_value_guard] would_block', do NOT block (prod unchanged)
+  //     enforce → block (422 critical / null non-critical) — flip AFTER reviewing shadow logs
+  //     off     → emergency kill-switch, no validation, loudly logged (degraded safety)
+  const guardMode = (process.env.CONFIRMED_VALUE_GUARD_MODE ?? 'shadow').toLowerCase()
+  if (guardMode === 'off') {
+    console.error('[confirmed_value_guard] MODE=off — release-value sanitation DISABLED (degraded safety)')
+  }
+  const enforce = guardMode === 'enforce'
   for (const f of payload.fields ?? []) {
+    if (guardMode === 'off') break
     const verdict = validateConfirmedValue(f.field, f.normalized_value)
     const criticality = classifyCriticality(f.field)
     const critical = criticality === 'critical_identity' || criticality === 'critical_document'
     if (!verdict.ok) {
+      // Observability: PII-free signal (field name + class + reason, never the value).
+      // 'would_block' in shadow (measurement), 'block' when actually enforced.
+      console.warn(`[confirmed_value_guard] ${enforce ? 'block' : 'would_block'}`, JSON.stringify({
+        field: f.field, criticality, reason: verdict.reason, doc_type: payload.doc_type ?? null,
+      }))
+      if (!enforce) continue // shadow: measured, but do NOT alter output
       if (critical) {
         return NextResponse.json(
           // PII rule: field NAME only — the rejected value is NEVER echoed.
-          { ok: false, error: 'review_required', gate: 'confirmed_value_guard', field: f.field, reason: verdict.reason },
-          { status: 403 },
+          { ok: false, error: 'unprocessable_field', gate: 'confirmed_value_guard', field: f.field, reason: verdict.reason },
+          { status: 422 },
         )
       }
       f.final_value = null      // non-critical: drop the bad value, render as missing
       f.normalized_value = ''   // belt-and-suspenders: no other consumer can read it
       continue
     }
-    f.final_value = (f.normalized_value ?? '').trim() || null // C3 accepts the release value as final
+    if (enforce) f.final_value = (f.normalized_value ?? '').trim() || null // C3 accepts the release value as final
   }
 
   // ── C3: machine-read critical-field output gate (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
