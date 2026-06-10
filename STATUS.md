@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- FIXED bench finding A: translate wizard now downscales >3.8MB photos client-side before upload (was HTTP 413 at edge). Flagship only; reparole/ead/tps follow-up.
 - GT pipeline bench run (live prod): printed Cyrillic reliable (military 4/4); handwritten partial but always-review holds. Findings: 413>4MB, birth-cert handwritten:false mislabel, sex-not-in-spec. EXPLORATORY (1/class).
 - Debt closed: BUG C + BUG D tests (+10). NEW finding: RU-spelling guard misses composite full_names without ё/э/ы/ъ — pinned + flagged for owner.
 - CI infra: bumped GitHub Actions to Node-24 majors (checkout v6 / setup-node v6 / cache v5 / pnpm-action-setup v6) — clears 2026-06-16 Node-20 deprecation.
