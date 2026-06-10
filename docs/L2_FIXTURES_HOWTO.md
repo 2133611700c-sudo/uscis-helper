@@ -33,6 +33,26 @@ Format (see the synthetic example `apps/web/src/lib/canonical/core/benchmark/exa
 Tier-1 decision benchmark = **≥ 30 docs per class**, from **≥ 5 different people** (so it isn't one
 person's handwriting). Target classes first: the ones you actually process most.
 
+## ADVERSARIAL cases are MANDATORY (owner rule)
+
+A benchmark of only clean, legible documents measures *"works on easy"* — it verifies **zero safety
+invariants**. Each class MUST include **≥ 3 of these 6 adversarial categories** (synthetic example:
+`examples/adversarial.example.json`). Each maps to an `expected` the verdict can check:
+
+| # | Category | GT label expectation |
+|---|---|---|
+| 1 | **Wrong-person** — passport of person A + a birth cert claiming the same person with different names | the cross-document anchor must BLOCK → the conflicting field `expected: null` |
+| 2 | **Silent substitution** — Сергій (UA) in the original | `expected: "Serhii"` (as-written), NEVER the Russianized form; a wrong script = a wrong |
+| 3 | **Illegible critical field** — a DOB/patronymic that truly cannot be read | `expected: null` (must stay review, never a guess) |
+| 4 | **Cyrillic-in-output** — a Latin-only critical field whose only value still has Cyrillic | `expected: null` (the guard must block it) |
+| 5 | **Soviet bilingual mismatch** — RU and UA versions of one field disagree | `expected:` the as-written value + the other read must NOT force-rewrite it |
+| 6 | **Pre-2020 admin unit** — an old place name the gazetteer lacks (Дніпропетровськ, Артемівськ…) | `expected: null` (fallback + review, NOT a silent snap to a similar modern city) |
+
+Without ≥ 3 of these per class, the runner will report "99% accurate" on easy docs and prove nothing about
+safety — the same mistake as ML metrics without adversarial testing. The scorer treats a false-finalization
+of any `expected: null` field as `critical_wrong` (zero-tolerance), so these cases are what actually exercise
+the guards.
+
 ## Where to put them (PRIVACY — this is real PII)
 
 - Real document **images** + their fixture JSONs go under `test-fixtures/owner/<documentClass>/`.
