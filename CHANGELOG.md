@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: lock RU=BGN/PCGN standard + visual-evidence date rule, CODE, agent)
+- Owner locked transliteration standards: RU=BGN/PCGN simplified, UA=KMU-55, applicant=MRZ/passport-controlling, relatives=as-written, ambiguous→review. transliterateRussian rewritten to BGN/PCGN (е after vowel/initial→ye: Сергеевич→Sergeyevich; я→ya: Наталья→Natalya). +visualEvidenceRule tests: cross-document/cross-engine DOB match is a CANDIDATE that raises confidence/review but NEVER overwrites or finalizes an illegible date (C3 finalValue=null). 18 name+date tests; 3090 passed. RU_TRANSLIT_ENABLED enabled in prod (mappings proven). Synthetic names only.
+
 ## 2026-06-10 (feat: deterministic date-role guard, CODE, agent)
 - NEW dateRoleGuard.ts in readDocument (all products, no flag): role-conflation (same date in dob and date_of_issue → both review + date_role_conflict) and sequence conflict (issue before birth → date_sequence_conflict). Only raises review, never edits values or lowers flags. Addresses the observed model bug of copying one date into two role fields, and a spec requirement. +10 tests; suite green.
 
