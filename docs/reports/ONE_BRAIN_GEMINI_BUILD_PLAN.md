@@ -34,7 +34,14 @@ Kill fragmentation. Make Gemini-Core the default reader, ONE product at a time. 
 (so the Phase-3 `final_value` migration is additive). Each product: OFF=identical, preview-prove reads + PDF,
 owner flips. Do NOT do all four at once.
 - [ ] **2.1** Translation → Core default (preview-prove read + review + PDF; OFF=identical).
-- [ ] **2.2** TPS → Core default for UA identity docs (preview-prove vs current rule-modules — "not worse").
+- [ ] **2.1a** **Translator hard-case UNBYPASS (flagship, incident-class fix):** birth/marriage are `auto:false` in
+  DOC_TYPES → vision-extract never called → manual ticket (RC-1, still true). Route them through the Core under
+  hard-case policy + C3 (auto-read → candidate+review, NOT zero-read → manual). Behind a flag; the safety stack
+  that makes this safe is already proven on real docs (06-09). See PRODUCT_READINESS_COMPARISON_2026-06-09.md.
+- [ ] **2.2** TPS → Core default for UA identity docs ONLY (booklet/birth/military); keep deterministic US-form rule
+  modules (i94/ead/dl/i797) + Vision/DocAI as the technical eye (preview-prove "not worse" vs rule-modules).
+- [ ] **2.2a** EAD registry proof: verify `us_ead`/`us_i94`/`i797` DocTypeSpecs actually exist & are correct in
+  `docintel/documentRegistry` (PRODUCT_RUNTIME flags them UNPROVEN); owner provides upright real EAD/I-94 fixtures.
 - [ ] **2.3** Reparole → Core default (passport/booklet); then extend Core to i94/ead/dl.
 - [ ] **2.4** EAD → Core default.
 - [ ] **2.5** Retire legacy ungated `/api/ocr/extract` (DeepSeek+gpt, RC-3) — confirm no live caller, then remove.
