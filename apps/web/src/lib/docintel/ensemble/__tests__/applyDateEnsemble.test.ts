@@ -27,6 +27,20 @@ describe('extractDateCandidatesFromText', () => {
   it('returns empty for text with no dates', () => {
     expect(extractDateCandidatesFromText('no dates here, just words')).toEqual([])
   })
+  it('captures month+year even when the day is missing (OCR of a date region)', () => {
+    // Vision OCR of a zoomed handwritten date often drops a clean day digit.
+    const got = extractDateCandidatesFromText('родился (лась) июня 1996 место')
+    expect(got.some((s) => /июня\s+1996/.test(s))).toBe(true)
+  })
+})
+
+describe('applyDateEnsemble — month-only second reading (no day) still surfaces', () => {
+  it('Gemini July(full date) vs Vision "июня 1996" (no day) → month disagreement flagged', () => {
+    const input: EnsembleField[] = [{ field: 'dob', kind: 'ai_vision', raw_cyrillic: '14 липня 1990', review_required: false }]
+    const out = applyDateEnsemble(input, 'родился июня 1996')
+    expect(out.disagreements).toContain('dob')
+    expect(out.fields[0].ensemble_candidate).toMatch(/июня\s+1996/)
+  })
 })
 
 describe('applyDateEnsemble — cross-engine date conflict', () => {

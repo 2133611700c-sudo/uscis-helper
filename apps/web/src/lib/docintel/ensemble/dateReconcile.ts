@@ -83,7 +83,10 @@ export function parseDateText(text: string): ParsedDate {
 }
 
 const ALL_MONTH_STEMS = Object.values(MONTH_STEMS).flat().join('|')
-const WORD_DATE_RE = new RegExp(`\\b(\\d{1,2})\\s+\\p{L}*(?:${ALL_MONTH_STEMS})\\p{L}*\\s+(1[89]\\d{2}|20\\d{2})`, 'giu')
+// Day is OPTIONAL: OCR of a handwritten date region often yields "<month> YYYY"
+// without a clean adjacent day digit. Capturing month+year still lets the
+// reconciler catch a MONTH disagreement (the high-value handwritten signal).
+const WORD_DATE_RE = new RegExp(`(?:\\b(\\d{1,2})\\s+)?\\p{L}*(?:${ALL_MONTH_STEMS})\\p{L}*\\s+(1[89]\\d{2}|20\\d{2})`, 'giu')
 const ISO_DATE_RE = /\b\d{4}-\d{1,2}-\d{1,2}\b/g
 const NUM_DATE_RE = /\b\d{1,2}[./]\d{1,2}[./]\d{4}\b/g
 
