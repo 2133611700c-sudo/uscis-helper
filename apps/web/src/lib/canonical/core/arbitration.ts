@@ -19,6 +19,21 @@
 import type { CanonicalField, FieldEvidence } from '../types'
 import { criticalityOf, materiallyDifferent, sourceRank, buildConfidence, REVIEW_THRESHOLD } from '../policy'
 import type { FieldCandidate } from './types'
+import { normalizeCanonicalValue } from './knowledgeNormalize'
+import type { Sex } from '@uscis-helper/knowledge'
+
+/**
+ * Doc-level context for the knowledge layer (ADR-017 §D2). When the caller passes this
+ * (gated on KNOWLEDGE_BRAIN_ENABLED), the deterministic dictionary is applied to each
+ * arbitrated value. Undefined → arbitration is byte-identical to before (no knowledge).
+ */
+export interface KnowledgeArbitrationCtx {
+  documentClass?: string | null
+  /** old document → authority names are historical (Міліція, not Police). */
+  isHistorical?: boolean
+  /** the doc is a Ukrainian identity doc (enables Russian-spelling suspicion on names). default true. */
+  ukrainianDoc?: boolean
+}
 
 /** Fields the passport MRZ controls when its check digits are valid. */
 export const PASSPORT_MRZ_FIELDS: ReadonlySet<string> = new Set([
@@ -96,20 +111,94 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
   return field(key, primary.value, primary.source, crit, reasons.length > 0, reasons, evidence, conf)
 }
 
-/** Arbitrate every field key present in the candidate set. */
-export function arbitrateDocument(candidates: FieldCandidate[]): CanonicalField[] {
+/**
+ * Arbitrate every field key present in the candidate set.
+ *
+ * When `knowledge` is passed (caller gates on KNOWLEDGE_BRAIN_ENABLED), the deterministic D2
+ * dictionary is applied as an AUTHORITY LAYER on each value (ADR-017 §D2): a safe transform is
+ * accepted; a CONFLICT on a value is NEVER silently substituted — it surfaces `suggestedValue`
+ * and forces review, the read value is kept. `knowledge` omitted ⇒ byte-identical to before.
+ */
+export function arbitrateDocument(
+  candidates: FieldCandidate[],
+  knowledge?: KnowledgeArbitrationCtx | null,
+): CanonicalField[] {
   const byKey = new Map<string, FieldCandidate[]>()
   for (const c of candidates) {
     const arr = byKey.get(c.key)
     if (arr) arr.push(c)
     else byKey.set(c.key, [c])
   }
+  // Doc-level context for D2 (sex + given name help patronymic / spelling checks).
+  const sex = knowledge ? deriveSex(candidates) : null
+  const givenNameCyrillic = knowledge ? deriveGivenNameCyrillic(candidates) : null
   const out: CanonicalField[] = []
   for (const [key, group] of byKey) {
     const f = arbitrateField(key, group)
-    if (f) out.push(f)
+    if (!f) continue
+    out.push(knowledge ? applyKnowledge(f, knowledge, sex, givenNameCyrillic) : f)
   }
   return out
+}
+
+/**
+ * Apply a D2 decision to one arbitrated field WITHOUT silent substitution.
+ * accept/preserve ⇒ take the deterministic value. suggest/review/block ⇒ keep the read value,
+ * surface the dictionary's candidate as `suggestedValue`, and force review (conflict → human).
+ */
+function applyKnowledge(
+  f: CanonicalField,
+  ctx: KnowledgeArbitrationCtx,
+  sex: Sex | null,
+  givenNameCyrillic: string | null,
+): CanonicalField {
+  const d = normalizeCanonicalValue(f.key, f.normalizedValue ?? f.rawValue ?? '', {
+    documentClass: ctx.documentClass ?? null,
+    sourceDoc: ctx.documentClass ?? undefined,
+    sex,
+    givenNameCyrillic,
+    isHistorical: ctx.isHistorical === true,
+    ukrainianDoc: ctx.ukrainianDoc,
+  })
+
+  if (d.action === 'accept' || d.action === 'preserve') {
+    // Safe deterministic transform — take it. Provenance kept for the audit log (Phase 4).
+    return { ...f, normalizedValue: d.finalValue, knowledgeRule: d.ruleId, knowledgeProvenance: d.provenance }
+  }
+
+  // CONFLICT (suggest/review/block): never overwrite a critical value silently.
+  const reasons = mergeReasons(f.reviewReasons, [...d.reasonCodes, `knowledge:${d.action}:${d.ruleId}`])
+  return {
+    ...f,
+    // normalizedValue stays the READ value (no silent substitution)
+    suggestedValue: d.candidateValue ?? f.suggestedValue ?? null,
+    reviewRequired: true,
+    reviewReasons: reasons,
+    knowledgeRule: d.ruleId,
+    knowledgeProvenance: d.provenance,
+  }
+}
+
+function mergeReasons(existing: string[], add: string[]): string[] {
+  const out = [...existing]
+  for (const r of add) if (r && !out.includes(r)) out.push(r)
+  return out
+}
+
+/** Best-effort subject sex from a 'sex' candidate (for patronymic reconstruction). */
+function deriveSex(candidates: FieldCandidate[]): Sex | null {
+  const c = candidates.find((x) => x.key === 'sex' || x.key.endsWith('_sex'))
+  const v = (c?.value ?? '').trim().toLowerCase()
+  if (!v) return null
+  if (/^(m|male|ч|чол)/.test(v)) return 'M'
+  if (/^(f|female|ж|жін|жои)/.test(v)) return 'F'
+  return null
+}
+
+/** Best-effort given name in Cyrillic (for patronymic reconstruction). */
+function deriveGivenNameCyrillic(candidates: FieldCandidate[]): string | null {
+  const c = candidates.find((x) => (x.key === 'given_name' || x.key === 'child_given_name') && /[Ѐ-ӿ]/.test(x.value ?? ''))
+  return c?.value ?? null
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────

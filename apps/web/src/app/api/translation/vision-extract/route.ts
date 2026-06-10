@@ -41,7 +41,7 @@ import { deepseekProseTranslator } from '@/lib/engine/translator'
 import { DOC_TYPES } from '@/lib/engine/docTypes'
 // ONE BRAIN Core arbitration (flag-gated: ONE_BRAIN_CORE_ENABLED=1, default OFF)
 // B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
-import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
+import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/canonical/core/translationAdapter'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
 import {
@@ -224,7 +224,10 @@ export async function POST(req: NextRequest) {
           allCandidates.push(...r.fields.map((f) => docintelToCandidate(f, i + 1)))
         }
       }
-      const canonicalFields = arbitrateDocument(allCandidates)
+      const canonicalFields = applyKnowledgeBrainIfEnabled(
+        allCandidates,
+        buildKnowledgeContext({ docTypeId, product: 'translation' }),
+      )
       if (canonicalFields.length > 0) {
         // B2: toTranslationRows = named adapter, maps canonical → Translation FieldOut
         const fields = toTranslationRows(canonicalFields, cyrillicMap)
