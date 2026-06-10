@@ -38,7 +38,7 @@ import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { mrzCandidatesFromText } from '@/lib/canonical/core/mrzAuthority'
 
 export const runtime = 'nodejs'
-export const maxDuration = 30
+export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 const MAX_BYTES = 10 * 1024 * 1024
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Visual read (Gemini docintel) and Vision OCR run in parallel
     const [coreRead, mrzRawText] = await Promise.all([
-      readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000, product: 'reparole' }),
+      readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'reparole' }),
       mrzRawTextPromise,
     ])
 
