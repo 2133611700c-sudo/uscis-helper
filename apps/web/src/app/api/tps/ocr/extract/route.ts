@@ -53,7 +53,7 @@ import {
 import { postExtractNormalize } from '@/lib/tps/ocr/postExtractNormalize'
 // ONE BRAIN B1: TPS → Core behind flag (ONE_CORE_TPS_ENABLED=1, default OFF)
 import { readDocument } from '@/lib/docintel/documentFieldReader'
-import { arbitrateDocument } from '@/lib/canonical/core/arbitration'
+import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
 import { classifyCriticality, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
@@ -282,7 +282,10 @@ export async function POST(req: NextRequest) {
                 'MRZ candidates, mrzCheckValid:', mrzCandidates[0]?.mrzCheckValid)
             }
           }
-          const canonicalFields = arbitrateDocument(candidates)
+          const canonicalFields = applyKnowledgeBrainIfEnabled(
+            candidates,
+            buildKnowledgeContext({ docTypeId: docintelId, product: 'tps' }),
+          )
           if (canonicalFields.length > 0) {
             moduleResult = canonicalToTpsModuleResult(canonicalFields, docTypeHint, document_id)
             coreStatus = 'ok'
