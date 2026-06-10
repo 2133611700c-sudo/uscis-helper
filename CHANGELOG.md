@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (tune: ensemble crops full-width date band, not tight bbox, CODE, agent)
+- Vision read the year but garbled the month on tight Gemini bboxes (month_hits=0). Crop the FULL-WIDTH horizontal band at the date line instead — gives Vision the whole handwritten line. Targeted attempt; if still garbled, the path is Transkribus HTR (owner auth).
+
 ## 2026-06-10 (debug: month/year/cands diag for ensemble, CODE, agent)
 - Ensemble now runs in the Core path (3 boxes, 3 crops, 375 chars Vision text) but extracts 0 date candidates. Added PII-free month_hits/year_hits/cands to date_ensemble diag to determine whether Vision garbles the handwritten month on the zoomed crops.
 

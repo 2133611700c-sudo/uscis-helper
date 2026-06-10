@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- TUNING: tight bbox clipped the handwritten month (Vision: year ok, month garbled). Now crop FULL-WIDTH horizontal band at the date line. One targeted attempt.
 - DEBUG2: ensemble runs (3 boxes/3 crops/375 chars) but extracts 0 dates. Added month_hits/year_hits/cands diag to see if Vision garbles the month on crops.
 - ROOT CAUSE FOUND: ensemble was wired into the legacy path but reads return via the CORE path (ok:core-b2, early return) — ensemble never ran. Now wired into Core path via shared runDateEnsemble helper.
 - DEBUG: exposed date_ensemble diagnostics in response (boxes/crops/chars/status) to find why the 2nd reading isnt surfacing in prod.
