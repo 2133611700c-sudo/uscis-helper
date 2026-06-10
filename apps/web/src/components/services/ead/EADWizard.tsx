@@ -32,6 +32,7 @@ import {
   ChevronRight, ChevronLeft, Download, CheckCircle,
   AlertTriangle, ExternalLink, Info, Upload
 } from 'lucide-react'
+import { downscaleImageForUpload } from '@/lib/upload/downscaleImage'
 
 // docHints the EAD Core route accepts (see mapEadHintToDocintelId in route.ts)
 // Phase 2.4: upload step always shown — Core unconditional.
@@ -876,7 +877,7 @@ export function EADWizard({ locale }: EADWizardProps) {
     setUploadState(s => ({ ...s, status: 'uploading', fileName: file.name, errorMsg: undefined }))
     try {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', await downscaleImageForUpload(file), file.name)
       fd.append('docHint', uploadState.hint)
 
       const res = await fetch('/api/ead/ocr/extract', { method: 'POST', body: fd })
