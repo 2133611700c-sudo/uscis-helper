@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: mirror translation PDF — wire official schemas to live flow, CODE, agent)
+- FOUNDATIONAL: the English-mirror capability existed as orphaned scaffolding (5 KMU-sourced schemas + renderOfficialTranslation) fed ONLY by mockOCR. Built the 3 missing bricks to drive it from REAL extracted fields:
+  - `forms/ukraine/schemas/registry.ts` — getOfficialSchema(docType) for the 5 cert types.
+  - `pdf/buildMirrorValues.ts` — maps registry keys→schema keys (child_family_name→child_surname, dob→date_of_birth, …), finalValue-first, never invents.
+  - `pdf/renderMirrorTranslationPDF.ts` — orchestrator (schema+values+renderer → mirror PDF, or null).
+- Wired into generate-pdf behind `MIRROR_PDF_ENABLED` (default OFF → live unchanged): on + schema exists → faithful English mirror per KMU layout; else generic.
+- +9 tests (registry/mapping/e2e real PDF). tsc 0; 3042 passed / 4 skipped / 0 failed. content-guard 0.
+- Arch: docs/architecture/MIRROR_TRANSLATION_ARCHITECTURE.md. Mirror = structural English mirror (title/groups/order/source + seal placeholders), NOT a visual clone.
+
 ## 2026-06-10 (decision: NO tonal preprocessing before vision read — A/B data, docs, agent)
 - Tested orig(color) vs greyscale+contrast vs hard B&W on real Cyrillic docs via live prod read. Handwritten birth cert: 3/3→0/3 Cyrillic when preprocessed; printed unaffected. Tonal preprocessing DESTROYS faint handwriting (our danger class).
 - DECIDED: send original color (geometric resize only, already shipped). Geometric crop/deskew may help but must be bench-measured first; never greyscale/binarize. Official PDF is built from extracted text, not a scan → no PDF benefit either.
