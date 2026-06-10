@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (ci: bump GitHub Actions to Node-24 majors, infra, agent)
+- checkout v4→v6, setup-node v4→v6, cache v4→v5, pnpm/action-setup v4→v6 across all 8 workflows. Clears the Node.js-20 deprecation (forced to Node 24 on 2026-06-16). No `version:` inputs → action-setup v6 reads `packageManager: pnpm@10.33.2`. YAML validated.
+
 ## 2026-06-10 (ci: content-guard fix — reword 'certified translation' comment, agent)
 - `applyOcrFieldSafety.ts` comment reworded ('certified translation' literal tripped Rule 4 product-claim guard in CI). No logic change. tsc 0.
 
