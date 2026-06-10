@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-10 (Phase 2 split EXECUTED: PRs #104-#109 all merged, docs, agent)
+- Sequential split-merge per PR104 audit OPTION B: #104 (1.3) -> #105 (2.0) -> #106 (2.1a) -> #107 (2.1) -> #108 (2.2-2.6 two-part label) -> #109 (PR-F timeouts). Green checks before every merge.
+- Added docs/reports/PR104_PHASE2_INTEGRATION_AUDIT.md to main (was local-only) + execution outcome appended.
+- Prod env untouched. Owner action unblocked: flip prod GEMINI_MODEL -> gemini-3.1-pro-preview (clean value).
+
 ## 2026-06-10 (PR-F: raise Core read timeouts for pro-model, CODE, agent)
 - `timeoutMs: 20_000 → 40_000` for readDocument in 4 routes (translation/tps/reparole/ead) — gemini-3.1-pro-preview observed at 28s on handwritten birth cert; 20s cap silently degraded pro reads to flash (PR104 audit, timeout_status: CONFLICT).
 - `maxDuration: 30 → 60` on reparole + EAD routes (translation/TPS already 60).
