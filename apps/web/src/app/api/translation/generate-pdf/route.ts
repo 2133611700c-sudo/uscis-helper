@@ -236,16 +236,23 @@ export async function POST(req: NextRequest) {
     // (structured by its KMU normative source) instead of the generic field table.
     // OFF or no schema ⇒ unchanged generic certification PDF (byte-identical).
     if (process.env.MIRROR_PDF_ENABLED === '1' && hasOfficialSchema(payload.doc_type)) {
-      const mirror = await renderMirrorTranslationPDF(payload.doc_type, payload.fields ?? [], {
-        signerName: profile.name,
-        signerAddress: profile.addr,
-      })
-      if (mirror) {
-        pdfBuffer = mirror.pdf
-        pdfMode = 'mirror'
-        console.info('[generate-pdf] mirror PDF', JSON.stringify({
-          doc_type: mirror.docType, unresolved: mirror.unresolved.length, source: mirror.officialSource.act,
-        }))
+      // FAIL-OPEN: a mirror-render error must NEVER break the client's PDF — fall
+      // through to the generic certification PDF below (pdfBuffer stays null). The
+      // mirror is a structural nicety; the generic table is the guaranteed output.
+      try {
+        const mirror = await renderMirrorTranslationPDF(payload.doc_type, payload.fields ?? [], {
+          signerName: profile.name,
+          signerAddress: profile.addr,
+        })
+        if (mirror) {
+          pdfBuffer = mirror.pdf
+          pdfMode = 'mirror'
+          console.info('[generate-pdf] mirror PDF', JSON.stringify({
+            doc_type: mirror.docType, unresolved: mirror.unresolved.length, source: mirror.officialSource.act,
+          }))
+        }
+      } catch (mirrorErr) {
+        console.error('[generate-pdf] mirror render failed, falling back to generic:', mirrorErr)
       }
     }
     if (!pdfBuffer) {
