@@ -72,6 +72,51 @@ type FieldOut = {
   ensemble_candidate?: string | null
 }
 
+/**
+ * ENSEMBLE_DATE_ENABLED (default OFF): cross-engine date check shared by BOTH the
+ * Core path and the legacy path. For handwritten-risk docs, read the date REGIONS
+ * with a zoomed Google Vision pass and reconcile — disagreement forces review +
+ * attaches the second reading. Fail-open; never lowers review. Returns PII-free diag.
+ */
+async function runDateEnsemble<T extends {
+  field: string; kind?: string; value?: string | null; raw_cyrillic?: string | null
+  review_required?: boolean; review_reasons?: string[]; ensemble_candidate?: string | null
+}>(fields: T[], docTypeId: string, firstFile: File): Promise<{ fields: T[]; diag: Record<string, unknown> }> {
+  if (!(
+    process.env.ENSEMBLE_DATE_ENABLED === '1' &&
+    isUkrainianIdentityDoc(docTypeId) &&
+    HANDWRITTEN_FABRICATION_RISK_CLASSES.has(docintelIdToDocumentClass(docTypeId)) &&
+    fields.some((f) => isDateFieldName(f.field, f.kind))
+  )) return { fields, diag: { status: 'off' } }
+  try {
+    const apiKey = getGeminiApiKey()
+    const imageBuffer = Buffer.from(await firstFile.arrayBuffer())
+    const mimeType = firstFile.type || 'image/jpeg'
+    let secondText = ''
+    let diag: Record<string, unknown> = {}
+    if (apiKey) {
+      const rr = await readDateRegionsWithVision({
+        imageBuffer, mimeType, geminiApiKey: apiKey,
+        geminiModel: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview'),
+        vision: googleVisionProvider,
+      })
+      secondText = rr.text; diag = { ...rr.diag, source: 'region_crop' }
+    }
+    if (!secondText) {
+      const full = await googleVisionProvider.extractText({ imageBuffer, mimeType })
+      if (!isBlocked(full)) { secondText = full.raw_text ?? ''; diag = { ...diag, fallback_chars: secondText.length } }
+    }
+    if (secondText) {
+      const outcome = applyDateEnsemble(fields, secondText)
+      if (outcome.disagreements.length) console.info('[date_ensemble] disagreement', JSON.stringify({ doc_type_id: docTypeId, fields: outcome.disagreements }))
+      return { fields: outcome.fields, diag: { ...diag, status: outcome.applied ? 'applied' : 'no_dates', disagreements: outcome.disagreements.length } }
+    }
+    return { fields, diag: { ...diag, status: 'no_dates' } }
+  } catch (e) {
+    return { fields, diag: { status: 'error', error: e instanceof Error ? e.message.slice(0, 60) : 'err' } }
+  }
+}
+
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req)
   const rl = await rateLimit(`translation-vision:${ip}`, 8, 60_000)
@@ -179,11 +224,16 @@ export async function POST(req: NextRequest) {
       buildKnowledgeContext({ docTypeId, product: 'translation' }),
     )
     if (canonicalFields.length > 0) {
-      const fields = toTranslationRows(canonicalFields, cyrillicMap)
+      let fields = toTranslationRows(canonicalFields, cyrillicMap)
+      // Cross-engine date ensemble (handwritten-risk; flag-gated) — wired HERE in
+      // the Core path because this is the live return (status ok:core-b2).
+      const ens = await runDateEnsemble(fields, docTypeId, rawFiles[0])
+      fields = ens.fields
       const requiresReview = fields.some((f) => f.review_required)
       console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview)
       return NextResponse.json({
         ok: true, doc_type_id: docTypeId, fields,
+        date_ensemble: ens.diag,
         pages: corePageResults, page_count: rawFiles.length,
         provider: 'one-brain-core:translation-b2',
         model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
@@ -286,57 +336,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── ENSEMBLE_DATE_ENABLED (default OFF): cross-engine date check ───────────
-  // The proven handwritten-date fix (2026-06-10): Gemini misreads the handwritten
-  // month; Google Vision reads it correctly. For handwritten-risk classes, run a
-  // SECOND read with Google Vision and reconcile DATE fields — any disagreement
-  // forces review and surfaces the second engine's reading (never overwrites the
-  // primary, never lowers review). OFF ⇒ skipped (byte-identical, no extra cost).
-  let dateEnsembleStatus: 'off' | 'no_dates' | 'applied' | 'error' = 'off'
-  let dateEnsembleDiag: Record<string, unknown> | null = null
-  if (
-    ok && process.env.ENSEMBLE_DATE_ENABLED === '1' &&
-    isUkrainianIdentityDoc(docTypeId) &&
-    HANDWRITTEN_FABRICATION_RISK_CLASSES.has(docintelIdToDocumentClass(docTypeId)) &&
-    fields.some((f) => isDateFieldName(f.field, f.kind))
-  ) {
-    try {
-      const apiKey = getGeminiApiKey()
-      const imageBuffer = Buffer.from(await rawFiles[0].arrayBuffer())
-      const mimeType = rawFiles[0].type || 'image/jpeg'
-      // Read the DATE REGIONS with a zoomed second-engine pass — Vision garbles the
-      // handwritten month on the full page but reads it on a zoomed crop (prod proof).
-      let secondText = ''
-      if (apiKey) {
-        const regionRead = await readDateRegionsWithVision({
-          imageBuffer, mimeType, geminiApiKey: apiKey,
-          geminiModel: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview'),
-          vision: googleVisionProvider,
-        })
-        secondText = regionRead.text
-        dateEnsembleDiag = { ...regionRead.diag, source: 'region_crop' }
-      }
-      // Fallback: if region-crop yielded nothing, try Vision on the full page.
-      if (!secondText) {
-        const full = await googleVisionProvider.extractText({ imageBuffer, mimeType })
-        if (!isBlocked(full)) { secondText = full.raw_text ?? ''; dateEnsembleDiag = { ...(dateEnsembleDiag ?? {}), fallback_chars: secondText.length } }
-      }
-      if (secondText) {
-        const outcome = applyDateEnsemble(fields, secondText)
-        fields = outcome.fields
-        dateEnsembleStatus = outcome.applied ? 'applied' : 'no_dates'
-        dateEnsembleDiag = { ...(dateEnsembleDiag ?? {}), disagreements: outcome.disagreements.length, applied: outcome.applied }
-        if (outcome.disagreements.length) {
-          console.info('[date_ensemble] disagreement', JSON.stringify({ doc_type_id: docTypeId, fields: outcome.disagreements }))
-        }
-      } else {
-        dateEnsembleStatus = 'no_dates'
-      }
-    } catch (e) {
-      dateEnsembleStatus = 'error'
-      console.warn('[date_ensemble] second-read failed:', e instanceof Error ? e.message : 'unknown')
-    }
-  }
+  // ── ENSEMBLE_DATE_ENABLED (default OFF): cross-engine date check (legacy path) ──
+  // Same shared helper as the Core path. OFF ⇒ skipped (byte-identical).
+  const legacyEns = ok ? await runDateEnsemble(fields, docTypeId, rawFiles[0]) : { fields, diag: { status: 'off' } as Record<string, unknown> }
+  fields = legacyEns.fields
+  const dateEnsembleDiag = legacyEns.diag
 
   // ── C3: Global OCR field safety guard (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
   // OFF ⇒ this block is skipped ⇒ byte-identical. ON ⇒ unsafe critical reads (hard-case,
@@ -357,7 +361,7 @@ export async function POST(req: NextRequest) {
     doc_type_id: docTypeId,
     fields,
     ocr_field_safety: ocrFieldSafety,
-    date_ensemble: { status: dateEnsembleStatus, ...(dateEnsembleDiag ?? {}) },
+    date_ensemble: dateEnsembleDiag,
     policy_guard_status: translationPolicyGuardStatus,
     pages: pageResults,
     page_count: rawFiles.length,

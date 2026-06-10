@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (fix: wire date ensemble into the CORE path (was dead in legacy), CODE, agent)
+- Root cause of the silent ensemble: it lived in the legacy merged-path, but real reads return via the Core path (ok:core-b2) which returns early — the ensemble code never executed. Extracted shared runDateEnsemble helper, wired into the Core path (and deduped the legacy block). date_ensemble diag now in the Core response. tsc 0; 3061 passed.
+
 ## 2026-06-10 (debug: expose date_ensemble diagnostics in response, CODE, agent)
 - TEMPORARY: response carries date_ensemble {status, boxes, crops, chars, disagreements} (PII-free counts) to diagnose why the live ensemble isnt surfacing the 2nd reading after multiple fixes. Remove once fixed.
 
