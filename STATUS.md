@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- DECIDED (A/B data): no scanner-style greyscale/B&W preprocessing — it collapses handwritten Cyrillic (3/3→0/3); send original color. Geometric crop/deskew = future measured candidate only.
 - Bench coverage 4/5 UA classes (+Soviet bilingual: same review-gated misread pattern). Finding B corrected: birth cert IS protected via always_review+route override (not the spec flag). Intl-passport GT MISSING (owner).
 - Finding A fully closed: ALL 5 upload paths (translation/EAD/TPS×2/reparole) now downscale >3.8MB photos client-side via shared lib/upload/downscaleImage. No more 413 on large phone photos anywhere.
 - FIXED bench finding A: translate wizard now downscales >3.8MB photos client-side before upload (was HTTP 413 at edge). Flagship only; reparole/ead/tps follow-up.
