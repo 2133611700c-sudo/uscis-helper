@@ -1,4 +1,20 @@
-# HANDOFF (2026-06-10 — PR cleanup: canary docs applied, stale PRs closed)
+# HANDOFF (2026-06-10 — fix: pre-payment review check in generate-pdf/route.ts)
+
+## What was done this session
+1. Fixed payment ordering bug in `apps/web/src/app/api/translation/generate-pdf/route.ts`.
+   - Added pre-payment review check BEFORE Stripe verification block.
+   - Returns 400 `fields_require_review` when any `f.review_required === true` field exists.
+   - Prevents user from being charged for a PDF that reviewGate would block with 403.
+2. tsc: 0 errors. Tests: 2992 passed | 4 skipped | 0 failed.
+
+## What was NOT done
+- No prod env changes. No flag changes.
+
+## Next task
+- Continue Phase 3 follow-up or owner-directed canary.
+
+---
+# Previous HANDOFF (2026-06-10 — PR cleanup: canary docs applied, stale PRs closed)
 
 ## What was done this session
 1. Applied OCR field safety canary docs (PRs #100, #101, #102) directly to main — PRs had conflicts in CHANGELOG/HANDOFF/STATUS only; unique report files extracted and committed.

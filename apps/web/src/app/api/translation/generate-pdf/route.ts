@@ -59,6 +59,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Invalid JSON' }, { status: 400 })
   }
 
+  // ── Pre-payment review check ───────────────────────────────────────────────
+  // Block BEFORE Stripe charge if any extracted field still requires review.
+  // This prevents the user from being charged for a PDF that reviewGate would
+  // block with 403. Return 400 (client error) so the wizard can show a
+  // "please confirm your fields first" message without triggering a charge.
+  const unresolvedReviewFields = (payload.fields ?? []).filter((f) => f.review_required === true)
+  if (unresolvedReviewFields.length > 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'fields_require_review',
+        detail: 'Please confirm all highlighted fields on the review screen before completing payment.',
+        unresolved_count: unresolvedReviewFields.length,
+      },
+      { status: 400 },
+    )
+  }
+
   // ── Payment gate (Severity-1 liability fix, 2026-05-27) ────────────────────
   //   This endpoint previously hardcoded payment_confirmed:true and never
   //   verified the Stripe session — anyone could POST and receive a translation
