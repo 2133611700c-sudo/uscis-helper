@@ -14,6 +14,8 @@
 
 import { getDocTypeSpec } from './documentRegistry'
 import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVisionProvider'
+import { getGeminiApiKey } from '@/lib/gemini/apiKey'
+import { autoOrient } from './orientation/autoOrient'
 import { toCanonicalValue } from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
@@ -44,6 +46,21 @@ export async function readDocument(
 
   // PII-free document-class metric (logging only; silent unless flag on).
   if (opts.product) recordDocumentClassMetric({ product: opts.product, docTypeId })
+
+  // AUTO_ORIENT_ENABLED (default OFF): correct content rotation BEFORE the read.
+  // A real birth cert was photographed sideways (90°) and every engine read the
+  // cursive sideways. sharp.rotate() fixes only EXIF; this detects + fixes rotated
+  // CONTENT. Fail-open. OFF ⇒ byte-identical, no extra cost.
+  let orientApplied = 0
+  if (process.env.AUTO_ORIENT_ENABLED === '1') {
+    const apiKey = getGeminiApiKey()
+    if (apiKey) {
+      const oriented = await autoOrient(imageBuffer, apiKey, primaryGeminiModel())
+      imageBuffer = oriented.buffer
+      orientApplied = oriented.applied
+      if (orientApplied) console.info('[auto_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
+    }
+  }
 
   const provider = opts.provider ?? defaultVisionProvider
   const read = await provider.readFields(imageBuffer, mimeType, spec, {
