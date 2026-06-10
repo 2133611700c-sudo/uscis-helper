@@ -293,6 +293,7 @@ export async function POST(req: NextRequest) {
   // forces review and surfaces the second engine's reading (never overwrites the
   // primary, never lowers review). OFF ⇒ skipped (byte-identical, no extra cost).
   let dateEnsembleStatus: 'off' | 'no_dates' | 'applied' | 'error' = 'off'
+  let dateEnsembleDiag: Record<string, unknown> | null = null
   if (
     ok && process.env.ENSEMBLE_DATE_ENABLED === '1' &&
     isUkrainianIdentityDoc(docTypeId) &&
@@ -307,21 +308,24 @@ export async function POST(req: NextRequest) {
       // handwritten month on the full page but reads it on a zoomed crop (prod proof).
       let secondText = ''
       if (apiKey) {
-        secondText = await readDateRegionsWithVision({
+        const regionRead = await readDateRegionsWithVision({
           imageBuffer, mimeType, geminiApiKey: apiKey,
           geminiModel: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview'),
           vision: googleVisionProvider,
         })
+        secondText = regionRead.text
+        dateEnsembleDiag = { ...regionRead.diag, source: 'region_crop' }
       }
       // Fallback: if region-crop yielded nothing, try Vision on the full page.
       if (!secondText) {
         const full = await googleVisionProvider.extractText({ imageBuffer, mimeType })
-        if (!isBlocked(full)) secondText = full.raw_text ?? ''
+        if (!isBlocked(full)) { secondText = full.raw_text ?? ''; dateEnsembleDiag = { ...(dateEnsembleDiag ?? {}), fallback_chars: secondText.length } }
       }
       if (secondText) {
         const outcome = applyDateEnsemble(fields, secondText)
         fields = outcome.fields
         dateEnsembleStatus = outcome.applied ? 'applied' : 'no_dates'
+        dateEnsembleDiag = { ...(dateEnsembleDiag ?? {}), disagreements: outcome.disagreements.length, applied: outcome.applied }
         if (outcome.disagreements.length) {
           console.info('[date_ensemble] disagreement', JSON.stringify({ doc_type_id: docTypeId, fields: outcome.disagreements }))
         }
@@ -333,7 +337,6 @@ export async function POST(req: NextRequest) {
       console.warn('[date_ensemble] second-read failed:', e instanceof Error ? e.message : 'unknown')
     }
   }
-  void dateEnsembleStatus
 
   // ── C3: Global OCR field safety guard (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
   // OFF ⇒ this block is skipped ⇒ byte-identical. ON ⇒ unsafe critical reads (hard-case,
@@ -354,6 +357,7 @@ export async function POST(req: NextRequest) {
     doc_type_id: docTypeId,
     fields,
     ocr_field_safety: ocrFieldSafety,
+    date_ensemble: { status: dateEnsembleStatus, ...(dateEnsembleDiag ?? {}) },
     policy_guard_status: translationPolicyGuardStatus,
     pages: pageResults,
     page_count: rawFiles.length,
