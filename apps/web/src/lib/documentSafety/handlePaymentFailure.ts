@@ -21,10 +21,12 @@ import {
 export interface PaymentFailureDeps {
   /** send the customer acknowledgment email; resolve true on success. Must not throw. */
   sendAck: (to: string, subject: string, body: string) => Promise<boolean>
-  /** create/append a manual-review ticket (PII-free reason). resolve true on success. */
-  createTicket: (sessionId: string, reasonSummary: string) => Promise<boolean>
-  /** alert the owner (Telegram/email) with a PII-free summary. resolve true on success. */
-  alertOwner: (summary: string) => Promise<boolean>
+  /**
+   * Escalate to the owner: create the manual-review ticket AND alert the owner with the
+   * resulting ticket id. One unit — the real notifyOwnerAlert is ticket-coupled. PII-free
+   * summary (failure_type + session). The route binds the concrete typed utilities.
+   */
+  escalateToOwner: (sessionId: string, reasonSummary: string) => Promise<{ ticketCreated: boolean; ownerAlerted: boolean }>
 }
 
 export interface PaymentFailureContext {
@@ -69,14 +71,15 @@ export async function handlePaymentFailure(
     ackSent = await safe(() => deps.sendAck(ctx.userEmail as string, ack.subject, ack.body))
   }
 
-  // (1)+(2) owner-alert cases get a ticket + an owner alert (PII-free).
-  let ticketCreated = false
-  let ownerAlerted = false
+  // (1)+(2) owner-alert cases get a ticket + an owner alert (one escalation unit, PII-free).
+  let esc = { ticketCreated: false, ownerAlerted: false }
   if (decision.ownerAlert) {
-    const summary = `paid_request_failed:${ctx.failureType} doc=${ctx.docType ?? 'unknown'} session=${ctx.sessionId}`
-    ticketCreated = await safe(() => deps.createTicket(ctx.sessionId, `paid_request_failed:${ctx.failureType}`))
-    ownerAlerted = await safe(() => deps.alertOwner(summary))
+    try {
+      esc = await deps.escalateToOwner(ctx.sessionId, `paid_request_failed:${ctx.failureType}`)
+    } catch {
+      esc = { ticketCreated: false, ownerAlerted: false } // escalation failure must not break the handler
+    }
   }
 
-  return { decision, ackSent, ticketCreated, ownerAlerted }
+  return { decision, ackSent, ticketCreated: esc.ticketCreated, ownerAlerted: esc.ownerAlerted }
 }
