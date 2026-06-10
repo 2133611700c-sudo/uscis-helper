@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (debug: month/year/cands diag for ensemble, CODE, agent)
+- Ensemble now runs in the Core path (3 boxes, 3 crops, 375 chars Vision text) but extracts 0 date candidates. Added PII-free month_hits/year_hits/cands to date_ensemble diag to determine whether Vision garbles the handwritten month on the zoomed crops.
+
 ## 2026-06-10 (fix: wire date ensemble into the CORE path (was dead in legacy), CODE, agent)
 - Root cause of the silent ensemble: it lived in the legacy merged-path, but real reads return via the Core path (ok:core-b2) which returns early — the ensemble code never executed. Extracted shared runDateEnsemble helper, wired into the Core path (and deduped the legacy block). date_ensemble diag now in the Core response. tsc 0; 3061 passed.
 
