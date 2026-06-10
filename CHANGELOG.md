@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-10 (P0 design lock + P0-A output-door sanitation, CODE+5 docs, agent)
+- NEW `apps/web/src/lib/documentSafety/confirmedValueGuard.ts` — deterministic release-value sanitation (Cyrillic/control/length/date).
+- `generate-pdf/route.ts` — guard wired ALWAYS-ON (legal sanitation, not behind OCR_FIELD_SAFETY). Fixed dead-code bug from prior agent (keyed on never-sent `confirmed` flag → now validates real release values). Deliberate prod behavior change: defects blocked, legitimate Latin unaffected.
+- `applyOcrFieldSafety.ts` classifyCriticality — added validity dates, issuing_authority, category, nationality (were silently `optional`). Reconciled to CRITICAL_FIELDS_CONTRACT.
+- `documentFieldReader.ts` — PII-free fallback_model_used observability log.
+- `translation/types.ts` — ExtractedField.final_value + confirmed.
+- 5 design-lock contracts: CRITICAL_FIELDS_CONTRACT, C3_USER_CORRECTION_CONTRACT, PAYMENT_REFUND_LEGACY_GATE_CONTRACT, GT_BENCHMARK_EXIT_CRITERIA (docs/architecture/); ADR-019-audit-trail-persistence (docs/adr/).
+- NEW test `confirmedValueGuard.test.ts` (14). tsc 0; 3011 passed / 4 skipped / 0 failed.
+
 ## 2026-06-10 (ADR-018 model matrix locked + fallback-model review guard, CODE+ADR, agent)
 - `docs/adr/ADR-018-model-matrix.md` — iron model matrix per owner directive: pro-preview = reader, flash = fallback-only, Vision = technical eye, DeepSeek = prose (+sanitized TPS text gap-fill), D2/C3/PDF = code.
 - `geminiVisionProvider.ts` — `primaryGeminiModel()` exported.
