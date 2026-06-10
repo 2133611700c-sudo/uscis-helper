@@ -33,7 +33,7 @@ import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 
 export const runtime = 'nodejs'
-export const maxDuration = 30
+export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 const MAX_BYTES = 10 * 1024 * 1024
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
   const document_id = `ead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
   try {
     // 1. Visual read (Gemini docintel) — the only I/O call in this route
-    const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 20_000, product: 'ead' })
+    const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'ead' })
 
     if (!coreRead.ok || !Array.isArray(coreRead.fields) || coreRead.fields.length === 0) {
       console.warn('[B4/EAD/Core] docintel returned no fields:', {
