@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < rawFiles.length; i++) {
       const file = rawFiles[i]
       const buffer = Buffer.from(await file.arrayBuffer())
-      const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 20_000, product: 'translation' })
+      const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 40_000, product: 'translation' })
       corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
       if (r.ok && Array.isArray(r.fields)) {
         buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
