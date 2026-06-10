@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email/resend'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
+import { renderMirrorTranslationPDF } from '@/lib/translation/pdf/renderMirrorTranslationPDF'
+import { hasOfficialSchema } from '@/lib/translation/forms/ukraine/schemas/registry'
 import { buildCertificationRecord } from '@/lib/translation/certificationRecord'
 import { ExtractedField, SourceTrace } from '@/lib/translation/types'
 import { isOwnerSession } from '@/lib/ownerAccess'
@@ -227,19 +229,40 @@ export async function POST(req: NextRequest) {
 
   // Generate real PDF
   let pdfBuffer: Buffer | null = null
+  let pdfMode: 'mirror' | 'generic' = 'generic'
   try {
-    pdfBuffer = await generateTranslationPDF({
-      scopeTitle: payload.scope_title ?? `English Translation of Ukrainian Document`,
-      documentType: payload.doc_type ?? 'other',
-      fields: payload.fields ?? [],
-      sourceTraces: payload.source_traces ?? [],
-      certificationRecord: certRecord,
-      sessionId: session_id ?? 'legacy',
-      signatureDataUrl: payload.signatureDataUrl,
-    })
+    // MIRROR_PDF_ENABLED (default OFF): when on AND an official schema exists for
+    // this docType, render a faithful English MIRROR of the Ukrainian document
+    // (structured by its KMU normative source) instead of the generic field table.
+    // OFF or no schema ⇒ unchanged generic certification PDF (byte-identical).
+    if (process.env.MIRROR_PDF_ENABLED === '1' && hasOfficialSchema(payload.doc_type)) {
+      const mirror = await renderMirrorTranslationPDF(payload.doc_type, payload.fields ?? [], {
+        signerName: profile.name,
+        signerAddress: profile.addr,
+      })
+      if (mirror) {
+        pdfBuffer = mirror.pdf
+        pdfMode = 'mirror'
+        console.info('[generate-pdf] mirror PDF', JSON.stringify({
+          doc_type: mirror.docType, unresolved: mirror.unresolved.length, source: mirror.officialSource.act,
+        }))
+      }
+    }
+    if (!pdfBuffer) {
+      pdfBuffer = await generateTranslationPDF({
+        scopeTitle: payload.scope_title ?? `English Translation of Ukrainian Document`,
+        documentType: payload.doc_type ?? 'other',
+        fields: payload.fields ?? [],
+        sourceTraces: payload.source_traces ?? [],
+        certificationRecord: certRecord,
+        sessionId: session_id ?? 'legacy',
+        signatureDataUrl: payload.signatureDataUrl,
+      })
+    }
   } catch (err) {
     console.error('[generate-pdf] PDF generation failed:', err)
   }
+  void pdfMode
 
   // Internal attestation/audit trail (8 CFR §103.2(b)(3)) — WHAT was attested and
   // WHEN. Persisted to translation_certification_audit (its own table). Not shown
