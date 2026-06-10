@@ -1,16 +1,25 @@
 /**
  * recordGuardBlock — L1 baseline write-hook. Persists a PII-free guard-block event to
- * public.guard_block_events so the rate-alert cron can measure the real block rate.
+ * public.guard_block_events (schema applied by the owner: gate_type, reason_code,
+ * field_name, would_block, doc_type, session_id uuid). The rate-alert cron reads it.
  *
- * Behind GUARD_BLOCK_METRICS_ENABLED (default OFF → no-op, zero cost). Best-effort:
- * never throws, never blocks the request beyond a single awaited insert. NO field
- * names / values are stored — gate + failure_type + doc_type + session only (LAW 5).
+ * Behind GUARD_BLOCK_METRICS_ENABLED (default OFF → no-op). Best-effort, never throws.
+ * NO field VALUES are stored — only the field NAME, gate, reason code (LAW 5).
  */
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+/** session_id is a uuid column — coerce a non-uuid (e.g. 'legacy') to null. */
+export function asUuidOrNull(s: string | null | undefined): string | null {
+  return s && UUID_RE.test(s) ? s : null
+}
+
 export interface GuardBlockEvent {
-  gate: string
-  failureType: string
+  gateType: string // confirmed_value_guard | ocr_field_safety
+  reasonCode: string // PII-free reason
+  /** would_block=true in SHADOW (would have blocked); false when it actually blocked */
+  wouldBlock: boolean
+  fieldName?: string | null
   docType?: string | null
   sessionId?: string | null
 }
@@ -25,10 +34,12 @@ export async function recordGuardBlock(e: GuardBlockEvent): Promise<void> {
   try {
     const supabase = createAdminSupabaseClient()
     await supabase.from('guard_block_events').insert({
-      gate: e.gate,
-      failure_type: e.failureType,
+      gate_type: e.gateType,
+      reason_code: e.reasonCode,
+      would_block: e.wouldBlock,
+      field_name: e.fieldName ?? null,
       doc_type: e.docType ?? null,
-      session_id: e.sessionId ?? null,
+      session_id: asUuidOrNull(e.sessionId),
     })
   } catch {
     /* metrics must never break the request */

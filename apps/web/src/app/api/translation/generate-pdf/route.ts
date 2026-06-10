@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
   // OFF ⇒ skipped entirely (byte-identical prod). A block (anchor conflict / invalid
   // authority, e.g. user_clarified on TIER 1) → 422; every decision is audited.
   if (process.env.CERTIFIER_OVERRIDE_ENABLED === '1' && payload.fields?.length) {
-    const { block } = applyCertifierOverrides(payload.fields as unknown as FieldWithMaybeOverride[], {
+    const { block } = await applyCertifierOverrides(payload.fields as unknown as FieldWithMaybeOverride[], {
       enabled: true,
       docType: payload.doc_type ?? '',
       documentClass: docintelIdToDocumentClass(payload.doc_type ?? ''),
@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
       }))
       // L1 baseline (GUARD_BLOCK_METRICS_ENABLED, default OFF): count would-be/actual
       // blocks PII-free so the rate threshold can be calibrated. Records in shadow too.
-      await recordGuardBlock({ gate: 'confirmed_value_guard', failureType: 'user_input_invalid', docType: payload.doc_type ?? null, sessionId: payload.session_id ?? null })
+      await recordGuardBlock({ gateType: 'confirmed_value_guard', reasonCode: verdict.reason ?? 'invalid_value', wouldBlock: !enforce, fieldName: f.field, docType: payload.doc_type ?? null, sessionId: payload.session_id ?? null })
       if (!enforce) continue // shadow: measured, but do NOT alter output
       if (critical) {
         // L1 A-full (REFUND_AUTOTICKET_ENABLED, default OFF): this 422 is POST-payment →
@@ -244,7 +244,7 @@ export async function POST(req: NextRequest) {
       })),
     )
     if (unresolved) {
-      await recordGuardBlock({ gate: 'ocr_field_safety', failureType: 'guard_block', docType: payload.doc_type ?? null, sessionId: payload.session_id ?? null })
+      await recordGuardBlock({ gateType: 'ocr_field_safety', reasonCode: 'unresolved_critical_field', wouldBlock: false, docType: payload.doc_type ?? null, sessionId: payload.session_id ?? null })
       // L1 A-full: POST-payment guard block → review-flow + owner alert (best-effort, OFF by default).
       await postPaymentFailure('guard_block', {
         sessionId: payload.session_id ?? 'legacy', email: payload.profile?.email ?? null, docType: payload.doc_type ?? null,
