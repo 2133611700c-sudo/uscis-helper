@@ -9,8 +9,7 @@ import { handlePaymentFailure, type PaymentFailureDeps } from '../handlePaymentF
 function deps(over: Partial<PaymentFailureDeps> = {}): PaymentFailureDeps {
   return {
     sendAck: vi.fn(async () => true),
-    createTicket: vi.fn(async () => true),
-    alertOwner: vi.fn(async () => true),
+    escalateToOwner: vi.fn(async () => ({ ticketCreated: true, ownerAlerted: true })),
     ...over,
   }
 }
@@ -24,7 +23,7 @@ describe('per-type side-effect routing', () => {
     expect(out.ticketCreated).toBe(false)
     expect(out.ownerAlerted).toBe(false)
     expect(d.sendAck).toHaveBeenCalledOnce()
-    expect(d.createTicket).not.toHaveBeenCalled()
+    expect(d.escalateToOwner).not.toHaveBeenCalled()
     // the 422 ack must be the correction message (action required)
     expect((d.sendAck as ReturnType<typeof vi.fn>).mock.calls[0][2].toLowerCase()).toMatch(/return to your document|confirm/)
   })
@@ -36,7 +35,7 @@ describe('per-type side-effect routing', () => {
     expect(out.ackSent).toBe(true)
     expect(out.ticketCreated).toBe(true)
     expect(out.ownerAlerted).toBe(true)
-    expect(d.alertOwner).toHaveBeenCalledOnce()
+    expect(d.escalateToOwner).toHaveBeenCalledOnce()
   })
 
   it('guard_block (403): ack + ticket + owner alert', async () => {
@@ -54,15 +53,14 @@ describe('per-type side-effect routing', () => {
   })
 })
 
-describe('PII safety — owner summary + ticket reason carry no values', () => {
-  it('ticket reason and owner summary contain only failure_type/doc/session', async () => {
-    const createTicket = vi.fn(async (_sessionId: string, _reason: string) => true)
-    const alertOwner = vi.fn(async (_summary: string) => true)
+describe('PII safety — escalation summary carries no values', () => {
+  it('escalateToOwner is called with a PII-free failure_type summary only', async () => {
+    const escalateToOwner = vi.fn(async (_sessionId: string, _summary: string) => ({ ticketCreated: true, ownerAlerted: true }))
     await handlePaymentFailure(
       { failureType: 'backend_persist_failure', sessionId: 's5', userEmail: 'u@example.com', docType: 'ua_birth_certificate' },
-      deps({ createTicket, alertOwner }))
-    expect(createTicket.mock.calls[0][1]).toBe('paid_request_failed:backend_persist_failure')
-    expect(alertOwner.mock.calls[0][0]).toContain('paid_request_failed:backend_persist_failure')
+      deps({ escalateToOwner }))
+    expect(escalateToOwner.mock.calls[0][0]).toBe('s5')
+    expect(escalateToOwner.mock.calls[0][1]).toBe('paid_request_failed:backend_persist_failure')
   })
 })
 
@@ -70,8 +68,7 @@ describe('best-effort — a throwing dependency never breaks the handler', () =>
   it('resolves even when every dep throws, with false outcome flags', async () => {
     const d = deps({
       sendAck: vi.fn(async () => { throw new Error('resend down') }),
-      createTicket: vi.fn(async () => { throw new Error('db down') }),
-      alertOwner: vi.fn(async () => { throw new Error('telegram down') }),
+      escalateToOwner: vi.fn(async () => { throw new Error('db down') }),
     })
     const out = await handlePaymentFailure(
       { failureType: 'backend_persist_failure', sessionId: 's6', userEmail: 'u@example.com' }, d)
