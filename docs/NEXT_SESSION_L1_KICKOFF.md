@@ -53,14 +53,37 @@ L1 SCOPE (owner-ruled A-full + per-failure-type triage):
    immutable audit + legal accounting review = 2-3 sessions + legal; A-full gives 80% of the
    user benefit in 1 session). Write docs/policy/REFUND_POLICY.md from this ruling.
 
-   CUSTOMER ACKNOWLEDGMENT TEMPLATE (English, client-facing; SLA = 24h, see owner ruling):
-     "We've received your payment and your document is being finalized by our review team.
-      Most cases are completed within a few hours; we'll respond within 24 hours at the latest.
-      Your payment is secure — no action is needed from you right now."
-     SLA = 24 hours (owner business commitment): honest given owner-only transitional ops,
-     beatable (internal escalation at 4h/12h → typically resolved far sooner), competitive
-     (human-reviewed certified translation norm is 24-48h). Tighten later if a monitoring
-     cadence or a delegated certifier is added.
+   CUSTOMER ACKNOWLEDGMENT = 4 TEMPLATES, routed by failure_type (owner RULED 2026-06-10).
+   A single template is WRONG: "no action needed" misleads the 422 case (the user MUST fix a
+   field) → they don't return → ticket goes 'abandoned' → artificial refund queue; and the
+   email-fail case needs a "check spam" instruction. SLA in every version = 24 hours.
+
+     ack_422_correction  (user-input — ACTION REQUIRED, link back to D5):
+       "We've received your payment — thank you. We need one small clarification before we
+        finalize your document: please return to your document and confirm the highlighted
+        field. It takes under a minute, and your payment is secure. Once you confirm, your
+        translation completes automatically."
+
+     ack_403_review  (guard — manual review, wait, no action):
+       "We've received your payment — thank you. Your document needs a brief manual review by
+        our team to ensure accuracy. No action is needed from you; most cases are completed
+        within a few hours, and we'll respond within 24 hours at the latest. Your payment is secure."
+
+     ack_503_retry  (infra — auto-retry, wait, no action):
+       "We've received your payment — thank you. We hit a temporary technical issue while
+        finalizing your document. The system is retrying automatically; no action is needed.
+        If it isn't resolved shortly our team will step in — we'll respond within 24 hours at
+        the latest. Your payment is secure."
+
+     ack_email_resend  (delivery — check spam, auto-resend):
+       "Your translation is ready and your payment is complete — thank you. We've emailed your
+        document; please also check your spam/junk folder. If you don't see it within 24 hours,
+        we'll resend it automatically — no action is needed."
+
+   ROUTING: send the template selected by failure_type (the same key that classifies the
+   triage above). Wire through the existing Resend sendEmail() (reuse). SLA = 24h (owner-
+   confirmed): honest for owner-only transitional ops, beatable via the 4h/12h escalation,
+   competitive (24-48h human-review norm). Tighten later if monitoring cadence / delegated certifier.
 2. RATE-ALERT on guard-block frequency.
    - Guard-block console logs are NOT consumed today (no log drain). Persist each block
      to a small table (pattern: translation_quality_log), then a GH-cron rate-checker
@@ -90,7 +113,8 @@ DEFINITION OF DONE:
 
 ## OWNER RULINGS (RESOLVED 2026-06-10)
 - Refund execution = **A-full with per-failure-type triage** (above). NOT a blanket refund; NOT auto (B deferred).
-- Customer-facing acknowledgment SLA = **24 hours** (agent-recommended working default with reasoning; owner confirms/tightens — it is a business commitment). Template above.
+- Customer-facing acknowledgment SLA = **24 hours** (owner-CONFIRMED 2026-06-10).
+- Acknowledgment = **4 templates routed by failure_type** (owner ruled — a single template misleads the 422 user-input case). Texts above.
 - Escalation timer + daily reconciliation cron are MANDATORY parts of A-full, not optional.
 
 ## TEMPO RECOMMENDATION
