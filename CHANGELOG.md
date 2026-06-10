@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (feat: KIT 2 verify — passport MRZ is the DOB authority, test, agent)
+- The handwritten birth-cert month is illegible-as-June to every engine + a human; the international passport MRZ encodes it with a check digit → 1986-06-25 (June). Verified mrzAuthority decodes it correctly (conf 0.99, check_digits dob=true) and the existing fieldArbiter ranks passport_ocr_mrz #1, so in multi-doc flows (TPS/reparole) the MRZ DOB overrides the handwriting. +2 tests.
+
 ## 2026-06-10 (feat: KIT 1 auto-orientation infrastructure, CODE, agent)
 - Reading the docs myself revealed the handwritten birth cert was photographed SIDEWAYS (content rotated 90); every engine read cursive sideways. NEW autoOrient.ts: detect content rotation via a Gemini thumbnail + self-verify loop (90<->270 unstable) + fail-open, geometric only. Wired into readDocument (all products) behind AUTO_ORIENT_ENABLED (default OFF). A/B on the real birth cert: dob day 26->25 (correct), place_of_birth fuller (+district). +2 fail-open tests.
 
