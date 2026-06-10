@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (stop: ensemble flag OFF in prod; bound the date crop, CODE+env, agent)
+- HONEST: the date ensemble infra is complete, Core-path-wired, tested, observable, fail-safe — but it is NOT yet delivering a reliable second reading: Vision garbles the handwritten month on tight auto-crops (month_hits=0), and full-width bands time out the route. Turned ENSEMBLE_DATE_ENABLED OFF in prod (dates are already review_required, so safety unchanged). Bounded the crop (≤2 regions, padded bbox, capped resize) so the code is timeout-safe when re-enabled. Finishing needs local Vision iteration (after key rotation) or Transkribus HTR.
+
 ## 2026-06-10 (tune: ensemble crops full-width date band, not tight bbox, CODE, agent)
 - Vision read the year but garbled the month on tight Gemini bboxes (month_hits=0). Crop the FULL-WIDTH horizontal band at the date line instead — gives Vision the whole handwritten line. Targeted attempt; if still garbled, the path is Transkribus HTR (owner auth).
 
