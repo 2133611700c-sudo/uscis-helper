@@ -141,6 +141,63 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
       { field: 'doc_number', label_uk: 'Серія та номер', kind: 'doc_number', handwritten: true, required: false },
     ],
   },
+  // ── US Employment Authorization Card (I-766) ────────────────────────────
+  // Phase 2.2a: registry proof. All fields printed in Latin script.
+  // vision_anchor = card_number (EADXXXXXXXXXXXXXXXXX, always on front).
+  us_ead: {
+    id: 'us_ead',
+    title_en: 'US Employment Authorization Card (I-766)',
+    script: 'latin',
+    consumers: ['ead'],
+    vision_anchor: 'card_number',
+    fields: [
+      { field: 'family_name',      label_uk: 'Family Name',     kind: 'name',       handwritten: false, required: true },
+      { field: 'given_name',       label_uk: 'Given Name',      kind: 'name',       handwritten: false, required: true },
+      { field: 'card_number',      label_uk: 'Card #',          kind: 'doc_number', handwritten: false, required: true },
+      { field: 'a_number',         label_uk: 'USCIS #',         kind: 'doc_number', handwritten: false, required: false },
+      { field: 'ead_category',     label_uk: 'Category',        kind: 'doc_number', handwritten: false, required: false },
+      { field: 'ead_validity_from', label_uk: 'Valid From',     kind: 'date',       handwritten: false, required: false },
+      { field: 'ead_validity_to',  label_uk: 'Card Expires',    kind: 'date',       handwritten: false, required: false },
+      { field: 'country_of_birth', label_uk: 'Country of Birth', kind: 'text',     handwritten: false, required: false },
+    ],
+  },
+
+  // ── US I-94 Arrival/Departure Record ──────────────────────────────────────
+  // Phase 2.2a: registry proof. Online I-94 printout (CBP.DHS.gov).
+  us_i94: {
+    id: 'us_i94',
+    title_en: 'US Form I-94 (Arrival/Departure Record)',
+    script: 'latin',
+    consumers: ['ead', 'reparole', 'tps'],
+    vision_anchor: 'i94_admission_number',
+    fields: [
+      { field: 'family_name',           label_uk: 'Last/Surname',           kind: 'name',       handwritten: false, required: true },
+      { field: 'given_name',            label_uk: 'First (Given) Name',     kind: 'name',       handwritten: false, required: true },
+      { field: 'date_of_birth',         label_uk: 'Date of Birth',          kind: 'date',       handwritten: false, required: false },
+      { field: 'i94_admission_number',  label_uk: 'Admission (I-94) Number', kind: 'doc_number', handwritten: false, required: true },
+      { field: 'i94_class_of_admission', label_uk: 'Class of Admission',    kind: 'doc_number', handwritten: false, required: false },
+      { field: 'i94_date_of_entry',     label_uk: 'Last Date of Entry',     kind: 'date',       handwritten: false, required: false },
+      { field: 'i94_place_of_entry',    label_uk: 'Port of Entry',          kind: 'text',       handwritten: false, required: false },
+      { field: 'country_of_birth',      label_uk: 'Country of Birth',       kind: 'text',       handwritten: false, required: false },
+    ],
+  },
+
+  // ── US I-797 Notice of Action ─────────────────────────────────────────────
+  // Phase 2.2a: registry proof. Covers receipt notices, approval notices.
+  // I-797 variants differ — extract only fields present on all variants.
+  us_i797: {
+    id: 'us_i797',
+    title_en: 'US Form I-797 (Notice of Action)',
+    script: 'latin',
+    consumers: ['ead'],
+    vision_anchor: 'a_number',
+    fields: [
+      { field: 'family_name',   label_uk: 'Applicant Last Name',              kind: 'name',       handwritten: false, required: false },
+      { field: 'given_name',    label_uk: 'Applicant First Name',             kind: 'name',       handwritten: false, required: false },
+      { field: 'a_number',      label_uk: 'A-Number (Alien Registration #)',  kind: 'doc_number', handwritten: false, required: true },
+      { field: 'uscis_number',  label_uk: 'USCIS Online Account Number',      kind: 'doc_number', handwritten: false, required: false },
+    ],
+  },
 }
 
 export function getDocTypeSpec(id: string): DocTypeSpec | null {
