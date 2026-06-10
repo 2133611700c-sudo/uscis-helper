@@ -9,9 +9,17 @@ Path B, so any uuid is accepted). Go in this order — do NOT skip the baseline.
 - **Vercel env** (the Next.js app / route reads these): `OWNER_CERTIFIER_ID`,
   `GUARD_BLOCK_METRICS_ENABLED`, `REFUND_AUTOTICKET_ENABLED`, `CERTIFIER_AUDIT_PERSIST_ENABLED`,
   `CERTIFIER_OVERRIDE_ENABLED`. Set under Vercel → Project → Settings → Environment Variables (Production).
-- **GitHub Actions** (the cron scripts read these): secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-  `RESEND_API_KEY`, `CONTACT_EMAIL_DESTINATION`, `TELEGRAM_OWNER_WEBHOOK_URL`; variable `GUARD_BLOCK_RATE_THRESHOLD`.
-  Set under GitHub → repo → Settings → Secrets and variables → Actions.
+- **GitHub Actions — L1 cron secrets** (the escalation/reconciliation/rate-check scripts read these):
+  `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `CONTACT_EMAIL_DESTINATION`,
+  `TELEGRAM_OWNER_WEBHOOK_URL`; variable `GUARD_BLOCK_RATE_THRESHOLD`.
+- **GitHub Actions — drift-guard secrets** (a SEPARATE set, only for `supabase-drift-check.yml`,
+  per docs/ops/SETUP_GITHUB_SECRETS.md): `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`,
+  `SUPABASE_DB_PASSWORD`. These do NOT enable the L1 baseline — do not confuse the two sets.
+
+> **L1 baseline DATA COLLECTION needs only `GUARD_BLOCK_METRICS_ENABLED=1` in Vercel** (the route
+> writes via the already-set SUPABASE_URL/SERVICE_ROLE_KEY). The cron secrets are for ALERTING,
+> which stays silent until `GUARD_BLOCK_RATE_THRESHOLD` is set after the baseline. `OWNER_CERTIFIER_ID`
+> belongs to Step 3 (L3 audit), not the baseline.
 
 ## Step 0 — prerequisites (one-time)
 - [ ] GitHub repo secrets exist: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
