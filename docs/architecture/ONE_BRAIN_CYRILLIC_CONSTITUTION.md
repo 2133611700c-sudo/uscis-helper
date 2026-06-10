@@ -98,11 +98,93 @@ Core-default per product → 3 explicit `final_value` + C3 final writer → 4 Kn
 - No critical field final without source/provenance.
 - No per-product reading path (one door: `documentFieldReader`).
 
-## The real problem, stated precisely
-Cyrillic IS read and IS stored (`raw_cyrillic`), but it is transliterated to Latin at the read loop and then dropped
-from the Core record — so D2 (gazetteer / RU-vs-UA / patronymic / authority) operates on Latin and its accuracy never
-reaches the product. The first technical fix is GAP A+C: D2 on `raw_cyrillic` at the one door, carried forward.
+## Historical failure mode vs current invariant (do NOT conflate — Phase 2 merged)
+**Historical failure (pre-Phase-2, FIXED):** `raw_cyrillic` was transliterated to Latin at the read loop and dropped
+from the Core record before D2 saw it — so D2 (gazetteer / RU-vs-UA / patronymic / authority) operated on Latin and
+its accuracy never reached the product.
+**Current INVARIANT (must hold forever):** `raw_cyrillic` must never be dropped before D2/C3. It flows
+`FieldCandidate → CanonicalField → D2 (on raw_cyrillic) → C3`. Any code path that transliterates-then-discards the
+Cyrillic before D2 is a regression of this invariant, not a style choice.
 
 ## Owner-gated (the recurring blocker)
 - Per-class model selection (gemini-2.5-pro DISQUALIFIED for birth certs — false confidence; flash-image correct) and
   any prod enablement of a dictionary layer require ground truth from DIFFERENT people + a measured OFF/ON delta.
+
+---
+
+# PART II — THE LAWS (owner-directed 2026-06-10; the rules the agent cannot drift past)
+
+These turn the layer-scheme above into enforceable law. Where a clause is tagged **⚠ OWNER-CONFIRM**, the agent
+proposed a resolution to a conflict between two owner rules; the owner may veto it.
+
+## LAW 1 — TRANSLITERATION
+- **UA visible source** → Ukrainian official / **KMU-55**: Сергій→Serhii, Сергійович→Serhiiovych, Леонідович→Leonidovych.
+- **RU visible source** → **BGN/PCGN simplified**: Сергей→Sergey, Сергеевич→Sergeyevich, Леонидович→Leonidovich.
+- **Ambiguous source** (no distinctive letter і/ї/є/ґ nor ы/э/ё/ъ): `review_required=true`, `final_value=null`.
+  Document context MAY suggest a candidate; document context CANNOT final.
+- Code: `transliterateKMU55` / `transliterateRussian` / `isNameSourceScriptAmbiguous` (`transliterationPolicy.ts`),
+  gate in `documentFieldReader.ts`, behind `RU_TRANSLIT_ENABLED`. Source script controls; never harmonize across lines.
+
+## LAW 2 — SOURCE OF TRUTH (precedence when sources conflict)
+1. **MRZ / official-Latin field** controls the APPLICANT's own identity SPELLING/romanization where MRZ provides that field.
+   **⚠ OWNER-CONFIRM:** "controls" = romanization authority for the applicant; it does NOT license filling an
+   *illegible field on another document* from MRZ — there MRZ is candidate-only (LAW 4 / visual-evidence rule wins).
+2. **Visible source line** controls relatives / parents / spouses (as-written, per their line's script).
+3. **`raw_cyrillic`** controls transliteration (never the model's own Latin).
+4. **D2 dictionaries** suggest / validate (never final).
+5. **User correction** is evidence C3 weighs — not automatic truth.
+   **⚠ OWNER-CONFIRM:** when user confirmation is the ONLY source for an otherwise-`null` field (illegible, no machine
+   anchor), C3 MAY final on it with `provenance=user_confirmed`; it never overrides a strong machine anchor (MRZ).
+6. **C3** decides `final_value`.
+7. If conflict remains → `final_value=null`.
+
+## LAW 3 — HANDWRITING
+- A handwritten CRITICAL field cannot be silently final.
+- If a stamp / fold / blur overlaps a name / patronymic / date → `review_required=true`, `final_value=null` unless C3 has
+  strong independent evidence.
+- **Reading a date correctly does NOT validate parent names. Each field has independent confidence.** (This is the parent-name bug.)
+- Code: handwritten classes are `always_review`; `applyDateRoleGuard`; no cross-field confidence borrowing.
+
+## LAW 4 — VISUAL EVIDENCE
+- Label context determines field ROLE. Visual evidence determines field VALUE.
+- Cross-document / cross-engine agreement raises CONFIDENCE and may surface a CANDIDATE — it never replaces visual
+  evidence and never finalizes an illegible value. Code: `visualEvidenceRule.test.ts`.
+
+## LAW 5 — PRIVACY (no real user PII anywhere)
+- No real surname / given name / patronymic / date / document number in: tests, docs, logs, PRs, reports, screenshots,
+  benchmark outputs. Use only synthetic **Іваненко / Иваненко / Ivanenko**. A real PII leak = RESULT FAIL, stop.
+
+## LAW 6 — CRITICAL FIELDS (configured per doc type; code is the single source of truth)
+- The per-doc-type critical list lives in CODE, not only in `.md` (`CRITICAL_FIELDS_CONTRACT.md` is the human mirror).
+- **GAP (open):** `classifyCriticality` is currently a GENERIC substring match, not per-doc-type — md and code can drift.
+  L0 task: make criticality per-`document_class` in code, with `CRITICAL_FIELDS_CONTRACT.md` generated from / checked against it.
+- Birth cert: child full name, DOB, birth place, father, mother, registry No., issuing authority, issue date, series/No.
+- Passport: surname, given name, DOB, sex, passport No., citizenship, issue/expiry (if used).
+- EAD / I-94 / I-797: name, DOB, A-number / admission No., category / status, validity dates.
+
+## LAW 7 — DeepSeek BOUNDARY
+- DeepSeek translates **prose only, AFTER** identity fields are locked by C3.
+- DeepSeek does NOT: receive raw identity candidates as authority · change identity fields · translate names · fix dates.
+- Code today: invariant in `C3_USER_CORRECTION_CONTRACT.md:64` + ADR-018. **L0 task:** make it a CHECKABLE lint/test
+  (DeepSeek output can never reach `final_value`), not only a comment.
+
+## LAW 8 — AUDIT TRAIL (durable, minimal, no public PII)
+- For every released translation, store a durable minimal record: document type, field names, source type, D2 decision,
+  C3 decision, user-confirmation event, `final_present` yes/no, blocked reason, payment/release event — **no public PII** (Tier 0).
+- Status: ADR-019 designed (Tier 0 default; Tier 0 ≠ legal evidence); **persistence NOT built** (L3 task).
+
+---
+
+# PART III — MATURITY MAP (L0–L4) & build order (owner 2026-06-10)
+
+Rule: **do not build layer N+1 until N is ≥80% closed.** Building HTR (an L4 capability) on a thin L1 is the canonical early-safety error.
+
+| Layer | What | Est. status | Open items |
+|---|---|---|---|
+| **L0** Safety primitives | finalValue, confirmedValueGuard, source-script gate, anchor cross-check | ~75% | criticality-per-doc-in-code (LAW 6), DeepSeek lint (LAW 7), gazetteer honest coverage |
+| **L1** Operations | observability, kill-switch, 422, refund, runbook, rollback | **~45%** (repo-verified, NOT 10%) | refund policy + auto-ticket; guard-block **rate alert**; (opt) true kill-switch |
+| **L2** Evidence | GT runner N≥30, per-class thresholds, wrong-person category, canary gate in CI | ~10% | runner code (agent) + **GT fixtures from ≥5 people/class (OWNER, encrypted, not in git)** |
+| **L3** Legal/audit | audit persistence, retention, PII-at-rest, subpoena export, DPA | ~5% | persistence (ADR-019) + legal review |
+| **L4** Continuous safety | adversarial suite, drift detection, quarterly review | 0% | not yet — after L1–L3 |
+
+**Next session opens with L1, not HTR.** HTR stays behind ADR-020 (data-handling) and a real prod-failure number, which does not yet exist (no telemetry on % handwritten-date failures — itself an L1 gap).
