@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-09 (knowledge inventory + audit synthesis — Phase 2.0 reconciled, docs-only, agent)
+- per owner ("inventory the dictionaries + read audits first"): read live data inventory + 4 prior audits (KNOWLEDGE_CORE_INVENTORY 06-03, CYRILLIC_HANDLING_ARCHITECTURE 06-03, P2_DICTIONARY_IN_LIVE_PATH_CHECKPOINT 06-03, FAILED_CYRILLIC_GROUND_TRUTH 06-02).
+- FINDING 1 (architecture): a dictionary-in-path layer ALREADY exists at the right place (raw Cyrillic) — SMART_NORMALIZE_ENABLED P2.1-P2.3 (Door A toCanonicalValue→snapCity; Door B documentFieldReader patronymic/authority, tests 25/25). My Phase-1 knowledgeBrain at arbitration duplicates it at the WRONG layer (post-KMU-55 Latin). → Phase 2.0 reframed: RECONCILE to ONE layer at Door A/B keeping my KnowledgeDecision contract; retire the arbitration duplication. Supersedes "thread rawCyrillic".
+- FINDING 2 (risk): dominant real failure = wrong_person_selected (model reads a different identity; 2.5-pro false-confidence on birth certs) — NOT a dictionary problem; defended by always-review policy + model choice + reshoot.
+- inventory: gazetteer/settlements = SEED (35/458 vs ~28-30k KOATUU); deprecated gemini-2.0-flash (404) still in fallback chain (bug → 2.0b); civil_registry_terms.json + GLOBAL_BLOCKLIST/FIELD_LABELS orphaned. HARD GATE: any dict layer in prod FORBIDDEN until owner GT + OFF/ON delta; per-class model selection GT-gated.
+- docs-only; no code/prod/env/keys/PII; all dict flags OFF; ReaderResult/OneBrain HOLD. Report: KNOWLEDGE_INVENTORY_AUDIT_SYNTHESIS_2026-06-09.md. Branch feat/one-brain-gemini-core (PR #104).
+
 ## 2026-06-09 (Phase 1.4 — real-doc Knowledge Brain proof + Cyrillic-bypass finding, agent)
 - ran real Soviet + handwritten birth certs through readDocument (real Gemini gemini-3.1-pro-preview) → applyKnowledgeBrainIfEnabled (KNOWLEDGE_BRAIN_ENABLED=1) via a temp harness (created→run→DELETED, suite count untouched). SANITIZED output only (field name + action/rule/provenance/booleans, NO values/PII).
 - safety PASS: D2 provenance on every field; conflict→review+suggestedValue (child_patronymic→patronymic.fragment; issuing_authority/date_of_issue→authority.unknown); no silent override; no Cyrillic leaks in accepted finals.

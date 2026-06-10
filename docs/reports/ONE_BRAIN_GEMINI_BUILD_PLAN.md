@@ -15,11 +15,19 @@ The accuracy fix. Knowledge applied to the FINAL value for ALL products, in one 
 - [x] **1.4** **DONE — real-doc proof (flag ON) on Soviet + handwritten birth certs, real Gemini gemini-3.1-pro-preview.** Safety holds: every field carries D2 provenance; conflict→review (patronymic.fragment, authority.unknown surface `suggestedValue`); NO silent override; no Cyrillic leaks in accepted finals. **FINDING (the value of 1.4):** D2's Cyrillic-dependent rules (gazetteer city snap, Russian-spelling-on-UA detection, `normalizeName` on Cyrillic) are **bypassed on the live pipeline** — the docintel reader KMU-55-transliterates to Latin BEFORE arbitration (`translationAdapter`: candidate.value = "KMU-55 Latin — what the Core arbitrates"; Cyrillic kept in a separate `cyrillicMap`). So D2 currently sees Latin and mostly emits a conservative review, not its real normalization. Safe, but the accuracy value is not yet delivered. **FieldCandidate has no `rawCyrillic` field.**
 
 ## Phase 2 — One pipeline (Core-default / consolidation)  (CODE + owner flip)
-- [ ] **2.0** **PREREQUISITE (from 1.4 finding):** thread raw Cyrillic to D2 so its Cyrillic rules actually fire.
-  Add `rawCyrillic?` to `FieldCandidate`, populate in `docintelToCandidate`, and have `knowledgeNormalize` use it
-  for gazetteer / RU-spelling / name normalization (then emit KMU-55 Latin itself). Eventual clean state: the
-  reader returns raw Cyrillic and **D2 is the single transliteration authority** (remove the duplicate KMU-55 at
-  read time). Behind the same flag; OFF=identical.
+- [ ] **2.0** **RECONCILE two dictionary layers into ONE (supersedes "thread rawCyrillic").** Inventory + audits
+  (KNOWLEDGE_INVENTORY_AUDIT_SYNTHESIS_2026-06-09.md) found a dictionary-in-path layer ALREADY exists at the RIGHT
+  place (raw Cyrillic): `SMART_NORMALIZE_ENABLED` P2.1-P2.3 — Door A `transliterationPolicy.toCanonicalValue`→
+  `dictionaryBridge.normalizeCity`→`snapCity`; Door B `documentFieldReader` post-passes `patronymicReconcile`+
+  `authorityResolve`. My Phase-1 `knowledgeNormalize` at arbitration is at the WRONG layer (post-KMU-55 Latin) and
+  duplicates it. **Action:** keep MY `KnowledgeDecision` contract (action/candidate/provenance/final-gate), apply it
+  at Door A/B (raw Cyrillic), fold in the existing P2 primitives, unify to ONE flag, retire the arbitration-level
+  duplication. OFF=identical. **Prod enablement of ANY dictionary layer stays FORBIDDEN until owner GT + OFF/ON delta
+  (P2 hard gate).**
+- [ ] **2.0b** Fix deprecated `gemini-2.0-flash` (HTTP 404) in the `geminiVisionProvider` fallback chain (small).
+- [ ] **2.0c** Per-class model selection (2.5-pro DISQUALIFIED for birth certs — wrong person + false confidence;
+  flash-image reads correct) — **owner GT-gated**. Dominant failure `wrong_person_selected` is a READER problem,
+  defended by always-review policy + model choice + reshoot, NOT by the dictionary.
 
 ## Phase 2 — One pipeline (Core-default / consolidation)  (CODE + owner flip)
 Kill fragmentation. Make Gemini-Core the default reader, ONE product at a time. Built to the binding contract
