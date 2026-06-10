@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-10 (fix: ensemble surfaces any date diff on cropped region, CODE, agent)
+- Required shared-year anchor wrongly suppressed the real handwritten case (Gemini reads the year, Vision the month — no shared component). Since the 2nd engine reads the cropped DATE region, surface ANY difference. +relaxed test. tsc 0; 17 ensemble tests.
+
 ## 2026-06-10 (fix: ensemble date-bbox parse — array boxes + salvage malformed JSON, CODE, agent)
 - Gemini returned malformed keyed JSON for date bboxes → empty → ensemble fell back to full-page Vision (garbled month). Now requests array boxes [ymin,xmin,ymax,xmax] + salvages malformed JSON via quartet regex. tsc 0.
 
