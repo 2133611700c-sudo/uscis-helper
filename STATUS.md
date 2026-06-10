@@ -1,4 +1,5 @@
 # STATUS (2026-06-10 — P0-A guard SHADOW mode (measurement-first); enforce = owner-flip)
+- BUILT date-role guard (deterministic, no flag, in readDocument all products): catches date role-conflation (one date in two role fields) + sequence conflict (issue before birth) → review. +10 tests. From the ChatGPT spec, applicable part.
 - APPLIED from ChatGPT spec: Russian transliterator (transliterateRussian) + detectNameScript, wired into transliterationPolicy behind RU_TRANSLIT_ENABLED (OFF). 14 tests. LIMITATION found: ambiguous names (Сергей, no ы/э/ё/ъ) → unknown → need DOC-level script context, not per-name. Rejected ChatGPT fabrication (it never read the image either).
 - KIT 2 VERIFIED: passport MRZ decodes DOB=1986-06-25 (June, check-digit valid, conf 0.99); fieldArbiter ranks passport_ocr_mrz #1 → MRZ resolves the illegible birth-cert date in multi-doc flows (TPS/reparole). Test added.
 - KIT 1 BUILT: auto-orientation (autoOrient.ts) wired into readDocument behind AUTO_ORIENT_ENABLED. PROVEN on rotated birth cert: day 26→25 (correct), place fuller. Detects content rotation (Gemini thumbnail) + self-verify loop + fail-open.
