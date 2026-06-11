@@ -25,6 +25,12 @@ export interface VerifyResult {
   correctService: boolean
   /** Machine-readable reason when paid=false or correctService=false. */
   reason?: VerifyReason
+  /**
+   * Customer email Stripe collected at checkout (operator flow: the wizard
+   * never asks for an email, so the verified Stripe session is the single
+   * trustworthy source for "where do we send the finished PDF").
+   */
+  customerEmail?: string | null
 }
 
 const VALID_PREFIX = /^(cs_|py_)/ // Stripe checkout (cs_) and PaymentIntent (py_) test/live ids
@@ -52,9 +58,10 @@ export async function verifyStripeSessionPaid(
     const correctService = opts.expectedService
       ? session.metadata?.service === opts.expectedService
       : true
-    if (!paid) return { paid: false, correctService, reason: 'not_paid' }
-    if (!correctService) return { paid: true, correctService: false, reason: 'wrong_service' }
-    return { paid: true, correctService: true }
+    const customerEmail = (session.customer_details as { email?: string } | null)?.email ?? null
+    if (!paid) return { paid: false, correctService, reason: 'not_paid', customerEmail }
+    if (!correctService) return { paid: true, correctService: false, reason: 'wrong_service', customerEmail }
+    return { paid: true, correctService: true, customerEmail }
   } catch {
     return { paid: false, correctService: false, reason: 'stripe_api_error' }
   }

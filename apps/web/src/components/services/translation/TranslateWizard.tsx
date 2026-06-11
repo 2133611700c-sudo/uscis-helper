@@ -41,6 +41,10 @@ type Locale = 'en' | 'uk' | 'ru' | 'es'
 // ON → vision-extract is called; all fields come back review_required=true (hard-case
 // policy); user must confirm each field before payment; 0-field fallback → manual path.
 const HARD_CASE_AUTOREAD = process.env.NEXT_PUBLIC_HARD_CASE_AUTOREAD_ENABLED === '1'
+// OPERATOR FLOW (PIVOT 2026-06-11): a paid order goes to the operator queue and
+// the customer is redirected to /order/{id} — they never confirm fields or
+// download the PDF themselves. OFF ⇒ the legacy self-serve screens (7+).
+const OPERATOR_FLOW = process.env.NEXT_PUBLIC_NEW_OPERATOR_FLOW_ENABLED === '1'
 
 interface DocTypeMeta {
   id: DocTypeChoice
@@ -936,7 +940,45 @@ export function TranslateWizard() {
         setStripeCheckoutId(cs)
         try { sessionStorage.setItem('tw:cs', cs) } catch { /* */ }
       }
-      setScreen(7)
+      // OPERATOR FLOW: hand the paid order to the operator queue and leave the
+      // wizard entirely — the customer tracks /order/{id} and gets the PDF by
+      // email. Idempotent per checkout id (server reuses the open ticket).
+      // Falls through to the legacy success screen only if submit fails, so a
+      // backend problem never strands a paying customer without ANY path.
+      if (OPERATOR_FLOW && cs && /^(cs_|py_)/.test(cs)) {
+        void (async () => {
+          try {
+            const raw = sessionStorage.getItem(DRAFT_KEY)
+            const draft = raw ? (JSON.parse(raw) as DraftState) : null
+            const docTypeId = draft?.selectedDocType ?? selectedDocType
+            const draftFields = (Array.isArray(draft?.extractedFields) && draft!.extractedFields.length > 0)
+              ? draft!.extractedFields : extractedFields
+            const resp = await fetch('/api/translation/submit-order', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                checkout_id: cs,
+                doc_type: DOC_TYPES.find((d) => d.id === docTypeId)?.registryId ?? docTypeId ?? 'other',
+                locale,
+                fields: draftFields.map((f) => ({
+                  field: f.field, value: f.value ?? null, raw_cyrillic: f.raw_cyrillic ?? null,
+                  review_required: f.review_required ?? false,
+                })),
+              }),
+            })
+            const j = await resp.json().catch(() => null)
+            if (resp.ok && j?.ok && j.order_id) {
+              window.location.assign(`/${locale}/order/${j.order_id}`)
+              return
+            }
+            console.warn('[wizard] submit-order failed, showing legacy success screen')
+            setScreen(7)
+          } catch {
+            setScreen(7) // backend problem must never strand a paying customer
+          }
+        })()
+      } else {
+        setScreen(7)
+      }
 
       // #5: a MANUAL-review document was PAID but no auto-fields were extracted —
       // create a staff ticket so the paid work is actually queued (was: payment

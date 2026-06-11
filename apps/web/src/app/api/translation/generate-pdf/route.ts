@@ -442,6 +442,7 @@ export async function POST(req: NextRequest) {
         attachment: {
           filename: `translation-${(session_id ?? 'order').slice(0, 8)}.pdf`,
           content: pdfBuffer.toString('base64'),
+          encoding: 'base64' as const, // content is already base64 — prevents double-encoding in sendEmail
         },
       } : {}),
     })
