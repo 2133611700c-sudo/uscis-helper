@@ -409,3 +409,4 @@ This is the ONLY way to change status from ENABLED_BY_ENV to RUNTIME_VERIFIED.
 - 2026-06-11 incident: manual CLI deploy broke vision-extract (504) → rolled back per runbook, service restored; rule: git-push deploys only.
 - 2026-06-11 CLOSED LOOP: after-fix re-bench on the real cert → SILENT-WRONG=0 (act_record_number now review-gated); 6/9 match, all 9 review-gated; service healthy on git build aaed819.
 - 2026-06-11 methodology fix: GT field_provenance added (gold vs agent-proposed); bench report REVISED with separated numbers + CI[62,100] + shadow-mode disclaimer + act# caveat. Verified: bench-1 11/12 was ALL-GOLD (not circular); full-spec had 3 agent-proposed.
+- 2026-06-11 corroboration pass: father+mother CONFIRMED by 2nd independent max-zoom read (+patronymic consistency); act# AMBIGUOUS (8+crossed-7: 87 likely, 84 possible) — owner must adjudicate on the physical doc. Evidence in GT _meta; provenance NOT flipped (owner-only).
