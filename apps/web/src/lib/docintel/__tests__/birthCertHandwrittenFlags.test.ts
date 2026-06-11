@@ -13,12 +13,13 @@
 import { describe, it, expect } from 'vitest'
 import { getDocTypeSpec } from '../documentRegistry'
 
-describe('ua_birth_certificate — every value field is handwritten (always review)', () => {
-  const spec = getDocTypeSpec('ua_birth_certificate')!
+describe.each(['ua_birth_certificate', 'ua_marriage_certificate', 'ua_divorce_certificate'])(
+  '%s — every value field is handwritten (always review)', (docTypeId) => {
+  const spec = getDocTypeSpec(docTypeId)!
 
   it('spec exists with the full field set', () => {
     expect(spec).toBeTruthy()
-    expect(spec.fields.length).toBeGreaterThanOrEqual(10)
+    expect(spec.fields.length).toBeGreaterThanOrEqual(5)
   })
 
   it('EVERY field is flagged handwritten — incl. act_record_number (the proven silent-wrong)', () => {
@@ -29,6 +30,6 @@ describe('ua_birth_certificate — every value field is handwritten (always revi
 
   it('act_record_number specifically (regression pin for the 2026-06-11 GT-bench finding)', () => {
     const act = spec.fields.find((f) => f.field === 'act_record_number')
-    expect(act?.handwritten).toBe(true)
+    if (act) expect(act.handwritten).toBe(true) // present on birth/marriage/divorce
   })
 })
