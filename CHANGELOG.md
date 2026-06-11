@@ -674,3 +674,7 @@
 
 ## 2026-06-11 (bench: after-fix verification — SILENT-WRONG=0 on the real document, DOCS, agent)
 - Final control bench on the real handwritten certificate after the registry fix (proper git deploy aaed819): act_record_number now review=True; SILENT-WRONG 1→0; 6/9 critical fields match and ALL 9 are review-gated. Parents read correctly from cursive. Service verified healthy by a light probe (200). Report updated: docs/reports/FIRST_REAL_GT_BENCH_2026-06-11.md.
+
+## 2026-06-11 (methodology: GT provenance separation — critique verified and fixed, DOCS, agent)
+- Verified the mixed-truth critique against the data: bench-1 (11/12) was entirely owner-verified via the qa-private parallel keys — NOT circular; the full-spec bench had 3 agent-proposed fields (father/mother/act_record_number). The act_record_number silent-wrong therefore carries an honest caveat (scored against the agent read), but the structural fix is truth-independent and the post-fix re-bench stands.
+- FIXED the foundation: _meta.field_provenance added to every GT file (owner_verified | agent_proposed_pending_owner_review); benches score gold-only with agent-proposed reported as preview; FIRST_REAL_GT_BENCH report REWRITTEN (separated numbers: gold 11/12 and 4/6; CI [62,100] disclaimer; shadow-mode boundary condition; silent-wrong=0 as the primary metric). L2_FIXTURES_HOWTO now requires provenance. Owner action: eyeball the 3 agent-proposed fields and flip provenance.

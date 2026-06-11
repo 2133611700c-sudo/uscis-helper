@@ -1,53 +1,61 @@
-# First REAL ground-truth bench — 2026-06-11 (PII-free)
+# First REAL ground-truth bench — 2026-06-11 (REVISED with provenance separation)
 
-Owner directed: fill the GT templates from the original documents and USE them.
+> REVISION (same day): a methodology critique flagged mixed truth in the GT (some fields
+> owner-verified, some agent-labeled → circular risk). VERIFIED against the data and fixed:
+> every GT field now carries `field_provenance`; benches report GOLD and AGENT-PROPOSED
+> separately. This file replaces the earlier mixed-number version.
 
-## What was done
-1. Found the owner's VERIFIED_BY_OWNER GT in qa-private/ground-truth/ (4 docs, partially
-   filled under parallel key names) — the real-docs templates were empty duplicates.
-2. Merged owner-verified values into the templates; the agent visually read the original
-   documents (high-res crops) and filled every remaining blank. Cross-check: every field
-   where both owner GT and the agent read exist agrees semantically (the apparent diffs are
-   script-form only: owner = Ukrainian/ISO identity forms, agent = as-written Russian from
-   the Soviet form — per the locked as-written rule). The handwritten birth DATE is now
-   corroborated by THREE independent sources: owner ISO GT, the passport MRZ anchor, and
-   the agent's high-resolution visual read.
-3. GT files live ONLY in gitignored dirs (verified via git check-ignore + git status).
-4. USED: all 3 unique documents run through the LIVE prod pipeline (vision-extract) and
-   scored against the filled GT.
+## Provenance verification result (the critique, checked)
+- **Bench-1 (3 docs, 12 critical fields): ALL 12 fields were OWNER-VERIFIED** via the
+  owner's parallel-key GT in qa-private (status VERIFIED_BY_OWNER) → the headline number
+  was NOT circular.
+- **Full-spec bench (9 fields): 6 GOLD + 3 AGENT-PROPOSED** (father, mother, act number —
+  the owner had never filled those) → those 3 are preview-only.
 
-## Results (N=3 documents, 12 scored critical fields)
-| Doc | Type | Critical fields | Match | Notes |
+## Numbers (separated, honestly framed)
+
+### GOLD (owner-verified fields only)
+| Bench | Gold fields | Match | Caught by review | Silent-wrong |
 |---|---|---|---|---|
-| birth certificate | HANDWRITTEN cursive | 5 | 4/5 | names + PLACE read correctly from cursive; DOB mismatched (the known hard month/day) — review-gated |
-| military booklet | printed + handwriting | 4 | 4/4 | incl. handwritten name lines |
-| internal passport | printed | 3 read | 3/3 | patronymic field absent from the read (NOT_READ, not wrong) |
+| Bench-1 (booklet-spec bc + military + passport) | 12 | 11 | 1 (handwritten DOB) | **0** |
+| Full-spec birth cert | 6 | 4 | 2 (DOB, issuing authority) | **0** |
 
-**Aggregate: 11/12 (91%) · SILENT-WRONG: 0** — the only mismatch was review_required=true.
-Every field on every document was review-gated (handwritten/critical policy holds live).
+### AGENT-PROPOSED (preview only — pending owner eyeball, NOT gold)
+| Field | Match vs agent read | Note |
+|---|---|---|
+| father_full_name | ✓ | corroborated by child patronymic consistency |
+| mother_full_name | ✓ | |
+| act_record_number | ✗ | **caveat below** |
 
-## Honest framing
-- verdict: **INSUFFICIENT_N** (N=3 < 30) — these numbers are a first measured slice, NOT a
-  rollout-grade benchmark. The L2 threshold decision still needs ≥30 docs/class from ≥5 people.
-- Handwritten Cyrillic NAMES + PLACE: read correctly on this document. The handwritten DATE
-  remains the systematic failure — and remains correctly review-gated (zero silent output).
-- The one passport field returned as NOT_READ (skipped, not fabricated) is the designed
-  fail-closed behavior.
+## Statistical honesty
+11/12 → 95% CI ≈ **[62%, 100%]** (Clopper-Pearson). The accuracy number is statistically
+UNINFORMATIVE at N=3. What IS informative at this N:
+- **silent-wrong = 0 on every gold field, before AND after the registry fix** — the
+  fail-closed architecture held on real documents. This is the primary metric.
+- The known hard-case (handwritten DOB) was caught by the review gate, as designed.
+
+## The act_record_number "silent-wrong" — honest caveat
+The mismatch was scored against an AGENT-PROPOSED value (the agent's visual read of the
+hand-written act number). If the agent's read is wrong and the model's right, the VALUE
+was not wrong — **but the structural finding stands either way**: a hand-filled
+doc-number field reached `review_required=false` at high confidence, and doc_number/agency
+kinds are outside the anti-fabrication identity allowlist. The fix (handwritten:true on
+all certificate fields → always review) is correct under any truth, and the post-fix
+re-bench confirmed every field is now review-gated. OWNER ACTION: eyeball the act number
+(plus father/mother) and flip their provenance to owner_verified.
+
+## Boundary conditions (do not extrapolate past these)
+- Measured with safety guards in SHADOW mode (`CONFIRMED_VALUE_GUARD_MODE` unset ⇒ shadow;
+  `OCR_FIELD_SAFETY_ENABLED` OFF). The bench exercised read + arbitration + review-path —
+  NOT the enforce path. False-positive enforcement rate is unmeasured.
+- N=3 documents, 1 person's documents — no claim about cross-writer generalization.
+- Verdict: **INSUFFICIENT_N** (N<30/class). Rollout decisions still require the L2 gate.
+
+## Process changes locked in
+1. Every GT field carries `field_provenance: owner_verified | agent_proposed_pending_owner_review`.
+2. Benches score ONLY owner_verified as gold; agent-proposed reported separately as preview.
+3. Agent-proposed fields queue for owner review before the next run.
 
 ## PII handling
-Originals + GT values used locally only (owner-directed); GT JSONs are gitignored
-(verified); /tmp working copies deleted; this report carries counts and statuses only.
-
-## UPDATE 2026-06-11 — full-spec bench + the silent-wrong fix (closed loop)
-
-Re-ran with the FULL birth-certificate spec (docTypeId=ua_birth_certificate, 10 fields incl parents/act/authority):
-
-| Stage | Critical fields | Match | SILENT-WRONG |
-|---|---|---|---|
-| before fix | 9 | 6/9 (66%) | **1** — act_record_number wrong at high confidence, review=false |
-| after fix (handwritten:true on all fields, deployed via git) | 9 | 6/9 (66%) | **0** — every field review-gated |
-
-- PARENTS (father + mother) read correctly from cursive handwriting; place too.
-- The 3 mismatches (dob / act number / authority) are ALL review-gated — the certifier sees and fixes them; nothing flows silently.
-- The review-reasons fix is visibly live (source_script_ambiguous, date_role_conflict in prod responses).
-- Ops note: one broken manual CLI deploy caused ~15 min of vision-extract 504s — detected by a light probe, rolled back per runbook, redelivered via the proper git build (see OPS_INCIDENT_LOG.md).
+GT values local/gitignored only (verified); /tmp working copies deleted after every run;
+this report carries counts and statuses only.
