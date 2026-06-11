@@ -12,6 +12,7 @@ import { sendEmail } from '@/lib/email/resend'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
 import { renderMirrorTranslationPDF } from '@/lib/translation/pdf/renderMirrorTranslationPDF'
+import { isDualRenderEnabled, buildDualRenderLog } from '@/lib/translation/pdf/dualRenderCompare'
 import { hasOfficialSchema } from '@/lib/translation/forms/ukraine/schemas/registry'
 import { buildCertificationRecord } from '@/lib/translation/certificationRecord'
 import { ExtractedField, SourceTrace } from '@/lib/translation/types'
@@ -269,6 +270,18 @@ export async function POST(req: NextRequest) {
   // Generate real PDF
   let pdfBuffer: Buffer | null = null
   let pdfMode: 'mirror' | 'generic' = 'generic'
+  // Single source for the legacy/generic render — used by the fallback path AND
+  // by the dual-render comparison (Migration Plan step B), so both always see
+  // identical inputs.
+  const renderGenericPdf = () => generateTranslationPDF({
+    scopeTitle: payload.scope_title ?? `English Translation of Ukrainian Document`,
+    documentType: payload.doc_type ?? 'other',
+    fields: payload.fields ?? [],
+    sourceTraces: payload.source_traces ?? [],
+    certificationRecord: certRecord,
+    sessionId: session_id ?? 'legacy',
+    signatureDataUrl: payload.signatureDataUrl,
+  })
   try {
     // MIRROR_PDF_ENABLED (default OFF): when on AND an official schema exists for
     // this docType, render a faithful English MIRROR of the Ukrainian document
@@ -289,21 +302,28 @@ export async function POST(req: NextRequest) {
           console.info('[generate-pdf] mirror PDF', JSON.stringify({
             doc_type: mirror.docType, unresolved: mirror.unresolved.length, source: mirror.officialSource.act,
           }))
+          // ── Dual-render comparison (PASSPORT_SCHEMA_DUAL_RENDER_ENABLED, default
+          // OFF — Migration Plan step B). The schema PDF is what the user gets;
+          // the legacy PDF is rendered ONLY to log a PII-free parity record
+          // (hashes + byte counts). Fail-open: a compare error never affects the
+          // response.
+          if (isDualRenderEnabled()) {
+            try {
+              const legacyPdf = await renderGenericPdf()
+              console.info('[generate-pdf] dual-render', JSON.stringify(
+                buildDualRenderLog(payload.doc_type ?? 'unknown', mirror.pdf, legacyPdf),
+              ))
+            } catch (dualErr) {
+              console.warn('[generate-pdf] dual-render compare failed (response unaffected):', dualErr)
+            }
+          }
         }
       } catch (mirrorErr) {
         console.error('[generate-pdf] mirror render failed, falling back to generic:', mirrorErr)
       }
     }
     if (!pdfBuffer) {
-      pdfBuffer = await generateTranslationPDF({
-        scopeTitle: payload.scope_title ?? `English Translation of Ukrainian Document`,
-        documentType: payload.doc_type ?? 'other',
-        fields: payload.fields ?? [],
-        sourceTraces: payload.source_traces ?? [],
-        certificationRecord: certRecord,
-        sessionId: session_id ?? 'legacy',
-        signatureDataUrl: payload.signatureDataUrl,
-      })
+      pdfBuffer = await renderGenericPdf()
     }
   } catch (err) {
     console.error('[generate-pdf] PDF generation failed:', err)
