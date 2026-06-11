@@ -108,10 +108,10 @@ describe('docintel/documentFieldReader (orchestration with a mock provider)', ()
         model: 'mock-1',
         ms: 5,
         fields: [
-          { field: 'family_name', cyrillic: "REDACTED_NAME", can_read: true, confidence: 1, reason: '' },
-          { field: 'patronymic', cyrillic: 'Сергійович', can_read: true, confidence: 1, reason: '' },
-          { field: 'city_of_birth', cyrillic: 'Тростянець', can_read: true, confidence: 0.9, reason: '' },
-          { field: 'dob', cyrillic: '', iso_date: '1986-06-25', can_read: true, confidence: 1, reason: '' },
+          { field: 'family_name', cyrillic: "Іваненко", can_read: true, confidence: 1, reason: '' },
+          { field: 'patronymic', cyrillic: 'Петрович', can_read: true, confidence: 1, reason: '' },
+          { field: 'city_of_birth', cyrillic: 'Вінниця', can_read: true, confidence: 0.9, reason: '' },
+          { field: 'dob', cyrillic: '', iso_date: '1990-01-01', can_read: true, confidence: 1, reason: '' },
           { field: 'given_name', cyrillic: '', can_read: false, confidence: 0, reason: 'illegible' },
         ],
       }
@@ -123,11 +123,17 @@ describe('docintel/documentFieldReader (orchestration with a mock provider)', ()
     expect(r.ok).toBe(true)
     expect(r.anchor_read).toBe(true) // family_name read
     const by = Object.fromEntries(r.fields.map((f) => [f.field, f.value]))
-    expect(by.family_name).toBe('REDACTED')
-    expect(by.patronymic).toBe('Serhiiovych') // «По батькові» = patronymic, not middle_name
-    expect(by.city_of_birth).toBe('Trostianets')
-    expect(by.dob).toBe('1986-06-25')
-    expect(by.given_name).toBeUndefined() // can_read=false skipped
+    expect(by.family_name).toBe('Ivanenko')
+    expect(by.patronymic).toBe('Petrovych') // «По батькові» = patronymic, not middle_name
+    expect(by.city_of_birth).toBe('Vinnytsia')
+    expect(by.dob).toBe('1990-01-01')
+    // REGISTRY BACKFILL: an unread field is NEVER dropped — it appears as an
+    // explicit manual-entry row (value:null + review) so the UI can render it.
+    const gn = r.fields.find((f) => f.field === 'given_name')!
+    expect(gn).toBeDefined()
+    expect(gn.value).toBeNull()
+    expect(gn.review_required).toBe(true)
+    expect(gn.review_reasons).toContain('not_read_manual_entry')
   })
 
   it('handwritten fields are always review_required', async () => {

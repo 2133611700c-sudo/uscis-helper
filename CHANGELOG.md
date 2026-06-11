@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-11 (PIVOT Phase 1: 504 parallel pages + patronymic backfill + review copy + test de-PII, CODE, agent)
+- 504 FIX: vision-extract pages now run IN PARALLEL (both Core and legacy paths). Root cause from prod logs: owner hit FOUR 504s (19:45-19:52) — 2-page handwritten booklet × 16-40s/page sequential > 60s hobby-plan ceiling (Vercel plan verified hobby — maxDuration 300 impossible). Parallel wall-clock = slowest page. Quality-gate reshoot/error semantics preserved per page.
+- PATRONYMIC FIX (registry backfill in documentFieldReader): an unread field (can_read:false / omitted / empty cyrillic) vanished from the response — owner saw 5 of 6 booklet fields with no patronymic row. Every registry field now ALWAYS appears: unread → value:null + review_required + reason not_read_manual_entry. Placed BEFORE ADR-018 so fallback tagging covers backfilled rows; guarded by fields.length>0 (failed read still 0 fields). Fixes all 4 products through the single shared door. Pin test INVERTED (was asserting the drop).
+- TEST DE-PII: docintel.test.ts mock carried the owner's REAL surname/birthplace/DOB → synthetic Ivanenko/Vinnytsia/1990-01-01. NOTE: 6+ more test files still carry real PII (mrzAuthority, mrzWiringProof, knowledgeNormalize, core, coreFixes, documentClassPolicy) — sweep queued as a separate task (MRZ fixtures need valid check digits).
+- REVIEW COPY (interim до operator-flow): «Требует проверки» → «Проверьте, пожалуйста» / 'Please double-check'; review-block теперь объясняет ЧТО сделать и что это займёт минуту.
+- Tests: 3260 passed | 5 skipped; tsc 0.
+
 ## 2026-06-11 (owner ruling: Telegram DROPPED)
 - Owner: «забудь за телеграм» — шаг Telegram-бота удалён из HANDOFF_OWNER_TAKEOVER (список перенумерован 1-6). Код native Bot API в sendOwnerAlert остаётся (безвреден без env; алерты деградируют в email/not_configured). Решение записано в память агента.
 
