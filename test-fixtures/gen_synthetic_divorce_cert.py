@@ -2,7 +2,7 @@
 """Synthetic Ukrainian DIVORCE CERTIFICATE JPEG. No real PII."""
 from PIL import Image, ImageDraw, ImageFont
 import os
-W, H = 1500, 1000
+W, H = 2600, 1750
 img = Image.new('RGB', (W, H), (238, 236, 244))
 d = ImageDraw.Draw(img)
 def font(sz):
@@ -23,6 +23,17 @@ for label,val in rows:
     d.text((560,y-4),val,font=F_V,fill=(25,25,70))
     d.line([(560,y+34),(W-80,y+34)],fill=(140,140,170),width=1)
     y+=100
+
+# subtle paper-grain noise so the JPEG lands past the 300KB apostille quality gate
+import random
+random.seed(42)
+px = img.load()
+for _ in range(int(W*H*0.06)):
+    x, y = random.randrange(W), random.randrange(H)
+    r, g, b = px[x, y]
+    d = random.randint(-14, 14)
+    px[x, y] = (max(0,min(255,r+d)), max(0,min(255,g+d)), max(0,min(255,b+d)))
+
 out=os.path.join(os.path.dirname(os.path.abspath(__file__)),'synthetic-divorce-cert.jpg')
-img.save(out,quality=92)
+img.save(out,quality=97)
 print(f'Generated: {out} ({os.path.getsize(out)} bytes)')
