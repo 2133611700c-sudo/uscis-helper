@@ -65,3 +65,11 @@ test('supported-documents inventory page renders all 10 classes', async ({ page 
   await birthCard.locator('summary').click()
   await expect(birthCard.getByText(/✍️/).first()).toBeVisible()
 })
+
+test('order status page: unknown order shows the calm not-found state (no PII, no crash)', async ({ page }) => {
+  // random uuid = capability token that matches nothing
+  await page.goto('/ru/order/00000000-0000-4000-8000-000000000000')
+  // the page must render a human state, not a Next error overlay
+  await expect(page.locator('body')).not.toContainText(/Application error|500/)
+  await expect(page.getByText(/не найден|not found|заказ/i).first()).toBeVisible({ timeout: 30_000 })
+})
