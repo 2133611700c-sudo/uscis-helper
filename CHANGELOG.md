@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-11 (PIVOT Phase 2-3: OPERATOR FLOW behind flag — pay → queue → /order/[id] → admin approve → PDF email, CODE, agent+2 subagents)
+- Product model: платящий клиент НЕ подтверждает поля и НЕ скачивает PDF сам — заказ уходит в operator queue, owner правит/подтверждает в /admin/manual-review, клиент получает готовый PDF на email и следит за /order/{id}. Flag NEXT_PUBLIC_NEW_OPERATOR_FLOW_ENABLED (default OFF = прод байт-в-байт).
+- Server: POST /api/translation/submit-order (Stripe-token = auth; customer email берётся из VERIFIED Stripe session — verifyPayment.ts теперь отдаёт customerEmail; ticket idempotent по checkout id; operator notify + customer confirmation email, fail-open); GET /api/order/[id] (PII-free статус, uuid = capability token, rate-limited); POST /api/order/[id]/resend (completed-only, 2/час).
+- Customer: /[locale]/order/[id] страница (3 шага, polling 30s, 4 локали, тон для 30-80 лет, ноль PII) + email-шаблоны operatorFlowTemplates (received/completed, en/ru/uk, запрещённые фразы протестированы) — 21 тест.
+- Admin: approveAndSendPdf server action (РЕАЛЬНЫЙ certified PDF из правок оператора; гейт OPERATOR_SIGNER_NAME — без подписанта не шлёт; orderCompletedEmail + attachment) + кнопка на detail-странице; SLA-колонка в списке (green<4h/amber/red, slaTimer 9 тестов); resend.ts double-base64 FIX (encoding:'base64' — PDF-вложения приходили нечитаемыми; 3 теста с проверкой wire-байтов); escalation-tick расширен на operator_review_paid (per-reason запросы = OR).
+- Wizard: paid-return при флаге → submit-order → redirect /order/{id}; fail → legacy экран (платящий никогда не остаётся без пути). toCustomerStatus вынесен в lib (Next route-export constraint, ломал build).
+- ВНИМАНИЕ МЕНТОРУ: supabase/migrations/20260611000000_manual_review_events_operator_completed.sql — CHECK constraint events-таблицы не знает operator_completed; без применения аудит-событие пишется впустую (статус-апдейт работает). Применение миграций = ментор.
+- Включение флоу: NEXT_PUBLIC_NEW_OPERATOR_FLOW_ENABLED=1 + OPERATOR_SIGNER_NAME/OPERATOR_SIGNER_ADDRESS в Vercel env + redeploy.
+- Tests: 3304+3 passed | 5 skipped; tsc 0; full next build PASS.
+
 ## 2026-06-11 (PIVOT Phase 1.3: смт preservation through the live translation door, CODE, agent)
 - Root cause (agent-traced): extraction deliberately strips the settlement prefix from the canonical city value with a promise "translation layer re-adds it" — but the re-add existed ONLY in the TPS door; the Core B2 translation door had none. Gazetteer MISS confirmed (КАТОТТГ category T not ingested by gen-settlements — only M+K).
 - Fix: packages/knowledge settlementDesignatorEn(rawCyrillic) — pure source-driven prefix lookup (смт/пгт/селище міського типу → urban-type settlement; с./село → village; селище → settlement; хутір → khutor; м. → null), uppercase-Cyrillic guard for the ambiguous bare «с.»; applied in canonicalToFieldOut for city/place keys, SUFFIX form (the test-locked convention), double-append guard. Designator comes ONLY from the source text — never inferred (смт abolished 2024), never modernizes the name.
