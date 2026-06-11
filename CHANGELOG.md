@@ -690,3 +690,6 @@
 
 ## 2026-06-11 (chore: untracked triage — PII-safe split of 30 legacy files, DOCS, agent)
 - Mentor cleanup prompt items 1a/1b/2/3a-b were already completed and pushed in c676d9b (the prompt was written from a pre-commit snapshot). Executed the genuinely remaining triage: PII-scanned every untracked md/csv — 15 reports contain the real surname/year → moved to qa-private/reports (gitignored, never committed, LAW 5); 11 clean historical audit/architecture reports committed; 4 daily-briefing files moved to qa-private/briefings (personal session artifacts duplicating the CHANGELOG function — a recorded, reversible policy decision).
+
+## 2026-06-11 (docs: per-document bench numbers appended to the report, DOCS, agent)
+- Added the per-document split section (military 5/5 gold incl doc_number-vector; passport 3/3 with 2 honest NOT_READ; birth 4/6 post-fix; silent-wrong 0 on every doc) to FIRST_REAL_GT_BENCH_2026-06-11.md without touching the aggregate.
