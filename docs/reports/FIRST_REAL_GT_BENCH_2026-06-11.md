@@ -59,3 +59,13 @@ re-bench confirmed every field is now review-gated. OWNER ACTION: eyeball the ac
 ## PII handling
 GT values local/gitignored only (verified); /tmp working copies deleted after every run;
 this report carries counts and statuses only.
+
+## Per-document numbers (mentor request, 2026-06-11; gold-only, full-spec)
+
+| Document | Spec | GOLD match | Caught by review | NOT_READ (fail-closed) | Silent-wrong |
+|---|---|---|---|---|---|
+| birth certificate (handwritten) | ua_birth_certificate | 4/6 | dob, issuing_authority | — | **0** (post-fix; was 1 pre-fix) |
+| military booklet | ua_military_id | **5/5** — incl doc_number, the same kind-vector as the act# finding (already protected by handwritten:true) | — (all matched, all review-gated) | — | **0** |
+| internal passport | ua_internal_passport_booklet | **3/3** | — | patronymic, city_of_birth (skipped, not fabricated) | **0** |
+
+Every scored field on every document is review-gated. No new silent-wrong found on docs 2-3 — the kind↔protection audit (marriage/divorce same-vector fix, machine-printed classes verified correct) holds.
