@@ -101,6 +101,7 @@ export function docintelIdToDocumentClass(docTypeId: string): DocumentClass {
     ua_international_passport: 'internal_passport_booklet', // international = same model policy as booklet
     ua_birth_certificate: 'birth_certificate_handwritten',  // conservative: assume handwritten until schema says otherwise
     ua_marriage_certificate: 'marriage_apostille',
+    ua_divorce_certificate: 'marriage_apostille', // same vintage hand-filled cert family (2026-06-11)
     ua_military_id: 'military_id',
   }
   return map[docTypeId] ?? 'unknown_document'
