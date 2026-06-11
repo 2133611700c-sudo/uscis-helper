@@ -58,7 +58,12 @@ export function docintelToCandidate(f: ExtractedDocField, page: number): FieldCa
     confidence: f.confidence,
     provider: `docintel:${f.provider}:page${page}`,
     reviewRequired: f.review_required,
-    reviewReasons: f.review_required ? ['reader_flagged'] : [],
+    // Carry the reader's SPECIFIC reasons (source_script_ambiguous, date_role_conflict,
+    // fallback_model_used…). Replacing them with a generic tag blinded the D5 review
+    // screen — found by a live prod test on a real handwritten birth cert (2026-06-10).
+    reviewReasons: f.review_reasons?.length
+      ? [...f.review_reasons]
+      : f.review_required ? ['reader_flagged'] : [],
   }
 }
 
@@ -80,6 +85,9 @@ export function canonicalToFieldOut(
     raw_cyrillic: f.rawCyrillic ?? cyrillicMap?.get(f.key) ?? null,
     confidence: f.confidence.final ?? 0,
     review_required: f.reviewRequired,
+    // Surface WHY review is needed (the D5 screen explains it to the user).
+    // Omitted when empty to keep the response shape unchanged for clean fields.
+    ...(f.reviewReasons?.length ? { review_reasons: [...f.reviewReasons] } : {}),
     kind: f.source,
   }
 }
