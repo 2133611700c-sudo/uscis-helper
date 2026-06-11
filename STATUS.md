@@ -407,3 +407,4 @@ This is the ONLY way to change status from ENABLED_BY_ENV to RUNTIME_VERIFIED.
 - 2026-06-11 fix: repaired printf-truncated CHANGELOG bench entry.
 - 2026-06-11 silent-wrong fix: ua_birth_certificate all fields handwritten:true (real GT-bench catch: act_record_number wrong+unflagged); +3 regression tests; 3 stale tests updated. 3214 passed.
 - 2026-06-11 incident: manual CLI deploy broke vision-extract (504) → rolled back per runbook, service restored; rule: git-push deploys only.
+- 2026-06-11 CLOSED LOOP: after-fix re-bench on the real cert → SILENT-WRONG=0 (act_record_number now review-gated); 6/9 match, all 9 review-gated; service healthy on git build aaed819.
