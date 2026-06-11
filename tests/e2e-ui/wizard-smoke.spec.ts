@@ -60,6 +60,8 @@ test('supported-documents inventory page renders all 10 classes', async ({ page 
   await page.goto('/ru/supported-documents')
   await expect(page.locator('details')).toHaveCount(10, { timeout: 30_000 })
   // a vintage doc shows the handwriting badge; a mirror doc shows the mirror mark
-  await expect(page.getByText(/Свидетельство о рождении/).first()).toBeVisible()
-  await expect(page.getByText(/✍️/).first()).toBeVisible() // .first(): the badge repeats per handwritten field
+  // expand the birth-certificate card and assert the ✍️ badge INSIDE it
+  const birthCard = page.locator('details', { hasText: /Свидетельство о рождении/ }).first()
+  await birthCard.locator('summary').click()
+  await expect(birthCard.getByText(/✍️/).first()).toBeVisible()
 })
