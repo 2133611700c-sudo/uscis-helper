@@ -30,6 +30,7 @@ type DocTypeChoice =
   | 'passport_foreign'
   | 'birth'
   | 'marriage'
+  | 'divorce'
   | 'id_card'
   | 'military'
   | 'other'
@@ -63,6 +64,7 @@ const DOC_TYPES: DocTypeMeta[] = [
   { id: 'passport_foreign',  icon: '✈️',                  auto: true,                          registryId: 'ua_international_passport' },
   { id: 'birth',             icon: '👶',                  auto: false, autoread: HARD_CASE_AUTOREAD, registryId: 'ua_birth_certificate' },
   { id: 'marriage',          icon: '💍',                  auto: false, autoread: HARD_CASE_AUTOREAD, registryId: 'ua_marriage_certificate' },
+  { id: 'divorce',           icon: '📜',                  auto: false, autoread: HARD_CASE_AUTOREAD, registryId: 'ua_divorce_certificate' },
   { id: 'id_card',           icon: '💳',                  auto: true,                          registryId: 'ua_id_card' },
   { id: 'military',          icon: '🪖',                  auto: false, autoread: true,              registryId: 'ua_military_id' },
   { id: 'other',             icon: '📄',                  auto: false,                         registryId: null },
@@ -117,7 +119,8 @@ const T = {
       passport_internal: { name: 'Паспорт Украины', hint: 'Внутренний, книжка' },
       passport_foreign:  { name: 'Загранпаспорт',   hint: 'Биометрический' },
       birth:             { name: 'Свидетельство о рождении', hint: '' },
-      marriage:          { name: 'О браке / разводе', hint: '' },
+      marriage:          { name: 'Свидетельство о браке', hint: '' },
+      divorce:           { name: 'О расторжении брака', hint: '' },
       id_card:           { name: 'ID-карта',         hint: 'Пластиковая карта' },
       military:          { name: 'Военный билет',    hint: 'Військовий квиток' },
       other:             { name: 'Другой документ',  hint: 'Водительские права и др.' },
@@ -243,6 +246,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
       passport_foreign:  { name: 'International Passport', hint: 'Biometric' },
       birth:             { name: 'Birth Certificate', hint: '' },
       marriage:          { name: 'Marriage / Divorce', hint: '' },
+      divorce:           { name: 'Divorce Certificate', hint: '' },
       id_card:           { name: 'ID Card', hint: 'Plastic card' },
       military:          { name: 'Military ID', hint: 'Військовий квиток' },
       other:             { name: 'Other Document', hint: "Driver's license, etc." },
@@ -378,6 +382,12 @@ const SAMPLE_ROWS: Record<DocTypeChoice, Array<{ ukr: string; val_ukr: string; v
     { ukr: 'Актовий запис №',       val_ukr: '—', val_eng: '—' },
     { ukr: 'Орган реєстрації',      val_ukr: '—', val_eng: '—' },
   ],
+  divorce:           [
+    { ukr: "Він (прізвище, імʼя)",  val_ukr: "—", val_eng: "—" },
+    { ukr: "Вона (прізвище, імʼя)", val_ukr: "—", val_eng: "—" },
+    { ukr: 'Дата розірвання шлюбу', val_ukr: '—', val_eng: '—' },
+    { ukr: 'Актовий запис №',       val_ukr: '—', val_eng: '—' },
+  ],
   id_card:           [
     { ukr: 'Прізвище',        val_ukr: '—', val_eng: '—' },
     { ukr: "Ім'я, по батькові", val_ukr: '—', val_eng: '—' },
@@ -398,6 +408,7 @@ const CERT_TITLES_EN: Record<DocTypeChoice, string> = {
   passport_foreign:  'TRANSLATION OF UKRAINIAN INTERNATIONAL PASSPORT',
   birth:             'TRANSLATION OF UKRAINIAN BIRTH CERTIFICATE',
   marriage:          'TRANSLATION OF UKRAINIAN MARRIAGE CERTIFICATE',
+  divorce:           'TRANSLATION OF UKRAINIAN DIVORCE CERTIFICATE',
   id_card:           'TRANSLATION OF UKRAINIAN IDENTITY CARD',
   military:          'TRANSLATION OF UKRAINIAN MILITARY ID',
   other:             'TRANSLATION OF UKRAINIAN DOCUMENT',
@@ -1512,6 +1523,11 @@ export function TranslateWizard() {
           })()}
           <div style={{ marginTop: 20 }}>
             <button className="tw-btn-primary" disabled={!selectedDocType} onClick={() => goTo(3)}>{t.next}</button>
+          </div>
+          <div style={{ marginTop: 14, textAlign: 'center', fontSize: 13 }}>
+            <a href="/supported-documents" target="_blank" rel="noreferrer" style={{ color: 'var(--acc, #2c6e9e)', textDecoration: 'underline' }}>
+              📋 {locale === 'uk' ? 'Усі підтримувані документи' : locale === 'en' ? 'All supported documents' : locale === 'es' ? 'Todos los documentos compatibles' : 'Все поддерживаемые документы'}
+            </a>
           </div>
         </div>
 
