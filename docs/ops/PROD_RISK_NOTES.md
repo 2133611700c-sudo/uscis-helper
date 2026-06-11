@@ -55,3 +55,21 @@ field ✓, value ✓, raw_cyrillic ✓, confidence ✓, review_required ✓, rev
 SOURCE ('ai_vision'), not the semantic type. Known consequence already hit once: the date
 ensemble had to detect date fields by NAME. Documented as a known pattern; fix only with a
 concrete need (renaming the output field is a breaking API change).
+
+## ARCH_DEBT — handwritten:true is a per-DOC-TYPE assumption (2026-06-11)
+`ua_birth_certificate` / `ua_marriage_certificate` / `ua_divorce_certificate` now carry
+`handwritten:true` on every field — correct for the VINTAGE hand-filled blanks that dominate
+our population, and the safety asymmetry favors it (a false-positive review on a modern
+machine-printed reprint = friction; a silent-wrong on a vintage cert = a legal defect).
+KNOWN ASSUMPTION: modern machine-printed UA certificates will be force-reviewed even when
+legible. The proper future fix is per-field layout detection (handwriting-origin signal from
+the reader) — the same ADDITION-C signal the HTR threshold needs. Until then: documented,
+not silent. Machine-printed classes (ID-card, EAD, I-94, I-797, intl passport) correctly
+keep handwritten:false (their protection = MRZ anchor + confidence + guards).
+
+## Generalization status of the handwritten benches (correct claim, 2026-06-11)
+- N=3 owner docs, full-spec, gold-only: birth 4/6 + military 5/5 (incl doc_number — the
+  same vector as the act#) + passport 3/3; **silent-wrong = 0 on every doc post-fix**.
+- Generalization claim: NOT MADE (one person's documents). Rollout claim: NOT MADE.
+- N=30/class scaling remains the next step; the kind↔protection audit is complete
+  (vintage-cert family fixed; machine-printed classes correct as-is).
