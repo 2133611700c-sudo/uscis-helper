@@ -20,6 +20,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { isGarbageValue } from '@uscis-helper/knowledge'
 import { getUnresolvedReviewFields } from '@/lib/translation/reviewGate'
+import { ukrLabelFor } from './translationFieldLabels'
 import { downscaleImageForUpload } from '@/lib/upload/downscaleImage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -403,14 +404,7 @@ const CERT_TITLES_EN: Record<DocTypeChoice, string> = {
 }
 
 // Map docintel field ids to Ukrainian labels on the booklet identity page.
-const UKR_LABEL_BY_FIELD: Record<string, string> = {
-  family_name: 'Прізвище',
-  given_name: "Ім'я",
-  middle_name: 'По батькові',
-  dob: 'Дата народження',
-  city_of_birth: 'Місце народження',
-  province_of_birth: 'Область',
-}
+// Labels moved to translationFieldLabels.ts (full registry coverage, test-pinned).
 
 function fmtScreenStep(screen: Screen): number {
   // Map screen index to 0-based progress step (welcome has no progress).
@@ -1384,10 +1378,11 @@ export function TranslateWizard() {
   const translationRows = (() => {
     if (extractedFields.length > 0) {
       return extractedFields
-        .filter((f) => UKR_LABEL_BY_FIELD[f.field])
+        // SILENT-DROP FIX (2026-06-11): unlabeled fields previously VANISHED here
+        // (passport number/expiry, 9/10 birth-cert fields). Never drop — fall back.
         .map((f) => ({
           fieldKey: f.field,
-          ukr: UKR_LABEL_BY_FIELD[f.field],
+          ukr: ukrLabelFor(f.field),
           val_ukr: f.raw_cyrillic ?? '—',
           val_eng: f.value ?? '—',
           current_eng: f.value ?? '',
