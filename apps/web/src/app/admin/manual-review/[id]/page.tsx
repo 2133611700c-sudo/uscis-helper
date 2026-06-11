@@ -6,7 +6,7 @@
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { sendTranslation } from './actions'
+import { sendTranslation, approveAndSendPdfForm } from './actions'
 
 interface Row {
   id: string
@@ -155,23 +155,44 @@ export default async function ManualReviewDetailPage({
           </div>
 
           {!isCompleted && (
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: '16px',
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '18px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                minHeight: '56px',
-              }}
-            >
-              Send translation to client →
-            </button>
+            <div style={{ display: 'grid', gap: '12px' }}>
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  minHeight: '56px',
+                }}
+              >
+                Send translation to client →
+              </button>
+              {/* Operator flow: render a REAL certification PDF and email it as attachment */}
+              <button
+                type="submit"
+                formAction={approveAndSendPdfForm}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: '#059669',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  minHeight: '56px',
+                }}
+              >
+                Approve &amp; Send PDF →
+              </button>
+            </div>
           )}
         </form>
       </section>

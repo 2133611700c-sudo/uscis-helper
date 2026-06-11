@@ -24,7 +24,14 @@ export interface SendEmailParams {
   html: string
   text?: string
   type: EmailType
-  attachment?: { filename: string; content: string }
+  /**
+   * Attachment content semantics:
+   *   - encoding 'utf8' (default, backward-compatible): `content` is raw text;
+   *     sendEmail base64-encodes it before handing to Resend.
+   *   - encoding 'base64': `content` is ALREADY base64 (e.g. pdfBuffer.toString('base64'));
+   *     sendEmail passes it through unchanged. Prevents double-encoding of binary attachments.
+   */
+  attachment?: { filename: string; content: string; encoding?: 'base64' | 'utf8' }
 }
 
 export interface SendEmailResult {
@@ -96,7 +103,12 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
 
   try {
     const attachments = params.attachment
-      ? [{ filename: params.attachment.filename, content: Buffer.from(params.attachment.content, 'utf-8').toString('base64') }]
+      ? [{
+          filename: params.attachment.filename,
+          content: params.attachment.encoding === 'base64'
+            ? params.attachment.content // already base64 — pass through unchanged (no double-encoding)
+            : Buffer.from(params.attachment.content, 'utf-8').toString('base64'),
+        }]
       : undefined
 
     const { data, error } = await client.emails.send({
