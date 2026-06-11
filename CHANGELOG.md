@@ -11,6 +11,7 @@
 - D docs/HANDOFF_OWNER_TAKEOVER.md (inventory + 7-step owner action list + mentor triggers).
 - NOT done (forbidden): flag flips in prod, US docs, TPS/Reparole expansion, Supabase migrations.
 - Tests: 3260 passed | 5 skipped; tsc 0.
+- Hotfix e58fe2c build failure: /admin/status used `<a>` for an internal route → next/link (ESLint no-html-link-for-pages fails `next build`; tsc alone did not catch it). Full local `pnpm --filter web build` now passes.
 
 ## 2026-06-11 (FINAL-CLOSURE: passport schemas unregistered + migration plan + HEIC + discoverability, CODE, agent)
 - P1 docs/architecture/LEGACY_PASSPORT_TEMPLATE_AUDIT.md — generate-pdf:277 = THE legacy↔schema switch; 3 templates mapped (booklet active / intl draft / id-card draft), suppression invariant (mrz/personal_number/rnokpp) recorded.
