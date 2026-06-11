@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-11 (OPERATOR FLOW ENABLED in prod + e2e order-page case)
+- Owner: «доделай всё на 110%». Включено: NEXT_PUBLIC_NEW_OPERATOR_FLOW_ENABLED=1 + OPERATOR_SIGNER_NAME/ADDRESS в Vercel prod (этот коммит = build, который вшивает NEXT_PUBLIC). Owner: проверь написание подписанта в env и сделай $1-тест.
+- E2E: кейс /order/{random-uuid} → calm not-found (страница не падает, PII нет).
+- PII-sweep 6 тест-файлов с реальными данными — агент в работе, отдельным коммитом (MRZ check-digits пересчитываются).
+
 ## 2026-06-11 (PIVOT Phase 2-3: OPERATOR FLOW behind flag — pay → queue → /order/[id] → admin approve → PDF email, CODE, agent+2 subagents)
 - Product model: платящий клиент НЕ подтверждает поля и НЕ скачивает PDF сам — заказ уходит в operator queue, owner правит/подтверждает в /admin/manual-review, клиент получает готовый PDF на email и следит за /order/{id}. Flag NEXT_PUBLIC_NEW_OPERATOR_FLOW_ENABLED (default OFF = прод байт-в-байт).
 - Server: POST /api/translation/submit-order (Stripe-token = auth; customer email берётся из VERIFIED Stripe session — verifyPayment.ts теперь отдаёт customerEmail; ticket idempotent по checkout id; operator notify + customer confirmation email, fail-open); GET /api/order/[id] (PII-free статус, uuid = capability token, rate-limited); POST /api/order/[id]/resend (completed-only, 2/час).
