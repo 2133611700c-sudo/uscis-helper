@@ -30,6 +30,7 @@ type DocTypeChoice =
   | 'birth'
   | 'marriage'
   | 'id_card'
+  | 'military'
   | 'other'
 type Locale = 'en' | 'uk' | 'ru' | 'es'
 
@@ -62,6 +63,7 @@ const DOC_TYPES: DocTypeMeta[] = [
   { id: 'birth',             icon: '👶',                  auto: false, autoread: HARD_CASE_AUTOREAD, registryId: 'ua_birth_certificate' },
   { id: 'marriage',          icon: '💍',                  auto: false, autoread: HARD_CASE_AUTOREAD, registryId: 'ua_marriage_certificate' },
   { id: 'id_card',           icon: '💳',                  auto: true,                          registryId: 'ua_id_card' },
+  { id: 'military',          icon: '🪖',                  auto: false, autoread: true,              registryId: 'ua_military_id' },
   { id: 'other',             icon: '📄',                  auto: false,                         registryId: null },
 ]
 
@@ -116,6 +118,7 @@ const T = {
       birth:             { name: 'Свидетельство о рождении', hint: '' },
       marriage:          { name: 'О браке / разводе', hint: '' },
       id_card:           { name: 'ID-карта',         hint: 'Пластиковая карта' },
+      military:          { name: 'Военный билет',    hint: 'Військовий квиток' },
       other:             { name: 'Другой документ',  hint: 'Водительские права и др.' },
     },
     // Screen 3 — Upload
@@ -240,6 +243,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
       birth:             { name: 'Birth Certificate', hint: '' },
       marriage:          { name: 'Marriage / Divorce', hint: '' },
       id_card:           { name: 'ID Card', hint: 'Plastic card' },
+      military:          { name: 'Military ID', hint: 'Військовий квиток' },
       other:             { name: 'Other Document', hint: "Driver's license, etc." },
     },
     s3_title_1: 'Upload', s3_title_2: 'your document',
@@ -351,6 +355,7 @@ const SAMPLE_ROWS: Record<DocTypeChoice, Array<{ ukr: string; val_ukr: string; v
   birth:             [{ ukr: 'Прізвище', val_ukr: '—', val_eng: '—' }],
   marriage:          [{ ukr: 'Подружжя', val_ukr: '—', val_eng: '—' }],
   id_card:           [{ ukr: 'Прізвище', val_ukr: '—', val_eng: '—' }],
+  military:          [{ ukr: 'Прізвище', val_ukr: '—', val_eng: '—' }],
   other:             [{ ukr: 'Документ', val_ukr: '—', val_eng: '—' }],
 }
 
@@ -360,6 +365,7 @@ const CERT_TITLES_EN: Record<DocTypeChoice, string> = {
   birth:             'TRANSLATION OF UKRAINIAN BIRTH CERTIFICATE',
   marriage:          'TRANSLATION OF UKRAINIAN MARRIAGE CERTIFICATE',
   id_card:           'TRANSLATION OF UKRAINIAN IDENTITY CARD',
+  military:          'TRANSLATION OF UKRAINIAN MILITARY ID',
   other:             'TRANSLATION OF UKRAINIAN DOCUMENT',
 }
 
