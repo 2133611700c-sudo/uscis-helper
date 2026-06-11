@@ -1930,16 +1930,22 @@ export default function TPSWizardV2({ locale }: Props) {
       if (!upload?.fields) continue
       const candidates: ExtractedCandidate[] = []
       for (const [fieldName, fx] of Object.entries(upload.fields)) {
-        if (!fx || !fx.value) continue
+        if (!fx) continue
+        // UI-AWARE CANDIDATE RENDER (OCR_FIELD_SAFETY incident, 2026-06-11): when a
+        // safety gate demotes a value (normalized→null, raw preserved as candidate),
+        // dropping the field showed "Не найдено" and hid the read entirely. Fall back
+        // to raw_value WITH FORCED review so the screen prefills + badges instead.
+        const effValue = fx.value || fx.raw_value || ''
+        if (!effValue) continue
         // Booklet filter: only allow wave1 fields
         if (slotId === 'booklet' && !BOOKLET_WAVE1_FIELDS.has(fieldName)) continue
         candidates.push({
           field: fieldName,
-          value: fx.value,
+          value: effValue,
           sourceDoc: slotId as SourceDoc,
           sourceType: (fx.source || 'ocr_keyword') as SourceType,
           confidence: fx.confidence ?? null,
-          reviewRequired: fx.requires_review || false,
+          reviewRequired: fx.requires_review || !fx.value, // candidate fallback ⇒ always review
         })
       }
       arbiterUploads[slotId] = candidates
