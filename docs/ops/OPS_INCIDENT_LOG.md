@@ -2,6 +2,15 @@
 
 One entry per operational incident / sensitive operation. Newest first. PII-free.
 
+## 2026-06-11 — broken manual CLI deploy → vision-extract 504 (RESOLVED by rollback)
+- The git webhook did not fire for commit 758415b; agent ran `npx vercel --prod --yes`
+  from the repo root. The resulting artifact 504-ed EVERY vision-extract request
+  (healthz fine) — monorepo CLI build ≠ git-integration build. Detected within minutes
+  by a light synthetic probe; ROLLED BACK via `vercel promote <last-good>` per the
+  runbook (service restored, probe 200). Exposure window ≈15 min, low-traffic hours.
+- RULE: deploy ONLY via git push (the integration build). If the webhook misfires,
+  re-trigger with an empty commit — never a root-level CLI deploy.
+
 ## 2026-06-11 — L1 escalation-tick cron failure (RESOLVED)
 - Owner reported `L1 Escalation Tick` failing (~32s). `gh run` logs: Postgres `22P02` —
   supabase-js `.contains()` with a JS array on a **jsonb** column emits a `{}` pg-array literal.
