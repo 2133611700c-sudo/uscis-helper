@@ -176,6 +176,26 @@ export async function notifyOperator(
 export async function notifyOwnerAlert(
   input: OperatorNotificationInput,
 ): Promise<NotificationDelivery> {
+  // NATIVE Telegram Bot API path (TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID) — the
+  // 3-minute BotFather setup; takes precedence over the custom webhook.
+  const botToken = process.env.TELEGRAM_BOT_TOKEN
+  const chatId = process.env.TELEGRAM_CHAT_ID
+  if (botToken && chatId) {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: `[manual_review] ${input.eventType} ${input.priority} ${input.ticketId.slice(0, 8)}`,
+        }),
+      })
+      if (res.ok) return { channel: 'telegram_owner', status: 'sent', errorTag: null }
+      return { channel: 'telegram_owner', status: 'failed', errorTag: `http_${res.status}` }
+    } catch {
+      return { channel: 'telegram_owner', status: 'failed', errorTag: 'send_error' }
+    }
+  }
   const url = process.env.TELEGRAM_OWNER_WEBHOOK_URL
   if (!url) {
     return { channel: 'telegram_owner', status: 'not_configured', errorTag: 'webhook_missing' }
