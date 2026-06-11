@@ -134,6 +134,9 @@ export type ManualReviewReason =
   | 'system_error'
   // a request that FAILED after the customer already paid (L1 A-full triage; PII-free)
   | 'paid_request_failed'
+  // Operator-flow product model (2026-06-11): every PAID order is reviewed by
+  // the operator before the customer receives the finished PDF.
+  | 'operator_review_paid'
 
 export const MANUAL_REVIEW_REASONS: readonly ManualReviewReason[] = [
   'unknown_document_type',
@@ -155,6 +158,7 @@ export const MANUAL_REVIEW_REASONS: readonly ManualReviewReason[] = [
   'user_requested_human_help',
   'system_error',
   'paid_request_failed',
+  'operator_review_paid',
 ] as const
 
 /**
@@ -232,6 +236,7 @@ export type ManualReviewEventType =
   | 'manual_review_approved_for_render'
   | 'manual_review_rejected'
   | 'manual_review_cancelled'
+  | 'operator_completed'
 
 export const MANUAL_REVIEW_EVENT_TYPES: readonly ManualReviewEventType[] = [
   'manual_review_queued',
@@ -242,6 +247,7 @@ export const MANUAL_REVIEW_EVENT_TYPES: readonly ManualReviewEventType[] = [
   'manual_review_approved_for_render',
   'manual_review_rejected',
   'manual_review_cancelled',
+  'operator_completed',
 ] as const
 
 // ── Type guards / validators ─────────────────────────────────────────────────

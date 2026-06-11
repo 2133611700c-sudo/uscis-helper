@@ -283,6 +283,7 @@ interface EventInput {
     | 'manual_review_approved_for_render'
     | 'manual_review_rejected'
     | 'manual_review_cancelled'
+    | 'operator_completed'
   metadata: Record<string, unknown>
 }
 
