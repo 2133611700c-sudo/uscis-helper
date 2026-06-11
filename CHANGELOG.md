@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-06-11 (MIGRATION-EXEC: passport flag+dual-render+snapshots+visual-diff + owner runbooks + /admin/status, CODE, agent)
+- A.1 PASSPORT_SCHEMA_RENDERER_ENABLED: staged registration in schemas/registry.ts (per-call env read); registryFlagGating.test.ts 4 tests (OFF default, no truthy coercion, ON resolves 3, registered 6 untouched). Default OFF = byte-identical prod.
+- A.2 PASSPORT_SCHEMA_DUAL_RENDER_ENABLED: generate-pdf renders BOTH when mirror active, returns schema PDF, logs PII-free parity record (dualRenderCompare.ts — sha256/16 + normalized hashes stripping /CreationDate,/ModDate,/ID + byte counts); fail-open. 6 tests incl. PII-leak guard.
+- A.3 passportSchemaSnapshots.test.ts: 3 synthetic renders through the REAL mirror renderer (flag stubbed), review/missing→unresolved pins, flag-OFF→null pin; owner-GT leg (local-only, values from disk): internal passport GT PASSES, international GT honestly SKIPS (owner template unfilled).
+- A.4 visual diff harness apps/web/scripts/visual-diff-passport.ts (deviation from prompt path tests/visual-diff/: PDF modules use @/ aliases resolvable only inside apps/web) → /tmp/visual-diff-report.html side-by-side embeds + hash/byte stats; ran successfully (3 docTypes, 6 PDFs). No auto pass/fail by design (layouts differ structurally) — human-review artifact.
+- A.5 docs/ops/PASSPORT_MIGRATION_RUNBOOK.md: steps E-H with exact env/git commands + inline rollback.
+- B docs/ops/OWNER_PRODUCTION_VALIDATION_CHECKLIST.md (7 UA types + HEIC + rotation + acceptance criteria + report template + Supabase log queries).
+- C /admin/status (src/app/admin/status/page.tsx): middleware 404 + in-page admin_session check (401 bare, no data assembled); data via lib/admin/statusDashboardData.ts — flags state, guard-blocks 24h rate, certifier audit last 10 (PII-free column whitelist), review-queue pending, passport migration state, CI graceful-skip without GITHUB_TOKEN; 30s meta-refresh. 5 tests (empty-table grace, PII column whitelist, flag mirroring).
+- D docs/HANDOFF_OWNER_TAKEOVER.md (inventory + 7-step owner action list + mentor triggers).
+- NOT done (forbidden): flag flips in prod, US docs, TPS/Reparole expansion, Supabase migrations.
+- Tests: 3260 passed | 5 skipped; tsc 0.
+
 ## 2026-06-11 (FINAL-CLOSURE: passport schemas unregistered + migration plan + HEIC + discoverability, CODE, agent)
 - P1 docs/architecture/LEGACY_PASSPORT_TEMPLATE_AUDIT.md — generate-pdf:277 = THE legacy↔schema switch; 3 templates mapped (booklet active / intl draft / id-card draft), suppression invariant (mrz/personal_number/rnokpp) recorded.
 - P2 three passport schemas CREATED, NOT registered (internal-passport 6 fields / international-passport 5 / id-card 5; keys = docintel names; ICAO 9303 + Law 1474-VIII sources). passportSchemas.test.ts 5/5 pins shape + suppression + hasOfficialSchema===false. DEVIATION recorded: prompt 2.4 (register) vs 2.6 (legacy primary) contradict — registration IS the live switch, deferred to the migration plan.
