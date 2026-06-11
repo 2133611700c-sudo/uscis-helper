@@ -30,6 +30,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
+import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
 import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
@@ -55,7 +56,16 @@ import {
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // gemini-2.5-pro vision ~16-40s/page (handwriting) — default 15s would abort it
 
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
+const ALLOWED_MIME = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  // HEIC / HEIF — iPhone default. heicToJpeg (WASM libde265 — sharp's prebuilt
+  // libvips lacks the HEVC codec) converts at intake; downstream sees JPEG only.
+  'image/heic',
+  'image/heif',
+])
 const MAX_BYTES = 10 * 1024 * 1024 // 10 MB per page
 const MAX_PAGES = 6                  // hard cap matching the wizard
 
@@ -151,12 +161,31 @@ export async function POST(req: NextRequest) {
       { status: 413 },
     )
   }
+  // HEIC/HEIF (iPhone default camera format) → JPEG BEFORE validation, so every
+  // downstream read (ensemble, Core, legacy) sees a plain JPEG. Fail-open: a
+  // failed decode leaves the original file, which the MIME gate below rejects
+  // with the standard 415 — never a 500.
+  for (let i = 0; i < rawFiles.length; i++) {
+    const f = rawFiles[i]
+    const suspicious =
+      /heic|heif/i.test(f.type) || !f.type ||
+      f.type === 'application/octet-stream' || /\.(heic|heif)$/i.test(f.name)
+    if (!suspicious) continue
+    const conv = await heicToJpeg(Buffer.from(await f.arrayBuffer()), f.type)
+    if (conv.converted) {
+      rawFiles[i] = new File(
+        [new Uint8Array(conv.buffer)],
+        f.name.replace(/\.(heic|heif)$/i, '') + '.jpg',
+        { type: 'image/jpeg' },
+      )
+    }
+  }
   // Validate every page before spending any vision budget.
   for (const file of rawFiles) {
     const mime = file.type || 'image/jpeg'
     if (!ALLOWED_MIME.has(mime)) {
       return NextResponse.json(
-        { ok: false, error: `Unsupported image type: ${mime}. Use JPEG, PNG, or WebP.` },
+        { ok: false, error: `Unsupported image type: ${mime}. Use JPEG, PNG, WebP, or HEIC.` },
         { status: 415 },
       )
     }
@@ -215,6 +244,7 @@ export async function POST(req: NextRequest) {
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
     for (let i = 0; i < rawFiles.length; i++) {
       const file = rawFiles[i]
+      // HEIC was already converted to JPEG at intake (heicToJpeg, top of handler).
       const buffer = Buffer.from(await file.arrayBuffer())
       const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 40_000, product: 'translation' })
       corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })

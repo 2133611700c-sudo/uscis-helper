@@ -63,6 +63,22 @@ export async function preprocessImage(
   mimeType: string
 ): Promise<PreprocessResult | PreprocessError> {
 
+  // ── 0. HEIC/HEIF (iPhone default) → JPEG ─────────────────────────────────
+  // sharp's prebuilt libvips lacks the HEVC codec, so decode goes through
+  // heicToJpeg (WASM libde265). Fail-open: an undecodable file keeps its
+  // original mime and is rejected by step 1 with the standard message.
+  // This single hook fixes HEIC for every caller (TPS, EAD, Reparole,
+  // translation) — those routes already ACCEPTED heic by MIME but this
+  // module then rejected it.
+  {
+    const { heicToJpeg } = await import('./heicToJpeg')
+    const conv = await heicToJpeg(buffer, mimeType)
+    if (conv.converted) {
+      buffer = conv.buffer
+      mimeType = conv.mimeType
+    }
+  }
+
   // ── 1. Reject unsupported formats ────────────────────────────────────────
   const lowerMime = mimeType.toLowerCase().split(';')[0].trim()
   if (!SUPPORTED_MIME_TYPES.includes(lowerMime as SupportedMimeType)) {

@@ -491,6 +491,8 @@
         "links": {
           "officialLinks": "Официальные ссылки",
           "faq": "Вопросы и ответы",
+          "supportedDocuments": "Поддерживаемые документы",
+          "supportedDocs": "Поддерживаемые документы",
           "telegram": "Telegram",
           "contact": "Контакты",
           "pricing": "Стоимость"

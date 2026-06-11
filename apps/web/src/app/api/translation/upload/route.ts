@@ -18,8 +18,8 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 export const dynamic = 'force-dynamic'
 
 const MAX_BYTES = 10 * 1024 * 1024          // 10 MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
-const ALLOWED_EXTS  = ['.jpg', '.jpeg', '.png', '.webp', '.pdf']
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf']
+const ALLOWED_EXTS  = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf']
 const STORAGE_BUCKET = 'translation-documents'
 
 interface ValidationResult {
@@ -92,16 +92,31 @@ export async function POST(req: NextRequest) {
     }, { status: 422 })
   }
 
+  // HEIC/HEIF (iPhone default) → JPEG before storage, so everything downstream
+  // (extraction, certifier preview, re-renders) reads a universally-decodable
+  // format. Fail-open: an undecodable file is stored as-is with its real mime.
+  let storedBuffer: Buffer = Buffer.from(await file.arrayBuffer())
+  let storedType = file.type
+  let storedName = file.name
+  {
+    const { heicToJpeg } = await import('@/lib/ocr/heicToJpeg')
+    const conv = await heicToJpeg(storedBuffer, file.type)
+    if (conv.converted) {
+      storedBuffer = conv.buffer
+      storedType = 'image/jpeg'
+      storedName = file.name.replace(/\.(heic|heif)$/i, '') + '.jpg'
+    }
+  }
+
   // Build storage path
-  const ext = '.' + (file.name.split('.').pop() ?? 'jpg').toLowerCase()
+  const ext = '.' + (storedName.split('.').pop() ?? 'jpg').toLowerCase()
   const storageKey = `${sessionId}/${Date.now()}${ext}`
 
   // Upload to Supabase Storage
-  const fileBuffer = await file.arrayBuffer()
   const { error: uploadErr } = await supabase.storage
     .from(STORAGE_BUCKET)
-    .upload(storageKey, fileBuffer, {
-      contentType: file.type,
+    .upload(storageKey, storedBuffer, {
+      contentType: storedType,
       upsert: false,
     })
 
@@ -125,8 +140,8 @@ export async function POST(req: NextRequest) {
       session_id: sessionId,
       storage_key: storageKey,
       original_name: file.name,
-      mime_type: file.type,
-      file_size_bytes: file.size,
+      mime_type: storedType,
+      file_size_bytes: storedBuffer.length,
       upload_validated: true,
       validation_errors: [],
     })
@@ -151,8 +166,8 @@ export async function POST(req: NextRequest) {
       document_id: doc.id,
       storage_key: storageKey,
       original_name: file.name,
-      file_size_bytes: file.size,
-      mime_type: file.type,
+      file_size_bytes: storedBuffer.length,
+      mime_type: storedType,
     },
   })
 
@@ -163,9 +178,9 @@ export async function POST(req: NextRequest) {
     session_id: sessionId,
     validation,
     file: {
-      name: file.name,
-      size: file.size,
-      type: file.type,
+      name: storedName,
+      size: storedBuffer.length,
+      type: storedType,
     },
   })
 }
