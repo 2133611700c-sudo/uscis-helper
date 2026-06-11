@@ -405,3 +405,4 @@ This is the ONLY way to change status from ENABLED_BY_ENV to RUNTIME_VERIFIED.
 - 2026-06-11 cleanup: PII-trail 0 rows (verified), OPS_INCIDENT_LOG + PROD_RISK_NOTES created (F1/F2, exact handwritten wording, boundary-loss audit, alert-logic-untested). No code/env changes.
 - 2026-06-11 GT filled (3 files, owner qa-private merged + agent visual reads) + FIRST REAL BENCH: 11/12 (91%), SILENT-WRONG=0, INSUFFICIENT_N honest. Report committed PII-free.
 - 2026-06-11 fix: repaired printf-truncated CHANGELOG bench entry.
+- 2026-06-11 silent-wrong fix: ua_birth_certificate all fields handwritten:true (real GT-bench catch: act_record_number wrong+unflagged); +3 regression tests; 3 stale tests updated. 3214 passed.

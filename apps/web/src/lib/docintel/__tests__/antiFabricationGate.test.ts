@@ -113,12 +113,15 @@ function stub(): VisionProvider {
 describe('readDocument — ANTI_FABRICATION_GATE_ENABLED gating', () => {
   afterEach(() => { delete process.env.ANTI_FABRICATION_GATE_ENABLED })
 
-  it('flag OFF: hard-case identity NOT force-reviewed (current behavior)', async () => {
+  it('flag OFF: hard-case identity still review-gated by the handwritten flag (2026-06-11 fix)', async () => {
+    // Since the GT-bench silent-wrong fix, EVERY ua_birth_certificate field is
+    // handwritten:true ⇒ review_required regardless of this gate. The gate adds
+    // REASONS; the handwritten flag guarantees the review itself.
     delete process.env.ANTI_FABRICATION_GATE_ENABLED
     const res = await readDocument(Buffer.from('x'), 'image/jpeg', 'ua_birth_certificate', { provider: stub() })
     const n = res.fields.find((f) => f.field === 'child_family_name')!
-    expect(n.review_required).toBe(false)
-    expect(n.review_reasons).toBeUndefined()
+    expect(n.review_required).toBe(true)
+    expect(n.review_reasons ?? []).not.toContain('handwritten_document') // gate OFF adds no reasons
   })
 
   it('flag ON: hard-case identity forced to review with reasons', async () => {
@@ -128,7 +131,8 @@ describe('readDocument — ANTI_FABRICATION_GATE_ENABLED gating', () => {
     expect(n.review_required).toBe(true)
     expect(n.review_reasons).toContain('handwritten_document')
     const act = res.fields.find((f) => f.field === 'act_record_number')!
-    expect(act.review_required).toBe(false) // non-identity untouched
+    // post-fix: act_record_number is handwritten:true ⇒ review (the proven silent-wrong)
+    expect(act.review_required).toBe(true)
   })
 })
 
