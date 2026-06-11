@@ -12,7 +12,7 @@ import { getDocTypeSpec } from '@/lib/docintel/documentRegistry'
 
 const WIZARD_REGISTRY_IDS = [
   'ua_internal_passport_booklet', 'ua_international_passport',
-  'ua_birth_certificate', 'ua_marriage_certificate', 'ua_id_card', 'ua_military_id',
+  'ua_birth_certificate', 'ua_marriage_certificate', 'ua_divorce_certificate', 'ua_id_card', 'ua_military_id',
 ]
 
 describe('UKR_LABEL_BY_FIELD covers every wizard doc-type field (no silent drops)', () => {
