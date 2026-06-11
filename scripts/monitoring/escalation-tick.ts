@@ -11,17 +11,33 @@ import {
 
 const OPEN_STATUSES = ['pending', 'in_review', 'queued', 'assigned', 'needs_user_clarification']
 
+// Reasons that escalate: classic paid-failure tickets AND paid operator-review
+// orders (operator flow). Each reason is a separate query (PostgREST `contains`
+// is AND semantics — one query per reason gives OR), then union + dedupe by id.
+const ESCALATING_REASONS = ['paid_request_failed', 'operator_review_paid']
+
+interface TickRow { id: string; created_at: string; status: string; last_alert_stage: string | null }
+
+async function fetchEscalatingTickets(): Promise<TickRow[]> {
+  const byId = new Map<string, TickRow>()
+  for (const reason of ESCALATING_REASONS) {
+    const { data, error } = await supabase
+      .from('manual_review_queue')
+      .select('id,created_at,status,last_alert_stage')
+      .in('status', OPEN_STATUSES)
+      .contains('reasons', JSON.stringify([reason])) // jsonb: supabase-js needs a JSON string (a JS array becomes a {} pg-array literal → 22P02)
+    if (error) throw error
+    for (const r of (data ?? []) as TickRow[]) byId.set(r.id, r)
+  }
+  return Array.from(byId.values())
+}
+
 async function main(): Promise<void> {
-  const { data: rows, error } = await supabase
-    .from('manual_review_queue')
-    .select('id,created_at,status,last_alert_stage')
-    .in('status', OPEN_STATUSES)
-    .contains('reasons', JSON.stringify(['paid_request_failed'])) // jsonb: supabase-js needs a JSON string (a JS array becomes a {} pg-array literal → 22P02) // only paid-failure tickets escalate here
-  if (error) throw error
+  const rows = await fetchEscalatingTickets()
 
   const now = Date.now()
   let acted = 0
-  for (const r of (rows ?? []) as Array<{ id: string; created_at: string; last_alert_stage: string | null }>) {
+  for (const r of rows) {
     const ticket: OpenTicketState = {
       ticketId: r.id,
       ageMs: now - new Date(r.created_at).getTime(),
@@ -40,7 +56,7 @@ async function main(): Promise<void> {
     if (upErr) throw upErr
     acted += 1
   }
-  console.log(`[escalation-tick] open=${rows?.length ?? 0} escalated=${acted}`)
+  console.log(`[escalation-tick] open=${rows.length} escalated=${acted}`)
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })

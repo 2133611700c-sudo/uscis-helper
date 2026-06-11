@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
+import { computeSla, type SlaColor } from '@/lib/translation/manualReview/slaTimer'
 
 interface QueueRow {
   id: string
@@ -44,6 +45,12 @@ const STATUS_COLORS: Record<string, string> = {
   operator_completed:       'background:#dcfce7;color:#166534',
   approved_for_render:      'background:#d1fae5;color:#065f46',
   rejected:                 'background:#f1f5f9;color:#64748b',
+}
+
+const SLA_COLORS: Record<SlaColor, string> = {
+  green: 'background:#d1fae5;color:#065f46',
+  amber: 'background:#fef3c7;color:#92400e',
+  red:   'background:#fee2e2;color:#991b1b',
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -88,9 +95,12 @@ export default async function ManualReviewListPage() {
     return out as CSSProperties
   }
 
+  const nowMs = Date.now() // server-render snapshot; SLA is computed once per page load
+
   function Row({ r }: { r: QueueRow }) {
     const created = new Date(r.created_at).toLocaleString('en-US', { timeZone: 'America/New_York' })
     const expires = new Date(r.expires_at).toLocaleDateString('en-US')
+    const sla = computeSla(r.created_at, nowMs)
     const statusStyle = STATUS_COLORS[r.status] ?? ''
     const priorityKey = r.priority ?? 'normal'
     const priorityStyle = PRIORITY_COLORS[priorityKey] ?? PRIORITY_COLORS.normal
@@ -121,6 +131,11 @@ export default async function ManualReviewListPage() {
         </td>
         <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0', fontSize: '15px', color: '#64748b' }}>
           {reasonsLabel || '—'}
+        </td>
+        <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0' }}>
+          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '15px', fontWeight: 600, whiteSpace: 'nowrap', ...styleFromCss(SLA_COLORS[sla.color]) }}>
+            {sla.label}
+          </span>
         </td>
         <td style={{ padding: '12px 8px', borderBottom: '1px solid #e2e8f0', fontSize: '15px', color: '#64748b' }}>
           {created}
@@ -173,7 +188,7 @@ export default async function ManualReviewListPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    {['Document', 'Lang', 'Priority', 'Reasons', 'Received', 'Expires', 'Status', ''].map(h => (
+                    {['Document', 'Lang', 'Priority', 'Reasons', 'SLA', 'Received', 'Expires', 'Status', ''].map(h => (
                       <th key={h} style={{ padding: '8px', textAlign: 'left', fontSize: '15px', color: '#64748b', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>
                         {h}
                       </th>
