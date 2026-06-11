@@ -133,6 +133,31 @@ export async function readDocument(
     })
   }
 
+  // REGISTRY BACKFILL (2026-06-11, owner live test): an unread field
+  // (can_read:false, or omitted by the model, or empty cyrillic) used to vanish
+  // from the response entirely — the UI then showed 5 of 6 booklet fields and a
+  // missing patronymic was indistinguishable from "this doc type has no
+  // patronymic". Every registry field now ALWAYS appears: unread → value:null +
+  // review_required ("enter manually" row). Guarded by fields.length>0 so a
+  // totally failed read still reports 0 fields (ok:false semantics unchanged).
+  if (fields.length > 0) {
+    const present = new Set(fields.map((f) => f.field))
+    for (const f of spec.fields) {
+      if (present.has(f.field)) continue
+      fields.push({
+        field: f.field,
+        kind: f.kind,
+        raw_cyrillic: null,
+        value: null,
+        confidence: 0,
+        review_required: true,
+        source: 'vision',
+        provider: provider.name,
+        review_reasons: ['not_read_manual_entry'],
+      })
+    }
+  }
+
   // MODEL MATRIX (ADR-018): only the configured primary model is a trusted
   // reader for Cyrillic documents. When the provider fell back (primary
   // timeout/5xx → flash), every field becomes review-required: gemini-2.5-flash
