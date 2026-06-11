@@ -13,6 +13,7 @@ import { birthCertificateSchema } from './birth-certificate.schema'
 import { marriageCertificateSchema } from './marriage-certificate.schema'
 import { divorceCertificateSchema } from './divorce-certificate.schema'
 import { deathCertificateSchema } from './death-certificate.schema'
+import { militaryIdSchema } from './military-id.schema'
 import { nameChangeCertificateSchema } from './name-change-certificate.schema'
 
 const OFFICIAL_SCHEMAS: Record<string, OfficialFormSchema> = {
@@ -21,6 +22,7 @@ const OFFICIAL_SCHEMAS: Record<string, OfficialFormSchema> = {
   ua_divorce_certificate: divorceCertificateSchema,
   ua_death_certificate: deathCertificateSchema,
   ua_name_change_certificate: nameChangeCertificateSchema,
+  ua_military_id: militaryIdSchema,
 }
 
 /** Resolve the official mirror schema for a docType, or null if none exists. */
