@@ -1,0 +1,40 @@
+name: Post-Deploy Smoke
+
+# Meta-finding from the 2026-06-11 broken-CLI-deploy incident: CI validated the
+# BUILD (tsc + tests + build), but nothing validated the DEPLOYED ARTIFACT — a
+# broken vision-extract served 504s for ~15 min until a manual probe caught it.
+# This probes the LIVE prod after every production deployment: healthz + a light
+# vision-extract call with the COMMITTED synthetic passport (zero PII). A failure
+# fails the workflow = the alert.
+on:
+  deployment_status:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    # run only for successful PRODUCTION deployments (or manual dispatch)
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       (github.event.deployment.environment == 'Production' ||
+        github.event.deployment.environment == 'production'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v6
+      - name: Probe healthz
+        run: |
+          code=$(curl -s -o /tmp/h.json -w "%{http_code}" --max-time 20 https://messenginfo.com/api/healthz)
+          echo "healthz HTTP=$code $(cat /tmp/h.json)"
+          [ "$code" = "200" ] || { echo "::error::healthz failed ($code)"; exit 1; }
+      - name: Probe vision-extract (synthetic, no PII)
+        run: |
+          code=$(curl -s -o /tmp/v.json -w "%{http_code}" --max-time 150 -X POST \
+            https://messenginfo.com/api/translation/vision-extract \
+            -F "file=@test-fixtures/synthetic-passport.jpg;type=image/jpeg")
+          echo "vision-extract HTTP=$code"
+          head -c 200 /tmp/v.json; echo
+          if [ "$code" != "200" ]; then
+            echo "::error::vision-extract smoke FAILED ($code) — the deployed artifact may be broken (see OPS_INCIDENT_LOG 2026-06-11). Roll back per docs/runbook.md."
+            exit 1
+          fi
