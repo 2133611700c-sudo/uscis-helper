@@ -2,6 +2,23 @@
 
 One entry per operational incident / sensitive operation. Newest first. PII-free.
 
+## 2026-06-11 — OCR_FIELD_SAFETY false-positive nulling (DETECTED BY OWNER T+24h TEST, ROLLED BACK <10min)
+- Owner manual test right after C-activation: TPS passport → "Фамилия: Не найдено — введите
+  вручную"; translation wizard → "Извлечённых полей нет" (manual-after-payment fallback).
+- ROOT CAUSE (confirmed in code, tps/ocr/extract route ~1205-1226): with
+  OCR_FIELD_SAFETY_ENABLED=1, protectOcrField marks critical fields candidate_only when
+  there is no strong source anchor → normalized_value→null; product UIs render value=null
+  as "not recognized". EXACTLY the latent→active false-positive the audit predicted
+  ("OCR safety blocking after future OCR_FIELD_SAFETY_ENABLED=1"). The activation smoke
+  checked HTTP/status only, NOT field values — probe blind spot, now known.
+- ACTION: rollback per ORR §9/§10 (default=rollback): env rm OCR_FIELD_SAFETY_ENABLED +
+  git redeploy (cdc0785). Decision-to-rollback < 10 min. Other 5 activation vars remain
+  (observability-only, unaffected).
+- LESSONS: (1) this flag needs UI-aware integration (candidate/review rendering) before any
+  re-enable — it is NOT a drop-in; (2) smoke probes must assert FIELD VALUES, not just 200;
+  (3) the ORR owner-test checkpoint did its job — the owner caught it within the window.
+- Re-test request to owner: TPS + translation upload again after cdc0785.
+
 ## 2026-06-11 — C-ACTIVATION executed (per C_ACTIVATION ORR, path α agent-executed on owner order)
 - 6 env-vars set in production: OWNER_CERTIFIER_ID (stable uuid, owner copy in
   ~/.uscis-helper-owner-certifier-id), GUARD_BLOCK_METRICS_ENABLED=1 (14d baseline clock),
