@@ -671,3 +671,6 @@
 
 ## 2026-06-11 (ops: broken CLI deploy → 504 → rollback per runbook, DOCS, agent)
 - The git webhook did not fire for 758415b; the agent manual-CLI-deployed and the artifact 504-ed every vision-extract request (healthz fine). Detected by a light synthetic probe within minutes; rolled back via vercel promote last-good (service restored, probe 200, ~15 min exposure in low-traffic hours). Logged in OPS_INCIDENT_LOG.md with the rule: git-push deploys only; on webhook miss use an empty commit, never a root CLI deploy. Re-delivering the registry fix via the proper git path.
+
+## 2026-06-11 (bench: after-fix verification — SILENT-WRONG=0 on the real document, DOCS, agent)
+- Final control bench on the real handwritten certificate after the registry fix (proper git deploy aaed819): act_record_number now review=True; SILENT-WRONG 1→0; 6/9 critical fields match and ALL 9 are review-gated. Parents read correctly from cursive. Service verified healthy by a light probe (200). Report updated: docs/reports/FIRST_REAL_GT_BENCH_2026-06-11.md.
