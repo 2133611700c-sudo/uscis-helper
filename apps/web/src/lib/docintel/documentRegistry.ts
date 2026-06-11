@@ -51,6 +51,11 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
   },
 
   // ── Ukrainian birth certificate (mostly printed; Soviet-era variants exist) ──
+  // EVERY value on these certificate blanks is HANDWRITTEN (printed form, hand-filled
+  // entries) ⇒ handwritten:true on all fields = always review. Pinned by a REAL
+  // silent-wrong: act_record_number read wrong at high confidence with review=false
+  // on the owner's actual certificate (first GT bench, 2026-06-11). Identity fields
+  // were saved by the anti-fabrication gates; doc_number/agency/date kinds were not.
   ua_birth_certificate: {
     id: 'ua_birth_certificate',
     title_en: 'Ukrainian Birth Certificate',
@@ -58,16 +63,16 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
     consumers: ['translation', 'reparole', 'tps'],
     vision_anchor: 'child_family_name',
     fields: [
-      { field: 'child_family_name', label_uk: 'Прізвище', kind: 'name', handwritten: false, required: true },
-      { field: 'child_given_name', label_uk: "Ім'я", kind: 'name', handwritten: false, required: true },
-      { field: 'child_patronymic', label_uk: 'По батькові', kind: 'name', handwritten: false, required: false },
-      { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: false, required: true },
-      { field: 'place_of_birth_city', label_uk: 'Місце народження', kind: 'place_city', handwritten: false, required: false },
-      { field: 'father_full_name', label_uk: 'Батько', kind: 'name', handwritten: false, required: false },
-      { field: 'mother_full_name', label_uk: 'Мати', kind: 'name', handwritten: false, required: false },
-      { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: false, required: false },
-      { field: 'issuing_authority', label_uk: 'Орган реєстрації', kind: 'agency', handwritten: false, required: false },
-      { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: false, required: false },
+      { field: 'child_family_name', label_uk: 'Прізвище', kind: 'name', handwritten: true, required: true },
+      { field: 'child_given_name', label_uk: "Ім'я", kind: 'name', handwritten: true, required: true },
+      { field: 'child_patronymic', label_uk: 'По батькові', kind: 'name', handwritten: true, required: false },
+      { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: true, required: true },
+      { field: 'place_of_birth_city', label_uk: 'Місце народження', kind: 'place_city', handwritten: true, required: false },
+      { field: 'father_full_name', label_uk: 'Батько', kind: 'name', handwritten: true, required: false },
+      { field: 'mother_full_name', label_uk: 'Мати', kind: 'name', handwritten: true, required: false },
+      { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: true, required: false },
+      { field: 'issuing_authority', label_uk: 'Орган реєстрації', kind: 'agency', handwritten: true, required: false },
+      { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: true, required: false },
     ],
   },
 

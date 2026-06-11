@@ -126,7 +126,7 @@ describe('readDocument — SMART_NORMALIZE_ENABLED gating for authority', () => 
     })
     const a = res.fields.find((f) => f.field === 'issuing_authority')!
     expect(a.value).not.toContain('ZAGS') // not resolved
-    expect(a.review_required).toBe(false) // printed high-confidence
+    expect(a.review_required).toBe(true) // handwritten-filled blank ⇒ always review (2026-06-11 fix)
   })
 
   it('flag ON: ЗАГС resolved to English + review raised', async () => {
