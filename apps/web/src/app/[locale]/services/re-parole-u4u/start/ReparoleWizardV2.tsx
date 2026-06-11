@@ -107,6 +107,8 @@ export interface FieldExtraction {
   source: ExtractionSource
   requires_review: boolean
   doc_slot: string
+  /** Raw OCR string preserved by a safety demotion (value→null). Optional, additive. */
+  raw_value?: string | null
 }
 
 interface UploadEntry {
@@ -559,7 +561,14 @@ export default function ReparoleWizardV2({ locale }: Props) {
       const u = data.uploads[id]
       if (!u.fields) continue
       for (const k of Object.keys(u.fields)) {
-        const fx = u.fields[k]
+        const fxRaw = u.fields[k]
+        if (!fxRaw) continue
+        // UI-AWARE CANDIDATE RENDER (OCR_FIELD_SAFETY incident, 2026-06-11): a safety-
+        // demoted value (value→null, raw preserved) must prefill with forced review,
+        // not vanish into "Не найдено". Same fix as the TPS wizard ingest.
+        const fx = fxRaw.value
+          ? fxRaw
+          : (fxRaw.raw_value ? { ...fxRaw, value: fxRaw.raw_value, requires_review: true } : null)
         if (!fx || !fx.value) continue
         if (!merged[k]) { merged[k] = fx; continue }
         if (
