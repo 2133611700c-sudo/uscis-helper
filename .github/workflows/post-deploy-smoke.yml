@@ -27,7 +27,7 @@ jobs:
           code=$(curl -s -o /tmp/h.json -w "%{http_code}" --max-time 20 https://messenginfo.com/api/healthz)
           echo "healthz HTTP=$code $(cat /tmp/h.json)"
           [ "$code" = "200" ] || { echo "::error::healthz failed ($code)"; exit 1; }
-      - name: Probe vision-extract (synthetic, no PII)
+      - name: Probe vision-extract (synthetic, no PII) — VALUE-CHECKING
         run: |
           code=$(curl -s -o /tmp/v.json -w "%{http_code}" --max-time 150 -X POST \
             https://messenginfo.com/api/translation/vision-extract \
@@ -38,3 +38,18 @@ jobs:
             echo "::error::vision-extract smoke FAILED ($code) — the deployed artifact may be broken (see OPS_INCIDENT_LOG 2026-06-11). Roll back per docs/runbook.md."
             exit 1
           fi
+          # LESSON (OCR_FIELD_SAFETY incident, 2026-06-11): HTTP 200 is NOT enough —
+          # the flag nulled every critical value while status stayed ok. Assert that
+          # extraction returns fields AND that values are actually populated.
+          python3 - <<'PY'
+          import json, sys
+          d = json.load(open('/tmp/v.json'))
+          fields = d.get('fields', [])
+          vals = sum(1 for f in fields if (f.get('value') or '').strip())
+          print(f"fields={len(fields)} values_set={vals}")
+          if len(fields) < 2 or vals < 2:
+              print("::error::vision-extract returned EMPTY/NULLED values "
+                    f"(fields={len(fields)}, values_set={vals}) — the OCR_FIELD_SAFETY-class "
+                    "failure mode (values nulled while HTTP 200). Roll back per runbook.")
+              sys.exit(1)
+          PY
