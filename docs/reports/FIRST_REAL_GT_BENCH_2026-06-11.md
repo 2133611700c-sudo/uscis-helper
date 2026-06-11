@@ -37,3 +37,17 @@ Every field on every document was review-gated (handwritten/critical policy hold
 ## PII handling
 Originals + GT values used locally only (owner-directed); GT JSONs are gitignored
 (verified); /tmp working copies deleted; this report carries counts and statuses only.
+
+## UPDATE 2026-06-11 — full-spec bench + the silent-wrong fix (closed loop)
+
+Re-ran with the FULL birth-certificate spec (docTypeId=ua_birth_certificate, 10 fields incl parents/act/authority):
+
+| Stage | Critical fields | Match | SILENT-WRONG |
+|---|---|---|---|
+| before fix | 9 | 6/9 (66%) | **1** — act_record_number wrong at high confidence, review=false |
+| after fix (handwritten:true on all fields, deployed via git) | 9 | 6/9 (66%) | **0** — every field review-gated |
+
+- PARENTS (father + mother) read correctly from cursive handwriting; place too.
+- The 3 mismatches (dob / act number / authority) are ALL review-gated — the certifier sees and fixes them; nothing flows silently.
+- The review-reasons fix is visibly live (source_script_ambiguous, date_role_conflict in prod responses).
+- Ops note: one broken manual CLI deploy caused ~15 min of vision-extract 504s — detected by a light probe, rolled back per runbook, redelivered via the proper git build (see OPS_INCIDENT_LOG.md).
