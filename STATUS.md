@@ -404,3 +404,4 @@ This is the ONLY way to change status from ENABLED_BY_ENV to RUNTIME_VERIFIED.
 - 2026-06-11 fix: L1 crons .contains on jsonb reasons → JSON.stringify (22P02 in live run, diagnosed from gh logs)
 - 2026-06-11 cleanup: PII-trail 0 rows (verified), OPS_INCIDENT_LOG + PROD_RISK_NOTES created (F1/F2, exact handwritten wording, boundary-loss audit, alert-logic-untested). No code/env changes.
 - 2026-06-11 GT filled (3 files, owner qa-private merged + agent visual reads) + FIRST REAL BENCH: 11/12 (91%), SILENT-WRONG=0, INSUFFICIENT_N honest. Report committed PII-free.
+- 2026-06-11 fix: repaired printf-truncated CHANGELOG bench entry.
