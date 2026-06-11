@@ -2,6 +2,20 @@
 
 One entry per operational incident / sensitive operation. Newest first. PII-free.
 
+## 2026-06-11 — C-ACTIVATION executed (per C_ACTIVATION ORR, path α agent-executed on owner order)
+- 6 env-vars set in production: OWNER_CERTIFIER_ID (stable uuid, owner copy in
+  ~/.uscis-helper-owner-certifier-id), GUARD_BLOCK_METRICS_ENABLED=1 (14d baseline clock),
+  REFUND_AUTOTICKET_ENABLED=1, CERTIFIER_AUDIT_PERSIST_ENABLED=1 (receiver armed),
+  OCR_FIELD_SAFETY_ENABLED=1 (post-payment guard, A-full handled), CONFIRMED_VALUE_GUARD_MODE=shadow (pin).
+- NOT activated (owner gates): guard enforce (baseline-first), CERTIFIER_OVERRIDE (L2 PASS + D5 UI).
+- ORR deviations (recorded): (1) deploy via git empty-commit, NOT `vercel --prod` — per the
+  2026-06-11 broken-CLI-deploy rule in this log; (2) Step-4/6 verify strings adjusted to real
+  code signals (the ORR named log lines that do not exist).
+- Known degradation: TELEGRAM_OWNER_WEBHOOK_URL absent in Vercel → owner-alert returns
+  not_configured (ticket + customer ack still fire). Owner: add the webhook to upgrade alerts.
+- Pre-conditions: all TRUE (prod 34fdb51, tsc 0, files present, vercel auth, 0 processing orders).
+- Checkpoints: T+60min log sweep (agent, below), T+24h owner test paths, T+14d threshold calibration.
+
 ## 2026-06-11 — broken manual CLI deploy → vision-extract 504 (RESOLVED by rollback)
 - The git webhook did not fire for commit 758415b; agent ran `npx vercel --prod --yes`
   from the repo root. The resulting artifact 504-ed EVERY vision-extract request
