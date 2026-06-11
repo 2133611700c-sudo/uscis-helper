@@ -241,12 +241,20 @@ export async function POST(req: NextRequest) {
   try {
     const allCandidates: ReturnType<typeof docintelToCandidate>[] = []
     const cyrillicMap = new Map<string, string>()
-    const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
-    for (let i = 0; i < rawFiles.length; i++) {
-      const file = rawFiles[i]
+    // PAGES IN PARALLEL (504 fix, 2026-06-11). Sequential pages overflowed the
+    // 60s hobby-plan ceiling on a 2-page handwritten booklet (16-40s/page →
+    // owner hit four 504s live). Parallel wall-clock = slowest page, not the
+    // sum. Paid Gemini tier handles 2-6 concurrent calls; per-page timeout
+    // stays 40s. Merge order is preserved by index (earliest page still wins
+    // in the arbiter) — results are awaited as a positional array.
+    const corePages = await Promise.all(rawFiles.map(async (file, i) => {
       // HEIC was already converted to JPEG at intake (heicToJpeg, top of handler).
       const buffer = Buffer.from(await file.arrayBuffer())
       const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 40_000, product: 'translation' })
+      return { i, r }
+    }))
+    const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
+    for (const { i, r } of corePages) {
       corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
       if (r.ok && Array.isArray(r.fields)) {
         buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
@@ -280,15 +288,19 @@ export async function POST(req: NextRequest) {
     console.error('[Core B2] error, falling through to legacy reader:', e?.message ?? e)
   }
 
-  // Run all pages sequentially (Gemini free tier rate-limits parallel calls
-  // hard; sequential is more reliable + simpler to reason about for a 1-6
-  // page job). Merge field-by-field, keeping the earliest non-empty value.
+  // Legacy fallback — pages IN PARALLEL too (504 fix, 2026-06-11; the old
+  // sequential rationale was the FREE Gemini tier, prod runs the paid key).
+  // Merge field-by-field after all pages settle, keeping the earliest
+  // non-empty value (page order preserved via the positional results array).
   const merged = new Map<string, FieldOut>()
   const pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; provider?: string; error?: string }> = []
   let lastResult: Awaited<ReturnType<typeof readDocument>> | null = null
 
-  for (let i = 0; i < rawFiles.length; i++) {
-    const file = rawFiles[i]
+  type LegacyPage =
+    | { kind: 'reshoot'; page: number; q: ReturnType<typeof decideImageQuality> }
+    | { kind: 'read'; page: number; r: Awaited<ReturnType<typeof readDocument>> }
+    | { kind: 'error'; page: number; message: string }
+  const legacyPages: LegacyPage[] = await Promise.all(rawFiles.map(async (file, i): Promise<LegacyPage> => {
     const mime = file.type || 'image/jpeg'
     const rawBuffer = Buffer.from(await file.arrayBuffer())
     // Auto-rotate (EXIF), resize >2048px, normalize orientation.
@@ -297,42 +309,50 @@ export async function POST(req: NextRequest) {
     const buffer = pre?.ok ? pre.buffer : rawBuffer
     const effectiveMime = pre?.ok ? pre.mimeType : mime
     // ── D0 intake quality gate (QUALITY_GATE_ENABLED, default OFF) ──────────
-    // Flag OFF ⇒ this whole block is skipped ⇒ byte-identical to current prod.
-    // Flag ON ⇒ a too-blurry/dark/small photo is bounced back for a reshoot BEFORE
-    // any model spend. Quality is image-usability only — NEVER a fabrication signal.
+    // Flag OFF ⇒ skipped ⇒ byte-identical. ON ⇒ a too-blurry/dark/small photo is
+    // bounced back for a reshoot BEFORE model spend. Never a fabrication signal.
     if (isQualityGateEnabled() && pre?.ok) {
       const q = decideImageQuality(metricsFromPreprocess(pre))
-      if (q.reshoot_required) {
-        return NextResponse.json({
-          ok: false,
-          status: 'reshoot_required',
-          reshoot: true,
-          page: i + 1,
-          message_key: q.user_message_key,
-          quality_decision: q.decision,
-          signals: q.signals,
-        }, { status: 200 })
-      }
+      if (q.reshoot_required) return { kind: 'reshoot', page: i + 1, q }
     }
     try {
       const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 15_000, product: 'translation' })
-      lastResult = r
-      pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
-      if (r.ok && Array.isArray(r.fields)) {
-        for (const f of r.fields) {
-          const existing = merged.get(f.field)
-          // Keep the earliest non-empty value. If existing entry has no
-          // value but this page does, upgrade it.
-          if (!existing) {
-            merged.set(f.field, { ...f, source_page: i + 1 })
-          } else if (!existing.value && f.value) {
-            merged.set(f.field, { ...f, source_page: i + 1 })
-          }
-        }
-      }
+      return { kind: 'read', page: i + 1, r }
     } catch (e: any) {
       console.error('[translation/vision-extract page', i + 1, ']', e?.message ?? e)
-      pageResults.push({ page: i + 1, ok: false, status: 'error', ms: 0, error: e?.message ?? 'unknown' })
+      return { kind: 'error', page: i + 1, message: e?.message ?? 'unknown' }
+    }
+  }))
+  for (const p of legacyPages) {
+    if (p.kind === 'reshoot') {
+      return NextResponse.json({
+        ok: false,
+        status: 'reshoot_required',
+        reshoot: true,
+        page: p.page,
+        message_key: p.q.user_message_key,
+        quality_decision: p.q.decision,
+        signals: p.q.signals,
+      }, { status: 200 })
+    }
+    if (p.kind === 'error') {
+      pageResults.push({ page: p.page, ok: false, status: 'error', ms: 0, error: p.message })
+      continue
+    }
+    const r = p.r
+    lastResult = r
+    pageResults.push({ page: p.page, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
+    if (r.ok && Array.isArray(r.fields)) {
+      for (const f of r.fields) {
+        const existing = merged.get(f.field)
+        // Keep the earliest non-empty value. If existing entry has no
+        // value but this page does, upgrade it.
+        if (!existing) {
+          merged.set(f.field, { ...f, source_page: p.page })
+        } else if (!existing.value && f.value) {
+          merged.set(f.field, { ...f, source_page: p.page })
+        }
+      }
     }
   }
 
