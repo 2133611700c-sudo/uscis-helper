@@ -400,3 +400,4 @@ This is the ONLY way to change status from ENABLED_BY_ENV to RUNTIME_VERIFIED.
   - project understanding must distinguish these planes instead of flattening them into one claim
   - TPS merge brain (`lib/tps/centralBrain.ts`) is a separate live plane, not dead code
 - 2026-06-10 clarified L1_T0_ACTIVATION_CHECKLIST: 3 distinct secret-sets (baseline≠crons≠drift-guard); baseline data needs only GUARD_BLOCK_METRICS_ENABLED in Vercel.
+- 2026-06-10 HANDWRITTEN: live prod test on REAL handwritten cert → found+FIXED review_reasons loss (translationAdapter 2 boundaries, TDD +4); +handwrittenCyrillicE2E.test.ts (+4, full chain real functions); GT templates UNFILLED (owner: fill 3 JSONs). 3207 passed.
