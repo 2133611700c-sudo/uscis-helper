@@ -509,6 +509,8 @@
         "links": {
           "officialLinks": "Офіційні посилання",
           "faq": "Питання та відповіді",
+          "supportedDocuments": "Підтримувані документи",
+          "supportedDocs": "Підтримувані документи",
           "telegram": "Telegram",
           "contact": "Контакти",
           "pricing": "Вартість"
