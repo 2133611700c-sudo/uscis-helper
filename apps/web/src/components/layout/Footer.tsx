@@ -44,6 +44,12 @@ export function Footer() {
               <Link href={`/${locale}/faq`} className="text-slate-400 hover:text-white transition-colors">
                 {t('columns.resources.links.faq')}
               </Link>
+              <Link href={`/${locale}/supported-documents`} className="text-slate-400 hover:text-white transition-colors">
+                {t('columns.resources.links.supportedDocuments')}
+              </Link>
+              <Link href={`/${locale}/supported-documents`} className="text-slate-400 hover:text-white transition-colors">
+                {t('columns.resources.links.supportedDocs')}
+              </Link>
               <Link href={`/${locale}/contact`} className="text-slate-400 hover:text-white transition-colors">
                 {t('columns.resources.links.contact')}
               </Link>
