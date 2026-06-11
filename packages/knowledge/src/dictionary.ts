@@ -453,3 +453,35 @@ export function normalizeOblastToNominative(raw: string): { nominative_uk: strin
   }
   return null;
 }
+
+// ── SETTLEMENT DESIGNATOR (source-driven re-add) ─────────────────────────────
+// The extraction layer deliberately STRIPS the settlement-type prefix from the
+// canonical city value (USCIS form fields want the bare name) with the promise
+// that "the settlement type stays in raw_cyrillic for the translation layer to
+// re-add". This is that re-add, as a pure source-driven lookup: given the RAW
+// Cyrillic the model actually read, return the English designator — or null.
+// HARD RULES: «смт» = "urban-type settlement", NEVER "city"/"town"; the
+// designator comes ONLY from the source text (смт abolished 2024 — never added
+// because a place "is" one, never removed because the category is gone).
+// «м.»/«місто» returns null: cities stay bare (matches the TPS convention).
+// Bare «с.» is ambiguous (село vs an initial) — require a following Cyrillic
+// capital; «с.м.т.» is matched before «с.».
+const DESIGNATOR_PREFIXES: Array<{ re: RegExp; en: string | null }> = [
+  { re: /^\s*(?:смт\.?|с\.\s*м\.\s*т\.?|селище міського типу|пгт\.?|п\.\s*г\.\s*т\.?)\s+/iu, en: 'urban-type settlement' },
+  { re: /^\s*(?:село|с\.)\s+/iu, en: 'village' },
+  { re: /^\s*(?:селище|с-ще)\s+/iu, en: 'settlement' },
+  { re: /^\s*(?:хутір|хут\.)\s+/iu, en: 'khutor' },
+  { re: /^\s*(?:місто|м\.)\s+/iu, en: null }, // city stays bare
+];
+
+export function settlementDesignatorEn(rawCyrillic: string | null | undefined): string | null {
+  if (!rawCyrillic) return null;
+  for (const { re, en } of DESIGNATOR_PREFIXES) {
+    const m = rawCyrillic.match(re);
+    // The remainder must START with an UPPERCASE Cyrillic letter — guards the
+    // ambiguous bare «с.» (село vs an initial) and partial abbreviations.
+    // Checked in code because a regex `i` flag would defeat the case test.
+    if (m && /^[А-ЯҐЄІЇ]/u.test(rawCyrillic.slice(m[0].length))) return en;
+  }
+  return null;
+}
