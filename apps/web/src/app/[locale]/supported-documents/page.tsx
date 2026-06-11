@@ -28,12 +28,13 @@ const CLASSES: Array<{ id: string; icon: string; wizards: string[] }> = [
   { id: 'us_i797',                      icon: '📄', wizards: ['tps'] },
 ]
 
-const T: Record<string, { title: string; sub: string; fields: string; handwritten: string; mirror: string; wizards: string; review_note: string; names: Record<string, string> }> = {
+const T: Record<string, { title: string; sub: string; fields: string; handwritten: string; mirror: string; wizards: string; review_note: string; formats_note: string; names: Record<string, string> }> = {
   ru: {
     title: 'Поддерживаемые документы', sub: 'Что система читает, какие поля извлекает и как переводит.',
     fields: 'Извлекаемые поля', handwritten: 'рукописное — требует вашего подтверждения',
     mirror: 'Перевод «строчка-в-строчку» по официальной структуре', wizards: 'Доступен в',
     review_note: 'Рукописные значения никогда не финализируются автоматически — вы подтверждаете каждое.',
+    formats_note: 'Форматы фото: JPEG, PNG, WEBP, HEIC (iPhone). До 10 МБ на страницу.',
     names: { ua_internal_passport_booklet: 'Паспорт Украины (книжка)', ua_international_passport: 'Загранпаспорт', ua_birth_certificate: 'Свидетельство о рождении', ua_marriage_certificate: 'Свидетельство о браке', ua_divorce_certificate: 'Свидетельство о расторжении брака', ua_id_card: 'ID-карта', ua_military_id: 'Военный билет', us_i94: 'I-94', us_ead: 'EAD (разрешение на работу)', us_i797: 'I-797 Notice' },
   },
   uk: {
@@ -41,6 +42,7 @@ const T: Record<string, { title: string; sub: string; fields: string; handwritte
     fields: 'Поля, що витягуються', handwritten: 'рукописне — потребує вашого підтвердження',
     mirror: 'Переклад «рядок-у-рядок» за офіційною структурою', wizards: 'Доступний у',
     review_note: 'Рукописні значення ніколи не фіналізуються автоматично — ви підтверджуєте кожне.',
+    formats_note: 'Формати фото: JPEG, PNG, WEBP, HEIC (iPhone). До 10 МБ на сторінку.',
     names: { ua_internal_passport_booklet: 'Паспорт України (книжечка)', ua_international_passport: 'Закордонний паспорт', ua_birth_certificate: 'Свідоцтво про народження', ua_marriage_certificate: 'Свідоцтво про шлюб', ua_divorce_certificate: 'Свідоцтво про розірвання шлюбу', ua_id_card: 'ID-картка', ua_military_id: 'Військовий квиток', us_i94: 'I-94', us_ead: 'EAD (дозвіл на роботу)', us_i797: 'I-797 Notice' },
   },
   en: {
@@ -48,6 +50,7 @@ const T: Record<string, { title: string; sub: string; fields: string; handwritte
     fields: 'Extracted fields', handwritten: 'handwritten — requires your confirmation',
     mirror: 'Line-by-line translation following the official structure', wizards: 'Available in',
     review_note: 'Handwritten values are never finalized automatically — you confirm each one.',
+    formats_note: 'Photo formats: JPEG, PNG, WEBP, HEIC (iPhone). Up to 10 MB per page.',
     names: { ua_internal_passport_booklet: 'Ukrainian Passport (booklet)', ua_international_passport: 'International Passport', ua_birth_certificate: 'Birth Certificate', ua_marriage_certificate: 'Marriage Certificate', ua_divorce_certificate: 'Divorce Certificate', ua_id_card: 'ID Card', ua_military_id: 'Military ID', us_i94: 'I-94', us_ead: 'EAD (work permit)', us_i797: 'I-797 Notice' },
   },
   es: {
@@ -55,6 +58,7 @@ const T: Record<string, { title: string; sub: string; fields: string; handwritte
     fields: 'Campos extraídos', handwritten: 'manuscrito — requiere su confirmación',
     mirror: 'Traducción línea por línea según la estructura oficial', wizards: 'Disponible en',
     review_note: 'Los valores manuscritos nunca se finalizan automáticamente: usted confirma cada uno.',
+    formats_note: 'Formatos de foto: JPEG, PNG, WEBP, HEIC (iPhone). Hasta 10 MB por página.',
     names: { ua_internal_passport_booklet: 'Pasaporte de Ucrania (libreta)', ua_international_passport: 'Pasaporte internacional', ua_birth_certificate: 'Certificado de nacimiento', ua_marriage_certificate: 'Certificado de matrimonio', ua_divorce_certificate: 'Certificado de divorcio', ua_id_card: 'Tarjeta ID', ua_military_id: 'Cartilla militar', us_i94: 'I-94', us_ead: 'EAD (permiso de trabajo)', us_i797: 'I-797 Notice' },
   },
 }
@@ -70,6 +74,7 @@ export default async function SupportedDocumentsPage({ params }: { params: Promi
       <p style={{ background: 'var(--surface-1, #f6f4f0)', borderRadius: 12, padding: '12px 16px', fontSize: 14, marginBottom: 24 }}>
         🔍 {t.review_note}
       </p>
+      <p style={{ color: 'var(--text-2, #666)', fontSize: 13, marginBottom: 24 }}>📷 {t.formats_note}</p>
       <div style={{ display: 'grid', gap: 16 }}>
         {CLASSES.map(({ id, icon, wizards }) => {
           const spec = getDocTypeSpec(id)

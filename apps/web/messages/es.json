@@ -491,6 +491,8 @@
         "links": {
           "officialLinks": "Fuentes oficiales",
           "faq": "Preguntas frecuentes",
+          "supportedDocuments": "Documentos compatibles",
+          "supportedDocs": "Documentos compatibles",
           "telegram": "Telegram",
           "contact": "Contacto",
           "pricing": "Precios"
