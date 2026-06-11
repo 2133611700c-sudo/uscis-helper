@@ -67,6 +67,16 @@ safety — the same mistake as ML metrics without adversarial testing. The score
 of any `expected: null` field as `critical_wrong` (zero-tolerance), so these cases are what actually exercise
 the guards.
 
+## Field provenance is REQUIRED (methodology rule, 2026-06-11)
+
+Every filled GT field must carry a provenance mark:
+- `owner_verified` — the owner looked at the physical document and confirmed the value. Only
+  these are scored as GOLD by the benchmark.
+- `agent_proposed_pending_owner_review` — an agent read it from the image; preview-only until
+  the owner flips it. Scoring agent-proposed fields as gold = circular check (the reader vs a
+  reader), which silently inflates accuracy.
+Record it in `_meta.field_provenance` (see the filled files for the shape).
+
 ## Where to put them (PRIVACY — this is real PII)
 
 - Real document **images** + their fixture JSONs go under `test-fixtures/owner/<documentClass>/`.
