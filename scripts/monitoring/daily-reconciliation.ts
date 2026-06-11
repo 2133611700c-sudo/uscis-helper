@@ -13,7 +13,7 @@ async function main(): Promise<void> {
     .from('manual_review_queue')
     .select('id,created_at,status,priority')
     .in('status', OPEN_STATUSES)
-    .contains('reasons', ['paid_request_failed'])
+    .contains('reasons', JSON.stringify(['paid_request_failed'])) // jsonb: supabase-js needs a JSON string (a JS array becomes a {} pg-array literal → 22P02)
   if (error) throw error
 
   const now = Date.now()

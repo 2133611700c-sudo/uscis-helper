@@ -16,7 +16,7 @@ async function main(): Promise<void> {
     .from('manual_review_queue')
     .select('id,created_at,status,last_alert_stage')
     .in('status', OPEN_STATUSES)
-    .contains('reasons', ['paid_request_failed']) // only paid-failure tickets escalate here
+    .contains('reasons', JSON.stringify(['paid_request_failed'])) // jsonb: supabase-js needs a JSON string (a JS array becomes a {} pg-array literal → 22P02) // only paid-failure tickets escalate here
   if (error) throw error
 
   const now = Date.now()
