@@ -2,6 +2,17 @@
 
 One entry per operational incident / sensitive operation. Newest first. PII-free.
 
+## 2026-06-11 — METHODOLOGY FIX: wizard-level E2E UI smoke added
+- 5+ debugging sessions were lost because verification stopped at the API layer
+  (vision-extract probes). Wizard CONFIG bugs were invisible: the autoread flag that
+  silently skipped extraction for birth/marriage, and the 6-key label whitelist that
+  silently dropped extracted fields (passport number/expiry, 9/10 birth fields). Both
+  were found by the OWNER, not by our tests.
+- FIX: Playwright E2E smoke (tests/e2e-ui/wizard-smoke.spec.ts) drives the REAL wizard
+  on the live deployment with SYNTHETIC fixtures (birth + military), asserting the
+  review table renders real rows and never falls to the manual notice.
+  .github/workflows/post-deploy-ui-smoke.yml runs it on every production deployment.
+
 ## 2026-06-11 — OCR_FIELD_SAFETY false-positive nulling (DETECTED BY OWNER T+24h TEST, ROLLED BACK <10min)
 - Owner manual test right after C-activation: TPS passport → "Фамилия: Не найдено — введите
   вручную"; translation wizard → "Извлечённых полей нет" (manual-after-payment fallback).
