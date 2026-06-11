@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-11 (owner ruling: Telegram DROPPED)
+- Owner: «забудь за телеграм» — шаг Telegram-бота удалён из HANDOFF_OWNER_TAKEOVER (список перенумерован 1-6). Код native Bot API в sendOwnerAlert остаётся (безвреден без env; алерты деградируют в email/not_configured). Решение записано в память агента.
+
 ## 2026-06-11 (MIGRATION-EXEC: passport flag+dual-render+snapshots+visual-diff + owner runbooks + /admin/status, CODE, agent)
 - A.1 PASSPORT_SCHEMA_RENDERER_ENABLED: staged registration in schemas/registry.ts (per-call env read); registryFlagGating.test.ts 4 tests (OFF default, no truthy coercion, ON resolves 3, registered 6 untouched). Default OFF = byte-identical prod.
 - A.2 PASSPORT_SCHEMA_DUAL_RENDER_ENABLED: generate-pdf renders BOTH when mirror active, returns schema PDF, logs PII-free parity record (dualRenderCompare.ts — sha256/16 + normalized hashes stripping /CreationDate,/ModDate,/ID + byte counts); fail-open. 6 tests incl. PII-leak guard.
