@@ -11,6 +11,7 @@
 export const dynamic = 'force-dynamic'
 
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { buildStatusDashboard, type DbLike } from '@/lib/admin/statusDashboardData'
 
@@ -66,7 +67,7 @@ export default async function AdminStatusPage() {
       <h2 style={{ fontSize: 17, marginTop: 24 }}>Manual review queue</h2>
       <p style={{ fontSize: 14 }}>
         {dash.reviewQueue.error ? `unavailable: ${dash.reviewQueue.error}` : `pending: ${dash.reviewQueue.pending}`}
-        {' '}— <a href="/admin/manual-review">open queue</a>
+        {' '}— <Link href="/admin/manual-review">open queue</Link>
       </p>
 
       <h2 style={{ fontSize: 17, marginTop: 24 }}>Certifier override audit (last 10, PII-free)</h2>
