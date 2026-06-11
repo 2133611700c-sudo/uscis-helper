@@ -693,3 +693,6 @@
 
 ## 2026-06-11 (docs: per-document bench numbers appended to the report, DOCS, agent)
 - Added the per-document split section (military 5/5 gold incl doc_number-vector; passport 3/3 with 2 honest NOT_READ; birth 4/6 post-fix; silent-wrong 0 on every doc) to FIRST_REAL_GT_BENCH_2026-06-11.md without touching the aggregate.
+
+## 2026-06-11 (ops: C-activation — 6 env-vars live in production, OPS, agent)
+- Executed the C-activation ORR (path α on owner order): OWNER_CERTIFIER_ID (stable uuid), GUARD_BLOCK_METRICS_ENABLED=1 (the 14-day baseline clock starts), REFUND_AUTOTICKET_ENABLED=1, CERTIFIER_AUDIT_PERSIST_ENABLED=1, OCR_FIELD_SAFETY_ENABLED=1, CONFIRMED_VALUE_GUARD_MODE=shadow. NOT activated per owner gates: guard enforce, CERTIFIER_OVERRIDE. Two ORR deviations recorded in OPS_INCIDENT_LOG (git-deploy instead of the forbidden CLI path; verify-strings adjusted to real code). Known degradation: Telegram webhook absent in Vercel (owner-alert not_configured; tickets + customer acks unaffected).
