@@ -43,7 +43,7 @@ export type { TpsFilingType } from './tps_ukraine_requirements';
 
 export {
   AUTHORITIES, AUTHORITY_PATTERNS, GEO_CORRECTIONS,
-  SETTLEMENT_TYPES, FIELD_LABELS, SEX_MAP, GLOBAL_BLOCKLIST,
+  SETTLEMENT_TYPES, settlementDesignatorEn, FIELD_LABELS, SEX_MAP, GLOBAL_BLOCKLIST,
   OBLAST_GENITIVE_TO_NOMINATIVE, normalizeOblastToNominative,
   DOCUMENT_TYPES,
 } from './dictionary';

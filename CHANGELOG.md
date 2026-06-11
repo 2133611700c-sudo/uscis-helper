@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-11 (PIVOT Phase 1.3: смт preservation through the live translation door, CODE, agent)
+- Root cause (agent-traced): extraction deliberately strips the settlement prefix from the canonical city value with a promise "translation layer re-adds it" — but the re-add existed ONLY in the TPS door; the Core B2 translation door had none. Gazetteer MISS confirmed (КАТОТТГ category T not ingested by gen-settlements — only M+K).
+- Fix: packages/knowledge settlementDesignatorEn(rawCyrillic) — pure source-driven prefix lookup (смт/пгт/селище міського типу → urban-type settlement; с./село → village; селище → settlement; хутір → khutor; м. → null), uppercase-Cyrillic guard for the ambiguous bare «с.»; applied in canonicalToFieldOut for city/place keys, SUFFIX form (the test-locked convention), double-append guard. Designator comes ONLY from the source text — never inferred (смт abolished 2024), never modernizes the name.
+- 8 new tests through the REAL adapter incl. «смт. Муровані Курилівці» → "Murovani Kurylivtsi urban-type settlement". Follow-up noted: ingest КАТОТТГ category T into the gazetteer (removes the forced review on UTS places).
+- Tests: 3268 passed | 5 skipped (web) + knowledge 61 passed; tsc 0.
+
 ## 2026-06-11 (PIVOT Phase 1: 504 parallel pages + patronymic backfill + review copy + test de-PII, CODE, agent)
 - 504 FIX: vision-extract pages now run IN PARALLEL (both Core and legacy paths). Root cause from prod logs: owner hit FOUR 504s (19:45-19:52) — 2-page handwritten booklet × 16-40s/page sequential > 60s hobby-plan ceiling (Vercel plan verified hobby — maxDuration 300 impossible). Parallel wall-clock = slowest page. Quality-gate reshoot/error semantics preserved per page.
 - PATRONYMIC FIX (registry backfill in documentFieldReader): an unread field (can_read:false / omitted / empty cyrillic) vanished from the response — owner saw 5 of 6 booklet fields with no patronymic row. Every registry field now ALWAYS appears: unread → value:null + review_required + reason not_read_manual_entry. Placed BEFORE ADR-018 so fallback tagging covers backfilled rows; guarded by fields.length>0 (failed read still 0 fields). Fixes all 4 products through the single shared door. Pin test INVERTED (was asserting the drop).

@@ -12,6 +12,7 @@
  * This file is pure: no I/O, no AI calls, no OCR. It only maps data.
  * Used behind ONE_BRAIN_CORE_ENABLED=1 in vision-extract/route.ts (B2).
  */
+import { settlementDesignatorEn } from '@uscis-helper/knowledge'
 import type { ExtractedDocField } from '@/lib/docintel/types'
 import type { CanonicalField } from '../types'
 import type { FieldCandidate } from './types'
@@ -76,13 +77,27 @@ export function canonicalToFieldOut(
   f: CanonicalField,
   cyrillicMap?: Map<string, string>,
 ): FieldOut {
+  // Phase 3 (ADR-017 C3 contract): use finalValue when C3 has run.
+  // finalValue=string → C3 accepted (release). finalValue=null → C3 rejected (block).
+  // finalValue=undefined → C3 not run (flag OFF); fall back to normalizedValue for backward compat.
+  let value = f.finalValue !== undefined ? f.finalValue : (f.normalizedValue ?? f.rawValue ?? null)
+  const rawCyr = f.rawCyrillic ?? cyrillicMap?.get(f.key) ?? null
+  // SETTLEMENT DESIGNATOR re-add (hard rule: «смт» = "urban-type settlement").
+  // Extraction strips the prefix from the canonical city value; for the
+  // TRANSLATION product the document must mirror the source, so the English
+  // designator (taken ONLY from the raw Cyrillic the model read — never
+  // inferred) is appended back. Suffix form matches the existing TPS/knowledge
+  // test-locked convention. Guarded against double-append.
+  if (value && rawCyr && /city|place_of_birth/.test(f.key)) {
+    const designator = settlementDesignatorEn(rawCyr)
+    if (designator && !value.toLowerCase().includes(designator)) {
+      value = `${value} ${designator}`
+    }
+  }
   return {
     field: f.key,
-    // Phase 3 (ADR-017 C3 contract): use finalValue when C3 has run.
-    // finalValue=string → C3 accepted (release). finalValue=null → C3 rejected (block).
-    // finalValue=undefined → C3 not run (flag OFF); fall back to normalizedValue for backward compat.
-    value: f.finalValue !== undefined ? f.finalValue : (f.normalizedValue ?? f.rawValue ?? null),
-    raw_cyrillic: f.rawCyrillic ?? cyrillicMap?.get(f.key) ?? null,
+    value,
+    raw_cyrillic: rawCyr,
     confidence: f.confidence.final ?? 0,
     review_required: f.reviewRequired,
     // Surface WHY review is needed (the D5 screen explains it to the user).
