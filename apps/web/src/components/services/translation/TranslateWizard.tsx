@@ -145,7 +145,7 @@ const T = {
     s3_max_pages: 'Можно загрузить до 6 страниц.',
     s3_page_n: 'Страница',
     s3_remove_aria: 'Удалить страницу',
-    s3_rotate: 'Повернуть на 90°',
+    s3_rotate: 'Повернуть',
     s3_tip_t: 'Советы для хорошего фото:',
     s3_tip_b: 'снимайте при дневном свете, держите телефон ровно, все буквы должны быть чёткими. Книжку загружайте обеими развёрнутыми страницами или сделайте отдельные фото.',
     s3_better_scan: 'Фото получилось слишком маленьким или нечётким. Пожалуйста, переснимите при хорошем свете, держа телефон ровно, чтобы все буквы были чёткими — и попробуйте снова.',
@@ -279,7 +279,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s3_max_pages: 'Up to 6 pages.',
     s3_page_n: 'Page',
     s3_remove_aria: 'Remove page',
-    s3_rotate: 'Rotate 90°',
+    s3_rotate: 'Rotate',
     s3_tip_t: 'Tips for a good photo:',
     s3_tip_b: 'shoot in daylight, hold the phone level, every letter must be sharp. For a booklet, photograph both open pages together or upload separate photos for each side.',
     s3_better_scan: 'The photo came out too small or unclear. Please retake it in good light, holding the phone steady so every letter is sharp — then try again.',
@@ -627,12 +627,14 @@ const WIZARD_CSS = `
   background: var(--acc-l);
 }
 .tw-page-tile {
-  position: relative; border-radius: 12px; overflow: hidden;
+  border-radius: 12px; overflow: hidden;
   border: 1px solid var(--border); background: var(--card);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow); display: flex; flex-direction: column;
 }
+.tw-page-thumb { position: relative; }
 .tw-page-tile img {
-  width: 100%; height: 150px; object-fit: cover; display: block;
+  width: 100%; height: 128px; object-fit: contain; display: block;
+  background: var(--surface-2); /* clean letterbox — show the WHOLE document, not a crop */
 }
 .tw-page-no {
   position: absolute; bottom: 6px; left: 6px;
@@ -654,20 +656,24 @@ const WIZARD_CSS = `
 }
 .tw-page-remove:hover { background: rgba(0,0,0,0.78); }
 .tw-page-remove:active { background: rgba(0,0,0,0.85); transform: scale(0.92); }
-.tw-page-rotate {
-  position: absolute; top: 6px; left: 6px;
-  width: 36px; height: 36px; border-radius: 50%;
-  background: rgba(0,0,0,0.6); color: #fff;
-  border: none; cursor: pointer;
-  font-size: 19px; font-weight: 700; line-height: 1;
-  display: flex; align-items: center; justify-content: center;
-  font-family: inherit; -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.1s;
-}
-.tw-page-rotate:hover { background: rgba(0,0,0,0.78); }
-.tw-page-rotate:active { background: rgba(0,0,0,0.85); transform: scale(0.92) rotate(90deg); }
-.tw-page-rotate:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .tw-page-remove:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+/* Labeled rotate control UNDER the thumbnail — text + icon make it obvious it's
+   a "rotate the photo" action (a bare corner icon read as unclear). */
+.tw-page-rotate-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; padding: 10px 8px; border: none; border-top: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text-1);
+  font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s;
+}
+.tw-page-rotate-btn .tw-rot-ico {
+  font-size: 18px; line-height: 1; color: var(--acc); transition: transform 0.2s;
+  display: inline-block;
+}
+.tw-page-rotate-btn:hover { background: var(--acc); color: #fff; }
+.tw-page-rotate-btn:hover .tw-rot-ico { color: #fff; transform: rotate(90deg); }
+.tw-page-rotate-btn:active { background: var(--acc); }
+.tw-page-rotate-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
 
 /* Primary button — TPS navBtn(forward): green, 18px, 800 weight, 48px tap */
 .tw-btn-primary {
@@ -1708,21 +1714,24 @@ export function TranslateWizard() {
             >
               {previewUrls.map((url, i) => (
                 <div className="tw-page-tile" key={`${url.slice(0, 32)}-${i}`}>
-                  <img src={url} alt={`${t.s3_page_n} ${i + 1}`} />
-                  <div className="tw-page-no">{t.s3_page_n} {i + 1}</div>
+                  <div className="tw-page-thumb">
+                    <img src={url} alt={`${t.s3_page_n} ${i + 1}`} />
+                    <div className="tw-page-no">{t.s3_page_n} {i + 1}</div>
+                    <button
+                      type="button"
+                      className="tw-page-remove"
+                      aria-label={`${t.s3_remove_aria} ${i + 1}`}
+                      onClick={() => handleRemoveFile(i)}
+                    >×</button>
+                  </div>
                   <button
                     type="button"
-                    className="tw-page-rotate"
+                    className="tw-page-rotate-btn"
                     aria-label={`${t.s3_rotate} ${i + 1}`}
-                    title={t.s3_rotate}
                     onClick={() => handleRotateFile(i)}
-                  >↻</button>
-                  <button
-                    type="button"
-                    className="tw-page-remove"
-                    aria-label={`${t.s3_remove_aria} ${i + 1}`}
-                    onClick={() => handleRemoveFile(i)}
-                  >×</button>
+                  >
+                    <span className="tw-rot-ico" aria-hidden="true">↻</span> {t.s3_rotate}
+                  </button>
                 </div>
               ))}
             </div>
