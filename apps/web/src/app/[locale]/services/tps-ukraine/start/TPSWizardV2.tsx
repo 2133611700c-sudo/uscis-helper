@@ -27,7 +27,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
-import { downscaleImageForUpload } from '@/lib/upload/downscaleImage'
+import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
 import { resolveAllFields, type ExtractedCandidate, type SourceDoc, type SourceType } from '@/lib/tps/fieldArbiter'
 import { DOCUMENT_CONTRACTS } from '@/lib/tps/ocr/documentContracts'
@@ -2117,7 +2117,8 @@ export default function TPSWizardV2({ locale }: Props) {
       }))
       try {
         const fd = new FormData()
-        fd.append('file', await downscaleImageForUpload(file), file.name)
+        const prepared = await prepareImageForUpload(file)
+        fd.append('file', prepared.blob, prepared.name)
         fd.append('docHint', id)
         const r = await fetch('/api/tps/ocr/extract', { method: 'POST', body: fd })
         if (!r.ok) {

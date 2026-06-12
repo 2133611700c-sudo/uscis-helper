@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-12 | FEATURE (owner-requested) — FREE document auto-rotation (zero API cost), uniform across all wizards
+Owner: the system must rotate the document itself WITHOUT spending money. Built on what was ALREADY installed (inventoried deps first — `tesseract.js@7` + `sharp` were present and unused).
+- NEW `lib/upload/autoRotate.ts`: client-side **Tesseract OSD** detects the document's rotation (0/90/180/270) locally in the browser — **ZERO API cost** — and rotates the pixels upright with a canvas. Needs the legacy engine (`OEM.TESSERACT_ONLY` + `legacyCore/legacyLang`); confidence-gated (≥0.7) and timeout/fail-open (any problem → original file). **VERIFIED**: OSD detects all 4 orientations correctly in Node AND in a real browser (Playwright) — 90°→od270, 180°→od180, 270°→od90, upright→0.
+- NEW `lib/upload/prepareImageForUpload.ts`: the SINGLE helper = auto-rotate + downscale, so every product handles images identically.
+- Wired into ALL 5 client upload sites: `TranslateWizard`, `TPSWizardV2`, `ReparoleWizardV2`, `EADWizard`, TPS `DocumentUploadScreen` (replaced the bare downscale calls). Applies the owner's "everything works the same" rule.
+- The old Gemini-based `autoOrient` (AUTO_ORIENT_ENABLED) stays available but is no longer needed for the client path — the free OSD corrects orientation before upload.
+- tsc 0, build clean, 3176 tests pass.
+
 ## 2026-06-12 | BUGFIX (owner-reported) — multi-photo 413 + rotated-document errors
 Owner tested the translator: fails on 2+ photos, and makes big errors on rotated documents.
 - **MULTI-PHOTO (root cause + fix):** the client downscaled PER-FILE (3.8MB threshold), so two normal phone photos (~2.5MB each = 5MB) blew Vercel's ~4.5MB request-body cap → HTTP 413 → "could not recognize". Fix in `TranslateWizard.startProcessing`: per-file budget = `4MB / pageCount` (+ smaller maxEdge/quality for more pages) so the TOTAL upload stays under the cap. The server-side multi-page merge was already correct (arbitration combines fields across pages) — diagnosed, not the bug.

@@ -32,7 +32,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
-import { downscaleImageForUpload } from '@/lib/upload/downscaleImage'
+import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 
 // docHints covered by /api/reparole/ocr/extract (Phase 2.3: flag removed, Core unconditional)
 // US-form slots (i94, ead, dl) go to /api/tps/ocr/extract — no reparole mapping exists.
@@ -596,7 +596,8 @@ export default function ReparoleWizardV2({ locale }: Props) {
     }))
     try {
       const fd = new FormData()
-      fd.append('file', await downscaleImageForUpload(file), file.name); fd.append('docHint', id)
+      const prepared = await prepareImageForUpload(file)
+      fd.append('file', prepared.blob, prepared.name); fd.append('docHint', id)
 
       // ── Route selection (B3, Phase 2.3) ─────────────────────────────────────
       // passport/booklet → Core route; i94/ead/dl → TPS route (no mapping exists).
