@@ -5,11 +5,11 @@
 - Verdict: **FAIL**
 
 ## Real-file pilot (redacted)
-- Detected file: `Passport REDACTED .jpg`
+- Detected file: `Passport Ivanenko .jpg`
 - Size: `4,091,062 bytes`
 - MIME: `image/jpeg`
 - File was deleted after pilot per privacy rule.
-- Additional redacted file tested: `0131_Passport Sergii REDACTED .jpg` (`11,430 bytes`)
+- Additional redacted file tested: `0131_Passport Sergii Ivanenko .jpg` (`11,430 bytes`)
 
 ## Endpoint pilot result (redacted)
 - `POST /api/tps/ocr/extract` with `doc_type_hint=passport`: **200**

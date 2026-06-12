@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-11 | PII sweep Phase 3 — historical docs (A-variant)
+- docs/adr/, docs/architecture/ (3), docs/audit/ (4), docs/archive/, docs/product/, docs/translation/ — 12 файлов, A-variant (PII→synthetic).
+- docs/archive/old-messenginfo-final-state.json — 7 email instances replaced.
+- Final state: git grep returns 0 hits across ALL tracked files (excluding docs/reports/ — owner pending decision, and guards.yml detection rule).
+- NEXT: owner Phase 0 ($1 test) → signal → Phase 1 dead code removal.
+
 ## 2026-06-11 | PII sweep Phase 2 — active code: E2E, scripts, prompts, packages
 - E2E tests (5): booklet-*/translation-review-gate/verify-each-doc — hardcoded paths + names → E2E_EXPECTED_* env-vars.
 - Scripts (4): booklet-stability-test.sh, phase3-e2e-verify.mjs, vision-arbiter-proof.mjs, wizard-simulation-test.mjs — synthetic data + env-var image paths.

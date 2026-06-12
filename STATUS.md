@@ -1,5 +1,7 @@
-# STATUS (2026-06-11 — PII sweep complete, all source files clean)
-- PII SWEEP DONE: 99 файлов (78 тест + 21 production source). field-mapper.ts:177 (Gemini prompt) и ещё 20 файлов — реальные данные заменены на Іваненко/1990-01-01/FA000000. 3304 pass/tsc 0/build OK.
+# STATUS (2026-06-11 — PII sweep COMPLETE, waiting Phase 0 owner gate)
+- PII SWEEP COMPLETE (3 phases): source (99 files) + active code/scripts/prompts + historical docs (12 files). git grep = 0 hits on all tracked files except docs/reports/ (owner pending) and guards.yml (detection rule, intentional). 3304 pass/tsc 0/build OK.
+- OWNER GATE: Phase 0 ($1 test → /order/id → admin → Approve&Send → receive PDF). Signal result to unlock Phase 1.
+- PHASE 1 READY (dead code): L2 benchmark runner, anti-fab/self-consistency/smart-normalize gates, guard_block_events L1 infra, CONFIRMED_VALUE_GUARD, OCR_FIELD_SAFETY — all superseded by operator-flow. Est: 1 day agent.
 
 # STATUS (2026-06-10 — synthetic L2 fixture pack + runner smoke-test + GH-secrets doc)
 - L2 ACTIVATION-ENERGY LOWERED: 3 synthetic worked-example fixtures (examples/: passport baseline + 2 adversarial silent-substitution/cyrillic-in-output) in the EXISTING GroundTruthFixture format (independent deviation from prompt's parallel schema, reconciled via `_`-doc keys). l2RunnerSmoke.test.ts (+5) runs the REAL runner end-to-end → INSUFFICIENT_N + broken-reader false-finalization caught. docs/ops/SETUP_GITHUB_SECRETS.md (drift-guard activation). HOWTO pointer added. PII audit: 0 real (synthetic only). 3203 passed, tsc 0, guard 0. OWNER: copy the 3 shapes → ≥30 real docs/class incl ≥3 adversarial; or L1 baseline. No further agent value without owner deliverable.

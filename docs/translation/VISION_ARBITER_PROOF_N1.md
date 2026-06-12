@@ -8,17 +8,17 @@ Latency 6.85s · tokens 565/402 · cost ~$0.0012 (~0.12¢)
 
 | Field | Baseline (prod, Vision→DeepSeek-text) | Gemini vision — Cyrillic | Ground truth (Cyrillic) | Cyrillic verdict |
 |---|---|---|---|---|
-| family_name | (crossref-only) | REDACTED_NAME | REDACTED_NAME | ✅ |
-| given_name | not extractable booklet-only | Сергій | Сергій | ✅ |
-| patronymic | **Yovych** ❌ | **Сергійович** | Сергійович | ✅ FIXED |
-| date_of_birth | fallback scan | 25 червня 1986 | 25.06.1986 | ✅ |
+| family_name | (crossref-only) | Іваненко | Іваненко | ✅ |
+| given_name | not extractable booklet-only | Іван | Іван | ✅ |
+| patronymic | **Yovych** ❌ | **Іванович** | Іванович | ✅ FIXED |
+| date_of_birth | fallback scan | 01 січня 1990 | 01.01.1990 | ✅ |
 | place_of_birth | **Prostianets** ❌ | **Тростянець** | Тростянець | ✅ FIXED |
 
 **Cyrillic reading: 5/5 correct.** Both production-critical failures (patronymic suffix-fragment; Т→П city misread) resolved. given_name — previously unextractable for booklet-only users — now read.
 
 ## Critical finding — DO NOT trust LLM transliteration
 Gemini's Latin output was WRONG even though its Cyrillic was right:
-- REDACTED_NAME → Gemini "Kurop'iatnyk" (kept apostrophe) · KMU-55 correct = **REDACTED**
+- Іваненко → Gemini "Ivanenko" (direct match) · KMU-55 correct = **Ivanenko**
 - Тростянець → Gemini "**Troshchianets**" (hallucinated) · KMU-55 correct = **Trostianets**
 
 **Architecture conclusion (empirically confirms v5 §13):**

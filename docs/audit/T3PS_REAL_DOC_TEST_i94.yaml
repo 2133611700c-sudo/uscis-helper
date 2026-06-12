@@ -2,7 +2,7 @@ test: T3PS_REAL_DOC_TEST_i94
 date: 2026-05-20
 sha_pre_fix: dfa5bc0
 sha_post_fix: c4c8cea
-file_under_test: qa-shots/private/I94 Sergii REDACTED .jpg
+file_under_test: qa-shots/private/I94 Sergii Ivanenko .jpg
 file_shape: { width_px: 1439, height_px: 1853, mime: image/jpeg, bytes: 463449 }
 hint_used: i94
 
