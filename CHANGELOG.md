@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-12 | BUGFIX (owner-reported) — multi-photo 413 + rotated-document errors
+Owner tested the translator: fails on 2+ photos, and makes big errors on rotated documents.
+- **MULTI-PHOTO (root cause + fix):** the client downscaled PER-FILE (3.8MB threshold), so two normal phone photos (~2.5MB each = 5MB) blew Vercel's ~4.5MB request-body cap → HTTP 413 → "could not recognize". Fix in `TranslateWizard.startProcessing`: per-file budget = `4MB / pageCount` (+ smaller maxEdge/quality for more pages) so the TOTAL upload stays under the cap. The server-side multi-page merge was already correct (arbitration combines fields across pages) — diagnosed, not the bug.
+- **ROTATION (mitigations shipped):** the translation path doesn't correct orientation and `AUTO_ORIENT_ENABLED` is OFF in prod. (a) Gemini prompt now instructs "the photo may be rotated 0/90/180/270 — mentally rotate and read"; (b) legacy `readDocument` timeout 15→25s so the primary model finishes instead of always falling to the flash fallback (which flagged every field for review). The FULL content-rotation fix is enabling `AUTO_ORIENT_ENABLED=1` (built, fail-open, tested — env flip + ~latency, owner decision).
+- tsc 0, build clean, 3176 tests pass.
+
 ## 2026-06-12 | Survival 3A — EAD form-label associations (a11y)
 - `EADWizard` personal-info step: added `htmlFor`/`id` to 7 fields (lastName, firstName, middleName, dob, countryOfBirth, alienNumber, usAddress) — labels were siblings of inputs with no programmatic association, so screen readers didn't announce the field name. tsc 0, build clean, 3176 tests pass.
 

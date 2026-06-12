@@ -106,7 +106,9 @@ describe('TranslateWizard — large photos are downscaled before vision-extract'
   })
 
   it('applies the downscale in the vision-extract upload loop (not raw files)', () => {
-    expect(src).toMatch(/await downscaleImageForUpload\(f\)/)
+    // Called with a per-file budget so multi-photo uploads stay under the body cap.
+    expect(src).toMatch(/await downscaleImageForUpload\(f,\s*\{/)
     expect(src).toMatch(/form\.append\('file', blob, f\.name\)/)
+    expect(src).toMatch(/perFileBudget/)
   })
 })
