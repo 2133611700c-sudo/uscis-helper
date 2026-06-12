@@ -1,10 +1,10 @@
 #!/bin/bash
 # Booklet Stability Test — 10-run canonical dataset
-# Ground truth:
-#   surname = REDACTED_NAME
-#   given_name = Сергій
+# Ground truth (synthetic — replace with real values via E2E_EXPECTED_* env vars):
+#   surname = Іваненко
+#   given_name = Іван
 #   patronymic = Сергійович
-#   DOB = 25.06.1986 (1986-06-25)
+#   DOB = 01.01.1990 (1990-01-01)
 #   city = Тростянець
 #   province = Вінницька обл.
 

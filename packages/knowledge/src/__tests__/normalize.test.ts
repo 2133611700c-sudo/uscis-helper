@@ -23,35 +23,35 @@ function assert(condition: boolean, desc: string, detail?: string) {
 const ctx_uscis: NormalizationContext = {
   mode: 'uscis_normalized',
   controlling_spellings: [
-    { field: 'surname', latin_value: 'REDACTED', source: 'drivers_license' },
-    { field: 'given_name', latin_value: 'SERHII', source: 'drivers_license' },
+    { field: 'surname', latin_value: 'IVANENKO', source: 'drivers_license' },
+    { field: 'given_name', latin_value: 'IVAN', source: 'drivers_license' },
   ],
 };
 
-const surname = normalizeName("REDACTED_NAME", 'surname', 'internal_passport', ctx_uscis);
-assert(surname.normalized_value === 'REDACTED',
+const surname = normalizeName("Іваненко", 'surname', 'internal_passport', ctx_uscis);
+assert(surname.normalized_value === 'IVANENKO',
   'Controlling spelling wins for surname',
   `Got: ${surname.normalized_value}`);
 assert(surname.rule_applied.includes('controlling_spelling'),
   'Rule shows controlling_spelling source');
 
-const givenName = normalizeName('Сергій', 'given_name', 'internal_passport', ctx_uscis);
-assert(givenName.normalized_value === 'SERHII',
+const givenName = normalizeName('Іван', 'given_name', 'internal_passport', ctx_uscis);
+assert(givenName.normalized_value === 'IVAN',
   'Controlling spelling wins for given name',
   `Got: ${givenName.normalized_value}`);
 
 // ── PATRONYMIC: KMU-55 (no controlling), NEVER MIDDLE NAME ──
 
-const patronymic = normalizeName('Сергійович', 'patronymic', 'internal_passport',
+const patronymic = normalizeName('Петрович', 'patronymic', 'internal_passport',
   { mode: 'uscis_normalized' });
-assert(patronymic.normalized_value === 'Serhiiovych',
+assert(patronymic.normalized_value === 'Petrovych',
   'Patronymic transliterates via KMU-55',
   `Got: ${patronymic.normalized_value}`);
 assert(patronymic.field === 'patronymic',
   'Field is "patronymic" not "middle_name"');
 
 // Validate blocklist catches "Middle Name" if somehow injected
-const fakeMiddle = { ...patronymic, normalized_value: 'Middle Name: Serhiiovych' };
+const fakeMiddle = { ...patronymic, normalized_value: 'Middle Name: Petrovych' };
 const validated = validateOutput(fakeMiddle);
 assert(validated.review_required === true,
   'Blocklist catches "Middle Name" in patronymic output');
@@ -160,8 +160,8 @@ assert(vinnica_conflict.controlling_spelling_conflict === true,
 
 // ── DATES ────────────────────────────────────────────────
 
-const date1 = normalizeDate('25 червня 1986 року', 'date_of_birth', 'passport');
-assert(date1.normalized_value === '06/25/1986',
+const date1 = normalizeDate('01 січня 1990 року', 'date_of_birth', 'passport');
+assert(date1.normalized_value === '01/01/1990',
   'Ukrainian date → USCIS format',
   `Got: ${date1.normalized_value}`);
 

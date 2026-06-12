@@ -25,23 +25,20 @@ const GV_KEY = eg('GOOGLE_CLOUD_VISION_API_KEY') || eg('GOOGLE_VISION_API_KEY')
 const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.5-flash', 'gemini-3.1-pro-preview']
 const FIX = resolve(REPO, 'test-fixtures/real-docs')
 
-// ── docs: fields to read + hand-verified ground truth (normalized at compare) ──
+// Ground truth lives in test-fixtures/real-docs/bench-truth.json (gitignored).
+// Copy from ground-truth/ JSON files or ask the owner. Never commit truth inline.
+const BENCH_TRUTH_FILE = resolve(FIX, 'bench-truth.json')
+if (!existsSync(BENCH_TRUTH_FILE)) {
+  console.error('[bench] bench-truth.json not found at', BENCH_TRUTH_FILE)
+  console.error('[bench] Create it from test-fixtures/real-docs/ground-truth/ — see that directory for field names.')
+  process.exit(1)
+}
+const benchTruth = JSON.parse(readFileSync(BENCH_TRUTH_FILE, 'utf8'))
+
 const DOCS = [
-  {
-    file: 'internal_passport_redacted.jpg', label: 'PASSPORT (printed + MRZ)',
-    fields: ['surname', 'given_name', 'date_of_birth', 'passport_no', 'birth_place'],
-    truth: { surname: "REDACTED_NAME", given_name: 'Сергій', date_of_birth: '1986-06-25', passport_no: 'FU262473', birth_place: 'Вінницька' },
-  },
-  {
-    file: 'birth_cert_soviet_redacted.jpg', label: 'BIRTH CERT (handwritten, UkrSSR 1986)',
-    fields: ['surname', 'given_name', 'patronymic', 'date_of_birth', 'birth_settlement', 'birth_oblast', 'father_full_name', 'mother_full_name', 'certificate_number'],
-    truth: { surname: 'REDACTED_NAME', given_name: 'Сергей', patronymic: 'Сергеевич', date_of_birth: '1986-06-25', birth_settlement: 'Тростянец', birth_oblast: 'Винницкая', father_full_name: 'REDACTED_NAME Сергей Леонидович', mother_full_name: 'REDACTED_NAME Наталья Степановна', certificate_number: 'III-АМ 428069' },
-  },
-  {
-    file: 'military_id_p1_redacted.jpg', label: 'MILITARY ID (printed + handwritten)',
-    fields: ['surname', 'given_name', 'patronymic', 'date_of_birth', 'birth_settlement', 'birth_oblast', 'series_number', 'issue_date'],
-    truth: { surname: "REDACTED_NAME", given_name: 'Сергій', patronymic: 'Сергійович', date_of_birth: '1986-06-25', birth_settlement: 'Тростянець', birth_oblast: 'Вінницька', series_number: 'СО 845621', issue_date: '2016-12-22' },
-  },
+  { file: benchTruth.passport.file, label: benchTruth.passport.label, fields: benchTruth.passport.fields, truth: benchTruth.passport.truth },
+  { file: benchTruth.birth_cert.file, label: benchTruth.birth_cert.label, fields: benchTruth.birth_cert.fields, truth: benchTruth.birth_cert.truth },
+  { file: benchTruth.military_id.file, label: benchTruth.military_id.label, fields: benchTruth.military_id.fields, truth: benchTruth.military_id.truth },
 ]
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

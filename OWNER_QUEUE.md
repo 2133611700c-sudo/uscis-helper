@@ -189,7 +189,7 @@ gate = PREPARE_CANARY only (no prod enable without owner approval + rollback).
    `ANTI_FABRICATION_GATE_ENABLED` (+ optional `SELF_CONSISTENCY_GATE_ENABLED`) — mode C drove
    false_negative_review to 0 in all cells — but enabling it is an owner decision and still wants more GT.
    See `SMART_NORMALIZE_DECISION.md`.
-4. Later: PII history sweep before sharing the repo externally (surname/`FU262473`/DOB pervasive in main
+4. Later: PII history sweep before sharing the repo externally (surname/`FA000000`/DOB pervasive in main
    history — Session-54 debt; not a blocker for internal work).
 
 **Agent can do autonomously (not owner-gated):** verify the `[document_class_metric]` line via Vercel
@@ -238,7 +238,7 @@ P2 OFF-vs-ON delta is measured afterward.
 ## 2026-06-05 — PII DECISION: INTERNAL-ONLY FOREVER (CLOSED)
 
 **Decision:** Repository is PRIVATE (verified `isPrivate: true`). It will NOT be shared externally.
-PII in git history (surname, FU262473, DOB, 51 USCIS packets) = accepted risk for internal-only repo.
+PII in git history (surname, FA000000, DOB, 51 USCIS packets) = accepted risk for internal-only repo.
 `docs/reports/evidence/` already gitignored — no new leaks forward.
 Phase A/B from PII_HISTORY_REWRITE_RUNBOOK.md = NOT NEEDED unless repo goes external (re-open then).
 **This topic is CLOSED. Do not re-raise.**

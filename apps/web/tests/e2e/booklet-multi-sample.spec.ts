@@ -30,8 +30,8 @@ const PRIVATE_DIR = path.join(REPO_ROOT, 'qa-shots', 'private')
 // fields (given_name/passport_number from passport MRZ, last_entry_date from I-94).
 // The translation output is still booklet-specific; these only satisfy gate eligibility
 // and give the CB a complete dataset so it completes within the test timeout.
-const PASSPORT_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/Passport Sergii REDACTED .jpg')
-const I94_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/I94 Sergii REDACTED .jpg')
+const PASSPORT_IMAGE = path.join(REPO_ROOT, process.env.E2E_PASSPORT_IMAGE ?? 'qa-shots/private/passport_test.jpg')
+const I94_IMAGE = path.join(REPO_ROOT, process.env.E2E_I94_IMAGE ?? 'qa-shots/private/i94_test.jpg')
 
 // Documents to test — IDs used in artifact filenames (NOT the original filenames).
 //

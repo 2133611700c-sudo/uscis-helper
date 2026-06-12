@@ -16,10 +16,10 @@ Pre-processing (deglare, sharpen, contrast) would improve everything.
 
 | Processor | Surname | Patronymic | City | Province | DOB |
 |-----------|---------|-----------|------|----------|-----|
-| OCR_PROCESSOR (standard) | REDACTED_NAME (wrong) | Cepriziobur (garbage) | Тростянець ✅ | Вінницької області ✅ | ✅ |
+| OCR_PROCESSOR (standard) | Іванеко (wrong) | Cepriziobur (garbage) | Тростянець ✅ | Вінницької області ✅ | ✅ |
 | FORM_PARSER | cupon'smuuc (WORSE) | Cepritrobur (garbage) | Простянець (WRONG) | Binuuyської (WRONG) | GARBLED |
-| Google Vision | REDACTED_NAME (closer) | Cepriticbur (garbage) | Тростянець ✅ | Вінницької област ✅ | ✅ |
-| Dual OCR + DeepSeek | **REDACTED_NAME** ✅ | Сергійович (inferred⚠️) | Тростянець ✅ | Вінницька ✅ | ✅ |
+| Google Vision | Іваненко (closer) | Cepriticbur (garbage) | Тростянець ✅ | Вінницької област ✅ | ✅ |
+| Dual OCR + DeepSeek | **Іваненко** ✅ | Сергійович (inferred⚠️) | Тростянець ✅ | Вінницька ✅ | ✅ |
 
 ## VERDICT
 1. Form Parser: REJECTED — worse results, 0 form fields detected
