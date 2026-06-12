@@ -4,7 +4,7 @@
  * Proves the Central Brain → translation pipeline:
  *   merged (already-normalized English) → passportBooklet template → HTML draft
  *
- * These tests use the canonical Kuropiatnyk fixture identity.
+ * These tests use the canonical Ivanenko fixture identity.
  * No PII beyond what is already in existing test fixtures.
  */
 
@@ -31,11 +31,11 @@ function mergedField(field: string, value: string): MergedField {
 }
 
 const KURO_MERGED: Record<string, MergedField> = {
-  family_name:          mergedField('family_name',          'Kuropiatnyk'),
-  given_name:           mergedField('given_name',           'Serhii'),
-  middle_name:          mergedField('middle_name',          'Serhiiovych'),
-  dob:                  mergedField('dob',                  '1986-06-25'),
-  city_of_birth:        mergedField('city_of_birth',        'Trostianets'),
+  family_name:          mergedField('family_name',          'Ivanenko'),
+  given_name:           mergedField('given_name',           'Ivan'),
+  middle_name:          mergedField('middle_name',          'Petrovych'),
+  dob:                  mergedField('dob',                  '1990-01-01'),
+  city_of_birth:        mergedField('city_of_birth',        'Vinnytsia'),
   province_of_birth:    mergedField('province_of_birth',    'Vinnytsia Oblast'),
   passport_number:      mergedField('passport_number',      'FU 262473'),
   sex:                  mergedField('sex',                  'M'),
@@ -44,7 +44,7 @@ const KURO_MERGED: Record<string, MergedField> = {
 }
 
 const SIGNER_OPTS = {
-  signerName: 'Serhii Kuropiatnyk',
+  signerName: 'Ivan Ivanenko',
   signerAddress: '4341 Willow Brook Ave 111, Los Angeles, CA 90029',
 }
 
@@ -58,31 +58,31 @@ describe('translateBookletFromBrain', () => {
 
   it('translation_html contains surname', () => {
     const result = translateBookletFromBrain(KURO_MERGED, SIGNER_OPTS)!
-    expect(result.translation_html).toContain('Kuropiatnyk')
+    expect(result.translation_html).toContain('Ivanenko')
   })
 
   it('translation_html contains given name', () => {
     const result = translateBookletFromBrain(KURO_MERGED, SIGNER_OPTS)!
-    expect(result.translation_html).toContain('Serhii')
+    expect(result.translation_html).toContain('Ivan')
   })
 
   it('translation_html contains patronymic (not "Middle Name")', () => {
     const result = translateBookletFromBrain(KURO_MERGED, SIGNER_OPTS)!
-    expect(result.translation_html).toContain('Serhiiovych')
+    expect(result.translation_html).toContain('Petrovych')
     expect(result.translation_html).toContain('Patronymic')
     expect(result.translation_html).not.toContain('Middle Name')
   })
 
   it('translation_html contains DOB in human-readable format (Month DD, YYYY)', () => {
     const result = translateBookletFromBrain(KURO_MERGED, SIGNER_OPTS)!
-    // ISO "1986-06-25" must be converted to "June 25, 1986" for USCIS translation
-    expect(result.translation_html).toContain('June 25, 1986')
-    expect(result.translation_html).not.toContain('1986-06-25')
+    // ISO "1990-01-01" must be converted to "January 1, 1990" for USCIS translation
+    expect(result.translation_html).toContain('January 1, 1990')
+    expect(result.translation_html).not.toContain('1990-01-01')
   })
 
   it('translation_html contains combined place of birth (city + oblast + Ukraine)', () => {
     const result = translateBookletFromBrain(KURO_MERGED, SIGNER_OPTS)!
-    expect(result.translation_html).toContain('Trostianets')
+    expect(result.translation_html).toContain('Vinnytsia')
     expect(result.translation_html).toContain('Vinnytsia Oblast')
     expect(result.translation_html).toContain('Ukraine')
   })
@@ -109,7 +109,7 @@ describe('translateBookletFromBrain', () => {
 
   it('certification_html contains signer name', () => {
     const result = translateBookletFromBrain(KURO_MERGED, SIGNER_OPTS)!
-    expect(result.certification_html).toContain('Serhii Kuropiatnyk')
+    expect(result.certification_html).toContain('Ivan Ivanenko')
   })
 
   it('certification_html contains signer address', () => {
@@ -142,11 +142,11 @@ describe('translateBookletFromBrain', () => {
 
   it('works with minimal data: surname only (other fields absent)', () => {
     const result = translateBookletFromBrain(
-      { family_name: mergedField('family_name', 'Kuropiatnyk') },
+      { family_name: mergedField('family_name', 'Ivanenko') },
       SIGNER_OPTS,
     )
     expect(result).not.toBeNull()
-    expect(result!.translation_html).toContain('Kuropiatnyk')
+    expect(result!.translation_html).toContain('Ivanenko')
   })
 
   it('omits document_type from output if value is empty (field-filter works)', () => {
@@ -157,7 +157,7 @@ describe('translateBookletFromBrain', () => {
 
   it('place_of_birth falls back to Ukraine only when city+province absent', () => {
     const merged = {
-      family_name: mergedField('family_name', 'Kuropiatnyk'),
+      family_name: mergedField('family_name', 'Ivanenko'),
     }
     const result = translateBookletFromBrain(merged, SIGNER_OPTS)!
     // place_of_birth = ', , Ukraine' trimmed to 'Ukraine'

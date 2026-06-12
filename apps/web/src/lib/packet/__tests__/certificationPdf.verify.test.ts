@@ -39,10 +39,10 @@ describe('certification PDF — zero-trust output', () => {
   beforeAll(async () => {
     buf = await generateTranslationPDF({
       scopeTitle: 'Birth Certificate', documentType: 'birth',
-      fields: [ef('surname', 'KUROPIATNYK')], sourceTraces: [],
+      fields: [ef('surname', 'IVANENKO')], sourceTraces: [],
       certificationRecord: {
-        signer_full_name: 'Serhii Kuropiatnyk', address: '1213 Gordon St, Los Angeles, CA 90038',
-        language_pair_confirmed: true, statement: '', signature_typed_name: 'Serhii Kuropiatnyk',
+        signer_full_name: 'Ivan Ivanenko', address: '1213 Gordon St, Los Angeles, CA 90038',
+        language_pair_confirmed: true, statement: '', signature_typed_name: 'Ivan Ivanenko',
         signed_at: '2026-05-30T00:00:00Z', certification_version: 'self_cert_8cfr_v1',
       },
       sessionId: 'verify', signatureDataUrl: PNG,
@@ -55,7 +55,7 @@ describe('certification PDF — zero-trust output', () => {
     expect(text.toLowerCase()).toContain('accurate and complete')
   })
   it('contains Name, Address and Date', () => {
-    expect(text).toContain('Serhii Kuropiatnyk')
+    expect(text).toContain('Ivan Ivanenko')
     expect(text).toContain('1213 Gordon St')
     expect(text).toMatch(/202[0-9]/) // a date year
   })

@@ -289,8 +289,8 @@ describe('Patronymic field — NOT labeled as Middle Name', () => {
 })
 
 describe('Name safety — analyseNameField does NOT silently transliterate', () => {
-  it('Cyrillic СЕРГІЙ stays Cyrillic after analysis (no silent Sergiy/Serhii)', () => {
-    const result = analyseNameField('СЕРГІЙ')
+  it('Cyrillic ІВАН stays Cyrillic after analysis (no silent Sergiy/Ivan)', () => {
+    const result = analyseNameField('ІВАН')
     // nameNormalizer does title-casing only, never Cyrillic→Latin transliteration
     expect(result.normalized).toMatch(/[А-ЯЄІЇҐа-яєіїґ]/)  // still contains Cyrillic
     expect(result.normalized).not.toMatch(/^[A-Za-z]+$/)     // is NOT pure Latin
@@ -320,7 +320,7 @@ describe('Name safety — analyseNameField does NOT silently transliterate', () 
     const result = analyseNameField('Olena')
     expect(result.normalized).toBe('Olena')   // title-case preserves the spelling
     expect(result.normalized).not.toBe('Sergiy')
-    expect(result.normalized).not.toBe('Sergii')
+    expect(result.normalized).not.toBe('Ivan')
   })
 
   it('analyseNameField Dmytro-Ivan hyphen → both parts title-cased, not rewritten', () => {

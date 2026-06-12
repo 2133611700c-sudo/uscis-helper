@@ -111,7 +111,7 @@ export function isCyrillicValue(text: string): boolean {
 
 /**
  * Strip common inline label prefixes from a tail string.
- * e.g. "/ Прізвищ" → "" (stripped), "Куроп'ятник" → "Куроп'ятник" (unchanged)
+ * e.g. "/ Прізвищ" → "" (stripped), "Іваненко" → "Іваненко" (unchanged)
  */
 function stripInlineLabelTail(tail: string): string {
   // Remove leading punctuation/slashes
@@ -154,7 +154,7 @@ export function extractValueAfterLabel(
     for (const pattern of labelPatterns) {
       if (!pattern.test(line)) continue
 
-      // ── 1. Inline tail: "Прізвище: Куроп'ятник" ──────────────────────────
+      // ── 1. Inline tail: "Прізвище: Іваненко" ──────────────────────────────
       if (allowInline) {
         const rawTail = line.replace(pattern, '').replace(/^[\s:\-—.\/|,;]+/, '').trim()
         const tail = stripInlineLabelTail(rawTail)

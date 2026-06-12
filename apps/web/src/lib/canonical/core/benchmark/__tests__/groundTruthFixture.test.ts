@@ -58,7 +58,7 @@ describe('scoreFixture — false-finalization is zero-tolerance', () => {
       { key: 'child_family_name', value: 'Ivanenko' },
       { key: 'child_given_name', value: 'Ivan' },
       { key: 'dob', value: '1990-05-14' },
-      { key: 'child_patronymic', value: 'Serhiiovych' }, // WRONG: should have stayed null/review
+      { key: 'child_patronymic', value: 'Petrovych' }, // WRONG: should have stayed null/review
     ]
     expect(scoreFixture(f, produced).critical_wrong_count).toBeGreaterThanOrEqual(1)
   })

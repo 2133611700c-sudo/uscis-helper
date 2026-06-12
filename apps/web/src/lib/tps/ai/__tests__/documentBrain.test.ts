@@ -345,28 +345,28 @@ describe('validateBrainField — deterministic rules', () => {
     expect(f.final_value).toBe('07/13/1985')
   })
 
-  it('accepts DOB "25 червня 1986 року" (Ukrainian full month + optional year word)', () => {
-    const f = baseField('25 червня 1986 року')
+  it('accepts DOB "01 січня 1990 року" (Ukrainian full month + optional year word)', () => {
+    const f = baseField('01 січня 1990 року')
     const res = validateBrainField('dob', f)
     expect(res.ok).toBe(true)
-    expect(f.final_value).toBe('06/25/1986')
+    expect(f.final_value).toBe('01/01/1990')
   })
 
-  it('accepts DOB "25 червня 1986" (Ukrainian full month without year word)', () => {
-    const f = baseField('25 червня 1986')
+  it('accepts DOB "01 січня 1990" (Ukrainian full month without year word)', () => {
+    const f = baseField('01 січня 1990')
     const res = validateBrainField('dob', f)
     expect(res.ok).toBe(true)
-    expect(f.final_value).toBe('06/25/1986')
+    expect(f.final_value).toBe('01/01/1990')
   })
 
   it('rejects DOB with invalid Ukrainian month word', () => {
-    const f = baseField('25 червеня 1986 року')
+    const f = baseField('01 січеня 1990 року')
     const res = validateBrainField('dob', f)
     expect(res.ok).toBe(false)
   })
 
   it('rejects out-of-range day for Ukrainian textual DOB', () => {
-    const f = baseField('32 червня 1986 року')
+    const f = baseField('32 січня 1990 року')
     const res = validateBrainField('dob', f)
     expect(res.ok).toBe(false)
   })

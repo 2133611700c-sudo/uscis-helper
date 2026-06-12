@@ -347,15 +347,15 @@ describe('validateForbiddenMislabels', () => {
 // ── 11. normalizeBirthCertDate ────────────────────────────────────────────────
 
 describe('normalizeBirthCertDate — date normalization', () => {
-  it('normalizes Ukrainian date: 25 червня 1986 → 25 June 1986', () => {
-    const result = normalizeBirthCertDate('25 червня 1986')
-    expect(result.normalized).toBe('25 June 1986')
+  it('normalizes Ukrainian date: 01 січня 1990 → 01 January 1990', () => {
+    const result = normalizeBirthCertDate('01 січня 1990')
+    expect(result.normalized).toBe('01 January 1990')
     expect(result.review_required).toBe(false)
   })
 
-  it('normalizes Russian date with review_required: 25 июня 1986 → 25 June 1986 + review', () => {
-    const result = normalizeBirthCertDate('25 июня 1986')
-    expect(result.normalized).toBe('25 June 1986')
+  it('normalizes Russian date with review_required: 01 января 1990 → 01 January 1990 + review', () => {
+    const result = normalizeBirthCertDate('01 января 1990')
+    expect(result.normalized).toBe('01 January 1990')
     expect(result.review_required).toBe(true)
     expect(result.reason).toBe('russian_month_fallback')
     expect(result.used_fallback_language).toBe('russian')

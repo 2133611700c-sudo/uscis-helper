@@ -33,7 +33,7 @@ describe('knowledgeBrain.buildKnowledgeContext — central derivation, no route 
 describe('knowledgeBrain OFF — byte-identical to bare arbitration', () => {
   it('flag absent ⇒ applyKnowledgeBrainIfEnabled === arbitrateDocument(candidates)', () => {
     expect(isKnowledgeBrainEnabled()).toBe(false)
-    const cands = [c({ key: 'given_name', value: 'Сергей' }), c({ key: 'place_of_birth_city', value: 'Простянець' })]
+    const cands = [c({ key: 'given_name', value: 'Андрей' }), c({ key: 'place_of_birth_city', value: 'Простянець' })]
     const ctx = buildKnowledgeContext({ docTypeId: 'ua_birth_certificate', product: 'translation' })
     const viaHelper = applyKnowledgeBrainIfEnabled(cands, ctx)
     const bare = arbitrateDocument(cands)
@@ -46,10 +46,10 @@ describe('knowledgeBrain ON — D2 authority applied, conflict never silent', ()
     vi.stubEnv('KNOWLEDGE_BRAIN_ENABLED', '1')
     expect(isKnowledgeBrainEnabled()).toBe(true)
     const out = applyKnowledgeBrainIfEnabled(
-      [c({ key: 'given_name', value: 'Сергей' })],
+      [c({ key: 'given_name', value: 'Андрей' })],
       buildKnowledgeContext({ docTypeId: 'ua_birth_certificate', product: 'translation' }),
     )
-    expect(out[0].normalizedValue).toBe('Сергей')      // NOT silently rewritten
+    expect(out[0].normalizedValue).toBe('Андрей')      // NOT silently rewritten
     expect(out[0].reviewRequired).toBe(true)
     expect(out[0].suggestedValue).toBeTruthy()
     expect(out[0].knowledgeProvenance).toBeTruthy()    // provenance recorded
@@ -58,7 +58,7 @@ describe('knowledgeBrain ON — D2 authority applied, conflict never silent', ()
   it('clean UA spelling → accepted transliteration as final', () => {
     vi.stubEnv('KNOWLEDGE_BRAIN_ENABLED', '1')
     const out = applyKnowledgeBrainIfEnabled(
-      [c({ key: 'given_name', value: 'Сергій' })],
+      [c({ key: 'given_name', value: 'Іван' })],
       buildKnowledgeContext({ docTypeId: 'ua_birth_certificate', product: 'translation' }),
     )
     expect(out[0].normalizedValue).not.toMatch(/[Ѐ-ӿ]/)

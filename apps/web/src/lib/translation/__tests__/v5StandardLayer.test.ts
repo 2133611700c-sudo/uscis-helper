@@ -309,13 +309,13 @@ describe('validatePaymentGate', () => {
 describe('gateCertificationRecord', () => {
   function mkCert(over: Partial<CertificationRecord> = {}): CertificationRecord {
     return {
-      signer_full_name: 'Sergii Test',
+      signer_full_name: 'Ivan Test',
       language_pair_confirmed: true,
       // The underlying validator requires the statement to reference 8 CFR §103.2(b)(3).
       statement:
         'I certify that I am competent to translate. Pursuant to 8 CFR §103.2(b)(3).',
       // signature_typed_name MUST equal signer_full_name (case-insensitively).
-      signature_typed_name: 'Sergii Test',
+      signature_typed_name: 'Ivan Test',
       signed_at: '2026-05-09T00:00:00Z',
       certification_version: CERTIFICATION_VERSION,
       ...over,
@@ -479,7 +479,7 @@ describe('renderPassportBooklet', () => {
         mkRenderField('date_of_birth', '12 May 1990'),
       ],
       translation_date: '12 May 2026',
-      signer_full_name: 'Sergii Test',
+      signer_full_name: 'Ivan Test',
       signer_address: '123 Main St, San Francisco CA',
       source_language: 'Ukrainian/Russian',
     })

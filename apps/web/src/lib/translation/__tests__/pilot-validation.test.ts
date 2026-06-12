@@ -251,7 +251,7 @@ describe('Phase 2 — isLikelyCyrillicLookalike', () => {
   })
 
   it('returns false for Latin non-lookalike letters', () => {
-    // 'Serhii' — S is not a Cyrillic lookalike, r is not
+    // 'Ivan' — S is not a Cyrillic lookalike, r is not
     expect(isLikelyCyrillicLookalike('Olena')).toBe(false)
   })
 

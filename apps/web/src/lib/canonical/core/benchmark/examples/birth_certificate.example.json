@@ -5,10 +5,10 @@
   "fields": [
     { "field": "child_family_name", "expected": "Ivanenko", "critical": true },
     { "field": "child_given_name", "expected": "Ivan", "critical": true },
-    { "field": "child_patronymic", "expected": "Serhiiovych", "critical": true },
+    { "field": "child_patronymic", "expected": "Petrovych", "critical": true },
     { "field": "dob", "expected": "1990-05-14", "critical": true },
     { "field": "place_of_birth_city", "expected": "Vinnytsia", "critical": true },
-    { "field": "father_full_name", "expected": "Serhii Ivanenko", "critical": true },
+    { "field": "father_full_name", "expected": "Ivan Ivanenko", "critical": true },
     { "field": "mother_full_name", "expected": "Olena Ivanenko", "critical": true },
     { "field": "act_record_number", "expected": "123", "critical": true },
     { "field": "issuing_authority", "expected": null, "critical": true }

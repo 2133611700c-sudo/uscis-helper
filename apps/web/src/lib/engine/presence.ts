@@ -17,7 +17,7 @@ import type { ProseTranslator } from './translator'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
 
 /** Normalize to space-separated words (preserves word boundaries for presence).
- *  Apostrophes are REMOVED (join), so Ukrainian "Куроп'ятник" stays ONE word. */
+ *  Apostrophes are REMOVED (join), so Ukrainian "Д'яченко" stays ONE word. */
 const normWords = (s: string) => (s ?? '').toLocaleLowerCase('uk')
   .replace(/['ʼ`‘’]/g, '')
   .replace(/[^a-zа-яіїєґ0-9]+/giu, ' ').trim()

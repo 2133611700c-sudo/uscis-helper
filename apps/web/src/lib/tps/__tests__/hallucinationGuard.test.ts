@@ -37,7 +37,7 @@ describe('hallucinationGuard.detectGarbageString', () => {
   })
 
   it('passes a known-good Latin name', () => {
-    const r = detectGarbageString('family_name', 'Kuropiatnyk')
+    const r = detectGarbageString('family_name', 'Ivanenko')
     expect(r.risk).toBe('none')
     expect(r.should_block).toBe(false)
   })
@@ -86,7 +86,7 @@ describe('hallucinationGuard.checkGeography', () => {
   })
 
   it('passes a clean city name', () => {
-    const r = checkGeography('city_of_birth', 'Trostianets')
+    const r = checkGeography('city_of_birth', 'Vinnytsia')
     expect(r.should_block).toBe(false)
     expect(r.risk).toBe('none')
   })
@@ -106,7 +106,7 @@ describe('hallucinationGuard.crossDocumentConflict', () => {
   })
 
   it('returns risk=high for large distance (real conflict)', () => {
-    const r = crossDocumentConflict('given_name', 'Sergii', 'Saghi')
+    const r = crossDocumentConflict('given_name', 'Ivan', 'Saghi')
     expect(r.risk).toBe('high')
     expect(r.should_block).toBe(true)
   })
@@ -114,7 +114,7 @@ describe('hallucinationGuard.crossDocumentConflict', () => {
 
 describe('hallucinationGuard.guardField', () => {
   it('passes a clean name field', () => {
-    const r = guardField(sf('family_name', 'Kuropiatnyk'))
+    const r = guardField(sf('family_name', 'Ivanenko'))
     expect(r.should_block).toBe(false)
     expect(r.risk).toBe('none')
   })
@@ -125,7 +125,7 @@ describe('hallucinationGuard.guardField', () => {
   })
 
   it('blocks city with oblast descriptor', () => {
-    const r = guardField({ ...sf('city_of_birth', 'Trostianets Oblast'), slot: 'booklet' })
+    const r = guardField({ ...sf('city_of_birth', 'Vinnytsia Oblast'), slot: 'booklet' })
     expect(r.should_block).toBe(true)
   })
 })

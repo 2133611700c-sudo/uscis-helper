@@ -16,7 +16,7 @@ function c(p: Partial<FieldCandidate> & { key: string; value: string }): FieldCa
 
 describe('knowledgeNormalize — D2 decision contract (provenance + action, no silent override)', () => {
   it('Russian spelling on a UA doc → REVIEW with candidate, NOT a silent final', () => {
-    const d = normalizeCanonicalValue('given_name', 'Сергей', { ukrainianDoc: true })
+    const d = normalizeCanonicalValue('given_name', 'Андрей', { ukrainianDoc: true })
     expect(d.action).toBe('review')
     expect(d.finalValue).toBeNull()              // never finalize a suspected misread
     expect(d.candidateValue).toBeTruthy()        // offer the transliteration for a human
@@ -24,7 +24,7 @@ describe('knowledgeNormalize — D2 decision contract (provenance + action, no s
   })
 
   it('clean Ukrainian spelling → ACCEPT (KMU-55), transliterated final', () => {
-    const d = normalizeCanonicalValue('given_name', 'Сергій', { ukrainianDoc: true })
+    const d = normalizeCanonicalValue('given_name', 'Іван', { ukrainianDoc: true })
     expect(d.action).toBe('accept')
     expect(d.finalValue).toBeTruthy()
     expect(d.finalValue).not.toMatch(/[Ѐ-ӿ]/)
@@ -48,15 +48,15 @@ describe('knowledgeNormalize — D2 decision contract (provenance + action, no s
   })
 
   it('valid patronymic with sex → ACCEPT, never "Middle Name"', () => {
-    const d = normalizeCanonicalValue('patronymic', 'Сергійович', { sex: 'M' })
+    const d = normalizeCanonicalValue('patronymic', 'Петрович', { sex: 'M' })
     expect(d.action).toBe('accept')
     expect(d.finalValue).not.toMatch(/[Ѐ-ӿ]/)
   })
 
   it('controlling Latin (MRZ) name → PRESERVE, spelling kept', () => {
-    const d = normalizeCanonicalValue('family_name', 'KUROPIATNYK')
+    const d = normalizeCanonicalValue('family_name', 'IVANENKO')
     expect(d.action).toBe('preserve')
-    expect(d.finalValue).toBe('Kuropiatnyk')
+    expect(d.finalValue).toBe('Ivanenko')
   })
 
   it('known authority Міліція → ACCEPT Militsiya (never Police)', () => {
@@ -75,17 +75,17 @@ describe('knowledgeNormalize — D2 decision contract (provenance + action, no s
 
 describe('arbitrateDocument — knowledge OFF = identical, ON = conflict→review (no silent rewrite)', () => {
   it('no knowledge ctx → byte-identical (value untouched)', () => {
-    const fields = arbitrateDocument([c({ key: 'given_name', value: 'Сергей' })])
-    expect(fields[0].normalizedValue).toBe('Сергей')
+    const fields = arbitrateDocument([c({ key: 'given_name', value: 'Андрей' })])
+    expect(fields[0].normalizedValue).toBe('Андрей')
     expect(fields[0].reviewReasons).not.toContain('russian_spelling_suspected')
   })
 
   it('knowledge ON: Russian spelling → review + suggestedValue, read value KEPT (not silently "fixed")', () => {
     const fields = arbitrateDocument(
-      [c({ key: 'given_name', value: 'Сергей' })],
+      [c({ key: 'given_name', value: 'Андрей' })],
       { documentClass: 'birth_certificate_handwritten', ukrainianDoc: true },
     )
-    expect(fields[0].normalizedValue).toBe('Сергей')   // NOT replaced
+    expect(fields[0].normalizedValue).toBe('Андрей')   // NOT replaced
     expect(fields[0].reviewRequired).toBe(true)
     expect(fields[0].suggestedValue).toBeTruthy()      // candidate surfaced
     expect(fields[0].reviewReasons.some((r) => r.includes('russian_spelling'))).toBe(true)
@@ -93,7 +93,7 @@ describe('arbitrateDocument — knowledge OFF = identical, ON = conflict→revie
 
   it('knowledge ON: clean UA spelling → accepted transliteration as the final value', () => {
     const fields = arbitrateDocument(
-      [c({ key: 'given_name', value: 'Сергій' })],
+      [c({ key: 'given_name', value: 'Іван' })],
       { documentClass: 'birth_certificate_handwritten', ukrainianDoc: true },
     )
     expect(fields[0].normalizedValue).not.toMatch(/[Ѐ-ӿ]/) // transliterated

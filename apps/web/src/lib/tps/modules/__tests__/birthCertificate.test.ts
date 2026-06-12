@@ -15,30 +15,30 @@ import { extractBirthCertificate, runBirthCertificateModule } from '../birthCert
 
 // Typical Ukrainian birth certificate OCR text with clear structure
 const TYPICAL_BIRTH_CERT_OCR = `СВІДОЦТВО ПРО НАРОДЖЕННЯ
-Прізвище: Куроп'ятник
-Ім'я: Сергій
-По батькові: Сергійович
-Дата народження: 25 червня 1986 р.
-Місце народження: Тростянець
-Батько: Куроп'ятник Микола Іванович
-Мати: Куроп'ятник Ніна Петрівна
+Прізвище: Іваненко
+Ім'я: Іван
+По батькові: Петрович
+Дата народження: 01 січня 1990 р.
+Місце народження: Вінниця
+Батько: Іваненко Микола Іванович
+Мати: Іваненко Ніна Петрівна
 Актовий запис № 42
-Орган реєстрації: Тростянецький РАЦС
+Орган реєстрації: Вінницький РАЦС
 Дата видачі: 01 вересня 1986 р.`
 
 // OCR text with ambiguous structure — no clear "Батько"/"Мати" separator
 const AMBIGUOUS_OCR = `СВІДОЦТВО ПРО НАРОДЖЕННЯ
-Куроп'ятник
+Іваненко
 1986
-Тростянець
+Вінниця
 Вінницька
 Петренко Іван Миколайович`  // could be child or parent — ambiguous
 
 // OCR with parent name that should NOT bleed into child block
 const PARENT_CONTAMINATION_RISK_OCR = `СВІДОЦТВО ПРО НАРОДЖЕННЯ
-Прізвище: Куроп'ятник
-Ім'я: Сергій
-Дата народження: 25 червня 1986 р.
+Прізвище: Іваненко
+Ім'я: Іван
+Дата народження: 01 січня 1990 р.
 Батько: Петренко Микола
 Мати: Іваненко Ніна
 Актовий запис № 42`
@@ -99,7 +99,7 @@ describe('extractBirthCertificate — role grounding', () => {
 describe('extractBirthCertificate — parent name must not become child_family_name', () => {
   it('parent name (Петренко) does not become child_family_name', () => {
     const result = extractBirthCertificate(PARENT_CONTAMINATION_RISK_OCR)
-    // Child family name should be "Куроп'ятник", not "Петренко"
+    // Child family name should be "Іваненко", not "Петренко"
     if (result.child_family_name !== null) {
       expect(result.child_family_name).not.toBe('Петренко Микола')
       expect(result.child_family_name).not.toContain('Петренко')
@@ -149,17 +149,17 @@ describe('extractBirthCertificate — immigration fields forbidden', () => {
 describe('extractBirthCertificate — field extraction', () => {
   it('extracts child_family_name from Прізвище label', () => {
     const result = extractBirthCertificate(TYPICAL_BIRTH_CERT_OCR)
-    expect(result.child_family_name).toBe("Куроп'ятник")
+    expect(result.child_family_name).toBe("Іваненко")
   })
 
   it('extracts child_given_name from Ім\'я label', () => {
     const result = extractBirthCertificate(TYPICAL_BIRTH_CERT_OCR)
-    expect(result.child_given_name).toBe('Сергій')
+    expect(result.child_given_name).toBe('Іван')
   })
 
   it('extracts child_date_of_birth with Ukrainian month parsing', () => {
     const result = extractBirthCertificate(TYPICAL_BIRTH_CERT_OCR)
-    expect(result.child_date_of_birth).toBe('1986-06-25')
+    expect(result.child_date_of_birth).toBe('1990-01-01')
   })
 
   it('extracts father_name from Батько block', () => {
@@ -217,13 +217,13 @@ describe('extractBirthCertificate — label-as-value regression (Phase 2)', () =
   it('actual surname extracted when present on next line after label', () => {
     const r = runBirthCertificateModule(
       {
-        raw_text: "СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище\nКуроп'ятник\nім'я\nСергій\nБатько: Test\nМати: Test2",
+        raw_text: "СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище\nІваненко\nім'я\nІван\nБатько: Test\nМати: Test2",
         lines: [],
       },
       { document_id: 't' }
     )
     const fn = r.fields.find(f => f.field === 'child_family_name')
-    expect(fn?.raw_value).toBe("Куроп'ятник")
+    expect(fn?.raw_value).toBe("Іваненко")
   })
 
   it('given_name not returned as label when bilingual label line used', () => {
@@ -272,10 +272,10 @@ describe('extractBirthCertificate — label-as-value regression (Phase 2)', () =
     }
   })
 
-  it('actual value extracted when present after label (Куроп\'ятник)', () => {
-    const rawText = "СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище\nКуроп'ятник\nім'я\nСергій\nБатько: Test\nМати: Test2"
+  it('actual value extracted when present after label (Іваненко)', () => {
+    const rawText = "СВІДОЦТВО ПРО НАРОДЖЕННЯ\nПрізвище\nІваненко\nім'я\nІван\nБатько: Test\nМати: Test2"
     const result = runBirthCertificateModule({ raw_text: rawText, lines: [] }, { document_id: 'test' })
     const fn = result.fields.find(f => f.field === 'child_family_name')
-    expect(fn?.raw_value).toBe("Куроп'ятник")
+    expect(fn?.raw_value).toBe("Іваненко")
   })
 })

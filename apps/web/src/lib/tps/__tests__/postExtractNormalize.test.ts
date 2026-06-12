@@ -23,7 +23,7 @@ function mkField(field: string, raw: string, normalized: string): TpsExtractedFi
 
 describe('postExtractNormalize', () => {
   it('normalizes broken city prefix from booklet into canonical city value', () => {
-    const input = [mkField('city_of_birth', 'слет . Тростянець', 'слет . Тростянець')]
+    const input = [mkField('city_of_birth', 'слет . Вінниця', 'слет . Вінниця')]
     const result = postExtractNormalize(input)
     expect(result.rejected_fields).toEqual([])
     expect(result.fields[0].normalized_value).toBeTruthy()
@@ -69,11 +69,11 @@ describe('postExtractNormalize', () => {
     expect(result.rejected_fields).toContain('city_of_birth')
   })
 
-  it('passes valid Latin city "Trostianets"', () => {
-    const input = [mkField('city_of_birth', 'Тростянець', 'Trostianets')]
+  it('passes valid Latin city "Vinnytsia"', () => {
+    const input = [mkField('city_of_birth', 'Вінниця', 'Vinnytsia')]
     const result = postExtractNormalize(input)
     expect(result.rejected_fields).not.toContain('city_of_birth')
-    expect(result.fields[0].normalized_value).toBe('Trostianets')
+    expect(result.fields[0].normalized_value).toBe('Vinnytsia')
   })
 
   it('passes valid Cyrillic city "Київ"', () => {
@@ -98,7 +98,7 @@ describe('postExtractNormalize', () => {
 
   it('does not affect strong MRZ fields when booklet garbage is rejected', () => {
     const input = [
-      mkField('family_name', 'Kuropiatnyk', 'Kuropiatnyk'),
+      mkField('family_name', 'Ivanenko', 'Ivanenko'),
       mkField('city_of_birth', 'BiRHEROI', 'BiRHEROI'),
     ]
     const result = postExtractNormalize(input)

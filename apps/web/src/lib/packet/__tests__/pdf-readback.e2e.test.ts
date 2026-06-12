@@ -27,8 +27,8 @@ const ef = (field: string, normalized_value: string, review_required = false) =>
 const input = {
   scopeTitle: 'Birth Certificate', documentType: 'birth',
   fields: [
-    ef('surname', 'KUROPIATNYK'),                              // MRZ controlling Latin
-    ef('place_of_birth', 'Trostianets (urban-type settlement)'), // смт preserved
+    ef('surname', 'IVANENKO'),                              // MRZ controlling Latin
+    ef('place_of_birth', 'Vinnytsia (urban-type settlement)'), // смт preserved
     ef('issuing_authority', 'Militsiya', true),                // 1986 historical lock
     ef('date_of_birth', ''),                                   // MISSING — must stay visible
   ],
@@ -56,11 +56,11 @@ describe('E2E — PDF render readback (6-critical at the output layer)', () => {
     expect(plan.certifiable).toBe(false)
   })
   it('MRZ controlling-Latin name is rendered as-is (audit #3)', () => {
-    expect(row('Surname').value).toBe('KUROPIATNYK')
+    expect(row('Surname').value).toBe('IVANENKO')
   })
   it('смт preserved as "urban-type settlement", never "city" (HARD RULE)', () => {
     expect(row('Place Of Birth').value).toContain('urban-type settlement')
-    expect(row('Place Of Birth').value).toContain('Trostianets')
+    expect(row('Place Of Birth').value).toContain('Vinnytsia')
     expect(row('Place Of Birth').value).not.toContain('city')
   })
   it('1986 authority NOT modernised — Militsiya, not National Police (audit #11)', () => {

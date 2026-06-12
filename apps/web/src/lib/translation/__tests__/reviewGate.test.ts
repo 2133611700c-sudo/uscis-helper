@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest'
 import { assertReviewGate, getUnresolvedReviewFields, isSignatureComplete } from '../reviewGate'
 
-const ID = { signerName: 'Serhii Kuropiatnyk', signerAddress: '1213 Gordon St, Los Angeles, CA 90038' }
+const ID = { signerName: 'Ivan Ivanenko', signerAddress: '1213 Gordon St, Los Angeles, CA 90038' }
 const SIG = { signedAt: '2026-05-30T12:00:00.000Z', signatureMethod: 'drawn_on_screen' as const, signatureDataUrl: 'data:image/png;base64,iVBORw0KGgo=' }
 const CHECKS = { dataReviewed: true, accuracyAttested: true }
 
@@ -47,8 +47,8 @@ describe('assertReviewGate v2 — hard block', () => {
       ...CHECKS,
       ...SIG,
       extractedFields: [
-        { field: 'family_name', normalized_value: 'Kuropiatnyk', review_required: false },
-        { field: 'given_name', normalized_value: 'Serhii', review_required: true },
+        { field: 'family_name', normalized_value: 'Ivanenko', review_required: false },
+        { field: 'given_name', normalized_value: 'Ivan', review_required: true },
       ],
     })
     expect(r.ok).toBe(false)
@@ -89,7 +89,7 @@ describe('isSignatureComplete', () => {
 describe('getUnresolvedReviewFields', () => {
   it('returns review_required fields and blank values', () => {
     expect(getUnresolvedReviewFields([
-      { field: 'family_name', normalized_value: 'Kuropiatnyk', review_required: false },
+      { field: 'family_name', normalized_value: 'Ivanenko', review_required: false },
       { field: 'given_name', normalized_value: '', review_required: false },
       { field: 'dob', normalized_value: '1990-01-01', review_required: true },
     ])).toEqual(['given_name', 'dob'])
@@ -97,8 +97,8 @@ describe('getUnresolvedReviewFields', () => {
 
   it('returns empty array when every field is resolved', () => {
     expect(getUnresolvedReviewFields([
-      { field: 'family_name', normalized_value: 'Kuropiatnyk', review_required: false },
-      { field: 'given_name', normalized_value: 'Serhii', review_required: false },
+      { field: 'family_name', normalized_value: 'Ivanenko', review_required: false },
+      { field: 'given_name', normalized_value: 'Ivan', review_required: false },
     ])).toEqual([])
   })
 })

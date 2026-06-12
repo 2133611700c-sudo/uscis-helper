@@ -1,7 +1,7 @@
 /**
  * sessionIsolation.test.ts — source-level guard: the translation wizard must NOT
  * resurrect a previous session's extracted fields on a fresh visit. Restoring a
- * stale draft showed foreign data ("Шуляк/Сергій/Проскурів") as if recognized for
+ * stale draft showed foreign data ("Шуляк/Іван/Проскурів") as if recognized for
  * the current upload. The draft restore must be gated on the Stripe return (?paid=1),
  * and a new upload must clear prior fields.
  */

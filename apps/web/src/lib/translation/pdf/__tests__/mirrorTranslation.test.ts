@@ -33,11 +33,11 @@ describe('buildMirrorValues — registry keys → schema keys', () => {
     const v = buildMirrorValues(schema, [
       { field: 'child_family_name', final_value: 'Kovalenko', review_required: false },
       { field: 'dob', normalized_value: '2010-05-15', review_required: false },
-      { field: 'place_of_birth_city', normalized_value: 'Trostianets', review_required: true },
+      { field: 'place_of_birth_city', normalized_value: 'Vinnytsia', review_required: true },
     ])
     expect(v.child_surname).toEqual({ value: 'Kovalenko', review: false, canRead: true })
     expect(v.date_of_birth.value).toBe('2010-05-15')
-    expect(v.place_of_birth).toEqual({ value: 'Trostianets', review: true, canRead: true })
+    expect(v.place_of_birth).toEqual({ value: 'Vinnytsia', review: true, canRead: true })
   })
 
   it('prefers final_value over normalized_value (C3 release contract)', () => {

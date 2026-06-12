@@ -37,16 +37,16 @@ describe('isLabelText', () => {
     expect(isLabelText('Прізвищ')).toBe(true)
   })
 
-  it('returns false for "Куроп\'ятник" (real surname)', () => {
-    expect(isLabelText("Куроп'ятник")).toBe(false)
+  it('returns false for "Іваненко" (real surname)', () => {
+    expect(isLabelText("Іваненко")).toBe(false)
   })
 
-  it('returns false for "Сергій" (real given name)', () => {
-    expect(isLabelText('Сергій')).toBe(false)
+  it('returns false for "Іван" (real given name)', () => {
+    expect(isLabelText('Іван')).toBe(false)
   })
 
-  it('returns false for "25 червня 1986" (date value)', () => {
-    expect(isLabelText('25 червня 1986')).toBe(false)
+  it('returns false for "01 січня 1990" (date value)', () => {
+    expect(isLabelText('01 січня 1990')).toBe(false)
   })
 
   it('returns true for punctuation-only "---"', () => {
@@ -62,7 +62,7 @@ describe('isLabelText', () => {
 
 describe('isCyrillicValue', () => {
   it('returns true for real surname', () => {
-    expect(isCyrillicValue("Куроп'ятник")).toBe(true)
+    expect(isCyrillicValue("Іваненко")).toBe(true)
   })
 
   it('returns false for label text', () => {
@@ -89,35 +89,35 @@ describe('isCyrillicValue', () => {
 // ── extractValueAfterLabel — core extraction ──────────────────────────────────
 
 describe('extractValueAfterLabel — inline value', () => {
-  it('extracts "Куроп\'ятник" from "Прізвище: Куроп\'ятник"', () => {
-    const lines = ["Прізвище: Куроп'ятник"]
+  it('extracts "Іваненко" from "Прізвище: Іваненко"', () => {
+    const lines = ["Прізвище: Іваненко"]
     const result = extractValueAfterLabel(lines, [/прізвище\s*[:.]?/iu])
-    expect(result.raw_value).toBe("Куроп'ятник")
+    expect(result.raw_value).toBe("Іваненко")
     expect(result.review_required).toBe(false)
     expect(result.confidence).toBe('high')
   })
 
-  it('extracts "Сергій" from "Ім\'я: Сергій"', () => {
-    const lines = ["Ім'я: Сергій"]
+  it('extracts "Іван" from "Ім\'я: Іван"', () => {
+    const lines = ["Ім'я: Іван"]
     const result = extractValueAfterLabel(lines, [/ім['ʼ'`]?я\s*[:.]?/iu])
-    expect(result.raw_value).toBe('Сергій')
+    expect(result.raw_value).toBe('Іван')
     expect(result.review_required).toBe(false)
   })
 })
 
 describe('extractValueAfterLabel — value on next line', () => {
   it('extracts surname from next line after bare label', () => {
-    const lines = ['Прізвище', "Куроп'ятник"]
+    const lines = ['Прізвище', "Іваненко"]
     const result = extractValueAfterLabel(lines, [/прізвище\s*[:.]?/iu])
-    expect(result.raw_value).toBe("Куроп'ятник")
+    expect(result.raw_value).toBe("Іваненко")
     expect(result.review_required).toBe(false)
     expect(result.confidence).toBe('medium')
   })
 
   it('extracts given name from next line', () => {
-    const lines = ["Ім'я", 'Сергій']
+    const lines = ["Ім'я", 'Іван']
     const result = extractValueAfterLabel(lines, [/ім['ʼ'`]?я\s*[:.]?/iu])
-    expect(result.raw_value).toBe('Сергій')
+    expect(result.raw_value).toBe('Іван')
   })
 })
 
@@ -159,7 +159,7 @@ describe('extractValueAfterLabel — label-as-value rejection', () => {
   })
 
   it('returns null when label not found at all', () => {
-    const lines = ['СВІДОЦТВО ПРО НАРОДЖЕННЯ', 'Тростянець']
+    const lines = ['СВІДОЦТВО ПРО НАРОДЖЕННЯ', 'Вінниця']
     const result = extractValueAfterLabel(lines, [/прізвище\s*[:.]?/iu])
     expect(result.raw_value).toBeNull()
     expect(result.review_required).toBe(true)
@@ -169,37 +169,37 @@ describe('extractValueAfterLabel — label-as-value rejection', () => {
 
 describe('extractValueAfterLabel — multiple candidates', () => {
   it('returns first candidate + review_required when two values follow label', () => {
-    const lines = ['Прізвище', "Куроп'ятник", 'Петренко']
+    const lines = ['Прізвище', "Іваненко", 'Петренко']
     const result = extractValueAfterLabel(lines, [/прізвище\s*[:.]?/iu])
-    expect(result.raw_value).toBe("Куроп'ятник")
+    expect(result.raw_value).toBe("Іваненко")
     expect(result.review_required).toBe(true)
     expect(result.rejection_reason).toBe('multiple_candidates')
   })
 })
 
 describe('extractValueAfterLabel — date extraction', () => {
-  it('extracts "25 червня 1986" from next line after дата народження', () => {
-    const lines = ['Дата народження', '25 червня 1986 р.']
+  it('extracts "01 січня 1990" from next line after дата народження', () => {
+    const lines = ['Дата народження', '01 січня 1990 р.']
     const result = extractValueAfterLabel(lines, [/дата\s+народження\s*[:.]?/iu])
-    expect(result.raw_value).toBe('25 червня 1986 р.')
+    expect(result.raw_value).toBe('01 січня 1990 р.')
     expect(result.review_required).toBe(false)
   })
 
   it('extracts inline date', () => {
-    const lines = ['Дата народження: 25 червня 1986 р.']
+    const lines = ['Дата народження: 01 січня 1990 р.']
     const result = extractValueAfterLabel(lines, [/дата\s+народження\s*[:.]?/iu])
-    expect(result.raw_value).toBe('25 червня 1986 р.')
+    expect(result.raw_value).toBe('01 січня 1990 р.')
   })
 })
 
 describe('extractValueAfterLabel — bilingual OCR scenarios', () => {
   it('label repeated bilingual → no label-as-value', () => {
     // Form with UA + RU label on one line, value on next
-    const lines = ['Прізвище / Фамилия', "Куроп'ятник"]
+    const lines = ['Прізвище / Фамилия', "Іваненко"]
     const result = extractValueAfterLabel(lines, [/прізвище\s*[:.]?/iu])
     // inline tail is "/ Фамилия" — rejected as label
-    // next line "Куроп'ятник" — accepted as value
-    expect(result.raw_value).toBe("Куроп'ятник")
+    // next line "Іваненко" — accepted as value
+    expect(result.raw_value).toBe("Іваненко")
   })
 
   it('does not return "прізвищ" as child_family_name', () => {

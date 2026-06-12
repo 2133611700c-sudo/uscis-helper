@@ -621,7 +621,7 @@ function parseDate(s: string): Date | null {
   }
 
   // Ukrainian textual date (explicit parser, no Date.parse locale magic):
-  //  "25 червня 1986 року" / "25 червня 1986"
+  //  "01 січня 1990 року" / "01 січня 1990"
   let m = t.match(
     /^(\d{1,2})\s+([А-Яа-яІіЇїЄєҐґ'’`.-]+)\s+(\d{4})(?:\s+(?:року|р\.?|г\.?))?$/u,
   )

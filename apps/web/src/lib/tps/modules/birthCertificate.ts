@@ -61,7 +61,7 @@ const REGISTRY_GLOSSARY: Record<string, string> = {
 
 /**
  * Parse Ukrainian/Russian written-out date or numeric date.
- * "25 червня 1986" → "1986-06-25", "25.06.1986" → "1986-06-25"
+ * "01 січня 1990" → "1990-01-01", "01.01.1990" → "1990-01-01"
  */
 function parseDate(s: string): string | null {
   if (!s) return null

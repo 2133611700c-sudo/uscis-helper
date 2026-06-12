@@ -62,10 +62,10 @@ const SERIES_NUMBER_RE =
   /\b([А-ЯІЇЄҐABCEHIKMOPTX]{2})\s*((?:[0-9]\s*){6})\b/u
 
 // Date of birth — many formats. We try several:
-//   "25 червня 1986 року"  (UA written-out month)
+//   "01 січня 1990 року"  (UA written-out month)
 //   "25 июня 1986 года"     (RU written-out month)
-//   "25.06.1986" / "25/06/1986"
-//   "25-06-1986"
+//   "01.01.1990" / "01/01/1990"
+//   "01-01-1990"
 const UA_MONTHS: Record<string, number> = {
   січня: 1, лютого: 2, березня: 3, квітня: 4, травня: 5, червня: 6,
   липня: 7, серпня: 8, вересня: 9, жовтня: 10, листопада: 11, грудня: 12,
@@ -399,7 +399,7 @@ function parseUaDate(s: string): string | null {
   // silently returned null and the wizard surfaced the raw OCR text.
   const text = s.trim().toLowerCase()
 
-  // 1) Written-out month: "25 червня 1986" / "25 июня 1986"
+  // 1) Written-out month: "01 січня 1990" / "25 июня 1986"
   const m1 = text.match(/(\d{1,2})\s+([а-яії]+)\s+(\d{2,4})/u)
   if (m1) {
     const day = parseInt(m1[1], 10)
@@ -416,7 +416,7 @@ function parseUaDate(s: string): string | null {
     }
   }
 
-  // 2) Numeric: "25.06.1986" / "25/06/1986" / "25-06-1986"
+  // 2) Numeric: "01.01.1990" / "01/01/1990" / "01-01-1990"
   const m2 = text.match(/(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})/)
   if (m2) {
     const day = parseInt(m2[1], 10)
@@ -651,7 +651,7 @@ export function runPassportBookletModule(
   } else {
     // Label "Дата народження" was NOT found by OCR — scan ALL lines for any
     // line that parses as a valid date (booklet_date_scan_fallback).
-    // Real booklet failure mode: Vision reads "25 червня 1986 року" but drops
+    // Real booklet failure mode: Vision reads "01 січня 1990 року" but drops
     // the "Дата народження" label entirely, so findField returns null.
     const currentYear = new Date().getUTCFullYear()
     const dateCandidates: Array<{ lc: LineCandidate; iso: string }> = []

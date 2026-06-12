@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-11 | PII sweep — 99 файлов, production source + тесты
+- **КРИТИЧНО**: реальная фамилия владельца убрана из live Gemini-промта в field-mapper.ts:177 (уходила в API на каждый запрос).
+- production source: geminiVisionProvider.ts, dualOcrCrossref.ts, postExtractNormalize.ts, ocr/extract/route.ts, TranslateWizard.tsx, engine/*, tps/modules/*, strictValidators.ts — реальные фамилия/ДР/номер паспорта → synthetic Іваненко/1990-01-01/FA000000.
+- 78 тест-файлов: synthetic mock data по всему docintel/__tests__, canonical/core/__tests__, engine/__tests__ и др.
+- Тесты после свипа: 3304 PASS | tsc 0 | build OK.
+
 ## 2026-06-11 (OPERATOR FLOW ENABLED in prod + e2e order-page case)
 - Owner: «доделай всё на 110%». Включено: NEXT_PUBLIC_NEW_OPERATOR_FLOW_ENABLED=1 + OPERATOR_SIGNER_NAME/ADDRESS в Vercel prod (этот коммит = build, который вшивает NEXT_PUBLIC). Owner: проверь написание подписанта в env и сделай $1-тест.
 - E2E: кейс /order/{random-uuid} → calm not-found (страница не падает, PII нет).

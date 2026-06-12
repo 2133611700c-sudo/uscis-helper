@@ -50,14 +50,14 @@ describe('BUG D — Soviet-bilingual Russian-spelling tolerance', () => {
   // ── KNOWN GAP (pinned, not hidden) ──────────────────────────────────────────
   // looksRussianSpelled() matches a composite full_name against the SINGLE-name
   // RU_SPELLED_GIVEN set, so a multi-word Russian name with NO orthographic signal
-  // (no ы/э/ё/ъ) — e.g. 'Сергей Иванович' — is NOT flagged even on a Ukrainian doc.
-  // The single-token path DOES catch 'Сергей'. This pins the current limitation;
+  // (no ы/э/ё/ъ) — e.g. 'Андрей Андреевич' — is NOT flagged even on a Ukrainian doc.
+  // The single-token path DOES catch 'Андрей'. This pins the current limitation;
   // tightening it (token-wise RU check on composites) needs owner GT + a rule change.
   it('GAP: composite RU full_name without ё/э/ы/ъ is NOT detected even on a UA doc', () => {
-    const ua = normalizeCanonicalValue('father_full_name', 'Сергей Иванович', { ukrainianDoc: true })
+    const ua = normalizeCanonicalValue('father_full_name', 'Андрей Андреевич', { ukrainianDoc: true })
     expect(ua.reasonCodes).not.toContain('russian_spelling_suspected')
     // but the single given-name token IS caught:
-    const single = normalizeCanonicalValue('given_name', 'Сергей', { ukrainianDoc: true })
+    const single = normalizeCanonicalValue('given_name', 'Андрей', { ukrainianDoc: true })
     expect(single.reasonCodes).toContain('russian_spelling_suspected')
   })
 })
