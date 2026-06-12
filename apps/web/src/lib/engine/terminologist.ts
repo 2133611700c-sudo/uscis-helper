@@ -21,7 +21,7 @@ const EN_MONTHS = ['', 'January', 'February', 'March', 'April', 'May', 'June',
 /**
  * Format a Ukrainian/Russian date to USCIS-safe English "25 February 2011"
  * (day-month-year, no ambiguity). Accepts: "25 лютого 2011 року",
- * "25.06.1986", "1986-06-25", "26 июня 1965". Returns null if not parseable
+ * "01.01.1990", "1990-01-01", "26 июня 1965". Returns null if not parseable
  * (caller keeps it for human review — never guesses).
  */
 /** Real-calendar check: month 1-12, day valid for that month (+leap), plausible

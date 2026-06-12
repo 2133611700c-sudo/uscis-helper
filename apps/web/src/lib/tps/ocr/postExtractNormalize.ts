@@ -177,7 +177,7 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
 
     // P2 FIX: normalize date fields from US format (MM/DD/YYYY) to ISO
     // (YYYY-MM-DD). Brain often outputs US format. Without this, dates
-    // pass through as "06/25/1986" instead of "1986-06-25".
+    // pass through as "01/25/1990" instead of "1990-01-25".
     if ((f.field === 'dob' || f.field === 'last_entry_date' || f.field === 'ead_expiration_date') && f.normalized_value) {
       const v = f.normalized_value.trim()
       const usMatch = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
@@ -342,11 +342,11 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       const input = norm || raw
 
       // Skip if already Latin (MRZ or EAD/I-94 keyword extraction). Don't
-      // re-transliterate "Kuropiatnyk" — it would mangle the value.
+      // re-transliterate already-Latin values like "Ivanenko" — it would mangle them.
       const hasCyrillic = /[А-Яа-яІіЇїЄєҐґ]/.test(input)
       if (!hasCyrillic) {
         // Garbage guard: mixed-case Latin (e.g. "BiRHEROI" from broken OCR).
-        // Title case "Kuropiatnyk" and ALL CAPS "KUROPIATNYK" are both ok.
+        // Title case "Ivanenko" and ALL CAPS "IVANENKO" are both ok.
         const latinWords = input.match(/[A-Za-z]{3,}/g) || []
         let isGarbage = false
         for (const w of latinWords) {

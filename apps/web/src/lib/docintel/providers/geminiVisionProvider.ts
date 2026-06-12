@@ -21,7 +21,7 @@ import { normalizeGeminiModel } from '@/lib/gemini/model'
 // handwritten 1986 UkrSSR birth cert, scored vs ground truth:
 //   gemini-3.1-pro-preview 19/22 (best) · 3.5-flash 16/22 · 2.5-pro 13/22.
 //   2.5-pro CATASTROPHICALLY FABRICATED a fake identity on the handwritten cert
-//   ("Кудрявцев Олег" instead of "Куропятник Сергей") → 1/9 there. So 2.5-pro is
+//   (fabricated a different person entirely) → 1/9 there. So 2.5-pro is
 //   NOT a safe default. 3.1-pro-preview leads; flash is the fast fallback.
 //   The robust answer is the 3-model consensus (E4: 19/22, and it OUTVOTES the
 //   2.5-pro fabrication) — see report. NOTE: 3.1-pro is a PREVIEW model.

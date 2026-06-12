@@ -66,10 +66,10 @@ describe('Q2 ADDITION A — tier × reason_code validity matrix', () => {
 describe('LAW 2#5 — evaluate override decisions', () => {
   it('TIER 1 source_verified → finalize', () => {
     const r = evaluateCertifierOverride({
-      docType: 'ua_international_passport', field: 'given_name', proposedValue: 'Serhii', authority: 'source_verified',
+      docType: 'ua_international_passport', field: 'given_name', proposedValue: 'Ivan', authority: 'source_verified',
     })
     expect(r.decision).toBe('finalize')
-    expect(r.finalValue).toBe('Serhii')
+    expect(r.finalValue).toBe('Ivan')
   })
 
   it('TIER 1 user_confirmed alone → reject (needs certifier_override)', () => {
@@ -93,7 +93,7 @@ describe('LAW 2#5 — evaluate override decisions', () => {
       docType: 'ua_international_passport', field: 'given_name',
       proposedValue: 'Oleksandr',          // user/certifier typed this
       authority: 'source_verified',
-      anchorValue: 'Serhii',               // passport MRZ says this
+      anchorValue: 'Ivan',               // passport MRZ says this
     })
     expect(r.decision).toBe('block_escalate')
     expect(r.finalValue).toBeNull()
@@ -103,7 +103,7 @@ describe('LAW 2#5 — evaluate override decisions', () => {
   it('anchor AGREEMENT on a critical field → allowed to finalize', () => {
     const r = evaluateCertifierOverride({
       docType: 'ua_international_passport', field: 'given_name',
-      proposedValue: 'Serhii', authority: 'source_verified', anchorValue: 'Serhii',
+      proposedValue: 'Ivan', authority: 'source_verified', anchorValue: 'Ivan',
     })
     expect(r.decision).toBe('finalize')
   })
@@ -126,11 +126,11 @@ describe('LAW 2#5 — evaluate override decisions', () => {
 
   it('other_with_text requires a note; with a note it finalizes and is flagged for audit', () => {
     const noNote = evaluateCertifierOverride({
-      docType: 'ua_birth_certificate', field: 'father_full_name', proposedValue: 'Serhii Ivanenko', authority: 'other_with_text',
+      docType: 'ua_birth_certificate', field: 'father_full_name', proposedValue: 'Ivan Ivanenko', authority: 'other_with_text',
     })
     expect(noNote.decision).toBe('reject_invalid')
     const withNote = evaluateCertifierOverride({
-      docType: 'ua_birth_certificate', field: 'father_full_name', proposedValue: 'Serhii Ivanenko',
+      docType: 'ua_birth_certificate', field: 'father_full_name', proposedValue: 'Ivan Ivanenko',
       authority: 'other_with_text', note: 'partially torn; cross-checked against marriage cert',
     })
     expect(withNote.decision).toBe('finalize')
@@ -142,7 +142,7 @@ describe('audit hook — ADR-021 schema, PII-free (values hashed, LAW 5)', () =>
   it('record has all required fields and NEVER stores raw values', () => {
     const rec = buildCertifierAuditRecord({
       authority: 'source_verified', tier: 1, field: 'given_name', documentClass: 'internal_passport_booklet',
-      previousValue: 'Сергей', newValue: 'Serhii', certifierId: 'owner', timestampUtc: '2026-06-10T20:00:00.000Z',
+      previousValue: 'Иван', newValue: 'Ivan', certifierId: 'owner', timestampUtc: '2026-06-10T20:00:00.000Z',
       sessionId: 'sess-1', linkedPdfDocId: 'pdf-1', crossDocAnchorId: 'case-1', decision: 'finalize',
     })
     // all ADR-021 fields present
@@ -152,8 +152,8 @@ describe('audit hook — ADR-021 schema, PII-free (values hashed, LAW 5)', () =>
     }
     // raw values must NOT appear anywhere in the serialized record
     const json = JSON.stringify(rec)
-    expect(json).not.toContain('Сергей')
-    expect(json).not.toContain('Serhii')
+    expect(json).not.toContain('Иван')
+    expect(json).not.toContain('Ivan')
     // hashes are 64-hex sha256
     expect(rec.previous_value_hash).toMatch(/^[a-f0-9]{64}$/)
     expect(rec.new_value_hash).toMatch(/^[a-f0-9]{64}$/)
@@ -163,7 +163,7 @@ describe('audit hook — ADR-021 schema, PII-free (values hashed, LAW 5)', () =>
   it('immutable_marker changes if any field changes (tamper-evident)', () => {
     const base = {
       authority: 'source_verified' as const, tier: 1 as const, field: 'given_name', documentClass: 'passport',
-      previousValue: null, newValue: 'Serhii', certifierId: 'owner', timestampUtc: '2026-06-10T20:00:00.000Z',
+      previousValue: null, newValue: 'Ivan', certifierId: 'owner', timestampUtc: '2026-06-10T20:00:00.000Z',
       sessionId: 's', decision: 'finalize' as const,
     }
     const a = buildCertifierAuditRecord(base)

@@ -22,7 +22,7 @@ describe('garbageGuard', () => {
   })
   it('accepts real names/places', () => {
     expect(isGarbageValue('Шевченко')).toBe(false)
-    expect(isGarbageValue('Trostianets')).toBe(false)
-    expect(isGarbageValue('Serhii')).toBe(false)
+    expect(isGarbageValue('Vinnytsia')).toBe(false)
+    expect(isGarbageValue('Ivan')).toBe(false)
   })
 })

@@ -51,14 +51,14 @@ const AGENCY_GLOSSARY: Record<string, string> = {
 }
 
 /**
- * Parse Ukrainian written-out date "25 червня 1986 р." → "1986-06-25".
+ * Parse Ukrainian written-out date "01 січня 1990 р." → "1990-01-01".
  * Returns null if not parseable.
  */
 export function parseUkrainianDate(s: string): string | null {
   if (!s) return null
   const text = s.trim().toLowerCase()
 
-  // Written-out: "25 червня 1986" or "25 червня 1986 р." or "25 червня 1986 року"
+  // Written-out: "01 січня 1990" or "01 січня 1990 р." or "01 січня 1990 року"
   const m1 = text.match(/(\d{1,2})\s+([а-яіїєґ]+)\s+(\d{4})/)
   if (m1) {
     const day = parseInt(m1[1], 10)
@@ -70,7 +70,7 @@ export function parseUkrainianDate(s: string): string | null {
     }
   }
 
-  // Numeric: "25.06.1986" / "25/06/1986" / "25-06-1986"
+  // Numeric: "01.01.1990" / "01/01/1990" / "01-01-1990"
   const m2 = text.match(/(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})/)
   if (m2) {
     const day = parseInt(m2[1], 10)
@@ -108,7 +108,7 @@ function translateAuthority(raw: string): string | null {
 
 /**
  * Reject given_name if it looks like a patronymic label or label text that OCR
- * mistook for the given name field (e.g. "По батьковим Сергійови").
+ * mistook for the given name field (e.g. "По батьковим Іванові").
  * Better to return null + review than to store a label as a name.
  */
 export function isLikelyPatronymicOrLabel(text: string): boolean {
@@ -127,7 +127,7 @@ export function isLikelyPatronymicOrLabel(text: string): boolean {
 
 /**
  * Reject issuing authority if OCR clearly produced garbage.
- * Known good patterns: "Тростянецький РВК", "ТЦК Вінниці", "ОМВК"
+ * Known good patterns: "Вінницький ОВК", "ТЦК Вінниці", "ОМВК"
  * Garbage: random consonant clusters, OCR noise like "гровоградськельковим"
  * Returns true when text should be rejected (not trusted).
  */
@@ -409,7 +409,7 @@ export function runMilitaryIdModule(
   }
 
   // ── Date of birth ─────────────────────────────────────────────────────────
-  // Military ID writes DOB inline: "25 червня 1986 р." or after a label
+  // Military ID writes DOB inline: "01 січня 1990 р." or after a label
   // Also scan raw text for date patterns directly
   let dobRaw: string | null = null
   let dobIso: string | null = null

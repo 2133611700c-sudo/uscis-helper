@@ -73,7 +73,7 @@ function norm(s: string): string {
 
 /**
  * Do two readings point at the same underlying value? Uses the
- * confusion-weighted distance so "Сергій"/"Сергей" (orthographic variants) or a
+ * confusion-weighted distance so "Олексій"/"Алексей" (orthographic variants) or a
  * single handwriting confusion count as agreement, while "Хроменчук"/"Людмила"
  * (a fabrication) does not.
  */

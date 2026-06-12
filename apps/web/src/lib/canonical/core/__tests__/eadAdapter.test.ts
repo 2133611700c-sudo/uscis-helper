@@ -61,23 +61,23 @@ function makeCanonical(
 
 describe('toEadAnswers — identity field mapping', () => {
   it('maps family_name from canonical', () => {
-    const result = toEadAnswers(makeCanonical([makeField('family_name', 'Kuropiatnyk')]))
-    expect(result.family_name).toBe('Kuropiatnyk')
+    const result = toEadAnswers(makeCanonical([makeField('family_name', 'Ivanenko')]))
+    expect(result.family_name).toBe('Ivanenko')
   })
 
   it('maps given_name from canonical', () => {
-    const result = toEadAnswers(makeCanonical([makeField('given_name', 'Serhii')]))
-    expect(result.given_name).toBe('Serhii')
+    const result = toEadAnswers(makeCanonical([makeField('given_name', 'Ivan')]))
+    expect(result.given_name).toBe('Ivan')
   })
 
   it('maps date_of_birth with dob alias', () => {
-    const result = toEadAnswers(makeCanonical([makeField('dob', '1986-06-25')]))
-    expect(result.date_of_birth).toBe('1986-06-25')
+    const result = toEadAnswers(makeCanonical([makeField('dob', '1990-01-01')]))
+    expect(result.date_of_birth).toBe('1990-01-01')
   })
 
   it('maps date_of_birth primary key when present', () => {
-    const result = toEadAnswers(makeCanonical([makeField('date_of_birth', '1986-06-25')]))
-    expect(result.date_of_birth).toBe('1986-06-25')
+    const result = toEadAnswers(makeCanonical([makeField('date_of_birth', '1990-01-01')]))
+    expect(result.date_of_birth).toBe('1990-01-01')
   })
 
   it('maps sex from canonical', () => {
@@ -115,9 +115,9 @@ describe('toEadAnswers — identity field mapping', () => {
 
 describe('toEadAnswers — passport-only: source-gated fields are null', () => {
   const passportFields = [
-    makeField('family_name', 'Kuropiatnyk'),
-    makeField('given_name', 'Serhii'),
-    makeField('date_of_birth', '1986-06-25'),
+    makeField('family_name', 'Ivanenko'),
+    makeField('given_name', 'Ivan'),
+    makeField('date_of_birth', '1990-01-01'),
     makeField('sex', 'M'),
     makeField('passport_number', 'AB123456'),
     makeField('date_of_expiry', '2030-06-25'),
@@ -178,9 +178,9 @@ describe('toEadAnswers — passport-only: source-gated fields are null', () => {
 
   it('family_name, given_name, date_of_birth are mapped from passport', () => {
     const result = toEadAnswers(passport)
-    expect(result.family_name).toBe('Kuropiatnyk')
-    expect(result.given_name).toBe('Serhii')
-    expect(result.date_of_birth).toBe('1986-06-25')
+    expect(result.family_name).toBe('Ivanenko')
+    expect(result.given_name).toBe('Ivan')
+    expect(result.date_of_birth).toBe('1990-01-01')
   })
 })
 
@@ -474,9 +474,9 @@ describe('toEadAnswers — source type recognition (gate variants)', () => {
 describe('toEadAnswers — full passport fixture (B4 proof)', () => {
   it('maps a complete passport and leaves all gated fields null', () => {
     const canonical = makeCanonical([
-      makeField('family_name', 'Kuropiatnyk'),
-      makeField('given_name', 'Serhii'),
-      makeField('date_of_birth', '1986-06-25'),
+      makeField('family_name', 'Ivanenko'),
+      makeField('given_name', 'Ivan'),
+      makeField('date_of_birth', '1990-01-01'),
       makeField('sex', 'M'),
       makeField('passport_number', 'AB123456'),
       makeField('date_of_expiry', '2030-06-25'),
@@ -486,9 +486,9 @@ describe('toEadAnswers — full passport fixture (B4 proof)', () => {
     const result = toEadAnswers(canonical)
 
     // Identity mapped
-    expect(result.family_name).toBe('Kuropiatnyk')
-    expect(result.given_name).toBe('Serhii')
-    expect(result.date_of_birth).toBe('1986-06-25')
+    expect(result.family_name).toBe('Ivanenko')
+    expect(result.given_name).toBe('Ivan')
+    expect(result.date_of_birth).toBe('1990-01-01')
     expect(result.sex).toBe('M')
     expect(result.passport_number).toBe('AB123456')
     expect(result.passport_expiry).toBe('2030-06-25')

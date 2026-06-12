@@ -17,12 +17,12 @@ import { lookupAuthority } from '@uscis-helper/knowledge'
 // Typical military ID identity page OCR text (from real document test)
 const TYPICAL_IDENTITY_OCR = `ВІЙСЬКОВИЙ КВИТОК
 Серія Со № 845621
-Куроп'ятник
-Сергій
-По батькові: Сергійович
-25 червня 1986 р.
-Тростянець
-Виданий Тростянецьким РВК`
+Іваненко
+Іван
+По батькові: Петрович
+01 січня 1990 р.
+Вінниця
+Виданий Вінницьким РВК`
 
 // Service page — should not contaminate identity fields
 const SERVICE_PAGE_OCR = `Відомості про проходження служби
@@ -32,22 +32,22 @@ const SERVICE_PAGE_OCR = `Відомості про проходження сл�
 describe('extractMilitaryId', () => {
   it('extracts family_name from military ID raw text', () => {
     const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
-    expect(result.family_name_cyrillic).toBe("Куроп'ятник")
+    expect(result.family_name_cyrillic).toBe("Іваненко")
   })
 
   it('extracts given_name from military ID raw text', () => {
     const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
-    expect(result.given_name_cyrillic).toBe('Сергій')
+    expect(result.given_name_cyrillic).toBe('Іван')
   })
 
   it('extracts patronymic from "По батькові" label', () => {
     const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
-    expect(result.patronymic_cyrillic).toBe('Сергійович')
+    expect(result.patronymic_cyrillic).toBe('Петрович')
   })
 
   it('parses date_of_birth from Ukrainian month name format', () => {
     const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
-    expect(result.date_of_birth).toBe('1986-06-25')
+    expect(result.date_of_birth).toBe('1990-01-01')
   })
 
   it('extracts military_id_number in Серія+№ format', () => {
@@ -136,8 +136,8 @@ describe('extractMilitaryId — service page does not overwrite identity fields'
 // ── PHASE 1 guards: given_name rejection + authority quality ─────────────────
 
 describe('isLikelyPatronymicOrLabel — guard for OCR-label-as-given-name', () => {
-  it('rejects "По батьковим Сергійови" (patronymic label OCR confusion)', () => {
-    expect(isLikelyPatronymicOrLabel('По батьковим Сергійови')).toBe(true)
+  it('rejects "По батьковим Іванови" (patronymic label OCR confusion)', () => {
+    expect(isLikelyPatronymicOrLabel('По батьковим Іванови')).toBe(true)
   })
 
   it('rejects "По батькові" (label text)', () => {
@@ -148,8 +148,8 @@ describe('isLikelyPatronymicOrLabel — guard for OCR-label-as-given-name', () =
     expect(isLikelyPatronymicOrLabel('по батьков')).toBe(true)
   })
 
-  it('accepts "Сергій" (normal given name)', () => {
-    expect(isLikelyPatronymicOrLabel('Сергій')).toBe(false)
+  it('accepts "Іван" (normal given name)', () => {
+    expect(isLikelyPatronymicOrLabel('Іван')).toBe(false)
   })
 
   it('accepts "Василь" (normal given name)', () => {
@@ -162,14 +162,14 @@ describe('isLikelyPatronymicOrLabel — guard for OCR-label-as-given-name', () =
 })
 
 describe('given_name guard: patronymic OCR confusion rejected in extraction', () => {
-  it('given_name "По батьковим Сергійови" is not emitted by extraction (inline tail)', () => {
+  it('given_name "По батьковим Іванови" is not emitted by extraction (inline tail)', () => {
     // OCR where "ім'я" label and patronymic text land on the same line (inline confusion)
     const ocr = `ВІЙСЬКОВИЙ КВИТОК
 Серія Со № 845621
-Куроп'ятник
-ім'я По батьковим Сергійови
-25 червня 1986 р.
-Виданий Тростянецьким РВК`
+Іваненко
+ім'я По батьковим Іванови
+01 січня 1990 р.
+Виданий Вінницьким РВК`
     const result = runMilitaryIdModule(
       { raw_text: ocr, lines: ocr.split('\n').filter(Boolean).map(t => ({ text: t })) },
       { document_id: 'test' }
@@ -184,9 +184,9 @@ describe('given_name guard: patronymic OCR confusion rejected in extraction', ()
     expect(result.warnings).toContain('military_id_given_name_rejected_patronymic_or_label')
   })
 
-  it('given_name "Сергій" is accepted and emitted', () => {
+  it('given_name "Іван" is accepted and emitted', () => {
     const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
-    expect(result.given_name_cyrillic).toBe('Сергій')
+    expect(result.given_name_cyrillic).toBe('Іван')
   })
 })
 
@@ -203,8 +203,8 @@ describe('isAuthorityOcrGarbage — guard for bad OCR authority text', () => {
     expect(isAuthorityOcrGarbage('РВК')).toBe(true)
   })
 
-  it('accepts "Тростянецький РВК" (known good authority)', () => {
-    expect(isAuthorityOcrGarbage('Тростянецький РВК')).toBe(false)
+  it('accepts "Вінницький РВК" (known good authority)', () => {
+    expect(isAuthorityOcrGarbage('Вінницький РВК')).toBe(false)
   })
 
   it('accepts "ТЦК Вінниці" (short valid format)', () => {
@@ -216,9 +216,9 @@ describe('isAuthorityOcrGarbage — guard for bad OCR authority text', () => {
   })
 })
 
-describe('dob normalization: "25 червня 1986 р." → "1986-06-25"', () => {
+describe('dob normalization: "01 січня 1990 р." → "1990-01-01"', () => {
   it('parseUkrainianDate normalizes dob from military booklet format', () => {
-    expect(parseUkrainianDate('25 червня 1986 р.')).toBe('1986-06-25')
+    expect(parseUkrainianDate('01 січня 1990 р.')).toBe('1990-01-01')
   })
 
   it('runMilitaryIdModule correctly normalizes dob field', () => {
@@ -227,7 +227,7 @@ describe('dob normalization: "25 червня 1986 р." → "1986-06-25"', () =>
       { document_id: 'test' }
     )
     const dob = result.fields.find(f => f.field === 'dob')
-    expect(dob?.normalized_value).toBe('1986-06-25')
+    expect(dob?.normalized_value).toBe('1990-01-01')
   })
 })
 
@@ -254,7 +254,7 @@ describe('agency registry: Міліція → Militsiya (not Police)', () => {
 
 describe('parseUkrainianDate', () => {
   it('parses written-out Ukrainian month', () => {
-    expect(parseUkrainianDate('25 червня 1986 р.')).toBe('1986-06-25')
+    expect(parseUkrainianDate('01 січня 1990 р.')).toBe('1990-01-01')
     expect(parseUkrainianDate('1 січня 2000 р.')).toBe('2000-01-01')
     expect(parseUkrainianDate('15 грудня 1975')).toBe('1975-12-15')
   })
@@ -271,9 +271,9 @@ describe('parseUkrainianDate', () => {
   })
 
   it('parses numeric date formats', () => {
-    expect(parseUkrainianDate('25.06.1986')).toBe('1986-06-25')
-    expect(parseUkrainianDate('25/06/1986')).toBe('1986-06-25')
-    expect(parseUkrainianDate('25-06-1986')).toBe('1986-06-25')
+    expect(parseUkrainianDate('01.01.1990')).toBe('1990-01-01')
+    expect(parseUkrainianDate('14/02/1990')).toBe('1990-02-14')
+    expect(parseUkrainianDate('14-02-1990')).toBe('1990-02-14')
   })
 
   it('returns null for unparseable input', () => {

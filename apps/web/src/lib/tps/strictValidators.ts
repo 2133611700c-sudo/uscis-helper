@@ -29,7 +29,7 @@ const SEX_RE = /^[MFX]$/
 /**
  * Passport number: 1-3 letters followed by 6-9 digits, optionally with
  * a single space between the letter prefix and the digits.
- *   FU262473        — Ukrainian international (TD3)
+ *   FA000000        — Ukrainian international (TD3, synthetic)
  *   EK 790396       — Ukrainian internal-booklet perforation
  *   AB1234567       — generic
  * MRZ canonical form has no space; the visible passport surface may.
@@ -105,7 +105,7 @@ export function isStrictValidValue(field: string, rawValue: string): boolean {
 // even though OCR successfully read the date.
 //
 // Design rules:
-//   - SAFE: only unambiguous transformations. "06/25/1986" → "1986-06-25"
+//   - SAFE: only unambiguous transformations. "01/25/1990" → "1990-01-25"
 //     (day 25 > 12, so the layout cannot be DD/MM). "09/07/2024" is
 //     AMBIGUOUS (both segments ≤ 12) — we refuse and force manual entry
 //     per the project hard rule "no AI guessing for critical fields".

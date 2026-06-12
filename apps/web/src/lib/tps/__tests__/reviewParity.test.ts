@@ -5,13 +5,13 @@ import { checkReviewPayloadParity } from '../reviewParity'
 const BASE: TPSAnswers = {
   family_name: 'Testenko',
   given_name: 'Ivan',
-  dob: '1986-06-25',
+  dob: '1990-01-01',
   sex: 'M',
   country_of_birth: 'Ukraine',
   country_of_nationality: 'Ukraine',
-  passport_number: 'FU262473',
+  passport_number: 'FA000000',
   passport_country_of_issuance: 'Ukraine',
-  passport_expiration_date: '2029-02-22',
+  passport_expiration_date: '2030-01-01',
   us_address_street: '1213 Gordon St',
   us_address_city: 'Los Angeles',
   us_address_state: 'CA',
@@ -28,14 +28,14 @@ const BASE: TPSAnswers = {
   left_us_without_advance_parole: false,
   marital_status: 'single',
   part7_reviewed: true,
-  city_of_birth: 'Trostianets',
+  city_of_birth: 'Vinnytsia',
   province_of_birth: 'Vinnytsia Oblast',
 }
 
 describe('checkReviewPayloadParity', () => {
   it('returns no mismatches when review snapshot matches payload', () => {
     const mismatches = checkReviewPayloadParity(BASE, {
-      city_of_birth: 'Trostianets',
+      city_of_birth: 'Vinnytsia',
       province_of_birth: 'Vinnytsia Oblast',
     })
     expect(mismatches).toEqual([])

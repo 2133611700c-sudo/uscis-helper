@@ -42,8 +42,8 @@ describe.skipIf(!LIVE)('LIVE pipeline E2E (military ID, owner fixture)', () => {
 
   it('PASSPORT — MRZ controlling Latin beats re-transliteration', async () => {
     const f = await run('internal_passport_kuropiatnyk.jpg', 'ua_international_passport')
-    expect(f['family_name']?.latin || '').toMatch(/KUROPIATNYK/i)   // MRZ, not KMU-55 guess
-    expect(f['passport_number']?.latin || '').toMatch(/FU262473/i)
+    expect(f['family_name']?.latin || '').toMatch(/IVANENKO/i)   // MRZ, not KMU-55 guess
+    expect(f['passport_number']?.latin || '').toMatch(/FA000000/i)
     expect(f['date_of_birth']?.latin || '').toMatch(/1986/)
   }, 120000)
 

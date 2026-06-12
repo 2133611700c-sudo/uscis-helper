@@ -27,7 +27,7 @@ import type { ExtractedDocField } from '@/lib/docintel/types'
 const READER_OUTPUT: ExtractedDocField[] = [
   { field: 'child_family_name', kind: 'name', raw_cyrillic: 'Іваненко', value: 'Ivanenko',
     confidence: 0.9, review_required: true, source: 'vision', provider: 'gemini' },
-  { field: 'child_given_name', kind: 'name', raw_cyrillic: 'Сергей', value: 'Serhei',
+  { field: 'child_given_name', kind: 'name', raw_cyrillic: 'Иван', value: 'Serhei',
     confidence: 0.85, review_required: true, source: 'vision', provider: 'gemini',
     review_reasons: ['source_script_ambiguous'] }, // no distinctive UA/RU letter
   { field: 'dob', kind: 'date', raw_cyrillic: '28 липня 1986', value: '1986-07-28',
@@ -49,19 +49,19 @@ describe('handwritten Cyrillic — full chain, real functions', () => {
 
   it('2) human-in-loop: the user fixes the misread date; the guard accepts a clean value', () => {
     // user looked at their own certificate and typed the real date
-    const verdict = validateConfirmedValue('dob', '06/25/1986')
+    const verdict = validateConfirmedValue('dob', '01/01/1990')
     expect(verdict.ok).toBe(true)
   })
 
   it('2b) the guard REJECTS a correction that still contains Cyrillic (critical field)', () => {
-    const verdict = validateConfirmedValue('child_given_name', 'Сергій') // not romanized
+    const verdict = validateConfirmedValue('child_given_name', 'Іван') // not romanized
     expect(verdict.ok).toBe(false)
   })
 
   it('3) output: the mirror PDF shows confirmed values and keeps the unconfirmed date visible', async () => {
     const res = await renderMirrorTranslationPDF('ua_birth_certificate', [
       { field: 'child_family_name', value: 'Ivanenko', review_required: false }, // confirmed
-      { field: 'child_given_name', value: 'Serhii', review_required: false },    // confirmed (user picked UA form)
+      { field: 'child_given_name', value: 'Ivan', review_required: false },    // confirmed (user picked UA form)
       { field: 'dob', value: '1986-07-28', review_required: true },              // NOT confirmed → must be marked
     ])
     expect(res).not.toBeNull()

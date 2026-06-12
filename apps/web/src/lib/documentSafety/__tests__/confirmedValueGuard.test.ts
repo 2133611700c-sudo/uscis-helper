@@ -53,15 +53,15 @@ describe('validateConfirmedValue — critical empties', () => {
 
 describe('validateConfirmedValue — date format', () => {
   it('accepts MM/DD/YYYY', () => {
-    expect(validateConfirmedValue('date_of_birth', '06/25/1986').ok).toBe(true)
+    expect(validateConfirmedValue('date_of_birth', '01/01/1990').ok).toBe(true)
   })
 
   it('accepts ISO YYYY-MM-DD (the canonical pipeline date format)', () => {
-    expect(validateConfirmedValue('date_of_birth', '1986-06-25').ok).toBe(true)
+    expect(validateConfirmedValue('date_of_birth', '1990-01-01').ok).toBe(true)
   })
 
   it('rejects a European-style dotted date', () => {
-    const v = validateConfirmedValue('date_of_birth', '25.06.1986')
+    const v = validateConfirmedValue('date_of_birth', '01.01.1990')
     expect(v.ok).toBe(false)
     expect(v.reason).toBe('invalid_date_format')
   })

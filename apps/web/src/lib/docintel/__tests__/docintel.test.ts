@@ -79,22 +79,22 @@ describe('docintel/transliterationPolicy (KMU-55, never LLM)', () => {
   })
 
   it('names → exact KMU-55 Latin', () => {
-    expect(toCanonicalValue(read("Куроп'ятник"), 'name')).toBe('Kuropiatnyk')
-    expect(toCanonicalValue(read('Сергійович'), 'name')).toBe('Serhiiovych')
+    expect(toCanonicalValue(read("Іваненко"), 'name')).toBe('Ivanenko')
+    expect(toCanonicalValue(read('Петрович'), 'name')).toBe('Petrovych')
   })
-  it('city → KMU-55 (Trostianets, not Prostianets/Troshchianets)', () => {
-    expect(toCanonicalValue(read('Тростянець'), 'place_city')).toBe('Trostianets')
+  it('city → KMU-55 (Vinnytsia, not Prostianets/Troshchianets)', () => {
+    expect(toCanonicalValue(read('Вінниця'), 'place_city')).toBe('Vinnytsia')
   })
   it('oblast → nominative + Oblast', () => {
     expect(toCanonicalValue(read('Вінницька область'), 'place_oblast')).toBe('Vinnytsia Oblast')
   })
   it('city strips settlement-type prefix (смт / с.м.т. / м.) → bare city for the form', () => {
-    expect(toCanonicalValue(read('смт Тростянець'), 'place_city')).toBe('Trostianets')
-    expect(toCanonicalValue(read('с.м.т. Тростянець'), 'place_city')).toBe('Trostianets') // live Gemini variant
+    expect(toCanonicalValue(read('смт Вінниця'), 'place_city')).toBe('Vinnytsia')
+    expect(toCanonicalValue(read('с.м.т. Вінниця'), 'place_city')).toBe('Vinnytsia') // live Gemini variant
     expect(toCanonicalValue(read('м. Київ'), 'place_city')).toBe('Kyiv')
   })
   it('date → ISO only when well-formed, else null (no guessing)', () => {
-    expect(toCanonicalValue(read('25 червня 1986', '1986-06-25'), 'date')).toBe('1986-06-25')
+    expect(toCanonicalValue(read('01 січня 1990', '1990-01-01'), 'date')).toBe('1990-01-01')
     expect(toCanonicalValue(read('June 25', 'June 25'), 'date')).toBeNull()
   })
 })

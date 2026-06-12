@@ -30,14 +30,14 @@ describe('BUG C — canonical_value_unresolved (no silent drop)', () => {
   it('date field with cyrillic but NO iso_date → emitted as review, value = cyrillic', async () => {
     const res = await readDocument(IMG, 'image/jpeg', 'ua_internal_passport_booklet', {
       provider: provider([
-        { field: 'dob', cyrillic: '25 червня 1986', iso_date: null, can_read: true, confidence: 0.9, reason: '' },
+        { field: 'dob', cyrillic: '01 січня 1990', iso_date: null, can_read: true, confidence: 0.9, reason: '' },
       ]),
     })
     expect(res.ok).toBe(true)
     const dob = res.fields.find((f) => f.field === 'dob')
     expect(dob).toBeDefined()
-    expect(dob!.value).toBe('25 червня 1986')        // raw cyrillic kept as fallback
-    expect(dob!.raw_cyrillic).toBe('25 червня 1986')
+    expect(dob!.value).toBe('01 січня 1990')        // raw cyrillic kept as fallback
+    expect(dob!.raw_cyrillic).toBe('01 січня 1990')
     expect(dob!.review_required).toBe(true)
     expect(dob!.review_reasons ?? []).toContain('canonical_value_unresolved')
   })
@@ -67,7 +67,7 @@ describe('BUG C — canonical_value_unresolved (no silent drop)', () => {
   it('a valid iso_date resolves normally → NO unresolved reason', async () => {
     const res = await readDocument(IMG, 'image/jpeg', 'ua_internal_passport_booklet', {
       provider: provider([
-        { field: 'dob', cyrillic: '25.06.1986', iso_date: '1986-06-25', can_read: true, confidence: 0.9, reason: '' },
+        { field: 'dob', cyrillic: '01.01.1990', iso_date: '1990-01-01', can_read: true, confidence: 0.9, reason: '' },
       ]),
     })
     const dob = res.fields.find((f) => f.field === 'dob')

@@ -113,10 +113,10 @@ describe('Phase 2.0 — GAP A: rawCyrillic threaded through pipeline', () => {
 // ── GAP B: D2 runs on Cyrillic (not Latin) ────────────────────────────────────
 
 describe('Phase 2.0 — GAP B: D2 receives Cyrillic via applyKnowledge', () => {
-  it('applyKnowledge uses rawCyrillic for D2 — Сергій (clean UA name) → accept with KMU-55', () => {
+  it('applyKnowledge uses rawCyrillic for D2 — Іван (clean UA name) → accept with KMU-55', () => {
     // When KNOWLEDGE_BRAIN_ENABLED=1 and rawCyrillic is set, D2 should see Cyrillic.
     // We test normalizeCanonicalValue directly here (it's the D2 engine).
-    const d = normalizeCanonicalValue('given_name', 'Сергій', { ukrainianDoc: true, sourceBasis: 'raw_cyrillic' })
+    const d = normalizeCanonicalValue('given_name', 'Іван', { ukrainianDoc: true, sourceBasis: 'raw_cyrillic' })
     expect(d.action).toBe('accept')
     expect(d.finalValue).toBeTruthy()
     expect(d.ruleId).toMatch(/name\.given_name/)
@@ -125,7 +125,7 @@ describe('Phase 2.0 — GAP B: D2 receives Cyrillic via applyKnowledge', () => {
   })
 
   it('D2 receives Cyrillic → Russian spelling on UA doc triggers review, not accept', () => {
-    const d = normalizeCanonicalValue('given_name', 'Сергей', { ukrainianDoc: true, sourceBasis: 'raw_cyrillic' })
+    const d = normalizeCanonicalValue('given_name', 'Андрей', { ukrainianDoc: true, sourceBasis: 'raw_cyrillic' })
     expect(d.action).toBe('review')
     expect(d.finalValue).toBeNull()
     expect(d.reasonCodes).toContain('russian_spelling_suspected')
@@ -198,7 +198,7 @@ describe('Phase 2.0 — Bug B fix: derived KMU-55 Latin not treated as controlli
   })
 
   it('Latin name from ead_latin → preserve with high evidence', () => {
-    const d = normalizeCanonicalValue('given_name', 'SERHII', { sourceBasis: 'ead_latin' })
+    const d = normalizeCanonicalValue('given_name', 'IVAN', { sourceBasis: 'ead_latin' })
     expect(d.action).toBe('preserve')
     expect(d.evidenceStrength).toBeGreaterThanOrEqual(0.95)
   })
@@ -235,11 +235,11 @@ describe('Phase 2.0 — OFF behavior: KNOWLEDGE_BRAIN_ENABLED absent → identic
 
   it('rawCyrillic is threaded even without knowledge ctx (structural improvement)', () => {
     const candidates: FieldCandidate[] = [
-      makeCandidate({ key: 'given_name', value: 'Serhii', rawCyrillic: 'Сергій' }),
+      makeCandidate({ key: 'given_name', value: 'Ivan', rawCyrillic: 'Іван' }),
     ]
     const fields = arbitrateDocument(candidates)  // no knowledge
-    expect(fields[0].rawCyrillic).toBe('Сергій')
-    expect(fields[0].normalizedValue).toBe('Serhii')   // unchanged
+    expect(fields[0].rawCyrillic).toBe('Іван')
+    expect(fields[0].normalizedValue).toBe('Ivan')   // unchanged
   })
 })
 

@@ -56,12 +56,12 @@ describe('trigger scope', () => {
 describe('applyAntiFabricationGate (pure)', () => {
   it('handwritten birth cert: forces review on identity, keeps value, adds reasons', () => {
     const out = applyAntiFabricationGate([
-      field({ field: 'child_family_name', value: 'Kuropiatnyk', review_required: false }),
+      field({ field: 'child_family_name', value: 'Ivanenko', review_required: false }),
       field({ field: 'act_record_number', value: '87', review_required: false }),
     ], 'ua_birth_certificate')
     const name = out.find((f) => f.field === 'child_family_name')!
     expect(name.review_required).toBe(true)
-    expect(name.value).toBe('Kuropiatnyk') // value unchanged
+    expect(name.value).toBe('Ivanenko') // value unchanged
     expect(name.review_reasons).toEqual([...ANTI_FABRICATION_REASONS])
     const act = out.find((f) => f.field === 'act_record_number')!
     expect(act.review_required).toBe(false) // non-identity untouched
@@ -78,8 +78,8 @@ describe('applyAntiFabricationGate (pure)', () => {
 
   it('non-hard-case (passport): fields untouched (MRZ identity not blanket-forced)', () => {
     const input = [
-      field({ field: 'family_name', value: 'KUROPIATNYK', review_required: false }),
-      field({ field: 'passport_number', value: 'FU262473', review_required: false }),
+      field({ field: 'family_name', value: 'IVANENKO', review_required: false }),
+      field({ field: 'passport_number', value: 'FA000000', review_required: false }),
     ]
     const out = applyAntiFabricationGate(input, 'ua_international_passport')
     expect(out).toEqual(input)
@@ -102,7 +102,7 @@ function stub(): VisionProvider {
       return {
         ok: true, model: primaryGeminiModel(), ms: 1,
         fields: [
-          { field: 'child_family_name', cyrillic: 'Куропятник', can_read: true, confidence: 0.99, reason: '' },
+          { field: 'child_family_name', cyrillic: 'Іваненко', can_read: true, confidence: 0.99, reason: '' },
           { field: 'act_record_number', cyrillic: '87', can_read: true, confidence: 0.99, reason: '' },
         ],
       }
