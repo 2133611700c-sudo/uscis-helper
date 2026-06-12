@@ -14,7 +14,36 @@
       "home": "Главная",
       "privacy": "Конфиденциальность",
       "terms": "Условия",
-      "disclaimer": "Отказ от ответственности"
+      "disclaimer": "Отказ от ответственности",
+      "pillars": {
+        "translate": {
+          "label": "Перевод",
+          "translateDoc": "Перевести документ",
+          "supportedDocs": "Поддерживаемые документы",
+          "pricing": "Стоимость"
+        },
+        "forms": {
+          "label": "Формы",
+          "ead": "Разрешение на работу (EAD)",
+          "reparole": "Re-Parole U4U",
+          "tps": "TPS Украина",
+          "all": "Все услуги"
+        },
+        "status": {
+          "label": "Статус",
+          "uscisStatus": "Статус дела USCIS",
+          "tpsStatus": "Статус TPS",
+          "i94Guide": "Руководство I-94"
+        },
+        "info": {
+          "label": "Инфо",
+          "faq": "Вопросы и ответы",
+          "attorneys": "Юридическая помощь",
+          "sources": "Официальные источники",
+          "about": "О нас",
+          "contact": "Контакты"
+        }
+      }
     },
     "ctaStatus": "Проверить статус",
     "signIn": "Войти",

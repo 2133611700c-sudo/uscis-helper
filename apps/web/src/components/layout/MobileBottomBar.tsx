@@ -3,23 +3,28 @@
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
-import { Home, Grid3X3, Search, Mail } from 'lucide-react'
+import { Languages, ClipboardEdit, Search, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { navPillars, type NavIconName } from '@/data/navPillars'
+
+const ICONS: Record<NavIconName, typeof Languages> = {
+  Languages,
+  ClipboardEdit,
+  Search,
+  BookOpen,
+}
 
 export function MobileBottomBar() {
-  const t = useTranslations('mobileBar')
+  const t = useTranslations('header')
   const locale = useLocale()
   const pathname = usePathname()
 
-  const links: Array<{ href: string; label: string; icon: typeof Home; external?: boolean }> = [
-    { href: `/${locale}`, label: t('home'), icon: Home },
-    { href: `/${locale}/services`, label: t('services'), icon: Grid3X3 },
-    // Status — our own helper: decodes USCIS status codes in plain language,
-    // then links out to egov. Keeps the user on our product first (was a direct
-    // external jump to egov.uscis.gov).
-    { href: `/${locale}/services/uscis-case-status`, label: t('status'), icon: Search },
-    { href: `/${locale}/contact`, label: t('contact'), icon: Mail },
-  ]
+  // Active pillar = the one whose topHref is the LONGEST matching prefix, so
+  // /services/translate-document highlights Translate, not Forms (/services).
+  const activeId = navPillars
+    .map((p) => ({ id: p.id, full: `/${locale}${p.topHref}` }))
+    .filter((x) => pathname === x.full || pathname.startsWith(`${x.full}/`))
+    .sort((a, b) => b.full.length - a.full.length)[0]?.id
 
   return (
     <nav
@@ -29,37 +34,21 @@ export function MobileBottomBar() {
       aria-label="Mobile navigation"
     >
       <div className="grid grid-cols-4 h-14">
-        {links.map(({ href, label, icon: Icon, external }) => {
-          const isActive = !external && pathname === href
-          const className = cn(
-            // px-1 + min-width-0 so long labels (e.g. "Контакты") wrap
-            // instead of truncating with an ellipsis on 360–390px viewports.
-            'flex flex-col items-center justify-center gap-0.5 px-1 min-w-0 text-sm leading-tight font-medium transition-colors text-center',
-            isActive ? 'text-brand-600 dark:text-brand-300' : 'text-ink-600 hover:text-ink-900',
-          )
-          if (external) {
-            return (
-              <a
-                key={href}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={className}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="block w-full break-words">{label}</span>
-              </a>
-            )
-          }
+        {navPillars.map((p) => {
+          const Icon = ICONS[p.icon]
+          const isActive = p.id === activeId
           return (
             <Link
-              key={href}
-              href={href}
-              className={className}
+              key={p.id}
+              href={`/${locale}${p.topHref}`}
               aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'flex flex-col items-center justify-center gap-0.5 px-1 min-w-0 text-sm leading-tight font-medium transition-colors text-center',
+                isActive ? 'text-brand-600 dark:text-brand-300' : 'text-ink-600 hover:text-ink-900',
+              )}
             >
               <Icon className="w-5 h-5" />
-              <span className="block w-full break-words">{label}</span>
+              <span className="block w-full break-words">{t(`nav.${p.labelKey}`)}</span>
             </Link>
           )
         })}
