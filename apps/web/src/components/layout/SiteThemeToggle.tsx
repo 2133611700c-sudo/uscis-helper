@@ -35,9 +35,9 @@ export function SiteThemeToggle() {
         color: 'var(--text-2)',
         border: '1px solid var(--border)',
       }}
-      className="rounded-md p-1.5 transition-colors hover:opacity-80"
+      className="rounded-md p-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors hover:opacity-80"
     >
-      {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      {isDark ? <Sun size={18} /> : <Moon size={18} />}
     </button>
   )
 }
