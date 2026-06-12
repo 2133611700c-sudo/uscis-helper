@@ -16,10 +16,10 @@
  * never bleed into the rest of the site.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { isGarbageValue } from '@uscis-helper/knowledge'
-import { getUnresolvedReviewFields } from '@/lib/translation/reviewGate'
+import { getHardUnresolvedReviewFields, getSoftReviewFields } from '@/lib/translation/reviewGate'
 import { ukrLabelFor } from './translationFieldLabels'
 import { downscaleImageForUpload } from '@/lib/upload/downscaleImage'
 
@@ -168,6 +168,8 @@ const T = {
     s5_second_reading: 'Второе прочтение (Google Vision)',
     s5_second_reading_verify: 'сверьте дату',
     s5_review_block: 'Сверьте отмеченные поля с вашим документом — рукописный текст мы читаем осторожно. Если всё верно, нажмите «Подтвердить»; если нет — «Изменить». Это займёт минуту.',
+    s5_soft_confirm: 'Мы прочитали эти поля с вашего паспорта. Пожалуйста, бегло сверьте их с документом и подтвердите — это займёт несколько секунд.',
+    s5_confirm_all: 'Всё верно — подтвердить и продолжить',
     s5_sample_badge: '📄 ОБРАЗЕЦ ПЕРЕВОДА',
     s5_cert_intro: 'I, the undersigned, hereby certify that I am competent in Ukrainian and English languages, and that the above is a true and accurate translation of the Ukrainian document.',
     s5_cta: 'Оплатить и получить PDF — $14.99 →',
@@ -291,6 +293,8 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s5_second_reading: 'Second reading (Google Vision)',
     s5_second_reading_verify: 'please verify the date',
     s5_review_block: 'Please compare the marked fields with your document — we read handwriting cautiously. If a value is correct press Confirm; if not, press Edit. Takes a minute.',
+    s5_soft_confirm: 'We read these fields from your passport. Please glance over them against your document and confirm — it takes a few seconds.',
+    s5_confirm_all: 'Looks correct — confirm & continue',
     s5_sample_badge: '📄 SAMPLE TRANSLATION',
     s5_cta: 'Pay and get PDF — $14.99 →',
     s5_payment_note: 'Payment via Stripe. Secure. PDF available immediately after payment.',
@@ -1192,18 +1196,38 @@ export function TranslateWizard() {
   // Phase 2.1a: review gate is enforced for auto docs (passport/id) AND for hard-case
   // docs when autoread returned >0 fields. Pure manual path (flag OFF or 0 fields) → no gate.
   const needsReviewGate = currentDocMeta?.auto || hardCaseHasFields
-  const unresolvedReviewFields = needsReviewGate
-    ? getUnresolvedReviewFields(
-        extractedFields.map((f) => ({
-          field: f.field,
-          normalized_value: f.value,
-          review_required: Boolean(f.review_required),
-        })),
-      )
-    : []
+  // A field flagged ONLY because the document has no MRZ math-anchor
+  // (every internal passport booklet; any passport with the MRZ strip out of
+  // frame) becomes a one-click SOFT confirm, not a hard block on payment.
+  // Genuine doubt (low_confidence / mrz_check_failed / provider_conflict /
+  // empty value) still hard-blocks. The operator re-reviews and signs before
+  // any certified PDF, so a soft confirm only unlocks the Stripe step.
+  const reviewGateRows = useMemo(
+    () =>
+      extractedFields.map((f) => ({
+        field: f.field,
+        normalized_value: f.value,
+        review_required: Boolean(f.review_required),
+        review_reasons: f.review_reasons,
+      })),
+    [extractedFields],
+  )
+  const unresolvedReviewFields = needsReviewGate ? getHardUnresolvedReviewFields(reviewGateRows) : []
+  const softReviewFields = needsReviewGate ? getSoftReviewFields(reviewGateRows) : []
   const hasUnresolvedReviewFields = unresolvedReviewFields.length > 0
+  const hasSoftReviewFields = softReviewFields.length > 0
   const canProceedToCertifiedOutput =
     !needsReviewGate || (extractedFields.length > 0 && !hasUnresolvedReviewFields)
+
+  const handleConfirmAllSoftFields = useCallback(() => {
+    setExtractedFields((prev) =>
+      prev.map((f) =>
+        softReviewFields.includes(f.field) && (f.value ?? '').trim()
+          ? { ...f, kind: 'user_confirmed', confidence: 1, review_required: false }
+          : f,
+      ),
+    )
+  }, [softReviewFields])
 
   // ── Real Stripe checkout (replaces prototype's simulatePayment) ──
   const handlePayment = useCallback(async () => {
@@ -1721,6 +1745,18 @@ export function TranslateWizard() {
                 <div className="tw-confirm-edit" style={{ marginBottom: 12 }}>
                   <span>⚠️</span>
                   <div style={{ flex: 1 }}>{t.s5_review_block}</div>
+                </div>
+              )}
+              {!hasUnresolvedReviewFields && hasSoftReviewFields && (
+                <div
+                  className="tw-confirm-edit"
+                  style={{ marginBottom: 12, alignItems: 'center', flexWrap: 'wrap', gap: 12 }}
+                >
+                  <span aria-hidden="true">👁️</span>
+                  <div style={{ flex: 1, minWidth: 200 }}>{t.s5_soft_confirm}</div>
+                  <button type="button" className="tw-btn-primary" onClick={handleConfirmAllSoftFields}>
+                    {t.s5_confirm_all}
+                  </button>
                 </div>
               )}
               <div>
