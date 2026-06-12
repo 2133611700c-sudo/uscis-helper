@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3A — TPS + EAD accessibility completion (labels, focus)
+Applies the "everything works the same" rule to a11y across the wizards.
+- `TPSWizardV2` `FieldInput` (the shared component behind every TPS review field): the label was a plain `<div>`; now `<label htmlFor={dataTestId}>` + input `id`, so all TPS fields are announced by screen readers — fixed in ONE place.
+- `EADWizard`: 7 inputs used `focus:outline-none` + a Tailwind ring (a box-shadow ring is invisible in Windows High Contrast Mode). Replaced with the ring + a real `focus-visible:outline`, so keyboard / High-Contrast users get a visible focus indicator.
+- tsc 0, build clean, 3176 tests pass.
+
 ## 2026-06-12 | Safety net — manual rotate override (free, user wins)
 A hedge for the auto-rotation the owner asked about ("можно подстраховаться?"): a ↻ rotate button on each upload preview tile in the translation wizard. Auto-OSD does its best automatically; if it's wrong or didn't fire, the user rotates by hand and **that choice is final** — the OSD won't override a hand-rotated page.
 - `autoRotate.ts`: exported `rotateImage90` (90° CW, fail-open).
