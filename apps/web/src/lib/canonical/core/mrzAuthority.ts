@@ -180,6 +180,35 @@ export function mrzCandidatesFromText(rawText: string): FieldCandidate[] {
   return candidates
 }
 
+// MRZ field keys → the translation registry's field names, per docType. The MRZ
+// parser emits ICAO names (date_of_birth/date_of_expiry); the translation reader
+// uses dob/passport_expiration_date. Only the fields the registry expects are
+// kept (nationality/sex are dropped for the intl passport's 5-field spec).
+const TRANSLATION_MRZ_KEYMAP: Record<string, Record<string, string>> = {
+  ua_international_passport: { date_of_birth: 'dob', date_of_expiry: 'passport_expiration_date' },
+}
+const TRANSLATION_MRZ_ALLOWED: Record<string, Set<string>> = {
+  ua_international_passport: new Set(['family_name', 'given_name', 'passport_number', 'dob', 'passport_expiration_date']),
+}
+
+/**
+ * MRZ candidates for the TRANSLATION path, remapped to a docType's registry
+ * field names so a valid MRZ merges with the Gemini read (same arbitration key)
+ * and auto-resolves the field instead of falling to critical_no_mrz_anchor.
+ * Returns [] for docTypes without an MRZ mapping (no behavior change).
+ */
+export function mrzCandidatesForTranslation(rawText: string, docTypeId: string): FieldCandidate[] {
+  const keymap = TRANSLATION_MRZ_KEYMAP[docTypeId]
+  const allowed = TRANSLATION_MRZ_ALLOWED[docTypeId]
+  if (!keymap || !allowed) return []
+  const out: FieldCandidate[] = []
+  for (const c of mrzCandidatesFromText(rawText)) {
+    const key = keymap[c.key] ?? c.key
+    if (allowed.has(key)) out.push({ ...c, key })
+  }
+  return out
+}
+
 /**
  * Extended MRZ parse result with debug classification.
  * Used by routes that need to return specific failure reasons.
