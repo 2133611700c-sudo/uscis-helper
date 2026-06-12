@@ -96,6 +96,11 @@
     --border: #d1d5db;
     --accent: #10a37f;
     --accent-hover: #0e8f70;
+    /* Translucent accent tint for selected/active/hover surfaces. MUST be
+       defined here: the translation wizard reads var(--accent-light) and would
+       otherwise fall back to a fixed near-white (#e6f4ed) that turns invisible
+       under light text in dark mode (the "white patch" bug). */
+    --accent-light: rgba(16, 163, 127, 0.12);
     --danger-bg: #fef2f2;
     --danger-text: #991b1b;
     --warning-bg: #fffbeb;
@@ -159,6 +164,9 @@
     --border: #565869;
     --accent: #10a37f;
     --accent-hover: #13b890;
+    /* Dark: stronger translucent tint so selected/active surfaces read as a
+       dark teal (near-white text stays legible) instead of a light patch. */
+    --accent-light: rgba(16, 163, 127, 0.28);
     --danger-bg: #3b1f24;
     --danger-text: #fecaca;
     --warning-bg: #3a2f15;
