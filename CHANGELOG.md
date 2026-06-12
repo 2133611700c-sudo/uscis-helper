@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival Phase 3A (core visual/legibility) — selection, fonts, contrast
+Branch survival/phases-0-3 (NOT pushed).
+- `globals.css`: defined `::selection` / `::-moz-selection` (white on brand blue, both themes) — fixes highlighted/selected text vanishing in dark mode (the "при выделении не читается" report). Added `--font-sans` / `--font-display` to `@theme` so Tailwind font utilities resolve to Inter/Playfair instead of falling back to system-ui (fixes the Inter/system split = "некачественный шрифт").
+- `[locale]/layout.tsx`: Playfair Display now loads the `cyrillic` subset so RU/UK headings don't fall back to a system serif.
+- Contrast fixes (were ~1.5–2.8:1): `button.tsx` ghost/outline hover (was dark-blue on green ~1.8:1 → neutral surface text-1/surface-2), `MemberTabs` active tab (dark variant), `MobileBottomBar` active nav (dark variant); `LocaleSwitcher` 9px arrow → text-xs.
+- Evidence: tsc 0, production build clean, 3216 tests pass. Pending 3A: full dark-mode token migration (remove the per-utility override hack), remaining contrast fixes (Screen12 copy box, TrendingTopics pill), text-xs on content.
+
 ## 2026-06-12 | Survival Phase 1 (partial) — soft-confirm review gate + truthful health
 Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - `lib/translation/reviewGate.ts`: added `isSoftAnchorOnly`, `getHardUnresolvedReviewFields`, `getSoftReviewFields`. A passport field flagged ONLY with `critical_no_mrz_anchor` (and having a value) becomes a one-click SOFT confirm in the wizard pay-gate instead of a hard block. Genuine doubt (low_confidence/mrz_check_failed/provider_conflict/empty) still hard-blocks. Server `assertReviewGate` unchanged — operator certification path stays strict.

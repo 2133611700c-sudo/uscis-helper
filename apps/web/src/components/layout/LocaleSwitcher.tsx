@@ -45,7 +45,7 @@ export function LocaleSwitcher() {
     >
       <Globe className="h-4 w-4 shrink-0 text-ink-700" />
       <span>{currentLabel}</span>
-      <span className="text-[9px] font-semibold text-ink-600 opacity-60">
+      <span className="text-xs font-semibold text-ink-600">
         → {nextLabel}
       </span>
     </button>
