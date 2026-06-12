@@ -45,7 +45,7 @@ export function Header() {
             {t('nav.faq')}
           </Link>
           <Link
-            href={`#sources`}
+            href={`/${locale}#sources`}
             className="hover:bg-[var(--surface-3)] transition-[background,color] duration-150 font-medium px-3 py-1.5 rounded-md"
             style={{ color: 'var(--text-1)' }}
           >
@@ -56,29 +56,17 @@ export function Header() {
         <div className="flex items-center gap-2">
           <SiteThemeToggle />
           <LocaleSwitcher />
-          {/* Sign in — ghost pill button */}
+          {/* Check status — filled CTA → our own status helper (decodes USCIS
+              codes in plain language, then links out to egov). The previous
+              "Sign in" pill was removed: it linked to /sign-in which has no
+              route (404) and end users have no account. */}
           <Link
-            href={`/${locale}/sign-in`}
-            className="hidden sm:inline-flex items-center active:scale-[0.97] text-sm font-semibold px-4 py-2 rounded-[999px] transition-[background,transform] duration-150"
-            style={{
-              border: '1.5px solid var(--border)',
-              color: 'var(--text-1)',
-              background: 'transparent',
-            }}
-          >
-            {t('signIn')}
-          </Link>
-          {/* Check status — filled CTA. Goes DIRECTLY to the official USCIS
-              Case Status Online portal in a new tab. One click, no detour. */}
-          <a
-            href="https://egov.uscis.gov/"
-            target="_blank"
-            rel="noopener noreferrer"
+            href={`/${locale}/services/uscis-case-status`}
             className="hidden sm:inline-flex items-center active:scale-[0.97] text-white text-sm font-semibold px-4 py-2 rounded-[999px] transition-[background,transform] duration-150"
-            style={{ background: '#2563eb' }}
+            style={{ background: 'var(--primary)' }}
           >
             {t('ctaStatus')}
-          </a>
+          </Link>
         </div>
       </div>
     </header>
