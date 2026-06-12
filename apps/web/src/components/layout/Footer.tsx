@@ -38,7 +38,7 @@ export function Footer() {
           <div>
             <p className="text-white font-semibold text-sm mb-3">{t('columns.resources.title')}</p>
             <nav className="flex flex-col gap-2 text-sm">
-              <Link href={`#sources`} className="text-slate-400 hover:text-white transition-colors">
+              <Link href={`/${locale}#sources`} className="text-slate-400 hover:text-white transition-colors">
                 {t('columns.resources.links.officialLinks')}
               </Link>
               <Link href={`/${locale}/faq`} className="text-slate-400 hover:text-white transition-colors">
@@ -46,9 +46,6 @@ export function Footer() {
               </Link>
               <Link href={`/${locale}/supported-documents`} className="text-slate-400 hover:text-white transition-colors">
                 {t('columns.resources.links.supportedDocuments')}
-              </Link>
-              <Link href={`/${locale}/supported-documents`} className="text-slate-400 hover:text-white transition-colors">
-                {t('columns.resources.links.supportedDocs')}
               </Link>
               <Link href={`/${locale}/contact`} className="text-slate-400 hover:text-white transition-colors">
                 {t('columns.resources.links.contact')}
@@ -78,12 +75,8 @@ export function Footer() {
 
         <div className="mt-10 pt-6 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
           <a href={`/${locale}/owner`} className="text-xs text-slate-500 hover:text-slate-400 transition-colors cursor-default">{t('bottom')}</a>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span>EN</span><span>·</span>
-            <span>RU</span><span>·</span>
-            <span>UK</span><span>·</span>
-            <span>ES</span>
-          </div>
+          {/* The static EN·RU·UK·ES row was removed: it looked clickable but did
+              nothing. The working language selector lives in the header. */}
         </div>
       </div>
     </footer>
