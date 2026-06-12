@@ -147,6 +147,7 @@ const T = {
     // Screen 4 — Processing
     s4_title_1: 'AI читает', s4_title_2: 'ваш документ...',
     s4_subtitle: 'Пожалуйста, подождите. Это займёт несколько секунд.',
+    s4_slow: 'Документ читается чуть дольше обычного — пожалуйста, не закрывайте эту страницу. Мы почти закончили.',
     s4_steps: [
       'Проверяем качество изображения',
       'Распознаём текст (OCR)',
@@ -273,6 +274,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s3_cta_n: 'Recognize %COUNT% pages →',
     s4_title_1: 'AI is reading', s4_title_2: 'your document…',
     s4_subtitle: 'Please wait. This takes a few seconds.',
+    s4_slow: 'This document is taking a little longer than usual — please keep this page open. We are almost done.',
     s4_steps: [
       'Checking image quality',
       'Recognising text (OCR)',
@@ -911,6 +913,7 @@ export function TranslateWizard() {
   const [pdfDownloaded, setPdfDownloaded] = useState(false)
   const [sigSaved, setSigSaved] = useState(false)
   const [procStep, setProcStep] = useState(0) // 0-5 — which step is currently active
+  const [procSlow, setProcSlow] = useState(false) // true after ~15s — reassure, don't let users close the tab
   const MAX_PAGES = 6 // hard cap to keep OCR cost predictable (~$0.001/page)
   const [stripeCheckoutId, setStripeCheckoutId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null
@@ -1081,6 +1084,7 @@ export function TranslateWizard() {
   const startProcessing = useCallback(async () => {
     if (uploadedFiles.length === 0 || !selectedDocType) return
     setProcStep(1)
+    setProcSlow(false)
     goTo(4)
     setExtractionError(null)
     setExtractedFields([])
@@ -1093,6 +1097,9 @@ export function TranslateWizard() {
       setTimeout(() => setProcStep(3), perPage * 2),
       setTimeout(() => setProcStep(4), perPage * 3),
       setTimeout(() => setProcStep(5), perPage * 4),
+      // After ~15s reassure the user (slow Gemini read / multi-page) so a
+      // 35-80yo doesn't think it froze and close the tab.
+      setTimeout(() => setProcSlow(true), 15000),
     ]
     const meta = DOC_TYPES.find((d) => d.id === selectedDocType)
     const registryId = meta?.registryId
@@ -1698,6 +1705,11 @@ export function TranslateWizard() {
             <div className="tw-ai-spinner" />
             <h2 className="tw-h2">{t.s4_title_1}<br />{t.s4_title_2}</h2>
             <p className="tw-subtitle">{t.s4_subtitle}</p>
+            {procSlow && (
+              <p className="tw-subtitle" style={{ marginTop: 8, color: 'var(--warning-text)', fontWeight: 600 }}>
+                {t.s4_slow}
+              </p>
+            )}
           </div>
           <div className="tw-card tw-proc-steps">
             {t.s4_steps.map((label, i) => {
