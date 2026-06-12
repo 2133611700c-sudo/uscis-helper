@@ -1,19 +1,6 @@
 import { registryCatalog } from '@uscis-helper/knowledge'
 
 /**
- * Internal routing table for the (inactive) central-brain `analyze()` function.
- * NOTE: this is NOT a truthful claim about the production pipeline — analyze()
- * has no production callers. It is kept only so the dead module still type-checks
- * until Phase 2 quarantines it. The health endpoint no longer exposes it.
- */
-export const MIGRATION_STATE: Record<string, { migrated: boolean; step: number; note: string }> = {
-  translation: { migrated: true, step: 2, note: 'engine path (inactive — no production callers)' },
-  reparole_u4u: { migrated: true, step: 3, note: 'engine path (inactive — no production callers)' },
-  ead: { migrated: true, step: 4, note: 'engine path (inactive — no production callers)' },
-  tps: { migrated: false, step: 5, note: 'never moved into engine wrapper' },
-}
-
-/**
  * Truthful runtime status for /api/central-brain/health.
  *
  * REALITY (verified 2026-06-12): the production document pipeline is
