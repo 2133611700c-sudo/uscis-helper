@@ -99,6 +99,24 @@ async function detectCorrectionDeg(bitmap: ImageBitmap): Promise<number> {
  * Return an upright version of `file` (rotated if the document was photographed
  * sideways/upside-down). Fail-open: returns the original on any problem.
  */
+/**
+ * Manual 90°-clockwise rotation (the user-override safety net for when auto
+ * detection is wrong or didn't fire). Fail-open: returns the original on error.
+ */
+export async function rotateImage90(file: File): Promise<File> {
+  if (typeof window === 'undefined' || typeof createImageBitmap !== 'function' || typeof document === 'undefined') return file
+  if (!file.type.startsWith('image/')) return file
+  let bitmap: ImageBitmap | null = null
+  try {
+    bitmap = await createImageBitmap(file)
+    return await canvasToFile(rotateBitmap(bitmap, 90), file.name)
+  } catch {
+    return file
+  } finally {
+    bitmap?.close?.()
+  }
+}
+
 export async function autoRotateImage(file: File): Promise<File> {
   if (typeof window === 'undefined' || typeof createImageBitmap !== 'function' || typeof document === 'undefined') return file
   if (!file.type.startsWith('image/') || file.type === 'image/svg+xml' || file.type === 'image/gif') return file
