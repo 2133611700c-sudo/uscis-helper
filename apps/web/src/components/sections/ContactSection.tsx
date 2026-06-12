@@ -29,9 +29,9 @@ export function ContactSection() {
         </div>
 
         {state.ok ? (
-          <div className="rounded-2xl border border-green-200 bg-green-50 p-6 flex gap-4 items-start">
-            <CheckCircle className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
-            <p className="text-green-800 text-sm leading-relaxed">{tForm('success')}</p>
+          <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-6 flex gap-4 items-start">
+            <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+            <p className="text-green-800 dark:text-green-300 text-sm leading-relaxed">{tForm('success')}</p>
           </div>
         ) : (
           <form ref={formRef} action={formAction} className="space-y-6">
