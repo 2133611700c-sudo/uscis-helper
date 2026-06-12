@@ -3,7 +3,7 @@ status: PASS_WITH_KNOWN_GAPS
 mode: approved by user — T1–T6, no I-94/EAD/I-912 in this cycle
 generated_at: "2026-05-11T07:10Z"
 agent: Claude (Cowork mode), browser via Claude in Chrome
-operator: SERGII (2133611700c@gmail.com)
+operator: owner@messenginfo.com
 
 # ── COMMIT + DEPLOYMENT ─────────────────────────────────────────────────────
 commit_sha: 14a45cd7aa066e5db8bebd99fbd0a8720ea75617

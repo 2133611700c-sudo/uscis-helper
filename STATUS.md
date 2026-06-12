@@ -1,5 +1,5 @@
 # STATUS (2026-06-11 — PII sweep COMPLETE, waiting Phase 0 owner gate)
-- PII SWEEP COMPLETE (3 phases): source (99 files) + active code/scripts/prompts + historical docs (12 files). git grep = 0 hits on all tracked files except docs/reports/ (owner pending) and guards.yml (detection rule, intentional). 3304 pass/tsc 0/build OK.
+- PII SWEEP COMPLETE (3 phases): source (99 files) + active code/scripts/prompts + historical docs (12 files). git grep = 0 hits on all tracked files except docs/reports/ (owner pending) and guards.yml (detection rule, intentional). Proof yamls cleaned (final pass).. 3304 pass/tsc 0/build OK.
 - OWNER GATE: Phase 0 ($1 test → /order/id → admin → Approve&Send → receive PDF). Signal result to unlock Phase 1.
 - PHASE 1 READY (dead code): L2 benchmark runner, anti-fab/self-consistency/smart-normalize gates, guard_block_events L1 infra, CONFIRMED_VALUE_GUARD, OCR_FIELD_SAFETY — all superseded by operator-flow. Est: 1 day agent.
 
