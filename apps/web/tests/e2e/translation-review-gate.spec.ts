@@ -20,16 +20,17 @@ import { execSync } from 'child_process'
 
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const BOOKLET_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/booklet_test_resized.jpg')
-const PASSPORT_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/Passport Sergii Kuropiatnyk .jpg')
-const I94_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/I94 Sergii Kuropiatnyk .jpg')
+const PASSPORT_IMAGE = process.env.E2E_PASSPORT_IMAGE ?? path.join(REPO_ROOT, 'qa-shots/private/passport_test.jpg')
+const I94_IMAGE = process.env.E2E_I94_IMAGE ?? path.join(REPO_ROOT, 'qa-shots/private/i94_test.jpg')
 
 // family/city/province/middle come from OCR of the real booklet image (the
 // image is gitignored). `given` is the SYNTHETIC value we type via the
 // ReviewOcr edit button — it MUST appear in the translation (regression guard
 // for the 2026-05-27 bug where the manually-supplied given name never reached
 // the translation due to a *_manual key mismatch).
+const EXPECTED_FAMILY_NAME = process.env.E2E_EXPECTED_FAMILY_NAME ?? 'Ivanenko'
 const EXPECTED = {
-  family: 'Kuropiatnyk',
+  family: EXPECTED_FAMILY_NAME,
   city: 'Trostianets',
   province: 'Vinnytsia',
   middle: 'Serhiiovych',

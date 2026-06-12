@@ -94,8 +94,8 @@ export function transliterateKMU55(input: string): string {
 // ── Russian as-written romanization — BGN/PCGN (owner-approved 2026-06-10) ────
 // A Soviet/bilingual line written in RUSSIAN uses BGN/PCGN simplified Russian, NOT
 // KMU-55 (Ukrainian, which would give г→h, и→y). Required outputs:
-//   Сергей→Sergey · Сергеевич→Sergeyevich · Леонидович→Leonidovich
-//   Наталья→Natalya · Степановна→Stepanovna · Иваненко→Ivanenko
+//   Иван→Ivan · Иванович→Ivanovich · Петрович→Petrovich
+//   Ганна→Hanna · Петрівна→Petrivna · Іваненко→Ivanenko
 // BGN/PCGN rule that matters here: е/ё → "ye"/"yё" at word start, after a vowel,
 // or after ъ/ь; "e"/"ё→e" after a consonant. я→ya, ю→yu, й→y, ы→y, э→e, ъ/ь→omit.
 const RU_BASE: Record<string, string> = {
@@ -161,7 +161,7 @@ export function detectNameScript(input: string): 'ua' | 'ru' | 'unknown' {
 
 /**
  * Convert Ukrainian date string to USCIS format (MM/DD/YYYY).
- * Input: "25 червня 1986 року" or "25.06.1986"
+ * Input: "01 січня 1990 року" or "01.01.1990"
  */
 const UA_MONTHS: Record<string, string> = {
   'січня': '01', 'лютого': '02', 'березня': '03', 'квітня': '04',
@@ -178,7 +178,7 @@ export function convertDateToUSCIS(input: string): string | null {
   const dotMatch = input.match(/^(\d{1,2})\.(\d{2})\.(\d{4})$/);
   if (dotMatch) return `${dotMatch[2]}/${dotMatch[1].padStart(2, '0')}/${dotMatch[3]}`;
 
-  // Format: "25 червня 1986 року" or "25 июня 1986 года"
+  // Format: "01 січня 1990 року" or "01 января 1990 года"
   const parts = input.toLowerCase().replace(/\s+(року|года|р\.?|г\.?)\s*$/i, '').trim().split(/\s+/);
   if (parts.length >= 3) {
     const day = parts[0].padStart(2, '0');

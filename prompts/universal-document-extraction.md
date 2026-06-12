@@ -136,7 +136,7 @@ Return ONLY valid JSON:
       "source_label_raw": "Прізвище",
       "source_zone": "name_block.surname_line",
       "bbox": [0.45, 0.12, 0.95, 0.18],
-      "raw_value": "Куроп'ятник",
+      "raw_value": "Іваненко",
       "language_layer": "uk",
       "confidence": 0.91,
       "review_required": false,
@@ -146,7 +146,7 @@ Return ONLY valid JSON:
   "controlling_latin": [
     {
       "field": "Surname",
-      "value": "KUROPIATNYK",
+      "value": "IVANENKO",
       "source": "drivers_license_field_1"
     }
   ],

@@ -9,7 +9,7 @@ import fs from 'fs'
 import path from 'path'
 
 const BASE_URL = process.argv[2] || 'http://localhost:3000'
-const IMAGE = '/Users/sergiikuropiatnyk/work/uscis-helper/qa-shots/private/booklet_test_resized.jpg'
+const IMAGE = process.env.E2E_BOOKLET_IMAGE ?? '/Users/sergiikuropiatnyk/work/uscis-helper/qa-shots/private/booklet_test_resized.jpg'
 
 // Mirror the wizard's BOOKLET_WAVE1_FIELDS set (AFTER fix).
 const BOOKLET_WAVE1_FIELDS = new Set([
@@ -60,10 +60,10 @@ async function main() {
   const showsPatronymic = visibleToWizard.find(f => f.field === 'middle_name')
 
   const expected = {
-    family_name: 'Kuropiatnyk',
-    city_of_birth: 'Trostianets',
-    province_of_birth: 'Vinnytsia Oblast',
-    middle_name: 'Serhiiovych',
+    family_name: process.env.E2E_EXPECTED_FAMILY_NAME ?? 'Ivanenko',
+    city_of_birth: process.env.E2E_EXPECTED_CITY ?? 'Trostianets',
+    province_of_birth: process.env.E2E_EXPECTED_PROVINCE ?? 'Vinnytsia Oblast',
+    middle_name: process.env.E2E_EXPECTED_PATRONYMIC ?? 'Serhiiovych',
   }
   let pass = true
   for (const [k, exp] of Object.entries(expected)) {
