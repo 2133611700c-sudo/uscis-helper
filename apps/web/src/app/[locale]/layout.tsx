@@ -15,7 +15,9 @@ import { MiaFloatingWidget } from '@/components/widgets/MiaFloatingWidget';
 import '../globals.css';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' });
-const playfair = Playfair_Display({ subsets: ['latin'], weight: ['700', '800'], variable: '--font-playfair' });
+// Cyrillic subset required: this is a RU/UK product, headings using --font-display
+// would otherwise fall back to a system serif for Ukrainian/Russian text.
+const playfair = Playfair_Display({ subsets: ['latin', 'cyrillic'], weight: ['700', '800'], variable: '--font-playfair' });
 
 type Props = {
   children: React.ReactNode;
