@@ -1446,9 +1446,10 @@ function FieldInput({
   return (
     <div style={{ marginBottom: 2 }}>
       <div style={{ fontSize: 15, color: TEXT_MUTED }}>
-        {label} <Tip text={tip} />
+        <label htmlFor={dataTestId}>{label}</label> <Tip text={tip} />
       </div>
       <input
+        id={dataTestId}
         data-testid={dataTestId}
         value={value}
         onChange={(e) => onChange(e.target.value)}

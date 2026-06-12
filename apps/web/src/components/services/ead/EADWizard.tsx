@@ -1124,7 +1124,7 @@ export function EADWizard({ locale }: EADWizardProps) {
               id="ead-lastName"
               type="text" value={data.lastName}
               onChange={e => patch({ lastName: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
               placeholder="ШЕВЧЕНКО / SHEVCHENKO"
             />
           </div>
@@ -1134,7 +1134,7 @@ export function EADWizard({ locale }: EADWizardProps) {
               id="ead-firstName"
               type="text" value={data.firstName}
               onChange={e => patch({ firstName: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
               placeholder="TARAS"
             />
           </div>
@@ -1145,7 +1145,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             id="ead-middleName"
             type="text" value={data.middleName}
             onChange={e => patch({ middleName: e.target.value })}
-            className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1155,7 +1155,7 @@ export function EADWizard({ locale }: EADWizardProps) {
               id="ead-dob"
               type="date" value={data.dob}
               onChange={e => patch({ dob: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
             />
           </div>
           <div>
@@ -1165,7 +1165,7 @@ export function EADWizard({ locale }: EADWizardProps) {
               type="text" value={data.countryOfBirth}
               onChange={e => patch({ countryOfBirth: e.target.value })}
               placeholder="Ukraine"
-              className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
             />
           </div>
         </div>
@@ -1191,7 +1191,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             type="text" value={data.alienNumber}
             onChange={e => patch({ alienNumber: e.target.value })}
             placeholder="A123456789"
-            className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
           />
           <p className="text-sm text-[var(--text-2)] mt-1">{ui.alienHint}</p>
         </div>
@@ -1284,7 +1284,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             onChange={e => patch({ usAddress: e.target.value })}
             rows={3}
             placeholder="123 Main St, Apt 4B&#10;Chicago, IL 60601"
-            className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] resize-none focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
           />
           <p className="text-sm text-[var(--text-2)] mt-1">{ui.addressHint}</p>
         </div>
