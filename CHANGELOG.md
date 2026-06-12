@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | BUGFIX (dark mode, round 3) — TPS + EAD wizards (proactive)
+Swept the other product wizards for the same bug classes. Verified each agent finding — rejected 3 false positives (the global `input,textarea,select{}` rule already themes inputs; the #222 tooltip is white-on-charcoal = readable; disabled-button grey is acceptable). Confirmed + fixed:
+- `TPSWizardV2` stale-session banner used UNDEFINED tokens `--warn-bg`/`--warn-border` → cream fallback in BOTH themes → near-white `--text-1` invisible on cream in dark. Fixed to `--warning-bg`/`--warning-border`. CRITICAL.
+- `TPSWizardV2`: `--border-1` (undefined) → `--border`; signature block's bad `--surface-2, #1a1a2e` fallback removed.
+- `EADWizard` step indicator: `ring-blue-200` → `ring-blue-400`; step labels `text-green-600`/`text-blue-600` got `dark:` variants.
+- tsc 0, build clean, 3169 tests pass.
+
 ## 2026-06-12 | BUGFIX (dark mode, round 2) — translator contrast sweep (proactive)
 After fixing --accent-light, an agent dark-mode audit of the whole translator found 6 more readability bugs; all fixed:
 - `HomeTranslateDocumentWidget`: selected-state icon `bg-brand-100` (#dbeafe, icon invisible at 1.04:1) and disabled CTA `disabled:bg-slate-300` with white text (1.36:1) — added `.dark` overrides in globals.css.

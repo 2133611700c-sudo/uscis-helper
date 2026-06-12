@@ -1,4 +1,4 @@
-# STATUS (2026-06-12 — translator dark-mode contrast sweep done; survival+Phase2 live)
+# STATUS (2026-06-12 — dark-mode sweep: translator + TPS + EAD wizards fixed; live)
 - BUGFIX (owner-reported): dark-mode "white patch, invisible text" on selecting a doc-type in the translator = --accent-light token undefined → fixed near-white fallback used in both themes. Defined --accent-light in globals.css (light 0.12 / dark 0.28 translucent accent). 13 wizard spots fixed at once. tsc 0/build.
 - UX: wizard processing screen shows a "taking longer, keep page open" reassurance after ~15s (35-80yo don't close the tab). Additive. 3169 pass.
 - PHASE 2 QUARANTINE: deleted lib/engine/ (12 mods+10 tests), central-brain analyze()/types/audit/MIGRATION_STATE (index now only brainHealth), dead api/ocr routes, TPSWizard v1, transliterateKMU2010. Added no-engine-revival guard test. HELD: api/translation/extract (owner-confirm), lib/tps/transliterate (live). tsc 0/build/3169 pass. Validated incl scripts/+.github.
