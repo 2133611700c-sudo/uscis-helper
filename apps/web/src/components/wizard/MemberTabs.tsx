@@ -35,8 +35,8 @@ export function MemberTabs({ activeIndex, onChange }: MemberTabsProps) {
               'shrink-0 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
               'border-b-2 -mb-px',
               isActive
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300',
+                ? 'border-blue-600 text-blue-700 dark:text-blue-300'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:border-slate-300',
             ].join(' ')}
           >
             {member.alias}
