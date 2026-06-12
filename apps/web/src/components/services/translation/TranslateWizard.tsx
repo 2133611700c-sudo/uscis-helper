@@ -116,6 +116,10 @@ const T = {
     // Screen 2 — Doc type
     s2_title_1: 'Какой документ', s2_title_2: 'нужно перевести?',
     s2_subtitle: 'Выберите один документ',
+    s2_price_block_price: 'Черновик перевода — от $15',
+    s2_price_block_tier: 'Один документ · Оплата после проверки перевода',
+    s2_price_block_what: 'Вы получите черновик перевода на английском + шаблон самоподтверждения (8 CFR §103.2(b)(3)). Вы проверяете, исправляете и подписываете.',
+    s2_price_block_legal: 'Не юридическая фирма. Информационная помощь — не юридическая консультация.',
     s2_popular: 'Самый частый',
     s2_manual_note: 'Этот тип документа обработает наш специалист. Срок: 1–2 рабочих дня. Цена та же — $14.99.',
     s2_hard_case_note: 'Сложный документ: AI попробует прочитать, все поля потребуют вашего подтверждения. Если AI не сможет — наш специалист обработает вручную. Срок тот же.',
@@ -246,6 +250,10 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s1_secure_s: 'We do not retain originals after processing. Everything is encrypted.',
     s2_title_1: 'Which document', s2_title_2: 'do you need translated?',
     s2_subtitle: 'Pick one document',
+    s2_price_block_price: 'Translation draft — from $15',
+    s2_price_block_tier: 'Per document · Pay only after reviewing the translation',
+    s2_price_block_what: 'You receive an English translation draft + a self-certification template (8 CFR §103.2(b)(3)). You review, correct, and sign it.',
+    s2_price_block_legal: 'Not a law firm. Informational help — not legal advice.',
     s2_popular: 'Most common',
     s2_manual_note: 'This document type will be processed by our specialist. Turnaround: 1–2 business days. Same price: $14.99.',
     s2_hard_case_note: 'Complex document: AI will attempt to read it; all fields require your confirmation. If AI cannot extract — a specialist handles it manually at the same price.',
@@ -679,11 +687,17 @@ const WIZARD_CSS = `
 /* Back link — small grey, hover green */
 .tw-back-btn {
   background: none; border: none; color: var(--text-muted);
-  font-size: 14px; cursor: pointer; padding: 6px 0; margin-bottom: 12px;
+  font-size: 14px; cursor: pointer; padding: 10px 0; margin-bottom: 12px;
   display: inline-flex; align-items: center; gap: 4px; font-family: inherit;
-  transition: color 0.15s; min-height: 32px; font-weight: 700;
+  transition: color 0.15s; min-height: 44px; font-weight: 700;
 }
 .tw-back-btn:hover { color: var(--acc); }
+/* Keyboard focus rings — these custom tiles/labels suppress the global ring via
+   -webkit-tap-highlight-color, so they need their own :focus-visible. */
+.tw-doc-tile:focus-visible, .tw-back-btn:focus-visible,
+.tw-btn-upload:focus-visible, .tw-upload-zone:focus-visible {
+  outline: 3px solid var(--acc); outline-offset: 2px;
+}
 
 /* Processing — green spinner on light bg */
 .tw-processing { text-align: center; padding: 16px 0; }
@@ -1576,11 +1590,20 @@ export function TranslateWizard() {
           <button type="button" className="tw-back-btn" onClick={() => goTo(1)}>{t.back}</button>
           <h2 className="tw-h2">{t.s2_title_1}<br />{t.s2_title_2}</h2>
           <p className="tw-subtitle">{t.s2_subtitle}</p>
+          {/* Price + trust BEFORE upload — a 35-80yo should know the cost and what
+              they get before committing a document. Range only (not a fixed price). */}
+          <div className="tw-card" style={{ borderLeft: '3px solid var(--acc)', padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-1)' }}>{t.s2_price_block_price}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{t.s2_price_block_tier}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-1)', marginTop: 8, lineHeight: 1.5 }}>{t.s2_price_block_what}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>{t.s2_price_block_legal}</div>
+          </div>
           <div className="tw-doc-grid">
             {DOC_TYPES.map((d) => (
               <button
                 key={d.id}
                 type="button"
+                aria-pressed={selectedDocType === d.id}
                 className={`tw-doc-tile ${d.popular ? 'popular' : ''} ${selectedDocType === d.id ? 'tw-selected' : ''}`}
                 onClick={() => setSelectedDocType(d.id)}
               >

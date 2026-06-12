@@ -39,7 +39,7 @@ export function LocaleSwitcher() {
     <button
       type="button"
       onClick={switchLocale}
-      className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-ink-800 shadow-sm transition-all duration-200 hover:border-brand-200 hover:bg-slate-50"
+      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-ink-800 shadow-sm transition-all duration-200 hover:border-brand-200 hover:bg-slate-50"
       aria-label={`${t('label')}: ${currentLabel} → ${nextLabel}`}
       title={t('label')}
     >
