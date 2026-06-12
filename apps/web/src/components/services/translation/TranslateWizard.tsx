@@ -1754,7 +1754,7 @@ export function TranslateWizard() {
               </p>
             )}
           </div>
-          <div className="tw-card tw-proc-steps">
+          <div className="tw-card tw-proc-steps" role="status" aria-live="polite">
             {t.s4_steps.map((label, i) => {
               const idx = i + 1
               const isDone = procStep > idx
@@ -1979,8 +1979,9 @@ export function TranslateWizard() {
           </div>
           <div className="tw-card">
             <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14 }}>{t.s7_cert_title}</div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{t.s7_addr_label}</label>
+            <label htmlFor="tw-certifier-addr" style={{ display: 'block', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{t.s7_addr_label}</label>
             <input
+              id="tw-certifier-addr"
               type="text"
               value={certifierAddress}
               onChange={(e) => setCertifierAddress(e.target.value)}
