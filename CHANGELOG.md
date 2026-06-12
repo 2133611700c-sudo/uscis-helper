@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3A/3B — price-before-upload + accessibility (focus, tap targets)
+Three parallel audit agents (a11y / nav-registry / pricing) → applied the safe high-value subset.
+- PRICE BEFORE UPLOAD: added a price+trust card on the translate wizard doc-type screen (Screen 2), before upload — "Translation draft — from $15 · pay only after reviewing · you receive a draft + self-certification template, you review/correct/sign · not a law firm". Range only; content-rule compliant ("черновик"/"информационная помощь", no banned wording). ru + en.
+- ACCESSIBILITY: focus rings on doc-type tiles / back / upload labels (the wizard's scoped CSS had suppressed the global ring); `aria-pressed` on doc-type tiles; back-btn tap target 32→44px; SiteThemeToggle 28→44px; LocaleSwitcher 40→44px.
+- ⚠ AWAITING_OWNER_PRICING (NOT changed — money decision): wizard Stripe amounts vs /pricing mismatch — translation charges $14.99 vs page $15; **Re-Parole wizard charges $15 but /pricing says $29 ($14 gap)**; $29 "Reviewed Draft" advertised but no wizard path; TPS absent from /pricing. Owner must reconcile.
+- DEFERRED (ready, not applied): 4-pillar registry nav (Header+MobileBottomBar parity) — needs 64 i18n keys + a Contact-drops-from-mobile UX decision.
+- tsc 0, build clean, 3169 tests pass.
+
 ## 2026-06-12 | Survival 3A — "retake photo" flow for too-small/unclear scans
 - The wizard already had photo tips (s3_tip_t/s3_tip_b) and a human extraction-error message. Added the missing piece: when the server bounces a photo as `needs_better_scan` / `reshoot_required` (e.g. <100KB), the user is sent back to the UPLOAD screen with a clear "photo too small/unclear — please retake in good light" notice (📷, warning tokens) instead of being pushed to screen 5 / payment to have a specialist read a bad photo. Additive: scanWarning state resets per run. ru + en. tsc 0, build clean, 3169 tests pass.
 
