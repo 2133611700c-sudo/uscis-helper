@@ -6,12 +6,13 @@ import { execSync } from 'child_process'
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const BOOKLET_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/booklet_test_resized.jpg')
 
+// Set E2E_EXPECTED_* in .env.test (gitignored) when running with real document fixtures.
 const EXPECTED = {
-  family: 'REDACTED',
-  city: 'Trostianets',
-  province: 'Vinnytsia',
-  provinceOblast: 'Vinnytsia Oblast',
-  middle: 'Serhiiovych',
+  family: process.env.E2E_EXPECTED_FAMILY_NAME ?? 'Ivanenko',
+  city: process.env.E2E_EXPECTED_CITY ?? 'Vinnytsia',
+  province: process.env.E2E_EXPECTED_PROVINCE ?? 'Vinnytsia',
+  provinceOblast: (process.env.E2E_EXPECTED_PROVINCE ?? 'Vinnytsia') + ' Oblast',
+  middle: process.env.E2E_EXPECTED_PATRONYMIC ?? 'Ivanovych',
 }
 
 test('booklet-only -> review -> generate ZIP/PDF proof', async ({ page, browserName }) => {

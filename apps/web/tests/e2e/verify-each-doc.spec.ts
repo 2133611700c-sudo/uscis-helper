@@ -13,8 +13,8 @@ import { promises as fs } from 'fs'
 
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const BOOKLET = path.join(REPO_ROOT, 'qa-shots/private/booklet_test_resized.jpg')
-const PASSPORT = path.join(REPO_ROOT, 'qa-shots/private/Passport Sergii REDACTED .jpg')
-const I94 = path.join(REPO_ROOT, 'qa-shots/private/I94 Sergii REDACTED .jpg')
+const PASSPORT = process.env.E2E_PASSPORT_IMAGE ?? path.join(REPO_ROOT, 'qa-shots/private/passport_test.jpg')
+const I94 = process.env.E2E_I94_IMAGE ?? path.join(REPO_ROOT, 'qa-shots/private/i94_test.jpg')
 
 const ARTIFACTS = path.resolve(process.cwd(), 'test-results', 'verify-each-doc')
 
@@ -163,7 +163,8 @@ test('4. All 3 docs → Step 5 has given_name edit btn, no blank manual identity
   await expect(page.getByTestId('tps-review-step-container')).toBeVisible({ timeout: 60_000 })
 
   // CB settle: family_name from booklet should appear
-  await expect(page.locator('body')).toContainText('REDACTED', { timeout: 60_000 })
+  const E2E_EXPECTED_FAMILY_NAME = process.env.E2E_EXPECTED_FAMILY_NAME ?? 'Ivanenko'
+  await expect(page.locator('body')).toContainText(E2E_EXPECTED_FAMILY_NAME, { timeout: 60_000 })
   await page.screenshot({ path: path.join(ARTIFACTS, '4-all3-step5.png'), fullPage: true })
 
   const proof: Record<string, unknown> = {}

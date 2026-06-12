@@ -6,9 +6,9 @@ import { transliterateKMU55, convertDateToUSCIS } from '../transliterate';
 
 const cases: [string, string, string][] = [
   // [input, expected, description]
-  ['REDACTED\'ятник', 'REDACTED', 'Surname with apostrophe'],
-  ['Сергій', 'Serhii', 'Given name — Й non-initial'],
-  ['Сергійович', 'Serhiiovych', 'Patronymic — compound'],
+  ['Дем\'яненко', 'Demianenko', 'Surname with apostrophe'],
+  ['Іван', 'Ivan', 'Given name — Й non-initial'],
+  ['Петрович', 'Petrovych', 'Patronymic — compound'],
   ['Вінниця', 'Vinnytsia', 'City — #CorrectUA'],
   ['Київ', 'Kyiv', 'Capital — #CorrectUA'],
   ['Одеса', 'Odesa', 'City — single s'],
@@ -31,8 +31,8 @@ const cases: [string, string, string][] = [
   ['Донецьк', 'Donetsk', 'ь skipped'],
   ['Богдан', 'Bohdan', 'Г = H not G'],
   // Edge cases added in self-check
-  ['КУРОП\'ЯТНИК', 'REDACTED', 'ALL-CAPS input'],
-  ['СЕРГІЙ', 'SERHII', 'ALL-CAPS name'],
+  ['ДЕМ\'ЯНЕНКО', 'DEMIANENKO', 'ALL-CAPS input'],
+  ['ІВАН', 'IVAN', 'ALL-CAPS name'],
   ['Івано-Франківськ', 'Ivano-Frankivsk', 'Hyphenated city name'],
   ['', '', 'Empty string'],
   ['Hello World', 'Hello World', 'Non-Cyrillic passthrough'],
@@ -54,11 +54,11 @@ for (const [input, expected, desc] of cases) {
 
 // Date tests
 const dateCases: [string, string | null, string][] = [
-  ['25.06.1986', '06/25/1986', 'Dot format'],
-  ['25 червня 1986 року', '06/25/1986', 'Ukrainian long format'],
+  ['01.01.1990', '01/01/1990', 'Dot format'],
+  ['01 січня 1990 року', '01/01/1990', 'Ukrainian long format'],
   ['19 лютого 2003', '02/19/2003', 'February'],
   ['5 грудня 2011', '12/05/2011', 'December'],
-  ['25 июня 1986 года', '06/25/1986', 'Russian fallback'],
+  ['01 января 1990 года', '01/01/1990', 'Russian fallback'],
 ];
 
 for (const [input, expected, desc] of dateCases) {

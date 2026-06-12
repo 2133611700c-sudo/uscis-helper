@@ -4,7 +4,7 @@
  * The Definition-of-Done test that Session 17 owed and never wrote.
  *
  * Walks the TPS Ukraine wizard end-to-end with the canonical booklet
- * sample and verifies that family_name="REDACTED" actually reaches
+ * sample and verifies that the expected family_name actually reaches
  * the Step 5 review DOM — i.e. survives the THREE legs of the bug
  * pattern that Session 17 introduced:
  *   1. BOOKLET_WAVE1_FIELDS filter
@@ -26,11 +26,12 @@
  *   - At step 4, find the booklet upload input by data-testid and
  *     attach the canonical sample image.
  *   - Wait for upload+OCR ("Recognize documents →" CTA).
- *   - At step 5, byte-grep the DOM for "REDACTED".
+ *   - At step 5, byte-grep the DOM for E2E_EXPECTED_FAMILY_NAME.
  *
- * Pass criterion: review DOM contains the string "REDACTED".
- * The string is the KMU-55 transliteration of "REDACTED_NAME" and only
- * appears if all three filter legs let family_name through.
+ * Pass criterion: review DOM contains the expected family name.
+ * Set E2E_EXPECTED_FAMILY_NAME in .env.test (gitignored) when running
+ * with real document fixtures. Only appears if all three filter legs
+ * let family_name through.
  *
  * Run:
  *   pnpm --filter web exec playwright test booklet-review
@@ -50,15 +51,16 @@ import { promises as fs } from 'fs'
 
 const REPO_ROOT = path.resolve(process.cwd(), '../..')
 const BOOKLET_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/booklet_test_resized.jpg')
-const PASSPORT_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/Passport Sergii REDACTED .jpg')
-const I94_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/I94 Sergii REDACTED .jpg')
+const PASSPORT_IMAGE = path.join(REPO_ROOT, process.env.E2E_PASSPORT_IMAGE ?? 'qa-shots/private/passport_test.jpg')
+const I94_IMAGE = path.join(REPO_ROOT, process.env.E2E_I94_IMAGE ?? 'qa-shots/private/i94_test.jpg')
 const EAD_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/Ead1.jpg')
 const DL_IMAGE = path.join(REPO_ROOT, 'qa-shots/private/DL.jpg')
 
-const EXPECTED_FAMILY_NAME = 'REDACTED' // KMU-55 transliteration of "REDACTED_NAME"
-const EXPECTED_CITY = 'Trostianets'
-const EXPECTED_PROVINCE = 'Vinnytsia'
-const EXPECTED_PATRONYMIC = 'Serhiiovych'
+// Set these in .env.test (gitignored) when running with real document fixtures.
+const EXPECTED_FAMILY_NAME = process.env.E2E_EXPECTED_FAMILY_NAME ?? 'Ivanenko'
+const EXPECTED_CITY = process.env.E2E_EXPECTED_CITY ?? 'Vinnytsia'
+const EXPECTED_PROVINCE = process.env.E2E_EXPECTED_PROVINCE ?? 'Vinnytsia'
+const EXPECTED_PATRONYMIC = process.env.E2E_EXPECTED_PATRONYMIC ?? 'Ivanovych'
 
 test('booklet upload → review fields survive → generate ZIP', async ({ page, browserName }) => {
   test.setTimeout(240_000)
