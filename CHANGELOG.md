@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival Phase 3B (broken-link fixes) — navigation cleanup
+Branch survival/phases-0-3 (NOT pushed).
+- `Header`: removed the broken "Sign in" pill (`/sign-in` = 404, no route, no user accounts). "Check Status" CTA now → our `/services/uscis-case-status` (plain-language decode, then links to egov) instead of jumping straight to the external portal; hardcoded `#2563eb` → `var(--primary)`. `#sources` → `/{locale}#sources` (worked only on the homepage before).
+- `Footer`: `#sources` → `/{locale}#sources`; removed the duplicate "Supported Documents" link; removed the fake static `EN·RU·UK·ES` row (looked clickable, did nothing — the real switcher is in the header).
+- `MobileBottomBar`: Status → our `/services/uscis-case-status` (was a direct external jump to egov).
+- Evidence: tsc 0, build clean, 3216 tests pass. Remaining 3B: 4-pillar registry-driven nav + info→start funnel.
+
 ## 2026-06-12 | Survival Phase 3A (remaining) — "text disappears" contrast fixes
 Branch survival/phases-0-3 (NOT pushed).
 - `TrendingTopicsBar`: dark-mode variants — pill `hover:bg-brand-100` was a light blue not remapped in dark, making light-blue text invisible on touch/hover.
