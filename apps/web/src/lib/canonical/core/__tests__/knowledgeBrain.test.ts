@@ -30,14 +30,18 @@ describe('knowledgeBrain.buildKnowledgeContext — central derivation, no route 
   })
 })
 
-describe('knowledgeBrain OFF — byte-identical to bare arbitration', () => {
-  it('flag absent ⇒ applyKnowledgeBrainIfEnabled === arbitrateDocument(candidates)', () => {
+describe('knowledgeBrain default — ON (owner-activated 2026-06-12)', () => {
+  it('flag absent ⇒ enabled (the dictionary is the production default)', () => {
+    expect(isKnowledgeBrainEnabled()).toBe(true)
+  })
+  it('KNOWLEDGE_BRAIN_ENABLED=0 ⇒ disabled, byte-identical to bare arbitration', () => {
+    vi.stubEnv('KNOWLEDGE_BRAIN_ENABLED', '0')
     expect(isKnowledgeBrainEnabled()).toBe(false)
     const cands = [c({ key: 'given_name', value: 'Андрей' }), c({ key: 'place_of_birth_city', value: 'Простянець' })]
     const ctx = buildKnowledgeContext({ docTypeId: 'ua_birth_certificate', product: 'translation' })
     const viaHelper = applyKnowledgeBrainIfEnabled(cands, ctx)
     const bare = arbitrateDocument(cands)
-    expect(viaHelper).toEqual(bare) // deep-equal: no D2 applied when OFF
+    expect(viaHelper).toEqual(bare) // deep-equal: no D2 applied when explicitly disabled
   })
 })
 
