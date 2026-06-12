@@ -201,7 +201,7 @@
     --warning-border: #92400e;
     --info-bg: #1e3a8a;
     --info-border: #1e40af;
-    --info-text: #93c5fd;
+    --info-text: #bfdbfe; /* was #93c5fd — too low (3.45:1) on --info-bg navy; bumped to ~5:1 */
     --error-bg: #450a0a;
     --error-border: #991b1b;
     --error-text: #fca5a5;
@@ -362,6 +362,10 @@ button, a {
 
 /* ── Specific section overrides ── */
 .dark .bg-brand-50         { background-color: rgba(59,130,246,0.1) !important; }
+/* Selected-state tints + disabled CTA — were hardcoded light (#dbeafe / #cbd5e1)
+   in dark, hiding the icon/label. Make them dark-aware. */
+.dark .bg-brand-100        { background-color: rgba(59,130,246,0.18) !important; }
+.dark .disabled\:bg-slate-300:disabled { background-color: var(--surface-2) !important; color: var(--text-3) !important; }
 .dark .bg-blue-50          { background-color: rgba(59,130,246,0.1) !important; }
 .dark .bg-green-50         { background-color: rgba(34,197,94,0.1) !important; }
 

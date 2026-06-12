@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-12 | BUGFIX (dark mode, round 2) — translator contrast sweep (proactive)
+After fixing --accent-light, an agent dark-mode audit of the whole translator found 6 more readability bugs; all fixed:
+- `HomeTranslateDocumentWidget`: selected-state icon `bg-brand-100` (#dbeafe, icon invisible at 1.04:1) and disabled CTA `disabled:bg-slate-300` with white text (1.36:1) — added `.dark` overrides in globals.css.
+- `TranslateWizard`: the review badge, two amber "needs review/manual" notice boxes, and the ensemble "verify date" hint used `--gold-light` (which the wizard aliases to `--accent-hover` = teal #13b890) on a dark amber tint (~2:1) — switched to the proper `--warn-bg/--warn-tx/--warn-bd` tokens (readable amber, correct warning semantic).
+- `TranslateWizard` screen-7 PDF-ready heading: `--green-light` teal on a dark teal card (~2:1) → `--text-1`.
+- info boxes: dark `--info-text` #93c5fd → #bfdbfe (3.45:1 → ~5:1 on the navy info-bg).
+- Verified: no remaining undefined-token-light-fallback in the wizard var block. tsc 0, build clean, 3169 tests pass.
+
 ## 2026-06-12 | BUGFIX — dark-mode "white patch" in the translation wizard (owner-reported)
 - Owner: clicking e.g. "translate passport" in dark mode lit up a white patch with invisible text — "and everywhere". Root cause: the wizard's selected/active/hover surfaces use `--acc-l: var(--accent-light, #e6f4ed)`, but `--accent-light` was NEVER defined in globals.css, so the fixed near-white fallback `#e6f4ed` was used in BOTH themes. In dark mode a selected tile painted near-white while its text stayed `var(--text-1)` (near-white) → invisible. `--acc-l` is used 13× across the wizard (every active/selected/hover state) → "everywhere".
 - Fix: defined `--accent-light` in globals.css — light `rgba(16,163,127,0.12)`, dark `rgba(16,163,127,0.28)` (translucent accent tint that stays legible under text-1 in both themes). No wizard edits needed; the existing `var(--accent-light, …)` now resolves to a theme-aware value. Verified: no other component has this undefined-token-light-fallback pattern. tsc 0, build clean.
