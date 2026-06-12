@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3A (UX) — "taking longer" reassurance during extraction
+- `TranslateWizard` processing screen (screen 4): after ~15s of a slow vision-extract (multi-page or slow Gemini read), show a friendly "this is taking a little longer — please keep this page open, we're almost done" line so a 35-80yo user doesn't assume it froze and close the tab. Additive — the existing staged-step ticker is unchanged; `procSlow` resets per run and is cleared with the tickers. ru + en strings. tsc 0, build clean, 3169 tests pass.
+
 ## 2026-06-12 | Phase 2 quarantine — remove dead engine pipeline + dead routes
 Validated across apps/web/src + scripts/ + .github (the cron-incident lesson applied).
 - Deleted `lib/engine/` entirely (12 modules + 10 test files) — the engine-consensus "second brain" had ZERO production callers.

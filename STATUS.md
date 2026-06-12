@@ -1,4 +1,5 @@
-# STATUS (2026-06-12 — Survival + Phase 2 quarantine deployed; cron green; guard test added)
+# STATUS (2026-06-12 — Survival + Phase 2 + extract-UX deployed; cron green; guard test added)
+- UX: wizard processing screen shows a "taking longer, keep page open" reassurance after ~15s (35-80yo don't close the tab). Additive. 3169 pass.
 - PHASE 2 QUARANTINE: deleted lib/engine/ (12 mods+10 tests), central-brain analyze()/types/audit/MIGRATION_STATE (index now only brainHealth), dead api/ocr routes, TPSWizard v1, transliterateKMU2010. Added no-engine-revival guard test. HELD: api/translation/extract (owner-confirm), lib/tps/transliterate (live). tsc 0/build/3169 pass. Validated incl scripts/+.github.
 - DESKTOP: DesktopStepSidebar contrast (current/future step) fixed. All other survival fixes are responsive (desktop+mobile both). 3229 tests.
 - HOTFIX: restored ticketEscalation.ts + guardBlockRate.ts (b5d627b deleted them as "dead" but scripts/monitoring/* import them → 3 cron jobs failed). tsc 0/13 tests. Lesson: dead-code scan must include scripts/ + .github.
