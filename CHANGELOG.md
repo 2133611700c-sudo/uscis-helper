@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-12 | BUGFIX (owner test) — stop reading Ukrainian Cyrillic as Russian
+Owner's birth-certificate test: names/places came out Russified — "Serhei" (should be Serhii/Sergii), "Serheevych" (Serhiiovych), "Stepanovna" (Stepanivna), "Kyrovohradskaia/Vynnytskaia oblast", "raiotdel ZAHSa".
+- ROOT CAUSE (inventory-first): RU_TRANSLIT_ENABLED is OFF, so names always go through KMU-55 (Ukrainian) — the transliteration engine is correct. The Gemini READER was Russifying the Ukrainian Cyrillic at read time (returns Сергей for Сергій, Кировоградская for Кіровоградської); KMU-55 then faithfully transliterated the wrong Cyrillic. The always-on oblast→nominative / city normalization also failed because they were fed Russified input.
+- FIX: `geminiVisionProvider.buildPrompt` — added a LANGUAGE rule with examples: transcribe the Ukrainian Cyrillic EXACTLY, keep і/ї/є/ґ, do NOT convert to Russian (Сергій≠Сергей, Степанівна≠Степановна, Кіровоградської≠Кировоградской, Вінницької≠Винницкой). This fixes the names AND unblocks the always-on oblast/city normalization (which only work on correct Ukrainian input).
+- STILL BACKLOG (owner's "later" — the deeper knowledge layer): agency glossary (ЗАГС → "Civil Registry Office"), smt designator placement, full oblast genitive coverage, and the KNOWLEDGE_BRAIN_ENABLED dictionary. tsc 0, 3176 tests pass.
+
 ## 2026-06-12 | UX (owner feedback) — clearer rotate control + whole-document preview
 Owner: the rotate button didn't read as "rotate", and the preview image was too large / cropped / unclear.
 - Preview thumbnail: `object-fit: cover` → `contain` (shows the WHOLE document, not a crop) on a clean `--surface-2` letterbox; height 150 → 128px (more compact). Tile is now a flex column: thumb on top, control below.
