@@ -14,7 +14,36 @@
       "sources": "Джерела",
       "privacy": "Конфіденційність",
       "terms": "Умови",
-      "disclaimer": "Відмова від відповідальності"
+      "disclaimer": "Відмова від відповідальності",
+      "pillars": {
+        "translate": {
+          "label": "Переклад",
+          "translateDoc": "Перекласти документ",
+          "supportedDocs": "Підтримувані документи",
+          "pricing": "Вартість"
+        },
+        "forms": {
+          "label": "Форми",
+          "ead": "Дозвіл на роботу (EAD)",
+          "reparole": "Re-Parole U4U",
+          "tps": "TPS Україна",
+          "all": "Усі послуги"
+        },
+        "status": {
+          "label": "Статус",
+          "uscisStatus": "Статус справи USCIS",
+          "tpsStatus": "Статус TPS",
+          "i94Guide": "Посібник I-94"
+        },
+        "info": {
+          "label": "Інфо",
+          "faq": "Питання та відповіді",
+          "attorneys": "Юридична допомога",
+          "sources": "Офіційні джерела",
+          "about": "Про нас",
+          "contact": "Контакти"
+        }
+      }
     },
     "langSwitcher": "Мова",
     "ctaStatus": "Перевірити статус",
