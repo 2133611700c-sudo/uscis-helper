@@ -2,7 +2,7 @@ test: T3PS_REAL_DOC_TEST_passport
 date: 2026-05-20
 sha_pre_fix: dfa5bc0
 sha_post_fix: c4c8cea  # (deploy result to be appended below)
-file_under_test: qa-shots/private/Passport Sergii REDACTED .jpg
+file_under_test: qa-shots/private/Passport Sergii Ivanenko .jpg
 file_shape: { width_px: 2274, height_px: 1611, mime: image/jpeg, bytes: 716605 }
 hint_used: passport
 

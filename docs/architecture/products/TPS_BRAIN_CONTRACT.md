@@ -8,5 +8,5 @@
 **Review:** field+crop, uncertain→empty; readiness gate (readinessPolicy.ts).
 **PDF:** I-821(+I-765) via pdf-lib, byte-readback proof, ZIP packet.
 **Audit:** every field provenance logged.
-**E2E:** upload→OCR→review→gate→generate→ZIP→PDF readback (REDACTED/Trostianets/Vinnytsia confirmed).
+**E2E:** upload→OCR→review→gate→generate→ZIP→PDF readback (Ivanenko/Trostianets/Vinnytsia confirmed).
 **Migration:** LAST (Phase 5 Step 5) — move existing brain into common wrapper behavior-preserving; do NOT break.

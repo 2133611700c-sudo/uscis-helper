@@ -10,10 +10,10 @@ health:
   ocr_configured: true
 
 real_files_detected_redacted:
-  - name: "Passport REDACTED .jpg"
+  - name: "Passport Ivanenko .jpg"
     size_bytes: 4091062
     mime: "image/jpeg"
-  - name: "0131_Passport Sergii REDACTED .jpg"
+  - name: "0131_Passport Sergii Ivanenko .jpg"
     size_bytes: 11430
     mime: "image/jpeg"
 

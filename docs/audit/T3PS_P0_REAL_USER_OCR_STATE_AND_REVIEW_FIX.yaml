@@ -93,7 +93,7 @@ unresolved_p1_p2:
     priority: P1
     description: |
       Sergii observed unstable spelling between sessions:
-      "REDACTED" vs "REDACTED", "Serhii" vs "Sergi". This is
+      "REDACTED" vs "Ivanenko", "Serhii" vs "Sergi". This is
       DeepSeek non-determinism on transliteration of low-confidence
       Cyrillic when MRZ isn't crisply visible. Fix path: prefer MRZ
       Latin always when present; for visual-only inputs, lower Brain
