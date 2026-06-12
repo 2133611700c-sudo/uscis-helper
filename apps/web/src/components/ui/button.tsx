@@ -8,8 +8,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        // Hover uses the neutral surface (text-1 on surface-2), readable in both
+        // themes. Previously hover:bg-accent + hover:text-accent-foreground put
+        // blue text on a green accent (~1.8:1 contrast — unreadable).
+        outline: 'border border-input bg-background hover:bg-secondary hover:text-secondary-foreground',
+        ghost: 'hover:bg-secondary hover:text-secondary-foreground',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
       },
       size: {
