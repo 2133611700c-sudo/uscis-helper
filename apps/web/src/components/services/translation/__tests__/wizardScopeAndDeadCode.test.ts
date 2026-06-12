@@ -100,15 +100,14 @@ describe('classifyToModule self-serve eligibility (server-side truth)', () => {
 describe('TranslateWizard — large photos are downscaled before vision-extract', () => {
   const src = fs.readFileSync(ACTIVE_WIZARD, 'utf-8')
 
-  it('imports the shared downscale helper (not a local copy)', () => {
-    expect(src).toContain("from '@/lib/upload/downscaleImage'")
-    expect(src).toContain('downscaleImageForUpload')
+  it('imports the shared upload-prep helper (not a local copy)', () => {
+    expect(src).toContain("from '@/lib/upload/prepareImageForUpload'")
+    expect(src).toContain('prepareImageForUpload')
   })
 
-  it('applies the downscale in the vision-extract upload loop (not raw files)', () => {
-    // Called with a per-file budget so multi-photo uploads stay under the body cap.
-    expect(src).toMatch(/await downscaleImageForUpload\(f,\s*\{/)
-    expect(src).toMatch(/form\.append\('file', blob, f\.name\)/)
-    expect(src).toMatch(/perFileBudget/)
+  it('prepares each image (free OSD rotate + per-file-budget downscale) before upload', () => {
+    expect(src).toMatch(/prepareImageForUpload\(f,\s*\{/) // shared rotate+downscale helper
+    expect(src).toMatch(/form\.append\('file', prepared\.blob, prepared\.name\)/)
+    expect(src).toMatch(/perFileBudget/)                  // multi-photo body-cap budget
   })
 })
