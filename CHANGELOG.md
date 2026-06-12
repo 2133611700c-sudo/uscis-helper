@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-12 | BUGFIX — dark-mode "white patch" in the translation wizard (owner-reported)
+- Owner: clicking e.g. "translate passport" in dark mode lit up a white patch with invisible text — "and everywhere". Root cause: the wizard's selected/active/hover surfaces use `--acc-l: var(--accent-light, #e6f4ed)`, but `--accent-light` was NEVER defined in globals.css, so the fixed near-white fallback `#e6f4ed` was used in BOTH themes. In dark mode a selected tile painted near-white while its text stayed `var(--text-1)` (near-white) → invisible. `--acc-l` is used 13× across the wizard (every active/selected/hover state) → "everywhere".
+- Fix: defined `--accent-light` in globals.css — light `rgba(16,163,127,0.12)`, dark `rgba(16,163,127,0.28)` (translucent accent tint that stays legible under text-1 in both themes). No wizard edits needed; the existing `var(--accent-light, …)` now resolves to a theme-aware value. Verified: no other component has this undefined-token-light-fallback pattern. tsc 0, build clean.
+
 ## 2026-06-12 | Survival 3A (UX) — "taking longer" reassurance during extraction
 - `TranslateWizard` processing screen (screen 4): after ~15s of a slow vision-extract (multi-page or slow Gemini read), show a friendly "this is taking a little longer — please keep this page open, we're almost done" line so a 35-80yo user doesn't assume it froze and close the tab. Additive — the existing staged-step ticker is unchanged; `procSlow` resets per run and is cleared with the tickers. ru + en strings. tsc 0, build clean, 3169 tests pass.
 
