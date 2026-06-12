@@ -337,7 +337,11 @@ export async function POST(req: NextRequest) {
       if (q.reshoot_required) return { kind: 'reshoot', page: i + 1, q }
     }
     try {
-      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 15_000, product: 'translation' })
+      // 25s (was 15s): the primary model (gemini-3.1-pro-preview) takes 20-40s on
+      // a full page, so 15s aborted it every time → always fell to the flash
+      // fallback → every field flagged review. Pages run in parallel under the
+      // 60s route budget, so 25s is safe.
+      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 25_000, product: 'translation' })
       return { kind: 'read', page: i + 1, r }
     } catch (e: any) {
       console.error('[translation/vision-extract page', i + 1, ']', e?.message ?? e)

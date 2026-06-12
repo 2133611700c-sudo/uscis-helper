@@ -63,6 +63,7 @@ For each key return an object:
   "reason": "<short>" }
 
 Rules:
+- The photo may be ROTATED (0°, 90°, 180° / upside-down, or 270°). Mentally rotate the image so the text is upright, then read it. Orientation must not change what you read.
 - Read the FULL word, every letter. Never return only a suffix (never "ович" alone).
 - Handwritten Ukrainian "Т" and "П" look similar; pick the letter that forms a REAL Ukrainian name/place.
 - If a field is not clearly legible, set can_read=false and cyrillic="".
