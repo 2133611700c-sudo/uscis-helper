@@ -14,9 +14,10 @@ export function MobileBottomBar() {
   const links: Array<{ href: string; label: string; icon: typeof Home; external?: boolean }> = [
     { href: `/${locale}`, label: t('home'), icon: Home },
     { href: `/${locale}/services`, label: t('services'), icon: Grid3X3 },
-    // Status — opens the official USCIS Case Status portal DIRECTLY in a new
-    // tab. One tap, no intermediate page on our side.
-    { href: 'https://egov.uscis.gov/', label: t('status'), icon: Search, external: true },
+    // Status — our own helper: decodes USCIS status codes in plain language,
+    // then links out to egov. Keeps the user on our product first (was a direct
+    // external jump to egov.uscis.gov).
+    { href: `/${locale}/services/uscis-case-status`, label: t('status'), icon: Search },
     { href: `/${locale}/contact`, label: t('contact'), icon: Mail },
   ]
 
