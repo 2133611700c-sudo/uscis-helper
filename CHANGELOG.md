@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | UX (owner feedback) — clearer rotate control + whole-document preview
+Owner: the rotate button didn't read as "rotate", and the preview image was too large / cropped / unclear.
+- Preview thumbnail: `object-fit: cover` → `contain` (shows the WHOLE document, not a crop) on a clean `--surface-2` letterbox; height 150 → 128px (more compact). Tile is now a flex column: thumb on top, control below.
+- Rotate control: the bare corner ↻ icon → a LABELED "↻ Rotate" button under the thumbnail (accent-green rotate glyph + text, fills/spins on hover). Now obviously a rotate action. The × remove button stays in the thumbnail corner.
+- Label shortened to "Повернуть" / "Rotate". Visual-verified with Playwright (whole document visible, labeled button renders, dark mode clean).
+- NOTE (owner, backlog — not now): the full knowledge dictionaries (cities/agencies/historical/Міліція/смт/oblast cases/glossaries — currently dark behind KNOWLEDGE_BRAIN_ENABLED) and the mirror-translation templates (structured source→English document) remain to be integrated later — the important knowledge-layer work.
+
 ## 2026-06-12 | Survival 3A — TPS + EAD accessibility completion (labels, focus)
 Applies the "everything works the same" rule to a11y across the wizards.
 - `TPSWizardV2` `FieldInput` (the shared component behind every TPS review field): the label was a plain `<div>`; now `<label htmlFor={dataTestId}>` + input `id`, so all TPS fields are announced by screen readers — fixed in ONE place.
