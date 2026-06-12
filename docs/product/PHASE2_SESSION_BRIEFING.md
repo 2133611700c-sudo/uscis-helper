@@ -60,7 +60,7 @@ upload documents
 ### Business entity:
 - SK Logistics LLC, Los Angeles, CA
 - Site: messenginfo.com
-- Repo: `2133611700c-sudo/uscis-helper` (private GitHub)
+- Repo: `owner-sudo/uscis-helper` (private GitHub)
 - Deploy: Vercel, project `prj_G5Bwd5VMDqEMdbPKLlQW50aF3pQq`
 - Team: `team_qRGWLc9kKWuiKWouVsOeO1P4`
 
@@ -186,8 +186,8 @@ that provenance disappears when the value enters TPSAnswers.
 - GitHub Actions workflow: `.github/workflows/guards.yml`
 
 ### Owner test documents (for production diagnostic):
-- Passport: `qa-shots/private/Passport Sergii Kuropiatnyk .jpg`
-- I-94: `qa-shots/private/I94 Sergii Kuropiatnyk .jpg`
+- Passport: `qa-shots/private/Passport Sergii Ivanenko .jpg`
+- I-94: `qa-shots/private/I94 Sergii Ivanenko .jpg`
 - EAD: `qa-shots/private/Ead1.jpg`
 - DL: `qa-shots/private/DL.jpg`
 
@@ -220,8 +220,8 @@ that provenance disappears when the value enters TPSAnswers.
 // node /tmp/ocr-diag.mjs
 import { readFile } from 'fs/promises';
 const docs = [
-  { file: 'qa-shots/private/Passport Sergii Kuropiatnyk .jpg', hint: 'passport', label: 'Passport' },
-  { file: 'qa-shots/private/I94 Sergii Kuropiatnyk .jpg', hint: 'i94', label: 'I-94' },
+  { file: 'qa-shots/private/Passport Sergii Ivanenko .jpg', hint: 'passport', label: 'Passport' },
+  { file: 'qa-shots/private/I94 Sergii Ivanenko .jpg', hint: 'i94', label: 'I-94' },
   { file: 'qa-shots/private/Ead1.jpg', hint: 'ead', label: 'EAD' },
   { file: 'qa-shots/private/DL.jpg', hint: 'dl', label: 'DL' },
 ];
