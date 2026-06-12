@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-12 | HOTFIX — restore live modules wrongly deleted as "dead" (broke 3 cron jobs)
+- b5d627b's dead-code pass deleted `documentSafety/ticketEscalation.ts` + `guardBlockRate.ts`, but they are NOT dead: `scripts/monitoring/{escalation-tick,daily-reconciliation,guard-block-rate-check}.ts` import them. The original audit grepped only `apps/web/src` and missed `scripts/` + `.github/`. Result: 3 GitHub Action cron jobs (L1 Escalation Tick every 30m, daily-reconciliation, guard-block-rate-check) failed at import (~30s).
+- Restored both modules + their tests from 54c0e43. tsc 0, 13 module tests pass.
+- LESSON: dead-code reachability analysis MUST include `scripts/` and `.github/workflows/`, not just the Next.js app source. The other 5 modules deleted in b5d627b have zero importers anywhere (confirmed) — those deletions stand.
+
 ## 2026-06-12 | Survival 3B (info→start funnel) — landing pages reachable
 Branch survival/phases-0-3 (NOT pushed to main).
 - `services/tps-ukraine` and `services/re-parole-u4u` bare routes now redirect to `/info` (hero, price range, how-it-works, FAQ) instead of straight to `/start`. The whole landing + pricing content was previously unreachable (audit: orphaned). The info pages already have a "Start" CTA → `/start` (wizardHref), so the funnel is info → understand+price → start.
