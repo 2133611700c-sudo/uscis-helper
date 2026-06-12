@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3B — 4-pillar registry navigation (desktop + mobile parity)
+- NEW `apps/web/src/data/navPillars.ts` — single source of truth: **Translate / Forms / Status / Info**, each with sub-links, used by both Header and MobileBottomBar.
+- `Header` (desktop): renders the 4 pillars with a CSS-only hover dropdown exposing sub-links (no client JS — stays server-component-safe).
+- `MobileBottomBar`: the SAME 4 pillars (was Home/Services/Status/Contact). Longest-prefix active detection so /services/translate-document highlights Translate, not Forms. Contact moved into the Info pillar sub-links (still reachable; also in footer).
+- i18n: added `header.nav.pillars.*` — 16 keys × 4 locales (en/ru/uk/es), clean additive diff.
+- VISUAL-VERIFIED with Playwright screenshots (desktop dropdown light+dark, mobile dark) — confirmed readable + in parity with my own eyes. Added `scripts/visual-verify.mjs` + `scripts/nav-shot.mjs` as dev tools.
+- tsc 0, build clean, 3169 tests pass.
+
 ## 2026-06-12 | Survival 3A/3B — price-before-upload + accessibility (focus, tap targets)
 Three parallel audit agents (a11y / nav-registry / pricing) → applied the safe high-value subset.
 - PRICE BEFORE UPLOAD: added a price+trust card on the translate wizard doc-type screen (Screen 2), before upload — "Translation draft — from $15 · pay only after reviewing · you receive a draft + self-certification template, you review/correct/sign · not a law firm". Range only; content-rule compliant ("черновик"/"информационная помощь", no banned wording). ru + en.

@@ -14,7 +14,36 @@
       "home": "Home",
       "privacy": "Privacy",
       "terms": "Terms",
-      "disclaimer": "Disclaimer"
+      "disclaimer": "Disclaimer",
+      "pillars": {
+        "translate": {
+          "label": "Translate",
+          "translateDoc": "Translate a document",
+          "supportedDocs": "Supported documents",
+          "pricing": "Pricing"
+        },
+        "forms": {
+          "label": "Forms",
+          "ead": "EAD Work Permit",
+          "reparole": "Re-Parole U4U",
+          "tps": "TPS Ukraine",
+          "all": "All services"
+        },
+        "status": {
+          "label": "Status",
+          "uscisStatus": "USCIS case status",
+          "tpsStatus": "TPS status",
+          "i94Guide": "I-94 guide"
+        },
+        "info": {
+          "label": "Info",
+          "faq": "FAQ",
+          "attorneys": "Legal help",
+          "sources": "Official sources",
+          "about": "About",
+          "contact": "Contact"
+        }
+      }
     },
     "ctaStatus": "Check Status",
     "signIn": "Sign in",
