@@ -18,9 +18,9 @@ describe('#8 — date calendar validation', () => {
     expect(formatDateEn('30.02.2000')).toBeNull()
   })
   it('accepts real dates incl. leap day', () => {
-    expect(formatDateEn('25.06.1986')).toBe('25 June 1986')
+    expect(formatDateEn('01.01.1990')).toBe('1 January 1990')
     expect(formatDateEn('29.02.2000')).toBe('29 February 2000') // leap
-    expect(formatDateEn('1986-06-25')).toBe('25 June 1986')
+    expect(formatDateEn('1990-01-01')).toBe('1 January 1990')
   })
   it('rejects Feb 29 on a non-leap year', () => {
     expect(formatDateEn('29.02.2001')).toBeNull()

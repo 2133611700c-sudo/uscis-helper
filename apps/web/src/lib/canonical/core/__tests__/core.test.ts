@@ -50,7 +50,7 @@ describe('Core arbitration — minimal authority policy', () => {
   })
 
   it('a fuzzy candidate → review', () => {
-    const f = arbitrateField('place_of_birth', [c({ key: 'place_of_birth', value: 'Trostianets', source: 'ai_vision', fuzzy: true })])!
+    const f = arbitrateField('place_of_birth', [c({ key: 'place_of_birth', value: 'Vinnytsia', source: 'ai_vision', fuzzy: true })])!
     expect(f.reviewReasons).toContain('fuzzy_match')
   })
 

@@ -340,10 +340,10 @@ describe('Master agent prompt is NOT wired into passport runtime', () => {
 describe('buildAdminAuditArtifact', () => {
   function mkCert(): CertificationRecord {
     return {
-      signer_full_name: 'Sergii Test',
+      signer_full_name: 'Ivan Test',
       language_pair_confirmed: true,
       statement: 'I certify ... pursuant to 8 CFR §103.2(b)(3).',
-      signature_typed_name: 'Sergii Test',
+      signature_typed_name: 'Ivan Test',
       signed_at: '2026-05-09T01:23:45Z',
       certification_version: CERTIFICATION_VERSION,
     }

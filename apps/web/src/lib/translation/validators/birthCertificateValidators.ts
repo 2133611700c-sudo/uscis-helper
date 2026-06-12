@@ -543,7 +543,7 @@ export function normalizeBirthCertDate(raw: string): DateNormResult {
 
   const cleaned = raw.trim()
 
-  // Pattern: "25 червня 1986" or "25 червня 1986 р."
+  // Pattern: "01 січня 1990" or "01 січня 1990 р."
   const match = cleaned.match(/^(\d{1,2})\s+([а-яїієёА-ЯЇІЄЁа-яА-Я]+)\s+(\d{4})/)
   if (!match) {
     // Could be a spelled-out date (e.g. "двадцять п'ятого...")

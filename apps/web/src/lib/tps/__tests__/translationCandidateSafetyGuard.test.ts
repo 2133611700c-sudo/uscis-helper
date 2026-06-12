@@ -11,13 +11,13 @@ import type { TranslationFieldSet } from '../translationExtractor'
 
 function baseFields(overrides: Partial<TranslationFieldSet> = {}): TranslationFieldSet {
   return {
-    family_name:      'REDACTED',
-    given_name:       'Serhii',
-    patronymic:       'Serhiiovych',
-    date_of_birth:    'June 25, 1986',
+    family_name:      'Ivanenko',
+    given_name:       'Ivan',
+    patronymic:       'Petrovych',
+    date_of_birth:    'January 1, 1990',
     sex:              'Male',
     passport_number:  'FU 262473',
-    city_of_birth:    'Trostianets',
+    city_of_birth:    'Vinnytsia',
     province_of_birth: 'Vinnytsia Oblast',
     issued_by:        'Department of the State Migration Service of Ukraine in Vinnytsia Oblast',
     date_of_issue:    'August 12, 2019',
@@ -71,7 +71,7 @@ describe('guardTranslationCandidates — forbidden phrases', () => {
 
 describe('guardTranslationCandidates — Middle Name hard rule', () => {
   it('blocks "Middle Name" in any field (must be "Patronymic")', () => {
-    const result = guardTranslationCandidates(baseFields({ patronymic: 'Middle Name: Serhiiovych' }))
+    const result = guardTranslationCandidates(baseFields({ patronymic: 'Middle Name: Petrovych' }))
     expect(result.safe).toBe(false)
     expect(result.violations.some((v) => v.rule.includes('Middle Name'))).toBe(true)
   })
@@ -105,13 +105,13 @@ describe('guardTranslationCandidates — Militsiya/Police rule (pre-2015)', () =
 
 describe('guardTranslationCandidates — Cyrillic leak', () => {
   it('blocks Cyrillic in family_name (must be Latin/KMU-55)', () => {
-    const result = guardTranslationCandidates(baseFields({ family_name: 'REDACTED_NAME' }))
+    const result = guardTranslationCandidates(baseFields({ family_name: 'Іваненко' }))
     expect(result.safe).toBe(false)
     expect(result.violations.some((v) => v.rule === 'cyrillic_in_latin_required_field')).toBe(true)
   })
 
   it('blocks Cyrillic in given_name', () => {
-    const result = guardTranslationCandidates(baseFields({ given_name: 'Сергій' }))
+    const result = guardTranslationCandidates(baseFields({ given_name: 'Іван' }))
     expect(result.safe).toBe(false)
   })
 
@@ -122,7 +122,7 @@ describe('guardTranslationCandidates — Cyrillic leak', () => {
 
   it('does NOT block Cyrillic in date_of_birth (numeric, not in LATIN_REQUIRED)', () => {
     // date fields don't have LATIN_REQUIRED constraint — they use formatDobForTranslation
-    const result = guardTranslationCandidates(baseFields({ date_of_birth: 'June 25, 1986' }))
+    const result = guardTranslationCandidates(baseFields({ date_of_birth: 'January 1, 1990' }))
     expect(result.safe).toBe(true)
   })
 })
@@ -147,7 +147,7 @@ describe('guardTranslationCandidates — label-as-value', () => {
 
 describe('collectViolationStrings', () => {
   it('returns human-readable violation strings', () => {
-    const guardResult = guardTranslationCandidates(baseFields({ family_name: 'REDACTED_NAME' }))
+    const guardResult = guardTranslationCandidates(baseFields({ family_name: 'Іваненко' }))
     const strings = collectViolationStrings(guardResult)
     expect(strings.length).toBeGreaterThan(0)
     expect(strings[0]).toMatch(/\[block\].*family_name.*cyrillic/)

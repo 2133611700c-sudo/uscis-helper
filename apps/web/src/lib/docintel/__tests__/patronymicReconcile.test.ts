@@ -24,11 +24,11 @@ function field(partial: Partial<ExtractedDocField> & Pick<ExtractedDocField, 'fi
 describe('reconcilePatronymicFields (pure)', () => {
   it('keeps a well-formed patronymic and does NOT add review', () => {
     const out = reconcilePatronymicFields([
-      field({ field: 'child_given_name', raw_cyrillic: 'Сергій', value: 'Serhii' }),
-      field({ field: 'child_patronymic', raw_cyrillic: 'Сергійович', value: 'Serhiiovych' }),
+      field({ field: 'child_given_name', raw_cyrillic: 'Іван', value: 'Ivan' }),
+      field({ field: 'child_patronymic', raw_cyrillic: 'Петрович', value: 'Petrovych' }),
     ])
     const p = out.find((f) => f.field === 'child_patronymic')!
-    expect(p.value).toBe('Serhiiovych')
+    expect(p.value).toBe('Petrovych')
     expect(p.review_required).toBe(false)
   })
 
@@ -43,7 +43,7 @@ describe('reconcilePatronymicFields (pure)', () => {
 
   it('forces review when the read cannot be resolved (short garbage)', () => {
     const out = reconcilePatronymicFields([
-      field({ field: 'child_patronymic', raw_cyrillic: 'Сергі', value: 'Serhi' }),
+      field({ field: 'child_patronymic', raw_cyrillic: 'Петрови', value: 'Petrovy' }),
     ])
     expect(out[0].review_required).toBe(true)
   })
@@ -78,8 +78,8 @@ function stubProvider(): VisionProvider {
         model: primaryGeminiModel(),
         ms: 1,
         fields: [
-          { field: 'family_name', cyrillic: 'REDACTEDʼятник', can_read: true, confidence: 0.99, reason: '' },
-          { field: 'given_name', cyrillic: 'Сергій', can_read: true, confidence: 0.99, reason: '' },
+          { field: 'family_name', cyrillic: 'Іваненко', can_read: true, confidence: 0.99, reason: '' },
+          { field: 'given_name', cyrillic: 'Іван', can_read: true, confidence: 0.99, reason: '' },
           // garbled patronymic at HIGH confidence: review would be false without P2.2
           { field: 'patronymic', cyrillic: 'ович', can_read: true, confidence: 0.99, reason: '' },
         ],

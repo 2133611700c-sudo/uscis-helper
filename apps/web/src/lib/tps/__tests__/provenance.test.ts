@@ -162,7 +162,7 @@ describe('buildProvenanceFromWizard', () => {
   it('preserves passport OCR provenance for identity fields', () => {
     const merged: Record<string, ProvenanceInput> = {
       family_name: passportField('family_name', 'TESTNAME'),
-      dob: passportField('dob', '1986-06-25'),
+      dob: passportField('dob', '1990-01-01'),
     }
     const map = buildProvenanceFromWizard(merged, {}, ['family_name', 'dob'])
     expect(map.family_name.source_document_type).toBe('passport')
@@ -186,14 +186,14 @@ describe('buildProvenanceFromWizard', () => {
   it('preserves booklet OCR provenance for booklet slot fields', () => {
     const merged: Record<string, ProvenanceInput> = {
       family_name: {
-        value: 'REDACTED',
+        value: 'Ivanenko',
         source: 'dual_ocr_crossref',
         doc_slot: 'booklet',
         confidence: 0.9,
         source_field: 'family_name',
       },
       city_of_birth: {
-        value: 'Trostianets',
+        value: 'Vinnytsia',
         source: 'dual_ocr_crossref',
         doc_slot: 'booklet',
         confidence: 0.9,

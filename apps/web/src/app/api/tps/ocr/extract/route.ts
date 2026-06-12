@@ -306,7 +306,7 @@ export async function POST(req: NextRequest) {
       // 2026-05-20 T3PS_ROBUST_OCR P0 (revised): the booklet module
       // matches as soon as it finds ANY field, so a 180-rotated
       // international passport with a readable visible Cyrillic zone
-      // (УКРАЇНА, СЕРГІЙ, КУРОП'ЯТНИК…) trips booklet.matched=true and
+      // (УКРАЇНА, ІВАНІВ, ІВАНЕНКО…) trips booklet.matched=true and
       // skips the rotation retry — but the MRZ block is unreadable
       // upside-down so passport_number/passport_expiration_date/sex
       // are missing. Retry condition is therefore: TD3 didn't match

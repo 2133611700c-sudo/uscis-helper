@@ -16,7 +16,7 @@ const ef = (field: string, normalized_value: string) => ({
 
 const baseInput = (signatureDataUrl?: string | null) => ({
   scopeTitle: 'Birth Certificate', documentType: 'birth',
-  fields: [ef('surname', 'REDACTED')],
+  fields: [ef('surname', 'IVANENKO')],
   sourceTraces: [],
   certificationRecord: {
     signer_full_name: 'Test Translator', address: '1213 Gordon St, Los Angeles, CA 90038',

@@ -719,8 +719,8 @@ describe('OCR provider — word IDs and bboxes', () => {
   it('each word has a unique stable ID in w_NNNN format', () => {
     const words: OcrWord[] = [
       makeWord('w_0000', 'ПАСПОРТ', 0.1, 0.05, 0.3, 0.04),
-      makeWord('w_0001', 'REDACTED_NAME', 0.1, 0.2, 0.25, 0.04),
-      makeWord('w_0002', 'Сергій', 0.1, 0.25, 0.2, 0.04),
+      makeWord('w_0001', 'Іваненко', 0.1, 0.2, 0.25, 0.04),
+      makeWord('w_0002', 'Іван', 0.1, 0.25, 0.2, 0.04),
     ]
     const ids = words.map(w => w.id)
     const unique = new Set(ids)
@@ -729,7 +729,7 @@ describe('OCR provider — word IDs and bboxes', () => {
   })
 
   it('each word bbox is normalised 0–1 and non-degenerate', () => {
-    const word = makeWord('w_0012', 'REDACTED_NAME', 0.12, 0.25, 0.18, 0.032)
+    const word = makeWord('w_0012', 'Іваненко', 0.12, 0.25, 0.18, 0.032)
     expect(word.bbox.x).toBeGreaterThanOrEqual(0)
     expect(word.bbox.y).toBeGreaterThanOrEqual(0)
     expect(word.bbox.x + word.bbox.width).toBeLessThanOrEqual(1)
@@ -766,8 +766,8 @@ describe('OCR provider — word IDs and bboxes', () => {
 
 describe('bbox resolver — resolveOcrIds', () => {
   const resolverWords = [
-    makeWord('w_0012', 'REDACTED_NAME', 0.10, 0.20, 0.18, 0.032),
-    makeWord('w_0013', 'Сергій',     0.10, 0.24, 0.14, 0.032),
+    makeWord('w_0012', 'Іваненко', 0.10, 0.20, 0.18, 0.032),
+    makeWord('w_0013', 'Іван',     0.10, 0.24, 0.14, 0.032),
     makeWord('w_0020', '19',         0.10, 0.40, 0.04, 0.030),
     makeWord('w_0021', 'лютого',     0.15, 0.40, 0.09, 0.030),
     makeWord('w_0022', '2003',       0.25, 0.40, 0.06, 0.030),
