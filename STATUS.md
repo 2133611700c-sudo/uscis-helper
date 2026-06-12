@@ -1,4 +1,6 @@
-# STATUS (2026-06-12 — Survival roadmap: Phase 1 + 3A + 3B-links + content DONE on branch survival/phases-0-3)
+# STATUS (2026-06-12 — Survival 1+3A+3B+content DEPLOYED to prod; cron-regression hotfixed)
+- HOTFIX: restored ticketEscalation.ts + guardBlockRate.ts (b5d627b deleted them as "dead" but scripts/monitoring/* import them → 3 cron jobs failed). tsc 0/13 tests. Lesson: dead-code scan must include scripts/ + .github.
+- DEPLOYED to prod (messenginfo.com @ main 0ba35db): survival 1B/1C/3A/3B/content all LIVE, smoke-tested green (health truthful, info→start 307, nav 200).
 - SURVIVAL 3B-FUNNEL: tps-ukraine + re-parole-u4u bare routes now redirect to /info (price/FAQ/how-it-works) not straight to /start; info pages have Start CTA. Landing+pricing were unreachable before. tsc 0/build/3216.
 - SURVIVAL CONTENT: removed banned wording — "сертифицированный перевод" (TPSWizardV2) + "Консультації" (uk.json ×2). tsc 0/3216 pass.
 - SURVIVAL 3B-LINKS (nav): removed /sign-in 404, Check-Status→our tracker, #sources fixed (header+footer), dropped duplicate Supported-Docs + fake footer lang-switcher, mobile Status→our tracker. tsc 0/build/3216 pass. Remaining 3B: 4-pillar registry nav + info→start.
