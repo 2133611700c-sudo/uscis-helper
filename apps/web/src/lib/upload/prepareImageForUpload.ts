@@ -15,9 +15,12 @@ import { downscaleImageForUpload, type DownscaleOptions } from './downscaleImage
 
 export async function prepareImageForUpload(
   file: File,
-  opts?: DownscaleOptions,
+  opts?: DownscaleOptions & { autoRotate?: boolean },
 ): Promise<{ blob: Blob; name: string }> {
-  const upright = await autoRotateImage(file)
-  const blob = await downscaleImageForUpload(upright, opts)
+  const { autoRotate = true, ...downscaleOpts } = opts ?? {}
+  // autoRotate:false when the user already rotated this page by hand — their
+  // choice is final, the OSD must not override it.
+  const upright = autoRotate ? await autoRotateImage(file) : file
+  const blob = await downscaleImageForUpload(upright, downscaleOpts)
   return { blob, name: upright.name }
 }
