@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | Safety net — manual rotate override (free, user wins)
+A hedge for the auto-rotation the owner asked about ("можно подстраховаться?"): a ↻ rotate button on each upload preview tile in the translation wizard. Auto-OSD does its best automatically; if it's wrong or didn't fire, the user rotates by hand and **that choice is final** — the OSD won't override a hand-rotated page.
+- `autoRotate.ts`: exported `rotateImage90` (90° CW, fail-open).
+- `prepareImageForUpload`: `autoRotate` option (skip OSD for user-rotated pages).
+- `TranslateWizard`: per-page ↻ button next to ×, identity-keyed WeakSet so the manual choice survives add/remove and is respected at upload.
+- VISUAL-VERIFIED with Playwright (uploaded a doc → the ↻ button renders on the tile, dark mode clean). tsc 0, build clean, 3176 tests pass.
+
 ## 2026-06-12 | FEATURE (owner-requested) — FREE document auto-rotation (zero API cost), uniform across all wizards
 Owner: the system must rotate the document itself WITHOUT spending money. Built on what was ALREADY installed (inventoried deps first — `tesseract.js@7` + `sharp` were present and unused).
 - NEW `lib/upload/autoRotate.ts`: client-side **Tesseract OSD** detects the document's rotation (0/90/180/270) locally in the browser — **ZERO API cost** — and rotates the pixels upright with a canvas. Needs the legacy engine (`OEM.TESSERACT_ONLY` + `legacyCore/legacyLang`); confidence-gated (≥0.7) and timeout/fail-open (any problem → original file). **VERIFIED**: OSD detects all 4 orientations correctly in Node AND in a real browser (Playwright) — 90°→od270, 180°→od180, 270°→od90, upright→0.

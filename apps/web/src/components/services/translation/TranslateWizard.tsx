@@ -22,6 +22,7 @@ import { isGarbageValue } from '@uscis-helper/knowledge'
 import { getHardUnresolvedReviewFields, getSoftReviewFields } from '@/lib/translation/reviewGate'
 import { ukrLabelFor } from './translationFieldLabels'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
+import { rotateImage90 } from '@/lib/upload/autoRotate'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -144,6 +145,7 @@ const T = {
     s3_max_pages: 'Можно загрузить до 6 страниц.',
     s3_page_n: 'Страница',
     s3_remove_aria: 'Удалить страницу',
+    s3_rotate: 'Повернуть на 90°',
     s3_tip_t: 'Советы для хорошего фото:',
     s3_tip_b: 'снимайте при дневном свете, держите телефон ровно, все буквы должны быть чёткими. Книжку загружайте обеими развёрнутыми страницами или сделайте отдельные фото.',
     s3_better_scan: 'Фото получилось слишком маленьким или нечётким. Пожалуйста, переснимите при хорошем свете, держа телефон ровно, чтобы все буквы были чёткими — и попробуйте снова.',
@@ -277,6 +279,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s3_max_pages: 'Up to 6 pages.',
     s3_page_n: 'Page',
     s3_remove_aria: 'Remove page',
+    s3_rotate: 'Rotate 90°',
     s3_tip_t: 'Tips for a good photo:',
     s3_tip_b: 'shoot in daylight, hold the phone level, every letter must be sharp. For a booklet, photograph both open pages together or upload separate photos for each side.',
     s3_better_scan: 'The photo came out too small or unclear. Please retake it in good light, holding the phone steady so every letter is sharp — then try again.',
@@ -651,6 +654,19 @@ const WIZARD_CSS = `
 }
 .tw-page-remove:hover { background: rgba(0,0,0,0.78); }
 .tw-page-remove:active { background: rgba(0,0,0,0.85); transform: scale(0.92); }
+.tw-page-rotate {
+  position: absolute; top: 6px; left: 6px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(0,0,0,0.6); color: #fff;
+  border: none; cursor: pointer;
+  font-size: 19px; font-weight: 700; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit; -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+.tw-page-rotate:hover { background: rgba(0,0,0,0.78); }
+.tw-page-rotate:active { background: rgba(0,0,0,0.85); transform: scale(0.92) rotate(90deg); }
+.tw-page-rotate:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .tw-page-remove:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
 /* Primary button — TPS navBtn(forward): green, 18px, 800 weight, 48px tap */
@@ -1078,6 +1094,23 @@ export function TranslateWizard() {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index))
   }, [])
+  // Manual rotate = the safety net for when auto-orientation is wrong or didn't
+  // fire. Files the user rotated by hand are marked so the OSD doesn't override
+  // them at upload (identity-keyed so it survives add/remove).
+  const userRotatedRef = useRef<WeakSet<File>>(new WeakSet())
+  const handleRotateFile = useCallback(async (index: number) => {
+    const file = uploadedFiles[index]
+    if (!file) return
+    const rotated = await rotateImage90(file)
+    userRotatedRef.current.add(rotated)
+    setUploadedFiles((prev) => prev.map((f, i) => (i === index ? rotated : f)))
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const url = e.target?.result as string
+      setPreviewUrls((prev) => prev.map((u, i) => (i === index ? url : u)))
+    }
+    reader.readAsDataURL(rotated)
+  }, [uploadedFiles])
 
   // Desktop drag-drop. Mobile has no drag-and-drop API so these handlers
   // are silent no-ops there; tap-to-upload via the file picker covers
@@ -1151,7 +1184,10 @@ export function TranslateWizard() {
         // prepareImageForUpload = free OSD auto-rotate (sideways/upside-down →
         // upright, no API cost) + downscale to the per-file budget. Same single
         // helper every wizard uses, so rotation + sizing behave identically.
-        const prepared = await prepareImageForUpload(f, { thresholdBytes: perFileBudget, maxEdge, quality })
+        const prepared = await prepareImageForUpload(f, {
+          thresholdBytes: perFileBudget, maxEdge, quality,
+          autoRotate: !userRotatedRef.current.has(f), // user's manual rotate wins
+        })
         form.append('file', prepared.blob, prepared.name)
       }
       form.append('docTypeId', registryId!)
@@ -1674,6 +1710,13 @@ export function TranslateWizard() {
                 <div className="tw-page-tile" key={`${url.slice(0, 32)}-${i}`}>
                   <img src={url} alt={`${t.s3_page_n} ${i + 1}`} />
                   <div className="tw-page-no">{t.s3_page_n} {i + 1}</div>
+                  <button
+                    type="button"
+                    className="tw-page-rotate"
+                    aria-label={`${t.s3_rotate} ${i + 1}`}
+                    title={t.s3_rotate}
+                    onClick={() => handleRotateFile(i)}
+                  >↻</button>
                   <button
                     type="button"
                     className="tw-page-remove"
