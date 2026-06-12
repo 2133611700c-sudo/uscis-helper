@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-12 | FEATURE (owner-activated) — knowledge dictionary ON by default in production
+Owner: "большой слой знаний… считаю это нужно делать сейчас." Activated the D2 dictionary as production authority.
+- INVENTORY-FIRST (agent): confirmed the CONFLICT POLICY IS SAFE — a dictionary value that differs from the read value is NEVER silently substituted; it keeps the read value, surfaces a `suggestedValue`, and forces review (`arbitration.ts` applyKnowledge). Only deterministic safe transforms are accepted outright. So default-on cannot produce a silently-wrong value (worst case = a review flag the operator catches).
+- `isKnowledgeBrainEnabled` default flipped: `=== '1'` → `!== '0'` (ON unless explicitly disabled). Rollback = set `KNOWLEDGE_BRAIN_ENABLED=0` (no code change). Active in ALL 4 products (translation/tps/ead/reparole).
+- NOW LIVE: oblast genitive→English nominative (Вінницької області→**Vinnytsia Oblast**), ЗАГС/РАЦС→**Civil Registry Office**, **Міліція**→Militsiya (era-gated, never Police), historical-name preserve, patronymic validation, gazetteer city snap, KMU-55.
+- Pinned by `knowledgeDictionaryLive.test.ts` (the owner's exact birth-cert examples — oblast/ЗАГС/Міліція). Updated `knowledgeBrain.test.ts` (default is ON; `=0` disables, byte-identical).
+- Refinement gaps logged as follow-ups (not blockers): agency acronym "(ZAHS)", modern city rename for Cyrillic input (Кіровоград→Кропивницький — historical-preserve works; modern-rename GEO_CORRECTIONS is dead for Cyrillic), смт lowercase guard, oblast dative-without-period.
+- Evidence: tsc 0, build clean, 3181 tests pass.
+
 ## 2026-06-12 | BUGFIX (owner test) — stop reading Ukrainian Cyrillic as Russian
 Owner's birth-certificate test: names/places came out Russified — "Serhei" (should be Serhii/Sergii), "Serheevych" (Serhiiovych), "Stepanovna" (Stepanivna), "Kyrovohradskaia/Vynnytskaia oblast", "raiotdel ZAHSa".
 - ROOT CAUSE (inventory-first): RU_TRANSLIT_ENABLED is OFF, so names always go through KMU-55 (Ukrainian) — the transliteration engine is correct. The Gemini READER was Russifying the Ukrainian Cyrillic at read time (returns Сергей for Сергій, Кировоградская for Кіровоградської); KMU-55 then faithfully transliterated the wrong Cyrillic. The always-on oblast→nominative / city normalization also failed because they were fed Russified input.
