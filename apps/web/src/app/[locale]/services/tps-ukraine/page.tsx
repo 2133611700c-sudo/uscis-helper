@@ -1,12 +1,12 @@
 /**
  * /[locale]/services/tps-ukraine
  *
- * TPS Ukraine main landing — redirects directly to the prototype-style wizard
- * at /start so the cleanly-designed flow is the first thing the user sees.
+ * Redirects to the INFO landing first (hero, price range, how-it-works, FAQ)
+ * so a 35–80yo user understands what this is and what it costs BEFORE being
+ * dropped into the upload wizard. The info page's "Start" CTA goes to /start.
  *
- * The legacy info landing (FAQ, official sources, regulatory context) lives
- * at /[locale]/services/tps-ukraine/info — link to it from the wizard footer
- * when needed.
+ * (Was redirecting straight to /start, which stranded the whole landing +
+ * pricing content and gave first-time users no context.)
  */
 import { redirect } from 'next/navigation'
 
@@ -16,5 +16,5 @@ interface Props {
 
 export default async function TpsUkraineRedirect({ params }: Props) {
   const { locale } = await params
-  redirect(`/${locale}/services/tps-ukraine/start`)
+  redirect(`/${locale}/services/tps-ukraine/info`)
 }
