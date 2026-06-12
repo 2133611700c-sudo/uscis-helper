@@ -1,4 +1,5 @@
-# STATUS (2026-06-12 — Survival + Phase 2 + extract-UX deployed; cron green; guard test added)
+# STATUS (2026-06-12 — dark-mode white-patch wizard bug FIXED; survival+Phase2 deployed)
+- BUGFIX (owner-reported): dark-mode "white patch, invisible text" on selecting a doc-type in the translator = --accent-light token undefined → fixed near-white fallback used in both themes. Defined --accent-light in globals.css (light 0.12 / dark 0.28 translucent accent). 13 wizard spots fixed at once. tsc 0/build.
 - UX: wizard processing screen shows a "taking longer, keep page open" reassurance after ~15s (35-80yo don't close the tab). Additive. 3169 pass.
 - PHASE 2 QUARANTINE: deleted lib/engine/ (12 mods+10 tests), central-brain analyze()/types/audit/MIGRATION_STATE (index now only brainHealth), dead api/ocr routes, TPSWizard v1, transliterateKMU2010. Added no-engine-revival guard test. HELD: api/translation/extract (owner-confirm), lib/tps/transliterate (live). tsc 0/build/3169 pass. Validated incl scripts/+.github.
 - DESKTOP: DesktopStepSidebar contrast (current/future step) fixed. All other survival fixes are responsive (desktop+mobile both). 3229 tests.
