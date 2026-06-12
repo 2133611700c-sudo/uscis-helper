@@ -69,8 +69,17 @@ export interface KnowledgeNormalizeCtx {
   sourceBasis?: 'mrz_latin' | 'ead_latin' | 'i94_latin' | 'reader_latin' | 'raw_cyrillic' | 'unknown'
 }
 
+/**
+ * The knowledge dictionary (D2 authority: oblast genitive→nominative, ЗАГС/РАЦС
+ * agency terms, Міліція era-gating, смт, historical names, patronymic, KMU-55)
+ * is ON BY DEFAULT (owner-activated 2026-06-12). It is SAFE to default-on: a
+ * dictionary CONFLICT never silently rewrites — it keeps the read value, surfaces
+ * a suggestedValue, and forces review (arbitration.ts applyKnowledge). Only
+ * deterministic safe transforms are accepted outright. Set KNOWLEDGE_BRAIN_ENABLED=0
+ * to disable without a code change (rollback).
+ */
 export function isKnowledgeBrainEnabled(env: Record<string, string | undefined> = process.env): boolean {
-  return env.KNOWLEDGE_BRAIN_ENABLED === '1'
+  return env.KNOWLEDGE_BRAIN_ENABLED !== '0'
 }
 
 const CYRILLIC = /[Ѐ-ӿ]/
