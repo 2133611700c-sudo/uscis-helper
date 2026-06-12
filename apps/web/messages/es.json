@@ -14,7 +14,36 @@
       "home": "Inicio",
       "privacy": "Privacidad",
       "terms": "Términos",
-      "disclaimer": "Aviso legal"
+      "disclaimer": "Aviso legal",
+      "pillars": {
+        "translate": {
+          "label": "Traducir",
+          "translateDoc": "Traducir un documento",
+          "supportedDocs": "Documentos compatibles",
+          "pricing": "Precios"
+        },
+        "forms": {
+          "label": "Formularios",
+          "ead": "Permiso de trabajo (EAD)",
+          "reparole": "Re-Parole U4U",
+          "tps": "TPS Ucrania",
+          "all": "Todos los servicios"
+        },
+        "status": {
+          "label": "Estado",
+          "uscisStatus": "Estado del caso USCIS",
+          "tpsStatus": "Estado de TPS",
+          "i94Guide": "Guía I-94"
+        },
+        "info": {
+          "label": "Información",
+          "faq": "Preguntas frecuentes",
+          "attorneys": "Ayuda legal",
+          "sources": "Fuentes oficiales",
+          "about": "Acerca de",
+          "contact": "Contacto"
+        }
+      }
     },
     "ctaStatus": "Verificar estado",
     "signIn": "Iniciar sesión",
