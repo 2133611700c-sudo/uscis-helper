@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3A — EAD form-label associations (a11y)
+- `EADWizard` personal-info step: added `htmlFor`/`id` to 7 fields (lastName, firstName, middleName, dob, countryOfBirth, alienNumber, usAddress) — labels were siblings of inputs with no programmatic association, so screen readers didn't announce the field name. tsc 0, build clean, 3176 tests pass.
+
 ## 2026-06-12 | Survival Phase 1 (1A) — MRZ into translation (flag-gated, default OFF)
 - NEW `mrzCandidatesForTranslation(rawText, docType)` in `mrzAuthority.ts`: MRZ candidates remapped to the translation registry's field names (`date_of_birth`→`dob`, `date_of_expiry`→`passport_expiration_date`), filtered to the international-passport 5-field spec (drops nationality/sex).
 - `vision-extract` Core B2: behind **`MRZ_TRANSLATION_ENABLED` (default OFF = byte-identical prod)**, for `ua_international_passport` it runs a Google Vision text pass on the first page → `mrzCandidatesForTranslation` → merged into arbitration. Fail-open (Vision blocked / no MRZ → `[]`, same as today).

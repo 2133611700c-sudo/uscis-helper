@@ -1118,8 +1118,9 @@ export function EADWizard({ locale }: EADWizardProps) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.lastName} <span className="text-red-500">*</span></label>
+            <label htmlFor="ead-lastName" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.lastName} <span className="text-red-500">*</span></label>
             <input
+              id="ead-lastName"
               type="text" value={data.lastName}
               onChange={e => patch({ lastName: e.target.value })}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1127,8 +1128,9 @@ export function EADWizard({ locale }: EADWizardProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.firstName} <span className="text-red-500">*</span></label>
+            <label htmlFor="ead-firstName" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.firstName} <span className="text-red-500">*</span></label>
             <input
+              id="ead-firstName"
               type="text" value={data.firstName}
               onChange={e => patch({ firstName: e.target.value })}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1137,8 +1139,9 @@ export function EADWizard({ locale }: EADWizardProps) {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.middleName}</label>
+          <label htmlFor="ead-middleName" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.middleName}</label>
           <input
+            id="ead-middleName"
             type="text" value={data.middleName}
             onChange={e => patch({ middleName: e.target.value })}
             className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1146,16 +1149,18 @@ export function EADWizard({ locale }: EADWizardProps) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.dob} <span className="text-red-500">*</span></label>
+            <label htmlFor="ead-dob" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.dob} <span className="text-red-500">*</span></label>
             <input
+              id="ead-dob"
               type="date" value={data.dob}
               onChange={e => patch({ dob: e.target.value })}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.countryOfBirth}</label>
+            <label htmlFor="ead-countryOfBirth" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.countryOfBirth}</label>
             <input
+              id="ead-countryOfBirth"
               type="text" value={data.countryOfBirth}
               onChange={e => patch({ countryOfBirth: e.target.value })}
               placeholder="Ukraine"
@@ -1179,8 +1184,9 @@ export function EADWizard({ locale }: EADWizardProps) {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.alienNumber}</label>
+          <label htmlFor="ead-alienNumber" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.alienNumber}</label>
           <input
+            id="ead-alienNumber"
             type="text" value={data.alienNumber}
             onChange={e => patch({ alienNumber: e.target.value })}
             placeholder="A123456789"
@@ -1270,8 +1276,9 @@ export function EADWizard({ locale }: EADWizardProps) {
           </div>
         )}
         <div>
-          <label className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.addressLabel} <span className="text-red-500">*</span></label>
+          <label htmlFor="ead-usAddress" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.addressLabel} <span className="text-red-500">*</span></label>
           <textarea
+            id="ead-usAddress"
             value={data.usAddress}
             onChange={e => patch({ usAddress: e.target.value })}
             rows={3}
