@@ -22,10 +22,10 @@ describe('G1 Glossary Registry', () => {
   })
 
   // Test 1 — смт must stay "urban-type settlement", NEVER city
-  it('"смт Тростянець" → urban-type settlement + Trostianets, NOT city', () => {
-    const r = lookupSettlement('смт Тростянець')
+  it('"смт Вінниця" → urban-type settlement + Vinnytsia, NOT city', () => {
+    const r = lookupSettlement('смт Вінниця')
     expect(r.matched).toBe(true)
-    expect(r.official_en).toBe('Trostianets')
+    expect(r.official_en).toBe('Vinnytsia')
     expect(r.settlementType).toBe('urban-type settlement')
     expect(r.warning.toLowerCase()).toContain('never')
     expect(r.official_en.toLowerCase()).not.toContain('city')
@@ -33,12 +33,12 @@ describe('G1 Glossary Registry', () => {
   })
 
   // Test 2 — misspelled place fuzzy-matches but is NEVER silent
-  it('"Простянець" → Trostianets with review_required (fuzzy, not silent)', () => {
-    const r = lookupSettlement('Простянець')
+  it('"Бінниця" → Vinnytsia with review_required (fuzzy, not silent)', () => {
+    const r = lookupSettlement('Бінниця')
     expect(r.matched).toBe(true)
-    expect(r.official_en).toBe('Trostianets')
+    expect(r.official_en).toBe('Vinnytsia')
     expect(r.review_required).toBe(true)
-    expect(r.candidates).toContain('Trostianets')
+    expect(r.candidates).toContain('Vinnytsia')
   })
 
   // Test 3 — a 1986 document must NOT be modernised
@@ -72,7 +72,7 @@ describe('G1 Glossary Registry', () => {
   it('no matched value is returned without source_url', () => {
     for (const probe of [
       lookupAuthority('національна поліція', '2020'),
-      lookupSettlement('смт Тростянець'),
+      lookupSettlement('смт Вінниця'),
       lookupRegistry('oblast', 'Вінницької'),
       resolveAbbreviation('обл.'),
     ]) {
@@ -82,8 +82,8 @@ describe('G1 Glossary Registry', () => {
 
   // live-E2E found: recognition dumps the whole place line into one field
   it('place line with city + oblast still resolves to the city + type', () => {
-    const r = lookupSettlement('смт. Тростянець Вінницької обл.')
-    expect(r.official_en).toBe('Trostianets')
+    const r = lookupSettlement('смт. Вінниця Вінницької обл.')
+    expect(r.official_en).toBe('Vinnytsia')
     expect(r.settlementType).toBe('urban-type settlement')
   })
 
