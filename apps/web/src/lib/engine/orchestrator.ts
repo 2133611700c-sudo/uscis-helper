@@ -7,7 +7,7 @@
  *   2. consensus + hallucination guard + open-name systematic-error guard.
  *   3. D2 normalize each accepted value by kind:
  *        name        → KMU-55 transliteration (patronymic → validate/reconstruct)
- *        place_city  → gazetteer snap (Простянець→Тростянець)
+ *        place_city  → gazetteer snap (typo corrections + known variants)
  *        place_oblast→ genitive→nominative + DMS English
  *        date        → kept as read (ISO if model gave it)
  *   4. Emit canonical fields with provenance + review flags. NEVER guesses.

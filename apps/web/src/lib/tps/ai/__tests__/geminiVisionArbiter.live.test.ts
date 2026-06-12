@@ -33,8 +33,8 @@ describe.skipIf(!LIVE)('geminiVisionArbiter — LIVE (owner booklet)', () => {
     // eslint-disable-next-line no-console
     console.log('LIVE final fields (Cyrillic→KMU-55):', JSON.stringify(by))
 
-    expect(by.family_name).toBe('REDACTED')
-    expect(by.middle_name).toBe('Serhiiovych') // was "Yovych" in prod
-    expect(by.city_of_birth).toBe('Trostianets') // was "Prostianets" in prod
+    expect(by.family_name).toBe('Ivanenko')
+    expect(by.middle_name).toBe('Petrovych') // was "Yovych" in prod
+    expect(by.city_of_birth).toBe('Vinnytsia') // was "Prostianets" in prod
   }, 90000)
 })

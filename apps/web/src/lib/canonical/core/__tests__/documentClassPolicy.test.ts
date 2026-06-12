@@ -134,8 +134,8 @@ describe('wrong-person guard — role grounding on certificates', () => {
 
   test('accepts role-grounded child fields on birth cert', () => {
     const result = applyCertificateRoleGuard('birth_certificate_handwritten', {
-      child_family_name: 'REDACTED_NAME',
-      child_given_name: 'Сергій',
+      child_family_name: 'Іваненко',
+      child_given_name: 'Іван',
     })
     expect(result.safe).toBe(true)
     expect(result.forcedReviewFields).toHaveLength(0)
@@ -143,14 +143,14 @@ describe('wrong-person guard — role grounding on certificates', () => {
 
   test('accepts role-grounded spouse fields on marriage', () => {
     const result = applyCertificateRoleGuard('marriage_apostille', {
-      spouse1_family_name: 'REDACTED_NAME',
+      spouse1_family_name: 'Іваненко',
     })
     expect(result.safe).toBe(true)
   })
 
   test('passport is not subject to role guard — passes through', () => {
     const result = applyCertificateRoleGuard('internal_passport_booklet', {
-      family_name: 'REDACTED_NAME',
+      family_name: 'Іваненко',
     })
     expect(result.safe).toBe(true)
     expect(result.forcedReviewFields).toHaveLength(0)

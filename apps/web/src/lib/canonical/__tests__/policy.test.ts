@@ -69,16 +69,16 @@ describe('canonical policy — criticality matrix (§B)', () => {
 describe('canonical policy — no-silent-correction (§E)', () => {
   it('case/whitespace/punctuation differences are NOT material', () => {
     expect(materiallyDifferent('Kovalenko', 'KOVALENKO')).toBe(false)
-    expect(materiallyDifferent(' Trostianets ', 'Trostianets')).toBe(false)
+    expect(materiallyDifferent(' Vinnytsia ', 'Vinnytsia')).toBe(false)
     expect(materiallyDifferent("O'Brien", 'OBrien')).toBe(false)
   })
 
   it('a different value IS material → forces review and keeps raw', () => {
-    expect(materiallyDifferent('Ярошенець', 'Тростянець')).toBe(true)
+    expect(materiallyDifferent('Ярошенець', 'Вінниця')).toBe(true)
     const d = decideReviewRequired({
       key: 'place_of_birth',
       rawValue: 'Ярошенець',
-      normalizedValue: 'Тростянець',
+      normalizedValue: 'Вінниця',
       confidence: buildConfidence({ ocr: 0.9, field_match: 0.9, normalization: 0.9, source_match: 0.9 }),
       evidence: [],
     })

@@ -1,13 +1,13 @@
 /**
  * geographyNoSilentSnap.test.ts — S1 safety: a fuzzy place must NEVER silently
  * replace the raw read. Locks the owner's live failure: с.м.т. Ярошенець must NOT
- * become Trostianets without review.
+ * become Vinnytsia without review.
  */
 import { describe, it, expect } from 'vitest'
 import { snapCity } from '@uscis-helper/knowledge'
 
 describe('S1 — geography no-silent-snap', () => {
-  it('does NOT silently replace a distant fuzzy read (Ярошенець ≠ Тростянець)', () => {
+  it('does NOT silently replace a distant fuzzy read (Ярошенець ≠ Вінниця)', () => {
     const r = snapCity('с.м.т. Ярошенець')
     expect(r.value).toContain('Ярошен')          // RAW preserved
     expect(r.value).not.toBe(r.suggestedValue)    // NOT silently replaced by the suggestion
@@ -22,9 +22,9 @@ describe('S1 — geography no-silent-snap', () => {
     expect(r.reason).toBe('fuzzy_geography_match')
   })
 
-  it('an EXACT match still normalizes (Тростянець → Тростянець, no review)', () => {
-    const r = snapCity('Тростянець')
-    expect(r.value).toBe('Тростянець')
+  it('an EXACT match still normalizes (Вінниця → Вінниця, no review)', () => {
+    const r = snapCity('Вінниця')
+    expect(r.value).toBe('Вінниця')
     expect(r.matched).toBe(true)
     expect(r.review_required).toBe(false)
     expect(r.suggestedValue ?? null).toBeNull()

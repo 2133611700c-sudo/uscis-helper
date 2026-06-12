@@ -9,7 +9,7 @@ import { planTranslationRows } from '../pdf'
 describe('P0 — honest PDF field planning', () => {
   it('empty field becomes a visible MISSING row, not dropped', () => {
     const { rows, missingCount, certifiable } = planTranslationRows([
-      { field: 'surname', normalized_value: 'REDACTED', review_required: true },
+      { field: 'surname', normalized_value: 'Ivanenko', review_required: true },
       { field: 'date_of_birth', normalized_value: '', review_required: false },     // unread
       { field: 'place_of_birth', normalized_value: null, review_required: false },  // unread
     ])
@@ -23,8 +23,8 @@ describe('P0 — honest PDF field planning', () => {
 
   it('all fields present & reviewed → certifiable, review flagged', () => {
     const { rows, missingCount, reviewCount, certifiable } = planTranslationRows([
-      { field: 'surname', normalized_value: 'REDACTED', review_required: true },
-      { field: 'passport_no', normalized_value: 'FU262473', review_required: false },
+      { field: 'surname', normalized_value: 'Ivanenko', review_required: true },
+      { field: 'passport_no', normalized_value: 'FA000000', review_required: false },
     ])
     expect(missingCount).toBe(0)
     expect(certifiable).toBe(true)

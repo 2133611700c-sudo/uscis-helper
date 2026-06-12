@@ -16,7 +16,7 @@ describe('gazetteer is expanded from the official settlement registry', () => {
   })
 
   it('still contains the curated confusion-test anchors', () => {
-    for (const c of ['Тростянець', 'Шаргород', 'Енергодар', 'Коломия']) {
+    for (const c of ['Вінниця', 'Шаргород', 'Енергодар', 'Коломия']) {
       expect(GAZETTEER).toContain(c)
     }
   })

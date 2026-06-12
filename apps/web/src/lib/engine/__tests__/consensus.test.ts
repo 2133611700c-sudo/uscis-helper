@@ -4,11 +4,11 @@ import { reconcileField, readingsAgree, type FieldRead } from '../consensus'
 const r = (cyrillic: string, can_read = true, confidence = 0.9): FieldRead => ({ cyrillic, can_read, confidence })
 
 describe('readingsAgree', () => {
-  it('orthographic variants agree (Сергій / Сергей)', () => {
-    expect(readingsAgree('Сергій', 'Сергей')).toBe(true)
+  it('orthographic variants agree (Іван / Иван)', () => {
+    expect(readingsAgree('Іван', 'Иван')).toBe(true)
   })
-  it('one handwriting confusion still agrees (Тростянець / Простянець)', () => {
-    expect(readingsAgree('Тростянець', 'Простянець')).toBe(true)
+  it('one handwriting confusion still agrees (Вінниця / Бінниця)', () => {
+    expect(readingsAgree('Вінниця', 'Бінниця')).toBe(true)
   })
   it('two different fabricated people DISAGREE', () => {
     expect(readingsAgree('Хроменчук Олег Васильович', 'Людмила Анатольевна')).toBe(false)
@@ -28,15 +28,15 @@ describe('readingsAgree', () => {
     expect(readingsAgree('Хроменчук Олег Васильович', 'після реєстрації шлюбу')).toBe(false)
   })
   it('empty never agrees', () => {
-    expect(readingsAgree('', 'Сергій')).toBe(false)
+    expect(readingsAgree('', 'Іван')).toBe(false)
   })
 })
 
 describe('reconcileField — hallucination guard', () => {
   it('two models AGREE → accept', () => {
     const f = reconcileField('child', [
-      { model: 'gemini', read: r('REDACTED_NAME Сергій') },
-      { model: 'openai', read: r('REDACTED_NAME Сергей') },
+      { model: 'gemini', read: r('Іваненко Іван') },
+      { model: 'openai', read: r('Іваненко Иван') },
     ])
     expect(f.can_read).toBe(true)
     expect(f.confidence).toBe(0.9)
@@ -60,7 +60,7 @@ describe('reconcileField — hallucination guard', () => {
 
   it('single read of HANDWRITTEN field → not trusted (needs human)', () => {
     const f = reconcileField('child', [
-      { model: 'gemini', read: r('Сергій') },
+      { model: 'gemini', read: r('Іван') },
       { model: 'openai', read: r('', false, 0) },
     ])
     expect(f.can_read).toBe(false)
@@ -108,8 +108,8 @@ describe('reconcileField — hallucination guard', () => {
 
   it('3 models, 2 agree + 1 fabricates → majority wins', () => {
     const f = reconcileField('city', [
-      { model: 'gemini', read: r('Тростянець') },
-      { model: 'vertex', read: r('Простянець') }, // 1 confusion → agrees
+      { model: 'gemini', read: r('Вінниця') },
+      { model: 'vertex', read: r('Бінниця') }, // 1 confusion → agrees
       { model: 'openai', read: r('Кропивницьке') }, // fabrication → outvoted
     ])
     expect(f.can_read).toBe(true)

@@ -8,13 +8,13 @@ import {
 
 describe('Field Arbiter v0', () => {
   // CASE 1: MRZ wins over weaker OCR
-  it('MRZ identity lock: Sergii wins over Saghi', () => {
+  it('MRZ identity lock: Ivan wins over Saghi', () => {
     const candidates: ExtractedCandidate[] = [
-      { field: 'given_name', value: 'Sergii', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
+      { field: 'given_name', value: 'Ivan', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
       { field: 'given_name', value: 'Saghi', sourceDoc: 'ead', sourceType: 'ai_brain', confidence: 0.7, reviewRequired: true },
     ]
     const result = resolveField('given_name', candidates)
-    expect(result.chosenValue).toBe('Sergii')
+    expect(result.chosenValue).toBe('Ivan')
     expect(result.locked).toBe(true)
     expect(result.conflict).toBe(true)
     expect(result.rejectedCandidates).toHaveLength(1)
@@ -66,11 +66,11 @@ describe('Field Arbiter v0', () => {
   // CASE 6: user correction always wins
   it('user correction overrides MRZ', () => {
     const candidates: ExtractedCandidate[] = [
-      { field: 'given_name', value: 'Sergii', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
-      { field: 'given_name', value: 'Serhii', sourceDoc: 'manual', sourceType: 'user_corrected', confidence: null, reviewRequired: false },
+      { field: 'given_name', value: 'Ivan', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
+      { field: 'given_name', value: 'Ivan', sourceDoc: 'manual', sourceType: 'user_corrected', confidence: null, reviewRequired: false },
     ]
     const result = resolveField('given_name', candidates)
-    expect(result.chosenValue).toBe('Serhii')
+    expect(result.chosenValue).toBe('Ivan')
     expect(result.locked).toBe(false) // user correction, not MRZ
   })
 
@@ -79,10 +79,10 @@ describe('Field Arbiter v0', () => {
     const result = resolveAllFields({
       uploads: {
         passport: [
-          { field: 'family_name', value: 'REDACTED', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
-          { field: 'given_name', value: 'Sergii', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
-          { field: 'dob', value: '1986-06-25', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
-          { field: 'passport_expiration_date', value: '2029-02-22', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
+          { field: 'family_name', value: 'Ivanenko', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
+          { field: 'given_name', value: 'Ivan', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
+          { field: 'dob', value: '1990-01-01', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
+          { field: 'passport_expiration_date', value: '2030-01-01', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
         ],
         ead: [
           { field: 'given_name', value: 'Saghi', sourceDoc: 'ead', sourceType: 'ai_brain', confidence: 0.7, reviewRequired: true },
@@ -93,14 +93,14 @@ describe('Field Arbiter v0', () => {
           { field: 'i94_admission_number', value: '039622651A3', sourceDoc: 'i94', sourceType: 'ocr_keyword', confidence: 0.95, reviewRequired: false },
         ],
         booklet: [
-          { field: 'city_of_birth', value: 'Trostianets', sourceDoc: 'booklet', sourceType: 'ai_brain', confidence: 0.9, reviewRequired: true },
+          { field: 'city_of_birth', value: 'Vinnytsia', sourceDoc: 'booklet', sourceType: 'ai_brain', confidence: 0.9, reviewRequired: true },
         ],
       },
       manual: {},
     })
 
     // MRZ identity locked
-    expect(result.resolvedFields.given_name.chosenValue).toBe('Sergii')
+    expect(result.resolvedFields.given_name.chosenValue).toBe('Ivan')
     expect(result.resolvedFields.given_name.locked).toBe(true)
     expect(result.lockedFields).toContain('given_name')
 
@@ -115,11 +115,11 @@ describe('Field Arbiter v0', () => {
     expect(result.resolvedFields.last_entry_date.chosenValue).toBe('2022-09-09')
 
     // Weak booklet field
-    expect(result.resolvedFields.city_of_birth.chosenValue).toBe('Trostianets')
+    expect(result.resolvedFields.city_of_birth.chosenValue).toBe('Vinnytsia')
     expect(result.resolvedFields.city_of_birth.reviewRequired).toBe(true)
 
     // Passport expiration
-    expect(result.resolvedFields.passport_expiration_date.chosenValue).toBe('2029-02-22')
+    expect(result.resolvedFields.passport_expiration_date.chosenValue).toBe('2030-01-01')
 
     // Conflict count
     expect(result.conflictCount).toBe(1) // given_name conflict
@@ -142,11 +142,11 @@ describe('Field Arbiter v0', () => {
   // CASE 10: same value from multiple sources = no conflict
   it('same value from multiple sources: no conflict', () => {
     const candidates: ExtractedCandidate[] = [
-      { field: 'family_name', value: 'REDACTED', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
-      { field: 'family_name', value: 'REDACTED', sourceDoc: 'i94', sourceType: 'ocr_keyword', confidence: 0.9, reviewRequired: false },
+      { field: 'family_name', value: 'Ivanenko', sourceDoc: 'passport', sourceType: 'ocr_mrz', confidence: 0.99, reviewRequired: false },
+      { field: 'family_name', value: 'IVANENKO', sourceDoc: 'i94', sourceType: 'ocr_keyword', confidence: 0.9, reviewRequired: false },
     ]
     const result = resolveField('family_name', candidates)
-    expect(result.chosenValue).toBe('REDACTED')
+    expect(result.chosenValue).toBe('Ivanenko')
     expect(result.conflict).toBe(false) // same value, different case
     expect(result.locked).toBe(true)
   })

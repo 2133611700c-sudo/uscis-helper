@@ -33,19 +33,19 @@ function rf(field: string, raw_value: string, slot: 'booklet' | 'passport' = 'bo
 
 describe('formatDobForTranslation', () => {
   it('converts ISO YYYY-MM-DD to Month DD, YYYY', () => {
-    expect(formatDobForTranslation('1986-06-25')).toBe('June 25, 1986')
+    expect(formatDobForTranslation('1990-01-01')).toBe('January 1, 1990')
   })
 
   it('converts US format MM/DD/YYYY (wizard state)', () => {
-    expect(formatDobForTranslation('06/25/1986')).toBe('June 25, 1986')
+    expect(formatDobForTranslation('01/01/1990')).toBe('January 1, 1990')
   })
 
   it('converts dot format DD.MM.YYYY (OCR document)', () => {
-    expect(formatDobForTranslation('25.06.1986')).toBe('June 25, 1986')
+    expect(formatDobForTranslation('01.01.1990')).toBe('January 1, 1990')
   })
 
   it('passes through already-formatted "Month DD, YYYY"', () => {
-    expect(formatDobForTranslation('June 25, 1986')).toBe('June 25, 1986')
+    expect(formatDobForTranslation('January 1, 1990')).toBe('January 1, 1990')
   })
 
   it('handles single-digit day', () => {
@@ -76,30 +76,30 @@ describe('formatDobForTranslation', () => {
 
 describe('extractTranslationFields', () => {
   const baseMerged: Record<string, MergedField> = {
-    family_name:       mf('family_name',       'REDACTED'),
-    middle_name:       mf('middle_name',        'Serhiiovych'),
-    dob:               mf('dob',               '1986-06-25'),
-    city_of_birth:     mf('city_of_birth',     'Trostianets'),
+    family_name:       mf('family_name',       'Ivanenko'),
+    middle_name:       mf('middle_name',        'Petrovych'),
+    dob:               mf('dob',               '1990-01-01'),
+    city_of_birth:     mf('city_of_birth',     'Vinnytsia'),
     province_of_birth: mf('province_of_birth', 'Vinnytsia Oblast'),
   }
 
   it('extracts family_name and patronymic from cb_merged', () => {
     const result = extractTranslationFields(baseMerged, [], {})
-    expect(result.family_name).toBe('REDACTED')
-    expect(result.patronymic).toBe('Serhiiovych')
+    expect(result.family_name).toBe('Ivanenko')
+    expect(result.patronymic).toBe('Petrovych')
     expect(result._sources.family_name).toBe('cb_merged')
     expect(result._sources.middle_name).toBe('cb_merged')
   })
 
   it('formats DOB from ISO to Month DD, YYYY', () => {
     const result = extractTranslationFields(baseMerged, [], {})
-    expect(result.date_of_birth).toBe('June 25, 1986')
+    expect(result.date_of_birth).toBe('January 1, 1990')
   })
 
   it('picks up given_name from cb_rejected when not in merged (booklet contract blocks it)', () => {
-    const rejected = [rf('given_name', 'Serhii')]
+    const rejected = [rf('given_name', 'Ivan')]
     const result = extractTranslationFields(baseMerged, rejected, {})
-    expect(result.given_name).toBe('Serhii')
+    expect(result.given_name).toBe('Ivan')
     expect(result._sources.given_name).toBe('cb_rejected')
   })
 
@@ -118,8 +118,8 @@ describe('extractTranslationFields', () => {
   })
 
   it('falls back to manual when field absent from both merged and rejected', () => {
-    const result = extractTranslationFields(baseMerged, [], { given_name: 'Serhii_Manual' })
-    expect(result.given_name).toBe('Serhii_Manual')
+    const result = extractTranslationFields(baseMerged, [], { given_name: 'Ivan_Manual' })
+    expect(result.given_name).toBe('Ivan_Manual')
     expect(result._sources.given_name).toBe('manual')
   })
 
@@ -175,10 +175,10 @@ describe('extractTranslationFields', () => {
   it('expands смт prefix to "urban-type settlement" in city_of_birth', () => {
     const merged = {
       ...baseMerged,
-      city_of_birth: mf('city_of_birth', 'Trostianets', 'смт Тростянець'),
+      city_of_birth: mf('city_of_birth', 'Vinnytsia', 'смт Вінниця'),
     }
     const result = extractTranslationFields(merged, [], {})
-    expect(result.city_of_birth).toBe('Trostianets urban-type settlement')
+    expect(result.city_of_birth).toBe('Vinnytsia urban-type settlement')
   })
 
   it('expands смт. prefix (with dot) to "urban-type settlement"', () => {
@@ -220,6 +220,6 @@ describe('extractTranslationFields', () => {
 
   it('leaves city unchanged when no raw_value stored', () => {
     const result = extractTranslationFields(baseMerged, [], {})
-    expect(result.city_of_birth).toBe('Trostianets')
+    expect(result.city_of_birth).toBe('Vinnytsia')
   })
 })

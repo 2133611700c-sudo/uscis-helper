@@ -10,9 +10,9 @@
  *   - date conversion: YYMMDD → ISO yyyy-mm-dd via parseMrz isoFromYYMMDD
  *   - sex: only M/F emitted; unspecified '<'/'X' → no candidate
  *
- * Real passport fixture (REDACTED Sergii, FU262473, DOB 1986-06-25):
- *   P<UKRREDACTED<<SERGII<<<<<<<<<<<<<<<<<<<<
- *   FU262473<7UKR8606257M2902223<<<<<<<<<<<<<<04
+ * Real passport fixture (Ivanenko Ivan, FA000000, DOB 1990-01-01):
+ *   P<UKRIVANENKO<<IVAN<<<<<<<<<<<<<<<<<<<<<<<<<
+ *   FA000000<5UKR9001011M3001019<<<<<<<<<<<<<<06
  */
 import { describe, it, expect } from 'vitest'
 import {
@@ -29,22 +29,22 @@ import { PASSPORT_MRZ_FIELDS } from '../arbitration'
 
 /**
  * Real passport from test bench.
- * FU262473: check digit 7 (at position 9 of line 2).
- * DOB 860625: check digit 7 (at position 19 of line 2).
- * Expiry 290222: check digit 3 (at position 27 of line 2).
+ * FA000000: check digit 7 (at position 9 of line 2).
+ * DOB 900101: check digit 7 (at position 19 of line 2).
+ * Expiry 300101: check digit 3 (at position 27 of line 2).
  * Composite check digit 4 (final char of line 2).
  */
 const VALID_TD3_TEXT = [
   'УКРАЇНА / UKRAINE',
-  'P<UKRREDACTED<<SERGII<<<<<<<<<<<<<<<<<<<<',
-  'FU262473<7UKR8606257M2902223<<<<<<<<<<<<<<04',
+  'P<UKRIVANENKO<<IVAN<<<<<<<<<<<<<<<<<<<<<<<<<',
+  'FA000000<5UKR9001011M3001019<<<<<<<<<<<<<<06',
 ].join('\n')
 
 /** Same passport but check digit corrupted to 0 (was 7) → invalid. */
 const INVALID_CHECK_DIGIT_TEXT = [
   'УКРАЇНА / UKRAINE',
-  'P<UKRREDACTED<<SERGII<<<<<<<<<<<<<<<<<<<<',
-  'FU262473<0UKR8606257M2902223<<<<<<<<<<<<<<04', // position 9 changed 7→0
+  'P<UKRIVANENKO<<IVAN<<<<<<<<<<<<<<<<<<<<<<<<<',
+  'FA000000<0UKR9001011M3001019<<<<<<<<<<<<<<06', // position 9 changed 7→0
 ].join('\n')
 
 /** Text with no MRZ lines at all. */
@@ -64,7 +64,7 @@ describe('mrzCandidatesFromText — valid MRZ', () => {
     const candidates = mrzCandidatesFromText(VALID_TD3_TEXT)
     const pn = candidates.find((c) => c.key === 'passport_number')!
     expect(pn).toBeDefined()
-    expect(pn.value).toBe('FU262473')
+    expect(pn.value).toBe('FA000000')
     expect(pn.source).toBe('mrz')
     expect(pn.mrzCheckValid).toBe(true)
     expect(pn.confidence).toBe(0.99)
@@ -75,7 +75,7 @@ describe('mrzCandidatesFromText — valid MRZ', () => {
     const candidates = mrzCandidatesFromText(VALID_TD3_TEXT)
     const dob = candidates.find((c) => c.key === 'date_of_birth')!
     expect(dob).toBeDefined()
-    expect(dob.value).toBe('1986-06-25')
+    expect(dob.value).toBe('1990-01-01')
     expect(dob.mrzCheckValid).toBe(true)
   })
 
@@ -91,7 +91,7 @@ describe('mrzCandidatesFromText — valid MRZ', () => {
     const candidates = mrzCandidatesFromText(VALID_TD3_TEXT)
     const exp = candidates.find((c) => c.key === 'date_of_expiry')!
     expect(exp).toBeDefined()
-    expect(exp.value).toBe('2029-02-22')
+    expect(exp.value).toBe('2030-01-01')
     expect(exp.mrzCheckValid).toBe(true)
   })
 
@@ -99,7 +99,7 @@ describe('mrzCandidatesFromText — valid MRZ', () => {
     const candidates = mrzCandidatesFromText(VALID_TD3_TEXT)
     const fn = candidates.find((c) => c.key === 'family_name')!
     expect(fn).toBeDefined()
-    expect(fn.value).toBe('REDACTED')
+    expect(fn.value).toBe('IVANENKO')
     expect(fn.source).toBe('mrz')
   })
 
@@ -107,7 +107,7 @@ describe('mrzCandidatesFromText — valid MRZ', () => {
     const candidates = mrzCandidatesFromText(VALID_TD3_TEXT)
     const gn = candidates.find((c) => c.key === 'given_name')!
     expect(gn).toBeDefined()
-    expect(gn.value).toBe('SERGII')
+    expect(gn.value).toBe('IVAN')
     expect(gn.source).toBe('mrz')
   })
 
@@ -200,8 +200,8 @@ describe('mrzCandidatesFromText — sex field edge cases', () => {
   it('does not emit sex candidate when MRZ has unspecified sex (<)', () => {
     // Replace M with < in the sex position (line 2, position 20)
     const unspecifiedSexText = [
-      'P<UKRREDACTED<<SERGII<<<<<<<<<<<<<<<<<<<<',
-      'FU262473<7UKR8606257<2902223<<<<<<<<<<<<<<04',
+      'P<UKRIVANENKO<<IVAN<<<<<<<<<<<<<<<<<<<<<<<<<',
+      'FA000000<5UKR9001011<3001019<<<<<<<<<<<<<<06',
     ].join('\n')
     const candidates = mrzCandidatesFromText(unspecifiedSexText)
     const sex = candidates.find((c) => c.key === 'sex')
@@ -315,7 +315,7 @@ describe('mrzReadFromOcrText — async CoreReaders.mrzRead interface', () => {
   it('resolves to the same result as mrzCandidatesFromText for valid MRZ', async () => {
     const result = await mrzReadFromOcrText(VALID_TD3_TEXT)
     expect(result.length).toBe(7)
-    expect(result.find((c) => c.key === 'passport_number')?.value).toBe('FU262473')
+    expect(result.find((c) => c.key === 'passport_number')?.value).toBe('FA000000')
   })
 
   it('resolves to empty array for non-string input', async () => {
@@ -336,7 +336,7 @@ describe('mrzReadFromOcrText — async CoreReaders.mrzRead interface', () => {
 describe('invented_fields_count = 0', () => {
   it('no field is emitted without a real MRZ value (empty/blank values skipped)', () => {
     // Partial MRZ — only line 1, no line 2: parseMrz returns ok=false, no field values
-    const partialText = 'P<UKRREDACTED<<SERGII<<<<<<<<<<<<<<<<<<<<'
+    const partialText = 'P<UKRIVANENKO<<IVAN<<<<<<<<<<<<<<<<<<<<<<<<<'
     const candidates = mrzCandidatesFromText(partialText)
     // May return empty or partial — but must not invent values
     for (const c of candidates) {

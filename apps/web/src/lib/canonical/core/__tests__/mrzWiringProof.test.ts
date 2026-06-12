@@ -16,7 +16,7 @@
  * These tests operate at the arbitrateDocument level — no image, no Gemini call,
  * no route handler. Injecting candidates simulates exactly what the routes do.
  *
- * Fixture: real passport REDACTED Sergii — FU262473, DOB 1986-06-25.
+ * Fixture: real passport Ivanenko Ivan — FA000000, DOB 1990-01-01.
  */
 import { describe, it, expect } from 'vitest'
 import { arbitrateDocument, PASSPORT_MRZ_FIELDS } from '../arbitration'
@@ -27,14 +27,14 @@ import type { FieldCandidate } from '../types'
 
 const VALID_TD3_TEXT = [
   'УКРАЇНА / UKRAINE',
-  'P<UKRREDACTED<<SERGII<<<<<<<<<<<<<<<<<<<<',
-  'FU262473<7UKR8606257M2902223<<<<<<<<<<<<<<04',
+  'P<UKRIVANENKO<<IVAN<<<<<<<<<<<<<<<<<<<<<<<<<',
+  'FA000000<5UKR9001011M3001019<<<<<<<<<<<<<<06',
 ].join('\n')
 
 const INVALID_CHECK_DIGIT_TEXT = [
   'УКРАЇНА / UKRAINE',
-  'P<UKRREDACTED<<SERGII<<<<<<<<<<<<<<<<<<<<',
-  'FU262473<0UKR8606257M2902223<<<<<<<<<<<<<<04', // check digit 7 → 0
+  'P<UKRIVANENKO<<IVAN<<<<<<<<<<<<<<<<<<<<<<<<<',
+  'FA000000<0UKR9001011M3001019<<<<<<<<<<<<<<06', // check digit 7 → 0
 ].join('\n')
 
 const NO_MRZ_TEXT = 'Документ без машинозчитуваної зони.'
@@ -56,7 +56,7 @@ describe('MRZ wiring — valid MRZ wins over Gemini docintel', () => {
     const pn = fields.find((f) => f.key === 'passport_number')!
 
     expect(pn).toBeDefined()
-    expect(pn.normalizedValue).toBe('FU262473') // MRZ wins
+    expect(pn.normalizedValue).toBe('FA000000') // MRZ wins
     expect(pn.source).toBe('mrz')
     expect(pn.reviewRequired).toBe(false) // valid MRZ → no review
     expect(pn.evidence.length).toBeGreaterThanOrEqual(2) // both sources preserved as evidence
@@ -70,13 +70,13 @@ describe('MRZ wiring — valid MRZ wins over Gemini docintel', () => {
     const dob = fields.find((f) => f.key === 'date_of_birth')!
 
     expect(dob).toBeDefined()
-    expect(dob.normalizedValue).toBe('1986-06-25') // MRZ date wins
+    expect(dob.normalizedValue).toBe('1990-01-01') // MRZ date wins
     expect(dob.source).toBe('mrz')
     expect(dob.reviewRequired).toBe(false)
   })
 
   it('family_name: MRZ wins over Gemini', () => {
-    const geminiCandidates = [visual('family_name', 'REDACTED')] // same value
+    const geminiCandidates = [visual('family_name', 'Ivanenko')] // same value
     const mrzCandidates = mrzCandidatesFromText(VALID_TD3_TEXT)
 
     const fields = arbitrateDocument([...geminiCandidates, ...mrzCandidates])
@@ -134,7 +134,7 @@ describe('MRZ wiring — invalid MRZ forces review, not silent fallback', () => 
   })
 
   it('invalid MRZ with visual fallback: MRZ still wins but review_required=true', () => {
-    const geminiCandidates = [visual('passport_number', 'FU262473', 0.95)]
+    const geminiCandidates = [visual('passport_number', 'FA000000', 0.95)]
     const mrzCandidates = mrzCandidatesFromText(INVALID_CHECK_DIGIT_TEXT)
 
     const fields = arbitrateDocument([...geminiCandidates, ...mrzCandidates])
@@ -156,7 +156,7 @@ describe('MRZ wiring — missing MRZ: visual used, critical fields get review', 
   })
 
   it('passport_number: only Gemini candidate, critical_no_mrz_anchor review', () => {
-    const geminiCandidates = [visual('passport_number', 'FU262473')]
+    const geminiCandidates = [visual('passport_number', 'FA000000')]
     // No MRZ candidates (empty rawText)
     const mrzCandidates = mrzCandidatesFromText(NO_MRZ_TEXT)
 
@@ -164,7 +164,7 @@ describe('MRZ wiring — missing MRZ: visual used, critical fields get review', 
     const pn = fields.find((f) => f.key === 'passport_number')!
 
     expect(pn).toBeDefined()
-    expect(pn.normalizedValue).toBe('FU262473') // visual value used
+    expect(pn.normalizedValue).toBe('FA000000') // visual value used
     expect(pn.source).toBe('ai_vision')
     expect(pn.reviewRequired).toBe(true) // critical field, no MRZ anchor
     expect(pn.reviewReasons).toContain('critical_no_mrz_anchor')
@@ -236,7 +236,7 @@ describe('MRZ wiring — conflict: MRZ wins, visual preserved as evidence', () =
     const fields = arbitrateDocument([...geminiCandidates, ...mrzCandidates])
     const pn = fields.find((f) => f.key === 'passport_number')!
 
-    expect(pn.normalizedValue).toBe('FU262473') // MRZ wins
+    expect(pn.normalizedValue).toBe('FA000000') // MRZ wins
     expect(pn.source).toBe('mrz')
     // Evidence array preserves both candidates (visual + mrz)
     expect(pn.evidence.some((e) => e.source === 'ai_vision')).toBe(true)

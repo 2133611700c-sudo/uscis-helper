@@ -174,8 +174,8 @@ Return format:
   "fields": [
     {
       "field": "surname",
-      "raw_value": "REDACTED_NAME",
-      "normalized_value": "Testenko",
+      "raw_value": "Іваненко",
+      "normalized_value": "Ivanenko",
       "ocr_ids": ["w_0012"],
       "source_label": "ПРІЗВИЩЕ",
       "source_zone": "top_personal_data",
