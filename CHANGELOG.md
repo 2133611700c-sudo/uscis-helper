@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival Phase 1 (partial) — soft-confirm review gate + truthful health
+Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
+- `lib/translation/reviewGate.ts`: added `isSoftAnchorOnly`, `getHardUnresolvedReviewFields`, `getSoftReviewFields`. A passport field flagged ONLY with `critical_no_mrz_anchor` (and having a value) becomes a one-click SOFT confirm in the wizard pay-gate instead of a hard block. Genuine doubt (low_confidence/mrz_check_failed/provider_conflict/empty) still hard-blocks. Server `assertReviewGate` unchanged — operator certification path stays strict.
+- `TranslateWizard.tsx`: pay-gate uses hard-unresolved set; "Confirm all & continue" soft banner; passes `review_reasons` into the gate; `useMemo` import added.
+- `central-brain/health.ts`: removed false "MIGRATED — full pipeline through engine consensus" claim. Now reports `active_core: docintel+canonical`, `central_brain_engine: inactive`, `migrated_claim_removed: true`. MIGRATION_STATE kept internal for the (dead) analyze() routing until Phase 2.
+- Tests: reviewGate 24/24 (incl. safety test proving server gate stays strict), central-brain 7/7. tsc 0.
+- Fixes the passport "grey button" for ALL passports incl. booklet (no MRZ). Pending 1A: MRZ→translation auto-resolves intl passport/id-card.
+
 ## 2026-06-12 | Phase 1 dead code removal — operator-flow pivot cleanup
 - Deleted `src/lib/canonical/core/benchmark/` — L2 GT runner (10 files, fully orphaned, no prod imports).
 - Deleted 7 dead `documentSafety` modules: certifierAuthority, deepseekBoundaryGuard, guardBlockRate, handlePaymentFailure, paymentFailureTriage, ticketEscalation, persistCertifierAudit.
