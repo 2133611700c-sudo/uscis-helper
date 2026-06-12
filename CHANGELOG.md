@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3A — "retake photo" flow for too-small/unclear scans
+- The wizard already had photo tips (s3_tip_t/s3_tip_b) and a human extraction-error message. Added the missing piece: when the server bounces a photo as `needs_better_scan` / `reshoot_required` (e.g. <100KB), the user is sent back to the UPLOAD screen with a clear "photo too small/unclear — please retake in good light" notice (📷, warning tokens) instead of being pushed to screen 5 / payment to have a specialist read a bad photo. Additive: scanWarning state resets per run. ru + en. tsc 0, build clean, 3169 tests pass.
+
 ## 2026-06-12 | BUGFIX (dark mode, round 3) — TPS + EAD wizards (proactive)
 Swept the other product wizards for the same bug classes. Verified each agent finding — rejected 3 false positives (the global `input,textarea,select{}` rule already themes inputs; the #222 tooltip is white-on-charcoal = readable; disabled-button grey is acceptable). Confirmed + fixed:
 - `TPSWizardV2` stale-session banner used UNDEFINED tokens `--warn-bg`/`--warn-border` → cream fallback in BOTH themes → near-white `--text-1` invisible on cream in dark. Fixed to `--warning-bg`/`--warning-border`. CRITICAL.
