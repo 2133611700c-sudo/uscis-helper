@@ -44,6 +44,7 @@ import { normalizeGeminiModel } from '@/lib/gemini/model'
 // ONE BRAIN Core — B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/canonical/core/translationAdapter'
+import { mrzCandidatesForTranslation } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
 import {
   checkImageQuality,
@@ -259,6 +260,26 @@ export async function POST(req: NextRequest) {
       if (r.ok && Array.isArray(r.fields)) {
         buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
         allCandidates.push(...r.fields.map((f) => docintelToCandidate(f, i + 1)))
+      }
+    }
+    // 1A — MRZ authority for the international passport (flag-gated, default OFF
+    // = byte-identical prod). A valid MRZ (Latin, math-checkable) auto-resolves
+    // passport_number/dob/expiry/names so the field doesn't fall to
+    // critical_no_mrz_anchor. Fail-open: Vision blocked / no MRZ lines → [] →
+    // identical to today. Vision OCR runs on the first (data) page only.
+    if (process.env.MRZ_TRANSLATION_ENABLED === '1' && docTypeId === 'ua_international_passport' && rawFiles.length > 0) {
+      try {
+        const firstBuf = Buffer.from(await rawFiles[0].arrayBuffer())
+        const vis = await googleVisionProvider.extractText({ imageBuffer: firstBuf, mimeType: rawFiles[0].type || 'image/jpeg' })
+        if (!isBlocked(vis) && vis.raw_text) {
+          const mrz = mrzCandidatesForTranslation(vis.raw_text, docTypeId)
+          if (mrz.length > 0) {
+            allCandidates.push(...mrz)
+            console.info('[Core B2] MRZ_WIRED:', mrz.length, 'candidates for', docTypeId, 'valid=', mrz[0]?.mrzCheckValid)
+          }
+        }
+      } catch (e) {
+        console.warn('[Core B2] MRZ best-effort failed (fail-open):', (e as Error)?.message ?? e)
       }
     }
     const canonicalFields = applyKnowledgeBrainIfEnabled(
