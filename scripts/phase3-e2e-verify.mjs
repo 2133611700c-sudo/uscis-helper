@@ -20,8 +20,8 @@ const BASE = 'https://messenginfo.com'
 const OUT_DIR = '/tmp/phase3-e2e-verify'
 
 const DOCS = [
-  { file: 'qa-shots/private/Passport Sergii Kuropiatnyk .jpg', hint: 'passport', label: 'passport' },
-  { file: 'qa-shots/private/I94 Sergii Kuropiatnyk .jpg', hint: 'i94', label: 'i94' },
+  { file: process.env.E2E_PASSPORT_IMAGE ?? 'qa-shots/private/passport_test.jpg', hint: 'passport', label: 'passport' },
+  { file: process.env.E2E_I94_IMAGE ?? 'qa-shots/private/i94_test.jpg', hint: 'i94', label: 'i94' },
   { file: 'qa-shots/private/Ead1.jpg', hint: 'ead', label: 'ead' },
   { file: 'qa-shots/private/DL.jpg', hint: 'dl', label: 'dl' },
 ]

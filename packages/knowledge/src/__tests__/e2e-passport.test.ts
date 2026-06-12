@@ -1,6 +1,6 @@
 /**
  * E2E TEST: Real passport images → Knowledge normalization → I-765 fields
- * Uses actual data from Sergii's internal passport (3 photos)
+ * Uses actual data from Ivan's internal passport (3 photos)
  */
 import {
   normalizeName, normalizeDate, normalizeSex,
@@ -9,8 +9,8 @@ import {
 } from '../normalize';
 
 const controlling: ControllingSpelling[] = [
-  { field: 'surname', latin_value: 'KUROPIATNYK', source: 'drivers_license' },
-  { field: 'given_name', latin_value: 'SERHII', source: 'drivers_license' },
+  { field: 'surname', latin_value: 'IVANENKO', source: 'drivers_license' },
+  { field: 'given_name', latin_value: 'IVAN', source: 'drivers_license' },
 ];
 
 const ctx: NormalizationContext = {
@@ -20,10 +20,10 @@ const ctx: NormalizationContext = {
 };
 
 const results = [
-  validateOutput(normalizeName("Куроп'ятник", 'surname', 'internal_passport', ctx)),
-  validateOutput(normalizeName('Сергій', 'given_name', 'internal_passport', ctx)),
-  validateOutput(normalizeName('Сергійович', 'patronymic', 'internal_passport', ctx)),
-  validateOutput(normalizeDate('25 червня 1986 року', 'dob', 'internal_passport')),
+  validateOutput(normalizeName("Іваненко", 'surname', 'internal_passport', ctx)),
+  validateOutput(normalizeName('Іван', 'given_name', 'internal_passport', ctx)),
+  validateOutput(normalizeName('Петрович', 'patronymic', 'internal_passport', ctx)),
+  validateOutput(normalizeDate('01 січня 1990 року', 'dob', 'internal_passport')),
   validateOutput(normalizeSex('чоловіча', 'internal_passport')),
   validateOutput(normalizePlace('смт. Устинівка', 'city_of_birth', 'internal_passport', ctx)),
   validateOutput(normalizePlace('Вінницької області', 'province_of_birth', 'internal_passport', ctx)),
@@ -39,10 +39,10 @@ function check(desc: string, actual: string, expected: string) {
 
 console.log('\n=== E2E: Internal Passport → Knowledge → I-765 ===\n');
 
-check('Surname (controlling DL)', results[0].normalized_value, 'KUROPIATNYK');
-check('Given Name (controlling DL)', results[1].normalized_value, 'SERHII');
-check('Patronymic (KMU-55)', results[2].normalized_value, 'Serhiiovych');
-check('DOB → MM/DD/YYYY', results[3].normalized_value, '06/25/1986');
+check('Surname (controlling DL)', results[0].normalized_value, 'IVANENKO');
+check('Given Name (controlling DL)', results[1].normalized_value, 'IVAN');
+check('Patronymic (KMU-55)', results[2].normalized_value, 'Petrovych');
+check('DOB → MM/DD/YYYY', results[3].normalized_value, '01/01/1990');
 check('Sex → Male', results[4].normalized_value, 'Male');
 check('Birth place (смт→settlement)', results[5].normalized_value, 'Ustynivka urban-type settlement');
 check('Authority → UMVS', results[7].normalized_value, 'Regional Department of MIA');

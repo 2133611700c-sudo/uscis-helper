@@ -37,7 +37,7 @@ e6f828a feat(translation): add manual review queue v1 (Path B additive hardening
 | Inspector | https://vercel.com/sergiis-projects-8a97ee0f/uscis-helper/AkSaPk6TBMZr7PHLhFuxAQ69VLFV |
 
 Previous production deployment in `ERROR`:
-- `dpl_4RWgasjJAAh8w4ESzqn1dpKsrWDJ` @ `e7681e4` — rejected because the agent's first commit had author `ops@messenginfo.local` (not a Vercel team member). Resolved by `git commit --amend --author="Sergii (USCIS) <2133611700c@gmail.com>" --no-edit` and `git push --force-with-lease`. The user's "deployment failed" email from Vercel/Knock corresponds to this errored deploy, not to the current production.
+- `dpl_4RWgasjJAAh8w4ESzqn1dpKsrWDJ` @ `e7681e4` — rejected because the agent's first commit had author `ops@messenginfo.local` (not a Vercel team member). Resolved by `git commit --amend --author="Sergii (USCIS) <owner@messenginfo.com>" --no-edit` and `git push --force-with-lease`. The user's "deployment failed" email from Vercel/Knock corresponds to this errored deploy, not to the current production.
 
 Live smoke-check from sandbox:
 - `https://messenginfo.com/` → 307 → `https://messenginfo.com/en` → HTTP 200, 239,862 bytes, `<title>Messenginfo – USCIS Help for Ukrainians in the U.S.</title>`

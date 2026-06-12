@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-11 | PII sweep Phase 2 — active code: E2E, scripts, prompts, packages
+- E2E tests (5): booklet-*/translation-review-gate/verify-each-doc — hardcoded paths + names → E2E_EXPECTED_* env-vars.
+- Scripts (4): booklet-stability-test.sh, phase3-e2e-verify.mjs, vision-arbiter-proof.mjs, wizard-simulation-test.mjs — synthetic data + env-var image paths.
+- Bench scripts (2): gemini/gpt-bench — inline PII truth → gitignored bench-truth.json.
+- prompts/universal-document-extraction.md, packages/knowledge/src/transliterate.ts — comment examples cleaned.
+- Active docs: HANDOFF/STATUS/OWNER_QUEUE/PRODUCTION_TRUTH_REPORT/HANDWRITTEN_CYRILLIC_SESSION — cleaned.
+- 3304 tests pass, tsc 0, build OK.
+- REMAINING (owner-decision): docs/adr/, docs/architecture/, docs/audit/, docs/archive/, docs/product/, docs/translation/ — исторические доки, не выполняемый код.
+
 ## 2026-06-11 | PII sweep — 99 файлов, production source + тесты
 - **КРИТИЧНО**: реальная фамилия владельца убрана из live Gemini-промта в field-mapper.ts:177 (уходила в API на каждый запрос).
 - production source: geminiVisionProvider.ts, dualOcrCrossref.ts, postExtractNormalize.ts, ocr/extract/route.ts, TranslateWizard.tsx, engine/*, tps/modules/*, strictValidators.ts — реальные фамилия/ДР/номер паспорта → synthetic Іваненко/1990-01-01/FA000000.
@@ -203,7 +212,7 @@
 - REJECTED from the spec: the *why I read 25 June* narrative = post-hoc fabrication; the month is illegible-as-June to every engine + a human (verified). Privacy rule followed: synthetic example names only.
 
 ## 2026-06-10 (feat: KIT 2 verify — passport MRZ is the DOB authority, test, agent)
-- The handwritten birth-cert month is illegible-as-June to every engine + a human; the international passport MRZ encodes it with a check digit → 1986-06-25 (June). Verified mrzAuthority decodes it correctly (conf 0.99, check_digits dob=true) and the existing fieldArbiter ranks passport_ocr_mrz #1, so in multi-doc flows (TPS/reparole) the MRZ DOB overrides the handwriting. +2 tests.
+- The handwritten birth-cert month is illegible-as-June to every engine + a human; the international passport MRZ encodes it with a check digit → 1990-01-01. Verified mrzAuthority decodes it correctly (conf 0.99, check_digits dob=true) and the existing fieldArbiter ranks passport_ocr_mrz #1, so in multi-doc flows (TPS/reparole) the MRZ DOB overrides the handwriting. +2 tests.
 
 ## 2026-06-10 (feat: KIT 1 auto-orientation infrastructure, CODE, agent)
 - Reading the docs myself revealed the handwritten birth cert was photographed SIDEWAYS (content rotated 90); every engine read cursive sideways. NEW autoOrient.ts: detect content rotation via a Gemini thumbnail + self-verify loop (90<->270 unstable) + fail-open, geometric only. Wired into readDocument (all products) behind AUTO_ORIENT_ENABLED (default OFF). A/B on the real birth cert: dob day 26->25 (correct), place_of_birth fuller (+district). +2 fail-open tests.
