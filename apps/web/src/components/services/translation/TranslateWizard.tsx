@@ -1139,9 +1139,16 @@ export function TranslateWizard() {
         return
       }
       const form = new FormData()
-      // Downscale large photos client-side so they clear the ~4.5MB edge body cap.
+      // Keep the TOTAL upload under Vercel's ~4.5MB body cap by giving each file
+      // a SHARE of the budget. The old per-file 3.8MB threshold let two normal
+      // phone photos (~2.5MB each = 5MB) blow the cap → HTTP 413 → "could not
+      // recognize". More files → smaller per-file budget + smaller max edge.
+      const pageCount = Math.max(1, uploadedFiles.length)
+      const perFileBudget = Math.floor(4_000_000 / pageCount)
+      const maxEdge = pageCount >= 4 ? 1600 : pageCount >= 2 ? 2000 : 2400
+      const quality = pageCount >= 4 ? 0.72 : pageCount >= 2 ? 0.78 : 0.82
       for (const f of uploadedFiles) {
-        const blob = await downscaleImageForUpload(f)
+        const blob = await downscaleImageForUpload(f, { thresholdBytes: perFileBudget, maxEdge, quality })
         form.append('file', blob, f.name)
       }
       form.append('docTypeId', registryId!)
