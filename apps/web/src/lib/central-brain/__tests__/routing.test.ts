@@ -13,10 +13,11 @@ const fakeRecognize = (..._a: any[]): Promise<EngineResult> => Promise.resolve({
 const doc = { docTypeId: 'ua_marriage_certificate', image: Buffer.from('x'), mime: 'image/jpeg' }
 
 describe('central brain — routing + C3 wiring', () => {
-  it('health: translation/reparole/ead migrated (3)', () => {
+  it('health: truthful — active core is docintel/canonical, engine inactive', () => {
     const h = brainHealth()
-    expect(h.migrated_count).toBe(3)
-    expect(h.products.tps.migrated).toBe(false)
+    expect(h.active_core).toMatch(/docintel/)
+    expect(h.central_brain_engine).toBe('inactive')
+    expect(h.migrated_claim_removed).toBe(true)
   })
 
   it('health: D-GLOSSARY catalog present with full provenance', () => {

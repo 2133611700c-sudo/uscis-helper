@@ -4,7 +4,14 @@
  * a completed signature. Anything missing → refusal.
  */
 import { describe, it, expect } from 'vitest'
-import { assertReviewGate, getUnresolvedReviewFields, isSignatureComplete } from '../reviewGate'
+import {
+  assertReviewGate,
+  getUnresolvedReviewFields,
+  getHardUnresolvedReviewFields,
+  getSoftReviewFields,
+  isSoftAnchorOnly,
+  isSignatureComplete,
+} from '../reviewGate'
 
 const ID = { signerName: 'Ivan Ivanenko', signerAddress: '1213 Gordon St, Los Angeles, CA 90038' }
 const SIG = { signedAt: '2026-05-30T12:00:00.000Z', signatureMethod: 'drawn_on_screen' as const, signatureDataUrl: 'data:image/png;base64,iVBORw0KGgo=' }
@@ -100,5 +107,63 @@ describe('getUnresolvedReviewFields', () => {
       { field: 'family_name', normalized_value: 'Ivanenko', review_required: false },
       { field: 'given_name', normalized_value: 'Ivan', review_required: false },
     ])).toEqual([])
+  })
+})
+
+describe('isSoftAnchorOnly', () => {
+  it('true when the only reason is critical_no_mrz_anchor', () => {
+    expect(isSoftAnchorOnly({ field: 'dob', review_reasons: ['critical_no_mrz_anchor'] })).toBe(true)
+  })
+  it('false when a genuine doubt reason is also present', () => {
+    expect(isSoftAnchorOnly({ field: 'dob', review_reasons: ['critical_no_mrz_anchor', 'low_confidence'] })).toBe(false)
+  })
+  it('false when there are no reasons (flag set without provenance)', () => {
+    expect(isSoftAnchorOnly({ field: 'dob' })).toBe(false)
+    expect(isSoftAnchorOnly({ field: 'dob', review_reasons: [] })).toBe(false)
+  })
+})
+
+describe('getHardUnresolvedReviewFields — client pay-gate', () => {
+  it('does NOT block on a no-MRZ-anchor field that has a value (soft confirm)', () => {
+    expect(getHardUnresolvedReviewFields([
+      { field: 'family_name', normalized_value: 'Ivanenko', review_required: true, review_reasons: ['critical_no_mrz_anchor'] },
+      { field: 'dob', normalized_value: '01.01.1990', review_required: true, review_reasons: ['critical_no_mrz_anchor'] },
+    ])).toEqual([])
+  })
+  it('STILL blocks low_confidence, mrz_check_failed, provider_conflict and empty values', () => {
+    expect(getHardUnresolvedReviewFields([
+      { field: 'a', normalized_value: 'X', review_required: true, review_reasons: ['critical_no_mrz_anchor', 'low_confidence'] },
+      { field: 'b', normalized_value: 'X', review_required: true, review_reasons: ['mrz_check_failed'] },
+      { field: 'c', normalized_value: 'X', review_required: true, review_reasons: ['provider_conflict'] },
+      { field: 'd', normalized_value: '', review_required: true, review_reasons: ['critical_no_mrz_anchor'] },
+    ]).sort()).toEqual(['a', 'b', 'c', 'd'])
+  })
+  it('a field with no reasons array but review_required stays a hard block', () => {
+    expect(getHardUnresolvedReviewFields([
+      { field: 'x', normalized_value: 'X', review_required: true },
+    ])).toEqual(['x'])
+  })
+})
+
+describe('getSoftReviewFields', () => {
+  it('lists only value-present, anchor-only fields', () => {
+    expect(getSoftReviewFields([
+      { field: 'family_name', normalized_value: 'Ivanenko', review_required: true, review_reasons: ['critical_no_mrz_anchor'] },
+      { field: 'b', normalized_value: 'X', review_required: true, review_reasons: ['low_confidence'] },
+      { field: 'c', normalized_value: '', review_required: true, review_reasons: ['critical_no_mrz_anchor'] },
+    ])).toEqual(['family_name'])
+  })
+})
+
+describe('SAFETY: server gate stays strict regardless of soft reclassification', () => {
+  it('assertReviewGate still refuses a soft anchor-only field (operator-grade strictness preserved)', () => {
+    const r = assertReviewGate({
+      ...ID, ...CHECKS, ...SIG,
+      extractedFields: [
+        { field: 'dob', normalized_value: '01.01.1990', review_required: true, review_reasons: ['critical_no_mrz_anchor'] },
+      ],
+    })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.reason).toBe('ocr_review_unresolved')
   })
 })

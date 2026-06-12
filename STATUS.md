@@ -1,5 +1,7 @@
-# STATUS (2026-06-12 — Phase 1 dead code removal COMPLETE)
-- PHASE 1 DONE: L2 benchmark runner (10 files) + 7 dead documentSafety modules (certifierAuthority/deepseekBoundaryGuard/guardBlockRate/handlePaymentFailure/paymentFailureTriage/ticketEscalation/persistCertifierAudit) + 13 test files DELETED. certifierOverrideApply + paymentFailureRouteAdapter = no-op stubs (operator-flow supersedes). tsc 0, 3208 tests pass, build clean.
+# STATUS (2026-06-12 — Survival roadmap: Phase 1 soft-confirm+health DONE on branch)
+- BRANCH survival/phases-0-3 (NOT pushed — push=prod auto-deploy; main pinned to prod 54c0e43). Phase 0 operator-flow pre-check = PASS (code-ready; owner manual test still the gate).
+- SURVIVAL PHASE 1 (partial): (1B) reviewGate soft-confirm — a passport field flagged ONLY critical_no_mrz_anchor (with a value) is one-click SOFT confirm in wizard, not a hard pay-block; server assertReviewGate stays strict (operator certifies). Fixes the grey-button for ALL passports incl booklet. (1C) central-brain/health no longer lies "migrated/engine consensus" → active_core=docintel/canonical, engine=inactive. tsc 0; reviewGate 24/24; central-brain 7/7. PENDING 1A: MRZ→translation (auto-resolves intl passport/id-card).
+- (prior, also on branch) dead-code removal b5d627b: L2 runner + 7 dead documentSafety modules (certifierAuthority/deepseekBoundaryGuard/guardBlockRate/handlePaymentFailure/paymentFailureTriage/ticketEscalation/persistCertifierAudit) + 13 test files DELETED. certifierOverrideApply + paymentFailureRouteAdapter = no-op stubs (operator-flow supersedes). tsc 0, 3208 tests pass, build clean.
 - PII SWEEP COMPLETE (3 phases): source (99 files) + active code/scripts/prompts + historical docs (12 files). git grep = 0 hits on all tracked files except docs/reports/ (owner pending) and guards.yml (detection rule, intentional).
 - OWNER PENDING: Phase 0 result ($1 test flow). docs/reports/ PII decision (A: replace/B: mv qa-private/C: delete).
 
