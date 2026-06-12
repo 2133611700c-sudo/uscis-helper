@@ -61,7 +61,7 @@ describe('criticalityOf — birth cert child fields', () => {
 describe('arbitrateField — reader reviewRequired carry-through', () => {
   it('candidate with reviewRequired=true carries review into result', () => {
     const f = arbitrateField('place_of_birth', [
-      c({ key: 'place_of_birth', value: 'Trostianets', source: 'ai_vision', reviewRequired: true }),
+      c({ key: 'place_of_birth', value: 'Vinnytsia', source: 'ai_vision', reviewRequired: true }),
     ])!
     expect(f).not.toBeNull()
     expect(f.reviewRequired).toBe(true)
@@ -71,7 +71,7 @@ describe('arbitrateField — reader reviewRequired carry-through', () => {
   it('candidate with reviewRequired=true and reviewReasons carries named reasons', () => {
     const f = arbitrateField('place_of_birth', [
       c({
-        key: 'place_of_birth', value: 'Trostianets', source: 'ai_vision',
+        key: 'place_of_birth', value: 'Vinnytsia', source: 'ai_vision',
         reviewRequired: true, reviewReasons: ['low_ocr_quality'],
       }),
     ])!
@@ -91,7 +91,7 @@ describe('arbitrateField — reader reviewRequired carry-through', () => {
   it('dob candidate is still critical-no-mrz-anchor even when review not set by reader', () => {
     // Verify the dob alias feeds into the correct criticality path
     const f = arbitrateField('dob', [
-      c({ key: 'dob', value: '1986-06-25', source: 'ai_vision', reviewRequired: false }),
+      c({ key: 'dob', value: '1990-01-01', source: 'ai_vision', reviewRequired: false }),
     ])!
     expect(f.reviewRequired).toBe(true)
     expect(f.reviewReasons).toContain('critical_no_mrz_anchor')

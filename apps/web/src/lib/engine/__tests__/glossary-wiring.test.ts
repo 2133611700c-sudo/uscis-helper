@@ -17,8 +17,8 @@ const spec = (key: string, kind: DocFieldSpec['kind']): DocFieldSpec => ({
 
 describe('G2 — normalize() wired to Glossary Registry', () => {
   it('place_city keeps the settlement TYPE (смт → urban-type settlement) and city', () => {
-    const r = normalize(spec('place_of_birth', 'place_city'), cf('смт Тростянець'), { sex: 'M' })
-    expect(r.latin).toContain('Trostianets')
+    const r = normalize(spec('place_of_birth', 'place_city'), cf('смт Вінниця'), { sex: 'M' })
+    expect(r.latin).toContain('Vinnytsia')
     expect(r.latin.toLowerCase()).toContain('urban-type settlement')
     expect(r.source).toContain('registry:settlement')
   })

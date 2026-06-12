@@ -20,7 +20,7 @@ import type { ExtractedDocField } from '@/lib/docintel/types'
 const readerField = (over: Partial<ExtractedDocField> = {}): ExtractedDocField => ({
   field: 'given_name',
   kind: 'name',
-  raw_cyrillic: 'Сергей', // ambiguous script (no distinctive UA/RU letter) — synthetic
+  raw_cyrillic: 'Иван', // ambiguous script (no distinctive UA/RU letter) — synthetic
   value: 'Serhei',
   confidence: 0.9,
   review_required: true,
@@ -55,7 +55,7 @@ describe('review reasons survive arbitration → FieldOut (the live-prod gap)', 
   })
 
   it('a non-review field outputs no review_reasons noise', () => {
-    const clean = readerField({ review_required: false, review_reasons: undefined, raw_cyrillic: 'Сергій', value: 'Serhii' })
+    const clean = readerField({ review_required: false, review_reasons: undefined, raw_cyrillic: 'Іван', value: 'Ivan' })
     const candidate = docintelToCandidate(clean, 1)
     const fields = arbitrateDocument([candidate])
     const out = canonicalToFieldOut(fields.find((f) => f.key === 'given_name')!)

@@ -18,7 +18,7 @@ import {
 
 describe('isStrictValidValue — dob', () => {
   it('accepts valid ISO YYYY-MM-DD', () => {
-    expect(isStrictValidValue('dob', '1986-06-25')).toBe(true)
+    expect(isStrictValidValue('dob', '1990-01-01')).toBe(true)
     expect(isStrictValidValue('dob', '1960-08-13')).toBe(true)
     expect(isStrictValidValue('dob', '2000-01-01')).toBe(true)
     expect(isStrictValidValue('dob', '2099-12-31')).toBe(true)
@@ -27,8 +27,8 @@ describe('isStrictValidValue — dob', () => {
   it('REJECTS raw OCR garbage that prompted this fix', () => {
     expect(isStrictValidValue('dob', 'Date of birth 13 CEP / AUG 60')).toBe(false)
     expect(isStrictValidValue('dob', '13 CEP / AUG 60')).toBe(false)
-    expect(isStrictValidValue('dob', '25 червня 1986')).toBe(false)
-    expect(isStrictValidValue('dob', '25.06.1986')).toBe(false) // not ISO yet
+    expect(isStrictValidValue('dob', '01 січня 1990')).toBe(false)
+    expect(isStrictValidValue('dob', '01.01.1990')).toBe(false) // not ISO yet
   })
 
   it('rejects bogus dates that pass shape but are obviously wrong', () => {
@@ -63,13 +63,13 @@ describe('isStrictValidValue — sex', () => {
 
 describe('isStrictValidValue — passport_number', () => {
   it('accepts Ukrainian international + booklet formats', () => {
-    expect(isStrictValidValue('passport_number', 'FU262473')).toBe(true)
+    expect(isStrictValidValue('passport_number', 'FA000000')).toBe(true)
     expect(isStrictValidValue('passport_number', 'EK 790396')).toBe(true)
     expect(isStrictValidValue('passport_number', 'AB1234567')).toBe(true)
   })
 
   it('rejects raw OCR garbage masquerading as a passport number', () => {
-    expect(isStrictValidValue('passport_number', 'Passport No: FU262473')).toBe(false)
+    expect(isStrictValidValue('passport_number', 'Passport No: FA000000')).toBe(false)
     expect(isStrictValidValue('passport_number', '123')).toBe(false) // too short
     expect(isStrictValidValue('passport_number', 'FU 262 473 extra')).toBe(false)
     expect(isStrictValidValue('passport_number', 'just-text')).toBe(false)
@@ -121,7 +121,7 @@ describe('isStrictValidValue — unknown fields pass through', () => {
 })
 
 // 2026-05-21 FIX_TPS_STRICT_VALIDATOR_NORMALIZER tests.
-// EAD evidence (prod 16e558c): AI Brain emits dob "06/25/1986" and
+// EAD evidence (prod 16e558c): AI Brain emits dob "01/01/1990" and
 // ead_expiration_date "09/07/2024" in US format. The old strict validator
 // dropped both → user saw "Не найдено" for fields that OCR actually read.
 // The normalizer fixes UNAMBIGUOUS cases and refuses AMBIGUOUS ones
@@ -129,18 +129,18 @@ describe('isStrictValidValue — unknown fields pass through', () => {
 
 describe('normalizeDate', () => {
   it('keeps already-ISO dates unchanged', () => {
-    expect(normalizeDate('1986-06-25')).toBe('1986-06-25')
+    expect(normalizeDate('1990-01-01')).toBe('1990-01-01')
     expect(normalizeDate('2024-09-07')).toBe('2024-09-07')
   })
 
   it('normalizes US MM/DD/YYYY when unambiguous (day > 12)', () => {
-    expect(normalizeDate('06/25/1986')).toBe('1986-06-25')
+    expect(normalizeDate('02/14/1990')).toBe('1990-02-14')
     expect(normalizeDate('12/31/2024')).toBe('2024-12-31')
     expect(normalizeDate('6/5/2024')).toBeNull() // ambiguous: both ≤ 12 → refuse
   })
 
   it('normalizes EU DD/MM/YYYY when unambiguous (day > 12 in first slot)', () => {
-    expect(normalizeDate('25/06/1986')).toBe('1986-06-25')
+    expect(normalizeDate('14/02/1990')).toBe('1990-02-14')
     expect(normalizeDate('31/12/2024')).toBe('2024-12-31')
   })
 
@@ -151,7 +151,7 @@ describe('normalizeDate', () => {
   })
 
   it('handles YYYY/MM/DD slashes', () => {
-    expect(normalizeDate('1986/06/25')).toBe('1986-06-25')
+    expect(normalizeDate('1990/01/01')).toBe('1990-01-01')
     expect(normalizeDate('2024-09-07')).toBe('2024-09-07')
   })
 
@@ -194,9 +194,9 @@ describe('normalizeSex', () => {
 
 describe('normalizeAndValidate — combined pipeline', () => {
   it('rescues EAD AI-Brain US date for dob (regression for prod 16e558c)', () => {
-    const r = normalizeAndValidate('dob', '06/25/1986')
+    const r = normalizeAndValidate('dob', '02/14/1990')
     expect(r.ok).toBe(true)
-    expect(r.value).toBe('1986-06-25')
+    expect(r.value).toBe('1990-02-14')
   })
 
   it('rescues EAD AI-Brain US date for ead_expiration_date when unambiguous', () => {
@@ -223,9 +223,9 @@ describe('normalizeAndValidate — combined pipeline', () => {
   })
 
   it('preserves canonical inputs unchanged', () => {
-    expect(normalizeAndValidate('dob', '1986-06-25')).toEqual({ ok: true, value: '1986-06-25' })
+    expect(normalizeAndValidate('dob', '1990-01-01')).toEqual({ ok: true, value: '1990-01-01' })
     expect(normalizeAndValidate('sex', 'M')).toEqual({ ok: true, value: 'M' })
-    expect(normalizeAndValidate('passport_number', 'FU262473')).toEqual({ ok: true, value: 'FU262473' })
+    expect(normalizeAndValidate('passport_number', 'FA000000')).toEqual({ ok: true, value: 'FA000000' })
   })
 
   it('does not normalize fields without a rule', () => {

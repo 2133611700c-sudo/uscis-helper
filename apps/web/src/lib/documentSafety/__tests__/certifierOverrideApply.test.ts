@@ -39,12 +39,12 @@ describe('disabled → byte-identical (no mutation, no block)', () => {
 describe('finalize — TIER 1 source_verified', () => {
   it('sets final_value and clears the review flag (certifier attested)', async () => {
     const fields: FieldWithMaybeOverride[] = [
-      { field: 'given_name', normalized_value: 'Serhii', review_required: true,
+      { field: 'given_name', normalized_value: 'Ivan', review_required: true,
         certifier_override: { reason_code: 'source_verified', certifier_id: 'owner' } },
     ]
     const out = await applyCertifierOverrides(fields, ctx)
     expect(out.block).toBeNull()
-    expect(out.fields[0].final_value).toBe('Serhii')
+    expect(out.fields[0].final_value).toBe('Ivan')
     expect(out.fields[0].review_required).toBe(false)
   })
 })
@@ -65,7 +65,7 @@ describe('anchor conflict → block', () => {
   it('blocks when the proposed value disagrees with the cross-document anchor', async () => {
     const fields: FieldWithMaybeOverride[] = [
       { field: 'given_name', normalized_value: 'Oleksandr', review_required: true,
-        certifier_override: { reason_code: 'source_verified', certifier_id: 'owner', anchor_value: 'Serhii' } },
+        certifier_override: { reason_code: 'source_verified', certifier_id: 'owner', anchor_value: 'Ivan' } },
     ]
     const out = await applyCertifierOverrides(fields, ctx)
     expect(out.block).toEqual({ field: 'given_name', reason: 'anchor_conflict' })
@@ -75,7 +75,7 @@ describe('anchor conflict → block', () => {
 describe('unreadable_per_source → refusal (final_value null, review NOT cleared)', () => {
   it('keeps the field unresolved', async () => {
     const fields: FieldWithMaybeOverride[] = [
-      { field: 'given_name', normalized_value: 'Serhii', review_required: true, final_value: 'x',
+      { field: 'given_name', normalized_value: 'Ivan', review_required: true, final_value: 'x',
         certifier_override: { reason_code: 'unreadable_per_source', certifier_id: 'owner' } },
     ]
     const out = await applyCertifierOverrides(fields, ctx)

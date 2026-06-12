@@ -15,8 +15,8 @@
     { "field": "place_of_birth_city", "expected": null, "critical": true,
       "_tests": "CAT-6 pre-2020 admin unit (e.g. an old raion centre absent from the gazetteer) → fallback+review, NOT a silent snap to a similar city" },
 
-    { "field": "father_full_name", "expected": "Sergey Ivanenko", "critical": true,
-      "_tests": "CAT-2/CAT-5 as-written: a Russian-script parent line stays Sergey (BGN/PCGN), NOT harmonized to the Ukrainian Serhii" },
+    { "field": "father_full_name", "expected": "Pyotr Ivanenko", "critical": true,
+      "_tests": "CAT-2/CAT-5 as-written: a Russian-script parent line stays Pyotr (BGN/PCGN), NOT harmonized to the Ukrainian Petro" },
 
     { "field": "issuing_authority", "expected": null, "critical": true,
       "_tests": "CAT-4 cyrillic-in-output: if the only available value still contains Cyrillic in a Latin field → guard blocks, not finalized" }

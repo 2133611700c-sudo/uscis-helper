@@ -107,8 +107,8 @@ describe('centralBrain.mergeToCentralBrain', () => {
           field('given_name', 'Olena'),
           field('dob', '1990-03-15'),
           field('sex', 'F'),
-          field('passport_number', 'FU262473'),
-          field('passport_expiration_date', '2029-02-22'),
+          field('passport_number', 'FA000000'),
+          field('passport_expiration_date', '2030-01-01'),
           field('country_of_nationality', 'Ukraine'),
         ],
         i94: [

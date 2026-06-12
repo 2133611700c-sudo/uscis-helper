@@ -10,9 +10,9 @@ describe('buildAttestationRecord', () => {
   it('records both checkboxes, signature presence, identity presence, hash, version', () => {
     const r = buildAttestationRecord({
       dataReviewed: true, accuracyAttested: true,
-      signerName: 'Serhii', signerAddress: '1213 Gordon St',
+      signerName: 'Ivan', signerAddress: '1213 Gordon St',
       signedAt: AT, signatureMethod: 'drawn_on_screen', signatureDataUrl: 'data:image/png;base64,iVB',
-      certificationVersion: 'self_cert_8cfr_v1', content: { surname: 'KUROPIATNYK' }, recordedAt: AT,
+      certificationVersion: 'self_cert_8cfr_v1', content: { surname: 'IVANENKO' }, recordedAt: AT,
     })
     expect(r.data_reviewed).toBe(true)
     expect(r.accuracy_attested).toBe(true)

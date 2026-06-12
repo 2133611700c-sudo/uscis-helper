@@ -65,7 +65,7 @@ export function normalizeProvince(raw: string): NormalizeResult {
 
 /**
  * Normalize a city_of_birth value.
- * Applies GEO_CORRECTIONS (Тростянець → Trostianets) and strips settlement descriptors.
+ * Applies GEO_CORRECTIONS (OCR typo corrections) and strips settlement descriptors.
  */
 export function normalizeCity(raw: string): NormalizeResult {
   const trimmed = raw.trim()

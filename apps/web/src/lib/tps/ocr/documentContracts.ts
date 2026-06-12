@@ -130,7 +130,7 @@ export const DOCUMENT_CONTRACTS: Record<SlotId, DocumentSlotContract> = {
       // When загранпаспорт IS present, Field Arbiter gives MRZ priority anyway.
       'given_name',
       // 2026-05-26: explicit Ukrainian DOB parser normalizes
-      // "25 червня 1986 року" => "1986-06-25" before merge.
+      // "01 січня 1990 року" => "1990-01-01" before merge.
       // Keep under review flow; invalid dates still reject.
       'dob',
       // Inferred constants — every Ukrainian internal passport is Ukraine-issued.

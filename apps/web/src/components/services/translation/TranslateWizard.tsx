@@ -915,7 +915,7 @@ export function TranslateWizard() {
 
   // Restore draft ONLY when returning from the Stripe round-trip (?paid=1).
   // SESSION ISOLATION: a fresh visit must NOT resurrect a previous session's
-  // fields — doing so showed stale/foreign data (e.g. "Шуляк/Сергій/Проскурів")
+  // fields — doing so showed stale/foreign data (e.g. "Іваненко/Іван/Проскурів")
   // as if it were recognized for the CURRENT upload. On a plain visit, start clean.
   useEffect(() => {
     if (searchParams?.get('paid') !== '1') return // not a Stripe return → no stale restore

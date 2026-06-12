@@ -2,8 +2,8 @@
  * docintel/transliterationPolicy — THE single place that turns a Cyrillic
  * vision read into a canonical value. Centralizes the rule proven empirically
  * (2026-05-27) and mandated by v5 §13: vision reads Cyrillic, KMU-55 produces
- * Latin — the LLM NEVER transliterates names (it returned "Troshchianets" for
- * Тростянець). Every product flow gets identical canonical values from here.
+ * Latin — the LLM NEVER transliterates names (free-form LLM output is unstable
+ * and non-reproducible). Every product flow gets identical canonical values from here.
  */
 
 import { transliterateKMU55, transliterateRussian, detectNameScript } from '@uscis-helper/knowledge'

@@ -17,10 +17,10 @@ const SYNTHETIC_BIRTH: ExtractedFieldLite[] = [
   { field: 'child_family_name', value: 'Ivanenko', review_required: false },
   { field: 'child_given_name', value: 'Ivan', review_required: false },
   // patronymic read but ambiguous source script → carried as review candidate:
-  { field: 'child_patronymic', value: 'Serhiiovych', review_required: true },
+  { field: 'child_patronymic', value: 'Petrovych', review_required: true },
   { field: 'dob', value: '1990-05-14', review_required: false },
   { field: 'place_of_birth_city', value: 'Vinnytsia', review_required: false },
-  { field: 'father_full_name', value: 'Serhii Ivanenko', review_required: false },
+  { field: 'father_full_name', value: 'Ivan Ivanenko', review_required: false },
   // mother deliberately omitted → renderer must emit "[enter from document]"
 ]
 
