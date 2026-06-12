@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-12 | Phase 1 dead code removal — operator-flow pivot cleanup
+- Deleted `src/lib/canonical/core/benchmark/` — L2 GT runner (10 files, fully orphaned, no prod imports).
+- Deleted 7 dead `documentSafety` modules: certifierAuthority, deepseekBoundaryGuard, guardBlockRate, handlePaymentFailure, paymentFailureTriage, ticketEscalation, persistCertifierAudit.
+- Deleted 13 test files (7 for dead modules + 4 benchmark tests + benchmark.test.ts root + 1 for benchmark).
+- Simplified `certifierOverrideApply.ts` to no-op stub (certifier-authority path superseded by operator review). Removed deleted imports, inlined types.
+- Simplified `paymentFailureRouteAdapter.ts` to no-op stub (REFUND_AUTOTICKET dead, operator-flow handles failures). Removed deleted imports.
+- Rewrote `certifierOverrideApply.test.ts` to test stub behavior only.
+- Evidence: tsc 0 errors, 3208 tests pass (181 files), build clean.
+
 ## 2026-06-11 | PII sweep FINAL — proof yamls + full repo now 0 hits
 - test-fixtures/proof/FINISH_OCR_GREEN.report.yaml, PILOT_PREP_V1.report.yaml — email replaced.
 - git grep 0 hits on ALL tracked files (except docs/reports/ pending + guards.yml detection rule).
