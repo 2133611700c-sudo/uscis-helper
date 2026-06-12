@@ -23,6 +23,8 @@ export interface ReviewGateField {
   field: string
   normalized_value?: string | null
   review_required?: boolean | null
+  /** Why the field was flagged. Used to separate soft (no-MRZ-anchor) from hard blocks. */
+  review_reasons?: string[] | null
 }
 
 export interface ReviewGateInput {
@@ -83,6 +85,54 @@ export function getUnresolvedReviewFields(fields?: ReviewGateField[] | null): st
     if (field.review_required === true || !normalized) unresolved.add(field.field)
   }
   return [...unresolved]
+}
+
+/**
+ * A field is "soft-anchor-only" when its ONLY review reason is
+ * `critical_no_mrz_anchor` — i.e. it was flagged solely because the document
+ * has no MRZ math-anchor (every internal passport booklet, and any passport
+ * whose MRZ strip is out of frame). Genuine doubt reasons — low_confidence,
+ * mrz_check_failed, provider_conflict, fuzzy_match, reader_review_required,
+ * knowledge:* conflicts — make this false.
+ */
+export function isSoftAnchorOnly(field: ReviewGateField): boolean {
+  const reasons = field.review_reasons ?? []
+  if (reasons.length === 0) return false
+  return reasons.every((r) => r === 'critical_no_mrz_anchor')
+}
+
+/**
+ * CLIENT pay-gate variant. A field whose only reason is `critical_no_mrz_anchor`
+ * AND which has a non-empty value becomes a one-click SOFT confirm, not a hard
+ * block on payment. Empty values and genuine doubt reasons still hard-block.
+ *
+ * Safe: a soft confirm only unlocks the Stripe step. The operator re-reviews
+ * every field in /admin and signs before any certified PDF is sent, so user
+ * confirmation is never the certification. This does NOT relax the server-side
+ * `assertReviewGate` (PDF generation stays strict via getUnresolvedReviewFields).
+ */
+export function getHardUnresolvedReviewFields(fields?: ReviewGateField[] | null): string[] {
+  if (!Array.isArray(fields)) return []
+  const unresolved = new Set<string>()
+  for (const field of fields) {
+    if (!field?.field) continue
+    const normalized = (field.normalized_value ?? '').trim()
+    if (!normalized) { unresolved.add(field.field); continue }
+    if (field.review_required === true && !isSoftAnchorOnly(field)) unresolved.add(field.field)
+  }
+  return [...unresolved]
+}
+
+/** Soft-confirm fields: review_required, value present, only the no-MRZ-anchor reason. */
+export function getSoftReviewFields(fields?: ReviewGateField[] | null): string[] {
+  if (!Array.isArray(fields)) return []
+  const soft = new Set<string>()
+  for (const field of fields) {
+    if (!field?.field) continue
+    const normalized = (field.normalized_value ?? '').trim()
+    if (normalized && field.review_required === true && isSoftAnchorOnly(field)) soft.add(field.field)
+  }
+  return [...soft]
 }
 
 /**
