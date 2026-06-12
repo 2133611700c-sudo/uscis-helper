@@ -56,14 +56,6 @@ function restoreWord(word: string): string {
   return word
 }
 
-/**
- * @deprecated Use transliterateKMU55 from @uscis-helper/knowledge directly.
- * Kept for backward compatibility — delegates to canonical engine.
- */
-export function transliterateKMU2010(ukrainianText: string): string {
-  return transliterateKMU55(ukrainianText)
-}
-
 export function transliterateName(ukrainianName: string, controllingLatinSpelling?: string): string {
   if (controllingLatinSpelling && controllingLatinSpelling.trim()) {
     return controllingLatinSpelling.trim()

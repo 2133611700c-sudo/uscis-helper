@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-06-12 | Phase 2 quarantine — remove dead engine pipeline + dead routes
+Validated across apps/web/src + scripts/ + .github (the cron-incident lesson applied).
+- Deleted `lib/engine/` entirely (12 modules + 10 test files) — the engine-consensus "second brain" had ZERO production callers.
+- `central-brain`: removed `analyze()` + `BrainDeps` + `types.ts` + `audit/ledger.ts` + `MIGRATION_STATE`. `index.ts` now only re-exports `brainHealth`; the `/api/central-brain/health` route is unchanged.
+- Deleted dead routes `api/ocr/extract` + `api/ocr/translate` (self-documented "no live callers").
+- Deleted `TPSWizard.tsx` v1 (orphaned; the boundary imports V2).
+- Removed deprecated `transliterateKMU2010` wrapper (zero callers).
+- Added architecture guard test `no-engine-revival.test.ts` — fails if any source reimports `lib/engine` or `analyze` from central-brain (regression backstop).
+- HELD (not deleted): `api/translation/extract` (possible external callers — needs owner confirm); `lib/tps/transliterate` (LIVE via PDF renderers — the duplicate-transliteration collapse is a separate Phase E).
+- Evidence: tsc 0, build clean, 3169 tests pass (3 guard + the rest; engine test files removed). Net ≈ −2000 LOC.
+
 ## 2026-06-12 | Survival 3A (desktop) — wizard step-sidebar contrast
 Desktop-only `DesktopStepSidebar` (the left step rail on the web/desktop wizard):
 - current step `dark:text-green-400` → `dark:text-green-300` (~3.5:1 → ~5:1 on the dark green tint).
