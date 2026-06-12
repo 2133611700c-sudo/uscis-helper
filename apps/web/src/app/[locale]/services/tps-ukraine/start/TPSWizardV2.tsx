@@ -2697,8 +2697,8 @@ export default function TPSWizardV2({ locale }: Props) {
         {staleSessionDays >= 3 && (
           <div
             style={{
-              background: 'var(--warn-bg, #fffbeb)',
-              border: '1.5px solid var(--warn-border, #f59e0b)',
+              background: 'var(--warning-bg)',
+              border: '1.5px solid var(--warning-border)',
               borderRadius: 12,
               padding: '12px 16px',
               marginBottom: 16,
@@ -2891,7 +2891,7 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 12 }}>{t.s4h}</div>
 
             {/* AI data processing disclosure — ADR-009 requirement */}
-            <div style={{ background: 'var(--surface-2, #f3f4f6)', border: '1px solid var(--border-1, #e5e7eb)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--text-2, #6b7280)', marginBottom: 16, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--text-2)', marginBottom: 16, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <span style={{ flexShrink: 0, marginTop: 1 }}>🔒</span>
               <span>{t.aiDisclosure}</span>
             </div>
@@ -3266,7 +3266,7 @@ export default function TPSWizardV2({ locale }: Props) {
 
             {/* Signature block — ONLY for paper filing. Online = sign in myUSCIS */}
             {data.method === 'paper' && (
-            <div data-testid="tps-signature-mode-block" style={{ background: 'var(--surface-2, #1a1a2e)', border: '1px solid var(--border, #333)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div data-testid="tps-signature-mode-block" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>✍️ {locale === 'ru' ? 'Подпись' : locale === 'uk' ? 'Підпис' : locale === 'es' ? 'Firma' : 'Signature'}</span>
                 <Tip text={locale === 'ru'

@@ -731,13 +731,13 @@ function StepIndicator({ step, labels }: { step: number; labels: string[] }) {
         return (
           <div key={i} className="flex items-center gap-1 flex-shrink-0">
             <div className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-bold transition-all
-              ${done ? 'bg-green-500 text-white' : active ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)]'}`}>
+              ${done ? 'bg-green-500 text-white' : active ? 'bg-blue-600 text-white ring-2 ring-blue-400' : 'bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)]'}`}>
               {done
                 ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="10" height="10"><polyline points="20 6 9 17 4 12" /></svg>
                 : i + 1}
             </div>
             <span className={`text-sm font-semibold whitespace-nowrap hidden sm:inline
-              ${done ? 'text-green-600' : active ? 'text-blue-600' : 'text-[var(--text-2)]'}`}>{label}</span>
+              ${done ? 'text-green-600 dark:text-green-400' : active ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-2)]'}`}>{label}</span>
             {i < labels.length - 1 && <div className={`w-3 h-0.5 mx-0.5 ${done ? 'bg-green-400' : 'bg-[var(--border)]'}`} />}
           </div>
         )
