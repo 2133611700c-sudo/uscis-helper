@@ -1288,7 +1288,9 @@ function UploadDrop({
     <div
       data-testid={`tps-upload-slot-${doc.id}`}
       onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click() } }}
       role="button"
+      aria-label={doc.lb}
       tabIndex={0}
       style={{
         border: `2.5px ${ok ? 'solid' : 'dashed'} ${ok ? GREEN : err ? 'var(--error-border, #d33)' : BORDER}`,

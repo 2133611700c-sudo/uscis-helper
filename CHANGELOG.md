@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3A — accessibility batch (keyboard upload, live region, label)
+- `TPSWizardV2` UploadDrop (a `role="button"` div): added `onKeyDown` for Enter/Space — keyboard users could not trigger the upload before — plus `aria-label={doc.lb}` for a clear accessible name.
+- `TranslateWizard` processing screen: `role="status" aria-live="polite"` so screen-reader users hear the read-progress steps.
+- `TranslateWizard` certifier-address field: `<label htmlFor>` + input `id` (programmatic label association).
+- tsc 0, build clean, 3169 tests pass.
+
 ## 2026-06-12 | Survival 3B — 4-pillar registry navigation (desktop + mobile parity)
 - NEW `apps/web/src/data/navPillars.ts` — single source of truth: **Translate / Forms / Status / Info**, each with sub-links, used by both Header and MobileBottomBar.
 - `Header` (desktop): renders the 4 pillars with a CSS-only hover dropdown exposing sub-links (no client JS — stays server-component-safe).
