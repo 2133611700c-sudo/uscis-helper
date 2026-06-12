@@ -53,9 +53,9 @@ export function DesktopStepSidebar({ slug }: DesktopStepSidebarProps) {
               key={index}
               className={[
                 'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm',
-                isCurrent ? 'bg-green-50 dark:bg-green-900/20 font-semibold text-green-800 dark:text-green-400' : '',
+                isCurrent ? 'bg-green-50 dark:bg-green-900/20 font-semibold text-green-800 dark:text-green-300' : '',
                 isPast ? 'text-slate-600 dark:text-slate-400' : '',
-                isFuture ? 'text-slate-400 dark:text-slate-600' : '',
+                isFuture ? 'text-slate-500 dark:text-slate-500' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
