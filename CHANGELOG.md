@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-11 | PII sweep FINAL — proof yamls + full repo now 0 hits
+- test-fixtures/proof/FINISH_OCR_GREEN.report.yaml, PILOT_PREP_V1.report.yaml — email replaced.
+- git grep 0 hits on ALL tracked files (except docs/reports/ pending + guards.yml detection rule).
+- STATUS: PII sweep complete across source/tests/scripts/docs/proof.
+
 ## 2026-06-11 | PII sweep Phase 3 — historical docs (A-variant)
 - docs/adr/, docs/architecture/ (3), docs/audit/ (4), docs/archive/, docs/product/, docs/translation/ — 12 файлов, A-variant (PII→synthetic).
 - docs/archive/old-messenginfo-final-state.json — 7 email instances replaced.
