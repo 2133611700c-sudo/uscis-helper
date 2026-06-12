@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival Phase 3A (remaining) — "text disappears" contrast fixes
+Branch survival/phases-0-3 (NOT pushed).
+- `TrendingTopicsBar`: dark-mode variants — pill `hover:bg-brand-100` was a light blue not remapped in dark, making light-blue text invisible on touch/hover.
+- `Screen12` transfer copy box: value was text-1 on accent green (~3.9:1 WCAG fail) → text-1 on surface-2 with accent border.
+- `ContactSection` success: `text-green-800` had no dark variant (dark-on-dark) → added.
+- Evidence: tsc 0, build clean, 3216 tests pass.
+
 ## 2026-06-12 | Survival Phase 3A (core visual/legibility) — selection, fonts, contrast
 Branch survival/phases-0-3 (NOT pushed).
 - `globals.css`: defined `::selection` / `::-moz-selection` (white on brand blue, both themes) — fixes highlighted/selected text vanishing in dark mode (the "при выделении не читается" report). Added `--font-sans` / `--font-display` to `@theme` so Tailwind font utilities resolve to Inter/Playfair instead of falling back to system-ui (fixes the Inter/system split = "некачественный шрифт").
