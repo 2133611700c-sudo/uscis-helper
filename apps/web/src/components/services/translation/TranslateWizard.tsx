@@ -21,7 +21,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { isGarbageValue } from '@uscis-helper/knowledge'
 import { getHardUnresolvedReviewFields, getSoftReviewFields } from '@/lib/translation/reviewGate'
 import { ukrLabelFor } from './translationFieldLabels'
-import { downscaleImageForUpload } from '@/lib/upload/downscaleImage'
+import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -1148,8 +1148,11 @@ export function TranslateWizard() {
       const maxEdge = pageCount >= 4 ? 1600 : pageCount >= 2 ? 2000 : 2400
       const quality = pageCount >= 4 ? 0.72 : pageCount >= 2 ? 0.78 : 0.82
       for (const f of uploadedFiles) {
-        const blob = await downscaleImageForUpload(f, { thresholdBytes: perFileBudget, maxEdge, quality })
-        form.append('file', blob, f.name)
+        // prepareImageForUpload = free OSD auto-rotate (sideways/upside-down →
+        // upright, no API cost) + downscale to the per-file budget. Same single
+        // helper every wizard uses, so rotation + sizing behave identically.
+        const prepared = await prepareImageForUpload(f, { thresholdBytes: perFileBudget, maxEdge, quality })
+        form.append('file', prepared.blob, prepared.name)
       }
       form.append('docTypeId', registryId!)
       const res = await fetch('/api/translation/vision-extract', { method: 'POST', body: form })
