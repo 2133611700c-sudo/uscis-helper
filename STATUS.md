@@ -1,4 +1,5 @@
-# STATUS (2026-06-12 — Survival roadmap: Phase 1 + 3A-core DONE on branch survival/phases-0-3)
+# STATUS (2026-06-12 — Survival roadmap: Phase 1 + 3A + 3B-links + content DONE on branch survival/phases-0-3)
+- SURVIVAL CONTENT: removed banned wording — "сертифицированный перевод" (TPSWizardV2) + "Консультації" (uk.json ×2). tsc 0/3216 pass.
 - SURVIVAL 3B-LINKS (nav): removed /sign-in 404, Check-Status→our tracker, #sources fixed (header+footer), dropped duplicate Supported-Docs + fake footer lang-switcher, mobile Status→our tracker. tsc 0/build/3216 pass. Remaining 3B: 4-pillar registry nav + info→start.
 - SURVIVAL 3A (visual): ::selection defined (highlighted text readable in dark — owner's main complaint), font tokens wired in @theme (Inter/Playfair, no more system-ui split), Playfair+cyrillic, contrast fixes: button hover / MemberTabs / MobileBottomBar / 9px arrow / TrendingTopics pill hover / Screen12 copy-box / ContactSection. tsc 0, build clean, 3216 pass. Remaining 3A (future): full dark-token migration (drop override hack), text-xs on content.
 - BRANCH survival/phases-0-3 (NOT pushed — push=prod auto-deploy; main pinned to prod 54c0e43). Phase 0 operator-flow pre-check = PASS (code-ready; owner manual test still the gate).
