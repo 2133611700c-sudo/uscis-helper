@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3B (content compliance) — banned wording removed
+Branch survival/phases-0-3 (NOT pushed).
+- `TPSWizardV2` s6TranslateNote: "сертифицированный перевод" → "приложите перевод на английский" (CLAUDE.md content rule; the project's own test flags this term as forbidden).
+- `messages/uk.json`: "Консультації з перекладу документів" → "Допомога з перекладу документів" (×2; rule: never «консультация» → «інформаційна допомога»).
+- Evidence: uk.json valid JSON, tsc 0, 3216 tests pass.
+
 ## 2026-06-12 | Survival Phase 3B (broken-link fixes) — navigation cleanup
 Branch survival/phases-0-3 (NOT pushed).
 - `Header`: removed the broken "Sign in" pill (`/sign-in` = 404, no route, no user accounts). "Check Status" CTA now → our `/services/uscis-case-status` (plain-language decode, then links to egov) instead of jumping straight to the external portal; hardcoded `#2563eb` → `var(--primary)`. `#sources` → `/{locale}#sources` (worked only on the homepage before).
