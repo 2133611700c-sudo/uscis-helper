@@ -142,6 +142,7 @@ const T = {
     s3_remove_aria: 'Удалить страницу',
     s3_tip_t: 'Советы для хорошего фото:',
     s3_tip_b: 'снимайте при дневном свете, держите телефон ровно, все буквы должны быть чёткими. Книжку загружайте обеими развёрнутыми страницами или сделайте отдельные фото.',
+    s3_better_scan: 'Фото получилось слишком маленьким или нечётким. Пожалуйста, переснимите при хорошем свете, держа телефон ровно, чтобы все буквы были чёткими — и попробуйте снова.',
     s3_cta: 'Распознать документ →',
     s3_cta_n: 'Распознать %COUNT% стр. →',
     // Screen 4 — Processing
@@ -270,6 +271,7 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s3_remove_aria: 'Remove page',
     s3_tip_t: 'Tips for a good photo:',
     s3_tip_b: 'shoot in daylight, hold the phone level, every letter must be sharp. For a booklet, photograph both open pages together or upload separate photos for each side.',
+    s3_better_scan: 'The photo came out too small or unclear. Please retake it in good light, holding the phone steady so every letter is sharp — then try again.',
     s3_cta: 'Recognize document →',
     s3_cta_n: 'Recognize %COUNT% pages →',
     s4_title_1: 'AI is reading', s4_title_2: 'your document…',
@@ -914,6 +916,7 @@ export function TranslateWizard() {
   const [sigSaved, setSigSaved] = useState(false)
   const [procStep, setProcStep] = useState(0) // 0-5 — which step is currently active
   const [procSlow, setProcSlow] = useState(false) // true after ~15s — reassure, don't let users close the tab
+  const [scanWarning, setScanWarning] = useState(false) // server said the photo is too small/unclear — ask to retake, don't push to pay
   const MAX_PAGES = 6 // hard cap to keep OCR cost predictable (~$0.001/page)
   const [stripeCheckoutId, setStripeCheckoutId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null
@@ -1085,6 +1088,7 @@ export function TranslateWizard() {
     if (uploadedFiles.length === 0 || !selectedDocType) return
     setProcStep(1)
     setProcSlow(false)
+    setScanWarning(false)
     goTo(4)
     setExtractionError(null)
     setExtractedFields([])
@@ -1130,8 +1134,18 @@ export function TranslateWizard() {
       const res = await fetch('/api/translation/vision-extract', { method: 'POST', body: form })
       tickers.forEach(clearTimeout)
       setProcStep(5)
-      const json = await res.json().catch(() => ({} as { ok?: boolean; fields?: ExtractedField[]; error?: string }))
+      const json = await res.json().catch(() => ({} as { ok?: boolean; fields?: ExtractedField[]; error?: string; status?: string }))
       if (!res.ok || !json?.ok) {
+        // A photo-quality bounce (too small / blurry / needs reshoot) is FIXABLE —
+        // send the user back to upload with a clear "retake" notice instead of
+        // pushing them to pay for a specialist to read a bad photo.
+        const status = (json as { status?: string })?.status
+        if (status === 'needs_better_scan' || status === 'reshoot_required') {
+          setScanWarning(true)
+          setProcStep(0)
+          goTo(3)
+          return
+        }
         setExtractionError(json?.error ?? `HTTP ${res.status}`)
         // For hard-case autoread: a read failure falls through to manual path (no review gate).
         setHardCaseHasFields(false)
@@ -1609,6 +1623,12 @@ export function TranslateWizard() {
           <button type="button" className="tw-back-btn" onClick={() => goTo(2)}>{t.back}</button>
           <h2 className="tw-h2">{t.s3_title_1}<br />{t.s3_title_2}</h2>
           <p className="tw-subtitle">{t.s3_subtitle}</p>
+          {scanWarning && (
+            <div className="tw-confirm-edit" style={{ marginTop: 12, background: 'var(--warning-bg)', borderColor: 'var(--warning-border)' }}>
+              <span aria-hidden="true">📷</span>
+              <div style={{ flex: 1, color: 'var(--warning-text)', fontWeight: 600 }}>{t.s3_better_scan}</div>
+            </div>
+          )}
 
           {previewUrls.length > 0 && (
             <div
