@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival Phase 1 (1A) — MRZ into translation (flag-gated, default OFF)
+- NEW `mrzCandidatesForTranslation(rawText, docType)` in `mrzAuthority.ts`: MRZ candidates remapped to the translation registry's field names (`date_of_birth`→`dob`, `date_of_expiry`→`passport_expiration_date`), filtered to the international-passport 5-field spec (drops nationality/sex).
+- `vision-extract` Core B2: behind **`MRZ_TRANSLATION_ENABLED` (default OFF = byte-identical prod)**, for `ua_international_passport` it runs a Google Vision text pass on the first page → `mrzCandidatesForTranslation` → merged into arbitration. Fail-open (Vision blocked / no MRZ → `[]`, same as today).
+- Effect when ON: a valid MRZ auto-resolves passport_number/dob/expiry/names → no `critical_no_mrz_anchor` → no review needed. Proven by `mrzTranslation.test.ts` (7 tests incl. a without-MRZ control showing the anchor DOES fire without it).
+- READY for owner real-passport verification: set `MRZ_TRANSLATION_ENABLED=1` on a preview deploy + upload a real international passport. (1B soft-confirm already removed the grey-button for ALL passports incl. the no-MRZ booklet.)
+- tsc 0, build clean, 3176 tests pass.
+
 ## 2026-06-12 | Survival 3A — accessibility batch (keyboard upload, live region, label)
 - `TPSWizardV2` UploadDrop (a `role="button"` div): added `onKeyDown` for Enter/Space — keyboard users could not trigger the upload before — plus `aria-label={doc.lb}` for a clear accessible name.
 - `TranslateWizard` processing screen: `role="status" aria-live="polite"` so screen-reader users hear the read-progress steps.
