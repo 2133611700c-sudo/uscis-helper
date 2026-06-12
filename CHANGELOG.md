@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3A (desktop) — wizard step-sidebar contrast
+Desktop-only `DesktopStepSidebar` (the left step rail on the web/desktop wizard):
+- current step `dark:text-green-400` → `dark:text-green-300` (~3.5:1 → ~5:1 on the dark green tint).
+- future steps `text-slate-400 dark:text-slate-600` → `text-slate-500 dark:text-slate-500` (was ~2.4:1 in dark — invisible; now legible while still de-emphasized).
+- Note: all other survival fixes (selection, fonts, nav, contrast) are responsive and already apply to BOTH desktop and mobile; this was the one desktop-specific component left from the audit. tsc 0, build clean, 3229 tests pass.
+
 ## 2026-06-12 | HOTFIX — restore live modules wrongly deleted as "dead" (broke 3 cron jobs)
 - b5d627b's dead-code pass deleted `documentSafety/ticketEscalation.ts` + `guardBlockRate.ts`, but they are NOT dead: `scripts/monitoring/{escalation-tick,daily-reconciliation,guard-block-rate-check}.ts` import them. The original audit grepped only `apps/web/src` and missed `scripts/` + `.github/`. Result: 3 GitHub Action cron jobs (L1 Escalation Tick every 30m, daily-reconciliation, guard-block-rate-check) failed at import (~30s).
 - Restored both modules + their tests from 54c0e43. tsc 0, 13 module tests pass.
