@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-12 | Survival 3B (info→start funnel) — landing pages reachable
+Branch survival/phases-0-3 (NOT pushed to main).
+- `services/tps-ukraine` and `services/re-parole-u4u` bare routes now redirect to `/info` (hero, price range, how-it-works, FAQ) instead of straight to `/start`. The whole landing + pricing content was previously unreachable (audit: orphaned). The info pages already have a "Start" CTA → `/start` (wizardHref), so the funnel is info → understand+price → start.
+- Evidence: tsc 0, build clean, 3216 tests pass.
+
 ## 2026-06-12 | Survival 3B (content compliance) — banned wording removed
 Branch survival/phases-0-3 (NOT pushed).
 - `TPSWizardV2` s6TranslateNote: "сертифицированный перевод" → "приложите перевод на английский" (CLAUDE.md content rule; the project's own test flags this term as forbidden).
