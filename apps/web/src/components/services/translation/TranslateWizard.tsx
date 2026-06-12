@@ -1582,9 +1582,9 @@ export function TranslateWizard() {
             if (!m || m.auto) return null
             // Phase 2.1a: hard-case autoread shows a different notice (AI tries, confirm required)
             if (m.autoread) return (
-              <div className="tw-reassurance" style={{ marginTop: 16, borderColor: 'rgba(201,168,76,0.3)', background: 'rgba(201,168,76,0.08)' }}>
+              <div className="tw-reassurance" style={{ marginTop: 16, borderColor: 'var(--warn-bd)', background: 'var(--warn-bg)' }}>
                 <div className="tw-reassurance-icon">🔍</div>
-                <div className="tw-reassurance-text" style={{ color: 'var(--gold-light)' }}>{t.s2_hard_case_note}</div>
+                <div className="tw-reassurance-text" style={{ color: 'var(--warn-tx)' }}>{t.s2_hard_case_note}</div>
               </div>
             )
             return (
@@ -1787,12 +1787,12 @@ export function TranslateWizard() {
                         <div className="tw-trans-eng">
                           {row.val_eng}
                           {isEdited && <span className="corrected-badge">{t.s5_corrected}</span>}
-                          {row.requiresReview && <span className="corrected-badge" style={{ background: 'rgba(201,168,76,0.18)', color: 'var(--gold-light)' }}>{t.s5_review_needed}</span>}
+                          {row.requiresReview && <span className="corrected-badge" style={{ background: 'var(--warn-bg)', color: 'var(--warn-tx)', border: '1px solid var(--warn-bd)' }}>{t.s5_review_needed}</span>}
                         </div>
                         {row.ensembleCandidate && (
                           <div
                             className="tw-trans-ensemble"
-                            style={{ fontSize: 12, color: 'var(--gold-light)', marginTop: 4, lineHeight: 1.4 }}
+                            style={{ fontSize: 12, color: 'var(--warn-tx)', marginTop: 4, lineHeight: 1.4 }}
                           >
                             {t.s5_second_reading}: <b>{row.ensembleCandidate}</b> — {t.s5_second_reading_verify}
                           </div>
@@ -1829,9 +1829,9 @@ export function TranslateWizard() {
               </div>
             </>
           ) : (
-            <div className="tw-reassurance" style={{ background: 'rgba(201,168,76,0.08)', borderColor: 'rgba(201,168,76,0.3)' }}>
+            <div className="tw-reassurance" style={{ background: 'var(--warn-bg)', borderColor: 'var(--warn-bd)' }}>
               <div className="tw-reassurance-icon">👨‍💼</div>
-              <div className="tw-reassurance-text" style={{ color: 'var(--gold-light)' }}>
+              <div className="tw-reassurance-text" style={{ color: 'var(--warn-tx)' }}>
                 {extractionError ? t.s5_extraction_error : t.s5_no_fields}
               </div>
             </div>
@@ -1912,7 +1912,7 @@ export function TranslateWizard() {
             <p className="tw-subtitle">{t.s7_subtitle}</p>
           </div>
           <div className="tw-card" style={{ background: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.3)' }}>
-            <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 12, color: 'var(--green-light)' }}>{t.s7_pdf_title}</div>
+            <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 12, color: 'var(--text-1)' }}>{t.s7_pdf_title}</div>
             <div style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 16 }}>{t.s7_pdf_sub}</div>
             <button
               type="button"
