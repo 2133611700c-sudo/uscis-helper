@@ -235,8 +235,10 @@ export function Screen12() {
             <div
               className="rounded-[10px] p-3.5 mb-3 font-mono text-[18px] font-bold break-words"
               style={{
-                background: 'var(--accent)',
-                border: '1.5px solid var(--primary)',
+                // High-contrast surface (text-1 on surface-2) — the value must be
+                // legible to copy. Was text-1 on accent green (~3.9:1, WCAG fail).
+                background: 'var(--surface-2)',
+                border: '2px solid var(--accent)',
                 color: 'var(--text-1)',
               }}
             >
