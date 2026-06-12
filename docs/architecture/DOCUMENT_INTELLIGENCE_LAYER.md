@@ -29,7 +29,7 @@ image + docTypeId
 
 ## Guarantees
 - **Provider-agnostic.** Gemini today; GPT/Claude/Azure can implement the same interface and be benchmarked without touching consumers.
-- **Cyrillic read by vision; Latin produced by deterministic KMU-55.** One place, never the LLM. Empirically proven (Kuropiatnyk / Serhiiovych / Trostianets correct; LLM's own "Troshchianets" rejected).
+- **Cyrillic read by vision; Latin produced by deterministic KMU-55.** One place, never the LLM. Empirically proven (Ivanenko / Serhiiovych / Trostianets correct; LLM's own "Troshchianets" rejected).
 - **Candidate-only.** Handwritten fields always `review_required=true`; printed fields below 0.95 confidence too. The consuming product's Review Gate makes values final.
 - **Never throws / never blocks.** Provider failure → `ok:false` with status; caller falls back.
 - **`raw_cyrillic` preserved** so translation can re-add settlement type ("urban-type settlement") while the form gets the bare city.
@@ -41,7 +41,7 @@ image + docTypeId
 
 ## Validation
 - Unit: `docintel/__tests__/docintel.test.ts` — registry integrity, transliteration (incl. settlement-prefix variants), orchestration with a mock provider.
-- Live (self-skips in CI; `RUN_LIVE_VISION=1`): `geminiVisionArbiter.live.test.ts` — real Gemini on owner booklet through the spine → Kuropiatnyk / Serhii / Serhiiovych / 1986-06-25 / Trostianets / Vinnytsia Oblast.
+- Live (self-skips in CI; `RUN_LIVE_VISION=1`): `geminiVisionArbiter.live.test.ts` — real Gemini on owner booklet through the spine → Ivanenko / Serhii / Serhiiovych / 1990-01-01 / Trostianets / Vinnytsia Oblast.
 
 ## Status / limits
 - Booklet path validated live (N=1, owner). Other doc types declared + structurally tested with a mock provider; need real fixtures + ground truth (≥3 distinct people per v5 §29/§32) before any production enablement.

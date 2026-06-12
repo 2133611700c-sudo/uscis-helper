@@ -121,4 +121,4 @@ Responsibilities: log every field's provenance (which department/employee produc
 6. **Auditor** — correction → ground-truth learning loop.
 
 ## Ground-truth test set (N>1 — secured 2026-05-28)
-`test-fixtures/real-docs/` (gitignored — PII): 9 documents, multiple distinct people — marriage (Zastavnyi/Kovshirina, 1939 Borodavka, Johnson/Kvasnikova, apostille), divorce (blank + redacted), birth (Kuropiatnyk handwritten), military ID (Kuropiatnyk). This breaks the N=1 self-deception. Every accuracy claim must be measured against owner-confirmed ground truth on this set.
+`test-fixtures/real-docs/` (gitignored — PII): 9 documents, multiple distinct people — marriage (Zastavnyi/Kovshirina, 1939 Borodavka, Johnson/Kvasnikova, apostille), divorce (blank + redacted), birth (Ivanenko handwritten), military ID (Ivanenko). This breaks the N=1 self-deception. Every accuracy claim must be measured against owner-confirmed ground truth on this set.

@@ -28,10 +28,10 @@ between official USCIS forms and bureau-style certified translations.
 `renderOfficialTranslation(birthCertificateSchema, values)` → PDF → hex-decoded readback:
 ```
 BIRTH CERTIFICATE
-CHILD  Surname: Kuropiatnyk  Date of birth: 25 June 1986
+CHILD  Surname: Ivanenko  Date of birth: 01 January 1990
        Place of birth: Trostianets (urban-type settlement)  Region (Oblast): Vinnytsia Oblast
        Given name: ____ [enter from document]   ← honest MISSING, not dropped
-STATE REGISTRATION  Place of state registration: Civil Registry Office  Series and No.: I-AM 428069
+STATE REGISTRATION  Place of state registration: Civil Registry Office  Series and No.: I-AM 000001
 ```
 Bureau layout ✓ · honest MISSING placeholders ✓ · fully text-extractable ✓.
 
