@@ -44,6 +44,7 @@ import { normalizeGeminiModel } from '@/lib/gemini/model'
 // ONE BRAIN Core — B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/canonical/core/translationAdapter'
+import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import { mrzCandidatesForTranslation } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
 import {
@@ -293,7 +294,24 @@ export async function POST(req: NextRequest) {
       buildKnowledgeContext({ docTypeId, product: 'translation' }),
     )
     if (canonicalFields.length > 0) {
-      let fields = toTranslationRows(canonicalFields, cyrillicMap)
+      // Phase 1 (one canonical currency): wrap the arbitrated fields into the ONE
+      // internal envelope (CanonicalDocumentResult) instead of stopping at a bare
+      // CanonicalField[]. PURE wrapper — buildCanonicalResult changes no value, no
+      // review state. The product adapter then reads from result.fields, so value
+      // resolution is the single accessor path (no duplicate post-canonical work).
+      // documentSessionId is optional on this stateless extract endpoint (the wizard
+      // holds the session client-side); a synthetic marker keeps the contract honest
+      // without inventing PII.
+      const documentSessionId =
+        (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
+      const canonicalResult = buildCanonicalResult({
+        documentSessionId,
+        product: 'translation',
+        docType: docTypeId,
+        fields: canonicalFields,
+        createdAt: new Date().toISOString(),
+      })
+      let fields = toTranslationRows(canonicalResult.fields, cyrillicMap)
       // Cross-engine date ensemble (handwritten-risk; flag-gated) — wired HERE in
       // the Core path because this is the live return (status ok:core-b2).
       const ens = await runDateEnsemble(fields, docTypeId, rawFiles[0])
