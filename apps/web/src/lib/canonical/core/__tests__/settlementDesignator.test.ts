@@ -37,17 +37,17 @@ const base: CanonicalField = {
 } as unknown as CanonicalField
 
 describe('canonicalToFieldOut — designator re-add (translation door)', () => {
-  it('appends urban-type settlement from the raw Cyrillic', () => {
+  it('prefixes urban-type settlement from the raw Cyrillic (mirrors «смт Х»)', () => {
     const out = canonicalToFieldOut(base)
-    expect(out.value).toBe('Murovani Kurylivtsi urban-type settlement')
+    expect(out.value).toBe('urban-type settlement Murovani Kurylivtsi')
   })
   it('no prefix in raw → value unchanged', () => {
     const out = canonicalToFieldOut({ ...base, rawCyrillic: 'Муровані Курилівці' } as CanonicalField)
     expect(out.value).toBe('Murovani Kurylivtsi')
   })
-  it('no double-append when the value already carries the designator', () => {
-    const out = canonicalToFieldOut({ ...base, normalizedValue: 'Murovani Kurylivtsi urban-type settlement' } as CanonicalField)
-    expect(out.value).toBe('Murovani Kurylivtsi urban-type settlement')
+  it('no double-add when the value already carries the designator', () => {
+    const out = canonicalToFieldOut({ ...base, normalizedValue: 'urban-type settlement Murovani Kurylivtsi' } as CanonicalField)
+    expect(out.value).toBe('urban-type settlement Murovani Kurylivtsi')
   })
   it('non-place keys are untouched even with a prefixed raw', () => {
     const out = canonicalToFieldOut({ ...base, key: 'family_name', normalizedValue: 'Ivanenko', rawCyrillic: 'смт. Іваненко' } as CanonicalField)
