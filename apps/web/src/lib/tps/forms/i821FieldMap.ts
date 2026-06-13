@@ -11,9 +11,12 @@
  * FIELD CLASSIFICATION (per TPS_FIELD_COVERAGE_CLOSEOUT_V1):
  *   MAPPED (this file):
  *     Part 1  — filing type, TPS country, concurrent EAD
- *     Part 2  — identity, address, A-number, DOB, sex, SSN, marital status,
- *               city/country of birth, passport, I-94, status at entry,
- *               port of entry, authorized stay, other names (first 2)
+ *     Part 2  — identity, address, A-number, DOB (Item 10 only — Item 11
+ *               "Other Dates of Birth Used" is left for the user), sex, SSN,
+ *               marital status, city/country of birth, passport, I-94, status
+ *               at entry, port of entry, authorized stay, other names used
+ *               (Items 2/3 — first 2 slots). Items 15/16 (Countries of
+ *               Residence / Citizenship) are NOT mapped (no source).
  *     Part 3  — biographic (ethnicity, race, eye/hair color)
  *     Part 7  — all yes/no background questions (defaults to No; user reviews)
  *     Part 8  — phone, email (contact)
@@ -40,16 +43,19 @@
  */
 
 import type { TPSAnswers } from '../answers'
-import { toUscisDate, normalizeCountryOfBirth } from '../answers'
+import { buildI821DocumentOps, type I821Op } from '@/lib/canonical/forms/i821DocumentMapper'
+import { i821DocumentFactsToCanonical } from './i821DocumentBoundary'
 
-export interface I821Op {
-  field: string
-  kind: 'text' | 'checkbox' | 'choice'
-  value: string | boolean
-}
+export type { I821Op }
 
 export function buildI821Ops(a: TPSAnswers): I821Op[] {
   const ops: I821Op[] = []
+
+  // ── DOCUMENT-DERIVED fields via the ONE shared canonical mapper ───────────────
+  // Legal name, DOB, sex, A-Number, birth city/country, passport, I-94, entry info
+  // are now owned by i821DocumentMapper. normalizeCountryOfBirth runs at the boundary
+  // (i821DocumentBoundary), NOT here.
+  ops.push(...buildI821DocumentOps(i821DocumentFactsToCanonical(a)))
 
   // ── Part 1 — Type of application ──────────────────────────────────────────
   // Field name pattern in inventory:
@@ -87,11 +93,7 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     value: a.wants_ead === false,
   })
 
-  // ── Part 2 — Identity (Item 1: legal name) ─────────────────────────────────
-  // I-821 places the legal-name fields on Page01.
-  ops.push({ field: 'form1[0].Page01[0].Part2_Item1_FamilyName[0]', kind: 'text', value: a.family_name })
-  ops.push({ field: 'form1[0].Page01[0].Part2_Item1_GivenName[0]',  kind: 'text', value: a.given_name })
-  ops.push({ field: 'form1[0].Page01[0].Part2_Item1_MiddleName[0]', kind: 'text', value: a.middle_name ?? '' })
+  // (Legal name Part 2 Item 1 is now emitted by the shared canonical document mapper.)
 
   // ── Part 2 — Item 4: US physical address (Page02) ──────────────────────────
   if (a.us_address_in_care_of) {
@@ -134,16 +136,7 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     ops.push({ field: 'form1[0].Page02[0].Part2_Item6_ZipCode[0]',   kind: 'text', value: a.mailing_zip ?? '' })
   }
 
-  // ── Part 2 — Item 7: A-Number (Alien Registration Number, if any) ────────
-  // OCR'd from an EAD card; user can also type. 9 digits, no 'A' prefix.
-  // Inventory field name: form1[0].Page02[0].Part2_Item7_AlienNumber[0]
-  if (a.a_number) {
-    ops.push({
-      field: 'form1[0].Page02[0].Part2_Item7_AlienNumber[0]',
-      kind: 'text',
-      value: a.a_number,
-    })
-  }
+  // (A-Number Part 2 Item 7 is now emitted by the shared canonical document mapper.)
 
   // ── Part 2 — Item 8 (USCIS online account number, if any) ─────────────────
   if (a.uscis_online_account) {
@@ -154,13 +147,7 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     })
   }
 
-  // ── Part 2 — Item 10: applicant DOB ────────────────────────────────────────
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item10_DateOfBirth[0]', kind: 'text', value: toUscisDate(a.dob) })
-
-  // ── Part 2 — Item 12: sex ──────────────────────────────────────────────────
-  // [0] = Male, [1] = Female (per USCIS form ordering)
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item12_Sex[0]', kind: 'checkbox', value: a.sex === 'M' })
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item12_Sex[1]', kind: 'checkbox', value: a.sex === 'F' })
+  // (DOB Part 2 Item 10 and Sex Part 2 Item 12 are now emitted by the canonical mapper.)
 
   // ── Part 2 — Item 9: Social Security Number (if applicant has one) ──────────
   if (a.ssn) {
@@ -171,23 +158,16 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     })
   }
 
-  // ── Part 2 — Item 11: Date of Birth (second AcroForm instance on Page02) ────
-  // The I-821 PDF has two AcroForm field instances for DOB on Page 2 — Item 10
-  // ([0]) and Item 11 ([0] and [1]). Both carry the same date. Item 11's two
-  // instances appear to be linked left/right cells that split MM/DD and YYYY
-  // on some printer layouts. Writing the full MM/DD/YYYY to both is safe —
-  // the prefiller gracefully skips any cell that rejects a value longer than
-  // its maxLength.
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item11_DateOfBirth[0]', kind: 'text', value: toUscisDate(a.dob) })
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item11_DateOfBirth[1]', kind: 'text', value: toUscisDate(a.dob) })
+  // ── Part 2 — Item 11: "Other Dates of Birth Used (if any)" ─────────────────
+  // DO NOT write the applicant's real DOB here. Item 11 (Page 2, labeled
+  // "Other Dates of Birth Used") asks for ALTERNATE/alias dates of birth the
+  // applicant has previously used. Filling it with the real DOB (which the
+  // mapper previously did, into [0] and [1]) fabricates an alias DOB the
+  // applicant never claimed. The real DOB belongs only in Item 10 (above).
+  // We have no alias-DOB source in TPSAnswers, so these cells stay empty for
+  // the user to complete if applicable.
 
-  // ── Part 2 — Item 13: city of birth ────────────────────────────────────────
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item13_CityOrTown[0]', kind: 'text', value: a.city_of_birth ?? '' })
-
-  // ── Part 2 — Item 14: country of birth ────────────────────────────────────
-  // Normalize: Ukrainian passports show oblast/city as "place of birth";
-  // USCIS asks for COUNTRY. normalizeCountryOfBirth converts "Vinnytska Obl. / Ukr" → "Ukraine".
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item14_CountryofBirth[0]', kind: 'text', value: normalizeCountryOfBirth(a.country_of_birth, a.country_of_nationality) })
+  // (City/country of birth Items 13/14 are now emitted by the canonical mapper.)
 
   // ── Part 2 — Item 17: marital status ──────────────────────────────────────
   // Seven checkboxes [0]-[6]: single, married, divorced, widowed,
@@ -204,71 +184,39 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     })
   }
 
-  // ── Part 2 — Items 15/16: Other names (aliases / prior names) ────────────────
-  // First two other-name slots have AcroForm cells. Map from other_names[0/1].
-  // Fields: Item15a=FamilyName, Item15b=GivenName, Item15c=MiddleName, Item15d=other-name type
-  // Fields: Item16a=FamilyName, Item16b=GivenName, Item16c=MiddleName, Item16d=other-name type
+  // ── Part 2 — Items 2/3: "Other Names Used" (aliases / maiden / prior names) ──
+  // The I-821 (Edition 01/20/25) places the two "Other Names Used" slots on
+  // Page 2, left column, as Items 2.a-2.c (first slot) and 3.a-3.c (second
+  // slot) — verified against the rendered PDF widget positions + printed
+  // labels. The AcroForm cells named Part2_Item15* / Part2_Item16* are the
+  // RIGHT-column "Countries of Residence" and "Countries of Citizenship or
+  // Nationality" fields — NOT name fields. The mapper previously wrote name
+  // parts into Items 15/16, polluting country fields with a person's name; it
+  // is corrected here to target the real other-name cells (Items 2/3).
+  // Fields: Item2_FamilyName / Item2_GivenName / Item2_MiddleName, etc.
   if (a.other_names && a.other_names.length > 0) {
     const n0 = a.other_names[0]
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item15a[0]', kind: 'text', value: n0.family })
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item15b[0]', kind: 'text', value: n0.given })
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item15c[0]', kind: 'text', value: n0.middle ?? '' })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item2_FamilyName[0]', kind: 'text', value: n0.family })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item2_GivenName[0]',  kind: 'text', value: n0.given })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item2_MiddleName[0]', kind: 'text', value: n0.middle ?? '' })
   }
   if (a.other_names && a.other_names.length > 1) {
     const n1 = a.other_names[1]
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item16a[0]', kind: 'text', value: n1.family })
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item16b[0]', kind: 'text', value: n1.given })
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item16c[0]', kind: 'text', value: n1.middle ?? '' })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item3_FamilyName[0]', kind: 'text', value: n1.family })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item3_GivenName[0]',  kind: 'text', value: n1.given })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item3_MiddleName[0]', kind: 'text', value: n1.middle ?? '' })
   }
 
-  // ── Part 2 — Item 20: Port of entry ─────────────────────────────────────────
-  // Accepts either split fields (port_of_entry_city/state) or combined place_of_last_entry
-  const poeCity = a.port_of_entry_city || (a.place_of_last_entry?.split(',')[0]?.trim() ?? '')
-  const poeState = a.port_of_entry_state || (a.place_of_last_entry?.split(',')[1]?.trim() ?? '')
-  if (poeCity) {
-    ops.push({ field: 'form1[0].Page03[0].Part2_Item20_CityOrTown[0]', kind: 'text', value: poeCity })
-  }
-  if (poeState) {
-    ops.push({ field: 'form1[0].Page03[0].Part2_Item20_State[0]', kind: 'choice', value: poeState })
-  }
+  // (Port of entry Items 20 city/state are now emitted by the canonical mapper,
+  //  pre-split from place_of_last_entry in i821DocumentBoundary.)
 
   // ── Part 2 — Item 21: Authorized period of stay ──────────────────────────────
   if (a.authorized_stay) {
     ops.push({ field: 'form1[0].Page03[0].Part2_Item21_AuthorizedPdofStay[0]', kind: 'text', value: a.authorized_stay })
   }
 
-  // ── Part 2 — Item 18: date of last arrival (Page03) ────────────────────────
-  // The PDF AcroForm field is misleadingly named "P2_Line7_DateOfBirth" but it
-  // is physically above Item 19 (immigration status) at Y≈618 on page 3, which
-  // corresponds to "Date of your last arrival to the United States" on the form.
-  if (a.last_entry_date) {
-    ops.push({
-      field: 'form1[0].Page03[0].P2_Line7_DateOfBirth[0]',
-      kind: 'text',
-      value: toUscisDate(a.last_entry_date),
-    })
-  }
-
-  // ── Part 2 — Item 19: immigration status at last entry (Page03) ────────────
-  // I-765 Line 23 already maps this; I-821 Part 2 Item 19 is the same data.
-  if (a.status_at_last_entry) {
-    ops.push({
-      field: 'form1[0].Page03[0].Part2_Item19_ImmigrationStatus[0]',
-      kind: 'text',
-      value: a.status_at_last_entry,
-    })
-  }
-
-  // ── Part 2 — Item 22: passport (Page03) ───────────────────────────────────
-  ops.push({ field: 'form1[0].Page03[0].Part2_Item22_Passport[0]', kind: 'text', value: a.passport_number })
-  // Item 22 line 2 = I-94 admission number
-  if (a.i94_admission_number) {
-    ops.push({ field: 'form1[0].Page03[0].Part2_Item22_I94[0]', kind: 'text', value: a.i94_admission_number })
-  }
-
-  // ── Part 2 — Item 24: country of issuance + passport expiration ──────────
-  ops.push({ field: 'form1[0].Page03[0].Part2_Item24_CountryofIssuance[0]', kind: 'text', value: a.passport_country_of_issuance })
-  ops.push({ field: 'form1[0].Page03[0].Part2_Item24_PassportExpiration[0]', kind: 'text', value: toUscisDate(a.passport_expiration_date) })
+  // (Items 18/19/22/24 — last arrival date, immigration status, passport, I-94 are
+  //  now emitted by the canonical mapper via i821DocumentBoundary.)
 
   // ── Part 3 — Biographic Information (Pages 03-04) ────────────────────────────
   // Ethnicity: [0]=Yes Hispanic/Latino, [1]=No not Hispanic/Latino
