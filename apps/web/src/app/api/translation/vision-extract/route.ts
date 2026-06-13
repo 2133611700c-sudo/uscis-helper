@@ -55,7 +55,7 @@ import {
 } from '@/lib/canonical/core/documentClassPolicy'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60 // gemini-2.5-pro vision ~16-40s/page (handwriting) — default 15s would abort it
+export const maxDuration = 120 // multi-page: N pages read in parallel + a legacy fallback pass; 60s killed 4-page passports. Vision ~16-40s/page (handwriting). Caps at the Vercel plan limit if lower.
 
 const ALLOWED_MIME = new Set([
   'image/jpeg',

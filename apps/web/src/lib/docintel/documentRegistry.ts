@@ -72,8 +72,11 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
       { field: 'child_given_name', label_uk: "Ім'я", kind: 'name', handwritten: true, required: true },
       { field: 'child_patronymic', label_uk: 'По батькові', kind: 'name', handwritten: true, required: false },
       { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: true, required: true },
-      { field: 'place_of_birth_city', label_uk: 'Місце народження (місто/село)', kind: 'place_city', handwritten: true, required: false },
-      { field: 'province_of_birth', label_uk: 'Місце народження (область)', kind: 'place_oblast', handwritten: true, required: false },
+      { field: 'place_of_birth_city', label_uk: 'Місце народження', kind: 'place_city', handwritten: true, required: false },
+      // NOTE: no separate `province_of_birth` field for birth certs. Many blanks do
+      // not have a standalone oblast line, and asking for it made the model INFER /
+      // fabricate an oblast (owner-reported on a real 1986 cert). The oblast, when
+      // present, is part of the place-of-birth line or the registration authority.
       { field: 'father_full_name', label_uk: 'Батько', kind: 'name', handwritten: true, required: false },
       { field: 'mother_full_name', label_uk: 'Мати', kind: 'name', handwritten: true, required: false },
       { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: true, required: false },
