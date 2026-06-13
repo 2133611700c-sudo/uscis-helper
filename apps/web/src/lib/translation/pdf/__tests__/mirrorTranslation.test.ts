@@ -20,9 +20,13 @@ describe('official schema registry', () => {
     expect(s?.titleEn).toBe('BIRTH CERTIFICATE')
     expect(s?.officialSource.act).toContain('1025')
   })
-  it('returns null for a docType with no mirror schema (passport)', () => {
-    expect(getOfficialSchema('ua_internal_passport_booklet')).toBeNull()
-    expect(hasOfficialSchema('ua_internal_passport_booklet')).toBe(false)
+  it('passports are now registered (resolve to their schema)', () => {
+    expect(getOfficialSchema('ua_internal_passport_booklet')?.docType).toBe('ua_internal_passport_booklet')
+    expect(hasOfficialSchema('ua_international_passport')).toBe(true)
+  })
+  it('returns null for a genuinely unknown docType', () => {
+    expect(getOfficialSchema('ua_unknown_doc')).toBeNull()
+    expect(hasOfficialSchema('ua_unknown_doc')).toBe(false)
   })
 })
 
@@ -126,8 +130,8 @@ describe('renderMirrorTranslationPDF — end to end', () => {
     expect(res!.unresolved.length).toBeGreaterThan(0)
   })
 
-  it('returns null for a docType without a mirror schema (caller falls back to generic)', async () => {
-    const res = await renderMirrorTranslationPDF('ua_internal_passport_booklet', [
+  it('returns null for a genuinely unknown docType (caller falls back to generic)', async () => {
+    const res = await renderMirrorTranslationPDF('ua_unknown_doc', [
       { field: 'family_name', final_value: 'X' },
     ])
     expect(res).toBeNull()

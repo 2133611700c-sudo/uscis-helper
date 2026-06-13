@@ -19,6 +19,12 @@ import { internalPassportSchema } from './internal-passport.schema'
 import { internationalPassportSchema } from './international-passport.schema'
 import { idCardSchema } from './id-card.schema'
 
+// All official mirror schemas, REGISTERED (resolve unconditionally). The 3
+// passport schemas were previously staged behind PASSPORT_SCHEMA_RENDERER_ENABLED;
+// registered 2026-06-12 (owner: "возьми паспорта") — their keys match the docintel
+// extraction names and the SUPPRESSION INVARIANT (MRZ/personal_number/rnokpp not
+// declared) is preserved in the schema files. They render the mirror by default
+// via MIRROR_READY_DOCTYPES (generate-pdf), fail-open to the legacy PDF.
 const OFFICIAL_SCHEMAS: Record<string, OfficialFormSchema> = {
   ua_birth_certificate: birthCertificateSchema,
   ua_marriage_certificate: marriageCertificateSchema,
@@ -26,31 +32,15 @@ const OFFICIAL_SCHEMAS: Record<string, OfficialFormSchema> = {
   ua_death_certificate: deathCertificateSchema,
   ua_name_change_certificate: nameChangeCertificateSchema,
   ua_military_id: militaryIdSchema,
-}
-
-// ── STAGED passport schemas (Migration Plan step A) ─────────────────────────
-// Resolving one of these IS the live switch of the customer PDF for that
-// docType (generate-pdf: hasOfficialSchema → mirror). They activate ONLY behind
-// PASSPORT_SCHEMA_RENDERER_ENABLED — flag absent/OFF ⇒ byte-identical prod.
-// The flag is read PER CALL (not at module load) so a Vercel env change takes
-// effect on redeploy and test env-stubs work without module re-import.
-const STAGED_PASSPORT_SCHEMAS: Record<string, OfficialFormSchema> = {
   ua_internal_passport_booklet: internalPassportSchema,
   ua_international_passport: internationalPassportSchema,
   ua_id_card: idCardSchema,
 }
 
-function passportRendererEnabled(): boolean {
-  return process.env.PASSPORT_SCHEMA_RENDERER_ENABLED === '1'
-}
-
 /** Resolve the official mirror schema for a docType, or null if none exists. */
 export function getOfficialSchema(docType: string | null | undefined): OfficialFormSchema | null {
   if (!docType) return null
-  const base = OFFICIAL_SCHEMAS[docType]
-  if (base) return base
-  if (passportRendererEnabled()) return STAGED_PASSPORT_SCHEMAS[docType] ?? null
-  return null
+  return OFFICIAL_SCHEMAS[docType] ?? null
 }
 
 /** True when a faithful mirror PDF can be rendered for this docType. */
@@ -60,7 +50,5 @@ export function hasOfficialSchema(docType: string | null | undefined): boolean {
 
 /** All docTypes that have an official mirror schema (for diagnostics/tests). */
 export function officialSchemaDocTypes(): string[] {
-  return passportRendererEnabled()
-    ? [...Object.keys(OFFICIAL_SCHEMAS), ...Object.keys(STAGED_PASSPORT_SCHEMAS)]
-    : Object.keys(OFFICIAL_SCHEMAS)
+  return Object.keys(OFFICIAL_SCHEMAS)
 }

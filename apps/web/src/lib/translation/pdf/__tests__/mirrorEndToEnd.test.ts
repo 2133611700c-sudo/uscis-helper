@@ -59,7 +59,7 @@ describe('mirror PDF end-to-end (synthetic birth certificate)', () => {
   })
 
   it('returns null for a docType with no official schema (caller falls back to generic)', async () => {
-    const res = await renderMirrorTranslationPDF('ua_id_card', SYNTHETIC_BIRTH) // military now HAS a schema (2026-06-11); id_card does not
+    const res = await renderMirrorTranslationPDF('ua_unknown_doc', SYNTHETIC_BIRTH) // genuinely no schema (passports/id_card now registered)
     expect(res).toBeNull()
   })
 
