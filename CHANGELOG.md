@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-12 | MIRROR complete for ALL 5 UA civil certificates (divorce/death/name-change)
+Finishes the mirror set per the official KMU 1025 structure (owner: "как правильно выглядят укр документы… без ошибок и дублирования").
+- **Divorce** (`divorce-certificate.schema.ts` + registry): schema split groom_full_name/bride_full_name → groom_surname/given_name/patronymic + bride_*; added act_record_date + date_of_issue. Registry split composite spouse_*_full_name → spouse_1/2_surname/given_name/patronymic + surnames-after + act_record_date + certificate_series_number + date_of_issue.
+- **Death** (`death-certificate.schema.ts` + registry): schema already split; added act_record_date + date_of_issue. Registry entry did NOT exist (→ readDocument returned unknown_document_type → 100% blank) — ADDED: deceased_surname/given_name/patronymic, date_of_birth, date_of_death, place_of_death, act_record_*, issuing_authority, certificate_series_number, date_of_issue.
+- **Name-change** (`name-change-certificate.schema.ts` + registry): schema split previous_full_name/new_full_name → previous_surname/given_name/patronymic + new_*; added act_record_date + date_of_issue. Registry entry did NOT exist — ADDED the split previous_*/new_* + DOB + act_record_* + issuing + series + date_of_issue.
+- All new registry fields `handwritten:true` ⇒ always review_required (no silent-wrong). `buildMirrorValues` aliases for all three (spouse_1→groom/spouse_2→bride, date_of_divorce→date_of_dissolution, issuing_authority→place_of_registration, certificate_series_number→series_number). Renderer GROUP_TITLE += previous/new (NAME BEFORE/AFTER CHANGE). UI labels added. All 5 certificate types added to `MIRROR_READY_DOCTYPES`.
+- Verified by rendering each mirror (text + PNG): every section fills, no duplicate lines, no ADDITIONAL ENTRIES dump; divorce "Wife's surname after dissolution" correctly distinct from husband's.
+- Evidence: tsc 0, build exit 0, web tests 3289 passed/2 skipped.
+
 ## 2026-06-12 | MIRROR marriage certificate LIVE (full HUSBAND/WIFE structure, KMU 1025)
 - Same bug class as birth, worse: the live reader (`documentRegistry.ts`) emitted COMPOSITE `spouse_1_full_name`/`spouse_2_full_name`, but the marriage schema uses split per-person keys (groom_surname/given_name/patronymic, bride_*) → 16/20 fields rendered blank and the two read names were dropped entirely.
 - **Split the registry** (`documentRegistry.ts ua_marriage_certificate`) into the full official blank: husband + wife each Прізвище/Ім'я/По батькові/дата народження/місце народження/громадянство, date of marriage, both surnames-after, act record №+date, registration office, series+number, date of issue. All `handwritten:true` ⇒ always review_required (no silent-wrong on a hand-filled cert). The reader prompt is built from `spec.fields`, so the new fields are now actually extracted. `vision_anchor` → `spouse_1_surname`.

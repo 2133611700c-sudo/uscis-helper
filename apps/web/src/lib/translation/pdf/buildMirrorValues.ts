@@ -67,7 +67,29 @@ const ALIASES: Record<string, Record<string, string>> = {
     certificate_series_number: 'series_number',
   },
   ua_divorce_certificate: {
-    // date_of_divorce / act_record_number / issuing_authority match directly
+    // spouse_1 = former husband (groom), spouse_2 = former wife (bride).
+    spouse_1_surname: 'groom_surname',
+    spouse_1_given_name: 'groom_given_name',
+    spouse_1_patronymic: 'groom_patronymic',
+    spouse_1_surname_after: 'groom_surname_after',
+    spouse_2_surname: 'bride_surname',
+    spouse_2_given_name: 'bride_given_name',
+    spouse_2_patronymic: 'bride_patronymic',
+    spouse_2_surname_after: 'bride_surname_after',
+    date_of_divorce: 'date_of_dissolution',
+    issuing_authority: 'place_of_registration',
+    certificate_series_number: 'series_number',
+  },
+  ua_death_certificate: {
+    // deceased_* / date_of_birth / date_of_death / place_of_death / act_record_*
+    // match the schema keys directly.
+    issuing_authority: 'place_of_registration',
+    certificate_series_number: 'series_number',
+  },
+  ua_name_change_certificate: {
+    // previous_* / new_* / date_of_birth / act_record_* match directly.
+    issuing_authority: 'place_of_registration',
+    certificate_series_number: 'series_number',
   },
 }
 
