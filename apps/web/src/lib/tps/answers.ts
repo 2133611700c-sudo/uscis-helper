@@ -199,6 +199,22 @@ export interface TPSAnswers {
   _signature_name?: string           // e.g. "JOHN DOE" for /s/ format
   _signature_date?: string           // MM/DD/YYYY
   _signature_image_base64?: string   // PNG from SignaturePad (future: overlay)
+
+  // ── Canonical continuity linkage ────────────────────────────────────────────
+  /**
+   * UUID of the canonical_documents row created during OCR extract.
+   * Passed through the wizard → generate-packet so the packet route can load
+   * the persisted canonical result instead of reconstructing from DTO.
+   *
+   * The extract route persists the canonical document (shadow) and, when that
+   * persist succeeds, returns its id. The wizard captures it for the PRIMARY
+   * identity document (passport → booklet → any slot that returned one) and
+   * resends it here so generation can be tied back to the same canonical read.
+   * OPTIONAL: absent when CANONICAL_CONTINUITY_MODE=off or persist failed in
+   * shadow mode — never fabricate an id. Enforce-mode enforcement lives server-side.
+   * Naming: no _-prefix despite being a system field; it is load-bearing for routing.
+   */
+  canonical_document_id?: string
 }
 
 /**
