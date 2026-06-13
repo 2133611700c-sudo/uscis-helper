@@ -33,9 +33,9 @@ describe('buildMirrorValues — registry keys → schema keys', () => {
     const v = buildMirrorValues(schema, [
       { field: 'child_family_name', final_value: 'Kovalenko', review_required: false },
       { field: 'dob', normalized_value: '2010-05-15', review_required: false },
-      // REAL extractor key is `city_of_birth` (documentContracts birth slot), NOT
-      // `place_of_birth_city`. Production sends city_of_birth → place_of_birth.
-      { field: 'city_of_birth', normalized_value: 'Vinnytsia', review_required: true },
+      // LIVE translation path (documentRegistry) emits `place_of_birth_city`;
+      // TPS path emits `city_of_birth`. Both alias → place_of_birth.
+      { field: 'place_of_birth_city', normalized_value: 'Vinnytsia', review_required: true },
       { field: 'certificate_series_number', normalized_value: 'I-АМ № 428069', review_required: false },
     ])
     expect(v.child_surname).toEqual({ value: 'Kovalenko', review: false, canRead: true })

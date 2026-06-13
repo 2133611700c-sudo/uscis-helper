@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | HOTFIX: birth mirror place-of-birth regression (wrong extraction contract)
+- 9fd4abc fixed the birth alias against `documentContracts.ts` (the TPS OCR contract, emits `city_of_birth`). But the LIVE TRANSLATION path keys fields by `documentRegistry.ts` (`documentFieldReader.ts:86` drops any key not in the spec), and the birth registry entry emits `place_of_birth_city` (documentRegistry.ts:70). So replacing the `place_of_birth_city→place_of_birth` alias with `city_of_birth` made the live mirror's Place-of-birth render blank `[enter from document]`.
+- Fix (`buildMirrorValues.ts`): alias BOTH `place_of_birth_city` AND `city_of_birth` → `place_of_birth` so the mirror fills regardless of which contract fed it (translation vs TPS).
+- Tests: `mirrorEndToEnd`/`mirrorTranslation` updated to use the LIVE key `place_of_birth_city` + a regression that asserts BOTH contract keys map.
+- Architecture audit (3 parallel agents) documented the real extraction path (documentRegistry, not the dead *.module.ts files) + the marriage/divorce composite-name + death/name-change missing-registry + mixed-script + dedup gaps — staged for the next commits.
+- Evidence: tsc 0, mirror tests pass.
+
 ## 2026-06-12 | MIRROR translation LIVE for birth certificate (2nd keystone)
 - The "second big area" the owner repeatedly flagged ("структура не формирует готовый документ… зеркальный перевод шаблоны не сформировали"). Inventory found the mirror infra was 90% built-but-dark (schemas live, generic renderer ready, route gate ready) behind `MIRROR_PDF_ENABLED` (OFF) + 2 alias bugs.
 - **Alias fix** (`buildMirrorValues.ts`): extractor emits `city_of_birth` + `certificate_series_number` (verified in `documentContracts.ts` birth_certificate slot), but the mirror map expected `place_of_birth_city` + `series_number` → Place-of-birth and Series silently rendered `[enter from document]` even when read. Mapped the REAL keys.
