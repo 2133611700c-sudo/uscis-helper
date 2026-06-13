@@ -31,7 +31,10 @@ ALTER TABLE public.canonical_documents
 COMMENT ON CONSTRAINT canonical_documents_session_doc_hash_unique ON public.canonical_documents IS
   'Enables idempotent upsert: same session + doc_type + fields_hash always returns the same row id. '
   'Different content produces a different fields_hash and thus a new row. '
-  'Used by persistCanonicalDocument ON CONFLICT DO UPDATE to safely handle retries.';
+  'Used by persistCanonicalDocument: ON CONFLICT (session_id, doc_type, fields_hash) DO UPDATE '
+  're-writes the content columns to their identical incoming values (product, document_session_id, '
+  'fields_json, result_hash) so RETURNING yields the existing row id. There is no updated_at column '
+  'on canonical_documents; the upsert performs no timestamp mutation.';
 
 -- ============================================================================
 -- 3. Atomic override append RPC
