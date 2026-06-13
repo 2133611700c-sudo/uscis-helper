@@ -26,7 +26,8 @@
 
 import { createHash } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
-import type { CanonicalDocumentResult, CanonicalField } from '../types'
+import type { CanonicalDocumentResult, CanonicalField, FieldEvidence } from '../types'
+import { CANONICAL_SCHEMA_VERSION, FIELDS_HASH_SCHEMA_VERSION } from '../version'
 import { CanonicalConcurrencyError } from './errors'
 
 // ---------------------------------------------------------------------------
@@ -105,25 +106,63 @@ export function computeResultHash(result: CanonicalDocumentResult): string {
 // ---------------------------------------------------------------------------
 
 /**
- * fields_hash: covers value integrity per the DESIGN_LOCK spec.
- * Input per field: { key, finalValue, reviewRequired, confidenceFinal, reviewReasons sorted }
+ * Deterministically serialize one evidence candidate. Stable key order, no unstable fields.
+ */
+function serializeEvidence(e: FieldEvidence): string {
+  // Fixed key order; sha256 over a canonical tuple. value/source/confidence/provider all bound.
+  return JSON.stringify([e.value, e.source, e.confidence, e.provider])
+}
+
+/**
+ * fields_hash (v2 — versioned, provenance-covering): the authoritative base-integrity hash.
  *
- * Critical: finalValue=undefined is stored as sentinel '__UNDEFINED__' so it hashes
- * differently from finalValue=null (C3 hard reject). This proves INV-11 in hash space.
+ * SECURITY: this hash MUST change if ANY security-relevant content is tampered. v1 covered
+ * only finalValue + confidence + review state and therefore did NOT protect provenance
+ * (source, rawValue, normalizedValue, evidence, knowledge*). v2 binds the full field shape
+ * plus document-level identity (docType, product, schemaVersion).
+ *
+ * Determinism guarantees:
+ *   - fields sorted by key (localeCompare); evidence sorted by its canonical serialization
+ *   - explicit object-key ordering (we build arrays/tuples, not relying on JS key order)
+ *   - finalValue: undefined→sentinel, null→null, string→string (three distinct hashes — INV-11)
+ *   - NO timestamps, DB ids, or unstable array order enter the input
+ *   - the hash schema version is embedded so a v1 hash can never be re-read as v2
+ *
+ * Returns the hex digest. Pair with FIELDS_HASH_SCHEMA_VERSION when persisting.
  */
 export function computeFieldsHash(result: CanonicalDocumentResult): string {
-  const payload = result.fields
+  const fields = result.fields
     .slice()
     .sort((a, b) => a.key.localeCompare(b.key))
     .map((f) => ({
       key: f.key,
+      rawValue: f.rawValue ?? null,
+      normalizedValue: f.normalizedValue ?? null,
       // Sentinel: undefined ≠ null in hash input (they must produce different hashes)
       finalValue:
         f.finalValue === undefined ? FINAL_VALUE_UNDEFINED_SENTINEL : f.finalValue,
-      reviewRequired: f.reviewRequired,
+      source: f.source,
+      criticality: f.criticality,
       confidenceFinal: f.confidence.final,
+      reviewRequired: f.reviewRequired,
       reviewReasons: f.reviewReasons.slice().sort(),
+      // evidence: deterministically serialized + sorted so order is stable & tamper-evident
+      evidence: f.evidence
+        .map(serializeEvidence)
+        .slice()
+        .sort(),
+      knowledgeRule: f.knowledgeRule ?? null,
+      knowledgeProvenance: f.knowledgeProvenance ?? null,
     }))
+
+  // Versioned envelope: doc-level identity + schema versions bound into the hash input.
+  const payload = {
+    hashSchemaVersion: FIELDS_HASH_SCHEMA_VERSION,
+    canonicalSchemaVersion: CANONICAL_SCHEMA_VERSION,
+    docType: result.docType,
+    product: result.product,
+    fields,
+  }
   return sha256(JSON.stringify(payload))
 }
 
@@ -307,9 +346,15 @@ function rowToOverride(row: Record<string, unknown>): CanonicalOverride {
 /**
  * Idempotently persist a CanonicalDocumentResult into canonical_documents.
  *
- * Uses ON CONFLICT (session_id, doc_type, fields_hash) DO UPDATE SET updated_at = now()
- * so concurrent retries with identical content always return the same row id.
- * Different content (different fields_hash) → new row.
+ * Idempotency key is PRODUCT-SCOPED: (session_id, product, doc_type, fields_hash).
+ * session_id is reused across products (tps/translation/reparole/ead/bureau_pdf); without
+ * product in the key, one product's persist would collide with another's that shares
+ * session+doc_type+fields_hash (proven live: a 'translation' persist overwrote a 'tps' row).
+ *
+ * The base row is IMMUTABLE (DB triggers reject UPDATE/DELETE). We therefore use
+ * INSERT ... ON CONFLICT DO NOTHING and re-SELECT the existing row on conflict — never an
+ * UPDATE (which the immutability trigger would reject). Identical retries → same row id.
+ * Different content → different fields_hash → new row.
  *
  * Returns the row id and both hashes. Safe to call multiple times with the same input.
  */
@@ -326,6 +371,9 @@ export async function persistCanonicalDocument(
       `fields=${result.fields.length} session=${sessionId}`
   )
 
+  // INSERT ... ON CONFLICT DO NOTHING. On conflict, data is empty (no row returned) because
+  // the immutable base must NOT be UPDATEd. We then re-select the existing row by the
+  // product-scoped idempotency key.
   const { data, error } = await supabase
     .from('canonical_documents')
     .upsert(
@@ -337,27 +385,46 @@ export async function persistCanonicalDocument(
         fields_json: fieldsToJson(result.fields),
         result_hash: resultHash,
         fields_hash: fieldsHash,
+        fields_hash_schema_version: FIELDS_HASH_SCHEMA_VERSION,
       },
       {
-        onConflict: 'session_id,doc_type,fields_hash',
-        ignoreDuplicates: false, // DO UPDATE (not DO NOTHING) so RETURNING works
+        onConflict: 'session_id,product,doc_type,fields_hash',
+        ignoreDuplicates: true, // DO NOTHING — base is immutable, never UPDATE
       }
     )
     .select('id, fields_hash, result_hash')
-    .single()
+    .maybeSingle()
 
-  if (error || !data) {
+  if (error) {
+    throw new Error(`[canonical/persistence] insert failed: ${error.message}`)
+  }
+
+  if (data) {
+    const row = data as { id: string; fields_hash: string; result_hash: string }
+    console.info(
+      `[canonical/persistence] persisted id=${row.id} resultHash=${row.result_hash.slice(0, 8)}…`
+    )
+    return { id: row.id, resultHash: row.result_hash, fieldsHash: row.fields_hash }
+  }
+
+  // Conflict path (row already existed): re-select by the product-scoped idempotency key.
+  const { data: existing, error: selErr } = await supabase
+    .from('canonical_documents')
+    .select('id, fields_hash, result_hash')
+    .eq('session_id', sessionId)
+    .eq('product', result.product)
+    .eq('doc_type', result.docType)
+    .eq('fields_hash', fieldsHash)
+    .maybeSingle()
+
+  if (selErr || !existing) {
     throw new Error(
-      `[canonical/persistence] upsert failed: ${error?.message ?? 'no data returned'}`
+      `[canonical/persistence] idempotent re-select failed: ${selErr?.message ?? 'no row found after conflict'}`
     )
   }
 
-  const row = data as { id: string; fields_hash: string; result_hash: string }
-  console.info(
-    `[canonical/persistence] persisted id=${row.id} ` +
-      `resultHash=${row.result_hash.slice(0, 8)}…`
-  )
-
+  const row = existing as { id: string; fields_hash: string; result_hash: string }
+  console.info(`[canonical/persistence] idempotent hit id=${row.id}`)
   return { id: row.id, resultHash: row.result_hash, fieldsHash: row.fields_hash }
 }
 
@@ -587,7 +654,7 @@ export async function verifyCanonicalHash(
 
   const { data, error } = await supabase
     .from('canonical_documents')
-    .select('fields_json, fields_hash, result_hash, doc_type, product')
+    .select('fields_json, fields_hash, result_hash, doc_type, product, fields_hash_schema_version')
     .eq('id', canonicalId)
     .maybeSingle()
 
@@ -595,6 +662,17 @@ export async function verifyCanonicalHash(
     return {
       valid: false,
       mismatch: `row not found or query error: ${error?.message ?? 'no data'}`,
+    }
+  }
+
+  // Forward-safe version gate: never reinterpret a non-v2 hash with the v2 algorithm.
+  const storedVersion =
+    ((data as Record<string, unknown>).fields_hash_schema_version as number | null) ??
+    FIELDS_HASH_SCHEMA_VERSION
+  if (storedVersion !== FIELDS_HASH_SCHEMA_VERSION) {
+    return {
+      valid: false,
+      mismatch: `hash schema version mismatch: stored=${storedVersion} verifier=${FIELDS_HASH_SCHEMA_VERSION}`,
     }
   }
 
