@@ -68,6 +68,15 @@ export interface ReParoleAnswers {
   // ── Application type marker (Re-Parole specific) ────────────────────────
   /** Filing method drives Part 1 checkbox + filing instructions. */
   filing_method: 'mail' | 'online' | 'unsure'
+
+  // ── Canonical continuity linkage ─────────────────────────────────────────
+  /**
+   * UUID of the canonical_documents row created during OCR extract.
+   * Passed through the wizard → generate-packet so the packet route can load
+   * the persisted canonical result instead of reconstructing from DTO.
+   * Optional: absent when CANONICAL_CONTINUITY_MODE=off or persist failed in shadow mode.
+   */
+  canonical_document_id?: string
 }
 
 /**

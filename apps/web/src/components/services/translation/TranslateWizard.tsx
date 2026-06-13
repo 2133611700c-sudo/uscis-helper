@@ -91,6 +91,11 @@ interface DraftState {
   screen: Screen
   selectedDocType: DocTypeChoice | null
   extractedFields: ExtractedField[]
+  // CANONICAL_CONTINUITY: the canonical_document_id returned by vision-extract for
+  // THIS upload, carried across the Stripe round-trip so generate-pdf (which runs
+  // on the post-payment success screen) can resend it. null when extract did not
+  // persist a canonical (shadow persist failure or continuity=off) — never fabricated.
+  canonicalDocumentId?: string | null
   // file is intentionally NOT persisted (cannot serialize a Blob)
 }
 
@@ -938,6 +943,11 @@ export function TranslateWizard() {
   const [dataReviewed, setDataReviewed] = useState(false)
   const [accuracyAttested, setAccuracyAttested] = useState(false)
   const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([])
+  // CANONICAL_CONTINUITY: id of the persisted canonical document for the PRIMARY
+  // uploaded document, captured from the vision-extract response and resent in the
+  // generate-pdf body. null when extract returned no id (shadow persist failure or
+  // continuity=off) — we send nothing rather than fabricate/stale an id.
+  const [canonicalDocumentId, setCanonicalDocumentId] = useState<string | null>(null)
   const [extractionError, setExtractionError] = useState<string | null>(null)
   // Phase 2.1a: true when we called vision-extract for a hard-case doc (autoread=true)
   // AND the API returned >0 fields. In that state the review gate is enforced even though
@@ -974,6 +984,11 @@ export function TranslateWizard() {
       // still has them after payment. Screen is set by the ?paid=1 handler below.
       if (draft.selectedDocType) setSelectedDocType(draft.selectedDocType)
       if (Array.isArray(draft.extractedFields)) setExtractedFields(draft.extractedFields)
+      // CANONICAL_CONTINUITY: restore the captured id so the post-payment
+      // generate-pdf call can resend it. Only accept a string — never fabricate.
+      if (typeof draft.canonicalDocumentId === 'string' && draft.canonicalDocumentId.length > 0) {
+        setCanonicalDocumentId(draft.canonicalDocumentId)
+      }
     } catch { /* ignore */ }
   }, [])
 
@@ -1066,10 +1081,10 @@ export function TranslateWizard() {
 
   const saveDraft = useCallback(() => {
     try {
-      const draft: DraftState = { screen, selectedDocType, extractedFields }
+      const draft: DraftState = { screen, selectedDocType, extractedFields, canonicalDocumentId }
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
     } catch { /* */ }
-  }, [screen, selectedDocType, extractedFields])
+  }, [screen, selectedDocType, extractedFields, canonicalDocumentId])
 
   // ── File handling (multi-page) ──
   // Append-mode: every drop/pick adds pages to the existing list (capped at
@@ -1145,6 +1160,8 @@ export function TranslateWizard() {
     goTo(4)
     setExtractionError(null)
     setExtractedFields([])
+    // CANONICAL_CONTINUITY: clear any id from a previous upload before this read.
+    setCanonicalDocumentId(null)
 
     // Tick visible steps while the network call is in flight. Multi-page
     // calls take longer (≈ 2-3 s per page) so we stretch the ticker.
@@ -1199,7 +1216,7 @@ export function TranslateWizard() {
       const res = await fetch('/api/translation/vision-extract', { method: 'POST', body: form })
       tickers.forEach(clearTimeout)
       setProcStep(5)
-      const json = await res.json().catch(() => ({} as { ok?: boolean; fields?: ExtractedField[]; error?: string; status?: string }))
+      const json = await res.json().catch(() => ({} as { ok?: boolean; fields?: ExtractedField[]; error?: string; status?: string; canonical_document_id?: string | null }))
       if (!res.ok || !json?.ok) {
         // A photo-quality bounce (too small / blurry / needs reshoot) is FIXABLE —
         // send the user back to upload with a clear "retake" notice instead of
@@ -1230,6 +1247,14 @@ export function TranslateWizard() {
             .filter((f) => f.value || (f as any).review_required)
         : []
       setExtractedFields(fields)
+      // CANONICAL_CONTINUITY (CAPTURE): store the canonical_document_id the server
+      // persisted for this read. Only a string is accepted — null/absent (shadow
+      // persist failure or continuity=off) stores null so RESEND sends nothing.
+      // This id belongs to the PRIMARY document of this upload: vision-extract was
+      // invoked with a single docTypeId over all pages and returns ONE canonical
+      // result, so there is exactly one id to carry.
+      const capturedId = (json as { canonical_document_id?: string | null }).canonical_document_id
+      setCanonicalDocumentId(typeof capturedId === 'string' && capturedId.length > 0 ? capturedId : null)
       // Phase 2.1a: if we called vision-extract for a hard-case doc (autoread=true,
       // auto=false) AND got back >0 fields → enforce the review gate.
       // 0 fields → treat as manual (no gate; specialist handles it).
@@ -1476,6 +1501,11 @@ export function TranslateWizard() {
           doc_type: DOC_TYPES.find((d) => d.id === selectedDocType)?.registryId ?? 'other',
           scope_title: CERT_TITLES_EN[selectedDocType ?? 'other'],
           fields: fieldsForPdf,
+          // CANONICAL_CONTINUITY (RESEND): link this PDF to the canonical document
+          // persisted at extract time. Spread so the key is OMITTED when no id was
+          // captured (shadow persist failure / continuity=off) — stays optional, a
+          // wrong/stale id is worse than none. Enforce-mode validation is server-side.
+          ...(canonicalDocumentId ? { canonical_document_id: canonicalDocumentId } : {}),
         }),
       })
       if (res.ok) {

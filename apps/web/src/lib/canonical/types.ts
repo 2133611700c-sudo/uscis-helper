@@ -109,6 +109,12 @@ export interface CanonicalField {
   knowledgeProvenance?: string
 }
 
+/**
+ * Semantic version of the CanonicalField type schema.
+ * Re-exported from version.ts for convenience; version.ts is the single source.
+ */
+export { CANONICAL_SCHEMA_VERSION } from './version'
+
 /** The product surfaces a canonical result can feed. */
 export type CanonicalProduct = 'tps' | 'translation' | 'reparole' | 'ead' | 'bureau_pdf'
 

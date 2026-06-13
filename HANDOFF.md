@@ -1,3 +1,265 @@
+# HANDOFF (2026-06-13 — HTTP-contract fix: not-found canonical → 404 not 503/409 in enforce, found by preview-enforce smoke)
+
+DONE (this session):
+- Fixed the real HTTP-contract defect preview-enforce smoke surfaced: a non-existent `canonical_document_id` returned 503 (translation/generate-pdf + translation/render) or 409 (tps/reparole/ead generate-packet) instead of 404 CANONICAL_NOT_FOUND in enforce mode.
+- `resolveCanonicalDocument()` (`lib/canonical/persistence/index.ts`): now RETURNS null on base not-found (was: threw) so the route's existing `if(!sourceCanonical){404}` branch is live; still THROWS only on a genuine Supabase/DB error → 503. Return type changed to `Promise<CanonicalDocumentResult | null>`.
+- `verifyCanonicalHash()`: now returns `{valid:false, notFound:true}` for a missing row and THROWS on a real query error (was: collapsed both into `{valid:false, mismatch}` → 409). Return type extended with `notFound?: boolean`.
+- The 3 packet routes (tps/reparole/ead generate-packet): check `hashCheck.notFound → 404` BEFORE the 409 hash-mismatch branch; a hash-verify throw now → 503 in enforce (was: silently downgraded to 409). Shadow paths log and fall through to legacy unchanged.
+- Translation routes (generate-pdf, render): NO route edit needed — their `if(!sourceCanonical){404}` branch was already correct; the persistence-layer null fix makes it reachable.
+- Tests: added `lib/canonical/persistence/__tests__/canonicalNotFoundContract.test.ts` (21 tests) — drives the REAL resolve/verify fns with a configurable Supabase mock (not-found vs infra) and asserts per-route mapping for all 5 routes (404 not-found, 503 infra, 409 genuine mismatch preserved). Added null-guards (`resolved!`/`expect().not.toBeNull()`) to 3 pre-existing persistence tests after the return-type change.
+- GATE: tsc 0 errors; tests 3663 pass / 24 skip / 0 fail (+21 vs prior 3642 baseline).
+
+CALLERS needing special handling: none beyond the 3 packet routes (hash-first ordering) + 3 persistence test null-guards. `/api/canonical/[id]/override` uses `loadCanonicalDocumentById` (already null on not-found) — unaffected.
+
+NEXT:
+1. Owner: re-run preview enforce-smoke against a preview deploy — assert bogus UUID now yields 404 (not 503/409) on all 5 routes.
+2. Owner: review PR, merge to main, then enable enforce in prod.
+
+NOT merged to main, no Vercel/env change, not deployed. Pushed to `architecture/canonical-continuity` only.
+
+---
+
+# HANDOFF (2026-06-13 — Wave 1b INTEGRATION coordinator: client canonical_document_id carriage WIRED for all 4 products, gate green, preview-enforce GO)
+
+DONE (Wave 1b integration session):
+- Cherry-picked 4 per-product carriage commits onto `architecture/canonical-continuity` (base `4f8aee70`), order TPS → ReParole → EAD → Translation. SHAs: 1ffb535 / 9791316 / dfe872a / fb5971c → re-committed as 87096f3 / bfcd603 / 0d1da0b / 9e85506.
+- ONE conflict: `apps/web/src/lib/tps/answers.ts` — both base and the TPS pick documented the SAME `canonical_document_id?: string` field. Resolved SEMANTICALLY: merged both doc-comments into one, field declared once, no product field dropped. No global ours/theirs.
+- Files touched are otherwise DISTINCT per product (separate extract routes + wizards + per-product test files) — no other conflicts.
+- This is the layer the prior Wave 1 NO-GO flagged as UNBUILT (`client_id_carriage_proven=false`). Prior 'COMPLETE / all 4 wired' was SERVER-ONLY. Honest correction: client capture+resend was missing; it is now built for all 4.
+- SERVER EMIT added: ReParole + EAD extract routes persist canonical (shadow/enforce) and return `canonical_document_id` (null on shadow failure — never fabricated; 503 on enforce failure). TPS + Translation already emitted in base.
+- CLIENT CARRIAGE: TPS (canonicalCarriage.ts), ReParole (localStorage-persisted across Stripe), EAD (useState), Translation (sessionStorage-persisted across Stripe). All capture only a real string from the extract RESPONSE, store null otherwise, resend via conditional spread (OMIT when absent). canonical_document_id stays OPTIONAL everywhere — shadow works without it.
+- GATE: tsc 0 errors; tests 3642 pass / 24 skip / 0 fail (+45 vs 3597 baseline; skips pre-existing, none in carriage tests); build PASS; PII gate CLEAN.
+- Static end-to-end carriage proven for ALL 4: capture + resend in each wizard, id emitted by each extract route. carriage_all_4_products = true.
+
+DECISION — preview ENFORCE: **GO**. carriage proven + tsc 0 + build + PII clean + no required skipped tests. Server-side enforce already exists; flipping CANONICAL_CONTINUITY_MODE=enforce in PREVIEW is now safe to smoke.
+
+NEXT:
+1. Owner: run preview enforce-smoke (`scripts/smoke-enforce-preview.ts`) against a preview deploy with CANONICAL_CONTINUITY_MODE=enforce; assert real-user happy path carries an id end-to-end (no 422/409 on legitimate flows).
+2. Owner: review PR, merge to main, then enable enforce in prod.
+
+NOT merged to main, no Vercel/env change, not deployed. Pushed to `architecture/canonical-continuity` only.
+
+---
+
+# HANDOFF (2026-06-13 — Wave 1 INTEGRATION coordinator: Agent 1 merged, gate green, preview-enforce NO-GO)
+
+DONE (integration session):
+- Cherry-picked Agent 1 `066ab1f` onto `architecture/canonical-continuity` (base `69717fe`) — clean, no conflicts. Migrations `20260613000004`/`000005` retain distinct in-order timestamps; no duplicate migration version.
+- Agent 2 (`BLOCKED_CLIENT_ID_CARRIAGE`) had NO mergeable commit: its worktree HEAD `1919b543` is an unrelated Phase 1/2B forms commit and the integration base is NOT its ancestor. Nothing to integrate. Agent 2's "override route absent" finding is stale — the route exists on the integration branch (base `69717fe`).
+- Re-proved the DB hardening LIVE (postgres path, synthetic WAVE1_TEST* rows, cleaned up via guarded `canonical_admin_cleanup_sentinel`): UPDATE/DELETE base both REJECTED P0001; 4 triggers; product-scoped UNIQUE present + old constraint dropped; hash-version column present; anon/authenticated grants = 0; 0 leftovers.
+- GATE: tsc 0; tests 3597 pass / 24 skip / 0 fail; build PASS (override route ƒ registered); PII gate CLEAN.
+
+DECISION — preview ENFORCE (Wave 2): **NO-GO**. `client_id_carriage_proven=false` is an automatic NO-GO. The canonical_document_id emit + extraction-persistence + id-carriage + enforce-by-id contract is UNBUILT across all 4 products. Enforcing today 422/409s every real user.
+
+NEXT (Wave 2, before any enforce flip):
+1. Build the server emit: each of the 4 extract routes (tps/ocr/extract, reparole/ocr/extract, ead/ocr/extract, translation/vision-extract) must persist a canonical record and RETURN { canonical_document_id, fields_hash, session linkage }.
+2. Wire each client wizard to capture canonical_document_id on extract and resend it on generate-packet / generate-pdf / render.
+3. Implement the canonical-by-id off/shadow/enforce mode and the 7-field certification (canonical_document_id, base/resolved/override-set hashes, override_version, canonical_schema_version, renderer_version).
+4. Only then re-run the go/no-go. DB layer is ready and proven.
+
+NOT merged to main, no Vercel/env change, not deployed.
+
+---
+
+# HANDOFF (2026-06-13 — Wave 1 Agent 1: canonical DB hardening, LIVE-proven)
+
+> **Final DB/concurrency/hash/security audit of canonical persistence + overrides, proven against the LIVE Supabase DB (project rtfxrlountkoegsseukx) through the service-role/postgres path — not migration text. Found 4 real gaps, fixed all with forward migrations + code, re-proved on live DB.**
+
+DONE (this session):
+- IMMUTABILITY (was RLS-only, broken for service_role): live probe proved UPDATE base + UPDATE/DELETE override SUCCEEDED. Added 4 BEFORE UPDATE/DELETE triggers + guard functions (CANONICAL_BASE_IMMUTABLE / CANONICAL_OVERRIDES_APPEND_ONLY). Re-probe: all 4 REJECTED (P0001) even as postgres. Added guarded `canonical_admin_cleanup_sentinel(text)` (service_role-only, WAVE1_TEST* prefix only) so synthetic rows can be removed despite triggers.
+- IDEMPOTENCY (cross-product collision): live probe proved a 'translation' persist OVERWROTE a 'tps' row under UNIQUE(session_id,doc_type,fields_hash). Dropped it, added product-scoped UNIQUE(session_id,product,doc_type,fields_hash). `persistCanonicalDocument` now INSERT…ON CONFLICT DO NOTHING + re-select (never UPDATE, base is immutable). Re-probe: distinct products kept, retry same id.
+- HASH INTEGRITY (provenance unprotected): fields_hash v1 covered only finalValue+confidence+review. Rewrote to versioned v2 (FIELDS_HASH_SCHEMA_VERSION=2) covering full field shape (rawValue/normalizedValue/source/criticality/evidence/knowledge*) + doc identity (docType/product/schemaVersion). Persisted `fields_hash_schema_version` column; `verifyCanonicalHash` version-gates (refuses to read a non-v2 hash with the v2 algo). Unit tests flipped Test 6 from "rawValue excluded" to tamper-evident; added source/evidence/normalized/knowledge/identity tamper tests + evidence-order-stability test.
+- ATOMIC RPC: confirmed correct on live DB. Upgraded advisory lock 32-bit hashtext → single-key 64-bit bigint hashtextextended (collision-safe; ALSO fixes an int4-overflow that the live JS test caught). search_path hardened to `public, pg_temp`.
+- GRANTS: anon/authenticated had FULL default table grants on both tables (writes blocked only by RLS). REVOKEd ALL from anon+authenticated (service_role retained). Both functions: EXECUTE revoked PUBLIC/anon/authenticated, granted service_role only — live-tested anon/authenticated calls DENIED.
+- MIGRATIONS: `20260613000004_canonical_immutability_triggers_and_product_idempotency.sql`, `20260613000005_canonical_revoke_anon_grants_and_hash_version.sql` (both applied live; bigint-lock fix folded into 000004 and also applied as a separate idempotent live entry). Made ADD CONSTRAINT replay-safe (guarded by pg_constraint check) so `db push` is harmless.
+- TESTS: live `canonicalDbInvariants.live.test.ts` (6/6 PASS via real service-role JS client, RUN_DB_INVARIANTS=1). Full suite 3597 pass / 24 skip. tsc 0 errors. 0 synthetic leftovers.
+
+NOT DONE / NEXT:
+- NOT merged, NOT deployed, no Vercel env changed (Wave 1 = code+DB+proof only).
+- MIGRATION LEDGER caveat: live `supabase_migrations.schema_migrations` records canonical migrations under MCP-generated version timestamps; local filename prefixes differ (pre-existing on this branch). One applied-only ledger entry `20260613194627_..._idempotent` has no local file (benign intermediate; its UNIQUE was superseded). My migrations are idempotent so replay is safe, but the team should reconcile ledger naming before relying on `supabase db push` for these.
+- Owner-side remaining: review PR, enforce-mode flip, prod cutover.
+
+---
+
+# HANDOFF (2026-06-13 — Override-route agent: missing HTTP override route added + gated + pushed)
+
+> **The HTTP override route was MISSING — `appendCanonicalOverride` had no HTTP caller, leaving the override write-path unreachable end-to-end. It is now wired, gated, and pushed (NOT merged, enforce NOT enabled).**
+
+DONE (this session):
+- ADDED `apps/web/src/app/api/canonical/[id]/override/route.ts` (POST + GET). Strict 422 for all client errors; 404/403/409/503 mapped correctly; 503 only on infra-catch. PII-safe (never logs `override_value`). INV-11: `override_value:null` is legal and passed through.
+- ADDED `overrideRoute.test.ts` (11 tests pass, persistence mocked, PII-free fixtures).
+- WIRED `scripts/smoke-enforce-preview.ts` `overrideChecks()`; comment-only fix on migration `20260613000002`.
+- GATE: tsc 0 errors; tests 3591 pass (>= 3580 floor); build PASS (route registered `ƒ /api/canonical/[id]/override`).
+
+NOT DONE (intentionally owner-side):
+- Preview enforce-smoke (O1/O2/O3 mutation flow needs `SMOKE_CANONICAL_ID`), owner GO, merge of PR #117, prod enforce cutover.
+
+NEXT TASK: owner runs preview enforce-smoke per `docs/reports/ENFORCE_SMOKE_RUNBOOK.md`, then decides merge + prod enforce.
+
+---
+
+# HANDOFF (2026-06-13 — Smoke-runbook agent: turnkey enforce-smoke script + owner runbook)
+
+> **Added a read-only HTTP enforce-smoke script + owner runbook for the PR #117 preview gate. Awaiting owner to set enforce on PREVIEW, redeploy, and run the smoke.**
+
+DONE (this session):
+- ADDED `scripts/smoke-enforce-preview.ts` (tsx, read-only HTTP, PII-free, exit 0/1). Proves the live enforce gate: 422 CANONICAL_ID_REQUIRED (missing id) + 404 CANONICAL_NOT_FOUND (bogus UUID) on translation/generate-pdf and translation/render. These two routes check the canonical pre-gate BEFORE payment/review → no DB write, no charge, no render, no email.
+- ADDED `docs/reports/ENFORCE_SMOKE_RUNBOOK.md` — owner steps A–I + exact rollback (CANONICAL_CONTINUITY_MODE=off → redeploy; no data deleted, INSERT-only tables) + Supabase monotonic-version & 7-field cert SQL.
+- DOCUMENTED HONEST GAPS (no invented endpoints): no HTTP override route on this branch → override 200/409 covered by `canonicalConcurrency.integration`; extract→UUID and generate-pdf 200+7-field cert are owner-manual.
+- VERIFIED: standalone `tsc --noEmit --strict` on script EXIT=0 (script is outside web tsconfig scope; uses only global fetch/process).
+
+OWNER NEXT (one command after preview enforce + redeploy):
+- `export PREVIEW_BASE_URL=https://uscis-helper-xxxx.vercel.app && pnpm tsx scripts/smoke-enforce-preview.ts`
+
+---
+
+# HANDOFF (2026-06-13 — Final gate agent: integration tests PASS, RPC bug fixed, PR #117 updated)
+
+> **All checks green. RPC call bug fixed (JSON.stringify removed). 6/6 concurrency integration tests PASS. Branch pushed. PR #117 body updated. Awaiting owner GO to merge.**
+
+DONE (this session):
+- BUG FIX: `appendCanonicalOverride` was passing `JSON.stringify(overridesPayload)` as `p_overrides` to the RPC, producing a text scalar that broke `jsonb_array_elements`. Fixed to pass the raw array — Supabase JS client serializes arrays to JSONB correctly.
+- VERIFIED: All 6 concurrency integration tests pass against real DB (project rtfxrlountkoegsseukx).
+- VERIFIED: Migration ledger — 5 remote entries under 20260613 prefix (3 original + 000002 + 000003 applied).
+- VERIFIED: UNIQUE constraints, atomic RPC (SECURITY DEFINER, service_role only), certification FK — all live.
+- VERIFIED: tsc 0 errors, build PASS, 3580 tests pass.
+- DONE: Branch pushed (`architecture/canonical-continuity`), PR #117 body updated.
+
+NOT DONE / owner next steps:
+- Owner GO to merge PR #117 to main.
+- Vercel: set CANONICAL_CONTINUITY_MODE=enforce on production → redeploy → smoke test.
+- CI integration test env vars (SUPABASE_SERVICE_ROLE_KEY) — not set in GitHub Actions; owner adds if desired.
+
+NEXT TASK: Owner reviews PR #117 → GO → merge → enforce mode → smoke.
+
+---
+# HANDOFF (2026-06-13 — Code hardening agent: 5 persistence defects fixed)
+
+> **5 defects fixed in canonical persistence layer. 2 new migrations written (NOT applied). 0 TypeScript errors. 3580 tests pass.**
+
+DONE (this session):
+- FIX A: Migration `20260613000002_canonical_atomicity_and_constraints.sql` — UNIQUE(canonical_id, version), UNIQUE(session_id, doc_type, fields_hash), `append_canonical_overrides_atomic()` RPC with advisory lock + optimistic concurrency, `next_canonical_override_version` hardened (SECURITY DEFINER SET search_path, revoked from PUBLIC/anon).
+- FIX B: Migration `20260613000003_certification_canonical_fk.sql` — FK `translation_certification_audit.canonical_document_id` → `canonical_documents(id)`, ON DELETE RESTRICT DEFERRABLE, orphan guard.
+- FIX C: `persistCanonicalDocument` → idempotent upsert ON CONFLICT (session_id, doc_type, fields_hash) DO UPDATE. Same hash → same id on retry.
+- FIX D: `appendCanonicalOverride` → delegates to `append_canonical_overrides_atomic` RPC. Throws `CanonicalConcurrencyError` on conflict. Returns new MAX(version).
+- FIX E: `listCanonicalOverrides` ORDER BY changed from `created_at ASC` → `version ASC`. `resolveCanonicalDocument` comment updated to match.
+- `CanonicalConcurrencyError` added to `errors.ts`.
+- Integration tests: `canonicalConcurrency.integration.test.ts` (6 tests, require real DB, skip when env not set).
+- Unit test mock updated: `upsert` + `rpc` supported. Tests 1 and 18 updated for new signatures.
+- TypeScript: 0 errors. Tests: 3580 pass.
+
+NOT done / owner decisions required:
+- Migrations NOT applied (owner must run `supabase db push` or apply via Supabase dashboard).
+- Integration tests require `SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY` — not run in CI by default.
+- Override API routes: caller should catch `CanonicalConcurrencyError` → return 409 (existing routes may still use raw `Error.code` check — audit needed).
+
+EXACT NEXT TASK:
+1. Owner applies migrations 000002 + 000003 to Supabase project `rtfxrlountkoegsseukx`.
+2. Run integration tests against real DB to validate atomicity contract.
+3. Audit override API routes to catch `CanonicalConcurrencyError` → 409.
+
+# HANDOFF (2026-06-13 — Migration ledger agent: duplicate canonical migration removed)
+> **Duplicate `20260613000001_canonical_documents_and_overrides.sql` removed. Version collision resolved. Branch clean.**
+>
+> DONE (this session):
+> - Confirmed both `20260613000000` and `20260613000001_canonical_documents_and_overrides.sql` were byte-for-byte identical (SHA256 ade9d82a...)
+> - Remote already handled collision via 3 applied versions: 20260613194557 (canonical tables), 20260613194613 (cert binding), 20260613194627 (idempotent no-op for the duplicate)
+> - `git rm` applied to the duplicate file only; cert binding file untouched
+> - CHANGELOG + HANDOFF + STATUS updated
+>
+> NOT DONE:
+> - DB migration still NOT applied to local Supabase CLI (remote is ahead — the 3 migrations were applied via Supabase MCP, not `supabase migrate`)
+> - `CANONICAL_CONTINUITY_MODE=shadow` remains default — enforce requires env var flip in Vercel
+> - Push to remote + Draft PR still needed
+>
+> NEXT TASK: push `architecture/canonical-continuity` and open Draft PR for owner review
+
+# HANDOFF (2026-06-13 — EAD wiring agent: EAD generate-packet wired to canonical continuity)
+> **All 4 products (TPS, Re-Parole, Translation, EAD) are now wired to canonical continuity. 3573 tests pass. 0 type errors. Build PASS.**
+>
+> DONE (this session):
+> - `/api/ead/generate-packet/route.ts` wired to canonical continuity pattern (identical to TPS)
+>   - enforce: 422 CANONICAL_ID_REQUIRED, 409 CANONICAL_HASH_MISMATCH/NOT_READY, 404 NOT_FOUND, 403 SESSION_MISMATCH, 503 STORAGE_UNAVAILABLE
+>   - shadow (default): fall through to legacy on error; PII-free logs (event keys only, no values)
+>   - off: skip canonical entirely
+> - `lib/ead/packetBuilder.ts` updated to accept `CanonicalDocumentResult | null`
+>   - Canonical path: `buildI765DocumentOps(documentCanonical)` — shared entry point
+>   - Legacy fallback: `buildEadI765Ops(data)` — allowed in off/shadow only (unreachable in enforce)
+>   - C3 null (INV-11): fields with `finalValue=null` produce no op, never rendered as blank
+> - 11 new tests in `apps/web/src/app/api/ead/__tests__/eadPacketCanonical.test.ts`
+> - CHANGELOG + HANDOFF + STATUS updated
+>
+> NOT DONE (deferred, owner decision):
+> - DB migration NOT applied (3 SQL files on branch, need owner approval + supabase migrate)
+> - `CANONICAL_CONTINUITY_MODE=shadow` is the default — enforce requires env var flip in Vercel
+> - Push to remote + Draft PR still needed
+>
+> NEXT TASK:
+> - `git push origin architecture/canonical-continuity` + open Draft PR against main
+> - Owner: review SQL migrations and apply to Supabase (owner-gated)
+> - Owner: flip `CANONICAL_CONTINUITY_MODE=enforce` after migration + smoke script validation
+>
+> EVIDENCE: tsc 0 errors. Tests 3573 pass / 18 skip / 0 fail (+14 from 3559 baseline).
+> Build: PASS. PII gate: PASS. Static enforce: 422 present, 503 only for infra.
+
+# HANDOFF (2026-06-13 — Integration: A1-A4 merged + render/route.ts canonical cutover complete)
+> **All 4 worktree commits integrated onto `architecture/canonical-continuity`. render/route.ts wired to canonical. 3559 tests pass. 0 type errors.**
+>
+> DONE (this session):
+> - Cherry-picked A1 (persistence layer, migration, 8 ops, INV-11 tests)
+> - A2 was empty — skipped
+> - Cherry-picked A3 (packet routes canonical wiring, 18 tests)
+> - Cherry-picked A4 (generate-pdf cutover, certification binding, smoke script)
+> - Fixed render/route.ts (STEP 6 — missed by A4): canonical continuity pattern applied
+>   - enforce: 422 CANONICAL_ID_REQUIRED, 404 NOT_FOUND, 409 NOT_READY, 503 UNAVAILABLE
+>   - shadow: PII-free comparison log (keys+counts only, no field values)
+>   - C3 null filtered from render (INV-11)
+>   - 7-field certification binding in audit_logs.metadata
+> - 8 new render canonical tests (translationRenderCanonical.test.ts)
+>
+> NOT DONE (deferred, owner decision):
+> - DB migration NOT applied (3 SQL files on branch, need owner approval + supabase migrate)
+> - `CANONICAL_CONTINUITY_MODE=shadow` is the default — enforce requires env var flip
+> - I-765 has 2 mapper files (i765DocumentBoundary in both lib/ead/ and lib/tps/) — not fully unified yet
+> - No EAD-specific generate-packet route found — only TPS + Re-Parole wired
+>
+> NEXT TASK:
+> - Owner: review SQL migrations and apply to Supabase (owner-gated)
+> - Owner: flip `CANONICAL_CONTINUITY_MODE=enforce` after migration + smoke script validation
+> - If I-765 unification needed: consolidate to single canonical mapper in lib/canonical/forms/
+>
+> EVIDENCE: tsc 0 errors. Tests 3559 pass / 18 skip / 0 fail.
+> Commit: see git log on architecture/canonical-continuity.
+
+# HANDOFF (2026-06-13 — Agent 4: canonical continuity translation cutover + certification hash binding)
+> **Translation generate-pdf wired to resolved canonical (shadow + enforce mode). Certification now binds all 7 hash fields per CERTIFICATION_REPRODUCIBILITY_CONTRACT. 22 new tests (3502 total, 0 regressions).**
+>
+> DONE:
+> - `generate-pdf/route.ts` cutover to `resolveCanonicalDocument` when `canonical_document_id` present
+> - C3 null safety: `.filter(fo.value !== null)` before ExtractedField conversion (INV-11)
+> - Certification 7-field hash binding in `auditRow`
+> - `version.ts` with `CANONICAL_SCHEMA_VERSION='1.0.0'` + `RENDERER_VERSION='1.0.0'`
+> - `computeOverrideSetHash` added to persistence module
+> - Persistence module (from Agent 1) copied to this worktree
+> - Migration files written (NOT applied): canonical_documents + certification columns
+> - 22 new tests: canonicalContinuityE2E (14) + translationCanonicalCutover (8)
+> - Smoke script: `scripts/smoke-canonical-continuity.ts`
+> - Audit: `docs/reports/CANONICAL_CONTINUITY_AUDIT_2026-06-13.md`
+>
+> NOT DONE (out of Agent 4 scope):
+> - Packet routes (TPS/Re-Parole/EAD) not wired to canonical
+> - `render/route.ts` (session-based) not wired to canonical
+> - DB migration not applied (requires owner)
+>
+> VERDICT: CONTINUITY_PARTIAL
+> BLOCKERS: BLOCKED_PACKET_ROUTES_NOT_WIRED, BLOCKED_RENDER_ROUTE_NOT_WIRED, BLOCKED_DB_NOT_APPLIED
+>
+> NEXT (after owner applies migration 20260613000000 + 20260613000001):
+> 1. Wire `render/route.ts` to load canonical by session_id + doc_type
+> 2. Wire TPS/Re-Parole/EAD packet routes
+> 3. Run parity tests with real docs to confirm zero regression
+> 4. Enable enforce mode only after parity confirmed
+
 # HANDOFF (2026-06-13 — FULL SYSTEM + DOCUMENT-CORE AUDIT; audit-only, no code change, nothing merged)
 > **AUDIT-ONLY.** Wrote one consolidated, evidence-only audit: `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — Part 1 (repo/PR/security/deploy), Part 2 (Document Core: brain/dictionary/arbitration/canonical/forms/runtime-trace), Part 3 (full system: 44 pages / 51 API routes / 1 middleware / 29 migrations / 38 live tables; DB+storage+auth+env+deploy+monitoring+flows+packets+archive+deps+dead-code+security+production). Added a read-first `0.` pointer to AGENTS.md and CLAUDE.md. NO application code touched. Verified live via Vercel + Supabase MCP + healthz: prod=`4d3e470` (main, Phase 2A); preview=`76c49e2` (PR #116, OPEN). 38 tables inventoried with row counts; `guard_block_events`/`certifier_override_audit`/`translation_certification_audit` = 0 rows ⇒ their flags OFF in prod. Tests re-run: tsc 0, field-by-field 46/46, cross-product parity 100 pass/1 skip, live EAD+I-94 gate 8/8 (0 fabrication). 
 > DID NOT: change code, refactor, merge, push, or create a PR. The audit doc + the AGENTS.md/CLAUDE.md pointers are the only artifacts.

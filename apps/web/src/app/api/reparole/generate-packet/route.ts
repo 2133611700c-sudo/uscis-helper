@@ -22,6 +22,13 @@ import JSZip from 'jszip'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { buildReParoleI131 } from '@/lib/reparole/packetBuilder'
 import type { ReParoleAnswers } from '@/lib/reparole/answers'
+// CANONICAL_CONTINUITY: packet route loads persisted canonical (shadow/enforce modes)
+import type { CanonicalDocumentResult } from '@/lib/canonical/types'
+import {
+  resolveCanonicalDocument,
+  verifyCanonicalHash,
+} from '@/lib/canonical/persistence'
+import { canonicalError } from '@/lib/canonical/persistence/errors'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -147,8 +154,101 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // ── CANONICAL_CONTINUITY: load resolved canonical if available ──────────────
+  const mode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+  const canonical_document_id = (answers as unknown as { canonical_document_id?: string }).canonical_document_id ?? null
+  // Remove from answers so it doesn't bleed into legacy processing
+  delete (answers as unknown as Record<string, unknown>).canonical_document_id
+
+  let documentCanonical: CanonicalDocumentResult | null = null
+
+  if (mode === 'enforce' && !canonical_document_id) {
+    return NextResponse.json(
+      canonicalError('CANONICAL_ID_REQUIRED', 'canonical_document_id required in enforce mode'),
+      { status: 422 },
+    )
+  }
+
+  if (canonical_document_id && mode !== 'off') {
+    // NOT-FOUND vs INFRA vs MISMATCH: notFound:true → 404, throw → 503, mismatch → 409.
+    // A missing id must NOT surface as a 409 hash mismatch or a 503.
+    let hashCheck: { valid: boolean; mismatch?: string; notFound?: boolean }
+    try {
+      hashCheck = await verifyCanonicalHash(canonical_document_id)
+    } catch {
+      if (mode === 'enforce') {
+        return NextResponse.json(
+          canonicalError('CANONICAL_STORAGE_UNAVAILABLE'),
+          { status: 503 },
+        )
+      }
+      console.warn('[canonical/continuity] reparole-generate canonical_hash_verify_failed_shadow', {
+        event: 'canonical_hash_verify_failed_shadow',
+        canonical_document_id,
+      })
+      hashCheck = { valid: false }
+    }
+
+    if (hashCheck.notFound) {
+      if (mode === 'enforce') {
+        return NextResponse.json(canonicalError('CANONICAL_NOT_FOUND'), { status: 404 })
+      }
+      console.warn('[canonical/continuity] reparole-generate canonical_not_found_shadow', {
+        event: 'canonical_not_found_shadow',
+        canonical_document_id,
+      })
+    } else if (!hashCheck.valid) {
+      if (mode === 'enforce') {
+        return NextResponse.json(
+          canonicalError('CANONICAL_HASH_MISMATCH', hashCheck.mismatch),
+          { status: 409 },
+        )
+      }
+      console.warn('[canonical/continuity] reparole-generate canonical_hash_mismatch_shadow', {
+        event: 'canonical_hash_mismatch_shadow',
+        canonical_document_id,
+      })
+    } else {
+      try {
+        documentCanonical = await resolveCanonicalDocument(canonical_document_id)
+        if (!documentCanonical && mode === 'enforce') {
+          return NextResponse.json(
+            canonicalError('CANONICAL_NOT_FOUND'),
+            { status: 404 },
+          )
+        }
+        console.info('[canonical/continuity] reparole-generate canonical_loaded', {
+          event: 'canonical_loaded',
+          canonical_document_id,
+          fields: documentCanonical?.fields.length ?? 0,
+        })
+      } catch (err) {
+        if (mode === 'enforce') {
+          return NextResponse.json(
+            canonicalError('CANONICAL_STORAGE_UNAVAILABLE'),
+            { status: 503 },
+          )
+        }
+        console.warn('[canonical/continuity] reparole-generate canonical_load_failed_shadow', {
+          event: 'canonical_load_failed_shadow',
+          canonical_document_id,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+  }
+
+  // enforce mode invariant guard: unreachable in enforce mode if above logic is correct.
+  if (mode === 'enforce' && !documentCanonical) {
+    return NextResponse.json(
+      canonicalError('CANONICAL_NOT_READY', 'canonical document not available in enforce mode'),
+      { status: 409 },
+    )
+  }
+  // ── END CANONICAL_CONTINUITY ──────────────────────────────────────────────
+
   try {
-    const result = await buildReParoleI131(answers)
+    const result = await buildReParoleI131(answers, documentCanonical)
     const zip = new JSZip()
     zip.file('I-131.pdf', result.i131_bytes)
     zip.file('README.txt', readme(answers))

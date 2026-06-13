@@ -54,6 +54,8 @@ import {
   docintelIdToDocumentClass,
   isUkrainianIdentityDoc,
 } from '@/lib/canonical/core/documentClassPolicy'
+// CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
+import { persistCanonicalDocument } from '@/lib/canonical/persistence'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120 // multi-page: N pages read in parallel + a legacy fallback pass; 60s killed 4-page passports. Vision ~16-40s/page (handwriting). Caps at the Vercel plan limit if lower.
@@ -302,6 +304,31 @@ export async function POST(req: NextRequest) {
         fields: canonicalFields,
         createdAt: new Date().toISOString(),
       })
+      // CANONICAL_CONTINUITY: persist canonical result (shadow/enforce modes)
+      const continuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+      let canonicalDocumentId: string | null = null
+      if (continuityMode !== 'off') {
+        try {
+          const persisted = await persistCanonicalDocument(canonicalResult, documentSessionId)
+          canonicalDocumentId = persisted.id
+          console.info('[canonical/continuity] persisted', {
+            event: 'canonical_persisted',
+            canonical_document_id: persisted.id,
+            fields_hash: persisted.fieldsHash.slice(0, 8),
+            mode: continuityMode,
+          })
+        } catch {
+          if (continuityMode === 'enforce') {
+            return NextResponse.json(
+              { error: 'canonical_persistence_failed' },
+              { status: 503 }
+            )
+          }
+          console.warn('[canonical/continuity] persist failed (shadow — non-blocking)', { mode: continuityMode })
+        }
+      } else {
+        console.info('[canonical/continuity] continuity=off — persistence skipped')
+      }
       let fields = toTranslationRows(canonicalResult.fields, cyrillicMap)
       // Cross-engine date ensemble (handwritten-risk; flag-gated) — wired HERE in
       // the Core path because this is the live return (status ok:core-b2).
@@ -321,6 +348,8 @@ export async function POST(req: NextRequest) {
         // so the client/telemetry can distinguish it from the legacy fallback below.
         core_path: 'canonical',
         fallback_used: false,
+        // CANONICAL_CONTINUITY: canonical document id for session linkage
+        canonical_document_id: canonicalDocumentId,
       }, { status: 200 })
     }
     console.warn('[Core B2] 0 fields — falling through to legacy reader (with preprocessing)')
@@ -414,14 +443,41 @@ export async function POST(req: NextRequest) {
     legacyCandidates,
     buildKnowledgeContext({ docTypeId, product: 'translation' }),
   )
+  const legacyDocumentSessionId =
+    (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
   const legacyCanonicalResult = buildCanonicalResult({
-    documentSessionId:
-      (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract',
+    documentSessionId: legacyDocumentSessionId,
     product: 'translation',
     docType: docTypeId,
     fields: legacyCanonicalFields,
     createdAt: new Date().toISOString(),
   })
+
+  // CANONICAL_CONTINUITY: persist canonical result (shadow/enforce modes)
+  const legacyContinuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+  let legacyCanonicalDocumentId: string | null = null
+  if (legacyContinuityMode !== 'off') {
+    try {
+      const persisted = await persistCanonicalDocument(legacyCanonicalResult, legacyDocumentSessionId)
+      legacyCanonicalDocumentId = persisted.id
+      console.info('[canonical/continuity] persisted (legacy path)', {
+        event: 'canonical_persisted',
+        canonical_document_id: persisted.id,
+        fields_hash: persisted.fieldsHash.slice(0, 8),
+        mode: legacyContinuityMode,
+      })
+    } catch {
+      if (legacyContinuityMode === 'enforce') {
+        return NextResponse.json(
+          { error: 'canonical_persistence_failed' },
+          { status: 503 }
+        )
+      }
+      console.warn('[canonical/continuity] persist failed (shadow — non-blocking)', { mode: legacyContinuityMode })
+    }
+  } else {
+    console.info('[canonical/continuity] continuity=off — persistence skipped (legacy path)')
+  }
 
   // Any field at all? Then the request is considered ok even if some pages
   // failed (e.g. user uploaded one good page + one blurry one).
@@ -493,6 +549,8 @@ export async function POST(req: NextRequest) {
     // values — never relabeled as canonical-clean, never downgrading review state.
     core_path: 'legacy_fallback',
     fallback_used: true,
+    // CANONICAL_CONTINUITY: canonical document id for session linkage
+    canonical_document_id: legacyCanonicalDocumentId,
     pages: pageResults,
     page_count: rawFiles.length,
     // Backward compat: keep the single-call shape too for legacy clients.

@@ -31,6 +31,8 @@ import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { toEadAnswers } from '@/lib/canonical/core/eadAdapter'
 import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
+// CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
+import { persistCanonicalDocument } from '@/lib/canonical/persistence'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -212,6 +214,38 @@ export async function POST(req: NextRequest) {
     // 5. Map to EAD answers (pure, no I/O)
     const eadAnswers = toEadAnswers(canonical)
 
+    // ── CANONICAL_CONTINUITY: persist the canonical result (shadow/enforce modes) ──
+    // SAFE carriage: on success we return the persisted UUID so the wizard can resend
+    // it to /api/ead/generate-packet. On shadow persist failure we return null (NEVER a
+    // fabricated id) — a wrong/stale id is worse than none. In enforce mode a persist
+    // failure is a hard 503 (the generate route requires a valid id).
+    let canonicalDocumentId: string | null = null
+    const continuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+    if (continuityMode !== 'off') {
+      try {
+        const persisted = await persistCanonicalDocument(canonical, document_id)
+        canonicalDocumentId = persisted.id
+        console.info('[canonical/continuity] persisted EAD', {
+          event: 'canonical_persisted',
+          canonical_document_id: persisted.id,
+          fields_hash: persisted.fieldsHash.slice(0, 8),
+          mode: continuityMode,
+        })
+      } catch {
+        if (continuityMode === 'enforce') {
+          return NextResponse.json(
+            { error: 'canonical_persistence_failed' },
+            { status: 503 },
+          )
+        }
+        // shadow: PII-free divergence log; carriage degrades to null (no fabricated id)
+        console.warn('[canonical/continuity] EAD persist failed (shadow — non-blocking)', { mode: continuityMode })
+        canonicalDocumentId = null
+      }
+    } else {
+      console.info('[canonical/continuity] continuity=off — EAD persistence skipped')
+    }
+
     // Log for monitoring (no PII — counts and codes only)
     console.log('[B4/EAD/Core]', {
       doc_type: docintelId,
@@ -229,6 +263,9 @@ export async function POST(req: NextRequest) {
         ok: true,
         ...eadAnswers,
         document_id,
+        // CANONICAL_CONTINUITY: null when persistence is off or failed in shadow.
+        // The wizard captures this and resends it to /api/ead/generate-packet.
+        canonical_document_id: canonicalDocumentId,
         doc_type_hint: docTypeHint,
         _core: true,
         _flag: 'ONE_CORE_EAD_ENABLED',

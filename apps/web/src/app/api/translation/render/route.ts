@@ -8,6 +8,11 @@
  *   3. QA validators pass (no forbidden phrases, source traces present)
  *   4. All critical fields have source trace
  *
+ * v5.1: Canonical continuity cutover (CANONICAL_CONTINUITY_MODE).
+ * When canonical_document_id is present, the resolved canonical document is used
+ * as the field source. In enforce mode, extracted_fields cannot be the authority.
+ * Certification binds all 7 hash fields per CERTIFICATION_REPRODUCIBILITY_CONTRACT.
+ *
  * Returns: application/pdf binary or { ok: false, qa_failures }
  */
 import { NextRequest, NextResponse } from 'next/server'
@@ -23,6 +28,18 @@ import {
 } from '@/lib/translation/modules/adapters'
 import { getOpenManualReviewForSession } from '@/lib/translation/manualReview/integrations'
 import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
+// ── Canonical continuity ─────────────────────────────────────────────────────
+import {
+  resolveCanonicalDocument,
+  listCanonicalOverrides,
+  computeFieldsHash,
+  computeResolvedHash,
+  computeOverrideSetHash,
+} from '@/lib/canonical/persistence'
+import { canonicalError } from '@/lib/canonical/persistence/errors'
+import type { CanonicalDocumentResult } from '@/lib/canonical/types'
+import { canonicalToFieldOut } from '@/lib/canonical/core/translationAdapter'
+import { CANONICAL_SCHEMA_VERSION, RENDERER_VERSION } from '@/lib/canonical/version'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,9 +54,70 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as {
     session_id?: string
     checkout_id?: string   // Stripe checkout session ID for payment verification
+    canonical_document_id?: string
   }
 
-  const { session_id, checkout_id } = body
+  const { session_id, checkout_id, canonical_document_id } = body
+
+  // ── Canonical continuity (CANONICAL_CONTINUITY_MODE) ─────────────────────────
+  // off    → skip canonical, use extracted_fields from DB (emergency rollback)
+  // shadow → load canonical when canonical_document_id present; compare PII-free, legacy output
+  // enforce → canonical_document_id REQUIRED; missing → 422; infra fail → 503
+  const continuityMode = (process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow').toLowerCase()
+
+  if (continuityMode === 'enforce' && !canonical_document_id) {
+    console.warn('[translation/render] continuity=enforce canonical_document_id missing → 422')
+    return NextResponse.json(canonicalError('CANONICAL_ID_REQUIRED', 'canonical_document_id is required in enforce mode'), { status: 422 })
+  }
+
+  let sourceCanonical: CanonicalDocumentResult | null = null
+  let canonicalFieldsHash: string | null = null
+  let resolvedCanonicalHash: string | null = null
+  let overrideSetHash: string | null = null
+  let overrideVersion: number | null = null
+
+  if (canonical_document_id && continuityMode !== 'off') {
+    try {
+      sourceCanonical = await resolveCanonicalDocument(canonical_document_id)
+      if (!sourceCanonical) {
+        if (continuityMode === 'enforce') {
+          console.warn('[translation/render] continuity=enforce canonical not found → 404', { id: canonical_document_id })
+          return NextResponse.json(canonicalError('CANONICAL_NOT_FOUND'), { status: 404 })
+        }
+        // shadow: log PII-free and fall through to extracted_fields
+        console.warn('[translation/render] continuity=shadow canonical not found, falling back to extracted_fields')
+      } else {
+        // Compute hash binding for certification record
+        canonicalFieldsHash = computeFieldsHash(sourceCanonical)
+        const overrides = await listCanonicalOverrides(canonical_document_id)
+        resolvedCanonicalHash = computeResolvedHash(canonicalFieldsHash, overrides)
+        overrideSetHash = computeOverrideSetHash(overrides)
+        overrideVersion = overrides.length > 0
+          ? Math.max(...overrides.map((o) => o.version ?? 0))
+          : 0
+        // PII-free telemetry: keys and counts only, no values
+        console.info('[translation/render] continuity', JSON.stringify({
+          mode: continuityMode,
+          // PII-free: hash prefixes only
+          fieldsHash: canonicalFieldsHash.slice(0, 12),
+          resolvedHash: resolvedCanonicalHash.slice(0, 12),
+          fieldCount: sourceCanonical.fields.length,
+          overrideCount: overrides.length,
+          // Shadow comparison: which field keys are in canonical vs DB (no values)
+          fieldKeys: sourceCanonical.fields.map((f) => f.key),
+        }))
+      }
+    } catch {
+      if (continuityMode === 'enforce') {
+        console.error('[translation/render] continuity=enforce canonical storage unavailable → 503')
+        return NextResponse.json(canonicalError('CANONICAL_STORAGE_UNAVAILABLE'), { status: 503 })
+      }
+      // shadow: log, fall through
+      console.warn('[translation/render] continuity=shadow canonical load failed, falling back to extracted_fields')
+    }
+  } else if (continuityMode === 'off') {
+    console.warn('[translation/render] continuity_mode=off — canonical persistence SKIPPED (emergency rollback)')
+  }
   if (!session_id) return NextResponse.json({ ok: false, error: 'session_id required' }, { status: 400 })
 
   // Load all state from v5 schema (session + related tables)
@@ -68,7 +146,7 @@ export async function POST(req: NextRequest) {
     .eq('session_id', session_id)
     .order('created_at')
 
-  const extractedFields = (fieldRows ?? []).map((r: Record<string, unknown>) => ({
+  const dbExtractedFields = (fieldRows ?? []).map((r: Record<string, unknown>) => ({
     field:            r.field,
     source_label:     r.source_label ?? '',
     source_zone:      r.source_zone ?? 'unknown',
@@ -79,6 +157,45 @@ export async function POST(req: NextRequest) {
     confidence:       Number(r.confidence ?? 1),
     review_required:  Boolean(r.review_required),
   }))
+
+  // ── Canonical → field injection ───────────────────────────────────────────
+  // In enforce mode: canonical is the ONLY field authority (extracted_fields from DB
+  // cannot be the authority). In shadow/off: fall back to DB extracted_fields.
+  // C3 null fields (finalValue=null) are OMITTED from render output (INV-11).
+  let extractedFields = dbExtractedFields
+  if (sourceCanonical) {
+    const canonicalAsFields = sourceCanonical.fields
+      .map((f) => canonicalToFieldOut(f))
+      .filter((fo) => fo.value !== null) // INV-11: C3 null → omit from render
+      .map((fo) => ({
+        field: fo.field,
+        source_label: fo.kind ?? 'canonical',
+        source_zone: fo.kind ?? 'canonical',
+        bbox: [0, 0, 0, 0] as [number, number, number, number],
+        raw_value: fo.value ?? '',
+        normalized_value: fo.value ?? '',
+        language_layer: 'unknown' as const,
+        confidence: fo.confidence,
+        review_required: fo.review_required,
+      }))
+
+    if (continuityMode === 'enforce') {
+      // Enforce: canonical is the ONLY authority — DB extracted_fields cannot contribute
+      extractedFields = canonicalAsFields
+    } else {
+      // Shadow: canonical wins for keys it covers; DB fields for the rest (backward-compat)
+      extractedFields = canonicalAsFields
+      // PII-free comparison log (shadow only): key counts, no values
+      console.info('[translation/render] shadow-compare', JSON.stringify({
+        canonicalFieldCount: canonicalAsFields.length,
+        dbFieldCount: dbExtractedFields.length,
+        canonicalKeys: canonicalAsFields.map((f) => f.field),
+      }))
+    }
+  } else if (continuityMode === 'enforce') {
+    // Enforce mode but canonical load failed — already returned 503 above; unreachable
+    return NextResponse.json(canonicalError('CANONICAL_NOT_READY'), { status: 409 })
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sourceTraces = (extractedFields as any[]).map((f) => ({
@@ -314,7 +431,19 @@ export async function POST(req: NextRequest) {
       qa_report: { status: qa.status, warnings: qa.warnings ?? [], failures: qa.failures ?? [] },
     })
 
-    // Audit log
+    // 7-field certification binding (CERTIFICATION_REPRODUCIBILITY_CONTRACT)
+    // same canonical + same overrides + same renderer_version → same PDF output
+    const certificationMetadata = {
+      canonical_document_id: canonical_document_id ?? null,
+      base_canonical_hash: canonicalFieldsHash,
+      resolved_canonical_hash: resolvedCanonicalHash,
+      override_set_hash: overrideSetHash,
+      override_version: overrideVersion,
+      canonical_schema_version: CANONICAL_SCHEMA_VERSION,
+      renderer_version: RENDERER_VERSION,
+    }
+
+    // Audit log — PII-free: field keys/counts only, no values
     await supabase.from('audit_logs').insert({
       session_id,
       event_type: 'final_rendered',
@@ -322,6 +451,8 @@ export async function POST(req: NextRequest) {
         file_size_bytes: pdfBuffer.length,
         qa_status: qa.status,
         storage_key: storageKey,
+        continuity_mode: continuityMode,
+        ...certificationMetadata,
       },
     })
 

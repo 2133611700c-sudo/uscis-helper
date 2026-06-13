@@ -21,6 +21,15 @@ import type { ProvenanceMap } from '@/lib/tps/provenance'
 import { checkReviewPayloadParity, type ReviewSnapshot } from '@/lib/tps/reviewParity'
 import { isOwnerSession } from '@/lib/ownerAccess'
 import { stripe } from '@/lib/stripe/client'
+// CANONICAL_CONTINUITY: packet route loads persisted canonical (shadow/enforce modes)
+import type { CanonicalDocumentResult } from '@/lib/canonical/types'
+import {
+  resolveCanonicalDocument,
+  verifyCanonicalHash,
+} from '@/lib/canonical/persistence'
+import { canonicalError } from '@/lib/canonical/persistence/errors'
+import { buildI821DocumentOps } from '@/lib/canonical/forms/i821DocumentMapper'
+import { i821DocumentFactsToCanonical } from '@/lib/tps/forms/i821DocumentBoundary'
 
 // R1A Phase 6 — pre-PDF firewall.
 // Final safety net BEFORE pdf-lib touches anything. Three checks:
@@ -212,8 +221,105 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // ── CANONICAL_CONTINUITY: load resolved canonical if available ──────────────
+  const mode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+  const canonical_document_id = answers.canonical_document_id ?? null
+  // Remove from answers so it doesn't bleed into legacy processing
+  delete (answers as unknown as Record<string, unknown>).canonical_document_id
+
+  let documentCanonical: CanonicalDocumentResult | null = null
+
+  if (mode === 'enforce' && !canonical_document_id) {
+    return NextResponse.json(
+      canonicalError('CANONICAL_ID_REQUIRED', 'canonical_document_id required in enforce mode'),
+      { status: 422 },
+    )
+  }
+
+  if (canonical_document_id && mode !== 'off') {
+    // Verify hash integrity first.
+    // NOT-FOUND vs INFRA vs MISMATCH: verifyCanonicalHash returns notFound:true for a
+    // missing row (→404), THROWS on a real storage error (→503), and returns
+    // mismatch for a genuine hash conflict (→409). A missing id must NOT be reported
+    // as a 409 hash mismatch or a 503.
+    let hashCheck: { valid: boolean; mismatch?: string; notFound?: boolean }
+    try {
+      hashCheck = await verifyCanonicalHash(canonical_document_id)
+    } catch {
+      if (mode === 'enforce') {
+        return NextResponse.json(
+          canonicalError('CANONICAL_STORAGE_UNAVAILABLE'),
+          { status: 503 },
+        )
+      }
+      console.warn('[canonical/continuity] tps-generate canonical_hash_verify_failed_shadow', {
+        event: 'canonical_hash_verify_failed_shadow',
+        canonical_document_id,
+      })
+      hashCheck = { valid: false }
+    }
+
+    if (hashCheck.notFound) {
+      if (mode === 'enforce') {
+        return NextResponse.json(canonicalError('CANONICAL_NOT_FOUND'), { status: 404 })
+      }
+      console.warn('[canonical/continuity] tps-generate canonical_not_found_shadow', {
+        event: 'canonical_not_found_shadow',
+        canonical_document_id,
+      })
+    } else if (!hashCheck.valid) {
+      if (mode === 'enforce') {
+        return NextResponse.json(
+          canonicalError('CANONICAL_HASH_MISMATCH', hashCheck.mismatch),
+          { status: 409 },
+        )
+      }
+      console.warn('[canonical/continuity] tps-generate canonical_hash_mismatch_shadow', {
+        event: 'canonical_hash_mismatch_shadow',
+        canonical_document_id,
+      })
+    } else {
+      try {
+        documentCanonical = await resolveCanonicalDocument(canonical_document_id)
+        if (!documentCanonical && mode === 'enforce') {
+          return NextResponse.json(
+            canonicalError('CANONICAL_NOT_FOUND'),
+            { status: 404 },
+          )
+        }
+        console.info('[canonical/continuity] tps-generate canonical_loaded', {
+          event: 'canonical_loaded',
+          canonical_document_id,
+          fields: documentCanonical?.fields.length ?? 0,
+        })
+      } catch (err) {
+        if (mode === 'enforce') {
+          return NextResponse.json(
+            canonicalError('CANONICAL_STORAGE_UNAVAILABLE'),
+            { status: 503 },
+          )
+        }
+        console.warn('[canonical/continuity] tps-generate canonical_load_failed_shadow', {
+          event: 'canonical_load_failed_shadow',
+          canonical_document_id,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+  }
+
+  // enforce mode invariant guard: if we reach here in enforce mode, documentCanonical MUST be set.
+  // This line is unreachable in enforce mode if the above logic is correct, but guards for type safety.
+  if (mode === 'enforce' && !documentCanonical) {
+    return NextResponse.json(
+      canonicalError('CANONICAL_NOT_READY', 'canonical document not available in enforce mode'),
+      { status: 409 },
+    )
+  }
+  // ── END CANONICAL_CONTINUITY ──────────────────────────────────────────────
+
   try {
-    const result = await buildPacket(answers, provenance, translationOpts)
+    const result = await buildPacket(answers, provenance, translationOpts, documentCanonical)
     return new NextResponse(new Uint8Array(result.zipBytes), {
       status: 200,
       headers: {
