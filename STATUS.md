@@ -512,3 +512,5 @@ This is the ONLY way to change status from ENABLED_BY_ENV to RUNTIME_VERIFIED.
 - 2026-06-11 FULL-COVERAGE code: divorce в TranslateWizard (tile+samples+title, autoread) + divorce→marriage_apostille docClass mapping + 2 synthetic generators (divorce 5/5, id-card 5/5 vs prod) + labels-test +divorce (8/8) + /supported-documents страница (registry-driven, 4 локали, 10 классов, ✍️-бейджи) + линк из визарда + E2E spec → 6 классов + inventory-page check.
 - 2026-06-11 CI-smoke fixes: marriage/divorce fixtures bumped past the 300KB apostille quality-gate (paper-grain noise; marriage now 6/6 vs prod); page-test locators .first() (strict-mode). 4/6 wizard cases were already green in CI incl divorce/passport/id-card.
 - 2026-06-11 E2E COMPLETE: все 6 wizard-кейсов GREEN в CI (marriage 22.7s после fixture-fix; military через retry=транзиент); page-тест починен (бейдж внутри collapsed details → scoped expand) и зелёный локально 921ms.
+
+<!-- 2026-06-13: added Part 3 OUTPUT-format TL;DR block to docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md (audit-only, no code change). -->

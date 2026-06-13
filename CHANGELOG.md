@@ -1190,3 +1190,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ## 2026-06-11 (fix: page-test details-expansion — full E2E catalog green, CODE, agent)
 - CI run after the fixture fix: ALL 6 wizard cases GREEN (birth 26.5s, military via retry — transient Gemini, marriage 22.7s, divorce 22.3s, passport 9.7s, id-card 10.7s) — the entire translator catalog verified through the REAL UI on live prod. The last tail (supported-documents test) was a test-side issue: the ✍️ badges live inside collapsed <details>, and .first() resolved into a different collapsed card — fixed by expanding the birth card via its summary and scoping the badge assert inside it (921ms green locally). This commit triggers the deploy whose CI run should be 7/7.
+
+## 2026-06-13 | audit doc — added Part 3 OUTPUT-format TL;DR block
+- Appended the compact RESULT/SYSTEM_ARCHITECTURE/.../RECOMMENDED_NEXT_ACTION summary block to Part 3 of docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md. Audit-only; no application code changed.
