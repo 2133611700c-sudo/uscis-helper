@@ -1,4 +1,6 @@
 # STATUS (2026-06-12 — REAL-DOC verified: intl passport (TARAS/oblast/sex) + 4-page passport=0 fixed)
+- CI PII gate is now FAIL-CLOSED: a missing/empty OWNER_PII_PATTERNS_B64 on CI is exit 1 (not skip) — a security gate must not silently disable itself. Local opt-out only via ALLOW_MISSING_PII_SECRET=1. Added a synthetic-marker self-test step (proves the grep fires). mktemp 0600 + trap cleanup; logs only file:line.
+
 - CI gate hardened: exact PII patterns are NOT stored in the repo — they live in the GitHub secret OWNER_PII_PATTERNS_B64 (base64 of a gitignored .pii-patterns). The workflow decodes to a temp file, greps, deletes it, and logs only file:line (value redacted). Old hardcoded master-email guard removed. Owner-context geography scrubbed from session docs (kept in dictionary/gazetteer).
 
 - SECURITY: PII emergency sweep — scrubbed owner real PII (name, passport FU→AA000000, A#/I-94#/EAD#, email, DOB) from ~190 tracked files → fake placeholders (IVANENKO/TARAS/owner@messenginfo.test). Removed 6 tracked .log + the live-doc harness + a .swp. Added CI gate "Block real owner PII" + .gitignore *.log/*.swp. Geo place names (Kyiv/Boryspil) LEFT — real gazetteer data, weakly identifying; replacing would break the dictionary. tsc 0/build/3287 — sweep broke nothing. Tag stable-2026-06-12-morning at 54c0e43.

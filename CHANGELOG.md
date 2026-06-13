@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-12 | SECURITY gate fail-closed + self-test
+- The CI PII gate no longer fail-opens. On CI a missing/empty OWNER_PII_PATTERNS_B64 secret is a HARD FAIL (exit 1), so the protection cannot be silently disabled by a forgotten/renamed secret or a repo transfer. A local run may opt out with ALLOW_MISSING_PII_SECRET=1. Added a synthetic-marker self-test step (positive+negative) that proves the detection logic fires without using any real PII. Temp pattern file is mktemp + chmod 600 + trap-removed; logs print only file:line.
+
+
 ## 2026-06-12 | SECURITY gate hardening (PII patterns out of tracked CI)
 - The CI PII gate no longer hardcodes the real tokens. Patterns come from the GitHub secret OWNER_PII_PATTERNS_B64 (base64 of the gitignored .pii-patterns); the workflow decodes to a temp file, greps, deletes it, and prints only file:line (value redacted). Removed the old hardcoded master-email guard (it stored the literal email). Owner-context geography (Vinnytsia/Trostianets in real-doc session notes) scrubbed to fakes; geography in the dictionary/gazetteer/code-examples is kept (product data).
 - Owner action: set repo secret OWNER_PII_PATTERNS_B64 from .pii-secret-setup.txt (gitignored, local only).
