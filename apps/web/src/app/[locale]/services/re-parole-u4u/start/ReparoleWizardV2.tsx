@@ -121,6 +121,10 @@ interface UploadEntry {
   slot_mismatch?: boolean
   vision_text_length?: number
   brain_status?: 'off' | 'skipped' | 'ran' | 'error'
+  // CANONICAL_CONTINUITY: id of the persisted canonical_documents row returned by the
+  // Core extract route for THIS document (passport/booklet). Carried into generate-packet.
+  // null/absent when continuity=off or the shadow persist failed — never fabricated.
+  canonical_document_id?: string | null
 }
 
 interface WizardData {
@@ -492,6 +496,9 @@ export default function ReparoleWizardV2({ locale }: Props) {
             fileName: string
             status: UploadEntry['status']
             fields?: Record<string, FieldExtraction>
+            // CANONICAL_CONTINUITY: persisted canonical id survives reload so the resend
+            // step can still carry it after the user returns from Stripe checkout.
+            canonical_document_id?: string | null
           } | undefined>
           for (const k of Object.keys(meta)) {
             const m = meta[k]
@@ -506,7 +513,10 @@ export default function ReparoleWizardV2({ locale }: Props) {
                 clean[fk] = fx
               }
             }
-            rebuilt[k] = { file: null, fileName: m.fileName, status: m.status, fields: clean }
+            rebuilt[k] = {
+              file: null, fileName: m.fileName, status: m.status, fields: clean,
+              canonical_document_id: typeof m.canonical_document_id === 'string' ? m.canonical_document_id : null,
+            }
           }
           const { uploadsMeta: _u, lastStep: _l, schema: _s, ...rest } = parsed
           setData((d) => ({ ...d, ...rest, uploads: rebuilt }))
@@ -534,10 +544,10 @@ export default function ReparoleWizardV2({ locale }: Props) {
   useEffect(() => {
     try {
       const { uploads, ...rest } = data
-      const uploadsMeta: Record<string, Pick<UploadEntry, 'fileName' | 'status' | 'fields'>> = {}
+      const uploadsMeta: Record<string, Pick<UploadEntry, 'fileName' | 'status' | 'fields' | 'canonical_document_id'>> = {}
       for (const k of Object.keys(uploads)) {
         const u = uploads[k]
-        uploadsMeta[k] = { fileName: u.fileName, status: u.status, fields: u.fields }
+        uploadsMeta[k] = { fileName: u.fileName, status: u.status, fields: u.fields, canonical_document_id: u.canonical_document_id }
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         schema: STORAGE_SCHEMA, ...rest, lastStep: step, uploadsMeta,
@@ -661,6 +671,16 @@ export default function ReparoleWizardV2({ locale }: Props) {
         }
       }
 
+      // ── CANONICAL_CONTINUITY: capture the persisted canonical id from the Core extract
+      //    response. Only the Core route (passport/booklet) persists a canonical; the TPS
+      //    fallback route (i94/ead/dl) does not. Store it only when the server returned a
+      //    real string — if absent/null (continuity=off or shadow persist failed) store null
+      //    so the resend step sends nothing. Never fabricate an id.
+      const capturedCanonicalId: string | null =
+        useCoreRoute && json?._core === true && typeof json?.canonical_document_id === 'string'
+          ? json.canonical_document_id
+          : null
+
       setData((d) => ({
         ...d, uploads: { ...d.uploads, [id]: {
           file, fileName: file.name, status: 'done', fields,
@@ -669,6 +689,7 @@ export default function ReparoleWizardV2({ locale }: Props) {
           slot_mismatch: useCoreRoute ? false : Boolean(json?.slot_mismatch),
           vision_text_length: useCoreRoute ? undefined : (typeof json?.vision_text_length === 'number' ? json.vision_text_length : undefined),
           brain_status: useCoreRoute ? 'ran' : (typeof json?.brain_status === 'string' ? json.brain_status as UploadEntry['brain_status'] : undefined),
+          canonical_document_id: capturedCanonicalId,
         } },
       }))
     } catch {
@@ -685,6 +706,19 @@ export default function ReparoleWizardV2({ locale }: Props) {
     try {
       const v = (k: string): string => mergedFields[k]?.value || ''
       const aNum = v('a_number').replace(/\D/g, '')
+      // ── CANONICAL_CONTINUITY (RESEND): carry the persisted canonical id for the PRIMARY
+      //    identity document. The passport is the authoritative identity source for the
+      //    Re-Parole packet (mergedFields is passport-first), and it is the doc whose Core
+      //    extract persisted the canonical; the internal-passport booklet is the fallback.
+      //    Only the Core route persists, so only these two slots can carry an id. Omit the
+      //    field entirely when no id was captured — never send null/undefined/fabricated.
+      const canonicalDocumentId: string | null =
+        (typeof data.uploads.passport?.canonical_document_id === 'string'
+          ? data.uploads.passport.canonical_document_id
+          : null) ??
+        (typeof data.uploads.booklet?.canonical_document_id === 'string'
+          ? data.uploads.booklet.canonical_document_id
+          : null)
       const answers = {
         family_name: v('family_name'), given_name: v('given_name'), middle_name: v('middle_name'),
         mailing_street: data.manual.mailing_street || v('us_address_street') || v('address'),
@@ -709,6 +743,9 @@ export default function ReparoleWizardV2({ locale }: Props) {
         last_entry_date: v('last_entry_date'),
         ead_requested: data.ead === 'ead',
         filing_method: data.method || 'online',
+        // Spread the canonical id only when captured (optional; generate-packet treats it
+        // as optional and keeps working in shadow mode when absent).
+        ...(canonicalDocumentId ? { canonical_document_id: canonicalDocumentId } : {}),
       }
       const r = await fetch('/api/reparole/generate-packet', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },

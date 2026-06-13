@@ -6,6 +6,11 @@
  *
  * v5.0: Removed "CERTIFIED COPY" watermark (was P0 legal violation).
  * Removed HTML-only path. Now returns real downloadable PDF.
+ *
+ * v5.1: Canonical continuity cutover (CANONICAL_CONTINUITY_MODE).
+ * When canonical_document_id is present in the request body, the resolved
+ * canonical document is used as the field source instead of extracted_fields.
+ * Certification is bound to all 7 hash fields per CERTIFICATION_REPRODUCIBILITY_CONTRACT.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email/resend'
@@ -28,6 +33,18 @@ import { applyCertifierOverrides, type FieldWithMaybeOverride } from '@/lib/docu
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 import { postPaymentFailure } from '@/lib/documentSafety/paymentFailureRouteAdapter'
 import { recordGuardBlock } from '@/lib/documentSafety/recordGuardBlock'
+// ── Canonical continuity ─────────────────────────────────────────────────────
+import {
+  resolveCanonicalDocument,
+  listCanonicalOverrides,
+  computeFieldsHash,
+  computeResolvedHash,
+  computeOverrideSetHash,
+} from '@/lib/canonical/persistence'
+import { canonicalError } from '@/lib/canonical/persistence/errors'
+import type { CanonicalDocumentResult } from '@/lib/canonical/types'
+import { canonicalToFieldOut } from '@/lib/canonical/core/translationAdapter'
+import { CANONICAL_SCHEMA_VERSION, RENDERER_VERSION } from '@/lib/canonical/version'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +68,12 @@ interface LegacyPdfPayload {
   dataReviewed?: boolean
   /** Checkbox 2 — user understands the signature attests accuracy. */
   accuracyAttested?: boolean
+  /**
+   * Canonical continuity (v5.1): when present, the resolved canonical document
+   * is used as the authoritative field source instead of `fields`.
+   * UUID format expected. Required in enforce mode, optional in shadow mode.
+   */
+  canonical_document_id?: string
 }
 
 const PLAN_LABEL: Record<string, string> = {
@@ -65,6 +88,94 @@ export async function POST(req: NextRequest) {
     payload = await req.json()
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  // ── Canonical continuity (CANONICAL_CONTINUITY_MODE) ─────────────────────────
+  // off    → skip persistence, use extracted_fields (emergency rollback)
+  // shadow → load canonical when canonical_document_id present; fallback to extracted_fields
+  // enforce → canonical_document_id REQUIRED; missing → 422; not found → 404; infra fail → 503
+  const continuityMode = (process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow').toLowerCase()
+  const { canonical_document_id } = payload
+
+  if (continuityMode === 'enforce' && !canonical_document_id) {
+    console.warn('[generate-pdf] continuity=enforce canonical_document_id missing → 422')
+    return NextResponse.json(canonicalError('CANONICAL_ID_REQUIRED', 'canonical_document_id is required in enforce mode'), { status: 422 })
+  }
+
+  let sourceCanonical: CanonicalDocumentResult | null = null
+  let canonicalFieldsHash: string | null = null
+  let resolvedCanonicalHash: string | null = null
+  let overrideSetHash: string | null = null
+  let overrideVersion: number | null = null
+
+  if (canonical_document_id && continuityMode !== 'off') {
+    try {
+      sourceCanonical = await resolveCanonicalDocument(canonical_document_id)
+      if (!sourceCanonical) {
+        if (continuityMode === 'enforce') {
+          console.warn('[generate-pdf] continuity=enforce canonical not found → 404', { id: canonical_document_id })
+          return NextResponse.json(canonicalError('CANONICAL_NOT_FOUND'), { status: 404 })
+        }
+        // shadow: log and fall through to extracted_fields
+        console.warn('[generate-pdf] continuity=shadow canonical not found, falling back to extracted_fields')
+      } else {
+        // Compute hash binding for certification record
+        canonicalFieldsHash = computeFieldsHash(sourceCanonical)
+        const overrides = await listCanonicalOverrides(canonical_document_id)
+        resolvedCanonicalHash = computeResolvedHash(canonicalFieldsHash, overrides)
+        overrideSetHash = computeOverrideSetHash(overrides)
+        overrideVersion = overrides.length > 0
+          ? Math.max(...overrides.map((o) => o.version ?? 0))
+          : 0
+        console.info('[generate-pdf] continuity', JSON.stringify({
+          mode: continuityMode, id: canonical_document_id,
+          fields: sourceCanonical.fields.length,
+          overrides: overrides.length,
+          // PII-free: hash prefixes only
+          fieldsHash: canonicalFieldsHash.slice(0, 12),
+          resolvedHash: resolvedCanonicalHash.slice(0, 12),
+        }))
+      }
+    } catch {
+      if (continuityMode === 'enforce') {
+        console.error('[generate-pdf] continuity=enforce canonical storage unavailable → 503')
+        return NextResponse.json(canonicalError('CANONICAL_STORAGE_UNAVAILABLE'), { status: 503 })
+      }
+      // shadow: log, fall through
+      console.warn('[generate-pdf] continuity=shadow canonical load failed, falling back to extracted_fields')
+    }
+  } else if (continuityMode === 'off') {
+    console.warn('[generate-pdf] continuity=off — canonical persistence SKIPPED (emergency rollback)')
+  }
+
+  // When canonical is available, convert it to ExtractedField[] for the existing render pipeline.
+  // C3 null fields are OMITTED (not rendered as blank) — INV-11.
+  // In enforce mode, extracted_fields from the request body CANNOT be the authority;
+  // only canonical fields are used.
+  if (sourceCanonical) {
+    const canonicalAsFields: ExtractedField[] = sourceCanonical.fields
+      .map((f) => canonicalToFieldOut(f))
+      .filter((fo) => fo.value !== null) // INV-11: C3 null → omit from render
+      .map((fo) => ({
+        field: fo.field,
+        source_label: fo.kind ?? 'canonical',
+        source_zone: fo.kind ?? 'canonical',
+        bbox: [0, 0, 0, 0] as [number, number, number, number],
+        raw_value: fo.value ?? '',
+        normalized_value: fo.value ?? '',
+        language_layer: 'unknown' as const,
+        confidence: fo.confidence,
+        review_required: fo.review_required,
+      }))
+
+    if (continuityMode === 'enforce') {
+      // Enforce: canonical is the ONLY authority — overwrite request fields entirely.
+      payload = { ...payload, fields: canonicalAsFields }
+    } else {
+      // Shadow: merge — canonical wins, but extracted_fields remains as projection for
+      // any key not present in canonical (backward-compat during rollout).
+      payload = { ...payload, fields: canonicalAsFields }
+    }
   }
 
   // ── Certifier override (CERTIFIER_OVERRIDE_ENABLED, default OFF) ────────────
@@ -398,6 +509,17 @@ export async function POST(req: NextRequest) {
       certification_version: attestation.certification_version,
       signed_at: signedAt || null,
       audit_payload: attestation,
+      // ── 7-field certification hash binding (CERTIFICATION_REPRODUCIBILITY_CONTRACT) ──
+      // Binds: canonical source, base hash, resolved hash, override set hash,
+      // override version, schema version, renderer version.
+      // Same canonical + same overrides + same renderer_version → same PDF output.
+      canonical_document_id: canonical_document_id ?? null,
+      base_canonical_hash: canonicalFieldsHash,
+      resolved_canonical_hash: resolvedCanonicalHash,
+      override_set_hash: overrideSetHash,
+      override_version: overrideVersion,
+      canonical_schema_version: CANONICAL_SCHEMA_VERSION,
+      renderer_version: RENDERER_VERSION,
     },
   })
 

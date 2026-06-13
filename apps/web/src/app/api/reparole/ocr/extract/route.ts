@@ -36,6 +36,8 @@ import { isBlocked } from '@/lib/ocr/types'
 // MRZ_WIRED: inject MRZ authority for international passport
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { mrzCandidatesFromText } from '@/lib/canonical/core/mrzAuthority'
+// CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
+import { persistCanonicalDocument } from '@/lib/canonical/persistence'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -241,6 +243,39 @@ export async function POST(req: NextRequest) {
       requiresReview: canonicalFields.some((f) => f.reviewRequired),
     }
 
+    // 6b. CANONICAL_CONTINUITY: persist the canonical result (shadow/enforce modes).
+    //     The persisted row id is carried by the wizard into generate-packet so the
+    //     packet route loads the immutable canonical instead of reconstructing from DTO.
+    //     SAFE CARRIAGE: on persist failure in shadow we return canonical_document_id=null
+    //     (never fabricate) — a wrong/stale id is worse than none. In enforce mode a persist
+    //     failure is fatal (503) so generate-packet never runs without a verifiable canonical.
+    //     Mirrors the TPS extract route persist pattern.
+    let reParoleCanonicalDocumentId: string | null = null
+    const continuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+    if (continuityMode !== 'off') {
+      try {
+        const persisted = await persistCanonicalDocument(canonical, document_id)
+        reParoleCanonicalDocumentId = persisted.id
+        console.info('[canonical/continuity] persisted ReParole', {
+          event: 'canonical_persisted',
+          canonical_document_id: persisted.id,
+          fields_hash: persisted.fieldsHash.slice(0, 8),
+          mode: continuityMode,
+        })
+      } catch {
+        if (continuityMode === 'enforce') {
+          return NextResponse.json(
+            { error: 'canonical_persistence_failed' },
+            { status: 503 },
+          )
+        }
+        // Shadow: log PII-free divergence, return null id — never fabricate.
+        console.warn('[canonical/continuity] ReParole persist failed (shadow — non-blocking)', { mode: continuityMode })
+      }
+    } else {
+      console.info('[canonical/continuity] continuity=off — ReParole persistence skipped')
+    }
+
     // 7. Map to Re-Parole answers (pure, no I/O)
     const reParoleAnswers = toReParoleCoreAnswers(canonical)
 
@@ -260,6 +295,8 @@ export async function POST(req: NextRequest) {
         ok: true,
         ...reParoleAnswers,
         document_id,
+        // CANONICAL_CONTINUITY: persisted canonical row id (null when off / shadow persist failed).
+        canonical_document_id: reParoleCanonicalDocumentId,
         doc_type_hint: docTypeHint,
         _core: true,
         _flag: 'ONE_CORE_REPAROLE_ENABLED',

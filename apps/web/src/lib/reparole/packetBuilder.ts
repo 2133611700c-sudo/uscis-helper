@@ -25,6 +25,10 @@ import type { ReParoleAnswers } from './answers'
 import { buildI131Ops } from './i131FieldMap'
 import { prefill } from '@/lib/tps/pdfPrefiller'
 import { assertFormIntegrity } from '@/lib/tps/formIntegrity'
+// CANONICAL_CONTINUITY: canonical path for document-derived ops
+import type { CanonicalDocumentResult } from '@/lib/canonical/types'
+import { buildI131DocumentOps } from '@/lib/canonical/forms/i131DocumentMapper'
+import { i131DocumentFactsToCanonical } from './i131DocumentBoundary'
 
 // Edition date verified against uscis.gov on 2026-05-11 and stamped on
 // the PDF footer ("Form I-131 Edition 01/20/25"). If USCIS publishes a
@@ -41,12 +45,33 @@ export interface ReParolePacketResult {
   i131: { applied: number; skipped: number; firstSkips: string[] }
 }
 
-export async function buildReParoleI131(answers: ReParoleAnswers): Promise<ReParolePacketResult> {
+export async function buildReParoleI131(
+  answers: ReParoleAnswers,
+  /** CANONICAL_CONTINUITY: when provided, document-derived I-131 ops come from
+   * the resolved canonical result instead of the legacy boundary conversion.
+   * normalizeCountryOfBirth is NOT re-applied when using the canonical path
+   * (normalization already ran at extraction time). */
+  documentCanonical?: CanonicalDocumentResult | null,
+): Promise<ReParolePacketResult> {
   const i131Bytes = await fs.readFile(publicPdfPath('i-131.pdf'))
   // CB.6 — Runtime integrity guard. Fails fast if the on-disk PDF was
   // replaced without updating PINNED_HASHES + field map together.
   assertFormIntegrity('i-131.pdf', i131Bytes)
-  const ops = buildI131Ops(answers)
+  // CANONICAL_CONTINUITY: use resolved canonical if available (shadow/enforce modes),
+  // else fall back to legacy boundary (LEGACY FALLBACK — allowed in off/shadow only.
+  // In enforce mode this line is unreachable — the route guarantees documentCanonical).
+  const i131DocumentOps = documentCanonical
+    ? buildI131DocumentOps(documentCanonical)           // CANONICAL PATH (Part C: no re-normalization)
+    : buildI131DocumentOps(i131DocumentFactsToCanonical(answers))  // LEGACY PATH
+  const ops = documentCanonical
+    ? (() => {
+        // Merge: take all non-doc-derived ops from buildI131Ops, then prepend canonical doc ops.
+        const allOps = buildI131Ops(answers)
+        const docFieldNames = new Set(i131DocumentOps.map((op) => op.field))
+        const userDeclaredOps = allOps.filter((op) => !docFieldNames.has(op.field))
+        return [...i131DocumentOps, ...userDeclaredOps]
+      })()
+    : buildI131Ops(answers)
 
   const result = await prefill(new Uint8Array(i131Bytes), ops, {
     edition: I131_EDITION,
