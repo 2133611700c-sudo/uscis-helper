@@ -264,10 +264,56 @@ describe('Test 5: fields_hash changes when reviewRequired changes', () => {
 // Test 6: fields_hash does NOT change when rawValue changes
 // ---------------------------------------------------------------------------
 
-describe('Test 6: fields_hash stable when rawValue changes', () => {
-  it('rawValue is not included in hash input (excluded by spec)', () => {
+describe('Test 6: fields_hash v2 covers full provenance (tamper-evident)', () => {
+  // v2 (FIELDS_HASH_SCHEMA_VERSION) binds the full security-relevant field shape.
+  // Each of these mutations MUST change the hash — otherwise provenance is unprotected.
+  it('rawValue tampering changes the hash', () => {
     const r1 = makeResult({ fields: [makeField({ rawValue: 'OLENA' })] })
     const r2 = makeResult({ fields: [makeField({ rawValue: 'ОЛЕНА' })] })
+    expect(computeFieldsHash(r1)).not.toBe(computeFieldsHash(r2))
+  })
+
+  it('normalizedValue tampering changes the hash', () => {
+    const r1 = makeResult({ fields: [makeField({ normalizedValue: 'Olena' })] })
+    const r2 = makeResult({ fields: [makeField({ normalizedValue: 'Elena' })] })
+    expect(computeFieldsHash(r1)).not.toBe(computeFieldsHash(r2))
+  })
+
+  it('source tampering changes the hash', () => {
+    const r1 = makeResult({ fields: [makeField({ source: 'document_ocr' })] })
+    const r2 = makeResult({ fields: [makeField({ source: 'manual_user_entry' })] })
+    expect(computeFieldsHash(r1)).not.toBe(computeFieldsHash(r2))
+  })
+
+  it('evidence tampering changes the hash', () => {
+    const r1 = makeResult({
+      fields: [makeField({ evidence: [{ value: 'OLENA', source: 'document_ocr', confidence: 0.95, provider: 'gemini' }] })],
+    })
+    const r2 = makeResult({
+      fields: [makeField({ evidence: [{ value: 'HACKED', source: 'document_ocr', confidence: 0.95, provider: 'gemini' }] })],
+    })
+    expect(computeFieldsHash(r1)).not.toBe(computeFieldsHash(r2))
+  })
+
+  it('knowledgeProvenance tampering changes the hash', () => {
+    const r1 = makeResult({ fields: [makeField({ knowledgeProvenance: 'kmu55' })] })
+    const r2 = makeResult({ fields: [makeField({ knowledgeProvenance: 'gazetteer_exact' })] })
+    expect(computeFieldsHash(r1)).not.toBe(computeFieldsHash(r2))
+  })
+
+  it('docType / product identity tampering changes the hash', () => {
+    const r1 = makeResult({ product: 'translation', docType: 'birth_certificate' })
+    const r2 = makeResult({ product: 'tps', docType: 'birth_certificate' })
+    const r3 = makeResult({ product: 'translation', docType: 'marriage_certificate' })
+    expect(computeFieldsHash(r1)).not.toBe(computeFieldsHash(r2))
+    expect(computeFieldsHash(r1)).not.toBe(computeFieldsHash(r3))
+  })
+
+  it('evidence order does not affect hash (deterministic serialization)', () => {
+    const e1 = { value: 'A', source: 'document_ocr' as const, confidence: 0.9, provider: 'g' }
+    const e2 = { value: 'B', source: 'document_ocr' as const, confidence: 0.8, provider: 'v' }
+    const r1 = makeResult({ fields: [makeField({ evidence: [e1, e2] })] })
+    const r2 = makeResult({ fields: [makeField({ evidence: [e2, e1] })] })
     expect(computeFieldsHash(r1)).toBe(computeFieldsHash(r2))
   })
 })

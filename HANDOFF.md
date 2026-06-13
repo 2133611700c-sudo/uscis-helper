@@ -1,3 +1,23 @@
+# HANDOFF (2026-06-13 — Wave 1 Agent 1: canonical DB hardening, LIVE-proven)
+
+> **Final DB/concurrency/hash/security audit of canonical persistence + overrides, proven against the LIVE Supabase DB (project rtfxrlountkoegsseukx) through the service-role/postgres path — not migration text. Found 4 real gaps, fixed all with forward migrations + code, re-proved on live DB.**
+
+DONE (this session):
+- IMMUTABILITY (was RLS-only, broken for service_role): live probe proved UPDATE base + UPDATE/DELETE override SUCCEEDED. Added 4 BEFORE UPDATE/DELETE triggers + guard functions (CANONICAL_BASE_IMMUTABLE / CANONICAL_OVERRIDES_APPEND_ONLY). Re-probe: all 4 REJECTED (P0001) even as postgres. Added guarded `canonical_admin_cleanup_sentinel(text)` (service_role-only, WAVE1_TEST* prefix only) so synthetic rows can be removed despite triggers.
+- IDEMPOTENCY (cross-product collision): live probe proved a 'translation' persist OVERWROTE a 'tps' row under UNIQUE(session_id,doc_type,fields_hash). Dropped it, added product-scoped UNIQUE(session_id,product,doc_type,fields_hash). `persistCanonicalDocument` now INSERT…ON CONFLICT DO NOTHING + re-select (never UPDATE, base is immutable). Re-probe: distinct products kept, retry same id.
+- HASH INTEGRITY (provenance unprotected): fields_hash v1 covered only finalValue+confidence+review. Rewrote to versioned v2 (FIELDS_HASH_SCHEMA_VERSION=2) covering full field shape (rawValue/normalizedValue/source/criticality/evidence/knowledge*) + doc identity (docType/product/schemaVersion). Persisted `fields_hash_schema_version` column; `verifyCanonicalHash` version-gates (refuses to read a non-v2 hash with the v2 algo). Unit tests flipped Test 6 from "rawValue excluded" to tamper-evident; added source/evidence/normalized/knowledge/identity tamper tests + evidence-order-stability test.
+- ATOMIC RPC: confirmed correct on live DB. Upgraded advisory lock 32-bit hashtext → single-key 64-bit bigint hashtextextended (collision-safe; ALSO fixes an int4-overflow that the live JS test caught). search_path hardened to `public, pg_temp`.
+- GRANTS: anon/authenticated had FULL default table grants on both tables (writes blocked only by RLS). REVOKEd ALL from anon+authenticated (service_role retained). Both functions: EXECUTE revoked PUBLIC/anon/authenticated, granted service_role only — live-tested anon/authenticated calls DENIED.
+- MIGRATIONS: `20260613000004_canonical_immutability_triggers_and_product_idempotency.sql`, `20260613000005_canonical_revoke_anon_grants_and_hash_version.sql` (both applied live; bigint-lock fix folded into 000004 and also applied as a separate idempotent live entry). Made ADD CONSTRAINT replay-safe (guarded by pg_constraint check) so `db push` is harmless.
+- TESTS: live `canonicalDbInvariants.live.test.ts` (6/6 PASS via real service-role JS client, RUN_DB_INVARIANTS=1). Full suite 3597 pass / 24 skip. tsc 0 errors. 0 synthetic leftovers.
+
+NOT DONE / NEXT:
+- NOT merged, NOT deployed, no Vercel env changed (Wave 1 = code+DB+proof only).
+- MIGRATION LEDGER caveat: live `supabase_migrations.schema_migrations` records canonical migrations under MCP-generated version timestamps; local filename prefixes differ (pre-existing on this branch). One applied-only ledger entry `20260613194627_..._idempotent` has no local file (benign intermediate; its UNIQUE was superseded). My migrations are idempotent so replay is safe, but the team should reconcile ledger naming before relying on `supabase db push` for these.
+- Owner-side remaining: review PR, enforce-mode flip, prod cutover.
+
+---
+
 # HANDOFF (2026-06-13 — Override-route agent: missing HTTP override route added + gated + pushed)
 
 > **The HTTP override route was MISSING — `appendCanonicalOverride` had no HTTP caller, leaving the override write-path unreachable end-to-end. It is now wired, gated, and pushed (NOT merged, enforce NOT enabled).**
