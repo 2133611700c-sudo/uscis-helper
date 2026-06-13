@@ -42,6 +42,14 @@ describe('knowledgeNormalize — D2 decision contract (provenance + action, no s
     expect(d.finalValue).toBeNull()
   })
 
+  it('genuinely-UNKNOWN small town → ACCEPT transliteration (no review-flag inflation)', () => {
+    // Not in the ~500-entry seed gazetteer and not a fuzzy near-match of a known
+    // place → must NOT force review (that blocked the pay button on legit villages).
+    const d = normalizeCanonicalValue('place_of_birth_city', 'Кудашівка', { ukrainianDoc: true })
+    expect(d.action).toBe('accept')
+    expect(d.finalValue).toBeTruthy()
+  })
+
   it('patronymic fragment → REVIEW', () => {
     const d = normalizeCanonicalValue('child_patronymic', 'ович')
     expect(d.action).toBe('review')

@@ -7,18 +7,24 @@ import { describe, it, expect } from 'vitest'
 import { snapCity } from '@uscis-helper/knowledge'
 
 describe('S1 — geography no-silent-snap', () => {
-  it('does NOT silently replace a distant fuzzy read (Ярошенець ≠ Вінниця)', () => {
+  it('does NOT silently replace a distant read (Ярошенець ≠ Вінниця)', () => {
+    // Ярошенець is dist ~2.4 from its nearest seed entry — beyond the absolute
+    // fuzzy cap (2). It is now classified unknown_geography: the RAW read is kept
+    // and NO (wrong) suggestion is offered — even safer than the old fuzzy path,
+    // which used to suggest a different village. The owner's failure (Ярошенець →
+    // Vinnytsia) is fully prevented.
     const r = snapCity('с.м.т. Ярошенець')
     expect(r.value).toContain('Ярошен')          // RAW preserved
-    expect(r.value).not.toBe(r.suggestedValue)    // NOT silently replaced by the suggestion
     expect(r.matched).toBe(false)
-    expect(r.review_required).toBe(true)
-    // A nearest real settlement is surfaced as a SUGGESTION only (never applied).
-    // The exact suggestion depends on the gazetteer vocabulary (now the full
-    // КАТОТТГ settlement layer), so we pin the SAFETY invariant, not the city:
-    // a suggestion exists, it is a real place, and it is not the raw read.
-    expect(typeof r.suggestedValue).toBe('string')
-    expect(r.suggestedValue && r.suggestedValue.length).toBeGreaterThan(0)
+    expect(r.suggestedValue ?? null).toBeNull()   // no wrong suggestion
+    expect(r.reason).toBe('unknown_geography')
+  })
+
+  it('a CLOSE OCR misread still surfaces a suggestion, never silently applied (Простянець→Тростянець)', () => {
+    const r = snapCity('Простянець') // dist ~0.4 (П↔Т cheap confusion) → real fuzzy
+    expect(r.matched).toBe(false)                 // NOT silently replaced
+    expect(r.value).toBe('Простянець')            // RAW preserved
+    expect(r.suggestedValue).toBe('Тростянець')   // surfaced as a suggestion only
     expect(r.reason).toBe('fuzzy_geography_match')
   })
 
