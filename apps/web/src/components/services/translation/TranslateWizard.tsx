@@ -1187,12 +1187,13 @@ export function TranslateWizard() {
       const maxEdge = pageCount >= 4 ? 1600 : pageCount >= 2 ? 2000 : 2400
       const quality = pageCount >= 4 ? 0.72 : pageCount >= 2 ? 0.78 : 0.82
       for (const f of uploadedFiles) {
-        // prepareImageForUpload = free OSD auto-rotate (sideways/upside-down →
-        // upright, no API cost) + downscale to the per-file budget. Same single
-        // helper every wizard uses, so rotation + sizing behave identically.
+        // prepareImageForUpload = downscale to the per-file budget. Client OSD
+        // auto-rotate is DISABLED (wrong-direction bug corrupted sideways photos);
+        // the vision reader rotates mentally at read time. The manual rotate button
+        // bakes its rotation into `f` before upload, so nothing else is needed here.
         const prepared = await prepareImageForUpload(f, {
           thresholdBytes: perFileBudget, maxEdge, quality,
-          autoRotate: !userRotatedRef.current.has(f), // user's manual rotate wins
+          autoRotate: false,
         })
         form.append('file', prepared.blob, prepared.name)
       }

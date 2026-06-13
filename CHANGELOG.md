@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-12 | REGRESSION FIX — fabrication + orientation + Russification (owner-reported)
+Owner: translation recognition got WORSE — invents fields (birth/passport), auto-orientation terrible (~1/10), still reads Ukrainian as Russian. A 4-agent zero-trust audit confirmed all three were self-inflicted by recent commits. Fixes:
+- **Russification (revert 5a94b2b prompt softening):** `geminiVisionProvider.ts` LANGUAGE rule restored to the strong 46ebcc2 form ("These are UKRAINIAN-issued documents… do NOT convert them to Russian", with the explicit Сергій→Сергей error list). The softened "some documents are genuinely RUSSIAN… transcribe AS-IS" escape hatch was letting the model over-read Ukrainian as Russian. Also re-gated the RU transliteration routing in `transliterationPolicy.ts` behind RU_TRANSLIT_ENABLED (5a94b2b had made it always-on, which amplified a Russified read instead of containing it).
+- **Orientation (disable buggy client OSD):** `autoRotate.ts` applied Tesseract OSD's `orientation_degrees` as a CLOCKWISE correction, but OSD returns the COUNTER-clockwise angle (verified against tesseract.js worker source) → 90°/270° photos were rotated 180° wrong; the confidence gate was also on the wrong scale. `prepareImageForUpload` autoRotate now defaults FALSE and `TranslateWizard` passes false → the vision reader's "mentally rotate" prompt handles orientation on the original, undamaged pixels. Manual rotate button (rotateImage90) unaffected.
+- **Fabrication (prompt hardening + field cut):** the recent field-set expansion (~30 new registry fields) created list-completion pressure and the prompt only said "not legible → can_read=false", never "not PRESENT → can_read=false"; both anti-fab gates are OFF in prod. Added an explicit "ABSENT FIELDS ARE NORMAL → can_read=false, NEVER invent, do not assume citizenship/copy another field/guess a series or date" clause. Cut spouse `citizenship` (kind:text, unvalidated, always guessed) from the marriage registry + schema + aliases.
+- Tests: updated `mixedScriptRouting.test.ts` for the flag-gated routing.
+- Evidence: tsc 0, build exit 0, web tests 3286 passed/2 skipped.
+
 ## 2026-06-12 | Birth cert mirror completeness — oblast + series + act-record-date
 - The live birth `documentRegistry` entry emitted `place_of_birth_city` but NOT `province_of_birth` (oblast), `certificate_series_number`, or `act_record_date` — all VISIBLE on the certificate — so those mirror lines (Region/Series/Act-record-date) always rendered blank `[enter from document]` even on a clean read.
 - `documentRegistry.ts ua_birth_certificate`: added `province_of_birth` (kind place_oblast), `act_record_date` (date), `certificate_series_number` (doc_number). All handwritten:true ⇒ always review.
