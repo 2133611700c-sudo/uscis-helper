@@ -52,6 +52,18 @@ const ALIASES: Record<string, Record<string, string>> = {
   },
 }
 
+/** An extracted field that has a value but NO slot in the official schema.
+ *  Surfaced in the mirror's "ADDITIONAL ENTRIES" section so no read line is
+ *  ever silently dropped (owner rule: "ни одна строка не теряется"). */
+export interface ExtraEntry { key: string; label: string; value: string; review: boolean }
+
+function humanizeKey(k: string): string {
+  return k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+function normVal(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
 function releaseValue(f: ExtractedFieldLite): string {
   // finalValue-first (Phase 3), then normalized_value, then value.
   const v = f.final_value !== undefined && f.final_value !== null
@@ -87,4 +99,44 @@ export function buildMirrorValues(
     out[spec.key] = { value, review: f.review_required === true, canRead: true }
   }
   return out
+}
+
+/**
+ * collectMirrorExtras — extracted fields that carry a value but have NO slot in
+ * the official schema. Without this they are silently dropped (the renderer only
+ * iterates schema.fields). We surface them in an "ADDITIONAL ENTRIES" section so
+ * no recognized line is ever lost. NEVER invents: only echoes extracted values.
+ * Deduped against values already shown as labeled schema fields (so a datum is
+ * not printed twice — but distinct fields that happen to share a value, e.g. two
+ * people with the same surname, are NOT collapsed).
+ */
+export function collectMirrorExtras(
+  schema: OfficialFormSchema,
+  extracted: ExtractedFieldLite[],
+): ExtraEntry[] {
+  const alias = ALIASES[schema.docType] ?? {}
+  const schemaKeys = new Set(schema.fields.map((f) => f.key))
+  const shownValues = buildMirrorValues(schema, extracted)
+  const seen = new Set<string>(
+    Object.values(shownValues).filter((v) => v.canRead).map((v) => normVal(v.value)),
+  )
+  // Resolve each extracted field to its schema key (alias or identity), first
+  // non-empty wins — same rule as buildMirrorValues.
+  const bySchemaKey = new Map<string, ExtractedFieldLite>()
+  for (const f of extracted) {
+    const schemaKey = alias[f.field] ?? f.field
+    const existing = bySchemaKey.get(schemaKey)
+    if (!existing || (!releaseValue(existing) && releaseValue(f))) bySchemaKey.set(schemaKey, f)
+  }
+  const extras: ExtraEntry[] = []
+  for (const [schemaKey, f] of bySchemaKey) {
+    if (schemaKeys.has(schemaKey)) continue // it has a labeled slot → not an extra
+    const value = releaseValue(f)
+    if (!value) continue
+    const n = normVal(value)
+    if (seen.has(n)) continue // already shown under a labeled field → don't repeat
+    seen.add(n)
+    extras.push({ key: f.field, label: humanizeKey(f.field), value, review: f.review_required === true })
+  }
+  return extras
 }
