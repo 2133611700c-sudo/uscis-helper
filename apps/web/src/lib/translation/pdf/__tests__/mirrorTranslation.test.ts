@@ -59,7 +59,7 @@ describe('buildMirrorValues — registry keys → schema keys', () => {
   it('leaves schema fields with no extraction source blank (renderer prompts entry)', () => {
     const v = buildMirrorValues(schema, [{ field: 'child_family_name', final_value: 'X' }])
     expect(v.series_number).toEqual({ value: '', review: false, canRead: false })
-    expect(v.oblast_of_birth.canRead).toBe(false)
+    expect(v.place_of_registration.canRead).toBe(false)
   })
 
   it('surfaces extracted-but-unmapped fields as extras (no line is dropped)', () => {
