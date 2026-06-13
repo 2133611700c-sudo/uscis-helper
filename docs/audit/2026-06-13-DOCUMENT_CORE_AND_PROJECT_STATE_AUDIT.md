@@ -350,4 +350,56 @@ RECOMMENDED_NEXT_ACTION: read prod Vercel env (read-only) to confirm flag postur
 One action: **read the production Vercel env (read-only) to confirm the feature-flag posture** — above all `OCR_FIELD_SAFETY_ENABLED`. The 0-row audit tables strongly imply the safety/observability flags are OFF in prod; confirming this (and deciding whether to enable C3 + guard metrics) is the highest-leverage step, and it pairs with merging PR #116 to move the verified form-correctness fixes into production. Everything else in the risk register is MEDIUM/LOW cleanup.
 
 ---
-*Audit-only (Parts 1–3). No application code changed, no refactor, nothing merged, no new PR. This document itself is the only artifact written. Generated from verified evidence — incl. live Vercel + Supabase MCP — on 2026-06-13.*
+
+# PART 4 — PHASE 1 GAP AUDIT: "ONE CENTRAL BRAIN / ONE CANONICAL CURRENCY"
+*Independent code inventory against the owner's 12 Phase-1 acceptance criteria. Method: direct file:line reads + 2 independent sub-agents + test runs. Trust in prior docs = 0.*
+
+**RESULT: NOT `PHASE1_COMPLETE` — status = SHAPE DONE / CURRENCY NOT CONTINUOUS.** The shape migration (every consumer speaks `CanonicalField[]`) is done and parity-green; the **main gap from commit `5512b8c` is NOT closed** — the Core's `CanonicalDocumentResult` is still discarded after the read and a *synthetic* one is rebuilt from a legacy product DTO at packet time.
+
+### The actual runtime (verified)
+```
+upload → readDocument → arbitrateDocument → CanonicalDocumentResult (REAL provenance)
+  → adapter → PRODUCT DTO  (TPSAnswers / ReParoleAnswers / EadFieldData / ExtractedField)   ← Core canonical DISCARDED here
+  → wizard / Supabase (user edits)
+  → *DocumentBoundary → NEW synthetic CanonicalDocumentResult (provenance FABRICATED: confidence.final=1, source='document_ocr', reviewRequired=false, evidence=[])
+  → form mapper → PDF
+```
+The object the mapper reads is **not** the object the Core produced.
+
+### Acceptance criteria — verdicts (file:line)
+| # | Criterion | Verdict | Evidence |
+|---|---|---|---|
+| 1 | All 4 products call one Document Core | ✅ DONE | `documentFieldReader.ts:33` + `arbitration.ts:124` from all 4 OCR routes |
+| 2 | Core returns one CanonicalDocumentResult | ✅ DONE | single model `canonical/types.ts:127` |
+| **3** | **Result no longer discarded after Core** | ❌ **FAIL** | `reparole/ocr/extract:245 toReParoleCoreAnswers`, `ead:213 toEadAnswers`, `tps:282 canonicalToTpsModuleResult`, `translation/vision-extract:305 toTranslationRows` — canonical→DTO immediately; DTO is what's returned |
+| 4 | Translation Builder reads CanonicalField[] | ✅ extract / ⚠️ render | `translationAdapter.ts:79` via `getCanonicalValue`; but `render/route.ts:64` renders from `ExtractedField[]` (DB DTO) |
+| 5 | I-821/I-131/I-765 mappers read CanonicalField[] | ⚠️ PARTIAL | true, but canon rebuilt from DTO at boundary: `i821FieldMap:58`, `i131FieldMap:57`, `i765FieldMap:31`/`ead:90` |
+| 6 | DTOs only thin adapters, no logic | ⚠️ PARTIAL | canonical→DTO adapters pure; but boundaries run `normalizeCountryOfBirth` (`i821DocumentBoundary:60`, `tps/forms/i765DocumentBoundary:54`) and fabricate provenance in `docField()` |
+| 7 | No product fixes name/city/date/sex/authority | ⚠️ PARTIAL | name/city/authority = Core only; but country normalized at TPS boundary, gender enum→M/F at `ead/i765DocumentBoundary:38` |
+| 8 | No silent legacy TPS fallback | ✅ DONE | loud: `tps/ocr/extract:1274 fallback_used/core_path`; reparole/ead `core_status:'failed'+fallback_used:true` |
+| 9 | One file → same canonical fields across 4 | ⚠️ PARTIAL | parity tests PASS (mapper-level synthetic) + live EAD/I-94 8/8 SAME (extract); end-to-end continuity broken by DTO round-trip |
+| 10 | Old vs new compared by parity before removing old | ✅/⚠️ | parity tests exist & green; old adapters not yet removed (correct), continuity still not achieved |
+
+### What IS genuinely done
+One Core + frozen contract (`fieldAccessor`/`adapterContract`/`keyAliases`/`buildCanonicalResult`); all 4 OCR routes through one reader+arbitration+knowledgeBrain; all consumers speak `CanonicalField[]`; one shared `buildI765DocumentOps`; canonical→DTO adapters pure (one documented translation settlement-designator exception); loud fallback; parity tests green (44 pass/1 skip); tsc 0; PII clean; live EAD/I-94 extract = SAME / 0 fabrication.
+
+### What is NOT done (the gap)
+- **#3 — canonical discarded & rebuilt from DTO** (the central gap). Mapper reads a synthetic canon, not Core's.
+- **Boundaries are not pass-throughs**: `normalizeCountryOfBirth` (TPS) + `gender` map (EAD) = semantics outside Core.
+- **Provenance loss at boundary**: a Core `reviewRequired=true` becomes `false` at packet time (mitigated — review is surfaced earlier at the OCR/wizard stage, where `reParoleAdapter` preserves it; but the arbiter decision is formally erased at the boundary).
+- **Two I-765 wrappers + two boundaries** still live (`buildI765Ops` + `buildEadI765Ops`) — duplicate not removed (awaiting golden-PDF parity).
+- **Telemetry incomplete**: routes expose `core_status`+`fallback_used` but NOT the requested `provider`/`arbitration_used`/`knowledge_used`.
+- **Translation render** builds from `ExtractedField` (DB), not canon.
+
+### To reach PHASE1_COMPLETE (not executed — audit only)
+1. Carry the **same** `CanonicalDocumentResult` (or its session-id) from OCR route → wizard → generate-packet, replacing the DTO round-trip.
+2. Collapse `*DocumentBoundary` to pure pass-through (move `normalizeCountryOfBirth`/gender into Core/arbitration).
+3. Preserve real provenance (confidence/source/reviewRequired/evidence) to the mapper; stop fabricating.
+4. Merge the two I-765 wrappers behind golden-PDF parity; delete the duplicate.
+5. Add `provider`/`arbitration_used`/`knowledge_used` to route telemetry.
+6. Render translation from canon (or prove DTO↔canon parity).
+
+**Estimate: Phase 1 ≈ 55–65% done.** Expensive correct foundation built (one Core, one contract, shape migration, parity harness, clean adapters); the **single continuous currency is not achieved** — canon is still discarded and reconstructed from legacy DTOs with boundary normalization and provenance loss.
+
+---
+*Audit-only (Parts 1–4). No application code changed, no refactor, nothing merged. The audit document + AGENTS.md/CLAUDE.md read-first pointers are the only artifacts. Generated from verified evidence — incl. live Vercel + Supabase MCP, sub-agent cross-checks, and test runs (tsc 0; parity 44 pass/1 skip; live EAD/I-94 8/8) — on 2026-06-13.*
