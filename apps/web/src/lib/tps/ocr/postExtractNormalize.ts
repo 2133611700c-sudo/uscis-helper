@@ -175,9 +175,27 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
       lowConf.push({ field: f.field, confidence: f.confidence })
     }
 
+    // ── CANONICAL CUTOVER (GAP-2) ────────────────────────────────────────
+    // When a field came from the Document Core (extraction_source ===
+    // 'canonical_core'), its semantic value was ALREADY produced by the
+    // Core's knowledgeNormalize + arbitration: oblast genitive→nominative,
+    // KMU-55 transliteration, place normalization, name/patronymic handling,
+    // and country validation all ran inside the Core. Re-running them here
+    // is a LEGACY_DUPLICATE — it can mangle an already-correct canonical
+    // value (e.g. re-title-casing, re-transliterating a Latin MRZ name) and
+    // re-derives a verdict the arbiter already made.
+    //
+    // So for canonical fields we SKIP all semantic re-normalization. Only
+    // PRODUCT_FORMATTING_ONLY remains (date US→ISO), because the I-821 PDF
+    // writer needs ISO dates and that transform does not change the
+    // semantic value (same instant, different surface form). Everything
+    // else passes through untouched with a `passed` diagnostic.
+    const isCanonical = f.extraction_source === 'canonical_core'
+
     // P2 FIX: normalize date fields from US format (MM/DD/YYYY) to ISO
     // (YYYY-MM-DD). Brain often outputs US format. Without this, dates
     // pass through as "01/25/1990" instead of "1990-01-25".
+    // PRODUCT_FORMATTING_ONLY — allowed even for canonical fields.
     if ((f.field === 'dob' || f.field === 'last_entry_date' || f.field === 'ead_expiration_date') && f.normalized_value) {
       const v = f.normalized_value.trim()
       const usMatch = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
@@ -187,6 +205,22 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
         f.normalized_value = iso
         f.passes = [...f.passes, 'knowledge_date_us_to_iso']
       }
+    }
+
+    // Canonical fields: stop here. Emit a `passed` diagnostic so the wizard
+    // (which reads knowledge_diagnostics for the booklet drop-rule) still
+    // sees the field, and skip every semantic re-normalization branch below.
+    if (isCanonical) {
+      diagnostics.push({
+        field: f.field,
+        status: 'passed',
+        reason: 'canonical_core_no_renormalize',
+        input_raw: f.raw_value,
+        input_normalized: f.normalized_value,
+        output_normalized: f.normalized_value,
+        manual_required: false,
+      })
+      continue
     }
 
     // Oblast genitive → nominative (DMS-verified English)
