@@ -50,6 +50,20 @@ export const UKR_LABEL_BY_FIELD: Record<string, string> = {
   certificate_series_number: 'Серія та номер свідоцтва',
   date_of_marriage: 'Дата реєстрації шлюбу',
   date_of_divorce: 'Дата розірвання шлюбу',
+  date_of_dissolution: 'Дата розірвання шлюбу',
+  // death
+  deceased_surname: 'Прізвище померлого',
+  deceased_given_name: "Ім'я померлого",
+  deceased_patronymic: 'По батькові померлого',
+  date_of_death: 'Дата смерті',
+  place_of_death: 'Місце смерті',
+  // name change
+  previous_surname: 'Прізвище до зміни',
+  previous_given_name: "Ім'я до зміни",
+  previous_patronymic: 'По батькові до зміни',
+  new_surname: 'Прізвище після зміни',
+  new_given_name: "Ім'я після зміни",
+  new_patronymic: 'По батькові після зміни',
   // id card / military
   doc_number: 'Номер документа',
 }
