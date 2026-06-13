@@ -8,6 +8,14 @@ Owner: translation recognition got WORSE — invents fields (birth/passport), au
 - Tests: updated `mixedScriptRouting.test.ts` for the flag-gated routing.
 - Evidence: tsc 0, build exit 0, web tests 3286 passed/2 skipped.
 
+## 2026-06-12 | Dictionary P1 — stop gazetteer review-flag inflation (pay-button blocker)
+From the dictionary audit: the default-on D2 brain ran every Cyrillic city through a ~500-entry seed gazetteer, and any town not exactly in it was forced to `review_required` → blocked the pay button on legitimate small-town birthplaces.
+- `knowledgeNormalize.ts`: a genuinely-unknown town (`snapCity` reason `unknown_geography`) now falls through to `normalizePlace` and is ACCEPTED (KMU-55 transliteration), instead of being turned into a review-`suggest`. Only a real FUZZY near-match still goes to review.
+- `gazetteer.ts snapCity`: added an ABSOLUTE fuzzy-distance cap (≤2). The ratio threshold alone (0.34) was too loose on long names — a 9-letter word allowed ~3 edits, enough to "match" a DIFFERENT village sharing a suffix (Кудашівка→Жданівка dist 3, Зачепилівка→Решетилівка dist 3.4) → a wrong suggestion + a review. Real OCR confusions are ≤1 (Простянець→Тростянець 0.4, Вінниц→Вінниця 1), so the cap keeps the genuine catches and drops the false ones (distant reads → unknown_geography → accepted as-is, no wrong suggestion).
+- Tests: `knowledgeNormalize.test.ts` (+unknown-town→accept), `geographyNoSilentSnap.test.ts` (Ярошенець dist 2.4 is now unknown/no-suggestion; added a real-fuzzy Простянець→Тростянець case). Safety invariant (never silently replace the read) preserved.
+- NOT fixed (owner decision): the modern-rename silent overwrite (Дніпропетровськ→Dnipro / Кіровоград→Kropyvnytskyi at `normalize.ts:271`) fires on a doc-class flag, not the document date → can produce era-wrong values on a pre-rename document. Honoring "preserve historical, do NOT modernize" needs date-gating or a review-suggestion instead of a silent accept.
+- Evidence: tsc 0, build exit 0, web tests 3288 passed/2 skipped, knowledge pkg 13 passed.
+
 ## 2026-06-12 | Birth cert mirror completeness — oblast + series + act-record-date
 - The live birth `documentRegistry` entry emitted `place_of_birth_city` but NOT `province_of_birth` (oblast), `certificate_series_number`, or `act_record_date` — all VISIBLE on the certificate — so those mirror lines (Region/Series/Act-record-date) always rendered blank `[enter from document]` even on a clean read.
 - `documentRegistry.ts ua_birth_certificate`: added `province_of_birth` (kind place_oblast), `act_record_date` (date), `certificate_series_number` (doc_number). All handwritten:true ⇒ always review.
