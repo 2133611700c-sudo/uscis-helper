@@ -64,7 +64,7 @@ This distinction is missing from how the system is built today (one pipeline for
 image → Google Vision (text A) → DocAI (text B) → DeepSeek arbitrates text A vs text B → field
 ```
 
-`runDualOcrCrossref()` (`dualOcrCrossref.ts`) sends **only the two OCR TEXT strings** to DeepSeek. DeepSeek is **text-only — it never sees the pixels.** So when both Vision and DocAI misread the handwritten "Сергійович" as "...йович" and "Тростянець" as "Простянець", the arbiter is choosing between two wrong text reads and **cannot recover what neither OCR saw.** That is the mechanical root cause of the name errors you keep hitting — not a missing rule, not a bad contract.
+`runDualOcrCrossref()` (`dualOcrCrossref.ts`) sends **only the two OCR TEXT strings** to DeepSeek. DeepSeek is **text-only — it never sees the pixels.** So when both Vision and DocAI misread the handwritten "Тарасович" as "...йович" and "Тростянець" as "Простянець", the arbiter is choosing between two wrong text reads and **cannot recover what neither OCR saw.** That is the mechanical root cause of the name errors you keep hitting — not a missing rule, not a bad contract.
 
 **The highest-impact single change in the entire system:** replace/augment the text-only DeepSeek arbiter with a **vision LLM that receives the actual image crop** (Gemini 2.5 Pro / GPT-4o / Claude vision) and is asked to read the field directly, with the two OCR texts as *hints*. A model that sees the pixels will read handwriting far better than a model arbitrating two bad transcriptions. This alone likely fixes the majority of booklet name errors.
 

@@ -6,7 +6,7 @@
 
 ## 1) Repo truth (local)
 
-- Path: `/Users/sergiikuropiatnyk/work/uscis-helper`
+- Path: `/Users/sergiiivanenko/work/uscis-helper`
 - Branch: `main`
 - Local HEAD: `0e239635b062c1c0e9289bc08794da5d7fbe59b7`
 - origin/main: `0e239635b062c1c0e9289bc08794da5d7fbe59b7`
@@ -28,7 +28,7 @@
 
 - Command: `./scripts/run-all-gates.sh`
 - Status: **PASS**
-- Report: `/Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/RUN_ALL_GATES.report.yaml`
+- Report: `/Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/RUN_ALL_GATES.report.yaml`
 - Summary: `5/5 pass` (`typecheck`, `vitest`, `lint`, `guard`, `build`)
 
 ## 4) Vercel deployment truth

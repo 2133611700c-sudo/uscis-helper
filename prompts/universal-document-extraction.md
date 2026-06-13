@@ -105,7 +105,7 @@ Extract:
 
 ### us_i797
 Extract:
-- `Receipt Number` — e.g. "IOE0917678265"
+- `Receipt Number` — e.g. "IOE0000000000"
 - `A-Number`
 - `USCIS Account Number`
 - `Applicant Name`

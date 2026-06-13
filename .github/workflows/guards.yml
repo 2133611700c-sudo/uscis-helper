@@ -117,18 +117,35 @@ jobs:
           [ $FAIL -eq 0 ] && echo "OK — I-131 edition 01/20/25 correct, no wrong edition 02/27/26 in user-visible strings."
           exit $FAIL
 
-      - name: Guard — forbidden master email in source
+      # (The old hardcoded master-email guard was removed — it stored the owner's
+      # real email literal in this tracked file. The owner email is now one of the
+      # patterns in the OWNER_PII_PATTERNS_B64 secret, checked by the step below.)
+
+      # Block the OWNER's REAL PII from ever re-entering tracked files. The EXACT
+      # tokens are NEVER stored in the repo — they come from the GitHub secret
+      # OWNER_PII_PATTERNS_B64 (base64 of a newline-separated grep -E pattern list).
+      # The workflow decodes it to a temp file, greps, deletes it, and prints ONLY
+      # file:line (never the matched value). If the secret is unset, the step skips.
+      - name: Block real owner PII
+        env:
+          OWNER_PII_PATTERNS_B64: ${{ secrets.OWNER_PII_PATTERNS_B64 }}
         run: |
           set +e
-          # Per CLAUDE.md: master Google account email must never appear in
-          # source/comments/tests. Use BACKUP_EMAIL env var for ops mail.
-          HITS=$(grep -RnE "2133611700c@gmail" apps/ 2>/dev/null | grep -v node_modules)
+          if [ -z "$OWNER_PII_PATTERNS_B64" ]; then
+            echo "OWNER_PII_PATTERNS_B64 secret not set — PII gate skipped (set it to enable)."
+            exit 0
+          fi
+          PAT_FILE="$(mktemp)"
+          printf '%s' "$OWNER_PII_PATTERNS_B64" | base64 -d > "$PAT_FILE" 2>/dev/null
+          # -n line numbers, -I skip binaries; redact the value (keep file:line only).
+          HITS=$(git grep -nIE -f "$PAT_FILE" -- ':!*.lock' ':!pnpm-lock.yaml' 2>/dev/null | awk -F: '{print $1":"$2}')
+          rm -f "$PAT_FILE"
           if [ -n "$HITS" ]; then
-            echo "::error::Master account email leaked into source. Use env var only."
+            echo "::error::Owner PII detected (values redacted) — replace with fake placeholders:"
             echo "$HITS"
             exit 1
           fi
-          echo "OK — no master email in source."
+          echo "OK — no owner PII in tracked files."
 
       - name: Guard — DeepSeek model names in client UI
         run: |

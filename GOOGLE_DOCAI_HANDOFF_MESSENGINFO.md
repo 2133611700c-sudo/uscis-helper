@@ -40,9 +40,9 @@ VERIFIED resources:
 ## Local dev auth (VERIFIED)
 - ADC/service-account JSON flow was used and tested.
 - Working credential file path:
-  - `/Users/sergiikuropiatnyk/.config/messenginfo/secrets/messenginfo-docai-ocr-sa-20260525.json`
+  - `/Users/sergiiivanenko/.config/messenginfo/secrets/messenginfo-docai-ocr-sa-20260525.json`
 - Local env model:
-  - `GOOGLE_APPLICATION_CREDENTIALS=/Users/sergiikuropiatnyk/.config/messenginfo/secrets/messenginfo-docai-ocr-sa-20260525.json`
+  - `GOOGLE_APPLICATION_CREDENTIALS=/Users/sergiiivanenko/.config/messenginfo/secrets/messenginfo-docai-ocr-sa-20260525.json`
   - `GOOGLE_CLOUD_PROJECT=messenginfo`
   - `GOOGLE_CLOUD_LOCATION=us`
   - `DOCAI_PROCESSOR_ID=d207a62dc88ed12c`
@@ -55,7 +55,7 @@ VERIFIED resources:
 ## Secret/repo safety
 - JSON key file is not stored in `uscis-helper` repo.
 - Repo leak check result for `uscis-helper`: no matches for key filename/private_key markers.
-- Note: evidence files under `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808` contain key *path references* (not key material).
+- Note: evidence files under `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808` contain key *path references* (not key material).
 
 # 4. VERIFIED TEST REQUEST
 - Endpoint used:
@@ -81,7 +81,7 @@ Use exactly these inputs:
 - `GOOGLE_CLOUD_LOCATION=us`
 - `DOCAI_PROCESSOR_ID=d207a62dc88ed12c`
 - `DOCAI_PROCESSOR_RESOURCE_NAME=projects/537268475735/locations/us/processors/d207a62dc88ed12c`
-- `GOOGLE_APPLICATION_CREDENTIALS=/Users/sergiikuropiatnyk/.config/messenginfo/secrets/messenginfo-docai-ocr-sa-20260525.json` (local dev verified)
+- `GOOGLE_APPLICATION_CREDENTIALS=/Users/sergiiivanenko/.config/messenginfo/secrets/messenginfo-docai-ocr-sa-20260525.json` (local dev verified)
 - service account email: `messenginfo-docai-ocr-sa@messenginfo.iam.gserviceaccount.com`
 - region: `us`
 - expected MIME types for initial implementation: `image/jpeg`, `image/png`, `application/pdf` (only `image/jpeg` was live-tested in this run)
@@ -129,16 +129,16 @@ Minimal request body shape:
 # 8. EVIDENCE INDEX
 | Artifact | Path | What it proves |
 |---|---|---|
-| console_welcome_project.png | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/console_welcome_project.png` | Correct active GCP project context (`messenginfo`) |
-| console_document_ai_processors.png | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/console_document_ai_processors.png` | Processor exists in Document AI UI (`Document OCR`, enabled) |
-| console_service_accounts.png | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/console_service_accounts.png` | Service account exists and key ID visible |
-| processor_create_response.json | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/processor_create_response.json` | Processor created with ID/type/state/endpoint |
-| processor_get.json | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/processor_get.json` | Processor retrievable via API |
-| service_account_summary.txt | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/service_account_summary.txt` | Service account email and key file path |
-| process_request.json | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/process_request.json` | Exact payload used for live process request |
-| process_response.json | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/process_response.json` | Successful OCR response (`document` present) |
-| verification_summary.txt | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/verification_summary.txt` | API enabled + IAM roles + process success summary |
-| integration_packet.json | `/Users/sergiikuropiatnyk/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/integration_packet.json` | Consolidated integration identifiers and env inputs |
+| console_welcome_project.png | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/console_welcome_project.png` | Correct active GCP project context (`messenginfo`) |
+| console_document_ai_processors.png | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/console_document_ai_processors.png` | Processor exists in Document AI UI (`Document OCR`, enabled) |
+| console_service_accounts.png | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/console_service_accounts.png` | Service account exists and key ID visible |
+| processor_create_response.json | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/processor_create_response.json` | Processor created with ID/type/state/endpoint |
+| processor_get.json | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/processor_get.json` | Processor retrievable via API |
+| service_account_summary.txt | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/service_account_summary.txt` | Service account email and key file path |
+| process_request.json | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/process_request.json` | Exact payload used for live process request |
+| process_response.json | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/process_response.json` | Successful OCR response (`document` present) |
+| verification_summary.txt | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/verification_summary.txt` | API enabled + IAM roles + process success summary |
+| integration_packet.json | `/Users/sergiiivanenko/Documents/New project/MESSENGINFO_DOCAI_SETUP_20260525-013808/integration_packet.json` | Consolidated integration identifiers and env inputs |
 
 # 9. OPEN / UNVERIFIED
 - Production runtime credential mount path and deployment wiring are not verified.

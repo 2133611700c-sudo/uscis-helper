@@ -11,7 +11,7 @@ No real PII. Identity is the same one used by passport.test.ts:
   - Sex:     M
   - Expiry:  2029-06-30
 
-Output: /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/synthetic-passport.jpg
+Output: /Users/sergiiivanenko/work/uscis-helper/test-fixtures/synthetic-passport.jpg
 The image is sized 1500x1000 — a realistic photo-of-passport-page aspect.
 MRZ is rendered in OCR-B-equivalent monospace at the bottom.
 """
@@ -135,7 +135,7 @@ draw.rectangle([0, mrz_y - 30, W, H], fill=(255, 255, 255))  # white strip for c
 draw.text((40, mrz_y),       line1, fill=(0, 0, 0), font=mrz_font)
 draw.text((40, mrz_y + 70),  line2, fill=(0, 0, 0), font=mrz_font)
 
-out_path = '/Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/synthetic-passport.jpg'
+out_path = '/Users/sergiiivanenko/work/uscis-helper/test-fixtures/synthetic-passport.jpg'
 img.save(out_path, 'JPEG', quality=92)
 print(f"Saved: {out_path}")
 print(f"Size:  {os.path.getsize(out_path)} bytes")

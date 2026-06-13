@@ -22,7 +22,7 @@ providers:
       probe: /api/tps/health
       brain_ready: true
       brain_misconfigured: false
-    billing_responsible: Sergii (Anthropic-style account, separate from cloud bills)
+    billing_responsible: Taras (Anthropic-style account, separate from cloud bills)
     status: READY
 
   google_vision:
@@ -37,7 +37,7 @@ providers:
       provider_field_in_response: google_vision
       vision_text_length: 411 (>0 → live call returned text)
       response_http: 200
-    billing_responsible: Google Cloud project owned by Sergii
+    billing_responsible: Google Cloud project owned by Taras
     status: READY
 
   azure_id_document:
@@ -125,7 +125,7 @@ risks_if_we_keep_loose_language:
 
 next_action_per_provider:
   azure_id_document:
-    owner: Sergii
+    owner: Taras
     step_1: create Azure subscription + attach card
     step_2: create Document Intelligence resource (region close to
              Vercel iad1 — eastus2 or eastus)
@@ -133,7 +133,7 @@ next_action_per_provider:
     step_4: notify engineer; only then code + shadow benchmark begins
 
   aws_textract_analyzeid:
-    owner: Sergii
+    owner: Taras
     step_1: create AWS account + attach card
     step_2: create IAM user with textract:AnalyzeID permission only
     step_3: rotate keys, store in Vercel env (AWS_ACCESS_KEY_ID,
@@ -141,14 +141,14 @@ next_action_per_provider:
     step_4: notify engineer; only then code + benchmark begins
 
   mindee:
-    owner: Sergii
+    owner: Taras
     step_1: register at mindee.com, attach billing
     step_2: provision API key for Passport or Identity API
     step_3: store MINDEE_API_KEY in Vercel env
     step_4: notify engineer
 
   abbyy:
-    owner: Sergii
+    owner: Taras
     step_1: ABBYY Cloud OCR SDK trial → paid plan
     step_2: copy ApplicationID + Password to Vercel env
     step_3: notify engineer

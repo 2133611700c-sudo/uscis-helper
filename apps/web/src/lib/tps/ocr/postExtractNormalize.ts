@@ -305,7 +305,7 @@ export function postExtractNormalize(fields: TpsExtractedField[]): {
     }
 
     // ── COUNTRY FIELDS — reject hallucinated names as countries ───────────
-    // Brain sometimes puts surname as country_of_citizenship (e.g., "KUROPIATNYK").
+    // Brain sometimes puts surname as country_of_citizenship (e.g., "IVANENKO").
     // Country fields must be real country names, not person names.
     if ((f.field === 'country_of_citizenship' || f.field === 'country_of_birth' ||
          f.field === 'country_of_nationality' || f.field === 'passport_country_of_issuance') &&

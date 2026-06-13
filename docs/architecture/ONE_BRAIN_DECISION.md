@@ -44,7 +44,7 @@ upload (image/pdf)
 
 ## Rules (accepted corrections)
 1. **MRZ invalid → review** (critical passport fields `review_required`), NOT silent fallback to Gemini. Composite check, not just per-field.
-2. **KMU-55 normalizes Gemini's Cyrillic candidate**, it is not an independent source (`Сергій → Serhii`).
+2. **KMU-55 normalizes Gemini's Cyrillic candidate**, it is not an independent source (`Тарас → Taras`).
 3. **Evidence needs grounding.** In **v1, "evidence" = provenance** (which reader + raw value preserved), NOT a verified bbox. Full value↔bbox grounding is v2 (after the existing `bbox`/`ocr_ids` is proven). Else "no evidence → no field" deadlocks v1.
 4. **Vision/DocAI stay for DEGRADATION** (Gemini down/rate-limited → Vision OCR + safe review mode, site keeps working). Not retired before benchmark.
 5. **Build order:** spine + **minimal authority policy** → benchmark → expanded cascade/matrix. Minimal policy = (a) **principle rules now** (MRZ-valid wins; MRZ-invalid→review; KMU-55 normalizes; fuzzy geo→review; critical conflict→review; no source→no field) + (b) **empirical knobs from the reader benchmark**.

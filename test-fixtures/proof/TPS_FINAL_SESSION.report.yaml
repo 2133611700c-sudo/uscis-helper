@@ -82,7 +82,7 @@ honest_critical_point: |
   2. git push origin main (15 commits)
   3. Vercel deployment goes READY on HEAD
   4. (Optional but recommended) one real Ukrainian passport photo at
-     /Users/sergiikuropiatnyk/Downloads/tps-real-test.jpg so I can run
+     /Users/sergiiivanenko/Downloads/tps-real-test.jpg so I can run
      the live pilot smoke. Without this, controlled-beta is technically
      ready but unproven on real-world inputs.
   5. Decision: enable AI Brain in prod?

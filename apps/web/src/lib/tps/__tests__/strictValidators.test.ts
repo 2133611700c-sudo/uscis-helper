@@ -79,7 +79,7 @@ describe('isStrictValidValue — passport_number', () => {
 describe('isStrictValidValue — a_number', () => {
   it('accepts 9 digits with or without separators', () => {
     expect(isStrictValidValue('a_number', '231853474')).toBe(true)
-    expect(isStrictValidValue('a_number', '231-853-474')).toBe(true)
+    expect(isStrictValidValue('a_number', '000-000-000')).toBe(true)
     expect(isStrictValidValue('a_number', '231 853 474')).toBe(true)
   })
 
@@ -111,7 +111,7 @@ describe('isStrictValidValue — unknown fields pass through', () => {
     expect(isStrictValidValue('family_name', "О'Коннор")).toBe(true)
     expect(isStrictValidValue('us_address_street', '4341 Willow Brook Ave 111')).toBe(true)
     expect(isStrictValidValue('us_address_city', 'Los Angeles')).toBe(true)
-    expect(isStrictValidValue('i94_admission_number', '039622651A3')).toBe(true)
+    expect(isStrictValidValue('i94_admission_number', '000000000A0')).toBe(true)
   })
 
   it('rejects empty value regardless of field', () => {

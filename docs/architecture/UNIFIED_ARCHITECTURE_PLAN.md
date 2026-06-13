@@ -331,7 +331,7 @@ localStorage-only TPS).
 
 ## PART 11 — INVARIANTS / NON-NEGOTIABLES (carry forward, never regress)
 
-1. **Controlling Latin wins** — MRZ/printed romanization (SERGII) beats KMU-55
+1. **Controlling Latin wins** — MRZ/printed romanization (TARAS) beats KMU-55
    re-transliteration. (Verified on the real passport.)
 2. **Never fabricate** — a field not on the document → blank, never inferred. (oblast
    lesson.) Anti-fabrication prompt + no low-yield separate fields.

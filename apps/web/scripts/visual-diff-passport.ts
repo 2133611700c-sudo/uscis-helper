@@ -58,12 +58,12 @@ const SYNTH: Record<string, ExtractedFieldLite[]> = {
 }
 
 const certRecord = buildCertificationRecord({
-  signerName: 'Sergii Example',
+  signerName: 'Taras Example',
   signerAddress: '1213 Gordon St, Los Angeles, CA 90038',
   signerPhone: '+1 (000) 000-0000',
   signerEmail: 'owner@example.com',
   sourceLanguage: 'Ukrainian',
-  signatureTypedName: 'Sergii Example',
+  signatureTypedName: 'Taras Example',
 })
 
 async function main() {

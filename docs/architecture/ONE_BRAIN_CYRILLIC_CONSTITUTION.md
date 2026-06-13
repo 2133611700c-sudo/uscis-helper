@@ -118,7 +118,7 @@ These turn the layer-scheme above into enforceable law. Where a clause is tagged
 proposed a resolution to a conflict between two owner rules; the owner may veto it.
 
 ## LAW 1 — TRANSLITERATION
-- **UA visible source** → Ukrainian official / **KMU-55**: Сергій→Serhii, Сергійович→Serhiiovych, Леонідович→Leonidovych.
+- **UA visible source** → Ukrainian official / **KMU-55**: Тарас→Taras, Тарасович→Tarasovych, Леонідович→Leonidovych.
 - **RU visible source** → **BGN/PCGN simplified**: Сергей→Sergey, Сергеевич→Sergeyevich, Леонидович→Leonidovich.
 - **Ambiguous source** (no distinctive letter і/ї/є/ґ nor ы/э/ё/ъ): `review_required=true`, `final_value=null`.
   Document context MAY suggest a candidate; document context CANNOT final.
@@ -161,7 +161,7 @@ User confirmation = evidence weighted by C3. Authority depends on field critical
   Cross-document anchor (MRZ from passport, machine fields from EAD):
     ALWAYS overrides user_confirmed on critical identity fields
     Conflict between user_confirmed and anchor → block, escalate
-    (passport says SERHII, user typed OLEKSANDR → block, NOT override)
+    (passport says TARAS, user typed OLEKSANDR → block, NOT override)
 
   Transitional: certifier role = owner-only until a delegated certifier role is
   designed and approved (separate ADR-021). Owner-only is a launch mechanism,

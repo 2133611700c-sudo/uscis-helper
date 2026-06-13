@@ -12,7 +12,7 @@ Last updated: 2026-05-11.
 - Production: https://messenginfo.com
 - TPS Ukraine wizard: https://messenginfo.com/ru/services/tps-ukraine/start
 - Vercel project: `prj_G5Bwd5VMDqEMdbPKLlQW50aF3pQq`
-- Repo: `/Users/sergiikuropiatnyk/work/uscis-helper`
+- Repo: `/Users/sergiiivanenko/work/uscis-helper`
 - Public health probe: https://messenginfo.com/api/tps/health
 - Gated ops health: `curl -H 'x-health-token: $HEALTH_TOKEN' https://messenginfo.com/api/health`
 - Admin manual-review queue: https://messenginfo.com/admin/manual-review
@@ -30,7 +30,7 @@ Last updated: 2026-05-11.
 
 ### Slower — git revert + push
 
-1. `cd /Users/sergiikuropiatnyk/work/uscis-helper`
+1. `cd /Users/sergiiivanenko/work/uscis-helper`
 2. `git revert HEAD --no-edit && git push origin main`
 3. Wait for Vercel deployment, verify `/api/tps/health` SHA.
 
@@ -96,7 +96,7 @@ Procedure when a refresh is needed:
 curl -s https://messenginfo.com/api/tps/health | jq .ocr_configured
 
 # Local synthetic passport
-cd /Users/sergiikuropiatnyk/work/uscis-helper
+cd /Users/sergiiivanenko/work/uscis-helper
 python3 test-fixtures/gen_synthetic_passport.py
 curl -F "file=@test-fixtures/synthetic-passport.jpg" \
      -F "doc_type_hint=passport" \

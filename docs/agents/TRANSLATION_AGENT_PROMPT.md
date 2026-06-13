@@ -3,7 +3,7 @@
 Ти працюєш над модулем перекладу документів для messenginfo.com — self-service платформи для українських іммігрантів у США.
 
 ## Контекст
-- Репо: `/Users/sergiikuropiatnyk/work/uscis-helper` (Next.js 14, TypeScript, Vercel, Supabase, DeepSeek R1)
+- Репо: `/Users/sergiiivanenko/work/uscis-helper` (Next.js 14, TypeScript, Vercel, Supabase, DeepSeek R1)
 - Модуль: `apps/web/src/components/services/translation/` + `apps/web/src/lib/translation/`
 - API: `apps/web/src/app/api/translation/`
 - Live: https://messenginfo.com/ru/services/translate-document

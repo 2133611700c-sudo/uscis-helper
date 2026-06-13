@@ -3,11 +3,11 @@
 ROTATED Ukrainian internal-passport booklet (1 page).
 
 ## Observed (owner live test)
-- **TPS:** family=`Akulenko`, given=`„ Пріз` (label garbage), patronymic=`Serhiiovych` (stale), DOB/sex/passport=missing.
-- **Translation:** surname=`Шуляк/Shuliak`, given=`Сергій/Serhii`, place=`с.м.т. Проскурів/Proskuriv` — **unrelated** to the uploaded passport.
+- **TPS:** family=`Akulenko`, given=`„ Пріз` (label garbage), patronymic=`Tarasovych` (stale), DOB/sex/passport=missing.
+- **Translation:** surname=`Шуляк/Shuliak`, given=`Тарас/Taras`, place=`с.м.т. Проскурів/Proskuriv` — **unrelated** to the uploaded passport.
 
 ## Root cause (evidence-backed, zero-trust)
-1. **Stale state leakage (the unrelated `Шуляк/Сергій/Проскурів`).** Those strings are **NOT in the codebase** (grep clean; the SAMPLE placeholder is `ПРИКЛАД/SAMPLE`). They were a **previous session's `extractedFields`**, restored from storage:
+1. **Stale state leakage (the unrelated `Шуляк/Тарас/Проскурів`).** Those strings are **NOT in the codebase** (grep clean; the SAMPLE placeholder is `ПРИКЛАД/SAMPLE`). They were a **previous session's `extractedFields`**, restored from storage:
    - Translation wizard restored `sessionStorage tw:v2:draft` on **every mount**.
    - TPS wizard restored `localStorage wizard:tps-ukraine:v2:state` (full state, ≤60-day window).
 2. **OCR garbage accepted as value (`„ Пріз`, `Akulenko`).** A rotated page yields low-quality OCR; a fragment of the label «Прізвище» with a quote glyph was shown as the given name. No guard rejected label-as-value.

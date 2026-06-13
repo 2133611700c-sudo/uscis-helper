@@ -8,7 +8,7 @@
 
 ## Root-cause analysis (independent engineering view)
 
-Three distinct problems reported by Sergii on his real passport upload:
+Three distinct problems reported by Taras on his real passport upload:
 
 ### 1. DOB null on every real passport
 
@@ -41,9 +41,9 @@ populated a value the UI still claimed it came from the passport.
 Combined with merging fields from multiple documents (a real session
 typically has passport + EAD), labels became confusing.
 
-(The reported `a_number: "231-853-474"` on what looked like a passport
+(The reported `a_number: "000-000-000"` on what looked like a passport
 session is actually correct — wizard merges uploads, so the A-number
-came from the EAD upload that Sergii also did. The mislabel was the
+came from the EAD upload that Taras also did. The mislabel was the
 real bug.)
 
 ## Fixes shipped (commit `a8b26e2`)
@@ -109,7 +109,7 @@ Browser E2E (Playwright on Chromium, prod URL):
 | patronymic_explainer | P2 | empty patronymic row needs "не присутствует в этом документе" copy when document type is international passport |
 | missing_field_humanization | P1 | `—` should be replaced with "Не найдено — введите вручную" and an inline edit affordance |
 | a_number_normalizer | P2 | display can keep dashes; need to confirm packetBuilder strips them before writing to I-821/I-765 PDF fields |
-| real_document_matrix | P0 | the proof above used a synthetic image. Sergii's actual passport may have OCR-quality issues at the image layer (sharpness, glare, rotation) that Vision misses. Need redacted real-document matrix to close to GO. |
+| real_document_matrix | P0 | the proof above used a synthetic image. Taras's actual passport may have OCR-quality issues at the image layer (sharpness, glare, rotation) that Vision misses. Need redacted real-document matrix to close to GO. |
 
 ## Verdict per spec category
 
@@ -122,12 +122,12 @@ Browser E2E (Playwright on Chromium, prod URL):
 
 Overall: **PARTIAL_OCR_QUALITY_GAP**. Two P0 issues (DOB, country) are
 fixed end-to-end. Two P1 items (source labels, missing-field humanization)
-remain. Sergii should re-test the wizard with his real documents to
+remain. Taras should re-test the wizard with his real documents to
 confirm the date format on his passport parses through the new code.
 
 ## Next action
 
-1. Sergii re-uploads the same real documents at
+1. Taras re-uploads the same real documents at
    `https://messenginfo.com/ru/services/tps-ukraine` and confirms DOB
    shows up and citizenship reads `Ukraine`.
 2. If anything is still missing, the new OCR response diagnostics

@@ -17,9 +17,9 @@ functional_evidence:
   cyrillic_leak: NONE
   real_doc_pilot: PARTIAL
   evidence_paths:
-    selector_and_dual_probe: "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json"
-    network: "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_network.json"
-    failed_requests: "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_failed_requests.json"
+    selector_and_dual_probe: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json"
+    network: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_network.json"
+    failed_requests: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_failed_requests.json"
 original_5_prompts:
   status: PARTIAL_NON_BLOCKING
   open_blocking_items_count: 0

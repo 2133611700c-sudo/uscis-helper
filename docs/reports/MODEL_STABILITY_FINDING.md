@@ -59,5 +59,5 @@ fixture, so this is a stability finding, not an accuracy finding.
 ## Contrast — clean printed doc is fine
 
 The international passport (`internal_passport_*.jpg`) read identically and correctly
-across models/runs (`KUROPIATNYK / SERHII / FU262473 / 1986-06-25`, review=false). The
+across models/runs (`IVANENKO / TARAS / AA000000 / 1990-01-01`, review=false). The
 instability is specific to the hard-case handwritten/faded certificate.
