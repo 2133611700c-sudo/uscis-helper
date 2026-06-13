@@ -1,12 +1,20 @@
 # CHANGELOG
 
-## 2026-06-13 | P0 preflight: PR #116 merged; integration branch + DESIGN_LOCK.md for canonical-continuity
-- Updated PR #116 title/description to honest framing: "Phase 1 canonical shape + Phase 2B form correctness" — removed any implication that Phase 1 continuous currency is complete.
-- Merged PR #116 → main `1919b54`. Production will advance from `4d3e470` to `1919b54` via Vercel auto-deploy.
-- Verified Supabase live schema: 38 tables, no `canonical_documents` or `canonical_overrides` tables (confirmed absent by direct SQL query).
-- Created integration branch `architecture/canonical-continuity` from `1919b54` + pushed to origin.
-- Wrote `DESIGN_LOCK.md` freezing the canonical-continuity architecture contracts: canonical_document_id semantics, SHA-256 hash rules, 8-op persistence API (persistCanonicalDocument / loadById / loadBySession / appendOverride / listOverrides / resolveCanonical / verifyHash / getId), base immutability (INSERT-only), append-only override model, resolved canonical field semantics, CANONICAL_CONTINUITY_MODE flag (off/shadow/enforce). Security invariants INV-07/INV-11/INV-12 bound verbatim. Supabase table DDL for canonical_documents + canonical_overrides included. P0 preflight results recorded.
-- Files changed: `DESIGN_LOCK.md` (new), `STATUS.md`, `HANDOFF.md`, `CHANGELOG.md`. No application code changed.
+## 2026-06-13 | canonical-continuity Agent 1 — persistence layer, migration SQL, tests
+- **Rewrote** `supabase/migrations/20260613000001_canonical_documents_and_overrides.sql`: added `version integer NOT NULL`, `supersedes_id uuid REFERENCES canonical_overrides(id)`, `confirmed boolean NOT NULL DEFAULT false`, `actor text`, `original_rejection_reasons text[]` columns; helper function `next_canonical_override_version(p_canonical_id uuid)` for monotonic versioning; `(canonical_id, version DESC)` and `(supersedes_id)` indexes; RLS comments documenting UPDATE/DELETE denial and anon denial. Migration NOT applied (write-only per task spec).
+- **Created** `apps/web/src/lib/canonical/version.ts` — `CANONICAL_SCHEMA_VERSION='1.0.0'`, `RENDERER_VERSION='1.0.0'` for certification reproducibility contract.
+- **Created** `apps/web/src/lib/canonical/persistence/errors.ts` — typed `CanonicalErrorCode` union, `CanonicalErrorBody` interface, `canonicalError()` helper. Covers all 7 HTTP error codes from the design lock.
+- **Rewrote** `apps/web/src/lib/canonical/persistence/index.ts`:
+  - All 8 operations (persistCanonicalDocument, load by id/session, appendCanonicalOverride with optimistic concurrency + version counting, listCanonicalOverrides, resolveCanonicalDocument, verifyCanonicalHash, getCanonicalDocumentId)
+  - `computeFieldsHash` now uses `'__UNDEFINED__'` sentinel for `finalValue=undefined` (was `null` in old code — hash was not distinguishing undefined from null, violating the spec)
+  - `computeResolvedHash(baseFieldsHash, overrides)` — binds base + override set for certification reproducibility
+  - `getEffectiveValue(field, override?)` — C3 null contract: no confirmed override → null; confirmed + non-null → override value; unconfirmed → base finalValue
+  - `CanonicalOverride` interface extended with: `id`, `canonicalId`, `version`, `supersedesId`, `confirmed`, `actor`, `originalRejectionReasons`, `createdAt`
+  - `resolveCanonicalDocument` now only applies overrides with `confirmed=true` (was applying all overrides unconditionally in old code)
+  - `FINAL_VALUE_UNDEFINED_SENTINEL` exported as a named constant
+- **Rewrote** `apps/web/src/lib/canonical/persistence/__tests__/canonicalPersistence.test.ts` — 23 tests (18 required + 5 sub-cases): hash determinism, sentinel proof (undefined ≠ null ≠ string in hash space), INV-11 null preservation on load, undefined sentinel round-trip, resolveCanonicalDocument last-wins + null + base-immutable, getEffectiveValue (c3_null_not_resurrected, confirmed_override_is_effective, unconfirmed_does_not_release), version monotonic. Fixed mock chain (old file had broken Supabase chain mocks causing 8 failures).
+- **Created** `apps/web/src/lib/canonical/persistence/__tests__/canonicalPersistenceRLS.test.ts` — 8 RLS tests: anon INSERT/SELECT rejected for both tables; service_role INSERT/SELECT allowed; service_role UPDATE/DELETE blocked (0 rows affected); each test documents live DB behavior in comments.
+- Verification: `tsc 0` | `3505 pass / 18 skip` (up from 3474 baseline, 0 regressions) | PII-free (no field values logged)
 
 ## 2026-06-13 | FULL SYSTEM + DOCUMENT-CORE AUDIT (audit-only, no code change)
 - Wrote `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — single consolidated, evidence-only audit. Part 1: repo/PR/security/deploy. Part 2: Document Core (brain/dictionary/arbitration/canonical/identity-fields/translation/forms + live real-doc runtime trace). Part 3: full system runtime (44 pages / 51 API routes / 1 middleware / 29 migrations / 38 live Supabase tables; DB, storage, auth, env+feature-flags, deployment, monitoring, user flows, packets, archive/operator, dependency graph, dead code, security surface, production truth).
