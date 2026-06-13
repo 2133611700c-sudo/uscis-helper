@@ -63,18 +63,14 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
     case 'name': {
       // Names: KMU-55 (Ukrainian). Never the LLM's own Latin.
       if (!cy) return null
-      // MIXED-SCRIPT (always on, owner-directed 2026-06-12): a name line written in
-      // clearly-RUSSIAN script — distinctive ы/э/ё/ъ present AND no Ukrainian і/ї/є/ґ
-      // (detectNameScript === 'ru') — is transliterated with the Russian system, not
-      // KMU-55. KMU-55 has no mapping for ы/э/ё/ъ, so forcing it would mangle a
-      // Soviet-era / bilingual Russian name. This routing is unambiguous (those
-      // letters do not exist in Ukrainian) so it is safe without a flag.
-      // The SEPARATE 'unknown'-script review escalation (names with no distinctive
-      // letter) stays behind RU_TRANSLIT_ENABLED — see isNameSourceScriptAmbiguous —
-      // because forcing review on every distinctive-letter-less Ukrainian surname is
-      // an owner decision, not a correctness fix.
-      if (detectNameScript(cy) === 'ru') {
-        return transliterateRussian(cy) || transliterateKMU55(cy) || null
+      // RU routing is flag-gated again (reverted 2026-06-12 after the always-on
+      // version amplified Russified reads): the owner's real problem is Ukrainian
+      // being mis-read as Russian, and with the strong anti-Russification prompt
+      // restored a correct read stays Ukrainian. Behind RU_TRANSLIT_ENABLED a
+      // clearly-Russian read (ы/э/ё/ъ, no і/ї/є/ґ) uses the Russian table (KMU-55
+      // can't map those letters); default OFF ⇒ everything goes KMU-55.
+      if (process.env.RU_TRANSLIT_ENABLED === '1' && detectNameScript(cy) === 'ru') {
+        return transliterateRussian(cy) || null
       }
       return transliterateKMU55(cy) || null
     }
