@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-12 | MIRROR passports LIVE — registered all 3 UA passport schemas
+- Owner: "возьми паспорта". The 3 passport mirror schemas (internal booklet, international, ID card) existed but were STAGED behind `PASSPORT_SCHEMA_RENDERER_ENABLED` (a migration gate) → never rendered in prod.
+- **Registered** them into `OFFICIAL_SCHEMAS` (`schemas/registry.ts`) unconditionally; removed the staged-schema map + flag branch (flag retired). Schema keys already matched the docintel `documentRegistry` extraction names exactly, so no aliases were needed. SUPPRESSION INVARIANT intact (MRZ/personal_number/rnokpp never declared). International passport + ID card carry the printed LATIN name verbatim (`locked_verbatim` → CLAUDE.md controlling-Latin rule, no re-transliteration); the booklet transliterates KMU-55.
+- Renderer: added GROUP_TITLE `holder`/`document` (HOLDER/DOCUMENT); genericized the seal/signature footer ("[ Signature of the head of the civil-registration body ]" → "[ Signature of the issuing official - not reproduced ]") — the old wording was wrong for a passport.
+- Added all 3 passport docTypes to `MIRROR_READY_DOCTYPES` (generate-pdf) → live by default, fail-open. statusDashboard passportMigration now reports `registered`.
+- Updated 6 tests that pinned the old staged-OFF behavior (registryFlagGating, passportSchemas, passportSchemaSnapshots, statusDashboardData, mirrorTranslation×2, mirrorEndToEnd) to assert registration; "no schema" cases now use a genuinely unknown docType.
+- Verified by rendering each passport mirror (text + PNG): HOLDER/DOCUMENT sections fill, Latin names preserved verbatim, certification names the document.
+- Evidence: tsc 0, build exit 0, web tests 3289 passed/2 skipped.
+
 ## 2026-06-12 | MIRROR complete for ALL 5 UA civil certificates (divorce/death/name-change)
 Finishes the mirror set per the official KMU 1025 structure (owner: "как правильно выглядят укр документы… без ошибок и дублирования").
 - **Divorce** (`divorce-certificate.schema.ts` + registry): schema split groom_full_name/bride_full_name → groom_surname/given_name/patronymic + bride_*; added act_record_date + date_of_issue. Registry split composite spouse_*_full_name → spouse_1/2_surname/given_name/patronymic + surnames-after + act_record_date + certificate_series_number + date_of_issue.

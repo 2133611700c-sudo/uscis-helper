@@ -296,6 +296,7 @@ export async function POST(req: NextRequest) {
     const MIRROR_READY_DOCTYPES = new Set([
       'ua_birth_certificate', 'ua_marriage_certificate', 'ua_divorce_certificate',
       'ua_death_certificate', 'ua_name_change_certificate',
+      'ua_internal_passport_booklet', 'ua_international_passport', 'ua_id_card',
     ])
     const mirrorEnabled =
       process.env.MIRROR_PDF_ENABLED === '1' ||

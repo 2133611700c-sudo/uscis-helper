@@ -30,10 +30,10 @@ describe('passport schemas — shape', () => {
   })
 })
 
-describe('passport schemas — DELIBERATELY unregistered (migration-plan gated)', () => {
-  it('registering any of these flips the LIVE customer PDF — must go through the plan', () => {
-    expect(hasOfficialSchema('ua_internal_passport_booklet')).toBe(false)
-    expect(hasOfficialSchema('ua_international_passport')).toBe(false)
-    expect(hasOfficialSchema('ua_id_card')).toBe(false)
+describe('passport schemas — REGISTERED (2026-06-12, flag retired)', () => {
+  it('all 3 passport schemas resolve via the registry (mirror live by default)', () => {
+    expect(hasOfficialSchema('ua_internal_passport_booklet')).toBe(true)
+    expect(hasOfficialSchema('ua_international_passport')).toBe(true)
+    expect(hasOfficialSchema('ua_id_card')).toBe(true)
   })
 })
