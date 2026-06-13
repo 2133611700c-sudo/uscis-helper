@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-06-13 | Phase 1 canonical single-currency — I-821 + I-131 cut over to CanonicalField[] (PR open, NOT merged)
+- **Closed the Phase 1 single-currency gap for I-821 and I-131.** Both form mappers were still reading `TPSAnswers` / `ReParoleAnswers` directly; after this session ALL four canonical consumers (Translation, I-765, I-821, I-131) read ONLY `CanonicalDocumentResult` / `CanonicalField[]` through `fieldAccessor` / `adapterContract`.
+- **4 new files created:**
+  - `apps/web/src/lib/canonical/forms/i821DocumentMapper.ts` — shared canonical mapper for I-821 document-derived fields (`applyCanonicalFieldMap` pattern, same as I-765 template)
+  - `apps/web/src/lib/tps/forms/i821DocumentBoundary.ts` — thin `TPSAnswers → CanonicalDocumentResult` converter; splits `place_of_last_entry` → `port_of_entry_city`/`port_of_entry_state` at the boundary; runs `normalizeCountryOfBirth` here (not in the mapper)
+  - `apps/web/src/lib/canonical/forms/i131DocumentMapper.ts` — shared canonical mapper for I-131 document-derived fields with the I-131 gender-widget inversion permanently baked in (`Gender[0]`=`/F Female`, `Gender[1]`=`/M Male` — opposite of visible label order)
+  - `apps/web/src/lib/reparole/i131DocumentBoundary.ts` — thin `ReParoleAnswers → CanonicalDocumentResult` converter (no country normalization needed — I-131 uses EAD/I-94 English country names)
+- **2 files updated:** `i821FieldMap.ts` and `i131FieldMap.ts` now call `buildI821DocumentOps(i821DocumentFactsToCanonical(a))` / `buildI131DocumentOps(i131DocumentFactsToCanonical(a))` for all document-derived fields; unused legacy helpers (`toUscisDate`, `normalizeCountryOfBirth`, `normalizeANumber`) removed; USER_DECLARED fields (address, SSN, USCIS account, contact) remain in the application-layer mappers
+- **1 new test file:** `apps/web/src/lib/canonical/forms/__tests__/i821i131DocumentMapper.test.ts` — 18 parity tests covering A-Number normalization (strip "A"/dashes → 9 trailing digits), DOB ISO→MM/DD/YYYY, I-821 sex standard checkbox order, I-131 sex widget inversion (male→`Gender[1]`, female→`Gender[0]`), port-of-entry comma-split + explicit override, absent-field no-op
+- Verification: tsc 0 | 3474 pass / 18 skip / 0 fail | PII gate CLEAN on all 7 changed files | no Order/Cart/Pricing/Operator work
+
 ## 2026-06-13 | Phase 2B FORM FIELD-BY-FIELD validation — I-821 / I-131 / I-765 (PR open, NOT merged)
 - Validated the final generated PDFs field-by-field against the edition-locked official forms via 4 agents in isolated worktrees + coordinator integration (I-821 → I-131 → I-765 → independent PDF audit, gate after each). Editions re-verified per page: I-821 01/20/25 (13/13), I-131 01/20/25 (14/14), I-765 08/21/25 (7/7) — official == repo, independently audited; renders + AcroForm extracted with pdftoppm/pdf-lib.
 - **SEVEN real defects found + fixed** (generalizable, no owner-specific hardcodes; each with a synthetic regression test):
