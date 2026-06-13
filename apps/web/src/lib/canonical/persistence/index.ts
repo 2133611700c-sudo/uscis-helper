@@ -161,6 +161,32 @@ export function computeResolvedHash(
 }
 
 // ---------------------------------------------------------------------------
+// Hash: override_set_hash
+// ---------------------------------------------------------------------------
+
+/**
+ * override_set_hash: covers the confirmed override set INDEPENDENTLY of the base.
+ * Used in the certification binding so the base and overrides can be audited separately.
+ *
+ * override_set_hash = SHA-256(confirmed overrides sorted by created_at, mapped to
+ *                             { field_key, override_value, source })
+ *
+ * When there are no confirmed overrides, returns SHA-256('[]').
+ */
+export function computeOverrideSetHash(overrides: CanonicalOverride[]): string {
+  const confirmedSorted = overrides
+    .filter((o) => o.confirmed)
+    .slice()
+    .sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))
+    .map((o) => ({
+      field_key: o.fieldKey,
+      override_value: o.overrideValue,
+      source: o.source,
+    }))
+  return sha256(JSON.stringify(confirmedSorted))
+}
+
+// ---------------------------------------------------------------------------
 // Effective value helper (C3 null + confirmed override contract)
 // ---------------------------------------------------------------------------
 

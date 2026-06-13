@@ -1,33 +1,31 @@
-# HANDOFF (2026-06-13 — canonical-continuity Agent 3: packet routes canonical continuity COMPLETE)
-> **Branch: architecture/canonical-continuity. Agent 3 scope: packet routes load resolved canonical + enforce mode blocks synthetic reconstruction.**
-> COMPLETED:
-> - Incorporated Agent 1 persistence layer (`persistence/index.ts`, `persistence/errors.ts`, `version.ts`, migration SQL, tests) via cherry-pick
-> - Incorporated Agent 2 extract route changes (TPS OCR extract + vision-extract with `canonical_document_id` response, `answers.canonical_document_id` field)
-> - `apps/web/src/lib/tps/answers.ts` — added `canonical_document_id?: string` field for session linkage
-> - `apps/web/src/lib/reparole/answers.ts` — added `canonical_document_id?: string` field
-> - `apps/web/src/lib/tps/packetBuilder.ts` — added `documentCanonical?: CanonicalDocumentResult | null` param; CANONICAL PATH uses `buildI821DocumentOps(documentCanonical)` without re-normalizing country; LEGACY PATH (off/shadow fallback) preserved
-> - `apps/web/src/lib/reparole/packetBuilder.ts` — same pattern for `buildReParoleI131`
-> - `apps/web/src/app/api/tps/generate-packet/route.ts` — full CANONICAL_CONTINUITY_MODE implementation (off|shadow|enforce) per design lock
-> - `apps/web/src/app/api/reparole/generate-packet/route.ts` — same canonical continuity logic
-> - `apps/web/src/app/api/tps/__tests__/generatePacketCanonicalContinuity.test.ts` — 18 tests (all pass): Group A provenance survival, Group B INV-11 C3 null, Group C user override, mode tests, I-765 unification proof
-> EVIDENCE: tsc 0 new errors | 18/18 new tests pass | legacy test suite 3474/18-skip unchanged (0 regressions)
-> ENFORCE MODE PROOF: in enforce mode, route returns 422 (CANONICAL_ID_REQUIRED) if no canonical_document_id, 409 (CANONICAL_HASH_MISMATCH) on hash failure, 404 (CANONICAL_NOT_FOUND) if DB miss, 503 (CANONICAL_STORAGE_UNAVAILABLE) on infra error. Runtime invariant guard at end blocks all code paths in enforce mode without a documentCanonical.
-> I-765 UNIFICATION: `buildI765DocumentOps` from `i765DocumentMapper` is called from EXACTLY 2 callers (TPS: `tpsDocumentFactsToCanonical`, EAD: `eadDocumentFactsToCanonical`). No third mapper exists.
-> NOT DONE (Agent 4 scope): parity runtime guards, PHASE1_CONTINUITY_COMPLETE evidence, override route HTTP contract.
-> NEXT (Agent 4): override endpoint 409 concurrency; canonical_document_id header in extract response verification; parity runtime guards.
-
-# HANDOFF (2026-06-13 — canonical-continuity Agent 1: persistence layer complete)
-> **Branch: architecture/canonical-continuity. Agent 1 scope: migration SQL + persistence module + tests.**
-> COMPLETED:
-> - `supabase/migrations/20260613000001_canonical_documents_and_overrides.sql` — rewrote with full schema (version, supersedes_id, confirmed, actor, original_rejection_reasons columns + monotonic helper function next_canonical_override_version()). NOT applied to DB. Rollback section commented out.
-> - `apps/web/src/lib/canonical/persistence/index.ts` — all 8 operations: persistCanonicalDocument, loadCanonicalDocumentById, loadCanonicalDocumentBySession, appendCanonicalOverride (with optimistic concurrency + version counting), listCanonicalOverrides, resolveCanonicalDocument (confirmed-override-aware), verifyCanonicalHash, getCanonicalDocumentId. Plus: computeResolvedHash, getEffectiveValue, FINAL_VALUE_UNDEFINED_SENTINEL constant, CanonicalOverride interface with all versioning fields.
-> - `apps/web/src/lib/canonical/version.ts` — CANONICAL_SCHEMA_VERSION='1.0.0', RENDERER_VERSION='1.0.0'
-> - `apps/web/src/lib/canonical/persistence/errors.ts` — CanonicalErrorCode, CanonicalErrorBody, canonicalError() helper
-> - `apps/web/src/lib/canonical/persistence/__tests__/canonicalPersistence.test.ts` — 23 tests (Tests 1-18 per spec, some with sub-cases), all pass
-> - `apps/web/src/lib/canonical/persistence/__tests__/canonicalPersistenceRLS.test.ts` — 8 RLS tests (mock + DB behavior comments), all pass
-> EVIDENCE: tsc 0 | 3505 pass / 18 skip | 0 regressions from 3474 baseline
-> NOT DONE (Agent 2 scope): CANONICAL_CONTINUITY_MODE wiring to API routes, override endpoint with HTTP 409 concurrency check, certification reproducibility record.
-> NEXT (Agent 2): wire persistence to /api/canonical/* routes; implement CANONICAL_CONTINUITY_MODE off|shadow|enforce; POST /api/canonical/[id]/override with expected_version 409 handling.
+# HANDOFF (2026-06-13 — Agent 4: canonical continuity translation cutover + certification hash binding)
+> **Translation generate-pdf wired to resolved canonical (shadow + enforce mode). Certification now binds all 7 hash fields per CERTIFICATION_REPRODUCIBILITY_CONTRACT. 22 new tests (3502 total, 0 regressions).**
+>
+> DONE:
+> - `generate-pdf/route.ts` cutover to `resolveCanonicalDocument` when `canonical_document_id` present
+> - C3 null safety: `.filter(fo.value !== null)` before ExtractedField conversion (INV-11)
+> - Certification 7-field hash binding in `auditRow`
+> - `version.ts` with `CANONICAL_SCHEMA_VERSION='1.0.0'` + `RENDERER_VERSION='1.0.0'`
+> - `computeOverrideSetHash` added to persistence module
+> - Persistence module (from Agent 1) copied to this worktree
+> - Migration files written (NOT applied): canonical_documents + certification columns
+> - 22 new tests: canonicalContinuityE2E (14) + translationCanonicalCutover (8)
+> - Smoke script: `scripts/smoke-canonical-continuity.ts`
+> - Audit: `docs/reports/CANONICAL_CONTINUITY_AUDIT_2026-06-13.md`
+>
+> NOT DONE (out of Agent 4 scope):
+> - Packet routes (TPS/Re-Parole/EAD) not wired to canonical
+> - `render/route.ts` (session-based) not wired to canonical
+> - DB migration not applied (requires owner)
+>
+> VERDICT: CONTINUITY_PARTIAL
+> BLOCKERS: BLOCKED_PACKET_ROUTES_NOT_WIRED, BLOCKED_RENDER_ROUTE_NOT_WIRED, BLOCKED_DB_NOT_APPLIED
+>
+> NEXT (after owner applies migration 20260613000000 + 20260613000001):
+> 1. Wire `render/route.ts` to load canonical by session_id + doc_type
+> 2. Wire TPS/Re-Parole/EAD packet routes
+> 3. Run parity tests with real docs to confirm zero regression
+> 4. Enable enforce mode only after parity confirmed
 
 # HANDOFF (2026-06-13 — FULL SYSTEM + DOCUMENT-CORE AUDIT; audit-only, no code change, nothing merged)
 > **AUDIT-ONLY.** Wrote one consolidated, evidence-only audit: `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — Part 1 (repo/PR/security/deploy), Part 2 (Document Core: brain/dictionary/arbitration/canonical/forms/runtime-trace), Part 3 (full system: 44 pages / 51 API routes / 1 middleware / 29 migrations / 38 live tables; DB+storage+auth+env+deploy+monitoring+flows+packets+archive+deps+dead-code+security+production). Added a read-first `0.` pointer to AGENTS.md and CLAUDE.md. NO application code touched. Verified live via Vercel + Supabase MCP + healthz: prod=`4d3e470` (main, Phase 2A); preview=`76c49e2` (PR #116, OPEN). 38 tables inventoried with row counts; `guard_block_events`/`certifier_override_audit`/`translation_certification_audit` = 0 rows ⇒ their flags OFF in prod. Tests re-run: tsc 0, field-by-field 46/46, cross-product parity 100 pass/1 skip, live EAD+I-94 gate 8/8 (0 fabrication). 
