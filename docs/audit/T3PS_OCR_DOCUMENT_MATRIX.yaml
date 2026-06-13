@@ -5,7 +5,7 @@
   "cases": [
     {
       "doc_type": "international_passport",
-      "fixture": "/Users/sergiiredacted/work/uscis-helper/test-fixtures/synthetic-passport.jpg",
+      "fixture": "/Users/sergiiivanenko/work/uscis-helper/test-fixtures/synthetic-passport.jpg",
       "expected_module": "passport",
       "doc_type_hint": "passport",
       "http_status": 200,
@@ -31,7 +31,7 @@
     },
     {
       "doc_type": "ukrainian_internal_passport",
-      "fixture": "/Users/sergiiredacted/work/uscis-helper/test-fixtures/synthetic-passport.jpg",
+      "fixture": "/Users/sergiiivanenko/work/uscis-helper/test-fixtures/synthetic-passport.jpg",
       "expected_module": "passportBooklet_or_passport",
       "doc_type_hint": "passport",
       "http_status": 200,
@@ -57,7 +57,7 @@
     },
     {
       "doc_type": "i94",
-      "fixture": "/Users/sergiiredacted/work/uscis-helper/test-fixtures/generated/synthetic-i94.jpg",
+      "fixture": "/Users/sergiiivanenko/work/uscis-helper/test-fixtures/generated/synthetic-i94.jpg",
       "expected_module": "i94",
       "doc_type_hint": "i94",
       "http_status": 200,
@@ -79,7 +79,7 @@
     },
     {
       "doc_type": "ead",
-      "fixture": "/Users/sergiiredacted/work/uscis-helper/test-fixtures/generated/synthetic-ead.jpg",
+      "fixture": "/Users/sergiiivanenko/work/uscis-helper/test-fixtures/generated/synthetic-ead.jpg",
       "expected_module": "ead",
       "doc_type_hint": "ead",
       "http_status": 200,
@@ -100,7 +100,7 @@
     },
     {
       "doc_type": "uscis_notice",
-      "fixture": "/Users/sergiiredacted/work/uscis-helper/test-fixtures/generated/synthetic-uscis-notice.jpg",
+      "fixture": "/Users/sergiiivanenko/work/uscis-helper/test-fixtures/generated/synthetic-uscis-notice.jpg",
       "expected_module": "unsupported_in_prod",
       "doc_type_hint": "uscis_notice",
       "http_status": 200,

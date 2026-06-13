@@ -9,7 +9,7 @@
 РОЛЬ: Execution agent under AGENT_OPERATING_CONTRACT.md. Evidence-first. Gemini-first.
 
 КОНТЕКСТ:
-- Project: /Users/sergiiredacted/work/uscis-helper
+- Project: /Users/sergiiivanenko/work/uscis-helper
 - Live: safety wrapper (Gemini → readDocument/post-passes/arbitration → anti-fab/self-consistency gates → review/PDF).
 - D0 quality signals exist in preprocess/sharp but do NOT reach readDocument. A bad photo breaks everything
   downstream — catch it before model spend.

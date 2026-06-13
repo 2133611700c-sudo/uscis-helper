@@ -7,7 +7,7 @@ Build: ✓ TypeScript 0 errors | ✓ 89/89 static pages
 
 ## Handy & Friend Reference Project
 
-**Path:** `/Users/sergiiredacted/handy-friend-landing-v6`
+**Path:** `/Users/sergiiivanenko/handy-friend-landing-v6`
 **Type:** Vanilla HTML/CSS + Vercel
 **Key files inspected (read-only):**
 - `assets/css/main.css` — full design system, card styles, typography, animations

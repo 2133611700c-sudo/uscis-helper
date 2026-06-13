@@ -29,12 +29,12 @@
 
 ## Read-only reference folders (DO NOT MODIFY)
 
-- `/Users/sergiiredacted/handy-friend-landing-v6` — UX reference for visual style
-- `/Users/sergiiredacted/work/messenginfo-merge` — old logistics project, engineering reference only
+- `/Users/sergiiivanenko/handy-friend-landing-v6` — UX reference for visual style
+- `/Users/sergiiivanenko/work/messenginfo-merge` — old logistics project, engineering reference only
 
 ## Active working dir
 
-- `/Users/sergiiredacted/work/uscis-helper` ← this is where you build
+- `/Users/sergiiivanenko/work/uscis-helper` ← this is where you build
 
 ## NotebookLM context (separate task TASK-01)
 

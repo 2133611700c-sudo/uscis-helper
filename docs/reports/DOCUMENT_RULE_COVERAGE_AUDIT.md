@@ -106,7 +106,7 @@ Merge logic exists in at least two places that must agree: server `centralBrain.
 - **No PDF readback inside the prefiller** — `pdfPrefiller.ts` writes and trusts pdf-lib; only one e2e spec unzips+greps the PDF. A silent field-write failure would not be caught for most fields.
 
 ### 4.G — the honest OCR ceiling (must be said)
-Handwritten Cyrillic in the booklet has a **hard accuracy ceiling**. No architecture makes Google Vision read a handwritten "Тростянець" or "Сергійович" perfectly every time. Every booklet field is already `review_required=true` (`passportBooklet.ts:551`) for this reason. **The achievable goal is not "everything auto-extracts perfectly." It is "auto-extract what is reliably readable; for the rest, fail honestly with a specific reason and a targeted prompt."** Chasing 100% auto-extraction of handwriting is what keeps the goal permanently one fix away.
+Handwritten Cyrillic in the booklet has a **hard accuracy ceiling**. No architecture makes Google Vision read a handwritten "Тростянець" or "Тарасович" perfectly every time. Every booklet field is already `review_required=true` (`passportBooklet.ts:551`) for this reason. **The achievable goal is not "everything auto-extracts perfectly." It is "auto-extract what is reliably readable; for the rest, fail honestly with a specific reason and a targeted prompt."** Chasing 100% auto-extraction of handwriting is what keeps the goal permanently one fix away.
 
 ---
 

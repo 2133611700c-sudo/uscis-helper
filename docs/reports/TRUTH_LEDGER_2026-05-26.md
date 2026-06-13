@@ -94,7 +94,7 @@
   - **Именно эти поля — главная область ответственности booklet** в multi-doc сценарии.
 
 **Вердикт по сценарию `booklet-review`:**  
-Доказательство того, что в проде ZIP/PDF действительно содержат фамилию `REDACTED` и другие ключевые поля, **есть** (Playwright + `booklet-review-artifacts`).  
+Доказательство того, что в проде ZIP/PDF действительно содержат фамилию `Ivanenko` и другие ключевые поля, **есть** (Playwright + `booklet-review-artifacts`).  
 Но этот сценарий **по определению не может** служить строгим доказательством «`family_name` именно из booklet», потому что арбитр честно отдаёт приоритет MRZ/DL над booklet для STRONG_IDENTITY.
 
 Статус: **PASS (flow)**, **DEGRADED** как proof именно booklet‑origin для `family_name`.
@@ -107,7 +107,7 @@
 - **Слоты в сценарии:** только `booklet` (паспорт/DL/I‑94/EAD не загружаются).
 - **Критерий строгости в тесте:**
   - дождаться OCR (`POST /api/tps/ocr/extract` для `docHint='booklet'`);
-  - убедиться, что в review DOM есть `REDACTED` / `Trostianets` / `Vinnytsia Oblast` / `Serhiiovych`;
+  - убедиться, что в review DOM есть `Ivanenko` / `Trostianets` / `Vinnytsia Oblast` / `Tarasovych`;
   - заполнить только gate‑поля, не связанные с booklet proof (паспортный номер допустим как manual gating‑only);
   - при `generate-packet` считать:
     - `_provenance.family_name.source_document_type === 'booklet'` — строгое условие;
@@ -127,7 +127,7 @@
 - **Файл:** `docs/reports/evidence/finish-all-20260525-183306/audit-db/phaseC_fresh_ocr_response.json`
 - Ключевые фрагменты:
   - `doc_type_hint: "booklet"`
-  - `raw_text` содержит `25 червня 1986 року`
+  - `raw_text` содержит `01 січня 1990 року`
   - `final_field_keys`: `["city_of_birth","family_name","middle_name","province_of_birth"]`
   - `rejected_fields` включает:
     - `{"field": "dob", "reason": "FORBIDDEN_FIELD_FOR_DOCUMENT_SLOT"}`
@@ -145,7 +145,7 @@
 
 - `apps/web/src/lib/tps/ai/documentBrain.ts`:
   - `parseDate()` теперь явно поддерживает украинский формат:
-    - принимает `25 червня 1986 року` и `25 червня 1986`,
+    - принимает `01 січня 1990 року` и `01 січня 1990`,
     - нормализует в `06/25/1986` (USCIS MM/DD/YYYY).
   - `validateBrainField('dob', ...)`:
     - использует `parseDate` и нормализует DOB в canonical формат.
@@ -156,7 +156,7 @@
 
 **Вывод (dirty‑код):**
 - В локальном рабочем дереве DOB **больше не должен** резаться контрактом для `slot='booklet'`.
-- Парсер DOB теперь способен разобрать исторский кейс `25 червня 1986 року`.
+- Парсер DOB теперь способен разобрать исторский кейс `01 січня 1990 року`.
 
 #### Что остаётся UNVERIFIED
 
@@ -224,7 +224,7 @@
 Высокоуровневое разделение (без повторения всего evidence):
 
 - **`booklet-review` (multi-doc)**:
-  - ZIP/PDF: **ПОЛУЧЕНЫ**, readback показывает `REDACTED` в обоих формах.
+  - ZIP/PDF: **ПОЛУЧЕНЫ**, readback показывает `Ivanenko` в обоих формах.
   - `city_of_birth / province_of_birth / middle_name` могут отсутствовать в конкретном прогона → статус **DEGRADED** как proof “все слабые поля стабильно автозаполняются”.
 
 - **`booklet-only` (strict)**:
@@ -269,11 +269,11 @@
   - `apps/web/src/lib/tps/ocr/documentContracts.ts`
   - `apps/web/src/lib/tps/ocr/__tests__/documentContracts.test.ts`
 - **Why**
-  - Устранить исторический root cause: `25 червня 1986 року` → парсабельный DOB и DOB не выкидывается контрактом booklet.
+  - Устранить исторический root cause: `01 січня 1990 року` → парсабельный DOB и DOB не выкидывается контрактом booklet.
 - **Tests (локально)**
   - `pnpm --filter web test -- src/lib/tps/ai/__tests__/documentBrain.test.ts src/lib/tps/ocr/__tests__/documentContracts.test.ts`
 - **Acceptance criteria**
-  - Тест `accepts DOB \"25 червня 1986 року\"` проходит.
+  - Тест `accepts DOB \"01 січня 1990 року\"` проходит.
   - Контракт `applyContract('booklet', ['dob'], ...)` принимает DOB (unit test).
   - Нет расширения allowed/forbidden вне `dob` (никакой “релаксации всего”).
 - **DO NOT include**

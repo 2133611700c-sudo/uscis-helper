@@ -126,8 +126,8 @@ $ curl -s -A "Mozilla/5.0 (iPhone)" https://messenginfo.com/en | grep -c 'data-m
 
 ## 13. NOT TOUCHED (verify)
 
-- `/Users/sergiiredacted/handy-friend-landing-v6` — unmodified ✅/❌
-- `/Users/sergiiredacted/work/messenginfo-merge` — unmodified ✅/❌
+- `/Users/sergiiivanenko/handy-friend-landing-v6` — unmodified ✅/❌
+- `/Users/sergiiivanenko/work/messenginfo-merge` — unmodified ✅/❌
 - Supabase schema unchanged ✅/❌
 - Vercel project ID unchanged ✅/❌
 - GitHub repo unchanged (only new commits on branch) ✅/❌

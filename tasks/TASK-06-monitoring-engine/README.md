@@ -1,7 +1,7 @@
 # TASK-06 — Daily Monitoring Engine
 
 **For**: Claude Code (with GitHub CLI + Supabase access)
-**Working dir**: `/Users/sergiiredacted/work/uscis-helper`
+**Working dir**: `/Users/sergiiivanenko/work/uscis-helper`
 **Duration**: 2-3 hours
 **Outcome**: 5 GitHub Actions workflows + Supabase tables + scripts that monitor USCIS/Federal Register/forms/dead-links/YouTube + email digest
 **Prerequisite**: TASK-04 done (form intelligence files exist for form-edition-checker workflow)

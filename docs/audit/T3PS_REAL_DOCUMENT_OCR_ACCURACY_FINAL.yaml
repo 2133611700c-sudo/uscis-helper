@@ -12,7 +12,7 @@ documents_tested:
 
 passport:
   family_name: PASS  (value: REDACTED)
-  given_name: PASS   (value: Serhii)
+  given_name: PASS   (value: Taras)
   dob: PASS          (source 13.07.85 -> 07/13/1985)
   sex: PASS          (source "Ч / M" -> M)
   passport_number: PASS  (value: EK790396)
@@ -113,7 +113,7 @@ production_e2e:
       validated_skipped: []
       extracted:
         family_name: REDACTED
-        given_name: Serhii
+        given_name: Taras
         dob: "07/13/1985"
         sex: M
         country_of_nationality: Ukraine
@@ -161,7 +161,7 @@ remaining_gaps:
       dob == issue date, force review_required.
 
 next_action:
-  - Sergii uploads the SAME real passport that previously failed.
+  - Taras uploads the SAME real passport that previously failed.
   - Expected: dob, sex, expiration all populated; country = Ukraine.
   - If anything still missing, the OCR diagnostics
     (brain_status / validated_skipped[] / final_field_keys) pinpoint

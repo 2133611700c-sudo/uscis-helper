@@ -12,7 +12,7 @@ Paid launch ready: **false**
 - Result: `local == origin == production` at closeout time.
 
 ## Original 5 Prompt Coverage
-- Consolidated mapping file: [T3PS_PROMPT_COVERAGE_MATRIX.md](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_PROMPT_COVERAGE_MATRIX.md)
+- Consolidated mapping file: [T3PS_PROMPT_COVERAGE_MATRIX.md](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_PROMPT_COVERAGE_MATRIX.md)
 - Current mapping summary:
   - T3PS-01 PASS
   - T3PS-02 PASS
@@ -26,13 +26,13 @@ Paid launch ready: **false**
 - Day1 operations remains partially dependent on monitoring transport; treated as operational, not functional P0.
 
 ## Browser Evidence
-- Fresh rerun artifacts: `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/`
+- Fresh rerun artifacts: `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/`
 - Flow A (`wants_ead=false`): generate `200`, ZIP downloaded in same run.
 - Flow B (`wants_ead=true`): generate `200`, ZIP downloaded in same run, I-765 included.
 - Known caveats (non-blocking): `/_vercel/insights/script.js` 404 and CSP beacon blocking.
 
 ## OCR Evidence
-- Source: [/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json](/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json)
+- Source: [/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json](/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json)
 - international_passport PASS
 - ukrainian_internal_passport PASS
 - i94 PASS
@@ -40,14 +40,14 @@ Paid launch ready: **false**
 - uscis_notice NOT_REQUIRED (explicitly outside Stage I functional scope)
 
 ## PDF Evidence
-- ZIP listing: [/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/zip_listing.txt](/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/zip_listing.txt)
-- I-821 dump: [/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/i821_field_dump_redacted.txt](/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/i821_field_dump_redacted.txt)
-- I-765 dump: [/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/i765_field_dump_redacted.txt](/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/i765_field_dump_redacted.txt)
+- ZIP listing: [/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/zip_listing.txt](/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/zip_listing.txt)
+- I-821 dump: [/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/i821_field_dump_redacted.txt](/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/i821_field_dump_redacted.txt)
+- I-765 dump: [/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/i765_field_dump_redacted.txt](/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/i765_field_dump_redacted.txt)
 - `cyrillic_leak = NONE`
 - Required key fields present for Stage I flows.
 
 ## Remaining Gaps
-- Register: [T3PS_RESIDUAL_GAPS_REGISTER.yaml](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_RESIDUAL_GAPS_REGISTER.yaml)
+- Register: [T3PS_RESIDUAL_GAPS_REGISTER.yaml](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_RESIDUAL_GAPS_REGISTER.yaml)
 - Open P0: **0**
 - Open P1: **2** (console noise, real-doc confidence scope)
 - Accepted non-blocking: monitoring transport, uscis_notice scope, I-912 out of scope.

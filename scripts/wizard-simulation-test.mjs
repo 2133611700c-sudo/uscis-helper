@@ -9,7 +9,7 @@ import fs from 'fs'
 import path from 'path'
 
 const BASE_URL = process.argv[2] || 'http://localhost:3000'
-const IMAGE = process.env.E2E_BOOKLET_IMAGE ?? '/Users/sergiiredacted/work/uscis-helper/qa-shots/private/booklet_test_resized.jpg'
+const IMAGE = process.env.E2E_BOOKLET_IMAGE ?? '/Users/sergiiivanenko/work/uscis-helper/qa-shots/private/booklet_test_resized.jpg'
 
 // Mirror the wizard's BOOKLET_WAVE1_FIELDS set (AFTER fix).
 const BOOKLET_WAVE1_FIELDS = new Set([
@@ -63,7 +63,7 @@ async function main() {
     family_name: process.env.E2E_EXPECTED_FAMILY_NAME ?? 'Ivanenko',
     city_of_birth: process.env.E2E_EXPECTED_CITY ?? 'Trostianets',
     province_of_birth: process.env.E2E_EXPECTED_PROVINCE ?? 'Vinnytsia Oblast',
-    middle_name: process.env.E2E_EXPECTED_PATRONYMIC ?? 'Serhiiovych',
+    middle_name: process.env.E2E_EXPECTED_PATRONYMIC ?? 'Tarasovych',
   }
   let pass = true
   for (const [k, exp] of Object.entries(expected)) {

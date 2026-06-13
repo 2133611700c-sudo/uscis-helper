@@ -2,8 +2,8 @@
 
 ## NO-TOUCH directories (read-only references)
 
-- `/Users/sergiiredacted/handy-friend-landing-v6` — UX reference for visual style
-- `/Users/sergiiredacted/work/messenginfo-merge` — old logistics project
+- `/Users/sergiiivanenko/handy-friend-landing-v6` — UX reference for visual style
+- `/Users/sergiiivanenko/work/messenginfo-merge` — old logistics project
 
 **You may READ files in these directories** for inspiration on component patterns, animations, layout choices.
 

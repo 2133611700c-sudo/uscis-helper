@@ -4,7 +4,7 @@ Date: 2026-04-30
 
 ## 1. Inputs used
 
-- Primary execution folder: `/Users/sergiiredacted/work/uscis-helper/docs/research/raw-screenshots/`
+- Primary execution folder: `/Users/sergiiivanenko/work/uscis-helper/docs/research/raw-screenshots/`
 - Source type: screenshot batch only (manual visual extraction)
 - iCloud path not used for execution in this batch
 

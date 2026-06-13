@@ -45,7 +45,7 @@ Exact values extracted from source:
 | Ink tertiary | `rgba(42,31,20,0.42)` --ink3 | main.css | YES |
 | Border (subtle) | `rgba(42,31,20,0.09)` --st | main.css | YES |
 
-**Source:** `/Users/sergiiredacted/handy-friend-landing-v6/assets/css/main.css` lines 1–11
+**Source:** `/Users/sergiiivanenko/handy-friend-landing-v6/assets/css/main.css` lines 1–11
 
 ### Typography Stack
 | Element | Font | Weight | Size | Line Height | Source |
@@ -69,7 +69,7 @@ Exact values extracted from source:
 | Brand font size (mobile) | 24px | `.brand` | main.css |
 | Brand font size (desktop) | 28px | `@media(min-width:900px)` | main.css |
 
-**Source:** `/Users/sergiiredacted/handy-friend-landing-v6/assets/css/main.css` lines 28–50
+**Source:** `/Users/sergiiivanenko/handy-friend-landing-v6/assets/css/main.css` lines 28–50
 
 ### Card System
 | Property | Value | Source |
@@ -87,7 +87,7 @@ Exact values extracted from source:
 | Card hover transform | `translateY(-5px)` | main.css `.scard:hover` |
 | Card padding | 18px | main.css (inferred from nested elements) |
 
-**Source:** `/Users/sergiiredacted/handy-friend-landing-v6/assets/css/main.css` lines 90–120
+**Source:** `/Users/sergiiivanenko/handy-friend-landing-v6/assets/css/main.css` lines 90–120
 
 ### Container & Layout
 | Property | Value | Source |
@@ -118,7 +118,7 @@ Values extracted from TypeScript components and globals.css:
 | Risk medium | `#fef3c7` bg / `#b45309` fg | globals.css `--color-risk-mid-*` | **NEW** — not in Handy |
 | Risk high | `#fee2e2` bg / `#b91c1c` fg | globals.css `--color-risk-high-*` | **NEW** — not in Handy |
 
-**Source:** `/Users/sergiiredacted/work/uscis-helper/apps/web/src/app/globals.css` lines 20–43
+**Source:** `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/app/globals.css` lines 20–43
 
 ### Typography Stack (Tailwind default)
 | Element | Font | Weight | Size | Line Height | Source |
@@ -767,26 +767,26 @@ className="text-3xl sm:text-4xl xl-2:text-5xl"  // more granular
 
 | File | Type | Purpose | Status |
 |------|------|---------|--------|
-| `/Users/sergiiredacted/handy-friend-landing-v6/assets/css/main.css` | CSS | Handy design tokens & layout | ✓ Extracted |
-| `/Users/sergiiredacted/handy-friend-landing-v6/assets/css/pages.css` | CSS | Handy service page styles | ✓ Extracted |
-| `/Users/sergiiredacted/handy-friend-landing-v6/index.html` | HTML | Handy homepage structure | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/app/globals.css` | CSS | Messenginfo design system | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/components/home/Hero.tsx` | TSX | Messenginfo hero section | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/components/home/ServiceCardGrid.tsx` | TSX | Messenginfo service grid | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/components/cards/ServiceCard.tsx` | TSX | Messenginfo card component | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/components/layout/Header.tsx` | TSX | Messenginfo header | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/components/layout/Footer.tsx` | TSX | Messenginfo footer | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/components/layout/MobileBottomBar.tsx` | TSX | Mobile navigation bar | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/components/widgets/MiaFloatingWidget.tsx` | TSX | Floating help widget | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/app/[locale]/page.tsx` | TSX | Homepage component order | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/app/[locale]/services/[slug]/page.tsx` | TSX | Service detail page | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/components/layout/LocaleSwitcher.tsx` | TSX | Language switcher logic | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/middleware.ts` | TS | i18n routing middleware | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/src/i18n/routing.ts` | TS | Locale configuration | ✓ Extracted |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/messages/en.json` | JSON | English translations | ✓ Sampled |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/messages/ru.json` | JSON | Russian translations | ✓ Sampled |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/messages/uk.json` | JSON | Ukrainian translations | ✓ Sampled |
-| `/Users/sergiiredacted/work/uscis-helper/apps/web/messages/es.json` | JSON | Spanish translations | ✓ Sampled |
+| `/Users/sergiiivanenko/handy-friend-landing-v6/assets/css/main.css` | CSS | Handy design tokens & layout | ✓ Extracted |
+| `/Users/sergiiivanenko/handy-friend-landing-v6/assets/css/pages.css` | CSS | Handy service page styles | ✓ Extracted |
+| `/Users/sergiiivanenko/handy-friend-landing-v6/index.html` | HTML | Handy homepage structure | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/app/globals.css` | CSS | Messenginfo design system | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/components/home/Hero.tsx` | TSX | Messenginfo hero section | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/components/home/ServiceCardGrid.tsx` | TSX | Messenginfo service grid | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/components/cards/ServiceCard.tsx` | TSX | Messenginfo card component | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/components/layout/Header.tsx` | TSX | Messenginfo header | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/components/layout/Footer.tsx` | TSX | Messenginfo footer | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/components/layout/MobileBottomBar.tsx` | TSX | Mobile navigation bar | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/components/widgets/MiaFloatingWidget.tsx` | TSX | Floating help widget | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/app/[locale]/page.tsx` | TSX | Homepage component order | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/app/[locale]/services/[slug]/page.tsx` | TSX | Service detail page | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/components/layout/LocaleSwitcher.tsx` | TSX | Language switcher logic | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/middleware.ts` | TS | i18n routing middleware | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/src/i18n/routing.ts` | TS | Locale configuration | ✓ Extracted |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/messages/en.json` | JSON | English translations | ✓ Sampled |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/messages/ru.json` | JSON | Russian translations | ✓ Sampled |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/messages/uk.json` | JSON | Ukrainian translations | ✓ Sampled |
+| `/Users/sergiiivanenko/work/uscis-helper/apps/web/messages/es.json` | JSON | Spanish translations | ✓ Sampled |
 
 ---
 

@@ -181,7 +181,7 @@ Monitoring:    PASS — 26 sources, 186 alerts, CI workflows all green
 Production:    PASS — 44/44 service routes + 4/4 wizard routes 200 OK
 Security:      PASS — no secret leaks, no brand contamination, no legal danger phrases
 Commit:        4b0ad3c (feat(platform): wizard persistence + DeepSeek AI client + translation upload MVP)
-Report:        /Users/sergiiredacted/work/uscis-helper/docs/reports/messenginfo-full-connectivity-audit.md
+Report:        /Users/sergiiivanenko/work/uscis-helper/docs/reports/messenginfo-full-connectivity-audit.md
 Evidence:      /tmp/messenginfo-connectivity/
 Remaining blockers:
   1. Resend 403 — domain DNS verification required (user action in Resend dashboard)

@@ -100,7 +100,7 @@ try {
     await saveShot('edit_modal_open.png');
     const input = page.locator('input').first();
     if(await input.count()){
-      await input.fill('REDACTED').catch(()=>{});
+      await input.fill('IVANENKO').catch(()=>{});
       await clickByText(['Сохранить','Save']);
       await page.waitForTimeout(700);
       await saveShot('edit_modal_after_save.png');

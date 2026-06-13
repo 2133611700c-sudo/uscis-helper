@@ -256,7 +256,7 @@ phase_D_real_doc_pilot:
     - "DELETE photo from Downloads/ via bash immediately after test"
   tasks:
     - id: D.1
-      task: "User places photo at /Users/sergiiredacted/Downloads/tps-real-test.jpg"
+      task: "User places photo at /Users/sergiiivanenko/Downloads/tps-real-test.jpg"
       owner: user
       hours: 0.1
     - id: D.2

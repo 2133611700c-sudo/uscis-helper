@@ -34,9 +34,9 @@ const MODELS = [
 
 const FIX = resolve(REPO, 'test-fixtures/real-docs')
 const DOCS = [
-  { file: 'birth_cert_handwritten_redacted.jpg', kind: 'HANDWRITTEN' },
+  { file: 'birth_cert_handwritten_ivanenko.jpg', kind: 'HANDWRITTEN' },
   { file: 'marriage_1939_kharkiv_borodavka.jpg', kind: 'HANDWRITTEN (1939)' },
-  { file: 'military_id_p1_redacted.jpg', kind: 'PRINTED+hw' },
+  { file: 'military_id_p1_ivanenko.jpg', kind: 'PRINTED+hw' },
 ]
 
 const PROMPT = `You are an expert transcriber of Ukrainian/Russian official documents.

@@ -1,7 +1,7 @@
 # TASK-05 — Pain Points / Misinformation / FAQ Database
 
 **For**: Claude Code
-**Working dir**: `/Users/sergiiredacted/work/uscis-helper`
+**Working dir**: `/Users/sergiiivanenko/work/uscis-helper`
 **Duration**: 1-2 hours
 **Outcome**: 3 structured databases ready to power Wave 1.5 service page content + future Telegram bot answers
 **Prerequisite**: TASK-04 done

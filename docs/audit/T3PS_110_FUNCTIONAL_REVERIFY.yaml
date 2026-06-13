@@ -10,7 +10,7 @@ repo_gates:
 production_health:
   ok: true
   sha_matches_origin: true
-  health_json_path: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/health.json
+  health_json_path: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/health.json
 production_smoke:
   ru_start: PASS
   en_start: PASS
@@ -18,36 +18,36 @@ production_smoke:
   ru_sources: PASS
   ru_privacy: PASS
   headers:
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_ru_start.headers.txt
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_en_start.headers.txt
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_ru_landing.headers.txt
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_ru_sources.headers.txt
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_ru_privacy.headers.txt
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_ru_start.headers.txt
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_en_start.headers.txt
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_ru_landing.headers.txt
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_ru_sources.headers.txt
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/smoke_ru_privacy.headers.txt
 browser:
   scenario_A_i821_only:
     status: PASS
     ocr_status: 200
     generate_status: 200
     zip_downloaded: true
-    summary_path: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/browser_summary_A.json
+    summary_path: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/browser_summary_A.json
   scenario_B_i821_i765:
     status: PASS
     ocr_status: 200
     generate_status: 200
     zip_downloaded: true
-    summary_path: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/browser_summary_B.json
+    summary_path: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/browser_summary_B.json
   known_nonblocking_console_noise:
     - _vercel_insights_404
     - csp_blocked_cloudflare_beacon
 ocr_matrix:
-  source: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/ocr_matrix_reverify.json
+  source: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/ocr_matrix_reverify.json
   international_passport: PASS
   ukrainian_internal_passport: PASS
   i94: PASS
   ead: PASS
   uscis_notice: NOT_REQUIRED
 pdf:
-  source: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-110/pdf_reverify_summary.json
+  source: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/pdf_reverify_summary.json
   i821_critical_fields: PASS
   i765_critical_fields_when_ead: PASS
   part7_presence: PASS
