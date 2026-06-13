@@ -28,6 +28,7 @@ export type FieldKind =
   | 'date' // → ISO YYYY-MM-DD
   | 'doc_number' // series/number/act number → preserve exactly
   | 'agency' // issuing authority → glossary
+  | 'sex' // Ч/Ж/M/F → Male/Female (SEX_MAP)
   | 'text' // free text (seal, note)
 
 /** Which product flows consume a document type. Lets one base serve all. */
