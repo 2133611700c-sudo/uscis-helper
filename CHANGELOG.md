@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-12 | MIRROR marriage certificate LIVE (full HUSBAND/WIFE structure, KMU 1025)
+- Same bug class as birth, worse: the live reader (`documentRegistry.ts`) emitted COMPOSITE `spouse_1_full_name`/`spouse_2_full_name`, but the marriage schema uses split per-person keys (groom_surname/given_name/patronymic, bride_*) → 16/20 fields rendered blank and the two read names were dropped entirely.
+- **Split the registry** (`documentRegistry.ts ua_marriage_certificate`) into the full official blank: husband + wife each Прізвище/Ім'я/По батькові/дата народження/місце народження/громадянство, date of marriage, both surnames-after, act record №+date, registration office, series+number, date of issue. All `handwritten:true` ⇒ always review_required (no silent-wrong on a hand-filled cert). The reader prompt is built from `spec.fields`, so the new fields are now actually extracted. `vision_anchor` → `spouse_1_surname`.
+- **Schema** (`marriage-certificate.schema.ts`): added `act_record_date`; removed the duplicate `issuing_authority` field (the office reads into the official "Place of state registration" line — one label per datum).
+- **Aliases** (`buildMirrorValues.ts`): spouse_1_*→groom_*, spouse_2_*→bride_*, issuing_authority→place_of_registration, certificate_series_number→series_number.
+- **UI labels** (`translationFieldLabels.ts`): added Ukrainian labels for every split key so the wizard review screen labels them.
+- **Enabled**: added `ua_marriage_certificate` to `MIRROR_READY_DOCTYPES` (generate-pdf route) — marriage now renders the structured mirror by default (fail-open to generic).
+- Verified by rendering the full marriage mirror PNG: every HUSBAND/WIFE/MARRIAGE/ACT RECORD/STATE REGISTRATION line fills, NO ADDITIONAL ENTRIES dump, no duplicate lines. "Wife's surname after marriage" = husband's identical surname is correctly NOT collapsed (validates the decision to skip value-based dedup).
+- Evidence: tsc 0, build exit 0, web tests 3286 passed/2 skipped.
+
 ## 2026-06-12 | Mirror cross-cutting: no-missed-lines + mixed-script (owner-directed)
 Owner ask: reproduce EVERY line, no duplication, and don't let Russian/English text inside a Ukrainian doc break translation.
 - **No missed lines** (`buildMirrorValues.collectMirrorExtras` + `renderOfficialTranslation`): any extracted field that has a value but NO official-schema slot is now surfaced in an "ADDITIONAL ENTRIES" section ([CONFIRM]) instead of being silently dropped (the renderer only iterates schema.fields). Never invents — only echoes extracted values. Deduped against already-shown labeled values. Verified: marriage composite `spouse_1/2_full_name` now appear; a fully-mapped birth cert yields ZERO extras (no behavior change).
