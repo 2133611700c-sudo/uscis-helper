@@ -1,3 +1,10 @@
+# HANDOFF (2026-06-12 — birth cert mirror completeness: oblast + series + act-record-date)
+> 2026-06-12 BIRTH completeness. DID: birth documentRegistry emitted place_of_birth_city but NOT province_of_birth/certificate_series_number/act_record_date (all visible on the cert → mirror lines blank). Added all three to the registry + act_record_date to the birth schema (aliases province→oblast / series already existed). All handwritten:true→review. Verified PNG/text — Region (Oblast), Act record date, Series now fill. tsc 0/build/3286.
+> ALL 9 UA doc mirrors now LIVE + each as complete as its visible fields: birth/marriage/divorce/death/name-change/military-id + 3 passports.
+> OWNER GATE (per type, still): real-document end-to-end test. New extraction fields default to review so a wrong read can't ship silently.
+> OPTIONAL FOLLOW-UP: passport completeness (international/ID lack place_of_birth/nationality/authority/date_of_issue — needs registry+schema, sex has no FieldKind); place/agency RU translit still KMU-55-only; doc-level language detection for full mixed-script.
+> EVIDENCE: tsc 0 | build exit 0 | 3286 passed/2 skipped | birth full PNG/text.
+
 # HANDOFF (2026-06-12 — MIRROR passports LIVE, all 3 types registered)
 > 2026-06-12 PASSPORTS registered + LIVE. DID: moved the 3 staged passport schemas into OFFICIAL_SCHEMAS (schemas/registry.ts), retired PASSPORT_SCHEMA_RENDERER_ENABLED. Keys already matched documentRegistry (no aliases). International + ID card use printed Latin verbatim (locked_verbatim, controlling-Latin rule); booklet KMU-55. GROUP_TITLE += holder/document; genericized seal/signature footer (was wrong "civil-registration body" for passports). Added all 3 to MIRROR_READY_DOCTYPES. Updated 6 tests pinning old staged-OFF behavior. Verified each PNG/text. tsc 0/build/3289.
 > 8 of 9 UA doc mirrors LIVE: birth/marriage/divorce/death/name-change/military-id + 3 passports.
