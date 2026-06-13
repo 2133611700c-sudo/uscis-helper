@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-13 | Wave 1 INTEGRATION: Agent 1 DB hardening merged onto canonical-continuity; gate green; preview-enforce NO-GO
+
+- **INTEGRATION**: cherry-picked Agent 1 `066ab1f` onto `architecture/canonical-continuity` (base `69717fe`). Clean, no conflicts. Migrations `20260613000004`/`000005` retain distinct in-order timestamps (no duplicate version). Files: persistence/index.ts, version.ts, canonical persistence tests + new live DB-invariant test, 2 migrations, STATUS/HANDOFF/CHANGELOG.
+- **AGENT 2 NOT INTEGRATED**: Agent 2 returned `BLOCKED_CLIENT_ID_CARRIAGE` (`client_id_carriage_proven=false`) and produced ZERO new commits on its base — its worktree HEAD `1919b543` is an unrelated Phase 1/2B forms commit; integration base is NOT its ancestor. Nothing to merge. Agent 2's "override route absent" was a stale-base artifact (route exists on integration branch via base `69717fe`).
+- **LIVE DB RE-PROOF** (rtfxrlountkoegsseukx, postgres path, synthetic WAVE1_TEST*, cleaned via guarded RPC): 4 triggers; product-scoped UNIQUE present + old constraint dropped; `fields_hash_schema_version` present; anon/authenticated grants = 0; UPDATE base → P0001, DELETE base → P0001; 0 leftovers.
+- **GATE**: tsc 0 errors; tests 3597 pass / 24 skip / 0 fail (6 live DB-invariant tests self-skip without `RUN_DB_INVARIANTS=1` — proven separately live; not a blocking skip); build PASS (`/api/canonical/[id]/override` registered ƒ); PII gate CLEAN.
+- **DECISION**: preview ENFORCE (Wave 2) = **NO-GO**. Automatic NO-GO on `client_id_carriage_proven=false`. Open blockers: BLOCKED_CLIENT_ID_CARRIAGE, BLOCKED_EXTRACTION_PERSISTENCE. The canonical_document_id emit + extraction-persistence + enforce-by-id + 7-field certification layer is unbuilt across all 4 products. DB layer is ready and proven.
+- NOT merged to main; no Vercel/env change; not deployed.
+
 ## 2026-06-13 | Wave 1 Agent 1: canonical DB immutability/idempotency/hash/security hardening (LIVE-proven)
 
 - **IMMUTABILITY (real gap, fixed)**: canonical_documents + canonical_overrides were protected by RLS only. service_role bypasses RLS; a LIVE probe (project rtfxrlountkoegsseukx) proved `UPDATE canonical_documents` SUCCEEDED and `UPDATE`/`DELETE canonical_overrides` SUCCEEDED. Added BEFORE UPDATE/DELETE triggers (`trg_canonical_documents_no_update/delete`, `trg_canonical_overrides_no_update/delete`) + guard functions raising `CANONICAL_BASE_IMMUTABLE` / `CANONICAL_OVERRIDES_APPEND_ONLY` (P0001). Re-probe: all 4 REJECTED even as postgres. Added `canonical_admin_cleanup_sentinel(text)` (service_role-only, WAVE1_TEST* prefix-guarded) for synthetic-row cleanup.
