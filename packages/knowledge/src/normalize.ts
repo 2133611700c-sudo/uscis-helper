@@ -278,8 +278,20 @@ export function normalizePlace(
       const wrongLower = gc.wrong.toLowerCase();
       const histLower = gc.historical_preserve?.toLowerCase();
       if (normalized.toLowerCase() === wrongLower || (histLower && normalized.toLowerCase() === histLower)) {
-        normalized = gc.correct;
-        rule = `geo_correction:${gc.wrong}->${gc.correct}`;
+        if (gc.renamed_year) {
+          // RENAMED city (Дніпропетровськ→Dnipro 2016, Кіровоград→Kropyvnytskyi
+          // 2016). Do NOT silently modernize: we cannot reliably know the
+          // document's date, and CLAUDE.md requires historical place names be
+          // PRESERVED. Keep the read (historical) form and flag REVIEW with the
+          // modern name as a suggestion — the operator decides from the document
+          // date they can see. (Was: silent overwrite → era-wrong translations.)
+          reviewRequired = true;
+          reviewReason = `Renamed place: document reads "${normalized}"; modern name is "${gc.correct}" (renamed ${gc.renamed_year}). Preserve the historical name unless the document post-dates the rename.`;
+          rule = `geo_rename_review:${normalized}->${gc.correct}`;
+        } else {
+          normalized = gc.correct;
+          rule = `geo_correction:${gc.wrong}->${gc.correct}`;
+        }
         break;
       }
     }

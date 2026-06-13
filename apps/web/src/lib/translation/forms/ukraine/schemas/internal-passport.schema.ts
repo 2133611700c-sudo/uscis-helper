@@ -28,6 +28,8 @@ export const internalPassportSchema: OfficialFormSchema = {
     { key: 'dob', sourceLabelUk: 'Дата народження', sourceLabelEn: 'Date of birth', required: true, fieldGroup: 'holder', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
     { key: 'city_of_birth', sourceLabelUk: 'Місце народження', sourceLabelEn: 'Place of birth', required: false, fieldGroup: 'holder', expectedScript: 'cyrillic', translationRule: 'place_gazetteer', lockedEntity: false, evidenceRequired: true },
     { key: 'province_of_birth', sourceLabelUk: 'Область', sourceLabelEn: 'Region (Oblast)', required: false, fieldGroup: 'holder', expectedScript: 'cyrillic', translationRule: 'place_gazetteer', lockedEntity: false, evidenceRequired: true },
+    { key: 'sex', sourceLabelUk: 'Стать', sourceLabelEn: 'Sex', required: false, fieldGroup: 'holder', expectedScript: 'mixed', translationRule: 'locked_verbatim', lockedEntity: true, evidenceRequired: true },
+    { key: 'date_of_issue', sourceLabelUk: 'Дата видачі', sourceLabelEn: 'Date of issue', required: false, fieldGroup: 'document', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
   ],
   layoutSections: ['header', 'personFields', 'issuingAuthority', 'seals', 'signatures', 'certification'],
 }

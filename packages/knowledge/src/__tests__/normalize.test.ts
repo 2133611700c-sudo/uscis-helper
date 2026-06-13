@@ -136,12 +136,15 @@ assert(kirovograd_hist.rule_applied.includes('historical') ||
        kirovograd_hist.rule_applied.includes('kmu55'),
   'Rule shows historical preservation or KMU-55');
 
-// Modern context: Kirovograd → Kropyvnytskyi
+// Renamed city: do NOT silently modernize — preserve the read + flag review with
+// the modern name as a suggestion (we can't know the doc date; historical names
+// must be preserved per CLAUDE.md). The operator decides.
 const kirovograd_modern = normalizePlace('Kirovograd', 'current_city',
   'user_input', { mode: 'uscis_normalized', is_historical_document: false });
-assert(kirovograd_modern.normalized_value === 'Kropyvnytskyi',
-  'Modern context: Kirovograd → Kropyvnytskyi',
-  `Got: ${kirovograd_modern.normalized_value}`);
+assert(kirovograd_modern.review_required === true &&
+       (kirovograd_modern.review_reason ?? '').includes('Kropyvnytskyi'),
+  'Renamed city: Kirovograd → REVIEW (suggest Kropyvnytskyi, never silent)',
+  `Got: value=${kirovograd_modern.normalized_value} review=${kirovograd_modern.review_required} reason=${kirovograd_modern.review_reason}`);
 
 // ── CONTROLLING SPELLING CONFLICT ────────────────────────
 

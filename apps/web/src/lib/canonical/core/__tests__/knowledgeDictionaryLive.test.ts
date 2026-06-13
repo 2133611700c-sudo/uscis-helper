@@ -51,9 +51,13 @@ describe('dictionary refinements (owner follow-ups 2026-06-12)', () => {
   it('oblast dative case → English nominative Oblast', () => {
     expect(normalizeOblastToNominative('Вінницькій області')?.transliterated).toBe('Vinnytsia Oblast')
   })
-  it('modern document: renamed city → modern name (Кіровоград→Kropyvnytskyi)', () => {
+  it('renamed city → REVIEW with modern suggestion, NEVER a silent rename', () => {
+    // Preserve the historical read (we cannot know the doc date); surface the
+    // modern name as a review suggestion. Silent modernization could be era-wrong.
     const r = normalizePlace('Кіровоград', 'place_of_birth', 'ua_internal_passport_booklet', { is_historical_document: false } as never)
-    expect(r.normalized_value).toContain('Kropyvnytskyi')
+    expect(r.normalized_value).toContain('Kirovohrad')      // historical read kept
+    expect(r.review_required).toBe(true)
+    expect(r.review_reason).toContain('Kropyvnytskyi')      // modern name suggested
   })
   it('historical document: renamed city preserved (Кіровоград→Kirovohrad)', () => {
     const r = normalizePlace('Кіровоград', 'place_of_birth', 'ua_birth_certificate', { is_historical_document: true } as never)

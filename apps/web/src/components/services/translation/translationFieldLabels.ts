@@ -19,6 +19,7 @@ export const UKR_LABEL_BY_FIELD: Record<string, string> = {
   // international passport
   passport_number: 'Номер паспорта',
   passport_expiration_date: 'Дата закінчення строку дії',
+  sex: 'Стать',
   // birth certificate (full spec)
   child_family_name: 'Прізвище дитини',
   child_given_name: "Ім'я дитини",
