@@ -15,7 +15,7 @@
  * missing → [enter from document]).
  */
 import { getOfficialSchema } from '../forms/ukraine/schemas/registry'
-import { buildMirrorValues, type ExtractedFieldLite } from './buildMirrorValues'
+import { buildMirrorValues, collectMirrorExtras, type ExtractedFieldLite } from './buildMirrorValues'
 import { renderOfficialTranslation } from './templates/ukraine/renderOfficialTranslation'
 
 export interface MirrorPdfResult {
@@ -34,7 +34,8 @@ export async function renderMirrorTranslationPDF(
   const schema = getOfficialSchema(docType)
   if (!schema) return null
   const values = buildMirrorValues(schema, extracted)
-  const { pdf, unresolved } = await renderOfficialTranslation(schema, values, opts)
+  const extras = collectMirrorExtras(schema, extracted)
+  const { pdf, unresolved } = await renderOfficialTranslation(schema, values, { ...opts, extras })
   return {
     pdf,
     unresolved,
