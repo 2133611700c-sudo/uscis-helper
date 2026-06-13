@@ -10,6 +10,7 @@ const GROUP_TITLE: Record<string, string> = {
   groom: 'HUSBAND', bride: 'WIFE', child: 'CHILD', parents: 'PARENTS', deceased: 'DECEASED',
   person: 'PERSON', marriage: 'MARRIAGE', dissolution: 'DISSOLUTION', actRecord: 'ACT RECORD',
   issuing: 'STATE REGISTRATION', previous: 'NAME BEFORE CHANGE', new: 'NAME AFTER CHANGE',
+  holder: 'HOLDER', document: 'DOCUMENT',
 }
 // PDF-safe rendering with NO silent data loss: KMU-55 transliterate Cyrillic,
 // map typographic symbols, mark anything still unrenderable. (was: silent strip)
@@ -58,8 +59,8 @@ export async function renderOfficialTranslation(
     for (const e of extras) { L(`  ${e.label}: ${e.value}    [CONFIRM]`, 10, font, warn); unresolved.push(e.key) }
     y -= 3
   }
-  HR(); L('[ Official round seal - emblem and text not reproduced ]', 9, ital, gray)
-  L('[ Signature of the head of the civil-registration body ]', 9, ital, gray); y -= 4; HR()
+  HR(); L('[ Official seal / stamp - emblem and text not reproduced ]', 9, ital, gray)
+  L('[ Signature of the issuing official - not reproduced ]', 9, ital, gray); y -= 4; HR()
   L("TRANSLATOR'S CERTIFICATION (8 CFR 103.2(b)(3))", 11, bold)
   L(`I, ${opts.signerName ?? '________________'}, certify that I am competent to translate from Ukrainian`, 10)
   const docName = schema.titleEn.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())

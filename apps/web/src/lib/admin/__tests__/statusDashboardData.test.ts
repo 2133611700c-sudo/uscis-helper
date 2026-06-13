@@ -45,9 +45,9 @@ describe('buildStatusDashboard', () => {
     expect(d.certifierAuditLast10).toEqual([])
   })
 
-  it('passport migration state mirrors the renderer flag', async () => {
+  it('passport migration state is registered (flag retired 2026-06-12)', async () => {
     const off = await buildStatusDashboard(fakeDb(), {}, NOW)
-    expect(off.passportMigration.state).toBe('not_registered')
+    expect(off.passportMigration.state).toBe('registered')
     const on = await buildStatusDashboard(fakeDb(), { PASSPORT_SCHEMA_RENDERER_ENABLED: '1' }, NOW)
     expect(on.passportMigration.state).toBe('registered')
   })
