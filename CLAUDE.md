@@ -1,6 +1,7 @@
 # CLAUDE.md — Mandatory Agent Rules for uscis-helper
 
 ## BEFORE YOU TOUCH ANY CODE — READ THESE FILES (in order):
+0. `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — consolidated evidence-only audit (brain/dictionary/arbitration/canonical + repo/PR/security/deploy). Read FIRST; verified facts, `UNVERIFIED` items, and risk register.
 1. `STATUS.md` — current operational truth (1 screen)
 2. `HANDOFF.md` — last session results + exact next task
 3. `SOURCE_OF_TRUTH.md` — canonical modules, what NOT to duplicate
