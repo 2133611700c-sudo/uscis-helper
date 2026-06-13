@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | Owner real-doc test fixes — oblast fabrication + 4-page-passport=0
+Owner tested a real birth certificate (names, patronymics, ЗАГС→ZAHS, series all came out CORRECT — the anti-Russification + dictionary fixes are working) and a 4-page passport. Two bugs:
+- **Oblast fabrication** (`documentRegistry.ts`, `birth-certificate.schema.ts`, `buildMirrorValues.ts`): the separate `province_of_birth` field added in the birth-completeness pass made the model INFER/fabricate an oblast on a real 1986 cert (owner: "придумал… заготовленную область"). Removed `province_of_birth` from the birth registry + `oblast_of_birth` from the birth schema + the dead alias. The oblast, when present, is part of the place-of-birth line — not a standalone field worth a fabrication-prone separate ask.
+- **4-page passport recognized "вообще 0"** (`geminiVisionProvider.ts`, `vision-extract/route.ts`): root cause (diagnostic agent) — `timeoutMs` was applied PER callGemini attempt, and the chain is 3-model fallback × 2 attempts, so a single page could run up to ~240s; 4 pages read in PARALLEL blew the route's 60s `maxDuration` → the serverless function was killed → zero fields returned (the 1-page birth cert had the full budget and was fine). FIX: `timeoutMs` is now a single TOTAL DEADLINE for the whole read across the fallback chain — each attempt gets `deadline - now` and the loop stops when <3s remain. Raised `maxDuration` 60→120 for multi-page headroom. Also strengthened the orientation prompt (a handwritten booklet shot in portrait is the weakest case: "you MUST mentally rotate… NEVER return can_read=false just because the text is sideways").
+- Tests: `mirrorTranslation.test.ts` updated (oblast field removed → assert another no-source field).
+- Evidence: tsc 0, build exit 0, web 3288 passed/2 skipped.
+
 ## 2026-06-12 | FINISH — passport completeness + modern-rename safety + OSD removal
 Owner: "доделай всё полностью… готовый результат, не куски". Finished the open items, verified the whole set.
 - **Passport completeness** (загран/ID/booklet): added Sex, Place of birth, Date of issue (booklet already had place of birth). Sex done via a NEW FieldKind `'sex'` (`types.ts`, `transliterationPolicy.ts` case) that maps Ч/Ж/чол/жін/M/F → Male/Female through `SEX_MAP` (added the Latin M/m/Male/Female forms) — not a fragile `text` path that would render "Ch". Schema + registry fields added for all 3. Deliberately NOT added: nationality/citizenship (no normalizer → "Ukraina") and the intl/ID issuing-authority code (a number, not an org name).

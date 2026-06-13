@@ -39,7 +39,7 @@ const ALIASES: Record<string, Record<string, string>> = {
     // Alias BOTH → place_of_birth so the mirror fills regardless of which fed it.
     place_of_birth_city: 'place_of_birth',
     city_of_birth: 'place_of_birth',
-    province_of_birth: 'oblast_of_birth',
+    // (no oblast alias — the birth oblast field was removed; it fabricated)
     // TPS contract emits `certificate_series_number`; registry path emits no series.
     certificate_series_number: 'series_number',
     issuing_authority: 'place_of_registration',

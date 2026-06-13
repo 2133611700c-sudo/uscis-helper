@@ -13,7 +13,8 @@ export const birthCertificateSchema: OfficialFormSchema = {
     N('child_patronymic', 'По батькові', 'Patronymic', 'child'),
     { key: 'date_of_birth', sourceLabelUk: 'дата народження', sourceLabelEn: 'Date of birth', required: true, fieldGroup: 'child', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
     { key: 'place_of_birth', sourceLabelUk: 'місце народження', sourceLabelEn: 'Place of birth', required: true, fieldGroup: 'child', expectedScript: 'cyrillic', translationRule: 'place_gazetteer', lockedEntity: false, evidenceRequired: true },
-    { key: 'oblast_of_birth', sourceLabelUk: 'область', sourceLabelEn: 'Region (Oblast)', required: false, fieldGroup: 'child', expectedScript: 'cyrillic', translationRule: 'place_gazetteer', lockedEntity: false, evidenceRequired: true },
+    // No separate oblast field: it was being inferred/fabricated (owner-reported).
+    // The oblast, when present, is part of the place-of-birth line on the document.
     N('father_full_name', 'Батько', 'Father', 'parents', false),
     N('mother_full_name', 'Мати', 'Mother', 'parents', false),
     { key: 'act_record_number', sourceLabelUk: 'актовий запис №', sourceLabelEn: 'Act record No.', required: true, fieldGroup: 'actRecord', expectedScript: 'numeric', translationRule: 'locked_verbatim', lockedEntity: true, evidenceRequired: true },
