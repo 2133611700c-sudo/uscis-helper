@@ -48,7 +48,10 @@ function modelFallback(): string[] {
 function buildPrompt(spec: DocTypeSpec): string {
   const lines = spec.fields.map((f) => {
     const dateHint = f.kind === 'date' ? ' (also return iso_date YYYY-MM-DD)' : ''
-    return `- ${f.field} (${f.label_uk})${dateHint}`
+    const nameHint = f.kind === 'name' && spec.script === 'mixed'
+      ? ' (this document prints the name in BOTH Cyrillic and the official LATIN romanization, e.g. "СЕРГІЙ/SERGII" and in the MRZ — return the LATIN spelling EXACTLY as printed, it is the controlling spelling; do NOT transliterate it yourself)'
+      : ''
+    return `- ${f.field} (${f.label_uk})${dateHint}${nameHint}`
   })
   return `You are reading a ${spec.title_en}. The IMAGE is the ground truth — read only what is visibly written. Do NOT guess, do NOT infer typical values.
 
