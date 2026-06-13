@@ -1,3 +1,6 @@
+# STATUS (2026-06-13 — Migration ledger: duplicate canonical migration removed, version collision RESOLVED)
+- MIGRATION LEDGER: duplicate `20260613000001_canonical_documents_and_overrides.sql` removed (byte-for-byte copy of `20260613000000`). Remote applied 3 migrations: 194557 (canonical tables), 194613 (cert binding), 194627 (idempotent no-op). Local now has 2 canonical files: `20260613000000_canonical_documents_and_overrides.sql` + `20260613000001_certification_canonical_hash_binding.sql`. Version collision resolved. Ledger CLEAN.
+
 # STATUS (2026-06-13 — EAD wiring DONE: all 4 products canonical, gate PASS)
 - CANONICAL CONTINUITY: ALL 4 products wired (TPS, Re-Parole, Translation/generate-pdf, EAD generate-packet). EAD route follows exact TPS pattern (422/409/404/403/503 HTTP contract). I-765 unified: buildI765DocumentOps is single entry point for both TPS and EAD document-derived fields. 3 migration files on branch (NOT applied — owner approval required). CANONICAL_CONTINUITY_MODE=shadow (default). Tests: 3573 pass (+14 from EAD tests). TypeScript: 0 errors. Build: PASS. Verdict: READY_FOR_MIGRATION (pending DB migration + owner approval to flip enforce).
 

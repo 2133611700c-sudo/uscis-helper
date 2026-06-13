@@ -1,3 +1,19 @@
+# HANDOFF (2026-06-13 — Migration ledger agent: duplicate canonical migration removed)
+> **Duplicate `20260613000001_canonical_documents_and_overrides.sql` removed. Version collision resolved. Branch clean.**
+>
+> DONE (this session):
+> - Confirmed both `20260613000000` and `20260613000001_canonical_documents_and_overrides.sql` were byte-for-byte identical (SHA256 ade9d82a...)
+> - Remote already handled collision via 3 applied versions: 20260613194557 (canonical tables), 20260613194613 (cert binding), 20260613194627 (idempotent no-op for the duplicate)
+> - `git rm` applied to the duplicate file only; cert binding file untouched
+> - CHANGELOG + HANDOFF + STATUS updated
+>
+> NOT DONE:
+> - DB migration still NOT applied to local Supabase CLI (remote is ahead — the 3 migrations were applied via Supabase MCP, not `supabase migrate`)
+> - `CANONICAL_CONTINUITY_MODE=shadow` remains default — enforce requires env var flip in Vercel
+> - Push to remote + Draft PR still needed
+>
+> NEXT TASK: push `architecture/canonical-continuity` and open Draft PR for owner review
+
 # HANDOFF (2026-06-13 — EAD wiring agent: EAD generate-packet wired to canonical continuity)
 > **All 4 products (TPS, Re-Parole, Translation, EAD) are now wired to canonical continuity. 3573 tests pass. 0 type errors. Build PASS.**
 >
