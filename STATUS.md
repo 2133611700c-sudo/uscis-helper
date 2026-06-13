@@ -1,3 +1,6 @@
+# STATUS (2026-06-13 — Final gate: all migrations applied, integration tests PASS, RPC bug fixed)
+- CANONICAL PERSISTENCE: All 4 migrations applied to prod DB. Atomic RPC bug fixed (JSON.stringify → pass array directly; Supabase serializes to JSONB). 6/6 concurrency integration tests PASS against real DB. UNIQUE constraints confirmed. FK confirmed. SECURITY DEFINER confirmed. Tests: 3580 pass. TypeScript: 0 errors. Build: PASS. PR #117 updated. Branch pushed.
+
 # STATUS (2026-06-13 — Persistence hardening: 5 defects fixed, 2 migrations written, NOT applied)
 - CANONICAL PERSISTENCE: 5 defects fixed. Migrations `000002` (UNIQUE constraints + atomic RPC) and `000003` (cert FK) written but NOT applied — owner must apply. `persistCanonicalDocument` is now idempotent (upsert). `appendCanonicalOverride` uses atomic RPC with advisory lock. Override resolution ORDER BY version ASC (was created_at). `CanonicalConcurrencyError` typed exception added. TypeScript: 0 errors. Tests: 3580 pass.
 

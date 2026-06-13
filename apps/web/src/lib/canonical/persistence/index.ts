@@ -469,7 +469,7 @@ export async function appendCanonicalOverride(
   const { data, error } = await supabase.rpc('append_canonical_overrides_atomic', {
     p_canonical_id: canonicalId,
     p_expected_version: expectedVersion,
-    p_overrides: JSON.stringify(overridesPayload),
+    p_overrides: overridesPayload,
   })
 
   if (error) {
