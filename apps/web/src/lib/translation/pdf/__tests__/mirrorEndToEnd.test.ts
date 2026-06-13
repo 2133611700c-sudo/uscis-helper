@@ -19,7 +19,7 @@ const SYNTHETIC_BIRTH: ExtractedFieldLite[] = [
   // patronymic read but ambiguous source script → carried as review candidate:
   { field: 'child_patronymic', value: 'Petrovych', review_required: true },
   { field: 'dob', value: '1990-05-14', review_required: false },
-  { field: 'place_of_birth_city', value: 'Vinnytsia', review_required: false },
+  { field: 'city_of_birth', value: 'Vinnytsia', review_required: false }, // REAL extractor key
   { field: 'father_full_name', value: 'Ivan Ivanenko', review_required: false },
   // mother deliberately omitted → renderer must emit "[enter from document]"
 ]
@@ -42,6 +42,20 @@ describe('mirror PDF end-to-end (synthetic birth certificate)', () => {
     expect(res!.unresolved).not.toContain('child_family_name')
     // at least one schema field had no extraction → some unresolved exist.
     expect(res!.unresolved.length).toBeGreaterThan(0)
+  })
+
+  it('REGRESSION: city_of_birth and certificate_series_number are mapped, not lost', async () => {
+    // Before the alias fix the mirror expected `place_of_birth_city`/`series_number`
+    // verbatim, but the extractor emits `city_of_birth`/`certificate_series_number`,
+    // so place of birth and the series silently rendered as [enter from document]
+    // even when read. Assert the REAL extractor keys now resolve (NOT unresolved).
+    const res = await renderMirrorTranslationPDF('ua_birth_certificate', [
+      { field: 'child_family_name', value: 'Ivanenko', review_required: false },
+      { field: 'city_of_birth', value: 'Vinnytsia', review_required: false },
+      { field: 'certificate_series_number', value: 'I-АМ № 428069', review_required: false },
+    ])
+    expect(res!.unresolved).not.toContain('place_of_birth')
+    expect(res!.unresolved).not.toContain('series_number')
   })
 
   it('returns null for a docType with no official schema (caller falls back to generic)', async () => {

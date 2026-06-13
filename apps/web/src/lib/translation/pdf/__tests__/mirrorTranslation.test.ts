@@ -33,11 +33,16 @@ describe('buildMirrorValues — registry keys → schema keys', () => {
     const v = buildMirrorValues(schema, [
       { field: 'child_family_name', final_value: 'Kovalenko', review_required: false },
       { field: 'dob', normalized_value: '2010-05-15', review_required: false },
-      { field: 'place_of_birth_city', normalized_value: 'Vinnytsia', review_required: true },
+      // REAL extractor key is `city_of_birth` (documentContracts birth slot), NOT
+      // `place_of_birth_city`. Production sends city_of_birth → place_of_birth.
+      { field: 'city_of_birth', normalized_value: 'Vinnytsia', review_required: true },
+      { field: 'certificate_series_number', normalized_value: 'I-АМ № 428069', review_required: false },
     ])
     expect(v.child_surname).toEqual({ value: 'Kovalenko', review: false, canRead: true })
     expect(v.date_of_birth.value).toBe('2010-05-15')
     expect(v.place_of_birth).toEqual({ value: 'Vinnytsia', review: true, canRead: true })
+    // certificate_series_number → series_number (was an unmapped blank before the fix)
+    expect(v.series_number).toEqual({ value: 'I-АМ № 428069', review: false, canRead: true })
   })
 
   it('prefers final_value over normalized_value (C3 release contract)', () => {

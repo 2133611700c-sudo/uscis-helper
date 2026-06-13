@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-12 | MIRROR translation LIVE for birth certificate (2nd keystone)
+- The "second big area" the owner repeatedly flagged ("структура не формирует готовый документ… зеркальный перевод шаблоны не сформировали"). Inventory found the mirror infra was 90% built-but-dark (schemas live, generic renderer ready, route gate ready) behind `MIRROR_PDF_ENABLED` (OFF) + 2 alias bugs.
+- **Alias fix** (`buildMirrorValues.ts`): extractor emits `city_of_birth` + `certificate_series_number` (verified in `documentContracts.ts` birth_certificate slot), but the mirror map expected `place_of_birth_city` + `series_number` → Place-of-birth and Series silently rendered `[enter from document]` even when read. Mapped the REAL keys.
+- **signedAt threaded** (`renderMirrorTranslationPDF.ts` → `renderOfficialTranslation.ts`): certification block now shows the real signed date instead of a blank line; cert text now names the document ("…true and accurate English translation of the attached Ukrainian Birth Certificate…").
+- **Turned ON for birth cert by default** (`generate-pdf/route.ts`): new `MIRROR_READY_DOCTYPES` allowlist (birth cert only — schema verified to cover all 11 extractor keys, no data loss vs generic table). Fail-open preserved (mirror error → generic PDF). Other doc types still require `MIRROR_PDF_ENABLED=1`.
+- **Tests**: `mirrorTranslation.test.ts` + `mirrorEndToEnd.test.ts` were feeding the WRONG key `place_of_birth_city` (encoding the bug) → updated to real extractor keys + added a render-level regression asserting `place_of_birth`/`series_number` are NOT unresolved. Status-dashboard note updated to reflect the allowlist.
+- Files: `buildMirrorValues.ts`, `renderOfficialTranslation.ts`, `renderMirrorTranslationPDF.ts`, `generate-pdf/route.ts`, `statusDashboardData.ts`, 2 mirror test files.
+- Evidence: tsc 0 errors, build exit 0, `pnpm --filter web test` 3278 passed / 2 skipped. Visual: rendered birth-cert mirror PDF, eyeballed PNG — finished structured document, Place-of-birth=Vinnytsia + Series populated, real cert date.
+
 ## 2026-06-12 | Dictionary SAFETY NET — the dictionary can never crash recognition
 Architect-grade multi-layer hedge so the now-active dictionary never breaks an extraction ("чтобы не падало ничего"):
 - **Layer 1 — crash isolation:** `arbitrateDocument` now wraps every per-field arbitration AND `applyKnowledge` in try/catch. A single bad field/rule degrades to the read value (fail-open) and the document always comes back. The doc-level derives (sex / given-name) are wrapped too. PII-free `[knowledge-safety]` `console.warn` on every fallback (observability — key + message, never the value). (`normalizeCanonicalValue` already fails-open to a review action; this covers everything around it.)
