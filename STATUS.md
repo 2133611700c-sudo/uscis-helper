@@ -1,23 +1,5 @@
-# STATUS (2026-06-13 — canonical-continuity Agent 3: packet routes COMPLETE; enforce mode blocks synthetic reconstruction)
-- Branch: architecture/canonical-continuity
-- DELIVERED: canonical continuity in TPS + reparole generate-packet routes (shadow/enforce/off mode). Persistence layer incorporated from Agent 1. Extract routes incorporated from Agent 2. 18 new tests (INV-11, provenance, C3 null, mode, I-765 unification). tsc 0 new errors. 3474 legacy tests pass.
-- CANONICAL_CONTINUITY_MODE=off: route uses legacy boundary, no persistence load
-- CANONICAL_CONTINUITY_MODE=shadow (default): loads canonical if canonical_document_id present, non-blocking on failure
-- CANONICAL_CONTINUITY_MODE=enforce: 422/409/404/503 on any canonical failure; legacy path unreachable
-- I-765: PROVEN — buildI765DocumentOps called from exactly 2 places (TPS i765FieldMap + EAD i765FieldMap). No third mapper.
-- INV-11 PROVEN: finalValue=null produces no PDF op; mapper honors C3 null via applyCanonicalFieldMap/getCanonicalValue.
-- normalizeCountryOfBirth: NOT re-applied on canonical path (Part C). Boundary only.
-- canonical_documents + canonical_overrides: NOT in live DB (migration not applied, not Agent 3 scope).
-- NEXT: Agent 4 — override route HTTP 409 concurrency; parity runtime guards.
-
-# STATUS (2026-06-13 — canonical-continuity Agent 1: persistence layer COMPLETE; migration written, NOT applied)
-- Branch: architecture/canonical-continuity (SHA 677dce8 + Agent 1 work).
-- DELIVERED: Supabase migration SQL (write-only, not applied), persistence module with all 8 operations, version.ts, errors.ts, 23 unit tests (all pass), 8 RLS tests (all pass). tsc 0. Test count: 3505 pass / 18 skip (up from 3474 baseline, 0 regressions).
-- canonical_documents + canonical_overrides DO NOT EXIST in live DB yet — migration must be applied by owner before any live persistence.
-- HASH SENTINEL PROVEN: fields_hash uses '__UNDEFINED__' for finalValue=undefined, so undefined ≠ null in hash space (Test 3 proves it).
-- INV-11 NULL PRESERVED PROVEN: finalValue=null loads back as null (Test 10); null override preserved (Test 13); unconfirmed override does not release null (Test 17).
-- CANONICAL_CONTINUITY_MODE: not yet wired to routes — that is Agent 2 scope.
-- NEXT: Agent 2 wires persistence to API routes + implements CANONICAL_CONTINUITY_MODE off|shadow|enforce.
+# STATUS (2026-06-13 — Agent 4: canonical continuity translation cutover PARTIAL)
+- TRANSLATION CUTOVER: generate-pdf wired to resolveCanonicalDocument in shadow+enforce mode. C3 null filtered (INV-11). Cert binds 7 hashes. 3502 tests pass. Verdict: CONTINUITY_PARTIAL. Blockers: packet routes not wired; render/route.ts not wired; DB migration not applied.
 
 # STATUS (2026-06-13 — FULL SYSTEM + DOCUMENT-CORE AUDIT written; audit-only, no code change, nothing merged)
 - AUDIT-ONLY session. Consolidated evidence-only audit written to `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` (Part 1 repo/PR/security/deploy; Part 2 Document Core brain/dictionary/arbitration/canonical; Part 3 full system runtime — routes/DB/storage/auth/env/deploy/monitoring/flows/packets/archive/deps/dead-code/security/production). Added a `0.` read-first pointer to AGENTS.md + CLAUDE.md so every agent reads it on contact. NO application code changed. RESULT: DEGRADED (functional + well-guarded; gaps in the doc's risk registers). VERIFIED LIVE: prod=main `4d3e470` (healthz + Vercel `target:production`); preview=PR#116 `76c49e2` (OPEN, not merged); Supabase `rtfxrlountkoegsseukx` ACTIVE_HEALTHY, 38 tables (3 audit/observability tables at 0 rows ⇒ OCR_FIELD_SAFETY/GUARD_BLOCK_METRICS/CERTIFIER_AUDIT flags OFF in prod). tsc 0; field-by-field 46/46; cross-product parity 100/1-skip; live real-doc gate (EAD+I-94) 8/8, 0 FABRICATED/0 REVIEW_LOST. TOP RISKS (HIGH): C3 anti-fabrication gate OFF in prod; Phase 2B form-correctness fixes are PR-only not in prod. NEXT (owner decision): read prod Vercel env to confirm flag posture (esp. OCR_FIELD_SAFETY_ENABLED) + merge PR #116. No new direction taken.
