@@ -9,7 +9,7 @@ export interface FieldValue { value: string; review: boolean; canRead: boolean }
 const GROUP_TITLE: Record<string, string> = {
   groom: 'HUSBAND', bride: 'WIFE', child: 'CHILD', parents: 'PARENTS', deceased: 'DECEASED',
   person: 'PERSON', marriage: 'MARRIAGE', dissolution: 'DISSOLUTION', actRecord: 'ACT RECORD',
-  issuing: 'STATE REGISTRATION',
+  issuing: 'STATE REGISTRATION', previous: 'NAME BEFORE CHANGE', new: 'NAME AFTER CHANGE',
 }
 // PDF-safe rendering with NO silent data loss: KMU-55 transliterate Cyrillic,
 // map typographic symbols, mark anything still unrenderable. (was: silent strip)
