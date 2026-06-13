@@ -63,11 +63,11 @@ For each key return an object:
   "reason": "<short>" }
 
 Rules:
-- LANGUAGE — transcribe each line EXACTLY in the script it is actually printed in. Do NOT translate between languages. Most lines are Ukrainian: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT Russify them. Errors to AVOID on a Ukrainian line: Сергій→(wrong)Сергей, Сергійович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой; ЗАГС/РАЦС forms stay as written. BUT some documents are genuinely RUSSIAN (Soviet-era certificates) or contain RUSSIAN/ENGLISH lines (apostilles, stamps, bilingual forms): if a line is actually printed in Russian (letters ы, э, ё, ъ) or English, transcribe it AS-IS in that language — do NOT Ukrainize it either (do not turn a real Сергеевич into Сергійович). The rule is: never change a name's language; mirror exactly what is printed.
+- LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Сергій→(wrong)Сергей, Сергійович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake.
 - The photo may be ROTATED (0°, 90°, 180° / upside-down, or 270°). Mentally rotate the image so the text is upright, then read it. Orientation must not change what you read.
 - Read the FULL word, every letter. Never return only a suffix (never "ович" alone).
 - Handwritten Ukrainian "Т" and "П" look similar; pick the letter that forms a REAL Ukrainian name/place.
-- If a field is not clearly legible, set can_read=false and cyrillic="".
+- ABSENT FIELDS ARE NORMAL. Many of the requested fields may simply NOT be present on this particular document — that is expected and correct. If a field is not visibly written on the document, or is not clearly legible, set can_read=false and cyrillic="". Returning an absent field is the CORRECT answer. NEVER invent, NEVER infer a typical/default value (e.g. do NOT assume citizenship "Україна", do NOT copy a value from another field, do NOT guess a series or a date). An empty field is always better than an invented one.
 - Do NOT transliterate to Latin yourself. Return the original script (except iso_date).
 - Output ONLY the JSON object.`
 }

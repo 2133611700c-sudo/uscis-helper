@@ -27,14 +27,12 @@ export const marriageCertificateSchema: OfficialFormSchema = {
     name('groom_patronymic', 'По батькові', 'Patronymic', 'groom'),
     { key: 'groom_dob', sourceLabelUk: 'який народився', sourceLabelEn: 'Date of birth', required: true, fieldGroup: 'groom', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
     { key: 'groom_place_of_birth', sourceLabelUk: 'місце народження', sourceLabelEn: 'Place of birth', required: false, fieldGroup: 'groom', expectedScript: 'cyrillic', translationRule: 'place_gazetteer', lockedEntity: false, evidenceRequired: true },
-    { key: 'groom_citizenship', sourceLabelUk: 'громадянин', sourceLabelEn: 'Citizenship', required: false, fieldGroup: 'groom', expectedScript: 'cyrillic', translationRule: 'glossary_authority', lockedEntity: false, evidenceRequired: true },
     // ── bride ──
     name('bride_surname', 'Прізвище', 'Surname', 'bride'),
     name('bride_given_name', "Ім'я", 'Given name', 'bride'),
     name('bride_patronymic', 'По батькові', 'Patronymic', 'bride'),
     { key: 'bride_dob', sourceLabelUk: 'яка народилася', sourceLabelEn: 'Date of birth', required: true, fieldGroup: 'bride', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
     { key: 'bride_place_of_birth', sourceLabelUk: 'місце народження', sourceLabelEn: 'Place of birth', required: false, fieldGroup: 'bride', expectedScript: 'cyrillic', translationRule: 'place_gazetteer', lockedEntity: false, evidenceRequired: true },
-    { key: 'bride_citizenship', sourceLabelUk: 'громадянка', sourceLabelEn: 'Citizenship', required: false, fieldGroup: 'bride', expectedScript: 'cyrillic', translationRule: 'glossary_authority', lockedEntity: false, evidenceRequired: true },
     // ── marriage / act record ──
     { key: 'date_of_marriage', sourceLabelUk: 'зареєстрували шлюб', sourceLabelEn: 'Date of marriage', required: true, fieldGroup: 'marriage', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
     { key: 'act_record_number', sourceLabelUk: 'актовий запис №', sourceLabelEn: 'Act record No.', required: true, fieldGroup: 'actRecord', expectedScript: 'numeric', translationRule: 'locked_verbatim', lockedEntity: true, evidenceRequired: true },

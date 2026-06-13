@@ -5,27 +5,31 @@
  * the routing is unambiguous. Clearly-Ukrainian names stay on KMU-55. The
  * 'unknown'-script REVIEW escalation remains flag-gated (owner decision).
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { toCanonicalValue, isNameSourceScriptAmbiguous } from '../transliterationPolicy'
 import { transliterateRussian, transliterateKMU55 } from '@uscis-helper/knowledge'
 
 const nameRead = (cyrillic: string) => ({ cyrillic, can_read: true, confidence: 0.9 }) as any
 
-describe('mixed-script name routing (always on)', () => {
-  it('routes a clearly-Russian name (ъ/ы/э/ё) through the Russian table, not KMU-55', () => {
-    // "Объёмный" has ъ + ё → unambiguously Russian script.
-    const cy = 'Объёмный'
-    expect(toCanonicalValue(nameRead(cy), 'name')).toBe(transliterateRussian(cy))
-    expect(toCanonicalValue(nameRead(cy), 'name')).not.toBe(transliterateKMU55(cy))
-  })
+describe('mixed-script name routing (flag-gated, default OFF)', () => {
+  const orig = process.env.RU_TRANSLIT_ENABLED
+  afterEach(() => { if (orig === undefined) delete process.env.RU_TRANSLIT_ENABLED; else process.env.RU_TRANSLIT_ENABLED = orig })
 
-  it('keeps a clearly-Ukrainian name (і/ї/є/ґ) on KMU-55', () => {
-    const cy = 'Сергій'
+  it('default (flag OFF): even a clearly-Russian name goes through KMU-55', () => {
+    delete process.env.RU_TRANSLIT_ENABLED
+    const cy = 'Объёмный'
     expect(toCanonicalValue(nameRead(cy), 'name')).toBe(transliterateKMU55(cy))
   })
 
-  it('a name with no distinctive letter stays on KMU-55 (no Russian routing)', () => {
-    const cy = 'Петренко'
+  it('flag ON: a clearly-Russian name (ъ/ы/э/ё) routes through the Russian table', () => {
+    process.env.RU_TRANSLIT_ENABLED = '1'
+    const cy = 'Объёмный'
+    expect(toCanonicalValue(nameRead(cy), 'name')).toBe(transliterateRussian(cy))
+  })
+
+  it('keeps a clearly-Ukrainian name (і/ї/є/ґ) on KMU-55 even with the flag ON', () => {
+    process.env.RU_TRANSLIT_ENABLED = '1'
+    const cy = 'Сергій'
     expect(toCanonicalValue(nameRead(cy), 'name')).toBe(transliterateKMU55(cy))
   })
 })
