@@ -89,7 +89,7 @@ export const AUTHORITIES: Record<string, AuthorityEntry> = {
   CIVIL_REGISTRY: {
     uk: 'ЗАГС / РАЦС / ДРАЦС',
     official_en: 'civil status registration authority',
-    normalized_uscis_en: 'Civil Registry Office',
+    normalized_uscis_en: 'Civil Registry Office (ZAHS)',
     plain_en_alias: 'civil registry',
     historical_mode: true,
   },
@@ -446,9 +446,13 @@ export function normalizeOblastToNominative(raw: string): { nominative_uk: strin
     'чернігівської': 'Chernihiv', 'чернігівська': 'Chernihiv',
   };
 
-  const englishName = DMS_ENGLISH[lower];
+  // Normalize ANY oblast adjective case to the nominative -ка form so every
+  // case resolves without listing each: -ка/-кої/-кій/-кою/-ку → -ка
+  // (вінницької / вінницькій / вінницькою / вінницьку → вінницька).
+  const lowerNom = lower.replace(/к(а|ої|ій|ою|у)$/u, 'ка');
+  const englishName = DMS_ENGLISH[lower] ?? DMS_ENGLISH[lowerNom];
   if (englishName) {
-    const nom = OBLAST_GENITIVE_TO_NOMINATIVE[lower] ?? lower;
+    const nom = OBLAST_GENITIVE_TO_NOMINATIVE[lower] ?? lowerNom;
     return { nominative_uk: `${nom} область`, transliterated: `${englishName} Oblast` };
   }
   return null;
@@ -466,22 +470,29 @@ export function normalizeOblastToNominative(raw: string): { nominative_uk: strin
 // «м.»/«місто» returns null: cities stay bare (matches the TPS convention).
 // Bare «с.» is ambiguous (село vs an initial) — require a following Cyrillic
 // capital; «с.м.т.» is matched before «с.».
-const DESIGNATOR_PREFIXES: Array<{ re: RegExp; en: string | null }> = [
+// guardCase: only the AMBIGUOUS single-letter dotted prefixes («с.», «м.») need
+// the uppercase-next-letter guard (село vs an initial like «С. Петренко»). The
+// unambiguous full forms (смт, село, селище, хутір, місто) fire even when the OCR
+// lowercased the city name (e.g. «смт вишневе» → urban-type settlement).
+const DESIGNATOR_PREFIXES: Array<{ re: RegExp; en: string | null; guardCase?: boolean }> = [
   { re: /^\s*(?:смт\.?|с\.\s*м\.\s*т\.?|селище міського типу|пгт\.?|п\.\s*г\.\s*т\.?)\s+/iu, en: 'urban-type settlement' },
-  { re: /^\s*(?:село|с\.)\s+/iu, en: 'village' },
+  { re: /^\s*село\s+/iu, en: 'village' },
+  { re: /^\s*с\.\s+/iu, en: 'village', guardCase: true },
   { re: /^\s*(?:селище|с-ще)\s+/iu, en: 'settlement' },
   { re: /^\s*(?:хутір|хут\.)\s+/iu, en: 'khutor' },
-  { re: /^\s*(?:місто|м\.)\s+/iu, en: null }, // city stays bare
+  { re: /^\s*місто\s+/iu, en: null }, // city stays bare
+  { re: /^\s*м\.\s+/iu, en: null, guardCase: true },
 ];
 
 export function settlementDesignatorEn(rawCyrillic: string | null | undefined): string | null {
   if (!rawCyrillic) return null;
-  for (const { re, en } of DESIGNATOR_PREFIXES) {
+  for (const { re, en, guardCase } of DESIGNATOR_PREFIXES) {
     const m = rawCyrillic.match(re);
-    // The remainder must START with an UPPERCASE Cyrillic letter — guards the
-    // ambiguous bare «с.» (село vs an initial) and partial abbreviations.
-    // Checked in code because a regex `i` flag would defeat the case test.
-    if (m && /^[А-ЯҐЄІЇ]/u.test(rawCyrillic.slice(m[0].length))) return en;
+    if (!m) continue;
+    // Ambiguous «с.»/«м.» only: require an uppercase next letter so an initial
+    // («С. Петренко») isn't misread as «село». Unambiguous prefixes skip the guard.
+    if (guardCase && !/^[А-ЯҐЄІЇ]/u.test(rawCyrillic.slice(m[0].length))) continue;
+    return en;
   }
   return null;
 }

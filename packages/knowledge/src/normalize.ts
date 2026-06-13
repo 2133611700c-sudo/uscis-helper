@@ -268,11 +268,16 @@ export function normalizePlace(
     }
   }
 
-  // Apply geography corrections for modern context
+  // Apply geography corrections for modern context. Match BOTH the Russian/old
+  // Latin form (gc.wrong, e.g. "Kirovograd") AND the KMU-55 form of the old name
+  // (gc.historical_preserve, e.g. "Kirovohrad") — the latter is what KMU-55
+  // produces from the Ukrainian Cyrillic, so without it the modern rename
+  // (Кіровоград→Kropyvnytskyi, Дніпропетровськ→Dnipro) never fired on Cyrillic input.
   if (!ctx.is_historical_document) {
     for (const gc of GEO_CORRECTIONS) {
       const wrongLower = gc.wrong.toLowerCase();
-      if (normalized.toLowerCase() === wrongLower) {
+      const histLower = gc.historical_preserve?.toLowerCase();
+      if (normalized.toLowerCase() === wrongLower || (histLower && normalized.toLowerCase() === histLower)) {
         normalized = gc.correct;
         rule = `geo_correction:${gc.wrong}->${gc.correct}`;
         break;
@@ -285,7 +290,9 @@ export function normalizePlace(
     if (raw.toLowerCase().startsWith(abbr.toLowerCase())) {
       const remainder = raw.slice(abbr.length).replace(/^[\s.]+/, '').trim();
       const translitPlace = transliterateKMU55(remainder);
-      normalized = `${translitPlace} ${info.en}`;
+      // PREFIX, mirroring «смт Х» order ("urban-type settlement X"), consistent
+      // with the translation adapter.
+      normalized = `${info.en} ${translitPlace}`;
       rule = `settlement_type:${abbr}`;
       break;
     }

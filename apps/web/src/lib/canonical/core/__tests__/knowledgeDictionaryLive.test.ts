@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { applyKnowledgeBrainIfEnabled, buildKnowledgeContext } from '../knowledgeBrain'
+import { settlementDesignatorEn, normalizeOblastToNominative, normalizePlace } from '@uscis-helper/knowledge'
 import type { FieldCandidate } from '../types'
 
 const c = (key: string, value: string): FieldCandidate =>
@@ -37,5 +38,25 @@ describe('knowledge dictionary LIVE (default ON) — owner birth-cert examples',
     const f = out.find((x) => x.key === 'issuing_authority')!
     expect(f.normalizedValue).toBe('Militsiya')
     expect(f.normalizedValue).not.toMatch(/Police/i)
+  })
+})
+
+describe('dictionary refinements (owner follow-ups 2026-06-12)', () => {
+  it('смт with a lowercased city → urban-type settlement', () => {
+    expect(settlementDesignatorEn('смт вишневе')).toBe('urban-type settlement')
+  })
+  it('ambiguous «с.» before lowercase stays guarded (no false village)', () => {
+    expect(settlementDesignatorEn('с. петренко')).toBeNull()
+  })
+  it('oblast dative case → English nominative Oblast', () => {
+    expect(normalizeOblastToNominative('Вінницькій області')?.transliterated).toBe('Vinnytsia Oblast')
+  })
+  it('modern document: renamed city → modern name (Кіровоград→Kropyvnytskyi)', () => {
+    const r = normalizePlace('Кіровоград', 'place_of_birth', 'ua_internal_passport_booklet', { is_historical_document: false } as never)
+    expect(r.normalized_value).toContain('Kropyvnytskyi')
+  })
+  it('historical document: renamed city preserved (Кіровоград→Kirovohrad)', () => {
+    const r = normalizePlace('Кіровоград', 'place_of_birth', 'ua_birth_certificate', { is_historical_document: true } as never)
+    expect(r.normalized_value).toContain('Kirovohrad')
   })
 })
