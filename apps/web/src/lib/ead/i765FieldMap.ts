@@ -14,6 +14,33 @@
  *   other → leave Item 27 blank (user fills manually)
  *
  * Verified against uscis.gov/i-765 (2026-05-06) — see ead-work-permit/start/page.tsx.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * I-765 MAP UNIFICATION PLAN (Phase 1 — DOCUMENTED, NOT EXECUTED)
+ *
+ * There are TWO I-765 field maps today, both writing the SAME USCIS PDF
+ * (edition 08/21/25):
+ *   - lib/ead/i765FieldMap.ts  (this file) — EAD wizard, sparse EadFieldData,
+ *     uses 'form1[0].Page1[0]...' / 'Page2[0]' / 'Page3[0]' field paths.
+ *   - lib/tps/forms/i765FieldMap.ts        — TPS pipeline, richer answer shape.
+ *
+ * They diverge in the answer object they consume and in some PtLine/area paths,
+ * so a naive merge risks changing a filled PDF value. The safe end state is a
+ * single map that:
+ *   1. Reads ALL document-derived values through the frozen accessor
+ *      `getCanonicalValue` (lib/canonical/core/fieldAccessor.ts) so C3's
+ *      finalValue contract is honored uniformly (no per-map re-implementation
+ *      of normalizedValue ?? rawValue — the exact blind spot just fixed in
+ *      reParoleAdapter).
+ *   2. Keeps user-declared wizard answers (appType, category, address, contact)
+ *      exactly as today — those are NOT document-derived and must not route
+ *      through canonical.
+ *   3. Is migrated ONLY behind a golden-PDF parity harness (byte/field-level
+ *      diff of the two maps over a fixture matrix) proving zero output change.
+ *
+ * Until that parity infra exists, the two maps stay separate and NO duplicate
+ * is removed. This pass only fixed the adapter-layer finalValue blind spot.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 export type EadAppType = 'new' | 'renewal' | null
