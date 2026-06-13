@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-12 | Dictionary SAFETY NET — the dictionary can never crash recognition
+Architect-grade multi-layer hedge so the now-active dictionary never breaks an extraction ("чтобы не падало ничего"):
+- **Layer 1 — crash isolation:** `arbitrateDocument` now wraps every per-field arbitration AND `applyKnowledge` in try/catch. A single bad field/rule degrades to the read value (fail-open) and the document always comes back. The doc-level derives (sex / given-name) are wrapped too. PII-free `[knowledge-safety]` `console.warn` on every fallback (observability — key + message, never the value). (`normalizeCanonicalValue` already fails-open to a review action; this covers everything around it.)
+- **Defense-in-depth:** added null/non-string guards to `settlementDesignatorEn` + `normalizeOblastToNominative` (settlementDesignatorEn was throwing on non-string input — caught by the fuzz test below).
+- **Layer 2 — fuzz:** `knowledgeSafetyNet.test.ts` (91 tests) feeds hostile inputs (empty, control chars, 8k-char strings, emoji, HTML, path-traversal, `null`/`undefined`/number/object/array) to `arbitrateDocument`-with-dictionary and the public helpers, asserting NO throw and always a valid array.
+- **Layer 3 — CI (the infra debt):** the knowledge package `test` script now runs ALL 4 suites (added `normalize` + `e2e-passport`, which were missing); `guards.yml` CI now runs `pnpm --filter @uscis-helper/knowledge test`. They `process.exit(1)` on failure so CI gates them.
+- Evidence: tsc 0, build clean, apps/web 3277 pass, knowledge pkg 35+26+36+13 pass.
+
 ## 2026-06-12 | Dictionary refinements ("делай все") — agency, смт, oblast cases, modern rename
 All the follow-up gaps from the owner's birth-certificate test, fixed:
 - **Agency:** ЗАГС/РАЦС → "Civil Registry Office (ZAHS)" (added the acronym to the CIVIL_REGISTRY entry).
