@@ -3,7 +3,7 @@
  * Knowledge Brain (ADR-017 §D2). No route may import individual dictionary functions or build
  * D2 context itself — everything goes through here, so there is ONE authority contract, not four.
  *
- * - isKnowledgeBrainEnabled()        — the flag (KNOWLEDGE_BRAIN_ENABLED, default OFF).
+ * - isKnowledgeBrainEnabled()        — the flag (KNOWLEDGE_BRAIN_ENABLED, default ON; set =0 to disable).
  * - buildKnowledgeContext(input)     — derive the doc-level D2 context centrally (no route logic).
  * - applyKnowledgeBrainIfEnabled()   — arbitrate; apply D2 ONLY when the flag is ON. OFF ⇒ identical
  *                                      to bare arbitrateDocument (byte-identical product payloads).

@@ -31,6 +31,8 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
       { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: true, required: true },
       { field: 'city_of_birth', label_uk: 'Місце народження', kind: 'place_city', handwritten: true, required: false },
       { field: 'province_of_birth', label_uk: 'Місце народження (область)', kind: 'place_oblast', handwritten: true, required: false },
+      { field: 'sex', label_uk: 'Стать', kind: 'sex', handwritten: true, required: false },
+      { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: true, required: false },
     ],
   },
 
@@ -46,6 +48,9 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
       { field: 'given_name', label_uk: "Ім'я / Given name", kind: 'name', handwritten: false, required: true },
       { field: 'passport_number', label_uk: 'Номер документа', kind: 'doc_number', handwritten: false, required: true },
       { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: false, required: true },
+      { field: 'sex', label_uk: 'Стать / Sex', kind: 'sex', handwritten: false, required: false },
+      { field: 'city_of_birth', label_uk: 'Місце народження / Place of birth', kind: 'place_city', handwritten: false, required: false },
+      { field: 'date_of_issue', label_uk: 'Дата видачі / Date of issue', kind: 'date', handwritten: false, required: false },
       { field: 'passport_expiration_date', label_uk: 'Дійсний до', kind: 'date', handwritten: false, required: false },
     ],
   },
@@ -204,7 +209,10 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
       // "По батькові" = patronymic, NOT a Western middle name (CLAUDE.md hard-rule).
       { field: 'patronymic', label_uk: 'По батькові', kind: 'name', handwritten: false, required: false },
       { field: 'dob', label_uk: 'Дата народження', kind: 'date', handwritten: false, required: true },
+      { field: 'sex', label_uk: 'Стать', kind: 'sex', handwritten: false, required: false },
+      { field: 'city_of_birth', label_uk: 'Місце народження', kind: 'place_city', handwritten: false, required: false },
       { field: 'doc_number', label_uk: 'Номер', kind: 'doc_number', handwritten: false, required: false },
+      { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: false, required: false },
     ],
   },
 
