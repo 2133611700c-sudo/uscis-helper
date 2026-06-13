@@ -34,6 +34,7 @@ import {
   type NormalizedField,
   type NormalizationContext,
 } from '@uscis-helper/knowledge'
+import { stripCountryCode } from '@/lib/docintel/transliterationPolicy'
 
 export type KnowledgeAction = 'accept' | 'preserve' | 'suggest' | 'review' | 'block'
 
@@ -189,9 +190,16 @@ export function normalizeCanonicalValue(
 
     // ── Place (city / oblast / province / place_of_birth / settlement) ────────
     if (/place|city|province|oblast|settlement|region/.test(key_)) {
+      // COUNTRY-CODE STRIP (Agent 1, real intl-passport): the passport place-of-birth
+      // cell carries the issuing-country code ("ВІННИЦЬКА ОБЛ./UKR"). The reader's
+      // toCanonicalValue('place_city') strips it, but D2 here gazetteers/normalizes
+      // the ORIGINAL raw Cyrillic — which still has "/UKR" — and neither snapCity nor
+      // normalizePlace removes a country token, so it leaked into the released place.
+      // Strip it first (any separator, suffix OR prefix; embedded substrings safe).
+      const placeRaw = stripCountryCode(raw)
       // City fields: gazetteer on the RAW Cyrillic. EXACT ⇒ accept; FUZZY ⇒ suggest (never overwrite).
       if ((key_.includes('city') || key_.endsWith('place_of_birth')) && cyr) {
-        const snap = snapCity(raw)
+        const snap = snapCity(placeRaw)
         if (snap.matched) return accept(transliterateKMU55(snap.value), 'place.gazetteer_exact', 'gazetteer_exact', 0.9)
         // A FUZZY near-match (possible misread of a known place) → review. But a
         // GENUINELY-UNKNOWN town (reason 'unknown_geography') is NOT a misread —
@@ -201,7 +209,7 @@ export function normalizeCanonicalValue(
         if (snap.review_required && snap.reason !== 'unknown_geography')
           return suggest(snap.value ? transliterateKMU55(snap.value) : null, 'place.gazetteer_fuzzy', 'gazetteer_fuzzy', ['place_fuzzy_unconfirmed'])
       }
-      return fromField(normalizePlace(raw, key, sourceDoc, nctx), 'place.normalize', 'place_dict')
+      return fromField(normalizePlace(placeRaw, key, sourceDoc, nctx), 'place.normalize', 'place_dict')
     }
 
     // ── Issuing authority (Міліція → Militsiya; unknown → do not invent) ───────

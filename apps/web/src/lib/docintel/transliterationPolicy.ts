@@ -26,6 +26,30 @@ export function stripSettlementPrefix(cy: string): string {
 }
 
 /**
+ * Strip an ICAO/passport COUNTRY CODE token from a place-of-birth string.
+ *
+ * UA international passports print place of birth with the issuing-country code
+ * appended ("ВІННИЦЬКА ОБЛ./UKR"). Gemini reads (and apostille/typed variants)
+ * attach that token with ANY separator — "/", "|", ",", or whitespace — and it
+ * can appear as a trailing SUFFIX or a leading PREFIX. The country code must
+ * never leak into the released city/oblast value.
+ *
+ * Safety: the code is removed ONLY when it is a STANDALONE token sitting next to
+ * a separator (or at the very start/end). An embedded substring is preserved —
+ * e.g. the real settlement "Українка"/"Ukrainka" is NOT corrupted, because "ukr"
+ * there is not a whole token delimited by a separator.
+ */
+const COUNTRY_CODE = '(?:ukraine|україна|ukr|укр|ua|уа)\\.?'
+export function stripCountryCode(cy: string): string {
+  return cy
+    // trailing: "<place><sep>UKR" — sep is /,| or whitespace; token at end.
+    .replace(new RegExp(`[\\s/|,]+${COUNTRY_CODE}\\s*$`, 'iu'), '')
+    // leading:  "UKR<sep><place>" — token at start followed by a separator.
+    .replace(new RegExp(`^\\s*${COUNTRY_CODE}[\\s/|,]+`, 'iu'), '')
+    .trim()
+}
+
+/**
  * Owner-locked source-script rule (2026-06-10): VISIBLE source script controls
  * transliteration. A name line is AMBIGUOUS when its script is not visually
  * confirmed — no distinctive Ukrainian letter (і/ї/є/ґ) AND no distinctive
@@ -90,12 +114,19 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
       // normalizeCity (blocklist/geo-corrections), then KMU-55. The settlement
       // type stays in raw_cyrillic for the translation layer to re-add.
       if (!cy) return null
-      // Passport "place of birth" is often an OBLAST with a country code suffix
-      // ("ВІННИЦЬКА ОБЛ./UKR" on the international passport). Strip the /UKR|/UA
+      // Passport "place of birth" is often an OBLAST with a country code
+      // ("ВІННИЦЬКА ОБЛ./UKR" on the international passport). Strip the UKR/UA
       // country code, and if it's an oblast (обл./область) route to the oblast
       // normalizer → "Vinnytsia Oblast", not a literal "Vinnytska Obl./UKR".
       // (NB: JS \b does not work on Cyrillic, so we match обл/область directly.)
-      const noCountry = cy.replace(/\s*[\/|]\s*(ukr|ua|ukraine|укр|україна)\.?\s*$/iu, '').trim()
+      // GENERALIZED (Agent 1, real intl-passport): the country code is a STANDALONE
+      // token attached by ANY separator — "/", "|", ",", or whitespace — and may
+      // appear as a trailing suffix OR a leading prefix. The old regex handled only
+      // "/UKR"|"|UKR" at the end, so " UKR" / ",UKR" / "UKRAINE/<city>" leaked the
+      // code into the released place value. We strip a country token only when it is
+      // a whole token next to a real separator, so an embedded substring (e.g. the
+      // settlement "Українка"/"Ukrainka") is preserved.
+      const noCountry = stripCountryCode(cy)
       if (/обл\.?|област[ьі:]/iu.test(noCountry)) {
         const expanded = noCountry.replace(/\s*обл\.?\s*$/iu, ' область').trim()
         return normalizeProvince(expanded).value || normalizeProvince(noCountry).value || transliterateKMU55(noCountry) || null
