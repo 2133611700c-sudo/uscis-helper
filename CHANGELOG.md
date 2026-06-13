@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-06-13 | Integration agent — A1-A4 cherry-pick + render/route.ts canonical cutover + 8 new render tests
+- **A1-A3-A4 integrated**: cherry-picked 3 worktree commits onto `architecture/canonical-continuity`. A2 was empty (no code). Conflicts in CHANGELOG/HANDOFF/STATUS (doc files only) resolved by taking newest worktree version. persistence/index.ts conflict resolved by taking A4 (adds `computeOverrideSetHash`).
+- **Migration files on branch**: `20260613000000_canonical_documents_and_overrides.sql` + `20260613000001_canonical_documents_and_overrides.sql` (same content, different timestamp from wt1/wt3) + `20260613000001_certification_canonical_hash_binding.sql` — NOT applied, owner approval required.
+- **Packet routes wired**: TPS `generate-packet/route.ts` + Re-Parole `generate-packet/route.ts` both have `resolveCanonicalDocument` + `CANONICAL_CONTINUITY_MODE` logic (from A3).
+- **render/route.ts canonical cutover (STEP 6 — missed by A4)**:
+  - Imports `resolveCanonicalDocument`, `listCanonicalOverrides`, `computeFieldsHash`, `computeResolvedHash`, `computeOverrideSetHash` from persistence module.
+  - Enforce mode: 422 CANONICAL_ID_REQUIRED if `canonical_document_id` absent; 404 NOT_FOUND; 409 CANONICAL_NOT_READY if enforce but no canonical.
+  - Shadow mode: PII-free comparison log (field keys/counts only, no values).
+  - Off mode: explicit warn log with `continuity_mode=off`.
+  - C3 null fields filtered before render (INV-11): `.filter((fo) => fo.value !== null)`.
+  - 7-field certification binding in audit log: `canonical_document_id`, `base_canonical_hash`, `resolved_canonical_hash`, `override_set_hash`, `override_version`, `canonical_schema_version`, `renderer_version`.
+- **8 new render canonical tests**: `translationRenderCanonical.test.ts` — all 8 pass.
+- **TypeScript**: 0 errors. Tests: 3559 pass / 18 skip / 0 fail (up from 3557 pre-session with render tests added).
+
 ## 2026-06-13 | Agent 4 — canonical continuity: translation cutover + certification hash binding
 - **Translation render cutover**: `generate-pdf/route.ts` now loads `resolveCanonicalDocument` when `canonical_document_id` present. In shadow mode: falls back to `extracted_fields` with explicit log. In enforce mode: 422 CANONICAL_ID_REQUIRED (not 503), 404 for missing, 503 for infra failure only.
 - **C3 null safety (INV-11)**: canonical-to-ExtractedField conversion filters `fo.value !== null` — C3-rejected fields are omitted from render, never rendered as blank.

@@ -1,3 +1,6 @@
+# STATUS (2026-06-13 — Integration: A1-A4 merged + render/route.ts canonical cutover COMPLETE)
+- CANONICAL CONTINUITY: all 4 worktree agents integrated. persistence module, packet routes (TPS + Re-Parole), generate-pdf, AND render/route.ts now wired to canonical continuity pattern. 3 migration files on branch (NOT applied — owner approval required). CANONICAL_CONTINUITY_MODE=shadow (default). Tests: 3559 pass. TypeScript: 0 errors. Verdict: READY_FOR_MIGRATION (pending DB migration + owner approval to flip enforce).
+
 # STATUS (2026-06-13 — Agent 4: canonical continuity translation cutover PARTIAL)
 - TRANSLATION CUTOVER: generate-pdf wired to resolveCanonicalDocument in shadow+enforce mode. C3 null filtered (INV-11). Cert binds 7 hashes. 3502 tests pass. Verdict: CONTINUITY_PARTIAL. Blockers: packet routes not wired; render/route.ts not wired; DB migration not applied.
 
