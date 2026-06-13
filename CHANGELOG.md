@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-13 | docs(canonical): turnkey enforce-smoke script + owner runbook for PR #117 preview gate
+
+- **ADDED**: `scripts/smoke-enforce-preview.ts` (tsx-runnable, read-only HTTP). Asserts the live enforce gate on the preview deploy: T1/T3 missing `canonical_document_id` → 422 CANONICAL_ID_REQUIRED on `translation/generate-pdf` + `translation/render`; T2/T4 bogus UUID → 404 CANONICAL_NOT_FOUND. Both endpoints check the canonical pre-gate BEFORE payment/review, so the smoke is mutation-free (no DB write, no charge, no render, no email). PII-free, exit 0/1.
+- **ADDED**: `docs/reports/ENFORCE_SMOKE_RUNBOOK.md` — owner steps A–I (CI green → set enforce on PREVIEW + redeploy → export PREVIEW_BASE_URL → `pnpm tsx scripts/smoke-enforce-preview.ts` → Supabase monotonic-version + 7-field cert SQL checks → cleanup → optional integration test in CI → prod cutover → healthz SHA). Exact rollback: `CANONICAL_CONTINUITY_MODE=off` → redeploy (no data deleted; tables are INSERT-only).
+- **HONEST GAPS documented** (not invented endpoints): no HTTP override route exists on this branch → override 200/409 version-conflict is covered by the library test `canonicalConcurrency.integration`, not the smoke; extract→real-UUID and generate-pdf 200 + 7-field cert are owner-manual (PAID Vision / owner session + signed payload).
+- **EVIDENCE**: standalone `tsc --noEmit --strict` on the script EXIT=0. Script is outside the web tsconfig scope (root `scripts/`), uses only global fetch/process.
+- **Files**: `scripts/smoke-enforce-preview.ts`, `docs/reports/ENFORCE_SMOKE_RUNBOOK.md`.
+
 ## 2026-06-13 | fix(canonical): RPC jsonb serialization bug — pass array directly, not JSON.stringify
 
 - **BUG**: `appendCanonicalOverride` was calling `JSON.stringify(overridesPayload)` before passing to Supabase `.rpc()`. Supabase JS serializes the string as a SQL text scalar, not JSONB. `jsonb_array_elements(p_overrides)` then throws "cannot extract elements from a scalar".

@@ -1,3 +1,6 @@
+# STATUS (2026-06-13 — Enforce-smoke runbook: turnkey script + owner runbook added)
+- ENFORCE SMOKE: `scripts/smoke-enforce-preview.ts` (tsx, read-only HTTP) + `docs/reports/ENFORCE_SMOKE_RUNBOOK.md` added. Smoke asserts the live preview enforce gate (422 CANONICAL_ID_REQUIRED missing id; 404 CANONICAL_NOT_FOUND bogus UUID) on translation/generate-pdf + translation/render — mutation-free (pre-gate runs before payment/review). Override 200/409 + extract→UUID + generate-pdf 200 are owner-manual / integration-test covered (no HTTP override route exists on this branch). Standalone tsc EXIT=0. Owner one-liner: `export PREVIEW_BASE_URL=https://uscis-helper-xxxx.vercel.app && pnpm tsx scripts/smoke-enforce-preview.ts`.
+
 # STATUS (2026-06-13 — Final gate: all migrations applied, integration tests PASS, RPC bug fixed)
 - CANONICAL PERSISTENCE: All 4 migrations applied to prod DB. Atomic RPC bug fixed (JSON.stringify → pass array directly; Supabase serializes to JSONB). 6/6 concurrency integration tests PASS against real DB. UNIQUE constraints confirmed. FK confirmed. SECURITY DEFINER confirmed. Tests: 3580 pass. TypeScript: 0 errors. Build: PASS. PR #117 updated. Branch pushed.
 
