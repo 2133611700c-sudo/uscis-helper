@@ -29,7 +29,7 @@ export interface MirrorPdfResult {
 export async function renderMirrorTranslationPDF(
   docType: string | null | undefined,
   extracted: ExtractedFieldLite[],
-  opts: { signerName?: string; signerAddress?: string } = {},
+  opts: { signerName?: string; signerAddress?: string; signedAt?: string } = {},
 ): Promise<MirrorPdfResult | null> {
   const schema = getOfficialSchema(docType)
   if (!schema) return null
