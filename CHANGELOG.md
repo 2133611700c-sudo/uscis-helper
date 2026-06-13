@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-06-13 | fix(canonical): atomic overrides RPC, UNIQUE constraints, idempotent persist, version ASC order, cert FK migration
+
+- **FIX A — Migration `20260613000002_canonical_atomicity_and_constraints.sql`**: UNIQUE constraint on `canonical_overrides(canonical_id, version)`, UNIQUE on `canonical_documents(session_id, doc_type, fields_hash)`, `append_canonical_overrides_atomic()` RPC (advisory lock + optimistic concurrency check), hardened `next_canonical_override_version` (SECURITY DEFINER + SET search_path, revoked from PUBLIC/anon/authenticated).
+- **FIX B — Migration `20260613000003_certification_canonical_fk.sql`**: FK from `translation_certification_audit.canonical_document_id` → `canonical_documents(id)`, ON DELETE RESTRICT + DEFERRABLE INITIALLY DEFERRED, orphan guard before constraint add.
+- **FIX C — `persistence/index.ts`**: `persistCanonicalDocument` now uses `.upsert(..., { onConflict: 'session_id,doc_type,fields_hash' })` — idempotent on retry; returns `{ id, resultHash, fieldsHash }` from RETURNING clause.
+- **FIX D — `persistence/index.ts`**: `appendCanonicalOverride` now delegates to `append_canonical_overrides_atomic` RPC; throws `CanonicalConcurrencyError` on P0002/OVERRIDE_VERSION_CONFLICT; returns new MAX(version) as number.
+- **FIX E — `persistence/index.ts`**: `listCanonicalOverrides` and `resolveCanonicalDocument` now ORDER BY `version ASC` (not `created_at ASC`) — prevents time-skew from breaking override resolution order.
+- **`persistence/errors.ts`**: Added `CanonicalConcurrencyError` class for typed 409 handling.
+- **Integration tests**: `canonicalConcurrency.integration.test.ts` — 6 tests covering concurrent append conflict, no duplicate versions, monotonic sequential appends, idempotent persist, concurrent persist no-duplicate, version-beats-created_at.
+- **Unit tests updated**: `canonicalPersistence.test.ts` mock updated to support `upsert` + `rpc`; Tests 1 and 18 updated for new signatures.
+- TypeScript: 0 errors. Tests: 3580 pass (was 3573).
+
 ## 2026-06-13 | fix(migrations): remove duplicate canonical migration, resolve version collision
 - Removed `supabase/migrations/20260613000001_canonical_documents_and_overrides.sql` — byte-for-byte identical to `20260613000000_canonical_documents_and_overrides.sql` (SHA256: ade9d82a..., same for both).
 - Remote already resolved the collision: applied as `20260613194557` (canonical_documents content) + `20260613194613` (certification binding) + `20260613194627` (idempotent no-op wrapper for the duplicate).

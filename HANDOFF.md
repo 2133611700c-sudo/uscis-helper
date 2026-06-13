@@ -1,3 +1,28 @@
+# HANDOFF (2026-06-13 — Code hardening agent: 5 persistence defects fixed)
+
+> **5 defects fixed in canonical persistence layer. 2 new migrations written (NOT applied). 0 TypeScript errors. 3580 tests pass.**
+
+DONE (this session):
+- FIX A: Migration `20260613000002_canonical_atomicity_and_constraints.sql` — UNIQUE(canonical_id, version), UNIQUE(session_id, doc_type, fields_hash), `append_canonical_overrides_atomic()` RPC with advisory lock + optimistic concurrency, `next_canonical_override_version` hardened (SECURITY DEFINER SET search_path, revoked from PUBLIC/anon).
+- FIX B: Migration `20260613000003_certification_canonical_fk.sql` — FK `translation_certification_audit.canonical_document_id` → `canonical_documents(id)`, ON DELETE RESTRICT DEFERRABLE, orphan guard.
+- FIX C: `persistCanonicalDocument` → idempotent upsert ON CONFLICT (session_id, doc_type, fields_hash) DO UPDATE. Same hash → same id on retry.
+- FIX D: `appendCanonicalOverride` → delegates to `append_canonical_overrides_atomic` RPC. Throws `CanonicalConcurrencyError` on conflict. Returns new MAX(version).
+- FIX E: `listCanonicalOverrides` ORDER BY changed from `created_at ASC` → `version ASC`. `resolveCanonicalDocument` comment updated to match.
+- `CanonicalConcurrencyError` added to `errors.ts`.
+- Integration tests: `canonicalConcurrency.integration.test.ts` (6 tests, require real DB, skip when env not set).
+- Unit test mock updated: `upsert` + `rpc` supported. Tests 1 and 18 updated for new signatures.
+- TypeScript: 0 errors. Tests: 3580 pass.
+
+NOT done / owner decisions required:
+- Migrations NOT applied (owner must run `supabase db push` or apply via Supabase dashboard).
+- Integration tests require `SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY` — not run in CI by default.
+- Override API routes: caller should catch `CanonicalConcurrencyError` → return 409 (existing routes may still use raw `Error.code` check — audit needed).
+
+EXACT NEXT TASK:
+1. Owner applies migrations 000002 + 000003 to Supabase project `rtfxrlountkoegsseukx`.
+2. Run integration tests against real DB to validate atomicity contract.
+3. Audit override API routes to catch `CanonicalConcurrencyError` → 409.
+
 # HANDOFF (2026-06-13 — Migration ledger agent: duplicate canonical migration removed)
 > **Duplicate `20260613000001_canonical_documents_and_overrides.sql` removed. Version collision resolved. Branch clean.**
 >
