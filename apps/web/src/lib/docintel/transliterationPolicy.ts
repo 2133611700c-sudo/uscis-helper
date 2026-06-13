@@ -63,16 +63,18 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
     case 'name': {
       // Names: KMU-55 (Ukrainian). Never the LLM's own Latin.
       if (!cy) return null
-      // RU_TRANSLIT_ENABLED (default OFF): a name line written in clearly-RUSSIAN
-      // script (ы/э/ё/ъ present) is transliterated with the Russian system, not
-      // KMU-55 — Soviet/bilingual docs are as-written, never harmonized to Ukrainian.
-      // 'unknown' (no distinctive letter) yields a best-effort KMU-55 CANDIDATE so
-      // the review screen isn't empty — but the reader flags it ambiguous and C3
-      // must not finalize it (see isNameSourceScriptAmbiguous + the source-script
-      // gate in documentFieldReader). Visible source controls translit; ambiguity
-      // blocks final. (For the APPLICANT's own name, MRZ/passport stays controlling.)
-      if (process.env.RU_TRANSLIT_ENABLED === '1' && detectNameScript(cy) === 'ru') {
-        return transliterateRussian(cy) || null
+      // MIXED-SCRIPT (always on, owner-directed 2026-06-12): a name line written in
+      // clearly-RUSSIAN script — distinctive ы/э/ё/ъ present AND no Ukrainian і/ї/є/ґ
+      // (detectNameScript === 'ru') — is transliterated with the Russian system, not
+      // KMU-55. KMU-55 has no mapping for ы/э/ё/ъ, so forcing it would mangle a
+      // Soviet-era / bilingual Russian name. This routing is unambiguous (those
+      // letters do not exist in Ukrainian) so it is safe without a flag.
+      // The SEPARATE 'unknown'-script review escalation (names with no distinctive
+      // letter) stays behind RU_TRANSLIT_ENABLED — see isNameSourceScriptAmbiguous —
+      // because forcing review on every distinctive-letter-less Ukrainian surname is
+      // an owner decision, not a correctness fix.
+      if (detectNameScript(cy) === 'ru') {
+        return transliterateRussian(cy) || transliterateKMU55(cy) || null
       }
       return transliterateKMU55(cy) || null
     }

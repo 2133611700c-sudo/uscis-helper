@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { getOfficialSchema, hasOfficialSchema, officialSchemaDocTypes } from '../../forms/ukraine/schemas/registry'
-import { buildMirrorValues } from '../buildMirrorValues'
+import { buildMirrorValues, collectMirrorExtras } from '../buildMirrorValues'
 import { renderMirrorTranslationPDF } from '../renderMirrorTranslationPDF'
 
 describe('official schema registry', () => {
@@ -56,6 +56,27 @@ describe('buildMirrorValues — registry keys → schema keys', () => {
     const v = buildMirrorValues(schema, [{ field: 'child_family_name', final_value: 'X' }])
     expect(v.series_number).toEqual({ value: '', review: false, canRead: false })
     expect(v.oblast_of_birth.canRead).toBe(false)
+  })
+
+  it('surfaces extracted-but-unmapped fields as extras (no line is dropped)', () => {
+    const extras = collectMirrorExtras(schema, [
+      { field: 'child_family_name', final_value: 'Kovalenko' }, // maps → NOT an extra
+      { field: 'spouse_1_full_name', final_value: 'Some Read Value' }, // no birth slot → extra
+    ])
+    expect(extras.map((e) => e.key)).toEqual(['spouse_1_full_name'])
+    expect(extras[0]).toMatchObject({ label: 'Spouse 1 Full Name', value: 'Some Read Value' })
+  })
+
+  it('a fully-mapped birth cert produces NO extras (no behavior change)', () => {
+    const extras = collectMirrorExtras(schema, [
+      { field: 'child_family_name', final_value: 'Kovalenko' },
+      { field: 'dob', final_value: '2010-05-15' },
+      { field: 'place_of_birth_city', final_value: 'Vinnytsia' },
+      { field: 'father_full_name', final_value: 'Petro Kovalenko' },
+      { field: 'mother_full_name', final_value: 'Olha Kovalenko' },
+      { field: 'issuing_authority', final_value: 'Vinnytsia ZAHS' },
+    ])
+    expect(extras).toEqual([])
   })
 
   it('does not invent a value for an empty field', () => {
