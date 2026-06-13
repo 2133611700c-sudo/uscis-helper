@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-13 | fix(migrations): remove duplicate canonical migration, resolve version collision
+- Removed `supabase/migrations/20260613000001_canonical_documents_and_overrides.sql` — byte-for-byte identical to `20260613000000_canonical_documents_and_overrides.sql` (SHA256: ade9d82a..., same for both).
+- Remote already resolved the collision: applied as `20260613194557` (canonical_documents content) + `20260613194613` (certification binding) + `20260613194627` (idempotent no-op wrapper for the duplicate).
+- Local files after fix: `20260613000000_canonical_documents_and_overrides.sql` + `20260613000001_certification_canonical_hash_binding.sql` only.
+- No schema change. No code change. Migration ledger now clean.
+
 ## 2026-06-13 | feat(canonical): wire EAD generate-packet to canonical continuity; 11 tests; gate PASS
 - **EAD route wired**: `apps/web/src/app/api/ead/generate-packet/route.ts` now follows the exact TPS canonical continuity pattern. Extracts `canonical_document_id` + `session_id` from request body; enforces HTTP status contract (422/409/404/403/503).
 - **EAD packetBuilder updated**: `apps/web/src/lib/ead/packetBuilder.ts` accepts optional `CanonicalDocumentResult`. Canonical path calls `buildI765DocumentOps(documentCanonical)` directly (shared entry point). Legacy path unchanged (off/shadow only).
