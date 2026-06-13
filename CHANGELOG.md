@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-13 | FULL SYSTEM + DOCUMENT-CORE AUDIT (audit-only, no code change)
+- Wrote `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — single consolidated, evidence-only audit. Part 1: repo/PR/security/deploy. Part 2: Document Core (brain/dictionary/arbitration/canonical/identity-fields/translation/forms + live real-doc runtime trace). Part 3: full system runtime (44 pages / 51 API routes / 1 middleware / 29 migrations / 38 live Supabase tables; DB, storage, auth, env+feature-flags, deployment, monitoring, user flows, packets, archive/operator, dependency graph, dead code, security surface, production truth).
+- Added read-first pointer (item `0.`) to `AGENTS.md` startup protocol and `CLAUDE.md` so all agents read the audit on contact.
+- Verified live (Vercel + Supabase MCP + healthz): production = main `4d3e470` (Phase 2A); preview = PR #116 `76c49e2` (OPEN, not merged). Supabase `rtfxrlountkoegsseukx` ACTIVE_HEALTHY (pg 17.6). 3 audit/observability tables at 0 rows confirm OCR_FIELD_SAFETY / GUARD_BLOCK_METRICS / CERTIFIER_AUDIT flags OFF in prod.
+- Re-ran tests as evidence: tsc 0; field-by-field 46/46; cross-product parity 100 pass/1 skip; live real-doc gate (EAD+I-94) 8/8 with 0 FABRICATED / 0 REVIEW_LOST.
+- Files changed THIS commit: the audit doc, AGENTS.md, CLAUDE.md, STATUS.md, HANDOFF.md, CHANGELOG.md. NO application/source code changed. Nothing merged, nothing pushed, no new PR.
+
 ## 2026-06-13 | Phase 1 canonical single-currency — I-821 + I-131 cut over to CanonicalField[] (PR open, NOT merged)
 - **Closed the Phase 1 single-currency gap for I-821 and I-131.** Both form mappers were still reading `TPSAnswers` / `ReParoleAnswers` directly; after this session ALL four canonical consumers (Translation, I-765, I-821, I-131) read ONLY `CanonicalDocumentResult` / `CanonicalField[]` through `fieldAccessor` / `adapterContract`.
 - **4 new files created:**
