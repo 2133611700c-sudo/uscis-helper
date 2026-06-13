@@ -193,7 +193,13 @@ export function normalizeCanonicalValue(
       if ((key_.includes('city') || key_.endsWith('place_of_birth')) && cyr) {
         const snap = snapCity(raw)
         if (snap.matched) return accept(transliterateKMU55(snap.value), 'place.gazetteer_exact', 'gazetteer_exact', 0.9)
-        if (snap.review_required) return suggest(snap.value ? transliterateKMU55(snap.value) : null, 'place.gazetteer_fuzzy', 'gazetteer_fuzzy', ['place_fuzzy_unconfirmed'])
+        // A FUZZY near-match (possible misread of a known place) → review. But a
+        // GENUINELY-UNKNOWN town (reason 'unknown_geography') is NOT a misread —
+        // our seed gazetteer is ~500 of 28k+ settlements; forcing review on every
+        // village not in the seed blocked the pay button on legitimate small-town
+        // birthplaces. Fall through to normalizePlace (transliterate + dict, accept).
+        if (snap.review_required && snap.reason !== 'unknown_geography')
+          return suggest(snap.value ? transliterateKMU55(snap.value) : null, 'place.gazetteer_fuzzy', 'gazetteer_fuzzy', ['place_fuzzy_unconfirmed'])
       }
       return fromField(normalizePlace(raw, key, sourceDoc, nctx), 'place.normalize', 'place_dict')
     }

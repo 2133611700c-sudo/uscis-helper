@@ -147,7 +147,15 @@ export function snapCity(raw: string, opts: { threshold?: number } = {}): PlaceM
   }
 
   const norm = best / Math.max(lower.length, GAZ_LOWER[bestIdx]?.length ?? 1)
-  if (bestIdx >= 0 && norm <= threshold) {
+  // The ratio threshold alone is too loose on long names: a 9-letter word allows
+  // ~3 edits, enough to "match" a DIFFERENT village sharing a common suffix
+  // (Кудашівка→Жданівка dist 3, Зачепилівка→Решетилівка dist 3.4) → a wrong
+  // suggestion + a review that blocked the pay button. A real OCR confusion is
+  // 1-2 cheap edits (Простянець→Тростянець dist 0.4, Вінниц→Вінниця dist 1). Add
+  // an ABSOLUTE cap so only genuinely-close reads are treated as fuzzy; anything
+  // further is unknown_geography (accepted as-is, no review).
+  const MAX_FUZZY_DISTANCE = 2
+  if (bestIdx >= 0 && norm <= threshold && best <= MAX_FUZZY_DISTANCE) {
     // S1 NO-SILENT-SNAP: a fuzzy candidate is a SUGGESTION, never a silent final
     // value. Keep the RAW read; surface the nearest entry as suggestedValue; force
     // review. (Was: value = GAZETTEER[bestIdx] → "Ярошенець" silently became
