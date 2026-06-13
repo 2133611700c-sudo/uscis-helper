@@ -132,15 +132,50 @@ export function arbitrateDocument(
     else byKey.set(c.key, [c])
   }
   // Doc-level context for D2 (sex + given name help patronymic / spelling checks).
-  const sex = knowledge ? deriveSex(candidates) : null
-  const givenNameCyrillic = knowledge ? deriveGivenNameCyrillic(candidates) : null
+  // SAFETY NET: the dictionary must NEVER crash recognition. Every step that can
+  // throw is isolated so one bad field/rule degrades to the read value, and the
+  // document always comes back. (normalizeCanonicalValue already fails-open to a
+  // review action; these guards cover everything around it.)
+  const sex = knowledge ? safeKnowledge(() => deriveSex(candidates), null, 'deriveSex') : null
+  const givenNameCyrillic = knowledge
+    ? safeKnowledge(() => deriveGivenNameCyrillic(candidates), null, 'deriveGivenNameCyrillic')
+    : null
   const out: CanonicalField[] = []
   for (const [key, group] of byKey) {
-    const f = arbitrateField(key, group)
+    let f: CanonicalField | null = null
+    try {
+      f = arbitrateField(key, group)
+    } catch (e) {
+      logKnowledgeError('arbitrateField', key, e)
+      continue // can't recover this field's arbitration — skip, never crash the doc
+    }
     if (!f) continue
-    out.push(knowledge ? applyKnowledge(f, knowledge, sex, givenNameCyrillic) : f)
+    if (!knowledge) { out.push(f); continue }
+    try {
+      out.push(applyKnowledge(f, knowledge, sex, givenNameCyrillic))
+    } catch (e) {
+      logKnowledgeError('applyKnowledge', key, e)
+      out.push(f) // fail-open: keep the un-enriched read value, document survives
+    }
   }
   return out
+}
+
+/** Run a knowledge step; on ANY throw, log (PII-free) and return the fallback. */
+function safeKnowledge<T>(fn: () => T, fallback: T, where: string): T {
+  try {
+    return fn()
+  } catch (e) {
+    logKnowledgeError(where, '', e)
+    return fallback
+  }
+}
+
+/** PII-free error log: field KEY + message only, never the value. */
+function logKnowledgeError(where: string, key: string, e: unknown): void {
+  const msg = e instanceof Error ? e.message : String(e)
+  // eslint-disable-next-line no-console
+  console.warn(`[knowledge-safety] ${where}${key ? ` key=${key}` : ''} failed (fail-open): ${msg}`)
 }
 
 /**
