@@ -600,12 +600,16 @@ export async function listCanonicalOverrides(
  */
 export async function resolveCanonicalDocument(
   canonicalId: string
-): Promise<CanonicalDocumentResult> {
+): Promise<CanonicalDocumentResult | null> {
+  // NOT-FOUND vs INFRA contract: a missing base canonical is NOT an infra failure.
+  // loadCanonicalDocumentById returns null on not-found and THROWS only on a real
+  // Supabase/network error. We mirror that here: return null when the base does not
+  // exist so callers map it to 404 (CANONICAL_NOT_FOUND), and let genuine DB errors
+  // propagate as a throw → 503 (CANONICAL_STORAGE_UNAVAILABLE). Never collapse
+  // not-found into 503. (Was: threw on not-found → caught by route → wrong 503.)
   const base = await loadCanonicalDocumentById(canonicalId)
   if (!base) {
-    throw new Error(
-      `[canonical/persistence] resolveCanonicalDocument: id=${canonicalId} not found`
-    )
+    return null
   }
 
   const overrides = await listCanonicalOverrides(canonicalId)
@@ -646,10 +650,17 @@ export async function resolveCanonicalDocument(
  * Re-compute fields_hash from the stored fields_json and compare to the stored hash.
  * Returns valid=true when they match. On mismatch, returns a description (no PII —
  * only hash values, not field content).
+ *
+ * NOT-FOUND vs INFRA vs MISMATCH contract (three distinct outcomes):
+ *   - row does not exist        → { valid: false, notFound: true }   (caller → 404)
+ *   - genuine Supabase/DB error → THROWS                              (caller → 503)
+ *   - row exists, hash differs  → { valid: false, mismatch: '…' }    (caller → 409)
+ * Previously a not-found row AND a query error were both collapsed into
+ * { valid:false, mismatch } → a missing id wrongly produced 409 (hash mismatch).
  */
 export async function verifyCanonicalHash(
   canonicalId: string
-): Promise<{ valid: boolean; mismatch?: string }> {
+): Promise<{ valid: boolean; mismatch?: string; notFound?: boolean }> {
   const supabase = getSupabaseClient()
 
   const { data, error } = await supabase
@@ -658,11 +669,16 @@ export async function verifyCanonicalHash(
     .eq('id', canonicalId)
     .maybeSingle()
 
-  if (error || !data) {
-    return {
-      valid: false,
-      mismatch: `row not found or query error: ${error?.message ?? 'no data'}`,
-    }
+  if (error) {
+    // Real infra/query failure — surface as a throw so the route returns 503,
+    // never a 409 hash-mismatch (which would falsely implicate the data).
+    throw new Error(
+      `[canonical/persistence] verifyCanonicalHash query failed: ${error.message}`
+    )
+  }
+  if (!data) {
+    // Not found is NOT a hash mismatch and NOT infra — distinct signal for 404.
+    return { valid: false, notFound: true }
   }
 
   // Forward-safe version gate: never reinterpret a non-v2 hash with the v2 algorithm.

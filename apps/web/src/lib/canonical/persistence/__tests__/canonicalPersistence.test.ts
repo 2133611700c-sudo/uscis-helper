@@ -471,7 +471,8 @@ describe('Test 12: resolveCanonicalDocument — last override per field wins', (
     queueResponse('canonical_overrides', { data: overrideRows, error: null })
 
     const resolved = await resolveCanonicalDocument('uuid-1')
-    const field = resolved.fields.find((f) => f.key === 'first_name')
+    expect(resolved).not.toBeNull()
+    const field = resolved!.fields.find((f) => f.key === 'first_name')
     expect(field).toBeDefined()
     // Last confirmed override wins (ov-2)
     expect(field!.finalValue).toBe('Olena-final')
@@ -514,7 +515,8 @@ describe('Test 13: resolveCanonicalDocument — null override preserves INV-11',
     queueResponse('canonical_overrides', { data: overrideRows, error: null })
 
     const resolved = await resolveCanonicalDocument('uuid-1')
-    const field = resolved.fields.find((f) => f.key === 'first_name')
+    expect(resolved).not.toBeNull()
+    const field = resolved!.fields.find((f) => f.key === 'first_name')
     expect(field).toBeDefined()
     // INV-11: null must remain null
     expect(field!.finalValue).toBeNull()
@@ -563,7 +565,8 @@ describe('Test 14: resolveCanonicalDocument — base immutable after override', 
     queueResponse('canonical_overrides', { data: overrideRows, error: null })
 
     const resolved = await resolveCanonicalDocument('uuid-1')
-    const field = resolved.fields.find((f) => f.key === 'first_name')
+    expect(resolved).not.toBeNull()
+    const field = resolved!.fields.find((f) => f.key === 'first_name')
     expect(field).toBeDefined()
 
     // Override applied correctly

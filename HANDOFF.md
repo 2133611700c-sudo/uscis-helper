@@ -1,3 +1,24 @@
+# HANDOFF (2026-06-13 — HTTP-contract fix: not-found canonical → 404 not 503/409 in enforce, found by preview-enforce smoke)
+
+DONE (this session):
+- Fixed the real HTTP-contract defect preview-enforce smoke surfaced: a non-existent `canonical_document_id` returned 503 (translation/generate-pdf + translation/render) or 409 (tps/reparole/ead generate-packet) instead of 404 CANONICAL_NOT_FOUND in enforce mode.
+- `resolveCanonicalDocument()` (`lib/canonical/persistence/index.ts`): now RETURNS null on base not-found (was: threw) so the route's existing `if(!sourceCanonical){404}` branch is live; still THROWS only on a genuine Supabase/DB error → 503. Return type changed to `Promise<CanonicalDocumentResult | null>`.
+- `verifyCanonicalHash()`: now returns `{valid:false, notFound:true}` for a missing row and THROWS on a real query error (was: collapsed both into `{valid:false, mismatch}` → 409). Return type extended with `notFound?: boolean`.
+- The 3 packet routes (tps/reparole/ead generate-packet): check `hashCheck.notFound → 404` BEFORE the 409 hash-mismatch branch; a hash-verify throw now → 503 in enforce (was: silently downgraded to 409). Shadow paths log and fall through to legacy unchanged.
+- Translation routes (generate-pdf, render): NO route edit needed — their `if(!sourceCanonical){404}` branch was already correct; the persistence-layer null fix makes it reachable.
+- Tests: added `lib/canonical/persistence/__tests__/canonicalNotFoundContract.test.ts` (21 tests) — drives the REAL resolve/verify fns with a configurable Supabase mock (not-found vs infra) and asserts per-route mapping for all 5 routes (404 not-found, 503 infra, 409 genuine mismatch preserved). Added null-guards (`resolved!`/`expect().not.toBeNull()`) to 3 pre-existing persistence tests after the return-type change.
+- GATE: tsc 0 errors; tests 3663 pass / 24 skip / 0 fail (+21 vs prior 3642 baseline).
+
+CALLERS needing special handling: none beyond the 3 packet routes (hash-first ordering) + 3 persistence test null-guards. `/api/canonical/[id]/override` uses `loadCanonicalDocumentById` (already null on not-found) — unaffected.
+
+NEXT:
+1. Owner: re-run preview enforce-smoke against a preview deploy — assert bogus UUID now yields 404 (not 503/409) on all 5 routes.
+2. Owner: review PR, merge to main, then enable enforce in prod.
+
+NOT merged to main, no Vercel/env change, not deployed. Pushed to `architecture/canonical-continuity` only.
+
+---
+
 # HANDOFF (2026-06-13 — Wave 1b INTEGRATION coordinator: client canonical_document_id carriage WIRED for all 4 products, gate green, preview-enforce GO)
 
 DONE (Wave 1b integration session):
