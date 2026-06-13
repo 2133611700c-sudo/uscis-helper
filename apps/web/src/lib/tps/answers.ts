@@ -205,7 +205,13 @@ export interface TPSAnswers {
    * UUID of the canonical_documents row created during OCR extract.
    * Passed through the wizard → generate-packet so the packet route can load
    * the persisted canonical result instead of reconstructing from DTO.
-   * Optional: absent when CANONICAL_CONTINUITY_MODE=off or persist failed in shadow mode.
+   *
+   * The extract route persists the canonical document (shadow) and, when that
+   * persist succeeds, returns its id. The wizard captures it for the PRIMARY
+   * identity document (passport → booklet → any slot that returned one) and
+   * resends it here so generation can be tied back to the same canonical read.
+   * OPTIONAL: absent when CANONICAL_CONTINUITY_MODE=off or persist failed in
+   * shadow mode — never fabricate an id. Enforce-mode enforcement lives server-side.
    * Naming: no _-prefix despite being a system field; it is load-bearing for routing.
    */
   canonical_document_id?: string
