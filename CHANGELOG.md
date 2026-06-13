@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-12 | Unified architecture plan (design doc)
+- Added docs/architecture/UNIFIED_ARCHITECTURE_PLAN.md: complete target model for unifying TPS / Re-Parole / EAD / Translation onto one spine (shared Document Core → CanonicalDocument → Form Mapper / Translation Builder / Packet Builder → one Order/Cart → one Operator queue/Archive). Includes exists/build/rebuild gap table, order+line-item pricing model, unified wizard flow, 7-phase dependency-ordered build plan, target data model, and the carry-forward invariants. Design only; no code change.
+
+
 ## 2026-06-12 | Real-doc verified: intl passport (SERGII/oblast/sex) + 4-page passport "0"
 Ran the owner's REAL documents (his real Gemini key + real images already in the repo) through the live pipeline via a gated harness `liveRealDocs.test.ts` (RUN_LIVE_DOCS=1). Found + fixed + verified on his actual documents:
 - **International passport given_name SERGII** (was SERHII): bilingual `script:'mixed'` docs (international passport, ID card) now instruct the model to return the printed LATIN romanization ("СЕРГІЙ/SERGII" → SERGII), and `transliterationPolicy` name-case keeps an already-Latin value VERBATIM (controlling-Latin rule — never re-transliterate the Cyrillic into a different romanization). `geminiVisionProvider.buildPrompt` + `transliterationPolicy.ts`.
