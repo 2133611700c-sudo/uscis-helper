@@ -1,3 +1,18 @@
+# HANDOFF (2026-06-13 — Smoke-runbook agent: turnkey enforce-smoke script + owner runbook)
+
+> **Added a read-only HTTP enforce-smoke script + owner runbook for the PR #117 preview gate. Awaiting owner to set enforce on PREVIEW, redeploy, and run the smoke.**
+
+DONE (this session):
+- ADDED `scripts/smoke-enforce-preview.ts` (tsx, read-only HTTP, PII-free, exit 0/1). Proves the live enforce gate: 422 CANONICAL_ID_REQUIRED (missing id) + 404 CANONICAL_NOT_FOUND (bogus UUID) on translation/generate-pdf and translation/render. These two routes check the canonical pre-gate BEFORE payment/review → no DB write, no charge, no render, no email.
+- ADDED `docs/reports/ENFORCE_SMOKE_RUNBOOK.md` — owner steps A–I + exact rollback (CANONICAL_CONTINUITY_MODE=off → redeploy; no data deleted, INSERT-only tables) + Supabase monotonic-version & 7-field cert SQL.
+- DOCUMENTED HONEST GAPS (no invented endpoints): no HTTP override route on this branch → override 200/409 covered by `canonicalConcurrency.integration`; extract→UUID and generate-pdf 200+7-field cert are owner-manual.
+- VERIFIED: standalone `tsc --noEmit --strict` on script EXIT=0 (script is outside web tsconfig scope; uses only global fetch/process).
+
+OWNER NEXT (one command after preview enforce + redeploy):
+- `export PREVIEW_BASE_URL=https://uscis-helper-xxxx.vercel.app && pnpm tsx scripts/smoke-enforce-preview.ts`
+
+---
+
 # HANDOFF (2026-06-13 — Final gate agent: integration tests PASS, RPC bug fixed, PR #117 updated)
 
 > **All checks green. RPC call bug fixed (JSON.stringify removed). 6/6 concurrency integration tests PASS. Branch pushed. PR #117 body updated. Awaiting owner GO to merge.**
