@@ -47,7 +47,7 @@ describe('docintel/documentRegistry', () => {
 describe('docintel — coverage guard (rule auditor: registry ↔ transliteration)', () => {
   // Locks the spine against the fragmentation disease: if someone adds a field
   // whose kind the transliteration policy does not handle, this FAILS in CI.
-  const HANDLED_KINDS = new Set(['name', 'place_city', 'place_oblast', 'date', 'doc_number', 'agency', 'text'])
+  const HANDLED_KINDS = new Set(['name', 'place_city', 'place_oblast', 'date', 'doc_number', 'agency', 'sex', 'text'])
 
   it('every field kind in the registry is handled by transliterationPolicy', () => {
     for (const spec of Object.values(DOCUMENT_TYPES)) {
