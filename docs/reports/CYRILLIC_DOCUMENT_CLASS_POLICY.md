@@ -56,8 +56,8 @@ Both classes: `auto_fill_allowed: true`, `final_without_review: false` — auto-
 ## What Remains Blocked by Missing Ground Truth
 
 All three certificate ground truth files exist at `qa-private/ground-truth/` but have `ground_truth_status: MISSING` with empty fields:
-- `birth_cert_handwritten_kuropiatnyk.json`
-- `birth_cert_soviet_kuropiatnyk.json`
+- `birth_cert_handwritten_ivanenko.json`
+- `birth_cert_soviet_ivanenko.json`
 - `marriage_apostille_vasylsiuk.json`
 
 **These files were NOT overwritten.** Owner must fill values from physical documents.

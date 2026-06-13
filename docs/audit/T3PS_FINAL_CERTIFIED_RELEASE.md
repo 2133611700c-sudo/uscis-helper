@@ -2,7 +2,7 @@
 
 - Task ID: `T3PS-08-CONTROLLED-BETA-STABILIZATION-AND-LAUNCH`
 - Generated at (UTC): `2026-05-15T23:36:00Z`
-- Repo: `/Users/sergiikuropiatnyk/work/uscis-helper`
+- Repo: `/Users/sergiiivanenko/work/uscis-helper`
 
 ## Final Status
 
@@ -32,9 +32,9 @@
 
 ## Operating Pack
 
-- Operating plan: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_OPERATING_PLAN.md`
-- Checklist: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_CHECKLIST.yaml`
-- Risk register: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_POST_GO_RISK_REGISTER.yaml`
+- Operating plan: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_OPERATING_PLAN.md`
+- Checklist: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_CHECKLIST.yaml`
+- Risk register: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_POST_GO_RISK_REGISTER.yaml`
 
 ## Monitoring Status
 

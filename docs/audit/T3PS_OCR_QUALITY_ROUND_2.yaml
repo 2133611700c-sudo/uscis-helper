@@ -72,7 +72,7 @@ changes:
   a_number_pdf_safety:
     severity: P2
     before: |
-      A-number flowed into TPSAnswers as raw '231-853-474'. The I-821
+      A-number flowed into TPSAnswers as raw '000-000-000'. The I-821
       / I-765 A-number PDF fields expect digits only.
     after: |
       handleGenerate strips non-digits via .replace(/\\D/g, '') before
@@ -117,7 +117,7 @@ remaining_gaps:
   - id: real_document_matrix
     priority: P0 (carry-over)
     description: |
-      Still need Sergii's actual passport/EAD/I-94 in a redacted matrix
+      Still need Taras's actual passport/EAD/I-94 in a redacted matrix
       to close the carry-over real-doc quality verdict. Synthetic
       passport hits all the new code paths but real OCR can fail at the
       image layer (blur/glare/rotation) regardless of these UI fixes.
@@ -132,7 +132,7 @@ remaining_gaps:
   - id: ocr_learning_loop
     priority: P1
     description: |
-      Per Sergii's controlled-learning spec (T3PS_CONTROLLED_OCR_LEARNING_LOOP),
+      Per Taras's controlled-learning spec (T3PS_CONTROLLED_OCR_LEARNING_LOOP),
       the next iteration captures shape-only correction telemetry into
       audit_log, classifies the error type, and converts repeated
       patterns into regression fixtures.

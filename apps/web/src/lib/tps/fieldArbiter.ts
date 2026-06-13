@@ -43,7 +43,7 @@ export const FIELD_CLASS: Record<string, FieldClass> = {
 }
 
 // ── Levenshtein Distance — cross-document fuzzy name matching ──────────────
-// Detects OCR errors like "Saghi" vs "Sergii" (distance=3 → conflict)
+// Detects OCR errors like "Saghi" vs "Taras" (distance=3 → conflict)
 // Same-value check: distance ≤ 1 = same value, 2 = possible OCR error (flag),
 // ≥ 3 = material conflict (reject lower-priority source)
 export function levenshtein(a: string, b: string): number {

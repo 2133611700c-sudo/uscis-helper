@@ -3,7 +3,7 @@
 # Ground truth (synthetic — replace with real values via E2E_EXPECTED_* env vars):
 #   surname = Іваненко
 #   given_name = Іван
-#   patronymic = Сергійович
+#   patronymic = Тарасович
 #   DOB = 01.01.1990 (1990-01-01)
 #   city = Тростянець
 #   province = Вінницька обл.
@@ -12,9 +12,9 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 
 BASE_URL="${1:-http://localhost:3000}"
-IMAGE="/Users/sergiikuropiatnyk/work/uscis-helper/qa-shots/private/booklet_test_resized.jpg"
+IMAGE="/Users/sergiiivanenko/work/uscis-helper/qa-shots/private/booklet_test_resized.jpg"
 RUNS="${2:-10}"
-OUT_DIR="/Users/sergiikuropiatnyk/work/uscis-helper/reports/booklet-stability-$(date +%Y%m%d-%H%M%S)"
+OUT_DIR="/Users/sergiiivanenko/work/uscis-helper/reports/booklet-stability-$(date +%Y%m%d-%H%M%S)"
 
 mkdir -p "$OUT_DIR"
 

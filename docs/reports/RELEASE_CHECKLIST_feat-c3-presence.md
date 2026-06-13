@@ -9,7 +9,7 @@ Date: 2026-05-29.
 |---|---|---|---|
 | #1 | PDF silently dropped unread fields | ✅ PASS | `honest-pdf.test.ts` + `pdf-readback.e2e.test.ts` — MISSING row visible, `certifiable=false` |
 | #2a | wizard hardcoded review on every field | ✅ PASS | code: real per-field flag propagated (`TranslateWizard` ~1115) |
-| #3 | passport name re-transliterated vs MRZ | ✅ PASS | `mrz.test.ts` (KUROPIATNYK/SERGII, check digits) + presence override |
+| #3 | passport name re-transliterated vs MRZ | ✅ PASS | `mrz.test.ts` (IVANENKO/TARAS, check digits) + presence override |
 | #4 | false "PDF sent to your email" | ✅ PASS | copy removed (ru+en), i18n drift 0 |
 | #5 | manual doc paid, no ticket | ✅ PASS | wizard POSTs `/api/translation/manual-review` on paid manual docs |
 | #6 | no pixel preprocessing | ✅ PASS | `preprocess.test.ts` (sharp + quality gate), wired into presence |
@@ -35,7 +35,7 @@ gated on real signature.
 
 ## D. PDF readback (open the generated PDF)
 - [ ] MISSING fields visible as `____ [enter from document]`, not gone.
-- [ ] Passport name = MRZ Latin (e.g. KUROPIATNYK), not re-transliterated.
+- [ ] Passport name = MRZ Latin (e.g. IVANENKO), not re-transliterated.
 - [ ] `смт` rendered as "urban-type settlement", never "city/town".
 - [ ] 1986 authority = Militsiya, not National Police.
 - [ ] Download button disabled until a real on-screen signature.

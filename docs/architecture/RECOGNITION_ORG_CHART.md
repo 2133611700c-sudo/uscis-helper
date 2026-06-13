@@ -43,7 +43,7 @@ Maps 1:1 to v5.0 "Controlled Autonomy" (AI drafts/validates/renders → human co
 
 | Employee | Engine | Job description | Source |
 |---|---|---|---|
-| Transliterator | **KMU-55 engine** (`transliterate.ts`) | Names Cyrillic→Latin (Сергій→Serhii). Legally correct, deterministic. | KMU Resolution №55 |
+| Transliterator | **KMU-55 engine** (`transliterate.ts`) | Names Cyrillic→Latin (Тарас→Taras). Legally correct, deterministic. | KMU Resolution №55 |
 | Validator/Corrector | **Gazetteer + Dictionary** (`packages/knowledge`) | Snap city→known UA place, oblast→25 set, authority→registry, **patronymic→generated/validated**. Reject impossible values. | gazetteer (NEW), `dictionary.ts`, `patronymic.ts` (NEW) |
 
 ## D3 — Translation (Отдел перевода)  ← **THE MISSING DEPARTMENT TODAY**

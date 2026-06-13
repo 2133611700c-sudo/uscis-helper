@@ -53,9 +53,9 @@ immediately and this file fills with the real per-model transcripts.
 ## Test matrix (ready to run)
 
 Fixtures (`test-fixtures/real-docs/`):
-- `birth_cert_handwritten_kuropiatnyk.jpg` (handwritten)
+- `birth_cert_handwritten_ivanenko.jpg` (handwritten)
 - `marriage_1939_kharkiv_borodavka.jpg` (old handwritten)
-- `military_id_p1_kuropiatnyk.jpg` (printed+handwritten)
+- `military_id_p1_ivanenko.jpg` (printed+handwritten)
 
 Models: 148545 (RU h/w+typed CER 5.54%), 144265 (UK h/w+typed CER 4.57%),
 132853 (RU+UK XXI).

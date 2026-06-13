@@ -29,7 +29,7 @@ describe('mixed-script name routing (flag-gated, default OFF)', () => {
 
   it('keeps a clearly-Ukrainian name (і/ї/є/ґ) on KMU-55 even with the flag ON', () => {
     process.env.RU_TRANSLIT_ENABLED = '1'
-    const cy = 'Сергій'
+    const cy = 'Тарас'
     expect(toCanonicalValue(nameRead(cy), 'name')).toBe(transliterateKMU55(cy))
   })
 })

@@ -28,7 +28,7 @@ New shared module. Core problem it solves: Ukrainian/Russian bilingual OCR print
 
 **Fix:** `extractFieldFromBlock()` now delegates to `extractValueAfterLabel()` with:
 - `allowPrevLine=false` — birth cert forms always print label before value; looking backward caused family_name to bleed into given_name extraction.
-- `allowInline=true` — inline colon syntax ("Прізвище: Куроп'ятник") still works.
+- `allowInline=true` — inline colon syntax ("Прізвище: Іваненко") still works.
 - `maxLinesAfter=3` — unchanged.
 
 **Registry wired:** `translateAuthority()` now tries `translateCivilRegistryTerm()` + `lookupAuthority()` from `@uscis-helper/knowledge` after inline glossary. Covers РАЦС/ЗАГС/ДРАЦС abbreviations with era-gating.

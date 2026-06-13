@@ -2,7 +2,7 @@ import os, json, re
 from pypdf import PdfReader
 from pypdf.generic import IndirectObject
 
-TPS = "/Users/sergiikuropiatnyk/work/uscis-helper/docs/uscis/forms/tps"
+TPS = "/Users/sergiiivanenko/work/uscis-helper/docs/uscis/forms/tps"
 PDF_DIR = os.path.join(TPS, "pdf")
 
 FT_NAMES = {"/Tx":"text", "/Btn":"button", "/Ch":"choice", "/Sig":"signature"}

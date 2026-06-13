@@ -11,29 +11,29 @@ sha_truth:
 dirty_inventory:
   status: present
   note: "Workspace contains many unrelated modified/untracked files; strict scoped commit used for this task."
-  snapshot_source: "/Users/sergiikuropiatnyk/work/uscis-helper (git status --short)"
+  snapshot_source: "/Users/sergiiivanenko/work/uscis-helper (git status --short)"
 artifact_inventory:
-  - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_01_PRODUCTION_TRUTH_BASELINE.md
+  - path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_01_PRODUCTION_TRUTH_BASELINE.md
     purpose: baseline
     status: found
     pii_risk: low
-  - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_02_LIVE_BROWSER_CONTOUR.md
+  - path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_02_LIVE_BROWSER_CONTOUR.md
     purpose: browser_proof
     status: found
     pii_risk: medium_redacted
-  - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_03_PDF_FIELD_COVERAGE_PROOF.md
+  - path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_03_PDF_FIELD_COVERAGE_PROOF.md
     purpose: pdf_proof
     status: found
     pii_risk: medium_redacted
-  - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.md
+  - path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.md
     purpose: real_doc_pilot
     status: found
     pii_risk: medium_redacted
-  - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_GO_NO_GO_RELEASE_REPORT.md
+  - path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_FINAL_GO_NO_GO_RELEASE_REPORT.md
     purpose: go_no_go
     status: found
     pii_risk: low
-  - path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/
+  - path: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/
     purpose: consolidated_fresh_rerun_evidence
     status: found
     pii_risk: redacted
@@ -64,34 +64,34 @@ browser:
     generate_status: 200
     zip_downloaded_same_run: true
     evidence:
-      summary: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/browser_summary_A.json
-      screenshots_dir: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/screenshots/A
+      summary: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/browser_summary_A.json
+      screenshots_dir: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/screenshots/A
   flow_B_i821_i765:
     status: PASS
     generate_status: 200
     zip_downloaded_same_run: true
     evidence:
-      summary: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/browser_summary_B.json
-      screenshots_dir: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/screenshots/B
+      summary: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/browser_summary_B.json
+      screenshots_dir: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/screenshots/B
   console_network_caveats:
     - "_vercel/insights/script.js 404"
     - "CSP blocked Cloudflare beacon script"
 ocr_matrix:
-  source: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json
+  source: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json
   international_passport: PASS
   ukrainian_internal_passport: PASS
   i94: PASS
   ead: PASS
   uscis_notice: NOT_REQUIRED
 pdf_proof:
-  source_summary: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/pdf_reverify_summary.json
-  i821_field_dump_redacted: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/i821_field_dump_redacted.txt
-  i765_field_dump_redacted: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/i765_field_dump_redacted.txt
-  zip_listing: /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-master/zip_listing.txt
+  source_summary: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/pdf_reverify_summary.json
+  i821_field_dump_redacted: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/i821_field_dump_redacted.txt
+  i765_field_dump_redacted: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/i765_field_dump_redacted.txt
+  zip_listing: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/zip_listing.txt
   cyrillic_leak: NONE
   key_fields_required_status: PASS
 prompt_coverage:
-  matrix_path: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_PROMPT_COVERAGE_MATRIX.md
+  matrix_path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_PROMPT_COVERAGE_MATRIX.md
   summary:
     T3PS_01: PASS
     T3PS_02: PASS
@@ -103,7 +103,7 @@ prompt_coverage:
     T3PS_08: PASS
     T3PS_09: PARTIAL
 residual_gaps:
-  source: /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_RESIDUAL_GAPS_REGISTER.yaml
+  source: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_RESIDUAL_GAPS_REGISTER.yaml
   p0_open_count: 0
   p1_open_count: 2
   accepted_count: 3

@@ -154,7 +154,7 @@ operator_docs_verdict: PASS
 
 # ── REAL DOCUMENT PILOT ─────────────────────────────────────────────────────
 real_document_pilot_result: NOT_RUN_THIS_SESSION
-  status: blocked on user photo at /Users/sergiikuropiatnyk/Downloads/tps-real-test.jpg
+  status: blocked on user photo at /Users/sergiiivanenko/Downloads/tps-real-test.jpg
   pre-existing_evidence_summary: |
     From earlier sessions: Shevchenko historical fixture passed through
     booklet extractor end-to-end after the Latin-look-alike reverse-map fix.
@@ -213,10 +213,10 @@ final_verdict:
 
 # ── WHAT THE USER NEEDS TO DO NEXT ──────────────────────────────────────────
 next_action_owner_user:
-  1: "cd /Users/sergiikuropiatnyk/work/uscis-helper && ./push.command (or git push origin main)"
+  1: "cd /Users/sergiiivanenko/work/uscis-helper && ./push.command (or git push origin main)"
   2: "pnpm --filter web run typecheck && pnpm --filter web test && pnpm --filter web lint && pnpm --filter web run guard && pnpm --filter web build"
   3: "Wait Vercel READY on bdddaf0..736b239 commit range"
-  4: "(optional but recommended) Place one photo at /Users/sergiikuropiatnyk/Downloads/tps-real-test.jpg for Phase D real-doc pilot"
+  4: "(optional but recommended) Place one photo at /Users/sergiiivanenko/Downloads/tps-real-test.jpg for Phase D real-doc pilot"
 
 # ── HONEST CLOSING ──────────────────────────────────────────────────────────
 honest_closing: |

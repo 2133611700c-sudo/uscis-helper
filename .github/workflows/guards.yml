@@ -117,18 +117,57 @@ jobs:
           [ $FAIL -eq 0 ] && echo "OK — I-131 edition 01/20/25 correct, no wrong edition 02/27/26 in user-visible strings."
           exit $FAIL
 
-      - name: Guard — forbidden master email in source
+      # (The old hardcoded master-email guard was removed — it stored the owner's
+      # real email literal in this tracked file. The owner email is now one of the
+      # patterns in the OWNER_PII_PATTERNS_B64 secret, checked by the step below.)
+
+      # PII gate self-test — proves the detection logic actually fires, using a
+      # SYNTHETIC marker (never real PII). Positive: a line with the marker must
+      # match; negative: clean text must not.
+      - name: PII gate self-test (synthetic)
         run: |
-          set +e
-          # Per CLAUDE.md: master Google account email must never appear in
-          # source/comments/tests. Use BACKUP_EMAIL env var for ops mail.
-          HITS=$(grep -RnE "2133611700c@gmail" apps/ 2>/dev/null | grep -v node_modules)
+          set -eu
+          MARK="ZZSELFTESTPIIMARKERZZ"
+          PF="$(mktemp)"; chmod 600 "$PF"; trap 'rm -f "$PF"' EXIT
+          printf '%s\n' "$MARK" > "$PF"
+          printf 'hello %s world\n' "$MARK" | grep -qIE -f "$PF" \
+            || { echo "::error::self-test FAILED — gate would not detect PII"; exit 1; }
+          if printf 'clean text\n' | grep -qIE -f "$PF"; then
+            echo "::error::self-test FAILED — false positive on clean text"; exit 1
+          fi
+          echo "PII gate self-test: positive+negative OK."
+
+      # Block the OWNER's REAL PII from ever re-entering tracked files. The EXACT
+      # tokens are NEVER stored in the repo — they come from the GitHub secret
+      # OWNER_PII_PATTERNS_B64 (base64 of a newline-separated grep -E pattern list).
+      # FAIL-CLOSED: on CI (push/PR to main) a missing/empty secret is a HARD FAIL,
+      # not a skip — a security gate must not silently disable itself. A local run
+      # may opt out with ALLOW_MISSING_PII_SECRET=1. Decoded patterns go to a 0600
+      # temp file removed via trap; logs print ONLY file:line, never the value.
+      - name: Block real owner PII
+        env:
+          OWNER_PII_PATTERNS_B64: ${{ secrets.OWNER_PII_PATTERNS_B64 }}
+        run: |
+          set -eu
+          if [ -z "${OWNER_PII_PATTERNS_B64:-}" ]; then
+            if [ "${ALLOW_MISSING_PII_SECRET:-}" = "1" ]; then
+              echo "PII gate skipped (ALLOW_MISSING_PII_SECRET=1 — local only)."
+              exit 0
+            fi
+            echo "::error::OWNER_PII_PATTERNS_B64 is not configured"
+            exit 1
+          fi
+          PAT_FILE="$(mktemp)"; chmod 600 "$PAT_FILE"
+          trap 'rm -f "$PAT_FILE"' EXIT
+          printf '%s' "$OWNER_PII_PATTERNS_B64" | base64 -d > "$PAT_FILE" 2>/dev/null \
+            || { echo "::error::failed to decode OWNER_PII_PATTERNS_B64"; exit 1; }
+          HITS=$(git grep -nIE -f "$PAT_FILE" -- ':!*.lock' ':!pnpm-lock.yaml' 2>/dev/null | awk -F: '{print $1":"$2}')
           if [ -n "$HITS" ]; then
-            echo "::error::Master account email leaked into source. Use env var only."
+            echo "::error::Owner PII detected (values redacted) — replace with fake placeholders:"
             echo "$HITS"
             exit 1
           fi
-          echo "OK — no master email in source."
+          echo "OK — no owner PII in tracked files."
 
       - name: Guard — DeepSeek model names in client UI
         run: |

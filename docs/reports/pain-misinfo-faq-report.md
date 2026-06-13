@@ -45,7 +45,7 @@
 
 ```
 $ pnpm --filter web typecheck
-> web@0.1.0 typecheck /Users/sergiikuropiatnyk/work/uscis-helper/apps/web
+> web@0.1.0 typecheck /Users/sergiiivanenko/work/uscis-helper/apps/web
 > tsc --noEmit
 ```
 

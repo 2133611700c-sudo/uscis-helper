@@ -61,7 +61,7 @@ browser_fresh_session_proof:
   scenario: |
     Playwright Chromium, fresh context, pre-seeded with a PRE-FIREWALL
     v2 localStorage payload containing the exact "Ghost" family_name
-    and the hallucinated A-number 231-853-474 under the passport slot.
+    and the hallucinated A-number 000-000-000 under the passport slot.
     Then full walkthrough Step 1 → upload realistic UA passport →
     Step 5 review → Step 6 pay button label.
   results:
@@ -92,8 +92,8 @@ unresolved_p1_p2:
   - id: name_recognition_stability
     priority: P1
     description: |
-      Sergii observed unstable spelling between sessions:
-      "Kuropyatnyk" vs "Ivanenko", "Serhii" vs "Sergi". This is
+      Taras observed unstable spelling between sessions:
+      "Kuropyatnyk" vs "Ivanenko", "Taras" vs "Sergi". This is
       DeepSeek non-determinism on transliteration of low-confidence
       Cyrillic when MRZ isn't crisply visible. Fix path: prefer MRZ
       Latin always when present; for visual-only inputs, lower Brain
@@ -117,7 +117,7 @@ unresolved_p1_p2:
       review. Currently first-wins.
 
 next_action: |
-  Sergii does a fresh-session test on production:
+  Taras does a fresh-session test on production:
   1. Clear browser localStorage for messenginfo.com (or open in a
      private window).
   2. Upload the same real passport.

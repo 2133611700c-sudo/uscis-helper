@@ -6,7 +6,7 @@
 - verdict: **PASS**
 
 Evidence dir (latest):  
-`/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/`
+`/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/`
 
 ## Verified results
 

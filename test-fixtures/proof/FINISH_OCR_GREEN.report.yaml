@@ -53,11 +53,11 @@ chrome_mcp_status:
   device_name: "мак"
   platform: macOS
 
-synthetic_passport_path: /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/synthetic-passport.jpg
+synthetic_passport_path: /Users/sergiiivanenko/work/uscis-helper/test-fixtures/synthetic-passport.jpg
 synthetic_passport_meta:
   size_bytes: 154762
   mime: image/jpeg
-  generator: /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/gen_synthetic_passport.py
+  generator: /Users/sergiiivanenko/work/uscis-helper/test-fixtures/gen_synthetic_passport.py
   contains_pii: false
   mrz:
     line1: "P<UKRTESTSURNAME<<TESTGIVEN<<<<<<<<<<<<<<<<<"
@@ -165,7 +165,7 @@ zip_metadata:
     result: 200
     duration: 0.47s
     size_bytes: 1855815
-    saved_to: /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/tps-packet.zip
+    saved_to: /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/tps-packet.zip
     contents:
       - I-821.pdf  (1854370 bytes)
       - README.txt (1233 bytes)
@@ -181,7 +181,7 @@ zip_metadata:
     endpoint: "POST https://messenginfo.com/api/tps/generate-packet"
     result: 200
     size_bytes: 2623868
-    saved_to: /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/tps-packet-with-ead.zip
+    saved_to: /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/tps-packet-with-ead.zip
     contents:
       - I-821.pdf  (1854370 bytes)
       - I-765.pdf  (767930 bytes)

@@ -1,6 +1,6 @@
 {
   "scenario_A": {
-    "zip_path": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_A/downloaded_zip/tps-packet-1778917053361.zip",
+    "zip_path": "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_A/downloaded_zip/tps-packet-1778917053361.zip",
     "files": [
       "I-821.pdf",
       "README.txt"
@@ -88,7 +88,7 @@
     }
   },
   "scenario_B": {
-    "zip_path": "/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/downloaded_zip/tps-packet-1778917128000.zip",
+    "zip_path": "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/downloaded_zip/tps-packet-1778917128000.zip",
     "files": [
       "I-821.pdf",
       "I-765.pdf",

@@ -7,7 +7,7 @@ Status: COMPLETE ✅
 
 ## Source Image
 
-- File: `/Users/sergiikuropiatnyk/Downloads/0387F21B-460D-422B-A74F-D3B091D7375C.png`
+- File: `/Users/sergiiivanenko/Downloads/0387F21B-460D-422B-A74F-D3B091D7375C.png`
 - Format: PNG, 1254×1254 px, 8-bit RGB, no alpha, 1.6 MB
 - Visual: Dark navy rounded-corner background, golden serif "M", document+checkmark, blue/yellow ribbon
 - Safety check: PASS — no government seals, no USCIS/DHS branding, no "USCIS Helper" text

@@ -31,8 +31,8 @@ files_changed:
 
 PP_T1_real_world_passport_test:
   status: PASS_WITH_FINDINGS
-  fixture_path: /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/degraded/
-  matrix_path: /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/degraded_passport_matrix.csv
+  fixture_path: /Users/sergiiivanenko/work/uscis-helper/test-fixtures/degraded/
+  matrix_path: /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/degraded_passport_matrix.csv
   total_variants: 20
   results:
     pass_ocr_extracts_all_8_fields:
@@ -186,13 +186,13 @@ known_gaps:
 
 # ── ARTIFACTS ───────────────────────────────────────────────────────────────
 artifacts:
-  - /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/degraded/  # 20 phone-photo variants
-  - /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/degraded_passport_matrix.csv  # full result CSV
-  - /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/pilot-prep.zip  # CA-Phoenix ZIP
-  - /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/pilot-prep-ny.zip  # NY-Chicago ZIP
-  - /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/pilot-prep-unpacked/README.txt
-  - /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/pilot-prep-ny-unpacked/README.txt
-  - /Users/sergiikuropiatnyk/work/uscis-helper/docs/uscis/sources/2026-05-10/
+  - /Users/sergiiivanenko/work/uscis-helper/test-fixtures/degraded/  # 20 phone-photo variants
+  - /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/degraded_passport_matrix.csv  # full result CSV
+  - /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/pilot-prep.zip  # CA-Phoenix ZIP
+  - /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/pilot-prep-ny.zip  # NY-Chicago ZIP
+  - /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/pilot-prep-unpacked/README.txt
+  - /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/pilot-prep-ny-unpacked/README.txt
+  - /Users/sergiiivanenko/work/uscis-helper/docs/uscis/sources/2026-05-10/
 
 # ── SUMMARY ─────────────────────────────────────────────────────────────────
 summary: |

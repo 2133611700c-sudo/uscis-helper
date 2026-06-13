@@ -5,7 +5,7 @@
 - SHA: `0627cba5fe5a3b0a94ccf0b05e62476eed96dca0`
 
 ## Scenario A — I-821 only
-- Summary: [browser_summary.json](/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_A/browser_summary.json:1)
+- Summary: [browser_summary.json](/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_A/browser_summary.json:1)
 - Result:
   - `POST /api/tps/ocr/extract = 200`
   - `POST /api/tps/generate-packet = 200`
@@ -13,7 +13,7 @@
   - ZIP content: `I-821.pdf`, `README.txt`
 
 ## Scenario B — TPS + EAD + I-94
-- Summary: [browser_summary.json](/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/browser_summary.json:1)
+- Summary: [browser_summary.json](/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/browser_summary.json:1)
 - Result:
   - `POST /api/tps/ocr/extract = 200`
   - `POST /api/tps/generate-packet = 200`
@@ -21,8 +21,8 @@
   - ZIP content: `I-821.pdf`, `I-765.pdf`, `README.txt`
 
 ## Screenshots
-- Scenario A: [screenshots](/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_A/screenshots)
-- Scenario B: [screenshots](/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/screenshots)
+- Scenario A: [screenshots](/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_A/screenshots)
+- Scenario B: [screenshots](/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-functional-closeout/scenario_B/screenshots)
 
 ## Network/console
 - Known non-blocking noise in both runs:

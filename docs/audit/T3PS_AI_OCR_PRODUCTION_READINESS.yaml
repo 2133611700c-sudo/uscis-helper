@@ -110,7 +110,7 @@ remaining_gaps:
       pre-filled. Synthetic curl matrix passes; real upload not exercised.
 
 next_action: |
-  1. Sergii uploads a real passport / I-94 / EAD via the production
+  1. Taras uploads a real passport / I-94 / EAD via the production
      wizard at https://messenginfo.com/ru/services/tps-ukraine and
      confirms Step 5 shows non-empty fields.
   2. If something missing, the new flat diagnostics in the OCR response

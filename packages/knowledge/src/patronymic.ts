@@ -99,10 +99,10 @@ export function generatePatronymic(givenName: string, sex: Sex): { value: string
 
   const last = name[name.length - 1]
 
-  // -ій / -їй ending (Сергій, Андрій, Валерій, Юрій): +ович / replace й→ївна
+  // -ій / -їй ending (Тарас, Андрій, Валерій, Юрій): +ович / replace й→ївна
   if (name.endsWith('ій') || name.endsWith('їй')) {
-    if (sex === 'M') return { value: titleCase(name + 'ович'), source: 'generated_regular' } // Сергій→Сергійович
-    return { value: titleCase(name.slice(0, -1) + 'ївна'), source: 'generated_regular' }      // Сергій→Сергіївна
+    if (sex === 'M') return { value: titleCase(name + 'ович'), source: 'generated_regular' } // Тарас→Тарасович
+    return { value: titleCase(name.slice(0, -1) + 'ївна'), source: 'generated_regular' }      // Тарас→Сергіївна
   }
 
   // other -й ending (rare): drop й, +йович / +ївна

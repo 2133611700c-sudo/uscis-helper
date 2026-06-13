@@ -23,12 +23,12 @@ Reason: P0 evidence gates are not fully closed (`T3PS-04 = FAIL`: real-doc OCR e
 - Production health `ocr_configured`: `true`
 
 Evidence:
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/git-sha.txt`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/health.json`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/start.headers.txt`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/landing.headers.txt`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/sources.headers.txt`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/privacy.headers.txt`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/git-sha.txt`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/health.json`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/start.headers.txt`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/landing.headers.txt`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/sources.headers.txt`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/privacy.headers.txt`
 
 ## Gates Result
 
@@ -41,11 +41,11 @@ Evidence:
   - build: PASS
 
 Evidence:
-- `/Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/RUN_ALL_GATES.report.yaml`
+- `/Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/RUN_ALL_GATES.report.yaml`
 
 ## Browser Evidence Result
 
-Source report: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_02_LIVE_BROWSER_CONTOUR.md`
+Source report: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_02_LIVE_BROWSER_CONTOUR.md`
 
 Status: **PASS**
 
@@ -62,11 +62,11 @@ Closed now:
 2. Legal-risk yes-case screenshots captured (`criminal`, `removal`, `prior_denial`).
 
 Evidence bundle:
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/`
 
 ## PDF/ZIP Evidence Result
 
-Source report: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_03_PDF_FIELD_COVERAGE_PROOF.md`
+Source report: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_03_PDF_FIELD_COVERAGE_PROOF.md`
 
 Status: **PASS**
 
@@ -80,12 +80,12 @@ Closed now:
 2. Invalid map refs remain zero in current extractor output.
 
 Evidence bundle:
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-pdf-proof/`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/generated/`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-pdf-proof/`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/audit/generated/`
 
 ## Real Document Pilot Result
 
-Source report: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.md`
+Source report: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.md`
 
 Status: **FAIL**
 
@@ -95,9 +95,9 @@ Blocking facts:
 3. Synthetic robustness run still yields mostly `field_count=0`.
 
 Evidence:
-- `/Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/proof/T3PS_REAL_DOCUMENT_PILOT_REDACTED.report.yaml`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_OCR_ROBUSTNESS_MATRIX.csv`
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/generated/t3ps_phase3_brain_off_safety.json`
+- `/Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/T3PS_REAL_DOCUMENT_PILOT_REDACTED.report.yaml`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_OCR_ROBUSTNESS_MATRIX.csv`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/audit/generated/t3ps_phase3_brain_off_safety.json`
 
 ## Regulatory Guard Result
 
@@ -129,7 +129,7 @@ Not fully closed:
 - Evidence report path (OpenClaw repo): `ops/agent-control/reports/openclaw-heartbeat/20260515T012224Z.md`
 
 Evidence:
-- `/Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-final-release/openclaw-heartbeat.txt`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/openclaw-heartbeat.txt`
 
 ## Remaining P0 Gaps
 

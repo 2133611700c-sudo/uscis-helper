@@ -6,7 +6,7 @@ brightness shift, glare overlay, and downscaling.
 
 NO real PII. Pure transformation of the existing synthetic-passport.jpg.
 
-Outputs go to /Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/degraded/.
+Outputs go to /Users/sergiiivanenko/work/uscis-helper/test-fixtures/degraded/.
 Each is named after the degradation applied, so when the OCR endpoint
 report comes back we can match failures to specific real-world hazards.
 """
@@ -15,8 +15,8 @@ from PIL import Image, ImageFilter, ImageEnhance, ImageDraw
 import os
 import io
 
-SRC = '/Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/synthetic-passport.jpg'
-OUT_DIR = '/Users/sergiikuropiatnyk/work/uscis-helper/test-fixtures/degraded'
+SRC = '/Users/sergiiivanenko/work/uscis-helper/test-fixtures/synthetic-passport.jpg'
+OUT_DIR = '/Users/sergiiivanenko/work/uscis-helper/test-fixtures/degraded'
 os.makedirs(OUT_DIR, exist_ok=True)
 
 base = Image.open(SRC).convert('RGB')

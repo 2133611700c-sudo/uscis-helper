@@ -56,7 +56,7 @@ invariants**. Each class MUST include **≥ 3 of these 6 adversarial categories*
 | # | Category | GT label expectation |
 |---|---|---|
 | 1 | **Wrong-person** — passport of person A + a birth cert claiming the same person with different names | the cross-document anchor must BLOCK → the conflicting field `expected: null` |
-| 2 | **Silent substitution** — Сергій (UA) in the original | `expected: "Serhii"` (as-written), NEVER the Russianized form; a wrong script = a wrong |
+| 2 | **Silent substitution** — Тарас (UA) in the original | `expected: "Taras"` (as-written), NEVER the Russianized form; a wrong script = a wrong |
 | 3 | **Illegible critical field** — a DOB/patronymic that truly cannot be read | `expected: null` (must stay review, never a guess) |
 | 4 | **Cyrillic-in-output** — a Latin-only critical field whose only value still has Cyrillic | `expected: null` (the guard must block it) |
 | 5 | **Soviet bilingual mismatch** — RU and UA versions of one field disagree | `expected:` the as-written value + the other read must NOT force-rewrite it |

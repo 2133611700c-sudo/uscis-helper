@@ -1,7 +1,7 @@
 import os, re, json, hashlib, subprocess, datetime
 from pypdf import PdfReader
 
-TPS = "/Users/sergiikuropiatnyk/work/uscis-helper/docs/uscis/forms/tps"
+TPS = "/Users/sergiiivanenko/work/uscis-helper/docs/uscis/forms/tps"
 PDF_DIR = os.path.join(TPS, "pdf")
 DOWNLOADED_AT = "2026-05-10T22:41:48Z"   # from the curl run
 
@@ -56,7 +56,7 @@ for key, meta in META.items():
         "sha256": sha,
         "form_field_count": len(raw_fields),
         "downloaded_at_utc": DOWNLOADED_AT,
-        "local_path": os.path.relpath(path, "/Users/sergiikuropiatnyk/work/uscis-helper"),
+        "local_path": os.path.relpath(path, "/Users/sergiiivanenko/work/uscis-helper"),
     }
     print(f"{key}: pages={pages} fields={len(raw_fields)} pdf_edition={pdf_edition} page_edition={meta['page_edition']} -> {status}")
 

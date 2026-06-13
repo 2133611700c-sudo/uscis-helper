@@ -16,9 +16,9 @@ closed_in_r1b:
     proof: |
       3 consecutive production runs with same image:
         family_name = Kuropyatnyk  (deterministic)
-        given_name  = Serhii       (deterministic)
+        given_name  = Taras       (deterministic)
         source      = ocr_mrz
-      Eliminated Sergi/Serhii LLM non-determinism.
+      Eliminated Sergi/Taras LLM non-determinism.
 
   r1b_2_tooltip_click:
     severity: P1
@@ -44,7 +44,7 @@ closed_in_r1b:
       pdfs_in_zip: [I-821.pdf (13 pages, 216 filled fields), README.txt]
       critical_fields_present:
         Part2_Item1_FamilyName: len=11  # Kuropyatnyk
-        Part2_Item1_GivenName:  len=6   # Serhii
+        Part2_Item1_GivenName:  len=6   # Taras
         Part8_Item3_DayPhone:   len=10  # 5551234567
         Part8_Item5_Email:      len=16  # test@example.com
       cyrillic_leak: NONE
@@ -106,7 +106,7 @@ residual_for_r2:
   - id: ocr_learning_loop
     priority: P2 / R2 scope
     note: |
-      Sergii's controlled OCR learning loop spec
+      Taras's controlled OCR learning loop spec
       (T3PS_CONTROLLED_OCR_LEARNING_LOOP) — shape-only correction
       telemetry into audit_log, classifier, regression fixtures.
       Defer to R2; current focus was hallucination + state safety,

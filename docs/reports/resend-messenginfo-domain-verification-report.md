@@ -52,5 +52,5 @@
 
 - Old `RESEND_API_KEY` (set ~2h prior by previous agent) was removed and replaced with the new messenginfo-scoped key.
 - `BACKUP_EMAIL` env var (set 2h prior) was left as-is — not part of contact email flow.
-- handyandfriend.com Resend account (`2133611700c@gmail.com`) was **not touched**.
+- handyandfriend.com Resend account (`owner@messenginfo.test`) was **not touched**.
 - Free plan limit: 1 domain per account — separate accounts are required by design.

@@ -12,8 +12,8 @@ machine-readable contract.
 
 ## Why this release existed
 
-A real user (Sergii) uploaded his actual Ukrainian passport. The TPS
-wizard's review screen showed `A-Number: 231-853-474` next to his
+A real user (Taras) uploaded his actual Ukrainian passport. The TPS
+wizard's review screen showed `A-Number: 000-000-000` next to his
 passport data. Passports cannot contain A-numbers — the value came
 either from a Brain hallucination or a stale localStorage merge from
 a previous EAD upload. Worse, the value was confidently labeled
@@ -68,7 +68,7 @@ defences now stack:
 
 ### Layer 4 — Real-document OCR accuracy (`91f85a2` + `66de140`)
 
-The reason Sergii's DOB was originally `null`:
+The reason Taras's DOB was originally `null`:
 
 - `parseDate` only accepted ISO and `MM/DD/YYYY` — Ukrainian
   passports show `DD.MM.YY` with 2-digit years. Added Ukrainian +
@@ -135,14 +135,14 @@ Run via Playwright on production:
 | Scenario | Result |
 |---|---|
 | 1. Passport in passport slot, fresh storage | PASS — no A-number row, no warnings |
-| 2. Pre-seeded v2 ghost localStorage (A-number=231-853-474) | PASS — value suppressed, v2 key wiped |
+| 2. Pre-seeded v2 ghost localStorage (A-number=000-000-000) | PASS — value suppressed, v2 key wiped |
 | 3. Passport file POSTed with `docHint=i94` | PASS — `slot_mismatch=true`, 3 fields rejected, warning banner |
 | 4. Cyrillic family_name into generate-packet | PASS — HTTP 422, never reached pdf-lib |
 | 5. Happy-path full ZIP download | PASS — HTTP 200, 1.8 MB ZIP, 216 form fields, **cyrillic_leak=NONE** |
 
 ## R1B follow-up (already shipped, not part of R1A spec but logged)
 
-- `9d11aad` — MRZ-anchored name override kills Sergi/Serhii non-determinism
+- `9d11aad` — MRZ-anchored name override kills Sergi/Taras non-determinism
 - `d0bcdb7` — tooltip click popover (mobile-friendly)
 - `1447188` — gates 100% cleanup
 

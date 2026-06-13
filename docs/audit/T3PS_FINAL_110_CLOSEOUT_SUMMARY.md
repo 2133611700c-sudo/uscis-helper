@@ -7,7 +7,7 @@
 ## Authoritative final set
 - Count: **11**
 - Pass: **true**
-- Master lock: `/Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_MASTER_RELEASE_LOCK_FINAL.yaml`
+- Master lock: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_MASTER_RELEASE_LOCK_FINAL.yaml`
 
 ## Functional state
 - Gates: **PASS**

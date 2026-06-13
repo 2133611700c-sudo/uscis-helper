@@ -1,6 +1,6 @@
 # TPS Ukraine — Engineering Plan, Cycles 1-6
 # Compiled: 2026-05-10
-# Owner: SERGII (product), agent (engineering)
+# Owner: TARAS (product), agent (engineering)
 # Locked vision: 5-agent pipeline → user uploads photos → ready-to-mail packet
 #
 # Each cycle ends with: typecheck + tests + content-guard + build + push + Vercel READY + live smoke
@@ -103,7 +103,7 @@ cycle_5:
   acceptance:
     - 3 fixture cases (initial single adult, re-registration single adult, family with child<14) all produce correct PDFs
     - content guard passes
-    - real eye-test by Sergii on output PDF
+    - real eye-test by Taras on output PDF
 
 cycle_6:
   name: TPS_AGENT_4_EVIDENCE_BUILDER_AND_FEDERAL_REGISTER_MONITOR

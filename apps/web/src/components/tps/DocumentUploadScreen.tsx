@@ -4,7 +4,7 @@
  * DocumentUploadScreen — the new wizard step that takes uploaded photos
  * of passport / I-94 / EAD and POSTs them to /api/tps/ocr/extract.
  *
- * Per docs/ux/SELF_REVIEW_PATTERN.md and Sergii's "address vs evidence"
+ * Per docs/ux/SELF_REVIEW_PATTERN.md and Taras's "address vs evidence"
  * rule:
  *   - We OCR ONLY identity documents (passport / I-94 / EAD card).
  *   - We do NOT OCR all residence-evidence documents here. That stays

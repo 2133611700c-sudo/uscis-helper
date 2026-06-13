@@ -71,7 +71,7 @@ What x-doc.ai DOESN'T do that we should:
 
 **1. OCR auto-fill (x-doc.ai's killer feature)**
 - User uploads photo/scan of document → AI extracts all fields → wizard pre-fills automatically
-- Instead of typing "ЮРЧЕНКО СЕРГІЙ ІВАНОВИЧ" — they just take a photo
+- Instead of typing "ЮРЧЕНКО ТАРАС ІВАНОВИЧ" — they just take a photo
 - Implementation: use OpenAI Vision API (already have key) or Tesseract.js (free, browser)
 - Document Lab already has a stub — connect it to TranslationWizard
 

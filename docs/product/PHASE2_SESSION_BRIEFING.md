@@ -151,7 +151,7 @@ that provenance disappears when the value enters TPSAnswers.
 ## 5. KEY FILE PATHS
 
 ### Monorepo root:
-`/Users/sergiikuropiatnyk/work/uscis-helper/`
+`/Users/sergiiivanenko/work/uscis-helper/`
 
 ### OCR pipeline:
 - OCR route: `apps/web/src/app/api/tps/ocr/extract/route.ts` (739 lines)
@@ -186,8 +186,8 @@ that provenance disappears when the value enters TPSAnswers.
 - GitHub Actions workflow: `.github/workflows/guards.yml`
 
 ### Owner test documents (for production diagnostic):
-- Passport: `qa-shots/private/Passport Sergii Ivanenko .jpg`
-- I-94: `qa-shots/private/I94 Sergii Ivanenko .jpg`
+- Passport: `qa-shots/private/Passport Taras Ivanenko .jpg`
+- I-94: `qa-shots/private/I94 Taras Ivanenko .jpg`
 - EAD: `qa-shots/private/Ead1.jpg`
 - DL: `qa-shots/private/DL.jpg`
 
@@ -199,7 +199,7 @@ that provenance disappears when the value enters TPSAnswers.
 - Node: v24.11.1 at `~/.nvm/versions/node/v24.11.1/bin`
 - pnpm: via Node
 - Homebrew: `/opt/homebrew/bin/` (has `gh`, `pdftotext`, `brew`)
-- PATH for commands: `export PATH="/opt/homebrew/bin:/Users/sergiikuropiatnyk/.nvm/versions/node/v24.11.1/bin:$PATH"`
+- PATH for commands: `export PATH="/opt/homebrew/bin:/Users/sergiiivanenko/.nvm/versions/node/v24.11.1/bin:$PATH"`
 
 ### CI (GitHub Actions):
 - Ubuntu-latest, Node 22, pnpm
@@ -220,8 +220,8 @@ that provenance disappears when the value enters TPSAnswers.
 // node /tmp/ocr-diag.mjs
 import { readFile } from 'fs/promises';
 const docs = [
-  { file: 'qa-shots/private/Passport Sergii Ivanenko .jpg', hint: 'passport', label: 'Passport' },
-  { file: 'qa-shots/private/I94 Sergii Ivanenko .jpg', hint: 'i94', label: 'I-94' },
+  { file: 'qa-shots/private/Passport Taras Ivanenko .jpg', hint: 'passport', label: 'Passport' },
+  { file: 'qa-shots/private/I94 Taras Ivanenko .jpg', hint: 'i94', label: 'I-94' },
   { file: 'qa-shots/private/Ead1.jpg', hint: 'ead', label: 'EAD' },
   { file: 'qa-shots/private/DL.jpg', hint: 'dl', label: 'DL' },
 ];
@@ -310,7 +310,7 @@ for (const d of docs) {
 
 Paste this briefing document into the new chat, then say:
 
-> Read `/Users/sergiikuropiatnyk/work/uscis-helper/docs/product/PHASE2_SESSION_BRIEFING.md`
+> Read `/Users/sergiiivanenko/work/uscis-helper/docs/product/PHASE2_SESSION_BRIEFING.md`
 > and start TPS_PROVENANCE_PHASE_2_WIZARD_STATE.
 > First action: find where TpsExtractedField[] converts to flat TPSAnswers.
 > Verify CI is green for current HEAD before making any changes.

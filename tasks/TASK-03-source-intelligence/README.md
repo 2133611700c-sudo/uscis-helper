@@ -54,4 +54,4 @@ Reason: 20 channels × 30 search queries = 600 search operations. Errors compoun
 
 ## YT-SOURCE-01 IS ALREADY DONE
 
-Channel `@ukrainiansinusa` (YT-SOURCE-01) was processed in a prior session. Skip in this run unless user explicitly requests refresh. Report file should already exist at `/Users/sergiikuropiatnyk/work/uscis-helper/source-reports/YT-SOURCE-01-report.md`.
+Channel `@ukrainiansinusa` (YT-SOURCE-01) was processed in a prior session. Skip in this run unless user explicitly requests refresh. Report file should already exist at `/Users/sergiiivanenko/work/uscis-helper/source-reports/YT-SOURCE-01-report.md`.

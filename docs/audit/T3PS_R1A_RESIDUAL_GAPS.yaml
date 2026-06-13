@@ -50,7 +50,7 @@ p1_followups_for_r2:
     severity: future_capability
     user_impact: high_over_time
     description: |
-      Sergii's T3PS_CONTROLLED_OCR_LEARNING_LOOP spec calls for
+      Taras's T3PS_CONTROLLED_OCR_LEARNING_LOOP spec calls for
       shape-only correction telemetry into audit_log, a classifier
       (OCR_ERROR / NORMALIZATION_ERROR / VALIDATOR_ERROR /
       USER_PREFERENCE / UNKNOWN), and regression-fixture generation.
@@ -120,7 +120,7 @@ p2_followups:
   - id: telegram_payment_part7_redesign
     priority: out_of_scope
     note: |
-      Explicitly excluded by both R1A spec and Sergii's
+      Explicitly excluded by both R1A spec and Taras's
       hard_rules — out of R2 scope as well.
 
 dev_env_notes:

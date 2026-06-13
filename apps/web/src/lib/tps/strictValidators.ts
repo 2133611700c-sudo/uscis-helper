@@ -36,7 +36,7 @@ const SEX_RE = /^[MFX]$/
  */
 const PASSPORT_NUMBER_RE = /^[A-Z]{1,3}\s?[0-9]{6,9}$/
 
-/** A-number: 9 digits. Often shown with dashes (231-853-474) — strip first. */
+/** A-number: 9 digits. Often shown with dashes (000-000-000) — strip first. */
 const A_NUMBER_RE = /^\d{9}$/
 
 /**

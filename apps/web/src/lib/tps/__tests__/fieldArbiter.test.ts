@@ -35,10 +35,10 @@ describe('Field Arbiter v0', () => {
   // CASE 3: EAD gives valid a_number
   it('a_number from EAD wins', () => {
     const candidates: ExtractedCandidate[] = [
-      { field: 'a_number', value: '231-853-474', sourceDoc: 'ead', sourceType: 'ai_brain', confidence: 0.9, reviewRequired: false },
+      { field: 'a_number', value: '000-000-000', sourceDoc: 'ead', sourceType: 'ai_brain', confidence: 0.9, reviewRequired: false },
     ]
     const result = resolveField('a_number', candidates)
-    expect(result.chosenValue).toBe('231-853-474')
+    expect(result.chosenValue).toBe('000-000-000')
     expect(result.chosenSourceDoc).toBe('ead')
   })
 
@@ -90,7 +90,7 @@ describe('Field Arbiter v0', () => {
         ],
         i94: [
           { field: 'last_entry_date', value: '2022-09-09', sourceDoc: 'i94', sourceType: 'ocr_keyword', confidence: 0.95, reviewRequired: false },
-          { field: 'i94_admission_number', value: '039622651A3', sourceDoc: 'i94', sourceType: 'ocr_keyword', confidence: 0.95, reviewRequired: false },
+          { field: 'i94_admission_number', value: '000000000A0', sourceDoc: 'i94', sourceType: 'ocr_keyword', confidence: 0.95, reviewRequired: false },
         ],
         booklet: [
           { field: 'city_of_birth', value: 'Vinnytsia', sourceDoc: 'booklet', sourceType: 'ai_brain', confidence: 0.9, reviewRequired: true },

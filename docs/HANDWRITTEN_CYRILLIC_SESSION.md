@@ -19,7 +19,7 @@ Pre-processing (deglare, sharpen, contrast) would improve everything.
 | OCR_PROCESSOR (standard) | Іванеко (wrong) | Cepriziobur (garbage) | Тростянець ✅ | Вінницької області ✅ | ✅ |
 | FORM_PARSER | cupon'smuuc (WORSE) | Cepritrobur (garbage) | Простянець (WRONG) | Binuuyської (WRONG) | GARBLED |
 | Google Vision | Іваненко (closer) | Cepriticbur (garbage) | Тростянець ✅ | Вінницької област ✅ | ✅ |
-| Dual OCR + DeepSeek | **Іваненко** ✅ | Сергійович (inferred⚠️) | Тростянець ✅ | Вінницька ✅ | ✅ |
+| Dual OCR + DeepSeek | **Іваненко** ✅ | Тарасович (inferred⚠️) | Тростянець ✅ | Вінницька ✅ | ✅ |
 
 ## VERDICT
 1. Form Parser: REJECTED — worse results, 0 form fields detected
