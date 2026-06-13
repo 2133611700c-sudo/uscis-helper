@@ -68,11 +68,12 @@ describe('staged passport schemas — mirror render snapshots (synthetic)', () =
     })
   }
 
-  it('flag OFF in the same process: render returns null (the switch is live)', async () => {
+  it('renders even with the retired flag absent (passports registered unconditionally)', async () => {
     vi.stubEnv('PASSPORT_SCHEMA_RENDERER_ENABLED', '')
     try {
       const res = await renderMirrorTranslationPDF('ua_internal_passport_booklet', CASES[0].fields)
-      expect(res).toBeNull()
+      expect(res).not.toBeNull()
+      expect(res!.pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-')
     } finally {
       vi.stubEnv('PASSPORT_SCHEMA_RENDERER_ENABLED', '1')
     }
