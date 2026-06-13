@@ -15,9 +15,11 @@ const GROUP_TITLE: Record<string, string> = {
 // map typographic symbols, mark anything still unrenderable. (was: silent strip)
 const safe = pdfSafe
 
+export interface ExtraEntry { key: string; label: string; value: string; review: boolean }
+
 export async function renderOfficialTranslation(
   schema: OfficialFormSchema, values: Record<string, FieldValue>,
-  opts: { signerName?: string; signerAddress?: string; signedAt?: string } = {},
+  opts: { signerName?: string; signerAddress?: string; signedAt?: string; extras?: ExtraEntry[] } = {},
 ): Promise<{ pdf: Buffer; unresolved: string[] }> {
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
@@ -45,6 +47,15 @@ export async function renderOfficialTranslation(
       else if (v && v.canRead && v.value) { L(`  ${f.sourceLabelEn}: ${v.value}    [CONFIRM]`, 10, font, warn); unresolved.push(f.key) }
       else { L(`  ${f.sourceLabelEn}: ____________________  [enter from document]`, 10, font, warn); unresolved.push(f.key) }
     }
+    y -= 3
+  }
+  // ADDITIONAL ENTRIES — recognized lines that have no slot in the official
+  // schema. Surfaced (never dropped) so the mirror reproduces every read line.
+  // Marked [CONFIRM] because they are outside the verified normative structure.
+  const extras = (opts.extras ?? []).filter((e) => e.value && e.value.trim())
+  if (extras.length) {
+    L('ADDITIONAL ENTRIES', 10, bold, gray)
+    for (const e of extras) { L(`  ${e.label}: ${e.value}    [CONFIRM]`, 10, font, warn); unresolved.push(e.key) }
     y -= 3
   }
   HR(); L('[ Official round seal - emblem and text not reproduced ]', 9, ital, gray)
