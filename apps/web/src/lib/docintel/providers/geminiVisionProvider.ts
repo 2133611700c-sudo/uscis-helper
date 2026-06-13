@@ -64,7 +64,7 @@ For each key return an object:
 
 Rules:
 - LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Сергій→(wrong)Сергей, Сергійович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake.
-- The photo may be ROTATED (0°, 90°, 180° / upside-down, or 270°). Mentally rotate the image so the text is upright, then read it. Orientation must not change what you read.
+- ORIENTATION — the photo is very often ROTATED (90° sideways, 180° upside-down, or 270°), e.g. a passport page shot in portrait. You MUST mentally rotate the page until the text is upright, then read every field. NEVER return can_read=false just because the text is sideways or upside-down — rotation is normal and you are expected to handle it. Reading rotated text is required; orientation must not change what you read.
 - Read the FULL word, every letter. Never return only a suffix (never "ович" alone).
 - Handwritten Ukrainian "Т" and "П" look similar; pick the letter that forms a REAL Ukrainian name/place.
 - ABSENT FIELDS ARE NORMAL. Many of the requested fields may simply NOT be present on this particular document — that is expected and correct. If a field is not visibly written on the document, or is not clearly legible, set can_read=false and cyrillic="". Returning an absent field is the CORRECT answer. NEVER invent, NEVER infer a typical/default value (e.g. do NOT assume citizenship "Україна", do NOT copy a value from another field, do NOT guess a series or a date). An empty field is always better than an invented one.
@@ -118,7 +118,16 @@ export class GeminiVisionProvider implements VisionProvider {
 
     // 2.5-pro + thinking on a full-page scan runs ~20-40s; the old 8s default
     // would abort it every time. Default high; callers can still override.
+    //
+    // timeoutMs is the TOTAL budget for THIS read across the whole model/attempt
+    // fallback chain — NOT per attempt. Previously each callGemini got the full
+    // timeoutMs, so a single page could run 3 models × 2 attempts × 40s = up to
+    // 240s; with 4 pages read in parallel that blew the route's 60s maxDuration →
+    // the function was killed → ZERO fields (the owner's 4-page passport = "0").
+    // Now we cap the chain at a single deadline so N parallel pages finish within
+    // the route budget.
     const timeoutMs = opts.timeoutMs ?? 45000
+    const deadline = t0 + timeoutMs
     const attempts = opts.attemptsPerModel ?? 2
     const prompt = buildPrompt(spec)
     const imageB64 = imageBuffer.toString('base64')
@@ -127,8 +136,10 @@ export class GeminiVisionProvider implements VisionProvider {
 
     for (const model of modelFallback()) {
       for (let a = 0; a < attempts; a++) {
+        const remaining = deadline - Date.now()
+        if (remaining < 3000) { lastErr = 'deadline'; break } // not enough time for another attempt
         try {
-          const { ok, status, json } = await callGemini(model, apiKey, imageB64, mimeType, prompt, timeoutMs)
+          const { ok, status, json } = await callGemini(model, apiKey, imageB64, mimeType, prompt, remaining)
           if (ok) {
             const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
             let parsed: Record<string, any>
