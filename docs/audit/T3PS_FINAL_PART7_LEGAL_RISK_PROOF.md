@@ -1,17 +1,17 @@
 # T3PS Final Part 7 Legal-Risk Yes-Case Proof
 
 Generated: 2026-05-16T22:02:30Z  
-Capture script: `/Users/sergiiredacted/work/uscis-helper/scripts/t3ps-legal-risk-capture.mjs`
+Capture script: `/Users/sergiiivanenko/work/uscis-helper/scripts/t3ps-legal-risk-capture.mjs`
 
 ## Cases captured
 - All-no baseline:
-  - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/legal_risk_all_no.png`
+  - `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/legal_risk_all_no.png`
 - Criminal concern = yes:
-  - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/legal_risk_criminal_yes.png`
+  - `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/legal_risk_criminal_yes.png`
 - Left U.S. without advance parole = yes:
-  - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/legal_risk_removal_yes.png`
+  - `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/legal_risk_removal_yes.png`
 - Prior TPS denial = yes:
-  - `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/legal_risk_prior_denial_yes.png`
+  - `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots/legal_risk_prior_denial_yes.png`
 
 ## Verification
 - Warning surface is visible for yes-cases.

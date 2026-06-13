@@ -17,13 +17,13 @@ Production SHA: `5d713b40d919f559f19e6a0e3ff5127322de065d`
   - `typecheck`, `vitest`, `lint`, `guard`, `build` = `PASS`.
 
 ## Evidence index
-- Baseline: [T3PS_FUNCTIONAL_CLOSEOUT_BASELINE.yaml](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_FUNCTIONAL_CLOSEOUT_BASELINE.yaml:1)
-- OCR matrix: [T3PS_OCR_DOCUMENT_MATRIX.yaml](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_OCR_DOCUMENT_MATRIX.yaml:1)
-- Live browser proof: [T3PS_LIVE_BROWSER_FUNCTIONAL_PROOF.md](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_LIVE_BROWSER_FUNCTIONAL_PROOF.md:1)
-- OCR→PDF trace: [T3PS_OCR_TO_PDF_TRACE.yaml](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_OCR_TO_PDF_TRACE.yaml:1)
-- Field coverage closeout: [T3PS_FIELD_COVERAGE_FINAL.yaml](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_FIELD_COVERAGE_FINAL.yaml:1)
-- PDF/ZIP proof: [T3PS_PDF_ZIP_FINAL_PROOF.yaml](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_PDF_ZIP_FINAL_PROOF.yaml:1)
-- Brain verification: [T3PS_DEEPSEEK_BRAIN_VERIFICATION.yaml](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_DEEPSEEK_BRAIN_VERIFICATION.yaml:1)
+- Baseline: [T3PS_FUNCTIONAL_CLOSEOUT_BASELINE.yaml](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_FUNCTIONAL_CLOSEOUT_BASELINE.yaml:1)
+- OCR matrix: [T3PS_OCR_DOCUMENT_MATRIX.yaml](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_OCR_DOCUMENT_MATRIX.yaml:1)
+- Live browser proof: [T3PS_LIVE_BROWSER_FUNCTIONAL_PROOF.md](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_LIVE_BROWSER_FUNCTIONAL_PROOF.md:1)
+- OCR→PDF trace: [T3PS_OCR_TO_PDF_TRACE.yaml](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_OCR_TO_PDF_TRACE.yaml:1)
+- Field coverage closeout: [T3PS_FIELD_COVERAGE_FINAL.yaml](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_FIELD_COVERAGE_FINAL.yaml:1)
+- PDF/ZIP proof: [T3PS_PDF_ZIP_FINAL_PROOF.yaml](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_PDF_ZIP_FINAL_PROOF.yaml:1)
+- Brain verification: [T3PS_DEEPSEEK_BRAIN_VERIFICATION.yaml](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_DEEPSEEK_BRAIN_VERIFICATION.yaml:1)
 
 ## Accepted operational risk (non-functional blocker)
 - `telegram_alert_transport_missing` — accepted as operational risk, not functional TPS blocker for this closeout.

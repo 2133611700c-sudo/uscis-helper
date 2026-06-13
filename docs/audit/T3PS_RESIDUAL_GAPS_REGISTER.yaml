@@ -4,10 +4,10 @@ gaps:
     title: Telegram monitoring transport not required for functional closeout
     description: TELEGRAM_BOT_TOKEN/CHAT_ID transport is operational monitoring scope, not TPS functional correctness scope.
     evidence:
-      - /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_DAY1_REPORT.yaml
+      - /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_DAY1_REPORT.yaml
     risk: Monitoring alerts may be delayed or absent unless transport is configured.
     decision: accepted_non_blocking_for_stage_i_functional_closeout
-    owner: Sergii
+    owner: Taras
     next_action: Enable transport before broader beta scale-up.
 
   - id: T3PS-GAP-002
@@ -15,8 +15,8 @@ gaps:
     title: _vercel insights 404 and CSP beacon noise in browser console
     description: Browser runs consistently show 404 for /_vercel/insights/script.js and CSP-blocked Cloudflare beacon script.
     evidence:
-      - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/browser_summary_A.json
-      - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/browser_summary_B.json
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/browser_summary_A.json
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/browser_summary_B.json
     risk: Console noise may hide future real client-side issues.
     decision: non_blocking_for_tps_generate_flow
     owner: Engineering
@@ -27,7 +27,7 @@ gaps:
     title: USCIS notice OCR module not in Stage I route
     description: doc_type_hint=uscis_notice returns module_field_count=0 and is not wired to wizard/PDF in current Stage I scope.
     evidence:
-      - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json
     risk: USCIS notice uploads are not auto-extracted in this contour.
     decision: not_required_stage_i
     owner: Product
@@ -49,8 +49,8 @@ gaps:
     title: Real-document pilot completeness varies across historical reports
     description: Real-doc evidence exists but historical runs include environment and privacy constraints; consolidated rerun used synthetic/redacted fixtures.
     evidence:
-      - /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.md
-      - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json
+      - /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.md
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-master/ocr_matrix_reverify.json
     risk: Confidence for messy real-world scans is lower than synthetic fixtures.
     decision: non_blocking_for_controlled_beta_small_cohort
     owner: Operations

@@ -20,10 +20,10 @@ monitoring_transport:
 dry_run:
   status: PASS
   evidence:
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/console.json
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/network.json
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/failed_requests.json
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/console.json
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/network.json
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/failed_requests.json
   ocr_status: 200
   generate_status: 200
   zip_size_bytes: 1825484
@@ -36,8 +36,8 @@ support_queue:
 
 testers:
   invited_count: 3
-  list_path: /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_USERS.md
-  first_beta_script: /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_FIRST_BETA_USERS_SCRIPT.md
+  list_path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_USERS.md
+  first_beta_script: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_FIRST_BETA_USERS_SCRIPT.md
 
 counts:
   completed_flows: 2
@@ -47,7 +47,7 @@ counts:
   generate_failures: 0
   support_requests: 2
 
-issues_path: /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_BETA_ISSUES.yaml
+issues_path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_BETA_ISSUES.yaml
 p0_issues:
   - T3PS-BETA-OPS-001
 p1_issues:

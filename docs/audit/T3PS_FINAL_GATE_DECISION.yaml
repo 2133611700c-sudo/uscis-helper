@@ -14,5 +14,5 @@ commands:
     exit_code: 0
     status: PASS
 authoritative_functional_evidence:
-  source: /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_110_FUNCTIONAL_REVERIFY.yaml
+  source: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_110_FUNCTIONAL_REVERIFY.yaml
   statement: "Prior full functional evidence remains authoritative for OCR matrix, browser A/B, and PDF proof."

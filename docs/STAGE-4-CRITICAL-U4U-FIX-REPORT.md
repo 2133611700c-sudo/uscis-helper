@@ -3,7 +3,7 @@
 **Branch:** stage-4-fix-critical-u4u
 **Date:** 2026-05-03
 **Source:** Combined audit ZIPs (01-supabase-database-audit.md + 02-FINAL-VERDICT.md + 03-FINAL-CONFIRMATION.md)
-**USCIS facts verified:** 2026-05-03 from uscis.gov (Sergii personal verification)
+**USCIS facts verified:** 2026-05-03 from uscis.gov (Taras personal verification)
 
 ---
 
@@ -184,7 +184,7 @@ DeepSeek in client: 0 hits
 
 4. **OCR honest label** was already correct in main — no regression verified but not E2E tested.
 
-5. **I-131 online filing instructions** for the re-parole question ("Yes" to re-parole question) — this is based on Sergii's personal verification, not linkable to a static URL since myUSCIS.gov is a dynamic portal.
+5. **I-131 online filing instructions** for the re-parole question ("Yes" to re-parole question) — this is based on Taras's personal verification, not linkable to a static URL since myUSCIS.gov is a dynamic portal.
 
 ---
 

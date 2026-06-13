@@ -9,7 +9,7 @@
 ## TL;DR
 
 The TPS OCR + AI extraction pipeline is now production-ready. The single
-root cause for "no recognition" reported by Sergii was a paranoid
+root cause for "no recognition" reported by Taras was a paranoid
 opt-in flag (`TPS_AI_BRAIN_ENABLED='1'`) that was never set in Vercel,
 even though the underlying DeepSeek key has been present and working
 for the translation and re-parole services for months. The TPS pipeline
@@ -135,7 +135,7 @@ browser run with redacted screenshots). Wizard wiring (`TPSWizardV2.tsx`)
 was fixed in commit `f752667` to read from the correct response branch
 (`json.module.fields[]` with TpsExtractedField shape).
 
-Sergii should now upload a real passport / I-94 / EAD via the wizard
+Taras should now upload a real passport / I-94 / EAD via the wizard
 on production and confirm Step 5 surfaces non-empty fields. If a
 field is missing, the response diagnostics
 (`brain_status`/`brain_error_code`/`final_field_keys`) will tell us

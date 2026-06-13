@@ -18,7 +18,7 @@ gates:
   lint: PASS
   guard: PASS
   build: PASS
-  evidence: /Users/sergiiredacted/work/uscis-helper/test-fixtures/proof/RUN_ALL_GATES.report.yaml
+  evidence: /Users/sergiiivanenko/work/uscis-helper/test-fixtures/proof/RUN_ALL_GATES.report.yaml
 
 browser_smoke:
   status: PASS
@@ -27,13 +27,13 @@ browser_smoke:
     tps-passport-number-input: true
     tps-passport-expiration-input: true
   evidence:
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json
-    - /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots-redacted/07_step6_screen.png
-    - /Users/sergiiredacted/work/uscis-helper/apps/web/src/lib/tps/__tests__/controlledBetaLock.test.ts
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json
+    - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots-redacted/07_step6_screen.png
+    - /Users/sergiiivanenko/work/uscis-helper/apps/web/src/lib/tps/__tests__/controlledBetaLock.test.ts
 
 http_smoke:
   status: PASS
-  evidence_dir: /Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/t3ps08-smoke
+  evidence_dir: /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/t3ps08-smoke
   notes:
     - Browser-style user-agent used for status verification.
 
@@ -63,9 +63,9 @@ monitoring_status:
     - TELEGRAM_ALERT_CHAT_ID
 
 operating_pack:
-  plan_path: /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_OPERATING_PLAN.md
-  checklist_path: /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_CHECKLIST.yaml
-  risk_register_path: /Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_POST_GO_RISK_REGISTER.yaml
+  plan_path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_OPERATING_PLAN.md
+  checklist_path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_CHECKLIST.yaml
+  risk_register_path: /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_POST_GO_RISK_REGISTER.yaml
 
 open_p1_risks:
   - id: T3PS-P1-001

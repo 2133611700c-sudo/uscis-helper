@@ -1,6 +1,6 @@
 # AGENT PROMPT — TASK-02 Wave 1A Site Build
 
-You are Claude Code working in `/Users/sergiiredacted/work/uscis-helper`.
+You are Claude Code working in `/Users/sergiiivanenko/work/uscis-helper`.
 
 Your task: build the production Messenginfo site (Wave 1A scope) per the specifications in this folder.
 
@@ -22,7 +22,7 @@ Read these files in order:
 ## STEP 1 — VERIFY ENVIRONMENT
 
 ```bash
-cd /Users/sergiiredacted/work/uscis-helper
+cd /Users/sergiiivanenko/work/uscis-helper
 git status                                  # must be clean or known state
 git branch --show-current                   # note current branch
 pnpm install                                # ensure deps current
@@ -48,7 +48,7 @@ Open `apps/web/tailwind.config.ts`. Extend theme per `context/DESIGN-TOKENS.md` 
 ```bash
 pnpm --filter web add lucide-react
 mkdir -p apps/web/data
-cp /Users/sergiiredacted/work/uscis-helper/TASK-02-wave-1a-build/data/service-cards.ts.template apps/web/data/serviceCards.ts
+cp /Users/sergiiivanenko/work/uscis-helper/TASK-02-wave-1a-build/data/service-cards.ts.template apps/web/data/serviceCards.ts
 ```
 
 (If the TASK-02 folder is not in the repo, copy from wherever the user dropped it.)
@@ -234,8 +234,8 @@ Then output the report path. Do not narrate the work — just point to the repor
 
 ## CONSTRAINTS THROUGHOUT
 
-- Do NOT modify `/Users/sergiiredacted/handy-friend-landing-v6` (read-only reference)
-- Do NOT modify `/Users/sergiiredacted/work/messenginfo-merge` (read-only reference)
+- Do NOT modify `/Users/sergiiivanenko/handy-friend-landing-v6` (read-only reference)
+- Do NOT modify `/Users/sergiiivanenko/work/messenginfo-merge` (read-only reference)
 - Do NOT copy components verbatim from those folders — read them for inspiration only
 - Do NOT add USCIS Helper, AI-powered, AI-assisted, AI lawyer, AI legal advice strings to UI
 - Do NOT use Certified Translation in any user-facing copy

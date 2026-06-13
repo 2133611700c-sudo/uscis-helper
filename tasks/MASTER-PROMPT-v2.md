@@ -25,7 +25,7 @@ This prompt enforces the safe execution order, baseline checks, and acceptance g
 
 ## EXECUTION CONTRACT (read before running any task)
 
-You are an AI agent executing a task from the Messenginfo project. Six tasks exist in `/Users/sergiiredacted/work/uscis-helper/tasks/` (or wherever the user dropped them):
+You are an AI agent executing a task from the Messenginfo project. Six tasks exist in `/Users/sergiiivanenko/work/uscis-helper/tasks/` (or wherever the user dropped them):
 
 ```
 TASK-01-notebooklm-cleanup
@@ -115,7 +115,7 @@ If a prerequisite fails, **stop and report**. Do not "skip" or "work around" the
 The repo is a monorepo. Script names (`typecheck`, `lint`, `build`) may differ between root and `apps/web/`. Some scripts may not exist at all. Discover them first:
 
 ```bash
-cd /Users/sergiiredacted/work/uscis-helper
+cd /Users/sergiiivanenko/work/uscis-helper
 
 # Inspect repo structure
 cat package.json | jq '.scripts // {}'
@@ -429,8 +429,8 @@ Provisional data is OK to ship as long as it is labeled and dated. Unlabeled "de
 
 ### Forbidden behaviors (every task)
 
-- Modifying `/Users/sergiiredacted/handy-friend-landing-v6` (read-only)
-- Modifying `/Users/sergiiredacted/work/messenginfo-merge` (read-only)
+- Modifying `/Users/sergiiivanenko/handy-friend-landing-v6` (read-only)
+- Modifying `/Users/sergiiivanenko/work/messenginfo-merge` (read-only)
 - Modifying global git config or shell rc files
 - Committing secrets to git or printing secret values to logs
 - Force-pushing to any branch

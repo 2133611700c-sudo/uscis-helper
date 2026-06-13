@@ -4,7 +4,7 @@ verified_at: 2026-05-20T01:06:10Z
 
 before:
   symptom: |
-    Real passport upload showed A-Number "231-853-474" on Step 5.
+    Real passport upload showed A-Number "000-000-000" on Step 5.
     Passports cannot legitimately contain A-numbers — that data only
     exists on EAD / I-797 / manual entry. The value came either from a
     Brain hallucination or from a previous EAD upload in the same
@@ -137,7 +137,7 @@ remaining_gaps:
   - id: real_user_documents_matrix
     priority: P0 (carry-over)
     description: |
-      Sergii to re-upload the exact same passport. Expected: A-Number
+      Taras to re-upload the exact same passport. Expected: A-Number
       row is GONE (firewall blocks it at API). dob/sex/expiration are
       visible (parser fixes still in place). If anything else looks
       off, the new diagnostics (slot, slot_mismatch, rejected_fields,

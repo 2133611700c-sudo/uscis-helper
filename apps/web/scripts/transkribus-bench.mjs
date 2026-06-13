@@ -37,9 +37,9 @@ const MODELS = [
 
 // Real fixtures to test — mix of handwritten + printed Cyrillic.
 const DOCS = [
-  'birth_cert_handwritten_redacted.jpg',
+  'birth_cert_handwritten_ivanenko.jpg',
   'marriage_1939_kharkiv_borodavka.jpg',
-  'military_id_p1_redacted.jpg',
+  'military_id_p1_ivanenko.jpg',
 ]
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

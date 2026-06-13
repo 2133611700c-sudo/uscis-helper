@@ -3,19 +3,19 @@ generated_at: "2026-05-15T08:04:30Z"
 deployed_commit_sha: "2b8b64bb011f090000add69b21c2005a2c2a86d9"
 verdict: PASS
 
-evidence_dir: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean"
-summary_file: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json"
+evidence_dir: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean"
+summary_file: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json"
 
 api_status:
   ocr_extract: 200
   generate_packet: 200
 
 artifacts:
-  screenshots_dir: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots"
-  console_json: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/console.json"
-  network_json: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/network.json"
-  failed_requests_json: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/failed_requests.json"
-  downloaded_zip: "/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/downloaded_zip/tps-packet-intercept-1778832713477.zip"
+  screenshots_dir: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/screenshots"
+  console_json: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/console.json"
+  network_json: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/network.json"
+  failed_requests_json: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/failed_requests.json"
+  downloaded_zip: "/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/downloaded_zip/tps-packet-intercept-1778832713477.zip"
   legal_risk_screenshots:
     - "legal_risk_all_no.png"
     - "legal_risk_criminal_yes.png"

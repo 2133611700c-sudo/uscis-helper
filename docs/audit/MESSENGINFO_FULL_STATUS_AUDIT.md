@@ -1,7 +1,7 @@
 # MESSENGINFO FULL STATUS AUDIT
 **Generated:** 2026-05-08  
 **Auditor:** Claude (evidence-based, no code modified)  
-**Project root:** `/Users/sergiiredacted/work/uscis-helper`  
+**Project root:** `/Users/sergiiivanenko/work/uscis-helper`  
 **Branch:** `main`
 
 ---

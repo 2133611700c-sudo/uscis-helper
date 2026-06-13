@@ -45,7 +45,7 @@ browser:
     v2_key_wiped:           true
     note: |
       v2 localStorage pre-seeded with family_name='Ghost' and
-      a_number='231-853-474'. After page load: ghost values not on
+      a_number='000-000-000'. After page load: ghost values not on
       screen, old v2 key removed.
   scenario_3_wrong_slot:
     slot:                    i94

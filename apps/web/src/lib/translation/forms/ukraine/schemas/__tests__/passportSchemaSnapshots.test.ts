@@ -87,7 +87,7 @@ const GT_DIR = path.join(__dirname, '../../../../../../../../../qa-private/groun
 const GT_CASES: Array<{ docType: string; file: string; map: Record<string, string> }> = [
   {
     docType: 'ua_internal_passport_booklet',
-    file: 'internal_passport_redacted.json',
+    file: 'internal_passport_ivanenko.json',
     map: {
       family_name_latin: 'family_name', given_name_latin: 'given_name',
       patronymic_latin: 'patronymic', date_of_birth: 'dob',
@@ -96,7 +96,7 @@ const GT_CASES: Array<{ docType: string; file: string; map: Record<string, strin
   },
   {
     docType: 'ua_international_passport',
-    file: 'passport_international_redacted.json',
+    file: 'passport_international_ivanenko.json',
     map: {
       family_name_latin: 'family_name', given_name_latin: 'given_name',
       passport_number: 'passport_number', date_of_birth: 'dob',

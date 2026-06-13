@@ -8,7 +8,7 @@ meta:
   id: uscis-helper-migration
   version: 1
   prod_sha: 31353a7da7a575e23f848abc793d9adcbc6950f1
-  repo_root: /Users/sergiiredacted/work/uscis-helper
+  repo_root: /Users/sergiiivanenko/work/uscis-helper
   app: apps/web
   mode: principal-execution-agent / co-founder   # НЕ assistant mode
   rules_of_evidence: [Confirmed, Hypothesis, UNKNOWN]   # маркировать каждое утверждение
@@ -144,7 +144,7 @@ blockers:
     impact: 'localhost app-router НЕ источник истины; direct route-handler invocation надёжнее'
     workaround: 'baseline снимать прямым вызовом POST() handlers с .env.local, как уже делал агент'
   B3_presence_passport_guard:
-    fact: 'engine/presence.ts отдал пустые printed fields под guard "printed field not found in OCR" => fail на REDACTED'
+    fact: 'engine/presence.ts отдал пустые printed fields под guard "printed field not found in OCR" => fail на IVANENKO'
     impact: 'presence/central-brain cluster нельзя считать безопасной опорой; но это side-path, не live core'
     decision: 'не чинить presence — он в dead-плоскости; зафиксировать как причину НЕ опираться на него'
 

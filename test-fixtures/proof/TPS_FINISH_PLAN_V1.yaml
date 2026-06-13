@@ -64,7 +64,7 @@ phase_A:
     - "Live browser smoke: latin preview + checker + clear-data все видны на /ru/services/tps-ukraine/start"
   tasks:
     - id: A.1
-      task: "Mac: cd /Users/sergiiredacted/work/uscis-helper && ./push.command"
+      task: "Mac: cd /Users/sergiiivanenko/work/uscis-helper && ./push.command"
       owner: mac
       hours: 0.1
       blocks: [A.2, A.3]
@@ -210,7 +210,7 @@ phase_C:
     - "Privacy: фото удалено сразу после теста, no commit, no log"
   tasks:
     - id: C.1
-      task: "User кладёт реальное фото на /Users/sergiiredacted/Downloads/tps-real-test.jpg"
+      task: "User кладёт реальное фото на /Users/sergiiivanenko/Downloads/tps-real-test.jpg"
       owner: user
       hours: 0.1
       acceptance: "Современный украинский загранпаспорт ИЛИ паспорт-книжка post-2010 биометрика. Photo страницы с MRZ или страницы с фамилия/имя."

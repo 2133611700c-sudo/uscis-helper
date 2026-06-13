@@ -79,7 +79,7 @@ identical in light and dark.
 
 ## Audit of existing patterns (translate-document, re-parole)
 
-Per Sergii's request, audited before rolling our own:
+Per Taras's request, audited before rolling our own:
 
 - **translate-document** uses server-side state keyed by `sessionId`
   in the URL — different architecture (server session, not localStorage).
@@ -128,7 +128,7 @@ navigating to a new locale.
 
 ## What this enables
 
-Sergii's stated requirement was "человек загружает документы и должен
+Taras's stated requirement was "человек загружает документы и должен
 получить готовый результат, не на половину". Before this fix the user
 could lose 10 minutes of upload + review work by misclicking the
 language pill. After this fix:

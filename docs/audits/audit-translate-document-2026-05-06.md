@@ -2,7 +2,7 @@
 **Date:** 2026-05-06  
 **Auditor:** Claude (AI agent)  
 **Scope:** Full codebase + live page audit for P0 rebuild (elderly/low-vision Russian-speaking users)  
-**Status:** COMPLETE — awaiting Sergii sign-off before Stage B begins
+**Status:** COMPLETE — awaiting Taras sign-off before Stage B begins
 
 ---
 
@@ -136,9 +136,9 @@ Landing page
 
 ---
 
-## H. Open questions — requires Sergii answers before Stage B
+## H. Open questions — requires Taras answers before Stage B
 
-**STOP. Do not begin Stage B until Sergii answers these in writing.**
+**STOP. Do not begin Stage B until Taras answers these in writing.**
 
 1. **Price config** — Is $15 permanent, or should there be a `TRANSLATE_PRICE_USD` env var so it can be changed without a code deploy?
 
@@ -158,7 +158,7 @@ Landing page
 
 ## I. P0 change list (preview — Stage B scope, pending sign-off)
 
-If Sergii signs off on the above, Stage B will address these in priority order:
+If Taras signs off on the above, Stage B will address these in priority order:
 
 | ID | Priority | Change | Prerequisite |
 |---|---|---|---|
@@ -167,7 +167,7 @@ If Sergii signs off on the above, Stage B will address these in priority order:
 | P0-3 | CRITICAL | Touch targets ≥ 48px on all wizard buttons | None |
 | P0-4 | HIGH | Wizard step indicator: "Шаг X из Y" visible at all steps | None |
 | P0-5 | HIGH | Pre-payment summary screen (what user gets for $15) | None |
-| P0-6 | HIGH | Stripe env vars in Vercel Dashboard | Sergii action |
+| P0-6 | HIGH | Stripe env vars in Vercel Dashboard | Taras action |
 | P0-7 | HIGH | Fix `--text-3` usage at small sizes (replace with `--text-2`) | None |
 | P0-8 | MEDIUM | OCR disconnect — remove false "auto-fill" promise from UI if not functional | Answer to Q5 |
 | P0-9 | MEDIUM | File TTL policy in Supabase | Answer to Q6 |

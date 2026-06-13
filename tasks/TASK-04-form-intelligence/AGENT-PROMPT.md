@@ -1,6 +1,6 @@
 # AGENT PROMPT — TASK-04 Form Intelligence
 
-You are Claude Code working in `/Users/sergiiredacted/work/uscis-helper`.
+You are Claude Code working in `/Users/sergiiivanenko/work/uscis-helper`.
 
 ## STEP 0 — READ CONTEXT
 
@@ -16,7 +16,7 @@ You are Claude Code working in `/Users/sergiiredacted/work/uscis-helper`.
 ## STEP 1 — VERIFY ENVIRONMENT
 
 ```bash
-cd /Users/sergiiredacted/work/uscis-helper
+cd /Users/sergiiivanenko/work/uscis-helper
 git status
 git checkout -b form-intelligence-$(date +%Y%m%d-%H%M)
 ```

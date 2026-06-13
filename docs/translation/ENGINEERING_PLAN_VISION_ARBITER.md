@@ -1,7 +1,7 @@
 # Engineering Plan — Vision Arbiter for Ukrainian Cyrillic Documents
 
 **Status:** APPROVED FOR EXECUTION · 2026-05-27
-**Owner:** Sergii (product) · Engineering: Claude (acting)
+**Owner:** Taras (product) · Engineering: Claude (acting)
 **Supersedes debate in:** DOCUMENT_RULE_COVERAGE_AUDIT.md, OCR_PROVIDER_BENCHMARK_PLAN.md, OCR_PROVIDER_COST_MATRIX.md, EXECUTION_PLAN_OCR_STABILIZATION.md, TRANSLATION_ENGINE_REALITY.md
 **Conforms to:** Translation Engine v5.0 Final Standard (controlled autonomy; §1, §4 Stage 3, §33 roadmap, "Vision provider remains pluggable").
 
@@ -9,7 +9,7 @@
 
 ## 1. Working backwards — the customer outcome
 
-> A 35–80-year-old Ukrainian uploads a photo of a handwritten internal passport (or a printed birth/marriage/divorce certificate). Within ~15 seconds they see each extracted field next to a crop of where it came from. Names like **Сергійович** and cities like **Тростянець** are read correctly — not mangled into "Yovych" or "Prostianets". Anything the system is unsure about is shown blank and flagged for them to confirm. They verify, pay, sign the certification, and download a bureau-style certified English translation accepted for USCIS-style submission.
+> A 35–80-year-old Ukrainian uploads a photo of a handwritten internal passport (or a printed birth/marriage/divorce certificate). Within ~15 seconds they see each extracted field next to a crop of where it came from. Names like **Тарасович** and cities like **Тростянець** are read correctly — not mangled into "Yovych" or "Prostianets". Anything the system is unsure about is shown blank and flagged for them to confirm. They verify, pay, sign the certification, and download a bureau-style certified English translation accepted for USCIS-style submission.
 
 The single thing standing between today and that outcome: **no model has ever looked at the image.** Today's pipeline is Google Vision (OCR text) → DeepSeek (text-only). When Vision misreads handwriting, nothing downstream can recover it. This plan inserts a vision model that reads the pixels.
 
@@ -24,14 +24,14 @@ The single thing standing between today and that outcome: **no model has ever lo
 ## 3. Problem statement (grounded in code)
 - Booklet path: `route.ts:484` calls `runDualOcrCrossref()` → DeepSeek arbitrates two TEXT OCR outputs. `field-mapper.ts:11` explicitly: "Do NOT use DeepSeek Vision." → handwriting misreads are unrecoverable.
 - Translation path: same weakness (Google Vision → DeepSeek text).
-- Result in production: `middle_name="Yovych"` (suffix fragment of Сергійович), `city_of_birth="Prostianets"` (Т misread as П).
+- Result in production: `middle_name="Yovych"` (suffix fragment of Тарасович), `city_of_birth="Prostianets"` (Т misread as П).
 - v5 spec already anticipates the fix: **"Vision provider remains pluggable"** (p.1). This is not a deviation — it's exercising a designed seam.
 
 ## 4. Goals / Non-goals
 **Goals**
 - G1. A `geminiVisionProvider` that reads named fields from an image crop and returns candidate JSON with confidence + can_read.
 - G2. Behind feature flag `TPS_GEMINI_VISION_ARBITER_ENABLED` (default OFF).
-- G3. Before/after proof on the owner's booklet (Сергійович, Тростянець).
+- G3. Before/after proof on the owner's booklet (Тарасович, Тростянець).
 - G4. Cost + latency instrumented, logged to `tps_ocr_audit` (extend, don't fork).
 - G5. Fits both products (TPS booklet + standalone translator) via one provider.
 
@@ -45,7 +45,7 @@ The single thing standing between today and that outcome: **no model has ever lo
 ## 5. Success metrics (from v5 §28 / §32)
 | Metric | Target | This iteration's bar |
 |---|---|---|
-| Critical-field accuracy | ≥99.5% (names/dates/ids/agency) | Proof: Сергійович + Тростянець correct on owner doc |
+| Critical-field accuracy | ≥99.5% (names/dates/ids/agency) | Proof: Тарасович + Тростянець correct on owner doc |
 | Numeric accuracy | ≥99.9% | DOB read correct |
 | Unjustified guess rate | 0; every low-conf flagged | can_read=false when illegible |
 | Source-trace coverage | 100% critical | every field carries evidence_region |
@@ -69,8 +69,8 @@ image → Google Vision/DocAI (text + bboxes)            [Stage 3a, exists]
 ```json
 {
   "field": "patronymic",
-  "cyrillic_value": "Сергійович",
-  "latin_value": "Serhiiovych",
+  "cyrillic_value": "Тарасович",
+  "latin_value": "Tarasovych",
   "can_read": true,
   "confidence": 0.0,
   "evidence_region": "identity-zone crop ref",

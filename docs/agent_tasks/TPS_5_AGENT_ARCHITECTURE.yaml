@@ -1,6 +1,6 @@
 # TPS Ukraine — 5-Agent Pipeline Architecture
 # Compiled: 2026-05-10
-# Vision (locked, owner: SERGII):
+# Vision (locked, owner: TARAS):
 #   Human uploads photos → 5 AI agents do their parts → user gets a packet
 #   that's already filled out and only needs to be reviewed and submitted.
 #

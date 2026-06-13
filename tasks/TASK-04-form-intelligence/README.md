@@ -1,7 +1,7 @@
 # TASK-04 — Form Intelligence Files
 
 **For**: Claude Code (with PDF extraction + web fetch)
-**Working dir**: `/Users/sergiiredacted/work/uscis-helper`
+**Working dir**: `/Users/sergiiivanenko/work/uscis-helper`
 **Duration**: 2-4 hours
 **Outcome**: 7 USCIS forms parsed into structured TS + MD specs ready for Wave 2 product flows
 **Prerequisite**: TASK-02 done (Wave 1A live)

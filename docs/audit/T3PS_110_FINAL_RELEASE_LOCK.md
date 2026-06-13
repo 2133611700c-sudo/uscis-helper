@@ -16,7 +16,7 @@ Paid/public launch: **not ready / false**.
 
 ## Superseded / Historical
 - Original 5 prompts reconciled in:
-  - [/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_ORIGINAL_5_PROMPTS_FINAL_RECONCILIATION.md](/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_ORIGINAL_5_PROMPTS_FINAL_RECONCILIATION.md)
+  - [/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_ORIGINAL_5_PROMPTS_FINAL_RECONCILIATION.md](/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_ORIGINAL_5_PROMPTS_FINAL_RECONCILIATION.md)
 - Historical status remains `PARTIAL_WITH_SUPERSEDED_ITEMS` (это governance-след, не текущий функциональный блокер).
 
 ## Accepted Non-Blocking Residuals

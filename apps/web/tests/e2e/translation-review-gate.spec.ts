@@ -33,7 +33,7 @@ const EXPECTED = {
   family: EXPECTED_FAMILY_NAME,
   city: 'Trostianets',
   province: 'Vinnytsia',
-  middle: 'Serhiiovych',
+  middle: 'Tarasovych',
   given: 'Testname',
 }
 

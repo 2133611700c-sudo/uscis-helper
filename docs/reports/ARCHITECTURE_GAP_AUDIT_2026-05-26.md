@@ -81,7 +81,7 @@
 
 ## Ukrainian handwritten/cyrillic passport/booklet gap
 - Historical production evidence (`phaseC_fresh_ocr_response.json`) показывает:
-  - raw OCR содержит `25 червня 1986 року`,
+  - raw OCR содержит `01 січня 1990 року`,
   - `brain.validated_skipped` содержит `dob/date not parseable`,
   - contract rejected `dob` for booklet at that time.
 - Dirty local code now includes:
@@ -149,7 +149,7 @@ flowchart TD
 - files: `documentBrain.ts`, `documentContracts.ts`, their tests
 - purpose: unblock UA textual DOB parsing and contract allowlist for booklet
 - tests: targeted unit suite + OCR route replay
-- acceptance: `25 червня 1986 року` survives to final field set
+- acceptance: `01 січня 1990 року` survives to final field set
 - do not include: provenance or e2e refactors
 
 ### B — provenance mapping

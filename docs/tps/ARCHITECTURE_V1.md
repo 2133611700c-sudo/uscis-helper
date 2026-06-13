@@ -140,7 +140,7 @@ interface TpsAttestationRecord {
 | `tps_i94`                     | active  | true  | New; CBP printout / screenshot |
 | `tps_ead_card`                | active  | true  | New; USCIS card format |
 | `tps_i797_receipt`            | active  | true  | New; for pending applications |
-| `tps_residence_evidence`      | active  | false | OCR address ONLY when user opts in; do NOT auto-OCR all uploaded evidence (per Sergii's address-vs-evidence rule) |
+| `tps_residence_evidence`      | active  | false | OCR address ONLY when user opts in; do NOT auto-OCR all uploaded evidence (per Taras's address-vs-evidence rule) |
 | `tps_translated_document`     | active  | false | If user uploads non-English doc, route to Translation Engine v5 first |
 | `manual_review_required`      | manual  | false | Sentinel — never auto-prefills |
 

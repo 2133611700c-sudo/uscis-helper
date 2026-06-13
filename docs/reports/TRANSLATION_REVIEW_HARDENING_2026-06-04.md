@@ -42,7 +42,7 @@ Target:
 
 Fixture:
 
-- `test-fixtures/real-docs/internal_passport_redacted.jpg`
+- `test-fixtures/real-docs/internal_passport_ivanenko.jpg`
 
 Observed result on real OCR run:
 

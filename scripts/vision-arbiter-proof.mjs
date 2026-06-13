@@ -4,7 +4,7 @@
  * Sends a Ukrainian internal passport booklet IMAGE (pixels, not OCR text) to
  * Gemini and asks it to read the handwritten identity fields. This proves
  * whether a vision model recovers what the current Google-Vision→DeepSeek-text
- * pipeline mangles (e.g. "Yovych" → Сергійович, "Prostianets" → Тростянець).
+ * pipeline mangles (e.g. "Yovych" → Тарасович, "Prostianets" → Тростянець).
  *
  * READ-ONLY proof: no production code path touched. Key read from .env.local.
  * Free-tier key + owner's own document only. Never commit the key.
@@ -83,7 +83,7 @@ console.log(`\n--- BASELINE (current Vision→DeepSeek-text pipeline, from produ
 console.log(`  patronymic           Йович(?)         → Yovych           (WRONG: suffix fragment)`)
 console.log(`  place_of_birth_city  Простянець(?)    → Prostianets      (WRONG: Т misread as П)`)
 console.log(`\n--- GROUND TRUTH (synthetic — set E2E_EXPECTED_* env vars for real values) ---`)
-console.log(`  patronymic           Сергійович       → Serhiiovych`)
+console.log(`  patronymic           Тарасович       → Tarasovych`)
 console.log(`  place_of_birth_city  Тростянець       → Trostianets`)
 console.log(`  family_name          Іваненко         → Ivanenko`)
 console.log(`  date_of_birth        01.01.1990       → 1990-01-01`)

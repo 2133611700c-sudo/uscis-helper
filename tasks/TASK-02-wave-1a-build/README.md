@@ -1,7 +1,7 @@
 # TASK-02 — Wave 1A Production Site Build
 
 **For**: Claude Code (or Cursor agent)
-**Working dir**: `/Users/sergiiredacted/work/uscis-helper`
+**Working dir**: `/Users/sergiiivanenko/work/uscis-helper`
 **Duration**: 30-60 minutes
 **Outcome**: messenginfo.com renders 80 routes, 4 locales, 12 service cards, mobile bar — production deploy
 
@@ -33,7 +33,7 @@ TASK-02-wave-1a-build/
 
 ## EXECUTION
 
-1. Open Claude Code in `/Users/sergiiredacted/work/uscis-helper`
+1. Open Claude Code in `/Users/sergiiivanenko/work/uscis-helper`
 2. Tell Claude Code: "Read `AGENT-PROMPT.md` and execute it. All context is in this folder."
 3. Wait for final report.
 4. Verify deploy at https://messenginfo.com.
@@ -55,7 +55,7 @@ TASK-02-wave-1a-build/
 
 - Build/typecheck failure
 - Brand violation rendered on any page
-- Modification to `/Users/sergiiredacted/handy-friend-landing-v6` (read-only ref)
-- Modification to `/Users/sergiiredacted/work/messenginfo-merge` (read-only ref)
+- Modification to `/Users/sergiiivanenko/handy-friend-landing-v6` (read-only ref)
+- Modification to `/Users/sergiiivanenko/work/messenginfo-merge` (read-only ref)
 - Receipt number stored anywhere or appended to USCIS URL
 - Secret committed to git

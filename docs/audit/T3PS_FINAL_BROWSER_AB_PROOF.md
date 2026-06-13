@@ -3,7 +3,7 @@
 Generated: 2026-05-24T05:58:00Z
 
 ## Client Mode
-- Source: `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json`
+- Source: `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_summary.json`
 - Result: **PASS**
   - selector contract present (`tps-ocr-cta`, upload slot/input prefixes),
   - OCR per slot: `passport/booklet/i94/i797_or_ead/dl => 200`,
@@ -18,12 +18,12 @@ Generated: 2026-05-24T05:58:00Z
   - blocking reason: no owner session available in automation context.
 
 ## Screenshots
-- `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_step6_unpaid.png`
-- `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_step6_paid_callback.png`
-- `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_after_generate.png`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_step6_unpaid.png`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_step6_paid_callback.png`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual-proof-shots/client_after_generate.png`
 
 ## Network Evidence
-- `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_network.json`
-- `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_failed_requests.json`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_network.json`
+- `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/dual_proof_failed_requests.json`
 
 Verdict: **PARTIAL** (client contour closed; owner contour blocked by access context).

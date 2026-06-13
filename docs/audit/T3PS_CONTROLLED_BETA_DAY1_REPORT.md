@@ -19,7 +19,7 @@
 
 ## Dry run
 - Status: `PASS`
-- Evidence: `/Users/sergiiredacted/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json`
+- Evidence: `/Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-final-release/browser-run-clean/browser_summary.json`
 - OCR: `200`
 - Generate: `200`
 - ZIP intercept bytes: `1825484`
@@ -27,12 +27,12 @@
 
 ## Testers
 - Prepared testers list and invitation template: `3` trusted tester IDs.
-- Evidence: `/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_USERS.md`
+- Evidence: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_CONTROLLED_BETA_USERS.md`
 
 ## Issues
 - P0: monitoring transport env blocker.
 - P1: manual-review endpoint strict schema fix deployed and verified (extra key returns 400).
-- Source: `/Users/sergiiredacted/work/uscis-helper/docs/audit/T3PS_BETA_ISSUES.yaml`
+- Source: `/Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_BETA_ISSUES.yaml`
 
 ## Day1 status
 - `BETA_BLOCKED_MONITORING`
