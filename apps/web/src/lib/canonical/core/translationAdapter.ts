@@ -86,12 +86,13 @@ export function canonicalToFieldOut(
   // Extraction strips the prefix from the canonical city value; for the
   // TRANSLATION product the document must mirror the source, so the English
   // designator (taken ONLY from the raw Cyrillic the model read — never
-  // inferred) is appended back. Suffix form matches the existing TPS/knowledge
-  // test-locked convention. Guarded against double-append.
+  // inferred) is restored as a PREFIX, mirroring the Ukrainian «смт Тростянець»
+  // order: "urban-type settlement Trostianets" (a bare-city suffix read oddly and
+  // landed at the end of composite place strings). Guarded against double-add.
   if (value && rawCyr && /city|place_of_birth/.test(f.key)) {
     const designator = settlementDesignatorEn(rawCyr)
     if (designator && !value.toLowerCase().includes(designator)) {
-      value = `${value} ${designator}`
+      value = `${designator} ${value}`
     }
   }
   return {
