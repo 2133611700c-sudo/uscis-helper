@@ -12,8 +12,10 @@ export const deathCertificateSchema: OfficialFormSchema = {
     {key:'date_of_death',sourceLabelUk:'дата смерті',sourceLabelEn:'Date of death',required:true,fieldGroup:'deceased',expectedScript:'mixed',translationRule:'date_normalize',lockedEntity:true,evidenceRequired:true},
     {key:'place_of_death',sourceLabelUk:'місце смерті',sourceLabelEn:'Place of death',required:false,fieldGroup:'deceased',expectedScript:'cyrillic',translationRule:'place_gazetteer',lockedEntity:false,evidenceRequired:true},
     {key:'act_record_number',sourceLabelUk:'актовий запис №',sourceLabelEn:'Act record No.',required:true,fieldGroup:'actRecord',expectedScript:'numeric',translationRule:'locked_verbatim',lockedEntity:true,evidenceRequired:true},
+    {key:'act_record_date',sourceLabelUk:'дата складання актового запису',sourceLabelEn:'Act record date',required:false,fieldGroup:'actRecord',expectedScript:'mixed',translationRule:'date_normalize',lockedEntity:true,evidenceRequired:true},
     {key:'place_of_registration',sourceLabelUk:'місце державної реєстрації',sourceLabelEn:'Place of state registration',required:true,fieldGroup:'issuing',expectedScript:'cyrillic',translationRule:'glossary_authority',lockedEntity:false,evidenceRequired:true},
     {key:'series_number',sourceLabelUk:'Серія та номер',sourceLabelEn:'Series and No.',required:true,fieldGroup:'issuing',expectedScript:'mixed',translationRule:'locked_verbatim',lockedEntity:true,evidenceRequired:true},
+    {key:'date_of_issue',sourceLabelUk:'Дата видачі',sourceLabelEn:'Date of issue',required:false,fieldGroup:'issuing',expectedScript:'mixed',translationRule:'date_normalize',lockedEntity:true,evidenceRequired:true},
   ],
   layoutSections:['header','personFields','actRecord','issuingAuthority','seals','signatures','certification'],
 }

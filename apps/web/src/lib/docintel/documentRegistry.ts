@@ -114,19 +114,79 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
     ],
   },
 
-  // ── Ukrainian divorce certificate ──
+  // ── Ukrainian divorce certificate (Свідоцтво про розірвання шлюбу, KMU 1025) ──
+  // spouse_1 = former husband, spouse_2 = former wife (NEVER swap). Split names per
+  // official blank. All handwritten:true ⇒ always review.
   ua_divorce_certificate: {
     id: 'ua_divorce_certificate',
     title_en: 'Ukrainian Divorce Certificate',
     script: 'cyrillic',
     consumers: ['translation'],
-    vision_anchor: 'spouse_1_full_name',
+    vision_anchor: 'spouse_1_surname',
     fields: [
-      { field: 'spouse_1_full_name', label_uk: 'Він', kind: 'name', handwritten: true, required: true },
-      { field: 'spouse_2_full_name', label_uk: 'Вона', kind: 'name', handwritten: true, required: true },
-      { field: 'date_of_divorce', label_uk: 'Дата розірвання', kind: 'date', handwritten: true, required: true },
+      { field: 'spouse_1_surname', label_uk: 'Чоловік — Прізвище', kind: 'name', handwritten: true, required: true },
+      { field: 'spouse_1_given_name', label_uk: "Чоловік — Ім'я", kind: 'name', handwritten: true, required: true },
+      { field: 'spouse_1_patronymic', label_uk: 'Чоловік — По батькові', kind: 'name', handwritten: true, required: false },
+      { field: 'spouse_2_surname', label_uk: 'Дружина — Прізвище', kind: 'name', handwritten: true, required: true },
+      { field: 'spouse_2_given_name', label_uk: "Дружина — Ім'я", kind: 'name', handwritten: true, required: true },
+      { field: 'spouse_2_patronymic', label_uk: 'Дружина — По батькові', kind: 'name', handwritten: true, required: false },
+      { field: 'date_of_divorce', label_uk: 'Дата розірвання шлюбу', kind: 'date', handwritten: true, required: true },
+      { field: 'spouse_1_surname_after', label_uk: 'Прізвище чоловіка після розірвання', kind: 'name', handwritten: true, required: false },
+      { field: 'spouse_2_surname_after', label_uk: 'Прізвище дружини після розірвання', kind: 'name', handwritten: true, required: false },
       { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: true, required: false },
-      { field: 'issuing_authority', label_uk: 'Орган реєстрації', kind: 'agency', handwritten: true, required: false },
+      { field: 'act_record_date', label_uk: 'Дата складання актового запису', kind: 'date', handwritten: true, required: false },
+      { field: 'issuing_authority', label_uk: 'Місце державної реєстрації (орган)', kind: 'agency', handwritten: true, required: false },
+      { field: 'certificate_series_number', label_uk: 'Серія та номер свідоцтва', kind: 'doc_number', handwritten: true, required: false },
+      { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: true, required: false },
+    ],
+  },
+
+  // ── Ukrainian death certificate (Свідоцтво про смерть, KMU 1025) ──
+  // Schema is already split (deceased_surname/given_name/patronymic). All
+  // handwritten:true ⇒ always review.
+  ua_death_certificate: {
+    id: 'ua_death_certificate',
+    title_en: 'Ukrainian Death Certificate',
+    script: 'cyrillic',
+    consumers: ['translation'],
+    vision_anchor: 'deceased_surname',
+    fields: [
+      { field: 'deceased_surname', label_uk: 'Прізвище померлого', kind: 'name', handwritten: true, required: true },
+      { field: 'deceased_given_name', label_uk: "Ім'я померлого", kind: 'name', handwritten: true, required: true },
+      { field: 'deceased_patronymic', label_uk: 'По батькові померлого', kind: 'name', handwritten: true, required: false },
+      { field: 'date_of_birth', label_uk: 'Дата народження', kind: 'date', handwritten: true, required: false },
+      { field: 'date_of_death', label_uk: 'Дата смерті', kind: 'date', handwritten: true, required: true },
+      { field: 'place_of_death', label_uk: 'Місце смерті', kind: 'place_city', handwritten: true, required: false },
+      { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: true, required: false },
+      { field: 'act_record_date', label_uk: 'Дата складання актового запису', kind: 'date', handwritten: true, required: false },
+      { field: 'issuing_authority', label_uk: 'Місце державної реєстрації (орган)', kind: 'agency', handwritten: true, required: false },
+      { field: 'certificate_series_number', label_uk: 'Серія та номер свідоцтва', kind: 'doc_number', handwritten: true, required: false },
+      { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: true, required: false },
+    ],
+  },
+
+  // ── Ukrainian name-change certificate (Свідоцтво про зміну імені, KMU 1025) ──
+  // previous_* = name before, new_* = name after. Split per official blank. All
+  // handwritten:true ⇒ always review.
+  ua_name_change_certificate: {
+    id: 'ua_name_change_certificate',
+    title_en: 'Ukrainian Name Change Certificate',
+    script: 'cyrillic',
+    consumers: ['translation'],
+    vision_anchor: 'new_surname',
+    fields: [
+      { field: 'previous_surname', label_uk: 'Прізвище до зміни', kind: 'name', handwritten: true, required: true },
+      { field: 'previous_given_name', label_uk: "Ім'я до зміни", kind: 'name', handwritten: true, required: true },
+      { field: 'previous_patronymic', label_uk: 'По батькові до зміни', kind: 'name', handwritten: true, required: false },
+      { field: 'new_surname', label_uk: 'Прізвище після зміни', kind: 'name', handwritten: true, required: true },
+      { field: 'new_given_name', label_uk: "Ім'я після зміни", kind: 'name', handwritten: true, required: true },
+      { field: 'new_patronymic', label_uk: 'По батькові після зміни', kind: 'name', handwritten: true, required: false },
+      { field: 'date_of_birth', label_uk: 'Дата народження', kind: 'date', handwritten: true, required: false },
+      { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: true, required: false },
+      { field: 'act_record_date', label_uk: 'Дата складання актового запису', kind: 'date', handwritten: true, required: false },
+      { field: 'issuing_authority', label_uk: 'Місце державної реєстрації (орган)', kind: 'agency', handwritten: true, required: false },
+      { field: 'certificate_series_number', label_uk: 'Серія та номер свідоцтва', kind: 'doc_number', handwritten: true, required: false },
+      { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: true, required: false },
     ],
   },
 
