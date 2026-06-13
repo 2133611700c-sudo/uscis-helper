@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-13 | feat(canonical): wire EAD generate-packet to canonical continuity; 11 tests; gate PASS
+- **EAD route wired**: `apps/web/src/app/api/ead/generate-packet/route.ts` now follows the exact TPS canonical continuity pattern. Extracts `canonical_document_id` + `session_id` from request body; enforces HTTP status contract (422/409/404/403/503).
+- **EAD packetBuilder updated**: `apps/web/src/lib/ead/packetBuilder.ts` accepts optional `CanonicalDocumentResult`. Canonical path calls `buildI765DocumentOps(documentCanonical)` directly (shared entry point). Legacy path unchanged (off/shadow only).
+- **I-765 unified entry point confirmed**: `buildI765DocumentOps` from `lib/canonical/forms/i765DocumentMapper.ts` is the single writer for both TPS and EAD document-derived I-765 fields. No parallel mapper.
+- **11 new tests**: `apps/web/src/app/api/ead/__tests__/eadPacketCanonical.test.ts` — covers all 422/409/404/403/503 statuses, C3 null INV-11, confirmed overrides, provenance survival, enforce/shadow mode semantics.
+- **Gate**: tsc 0 errors. Tests 3573 pass / 18 skip / 0 fail (delta: +14). Build PASS. PII gate PASS.
+
 ## 2026-06-13 | Integration agent — A1-A4 cherry-pick + render/route.ts canonical cutover + 8 new render tests
 - **A1-A3-A4 integrated**: cherry-picked 3 worktree commits onto `architecture/canonical-continuity`. A2 was empty (no code). Conflicts in CHANGELOG/HANDOFF/STATUS (doc files only) resolved by taking newest worktree version. persistence/index.ts conflict resolved by taking A4 (adds `computeOverrideSetHash`).
 - **Migration files on branch**: `20260613000000_canonical_documents_and_overrides.sql` + `20260613000001_canonical_documents_and_overrides.sql` (same content, different timestamp from wt1/wt3) + `20260613000001_certification_canonical_hash_binding.sql` — NOT applied, owner approval required.

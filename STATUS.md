@@ -1,3 +1,6 @@
+# STATUS (2026-06-13 — EAD wiring DONE: all 4 products canonical, gate PASS)
+- CANONICAL CONTINUITY: ALL 4 products wired (TPS, Re-Parole, Translation/generate-pdf, EAD generate-packet). EAD route follows exact TPS pattern (422/409/404/403/503 HTTP contract). I-765 unified: buildI765DocumentOps is single entry point for both TPS and EAD document-derived fields. 3 migration files on branch (NOT applied — owner approval required). CANONICAL_CONTINUITY_MODE=shadow (default). Tests: 3573 pass (+14 from EAD tests). TypeScript: 0 errors. Build: PASS. Verdict: READY_FOR_MIGRATION (pending DB migration + owner approval to flip enforce).
+
 # STATUS (2026-06-13 — Integration: A1-A4 merged + render/route.ts canonical cutover COMPLETE)
 - CANONICAL CONTINUITY: all 4 worktree agents integrated. persistence module, packet routes (TPS + Re-Parole), generate-pdf, AND render/route.ts now wired to canonical continuity pattern. 3 migration files on branch (NOT applied — owner approval required). CANONICAL_CONTINUITY_MODE=shadow (default). Tests: 3559 pass. TypeScript: 0 errors. Verdict: READY_FOR_MIGRATION (pending DB migration + owner approval to flip enforce).
 
