@@ -15,11 +15,13 @@
  *   - It deliberately does NOT call the OCR extract endpoint (that runs PAID
  *     Google Vision and would INSERT a canonical_documents row). Extract-driven
  *     end-to-end is an owner-manual + integration-test step — see the runbook.
- *   - There is NO HTTP override route on this branch
- *     (apps/web/src/app/api/canonical/[id]/override does not exist). The atomic
- *     override / version-conflict guarantee is verified by the library
- *     integration test `canonicalConcurrency.integration`, NOT by this script.
- *     This script does not invent endpoints.
+ *   - The HTTP override route now EXISTS
+ *     (apps/web/src/app/api/canonical/[id]/override/route.ts). This script
+ *     exercises it. The read-only override checks (O0: bogus id → 404) run
+ *     unconditionally and mutate nothing. The MUTATING 200→409 flow (O1/O2/O3)
+ *     runs ONLY when SMOKE_CANONICAL_ID is explicitly set to a sentinel
+ *     canonical UUID, so an accidental run never writes overrides to a real
+ *     customer document.
  *
  * WHAT THIS PROVES (the live-preview enforce gate):
  *   T1  translation/generate-pdf  — missing canonical_document_id → 422 CANONICAL_ID_REQUIRED
@@ -128,6 +130,106 @@ async function assertEnforceGate(
   }
 }
 
+/** GET helper for the override list route. */
+async function getJson(
+  path: string,
+): Promise<{ status: number; json: any; text: string }> {
+  const res = await fetch(`${BASE}${path}`, { method: 'GET' })
+  const text = await res.text()
+  let json: any = null
+  try {
+    json = JSON.parse(text)
+  } catch {
+    /* non-JSON */
+  }
+  return { status: res.status, json, text }
+}
+
+/**
+ * Override route checks.
+ * O0 (always, read-only): POST to a bogus canonical id → 404 CANONICAL_NOT_FOUND.
+ *   loadCanonicalDocumentById returns null for the bogus UUID BEFORE any write.
+ * O1/O2/O3 (mutating, gated on SMOKE_CANONICAL_ID): real append → 200, stale → 409,
+ *   GET list is PII-free. Skipped unless a sentinel canonical id is provided.
+ */
+async function overrideChecks() {
+  const sentinelOverride = {
+    field_key: 'family_name',
+    override_value: 'TESTIVANENKO', // PII-free synthetic sentinel
+    source: 'user_edit',
+    confirmed: true,
+    actor: 'smoke',
+  }
+
+  // O0 — bogus id, read-only (load returns null → 404 before any write)
+  {
+    const { status, json } = await postJson(
+      `/api/canonical/${BOGUS_UUID}/override`,
+      { session_id: 'SMOKE-enforce-preview', expected_version: 0, overrides: [sentinelOverride] },
+    )
+    const code = json?.error ?? '(none)'
+    record(
+      'O0',
+      `override POST bogus id → 404 CANONICAL_NOT_FOUND`,
+      status === 404 && code === 'CANONICAL_NOT_FOUND',
+      `got status=${status} error=${code}`,
+    )
+  }
+
+  const canonicalId = process.env.SMOKE_CANONICAL_ID
+  if (!canonicalId) {
+    console.log(
+      '[SKIP] O1/O2/O3 mutating override flow — set SMOKE_CANONICAL_ID=<sentinel canonical uuid> to enable',
+    )
+    return
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(canonicalId)) {
+    record('O1', 'override mutating flow', false, `SMOKE_CANONICAL_ID is not a UUID: ${canonicalId}`)
+    return
+  }
+
+  // O1 — append one confirmed user_edit at expected_version=0 → 200, capture new_version
+  const post1 = await postJson(`/api/canonical/${canonicalId}/override`, {
+    session_id: process.env.SMOKE_SESSION_ID ?? undefined,
+    expected_version: 0,
+    overrides: [sentinelOverride],
+  })
+  record(
+    'O1',
+    'override POST expected_version=0 → 200 ok',
+    post1.status === 200 && post1.json?.ok === true && typeof post1.json?.new_version === 'number',
+    `got status=${post1.status} new_version=${post1.json?.new_version ?? '(none)'}`,
+  )
+
+  // O2 — repeat with the now-stale expected_version=0 → 409 OVERRIDE_VERSION_CONFLICT
+  const post2 = await postJson(`/api/canonical/${canonicalId}/override`, {
+    session_id: process.env.SMOKE_SESSION_ID ?? undefined,
+    expected_version: 0,
+    overrides: [sentinelOverride],
+  })
+  record(
+    'O2',
+    'override POST stale expected_version=0 → 409 OVERRIDE_VERSION_CONFLICT',
+    post2.status === 409 && post2.json?.error === 'OVERRIDE_VERSION_CONFLICT',
+    `got status=${post2.status} error=${post2.json?.error ?? '(none)'}`,
+  )
+
+  // O3 — GET list is PII-free: field_keys present, NO override_value in payload
+  const sessionQs = process.env.SMOKE_SESSION_ID
+    ? `?session_id=${encodeURIComponent(process.env.SMOKE_SESSION_ID)}`
+    : ''
+  const get1 = await getJson(`/api/canonical/${canonicalId}/override${sessionQs}`)
+  const hasFieldKeys = Array.isArray(get1.json?.field_keys) && get1.json.field_keys.length > 0
+  const leaksValue =
+    get1.text.includes('override_value') || get1.text.includes('TESTIVANENKO')
+  record(
+    'O3',
+    'override GET → field_keys present, NO override_value',
+    get1.status === 200 && hasFieldKeys && !leaksValue,
+    `got status=${get1.status} field_keys=${JSON.stringify(get1.json?.field_keys)} leaks=${leaksValue}`,
+  )
+}
+
 async function main() {
   console.log('─'.repeat(72))
   console.log('Canonical-continuity ENFORCE smoke (read-only HTTP)')
@@ -170,6 +272,9 @@ async function main() {
     'CANONICAL_NOT_FOUND',
   )
 
+  // O0..O3 — HTTP override route (O0 read-only; O1..O3 gated on SMOKE_CANONICAL_ID)
+  await overrideChecks()
+
   console.log('─'.repeat(72))
   const failed = checks.filter((c) => !c.pass)
   const passed = checks.length - failed.length
@@ -189,8 +294,10 @@ async function main() {
   console.log('─'.repeat(72))
   console.log('NOT covered by this read-only HTTP smoke (see runbook):')
   console.log('  - extract → real canonical UUID (PAID Vision, INSERTs a row): owner-manual')
-  console.log('  - override 200 then 409 version-conflict: NO HTTP route exists on this')
-  console.log('    branch → covered by canonicalConcurrency.integration (library test)')
+  console.log('  - override 200 then 409 version-conflict: HTTP route now EXISTS; run with')
+  console.log('    SMOKE_CANONICAL_ID=<sentinel uuid> (and optional SMOKE_SESSION_ID) to')
+  console.log('    exercise O1/O2/O3. Library test canonicalConcurrency.integration still')
+  console.log('    covers the atomic RPC guarantee directly.')
   console.log('  - generate-pdf 200 + 7-field cert metadata: needs owner session + a real')
   console.log('    canonical id + signed review payload: owner-manual + Supabase SQL check')
   console.log('─'.repeat(72))

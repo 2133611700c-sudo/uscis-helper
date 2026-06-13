@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-13 | fix(canonical): add missing /api/canonical/[id]/override HTTP route — close end-to-end override write-path
+
+- **ADDED**: `apps/web/src/app/api/canonical/[id]/override/route.ts` — the previously MISSING HTTP override route. POST validates UUID/body/each override strictly (422 `CANONICAL_ID_REQUIRED` for all client problems incl. bad UUID, non-numeric `expected_version`, empty `field_key`, `confirmed!==true`, malformed JSON), then `loadCanonicalDocumentById` (null→404, throw→503) → ownership check (403 `CANONICAL_SESSION_MISMATCH`) → `verifyCanonicalHash` (409 `CANONICAL_HASH_MISMATCH`) → `appendCanonicalOverride` (409 `OVERRIDE_VERSION_CONFLICT` on `CanonicalConcurrencyError`, 503 otherwise). 200 `{ ok, new_version, applied_count }`. GET returns `{ canonical_document_id, count, field_keys, current_version }` — no values. PII rule: logs only event/canonical_id/field_keys/count, NEVER `override_value`. 503 only on infra-catch paths.
+- **ADDED**: `apps/web/src/app/api/canonical/[id]/override/__tests__/overrideRoute.test.ts` — 11 tests, all pass, persistence mocked, PII-free `TESTIVANENKO` fixtures.
+- **CLOSED GAP**: prior session documented "no HTTP override route exists on this branch" — that gap is now closed; override 200/409 write-path is reachable over HTTP end-to-end.
+- **SMOKE**: `scripts/smoke-enforce-preview.ts` gains `overrideChecks()` (O0 read-only bogus-id→404 always; O1/O2/O3 gated on `SMOKE_CANONICAL_ID`).
+- **MIGRATION**: `supabase/migrations/20260613000002_canonical_atomicity_and_constraints.sql` comment-only fix on the session/doc-hash unique constraint (no DDL change).
+- **EVIDENCE**: tsc EXIT=0 (0 errors). Tests 3591 passed | 18 skipped. Build PASS, route registered as `ƒ /api/canonical/[id]/override`. NOT merged, enforce NOT enabled.
+
 ## 2026-06-13 | docs(canonical): turnkey enforce-smoke script + owner runbook for PR #117 preview gate
 
 - **ADDED**: `scripts/smoke-enforce-preview.ts` (tsx-runnable, read-only HTTP). Asserts the live enforce gate on the preview deploy: T1/T3 missing `canonical_document_id` → 422 CANONICAL_ID_REQUIRED on `translation/generate-pdf` + `translation/render`; T2/T4 bogus UUID → 404 CANONICAL_NOT_FOUND. Both endpoints check the canonical pre-gate BEFORE payment/review, so the smoke is mutation-free (no DB write, no charge, no render, no email). PII-free, exit 0/1.
