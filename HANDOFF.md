@@ -1,3 +1,23 @@
+# HANDOFF (2026-06-13 — Wave 1 INTEGRATION coordinator: Agent 1 merged, gate green, preview-enforce NO-GO)
+
+DONE (integration session):
+- Cherry-picked Agent 1 `066ab1f` onto `architecture/canonical-continuity` (base `69717fe`) — clean, no conflicts. Migrations `20260613000004`/`000005` retain distinct in-order timestamps; no duplicate migration version.
+- Agent 2 (`BLOCKED_CLIENT_ID_CARRIAGE`) had NO mergeable commit: its worktree HEAD `1919b543` is an unrelated Phase 1/2B forms commit and the integration base is NOT its ancestor. Nothing to integrate. Agent 2's "override route absent" finding is stale — the route exists on the integration branch (base `69717fe`).
+- Re-proved the DB hardening LIVE (postgres path, synthetic WAVE1_TEST* rows, cleaned up via guarded `canonical_admin_cleanup_sentinel`): UPDATE/DELETE base both REJECTED P0001; 4 triggers; product-scoped UNIQUE present + old constraint dropped; hash-version column present; anon/authenticated grants = 0; 0 leftovers.
+- GATE: tsc 0; tests 3597 pass / 24 skip / 0 fail; build PASS (override route ƒ registered); PII gate CLEAN.
+
+DECISION — preview ENFORCE (Wave 2): **NO-GO**. `client_id_carriage_proven=false` is an automatic NO-GO. The canonical_document_id emit + extraction-persistence + id-carriage + enforce-by-id contract is UNBUILT across all 4 products. Enforcing today 422/409s every real user.
+
+NEXT (Wave 2, before any enforce flip):
+1. Build the server emit: each of the 4 extract routes (tps/ocr/extract, reparole/ocr/extract, ead/ocr/extract, translation/vision-extract) must persist a canonical record and RETURN { canonical_document_id, fields_hash, session linkage }.
+2. Wire each client wizard to capture canonical_document_id on extract and resend it on generate-packet / generate-pdf / render.
+3. Implement the canonical-by-id off/shadow/enforce mode and the 7-field certification (canonical_document_id, base/resolved/override-set hashes, override_version, canonical_schema_version, renderer_version).
+4. Only then re-run the go/no-go. DB layer is ready and proven.
+
+NOT merged to main, no Vercel/env change, not deployed.
+
+---
+
 # HANDOFF (2026-06-13 — Wave 1 Agent 1: canonical DB hardening, LIVE-proven)
 
 > **Final DB/concurrency/hash/security audit of canonical persistence + overrides, proven against the LIVE Supabase DB (project rtfxrlountkoegsseukx) through the service-role/postgres path — not migration text. Found 4 real gaps, fixed all with forward migrations + code, re-proved on live DB.**
