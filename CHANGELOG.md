@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-06-13 | fix(canonical): not-found canonical returns 404 not 503/409 in enforce — found by preview-enforce smoke
+
+- **DEFECT (preview-enforce smoke)**: in enforce mode, a generate-pdf/render/packet request with a `canonical_document_id` that does NOT exist returned 503 CANONICAL_STORAGE_UNAVAILABLE (translation routes) / 409 CANONICAL_HASH_MISMATCH (packet routes) instead of 404 CANONICAL_NOT_FOUND. Contract: 404 = id not found; 503 = real infra ONLY; 409 = genuine hash mismatch.
+- **FIX A** `lib/canonical/persistence/index.ts` `resolveCanonicalDocument`: returns `null` on base not-found (was: threw — caught by route → 503); throws ONLY on a genuine Supabase/DB error. Return type → `Promise<CanonicalDocumentResult | null>`. Mirrors `loadCanonicalDocumentById`.
+- **FIX B** `verifyCanonicalHash`: returns `{valid:false, notFound:true}` for a missing row, THROWS on a real query error (was: collapsed not-found + query-error into `{valid:false, mismatch}` → 409). Return type extended with `notFound?: boolean`.
+- **ROUTES** `api/{tps,reparole,ead}/generate-packet/route.ts`: check `hashCheck.notFound → 404` BEFORE the 409 hash-mismatch branch; hash-verify throw → 503 in enforce (was downgraded to 409); shadow paths log + fall through to legacy unchanged. Translation routes (generate-pdf, render) needed NO edit — their `if(!sourceCanonical){404}` branch was already correct and is now reachable.
+- **STATUS MAPPING (all 5 routes)**: missing id → 422 | not-found → 404 | hash mismatch → 409 | session mismatch → 403 (ead) | real infra throw → 503.
+- **TESTS**: new `lib/canonical/persistence/__tests__/canonicalNotFoundContract.test.ts` (21) — drives REAL resolve/verify fns with a configurable Supabase mock (not-found vs infra) + per-route status-mapping simulation for all 5 routes; proves not-found→404, infra→503, genuine mismatch→409 preserved. Added null-guards to 3 pre-existing persistence tests after the return-type change.
+- **GATE**: tsc 0 errors; tests 3663 pass / 24 skip / 0 fail (+21 vs 3642 baseline).
+- Files: lib/canonical/persistence/index.ts, api/tps/generate-packet/route.ts, api/reparole/generate-packet/route.ts, api/ead/generate-packet/route.ts, lib/canonical/persistence/__tests__/canonicalNotFoundContract.test.ts (new), lib/canonical/persistence/__tests__/canonicalPersistence.test.ts, lib/canonical/persistence/__tests__/canonicalConcurrency.integration.test.ts, STATUS/HANDOFF/CHANGELOG.
+- NOT merged to main; no Vercel/env change; not deployed. Pushed to `architecture/canonical-continuity`.
+
+---
+
 ## 2026-06-13 | Wave 1b INTEGRATION: end-to-end client canonical_document_id carriage for all 4 products + EAD/ReParole extract persistence
 
 - **INTEGRATION**: cherry-picked 4 per-product carriage commits onto `architecture/canonical-continuity` (base `4f8aee70`), order TPS → ReParole → EAD → Translation. Re-committed as 87096f3 / bfcd603 / 0d1da0b / 9e85506.

@@ -237,15 +237,37 @@ export async function POST(req: NextRequest) {
   }
 
   if (canonical_document_id && mode !== 'off') {
-    // Verify hash integrity first
-    let hashCheck: { valid: boolean; mismatch?: string }
+    // Verify hash integrity first.
+    // NOT-FOUND vs INFRA vs MISMATCH: verifyCanonicalHash returns notFound:true for a
+    // missing row (→404), THROWS on a real storage error (→503), and returns
+    // mismatch for a genuine hash conflict (→409). A missing id must NOT be reported
+    // as a 409 hash mismatch or a 503.
+    let hashCheck: { valid: boolean; mismatch?: string; notFound?: boolean }
     try {
       hashCheck = await verifyCanonicalHash(canonical_document_id)
     } catch {
-      hashCheck = { valid: false, mismatch: 'hash verification failed (storage error)' }
+      if (mode === 'enforce') {
+        return NextResponse.json(
+          canonicalError('CANONICAL_STORAGE_UNAVAILABLE'),
+          { status: 503 },
+        )
+      }
+      console.warn('[canonical/continuity] tps-generate canonical_hash_verify_failed_shadow', {
+        event: 'canonical_hash_verify_failed_shadow',
+        canonical_document_id,
+      })
+      hashCheck = { valid: false }
     }
 
-    if (!hashCheck.valid) {
+    if (hashCheck.notFound) {
+      if (mode === 'enforce') {
+        return NextResponse.json(canonicalError('CANONICAL_NOT_FOUND'), { status: 404 })
+      }
+      console.warn('[canonical/continuity] tps-generate canonical_not_found_shadow', {
+        event: 'canonical_not_found_shadow',
+        canonical_document_id,
+      })
+    } else if (!hashCheck.valid) {
       if (mode === 'enforce') {
         return NextResponse.json(
           canonicalError('CANONICAL_HASH_MISMATCH', hashCheck.mismatch),
