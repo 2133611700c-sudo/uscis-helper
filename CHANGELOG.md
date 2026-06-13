@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## 2026-06-13 | FULL SYSTEM + DOCUMENT-CORE AUDIT (audit-only, no code change)
+- Wrote `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — single consolidated, evidence-only audit. Part 1: repo/PR/security/deploy. Part 2: Document Core (brain/dictionary/arbitration/canonical/identity-fields/translation/forms + live real-doc runtime trace). Part 3: full system runtime (44 pages / 51 API routes / 1 middleware / 29 migrations / 38 live Supabase tables; DB, storage, auth, env+feature-flags, deployment, monitoring, user flows, packets, archive/operator, dependency graph, dead code, security surface, production truth).
+- Added read-first pointer (item `0.`) to `AGENTS.md` startup protocol and `CLAUDE.md` so all agents read the audit on contact.
+- Verified live (Vercel + Supabase MCP + healthz): production = main `4d3e470` (Phase 2A); preview = PR #116 `76c49e2` (OPEN, not merged). Supabase `rtfxrlountkoegsseukx` ACTIVE_HEALTHY (pg 17.6). 3 audit/observability tables at 0 rows confirm OCR_FIELD_SAFETY / GUARD_BLOCK_METRICS / CERTIFIER_AUDIT flags OFF in prod.
+- Re-ran tests as evidence: tsc 0; field-by-field 46/46; cross-product parity 100 pass/1 skip; live real-doc gate (EAD+I-94) 8/8 with 0 FABRICATED / 0 REVIEW_LOST.
+- Files changed THIS commit: the audit doc, AGENTS.md, CLAUDE.md, STATUS.md, HANDOFF.md, CHANGELOG.md. NO application/source code changed. Nothing merged, nothing pushed, no new PR.
+
+## 2026-06-13 | Phase 1 canonical single-currency — I-821 + I-131 cut over to CanonicalField[] (PR open, NOT merged)
+- **Closed the Phase 1 single-currency gap for I-821 and I-131.** Both form mappers were still reading `TPSAnswers` / `ReParoleAnswers` directly; after this session ALL four canonical consumers (Translation, I-765, I-821, I-131) read ONLY `CanonicalDocumentResult` / `CanonicalField[]` through `fieldAccessor` / `adapterContract`.
+- **4 new files created:**
+  - `apps/web/src/lib/canonical/forms/i821DocumentMapper.ts` — shared canonical mapper for I-821 document-derived fields (`applyCanonicalFieldMap` pattern, same as I-765 template)
+  - `apps/web/src/lib/tps/forms/i821DocumentBoundary.ts` — thin `TPSAnswers → CanonicalDocumentResult` converter; splits `place_of_last_entry` → `port_of_entry_city`/`port_of_entry_state` at the boundary; runs `normalizeCountryOfBirth` here (not in the mapper)
+  - `apps/web/src/lib/canonical/forms/i131DocumentMapper.ts` — shared canonical mapper for I-131 document-derived fields with the I-131 gender-widget inversion permanently baked in (`Gender[0]`=`/F Female`, `Gender[1]`=`/M Male` — opposite of visible label order)
+  - `apps/web/src/lib/reparole/i131DocumentBoundary.ts` — thin `ReParoleAnswers → CanonicalDocumentResult` converter (no country normalization needed — I-131 uses EAD/I-94 English country names)
+- **2 files updated:** `i821FieldMap.ts` and `i131FieldMap.ts` now call `buildI821DocumentOps(i821DocumentFactsToCanonical(a))` / `buildI131DocumentOps(i131DocumentFactsToCanonical(a))` for all document-derived fields; unused legacy helpers (`toUscisDate`, `normalizeCountryOfBirth`, `normalizeANumber`) removed; USER_DECLARED fields (address, SSN, USCIS account, contact) remain in the application-layer mappers
+- **1 new test file:** `apps/web/src/lib/canonical/forms/__tests__/i821i131DocumentMapper.test.ts` — 18 parity tests covering A-Number normalization (strip "A"/dashes → 9 trailing digits), DOB ISO→MM/DD/YYYY, I-821 sex standard checkbox order, I-131 sex widget inversion (male→`Gender[1]`, female→`Gender[0]`), port-of-entry comma-split + explicit override, absent-field no-op
+- Verification: tsc 0 | 3474 pass / 18 skip / 0 fail | PII gate CLEAN on all 7 changed files | no Order/Cart/Pricing/Operator work
+
+## 2026-06-13 | Phase 2B FORM FIELD-BY-FIELD validation — I-821 / I-131 / I-765 (PR open, NOT merged)
+- Validated the final generated PDFs field-by-field against the edition-locked official forms via 4 agents in isolated worktrees + coordinator integration (I-821 → I-131 → I-765 → independent PDF audit, gate after each). Editions re-verified per page: I-821 01/20/25 (13/13), I-131 01/20/25 (14/14), I-765 08/21/25 (7/7) — official == repo, independently audited; renders + AcroForm extracted with pdftoppm/pdf-lib.
+- **SEVEN real defects found + fixed** (generalizable, no owner-specific hardcodes; each with a synthetic regression test):
+  - **I-131 gender inversion (critical):** the AcroForm widget index order is REVERSED vs the visible "Male Female" labels (`Gender[0]` on-value `/F`, `[1]` `/M`); the mapper checked `[0]` for sex M, so every male got the **Female** box and vice-versa. Fixed to target the widget whose on-value matches the sex.
+  - **A-Number silently dropped on I-131, I-765, and I-821:** the AcroForm A-Number cells are maxLength=9; an "A"-prefixed or dashed value (`A012345678`, `012-345-678`) is rejected by pdf-lib and the field comes out BLANK on the officer-facing PDF. Fixed with a 9-trailing-digit normalizer (leading zeros preserved) in all three mappers.
+  - **SSN silently dropped on I-131** (same maxLength cause) — fixed.
+  - **I-821 fabricated DOB:** the real DOB was written into Item 11 "Other Dates of Birth Used (if any)", asserting an alias the user never claimed — removed.
+  - **I-821 wrong-question name mapping:** `other_names` were written into the Item 15/16 "Countries of Residence / Citizenship" cells — remapped to the real "Other Names Used" Items 2/3 (which had been left wrongly empty).
+- Independent PDF audit AUDIT_PASS after integration. The phase-B re-run CAUGHT the audit's own gender assertion still encoding the pre-fix index assumption → corrected to assert by on-value (index-agnostic), so it verifies the /M widget is checked for a male rather than re-validating the bug.
+- Verification: tsc 0, full suite 3456 passed/18 skipped, build, knowledge, 0 tracked PII. Synthetic fixtures only; real GT stays gitignored.
+- HONEST flags (NOT fixed — out of mapper scope / owner decision): (1) I-821 Part 7 felony-question wizard↔PDF label drift — safe on the default all-No + forced-review path; needs a label audit before enabling any non-default Part 7 answer (touches wizard UI). (2) Over-length street-address / USCIS-account input is silently dropped by pdf-lib's maxLength guard — a UI-validation concern; truncating in the mapper would corrupt a legal value.
+- No Order/Cart/Pricing/Operator/Unified-Wizard work. PR "test(validation): verify I-821 I-131 and I-765 field by field" open, NOT merged — awaits owner review.
+
 ## 2026-06-13 | Phase 2A REAL-DOC VALIDATION EXPANSION (validation PR open, NOT merged)
 - Validated the deployed central brain (prod 0561600) on real private documents via 4 agents in isolated git worktrees + coordinator integration (Agent1 intl-passport, Agent2 I-94/EAD, Agent3 civil/booklet, Agent4 independent audit). PII-free gated harnesses; only redacted enum verdicts leave the process.
 - **One real defect found + fixed (generalizable, no owner-specific rule):** the country code `/UKR` leaked into the released `city_of_birth` (KNOWLEDGE_WRONG). Fix: new `stripCountryCode()` in `lib/docintel/transliterationPolicy.ts` + applied in `lib/canonical/core/knowledgeNormalize.ts` (the live D2 layer; KNOWLEDGE_BRAIN is ON in prod) — strips a standalone UKR/UA/Ukraine country token next to any separator (suffix or prefix), preserving embedded substrings. Synthetic regression test `placeCountryCodeStrip.test.ts` (RED before, GREEN after).
@@ -1159,3 +1190,9 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ## 2026-06-11 (fix: page-test details-expansion — full E2E catalog green, CODE, agent)
 - CI run after the fixture fix: ALL 6 wizard cases GREEN (birth 26.5s, military via retry — transient Gemini, marriage 22.7s, divorce 22.3s, passport 9.7s, id-card 10.7s) — the entire translator catalog verified through the REAL UI on live prod. The last tail (supported-documents test) was a test-side issue: the ✍️ badges live inside collapsed <details>, and .first() resolved into a different collapsed card — fixed by expanding the birth card via its summary and scoping the badge assert inside it (921ms green locally). This commit triggers the deploy whose CI run should be 7/7.
+
+## 2026-06-13 | audit doc — added Part 3 OUTPUT-format TL;DR block
+- Appended the compact RESULT/SYSTEM_ARCHITECTURE/.../RECOMMENDED_NEXT_ACTION summary block to Part 3 of docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md. Audit-only; no application code changed.
+
+## 2026-06-13 | audit doc — added Part 4 (Phase 1 one-central-brain gap audit)
+- Independent code inventory vs the 12 Phase-1 acceptance criteria. RESULT: NOT PHASE1_COMPLETE (~55-65%). Shape migration done + parity-green, but the main gap is open: Core CanonicalDocumentResult is discarded after read (adapter→product DTO) and a synthetic canon is rebuilt from the legacy DTO at the packet boundary (i821/i131/i765 DocumentBoundary), with normalizeCountryOfBirth at the TPS boundary and fabricated provenance. Verified via 2 sub-agents + tsc 0 + parity 44 pass/1 skip. Audit-only; no application code changed.
