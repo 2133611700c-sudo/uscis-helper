@@ -8,7 +8,7 @@
 
 ## 1. Why
 
-The live-failure investigation (Session 69) found a user could be stuck on a **bad recognition** with no clean way to recover: the review screen (5) had no top Back button, and there was **no full "Start over"** anywhere except the success screen. Combined with stale session state this produced the "Шуляк/Сергій/Проскурів" class of confusion. The session-isolation fix stopped stale *restores*; this adds the explicit, user-driven *reset*.
+The live-failure investigation (Session 69) found a user could be stuck on a **bad recognition** with no clean way to recover: the review screen (5) had no top Back button, and there was **no full "Start over"** anywhere except the success screen. Combined with stale session state this produced the "Шуляк/Тарас/Проскурів" class of confusion. The session-isolation fix stopped stale *restores*; this adds the explicit, user-driven *reset*.
 
 ## 2. What changed
 

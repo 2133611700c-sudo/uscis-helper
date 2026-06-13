@@ -11,17 +11,17 @@
 ### 🔴 CRIT-1 — The fixtures are N=1. This breaks the entire validation premise.
 Verified contents of `qa-shots/private/`:
 ```
-1.jpg 2.jpg 3.jpg 4.jpg booklet_test_resized.jpg   ← all = ONE booklet (Kuropiatnyk)
-Passport Sergii Kuropiatnyk.jpg, I94 Sergii Kuropiatnyk.jpg ← same person
+1.jpg 2.jpg 3.jpg 4.jpg booklet_test_resized.jpg   ← all = ONE booklet (Ivanenko)
+Passport Taras Ivanenko.jpg, I94 Taras Ivanenko.jpg ← same person
 *_rot90/180/270.jpg ← SYNTHETIC rotations of the same images
 ```
-**Every fixture is one person — the owner.** STATUS.md already confessed this: *"only one real canonical identity + synthetic transforms."* Handwriting is per-person. Proving Gemini reads **Sergii's** "Сергійович" correctly proves **nothing** about any other user's handwriting. **WORST CASE: P1 passes on the owner's document, we flip the flag, and it fails on every real applicant.** This is the textbook self-deception and it is currently baked in. → **No "P1 success" claim is valid until ≥3 different people's booklets are tested.** Until then every result is labeled `N=1, DIRECTION ONLY, NOT VALIDATED`.
+**Every fixture is one person — the owner.** STATUS.md already confessed this: *"only one real canonical identity + synthetic transforms."* Handwriting is per-person. Proving Gemini reads **Taras's** "Тарасович" correctly proves **nothing** about any other user's handwriting. **WORST CASE: P1 passes on the owner's document, we flip the flag, and it fails on every real applicant.** This is the textbook self-deception and it is currently baked in. → **No "P1 success" claim is valid until ≥3 different people's booklets are tested.** Until then every result is labeled `N=1, DIRECTION ONLY, NOT VALIDATED`.
 
 ### 🔴 CRIT-2 — The Gemini 2.5 Flash price in the matrix is wrong (again).
 The pasted matrix uses **$0.075 / $0.30**. That is **Flash-Lite / 2.0 Flash**, not 2.5 Flash. Verified twice from Google's own pricing: **Gemini 2.5 Flash = $0.30 in / $2.50 out per 1M tokens**. Per-field cost is ~$0.00025, not $0.000058 — understated ~4–5×. Economics still win (<0.3¢/doc), but a unit-economics model built on the wrong number is sand. **Pin the exact model ID + price before integration.**
 
 ### 🔴 CRIT-3 — The experiment is unfalsifiable without ground truth.
-To say "accuracy improved" you need the **correct Cyrillic per field per fixture**, hand-verified. We have it for the owner's doc. For new people's docs, **Sergii must hand-transcribe truth first**. Without it, "Gemini returned Сергійович" is indistinguishable from a confident hallucination. No ground truth = no experiment, only vibes.
+To say "accuracy improved" you need the **correct Cyrillic per field per fixture**, hand-verified. We have it for the owner's doc. For new people's docs, **Taras must hand-transcribe truth first**. Without it, "Gemini returned Тарасович" is indistinguishable from a confident hallucination. No ground truth = no experiment, only vibes.
 
 ### 🔴 CRIT-4 — `review_required=true` must mean the field renders EMPTY, not pre-filled.
 If a handwritten name comes back `review_required` but the UI **pre-fills Gemini's guess**, the user rubber-stamps a confident hallucination and review is theater. Law: handwritten identity fields are shown **blank/unconfirmed** until the user explicitly confirms or types. The candidate value may be offered as a suggestion, never as the default accepted value.
@@ -33,7 +33,7 @@ We removed rotation loops *today* because uploads **hung**. Six **serial** Gemin
 The three lists differ (verified): `centralBrain.REQUIRED_FOR_GENERATE` requires `status_at_last_entry`; `mailReadyGate.REQUIRED_FIELDS` requires address/phone/email/marital_status; `isMinimallyComplete` requires `part7_reviewed`. **Blind union → the generate button never appears (over-block). Blind intersection → drop a check that catches real USCIS RFEs (under-block).** → It must be a **per-stage policy** (`required_for_merge` / `required_for_mail` / `recommended`), a conscious decision per field — not a flat merged list.
 
 ### 🟠 CRIT-7 — P1 behind a flag does NOT fix the live browser bug.
-Flag default OFF = nothing changes for users. The "Сергійович/Prostianets wrong in browser" is fixed **only when the flag flips ON in production**, which is gated on CRIT-1 (multi-person validation). **This plan ships a test harness, not a user-visible fix.** Anyone who thinks the browser bug is closed by P1 is wrong.
+Flag default OFF = nothing changes for users. The "Тарасович/Prostianets wrong in browser" is fixed **only when the flag flips ON in production**, which is gated on CRIT-1 (multi-person validation). **This plan ships a test harness, not a user-visible fix.** Anyone who thinks the browser bug is closed by P1 is wrong.
 
 ### ⚪ CRIT-8 (meta) — 5 rounds of strategy, 0 lines of fix. Analysis paralysis is now itself the risk.
 The architecture is decided. Every round since round 2 has reached the same answer. Continuing to debate providers is now more dangerous than executing. **Build P0 + P1, measure on real multi-person data, decide from numbers.**
@@ -57,7 +57,7 @@ The architecture is decided. Every round since round 2 has reached the same answ
 ## C. WHAT IS NEEDED (the real gaps)
 
 1. **3–5 DIFFERENT people's booklets** (BLOCKER for *validation*, not for *building*). Without this, P1 cannot be declared a success.
-2. **Ground-truth JSON** per fixture (Sergii hand-transcribes correct values).
+2. **Ground-truth JSON** per fixture (Taras hand-transcribes correct values).
 3. **Gemini paid API key** (`GEMINI_API_KEY`, paid tier — no free tier for PII).
 4. **ADR-009 sign-off**: sending crops to Gemini = sending PII images to Google. Confirm paid-tier no-train + retention policy, same audit as existing providers.
 

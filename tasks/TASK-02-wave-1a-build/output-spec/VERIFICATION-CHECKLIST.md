@@ -5,7 +5,7 @@ Save all output to `/tmp/wave-1a-verification.txt`.
 ## 1. Local build green
 
 ```bash
-cd /Users/sergiikuropiatnyk/work/uscis-helper
+cd /Users/sergiiivanenko/work/uscis-helper
 pnpm --filter web typecheck
 pnpm --filter web lint
 pnpm --filter web build

@@ -1,7 +1,7 @@
 # ADR-016 — Hard-case Ukrainian = mandatory human review; OneBrain decideField parked; N=1 honesty
 
 **Status:** Accepted (2026-06-04)
-**Context owner:** Sergii. Supersedes nothing; complements ADR-CENTRAL-BRAIN, the One-Brain decision.
+**Context owner:** Taras. Supersedes nothing; complements ADR-CENTRAL-BRAIN, the One-Brain decision.
 
 ## Context
 

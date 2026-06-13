@@ -49,7 +49,7 @@ function buildPrompt(spec: DocTypeSpec): string {
   const lines = spec.fields.map((f) => {
     const dateHint = f.kind === 'date' ? ' (also return iso_date YYYY-MM-DD)' : ''
     const nameHint = f.kind === 'name' && spec.script === 'mixed'
-      ? ' (this document prints the name in BOTH Cyrillic and the official LATIN romanization, e.g. "СЕРГІЙ/SERGII" and in the MRZ — return the LATIN spelling EXACTLY as printed, it is the controlling spelling; do NOT transliterate it yourself)'
+      ? ' (this document prints the name in BOTH Cyrillic and the official LATIN romanization, e.g. "ТАРАС/TARAS" and in the MRZ — return the LATIN spelling EXACTLY as printed, it is the controlling spelling; do NOT transliterate it yourself)'
       : ''
     return `- ${f.field} (${f.label_uk})${dateHint}${nameHint}`
   })
@@ -66,7 +66,7 @@ For each key return an object:
   "reason": "<short>" }
 
 Rules:
-- LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Сергій→(wrong)Сергей, Сергійович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake.
+- LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Тарас→(wrong)Сергей, Тарасович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake.
 - ORIENTATION — the photo is very often ROTATED (90° sideways, 180° upside-down, or 270°), e.g. a passport page shot in portrait. You MUST mentally rotate the page until the text is upright, then read every field. NEVER return can_read=false just because the text is sideways or upside-down — rotation is normal and you are expected to handle it. Reading rotated text is required; orientation must not change what you read.
 - Read the FULL word, every letter. Never return only a suffix (never "ович" alone).
 - Handwritten Ukrainian "Т" and "П" look similar; pick the letter that forms a REAL Ukrainian name/place.

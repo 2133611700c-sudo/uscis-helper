@@ -65,7 +65,7 @@ TASK-03  Source Intelligence Audit  (4-8 hours, channel-by-channel)
 3. *"Read TASK-01-notebooklm-cleanup/README.md and AGENT-PROMPT.md, then execute. Use the CSVs in data/."*
 
 ### TASK-02 (Wave 1A build) — START HERE FIRST
-1. Open Cursor / Claude Code in `/Users/sergiikuropiatnyk/work/uscis-helper`
+1. Open Cursor / Claude Code in `/Users/sergiiivanenko/work/uscis-helper`
 2. *"Read TASK-02-wave-1a-build/README.md and AGENT-PROMPT.md, then execute."*
 
 ### TASK-03 (Source Intelligence)
