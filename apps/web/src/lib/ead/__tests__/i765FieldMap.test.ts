@@ -46,7 +46,12 @@ describe('EAD i765FieldMap — buildEadI765Ops', () => {
     const ops = buildEadI765Ops(SAMPLE)
     expect(findField(ops, 'form1[0].Page1[0].Line1a_FamilyName[0]')?.value).toBe('Testenko')
     expect(findField(ops, 'form1[0].Page1[0].Line1b_GivenName[0]')?.value).toBe('Olena')
-    expect(findField(ops, 'form1[0].Page1[0].Line1c_MiddleName[0]')?.value).toBe('')
+    // GAP-3: empty middle name now emits NO op (shared mapper omits absent values;
+    // PDF-equivalent — an empty text field and a missing op both leave Line1c blank).
+    expect(findField(ops, 'form1[0].Page1[0].Line1c_MiddleName[0]')).toBeUndefined()
+    // A present middle name is still written through the shared mapper.
+    const withMiddle = buildEadI765Ops({ ...SAMPLE, middleName: 'Ivanivna' })
+    expect(findField(withMiddle, 'form1[0].Page1[0].Line1c_MiddleName[0]')?.value).toBe('Ivanivna')
   })
 
   it('converts DOB ISO → USCIS MM/DD/YYYY', () => {
