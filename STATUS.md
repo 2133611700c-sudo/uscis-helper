@@ -514,3 +514,5 @@ This is the ONLY way to change status from ENABLED_BY_ENV to RUNTIME_VERIFIED.
 - 2026-06-11 E2E COMPLETE: все 6 wizard-кейсов GREEN в CI (marriage 22.7s после fixture-fix; military через retry=транзиент); page-тест починен (бейдж внутри collapsed details → scoped expand) и зелёный локально 921ms.
 
 <!-- 2026-06-13: added Part 3 OUTPUT-format TL;DR block to docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md (audit-only, no code change). -->
+
+<!-- 2026-06-13: added Part 4 (Phase 1 ONE-CENTRAL-BRAIN gap audit) to docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md. Finding: SHAPE DONE / CURRENCY NOT CONTINUOUS — Core CanonicalDocumentResult still discarded after read & rebuilt from legacy DTO at packet boundary (crit #3 FAIL). Phase1 ~55-65%. Audit-only, no code change. -->
