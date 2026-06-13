@@ -63,6 +63,13 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
     case 'name': {
       // Names: KMU-55 (Ukrainian). Never the LLM's own Latin.
       if (!cy) return null
+      // CONTROLLING LATIN: if the value is ALREADY printed in Latin (international
+      // passport / ID card romanization or MRZ, e.g. "SERGII"), it is the official
+      // controlling spelling — keep it VERBATIM, never re-transliterate the Cyrillic
+      // into a different romanization (СЕРГІЙ→Serhii would disagree with the passport).
+      if (/[A-Za-z]/.test(cy) && !/[Ѐ-ӿ]/.test(cy)) {
+        return cy.replace(/\s+/g, ' ').trim() || null
+      }
       // RU routing is flag-gated again (reverted 2026-06-12 after the always-on
       // version amplified Russified reads): the owner's real problem is Ukrainian
       // being mis-read as Russian, and with the strong anti-Russification prompt
@@ -83,7 +90,17 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
       // normalizeCity (blocklist/geo-corrections), then KMU-55. The settlement
       // type stays in raw_cyrillic for the translation layer to re-add.
       if (!cy) return null
-      const bare = stripSettlementPrefix(cy)
+      // Passport "place of birth" is often an OBLAST with a country code suffix
+      // ("ВІННИЦЬКА ОБЛ./UKR" on the international passport). Strip the /UKR|/UA
+      // country code, and if it's an oblast (обл./область) route to the oblast
+      // normalizer → "Vinnytsia Oblast", not a literal "Vinnytska Obl./UKR".
+      // (NB: JS \b does not work on Cyrillic, so we match обл/область directly.)
+      const noCountry = cy.replace(/\s*[\/|]\s*(ukr|ua|ukraine|укр|україна)\.?\s*$/iu, '').trim()
+      if (/обл\.?|област[ьі:]/iu.test(noCountry)) {
+        const expanded = noCountry.replace(/\s*обл\.?\s*$/iu, ' область').trim()
+        return normalizeProvince(expanded).value || normalizeProvince(noCountry).value || transliterateKMU55(noCountry) || null
+      }
+      const bare = stripSettlementPrefix(noCountry)
       const nc = normalizeCity(bare)
       if (nc.value === null) return null // blocklisted
       return /[a-zA-Z]/.test(nc.value) ? nc.value : transliterateKMU55(nc.value) || null
@@ -103,10 +120,17 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
       return cy ? transliterateKMU55(cy) || cy : null
 
     case 'sex': {
-      // Sex marker: map Ч/Ж/чол/жін/M/F → Male/Female. Unknown → keep raw so the
-      // knowledge brain flags it for review (never a transliterated "Ch").
+      // Sex marker: map Ч/Ж/чол/жін/M/F → Male/Female. Passports print it BILINGUAL
+      // ("Ч/M", "Ж/F") — try the whole string, then each slash-separated part.
+      // Unknown → keep raw so the knowledge brain flags it for review (never "Ch").
       if (!cy) return null
-      return SEX_MAP[cy] ?? SEX_MAP[cy.toLowerCase()] ?? cy
+      const direct = SEX_MAP[cy] ?? SEX_MAP[cy.toLowerCase()]
+      if (direct) return direct
+      for (const part of cy.split(/[\/\\|,;]/).map((s) => s.trim())) {
+        const m = SEX_MAP[part] ?? SEX_MAP[part.toLowerCase()]
+        if (m) return m
+      }
+      return cy
     }
 
     case 'text':

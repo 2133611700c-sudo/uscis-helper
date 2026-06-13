@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-12 | Real-doc verified: intl passport (SERGII/oblast/sex) + 4-page passport "0"
+Ran the owner's REAL documents (his real Gemini key + real images already in the repo) through the live pipeline via a gated harness `liveRealDocs.test.ts` (RUN_LIVE_DOCS=1). Found + fixed + verified on his actual documents:
+- **International passport given_name SERGII** (was SERHII): bilingual `script:'mixed'` docs (international passport, ID card) now instruct the model to return the printed LATIN romanization ("СЕРГІЙ/SERGII" → SERGII), and `transliterationPolicy` name-case keeps an already-Latin value VERBATIM (controlling-Latin rule — never re-transliterate the Cyrillic into a different romanization). `geminiVisionProvider.buildPrompt` + `transliterationPolicy.ts`.
+- **sex Ч/М → Male**: the 'sex' case now splits a bilingual "Ч/M"/"Ж/F" on the slash and maps each part via SEX_MAP.
+- **place "ВІННИЦЬКА ОБЛ./UKR" → "Vinnytsia Oblast"**: place_city strips a trailing country code (/UKR, /UA) and, when the value is an oblast (обл./область), routes to the oblast normalizer. (JS \b does not work on Cyrillic, so обл/область is matched directly, not with a word boundary.)
+- **4-page passport "вообще 0"**: the prior deadline fix capped each page at the route's 40s which was too tight for a real Soviet/handwritten doc. Core read now passes timeoutMs 85s (TOTAL deadline) + attemptsPerModel:1 so a slow primary model doesn't burn the budget and the faster fallback gets a turn. Verified: page 1 of the real 4-page booklet reads in 14s; pages 3-4 honestly return little/0 (no fabrication).
+- Verified final international passport read: REDACTED / SERGII / FU262473 / 1986-06-25 / Male / Vinnytsia Oblast / 2019-02-22 / 2029-02-22 — every field correct vs the physical passport.
+- Evidence: tsc 0, build exit 0, web 3288 passed/3 skipped, knowledge 35+26+36+13.
+
+
 ## 2026-06-12 | Owner real-doc test fixes — oblast fabrication + 4-page-passport=0
 Owner tested a real birth certificate (names, patronymics, ЗАГС→ZAHS, series all came out CORRECT — the anti-Russification + dictionary fixes are working) and a 4-page passport. Two bugs:
 - **Oblast fabrication** (`documentRegistry.ts`, `birth-certificate.schema.ts`, `buildMirrorValues.ts`): the separate `province_of_birth` field added in the birth-completeness pass made the model INFER/fabricate an oblast on a real 1986 cert (owner: "придумал… заготовленную область"). Removed `province_of_birth` from the birth registry + `oblast_of_birth` from the birth schema + the dead alias. The oblast, when present, is part of the place-of-birth line — not a standalone field worth a fabrication-prone separate ask.
