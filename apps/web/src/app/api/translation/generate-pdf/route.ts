@@ -287,7 +287,17 @@ export async function POST(req: NextRequest) {
     // this docType, render a faithful English MIRROR of the Ukrainian document
     // (structured by its KMU normative source) instead of the generic field table.
     // OFF or no schema ⇒ unchanged generic certification PDF (byte-identical).
-    if (process.env.MIRROR_PDF_ENABLED === '1' && hasOfficialSchema(payload.doc_type)) {
+    // MIRROR_READY_DOCTYPES: doc types whose official schema is VERIFIED to cover
+    // every field the extractor emits (no data loss vs the generic table) and whose
+    // mirror layout has been eyeballed. These render the mirror BY DEFAULT (no env
+    // flag) — birth certificate is the first, schema = KMU 1025, all 11 extractor
+    // keys map to schema keys. Other doc types still require MIRROR_PDF_ENABLED=1
+    // until their schemas are likewise verified (divorce/name-change are sparse).
+    const MIRROR_READY_DOCTYPES = new Set(['ua_birth_certificate'])
+    const mirrorEnabled =
+      process.env.MIRROR_PDF_ENABLED === '1' ||
+      MIRROR_READY_DOCTYPES.has(payload.doc_type ?? '')
+    if (mirrorEnabled && hasOfficialSchema(payload.doc_type)) {
       // FAIL-OPEN: a mirror-render error must NEVER break the client's PDF — fall
       // through to the generic certification PDF below (pdfBuffer stays null). The
       // mirror is a structural nicety; the generic table is the guaranteed output.
@@ -295,6 +305,7 @@ export async function POST(req: NextRequest) {
         const mirror = await renderMirrorTranslationPDF(payload.doc_type, payload.fields ?? [], {
           signerName: profile.name,
           signerAddress: profile.addr,
+          signedAt,
         })
         if (mirror) {
           pdfBuffer = mirror.pdf
