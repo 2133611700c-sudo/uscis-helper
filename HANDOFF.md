@@ -1,3 +1,23 @@
+# HANDOFF (2026-06-13 — Final gate agent: integration tests PASS, RPC bug fixed, PR #117 updated)
+
+> **All checks green. RPC call bug fixed (JSON.stringify removed). 6/6 concurrency integration tests PASS. Branch pushed. PR #117 body updated. Awaiting owner GO to merge.**
+
+DONE (this session):
+- BUG FIX: `appendCanonicalOverride` was passing `JSON.stringify(overridesPayload)` as `p_overrides` to the RPC, producing a text scalar that broke `jsonb_array_elements`. Fixed to pass the raw array — Supabase JS client serializes arrays to JSONB correctly.
+- VERIFIED: All 6 concurrency integration tests pass against real DB (project rtfxrlountkoegsseukx).
+- VERIFIED: Migration ledger — 5 remote entries under 20260613 prefix (3 original + 000002 + 000003 applied).
+- VERIFIED: UNIQUE constraints, atomic RPC (SECURITY DEFINER, service_role only), certification FK — all live.
+- VERIFIED: tsc 0 errors, build PASS, 3580 tests pass.
+- DONE: Branch pushed (`architecture/canonical-continuity`), PR #117 body updated.
+
+NOT DONE / owner next steps:
+- Owner GO to merge PR #117 to main.
+- Vercel: set CANONICAL_CONTINUITY_MODE=enforce on production → redeploy → smoke test.
+- CI integration test env vars (SUPABASE_SERVICE_ROLE_KEY) — not set in GitHub Actions; owner adds if desired.
+
+NEXT TASK: Owner reviews PR #117 → GO → merge → enforce mode → smoke.
+
+---
 # HANDOFF (2026-06-13 — Code hardening agent: 5 persistence defects fixed)
 
 > **5 defects fixed in canonical persistence layer. 2 new migrations written (NOT applied). 0 TypeScript errors. 3580 tests pass.**
