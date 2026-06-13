@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-06-13 | Phase 2B FORM FIELD-BY-FIELD validation — I-821 / I-131 / I-765 (PR open, NOT merged)
+- Validated the final generated PDFs field-by-field against the edition-locked official forms via 4 agents in isolated worktrees + coordinator integration (I-821 → I-131 → I-765 → independent PDF audit, gate after each). Editions re-verified per page: I-821 01/20/25 (13/13), I-131 01/20/25 (14/14), I-765 08/21/25 (7/7) — official == repo, independently audited; renders + AcroForm extracted with pdftoppm/pdf-lib.
+- **SEVEN real defects found + fixed** (generalizable, no owner-specific hardcodes; each with a synthetic regression test):
+  - **I-131 gender inversion (critical):** the AcroForm widget index order is REVERSED vs the visible "Male Female" labels (`Gender[0]` on-value `/F`, `[1]` `/M`); the mapper checked `[0]` for sex M, so every male got the **Female** box and vice-versa. Fixed to target the widget whose on-value matches the sex.
+  - **A-Number silently dropped on I-131, I-765, and I-821:** the AcroForm A-Number cells are maxLength=9; an "A"-prefixed or dashed value (`A012345678`, `012-345-678`) is rejected by pdf-lib and the field comes out BLANK on the officer-facing PDF. Fixed with a 9-trailing-digit normalizer (leading zeros preserved) in all three mappers.
+  - **SSN silently dropped on I-131** (same maxLength cause) — fixed.
+  - **I-821 fabricated DOB:** the real DOB was written into Item 11 "Other Dates of Birth Used (if any)", asserting an alias the user never claimed — removed.
+  - **I-821 wrong-question name mapping:** `other_names` were written into the Item 15/16 "Countries of Residence / Citizenship" cells — remapped to the real "Other Names Used" Items 2/3 (which had been left wrongly empty).
+- Independent PDF audit AUDIT_PASS after integration. The phase-B re-run CAUGHT the audit's own gender assertion still encoding the pre-fix index assumption → corrected to assert by on-value (index-agnostic), so it verifies the /M widget is checked for a male rather than re-validating the bug.
+- Verification: tsc 0, full suite 3456 passed/18 skipped, build, knowledge, 0 tracked PII. Synthetic fixtures only; real GT stays gitignored.
+- HONEST flags (NOT fixed — out of mapper scope / owner decision): (1) I-821 Part 7 felony-question wizard↔PDF label drift — safe on the default all-No + forced-review path; needs a label audit before enabling any non-default Part 7 answer (touches wizard UI). (2) Over-length street-address / USCIS-account input is silently dropped by pdf-lib's maxLength guard — a UI-validation concern; truncating in the mapper would corrupt a legal value.
+- No Order/Cart/Pricing/Operator/Unified-Wizard work. PR "test(validation): verify I-821 I-131 and I-765 field by field" open, NOT merged — awaits owner review.
+
 ## 2026-06-13 | Phase 2A REAL-DOC VALIDATION EXPANSION (validation PR open, NOT merged)
 - Validated the deployed central brain (prod 0561600) on real private documents via 4 agents in isolated git worktrees + coordinator integration (Agent1 intl-passport, Agent2 I-94/EAD, Agent3 civil/booklet, Agent4 independent audit). PII-free gated harnesses; only redacted enum verdicts leave the process.
 - **One real defect found + fixed (generalizable, no owner-specific rule):** the country code `/UKR` leaked into the released `city_of_birth` (KNOWLEDGE_WRONG). Fix: new `stripCountryCode()` in `lib/docintel/transliterationPolicy.ts` + applied in `lib/canonical/core/knowledgeNormalize.ts` (the live D2 layer; KNOWLEDGE_BRAIN is ON in prod) — strips a standalone UKR/UA/Ukraine country token next to any separator (suffix or prefix), preserving embedded substrings. Synthetic regression test `placeCountryCodeStrip.test.ts` (RED before, GREEN after).

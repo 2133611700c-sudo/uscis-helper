@@ -89,6 +89,25 @@ function toUscisDate(iso: string): string {
   return m ? `${m[2]}/${m[3]}/${m[1]}` : iso
 }
 
+/**
+ * Normalize an A-Number to the 9 digits the I-765 Line 7 AcroForm cell expects.
+ *
+ * PDF_FORMATTING only — NOT a value change. The Alien Registration Number IS a
+ * 9-digit number; the leading "A" and any separators (spaces, dashes) are display
+ * formatting. The PDF field has maxLength=9, so an "A"-prefixed or dashed value
+ * (e.g. "A012345678" or "012-345-678") is REJECTED by pdf-lib and the field is
+ * silently left blank — an EMPTY_WRONG defect. We strip every non-digit and keep
+ * the trailing 9 digits (preserving leading zeros).
+ *
+ * Same intent as the existing phone digit-strip in the product field maps. If the
+ * input does not contain 9 trailing digits we return the digits we have (the field
+ * cap still applies upstream) rather than fabricating.
+ */
+function toI765ANumber(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  return digits.length > 9 ? digits.slice(-9) : digits
+}
+
 // AcroForm field names on the shared i-765.pdf (edition 08/21/25). These are the
 // SAME literals both old maps used for document-derived fields — single-sourced here.
 const F = {
@@ -164,8 +183,10 @@ export function buildI765DocumentOps(canonical: CanonicalDocumentResult): I765Op
   text(F.givenName, values.givenName)
   text(F.middleName, values.middleName)
 
-  // ── Page 2, Line 7 — A-Number ─────────────────────────────────────────────
-  text(F.alienNumber, values.alienNumber)
+  // ── Page 2, Line 7 — A-Number (PDF_FORMATTING: strip "A"/separators → 9 digits)
+  // The cell is maxLength=9; an "A"-prefixed or dashed value would be rejected by
+  // pdf-lib and silently dropped. Normalize to the 9-digit form the field holds.
+  if (values.alienNumber) text(F.alienNumber, toI765ANumber(values.alienNumber))
 
   // ── Page 2, Line 9 — Gender (PDF_FORMATTING: enum → two checkboxes) ────────
   // Canonical 'sex' is 'M' | 'F' (or absent). Emit checkboxes only when present,

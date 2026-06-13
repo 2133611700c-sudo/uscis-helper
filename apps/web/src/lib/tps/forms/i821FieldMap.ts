@@ -11,9 +11,12 @@
  * FIELD CLASSIFICATION (per TPS_FIELD_COVERAGE_CLOSEOUT_V1):
  *   MAPPED (this file):
  *     Part 1  — filing type, TPS country, concurrent EAD
- *     Part 2  — identity, address, A-number, DOB, sex, SSN, marital status,
- *               city/country of birth, passport, I-94, status at entry,
- *               port of entry, authorized stay, other names (first 2)
+ *     Part 2  — identity, address, A-number, DOB (Item 10 only — Item 11
+ *               "Other Dates of Birth Used" is left for the user), sex, SSN,
+ *               marital status, city/country of birth, passport, I-94, status
+ *               at entry, port of entry, authorized stay, other names used
+ *               (Items 2/3 — first 2 slots). Items 15/16 (Countries of
+ *               Residence / Citizenship) are NOT mapped (no source).
  *     Part 3  — biographic (ethnicity, race, eye/hair color)
  *     Part 7  — all yes/no background questions (defaults to No; user reviews)
  *     Part 8  — phone, email (contact)
@@ -137,12 +140,21 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
   // ── Part 2 — Item 7: A-Number (Alien Registration Number, if any) ────────
   // OCR'd from an EAD card; user can also type. 9 digits, no 'A' prefix.
   // Inventory field name: form1[0].Page02[0].Part2_Item7_AlienNumber[0]
+  // The AcroForm cell is maxLength=9: a value carrying the "A" prefix or USCIS
+  // dashes (A012345678 / 012-345-678) is rejected by pdf-lib and the whole field
+  // comes out BLANK on the officer-facing PDF. Normalize to the 9 trailing digits
+  // (PDF_FORMATTING only — the A-Number IS a 9-digit value; "A"/separators are
+  // display formatting). Same fix as the shared I-765 mapper (toI765ANumber).
   if (a.a_number) {
-    ops.push({
-      field: 'form1[0].Page02[0].Part2_Item7_AlienNumber[0]',
-      kind: 'text',
-      value: a.a_number,
-    })
+    const digits = a.a_number.replace(/\D/g, '')
+    const aNumber9 = digits.length > 9 ? digits.slice(-9) : digits
+    if (aNumber9) {
+      ops.push({
+        field: 'form1[0].Page02[0].Part2_Item7_AlienNumber[0]',
+        kind: 'text',
+        value: aNumber9,
+      })
+    }
   }
 
   // ── Part 2 — Item 8 (USCIS online account number, if any) ─────────────────
@@ -171,15 +183,14 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     })
   }
 
-  // ── Part 2 — Item 11: Date of Birth (second AcroForm instance on Page02) ────
-  // The I-821 PDF has two AcroForm field instances for DOB on Page 2 — Item 10
-  // ([0]) and Item 11 ([0] and [1]). Both carry the same date. Item 11's two
-  // instances appear to be linked left/right cells that split MM/DD and YYYY
-  // on some printer layouts. Writing the full MM/DD/YYYY to both is safe —
-  // the prefiller gracefully skips any cell that rejects a value longer than
-  // its maxLength.
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item11_DateOfBirth[0]', kind: 'text', value: toUscisDate(a.dob) })
-  ops.push({ field: 'form1[0].Page02[0].Part2_Item11_DateOfBirth[1]', kind: 'text', value: toUscisDate(a.dob) })
+  // ── Part 2 — Item 11: "Other Dates of Birth Used (if any)" ─────────────────
+  // DO NOT write the applicant's real DOB here. Item 11 (Page 2, labeled
+  // "Other Dates of Birth Used") asks for ALTERNATE/alias dates of birth the
+  // applicant has previously used. Filling it with the real DOB (which the
+  // mapper previously did, into [0] and [1]) fabricates an alias DOB the
+  // applicant never claimed. The real DOB belongs only in Item 10 (above).
+  // We have no alias-DOB source in TPSAnswers, so these cells stay empty for
+  // the user to complete if applicable.
 
   // ── Part 2 — Item 13: city of birth ────────────────────────────────────────
   ops.push({ field: 'form1[0].Page02[0].Part2_Item13_CityOrTown[0]', kind: 'text', value: a.city_of_birth ?? '' })
@@ -204,21 +215,27 @@ export function buildI821Ops(a: TPSAnswers): I821Op[] {
     })
   }
 
-  // ── Part 2 — Items 15/16: Other names (aliases / prior names) ────────────────
-  // First two other-name slots have AcroForm cells. Map from other_names[0/1].
-  // Fields: Item15a=FamilyName, Item15b=GivenName, Item15c=MiddleName, Item15d=other-name type
-  // Fields: Item16a=FamilyName, Item16b=GivenName, Item16c=MiddleName, Item16d=other-name type
+  // ── Part 2 — Items 2/3: "Other Names Used" (aliases / maiden / prior names) ──
+  // The I-821 (Edition 01/20/25) places the two "Other Names Used" slots on
+  // Page 2, left column, as Items 2.a-2.c (first slot) and 3.a-3.c (second
+  // slot) — verified against the rendered PDF widget positions + printed
+  // labels. The AcroForm cells named Part2_Item15* / Part2_Item16* are the
+  // RIGHT-column "Countries of Residence" and "Countries of Citizenship or
+  // Nationality" fields — NOT name fields. The mapper previously wrote name
+  // parts into Items 15/16, polluting country fields with a person's name; it
+  // is corrected here to target the real other-name cells (Items 2/3).
+  // Fields: Item2_FamilyName / Item2_GivenName / Item2_MiddleName, etc.
   if (a.other_names && a.other_names.length > 0) {
     const n0 = a.other_names[0]
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item15a[0]', kind: 'text', value: n0.family })
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item15b[0]', kind: 'text', value: n0.given })
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item15c[0]', kind: 'text', value: n0.middle ?? '' })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item2_FamilyName[0]', kind: 'text', value: n0.family })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item2_GivenName[0]',  kind: 'text', value: n0.given })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item2_MiddleName[0]', kind: 'text', value: n0.middle ?? '' })
   }
   if (a.other_names && a.other_names.length > 1) {
     const n1 = a.other_names[1]
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item16a[0]', kind: 'text', value: n1.family })
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item16b[0]', kind: 'text', value: n1.given })
-    ops.push({ field: 'form1[0].Page02[0].Part2_Item16c[0]', kind: 'text', value: n1.middle ?? '' })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item3_FamilyName[0]', kind: 'text', value: n1.family })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item3_GivenName[0]',  kind: 'text', value: n1.given })
+    ops.push({ field: 'form1[0].Page02[0].Part2_Item3_MiddleName[0]', kind: 'text', value: n1.middle ?? '' })
   }
 
   // ── Part 2 — Item 20: Port of entry ─────────────────────────────────────────
