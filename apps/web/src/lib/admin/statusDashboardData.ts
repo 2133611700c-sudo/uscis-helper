@@ -109,8 +109,10 @@ export async function buildStatusDashboard(
     certifierAuditError,
     reviewQueue,
     passportMigration: {
-      state: rendererFlag ? 'registered' : 'not_registered',
-      flag: rendererFlag ? '1' : 'OFF (unset)',
+      // Passport schemas registered unconditionally 2026-06-12 (the flag is retired);
+      // mirror is live by default via MIRROR_READY_DOCTYPES.
+      state: 'registered',
+      flag: rendererFlag ? '1 (retired flag)' : 'registered (flag retired)',
       dualRender: env.PASSPORT_SCHEMA_DUAL_RENDER_ENABLED === '1' ? '1' : 'OFF (unset)',
     },
     ci: env.GITHUB_TOKEN
