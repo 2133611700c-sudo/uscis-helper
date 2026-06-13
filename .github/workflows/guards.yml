@@ -198,3 +198,6 @@ jobs:
 
       - name: Run tests
         run: pnpm --filter web test
+
+      - name: Run knowledge-package tests (dictionary/transliteration/normalize)
+        run: pnpm --filter @uscis-helper/knowledge test
