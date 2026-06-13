@@ -43,6 +43,9 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { buildI765DocumentOps, type I765Op } from '@/lib/canonical/forms/i765DocumentMapper'
+import { eadDocumentFactsToCanonical } from './i765DocumentBoundary'
+
 export type EadAppType = 'new' | 'renewal' | null
 export type EadCategory = 'c11' | 'c08' | 'a12' | 'other' | null
 export type EadGender = 'male' | 'female' | 'nonbinary' | ''
@@ -60,18 +63,7 @@ export interface EadFieldData {
   usAddress: string       // single line (street + apt + city, state zip)
 }
 
-export interface I765Op {
-  field: string
-  kind: 'text' | 'checkbox' | 'choice'
-  value: string | boolean
-}
-
-/** YYYY-MM-DD → MM/DD/YYYY for USCIS form fields. */
-function toUscisDate(iso: string): string {
-  if (!iso) return ''
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  return m ? `${m[2]}/${m[3]}/${m[1]}` : iso
-}
+export type { I765Op }
 
 /** Map EAD category to the two segments USCIS expects on Page 3 Item 27. */
 export function categorySegments(c: EadCategory): { letter: string; number: string } | null {
@@ -92,10 +84,10 @@ export function buildEadI765Ops(d: EadFieldData): I765Op[] {
   ops.push({ field: 'form1[0].Page1[0].Part1_Checkbox[1]', kind: 'checkbox', value: false })
   ops.push({ field: 'form1[0].Page1[0].Part1_Checkbox[2]', kind: 'checkbox', value: d.appType === 'renewal' })
 
-  // ── Page 1, Line 1 — Legal name ───────────────────────────────────────────
-  ops.push({ field: 'form1[0].Page1[0].Line1a_FamilyName[0]', kind: 'text', value: d.lastName })
-  ops.push({ field: 'form1[0].Page1[0].Line1b_GivenName[0]',  kind: 'text', value: d.firstName })
-  ops.push({ field: 'form1[0].Page1[0].Line1c_MiddleName[0]', kind: 'text', value: d.middleName })
+  // ── DOCUMENT-DERIVED fields via the ONE shared canonical mapper (GAP-3) ─────
+  // Legal name, A-Number, gender, country of birth, DOB. The EAD wizard assumes
+  // country is already normalized upstream, so the boundary is a pass-through.
+  ops.push(...buildI765DocumentOps(eadDocumentFactsToCanonical(d)))
 
   // ── Page 2, Line 4b — US mailing address ──────────────────────────────────
   // EAD wizard collects address as one line; we put the whole string in Line4b
@@ -109,22 +101,8 @@ export function buildEadI765Ops(d: EadFieldData): I765Op[] {
   ops.push({ field: 'form1[0].Page2[0].Part2Line5_Checkbox[0]', kind: 'checkbox', value: false })
   ops.push({ field: 'form1[0].Page2[0].Part2Line5_Checkbox[1]', kind: 'checkbox', value: true })
 
-  // ── Page 2, Line 7 — A-Number ─────────────────────────────────────────────
-  if (d.alienNumber) {
-    ops.push({ field: 'form1[0].Page2[0].Line7_AlienNumber[0]', kind: 'text', value: d.alienNumber })
-  }
-
-  // ── Page 2, Line 9 — Gender ───────────────────────────────────────────────
-  ops.push({ field: 'form1[0].Page2[0].Line9_Checkbox[0]', kind: 'checkbox', value: d.gender === 'male' })
-  ops.push({ field: 'form1[0].Page2[0].Line9_Checkbox[1]', kind: 'checkbox', value: d.gender === 'female' })
-
-  // ── Page 3 — Identity ─────────────────────────────────────────────────────
-  if (d.countryOfBirth) {
-    ops.push({ field: 'form1[0].Page3[0].Line18c_CountryOfBirth[0]', kind: 'text', value: d.countryOfBirth })
-  }
-  if (d.dob) {
-    ops.push({ field: 'form1[0].Page3[0].Line19_DOB[0]', kind: 'text', value: toUscisDate(d.dob) })
-  }
+  // (A-Number Line 7, Gender Line 9, Country of birth Line 18c, and DOB Line 19
+  //  are now emitted by the shared canonical document mapper above.)
 
   // ── Page 3, Item 27 — Eligibility Category ────────────────────────────────
   //   The PDF splits this into three text boxes inside #area[1]:

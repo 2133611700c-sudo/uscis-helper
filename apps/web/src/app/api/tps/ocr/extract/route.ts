@@ -910,7 +910,17 @@ export async function POST(req: NextRequest) {
   // any MRZ-shape line, pull surname + given Latin tokens directly, and
   // force-override Brain's name fields with that deterministic value.
   // KMU-55 is unnecessary — MRZ is already Latin and authoritative.
-  if (mergedModule && effectiveOcrResult.raw_text) {
+  //
+  // Phase 1 cutover invariant: on a successful Document Core read
+  // (coreStatus==='ok') the canonical result ALREADY carries the MRZ-derived,
+  // arbitrated name — MRZ candidates are injected into Core at the read seam
+  // above. Re-parsing raw_text MRZ here and force-overriding would be a
+  // post-canonical MRZ override (forbidden) and would MUTATE the canonical value
+  // (e.g. controlling-Latin "IVANENKO" → title-cased "Ivanenko"). This
+  // deterministic R1B fix exists only to stabilize the LEGACY Brain path's
+  // non-deterministic name source, so it must run ONLY when Core did not produce
+  // the result.
+  if (coreStatus !== 'ok' && mergedModule && effectiveOcrResult.raw_text) {
     const MRZ = /\bP<([A-Z]{3})([A-Z<]+?)<<([A-Z<]+?)(?:<<|<\s|$)/m
     const m = effectiveOcrResult.raw_text.match(MRZ)
     if (m) {
@@ -1233,13 +1243,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── CANONICAL CUTOVER (GAP-2): fallback semantics ───────────────────────
+  // On Core success (coreStatus==='ok') the canonical path produced the
+  // fields — NO legacy fallback was taken. On a TECHNICAL Core failure
+  // (coreStatus==='error') the legacy switch ran instead → that IS a
+  // fallback and must be reported as one; we never hide a fallback under
+  // an 'ok' status. 'skipped_no_mapping' (US-form slots: i94/ead/dl/i797 —
+  // never had Core) and 'skipped_no_fields' (Core ran, read nothing) are
+  // not technical failures of an applicable Core, so they are not flagged
+  // as fallbacks; core_path reflects which path actually produced fields.
+  const fallbackUsed = coreStatus === 'error'
+  const corePath: 'canonical' | 'legacy_fallback' | 'legacy' =
+    coreStatus === 'ok' ? 'canonical' : coreStatus === 'error' ? 'legacy_fallback' : 'legacy'
+
   return NextResponse.json(
     {
       ok: true,
       provider: result.provider,
       doc_type_hint: docTypeHint || null,
       document_id,
-      raw_text: result.raw_text,
       vision_text_length: result.raw_text.length,
       page_count: result.pages.length,
       word_count: result.words.length,
@@ -1247,6 +1269,10 @@ export async function POST(req: NextRequest) {
       ocr_provider: isDocAIEnabled() ? 'google_docai' : 'google_vision',
       // ONE BRAIN B1 diagnostics (shows Core path result even when flag OFF)
       core_status: coreStatus,
+      // CANONICAL CUTOVER (GAP-2): explicit fallback signal. true ONLY when a
+      // technical Core failure forced the legacy path. Never hidden under 'ok'.
+      fallback_used: fallbackUsed,
+      core_path: corePath,
       // POLICY_WIRED: document-class policy guard diagnostics
       policy_guard_status: policyGuardStatus,
       // MRZ_DEBUG: parse status for passport slots — metadata only, no PII, no raw MRZ string.
@@ -1298,8 +1324,11 @@ export async function POST(req: NextRequest) {
         line_count: p.lines.length,
         word_count: p.words.length,
       })),
-      words: result.words,    // includes ids, bboxes, confidence
-      lines: result.lines,    // includes ids, bboxes
+      // CANONICAL CUTOVER (GAP-2): raw OCR `words`/`lines` (full text + bboxes,
+      // PII-heavy) removed from the client JSON — no UI component consumes them
+      // (verified: DocumentUploadScreen reads ok/error/quality_error/module/
+      // document_id; TPSWizardV2 reads module.fields + knowledge_diagnostics +
+      // slot/brain diagnostics). Per-page counts are retained below.
       processing_ms: result.processing_ms,
       route_total_ms: Date.now() - t0,
       image_quality: pre.quality,
@@ -1320,7 +1349,18 @@ export async function POST(req: NextRequest) {
       knowledge_conflicts: normalizationMeta.conflicts,
       knowledge_low_confidence: normalizationMeta.low_confidence,
       knowledge_rejected_fields: normalizationMeta.rejected_fields,
-      knowledge_diagnostics: normalizationMeta.diagnostics,
+      // CANONICAL CUTOVER (GAP-2): the UI (TPSWizardV2 booklet drop-rule) reads
+      // only field/status/reason/manual_required from knowledge_diagnostics.
+      // The raw value pair (input_raw/input_normalized/output_normalized) is
+      // PII (actual document field values) and is NOT consumed by any client —
+      // strip it from the client JSON. The full diagnostic still flows to the
+      // server-side audit (brainRawAudit → logOcrRun) where it is needed.
+      knowledge_diagnostics: normalizationMeta.diagnostics.map((d) => ({
+        field: d.field,
+        status: d.status,
+        reason: d.reason,
+        manual_required: d.manual_required,
+      })),
       // DS.2 — Brain diagnostics surfaced to the client (UI never renders
       // raw_response_length; this is for /api/tps/health-style monitoring).
       brain: brainResult

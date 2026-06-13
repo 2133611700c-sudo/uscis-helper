@@ -71,18 +71,9 @@ const ALLOWED_MIME = new Set([
 const MAX_BYTES = 10 * 1024 * 1024 // 10 MB per page
 const MAX_PAGES = 6                  // hard cap matching the wizard
 
-type FieldOut = {
-  field: string
-  value: string | null
-  raw_cyrillic: string | null
-  confidence: number
-  review_required: boolean
-  kind: string
-  source_page?: number
-  /** ENSEMBLE_DATE: reasons + the second engine's date reading on a cross-engine conflict. */
-  review_reasons?: string[]
-  ensemble_candidate?: string | null
-}
+// FieldOut shape is now owned by the canonical translationAdapter (toTranslationRows
+// returns it for BOTH the Core path and — post-cutover — the legacy fallback). The
+// route no longer builds rows by hand, so the local duplicate type was removed.
 
 /**
  * ENSEMBLE_DATE_ENABLED (default OFF): cross-engine date check shared by BOTH the
@@ -326,6 +317,10 @@ export async function POST(req: NextRequest) {
         model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
         status: 'ok:core-b2',
         core_version: 'b2',
+        // CUTOVER: the Core path is the canonical arbitration path. Marked honestly
+        // so the client/telemetry can distinguish it from the legacy fallback below.
+        core_path: 'canonical',
+        fallback_used: false,
       }, { status: 200 })
     }
     console.warn('[Core B2] 0 fields — falling through to legacy reader (with preprocessing)')
@@ -335,9 +330,21 @@ export async function POST(req: NextRequest) {
 
   // Legacy fallback — pages IN PARALLEL too (504 fix, 2026-06-11; the old
   // sequential rationale was the FREE Gemini tier, prod runs the paid key).
-  // Merge field-by-field after all pages settle, keeping the earliest
-  // non-empty value (page order preserved via the positional results array).
-  const merged = new Map<string, FieldOut>()
+  //
+  // CUTOVER (Phase 1 GAP-1): the fallback now runs the SAME canonical pipeline as
+  // the Core path. It collects FieldCandidate[] via docintelToCandidate(f, page)
+  // (which carries the page → arbitrateDocument still picks the earliest valid
+  // candidate, preserving the old "earliest non-empty page wins" merge) and a
+  // cyrillicMap, then after the page loop runs
+  //   applyKnowledgeBrainIfEnabled → buildCanonicalResult → toTranslationRows.
+  // It no longer raw-merges ExtractedDocField into a Map<string,FieldOut> — so it
+  // now honors C3 (getCanonicalValue rejects finalValue===null), applies the
+  // settlement-designator/getCanonicalValue logic that lives in toTranslationRows,
+  // and preserves rawCyrillic/reviewReasons/suggestedValue by construction. The
+  // fallback differs from the Core path ONLY by per-page preprocessing (rotate +
+  // quality gate), the shorter per-page timeout, and the explicit fallback flag.
+  const legacyCandidates: ReturnType<typeof docintelToCandidate>[] = []
+  const legacyCyrillicMap = new Map<string, string>()
   const pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; provider?: string; error?: string }> = []
   let lastResult: Awaited<ReturnType<typeof readDocument>> | null = null
 
@@ -392,23 +399,34 @@ export async function POST(req: NextRequest) {
     lastResult = r
     pageResults.push({ page: p.page, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
     if (r.ok && Array.isArray(r.fields)) {
-      for (const f of r.fields) {
-        const existing = merged.get(f.field)
-        // Keep the earliest non-empty value. If existing entry has no
-        // value but this page does, upgrade it.
-        if (!existing) {
-          merged.set(f.field, { ...f, source_page: p.page })
-        } else if (!existing.value && f.value) {
-          merged.set(f.field, { ...f, source_page: p.page })
-        }
-      }
+      // Same as the Core path: build the cyrillic display fallback and collect
+      // candidates carrying the page. The arbiter (arbitrateDocument inside
+      // applyKnowledgeBrainIfEnabled) picks the earliest valid candidate, so the
+      // previous "earliest non-empty page wins" behavior is preserved here.
+      buildCyrillicMap(r.fields).forEach((v, k) => { if (!legacyCyrillicMap.has(k)) legacyCyrillicMap.set(k, v) })
+      legacyCandidates.push(...r.fields.map((f) => docintelToCandidate(f, p.page)))
     }
   }
+
+  // Run the canonical pipeline on the collected candidates — identical arbitration
+  // to the Core path. Empty candidate set ⇒ empty arbitrated set ⇒ ok:false below.
+  const legacyCanonicalFields = applyKnowledgeBrainIfEnabled(
+    legacyCandidates,
+    buildKnowledgeContext({ docTypeId, product: 'translation' }),
+  )
+  const legacyCanonicalResult = buildCanonicalResult({
+    documentSessionId:
+      (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract',
+    product: 'translation',
+    docType: docTypeId,
+    fields: legacyCanonicalFields,
+    createdAt: new Date().toISOString(),
+  })
 
   // Any field at all? Then the request is considered ok even if some pages
   // failed (e.g. user uploaded one good page + one blurry one).
   // Reaching here means Core returned 0 fields or errored — legacy reader ran.
-  let fields = Array.from(merged.values())
+  let fields = toTranslationRows(legacyCanonicalResult.fields, legacyCyrillicMap)
   const ok = fields.length > 0
 
   // ── POLICY_WIRED: post-extraction document-class guards ───────────────────
@@ -455,7 +473,10 @@ export async function POST(req: NextRequest) {
       flow: 'translation_public',
       document_class: docintelIdToDocumentClass(docTypeId),
     }, { zeroRecognition: !ok })
-    fields = res.fields as typeof fields
+    // applyOcrFieldSafety returns SafeField[] (kind optional); the row type is the
+    // adapter's FieldOut (kind required). The guard preserves every input property
+    // it does not touch, so the runtime shape is intact — cast through unknown.
+    fields = res.fields as unknown as typeof fields
     ocrFieldSafety = { applied: true, unresolved_critical: res.anyUnresolvedCritical }
   }
 
@@ -466,6 +487,12 @@ export async function POST(req: NextRequest) {
     ocr_field_safety: ocrFieldSafety,
     date_ensemble: dateEnsembleDiag,
     policy_guard_status: translationPolicyGuardStatus,
+    // CUTOVER: honest fallback marking. The fallback now runs the same canonical
+    // arbitration as the Core path; it is reached only on Core failure (0 fields)
+    // or a thrown Core error. The provider/model below stay the REAL legacy reader
+    // values — never relabeled as canonical-clean, never downgrading review state.
+    core_path: 'legacy_fallback',
+    fallback_used: true,
     pages: pageResults,
     page_count: rawFiles.length,
     // Backward compat: keep the single-call shape too for legacy clients.
