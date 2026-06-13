@@ -621,3 +621,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 - Practical implication:
   - future changes must be explicit about which architectural plane they touch
   - "brain", "core", and "central brain" are not interchangeable terms in this repo
+
+> 2026-06-12 Wrote docs/architecture/UNIFIED_ARCHITECTURE_PLAN.md — the complete target model (spine: Document Core → CanonicalDocument → Form Mapper / Translation Builder / Packet Builder → Order/Cart → Operator/Archive), gap table, order/pricing model, unified wizard, 7-phase build plan, data model, invariants. Phase 1 = make CanonicalDocument the only currency.
