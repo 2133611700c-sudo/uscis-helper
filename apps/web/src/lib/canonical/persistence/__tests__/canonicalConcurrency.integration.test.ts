@@ -352,7 +352,8 @@ describe('canonical persistence — concurrency integration', () => {
     // resolveCanonicalDocument must produce 'CorrectValue' (version=2 wins)
     // NOT 'WrongValue' (which has the later created_at)
     const resolved = await resolveCanonicalDocument(id)
-    const firstNameField = resolved.fields.find((f) => f.key === 'first_name')
+    expect(resolved).not.toBeNull()
+    const firstNameField = resolved!.fields.find((f) => f.key === 'first_name')
     expect(firstNameField?.finalValue).toBe('CorrectValue')
 
     // Also verify listCanonicalOverrides returns in version ASC order
