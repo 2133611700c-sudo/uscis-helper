@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-06-13 | canonical-continuity Agent 3 — packet routes canonical continuity + 18 tests
+- **Incorporated** Agent 1 persistence layer (cherry-pick 3a7a67c): `persistence/index.ts` (8 ops), `persistence/errors.ts`, `version.ts`, migration SQL, 31 persistence tests
+- **Incorporated** Agent 2 extract route changes: TPS OCR extract + vision-extract return `canonical_document_id`; `TPSAnswers.canonical_document_id` field added
+- **Added** `apps/web/src/lib/reparole/answers.ts`: `canonical_document_id?: string` field
+- **Modified** `apps/web/src/lib/tps/packetBuilder.ts`: added `documentCanonical?: CanonicalDocumentResult | null` param; CANONICAL PATH calls `buildI821DocumentOps(documentCanonical)` — skips normalizeCountryOfBirth (already ran at extract); LEGACY PATH (`i821DocumentFactsToCanonical`) preserved for off/shadow
+- **Modified** `apps/web/src/lib/reparole/packetBuilder.ts`: same pattern for `buildReParoleI131` + `buildI131DocumentOps`
+- **Modified** `apps/web/src/app/api/tps/generate-packet/route.ts`: full CANONICAL_CONTINUITY_MODE off|shadow|enforce; typed HTTP error codes per design lock (422/409/404/503); PII-free logging; enforce mode runtime invariant guard
+- **Modified** `apps/web/src/app/api/reparole/generate-packet/route.ts`: same canonical continuity logic
+- **Created** `apps/web/src/app/api/tps/__tests__/generatePacketCanonicalContinuity.test.ts`: 18 tests — Group A provenance survival (A1-A3), Group B INV-11 C3 null (B4-B6), Group C user override (C7-C10), mode tests (M11-M14), INV-11 additional (4 tests)
+- Verification: tsc 0 new errors (pre-existing missing-module errors unchanged) | 18/18 new tests pass | 3474 legacy tests pass / 18 skip (0 regressions)
+
 ## 2026-06-13 | canonical-continuity Agent 1 — persistence layer, migration SQL, tests
 - **Rewrote** `supabase/migrations/20260613000001_canonical_documents_and_overrides.sql`: added `version integer NOT NULL`, `supersedes_id uuid REFERENCES canonical_overrides(id)`, `confirmed boolean NOT NULL DEFAULT false`, `actor text`, `original_rejection_reasons text[]` columns; helper function `next_canonical_override_version(p_canonical_id uuid)` for monotonic versioning; `(canonical_id, version DESC)` and `(supersedes_id)` indexes; RLS comments documenting UPDATE/DELETE denial and anon denial. Migration NOT applied (write-only per task spec).
 - **Created** `apps/web/src/lib/canonical/version.ts` — `CANONICAL_SCHEMA_VERSION='1.0.0'`, `RENDERER_VERSION='1.0.0'` for certification reproducibility contract.

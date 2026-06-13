@@ -14,6 +14,10 @@ import JSZip from 'jszip'
 import type { TPSAnswers } from './answers'
 import { buildI821Ops } from './forms/i821FieldMap'
 import { buildI765Ops } from './forms/i765FieldMap'
+// CANONICAL_CONTINUITY: canonical path for document-derived ops
+import type { CanonicalDocumentResult } from '@/lib/canonical/types'
+import { buildI821DocumentOps } from '@/lib/canonical/forms/i821DocumentMapper'
+import { i821DocumentFactsToCanonical } from './forms/i821DocumentBoundary'
 import { prefill } from './pdfPrefiller'
 import { lockboxFor, feeGuidance, SNAPSHOT_DATE, OFFICIAL_TPS_UKRAINE_PAGE } from './filingGuidance'
 import { assertFormIntegrity } from './formIntegrity'
@@ -80,6 +84,11 @@ export async function buildPacket(
   answers: TPSAnswers,
   provenance?: ProvenanceMap | null,
   translationOpts?: TranslationOptions | null,
+  /** CANONICAL_CONTINUITY: when provided, document-derived I-821 ops come from
+   * the resolved canonical result instead of the legacy boundary conversion.
+   * normalizeCountryOfBirth is NOT re-applied when using the canonical path
+   * (normalization already ran at extraction time). */
+  documentCanonical?: CanonicalDocumentResult | null,
 ): Promise<PacketResult> {
   // Read official PDFs from the public/ bundle (Vercel includes these in the
   // serverless function's filesystem).
@@ -96,7 +105,25 @@ export async function buildPacket(
   if (answers.wants_ead) assertFormIntegrity('i-765.pdf', i765Bytes)
 
   // Build prefill operations from the field maps.
-  const i821Ops = buildI821Ops(answers)
+  // CANONICAL_CONTINUITY: use resolved canonical if available (shadow/enforce modes),
+  // else fall back to legacy boundary (LEGACY FALLBACK — allowed in off/shadow only.
+  // In enforce mode this line is unreachable — the route guarantees documentCanonical).
+  const i821DocumentOps = documentCanonical
+    ? buildI821DocumentOps(documentCanonical)           // CANONICAL PATH (Part C: no re-normalization)
+    : buildI821DocumentOps(i821DocumentFactsToCanonical(answers))  // LEGACY PATH
+  // buildI821Ops includes USER_DECLARED / PRODUCT_CONFIG fields not owned by the canonical mapper.
+  // We replace only the document-derived ops; the full I821Ops from buildI821Ops covers the rest.
+  // In canonical mode: build full ops set from legacy then override doc-derived fields with canonical.
+  const i821Ops = documentCanonical
+    ? (() => {
+        // Merge: take all non-doc-derived ops from buildI821Ops, then prepend canonical doc ops.
+        // CANONICAL_PATH comment: normalizeCountryOfBirth already ran at extraction time — skipped here.
+        const allOps = buildI821Ops(answers)
+        const docFieldNames = new Set(i821DocumentOps.map((op) => op.field))
+        const userDeclaredOps = allOps.filter((op) => !docFieldNames.has(op.field))
+        return [...i821DocumentOps, ...userDeclaredOps]
+      })()
+    : buildI821Ops(answers)
   // Skip I-765 entirely if the user didn't ask for an EAD.
   const i765Ops = answers.wants_ead ? buildI765Ops(answers) : []
 
