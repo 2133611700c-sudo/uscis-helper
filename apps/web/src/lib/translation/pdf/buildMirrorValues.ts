@@ -45,7 +45,26 @@ const ALIASES: Record<string, Record<string, string>> = {
     issuing_authority: 'place_of_registration',
   },
   ua_marriage_certificate: {
-    // date_of_marriage / act_record_number / issuing_authority / date_of_issue match directly
+    // spouse_1 = husband (groom), spouse_2 = wife (bride). Registry emits split
+    // name parts; schema uses groom_/bride_ keys. date_of_marriage / act_record_*
+    // / date_of_issue match directly.
+    spouse_1_surname: 'groom_surname',
+    spouse_1_given_name: 'groom_given_name',
+    spouse_1_patronymic: 'groom_patronymic',
+    spouse_1_dob: 'groom_dob',
+    spouse_1_place_of_birth: 'groom_place_of_birth',
+    spouse_1_citizenship: 'groom_citizenship',
+    spouse_1_surname_after: 'groom_surname_after',
+    spouse_2_surname: 'bride_surname',
+    spouse_2_given_name: 'bride_given_name',
+    spouse_2_patronymic: 'bride_patronymic',
+    spouse_2_dob: 'bride_dob',
+    spouse_2_place_of_birth: 'bride_place_of_birth',
+    spouse_2_citizenship: 'bride_citizenship',
+    spouse_2_surname_after: 'bride_surname_after',
+    // the registration office reads into the official "Place of state registration".
+    issuing_authority: 'place_of_registration',
+    certificate_series_number: 'series_number',
   },
   ua_divorce_certificate: {
     // date_of_divorce / act_record_number / issuing_authority match directly
