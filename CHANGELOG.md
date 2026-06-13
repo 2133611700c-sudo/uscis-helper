@@ -1,8 +1,9 @@
 # CHANGELOG
 
-## 2026-06-13 | Phase 1 integration — canonical single currency (base + 3 consumers)
-- Integrated the base contract + Agent 2 (translation consumes canonical via getCanonicalValue, builds the wrapper, carries suggestedValue; output values unchanged), Agent 3 (fixed the Re-Parole finalValue blind spot — a C3-rejected field is no longer resurrected into I-131; other adapters already compliant), Agent 4 (cross-product parity framework + explicit-fallback guard). Reconciled Agent 4 known-failure test to toBeNull() after Agent 3 fixed the bug.
-- Full suite 3330 passed/3 skipped, tsc 0, build, knowledge 35+26+36+13, 0 tracked PII. Conservative scope: the translation legacy reader, the TPS legacy-post-processing-on-core-success bypass, and the two-I-765 unify are DEFERRED (documented in code) — each is its own parity-gated pass.
+## 2026-06-13 | Phase 1 FOUNDATION — canonical single-currency foundation (base + first consumer pass)
+- **Phase 1 foundation merged. Phase 1 cutover is NOT complete.** This is the safe foundation of Phase 1, NOT the finished central-brain cutover. Merged (PR #113, squash) the base contract + Agent 2 (translation consumes canonical via getCanonicalValue, builds the wrapper, carries suggestedValue; output values unchanged), Agent 3 (fixed the Re-Parole finalValue blind spot — a C3-rejected field is no longer resurrected into I-131; other adapters already compliant), Agent 4 (cross-product parity framework + explicit-fallback guard).
+- Full suite 3330 passed/3 skipped, tsc 0, build, knowledge 35+26+36+13, 0 tracked PII.
+- THREE cutover gaps remain OPEN, each its own parity-gated pass (Phase 1 is complete only after all three + an independent real-doc parity pass): (1) the translation legacy-reader can still bypass arbitration on Core success; (2) TPS still re-runs canonical values through legacy post-processing on core success; (3) TPS and EAD still use two different I-765 mappers.
 
 
 ## 2026-06-13 | Phase 1 base — freeze safe canonical handoff and value resolution
