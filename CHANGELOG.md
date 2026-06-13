@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 2026-06-13 | fix(canonical): TPS carriage across Stripe reload + Translation operator-flow truth + STAGED-SHADOW decision
+
+- **TPS FIX** (`e4e5adc`): `TPSWizardV2.tsx` now persists `canonical_document_id` into localStorage `uploadsMeta` and restores it on rehydration, so it survives the Stripe `?paid=1` reload. Browser E2E had proven TPS dropped the id on the post-payment reload → generate-packet body lacked it → enforce would 422 every TPS user. Mirrors ReparoleWizardV2. tsc 0.
+- **BROWSER CARRIAGE PROOF** (Agent A, live Playwright on messenginfo.com): EAD + Re-Parole = FULL carriage proven on the wire; TPS = was broken (now fixed); Translation = extract proven, generate leg is operator-flow.
+- **TRANSLATION TRUTH**: prod OPERATOR_FLOW ON; final PDF operator-made from `manual_review_queue`; `submit-order` carries no canonical id → canonical→PDF continuity absent for Translation by design.
+- **OWNER DECISION**: STAGED — keep prod SHADOW; wire-re-prove TPS + watch persist telemetry; defer global enforce (extract-persist-mandatory availability risk; Translation operator-flow out of scope).
+- Files: `apps/web/src/app/[locale]/services/tps-ukraine/start/TPSWizardV2.tsx`. Tests: `apps/web/tests/e2e/canonical-carriage.spec.ts` (Playwright, real network-intercept). tsc 0; vitest unaffected (e2e excluded).
+
+## 2026-06-13 | test(e2e)+docs: browser canonical_document_id carriage proof + DB-truth re-verification (Wave 1 enforce-readiness)
+
+- **BRANCH** `architecture/canonical-enforce-e2e` (base `4c9fece`, PR #117 squash). integration_sha `cdf36fd`. NOT merged to main, no Vercel/env/deploy.
+- **MERGED (Agent A)**: cherry-pick `77026ab` clean — 2 NEW files: `apps/web/tests/e2e/canonical-carriage.spec.ts` (Playwright, real-browser network-intercept proof of client capture-from-extract → resend-in-generate-body, payment-safe via route.abort before server) + `apps/web/test-fixtures/proof/synthetic_passport.jpg` (synthetic non-PII fixture).
+- **Agent B**: DB-truth RE-VERIFICATION only (no new code; tip `066ab1f` is older unsquashed work already in base). Contract re-confirmed against integrated tree: missing id→422, not-found→404, hash mismatch→409, session mismatch→403, infra→503. DB_TRUTH_PASS.
+- **VITEST EXCLUSION (verified)**: vitest `include:['src/**/*.test.ts(x)']`; the Playwright `.spec.ts` lives at `tests/e2e/` outside `src/` → never enters the unit run. Confirmed 0 e2e files in the vitest run, 0 failures. Separate `playwright.config.ts` owns it. Playwright NOT run here (Agent A ran it live).
+- **GATE**: tsc 0 errors; tests 3663 pass / 24 skip / 0 fail; build PASS.
+- **LIVE BROWSER CARRIAGE (Agent A, prod messenginfo.com)**: Re-Parole FULL PROVEN; EAD FULL PROVEN; TPS CARRIAGE BREAK on paid path (generate body missing extract id); Translation extract proven, generate payment-gated → not wire-observable.
+- **DECISION**: preview/prod ENFORCE = NO-GO (carriage gap = automatic NO-GO). carriage_proven_products = EAD, Re-Parole (2/4). Open blockers: TPS_CARRIAGE_BREAK_PAID_PATH, TRANSLATION_CARRIAGE_UNPROVEN.
+- Files: apps/web/tests/e2e/canonical-carriage.spec.ts (new), apps/web/test-fixtures/proof/synthetic_passport.jpg (new), STATUS/HANDOFF/CHANGELOG.
+
+---
+
 ## 2026-06-13 | fix(canonical): not-found canonical returns 404 not 503/409 in enforce — found by preview-enforce smoke
 
 - **DEFECT (preview-enforce smoke)**: in enforce mode, a generate-pdf/render/packet request with a `canonical_document_id` that does NOT exist returned 503 CANONICAL_STORAGE_UNAVAILABLE (translation routes) / 409 CANONICAL_HASH_MISMATCH (packet routes) instead of 404 CANONICAL_NOT_FOUND. Contract: 404 = id not found; 503 = real infra ONLY; 409 = genuine hash mismatch.
