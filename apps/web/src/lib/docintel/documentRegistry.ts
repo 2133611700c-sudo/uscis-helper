@@ -76,19 +76,40 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
     ],
   },
 
-  // ── Ukrainian marriage certificate ──
+  // ── Ukrainian marriage certificate (Свідоцтво про шлюб, KMU 1025) ──
+  // Split per official blank: husband block (Чоловік) + wife block (Дружина),
+  // each Прізвище/Ім'я/По батькові/дата народження/місце народження/громадянство,
+  // then date of marriage, surnames-after, act record №+date, registration office,
+  // series+number, date of issue. spouse_1 = husband, spouse_2 = wife (NEVER swap).
+  // All fields handwritten:true ⇒ always review (no silent-wrong on a hand-filled
+  // certificate). Composite spouse_*_full_name was replaced by these split fields
+  // so the mirror fills the HUSBAND/WIFE sections instead of dumping a full string.
   ua_marriage_certificate: {
     id: 'ua_marriage_certificate',
     title_en: 'Ukrainian Marriage Certificate',
     script: 'cyrillic',
     consumers: ['translation', 'reparole'],
-    vision_anchor: 'spouse_1_full_name',
+    vision_anchor: 'spouse_1_surname',
     fields: [
-      { field: 'spouse_1_full_name', label_uk: 'Він', kind: 'name', handwritten: true, required: true },
-      { field: 'spouse_2_full_name', label_uk: 'Вона', kind: 'name', handwritten: true, required: true },
-      { field: 'date_of_marriage', label_uk: 'Дата шлюбу', kind: 'date', handwritten: true, required: true },
+      { field: 'spouse_1_surname', label_uk: 'Чоловік — Прізвище', kind: 'name', handwritten: true, required: true },
+      { field: 'spouse_1_given_name', label_uk: "Чоловік — Ім'я", kind: 'name', handwritten: true, required: true },
+      { field: 'spouse_1_patronymic', label_uk: 'Чоловік — По батькові', kind: 'name', handwritten: true, required: false },
+      { field: 'spouse_1_dob', label_uk: 'Чоловік — Дата народження', kind: 'date', handwritten: true, required: false },
+      { field: 'spouse_1_place_of_birth', label_uk: 'Чоловік — Місце народження', kind: 'place_city', handwritten: true, required: false },
+      { field: 'spouse_1_citizenship', label_uk: 'Чоловік — Громадянство', kind: 'text', handwritten: true, required: false },
+      { field: 'spouse_2_surname', label_uk: 'Дружина — Прізвище', kind: 'name', handwritten: true, required: true },
+      { field: 'spouse_2_given_name', label_uk: "Дружина — Ім'я", kind: 'name', handwritten: true, required: true },
+      { field: 'spouse_2_patronymic', label_uk: 'Дружина — По батькові', kind: 'name', handwritten: true, required: false },
+      { field: 'spouse_2_dob', label_uk: 'Дружина — Дата народження', kind: 'date', handwritten: true, required: false },
+      { field: 'spouse_2_place_of_birth', label_uk: 'Дружина — Місце народження', kind: 'place_city', handwritten: true, required: false },
+      { field: 'spouse_2_citizenship', label_uk: 'Дружина — Громадянство', kind: 'text', handwritten: true, required: false },
+      { field: 'date_of_marriage', label_uk: 'Дата реєстрації шлюбу', kind: 'date', handwritten: true, required: true },
+      { field: 'spouse_1_surname_after', label_uk: 'Прізвище чоловіка після шлюбу', kind: 'name', handwritten: true, required: false },
+      { field: 'spouse_2_surname_after', label_uk: 'Прізвище дружини після шлюбу', kind: 'name', handwritten: true, required: false },
       { field: 'act_record_number', label_uk: 'Актовий запис №', kind: 'doc_number', handwritten: true, required: false },
-      { field: 'issuing_authority', label_uk: 'Орган реєстрації', kind: 'agency', handwritten: true, required: false },
+      { field: 'act_record_date', label_uk: 'Дата складання актового запису', kind: 'date', handwritten: true, required: false },
+      { field: 'issuing_authority', label_uk: 'Місце державної реєстрації (орган)', kind: 'agency', handwritten: true, required: false },
+      { field: 'certificate_series_number', label_uk: 'Серія та номер свідоцтва', kind: 'doc_number', handwritten: true, required: false },
       { field: 'date_of_issue', label_uk: 'Дата видачі', kind: 'date', handwritten: true, required: false },
     ],
   },

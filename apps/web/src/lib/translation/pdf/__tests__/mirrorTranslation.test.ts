@@ -79,6 +79,27 @@ describe('buildMirrorValues — registry keys → schema keys', () => {
     expect(extras).toEqual([])
   })
 
+  it('maps split spouse keys onto groom/bride schema keys (marriage)', () => {
+    const m = getOfficialSchema('ua_marriage_certificate')!
+    const v = buildMirrorValues(m, [
+      { field: 'spouse_1_surname', final_value: 'REDACTED' },
+      { field: 'spouse_2_given_name', final_value: 'Olena' },
+      { field: 'issuing_authority', final_value: 'Vinnytsia ZAHS' },
+      { field: 'certificate_series_number', final_value: 'I-АМ № 1' },
+    ])
+    expect(v.groom_surname).toMatchObject({ value: 'REDACTED', canRead: true })
+    expect(v.bride_given_name).toMatchObject({ value: 'Olena', canRead: true })
+    // registration office reads into the official "Place of state registration"
+    expect(v.place_of_registration).toMatchObject({ value: 'Vinnytsia ZAHS', canRead: true })
+    expect(v.series_number).toMatchObject({ value: 'I-АМ № 1', canRead: true })
+    // split keys must NOT leak into ADDITIONAL ENTRIES (all mapped)
+    const extras = collectMirrorExtras(m, [
+      { field: 'spouse_1_surname', final_value: 'REDACTED' },
+      { field: 'spouse_2_given_name', final_value: 'Olena' },
+    ])
+    expect(extras).toEqual([])
+  })
+
   it('does not invent a value for an empty field', () => {
     const v = buildMirrorValues(schema, [{ field: 'child_family_name', normalized_value: '' }])
     expect(v.child_surname.canRead).toBe(false)

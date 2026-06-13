@@ -38,11 +38,11 @@ export const marriageCertificateSchema: OfficialFormSchema = {
     // ── marriage / act record ──
     { key: 'date_of_marriage', sourceLabelUk: 'зареєстрували шлюб', sourceLabelEn: 'Date of marriage', required: true, fieldGroup: 'marriage', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
     { key: 'act_record_number', sourceLabelUk: 'актовий запис №', sourceLabelEn: 'Act record No.', required: true, fieldGroup: 'actRecord', expectedScript: 'numeric', translationRule: 'locked_verbatim', lockedEntity: true, evidenceRequired: true },
+    { key: 'act_record_date', sourceLabelUk: 'дата складання актового запису', sourceLabelEn: 'Act record date', required: false, fieldGroup: 'actRecord', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
     { key: 'groom_surname_after', sourceLabelUk: 'прізвище чоловіка після шлюбу', sourceLabelEn: 'Husband’s surname after marriage', required: false, fieldGroup: 'marriage', expectedScript: 'cyrillic', translationRule: 'transliterate_kmu55', lockedEntity: true, evidenceRequired: true },
     { key: 'bride_surname_after', sourceLabelUk: 'прізвище дружини після шлюбу', sourceLabelEn: 'Wife’s surname after marriage', required: false, fieldGroup: 'marriage', expectedScript: 'cyrillic', translationRule: 'transliterate_kmu55', lockedEntity: true, evidenceRequired: true },
     // ── issuing ──
     { key: 'place_of_registration', sourceLabelUk: 'місце державної реєстрації', sourceLabelEn: 'Place of state registration', required: true, fieldGroup: 'issuing', expectedScript: 'cyrillic', translationRule: 'glossary_authority', lockedEntity: false, evidenceRequired: true },
-    { key: 'issuing_authority', sourceLabelUk: 'орган, що видав свідоцтво', sourceLabelEn: 'Issuing authority', required: false, fieldGroup: 'issuing', expectedScript: 'cyrillic', translationRule: 'glossary_authority', lockedEntity: false, evidenceRequired: true },
     { key: 'series_number', sourceLabelUk: 'Серія та номер', sourceLabelEn: 'Series and No.', required: true, fieldGroup: 'issuing', expectedScript: 'mixed', translationRule: 'locked_verbatim', lockedEntity: true, evidenceRequired: true },
     { key: 'date_of_issue', sourceLabelUk: 'Дата видачі', sourceLabelEn: 'Date of issue', required: false, fieldGroup: 'issuing', expectedScript: 'mixed', translationRule: 'date_normalize', lockedEntity: true, evidenceRequired: true },
   ],
