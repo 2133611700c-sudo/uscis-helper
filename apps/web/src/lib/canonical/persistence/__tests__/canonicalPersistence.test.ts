@@ -52,7 +52,7 @@ function makeChain(table: string) {
   }
 
   // All builder methods return `chain` to allow chaining
-  const methods = ['select', 'insert', 'eq', 'order', 'limit', 'in', 'is']
+  const methods = ['select', 'insert', 'upsert', 'eq', 'order', 'limit', 'in', 'is']
   for (const m of methods) {
     chain[m] = (..._args: unknown[]) => chain
   }
@@ -67,10 +67,14 @@ function makeChain(table: string) {
 }
 
 const mockFrom = vi.fn((table: string) => makeChain(table))
+const mockRpc = vi.fn((_fn: string, _args: unknown) =>
+  Promise.resolve({ data: 1, error: null })
+)
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     from: mockFrom,
+    rpc: mockRpc,
   })),
 }))
 
@@ -162,20 +166,25 @@ beforeEach(() => {
   mockResponses.clear()
   // Reset mockFrom to use the fresh response queues
   mockFrom.mockImplementation((table: string) => makeChain(table))
+  // Default RPC mock: success, returns version 1
+  mockRpc.mockResolvedValue({ data: 1, error: null })
 })
 
 // ---------------------------------------------------------------------------
 // Test 1: persistCanonicalDocument inserts row with correct hashes
 // ---------------------------------------------------------------------------
 
-describe('Test 1: persistCanonicalDocument inserts row with correct hashes', () => {
-  it('inserts a row and returns correct hashes', async () => {
+describe('Test 1: persistCanonicalDocument upserts row with correct hashes', () => {
+  it('upserts a row and returns correct hashes', async () => {
     const result = makeResult()
     const expectedResultHash = computeResultHash(result)
     const expectedFieldsHash = computeFieldsHash(result)
 
-    // Queue: single() call returns inserted id
-    queueResponse('canonical_documents', { data: { id: 'uuid-1' }, error: null })
+    // Queue: single() call returns the upserted row (id + both hashes)
+    queueResponse('canonical_documents', {
+      data: { id: 'uuid-1', fields_hash: expectedFieldsHash, result_hash: expectedResultHash },
+      error: null,
+    })
 
     const ret = await persistCanonicalDocument(result, 'sess-abc')
 
@@ -598,87 +607,58 @@ describe('Test 17: getEffectiveValue — unconfirmed_override_does_not_release_v
 })
 
 // ---------------------------------------------------------------------------
-// Test 18: override version is monotonic
+// Test 18: appendCanonicalOverride — delegates to atomic RPC with correct args
 // ---------------------------------------------------------------------------
 
-describe('Test 18: override version is monotonic', () => {
-  it('each accepted override has version > all previous overrides for same canonical_id', async () => {
-    // First appendCanonicalOverride call: no existing overrides → version starts at 1
-    // Second call: existing override with version=1 → next is 2
+describe('Test 18: appendCanonicalOverride — delegates to atomic RPC', () => {
+  it('calls append_canonical_overrides_atomic RPC with correct arguments', async () => {
+    // RPC returns new version = 1 for the first call, 2 for the second
+    mockRpc
+      .mockResolvedValueOnce({ data: 1, error: null })
+      .mockResolvedValueOnce({ data: 2, error: null })
 
-    let capturedInsertRows: unknown[] = []
-
-    // For the first appendCanonicalOverride:
-    // - Version check (maybeSingle on canonical_overrides for max version): returns null (no overrides yet)
-    // - Max version query (maybeSingle): returns null
-    // - Insert: success
-
-    // We need to mock sequential calls carefully
-    // First call to appendCanonicalOverride([{first_name}]):
-    //   1. maybeSingle on overrides (version check) → null
-    //   2. maybeSingle on overrides (max version) → null
-    //   3. insert (then-able) → success
-
-    // Second call to appendCanonicalOverride([{last_name}]):
-    //   1. maybeSingle on overrides (version check) → { version: 1 }
-    //   2. maybeSingle on overrides (max version) → { version: 1 }
-    //   3. insert (then-able) → success
-
-    const insertedVersions: number[] = []
-
-    // Override mockFrom to capture what's inserted
-    mockFrom.mockImplementation((table: string) => {
-      const chain: Record<string, unknown> = {}
-      const responses: MockResponse[] = mockResponses.get(table) ?? []
-
-      const methods = ['select', 'eq', 'order', 'limit', 'in', 'is']
-      for (const m of methods) {
-        chain[m] = (..._args: unknown[]) => chain
-      }
-
-      chain['insert'] = (rows: unknown) => {
-        // Capture the rows being inserted to inspect version field
-        if (Array.isArray(rows)) {
-          for (const row of rows as Record<string, unknown>[]) {
-            if (typeof row.version === 'number') {
-              insertedVersions.push(row.version)
-            }
-          }
-        }
-        return chain
-      }
-
-      chain['single'] = () => Promise.resolve(responses.shift() ?? { data: null, error: null })
-      chain['maybeSingle'] = () => Promise.resolve(responses.shift() ?? { data: null, error: null })
-      chain['then'] = (resolve: (v: MockResponse) => void) => {
-        resolve(responses.shift() ?? { data: null, error: null })
-      }
-
-      return chain
-    })
-
-    // Queue responses for first appendCanonicalOverride (no expectedVersion — simpler)
-    // max version query: no rows yet
-    if (!mockResponses.has('canonical_overrides')) mockResponses.set('canonical_overrides', [])
-    mockResponses.get('canonical_overrides')!.push({ data: null, error: null }) // max version
-    mockResponses.get('canonical_overrides')!.push({ data: null, error: null }) // insert result
-
-    await appendCanonicalOverride('canon-1', [
+    const v1 = await appendCanonicalOverride('canon-1', [
       { fieldKey: 'first_name', overrideValue: 'Olena', source: 'user_edit', confirmed: true },
-    ])
+    ], { expectedVersion: 0 })
 
-    // Queue responses for second appendCanonicalOverride
-    mockResponses.get('canonical_overrides')!.push({ data: { version: 1 }, error: null }) // max version
-    mockResponses.get('canonical_overrides')!.push({ data: null, error: null }) // insert result
+    expect(mockRpc).toHaveBeenCalledWith(
+      'append_canonical_overrides_atomic',
+      expect.objectContaining({
+        p_canonical_id: 'canon-1',
+        p_expected_version: 0,
+      })
+    )
+    expect(v1).toBe(1)
 
-    await appendCanonicalOverride('canon-1', [
+    const v2 = await appendCanonicalOverride('canon-1', [
       { fieldKey: 'last_name', overrideValue: 'Kovalenko', source: 'user_edit', confirmed: true },
-    ])
+    ], { expectedVersion: 1 })
 
-    // Verify monotonic versioning
-    expect(insertedVersions).toHaveLength(2)
-    expect(insertedVersions[0]).toBe(1)
-    expect(insertedVersions[1]).toBe(2)
-    expect(insertedVersions[1]).toBeGreaterThan(insertedVersions[0])
+    expect(mockRpc).toHaveBeenLastCalledWith(
+      'append_canonical_overrides_atomic',
+      expect.objectContaining({
+        p_canonical_id: 'canon-1',
+        p_expected_version: 1,
+      })
+    )
+    expect(v2).toBe(2)
+    // Monotonic: v2 > v1
+    expect(v2).toBeGreaterThan(v1)
+  })
+
+  it('throws CanonicalConcurrencyError when RPC returns OVERRIDE_VERSION_CONFLICT', async () => {
+    const { CanonicalConcurrencyError } = await import('../errors')
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockRpc.mockResolvedValueOnce({
+      data: 0,
+      error: { message: 'OVERRIDE_VERSION_CONFLICT expected=0 current=1' },
+    } as any)
+
+    await expect(
+      appendCanonicalOverride('canon-2', [
+        { fieldKey: 'first_name', overrideValue: 'Test', source: 'user_edit', confirmed: true },
+      ], { expectedVersion: 0 })
+    ).rejects.toBeInstanceOf(CanonicalConcurrencyError)
   })
 })

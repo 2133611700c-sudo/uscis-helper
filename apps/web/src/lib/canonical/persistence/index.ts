@@ -16,7 +16,7 @@
  *   result_hash  = SHA-256({ docType, product, fieldKeys[] sorted })
  *   fields_hash  = SHA-256({ key, finalValue (undefined→'__UNDEFINED__'), reviewRequired,
  *                            confidenceFinal, reviewReasons sorted }[] sorted by key)
- *   resolved_hash = SHA-256({ base_fields_hash, overrides[] sorted by created_at })
+ *   resolved_hash = SHA-256({ base_fields_hash, overrides[] sorted by version ASC })
  *
  * Override concurrency contract:
  *   Every POST to /api/canonical/[id]/override must include expected_override_version.
@@ -27,6 +27,7 @@
 import { createHash } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { CanonicalDocumentResult, CanonicalField } from '../types'
+import { CanonicalConcurrencyError } from './errors'
 
 // ---------------------------------------------------------------------------
 // Exported types
@@ -304,8 +305,13 @@ function rowToOverride(row: Record<string, unknown>): CanonicalOverride {
 // ---------------------------------------------------------------------------
 
 /**
- * Insert a CanonicalDocumentResult into canonical_documents (immutable, insert-only).
- * Returns the generated id and both hashes for the caller to record.
+ * Idempotently persist a CanonicalDocumentResult into canonical_documents.
+ *
+ * Uses ON CONFLICT (session_id, doc_type, fields_hash) DO UPDATE SET updated_at = now()
+ * so concurrent retries with identical content always return the same row id.
+ * Different content (different fields_hash) → new row.
+ *
+ * Returns the row id and both hashes. Safe to call multiple times with the same input.
  */
 export async function persistCanonicalDocument(
   result: CanonicalDocumentResult,
@@ -322,30 +328,37 @@ export async function persistCanonicalDocument(
 
   const { data, error } = await supabase
     .from('canonical_documents')
-    .insert({
-      session_id: sessionId,
-      document_session_id: result.documentSessionId || null,
-      product: result.product,
-      doc_type: result.docType,
-      fields_json: fieldsToJson(result.fields),
-      result_hash: resultHash,
-      fields_hash: fieldsHash,
-    })
-    .select('id')
+    .upsert(
+      {
+        session_id: sessionId,
+        document_session_id: result.documentSessionId || null,
+        product: result.product,
+        doc_type: result.docType,
+        fields_json: fieldsToJson(result.fields),
+        result_hash: resultHash,
+        fields_hash: fieldsHash,
+      },
+      {
+        onConflict: 'session_id,doc_type,fields_hash',
+        ignoreDuplicates: false, // DO UPDATE (not DO NOTHING) so RETURNING works
+      }
+    )
+    .select('id, fields_hash, result_hash')
     .single()
 
   if (error || !data) {
     throw new Error(
-      `[canonical/persistence] insert failed: ${error?.message ?? 'no data returned'}`
+      `[canonical/persistence] upsert failed: ${error?.message ?? 'no data returned'}`
     )
   }
 
+  const row = data as { id: string; fields_hash: string; result_hash: string }
   console.info(
-    `[canonical/persistence] persisted id=${(data as { id: string }).id} ` +
-      `resultHash=${resultHash.slice(0, 8)}…`
+    `[canonical/persistence] persisted id=${row.id} ` +
+      `resultHash=${row.result_hash.slice(0, 8)}…`
   )
 
-  return { id: (data as { id: string }).id, resultHash, fieldsHash }
+  return { id: row.id, resultHash: row.result_hash, fieldsHash: row.fields_hash }
 }
 
 // ---------------------------------------------------------------------------
@@ -411,96 +424,67 @@ export async function loadCanonicalDocumentBySession(
 // ---------------------------------------------------------------------------
 
 /**
- * Append override(s) to canonical_overrides for a given canonical document.
+ * Atomically append override(s) via the append_canonical_overrides_atomic DB RPC.
  *
- * Concurrency contract: provide expectedVersion (the MAX version the client last saw).
- * If the current MAX(version) in DB differs from expectedVersion → throws a
- * OVERRIDE_VERSION_CONFLICT error. Caller must reload and retry.
+ * Concurrency contract: provide expectedVersion (the MAX version the client last saw,
+ * or 0 if no overrides exist yet). The RPC holds a pg_advisory_xact_lock on the
+ * canonical_id, reads current MAX(version), checks it equals expectedVersion
+ * (raises OVERRIDE_VERSION_CONFLICT / P0002 if not), then inserts with monotonic versions.
  *
- * When expectedVersion is undefined, no concurrency check is performed (unsafe —
- * use only in trusted internal operations, e.g. system_correction from a single writer).
+ * Returns the new MAX(version) after all inserts.
  *
- * Each override row uses next_canonical_override_version() to guarantee monotonic version.
- * In production, this is called inside a DB transaction for atomicity.
+ * When expectedVersion is undefined, defaults to 0 (safe only when no overrides exist yet —
+ * the RPC will still conflict if any overrides were already inserted).
+ *
+ * Throws CanonicalConcurrencyError (code='OVERRIDE_VERSION_CONFLICT') on conflict so the
+ * caller can catch it and return 409.
  */
 export async function appendCanonicalOverride(
   canonicalId: string,
   overrides: CanonicalOverride[],
   options?: { expectedVersion?: number }
-): Promise<void> {
-  if (overrides.length === 0) return
+): Promise<number> {
+  if (overrides.length === 0) return options?.expectedVersion ?? 0
 
   const supabase = getSupabaseClient()
+  const expectedVersion = options?.expectedVersion ?? 0
 
-  // --- Optimistic concurrency check ---
-  if (options?.expectedVersion !== undefined) {
-    const { data: versionData, error: versionError } = await supabase
-      .from('canonical_overrides')
-      .select('version')
-      .eq('canonical_id', canonicalId)
-      .order('version', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (versionError) {
-      throw new Error(
-        `[canonical/persistence] version check failed: ${versionError.message}`
-      )
-    }
-
-    const currentVersion =
-      versionData ? (versionData as { version: number }).version : 0
-    if (currentVersion !== options.expectedVersion) {
-      const err = new Error(
-        `[canonical/persistence] OVERRIDE_VERSION_CONFLICT: ` +
-          `expected version ${options.expectedVersion}, found ${currentVersion}`
-      )
-      ;(err as Error & { code: string }).code = 'OVERRIDE_VERSION_CONFLICT'
-      ;(err as Error & { currentVersion: number }).currentVersion = currentVersion
-      throw err
-    }
-  }
-
-  // --- Build rows ---
-  // Note: in a real DB transaction, next_canonical_override_version() is called per row.
-  // For the persistence layer, we batch-compute starting from current MAX.
-  const { data: maxVersionData } = await supabase
-    .from('canonical_overrides')
-    .select('version')
-    .eq('canonical_id', canonicalId)
-    .order('version', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  let nextVersion = maxVersionData
-    ? (maxVersionData as { version: number }).version + 1
-    : 1
-
-  const rows = overrides.map((o) => ({
-    canonical_id: canonicalId,
+  // Serialize overrides to the jsonb shape the RPC expects
+  const overridesPayload = overrides.map((o) => ({
     field_key: o.fieldKey,
-    override_value: o.overrideValue, // null is valid (INV-11 explicit reject)
+    override_value: o.overrideValue, // null = INV-11 explicit C3 reject
     source: o.source,
     reason: o.reason ?? null,
-    version: nextVersion++,
     supersedes_id: o.supersedesId ?? null,
     confirmed: o.confirmed ?? false,
     actor: o.actor ?? null,
-    original_rejection_reasons: o.originalRejectionReasons ?? null,
+    original_rejection_reasons: o.originalRejectionReasons ?? [],
   }))
 
   console.info(
-    `[canonical/persistence] appending ${overrides.length} override(s) for id=${canonicalId} ` +
-      `keys=${overrides.map((o) => o.fieldKey).join(',')}`
+    `[canonical/persistence] appending ${overrides.length} override(s) via RPC for id=${canonicalId} ` +
+      `expectedVersion=${expectedVersion} keys=${overrides.map((o) => o.fieldKey).join(',')}`
   )
 
-  const { error } = await supabase.from('canonical_overrides').insert(rows)
+  const { data, error } = await supabase.rpc('append_canonical_overrides_atomic', {
+    p_canonical_id: canonicalId,
+    p_expected_version: expectedVersion,
+    p_overrides: JSON.stringify(overridesPayload),
+  })
 
   if (error) {
+    if (error.message?.includes('OVERRIDE_VERSION_CONFLICT')) {
+      throw new CanonicalConcurrencyError('OVERRIDE_VERSION_CONFLICT', {
+        canonicalId,
+        expectedVersion,
+      })
+    }
     throw new Error(
-      `[canonical/persistence] appendOverride failed: ${error.message}`
+      `[canonical/persistence] appendOverride RPC failed: ${error.message}`
     )
   }
+
+  return data as number
 }
 
 // ---------------------------------------------------------------------------
@@ -516,7 +500,7 @@ export async function listCanonicalOverrides(
     .from('canonical_overrides')
     .select('*')
     .eq('canonical_id', canonicalId)
-    .order('created_at', { ascending: true })
+    .order('version', { ascending: true })
 
   if (error) {
     throw new Error(
@@ -532,8 +516,9 @@ export async function listCanonicalOverrides(
 // ---------------------------------------------------------------------------
 
 /**
- * Load the base canonical document then apply all overrides in created_at order
- * (last override per field_key wins). Implements the C3 null + confirmed override contract:
+ * Load the base canonical document then apply all overrides in version ASC order
+ * (last override per field_key wins — version is the authoritative order, not created_at).
+ * Implements the C3 null + confirmed override contract:
  *
  *   WITHOUT confirmed override:
  *     field.finalValue = base finalValue (null preserved — INV-11)
@@ -559,7 +544,7 @@ export async function resolveCanonicalDocument(
   const overrides = await listCanonicalOverrides(canonicalId)
   if (overrides.length === 0) return base
 
-  // Build a map: fieldKey → last override (list is already sorted by created_at asc)
+  // Build a map: fieldKey → last override (list is already sorted by version ASC)
   const overrideMap = new Map<string, CanonicalOverride>()
   for (const o of overrides) {
     overrideMap.set(o.fieldKey, o)

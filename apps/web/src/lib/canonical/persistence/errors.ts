@@ -38,3 +38,21 @@ export function canonicalError(
   if (detail !== undefined) body.detail = detail
   return body
 }
+
+/**
+ * Thrown by appendCanonicalOverride when the DB returns OVERRIDE_VERSION_CONFLICT (P0002).
+ * API routes should catch this and return 409 with code='OVERRIDE_VERSION_CONFLICT'.
+ */
+export class CanonicalConcurrencyError extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly detail: Record<string, unknown>
+  ) {
+    super(code)
+    this.name = 'CanonicalConcurrencyError'
+    // Maintain proper stack trace in V8
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, CanonicalConcurrencyError)
+    }
+  }
+}

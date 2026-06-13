@@ -1,3 +1,6 @@
+# STATUS (2026-06-13 — Persistence hardening: 5 defects fixed, 2 migrations written, NOT applied)
+- CANONICAL PERSISTENCE: 5 defects fixed. Migrations `000002` (UNIQUE constraints + atomic RPC) and `000003` (cert FK) written but NOT applied — owner must apply. `persistCanonicalDocument` is now idempotent (upsert). `appendCanonicalOverride` uses atomic RPC with advisory lock. Override resolution ORDER BY version ASC (was created_at). `CanonicalConcurrencyError` typed exception added. TypeScript: 0 errors. Tests: 3580 pass.
+
 # STATUS (2026-06-13 — Migration ledger: duplicate canonical migration removed, version collision RESOLVED)
 - MIGRATION LEDGER: duplicate `20260613000001_canonical_documents_and_overrides.sql` removed (byte-for-byte copy of `20260613000000`). Remote applied 3 migrations: 194557 (canonical tables), 194613 (cert binding), 194627 (idempotent no-op). Local now has 2 canonical files: `20260613000000_canonical_documents_and_overrides.sql` + `20260613000001_certification_canonical_hash_binding.sql`. Version collision resolved. Ledger CLEAN.
 
