@@ -1,3 +1,32 @@
+# HANDOFF (2026-06-13 — Integration: A1-A4 merged + render/route.ts canonical cutover complete)
+> **All 4 worktree commits integrated onto `architecture/canonical-continuity`. render/route.ts wired to canonical. 3559 tests pass. 0 type errors.**
+>
+> DONE (this session):
+> - Cherry-picked A1 (persistence layer, migration, 8 ops, INV-11 tests)
+> - A2 was empty — skipped
+> - Cherry-picked A3 (packet routes canonical wiring, 18 tests)
+> - Cherry-picked A4 (generate-pdf cutover, certification binding, smoke script)
+> - Fixed render/route.ts (STEP 6 — missed by A4): canonical continuity pattern applied
+>   - enforce: 422 CANONICAL_ID_REQUIRED, 404 NOT_FOUND, 409 NOT_READY, 503 UNAVAILABLE
+>   - shadow: PII-free comparison log (keys+counts only, no field values)
+>   - C3 null filtered from render (INV-11)
+>   - 7-field certification binding in audit_logs.metadata
+> - 8 new render canonical tests (translationRenderCanonical.test.ts)
+>
+> NOT DONE (deferred, owner decision):
+> - DB migration NOT applied (3 SQL files on branch, need owner approval + supabase migrate)
+> - `CANONICAL_CONTINUITY_MODE=shadow` is the default — enforce requires env var flip
+> - I-765 has 2 mapper files (i765DocumentBoundary in both lib/ead/ and lib/tps/) — not fully unified yet
+> - No EAD-specific generate-packet route found — only TPS + Re-Parole wired
+>
+> NEXT TASK:
+> - Owner: review SQL migrations and apply to Supabase (owner-gated)
+> - Owner: flip `CANONICAL_CONTINUITY_MODE=enforce` after migration + smoke script validation
+> - If I-765 unification needed: consolidate to single canonical mapper in lib/canonical/forms/
+>
+> EVIDENCE: tsc 0 errors. Tests 3559 pass / 18 skip / 0 fail.
+> Commit: see git log on architecture/canonical-continuity.
+
 # HANDOFF (2026-06-13 — Agent 4: canonical continuity translation cutover + certification hash binding)
 > **Translation generate-pdf wired to resolved canonical (shadow + enforce mode). Certification now binds all 7 hash fields per CERTIFICATION_REPRODUCIBILITY_CONTRACT. 22 new tests (3502 total, 0 regressions).**
 >
