@@ -44,7 +44,7 @@ check('Given Name (controlling DL)', results[1].normalized_value, 'IVAN');
 check('Patronymic (KMU-55)', results[2].normalized_value, 'Petrovych');
 check('DOB → MM/DD/YYYY', results[3].normalized_value, '01/01/1990');
 check('Sex → Male', results[4].normalized_value, 'Male');
-check('Birth place (смт→settlement)', results[5].normalized_value, 'Ustynivka urban-type settlement');
+check('Birth place (смт→settlement)', results[5].normalized_value, 'urban-type settlement Ustynivka');
 check('Authority → UMVS', results[7].normalized_value, 'Regional Department of MIA');
 check('Date of Issue', results[8].normalized_value, '12/05/2011');
 
