@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-13 | Phase 1 base — freeze safe canonical handoff and value resolution
+- Added the canonical single-currency contract (additive): fieldAccessor (C3-exact value resolution — rejected finalValue=null never falls back), keyAliases (mechanical equivalents), adapterContract (dumb declarative field-map engine, no transform), buildCanonicalResult (one wrapper builder for TPS/Translation/Re-Parole/EAD). 9 contract tests. No existing behavior changed.
+
+
 ## 2026-06-12 | SECURITY gate fail-closed + self-test
 - The CI PII gate no longer fail-opens. On CI a missing/empty OWNER_PII_PATTERNS_B64 secret is a HARD FAIL (exit 1), so the protection cannot be silently disabled by a forgotten/renamed secret or a repo transfer. A local run may opt out with ALLOW_MISSING_PII_SECRET=1. Added a synthetic-marker self-test step (positive+negative) that proves the detection logic fires without using any real PII. Temp pattern file is mktemp + chmod 600 + trap-removed; logs print only file:line.
 
