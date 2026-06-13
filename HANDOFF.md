@@ -660,3 +660,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 > 2026-06-13 PHASE 1 Agent 1 base: canonical contract frozen (fieldAccessor + keyAliases + adapterContract + buildCanonicalResult + tests). Additive, no behavior change. Agents 2-4 rebase on this SHA.
 
 > 2026-06-13 PHASE 1 integrated on architecture/canonical-single-currency: base contract + A2(translation)+A3(forms/reParole-fix)+A4(parity). 3330 tests pass, tsc 0, build, knowledge, 0 PII. PR open (not merged). Deferred (documented): translation legacy-reader removal, TPS legacy-bypass-on-core-success, two-I-765 unify — each needs its own parity-gated pass.
+
+<!-- 2026-06-13: added Part 3 OUTPUT-format TL;DR block to the consolidated audit doc (audit-only, no code change). -->

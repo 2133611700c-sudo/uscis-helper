@@ -179,6 +179,65 @@ Verify (read-only) the four production env flags in Vercel — above all whether
 
 # PART 3 — FULL SYSTEM RUNTIME AUDIT (everything outside the Document Core)
 
+## Part 3 — TL;DR (OUTPUT format)
+```
+RESULT: DEGRADED
+
+SYSTEM_ARCHITECTURE: Next.js 14 App Router (TS strict) on Vercel. 44 page routes,
+  51 API routes, 1 middleware (bot-block + /admin cookie guard + i18n + headers;
+  /api/* excluded → self-guard), 29 migrations. Cron: /api/cron/cleanup daily 02:00
+  UTC + 11 GitHub-Actions monitors.
+DATABASES: Supabase Postgres 17, project rtfxrlountkoegsseukx (ACTIVE_HEALTHY),
+  38 live tables. Hot: tps_ocr_audit 662, monitoring_alerts 400, audit_logs 184,
+  extracted_fields 138, wizard_sessions 45, translation_sessions 32. Dead/drift:
+  translations_orders (vs active translation_orders), form_sessions/form_answers,
+  /api/review→reviews (table absent → silent loss).
+STORAGE: buckets translation-uploads (30d TTL), packets (7d TTL, signed), wizard/*
+  (30d DB TTL); daily cron cleanup (3 passes). Gaps: wizard storage objects not
+  purged on cascade; final_renders no TTL.
+AUTH: Owner (email HMAC code→cookie, Stripe bypass); Admin (ADMIN_SECRET→cookie,
+  /admin 404 if unauth); Stripe webhook sig-verified; cron/diag token-gated.
+  GAP: product OCR/extract routes accept client session_id without DB validation.
+ENV: ~96 vars. KNOWLEDGE_BRAIN_ENABLED ON; all other flags OFF by default
+  (OCR_FIELD_SAFETY, ANTI_FABRICATION, GUARD_BLOCK_METRICS, CERTIFIER_* …) —
+  confirmed OFF in prod by 0-row audit tables. .env.example drift (Vision/Gemini/flags).
+DEPLOYMENT: prod=push main→Vercel target:production; preview=per-branch.
+  production_sha=4d3e470 (healthz+Vercel verified); preview_sha=76c49e2 (PR#116 OPEN).
+  Rollback=Vercel Promote-to-Production on a prior READY deploy.
+MONITORING: /api/healthz (public) + /api/health (token deep) + 11 GH-Actions monitors
+  (Telegram/Resend). Blind spots: no live Vision/Gemini/DeepSeek probe, no Stripe-
+  webhook-failure monitor, guard-block alerting dark, prod-safety window expired.
+USER_FLOWS: TPS (paid, ZIP I-821+I-765), Re-Parole (paid, ZIP I-131), EAD (FREE,
+  single I-765 PDF, no order/audit trail), Translation (paid, full review→certify→
+  render→email). All four verified end-to-end in code.
+PACKETS: one shared prefill() (TPS/Re-Parole/EAD); doc fields via canonical
+  i{765,821,131}DocumentMapper.ts; Translation = separate mirror renderer. SHA-256
+  form-integrity pinned. No duplicate packet entry points.
+ARCHIVE: manual-review queue + operator UI + certification trail = LIVE.
+  guard_block_events / certifier_override_audit / translation_certification_audit =
+  implemented but DARK (0 rows, flags OFF). General "archive" = planned-only.
+DEPENDENCIES: BLOCKER Supabase, Google Vision. HIGH DeepSeek, Stripe.
+  MEDIUM Gemini (flag-gated, falls to Vision), Resend, Upstash. LOW Telegram, monitors.
+DEAD_CODE: readDocumentCore.ts (unused wrapper), legacy transliterateCyrillic()
+  (HTML-only), /api/review→reviews (silent loss), translations_orders/form_sessions/
+  form_answers tables. OFF flags = dormant, not dead.
+SECURITY: secrets server-only; prompt-injection guard + PII scrubber on /mia/chat;
+  uploads MIME/size-capped. Risks: missing session validation before paid AI (MED);
+  in-memory rate limiter unless Upstash (LOW); RLS anon-path effectiveness UNVERIFIED.
+PRODUCTION: prod (4d3e470) = Phases 0–2A (#112–#115). PR-only (76c49e2, NOT in prod):
+  Phase 2B form fixes (I-131 gender inversion, A#/SSN, DOB) + I-821/I-131→CanonicalField.
+RISKS: HIGH — C3 (OCR_FIELD_SAFETY) OFF in prod; Phase 2B correctness fixes PR-only.
+  MEDIUM — session-validation gap, wizard storage orphans, /api/review silent loss,
+  dark audit tables, EAD no audit trail, drift tables. LOW — rate-limiter, env drift,
+  dead wrapper, untracked osd.traineddata.
+VERIFIED_FACTS: prod 4d3e470 & preview 76c49e2 (Vercel+healthz); 38 tables w/ counts;
+  0-row audit tables ⇒ flags OFF; tsc 0 / 46 field tests / 100 parity / 8 live legs (0 fab).
+UNVERIFIED_CLAIMS: exact Vercel prod env values; RLS anon-path; youtube-monitor impl;
+  Stripe webhook idempotency; whether wizard doc/packet/email 0-rows are intentional.
+RECOMMENDED_NEXT_ACTION: read prod Vercel env (read-only) to confirm flag posture —
+  above all OCR_FIELD_SAFETY_ENABLED — and merge PR #116. Rest = MEDIUM/LOW cleanup.
+```
+
 **RESULT: `DEGRADED`.** Stack: Next.js 14 App Router (TS strict) + Supabase (Postgres 17, project `rtfxrlountkoegsseukx`) + Vercel (project `prj_G5Bwd5VM…`, team `team_qRGWLc9k…`). External: Google Vision (OCR), Gemini (vision, flag-gated), DeepSeek (extraction/Mia), Stripe (payments), Resend (email), Telegram (alerts), optional Upstash (rate limit). Counts: **44 page routes, 51 API routes, 1 middleware, 29 migrations, 38 live tables.**
 
 ## A. Runtime architecture
