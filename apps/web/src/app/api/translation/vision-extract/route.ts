@@ -251,7 +251,13 @@ export async function POST(req: NextRequest) {
     const corePages = await Promise.all(rawFiles.map(async (file, i) => {
       // HEIC was already converted to JPEG at intake (heicToJpeg, top of handler).
       const buffer = Buffer.from(await file.arrayBuffer())
-      const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 40_000, product: 'translation' })
+      // timeoutMs is the TOTAL deadline per page across the fallback chain (not
+      // per attempt). Handwritten/Soviet docs need the model to think 40-70s, so
+      // 40s was too tight (it failed a real Soviet birth cert outright). Pages run
+      // in PARALLEL, so a generous per-page budget still fits maxDuration=120.
+      // attemptsPerModel:1 so a slow primary doesn't burn the budget on a retry —
+      // the budget goes to the faster fallback models instead.
+      const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation' })
       return { i, r }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
