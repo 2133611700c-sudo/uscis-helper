@@ -56,6 +56,9 @@ import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
+import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
+// CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
+import { persistCanonicalDocument } from '@/lib/canonical/persistence'
 import { classifyCriticality, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { protectOcrField } from '@/lib/documentSafety/ocrFieldSafetyGate'
 // MRZ_WIRED: inject MRZ authority for international passport in Core path
@@ -258,6 +261,8 @@ export async function POST(req: NextRequest) {
   // Errors: coreStatus='error', moduleResult=null → falls through to old path.
   let coreStatus: 'skipped_no_mapping' | 'skipped_no_fields' | 'ok' | 'error' = 'skipped_no_mapping'
   let oldModuleForComparison: TpsModuleResult | null = null
+  // CANONICAL_CONTINUITY: tracks the persisted canonical document id for this request
+  let tpsCanonicalDocumentId: string | null = null
   const docintelId = mapTpsHintToDocintelId(docTypeHint)
   if (!docintelId) {
     coreStatus = 'skipped_no_mapping'
@@ -283,6 +288,37 @@ export async function POST(req: NextRequest) {
           coreStatus = 'ok'
           console.info('[Core/TPS] used Core for', docTypeHint, 'fields:', moduleResult.fields.length,
             'review_required:', moduleResult.fields.filter(f => f.review_required).length)
+          // CANONICAL_CONTINUITY: persist the canonical result (shadow/enforce modes)
+          const tpsContinuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+          if (tpsContinuityMode !== 'off') {
+            try {
+              const tpsCanonicalResult = buildCanonicalResult({
+                documentSessionId: document_id,
+                product: 'tps',
+                docType: docTypeHint,
+                fields: canonicalFields,
+                createdAt: new Date().toISOString(),
+              })
+              const persisted = await persistCanonicalDocument(tpsCanonicalResult, document_id)
+              tpsCanonicalDocumentId = persisted.id
+              console.info('[canonical/continuity] persisted TPS', {
+                event: 'canonical_persisted',
+                canonical_document_id: persisted.id,
+                fields_hash: persisted.fieldsHash.slice(0, 8),
+                mode: tpsContinuityMode,
+              })
+            } catch {
+              if (tpsContinuityMode === 'enforce') {
+                return NextResponse.json(
+                  { error: 'canonical_persistence_failed' },
+                  { status: 503 }
+                )
+              }
+              console.warn('[canonical/continuity] TPS persist failed (shadow — non-blocking)', { mode: tpsContinuityMode })
+            }
+          } else {
+            console.info('[canonical/continuity] continuity=off — TPS persistence skipped')
+          }
         } else {
           coreStatus = 'skipped_no_fields'
         }
@@ -1262,6 +1298,8 @@ export async function POST(req: NextRequest) {
       provider: result.provider,
       doc_type_hint: docTypeHint || null,
       document_id,
+      // CANONICAL_CONTINUITY: canonical document id for session linkage (null when mode=off or persist failed in shadow mode)
+      canonical_document_id: tpsCanonicalDocumentId,
       vision_text_length: result.raw_text.length,
       page_count: result.pages.length,
       word_count: result.words.length,

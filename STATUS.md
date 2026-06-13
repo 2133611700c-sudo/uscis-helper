@@ -1,3 +1,15 @@
+# STATUS (2026-06-13 — canonical-continuity Agent 3: packet routes COMPLETE; enforce mode blocks synthetic reconstruction)
+- Branch: architecture/canonical-continuity
+- DELIVERED: canonical continuity in TPS + reparole generate-packet routes (shadow/enforce/off mode). Persistence layer incorporated from Agent 1. Extract routes incorporated from Agent 2. 18 new tests (INV-11, provenance, C3 null, mode, I-765 unification). tsc 0 new errors. 3474 legacy tests pass.
+- CANONICAL_CONTINUITY_MODE=off: route uses legacy boundary, no persistence load
+- CANONICAL_CONTINUITY_MODE=shadow (default): loads canonical if canonical_document_id present, non-blocking on failure
+- CANONICAL_CONTINUITY_MODE=enforce: 422/409/404/503 on any canonical failure; legacy path unreachable
+- I-765: PROVEN — buildI765DocumentOps called from exactly 2 places (TPS i765FieldMap + EAD i765FieldMap). No third mapper.
+- INV-11 PROVEN: finalValue=null produces no PDF op; mapper honors C3 null via applyCanonicalFieldMap/getCanonicalValue.
+- normalizeCountryOfBirth: NOT re-applied on canonical path (Part C). Boundary only.
+- canonical_documents + canonical_overrides: NOT in live DB (migration not applied, not Agent 3 scope).
+- NEXT: Agent 4 — override route HTTP 409 concurrency; parity runtime guards.
+
 # STATUS (2026-06-13 — canonical-continuity Agent 1: persistence layer COMPLETE; migration written, NOT applied)
 - Branch: architecture/canonical-continuity (SHA 677dce8 + Agent 1 work).
 - DELIVERED: Supabase migration SQL (write-only, not applied), persistence module with all 8 operations, version.ts, errors.ts, 23 unit tests (all pass), 8 RLS tests (all pass). tsc 0. Test count: 3505 pass / 18 skip (up from 3474 baseline, 0 regressions).
