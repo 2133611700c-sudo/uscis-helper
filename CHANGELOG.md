@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-12 | Birth cert mirror completeness — oblast + series + act-record-date
+- The live birth `documentRegistry` entry emitted `place_of_birth_city` but NOT `province_of_birth` (oblast), `certificate_series_number`, or `act_record_date` — all VISIBLE on the certificate — so those mirror lines (Region/Series/Act-record-date) always rendered blank `[enter from document]` even on a clean read.
+- `documentRegistry.ts ua_birth_certificate`: added `province_of_birth` (kind place_oblast), `act_record_date` (date), `certificate_series_number` (doc_number). All handwritten:true ⇒ always review.
+- `birth-certificate.schema.ts`: added `act_record_date` (actRecord group). The aliases province_of_birth→oblast_of_birth and certificate_series_number→series_number already existed in buildMirrorValues.
+- Verified by rendering the birth mirror: Region (Oblast), Act record date, and Series and No. now fill.
+- Evidence: tsc 0, build exit 0, web tests 3286 passed/2 skipped.
+
 ## 2026-06-12 | MIRROR passports LIVE — registered all 3 UA passport schemas
 - Owner: "возьми паспорта". The 3 passport mirror schemas (internal booklet, international, ID card) existed but were STAGED behind `PASSPORT_SCHEMA_RENDERER_ENABLED` (a migration gate) → never rendered in prod.
 - **Registered** them into `OFFICIAL_SCHEMAS` (`schemas/registry.ts`) unconditionally; removed the staged-schema map + flag branch (flag retired). Schema keys already matched the docintel `documentRegistry` extraction names exactly, so no aliases were needed. SUPPRESSION INVARIANT intact (MRZ/personal_number/rnokpp never declared). International passport + ID card carry the printed LATIN name verbatim (`locked_verbatim` → CLAUDE.md controlling-Latin rule, no re-transliteration); the booklet transliterates KMU-55.
