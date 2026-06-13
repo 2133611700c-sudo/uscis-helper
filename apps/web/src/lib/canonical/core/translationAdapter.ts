@@ -16,6 +16,7 @@ import { settlementDesignatorEn } from '@uscis-helper/knowledge'
 import type { ExtractedDocField } from '@/lib/docintel/types'
 import type { CanonicalField } from '../types'
 import type { FieldCandidate } from './types'
+import { getCanonicalValue } from './fieldAccessor'
 
 export interface FieldOut {
   field: string
@@ -30,6 +31,8 @@ export interface FieldOut {
   /** ENSEMBLE_DATE: reasons + the second engine's date reading on a cross-engine conflict. */
   review_reasons?: string[]
   ensemble_candidate?: string | null
+  /** A fuzzy/alternative suggestion surfaced for review (S1-style), never auto-applied. Carried from CanonicalField.suggestedValue (was dropped here pre-Phase-1). */
+  suggested_value?: string | null
 }
 
 /**
@@ -77,10 +80,16 @@ export function canonicalToFieldOut(
   f: CanonicalField,
   cyrillicMap?: Map<string, string>,
 ): FieldOut {
-  // Phase 3 (ADR-017 C3 contract): use finalValue when C3 has run.
-  // finalValue=string → C3 accepted (release). finalValue=null → C3 rejected (block).
-  // finalValue=undefined → C3 not run (flag OFF); fall back to normalizedValue for backward compat.
-  let value = f.finalValue !== undefined ? f.finalValue : (f.normalizedValue ?? f.rawValue ?? null)
+  // Phase 1 (one canonical currency): value-resolution goes through the single
+  // sanctioned accessor — getCanonicalValue honors the C3 contract EXACTLY:
+  //   finalValue=null → null (rejected, no fallback); finalValue=string → release;
+  //   finalValue=undefined → normalizedValue ?? rawValue.
+  // PARITY: the prior local rule returned the value untrimmed and could surface a
+  // bare/whitespace string; getCanonicalValue trims and maps whitespace-only → null.
+  // That delta is consumed identically downstream (buildMirrorValues treats '' and
+  // null the same) and no test asserts an empty-string adapter value — so the
+  // user-visible output is unchanged. This kills the copy-pasted precedence rule.
+  let value = getCanonicalValue(f)
   const rawCyr = f.rawCyrillic ?? cyrillicMap?.get(f.key) ?? null
   // SETTLEMENT DESIGNATOR re-add (hard rule: «смт» = "urban-type settlement").
   // Extraction strips the prefix from the canonical city value; for the
@@ -89,6 +98,13 @@ export function canonicalToFieldOut(
   // inferred) is restored as a PREFIX, mirroring the Ukrainian «смт Тростянець»
   // order: "urban-type settlement Trostianets" (a bare-city suffix read oddly and
   // landed at the end of composite place strings). Guarded against double-add.
+  // SETTLEMENT-DESIGNATOR RE-ADD — DEFERRED (kept). The canonical value from
+  // getCanonicalValue does NOT carry the «смт» → "urban-type settlement" prefix
+  // (extraction strips it; settlementDesignator.test.ts proves the canonical
+  // value is the bare city). For the TRANSLATION product the document must mirror
+  // the source, so the designator (taken ONLY from the raw Cyrillic, never
+  // inferred) is restored as a PREFIX. Removing this would CHANGE output, so it
+  // stays. Guarded against double-add.
   if (value && rawCyr && /city|place_of_birth/.test(f.key)) {
     const designator = settlementDesignatorEn(rawCyr)
     if (designator && !value.toLowerCase().includes(designator)) {
@@ -104,6 +120,9 @@ export function canonicalToFieldOut(
     // Surface WHY review is needed (the D5 screen explains it to the user).
     // Omitted when empty to keep the response shape unchanged for clean fields.
     ...(f.reviewReasons?.length ? { review_reasons: [...f.reviewReasons] } : {}),
+    // Carry the fuzzy/alternative suggestion (was dropped at the adapter pre-Phase-1).
+    // Omitted when absent to keep the response shape unchanged for fields without one.
+    ...(f.suggestedValue != null ? { suggested_value: f.suggestedValue } : {}),
     kind: f.source,
   }
 }
