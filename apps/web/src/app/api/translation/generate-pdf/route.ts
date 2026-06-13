@@ -293,7 +293,7 @@ export async function POST(req: NextRequest) {
     // flag) — birth certificate is the first, schema = KMU 1025, all 11 extractor
     // keys map to schema keys. Other doc types still require MIRROR_PDF_ENABLED=1
     // until their schemas are likewise verified (divorce/name-change are sparse).
-    const MIRROR_READY_DOCTYPES = new Set(['ua_birth_certificate'])
+    const MIRROR_READY_DOCTYPES = new Set(['ua_birth_certificate', 'ua_marriage_certificate'])
     const mirrorEnabled =
       process.env.MIRROR_PDF_ENABLED === '1' ||
       MIRROR_READY_DOCTYPES.has(payload.doc_type ?? '')
