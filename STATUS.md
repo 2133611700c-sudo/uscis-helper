@@ -1,4 +1,8 @@
 # STATUS (2026-06-12 — REAL-DOC verified: intl passport (TARAS/oblast/sex) + 4-page passport=0 fixed)
+- PHASE 1 integrated (architecture/canonical-single-currency): A2 translation reads canonical via getCanonicalValue + builds the wrapper (values unchanged); A3 fixed the Re-Parole finalValue blind spot (C3-rejected no longer resurrected); A4 cross-product parity framework + explicit-fallback guard. Reconciled A4 known-failure→toBeNull after A3 fix. Full suite 3330 pass, tsc 0, build, knowledge, 0 PII. Conservative (legacy fallback + I-765 unify deferred, documented). PR opened, NOT merged.
+
+- PHASE 1 (Agent 1 base): froze the canonical contract — fieldAccessor (exact C3 value semantics: rejected→null no-fallback, finalized→finalValue, not-finalized→normalized??raw), keyAliases registry (mechanical), adapterContract (dumb-mapper engine), buildCanonicalResult (one wrapper for all 4 products). Additive; 9 contract tests pass. BASE for agents 2-4.
+
 - CI PII gate is now FAIL-CLOSED: a missing/empty OWNER_PII_PATTERNS_B64 on CI is exit 1 (not skip) — a security gate must not silently disable itself. Local opt-out only via ALLOW_MISSING_PII_SECRET=1. Added a synthetic-marker self-test step (proves the grep fires). mktemp 0600 + trap cleanup; logs only file:line.
 
 - CI gate hardened: exact PII patterns are NOT stored in the repo — they live in the GitHub secret OWNER_PII_PATTERNS_B64 (base64 of a gitignored .pii-patterns). The workflow decodes to a temp file, greps, deletes it, and logs only file:line (value redacted). Old hardcoded master-email guard removed. Owner-context geography scrubbed from session docs (kept in dictionary/gazetteer).

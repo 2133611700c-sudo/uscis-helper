@@ -302,3 +302,45 @@ describe('toReParoleCoreAnswers — full passport fixture', () => {
     expect(result.fallback_used).toBe(false)
   })
 })
+
+// ── C3 finalValue contract (the fixed blind spot) ──────────────────────────────
+describe('toReParoleCoreAnswers — C3 finalValue contract (regression)', () => {
+  it('does NOT release a C3-REJECTED field (finalValue=null), even if normalizedValue is set', () => {
+    // C3 (applyOcrFieldSafety) ran and rejected family_name: finalValue=null.
+    // A non-null normalizedValue/rawValue must NOT be resurrected — the whole
+    // point of the bugfix. Before the fix this returned 'Kovalenko'.
+    const canonical = makeCanonical([
+      makeField('family_name', 'Kovalenko', {
+        finalValue: null,
+        reviewRequired: true,
+        reviewReasons: ['ocr_field_safety_rejected'],
+      }),
+      makeField('given_name', 'Olena'),
+    ])
+    const result = toReParoleCoreAnswers(canonical)
+    expect(result.family_name).toBeNull()
+    // given_name (no C3) maps normally — parity for non-rejected fields.
+    expect(result.given_name).toBe('Olena')
+    // A rejected critical field is recorded as uncertain and forces review.
+    expect(result.uncertain_fields).toContain('family_name')
+    expect(result.review_required).toBe(true)
+  })
+
+  it('releases a C3-ACCEPTED field using finalValue (not normalizedValue)', () => {
+    // finalValue=string is the release value — it wins over normalizedValue.
+    const canonical = makeCanonical([
+      makeField('family_name', 'KOVALENKO', {
+        normalizedValue: 'KOVALENKO',
+        finalValue: 'Kovalenko',
+      }),
+    ])
+    const result = toReParoleCoreAnswers(canonical)
+    expect(result.family_name).toBe('Kovalenko')
+  })
+
+  it('falls back to normalizedValue when C3 did not run (finalValue=undefined) — parity', () => {
+    const canonical = makeCanonical([makeField('family_name', 'Kovalenko')])
+    const result = toReParoleCoreAnswers(canonical)
+    expect(result.family_name).toBe('Kovalenko')
+  })
+})

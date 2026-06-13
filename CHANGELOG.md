@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-13 | Phase 1 integration — canonical single currency (base + 3 consumers)
+- Integrated the base contract + Agent 2 (translation consumes canonical via getCanonicalValue, builds the wrapper, carries suggestedValue; output values unchanged), Agent 3 (fixed the Re-Parole finalValue blind spot — a C3-rejected field is no longer resurrected into I-131; other adapters already compliant), Agent 4 (cross-product parity framework + explicit-fallback guard). Reconciled Agent 4 known-failure test to toBeNull() after Agent 3 fixed the bug.
+- Full suite 3330 passed/3 skipped, tsc 0, build, knowledge 35+26+36+13, 0 tracked PII. Conservative scope: the translation legacy reader, the TPS legacy-post-processing-on-core-success bypass, and the two-I-765 unify are DEFERRED (documented in code) — each is its own parity-gated pass.
+
+
+## 2026-06-13 | Phase 1 base — freeze safe canonical handoff and value resolution
+- Added the canonical single-currency contract (additive): fieldAccessor (C3-exact value resolution — rejected finalValue=null never falls back), keyAliases (mechanical equivalents), adapterContract (dumb declarative field-map engine, no transform), buildCanonicalResult (one wrapper builder for TPS/Translation/Re-Parole/EAD). 9 contract tests. No existing behavior changed.
+
+
 ## 2026-06-12 | SECURITY gate fail-closed + self-test
 - The CI PII gate no longer fail-opens. On CI a missing/empty OWNER_PII_PATTERNS_B64 secret is a HARD FAIL (exit 1), so the protection cannot be silently disabled by a forgotten/renamed secret or a repo transfer. A local run may opt out with ALLOW_MISSING_PII_SECRET=1. Added a synthetic-marker self-test step (positive+negative) that proves the detection logic fires without using any real PII. Temp pattern file is mktemp + chmod 600 + trap-removed; logs print only file:line.
 

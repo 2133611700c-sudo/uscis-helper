@@ -629,3 +629,7 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 > 2026-06-12 GATE HARDENED: PII patterns moved OUT of tracked CI into the OWNER_PII_PATTERNS_B64 GitHub secret (decoded to temp file at CI time, deleted after; logs only file:line, value redacted). Removed the old hardcoded-email guard. Owner-context geography scrubbed from session docs. OWNER ACTION: set the repo secret from .pii-secret-setup.txt (gitignored). Local gate: 0 hits, self-test catches injection, tsc 0.
 
 > 2026-06-12 GATE FAIL-CLOSED: missing OWNER_PII_PATTERNS_B64 secret on CI now FAILS the build (was skip) — fail-open is wrong for a security gate. Local escape ALLOW_MISSING_PII_SECRET=1. Added synthetic-marker self-test step. Verified all modes locally (self-test ±, no-secret→exit1, escape→exit0, with-secret→0 hits). Next: PR head=security/pii-emergency-sweep base=main, await all checks + Vercel preview + owner secret + FINAL GO.
+
+> 2026-06-13 PHASE 1 Agent 1 base: canonical contract frozen (fieldAccessor + keyAliases + adapterContract + buildCanonicalResult + tests). Additive, no behavior change. Agents 2-4 rebase on this SHA.
+
+> 2026-06-13 PHASE 1 integrated on architecture/canonical-single-currency: base contract + A2(translation)+A3(forms/reParole-fix)+A4(parity). 3330 tests pass, tsc 0, build, knowledge, 0 PII. PR open (not merged). Deferred (documented): translation legacy-reader removal, TPS legacy-bypass-on-core-success, two-I-765 unify — each needs its own parity-gated pass.
