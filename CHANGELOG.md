@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-13 | fix(canonical): RPC jsonb serialization bug — pass array directly, not JSON.stringify
+
+- **BUG**: `appendCanonicalOverride` was calling `JSON.stringify(overridesPayload)` before passing to Supabase `.rpc()`. Supabase JS serializes the string as a SQL text scalar, not JSONB. `jsonb_array_elements(p_overrides)` then throws "cannot extract elements from a scalar".
+- **FIX**: Removed `JSON.stringify` — pass the raw JS array. Supabase client serializes arrays to JSONB correctly for `jsonb` parameters.
+- **EVIDENCE**: 6/6 concurrency integration tests now PASS against real DB (rtfxrlountkoegsseukx). 3580 unit tests pass. tsc 0. Build PASS.
+- **Files**: `apps/web/src/lib/canonical/persistence/index.ts` line ~472.
+
 ## 2026-06-13 | fix(canonical): atomic overrides RPC, UNIQUE constraints, idempotent persist, version ASC order, cert FK migration
 
 - **FIX A — Migration `20260613000002_canonical_atomicity_and_constraints.sql`**: UNIQUE constraint on `canonical_overrides(canonical_id, version)`, UNIQUE on `canonical_documents(session_id, doc_type, fields_hash)`, `append_canonical_overrides_atomic()` RPC (advisory lock + optimistic concurrency check), hardened `next_canonical_override_version` (SECURITY DEFINER + SET search_path, revoked from PUBLIC/anon/authenticated).
