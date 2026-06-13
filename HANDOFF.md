@@ -662,3 +662,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 > 2026-06-13 PHASE 1 integrated on architecture/canonical-single-currency: base contract + A2(translation)+A3(forms/reParole-fix)+A4(parity). 3330 tests pass, tsc 0, build, knowledge, 0 PII. PR open (not merged). Deferred (documented): translation legacy-reader removal, TPS legacy-bypass-on-core-success, two-I-765 unify — each needs its own parity-gated pass.
 
 <!-- 2026-06-13: added Part 3 OUTPUT-format TL;DR block to the consolidated audit doc (audit-only, no code change). -->
+
+<!-- 2026-06-13: Part 4 Phase-1 gap audit appended. NOT PHASE1_COMPLETE: canonical discarded→DTO→rebuilt at boundary; normalizeCountryOfBirth at TPS boundary; 2 I-765 wrappers; telemetry partial. To close: carry one CanonicalDocumentResult end-to-end. Audit-only. -->
