@@ -52,7 +52,7 @@ Conflict/agency  → Layer 4 DeepSeek (text)         fractions of ¢
 ```json
 {
   "field": "patronymic",
-  "value": "Сергійович",
+  "value": "Тарасович",
   "can_read": true,
   "confidence": 0.0,
   "provider": "gemini-2.5-pro",
@@ -69,7 +69,7 @@ Conflict/agency  → Layer 4 DeepSeek (text)         fractions of ¢
 
 1. **P1 (now, ~1–2 days):** Gemini vision arbiter for booklet handwritten fields, candidate-only, behind a feature flag, validated on the existing 5 fixtures. Biggest accuracy gain for least work.
 2. **P2 (parallel):** benchmark harness (`scripts/ocr-provider-benchmark.mjs`).
-3. **P3:** dataset + ground-truth JSONs (needs Sergii — real docs + correct answers).
+3. **P3:** dataset + ground-truth JSONs (needs Taras — real docs + correct answers).
 4. **P4:** run benchmark → lock provider per document type here.
 5. **P5:** certificate parsers (Gemini Flash structured) for birth/marriage/divorce.
 6. **P6:** provider router + rule/authority consolidation (from `DOCUMENT_RULE_COVERAGE_AUDIT.md`).

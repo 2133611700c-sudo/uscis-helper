@@ -7,11 +7,11 @@ LIVE SHA TRUTH
 
 DATASET MANIFEST
 Doc | Filename | Hash | Notes
-passport_main | /Users/sergiikuropiatnyk/work/uscis-helper/qa-shots/private/Passport Sergii Kuropiatnyk .jpg | sha256=ec2de594c234f064cd9261a757a552bc8a26fb0d4db4d3e986dd688ff430641f | canonical
-booklet_main | /Users/sergiikuropiatnyk/work/uscis-helper/qa-shots/private/booklet_test_resized.jpg | sha256=07848f1582ed16767c6aa9b07ccf667bee58ad38075c6f3f0e7ab9905bc25dd7 | canonical
-i94_main | /Users/sergiikuropiatnyk/work/uscis-helper/qa-shots/private/I94 Sergii Kuropiatnyk .jpg | sha256=34e921bc51c351ff61f64716179cc7cc7f5639d51755cb6a9ec0a3485f371490 | canonical
-ead_main | /Users/sergiikuropiatnyk/work/uscis-helper/qa-shots/private/Ead1.jpg | sha256=99426b52d5a94a5c397b8c2484330bb955715c37d9830723802537b68af6a8f2 | canonical
-dl_main | /Users/sergiikuropiatnyk/work/uscis-helper/qa-shots/private/DL.jpg | sha256=589919ce71ed8d99ef4487967bde29355f8b7fbb5dc03ac586c515dbb64ec785 | canonical
+passport_main | /Users/sergiiivanenko/work/uscis-helper/qa-shots/private/Passport Taras Ivanenko .jpg | sha256=ec2de594c234f064cd9261a757a552bc8a26fb0d4db4d3e986dd688ff430641f | canonical
+booklet_main | /Users/sergiiivanenko/work/uscis-helper/qa-shots/private/booklet_test_resized.jpg | sha256=07848f1582ed16767c6aa9b07ccf667bee58ad38075c6f3f0e7ab9905bc25dd7 | canonical
+i94_main | /Users/sergiiivanenko/work/uscis-helper/qa-shots/private/I94 Taras Ivanenko .jpg | sha256=34e921bc51c351ff61f64716179cc7cc7f5639d51755cb6a9ec0a3485f371490 | canonical
+ead_main | /Users/sergiiivanenko/work/uscis-helper/qa-shots/private/Ead1.jpg | sha256=99426b52d5a94a5c397b8c2484330bb955715c37d9830723802537b68af6a8f2 | canonical
+dl_main | /Users/sergiiivanenko/work/uscis-helper/qa-shots/private/DL.jpg | sha256=589919ce71ed8d99ef4487967bde29355f8b7fbb5dc03ac586c515dbb64ec785 | canonical
 i797_main | N/A | N/A | not used in this canonical run
 
 SCENARIO MATRIX
@@ -55,8 +55,8 @@ ZIP / PDF TRUTH
 - Generated ZIP: VERIFIED (`e2e/tps-packet.zip`)
 - ZIP contains: I-821.pdf, I-765.pdf, INSTRUCTION.txt (VERIFIED)
 - PDF readback verified fields:
-  - I-821: Kuropiatnyk, Sergii, Los Angeles, 90029, UHP, FU262473
-  - I-765: Kuropiatnyk, Sergii, Los Angeles, 90029, Vinnytsia Oblast, UHP, FU262473
+  - I-821: Ivanenko, Taras, Los Angeles, 90029, UHP, AA000000
+  - I-765: Ivanenko, Taras, Los Angeles, 90029, Vinnytsia Oblast, UHP, AA000000
 - Evidence: pdf/unzipped/*.txt, pdf/pdf_field_grep.txt
 
 H.R.1 RUNTIME TRUTH

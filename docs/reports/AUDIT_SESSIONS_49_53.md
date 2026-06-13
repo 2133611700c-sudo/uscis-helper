@@ -26,7 +26,7 @@ The wizard is **real and working on production**: GEMINI_API_KEY is set, the lan
 | **C7** Mobile parity 375×812 | ✅ PASS *(live)* | Identical results on mobile context; CTA height **61px** (≥48). |
 | **C8** Contrast ≥4.5:1 (was 2.5) | ✅ PASS *(live)* | Translation text `rgb(17,24,39)` on `rgb(255,255,255)` = **17.74:1**. Green-on-green removed from source. |
 | **C9** No v5 §31 forbidden phrases | ✅ PASS | 0 matches in `TranslateWizard.tsx` and deployed `/start`. The one "сертифицированным переводом" hit is USCIS-requirement guidance text from a **different** (TPS child-doc) component, not a product claim. |
-| **C10** Gemini-vision + KMU-55 (no LLM Latin) | ✅ PASS *(code)* / ⚠️ live-Cyrillic UNVERIFIED | `geminiVisionProvider` prompt: *"Do NOT transliterate to Latin yourself"* + *"never return only a suffix (never 'ович' alone)"*, `temperature:0`. `transliterationPolicy`: names → KMU-55 only. Unit test pins `Сергій→Serhii`, `Сергійович→Serhiiovych`. **Not** proven live on the standalone endpoint — the only fixture is Latin (`TESTSURNAME`); a Cyrillic image was not pushed through prod this audit. |
+| **C10** Gemini-vision + KMU-55 (no LLM Latin) | ✅ PASS *(code)* / ⚠️ live-Cyrillic UNVERIFIED | `geminiVisionProvider` prompt: *"Do NOT transliterate to Latin yourself"* + *"never return only a suffix (never 'ович' alone)"*, `temperature:0`. `transliterationPolicy`: names → KMU-55 only. Unit test pins `Тарас→Taras`, `Тарасович→Tarasovych`. **Not** proven live on the standalone endpoint — the only fixture is Latin (`TESTSURNAME`); a Cyrillic image was not pushed through prod this audit. |
 | **C11** generate-pdf rejects unpaid | ✅ PASS | `curl POST .../generate-pdf -d '{}'` → **HTTP 402** `{"error":"payment_required"}`. |
 | **C12** No regressions in TPS/EAD/ReParole | ✅ PASS | `git log 3580315^..HEAD -- lib/tps lib/ead lib/reparole` = **0 commits**. `vitest run` → **2124 passed \| 1 skipped**; `tsc --noEmit` exit **0**. Exactly matches the claim. |
 | **C13** Free Gemini key trains on PII | 🔴 CONFIRMED RISK (P1) | Endpoint publicly reachable (anon `POST` → 200, GET → 405), `rateLimit` 8/min but **no owner/auth gate**. Free tier trains on data (per provider docstring + CHANGELOG admission). Exact key signature **not pulled** (would exfiltrate a secret) → that sub-claim UNVERIFIED; risk holds regardless. |
@@ -59,7 +59,7 @@ Raw result (both profiles): `c3_cta_bg=rgb(16,163,127)`, `c6_remove_box=36x36`, 
 0 v5 §31 phrases in wizard source and deployed HTML. The lone "сертифицированным переводом" in the 165 KB page is instructional ("attach the child's birth certificate with a certified translation" — describing a USCIS requirement), originates outside `TranslateWizard.tsx`, and is not a claim that our product produces certified translations. **Recommend** a content-rule pass to confirm that wording is intentional, but it is not a wizard regression.
 
 ### C10 — KMU-55 chain — PASS (code) / live-Cyrillic UNVERIFIED
-Architecture is correct and defends against the historical `Yovych`/`Prostianets` bugs at the prompt level. The deterministic transliteration is unit-pinned. What was **not** done this audit: pushing a real Cyrillic image through the production `vision-extract` endpoint to observe `Сергій→Serhii` end-to-end (the available fixture is already-Latin). Mark live confirmation UNVERIFIED, code PASS.
+Architecture is correct and defends against the historical `Yovych`/`Prostianets` bugs at the prompt level. The deterministic transliteration is unit-pinned. What was **not** done this audit: pushing a real Cyrillic image through the production `vision-extract` endpoint to observe `Тарас→Taras` end-to-end (the available fixture is already-Latin). Mark live confirmation UNVERIFIED, code PASS.
 
 ### C11 — Payment gate — PASS
 402 without `X-Payment-Token`. Owner-bypass path not exercised (would need owner token) — its existence is in source but UNVERIFIED live.
@@ -80,7 +80,7 @@ The only key-shaped strings in git history are Google public keys embedded in **
 ### 🔴 Documentation & PII integrity — commit `3580315` (P1)
 - HANDOFF/CHANGELOG/STATUS describe Session 49 (`3580315`) as: *"restyle wizard 1:1 to TPS… **Pure CSS change. No JSX/logic touched.**"*
 - Reality from `git show --stat 3580315`: **354 files changed, +101,142 insertions**, of which **345 are under `docs/reports/`**.
-- It **newly added 34 `I-821.txt` evidence dumps** (parent tree had 0). These are filled USCIS forms containing the owner's real PII — e.g. `(Last Name) Kuropiatnyk` — plus I-765 dumps, OCR network JSON, owner-status JSON.
+- It **newly added 34 `I-821.txt` evidence dumps** (parent tree had 0). These are filled USCIS forms containing the owner's real PII — e.g. `(Last Name) Ivanenko` — plus I-765 dumps, OCR network JSON, owner-status JSON.
 - This contradicts the Session-27 retention policy ("`.gitignore` blocks evidence artifacts"): the patterns covered `.zip/.pdf/.png` but **`.txt` PDF-dumps slipped through**.
 - **Impact:** a misleading commit message bundled real identity-document PII into git history. Repo is private, so this is P1, not P0 — but it should be scrubbed (history rewrite or at minimum stop tracking + extend `.gitignore`), and the "pure CSS" claim corrected.
 
@@ -106,7 +106,7 @@ Vercel runtime-log 200/502 breakdown for the last hour was **not** retrieved thi
 
 **P2 — schedule:**
 3. Point `sitemap.ts` at `/start` (or drop the redirecting slug). Set translation-specific OG metadata on the `/start` page itself.
-4. Push one real **Cyrillic** image through production `vision-extract` to close C10's live gap (Сергій→Serhii).
+4. Push one real **Cyrillic** image through production `vision-extract` to close C10's live gap (Тарас→Taras).
 5. Confirm the "сертифицированным переводом" guidance wording against content rules (C9).
 6. Pull Vercel runtime logs to close the observability gap.
 

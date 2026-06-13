@@ -9,7 +9,7 @@
 - Size: `4,091,062 bytes`
 - MIME: `image/jpeg`
 - File was deleted after pilot per privacy rule.
-- Additional redacted file tested: `0131_Passport Sergii Ivanenko .jpg` (`11,430 bytes`)
+- Additional redacted file tested: `0131_Passport Taras Ivanenko .jpg` (`11,430 bytes`)
 
 ## Endpoint pilot result (redacted)
 - `POST /api/tps/ocr/extract` with `doc_type_hint=passport`: **200**

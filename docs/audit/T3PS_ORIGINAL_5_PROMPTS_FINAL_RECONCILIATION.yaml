@@ -4,8 +4,8 @@ prompts:
     original_goal: repo_deploy_baseline_and_gate_truth
     what_was_done: baseline truth was established and later reconfirmed at aligned production SHA
     evidence_paths:
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_01_PRODUCTION_TRUTH_BASELINE.yaml
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_110_TRUTH_BASELINE.yaml
+      - /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_01_PRODUCTION_TRUTH_BASELINE.yaml
+      - /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_110_TRUTH_BASELINE.yaml
     superseded_by: null
     remaining_gap: null
     beta_blocker: false
@@ -15,8 +15,8 @@ prompts:
     original_goal: live_browser_contour_upload_to_generate_zip
     what_was_done: browser flow A/B rerun on production with generate 200 and zip downloaded in same run
     evidence_paths:
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-110/browser_summary_A.json
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-110/browser_summary_B.json
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/browser_summary_A.json
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/browser_summary_B.json
     superseded_by: null
     remaining_gap: null
     beta_blocker: false
@@ -26,9 +26,9 @@ prompts:
     original_goal: pdf_field_coverage_and_semantic_proof
     what_was_done: fresh zip/pdf dumps generated with no cyrillic leak and required stage1 fields present
     evidence_paths:
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-110/pdf_reverify_summary.json
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-110/i821_field_dump_redacted.txt
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-110/i765_field_dump_redacted.txt
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/pdf_reverify_summary.json
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/i821_field_dump_redacted.txt
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/i765_field_dump_redacted.txt
     superseded_by: null
     remaining_gap: null
     beta_blocker: false
@@ -38,8 +38,8 @@ prompts:
     original_goal: real_document_pilot_ai_ocr_robustness
     what_was_done: OCR robustness and production OCR contour verified with synthetic/redacted fixtures; real-doc pilot constraints documented
     evidence_paths:
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.yaml
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/reports/evidence/t3ps-110/ocr_matrix_reverify.json
+      - /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_04_REAL_DOCUMENT_AI_OCR_ROBUSTNESS.yaml
+      - /Users/sergiiivanenko/work/uscis-helper/docs/reports/evidence/t3ps-110/ocr_matrix_reverify.json
     superseded_by:
       - T3PS_FINAL_FUNCTIONAL_CLOSEOUT
       - T3PS_FINAL_110_CLOSEOUT
@@ -51,8 +51,8 @@ prompts:
     original_goal: final_go_no_go_release_ops
     what_was_done: replaced by stronger consolidated closeout chain and current 110 release lock verdict
     evidence_paths:
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_FINAL_GO_NO_GO_RELEASE_REPORT.yaml
-      - /Users/sergiikuropiatnyk/work/uscis-helper/docs/audit/T3PS_110_FINAL_RELEASE_LOCK.yaml
+      - /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_FINAL_GO_NO_GO_RELEASE_REPORT.yaml
+      - /Users/sergiiivanenko/work/uscis-helper/docs/audit/T3PS_110_FINAL_RELEASE_LOCK.yaml
     superseded_by:
       - T3PS_06
       - T3PS_07

@@ -72,7 +72,7 @@ phase_3_i94_ead_ocr_full_routing:
 # ── PHASES STILL PENDING ────────────────────────────────────────────────────
 phase_4_real_doc_pilot_prep:
   status: PENDING
-  why: "Needs a real Ukrainian passport photo placed at /Users/sergiikuropiatnyk/Downloads/tps-real-test.jpg. Cannot self-source for privacy."
+  why: "Needs a real Ukrainian passport photo placed at /Users/sergiiivanenko/Downloads/tps-real-test.jpg. Cannot self-source for privacy."
   blocker_owner: "user"
 
 phase_5_output_contract_README_review:
@@ -108,7 +108,7 @@ commits_local_ahead_of_origin:
 # ── NEXT ACTION FOR USER ────────────────────────────────────────────────────
 next_action: |
   On Mac:
-    1. cd /Users/sergiikuropiatnyk/work/uscis-helper
+    1. cd /Users/sergiiivanenko/work/uscis-helper
     2. ./push.command   (double-click in Finder also works)
     3. Wait for Vercel READY at https://messenginfo.com
     4. Confirm new Checker + Latin preview render on /ru/services/tps-ukraine/start

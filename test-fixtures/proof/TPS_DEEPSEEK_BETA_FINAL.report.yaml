@@ -134,7 +134,7 @@ blockers_on_user:
   2: "Mac: pnpm --filter web run typecheck && pnpm --filter web test && pnpm --filter web lint && pnpm --filter web run guard && pnpm --filter web build"
   3: "Vercel READY verification (commit ≥ 632134f)"
   4: "Operator decision: enable Brain in prod? Set TPS_AI_BRAIN_ENABLED=1 + DEEPSEEK_API_KEY in Vercel env"
-  5: "(optional) Real-doc pilot photo at /Users/sergiikuropiatnyk/Downloads/tps-real-test.jpg"
+  5: "(optional) Real-doc pilot photo at /Users/sergiiivanenko/Downloads/tps-real-test.jpg"
 
 # ── FINAL VERDICT ───────────────────────────────────────────────────────────
 final_verdict:

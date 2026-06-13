@@ -111,7 +111,7 @@ immutable_marker
 ```
 
 Anchor rule (LAW 2#5): a cross-document anchor (MRZ/EAD) ALWAYS overrides `user_confirmed` on critical identity; a
-`user_confirmed` ↔ anchor conflict → **block + escalate**, never override (passport SERHII vs user OLEKSANDR → block).
+`user_confirmed` ↔ anchor conflict → **block + escalate**, never override (passport TARAS vs user OLEKSANDR → block).
 
 ## Consequences
 

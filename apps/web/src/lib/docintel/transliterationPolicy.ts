@@ -64,9 +64,9 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
       // Names: KMU-55 (Ukrainian). Never the LLM's own Latin.
       if (!cy) return null
       // CONTROLLING LATIN: if the value is ALREADY printed in Latin (international
-      // passport / ID card romanization or MRZ, e.g. "SERGII"), it is the official
+      // passport / ID card romanization or MRZ, e.g. "TARAS"), it is the official
       // controlling spelling — keep it VERBATIM, never re-transliterate the Cyrillic
-      // into a different romanization (СЕРГІЙ→Serhii would disagree with the passport).
+      // into a different romanization (ТАРАС→Taras would disagree with the passport).
       if (/[A-Za-z]/.test(cy) && !/[Ѐ-ӿ]/.test(cy)) {
         return cy.replace(/\s+/g, ' ').trim() || null
       }

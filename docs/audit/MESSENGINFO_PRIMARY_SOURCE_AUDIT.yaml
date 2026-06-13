@@ -24,7 +24,7 @@ primary_sources_consulted:
       real passport input. It must come from stale localStorage of an
       earlier session.
     invalidates_my_earlier_claim: |
-      I previously said "Brain non-determinism causes Sergi/Serhii
+      I previously said "Brain non-determinism causes Sergi/Taras
       variance". That was a GUESS without primary source verification.
       The actual DeepSeek API is deterministic at temp=0. The variance
       I observed must have a different root cause (e.g. Vision
@@ -41,7 +41,7 @@ primary_sources_consulted:
         slot's a_number IS in `ead`'s allowed_fields list — so it
         survives hydration LEGITIMATELY
     verified_conclusion: |
-      The "stale" A-Number 231-853-474 the user keeps seeing is NOT
+      The "stale" A-Number 000-000-000 the user keeps seeing is NOT
       a firewall bug. It is the correct hydration of a real previous
       EAD upload that contained that a_number. The system is doing
       what it was designed to do.
@@ -73,8 +73,8 @@ ROOT_CAUSE_OF_USER_PROBLEM:
 
   what_actually_happened:
     - User uploaded EAD card in some earlier session — legitimate.
-    - EAD card OCR extracted a_number=231-853-474 — legitimate.
-    - localStorage saved uploads.ead.fields.a_number=231-853-474 — correct.
+    - EAD card OCR extracted a_number=000-000-000 — legitimate.
+    - localStorage saved uploads.ead.fields.a_number=000-000-000 — correct.
     - User came back today, opened TPS wizard "without uploads"
       (his words), reached Step 5 review.
     - Hydration correctly restored uploads.ead.fields including a_number.

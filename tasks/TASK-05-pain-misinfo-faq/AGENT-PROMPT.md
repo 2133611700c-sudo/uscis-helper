@@ -1,6 +1,6 @@
 # AGENT PROMPT — TASK-05 Pain Points / Misinfo / FAQ DB
 
-You are Claude Code working in `/Users/sergiikuropiatnyk/work/uscis-helper`.
+You are Claude Code working in `/Users/sergiiivanenko/work/uscis-helper`.
 
 ## STEP 0 — READ CONTEXT
 
@@ -16,7 +16,7 @@ You are Claude Code working in `/Users/sergiikuropiatnyk/work/uscis-helper`.
 ## STEP 1 — VERIFY ENVIRONMENT
 
 ```bash
-cd /Users/sergiikuropiatnyk/work/uscis-helper
+cd /Users/sergiiivanenko/work/uscis-helper
 git status
 git checkout -b pain-misinfo-faq-$(date +%Y%m%d-%H%M)
 

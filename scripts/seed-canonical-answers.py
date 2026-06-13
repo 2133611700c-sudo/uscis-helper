@@ -1,7 +1,7 @@
 import urllib.request, json, re
 
 # Parse faqAnswers.ts
-content = open('/Users/sergiikuropiatnyk/work/uscis-helper/apps/web/src/data/faqAnswers.ts').read()
+content = open('/Users/sergiiivanenko/work/uscis-helper/apps/web/src/data/faqAnswers.ts').read()
 pattern = r"id: '(faq-\d+[^']+)',.*?topic: '([^']+)',.*?question: '([^']+)'.*?language: '([^']+)',.*?short_answer: '([^']+)'.*?full_answer: '([^']+)'"
 
 entries = {}
@@ -18,7 +18,7 @@ for match in re.finditer(pattern, content, re.DOTALL):
 
 # Load env
 env = {}
-with open('/Users/sergiikuropiatnyk/work/uscis-helper/.env.local') as f:
+with open('/Users/sergiiivanenko/work/uscis-helper/.env.local') as f:
     for line in f:
         line = line.strip()
         if line and not line.startswith('#') and '=' in line:

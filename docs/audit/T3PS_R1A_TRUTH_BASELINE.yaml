@@ -119,7 +119,7 @@ residual_known_gaps_carry_into_r1a:
       status: BRAIN_NONDETERMINISM
       where: documentBrain.ts SYSTEM_PROMPT
       note: |
-        Sergii observed "Sergi" / "Serhii" variation across sessions
+        Taras observed "Sergi" / "Taras" variation across sessions
         when MRZ not crisply visible. Brain temperature already 0 per
         deepseek client default; needs prompt rule "do not invent
         characters; transliterate strictly per KMU-55".

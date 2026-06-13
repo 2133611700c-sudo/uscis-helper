@@ -69,3 +69,15 @@ scripts/gt_intake.mjs
 
 # session-54 accuracy rerun harness (scratch, gitignored)
 /apps/web/src/lib/docintel/__rerun__/
+
+# logs (never track)
+*.log
+.apply-migration.log
+.mr-checks.log
+.push.log
+.save-mr-*.log
+.ship.log
+*.swp
+*.swo
+.pii-patterns
+.pii-secret-setup.txt

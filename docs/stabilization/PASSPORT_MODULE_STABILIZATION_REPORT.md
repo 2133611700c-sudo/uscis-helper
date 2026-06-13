@@ -23,7 +23,7 @@ Harden the Ukrainian internal passport booklet pipeline as the first production-
 | 2 | `passportBookletContract.ts` | ✅ DONE | Created — single source of truth for 14 fields |
 | 3 | Evidence storage tests | ✅ DONE | 101 new tests including evidence policy guards |
 | 4 | Month exports + crossCheckDateZones | ✅ DONE | `UKRAINIAN_MONTHS`, `RUSSIAN_MONTHS`, `ALL_MONTHS` exported |
-| 5 | Name safety tests | ✅ DONE | Patronymic label, no silent transliteration, Serhii≠Sergiy |
+| 5 | Name safety tests | ✅ DONE | Patronymic label, no silent transliteration, Taras≠Sergiy |
 | 6 | Glossary completeness | ✅ DONE (pre-existing) | 33 glossary tests, all required cases covered |
 | 7 | Bilingual layer | ✅ DONE (pre-existing) | UA > RU priority, Russian fallback detection tested |
 | 8 | PDF cleanliness | ✅ DONE | `npm run guard` → 0 violations (includes PDF phrase scan) |
@@ -96,8 +96,8 @@ Path: `apps/web/src/lib/translation/__tests__/passportBookletContract.test.ts`
 
 **Name safety (Phase 5):**
 - `patronymic` display.en is `'Patronymic'` not `'Middle Name'`
-- `analyseNameField('СЕРГІЙ')` returns Cyrillic, not transliterated Latin
-- `analyseNameField('Serhii')` → `'Serhii'` (not rewritten to `'Sergiy'` or `'Sergii'`)
+- `analyseNameField('ТАРАС')` returns Cyrillic, not transliterated Latin
+- `analyseNameField('Taras')` → `'Taras'` (not rewritten to `'Sergiy'` or `'Taras'`)
 - Pure Cyrillic names not flagged; lookalike-only Latin names are flagged
 
 **INTERNAL_TO_SPEC (Phase 5):**

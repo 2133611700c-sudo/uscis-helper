@@ -3,7 +3,7 @@
 **Status:** product-wide rule for any screen where the user reviews
 AI-extracted or AI-prefilled data before continuing.
 
-**Owner decision:** Sergii, 2026-05-11.
+**Owner decision:** Taras, 2026-05-11.
 
 ---
 

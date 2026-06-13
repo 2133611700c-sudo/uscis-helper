@@ -52,7 +52,7 @@ No route imports a dictionary function. No route-local KMU/gazetteer/patronymic 
 ## ON proof (flag simulated ON in tests only — `vi.stubEnv`)
 - Russian spelling on a UA doc (`Сергей`) → `reviewRequired=true`, `suggestedValue` set, `normalizedValue` stays
   `Сергей` (NOT auto-rewritten), `knowledgeProvenance` recorded.
-- Clean UA (`Сергій`) → accepted KMU-55 transliteration as final.
+- Clean UA (`Тарас`) → accepted KMU-55 transliteration as final.
 - (knowledgeNormalize.test.ts) Міліція → Militsiya accept; gazetteer exact → accept; fuzzy → suggest; patronymic
   fragment → review; MRZ Latin → preserve; unknown authority → review (not invented). Provenance present on all.
 
