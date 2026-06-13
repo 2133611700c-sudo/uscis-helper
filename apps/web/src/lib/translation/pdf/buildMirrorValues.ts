@@ -34,12 +34,13 @@ const ALIASES: Record<string, Record<string, string>> = {
   ua_birth_certificate: {
     child_family_name: 'child_surname',
     dob: 'date_of_birth',
-    // Extractor emits `city_of_birth` (documentContracts birth_certificate slot),
-    // NOT `place_of_birth_city`. The old alias never matched → place_of_birth
-    // always rendered blank [enter from document] even when the AI read it.
+    // TWO contracts feed birth: the live TRANSLATION path keys by documentRegistry
+    // (`place_of_birth_city`); the TPS path keys by documentContracts (`city_of_birth`).
+    // Alias BOTH → place_of_birth so the mirror fills regardless of which fed it.
+    place_of_birth_city: 'place_of_birth',
     city_of_birth: 'place_of_birth',
     province_of_birth: 'oblast_of_birth',
-    // Extractor emits `certificate_series_number`; schema key is `series_number`.
+    // TPS contract emits `certificate_series_number`; registry path emits no series.
     certificate_series_number: 'series_number',
     issuing_authority: 'place_of_registration',
   },
