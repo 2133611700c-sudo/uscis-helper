@@ -19,6 +19,7 @@
  * ONE_BRAIN_PARTIAL_3_PRODUCTS: TPS (B1) + Translation (B2) + Re-Parole (B3).
  */
 import type { CanonicalDocumentResult, CanonicalField } from '../types'
+import { getCanonicalValue } from './fieldAccessor'
 
 /**
  * Re-Parole answers extracted from the canonical document result.
@@ -72,14 +73,26 @@ function findField(fields: CanonicalField[], key: string): CanonicalField | null
 }
 
 /**
- * Helper: extract the best value for a field (normalizedValue ?? rawValue).
+ * Helper: extract the C3-honoring release value for a field.
+ *
+ * BUGFIX (Phase 1, finalValue blind spot): previously this read
+ * `normalizedValue ?? rawValue`, IGNORING finalValue. A field that C3
+ * (applyOcrFieldSafety) had explicitly rejected (finalValue === null) would
+ * still be released into the I-131 PDF via the Re-Parole wizard — a C3 contract
+ * violation. Re-Parole was the ONLY one of the four adapters with this blind
+ * spot (tps/ead/translation already honored finalValue).
+ *
+ * Now delegates to the single sanctioned accessor `getCanonicalValue`, which:
+ *   - finalValue === null      → returns null (C3 rejected; no resurrection)
+ *   - finalValue is a string   → returns it (trimmed; C3 accepted)
+ *   - finalValue === undefined → falls back to normalizedValue ?? rawValue
+ * For non-rejected fields the output is IDENTICAL to the old behavior (parity).
+ *
  * Returns null when the field is absent or has no usable value.
  */
 function getValue(field: CanonicalField | null): string | null {
   if (!field) return null
-  const v = field.normalizedValue ?? field.rawValue
-  if (!v || v.trim() === '') return null
-  return v
+  return getCanonicalValue(field)
 }
 
 /**
