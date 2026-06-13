@@ -17,7 +17,7 @@ const safe = pdfSafe
 
 export async function renderOfficialTranslation(
   schema: OfficialFormSchema, values: Record<string, FieldValue>,
-  opts: { signerName?: string; signerAddress?: string } = {},
+  opts: { signerName?: string; signerAddress?: string; signedAt?: string } = {},
 ): Promise<{ pdf: Buffer; unresolved: string[] }> {
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
@@ -51,8 +51,11 @@ export async function renderOfficialTranslation(
   L('[ Signature of the head of the civil-registration body ]', 9, ital, gray); y -= 4; HR()
   L("TRANSLATOR'S CERTIFICATION (8 CFR 103.2(b)(3))", 11, bold)
   L(`I, ${opts.signerName ?? '________________'}, certify that I am competent to translate from Ukrainian`, 10)
-  L('into English and that the above is accurate and complete to the best of my knowledge.', 10); y -= 4
-  L('Signature: ____________________   Date: ____________', 10)
+  const docName = schema.titleEn.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+  L(`into English and that the foregoing is a true and accurate English translation of the`, 10)
+  L(`attached Ukrainian ${docName}, to the best of my knowledge and ability.`, 10); y -= 4
+  const dateStr = opts.signedAt ? opts.signedAt.slice(0, 10) : '____________'
+  L(`Signature: ____________________   Date: ${dateStr}`, 10)
   L(`Address: ${opts.signerAddress ?? '____________________'}`, 10); y -= 8
   L(`Official structure basis: ${safe(schema.officialSource.act)} - ${schema.officialSource.url}`, 7, ital, gray)
   page.drawRectangle({ x: M - 14, y: 30, width: W - 2 * (M - 14), height: H - 60, borderColor: rule, borderWidth: 1 })

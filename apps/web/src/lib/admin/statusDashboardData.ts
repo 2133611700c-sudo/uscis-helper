@@ -42,7 +42,7 @@ export interface StatusDashboard {
 
 /** Flags worth showing — name + how to read the value. Values from process.env. */
 const WATCHED_FLAGS: Array<{ name: string; note: string }> = [
-  { name: 'MIRROR_PDF_ENABLED', note: 'mirror PDF for registered schemas' },
+  { name: 'MIRROR_PDF_ENABLED', note: 'mirror PDF for registered schemas (birth cert LIVE by default via allowlist; flag enables the rest)' },
   { name: 'PASSPORT_SCHEMA_RENDERER_ENABLED', note: 'passport schemas live switch (migration step E)' },
   { name: 'PASSPORT_SCHEMA_DUAL_RENDER_ENABLED', note: 'dual-render parity logging' },
   { name: 'CONFIRMED_VALUE_GUARD_MODE', note: 'shadow until 14d baseline + GT' },
