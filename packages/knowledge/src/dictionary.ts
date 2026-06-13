@@ -288,10 +288,12 @@ export const FIELD_LABELS: Record<string, FieldLabel> = {
 // ── SEX MAPPING ──────────────────────────────────────────────
 
 export const SEX_MAP: Record<string, string> = {
-  'Ч': 'Male', 'ч': 'Male', 'чоловіча': 'Male', 'чол': 'Male',
+  'Ч': 'Male', 'ч': 'Male', 'чоловіча': 'Male', 'чол': 'Male', 'чоловік': 'Male',
   'М': 'Male', 'м': 'Male', 'мужской': 'Male', 'муж': 'Male',
-  'Ж': 'Female', 'ж': 'Female', 'жіноча': 'Female', 'жін': 'Female',
+  'Ж': 'Female', 'ж': 'Female', 'жіноча': 'Female', 'жін': 'Female', 'жінка': 'Female',
   'F': 'Female', 'f': 'Female', 'женский': 'Female', 'жен': 'Female',
+  // Latin MRZ / passport-page forms
+  'M': 'Male', 'm': 'Male', 'male': 'Male', 'Male': 'Male', 'female': 'Female', 'Female': 'Female',
 };
 
 // ── DO-NOT-USE GLOBAL BLOCKLIST ──────────────────────────────

@@ -6,7 +6,7 @@
  * and non-reproducible). Every product flow gets identical canonical values from here.
  */
 
-import { transliterateKMU55, transliterateRussian, detectNameScript } from '@uscis-helper/knowledge'
+import { transliterateKMU55, transliterateRussian, detectNameScript, SEX_MAP } from '@uscis-helper/knowledge'
 import { normalizeProvince, normalizeCity } from '@/lib/tps/dictionaryBridge'
 import type { FieldKind, VisionFieldRead } from './types'
 
@@ -101,6 +101,13 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
     case 'agency':
       // Agency name: transliterate as a baseline; downstream glossary may refine.
       return cy ? transliterateKMU55(cy) || cy : null
+
+    case 'sex': {
+      // Sex marker: map Ч/Ж/чол/жін/M/F → Male/Female. Unknown → keep raw so the
+      // knowledge brain flags it for review (never a transliterated "Ch").
+      if (!cy) return null
+      return SEX_MAP[cy] ?? SEX_MAP[cy.toLowerCase()] ?? cy
+    }
 
     case 'text':
     default:
