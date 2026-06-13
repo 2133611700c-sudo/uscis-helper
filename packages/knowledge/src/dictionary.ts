@@ -412,6 +412,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentTypeEntry> = {
  * Robot calls this automatically — no human intervention needed.
  */
 export function normalizeOblastToNominative(raw: string): { nominative_uk: string; transliterated: string } | null {
+  if (!raw || typeof raw !== 'string') return null; // defense-in-depth: never throw on bad input
   // Strip oblast/obl suffix before lookup. Must match full words:
   // "область", "обл.", "обл" — but NOT strip "обл" as a prefix of "область".
   // Pattern: обл(?:асть|асті|\.?) covers all three forms safely.
@@ -485,7 +486,7 @@ const DESIGNATOR_PREFIXES: Array<{ re: RegExp; en: string | null; guardCase?: bo
 ];
 
 export function settlementDesignatorEn(rawCyrillic: string | null | undefined): string | null {
-  if (!rawCyrillic) return null;
+  if (!rawCyrillic || typeof rawCyrillic !== 'string') return null; // defense-in-depth: never throw on bad input
   for (const { re, en, guardCase } of DESIGNATOR_PREFIXES) {
     const m = rawCyrillic.match(re);
     if (!m) continue;
