@@ -1,3 +1,20 @@
+# HANDOFF (2026-06-13 — Override-route agent: missing HTTP override route added + gated + pushed)
+
+> **The HTTP override route was MISSING — `appendCanonicalOverride` had no HTTP caller, leaving the override write-path unreachable end-to-end. It is now wired, gated, and pushed (NOT merged, enforce NOT enabled).**
+
+DONE (this session):
+- ADDED `apps/web/src/app/api/canonical/[id]/override/route.ts` (POST + GET). Strict 422 for all client errors; 404/403/409/503 mapped correctly; 503 only on infra-catch. PII-safe (never logs `override_value`). INV-11: `override_value:null` is legal and passed through.
+- ADDED `overrideRoute.test.ts` (11 tests pass, persistence mocked, PII-free fixtures).
+- WIRED `scripts/smoke-enforce-preview.ts` `overrideChecks()`; comment-only fix on migration `20260613000002`.
+- GATE: tsc 0 errors; tests 3591 pass (>= 3580 floor); build PASS (route registered `ƒ /api/canonical/[id]/override`).
+
+NOT DONE (intentionally owner-side):
+- Preview enforce-smoke (O1/O2/O3 mutation flow needs `SMOKE_CANONICAL_ID`), owner GO, merge of PR #117, prod enforce cutover.
+
+NEXT TASK: owner runs preview enforce-smoke per `docs/reports/ENFORCE_SMOKE_RUNBOOK.md`, then decides merge + prod enforce.
+
+---
+
 # HANDOFF (2026-06-13 — Smoke-runbook agent: turnkey enforce-smoke script + owner runbook)
 
 > **Added a read-only HTTP enforce-smoke script + owner runbook for the PR #117 preview gate. Awaiting owner to set enforce on PREVIEW, redeploy, and run the smoke.**
