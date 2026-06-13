@@ -108,16 +108,16 @@ assert(zags_formal.normalized_value === 'civil status registration authority',
 
 const zags_uscis = normalizeAuthority('РАЦС м. Вінниця', 'birth_cert',
   { mode: 'uscis_normalized' });
-assert(zags_uscis.normalized_value === 'Civil Registry Office',
-  'РАЦС uscis_normalized = "Civil Registry Office"',
+assert(zags_uscis.normalized_value === 'Civil Registry Office (ZAHS)',
+  'РАЦС uscis_normalized = "Civil Registry Office (ZAHS)"',
   `Got: ${zags_uscis.normalized_value}`);
 
 // ── GEOGRAPHY: USTYNIVKA, VINNYTSIA, KIROVOHRAD ─────────
 
 const ustynivka = normalizePlace('смт. Устинівка', 'birth_locality',
   'internal_passport', { mode: 'uscis_normalized' });
-assert(ustynivka.normalized_value === 'Ustynivka urban-type settlement',
-  'смт Устинівка → "Ustynivka urban-type settlement"',
+assert(ustynivka.normalized_value === 'urban-type settlement Ustynivka',
+  'смт Устинівка → "urban-type settlement Ustynivka"',
   `Got: ${ustynivka.normalized_value}`);
 
 const vinnytsia = normalizePlace('Вінниця', 'birth_city',

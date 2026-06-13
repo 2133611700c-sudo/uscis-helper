@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-12 | Dictionary refinements ("делай все") — agency, смт, oblast cases, modern rename
+All the follow-up gaps from the owner's birth-certificate test, fixed:
+- **Agency:** ЗАГС/РАЦС → "Civil Registry Office (ZAHS)" (added the acronym to the CIVIL_REGISTRY entry).
+- **смт placement:** now a PREFIX — "urban-type settlement Murovani Kurylivtsi" (mirrors «смт Х») — in BOTH paths (`translationAdapter` + `normalizePlace` settlement expansion). Was a suffix that landed at the end of composite place strings ("…USSR urban-type settlement").
+- **смт lowercase:** `settlementDesignatorEn` now fires on "смт вишневе" (OCR lowercased the city); the uppercase guard now applies only to the ambiguous single-letter «с.»/«м.» (vs an initial), not to the unambiguous смт/село/селище/хутір.
+- **oblast cases:** `normalizeOblastToNominative` now generically normalizes ANY case ending (-ка/кої/кій/кою/ку → -ка) → covers dative «Вінницькій», instrumental, accusative etc. without listing each.
+- **modern rename for Cyrillic:** `normalizePlace` modern branch now also matches the KMU-55 form of the old name (`historical_preserve`), so Кіровоград→Kropyvnytskyi / Дніпропетровськ→Dnipro fire on Cyrillic input in modern docs (historical docs still preserve the old name).
+- Tests: +5 (apps/web knowledgeDictionaryLive), knowledge `normalize` 36/0 and `e2e-passport` 13/0 updated to the new prefix/acronym conventions. tsc 0, build clean, 3186 tests pass.
+
 ## 2026-06-12 | FEATURE (owner-activated) — knowledge dictionary ON by default in production
 Owner: "большой слой знаний… считаю это нужно делать сейчас." Activated the D2 dictionary as production authority.
 - INVENTORY-FIRST (agent): confirmed the CONFLICT POLICY IS SAFE — a dictionary value that differs from the read value is NEVER silently substituted; it keeps the read value, surfaces a `suggestedValue`, and forces review (`arbitration.ts` applyKnowledge). Only deterministic safe transforms are accepted outright. So default-on cannot produce a silently-wrong value (worst case = a review flag the operator catches).
