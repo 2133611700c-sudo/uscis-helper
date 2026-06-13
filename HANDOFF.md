@@ -1,3 +1,31 @@
+# HANDOFF (2026-06-13 — EAD wiring agent: EAD generate-packet wired to canonical continuity)
+> **All 4 products (TPS, Re-Parole, Translation, EAD) are now wired to canonical continuity. 3573 tests pass. 0 type errors. Build PASS.**
+>
+> DONE (this session):
+> - `/api/ead/generate-packet/route.ts` wired to canonical continuity pattern (identical to TPS)
+>   - enforce: 422 CANONICAL_ID_REQUIRED, 409 CANONICAL_HASH_MISMATCH/NOT_READY, 404 NOT_FOUND, 403 SESSION_MISMATCH, 503 STORAGE_UNAVAILABLE
+>   - shadow (default): fall through to legacy on error; PII-free logs (event keys only, no values)
+>   - off: skip canonical entirely
+> - `lib/ead/packetBuilder.ts` updated to accept `CanonicalDocumentResult | null`
+>   - Canonical path: `buildI765DocumentOps(documentCanonical)` — shared entry point
+>   - Legacy fallback: `buildEadI765Ops(data)` — allowed in off/shadow only (unreachable in enforce)
+>   - C3 null (INV-11): fields with `finalValue=null` produce no op, never rendered as blank
+> - 11 new tests in `apps/web/src/app/api/ead/__tests__/eadPacketCanonical.test.ts`
+> - CHANGELOG + HANDOFF + STATUS updated
+>
+> NOT DONE (deferred, owner decision):
+> - DB migration NOT applied (3 SQL files on branch, need owner approval + supabase migrate)
+> - `CANONICAL_CONTINUITY_MODE=shadow` is the default — enforce requires env var flip in Vercel
+> - Push to remote + Draft PR still needed
+>
+> NEXT TASK:
+> - `git push origin architecture/canonical-continuity` + open Draft PR against main
+> - Owner: review SQL migrations and apply to Supabase (owner-gated)
+> - Owner: flip `CANONICAL_CONTINUITY_MODE=enforce` after migration + smoke script validation
+>
+> EVIDENCE: tsc 0 errors. Tests 3573 pass / 18 skip / 0 fail (+14 from 3559 baseline).
+> Build: PASS. PII gate: PASS. Static enforce: 422 present, 503 only for infra.
+
 # HANDOFF (2026-06-13 — Integration: A1-A4 merged + render/route.ts canonical cutover complete)
 > **All 4 worktree commits integrated onto `architecture/canonical-continuity`. render/route.ts wired to canonical. 3559 tests pass. 0 type errors.**
 >
