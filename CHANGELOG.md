@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-13 | P0 preflight: PR #116 merged; integration branch + DESIGN_LOCK.md for canonical-continuity
+- Updated PR #116 title/description to honest framing: "Phase 1 canonical shape + Phase 2B form correctness" — removed any implication that Phase 1 continuous currency is complete.
+- Merged PR #116 → main `1919b54`. Production will advance from `4d3e470` to `1919b54` via Vercel auto-deploy.
+- Verified Supabase live schema: 38 tables, no `canonical_documents` or `canonical_overrides` tables (confirmed absent by direct SQL query).
+- Created integration branch `architecture/canonical-continuity` from `1919b54` + pushed to origin.
+- Wrote `DESIGN_LOCK.md` freezing the canonical-continuity architecture contracts: canonical_document_id semantics, SHA-256 hash rules, 8-op persistence API (persistCanonicalDocument / loadById / loadBySession / appendOverride / listOverrides / resolveCanonical / verifyHash / getId), base immutability (INSERT-only), append-only override model, resolved canonical field semantics, CANONICAL_CONTINUITY_MODE flag (off/shadow/enforce). Security invariants INV-07/INV-11/INV-12 bound verbatim. Supabase table DDL for canonical_documents + canonical_overrides included. P0 preflight results recorded.
+- Files changed: `DESIGN_LOCK.md` (new), `STATUS.md`, `HANDOFF.md`, `CHANGELOG.md`. No application code changed.
+
 ## 2026-06-13 | FULL SYSTEM + DOCUMENT-CORE AUDIT (audit-only, no code change)
 - Wrote `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — single consolidated, evidence-only audit. Part 1: repo/PR/security/deploy. Part 2: Document Core (brain/dictionary/arbitration/canonical/identity-fields/translation/forms + live real-doc runtime trace). Part 3: full system runtime (44 pages / 51 API routes / 1 middleware / 29 migrations / 38 live Supabase tables; DB, storage, auth, env+feature-flags, deployment, monitoring, user flows, packets, archive/operator, dependency graph, dead code, security surface, production truth).
 - Added read-first pointer (item `0.`) to `AGENTS.md` startup protocol and `CLAUDE.md` so all agents read the audit on contact.
