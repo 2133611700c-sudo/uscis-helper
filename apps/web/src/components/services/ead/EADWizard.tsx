@@ -805,6 +805,10 @@ export function EADWizard({ locale }: EADWizardProps) {
     hint: 'passport',
   })
   const [hasReviewFields, setHasReviewFields] = useState(false)
+  // CANONICAL_CONTINUITY: id of the persisted canonical document from the extract
+  // response. Captured on upload, resent in the generate-packet body. null when the
+  // extract did not return one (persistence off/failed) — we NEVER fabricate an id.
+  const [canonicalDocumentId, setCanonicalDocumentId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function patch(partial: Partial<EADFormData>) {
@@ -836,10 +840,16 @@ export function EADWizard({ locale }: EADWizardProps) {
     if (pdfLoading) return
     setPdfLoading(true)
     try {
+      // CANONICAL_CONTINUITY: resend the captured canonical id so the server can load
+      // the persisted canonical document (shadow: optional; enforce: required server-side).
+      // Omitted when not captured — never send a fabricated/stale id.
+      const generateBody = canonicalDocumentId
+        ? { ...data, canonical_document_id: canonicalDocumentId }
+        : data
       const res = await fetch('/api/ead/generate-packet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(generateBody),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({} as { error?: string }))
@@ -902,6 +912,7 @@ export function EADWizard({ locale }: EADWizardProps) {
         a_number?: string | null
         review_required?: boolean
         uncertain_fields?: string[]
+        canonical_document_id?: string | null
         _core?: boolean
       }
 
@@ -909,6 +920,13 @@ export function EADWizard({ locale }: EADWizardProps) {
         setUploadState(s => ({ ...s, status: 'error', errorMsg: uploadUi.error }))
         return
       }
+
+      // CANONICAL_CONTINUITY: capture the persisted canonical id (primary identity
+      // doc = the file just uploaded in Step 2). Store the value as-is; absent/null
+      // means persistence was off or failed — resend nothing rather than a fake id.
+      setCanonicalDocumentId(
+        typeof json.canonical_document_id === 'string' ? json.canonical_document_id : null,
+      )
 
       // Prefill form from Core answers (identity fields only — source-gated fields
       // are already null in the response when source gate not met)

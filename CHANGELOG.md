@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-06-13 | Wave 1b INTEGRATION: end-to-end client canonical_document_id carriage for all 4 products + EAD/ReParole extract persistence
+
+- **INTEGRATION**: cherry-picked 4 per-product carriage commits onto `architecture/canonical-continuity` (base `4f8aee70`), order TPS → ReParole → EAD → Translation. Re-committed as 87096f3 / bfcd603 / 0d1da0b / 9e85506.
+- **CONFLICT (1, semantic)**: `apps/web/src/lib/tps/answers.ts` — base and TPS pick documented the SAME `canonical_document_id?: string` field. Merged both doc-comments, field declared once, no field lost. No global ours/theirs.
+- **HONEST CORRECTION**: prior 'canonical continuity COMPLETE / all 4 wired' was SERVER-ONLY (extract persistence + packet routes). The CLIENT carriage (capture id from extract response → wizard state → resend in generate body) was MISSING for all 4 — this was the exact `client_id_carriage_proven=false` gap behind the prior preview-enforce NO-GO. Now built.
+- **SERVER EMIT**: ReParole (`api/reparole/ocr/extract/route.ts`) + EAD (`api/ead/ocr/extract/route.ts`) extract routes now persist the canonical (shadow/enforce) and RETURN `canonical_document_id` — null on shadow persist failure (NEVER fabricated), 503 on enforce failure. TPS + Translation extract routes already emitted in base.
+- **CLIENT CARRIAGE**: TPS (`lib/tps/canonicalCarriage.ts` capture + passport→booklet select, wired in TPSWizardV2), ReParole (ReparoleWizardV2 — capture from `_core` route, persisted in localStorage across Stripe), EAD (EADWizard useState, single-doc), Translation (TranslateWizard — capture from vision-extract, persisted in sessionStorage across Stripe). All capture only a real string from the response, store null otherwise, resend via conditional spread (field OMITTED when absent). canonical_document_id stays OPTIONAL — shadow works without it.
+- **GATE**: tsc 0 errors; tests 3642 pass / 24 skip / 0 fail (+45 vs 3597 baseline; skips pre-existing, none in carriage test files); build PASS; PII gate CLEAN (only new logs = ReParole/EAD persist info: event / canonical_document_id UUID / 8-char fields_hash / mode — no field values).
+- **CARRIAGE PROVEN** (static, all 4): each wizard captures + resends; each extract route emits id. carriage_all_4_products = true.
+- **DECISION**: preview ENFORCE = **GO**. Server-side enforce already exists; preview enforce-smoke is now safe. NOT enabled here.
+- Files: api/reparole/ocr/extract/route.ts (+test), api/ead/ocr/extract/route.ts (+test), ReparoleWizardV2.tsx, EADWizard.tsx, TPSWizardV2.tsx, lib/tps/canonicalCarriage.ts (+test), lib/tps/answers.ts, TranslateWizard.tsx (+test), STATUS/HANDOFF/CHANGELOG.
+- NOT merged to main; no Vercel/env change; not deployed. Pushed to `architecture/canonical-continuity`.
+
 ## 2026-06-13 | Wave 1 INTEGRATION: Agent 1 DB hardening merged onto canonical-continuity; gate green; preview-enforce NO-GO
 
 - **INTEGRATION**: cherry-picked Agent 1 `066ab1f` onto `architecture/canonical-continuity` (base `69717fe`). Clean, no conflicts. Migrations `20260613000004`/`000005` retain distinct in-order timestamps (no duplicate version). Files: persistence/index.ts, version.ts, canonical persistence tests + new live DB-invariant test, 2 migrations, STATUS/HANDOFF/CHANGELOG.
