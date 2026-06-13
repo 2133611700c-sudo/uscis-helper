@@ -1,3 +1,21 @@
+# HANDOFF (2026-06-13 — canonical-continuity Agent 3: packet routes canonical continuity COMPLETE)
+> **Branch: architecture/canonical-continuity. Agent 3 scope: packet routes load resolved canonical + enforce mode blocks synthetic reconstruction.**
+> COMPLETED:
+> - Incorporated Agent 1 persistence layer (`persistence/index.ts`, `persistence/errors.ts`, `version.ts`, migration SQL, tests) via cherry-pick
+> - Incorporated Agent 2 extract route changes (TPS OCR extract + vision-extract with `canonical_document_id` response, `answers.canonical_document_id` field)
+> - `apps/web/src/lib/tps/answers.ts` — added `canonical_document_id?: string` field for session linkage
+> - `apps/web/src/lib/reparole/answers.ts` — added `canonical_document_id?: string` field
+> - `apps/web/src/lib/tps/packetBuilder.ts` — added `documentCanonical?: CanonicalDocumentResult | null` param; CANONICAL PATH uses `buildI821DocumentOps(documentCanonical)` without re-normalizing country; LEGACY PATH (off/shadow fallback) preserved
+> - `apps/web/src/lib/reparole/packetBuilder.ts` — same pattern for `buildReParoleI131`
+> - `apps/web/src/app/api/tps/generate-packet/route.ts` — full CANONICAL_CONTINUITY_MODE implementation (off|shadow|enforce) per design lock
+> - `apps/web/src/app/api/reparole/generate-packet/route.ts` — same canonical continuity logic
+> - `apps/web/src/app/api/tps/__tests__/generatePacketCanonicalContinuity.test.ts` — 18 tests (all pass): Group A provenance survival, Group B INV-11 C3 null, Group C user override, mode tests, I-765 unification proof
+> EVIDENCE: tsc 0 new errors | 18/18 new tests pass | legacy test suite 3474/18-skip unchanged (0 regressions)
+> ENFORCE MODE PROOF: in enforce mode, route returns 422 (CANONICAL_ID_REQUIRED) if no canonical_document_id, 409 (CANONICAL_HASH_MISMATCH) on hash failure, 404 (CANONICAL_NOT_FOUND) if DB miss, 503 (CANONICAL_STORAGE_UNAVAILABLE) on infra error. Runtime invariant guard at end blocks all code paths in enforce mode without a documentCanonical.
+> I-765 UNIFICATION: `buildI765DocumentOps` from `i765DocumentMapper` is called from EXACTLY 2 callers (TPS: `tpsDocumentFactsToCanonical`, EAD: `eadDocumentFactsToCanonical`). No third mapper exists.
+> NOT DONE (Agent 4 scope): parity runtime guards, PHASE1_CONTINUITY_COMPLETE evidence, override route HTTP contract.
+> NEXT (Agent 4): override endpoint 409 concurrency; canonical_document_id header in extract response verification; parity runtime guards.
+
 # HANDOFF (2026-06-13 — canonical-continuity Agent 1: persistence layer complete)
 > **Branch: architecture/canonical-continuity. Agent 1 scope: migration SQL + persistence module + tests.**
 > COMPLETED:
