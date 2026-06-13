@@ -2,6 +2,7 @@
 
 ## MANDATORY STARTUP PROTOCOL
 Before any code change, read in this exact order when files/directories exist:
+0. `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — consolidated, evidence-only audit of the brain/dictionary/arbitration/canonical pipeline + repo/PR/security/deploy state. Read FIRST; it lists what is verified, what is `UNVERIFIED`, and the current risk register.
 1. `STATUS.md`
 2. `HANDOFF.md`
 3. `SOURCE_OF_TRUTH.md`
