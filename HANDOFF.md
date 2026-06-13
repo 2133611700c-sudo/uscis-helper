@@ -1,3 +1,25 @@
+# HANDOFF (2026-06-13 — Wave 1b INTEGRATION coordinator: client canonical_document_id carriage WIRED for all 4 products, gate green, preview-enforce GO)
+
+DONE (Wave 1b integration session):
+- Cherry-picked 4 per-product carriage commits onto `architecture/canonical-continuity` (base `4f8aee70`), order TPS → ReParole → EAD → Translation. SHAs: 1ffb535 / 9791316 / dfe872a / fb5971c → re-committed as 87096f3 / bfcd603 / 0d1da0b / 9e85506.
+- ONE conflict: `apps/web/src/lib/tps/answers.ts` — both base and the TPS pick documented the SAME `canonical_document_id?: string` field. Resolved SEMANTICALLY: merged both doc-comments into one, field declared once, no product field dropped. No global ours/theirs.
+- Files touched are otherwise DISTINCT per product (separate extract routes + wizards + per-product test files) — no other conflicts.
+- This is the layer the prior Wave 1 NO-GO flagged as UNBUILT (`client_id_carriage_proven=false`). Prior 'COMPLETE / all 4 wired' was SERVER-ONLY. Honest correction: client capture+resend was missing; it is now built for all 4.
+- SERVER EMIT added: ReParole + EAD extract routes persist canonical (shadow/enforce) and return `canonical_document_id` (null on shadow failure — never fabricated; 503 on enforce failure). TPS + Translation already emitted in base.
+- CLIENT CARRIAGE: TPS (canonicalCarriage.ts), ReParole (localStorage-persisted across Stripe), EAD (useState), Translation (sessionStorage-persisted across Stripe). All capture only a real string from the extract RESPONSE, store null otherwise, resend via conditional spread (OMIT when absent). canonical_document_id stays OPTIONAL everywhere — shadow works without it.
+- GATE: tsc 0 errors; tests 3642 pass / 24 skip / 0 fail (+45 vs 3597 baseline; skips pre-existing, none in carriage tests); build PASS; PII gate CLEAN.
+- Static end-to-end carriage proven for ALL 4: capture + resend in each wizard, id emitted by each extract route. carriage_all_4_products = true.
+
+DECISION — preview ENFORCE: **GO**. carriage proven + tsc 0 + build + PII clean + no required skipped tests. Server-side enforce already exists; flipping CANONICAL_CONTINUITY_MODE=enforce in PREVIEW is now safe to smoke.
+
+NEXT:
+1. Owner: run preview enforce-smoke (`scripts/smoke-enforce-preview.ts`) against a preview deploy with CANONICAL_CONTINUITY_MODE=enforce; assert real-user happy path carries an id end-to-end (no 422/409 on legitimate flows).
+2. Owner: review PR, merge to main, then enable enforce in prod.
+
+NOT merged to main, no Vercel/env change, not deployed. Pushed to `architecture/canonical-continuity` only.
+
+---
+
 # HANDOFF (2026-06-13 — Wave 1 INTEGRATION coordinator: Agent 1 merged, gate green, preview-enforce NO-GO)
 
 DONE (integration session):

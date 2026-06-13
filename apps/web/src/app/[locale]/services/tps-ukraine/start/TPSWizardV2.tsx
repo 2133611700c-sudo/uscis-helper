@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
+import { captureCanonicalDocumentId, selectCanonicalDocumentIdForGenerate } from '@/lib/tps/canonicalCarriage'
 import { resolveAllFields, type ExtractedCandidate, type SourceDoc, type SourceType } from '@/lib/tps/fieldArbiter'
 import { DOCUMENT_CONTRACTS } from '@/lib/tps/ocr/documentContracts'
 import type { TpsExtractionSource } from '@/lib/tps/types'
@@ -125,6 +126,13 @@ interface UploadEntry {
   ocr_http_status?: number
   /** Last OCR error string for this slot (non-PII). */
   ocr_error?: string
+  /**
+   * Canonical document id captured from the extract RESPONSE for this slot.
+   * Present ONLY when the server's shadow persist succeeded and returned an id.
+   * Null/absent otherwise — we never fabricate one. Resent (for the primary
+   * identity slot) in the generate-packet body as `canonical_document_id`.
+   */
+  canonical_document_id?: string | null
 }
 
 interface WizardData {
@@ -2257,6 +2265,13 @@ export default function TPSWizardV2({ locale }: Props) {
               .map((r: { field?: unknown }) => r?.field)
               .filter((k: unknown): k is string => typeof k === 'string')
           : []
+        // ── Canonical carriage CAPTURE ──────────────────────────────────────
+        // The extract route returns `canonical_document_id` ONLY when the
+        // server's shadow persist of the canonical document succeeded. Store it
+        // verbatim; if absent/empty, store null and NEVER fabricate one — a
+        // wrong/stale id is worse than none. Resent at generate time for the
+        // primary identity slot.
+        const canonicalDocumentId: string | null = captureCanonicalDocumentId(json)
         setData((d) => ({
           ...d,
           uploads: {
@@ -2277,6 +2292,7 @@ export default function TPSWizardV2({ locale }: Props) {
               ocr_error: undefined,
               knowledge_rejected_fields: knowledgeRejectedFields,
               knowledge_diagnostics: knowledgeDiagnostics,
+              canonical_document_id: canonicalDocumentId,
             },
           },
         }))
@@ -2508,8 +2524,23 @@ export default function TPSWizardV2({ locale }: Props) {
       }
 
       const v = (k: string): string => mergedFields[k]?.value || ''
+
+      // ── Canonical carriage RESEND ───────────────────────────────────────
+      // Carry the canonical_document_id of the PRIMARY identity document used
+      // to build the canonical read. Preference mirrors how extract was
+      // invoked per-slot: passport (ua_international_passport) first, then the
+      // internal booklet, then any other slot that returned an id. Only ids
+      // the server actually returned are eligible — uploads with a missing
+      // shadow persist carry null and are skipped. If none captured an id we
+      // send nothing (shadow mode stays valid; never fabricate).
+      const canonicalDocumentId: string | undefined = selectCanonicalDocumentIdForGenerate(data.uploads)
+
       const answers: Partial<TPSAnswers> = {
         ...buildDraftAnswers(),
+
+        // Resend the captured canonical document id (optional; omitted when
+        // no upload returned one). Spread into the generate-packet body below.
+        ...(canonicalDocumentId ? { canonical_document_id: canonicalDocumentId } : {}),
 
         // Signature from step 6
         // BLOCK generation if user chose 'screen' but didn't actually draw
