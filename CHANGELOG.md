@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-14 | Server-side PII ledger BACKEND (criterion #9)
+- supabase/migrations/20260614010000_wizard_drafts.sql: encrypted draft table (token pk, iv/ciphertext/tag, TTL, RLS service-role only).
+- apps/web/src/lib/v1/wizardDraftStore.ts: saveDraft (encrypt+upsert), loadDraft (decrypt; expired→delete→null), deleteDraft, isServerLedgerEnabled (default OFF). Injected client → unit-tested.
+- apps/web/src/app/api/wizard-draft/route.ts: POST/GET/DELETE behind SERVER_LEDGER_ENABLED (404 when off), fail-closed key, opaque httpOnly token cookie, never logs draft/token.
+- +7 tests (51 v1 total). tsc 0; content guard 0. Default-OFF → no behavior change. Remaining for #9: apply migration + wizard client rewiring + enable flag.
 ## 2026-06-14 | Server-side PII ledger — crypto foundation (criterion #9, rebased)
 - apps/web/src/lib/v1/wizardDraftCrypto.ts: AES-256-GCM sealDraft/openDraft (authenticated; tamper fails closed), generateOpaqueToken, keyFromEnv (fail-closed), isDraftExpired. +8 tests. Pure, server-only, default-OFF, no behavior change. Next: wizard_drafts table + /api/wizard-draft + wizard rewiring behind SERVER_LEDGER_ENABLED.
 ## 2026-06-14 | benchmark correction — I-94 canonical = SAME
