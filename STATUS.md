@@ -6,16 +6,17 @@
 > Do not stack historical status blocks here (CI: `scripts/verify-release-state.mjs`).
 
 ## Production
-- **production_sha = `86e5d1e`** = `main` (verified live: `messenginfo.com/api/healthz`).
-- Merged & deployed: PR #117 (canonical continuity/persistence), #118 (4-product carriage + product-scoped modes + 404-not-503), #120 (browser-PII containment).
+- **production_sha = `f7fc2fb`** = `main` (verified live: `messenginfo.com/api/healthz`).
+- Merged & deployed: PR #117 (canonical continuity/persistence), #118 (4-product carriage + product-scoped modes + 404-not-503), #120 (browser-PII containment), #121 (single source of truth: RELEASE_STATE.yaml + guard).
 - All 4 products run the one Document Core (`readDocument → arbitrate → CanonicalDocumentResult`); canonical modes default **shadow** in code. **Live prod env modes (`CANONICAL_MODE_*`) are UNVERIFIED from the repo** — read Vercel to confirm before any enforce.
 
 ## Open / in-flight
+- **PR #122** (legacy Translation security hotfix 0.5) — **OPEN, draft, rebased on `f7fc2fb`.** Per-action auth (fail-closed) + recipient RE-VERIFIED against Stripe at send (the ticket's `contact_email` has unpaid client writers, so it is not trusted). **PENDING preview security smoke before merge.** Until merged, prod still runs the unhardened legacy flow.
 - **PR #119** (Translation Operator Pipeline V2: canonical-bound orders, artifacts, outbox, state machine) — **OPEN, draft, FROZEN, NOT merged.** Replaces the legacy operator flow but is not in production.
 - Browser PII: **containment only** (#120). `value` (localStorage, TPS/Re-Parole) and `raw_cyrillic` (sessionStorage, Translation) still persist. Full removal = Phase B (server ledger) — deferred.
 
 ## Blockers (live in production)
-- **Legacy Translation operator flow:** recipient email taken from client FormData; admin Server Actions lack per-action authorization. → minimal security hotfix 0.5 (`security/legacy-translation-auth-recipient`) pending.
+- **Legacy Translation operator flow (until #122 merges):** recipient email taken from client FormData; admin Server Actions lack per-action authorization. Fix built in PR #122 (auth + Stripe re-verify), **pending preview smoke**.
 - **No dedicated staging:** heavy OCR e2e runs against the production DB + paid providers.
 
 ## Next actions (agreed order)
