@@ -1,0 +1,51 @@
+# RELEASE_STATE.yaml — machine-readable Phase 2 release state.
+# Maintained by Agent 4 (observability/operations). PII-free.
+# NOTE: code-default facts are VERIFIED from the repo. Live production env values
+# (CANONICAL_MODE_*) cannot be read from a worktree — those are marked UNVERIFIED.
+# Owner directive (binding): production stays SHADOW; no enforce; PR #119 stays DRAFT.
+
+schema_version: 1
+main_sha: 44ec7b8fcaa61ac621dbb1f2a8e14b64ea8eab44   # integration base (Wave 3/4)
+production_sha: UNVERIFIED                              # not readable from worktree
+verified_at: "2026-06-13T00:00:00Z"
+verified_by: wave34_integration_coordinator           # Agent 3 + Agent 4 merged + gated
+
+products:
+  tps:
+    mode: shadow            # code default; live value UNVERIFIED
+    carriage: canonical_continuity_v1
+    positive_e2e: DEFERRED  # owner: hosted Stripe positive E2E deferred to final acceptance
+  reparole:
+    mode: shadow
+    carriage: canonical_continuity_v1
+    positive_e2e: DEFERRED
+  ead:
+    mode: shadow
+    carriage: canonical_continuity_v1
+    positive_e2e: DEFERRED
+  translation:
+    mode: shadow            # code default 'shadow'; live value UNVERIFIED
+    extraction: canonical_bound
+    operator_pipeline: built              # translation_orders_v2 + atomic state machine (v2 shadow), harness GREEN
+    artifact_delivery: built              # immutable artifacts + delivery_outbox (transactional outbox), harness GREEN
+    external_stripe_e2e: deferred         # owner: hosted Stripe positive E2E to final acceptance
+    positive_e2e: DEFERRED
+
+observability:
+  events_module: apps/web/src/lib/translation/observability/events.ts
+  events_flag: PHASE2_EVENTS_ENABLED        # default OFF (silent)
+  alerts_doc: docs/observability/PHASE2_ALERTS.md
+  retention_doc: docs/observability/PHASE2_RETENTION.md
+  lifecycle_module: apps/web/src/lib/translation/lifecycle.ts
+  runbooks_dir: docs/runbooks/
+
+blockers:
+  - id: stripe_positive_e2e
+    severity: deferred
+    detail: "Hosted Stripe positive E2E deferred to final acceptance (owner decision). Not a Phase 2 blocker."
+  - id: pr_119_draft
+    severity: hold
+    detail: "PR #119 stays DRAFT; do NOT merge. Production stays SHADOW; no enforce."
+  - id: production_sha_unverified
+    severity: info
+    detail: "Live production_sha and live CANONICAL_MODE_* not readable from worktree; verify at deploy time."

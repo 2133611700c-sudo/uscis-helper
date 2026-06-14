@@ -3,6 +3,7 @@ import { after } from 'next/server'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe/client'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { emitEvent } from '@/lib/translation/observability/events'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,9 +19,13 @@ export async function POST(req: NextRequest) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, whsec)
   } catch (e) {
+    emitEvent('webhook_signature_failure_total', { route: 'stripe-webhook', status_code: 400 })
     console.error('[webhook] signature verification failed:', e instanceof Error ? e.message : e)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
+
+  // PII-free: only the verified event TYPE — never the raw Stripe payload.
+  emitEvent('webhook_received_total', { route: 'stripe-webhook', state: event.type })
 
   const supabase = createAdminSupabaseClient()
 
