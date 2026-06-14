@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-14 | /api/wizard-draft route integration test — server ledger PROVEN E2E
+- apps/web/src/app/api/wizard-draft/__tests__/route.itest.test.ts (6/6): POST encrypts (asserts no plaintext PII in stored row) → GET decrypts via opaque httpOnly token → DELETE; flag-OFF→404; enabled-but-no-key→503; bad body→400. In-memory Supabase double (no DB/network). Criterion #9 server side verified end-to-end.
+- Next: wire wizard components to the client adapter behind NEXT_PUBLIC_SERVER_LEDGER_ENABLED (default OFF), then flag-flip + browser smoke.
 ## 2026-06-14 | PII ledger client adapter (criterion #9 stack complete)
 - apps/web/src/lib/v1/wizardLedgerClient.ts: saveDraftToServer / loadDraftFromServer / clearServerDraft to /api/wizard-draft; isLedgerClientEnabled (NEXT_PUBLIC_SERVER_LEDGER_ENABLED, default OFF); fetch injected; never logs draft; network-safe (no throw). +6 tests (57 v1 total).
 - The full server-side ledger stack is now in place (crypto #129, backend+table #130 [table applied to DB], client adapter here) — all default-OFF, zero behavior change. Remaining to ACTIVATE #9: wire the adapter into TPS/Re-Parole/Translate wizard components + set the 3 env vars + browser-verify.
