@@ -618,6 +618,59 @@ export async function downloadArtifactBytes(
 }
 
 // ---------------------------------------------------------------------------
+// 7b. Stripe webhook processed-events dedupe ledger
+// ---------------------------------------------------------------------------
+
+export interface RecordProcessedEventInput {
+  /** Stripe event id (evt_...) — the webhook idempotency key. Never PII. */
+  stripeEventId: string
+  eventType: string
+  /** Opaque Stripe checkout session id (cs_...) when applicable. */
+  checkoutSessionId?: string | null
+  /** Internal V2 order uuid this event resolved to (if any). */
+  orderId?: string | null
+  /** PII-free machine result code. */
+  resultCode?: string | null
+}
+
+/**
+ * Idempotently record a processed Stripe webhook event. Returns inserted=true when THIS caller is
+ * the first to record the event id (it should process the event) or inserted=false on a duplicate
+ * (already recorded → skip re-processing: no second audit transition, no second outbox event).
+ */
+export async function recordStripeProcessedEvent(
+  input: RecordProcessedEventInput
+): Promise<{ inserted: boolean }> {
+  const supabase = getClient()
+  const { data, error } = await supabase.rpc('record_stripe_processed_event', {
+    p_stripe_event_id: input.stripeEventId,
+    p_event_type: input.eventType,
+    p_checkout_session_id: input.checkoutSessionId ?? null,
+    p_order_id: input.orderId ?? null,
+    p_result_code: input.resultCode ?? null,
+  })
+  if (error) {
+    throw new TranslationOrderError('ORDER_STORAGE_UNAVAILABLE', `recordStripeProcessedEvent: ${error.message}`)
+  }
+  const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined
+  return { inserted: (row?.inserted as boolean) ?? false }
+}
+
+/** True if a Stripe event id has already been processed (PII-free existence check). */
+export async function isStripeEventProcessed(stripeEventId: string): Promise<boolean> {
+  const supabase = getClient()
+  const { data, error } = await supabase
+    .from('stripe_processed_events')
+    .select('stripe_event_id')
+    .eq('stripe_event_id', stripeEventId)
+    .maybeSingle()
+  if (error) {
+    throw new TranslationOrderError('ORDER_STORAGE_UNAVAILABLE', `isStripeEventProcessed: ${error.message}`)
+  }
+  return !!data
+}
+
+// ---------------------------------------------------------------------------
 // 8. Admin cleanup (synthetic sentinel rows only)
 // ---------------------------------------------------------------------------
 

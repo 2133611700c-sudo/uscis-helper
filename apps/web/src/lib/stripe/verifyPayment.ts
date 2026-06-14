@@ -9,6 +9,7 @@
  * path (TPS pattern is to fall through; this util surfaces the state).
  */
 
+import type Stripe from 'stripe'
 import { stripe } from './client'
 
 export type VerifyReason =
@@ -31,6 +32,12 @@ export interface VerifyResult {
    * trustworthy source for "where do we send the finished PDF").
    */
   customerEmail?: string | null
+  /**
+   * The raw, server-retrieved Stripe Checkout Session (server-side authoritative). Present only
+   * when the session was successfully retrieved. Phase 2 reconciliation passes this SAME object to
+   * the unified payment handler so the client path can never out-vote the server's view.
+   */
+  session?: Stripe.Checkout.Session
 }
 
 const VALID_PREFIX = /^(cs_|py_)/ // Stripe checkout (cs_) and PaymentIntent (py_) test/live ids
@@ -59,9 +66,9 @@ export async function verifyStripeSessionPaid(
       ? session.metadata?.service === opts.expectedService
       : true
     const customerEmail = (session.customer_details as { email?: string } | null)?.email ?? null
-    if (!paid) return { paid: false, correctService, reason: 'not_paid', customerEmail }
-    if (!correctService) return { paid: true, correctService: false, reason: 'wrong_service', customerEmail }
-    return { paid: true, correctService: true, customerEmail }
+    if (!paid) return { paid: false, correctService, reason: 'not_paid', customerEmail, session }
+    if (!correctService) return { paid: true, correctService: false, reason: 'wrong_service', customerEmail, session }
+    return { paid: true, correctService: true, customerEmail, session }
   } catch {
     return { paid: false, correctService: false, reason: 'stripe_api_error' }
   }

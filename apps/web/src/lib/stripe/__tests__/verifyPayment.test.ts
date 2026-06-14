@@ -13,9 +13,15 @@ describe('verifyStripeSessionPaid', () => {
   beforeEach(() => retrieveMock.mockReset())
 
   it('paid + correct service → paid:true, correctService:true', async () => {
-    retrieveMock.mockResolvedValueOnce({ payment_status: 'paid', metadata: { service: 'translation' } })
+    const fakeSession = { payment_status: 'paid', metadata: { service: 'translation' } }
+    retrieveMock.mockResolvedValueOnce(fakeSession)
     const r = await verifyStripeSessionPaid('cs_test_123', { expectedService: 'translation' })
-    expect(r).toEqual({ paid: true, correctService: true, customerEmail: null })
+    // The result carries the verified flags + the server-retrieved session (Phase 2 closeout:
+    // reconciliation passes this SAME session object to the unified payment handler).
+    expect(r.paid).toBe(true)
+    expect(r.correctService).toBe(true)
+    expect(r.customerEmail).toBeNull()
+    expect(r.session).toBe(fakeSession)
     // operator flow: the verified Stripe session is the only trusted email source
     expect('customerEmail' in r).toBe(true)
   })
