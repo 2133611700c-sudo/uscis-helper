@@ -17,10 +17,14 @@ function normalize(v: string | undefined | null): CanonicalMode | undefined {
  * Resolve the canonical-continuity mode for a SINGLE product.
  * Precedence: product-scoped env (CANONICAL_MODE_<PRODUCT>) → CANONICAL_MODES JSON
  * → legacy global CANONICAL_CONTINUITY_MODE (back-compat) → 'shadow' default.
- * HARD GUARD: translation can never resolve to 'enforce' via the legacy global flag
- * (operator-flow continuity is not built); only an explicit CANONICAL_MODE_TRANSLATION
- * / CANONICAL_MODES.translation may set it, and even then callers should keep it shadow
- * until the operator pipeline carries canonical to the final PDF.
+ *
+ * HARD GUARD (applies to ALL products, including tps/reparole/ead/translation):
+ * the legacy global CANONICAL_CONTINUITY_MODE can NEVER enable 'enforce'. If the
+ * legacy global is 'enforce' it is treated as 'shadow' for every product; it may
+ * only ever yield 'off' or 'shadow'. enforce is allowed EXCLUSIVELY via the
+ * product-scoped envs (CANONICAL_MODE_<PRODUCT>) or the matching key in the
+ * CANONICAL_MODES JSON. This prevents a single broad operator flag from silently
+ * turning on hard-failing canonical enforcement across the whole platform.
  */
 export function getCanonicalMode(product: CanonicalProduct): CanonicalMode {
   const scoped = normalize(process.env[ENV_KEY[product]])
@@ -32,14 +36,20 @@ export function getCanonicalMode(product: CanonicalProduct): CanonicalMode {
       const parsed = JSON.parse(json) as Record<string, string>
       const m = normalize(parsed?.[product])
       if (m) return m
-    } catch { /* ignore malformed JSON, fall through */ }
+    } catch {
+      // Malformed CANONICAL_MODES JSON. Emit a PII-SAFE warning (static message +
+      // product key only; NEVER the raw value, which could carry operator data)
+      // and safely fall through to the legacy/default resolution.
+      // eslint-disable-next-line no-console
+      console.warn(`[canonical] CANONICAL_MODES is not valid JSON; ignoring (product=${product})`)
+    }
   }
 
   const legacyGlobal = normalize(process.env.CANONICAL_CONTINUITY_MODE)
   if (legacyGlobal) {
-    // Never let the legacy global push translation into enforce.
-    if (product === 'translation' && legacyGlobal === 'enforce') return 'shadow'
-    return legacyGlobal
+    // Legacy global can NEVER enforce for ANY product. Only 'off' passes through;
+    // anything else (incl. 'enforce') is clamped to 'shadow'.
+    return legacyGlobal === 'off' ? 'off' : 'shadow'
   }
 
   return 'shadow'

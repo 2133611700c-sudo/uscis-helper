@@ -38,15 +38,36 @@ type Carriage = {
   blocker: string | null
 }
 
+// PII-safe deployment context. Host only (no full URL with query), short SHA only.
+// Never logs the canonical id value or any applicant field.
+const DEPLOY_SHA =
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.GITHUB_SHA ||
+  process.env.PLAYWRIGHT_DEPLOY_SHA ||
+  null
+function baseHost(): string | null {
+  const raw = process.env.PLAYWRIGHT_BASE_URL || ''
+  try {
+    return raw ? new URL(raw).host : null
+  } catch {
+    return null
+  }
+}
+
 async function writeResult(c: Carriage) {
   await fs.mkdir(ARTIFACTS, { recursive: true })
+  const artifact = {
+    ...c,
+    deploy_sha: DEPLOY_SHA,
+    base_url_host: baseHost(),
+  }
   await fs.writeFile(
     path.join(ARTIFACTS, `${c.product}.json`),
-    JSON.stringify(c, null, 2),
+    JSON.stringify(artifact, null, 2),
     'utf8',
   )
   // eslint-disable-next-line no-console
-  console.log(`[CARRIAGE/${c.product}] ${JSON.stringify(c)}`)
+  console.log(`[CARRIAGE/${c.product}] ${JSON.stringify(artifact)}`)
 }
 
 /** Extract id from a JSON object (top-level canonical_document_id only). */
@@ -152,6 +173,11 @@ test('TPS: canonical_document_id captured from extract, resent in generate-packe
     if ((await part7.count()) > 0) await part7.check()
 
     await page.getByTestId('tps-step6-continue-cta').click()
+    // Simulate the Stripe success redirect: a ?paid=1 page reload. This is the
+    // exact round-trip that previously DROPPED the canonical_document_id. The
+    // wizard now persists/restores canonical_document_id in uploadsMeta
+    // (TPSWizardV2 persist L1816-1824 / restore L1748-1754, mirroring Re-Parole),
+    // so the id survives the reload and is resent in the generate-packet body.
     await page.goto('/en/services/tps-ukraine/start?paid=1')
     await expect(page.getByTestId('tps-generate-cta')).toBeVisible({ timeout: 20_000 })
     await page.getByTestId('tps-generate-cta').click()
@@ -161,21 +187,15 @@ test('TPS: canonical_document_id captured from extract, resent in generate-packe
     if (!c.blocker) c.blocker = `nav_error:${String(e).slice(0, 200)}`
   }
 
-  if (c.generate_intercepted && !c.generate_has_id) {
-    // REAL FINDING (carriage break): the extract returns the id and the wizard
-    // holds it in memory, but TPSWizardV2 persists uploads to localStorage WITHOUT
-    // canonical_document_id (L1814-1817) and rehydrates uploads without it (L1747-1752).
-    // The Stripe payment flow requires a ?paid=1 page reload, so the id is LOST and
-    // the post-payment generate-packet body omits it. Re-Parole/EAD persist+restore
-    // the id correctly; TPS does not. This is the H3/H11 gap on the TPS paid path.
-    c.blocker = 'tps_carriage_break_on_paid_reload (extract id captured in-memory but NOT persisted to localStorage uploadsMeta; lost across the ?paid=1 Stripe-return reload → generate-packet body omits canonical_document_id)'
-  }
   await writeResult(c)
+  // Positive carriage: extract returns the id, the wizard persists it across the
+  // ?paid=1 Stripe-return reload, and the post-payment generate-packet body carries
+  // the SAME id. We abort the request before it reaches the server (no payment, no
+  // packet); proof is the on-the-wire request body.
   expect(c.extract_returned_id, 'extract returned canonical_document_id').toBe(true)
   expect(c.generate_intercepted, 'generate request intercepted on the wire').toBe(true)
-  // The id-in-body assertion documents the REAL state: on the production paid path
-  // (?paid=1 reload) the body does NOT carry the id. Asserting the truth, not a wish.
-  expect(c.generate_has_id, 'generate body carried canonical_document_id (FALSE on paid-reload path — carriage break)').toBe(false)
+  expect(c.generate_has_id, 'generate body carried canonical_document_id across the paid reload').toBe(true)
+  expect(c.ids_equal, 'generate-body id equals the extract-returned id').toBe(true)
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
