@@ -33,6 +33,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
+import { sanitizeFieldMapForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
 
 // docHints covered by /api/reparole/ocr/extract (Phase 2.3: flag removed, Core unconditional)
 // US-form slots (i94, ead, dl) go to /api/tps/ocr/extract — no reparole mapping exists.
@@ -479,6 +480,8 @@ export default function ReparoleWizardV2({ locale }: Props) {
   const [data, setData] = useState<WizardData>({ uploads: {}, manual: {}, paid: false, packetReady: false })
   const [busy, setBusy] = useState(false)
   const [errMsg, setErrMsg] = useState<string | null>(null)
+  // PII CONTAINMENT (Phase A): suppress persistence after terminal success.
+  const draftClearedRef = useRef(false)
 
   // Persist + hydrate ─ same pattern as TPSWizardV2
   useEffect(() => {
@@ -490,6 +493,11 @@ export default function ReparoleWizardV2({ locale }: Props) {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
+        // PII CONTAINMENT (Phase A): hard 24h TTL — discard stale drafts outright.
+        if (parsed && typeof parsed === 'object' && isDraftExpired(parsed.savedAt)) {
+          try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+          throw new Error('draft_expired')
+        }
         if (parsed && typeof parsed === 'object' && parsed.schema === STORAGE_SCHEMA) {
           const rebuilt: Record<string, UploadEntry> = {}
           const meta = (parsed.uploadsMeta || {}) as Record<string, {
@@ -542,15 +550,26 @@ export default function ReparoleWizardV2({ locale }: Props) {
   }, [])
 
   useEffect(() => {
+    // PII CONTAINMENT (Phase A): stop persisting after terminal success.
+    if (draftClearedRef.current) return
     try {
       const { uploads, ...rest } = data
+      // PII CONTAINMENT (Phase A): persist ONLY {value, requires_review, doc_slot}
+      // per field — strip raw OCR text and source traces. canonical_document_id
+      // (opaque) is kept for the Stripe carriage.
       const uploadsMeta: Record<string, Pick<UploadEntry, 'fileName' | 'status' | 'fields' | 'canonical_document_id'>> = {}
       for (const k of Object.keys(uploads)) {
         const u = uploads[k]
-        uploadsMeta[k] = { fileName: u.fileName, status: u.status, fields: u.fields, canonical_document_id: u.canonical_document_id }
+        uploadsMeta[k] = {
+          fileName: u.fileName,
+          status: u.status,
+          fields: sanitizeFieldMapForStorage('reparole', u.fields) as unknown as UploadEntry['fields'],
+          canonical_document_id: u.canonical_document_id,
+        }
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         schema: STORAGE_SCHEMA, ...rest, lastStep: step, uploadsMeta,
+        savedAt: new Date().toISOString(),
       }))
     } catch { /* */ }
   }, [data, step])
@@ -761,6 +780,10 @@ export default function ReparoleWizardV2({ locale }: Props) {
       a.href = url; a.download = 'reparole-packet-draft.zip'
       document.body.appendChild(a); a.click(); a.remove()
       URL.revokeObjectURL(url)
+      // PII CONTAINMENT (Phase A): packet generated = terminal success. Clear the
+      // browser-persisted draft (OCR PII) and suppress further persistence.
+      draftClearedRef.current = true
+      try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
       setData((d) => ({ ...d, packetReady: true }))
     } catch (e) {
       setErrMsg(e instanceof Error ? e.message : t.packetErr)
@@ -769,6 +792,8 @@ export default function ReparoleWizardV2({ locale }: Props) {
 
   const restart = useCallback(() => {
     try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+    // Re-enable persistence for the fresh document (cleared on completion).
+    draftClearedRef.current = false
     setData({ uploads: {}, manual: {}, paid: false, packetReady: false })
     setStep(1)
   }, [])
