@@ -1003,3 +1003,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-14: post-#122 deploy — RELEASE_STATE snapshot → 62c897a; legacy auth/recipient blocker removed (DEPLOYED); added open gap: positive paid Translation delivery RUNTIME_UNVERIFIED until staging. negative security smoke VERIFIED in prod. -->
 
 <!-- 2026-06-14: V1_COMPLETION control plane created (branch v1/completion-control-plane). One active phase (STAGING_CONTROL_PLANE), 13 ordered phases, program guard, 5 workflows, staging/OCR-cache/budget contracts + tests, generated V1_STATUS.md. No OCR/Brain/corpus/Stripe/server-ledger started; PR #119 untouched; no production change. Draft PR. -->
+
+<!-- 2026-06-14: V1 phases 1-3 advanced to PASS (control plane #124 merged; dark-code inventory; private-document registry: DOCUMENT_TYPES.yaml + FIELD_COVERAGE_MATRIX.csv 52 rows + PRIVATE_CORPUS_MANIFEST.safe.yaml 25 docs sha256-only PII-free). Active phase 4 = GROUND_TRUTH_CORPUS_AND_CACHE. Evidence verdicts under artifacts/v1/. #119 untouched; no prod change. -->

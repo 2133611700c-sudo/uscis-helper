@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-14 | V1 phases 1-3 PASS → phase 4 active (autonomous)
+- Phase 1 STAGING_CONTROL_PLANE: PASS (control plane merged #124, green CI; evidence artifacts/v1/STAGING_CONTROL_PLANE/verdict.json). Real staging provisioning remains an owner action (checklist committed).
+- Phase 2 DARK_CODE_INVENTORY: PASS (docs/v1/DARK_CODE_INVENTORY.md; corrections: TPS_AI_BRAIN + DUAL_OCR_CROSSREF effectively ON/paid in prod; certifier_override_audit dark; /api/review->reviews silent loss).
+- Phase 3 PRIVATE_DOCUMENT_REGISTRY: PASS — DOCUMENT_TYPES.yaml (per-type field extraction contracts: auto/candidate_only/manual_confirm/never_guess), FIELD_COVERAGE_MATRIX.csv (52 rows), scripts/gen-corpus-manifest.mjs + docs/document-coverage/PRIVATE_CORPUS_MANIFEST.safe.yaml (25 unique real docs, sha256+size+ext+doctype-guess ONLY; PII-free; originals stay gitignored).
+- V1_COMPLETION.yaml advanced; active_phase = GROUND_TRUTH_CORPUS_AND_CACHE (phase 4). V1_STATUS.md regenerated. Guards: v1-program PASS, release-state PASS, content PASS.
+- No runtime/app code change. PR #119 untouched. No production change.
 ## 2026-06-14 | V1_COMPLETION control plane (phase STAGING_CONTROL_PLANE)
 - Built the sequential completion pipeline to stop the audit→micro-fix→audit loop: V1_COMPLETION.yaml (one active phase, 13 ordered phases, gates, exit criteria, status enum, policies), scripts/verify-v1-completion.mjs (program guard: one active phase, before=PASS/after=NOT_STARTED, PASS needs evidence, prod-benchmark forbidden, handwriting not auto-final, #119 frozen, enforce/new-products forbidden, positive Stripe RUNTIME_UNVERIFIED, 5 workflows present), scripts/gen-v1-status.mjs + generated V1_STATUS.md (do-not-edit dashboard).
 - Contracts (pure, fail-closed, no runtime wiring, 29 unit tests): apps/web/src/lib/v1/stagingContract.ts (env validator + production-target rejection), ocrCache.ts (file_sha256·provider·model·prompt·preproc key), providerBudget.ts (paid calls disabled by default + caps), evidence.ts (PII-free verdict shape).
