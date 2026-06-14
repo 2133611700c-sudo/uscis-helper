@@ -15,6 +15,13 @@
 import type { DocTypeSpec, VisionFieldRead, VisionProvider, VisionReadResult } from '../types'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
+import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
+
+const GEMINI_PROVIDER_NAME = 'gemini'
+// Bump these when buildPrompt() text or the image preprocessing changes, so the
+// shadow cache-hit analysis never reuses a key across a prompt/preproc change.
+const GEMINI_PROMPT_VERSION = 'v1'
+const GEMINI_PREPROC_VERSION = 'v1'
 
 // Model order is env-driven so prod can flip models WITHOUT a code redeploy.
 // 2026-05-29 ensemble bench (docs/reports/GEMINI_ENSEMBLE_BENCH.md), 3 docs incl. a
@@ -85,18 +92,33 @@ async function callGemini(
 ): Promise<{ ok: boolean; status: number; json: any }> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  // SHADOW cost metric: time + emit the external Gemini call (PII-free). The
+  // fetch result is returned UNCHANGED — output is byte-identical.
+  const cacheKeySha = computeCacheKeySha({
+    fileSha256: sha256Hex(imageB64),
+    provider: GEMINI_PROVIDER_NAME,
+    model,
+    promptVersion: GEMINI_PROMPT_VERSION,
+    preprocVersion: GEMINI_PREPROC_VERSION,
+  })
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    const res = await withOcrCostMetrics(
       {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        signal: ctrl.signal,
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: imageB64 } }] }],
-          generationConfig: { temperature: 0, response_mime_type: 'application/json', maxOutputTokens: 8192 },
-        }),
+        product: 'ocr', route: 'provider:gemini_vision', provider: GEMINI_PROVIDER_NAME,
+        model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros(GEMINI_PROVIDER_NAME, model),
       },
+      () => fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          signal: ctrl.signal,
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: imageB64 } }] }],
+            generationConfig: { temperature: 0, response_mime_type: 'application/json', maxOutputTokens: 8192 },
+          }),
+        },
+      ),
     )
     const json = await res.json().catch(() => ({}))
     return { ok: res.ok, status: res.status, json }

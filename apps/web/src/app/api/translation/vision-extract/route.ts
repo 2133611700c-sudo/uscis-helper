@@ -28,6 +28,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { runWithUploadCostTally } from '@/lib/v1/ocrCostMetrics'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
@@ -128,6 +129,12 @@ async function runDateEnsemble<T extends {
 }
 
 export async function POST(req: NextRequest) {
+  // P2 shadow cost observability (observe-only): roll up provider calls into one
+  // PII-free ocr_upload_cost_summary. Handler result returned UNCHANGED.
+  return runWithUploadCostTally({ product: 'translation', route: '/api/translation/vision-extract' }, () => POST_impl(req))
+}
+
+async function POST_impl(req: NextRequest) {
   const ip = getClientIP(req)
   const rl = await rateLimit(`translation-vision:${ip}`, 8, 60_000)
   if (!rl.allowed) {

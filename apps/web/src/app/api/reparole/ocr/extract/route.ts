@@ -25,6 +25,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { runWithUploadCostTally } from '@/lib/v1/ocrCostMetrics'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
@@ -69,6 +70,12 @@ function mapReParoleHintToDocintelId(hint: string): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  // P2 shadow cost observability (observe-only): roll up provider calls into one
+  // PII-free ocr_upload_cost_summary. Handler result returned UNCHANGED.
+  return runWithUploadCostTally({ product: 'reparole', route: '/api/reparole/ocr/extract' }, () => POST_impl(req))
+}
+
+async function POST_impl(req: NextRequest) {
   const ip = getClientIP(req)
   const rl = await rateLimit(`reparole-ocr:${ip}`, 20, 60_000)
   if (!rl.allowed) {

@@ -10,6 +10,11 @@
  */
 
 import { GoogleAuth } from 'google-auth-library'
+import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
+
+const DOCAI_PROVIDER_NAME = 'google_docai'
+const DOCAI_PROMPT_VERSION = 'v1'   // request shape: rawDocument OCR processor
+const DOCAI_PREPROC_VERSION = 'v1'
 
 // ── Config ─────────────────────────────────────────────────────────────────
 
@@ -144,15 +149,31 @@ export async function processDocument(
       rawDocument: { mimeType, content: base64Content },
     })
 
-    // Call DocAI
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body,
+    // SHADOW cost metric: time + emit the external DocAI call (PII-free). Result
+    // is returned UNCHANGED — OCR output is byte-identical with/without this.
+    const cacheKeySha = computeCacheKeySha({
+      fileSha256: sha256Hex(fileBytes),
+      provider: DOCAI_PROVIDER_NAME,
+      model: config.processorId,
+      promptVersion: DOCAI_PROMPT_VERSION,
+      preprocVersion: DOCAI_PREPROC_VERSION,
     })
+    // Call DocAI
+    const response = await withOcrCostMetrics(
+      {
+        product: 'ocr', route: 'provider:google_docai', provider: DOCAI_PROVIDER_NAME,
+        model: config.processorId, cacheKeySha,
+        est_cost_usd_micros: estCostUsdMicros(DOCAI_PROVIDER_NAME),
+      },
+      () => fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body,
+      }),
+    )
 
     if (!response.ok) {
       const errBody = await response.text()
