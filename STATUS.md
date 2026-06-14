@@ -4,7 +4,7 @@
 > (describes main at a basis SHA; CI reports `snapshot_is_stale` — it is NOT a live mirror of main).
 > History: [CHANGELOG.md](CHANGELOG.md) and [docs/STATUS_ARCHIVE.md](docs/STATUS_ARCHIVE.md).
 > Do not stack historical status blocks here (CI: `scripts/verify-release-state.mjs`).
-> **Completion pipeline:** [V1_COMPLETION.yaml](V1_COMPLETION.yaml) · live board [V1_STATUS.md](V1_STATUS.md) (generated). Active phase = `STAGING_CONTROL_PLANE`.
+> **V1 pipeline:** [V1_COMPLETION.yaml](V1_COMPLETION.yaml) · board [V1_STATUS.md](V1_STATUS.md). Phases 1–3 PASS (control plane, dark-code inventory, document registry); **active = GROUND_TRUTH_CORPUS_AND_CACHE** (phase 4).
 
 ## Production
 - **production_sha = `62c897a`** = `main` (verified live: `messenginfo.com/api/healthz`).

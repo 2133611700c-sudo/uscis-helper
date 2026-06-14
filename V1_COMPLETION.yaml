@@ -15,7 +15,7 @@
 #  - V1_STATUS.md is generated (scripts/gen-v1-status.mjs), never hand-edited
 schema_version: 1
 program: V1_COMPLETION
-active_phase: STAGING_CONTROL_PLANE
+active_phase: GROUND_TRUTH_CORPUS_AND_CACHE
 
 status_enum: [NOT_STARTED, IN_PROGRESS, BLOCKED, PASS, FAILED]
 
@@ -40,7 +40,7 @@ deployed_truth:
 
 phases:
   - name: STAGING_CONTROL_PLANE
-    status: IN_PROGRESS
+    status: PASS
     blocked_by: []
     gates: [tsc, unit, build, content_guard, pii_guard, release_state_guard, v1_program_guard, workflow_syntax, staging_contract_tests, production_target_rejection_tests, provider_budget_tests, ocr_cache_key_tests]
     exit_criteria:
@@ -57,15 +57,15 @@ phases:
       - PR #119 unchanged
     evidence: artifacts/v1/STAGING_CONTROL_PLANE/verdict.json
   - name: DARK_CODE_INVENTORY
-    status: NOT_STARTED
+    status: PASS
     blocked_by: [STAGING_CONTROL_PLANE]
     evidence: artifacts/v1/DARK_CODE_INVENTORY/verdict.json
   - name: PRIVATE_DOCUMENT_REGISTRY
-    status: NOT_STARTED
+    status: PASS
     blocked_by: [DARK_CODE_INVENTORY]
     evidence: artifacts/v1/PRIVATE_DOCUMENT_REGISTRY/verdict.json
   - name: GROUND_TRUTH_CORPUS_AND_CACHE
-    status: NOT_STARTED
+    status: IN_PROGRESS
     blocked_by: [PRIVATE_DOCUMENT_REGISTRY]
     evidence: artifacts/v1/GROUND_TRUTH_CORPUS_AND_CACHE/verdict.json
   - name: PRINTED_CYRILLIC_AND_IMAGE_QUALITY
