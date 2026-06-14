@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-06-14 | feat(privacy): wire server PII ledger into LIVE ReparoleWizardV2 behind flag (default OFF, OFF-path parity) (P1)
+- GAP: ReparoleWizardV2.tsx (LIVE Re-Parole wizard) always wrote PII (field values) to localStorage; the inline hydrate was entangled. Mirrors the gap closed for TPS in #139.
+- REFACTOR FIRST: extracted the persist-rebuild into a single `applyPersistedDraft(parsed)` so the localStorage (OFF) and ledger (ON) hydrate paths share ONE rebuild and cannot drift.
+- WIRED the same ledger client (@/lib/v1/wizardLedgerClient, REUSED unmodified) behind flag NEXT_PUBLIC_SERVER_LEDGER_ENABLED (default OFF):
+  - SAVE (persist effect): ON → `void saveDraftToServer('reparole', draftRecord)`; OFF → byte-identical `localStorage.setItem(STORAGE_KEY, JSON.stringify(draftRecord))`.
+  - HYDRATE (mount effect): ON → wipe legacy localStorage keys + `loadDraftFromServer()` + client `isDraftExpired` guard → applyPersistedDraft; OFF → legacy-key wipe + `localStorage.getItem(STORAGE_KEY)` + TTL precheck → applyPersistedDraft. ?paid=1 Stripe return + owner-status fetch unchanged in both.
+  - CLEAR (terminal success + restart): ON → `clearServerDraft()` (DELETE row + cookie); OFF → `localStorage.removeItem(STORAGE_KEY)`.
+- TTL respected on hydrate (server-side TTL ON; client isDraftExpired in both).
+- canonical_document_id carriage (PR #118) preserved in BOTH states — kept in uploadsMeta/draftRecord and rebuilt by applyPersistedDraft.
+- FILES: apps/web/src/app/[locale]/services/re-parole-u4u/start/ReparoleWizardV2.tsx; NEW apps/web/src/app/[locale]/services/re-parole-u4u/start/__tests__/reparoleWizardServerLedger.itest.test.ts (12 tests).
+- TESTS: 12/12 pass — save→hydrate→clear roundtrip via real /api/wizard-draft route + in-memory Supabase double; ON-path browser jar holds only opaque token (PII=0); server row ciphertext-only; TTL drop on hydrate; canonical_document_id roundtrip; static OFF-path parity + applyPersistedDraft-shared asserts on ReparoleWizardV2 source. Live-browser Playwright = BLOCKED_EXTERNAL (no local Postgres/Docker; needs staging deploy w/ flag ON + WIZARD_DRAFT_ENC_KEY + wizard_drafts table) — not faked green.
+- GATES: tsc 0 real errors; build OK; content-guard 0 violations. Full suite: 1 pre-existing FAIL (translation/ownerMode.test.ts) from an UNRELATED uncommitted TranslateWizard.tsx already in the working tree — NOT this branch (Translation left untouched/uncommitted). All Reparole + ledger tests pass.
+- SCOPE: TPS + Translation source UNTOUCHED by this branch. Flag default OFF; prod flag UNCHANGED → no-op deploy. PR NOT merged.
+
 ## 2026-06-14 | feat(privacy): wire server PII ledger into LIVE TPSWizardV2 behind flag (default OFF, OFF-path parity) (P1)
 - GAP: the server PII ledger client (@/lib/v1/wizardLedgerClient, flag NEXT_PUBLIC_SERVER_LEDGER_ENABLED) was wired ONLY into the orphan GeneratePacketBlock.tsx (0 component importers). The LIVE wizard TPSWizardV2.tsx always wrote PII (field values) to localStorage.
 - WIRED the same ledger client into TPSWizardV2 behind the flag (default OFF):
