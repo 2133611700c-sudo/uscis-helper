@@ -1,3 +1,20 @@
+# STATUS (2026-06-14 — Browser PII MINIMIZATION/containment (PR #120), content-guard fixed)
+- HONEST FRAMING: this is PII MINIMIZATION/containment, NOT removal. `value` (name/DOB/address) REMAINS in localStorage for TPS/Re-Parole; `raw_cyrillic` REMAINS in sessionStorage for Translation (load-bearing carriage, documented exception). Full removal needs Phase B (server-side session ledger + opaque browser token) — separate later PR.
+- Containment shipped: persist sanitizer (drops evidence/raw_value/normalized/confidence/sourceTraces/source*) + scalar-coercion (nested object/array under an allowlisted key is DROPPED, cannot smuggle PII) + MAX_PERSISTED_VALUE_LEN=512 cap; 24h TTL discard-on-load; clear-on-completion; static guard test (17 cases incl. nested-object/array bypass, proto, raw_cyrillic translation-only+capped).
+- CI fix: content/certification guard FAILED on persistedDraftPolicy.ts:60 "certified translation" (+ CHANGELOG) → reworded to "translation draft hand-off". guard:content now 0 violations. tsc 0 real errors; full suite pass.
+- PR #120 DRAFT. Not merged, production shadow unchanged.
+
+---
+# STATUS (2026-06-13 — BROWSER PII CONTAINMENT Phase A: draft TTL + clear-on-completion + persist-sanitizer + static guard)
+- CONTAINMENT (`apps/web/src/lib/storage/persistedDraftPolicy.ts`): shared per-wizard allowlist + `sanitizeField*ForStorage()` + `DRAFT_TTL_MS=24h` + `isDraftExpired()`. The 3 persisting wizards now strip OCR internals (`raw_value`/`source`/`source_zone`/`source_document_id`/`confidence`/`ensemble_candidate`/`review_reasons`/`kind`) BEFORE `setItem`; persist only `{value, requires_review/review_required, doc_slot|field}` + opaque `canonical_document_id`. Translation keeps `raw_cyrillic` ON PURPOSE (load-bearing operator-handoff carriage; sole documented exception).
+- TTL: every draft carries `savedAt`; discarded + `removeItem` on load if >24h (TPS/Re-Parole/Translation). CLEAR-ON-COMPLETION: TPS+Re-Parole clear on packet-generated (`draftClearedRef` suppresses re-persist); Translation clears on `/order/{id}` operator redirect. Start-over already cleared all three; ref reset there.
+- EAD = N/A: persists NOTHING to browser storage (React-memory only; verified grep). No exposure window. Allowlist lists `ead:[]` so any future persistence must route through the sanitizer.
+- GUARD: `apps/web/src/lib/storage/__tests__/browserPiiGuard.test.ts` FAILS if the sanitizer stops stripping any prohibited key, an allowlist adds one (except translation `raw_cyrillic`), or TTL drifts from 24h.
+- CARRIAGE INTACT: `canonical_document_id` (TPS/Re-Parole) + `canonicalDocumentId` (Translation) still persist+restore across `?paid=1`; existing `canonicalCarriage` source-guard tests updated to tolerate the additional sanitized keys and still pass.
+- DEFERRED: Phase B (server-side session ledger — browser holds opaque token only) documented in `docs/reports/BROWSER_PII_AUDIT.md`, no code this PR (owner: too risky to bundle with containment).
+- GATE: tsc 0 errors (only pre-existing stale `.next/types` artifacts); full vitest 3693 pass / 24 skip / 0 fail; build PASS. NOT merged, no env/Vercel change, all products SHADOW. Branch `architecture/pii-localstorage-containment` (base `main` @ bd98667).
+
+---
 # STATUS (2026-06-13 — RESOLVER HARDENED: legacy global can NEVER enforce + TPS positive carriage + PR cleanup)
 - RESOLVER HARDENED (`apps/web/src/lib/canonical/continuityMode.ts`): legacy global `CANONICAL_CONTINUITY_MODE` can NEVER yield `enforce` for ANY product. It may only return `off` or `shadow` (legacy=`enforce` → clamped to `shadow` for tps/reparole/ead/translation). enforce is allowed EXCLUSIVELY via product-scoped envs `CANONICAL_MODE_<PRODUCT>` or the matching key in `CANONICAL_MODES` JSON. This REPLACES the prior behavior where legacy enforce flowed to tps/reparole/ead.
 - Malformed `CANONICAL_MODES` JSON now emits a PII-SAFE `console.warn` (static message + product key only; raw value NEVER logged) and falls through safely to shadow.
