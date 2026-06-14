@@ -18,8 +18,9 @@ const SRC = fs.readFileSync(path.resolve(__dirname, '..', 'route.ts'), 'utf-8')
 
 describe('submit-order V2 route contract', () => {
   it('test 1: recipient email comes from Stripe, NOT client body', () => {
-    // verifiedRecipientEmail is bound from the Stripe verify result (v.customerEmail).
-    expect(SRC).toMatch(/verifiedRecipientEmail:\s*v\.customerEmail/)
+    // The recipient is derived inside the unified handler from the verified Stripe SESSION only;
+    // submit-order passes the server-retrieved session (v.session), never a client email.
+    expect(SRC).toMatch(/verifiedSession:\s*reconcileSession/)
     // The body type has no email field — recipient is never read from the client.
     expect(SRC).not.toMatch(/body\.(recipient_email|email)/)
   })
@@ -27,7 +28,14 @@ describe('submit-order V2 route contract', () => {
   it('test 1: client field VALUES are not authoritative (comment + binding uses only canonical id)', () => {
     expect(SRC).toMatch(/VALUES are NOT authoritative/)
     // The binding uses verifiedCanonicalId, never body.fields values.
-    expect(SRC).toMatch(/canonicalDocumentId:\s*verifiedCanonicalId/)
+    expect(SRC).toMatch(/canonical_document_id:\s*verifiedCanonicalId/)
+  })
+
+  it('closeout: webhook is authority; submit-order is client_reconciliation via shared handler', () => {
+    expect(SRC).toMatch(/handleVerifiedPayment\(/)
+    expect(SRC).toMatch(/source:\s*'client_reconciliation'/)
+    // Passes the server-retrieved Stripe session, not a client-built one.
+    expect(SRC).toMatch(/v\.session/)
   })
 
   it('test 2: canonical binding path — load + verify + bind', () => {
@@ -56,9 +64,10 @@ describe('submit-order V2 route contract', () => {
     expect(SRC).toMatch(/503/)
   })
 
-  it('test 6: idempotent order reuse via createOrGetOrder', () => {
-    expect(SRC).toMatch(/createOrGetOrder\(/)
-    expect(SRC).toMatch(/checkoutSessionId:\s*checkoutId/)
+  it('test 6: idempotent order reuse via the unified handler (idempotent on checkout_session_id)', () => {
+    // Idempotency now lives in handleVerifiedPayment (createOrGetOrder on checkout_session_id).
+    expect(SRC).toMatch(/handleVerifiedPayment\(/)
+    expect(SRC).toMatch(/orderReused\s*=\s*result\.reused/)
   })
 
   it('rollout: gated by getCanonicalMode(translation); legacy queue still written', () => {

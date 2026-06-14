@@ -64,6 +64,7 @@ export const PAYMENT_BOUNDARY_EVENTS = [
   'webhook_amount_mismatch_total',
   'webhook_price_mismatch_total',
   'payment_to_order_latency',
+  'payment_succeeded_order_missing',
 ] as const
 
 export const PHASE2_EVENT_CODES = [

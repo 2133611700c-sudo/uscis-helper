@@ -1,3 +1,13 @@
+# STATUS (2026-06-14 — PHASE 2 WEBHOOK AUTHORITY for V2 — CODE COMPLETE, Stripe E2E deferred)
+- handleVerifiedPayment.ts: ONE idempotent domain handler (source=webhook|client_reconciliation). Webhook (api/stripe/webhook) is now AUTHORITATIVE for V2 order create/update via signature-verified checkout.session.completed → handleVerifiedPayment(webhook). submit-order demoted to reconciliation → handleVerifiedPayment(client_reconciliation). Both idempotent on Stripe event id + checkout_session_id.
+- Migration 20260614000004_stripe_processed_events applied to prod (append-only event dedupe). Races covered: webhook-first/client-second/both/client-never-returns/delayed/duplicated → exactly one V2 order.
+- Lifecycle: completed/expired/payment_failed/refund handlers (refund→review_required, no guessing; no order delete, no artifact mutation).
+- Synthetic signed-webhook tests (mocked constructEvent, NO Stripe keys): signature/product/amount/currency/mode/recipient/canonical-binding/idempotency/lifecycle.
+- Observability wired: webhook_received/signature_failure/duplicate/amount_mismatch/price_mismatch/payment_to_order_latency/payment_succeeded_order_missing. Runbooks 09/10/11 + 01/02 updated.
+- tsc 0; full suite 3823 pass / 47 skip / 0 fail. Prod SHADOW unchanged. PR #119 DRAFT.
+- DEFERRED (owner, NOT blocking): hosted Stripe test-mode positive E2E; live DB-invariant suite RUN_DB_INVARIANTS=1.
+
+---
 # Phase 2 Wave 3/4 NON_STRIPE_READY (2026-06-14)
 - PR #119 DRAFT @ db3da8a: payment-boundary + operator E2E (mocked) + observability + runbooks + lifecycle. 3847 tests (3801 pass/0 fail), tsc 0, build pass. Prod SHADOW unchanged. Deferred to final acceptance: hosted Stripe positive E2E + V2 webhook authority + live DB-invariant suite.
 

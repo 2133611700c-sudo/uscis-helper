@@ -22,6 +22,10 @@ All dimensions are PII-free (codes, counts, durations, opaque UUIDs, truncated h
 | 8 | Outbox claim failures | `outbox_claim_failures_total` | > 3 in 10 min | WARN | DB/RPC availability — check `claim_outbox_event` and Supabase health. Worker backs off (breaks the drain loop). |
 | 9 | Stale version conflicts | `stale_version_conflicts_total` | sustained > 10/min | WARN | Usually benign (operator double-tab); a sustained spike implies a UI not refreshing version. No data action. |
 | 10 | Operator auth denied spike | `operator_auth_denied_total` | > 10 in 5 min | WARN | Possible misconfigured `ADMIN_SECRET` or probing. Verify operator cookie/secret. Fail-closed is correct behavior. |
+| 11 | Verified checkout completed but no V2 order | `payment_succeeded_order_missing` (webhook path) | **> 0 (any)** | CRITICAL (paging) | The signature-verified webhook accepted a PAID translation session but created no order. Inspect `error_code`: `amount_mismatch`/`mode_mismatch` → a payment that does not match the server-expected product (investigate, do NOT mark paid); `storage_unavailable` → infra, Stripe will retry (5xx). Reconcile by checkout_session_id via the idempotent handler. Runbook 1. |
+| 12 | Amount / price mismatch | `webhook_amount_mismatch_total` / `webhook_price_mismatch_total` | **> 0 (any)** | CRITICAL | A paid amount/currency/tier that does not match `TRANSLATION_EXPECTED_CENTS`. The order is rejected. Never trust client amount. Investigate price-map drift or tampering. |
+| 13 | Webhook/client race anomaly | `webhook_duplicate_total` + `orders_created_total{route}` | duplicate count >> created over 10 min | WARN | Expected: both webhook and client_reconciliation converge on ONE order (idempotent on checkout_session_id). A pathological spike implies repeated re-drives; confirm no second audit transition/outbox per order. Runbook 9. |
+| 14 | Payment→order latency | `payment_to_order_latency` | sustained `gte5m` bucket | WARN | Order create-or-get is slow (Supabase/RPC). Stripe webhook may approach its timeout → retries. Check DB health. |
 
 ## Gauge signals (poll, not edge-triggered)
 
@@ -29,8 +33,10 @@ All dimensions are PII-free (codes, counts, durations, opaque UUIDs, truncated h
 |-------|-------|-------|
 | Queue depth | `operator_queue_depth` | non-terminal order count |
 | Outbox pending | `outbox_pending_count` | rows in `pending`/`retry` |
-| Webhook amount/price mismatch | `webhook_amount_mismatch_total`, `webhook_price_mismatch_total` | DEFINED but not yet wired into the legacy webhook (V2 payment coupling is owner-side). Any non-zero = CRITICAL: a paid amount/price that does not match the expected product. NEVER trust client `paid=true`. |
-| Payment→order latency | `payment_to_order_latency` (duration_bucket) | DEFINED; wire when V2 webhook→order linkage lands. `gte5m` bucket spike = investigate. |
+| Webhook amount/price mismatch | `webhook_amount_mismatch_total`, `webhook_price_mismatch_total` | WIRED (Phase 2 closeout) into the AUTHORITATIVE webhook + reconciliation handler. Any non-zero = CRITICAL: a paid amount/price that does not match the SERVER-side expected product (`TRANSLATION_EXPECTED_CENTS`). The order is NOT created on mismatch. NEVER trust client `paid=true`/amount/tier. |
+| Payment→order latency | `payment_to_order_latency` (duration_bucket) | WIRED in the webhook (measured create-or-get duration). `gte5m` bucket spike = investigate Supabase/RPC latency. |
+| Webhook duplicate | `webhook_duplicate_total` | WIRED: a duplicate Stripe EVENT id was suppressed by the `stripe_processed_events` ledger (expected from at-least-once delivery). A sustained spike with NO matching `orders_created_total` may indicate a replay storm. |
+| Payment succeeded, order missing (event) | `payment_succeeded_order_missing` | WIRED: a signature-verified PAID translation session produced NO V2 order (e.g. amount/mode reject, or storage error). **> 0 = CRITICAL** — reconcile by checkout_session_id; see alert 6 + Runbook 1. |
 
 ## Escalation order
 

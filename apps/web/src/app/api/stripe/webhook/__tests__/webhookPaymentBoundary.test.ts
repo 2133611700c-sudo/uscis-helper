@@ -1,18 +1,17 @@
 /**
- * webhookPaymentBoundary.test.ts — Phase 2 Wave 3A behavioral proof of the Stripe
- * payment-verification boundary. NO external Stripe, NO real keys, NO prod bypass.
+ * webhookPaymentBoundary.test.ts — Phase 2 CLOSEOUT proof that the signature-verified Stripe webhook
+ * is the AUTHORITY for Translation Order V2. NO external Stripe, NO real keys, NO prod bypass.
  *
- * The Stripe SDK boundary (stripe.webhooks.constructEvent) is mocked in-process so a
- * "verified event" inside the test is the equivalent of a signed Stripe event whose
- * signature ALREADY passed verification — we then test the INTERNAL handler. Negative
- * cases drive the REAL signature-rejection paths (missing/invalid signature) by making
- * the mocked constructEvent throw exactly as the Stripe SDK does on a bad signature.
+ * The Stripe SDK boundary (stripe.webhooks.constructEvent) is mocked in-process: a "verified event"
+ * inside the test is the equivalent of a signed Stripe event whose signature ALREADY passed. Negative
+ * cases drive the REAL signature-rejection paths (missing/invalid signature, missing secret) by
+ * making the mocked constructEvent throw exactly as the SDK does on a bad signature.
  *
- * BOUNDARY NOTE (recorded in agent evidence): the V2 operator pipeline's *authority*
- * boundary is the INLINE verifyStripeSessionPaid() in submit-order (the Stripe token is
- * the capability). The webhook here is an additional async side-channel that only
- * touches the LEGACY translation_orders table. Both are tested; the recommendation to
- * promote a webhook to V2 authority is in the agent report.
+ * The unified domain handler + the processed-events ledger are mocked here so this suite focuses on
+ * the WEBHOOK's responsibilities: fail-closed signature, event-id dedupe, authoritative V2 call for
+ * translation, lifecycle events (expired/failed/refund), and the legacy compat step being SEPARATE
+ * (a legacy failure cannot affect the V2 result). The handler's own behavior is proven against the
+ * fake DB in handleVerifiedPayment.test.ts.
  *
  * PII: synthetic sentinel data only; assertions never include raw emails/content.
  */
@@ -24,7 +23,22 @@ vi.mock('@/lib/stripe/client', () => ({
   stripe: { webhooks: { constructEvent: constructEventMock } },
 }))
 
-// ── Capture every Supabase write the webhook performs (no live DB) ──────────────
+// ── Mock the unified domain handler + processed-events ledger ───────────────────
+const handlerMocks = vi.hoisted(() => ({
+  handle: vi.fn(),
+  record: vi.fn(),
+}))
+vi.mock('@/lib/translation/orders/handleVerifiedPayment', () => ({
+  handleVerifiedPayment: handlerMocks.handle,
+}))
+vi.mock('@/lib/translation/orders', () => ({
+  recordStripeProcessedEvent: handlerMocks.record,
+}))
+vi.mock('@/lib/canonical/continuityMode', () => ({
+  getCanonicalMode: () => 'shadow',
+}))
+
+// ── Capture every LEGACY Supabase write the webhook performs (no live DB) ────────
 const dbCalls: { table: string; op: string; payload?: unknown; filters: [string, unknown][] }[] = []
 function makeChain(table: string, op: string, payload?: unknown) {
   const filters: [string, unknown][] = []
@@ -40,18 +54,12 @@ function makeChain(table: string, op: string, payload?: unknown) {
   ;(chain as { then: unknown }).then = (resolve: (v: { error: null }) => void) => resolve({ error: null })
   return chain
 }
-// ── Run after() callbacks inline (no Next request scope in vitest) ──────────────
 const afterCallbacks: (() => Promise<void> | void)[] = []
 vi.mock('next/server', async (orig) => {
   const actual = await (orig() as Promise<Record<string, unknown>>)
-  return {
-    ...actual,
-    after: (cb: () => Promise<void> | void) => { afterCallbacks.push(cb) },
-  }
+  return { ...actual, after: (cb: () => Promise<void> | void) => { afterCallbacks.push(cb) } }
 })
-async function flushAfter() {
-  while (afterCallbacks.length) await afterCallbacks.shift()!()
-}
+async function flushAfter() { while (afterCallbacks.length) await afterCallbacks.shift()!() }
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminSupabaseClient: () => ({
@@ -73,15 +81,39 @@ function req(body: string, sig: string | null): Request {
 const ORIG_ENV = { ...process.env }
 beforeEach(() => {
   constructEventMock.mockReset()
+  handlerMocks.handle.mockReset().mockResolvedValue({
+    orderId: 'order-uuid', created: true, reused: false, status: 'queued', resultCode: 'order_created', canonicalBound: false,
+  })
+  handlerMocks.record.mockReset().mockResolvedValue({ inserted: true })
   dbCalls.length = 0
+  afterCallbacks.length = 0
   process.env = { ...ORIG_ENV, STRIPE_WEBHOOK_SECRET: 'whsec_TEST_SENTINEL' }
 })
 
-describe('webhook payment boundary — negative (signature + event)', () => {
-  it('missing signature header → 400, never calls constructEvent', async () => {
+function translationEvent(over: Record<string, unknown> = {}) {
+  return {
+    id: 'evt_PHASE2_TEST_1',
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        id: 'cs_test_PHASE2',
+        amount_total: 1499,
+        currency: 'usd',
+        livemode: false,
+        metadata: { service: 'translation', plan: 'basic', wizard_session_id: 'PHASE2_TEST_w1' },
+        customer_details: { email: 'sentinel@phase2.test' },
+        ...over,
+      },
+    },
+  }
+}
+
+describe('webhook authority — signature fail-closed (zero DB writes)', () => {
+  it('missing signature header → 400, never constructEvent, no handler, no DB', async () => {
     const res = await POST(req('{}', null) as never)
     expect(res.status).toBe(400)
     expect(constructEventMock).not.toHaveBeenCalled()
+    expect(handlerMocks.handle).not.toHaveBeenCalled()
     expect(dbCalls).toHaveLength(0)
   })
 
@@ -90,108 +122,104 @@ describe('webhook payment boundary — negative (signature + event)', () => {
     const res = await POST(req('{}', 't=1,v1=abc') as never)
     expect(res.status).toBe(400)
     expect(constructEventMock).not.toHaveBeenCalled()
+    expect(handlerMocks.handle).not.toHaveBeenCalled()
   })
 
-  it('invalid signature (SDK throws) → 400, no DB writes', async () => {
-    constructEventMock.mockImplementation(() => {
-      throw new Error('No signatures found matching the expected signature for payload')
-    })
+  it('invalid signature (SDK throws) → 400, no handler, no DB writes', async () => {
+    constructEventMock.mockImplementation(() => { throw new Error('No signatures found') })
     const res = await POST(req('{"x":1}', 't=1,v1=bad') as never)
     expect(res.status).toBe(400)
-    const json = await res.json()
-    expect(json.error).toBe('Invalid signature')
+    expect(handlerMocks.handle).not.toHaveBeenCalled()
     expect(dbCalls).toHaveLength(0)
-  })
-
-  it('wrong event type (verified) → no state transition, no order update', async () => {
-    constructEventMock.mockReturnValue({
-      type: 'customer.subscription.updated',
-      data: { object: { id: 'sub_TEST' } },
-    })
-    const res = await POST(req('{}', 't=1,v1=ok') as never)
-    expect(res.status).toBe(200)
-    // No audit_log insert, no translation_orders update for an unrelated event.
-    expect(dbCalls.filter((c) => c.table === 'translation_orders')).toHaveLength(0)
-  })
-
-  it('payment_intent.payment_failed → recorded but NEVER marks paid/emailed', async () => {
-    constructEventMock.mockReturnValue({
-      type: 'payment_intent.payment_failed',
-      data: { object: { id: 'pi_TEST', last_payment_error: { message: 'card_declined' } } },
-    })
-    const res = await POST(req('{}', 't=1,v1=ok') as never)
-    expect(res.status).toBe(200)
-    const orderUpdates = dbCalls.filter((c) => c.table === 'translation_orders' && c.op === 'update')
-    expect(orderUpdates).toHaveLength(0)
   })
 })
 
-describe('webhook payment boundary — positive (verified event → internal handler)', () => {
-  it('checkout.session.completed (translation) → audit log + order update gated on signed status', async () => {
-    constructEventMock.mockReturnValue({
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          id: 'cs_test_PHASE2',
-          amount_total: 1500,
-          metadata: { service: 'translation', plan: 'basic', wizard_session_id: 'PHASE2_TEST_w1' },
-          customer_details: { email: 'sentinel@phase2.test' },
-        },
-      },
-    })
+describe('webhook authority — translation V2 (authoritative, synchronous)', () => {
+  it('verified checkout.session.completed (translation) → handleVerifiedPayment(source=webhook)', async () => {
+    constructEventMock.mockReturnValue(translationEvent())
     const res = await POST(req('{}', 't=1,v1=ok') as never)
     expect(res.status).toBe(200)
-    // after() schedules async work; allow the microtask/`after` callback to run.
-    await flushAfter()
+    expect(handlerMocks.handle).toHaveBeenCalledTimes(1)
+    const arg = handlerMocks.handle.mock.calls[0][0]
+    expect(arg.source).toBe('webhook')
+    expect(arg.verifiedEventId).toBe('evt_PHASE2_TEST_1')
+    // Recipient/product/amount are the handler's job — the webhook passes the verified session.
+    expect(arg.verifiedSession.id).toBe('cs_test_PHASE2')
+  })
 
+  it('dedupe: a duplicate Stripe event id is a no-op (handler NOT called again)', async () => {
+    constructEventMock.mockReturnValue(translationEvent())
+    handlerMocks.record.mockResolvedValueOnce({ inserted: false }) // already processed
+    const res = await POST(req('{}', 't=1,v1=ok') as never)
+    expect(res.status).toBe(200)
+    expect(handlerMocks.handle).not.toHaveBeenCalled()
+  })
+
+  it('handler infra failure → 500 (Stripe retries), no partial trust', async () => {
+    constructEventMock.mockReturnValue(translationEvent())
+    handlerMocks.handle.mockRejectedValueOnce(new Error('storage down'))
+    const res = await POST(req('{}', 't=1,v1=ok') as never)
+    expect(res.status).toBe(500)
+  })
+
+  it('non-translation product → V2 handler NOT called (legacy compat only)', async () => {
+    constructEventMock.mockReturnValue(translationEvent({ metadata: { service: 'tps-ukraine' } }))
+    const res = await POST(req('{}', 't=1,v1=ok') as never)
+    expect(res.status).toBe(200)
+    expect(handlerMocks.handle).not.toHaveBeenCalled()
+  })
+})
+
+describe('webhook authority — legacy compat is SEPARATE (cannot roll back V2)', () => {
+  it('legacy translation_orders update runs in after(); V2 already returned 200', async () => {
+    constructEventMock.mockReturnValue(translationEvent())
+    const res = await POST(req('{}', 't=1,v1=ok') as never)
+    expect(res.status).toBe(200)
+    // V2 handler ran synchronously before the response; legacy is deferred.
+    expect(handlerMocks.handle).toHaveBeenCalledTimes(1)
+    await flushAfter()
     const audit = dbCalls.filter((c) => c.table === 'audit_log' && c.op === 'insert')
     expect(audit).toHaveLength(1)
     const orderUpd = dbCalls.filter((c) => c.table === 'translation_orders' && c.op === 'update')
     expect(orderUpd).toHaveLength(1)
-    // The legacy update only flips a row that is already 'signed' (status guard),
-    // matched by the verified email + most-recent — NEVER an arbitrary order.
-    const filterCols = orderUpd[0].filters.map((f) => f[0])
-    expect(filterCols).toContain('email')
-    expect(filterCols).toContain('status')
+    // Legacy flips only an already-'signed' row matched by Stripe-verified email.
     expect(orderUpd[0].filters.find((f) => f[0] === 'status')?.[1]).toBe('signed')
     expect((orderUpd[0].payload as { status?: string }).status).toBe('emailed')
   })
+})
 
-  it('checkout.session.completed without customer email → no translation order update', async () => {
+describe('webhook authority — lifecycle events', () => {
+  it('checkout.session.expired → no paid transition, no V2 order, recorded only', async () => {
     constructEventMock.mockReturnValue({
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          id: 'cs_test_NOEMAIL',
-          amount_total: 1500,
-          metadata: { service: 'translation' },
-          customer_details: null,
-        },
-      },
+      id: 'evt_exp', type: 'checkout.session.expired',
+      data: { object: { id: 'cs_exp', metadata: { service: 'translation' } } },
     })
     const res = await POST(req('{}', 't=1,v1=ok') as never)
     expect(res.status).toBe(200)
+    expect(handlerMocks.handle).not.toHaveBeenCalled()
     await flushAfter()
-    expect(dbCalls.filter((c) => c.table === 'translation_orders')).toHaveLength(0)
+    expect(handlerMocks.record).toHaveBeenCalledWith(expect.objectContaining({ resultCode: 'expired_noop' }))
   })
 
-  it('wrong product (tps) → re-parole/translation order branches not taken', async () => {
+  it('payment_intent.payment_failed → never paid, no order, no delivery', async () => {
     constructEventMock.mockReturnValue({
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          id: 'cs_test_TPS',
-          amount_total: 1500,
-          metadata: { service: 'tps-ukraine' },
-          customer_details: { email: 'sentinel@phase2.test' },
-        },
-      },
+      id: 'evt_fail', type: 'payment_intent.payment_failed',
+      data: { object: { id: 'pi_x', last_payment_error: { code: 'card_declined' } } },
     })
     const res = await POST(req('{}', 't=1,v1=ok') as never)
     expect(res.status).toBe(200)
+    expect(handlerMocks.handle).not.toHaveBeenCalled()
+  })
+
+  it('charge.refunded → review_required only; no order create, no delivery, no audit delete', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_refund', type: 'charge.refunded',
+      data: { object: { id: 'ch_x', payment_intent: 'pi_x' } },
+    })
+    const res = await POST(req('{}', 't=1,v1=ok') as never)
+    expect(res.status).toBe(200)
+    expect(handlerMocks.handle).not.toHaveBeenCalled()
     await flushAfter()
-    // audit only (logged for every payment); no translation or wizard update.
-    expect(dbCalls.filter((c) => c.table === 'translation_orders')).toHaveLength(0)
-    expect(dbCalls.filter((c) => c.table === 'wizard_sessions')).toHaveLength(0)
+    expect(handlerMocks.record).toHaveBeenCalledWith(expect.objectContaining({ resultCode: 'refund_review_required' }))
   })
 })

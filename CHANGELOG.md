@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-14 | Phase 2 — signature-verified Stripe webhook becomes V2 order authority (no Stripe keys, synthetic-tested)
+
+- handleVerifiedPayment.ts unified idempotent domain handler (webhook | client_reconciliation); webhook authoritative for V2 create/update; submit-order demoted to reconciliation.
+- Migration 20260614000004_stripe_processed_events (append-only event dedupe) applied to prod additively.
+- Race-safe: webhook/client first/second/concurrent, client-never-returns → exactly one V2 order, one canonical binding, one paid transition.
+- Lifecycle handlers: completed/expired/payment_failed/refund(review_required, no policy invention).
+- Synthetic signed-webhook tests (mocked constructEvent, NO sk_test/pk_test/whsec). Observability events wired + alerts; runbooks 09/10/11 + 01/02.
+- tsc 0; 3823 pass / 47 skip / 0 fail. Production SHADOW unchanged; PR #119 DRAFT. Hosted Stripe E2E deferred to final acceptance.
+
+
 ## 2026-06-14 | Phase 2 Wave 3/4 — payment-boundary + operator E2E (no external Stripe) + observability + runbooks + lifecycle
 
 - RELEASE_STATE.yaml production_sha verified = bd98667 (Phase 1 PR #118 live shadow; Phase 2 branch NOT deployed). All products shadow.

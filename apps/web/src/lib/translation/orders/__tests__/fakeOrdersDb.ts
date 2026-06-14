@@ -104,11 +104,22 @@ interface OutboxRow {
   delivered_at: string | null
 }
 
+interface ProcessedEventRow {
+  stripe_event_id: string
+  event_type: string
+  checkout_session_id: string | null
+  order_id: string | null
+  result_code: string | null
+  processed_at: string
+}
+
 export interface FakeDbState {
   orders: Map<string, OrderRow>
   events: EventRow[]
   artifacts: ArtifactRow[]
   outbox: OutboxRow[]
+  /** Stripe webhook processed-events dedupe ledger (idempotency on the Stripe event id). */
+  processedEvents: Map<string, ProcessedEventRow>
   storage: Map<string, Buffer> // `${bucket}/${key}` -> bytes
   recipientEvents: { order_id: string; event_type: string; actor: string; reason: string | null; metadata: unknown }[]
   /** Fault injection hooks (chaos tests). */
@@ -125,6 +136,7 @@ export function makeFakeDbState(): FakeDbState {
     events: [],
     artifacts: [],
     outbox: [],
+    processedEvents: new Map(),
     storage: new Map(),
     recipientEvents: [],
     faults: {},
@@ -319,7 +331,32 @@ export function makeFakeSupabase(state: FakeDbState) {
         deleted++
       }
     }
+    for (const [eid, ev] of state.processedEvents) {
+      if (eid.startsWith(prefix) || (ev.checkout_session_id ?? '').startsWith(prefix)) {
+        state.processedEvents.delete(eid)
+      }
+    }
     return { data: deleted, error: null }
+  }
+
+  // record_stripe_processed_event: INSERT ON CONFLICT DO NOTHING on the event id.
+  function rpcRecordProcessedEvent(args: Record<string, unknown>) {
+    const eventId = args.p_stripe_event_id as string
+    if (eventId == null || String(eventId).trim() === '') {
+      return pgError('STRIPE_EVENT_ID_REQUIRED')
+    }
+    if (state.processedEvents.has(eventId)) {
+      return { data: [{ inserted: false }], error: null }
+    }
+    state.processedEvents.set(eventId, {
+      stripe_event_id: eventId,
+      event_type: args.p_event_type as string,
+      checkout_session_id: (args.p_checkout_session_id as string) ?? null,
+      order_id: (args.p_order_id as string) ?? null,
+      result_code: (args.p_result_code as string) ?? null,
+      processed_at: nowIso(),
+    })
+    return { data: [{ inserted: true }], error: null }
   }
 
   // ── from(table) query builder ─────────────────────────────────────────────
@@ -334,6 +371,7 @@ export function makeFakeSupabase(state: FakeDbState) {
         case 'transition_translation_order': return Promise.resolve(rpcTransition(args))
         case 'create_artifact_and_enqueue': return Promise.resolve(rpcCreateArtifactAndEnqueue(args))
         case 'claim_outbox_event': return Promise.resolve(rpcClaimOutbox(args))
+        case 'record_stripe_processed_event': return Promise.resolve(rpcRecordProcessedEvent(args))
         case 'phase2_admin_cleanup': return Promise.resolve(rpcPhase2Cleanup(args))
         default: return Promise.resolve(pgError(`unknown rpc ${name}`))
       }
@@ -400,6 +438,7 @@ class TableQuery {
     if (this.table === 'document_artifacts') return this.state.artifacts as unknown as Record<string, unknown>[]
     if (this.table === 'delivery_outbox') return this.state.outbox as unknown as Record<string, unknown>[]
     if (this.table === 'translation_order_events') return this.state.events as unknown as Record<string, unknown>[]
+    if (this.table === 'stripe_processed_events') return [...this.state.processedEvents.values()] as unknown as Record<string, unknown>[]
     return []
   }
 
