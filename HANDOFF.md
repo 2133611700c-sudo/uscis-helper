@@ -1,3 +1,14 @@
+# HANDOFF (2026-06-14 — full project reality audit COMPLETE)
+DONE: Integrated 4 audit agents' worktree docs onto audit/full-project-reality-2026-06-14 (cherry-picked b4c9258/f8fe72b/5d7bd20/5514e89, all docs/audit-only, clean). Wrote 4 synthesis docs (FULL_PROJECT_AUDIT_2026-06-14.md, CLAIMS_VS_REALITY.csv 19 claims, RISK_REGISTER.csv 23 risks, V1_COMPLETION_PLAN_V2.md 11 phases). 23 deliverables total. Validated CSV/JSON parse; no secrets/emails/PII committed. Diff base..HEAD touches ONLY docs/audit/* + STATUS/HANDOFF/CHANGELOG. Independently re-verified: main=prod=02eb595, ledger 404. Draft PR opened to main. NO runtime/env/migration/flag change; PR #119 untouched.
+TOP REAL BLOCKERS: P0 raw PII cleartext in tps_ocr_audit (575/668 rows); P0/P1 no env isolation (preview/dev write prod w/ service-role); P1 Re-Parole free-packet payment bypass; P1 ledger NOT_WIRED (orphan GeneratePacketBlock, live TPSWizardV2 untouched); P1 no real-doc GT (accuracy unmeasured, EMPTY=pass); P1 anti-fab gate OFF on Gemini vision (MRZ-less docs); P1 DB drift (4 V2 migrations only in #119); P1 canonical override orphan (enforce unsafe); P2 OCR cache/budget NOT_WIRED (uncapped spend); P2 no staging/Stripe-test/branch-protection.
+NEXT (owner): V1_COMPLETION_PLAN_V2.md order — P0 PII/env → staging (owner-provisioned) → browser lab → ledger wiring → real-doc GT → enforce. T0.1/T0.3 need no infra and can start now.
+
+---
+
+# HANDOFF (2026-06-14 — full project reality audit, in progress)
+- Read-only audit: 4 agents (arch/infra/docintel/security) → docs/audit/* + Draft PR. No fixes in audit. PR #119 untouched.
+
+---
 # HANDOFF (2026-06-14 — Stage 0: single source of truth established; Draft PR, no runtime change)
 > Created RELEASE_STATE.yaml (machine-readable truth), scripts/verify-release-state.mjs (dep-free guard), .github/workflows/release-state-guard.yml, trimmed STATUS.md to current-only (629→34 lines, 41→1 heading; fixed the stale 'PR #120 DRAFT' line), archived the 41 old blocks to docs/STATUS_ARCHIVE.md (no PII). NO runtime code / migrations / env / Stripe changes. Guard PASS locally. Draft PR, do-not-merge. NEXT: minimal security hotfix 0.5 (legacy Translation per-action auth + server-authoritative recipient).
 
