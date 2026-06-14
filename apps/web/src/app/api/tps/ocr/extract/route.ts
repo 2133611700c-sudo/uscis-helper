@@ -24,6 +24,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { docAIProvider, isDocAIEnabled } from '@/lib/docai/provider'
 import { logOcrRun } from '@/lib/tps/ocrAudit'
@@ -289,7 +290,7 @@ export async function POST(req: NextRequest) {
           console.info('[Core/TPS] used Core for', docTypeHint, 'fields:', moduleResult.fields.length,
             'review_required:', moduleResult.fields.filter(f => f.review_required).length)
           // CANONICAL_CONTINUITY: persist the canonical result (shadow/enforce modes)
-          const tpsContinuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+          const tpsContinuityMode = getCanonicalMode('tps')
           if (tpsContinuityMode !== 'off') {
             try {
               const tpsCanonicalResult = buildCanonicalResult({

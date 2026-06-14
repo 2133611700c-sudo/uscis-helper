@@ -37,8 +37,10 @@ describe('ReParole extract route — canonical persistence + id emission', () =>
     expect(ROUTE_SRC).toMatch(/import\s*\{\s*persistCanonicalDocument\s*\}\s*from\s*['"]@\/lib\/canonical\/persistence['"]/)
   })
 
-  it('guards persistence behind CANONICAL_CONTINUITY_MODE (off = skip)', () => {
-    expect(ROUTE_SRC).toMatch(/CANONICAL_CONTINUITY_MODE/)
+  it('guards persistence behind the product-scoped canonical mode (off = skip)', () => {
+    // Mode is now resolved per-product via getCanonicalMode('reparole'); the legacy
+    // global CANONICAL_CONTINUITY_MODE read lives only inside the resolver for back-compat.
+    expect(ROUTE_SRC).toMatch(/getCanonicalMode\(\s*['"]reparole['"]\s*\)/)
     expect(ROUTE_SRC).toMatch(/continuityMode\s*!==\s*['"]off['"]/)
   })
 

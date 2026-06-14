@@ -1,3 +1,53 @@
+# HANDOFF (2026-06-13 — resolver hardened: legacy global can't enforce + TPS positive carriage proof + PR cleanup)
+
+DONE: (1) Hardened `apps/web/src/lib/canonical/continuityMode.ts` so the legacy global `CANONICAL_CONTINUITY_MODE` can NEVER enforce for ANY product — it now yields only `off` (when set to off) or `shadow` (everything else, including legacy=enforce). enforce is product-scoped ONLY (`CANONICAL_MODE_<P>` / `CANONICAL_MODES` JSON). Malformed `CANONICAL_MODES` → PII-safe `console.warn` (static + product key) + shadow. (2) Rewrote `continuityMode.test.ts` to 20 tests covering all 4 products × all env priorities incl. the malformed-JSON warn-spy (no value leak). (3) Made the TPS `canonical-carriage.spec.ts` test POSITIVE: asserts `generate_has_id===true && ids_equal===true` after the `?paid=1` reload; intercepts real generate-packet, reads postData, aborts before server; writes PII-safe artifact with deploy SHA + base host. (4) PR cleanup: `git rm --cached tsconfig.tsbuildinfo`, removed orphaned `osd.traineddata` (no runtime ref; OSD path removed 2026-06-12), removed unrelated `monitoring/...briefing.md`; updated `.gitignore` (`*.tsbuildinfo`, `*.traineddata`).
+
+NEXT TASK (coordinator): merge PR #118 after the TPS wire-proof on the pushed-SHA preview is green. Do NOT enable enforce for any product; do NOT change prod env. When flipping enforce later, set ONLY the per-product env (legacy global is now inert for enforce).
+
+EVIDENCE: tsc 0; full vitest 3683 pass / 24 skip / 0 fail; build PASS; continuityMode 20/20; PII gate CLEAN. TPS wire-proof captured against the preview of the pushed SHA — all booleans true (extract 200, id len 36, generate_has_id, ids_equal), aborted before payment (see CHANGELOG + tps.json artifact). Preview is SSO-gated; test primes the Vercel bypass cookie via `VERCEL_SHARE_URL`/`VERCEL_SHARE_TOKEN` (test-only `beforeEach`, no-op when unset).
+
+OSD DECISION: `apps/web/osd.traineddata` REMOVED — grep across `apps/web/src`, `scripts/`, `.github/`, `packages/` found ZERO references; client-side Tesseract OSD auto-rotation was removed 2026-06-12 (`autoRotate.ts` / `prepareImageForUpload.ts` doc-comments), no runtime loads the blob, no origin/license documented. It was committed accidentally by the carriage-proof commit. Gitignored `*.traineddata`.
+
+---
+# HANDOFF (2026-06-13 — product-scoped canonical continuity modes; translation hard-guarded to shadow)
+
+DONE: Implemented per-product canonical continuity modes, replacing the single global `CANONICAL_CONTINUITY_MODE` enforce decision (owner-binding: a single global enforce across all products is PROHIBITED). New resolver `apps/web/src/lib/canonical/continuityMode.ts` exposes `getCanonicalMode(product)` with precedence product-env → `CANONICAL_MODES` JSON → legacy global (back-compat, resolver-only) → shadow. HARD GUARD: translation can never reach enforce via the legacy global flag (only explicit `CANONICAL_MODE_TRANSLATION` / `CANONICAL_MODES.translation`). Refactored 9 routes (tps/reparole/ead ocr-extract + generate-packet, translation vision-extract [main+legacy reads], generate-pdf, render). New test `continuityMode.test.ts` (12 tests). Updated 1 stale reparole source-inspection assertion. tsc 0; vitest 3675 pass / 24 skip / 0 fail.
+
+NEXT TASK: (1) Set per-product env in preview/prod when flipping enforce per product (e.g. `CANONICAL_MODE_EAD=enforce`, `CANONICAL_MODE_REPAROLE=enforce` once carriage re-proven) — NEVER a global enforce. (2) Keep translation shadow until operator-flow canonical→PDF continuity is built. (3) Wire-re-prove TPS carriage before any TPS enforce.
+
+EVIDENCE: grep confirms 0 bare `process.env.CANONICAL_CONTINUITY_MODE` outside resolver + tests. tsc 0; full suite 3675 pass / 24 skip / 0 fail.
+
+---
+# HANDOFF (2026-06-13 — TPS carriage fixed; owner chose STAGED-SHADOW)
+
+DONE: Fixed TPS carriage break (`e4e5adc`) — persist+restore canonical_document_id across Stripe `?paid=1` reload in TPSWizardV2 (uploadsSafe + meta type + rebuiltUploads). tsc 0. Surfaced Translation OPERATOR_FLOW architectural truth (operator-made PDF, no canonical→PDF in prod). Owner decision: STAGED — keep prod shadow, wire-re-prove TPS, watch telemetry, decide enforce later.
+
+NEXT TASK: (1) Land TPS fix + carriage specs to main (shadow-safe). (2) Wire-re-prove TPS carriage on a deployment with the fix (canonical-carriage.spec.ts, TPS test should now show generate_body_has_id=true). (3) Optional later: Translation operator-flow canonical wiring (submit-order → carry id → operator generation from resolved canonical) before any global enforce.
+
+EVIDENCE: EAD + Re-Parole full carriage wire-proven (Playwright on live prod). TPS was proven broken, now fixed. Translation extract-persist proven; output is operator-flow.
+
+---
+# HANDOFF (2026-06-13 — Wave 1 E2E INTEGRATION coordinator: browser carriage proof + DB-truth re-verify, gate green, preview-enforce NO-GO)
+
+DONE (Wave 1 e2e integration session):
+- Branch `architecture/canonical-enforce-e2e`, base `4c9fece` (PR #117 squash). Cherry-picked Agent A `77026ab` → new commit `cdf36fd`. CLEAN — 2 NEW files only (`tests/e2e/canonical-carriage.spec.ts` + `test-fixtures/proof/synthetic_passport.jpg`), no conflict.
+- Agent B produced NO new code: its worktree tip `066ab1f` is an older unsquashed state already subsumed by base (diff base..066ab1f = +33/−1286). Verified B's HTTP-contract claims hold against the integrated tree (422/404/409/403/503 mapping, resolve-null + verifyHash-notFound). DB_TRUTH_PASS stands.
+- Confirmed the Playwright spec does NOT enter the vitest unit run: vitest `include` = `src/**/*.test.ts(x)` only; the spec is at `apps/web/tests/e2e/*.spec.ts` (outside src, `.spec.ts`). Did NOT run Playwright here — Agent A already ran it live; only ensured it doesn't break the unit suite.
+- GATE: tsc 0 errors; tests 3663 pass / 24 skip / 0 fail; build PASS.
+
+BROWSER CARRIAGE (Agent A live prod run): EAD + Re-Parole = FULL CARRIAGE PROVEN on the wire. TPS = CARRIAGE BREAK on the paid path (generate body lacks the extract id). Translation = extract proven, generate payment-gated → not wire-observable.
+
+DECISION: preview/prod ENFORCE = NO-GO. carriage_proven_products = EAD, Re-Parole (2/4). Open blockers: TPS_CARRIAGE_BREAK_PAID_PATH, TRANSLATION_CARRIAGE_UNPROVEN.
+
+NEXT:
+1. Fix TPS client carriage: ensure the canonical_document_id captured from the TPS extract response is resent in the generate-packet request body on the PAID path (debug the wizard state→generate body wiring in TPSWizardV2 / canonicalCarriage.ts).
+2. Make Translation generate carriage wire-observable (test hook / preview without payment gate) and prove it, or accept it as owner-manual.
+3. Re-run Agent A's Playwright proof; require ALL 4 = FULL CARRIAGE PROVEN before flipping enforce.
+
+NOT merged to main, no Vercel/env change, not deployed. Pushed to `architecture/canonical-enforce-e2e` only.
+
+---
+
 # HANDOFF (2026-06-13 — HTTP-contract fix: not-found canonical → 404 not 503/409 in enforce, found by preview-enforce smoke)
 
 DONE (this session):

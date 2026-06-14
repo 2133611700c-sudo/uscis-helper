@@ -26,6 +26,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
@@ -251,7 +252,7 @@ export async function POST(req: NextRequest) {
     //     failure is fatal (503) so generate-packet never runs without a verifiable canonical.
     //     Mirrors the TPS extract route persist pattern.
     let reParoleCanonicalDocumentId: string | null = null
-    const continuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+    const continuityMode = getCanonicalMode('reparole')
     if (continuityMode !== 'off') {
       try {
         const persisted = await persistCanonicalDocument(canonical, document_id)
