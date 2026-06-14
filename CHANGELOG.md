@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-13 | feat(translation): Phase 2 Wave 3/4 integration — Agent 3 (harness) + Agent 4 (observability) merged onto architecture/translation-operator-canonical-v2
+
+- INTEGRATION (coordinator): cherry-picked Agent 3 (803798d) then Agent 4 (1d80dbc) onto base 44ec7b8. Only STATUS/HANDOFF/CHANGELOG overlapped (resolved semantically, both kept). Code files disjoint/auto-merged. Agent 4 audit reviewed: NO BLOCKING FINDINGS; minor unwired payment-coupling gauges deferred to owner-side per PR notes. Prod stays SHADOW; PR #119 stays DRAFT; NOT merged to main; no Vercel/env/deploy. External Stripe positive E2E owner-DEFERRED to final acceptance (not a blocker).
+
 ## 2026-06-13 | test(translation): Phase 2 Agent 3 internal harness — payment boundary + operator E2E + chaos (no external Stripe)
 
 - **PAYMENT BOUNDARY IDENTIFIED**: V2 payment authority = INLINE `verifyStripeSessionPaid()` in `apps/web/src/app/api/translation/submit-order/route.ts` (the Stripe checkout token is the capability). The Stripe webhook (`apps/web/src/app/api/stripe/webhook/route.ts`) is a side-channel touching only the LEGACY `translation_orders` table — it does NOT create V2 orders. Recommendation (evidence): promote a signature-verified `checkout.session.completed` webhook to V2 authority.
@@ -8,6 +12,15 @@
 - **LIVE DB INVARIANTS** `apps/web/src/lib/translation/orders/__tests__/phase2OrdersInvariants.live.test.ts` (8, SELF-SKIPS unless `RUN_DB_INVARIANTS=1`+service-role env): direct status/version change rejected by trigger, actor-required, stale-version→ORDER_VERSION_CONFLICT, invalid-transition, events append-only, canonical rebind forbidden — against REAL Supabase with `PHASE2_TEST_` sentinels, cleaned via guarded `phase2_admin_cleanup`. Test-only paid-state lives ONLY in the test DB, unreachable from any prod HTTP route.
 - **EMAIL TRANSPORT SEAM** `apps/web/src/lib/email/resend.ts`: added `EmailTransport` interface + `setEmailTransportForTesting`/`resetEmailTransport`; `sendEmail` delegates to the active transport. Prod default UNCHANGED (real Resend `realResendSend` — BCC, attachment encoding, idempotency key, email_events). Tests inject a capturing transport (no real send; captures only PII-free hashes/keys). No product code calls the test seam.
 - **GATE**: input_sha=44ec7b8fcaa61ac621dbb1f2a8e14b64ea8eab44. tsc 0 errors. Full vitest 3764 pass / 46 skip / 0 fail (228 files); +65 new pass + 8 new skipped (live). NO external Stripe, NO live DB touched, NO prod env/flag change, NO merge, PR #119 stays DRAFT, prod stays SHADOW. Hosted Stripe positive E2E owner-DEFERRED to final acceptance.
+
+## 2026-06-13 | feat(observability): Phase 2 Agent 4 — PII-safe events, alerts, runbooks, lifecycle/retention + independent audit
+- NEW `apps/web/src/lib/translation/observability/events.ts`: typed PII-safe event emitter (25 codes across orders/operator/artifact/delivery/payment_boundary). Dimension type makes PII unrepresentable; `assertPiiSafe()` rejects forbidden/unknown keys, email-like values, over-long free text. `emitEvent()` never throws; silent unless `PHASE2_EVENTS_ENABLED=1`. Helpers `durationBucket`, `truncateHash`.
+- WIRED emit() additively (no behavior change): `submit-order/route.ts` (orders_created_total, order_transition_failures_total), `[id]/v2Actions.ts` (operator_override_total, artifact_generation_total, artifact_generation_failures_total, artifact_storage_failures_total, operator_auth_denied_total, stale_version_conflicts_total), `translation-delivery/route.ts` (delivery_attempts/success/failure_total, delivery_duplicate_prevented_total, artifact_hash_mismatch_total, outbox_claim_failures_total), `stripe/webhook/route.ts` (webhook_received_total, webhook_signature_failure_total).
+- NEW `apps/web/src/lib/translation/lifecycle.ts`: pure retention/lifecycle planners (signed-URL TTL short-lived+private+non-reusable, customer-deletion plan with no orphan storage + preserved non-PII audit stub, legal hold, expired-artifact access). NO destructive migration shipped.
+- DOCS: `docs/observability/PHASE2_ALERTS.md` (10 alerts+auto-responses), `docs/observability/PHASE2_RETENTION.md`, `docs/runbooks/01..08`, `RELEASE_STATE.yaml` (machine-readable release state).
+- TESTS: `observability/__tests__/events.test.ts` + `__tests__/lifecycle.test.ts` (37 new). PII-gate test asserts no forbidden field survives.
+- AUDIT (Agent 1-3): no blocking data-loss/dup-delivery/authz-bypass/race/PII findings. GUC reset txn-local+rollback-safe; SKIP LOCKED + UNIQUE idempotency_key = exactly-once; immutable artifacts + content-addressed storage prevent overwrite. Minor: webhook amount/price-mismatch + payment_to_order_latency events defined, not yet wired (owner-side V2 webhook coupling).
+- GATE: tsc 0 errors; full vitest 3764 pass / 38 skip / 0 fail. base_sha 44ec7b8. NOT merged, no env/Vercel change, PHASE2_EVENTS_ENABLED OFF, prod SHADOW.
 
 ## 2026-06-14 | feat(translation): Phase 2 Operator Pipeline V2 — application flow (submit-order binding, operator auth, canonical render, outbox delivery)
 
