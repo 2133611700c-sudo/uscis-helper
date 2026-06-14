@@ -53,6 +53,9 @@ import {
   type DocumentBrainOutput,
 } from '@/lib/tps/ai/documentBrain'
 import { postExtractNormalize } from '@/lib/tps/ocr/postExtractNormalize'
+// P2 OCR cost OBSERVABILITY (shadow, observe-only): roll up per-upload provider
+// calls + est cost. Does NOT change output/behaviour — emits one summary event.
+import { runWithUploadCostTally } from '@/lib/v1/ocrCostMetrics'
 // ONE BRAIN B1: TPS → Core default for UA-identity docs (Phase 2.2)
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
@@ -97,6 +100,13 @@ const ALLOWED_MIME = new Set([
 ])
 
 export async function POST(req: NextRequest) {
+  // P2 shadow cost observability: wrap the handler so every provider call inside
+  // rolls up into ONE ocr_upload_cost_summary (PII-free). The handler result is
+  // returned UNCHANGED — no output/behaviour change.
+  return runWithUploadCostTally({ product: 'tps', route: '/api/tps/ocr/extract' }, () => POST_impl(req))
+}
+
+async function POST_impl(req: NextRequest) {
   // ── Rate limit: 20 OCR calls per minute per IP. Vision is paid; we
   //    do not want a single user (or bot) hammering it.
   const ip = getClientIP(req)

@@ -15,6 +15,8 @@
  * Fail-open: any error returns the ORIGINAL buffer. Behind AUTO_ORIENT_ENABLED.
  */
 
+import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
+
 export type Cw = 0 | 90 | 180 | 270
 
 const GEMINI_URL = (model: string, key: string) =>
@@ -25,16 +27,27 @@ async function detectCw(thumbB64: string, model: string, key: string): Promise<C
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), 15_000)
   try {
-    const res = await fetch(GEMINI_URL(model, key), {
-      method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [
-          { text: 'This is a scanned identity document. By how many degrees must it be rotated CLOCKWISE so the printed text reads upright/horizontal? Answer ONLY JSON {"cw":0} or {"cw":90} or {"cw":180} or {"cw":270}.' },
-          { inline_data: { mime_type: 'image/jpeg', data: thumbB64 } },
-        ] }],
-        generationConfig: { temperature: 0, response_mime_type: 'application/json' },
-      }),
+    // SHADOW cost metric: this is a real paid Gemini call (orientation thumbnail).
+    const cacheKeySha = computeCacheKeySha({
+      fileSha256: sha256Hex(thumbB64), provider: 'gemini', model,
+      promptVersion: 'orient_v1', preprocVersion: 'thumb_v1',
     })
+    const res = await withOcrCostMetrics(
+      {
+        product: 'ocr', route: 'provider:gemini_orient', provider: 'gemini',
+        model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('gemini', model),
+      },
+      () => fetch(GEMINI_URL(model, key), {
+        method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { text: 'This is a scanned identity document. By how many degrees must it be rotated CLOCKWISE so the printed text reads upright/horizontal? Answer ONLY JSON {"cw":0} or {"cw":90} or {"cw":180} or {"cw":270}.' },
+            { inline_data: { mime_type: 'image/jpeg', data: thumbB64 } },
+          ] }],
+          generationConfig: { temperature: 0, response_mime_type: 'application/json' },
+        }),
+      }),
+    )
     if (!res.ok) return null
     const j = await res.json()
     const cw = Number(JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.cw)
