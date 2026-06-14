@@ -1,3 +1,8 @@
+# HANDOFF (2026-06-14 — V1 fix program Phases 1-5 done; ledger layer complete)
+- Done: #135 PII redaction (prod-verified 538→0), #136 env-isolation shadow-detect, #137 Re-Parole payment gate (prod 403), #138 schema-drift diff=0, #139/#140/#141 server-ledger wired into 3 live wizards (flag OFF, OFF-parity). main=ecc4e6c shadow.
+- Next internal: Phase 7 OCR cache/budget runtime wiring (P2 cost), Phase 6 canonical override loop. BLOCKED_EXTERNAL: staging Supabase + Stripe test keys + real corpus (gate ledger-ON proof, Translation V2 E2E, honest benchmark).
+
+---
 # HANDOFF (2026-06-14 — P1 Re-Parole server PII ledger WIRED into LIVE ReparoleWizardV2 behind flag, OFF-path parity)
 DONE: Branch fix/p1-reparole-server-ledger-wiring off main (4cfca97). Mirrors the TPS wiring merged in #139. The LIVE wizard ReparoleWizardV2.tsx always persisted PII (uploadsMeta field values + manual) to localStorage and its hydrate was inline/entangled. (1) REFACTOR FIRST: extracted the persisted-draft rebuild into a single applyPersistedDraft(parsed) (slot-contract filtering, value-string guard, setData/setStep) so OFF (localStorage) and ON (ledger) hydrate share ONE rebuild and cannot drift. (2) WIRED @/lib/v1/wizardLedgerClient (REUSED unmodified — saveDraftToServer/loadDraftFromServer/clearServerDraft/isLedgerClientEnabled, flag NEXT_PUBLIC_SERVER_LEDGER_ENABLED) into ReparoleWizardV2:
 - SAVE (persist effect): build draftRecord {schema, ...rest, lastStep, uploadsMeta, savedAt}; ON → `void saveDraftToServer('reparole', draftRecord)` (nothing to localStorage); OFF → `localStorage.setItem(STORAGE_KEY, JSON.stringify(draftRecord))` — same record shape both paths.
