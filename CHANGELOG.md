@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-14 | Phase 2 FROZEN — full live DB invariants PASS (9/9) + payment-authority security review; PR #119 draft, Stripe E2E deferred
+
+- Full phase2OrdersInvariants.live.test.ts (RUN_DB_INVARIANTS=1) 9/9 PASS on real Supabase incl. duplicate-stripe-event-id dedupe + canonical-rebind-forbidden. Cleanup: 0 sentinel rows.
+- Payment-authority security review PASS (signature-before-handler fail-closed, all payment facts server-side, recipient Stripe-only, no PII logs, canonical immutable).
+- CI green on 16b140e. PR #119 DRAFT FROZEN — no new scope; production SHADOW unchanged. Hosted Stripe Test Mode E2E deferred to final acceptance (separate owner GO).
+
+
 ## 2026-06-14 | Phase 2 — signature-verified Stripe webhook becomes V2 order authority (no Stripe keys, synthetic-tested)
 
 - handleVerifiedPayment.ts unified idempotent domain handler (webhook | client_reconciliation); webhook authoritative for V2 create/update; submit-order demoted to reconciliation.
