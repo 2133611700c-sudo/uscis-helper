@@ -996,3 +996,4 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-13: added Part 3 OUTPUT-format TL;DR block to the consolidated audit doc (audit-only, no code change). -->
 
 <!-- 2026-06-13: Part 4 Phase-1 gap audit appended. NOT PHASE1_COMPLETE: canonical discarded→DTO→rebuilt at boundary; normalizeCountryOfBirth at TPS boundary; 2 I-765 wrappers; telemetry partial. To close: carry one CanonicalDocumentResult end-to-end. Audit-only. -->
+<!-- 2026-06-14: PR #121 corrected — RELEASE_STATE is now an honest VERIFIED SNAPSHOT (schema_version 2: snapshot.state_basis_main_sha / verified_production_sha / verified_at + evidence), not a fake auto-generated mirror. Guard v2 reports current_head/basis/main_tip/snapshot_is_stale; staleness WARNs (never blocks merge / no self-reference paradox). -->

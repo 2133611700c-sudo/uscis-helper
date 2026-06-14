@@ -1,6 +1,7 @@
 # STATUS (current — 2026-06-14)
 
-> **This file is current state ONLY.** Machine-readable truth: [RELEASE_STATE.yaml](RELEASE_STATE.yaml).
+> **This file is current state ONLY.** Machine-readable **verified snapshot**: [RELEASE_STATE.yaml](RELEASE_STATE.yaml)
+> (describes main at a basis SHA; CI reports `snapshot_is_stale` — it is NOT a live mirror of main).
 > History: [CHANGELOG.md](CHANGELOG.md) and [docs/STATUS_ARCHIVE.md](docs/STATUS_ARCHIVE.md).
 > Do not stack historical status blocks here (CI: `scripts/verify-release-state.mjs`).
 
