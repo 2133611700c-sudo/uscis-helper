@@ -1,3 +1,12 @@
+# HANDOFF (2026-06-13 — product-scoped canonical continuity modes; translation hard-guarded to shadow)
+
+DONE: Implemented per-product canonical continuity modes, replacing the single global `CANONICAL_CONTINUITY_MODE` enforce decision (owner-binding: a single global enforce across all products is PROHIBITED). New resolver `apps/web/src/lib/canonical/continuityMode.ts` exposes `getCanonicalMode(product)` with precedence product-env → `CANONICAL_MODES` JSON → legacy global (back-compat, resolver-only) → shadow. HARD GUARD: translation can never reach enforce via the legacy global flag (only explicit `CANONICAL_MODE_TRANSLATION` / `CANONICAL_MODES.translation`). Refactored 9 routes (tps/reparole/ead ocr-extract + generate-packet, translation vision-extract [main+legacy reads], generate-pdf, render). New test `continuityMode.test.ts` (12 tests). Updated 1 stale reparole source-inspection assertion. tsc 0; vitest 3675 pass / 24 skip / 0 fail.
+
+NEXT TASK: (1) Set per-product env in preview/prod when flipping enforce per product (e.g. `CANONICAL_MODE_EAD=enforce`, `CANONICAL_MODE_REPAROLE=enforce` once carriage re-proven) — NEVER a global enforce. (2) Keep translation shadow until operator-flow canonical→PDF continuity is built. (3) Wire-re-prove TPS carriage before any TPS enforce.
+
+EVIDENCE: grep confirms 0 bare `process.env.CANONICAL_CONTINUITY_MODE` outside resolver + tests. tsc 0; full suite 3675 pass / 24 skip / 0 fail.
+
+---
 # HANDOFF (2026-06-13 — TPS carriage fixed; owner chose STAGED-SHADOW)
 
 DONE: Fixed TPS carriage break (`e4e5adc`) — persist+restore canonical_document_id across Stripe `?paid=1` reload in TPSWizardV2 (uploadsSafe + meta type + rebuiltUploads). tsc 0. Surfaced Translation OPERATOR_FLOW architectural truth (operator-made PDF, no canonical→PDF in prod). Owner decision: STAGED — keep prod shadow, wire-re-prove TPS, watch telemetry, decide enforce later.

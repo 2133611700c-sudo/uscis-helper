@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { buildReParoleI131 } from '@/lib/reparole/packetBuilder'
 import type { ReParoleAnswers } from '@/lib/reparole/answers'
 // CANONICAL_CONTINUITY: packet route loads persisted canonical (shadow/enforce modes)
@@ -155,7 +156,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── CANONICAL_CONTINUITY: load resolved canonical if available ──────────────
-  const mode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+  const mode = getCanonicalMode('reparole')
   const canonical_document_id = (answers as unknown as { canonical_document_id?: string }).canonical_document_id ?? null
   // Remove from answers so it doesn't bleed into legacy processing
   delete (answers as unknown as Record<string, unknown>).canonical_document_id

@@ -1,3 +1,11 @@
+# STATUS (2026-06-13 — PRODUCT-SCOPED canonical continuity modes; single global enforce PROHIBITED)
+- Replaced the single global `CANONICAL_CONTINUITY_MODE` decision point with a per-product resolver `apps/web/src/lib/canonical/continuityMode.ts` (`getCanonicalMode(product)`). Each product (tps/reparole/ead/translation) resolves its OWN mode.
+- PRECEDENCE: product env `CANONICAL_MODE_<PRODUCT>` → `CANONICAL_MODES` JSON → legacy global `CANONICAL_CONTINUITY_MODE` (back-compat, resolver-internal ONLY) → `shadow` default.
+- HARD GUARD (owner-binding): translation can NEVER reach `enforce` via the legacy global flag (operator-flow continuity not built). Only explicit `CANONICAL_MODE_TRANSLATION` / `CANONICAL_MODES.translation` may set translation enforce.
+- 9 routes refactored to read `getCanonicalMode(<product>)`; no bare `process.env.CANONICAL_CONTINUITY_MODE` remains outside the resolver + tests. Behavior identical when no per-product env set (default shadow).
+- GATE: tsc 0 errors; full vitest 3675 pass / 24 skip / 0 fail (+12 new in `continuityMode.test.ts`; updated 1 stale reparole source-inspection assertion). NOT merged, no Vercel/env change, not deployed. Branch `architecture/canonical-enforce-e2e`.
+
+---
 # STATUS (2026-06-13 — TPS carriage FIXED + owner decision STAGED-SHADOW)
 - TPS CARRIAGE BREAK FIXED (`e4e5adc`): TPSWizardV2 persists `canonical_document_id` into localStorage `uploadsMeta` + restores on rehydration, surviving the Stripe `?paid=1` reload. Mirrors ReparoleWizardV2 persist/restore. tsc 0. Wire-re-proof pending.
 - TRANSLATION truth: prod runs OPERATOR_FLOW (`NEXT_PUBLIC_NEW_OPERATOR_FLOW_ENABLED` ON). Final PDF is operator-made from `manual_review_queue`; `submit-order` carries no canonical_document_id → canonical→PDF continuity architecturally ABSENT for Translation in prod. Enforce flag is GLOBAL.
