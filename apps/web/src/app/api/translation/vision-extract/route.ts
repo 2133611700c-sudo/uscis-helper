@@ -29,6 +29,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
@@ -305,7 +306,7 @@ export async function POST(req: NextRequest) {
         createdAt: new Date().toISOString(),
       })
       // CANONICAL_CONTINUITY: persist canonical result (shadow/enforce modes)
-      const continuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+      const continuityMode = getCanonicalMode('translation')
       let canonicalDocumentId: string | null = null
       if (continuityMode !== 'off') {
         try {
@@ -454,7 +455,7 @@ export async function POST(req: NextRequest) {
   })
 
   // CANONICAL_CONTINUITY: persist canonical result (shadow/enforce modes)
-  const legacyContinuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+  const legacyContinuityMode = getCanonicalMode('translation')
   let legacyCanonicalDocumentId: string | null = null
   if (legacyContinuityMode !== 'off') {
     try {

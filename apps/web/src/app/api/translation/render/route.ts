@@ -17,6 +17,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { runQaValidators } from '@/lib/translation/translationQaValidator'
 import { buildFinalDocument } from '@/lib/translation/bureauStyleRenderer'
 import { validateCertificationRecord } from '@/lib/translation/certificationRecord'
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
   // off    → skip canonical, use extracted_fields from DB (emergency rollback)
   // shadow → load canonical when canonical_document_id present; compare PII-free, legacy output
   // enforce → canonical_document_id REQUIRED; missing → 422; infra fail → 503
-  const continuityMode = (process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow').toLowerCase()
+  const continuityMode = getCanonicalMode('translation')
 
   if (continuityMode === 'enforce' && !canonical_document_id) {
     console.warn('[translation/render] continuity=enforce canonical_document_id missing → 422')

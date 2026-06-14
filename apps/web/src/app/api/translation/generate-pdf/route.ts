@@ -14,6 +14,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email/resend'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
 import { renderMirrorTranslationPDF } from '@/lib/translation/pdf/renderMirrorTranslationPDF'
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
   // off    → skip persistence, use extracted_fields (emergency rollback)
   // shadow → load canonical when canonical_document_id present; fallback to extracted_fields
   // enforce → canonical_document_id REQUIRED; missing → 422; not found → 404; infra fail → 503
-  const continuityMode = (process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow').toLowerCase()
+  const continuityMode = getCanonicalMode('translation')
   const { canonical_document_id } = payload
 
   if (continuityMode === 'enforce' && !canonical_document_id) {
