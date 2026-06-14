@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-13 | feat(canonical): product-scoped continuity modes (per-product enforce; translation hard-guarded to shadow)
+
+- **NEW RESOLVER** `apps/web/src/lib/canonical/continuityMode.ts`: `getCanonicalMode(product: 'tps'|'reparole'|'ead'|'translation'): 'off'|'shadow'|'enforce'`. Precedence: product env `CANONICAL_MODE_<PRODUCT>` → `CANONICAL_MODES` JSON → legacy global `CANONICAL_CONTINUITY_MODE` (back-compat, resolver-internal ONLY) → `shadow` default. Malformed values / malformed JSON fall through safely to shadow.
+- **HARD GUARD (owner-binding)**: a single global enforce across all products is PROHIBITED. Translation can NEVER reach `enforce` via the legacy global flag — only explicit `CANONICAL_MODE_TRANSLATION` / `CANONICAL_MODES.translation` may set translation enforce (operator-flow canonical→PDF continuity not built yet).
+- **9 ROUTES REFACTORED** to `getCanonicalMode(<product>)` (source of `mode` only; all off/shadow/enforce downstream logic unchanged): tps ocr/extract + generate-packet, reparole ocr/extract + generate-packet, ead ocr/extract + generate-packet, translation vision-extract (main + legacy reads), generate-pdf, render. Dropped redundant `.toLowerCase()` in generate-pdf/render (resolver returns lowercase). No bare `process.env.CANONICAL_CONTINUITY_MODE` remains outside resolver + tests.
+- **TESTS**: new `apps/web/src/lib/canonical/__tests__/continuityMode.test.ts` (12 tests: defaults, per-product isolation, JSON, precedence product>JSON>legacy, legacy-enforce-skips-translation hard guard, explicit translation opt-in, malformed value/JSON fall-through, case/whitespace normalize). Updated 1 stale source-inspection assertion in `reparole/ocr/extract/__tests__/canonicalCarriage.test.ts` (now asserts `getCanonicalMode('reparole')` instead of the literal env read).
+- **GATE**: tsc 0 errors; full vitest 3675 pass / 24 skip / 0 fail. NOT merged, no Vercel/env change, not deployed. Branch `architecture/canonical-enforce-e2e`.
+
 ## 2026-06-13 | fix(canonical): TPS carriage across Stripe reload + Translation operator-flow truth + STAGED-SHADOW decision
 
 - **TPS FIX** (`e4e5adc`): `TPSWizardV2.tsx` now persists `canonical_document_id` into localStorage `uploadsMeta` and restores it on rehydration, so it survives the Stripe `?paid=1` reload. Browser E2E had proven TPS dropped the id on the post-payment reload → generate-packet body lacked it → enforce would 422 every TPS user. Mirrors ReparoleWizardV2. tsc 0.
