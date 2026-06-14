@@ -1017,3 +1017,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-14: PII ledger backend complete — supabase/migrations/20260614010000_wizard_drafts.sql + wizardDraftStore.ts (encrypted upsert/load/delete, TTL) + /api/wizard-draft (POST/GET/DELETE, default-OFF→404, fail-closed key, opaque httpOnly token, no PII logs). 51 v1 tests. Remaining for #9: apply migration to DB + rewire wizards to the ledger + SERVER_LEDGER_ENABLED=1. #119 untouched. -->
 
 <!-- 2026-06-14: PII ledger client adapter (wizardLedgerClient.ts) — save/load/clear to /api/wizard-draft, gated by NEXT_PUBLIC_SERVER_LEDGER_ENABLED, fetch injected, never logs draft. 57 v1 tests. Full #9 stack now complete (crypto+store+API+table+client), default-OFF. Activation = component wiring + env flags + browser verify. -->
+
+<!-- 2026-06-14: /api/wizard-draft route integration test (6/6) — proves encrypted server ledger end-to-end (no plaintext PII in stored row; opaque-cookie round-trip; flag-OFF 404; missing-key 503). Server side of #9 verified. Next: wizard component wiring behind NEXT_PUBLIC_SERVER_LEDGER_ENABLED. -->
