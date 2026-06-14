@@ -1,0 +1,61 @@
+# PHASE 2 BASELINE — Translation Operator Pipeline V2
+# Recorded by coordinator before launching agents. Re-verify live before trusting.
+captured_at: "2026-06-14T00:50Z"
+
+git:
+  main_sha: bd986677b1e0743b86246bcc6ae6947ce62de84f
+  branch: architecture/translation-operator-canonical-v2
+  base_sha: bd986677b1e0743b86246bcc6ae6947ce62de84f
+  open_prs: []
+
+production:
+  healthz_sha: bd98667
+  environment: production
+  status: ok
+
+product_modes:   # all shadow (no CANONICAL_MODE_* set in prod env)
+  tps: shadow
+  reparole: shadow
+  ead: shadow
+  translation: shadow
+
+supabase:
+  projects: 1          # rtfxrlountkoegsseukx (PRODUCTION ONLY — no staging project)
+  storage_buckets:     # all private (public=false)
+    - documents
+    - packets
+    - translation-documents
+  canonical_tables: [canonical_documents, canonical_overrides]
+  translation_operator_table: manual_review_queue   # has document_id but NO canonical_document_id binding; stores contact_email (PII), source_fields, translated_fields, file_url
+
+infra_feasibility:
+  storage_private_bucket: AVAILABLE        # can add translation-artifacts (private) or reuse
+  email_test: AVAILABLE                    # Resend keys in Preview; BACKUP_EMAIL as test sink
+  supabase_staging: ABSENT                 # only prod project; migrations apply to prod (additive/safe), DB tests use synthetic sentinel
+  stripe_test_mode: ABSENT                 # NO sk_test/pk_test anywhere → blocks full payment E2E
+
+hard_blockers_owner_provisioned:
+  - BLOCKED_STRIPE_TEST_ENV:
+      missing_secrets:
+        - "STRIPE_SECRET_KEY (sk_test_...)  [Preview]"
+        - "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (pk_test_...) [Preview]"
+        - "STRIPE_WEBHOOK_SECRET (whsec test) [Preview]"
+        - "STRIPE_PRICE_ID_TRANSLATION_BASIC/PLUS/PREMIUM (test-mode price ids) [Preview]"
+      impact: "Translation V2 positive E2E (test payment -> submit-order) cannot run until provided. Code/contract is built regardless."
+
+existing_surfaces:
+  submit_order: apps/web/src/app/api/translation/submit-order/route.ts
+  operator_actions: apps/web/src/app/admin/manual-review/[id]/actions.ts
+  operator_page: apps/web/src/app/admin/manual-review/[id]/page.tsx
+  transition_route: apps/web/src/app/api/admin/manual-review/[ticketId]/transition/route.ts
+  order_view: apps/web/src/app/api/order/[id]/route.ts
+  order_resend: apps/web/src/app/api/order/[id]/resend/route.ts
+  email: apps/web/src/lib/email/{resend.ts, operatorFlowTemplates.ts}
+  pdf_render: apps/web/src/app/api/translation/{generate-pdf,render}/route.ts
+  canonical_resolver: apps/web/src/lib/canonical/{persistence/index.ts, continuityMode.ts}
+
+plan:
+  wave_1: "Agent 1 data-model foundation (orders, state machine, artifacts, outbox, DB security, tests) — buildable now, no Stripe dependency"
+  wave_2: "Agent 2 application flow (submit-order canonical binding, operator Server Action auth, canonical render, delivery worker)"
+  wave_3: "Agent 3 staging + Stripe-test E2E (GATED on owner Stripe test keys), Agent 4 observability/runbooks/lifecycle"
+  constraint: "production stays shadow throughout; no enforce; Phase 2 PR opens as Draft; merge only on separate owner authorization"

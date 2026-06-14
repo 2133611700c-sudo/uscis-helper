@@ -32,6 +32,12 @@ export interface SendEmailParams {
    *     sendEmail passes it through unchanged. Prevents double-encoding of binary attachments.
    */
   attachment?: { filename: string; content: string; encoding?: 'base64' | 'utf8' }
+  /**
+   * Delivery idempotency key (e.g. the outbox idempotency_key). When set it is
+   * passed to Resend as the Idempotency-Key so a duplicate send (worker retry) is
+   * a no-op at the provider. PII-free (an opaque hash), never logged.
+   */
+  idempotencyKey?: string
 }
 
 export interface SendEmailResult {
@@ -111,15 +117,18 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
         }]
       : undefined
 
-    const { data, error } = await client.emails.send({
-      from,
-      to: [params.to],
-      bcc: bcc ? [bcc] : undefined,
-      subject: params.subject,
-      html: params.html,
-      text: params.text,
-      attachments,
-    })
+    const { data, error } = await client.emails.send(
+      {
+        from,
+        to: [params.to],
+        bcc: bcc ? [bcc] : undefined,
+        subject: params.subject,
+        html: params.html,
+        text: params.text,
+        attachments,
+      },
+      params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : undefined,
+    )
 
     if (error) {
       await logEmailEvent({

@@ -1014,12 +1014,21 @@ export function TranslateWizard() {
             const docTypeId = draft?.selectedDocType ?? selectedDocType
             const draftFields = (Array.isArray(draft?.extractedFields) && draft!.extractedFields.length > 0)
               ? draft!.extractedFields : extractedFields
+            // CANONICAL_CONTINUITY (operator V2): carry the canonical_document_id across the
+            // Stripe round-trip so submit-order can bind the order to the authoritative canonical.
+            // Prefer the persisted draft value (survives reload); fall back to live state.
+            // Absent → server creates a legacy order (no fabricated canonical).
+            const submitCanonicalId =
+              (typeof draft?.canonicalDocumentId === 'string' && draft.canonicalDocumentId.length > 0)
+                ? draft.canonicalDocumentId
+                : (canonicalDocumentId && canonicalDocumentId.length > 0 ? canonicalDocumentId : null)
             const resp = await fetch('/api/translation/submit-order', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 checkout_id: cs,
                 doc_type: DOC_TYPES.find((d) => d.id === docTypeId)?.registryId ?? docTypeId ?? 'other',
                 locale,
+                ...(submitCanonicalId ? { canonical_document_id: submitCanonicalId } : {}),
                 fields: draftFields.map((f) => ({
                   field: f.field, value: f.value ?? null, raw_cyrillic: f.raw_cyrillic ?? null,
                   review_required: f.review_required ?? false,
