@@ -1,3 +1,7 @@
+# HANDOFF (2026-06-14 — Phase 2 FROZEN, code-complete, Stripe E2E deferred)
+DONE: webhook authority + client reconciliation complete; full live DB invariant suite 9/9 PASS (incl. duplicate stripe event id); security review PASS; CI green on 16b140e; cleanup verified zero sentinel. PR #119 DRAFT FROZEN, prod shadow.
+NEXT (final acceptance, separate owner GO only): add Stripe TEST-MODE keys to Preview (sk_test/pk_test/whsec/test price ids) → ONE hosted Checkout positive E2E (payment→webhook→V2 order→operator→artifact→outbox→delivery) + Stripe-side duplicate/expired/refund → then merge decision + per-product enforce decision. NO new scope on this branch until then.
+---
 # HANDOFF (2026-06-14 — Phase 2 webhook authority for V2 — code complete)
 DONE: signature-verified webhook is now the authority for Translation Order V2 (handleVerifiedPayment unified handler; submit-order = reconciliation; stripe_processed_events dedupe migration applied to prod; lifecycle completed/expired/failed/refund; synthetic webhook tests; observability + runbooks 09-11). tsc 0; 3823 tests pass. Prod shadow, PR #119 draft.
 NEXT (final acceptance, owner GO): add Stripe test-mode keys to Preview → one hosted Checkout positive E2E (payment→webhook→V2 order→operator→artifact→delivery) + Stripe-side duplicate/expired/refund; run RUN_DB_INVARIANTS=1; then merge decision.

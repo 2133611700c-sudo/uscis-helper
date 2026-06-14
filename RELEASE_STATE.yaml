@@ -49,3 +49,11 @@ blockers:
   - id: production_sha_unverified
     severity: info
     detail: "Live production_sha and live CANONICAL_MODE_* not readable from worktree; verify at deploy time."
+
+phase2_frozen:
+  ci_head_sha: 16b140e8eceb96fc19a1712d85e8841369ff7859
+  full_live_db_invariants: "9/9 PASS (RUN_DB_INVARIANTS=1)"
+  security_review: PASS
+  pr_119: { draft: true, frozen: true, safe_to_merge_now: false }
+  production: { unchanged: true, all_products: shadow }
+  deferred: { hosted_stripe_test_mode_e2e: true, stripe_keys_requested_now: false }
