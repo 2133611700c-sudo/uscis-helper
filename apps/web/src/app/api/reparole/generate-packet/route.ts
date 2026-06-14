@@ -21,6 +21,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { getCanonicalMode } from '@/lib/canonical/continuityMode'
+import { requirePaidPacket } from '@/lib/stripe/requirePaidPacket'
+import { REPAROLE_TIER1_PRICE_CENTS } from '@/lib/pricing'
 import { buildReParoleI131 } from '@/lib/reparole/packetBuilder'
 import type { ReParoleAnswers } from '@/lib/reparole/answers'
 // CANONICAL_CONTINUITY: packet route loads persisted canonical (shadow/enforce modes)
@@ -121,6 +123,23 @@ OFFICIAL SOURCES
 }
 
 export async function POST(req: NextRequest) {
+  // ── Server-side payment gate (fail-closed) ─────────────────────────────────
+  // Before ANY packet generation. Owner sessions bypass (same mechanism as TPS);
+  // everyone else must present a Stripe-verified, product-matched, correctly-priced,
+  // unconsumed X-Payment-Token. Client paid=1 / body / query params are NEVER
+  // authoritative. This closes the free-packet bypass (P1).
+  const gate = await requirePaidPacket({
+    req,
+    product: 're-parole-u4u',
+    expectedAmountCents: REPAROLE_TIER1_PRICE_CENTS,
+  })
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: 'Payment required to generate packet.', reason: gate.code },
+      { status: gate.status },
+    )
+  }
+
   const ip = getClientIP(req)
   const rl = await rateLimit(`reparole-generate:${ip}`, 10, 5 * 60_000)
   if (!rl.allowed) {
