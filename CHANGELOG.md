@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-14 | DARK_CODE_INVENTORY (phase-2 prepared evidence, read-only)
+- Static inventory (2 sub-agents + spot re-verify) → docs/v1/DARK_CODE_INVENTORY.md. Program state UNCHANGED (phase 1 STAGING_CONTROL_PLANE still active); no PASS advanced.
+- Corrections (verified in code): TPS_AI_BRAIN_ENABLED is effectively ON in prod when DEEPSEEK_API_KEY is set (paid DeepSeek fallback); DUAL_OCR_CROSSREF is ON by default (paid Gemini booklet crossref). Both must be covered by the cost ceiling. CONFIRMED_VALUE_GUARD_MODE default=shadow; certifier_override_audit has no INSERT writer (dark).
+- Output: 12 zero-cost flags safe to trial on staging; 5 paid flags (gate behind providerBudget + OCR cache); RU_TRANSLIT/OCR_FIELD_SAFETY risky (regression history). Dead-code ranking (removal deferred): formIntelligence/i131.ts, /api/review→reviews (silent loss), readDocumentCore (test-only), certifier_override_audit (dark), shadow infra (dormant), form_sessions/answers (superseded).
+- No runtime change. PR #119 untouched.
 ## 2026-06-14 | PR #122 deployed + RELEASE_STATE refresh (post-deploy truth)
 - #122 squash-merged → production 62c897a (healthz verified). Legacy Translation: per-action auth + Stripe-re-verified recipient now DEPLOYED.
 - Negative production security smoke VERIFIED: admin manual-review GET/POST 404 unauth (blocked before DB/PDF/email); 4 public product routes 200; no 500/chunk/import errors; UI recipient field non-submitting (merged code).

@@ -1001,3 +1001,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-14: PR #122 rebased onto post-#121 main (f7fc2fb). Short STATUS kept (no 629-line archive restore). RELEASE_STATE snapshot refreshed to f7fc2fb; legacy blocker = pending_verification (preview smoke required before merge). Scope unchanged: per-action auth + Stripe-re-verified recipient. -->
 
 <!-- 2026-06-14: post-#122 deploy — RELEASE_STATE snapshot → 62c897a; legacy auth/recipient blocker removed (DEPLOYED); added open gap: positive paid Translation delivery RUNTIME_UNVERIFIED until staging. negative security smoke VERIFIED in prod. -->
+
+<!-- 2026-06-14: DARK_CODE_INVENTORY (phase-2 prepared evidence) written to docs/v1/DARK_CODE_INVENTORY.md. Program state UNCHANGED (phase 1 still active). Key correction: TPS_AI_BRAIN + DUAL_OCR_CROSSREF are effectively ON/paid in prod. Read-only; #119 untouched. -->

@@ -17,6 +17,9 @@
 ## Open verification gaps (deployed but not fully runtime-proven)
 - **Positive paid Translation delivery = RUNTIME_UNVERIFIED.** #122's negative/fail-closed security paths are deployed + prod-smoke-verified (admin routes 404 unauth, raw POST blocked, recipient non-submitting). A successful **hosted Stripe Test Mode** delivery end-to-end has NOT been run — verify on dedicated staging before relying on auto-delivery.
 
+## V1 completion pipeline
+- Phase 1 STAGING_CONTROL_PLANE control plane = PR #124 (green CI). Phase-2 evidence prepared: [docs/v1/DARK_CODE_INVENTORY.md](docs/v1/DARK_CODE_INVENTORY.md). Program state unchanged (one active phase).
+
 ## Blockers (live in production)
 - **No dedicated staging:** heavy OCR e2e runs against the production DB + paid providers.
 
