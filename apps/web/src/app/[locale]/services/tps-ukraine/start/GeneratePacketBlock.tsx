@@ -17,7 +17,13 @@
  *  - Server route validates required fields and refuses incomplete submissions.
  */
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import {
+  isLedgerClientEnabled,
+  saveDraftToServer,
+  loadDraftFromServer,
+  clearServerDraft,
+} from '@/lib/v1/wizardLedgerClient'
 import type { TPSAnswers } from '@/lib/tps/answers'
 import type { TpsExtractedField } from '@/lib/tps/types'
 import { runMailReadyGate } from '@/lib/tps/mailReadyGate'
@@ -755,6 +761,7 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
   // family computers, library workstations).
   const [dataCleared, setDataCleared] = useState(false)
   const clearMyData = () => {
+    if (isLedgerClientEnabled()) void clearServerDraft()
     try {
       window.localStorage.removeItem(STORAGE_KEY)
       window.localStorage.removeItem(STORAGE_KEY_PART7)
@@ -769,12 +776,49 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
     setDataCleared(true)
   }
 
+  // V1 #9 server-side ledger (default OFF). When NEXT_PUBLIC_SERVER_LEDGER_ENABLED=1,
+  // PII (fields/part7) is stored encrypted server-side instead of localStorage; the
+  // browser keeps only the opaque httpOnly token. Default-OFF path is byte-identical.
+  const fieldsRef = useRef<PersonalFields>(fields)
+  const part7Ref = useRef<Part7State>(part7)
+  useEffect(() => {
+    fieldsRef.current = fields
+  }, [fields])
+  useEffect(() => {
+    part7Ref.current = part7
+  }, [part7])
+  useEffect(() => {
+    if (!isLedgerClientEnabled()) return
+    let alive = true
+    void loadDraftFromServer<{ fields?: Partial<PersonalFields>; part7?: Partial<Part7State> }>().then((d) => {
+      if (!alive || !d) return
+      if (d.fields) {
+        const f = applyPreExtracted({ ...EMPTY, ...d.fields }, preExtracted)
+        fieldsRef.current = f
+        setFields(f)
+      }
+      if (d.part7) {
+        const p = { ...EMPTY_PART7, ...d.part7 }
+        part7Ref.current = p
+        setPart7(p)
+      }
+    })
+    return () => {
+      alive = false
+    }
+  }, [preExtracted])
+
   function update<K extends keyof PersonalFields>(k: K, v: PersonalFields[K]) {
     setFields((prev) => {
       const next = { ...prev, [k]: v }
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      } catch { /* ignore */ }
+      fieldsRef.current = next
+      if (isLedgerClientEnabled()) {
+        void saveDraftToServer('tps', { fields: next, part7: part7Ref.current })
+      } else {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+        } catch { /* ignore */ }
+      }
       return next
     })
   }
@@ -782,9 +826,14 @@ export default function GeneratePacketBlock({ locale, filingPath, wantsEad, preE
   function updatePart7<K extends keyof Part7State>(k: K, v: Part7State[K]) {
     setPart7((prev) => {
       const next = { ...prev, [k]: v }
-      try {
-        window.localStorage.setItem(STORAGE_KEY_PART7, JSON.stringify(next))
-      } catch { /* ignore */ }
+      part7Ref.current = next
+      if (isLedgerClientEnabled()) {
+        void saveDraftToServer('tps', { fields: fieldsRef.current, part7: next })
+      } else {
+        try {
+          window.localStorage.setItem(STORAGE_KEY_PART7, JSON.stringify(next))
+        } catch { /* ignore */ }
+      }
       return next
     })
   }
