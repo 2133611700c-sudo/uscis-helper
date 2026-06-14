@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-14 | PR #122 rebased onto post-#121 main (f7fc2fb)
+- Recreated security/legacy-translation-auth-recipient on the new main: brought the auth+recipient security files (legacyOperatorAuth.ts, stripeRecipientVerifier.ts, actions.ts, page.tsx, 2 tests) onto the short-STATUS base — did NOT restore the 629-line STATUS stack.
+- STATUS.md: production_sha → f7fc2fb; #121 listed merged; #122 listed in-flight (pending preview smoke). RELEASE_STATE.yaml: snapshot refreshed to f7fc2fb; legacy blocker = pending_verification (not closed until smoke).
+- Scope unchanged (auth + Stripe-re-verified recipient only). PR #119 untouched. Still DRAFT; no merge until preview security smoke passes.
 ## 2026-06-14 | PR #121 fix — honest verified-snapshot model (was: fake "generated")
 - RELEASE_STATE.yaml → schema_version 2: replaced misleading auto-"generated" main_sha/production_sha with a VERIFIED SNAPSHOT block (snapshot.state_basis_main_sha + verified_production_sha + verified_at + evidence + staleness_note). No claim that the file equals current main HEAD.
 - Guard v2 (verify-release-state.mjs): validates basis is a REAL commit (not == HEAD), reports current_head_sha / snapshot_basis_sha / main_tip_sha / snapshot_is_stale; staleness is a WARNING (exit 0) — no self-reference paradox, no push-loop. Hard-fails only on bad shape / fabricated basis / >1 STATUS H1 / "#120 DRAFT" / fabricated Vercel-Stripe state. Advisory when a PR changes STATUS.md but not RELEASE_STATE.yaml.
