@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-14 | Stage 0 — single machine-readable release state (no runtime change)
+- Added RELEASE_STATE.yaml (single source of truth: prod=86e5d1e, merged #117/#118/#120, #119 OPEN/frozen, browser PII containment-only, modes UNVERIFIED-from-repo).
+- Added scripts/verify-release-state.mjs (dependency-free guard: RELEASE_STATE shape, one STATUS H1, no stale "#120 DRAFT", main_sha is a real commit, production_sha well-formed, UNVERIFIED discipline) + .github/workflows/release-state-guard.yml.
+- Trimmed STATUS.md to current-state-only (629→34 lines; 41→1 heading); moved historical blocks to docs/STATUS_ARCHIVE.md (verbatim, no PII).
+- Forbidden scope respected: no runtime code, no migrations, no Vercel/Stripe changes, PR #119 untouched. Draft PR, do-not-merge.
 ## 2026-06-14 | PR #120 — browser PII MINIMIZATION (honest framing) + content-guard fix + sanitizer hardening
 
 - HONEST CLAIM: PII minimized/contained, NOT removed. value (TPS/Re-Parole localStorage) + value/raw_cyrillic (Translation sessionStorage) REMAIN PII; full removal deferred to Phase B (server-side session ledger + opaque token).

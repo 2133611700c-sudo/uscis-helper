@@ -1,3 +1,7 @@
+# HANDOFF (2026-06-14 — Stage 0: single source of truth established; Draft PR, no runtime change)
+> Created RELEASE_STATE.yaml (machine-readable truth), scripts/verify-release-state.mjs (dep-free guard), .github/workflows/release-state-guard.yml, trimmed STATUS.md to current-only (629→34 lines, 41→1 heading; fixed the stale 'PR #120 DRAFT' line), archived the 41 old blocks to docs/STATUS_ARCHIVE.md (no PII). NO runtime code / migrations / env / Stripe changes. Guard PASS locally. Draft PR, do-not-merge. NEXT: minimal security hotfix 0.5 (legacy Translation per-action auth + server-authoritative recipient).
+
+
 # HANDOFF (2026-06-14 — PR #120 browser PII containment; content-guard fixed)
 DONE: PII MINIMIZATION (not removal) — sanitizer+scalar-coercion+size-cap+TTL+clear-on-completion+17-case guard test; fixed content-guard failure ("certified translation"→"translation draft hand-off"). value + raw_cyrillic remain PII in browser (documented). tsc 0, full suite pass, content-guard 0. PR #120 DRAFT, prod shadow.
 NEXT: after green CI → owner may merge PR #120 as a standalone P1 security improvement. Phase B (server-side session ledger, opaque token) = separate later PR for true PII removal from browser.
