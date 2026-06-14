@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-14 | V1_COMPLETION control plane (phase STAGING_CONTROL_PLANE)
+- Built the sequential completion pipeline to stop the audit→micro-fix→audit loop: V1_COMPLETION.yaml (one active phase, 13 ordered phases, gates, exit criteria, status enum, policies), scripts/verify-v1-completion.mjs (program guard: one active phase, before=PASS/after=NOT_STARTED, PASS needs evidence, prod-benchmark forbidden, handwriting not auto-final, #119 frozen, enforce/new-products forbidden, positive Stripe RUNTIME_UNVERIFIED, 5 workflows present), scripts/gen-v1-status.mjs + generated V1_STATUS.md (do-not-edit dashboard).
+- Contracts (pure, fail-closed, no runtime wiring, 29 unit tests): apps/web/src/lib/v1/stagingContract.ts (env validator + production-target rejection), ocrCache.ts (file_sha256·provider·model·prompt·preproc key), providerBudget.ts (paid calls disabled by default + caps), evidence.ts (PII-free verdict shape).
+- 5 workflows: v1-program-guard, v1-fast-gates (typecheck+V1 unit+content), v1-nightly-staging (dry-run, no prod/Stripe), v1-document-benchmark (paths-gated, paid disabled, dry-run), v1-production-readonly-smoke (health+routes only).
+- docs/v1/STAGING_PROVISIONING_CHECKLIST.md (manual; nothing auto-provisioned).
+- NOT started: OCR/Brain/corpus/Stripe/server ledger. PR #119 untouched. No production change. Draft PR, do-not-merge.
 ## 2026-06-14 | PR #122 deployed + RELEASE_STATE refresh (post-deploy truth)
 - #122 squash-merged → production 62c897a (healthz verified). Legacy Translation: per-action auth + Stripe-re-verified recipient now DEPLOYED.
 - Negative production security smoke VERIFIED: admin manual-review GET/POST 404 unauth (blocked before DB/PDF/email); 4 public product routes 200; no 500/chunk/import errors; UI recipient field non-submitting (merged code).
