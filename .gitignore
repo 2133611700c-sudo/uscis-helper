@@ -87,3 +87,7 @@ scripts/gt_intake.mjs
 *.swo
 .pii-patterns
 .pii-secret-setup.txt
+
+# V1 OCR cache (private; raw provider responses never committed)
+*.ocr-cache/
+apps/web/.ocr-cache/
