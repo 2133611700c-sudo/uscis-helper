@@ -5,9 +5,9 @@
 # Owner directive (binding): production stays SHADOW; no enforce; PR #119 stays DRAFT.
 
 schema_version: 1
-main_sha: 44ec7b8fcaa61ac621dbb1f2a8e14b64ea8eab44   # integration base (Wave 3/4)
-production_sha: UNVERIFIED                              # not readable from worktree
-verified_at: "2026-06-13T00:00:00Z"
+main_sha: bd986677b1e0743b86246bcc6ae6947ce62de84f   # current main (Phase 2 branch NOT merged)
+production_sha: bd98667                                # verified via healthz 2026-06-14 (Phase 1 PR #118 live; Phase 2 NOT deployed)
+verified_at: "2026-06-14T02:15:00Z"
 verified_by: wave34_integration_coordinator           # Agent 3 + Agent 4 merged + gated
 
 products:
