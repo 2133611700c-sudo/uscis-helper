@@ -5,6 +5,7 @@
  */
 
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { sanitizeBrainRawForAudit } from '@/lib/tps/ocrAuditSanitize'
 
 export interface OcrAuditInput {
   provider: string
@@ -38,9 +39,12 @@ export async function logOcrRun(input: OcrAuditInput): Promise<void> {
       brain_status: input.brain_status || null,
     }
 
+    // Defence in depth (P0): ALWAYS strip applicant PII from brain_raw at the
+    // writer, even if a caller passed raw values. This is the last gate before
+    // the value reaches the tps_ocr_audit table.
     const withBrainRaw = {
       ...baseRow,
-      brain_raw: input.brain_raw ?? null,
+      brain_raw: sanitizeBrainRawForAudit(input.brain_raw),
     }
 
     // Forward-compatible write: prefer full row with brain_raw.
