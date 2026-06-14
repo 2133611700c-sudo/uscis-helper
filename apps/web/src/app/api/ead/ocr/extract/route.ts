@@ -25,6 +25,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
@@ -220,7 +221,7 @@ export async function POST(req: NextRequest) {
     // fabricated id) — a wrong/stale id is worse than none. In enforce mode a persist
     // failure is a hard 503 (the generate route requires a valid id).
     let canonicalDocumentId: string | null = null
-    const continuityMode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+    const continuityMode = getCanonicalMode('ead')
     if (continuityMode !== 'off') {
       try {
         const persisted = await persistCanonicalDocument(canonical, document_id)

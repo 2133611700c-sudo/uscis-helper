@@ -15,6 +15,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { isMinimallyComplete, type TPSAnswers, defaultEadCategoryFor } from '@/lib/tps/answers'
 import { buildPacket, type TranslationOptions } from '@/lib/tps/packetBuilder'
 import type { ProvenanceMap } from '@/lib/tps/provenance'
@@ -222,7 +223,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── CANONICAL_CONTINUITY: load resolved canonical if available ──────────────
-  const mode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+  const mode = getCanonicalMode('tps')
   const canonical_document_id = answers.canonical_document_id ?? null
   // Remove from answers so it doesn't bleed into legacy processing
   delete (answers as unknown as Record<string, unknown>).canonical_document_id

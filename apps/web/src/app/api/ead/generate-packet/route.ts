@@ -28,6 +28,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { buildEadPacket } from '@/lib/ead/packetBuilder'
 import type { EadFieldData } from '@/lib/ead/i765FieldMap'
 // CANONICAL_CONTINUITY: canonical persistence and error codes
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── CANONICAL_CONTINUITY: load resolved canonical if available ──────────────
-  const mode = process.env.CANONICAL_CONTINUITY_MODE ?? 'shadow'
+  const mode = getCanonicalMode('ead')
 
   let documentCanonical: CanonicalDocumentResult | null = null
 

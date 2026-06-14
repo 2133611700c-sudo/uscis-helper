@@ -54,7 +54,13 @@ docs/audit/REAL_DOC_GROUND_TRUTH.local.yaml
 
 # Build artifacts
 apps/web/tsconfig.tsbuildinfo
+*.tsbuildinfo
 apps/web/public/brand/archive/
+
+# Tesseract OSD/traineddata — generated/vendored runtime blob, not source.
+# Client-side Tesseract OSD auto-rotation was removed 2026-06-12; no code loads
+# this file at runtime. Keep it out of the repo (10MB+ binary).
+*.traineddata
 
 # Real client/owner documents — PII, NEVER commit
 test-fixtures/real-docs/
