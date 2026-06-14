@@ -1001,3 +1001,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-14: PR #122 rebased onto post-#121 main (f7fc2fb). Short STATUS kept (no 629-line archive restore). RELEASE_STATE snapshot refreshed to f7fc2fb; legacy blocker = pending_verification (preview smoke required before merge). Scope unchanged: per-action auth + Stripe-re-verified recipient. -->
 
 <!-- 2026-06-14: post-#122 deploy — RELEASE_STATE snapshot → 62c897a; legacy auth/recipient blocker removed (DEPLOYED); added open gap: positive paid Translation delivery RUNTIME_UNVERIFIED until staging. negative security smoke VERIFIED in prod. -->
+
+<!-- 2026-06-14: V1_COMPLETION control plane created (branch v1/completion-control-plane). One active phase (STAGING_CONTROL_PLANE), 13 ordered phases, program guard, 5 workflows, staging/OCR-cache/budget contracts + tests, generated V1_STATUS.md. No OCR/Brain/corpus/Stripe/server-ledger started; PR #119 untouched; no production change. Draft PR. -->
