@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 2026-06-14 | Server-side PII ledger — crypto foundation (criterion #9, rebased)
+- apps/web/src/lib/v1/wizardDraftCrypto.ts: AES-256-GCM sealDraft/openDraft (authenticated; tamper fails closed), generateOpaqueToken, keyFromEnv (fail-closed), isDraftExpired. +8 tests. Pure, server-only, default-OFF, no behavior change. Next: wizard_drafts table + /api/wizard-draft + wizard rewiring behind SERVER_LEDGER_ENABLED.
 ## 2026-06-14 | benchmark correction — I-94 canonical = SAME
 - Re-ran with correct runtime fixture: I-94 canonical family/given/dob/admission_number/class/date_of_entry all SAME. The earlier FALLBACK was a missing test-input filename, not a product regression. Verified set (EAD, I-94, internal passport) = identity SAME, 0 fabricated. benchmark.json updated.
 ## 2026-06-14 | Real-document benchmark executed (0 fabricated) + PDF readback proof
