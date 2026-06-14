@@ -31,6 +31,7 @@ import {
 } from '@/lib/translation/orders'
 import { sendEmail } from '@/lib/email/resend'
 import { orderCompletedEmail } from '@/lib/email/operatorFlowTemplates'
+import { emitEvent } from '@/lib/translation/observability/events'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -50,6 +51,11 @@ interface DeliveryOutcome {
 }
 
 async function processOne(claim: ClaimedOutboxEvent): Promise<DeliveryOutcome> {
+  emitEvent('delivery_attempts_total', {
+    route: 'translation-delivery',
+    internal_uuid: claim.id,
+    attempt_count: claim.attemptCount,
+  })
   // Load the immutable artifact + its order. The order carries the verified
   // recipient (the outbox only holds an opaque recipient_ref hash).
   const artifact = await getArtifactById(claim.artifactId)
@@ -73,9 +79,21 @@ async function processOne(claim: ClaimedOutboxEvent): Promise<DeliveryOutcome> {
     // Storage hiccup or hash mismatch → transient (a hash mismatch should not
     // silently deliver; a retry re-verifies, and a persistent mismatch ages out
     // to permanent after MAX_ATTEMPTS).
+    // A hash mismatch (download verifies sha) is a critical artifact integrity event.
+    emitEvent('artifact_hash_mismatch_total', {
+      route: 'translation-delivery',
+      internal_uuid: claim.artifactId,
+      error_code: 'artifact_unavailable',
+      hash_verified: false,
+    })
     if (claim.attemptCount >= MAX_ATTEMPTS) {
       await markOutboxPermanentlyFailed(claim.id, 'artifact_unavailable')
       await failOrder(order, claim)
+      emitEvent('delivery_failure_total', {
+        route: 'translation-delivery',
+        internal_uuid: claim.id,
+        error_code: 'artifact_unavailable',
+      })
       return { outbox_id: claim.id, result: 'failed' }
     }
     await markOutboxFailed(claim.id, 'artifact_unavailable', new Date(Date.now() + backoffMs(claim.attemptCount)))
@@ -114,8 +132,18 @@ async function processOne(claim: ClaimedOutboxEvent): Promise<DeliveryOutcome> {
       })
     } catch {
       // Order may already be 'delivered' (a duplicate claim raced) — outbox is
-      // the exactly-once gate; a late transition conflict is benign.
+      // the exactly-once gate; a late transition conflict is benign. The outbox
+      // claim (FOR UPDATE SKIP LOCKED) is what prevented the duplicate send.
+      emitEvent('delivery_duplicate_prevented_total', {
+        route: 'translation-delivery',
+        internal_uuid: claim.id,
+      })
     }
+    emitEvent('delivery_success_total', {
+      route: 'translation-delivery',
+      internal_uuid: claim.id,
+      attempt_count: claim.attemptCount,
+    })
     return { outbox_id: claim.id, result: 'delivered' }
   }
 
@@ -123,6 +151,11 @@ async function processOne(claim: ClaimedOutboxEvent): Promise<DeliveryOutcome> {
   if (claim.attemptCount >= MAX_ATTEMPTS) {
     await markOutboxPermanentlyFailed(claim.id, 'email_send_failed')
     await failOrder(order, claim)
+    emitEvent('delivery_failure_total', {
+      route: 'translation-delivery',
+      internal_uuid: claim.id,
+      error_code: 'email_send_failed',
+    })
     return { outbox_id: claim.id, result: 'failed' }
   }
   await markOutboxFailed(claim.id, 'email_send_failed', new Date(Date.now() + backoffMs(claim.attemptCount)))
@@ -155,7 +188,13 @@ async function drain(): Promise<{ processed: DeliveryOutcome[] }> {
     try {
       claim = await claimOutboxEvent(WORKER_ID)
     } catch (e) {
-      if (e instanceof TranslationOrderError) break
+      if (e instanceof TranslationOrderError) {
+        emitEvent('outbox_claim_failures_total', {
+          route: 'translation-delivery',
+          error_code: e.code,
+        })
+        break
+      }
       throw e
     }
     if (!claim) break // nothing due

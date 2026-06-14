@@ -46,6 +46,7 @@ import {
   transitionOrder,
   TranslationOrderError,
 } from '@/lib/translation/orders'
+import { emitEvent } from '@/lib/translation/observability/events'
 
 export const dynamic = 'force-dynamic'
 
@@ -161,6 +162,15 @@ export async function POST(req: NextRequest) {
       })
       orderId = order.id
       orderReused = !created
+      if (created) {
+        emitEvent('orders_created_total', {
+          product: 'translation',
+          route: 'submit-order',
+          mode,
+          has_canonical: !!verifiedCanonicalId,
+          internal_uuid: order.id,
+        })
+      }
 
       // Bind canonical on a previously-legacy order if one is now supplied.
       if (verifiedCanonicalId && !order.canonicalDocumentId) {
@@ -198,6 +208,12 @@ export async function POST(req: NextRequest) {
       }
     } catch (e) {
       if (e instanceof TranslationOrderError) {
+        emitEvent('order_transition_failures_total', {
+          route: 'submit-order',
+          mode,
+          error_code: e.code,
+          internal_uuid: orderId ?? undefined,
+        })
         // Storage/infra problems are 503; everything else already returned above.
         return err('order_store_unavailable', 503, { code: e.code })
       }

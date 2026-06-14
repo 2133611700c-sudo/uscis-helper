@@ -37,6 +37,7 @@ import {
 } from '@/lib/translation/orders'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { renderFromCanonical } from '@/lib/translation/orders/renderFromCanonical'
+import { emitEvent } from '@/lib/translation/observability/events'
 
 export interface ActionResult {
   ok: boolean
@@ -46,7 +47,17 @@ export interface ActionResult {
 }
 
 function fail(e: unknown): ActionResult {
-  if (e instanceof OperatorAuthError) return { ok: false, error: e.message, status: e.status }
+  if (e instanceof OperatorAuthError) {
+    emitEvent('operator_auth_denied_total', { route: 'operator-action', status_code: e.status })
+    return { ok: false, error: e.message, status: e.status }
+  }
+  if (e instanceof TranslationOrderError) {
+    if (e.code === 'ORDER_VERSION_CONFLICT' || e.code === 'ORDER_STATE_CONFLICT') {
+      emitEvent('stale_version_conflicts_total', { route: 'operator-action', error_code: e.code })
+    } else {
+      emitEvent('order_transition_failures_total', { route: 'operator-action', error_code: e.code })
+    }
+  }
   if (e instanceof TranslationOrderError) {
     const status =
       e.code === 'ORDER_VERSION_CONFLICT' || e.code === 'ORDER_STATE_CONFLICT'
@@ -174,6 +185,12 @@ export async function appendOverride(formData: FormData): Promise<ActionResult> 
       [{ fieldKey, value, operatorId: actor.id, reason: 'operator_override' }],
       { expectedVersion: Number.isInteger(expectedOverrideVersion) ? expectedOverrideVersion : 0 },
     )
+    emitEvent('operator_override_total', {
+      route: 'operator-action',
+      internal_uuid: order.id,
+      field_keys: [fieldKey],
+      field_count: 1,
+    })
     revalidatePath(`/admin/manual-review/${id}`)
     return { ok: true, version: order.version }
   } catch (e) {
@@ -228,6 +245,11 @@ export async function approveForRender(formData: FormData): Promise<ActionResult
         upsert: true,
       })
     if (upload.error) {
+      emitEvent('artifact_storage_failures_total', {
+        route: 'operator-action',
+        internal_uuid: order.id,
+        error_code: 'artifact_upload_failed',
+      })
       return { ok: false, error: 'artifact_upload_failed', status: 503 }
     }
 
@@ -268,16 +290,32 @@ export async function approveForRender(formData: FormData): Promise<ActionResult
       destinationType: 'email',
     })
 
+    emitEvent('artifact_generation_total', {
+      route: 'operator-action',
+      product: 'translation',
+      internal_uuid: order.id,
+      truncated_hash: render.artifactSha256.slice(0, 16),
+      field_count: render.renderedKeys.length,
+      hash_verified: true,
+    })
     revalidatePath(`/admin/manual-review/${id}`)
     return { ok: true, version }
   } catch (e) {
     // A render config problem (missing signer) is a precondition, not infra.
     if (e instanceof Error && e.name === 'CanonicalRenderError') {
       const code = (e as { code?: string }).code
+      emitEvent('artifact_generation_failures_total', {
+        route: 'operator-action',
+        error_code: code ?? 'canonical_render_error',
+      })
       if (code === 'SIGNER_NOT_CONFIGURED') return { ok: false, error: 'operator_signer_not_configured', status: 409 }
       if (code === 'CANONICAL_NOT_FOUND') return { ok: false, error: 'canonical_not_found', status: 404 }
       return { ok: false, error: 'canonical_storage_unavailable', status: 503 }
     }
+    emitEvent('artifact_generation_failures_total', {
+      route: 'operator-action',
+      error_code: 'artifact_generation_failed',
+    })
     return fail(e)
   }
 }
