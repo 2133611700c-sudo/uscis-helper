@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 2026-06-14 | TPS wizard wired to server PII ledger (rebased; ready-not-verified-live)
+- GeneratePacketBlock: persist fields/part7 to encrypted server ledger when NEXT_PUBLIC_SERVER_LEDGER_ENABLED=1 (else localStorage, byte-identical); hydrate effect; clearMyData clears server draft. tsc 0; full build 0. Re-Parole/Translate not wired (inline/entangled hydrate → refactor+browser verify needed; not landing a broken ON path). #119 untouched.
 ## 2026-06-14 | /api/wizard-draft route integration test — server ledger PROVEN E2E
 - apps/web/src/app/api/wizard-draft/__tests__/route.itest.test.ts (6/6): POST encrypts (asserts no plaintext PII in stored row) → GET decrypts via opaque httpOnly token → DELETE; flag-OFF→404; enabled-but-no-key→503; bad body→400. In-memory Supabase double (no DB/network). Criterion #9 server side verified end-to-end.
 - Next: wire wizard components to the client adapter behind NEXT_PUBLIC_SERVER_LEDGER_ENABLED (default OFF), then flag-flip + browser smoke.

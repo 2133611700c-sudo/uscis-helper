@@ -5,7 +5,7 @@
 > History: [CHANGELOG.md](CHANGELOG.md) and [docs/STATUS_ARCHIVE.md](docs/STATUS_ARCHIVE.md).
 > Do not stack historical status blocks here (CI: `scripts/verify-release-state.mjs`).
 > **V1 pipeline:** [V1_COMPLETION.yaml](V1_COMPLETION.yaml) · board [V1_STATUS.md](V1_STATUS.md). Phases 1–3 PASS (control plane, dark-code inventory, document registry); **active = GROUND_TRUTH_CORPUS_AND_CACHE** (phase 4). Phase-4 cache half (budget-gated OCR cache) built; ground-truth + paid benchmark remain. Benchmark run: PDF proof 3/3 PASS, recognition 0-fabricated on verified set (I-94 canonical = SAME with correct fixture). BLOCKER: Stripe TEST keys absent (only LIVE) → Stripe Test Mode E2E blocked.
-> **PII ledger (crit #9):** server side PROVEN end-to-end (route integration test: POST encrypts→no plaintext PII stored, GET decrypts via opaque token, DELETE; flag-OFF 404; missing-key 503). Remaining: wizard component wiring + flag-flip + browser smoke.
+> **PII ledger (crit #9):** server ledger PROVEN E2E + TPS wizard WIRED behind NEXT_PUBLIC_SERVER_LEDGER_ENABLED (default OFF, byte-identical; tsc+build green). READY, NOT verified-live. Re-Parole/Translate hydrate is inline/entangled → need refactor + browser smoke.
 
 ## Production
 - **production_sha = `62c897a`** = `main` (verified live: `messenginfo.com/api/healthz`).
