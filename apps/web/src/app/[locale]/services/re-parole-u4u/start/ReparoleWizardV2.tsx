@@ -145,6 +145,9 @@ interface WizardData {
     mailing_zip?: string
   }
   paid: boolean
+  /** Stripe checkout session id from ?cs= after successful payment.
+   *  Sent as X-Payment-Token so the server can verify payment. */
+  stripeCheckoutId?: string | null
   packetReady: boolean
 }
 
@@ -535,7 +538,10 @@ export default function ReparoleWizardV2({ locale }: Props) {
     if (typeof window !== 'undefined') {
       const sp = new URLSearchParams(window.location.search)
       if (sp.get('paid') === '1') {
-        setData((d) => ({ ...d, paid: true }))
+        // Capture the Stripe checkout session id so it can be sent as
+        // X-Payment-Token for server-side payment verification.
+        const cs = sp.get('cs')
+        setData((d) => ({ ...d, paid: true, stripeCheckoutId: cs ?? null }))
         setStep(5)
       }
     }
@@ -767,7 +773,14 @@ export default function ReparoleWizardV2({ locale }: Props) {
         ...(canonicalDocumentId ? { canonical_document_id: canonicalDocumentId } : {}),
       }
       const r = await fetch('/api/reparole/generate-packet', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Server-side payment gate: send the Stripe checkout session id as the
+          // payment token. Owner sessions are verified server-side via cookie and
+          // do not need this header.
+          ...(data.stripeCheckoutId ? { 'x-payment-token': data.stripeCheckoutId } : {}),
+        },
         body: JSON.stringify(answers),
       })
       if (!r.ok) {
