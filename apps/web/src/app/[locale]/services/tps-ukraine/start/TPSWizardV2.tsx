@@ -43,6 +43,7 @@ import { PacketCompletenessChecker } from '@/components/tps/PacketCompletenessCh
 import { TranslationReviewGate } from '@/components/tps/TranslationReviewGate'
 import type { CentralBrainResult } from '@/lib/tps/centralBrain'
 import { shouldTranslateForTPSPacket, type TPSDocumentType } from '@/lib/tps/translationBridge'
+import { sanitizeFieldMapForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1681,6 +1682,10 @@ export default function TPSWizardV2({ locale }: Props) {
   const [translationPreviewBusy, setTranslationPreviewBusy] = useState(false)
   // > 0 = stale session banner shown (value = days since last save)
   const [staleSessionDays, setStaleSessionDays] = useState(0)
+  // PII CONTAINMENT (Phase A): once the packet is generated (terminal success)
+  // we clear the persisted draft and suppress further persistence so the
+  // browser does not keep OCR PII after the flow is complete.
+  const draftClearedRef = useRef(false)
 
   // ── Persist to localStorage (without File objects) ───────────────────────
   //
@@ -1709,6 +1714,13 @@ export default function TPSWizardV2({ locale }: Props) {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
+        // PII CONTAINMENT (Phase A): hard 24h TTL. Any draft older than
+        // DRAFT_TTL_MS is discarded outright so browser-persisted OCR PII has a
+        // bounded exposure window. Runs BEFORE rehydration.
+        if (parsed && typeof parsed === 'object' && isDraftExpired(parsed.savedAt)) {
+          try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+          throw new Error('draft_expired')
+        }
         if (parsed && typeof parsed === 'object' && parsed.schema === STORAGE_SCHEMA) {
           // Rebuild uploads map from uploadsMeta — without File objects,
           // but WITH the OCR fields so Step 5 keeps the recognized values
@@ -1807,6 +1819,9 @@ export default function TPSWizardV2({ locale }: Props) {
   }, [])
 
   useEffect(() => {
+    // PII CONTAINMENT (Phase A): after terminal success the draft is cleared and
+    // we stop re-persisting OCR PII.
+    if (draftClearedRef.current) return
     try {
       const { uploads, paid: _paid, ...rest } = data
       // Strip File objects but keep fields for redisplay
@@ -1817,10 +1832,18 @@ export default function TPSWizardV2({ locale }: Props) {
       // survives the Stripe ?paid=1 round-trip reload. Without this, the
       // post-payment generate-packet body drops the id and enforce mode 422s.
       // Mirrors ReparoleWizardV2 persist/restore.
+      // PII CONTAINMENT (Phase A): persist ONLY {value, requires_review, doc_slot}
+      // per field — strip raw OCR text, confidence, and source traces before
+      // writing. canonical_document_id (opaque) is kept for the Stripe carriage.
       const uploadsSafe: Record<string, Pick<UploadEntry, 'fileName' | 'status' | 'fields' | 'canonical_document_id'>> = {}
       for (const k of Object.keys(uploads)) {
         const u = uploads[k]
-        uploadsSafe[k] = { fileName: u.fileName, status: u.status, fields: u.fields, canonical_document_id: u.canonical_document_id ?? null }
+        uploadsSafe[k] = {
+          fileName: u.fileName,
+          status: u.status,
+          fields: sanitizeFieldMapForStorage('tps', u.fields) as unknown as UploadEntry['fields'],
+          canonical_document_id: u.canonical_document_id ?? null,
+        }
       }
       localStorage.setItem(
         STORAGE_KEY,
@@ -2669,6 +2692,11 @@ export default function TPSWizardV2({ locale }: Props) {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const blob = await r.blob()
       setGeneratedManifest({ at: new Date().toISOString(), zipBytes: blob.size })
+      // PII CONTAINMENT (Phase A): packet generated = terminal success. Clear the
+      // browser-persisted draft (OCR PII) now and suppress further persistence.
+      // canonical_document_id was already consumed in the generate-packet body above.
+      draftClearedRef.current = true
+      try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -2695,6 +2723,8 @@ export default function TPSWizardV2({ locale }: Props) {
     // Per-document isolation: a NEW document must not inherit the previous
     // person's attestation / legal-risk / Part-7 answers (the stale-state class).
     clearTpsDocumentState()
+    // Re-enable persistence for the fresh document (cleared on completion).
+    draftClearedRef.current = false
     setPreflightPassed(false)
     setGeneratedManifest(null)
     setData({ uploads: {}, manual: {}, paid: false, packetReady: false, part7Reviewed: false })

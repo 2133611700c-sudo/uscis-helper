@@ -23,6 +23,7 @@ import { getHardUnresolvedReviewFields, getSoftReviewFields } from '@/lib/transl
 import { ukrLabelFor } from './translationFieldLabels'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { rotateImage90 } from '@/lib/upload/autoRotate'
+import { sanitizeFieldListForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -97,6 +98,8 @@ interface DraftState {
   // persist a canonical (shadow persist failure or continuity=off) — never fabricated.
   canonicalDocumentId?: string | null
   // file is intentionally NOT persisted (cannot serialize a Blob)
+  // PII CONTAINMENT (Phase A): write timestamp for the 24h TTL discard on load.
+  savedAt?: string
 }
 
 const DRAFT_KEY = 'tw:v2:draft'
@@ -979,6 +982,11 @@ export function TranslateWizard() {
       const raw = sessionStorage.getItem(DRAFT_KEY)
       if (!raw) return
       const draft = JSON.parse(raw) as DraftState
+      // PII CONTAINMENT (Phase A): hard 24h TTL — discard a stale draft on load.
+      if (isDraftExpired(draft.savedAt)) {
+        try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* */ }
+        return
+      }
       if (['review', 'payment', 'success'].includes(String(draft.screen))) return
       // Restore selectedDocType + extractedFields so the success-screen PDF call
       // still has them after payment. Screen is set by the ?paid=1 handler below.
@@ -1028,6 +1036,13 @@ export function TranslateWizard() {
             })
             const j = await resp.json().catch(() => null)
             if (resp.ok && j?.ok && j.order_id) {
+              // PII CONTAINMENT (Phase A): order handed to the operator queue =
+              // terminal success. Clear the browser-persisted draft (OCR PII) now;
+              // raw_cyrillic carriage was already submitted to the server above.
+              try {
+                sessionStorage.removeItem(DRAFT_KEY)
+                sessionStorage.removeItem('tw:cs')
+              } catch { /* */ }
               window.location.assign(`/${locale}/order/${j.order_id}`)
               return
             }
@@ -1081,7 +1096,17 @@ export function TranslateWizard() {
 
   const saveDraft = useCallback(() => {
     try {
-      const draft: DraftState = { screen, selectedDocType, extractedFields, canonicalDocumentId }
+      // PII CONTAINMENT (Phase A): persist ONLY {field, value, review_required,
+      // raw_cyrillic} per field — strip confidence / kind / ensemble_candidate /
+      // review_reasons. raw_cyrillic is kept ON PURPOSE: it is load-bearing
+      // carriage for the post-payment submit-order operator hand-off.
+      const draft: DraftState = {
+        screen,
+        selectedDocType,
+        extractedFields: sanitizeFieldListForStorage('translation', extractedFields) as unknown as ExtractedField[],
+        canonicalDocumentId,
+        savedAt: new Date().toISOString(),
+      }
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
     } catch { /* */ }
   }, [screen, selectedDocType, extractedFields, canonicalDocumentId])
