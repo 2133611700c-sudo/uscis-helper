@@ -9,6 +9,8 @@ import { sendEmail } from '@/lib/email/resend'
 import { orderCompletedEmail } from '@/lib/email/operatorFlowTemplates'
 import { writeManualReviewEvent } from '@/lib/translation/manualReview/createManualReviewTicket'
 import type { ExtractedField } from '@/lib/translation/types'
+import { requireTranslationOperator, resolveVerifiedRecipient } from './legacyOperatorAuth'
+import { stripeTranslationVerifier } from './stripeRecipientVerifier'
 
 const LANG_LABELS: Record<string, string> = {
   ru: 'Russian',
@@ -17,12 +19,14 @@ const LANG_LABELS: Record<string, string> = {
 }
 
 export async function sendTranslation(formData: FormData) {
-  const id             = formData.get('id')             as string
-  const recipientEmail = formData.get('recipientEmail') as string
-  const docType        = formData.get('docType')        as string
-  const sourceLang     = formData.get('sourceLang')     as string
+  // SECURITY (0.5): authorize FIRST — before reading input or any side effect.
+  const { actor } = await requireTranslationOperator()
 
-  if (!id || !recipientEmail || !docType) {
+  const id         = formData.get('id')         as string
+  const docType    = formData.get('docType')    as string
+  const sourceLang = formData.get('sourceLang') as string
+
+  if (!id || !docType) {
     throw new Error('Missing required fields')
   }
 
@@ -38,14 +42,24 @@ export async function sendTranslation(formData: FormData) {
     throw new Error('No translated fields provided')
   }
 
+  // SECURITY (0.5): recipient is RE-VERIFIED against Stripe at send time (the
+  // ticket's contact_email has client writers, so it is not trusted). The
+  // form-submitted address is IGNORED. Fail closed if there is no verified
+  // paid translation session.
+  const supabase = createAdminSupabaseClient()
+  const { email: recipient } = await resolveVerifiedRecipient(supabase, id, stripeTranslationVerifier)
+  if (!recipient) {
+    throw new Error('recipient_not_verified')
+  }
+
   const originalLanguage = LANG_LABELS[sourceLang] ?? 'Ukrainian'
 
-  // 1. Send translation email to client
+  // 1. Send translation email to the VERIFIED client address
   const emailRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/api/translation/email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email:       recipientEmail.trim().toLowerCase(),
+      email:       recipient,
       prodId:      docType,
       fieldValues: translatedFields,
       srcLang:     originalLanguage,
@@ -59,13 +73,12 @@ export async function sendTranslation(formData: FormData) {
   }
 
   // 2. Update queue row: status=completed, reviewed_at=now(), store translated_fields
-  const supabase = createAdminSupabaseClient()
   const { error } = await supabase
     .from('manual_review_queue')
     .update({
       status:            'completed',
       reviewed_at:       new Date().toISOString(),
-      reviewed_by:       'admin',
+      reviewed_by:       actor,
       translated_fields: translatedFields,
     })
     .eq('id', id)
@@ -83,16 +96,19 @@ export async function sendTranslation(formData: FormData) {
  *
  * Safety: requires OPERATOR_SIGNER_NAME — we NEVER silently send an
  * uncertified PDF. PII rule: never log field values or recipient emails.
+ * SECURITY (0.5): operator-authorized first; recipient is server-authoritative.
  */
 export async function approveAndSendPdf(
   formData: FormData,
 ): Promise<{ ok: false; error: string } | void> {
-  const id             = formData.get('id')             as string
-  const recipientEmail = formData.get('recipientEmail') as string
-  const docType        = formData.get('docType')        as string
-  const sourceLang     = formData.get('sourceLang')     as string
+  // SECURITY (0.5): authorize FIRST — before reading input or any side effect.
+  const { actor } = await requireTranslationOperator()
 
-  if (!id || !recipientEmail || !docType) {
+  const id         = formData.get('id')         as string
+  const docType    = formData.get('docType')    as string
+  const sourceLang = formData.get('sourceLang') as string
+
+  if (!id || !docType) {
     throw new Error('Missing required fields')
   }
 
@@ -112,6 +128,14 @@ export async function approveAndSendPdf(
   const signerName = process.env.OPERATOR_SIGNER_NAME ?? ''
   if (!signerName.trim()) {
     return { ok: false, error: 'operator_signer_not_configured' }
+  }
+
+  // SECURITY (0.5): recipient RE-VERIFIED against Stripe; form address IGNORED;
+  // fail closed without a verified paid translation session.
+  const supabase = createAdminSupabaseClient()
+  const { email: recipient } = await resolveVerifiedRecipient(supabase, id, stripeTranslationVerifier)
+  if (!recipient) {
+    return { ok: false, error: 'recipient_not_verified' }
   }
 
   const certificationRecord = buildCertificationRecord({
@@ -150,7 +174,7 @@ export async function approveAndSendPdf(
   const emailContent = orderCompletedEmail({ locale: 'en', docTypeLabel })
 
   const sendResult = await sendEmail({
-    to: recipientEmail.trim().toLowerCase(),
+    to: recipient,
     subject: emailContent.subject,
     html: emailContent.html,
     text: emailContent.text,
@@ -167,13 +191,12 @@ export async function approveAndSendPdf(
     throw new Error(`Email send failed: ${sendResult.error ?? 'unknown'}`)
   }
 
-  const supabase = createAdminSupabaseClient()
   const { error } = await supabase
     .from('manual_review_queue')
     .update({
       status:            'completed',
       reviewed_at:       new Date().toISOString(),
-      reviewed_by:       'admin',
+      reviewed_by:       actor,
       translated_fields: translatedFields,
     })
     .eq('id', id)
@@ -210,6 +233,8 @@ export async function approveAndSendPdfForm(formData: FormData): Promise<void> {
 }
 
 export async function markInReview(id: string) {
+  // SECURITY (0.5): authorize FIRST — before any mutation.
+  await requireTranslationOperator()
   const supabase = createAdminSupabaseClient()
   await supabase
     .from('manual_review_queue')
