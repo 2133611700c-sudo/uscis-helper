@@ -1726,6 +1726,7 @@ export default function TPSWizardV2({ locale }: Props) {
               fileName: string
               status: UploadEntry['status']
               fields?: Record<string, FieldExtraction>
+              canonical_document_id?: string | null
             } | undefined
           >
           for (const k of Object.keys(meta)) {
@@ -1749,6 +1750,7 @@ export default function TPSWizardV2({ locale }: Props) {
               fileName: m.fileName,
               status: m.status,
               fields: cleanFields,
+              canonical_document_id: m.canonical_document_id ?? null,
             }
           }
           const {
@@ -1811,10 +1813,14 @@ export default function TPSWizardV2({ locale }: Props) {
       // NOTE: `paid` is intentionally excluded from localStorage.
       // Owner access uses isOwner (checked on mount), Stripe uses ?paid=1.
       // Saving paid=false to localStorage would override owner access on reload.
-      const uploadsSafe: Record<string, Pick<UploadEntry, 'fileName' | 'status' | 'fields'>> = {}
+      // CRITICAL (canonical continuity): persist canonical_document_id so it
+      // survives the Stripe ?paid=1 round-trip reload. Without this, the
+      // post-payment generate-packet body drops the id and enforce mode 422s.
+      // Mirrors ReparoleWizardV2 persist/restore.
+      const uploadsSafe: Record<string, Pick<UploadEntry, 'fileName' | 'status' | 'fields' | 'canonical_document_id'>> = {}
       for (const k of Object.keys(uploads)) {
         const u = uploads[k]
-        uploadsSafe[k] = { fileName: u.fileName, status: u.status, fields: u.fields }
+        uploadsSafe[k] = { fileName: u.fileName, status: u.status, fields: u.fields, canonical_document_id: u.canonical_document_id ?? null }
       }
       localStorage.setItem(
         STORAGE_KEY,
