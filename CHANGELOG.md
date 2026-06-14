@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-14 | Real-document benchmark executed (0 fabricated) + PDF readback proof
+- Ran the recognition benchmark with the existing Gemini key (local, not prod) against VERIFIED_BY_OWNER ground truth: EAD + internal-passport identity fields = SAME, honest EMPTY on reader-coverage gaps, **fabricated_critical_fields = 0**. I-94 canonical returned FALLBACK (coverage gap to fix). Evidence: artifacts/v1/PRINTED_CYRILLIC_AND_IMAGE_QUALITY/benchmark.json (PII-free verdict enums only).
+- PDF field-by-field readback proof (AUDIT_FORMS): I-821 + I-131 + I-765 = 3/3 PASS (edition, widgets, checkbox, transliteration, render). Item: canonical -> mapper -> PDF -> readback PROVEN.
+- BLOCKER (named): Stripe TEST-mode keys are absent (only sk_live/pk_live in env) -> Stripe Test Mode E2E and hosted-payment V2 step cannot run without real charges. All non-payment work continues.
+- No production change; no real money spent (Stripe untouched); PR #119 untouched.
 ## 2026-06-14 | Phase 4 cache-half: budget-enforced OCR cache (caps live paid paths)
 - apps/web/src/lib/v1/ocrCacheStore.ts: FsOcrCacheStore — immutable (wx flag), sha256 filenames, private gitignored dir, no PII logs.
 - apps/web/src/lib/v1/cachedBudgetedProvider.ts: cachedBudgetedCall — single chokepoint for paid OCR/AI: cache-first (hit = no spend), miss → checkBudget FAIL-CLOSED (DEFAULT_BUDGET denies), only an explicitly-budgeted within-caps miss calls the provider + caches immutably. Pure/injected → testable with no fs/network/money.
