@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-14 | audit: full project reality inventory + V1 completion plan v2 (read-only, docs-only)
+- Coordinator integrated 4 audit-agent worktrees onto audit/full-project-reality-2026-06-14: cherry-picked b4c9258 (arch/flow/canonical/translation-v2), f8fe72b (infra/CI/env/DB/cost/evidence), 5d7bd20 (corpus/coverage/brain-dictionary), 5514e89 (security/PII/USCIS-forms). 18 agent docs + project_truth.json.
+- Wrote 4 synthesis docs: docs/audit/FULL_PROJECT_AUDIT_2026-06-14.md, CLAIMS_VS_REALITY.csv (19 claims re-verified), RISK_REGISTER.csv (23 risks), V1_COMPLETION_PLAN_V2.md (11 phases, live-proof acceptance).
+- Independently re-verified: main=prod=02eb595 (healthz), /api/wizard-draft=404 (ledger OFF). CSV/JSON parse-validated; secret/email/PII scan clean.
+- Findings: legacy TPS+Translation flows PROVEN_PRODUCTION; V1 track (#121-#133) overclaims (ledger NOT_WIRED, cache/budget NOT_WIRED, "0 fabricated"/"3/3 readback" UNVERIFIED/PROVEN_LOCAL-via-#116, staging NOT_BUILT). P0: PII cleartext in tps_ocr_audit, no env isolation. P1×6 incl. Re-Parole payment bypass, DB drift, anti-fab gate OFF, canonical override orphan.
+- NO runtime/env/migration/flag/Stripe change. PR #119 untouched. Docs-only Draft PR to main.
+
+## 2026-06-14 | audit: full project reality inventory (read-only, docs-only)
+- Etap 1 ground truth: main=prod=02eb595 shadow; PRs #121-#133 parallel V1 track merged (server PII ledger/benchmark/cache/PDF-readback) — all claims UNVERIFIED, to be checked independently.
+
 ## 2026-06-14 | TPS wizard wired to server PII ledger (rebased; ready-not-verified-live)
 - GeneratePacketBlock: persist fields/part7 to encrypted server ledger when NEXT_PUBLIC_SERVER_LEDGER_ENABLED=1 (else localStorage, byte-identical); hydrate effect; clearMyData clears server draft. tsc 0; full build 0. Re-Parole/Translate not wired (inline/entangled hydrate → refactor+browser verify needed; not landing a broken ON path). #119 untouched.
 ## 2026-06-14 | /api/wizard-draft route integration test — server ledger PROVEN E2E

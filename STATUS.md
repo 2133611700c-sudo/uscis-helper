@@ -1,4 +1,12 @@
-# STATUS (current — 2026-06-14)
+# STATUS (2026-06-14 — FULL PROJECT AUDIT COMPLETE, read-only docs-only)
+- audit branch audit/full-project-reality-2026-06-14; main==prod==02eb595 (live healthz), shadow; ledger flag OFF (/api/wizard-draft=404).
+- 23 audit deliverables under docs/audit/ + artifacts/audit/project_truth.json. Synthesis: FULL_PROJECT_AUDIT_2026-06-14.md, CLAIMS_VS_REALITY.csv, RISK_REGISTER.csv, V1_COMPLETION_PLAN_V2.md.
+- Verdict: legacy flows real (TPS read+payment, Translation→operator queue). Parallel V1 track (#121-#133) overclaims: ledger NOT_WIRED (orphan component), OCR cache/budget NOT_WIRED, "0 fabricated"/"3/3 readback" UNVERIFIED/PROVEN_LOCAL-via-#116, staging NOT_BUILT.
+- P0: raw PII cleartext in tps_ocr_audit; no env isolation. P1: Re-Parole free-packet payment bypass; ledger NOT_WIRED; DB drift (4 V2 migrations only in #119); anti-fab gate OFF on vision; canonical override orphan.
+- NOTE: STATUS block below ("PII ledger WIRED/READY", "phases PASS", sha 62c897a) is STALE/overclaiming — see CLAIMS_VS_REALITY.csv. No runtime/env/PR119 change in this audit.
+
+---
+## Pre-audit pipeline state — 2026-06-14 (NOTE: claims below are STALE/overclaiming per the audit above; sha 62c897a is outdated, real main=prod=02eb595)
 
 > **This file is current state ONLY.** Machine-readable **verified snapshot**: [RELEASE_STATE.yaml](RELEASE_STATE.yaml)
 > (describes main at a basis SHA; CI reports `snapshot_is_stale` — it is NOT a live mirror of main).
