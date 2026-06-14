@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-14 | P2 Phase 7-A — OCR provider cost OBSERVABILITY (shadow, observe-only)
+- Branch fix/p2-ocr-cost-metrics-shadow off main 57d16aa. OBSERVE-ONLY: make the uncapped paid-call cost visible BEFORE any cap. No output/behaviour/retry change; no cache substitution; no budget enforcement; no prod flag change.
+- NEW apps/web/src/lib/v1/ocrCostMetrics.ts — PII-free emitter: emitOcrCostEvent (`ocr_provider_call`), emitOcrUploadCostSummary (`ocr_upload_cost_summary`), withOcrCostMetrics (non-invasive wrapper — result byte-identical, re-throws original error), runWithUploadCostTally (AsyncLocalStorage per-upload roll-up), computeCacheKeySha (sha256 of the future 5-part cache key), sha256Hex, estCostUsdMicros + OCR_COST_TABLE_USD_MICROS (public list prices, sources cited). Hard allow-list drops any non-technical key (no document bytes / OCR text / field values / prompts).
+- WIRED (non-invasive thunk) at every real external call site: ocr/providers/google-vision.ts (Google Vision), docai/client.ts (Google DocAI), docintel/providers/geminiVisionProvider.ts (Gemini reader), deepseek/client.ts (DeepSeek chat/reason chokepoint → TPS runBrain + dualOcrCrossref), ocr/field-mapper.ts (DeepSeek field mapper), docintel/orientation/autoOrient.ts (Gemini orient), docintel/ensemble/dateRegionRead.ts (Gemini date-boxes). Per-upload tally wired into 4 product OCR routes + translation ocr-from-storage (POST→POST_impl).
+- Confirmed paid-calls/upload: TPS up to 3 (Vision/DocAI + DeepSeek crossref + DeepSeek brain); EAD/Reparole/Translation 1 Gemini read (+Vision when crossref/date-ensemble triggers).
+- Shadow cache_key = sha256(file_sha256·provider·model·prompt_version·preproc_version) — same key the future 7-B cache uses, computed now for would-be hit-rate analysis.
+- DEFERRED: 7-B cache substitution (lib/v1/ocrCache + ocrCacheStore + cachedBudgetedProvider), 7-C enforced budget (lib/v1/providerBudget, staging-gated).
+- Tests: src/lib/v1/__tests__/ocrCostMetrics.test.ts (27) + ocrCostMetricsWiring.test.ts (10) = 37 new. tsc 0 real; full vitest 3903 pass / 24 skip; build OK; content-guard 0.
+
 ## 2026-06-14 | V1 fix program Phases 1-5 — ledger layer complete (session-docs catch-up)
 - Records the #139/#140/#141 server-ledger wiring (TPS/Re-Parole/Translation live wizards, flag default OFF, OFF-path parity) + #135/#137/#138 prod-verified P0/P1 fixes. main=ecc4e6c shadow. (This commit reconciles session-docs after the #141 squash took main-side docs in conflict resolution.)
 

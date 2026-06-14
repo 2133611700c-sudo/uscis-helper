@@ -14,6 +14,10 @@ import type { OcrResult, OcrLine, OcrWord } from './types'
 import type { DocumentType } from '@/lib/translation/types'
 import { analyseNameField, NAME_FIELDS } from './nameNormalizer'
 import { resolveIssuedBy } from '@/lib/translation/glossary/agencyGlossary'
+import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
+
+const FIELD_MAPPER_PROMPT_VERSION = 'v1'
+const FIELD_MAPPER_PREPROC_VERSION = 'v1'
 
 // Fields that should be run through the agency glossary resolver
 const AUTHORITY_FIELDS = new Set(['issued_by', 'issuing_authority'])
@@ -198,24 +202,40 @@ Return format:
   "image_quality": { "overall": 0.9, "issues": [] }
 }`
 
+  const dsModel = process.env.DEEPSEEK_MODEL ?? 'deepseek-chat'
   try {
-    const res = await fetch(DEEPSEEK_TEXT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL ?? 'deepseek-chat',
-        max_tokens: 3000,
-        temperature: 0.05,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user',   content: userPrompt },
-        ],
-      }),
-      signal: AbortSignal.timeout(FIELD_MAPPER_TIMEOUT_MS),
+    // SHADOW cost metric: hash the request payload (only the sha is logged) and
+    // time + emit the external DeepSeek call. Result returned UNCHANGED.
+    const cacheKeySha = computeCacheKeySha({
+      fileSha256: sha256Hex(`${systemPrompt}\n${userPrompt}`),
+      provider: 'deepseek',
+      model: dsModel,
+      promptVersion: FIELD_MAPPER_PROMPT_VERSION,
+      preprocVersion: FIELD_MAPPER_PREPROC_VERSION,
     })
+    const res = await withOcrCostMetrics(
+      {
+        product: 'translation', route: 'provider:deepseek_field_mapper', provider: 'deepseek',
+        model: dsModel, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('deepseek', dsModel),
+      },
+      () => fetch(DEEPSEEK_TEXT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: dsModel,
+          max_tokens: 3000,
+          temperature: 0.05,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: userPrompt },
+          ],
+        }),
+        signal: AbortSignal.timeout(FIELD_MAPPER_TIMEOUT_MS),
+      }),
+    )
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '')

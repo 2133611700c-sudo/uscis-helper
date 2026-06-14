@@ -20,10 +20,17 @@
 import { GoogleAuth } from 'google-auth-library'
 import type { OcrProvider, OcrResult, OcrBlockedResult, OcrWord, OcrLine, OcrPage, OcrBoundingBox } from '../types'
 import { loadVisionCredentials } from '@/lib/canonical/vision/visionCredentials'
+import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate'
 const VISION_TIMEOUT_MS = 12_000   // Google Vision: typically 1–5s; 12s safety margin
 const PROVIDER_NAME = 'google_vision'
+// Stable shadow-cache-key dims for this provider call shape. Bump when the
+// request shape (features/languageHints) or any preprocessing changes, so the
+// would-be cache-hit analysis never reuses a key across a behaviour change.
+const VISION_MODEL = 'document_text_detection'
+const VISION_PROMPT_VERSION = 'v1'      // request shape: DOCUMENT_TEXT_DETECTION, hints uk/en/ru
+const VISION_PREPROC_VERSION = 'v1'
 
 // ── Google Vision response shapes ────────────────────────────────────────────
 
@@ -181,14 +188,30 @@ export const googleVisionProvider: OcrProvider = {
       fetchUrl = `${VISION_API_URL}?key=${apiKey}`
     }
 
+    // SHADOW cost metric: time + emit the external Vision call (PII-free). The
+    // wrapper returns the fetch result UNCHANGED — output is byte-identical.
+    const cacheKeySha = computeCacheKeySha({
+      fileSha256: sha256Hex(imageBuffer),
+      provider: PROVIDER_NAME,
+      model: VISION_MODEL,
+      promptVersion: VISION_PROMPT_VERSION,
+      preprocVersion: VISION_PREPROC_VERSION,
+    })
     let gResponse: GAnnotateResponse
     try {
-      const res = await fetch(fetchUrl, {
-        method: 'POST',
-        headers: fetchHeaders,
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
-      })
+      const res = await withOcrCostMetrics(
+        {
+          product: 'ocr', route: 'provider:google_vision', provider: PROVIDER_NAME,
+          model: VISION_MODEL, cacheKeySha,
+          est_cost_usd_micros: estCostUsdMicros(PROVIDER_NAME, VISION_MODEL),
+        },
+        () => fetch(fetchUrl, {
+          method: 'POST',
+          headers: fetchHeaders,
+          body: JSON.stringify(requestBody),
+          signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
+        }),
+      )
 
       if (!res.ok) {
         const errBody = await res.text().catch(() => '')
