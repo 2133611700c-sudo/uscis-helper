@@ -1,3 +1,7 @@
+# HANDOFF (2026-06-14 — Phase 2 webhook authority for V2 — code complete)
+DONE: signature-verified webhook is now the authority for Translation Order V2 (handleVerifiedPayment unified handler; submit-order = reconciliation; stripe_processed_events dedupe migration applied to prod; lifecycle completed/expired/failed/refund; synthetic webhook tests; observability + runbooks 09-11). tsc 0; 3823 tests pass. Prod shadow, PR #119 draft.
+NEXT (final acceptance, owner GO): add Stripe test-mode keys to Preview → one hosted Checkout positive E2E (payment→webhook→V2 order→operator→artifact→delivery) + Stripe-side duplicate/expired/refund; run RUN_DB_INVARIANTS=1; then merge decision.
+---
 # Phase 2 Wave 3/4 NON_STRIPE_READY (2026-06-14)
 - PR #119 DRAFT @ db3da8a: payment-boundary + operator E2E (mocked) + observability + runbooks + lifecycle. 3847 tests (3801 pass/0 fail), tsc 0, build pass. Prod SHADOW unchanged. Deferred to final acceptance: hosted Stripe positive E2E + V2 webhook authority + live DB-invariant suite.
 

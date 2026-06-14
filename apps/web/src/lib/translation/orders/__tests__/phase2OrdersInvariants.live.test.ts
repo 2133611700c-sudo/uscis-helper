@@ -124,6 +124,28 @@ describe.skipIf(!GATE)('Phase 2 order invariants (live, service-role path)', () 
     expect(String(r.error?.message)).toContain('ORDER_EVENTS_APPEND_ONLY')
   })
 
+  it('duplicate Stripe event id prevented (webhook dedupe ledger)', async () => {
+    const eid = `${PREFIX}_evt`
+    const first = await db.rpc('record_stripe_processed_event', {
+      p_stripe_event_id: eid, p_event_type: 'checkout.session.completed',
+      p_checkout_session_id: `${PREFIX}_a`, p_order_id: orderId, p_result_code: 'received',
+    })
+    expect(first.error).toBeNull()
+    const firstRow = Array.isArray(first.data) ? first.data[0] : first.data
+    expect((firstRow as { inserted: boolean }).inserted).toBe(true)
+    // Re-record the SAME event id → no-op (inserted=false), no second row.
+    const second = await db.rpc('record_stripe_processed_event', {
+      p_stripe_event_id: eid, p_event_type: 'checkout.session.completed',
+      p_checkout_session_id: `${PREFIX}_a`, p_order_id: orderId, p_result_code: 'received',
+    })
+    const secondRow = Array.isArray(second.data) ? second.data[0] : second.data
+    expect((secondRow as { inserted: boolean }).inserted).toBe(false)
+    // Ledger is append-only: direct UPDATE rejected.
+    const upd = await db.from('stripe_processed_events').update({ result_code: 'HACK' }).eq('stripe_event_id', eid)
+    expect(upd.error).not.toBeNull()
+    expect(String(upd.error?.message)).toContain('STRIPE_EVENTS_APPEND_ONLY')
+  })
+
   it('canonical rebind forbidden once bound', async () => {
     // bind a synthetic canonical first (NULL → value is allowed); use a fresh order.
     const ins = await db

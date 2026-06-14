@@ -6,7 +6,15 @@
  * /order/{id} and waits; the operator reviews/edits via /admin/manual-review and
  * the finished PDF is rendered from the resolved canonical + emailed.
  *
- * ── AUTHORITY ────────────────────────────────────────────────────────────────
+ * ── AUTHORITY (Phase 2 closeout) ─────────────────────────────────────────────
+ * This endpoint is NO LONGER the sole authority for V2 order creation. The
+ * signature-verified Stripe WEBHOOK is the authority; this route is RECONCILIATION.
+ * It server-side verifies the checkout session (verifyStripeSessionPaid → the SAME
+ * Stripe session object), then calls the SAME unified domain handler
+ * handleVerifiedPayment(source='client_reconciliation'). It therefore returns the
+ * webhook-created order, or idempotently creates the identical order if the client
+ * returns first — collapsing to ONE order per checkout_session_id either way.
+ *
  * Client field VALUES are NOT authoritative. The server binds only the
  * canonical_document_id (an opaque reference it independently re-verifies) and
  * the recipient email taken EXCLUSIVELY from the verified Stripe session.
@@ -40,12 +48,10 @@ import {
   verifyCanonicalHash,
 } from '@/lib/canonical/persistence'
 import {
-  createOrGetOrder,
   bindCanonicalDocument,
-  getOrderById,
-  transitionOrder,
   TranslationOrderError,
 } from '@/lib/translation/orders'
+import { handleVerifiedPayment } from '@/lib/translation/orders/handleVerifiedPayment'
 import { emitEvent } from '@/lib/translation/observability/events'
 
 export const dynamic = 'force-dynamic'
@@ -145,79 +151,91 @@ export async function POST(req: NextRequest) {
     verifiedCanonicalId = canonicalId
   }
 
-  // ── 3. Create-or-return the V2 order (idempotent on checkout_session_id) ──────
-  // Only when V2 is active (mode !== off). Bind canonical + Stripe-verified email.
+  // ── 3. Reconcile via the UNIFIED domain handler (webhook authority) ──────────
+  // submit-order is no longer the sole authority. It calls the SAME handler the
+  // signature-verified webhook uses, with source='client_reconciliation'. The order
+  // is idempotent on checkout_session_id, so this returns the webhook-created order
+  // or creates the identical one if the client returns first. We pass the verified
+  // Stripe SESSION object (server-retrieved) so the client view can never out-vote
+  // the server. The client-verified canonical id is injected into the session
+  // metadata; the handler RE-VERIFIES ownership independently before binding.
   let orderId: string | null = null
   let orderReused = false
   if (mode !== 'off') {
-    try {
-      const { order, created } = await createOrGetOrder({
-        checkoutSessionId: checkoutId,
-        verifiedRecipientEmail: v.customerEmail ?? null,
-        canonicalDocumentId: verifiedCanonicalId,
-        documentType: docType,
-        sourceLanguage: 'uk',
+    if (!v.session) {
+      // Paid verified but no session object → infra (cannot reconcile safely).
+      return err('order_store_unavailable', 503)
+    }
+    // Shallow-clone the verified session with the client-verified canonical id merged into the
+    // SERVER-trusted metadata. The handler still re-verifies it; this only seeds discovery.
+    const reconcileSession = {
+      ...v.session,
+      metadata: {
+        ...(v.session.metadata ?? {}),
+        ...(verifiedCanonicalId ? { canonical_document_id: verifiedCanonicalId } : {}),
+        doc_type: docType,
         locale,
-        legacy: verifiedCanonicalId == null,
+      },
+    } as typeof v.session
+
+    let result
+    try {
+      result = await handleVerifiedPayment({
+        verifiedSession: reconcileSession,
+        verifiedEventId: null,
+        source: 'client_reconciliation',
+        canonicalMode: mode,
       })
-      orderId = order.id
-      orderReused = !created
-      if (created) {
-        emitEvent('orders_created_total', {
-          product: 'translation',
-          route: 'submit-order',
-          mode,
-          has_canonical: !!verifiedCanonicalId,
-          internal_uuid: order.id,
-        })
-      }
-
-      // Bind canonical on a previously-legacy order if one is now supplied.
-      if (verifiedCanonicalId && !order.canonicalDocumentId) {
-        try {
-          await bindCanonicalDocument(order.id, verifiedCanonicalId)
-        } catch (e) {
-          if (e instanceof TranslationOrderError && e.code !== 'ORDER_STORAGE_UNAVAILABLE') {
-            // A rebind attempt on an order already bound to a DIFFERENT canonical.
-            return err('canonical_binding_conflict', 409)
-          }
-          throw e
-        }
-      } else if (
-        verifiedCanonicalId &&
-        order.canonicalDocumentId &&
-        order.canonicalDocumentId !== verifiedCanonicalId
-      ) {
-        // Idempotent re-submit pointing at a different canonical → conflict.
-        return err('canonical_binding_conflict', 409)
-      }
-
-      // Enqueue operator review: brand-new orders start 'queued' by default
-      // (Agent 1 default). Keep idempotent — only transition if just created and
-      // not already past queued. A no-op/late transition is swallowed (PII-free).
-      if (created && order.status !== 'queued') {
-        await transitionOrder({
-          orderId: order.id,
-          expectedVersion: order.version,
-          expectedStatus: order.status,
-          toStatus: 'queued',
-          actor: 'system',
-          reason: 'submit_order',
-          metadata: { source: 'submit_order', has_canonical: !!verifiedCanonicalId },
-        }).catch(() => {})
-      }
     } catch (e) {
       if (e instanceof TranslationOrderError) {
         emitEvent('order_transition_failures_total', {
           route: 'submit-order',
           mode,
           error_code: e.code,
-          internal_uuid: orderId ?? undefined,
         })
-        // Storage/infra problems are 503; everything else already returned above.
         return err('order_store_unavailable', 503, { code: e.code })
       }
       throw e
+    }
+
+    // A binding conflict (the order is already bound to a DIFFERENT canonical) → 409.
+    if (result.resultCode === 'canonical_binding_conflict') {
+      return err('canonical_binding_conflict', 409)
+    }
+    if (result.resultCode === 'storage_unavailable') {
+      emitEvent('order_transition_failures_total', {
+        route: 'submit-order',
+        mode,
+        error_code: 'storage_unavailable',
+      })
+      return err('order_store_unavailable', 503)
+    }
+    orderId = result.orderId
+    orderReused = result.reused
+
+    // Defense in depth: if the webhook created the order BEFORE us with NO canonical (because the
+    // wizard hadn't persisted it yet) but the client now carries a verified canonical, bind it
+    // (NULL→value only; rebind to a different one → 409). The handler also attempts this, but the
+    // client path may carry a canonical the webhook could not discover.
+    if (orderId && verifiedCanonicalId && !result.canonicalBound) {
+      try {
+        await bindCanonicalDocument(orderId, verifiedCanonicalId)
+      } catch (e) {
+        if (e instanceof TranslationOrderError && e.code !== 'ORDER_STORAGE_UNAVAILABLE') {
+          return err('canonical_binding_conflict', 409)
+        }
+        // storage error → leave for the operator; not fatal to reconciliation.
+      }
+    }
+
+    if (orderId && !orderReused) {
+      emitEvent('orders_created_total', {
+        product: 'translation',
+        route: 'submit-order',
+        mode,
+        has_canonical: !!verifiedCanonicalId,
+        internal_uuid: orderId,
+      })
     }
   }
 
