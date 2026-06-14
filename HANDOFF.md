@@ -999,3 +999,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-14: PR #121 corrected — RELEASE_STATE is now an honest VERIFIED SNAPSHOT (schema_version 2: snapshot.state_basis_main_sha / verified_production_sha / verified_at + evidence), not a fake auto-generated mirror. Guard v2 reports current_head/basis/main_tip/snapshot_is_stale; staleness WARNs (never blocks merge / no self-reference paradox). -->
 
 <!-- 2026-06-14: PR #122 rebased onto post-#121 main (f7fc2fb). Short STATUS kept (no 629-line archive restore). RELEASE_STATE snapshot refreshed to f7fc2fb; legacy blocker = pending_verification (preview smoke required before merge). Scope unchanged: per-action auth + Stripe-re-verified recipient. -->
+
+<!-- 2026-06-14: post-#122 deploy — RELEASE_STATE snapshot → 62c897a; legacy auth/recipient blocker removed (DEPLOYED); added open gap: positive paid Translation delivery RUNTIME_UNVERIFIED until staging. negative security smoke VERIFIED in prod. -->
