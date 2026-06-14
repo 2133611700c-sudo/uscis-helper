@@ -34,6 +34,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { sanitizeFieldMapForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
+import {
+  isLedgerClientEnabled,
+  saveDraftToServer,
+  loadDraftFromServer,
+  clearServerDraft,
+} from '@/lib/v1/wizardLedgerClient'
 
 // docHints covered by /api/reparole/ocr/extract (Phase 2.3: flag removed, Core unconditional)
 // US-form slots (i94, ead, dl) go to /api/tps/ocr/extract — no reparole mapping exists.
@@ -488,53 +494,86 @@ export default function ReparoleWizardV2({ locale }: Props) {
 
   // Persist + hydrate ─ same pattern as TPSWizardV2
   useEffect(() => {
-    try {
-      // Wipe legacy keys defensively
-      ['wizard:re-parole-u4u:v2:state', 'wizard:re-parole-u4u:state'].forEach((k) => {
-        try { localStorage.removeItem(k) } catch { /* */ }
-      })
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        // PII CONTAINMENT (Phase A): hard 24h TTL — discard stale drafts outright.
-        if (parsed && typeof parsed === 'object' && isDraftExpired(parsed.savedAt)) {
-          try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
-          throw new Error('draft_expired')
-        }
-        if (parsed && typeof parsed === 'object' && parsed.schema === STORAGE_SCHEMA) {
-          const rebuilt: Record<string, UploadEntry> = {}
-          const meta = (parsed.uploadsMeta || {}) as Record<string, {
-            fileName: string
-            status: UploadEntry['status']
-            fields?: Record<string, FieldExtraction>
-            // CANONICAL_CONTINUITY: persisted canonical id survives reload so the resend
-            // step can still carry it after the user returns from Stripe checkout.
-            canonical_document_id?: string | null
-          } | undefined>
-          for (const k of Object.keys(meta)) {
-            const m = meta[k]
-            if (!m) continue
-            const allowed = SLOT_ALLOWED_FIELDS[k]
-            const clean: Record<string, FieldExtraction> = {}
-            if (m.fields) {
-              for (const fk of Object.keys(m.fields)) {
-                const fx = m.fields[fk]
-                if (!fx || typeof fx.value !== 'string') continue
-                if (allowed && !allowed.has(fk)) continue
-                clean[fk] = fx
-              }
-            }
-            rebuilt[k] = {
-              file: null, fileName: m.fileName, status: m.status, fields: clean,
-              canonical_document_id: typeof m.canonical_document_id === 'string' ? m.canonical_document_id : null,
+    // SERVER LEDGER (V1 #9) — when the flag is ON, the draft (PII) lives
+    // server-side encrypted; the browser holds ONLY an opaque httpOnly token
+    // cookie. We rehydrate by GETting the ledger instead of reading
+    // localStorage. The rebuild logic (applyPersistedDraft) is byte-identical
+    // to the localStorage path; only the SOURCE of `parsed` differs. When the
+    // flag is OFF this whole branch is skipped and behaviour is unchanged.
+    //
+    // applyPersistedDraft mirrors the original inline rehydration so both the
+    // localStorage (OFF) and ledger (ON) paths share one rebuild — avoiding the
+    // class of bug where the two paths drift apart.
+    const applyPersistedDraft = (parsed: unknown): void => {
+      if (!parsed || typeof parsed !== 'object') return
+      const p = parsed as Record<string, unknown> & { schema?: number; lastStep?: number; uploadsMeta?: unknown }
+      if (p.schema === STORAGE_SCHEMA) {
+        const rebuilt: Record<string, UploadEntry> = {}
+        const meta = (p.uploadsMeta || {}) as Record<string, {
+          fileName: string
+          status: UploadEntry['status']
+          fields?: Record<string, FieldExtraction>
+          // CANONICAL_CONTINUITY: persisted canonical id survives reload so the resend
+          // step can still carry it after the user returns from Stripe checkout.
+          canonical_document_id?: string | null
+        } | undefined>
+        for (const k of Object.keys(meta)) {
+          const m = meta[k]
+          if (!m) continue
+          const allowed = SLOT_ALLOWED_FIELDS[k]
+          const clean: Record<string, FieldExtraction> = {}
+          if (m.fields) {
+            for (const fk of Object.keys(m.fields)) {
+              const fx = m.fields[fk]
+              if (!fx || typeof fx.value !== 'string') continue
+              if (allowed && !allowed.has(fk)) continue
+              clean[fk] = fx
             }
           }
-          const { uploadsMeta: _u, lastStep: _l, schema: _s, ...rest } = parsed
-          setData((d) => ({ ...d, ...rest, uploads: rebuilt }))
-          if (typeof parsed.lastStep === 'number') setStep(parsed.lastStep)
+          rebuilt[k] = {
+            file: null, fileName: m.fileName, status: m.status, fields: clean,
+            canonical_document_id: typeof m.canonical_document_id === 'string' ? m.canonical_document_id : null,
+          }
         }
+        const { uploadsMeta: _u, lastStep: _l, schema: _s, ...rest } = p
+        setData((d) => ({ ...d, ...rest, uploads: rebuilt }))
+        if (typeof p.lastStep === 'number') setStep(p.lastStep)
       }
-    } catch { /* */ }
+    }
+
+    if (isLedgerClientEnabled()) {
+      // ON: draft (PII) lives server-side; the browser holds only the opaque
+      // token cookie. We still defensively wipe any legacy localStorage keys so
+      // no PII lingers from a pre-ledger session. The ledger applies its own
+      // server-side TTL; an expired/missing draft yields null → fresh wizard.
+      try { localStorage.removeItem('wizard:re-parole-u4u:v2:state') } catch { /* */ }
+      try { localStorage.removeItem('wizard:re-parole-u4u:state') } catch { /* */ }
+      try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+      void loadDraftFromServer<unknown>().then((draft) => {
+        try {
+          if (draft && typeof draft === 'object' && !isDraftExpired((draft as { savedAt?: string }).savedAt)) {
+            applyPersistedDraft(draft)
+          }
+        } catch { /* corrupt/expired draft → fresh wizard */ }
+      })
+    } else {
+      try {
+        // Wipe legacy keys defensively
+        ['wizard:re-parole-u4u:v2:state', 'wizard:re-parole-u4u:state'].forEach((k) => {
+          try { localStorage.removeItem(k) } catch { /* */ }
+        })
+        const raw = localStorage.getItem(STORAGE_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          // PII CONTAINMENT (Phase A): hard 24h TTL — discard stale drafts outright.
+          if (parsed && typeof parsed === 'object' && isDraftExpired(parsed.savedAt)) {
+            try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+            throw new Error('draft_expired')
+          }
+          applyPersistedDraft(parsed)
+        }
+      } catch { /* */ }
+    }
     if (typeof window !== 'undefined') {
       const sp = new URLSearchParams(window.location.search)
       if (sp.get('paid') === '1') {
@@ -573,10 +612,21 @@ export default function ReparoleWizardV2({ locale }: Props) {
           canonical_document_id: u.canonical_document_id,
         }
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      const draftRecord = {
         schema: STORAGE_SCHEMA, ...rest, lastStep: step, uploadsMeta,
         savedAt: new Date().toISOString(),
-      }))
+      }
+      // SERVER LEDGER (V1 #9): when ON, the draft (PII) is POSTed to the server
+      // ledger (encrypted at rest); the browser keeps ONLY the opaque httpOnly
+      // token cookie — NOTHING is written to localStorage. When OFF, the
+      // localStorage write below runs exactly as before (byte-identical).
+      // The serialized record shape is the SAME in both paths so hydrate reuses
+      // one rebuild (applyPersistedDraft).
+      if (isLedgerClientEnabled()) {
+        void saveDraftToServer('reparole', draftRecord)
+      } else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(draftRecord))
+      }
     } catch { /* */ }
   }, [data, step])
 
@@ -796,7 +846,9 @@ export default function ReparoleWizardV2({ locale }: Props) {
       // PII CONTAINMENT (Phase A): packet generated = terminal success. Clear the
       // browser-persisted draft (OCR PII) and suppress further persistence.
       draftClearedRef.current = true
-      try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+      // SERVER LEDGER (V1 #9): clear the persisted draft on terminal success.
+      // ON → DELETE the server ledger entry + opaque cookie; OFF → removeItem.
+      if (isLedgerClientEnabled()) { void clearServerDraft() } else { try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ } }
       setData((d) => ({ ...d, packetReady: true }))
     } catch (e) {
       setErrMsg(e instanceof Error ? e.message : t.packetErr)
@@ -804,7 +856,9 @@ export default function ReparoleWizardV2({ locale }: Props) {
   }, [data, mergedFields, t.packetErr])
 
   const restart = useCallback(() => {
-    try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+    // SERVER LEDGER (V1 #9): start-over clears the persisted draft.
+    // ON → DELETE the server ledger entry + opaque cookie; OFF → removeItem.
+    if (isLedgerClientEnabled()) { void clearServerDraft() } else { try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ } }
     // Re-enable persistence for the fresh document (cleared on completion).
     draftClearedRef.current = false
     setData({ uploads: {}, manual: {}, paid: false, packetReady: false })
