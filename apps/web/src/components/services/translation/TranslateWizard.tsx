@@ -24,6 +24,12 @@ import { ukrLabelFor } from './translationFieldLabels'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { rotateImage90 } from '@/lib/upload/autoRotate'
 import { sanitizeFieldListForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
+import {
+  isLedgerClientEnabled,
+  saveDraftToServer,
+  loadDraftFromServer,
+  clearServerDraft,
+} from '@/lib/v1/wizardLedgerClient'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -978,16 +984,13 @@ export function TranslateWizard() {
   // as if it were recognized for the CURRENT upload. On a plain visit, start clean.
   useEffect(() => {
     if (searchParams?.get('paid') !== '1') return // not a Stripe return → no stale restore
-    try {
-      const raw = sessionStorage.getItem(DRAFT_KEY)
-      if (!raw) return
-      const draft = JSON.parse(raw) as DraftState
+    // applyDraft rebuilds the wizard state from a draft regardless of SOURCE
+    // (sessionStorage OFF / server ledger ON) so both paths share one rebuild and
+    // cannot drift apart. Returns false when the draft is stale/wrong-screen.
+    const applyDraft = (draft: DraftState): boolean => {
       // PII CONTAINMENT (Phase A): hard 24h TTL — discard a stale draft on load.
-      if (isDraftExpired(draft.savedAt)) {
-        try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* */ }
-        return
-      }
-      if (['review', 'payment', 'success'].includes(String(draft.screen))) return
+      if (isDraftExpired(draft.savedAt)) return false
+      if (['review', 'payment', 'success'].includes(String(draft.screen))) return false
       // Restore selectedDocType + extractedFields so the success-screen PDF call
       // still has them after payment. Screen is set by the ?paid=1 handler below.
       if (draft.selectedDocType) setSelectedDocType(draft.selectedDocType)
@@ -997,7 +1000,32 @@ export function TranslateWizard() {
       if (typeof draft.canonicalDocumentId === 'string' && draft.canonicalDocumentId.length > 0) {
         setCanonicalDocumentId(draft.canonicalDocumentId)
       }
-    } catch { /* ignore */ }
+      return true
+    }
+
+    if (isLedgerClientEnabled()) {
+      // SERVER LEDGER (V1 #9), ON: the draft (PII incl. raw_cyrillic) lives
+      // server-side encrypted; the browser holds ONLY the opaque httpOnly token
+      // cookie which survived the Stripe redirect. Rehydrate by GETting the
+      // ledger. Defensively wipe any legacy sessionStorage draft so no PII
+      // lingers from a pre-ledger session. The ledger enforces its own TTL;
+      // an expired/missing draft yields null → nothing restored.
+      try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* */ }
+      void loadDraftFromServer<DraftState>().then((draft) => {
+        try { if (draft && typeof draft === 'object') applyDraft(draft) } catch { /* */ }
+      })
+    } else {
+      try {
+        const raw = sessionStorage.getItem(DRAFT_KEY)
+        if (!raw) return
+        const draft = JSON.parse(raw) as DraftState
+        if (isDraftExpired(draft.savedAt)) {
+          try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* */ }
+          return
+        }
+        applyDraft(draft)
+      } catch { /* ignore */ }
+    }
   }, [])
 
   // Stripe return: ?paid=1&plan=basic&cs=cs_X → advance to screen 7.
@@ -1009,6 +1037,30 @@ export function TranslateWizard() {
         setStripeCheckoutId(cs)
         try { sessionStorage.setItem('tw:cs', cs) } catch { /* */ }
       }
+      // SERVER LEDGER (V1 #9): read the persisted draft from the correct SOURCE.
+      // ON → GET the encrypted draft from the server ledger by opaque token (the
+      // browser holds NO PII; raw_cyrillic lives server-side). OFF → read the
+      // sessionStorage draft exactly as before. Same DraftState shape both ways.
+      const readPersistedDraft = async (): Promise<DraftState | null> => {
+        if (isLedgerClientEnabled()) {
+          return await loadDraftFromServer<DraftState>()
+        }
+        try {
+          const raw = sessionStorage.getItem(DRAFT_KEY)
+          return raw ? (JSON.parse(raw) as DraftState) : null
+        } catch { return null }
+      }
+      // SERVER LEDGER (V1 #9): clear the persisted draft from the correct SOURCE.
+      // ON → DELETE the ledger row + opaque cookie; OFF → sessionStorage remove.
+      const clearPersistedDraft = (): void => {
+        if (isLedgerClientEnabled()) {
+          void clearServerDraft()
+          try { sessionStorage.removeItem('tw:cs') } catch { /* */ }
+        } else {
+          try { sessionStorage.removeItem(DRAFT_KEY); sessionStorage.removeItem('tw:cs') } catch { /* */ }
+        }
+      }
+
       // OPERATOR FLOW: hand the paid order to the operator queue and leave the
       // wizard entirely — the customer tracks /order/{id} and gets the PDF by
       // email. Idempotent per checkout id (server reuses the open ticket).
@@ -1017,8 +1069,7 @@ export function TranslateWizard() {
       if (OPERATOR_FLOW && cs && /^(cs_|py_)/.test(cs)) {
         void (async () => {
           try {
-            const raw = sessionStorage.getItem(DRAFT_KEY)
-            const draft = raw ? (JSON.parse(raw) as DraftState) : null
+            const draft = await readPersistedDraft()
             const docTypeId = draft?.selectedDocType ?? selectedDocType
             const draftFields = (Array.isArray(draft?.extractedFields) && draft!.extractedFields.length > 0)
               ? draft!.extractedFields : extractedFields
@@ -1037,12 +1088,10 @@ export function TranslateWizard() {
             const j = await resp.json().catch(() => null)
             if (resp.ok && j?.ok && j.order_id) {
               // PII CONTAINMENT (Phase A): order handed to the operator queue =
-              // terminal success. Clear the browser-persisted draft (OCR PII) now;
-              // raw_cyrillic carriage was already submitted to the server above.
-              try {
-                sessionStorage.removeItem(DRAFT_KEY)
-                sessionStorage.removeItem('tw:cs')
-              } catch { /* */ }
+              // terminal success. Clear the persisted draft (OCR PII incl.
+              // raw_cyrillic) now; the carriage was already submitted to the
+              // server above. ON → DELETE the ledger row + cookie; OFF → session.
+              clearPersistedDraft()
               window.location.assign(`/${locale}/order/${j.order_id}`)
               return
             }
@@ -1060,27 +1109,31 @@ export function TranslateWizard() {
       // create a staff ticket so the paid work is actually queued (was: payment
       // taken, no ticket). Read the persisted draft (reliable across the Stripe
       // round-trip), idempotent per checkout id, fire-and-forget — never blocks success.
-      try {
-        if (cs && !sessionStorage.getItem(`tw:ticket:${cs}`)) {
-          const raw = sessionStorage.getItem(DRAFT_KEY)
-          const draft = raw ? (JSON.parse(raw) as DraftState) : null
-          const docTypeId = draft?.selectedDocType ?? selectedDocType
-          const fieldsLen = Array.isArray(draft?.extractedFields) ? draft!.extractedFields.length : extractedFields.length
-          if (fieldsLen === 0 && docTypeId) {
-            sessionStorage.setItem(`tw:ticket:${cs}`, '1')
-            void fetch('/api/translation/manual-review', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                session_id: cs,
-                doc_type: DOC_TYPES.find((d) => d.id === docTypeId)?.registryId ?? docTypeId ?? 'other',
-                source_lang: locale === 'uk' ? 'uk' : locale === 'en' ? 'en' : 'ru',
-                reason: 'manual_document_type',
-                confidence: 0,
-              }),
-            }).catch(() => { try { sessionStorage.removeItem(`tw:ticket:${cs}`) } catch { /* */ } })
-          }
-        }
-      } catch { /* never block the success screen */ }
+      // The `tw:ticket:${cs}` flag is a non-PII idempotency marker — it stays in
+      // sessionStorage in BOTH modes. Only the DRAFT read switches source (ON →
+      // server ledger, OFF → sessionStorage) via readPersistedDraft().
+      if (cs && (() => { try { return !sessionStorage.getItem(`tw:ticket:${cs}`) } catch { return false } })()) {
+        void (async () => {
+          try {
+            const draft = await readPersistedDraft()
+            const docTypeId = draft?.selectedDocType ?? selectedDocType
+            const fieldsLen = Array.isArray(draft?.extractedFields) ? draft!.extractedFields.length : extractedFields.length
+            if (fieldsLen === 0 && docTypeId) {
+              try { sessionStorage.setItem(`tw:ticket:${cs}`, '1') } catch { /* */ }
+              void fetch('/api/translation/manual-review', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  session_id: cs,
+                  doc_type: DOC_TYPES.find((d) => d.id === docTypeId)?.registryId ?? docTypeId ?? 'other',
+                  source_lang: locale === 'uk' ? 'uk' : locale === 'en' ? 'en' : 'ru',
+                  reason: 'manual_document_type',
+                  confidence: 0,
+                }),
+              }).catch(() => { try { sessionStorage.removeItem(`tw:ticket:${cs}`) } catch { /* */ } })
+            }
+          } catch { /* never block the success screen */ }
+        })()
+      }
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href)
         url.searchParams.delete('paid'); url.searchParams.delete('plan'); url.searchParams.delete('cs')
@@ -1094,7 +1147,7 @@ export function TranslateWizard() {
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
-  const saveDraft = useCallback(() => {
+  const saveDraft = useCallback(async (): Promise<void> => {
     try {
       // PII CONTAINMENT (Phase A): persist ONLY {field, value, review_required,
       // raw_cyrillic} per field — strip confidence / kind / ensemble_candidate /
@@ -1107,7 +1160,20 @@ export function TranslateWizard() {
         canonicalDocumentId,
         savedAt: new Date().toISOString(),
       }
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+      // SERVER LEDGER (V1 #9): when ON, the draft (PII incl. raw_cyrillic) is
+      // POSTed to the server ledger (encrypted at rest); the browser keeps ONLY
+      // the opaque httpOnly token cookie — NOTHING (esp. raw_cyrillic) is written
+      // to sessionStorage. We AWAIT the save so the token cookie is set before any
+      // Stripe redirect (the cookie is what survives the round-trip). When OFF,
+      // the sessionStorage write runs exactly as before (byte-identical). Same
+      // serialized DraftState shape both ways so hydrate reuses one rebuild.
+      if (isLedgerClientEnabled()) {
+        // Defensively wipe any legacy sessionStorage draft so no PII lingers.
+        try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* */ }
+        await saveDraftToServer('translation', draft)
+      } else {
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+      }
     } catch { /* */ }
   }, [screen, selectedDocType, extractedFields, canonicalDocumentId])
 
@@ -1371,10 +1437,14 @@ export function TranslateWizard() {
     // OWNER MODE: the site owner tests every product WITHOUT payment. The
     // generate-pdf route already bypasses the payment gate for a verified owner
     // cookie, so skip Stripe and go straight to the sign/download screen.
-    if (isOwner) { saveDraft(); setScreen(7); return }
+    if (isOwner) { await saveDraft(); setScreen(7); return }
     setPaymentLoading(true)
-    // Persist draft so we can rebuild state after the Stripe round-trip.
-    saveDraft()
+    // Persist draft so we can rebuild state after the Stripe round-trip. AWAIT so
+    // that (ledger ON) the encrypted draft is stored AND the opaque token cookie
+    // is set BEFORE we navigate to Stripe — the cookie is what carries identity
+    // across the redirect. (ledger OFF) await of the sync sessionStorage write is
+    // a no-op; behaviour unchanged.
+    await saveDraft()
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
@@ -1577,10 +1647,18 @@ export function TranslateWizard() {
     setSigSaved(false)
     setProcStep(0)
     setStripeCheckoutId(null)
-    try {
-      sessionStorage.removeItem(DRAFT_KEY)
-      sessionStorage.removeItem('tw:cs')
-    } catch { /* */ }
+    // SERVER LEDGER (V1 #9): explicit user-driven reset clears the persisted
+    // draft. ON → DELETE the ledger row + opaque cookie; OFF → sessionStorage
+    // remove exactly as before. The non-PII 'tw:cs' marker is cleared in both.
+    if (isLedgerClientEnabled()) {
+      void clearServerDraft()
+      try { sessionStorage.removeItem('tw:cs') } catch { /* */ }
+    } else {
+      try {
+        sessionStorage.removeItem(DRAFT_KEY)
+        sessionStorage.removeItem('tw:cs')
+      } catch { /* */ }
+    }
   }, [])
 
   // "Start over" from mid-flow: confirm (data loss), reset, return to doc-type.
