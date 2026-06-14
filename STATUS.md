@@ -5,7 +5,7 @@
 > History: [CHANGELOG.md](CHANGELOG.md) and [docs/STATUS_ARCHIVE.md](docs/STATUS_ARCHIVE.md).
 > Do not stack historical status blocks here (CI: `scripts/verify-release-state.mjs`).
 > **V1 pipeline:** [V1_COMPLETION.yaml](V1_COMPLETION.yaml) · board [V1_STATUS.md](V1_STATUS.md). Phases 1–3 PASS (control plane, dark-code inventory, document registry); **active = GROUND_TRUTH_CORPUS_AND_CACHE** (phase 4). Phase-4 cache half (budget-gated OCR cache) built; ground-truth + paid benchmark remain. Benchmark run: PDF proof 3/3 PASS, recognition 0-fabricated on verified set (I-94 canonical = SAME with correct fixture). BLOCKER: Stripe TEST keys absent (only LIVE) → Stripe Test Mode E2E blocked.
-> **PII ledger (crit #9):** backend DONE (wizard_drafts table + encrypted store + /api/wizard-draft, default-OFF). Remaining: apply migration + wizard client rewiring + flag-on.
+> **PII ledger (crit #9):** STACK COMPLETE — crypto + store + /api/wizard-draft + DB table (applied) + browser client adapter, all default-OFF + tested. Activation remaining: wire adapter into the 3 wizard components + set NEXT_PUBLIC_SERVER_LEDGER_ENABLED / SERVER_LEDGER_ENABLED / WIZARD_DRAFT_ENC_KEY + browser verify.
 
 ## Production
 - **production_sha = `62c897a`** = `main` (verified live: `messenginfo.com/api/healthz`).
