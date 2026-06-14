@@ -18,9 +18,9 @@
 schema_version: 2
 
 snapshot:
-  state_basis_main_sha: "86e5d1ede94e626bc1689f374cbde01abb983443"   # main HEAD this snapshot describes
-  verified_production_sha: "86e5d1ede94e626bc1689f374cbde01abb983443" # /api/healthz at verified_at
-  verified_at: "2026-06-14T05:39:21Z"
+  state_basis_main_sha: "f7fc2fb846611e7557152395f29ef4ebe8d2e90b"   # main HEAD this snapshot describes (after #121 merge)
+  verified_production_sha: "f7fc2fb846611e7557152395f29ef4ebe8d2e90b" # /api/healthz at verified_at
+  verified_at: "2026-06-14T06:20:00Z"
   evidence:
     state_basis_main_sha: "git rev-parse origin/main at snapshot time (BEFORE this PR's own merge)"
     verified_production_sha: "GET https://messenginfo.com/api/healthz -> .sha"
@@ -77,11 +77,11 @@ document_intelligence:
   sealed_benchmark: "none"
 
 blockers:
-  - "Legacy Translation operator flow (prod): recipient authority + per-action authorization — security hotfix in PR #122 (DRAFT, not merged). NOTE: contact_email has client writers (tps/translation manual-review); hotfix must re-verify Stripe at send."
+  - "Legacy Translation operator flow (prod, until #122 merges): recipient authority + per-action authorization. Fix BUILT in PR #122 (per-action auth + Stripe re-verify of recipient; contact_email has unpaid client writers so it is not trusted). STATUS: pending_verification — rebased on f7fc2fb, full CI, NOT merged until preview security smoke passes."
   - "No dedicated staging; heavy OCR e2e runs against production DB + paid providers."
 
 deferred:
-  - "PR #122 (legacy auth + recipient): rebase onto post-#121 main, preview security smoke, then merge."
+  - "PR #122 (legacy auth + recipient): preview security smoke, then merge (rebase on f7fc2fb done)."
   - "PR #119 (Translation Operator V2) — rebase + Stripe-test E2E + merge, after staging."
   - "Phase B: server-side session ledger to remove PII values from the browser."
   - "Real-document ground-truth corpus + OCR cache + provider cost ceiling."

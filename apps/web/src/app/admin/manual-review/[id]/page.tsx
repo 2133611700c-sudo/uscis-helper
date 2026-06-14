@@ -7,6 +7,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { sendTranslation, approveAndSendPdfForm } from './actions'
+import { maskEmail } from './legacyOperatorAuth'
 
 interface Row {
   id: string
@@ -117,22 +118,21 @@ export default async function ManualReviewDetailPage({
           <input type="hidden" name="docType" value={row.doc_type} />
           <input type="hidden" name="sourceLang" value={row.source_lang} />
 
-          {/* Recipient email — prefilled if available, editable */}
+          {/* SECURITY (0.5): recipient is server-authoritative (verified Stripe →
+              order record). It is NOT an editable/submitted field — the action
+              resolves it server-side and ignores any client value. Shown masked,
+              read-only, with no `name` so nothing authoritative is posted.
+              Changing the recipient is a V2 audited flow (PR #119), not here. */}
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ [LABEL_STYLE]: true } as React.CSSProperties}>
-              <span style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' }}>
-                Send to (client email) *
-              </span>
-            </label>
-            <input
-              type="email"
-              name="recipientEmail"
-              required
-              defaultValue={row.contact_email ?? ''}
-              placeholder="client@example.com"
-              disabled={isCompleted}
-              style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #cbd5e1', borderRadius: '6px', fontSize: '18px', fontFamily: 'inherit', boxSizing: 'border-box' }}
-            />
+            <span style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' }}>
+              Send to (verified from payment)
+            </span>
+            <div
+              aria-readonly="true"
+              style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '6px', background: '#f8fafc', color: '#1e293b', fontSize: '18px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+            >
+              {row.contact_email ? maskEmail(row.contact_email) : '— no verified recipient (sending is blocked) —'}
+            </div>
           </div>
 
           {/* Translated fields */}
