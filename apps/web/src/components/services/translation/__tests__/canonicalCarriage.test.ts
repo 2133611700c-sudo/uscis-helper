@@ -39,7 +39,9 @@ describe('TranslateWizard — canonical_document_id carriage', () => {
 
   it('CARRY: persists the id in the session draft', () => {
     expect(SRC).toMatch(/canonicalDocumentId\?: string \| null/) // DraftState field
-    expect(SRC).toMatch(/const draft: DraftState = \{ screen, selectedDocType, extractedFields, canonicalDocumentId \}/)
+    // The draft object still carries canonicalDocumentId (PII-containment added a
+    // sanitized extractedFields + savedAt; the carriage key is unchanged).
+    expect(SRC).toMatch(/const draft: DraftState = \{[\s\S]{0,260}\bcanonicalDocumentId,?[\s\S]{0,120}\}/)
   })
 
   it('CARRY: restores the id on the Stripe return, accepting only a non-empty string', () => {
