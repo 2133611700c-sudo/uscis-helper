@@ -31,6 +31,15 @@ export interface VerifyResult {
    * trustworthy source for "where do we send the finished PDF").
    */
   customerEmail?: string | null
+  /**
+   * service metadata as Stripe returned it (used by callers that need to
+   * cross-check the product without re-fetching). Undefined when no session.
+   */
+  service?: string | null
+  /** amount_total in cents as Stripe charged. Undefined when no session. */
+  amountTotalCents?: number | null
+  /** The opaque Stripe session id (== the token). Echoed for idempotency stores. */
+  sessionId?: string
 }
 
 const VALID_PREFIX = /^(cs_|py_)/ // Stripe checkout (cs_) and PaymentIntent (py_) test/live ids
@@ -55,13 +64,16 @@ export async function verifyStripeSessionPaid(
       expand: ['payment_intent'],
     })
     const paid = session.payment_status === 'paid'
+    const service = (session.metadata?.service ?? null) as string | null
     const correctService = opts.expectedService
-      ? session.metadata?.service === opts.expectedService
+      ? service === opts.expectedService
       : true
     const customerEmail = (session.customer_details as { email?: string } | null)?.email ?? null
-    if (!paid) return { paid: false, correctService, reason: 'not_paid', customerEmail }
-    if (!correctService) return { paid: true, correctService: false, reason: 'wrong_service', customerEmail }
-    return { paid: true, correctService: true, customerEmail }
+    const amountTotalCents = (session as { amount_total?: number | null }).amount_total ?? null
+    const base = { customerEmail, service, amountTotalCents, sessionId: checkoutId }
+    if (!paid) return { paid: false, correctService, reason: 'not_paid', ...base }
+    if (!correctService) return { paid: true, correctService: false, reason: 'wrong_service', ...base }
+    return { paid: true, correctService: true, ...base }
   } catch {
     return { paid: false, correctService: false, reason: 'stripe_api_error' }
   }
