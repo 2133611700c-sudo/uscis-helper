@@ -8,6 +8,7 @@ import { buildCertificationRecord } from '@/lib/translation/certificationRecord'
 import { sendEmail } from '@/lib/email/resend'
 import { orderCompletedEmail } from '@/lib/email/operatorFlowTemplates'
 import { writeManualReviewEvent } from '@/lib/translation/manualReview/createManualReviewTicket'
+import { requireTranslationOperator } from '@/lib/auth/requireTranslationOperator'
 import type { ExtractedField } from '@/lib/translation/types'
 
 const LANG_LABELS: Record<string, string> = {
@@ -17,6 +18,7 @@ const LANG_LABELS: Record<string, string> = {
 }
 
 export async function sendTranslation(formData: FormData) {
+  await requireTranslationOperator()
   const id             = formData.get('id')             as string
   const recipientEmail = formData.get('recipientEmail') as string
   const docType        = formData.get('docType')        as string
@@ -87,6 +89,7 @@ export async function sendTranslation(formData: FormData) {
 export async function approveAndSendPdf(
   formData: FormData,
 ): Promise<{ ok: false; error: string } | void> {
+  await requireTranslationOperator()
   const id             = formData.get('id')             as string
   const recipientEmail = formData.get('recipientEmail') as string
   const docType        = formData.get('docType')        as string
@@ -210,6 +213,7 @@ export async function approveAndSendPdfForm(formData: FormData): Promise<void> {
 }
 
 export async function markInReview(id: string) {
+  await requireTranslationOperator()
   const supabase = createAdminSupabaseClient()
   await supabase
     .from('manual_review_queue')

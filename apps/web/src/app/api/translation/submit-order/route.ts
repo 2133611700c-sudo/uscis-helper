@@ -1,20 +1,31 @@
 /**
- * POST /api/translation/submit-order — operator-flow entry (PIVOT Phase 2.1).
+ * POST /api/translation/submit-order — operator-flow entry.
  *
- * Called by the wizard right after Stripe checkout success when
- * NEXT_PUBLIC_NEW_OPERATOR_FLOW_ENABLED=1. Instead of the customer confirming
- * every field and downloading a PDF themselves, the paid order goes to the
- * operator queue: the owner reviews/edits the fields in /admin/manual-review
- * and emails the finished PDF. The customer sees /order/{id} and waits.
+ * Phase 2 (Translation Operator Pipeline V2) contract. The paid order is bound
+ * to its canonical document and enqueued for operator review. The customer sees
+ * /order/{id} and waits; the operator reviews/edits via /admin/manual-review and
+ * the finished PDF is rendered from the resolved canonical + emailed.
  *
- * Security: the Stripe checkout token IS the auth — verified server-side
- * (paid + service=translation). The customer email comes from the VERIFIED
- * Stripe session, never from the client body. Idempotent: re-posting the same
- * checkout token reuses the open ticket (createManualReviewTicket dedupes by
- * session_id).
+ * ── AUTHORITY ────────────────────────────────────────────────────────────────
+ * Client field VALUES are NOT authoritative. The server binds only the
+ * canonical_document_id (an opaque reference it independently re-verifies) and
+ * the recipient email taken EXCLUSIVELY from the verified Stripe session.
  *
- * PII: field values land only in manual_review_queue.source_fields (the
- * operator's working copy) — never in logs.
+ * ── ROLLOUT ──────────────────────────────────────────────────────────────────
+ * The V2 order row + canonical binding is ADDITIVE. getCanonicalMode('translation')
+ * gates V2 persistence: 'off' → legacy only; 'shadow'/'enforce' → V2 order is
+ * persisted alongside the legacy manual_review_queue row. The legacy path is
+ * never removed. In 'enforce' a canonical_document_id is REQUIRED.
+ *
+ * ── STATUS CONTRACT ──────────────────────────────────────────────────────────
+ *   422 malformed / missing required field
+ *   402 unpaid / wrong-service Stripe session
+ *   403 wrong session ownership OR wrong product on the canonical
+ *   404 canonical_document_id supplied but not found
+ *   409 conflicting canonical binding (hash mismatch / rebind)
+ *   503 real infra only (queue / storage unavailable)
+ *
+ * PII: never log field values or raw emails — only keys, counts, ids.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
@@ -23,14 +34,33 @@ import { createManualReviewTicket, writeManualReviewEvent } from '@/lib/translat
 import { notifyOperator } from '@/lib/translation/manualReview/notifications'
 import { sendEmail } from '@/lib/email/resend'
 import { orderReceivedEmail } from '@/lib/email/operatorFlowTemplates'
+import { getCanonicalMode } from '@/lib/canonical/continuityMode'
+import {
+  loadCanonicalDocumentById,
+  verifyCanonicalHash,
+} from '@/lib/canonical/persistence'
+import {
+  createOrGetOrder,
+  bindCanonicalDocument,
+  getOrderById,
+  transitionOrder,
+  TranslationOrderError,
+} from '@/lib/translation/orders'
 
 export const dynamic = 'force-dynamic'
 
 interface SubmitOrderBody {
   checkout_id?: string
+  canonical_document_id?: string
   doc_type?: string
   locale?: string
+  notes?: string
+  /** Legacy/back-compat working copy; VALUES are NOT authoritative (ignored for binding). */
   fields?: Array<{ field: string; value: string | null; raw_cyrillic?: string | null; review_required?: boolean }>
+}
+
+function err(error: string, status: number, extra?: Record<string, unknown>) {
+  return NextResponse.json({ ok: false, error, ...extra }, { status })
 }
 
 export async function POST(req: NextRequest) {
@@ -44,30 +74,148 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ ok: false, error: 'invalid_json' }, { status: 400 })
+    return err('invalid_json', 422)
   }
   const checkoutId = body.checkout_id ?? ''
   if (!checkoutId) {
-    return NextResponse.json({ ok: false, error: 'missing_checkout_id' }, { status: 400 })
-  }
-
-  // Payment gate — the token is the capability. Email comes from Stripe.
-  const v = await verifyStripeSessionPaid(checkoutId, { expectedService: 'translation' })
-  if (!v.paid || !v.correctService) {
-    return NextResponse.json({ ok: false, error: 'payment_not_confirmed', reason: v.reason }, { status: 402 })
+    return err('missing_checkout_id', 422)
   }
 
   const docType = body.doc_type || 'other'
   const locale = ['ru', 'uk', 'es', 'en'].includes(body.locale ?? '') ? (body.locale as string) : 'en'
+  const canonicalId = (body.canonical_document_id ?? '').trim() || null
+
+  // ── 1. Payment gate — the Stripe token is the capability. ────────────────────
+  const v = await verifyStripeSessionPaid(checkoutId, { expectedService: 'translation' })
+  if (!v.paid) {
+    return err('payment_not_confirmed', 402, { reason: v.reason })
+  }
+  if (!v.correctService) {
+    // Paid, but for the wrong product → forbidden, not a payment error.
+    return err('wrong_product', 403, { reason: v.reason })
+  }
+
+  const mode = getCanonicalMode('translation')
+
+  // enforce: a canonical binding is mandatory (no legacy-only orders).
+  if (mode === 'enforce' && !canonicalId) {
+    return err('canonical_document_id_required', 422)
+  }
+
+  // ── 2. Canonical verification (only when supplied + mode !== off) ────────────
+  // The client may only reference a canonical id; the server re-verifies it.
+  let verifiedCanonicalId: string | null = null
+  if (canonicalId && mode !== 'off') {
+    let canonical
+    try {
+      canonical = await loadCanonicalDocumentById(canonicalId)
+    } catch {
+      return err('canonical_storage_unavailable', 503)
+    }
+    if (!canonical) {
+      return err('canonical_not_found', 404)
+    }
+    // Product binding: the canonical must be a translation canonical.
+    if (canonical.product !== 'translation') {
+      return err('canonical_wrong_product', 403)
+    }
+    // Session ownership: the canonical must belong to THIS checkout session.
+    // documentSessionId is the upload/session reference; it must match the paid
+    // checkout token (which the wizard reuses as the session key).
+    if (
+      canonical.documentSessionId &&
+      canonical.documentSessionId !== checkoutId
+    ) {
+      return err('canonical_session_mismatch', 403)
+    }
+    // Integrity: stored fields_hash must still verify (tamper / drift → 409).
+    let hashCheck
+    try {
+      hashCheck = await verifyCanonicalHash(canonicalId)
+    } catch {
+      return err('canonical_storage_unavailable', 503)
+    }
+    if (hashCheck.notFound) {
+      return err('canonical_not_found', 404)
+    }
+    if (!hashCheck.valid) {
+      return err('canonical_hash_mismatch', 409)
+    }
+    verifiedCanonicalId = canonicalId
+  }
+
+  // ── 3. Create-or-return the V2 order (idempotent on checkout_session_id) ──────
+  // Only when V2 is active (mode !== off). Bind canonical + Stripe-verified email.
+  let orderId: string | null = null
+  let orderReused = false
+  if (mode !== 'off') {
+    try {
+      const { order, created } = await createOrGetOrder({
+        checkoutSessionId: checkoutId,
+        verifiedRecipientEmail: v.customerEmail ?? null,
+        canonicalDocumentId: verifiedCanonicalId,
+        documentType: docType,
+        sourceLanguage: 'uk',
+        locale,
+        legacy: verifiedCanonicalId == null,
+      })
+      orderId = order.id
+      orderReused = !created
+
+      // Bind canonical on a previously-legacy order if one is now supplied.
+      if (verifiedCanonicalId && !order.canonicalDocumentId) {
+        try {
+          await bindCanonicalDocument(order.id, verifiedCanonicalId)
+        } catch (e) {
+          if (e instanceof TranslationOrderError && e.code !== 'ORDER_STORAGE_UNAVAILABLE') {
+            // A rebind attempt on an order already bound to a DIFFERENT canonical.
+            return err('canonical_binding_conflict', 409)
+          }
+          throw e
+        }
+      } else if (
+        verifiedCanonicalId &&
+        order.canonicalDocumentId &&
+        order.canonicalDocumentId !== verifiedCanonicalId
+      ) {
+        // Idempotent re-submit pointing at a different canonical → conflict.
+        return err('canonical_binding_conflict', 409)
+      }
+
+      // Enqueue operator review: brand-new orders start 'queued' by default
+      // (Agent 1 default). Keep idempotent — only transition if just created and
+      // not already past queued. A no-op/late transition is swallowed (PII-free).
+      if (created && order.status !== 'queued') {
+        await transitionOrder({
+          orderId: order.id,
+          expectedVersion: order.version,
+          expectedStatus: order.status,
+          toStatus: 'queued',
+          actor: 'system',
+          reason: 'submit_order',
+          metadata: { source: 'submit_order', has_canonical: !!verifiedCanonicalId },
+        }).catch(() => {})
+      }
+    } catch (e) {
+      if (e instanceof TranslationOrderError) {
+        // Storage/infra problems are 503; everything else already returned above.
+        return err('order_store_unavailable', 503, { code: e.code })
+      }
+      throw e
+    }
+  }
+
+  // ── 4. Legacy manual_review_queue row (back-compat, ALWAYS written) ──────────
+  // The operator UI still reads this; values are the operator's working copy and
+  // are NEVER the binding authority. Mark the V2 linkage for traceability.
   const sourceFields: Record<string, string> = {}
   for (const f of body.fields ?? []) {
-    // Working copy for the operator: best value, else the raw Cyrillic read.
     const val = f.value ?? f.raw_cyrillic ?? ''
     if (f.field) sourceFields[f.field] = val
   }
 
   const ticket = await createManualReviewTicket({
-    sessionId: checkoutId, // checkout id doubles as the order session key (idempotency)
+    sessionId: checkoutId,
     reasons: ['operator_review_paid'],
     detectedDocumentType: docType,
     moduleType: 'translation',
@@ -81,22 +229,30 @@ export async function POST(req: NextRequest) {
     },
   })
   if (!ticket.ticketId) {
-    return NextResponse.json({ ok: false, error: 'queue_unavailable' }, { status: 503 })
+    return err('queue_unavailable', 503)
   }
 
   await writeManualReviewEvent({
     ticket_id: ticket.ticketId,
     session_id: checkoutId,
     event_type: 'manual_review_queued',
-    metadata: { source: 'submit_order', doc_type: docType, reused: ticket.reused },
+    metadata: {
+      source: 'submit_order',
+      doc_type: docType,
+      reused: ticket.reused,
+      v2_order_id: orderId,
+      v2_canonical_bound: !!verifiedCanonicalId,
+      canonical_mode: mode,
+    },
   }).catch(() => {})
 
-  // Operator notification (metadata-only) + customer confirmation. Both
-  // fail-open: a notification problem must never lose a PAID order — the
-  // ticket is already in the queue and the admin list shows it.
+  // The V2 order id is the canonical handle once V2 is active; otherwise the
+  // legacy ticket id (so /order/{id} keeps working in 'off' mode).
+  const publicOrderId = orderId ?? ticket.ticketId
+
   const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://messenginfo.com'
   const orderUrl = `${base}/${locale}/order/${ticket.ticketId}`
-  if (!ticket.reused) {
+  if (!ticket.reused && !orderReused) {
     notifyOperator({
       ticketId: ticket.ticketId,
       sessionId: checkoutId,
@@ -118,8 +274,22 @@ export async function POST(req: NextRequest) {
   }
 
   console.info('[submit-order]', JSON.stringify({
-    ticket_id: ticket.ticketId, doc_type: docType, reused: ticket.reused,
-    fields: Object.keys(sourceFields).length, has_email: !!v.customerEmail,
+    ticket_id: ticket.ticketId,
+    v2_order_id: orderId,
+    canonical_bound: !!verifiedCanonicalId,
+    canonical_mode: mode,
+    doc_type: docType,
+    reused: ticket.reused,
+    fields: Object.keys(sourceFields).length,
+    has_email: !!v.customerEmail,
   }))
-  return NextResponse.json({ ok: true, order_id: ticket.ticketId, reused: ticket.reused, order_url: orderUrl })
+
+  return NextResponse.json({
+    ok: true,
+    order_id: publicOrderId,
+    v2_order_id: orderId,
+    legacy_ticket_id: ticket.ticketId,
+    reused: ticket.reused || orderReused,
+    order_url: orderUrl,
+  })
 }
