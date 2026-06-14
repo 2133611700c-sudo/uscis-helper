@@ -4,7 +4,7 @@ DONE: (1) Hardened `apps/web/src/lib/canonical/continuityMode.ts` so the legacy 
 
 NEXT TASK (coordinator): merge PR #118 after the TPS wire-proof on the pushed-SHA preview is green. Do NOT enable enforce for any product; do NOT change prod env. When flipping enforce later, set ONLY the per-product env (legacy global is now inert for enforce).
 
-EVIDENCE: tsc 0; full vitest 3683 pass / 24 skip / 0 fail; build PASS; continuityMode 20/20; PII gate CLEAN. TPS wire-proof captured against the preview of the pushed SHA (see CHANGELOG + tps.json artifact).
+EVIDENCE: tsc 0; full vitest 3683 pass / 24 skip / 0 fail; build PASS; continuityMode 20/20; PII gate CLEAN. TPS wire-proof captured against the preview of the pushed SHA — all booleans true (extract 200, id len 36, generate_has_id, ids_equal), aborted before payment (see CHANGELOG + tps.json artifact). Preview is SSO-gated; test primes the Vercel bypass cookie via `VERCEL_SHARE_URL`/`VERCEL_SHARE_TOKEN` (test-only `beforeEach`, no-op when unset).
 
 OSD DECISION: `apps/web/osd.traineddata` REMOVED — grep across `apps/web/src`, `scripts/`, `.github/`, `packages/` found ZERO references; client-side Tesseract OSD auto-rotation was removed 2026-06-12 (`autoRotate.ts` / `prepareImageForUpload.ts` doc-comments), no runtime loads the blob, no origin/license documented. It was committed accidentally by the carriage-proof commit. Gitignored `*.traineddata`.
 
