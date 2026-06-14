@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-14 | PR #122 deployed + RELEASE_STATE refresh (post-deploy truth)
+- #122 squash-merged → production 62c897a (healthz verified). Legacy Translation: per-action auth + Stripe-re-verified recipient now DEPLOYED.
+- Negative production security smoke VERIFIED: admin manual-review GET/POST 404 unauth (blocked before DB/PDF/email); 4 public product routes 200; no 500/chunk/import errors; UI recipient field non-submitting (merged code).
+- RELEASE_STATE.yaml: snapshot → 62c897a; prs.merged += 121,122; legacy_translation_security block (per_action_auth/stripe_recipient_reverification=DEPLOYED, negative_security_smoke=VERIFIED, positive_paid_delivery=RUNTIME_UNVERIFIED); removed the auth/recipient blocker; added open_verification_gaps.
+- STATUS.md: production_sha=62c897a; #122 deployed; added "Open verification gaps" (positive paid delivery unverified until staging).
+- POSITIVE PAID DELIVERY remains RUNTIME_UNVERIFIED until dedicated staging + Stripe Test Mode. No real send / no payment performed.
 ## 2026-06-14 | PR #122 rebased onto post-#121 main (f7fc2fb)
 - Recreated security/legacy-translation-auth-recipient on the new main: brought the auth+recipient security files (legacyOperatorAuth.ts, stripeRecipientVerifier.ts, actions.ts, page.tsx, 2 tests) onto the short-STATUS base — did NOT restore the 629-line STATUS stack.
 - STATUS.md: production_sha → f7fc2fb; #121 listed merged; #122 listed in-flight (pending preview smoke). RELEASE_STATE.yaml: snapshot refreshed to f7fc2fb; legacy blocker = pending_verification (not closed until smoke).
