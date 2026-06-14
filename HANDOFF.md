@@ -1009,3 +1009,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-14: phase 4 (GROUND_TRUTH_CORPUS_AND_CACHE) cache-half delivered: FsOcrCacheStore (immutable) + cachedBudgetedCall (cache-first, fail-closed budget; default DENY → caps the already-live paid DeepSeek/Gemini paths). 36 v1 tests. Phase 4 stays IN_PROGRESS: ground-truth authoring (PII, owner) + paid benchmark runs (staging) remain. #119 untouched; no app behavior change. -->
 
 <!-- 2026-06-14: real-document benchmark RUN (existing Gemini key, local, vs VERIFIED ground truth). PDF readback proof I-821/I-131/I-765 = 3/3 PASS. Recognition: EAD + internal passport identity = SAME, 0 FABRICATED; I-94 canonical = FALLBACK (coverage gap). Evidence: artifacts/v1/PRINTED_CYRILLIC_AND_IMAGE_QUALITY/benchmark.json. BLOCKER named: Stripe TEST keys absent (only LIVE) → Stripe Test Mode E2E (#7) blocked. -->
+
+<!-- 2026-06-14: correction — I-94 canonical = SAME (was false FALLBACK due to missing fixture filename). Verified set EAD+I-94+internal-passport: identity SAME, 0 fabricated. -->

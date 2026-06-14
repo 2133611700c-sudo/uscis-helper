@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 2026-06-14 | benchmark correction — I-94 canonical = SAME
+- Re-ran with correct runtime fixture: I-94 canonical family/given/dob/admission_number/class/date_of_entry all SAME. The earlier FALLBACK was a missing test-input filename, not a product regression. Verified set (EAD, I-94, internal passport) = identity SAME, 0 fabricated. benchmark.json updated.
 ## 2026-06-14 | Real-document benchmark executed (0 fabricated) + PDF readback proof
 - Ran the recognition benchmark with the existing Gemini key (local, not prod) against VERIFIED_BY_OWNER ground truth: EAD + internal-passport identity fields = SAME, honest EMPTY on reader-coverage gaps, **fabricated_critical_fields = 0**. I-94 canonical returned FALLBACK (coverage gap to fix). Evidence: artifacts/v1/PRINTED_CYRILLIC_AND_IMAGE_QUALITY/benchmark.json (PII-free verdict enums only).
 - PDF field-by-field readback proof (AUDIT_FORMS): I-821 + I-131 + I-765 = 3/3 PASS (edition, widgets, checkbox, transliteration, render). Item: canonical -> mapper -> PDF -> readback PROVEN.
