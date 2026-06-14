@@ -1,3 +1,11 @@
+# STATUS (2026-06-14 — PHASE 2 FROZEN: webhook authority + full live invariants PASS; Stripe E2E deferred)
+- FROZEN at CI head 16b140e (full CI GREEN: typecheck+build PASS, session-docs-guard PASS, Vercel Preview PASS; smoke/ui-smoke skip by design).
+- FULL live DB invariant suite RUN_DB_INVARIANTS=1 → 9/9 PASS against real Supabase: direct status/version rejected, actor required, version-bump+1-event, stale→ORDER_VERSION_CONFLICT, invalid transition, events append-only, DUPLICATE STRIPE EVENT ID prevented (webhook dedupe), canonical rebind forbidden. Cleanup verified: 0 PHASE2_TEST sentinel rows / 0 sentinel artifacts / 0 sentinel stripe events.
+- Payment-authority security review PASS: signature verified before handler + fail-closed 400 zero-writes; product/paid/amount/currency/recipient ALL server-side from verified Stripe session; client email/paid/amount/price forbidden; no raw payload/email in logs; canonical immutable; one paid transition; no artifact/delivery before operator approval.
+- PR #119 DRAFT, FROZEN — no new scope, do NOT merge, production SHADOW unchanged (0 CANONICAL_MODE_*).
+- ONLY remaining gate (owner-deferred, separate GO): hosted Stripe Test Mode E2E (test keys + test price ids + test webhook secret → one positive payment→webhook→V2 order→operator→artifact→delivery).
+
+---
 # STATUS (2026-06-14 — PHASE 2 WEBHOOK AUTHORITY for V2 — CODE COMPLETE, Stripe E2E deferred)
 - handleVerifiedPayment.ts: ONE idempotent domain handler (source=webhook|client_reconciliation). Webhook (api/stripe/webhook) is now AUTHORITATIVE for V2 order create/update via signature-verified checkout.session.completed → handleVerifiedPayment(webhook). submit-order demoted to reconciliation → handleVerifiedPayment(client_reconciliation). Both idempotent on Stripe event id + checkout_session_id.
 - Migration 20260614000004_stripe_processed_events applied to prod (append-only event dedupe). Races covered: webhook-first/client-second/both/client-never-returns/delayed/duplicated → exactly one V2 order.
