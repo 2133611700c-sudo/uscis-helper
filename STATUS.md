@@ -1,3 +1,7 @@
+# Phase 2 Wave 3/4 NON_STRIPE_READY (2026-06-14)
+- PR #119 DRAFT @ db3da8a: payment-boundary + operator E2E (mocked) + observability + runbooks + lifecycle. 3847 tests (3801 pass/0 fail), tsc 0, build pass. Prod SHADOW unchanged. Deferred to final acceptance: hosted Stripe positive E2E + V2 webhook authority + live DB-invariant suite.
+
+---
 # STATUS (2026-06-13 — PHASE 2 AGENT 3: internal harness GREEN — payment boundary + operator E2E + chaos, external Stripe positive E2E owner-deferred)
 - PAYMENT BOUNDARY: V2 authority = INLINE `verifyStripeSessionPaid()` in `submit-order` (Stripe token = capability). Webhook (`api/stripe/webhook`) touches only LEGACY `translation_orders` (not V2). RECOMMEND promoting a signature-verified webhook to V2 authority (client may never return from Checkout → no V2 order today).
 - NEW TESTS (all behavioral, drive REAL product code; NO external Stripe / NO live DB / NO prod bypass):

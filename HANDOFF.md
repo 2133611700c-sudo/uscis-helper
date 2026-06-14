@@ -1,3 +1,7 @@
+# Phase 2 Wave 3/4 NON_STRIPE_READY (2026-06-14)
+- PR #119 DRAFT @ db3da8a: payment-boundary + operator E2E (mocked) + observability + runbooks + lifecycle. 3847 tests (3801 pass/0 fail), tsc 0, build pass. Prod SHADOW unchanged. Deferred to final acceptance: hosted Stripe positive E2E + V2 webhook authority + live DB-invariant suite.
+
+---
 # HANDOFF (2026-06-13 — Phase 2 Wave 3/4 INTEGRATION: Agent 3 + Agent 4 merged onto architecture/translation-operator-canonical-v2)
 
 DONE (coordinator): Cherry-picked Agent 3 (803798d, internal harness/transport/tests) then Agent 4 (1d80dbc, observability/docs/lifecycle) onto base 44ec7b8. Only overlap was STATUS/HANDOFF/CHANGELOG (resolved semantically, both kept); all code files disjoint or auto-merged. Actioned Agent 4 audit: NO BLOCKING FINDINGS confirmed; minor (unwired webhook amount/price-mismatch + payment_to_order_latency gauges) deferred to owner-side V2 webhook coupling per PR notes. Full gate run below. Prod stays SHADOW; PR #119 stays DRAFT; NOT merged to main; no Vercel/env/deploy change. External Stripe positive E2E remains owner-DEFERRED to final acceptance (not a blocker).
