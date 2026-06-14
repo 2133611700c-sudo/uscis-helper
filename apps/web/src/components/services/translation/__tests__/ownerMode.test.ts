@@ -15,7 +15,9 @@ describe('TranslateWizard — owner mode (free testing)', () => {
     expect(SRC).toMatch(/setIsOwner\(true\)/)
   })
   it('skips Stripe and advances to the sign/download screen for the owner', () => {
-    expect(SRC).toMatch(/if \(isOwner\) \{ saveDraft\(\); setScreen\(7\); return \}/)
+    // saveDraft is awaited so the server-ledger token cookie is set before the
+    // owner advances (parity with the paid path under the server-ledger flag).
+    expect(SRC).toMatch(/if \(isOwner\) \{ await saveDraft\(\); setScreen\(7\); return \}/)
   })
   it('labels the CTA for the owner', () => {
     expect(SRC).toMatch(/Owner — continue free/)

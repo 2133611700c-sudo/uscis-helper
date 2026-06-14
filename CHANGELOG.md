@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-06-14 | feat(privacy): wire server PII ledger into LIVE TranslateWizard behind flag (default OFF, OFF-path parity) (P1)
+- GAP: TranslateWizard.tsx (LIVE Translation wizard) persisted DraftState (extractedFields + canonicalDocumentId + raw_cyrillic PII) to sessionStorage. Mirrors the gap closed for TPS (#139) + Re-Parole, adapted for sessionStorage + Stripe round-trip + OPERATOR_FLOW.
+- WIRED the same ledger client (@/lib/v1/wizardLedgerClient, REUSED unmodified) behind flag NEXT_PUBLIC_SERVER_LEDGER_ENABLED (default OFF):
+  - SAVE (saveDraft, now async): ON → wipe legacy DRAFT_KEY + `await saveDraftToServer('translation', draft)` (awaited so the token cookie is set before the Stripe redirect); OFF → byte-identical `sessionStorage.setItem(DRAFT_KEY, …)`. handlePayment/owner path `await saveDraft()`.
+  - HYDRATE (?paid=1 mount + operator/ticket reads): ON → `loadDraftFromServer()` via the cookie that survives the redirect; OFF → `sessionStorage.getItem(DRAFT_KEY)`. Shared applyDraft()/readPersistedDraft() so both paths rebuild identically.
+  - CLEAR: submit-order success + reset/start-over → ON `clearServerDraft()`; OFF `sessionStorage.removeItem(DRAFT_KEY)`. Legacy self-serve PDF path unchanged (only submit-order deletes the draft).
+  - TTL respected (server 24h + client isDraftExpired); cancel/error keeps the draft until TTL.
+  - canonical_document_id preserved in BOTH states (stays in DraftState → generate-pdf + submit-order); raw_cyrillic kept in carriage but ON → server-side only (NOT in the browser).
+- FILES: apps/web/src/components/services/translation/TranslateWizard.tsx (wiring); NEW __tests__/translateWizardServerLedger.itest.test.ts (15 cases: save→hydrate→clear roundtrip via real /api/wizard-draft route + in-memory Supabase double; browser-jar PII=0 incl. raw_cyrillic; server-row ciphertext-only; canonical survives ?paid=1 round-trip; clear-after-submit-order; TTL; static OFF-path parity). Updated ownerMode.test.ts regex for `await saveDraft()`.
+- GATES: tsc 0 real errors; full vitest 3868 pass / 24 skip (no decrease, +15 new); build OK; content-guard 0 violations.
+- Real-browser Playwright BLOCKED_EXTERNAL (no local Postgres/Docker; needs staging w/ flag ON + WIZARD_DRAFT_ENC_KEY + wizard_drafts table). Prod flag UNCHANGED (still OFF → no-op deploy). TPS + Re-Parole files untouched. PR NOT merged.
+
 ## 2026-06-14 | feat(privacy): wire server PII ledger into LIVE TPSWizardV2 behind flag (default OFF, OFF-path parity) (P1)
 - GAP: the server PII ledger client (@/lib/v1/wizardLedgerClient, flag NEXT_PUBLIC_SERVER_LEDGER_ENABLED) was wired ONLY into the orphan GeneratePacketBlock.tsx (0 component importers). The LIVE wizard TPSWizardV2.tsx always wrote PII (field values) to localStorage.
 - WIRED the same ledger client into TPSWizardV2 behind the flag (default OFF):
