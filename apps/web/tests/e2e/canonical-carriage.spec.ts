@@ -27,6 +27,23 @@ import { promises as fs } from 'fs'
 const FIXTURE = path.resolve(process.cwd(), 'test-fixtures/proof/synthetic_passport.jpg')
 const ARTIFACTS = path.resolve(process.cwd(), 'test-results', 'canonical-carriage')
 
+// Vercel Deployment Protection: preview deployments are SSO-gated (HTTP 403).
+// When running against a protected preview, set VERCEL_SHARE_TOKEN to the
+// `_vercel_share` token (or VERCEL_SHARE_URL to the full shareable URL). The
+// first navigation hits the share URL, which sets the bypass auth cookie so all
+// subsequent relative navigations are authorized. No-op against public hosts
+// (e.g. prod) where the env var is absent.
+test.beforeEach(async ({ page, baseURL }) => {
+  const fullShareUrl = process.env.VERCEL_SHARE_URL
+  const token = process.env.VERCEL_SHARE_TOKEN
+  if (!fullShareUrl && !token) return
+  const url =
+    fullShareUrl ??
+    `${(baseURL ?? '').replace(/\/$/, '')}/?_vercel_share=${token}`
+  // Visiting the share URL sets the protection-bypass cookie on the context.
+  await page.goto(url, { waitUntil: 'domcontentloaded' })
+})
+
 type Carriage = {
   product: string
   extract_status: number | null
