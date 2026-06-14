@@ -28,6 +28,7 @@ import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { docAIProvider, isDocAIEnabled } from '@/lib/docai/provider'
 import { logOcrRun } from '@/lib/tps/ocrAudit'
+import { sanitizeBrainRawForAudit } from '@/lib/tps/ocrAuditSanitize'
 import { processDocument as processDocAI } from '@/lib/docai/client'
 import { runDualOcrCrossref } from '@/lib/tps/ai/dualOcrCrossref'
 import { readBookletViaVision, visionReadsToFields } from '@/lib/tps/ai/geminiVisionArbiter'
@@ -1225,7 +1226,11 @@ export async function POST(req: NextRequest) {
     success: true,
     processing_ms: result.processing_ms,
     brain_status: brainStatus,
-    brain_raw: brainRawAudit,
+    // P0 PII safety: strip applicant values (source_value/final_value/input_raw/
+    // source_line text, names/DOB/doc numbers/addresses) from the audit object
+    // BEFORE it is persisted. The writer also re-sanitizes (defence in depth).
+    // This does NOT change what the user receives from OCR — only the audit row.
+    brain_raw: sanitizeBrainRawForAudit(brainRawAudit),
   })
 
   // ── ONE_BRAIN_SHADOW (default OFF) — observe-only. Build the canonical result
