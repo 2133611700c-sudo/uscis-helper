@@ -10,8 +10,14 @@
  *   DeepSeekError, isDeepSeekError, ChatMessage, ChatOptions, ChatResult
  */
 
+import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
+
 export { generateMiaAnswer } from '@uscis-helper/ai'
 export type { MiaInput, MiaOutput } from '@uscis-helper/ai'
+
+const DEEPSEEK_PROVIDER_NAME = 'deepseek'
+const DEEPSEEK_PROMPT_VERSION = 'v1'   // request shape: chat/completions JSON
+const DEEPSEEK_PREPROC_VERSION = 'v1'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,21 +82,36 @@ async function deepseekFetch(
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
 
+  // SHADOW cost metric: hash the request payload (PII never logged — only the
+  // sha) and time + emit the external DeepSeek call. Result returned UNCHANGED.
+  const cacheKeySha = computeCacheKeySha({
+    fileSha256: sha256Hex(JSON.stringify(messages)),
+    provider: DEEPSEEK_PROVIDER_NAME,
+    model,
+    promptVersion: DEEPSEEK_PROMPT_VERSION,
+    preprocVersion: DEEPSEEK_PREPROC_VERSION,
+  })
   try {
-    const res = await fetch(`${baseURL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+    const res = await withOcrCostMetrics(
+      {
+        product: 'ocr', route: 'provider:deepseek_chat', provider: DEEPSEEK_PROVIDER_NAME,
+        model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros(DEEPSEEK_PROVIDER_NAME, model),
       },
-      body: JSON.stringify({
-        model,
-        max_tokens: options.maxTokens ?? 200,
-        temperature: options.temperature ?? 0.3,
-        messages,
+      () => fetch(`${baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: options.maxTokens ?? 200,
+          temperature: options.temperature ?? 0.3,
+          messages,
+        }),
+        signal: controller.signal,
       }),
-      signal: controller.signal,
-    })
+    )
 
     if (!res.ok) {
       throw new DeepSeekError(

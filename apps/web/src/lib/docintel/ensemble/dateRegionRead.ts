@@ -15,6 +15,7 @@
  */
 import type { OcrProvider } from '@/lib/ocr/types'
 import { isBlocked } from '@/lib/ocr/types'
+import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
 
 interface BBox { ymin: number; xmin: number; ymax: number; xmax: number }
 
@@ -44,13 +45,24 @@ async function geminiDateBoxes(imageB64: string, mime: string, model: string, ke
       'Find EVERY handwritten or printed DATE on this document (date of birth, date of issue, etc.). ' +
       'Return ONLY strict JSON: {"boxes":[[ymin,xmin,ymax,xmax]]} — each box an array of 4 integers ' +
       'normalized 0-1000 (top-left y, top-left x, bottom-right y, bottom-right x). Max 4 boxes.'
-    const res = await fetch(GEMINI_URL(model, key), {
-      method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: imageB64 } }] }],
-        generationConfig: { temperature: 0, response_mime_type: 'application/json' },
-      }),
+    // SHADOW cost metric: this is a real paid Gemini call (date-box detection).
+    const cacheKeySha = computeCacheKeySha({
+      fileSha256: sha256Hex(imageB64), provider: 'gemini', model,
+      promptVersion: 'date_boxes_v1', preprocVersion: 'v1',
     })
+    const res = await withOcrCostMetrics(
+      {
+        product: 'ocr', route: 'provider:gemini_date_boxes', provider: 'gemini',
+        model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('gemini', model),
+      },
+      () => fetch(GEMINI_URL(model, key), {
+        method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: imageB64 } }] }],
+          generationConfig: { temperature: 0, response_mime_type: 'application/json' },
+        }),
+      }),
+    )
     if (!res.ok) return []
     const j = await res.json()
     const txt = j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'

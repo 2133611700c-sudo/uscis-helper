@@ -29,6 +29,7 @@
  *   { doc_type?, document_id?, controlling_spelling?, retake_count? }
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { runWithUploadCostTally } from '@/lib/v1/ocrCostMetrics'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { loadGlossary, lookupTerm } from '@/lib/translation/glossary/glossaryLoader'
 import { transliterateName } from '@/lib/translation/glossary/nominativeCaseRestorer'
@@ -62,6 +63,18 @@ const SMART_RETAKE_USER_MESSAGE =
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(
+  req: NextRequest,
+  ctx: { params: Promise<{ sessionId: string }> }
+) {
+  // P2 shadow cost observability (observe-only): roll up provider calls into one
+  // PII-free ocr_upload_cost_summary. Handler result returned UNCHANGED.
+  return runWithUploadCostTally(
+    { product: 'translation', route: '/api/translation/[sessionId]/ocr-from-storage' },
+    () => POST_impl(req, ctx),
+  )
+}
+
+async function POST_impl(
   req: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
