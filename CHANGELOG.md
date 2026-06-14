@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-14 | V1 fix program Phases 1-5 — ledger layer complete (session-docs catch-up)
+- Records the #139/#140/#141 server-ledger wiring (TPS/Re-Parole/Translation live wizards, flag default OFF, OFF-path parity) + #135/#137/#138 prod-verified P0/P1 fixes. main=ecc4e6c shadow. (This commit reconciles session-docs after the #141 squash took main-side docs in conflict resolution.)
+
 ## 2026-06-14 | feat(privacy): wire server PII ledger into LIVE ReparoleWizardV2 behind flag (default OFF, OFF-path parity) (P1)
 - GAP: ReparoleWizardV2.tsx (LIVE Re-Parole wizard) always wrote PII (field values) to localStorage; the inline hydrate was entangled. Mirrors the gap closed for TPS in #139.
 - REFACTOR FIRST: extracted the persist-rebuild into a single `applyPersistedDraft(parsed)` so the localStorage (OFF) and ledger (ON) hydrate paths share ONE rebuild and cannot drift.
