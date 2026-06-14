@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-14 | PII ledger client adapter (criterion #9 stack complete)
+- apps/web/src/lib/v1/wizardLedgerClient.ts: saveDraftToServer / loadDraftFromServer / clearServerDraft to /api/wizard-draft; isLedgerClientEnabled (NEXT_PUBLIC_SERVER_LEDGER_ENABLED, default OFF); fetch injected; never logs draft; network-safe (no throw). +6 tests (57 v1 total).
+- The full server-side ledger stack is now in place (crypto #129, backend+table #130 [table applied to DB], client adapter here) — all default-OFF, zero behavior change. Remaining to ACTIVATE #9: wire the adapter into TPS/Re-Parole/Translate wizard components + set the 3 env vars + browser-verify.
+- tsc 0; content guard 0. #119 untouched.
 ## 2026-06-14 | Server-side PII ledger BACKEND (criterion #9)
 - supabase/migrations/20260614010000_wizard_drafts.sql: encrypted draft table (token pk, iv/ciphertext/tag, TTL, RLS service-role only).
 - apps/web/src/lib/v1/wizardDraftStore.ts: saveDraft (encrypt+upsert), loadDraft (decrypt; expired→delete→null), deleteDraft, isServerLedgerEnabled (default OFF). Injected client → unit-tested.
