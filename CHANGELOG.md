@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-14 | fix(security): stop writing applicant PII to tps_ocr_audit.brain_raw + redaction migration (P0)
+- NEW apps/web/src/lib/tps/ocrAuditSanitize.ts: sanitizeBrainRawForAudit() — PII-free technical-only projection of brain_raw. Deny-list (source_value/final_value/input_raw/output_normalized/source_line + alt-name PII) dropped at every nesting level (objects+arrays); allow-list keeps field/present/confidence/requires_review/inferred/has_source_line/reasons/status/counts/provider/model/latency; total, never throws.
+- WIRED: apps/web/src/app/api/tps/ocr/extract/route.ts (import + brain_raw sanitized before logOcrRun) and apps/web/src/lib/tps/ocrAudit.ts (import + writer always sanitizes before insert — defence in depth).
+- NEW supabase/migrations/20260614020000_redact_tps_ocr_audit_brain_raw_pii.sql (NOT applied — coordinator applies post-merge): idempotent/transactional recursive plpgsql redactor rewrites brain_raw IN PLACE (no row/column drop), adds redacted_at marker, installs BEFORE INSERT/UPDATE guard trigger rejecting forbidden keys; includes count-first command + rollback/backup notes.
+- NEW tests apps/web/src/lib/tps/__tests__/ocrAuditSanitize.test.ts (16 cases): proves PII dropped at every level (incl alt-keys, Unicode names, doc numbers, dates, addresses, raw OCR, bare PII arrays), technical keys kept, writer applies sanitizer even on raw caller input, user-facing OCR result untouched.
+- GATES: tsc 0 real errors; full vitest suite 3795 pass / 24 skip (+16, no decrease); pnpm build OK; content-guard 0 violations; STATUS single H1 preserved.
+- User-facing OCR extract response UNCHANGED (only audit row content changes). No enforce/env/flag/OCR-behaviour change. Migration NOT applied; PR NOT merged.
+
 ## 2026-06-14 | audit: full project reality inventory + V1 completion plan v2 (read-only, docs-only)
 - Coordinator integrated 4 audit-agent worktrees onto audit/full-project-reality-2026-06-14: cherry-picked b4c9258 (arch/flow/canonical/translation-v2), f8fe72b (infra/CI/env/DB/cost/evidence), 5d7bd20 (corpus/coverage/brain-dictionary), 5514e89 (security/PII/USCIS-forms). 18 agent docs + project_truth.json.
 - Wrote 4 synthesis docs: docs/audit/FULL_PROJECT_AUDIT_2026-06-14.md, CLAIMS_VS_REALITY.csv (19 claims re-verified), RISK_REGISTER.csv (23 risks), V1_COMPLETION_PLAN_V2.md (11 phases, live-proof acceptance).

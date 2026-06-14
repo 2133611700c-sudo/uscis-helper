@@ -3,6 +3,7 @@
 - 23 audit deliverables under docs/audit/ + artifacts/audit/project_truth.json. Synthesis: FULL_PROJECT_AUDIT_2026-06-14.md, CLAIMS_VS_REALITY.csv, RISK_REGISTER.csv, V1_COMPLETION_PLAN_V2.md.
 - Verdict: legacy flows real (TPS read+payment, Translation→operator queue). Parallel V1 track (#121-#133) overclaims: ledger NOT_WIRED (orphan component), OCR cache/budget NOT_WIRED, "0 fabricated"/"3/3 readback" UNVERIFIED/PROVEN_LOCAL-via-#116, staging NOT_BUILT.
 - P0: raw PII cleartext in tps_ocr_audit; no env isolation. P1: Re-Parole free-packet payment bypass; ledger NOT_WIRED; DB drift (4 V2 migrations only in #119); anti-fab gate OFF on vision; canonical override orphan.
+- P0 WRITER FIX IN FLIGHT (branch fix/p0-tps-ocr-audit-pii → PR to main): tps_ocr_audit.brain_raw is now sanitized by apps/web/src/lib/tps/ocrAuditSanitize.ts at the route AND in the writer (defence in depth) — applicant values (source_value/final_value/input_raw/source_line text) dropped, technical keys kept (field/present/confidence/requires_review/inferred/has_source_line/reasons/counts). User-facing OCR result UNCHANGED. Redaction migration 20260614020000_redact_tps_ocr_audit_brain_raw_pii.sql WRITTEN, NOT applied (coordinator applies post-merge; redact-in-place + DB guard trigger). Gates: tsc 0 real / full suite pass / build OK / content-guard 0.
 - NOTE: STATUS block below ("PII ledger WIRED/READY", "phases PASS", sha 62c897a) is STALE/overclaiming — see CLAIMS_VS_REALITY.csv. No runtime/env/PR119 change in this audit.
 
 ---
