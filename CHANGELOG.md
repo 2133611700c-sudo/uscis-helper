@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-14 | Phase 2 Wave 3/4 — payment-boundary + operator E2E (no external Stripe) + observability + runbooks + lifecycle
+
+- RELEASE_STATE.yaml production_sha verified = bd98667 (Phase 1 PR #118 live shadow; Phase 2 branch NOT deployed). All products shadow.
+- Wave 3 (Agent 3): webhookPaymentBoundary (8) + operatorPipelineBehavioral (29) + chaos; email transport made injectable; 3801 pass / 0 fail.
+- Wave 4 (Agent 4): 25 PII-safe events, 8 runbooks, lifecycle/retention, independent audit (no blocking findings).
+- Integration: PHASE2_NON_STRIPE_READY @ 85b95d7; tsc 0; build pass; PII clean. PR #119 stays DRAFT; prod SHADOW.
+- DEFERRED to final acceptance: hosted Stripe positive E2E; V2 checkout.session.completed webhook authority; live DB-invariant suite (RUN_DB_INVARIANTS=1).
+
+
 ## 2026-06-13 | feat(translation): Phase 2 Wave 3/4 integration — Agent 3 (harness) + Agent 4 (observability) merged onto architecture/translation-operator-canonical-v2
 
 - INTEGRATION (coordinator): cherry-picked Agent 3 (803798d) then Agent 4 (1d80dbc) onto base 44ec7b8. Only STATUS/HANDOFF/CHANGELOG overlapped (resolved semantically, both kept). Code files disjoint/auto-merged. Agent 4 audit reviewed: NO BLOCKING FINDINGS; minor unwired payment-coupling gauges deferred to owner-side per PR notes. Prod stays SHADOW; PR #119 stays DRAFT; NOT merged to main; no Vercel/env/deploy. External Stripe positive E2E owner-DEFERRED to final acceptance (not a blocker).
