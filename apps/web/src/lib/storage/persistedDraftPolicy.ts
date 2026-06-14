@@ -57,9 +57,12 @@ export type WizardId = 'tps' | 'reparole' | 'translation' | 'ead'
  *   on restore. No raw / confidence / source.
  * - translation: {field, value, review_required, raw_cyrillic}. raw_cyrillic
  *   is load-bearing CARRIAGE: the post-payment submit-order hand-off resends it
- *   to the operator for the certified translation, so it must survive the
+ *   to the operator for the translation draft, so it must survive the
  *   Stripe round-trip. It is the single documented exception and is dropped for
- *   every other wizard.
+ *   every other wizard. NOTE: value + raw_cyrillic are PII and REMAIN in browser
+ *   storage in this slice — this policy MINIMIZES exposure (drops evidence/raw/
+ *   confidence + adds TTL + clear-on-completion); full removal needs Phase B
+ *   (server-side session ledger with an opaque browser token).
  * - ead: persists nothing (React-memory only) — listed for completeness.
  */
 export const ALLOWED_FIELD_KEYS: Record<WizardId, readonly string[]> = {
@@ -70,6 +73,23 @@ export const ALLOWED_FIELD_KEYS: Record<WizardId, readonly string[]> = {
 }
 
 type FieldRecord = Record<string, unknown>
+
+/** Max persisted length for any string field value (defence against bloat / nested-PII smuggling). */
+export const MAX_PERSISTED_VALUE_LEN = 512
+
+/**
+ * Coerce an allowed value to a SAFE persisted scalar. A persisted field value
+ * must be a primitive (string/number/boolean/null). Objects, arrays and
+ * functions are NOT persisted — even under an allowlisted key — so a nested
+ * object/array inside `value` (or `raw_cyrillic`) can never smuggle extra data
+ * past the allowlist. Strings are length-capped.
+ */
+function coerceScalar(v: unknown): string | number | boolean | null {
+  if (v == null) return null
+  if (typeof v === 'string') return v.length > MAX_PERSISTED_VALUE_LEN ? v.slice(0, MAX_PERSISTED_VALUE_LEN) : v
+  if (typeof v === 'number' || typeof v === 'boolean') return v
+  return null // object / array / function → dropped
+}
 
 /**
  * Accepts any plain object (including typed interfaces that lack an index
@@ -92,7 +112,9 @@ export function sanitizeFieldForStorage(
   const allowed = new Set(ALLOWED_FIELD_KEYS[wizard])
   const out: FieldRecord = {}
   for (const k of Object.keys(src)) {
-    if (allowed.has(k)) out[k] = src[k]
+    // Only allowlisted keys, and only as safe scalars — a nested object/array
+    // under an allowed key (e.g. value) cannot smuggle data past the allowlist.
+    if (allowed.has(k)) out[k] = coerceScalar(src[k])
   }
   return out
 }

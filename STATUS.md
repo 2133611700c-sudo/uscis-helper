@@ -1,3 +1,10 @@
+# STATUS (2026-06-14 — Browser PII MINIMIZATION/containment (PR #120), content-guard fixed)
+- HONEST FRAMING: this is PII MINIMIZATION/containment, NOT removal. `value` (name/DOB/address) REMAINS in localStorage for TPS/Re-Parole; `raw_cyrillic` REMAINS in sessionStorage for Translation (load-bearing carriage, documented exception). Full removal needs Phase B (server-side session ledger + opaque browser token) — separate later PR.
+- Containment shipped: persist sanitizer (drops evidence/raw_value/normalized/confidence/sourceTraces/source*) + scalar-coercion (nested object/array under an allowlisted key is DROPPED, cannot smuggle PII) + MAX_PERSISTED_VALUE_LEN=512 cap; 24h TTL discard-on-load; clear-on-completion; static guard test (17 cases incl. nested-object/array bypass, proto, raw_cyrillic translation-only+capped).
+- CI fix: content/certification guard FAILED on persistedDraftPolicy.ts:60 "certified translation" (+ CHANGELOG) → reworded to "translation draft hand-off". guard:content now 0 violations. tsc 0 real errors; full suite pass.
+- PR #120 DRAFT. Not merged, production shadow unchanged.
+
+---
 # STATUS (2026-06-13 — BROWSER PII CONTAINMENT Phase A: draft TTL + clear-on-completion + persist-sanitizer + static guard)
 - CONTAINMENT (`apps/web/src/lib/storage/persistedDraftPolicy.ts`): shared per-wizard allowlist + `sanitizeField*ForStorage()` + `DRAFT_TTL_MS=24h` + `isDraftExpired()`. The 3 persisting wizards now strip OCR internals (`raw_value`/`source`/`source_zone`/`source_document_id`/`confidence`/`ensemble_candidate`/`review_reasons`/`kind`) BEFORE `setItem`; persist only `{value, requires_review/review_required, doc_slot|field}` + opaque `canonical_document_id`. Translation keeps `raw_cyrillic` ON PURPOSE (load-bearing operator-handoff carriage; sole documented exception).
 - TTL: every draft carries `savedAt`; discarded + `removeItem` on load if >24h (TPS/Re-Parole/Translation). CLEAR-ON-COMPLETION: TPS+Re-Parole clear on packet-generated (`draftClearedRef` suppresses re-persist); Translation clears on `/order/{id}` operator redirect. Start-over already cleared all three; ref reset there.

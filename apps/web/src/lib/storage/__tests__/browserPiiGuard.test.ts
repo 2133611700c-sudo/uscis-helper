@@ -3,6 +3,7 @@ import {
   DRAFT_TTL_MS,
   PROHIBITED_FIELD_KEYS,
   ALLOWED_FIELD_KEYS,
+  MAX_PERSISTED_VALUE_LEN,
   sanitizeFieldForStorage,
   sanitizeFieldMapForStorage,
   sanitizeFieldListForStorage,
@@ -128,5 +129,54 @@ describe('browser PII guard — persistedDraftPolicy', () => {
 
   it('DRAFT_TTL_MS is 24 hours', () => {
     expect(DRAFT_TTL_MS).toBe(24 * 60 * 60 * 1000)
+  })
+
+  // ── Hardening: nested objects/arrays cannot bypass the allowlist; size cap ──
+  it('a nested OBJECT under an allowlisted key (value) is dropped, not persisted', () => {
+    const out = sanitizeFieldForStorage('tps', {
+      value: { secret_full_name: 'IVAN', dob: '1980-01-01' },
+      requires_review: false,
+    })
+    expect(out.value).toBeNull()
+    expect(JSON.stringify(out)).not.toMatch(/IVAN|1980/)
+  })
+
+  it('a nested ARRAY under an allowlisted key (value) is dropped', () => {
+    const out = sanitizeFieldForStorage('translation', {
+      field: 'surname',
+      value: ['IVANENKO', { evidence: 'mrz' }],
+      review_required: true,
+    })
+    expect(out.value).toBeNull()
+    expect(JSON.stringify(out)).not.toMatch(/IVANENKO|evidence|mrz/)
+    expect(out.review_required).toBe(true)
+  })
+
+  it('top-level persisted payload contains ONLY allowlisted keys (no extras, no proto pollution)', () => {
+    for (const wizard of ['tps', 'reparole', 'translation'] as const) {
+      const out = sanitizeFieldForStorage(wizard, {
+        value: 'x', field: 'surname', review_required: false, requires_review: false,
+        doc_slot: 'passport', raw_cyrillic: 'Іваненко',
+        evidence: ['e'], raw_value: 'r', normalized_value: 'n', confidence: 0.9,
+        sourceTraces: [{}], source: 'mrz',
+      })
+      for (const k of Object.keys(out)) {
+        expect(ALLOWED_FIELD_KEYS[wizard]).toContain(k)
+      }
+    }
+  })
+
+  it('raw_cyrillic is allowed ONLY for translation and ONLY as a length-capped string', () => {
+    expect(sanitizeFieldForStorage('tps', { value: 'x', raw_cyrillic: 'Іван' })).not.toHaveProperty('raw_cyrillic')
+    expect(sanitizeFieldForStorage('reparole', { value: 'x', raw_cyrillic: 'Іван' })).not.toHaveProperty('raw_cyrillic')
+    const long = 'я'.repeat(5000)
+    const out = sanitizeFieldForStorage('translation', { field: 'surname', value: 'x', raw_cyrillic: long })
+    expect(typeof out.raw_cyrillic).toBe('string')
+    expect((out.raw_cyrillic as string).length).toBe(MAX_PERSISTED_VALUE_LEN)
+  })
+
+  it('string field values are length-capped (no unbounded PII blob)', () => {
+    const out = sanitizeFieldForStorage('tps', { value: 'a'.repeat(9999), requires_review: false })
+    expect((out.value as string).length).toBe(MAX_PERSISTED_VALUE_LEN)
   })
 })
