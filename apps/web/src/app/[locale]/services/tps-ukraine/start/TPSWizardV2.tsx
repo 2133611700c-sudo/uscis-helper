@@ -44,6 +44,12 @@ import { TranslationReviewGate } from '@/components/tps/TranslationReviewGate'
 import type { CentralBrainResult } from '@/lib/tps/centralBrain'
 import { shouldTranslateForTPSPacket, type TPSDocumentType } from '@/lib/tps/translationBridge'
 import { sanitizeFieldMapForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
+import {
+  isLedgerClientEnabled,
+  saveDraftToServer,
+  loadDraftFromServer,
+  clearServerDraft,
+} from '@/lib/v1/wizardLedgerClient'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1703,25 +1709,20 @@ export default function TPSWizardV2({ locale }: Props) {
   // re-render Step 5 / Step 4 chips correctly. Re-running OCR is not needed
   // because the extracted fields are already in memory.
   useEffect(() => {
-    try {
-      // Schema-version guard: ANY old-schema state is discarded outright.
-      // This is the single most reliable way to evict pre-firewall
-      // hallucinations (e.g. an A-number captured under the passport slot
-      // before the contract existed). We also defensively wipe the v1/v2
-      // keys so users who had those open don't keep seeing ghosts.
-      try { localStorage.removeItem('wizard:tps-ukraine:v2:state') } catch { /* */ }
-      try { localStorage.removeItem('wizard:tps-ukraine:state') } catch { /* */ }
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        // PII CONTAINMENT (Phase A): hard 24h TTL. Any draft older than
-        // DRAFT_TTL_MS is discarded outright so browser-persisted OCR PII has a
-        // bounded exposure window. Runs BEFORE rehydration.
-        if (parsed && typeof parsed === 'object' && isDraftExpired(parsed.savedAt)) {
-          try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
-          throw new Error('draft_expired')
-        }
-        if (parsed && typeof parsed === 'object' && parsed.schema === STORAGE_SCHEMA) {
+    // SERVER LEDGER (V1 #9) — when the flag is ON, the draft (PII) lives
+    // server-side encrypted; the browser holds ONLY an opaque httpOnly token
+    // cookie. We rehydrate by GETting the ledger instead of reading
+    // localStorage. The rebuild logic (applyPersistedDraft) is byte-identical
+    // to the localStorage path; only the SOURCE of `parsed` differs. When the
+    // flag is OFF this whole branch is skipped and behaviour is unchanged.
+    //
+    // applyPersistedDraft mirrors the original inline rehydration so both the
+    // localStorage (OFF) and ledger (ON) paths share one rebuild — avoiding the
+    // class of bug where the two paths drift apart.
+    const applyPersistedDraft = (parsed: unknown): void => {
+        if (!parsed || typeof parsed !== 'object') return
+        const p = parsed as Record<string, unknown> & { savedAt?: string; schema?: number; lastStep?: number; uploadsMeta?: unknown }
+        if (p.schema === STORAGE_SCHEMA) {
           // Rebuild uploads map from uploadsMeta — without File objects,
           // but WITH the OCR fields so Step 5 keeps the recognized values
           // after a locale switch / theme switch / refresh.
@@ -1732,7 +1733,7 @@ export default function TPSWizardV2({ locale }: Props) {
           // Filtering on read guarantees the UI can never resurrect a
           // pre-firewall A-number from a passport slot.
           const rebuiltUploads: Record<string, UploadEntry> = {}
-          const meta = (parsed.uploadsMeta || {}) as Record<
+          const meta = (p.uploadsMeta || {}) as Record<
             string,
             {
               fileName: string
@@ -1770,18 +1771,18 @@ export default function TPSWizardV2({ locale }: Props) {
             lastStep: _lastStep,
             schema: _schema,
             ...rest
-          } = parsed
+          } = p
           setData((d) => ({ ...d, ...rest, uploads: rebuiltUploads }))
-          if (typeof parsed.lastStep === 'number') setStep(parsed.lastStep)
+          if (typeof p.lastStep === 'number') setStep(p.lastStep)
 
           // Stale session detection: if savedAt is older than 3 days and the
           // user was past step 1, show a banner so they can start fresh.
-          if (typeof parsed.savedAt === 'string' && (parsed.lastStep ?? 1) > 1) {
-            const ageMs = Date.now() - new Date(parsed.savedAt).getTime()
+          if (typeof p.savedAt === 'string' && (p.lastStep ?? 1) > 1) {
+            const ageMs = Date.now() - new Date(p.savedAt).getTime()
             const ageDays = Math.floor(ageMs / 86_400_000)
             if (ageDays >= 60) {
               // Auto-clear very old sessions silently.
-              try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+              if (isLedgerClientEnabled()) { void clearServerDraft() } else { try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ } }
               setData({ uploads: {}, manual: {}, paid: false, packetReady: false, part7Reviewed: false })
               setStep(1)
             } else if (ageDays >= 3) {
@@ -1789,9 +1790,47 @@ export default function TPSWizardV2({ locale }: Props) {
             }
           }
         }
+    }
+
+    if (isLedgerClientEnabled()) {
+      // ON: draft (PII) lives server-side; the browser holds only the opaque
+      // token cookie. We still defensively wipe any legacy localStorage keys so
+      // no PII lingers from a pre-ledger session. The ledger applies its own
+      // server-side TTL; an expired/missing draft yields null → fresh wizard.
+      try { localStorage.removeItem('wizard:tps-ukraine:v2:state') } catch { /* */ }
+      try { localStorage.removeItem('wizard:tps-ukraine:state') } catch { /* */ }
+      try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+      void loadDraftFromServer<unknown>().then((draft) => {
+        try {
+          if (draft && typeof draft === 'object' && !isDraftExpired((draft as { savedAt?: string }).savedAt)) {
+            applyPersistedDraft(draft)
+          }
+        } catch { /* corrupt/expired draft → fresh wizard */ }
+      })
+    } else {
+      try {
+        // Schema-version guard: ANY old-schema state is discarded outright.
+        // This is the single most reliable way to evict pre-firewall
+        // hallucinations (e.g. an A-number captured under the passport slot
+        // before the contract existed). We also defensively wipe the v1/v2
+        // keys so users who had those open don't keep seeing ghosts.
+        try { localStorage.removeItem('wizard:tps-ukraine:v2:state') } catch { /* */ }
+        try { localStorage.removeItem('wizard:tps-ukraine:state') } catch { /* */ }
+        const raw = localStorage.getItem(STORAGE_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          // PII CONTAINMENT (Phase A): hard 24h TTL. Any draft older than
+          // DRAFT_TTL_MS is discarded outright so browser-persisted OCR PII has a
+          // bounded exposure window. Runs BEFORE rehydration.
+          if (parsed && typeof parsed === 'object' && isDraftExpired(parsed.savedAt)) {
+            try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+            throw new Error('draft_expired')
+          }
+          applyPersistedDraft(parsed)
+        }
+      } catch {
+        /* ignore — corrupt storage just gets ignored, never crashes the wizard */
       }
-    } catch {
-      /* ignore — corrupt storage just gets ignored, never crashes the wizard */
     }
     // Stripe return-from-checkout: ?paid=1 means the user just completed
     // payment on Stripe and was redirected back via the success page.
@@ -1845,16 +1884,24 @@ export default function TPSWizardV2({ locale }: Props) {
           canonical_document_id: u.canonical_document_id ?? null,
         }
       }
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          schema: STORAGE_SCHEMA,
-          ...rest,
-          lastStep: step,
-          uploadsMeta: uploadsSafe,
-          savedAt: new Date().toISOString(),
-        }),
-      )
+      const draftRecord = {
+        schema: STORAGE_SCHEMA,
+        ...rest,
+        lastStep: step,
+        uploadsMeta: uploadsSafe,
+        savedAt: new Date().toISOString(),
+      }
+      // SERVER LEDGER (V1 #9): when ON, the draft (PII) is POSTed to the server
+      // ledger (encrypted at rest); the browser keeps ONLY the opaque httpOnly
+      // token cookie — NOTHING is written to localStorage. When OFF, the
+      // localStorage write below runs exactly as before (byte-identical).
+      // The serialized record shape is the SAME in both paths so hydrate reuses
+      // one rebuild (applyPersistedDraft).
+      if (isLedgerClientEnabled()) {
+        void saveDraftToServer('tps', draftRecord)
+      } else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(draftRecord))
+      }
     } catch {
       /* ignore */
     }
@@ -2696,7 +2743,9 @@ export default function TPSWizardV2({ locale }: Props) {
       // browser-persisted draft (OCR PII) now and suppress further persistence.
       // canonical_document_id was already consumed in the generate-packet body above.
       draftClearedRef.current = true
-      try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ }
+      // SERVER LEDGER (V1 #9): clear the persisted draft on terminal success.
+      // ON → DELETE the server ledger entry + opaque cookie; OFF → removeItem.
+      if (isLedgerClientEnabled()) { void clearServerDraft() } else { try { localStorage.removeItem(STORAGE_KEY) } catch { /* */ } }
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -2715,14 +2764,12 @@ export default function TPSWizardV2({ locale }: Props) {
 
   // ── Restart helper ───────────────────────────────────────────────────────
   const restart = useCallback(() => {
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      /* ignore */
-    }
     // Per-document isolation: a NEW document must not inherit the previous
     // person's attestation / legal-risk / Part-7 answers (the stale-state class).
     clearTpsDocumentState()
+    // SERVER LEDGER (V1 #9): start-over clears the persisted draft.
+    // ON → DELETE the server ledger entry + opaque cookie; OFF → removeItem.
+    if (isLedgerClientEnabled()) { void clearServerDraft() } else { try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ } }
     // Re-enable persistence for the fresh document (cleared on completion).
     draftClearedRef.current = false
     setPreflightPassed(false)
