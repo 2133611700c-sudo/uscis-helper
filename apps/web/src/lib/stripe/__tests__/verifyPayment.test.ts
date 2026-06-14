@@ -13,9 +13,14 @@ describe('verifyStripeSessionPaid', () => {
   beforeEach(() => retrieveMock.mockReset())
 
   it('paid + correct service → paid:true, correctService:true', async () => {
-    retrieveMock.mockResolvedValueOnce({ payment_status: 'paid', metadata: { service: 'translation' } })
+    retrieveMock.mockResolvedValueOnce({ payment_status: 'paid', metadata: { service: 'translation' }, amount_total: 1500 })
     const r = await verifyStripeSessionPaid('cs_test_123', { expectedService: 'translation' })
-    expect(r).toEqual({ paid: true, correctService: true, customerEmail: null })
+    expect(r.paid).toBe(true)
+    expect(r.correctService).toBe(true)
+    expect(r.customerEmail).toBe(null)
+    expect(r.service).toBe('translation')
+    expect(r.amountTotalCents).toBe(1500)
+    expect(r.sessionId).toBe('cs_test_123')
     // operator flow: the verified Stripe session is the only trusted email source
     expect('customerEmail' in r).toBe(true)
   })

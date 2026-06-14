@@ -5,40 +5,45 @@
 
 interface Props {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ cs?: string; wizard?: string }>
 }
 
 const T = {
   uk: {
     title: '✅ Оплата отримана',
-    body: 'Дякуємо. Ваш пакет готується і буде надісланий на email найближчим часом.',
-    note: 'Якщо не отримаєте лист протягом 30 хвилин — напишіть на support@messenginfo.com',
-    back: '← Повернутись на головну',
+    body: 'Дякуємо. Зараз ми повернемо вас до вашого пакета — він буде доступний для завантаження.',
+    note: 'Якщо сторінка не переходить автоматично — натисніть кнопку нижче.',
+    back: '← Повернутись до пакета',
   },
   ru: {
     title: '✅ Оплата получена',
-    body: 'Спасибо. Ваш пакет готовится и будет отправлен на email в ближайшее время.',
-    note: 'Если не получите письмо в течение 30 минут — напишите на support@messenginfo.com',
-    back: '← Вернуться на главную',
+    body: 'Спасибо. Сейчас мы вернём вас к вашему пакету — он будет доступен для скачивания.',
+    note: 'Если страница не переходит автоматически — нажмите кнопку ниже.',
+    back: '← Вернуться к пакету',
   },
   en: {
     title: '✅ Payment received',
-    body: 'Thank you. Your packet is being prepared and will be emailed to you shortly.',
-    note: 'If you don\'t receive the email within 30 minutes, contact support@messenginfo.com',
-    back: '← Return to home',
+    body: 'Thank you. Returning you to your packet — it will be available for download.',
+    note: 'If the page does not redirect automatically, use the button below.',
+    back: '← Back to your packet',
   },
   es: {
     title: '✅ Pago recibido',
-    body: 'Gracias. Su paquete está siendo preparado y le será enviado por correo electrónico en breve.',
-    note: 'Si no recibe el correo en 30 minutos, contacte support@messenginfo.com',
-    back: '← Volver al inicio',
+    body: 'Gracias. Volviendo a su paquete — estará disponible para descargar.',
+    note: 'Si la página no redirige automáticamente, use el botón de abajo.',
+    back: '← Volver a su paquete',
   },
 } as const
 
 type Locale = keyof typeof T
 
-export default async function CheckoutSuccessPage({ params }: Props) {
+export default async function CheckoutSuccessPage({ params, searchParams }: Props) {
   const { locale } = (await params) as { locale: Locale }
+  const sp = await searchParams
   const t = T[locale] ?? T.en
+  // Redirect back to the wizard with ?paid=1&cs=<session>; the wizard reads the
+  // flag (unlock) and carries cs as the X-Payment-Token for server verification.
+  const back = `/${locale}/services/re-parole-u4u/start?paid=1${sp.cs ? `&cs=${encodeURIComponent(sp.cs)}` : ''}`
 
   return (
     <main
@@ -52,6 +57,7 @@ export default async function CheckoutSuccessPage({ params }: Props) {
         padding: '32px 20px',
       }}
     >
+      <meta httpEquiv="refresh" content={`3;url=${back}`} />
       <div
         style={{
           width: '100%',
@@ -73,7 +79,7 @@ export default async function CheckoutSuccessPage({ params }: Props) {
           {t.note}
         </p>
         <a
-          href={`/${locale}/services/re-parole-u4u`}
+          href={back}
           style={{
             display: 'block',
             width: '100%',
