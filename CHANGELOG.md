@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-14 | Phase 4 cache-half: budget-enforced OCR cache (caps live paid paths)
+- apps/web/src/lib/v1/ocrCacheStore.ts: FsOcrCacheStore — immutable (wx flag), sha256 filenames, private gitignored dir, no PII logs.
+- apps/web/src/lib/v1/cachedBudgetedProvider.ts: cachedBudgetedCall — single chokepoint for paid OCR/AI: cache-first (hit = no spend), miss → checkBudget FAIL-CLOSED (DEFAULT_BUDGET denies), only an explicitly-budgeted within-caps miss calls the provider + caches immutably. Pure/injected → testable with no fs/network/money.
+- Tests: +7 (36 v1 total). tsc 0; content guard 0.
+- Directly addresses the dark-code finding that TPS_AI_BRAIN (DeepSeek) + DUAL_OCR_CROSSREF (Gemini) are already ON/paid in prod — this layer is the hard ceiling to adopt at those call sites (adoption is a separate, tested, flagged step).
+- Phase 4 remains IN_PROGRESS: ground-truth authoring (real PII, owner) + paid benchmark runs (staging) still required. No app behavior change; PR #119 untouched.
 ## 2026-06-14 | V1 phases 1-3 PASS → phase 4 active (autonomous)
 - Phase 1 STAGING_CONTROL_PLANE: PASS (control plane merged #124, green CI; evidence artifacts/v1/STAGING_CONTROL_PLANE/verdict.json). Real staging provisioning remains an owner action (checklist committed).
 - Phase 2 DARK_CODE_INVENTORY: PASS (docs/v1/DARK_CODE_INVENTORY.md; corrections: TPS_AI_BRAIN + DUAL_OCR_CROSSREF effectively ON/paid in prod; certifier_override_audit dark; /api/review->reviews silent loss).
