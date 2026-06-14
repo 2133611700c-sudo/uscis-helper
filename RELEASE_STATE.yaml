@@ -1,0 +1,89 @@
+# RELEASE_STATE.yaml — VERIFIED SNAPSHOT of project state.
+#
+# HONEST MODEL: this is a *verified snapshot*, NOT an auto-updating mirror of main.
+# It describes main at `snapshot.state_basis_main_sha` as verified at `verified_at`.
+# After any later merge to main (INCLUDING this file's own PR), main HEAD advances
+# and this snapshot becomes STALE until a future PR refreshes it. That is expected.
+#
+# The guard (scripts/verify-release-state.mjs) does NOT pretend the snapshot equals
+# the current main HEAD. In CI it computes and reports:
+#   current_head_sha · snapshot_basis_sha · snapshot_is_stale
+# Staleness is a WARNING on push to main (never a hard failure / no self-reference
+# paradox / no infinite loop). Hard failures are reserved for: bad shape, a
+# fabricated (non-existent) basis commit, >1 STATUS H1, a stale "#120 DRAFT" claim,
+# or fabricated Vercel/Stripe runtime state.
+#
+# Unknown/unprovable-from-repo values MUST be the literal string UNVERIFIED.
+# History lives in CHANGELOG.md + docs/STATUS_ARCHIVE.md, NOT here.
+schema_version: 2
+
+snapshot:
+  state_basis_main_sha: "86e5d1ede94e626bc1689f374cbde01abb983443"   # main HEAD this snapshot describes
+  verified_production_sha: "86e5d1ede94e626bc1689f374cbde01abb983443" # /api/healthz at verified_at
+  verified_at: "2026-06-14T05:39:21Z"
+  evidence:
+    state_basis_main_sha: "git rev-parse origin/main at snapshot time (BEFORE this PR's own merge)"
+    verified_production_sha: "GET https://messenginfo.com/api/healthz -> .sha"
+    production_modes: "UNVERIFIED — Vercel env (CANONICAL_MODE_*) is not readable from the repository"
+    stripe_environment: "UNVERIFIED — not readable from the repository"
+  staleness_note: >
+    Refresh state_basis_main_sha + verified_production_sha + verified_at in the next PR
+    that changes release truth. CI reports snapshot_is_stale; it does not block merge.
+
+prs:
+  merged: [117, 118, 120]
+  open:
+    translation_operator_v2:
+      number: 119
+      state: "OPEN"
+      draft: true
+      merged: false
+      frozen: true
+
+products:
+  tps:
+    production_mode: "UNVERIFIED"          # code default = shadow; prod CANONICAL_MODE_TPS not readable from repo
+    canonical_core: true                    # readDocument → arbitrate → CanonicalDocumentResult
+    carriage: "wire-proven"                 # canonical_document_id carried extract→generate (PR #118)
+    positive_runtime_e2e: "UNVERIFIED"      # spec asserts true; live-green preview run DEFERRED
+  reparole:
+    production_mode: "UNVERIFIED"
+    canonical_core: true
+    carriage: "wire-proven"
+    positive_runtime_e2e: "UNVERIFIED"
+  ead:
+    production_mode: "UNVERIFIED"
+    canonical_core: true
+    carriage: "wire-proven"
+    positive_runtime_e2e: "UNVERIFIED"
+  translation:
+    production_flow: "legacy-operator"      # legacy manual-review flow live in prod
+    operator_v2_pr: 119                      # replacement built, NOT merged (frozen)
+    hosted_stripe_e2e: "UNVERIFIED"
+
+browser_pii:
+  containment: true                         # PR #120: sanitizer + 24h TTL + clear-on-completion
+  complete_removal: false                   # `value` (localStorage) + raw_cyrillic (sessionStorage) REMAIN; needs Phase B server ledger
+
+test_infrastructure:
+  dedicated_staging_supabase: false         # e2e currently runs against production
+  stripe_test_environment: "UNVERIFIED"
+  provider_test_budget: "none"              # no hard cap / no OCR response cache yet
+
+document_intelligence:
+  printed_cyrillic: "partial"               # works, but no real-document benchmark corpus
+  handwriting: "not_production_ready"        # v1 policy = candidate / assisted manual entry only
+  corpus: "none"
+  sealed_benchmark: "none"
+
+blockers:
+  - "Legacy Translation operator flow (prod): recipient authority + per-action authorization — security hotfix in PR #122 (DRAFT, not merged). NOTE: contact_email has client writers (tps/translation manual-review); hotfix must re-verify Stripe at send."
+  - "No dedicated staging; heavy OCR e2e runs against production DB + paid providers."
+
+deferred:
+  - "PR #122 (legacy auth + recipient): rebase onto post-#121 main, preview security smoke, then merge."
+  - "PR #119 (Translation Operator V2) — rebase + Stripe-test E2E + merge, after staging."
+  - "Phase B: server-side session ledger to remove PII values from the browser."
+  - "Real-document ground-truth corpus + OCR cache + provider cost ceiling."
+  - "Per-product canonical enforce (one product at a time, after benchmarks)."
+  - "Handwriting research track — outside v1 readiness."

@@ -1,3 +1,7 @@
+# HANDOFF (2026-06-14 — Stage 0: single source of truth established; Draft PR, no runtime change)
+> Created RELEASE_STATE.yaml (machine-readable truth), scripts/verify-release-state.mjs (dep-free guard), .github/workflows/release-state-guard.yml, trimmed STATUS.md to current-only (629→34 lines, 41→1 heading; fixed the stale 'PR #120 DRAFT' line), archived the 41 old blocks to docs/STATUS_ARCHIVE.md (no PII). NO runtime code / migrations / env / Stripe changes. Guard PASS locally. Draft PR, do-not-merge. NEXT: minimal security hotfix 0.5 (legacy Translation per-action auth + server-authoritative recipient).
+
+
 # HANDOFF (2026-06-14 — PR #120 browser PII containment; content-guard fixed)
 DONE: PII MINIMIZATION (not removal) — sanitizer+scalar-coercion+size-cap+TTL+clear-on-completion+17-case guard test; fixed content-guard failure ("certified translation"→"translation draft hand-off"). value + raw_cyrillic remain PII in browser (documented). tsc 0, full suite pass, content-guard 0. PR #120 DRAFT, prod shadow.
 NEXT: after green CI → owner may merge PR #120 as a standalone P1 security improvement. Phase B (server-side session ledger, opaque token) = separate later PR for true PII removal from browser.
@@ -992,3 +996,4 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-13: added Part 3 OUTPUT-format TL;DR block to the consolidated audit doc (audit-only, no code change). -->
 
 <!-- 2026-06-13: Part 4 Phase-1 gap audit appended. NOT PHASE1_COMPLETE: canonical discarded→DTO→rebuilt at boundary; normalizeCountryOfBirth at TPS boundary; 2 I-765 wrappers; telemetry partial. To close: carry one CanonicalDocumentResult end-to-end. Audit-only. -->
+<!-- 2026-06-14: PR #121 corrected — RELEASE_STATE is now an honest VERIFIED SNAPSHOT (schema_version 2: snapshot.state_basis_main_sha / verified_production_sha / verified_at + evidence), not a fake auto-generated mirror. Guard v2 reports current_head/basis/main_tip/snapshot_is_stale; staleness WARNs (never blocks merge / no self-reference paradox). -->
