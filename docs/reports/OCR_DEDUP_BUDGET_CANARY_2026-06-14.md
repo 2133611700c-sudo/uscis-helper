@@ -31,15 +31,24 @@ different-hash (B), captured via live `vercel logs` stream.
 
 | Check | Result |
 |---|---|
-| 5 concurrent identical → distinct response bodies | **1** (byte-identical) — parity PASS |
-| HTTP/error mapping vs baseline | all **429 OCR_RATE_LIMITED** (honest degradation preserved) |
+| **ERROR_PATH_PARITY** (5 concurrent identical → distinct bodies) | **PROVEN** — 1 byte-identical body, all `429 OCR_RATE_LIMITED` |
+| **SUCCESS_RESPONSE_PARITY** | **UNPROVEN** — no successful (200) provider response was observed (Vision 429 throttle); only the error envelope was compared. Do NOT claim success parity. |
+| **CROSS_INSTANCE_DEDUP** | **FAILED** — 0 collapses (see finding); in-flight Map is per-instance |
+| HTTP/error mapping vs baseline | unchanged — honest 429 degradation preserved |
 | 5xx / crash / memory growth | **0** |
-| `budget_blocked` events | **0** (shadow never blocks) — PASS |
-| `ocr_provider_call` events | 5 captured, status ok/429 |
+| `budget_blocked` events | **0** (shadow never blocks) |
+| `ocr_provider_call` events | 5 captured (orient ok / main read 429) |
 | `deduped` (collapse) events | **0** |
 | distinct cache keys (orient vs vision, same image) | **distinct** — confirms `requestSha` fix: different prompts → different keys, no wrong collapse |
-| cross-request contamination | none (no 5xx, no mixed content) |
+| cross-request contamination | none (no 5xx, no mixed content) — but note: only error-path observed |
 | PII in logs | none (cost events are allow-listed: route/provider/model/cost/key_sha only) |
+
+> **Honest evidence correction:** an earlier draft labelled this `response_parity=PASS`.
+> That was wrong — only the **error path** (429) was compared. The successful-OCR
+> response path was never exercised (Vision is rate-limited), so the correct split is
+> `ERROR_PATH_PARITY=PROVEN`, `SUCCESS_RESPONSE_PARITY=UNPROVEN`,
+> `CROSS_INSTANCE_DEDUP=FAILED`. Success parity is proven for the codec math via a
+> recorded synthetic fixture (PROVEN_LOCAL_RECORDED_FIXTURE), NOT via a live provider 200.
 
 ## Key finding — in-flight dedup does NOT relieve a serverless burst
 0 dedup collapses were observed for 5 truly-concurrent identical requests. Root cause:
