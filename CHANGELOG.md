@@ -2,6 +2,13 @@
 
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## 2026-06-14 | PR A — dedicated OCR cache key + version + success-codec parity (cross-instance coordination program)
+- Owner directed the full CROSS-INSTANCE OCR COORDINATION + ENCRYPTED CACHE SHADOW program (PRs A→B→C→D) after the canary proved in-flight dedup is per-instance. Persistent cache alone is insufficient (concurrent cache-miss → all instances call provider) → need a distributed lease. Vision quota stays an OPEN external lever.
+- NEW apps/web/src/lib/v1/ocrCacheCrypto.ts — DEDICATED OCR cache encryption, SEPARATE from the wizard ledger key: OCR_CACHE_ENC_KEY (64 hex, fail-closed) + OCR_CACHE_KEY_VERSION (default '1') bound as AES-256-GCM AAD so the key version is TAMPER-EVIDENT. sealOcrValue/openOcrValue authenticated; FAIL-CLOSED OcrCacheCryptoError(version_mismatch|auth_failed|malformed) — wrong key OR tampered payload = auth_failed; every failure → cache MISS + PII-free ocr_cache_security metric (allow-listed keys, never logs plaintext/ciphertext).
+- NEW success-codec parity test (PROVEN_LOCAL_RECORDED_FIXTURE) — full encode→encrypt→store→load→decrypt→decode deep-equal on a synthetic PII-free Cyrillic OcrResult (bbox, confidence present+absent, warnings, arrays, Unicode); deterministic encoding; fail-closed decode (schema_version_mismatch/binding_mismatch/integrity_failure/corrupt); isCacheable rejects empty+error. HONEST: proves the codec MATH via a recorded fixture, NOT a live provider 200 (Vision 429).
+- Corrected canary evidence wording in docs/reports/OCR_DEDUP_BUDGET_CANARY_2026-06-14.md → ERROR_PATH_PARITY=PROVEN, SUCCESS_RESPONSE_PARITY=UNPROVEN, CROSS_INSTANCE_DEDUP=FAILED (an earlier draft wrongly said response_parity=PASS; only the 429 error path was compared).
+- Gates: tsc 0 errors / 30 new tests pass (ocrCacheCrypto 18 + codec parity 12). NO runtime wiring (store swap is PR C), NO prod flag, NO prod key created.
+
 ## 2026-06-14 | P2 — OCR dedup/budget production canary executed + rolled back (proven-OFF baseline)
 - Owner-authorized 12-step production canary of OCR_DEDUP_ENABLED=1 + OCR_BUDGET_MODE=shadow + OCR_BUDGET_DAILY_USD=50 (NO enforce, NO cache). Set the 3 flags in prod env → new deployment 1f53ut4jp (code ac3923e) → fired 5 concurrent identical + 1 different-hash synthetic PII-free requests (~480KB noise PNGs) at /api/translation/vision-extract → captured prod runtime logs.
 - SAFETY PASSED: 5 concurrent identical → 1 distinct response body (parity); 0 5xx; 0 budget_blocked (shadow never blocks); honest 429 OCR_RATE_LIMITED preserved; requestSha fix confirmed live (gemini_orient vs gemini_vision on the same image → DIFFERENT cache keys); no PII in logs (allow-listed cost events).
