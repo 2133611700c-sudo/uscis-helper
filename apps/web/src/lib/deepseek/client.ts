@@ -96,6 +96,12 @@ async function deepseekFetch(
       {
         product: 'ocr', route: 'provider:deepseek_chat', provider: DEEPSEEK_PROVIDER_NAME,
         model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros(DEEPSEEK_PROVIDER_NAME, model),
+        // Gateway (cache/dedup/budget) — no-op pass-through until a flag is ON.
+        gateway: {
+          fileSha256: sha256Hex(JSON.stringify(messages)),
+          promptVersion: DEEPSEEK_PROMPT_VERSION,
+          preprocVersion: DEEPSEEK_PREPROC_VERSION,
+        },
       },
       () => fetch(`${baseURL}/chat/completions`, {
         method: 'POST',
