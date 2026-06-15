@@ -2,6 +2,10 @@
 
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## 2026-06-14 | PR D.1 — cross-instance lease PROVEN in prod (DB election) + routable canary endpoint
+- CROSS-INSTANCE PROOF (prod Postgres): 5 racers same key → winners=1/losers=4; winner→done; later acquire on done→loser; different key→own winner; non-owner complete blocked; fail→cooldown. Migrations 20260615010000 (lease+RPCs) + 20260615020000 (key_version) applied to prod; OCR_CACHE_ENC_KEY + version created in prod (never echoed). No real-OCR behavior changed.
+- FIX: the canary route was under /api/_diag/ — Next.js treats `_`-prefixed folders as PRIVATE/non-routable → 404 (the pre-existing /api/_diag/vision is dead for the same reason). Moved to apps/web/src/app/api/diag/ocr-coordination/route.ts (routable); auth now accepts INTERNAL_DIAG_TOKEN OR a short-lived OCR_CANARY_TOKEN. tsc 0.
+
 ## 2026-06-14 | PR D — cross-instance coordination canary endpoint (synthetic, auth-gated)
 - NEW apps/web/src/app/api/_diag/ocr-coordination/route.ts — the CROSS-INSTANCE PROD-PROOF harness. POST, auth-gated (X-Internal-Diag-Token === INTERNAL_DIAG_TOKEN else 401), config-gated (501 unless OCR_CACHE_ENC_KEY present). Exercises the REAL SupabaseLeaseStore (a Postgres-backed lease shared by ALL Vercel lambda instances — what the per-instance in-flight Map could not be) + SupabaseSecureOcrCacheStore via coordinateProviderCall, with a SYNTHETIC provider call (a short delay; NO real OCR, NO PII; value = a fixed 'CANARY' token). Returns {role: winner|waiter|unavailable, provider_called_here, value, instance_nonce}.
 - Protocol: N concurrent POSTs with the SAME ?key → expect exactly 1 winner (provider_called_here=1) + N-1 waiters, ALL returning the identical value (+ distinct instance_nonce values ⇒ a genuine cross-instance proof, not a single-instance artifact); a POST with a DIFFERENT ?key → a separate winner. Inert + harmless without the key/token (safe to merge).
