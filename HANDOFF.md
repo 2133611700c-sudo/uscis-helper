@@ -1,7 +1,13 @@
-# HANDOFF (2026-06-14 — P1 canonical override loop: user/operator corrections now dual-write into the canonical chain, flag default OFF)
+# HANDOFF (2026-06-14 — OCR dedup/cache key binds the actual request (requestSha); #146 canonical override loop merged to main)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
-## THIS SESSION — P1 canonical override loop (branch fix/p1-canonical-override-loop off main 128ea19)
+## THIS SESSION — OCR dedup-key hardening (branch fix/ocr-dedup-key-bind-prompt off main e0ed338) + production-canary prep
+- #146 (canonical override loop) MERGED to main (e0ed338). prod deploy of e0ed338 pending Vercel.
+- CANARY STEP-1 VERIFICATION (owner protocol) by reading live code: (a) all 5 paid OCR sites DO pass meta.gateway → dedup reachable when OCR_DEDUP_ENABLED=1; (b) in-flight single-flight clears in a `finally` after BOTH success and failure (ocrGateway.ts:431); (c) budget shadow records+logs only, NEVER blocks (only enforce throws); (d) cache stays OFF (no store/codec at call sites) so OCR_DEDUP_ENABLED=1 changes only dedup, not the response.
+- GAP FOUND + FIXED before flip: dedup/cache key bound only a coarse prompt_version constant, not the actual prompt → at gemini the variable prompt was absent (only image hash) → 2 concurrent same-image/different-prompt calls would wrongly collapse. Added optional `requestSha` (sha256 of the real request); bound gemini=sha256(prompt), vision=sha256(features+hints), docai=sha256(mimeType); field-mapper+deepseek already bind full prompt. Back-compat + zero migration impact (cache OFF, dedup in-flight-only).
+- NEXT EXACT TASK: run the production dedup canary per owner's 12-step protocol — save current prod flag values (rollback record, no secret echo) → set OCR_DEDUP_ENABLED=1 + OCR_BUDGET_MODE=shadow + OCR_BUDGET_DAILY_USD=50 via Vercel prod env → NEW deployment → 5 concurrent identical synthetic requests (expect 1 provider call, 5 identical responses, no cross-request contamination, no 500/mem growth, budget shadow logs 1 call) → 1 sequential DIFFERENT-hash request (must call provider separately) → verify prod → rollback if regression. THEN separate OCR_CACHE_ENC_KEY + OCR_CACHE_MODE=shadow per steps 9-11. Report ONLY as OCR_PRODUCTION_CANARY_COMPLETE.
+
+## PRIOR SESSION — P1 canonical override loop (branch fix/p1-canonical-override-loop off main 128ea19)
 DONE. ONE runtime PR. Flag default OFF → prod behaviour unchanged; enforce NOT enabled; base canonical immutable; no secrets/PII.
 
 PROBLEM (audit-confirmed): /api/canonical/[id]/override (POST/GET — correct 409 optimistic concurrency, INV-11 null semantics, getEffectiveValue) had ZERO UI callers; canonical_overrides = 0 rows. The LIVE user/operator correction path writes only to the legacy `user_corrections` table via the translation review routes — OUTSIDE canonical. So resolveCanonicalDocument never saw a human edit; "canonical is the source of truth" was false.
