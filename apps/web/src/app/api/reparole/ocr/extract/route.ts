@@ -34,7 +34,7 @@ import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { toReParoleCoreAnswers } from '@/lib/canonical/core/reParoleAdapter'
 import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
-import { isBlocked } from '@/lib/ocr/types'
+import { isUnusableOcr } from '@/lib/ocr/types'
 // MRZ_WIRED: inject MRZ authority for international passport
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { mrzCandidatesFromText } from '@/lib/canonical/core/mrzAuthority'
@@ -173,7 +173,7 @@ async function POST_impl(req: NextRequest) {
       docintelId === 'ua_international_passport'
         ? googleVisionProvider
             .extractText({ imageBuffer, mimeType: effectiveMime })
-            .then((r) => (!isBlocked(r) ? r.raw_text : ''))
+            .then((r) => (!isUnusableOcr(r) ? r.raw_text : ''))
             .catch(() => '')
         : Promise.resolve('')
 

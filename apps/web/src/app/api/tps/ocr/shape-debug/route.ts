@@ -50,7 +50,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
-import { isBlocked, type OcrLine } from '@/lib/ocr/types'
+import { isUnusableOcr, isProviderError, type OcrLine } from '@/lib/ocr/types'
 import { runPassportModule } from '@/lib/tps/modules/passport'
 import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
 import { runI94Module } from '@/lib/tps/modules/i94'
@@ -151,12 +151,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const buf = Buffer.from(await file.arrayBuffer())
   const mime = file.type || 'image/jpeg'
   const ocr = await googleVisionProvider.extractText({ imageBuffer: buf, mimeType: mime })
-  if (isBlocked(ocr)) {
-    return NextResponse.json({
-      blocked: true,
-      reason: ocr.reason,
-      required_env_vars: ocr.required_env_vars,
-    })
+  if (isUnusableOcr(ocr)) {
+    return NextResponse.json(
+      isProviderError(ocr)
+        ? { blocked: true, error_code: ocr.error.error_code, retryable: ocr.error.retryable, reason: ocr.error.message }
+        : { blocked: true, reason: ocr.reason, required_env_vars: ocr.required_env_vars },
+    )
   }
 
   const rawText = ocr.raw_text || ''

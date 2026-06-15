@@ -40,7 +40,7 @@ import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { getOcrProvider } from '@/lib/ocr/providers'
 import { mapFieldsWithDeepSeek } from '@/lib/ocr/field-mapper'
 import { buildOcrLookup, resolveOcrIds } from '@/lib/ocr/bbox-resolver'
-import { isBlocked } from '@/lib/ocr/types'
+import { isUnusableOcr, isProviderError } from '@/lib/ocr/types'
 import {
   getCriticalFieldSetForDocumentType,
   getCriticalFieldsForDocumentType,
@@ -219,10 +219,15 @@ async function POST_impl(
   })
 
   // BLOCKED: missing credentials
-  if (isBlocked(ocrRaw)) {
+  if (isUnusableOcr(ocrRaw)) {
+    // Distinguish a missing-credentials BLOCK from a provider FAILURE (P1):
+    // both halt this storage-OCR run, but a failure carries a typed reason/code.
+    const blockReason = isProviderError(ocrRaw) ? ocrRaw.error.message : ocrRaw.reason
+    const requiredEnv = isProviderError(ocrRaw) ? [] : ocrRaw.required_env_vars
+    const blockCode = isProviderError(ocrRaw) ? ocrRaw.error.error_code : 'ocr_provider_blocked'
     await finaliseRun(supabase, runId, 'failed', sessionId, {
       error_message: 'OCR provider not configured. Contact support.',
-      error_detail:  ocrRaw.reason,
+      error_detail:  blockReason,
     })
     // G3: ocr provider blocked → manual review ticket (system_error, high priority via paidUser/urgent)
     await routePipelineToManualReview(gateInputFromSignals({
@@ -236,9 +241,11 @@ async function POST_impl(
     return NextResponse.json({
       ok: false,
       error: 'OCR provider is not configured.',
-      code: 'ocr_provider_blocked',
-      required_env_vars: ocrRaw.required_env_vars,
-      setup_instructions: `Add the following environment variables to your Vercel project settings:\n${ocrRaw.required_env_vars.map(v => `  ${v}`).join('\n')}`,
+      code: blockCode,
+      required_env_vars: requiredEnv,
+      setup_instructions: requiredEnv.length
+        ? `Add the following environment variables to your Vercel project settings:\n${requiredEnv.map(v => `  ${v}`).join('\n')}`
+        : undefined,
     }, { status: 503 })
   }
 
