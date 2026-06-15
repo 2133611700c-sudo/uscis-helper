@@ -39,6 +39,14 @@
  */
 import { buildOcrCacheKey, type OcrCacheKeyParts, type OcrCacheStore } from './ocrCache'
 import { computeCacheKeySha } from './ocrCostMetrics'
+import {
+  encodeOcrResult,
+  decodeOcrResult,
+  isCacheable,
+  shadowParityVerdict,
+  CodecError,
+  type OcrCodecMeta,
+} from './ocrResponseCodec'
 
 export type OcrCacheMode = 'off' | 'shadow' | 'enforce'
 export type OcrBudgetMode = 'off' | 'shadow' | 'enforce'
@@ -150,15 +158,48 @@ export type OcrGatewayEvent = {
   outcome: string
 }
 
+/**
+ * PII-free SHADOW-PARITY telemetry. In OCR_CACHE_MODE=shadow the gateway encodes
+ * the live result and compares it against any prior shadow entry — emitting this
+ * verdict so the would-be cache CORRECTNESS is measurable before substitution is
+ * ever enabled. Carries ONLY technical dimensions + a key hash (no field values).
+ *   - first_seen : no prior entry; this run stored the first shadow record.
+ *   - match      : a prior entry decoded and equals the live result.
+ *   - mismatch   : a prior entry exists but failed decode (binding/integrity) OR
+ *                  differs from the live result.
+ */
+export type OcrCacheParityEvent = {
+  event: 'ocr_cache_parity'
+  key_sha: string
+  hit: boolean
+  parity: 'match' | 'mismatch' | 'first_seen'
+  provider: string
+  model: string
+}
+
 type GwSink = (e: OcrGatewayEvent) => void
+type ParitySink = (e: OcrCacheParityEvent) => void
 let _gwSink: GwSink | null = null
+let _paritySink: ParitySink | null = null
 /** TEST ONLY — capture gateway events instead of console. */
 export function __setOcrGatewaySink(sink: GwSink | null): void {
   _gwSink = sink
 }
+/** TEST ONLY — capture shadow-parity events instead of console. */
+export function __setOcrCacheParitySink(sink: ParitySink | null): void {
+  _paritySink = sink
+}
 function emitGw(e: OcrGatewayEvent): void {
   try {
     if (_gwSink) _gwSink(e)
+    else console.info(JSON.stringify(e))
+  } catch {
+    /* telemetry must never throw into the OCR path */
+  }
+}
+function emitParity(e: OcrCacheParityEvent): void {
+  try {
+    if (_paritySink) _paritySink(e)
     else console.info(JSON.stringify(e))
   } catch {
     /* telemetry must never throw into the OCR path */
@@ -184,11 +225,17 @@ export type OcrGatewayOptions<T> = {
   /** Encrypted-at-rest store; required to actually substitute/store in enforce. */
   store?: OcrCacheStore
   /** Value codec — provider results (e.g. Response) are not directly serializable;
-   *  supply this to enable cache substitution. Without it, cache is skipped. */
-  codec?: {
-    serialize: (v: T) => unknown
-    deserialize: (raw: unknown) => T
-  }
+   *  supply this to enable cache substitution. Without it, cache is skipped.
+   *
+   *  Two forms are supported:
+   *   - OPAQUE codec (legacy): { serialize, deserialize } — caller owns the bytes.
+   *   - BINDING codec (P2 step B): { mode:'ocr_result' } — the gateway uses the
+   *     versioned ocrResponseCodec to encode/decode + binding/integrity check, and
+   *     in shadow mode emits an ocr_cache_parity verdict (cached-vs-live). It also
+   *     refuses to STORE a non-cacheable (empty/error) value (HARD RULE). */
+  codec?:
+    | { serialize: (v: T) => unknown; deserialize: (raw: unknown) => T }
+    | { mode: 'ocr_result' }
   /** TTL for stored entries (ms). Default 24h. */
   ttlMs?: number
   /** Injected env (default process.env) + clock (default Date.now) for testability. */
@@ -199,6 +246,23 @@ export type OcrGatewayOptions<T> = {
 }
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000
+
+/** Narrow the codec union to the binding (ocr_result) form. */
+function isBindingCodec<T>(
+  codec: OcrGatewayOptions<T>['codec'],
+): codec is { mode: 'ocr_result' } {
+  return Boolean(codec && (codec as { mode?: string }).mode === 'ocr_result')
+}
+
+/** Derive the codec binding meta from the content-addressed key parts. */
+function metaFromKeyParts(parts: OcrCacheKeyParts): OcrCodecMeta {
+  return {
+    provider: parts.provider,
+    model: parts.modelVersion,
+    prompt_version: parts.promptVersion,
+    preproc_version: parts.preprocessingVersion,
+  }
+}
 
 /**
  * Run a paid OCR/AI provider call through the gateway.
@@ -257,16 +321,40 @@ export async function runOcrGateway<T>(opts: OcrGatewayOptions<T>, call: () => P
     // shadow: recorded above; just observed (never blocks).
   }
 
-  const canSubstitute = Boolean(opts.store && opts.codec)
+  const codec = opts.codec
+  const bindingCodec = isBindingCodec(codec)
+  const codecMeta = metaFromKeyParts(opts.keyParts)
+  const canSubstitute = Boolean(opts.store && codec)
+
+  // The cached raw record we looked up (binding-codec shadow parity uses it after
+  // the live call resolves so we can compare cached-vs-live deterministically).
+  let cachedRaw: unknown = undefined
+  let cachedHit = false
 
   // ── 2. CACHE lookup ───────────────────────────────────────────────────────────
   if (flags.cacheMode !== 'off' && opts.store) {
     const hit = await opts.store.get(cacheKey).catch(() => null)
+    cachedHit = Boolean(hit)
+    cachedRaw = hit?.rawResponse
+
     if (flags.cacheMode === 'enforce' && hit && canSubstitute) {
-      emitGw({ ...baseEvt, outcome: 'cache_hit' })
-      return opts.codec!.deserialize(hit.rawResponse)
-    }
-    if (flags.cacheMode === 'shadow') {
+      if (bindingCodec) {
+        // FAIL-CLOSED: decode + binding/integrity check. Any failure → treat as a
+        // cache MISS (re-read the provider), NEVER serve a corrupt/mismatched value.
+        try {
+          const decoded = decodeOcrResult(hit.rawResponse, codecMeta)
+          emitGw({ ...baseEvt, outcome: 'cache_hit' })
+          return decoded as unknown as T
+        } catch (err) {
+          if (!(err instanceof CodecError)) throw err
+          // fall through to cache_miss + provider call (do NOT serve).
+          emitGw({ ...baseEvt, outcome: 'cache_miss' })
+        }
+      } else {
+        emitGw({ ...baseEvt, outcome: 'cache_hit' })
+        return (codec as { deserialize: (raw: unknown) => T }).deserialize(hit.rawResponse)
+      }
+    } else if (flags.cacheMode === 'shadow') {
       // measure correctness safely: record hit/miss but ALWAYS call the provider.
       emitGw({ ...baseEvt, outcome: hit ? 'shadow_hit' : 'shadow_miss' })
     } else if (flags.cacheMode === 'enforce') {
@@ -277,17 +365,54 @@ export async function runOcrGateway<T>(opts: OcrGatewayOptions<T>, call: () => P
   // The "do the real call (and store on enforce-miss)" thunk.
   const doCall = async (): Promise<T> => {
     const value = await call()
+
+    // ── SHADOW PARITY (binding codec): encode the LIVE result, compute what WOULD
+    //    be cached, compare against any prior shadow entry, emit a PII-free verdict.
+    //    STILL returns the LIVE value below — NO substitution in shadow.
+    if (flags.cacheMode === 'shadow' && bindingCodec && opts.store) {
+      try {
+        if (isCacheable(value)) {
+          if (cachedHit) {
+            const parity = shadowParityVerdict(cachedRaw, value, codecMeta)
+            emitParity({ event: 'ocr_cache_parity', key_sha: keySha, hit: true, parity, provider: opts.provider, model: codecMeta.model })
+          } else {
+            // First time we see this key in shadow → store the encoded record so a
+            // LATER run can compare. Storing in shadow is safe: it is never served.
+            const record = encodeOcrResult(value, codecMeta, new Date(now()).toISOString())
+            const createdAt = new Date(now()).toISOString()
+            const expiresAt = new Date(now() + (opts.ttlMs ?? DEFAULT_TTL_MS)).toISOString()
+            await opts.store.putIfAbsent({ key: cacheKey, rawResponse: record, createdAt, expiresAt })
+              .catch(() => {/* shadow store failure must not break the OCR path */})
+            emitParity({ event: 'ocr_cache_parity', key_sha: keySha, hit: false, parity: 'first_seen', provider: opts.provider, model: codecMeta.model })
+          }
+        }
+        // NOT cacheable (empty/error) → emit nothing; never store an error/empty.
+      } catch {
+        /* parity is observability only — never throw into the OCR path */
+      }
+    }
+
+    // ── ENFORCE store-on-miss. HARD RULE: only store a genuinely cacheable result. ──
     if (flags.cacheMode === 'enforce' && canSubstitute) {
       const createdAt = new Date(now()).toISOString()
       const expiresAt = new Date(now() + (opts.ttlMs ?? DEFAULT_TTL_MS)).toISOString()
-      await opts
-        .store!.putIfAbsent({
-          key: cacheKey,
-          rawResponse: opts.codec!.serialize(value),
-          createdAt,
-          expiresAt,
-        })
-        .catch(() => {/* store failure must not break the OCR path */})
+      let rawResponse: unknown
+      let storeIt = true
+      if (bindingCodec) {
+        // NEVER cache an empty/error result as a success.
+        if (isCacheable(value)) {
+          rawResponse = encodeOcrResult(value, codecMeta, createdAt)
+        } else {
+          storeIt = false
+        }
+      } else {
+        rawResponse = (codec as { serialize: (v: T) => unknown }).serialize(value)
+      }
+      if (storeIt) {
+        await opts
+          .store!.putIfAbsent({ key: cacheKey, rawResponse, createdAt, expiresAt })
+          .catch(() => {/* store failure must not break the OCR path */})
+      }
     }
     return value
   }
