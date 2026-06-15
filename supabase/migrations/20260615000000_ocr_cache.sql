@@ -4,7 +4,12 @@
 -- for identical input bytes+pipeline instead of re-paying the provider.
 --
 -- KEY (content-addressed, NO PII, NO user/session id):
---   key_sha = sha256( file_sha256 · provider · model · prompt_version · preproc_version )
+--   key_sha = sha256( file_sha256 · provider · model · prompt_version · preproc_version
+--                     [ · request_sha ] )
+--   request_sha (optional) = sha256 of the ACTUAL provider request (prompt text +
+--   gen-config + document-type). Binds response-affecting params the coarse
+--   prompt_version constant does not track, so different prompts on identical
+--   bytes never collapse onto one cached/in-flight result.
 -- Invariant: identical input BYTES + identical pipeline ⇒ identical OCR result,
 -- regardless of WHO uploaded → safe to share the cached value across requests
 -- (no cross-user leak: the value is a pure function of the content + pipeline).
