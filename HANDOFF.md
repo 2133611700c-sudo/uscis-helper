@@ -1,7 +1,33 @@
-# HANDOFF (2026-06-14 — P2 OCR response codec + cacheable-guard: unblocks cache-shadow parity, substitution still OFF)
+# HANDOFF (2026-06-14 — P1 canonical override loop: user/operator corrections now dual-write into the canonical chain, flag default OFF)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
-## THIS SESSION — P2 OCR response codec + cacheable-guard (branch fix/p2-ocr-response-codec off main 9c42ff6)
+## THIS SESSION — P1 canonical override loop (branch fix/p1-canonical-override-loop off main 128ea19)
+DONE. ONE runtime PR. Flag default OFF → prod behaviour unchanged; enforce NOT enabled; base canonical immutable; no secrets/PII.
+
+PROBLEM (audit-confirmed): /api/canonical/[id]/override (POST/GET — correct 409 optimistic concurrency, INV-11 null semantics, getEffectiveValue) had ZERO UI callers; canonical_overrides = 0 rows. The LIVE user/operator correction path writes only to the legacy `user_corrections` table via the translation review routes — OUTSIDE canonical. So resolveCanonicalDocument never saw a human edit; "canonical is the source of truth" was false.
+
+LIVE CORRECTION FLOW MAPPED (UI→route→table):
+- EvidenceReviewPage.tsx (`/[locale]/services/translate-document/session/[sessionId]/review`) — the LIVE review UI.
+  - CorrectFieldModal.handleSave → POST /api/translation/[sessionId]/correct-field (EvidenceReviewPage.tsx:716) → updates extracted_fields + INSERT user_corrections (correct-field/route.ts:127, :157).
+  - EvidenceFieldCard.handleConfirm → POST /api/translation/[sessionId]/confirm-field (EvidenceReviewPage.tsx:872) → updates extracted_fields.confirmed (confirm-field/route.ts:63).
+  - NOTE: the inline single-page TranslateWizard.tsx uses window.prompt + sends fields straight to generate-pdf (NOT correct-field) — out of scope; the EvidenceReviewPage routes are the live correction path.
+- Canonical field key == translation field name (e.g. 'surname') — the translationAdapter sets key=f.field — so NO key remapping is needed between the legacy correction and the canonical override.
+
+BUILD:
+- NEW apps/web/src/lib/canonical/overrideLoopMode.ts — flag CANONICAL_OVERRIDE_LOOP (env): off (DEFAULT) | shadow | enforce; unknown/absent → off (fail-safe). enforce present for contract completeness but NO runtime path consumes it in this PR.
+- NEW apps/web/src/lib/canonical/overrideLoop.ts — appendCorrectionAsCanonicalOverride({canonicalDocumentId, fieldKey, newValue, source:'user_edit'|'certifier_override', actor, reason}): best-effort, returns a typed result, NEVER throws to the caller. Loads base (null→not_found→legacy-only), computes expected_version=MAX(version) over existing overrides (optimistic concurrency), no-ops when the new value already equals the prior effective value, then appends a CONFIRMED override via the EXISTING appendCanonicalOverride RPC. INV-11: overrideValue=null persists as an intentional rejection. originalRejectionReasons carries base reviewReasons (reason codes, no PII). PII-free logs (event/canonical_id/field_key/count only — never values). 409 stale-version → {ok:false,kind:'conflict'}; infra error → {ok:false,kind:'storage_error'}.
+- WIRED (dual-write) into correct-field (source='user_edit', reason=correction_type) AND confirm-field (loads current normalized_value BEFORE update, source='user_edit', reason='confirm'). Both: gate on getOverrideLoopMode()!==' off'; require a valid UUID canonical_document_id in the body (else canonical_loop:'skipped_no_id', legacy-only). Legacy write is UNCHANGED and remains authoritative for output; the canonical append runs AFTER the legacy 200 path and never affects it. Response gains canonical_loop:'off'|'skipped_no_id'|'skipped_no_value'|'appended'|'not_found'|'conflict'|'storage_error' (observability).
+- canonical_document_id THREADING: review-state/route.ts resolves it via getCanonicalDocumentId(sessionId, doc_type) ONLY when the flag is on (null on miss/throw → fail-safe) and returns it; EvidenceReviewPage reads state.canonical_document_id and threads it through EvidenceFieldCard (confirm body) and CorrectFieldModal (correct body), omitted when null. Absent → routes are legacy-only.
+
+END-TO-END PROOF (overrideLoop.test.ts): seed base canonical (finalValue='Kovalenko', reviewRequired=true) → appendCorrectionAsCanonicalOverride(newValue='Kovalenkо-Corrected') → resolveCanonicalDocument: field.finalValue='Kovalenkо-Corrected', reviewRequired=false; getCanonicalValue(field) (mapper boundary) returns the corrected value; loadCanonicalDocumentById (base) STILL shows 'Kovalenko'/reviewRequired=true (immutable base, not mutated).
+OFF-PARITY PROOF (correctFieldOverrideLoop.test.ts): flag OFF → appendCorrectionAsCanonicalOverride NEVER called, legacy user_corrections insert STILL happens, response canonical_loop:'off'. shadow+id → helper called once + legacy write still happens. shadow + no id → helper NOT called, canonical_loop:'skipped_no_id'.
+
+TESTS: 13 new (overrideLoop.test.ts 10 + correctFieldOverrideLoop.test.ts 3). Gates: tsc 0 real; full suite 4011 pass / 24 skip (no decrease, was 3998); build OK; content-guard 0; STATUS single H1.
+
+NEXT TASK (owner): review the PR; to exercise the loop, set CANONICAL_OVERRIDE_LOOP=shadow in a staging/canary with a translation session that HAS a persisted canonical document (CANONICAL_MODE_TRANSLATION=shadow already persists) and confirm canonical_overrides rows appear + resolveCanonicalDocument reflects them, with prod output still legacy-authoritative. Do NOT enable enforce. Do NOT merge until reviewed.
+
+---
+## PREV SESSION — P2 OCR response codec + cacheable-guard (branch fix/p2-ocr-response-codec off main 9c42ff6)
 DONE. ONE runtime PR. NO prod flag changed; cache substitution stays gated OFF; 429/errors NEVER cached as success.
 CONTEXT: #143 built ocrGateway + ocr_cache (AES-256-GCM, RLS) + OCR_CACHE_MODE off/shadow/enforce, but cache substitution was INERT — no codec existed to (de)serialize the provider Response value. #144 added typed OCR errors + isUnusableOcr/isProviderError. This PR adds the codec + makes cache-shadow able to COMPARE, without enabling substitution.
 - NEW apps/web/src/lib/v1/ocrResponseCodec.ts:

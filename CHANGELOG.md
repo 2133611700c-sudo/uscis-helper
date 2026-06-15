@@ -2,6 +2,16 @@
 
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## 2026-06-14 | P1 — canonical override loop wired (user/operator corrections dual-write into the canonical chain, flag default OFF)
+- Branch fix/p1-canonical-override-loop off main 128ea19. ONE runtime PR. Flag default OFF → prod behaviour unchanged; enforce NOT enabled; base canonical immutable; no secrets/PII. Closes the orphan override loop the 2026-06-14 audit flagged: /api/canonical/[id]/override had ZERO callers and canonical_overrides=0 rows; the live correction path wrote only to legacy user_corrections, so resolveCanonicalDocument never saw a human edit.
+- NEW apps/web/src/lib/canonical/overrideLoopMode.ts — flag CANONICAL_OVERRIDE_LOOP = off (DEFAULT) | shadow | enforce (unknown→off, fail-safe; enforce has no runtime consumer here).
+- NEW apps/web/src/lib/canonical/overrideLoop.ts — appendCorrectionAsCanonicalOverride: best-effort (never throws), computes expected_version=MAX(version) (optimistic concurrency), appends a CONFIRMED override via the existing appendCanonicalOverride RPC, INV-11 null preserved, no-op on unchanged value, PII-free logs; typed conflict/not_found/storage_error results.
+- WIRED (dual-write, flag-gated) into apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts (source user_edit) + confirm-field/route.ts (ratifies current value). Legacy user_corrections write UNCHANGED and authoritative; canonical append runs after and never affects the legacy 200. Response gains canonical_loop status. Fail-safe: no/invalid canonical_document_id → legacy-only (canonical_loop:'skipped_no_id').
+- canonical_document_id threaded: review-state/route.ts resolves it via getCanonicalDocumentId(sessionId, doc_type) when the flag is on (null on miss/error); EvidenceReviewPage.tsx passes it through EvidenceFieldCard (confirm) + CorrectFieldModal (correct), omitted when null.
+- END-TO-END proven (overrideLoop.test.ts): OCR base → user edit → override appended → resolveCanonicalDocument reflects it (finalValue=override, reviewRequired=false) → getCanonicalValue (mapper boundary) reads corrected value; base canonical immutable. OFF-parity proven (correctFieldOverrideLoop.test.ts): flag OFF → helper not called, legacy write still happens; shadow+id → helper once; shadow no-id → skipped.
+- Files: NEW lib/canonical/overrideLoopMode.ts, lib/canonical/overrideLoop.ts, lib/canonical/__tests__/overrideLoop.test.ts, app/api/translation/[sessionId]/__tests__/correctFieldOverrideLoop.test.ts; EDIT correct-field/route.ts, confirm-field/route.ts, review-state/route.ts, EvidenceReviewPage.tsx.
+- 13 new tests. Gates: tsc 0 real; full suite 4011 pass / 24 skip (no decrease, was 3998); build OK; content-guard 0; STATUS single H1. PR NOT merged.
+
 ## 2026-06-14 | P2 — OCR response codec + cacheable-guard (never cache errors/empty) — unblocks cache-shadow parity (step B)
 - Branch fix/p2-ocr-response-codec off main 9c42ff6. ONE runtime PR. NO prod flag changed; cache substitution stays gated OFF; 429/errors NEVER cached as success. Makes the #143 cache (INERT — no value codec wired) able to actually store+serve a full OCR result and unblocks cache-shadow parity measurement.
 - NEW apps/web/src/lib/v1/ocrResponseCodec.ts:
