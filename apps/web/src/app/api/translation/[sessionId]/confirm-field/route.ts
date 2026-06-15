@@ -11,8 +11,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { validateSessionId, validateFieldName } from '@/lib/translation/inputValidation'
+// CANONICAL_OVERRIDE_LOOP (P1): route the live confirmation into the canonical
+// override chain (dual-write) — flag default OFF, legacy write unchanged.
+import { getOverrideLoopMode } from '@/lib/canonical/overrideLoopMode'
+import { appendCorrectionAsCanonicalOverride } from '@/lib/canonical/overrideLoop'
 
 export const dynamic = 'force-dynamic'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const CRITICAL_FIELDS = [
   'surname', 'given_names', 'date_of_birth', 'place_of_birth',
@@ -34,8 +40,8 @@ export async function POST(
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   const { sessionId } = await params
-  const body = await req.json().catch(() => ({})) as { field?: string }
-  const { field } = body
+  const body = await req.json().catch(() => ({})) as { field?: string; canonical_document_id?: string }
+  const { field, canonical_document_id } = body
 
   // ── Input validation ─────────────────────────────────────────────────────
   const sessionErr = validateSessionId(sessionId)
@@ -60,6 +66,16 @@ export async function POST(
 
   const confirmedAt = new Date().toISOString()
 
+  // Load the current value BEFORE update so the canonical override (dual-write,
+  // below) can record the confirmed value. Confirm has no new value — it ratifies
+  // the existing extracted value. PII-safe: value used only for the override write.
+  const { data: existingField } = await supabase
+    .from('extracted_fields')
+    .select('normalized_value')
+    .eq('session_id', sessionId)
+    .eq('field', safeField)
+    .single()
+
   const { error: updateErr } = await supabase
     .from('extracted_fields')
     .update({ confirmed: true, confirmed_at: confirmedAt })
@@ -82,6 +98,41 @@ export async function POST(
     metadata: { field: safeField, confirmed_at: confirmedAt },
   })
 
+  // ── CANONICAL_OVERRIDE_LOOP (P1): dual-write into the canonical chain ─────
+  // Flag default OFF → skipped (legacy confirm byte-identical to today). In
+  // shadow, additionally append a confirmed canonical override recording the
+  // ratified value. Best-effort; never affects the legacy 200. Fail-safe: only
+  // when a valid canonical_document_id was supplied.
+  let canonicalLoop: 'off' | 'skipped_no_id' | 'skipped_no_value' | 'appended' | 'not_found' | 'conflict' | 'storage_error' = 'off'
+  const overrideLoopMode = getOverrideLoopMode()
+  if (overrideLoopMode !== 'off') {
+    const confirmedValue = existingField?.normalized_value ?? null
+    if (typeof canonical_document_id === 'string' && UUID_RE.test(canonical_document_id)) {
+      if (typeof confirmedValue === 'string' && confirmedValue.length > 0) {
+        const res = await appendCorrectionAsCanonicalOverride({
+          canonicalDocumentId: canonical_document_id,
+          fieldKey: safeField,
+          newValue: confirmedValue,
+          source: 'user_edit',
+          actor: 'user',
+          reason: 'confirm',
+        })
+        canonicalLoop = res.ok
+          ? 'appended'
+          : res.kind === 'not_found'
+            ? 'not_found'
+            : res.kind === 'conflict'
+              ? 'conflict'
+              : 'storage_error'
+      } else {
+        // Confirm with no value to ratify → nothing to write to canonical.
+        canonicalLoop = 'skipped_no_value'
+      }
+    } else {
+      canonicalLoop = 'skipped_no_id'
+    }
+  }
+
   // ── Recompute gates ──────────────────────────────────────────────────────
   const { data: allFields } = await supabase
     .from('extracted_fields')
@@ -97,6 +148,7 @@ export async function POST(
     ok: true,
     field: safeField,
     confirmed_at: confirmedAt,
+    canonical_loop: canonicalLoop,
     gates: {
       can_certify: canCertify,
       critical_confirmed: criticalConfirmed,
