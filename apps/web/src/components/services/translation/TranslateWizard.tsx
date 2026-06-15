@@ -198,6 +198,8 @@ const T = {
     s5_payment_note: 'Оплата через Stripe. Безопасно. После оплаты вы сразу скачаете PDF.',
     s5_no_fields: 'Извлечённых полей нет — мы переведём документ вручную после оплаты (1–2 рабочих дня).',
     s5_extraction_error: 'Не удалось распознать автоматически. После оплаты документ обработает наш специалист.',
+    s3_ocr_unavailable: 'Распознавание временно недоступно — пожалуйста, попробуйте снова через минуту. Ваш документ не был обработан.',
+    s3_try_again: 'Попробовать снова',
     // Screen 6 — Payment
     s6_title: 'Оплата',
     s6_subtitle: 'Один платёж — получите официальный PDF-перевод с сертификатом',
@@ -329,6 +331,8 @@ const T_OVERRIDES: Partial<Record<Locale, Partial<typeof T.ru>>> = {
     s5_payment_note: 'Payment via Stripe. Secure. PDF available immediately after payment.',
     s5_no_fields: 'No fields extracted — we will translate manually after payment (1–2 business days).',
     s5_extraction_error: 'Could not auto-recognize. Our specialist will process the document after payment.',
+    s3_ocr_unavailable: 'Recognition is temporarily unavailable — please try again in a moment. Your document was not processed.',
+    s3_try_again: 'Try again',
     s6_title: 'Payment',
     s6_subtitle: 'One payment — receive an official translated PDF with certification',
     s6_price_sub: 'Single tariff, no hidden fees',
@@ -972,6 +976,10 @@ export function TranslateWizard() {
   const [procStep, setProcStep] = useState(0) // 0-5 — which step is currently active
   const [procSlow, setProcSlow] = useState(false) // true after ~15s — reassure, don't let users close the tab
   const [scanWarning, setScanWarning] = useState(false) // server said the photo is too small/unclear — ask to retake, don't push to pay
+  // HONEST DEGRADATION (P1): provider rate-limit / outage. The document was NOT
+  // read — show a "try again shortly" state and send the user back to upload,
+  // NEVER advance to the manual/review path as if the read succeeded.
+  const [ocrUnavailable, setOcrUnavailable] = useState(false)
   const MAX_PAGES = 6 // hard cap to keep OCR cost predictable (~$0.001/page)
   const [stripeCheckoutId, setStripeCheckoutId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null
@@ -1248,6 +1256,7 @@ export function TranslateWizard() {
     setProcStep(1)
     setProcSlow(false)
     setScanWarning(false)
+    setOcrUnavailable(false)
     goTo(4)
     setExtractionError(null)
     setExtractedFields([])
@@ -1307,7 +1316,7 @@ export function TranslateWizard() {
       const res = await fetch('/api/translation/vision-extract', { method: 'POST', body: form })
       tickers.forEach(clearTimeout)
       setProcStep(5)
-      const json = await res.json().catch(() => ({} as { ok?: boolean; fields?: ExtractedField[]; error?: string; status?: string; canonical_document_id?: string | null }))
+      const json = await res.json().catch(() => ({} as { ok?: boolean; fields?: ExtractedField[]; error?: string; error_code?: string; status?: string; canonical_document_id?: string | null }))
       if (!res.ok || !json?.ok) {
         // A photo-quality bounce (too small / blurry / needs reshoot) is FIXABLE —
         // send the user back to upload with a clear "retake" notice instead of
@@ -1315,6 +1324,24 @@ export function TranslateWizard() {
         const status = (json as { status?: string })?.status
         if (status === 'needs_better_scan' || status === 'reshoot_required') {
           setScanWarning(true)
+          setProcStep(0)
+          goTo(3)
+          return
+        }
+        // HONEST DEGRADATION (P1): a provider rate-limit / outage is NOT a read.
+        // The server now returns a typed error_code (OCR_RATE_LIMITED, etc.) with
+        // an honest non-2xx (429/503/502). The document was NOT processed, so we
+        // must NOT advance to the manual/review path as if it succeeded — send the
+        // user back to upload with a clear "try again shortly" notice. Detected by
+        // the typed error_code or the explicit provider_unavailable status.
+        const errorCode = (json as { error_code?: string })?.error_code
+        const isProviderUnavailable =
+          status === 'provider_unavailable' ||
+          (typeof errorCode === 'string' && errorCode.startsWith('OCR_')) ||
+          res.status === 429 || res.status === 502 || res.status === 503
+        if (isProviderUnavailable) {
+          setOcrUnavailable(true)
+          setHardCaseHasFields(false)
           setProcStep(0)
           goTo(3)
           return
@@ -1834,6 +1861,22 @@ export function TranslateWizard() {
             <div className="tw-confirm-edit" style={{ marginTop: 12, background: 'var(--warning-bg)', borderColor: 'var(--warning-border)' }}>
               <span aria-hidden="true">📷</span>
               <div style={{ flex: 1, color: 'var(--warning-text)', fontWeight: 600 }}>{t.s3_better_scan}</div>
+            </div>
+          )}
+          {/* HONEST DEGRADATION (P1): recognition provider temporarily unavailable.
+              The document was NOT read — offer a retry, never a silent success. */}
+          {ocrUnavailable && (
+            <div className="tw-confirm-edit" style={{ marginTop: 12, background: 'var(--warning-bg)', borderColor: 'var(--warning-border)' }}>
+              <span aria-hidden="true">⏳</span>
+              <div style={{ flex: 1, color: 'var(--warning-text)', fontWeight: 600 }}>{t.s3_ocr_unavailable}</div>
+              <button
+                type="button"
+                className="tw-edit-btn"
+                onClick={() => { setOcrUnavailable(false); startProcessing() }}
+                disabled={uploadedFiles.length === 0}
+              >
+                {t.s3_try_again}
+              </button>
             </div>
           )}
 

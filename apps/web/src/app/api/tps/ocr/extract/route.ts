@@ -32,7 +32,8 @@ import { sanitizeBrainRawForAudit } from '@/lib/tps/ocrAuditSanitize'
 import { processDocument as processDocAI } from '@/lib/docai/client'
 import { runDualOcrCrossref } from '@/lib/tps/ai/dualOcrCrossref'
 import { readBookletViaVision, visionReadsToFields } from '@/lib/tps/ai/geminiVisionArbiter'
-import { isBlocked } from '@/lib/ocr/types'
+import { isUnusableOcr, isProviderError } from '@/lib/ocr/types'
+import { httpStatusForOcrError } from '@/lib/ocr/ocrErrors'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { runPassportModule } from '@/lib/tps/modules/passport'
 import { runPassportBookletModule } from '@/lib/tps/modules/passportBooklet'
@@ -234,7 +235,20 @@ async function POST_impl(req: NextRequest) {
   const ocrProvider = isDocAIEnabled() ? docAIProvider : googleVisionProvider
   const result = await ocrProvider.extractText({ imageBuffer, mimeType: effectiveMime })
 
-  if (isBlocked(result)) {
+  if (isUnusableOcr(result)) {
+    // A provider FAILURE (rate-limit / 5xx / billing / timeout) is honest non-2xx
+    // with a typed body — NOT a 503 "not configured" (P1 honest degradation).
+    if (isProviderError(result)) {
+      const err = result.error
+      return NextResponse.json(
+        { ok: false, error_code: err.error_code, retryable: err.retryable,
+          ...(typeof err.retry_after_seconds === 'number' ? { retry_after_seconds: err.retry_after_seconds } : {}),
+          message: err.message },
+        { status: httpStatusForOcrError(err.error_code),
+          ...(err.retryable && typeof err.retry_after_seconds === 'number'
+            ? { headers: { 'Retry-After': String(err.retry_after_seconds) } } : {}) },
+      )
+    }
     return NextResponse.json(
       {
         error: result.reason,
@@ -449,7 +463,7 @@ async function POST_impl(req: NextRequest) {
               imageBuffer: rotatedBuffer,
               mimeType: 'image/jpeg',
             })
-            if (isBlocked(rotatedResult)) continue
+            if (isUnusableOcr(rotatedResult)) continue
             const tryTd3 = runPassportModule(rotatedResult, { document_id })
             if (tryTd3.matched) {
               td3 = tryTd3
@@ -518,7 +532,7 @@ async function POST_impl(req: NextRequest) {
               imageBuffer: rotatedBuffer,
               mimeType: 'image/jpeg',
             })
-            if (isBlocked(rotatedResult)) continue
+            if (isUnusableOcr(rotatedResult)) continue
             const tryI94 = runI94Module(rotatedResult, { document_id })
             if (i94FieldCount(tryI94) > i94FieldCount(i94Result)) {
               i94Result = tryI94
@@ -553,7 +567,7 @@ async function POST_impl(req: NextRequest) {
               imageBuffer: rotatedBuffer,
               mimeType: 'image/jpeg',
             })
-            if (isBlocked(rotatedResult)) continue
+            if (isUnusableOcr(rotatedResult)) continue
             const tryEad = runEadModule(rotatedResult, { document_id })
             if (eadFieldCount(tryEad) > eadFieldCount(eadResult)) {
               eadResult = tryEad
@@ -603,7 +617,7 @@ async function POST_impl(req: NextRequest) {
               imageBuffer: rotatedBuffer,
               mimeType: 'image/jpeg',
             })
-            if (isBlocked(rotatedResult)) continue
+            if (isUnusableOcr(rotatedResult)) continue
             const tryDl = runDlModule(rotatedResult, { document_id })
             // Best rotation = matched AND address recovered → stop.
             if (dlGood(tryDl)) {
@@ -750,7 +764,7 @@ async function POST_impl(req: NextRequest) {
             const rotatedResult = await ocrProvider.extractText({
               imageBuffer: rotatedBuffer, mimeType: 'image/jpeg',
             })
-            if (isBlocked(rotatedResult)) continue
+            if (isUnusableOcr(rotatedResult)) continue
             const tryEad2 = runEadModule(rotatedResult, { document_id })
             if (eadTryCount(tryEad2) > eadTryCount(eadTry)) {
               eadTry = tryEad2
@@ -788,7 +802,7 @@ async function POST_impl(req: NextRequest) {
             const rotatedResult = await ocrProvider.extractText({
               imageBuffer: rotatedBuffer, mimeType: 'image/jpeg',
             })
-            if (isBlocked(rotatedResult)) continue
+            if (isUnusableOcr(rotatedResult)) continue
             const tryEadOld = runEadModule(rotatedResult, { document_id })
             if (eadOldCount(tryEadOld) > eadOldCount(eadOldResult)) {
               eadOldResult = tryEadOld
