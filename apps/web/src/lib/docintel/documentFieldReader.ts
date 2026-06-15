@@ -24,6 +24,7 @@ import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from '
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 import { identityHash, decideStatus, applySelfConsistencyOutcome } from './selfConsistency'
 import { recordDocumentClassMetric, type MetricProduct } from './documentClassMetric'
+import { classifyProviderError } from '@/lib/ocr/ocrErrors'
 import type {
   DocumentReadResult,
   ExtractedDocField,
@@ -70,10 +71,24 @@ export async function readDocument(
   })
 
   if (!read.ok) {
+    // Honest degradation (P1): classify the provider failure into a typed OCR
+    // error. A 429 rate-limit / 5xx / timeout is NOT a "successful empty read" —
+    // the route inspects provider_error and fails closed (honest non-2xx) instead
+    // of returning HTTP 200 + fields:[]. When the failure carries no HTTP status
+    // (e.g. 'no GEMINI_API_KEY', 'invalid JSON', 'deadline') we leave
+    // provider_error UNSET so the route's existing 0-field handling applies.
+    const hasHttpSignal = typeof read.errorStatus === 'number' || read.errorTimeout === true
+    const providerError = hasHttpSignal
+      ? classifyProviderError(read.errorStatus ?? 0, undefined, {
+          timeout: read.errorTimeout === true,
+          marker: read.error ?? null,
+        })
+      : undefined
     return {
       ok: false, doc_type_id: docTypeId, fields: [], anchor_read: false,
       provider: provider.name, model: read.model, ms: read.ms,
       status: `vision_failed:${read.error ?? 'unknown'}`, error: read.error,
+      ...(providerError ? { provider_error: providerError } : {}),
     }
   }
 

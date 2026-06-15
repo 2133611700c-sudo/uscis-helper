@@ -164,6 +164,11 @@ export class GeminiVisionProvider implements VisionProvider {
     const imageB64 = imageBuffer.toString('base64')
     const allowed = new Set(spec.fields.map((f) => f.field))
     let lastErr = 'unknown'
+    // Honest degradation (P1): remember the last HTTP status / timeout so the
+    // failure can be classified into a typed OCR error upstream (not masked as
+    // an empty success). Reset to undefined on a non-HTTP outcome.
+    let lastStatus: number | undefined
+    let lastTimeout = false
 
     for (const model of modelFallback()) {
       for (let a = 0; a < attempts; a++) {
@@ -197,17 +202,20 @@ export class GeminiVisionProvider implements VisionProvider {
             return { ok: true, fields, model, ms: Date.now() - t0 }
           }
           lastErr = `HTTP ${status}`
+          lastStatus = status
+          lastTimeout = false
           if (status === 503 || status === 429) {
             await new Promise((r) => setTimeout(r, 1500))
             continue
           }
           break // other error → next model
         } catch (e: any) {
-          lastErr = e?.name === 'AbortError' ? 'timeout' : (e?.message ?? 'fetch error')
+          if (e?.name === 'AbortError') { lastErr = 'timeout'; lastTimeout = true; lastStatus = undefined }
+          else { lastErr = e?.message ?? 'fetch error'; lastTimeout = false; lastStatus = undefined }
         }
       }
     }
-    return { ok: false, fields: [], model: null, ms: Date.now() - t0, error: lastErr }
+    return { ok: false, fields: [], model: null, ms: Date.now() - t0, error: lastErr, errorStatus: lastStatus, errorTimeout: lastTimeout }
   }
 }
 

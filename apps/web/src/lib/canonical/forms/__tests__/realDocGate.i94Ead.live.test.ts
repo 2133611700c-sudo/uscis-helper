@@ -39,7 +39,7 @@ import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import { runEadModule } from '@/lib/tps/modules/ead'
 import { runI94Module } from '@/lib/tps/modules/i94'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
-import { isBlocked } from '@/lib/ocr/types'
+import { isUnusableOcr } from '@/lib/ocr/types'
 import type { TpsExtractedField } from '@/lib/tps/types'
 
 const GATE = process.env.RUN_REAL_DOC_GATE === '1'
@@ -176,7 +176,7 @@ async function readLegacy(
 ): Promise<TpsExtractedField[] | null> {
   const buf = fs.readFileSync(path.join(SHOTS, image))
   const ocr = await googleVisionProvider.extractText({ imageBuffer: buf, mimeType: 'image/jpeg' })
-  if (isBlocked(ocr)) return null
+  if (isUnusableOcr(ocr)) return null
   // NOTE: in a sandboxed CI the Google Vision REST call may return 0 annotations
   // (no network egress) → 0 lines → the keyword module legitimately cannot match.
   // That surfaces as FALLBACK (not a product defect). The canonical Gemini path is

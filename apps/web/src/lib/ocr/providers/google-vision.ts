@@ -18,9 +18,10 @@
  * Do NOT log the API key or private_key. Do NOT expose raw response to client.
  */
 import { GoogleAuth } from 'google-auth-library'
-import type { OcrProvider, OcrResult, OcrBlockedResult, OcrWord, OcrLine, OcrPage, OcrBoundingBox } from '../types'
+import type { OcrProvider, OcrResult, OcrBlockedResult, OcrProviderErrorResult, OcrWord, OcrLine, OcrPage, OcrBoundingBox } from '../types'
 import { loadVisionCredentials } from '@/lib/canonical/vision/visionCredentials'
 import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
+import { classifyProviderError, extractGoogleRpcStatus } from '../ocrErrors'
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate'
 const VISION_TIMEOUT_MS = 12_000   // Google Vision: typically 1–5s; 12s safety margin
@@ -118,7 +119,7 @@ function getGoogleAuth(credentials: Record<string, unknown>): GoogleAuth {
 }
 
 export const googleVisionProvider: OcrProvider = {
-  async extractText({ imageBuffer, mimeType }): Promise<OcrResult | OcrBlockedResult> {
+  async extractText({ imageBuffer, mimeType }): Promise<OcrResult | OcrBlockedResult | OcrProviderErrorResult> {
     // ── Resolve credentials ──────────────────────────────────────────────────
     const { credentials, apiKey, status } = loadVisionCredentials()
 
@@ -221,22 +222,40 @@ export const googleVisionProvider: OcrProvider = {
 
       if (!res.ok) {
         const errBody = await res.text().catch(() => '')
-        // Do NOT include errBody verbatim — may contain key reflection
-        console.error(`[google-vision] HTTP ${res.status} — redacted error body`)
-        return buildEmptyResult(Date.now() - startMs, [`Vision API HTTP ${res.status}`])
+        // Do NOT log errBody verbatim — may contain key reflection. Parse it
+        // ONLY to read the Google RPC status/reason for classification.
+        let parsed: unknown
+        try { parsed = errBody ? JSON.parse(errBody) : undefined } catch { parsed = undefined }
+        const rpc = extractGoogleRpcStatus(parsed)
+        const error = classifyProviderError(res.status, rpc, {
+          retryAfterHeader: res.headers.get('retry-after'),
+        })
+        // HONEST DEGRADATION (P1): a provider HTTP failure (429 rate-limit, 5xx,
+        // 403 billing) is NO LONGER flattened into an empty success. We carry the
+        // typed error up so the route returns an honest non-2xx — never 200+[].
+        console.error(`[google-vision] HTTP ${res.status} → ${error.error_code} (redacted body)`)
+        return { provider_error: true, error }
       }
 
       const data = await res.json() as { responses?: GAnnotateResponse[] }
       gResponse = data.responses?.[0] ?? {}
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error('[google-vision] fetch failed:', msg)
-      return buildEmptyResult(Date.now() - startMs, [`Vision fetch error: ${msg}`])
+      const isTimeout = err instanceof Error && (err.name === 'TimeoutError' || /timeout|aborted/i.test(msg))
+      // Timeout / network = provider unavailable (retryable), NOT empty success.
+      const error = classifyProviderError(0, undefined, { timeout: isTimeout, marker: isTimeout ? 'timeout' : 'network' })
+      console.error(`[google-vision] fetch failed → ${error.error_code}:`, msg.slice(0, 120))
+      return { provider_error: true, error }
     }
 
     if (gResponse.error) {
-      console.error('[google-vision] API error:', gResponse.error.code, gResponse.error.message)
-      return buildEmptyResult(Date.now() - startMs, [`Vision error ${gResponse.error.code}`])
+      // 200 envelope carrying an inline error (Google sometimes returns 200 with
+      // responses[0].error). Classify by its code/status — NOT an empty success.
+      // gResponse.error.code is a Google RPC code (8=RESOURCE_EXHAUSTED), NOT an
+      // HTTP status — pass httpStatus 0 and let the message/marker keyword route it.
+      const error = classifyProviderError(0, { code: gResponse.error.code, message: gResponse.error.message }, { marker: gResponse.error.message })
+      console.error(`[google-vision] inline API error ${gResponse.error.code} → ${error.error_code}`)
+      return { provider_error: true, error }
     }
 
     const fta = gResponse.fullTextAnnotation
