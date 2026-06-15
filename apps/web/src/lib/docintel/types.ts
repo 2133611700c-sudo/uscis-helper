@@ -76,6 +76,15 @@ export interface VisionReadResult {
   model: string | null
   ms: number
   error?: string
+  /**
+   * Honest degradation (P1): the LAST HTTP status the provider saw on a failed
+   * read (e.g. 429, 503, 403). Lets readDocument classify a provider failure as a
+   * typed OCR error so the route can fail CLOSED instead of returning 200+[].
+   * Undefined for success or a non-HTTP failure (timeout/network → see `error`).
+   */
+  errorStatus?: number
+  /** True when the failure was a client/network timeout (AbortError). */
+  errorTimeout?: boolean
 }
 
 /** A provider that reads document fields from an image. Vendor-agnostic. */
@@ -116,6 +125,13 @@ export interface DocumentReadResult {
   ms: number
   status: string
   error?: string
+  /**
+   * Honest degradation (P1): typed provider-error classification when the read
+   * FAILED at the provider (rate-limit / 5xx / billing / timeout). When present,
+   * the route MUST fail closed (honest non-2xx) rather than treat 0 fields as a
+   * successful empty extraction. PII-free; no secrets.
+   */
+  provider_error?: import('@/lib/ocr/ocrErrors').OcrProviderError
   /** Self-consistency gate outcome (only set when the gate ran). PII-free. */
   self_consistency?: {
     status: 'agree' | 'mismatch' | 'incomplete' | 'insufficient_identity_fields'
