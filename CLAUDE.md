@@ -51,6 +51,11 @@ Entity: SK Logistics LLC, Los Angeles, CA.
 - "смт" = "urban-type settlement", NEVER "city" or "town"
 - Oblast genitive ("Вінницької") → nominative DMS-verified ("Vinnytsia Oblast")
 
+## MODELS — ADR-018 IS LAW (enforced in code: `apps/web/src/lib/docintel/modelMatrix.ts`)
+- **Primary reader = `gemini-3.1-pro-preview` ONLY.** It is the single model whose read is a valid product/acceptance result.
+- **Flash (`gemini-3.5-flash`, `gemini-2.5-flash`) = AVAILABILITY fallback, NEVER quality, NEVER primary.** A fallback read of a non-Latin doc is force-reviewed (`fallback_model_used`). `gemini-2.5-flash` is DISQUALIFIED for certificate docs (read a different person). `gemini-2.0-flash` is DEPRECATED (404) — never use.
+- **NEVER report a fallback read as a quality/acceptance number.** Acceptance is measured ONLY on the primary reader; if it is unavailable (e.g. quota 429), the result is `BLOCKED_…`, NOT a flash number. (This rule exists because an agent once proposed measuring acceptance on flash.) Enforced by `modelMatrix.acceptanceModelVerdict()` + the runner gate + `modelMatrix.test.ts` (CI).
+
 ## TECH STACK
 - Next.js 14 (App Router), TypeScript strict, Tailwind CSS
 - Vercel deploy, Supabase DB, DeepSeek R1 AI, Stripe payments
