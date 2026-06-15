@@ -191,12 +191,21 @@ export const googleVisionProvider: OcrProvider = {
 
     // SHADOW cost metric: time + emit the external Vision call (PII-free). The
     // wrapper returns the fetch result UNCHANGED — output is byte-identical.
+    // requestSha binds the response-affecting request CONFIG (features + language
+    // hints) — NOT the image (already in fileSha256). Currently constant, but this
+    // makes a future hint/feature change discriminate the key without a manual
+    // version bump, so different configs never collapse onto one dedup result.
+    const requestSha = sha256Hex(
+      JSON.stringify(requestBody.requests[0].features) +
+        JSON.stringify(requestBody.requests[0].imageContext),
+    )
     const cacheKeySha = computeCacheKeySha({
       fileSha256: sha256Hex(imageBuffer),
       provider: PROVIDER_NAME,
       model: VISION_MODEL,
       promptVersion: VISION_PROMPT_VERSION,
       preprocVersion: VISION_PREPROC_VERSION,
+      requestSha,
     })
     let gResponse: GAnnotateResponse
     try {
@@ -210,6 +219,7 @@ export const googleVisionProvider: OcrProvider = {
             fileSha256: sha256Hex(imageBuffer),
             promptVersion: VISION_PROMPT_VERSION,
             preprocVersion: VISION_PREPROC_VERSION,
+            requestSha,
           },
         },
         () => fetch(fetchUrl, {
