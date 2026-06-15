@@ -22,6 +22,11 @@
 import { createHash } from 'node:crypto'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { buildOcrCacheKey } from './ocrCache'
+// NOTE: ocrGateway imports computeCacheKeySha from THIS module → ESM cycle. It is
+// safe because runOcrGateway is referenced lazily (only when a call site opts into
+// the gateway), never at module-evaluation time. Imported as a namespace so the
+// binding resolves on first use after both modules have finished evaluating.
+import * as ocrGatewayMod from './ocrGateway'
 
 // ── Cost table (PUBLIC LIST PRICES — cite source, do NOT invent) ──────────────
 //
@@ -225,14 +230,60 @@ export function emitOcrUploadCostSummary(e: OcrUploadCostSummaryEvent): OcrUploa
 }
 
 /**
+ * Optional gateway hook. When a call site supplies `meta.gateway`, the wrapped
+ * call is routed through it (cache / dedup / budget) BEFORE timing+emitting. The
+ * gateway itself is a strict no-op pass-through when all its flags are OFF (the
+ * prod default), so supplying this changes NOTHING until a flag is enabled. It is
+ * injected (not imported at module top) only to keep ocrCostMetrics dependency-
+ * light; the default in withOcrCostMetrics is the live runOcrGateway.
+ */
+/**
+ * The default gateway hook = the live runOcrGateway with NO store/codec, so it
+ * provides in-flight DEDUP + BUDGET (both flag-gated, default OFF) but never cache-
+ * substitutes (cache substitution needs a value codec a future site supplies).
+ * Lazy-required to avoid a static import cycle with ocrGateway (which imports
+ * computeCacheKeySha from this module). With all flags OFF it is a pass-through.
+ */
+const defaultGatewayHook: OcrGatewayHook = (gw, call) => {
+  return ocrGatewayMod.runOcrGateway(
+    {
+      keyParts: gw.keyParts,
+      provider: gw.provider,
+      route: gw.route,
+      estCostUsdMicros: gw.estCostUsdMicros,
+      cacheKeySha: gw.cacheKeySha,
+    },
+    call,
+  )
+}
+
+export type OcrGatewayHook = <R>(
+  gw: {
+    keyParts: {
+      fileSha256: string
+      provider: string
+      modelVersion: string
+      promptVersion: string
+      preprocessingVersion: string
+    }
+    provider: string
+    route: string
+    estCostUsdMicros: number
+    cacheKeySha: string
+  },
+  call: () => Promise<R>,
+) => Promise<R>
+
+/**
  * NON-INVASIVE wrapper around a real provider call. It times the call, emits an
  * event AFTER the call returns (or status='error' on throw), and returns the
  * provider's result UNCHANGED. The result is never read, mutated, or replaced —
  * the OCR output the user receives is byte-identical with or without this wrap.
  *
- * It does NOT look up or substitute any cache (cached:false, always) and does
- * NOT consult any budget. Errors from the wrapped call are re-thrown verbatim so
- * the caller's existing retry/fallback/try-catch behaviour is preserved exactly.
+ * Cache/dedup/budget are applied ONLY when the call site supplies `meta.gateway`
+ * AND a gateway flag is enabled; with all flags OFF (prod default) the gateway is
+ * a pure pass-through so behaviour is byte-identical to the un-gated call. Errors
+ * are re-thrown verbatim so existing retry/fallback/try-catch is preserved.
  */
 export async function withOcrCostMetrics<T>(
   meta: {
@@ -242,13 +293,44 @@ export async function withOcrCostMetrics<T>(
     model: string | null
     cacheKeySha: string
     est_cost_usd_micros: number
+    /** Content-addressed key parts; required to enable the gateway (cache/dedup/budget). */
+    gateway?: {
+      fileSha256: string
+      promptVersion: string
+      preprocVersion: string
+      /** Injected for tests; defaults to the live runOcrGateway. */
+      hook?: OcrGatewayHook
+    }
   },
   call: () => Promise<T>,
 ): Promise<T> {
   const t0 = Date.now()
   let status: OcrCostCallStatus = 'ok'
+  // Route through the gateway when the call site opts in. With all gateway flags
+  // OFF this is byte-identical to `call()` (see ocrGateway.allFlagsOff fast path).
+  const effectiveCall: () => Promise<T> = meta.gateway
+    ? () => {
+        const hook = meta.gateway!.hook ?? defaultGatewayHook
+        return hook<T>(
+          {
+            keyParts: {
+              fileSha256: meta.gateway!.fileSha256,
+              provider: meta.provider,
+              modelVersion: meta.model ?? '',
+              promptVersion: meta.gateway!.promptVersion,
+              preprocessingVersion: meta.gateway!.preprocVersion,
+            },
+            provider: meta.provider,
+            route: meta.route,
+            estCostUsdMicros: meta.est_cost_usd_micros,
+            cacheKeySha: meta.cacheKeySha,
+          },
+          call,
+        )
+      }
+    : call
   try {
-    const result = await call()
+    const result = await effectiveCall()
     return result
   } catch (err) {
     status = 'error'
