@@ -1,4 +1,4 @@
-# HANDOFF (2026-06-15 — CYRILLIC PILOT runner built+ran on real docs; runner READY, provider BLOCKED_PROVIDER_RATE_QUOTA)
+# HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
 ## THIS SESSION (current) — CYRILLIC ACCEPTANCE phase: corrected metric engine (real-doc run BLOCKED on owner corpus)
