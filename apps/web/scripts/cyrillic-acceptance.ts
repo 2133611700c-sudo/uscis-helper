@@ -27,6 +27,7 @@ import {
   type AcceptanceProducedField,
 } from '@/lib/canonical/core/cyrillicAcceptanceMetrics'
 import type { GroundTruth } from '@/lib/canonical/core/benchmark'
+import { PRIMARY_READER, acceptanceModelVerdict } from '@/lib/docintel/modelMatrix'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(__dir, '../../..')
@@ -70,7 +71,12 @@ const FIELD_MAP: Record<string, Record<string, { latin: string; cyr?: string }>>
 const sha256 = (b: Buffer) => createHash('sha256').update(b).digest('hex')
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-type ProviderStatus = 'ok' | 'BLOCKED_PROVIDER_RATE_QUOTA' | 'PROVIDER_ERROR' | 'NO_KEY'
+// ADR-018 LAW: a quality/acceptance number is valid ONLY from the PRIMARY_READER.
+// A successful read from a FALLBACK model (flash) is availability, NEVER acceptance —
+// flash is disqualified on handwritten certificates (read a different person). The
+// runner records NON_PRIMARY_MODEL and refuses to score it as quality.
+type ProviderStatus =
+  | 'ok' | 'BLOCKED_PROVIDER_RATE_QUOTA' | 'PROVIDER_ERROR' | 'NO_KEY' | 'NON_PRIMARY_MODEL'
 
 /** readDocument with bounded retry on transient 429 (honest, spaced). */
 async function readWithRetry(buf: Buffer, docTypeId: string): Promise<{ result: Awaited<ReturnType<typeof readDocument>>; providerStatus: ProviderStatus }> {
@@ -78,7 +84,11 @@ async function readWithRetry(buf: Buffer, docTypeId: string): Promise<{ result: 
   let last!: Awaited<ReturnType<typeof readDocument>>
   for (let attempt = 1; attempt <= 3; attempt++) {
     last = await readDocument(buf, 'image/jpeg', docTypeId, {})
-    if (last.ok) return { result: last, providerStatus: 'ok' }
+    if (last.ok) {
+      // HARD GATE: a read that succeeded only via a fallback model is NOT acceptance-valid.
+      const verdict = acceptanceModelVerdict(last.model)
+      return { result: last, providerStatus: verdict.valid ? 'ok' : 'NON_PRIMARY_MODEL' }
+    }
     const code = (last as { provider_error?: { error_code?: string } }).provider_error?.error_code
     if (code === 'OCR_RATE_LIMITED' || code === 'OCR_QUOTA_EXHAUSTED') {
       if (attempt < 3) { await sleep(attempt * 4000); continue }
@@ -104,6 +114,7 @@ async function main() {
   const inventory: Record<string, unknown>[] = []
   let anyProviderOk = false
   let anyQuotaBlock = false
+  let anyNonPrimary = false
 
   for (const e of MANIFEST) {
     const absImg = resolve(REPO, e.image)
@@ -120,6 +131,7 @@ async function main() {
     const { result, providerStatus } = await readWithRetry(buf, e.docTypeId)
     if (providerStatus === 'ok') anyProviderOk = true
     if (providerStatus === 'BLOCKED_PROVIDER_RATE_QUOTA') anyQuotaBlock = true
+    if (providerStatus === 'NON_PRIMARY_MODEL') anyNonPrimary = true
 
     const got: Record<string, { value?: string | null; raw_cyrillic?: string | null; review_required?: boolean; finalValue?: string | null }> = {}
     for (const f of result.fields ?? []) got[f.field] = f as never
@@ -146,12 +158,16 @@ async function main() {
 
     const gtDoc: GroundTruth = { document_id: e.opaque_id, doc_type: e.docTypeId, fields: gtFields }
     const { metrics, verdicts } = scoreDocumentAcceptance(produced, gtDoc)
-    perDocMetrics.push(metrics)
+    // ADR-018 LAW: ONLY a primary-reader read contributes a quality/acceptance number.
+    // A fallback (flash) read is recorded but NEVER aggregated as quality.
+    if (providerStatus === 'ok') perDocMetrics.push(metrics)
 
     inventory.push({
       opaque_id: e.opaque_id, doc_type: e.docTypeId, image_present: true,
       image_sha256_prefix: sha.slice(0, 12), bytes: buf.length, duplicate_of: dupOf ?? null,
       verified_critical_fields: Object.keys(gtFields).length, provider_status: providerStatus,
+      model_used: result.model ?? null, primary_reader_required: PRIMARY_READER,
+      acceptance_scored: providerStatus === 'ok',
       read_status: result.status, fields_returned: (result.fields ?? []).length,
       raw_cyrillic_reached: `${rawCyrillicReached}/${rawCyrillicExpected}`,
     })
@@ -162,7 +178,14 @@ async function main() {
   const rollup = rollupByType(perDocMetrics)
 
   // ── PII-free aggregate ────────────────────────────────────────────────────────
-  const provider_status: ProviderStatus = anyProviderOk ? 'ok' : anyQuotaBlock ? 'BLOCKED_PROVIDER_RATE_QUOTA' : 'PROVIDER_ERROR'
+  // Precedence: a primary read ⇒ ok. Else if anything 429'd ⇒ quota-blocked. Else if a
+  // fallback model read (but no primary) ⇒ NON_PRIMARY_MODEL (NOT a quality result —
+  // ADR-018: acceptance is measured ONLY on the primary reader).
+  const provider_status: ProviderStatus = anyProviderOk
+    ? 'ok'
+    : anyQuotaBlock ? 'BLOCKED_PROVIDER_RATE_QUOTA'
+    : anyNonPrimary ? 'NON_PRIMARY_MODEL'
+    : 'PROVIDER_ERROR'
   const matchedPairs = inventory.filter((i) => i.image_present).length
   const distinctImages = seenSha.size
   const totalCrit = perDocMetrics.reduce((a, m) => a + m.critical_total, 0)
@@ -176,6 +199,7 @@ async function main() {
     provider_status === 'ok'
       ? (sumFab === 0 && sumFalseFinal === 0 && totalCrit > 0 && sumExact / totalCrit >= 0.95 ? 'READY' : 'NOT_READY')
       : provider_status === 'BLOCKED_PROVIDER_RATE_QUOTA' ? 'BLOCKED_PROVIDER_RATE_QUOTA'
+      : provider_status === 'NON_PRIMARY_MODEL' ? 'BLOCKED_PRIMARY_MODEL_UNAVAILABLE'
       : matchedPairs === 0 ? 'INSUFFICIENT_CORPUS' : 'NOT_READY'
 
   const report = {

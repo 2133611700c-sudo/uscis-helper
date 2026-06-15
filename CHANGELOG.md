@@ -2,6 +2,13 @@
 
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## 2026-06-15 | Model-matrix enforcement — make "measure acceptance on a fallback model" impossible
+- Root cause of a near-miss: ADR-018 (which model does what) lived ONLY in markdown, so an agent proposed measuring Cyrillic acceptance on flash (a fallback model; gemini-2.5-flash is DISQUALIFIED for certificates — it read a different person). Fix = machine enforcement, not discipline.
+- NEW apps/web/src/lib/docintel/modelMatrix.ts — the ADR-018 law in TYPED code: PRIMARY_READER=gemini-3.1-pro-preview, FALLBACK_MODELS, DISQUALIFIED (model→doc-class), DEPRECATED_MODELS, SANCTIONED_CHAIN; helpers isPrimaryReader/acceptanceModelVerdict/assertPrimaryReader/isDisqualifiedFor.
+- GATE in apps/web/scripts/cyrillic-acceptance.ts — a read that succeeded only via a fallback model is recorded but NEVER aggregated as a quality number; provider_status=NON_PRIMARY_MODEL → pilot_result=BLOCKED_PRIMARY_MODEL_UNAVAILABLE. Acceptance is valid ONLY from the primary reader.
+- CI GUARD: apps/web/src/lib/docintel/__tests__/modelMatrix.test.ts (9 tests) asserts primaryGeminiModel() default == matrix primary, the provider fallback chain == sanctioned chain, and NO deprecated model appears in active provider code (runs in "typecheck + V1 unit + content").
+- CLAUDE.md HARD RULE added ("MODELS — ADR-018 IS LAW"): primary reader only; flash never quality/never primary; never report a fallback read as acceptance. tsc 0.
+
 ## 2026-06-15 | Cyrillic PILOT acceptance runner — built + ran on real docs (provider quota-blocked)
 - Correction: the real corpus EXISTS in test-fixtures/real-docs/ (gitignored) — internal passport, birth cert, military_id — paired with 8 VERIFIED_BY_OWNER GT. Earlier "real-docs empty" was the wrong directory.
 - NEW apps/web/scripts/cyrillic-acceptance.ts (pnpm --filter web run benchmark:cyrillic-private): loads a PRIVATE gitignored manifest (committed script carries NO owner-name filenames), verifies SHA-256, dedup-detects (caught birth_cert_handwritten == birth_cert_soviet by identical SHA), honors owner_verified_fields ONLY, runs the REAL local readDocument with bounded 429 retry, scores via cyrillicAcceptanceMetrics (EMPTY/review/null never success), verifies raw_cyrillic flow, emits PII-free docs/reports/CYRILLIC_PILOT_ACCEPTANCE.json + gitignored detail. Two verdicts: technical RUNNER_READY + product PILOT_RESULT.
