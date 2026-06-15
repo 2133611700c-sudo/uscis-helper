@@ -94,12 +94,17 @@ async function callGemini(
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
   // SHADOW cost metric: time + emit the external Gemini call (PII-free). The
   // fetch result is returned UNCHANGED — output is byte-identical.
+  // requestSha binds the ACTUAL prompt: GEMINI_PROMPT_VERSION is a coarse constant,
+  // but the prompt varies by document type / call site. Without this, two same-image
+  // calls with different prompts would collapse onto one in-flight dedup result.
+  const requestSha = sha256Hex(prompt)
   const cacheKeySha = computeCacheKeySha({
     fileSha256: sha256Hex(imageB64),
     provider: GEMINI_PROVIDER_NAME,
     model,
     promptVersion: GEMINI_PROMPT_VERSION,
     preprocVersion: GEMINI_PREPROC_VERSION,
+    requestSha,
   })
   try {
     const res = await withOcrCostMetrics(
@@ -111,6 +116,7 @@ async function callGemini(
           fileSha256: sha256Hex(imageB64),
           promptVersion: GEMINI_PROMPT_VERSION,
           preprocVersion: GEMINI_PREPROC_VERSION,
+          requestSha,
         },
       },
       () => fetch(

@@ -151,12 +151,16 @@ export async function processDocument(
 
     // SHADOW cost metric: time + emit the external DocAI call (PII-free). Result
     // is returned UNCHANGED — OCR output is byte-identical with/without this.
+    // requestSha binds the response-affecting request descriptor (mimeType drives
+    // how DocAI parses the bytes) — NOT the document bytes (already in fileSha256).
+    const requestSha = sha256Hex(`docai:${mimeType}`)
     const cacheKeySha = computeCacheKeySha({
       fileSha256: sha256Hex(fileBytes),
       provider: DOCAI_PROVIDER_NAME,
       model: config.processorId,
       promptVersion: DOCAI_PROMPT_VERSION,
       preprocVersion: DOCAI_PREPROC_VERSION,
+      requestSha,
     })
     // Call DocAI
     const response = await withOcrCostMetrics(
@@ -169,6 +173,7 @@ export async function processDocument(
           fileSha256: sha256Hex(fileBytes),
           promptVersion: DOCAI_PROMPT_VERSION,
           preprocVersion: DOCAI_PREPROC_VERSION,
+          requestSha,
         },
       },
       () => fetch(endpoint, {
