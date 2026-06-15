@@ -204,6 +204,12 @@ export const googleVisionProvider: OcrProvider = {
           product: 'ocr', route: 'provider:google_vision', provider: PROVIDER_NAME,
           model: VISION_MODEL, cacheKeySha,
           est_cost_usd_micros: estCostUsdMicros(PROVIDER_NAME, VISION_MODEL),
+          // Gateway (cache/dedup/budget) — no-op pass-through until a flag is ON.
+          gateway: {
+            fileSha256: sha256Hex(imageBuffer),
+            promptVersion: VISION_PROMPT_VERSION,
+            preprocVersion: VISION_PREPROC_VERSION,
+          },
         },
         () => fetch(fetchUrl, {
           method: 'POST',

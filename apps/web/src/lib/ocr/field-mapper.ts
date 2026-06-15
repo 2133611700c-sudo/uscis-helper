@@ -217,6 +217,12 @@ Return format:
       {
         product: 'translation', route: 'provider:deepseek_field_mapper', provider: 'deepseek',
         model: dsModel, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('deepseek', dsModel),
+        // Gateway (cache/dedup/budget) — no-op pass-through until a flag is ON.
+        gateway: {
+          fileSha256: sha256Hex(`${systemPrompt}\n${userPrompt}`),
+          promptVersion: FIELD_MAPPER_PROMPT_VERSION,
+          preprocVersion: FIELD_MAPPER_PREPROC_VERSION,
+        },
       },
       () => fetch(DEEPSEEK_TEXT_URL, {
         method: 'POST',
