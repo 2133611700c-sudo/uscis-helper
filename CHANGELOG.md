@@ -2,6 +2,17 @@
 
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## 2026-06-14 | P2 — OCR response codec + cacheable-guard (never cache errors/empty) — unblocks cache-shadow parity (step B)
+- Branch fix/p2-ocr-response-codec off main 9c42ff6. ONE runtime PR. NO prod flag changed; cache substitution stays gated OFF; 429/errors NEVER cached as success. Makes the #143 cache (INERT — no value codec wired) able to actually store+serve a full OCR result and unblocks cache-shadow parity measurement.
+- NEW apps/web/src/lib/v1/ocrResponseCodec.ts:
+  - encodeOcrResult(result, meta, nowIso?) → versioned record {schema_version:1, provider, model, prompt_version, preproc_version, result_json (canonical stable-key-order JSON), content_sha256=sha256(result_json), encoded_at}. Deterministic (encoded_at excluded from the body/hash → byte-identical across clocks). Binds provider·model·prompt_version·preproc_version.
+  - decodeOcrResult(record, expectedMeta) → OcrResult OR typed CodecError (schema_version_mismatch | binding_mismatch | integrity_failure | corrupt | not_cacheable) → FAIL-CLOSED = cache miss, never served.
+  - isCacheable(result) → true ONLY for a genuine successful read with usable fields; reuses isProviderError/isUnusableOcr to reject provider errors (429/5xx/quota/billing/invalid) + BLOCKED, and rejects EMPTY (no raw_text AND no words AND no lines) + malformed. encode() throws not_cacheable → error/empty can never be stored as success.
+  - shadowParityVerdict(cachedRaw, live, meta) → 'match'|'mismatch' (PII-free verdict only).
+- WIRED into ocrGateway.ts via new binding codec form {mode:'ocr_result'} (legacy opaque codec unchanged): SHADOW encodes LIVE, stores first cacheable read (first_seen), later compares cached-vs-live and emits PII-free ocr_cache_parity {key_sha,hit,parity:match|mismatch|first_seen,provider,model} — STILL returns LIVE (no substitution); non-cacheable live read emits/stores nothing. ENFORCE (still OFF) decodes+serves only on binding+integrity pass else cache_miss→re-read; store-on-miss refuses non-cacheable. New OcrCacheParityEvent type + __setOcrCacheParitySink test seam.
+- TESTS: ocrResponseCodec.test.ts (24) + ocrGatewayCodec.test.ts (12) = 36 new. Round-trip identity; deterministic byte-identical; schema/binding/integrity/corrupt → CodecError; isCacheable rejects empty+5 error classes+blocked+malformed; 429/empty NEVER stored; shadow emits parity + still LIVE; first_seen→match; enforce serves decoded hit / re-reads on binding-mismatch; parity events PII-free.
+- GATES: tsc 0 real; full suite 3998 pass / 24 skip (no decrease, was 3973); build OK; content-guard 0; STATUS single H1. PR NOT merged.
+
 ## 2026-06-14 | P1 — OCR honest degradation (provider 429/5xx no longer masked as HTTP 200 empty-success)
 - Branch fix/p1-ocr-honest-degradation off main c8c6ef7. ONE runtime PR, correctness fix, NO flag (default-on). Kills the bug where a provider rate-limit returned HTTP 200 + fields:[] + status="vision_failed:HTTP 429" and the wizard advanced as a successful-but-empty read.
 - DIAGNOSIS (docs/audit/VISION_429_DIAGNOSIS.md, primary-source, PII-free): Vision SA on free-tier project gen-lang-client-0450386998 (low per-minute limits) → intermittent HTTP 429 RATE_QUOTA, transient (NOT a hard daily cap; NOT billing — the billing-disabled `messenginfo` project is unused; GOOGLE_CLOUD_VISION_API_KEY invalid but unused/latent).
