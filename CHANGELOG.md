@@ -2,6 +2,11 @@
 
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## 2026-06-14 | PR D — cross-instance coordination canary endpoint (synthetic, auth-gated)
+- NEW apps/web/src/app/api/_diag/ocr-coordination/route.ts — the CROSS-INSTANCE PROD-PROOF harness. POST, auth-gated (X-Internal-Diag-Token === INTERNAL_DIAG_TOKEN else 401), config-gated (501 unless OCR_CACHE_ENC_KEY present). Exercises the REAL SupabaseLeaseStore (a Postgres-backed lease shared by ALL Vercel lambda instances — what the per-instance in-flight Map could not be) + SupabaseSecureOcrCacheStore via coordinateProviderCall, with a SYNTHETIC provider call (a short delay; NO real OCR, NO PII; value = a fixed 'CANARY' token). Returns {role: winner|waiter|unavailable, provider_called_here, value, instance_nonce}.
+- Protocol: N concurrent POSTs with the SAME ?key → expect exactly 1 winner (provider_called_here=1) + N-1 waiters, ALL returning the identical value (+ distinct instance_nonce values ⇒ a genuine cross-instance proof, not a single-instance artifact); a POST with a DIFFERENT ?key → a separate winner. Inert + harmless without the key/token (safe to merge).
+- tsc 0. Operational prod proof (apply lease + key_version migrations to prod, create OCR_CACHE_ENC_KEY, deploy, run the 5-concurrent canary, rollback) is the next step. HONEST SCOPE: proves the lease+cache MECHANISM cross-instance; wiring into the real OCR provider calls is a separate follow-on.
+
 ## 2026-06-14 | PR C — secure separate-key cache store + coordination metrics + coordinateOrShadow (shadow layer)
 - The SHADOW-capable coordination layer (additive, flag-OFF, no live wiring). NEW apps/web/src/lib/v1/ocrSecureCacheStore.ts — InMemory + Supabase OCR cache stores using the DEDICATED key (PR A ocrCacheCrypto) + a key_version column. On ANY crypto failure (wrong key / tampered / malformed / key-version mismatch) the entry is a FAIL-CLOSED cache MISS + a PII-free ocr_cache_security metric; never throws into the OCR path, never serves a corrupt value.
 - NEW migration supabase/migrations/20260615020000_ocr_cache_key_version.sql — ALTER ocr_cache ADD COLUMN IF NOT EXISTS key_version (additive, idempotent; legacy NULL → treated as a miss; NOT applied to prod).
