@@ -88,7 +88,7 @@ export interface OcrProvider {
   extractText(params: {
     imageBuffer: Buffer
     mimeType: string      // 'image/jpeg' | 'image/png' | 'image/webp'
-  }): Promise<OcrResult | OcrBlockedResult>
+  }): Promise<OcrResult | OcrBlockedResult | OcrProviderErrorResult>
 }
 
 // ── BLOCKED sentinel ──────────────────────────────────────────────────────────
@@ -103,6 +103,47 @@ export interface OcrBlockedResult {
   required_env_vars: string[]   // exact names, no values
 }
 
-export function isBlocked(r: OcrResult | OcrBlockedResult): r is OcrBlockedResult {
+export function isBlocked(
+  r: OcrResult | OcrBlockedResult | OcrProviderErrorResult,
+): r is OcrBlockedResult {
   return (r as OcrBlockedResult).blocked === true
+}
+
+// ── PROVIDER ERROR sentinel ─────────────────────────────────────────────────
+
+/**
+ * Returned when the provider call itself FAILED (rate-limit / 5xx / timeout /
+ * billing / malformed) — distinct from a successful-but-empty read and from a
+ * missing-credentials BLOCKED result.
+ *
+ * THE BUG this kills: previously these failures were flattened into an empty
+ * OcrResult (raw_text='', words=[]) so the route returned HTTP 200 + fields=[]
+ * and the client treated a rate-limit as a successful empty extraction. Carrying
+ * the typed error up lets the route fail CLOSED (honest 429/503/502).
+ *
+ * `error` is the PII-free typed classification (see lib/ocr/ocrErrors.ts).
+ */
+export interface OcrProviderErrorResult {
+  provider_error: true
+  error: import('./ocrErrors').OcrProviderError
+}
+
+export function isProviderError(
+  r: OcrResult | OcrBlockedResult | OcrProviderErrorResult,
+): r is OcrProviderErrorResult {
+  return (r as OcrProviderErrorResult).provider_error === true
+}
+
+/**
+ * True for ANYTHING that is not a usable OcrResult (missing-creds BLOCKED OR a
+ * provider failure). Legacy callers (TPS/ReParole) that historically treated a
+ * swallowed provider failure as "no text" use this to narrow to OcrResult in ONE
+ * check — preserving their prior behaviour while staying type-safe against the
+ * new OcrProviderErrorResult member. The honest-degradation routing lives in the
+ * translation vision-extract route (P1); these legacy routes are out of scope.
+ */
+export function isUnusableOcr(
+  r: OcrResult | OcrBlockedResult | OcrProviderErrorResult,
+): r is OcrBlockedResult | OcrProviderErrorResult {
+  return isBlocked(r) || isProviderError(r)
 }

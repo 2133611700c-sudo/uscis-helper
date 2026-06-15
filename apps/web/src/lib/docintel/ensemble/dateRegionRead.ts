@@ -14,7 +14,7 @@
  * applied" — it never blocks or breaks the read.
  */
 import type { OcrProvider } from '@/lib/ocr/types'
-import { isBlocked } from '@/lib/ocr/types'
+import { isUnusableOcr } from '@/lib/ocr/types'
 import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
 
 interface BBox { ymin: number; xmin: number; ymax: number; xmax: number }
@@ -126,7 +126,7 @@ export async function readDateRegionsWithVision(opts: {
         .toBuffer()
       const r = await opts.vision.extractText({ imageBuffer: crop, mimeType: 'image/jpeg' })
       diag.crops++
-      if (!isBlocked(r) && r.raw_text) texts.push(r.raw_text)
+      if (!isUnusableOcr(r) && r.raw_text) texts.push(r.raw_text)
     }
     const text = texts.join('\n')
     diag.chars = text.length

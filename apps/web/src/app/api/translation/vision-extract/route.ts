@@ -37,7 +37,8 @@ import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from 
 import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
-import { isBlocked } from '@/lib/ocr/types'
+import { isBlocked, isProviderError } from '@/lib/ocr/types'
+import { httpStatusForOcrError, type OcrProviderError } from '@/lib/ocr/ocrErrors'
 import { applyDateEnsemble, isDateFieldName, extractDateCandidatesFromText } from '@/lib/docintel/ensemble/applyDateEnsemble'
 import { readDateRegionsWithVision } from '@/lib/docintel/ensemble/dateRegionRead'
 import { HANDWRITTEN_FABRICATION_RISK_CLASSES } from '@/lib/docintel/antiFabricationGate'
@@ -75,6 +76,60 @@ const ALLOWED_MIME = new Set([
 const MAX_BYTES = 10 * 1024 * 1024 // 10 MB per page
 const MAX_PAGES = 6                  // hard cap matching the wizard
 
+/**
+ * HONEST DEGRADATION (P1, 2026-06-14). Build an honest non-2xx response for a
+ * provider failure (rate-limit / 5xx / billing / timeout / malformed).
+ *
+ * THE BUG this kills: a provider 429/5xx used to be flattened into HTTP 200 +
+ * ok:false + fields:[] + status="vision_failed:HTTP 429" — the wizard treated it
+ * as a successful-but-empty read and advanced the user as if the document had
+ * been processed. A provider failure MUST NOT look like a success.
+ *
+ * The body is typed + PII-free: { ok:false, error_code, retryable,
+ * retry_after_seconds?, message }. The HTTP status is derived from the class
+ * (429 rate, 503 unavailable, 502 invalid). `Retry-After` is set when retryable.
+ */
+/**
+ * Pick the single error to report when multiple pages failed. Terminal
+ * config/account problems (billing/quota/budget) outrank an invalid response,
+ * which outranks a provider outage, which outranks a transient rate-limit. This
+ * way a user is not told to "retry shortly" when the real problem is a hard cap.
+ */
+function pickMostSevereOcrError(errors: OcrProviderError[]): OcrProviderError {
+  const rank: Record<OcrProviderError['error_code'], number> = {
+    OCR_BILLING_DISABLED: 5,
+    OCR_QUOTA_EXHAUSTED: 4,
+    OCR_BUDGET_EXCEEDED: 4,
+    OCR_INVALID_RESPONSE: 3,
+    OCR_PROVIDER_UNAVAILABLE: 2,
+    OCR_RATE_LIMITED: 1,
+  }
+  return errors.reduce((worst, e) => (rank[e.error_code] > rank[worst.error_code] ? e : worst), errors[0])
+}
+
+function ocrUnavailableResponse(err: OcrProviderError): NextResponse {
+  const status = httpStatusForOcrError(err.error_code)
+  const headers: Record<string, string> = {}
+  if (err.retryable && typeof err.retry_after_seconds === 'number') {
+    headers['Retry-After'] = String(err.retry_after_seconds)
+  }
+  return NextResponse.json(
+    {
+      ok: false,
+      error_code: err.error_code,
+      retryable: err.retryable,
+      ...(typeof err.retry_after_seconds === 'number' ? { retry_after_seconds: err.retry_after_seconds } : {}),
+      // status kept for clients that switch on it; clearly a FAILURE, not "no_fields".
+      status: 'provider_unavailable',
+      message: err.message ?? 'recognition temporarily unavailable',
+      // The document was NOT processed. The wizard must not advance as a success.
+      review_required: true,
+      fields: null,
+    },
+    { status, headers },
+  )
+}
+
 // FieldOut shape is now owned by the canonical translationAdapter (toTranslationRows
 // returns it for BOTH the Core path and — post-cutover — the legacy fallback). The
 // route no longer builds rows by hand, so the local duplicate type was removed.
@@ -111,7 +166,9 @@ async function runDateEnsemble<T extends {
     }
     if (!secondText) {
       const full = await googleVisionProvider.extractText({ imageBuffer, mimeType })
-      if (!isBlocked(full)) { secondText = full.raw_text ?? ''; diag = { ...diag, fallback_chars: secondText.length } }
+      // Ensemble is best-effort: a blocked/provider-error second read just means no
+      // cross-check (fail-open). It NEVER fails the primary extract.
+      if (!isBlocked(full) && !isProviderError(full)) { secondText = full.raw_text ?? ''; diag = { ...diag, fallback_chars: secondText.length } }
     }
     if (secondText) {
       // PII-free diagnostics: do month words / years appear, and how many date candidates parsed?
@@ -263,12 +320,28 @@ async function POST_impl(req: NextRequest) {
       return { i, r }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
+    // HONEST DEGRADATION (P1): collect any typed provider error a page surfaced.
+    const coreProviderErrors: OcrProviderError[] = []
     for (const { i, r } of corePages) {
       corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
       if (r.ok && Array.isArray(r.fields)) {
         buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
         allCandidates.push(...r.fields.map((f) => docintelToCandidate(f, i + 1)))
+      } else if (r.provider_error) {
+        coreProviderErrors.push(r.provider_error)
       }
+    }
+    // FAIL CLOSED: if NO page produced any usable candidate AND at least one page
+    // failed with a typed provider error (429 rate-limit / 5xx / billing / timeout),
+    // the document was NOT read — return an HONEST non-2xx instead of falling
+    // through to the legacy reader (which would hit the SAME throttled provider and
+    // ultimately return HTTP 200 + fields:[], masking the failure). The genuine
+    // empty-but-successful read (provider returned 200, zero fields, NO error) is
+    // unaffected: it produces no provider_error and falls through as before.
+    if (allCandidates.length === 0 && coreProviderErrors.length > 0) {
+      const chosen = pickMostSevereOcrError(coreProviderErrors)
+      console.warn('[Core B2] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: docTypeId, pages: corePageResults.map((p) => p.status) }))
+      return ocrUnavailableResponse(chosen)
     }
     // 1A — MRZ authority for the international passport (flag-gated, default OFF
     // = byte-identical prod). A valid MRZ (Latin, math-checkable) auto-resolves
@@ -279,7 +352,7 @@ async function POST_impl(req: NextRequest) {
       try {
         const firstBuf = Buffer.from(await rawFiles[0].arrayBuffer())
         const vis = await googleVisionProvider.extractText({ imageBuffer: firstBuf, mimeType: rawFiles[0].type || 'image/jpeg' })
-        if (!isBlocked(vis) && vis.raw_text) {
+        if (!isBlocked(vis) && !isProviderError(vis) && vis.raw_text) {
           const mrz = mrzCandidatesForTranslation(vis.raw_text, docTypeId)
           if (mrz.length > 0) {
             allCandidates.push(...mrz)
@@ -383,6 +456,7 @@ async function POST_impl(req: NextRequest) {
   const legacyCandidates: ReturnType<typeof docintelToCandidate>[] = []
   const legacyCyrillicMap = new Map<string, string>()
   const pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; provider?: string; error?: string }> = []
+  const legacyProviderErrors: OcrProviderError[] = []
   let lastResult: Awaited<ReturnType<typeof readDocument>> | null = null
 
   type LegacyPage =
@@ -435,6 +509,7 @@ async function POST_impl(req: NextRequest) {
     const r = p.r
     lastResult = r
     pageResults.push({ page: p.page, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
+    if (!r.ok && r.provider_error) legacyProviderErrors.push(r.provider_error)
     if (r.ok && Array.isArray(r.fields)) {
       // Same as the Core path: build the cyrillic display fallback and collect
       // candidates carrying the page. The arbiter (arbitrateDocument inside
@@ -443,6 +518,16 @@ async function POST_impl(req: NextRequest) {
       buildCyrillicMap(r.fields).forEach((v, k) => { if (!legacyCyrillicMap.has(k)) legacyCyrillicMap.set(k, v) })
       legacyCandidates.push(...r.fields.map((f) => docintelToCandidate(f, p.page)))
     }
+  }
+
+  // FAIL CLOSED (P1): legacy path also hit a typed provider failure and read
+  // nothing usable → honest non-2xx, NOT the generic 200+no_fields. This covers
+  // the case where the Core path returned 0 candidates for a non-HTTP reason and
+  // the legacy retry then hit a 429/5xx/timeout.
+  if (legacyCandidates.length === 0 && legacyProviderErrors.length > 0) {
+    const chosen = pickMostSevereOcrError(legacyProviderErrors)
+    console.warn('[legacy] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: docTypeId, pages: pageResults.map((p) => p.status) }))
+    return ocrUnavailableResponse(chosen)
   }
 
   // Run the canonical pipeline on the collected candidates — identical arbitration

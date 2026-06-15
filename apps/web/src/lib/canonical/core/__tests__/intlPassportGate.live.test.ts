@@ -49,7 +49,7 @@ import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import { getCanonicalValue, getField } from '@/lib/canonical/core/fieldAccessor'
 import { canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
-import { isBlocked } from '@/lib/ocr/types'
+import { isUnusableOcr } from '@/lib/ocr/types'
 import type { FieldCandidate } from '@/lib/canonical/core/types'
 
 const GATE = process.env.RUN_INTL_PASSPORT_GATE === '1'
@@ -192,7 +192,7 @@ async function runCanonical(imagePaths: string[], opts: { withMrz: boolean }) {
         imageBuffer: firstBuf,
         mimeType: 'image/jpeg',
       })
-      if (!isBlocked(vis) && vis.raw_text) {
+      if (!isUnusableOcr(vis) && vis.raw_text) {
         const mrz = mrzCandidatesForTranslation(vis.raw_text, DOC_ID)
         mrzInjected = mrz.length
         allCandidates.push(...mrz)
