@@ -21,8 +21,14 @@ import {
   validateCorrectionValue,
   normalizeValue,
 } from '@/lib/translation/inputValidation'
+// CANONICAL_OVERRIDE_LOOP (P1): route the live correction into the canonical
+// override chain (dual-write) — flag default OFF, legacy write unchanged.
+import { getOverrideLoopMode } from '@/lib/canonical/overrideLoopMode'
+import { appendCorrectionAsCanonicalOverride } from '@/lib/canonical/overrideLoop'
 
 export const dynamic = 'force-dynamic'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const CRITICAL_FIELDS = [
   'surname', 'given_names', 'date_of_birth', 'place_of_birth',
@@ -50,9 +56,10 @@ export async function POST(
     field?: string
     new_value?: string
     reason?: string
+    canonical_document_id?: string
   }
 
-  const { field, new_value, reason = 'manual' } = body
+  const { field, new_value, reason = 'manual', canonical_document_id } = body
 
   // ── Input validation ─────────────────────────────────────────────────────
   const sessionErr = validateSessionId(sessionId)
@@ -198,6 +205,38 @@ export async function POST(
     },
   })
 
+  // ── CANONICAL_OVERRIDE_LOOP (P1): dual-write into the canonical chain ─────
+  // Flag default OFF → this block is skipped entirely; the legacy correction
+  // above is byte-identical to today. In shadow, the legacy write stays
+  // authoritative for output; we additionally append a confirmed canonical
+  // override so resolveCanonicalDocument reflects the human edit. Best-effort:
+  // a canonical failure never affects the 200 returned for the legacy write.
+  // Fail-safe linkage: a canonical override is attempted ONLY when a valid
+  // canonical_document_id was supplied; absent/malformed → legacy-only.
+  let canonicalLoop: 'off' | 'skipped_no_id' | 'appended' | 'not_found' | 'conflict' | 'storage_error' = 'off'
+  const overrideLoopMode = getOverrideLoopMode()
+  if (overrideLoopMode !== 'off') {
+    if (typeof canonical_document_id === 'string' && UUID_RE.test(canonical_document_id)) {
+      const res = await appendCorrectionAsCanonicalOverride({
+        canonicalDocumentId: canonical_document_id,
+        fieldKey: safeField,
+        newValue: correctedValue,
+        source: 'user_edit',
+        actor: 'user',
+        reason: correctionType,
+      })
+      canonicalLoop = res.ok
+        ? 'appended'
+        : res.kind === 'not_found'
+          ? 'not_found'
+          : res.kind === 'conflict'
+            ? 'conflict'
+            : 'storage_error'
+    } else {
+      canonicalLoop = 'skipped_no_id'
+    }
+  }
+
   // ── Recompute gates ──────────────────────────────────────────────────────
   const { data: allFields } = await supabase
     .from('extracted_fields')
@@ -217,6 +256,7 @@ export async function POST(
     confirmed_at: confirmedAt,
     correction_id: correctionRow?.id ?? null,
     correction_type: correctionType,
+    canonical_loop: canonicalLoop,
     gates: {
       can_certify: canCertify,
       critical_confirmed: criticalConfirmed,

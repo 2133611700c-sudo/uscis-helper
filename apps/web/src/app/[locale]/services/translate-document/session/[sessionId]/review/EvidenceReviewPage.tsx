@@ -108,6 +108,9 @@ interface ReviewState {
     scope_title: string
     payment_confirmed: boolean
   }
+  // CANONICAL_OVERRIDE_LOOP (P1): canonical document id for dual-write, when the
+  // flag is on and a canonical doc exists. null/absent → legacy-only (fail-safe).
+  canonical_document_id?: string | null
   fields: ReviewField[]
   document_image_url: string | null
   certification_record: CertificationRecord | null
@@ -694,12 +697,14 @@ function CorrectFieldModal({
   field,
   currentValue,
   sessionId,
+  canonicalDocumentId,
   onSaved,
   onCancel,
 }: {
   field: ReviewField
   currentValue: string
   sessionId: string
+  canonicalDocumentId?: string | null
   onSaved: (field: string, newValue: string) => void
   onCancel: () => void
 }) {
@@ -716,7 +721,14 @@ function CorrectFieldModal({
       const res = await fetch(`/api/translation/${sessionId}/correct-field`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ field: field.field, new_value: value.trim(), reason }),
+        // CANONICAL_OVERRIDE_LOOP (P1): include the canonical id when present so the
+        // server can dual-write; omitted when null → server stays legacy-only.
+        body: JSON.stringify({
+          field: field.field,
+          new_value: value.trim(),
+          reason,
+          ...(canonicalDocumentId ? { canonical_document_id: canonicalDocumentId } : {}),
+        }),
       })
       const json = await res.json()
       if (!json.ok) { setError(json.error ?? 'Save failed'); setSaving(false); return }
@@ -850,12 +862,14 @@ function CorrectFieldModal({
 function EvidenceFieldCard({
   field,
   sessionId,
+  canonicalDocumentId,
   documentImageUrl,
   onConfirmed,
   onCorrected,
 }: {
   field: ReviewField
   sessionId: string
+  canonicalDocumentId?: string | null
   documentImageUrl?: string | null
   onConfirmed: (fieldName: string) => void
   onCorrected: (fieldName: string, newValue: string) => void
@@ -869,7 +883,12 @@ function EvidenceFieldCard({
       const res = await fetch(`/api/translation/${sessionId}/confirm-field`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ field: field.field }),
+        // CANONICAL_OVERRIDE_LOOP (P1): include the canonical id when present so the
+        // server can dual-write; omitted when null → server stays legacy-only.
+        body: JSON.stringify({
+          field: field.field,
+          ...(canonicalDocumentId ? { canonical_document_id: canonicalDocumentId } : {}),
+        }),
       })
       const json = await res.json()
       if (json.ok) onConfirmed(field.field)
@@ -1048,6 +1067,7 @@ function EvidenceFieldCard({
           field={field}
           currentValue={field.normalized_value ?? ''}
           sessionId={sessionId}
+          canonicalDocumentId={canonicalDocumentId}
           onSaved={(f, v) => { setShowCorrect(false); onCorrected(f, v) }}
           onCancel={() => setShowCorrect(false)}
         />
@@ -1720,6 +1740,8 @@ export function EvidenceReviewPage({
   }
 
   const { session, fields, document_image_url, certification_record, review_progress, gates } = state!
+  // CANONICAL_OVERRIDE_LOOP (P1): null/absent when flag OFF or no canonical doc → dual-write skipped.
+  const canonicalDocumentId = state!.canonical_document_id ?? null
 
   // Separate critical from non-critical fields, unconfirmed first
   const criticalFields = fields.filter(f => f.is_critical).sort((a, b) => Number(a.confirmed) - Number(b.confirmed))
@@ -1788,6 +1810,7 @@ export function EvidenceReviewPage({
                 key={f.field}
                 field={f}
                 sessionId={sessionId}
+                canonicalDocumentId={canonicalDocumentId}
                 documentImageUrl={document_image_url}
                 onConfirmed={handleFieldConfirmed}
                 onCorrected={handleFieldCorrected}
@@ -1808,6 +1831,7 @@ export function EvidenceReviewPage({
                 key={f.field}
                 field={f}
                 sessionId={sessionId}
+                canonicalDocumentId={canonicalDocumentId}
                 documentImageUrl={document_image_url}
                 onConfirmed={handleFieldConfirmed}
                 onCorrected={handleFieldCorrected}

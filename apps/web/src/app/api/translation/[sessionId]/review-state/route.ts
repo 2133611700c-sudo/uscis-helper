@@ -15,6 +15,11 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+// CANONICAL_OVERRIDE_LOOP (P1): resolve the canonical_document_id for this session so
+// the review UI can thread it into correct-field/confirm-field (dual-write). Only
+// resolved when the flag is on; absent/null → UI sends nothing → legacy-only (fail-safe).
+import { getOverrideLoopMode } from '@/lib/canonical/overrideLoopMode'
+import { getCanonicalDocumentId } from '@/lib/canonical/persistence'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,8 +106,21 @@ export async function GET(
     Boolean(certData) &&
     Boolean(session.payment_confirmed)
 
+  // CANONICAL_OVERRIDE_LOOP (P1): best-effort resolve the canonical document id so
+  // the UI can dual-write corrections into the canonical chain. Flag OFF → null
+  // (UI sends nothing → legacy-only). A lookup failure is swallowed → null (fail-safe).
+  let canonicalDocumentId: string | null = null
+  if (getOverrideLoopMode() !== 'off' && session.doc_type) {
+    try {
+      canonicalDocumentId = await getCanonicalDocumentId(sessionId, session.doc_type as string)
+    } catch {
+      canonicalDocumentId = null
+    }
+  }
+
   return NextResponse.json({
     ok: true,
+    canonical_document_id: canonicalDocumentId,
     session: {
       session_id: session.session_id,
       status: session.status,
