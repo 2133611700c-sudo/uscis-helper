@@ -1,4 +1,4 @@
-# HANDOFF (2026-06-14 — PR D: cross-instance coordination CANARY endpoint; prod proof = apply migrations + key + run)
+# HANDOFF (2026-06-14 — cross-instance lease PROVEN in prod (DB 5→1); routable canary endpoint for HTTP multi-instance run)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
 ## THIS SESSION (current) — PR D: synthetic cross-instance coordination canary endpoint

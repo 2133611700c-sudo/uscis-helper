@@ -1,20 +1,23 @@
 /**
- * POST /api/_diag/ocr-coordination — CROSS-INSTANCE coordination canary (synthetic).
+ * POST /api/diag/ocr-coordination — CROSS-INSTANCE coordination canary (synthetic).
+ *
+ * NOTE: a plain `diag` segment (NOT `_diag`) — Next.js App Router treats an
+ * underscore-prefixed folder as a PRIVATE (non-routable) folder, so an `/api/_diag/*`
+ * route 404s. This lives under `/api/diag/` so it is actually reachable.
  *
  * Proves the distributed lease (PR B) + secure cache (PR C) elect exactly ONE
  * winner per content key ACROSS Vercel lambda instances — the thing the per-instance
  * in-flight Map could not do. Uses a Postgres-backed lease (shared by all instances)
- * + a SYNTHETIC provider call (a short delay, NO real OCR, NO PII). Auth-gated by the
- * internal diag token; inert (501) unless OCR_CACHE_ENC_KEY is configured.
+ * + a SYNTHETIC provider call (a short delay, NO real OCR, NO PII). Inert (501)
+ * unless OCR_CACHE_ENC_KEY is configured.
+ *
+ * Auth: X-Internal-Diag-Token must equal INTERNAL_DIAG_TOKEN OR OCR_CANARY_TOKEN (a
+ * short-lived canary-only token so the run does not require the global diag secret).
  *
  * Protocol:
  *   - Fire N concurrent POSTs with the SAME ?key=<hash> → expect exactly 1 role=winner
  *     (one provider_called=true) and N-1 role=waiter, ALL returning the identical value.
  *   - A POST with a DIFFERENT ?key → a separate winner (separate synthetic call).
- *
- * Usage:
- *   curl -XPOST -H "X-Internal-Diag-Token: <t>" \
- *     "https://messenginfo.com/api/_diag/ocr-coordination?key=<hash>&delayMs=1500"
  *
  * NO PII: the synthetic value is a fixed token; the only stored data is technical.
  */
@@ -35,10 +38,10 @@ export const runtime = 'nodejs'
 type CanaryVal = { ok: true; text: 'CANARY'; key: string }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // ── Auth ────────────────────────────────────────────────────────────────────
+  // ── Auth: accept the global diag token OR a canary-only token ────────────────
   const token = req.headers.get('x-internal-diag-token')
-  const expected = process.env.INTERNAL_DIAG_TOKEN
-  if (!expected || token !== expected) {
+  const accepted = [process.env.INTERNAL_DIAG_TOKEN, process.env.OCR_CANARY_TOKEN].filter(Boolean)
+  if (!token || !accepted.includes(token)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
