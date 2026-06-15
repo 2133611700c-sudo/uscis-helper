@@ -37,3 +37,39 @@ describe('buildOcrCacheKey', () => {
     expect(() => buildOcrCacheKey({ ...parts, fileSha256: 'deadbeef' })).toThrow(/ocr_cache_key_invalid/)
   })
 })
+
+describe('buildOcrCacheKey — requestSha binding (different prompts never collapse)', () => {
+  const REQ_A = 'b'.repeat(64)
+  const REQ_B = 'c'.repeat(64)
+
+  it('is backward-compatible: omitting requestSha yields the original 5-part key', () => {
+    expect(buildOcrCacheKey(parts)).toBe(`${SHA}:gemini:gemini-3.1-pro-preview:p7:pre2`)
+  })
+
+  it('appends requestSha when present', () => {
+    expect(buildOcrCacheKey({ ...parts, requestSha: REQ_A })).toBe(
+      `${SHA}:gemini:gemini-3.1-pro-preview:p7:pre2:${REQ_A}`,
+    )
+  })
+
+  it('same bytes+provider+model+version but DIFFERENT request → DIFFERENT key (no wrong collapse)', () => {
+    const a = buildOcrCacheKey({ ...parts, requestSha: REQ_A })
+    const b = buildOcrCacheKey({ ...parts, requestSha: REQ_B })
+    expect(a).not.toBe(b)
+  })
+
+  it('identical request → identical key (correct collapse)', () => {
+    expect(buildOcrCacheKey({ ...parts, requestSha: REQ_A })).toBe(
+      buildOcrCacheKey({ ...parts, requestSha: REQ_A }),
+    )
+  })
+
+  it('a key WITH requestSha never equals the same key WITHOUT it', () => {
+    expect(buildOcrCacheKey({ ...parts, requestSha: REQ_A })).not.toBe(buildOcrCacheKey(parts))
+  })
+
+  it('throws on a blank or malformed requestSha (no silent weak binding)', () => {
+    expect(() => buildOcrCacheKey({ ...parts, requestSha: '   ' })).toThrow(/ocr_cache_key_incomplete/)
+    expect(() => buildOcrCacheKey({ ...parts, requestSha: 'deadbeef' })).toThrow(/ocr_cache_key_invalid/)
+  })
+})

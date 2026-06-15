@@ -111,6 +111,10 @@ export function computeCacheKeySha(parts: {
   model: string
   promptVersion: string
   preprocVersion: string
+  /** sha256 of the actual provider request (prompt + gen-config + doc-type). When
+   *  present it is bound into the key so two same-bytes calls with DIFFERENT
+   *  prompts never collapse onto one in-flight dedup result. */
+  requestSha?: string
 }): string {
   const key = buildOcrCacheKey({
     fileSha256: parts.fileSha256,
@@ -118,6 +122,7 @@ export function computeCacheKeySha(parts: {
     modelVersion: parts.model,
     promptVersion: parts.promptVersion,
     preprocessingVersion: parts.preprocVersion,
+    requestSha: parts.requestSha,
   })
   return createHash('sha256').update(key).digest('hex')
 }
@@ -265,6 +270,8 @@ export type OcrGatewayHook = <R>(
       modelVersion: string
       promptVersion: string
       preprocessingVersion: string
+      /** sha256 of the actual provider request — bound into the dedup/cache key. */
+      requestSha?: string
     }
     provider: string
     route: string
@@ -298,6 +305,10 @@ export async function withOcrCostMetrics<T>(
       fileSha256: string
       promptVersion: string
       preprocVersion: string
+      /** sha256 of the actual provider request (prompt + gen-config + doc-type).
+       *  Bound into the dedup/cache key so different prompts on identical bytes
+       *  never collapse. Optional for back-compat; live call sites supply it. */
+      requestSha?: string
       /** Injected for tests; defaults to the live runOcrGateway. */
       hook?: OcrGatewayHook
     }
@@ -319,6 +330,7 @@ export async function withOcrCostMetrics<T>(
               modelVersion: meta.model ?? '',
               promptVersion: meta.gateway!.promptVersion,
               preprocessingVersion: meta.gateway!.preprocVersion,
+              requestSha: meta.gateway!.requestSha,
             },
             provider: meta.provider,
             route: meta.route,
