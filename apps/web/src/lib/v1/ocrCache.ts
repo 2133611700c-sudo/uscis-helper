@@ -48,17 +48,21 @@ export function buildOcrCacheKey(parts: OcrCacheKeyParts): string {
   ].join(':')
 }
 
-/** A cached raw provider response. Immutable: writers must never overwrite a key. */
+/** A cached raw provider response. Immutable: writers must never overwrite a key.
+ *  `expiresAt` (ISO) is the optional TTL boundary; a store MAY treat an entry past
+ *  its expiry as a miss. `rawResponse` is the OCR/AI result and MAY contain PII —
+ *  encrypted-at-rest stores wrap it in ciphertext (see EncryptedOcrCacheStore). */
 export type OcrCacheEntry = {
   key: string
   rawResponse: unknown
   createdAt: string
+  expiresAt?: string
 }
 
 /**
- * Storage contract (implemented later against PRIVATE STAGING storage). Documented
- * invariants: immutable (put fails on existing key), no PII in logs, originals
- * never committed to git, a cache MISS is only filled after budget approval.
+ * Storage contract. Documented invariants: immutable (put fails on existing key),
+ * no PII in logs, a cache MISS is only filled after budget approval, and any store
+ * that persists `rawResponse` MUST do so encrypted-at-rest (the value is PII).
  */
 export interface OcrCacheStore {
   get(key: string): Promise<OcrCacheEntry | null>

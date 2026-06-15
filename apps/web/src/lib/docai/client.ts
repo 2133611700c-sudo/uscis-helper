@@ -164,6 +164,12 @@ export async function processDocument(
         product: 'ocr', route: 'provider:google_docai', provider: DOCAI_PROVIDER_NAME,
         model: config.processorId, cacheKeySha,
         est_cost_usd_micros: estCostUsdMicros(DOCAI_PROVIDER_NAME),
+        // Gateway (cache/dedup/budget) — no-op pass-through until a flag is ON.
+        gateway: {
+          fileSha256: sha256Hex(fileBytes),
+          promptVersion: DOCAI_PROMPT_VERSION,
+          preprocVersion: DOCAI_PREPROC_VERSION,
+        },
       },
       () => fetch(endpoint, {
         method: 'POST',
