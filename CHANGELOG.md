@@ -1,5 +1,7 @@
 # CHANGELOG
 
+<!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
+
 ## 2026-06-14 | P2 Phase 7-B/C — OCR cache + in-flight dedup + budget kill-switch wired (behind flags, default OFF)
 - Branch fix/p2-ocr-cache-budget-wiring off main 77ebe7d. Mitigates the LIVE Google Vision HTTP 429 (vision-extract 200 but internal vision_failed:HTTP 429, fields=0; OCR was uncapped: up to 3 paid calls/upload, no cache/budget/dedup). ONE runtime PR. ALL behind flags, DEFAULT OFF, strict OFF-parity (all-off ⇒ byte-identical: gateway is a pure pass-through, provider runs exactly as today).
 - NEW apps/web/src/lib/v1/ocrGateway.ts — runOcrGateway single chokepoint: BUDGET (per-provider/per-UTC-day; enforce blocks at cap → typed OcrBudgetExceededError fail-closed; shadow counts, never blocks) → CACHE (enforce HIT serves decrypted value w/ NO provider call, MISS calls+stores encrypted w/ TTL; shadow looks up + logs hit/miss but STILL calls + NO substitution) → DEDUP single-flight (concurrent identical-key calls share ONE promise ⇒ ONE provider call). Flags (env, default OFF): OCR_CACHE_MODE=off|shadow|enforce, OCR_DEDUP_ENABLED=0|1, OCR_BUDGET_MODE=off|shadow|enforce, OCR_BUDGET_DAILY_USD. Manual kill-switch: OCR_BUDGET_MODE=enforce + OCR_BUDGET_DAILY_USD=0 ⇒ block all paid calls instantly.
