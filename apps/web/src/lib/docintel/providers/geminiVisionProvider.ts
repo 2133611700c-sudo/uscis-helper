@@ -106,6 +106,12 @@ async function callGemini(
       {
         product: 'ocr', route: 'provider:gemini_vision', provider: GEMINI_PROVIDER_NAME,
         model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros(GEMINI_PROVIDER_NAME, model),
+        // Gateway (cache/dedup/budget) — no-op pass-through until a flag is ON.
+        gateway: {
+          fileSha256: sha256Hex(imageB64),
+          promptVersion: GEMINI_PROMPT_VERSION,
+          preprocVersion: GEMINI_PREPROC_VERSION,
+        },
       },
       () => fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
