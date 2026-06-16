@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-16 | Handwritten date targeted experiment → formally accepted limitation
+- Ran 5 input strategies x2 (full-page, crop, zoom, contrast) on the real handwritten birth-cert date; GT never sent, no cross-document data. Result: day+year correct, cursive MONTH read confidently-WRONG (н/л: июня->июля) and repeatable; model never self-reports UNSURE; preprocessing does not fix it. Disclosed+corrected a format bug in my own first compare script (raw verification authoritative).
+- VERDICT: handwritten date stays review/null (current pipeline behavior correct). No safe narrow reader/prompt fix; cross-document MRZ not used to 'fix' it (out of scope). docs/reports/HANDWRITTEN_DATE_EXPERIMENT.md records the formally accepted limitation.
+- Open held-out gate: prove handwritten-critical-date->review is ROBUST so a confident-wrong value can NEVER auto-finalize. Needs held-out corpus. No reader code changed.
 ## 2026-06-16 | Cyrillic FIELD APPLICABILITY AUDIT + honest recompute (no metric gaming)
 - Looked at the REAL source images: doc-A ('internal_passport') is the INTERNATIONAL passport (MRZ) and a duplicate of doc-E → removed from corpus. doc-B==doc-C by SHA → counted once.
 - Runner: added APPLICABILITY map (sex NOT_PRESENT on ua_military_id, DERIVABLE on ua_birth_certificate — verified physically absent as explicit fields) → excluded from document-native OCR accuracy, recorded as application_required_not_document_sourced. Added SHA-dedup in the metric rollup (counted_in_accuracy). NO reader-contract sex-stuffing (would have been metric gaming).
