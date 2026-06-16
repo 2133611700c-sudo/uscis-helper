@@ -66,7 +66,22 @@ const FIELD_MAP: Record<string, Record<string, { latin: string; cyr?: string }>>
   ua_internal_passport_booklet: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_military_id:               { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_birth_certificate:         { ...PERSON('child_'), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
+  ua_international_passport:     { ...PERSON(), passport_number: { latin: 'passport_number' }, dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' }, passport_expiration_date: { latin: 'passport_expiration_date' }, date_of_issue: { latin: 'date_of_issue' }, city_of_birth: { latin: 'place_of_birth_english' } },
 }
+
+// FIELD APPLICABILITY per (doc type, field), established by inspecting the REAL
+// source images. A field is scored for DOCUMENT-NATIVE OCR accuracy ONLY when it is
+// EXPLICIT on the source. NOT_PRESENT / DERIVABLE fields are NOT OCR failures — they
+// belong to APPLICATION COMPLETENESS (filled from MRZ / another document / user input)
+// and are reported separately, never penalising the OCR number.
+//   - ua_military_id.sex     = NOT_PRESENT  (military booklet page has no sex field)
+//   - ua_birth_certificate.sex = DERIVABLE  (no explicit field; only grammar народився)
+const APPLICABILITY: Record<string, Record<string, 'EXPLICIT' | 'NOT_PRESENT' | 'DERIVABLE'>> = {
+  ua_military_id:        { sex: 'NOT_PRESENT' },
+  ua_birth_certificate:  { sex: 'DERIVABLE' },
+}
+const fieldApplicability = (docType: string, field: string): 'EXPLICIT' | 'NOT_PRESENT' | 'DERIVABLE' =>
+  APPLICABILITY[docType]?.[field] ?? 'EXPLICIT'
 
 const sha256 = (b: Buffer) => createHash('sha256').update(b).digest('hex')
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -83,7 +98,7 @@ async function readWithRetry(buf: Buffer, docTypeId: string): Promise<{ result: 
   if (!process.env.GEMINI_API_KEY) return { result: { ok: false, doc_type_id: docTypeId, fields: [], anchor_read: false, provider: null, model: null, ms: 0, status: 'no_key' } as never, providerStatus: 'NO_KEY' }
   let last!: Awaited<ReturnType<typeof readDocument>>
   for (let attempt = 1; attempt <= 3; attempt++) {
-    last = await readDocument(buf, 'image/jpeg', docTypeId, {})
+    last = await readDocument(buf, 'image/jpeg', docTypeId, { timeoutMs: 120000 })
     if (last.ok) {
       // HARD GATE: a read that succeeded only via a fallback model is NOT acceptance-valid.
       const verdict = acceptanceModelVerdict(last.model)
@@ -139,11 +154,17 @@ async function main() {
     // Build GT (scored fields ONLY = owner-verified) + produced fields for the corrected scorer.
     const gtFields: GroundTruth['fields'] = {}
     const produced: AcceptanceProducedField[] = []
+    const applicationRequired: { field: string; applicability: string }[] = []
     let rawCyrillicReached = 0, rawCyrillicExpected = 0
     for (const [routeField, m] of Object.entries(map)) {
       const isVerified = verified.includes(m.latin) || (m.cyr && verified.includes(m.cyr)) ||
         (routeField === 'dob' && verified.includes('date_of_birth')) || (routeField === 'sex' && verified.includes('sex'))
       if (!isVerified) continue
+      // APPLICABILITY: a field NOT_PRESENT or only DERIVABLE on the source is NOT a
+      // document-native OCR field — exclude it from OCR accuracy and record it for
+      // application completeness (must come from MRZ / another document / user input).
+      const applic = fieldApplicability(e.docTypeId, routeField)
+      if (applic !== 'EXPLICIT') { applicationRequired.push({ field: routeField, applicability: applic }); continue }
       const expLatin = gt[m.latin]
       if (expLatin == null || expLatin === '') continue
       gtFields[routeField] = { value: String(expLatin), critical: true }
@@ -160,7 +181,9 @@ async function main() {
     const { metrics, verdicts } = scoreDocumentAcceptance(produced, gtDoc)
     // ADR-018 LAW: ONLY a primary-reader read contributes a quality/acceptance number.
     // A fallback (flash) read is recorded but NEVER aggregated as quality.
-    if (providerStatus === 'ok') perDocMetrics.push(metrics)
+    // SHA dedup: a byte-identical image (same document under two labels) is ONE
+    // quality sample — never double-count it in the accuracy denominator.
+    if (providerStatus === 'ok' && !dupOf) perDocMetrics.push(metrics)
 
     inventory.push({
       opaque_id: e.opaque_id, doc_type: e.docTypeId, image_present: true,
@@ -170,6 +193,8 @@ async function main() {
       acceptance_scored: providerStatus === 'ok',
       read_status: result.status, fields_returned: (result.fields ?? []).length,
       raw_cyrillic_reached: `${rawCyrillicReached}/${rawCyrillicExpected}`,
+      application_required_not_document_sourced: applicationRequired,
+      counted_in_accuracy: providerStatus === 'ok' && !dupOf,
     })
     // private detail (WITH no values — only field-level verdicts + flags) → gitignored
     privateDetail.push({ opaque_id: e.opaque_id, providerStatus, metrics, verdicts })
