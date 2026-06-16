@@ -49,6 +49,7 @@
 > History: [CHANGELOG.md](CHANGELOG.md) and [docs/STATUS_ARCHIVE.md](docs/STATUS_ARCHIVE.md).
 > Do not stack historical status blocks here (CI: `scripts/verify-release-state.mjs`).
 > **V1 pipeline:** [V1_COMPLETION.yaml](V1_COMPLETION.yaml) · board [V1_STATUS.md](V1_STATUS.md). Phases 1–3 PASS (control plane, dark-code inventory, document registry); **active = GROUND_TRUTH_CORPUS_AND_CACHE** (phase 4). Phase-4 cache half (budget-gated OCR cache) built; ground-truth + paid benchmark remain. Benchmark run: PDF proof 3/3 PASS, recognition 0-fabricated on verified set (I-94 canonical = SAME with correct fixture). BLOCKER: Stripe TEST keys absent (only LIVE) → Stripe Test Mode E2E blocked.
+> **Cyrillic acceptance (real run 2026-06-16):** 6 unique real docs. Critical fields 22 (cyr) → 15 EXACT (68%) / 4 EMPTY / 3 REVIEW / **0 DIFFERENT / 0 fabricated / 0 false-final**. EAD+I-94: 11 SAME/1 EMPTY/0 fab. Загранпаспорт 8/8 EXACT. NOT_READY (need ~91%). Dominant gap: sex field (4 docs).
 > **PII ledger (crit #9):** server ledger PROVEN E2E + TPS wizard WIRED behind NEXT_PUBLIC_SERVER_LEDGER_ENABLED (default OFF, byte-identical; tsc+build green). READY, NOT verified-live. Re-Parole/Translate hydrate is inline/entangled → need refactor + browser smoke.
 
 ## Production
@@ -81,3 +82,4 @@
 
 ## Hard "do NOT" (standing)
 Do not: add a new product · rewrite Canonical Core · enable global enforce · claim handwriting is fully recognized · treat one document as type-coverage · commit real originals/ground-truth-with-PII · keep using production as a test lab · treat test count as user-path proof · let the Brain guess unreadable values.
+<!-- 2026-06-16: CYRILLIC FIELD APPLICABILITY AUDIT (looked at real source images). FINDINGS: doc-A "internal_passport" is actually the INTERNATIONAL passport (MRZ) AND a duplicate of doc-E → removed. doc-B==doc-C by SHA → counted once. sex NOT_PRESENT on military booklet, DERIVABLE-only on birth cert (no explicit field) → excluded from document-native OCR accuracy, tracked as application_required (from MRZ/passport). RECOMPUTED honest baseline on 3 unique real docs: document_native_exact 12/13=92%, 0 empty, 1 review (handwritten birth dob, safe null), 0 wrong, 0 fabricated, 0 false_final. The old 68% was a measurement artifact (mislabel+dup+penalising absent fields), NOT bad OCR. Production verdict NOT_READY (3 docs/1 person = diagnostic set; need held-out corpus). -->
