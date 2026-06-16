@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-16 | First REAL document benchmark (Gemini paid key live) + runner reproducibility
+- cyrillic-acceptance runner: added ua_international_passport to FIELD_MAP (8 critical fields, all EXACT) + raised read timeout to 120s (handwritten birth cert was failing on the 45s deadline; now reads in ~60s). SHA dedup already present (doc-B==doc-C same image → 4 unique cyrillic images).
+- REAL result on 6 unique private documents (4 cyr images + EAD + I-94): 22 cyr critical fields → 15 EXACT (68%) / 4 EMPTY / 3 REVIEW / 0 DIFFERENT / **0 fabricated / 0 false-final**. EAD+I-94: 11 SAME / 1 EMPTY / 0 fabricated. Загранпаспорт: 8/8 EXACT.
+- HONEST: NOT production-ready (68% exact, narrow owner-only corpus). The 3 'different' are REVIEW (flagged, not wrong). Dominant gap = sex field (empty/review on 4/5 cyr docs). docs/reports/CYRILLIC_PILOT_ACCEPTANCE.json is PII-free.
+- No new infra. Next: diagnose+fix the 7 imperfect fields (sex, patronymic, handwritten dob), re-run same set, target 20/22.
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
 ## 2026-06-15 | Model-matrix enforcement — make "measure acceptance on a fallback model" impossible

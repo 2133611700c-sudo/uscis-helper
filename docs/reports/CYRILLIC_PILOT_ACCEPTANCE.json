@@ -2,11 +2,11 @@
   "title": "CYRILLIC_PILOT_ACCEPTANCE_COMPLETE",
   "note": "Apparatus + small-sample pilot. EMPTY/review/null are NEVER counted as success.",
   "runner_status": "READY",
-  "provider_status": "BLOCKED_PROVIDER_RATE_QUOTA",
-  "pilot_result": "BLOCKED_PROVIDER_RATE_QUOTA",
-  "private_images_found": 3,
-  "verified_gt_found": 4,
-  "matched_image_gt_pairs": 4,
+  "provider_status": "ok",
+  "pilot_result": "NOT_READY",
+  "private_images_found": 4,
+  "verified_gt_found": 5,
+  "matched_image_gt_pairs": 5,
   "duplicate_images": [
     {
       "opaque_id": "doc-C",
@@ -16,13 +16,14 @@
   "document_types_tested": [
     "ua_internal_passport_booklet",
     "ua_birth_certificate",
-    "ua_military_id"
+    "ua_military_id",
+    "ua_international_passport"
   ],
-  "critical_fields_expected": 14,
-  "critical_exact_matches": null,
-  "critical_empty": null,
-  "fabricated_critical": null,
-  "false_final_critical": null,
+  "critical_fields_expected": 22,
+  "critical_exact_matches": 15,
+  "critical_empty": 4,
+  "fabricated_critical": 0,
+  "false_final_critical": 0,
   "inventory": [
     {
       "opaque_id": "doc-A",
@@ -32,10 +33,13 @@
       "bytes": 4091062,
       "duplicate_of": null,
       "verified_critical_fields": 5,
-      "provider_status": "BLOCKED_PROVIDER_RATE_QUOTA",
-      "read_status": "vision_failed:HTTP 429",
-      "fields_returned": 0,
-      "raw_cyrillic_reached": "0/3"
+      "provider_status": "ok",
+      "model_used": "gemini-3.1-pro-preview",
+      "primary_reader_required": "gemini-3.1-pro-preview",
+      "acceptance_scored": true,
+      "read_status": "ok:gemini-3.1-pro-preview:7905ms:8f",
+      "fields_returned": 8,
+      "raw_cyrillic_reached": "2/3"
     },
     {
       "opaque_id": "doc-B",
@@ -45,9 +49,12 @@
       "bytes": 7072376,
       "duplicate_of": null,
       "verified_critical_fields": 2,
-      "provider_status": "BLOCKED_PROVIDER_RATE_QUOTA",
-      "read_status": "vision_failed:HTTP 429",
-      "fields_returned": 0,
+      "provider_status": "ok",
+      "model_used": "gemini-3.1-pro-preview",
+      "primary_reader_required": "gemini-3.1-pro-preview",
+      "acceptance_scored": true,
+      "read_status": "ok:gemini-3.1-pro-preview:60333ms:12f",
+      "fields_returned": 12,
       "raw_cyrillic_reached": "0/0"
     },
     {
@@ -58,9 +65,12 @@
       "bytes": 7072376,
       "duplicate_of": "doc-B",
       "verified_critical_fields": 2,
-      "provider_status": "BLOCKED_PROVIDER_RATE_QUOTA",
-      "read_status": "vision_failed:HTTP 429",
-      "fields_returned": 0,
+      "provider_status": "ok",
+      "model_used": "gemini-3.1-pro-preview",
+      "primary_reader_required": "gemini-3.1-pro-preview",
+      "acceptance_scored": true,
+      "read_status": "ok:gemini-3.1-pro-preview:26346ms:12f",
+      "fields_returned": 12,
       "raw_cyrillic_reached": "0/0"
     },
     {
@@ -71,10 +81,29 @@
       "bytes": 4787506,
       "duplicate_of": null,
       "verified_critical_fields": 5,
-      "provider_status": "BLOCKED_PROVIDER_RATE_QUOTA",
-      "read_status": "vision_failed:HTTP 429",
-      "fields_returned": 0,
-      "raw_cyrillic_reached": "0/3"
+      "provider_status": "ok",
+      "model_used": "gemini-3.1-pro-preview",
+      "primary_reader_required": "gemini-3.1-pro-preview",
+      "acceptance_scored": true,
+      "read_status": "ok:gemini-3.1-pro-preview:6492ms:5f",
+      "fields_returned": 5,
+      "raw_cyrillic_reached": "3/3"
+    },
+    {
+      "opaque_id": "doc-E",
+      "doc_type": "ua_international_passport",
+      "image_present": true,
+      "image_sha256_prefix": "ec2de594c234",
+      "bytes": 716605,
+      "duplicate_of": null,
+      "verified_critical_fields": 8,
+      "provider_status": "ok",
+      "model_used": "gemini-3.1-pro-preview",
+      "primary_reader_required": "gemini-3.1-pro-preview",
+      "acceptance_scored": true,
+      "read_status": "ok:gemini-3.1-pro-preview:5804ms:8f",
+      "fields_returned": 8,
+      "raw_cyrillic_reached": "2/2"
     }
   ],
   "per_type": [
@@ -82,16 +111,15 @@
       "doc_type": "ua_internal_passport_booklet",
       "documents": 1,
       "critical_fields_total": 5,
-      "critical_exact_match": 0,
-      "empty_critical_fields": 5,
+      "critical_exact_match": 0.6,
+      "empty_critical_fields": 1,
       "fabricated_critical_fields": 0,
       "wrong_transliterations": 0,
       "mrz_conflicts": 0,
-      "review_required": 0,
+      "review_required": 5,
       "production_ready": false,
       "not_ready_reasons": [
-        "critical_exact_match=0.0% (<95%)",
-        "all critical EMPTY"
+        "critical_exact_match=60.0% (<95%)"
       ]
     },
     {
@@ -99,32 +127,43 @@
       "documents": 2,
       "critical_fields_total": 4,
       "critical_exact_match": 0,
-      "empty_critical_fields": 4,
+      "empty_critical_fields": 2,
       "fabricated_critical_fields": 0,
       "wrong_transliterations": 0,
       "mrz_conflicts": 0,
-      "review_required": 0,
+      "review_required": 2,
       "production_ready": false,
       "not_ready_reasons": [
-        "critical_exact_match=0.0% (<95%)",
-        "all critical EMPTY"
+        "critical_exact_match=0.0% (<95%)"
       ]
     },
     {
       "doc_type": "ua_military_id",
       "documents": 1,
       "critical_fields_total": 5,
-      "critical_exact_match": 0,
-      "empty_critical_fields": 5,
+      "critical_exact_match": 0.8,
+      "empty_critical_fields": 1,
+      "fabricated_critical_fields": 0,
+      "wrong_transliterations": 0,
+      "mrz_conflicts": 0,
+      "review_required": 4,
+      "production_ready": false,
+      "not_ready_reasons": [
+        "critical_exact_match=80.0% (<95%)"
+      ]
+    },
+    {
+      "doc_type": "ua_international_passport",
+      "documents": 1,
+      "critical_fields_total": 8,
+      "critical_exact_match": 1,
+      "empty_critical_fields": 0,
       "fabricated_critical_fields": 0,
       "wrong_transliterations": 0,
       "mrz_conflicts": 0,
       "review_required": 0,
-      "production_ready": false,
-      "not_ready_reasons": [
-        "critical_exact_match=0.0% (<95%)",
-        "all critical EMPTY"
-      ]
+      "production_ready": true,
+      "not_ready_reasons": []
     }
   ]
 }

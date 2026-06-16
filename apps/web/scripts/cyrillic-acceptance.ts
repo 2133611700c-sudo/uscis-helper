@@ -66,6 +66,7 @@ const FIELD_MAP: Record<string, Record<string, { latin: string; cyr?: string }>>
   ua_internal_passport_booklet: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_military_id:               { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_birth_certificate:         { ...PERSON('child_'), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
+  ua_international_passport:     { ...PERSON(), passport_number: { latin: 'passport_number' }, dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' }, passport_expiration_date: { latin: 'passport_expiration_date' }, date_of_issue: { latin: 'date_of_issue' }, city_of_birth: { latin: 'place_of_birth_english' } },
 }
 
 const sha256 = (b: Buffer) => createHash('sha256').update(b).digest('hex')
@@ -83,7 +84,7 @@ async function readWithRetry(buf: Buffer, docTypeId: string): Promise<{ result: 
   if (!process.env.GEMINI_API_KEY) return { result: { ok: false, doc_type_id: docTypeId, fields: [], anchor_read: false, provider: null, model: null, ms: 0, status: 'no_key' } as never, providerStatus: 'NO_KEY' }
   let last!: Awaited<ReturnType<typeof readDocument>>
   for (let attempt = 1; attempt <= 3; attempt++) {
-    last = await readDocument(buf, 'image/jpeg', docTypeId, {})
+    last = await readDocument(buf, 'image/jpeg', docTypeId, { timeoutMs: 120000 })
     if (last.ok) {
       // HARD GATE: a read that succeeded only via a fallback model is NOT acceptance-valid.
       const verdict = acceptanceModelVerdict(last.model)
