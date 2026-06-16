@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-16 | Cyrillic FIELD APPLICABILITY AUDIT + honest recompute (no metric gaming)
+- Looked at the REAL source images: doc-A ('internal_passport') is the INTERNATIONAL passport (MRZ) and a duplicate of doc-E → removed from corpus. doc-B==doc-C by SHA → counted once.
+- Runner: added APPLICABILITY map (sex NOT_PRESENT on ua_military_id, DERIVABLE on ua_birth_certificate — verified physically absent as explicit fields) → excluded from document-native OCR accuracy, recorded as application_required_not_document_sourced. Added SHA-dedup in the metric rollup (counted_in_accuracy). NO reader-contract sex-stuffing (would have been metric gaming).
+- HONEST RECOMPUTED BASELINE (3 unique real docs): document_native_exact 12/13 = 92%; 0 empty, 1 review (handwritten birth dob → safe null), 0 wrong, 0 fabricated, 0 false_final. Loadbearing finding: the earlier 68% was a measurement artifact (mislabel + dup + penalising absent fields), NOT bad recognition. International passport 8/8, military id 4/4.
+- NOT production-ready: 3 documents of one person = diagnostic set. Held-out corpus (other people/years/qualities) required before any production verdict. No new infra.
+## 2026-06-16 | First REAL document benchmark (Gemini paid key live) + runner reproducibility
+- cyrillic-acceptance runner: added ua_international_passport to FIELD_MAP (8 critical fields, all EXACT) + raised read timeout to 120s (handwritten birth cert was failing on the 45s deadline; now reads in ~60s). SHA dedup already present (doc-B==doc-C same image → 4 unique cyrillic images).
+- REAL result on 6 unique private documents (4 cyr images + EAD + I-94): 22 cyr critical fields → 15 EXACT (68%) / 4 EMPTY / 3 REVIEW / 0 DIFFERENT / **0 fabricated / 0 false-final**. EAD+I-94: 11 SAME / 1 EMPTY / 0 fabricated. Загранпаспорт: 8/8 EXACT.
+- HONEST: NOT production-ready (68% exact, narrow owner-only corpus). The 3 'different' are REVIEW (flagged, not wrong). Dominant gap = sex field (empty/review on 4/5 cyr docs). docs/reports/CYRILLIC_PILOT_ACCEPTANCE.json is PII-free.
+- No new infra. Next: diagnose+fix the 7 imperfect fields (sex, patronymic, handwritten dob), re-run same set, target 20/22.
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
 ## 2026-06-15 | Model-matrix enforcement — make "measure acceptance on a fallback model" impossible
