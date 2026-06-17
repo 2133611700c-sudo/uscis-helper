@@ -25,6 +25,8 @@ import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPol
 import { identityHash, decideStatus, applySelfConsistencyOutcome } from './selfConsistency'
 import { recordDocumentClassMetric, type MetricProduct } from './documentClassMetric'
 import { classifyProviderError } from '@/lib/ocr/ocrErrors'
+import { coordinatedDocumentRead } from './coordinatedDocumentRead'
+import { OcrCoordinationUnavailable } from '@/lib/v1/ocrCoordination'
 import type {
   DocumentReadResult,
   ExtractedDocField,
@@ -35,7 +37,14 @@ export async function readDocument(
   imageBuffer: Buffer,
   mimeType: string,
   docTypeId: string,
-  opts: { provider?: VisionProvider; timeoutMs?: number; attemptsPerModel?: number; product?: MetricProduct } = {},
+  opts: {
+    provider?: VisionProvider
+    timeoutMs?: number
+    attemptsPerModel?: number
+    product?: MetricProduct
+    /** Tenant/session scope bound into the OCR coordination cache key (isolation). */
+    cacheScope?: string
+  } = {},
 ): Promise<DocumentReadResult> {
   const spec = getDocTypeSpec(docTypeId)
   if (!spec) {
@@ -64,11 +73,31 @@ export async function readDocument(
     }
   }
 
+  // OCR COORDINATION (issue #161, OCR_DISTRIBUTED_DEDUP_MODE, default off): the ONE
+  // provider call runs through the cross-instance lease + secure cache. off ⇒
+  // byte-identical direct call. enforce ⇒ a winner-failure/loser-timeout surfaces
+  // OcrCoordinationUnavailable, which we map to an honest non-2xx (never a crash).
   const provider = opts.provider ?? defaultVisionProvider
-  const read = await provider.readFields(imageBuffer, mimeType, spec, {
-    timeoutMs: opts.timeoutMs,
-    attemptsPerModel: opts.attemptsPerModel,
-  })
+  let read
+  try {
+    read = await coordinatedDocumentRead(imageBuffer, mimeType, spec, docTypeId, provider, {
+      timeoutMs: opts.timeoutMs,
+      attemptsPerModel: opts.attemptsPerModel,
+      tenantScope: opts.cacheScope,
+      product: opts.product,
+    })
+  } catch (err) {
+    if (err instanceof OcrCoordinationUnavailable) {
+      return {
+        ok: false, doc_type_id: docTypeId, fields: [], anchor_read: false,
+        provider: provider.name, model: null, ms: 0,
+        status: `ocr_unavailable:${err.errorClass}`,
+        error: err.message,
+        provider_error: classifyProviderError(503, undefined, { marker: err.errorClass }),
+      }
+    }
+    throw err
+  }
 
   if (!read.ok) {
     // Honest degradation (P1): classify the provider failure into a typed OCR
