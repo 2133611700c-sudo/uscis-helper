@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-17 | PR-1 / #161 — OCR coordination wired into the live readDocument path
+- New `apps/web/src/lib/docintel/coordinatedDocumentRead.ts`: wraps the single Gemini-Vision `provider.readFields()` call inside `readDocument()` with the cross-instance lease + secure cache. One chokepoint covers TPS-canonical + EAD + Translation.
+- Mode `OCR_DISTRIBUTED_DEDUP_MODE` (default **off** = byte-identical; **shadow** = probe + metrics, no substitution; **enforce** = cross-instance single-flight, staging-only). Production behavior UNCHANGED (flag off).
+- Safety invariants: 429/5xx/timeout/empty reads NEVER cached as success; cache key binds a tenant/session scope (cross-tenant isolation); missing `OCR_CACHE_ENC_KEY` or any setup error → fail-safe direct provider call; enforce exhaustion → `OcrCoordinationUnavailable` mapped to an honest non-2xx in `readDocument`. Self-consistency re-reads stay un-coordinated by design.
+- ADR-022 records the decision + rollout (off → staging shadow → product-scoped enforce canary). Issue #161.
+- Evidence: `tsc --noEmit` 0 errors; `vitest src/lib/docintel src/lib/v1` = 399 pass, incl. 10 NEW wiring proofs (off-parity, shadow no-substitution, single-flight reuse, tenant isolation, failure-not-cached, empty-not-cached, structured-unavailable, fail-safe).
+- Out of scope: TPS legacy raw-OCR path (`ocrProvider.extractText`, Google Vision) — a separate provider.
+
 ## 2026-06-17 | V1 Final Delivery Program opened (release-owner mode)
 - CI proven on main `acaa7177`: V1 Fast Gates run 27719837245 green with real steps (typecheck/unit/content all success).
 - Actions spend cut: disabled all 13 cron-scheduled workflows (OCR Availability Probe, Prod Safety Monitor, L1 Guard-Block/Daily/Escalation, USCIS/Federal/YouTube monitors, Dead Link, Supabase Drift, Form Edition, V1 Nightly Staging, V1 Production Read-Only Smoke, V1 Document Benchmark). ~3,300 runs/month avoided. Kept: V1 Fast Gates (PR+main), gate guards, Post-Deploy smokes, Vercel checks, manual dispatch.
