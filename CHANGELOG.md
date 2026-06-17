@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-17 | GitHub Actions budget block resolved + CI-bypass governance record
+- Root cause of repo-wide instant CI failures PROVEN (not assumed): check-run annotation "The job was not started because an Actions budget is preventing further use." All jobs had steps:[] (provisioning refusal), repo-wide across PRs + scheduled crons; vercel checks passed (separate infra) — the diagnostic asymmetry.
+- Owner raised the Actions budget. Control rerun at 2026-06-17T21:03:44Z executed with REAL steps (Set up job→checkout→setup-node→pnpm→Install→typecheck/tests) and went GREEN — confirms provisioning restored. Last budget-blocked run was 20:00:32Z (>1h earlier); ordering proves restore happened in between.
+- Governance: CI_BYPASSED_DUE_TO_ACTIONS_BILLING — PR #158 (docs-only handwritten-date limitation, cbb7f1c, runtime_changes=none) was admin-merged during the block; this commit is the required post-restore validation on current main. Disabled noise-cron "L1 Escalation Tick" (293374888) re-enabled.
+- No application/runtime code changed. Next per plan: held-out corpus from owner before any production-ready verdict.
+
 ## 2026-06-16 | Handwritten date targeted experiment → formally accepted limitation
 - Ran 5 input strategies x2 (full-page, crop, zoom, contrast) on the real handwritten birth-cert date; GT never sent, no cross-document data. Result: day+year correct, cursive MONTH read confidently-WRONG (н/л: июня->июля) and repeatable; model never self-reports UNSURE; preprocessing does not fix it. Disclosed+corrected a format bug in my own first compare script (raw verification authoritative).
 - VERDICT: handwritten date stays review/null (current pipeline behavior correct). No safe narrow reader/prompt fix; cross-document MRZ not used to 'fix' it (out of scope). docs/reports/HANDWRITTEN_DATE_EXPERIMENT.md records the formally accepted limitation.
