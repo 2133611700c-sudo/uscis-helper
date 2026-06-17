@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-17 | V1 Final Delivery Program opened (release-owner mode)
+- CI proven on main `acaa7177`: V1 Fast Gates run 27719837245 green with real steps (typecheck/unit/content all success).
+- Actions spend cut: disabled all 13 cron-scheduled workflows (OCR Availability Probe, Prod Safety Monitor, L1 Guard-Block/Daily/Escalation, USCIS/Federal/YouTube monitors, Dead Link, Supabase Drift, Form Edition, V1 Nightly Staging, V1 Production Read-Only Smoke, V1 Document Benchmark). ~3,300 runs/month avoided. Kept: V1 Fast Gates (PR+main), gate guards, Post-Deploy smokes, Vercel checks, manual dispatch.
+- Created GitHub control plane: #159 (V1 FINAL DELIVERY PROGRAM — single release-gate truth + product matrix + honest gate table), #160 (BLOCKER: staging not provisioned — exact owner checklist), #161 (wire coordinateOrShadow into real OCR path — safe off-default design + 9 mandatory proofs).
+- PR #119 (Translation V2) triaged: KEEP_DRAFT → REBUILD_FROM_MAIN (gated on #160) → CLOSE_AS_SUPERSEDED. Not merged (CONFLICTING, 40 commits behind, unproven migrations/Stripe).
+- Ground truth (Explore audit): coordinateOrShadow defined+tested but invoked only by diag canary, not the real path; OCR_DISTRIBUTED_DEDUP_MODE default off; payment gates enforced for Re-Parole + Translation (owner-only bypass); all feature flags default safe-OFF/shadow; stagingContract enforced but environment not provisioned.
+- SOURCE_OF_TRUTH.md now points to #159 as live tracker. No application/runtime code changed this session. V1 verdict: NOT_READY.
+
 ## 2026-06-17 | GitHub Actions budget block resolved + CI-bypass governance record
 - Root cause of repo-wide instant CI failures PROVEN (not assumed): check-run annotation "The job was not started because an Actions budget is preventing further use." All jobs had steps:[] (provisioning refusal), repo-wide across PRs + scheduled crons; vercel checks passed (separate infra) — the diagnostic asymmetry.
 - Owner raised the Actions budget. Control rerun at 2026-06-17T21:03:44Z executed with REAL steps (Set up job→checkout→setup-node→pnpm→Install→typecheck/tests) and went GREEN — confirms provisioning restored. Last budget-blocked run was 20:00:32Z (>1h earlier); ordering proves restore happened in between.
