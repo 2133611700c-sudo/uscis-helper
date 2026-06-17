@@ -1,6 +1,8 @@
 # SOURCE_OF_TRUTH.md
 Purpose: define canonical modules. Prevent duplication. Stop re-litigation.
 
+> **LIVE V1 PROGRAM TRACKER:** GitHub issue #159 "USCIS HELPER V1 — FINAL DELIVERY PROGRAM" is the single source of release-gate truth. Blockers: #160 (staging not provisioned), #161 (OCR coordination not on real path). PR #119 (Translation V2) = KEEP_DRAFT→REBUILD_FROM_MAIN→supersede. V1 verdict as of 2026-06-17: **NOT_READY**.
+
 ## Canonical normalization layer
 - `packages/knowledge/src/dictionary.ts` — authorities, geography, field labels, oblasts, blocklist
 - `packages/knowledge/src/normalize.ts` — normalizeName, normalizeDate, normalizeSex, normalizeAuthority, normalizePlace, validateOutput
