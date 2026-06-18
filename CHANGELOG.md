@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-17 | #160 staging provisioning prepared (CI-native, secrets stay in GitHub)
+- Owner created an ISOLATED staging Supabase (ref `rxnlpvldngxgdxkxoaaj`, us-west-1, bucket `images` private) — distinct from prod `rtfxrlountkoegsseukx`. It is under a different Supabase account, so the local CLI (authed to prod account) cannot manage it; provisioning is therefore done via CI.
+- `docs/reports/STAGING_MIGRATION_SAFETY.md`: scanned all 44 migrations — SAFE for a fresh staging apply. The 38 "destructive" matches are parameterized cleanup function bodies, a dedup that no-ops on an empty DB, and an in-sequence schema-minimize; the 6 prod-value matches are SQL comments + disclaimer content text. No unguarded DROP/TRUNCATE, no live keys.
+- `.github/workflows/staging-provision.yml`: manual `workflow_dispatch` that links the staging project, runs a dry-run diff, applies migrations (`db push`, confirm=APPLY only), and verifies tables/RLS/functions/triggers/migration-count via psql. A hard guard aborts if the target ref equals production. All credentials live ONLY in GitHub Secrets.
+- Blocker (owner): add `SUPABASE_ACCESS_TOKEN` (staging account), `STAGING_SUPABASE_PROJECT_REF`, `STAGING_SUPABASE_DB_PASSWORD`, `STAGING_SUPABASE_URL`, `STAGING_SUPABASE_ANON_KEY`, `STAGING_SUPABASE_SERVICE_ROLE_KEY` → then dispatch the workflow. No application code changed.
+
 ## 2026-06-17 | PR-1 / #161 — OCR coordination wired into the live readDocument path
 - New `apps/web/src/lib/docintel/coordinatedDocumentRead.ts`: wraps the single Gemini-Vision `provider.readFields()` call inside `readDocument()` with the cross-instance lease + secure cache. One chokepoint covers TPS-canonical + EAD + Translation.
 - Mode `OCR_DISTRIBUTED_DEDUP_MODE` (default **off** = byte-identical; **shadow** = probe + metrics, no substitution; **enforce** = cross-instance single-flight, staging-only). Production behavior UNCHANGED (flag off).
