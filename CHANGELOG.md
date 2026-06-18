@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-18 | Fix fresh-apply migration defect (translation_orders email index)
+- Staging `db push` (after the DB password was fixed) applied ~14 migrations then failed at `20260507235900_translation_orders.sql` with `column "email" does not exist` (42703). Root cause: `translation_orders` is created by three migrations with conflicting schemas — `20260503000001` (document-translation schema, no `email`) creates it first, so `20260507235900`'s `create table if not exists` is skipped and its `create index ... (email)` fails; `20260508000001` later drops+recreates it cleanly.
+- Fix: `20260507235900` now runs `alter table public.translation_orders add column if not exists email text;` before the email index. No-op on production (that DB already applied this migration and won't re-run it); unblocks a from-zero apply; superseded moments later by `20260508000001`'s drop+recreate.
+- Verified the other multi-defined tables (`official_sources`, `extracted_fields`, `canonical_answers`) self-heal via drop+recreate, so they are not at risk of the same ordering defect. No application code changed.
+
 ## 2026-06-17 | #160 — staging secret-name reconcile + non-secret values set
 - Renamed the staging access-token secret to `SUPABASE_STAGING_ACCESS_TOKEN` (owner's chosen name, staging account `2133611700uscis@gmail.com`); `staging-provision.yml` now sources the CLI's `SUPABASE_ACCESS_TOKEN` env from it (no prod collision).
 - Agent set the two NON-secret known values via `gh secret set`: `STAGING_SUPABASE_PROJECT_REF=rxnlpvldngxgdxkxoaaj`, `STAGING_SUPABASE_URL`.
