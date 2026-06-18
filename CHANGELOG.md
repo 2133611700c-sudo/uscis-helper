@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-18 | Staging migrations applied; fix verify-step IPv6 connectivity
+- After the translation_orders fix, the staging provision run applied ALL 44 migrations successfully (`Apply migrations` step = success on `rxnlpvldngxgdxkxoaaj`). Password + migrations now both green.
+- The `Verify` step failed only on connectivity: GitHub-hosted runners are IPv4-only, and the direct `db.<ref>.supabase.co` host is now IPv6-only (`Network is unreachable`). Fixed by connecting via the IPv4 session pooler (`aws-1-us-west-1.pooler.supabase.com`, user `postgres.<ref>` — the same endpoint `db push` used), with an optional `STAGING_DB_POOLER_HOST` override. Verify now also reports indexes count and whether bucket `images` is private. No application code changed.
+
 ## 2026-06-18 | Fix fresh-apply migration defect (translation_orders email index)
 - Staging `db push` (after the DB password was fixed) applied ~14 migrations then failed at `20260507235900_translation_orders.sql` with `column "email" does not exist` (42703). Root cause: `translation_orders` is created by three migrations with conflicting schemas — `20260503000001` (document-translation schema, no `email`) creates it first, so `20260507235900`'s `create table if not exists` is skipped and its `create index ... (email)` fails; `20260508000001` later drops+recreates it cleanly.
 - Fix: `20260507235900` now runs `alter table public.translation_orders add column if not exists email text;` before the email index. No-op on production (that DB already applied this migration and won't re-run it); unblocks a from-zero apply; superseded moments later by `20260508000001`'s drop+recreate.

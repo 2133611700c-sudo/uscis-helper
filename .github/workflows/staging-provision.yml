@@ -67,17 +67,22 @@ jobs:
 
       - name: Verify staging schema (confirm=APPLY only)
         if: ${{ github.event.inputs.confirm == 'APPLY' }}
+        env:
+          # GitHub-hosted runners are IPv4-only; the direct db.<ref>.supabase.co host
+          # is now IPv6-only → "Network is unreachable". Use the IPv4 SESSION pooler
+          # (the same endpoint `supabase db push` used). Staging is us-west-1; override
+          # via the optional STAGING_DB_POOLER_HOST secret if the region ever changes.
+          POOLER_HOST: ${{ secrets.STAGING_DB_POOLER_HOST || 'aws-1-us-west-1.pooler.supabase.com' }}
         run: |
           set -euo pipefail
-          DB="postgresql://postgres:${SUPABASE_DB_PASSWORD}@db.${STAGING_REF}.supabase.co:5432/postgres"
-          echo "── public tables ──"
-          psql "$DB" -tAc "select count(*) from information_schema.tables where table_schema='public';"
-          echo "── RLS-enabled tables ──"
-          psql "$DB" -tAc "select count(*) from pg_tables t join pg_class c on c.relname=t.tablename where t.schemaname='public' and c.relrowsecurity;"
-          echo "── functions ──"
-          psql "$DB" -tAc "select count(*) from information_schema.routines where routine_schema='public';"
-          echo "── triggers ──"
-          psql "$DB" -tAc "select count(*) from information_schema.triggers where trigger_schema='public';"
-          echo "── applied migrations ──"
-          psql "$DB" -tAc "select count(*) from supabase_migrations.schema_migrations;"
+          DB="postgresql://postgres.${STAGING_REF}:${SUPABASE_DB_PASSWORD}@${POOLER_HOST}:5432/postgres?sslmode=require"
+          q(){ psql "$DB" -tAc "$1"; }
+          q "select 1" >/dev/null   # connectivity probe — fail the step hard if unreachable
+          echo "applied_migrations=$(q "select count(*) from supabase_migrations.schema_migrations;")"
+          echo "public_tables=$(q "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE';")"
+          echo "rls_enabled_tables=$(q "select count(*) from pg_tables t join pg_class c on c.relname=t.tablename where t.schemaname='public' and c.relrowsecurity;")"
+          echo "functions=$(q "select count(*) from information_schema.routines where routine_schema='public';")"
+          echo "triggers=$(q "select count(*) from information_schema.triggers where trigger_schema='public';")"
+          echo "indexes=$(q "select count(*) from pg_indexes where schemaname='public';")"
+          echo "bucket_images=$(q "select coalesce((select case when public then 'PUBLIC' else 'private' end from storage.buckets where id='images'),'ABSENT');")"
           echo "verify_done (production ref ${PROD_REF} NEVER referenced as a connection in this job)"
