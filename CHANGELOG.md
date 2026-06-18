@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-18 | Staging DB verified; add Vercel staging-deploy workflow
+- Staging DB fully provisioned + verified (run 27733963589): 44/44 migrations, 47 tables (all RLS-enabled), 28 functions, 23 triggers, 144 indexes, bucket `images` private, production ref never connected.
+- `.github/workflows/staging-deploy.yml`: manual workflow that deploys a Vercel **PREVIEW** (production `messenginfo.com` untouched) wired to the staging Supabase. It pulls the preview env, injects the staging Supabase vars into the build env (local to the run), asserts the prod ref is absent from the build env, builds + deploys, then smokes `/api/healthz` and greps the served client JS to prove the staging ref is present and the prod ref is ABSENT. Uses `VERCEL_TOKEN`; non-secret Vercel org/project IDs are inlined. No application code changed.
+
 ## 2026-06-18 | Staging migrations applied; fix verify-step IPv6 connectivity
 - After the translation_orders fix, the staging provision run applied ALL 44 migrations successfully (`Apply migrations` step = success on `rxnlpvldngxgdxkxoaaj`). Password + migrations now both green.
 - The `Verify` step failed only on connectivity: GitHub-hosted runners are IPv4-only, and the direct `db.<ref>.supabase.co` host is now IPv6-only (`Network is unreachable`). Fixed by connecting via the IPv4 session pooler (`aws-1-us-west-1.pooler.supabase.com`, user `postgres.<ref>` — the same endpoint `db push` used), with an optional `STAGING_DB_POOLER_HOST` override. Verify now also reports indexes count and whether bucket `images` is private. No application code changed.

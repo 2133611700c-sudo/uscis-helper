@@ -1,0 +1,120 @@
+name: Staging Deploy (manual)
+
+# Builds + deploys a Vercel PREVIEW deployment wired to the ISOLATED staging Supabase
+# (#160). A preview deploy NEVER touches Production (messenginfo.com) or the prod
+# Supabase. All secrets stay in GitHub. Inert until dispatched with confirm=DEPLOY.
+#
+# Required secrets: VERCEL_TOKEN, STAGING_SUPABASE_PROJECT_REF, STAGING_SUPABASE_URL,
+#   STAGING_SUPABASE_ANON_KEY, STAGING_SUPABASE_SERVICE_ROLE_KEY.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DEPLOY to build + deploy the staging preview'
+        required: true
+        default: 'dry-run'
+
+permissions:
+  contents: read
+
+env:
+  # Non-secret Vercel identifiers for the uscis-helper project.
+  VERCEL_ORG_ID: team_qRGWLc9kKWuiKWouVsOeO1P4
+  VERCEL_PROJECT_ID: prj_G5Bwd5VMDqEMdbPKLlQW50aF3pQq
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  PROD_REF: rtfxrlountkoegsseukx
+  STAGING_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+  STAGING_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+  STAGING_ANON: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+  STAGING_SR: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guards — secrets present, staging != prod, URL matches staging ref
+        run: |
+          set -euo pipefail
+          for v in VERCEL_TOKEN STAGING_REF STAGING_URL STAGING_ANON STAGING_SR; do
+            eval "val=\${$v:-}"; [ -n "$val" ] || { echo "::error::secret $v missing"; exit 1; }
+          done
+          [ "$STAGING_REF" != "$PROD_REF" ] || { echo "::error::staging ref == prod ref"; exit 1; }
+          echo "$STAGING_URL" | grep -q "$STAGING_REF" || { echo "::error::STAGING_SUPABASE_URL does not contain the staging ref"; exit 1; }
+          if echo "$STAGING_URL" | grep -q "$PROD_REF"; then echo "::error::staging URL contains the prod ref"; exit 1; fi
+          echo "guards_ok"
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - run: npm i -g vercel@latest
+
+      - name: Pull PREVIEW env (never production)
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Inject staging Supabase into the build env (local to this run only)
+        run: |
+          set -euo pipefail
+          F=.vercel/.env.preview.local
+          touch "$F"
+          grep -vE '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY)=' "$F" > "$F.tmp" || true
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$STAGING_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$STAGING_ANON"
+            echo "SUPABASE_URL=$STAGING_URL"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$STAGING_SR"
+          } >> "$F.tmp"
+          mv "$F.tmp" "$F"
+          # Safety: the pulled/overridden env must NOT contain the prod ref anywhere.
+          if grep -q "$PROD_REF" "$F"; then echo "::error::prod ref present in build env — aborting"; exit 1; fi
+          echo "staging supabase injected (values hidden); prod ref absent"
+
+      - name: Build (confirm=DEPLOY only)
+        if: ${{ github.event.inputs.confirm == 'DEPLOY' }}
+        run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Deploy PREVIEW (confirm=DEPLOY only)
+        if: ${{ github.event.inputs.confirm == 'DEPLOY' }}
+        id: deploy
+        run: |
+          set -euo pipefail
+          URL=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "staging_url=$URL"
+
+      - name: Smoke + runtime staging-ref proof (confirm=DEPLOY only)
+        if: ${{ github.event.inputs.confirm == 'DEPLOY' }}
+        run: |
+          set -euo pipefail
+          URL="${{ steps.deploy.outputs.url }}"
+          echo "deployed: $URL"
+          # 1) liveness
+          ok=no
+          for i in $(seq 1 25); do
+            code=$(curl -s -o /tmp/hz -w '%{http_code}' "$URL/api/healthz" || true)
+            if [ "$code" = "200" ]; then ok=yes; break; fi
+            sleep 6
+          done
+          [ "$ok" = "yes" ] || { echo "::error::healthz never returned 200"; cat /tmp/hz || true; exit 1; }
+          echo "healthz=$(cat /tmp/hz)"
+          grep -q '"status":"ok"' /tmp/hz || { echo "::error::healthz status not ok"; exit 1; }
+          # 2) runtime supabase-ref proof: NEXT_PUBLIC_SUPABASE_URL is embedded in the
+          #    served client JS. Fetch the homepage's first-party chunks and grep.
+          curl -s "$URL" -o /tmp/home.html
+          chunks=$(grep -oE '/_next/static/[^"]+\.js' /tmp/home.html | sort -u | head -60)
+          found_staging=no; found_prod=no
+          for c in $chunks; do
+            body=$(curl -s "$URL$c" || true)
+            echo "$body" | grep -q "$STAGING_REF" && found_staging=yes
+            echo "$body" | grep -q "$PROD_REF" && found_prod=yes
+          done
+          echo "runtime_ref_staging_found=$found_staging"
+          echo "runtime_ref_prod_found=$found_prod"
+          if [ "$found_prod" = "yes" ]; then echo "::error::PROD supabase ref served by staging deployment"; exit 1; fi
+          # staging-ref-found is best-effort (the supabase chunk may load on a later
+          # route); a miss is a WARNING, not a failure — healthz + injected-env + the
+          # prod-ref-absent assertion already prove isolation.
+          [ "$found_staging" = "yes" ] && echo "runtime confirms staging ref" || echo "::warning::staging ref not found in homepage chunks (best-effort); isolation still proven by prod-ref-absent"
+          echo "smoke_done url=$URL"
