@@ -24,6 +24,15 @@ alter table public.translation_orders enable row level security;
 create policy "Service role only" on public.translation_orders
   using (false);
 
+-- FRESH-APPLY FIX (2026-06-18): an EARLIER migration (20260503000001) already
+-- created a DIFFERENT public.translation_orders (document-translation schema, no
+-- `email`). On a from-zero apply the `create table if not exists` above is therefore
+-- SKIPPED, and the email index below then fails (SQLSTATE 42703, column "email" does
+-- not exist). Ensure the column exists first so the index builds. This is a no-op on
+-- production (that DB already applied this migration and will not re-run it) and is
+-- superseded a moment later by 20260508000001, which drops+recreates the table clean.
+alter table public.translation_orders add column if not exists email text;
+
 -- Index for admin queries
 create index if not exists translation_orders_email_idx on public.translation_orders (email);
 create index if not exists translation_orders_created_at_idx on public.translation_orders (created_at desc);
