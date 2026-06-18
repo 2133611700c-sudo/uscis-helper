@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-17 | #160 — staging secret-name reconcile + non-secret values set
+- Renamed the staging access-token secret to `SUPABASE_STAGING_ACCESS_TOKEN` (owner's chosen name, staging account `2133611700uscis@gmail.com`); `staging-provision.yml` now sources the CLI's `SUPABASE_ACCESS_TOKEN` env from it (no prod collision).
+- Agent set the two NON-secret known values via `gh secret set`: `STAGING_SUPABASE_PROJECT_REF=rxnlpvldngxgdxkxoaaj`, `STAGING_SUPABASE_URL`.
+- The four dashboard-only secrets remain owner-action (cannot be fetched without the staging dashboard login): `SUPABASE_STAGING_ACCESS_TOKEN`, `STAGING_SUPABASE_ANON_KEY`, `STAGING_SUPABASE_SERVICE_ROLE_KEY`, `STAGING_SUPABASE_DB_PASSWORD`. The pre-existing `STAGING_SUPABASE_DB_PASSWORD` is STALE (from a never-created project) and must be overwritten. No application code changed.
+
 ## 2026-06-17 | #160 staging provisioning prepared (CI-native, secrets stay in GitHub)
 - Owner created an ISOLATED staging Supabase (ref `rxnlpvldngxgdxkxoaaj`, us-west-1, bucket `images` private) — distinct from prod `rtfxrlountkoegsseukx`. It is under a different Supabase account, so the local CLI (authed to prod account) cannot manage it; provisioning is therefore done via CI.
 - `docs/reports/STAGING_MIGRATION_SAFETY.md`: scanned all 44 migrations — SAFE for a fresh staging apply. The 38 "destructive" matches are parameterized cleanup function bodies, a dedup that no-ops on an empty DB, and an in-sequence schema-minimize; the 6 prod-value matches are SQL comments + disclaimer content text. No unguarded DROP/TRUNCATE, no live keys.
