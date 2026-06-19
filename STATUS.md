@@ -124,6 +124,9 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-19: TPS full E2E run 27847060748 — test1 (nav→review) PASS; test2 failed at generate CTA. Snapshot proved the prompt-fill WORKS (Shevchenko/Taras/1990-01-15/FA123456/Ukraine/Parole persisted) but sex/passport_expiration/i94/last_entry stayed empty → ROOT CAUSE: per-click page.once('dialog') RACED (an unmatched prompt consumed the wrong once-handler). FIX (branch fix/tps-e2e-dialog-race): one PERSISTENT page.on('dialog') reading a shared value + await + 300ms settle. Re-dispatch after merge. -->
 
+<!-- 2026-06-19: TPS full E2E run 27847632484 — REAL root cause found (snapshot e226): the form WAS complete (the "Generate packet →" button was visible) — my selector was wrong. data-testid="tps-generate-cta" is rendered ONLY when `ownerChecked && (isOwner || data.paid) && isStep6Eligible` (TPSWizardV2:3577) — i.e., owner/paid ONLY; a NON-OWNER never sees it and instead clicks the Nav "Generate packet →" button (s5Generate) which routes to the paywall. FIX (branch fix/tps-e2e-generate-nav-btn): click "Generate packet →" by accessible name → assert tps-paywall-state visible + tps-generate-cta count 0 + tps-package-ready-state count 0 (proves NO free bypass for a non-owner). This was a correct-but-mislabeled gate, not a fill bug (all fields DID fill via the persistent dialog handler). -->
+
+
 
 
 

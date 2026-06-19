@@ -112,14 +112,22 @@ test('TPS golden path (no-OCR) fill → generate → payment gate (non-owner)', 
 
   await page.getByTestId('tps-part7-checkbox').check()
 
-  // With identity complete + Part 7 confirmed, the Generate CTA renders.
-  const cta = page.getByTestId('tps-generate-cta')
-  await expect(cta, 'generate CTA after completing the form').toBeVisible({ timeout: 30_000 })
-  await cta.click()
+  // With identity complete + Part 7 confirmed, the "Generate packet →" Nav button
+  // renders. (NOTE: data-testid="tps-generate-cta" is the OWNER/PAID-only generation
+  // button — a non-owner never sees it; they click the Nav button, which routes to
+  // the paywall. Selecting the visible "Generate packet →" by its accessible name is
+  // the correct, locale-stable target.)
+  const genBtn = page.getByRole('button', {
+    name: /Generate packet|Згенерувати пакет|Сгенерировать пакет|Generar paquete/i,
+  })
+  await expect(genBtn, '"Generate packet →" button after completing the form').toBeVisible({ timeout: 30_000 })
+  await genBtn.click()
 
   // Non-owner, no Stripe token → the payment gate must engage (no free packet).
   await expect(page.getByTestId('tps-paywall-state'), 'payment gate (paywall)').toBeVisible({ timeout: 30_000 })
-  // Hard proof there is NO free bypass: the package-ready state must NOT appear.
+  // Hard proof there is NO free bypass: the OWNER/paid generate button + the
+  // package-ready state must NOT appear for a non-owner.
+  await expect(page.getByTestId('tps-generate-cta')).toHaveCount(0)
   await expect(page.getByTestId('tps-package-ready-state')).toHaveCount(0)
   console.log(JSON.stringify({ tps_full_path: 'reached_paywall_no_free_bypass' }))
 })
