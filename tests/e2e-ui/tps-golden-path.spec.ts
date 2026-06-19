@@ -42,13 +42,30 @@ async function navigateToReview(page: Page) {
   await expect(page.getByTestId('tps-review-step-container'), 'review container').toBeVisible({ timeout: 30_000 })
 }
 
-/** Edit an OCR-row field: its "Edit" button opens a native prompt() — accept it. */
-async function editOcrField(page: Page, key: string, value: string) {
+/**
+ * Edit an OCR-row field. Its "Edit" button opens a native window.prompt(). We use a
+ * SINGLE persistent dialog handler (set up once per page) reading a shared value —
+ * a per-click `page.once` raced (an unmatched prompt consumed the wrong handler), so
+ * some fields silently kept their value. Set the shared value, click, then settle.
+ */
+function installPromptResponder(page: Page): { set: (v: string) => void } {
+  const box = { value: '' }
+  page.on('dialog', async (d) => {
+    try {
+      await (d.type() === 'prompt' ? d.accept(box.value) : d.accept())
+    } catch {
+      /* dialog already handled */
+    }
+  })
+  return { set: (v: string) => { box.value = v } }
+}
+
+async function editOcrField(page: Page, responder: { set: (v: string) => void }, key: string, value: string) {
   const btn = page.getByTestId(`tps-ocr-edit-${key}`)
   if (!(await btn.isVisible().catch(() => false))) return
-  page.once('dialog', (d) => d.accept(value).catch(() => {}))
+  responder.set(value)
   await btn.click()
-  await page.waitForTimeout(150)
+  await page.waitForTimeout(300) // let the prompt resolve + React re-render
 }
 
 test('TPS golden path (no-OCR) navigates to the review screen + Part 7', async ({ page }) => {
@@ -57,6 +74,7 @@ test('TPS golden path (no-OCR) navigates to the review screen + Part 7', async (
 })
 
 test('TPS golden path (no-OCR) fill → generate → payment gate (non-owner)', async ({ page }) => {
+  const responder = installPromptResponder(page)
   await navigateToReview(page)
 
   // Core identity fields (OCR rows; each "Edit" is a native prompt). Latin values +
@@ -73,7 +91,7 @@ test('TPS golden path (no-OCR) fill → generate → payment gate (non-owner)', 
     ['last_entry_date', '2024-06-01'],
     ['status_at_last_entry', 'Parole'],
   ]
-  for (const [k, v] of ocr) await editOcrField(page, k, v)
+  for (const [k, v] of ocr) await editOcrField(page, responder, k, v)
 
   // Secondary manual fields (direct inputs).
   const manual: Array<[string, string]> = [
