@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS E2E: click the non-owner "Generate packet →" button → paywall
+- The full-path test was selecting `tps-generate-cta`, which is the OWNER/PAID-only generate button (`ownerChecked && (isOwner || data.paid)`). A non-owner never sees it — the form was actually complete (the "Generate packet →" Nav button was visible). Fixed the test to click "Generate packet →" by accessible name, then assert the paywall appears and both `tps-generate-cta` and `tps-package-ready-state` have count 0 (proves there is no free packet bypass for a non-owner). All identity fields fill correctly via the persistent dialog handler. No application code changed.
+
 ## 2026-06-19 | TPS E2E: fix the prompt-dialog race in the core-field fill
 - The full-path test's per-click `page.once('dialog')` raced (an unmatched prompt consumed the wrong handler, leaving sex/passport-expiration/I-94/last-entry empty even though name/dob/passport/country filled). Replaced it with one persistent `page.on('dialog')` reading a shared value set before each Edit click, awaited, with a 300ms settle. No application code changed.
 
