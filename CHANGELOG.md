@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS E2E: reach review via tps-ocr-cta (real no-OCR path)
+- The DOM snapshot from the prior run showed the spec reaches Step 4 (so nav works), but TPSWizardV2's step 4 is an inline upload screen with no `upload-skip-all`. The real no-OCR path is the "Recognize documents →" button (`tps-ocr-cta`), whose handler is `next={() => goto(5)}` — it advances to the review screen regardless of uploads, so clicking it with zero files reaches review with no OCR. Step 4 now clicks `tps-ocr-cta`. No application code changed.
+
 ## 2026-06-19 | TPS E2E: use stable testid for the skip-OCR button
 - The first TPS E2E run deployed staging + passed healthz, and the spec navigated Step 1 (Initial) → Step 2 (Paper) → Step 3 (No-EAD) via text selectors, then failed to find the skip-OCR button by text. Switched Step 4 to the stable `data-testid="upload-skip-all"` ("I will type the data myself"). No application code changed.
 
