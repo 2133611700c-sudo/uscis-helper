@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | Fix staging-deploy build (install pnpm on the runner)
+- `Staging Deploy (manual)` reached the build step (guards, pull preview env, inject staging Supabase all green) but `vercel build` failed with `spawn pnpm ENOENT` — it invokes the project's package manager (pnpm, detected from `pnpm-lock.yaml`) which was not installed on the runner. Added `pnpm/action-setup@v4` before the vercel steps. The deploy step was never reached, so production stayed untouched. No application code changed.
+
 ## 2026-06-18 | Staging DB verified; add Vercel staging-deploy workflow
 - Staging DB fully provisioned + verified (run 27733963589): 44/44 migrations, 47 tables (all RLS-enabled), 28 functions, 23 triggers, 144 indexes, bucket `images` private, production ref never connected.
 - `.github/workflows/staging-deploy.yml`: manual workflow that deploys a Vercel **PREVIEW** (production `messenginfo.com` untouched) wired to the staging Supabase. It pulls the preview env, injects the staging Supabase vars into the build env (local to the run), asserts the prod ref is absent from the build env, builds + deploys, then smokes `/api/healthz` and greps the served client JS to prove the staging ref is present and the prod ref is ABSENT. Uses `VERCEL_TOKEN`; non-secret Vercel org/project IDs are inlined. No application code changed.
