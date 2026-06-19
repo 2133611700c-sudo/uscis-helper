@@ -1,7 +1,7 @@
 # SOURCE_OF_TRUTH.md
 Purpose: define canonical modules. Prevent duplication. Stop re-litigation.
 
-> **LIVE V1 PROGRAM TRACKER:** GitHub issue #159 "USCIS HELPER V1 — FINAL DELIVERY PROGRAM" is the single source of release-gate truth. Blockers: #160 (staging not provisioned), #161 (OCR coordination not on real path). PR #119 (Translation V2) = KEEP_DRAFT→REBUILD_FROM_MAIN→supersede. V1 verdict as of 2026-06-17: **NOT_READY**.
+> **LIVE V1 PROGRAM TRACKER:** GitHub issue #159 "USCIS HELPER V1 — FINAL DELIVERY PROGRAM" is the single source of release-gate truth. DONE: #161 (OCR coordination wired to live path, off by default), #160 (isolated staging LIVE + runtime-proven — Supabase `rxnlpvldngxgdxkxoaaj` + Vercel preview, `V1_STAGING_READY=true`, ADR-023). PR #119 (Translation V2) = KEEP_DRAFT→REBUILD_FROM_MAIN→supersede. NEXT: product browser E2E (TPS first). Staging deploy = `.github/workflows/staging-deploy.yml` (`vercel deploy -e/-b`); staging DB provision = `.github/workflows/staging-provision.yml`. V1 verdict: **NOT_READY** (E2E/visual/Stripe-test/canary gates pending).
 
 ## Canonical normalization layer
 - `packages/knowledge/src/dictionary.ts` — authorities, geography, field labels, oblasts, blocklist
