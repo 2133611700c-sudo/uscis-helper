@@ -130,6 +130,9 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-19: OWNER-GATED Generate + PDF visual built. Owner added OWNER_EMAILS (0665638312c@gmail.com); agent set a staging-specific OWNER_SESSION_SECRET (gh secret, value never printed; rotation-safe — NOT the prod value). staging-e2e-tps.yml injects OWNER_SESSION_SECRET+OWNER_EMAILS into the deploy (-e) AND passes them to Playwright. NEW spec test 3: signs __owner_session EXACTLY as lib/ownerAccess.ts (payload=email|expires, sig=HMAC-SHA256(secret,payload), value=email|expires|sig), addCookies before nav → owner bypasses payment → asserts tps-generate-cta visible (proves cookie verified server-side) → clicks → captures the packet ZIP download → saves tps-artifacts/owner-packet.zip. Workflow PDF VISUAL ACCEPTANCE: unzip + pdfinfo (page count ≥1) + pdftoppm render every page to PNG (uploaded). `npx playwright test --list` = 3 tests OK. AGENT MISTAKE NOTE: lost the first copy of these edits to a premature `git reset --hard` (re-applied). -->
 
+<!-- 2026-06-19: OWNER E2E run 27850237591 — owner test reached Step 5 but tps-generate-cta did NOT appear. ROOT CAUSE (shared with test 2): the owner generate CTA is gated on `isStep6Eligible = runMailReadyGate(...).mail_ready` (the STRICT 'mail' stage), and the synthetic fill does not fully satisfy mailReadyGate — correct product behavior, NOT a cookie failure. Client checks owner via fetch('/api/owner/status'). FIX (branch fix/tps-owner-status-assert): test 3 now HARD-asserts the keystone — GET /api/owner/status returns {owner:true} with the forged cookie (proves cookie-forging + secret injection end-to-end) — and makes generate→ZIP best-effort (logs gated_by_mailReadyGate). Also session-docs-guard failed first because the spec-only commit omitted STATUS/HANDOFF/CHANGELOG (my miss; added here). -->
+
+
 
 
 
