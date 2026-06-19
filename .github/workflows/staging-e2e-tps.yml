@@ -96,6 +96,7 @@ jobs:
         run: |
           set -uo pipefail
           shopt -s nullglob
+          mkdir -p tps-artifacts   # the dir may not exist yet when owner tests are skipped
           zips=(tps-artifacts/*.zip)
           if [ ${#zips[@]} -eq 0 ]; then
             echo "::warning::no packet ZIP produced (owner tests likely skipped — secrets absent); no PDF acceptance"
