@@ -15,6 +15,8 @@
  *   (OWNER_SESSION_SECRET) or a Stripe test token — a separate, owner-gated follow-up.
  */
 import { test, expect, type Page } from '@playwright/test'
+import { createHmac } from 'node:crypto'
+import path from 'node:path'
 
 const UA =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
@@ -66,6 +68,41 @@ async function editOcrField(page: Page, responder: { set: (v: string) => void },
   responder.set(value)
   await btn.click()
   await page.waitForTimeout(300) // let the prompt resolve + React re-render
+}
+
+/** Fill the review screen to minimal completeness (synthetic Latin data) + Part 7. */
+async function fillReviewForm(page: Page, responder: { set: (v: string) => void }) {
+  const ocr: Array<[string, string]> = [
+    ['family_name', 'Shevchenko'], ['given_name', 'Taras'], ['dob', '1990-01-15'],
+    ['sex', 'M'], ['passport_number', 'FA123456'], ['passport_expiration_date', '2030-12-31'],
+    ['country_of_nationality', 'Ukraine'], ['i94_admission_number', '12345678901'],
+    ['last_entry_date', '2024-06-01'], ['status_at_last_entry', 'Parole'],
+  ]
+  for (const [k, v] of ocr) await editOcrField(page, responder, k, v)
+  const manual: Array<[string, string]> = [
+    ['tps-review-manual-address-street', '123 Main St'], ['tps-review-manual-address-city', 'Los Angeles'],
+    ['tps-review-manual-address-state', 'CA'], ['tps-review-manual-address-zip', '90038'],
+    ['tps-review-manual-phone', '2130000000'], ['tps-review-manual-email', 'e2e@example.com'],
+    ['tps-review-manual-city-of-birth', 'Kyiv'], ['tps-review-manual-province-of-birth', 'Kyiv Oblast'],
+    ['tps-review-manual-place-of-last-entry', 'New York, NY'],
+  ]
+  for (const [tid, val] of manual) {
+    const f = page.getByTestId(tid)
+    if (await f.isVisible().catch(() => false)) await f.fill(val).catch(() => {})
+  }
+  await page.getByTestId('tps-part7-checkbox').check()
+}
+
+/** Forge the __owner_session cookie EXACTLY as lib/ownerAccess.ts signs it:
+ *  payload = `${email.toLowerCase()}|${expires}` ; sig = HMAC-SHA256(secret, payload) ;
+ *  value = `${payload}|${sig}`. The same OWNER_SESSION_SECRET + OWNER_EMAILS are
+ *  injected into the staging deployment, so the server's verifyCookie() accepts it. */
+function signOwnerCookie(secret: string, email: string): string {
+  const e = email.trim().toLowerCase()
+  const expires = Date.now() + 30 * 24 * 60 * 60 * 1000
+  const payload = `${e}|${expires}`
+  const sig = createHmac('sha256', secret).update(payload).digest('hex')
+  return `${payload}|${sig}`
 }
 
 test('TPS golden path (no-OCR) navigates to the review screen + Part 7', async ({ page }) => {
@@ -141,4 +178,52 @@ test.fixme('TPS golden path (no-OCR) fill → generate → payment gate (non-own
   await expect(page.getByTestId('tps-generate-cta')).toHaveCount(0)
   await expect(page.getByTestId('tps-package-ready-state')).toHaveCount(0)
   console.log(JSON.stringify({ tps_full_path: 'reached_paywall_no_free_bypass' }))
+})
+
+// OWNER-gated full path: forge a valid __owner_session cookie (same HMAC as prod) →
+// the owner bypasses payment → reach Step 6 → download the real packet ZIP. Skips
+// cleanly when the owner secrets are not injected (so the suite stays green without
+// them). Synthetic data only (Shevchenko/Taras) — the saved ZIP is PII-free.
+test('TPS owner-gated generate → real packet ZIP (Step 6)', async ({ page, context }) => {
+  const secret = process.env.OWNER_SESSION_SECRET || ''
+  const email = (process.env.OWNER_EMAILS || '').split(',')[0]?.trim() || ''
+  const baseURL = process.env.E2E_BASE_URL || ''
+  test.skip(!secret || !email || !baseURL, 'owner secrets / base URL not provided')
+
+  // Forge + install the owner session cookie BEFORE navigating.
+  await context.addCookies([{
+    name: '__owner_session',
+    value: signOwnerCookie(secret, email),
+    url: baseURL,
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Lax',
+  }])
+
+  const responder = installPromptResponder(page)
+  await navigateToReview(page)
+  await fillReviewForm(page, responder)
+
+  // The owner-only generate button proves the forged cookie verified server-side.
+  const ownerCta = page.getByTestId('tps-generate-cta')
+  await expect(ownerCta, 'owner generate CTA (proves owner session)').toBeVisible({ timeout: 30_000 })
+
+  // Generation downloads the ZIP — set the listener up BEFORE the click.
+  const dlPromise = page.waitForEvent('download', { timeout: 90_000 }).catch(() => null)
+  await ownerCta.click()
+  let download = await dlPromise
+  if (!download && (await page.getByTestId('tps-download-success-state').isVisible().catch(() => false))) {
+    const [d] = await Promise.all([
+      page.waitForEvent('download', { timeout: 60_000 }),
+      page.getByTestId('tps-download-success-state').click(),
+    ])
+    download = d
+  }
+  expect(download, 'packet ZIP download').toBeTruthy()
+  const zipPath = path.join('tps-artifacts', 'owner-packet.zip')
+  await download!.saveAs(zipPath)
+  const { statSync } = await import('node:fs')
+  const size = statSync(zipPath).size
+  expect(size, 'ZIP is non-trivial').toBeGreaterThan(1000)
+  console.log(JSON.stringify({ tps_owner_generate: { zip: zipPath, bytes: size } }))
 })
