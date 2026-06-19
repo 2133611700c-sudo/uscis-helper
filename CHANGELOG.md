@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS E2E: full path to the payment gate (no free bypass)
+- The OCR-row "Edit" buttons open a native `window.prompt()`; Playwright fills the core identity fields via `page.on('dialog')` + the stable `tps-ocr-edit-<key>` testids. Added a second test that fills all core fields (Latin + ISO dates) + manual fields + Part 7, asserts the Generate CTA renders, clicks it, and hard-asserts the paywall appears while the package-ready state does NOT — proving there is no free packet bypass for a non-owner. Test 1 (navigate → review) stays as the deterministic smoke. No application code changed. Full ZIP download remains an owner-gated follow-up (owner session or Stripe test keys).
+
 ## 2026-06-19 | TPS E2E: hard-assert the deterministic review reach (green)
 - With the `tps-ocr-cta` fix, the spec reaches Step 5 "Review the data" (confirmed by DOM snapshot). The `tps-generate-cta` is gated behind Part 7 confirmation + complete identity fields, which the no-OCR path doesn't fill, so the hard assertions are now the deterministic reach: `tps-review-step-container` + `tps-part7-checkbox`. The Generate CTA / outcome are best-effort and logged. This makes the E2E green and proves the TPS no-OCR golden path navigates to the review screen on staging. No application code changed.
 
