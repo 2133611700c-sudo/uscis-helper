@@ -114,4 +114,7 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-19: TPS browser E2E started (#159 §C1). Explore confirmed a FULL no-OCR golden path exists: TPS wizard step 4 "type manually" (btnSkipAll) skips OCR → manual review → generate. So a meaningful TPS E2E needs ZERO secrets. NEW tests/e2e-ui/tps-golden-path.spec.ts (no-OCR, synthetic, browser UA for anti-bot middleware): navigates Initial→Paper→No-EAD→type-manually→asserts review container + Part7 + generate CTA; best-effort fill+generate logs outcome (non-owner → paywall expected). NEW .github/workflows/staging-e2e-tps.yml: deploys fresh staging preview (-e/-b) then runs the spec with E2E_BASE_URL=staging + uploads PII-free artifacts. Root playwright config: testDir tests/e2e-ui, baseURL=E2E_BASE_URL. Full ZIP download needs owner session (OWNER_SESSION_SECRET) or Stripe-test (owner-held) — follow-up. -->
 
+<!-- 2026-06-19: TPS E2E run 27844443577 — deploy+healthz green; spec navigated Initial→Paper→No-EAD (those selectors WORK) then failed finding the skip-OCR button via text regex. Fix: use stable data-testid="upload-skip-all" (EN text "I will type the data myself"). Re-dispatch after merge. -->
+
+
 
