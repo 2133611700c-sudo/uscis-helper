@@ -46,6 +46,11 @@ jobs:
           if echo "$STAGING_URL" | grep -q "$PROD_REF"; then echo "::error::staging URL contains the prod ref"; exit 1; fi
           echo "guards_ok"
 
+      # pnpm must be on PATH: `vercel build` invokes the project's package manager
+      # (pnpm, detected from pnpm-lock.yaml). Without it the build fails `spawn pnpm ENOENT`.
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
 
