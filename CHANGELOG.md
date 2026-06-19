@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS full E2E to a real artifact (2 scenarios, owner ZIP, PDF visual acceptance)
+- Pinned the mail-ready blocker from code (`readinessPolicy` requiredAt('mail') + `buildDraftAnswers`): the only missing required field was `marital_status` (a `SingleSelect`). Added an optional `testIdPrefix` to `SingleSelect` and `OptionPair` (testability only — no logic/bypass), giving stable `tps-review-marital-*` and `tps-step{1,2,3}-*` selectors.
+- Rewrote `tests/e2e-ui/tps-golden-path.spec.ts` to drive the real UI entirely via data-testids (no text selectors): nav smoke; non-owner mail-ready → paywall (no free bypass); owner Scenario A (Initial/Paper/No-EAD → real I-821 ZIP); owner Scenario B (Re-registration/Paper/EAD → real I-821 + I-765 ZIP). The owner session only skips payment — form validation + mailReadyGate are fully enforced.
+- `staging-e2e-tps.yml` PDF visual acceptance now unzips each scenario packet, checks page count + renders every page (poppler) + verifies the synthetic surname is on the form, emits a machine-readable `visual-acceptance.json`, fails if I-821 (both) or I-765 (B) is missing/invalid, and uploads the ZIPs + PNGs + JSON as PII-free artifacts (not committed).
+
 ## 2026-06-19 | TPS owner E2E: assert owner-session keystone (mailReadyGate gates the CTA)
 - The owner run reached Step 5 but the owner generate button stayed hidden: it (and the non-owner paywall) are gated on `isStep6Eligible = runMailReadyGate(...).mail_ready` — the strict 'mail' readiness gate — which the synthetic fill does not fully satisfy (correct product behavior, not a cookie failure). The client checks owner status via `/api/owner/status`.
 - Changed the owner test to hard-assert the keystone capability instead: `GET /api/owner/status` returns `{owner:true}` with the forged `__owner_session` cookie, proving the cookie-forging + the staging secret injection work end-to-end. The generate→ZIP→PDF path is now best-effort (runs only when mailReadyGate passes, logs `gated_by_mailReadyGate` otherwise). No application code changed.
