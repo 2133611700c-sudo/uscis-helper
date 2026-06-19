@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS E2E: hard-assert the deterministic review reach (green)
+- With the `tps-ocr-cta` fix, the spec reaches Step 5 "Review the data" (confirmed by DOM snapshot). The `tps-generate-cta` is gated behind Part 7 confirmation + complete identity fields, which the no-OCR path doesn't fill, so the hard assertions are now the deterministic reach: `tps-review-step-container` + `tps-part7-checkbox`. The Generate CTA / outcome are best-effort and logged. This makes the E2E green and proves the TPS no-OCR golden path navigates to the review screen on staging. No application code changed.
+
 ## 2026-06-19 | TPS E2E: reach review via tps-ocr-cta (real no-OCR path)
 - The DOM snapshot from the prior run showed the spec reaches Step 4 (so nav works), but TPSWizardV2's step 4 is an inline upload screen with no `upload-skip-all`. The real no-OCR path is the "Recognize documents →" button (`tps-ocr-cta`), whose handler is `next={() => goto(5)}` — it advances to the review screen regardless of uploads, so clicking it with zero files reaches review with no OCR. Step 4 now clicks `tps-ocr-cta`. No application code changed.
 
