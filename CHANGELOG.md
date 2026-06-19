@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-19 | Staging deploy: set true runtime env via vercel deploy -e/-b
+- The prebuilt deploy approach (`vercel build` + `.env.preview.local` + `deploy --prebuilt`) did NOT set the **server runtime** env — Next.js reads server `process.env` at runtime from the Vercel project's environment, not from the injected build file. So `deep /api/health` returned 404 (HEALTH_TOKEN absent at runtime) and the runtime Supabase was not provably staging.
+- Replaced it with a single `vercel deploy` (remote build) that passes per-deployment `--build-env` (NEXT_PUBLIC_*) and `--env` (runtime `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`/`HEALTH_TOKEN`). `--env` genuinely sets the serverless runtime env, so the deep-health runtime DB proof is valid. Production stays untouched (preview deploy). No application code changed.
+
 ## 2026-06-19 | Staging preview deployed; fix smoke (deep-health runtime proof)
 - `Staging Deploy (manual)` built and deployed a Vercel PREVIEW wired to staging Supabase (URL `…-ee7vc6p94…vercel.app`, `healthz`=200 `environment=preview`, sha `e58013b`); production `messenginfo.com` untouched.
 - The smoke step failed for two reasons, both fixed: (a) `set -e` aborted on `grep -q X && found=yes` when the pattern didn't match; (b) the client-JS Supabase-ref grep is N/A — the app has no browser supabase client, so `NEXT_PUBLIC_SUPABASE_URL` is never embedded in client JS. New smoke uses `set -uo` (no `-e`), asserts `healthz` reports `environment=preview`, and proves the runtime DB connection via the token-gated deep `/api/health` (HEALTH_TOKEN injected into the staging build). Isolation stays proven at build time (the inject step hard-fails if the prod ref appears). The anti-bot middleware 403s blank/curl UAs, so the smoke sends a browser UA. No application code changed.
