@@ -29,7 +29,7 @@ async function clickButton(page: import('@playwright/test').Page, re: RegExp, la
   await btn.click()
 }
 
-test('TPS golden path (no-OCR manual entry) renders review + generate CTA', async ({ page }) => {
+test('TPS golden path (no-OCR) navigates to the review screen + Part 7', async ({ page }) => {
   // Anti-bot middleware blocks empty UAs; we set a browser UA above.
   await page.goto('/en/services/tps-ukraine/start', { waitUntil: 'domcontentloaded' })
 
@@ -50,15 +50,20 @@ test('TPS golden path (no-OCR manual entry) renders review + generate CTA', asyn
   await expect(ocrCta, 'step-4 advance (Recognize documents →)').toBeVisible({ timeout: 30_000 })
   await ocrCta.click()
 
-  // STEP 5 — Review must render with Part 7 + the Generate CTA.
+  // STEP 5 — Review screen for the no-OCR path must render with the Part 7
+  // declaration. These are the DETERMINISTIC proof that the TPS golden path is
+  // reachable on the deployment. (The Generate CTA only renders once Part 7 is
+  // confirmed AND the required identity fields are complete — exercised best-effort
+  // below; the full generate→packet path with core-field fill is a follow-up.)
   const review = page.getByTestId('tps-review-step-container')
   await expect(review, 'review screen container').toBeVisible({ timeout: 30_000 })
-  await expect(page.getByTestId('tps-generate-cta'), 'generate CTA').toBeVisible({ timeout: 30_000 })
-  await expect(page.getByTestId('tps-part7-checkbox'), 'Part 7 declaration checkbox').toBeVisible()
+  await expect(page.getByTestId('tps-part7-checkbox'), 'Part 7 declaration checkbox').toBeVisible({ timeout: 30_000 })
 
   // ── BEST-EFFORT: fill the secondary manual fields we have stable testids for,
-  //    accept Part 7, click Generate, and record the outcome. Soft — does not fail
-  //    the test, since reaching the review + CTA above is the deterministic proof.
+  //    accept Part 7, then click Generate if it appears, and record the outcome.
+  //    Soft — does not fail the test (core identity fields are label-driven; a
+  //    non-owner also hits the paywall). Reaching the review + Part 7 above is the
+  //    deterministic proof.
   const softFill: Array<[string, string]> = [
     ['tps-review-manual-address-street', '123 Main St'],
     ['tps-review-manual-address-city', 'Los Angeles'],
@@ -75,7 +80,10 @@ test('TPS golden path (no-OCR manual entry) renders review + generate CTA', asyn
   const part7 = page.getByTestId('tps-part7-checkbox')
   if (await part7.isVisible().catch(() => false)) await part7.check().catch(() => {})
 
-  await page.getByTestId('tps-generate-cta').click().catch(() => {})
+  const cta = page.getByTestId('tps-generate-cta')
+  const ctaShown = await cta.isVisible().catch(() => false)
+  if (ctaShown) await cta.click().catch(() => {})
+  console.log(JSON.stringify({ tps_generate_cta_shown: ctaShown }))
   await page.waitForTimeout(3_000)
 
   const paywall = await page.getByTestId('tps-paywall-state').isVisible().catch(() => false)
