@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | Fix staging-deploy pnpm setup (version conflict)
+- `pnpm/action-setup@v4` with `version: 9` errored because the root `package.json` declares `"packageManager": "pnpm@10.33.2"` (the action refuses two version sources). Switched to `pnpm/action-setup@v6` with no `version` input (it reads the `packageManager` field) and bumped Node to 22. The run failed before build/deploy, so production stayed untouched. No application code changed.
+
 ## 2026-06-19 | Fix staging-deploy build (install pnpm on the runner)
 - `Staging Deploy (manual)` reached the build step (guards, pull preview env, inject staging Supabase all green) but `vercel build` failed with `spawn pnpm ENOENT` — it invokes the project's package manager (pnpm, detected from `pnpm-lock.yaml`) which was not installed on the runner. Added `pnpm/action-setup@v4` before the vercel steps. The deploy step was never reached, so production stayed untouched. No application code changed.
 
