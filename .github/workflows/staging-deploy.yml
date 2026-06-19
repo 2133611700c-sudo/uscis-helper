@@ -28,6 +28,7 @@ env:
   STAGING_URL: ${{ secrets.STAGING_SUPABASE_URL }}
   STAGING_ANON: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
   STAGING_SR: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+  HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
 
 jobs:
   deploy:
@@ -70,6 +71,9 @@ jobs:
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$STAGING_ANON"
             echo "SUPABASE_URL=$STAGING_URL"
             echo "SUPABASE_SERVICE_ROLE_KEY=$STAGING_SR"
+            # HEALTH_TOKEN lets the smoke prove the deployment talks to staging Supabase
+            # at runtime via the token-gated /api/health (deep DB check).
+            [ -n "${HEALTH_TOKEN:-}" ] && echo "HEALTH_TOKEN=$HEALTH_TOKEN"
           } >> "$F.tmp"
           mv "$F.tmp" "$F"
           # Safety: the pulled/overridden env must NOT contain the prod ref anywhere.
@@ -89,37 +93,42 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "staging_url=$URL"
 
-      - name: Smoke + runtime staging-ref proof (confirm=DEPLOY only)
+      - name: Smoke + runtime staging proof (confirm=DEPLOY only)
         if: ${{ github.event.inputs.confirm == 'DEPLOY' }}
+        env:
+          UA: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
         run: |
-          set -euo pipefail
+          # NOTE: -u/-o pipefail but NOT -e — the conditionals below intentionally use
+          # non-zero exit codes (grep) for control flow.
+          set -uo pipefail
           URL="${{ steps.deploy.outputs.url }}"
           echo "deployed: $URL"
-          # 1) liveness
+
+          # 1) LIVENESS — /api/healthz (UA-exempt). Must be a PREVIEW deployment.
           ok=no
           for i in $(seq 1 25); do
-            code=$(curl -s -o /tmp/hz -w '%{http_code}' "$URL/api/healthz" || true)
+            code=$(curl -s -A "$UA" -o /tmp/hz -w '%{http_code}' "$URL/api/healthz" || true)
             if [ "$code" = "200" ]; then ok=yes; break; fi
             sleep 6
           done
-          [ "$ok" = "yes" ] || { echo "::error::healthz never returned 200"; cat /tmp/hz || true; exit 1; }
+          if [ "$ok" != "yes" ]; then echo "::error::healthz never returned 200"; cat /tmp/hz 2>/dev/null || true; exit 1; fi
           echo "healthz=$(cat /tmp/hz)"
-          grep -q '"status":"ok"' /tmp/hz || { echo "::error::healthz status not ok"; exit 1; }
-          # 2) runtime supabase-ref proof: NEXT_PUBLIC_SUPABASE_URL is embedded in the
-          #    served client JS. Fetch the homepage's first-party chunks and grep.
-          curl -s "$URL" -o /tmp/home.html
-          chunks=$(grep -oE '/_next/static/[^"]+\.js' /tmp/home.html | sort -u | head -60)
-          found_staging=no; found_prod=no
-          for c in $chunks; do
-            body=$(curl -s "$URL$c" || true)
-            echo "$body" | grep -q "$STAGING_REF" && found_staging=yes
-            echo "$body" | grep -q "$PROD_REF" && found_prod=yes
-          done
-          echo "runtime_ref_staging_found=$found_staging"
-          echo "runtime_ref_prod_found=$found_prod"
-          if [ "$found_prod" = "yes" ]; then echo "::error::PROD supabase ref served by staging deployment"; exit 1; fi
-          # staging-ref-found is best-effort (the supabase chunk may load on a later
-          # route); a miss is a WARNING, not a failure — healthz + injected-env + the
-          # prod-ref-absent assertion already prove isolation.
-          [ "$found_staging" = "yes" ] && echo "runtime confirms staging ref" || echo "::warning::staging ref not found in homepage chunks (best-effort); isolation still proven by prod-ref-absent"
-          echo "smoke_done url=$URL"
+          if ! grep -q '"status":"ok"' /tmp/hz; then echo "::error::healthz status not ok"; exit 1; fi
+          if ! grep -q '"environment":"preview"' /tmp/hz; then echo "::error::not a preview deployment (production must never be the target)"; exit 1; fi
+
+          # 2) RUNTIME DB PROOF — the token-gated deep /api/health connects to the
+          #    deployment's CONFIGURED Supabase (the staging one we injected) and reads
+          #    its tables. 200 ⇒ the running server talks to staging Postgres at runtime.
+          #    (NEXT_PUBLIC_SUPABASE_URL is NOT in client JS — the app has no browser
+          #    supabase client — so a client-side ref grep is N/A by design.)
+          if [ -z "${HEALTH_TOKEN:-}" ]; then echo "::error::HEALTH_TOKEN secret missing"; exit 1; fi
+          hcode=$(curl -s -A "$UA" -H "x-health-token: $HEALTH_TOKEN" -o /tmp/health -w '%{http_code}' "$URL/api/health" || true)
+          echo "deep_health_code=$hcode"
+          echo "deep_health_body=$(head -c 500 /tmp/health 2>/dev/null)"
+          if [ "$hcode" != "200" ]; then echo "::error::deep /api/health != 200 — runtime DB connection to staging NOT proven"; exit 1; fi
+
+          # 3) ISOLATION — proven at build time: the injected build env contained ONLY
+          #    the staging Supabase and the Inject step HARD-FAILS if the prod ref
+          #    appears anywhere in it. Production messenginfo.com is a separate
+          #    deployment and is never targeted by a preview deploy.
+          echo "smoke_ok url=$URL (preview ✓ · deep-health 200 ✓ · build-env prod-ref-absent ✓)"
