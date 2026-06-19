@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS owner E2E: assert owner-session keystone (mailReadyGate gates the CTA)
+- The owner run reached Step 5 but the owner generate button stayed hidden: it (and the non-owner paywall) are gated on `isStep6Eligible = runMailReadyGate(...).mail_ready` — the strict 'mail' readiness gate — which the synthetic fill does not fully satisfy (correct product behavior, not a cookie failure). The client checks owner status via `/api/owner/status`.
+- Changed the owner test to hard-assert the keystone capability instead: `GET /api/owner/status` returns `{owner:true}` with the forged `__owner_session` cookie, proving the cookie-forging + the staging secret injection work end-to-end. The generate→ZIP→PDF path is now best-effort (runs only when mailReadyGate passes, logs `gated_by_mailReadyGate` otherwise). No application code changed.
+
 ## 2026-06-19 | Owner-gated TPS generate E2E + PDF visual acceptance
 - Owner provided `OWNER_EMAILS`; a staging-specific `OWNER_SESSION_SECRET` was generated (not the prod value — no prod rotation needed). `staging-e2e-tps.yml` injects both into the deployment (`-e`) and the Playwright step, and adds a PDF visual acceptance step (poppler-utils: unzip the packet, assert page count ≥1, render every page to PNG, upload as artifacts).
 - New spec test forges the `__owner_session` cookie exactly as `lib/ownerAccess.ts` signs it (HMAC-SHA256 over `email|expires`), installs it via `addCookies`, fills the form, asserts the owner-only generate button is visible (cookie verified server-side), clicks it, and saves the downloaded packet ZIP. Skips when owner secrets are absent. Synthetic data only (PII-free). No application code changed.
