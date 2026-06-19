@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-19 | Staging preview deployed; fix smoke (deep-health runtime proof)
+- `Staging Deploy (manual)` built and deployed a Vercel PREVIEW wired to staging Supabase (URL `…-ee7vc6p94…vercel.app`, `healthz`=200 `environment=preview`, sha `e58013b`); production `messenginfo.com` untouched.
+- The smoke step failed for two reasons, both fixed: (a) `set -e` aborted on `grep -q X && found=yes` when the pattern didn't match; (b) the client-JS Supabase-ref grep is N/A — the app has no browser supabase client, so `NEXT_PUBLIC_SUPABASE_URL` is never embedded in client JS. New smoke uses `set -uo` (no `-e`), asserts `healthz` reports `environment=preview`, and proves the runtime DB connection via the token-gated deep `/api/health` (HEALTH_TOKEN injected into the staging build). Isolation stays proven at build time (the inject step hard-fails if the prod ref appears). The anti-bot middleware 403s blank/curl UAs, so the smoke sends a browser UA. No application code changed.
+
 ## 2026-06-19 | Fix staging-deploy pnpm setup (version conflict)
 - `pnpm/action-setup@v4` with `version: 9` errored because the root `package.json` declares `"packageManager": "pnpm@10.33.2"` (the action refuses two version sources). Switched to `pnpm/action-setup@v6` with no `version` input (it reads the `packageManager` field) and bumped Node to 22. The run failed before build/deploy, so production stayed untouched. No application code changed.
 
