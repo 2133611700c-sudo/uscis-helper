@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS E2E: use stable testid for the skip-OCR button
+- The first TPS E2E run deployed staging + passed healthz, and the spec navigated Step 1 (Initial) → Step 2 (Paper) → Step 3 (No-EAD) via text selectors, then failed to find the skip-OCR button by text. Switched Step 4 to the stable `data-testid="upload-skip-all"` ("I will type the data myself"). No application code changed.
+
 ## 2026-06-19 | TPS browser E2E (no-OCR golden path) + staging E2E workflow
 - The TPS wizard has a no-OCR golden path (step 4 "type manually" skips OCR → manual review → generate), so a meaningful TPS E2E needs no secrets. Added `tests/e2e-ui/tps-golden-path.spec.ts`: drives Initial → Paper → No-EAD → type-manually and hard-asserts the review screen renders with the Part 7 declaration + Generate CTA (best-effort fill + generate logs the outcome; a non-owner is expected to hit the paywall).
 - Added `.github/workflows/staging-e2e-tps.yml`: deploys a fresh Vercel preview wired to staging Supabase (`-e/-b`), waits for `healthz` `environment=preview`, runs the TPS spec with `E2E_BASE_URL=<staging>`, and uploads PII-free Playwright artifacts. Production is never the target.
