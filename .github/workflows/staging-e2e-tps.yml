@@ -23,6 +23,11 @@ env:
   STAGING_ANON: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
   STAGING_SR: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
   HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+  # Owner-gated Generate flow (forged __owner_session cookie). Same secret is injected
+  # into the deployment (so the server verifies the cookie) AND passed to Playwright
+  # (so it signs an identical cookie). Empty ⇒ the owner test self-skips.
+  OWNER_SESSION_SECRET: ${{ secrets.OWNER_SESSION_SECRET }}
+  OWNER_EMAILS: ${{ secrets.OWNER_EMAILS }}
 
 jobs:
   e2e:
@@ -61,7 +66,9 @@ jobs:
             -b NEXT_PUBLIC_SUPABASE_ANON_KEY="$STAGING_ANON"  -e NEXT_PUBLIC_SUPABASE_ANON_KEY="$STAGING_ANON" \
             -e SUPABASE_URL="$STAGING_URL" \
             -e SUPABASE_SERVICE_ROLE_KEY="$STAGING_SR" \
-            -e HEALTH_TOKEN="$HEALTH_TOKEN")
+            -e HEALTH_TOKEN="$HEALTH_TOKEN" \
+            -e OWNER_SESSION_SECRET="$OWNER_SESSION_SECRET" \
+            -e OWNER_EMAILS="$OWNER_EMAILS")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "staging_url=$URL"
 
@@ -79,12 +86,36 @@ jobs:
           cat /tmp/hz 2>/dev/null; echo
           grep -q '"environment":"preview"' /tmp/hz || { echo "::error::staging not a preview deployment"; exit 1; }
 
-      - name: TPS golden-path E2E (no-OCR, synthetic)
+      - name: TPS golden-path E2E (no-OCR, synthetic) + owner-gated generate
         env:
           E2E_BASE_URL: ${{ steps.deploy.outputs.url }}
         run: npx playwright test tests/e2e-ui/tps-golden-path.spec.ts
 
-      - name: Upload Playwright artifacts (PII-free)
+      - name: PDF visual acceptance (render the generated packet)
+        if: always()
+        run: |
+          set -uo pipefail
+          ZIP=$(ls tps-artifacts/*.zip 2>/dev/null | head -1 || true)
+          if [ -z "$ZIP" ]; then
+            echo "::warning::no owner packet ZIP produced (owner test likely skipped); skipping PDF visual acceptance"
+            exit 0
+          fi
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+          mkdir -p tps-artifacts/render
+          ( cd tps-artifacts && unzip -o "$(basename "$ZIP")" -d packet >/dev/null )
+          pdfs=$(find tps-artifacts/packet -name '*.pdf')
+          [ -n "$pdfs" ] || { echo "::error::ZIP contained no PDF"; exit 1; }
+          echo "packet_files:"; ls -1 tps-artifacts/packet
+          for p in $pdfs; do
+            base=$(basename "$p" .pdf)
+            pages=$(pdfinfo "$p" 2>/dev/null | awk '/^Pages:/{print $2}')
+            echo "pdf=$base pages=${pages:-?}"
+            [ "${pages:-0}" -ge 1 ] || { echo "::error::$base has 0 pages"; exit 1; }
+            pdftoppm -png -r 110 "$p" "tps-artifacts/render/${base}-page" >/dev/null 2>&1 || true
+          done
+          echo "pdf_visual_acceptance=rendered ($(find tps-artifacts/render -name '*.png' | wc -l | tr -d ' ') page images)"
+
+      - name: Upload Playwright + packet artifacts (PII-free synthetic)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -92,5 +123,6 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            tps-artifacts/
           if-no-files-found: ignore
           retention-days: 7
