@@ -116,5 +116,8 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-19: TPS E2E run 27844443577 — deploy+healthz green; spec navigated Initial→Paper→No-EAD (those selectors WORK) then failed finding the skip-OCR button via text regex. Fix: use stable data-testid="upload-skip-all" (EN text "I will type the data myself"). Re-dispatch after merge. -->
 
+<!-- 2026-06-19: TPS E2E run 27844933767 — DOM snapshot revealed step-4 in TPSWizardV2 is an inline upload UI (doc tiles + "Recognize documents →"), NOT the DocumentUploadScreen component → no upload-skip-all. REAL no-OCR path: the "Recognize documents →" button has testid tps-ocr-cta and is `next={()=>goto(5)}` — it ALWAYS advances to review, so clicking it with ZERO files reaches review with no OCR. Fix: step 4 clicks tps-ocr-cta. (Explore conflated DocumentUploadScreen with the wizard's inline upload.) Re-dispatch after merge. -->
+
+
 
 

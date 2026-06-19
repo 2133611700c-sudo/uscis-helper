@@ -42,11 +42,13 @@ test('TPS golden path (no-OCR manual entry) renders review + generate CTA', asyn
   // STEP 3 — EAD: No / TPS only.
   await clickButton(page, /TPS only|^No$|Ні\b|Нет\b/i, 'No EAD')
 
-  // STEP 4 — Upload: choose the manual-entry path (skip OCR entirely).
-  // Stable testid on the "I will type the data myself" button (DocumentUploadScreen).
-  const skipAll = page.getByTestId('upload-skip-all')
-  await expect(skipAll, 'skip-OCR / type-manually button').toBeVisible({ timeout: 30_000 })
-  await skipAll.click()
+  // STEP 4 — Upload: the no-OCR path. TPSWizardV2's "Recognize documents →" button
+  // (testid tps-ocr-cta) is `next={() => goto(5)}` — it ALWAYS advances to the review
+  // screen. With ZERO files uploaded it goes straight to review with no OCR run, so we
+  // just click it (no document, no Gemini, no secrets).
+  const ocrCta = page.getByTestId('tps-ocr-cta')
+  await expect(ocrCta, 'step-4 advance (Recognize documents →)').toBeVisible({ timeout: 30_000 })
+  await ocrCta.click()
 
   // STEP 5 — Review must render with Part 7 + the Generate CTA.
   const review = page.getByTestId('tps-review-step-container')
