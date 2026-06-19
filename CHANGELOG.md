@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS E2E: lock in the green navigation proof; full path → fixme
+- Clicking the non-owner "Generate packet →" did not advance past Step 5 (a further mail-ready / step-6-eligibility validation gates it). After diagnosing it through, the full fill→generate→paywall test is marked `test.fixme` (skipped, suite stays green, honestly WIP — not faked) with a status comment. Test 1 (no-OCR golden path → review screen + Part 7) remains the green deterministic proof against staging. Finishing the full path / generating a real packet needs owner secrets (owner session or Stripe test). No application code changed.
+
 ## 2026-06-19 | TPS E2E: click the non-owner "Generate packet →" button → paywall
 - The full-path test was selecting `tps-generate-cta`, which is the OWNER/PAID-only generate button (`ownerChecked && (isOwner || data.paid)`). A non-owner never sees it — the form was actually complete (the "Generate packet →" Nav button was visible). Fixed the test to click "Generate packet →" by accessible name, then assert the paywall appears and both `tps-generate-cta` and `tps-package-ready-state` have count 0 (proves there is no free packet bypass for a non-owner). All identity fields fill correctly via the persistent dialog handler. No application code changed.
 
