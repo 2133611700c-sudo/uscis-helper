@@ -1229,10 +1229,13 @@ function OptionPair({
   options,
   value,
   onPick,
+  testIdPrefix,
 }: {
   options: Array<{ id: string; label: string; sub: string }>
   value?: string
   onPick: (id: string) => void
+  /** When set, each option button gets data-testid=`${testIdPrefix}-${o.id}` (stable E2E selectors). */
+  testIdPrefix?: string
 }) {
   return (
     <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
@@ -1242,6 +1245,7 @@ function OptionPair({
           <button
             key={o.id}
             type="button"
+            data-testid={testIdPrefix ? `${testIdPrefix}-${o.id}` : undefined}
             onClick={() => onPick(o.id)}
             style={{
               flex: 1,
@@ -1493,12 +1497,15 @@ function SingleSelect({
   options,
   value,
   onPick,
+  testIdPrefix,
 }: {
   label: string
   tip: string
   options: Array<{ id: string; label: string }>
   value?: string
   onPick: (id: string) => void
+  /** When set, each option button gets data-testid=`${testIdPrefix}-${o.id}` (stable E2E selectors). */
+  testIdPrefix?: string
 }) {
   return (
     <div style={{ marginBottom: 10 }}>
@@ -1512,6 +1519,7 @@ function SingleSelect({
             <button
               key={o.id}
               type="button"
+              data-testid={testIdPrefix ? `${testIdPrefix}-${o.id}` : undefined}
               onClick={() => onPick(o.id)}
               style={{
                 padding: '10px 16px',
@@ -2931,6 +2939,7 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s1q}</div>
             <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s1h}</div>
             <OptionPair
+              testIdPrefix="tps-step1"
               value={data.type}
               onPick={(id) => {
                 setData((d) => ({ ...d, type: id as FilingType }))
@@ -2951,6 +2960,7 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s2q}</div>
             <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s2h}</div>
             <OptionPair
+              testIdPrefix="tps-step2"
               value={data.method}
               onPick={(id) => {
                 setData((d) => ({ ...d, method: id as Method }))
@@ -2987,6 +2997,7 @@ export default function TPSWizardV2({ locale }: Props) {
             <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 3 }}>{t.s3q}</div>
             <div style={{ fontSize: 15, color: TEXT_MUTED, marginBottom: 16 }}>{t.s3h}</div>
             <OptionPair
+              testIdPrefix="tps-step3"
               value={data.ead}
               onPick={(id) => {
                 setData((d) => ({ ...d, ead: id as EadChoice }))
@@ -4159,6 +4170,7 @@ function ReviewManual({
         ]}
         value={manual.marital_status}
         onPick={(id) => onChange({ marital_status: id as TPSAnswers['marital_status'] })}
+        testIdPrefix="tps-review-marital"
       />
       <FieldInput
         label={locale === 'ru' ? 'Отчество (по батькові)' : locale === 'uk' ? 'По батькові' : locale === 'es' ? 'Patronímico' : 'Patronymic / Middle Name'}
