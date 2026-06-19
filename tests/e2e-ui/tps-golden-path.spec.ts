@@ -30,15 +30,53 @@ test.use({ userAgent: UA }) // the app's anti-bot middleware 403s blank/curl UAs
 type Filing = 'init' | 'rereg'
 type Ead = 'ead' | 'noead'
 
-/** Navigate the wizard to the review screen via stable step testids (no OCR). */
+/**
+ * Navigate the wizard to the review screen via stable step testids (no OCR).
+ * Each step asserts the option is hydrated+visible BEFORE clicking — a fresh
+ * preview deployment compiles this heavy route on first hit, so the React
+ * bundle can take tens of seconds to hydrate. Clicking before hydration is the
+ * exact cause of the earlier "stuck on Step 1" 240s timeouts.
+ */
 async function navigateToReview(page: Page, opts: { filing: Filing; ead: Ead }) {
   await page.goto('/en/services/tps-ukraine/start', { waitUntil: 'domcontentloaded' })
-  await page.getByTestId(`tps-step1-${opts.filing}`).click()        // Initial / Re-registration
-  await page.getByTestId('tps-step2-paper').click()                 // Paper filing
-  await page.getByTestId(`tps-step3-${opts.ead}`).click()           // EAD: Add I-765 / TPS only
-  // "Recognize documents →" (tps-ocr-cta) advances to review regardless of uploads.
-  await page.getByTestId('tps-ocr-cta').click()
+  const click = async (tid: string, timeout = 30_000) => {
+    const el = page.getByTestId(tid)
+    await expect(el, `${tid} visible`).toBeVisible({ timeout })
+    await el.click()
+  }
+  await click(`tps-step1-${opts.filing}`, 60_000) // first interaction — allow cold hydration
+  await click('tps-step2-paper')                  // Paper filing
+  await click(`tps-step3-${opts.ead}`)            // EAD: Add I-765 / TPS only
+  await click('tps-ocr-cta')                      // "Recognize documents →" → review (no uploads needed)
   await expect(page.getByTestId('tps-review-step-container'), 'review container').toBeVisible({ timeout: 30_000 })
+}
+
+/**
+ * From the FILLED review screen (step 5), advance to step 6 via the stable
+ * "Generate packet →" nav button (tps-step6-continue-cta). That button runs the
+ * mail-ready gate: on pass it goes to step 6, on fail it stays on step 5 and
+ * renders tps-gate-error-container. We surface the exact blocker text instead of
+ * a blind timeout — every step-6 state (owner CTA, paywall, package-ready) only
+ * exists on step 6, so this advance is mandatory before asserting any of them.
+ */
+async function advanceToStep6(page: Page) {
+  const cont = page.getByTestId('tps-step6-continue-cta')
+  await expect(cont, 'step 5→6 continue button').toBeVisible({ timeout: 30_000 })
+  await cont.click()
+  const ready = page.getByTestId('tps-package-ready-state')
+  const gateErr = page.getByTestId('tps-gate-error-container')
+  await expect
+    .poll(
+      async () =>
+        (await ready.isVisible().catch(() => false)) || (await gateErr.isVisible().catch(() => false)),
+      { timeout: 30_000, message: 'step 6 package-ready OR gate-error to appear' },
+    )
+    .toBe(true)
+  if (await gateErr.isVisible().catch(() => false)) {
+    const msg = (await gateErr.innerText().catch(() => '')).trim()
+    throw new Error(`mail-ready gate blocked step 6 advance: ${msg}`)
+  }
+  await expect(ready, 'step 6 package-ready').toBeVisible()
 }
 
 /** A persistent dialog handler reading a shared value (OCR-row Edit = native prompt). */
@@ -105,12 +143,17 @@ async function installOwnerSession(context: BrowserContext) {
   }])
 }
 
-/** Owner: generate via the UI and save the downloaded packet ZIP; assert it is real. */
+/**
+ * Owner: from the FILLED review screen, advance to step 6, then generate via the
+ * UI and save the downloaded packet ZIP; assert it is real. The owner-only
+ * generate button renders ONLY on step 6 AND only when ownerChecked && isOwner &&
+ * isStep6Eligible — its visibility is the proof that owner_session + mail_ready
+ * are both true (it skips ONLY payment, never the gate).
+ */
 async function generateAndSaveZip(page: Page, savePath: string) {
-  // The owner-only generate button renders ONLY when isStep6Eligible (mailReadyGate
-  // passed). Its visibility is the proof that owner_session + mail_ready are both true.
+  await advanceToStep6(page)
   const cta = page.getByTestId('tps-generate-cta')
-  await expect(cta, 'owner generate CTA (owner + mail_ready)').toBeVisible({ timeout: 30_000 })
+  await expect(cta, 'owner generate CTA (step 6, owner + mail_ready)').toBeVisible({ timeout: 30_000 })
 
   const dlPromise = page.waitForEvent('download', { timeout: 120_000 }).catch(() => null)
   await cta.click()
@@ -138,11 +181,12 @@ test('TPS non-owner: mail-ready form → payment gate (no free bypass)', async (
   const responder = installPromptResponder(page)
   await navigateToReview(page, { filing: 'init', ead: 'noead' })
   await fillReviewForm(page, responder)
-  // A non-owner clicks the Nav "Generate packet →" (tps-generate-cta is owner/paid-only).
-  await page.getByRole('button', { name: /Generate packet|Згенерувати пакет|Сгенерировать пакет/i }).click()
+  await advanceToStep6(page)
+  // On step 6 a NON-owner sees the Pay button (paywall) and NEVER the owner-only
+  // generate CTA. package-ready renders for everyone on step 6, so it is NOT a
+  // bypass signal — the bypass proof is: paywall present AND generate-CTA absent.
   await expect(page.getByTestId('tps-paywall-state'), 'payment gate (paywall)').toBeVisible({ timeout: 30_000 })
-  await expect(page.getByTestId('tps-generate-cta')).toHaveCount(0)
-  await expect(page.getByTestId('tps-package-ready-state')).toHaveCount(0)
+  await expect(page.getByTestId('tps-generate-cta'), 'no free owner CTA for non-owner').toHaveCount(0)
 })
 
 test('TPS owner Scenario A: Initial / Paper / No-EAD → real packet ZIP (I-821)', async ({ page, context }) => {
