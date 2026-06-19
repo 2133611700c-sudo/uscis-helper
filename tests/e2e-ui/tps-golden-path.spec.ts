@@ -43,7 +43,10 @@ test('TPS golden path (no-OCR manual entry) renders review + generate CTA', asyn
   await clickButton(page, /TPS only|^No$|Ні\b|Нет\b/i, 'No EAD')
 
   // STEP 4 — Upload: choose the manual-entry path (skip OCR entirely).
-  await clickButton(page, /type .*(myself|hand|data)|enter .*manual|manual.* entry|введу .*рук|вручну|вручную|manualmente|skip/i, 'type manually')
+  // Stable testid on the "I will type the data myself" button (DocumentUploadScreen).
+  const skipAll = page.getByTestId('upload-skip-all')
+  await expect(skipAll, 'skip-OCR / type-manually button').toBeVisible({ timeout: 30_000 })
+  await skipAll.click()
 
   // STEP 5 — Review must render with Part 7 + the Generate CTA.
   const review = page.getByTestId('tps-review-step-container')
