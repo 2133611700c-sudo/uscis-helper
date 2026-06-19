@@ -1252,6 +1252,9 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 
 <!-- 2026-06-19: staging-deploy run 27841613204 — guards/pull-preview/inject-staging-supabase all passed, but `vercel build` FAILED with `spawn pnpm ENOENT`: vercel build runs the project's package manager (pnpm, from pnpm-lock.yaml) and pnpm was not installed on the runner. FIX (branch fix/staging-deploy-pnpm): add `pnpm/action-setup@v4` (v9) before the vercel steps. Deploy step never reached → production untouched. NEXT EXACT ACTION: merge → re-dispatch `gh workflow run "Staging Deploy (manual)" -f confirm=DEPLOY` → if build still fails on a MISSING build-time env var, that names exactly which owner-held key to add to the preview env; once preview deploys → smoke (healthz + staging-ref-in-JS / prod-ref-absent) → V1_STAGING_READY=true → TPS E2E. -->
 
+<!-- 2026-06-19: pnpm setup conflict. Run 27841917469 — `pnpm/action-setup@v4` with `version:9` errored because root package.json has `"packageManager":"pnpm@10.33.2"` (action refuses two version sources). FIX (branch fix/staging-deploy-pnpm-v6): use `pnpm/action-setup@v6` with NO version input (reads the packageManager field) and bump node to 22 (Node 20 deprecation warning on runners). Failed before build/deploy → production untouched. NEXT EXACT ACTION: merge → re-dispatch deploy; expect build to proceed (pnpm@10.33.2 now resolved). -->
+
+
 
 
 
