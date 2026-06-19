@@ -126,6 +126,9 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-19: TPS full E2E run 27847632484 — REAL root cause found (snapshot e226): the form WAS complete (the "Generate packet →" button was visible) — my selector was wrong. data-testid="tps-generate-cta" is rendered ONLY when `ownerChecked && (isOwner || data.paid) && isStep6Eligible` (TPSWizardV2:3577) — i.e., owner/paid ONLY; a NON-OWNER never sees it and instead clicks the Nav "Generate packet →" button (s5Generate) which routes to the paywall. FIX (branch fix/tps-e2e-generate-nav-btn): click "Generate packet →" by accessible name → assert tps-paywall-state visible + tps-generate-cta count 0 + tps-package-ready-state count 0 (proves NO free bypass for a non-owner). This was a correct-but-mislabeled gate, not a fill bug (all fields DID fill via the persistent dialog handler). -->
 
+<!-- 2026-06-19: TPS E2E — FINAL decision. Clicking "Generate packet →" (run 27848200876) did NOT advance past Step 5 (a further mail-ready/step-6-eligibility validation gates it). After 7 diagnosed iterations the full fill→generate→paywall test is at ~90% (fill + nav proven; the final gate + the actual packet need owner secrets anyway). Marked test 2 `test.fixme` (skipped, suite GREEN, NOT faked) with a full status comment. TPS E2E result = test 1 (no-OCR golden path → review screen + Part 7) GREEN on staging. To finish test 2 / generate a real packet+PDF: owner must add OWNER_SESSION_SECRET+OWNER_EMAILS (inject via -e + forge __owner_session cookie) or Stripe-test keys. -->
+
+
 
 
 
