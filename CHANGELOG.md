@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS E2E: fix the prompt-dialog race in the core-field fill
+- The full-path test's per-click `page.once('dialog')` raced (an unmatched prompt consumed the wrong handler, leaving sex/passport-expiration/I-94/last-entry empty even though name/dob/passport/country filled). Replaced it with one persistent `page.on('dialog')` reading a shared value set before each Edit click, awaited, with a 300ms settle. No application code changed.
+
 ## 2026-06-19 | TPS E2E: full path to the payment gate (no free bypass)
 - The OCR-row "Edit" buttons open a native `window.prompt()`; Playwright fills the core identity fields via `page.on('dialog')` + the stable `tps-ocr-edit-<key>` testids. Added a second test that fills all core fields (Latin + ISO dates) + manual fields + Part 7, asserts the Generate CTA renders, clicks it, and hard-asserts the paywall appears while the package-ready state does NOT — proving there is no free packet bypass for a non-owner. Test 1 (navigate → review) stays as the deterministic smoke. No application code changed. Full ZIP download remains an owner-gated follow-up (owner session or Stripe test keys).
 

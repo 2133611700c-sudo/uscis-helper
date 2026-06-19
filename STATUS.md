@@ -122,6 +122,9 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-19: TPS E2E extended to the FULL path → payment gate. KEY: the OCR-row "Edit" buttons (testid tps-ocr-edit-<key>: family_name/given_name/dob/sex/passport_number/passport_expiration_date/country_of_nationality/i94_admission_number/last_entry_date/status_at_last_entry) open a native window.prompt() — handled in Playwright via page.on('dialog'). New test 2 fills all core identity fields (Latin + ISO dates) + manual fields + Part 7 → asserts the generate CTA renders → clicks it → HARD-asserts tps-paywall-state appears AND tps-package-ready-state has count 0 (proves NO free bypass for a non-owner). Test 1 (nav→review) stays as the deterministic smoke. Full ZIP download still needs OWNER_SESSION_SECRET/OWNER_EMAILS or Stripe-test (owner-held). -->
 
+<!-- 2026-06-19: TPS full E2E run 27847060748 — test1 (nav→review) PASS; test2 failed at generate CTA. Snapshot proved the prompt-fill WORKS (Shevchenko/Taras/1990-01-15/FA123456/Ukraine/Parole persisted) but sex/passport_expiration/i94/last_entry stayed empty → ROOT CAUSE: per-click page.once('dialog') RACED (an unmatched prompt consumed the wrong once-handler). FIX (branch fix/tps-e2e-dialog-race): one PERSISTENT page.on('dialog') reading a shared value + await + 300ms settle. Re-dispatch after merge. -->
+
+
 
 
 
