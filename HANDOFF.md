@@ -1264,6 +1264,9 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 
 <!-- 2026-06-19: TPS E2E first run (27844443577) — staging deploy + healthz green; the spec successfully clicked Step1 Initial, Step2 Paper, Step3 No-EAD (text-regex selectors WORK), then failed at Step4: the skip-OCR button text regex didn't match. FIX (branch fix/tps-e2e-skip-testid): use the stable data-testid `upload-skip-all` (the "I will type the data myself" button in DocumentUploadScreen, EN copy confirmed). Also `upload-next` testid exists. NEXT: merge → re-dispatch `gh workflow run "Staging E2E — TPS (manual)"` → expect to reach the review screen; if a manual-field/generate selector then mismatches, iterate. -->
 
+<!-- 2026-06-19: TPS E2E run 27844933767 — downloaded the Playwright error-context DOM snapshot: it confirmed the spec reaches STEP 4 of 6 ("Upload your documents") — so nav steps 1-3 work — but TPSWizardV2 step 4 is an INLINE upload screen (document tiles International passport/Internal passport/I-94/I-797-EAD/Driver's License + "No international passport?" + "Recognize documents →"), NOT the DocumentUploadScreen component, so `upload-skip-all` does not exist. The real no-OCR path: TPSWizardV2 line ~3030 the step-4 Nav is `next={() => goto(5)}` with `nextTestId="tps-ocr-cta"` — the "Recognize documents →" button ALWAYS advances to review regardless of uploads, so clicking tps-ocr-cta with zero files reaches review with no OCR/Gemini. FIX (branch fix/tps-e2e-ocr-cta): step 4 now clicks getByTestId('tps-ocr-cta'). NEXT: merge → re-dispatch the TPS E2E → expect to reach review (tps-review-step-container + tps-generate-cta + tps-part7-checkbox); iterate if the review/generate selectors then mismatch. -->
+
+
 
 
 
