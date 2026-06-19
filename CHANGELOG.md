@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-19 | Staging environment LIVE + runtime-proven (ADR-023)
+- Staging is fully stood up and verified end to end. App: Vercel preview `…-alb2sc5n3…vercel.app` (sha `0464bc5`), `healthz` `environment=preview`, production untouched. DB: isolated Supabase `rxnlpvldngxgdxkxoaaj` (44/44 migrations, 47 RLS tables, bucket `images` private).
+- **Runtime proof** (token-gated deep `/api/health`, 200): `db:true`, `wizard_sessions_ok:true`, `canonical_answers_count:12` (staging seed), `supabase_storage:true` — the running server genuinely connects to staging Postgres + storage.
+- Set repo variable `V1_STAGING_READY=true`. Added `docs/adr/ADR-023-isolated-staging-environment.md`. The `#159` gate "Staging isolated" is now satisfied. No application code changed.
+- Note: full TPS OCR + paid E2E still need `GEMINI_*` / `OCR_CACHE_ENC_KEY` / Stripe **test** keys passed as additional `vercel deploy -e/-b` flags (owner-held).
+
 ## 2026-06-19 | Staging deploy: set true runtime env via vercel deploy -e/-b
 - The prebuilt deploy approach (`vercel build` + `.env.preview.local` + `deploy --prebuilt`) did NOT set the **server runtime** env — Next.js reads server `process.env` at runtime from the Vercel project's environment, not from the injected build file. So `deep /api/health` returned 404 (HEALTH_TOKEN absent at runtime) and the runtime Supabase was not provably staging.
 - Replaced it with a single `vercel deploy` (remote build) that passes per-deployment `--build-env` (NEXT_PUBLIC_*) and `--env` (runtime `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`/`HEALTH_TOKEN`). `--env` genuinely sets the serverless runtime env, so the deep-health runtime DB proof is valid. Production stays untouched (preview deploy). No application code changed.
