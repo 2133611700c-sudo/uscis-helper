@@ -118,6 +118,9 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-19: TPS E2E run 27844933767 — DOM snapshot revealed step-4 in TPSWizardV2 is an inline upload UI (doc tiles + "Recognize documents →"), NOT the DocumentUploadScreen component → no upload-skip-all. REAL no-OCR path: the "Recognize documents →" button has testid tps-ocr-cta and is `next={()=>goto(5)}` — it ALWAYS advances to review, so clicking it with ZERO files reaches review with no OCR. Fix: step 4 clicks tps-ocr-cta. (Explore conflated DocumentUploadScreen with the wizard's inline upload.) Re-dispatch after merge. -->
 
+<!-- 2026-06-19: TPS E2E run 27845435949 — tps-ocr-cta fix WORKED: spec now reaches STEP 5 "Review the data" (snapshot shows Edit buttons + Part 7 checkbox). Failed on tps-generate-cta — that CTA renders only AFTER Part 7 is confirmed AND required identity fields are complete (core fields are label-driven, not filled by the no-OCR path). Fix: hard-assert only the deterministic reach — tps-review-step-container + tps-part7-checkbox; generate CTA is best-effort (logs whether it appears). This proves the no-OCR golden path navigates to the review screen on staging. Full generate→packet (fill core fields + owner session for ZIP) = follow-up. -->
+
+
 
 
 
