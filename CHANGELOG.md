@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-19 | TPS browser E2E (no-OCR golden path) + staging E2E workflow
+- The TPS wizard has a no-OCR golden path (step 4 "type manually" skips OCR → manual review → generate), so a meaningful TPS E2E needs no secrets. Added `tests/e2e-ui/tps-golden-path.spec.ts`: drives Initial → Paper → No-EAD → type-manually and hard-asserts the review screen renders with the Part 7 declaration + Generate CTA (best-effort fill + generate logs the outcome; a non-owner is expected to hit the paywall).
+- Added `.github/workflows/staging-e2e-tps.yml`: deploys a fresh Vercel preview wired to staging Supabase (`-e/-b`), waits for `healthz` `environment=preview`, runs the TPS spec with `E2E_BASE_URL=<staging>`, and uploads PII-free Playwright artifacts. Production is never the target.
+- Follow-ups (owner-held): full ZIP download needs an owner session (`OWNER_SESSION_SECRET`) or Stripe test token; full OCR path needs `GEMINI_*`/`OCR_CACHE_ENC_KEY`. No application code changed.
+
 ## 2026-06-19 | Staging environment LIVE + runtime-proven (ADR-023)
 - Staging is fully stood up and verified end to end. App: Vercel preview `…-alb2sc5n3…vercel.app` (sha `0464bc5`), `healthz` `environment=preview`, production untouched. DB: isolated Supabase `rxnlpvldngxgdxkxoaaj` (44/44 migrations, 47 RLS tables, bucket `images` private).
 - **Runtime proof** (token-gated deep `/api/health`, 200): `db:true`, `wizard_sessions_ok:true`, `canonical_answers_count:12` (staging seed), `supabase_storage:true` — the running server genuinely connects to staging Postgres + storage.
