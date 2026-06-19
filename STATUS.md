@@ -120,6 +120,9 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-19: TPS E2E run 27845435949 — tps-ocr-cta fix WORKED: spec now reaches STEP 5 "Review the data" (snapshot shows Edit buttons + Part 7 checkbox). Failed on tps-generate-cta — that CTA renders only AFTER Part 7 is confirmed AND required identity fields are complete (core fields are label-driven, not filled by the no-OCR path). Fix: hard-assert only the deterministic reach — tps-review-step-container + tps-part7-checkbox; generate CTA is best-effort (logs whether it appears). This proves the no-OCR golden path navigates to the review screen on staging. Full generate→packet (fill core fields + owner session for ZIP) = follow-up. -->
 
+<!-- 2026-06-19: TPS E2E extended to the FULL path → payment gate. KEY: the OCR-row "Edit" buttons (testid tps-ocr-edit-<key>: family_name/given_name/dob/sex/passport_number/passport_expiration_date/country_of_nationality/i94_admission_number/last_entry_date/status_at_last_entry) open a native window.prompt() — handled in Playwright via page.on('dialog'). New test 2 fills all core identity fields (Latin + ISO dates) + manual fields + Part 7 → asserts the generate CTA renders → clicks it → HARD-asserts tps-paywall-state appears AND tps-package-ready-state has count 0 (proves NO free bypass for a non-owner). Test 1 (nav→review) stays as the deterministic smoke. Full ZIP download still needs OWNER_SESSION_SECRET/OWNER_EMAILS or Stripe-test (owner-held). -->
+
+
 
 
 
