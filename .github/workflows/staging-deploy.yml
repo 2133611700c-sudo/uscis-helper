@@ -4,8 +4,15 @@ name: Staging Deploy (manual)
 # (#160). A preview deploy NEVER touches Production (messenginfo.com) or the prod
 # Supabase. All secrets stay in GitHub. Inert until dispatched with confirm=DEPLOY.
 #
+# RUNTIME ENV: the staging Supabase + HEALTH_TOKEN are passed to `vercel deploy` via
+# --build-env (-b, build-time, e.g. NEXT_PUBLIC_*) and --env (-e, runtime, e.g. the
+# server SUPABASE_* + HEALTH_TOKEN). A prebuilt deploy would NOT set server runtime
+# env (that comes from the project's env settings), so we let Vercel build remotely
+# with these per-deployment overrides instead. Other app env (GEMINI/Stripe/etc.)
+# comes from the project's Preview env and is only needed for those features.
+#
 # Required secrets: VERCEL_TOKEN, STAGING_SUPABASE_PROJECT_REF, STAGING_SUPABASE_URL,
-#   STAGING_SUPABASE_ANON_KEY, STAGING_SUPABASE_SERVICE_ROLE_KEY.
+#   STAGING_SUPABASE_ANON_KEY, STAGING_SUPABASE_SERVICE_ROLE_KEY, HEALTH_TOKEN.
 
 on:
   workflow_dispatch:
@@ -39,7 +46,7 @@ jobs:
       - name: Guards — secrets present, staging != prod, URL matches staging ref
         run: |
           set -euo pipefail
-          for v in VERCEL_TOKEN STAGING_REF STAGING_URL STAGING_ANON STAGING_SR; do
+          for v in VERCEL_TOKEN STAGING_REF STAGING_URL STAGING_ANON STAGING_SR HEALTH_TOKEN; do
             eval "val=\${$v:-}"; [ -n "$val" ] || { echo "::error::secret $v missing"; exit 1; }
           done
           [ "$STAGING_REF" != "$PROD_REF" ] || { echo "::error::staging ref == prod ref"; exit 1; }
@@ -50,46 +57,21 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
 
-      # pnpm must be on PATH: `vercel build` invokes the project's package manager
-      # (pnpm). No `version:` input — action-setup reads it from package.json's
-      # `packageManager` field (pnpm@10.x); specifying both would error.
-      - uses: pnpm/action-setup@v6
-
       - run: npm i -g vercel@latest
 
-      - name: Pull PREVIEW env (never production)
-        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
-
-      - name: Inject staging Supabase into the build env (local to this run only)
-        run: |
-          set -euo pipefail
-          F=.vercel/.env.preview.local
-          touch "$F"
-          grep -vE '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY)=' "$F" > "$F.tmp" || true
-          {
-            echo "NEXT_PUBLIC_SUPABASE_URL=$STAGING_URL"
-            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$STAGING_ANON"
-            echo "SUPABASE_URL=$STAGING_URL"
-            echo "SUPABASE_SERVICE_ROLE_KEY=$STAGING_SR"
-            # HEALTH_TOKEN lets the smoke prove the deployment talks to staging Supabase
-            # at runtime via the token-gated /api/health (deep DB check).
-            [ -n "${HEALTH_TOKEN:-}" ] && echo "HEALTH_TOKEN=$HEALTH_TOKEN"
-          } >> "$F.tmp"
-          mv "$F.tmp" "$F"
-          # Safety: the pulled/overridden env must NOT contain the prod ref anywhere.
-          if grep -q "$PROD_REF" "$F"; then echo "::error::prod ref present in build env — aborting"; exit 1; fi
-          echo "staging supabase injected (values hidden); prod ref absent"
-
-      - name: Build (confirm=DEPLOY only)
-        if: ${{ github.event.inputs.confirm == 'DEPLOY' }}
-        run: vercel build --token="$VERCEL_TOKEN"
-
-      - name: Deploy PREVIEW (confirm=DEPLOY only)
+      - name: Deploy PREVIEW with staging runtime env (confirm=DEPLOY only)
         if: ${{ github.event.inputs.confirm == 'DEPLOY' }}
         id: deploy
         run: |
           set -euo pipefail
-          URL=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          # Vercel builds remotely (NOT prebuilt) so -e applies to the server runtime.
+          # -b = build-time (NEXT_PUBLIC_* inlining), -e = runtime (server process.env).
+          URL=$(vercel deploy --yes --token="$VERCEL_TOKEN" \
+            -b NEXT_PUBLIC_SUPABASE_URL="$STAGING_URL"        -e NEXT_PUBLIC_SUPABASE_URL="$STAGING_URL" \
+            -b NEXT_PUBLIC_SUPABASE_ANON_KEY="$STAGING_ANON"  -e NEXT_PUBLIC_SUPABASE_ANON_KEY="$STAGING_ANON" \
+            -e SUPABASE_URL="$STAGING_URL" \
+            -e SUPABASE_SERVICE_ROLE_KEY="$STAGING_SR" \
+            -e HEALTH_TOKEN="$HEALTH_TOKEN")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "staging_url=$URL"
 
@@ -98,8 +80,7 @@ jobs:
         env:
           UA: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
         run: |
-          # NOTE: -u/-o pipefail but NOT -e — the conditionals below intentionally use
-          # non-zero exit codes (grep) for control flow.
+          # -u/-o pipefail but NOT -e — grep is used for control flow below.
           set -uo pipefail
           URL="${{ steps.deploy.outputs.url }}"
           echo "deployed: $URL"
@@ -117,18 +98,15 @@ jobs:
           if ! grep -q '"environment":"preview"' /tmp/hz; then echo "::error::not a preview deployment (production must never be the target)"; exit 1; fi
 
           # 2) RUNTIME DB PROOF — the token-gated deep /api/health connects to the
-          #    deployment's CONFIGURED Supabase (the staging one we injected) and reads
-          #    its tables. 200 ⇒ the running server talks to staging Postgres at runtime.
-          #    (NEXT_PUBLIC_SUPABASE_URL is NOT in client JS — the app has no browser
-          #    supabase client — so a client-side ref grep is N/A by design.)
-          if [ -z "${HEALTH_TOKEN:-}" ]; then echo "::error::HEALTH_TOKEN secret missing"; exit 1; fi
+          #    deployment's CONFIGURED Supabase (the staging one passed via -e) and
+          #    reads its tables. 200 ⇒ the running server talks to staging Postgres.
           hcode=$(curl -s -A "$UA" -H "x-health-token: $HEALTH_TOKEN" -o /tmp/health -w '%{http_code}' "$URL/api/health" || true)
           echo "deep_health_code=$hcode"
           echo "deep_health_body=$(head -c 500 /tmp/health 2>/dev/null)"
           if [ "$hcode" != "200" ]; then echo "::error::deep /api/health != 200 — runtime DB connection to staging NOT proven"; exit 1; fi
 
-          # 3) ISOLATION — proven at build time: the injected build env contained ONLY
-          #    the staging Supabase and the Inject step HARD-FAILS if the prod ref
-          #    appears anywhere in it. Production messenginfo.com is a separate
-          #    deployment and is never targeted by a preview deploy.
-          echo "smoke_ok url=$URL (preview ✓ · deep-health 200 ✓ · build-env prod-ref-absent ✓)"
+          # 3) ISOLATION — the staging Supabase URL/keys are the ONLY ones passed to
+          #    this deployment; production messenginfo.com is a separate deployment and
+          #    is never the target of a preview deploy. Guards already asserted the
+          #    staging URL carries the staging ref and not the prod ref.
+          echo "smoke_ok url=$URL (preview ✓ · deep-health 200 ✓ · staging-only env ✓)"
