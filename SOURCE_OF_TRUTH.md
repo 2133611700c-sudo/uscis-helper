@@ -28,7 +28,8 @@ These own: transliteration, authority names, historical policy, geography, USCIS
 
 ## Product gate E2E (real-artifact proof, per product)
 - TPS: `tests/e2e-ui/tps-golden-path.spec.ts` + `.github/workflows/staging-e2e-tps.yml` → real I-821(+I-765) ZIP. **CLOSED** (run 27853270531).
-- EAD: `tests/e2e-ui/ead-golden-path.spec.ts` + `.github/workflows/staging-e2e-ead.yml` → real filled I-765 PDF via the live UI (EAD is FREE — no owner/Stripe gating). Hard acceptance = negative readiness + pypdf field-level checks (name/dob/category a+12/app-type/address/A-number blank/signature blank) + 7 pages + render/missing-page + staging-ref proof. Stable testids live on `apps/web/src/components/services/ead/EADWizard.tsx`.
+- EAD: `tests/e2e-ui/ead-golden-path.spec.ts` + `.github/workflows/staging-e2e-ead.yml` → real filled I-765 PDF via the live UI (EAD is FREE — no owner/Stripe gating). Hard acceptance = negative readiness + pypdf field-level checks (name/dob/category a+12/app-type/address/A-number blank/signature blank) + 7 pages + render/missing-page + staging-ref proof. Stable testids live on `apps/web/src/components/services/ead/EADWizard.tsx`. **CLOSED** (run 27885324248, 2026-06-20).
+- Translation V2: REBUILD from main (supersede draft PR #119; forensic audit first, do NOT merge #119). Target full E2E: Stripe test → verified webhook (idempotency already on main via #184) → one order → upload → classify → quality → Cyrillic OCR (uk/ru separated; printed vs handwriting; uncertain critical → review_required+null) → translation candidate → operator review/correction (provenance) → approval → immutable PDF once → visual acceptance → exact stored bytes delivered. IN PROGRESS.
 
 ## Canonical PDF prefill
 - `apps/web/src/lib/tps/pdfPrefiller.ts` — XFA-strip, AcroForm fill, WinAnsi safety
