@@ -1,5 +1,6 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
+<!-- TV2: W1-W5 integrated, tsc 0, suite 4229 green. Next: agent PRs cleanup, Cyrillic flags, staging E2E. -->
 <!-- TV2 W5: webhook+submit-order wire durable V2 order (handleVerifiedPayment). Pipeline wired end-to-end on feat/translation-v2-rebuild. Next: integrate W3 operator UI, flip Cyrillic flags, staging E2E (creds). -->
 <!-- Translation V2 rebuild step 1 (2026-06-20): PDF renderer determinism pinned (lib/packet/pdf.ts → signed_at); pdfDeterminism.test.ts green. Next: orders/index.ts spine. See #195. -->
 <!-- TV2 rebuild: orders/index.ts + renderFromCanonical ported (foundation), tsc 0, 13 unit tests green. Next handleVerifiedPayment rewrite + delivery worker. -->

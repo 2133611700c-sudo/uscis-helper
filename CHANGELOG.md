@@ -1,5 +1,7 @@
 # CHANGELOG
 
+<!-- (rolling) TV2 rebuild W1-W5 integrated 2026-06-20; tsc 0; full suite 4229 green. -->
+
 ## 2026-06-20 | Translation V2 rebuild — W5 webhook + submit-order wire the durable V2 order
 - Layered `handleVerifiedPayment` (W1) onto the two LIVE paid-translation entry points, creating the durable V2 order keyed on `checkout_session_id` (UNIQUE) — NEVER matched by email — without changing the legacy `manual_review_queue`/`translation_orders` behaviour:
   - `api/stripe/webhook/route.ts`: in the translation branch (inside the existing `after()`), after the legacy update, call `handleVerifiedPayment({verifiedSession: cs, verifiedEventId: event.id, source: 'webhook'})`. Layered ON TOP of the #184 event-dedupe (single ledger; the handler owns no dedupe). Best-effort/try-caught → a V2 problem never fails the webhook (Stripe retries).

@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const h = vi.hoisted(() => ({
   event: {} as unknown,
   pending: [] as Promise<unknown>[],
-  hvp: vi.fn(async () => ({ orderId: 'o1', created: true, reused: false, status: 'queued', resultCode: 'order_created' })),
+  hvp: vi.fn(async (_input: { source: string; verifiedEventId: string | null; verifiedSession: { id: string } }) => ({ orderId: 'o1', created: true, reused: false, status: 'queued', resultCode: 'order_created' })),
 }))
 
 vi.mock('next/server', async (orig) => {
@@ -48,7 +48,7 @@ describe('#195 W5 — webhook wires the durable V2 translation order', () => {
     h.event = { id: 'evt_tr', type: 'checkout.session.completed', data: { object: { id: 'cs_tr', metadata: { service: 'translation', plan: 'basic' }, customer_details: { email: 'u@x.io' }, amount_total: 1499 } } }
     await deliver()
     expect(h.hvp).toHaveBeenCalledTimes(1)
-    const arg = h.hvp.mock.calls[0][0] as { source: string; verifiedEventId: string; verifiedSession: { id: string } }
+    const arg = h.hvp.mock.calls[0][0]
     expect(arg.source).toBe('webhook')
     expect(arg.verifiedEventId).toBe('evt_tr')
     expect(arg.verifiedSession.id).toBe('cs_tr')
