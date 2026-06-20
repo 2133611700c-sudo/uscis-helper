@@ -27,13 +27,18 @@ export async function POST(request: NextRequest) {
           subject: 'Messenginfo Owner Access Code',
           text: `Your owner access code: ${code}\n\nValid for 10 minutes. Do not share.`,
         })
-      } catch (e) {
-        console.error('[owner] Resend failed, code logged below')
-        console.log(`[OWNER_CODE] ${code}`)
+      } catch {
+        // SECURITY (#184 E2): NEVER log the live code in production (it lands in
+        // Vercel logs = credential leak). Surface the delivery failure only.
+        console.error('[owner] Resend failed to deliver the access code')
+        if (process.env.NODE_ENV !== 'production') console.log(`[OWNER_CODE dev-only] ${code}`)
       }
+    } else if (process.env.NODE_ENV !== 'production') {
+      // No email provider configured — dev-only fallback so a local developer
+      // can read the code. Gated so it can never log in production.
+      console.log(`[OWNER_CODE dev-only] ${code}`)
     } else {
-      // No Resend configured — log code to server console (visible in Vercel logs)
-      console.log(`[OWNER_CODE] ${code}`)
+      console.error('[owner] No email provider configured; cannot deliver access code')
     }
 
     return NextResponse.json({ ok: true, message: 'If this is an owner email, a code was sent.' })

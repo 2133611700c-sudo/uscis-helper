@@ -20,8 +20,7 @@ import { isMinimallyComplete, type TPSAnswers, defaultEadCategoryFor } from '@/l
 import { buildPacket, type TranslationOptions } from '@/lib/tps/packetBuilder'
 import type { ProvenanceMap } from '@/lib/tps/provenance'
 import { checkReviewPayloadParity, type ReviewSnapshot } from '@/lib/tps/reviewParity'
-import { isOwnerSession } from '@/lib/ownerAccess'
-import { stripe } from '@/lib/stripe/client'
+import { requirePaidPacket } from '@/lib/stripe/requirePaidPacket'
 // CANONICAL_CONTINUITY: packet route loads persisted canonical (shadow/enforce modes)
 import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import {
@@ -99,40 +98,20 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   // ── Server-side entitlement check ──────────────────────────────────────
-  // Owner bypasses payment. Non-owner must have valid Stripe payment.
-  // This prevents paywall bypass via direct API call or back-navigation.
-  const owner = await isOwnerSession(req)
-  if (!owner.verified) {
-    // Check for Stripe payment proof: the wizard sends X-Payment-Token
-    // after successful Stripe checkout. Without either owner session or
-    // payment token, generation is blocked server-side.
-    const paymentToken = req.headers.get('x-payment-token')
-    if (!paymentToken) {
-      return NextResponse.json(
-        { error: 'Payment required. Complete checkout before generating packet.' },
-        { status: 403 },
-      )
-    }
-    // Verify the Stripe checkout session ID against Stripe API.
-    // The token is the cs_* session ID set from ?cs= param on the success redirect.
-    // Accepts cs_* and py_* (live + test mode IDs).
-    if (stripe && /^(cs_|py_)/.test(paymentToken)) {
-      try {
-        const session = await stripe.checkout.sessions.retrieve(paymentToken, {
-          expand: ['payment_intent'],
-        })
-        const paid = session.payment_status === 'paid'
-        const correctService = session.metadata?.service === 'tps-ukraine'
-        if (!paid || !correctService) {
-          return NextResponse.json(
-            { error: 'Payment not confirmed. Please complete checkout.' },
-            { status: 403 },
-          )
-        }
-      } catch {
-        // Stripe not configured or network error — fall through (degrade gracefully)
-      }
-    }
+  // Owner bypasses payment; everyone else must present a Stripe-verified,
+  // product-matched, unconsumed token. This prevents paywall bypass via direct
+  // API call or back-navigation.
+  //
+  // SECURITY (#184 E5): use the SHARED fail-closed gate (same as reparole + ead).
+  // The previous TPS-local check fell OPEN — a junk token (not cs_/py_), missing
+  // Stripe config, or any retrieve() error fell through to generation, a full
+  // payment bypass. requirePaidPacket fails closed on every one of those.
+  const gate = await requirePaidPacket({ req, product: 'tps-ukraine' })
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: 'Payment required to generate packet.', reason: gate.code },
+      { status: gate.status },
+    )
   }
 
   const ip = getClientIP(req)
