@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-20 | Translation V2 rebuild — port orders/index.ts RPC bridge + renderFromCanonical (foundation)
+- Build-order step 1-2 (per audit #195, Agent A). Ported from #119 the net-new application layer that bridges the already-merged V2 DB RPCs to TypeScript (the spine was dead SQL with zero TS consumers):
+  - `lib/translation/orders/index.ts` (694 lines) — the order/artifact/outbox RPC bridge: `createOrGetOrder`/`getOrderByCheckout` (idempotent on `checkout_session_id` UNIQUE), `transitionOrder` (state-machine), `bindCanonicalDocument`, `applyOperatorOverride`, `resolveOrderCanonical`, `createArtifactAndEnqueue`, `claimOutboxEvent`/`markOutbox*`, `downloadArtifactBytes` (SHA-verified), `recordStripeProcessedEvent`. Imports only main-existing exports (`appendCanonicalOverride`, `resolveCanonicalDocument`, `CanonicalOverride`).
+  - `lib/translation/orders/renderFromCanonical.ts` — resolves canonical → fields → `generateTranslationPDF` (now byte-deterministic) → SHA-256 + 7-field cert binding for the immutable artifact.
+- Tests ported (pure unit, no DB): `orderErrors.unit.test.ts` (7), `renderFromCanonical.test.ts` (6). tsc 0 errors; 13 tests green.
+- NOT yet ported (next, with required rewrites): `handleVerifiedPayment` (REWRITE — single #184 dedupe ledger), webhook + submit-order REWRITE, delivery worker, v2 operator UI. #119 stays draft → superseded after this rebuild PR lands.
+
 ## 2026-06-20 | Translation V2 rebuild — pin PDF renderer determinism (immutable-artifact prerequisite)
 - First code step of the Translation V2 rebuild (branch `feat/translation-v2-rebuild`). Fixes Agent D's HIGH finding (#195): the translation PDF renderer was non-deterministic, so the V2 immutable-artifact content-address (SHA-256 of bytes) was unstable — a re-render after a partial failure would mint a NEW artifact + outbox row instead of being a true no-op.
 - `lib/packet/pdf.ts`: anchored the "Translation Date" to `certificationRecord.signed_at` (the single pinned time source) instead of the render wall-clock; pinned pdf-lib `CreationDate`/`ModDate` to `signed_at` + fixed `Producer`/`Creator` (pdf-lib otherwise stamps wall-clock + version). Same input → byte-identical output.
