@@ -1,6 +1,12 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## THIS SESSION (current) — Emergency GitHub exposure lockdown
+- Trigger: GitGuardian email reported a Google API Key pattern in `uscis-helper` commit `79ee41d92b56f7470141e1acacbb8bf1baef963d`.
+- Repo-level containment: `uscis-helper` was set to private; GitHub Actions was disabled to stop public code exposure and new Actions billing from this repo.
+- Code/doc containment: all `AIza...` key-shaped literals were redacted from the current tree to `REDACTED_GOOGLE_API_KEY_DO_NOT_USE`, including Vision diagnostic/test files and saved USCIS HTML snapshots that contain public site keys but still trigger scanners.
+- Verification required before closing: confirm `rg 'AIza[0-9A-Za-z_-]+'` is clean on the current tree and confirm provider-side Google key rotation/restriction outside GitHub if any exposed value was project-owned. Treat provider rotation as `BLOCKED_EXTERNAL` until verified in Google Cloud.
+
 ## THIS SESSION (current) — Translation V2 kickoff: 5-agent audit (#195) + P0-1 live fix
 - EAD gate CLOSED (#194). Translation V2 = priority #1. Ran 5 read-only agents; synthesis in issue #195.
 - AUDIT SYNTHESIS: V2 DB spine on main but DEAD SQL (no TS consumers) — rebuild wires app layer from #119 (build order: orders/index.ts → handleVerifiedPayment+renderFromCanonical → webhook+submit-order REWRITE for #184-dedupe reconciliation → delivery worker → v2 operator UI). DISCARD #119's migrations (on main) + its operator-auth helper (main's legacyOperatorAuth is stronger). KEEP-as-is: orders/index, renderFromCanonical, observability/events, lifecycle, verifyPayment session field, delivery worker. Branch `feat/translation-v2-rebuild` created (no commits yet); #119 fetched to local ref `pr119-head`.
@@ -1335,8 +1341,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-19: TPS FULL E2E (comprehensive single PR; close TPS to a real artifact before EAD/Re-Parole/Translation, per owner). MAIL-READY REQUIRED-FIELDS TABLE (from readinessPolicy requiredAt('mail') + buildDraftAnswers mapping + UI selector):
  family_name→ocr tps-ocr-edit-family_name (prompt) | given_name→tps-ocr-edit-given_name | dob→tps-ocr-edit-dob ISO | sex→tps-ocr-edit-sex (default M) | country_of_birth→DERIVED from country_of_nationality | country_of_nationality→tps-ocr-edit-country_of_nationality | passport_number→tps-ocr-edit-passport_number | passport_expiration_date→tps-ocr-edit-passport_expiration_date ISO | us_address_street/city/state/zip→tps-review-manual-address-* | last_entry_date→tps-ocr-edit-last_entry_date ISO | filing_path→step1 | daytime_phone→tps-review-manual-phone (10 digits) | email→tps-review-manual-email (has @) | marital_status→**WAS MISSING**→now tps-review-marital-single | part7_reviewed→tps-part7-checkbox | ead_category→AUTO (c19 init / a12 rereg, only if wants_ead).
  APP CHANGE: added optional testIdPrefix to SingleSelect (line ~1490) + OptionPair (line ~1228); wired tps-step1/2/3 + tps-review-marital. SPEC: 4 tests, all data-testid selectors, scenarios A (init/paper/noead→I-821) and B (rereg/paper/ead→I-821+I-765). WORKFLOW: staging-e2e-tps.yml PDF step renders both scenario ZIPs, emits visual-acceptance.json, fails on missing/invalid I-821 (both) or I-765 (B). tsc 0; playwright --list=4. NEXT EXACT ACTION: PR → green CI → merge → dispatch "Staging E2E — TPS (manual)" → confirm scenario-a/b ZIP + i821_visual=pass + i765_visual=pass(B) in the run + artifacts → then (only then) EAD complete E2E + I-765 visual. DoD for TPS: both scenarios green, owner recognised, mail_ready, Step6, real ZIP, I-821 + I-765 rendered+visually passed, production untouched, 0 PII. -->
-
-
 
 
 
