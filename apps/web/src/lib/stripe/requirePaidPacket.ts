@@ -57,15 +57,57 @@ export interface RequirePaidPacketOptions {
 const STRIPE_ID = /^(cs_|py_)/
 
 // ── Replay / idempotency store ────────────────────────────────────────────
-// Per-instance, in-memory: a given Stripe session id can mint exactly one packet
-// per product on this serverless instance. This is best-effort (serverless can
-// run multiple instances); a durable store (Supabase/KV) would close the gap
-// fully. It is NOT a payment check — payment is already verified above — it only
-// prevents a single confirmed token from being re-used for repeated downloads.
+// A payment-verified Stripe token may mint exactly ONE packet per product. This
+// is NOT a payment check (payment is verified above) — it only prevents re-use
+// of an already-spent token.
+//
+// DURABLE first: when Supabase is configured, the consume goes through the
+// append-only `stripe_consumed_tokens` ledger (cross-instance, survives
+// serverless recycles). The per-instance in-memory set is the fallback when no
+// store is configured (tests/local) or if the ledger is briefly unavailable —
+// in that degraded case we fail OPEN on the replay check only (the user already
+// paid; blocking their own download on a ledger outage is worse than allowing a
+// rare double-download).
 const consumed = new Set<string>()
 
 function consumeKey(product: string, token: string): string {
   return `${product}:${token}`
+}
+
+function durableStoreConfigured(): boolean {
+  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
+/**
+ * Consume a token for a product exactly once. Returns 'fresh' the first time and
+ * 'replayed' on any subsequent attempt. Uses the durable ledger when configured,
+ * falling back to the in-memory set otherwise / on ledger error.
+ */
+async function consumeToken(product: string, token: string): Promise<'fresh' | 'replayed'> {
+  if (durableStoreConfigured()) {
+    try {
+      const { createAdminSupabaseClient } = await import('@/lib/supabase/admin')
+      const supabase = createAdminSupabaseClient()
+      const { data, error } = await supabase.rpc('consume_stripe_packet_token', {
+        p_product: product,
+        p_token: token,
+      })
+      if (!error) {
+        const inserted = Array.isArray(data)
+          ? Boolean((data[0] as { inserted?: boolean } | undefined)?.inserted)
+          : Boolean((data as { inserted?: boolean } | null)?.inserted)
+        return inserted ? 'fresh' : 'replayed'
+      }
+      console.error('[requirePaidPacket] consume ledger error, falling back to memory:', error.message)
+    } catch (e) {
+      console.error('[requirePaidPacket] consume ledger threw, falling back to memory:', e instanceof Error ? e.message : e)
+    }
+  }
+  // In-memory fallback (also the test/local path).
+  const key = consumeKey(product, token)
+  if (consumed.has(key)) return 'replayed'
+  consumed.add(key)
+  return 'fresh'
 }
 
 /** Test helper: reset the per-instance replay store. Not used in production. */
@@ -132,11 +174,9 @@ export async function requirePaidPacket(
   }
 
   // 7. Replay: a token already consumed for this product cannot mint again.
-  const key = consumeKey(product, token)
-  if (consumed.has(key)) {
+  if ((await consumeToken(product, token)) === 'replayed') {
     return { ok: false, status: 403, code: 'replayed', reason: 'token_already_consumed' }
   }
-  consumed.add(key)
 
   return {
     ok: true,

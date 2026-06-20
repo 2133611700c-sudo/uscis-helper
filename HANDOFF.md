@@ -1,6 +1,12 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## THIS SESSION (current) — webhook idempotency + durable replay store (the last #184 pre-canary security item)
+- TPS gate CLOSED (#187, real I-821/I-765). Security #184 E5/E7/E1/E2 fixed+merged (#188). This branch `fix/security-184-webhook-idempotency` closes the remaining #184 title item.
+- DID: (1) Wired the EXISTING-but-unused `record_stripe_processed_event` ledger into `api/stripe/webhook` — duplicate Stripe events are now a 200 no-op; ledger-unavailable degrades to log+process (never 500, so it can't stall webhooks if the migration lags). (2) Added a DURABLE packet-token replay store: migration `20260619000000_stripe_consumed_tokens.sql` + `consume_stripe_packet_token` RPC; `requirePaidPacket` consumes durably when Supabase configured, in-memory fallback otherwise (fail-open on the replay check — user already paid). Tests added; full suite 4133 pass / 0 fail; tsc 0.
+- MIGRATIONS NOT APPLIED: the Supabase MCP only exposes prod `rtfxrlountkoegsseukx` (off-limits); staging `rxnlpvldngxgdxkxoaaj` is NOT reachable via MCP (I verified — do NOT call apply_migration here, it would hit prod). Owner must apply BOTH new migrations (20260614000004 if not already + 20260619000000) to prod + staging. Additive/idempotent; code degrades gracefully until applied.
+- NEXT EXACT STEP: open this PR, green CI, MERGE. That completes the #184 security gate. THEN (owner already chose security-before-products) the next product is EAD (→ Re-Parole Stripe-test → Translation V2 #185 → Cyrillic #186). Still pending external: apply the two Stripe migrations to prod/staging; confirm STRIPE_WEBHOOK_SECRET present in the webhook's env. See memory uscis_security_184_next_mandatory_stage.
+
 ## THIS SESSION (current) — TPS gate CLOSED (real I-821/I-765) → security #184 (E5/E7/E1/E2) fixed
 - TPS: diagnosed + fixed the failing E2E (PR #187, MERGED to main 3dbd033). The owner generate CTA / paywall / package-ready all render only on `step === 6`; the tests asserted the CTA on Step 5. Staging run 27853270531 GREEN → real artifacts: scenario-a.zip (I-821, 13pp), scenario-b.zip (I-821 13pp + I-765 7pp), all pages rendered, synthetic name present, visual-acceptance.json pass. **TPS product gate CLOSED.**
 - SECURITY (branch `fix/security-184-payment-idor-bruteforce-logs`): all 4 #184 findings re-confirmed on main then fixed.
