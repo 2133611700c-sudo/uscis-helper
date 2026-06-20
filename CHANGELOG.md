@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-20 | Translation V2 rebuild — port observability/events + lifecycle (PII-safe supporting layer)
+- KEEP net-new self-contained files (zero imports) from #119: `lib/translation/observability/events.ts` (PII-safe event taxonomy — truncated hashes/codes/counts only, never values/emails) and `lib/translation/lifecycle.ts` (retention/lifecycle helpers). 37 unit tests; tsc 0. Unblocks the delivery worker + operator flow.
+- Rebuild branch state (#197): determinism fix + orders/index.ts RPC bridge + renderFromCanonical + visual-acceptance harness + observability/lifecycle = ~52 unit tests green, tsc 0. Remaining (REWRITE/wiring, next): handleVerifiedPayment (single #184 ledger), webhook + submit-order rewrite, delivery worker (needs email templates), v2 operator UI, poppler CI job, flip+validate Cyrillic flags. #119 superseded after this PR.
+
 ## 2026-06-20 | Translation V2 rebuild — translation PDF visual-acceptance harness
 - Closes Agent D's "no translation visual-acceptance harness" gap (#195) — the analog of the TPS/EAD poppler gates, but local (renders via the now-deterministic `generateTranslationPDF`, no staging needed).
 - `lib/packet/__tests__/translationPdfVisualAcceptance.test.ts`: renders the cert PDF and asserts via poppler — page count == 2; every page renders non-blank (>3KB, no missing/blank page); English transliterated value present (Cyrillic input `ШЕВЧЕНКО` → Latin `SHEVCHENKO` in output); 8 CFR §103.2(b)(3) cert block + signer present; and the HARD Cyrillic rule: **ZERO U+0400–U+04FF leak** in the certified output. Proven locally (poppler present); self-skips where poppler is absent so normal CI never false-passes. tsc 0.
