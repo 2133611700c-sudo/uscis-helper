@@ -1,6 +1,11 @@
 # CHANGELOG
 
-## 2026-06-20 | EAD product gate CLOSED (real I-765, hard acceptance) → next: Translation V2
+## 2026-06-20 | Translation V2 rebuild — pin PDF renderer determinism (immutable-artifact prerequisite)
+- First code step of the Translation V2 rebuild (branch `feat/translation-v2-rebuild`). Fixes Agent D's HIGH finding (#195): the translation PDF renderer was non-deterministic, so the V2 immutable-artifact content-address (SHA-256 of bytes) was unstable — a re-render after a partial failure would mint a NEW artifact + outbox row instead of being a true no-op.
+- `lib/packet/pdf.ts`: anchored the "Translation Date" to `certificationRecord.signed_at` (the single pinned time source) instead of the render wall-clock; pinned pdf-lib `CreationDate`/`ModDate` to `signed_at` + fixed `Producer`/`Creator` (pdf-lib otherwise stamps wall-clock + version). Same input → byte-identical output.
+- Test `pdfDeterminism.test.ts`: render twice → identical SHA-256; a different `signed_at` → different bytes (proves the date genuinely flows into output, determinism isn't from dropping it). Existing cert/readback tests still green (16 packet tests). tsc 0.
+- Remaining V2 rebuild work tracked in #195 (wire orders/index.ts spine, webhook+submit-order rewrite, delivery worker, translation visual-acceptance harness, flip+validate Cyrillic flags, P0-2/P1 security).
+
 - `Staging E2E — EAD` hard-acceptance run 27885324248 GREEN against staging (`uscis-helper-nf7isiuje-...vercel.app`, main_sha 6f0e4fb). Real UI path (New → (a)(12) → personal → docs → filing(mail)+address → review → Download button → real I-765 PDF; NO direct API call). Negative readiness test passed (canAdvance blocks incomplete). PDF (758KB, **7 pages, 7 rendered, 0 missing/blank**): family=Shevchenko, given=Taras, dob=01/15/1990, category `a`+`12`, app-type "new" checked, address present, **A-number BLANK, signature BLANK**. staging_ref=rxnlpvldngxgdxkxoaaj, prod rtfxrlountkoegsseukx never used. **EAD product gate CLOSED.** (clipping/overlap = render-non-blank proxy; missing/blank pages verified.)
 - Per owner priority re-order, NEXT is **Translation V2** (NOT Re-Parole): full E2E (Stripe test → verified webhook → one order → upload → classify → quality → Cyrillic OCR → translation candidate → review_required/null for uncertain critical fields → operator review → correction w/ provenance → approval → immutable PDF once → visual acceptance → exact stored bytes delivered → download). Rebuild from main, supersede PR #119 (forensic audit first; do NOT merge #119 directly).
 

@@ -1,5 +1,6 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
+<!-- Translation V2 rebuild step 1 (2026-06-20): PDF renderer determinism pinned (lib/packet/pdf.ts → signed_at); pdfDeterminism.test.ts green. Next: orders/index.ts spine. See #195. -->
 
 ## THIS SESSION (current) — EAD GATE CLOSED → starting Translation V2 (NOT Re-Parole)
 - EAD product gate CLOSED: hard-acceptance run 27885324248 GREEN (real UI → real I-765, 7pp/7 rendered/0 missing, fields all correct, A-number+signature blank, negative readiness passed, staging-ref proven). main_sha 6f0e4fb.
