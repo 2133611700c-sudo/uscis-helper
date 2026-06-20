@@ -4,6 +4,8 @@
 <!-- TV2 rebuild: orders/index.ts + renderFromCanonical ported (foundation), tsc 0, 13 unit tests green. Next handleVerifiedPayment rewrite + delivery worker. -->
 <!-- TV2: + visual-acceptance harness (poppler, zero Cyrillic leak) proven local. Next: handleVerifiedPayment rewrite, delivery worker, poppler CI job. -->
 <!-- TV2: + observability/events + lifecycle ported (37 tests). Next REWRITE layer: handleVerifiedPayment (single #184 ledger), webhook, submit-order, delivery worker (needs operatorFlowTemplates + resend sendEmail). -->
+<!-- TV2 W3 (branch feat/tv2-operator-ui): V2 operator UI ported — app/admin/manual-review/[id]/v2/page.tsx + v2Actions.ts (8 audited actions, render-once→content-addressed artifact→enqueue). AUDIT #195 REWRITE done: auth = main's ./legacyOperatorAuth ({actor}, OperatorAuthError.httpStatus); #119 lib/auth helper NOT referenced; guard FIRST (fail-closed) + actor in every transition/override; per-field provenance via applyOperatorOverride (base canonical immutable). v2Actions.test.ts 9/9; tsc 0; web build GREEN. NOT touched: legacyOperatorAuth, legacy actions/page, orders/index, handleVerifiedPayment, delivery worker, webhook, submit-order. Next: handleVerifiedPayment+webhook+submit-order REWRITE, delivery worker, then wire v2 into the queue + E2E. -->
+
 
 ## THIS SESSION (current) — EAD GATE CLOSED → starting Translation V2 (NOT Re-Parole)
 - EAD product gate CLOSED: hard-acceptance run 27885324248 GREEN (real UI → real I-765, 7pp/7 rendered/0 missing, fields all correct, A-number+signature blank, negative readiness passed, staging-ref proven). main_sha 6f0e4fb.
