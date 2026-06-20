@@ -8,12 +8,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateTranslationHTML } from '@/lib/translation/generateTranslationHTML'
 import { sendTranslationEmail } from '@/lib/email/resend'
+import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 
 // Basic email regex — server-side guard only, not a replacement for Resend's own validation
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 export async function POST(req: NextRequest) {
   try {
+    // SECURITY (#195): this endpoint self-emails a generated translation draft and
+    // is intentionally usable by anonymous users (free draft → "email me a copy").
+    // Without a cap it is an open email relay: an attacker can send template-wrapped,
+    // attacker-supplied field text to ANY address from our domain (spam/phish on the
+    // Resend reputation). Throttle hard per IP — 5 sends / hour is ample for the
+    // legitimate "email myself my draft" flow.
+    const ip = getClientIP(req)
+    const rl = await rateLimit(`translation-email:${ip}`, 5, 60 * 60_000)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { ok: false, error: 'Too many requests. Try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt.getTime() - Date.now()) / 1000)) } },
+      )
+    }
+
     const body = await req.json()
     const { email, prodId, fieldValues, srcLang, docLabel } = body as {
       email: string
