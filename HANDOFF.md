@@ -4,6 +4,7 @@
 <!-- TV2 rebuild: orders/index.ts + renderFromCanonical ported (foundation), tsc 0, 13 unit tests green. Next handleVerifiedPayment rewrite + delivery worker. -->
 <!-- TV2: + visual-acceptance harness (poppler, zero Cyrillic leak) proven local. Next: handleVerifiedPayment rewrite, delivery worker, poppler CI job. -->
 <!-- TV2: + observability/events + lifecycle ported (37 tests). Next REWRITE layer: handleVerifiedPayment (single #184 ledger), webhook, submit-order, delivery worker (needs operatorFlowTemplates + resend sendEmail). -->
+<!-- TV2 delivery worker DONE (2026-06-20, branch feat/tv2-delivery-worker, agent W2): ported api/internal/translation-delivery/route.ts + deliveryWorker.test.ts (9/9) from pr119-head; additive resend.ts (idempotencyKey + EmailTransport seam, sendTranslationEmail unchanged); operatorFlowTemplates.ts already identical on branch. Idempotent outbox drain, SHA-verified exact stored bytes as attachment, CRON_SECRET Bearer auth. Recipient bound to order.verifiedRecipientEmail only (outbox holds opaque recipientRef hash). tsc 0. PR → feat/translation-v2-rebuild. Next: handleVerifiedPayment / webhook / submit-order REWRITE (other agents). -->
 
 ## THIS SESSION (current) — EAD GATE CLOSED → starting Translation V2 (NOT Re-Parole)
 - EAD product gate CLOSED: hard-acceptance run 27885324248 GREEN (real UI → real I-765, 7pp/7 rendered/0 missing, fields all correct, A-number+signature blank, negative readiness passed, staging-ref proven). main_sha 6f0e4fb.
