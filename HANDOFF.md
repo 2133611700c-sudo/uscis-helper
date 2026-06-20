@@ -4,6 +4,7 @@
 <!-- TV2 rebuild: orders/index.ts + renderFromCanonical ported (foundation), tsc 0, 13 unit tests green. Next handleVerifiedPayment rewrite + delivery worker. -->
 <!-- TV2: + visual-acceptance harness (poppler, zero Cyrillic leak) proven local. Next: handleVerifiedPayment rewrite, delivery worker, poppler CI job. -->
 <!-- TV2: + observability/events + lifecycle ported (37 tests). Next REWRITE layer: handleVerifiedPayment (single #184 ledger), webhook, submit-order, delivery worker (needs operatorFlowTemplates + resend sendEmail). -->
+<!-- TV2 (agent W1, branch feat/tv2-handle-verified-payment): handleVerifiedPayment ported with single-place dedupe — webhook-event dedupe stays in the webhook route (#184 ledger), handler relies on createOrGetOrder UNIQUE(checkout_session_id); no recordStripeProcessedEvent/isStripeEventProcessed in the handler (none existed in #119 to remove; made explicit + regression test asserts processedEvents ledger stays empty). verifyPayment.ts: additive `session?: Stripe.Checkout.Session` only. Tests 19/19 + orderErrors 7/7 (orders dir 32/32), tsc 0. Next: webhook + submit-order rewrite to call this handler, delivery worker. -->
 
 ## THIS SESSION (current) — EAD GATE CLOSED → starting Translation V2 (NOT Re-Parole)
 - EAD product gate CLOSED: hard-acceptance run 27885324248 GREEN (real UI → real I-765, 7pp/7 rendered/0 missing, fields all correct, A-number+signature blank, negative readiness passed, staging-ref proven). main_sha 6f0e4fb.
