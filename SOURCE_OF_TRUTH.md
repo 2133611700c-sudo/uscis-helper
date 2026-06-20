@@ -22,8 +22,13 @@ These own: transliteration, authority names, historical policy, geography, USCIS
 - `apps/web/src/lib/tps/modules/visionBridge.ts` — OCR→Knowledge→TPSAnswers bridge
 
 ## Canonical form maps
-- `apps/web/src/lib/tps/forms/i765FieldMap.ts` — I-765 edition 08/21/25
+- `apps/web/src/lib/tps/forms/i765FieldMap.ts` — I-765 edition 08/21/25 (TPS pipeline)
+- `apps/web/src/lib/ead/i765FieldMap.ts` — I-765 edition 08/21/25 (EAD wizard, sparse `EadFieldData`; UNIFICATION with the TPS map is documented-not-executed, kept separate until a golden-PDF parity harness exists — do NOT naively merge)
 - `apps/web/src/lib/tps/forms/i821FieldMap.ts` — I-821 edition 01/20/25
+
+## Product gate E2E (real-artifact proof, per product)
+- TPS: `tests/e2e-ui/tps-golden-path.spec.ts` + `.github/workflows/staging-e2e-tps.yml` → real I-821(+I-765) ZIP. **CLOSED** (run 27853270531).
+- EAD: `tests/e2e-ui/ead-golden-path.spec.ts` + `.github/workflows/staging-e2e-ead.yml` → real filled I-765 PDF via the live UI (EAD is FREE — no owner/Stripe gating). Hard acceptance = negative readiness + pypdf field-level checks (name/dob/category a+12/app-type/address/A-number blank/signature blank) + 7 pages + render/missing-page + staging-ref proof. Stable testids live on `apps/web/src/components/services/ead/EADWizard.tsx`.
 
 ## Canonical PDF prefill
 - `apps/web/src/lib/tps/pdfPrefiller.ts` — XFA-strip, AcroForm fill, WinAnsi safety
