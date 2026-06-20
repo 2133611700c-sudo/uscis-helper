@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-20 | Translation V2 rebuild — translation PDF visual-acceptance harness
+- Closes Agent D's "no translation visual-acceptance harness" gap (#195) — the analog of the TPS/EAD poppler gates, but local (renders via the now-deterministic `generateTranslationPDF`, no staging needed).
+- `lib/packet/__tests__/translationPdfVisualAcceptance.test.ts`: renders the cert PDF and asserts via poppler — page count == 2; every page renders non-blank (>3KB, no missing/blank page); English transliterated value present (Cyrillic input `ШЕВЧЕНКО` → Latin `SHEVCHENKO` in output); 8 CFR §103.2(b)(3) cert block + signer present; and the HARD Cyrillic rule: **ZERO U+0400–U+04FF leak** in the certified output. Proven locally (poppler present); self-skips where poppler is absent so normal CI never false-passes. tsc 0.
+- Follow-up: wire a poppler-enabled CI job so the gate runs in CI (not just locally), and a stored-vs-delivered exact-bytes round-trip once the delivery worker is ported.
+
 ## 2026-06-20 | Translation V2 rebuild — port orders/index.ts RPC bridge + renderFromCanonical (foundation)
 - Build-order step 1-2 (per audit #195, Agent A). Ported from #119 the net-new application layer that bridges the already-merged V2 DB RPCs to TypeScript (the spine was dead SQL with zero TS consumers):
   - `lib/translation/orders/index.ts` (694 lines) — the order/artifact/outbox RPC bridge: `createOrGetOrder`/`getOrderByCheckout` (idempotent on `checkout_session_id` UNIQUE), `transitionOrder` (state-machine), `bindCanonicalDocument`, `applyOperatorOverride`, `resolveOrderCanonical`, `createArtifactAndEnqueue`, `claimOutboxEvent`/`markOutbox*`, `downloadArtifactBytes` (SHA-verified), `recordStripeProcessedEvent`. Imports only main-existing exports (`appendCanonicalOverride`, `resolveCanonicalDocument`, `CanonicalOverride`).
