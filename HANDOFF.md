@@ -1,6 +1,12 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## THIS SESSION (current) — #184 RUNTIME gate: staging migrations applied + runtime-proof workflow (NOT yet green)
+- Owner verdict: #184 NOT closed until runtime-proven post-migration. Acted on all 3 critiques.
+- DID: (1) behavioral business-idempotency test `webhookBusinessIdempotency.test.ts` proving the ledger fail-open is safe (re-delivery = idempotent business state; audit_log is the only dup, a benign log). (2) Applied both migrations to STAGING via `Staging Provision (manual)` (run 27855704963 success; 20260619000000 applied, stripe_processed_events already present; prod untouched). (3) NEW `.github/workflows/staging-webhook-replay-proof.yml` — psql runtime proof vs staging: objects exist, event dedup, durable token replay, CONCURRENCY single-winner (two parallel connections = two instances), append-only guard, guarded PHASE2_TEST_ cleanup.
+- NEXT EXACT STEP: merge branch `chore/security-184-runtime-proof` to main (so the proof workflow is dispatchable from default), DISPATCH `Staging Webhook/Replay Idempotency Proof (manual)`, confirm WEBHOOK_REPLAY_PROOF=GREEN. THEN: confirm STRIPE_WEBHOOK_SECRET in staging test env; optionally a signed-webhook handler e2e. ONLY after green runtime evidence → close #184. THEN EAD.
+- STILL EXTERNAL (owner): apply both migrations to PROD via a separate production migration plan w/ rollback + back-compat check (NOT done — prod off-limits; staging proof first). Confirm STRIPE_WEBHOOK_SECRET present in staging+prod webhook env.
+
 ## THIS SESSION (current) — webhook idempotency + durable replay store (the last #184 pre-canary security item)
 - TPS gate CLOSED (#187, real I-821/I-765). Security #184 E5/E7/E1/E2 fixed+merged (#188). This branch `fix/security-184-webhook-idempotency` closes the remaining #184 title item.
 - DID: (1) Wired the EXISTING-but-unused `record_stripe_processed_event` ledger into `api/stripe/webhook` — duplicate Stripe events are now a 200 no-op; ledger-unavailable degrades to log+process (never 500, so it can't stall webhooks if the migration lags). (2) Added a DURABLE packet-token replay store: migration `20260619000000_stripe_consumed_tokens.sql` + `consume_stripe_packet_token` RPC; `requirePaidPacket` consumes durably when Supabase configured, in-memory fallback otherwise (fail-open on the replay check — user already paid). Tests added; full suite 4133 pass / 0 fail; tsc 0.
