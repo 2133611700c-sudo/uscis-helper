@@ -80,8 +80,12 @@ function stubProvider(): VisionProvider {
         fields: [
           { field: 'family_name', cyrillic: 'Іваненко', can_read: true, confidence: 0.99, reason: '' },
           { field: 'given_name', cyrillic: 'Іван', can_read: true, confidence: 0.99, reason: '' },
-          // garbled patronymic at HIGH confidence: review would be false without P2.2
-          { field: 'patronymic', cyrillic: 'ович', can_read: true, confidence: 0.99, reason: '' },
+          // garbled patronymic at HIGH confidence: review would be false without P2.2.
+          // NB: keep a distinctive UA letter (і) so the SOURCE-SCRIPT review gate
+          // (decoupled 2026-06-20, audit #195: ambiguous script → review by default)
+          // does NOT fire here — this test isolates the SMART_NORMALIZE_ENABLED gate,
+          // not script ambiguity. 'овіч' is still a garbled (invalid) patronymic.
+          { field: 'patronymic', cyrillic: 'овіч', can_read: true, confidence: 0.99, reason: '' },
         ],
       }
     },
