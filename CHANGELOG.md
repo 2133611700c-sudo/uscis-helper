@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-20 | Translation V2 — C2: critical-null discipline ALWAYS ON for translation
+- Audit #195 / Agent B HIGHEST-PRIORITY: the hard rule "NEVER guess a critical field — uncertain critical → review_required=true AND final_value=null" was implemented but gated behind `isOcrFieldSafetyEnabled()` (env `OCR_FIELD_SAFETY_ENABLED`, default OFF). At PROD DEFAULTS the translation route therefore SHIPPED A GUESS for an uncertain critical field — a hard-rule violation.
+- FIX (`apps/web/src/app/api/translation/vision-extract/route.ts`): the `applyOcrFieldSafety` call (flow `translation_public`) now runs UNCONDITIONALLY — removed the `if (isOcrFieldSafetyEnabled())` env-flag guard at this call site and dropped the now-unused `isOcrFieldSafetyEnabled` import. The guard's semantics are unchanged (pure, PII-free, value/finalValue→null + review_required for an unsafe critical field, raw read parked in `candidate_value`).
+- SCOPE = TRANSLATION ONLY: this is the sole `flow: 'translation_public'` call site. The TPS/EAD/legacy/Re-Parole readers that share the same env flag and the same underlying reader are NOT touched (no global default flip). `applyOcrFieldSafety.ts` was NOT modified.
+- TEST (`apps/web/src/app/api/translation/__tests__/translationCriticalNull.test.ts`, NEW, 5): behavior via `applyOcrFieldSafety` with PII-free synthetic fields — a low-confidence critical field and a zero-recognition critical field both emit `value=null` + `finalValue=null` + `review_required=true` (raw parked as `candidate_value`, `anyUnresolvedCritical=true`); a safe high-confidence non-critical field is preserved; wiring asserts the guard is not env-flag-gated and the flag-reader is no longer imported.
+- VERIFY: tsc 0; full suite `pnpm --filter web exec vitest run` = 275 files (3 skipped) / 4237 tests pass / 24 skipped / 0 fail. No TPS/EAD fallout. #195.
+
 ## 2026-06-20 | Translation V2 — P0-2 fix: resend uses the Stripe-verified recipient
 - `/api/order/[id]/resend` sent to the client-written `contact_email`. Now it re-verifies the recipient via the existing `resolveVerifiedRecipient(supabase, id, stripeTranslationVerifier)` (re-checks the order's stored `session_id` as paid+correct-product against Stripe) and sends ONLY to the Stripe-verified email — same helper the operator send paths use. Denies (409 `recipient_not_verified`) when it can't verify; dropped `contact_email` from the query. Source-invariant test `resendRecipient.security.test.ts` (3). tsc 0. Closes #195 P0-2.
 
