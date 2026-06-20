@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-20 | Translation V2 — P0-2 fix: resend uses the Stripe-verified recipient
+- `/api/order/[id]/resend` sent to the client-written `contact_email`. Now it re-verifies the recipient via the existing `resolveVerifiedRecipient(supabase, id, stripeTranslationVerifier)` (re-checks the order's stored `session_id` as paid+correct-product against Stripe) and sends ONLY to the Stripe-verified email — same helper the operator send paths use. Denies (409 `recipient_not_verified`) when it can't verify; dropped `contact_email` from the query. Source-invariant test `resendRecipient.security.test.ts` (3). tsc 0. Closes #195 P0-2.
+
 <!-- (rolling) TV2 rebuild W1-W5 integrated 2026-06-20; tsc 0; full suite 4229 green. -->
 
 ## 2026-06-20 | Translation V2 rebuild — W5 webhook + submit-order wire the durable V2 order
