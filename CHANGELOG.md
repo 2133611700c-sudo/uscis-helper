@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-19 | EAD product gate — stable testids + golden-path E2E + staging workflow
+- Next product after the TPS gate + #184 security gate (owner-approved). Goal mirrors TPS: a real filled I-765 PDF via the live UI on staging.
+- EAD already had the hard parts: `EADWizard.tsx` 8-step flow with a `canAdvance()` readiness gate (step0 appType, step1 category, step3 name+dob, step5 filing+address) and `handleDownloadPdf()` → POST `/api/ead/generate-packet` → **real filled I-765 PDF** (the "worksheet" HTML is a secondary download). EAD is FREE (no Stripe/owner gating), so the E2E needs no owner cookie/paywall.
+- Added the missing piece (blocker #1): stable `data-testid` selectors on the EAD wizard — `ead-type-{new,renewal}`, `ead-cat-{c11,c08,a12,other}`, `ead-input-{lastName,firstName,dob,countryOfBirth,usAddress}`, `ead-filing-{mail,online}`, `ead-next-cta`/`ead-back-cta`, `ead-review-container`, `ead-download-pdf-cta`, `ead-pdf-downloaded-state` (via a new optional `testId` prop on `OptionCard`). No logic/behavior change.
+- NEW `tests/e2e-ui/ead-golden-path.spec.ts` — drives the real UI via testids (New → (a)(12) → skip upload → personal → docs → filing(mail)+address → review → download), saves `ead-artifacts/i765-new.pdf`, asserts non-trivial.
+- NEW `.github/workflows/staging-e2e-ead.yml` — fresh Vercel preview (staging env, no owner secrets) → run the EAD spec → PDF visual acceptance (pdfinfo pages + pdftoppm render + pdftotext SHEVCHENKO present) → `visual-acceptance.json` → upload `ead-artifacts`.
+- tsc 0; existing EAD unit + wiring tests still green (54). Next: merge → dispatch the EAD staging E2E → real I-765 artifact + visual acceptance → close the EAD product gate.
+
 ## 2026-06-19 | Security #184 runtime gate — business-idempotency proof + staging webhook/replay proof workflow
 - Owner critique (correct): the webhook ledger fail-open (process when ledger unavailable) is only safe if every downstream op is idempotent. PROVEN by behavioral test `webhookBusinessIdempotency.test.ts`: re-delivering the same event keeps `wizard_sessions.payment_status='paid'` as a pure idempotent SET (final state identical after 1 vs 2 deliveries) and the translation update's `.eq('status','signed')` guard makes the 2nd delivery a no-op. The ONLY non-idempotent write is the append-only `audit_log` row — a log, where a duplicate under DB degradation is benign, not a business effect.
 - Applied both migrations to STAGING via the protected `Staging Provision (manual)` workflow (`supabase db push`, guarded STAGING_REF≠PROD): `20260619000000_stripe_consumed_tokens` applied; `stripe_processed_events` already present. applied_migrations=45. Prod NOT touched.
