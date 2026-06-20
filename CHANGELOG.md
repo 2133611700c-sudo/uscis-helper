@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-20 | Emergency GitHub exposure lockdown — Vision API key pattern redacted
+- Responded to GitGuardian alert for `2133611700c-sudo/uscis-helper` commit `79ee41d92b56f7470141e1acacbb8bf1baef963d` reporting a Google API Key pattern in the Vision credentials diagnostic/test area.
+- Redacted all `AIza...` key-shaped literals from the current tree to `REDACTED_GOOGLE_API_KEY_DO_NOT_USE`, including Vision diagnostic/test files and saved USCIS HTML snapshots that contain public site keys but still trigger scanners.
+- Account-level mitigation performed outside this repo: repository visibility set to private and GitHub Actions disabled to stop public exposure and new Actions spend. Provider-side key rotation remains required outside GitHub if the exposed value was ever live.
+
 ## 2026-06-20 | Translation V2 — 5-agent forensic audit + P0-1 live email-relay fix
 - Translation V2 kickoff (priority #1 after EAD gate). Ran 5 read-only agents (forensic #119, Cyrillic/OCR/handwriting, E2E/operator, PDF visual acceptance, Stripe/security/PII). Synthesis on issue #195.
 - KEY FINDINGS: (1) The V2 DB spine (`translation_orders_v2`/`document_artifacts`/`delivery_outbox` + RPCs) is on main but **dead SQL — zero TS consumers**; the live flow uses `manual_review_queue` + operator in-memory PDF email. Rebuild = wire the application layer from #119 (do NOT merge #119; migrations/auth already on main). (2) The translation PDF renderer is **non-deterministic** (`new Date()` ×2 + unpinned pdf-lib metadata) → breaks "immutable artifact / exact bytes / generated once"; no translation visual-acceptance harness. (3) Cyrillic correctness behaviors (C3 critical-null `OCR_FIELD_SAFETY_ENABLED`, handwriting distrust `ANTI_FABRICATION_GATE_ENABLED`, uk/ru split `RU_TRANSLIT_ENABLED`, MRZ authority `MRZ_TRANSLATION_ENABLED`) are **all flag-OFF by default** → at prod defaults uncertain critical fields ship a GUESS. (4) Two LIVE security holes: P0-1 `/api/translation/email` open relay; P0-2 `/api/order/[id]/resend` recipient not Stripe-verified.
