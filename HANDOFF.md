@@ -4,6 +4,7 @@
 <!-- TV2 rebuild: orders/index.ts + renderFromCanonical ported (foundation), tsc 0, 13 unit tests green. Next handleVerifiedPayment rewrite + delivery worker. -->
 <!-- TV2: + visual-acceptance harness (poppler, zero Cyrillic leak) proven local. Next: handleVerifiedPayment rewrite, delivery worker, poppler CI job. -->
 <!-- TV2: + observability/events + lifecycle ported (37 tests). Next REWRITE layer: handleVerifiedPayment (single #184 ledger), webhook, submit-order, delivery worker (needs operatorFlowTemplates + resend sendEmail). -->
+<!-- TV2 (agent W4, branch feat/tv2-poppler-ci): + poppler CI gate .github/workflows/translation-pdf-acceptance.yml — workflow_dispatch + PR on apps/web/src/lib/packet/** | apps/web/src/lib/translation/orders/**; installs poppler-utils + runs ONLY translationPdfVisualAcceptance.test.ts (real assertions, no skip), fails on assertion failure, echoes TRANSLATION_PDF_ACCEPTANCE=PASS. No Vercel/staging/secrets. YAML parses. PR → feat/translation-v2-rebuild. #195. -->
 
 ## THIS SESSION (current) — EAD GATE CLOSED → starting Translation V2 (NOT Re-Parole)
 - EAD product gate CLOSED: hard-acceptance run 27885324248 GREEN (real UI → real I-765, 7pp/7 rendered/0 missing, fields all correct, A-number+signature blank, negative readiness passed, staging-ref proven). main_sha 6f0e4fb.
