@@ -32,6 +32,12 @@ export interface SendEmailParams {
    *     sendEmail passes it through unchanged. Prevents double-encoding of binary attachments.
    */
   attachment?: { filename: string; content: string; encoding?: 'base64' | 'utf8' }
+  /**
+   * Delivery idempotency key (e.g. the outbox idempotency_key). When set it is
+   * passed to Resend as the Idempotency-Key so a duplicate send (worker retry) is
+   * a no-op at the provider. PII-free (an opaque hash), never logged.
+   */
+  idempotencyKey?: string
 }
 
 export interface SendEmailResult {
@@ -82,13 +88,51 @@ async function logEmailEvent(params: {
   }
 }
 
+// ─── Injectable transport seam (prod default = Resend) ──────────────────────────
+//
+// The actual provider call lives behind an EmailTransport so tests can inject a
+// capturing transport (NO real send) and assert exactly-once delivery, idempotency
+// key propagation, attachment integrity, etc. Production NEVER touches this seam —
+// the default transport is the real Resend send (defaultResendTransport) and
+// resetEmailTransport() restores it. setEmailTransportForTesting() is for vitest
+// only; nothing in the product calls it, so the prod default is unchanged.
+
+export interface EmailTransport {
+  send(params: SendEmailParams): Promise<SendEmailResult>
+}
+
+const defaultResendTransport: EmailTransport = {
+  send: realResendSend,
+}
+
+let activeTransport: EmailTransport = defaultResendTransport
+
+/** TEST-ONLY: replace the email transport with a capturing/fake one. */
+export function setEmailTransportForTesting(transport: EmailTransport): void {
+  activeTransport = transport
+}
+
+/** TEST-ONLY: restore the production Resend transport. */
+export function resetEmailTransport(): void {
+  activeTransport = defaultResendTransport
+}
+
 // ─── Core send function ───────────────────────────────────────────────────────
 
 /**
- * Send an email via Resend with automatic BCC.
- * Never throws — returns { ok: false, error } on failure.
+ * Send an email. Delegates to the active transport (prod = Resend; tests may inject
+ * a capturing transport). Never throws — returns { ok: false, error } on failure.
  */
 export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
+  return activeTransport.send(params)
+}
+
+/**
+ * The production Resend send path (BCC, attachment encoding, idempotency key,
+ * email_events logging). This is the default transport; tests replace the seam,
+ * not this function.
+ */
+async function realResendSend(params: SendEmailParams): Promise<SendEmailResult> {
   const client = getResendClient()
 
   if (!client) {
@@ -111,15 +155,18 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
         }]
       : undefined
 
-    const { data, error } = await client.emails.send({
-      from,
-      to: [params.to],
-      bcc: bcc ? [bcc] : undefined,
-      subject: params.subject,
-      html: params.html,
-      text: params.text,
-      attachments,
-    })
+    const { data, error } = await client.emails.send(
+      {
+        from,
+        to: [params.to],
+        bcc: bcc ? [bcc] : undefined,
+        subject: params.subject,
+        html: params.html,
+        text: params.text,
+        attachments,
+      },
+      params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : undefined,
+    )
 
     if (error) {
       await logEmailEvent({
