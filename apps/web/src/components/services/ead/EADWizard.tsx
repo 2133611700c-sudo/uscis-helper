@@ -748,13 +748,16 @@ function StepIndicator({ step, labels }: { step: number; labels: string[] }) {
 
 // ── Option card ───────────────────────────────────────────────────────────────
 
-function OptionCard({ selected, onClick, title, desc, badge }: {
+function OptionCard({ selected, onClick, title, desc, badge, testId }: {
   selected: boolean; onClick: () => void
   title: string; desc?: string; badge?: string
+  /** Stable E2E selector (no text/i18n coupling). */
+  testId?: string
 }) {
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={onClick}
       className={`relative w-full text-left p-4 rounded-2xl border-2 transition-all duration-150 cursor-pointer
         ${selected
@@ -1065,12 +1068,14 @@ export function EADWizard({ locale }: EADWizardProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <OptionCard
+            testId="ead-type-new"
             selected={data.appType === 'new'}
             onClick={() => patch({ appType: 'new' })}
             title={ui.newEAD}
             desc={ui.newEADDesc}
           />
           <OptionCard
+            testId="ead-type-renewal"
             selected={data.appType === 'renewal'}
             onClick={() => patch({ appType: 'renewal' })}
             title={ui.renewEAD}
@@ -1110,6 +1115,7 @@ export function EADWizard({ locale }: EADWizardProps) {
         {cats.map(c => (
           <OptionCard
             key={c.key ?? 'other'}
+            testId={`ead-cat-${c.key ?? 'other'}`}
             selected={data.category === c.key}
             onClick={() => patch({ category: c.key })}
             title={c.label}
@@ -1140,6 +1146,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             <label htmlFor="ead-lastName" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.lastName} <span className="text-red-500">*</span></label>
             <input
               id="ead-lastName"
+              data-testid="ead-input-lastName"
               type="text" value={data.lastName}
               onChange={e => patch({ lastName: e.target.value })}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
@@ -1150,6 +1157,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             <label htmlFor="ead-firstName" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.firstName} <span className="text-red-500">*</span></label>
             <input
               id="ead-firstName"
+              data-testid="ead-input-firstName"
               type="text" value={data.firstName}
               onChange={e => patch({ firstName: e.target.value })}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
@@ -1171,6 +1179,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             <label htmlFor="ead-dob" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.dob} <span className="text-red-500">*</span></label>
             <input
               id="ead-dob"
+              data-testid="ead-input-dob"
               type="date" value={data.dob}
               onChange={e => patch({ dob: e.target.value })}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-1)] text-[14px] focus:ring-2 focus:ring-blue-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
@@ -1180,6 +1189,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             <label htmlFor="ead-countryOfBirth" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.countryOfBirth}</label>
             <input
               id="ead-countryOfBirth"
+              data-testid="ead-input-countryOfBirth"
               type="text" value={data.countryOfBirth}
               onChange={e => patch({ countryOfBirth: e.target.value })}
               placeholder="Ukraine"
@@ -1276,12 +1286,14 @@ export function EADWizard({ locale }: EADWizardProps) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <OptionCard
+            testId="ead-filing-mail"
             selected={data.filingMethod === 'mail'}
             onClick={() => patch({ filingMethod: 'mail' })}
             title={ui.filingMail}
             desc={ui.filingMailDesc}
           />
           <OptionCard
+            testId="ead-filing-online"
             selected={data.filingMethod === 'online'}
             onClick={() => patch({ filingMethod: 'online' })}
             title={ui.filingOnline}
@@ -1298,6 +1310,7 @@ export function EADWizard({ locale }: EADWizardProps) {
           <label htmlFor="ead-usAddress" className="block text-sm font-semibold text-[var(--text-1)] mb-1">{ui.addressLabel} <span className="text-red-500">*</span></label>
           <textarea
             id="ead-usAddress"
+            data-testid="ead-input-usAddress"
             value={data.usAddress}
             onChange={e => patch({ usAddress: e.target.value })}
             rows={3}
@@ -1319,7 +1332,7 @@ export function EADWizard({ locale }: EADWizardProps) {
           <h2 className="text-[19px] font-bold text-[var(--text-1)]">{ui.step5Title}</h2>
           <p className="text-[14px] text-[var(--text-2)] mt-1">{ui.step5Sub}</p>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] overflow-hidden">
+        <div data-testid="ead-review-container" className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] overflow-hidden">
           {[
             { label: ui.lblType, value: data.appType ? (ui.appTypeNames[data.appType] ?? '') : '—' },
             { label: ui.lblCategory, value: data.category ? (ui.catNames[data.category] ?? '') : '—' },
@@ -1356,6 +1369,7 @@ export function EADWizard({ locale }: EADWizardProps) {
         {!pdfDownloaded ? (
           <button
             type="button"
+            data-testid="ead-download-pdf-cta"
             onClick={handleDownloadPdf}
             disabled={pdfLoading}
             className="w-full py-3 px-6 bg-green-600 hover:bg-green-700 disabled:opacity-50 active:scale-[0.98] text-white font-bold text-[15px] rounded-2xl transition-all flex items-center justify-center gap-2 min-h-[48px]"
@@ -1364,7 +1378,7 @@ export function EADWizard({ locale }: EADWizardProps) {
             {pdfLoading ? pdfL.loading : pdfL.primary}
           </button>
         ) : (
-          <div className="flex items-start gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-950 border border-green-300">
+          <div data-testid="ead-pdf-downloaded-state" className="flex items-start gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-950 border border-green-300">
             <CheckCircle size={20} className="text-green-600 flex-shrink-0" />
             <div>
               <div className="font-bold text-green-800 dark:text-green-200">{pdfL.done}</div>
@@ -1450,6 +1464,7 @@ export function EADWizard({ locale }: EADWizardProps) {
           {step > 0 && (
             <button
               type="button"
+              data-testid="ead-back-cta"
               onClick={() => setStep(s => s - 1)}
               className="flex items-center gap-1 px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-[14px] font-semibold text-[var(--text-1)] hover:border-blue-400 transition-colors"
             >
@@ -1458,6 +1473,7 @@ export function EADWizard({ locale }: EADWizardProps) {
           )}
           <button
             type="button"
+            data-testid="ead-next-cta"
             onClick={() => { if (canAdvance()) setStep(s => s + 1) }}
             disabled={!canAdvance()}
             className={`flex-1 flex items-center justify-center gap-1 py-2.5 rounded-xl text-[14px] font-bold transition-all
