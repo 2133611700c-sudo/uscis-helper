@@ -80,11 +80,17 @@ describe('generate-packet route status contract (422 vs 200)', () => {
     vi.stubEnv('UPSTASH_REDIS_URL', '')
   })
 
+  // Entitlement is OWNER here (payment-only bypass). Previously these tests used
+  // `x-payment-token: 'test'`, which only worked because of the #184 E5 fail-open
+  // hole (a junk token reached generation). That bypass is now closed, so the
+  // field-validation contract (422 vs 200) is reached via a legitimate owner
+  // session instead — exactly the supported "owner skips payment, not the gate".
   it('returns 422 when required passport fields are missing', async () => {
+    vi.doMock('@/lib/ownerAccess', () => ({ isOwnerSession: vi.fn(async () => ({ verified: true })) }))
     const { POST } = await import('@/app/api/tps/generate-packet/route')
     const req = new Request('http://localhost/api/tps/generate-packet', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-payment-token': 'test' },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         ...validAnswers(),
         passport_number: '',
@@ -99,6 +105,7 @@ describe('generate-packet route status contract (422 vs 200)', () => {
   })
 
   it('returns 200 when required passport fields are present', async () => {
+    vi.doMock('@/lib/ownerAccess', () => ({ isOwnerSession: vi.fn(async () => ({ verified: true })) }))
     vi.doMock('@/lib/tps/packetBuilder', () => ({
       buildPacket: vi.fn(async () => ({
         zipBytes: new Uint8Array([80, 75, 3, 4]),
@@ -111,7 +118,7 @@ describe('generate-packet route status contract (422 vs 200)', () => {
     const { POST } = await import('@/app/api/tps/generate-packet/route')
     const req = new Request('http://localhost/api/tps/generate-packet', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-payment-token': 'test' },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(validAnswers()),
     })
     const res = await POST(req as never)
