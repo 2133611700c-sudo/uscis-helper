@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-19 | EAD gate — hard acceptance (negative readiness case + field-level I-765 checks + staging-ref proof)
+- Owner acceptance bar for closing the EAD gate. The first EAD staging run (27856377304) was GREEN (real UI → real I-765 PDF, 7 pages, name present) — proving the mechanics — but the acceptance was too shallow. Strengthened to the owner's full bar.
+- E2E (`ead-golden-path.spec.ts`): added a NEGATIVE readiness test — at step 3 (personal) with empty name/dob the `ead-next-cta` is DISABLED; once filled it's ENABLED; at step 5 (filing) with no method/address it's DISABLED. Proves `canAdvance()` actually blocks incomplete forms. The PDF is downloaded via the real UI button (never a direct `/api/ead/generate-packet` call).
+- Workflow (`staging-e2e-ead.yml`): replaced the shallow check with HARD field-level assertions via pypdf against the downloaded PDF — family_name=Shevchenko, given_name=Taras, dob=01/15/1990, category letter `a` + number `12`, app-type "new" checkbox checked, address present, **A-number blank**, **signature blank** — plus page_count==7, all pages rendered, no missing/blank pages (>3KB/page), text layer non-empty. Added an explicit staging-ref proof (`STAGING_REF==rxnlpvldngxgdxkxoaaj`, prod `rtfxrlountkoegsseukx` never used). Uploads `i765-new.pdf` + rendered PNGs + `visual-acceptance.json` (with `fields`). All field assertions validated LOCALLY against the real run-1 PDF before re-dispatch. HONEST limit: clipping/overlap is a render-non-blank proxy (no vision model — Gemini quota exhausted), recorded as such in the JSON.
+- Next: merge → re-dispatch `Staging E2E — EAD` → green hard-acceptance run → close the EAD product gate → Re-Parole Stripe-test E2E.
+
 ## 2026-06-19 | EAD product gate — stable testids + golden-path E2E + staging workflow
 - Next product after the TPS gate + #184 security gate (owner-approved). Goal mirrors TPS: a real filled I-765 PDF via the live UI on staging.
 - EAD already had the hard parts: `EADWizard.tsx` 8-step flow with a `canAdvance()` readiness gate (step0 appType, step1 category, step3 name+dob, step5 filing+address) and `handleDownloadPdf()` → POST `/api/ead/generate-packet` → **real filled I-765 PDF** (the "worksheet" HTML is a secondary download). EAD is FREE (no Stripe/owner gating), so the E2E needs no owner cookie/paywall.
