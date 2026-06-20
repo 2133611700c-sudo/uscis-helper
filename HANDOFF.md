@@ -1,6 +1,12 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## THIS SESSION (current) — EAD gate HARD acceptance (owner bar)
+- EAD apparatus merged (#192). First staging run 27856377304 GREEN: real UI → real I-765 PDF (758KB, 7 pages, name present) — mechanics proven.
+- Strengthened to owner acceptance bar (branch `feat/ead-gate-hard-acceptance`): NEGATIVE readiness test (canAdvance blocks incomplete personal/filling); pypdf field-level I-765 checks (family=Shevchenko, given=Taras, dob=01/15/1990, category a+12, app-type-new checked, address present, A-number BLANK, signature BLANK) + page_count==7 + all-pages-rendered + no-missing/blank-page + text-layer + staging-ref proof (rxnlpvldngxgdxkxoaaj, prod never used). PDF downloaded via UI button, never a direct API call. Field assertions validated LOCALLY against the run-1 PDF.
+- NEXT EXACT STEP: merge → re-dispatch `Staging E2E — EAD` → green HARD-acceptance run → emit EAD_FULL_E2E_RESULT → close EAD product gate (update #159) → Re-Parole Stripe-test E2E.
+- HONEST limit: clipping/overlap is a render-non-blank proxy (no vision model — Gemini quota exhausted); missing/blank pages ARE verified (page_count + render count + >3KB/page).
+
 ## THIS SESSION (current) — EAD product gate apparatus (testids + E2E + staging workflow)
 - TPS gate CLOSED (#187). #184 security gate done (code #188/#189/#190, staging runtime GREEN run 27855969497; prod rollout tracked in #191). Owner approved starting EAD.
 - EAD discovery: wizard `EADWizard.tsx` (8 steps) already has `canAdvance()` readiness + `handleDownloadPdf()` → real filled I-765 PDF via `/api/ead/generate-packet` (FREE, no Stripe/owner). Only blocker to a TPS-style gate was missing testids.

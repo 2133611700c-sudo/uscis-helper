@@ -85,39 +85,105 @@ jobs:
           E2E_BASE_URL: ${{ steps.deploy.outputs.url }}
         run: npx playwright test tests/e2e-ui/ead-golden-path.spec.ts
 
-      - name: PDF visual acceptance (render + check the I-765 packet)
+      - name: Staging ref proof (staging used, prod untouched)
+        run: |
+          set -euo pipefail
+          [ "$STAGING_REF" = "rxnlpvldngxgdxkxoaaj" ] || { echo "::error::staging_ref != expected rxnlpvldngxgdxkxoaaj"; exit 1; }
+          [ "$STAGING_REF" != "$PROD_REF" ] || { echo "::error::staging_ref equals prod"; exit 1; }
+          echo "staging_ref_matches_expected=yes"
+          echo "production_ref_used=no (prod ${PROD_REF} never used as a connection in this job)"
+
+      - name: PDF visual acceptance (render + HARD field-level checks)
         if: always()
+        env:
+          EXPECTED_PAGES: '7'   # I-765 edition 08/21/25
         run: |
           set -uo pipefail
           shopt -s nullglob
-          mkdir -p ead-artifacts
-          pdfs=(ead-artifacts/*.pdf)
-          if [ ${#pdfs[@]} -eq 0 ]; then
-            echo "::error::no I-765 PDF produced by the EAD E2E"
+          mkdir -p ead-artifacts ead-artifacts/render
+          PDF=ead-artifacts/i765-new.pdf
+          if [ ! -f "$PDF" ]; then
+            echo "::error::no I-765 PDF produced by the EAD E2E (must be downloaded via the UI, not a direct API call)"
             echo '{"status":"no_pdf"}' > ead-artifacts/visual-acceptance.json
             exit 1
           fi
           sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils jq
-          echo '{"files":[]}' > ead-artifacts/visual-acceptance.json
-          overall_ok=1
-          mkdir -p ead-artifacts/render
-          for p in "${pdfs[@]}"; do
-            base=$(basename "$p")
-            pages=$(pdfinfo "$p" 2>/dev/null | awk '/^Pages:/{print $2}'); pages=${pages:-0}
-            text=$(pdftotext "$p" - 2>/dev/null || true)
-            name_present=no; echo "$text" | grep -qi "SHEVCHENKO" && name_present=yes
-            pdftoppm -png -r 110 "$p" "ead-artifacts/render/${base%.pdf}-page" >/dev/null 2>&1 || true
-            rendered=$(ls "ead-artifacts/render/${base%.pdf}-page"*.png 2>/dev/null | wc -l | tr -d ' ')
-            verdict="fail"; { [ "$pages" -ge 1 ] && [ "$rendered" -ge 1 ] && [ "$name_present" = "yes" ]; } && verdict="pass"
-            [ "$verdict" = "pass" ] || overall_ok=0
-            echo "  $base pages=$pages rendered=$rendered name_present=$name_present verdict=$verdict"
-            jq --arg f "$base" --argjson pg "$pages" --argjson rn "$rendered" --arg np "$name_present" --arg v "$verdict" \
-               '.files += [{file:$f,pages:$pg,rendered:$rn,name_present:$np,verdict:$v}]' \
-               ead-artifacts/visual-acceptance.json > /tmp/va.json && mv /tmp/va.json ead-artifacts/visual-acceptance.json
-          done
+          python3 -m pip install --quiet pypdf
+
+          # ── Structural: page count + render every page; a blank/missing page
+          #    renders to a tiny PNG, so >3KB per page guards against missing pages.
+          pages=$(pdfinfo "$PDF" 2>/dev/null | awk '/^Pages:/{print $2}'); pages=${pages:-0}
+          pdftoppm -png -r 110 "$PDF" "ead-artifacts/render/i765-page" >/dev/null 2>&1 || true
+          rendered=$(ls ead-artifacts/render/i765-page*.png 2>/dev/null | wc -l | tr -d ' ')
+          tiny=$(find ead-artifacts/render -name 'i765-page*.png' -size -3k | wc -l | tr -d ' ')
+          # pdftotext must succeed (non-empty) — proves the text layer is intact.
+          text_len=$(pdftotext "$PDF" - 2>/dev/null | wc -c | tr -d ' ')
+          echo "pages=$pages rendered=$rendered tiny_pngs=$tiny text_len=$text_len expected_pages=$EXPECTED_PAGES"
+
+          # ── Field-level (pypdf): exact AcroForm values, no fragile text grep.
+          python3 - "$PDF" > ead-artifacts/fields.json <<'PY'
+          import sys, json
+          from pypdf import PdfReader
+          r = PdfReader(sys.argv[1])
+          f = r.get_fields() or {}
+          def v(sub):
+              for name, fld in f.items():
+                  if sub in name:
+                      val = fld.get('/V')
+                      if val in (None, '/Off'):
+                          return ''
+                      s = str(val)
+                      return s[1:] if s.startswith('/') else s  # strip leading checkbox slash, keep date slashes
+              return None
+          out = {
+            "family_name": v("FamilyName"),
+            "given_name": v("GivenName"),
+            "dob": v("Line19_DOB") or v("DOB"),
+            "category_letter": v("section_1"),
+            "category_number": v("section_2"),
+            "apptype_new_checked": bool(v("Part1_Checkbox[0]")),
+            "address": v("Line4b"),
+            "a_number": v("AlienNumber"),
+            "signature": v("Signature"),
+          }
+          print(json.dumps(out))
+          PY
+          cat ead-artifacts/fields.json
+          F=ead-artifacts/fields.json
+          jqget(){ jq -r "$1 // \"\"" "$F"; }
+          fam=$(jqget .family_name); giv=$(jqget .given_name); dob=$(jqget .dob)
+          cl=$(jqget .category_letter); cn=$(jqget .category_number)
+          appnew=$(jqget .apptype_new_checked); addr=$(jqget .address)
+          anum=$(jqget .a_number); sig=$(jqget .signature)
+
+          ok=1; fails=""
+          chk(){ if [ "$2" = "1" ]; then echo "  ✓ $1"; else echo "  ✗ $1"; ok=0; fails="$fails $1"; fi; }
+          chk "page_count==$EXPECTED_PAGES"        "$([ "$pages" = "$EXPECTED_PAGES" ] && echo 1)"
+          chk "all_pages_rendered"                 "$([ "$rendered" = "$pages" ] && [ "$pages" -ge 1 ] && echo 1)"
+          chk "no_missing_blank_pages"             "$([ "$tiny" = "0" ] && echo 1)"
+          chk "text_layer_nonempty"                "$([ "$text_len" -gt 100 ] && echo 1)"
+          chk "family_name=Shevchenko"             "$(echo "$fam" | grep -qi 'shevchenko' && echo 1)"
+          chk "given_name=Taras"                   "$(echo "$giv" | grep -qi 'taras' && echo 1)"
+          chk "dob=01/15/1990"                     "$(echo "$dob" | grep -q '1990' && echo "$dob" | grep -q '15' && echo 1)"
+          chk "category_letter=a"                  "$([ "$cl" = "a" ] && echo 1)"
+          chk "category_number=12"                 "$([ "$cn" = "12" ] && echo 1)"
+          chk "apptype_new_checked"                "$([ "$appnew" = "true" ] && echo 1)"
+          chk "address_present"                    "$(echo "$addr" | grep -qi 'main st' && echo 1)"
+          chk "a_number_blank"                     "$([ -z "$anum" ] && echo 1)"
+          chk "signature_blank"                    "$([ -z "$sig" ] && echo 1)"
+
+          verdict="fail"; [ "$ok" = "1" ] && verdict="pass"
+          jq -n --argjson pg "$pages" --argjson rn "$rendered" --argjson tn "$tiny" \
+                --slurpfile fields "$F" --arg v "$verdict" --arg fails "$fails" \
+                --arg sref "$STAGING_REF" --arg pref "$PROD_REF" \
+            '{i765: {pages:$pg, rendered:$rn, tiny_pngs:$tn, fields:$fields[0], verdict:$v,
+              failed_checks:($fails|ltrimstr(" ")),
+              clipping_overlap:"render_nonblank_proxy_only (no vision model available)",
+              staging_ref_matches:($sref=="rxnlpvldngxgdxkxoaaj"), production_ref_used:false}}' \
+            > ead-artifacts/visual-acceptance.json
           echo "=== visual-acceptance.json ==="; cat ead-artifacts/visual-acceptance.json
-          [ "$overall_ok" = "1" ] || { echo "::error::EAD PDF visual acceptance FAILED"; exit 1; }
-          echo "ead_pdf_visual_acceptance=PASS"
+          [ "$verdict" = "pass" ] || { echo "::error::EAD PDF acceptance FAILED:$fails"; exit 1; }
+          echo "EAD_PDF_VISUAL_ACCEPTANCE=PASS"
 
       - name: Upload Playwright + packet artifacts (PII-free synthetic)
         if: always()

@@ -70,6 +70,28 @@ test('EAD golden path navigates to the review screen', async ({ page }) => {
   await fillToReview(page)
 })
 
+test('EAD readiness gate blocks an incomplete form (negative)', async ({ page }) => {
+  await page.goto('/en/services/ead-work-permit/start', { waitUntil: 'domcontentloaded' })
+  await click(page, 'ead-type-new', 60_000)
+  await next(page)
+  await click(page, 'ead-cat-a12')
+  await next(page)
+  await next(page) // skip optional upload
+
+  // Step 3 (personal): with required name/dob EMPTY, the Next CTA must be DISABLED.
+  await expect(page.getByTestId('ead-next-cta'), 'next disabled while personal info incomplete').toBeDisabled()
+  await page.getByTestId('ead-input-lastName').fill('Shevchenko')
+  await page.getByTestId('ead-input-firstName').fill('Taras')
+  await page.getByTestId('ead-input-dob').fill('1990-01-15')
+  await expect(page.getByTestId('ead-next-cta'), 'next enabled once personal info complete').toBeEnabled()
+  await next(page)
+
+  await next(page) // docs (no required fields)
+
+  // Step 5 (filing): with no filing method + no address, Next must be DISABLED.
+  await expect(page.getByTestId('ead-next-cta'), 'next disabled while filing/address incomplete').toBeDisabled()
+})
+
 test('EAD: complete form → real filled I-765 PDF', async ({ page }) => {
   await fillToReview(page)
   await next(page) // review → download step
