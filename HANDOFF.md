@@ -1,6 +1,12 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 
+## THIS SESSION (current) — EAD product gate apparatus (testids + E2E + staging workflow)
+- TPS gate CLOSED (#187). #184 security gate done (code #188/#189/#190, staging runtime GREEN run 27855969497; prod rollout tracked in #191). Owner approved starting EAD.
+- EAD discovery: wizard `EADWizard.tsx` (8 steps) already has `canAdvance()` readiness + `handleDownloadPdf()` → real filled I-765 PDF via `/api/ead/generate-packet` (FREE, no Stripe/owner). Only blocker to a TPS-style gate was missing testids.
+- DID (branch `feat/ead-product-gate-e2e`): added stable testids to EADWizard (ead-type-*, ead-cat-*, ead-input-*, ead-filing-*, ead-next-cta, ead-review-container, ead-download-pdf-cta, ead-pdf-downloaded-state); NEW `tests/e2e-ui/ead-golden-path.spec.ts`; NEW `.github/workflows/staging-e2e-ead.yml` (preview → spec → I-765 PDF visual acceptance). tsc 0; EAD units green (54).
+- NEXT EXACT STEP: merge this branch to main (so the workflow is dispatchable), dispatch `Staging E2E — EAD (manual)`, get the real `ead-artifacts/i765-new.pdf` + visual acceptance GREEN → close the EAD product gate. THEN next product: Re-Parole (Stripe test) → Translation V2 (#185) → Cyrillic (#186).
+
 ## THIS SESSION (current) — #184 RUNTIME gate: staging migrations applied + runtime-proof workflow (NOT yet green)
 - Owner verdict: #184 NOT closed until runtime-proven post-migration. Acted on all 3 critiques.
 - DID: (1) behavioral business-idempotency test `webhookBusinessIdempotency.test.ts` proving the ledger fail-open is safe (re-delivery = idempotent business state; audit_log is the only dup, a benign log). (2) Applied both migrations to STAGING via `Staging Provision (manual)` (run 27855704963 success; 20260619000000 applied, stripe_processed_events already present; prod untouched). (3) NEW `.github/workflows/staging-webhook-replay-proof.yml` — psql runtime proof vs staging: objects exist, event dedup, durable token replay, CONCURRENCY single-winner (two parallel connections = two instances), append-only guard, guarded PHASE2_TEST_ cleanup.
