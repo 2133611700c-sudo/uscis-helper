@@ -24,6 +24,40 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminSupabaseClient()
 
+  // ── Idempotency (#184 webhook replay) ──────────────────────────────────────
+  // Stripe delivers at-least-once: the same event id can arrive multiple times
+  // (network retries, replays). Claim the event id in the append-only ledger
+  // BEFORE processing. inserted=false ⇒ already processed ⇒ no-op (skip the
+  // audit row + every downstream side-effect). This is the standard "claim then
+  // process" pattern on the globally-unique Stripe event id.
+  const checkoutId =
+    event.type === 'checkout.session.completed'
+      ? (event.data.object as Stripe.Checkout.Session).id
+      : null
+  const { data: rec, error: recErr } = await supabase.rpc('record_stripe_processed_event', {
+    p_stripe_event_id: event.id,
+    p_event_type: event.type,
+    p_checkout_session_id: checkoutId,
+    p_order_id: null,
+    p_result_code: 'received',
+  })
+  if (recErr) {
+    // Ledger unavailable (e.g. the migration is not yet applied to this DB, or a
+    // transient error). Deliberately do NOT 500 here: that would stall ALL
+    // webhook processing whenever the ledger is missing/unreachable. Instead log
+    // and fall through to process this event — exactly today's behavior (no
+    // dedup). Full idempotency activates automatically once the ledger exists.
+    console.error('[webhook] processed-events ledger unavailable, processing without dedup:', recErr.message)
+  } else {
+    const inserted = Array.isArray(rec)
+      ? Boolean((rec[0] as { inserted?: boolean } | undefined)?.inserted)
+      : Boolean((rec as { inserted?: boolean } | null)?.inserted)
+    if (!inserted) {
+      // Duplicate / replayed delivery — already processed. Acknowledge, do nothing.
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+  }
+
   if (event.type === 'checkout.session.completed') {
     const cs = event.data.object as Stripe.Checkout.Session
     const service     = cs.metadata?.service ?? ''
