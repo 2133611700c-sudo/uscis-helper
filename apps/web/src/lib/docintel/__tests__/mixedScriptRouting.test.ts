@@ -34,11 +34,17 @@ describe('mixed-script name routing (flag-gated, default OFF)', () => {
   })
 })
 
-describe('unknown-script review escalation stays flag-gated', () => {
-  it('does NOT flag ambiguous when RU_TRANSLIT_ENABLED is unset (no review friction)', () => {
-    expect(isNameSourceScriptAmbiguous('Петренко', {})).toBe(false)
+describe('unknown-script review escalation (DECOUPLED 2026-06-20: default ON)', () => {
+  // The review gate was decoupled from RU_TRANSLIT_ENABLED (audit #195). It now
+  // defaults ON via SOURCE_SCRIPT_REVIEW_ENABLED, so an ambiguous name reviews even
+  // when RU routing is off — the SAFE half ships without the risky OUTPUT half.
+  it('flags ambiguous by DEFAULT now (no flag set) — never silently romanized', () => {
+    expect(isNameSourceScriptAmbiguous('Петренко', {})).toBe(true)
   })
-  it('flags ambiguous only when the flag is on', () => {
+  it('still flags ambiguous when RU routing is on', () => {
     expect(isNameSourceScriptAmbiguous('Петренко', { RU_TRANSLIT_ENABLED: '1' })).toBe(true)
+  })
+  it('can be turned off explicitly via SOURCE_SCRIPT_REVIEW_ENABLED=0 (escape hatch)', () => {
+    expect(isNameSourceScriptAmbiguous('Петренко', { SOURCE_SCRIPT_REVIEW_ENABLED: '0' })).toBe(false)
   })
 })
