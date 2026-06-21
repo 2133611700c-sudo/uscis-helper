@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-21 | guards.yml — fork-PR skip on OWNER_PII_PATTERNS_B64 step (public-ready prep)
+- Added `if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository` to the `Block real owner PII` step in `.github/workflows/guards.yml`.
+- Why: in a future public-repo state, fork PRs do not receive repository secrets. Without the skip, the FAIL-CLOSED gate would always fail on external contributions. With the skip, internal PRs and pushes to main still enforce the gate; fork PRs simply do not run it (the secret was never available to them anyway).
+- No behavior change while the repo is private. This is pre-flip preparation; the actual public-visibility flip is deferred until PR #208 (Translation V2 rebuild) lands so the required filter-repo history purge does not disrupt the V2 branch set.
+
+
 ## 2026-06-21 | RELEASE_STATE.yaml refresh — unblock Release State Guard (basis was fabrication)
 - Release State Guard hard-failed: `state_basis_main_sha: 62c897a54daf3cf503a3b8831c8dcb2d0ce32f3c` was not a real commit object in this repo (per scripts/verify-release-state.mjs rule 4 — likely lost in an earlier history rewrite).
 - Set `state_basis_main_sha` to `505153713b7023f80349c2652dd3218694d28449` (real, current main HEAD before the CI-hardening batch — last known good base).

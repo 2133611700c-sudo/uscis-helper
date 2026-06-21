@@ -149,6 +149,10 @@ jobs:
       # may opt out with ALLOW_MISSING_PII_SECRET=1. Decoded patterns go to a 0600
       # temp file removed via trap; logs print ONLY file:line, never the value.
       - name: Block real owner PII
+        # Skip on fork PRs: GitHub does not pass secrets to workflows from forks,
+        # so the secret is empty and the FAIL-CLOSED check would always fail.
+        # Internal PRs and pushes to main still run the gate.
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         env:
           OWNER_PII_PATTERNS_B64: ${{ secrets.OWNER_PII_PATTERNS_B64 }}
         run: |
