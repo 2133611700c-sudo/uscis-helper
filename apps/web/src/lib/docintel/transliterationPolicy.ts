@@ -59,14 +59,33 @@ export function stripCountryCode(cy: string): string {
  * be finalized by C3 until the source script is confirmed or the user/admin
  * confirms. D2 may still surface a best-effort KMU-55 candidate for the screen.
  *
- * Only active behind RU_TRANSLIT_ENABLED (the RU/UA routing feature); when OFF we
- * keep the legacy KMU-55-for-all behavior and do not raise this flag.
+ * GATE DECOUPLED (C3, 2026-06-20, audit #195 / Agent B). This REVIEW gate used to
+ * be coupled to RU_TRANSLIT_ENABLED (default OFF), which conflated two independent
+ * things and left the strictly-safe half inert in production:
+ *   (1) SAFE — flag an ambiguous name for REVIEW so it is never SILENTLY romanized
+ *       with a guessed system. This changes NO output value (the on-screen
+ *       candidate stays the exact same KMU-55 string it is today); it only adds a
+ *       review reason + blocks C3 finalization (applyOcrFieldSafety nulls final).
+ *       It CANNOT reintroduce the line-~110 "Russification amplification"
+ *       regression, because it never calls the Russian table — that regression was
+ *       about CHANGING romanization OUTPUT, not about raising a review flag.
+ *   (2) RISKY — actually routing a clearly-RU read through transliterateRussian
+ *       (see toCanonicalValue below), which previously amplified Russified
+ *       mis-reads. That output change stays gated behind RU_TRANSLIT_ENABLED and is
+ *       intentionally NOT enabled here (deferred — needs real-OCR validation).
+ *
+ * So this review gate now has its OWN flag, SOURCE_SCRIPT_REVIEW_ENABLED, default
+ * ON: undefined/'' ⇒ ON; only an explicit '0' disables it (an escape hatch if the
+ * review proves too noisy in production). RU_TRANSLIT_ENABLED='1' also still arms
+ * the gate, so any caller/test that set only that flag keeps the old behavior.
+ * Strictly review/finalization gating — no romanization OUTPUT changes here.
  */
 export function isNameSourceScriptAmbiguous(
   cy: string,
   env: Record<string, string | undefined> = process.env,
 ): boolean {
-  if (env.RU_TRANSLIT_ENABLED !== '1') return false
+  const reviewArmed = env.SOURCE_SCRIPT_REVIEW_ENABLED !== '0' || env.RU_TRANSLIT_ENABLED === '1'
+  if (!reviewArmed) return false
   const s = (cy ?? '').trim()
   if (!s) return false
   return detectNameScript(s) === 'unknown'
