@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-20 | Release-owner: secret-incident triage + CI restore + system map
+- Secret incident: main was history-rewritten (35508c1, Google API key pattern). Current tree + new main CLEAN of key patterns; redaction touched only docs. Treat key as UNVERIFIED→compromised → new Gemini key required (history rewrite ≠ revocation). Self-provisioned ADMIN_SECRET + CRON_SECRET (crypto-random, never echoed) + OPERATOR_SIGNER_NAME (variable); RESEND already present → external blockers reduced to Stripe test keys (×3) + new Gemini key.
+- CI root cause: GitHub Actions was DISABLED at the repo level (`actions/permissions enabled=false`) → #208 had zero checks. RE-ENABLED (enabled=true, allowed_actions=all). Secret-scanning push-protection needs GHAS (owner-side).
+- NEW docs/reports/TRANSLATION_CYRILLIC_SYSTEM_MAP.md — routes/tables/RPCs/flags/brain authority/dictionary registry/renderer/delivery/Stripe+PII boundaries/failure+rollback + the proof that the Central Brain is the single arbiter (brainSingleArbiterInvariant). #208 NOT merged until secret remediated + CI green + real staging E2E.
+
 ## 2026-06-20 | Central Brain — fix 2 HARD-RULE violations found by the golden-vector harness
 - The deterministic golden-vector proof (GOLDEN) found two REAL Central-Brain wiring bugs (asserted actual output, flagged, did not fake green). Both fixed in `lib/canonical/core/knowledgeNormalize.ts`:
   - **V1 «смт» designator silently dropped** — the gazetteer-first path (`snapCity`) stripped «смт» and released "Vyshneve" (violates HARD RULE «смт» = "urban-type settlement", NEVER city/town). Now re-attaches the designator from the raw value via `settlementDesignatorEn()` → "urban-type settlement Vyshneve".
