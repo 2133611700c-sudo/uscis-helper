@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-20 | Real-OCR fixtures: clear the 100KB image-quality gate
+- First real-OCR run (27890724694): deploy+route OK, but all 5 synthetic PNGs were rejected `needs_better_scan` (42–78KB < `IMAGE_QUALITY_RULES.min_bytes_for_extraction`=100KB) → Gemini never called (provider/model empty, 76–595ms). NOT a key/quota issue. Fix: `_add_paper_grain` (coarse scan-realistic grain) → fixtures now 1.5–1.6MB (in the 100KB–2MB proceed window). Re-dispatching.
+
 ## 2026-06-20 | TV2 AGENT 2 — REAL Cyrillic OCR + staging E2E (synthetic, PII-free)
 - Branch `feat/tv2-real-ocr-e2e` off `feat/tv2-rebuild-on-main`. Builds the missing REAL-OCR staging proof for the translation pipeline (no mocks, no expected-value substitution; a real Gemini read of a real image).
 - NEW `scripts/synthetic-docs/generate.py` — Pillow generator; Cyrillic-capable font resolution (Arial macOS → DejaVuSans CI) with a tofu-guard that proves the Cyrillic glyph actually renders. Produces 5 PII-FREE synthetic PNGs (committed) under `tests/fixtures/translation-synthetic/`:
