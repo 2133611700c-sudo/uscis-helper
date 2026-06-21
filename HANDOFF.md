@@ -4,6 +4,14 @@
 
 
 
+
+## THIS SESSION (current) — guards.yml: fork-PR skip on PII gate (public-ready prep)
+- Pre-public-flip preparation. 3-criteria workflow audit per the user's plan (pull_request_target / checkout-untrusted-ref / secrets-in-PR-jobs) found ONE issue: `guards.yml:153` references `OWNER_PII_PATTERNS_B64` in a `pull_request`-triggered job. On a public repo, fork PRs cannot access secrets, so the FAIL-CLOSED gate would always fail on external contributions.
+- Fix: added `if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository` to the PII step. Internal PRs and `push: main` still run the check (security preserved); fork PRs skip it (no false failures, no secret leak attempt).
+- Public flip itself DEFERRED until PR #208 (Translation V2 rebuild) merges. Rationale: filter-repo to purge owner PII from history (96 hits on "REDACTED", 784 evidence files reachable in pre-7757b83b commits) would force-rebase 4 active V2 branches + break PR #208's diff base. Translation V2 is owner's priority #1; not worth the disruption when private+hardened state is already $0 spend and secure.
+- Post-V2-merge plan: filter-repo → force-push (only main needed) → flip public → enable ruleset/secret-scanning/push-protection. ~30-60 min.
+- NEXT EXACT STEP: continue Translation V2 work; revisit public flip after #208 merges.
+
 ## THIS SESSION (current) — RELEASE_STATE snapshot refresh (unblock CI)
 - Trigger: Release State Guard hard-failed because `state_basis_main_sha: 62c897a5...` is not a real commit in this repo (likely lost in an earlier history rewrite, e.g. the Google-API-key purge). Guard rule 4: basis must be a real commit object.
 - Minimal mechanical fix (NOT a release-truth claim): `state_basis_main_sha → 505153713b7023f80349c2652dd3218694d28449` (real, current main HEAD before CI-hardening batch); `verified_production_sha → UNVERIFIED` (honest — prod /api/healthz returns short SHA `3227dab` that does not resolve from this clone, so I cannot verify); `verified_at → 2026-06-21T02:17:00Z`.
