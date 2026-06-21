@@ -1,8 +1,17 @@
 /**
  * Glossary Loader — Messenginfo Translation Engine v5.0
  * Loads only relevant glossary modules for a given document type.
+ *
+ * CANONICAL SOURCE: @uscis-helper/knowledge (dictionary.ts). Per audit #195 the
+ * `agencies` map was an independent FORK that diverged from the brain
+ * (УМВС "Directorate of the MIA" vs the canonical "Regional Department of MIA";
+ * РАЦС renderings). It now DELEGATES: every English agency value is pulled from
+ * the canonical AUTHORITIES dictionary so it can never drift again. The
+ * Ukrainian-string keys (e.g. "УМВС України") stay because this loader is keyed
+ * by the literal text the translation layer reads.
  */
 import { DocumentType } from '../types'
+import { AUTHORITIES, CIVIL_STATUS } from '@uscis-helper/knowledge'
 
 export interface GlossaryModule {
   passport_fields?: Record<string, string>
@@ -14,6 +23,41 @@ export interface GlossaryModule {
   marital_status?: Record<string, string>
   forbidden_translations?: string[]
   historical_geography_lock?: Array<{ lock: string; note: string }>
+}
+
+/**
+ * Build the agency map from the canonical AUTHORITIES dictionary so the English
+ * renderings cannot diverge from the brain (audit #195). We use the legal/formal
+ * `official_en` because this loader feeds certified-style document translation.
+ * Sub-unit forms (РВ/МВ УМВС, УДМС) are COMPOSED from the canonical parent name
+ * so "Department of the Ministry of Internal Affairs of Ukraine" always matches.
+ */
+function buildAgencies(): Record<string, string> {
+  const mvs = AUTHORITIES.MVS.official_en          // Ministry of Internal Affairs of Ukraine
+  const umvs = AUTHORITIES.UMVS.official_en         // Regional Department of the Ministry of Internal Affairs of Ukraine
+  const gumvs = AUTHORITIES.GUMVS.official_en       // Main Department of the Ministry of Internal Affairs of Ukraine
+  const dms = AUTHORITIES.DMS.official_en           // State Migration Service of Ukraine
+  const civil = AUTHORITIES.CIVIL_REGISTRY.normalized_uscis_en // Civil Registry Office (canonical, registry-sourced)
+  const sbgs = AUTHORITIES.SBGSU.official_en        // State Border Guard Service of Ukraine
+  return {
+    "МВС України": mvs,
+    "ГУМВС України": gumvs,
+    "УМВС України": umvs,
+    "РВ УМВС": `District Department of the ${umvs}`,
+    "МВ УМВС": `City Department of the ${umvs}`,
+    "ДМС України": dms,
+    "УДМС": `Territorial Subdivision of the ${dms}`,
+    "РАЦС": civil,
+    // ДРАЦС is the modern state body; the canonical normalized term is the same
+    // "Civil Registry Office" (registry.csv ДРАЦС row, source КМУ №1025). The
+    // "State" qualifier is dropped to match the brain's single rendering.
+    "ДРАЦС": civil,
+    "Державна прикордонна служба": sbgs,
+    // Bodies not in AUTHORITIES — kept verbatim (registry.csv carries these with
+    // provenance; no conflict to resolve).
+    "Міністерство освіти і науки України": "Ministry of Education and Science of Ukraine",
+    "Міністерство охорони здоров'я України": "Ministry of Health of Ukraine",
+  }
 }
 
 // Inline glossary — mirrors UKRAINE_GLOSSARY.yaml
@@ -43,20 +87,12 @@ const FULL_GLOSSARY: GlossaryModule = {
     "квартира": "apartment", "кв.": "apartment",
     "провулок": "lane", "пров.": "lane",
   },
-  agencies: {
-    "МВС України": "Ministry of Internal Affairs of Ukraine",
-    "ГУМВС України": "Main Directorate of the Ministry of Internal Affairs of Ukraine",
-    "УМВС України": "Directorate / Department of the Ministry of Internal Affairs of Ukraine",
-    "РВ УМВС": "District Department of the Directorate of the Ministry of Internal Affairs",
-    "МВ УМВС": "City Department of the Directorate of the Ministry of Internal Affairs",
-    "ДМС України": "State Migration Service of Ukraine",
-    "УДМС": "Territorial Subdivision of the State Migration Service",
-    "РАЦС": "Civil Registry Office",
-    "ДРАЦС": "State Civil Registry Office",
-    "Державна прикордонна служба": "State Border Guard Service of Ukraine",
-    "Міністерство освіти і науки України": "Ministry of Education and Science of Ukraine",
-    "Міністерство охорони здоров'я України": "Ministry of Health of Ukraine",
-  },
+  // DELEGATED to canonical AUTHORITIES (dictionary.ts). The English value for
+  // every agency below is the canonical `official_en`, so this map can no longer
+  // diverge from the brain (audit #195). Compound/sub-unit forms (РВ УМВС, МВ
+  // УМВС, УДМС) and bodies not represented in AUTHORITIES are composed from the
+  // same canonical strings via the helper so the parent name still matches.
+  agencies: buildAgencies(),
   abbreviations: {
     "ім.": "named after", "б/н": "without number / no number assigned",
     "в/ч": "Military Unit", "№": "No.",
@@ -79,12 +115,8 @@ const FULL_GLOSSARY: GlossaryModule = {
     "Ч": "M", "Ж": "F", "чол.": "M", "жін.": "F",
     "Мужской": "M", "Женский": "F",
   },
-  marital_status: {
-    "одружений": "married (male)", "одружена": "married (female)",
-    "неодружений": "single (male)", "неодружена": "single (female)",
-    "розлучений": "divorced (male)", "розлучена": "divorced (female)",
-    "вдівець": "widower", "вдова": "widow",
-  },
+  // DELEGATED to canonical CIVIL_STATUS (dictionary.ts) — audit #195 single source.
+  marital_status: CIVIL_STATUS,
   forbidden_translations: [
     "Police Department", "Round seal", "Uploaded image",
     "Bilingual Ukrainian/Russian", "Stamp", "Photo placeholder", "Scanner artifact",

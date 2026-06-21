@@ -32,6 +32,9 @@ import {
   reconcilePatronymic,
   isValidPatronymic,
   FIELD_LABELS,
+  CIVIL_STATUS,
+  DOCUMENT_TYPES,
+  parseMrz,
   type NormalizationContext,
 } from '../index';
 
@@ -220,6 +223,59 @@ eq(settlementDesignatorEn('місто Київ'), null, 'settlementDesignatorEn:
 eq(convertDateToUSCIS('01.01.1990'), '01/01/1990', 'Date dot format DD.MM.YYYY → MM/DD/YYYY');
 eq(convertDateToUSCIS('19 лютого 2003'), '02/19/2003', 'Ukrainian month name → USCIS date');
 eq(convertDateToUSCIS('5 грудня 2011'), '12/05/2011', 'Ukrainian December → USCIS date');
+// RU months (legacy documents) — same date engine, Russian month names.
+eq(convertDateToUSCIS('15 января 1985'), '01/15/1985', 'Russian month name (января) → USCIS date');
+eq(convertDateToUSCIS('3 декабря 1999'), '12/03/1999', 'Russian December (декабря) → USCIS date');
+
+// ──────────────────────────────────────────────────────────────────────────
+// 9. Civil / marital status — CANONICAL CIVIL_STATUS (dictionary.ts); the
+//    glossaryLoader fork now delegates here (audit #195). Gendered UA + RU forms.
+// ──────────────────────────────────────────────────────────────────────────
+eq(CIVIL_STATUS['одружений'], 'married (male)', 'civil status: одружений → married (male)');
+eq(CIVIL_STATUS['одружена'], 'married (female)', 'civil status: одружена → married (female)');
+eq(CIVIL_STATUS['розлучена'], 'divorced (female)', 'civil status: розлучена → divorced (female)');
+eq(CIVIL_STATUS['вдівець'], 'widower', 'civil status: вдівець → widower');
+eq(CIVIL_STATUS['женат'], 'married (male)', 'civil status RU: женат → married (male)');
+
+// ──────────────────────────────────────────────────────────────────────────
+// 10. Document types — canonical DOCUMENT_TYPES; смт-style hard rules don't
+//     apply but the USCIS phrasing must be stable.
+// ──────────────────────────────────────────────────────────────────────────
+eq(DOCUMENT_TYPES['свідоцтво про народження'].uscis_en, 'Birth Certificate', 'doc type: birth certificate');
+eq(DOCUMENT_TYPES['свідоцтво про шлюб'].uscis_en, 'Marriage Certificate', 'doc type: marriage certificate');
+eq(DOCUMENT_TYPES['id-картка'].uscis_en, 'National ID Card', 'doc type: ID card');
+
+// ──────────────────────────────────────────────────────────────────────────
+// 11. Civil-registry CANONICAL rendering (audit #195) — registry-sourced
+//     "Civil Registry Office" (NOT the old sourceless "ZAHS" typo).
+// ──────────────────────────────────────────────────────────────────────────
+{
+  const a = normalizeAuthority('РАЦС м. Вінниця', 'birth_cert', ctx);
+  eq(a.normalized_value, 'Civil Registry Office', 'РАЦС uscis_normalized → "Civil Registry Office" (registry-sourced)');
+  truthy(!/zahs/i.test(a.normalized_value), 'civil registry output has no ZAHS typo');
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// 12. MRZ authority — TD3 passport + TD1 ID card both yield the CONTROLLING
+//     Latin name and validate check digits; a tampered TD1 → review_required
+//     so an invalid MRZ can never silently overwrite a canonical value.
+// ──────────────────────────────────────────────────────────────────────────
+{
+  const td3 = parseMrz('P<UKRIVANENKO<<IVAN<<<<<<<<<<<<<<<<<<<<<<<<<\nFA000000<5UKR9001011M3001019<<<<<<<<<<<<<<06');
+  eq(td3.format, 'TD3', 'MRZ TD3 detected');
+  eq(td3.surname, 'IVANENKO', 'MRZ TD3 controlling surname');
+  eq(td3.review_required, false, 'MRZ TD3 valid → no review');
+}
+{
+  const td1Good = ['I<UKRAA12345678<<<<<<<<<<<<<<<', '9001011M3001019UKR<<<<<<<<<<<0', 'IVANENKO<<IVAN<<<<<<<<<<<<<<<<'].join('\n');
+  const td1 = parseMrz(td1Good);
+  eq(td1.format, 'TD1', 'MRZ TD1 detected');
+  eq(td1.surname, 'IVANENKO', 'MRZ TD1 controlling surname');
+  eq(td1.date_of_birth, '1990-01-01', 'MRZ TD1 DOB parsed');
+  eq(td1.review_required, false, 'MRZ TD1 valid → no review');
+  const tampered = parseMrz(td1Good.replace('9001011M', '9101011M'));
+  eq(tampered.review_required, true, 'MRZ TD1 tampered DOB → review_required (cannot overwrite canonical)');
+}
 
 // ──────────────────────────────────────────────────────────────────────────
 console.log(`\n=== Golden Dictionary Vectors: ${pass} passed, ${fail} failed ===`);
