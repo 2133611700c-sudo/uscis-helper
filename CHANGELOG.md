@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-21 | RELEASE_STATE.yaml refresh — unblock Release State Guard (basis was fabrication)
+- Release State Guard hard-failed: `state_basis_main_sha: 62c897a54daf3cf503a3b8831c8dcb2d0ce32f3c` was not a real commit object in this repo (per scripts/verify-release-state.mjs rule 4 — likely lost in an earlier history rewrite).
+- Set `state_basis_main_sha` to `505153713b7023f80349c2652dd3218694d28449` (real, current main HEAD before the CI-hardening batch — last known good base).
+- Set `verified_production_sha: UNVERIFIED` per schema discipline: prod `/api/healthz` returned short SHA `3227dab` which is not resolvable from this clone, so the value cannot be honestly claimed. UNVERIFIED is the schema-sanctioned placeholder; owner refreshes against the next real verified prod deploy.
+- `verified_at: 2026-06-21T02:17:00Z`. Snapshot is intentionally STALE (basis != main tip) — guard reports as WARN, which is the documented expected behavior.
+
+
 ## 2026-06-20 | CI security hardening — SHA-pin all third-party actions + concurrency + CODEOWNERS
 - Pinned every `uses:` to immutable commit SHA (was major-tag floats): actions/cache@v5 → 27d5ce7f, actions/setup-node@v6 → 48b55a01, actions/upload-artifact@v4 → ea165f8d, pnpm/action-setup@v6 → 0ebf4713, supabase/setup-cli@v1.7.1 → ab058987. Closes supply-chain attack window where a compromised upstream release could exfiltrate secrets from any of our 27 workflows.
 - Added `concurrency: ${{ github.workflow }}-${{ github.ref }}` + `cancel-in-progress: true` to every workflow that lacked it. Stops redundant runs piling up on rapid pushes (saves Actions minutes).

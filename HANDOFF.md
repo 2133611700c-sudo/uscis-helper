@@ -3,6 +3,13 @@
 <!-- staging-e2e-translation.yml registered on main to enable the real-OCR dispatch against #208's branch. -->
 
 
+
+## THIS SESSION (current) — RELEASE_STATE snapshot refresh (unblock CI)
+- Trigger: Release State Guard hard-failed because `state_basis_main_sha: 62c897a5...` is not a real commit in this repo (likely lost in an earlier history rewrite, e.g. the Google-API-key purge). Guard rule 4: basis must be a real commit object.
+- Minimal mechanical fix (NOT a release-truth claim): `state_basis_main_sha → 505153713b7023f80349c2652dd3218694d28449` (real, current main HEAD before CI-hardening batch); `verified_production_sha → UNVERIFIED` (honest — prod /api/healthz returns short SHA `3227dab` that does not resolve from this clone, so I cannot verify); `verified_at → 2026-06-21T02:17:00Z`.
+- Local guard run: PASS (basis is a real commit, prod SHA well-formed UNVERIFIED, no fabrication of Vercel/Stripe runtime state, schema_version 2 intact). Staleness reported as WARN per design (basis 5051537 != main tip e8669b8) — owner refreshes in the next release-truth PR.
+- NEXT EXACT STEP: owner refreshes basis + verified_production_sha + verified_at against the next real prod deploy. No product impact.
+
 ## THIS SESSION (current) — CI security hardening (supply-chain + cost guardrails)
 - Trigger: prep for safe long-term Actions usage; defend against compromised third-party action releases and against an attacker pivoting through an over-privileged `GITHUB_TOKEN`.
 - Hardening applied (commit acc1693d): SHA-pinned all 5 third-party actions to immutable commits (actions/cache@v5 → 27d5ce7f, setup-node@v6 → 48b55a01, upload-artifact@v4 → ea165f8d, pnpm/action-setup@v6 → 0ebf4713, supabase/setup-cli@v1.7.1 → ab058987); added `concurrency: ${{ github.workflow }}-${{ github.ref }}` + `cancel-in-progress: true` to every workflow that lacked it (saves Actions minutes on rapid pushes).
