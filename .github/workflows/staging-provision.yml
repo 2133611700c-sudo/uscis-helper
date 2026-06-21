@@ -19,6 +19,10 @@ on:
         required: true
         default: 'dry-run'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -51,7 +55,7 @@ jobs:
           if [ -n "$BAD" ]; then echo "::error::unguarded destructive DDL found:"; echo "$BAD"; exit 1; fi
           echo "safety_ok: no unguarded destructive DDL"
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1.7.1
         with:
           version: latest
 

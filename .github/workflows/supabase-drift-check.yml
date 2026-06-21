@@ -12,6 +12,10 @@ on:
     - cron: '0 9 * * *' # daily 09:00 UTC
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   drift:
     runs-on: ubuntu-latest
@@ -32,7 +36,7 @@ jobs:
           fi
       - name: Setup Supabase CLI
         if: steps.guard.outputs.configured == 'true'
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1.7.1
         with:
           version: latest
       - name: Link + diff (fail if drift)
