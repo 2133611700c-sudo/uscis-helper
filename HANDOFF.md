@@ -1,5 +1,12 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-21 | Scenario E2E coverage (RU + MRZ + operator-correction) + public CI mirror green
+- Public history-free CI mirror **2133611700c-sudo/uscis-helper-ci** runs Core Proof on free unlimited Linux Actions — 4 jobs GREEN (knowledge/brain/PDF/full-pipeline).
+- Added two locally+CI-verified E2E test files (13 tests, no Gemini): translationScenariosFixtureE2E (RU transliteration, passport TD3 MRZ controlling-Latin) + translationOperatorCorrectionE2E (C3 parks low-conf dob → real normalizer ISO→USCIS → release guard → regenerated certified PDF, zero Cyrillic leak).
+- Honest caveats recorded in-file: detectNameScript='unknown' for shared-letter names (correct conservative); transliterateKMU55('Сергей')=Serhei (RU uses transliterateRussian→Sergey); MRZ all-caps name-cased to title by brain (asserted case-insensitively).
+- OCR (image→Cyrillic via Gemini) STILL blocked on key quota — unchanged; free Actions ≠ Gemini quota.
+
+
 ## 2026-06-20 | REAL-OCR VERDICT: pipeline PROVEN to the OCR call; BLOCKED_EXTERNAL on Gemini quota
 
 **What was proven working (run 27891174836, head 9822429):**
