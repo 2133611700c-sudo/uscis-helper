@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 2026-06-20 | REAL-OCR VERDICT: pipeline PROVEN to the OCR call; BLOCKED_EXTERNAL on Gemini quota
+
+**What was proven working (run 27891174836, head 9822429):**
+1. CI deploys staging preview (Gemini key + staging Supabase + secrets) — OK
+2. Synthetic UA/RU printed + passport-MRZ + ambiguous + handwritten fixtures generated at ~1.5MB — OK
+3. Image-quality gate (100KB..2MB) CLEARED — OK
+4. POST /api/translation/vision-extract REACHES live Gemini and AUTHENTICATES (429, not 401/403) — OK
+5. Controlled backoff: 4 retries over 152s (12+25+45+70s incl. a full 70s wait) — every attempt 429 OCR_RATE_LIMITED
+
+**Verdict: BLOCKED_EXTERNAL.** A transient RPM window clears inside 60s; persistent 429 across a 70s wait = the
+Gemini key's quota is DEPLETED, not a momentary burst. This is an external resource limit, NOT a code defect.
+
+**Why there is no honest workaround (do not re-litigate):**
+- Route FAILS CLOSED (route.ts:334-345): zero candidates + provider 429 -> ocrUnavailableResponse(), honest non-2xx.
+- googleVisionProvider is MRZ-only (route.ts:351, MRZ_TRANSLATION_ENABLED), NOT a full-document reader.
+- Flash is forbidden as an acceptance number (ADR-018 + owner). A flash read would be force-reviewed, never a pass.
+- Therefore no provider path yields a real full-document OCR result without a funded Gemini primary key.
+
+**Single unblock step (owner-only):** put a Gemini API key WITH AVAILABLE QUOTA (paid/billing active, or a fresh
+key with daily quota remaining) into the staging GEMINI_API_KEY secret. No code change needed — the SAME workflow
+re-run will prove image->detect->OCR->normalize->dictionaries->Central Brain->English->review->PDF end to end.
+
+**Not done (blocked on the above):** the canonical-row assertions (Shevchenko, urban-type settlement, MRZ,
+ambiguous->review, handwritten->null+review) never executed because Gemini never returned text.
+
+**Do NOT** burn more Actions minutes re-running against the same depleted key.
+
+
 ## 2026-06-20 | Real-OCR: image gate cleared → Gemini reached; add controlled backoff for 429
 - Run with 1.5MB fixtures (49d7e51) CLEARED the 100KB quality gate and REACHED live Gemini — which returned `OCR_RATE_LIMITED` (429) on the first call (key authenticates; transient RPM). Per ADR-018 the workflow failed honestly (no flash, no fake pass). Added controlled retry/backoff to scripts/real-ocr-e2e.mjs: retry transient OCR_RATE_LIMITED (12/25/45/70s, respect retry-after), hard-block OCR_QUOTA_EXHAUSTED/billing immediately, 8s spacing between docs. Re-dispatching.
 
