@@ -29,4 +29,50 @@ describe('MRZ TD3 parser (controlling Latin)', () => {
     expect(r.ok).toBe(false)
     expect(r.review_required).toBe(true)
   })
+
+  it('TD3 reports format and validates expiry + composite (unified review)', () => {
+    const r = parseMrz(text)
+    expect(r.format).toBe('TD3')
+    expect(r.expiry).toBe('2030-01-01')
+    expect(r.checks.expiry).toBe(true)
+    expect(r.checks.composite).toBe(true)
+    expect(r.review_required).toBe(false)
+  })
+})
+
+describe('MRZ TD1 parser (ID card, 3×30)', () => {
+  // GOLDEN TD1 — Ivanenko Ivan, doc AA1234567, UKR, DOB 1990-01-01 M, exp 2030-01-01.
+  // Check digits computed by ICAO 7-3-1; composite over the documented field spans.
+  const td1 = [
+    'I<UKRAA12345678<<<<<<<<<<<<<<<',
+    '9001011M3001019UKR<<<<<<<<<<<0',
+    'IVANENKO<<IVAN<<<<<<<<<<<<<<<<',
+  ].join('\n')
+
+  it('reads controlling Latin name + fields from a TD1 ID card', () => {
+    const r = parseMrz(td1)
+    expect(r.ok).toBe(true)
+    expect(r.format).toBe('TD1')
+    expect(r.surname).toBe('IVANENKO')
+    expect(r.given_names).toBe('IVAN')
+    expect(r.passport_no).toBe('AA1234567')
+    expect(r.nationality).toBe('UKR')
+    expect(r.date_of_birth).toBe('1990-01-01')
+    expect(r.sex).toBe('M')
+    expect(r.expiry).toBe('2030-01-01')
+  })
+
+  it('all check digits pass on the known-good TD1 → no review', () => {
+    const r = parseMrz(td1)
+    expect(r.checks).toEqual({ passport_no: true, dob: true, expiry: true, composite: true })
+    expect(r.review_required).toBe(false)
+  })
+
+  it('TAMPERED TD1 (DOB digit flipped) → check fails, review_required, cannot overwrite', () => {
+    // Flip the DOB from 900101 to 910101 without fixing the check digit.
+    const tampered = td1.replace('9001011M', '9101011M')
+    const r = parseMrz(tampered)
+    expect(r.checks.dob).toBe(false)
+    expect(r.review_required).toBe(true)
+  })
 })
