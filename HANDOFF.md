@@ -2,6 +2,15 @@
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
 <!-- staging-e2e-translation.yml registered on main to enable the real-OCR dispatch against #208's branch. -->
 
+
+## THIS SESSION (current) — CI security hardening (supply-chain + cost guardrails)
+- Trigger: prep for safe long-term Actions usage; defend against compromised third-party action releases and against an attacker pivoting through an over-privileged `GITHUB_TOKEN`.
+- Hardening applied (commit acc1693d): SHA-pinned all 5 third-party actions to immutable commits (actions/cache@v5 → 27d5ce7f, setup-node@v6 → 48b55a01, upload-artifact@v4 → ea165f8d, pnpm/action-setup@v6 → 0ebf4713, supabase/setup-cli@v1.7.1 → ab058987); added `concurrency: ${{ github.workflow }}-${{ github.ref }}` + `cancel-in-progress: true` to every workflow that lacked it (saves Actions minutes on rapid pushes).
+- Repo-level Actions policy: `allowed_actions=selected`, `github_owned_allowed=true`, `verified_allowed=true`, `patterns_allowed=[pnpm/action-setup@*, supabase/setup-cli@*]`. `default_workflow_permissions=read` (least-priv GITHUB_TOKEN). Added `.github/CODEOWNERS` (`* @2133611700c-sudo`).
+- Cost: repo stays PRIVATE (~200 min/mo measured = 10% of GitHub Free 2000 min/mo quota → $0). Branch protection ruleset for `main` requires Pro on private repos ($4/mo) — deferred per owner's no-spend constraint.
+- Verification: V1 Fast Gates + V1 Program Guard GREEN on commit acc1693d (SHA-pinned actions work). Session Docs Guard / Release State Guard failed because this hardening commit didn't touch the doc-trio — this follow-up commit fixes that.
+- NEXT EXACT STEP: re-enable any Google credentials in Vercel + GitHub Secrets when owner has rotated them; otherwise no further action required for security baseline.
+
 ## THIS SESSION (current) — Emergency GitHub exposure lockdown
 - Trigger: GitGuardian email reported a Google API Key pattern in `uscis-helper` commit `79ee41d92b56f7470141e1acacbb8bf1baef963d`.
 - Repo-level containment: `uscis-helper` was set to private; GitHub Actions was disabled to stop public code exposure and new Actions billing from this repo.
