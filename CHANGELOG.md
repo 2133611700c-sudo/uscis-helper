@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-20 | Register real-OCR translation staging workflow (test-infra only)
+- Add `.github/workflows/staging-e2e-translation.yml` to main so it is dispatchable. Inert until dispatched. Dispatched with --ref feat/tv2-rebuild-on-main to deploy the V2 translator + run REAL Gemini OCR over synthetic Cyrillic docs (no product code merged here). #208 stays unmerged.
+
 ## 2026-06-20 | Emergency GitHub exposure lockdown — Vision API key pattern redacted
 - Responded to GitGuardian alert for `2133611700c-sudo/uscis-helper` commit `79ee41d92b56f7470141e1acacbb8bf1baef963d` reporting a Google API Key pattern in the Vision credentials diagnostic/test area.
 - Redacted all `AIza...` key-shaped literals from the current tree to `REDACTED_GOOGLE_API_KEY_DO_NOT_USE`, including Vision diagnostic/test files and saved USCIS HTML snapshots that contain public site keys but still trigger scanners.
