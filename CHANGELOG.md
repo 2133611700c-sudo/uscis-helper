@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-20 | CI security hardening — SHA-pin all third-party actions + concurrency + CODEOWNERS
+- Pinned every `uses:` to immutable commit SHA (was major-tag floats): actions/cache@v5 → 27d5ce7f, actions/setup-node@v6 → 48b55a01, actions/upload-artifact@v4 → ea165f8d, pnpm/action-setup@v6 → 0ebf4713, supabase/setup-cli@v1.7.1 → ab058987. Closes supply-chain attack window where a compromised upstream release could exfiltrate secrets from any of our 27 workflows.
+- Added `concurrency: ${{ github.workflow }}-${{ github.ref }}` + `cancel-in-progress: true` to every workflow that lacked it. Stops redundant runs piling up on rapid pushes (saves Actions minutes).
+- Repository Actions policy: `allowed_actions=selected` with `github_owned_allowed=true`, `verified_allowed=true`, plus explicit patterns `pnpm/action-setup@*` and `supabase/setup-cli@*`. `default_workflow_permissions=read` enforces least-privilege `GITHUB_TOKEN`. `can_approve_pull_request_reviews=false`.
+- Added `.github/CODEOWNERS` mapping all paths to `@2133611700c-sudo` (documentation; enforcement requires branch protection which needs GitHub Pro on private repos — deferred per owner's no-spend constraint).
+- Repo stays PRIVATE. Current Actions usage measured at ~200 min/mo = 10% of GitHub Free 2000 min/mo Linux quota → $0 spend.
+
+
 ## 2026-06-20 | Register real-OCR translation staging workflow (test-infra only)
 - Add `.github/workflows/staging-e2e-translation.yml` to main so it is dispatchable. Inert until dispatched. Dispatched with --ref feat/tv2-rebuild-on-main to deploy the V2 translator + run REAL Gemini OCR over synthetic Cyrillic docs (no product code merged here). #208 stays unmerged.
 
