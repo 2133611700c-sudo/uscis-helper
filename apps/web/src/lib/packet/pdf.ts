@@ -151,7 +151,11 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   drawHRule(page, y); y -= 14
 
   // Metadata
-  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  // DETERMINISM (#195): anchor the "Translation Date" to the certification's
+  // signed_at (the single pinned time source for this document), NOT the render
+  // wall-clock. Two renders of the same input must produce byte-identical bytes
+  // so the V2 immutable-artifact content-address (SHA-256) is stable.
+  const today = new Date(input.certificationRecord.signed_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
   const meta = [
     ['Translation Scope', clampText(input.scopeTitle, 70)],
     ['Language Pair', 'Ukrainian -> English'],
@@ -251,6 +255,16 @@ export async function generateTranslationPDF(input: PacketInput): Promise<Buffer
   // SOURCE TRACE / QA audit data is stored in the DB (extracted_fields, audit_logs).
   // It is intentionally NOT included in the customer-facing PDF.
   // Admin audit exports are a separate internal tool.
+
+  // DETERMINISM (#195): pdf-lib otherwise stamps CreationDate/ModDate with the
+  // render wall-clock and a version-dependent Producer, making bytes unstable.
+  // Pin all document metadata to the certification's signed_at + fixed strings so
+  // the same input always renders identical bytes (stable content-address SHA).
+  const pinned = new Date(input.certificationRecord.signed_at)
+  pdfDoc.setCreationDate(pinned)
+  pdfDoc.setModificationDate(pinned)
+  pdfDoc.setProducer('Messenginfo')
+  pdfDoc.setCreator('Messenginfo Translation')
 
   const pdfBytes = await pdfDoc.save()
   return Buffer.from(pdfBytes)
