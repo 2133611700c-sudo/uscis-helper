@@ -12,6 +12,10 @@ name: Staging Webhook/Replay Idempotency Proof (manual)
 on:
   workflow_dispatch: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

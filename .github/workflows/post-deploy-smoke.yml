@@ -20,6 +20,10 @@ on:
   deployment_status:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   smoke:
     # run only for successful PRODUCTION deployments (or manual dispatch)

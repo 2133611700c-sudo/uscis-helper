@@ -1,0 +1,6 @@
+# Default owners — review required on all changes
+* @2133611700c-sudo
+
+# Workflow & security files — owner-only
+/.github/ @2133611700c-sudo
+/scripts/ @2133611700c-sudo

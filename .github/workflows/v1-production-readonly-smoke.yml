@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '0 13 * * *' # 13:00 UTC daily
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prod-readonly-smoke:
     name: health + public routes (read-only)
