@@ -1,4 +1,32 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
+
+## 2026-06-20 | REAL-OCR VERDICT: pipeline PROVEN to the OCR call; BLOCKED_EXTERNAL on Gemini quota
+
+**What was proven working (run 27891174836, head 9822429):**
+1. CI deploys staging preview (Gemini key + staging Supabase + secrets) — OK
+2. Synthetic UA/RU printed + passport-MRZ + ambiguous + handwritten fixtures generated at ~1.5MB — OK
+3. Image-quality gate (100KB..2MB) CLEARED — OK
+4. POST /api/translation/vision-extract REACHES live Gemini and AUTHENTICATES (429, not 401/403) — OK
+5. Controlled backoff: 4 retries over 152s (12+25+45+70s incl. a full 70s wait) — every attempt 429 OCR_RATE_LIMITED
+
+**Verdict: BLOCKED_EXTERNAL.** A transient RPM window clears inside 60s; persistent 429 across a 70s wait = the
+Gemini key's quota is DEPLETED, not a momentary burst. This is an external resource limit, NOT a code defect.
+
+**Why there is no honest workaround (do not re-litigate):**
+- Route FAILS CLOSED (route.ts:334-345): zero candidates + provider 429 -> ocrUnavailableResponse(), honest non-2xx.
+- googleVisionProvider is MRZ-only (route.ts:351, MRZ_TRANSLATION_ENABLED), NOT a full-document reader.
+- Flash is forbidden as an acceptance number (ADR-018 + owner). A flash read would be force-reviewed, never a pass.
+- Therefore no provider path yields a real full-document OCR result without a funded Gemini primary key.
+
+**Single unblock step (owner-only):** put a Gemini API key WITH AVAILABLE QUOTA (paid/billing active, or a fresh
+key with daily quota remaining) into the staging GEMINI_API_KEY secret. No code change needed — the SAME workflow
+re-run will prove image->detect->OCR->normalize->dictionaries->Central Brain->English->review->PDF end to end.
+
+**Not done (blocked on the above):** the canonical-row assertions (Shevchenko, urban-type settlement, MRZ,
+ambiguous->review, handwritten->null+review) never executed because Gemini never returned text.
+
+**Do NOT** burn more Actions minutes re-running against the same depleted key.
+
 <!-- TV2 REAL-OCR E2E DONE (2026-06-20, AGENT 2, branch feat/tv2-real-ocr-e2e off feat/tv2-rebuild-on-main): built the REAL Cyrillic-OCR + staging E2E for translation. WHAT: (1) scripts/synthetic-docs/generate.py — Pillow generator, resolves a Cyrillic-capable font (Arial macOS → DejaVuSans CI), with a tofu-guard that proves the glyph really renders. Emits 5 PII-FREE synthetic PNGs to tests/fixtures/translation-synthetic/ (all committed): ua_birth_printed.png (Прізвище ШЕВЧЕНКО / Ім'я ТАРАС / Дата 15.01.1990 / Місце смт Вишневе / орган РАЦС), ru_printed.png (Фамилия СОЛОВЬЁВ / Имя ЭДУАРД / Дата 02.19.2003 + Ы/Э/Ё/Ъ markers), ua_passport_mrz.png (bio + a real TD3 2×44 MRZ, P< prefix, all 5 ICAO check digits independently verified), ambiguous_script.png (ПЕТРОВА — uk/ru shared letters only → must review), handwritten_critical.png (critical date 07.03.1985 in a handwriting-proxy font, rest printed). (2) scripts/real-ocr-e2e.mjs — POSTs each PNG to the LIVE POST /api/translation/vision-extract (REAL Gemini; multipart repeated `file` ≤6 + docTypeId + documentSessionId), asserts canonical rows from the route's FieldOut[] (value/raw_cyrillic/review_required/kind): ua_birth→Shevchenko/Taras KMU-55 + смт→'urban-type settlement' (never city/town) + zero Cyrillic leak in `value`; ru→fields+review; passport→Latin Shevchenko (MRZ authority); ambiguous→review_required; handwritten critical→null|review_required. 429/OCR_QUOTA_EXHAUSTED/RATE_LIMITED/BILLING → throws BlockedError → prints OCR_BLOCKED_QUOTA → exit 2 (ADR-018: BLOCKED, never a faked flash pass). Writes ocr-*.json + ocr-summary.json artifacts. NO mocks, NO substituted OCR values. (3) .github/workflows/staging-e2e-translation.yml — mirrors staging-e2e-tps/ead: guards (secrets present, staging!=prod) → setup-python + Pillow + fonts-dejavu-core + poppler → generate fixtures (assert each PNG >4KB) → vercel deploy preview with -e GEMINI_API_KEY + staging supabase (URL/ANON/SR/DB_PASSWORD) + ADMIN_SECRET + CRON_SECRET + RESEND_API_KEY + OPERATOR_SIGNER_NAME (vars) → wait healthz (assert '"environment":"preview"') → run real-ocr-e2e.mjs (exit 2 ⇒ ::error OCR_BLOCKED_QUOTA ⇒ fail) → translation PDF poppler visual acceptance (translationPdfVisualAcceptance.test.ts: 2 non-blank pages, English translit value, 8 CFR §103.2(b)(3) block, ZERO U+0400–U+04FF leak) → staging-ref proof → upload PII-free artifacts. VERIFY: generator ran (5 PNGs, 42–78KB); MRZ check digits all valid; YAML parses (python3 yaml.safe_load OK); OCR script runs offline & writes artifacts & exits non-zero on failure. NO TS spec added (used .mjs per ownership OR-clause) ⇒ no tsc delta. OWNED FILES ONLY (generate.py, fixtures, real-ocr-e2e.mjs, staging-e2e-translation.yml); did NOT touch knowledge/knowledgeNormalize/routes/existing workflows. NEXT (orchestrator): integrate branch, then DISPATCH staging-e2e-translation from the integrated branch (this agent did NOT dispatch). PR base feat/tv2-rebuild-on-main. #195/#197. -->
 <!-- TV2 DICT-UNIFY DONE (2026-06-20, AGENT 1, branch feat/tv2-dict-unify off feat/tv2-rebuild-on-main, audit #195): dictionaries are now a single source of truth — the 3 diverging copies of authorities/civil-status (dictionary.ts vs registry.csv vs glossaryLoader FULL_GLOSSARY) reconciled WITHOUT inventing any rendering.
   WHAT/HOW:
