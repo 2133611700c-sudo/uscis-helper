@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-06-20 | Real-OCR: image gate cleared → Gemini reached; add controlled backoff for 429
+- Run with 1.5MB fixtures (49d7e51) CLEARED the 100KB quality gate and REACHED live Gemini — which returned `OCR_RATE_LIMITED` (429) on the first call (key authenticates; transient RPM). Per ADR-018 the workflow failed honestly (no flash, no fake pass). Added controlled retry/backoff to scripts/real-ocr-e2e.mjs: retry transient OCR_RATE_LIMITED (12/25/45/70s, respect retry-after), hard-block OCR_QUOTA_EXHAUSTED/billing immediately, 8s spacing between docs. Re-dispatching.
+
 ## 2026-06-20 | Real-OCR fixtures: clear the 100KB image-quality gate
 - First real-OCR run (27890724694): deploy+route OK, but all 5 synthetic PNGs were rejected `needs_better_scan` (42–78KB < `IMAGE_QUALITY_RULES.min_bytes_for_extraction`=100KB) → Gemini never called (provider/model empty, 76–595ms). NOT a key/quota issue. Fix: `_add_paper_grain` (coarse scan-realistic grain) → fixtures now 1.5–1.6MB (in the 100KB–2MB proceed window). Re-dispatching.
 
