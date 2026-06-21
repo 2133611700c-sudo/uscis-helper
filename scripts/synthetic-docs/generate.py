@@ -100,6 +100,21 @@ def new_page(w: int = 1240, h: int = 1754) -> tuple["Image.Image", "ImageDraw.Im
     return img, ImageDraw.Draw(img)
 
 
+def _add_paper_grain(img: "Image.Image") -> "Image.Image":
+    """Subtle scan-realistic grain. Two purposes: (1) raises PNG entropy so the file
+    clears the route's 100 KB min_bytes_for_extraction gate (a perfectly flat render
+    compresses to ~50 KB and is rejected as needs_better_scan BEFORE Gemini is called);
+    (2) looks more like a real scan. Alpha is low so text stays crisp for OCR."""
+    base = img.convert("RGB")
+    w, h = base.size
+    # Coarse grain (generated at 1/3 res then upscaled) compresses far better than
+    # full-res noise → file lands in the 100KB–2MB "proceed" window, not the >2MB
+    # resize path, while still clearing the 100KB min gate.
+    small = Image.effect_noise((w // 3, h // 3), 30).convert("L").resize((w, h))
+    noise_rgb = Image.merge("RGB", (small, small, small))
+    return Image.blend(base, noise_rgb, 0.09)
+
+
 def line(d, x, y, text, f, fill=INK):
     d.text((x, y), text, font=f, fill=fill)
 
@@ -298,10 +313,12 @@ def main() -> int:
     ok = True
     for name, img in artifacts.items():
         path = OUT_DIR / name
+        img = _add_paper_grain(img)  # scan-realistic grain → PNG >100KB (vision-extract min_bytes gate)
         img.save(path, "PNG")
         size = path.stat().st_size
-        status = "ok" if size > 4000 else "SUSPICIOUS (too small)"
-        if size <= 4000:
+        # The route rejects <100KB as needs_better_scan (IMAGE_QUALITY_RULES.min_bytes_for_extraction).
+        status = "ok" if size > 105_000 else "SUSPICIOUS (below the 100KB OCR gate)"
+        if size <= 105_000:
             ok = False
         print(f"  wrote {path.relative_to(ROOT)}  {size} bytes  [{status}]")
 
