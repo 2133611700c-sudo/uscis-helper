@@ -25,6 +25,7 @@ import {
   reconcilePatronymic,
   isValidPatronymic,
   snapCity,
+  settlementDesignatorEn,
   normalizeName,
   normalizePlace,
   normalizeAuthority,
@@ -200,7 +201,15 @@ export function normalizeCanonicalValue(
       // City fields: gazetteer on the RAW Cyrillic. EXACT ⇒ accept; FUZZY ⇒ suggest (never overwrite).
       if ((key_.includes('city') || key_.endsWith('place_of_birth')) && cyr) {
         const snap = snapCity(placeRaw)
-        if (snap.matched) return accept(transliterateKMU55(snap.value), 'place.gazetteer_exact', 'gazetteer_exact', 0.9)
+        if (snap.matched) {
+          // HARD RULE («смт» = "urban-type settlement", NEVER city/town): snapCity
+          // strips the settlement designator and returns the bare gazetteer city, so
+          // re-attach it from the RAW value. Without this, «смт Вишневе» released as
+          // "Vyshneve" — a silent designator drop (GOLDEN vector V1).
+          const designator = settlementDesignatorEn(placeRaw)
+          const city = transliterateKMU55(snap.value)
+          return accept(designator ? `${designator} ${city}` : city, 'place.gazetteer_exact', 'gazetteer_exact', 0.9)
+        }
         // A FUZZY near-match (possible misread of a known place) → review. But a
         // GENUINELY-UNKNOWN town (reason 'unknown_geography') is NOT a misread —
         // our seed gazetteer is ~500 of 28k+ settlements; forcing review on every
@@ -213,7 +222,10 @@ export function normalizeCanonicalValue(
     }
 
     // ── Issuing authority (Міліція → Militsiya; unknown → do not invent) ───────
-    if (key_.includes('authority') || key_.includes('issu')) {
+    // NOTE: exclude date keys — 'date_of_issue'/'issue_date' contain 'issu' but are
+    // DATES, not authorities. Without the !date guard a valid issue DATE was misrouted
+    // to authority.unknown → false review instead of accept (GOLDEN vector V2).
+    if (key_.includes('authority') || (key_.includes('issu') && !key_.includes('date'))) {
       const a = normalizeAuthority(raw, sourceDoc, nctx)
       if (!a.review_required && a.rule_applied && a.rule_applied !== 'no_match' && a.rule_applied !== 'passthrough') {
         return accept(a.normalized_value, `authority.${a.rule_applied}`, 'authority_dict')
