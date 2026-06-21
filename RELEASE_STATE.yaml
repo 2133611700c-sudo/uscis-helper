@@ -18,9 +18,9 @@
 schema_version: 2
 
 snapshot:
-  state_basis_main_sha: "62c897a54daf3cf503a3b8831c8dcb2d0ce32f3c"   # main HEAD this snapshot describes (after #122 merge)
-  verified_production_sha: "62c897a54daf3cf503a3b8831c8dcb2d0ce32f3c" # /api/healthz at verified_at
-  verified_at: "2026-06-14T06:43:05Z"
+  state_basis_main_sha: "505153713b7023f80349c2652dd3218694d28449"   # main HEAD before CI hardening batch (commit before acc1693d)
+  verified_production_sha: "UNVERIFIED" # /api/healthz returns short SHA "3227dab" not resolvable from this clone
+  verified_at: "2026-06-21T02:17:00Z"
   evidence:
     state_basis_main_sha: "git rev-parse origin/main at snapshot time (BEFORE this PR's own merge)"
     verified_production_sha: "GET https://messenginfo.com/api/healthz -> .sha"
