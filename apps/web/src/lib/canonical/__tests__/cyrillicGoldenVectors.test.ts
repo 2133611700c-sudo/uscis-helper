@@ -130,21 +130,16 @@ describe('Cyrillic golden vectors — Central Brain normalizeCanonicalValue', ()
     expect(d.finalValue).toBe('Vinnytsia Oblast')
   })
 
-  // RULE VIOLATION (reported to caller): HARD RULE — «смт» must surface as
-  // "urban-type settlement" and must NEVER be silently dropped. For a
-  // `place_of_birth`/`*city*` Cyrillic value the brain calls snapCity() FIRST
-  // (knowledgeNormalize.ts:201-203). snapCity strips the «смт» prefix and returns
-  // an EXACT gazetteer match on the bare city ("Вишневе"), which the brain
-  // ACCEPTS as "Vyshneve" — the «смт» designator is LOST. The correct fallback
-  // (normalizePlace → "urban-type settlement Vyshneve") is never reached because
-  // the gazetteer matched first. The standalone dictionary is correct; the BRAIN
-  // WIRING drops the designator. We assert the ACTUAL (wrong) output, do NOT fake
-  // a pass, and flag the violation.
-  it('смт place_of_birth → BRAIN DROPS the "urban-type settlement" designator [RULE VIOLATION]', () => {
+  // FIXED (GOLDEN V1): the brain's gazetteer-first path (snapCity) used to STRIP the
+  // «смт» designator → released "Vyshneve" (HARD-RULE violation: «смт» = "urban-type
+  // settlement", NEVER city/town). knowledgeNormalize now re-attaches the designator
+  // from the raw value via settlementDesignatorEn(). Designator preserved on the
+  // gazetteer match.
+  it('смт place_of_birth → keeps "urban-type settlement" designator (gazetteer path)', () => {
     const d = normalizeCanonicalValue('place_of_birth', 'смт Вишневе', {})
     expect(d.action).toBe('accept')
-    // VIOLATION: designator silently dropped — should be "urban-type settlement Vyshneve".
-    expect(d.finalValue).toBe('Vyshneve')
+    expect(d.finalValue).toBe('urban-type settlement Vyshneve')
+    expect(d.finalValue).not.toMatch(/\b(city|town)\b/i)
     expect(d.provenance).toBe('gazetteer_exact')
   })
 
@@ -190,20 +185,14 @@ describe('Cyrillic golden vectors — Central Brain normalizeCanonicalValue', ()
     expect(d.finalValue).toBe('02/19/2003')
   })
 
-  // RULE VIOLATION (reported to caller): a field named `date_of_issue` / `issue_date`
-  // contains the substring "issu", and the brain's AUTHORITY branch
-  // (knowledgeNormalize.ts:216 `key_.includes('issu')`) is tested BEFORE the date
-  // branch (:232 `key_.includes('date')`). So a perfectly valid Ukrainian date in an
-  // issue-date field is MISROUTED to the authority handler → "authority.unknown" →
-  // review, finalValue=null. `date_of_birth` (no "issu") works correctly. This is a
-  // branch-ordering bug: date keys that also contain "issu" never reach the date
-  // parser. We assert the ACTUAL (wrong) output and flag it.
-  it('date_of_issue month-name date → MISROUTED to authority branch → review [RULE VIOLATION]', () => {
+  // FIXED (GOLDEN V2): `date_of_issue`/`issue_date` contain "issu" and used to be
+  // caught by the AUTHORITY branch before the date branch → a valid issue date was
+  // misrouted to authority.unknown → false review. The authority branch now excludes
+  // keys containing "date", so issue dates reach the date parser and accept.
+  it('date_of_issue month-name date → accepted as USCIS date (not misrouted to authority)', () => {
     const d = normalizeCanonicalValue('date_of_issue', '19 лютого 2003', {})
-    // VIOLATION: should accept "02/19/2003"; instead routed to authority → review.
-    expect(d.action).toBe('review')
-    expect(d.finalValue).toBeNull()
-    expect(d.ruleId).toBe('authority.unknown')
+    expect(d.action).toBe('accept')
+    expect(d.finalValue).toBe('02/19/2003')
   })
 
   it('empty value → block (no source → no field)', () => {

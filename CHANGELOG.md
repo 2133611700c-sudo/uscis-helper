@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-20 | Central Brain — fix 2 HARD-RULE violations found by the golden-vector harness
+- The deterministic golden-vector proof (GOLDEN) found two REAL Central-Brain wiring bugs (asserted actual output, flagged, did not fake green). Both fixed in `lib/canonical/core/knowledgeNormalize.ts`:
+  - **V1 «смт» designator silently dropped** — the gazetteer-first path (`snapCity`) stripped «смт» and released "Vyshneve" (violates HARD RULE «смт» = "urban-type settlement", NEVER city/town). Now re-attaches the designator from the raw value via `settlementDesignatorEn()` → "urban-type settlement Vyshneve".
+  - **V2 `date_of_issue` misrouted to authority** — `date_of_issue`/`issue_date` contain "issu" and were caught by the authority branch before the date branch → valid issue date → false `authority.unknown` review. Authority branch now excludes keys containing "date" → issue dates accept.
+- Golden test updated to assert the corrected output (no faked green). tsc 0; cyrillicGoldenVectors 22/22; knowledge tsx 59/0; full web suite 4315/0; zero regression (no other test encoded the old behavior).
+
 ## 2026-06-20 | Emergency GitHub exposure lockdown — Vision API key pattern redacted
 - Responded to GitGuardian alert for `2133611700c-sudo/uscis-helper` commit `79ee41d92b56f7470141e1acacbb8bf1baef963d` reporting a Google API Key pattern in the Vision credentials diagnostic/test area.
 - Redacted all `AIza...` key-shaped literals from the current tree to `REDACTED_GOOGLE_API_KEY_DO_NOT_USE`, including Vision diagnostic/test files and saved USCIS HTML snapshots that contain public site keys but still trigger scanners.
