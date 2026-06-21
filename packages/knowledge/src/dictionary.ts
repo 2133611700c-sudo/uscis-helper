@@ -87,9 +87,18 @@ export const AUTHORITIES: Record<string, AuthorityEntry> = {
     plain_en_alias: 'Ukrainian Border Guard',
   },
   CIVIL_REGISTRY: {
+    // CANONICAL RESOLUTION (audit #195): the USCIS-normalized rendering is
+    // "Civil Registry Office" — the value carried with REAL provenance in
+    // registry/registry.csv (rows ДРАЦС/РАЦС and ЗАГС), source_url
+    // https://zakon.rada.gov.ua/laws/show/1025-2010-п (КМУ №1025, 10.11.2010).
+    // Previous value "Civil Registry Office (ZAHS)" was sourceless and carried a
+    // transliteration typo (ZAHS≠ZAGS); the historical ЗАГS "(ZAGS)" suffix is
+    // an era-gated registry concern, not the umbrella default. The competing
+    // civil_registry_terms.json "Civil Status Registration Office" is a separate
+    // per-abbreviation lookup table (not the brain's normalizeAuthority path).
     uk: 'ЗАГС / РАЦС / ДРАЦС',
     official_en: 'civil status registration authority',
-    normalized_uscis_en: 'Civil Registry Office (ZAHS)',
+    normalized_uscis_en: 'Civil Registry Office',
     plain_en_alias: 'civil registry',
     historical_mode: true,
   },
@@ -101,6 +110,15 @@ export const AUTHORITIES: Record<string, AuthorityEntry> = {
     historical_mode: true,
     do_not_use: ['Traffic Police', 'Road Police'],
   },
+  // CANONICAL RESOLUTION (audit #195): УМВС/ГУМВС have NO row in
+  // registry/registry.csv, so dictionary.ts is the authoritative copy (registry
+  // carries no competing provenance). Kept the dictionary rendering "Regional
+  // Department of MIA"; the glossaryLoader.ts fork ("Directorate / Department of
+  // the MIA") was the divergence and now DELEGATES here. Source for the MIA
+  // self-name on which these compound: МВС → "Ministry of Internal Affairs of
+  // Ukraine" (mvs.gov.ua/en, see registry.csv row `authority,мвс`). The
+  // golden-vector test asserts "Regional Department of MIA" — do not silently
+  // change without updating that source-cited vector.
   UMVS: {
     uk: 'Управління МВС',
     official_en: 'Regional Department of the Ministry of Internal Affairs of Ukraine',
@@ -294,6 +312,33 @@ export const SEX_MAP: Record<string, string> = {
   'F': 'Female', 'f': 'Female', 'женский': 'Female', 'жен': 'Female',
   // Latin MRZ / passport-page forms
   'M': 'Male', 'm': 'Male', 'male': 'Male', 'Male': 'Male', 'female': 'Female', 'Female': 'Female',
+};
+
+// ── CIVIL / MARITAL STATUS ───────────────────────────────────
+// CANONICAL (audit #195): single source for civil-status renderings. Was forked
+// in apps/web/.../glossaryLoader.ts `marital_status`; that loader now delegates
+// here. Keys are the Ukrainian (and common Russian) forms as printed on
+// passports/certificates; value is the USCIS-friendly English with the sex the
+// gendered Ukrainian word encodes. Source: standard Ukrainian civil-status
+// vocabulary (Сімейний стан field, ДМС internal passport / КМУ №1025 acts).
+export const CIVIL_STATUS: Record<string, string> = {
+  'одружений': 'married (male)',
+  'одружена': 'married (female)',
+  'неодружений': 'single (male)',
+  'неодружена': 'single (female)',
+  'розлучений': 'divorced (male)',
+  'розлучена': 'divorced (female)',
+  'вдівець': 'widower',
+  'вдова': 'widow',
+  // Russian forms on legacy documents
+  'женат': 'married (male)',
+  'замужем': 'married (female)',
+  'холост': 'single (male)',
+  'не замужем': 'single (female)',
+  'разведён': 'divorced (male)',
+  'разведен': 'divorced (male)',
+  'разведена': 'divorced (female)',
+  'вдовец': 'widower',
 };
 
 // ── DO-NOT-USE GLOBAL BLOCKLIST ──────────────────────────────
