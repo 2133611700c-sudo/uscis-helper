@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { verifyStripeSessionPaid } from '@/lib/stripe/verifyPayment'
+import { handleVerifiedPayment } from '@/lib/translation/orders/handleVerifiedPayment'
 import { createManualReviewTicket, writeManualReviewEvent } from '@/lib/translation/manualReview/createManualReviewTicket'
 import { notifyOperator } from '@/lib/translation/manualReview/notifications'
 import { sendEmail } from '@/lib/email/resend'
@@ -82,6 +83,25 @@ export async function POST(req: NextRequest) {
   })
   if (!ticket.ticketId) {
     return NextResponse.json({ ok: false, error: 'queue_unavailable' }, { status: 503 })
+  }
+
+  // ── Translation V2 (durable order) — client reconciliation path ───────────
+  // Create/get the durable V2 order keyed on the Stripe checkout_session_id
+  // (UNIQUE → exactly one order per checkout, NEVER matched by email). Uses the
+  // SAME server-retrieved session verifyStripeSessionPaid already validated. No
+  // event dedupe here (the webhook owns the #184 ledger). Best-effort during
+  // cutover: the legacy queue ticket above is the source of truth, so a V2
+  // problem must not fail a PAID order.
+  if (v.session) {
+    try {
+      await handleVerifiedPayment({
+        verifiedSession: v.session,
+        verifiedEventId: null,
+        source: 'client_reconciliation',
+      })
+    } catch (e) {
+      console.error('[submit-order] V2 handleVerifiedPayment threw:', e instanceof Error ? e.message : e)
+    }
   }
 
   await writeManualReviewEvent({

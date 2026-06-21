@@ -34,7 +34,7 @@ import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
-import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
+import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked, isProviderError } from '@/lib/ocr/types'
@@ -612,12 +612,24 @@ async function POST_impl(req: NextRequest) {
   fields = legacyEns.fields
   const dateEnsembleDiag = legacyEns.diag
 
-  // ── C3: Global OCR field safety guard (OCR_FIELD_SAFETY_ENABLED, default OFF) ──
-  // OFF ⇒ this block is skipped ⇒ byte-identical. ON ⇒ unsafe critical reads (hard-case,
-  // source/stale mismatch, low conf, zero recognition) become candidate-only + review/manual,
-  // never shown as the final value. Pure guard; no content changed, no PII.
+  // ── C3 critical-null discipline: ALWAYS ON for the TRANSLATION pipeline ──
+  // C2 (audit #195, Agent B HIGHEST-PRIORITY finding). The hard rule "NEVER guess a
+  // critical field — uncertain critical → review_required=true AND final_value=null"
+  // must hold at PROD DEFAULTS. Previously this guard was gated behind the env flag
+  // OCR_FIELD_SAFETY_ENABLED (default OFF), so at prod defaults translation SHIPPED A
+  // GUESS for an uncertain critical field — a hard-rule violation. The guard now runs
+  // UNCONDITIONALLY here.
+  //
+  // SCOPE IS LOCAL TO TRANSLATION: this is the only call site that runs with
+  // flow='translation_public'; the TPS/EAD/legacy/Re-Parole readers that share the same
+  // env flag and the same underlying reader are NOT changed (no global default flip).
+  //
+  // Pure guard — no content changed, PII-free. An unsafe critical read (hard-case,
+  // source/stale mismatch, low confidence, zero recognition) is emitted with
+  // value=null + finalValue=null + review_required=true and the raw read parked in
+  // candidate_value; it is NEVER shipped as the final value.
   let ocrFieldSafety: { applied: boolean; unresolved_critical?: boolean } = { applied: false }
-  if (isOcrFieldSafetyEnabled()) {
+  {
     const res = applyOcrFieldSafety(fields as never[], {
       flow: 'translation_public',
       document_class: docintelIdToDocumentClass(docTypeId),

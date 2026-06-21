@@ -3,6 +3,7 @@ import { after } from 'next/server'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe/client'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { handleVerifiedPayment } from '@/lib/translation/orders/handleVerifiedPayment'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
         if (error) console.error('[webhook] audit_log insert failed:', error.message)
       })
 
-      // ── Translation: update order status to 'emailed' ─────────────────────
+      // ── Translation (legacy): update order status to 'emailed' ────────────
       if (service === 'translation' && customerEmail) {
         const { error } = await supabase
           .from('translation_orders')
@@ -92,6 +93,29 @@ export async function POST(req: NextRequest) {
           .order('created_at', { ascending: false })
           .limit(1)
         if (error) console.error('[webhook] translation_orders update failed:', error.message)
+      }
+
+      // ── Translation V2 (durable order) ────────────────────────────────────
+      // Create the durable V2 order keyed on checkout_session_id (UNIQUE), layered
+      // ON TOP of the #184 event-dedupe above — handleVerifiedPayment owns NO event
+      // dedupe (single ledger), and createOrGetOrder is itself idempotent, so this
+      // is safe to re-run. Server-side amount/product/paid are re-validated inside
+      // the handler. Best-effort during cutover: a V2 problem must NEVER fail the
+      // webhook (Stripe would retry); the operator path also reconciles via
+      // submit-order. Recipient is taken from the Stripe-verified session only.
+      if (service === 'translation') {
+        try {
+          const r = await handleVerifiedPayment({
+            verifiedSession: cs,
+            verifiedEventId: event.id,
+            source: 'webhook',
+          })
+          if (r.resultCode !== 'order_created' && r.resultCode !== 'order_reused') {
+            console.error('[webhook] V2 order not created:', r.resultCode)
+          }
+        } catch (e) {
+          console.error('[webhook] V2 handleVerifiedPayment threw:', e instanceof Error ? e.message : e)
+        }
       }
 
       // ── Re-Parole: update wizard session status ───────────────────────────

@@ -14,7 +14,14 @@ import { isNameSourceScriptAmbiguous } from '../transliterationPolicy'
 import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 
 const RU_ON = { RU_TRANSLIT_ENABLED: '1' }
-const RU_OFF = { RU_TRANSLIT_ENABLED: '0' }
+// Gate DECOUPLED (C3, 2026-06-20, audit #195): the ambiguity REVIEW gate now has
+// its own flag SOURCE_SCRIPT_REVIEW_ENABLED, default ON. RU_TRANSLIT_ENABLED:'0'
+// no longer disables the review gate (it only ever governed the risky RU-table
+// OUTPUT routing in toCanonicalValue). To disable review you must explicitly set
+// SOURCE_SCRIPT_REVIEW_ENABLED:'0'. The DEFAULT ({}) now ARMS the gate so that an
+// ambiguous name is never SILENTLY romanized with a guessed system.
+const REVIEW_OFF = { SOURCE_SCRIPT_REVIEW_ENABLED: '0' }
+const DEFAULT_ENV = {}
 
 describe('isNameSourceScriptAmbiguous — visible source script must be confirmed', () => {
   it('no distinctive letter (Иван) → ambiguous (cannot tell UA from RU by letters)', () => {
@@ -27,8 +34,18 @@ describe('isNameSourceScriptAmbiguous — visible source script must be confirme
   it('distinctive RU letter (Эдуард, э) → NOT ambiguous → BGN/PCGN', () => {
     expect(isNameSourceScriptAmbiguous('Эдуард', RU_ON)).toBe(false)
   })
-  it('feature OFF → never raises the gate (legacy KMU-55-for-all)', () => {
-    expect(isNameSourceScriptAmbiguous('Иван', RU_OFF)).toBe(false)
+  it('DEFAULT env (no flags) → gate is ARMED (decoupled, safe-by-default)', () => {
+    // Strictly-safe half is now ON by default: an ambiguous name reviews even when
+    // nobody set RU_TRANSLIT_ENABLED. No romanization OUTPUT value changes.
+    expect(isNameSourceScriptAmbiguous('Иван', DEFAULT_ENV)).toBe(true)
+  })
+  it('explicit SOURCE_SCRIPT_REVIEW_ENABLED=0 → gate disabled (escape hatch)', () => {
+    expect(isNameSourceScriptAmbiguous('Иван', REVIEW_OFF)).toBe(false)
+  })
+  it('SOURCE_SCRIPT_REVIEW_ENABLED=0 but RU_TRANSLIT_ENABLED=1 → still armed', () => {
+    expect(
+      isNameSourceScriptAmbiguous('Иван', { SOURCE_SCRIPT_REVIEW_ENABLED: '0', RU_TRANSLIT_ENABLED: '1' }),
+    ).toBe(true)
   })
   it('empty input → not ambiguous (nothing to review)', () => {
     expect(isNameSourceScriptAmbiguous('', RU_ON)).toBe(false)
