@@ -108,8 +108,11 @@ assert(zags_formal.normalized_value === 'civil status registration authority',
 
 const zags_uscis = normalizeAuthority('РАЦС м. Вінниця', 'birth_cert',
   { mode: 'uscis_normalized' });
-assert(zags_uscis.normalized_value === 'Civil Registry Office (ZAHS)',
-  'РАЦС uscis_normalized = "Civil Registry Office (ZAHS)"',
+// Audit #195 canonical: registry-sourced rendering is "Civil Registry Office"
+// (source_url zakon.rada.gov.ua/laws/show/1025-2010-п, КМУ №1025). Was the
+// sourceless typo'd "Civil Registry Office (ZAHS)".
+assert(zags_uscis.normalized_value === 'Civil Registry Office',
+  'РАЦС uscis_normalized = "Civil Registry Office" (registry-sourced)',
   `Got: ${zags_uscis.normalized_value}`);
 
 // ── GEOGRAPHY: USTYNIVKA, VINNYTSIA, KIROVOHRAD ─────────

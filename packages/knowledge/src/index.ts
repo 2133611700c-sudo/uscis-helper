@@ -45,7 +45,7 @@ export {
   AUTHORITIES, AUTHORITY_PATTERNS, GEO_CORRECTIONS,
   SETTLEMENT_TYPES, settlementDesignatorEn, FIELD_LABELS, SEX_MAP, GLOBAL_BLOCKLIST,
   OBLAST_GENITIVE_TO_NOMINATIVE, normalizeOblastToNominative,
-  DOCUMENT_TYPES,
+  DOCUMENT_TYPES, CIVIL_STATUS,
 } from './dictionary';
 export type { AuthorityEntry, GeoCorrection, FieldLabel, DocumentTypeEntry } from './dictionary';
 
@@ -59,6 +59,6 @@ export {
 export type { RegistryCategory, LookupResult, LookupOptions, RegistryRow } from './registry/registry.schema';
 
 // MRZ (passport machine-readable zone) — controlling Latin name/number/DOB.
-export { parseMrz, checkDigit, findMrzLines } from './mrz';
+export { parseMrz, checkDigit, findMrzLines, findTd1Lines } from './mrz';
 export { classifyGarbage, isGarbageValue } from './garbageGuard';
 export type { MrzResult } from './mrz';
