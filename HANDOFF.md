@@ -1,5 +1,6 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 <!-- ocr_cache migration renamed to 20260615000000 (collision fix, PR #143) -->
+<!-- staging-e2e-translation.yml registered on main to enable the real-OCR dispatch against #208's branch. -->
 
 ## THIS SESSION (current) — Emergency GitHub exposure lockdown
 - Trigger: GitGuardian email reported a Google API Key pattern in `uscis-helper` commit `79ee41d92b56f7470141e1acacbb8bf1baef963d`.
