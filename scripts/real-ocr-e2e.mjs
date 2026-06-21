@@ -60,32 +60,50 @@ class BlockedError extends Error {
   }
 }
 
+// Controlled retry/backoff (ADR-018, owner directive): a TRANSIENT rate-limit (RPM
+// window) is retried with increasing backoff (respecting retry-after); a HARD quota/
+// billing block is not retried (it will not recover in seconds) and fails honestly.
+const HARD_BLOCK = new Set(['OCR_QUOTA_EXHAUSTED', 'OCR_BILLING_DISABLED'])
+const BACKOFFS_MS = [12_000, 25_000, 45_000, 70_000]
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms))
+
 async function visionExtract(fixtureName, docTypeId) {
   const path = join(FIXTURES, fixtureName)
   if (!existsSync(path)) throw new Error(`fixture missing: ${path} (run scripts/synthetic-docs/generate.py)`)
   const buf = readFileSync(path)
-  const fd = new FormData()
-  fd.append('file', new Blob([buf], { type: 'image/png' }), fixtureName)
-  fd.append('docTypeId', docTypeId)
-  fd.append('documentSessionId', `real-ocr-e2e-${fixtureName}`)
 
-  const t0 = Date.now()
-  const r = await fetch(`${BASE_URL}/api/translation/vision-extract`, {
-    method: 'POST',
-    headers: { 'User-Agent': UA },
-    body: fd,
-  })
-  const ms = Date.now() - t0
-  let body
-  const raw = await r.text()
-  try { body = JSON.parse(raw) } catch { body = { _unparsed: raw.slice(0, 400) } }
+  let lastBlock = null
+  for (let attempt = 0; attempt <= BACKOFFS_MS.length; attempt++) {
+    const fd = new FormData()
+    fd.append('file', new Blob([buf], { type: 'image/png' }), fixtureName)
+    fd.append('docTypeId', docTypeId)
+    fd.append('documentSessionId', `real-ocr-e2e-${fixtureName}-${attempt}`)
 
-  // Honest BLOCK detection (ADR-018): a throttled/billing failure is NOT a pass.
-  const code = body?.error_code
-  if (r.status === 429 || (code && BLOCK_CODES.has(code))) {
-    throw new BlockedError(code || `HTTP_${r.status}`, body?.message || raw.slice(0, 200))
+    const t0 = Date.now()
+    const r = await fetch(`${BASE_URL}/api/translation/vision-extract`, {
+      method: 'POST', headers: { 'User-Agent': UA }, body: fd,
+    })
+    const ms = Date.now() - t0
+    const raw = await r.text()
+    let body
+    try { body = JSON.parse(raw) } catch { body = { _unparsed: raw.slice(0, 400) } }
+
+    const code = body?.error_code
+    const blocked = r.status === 429 || (code && BLOCK_CODES.has(code))
+    if (!blocked) return { httpStatus: r.status, ms, body }
+
+    lastBlock = new BlockedError(code || `HTTP_${r.status}`, body?.message || raw.slice(0, 200))
+    // Hard quota/billing → do not burn time retrying.
+    if (code && HARD_BLOCK.has(code)) throw lastBlock
+    // Transient rate-limit → backoff (respect retry-after) and retry.
+    if (attempt < BACKOFFS_MS.length) {
+      const retryAfter = Number(r.headers.get('retry-after')) * 1000
+      const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : BACKOFFS_MS[attempt]
+      console.log(`  rate-limited (${code || r.status}); backoff ${Math.round(wait / 1000)}s, retry ${attempt + 1}/${BACKOFFS_MS.length}`)
+      await sleep(wait)
+    }
   }
-  return { httpStatus: r.status, ms, body }
+  throw lastBlock
 }
 
 // ── assertion helpers ────────────────────────────────────────────────────────
@@ -185,7 +203,9 @@ async function run() {
     },
   ]
 
-  for (const s of scenarios) {
+  for (let i = 0; i < scenarios.length; i++) {
+    const s = scenarios[i]
+    if (i > 0) await sleep(8_000) // space requests so 5 docs don't burst the per-minute limit
     console.log(`\n── ${s.file}  (docTypeId=${s.docTypeId}) ─────────────────────────`)
     try {
       const { httpStatus, ms, body } = await visionExtract(s.file, s.docTypeId)
