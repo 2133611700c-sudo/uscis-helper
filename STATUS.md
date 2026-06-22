@@ -150,14 +150,4 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-19: owner test 3 GREEN (run 27850903052: 2 passed, 1 skipped) — /api/owner/status={owner:true} PROVEN (forged cookie + injected secret recognised as owner). gated_by_mailReadyGate logged. PINNED the missing field: marital_status is REQUIRED at 'mail' and is a SingleSelect (no testid) the fill never set → mailReadyGate blocked. FIX (branch fix/tps-fill-marital-mailready): fillReviewForm now clicks the marital "Single" option. With all 'mail' required fields satisfied, isStep6Eligible→true, the owner generate CTA renders, test 3's best-effort branch downloads the real packet ZIP, and the PDF-visual step renders it. Dispatched. -->
 
 <!-- 2026-06-19: TPS FULL E2E to artifact — one comprehensive PR (per owner directive: close TPS fully before any other product). EXACT mail-ready blocker pinned from code (requiredRules/readinessPolicy 'mail' list + buildDraftAnswers): only missing required-at-mail field was marital_status (SingleSelect, no testid). APP CHANGE (testability, not bypass): added optional testIdPrefix to SingleSelect + OptionPair → stable testids tps-review-marital-<id> and tps-step{1,2,3}-<id>. SPEC rewritten: ALL selectors are data-testid (no text selectors for fields/steps), navigateToReview parameterized {filing,ead}. 4 tests: (1) nav smoke; (2) non-owner mail-ready→paywall (no free bypass); (3) owner Scenario A init/paper/no-EAD → owner:true + generate CTA (=owner+mail_ready proven) → real ZIP scenario-a.zip (I-821); (4) owner Scenario B rereg/paper/EAD → real ZIP scenario-b.zip (I-821+I-765; ead_category auto-defaults c19/a12). WORKFLOW: PDF visual acceptance now unzips each scenario, pdfinfo page-count + pdftotext (synthetic surname present) + pdftoppm render every page→PNG, emits machine-readable tps-artifacts/visual-acceptance.json {scenario,i821_visual,i765_visual,files[]}, fails if I-821 (both) or I-765 (B) missing/invalid; uploads ZIPs+PNGs+JSON as artifacts (PII-free synthetic; not committed). tsc 0, playwright --list = 4. Owner-bypass only skips payment — form validation + mailReadyGate fully enforced via the real UI. -->
-
-
-
-
-
-
-
-
-
-
-
+<!-- 2026-06-21: gemini-quota-diag.yml on main — RAW Gemini 429 root-cause probe (quota metric + model existence). -->

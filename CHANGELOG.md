@@ -1819,3 +1819,4 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ## 2026-06-13 | audit doc — added Part 4 (Phase 1 one-central-brain gap audit)
 - Independent code inventory vs the 12 Phase-1 acceptance criteria. RESULT: NOT PHASE1_COMPLETE (~55-65%). Shape migration done + parity-green, but the main gap is open: Core CanonicalDocumentResult is discarded after read (adapter→product DTO) and a synthetic canon is rebuilt from the legacy DTO at the packet boundary (i821/i131/i765 DocumentBoundary), with normalizeCountryOfBirth at the TPS boundary and fabricated provenance. Verified via 2 sub-agents + tsc 0 + parity 44 pass/1 skip. Audit-only; no application code changed.
+<!-- 2026-06-21: gemini-quota-diag.yml on main — RAW Gemini 429 root-cause probe (quota metric + model existence). -->
