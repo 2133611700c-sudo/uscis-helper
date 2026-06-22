@@ -85,15 +85,38 @@ export function stripCountryCode(cy: string): string {
  * the gate, so any caller/test that set only that flag keeps the old behavior.
  * Strictly review/finalization gating — no romanization OUTPUT changes here.
  */
+/**
+ * Document types whose NAME fields are reliably written in UKRAINIAN: modern
+ * Ukrainian-issued ID documents print the citizen's official Ukrainian name. For
+ * these, a shared-letter ('unknown'-script) name is NOT ambiguous — it is Ukrainian,
+ * so KMU-55 applies with confidence and the field can auto-deliver. This is what lets
+ * a stable surname like «Куроп'ятник» (no і/ї) auto-deliver instead of always
+ * reviewing. EXCLUDED: Soviet-era / potentially-bilingual certificates (birth,
+ * marriage, divorce, death) where a name may genuinely be Russian (Сергей) — there the
+ * ambiguity gate must stay so we never silently Russify/Ukrainianize the wrong way.
+ */
+const UKRAINIAN_NAME_DOC_TYPES = new Set<string>([
+  'ua_internal_passport_booklet',
+  'ua_international_passport',
+  'ua_id_card',
+  'ua_military_id',
+])
+
 export function isNameSourceScriptAmbiguous(
   cy: string,
   env: Record<string, string | undefined> = process.env,
+  docTypeId?: string,
 ): boolean {
   const reviewArmed = env.SOURCE_SCRIPT_REVIEW_ENABLED !== '0' || env.RU_TRANSLIT_ENABLED === '1'
   if (!reviewArmed) return false
   const s = (cy ?? '').trim()
   if (!s) return false
-  return detectNameScript(s) === 'unknown'
+  if (detectNameScript(s) !== 'unknown') return false // distinctive UA/RU letter present
+  // Shared-letter name. On a known Ukrainian-issued ID doc it IS Ukrainian → not
+  // ambiguous (resolves the document-language). On a (possibly Soviet/bilingual) cert
+  // it stays ambiguous → review. The default (no docTypeId) keeps the safe cert behavior.
+  if (docTypeId && UKRAINIAN_NAME_DOC_TYPES.has(docTypeId)) return false
+  return true
 }
 
 /**

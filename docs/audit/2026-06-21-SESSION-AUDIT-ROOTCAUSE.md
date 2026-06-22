@@ -464,3 +464,26 @@ from 5/6 toward 6/6 and similarly across the corpus. This is the highest-value f
 
 ### Fix 4 status: engineering COMPLETE + validated. Remaining = document-language routing (unlock
 ambiguous surnames) + owner go-live (flag + 2× read cost + legal acceptance).
+
+---
+
+## PART 12 — document-language routing → booklet AUTO-DELIVERY 5/6 → 6/6
+
+`isNameSourceScriptAmbiguous(cy, env, docTypeId)` now resolves the per-name ambiguity using the
+DOCUMENT type: a shared-letter name ('unknown' script, no і/ї/є/ґ and no ы/э/ё/ъ) on a modern
+Ukrainian-issued ID (ua_internal_passport_booklet / ua_international_passport / ua_id_card /
+ua_military_id) is NOT ambiguous — it is the citizen's official Ukrainian name → KMU-55 with
+confidence → can auto-deliver. On a Soviet/bilingual CERTIFICATE (birth/marriage/divorce/death)
+the gate STAYS (the name may genuinely be Russian, e.g. Сергей). Default (no docTypeId) keeps the
+safe cert behavior — existing source-script tests unchanged (243 docintel green).
+
+Re-validated on the real booklet: **6 of 6 fields auto-deliver** (was 5/6, originally 0/6) — the
+surname «Куроп'ятник» now auto-delivers as Kuropiatnyk. The owner's internal passport fully
+auto-completes. Certificates keep the conservative gate (Russian-context names + unstable
+handwritten dates correctly review). tsc 0; +4 doc-language tests.
+
+### FATAL auto-delivery problem — SOLVED for ID documents
+Modern Ukrainian ID docs (the bulk of real uploads): auto-deliver all fields when stable+confident.
+Soviet certificates: auto-deliver the unambiguous fields; review only genuinely-uncertain ones
+(Russian-script names, handwritten unstable dates). All under AUTO_DELIVERY_CONSENSUS_ENABLED
+(default OFF) → owner enables when ready (legal acceptance + 2× read cost).
