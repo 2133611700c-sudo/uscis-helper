@@ -23,6 +23,7 @@ import { resolveAuthorityFields } from './authorityResolve'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 import { identityHash, decideStatus, applySelfConsistencyOutcome } from './selfConsistency'
+import { applyConsensusAutoDelivery, snapshotOf } from './autoDeliveryConsensus'
 import { recordDocumentClassMetric, type MetricProduct } from './documentClassMetric'
 import { classifyProviderError } from '@/lib/ocr/ocrErrors'
 import { coordinatedDocumentRead } from './coordinatedDocumentRead'
@@ -273,6 +274,35 @@ export async function readDocument(
       runs,
     }
   }
+
+  // AUTO_DELIVERY_CONSENSUS_ENABLED (default OFF): the product-fatal default is that
+  // ~100% of fields return review_required even when read correctly, so a no-experience
+  // user (35-80yo, won't manually fix) gets NOTHING automatically. This re-reads the page
+  // K times with the PRIMARY model and AUTO-DELIVERS (review_required=false) ONLY fields
+  // whose source text is IDENTICAL across all reads AND high-confidence AND carry no hard
+  // review reason. Unstable (e.g. handwritten DOB that varies 07/28↔05/29) / low-confidence
+  // / ambiguous-script fields stay in review. Never changes a value. Cost: K-1 extra reads
+  // (budget-gated by the flag; a single read's confidence is NOT trustworthy on handwriting).
+  let consensusDiag: { auto_delivered: number; reviewed: number; runs: number } | undefined
+  if (process.env.AUTO_DELIVERY_CONSENSUS_ENABLED === '1' && finalFields.length > 0) {
+    const runs = Math.min(3, Math.max(2, Number(process.env.AUTO_DELIVERY_CONSENSUS_RUNS) || 2))
+    const snaps: ReturnType<typeof snapshotOf>[] = []
+    for (let i = 1; i < runs; i++) {
+      try {
+        const rN = await provider.readFields(imageBuffer, mimeType, spec, { timeoutMs: opts.timeoutMs })
+        if (rN.ok && Array.isArray(rN.fields)) snaps.push(snapshotOf(rN.fields))
+      } catch { /* a failed re-read = no agreement for any field → everything stays review */ }
+    }
+    if (snaps.length > 0) {
+      const res = applyConsensusAutoDelivery(finalFields, snaps, {
+        confidenceFloor: Number(process.env.AUTO_DELIVERY_CONFIDENCE_FLOOR) || 0.9,
+      })
+      finalFields = res.fields as typeof finalFields
+      consensusDiag = { auto_delivered: res.auto_delivered, reviewed: res.reviewed, runs }
+      console.info('[auto_delivery_consensus]', JSON.stringify({ doc_type_id: docTypeId, ...consensusDiag }))
+    }
+  }
+  void consensusDiag
 
   // DATE-ROLE GUARD (deterministic, no flag): catch role conflation (one date
   // copied into two role fields) and sequence conflicts (issue before birth).

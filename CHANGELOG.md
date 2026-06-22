@@ -1996,3 +1996,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 <!-- 2026-06-21 Fix1: partial-date ISO validation — reject illegal month/day, keep year-only (was '1939-00-00'→'00/00/1939'). Part of auto-delivery recognition fixes. -->
 
 <!-- 2026-06-21 Fix2+3: Russian patronymic engine (51 tests) + month abbreviations uk/ru + bilingual passport dates (74 tests). Fix3 live via convertDateToUSCIS; Fix2 capability added, needs document-language routing to fire on RU docs. -->
+
+<!-- 2026-06-22 Fix4 foundation: cross-read consensus auto-delivery (autoDeliveryConsensus.ts), flag AUTO_DELIVERY_CONSENSUS_ENABLED default OFF. Remaining: C3 calibration + real-doc validation + owner go-live. -->
