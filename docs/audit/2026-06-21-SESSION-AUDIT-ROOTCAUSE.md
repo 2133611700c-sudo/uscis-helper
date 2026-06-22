@@ -214,3 +214,37 @@ has main's hardening) → apply the canon TREE as a diff (no history, no secret)
 tests → open PR → main → owner reviews & merges. I will execute this carefully on the owner's word.
 
 **Until then:** the canon branch is the single source of truth; origin/feat is superseded/archive.
+
+---
+
+## PART 5 — REAL-DOCUMENT QUALITY MEASUREMENT (closes the prior-audit "accuracy UNVERIFIED" gap)
+
+Owner authorized using the project's real original documents (qa-shots/private) to MEASURE
+translation/brain/dictionary quality. Live preview deploy `cd634be` (has the observability fix).
+PII redacted to rule-level per convention; the owner verified the actual values in chat against
+his own documents (ground truth).
+
+**N=2 real owner documents, both read by the PRIMARY model (`read_models=['gemini-3.1-pro-preview']`),
+100% correct against ground truth, all hard rules honored:**
+
+1. **Internal passport booklet** (handwritten Cyrillic, hi-res 4MB → resized): surname KMU-55 with
+   apostrophe handling = correct; given name + patronymic KMU-55 = correct; "смт ..." → "urban-type
+   settlement ..." (NOT city/town); Ukrainian genitive month → USCIS MM/DD/YYYY; oblast genitive →
+   nominative "... Oblast". All 6 fields correct.
+2. **International passport** (printed, MRZ): surname/given preserved from the document's CONTROLLING
+   LATIN romanization, NOT re-transliterated (the passport's official Latin spelling of the given
+   name DIFFERS from the booklet's KMU-55 spelling — and the system correctly keeps each document's
+   own spelling per the hard rule); passport number verbatim; bilingual dates parsed to ISO;
+   sex Ч/M → Male; place "<OBLAST> ОБЛ./UKR" → "... Oblast" (country code stripped, genitive resolved).
+   All 8 fields correct.
+
+**Quality signal:** the same person's name romanizes DIFFERENTLY across his two documents and BOTH
+are correct — internal passport (Cyrillic-only) → KMU-55; international passport (has official Latin)
+→ controlling-Latin kept verbatim. This is the sophisticated correct behavior the hard rules require,
+proven on real documents (not synthetic).
+
+**Status upgrade:** broad real-doc read accuracy was `UNVERIFIED` across ALL prior audits
+(FULL_PROJECT_AUDIT, DOCUMENT_COVERAGE_REALITY, EVIDENCE_VALIDITY_AUDIT). This session provides the
+first PRIMARY-model, real-owner-document, ground-truth-checked evidence: **N=2 PROVEN correct.**
+Remaining: widen N across doc types (birth/marriage/divorce certs, ID card) and operators — bounded
+by PII + budget; the harness now exists (POST real doc → read_models + fields → check vs GT).
