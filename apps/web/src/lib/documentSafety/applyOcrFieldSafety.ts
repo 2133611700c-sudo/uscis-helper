@@ -107,11 +107,23 @@ export interface SafeField {
 export function applyOcrFieldSafety<T extends SafeField>(
   fields: T[],
   ctx: SafetyContext,
-  opts: { zeroRecognition?: boolean } = {},
+  opts: {
+    zeroRecognition?: boolean
+    /**
+     * R7 (per-field anchor): when provided, the resolver decides strong_source_anchor
+     * PER FIELD (e.g. a gazetteer-EXACT place or a math-checked date is anchored even
+     * though the ctx-level flag is false). Absent → falls back to the ctx-level boolean,
+     * so existing callers are byte-identical.
+     */
+    anchorResolver?: (field: T) => boolean
+  } = {},
 ): { fields: SafeField[]; anyUnresolvedCritical: boolean } {
   let anyUnresolvedCritical = false
   const out = fields.map((f): SafeField => {
     const criticality = classifyCriticality(f.field)
+    const strongAnchor = opts.anchorResolver
+      ? opts.anchorResolver(f) || ctx.strong_source_anchor === true
+      : ctx.strong_source_anchor === true
     const r = protectOcrField({
       flow: ctx.flow,
       field_name: f.field,
@@ -123,7 +135,7 @@ export function applyOcrFieldSafety<T extends SafeField>(
       candidate_value_present: (f.raw_cyrillic != null && f.raw_cyrillic !== '') || (f.value != null && f.value !== ''),
       review_required: f.review_required === true,
       confidence: typeof f.confidence === 'number' ? f.confidence : null,
-      strong_source_anchor: ctx.strong_source_anchor === true,
+      strong_source_anchor: strongAnchor,
       legacy_reader: ctx.legacy_reader === true,
       hard_case: ctx.hard_case === true,
       source_doc_id_hash: ctx.source_doc_id_hash ?? null,

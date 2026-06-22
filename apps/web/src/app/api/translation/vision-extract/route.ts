@@ -34,7 +34,8 @@ import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
-import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
+import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
+import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked, isProviderError } from '@/lib/ocr/types'
@@ -444,6 +445,44 @@ async function POST_impl(req: NextRequest) {
       // the Core path because this is the live return (status ok:core-b2).
       const ens = await runDateEnsemble(fields, docTypeId, rawFiles[0])
       fields = ens.fields
+      // R8 — C3 (OCR field safety) on the CORE path, behind OCR_FIELD_SAFETY_ENABLED
+      // (default OFF → Core path byte-identical to prod). The legacy fallback already
+      // runs C3 unconditionally; the Core path did NOT (GAP-2). When the flag is ON,
+      // C3 runs here too so the live arbitration path enforces the same contract.
+      let coreOcrFieldSafety: { applied: boolean; unresolved_critical?: boolean } = { applied: false }
+      if (isOcrFieldSafetyEnabled()) {
+        // R7 — per-field strong-source-anchor (gated on DICTIONARY_CLEARS_SOFT_REVIEW).
+        // Anchor map is computed from the arbitrated CanonicalField metadata (provenance,
+        // source, consensus marker, date-guard reasons) which the FieldOut row does not
+        // carry. flagOff → resolver returns false → C3 sees today's MRZ-only anchoring.
+        const anchorFlagOn = process.env.DICTIONARY_CLEARS_SOFT_REVIEW === '1'
+        const anchorByKey = new Map<string, boolean>()
+        for (const cf of canonicalResult.fields) {
+          anchorByKey.set(
+            cf.key,
+            computeStrongSourceAnchor(
+              {
+                key: cf.key,
+                source: cf.source,
+                consensus_reliable: cf.consensus_reliable,
+                knowledgeProvenance: cf.knowledgeProvenance,
+                reviewReasons: cf.reviewReasons,
+              },
+              anchorFlagOn,
+            ),
+          )
+        }
+        const res = applyOcrFieldSafety(
+          fields as never[],
+          {
+            flow: 'translation_public',
+            document_class: docintelIdToDocumentClass(docTypeId),
+          },
+          { anchorResolver: (row: { field: string }) => anchorByKey.get(row.field) === true },
+        )
+        fields = res.fields as unknown as typeof fields
+        coreOcrFieldSafety = { applied: true, unresolved_critical: res.anyUnresolvedCritical }
+      }
       const requiresReview = fields.some((f) => f.review_required)
       // OBSERVABILITY/ADR-018 (2026-06-21): report the model(s) that ACTUALLY read the
       // pages (r.model from readDocument), NOT process.env.GEMINI_MODEL. The env default
@@ -456,6 +495,9 @@ async function POST_impl(req: NextRequest) {
       console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview, '; read_models=', readModels.join('+') || 'none')
       return NextResponse.json({
         ok: true, doc_type_id: docTypeId, fields,
+        // R8: only present when C3 actually ran on the Core path (flag ON) so the
+        // response shape is byte-identical at prod defaults (flag OFF).
+        ...(coreOcrFieldSafety.applied ? { ocr_field_safety: coreOcrFieldSafety } : {}),
         date_ensemble: ens.diag,
         pages: corePageResults, page_count: rawFiles.length,
         provider: 'one-brain-core:translation-b2',

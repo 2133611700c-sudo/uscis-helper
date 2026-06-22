@@ -35,6 +35,48 @@ export interface KnowledgeArbitrationCtx {
   ukrainianDoc?: boolean
 }
 
+/**
+ * R6 — bidirectional dictionary. DICTIONARY_CLEARS_SOFT_REVIEW (default OFF). When ON, a
+ * high-evidence D2 `accept` may RETRACT a SOFT review reason that an upstream step set, so a
+ * gazetteer-EXACT / known-authority / valid-ISO-date / whitelisted-KMU55 value is no longer
+ * forced to review by a soft reason it directly resolves. NEVER clears a HARD reason.
+ * Flag OFF → the merge stays monotonic-up (today's behavior, byte-identical).
+ */
+export function isDictionaryClearsSoftReviewEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DICTIONARY_CLEARS_SOFT_REVIEW === '1'
+}
+
+/** D2 provenance tags strong enough to clear a soft reason (EXACT / authoritative / math-checked). */
+const HIGH_EVIDENCE_PROVENANCE = new Set<string>([
+  'gazetteer_exact',
+  'authority_dict',
+  'date_parse',
+  'kmu55_name',
+])
+
+/** Soft reasons a high-evidence accept MAY retract (the dictionary directly resolves them). */
+export const CLEARABLE_SOFT_REASONS = new Set<string>([
+  'critical_no_mrz_anchor',
+  'low_confidence',
+  'handwritten-blanket',
+  'handwritten_blanket',
+])
+
+/**
+ * HARD reasons that are NEVER cleared (document-integrity / provider-conflict / manual).
+ * Any `knowledge:*` conflict reason is also hard (handled by the prefix check below).
+ */
+export const HARD_REVIEW_REASONS_NEVER_CLEAR = new Set<string>([
+  'fallback_model_used',
+  'provider_conflict',
+  'source_script_ambiguous',
+  'mrz_check_failed',
+  'not_read_manual_entry',
+])
+
+/** Minimum D2 evidence strength to be allowed to clear a soft reason. */
+const CLEAR_EVIDENCE_FLOOR = 0.85
+
 /** Fields the passport MRZ controls when its check digits are valid. */
 export const PASSPORT_MRZ_FIELDS: ReadonlySet<string> = new Set([
   'passport_number',
@@ -72,11 +114,11 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
     if (mrz.mrzCheckValid === true) {
       // valid MRZ = math authority → it wins; disagreement does not override it.
       // MRZ source has no Cyrillic (it is Latin by definition).
-      return field(key, mrz.value, mrz.source, crit, false, [], evidence, mrz.confidence ?? 0.99, undefined)
+      return field(key, mrz.value, mrz.source, crit, false, [], evidence, mrz.confidence ?? 0.99, undefined, mrz.consensus_reliable)
     }
     // invalid MRZ = red flag (bad photo / OCR / tampering) → must be reviewed.
     reasons.push('mrz_check_failed')
-    return field(key, mrz.value, mrz.source, crit, true, reasons, evidence, 0.3, undefined)
+    return field(key, mrz.value, mrz.source, crit, true, reasons, evidence, 0.3, undefined, mrz.consensus_reliable)
   }
 
   // ── No MRZ anchor: pick the highest-authority candidate ────────────────────
@@ -110,7 +152,7 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
     reasons.push('reader_review_required')
   }
 
-  return field(key, primary.value, primary.source, crit, reasons.length > 0, reasons, evidence, conf, primary.rawCyrillic)
+  return field(key, primary.value, primary.source, crit, reasons.length > 0, reasons, evidence, conf, primary.rawCyrillic, primary.consensus_reliable)
 }
 
 /**
@@ -209,7 +251,25 @@ function applyKnowledge(
 
   if (d.action === 'accept' || d.action === 'preserve') {
     // Safe deterministic transform — take it. Provenance kept for the audit log (Phase 4).
-    return { ...f, normalizedValue: d.finalValue, knowledgeRule: d.ruleId, knowledgeProvenance: d.provenance }
+    const accepted: CanonicalField = {
+      ...f,
+      normalizedValue: d.finalValue,
+      knowledgeRule: d.ruleId,
+      knowledgeProvenance: d.provenance,
+    }
+    // R6 — bidirectional dictionary (DICTIONARY_CLEARS_SOFT_REVIEW, default OFF). A
+    // high-evidence accept may retract a CLEARABLE SOFT reason it directly resolves
+    // (e.g. gazetteer_exact clears critical_no_mrz_anchor). HARD reasons untouched.
+    // Flag OFF → return unchanged (monotonic-up, byte-identical to before).
+    if (
+      d.action === 'accept' &&
+      isDictionaryClearsSoftReviewEnabled() &&
+      HIGH_EVIDENCE_PROVENANCE.has(d.provenance) &&
+      d.evidenceStrength >= CLEAR_EVIDENCE_FLOOR
+    ) {
+      return clearSoftReasons(accepted)
+    }
+    return accepted
   }
 
   // CONFLICT (suggest/review/block): never overwrite a critical value silently.
@@ -222,6 +282,26 @@ function applyKnowledge(
     reviewReasons: reasons,
     knowledgeRule: d.ruleId,
     knowledgeProvenance: d.provenance,
+  }
+}
+
+/**
+ * R6 — retract CLEARABLE soft reasons from a high-evidence accept. A reason is cleared ONLY
+ * if it is in CLEARABLE_SOFT_REASONS and is NOT hard. A `knowledge:*` reason is ALWAYS hard
+ * (a dictionary conflict that earlier forced review must not be self-cleared). reviewRequired
+ * is lowered to false ONLY when NO reason survives. Never raises anything.
+ */
+function clearSoftReasons(f: CanonicalField): CanonicalField {
+  const kept = (f.reviewReasons ?? []).filter((r) => {
+    if (HARD_REVIEW_REASONS_NEVER_CLEAR.has(r)) return true
+    if (r.startsWith('knowledge:')) return true // dictionary conflict — never self-clear
+    return !CLEARABLE_SOFT_REASONS.has(r) // clear only whitelisted soft reasons
+  })
+  if (kept.length === (f.reviewReasons?.length ?? 0)) return f // nothing cleared
+  return {
+    ...f,
+    reviewReasons: kept,
+    reviewRequired: kept.length > 0 ? f.reviewRequired : false,
   }
 }
 
@@ -262,6 +342,7 @@ function field(
   evidence: FieldEvidence[],
   finalConf: number,
   rawCyrillic: string | undefined,
+  consensusReliable: boolean | undefined,
 ): CanonicalField {
   return {
     key,
@@ -278,5 +359,8 @@ function field(
     reviewRequired,
     reviewReasons,
     evidence,
+    // R4 (UN-SEVER): carry the consensus marker from the winning candidate.
+    // undefined when absent → unchanged downstream (treated as false by C3).
+    consensus_reliable: consensusReliable,
   }
 }

@@ -33,6 +33,12 @@ export interface FieldOut {
   ensemble_candidate?: string | null
   /** A fuzzy/alternative suggestion surfaced for review (S1-style), never auto-applied. Carried from CanonicalField.suggestedValue (was dropped here pre-Phase-1). */
   suggested_value?: string | null
+  /**
+   * R4 (UN-SEVER): cross-read consensus marker. SafeField (C3 input) reads this to let
+   * a verifiably-stable critical field accept_final. Omitted when absent so the response
+   * shape is unchanged for fields without it.
+   */
+  consensus_reliable?: boolean
 }
 
 /**
@@ -68,6 +74,9 @@ export function docintelToCandidate(f: ExtractedDocField, page: number): FieldCa
     reviewReasons: f.review_reasons?.length
       ? [...f.review_reasons]
       : f.review_required ? ['reader_flagged'] : [],
+    // R4 (UN-SEVER): carry the cross-read consensus marker so it survives to C3.
+    // Absent on the reader field → undefined here → treated as false downstream.
+    consensus_reliable: f.consensus_reliable,
   }
 }
 
@@ -123,6 +132,9 @@ export function canonicalToFieldOut(
     // Carry the fuzzy/alternative suggestion (was dropped at the adapter pre-Phase-1).
     // Omitted when absent to keep the response shape unchanged for fields without one.
     ...(f.suggestedValue != null ? { suggested_value: f.suggestedValue } : {}),
+    // R4 (UN-SEVER): carry the consensus marker for C3. Omitted unless true so the
+    // response shape is byte-identical when consensus is OFF (the value is just absent/false).
+    ...(f.consensus_reliable === true ? { consensus_reliable: true } : {}),
     kind: f.source,
   }
 }

@@ -107,6 +107,12 @@ export interface CanonicalField {
   knowledgeRule?: string
   /** D2 knowledge provenance tag (kmu55 / gazetteer_exact / authority_dict / ...). */
   knowledgeProvenance?: string
+  /**
+   * R4 (UN-SEVER): cross-read consensus marker threaded from FieldCandidate.consensus_reliable
+   * (produced on ExtractedDocField by AUTO_DELIVERY_CONSENSUS). Lets C3 accept_final a
+   * verifiably-stable critical field. Default/absent = false → byte-identical when OFF.
+   */
+  consensus_reliable?: boolean
 }
 
 /**
