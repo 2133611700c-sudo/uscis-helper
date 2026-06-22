@@ -335,3 +335,57 @@ the system correctly parks for review rather than guessing.
 **Status:** broad real-doc accuracy is now PROVEN across birth/marriage/divorce/military/passport
 on real owner documents — primary model, zero leaks, dictionaries correct. This decisively closes
 the "accuracy UNVERIFIED on real docs" gap carried by every prior audit.
+
+---
+
+## PART 8 — THE FATAL PRODUCT GAP: AUTO-DELIVERY = 0 (root + full remediation plan)
+
+Measured on the real corpus: reads are CORRECT (0 null) but ~100% of fields are
+`review_required=true` → AUTO-DELIVER ≈ 0. For 35-80yo no-experience users who won't
+manually correct, this means the product delivers nothing. This is the #1 problem,
+not a minor one. (I wrongly downplayed it earlier.)
+
+### ROOT (Agent 1, file:line) — BLANKET review triggers that ignore confidence/stability
+- `documentFieldReader.ts:~173` — `isHandwritten → review_required=true` UNCONDITIONAL (ignores
+  the model's own confidence; a 0.99 correct handwritten read is still forced to review).
+- `antiFabricationGate.ts` — forces review on ALL identity-critical fields for handwritten/soviet
+  birth-cert classes (default OFF, but the route's hard-case override does the same).
+- `documentClassPolicy` hard-case override (route ~:596) — sets ALL fields review on hard-case.
+- C3 `ocrFieldSafetyGate.ts` — nulls critical fields on HARD_CASE_CLASSES regardless of confidence.
+- `fallback_model_used` — all fields review if the primary timed out and flash read.
+CALIBRATED (correct) triggers: confidence<floor (printed), canonical-unresolved, patronymic
+malformed, self-consistency mismatch (OFF), date-ensemble disagreement (OFF), date-role conflict.
+
+### DICTIONARY/RULE GAPS (Agent 3) — what's missing for correct recognition
+- Document-LANGUAGE → name-table routing MISSING: Russian-context names route through KMU-55
+  (Сергей→"Serhei" г→h) instead of Russian "Sergey". detectNameScript only sees per-name letters.
+- Russian PATRONYMIC engine COMPLETELY MISSING (patronymic.ts is UA-only) → Russian father/mother
+  names unresolved on Soviet certs.
+- COUNTRY dictionary MISSING (Канада→Canada) → foreign birthplaces unresolved.
+- EMBEDDED place designator («Канада, місто Торонто») not stripped (only LEADING handled).
+- SERIES parser MISSING (Roman III + Cyrillic АМ → AM) — works by KMU accident, no explicit rule.
+- Date gaps: year-only "1939-00-00" passes the ISO regex (bug); bilingual "25 ЧЕР/JUN 86" unparsed;
+  month ABBREVIATIONS (січ./ян.) absent (full words present).
+
+### HANDWRITING (Agent 2) — the honest limit + the path
+Handwritten Cyrillic dates are genuinely HTR-grade hard (the month липня/червня confusion is a
+structural model limit, proven by the ensemble bench — not fixable by prompt/preprocessing).
+BUT names read STABLY. The date ensemble (2-engine) + self-consistency (re-read) EXIST and are
+flag-OFF. PATH to auto-delivery: multi-read CONSENSUS — auto-deliver fields that are high-confidence
+AND consistent across reads; review only genuinely-unstable ones (the month). This turns 100%-review
+into ~10-20%-review while keeping correctness.
+
+### REMEDIATION PLAN (priority, root-first)
+SAFE recognition fixes (improve correctness, no legal risk, do now):
+1. Partial-date ISO validation (reject month 00 / day 00) — `transliterationPolicy.ts` date case.
+2. Russian patronymic engine + exceptions (packages/knowledge/patronymic.ts).
+3. Month abbreviations uk+ru (transliterate.ts UA_MONTHS).
+4. Embedded/foreign place designator + COUNTRY dictionary.
+5. Series parser (Roman + Cyrillic).
+AUTO-DELIVERY calibration (owner risk-decision — loosening review on LEGAL filings):
+6. Wire multi-read CONSENSUS (K=2 same primary) → stability signal.
+7. Calibrate blanket gates: auto-deliver (high-confidence AND consistent); review only unstable.
+8. Enable date-ensemble for the genuinely-hard handwritten dates.
+RISK NOTE: #6-8 let confident+stable values auto-deliver to a user who won't review — a wrong
+auto-delivered name/date on a USCIS filing is a real harm. The calibration is CONSERVATIVE
+(consensus-gated), but the decision to auto-deliver legal-document fields is the owner's to accept.

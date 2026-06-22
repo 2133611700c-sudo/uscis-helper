@@ -120,9 +120,25 @@ export function toCanonicalValue(read: VisionFieldRead, kind: FieldKind): string
   const cy = (read.cyrillic ?? '').trim()
 
   switch (kind) {
-    case 'date':
-      // Dates: trust only a well-formed ISO from the model; never guess.
-      return read.iso_date && /^\d{4}-\d{2}-\d{2}$/.test(read.iso_date) ? read.iso_date : null
+    case 'date': {
+      // Dates: trust only a well-formed ISO from the model; never guess. The old
+      // /^\d{4}-\d{2}-\d{2}$/ check accepted "1939-00-00" / "1986-13-45", which D2
+      // then turned into a nonsensical "00/00/1939". Validate the components.
+      const iso = read.iso_date
+      if (!iso) return null
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+      if (!m) return null
+      const [, year, mo, day] = m
+      const moN = Number(mo)
+      const dN = Number(day)
+      // Full, legal date → pass ISO through (D2 normalizes to USCIS MM/DD/YYYY).
+      if (moN >= 1 && moN <= 12 && dN >= 1 && dN <= 31) return iso
+      // EXPLICIT year-only partial ("1939-00-00" — both month AND day are 00, i.e. the
+      // model says "only the year is legible"): keep the YEAR. Any OTHER illegal combo
+      // (13-45, 00-10) is a misread, not a partial → null (never a nonsensical date).
+      if (moN === 0 && dN === 0 && year !== '0000') return year
+      return null
+    }
 
     case 'name': {
       // Names: KMU-55 (Ukrainian). Never the LLM's own Latin.
