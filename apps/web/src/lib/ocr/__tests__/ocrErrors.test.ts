@@ -45,6 +45,17 @@ describe('classifyProviderError', () => {
     expect(isRetryableOcrError(err.error_code)).toBe(false)
   })
 
+  it('spend-cap 429 via the MARKER channel (prod path) → OCR_QUOTA_EXHAUSTED, NOT retryable', () => {
+    // geminiVisionProvider now folds the Google RPC status into read.error, which
+    // documentFieldReader forwards as `marker`. A monthly spend cap surfaces as
+    // RESOURCE_EXHAUSTED here — it must classify as a HARD quota, never the
+    // transient OCR_RATE_LIMITED ("try again in a few seconds").
+    const err = classifyProviderError(429, undefined, { marker: 'HTTP 429 RESOURCE_EXHAUSTED' })
+    expect(err.error_code).toBe('OCR_QUOTA_EXHAUSTED')
+    expect(err.retryable).toBe(false)
+    expect(isRetryableOcrError(err.error_code)).toBe(false)
+  })
+
   it('403 BILLING_DISABLED → OCR_BILLING_DISABLED, NOT retryable', () => {
     const err = classifyProviderError(
       403,

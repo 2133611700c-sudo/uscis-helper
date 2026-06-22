@@ -207,14 +207,23 @@ export class GeminiVisionProvider implements VisionProvider {
             }
             return { ok: true, fields, model, ms: Date.now() - t0 }
           }
-          lastErr = `HTTP ${status}`
+          // Surface the Google RPC status (e.g. RESOURCE_EXHAUSTED for a monthly
+          // spend cap / hard quota) so the downstream classifier can tell a HARD
+          // quota apart from a transient rate limit. Without this, a spend-cap 429
+          // is mislabeled OCR_RATE_LIMITED ("try again in a few seconds") and the
+          // stack wastes retries on a block that will never clear by waiting.
+          const rpcStatus = typeof json?.error?.status === 'string' ? json.error.status : ''
+          lastErr = rpcStatus ? `HTTP ${status} ${rpcStatus}` : `HTTP ${status}`
           lastStatus = status
           lastTimeout = false
-          if (status === 503 || status === 429) {
+          // RESOURCE_EXHAUSTED / hard quota will NOT recover on retry — don't burn the
+          // inner attempts; move straight to the next model (also capped) and out.
+          const isHardQuota = /RESOURCE_EXHAUSTED|QUOTA/.test(rpcStatus)
+          if ((status === 503 || status === 429) && !isHardQuota) {
             await new Promise((r) => setTimeout(r, 1500))
             continue
           }
-          break // other error → next model
+          break // other error (incl. hard-quota 429) → next model
         } catch (e: any) {
           if (e?.name === 'AbortError') { lastErr = 'timeout'; lastTimeout = true; lastStatus = undefined }
           else { lastErr = e?.message ?? 'fetch error'; lastTimeout = false; lastStatus = undefined }
