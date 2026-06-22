@@ -177,3 +177,4 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-21: public CI mirror uscis-helper-ci GREEN (4 jobs); +13 scenario E2E tests (RU/MRZ/operator-correction). OCR still Gemini-quota-blocked. -->
 <!-- 2026-06-21: gemini-quota-diag.yml added to capture RAW Gemini 429 body (quota metric) + model-existence — root-cause probe for persistent OCR 429. -->
+<!-- 2026-06-21: OCR UNBLOCKED — was AI Studio monthly spend cap (RESOURCE_EXHAUSTED), owner raised it. REAL OCR proven on owner booklet (flash-fallback, force-reviewed). Provider now surfaces hard-quota honestly. -->
