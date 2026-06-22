@@ -37,6 +37,7 @@ import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from 
 import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
+import { getDocTypeSpec } from '@/lib/docintel/documentRegistry'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked, isProviderError } from '@/lib/ocr/types'
 import { httpStatusForOcrError, type OcrProviderError } from '@/lib/ocr/ocrErrors'
@@ -456,6 +457,8 @@ async function POST_impl(req: NextRequest) {
         // source, consensus marker, date-guard reasons) which the FieldOut row does not
         // carry. flagOff → resolver returns false → C3 sees today's MRZ-only anchoring.
         const anchorFlagOn = process.env.DICTIONARY_CLEARS_SOFT_REVIEW === '1'
+        const anchorSpec = getDocTypeSpec(docTypeId)
+        const isFieldHandwritten = (key: string) => !!anchorSpec?.fields.find((f) => f.field === key)?.handwritten
         const anchorByKey = new Map<string, boolean>()
         for (const cf of canonicalResult.fields) {
           anchorByKey.set(
@@ -467,6 +470,8 @@ async function POST_impl(req: NextRequest) {
                 consensus_reliable: cf.consensus_reliable,
                 knowledgeProvenance: cf.knowledgeProvenance,
                 reviewReasons: cf.reviewReasons,
+                // handwritten DATE never self-anchors (stable-misread safety, 2026-06-22).
+                handwritten: isFieldHandwritten(cf.key),
               },
               anchorFlagOn,
             ),

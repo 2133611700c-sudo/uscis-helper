@@ -46,6 +46,15 @@ export interface AnchorInputField {
   knowledgeProvenance?: string
   /** Review reasons (used to detect date-guard conflicts). */
   reviewReasons?: string[]
+  /**
+   * Is this field HANDWRITTEN (cursive) on the source document? CRITICAL for safety:
+   * a model can read handwriting STABLY-WRONG (e.g. a handwritten "25" read as "26" on
+   * every pass) — so consensus stability and "the date is internally valid" do NOT
+   * prove a handwritten value is correct. A handwritten critical field is anchored ONLY
+   * by a true EXTERNAL check (MRZ digits / dictionary-EXACT), never by self-consistency.
+   * (Real-doc finding 2026-06-22: a stably-misread handwritten DOB auto-delivered wrong.)
+   */
+  handwritten?: boolean
 }
 
 /**
@@ -56,18 +65,28 @@ export interface AnchorInputField {
 export function computeStrongSourceAnchor(f: AnchorInputField, flagOn: boolean): boolean {
   if (!flagOn) return false
 
-  // MRZ-valid: the field is MRZ-controlled and its check digits passed.
+  // MRZ-valid: the field is MRZ-controlled and its check digits passed. A true
+  // external math check — valid even on a handwritten field.
   if (f.source === 'mrz' && f.mrzCheckValid === true) return true
 
-  // Cross-read consensus (R4 marker).
-  if (f.consensus_reliable === true) return true
-
-  // Dictionary-EXACT: gazetteer_exact / known authority.
+  // Dictionary-EXACT: gazetteer_exact / known authority. An external match against
+  // a closed vocabulary — valid even on a handwritten field.
   if (f.knowledgeProvenance && EXACT_PROVENANCE.has(f.knowledgeProvenance)) return true
 
-  // A date that passed role+sequence guards: it IS a date field AND carries no
-  // date-conflict reason. (A non-date field is never anchored by this clause.)
-  if (isDateField(f.key)) {
+  // A HANDWRITTEN DATE is the proven danger (real-doc 2026-06-22: a handwritten "25"
+  // read stably as "26" on every pass → consensus "agreed" on the wrong date). For a
+  // handwritten date, NEITHER consensus NOR "internally valid" proves correctness, so it
+  // is NEVER self-anchored — it needs a true external check (MRZ/dictionary, which a
+  // free-form date won't have) → stays soft-confirm (one click). Handwritten NAMES are
+  // read reliably (cursive-name accuracy is high) and MAY anchor on consensus.
+  const handwrittenDate = f.handwritten === true && isDateField(f.key)
+
+  // Cross-read consensus (R4 marker) — reliable for printed text and handwritten names,
+  // NOT for handwritten dates.
+  if (f.consensus_reliable === true && !handwrittenDate) return true
+
+  // A date that passed role+sequence guards — only trustworthy when PRINTED.
+  if (isDateField(f.key) && f.handwritten !== true) {
     const reasons = f.reviewReasons ?? []
     const hasDateConflict = reasons.some((r) => DATE_CONFLICT_REASONS.has(r))
     if (!hasDateConflict) return true
