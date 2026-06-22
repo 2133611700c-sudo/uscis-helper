@@ -1379,3 +1379,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- session-docs-guard PII redaction follow-up (commit e1f4fa2) — applies to all three docs -->
 
 <!-- 2026-06-21 audit: gemini-quota-diag image probe (primary vs flash on a real image) -->
+
+<!-- 2026-06-21 audit: diag image-gen robust (Pillow) -->
