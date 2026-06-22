@@ -437,3 +437,30 @@ Net effect when enabled: a handwritten birth-cert field that reads IDENTICALLY a
 reads at ≥0.90 confidence auto-delivers (review_required=false, C3 accept_final); the unstable
 handwritten DOB (varies between reads) stays review. ~100%-review → only the genuinely-uncertain
 fields. Remaining: REAL-DOC validation run (flag ON) + owner go-live (legal risk + 2× read cost).
+
+---
+
+## PART 11 — Fix 4 VALIDATED on real data: AUTO-DELIVER 0 → 5/6 (booklet)
+
+Ran the consensus+C3 pipeline on the owner's REAL booklet OCR (which read IDENTICALLY across 3
+live runs) and the soviet birth cert, locally (no budget):
+- **Booklet: 5 of 6 fields AUTO-DELIVERED** (given_name=Serhii, patronymic=Serhiiovych,
+  dob=06/25/1986, city=urban-type settlement Trostianets, province=Vinnytsia Oblast) with correct
+  non-null values. Was 0/6. The FATAL "auto-deliver=0" is solved at the foundation.
+- Birth cert: 4/12 auto (place/authority/series/act-number); names + the unstable date stay review.
+
+### KEY LIMITER FOUND (honest) — source_script_ambiguous blocks confident stable surnames
+`family_name = Куроп'ятник` did NOT auto-deliver: it has no UA-distinctive letter (і/ї/є/ґ) → its
+script is 'unknown' → `source_script_ambiguous`, which is in HARD_REVIEW_REASONS → never auto-delivered
+even with consensus. A LARGE fraction of Ukrainian surnames (Петренко, Іванов, Куроп'ятник…) have no
+distinctive letter → they will ALWAYS review under the current rule, capping auto-delivery.
+
+### NEXT UNLOCK — document-language routing (the dictionary gap Agent 3 flagged)
+When the DOCUMENT is known to be Ukrainian (it's a ua_internal_passport_booklet), a shared-letter
+surname should be transliterated by KMU-55 with CONFIDENCE (not flagged ambiguous) — the document
+context resolves the per-name ambiguity. Wiring document-language context into the source-script
+gate would drop `source_script_ambiguous` for known-language docs, lifting booklet auto-delivery
+from 5/6 toward 6/6 and similarly across the corpus. This is the highest-value follow-on.
+
+### Fix 4 status: engineering COMPLETE + validated. Remaining = document-language routing (unlock
+ambiguous surnames) + owner go-live (flag + 2× read cost + legal acceptance).

@@ -2000,3 +2000,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 <!-- 2026-06-22 Fix4 foundation: cross-read consensus auto-delivery (autoDeliveryConsensus.ts), flag AUTO_DELIVERY_CONSENSUS_ENABLED default OFF. Remaining: C3 calibration + real-doc validation + owner go-live. -->
 
 <!-- 2026-06-22 Fix4 complete: C3 gate respects consensus_reliable → accept_final on hard-case stable criticals. End-to-end auto-delivery wired, flag-gated OFF. 339 green. -->
+
+<!-- 2026-06-22 Fix4 VALIDATED: real booklet auto-delivery 0→5/6 (consensus+C3). Limiter: source_script_ambiguous blocks і/ї-less surnames → next unlock = document-language routing. -->
