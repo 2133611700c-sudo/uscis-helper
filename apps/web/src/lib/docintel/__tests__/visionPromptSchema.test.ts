@@ -79,14 +79,14 @@ describe('STAGE 1 — per-document reading rules (teach the brain)', () => {
     expect(missing, `doc classes WITHOUT reading rules: ${missing.join(', ')}`).toEqual([])
   })
 
-  it('flag gates the block into the prompt: OFF → absent, ON → present', () => {
+  it('flag is DEFAULT ON: present when unset, absent only when =0', () => {
     const booklet = getDocTypeSpec('ua_birth_certificate')!
     const prev = process.env.DOC_READING_RULES_ENABLED
     try {
-      delete process.env.DOC_READING_RULES_ENABLED
-      expect(buildPrompt(booklet)).not.toMatch(/DOCUMENT-SPECIFIC READING RULES/)
-      process.env.DOC_READING_RULES_ENABLED = '1'
+      delete process.env.DOC_READING_RULES_ENABLED // default
       expect(buildPrompt(booklet)).toMatch(/DOCUMENT-SPECIFIC READING RULES/)
+      process.env.DOC_READING_RULES_ENABLED = '0' // explicit rollback
+      expect(buildPrompt(booklet)).not.toMatch(/DOCUMENT-SPECIFIC READING RULES/)
     } finally {
       if (prev === undefined) delete process.env.DOC_READING_RULES_ENABLED
       else process.env.DOC_READING_RULES_ENABLED = prev
