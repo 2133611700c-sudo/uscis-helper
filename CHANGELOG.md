@@ -1827,3 +1827,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Force-pushed 70 branches. Repository flipped PUBLIC. Free unlimited Actions + free ruleset on main now active.
 - Secret scanning, push protection, Dependabot security updates, private vulnerability reporting all enabled.
 - PR #208 reopened after force-push closed it.
+
+<!-- session-docs-guard PII redaction follow-up (commit e1f4fa2) — applies to all three docs -->
