@@ -206,3 +206,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-22 Fix4 complete: C3 gate respects consensus_reliable → accept_final on hard-case stable criticals. End-to-end auto-delivery wired, flag-gated OFF. 339 green. -->
 
 <!-- 2026-06-22 Fix4 VALIDATED: real booklet auto-delivery 0→5/6 (consensus+C3). Limiter: source_script_ambiguous blocks і/ї-less surnames → next unlock = document-language routing. -->
+
+<!-- 2026-06-22 doc-language routing: shared-letter names on UA ID docs not ambiguous → booklet auto-delivery 5/6→6/6. Certs keep the gate. -->

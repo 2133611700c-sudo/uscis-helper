@@ -161,7 +161,7 @@ export async function readDocument(
     // `value` stays a best-effort KMU-55 candidate (screen isn't empty), but we
     // force review + reason so C3 will not finalize it until the script is
     // confirmed. Better a noisy review than a clean PDF with the wrong name.
-    const ambiguousScript = kind === 'name' && isNameSourceScriptAmbiguous(r.cyrillic ?? '')
+    const ambiguousScript = kind === 'name' && isNameSourceScriptAmbiguous(r.cyrillic ?? '', process.env, spec.id)
     fields.push({
       field: r.field,
       kind,
