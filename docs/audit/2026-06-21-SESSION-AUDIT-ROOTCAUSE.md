@@ -101,3 +101,84 @@ RC1's "primary 429s on a single image" is now **UNVERIFIED** — it was inferred
 DEEPER RC1 root (preview model as sole acceptance reader) still stands as a design risk, but the
 "it always falls to 2.5-flash" claim must be re-confirmed with the corrected field. **This is
 exactly why the owner said find the root, not the surface: the surface signal was fabricated.**
+
+---
+
+## RC1 — CORRECTED VERDICT (after the RC2 observability fix)
+
+**The primary `gemini-3.1-pro-preview` IS the actual reader. There is NO 3.1→2.5 fallback.**
+Evidence: staging-e2e run 27931589437 (branch translation/ru-and-model-matrix-fixes, deploy with
+the RC2 fix) reported the REAL per-page reader for ALL 5 scenarios (ua_birth, ru_printed,
+passport, ambiguous, handwritten) = `model=gemini-3.1-pro-preview`, 12/12 pass.
+
+The earlier "model=gemini-2.5-flash" was 100% the fabricated env-default field (RC2), NOT a real
+fallback. **RC1's original "primary 429s on a single image / falls to flash" verdict was WRONG —
+it was inferred from a bogus signal.** The spend cap WAS a real blocker earlier (raw 429
+RESOURCE_EXHAUSTED, fixed by the owner raising it); but once raised, the primary reads vision
+fine at the current (low) volume. The "preview model can't serve production volume" risk (RC1
+deeper root) is a SCALE concern for later, not a current defect — at e2e volume the primary works.
+
+Lesson (recorded for the owner): a fabricated telemetry field caused a multi-hour misdiagnosis.
+The fix (report the real reader) is the durable correction; the model-switch never happened.
+
+### Budget note (owner-provided 2026-06-21)
+AI Studio "Experimental" tier, monthly spend cap $30, used $20.54 (~$9.46 left), resets 1st PT.
+Be economical with live Gemini calls. Durable scale fix = move to paid pay-as-you-go tier (higher
+spend AND rate limits) — owner billing decision; not a code blocker today.
+
+---
+
+## PART 2 — ARCHITECTURE MAP (4 parallel agents, evidence-based, my reconciliation)
+
+### Single brain (Agent 1)
+- LIVE reader = `documentFieldReader.readDocument` (docintel). LIVE arbitration = `arbitrateDocument`
+  via `applyKnowledgeBrainIfEnabled` (knowledgeBrain.ts:47-52). Wired on ALL 4 product routes
+  (translation/tps/reparole/ead).
+- DUPLICATION (code-only, benign): `vision-extract/route.ts` has TWO `buildCanonicalResult`
+  blocks — Core (~:381) and a legacy fallback (~:550) reached ONLY when Core returns 0 fields or
+  throws. Per request only ONE path runs (Core returns, OR falls through) → NO double DB write.
+  `readDocumentCore` + direct `arbitration.ts` import = DEAD (test-only). Optional cleanup:
+  hoist arbitration+wrap+persist out of the try/catch to one block. LOW priority (already correct).
+
+### C3 safety (Agent 2) — NO ACTION NEEDED
+- The safe accessor `fieldAccessor.getCanonicalValue` honors `finalValue===null ⇒ null` (no
+  resurrection). All 4 adapters (tps/translation/reparole/ead) + both PDF render paths
+  (`render`, `generate-pdf`) route through it and `.filter(value!==null)`. Re-Parole's former
+  blind spot is FIXED (reParoleAdapter.ts:93-95). `independentCrossProductAudit.ts:309` actively
+  detects a finalValue=null→released violation. **No confirmed C3 bypass on any release path.**
+
+### Dictionaries / legacy (Agent 3, reconciled)
+- LIVE translator path (vision-extract) = canonical `@uscis-helper/knowledge` ONLY. PROVEN today on
+  the owner's real booklet (Kuropiatnyk/Serhii/смт→urban-type settlement/Vinnytsia Oblast).
+- Legacy glossary (`lib/translation/glossary/*`, `ukraine_agency_abbreviations.json` ~56 entries,
+  validators ~2574 lines) is imported only by routes `/api/translation/extract` +
+  `/ocr-from-storage`, which have NO live fetch() caller (earlier caller-grep) → effectively DEAD.
+  NOTE: Agent 3 labeled these routes "LIVE" by import, but did not verify callers; the caller-grep
+  (0 fetch sites) governs — they are dead. `UNVERIFIED`: re-confirm no cron/server invokes them.
+- 3 conflicts (ГУМВС/УМВС Department-vs-Directorate, РАЦС Registry-vs-Status) — canonical is the
+  keeper per audit #195. Hygiene migration of ~26-47 niche abbreviations into knowledge is
+  OPTIONAL (dead path); do it only when quarantining legacy, and migrate-before-delete.
+
+### Branch / CI reality (Agent 4)
+- Complete work (RU fix d1b4ec2, ADR-018 4784fc6, observability cd634be) lives on
+  `translation/ru-and-model-matrix-fixes` (cd634be); the observability fix is ONLY there.
+- PR #208 auto-closed by the 2026-06-20 PII-redaction history rewrite (one-time filter-repo, not
+  an ongoing force-push bot). Current open PR = **#213** (feat→main, head diverged origin e1f9474
+  vs local dcd4a0e). origin/feat LOST the RU+ADR-018+observability fixes in the rewrite.
+- RECOMMENDATION: make `translation/ru-and-model-matrix-fixes` the canonical branch; open a clean
+  PR → main from it; abandon/archive origin/feat. No history-rewrite fight needed.
+
+## PART 3 — REMEDIATION PRIORITY (root-first, owner-decision marked)
+1. **[OWNER DECISION] Consolidate to one branch + PR.** Make `translation/ru-and-model-matrix-fixes`
+   canon; clean PR → main; close #213. Risk: merging to main = production deploy.
+2. **[OWNER, account-side] Scale: move AI Studio off "Experimental" $30/mo tier** to paid
+   pay-as-you-go (higher spend AND vision rate limits) before real volume. Not a code blocker now.
+3. **[ENG, optional hygiene] Quarantine dead legacy translation subsystem** (migrate ~26 niche
+   agency abbreviations + nominative-case logic into @uscis-helper/knowledge first, then delete
+   dead routes/validators). SSoT cleanup; does not change live behavior.
+4. **[ENG, optional] Collapse the duplicate buildCanonicalResult block** in vision-extract. Benign.
+
+## VERDICT
+Translator + dictionaries + single brain WORK on the live canonical path (primary model reading,
+real-doc proven, C3 safe, zero Cyrillic leak). Remaining items are consolidation (owner decision)
+and tech-debt hygiene — not correctness blockers.
