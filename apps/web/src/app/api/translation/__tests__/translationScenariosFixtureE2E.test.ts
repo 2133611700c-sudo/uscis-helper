@@ -85,7 +85,7 @@ function runRealPipeline(fields: ExtractedDocField[], docTypeId: string) {
     createdAt: '2026-06-15T00:00:00.000Z',
   })
   const rows = toTranslationRows(canonicalResult.fields, cyrillicMap)
-  const safe = applyOcrFieldSafety(rows, { flow: 'translation_public' })
+  const safe = applyOcrFieldSafety(rows as never[], { flow: 'translation_public' })
   return { rows, safe }
 }
 

@@ -181,3 +181,4 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-21: RU Cyrillic leak fixed (routing RU→Russian table); deterministic core all green. -->
 <!-- 2026-06-21: REAL OCR 12/12 GREEN on staging (spend cap raised + RU routing fixed). Proven on owner booklet. Remaining: raise gemini-3.1-pro-preview RPM for clean primary reads (account-side). #208 merge gate satisfied; awaiting owner go-ahead. -->
 <!-- 2026-06-21: provider now enforces ADR-018 DISQUALIFIED (2.5-flash excluded for certs); RELEASE_STATE basis sha fixed. -->
+<!-- 2026-06-21T02:05:00Z: typecheck fix (applyOcrFieldSafety cast in scenario E2E test) → Content&Brand guard green. e2e 12/12; reads still gemini-2.5-flash (RPM, account-side). -->
