@@ -1465,3 +1465,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-22: REGRESSION FIX — re-added KMU_RU_FALLBACK (clobbered when integrating month-agent transliterate.ts). RU names leaked Ё/Э/Ы in certified translation; caught by live ru_printed e2e. Verified on real leaked values. -->
 
 <!-- 2026-06-22: permanent no-Cyrillic-leak guard test (26 cases) — transliterateKMU55/Russian can never emit Cyrillic; regression-proof. -->
+
+<!-- 2026-06-22: e2e robustness — смт rule enforced only when смт actually read (stop false-fail on Gemini read-variance). RU leak fix LIVE-confirmed. Narrow М-place brain edge + famous-name-synthetic-fabrication recorded. -->

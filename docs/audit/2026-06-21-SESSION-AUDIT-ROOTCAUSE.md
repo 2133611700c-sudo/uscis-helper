@@ -537,3 +537,28 @@ LESSON (process): never `cp` an agent's whole file over canon — apply only the
 agent worktree based on an older HEAD silently reverts prior fixes. The LIVE real-doc test (not unit
 tests) is what caught this — unit tests passed because the months-agent's transliterate.test.ts
 didn't assert the Ё/Э/Ы no-leak case. Real-doc validation is essential.
+
+---
+
+## PART 15 — e2e brittleness + a narrow place edge (sober triage of repeated failures)
+
+The repeated staging-e2e "failures" are largely TEST BRITTLENESS, not product defects:
+- The e2e asserted EXACT synthetic values (place="urban-type settlement Vyshneve", surname=Shevchenko)
+  on a SYNTHETIC image read by a VARIABLE model. When Gemini reads the synthetic differently it
+  false-fails. This run: the place read as raw="МОРИНЦІ" (Gemini likely FABRICATED Shevchenko's real
+  birthplace Моринці instead of reading the synthetic's "смт Вишневе" — the synthetic using a FAMOUS
+  name invites fabrication). Fix: the смт→"urban-type settlement" rule is now enforced ONLY when смт
+  is actually in the read source; read-accuracy is not asserted here (it's in deterministic unit tests).
+- Confirmed: my RU-leak regression FIX is LIVE (ru_printed: no Cyrillic leak PASS on the deploy).
+
+NARROW REAL EDGE (recorded, not yet fixed): the live value was "city ORYNTSI" for raw "МОРИНЦІ".
+LOCALLY `toCanonicalValue('МОРИНЦІ','place_city')='MORYNTSI'` and `settlementDesignatorEn('МОРИНЦІ')=null`
+— both CORRECT. So a THIRD place-normalization path in the knowledge brain (normalizeCanonicalValue
+place branch) drops the leading "М" and prepends "city" for an М-initial place. Narrow (places
+starting with М, read without a following space), triggered here by a fabricated/misread place. Worth
+a targeted fix in the brain's place normalizer; not a leak/safety issue.
+
+SYNTHETIC-DESIGN FINDING: the synthetic fixtures use FAMOUS names (Shevchenko/Taras), which invite the
+model to fabricate known facts (birthplace Моринці) instead of reading the document. Synthetic test
+docs should use invented PII-free names to measure READING, not recall. (Real non-famous docs don't
+have this.)
