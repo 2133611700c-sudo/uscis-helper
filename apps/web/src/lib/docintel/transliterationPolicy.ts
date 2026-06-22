@@ -11,15 +11,20 @@ import { normalizeProvince, normalizeCity } from '@/lib/tps/dictionaryBridge'
 import type { FieldKind, VisionFieldRead } from './types'
 
 /**
- * Strip a leading Ukrainian settlement-type prefix from a place name, robust to
- * dotted/spaced variants (смт, с.м.т., смт., м., с., село, місто, селище
- * міського типу). The bare locality remains; the original (with type) is kept
- * by the caller in raw_cyrillic so translation can re-add "urban-type settlement".
+ * Strip a leading settlement-type prefix from a place name, robust to dotted/spaced
+ * variants. Handles Ukrainian (смт, с.м.т., смт., м., с., село, місто, селище
+ * міського типу) AND Russian (пгт, п.г.т., посёлок/поселок городского типа) — the
+ * Russian forms appear on Soviet-era / Russian-language documents (e.g. a 1986
+ * Soviet birth certificate writes «пгт. Тростянец»). Without the Russian forms the
+ * prefix was transliterated into the released value ("urban-type settlement pht.
+ * Trostianets") — a real defect found on a real birth certificate. The bare locality
+ * remains; the original (with type) is kept by the caller in raw_cyrillic so the
+ * translation layer re-adds "urban-type settlement" via settlementDesignatorEn.
  */
 export function stripSettlementPrefix(cy: string): string {
   return cy
     .replace(
-      /^\s*(?:с\.?\s*м\.?\s*т\.?|смт\.?|селище(?:\s+міського\s+типу)?|місто|село|м\.|с\.)\s+/iu,
+      /^\s*(?:с\.?\s*м\.?\s*т\.?|смт\.?|пгт\.?|п\.?\s*г\.?\s*т\.?|пос(?:[её]лок)?(?:\s+городского\s+типа)?\.?|селище(?:\s+міського\s+типу)?|місто|село|м\.|с\.)\s+/iu,
       '',
     )
     .trim()

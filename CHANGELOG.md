@@ -1988,3 +1988,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 <!-- 2026-06-21: real-doc quality N=2 PROVEN (internal+intl passport, primary model, 100% correct vs ground truth, all hard rules). Closes prior-audit accuracy-UNVERIFIED gap. -->
 
 <!-- 2026-06-21: real-doc quality CONCLUDED — internal+intl passport proven on primary, 100% correct; DL confirms controlling-Latin rule. -->
+
+<!-- 2026-06-21: real birth-cert test — FIXED пгт (Russian urban-type settlement) strip; orientation handled; date correctly review-gated. -->
