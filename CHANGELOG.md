@@ -2004,3 +2004,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 <!-- 2026-06-22 Fix4 VALIDATED: real booklet auto-delivery 0→5/6 (consensus+C3). Limiter: source_script_ambiguous blocks і/ї-less surnames → next unlock = document-language routing. -->
 
 <!-- 2026-06-22 doc-language routing: shared-letter names on UA ID docs not ambiguous → booklet auto-delivery 5/6→6/6. Certs keep the gate. -->
+
+<!-- 2026-06-22: staging deploy sets AUTO_DELIVERY_CONSENSUS_ENABLED=1 for live auto-delivery validation. -->
