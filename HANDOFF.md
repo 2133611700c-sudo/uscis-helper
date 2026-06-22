@@ -1,5 +1,26 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-22 | Recognition program R0-R8 done (autonomous); auto-delivery backbone built behind OFF flags
+**Done (branch `translation/ru-and-model-matrix-fixes`, commits b660be8 / 1a80de4 / 32fe26f; tsc 0; suites green):**
+- R0 measurement harness FIXED (was broken — non-existent fixtures) → honest **45% baseline** (birth 20 / booklet 60 / military 80).
+- R1 prompt v2 (handwritten markers + date-distinctness rule + confusables) · R2 strict response_schema · R3 Core-path image preprocessing + upscale (flag `CORE_PREPROCESS_ENABLED` default ON).
+- R4-R8 auto-delivery backbone, ALL behavior-changing parts DEFAULT OFF (prod byte-identical, tested): R4 un-sever consensus_reliable · R8 C3-on-Core · R5 voting · R6 bidirectional dictionary · R7 anchor model.
+- R9 dropped (data: failures are dates+routing, not places) · R10/R12 deferred (architecture/account-side).
+
+**FLAG GO-LIVE MATRIX (all OFF now; flip only after re-measure clears a bar):**
+| Flag | Default | Effect when ON |
+|---|---|---|
+| `CORE_PREPROCESS_ENABLED` | ON | preprocess+upscale on Core path (kill-switch `=0`) |
+| `OCR_FIELD_SAFETY_ENABLED` | OFF | C3 critical-null gate on Core path |
+| `SELF_CONSISTENCY_VOTE_ENABLED` | OFF | K=3 majority-pick value |
+| `DICTIONARY_CLEARS_SOFT_REVIEW` | OFF | high-evidence dict accept clears SOFT review + widens anchor (R6+R7) — THIS is the auto-delivery enabler; legal line |
+
+**EXACT NEXT TASK — re-measure (needs Gemini quota):**
+1. `node apps/web/scripts/gt-pipeline-bench.mjs` (LIVE) → compare to the 45% baseline; the R1/R2/R3 gains show here. Verify headSha.
+2. RESOLVE TWO UNKNOWNS the baseline exposed: (a) is `sex` a real pipeline MISS or just absent from the R0 dry-reads fixture? (b) GT VALIDITY — `birth_cert_soviet` GT expects UA `Сергій` but the doc is RU `Сергей`; a source-faithful certified translation transliterates the Russian as written, so the 20% may be artificially low. Owner reconciliation on RU-script name policy.
+3. Only after measured accuracy is high per-field: flip `DICTIONARY_CLEARS_SOFT_REVIEW` (+ optionally consensus) for THAT field class. Never globally at 45%.
+4. Account-side (owner): raise `gemini-3.1-pro-preview` RPM to kill the flash-fallback→force-review cascade (the real R12 fix).
+
 ## 2026-06-22 | Place recognition: М-place ROOT fix + foreign-country dictionary + non-famous synthetics
 **Done (all integrated to branch `translation/ru-and-model-matrix-fixes`, tests green):**
 - **М-place bug fixed at root** — `normalizePlace` (packages/knowledge/normalize.ts) used `startsWith('м')` on the bare SETTLEMENT_TYPES key, releasing «МОРИНЦІ» as "city ORYNTSI" (and latently corrupting any М-/С-initial place: Миколаїв, Маріуполь…). Designator now must be a whole token. +8 tests.
