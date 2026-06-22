@@ -182,3 +182,35 @@ spend AND rate limits) — owner billing decision; not a code blocker today.
 Translator + dictionaries + single brain WORK on the live canonical path (primary model reading,
 real-doc proven, C3 safe, zero Cyrillic leak). Remaining items are consolidation (owner decision)
 and tech-debt hygiene — not correctness blockers.
+
+---
+
+## PART 4 — CONSOLIDATION VERDICT (Task #4)
+
+**Done (safe): all product work consolidated onto ONE verified canonical branch.**
+- Canon = `translation/ru-and-model-matrix-fixes` (origin, tip 7a96346). Verified GREEN:
+  tsc 0 errors; knowledge 47+26+36+13+79; docintel+translation+C3 = 269 tests; live e2e 12/12
+  (primary model). Working tree secret-clean.
+- This branch is STRICTLY more complete than `origin/feat/tv2-rebuild-on-main` (e1f9474): it has
+  the same TV2 + RESOURCE_EXHAUSTED PLUS the RU fix, ADR-018 enforcement, and the observability fix
+  that the 2026-06-20 PII-rewrite dropped from feat. PR #208 was auto-closed by that rewrite;
+  PR #213 (feat→main) is diverged & incomplete → superseded by this canon branch.
+
+**NOT done (deliberately — gated, NOT to be rushed): merge into `main`.** Three hard gates make
+this a careful, owner-driven operation, not a quick push:
+1. **No common ancestor** (`git merge-base canon main` = empty) → GitHub refuses a normal PR
+   ("no history in common"). Merge requires REPLAYING the tree-diff onto a main-based branch
+   (the same pattern used for #208). Replaying the whole TV2 rebuild is large and was the source
+   of a prior force-push incident — do it carefully, not hastily.
+2. **History carries a redacted secret:** the canon branch HISTORY still contains
+   `docs/reports/VISION_MRZ_AUTH_DIAGNOSTIC.md` (commits 426fbbf/7203dc8/05703fe) with the real
+   Google key (#209). The WORKING TREE is clean, but the branch history must NOT be republished
+   (no public flip, no history-preserving move). A clean merge must carry the TREE, not this history.
+3. **main = production** (messenginfo prod deploys from main). Merging = a production deploy of the
+   TV2 translation rebuild. Per the owner's standing rule, prod changes need explicit go-ahead.
+
+**Recommended merge path (when owner says go):** branch off CURRENT `origin/main` (clean history,
+has main's hardening) → apply the canon TREE as a diff (no history, no secret) → run all guards/
+tests → open PR → main → owner reviews & merges. I will execute this carefully on the owner's word.
+
+**Until then:** the canon branch is the single source of truth; origin/feat is superseded/archive.
