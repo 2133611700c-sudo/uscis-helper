@@ -10,7 +10,7 @@ to upload to a free-tier Gemini read. The images are fed to the LIVE
 value is ever hardcoded into the fixture itself.
 
 Fixtures produced (under tests/fixtures/translation-synthetic/):
-  ua_birth_printed.png      Ukrainian printed civil cert (Shevchenko/Taras, смт Вишневе, РАЦС)
+  ua_birth_printed.png      Ukrainian printed civil cert (invented Yurchenko/Oleksii, смт Лісове, РАЦС)
   ru_printed.png            Russian printed doc with ru-only markers (Ы/Э/Ё/Ъ)
   ua_passport_mrz.png       passport bio page + a valid TD3 MRZ block (real check digits)
   ambiguous_script.png      uk/ru-shared-letters-only name (ПЕТРОВА) → must trigger review
@@ -132,11 +132,11 @@ def build_ua_birth_printed(f_title, f_h, f_b) -> "Image.Image":
     line(d, 470, 150, "(повторне)", f_b)
     y = 280
     rows = [
-        ("Прізвище:", "ШЕВЧЕНКО"),
-        ("Ім'я:", "ТАРАС"),
-        ("По батькові:", "ГРИГОРОВИЧ"),
+        ("Прізвище:", "ЮРЧЕНКО"),
+        ("Ім'я:", "ОЛЕКСІЙ"),
+        ("По батькові:", "ВАСИЛЬОВИЧ"),
         ("Дата народження:", "15.01.1990"),
-        ("Місце народження:", "смт Вишневе"),
+        ("Місце народження:", "смт Лісове"),
         ("Стать:", "чоловіча"),
     ]
     for label, val in rows:
@@ -193,7 +193,7 @@ def _td3_mrz() -> tuple[str, str]:
     """Build a valid 2x44 TD3 MRZ with correct check digits. Synthetic identity."""
     # Line 1: P<ISSUER + names
     issuer = "UKR"
-    name = "SHEVCHENKO<<TARAS<HRYHOROVYCH"
+    name = "YURCHENKO<<OLEKSII<VASYLOVYCH"
     l1 = ("P<" + issuer + name).ljust(44, "<")[:44]
     # Line 2 fields
     passport_no = "FH123456"                      # 9 chars
@@ -226,8 +226,8 @@ def build_ua_passport_mrz(f_title, f_h, f_b, f_mono) -> "Image.Image":
     line(d, 300, 80, "PASSPORT / ПАСПОРТ — UKRAINE", f_title)
     y = 240
     rows = [
-        ("Surname / Прізвище:", "SHEVCHENKO"),
-        ("Given names / Ім'я:", "TARAS HRYHOROVYCH"),
+        ("Surname / Прізвище:", "YURCHENKO"),
+        ("Given names / Ім'я:", "OLEKSII VASYLOVYCH"),
         ("Passport No.:", "FH123456"),
         ("Nationality:", "UKR"),
         ("Date of birth:", "15 JAN 1990"),

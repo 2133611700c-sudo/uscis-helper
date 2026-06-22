@@ -149,6 +149,55 @@ assert(kirovograd_modern.review_required === true &&
   'Renamed city: Kirovograd → REVIEW (suggest Kropyvnytskyi, never silent)',
   `Got: value=${kirovograd_modern.normalized_value} review=${kirovograd_modern.review_required} reason=${kirovograd_modern.review_reason}`);
 
+// ── SETTLEMENT DESIGNATOR MUST BE A WHOLE TOKEN ──────────
+// BUG (live real-OCR run): bare key «м» («м.»/«місто» → "city") matched ANY
+// string starting with М via startsWith(). «МОРИНЦІ» (village Моринці) was
+// split into «М» + «ОРИНЦІ» → "city ORYNTSI": leading М dropped + spurious
+// "city" prefix. This corrupted every place starting with М.
+// FIX: a designator must be a whole token (trailing dot or whitespace boundary);
+// a place whose NAME begins with М/м is never split.
+
+const place_m = (raw: string) =>
+  normalizePlace(raw, 'birth_city', 'document', { mode: 'uscis_normalized' }).normalized_value;
+
+// KMU-55 preserves case: all-caps OCR «МОРИНЦІ» → «MORYNTSI» (the reader path
+// returns exactly this). The point of the assertion: NO "city" prefix, leading
+// М preserved (was "city ORYNTSI").
+assert(place_m('МОРИНЦІ') === 'MORYNTSI',
+  'МОРИНЦІ → MORYNTSI (NO "city", leading М preserved)',
+  `Got: ${place_m('МОРИНЦІ')}`);
+
+assert(place_m('Миколаїв') === 'Mykolaiv',
+  'Миколаїв → Mykolaiv (М preserved, not split)',
+  `Got: ${place_m('Миколаїв')}`);
+
+assert(place_m('Маріуполь') === 'Mariupol',
+  'Маріуполь → Mariupol (М preserved)',
+  `Got: ${place_m('Маріуполь')}`);
+
+assert(place_m('Мелітополь') === 'Melitopol',
+  'Мелітополь → Melitopol (М preserved)',
+  `Got: ${place_m('Мелітополь')}`);
+
+assert(place_m('Мукачево') === 'Mukachevo',
+  'Мукачево → Mukachevo (М preserved)',
+  `Got: ${place_m('Мукачево')}`);
+
+// Legit «м.» designator with a separator STILL works (KMU-55: Оринці→Oryntsi)
+assert(place_m('М. Оринці') === 'city Oryntsi',
+  'М. Оринці → "city Oryntsi" (real «м.» designator with dot still parses)',
+  `Got: ${place_m('М. Оринці')}`);
+
+// Full-word «місто» designator with whitespace STILL works
+assert(place_m('місто Львів') === 'city Lviv',
+  'місто Львів → "city Lviv" (real «місто » designator still parses)',
+  `Got: ${place_m('місто Львів')}`);
+
+// «смт» must NOT regress to "city"/"town"
+assert(place_m('смт Вишневе') === 'urban-type settlement Vyshneve',
+  'смт Вишневе → "urban-type settlement Vyshneve" (no regression)',
+  `Got: ${place_m('смт Вишневе')}`);
+
 // ── CONTROLLING SPELLING CONFLICT ────────────────────────
 
 const conflictCtx: NormalizationContext = {

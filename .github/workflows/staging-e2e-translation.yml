@@ -4,7 +4,7 @@ name: Staging E2E — Translation (REAL Cyrillic OCR, manual)
 # then proves the Ukrainian/Russian document OCR end-to-end against it:
 #   1. generate PII-free synthetic Cyrillic document PNGs (Pillow)
 #   2. POST each image to the LIVE /api/translation/vision-extract (REAL Gemini read)
-#      and assert the canonical rows (Shevchenko/Taras KMU-55, смт→urban-type
+#      and assert the canonical rows (invented Yurchenko/Oleksii KMU-55, смт→urban-type
 #      settlement, MRZ Latin authority, ambiguous→review, handwritten critical→
 #      null+review). NOTHING is mocked; no expected-value substitution.
 #   3. render the certified translation PDF (deterministic) and run poppler visual

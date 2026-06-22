@@ -1,3 +1,5 @@
+import { transliterateKMU55, transliterateRussian } from './transliterate';
+
 /**
  * Ukraine Terminology Dictionary v1.3 — TypeScript module
  * Sources: mvs.gov.ua, dmsu.gov.ua, czo.gov.ua, KMU Resolution No.55
@@ -543,4 +545,164 @@ export function settlementDesignatorEn(rawCyrillic: string | null | undefined): 
     return en;
   }
   return null;
+}
+
+// ── FOREIGN COUNTRIES ────────────────────────────────────────
+// A foreign place_of_birth («Канада, місто Торонто») must NOT be transliterated
+// as a Ukrainian place — the country name has a STANDARD English form and must
+// not be passed through KMU-55 (that produces «Kanada», «Polshcha» etc.).
+// Diaspora births and foreign-born adoptees are common in USCIS filings.
+//
+// Keys are LOWERCASE source forms (Ukrainian + common Russian spellings).
+// Correctness over coverage — every entry below is a confident, verified mapping;
+// uncertain names are deliberately omitted so the normal path handles them.
+export const COUNTRIES: Record<string, string> = {
+  // North America
+  'канада': 'Canada',
+  'сша': 'United States',
+  'сполучені штати': 'United States',
+  'сполучені штати америки': 'United States',
+  'соединённые штаты': 'United States',
+  'соединенные штаты': 'United States',
+  'соединённые штаты америки': 'United States',
+  'соединенные штаты америки': 'United States',
+  // Europe
+  'росія': 'Russia',
+  'россия': 'Russia',
+  'російська федерація': 'Russia',
+  'российская федерация': 'Russia',
+  'німеччина': 'Germany',
+  'германия': 'Germany',
+  'польща': 'Poland',
+  'польша': 'Poland',
+  'франція': 'France',
+  'франция': 'France',
+  'велика британія': 'United Kingdom',
+  'великобританія': 'United Kingdom',
+  'великобритания': 'United Kingdom',
+  'австралія': 'Australia',
+  'австралия': 'Australia',
+  'австрія': 'Austria',
+  'австрия': 'Austria',
+  'чехія': 'Czechia',
+  'чехия': 'Czechia',
+  'італія': 'Italy',
+  'италия': 'Italy',
+  'іспанія': 'Spain',
+  'испания': 'Spain',
+  'молдова': 'Moldova',
+  'молдавия': 'Moldova',
+  'білорусь': 'Belarus',
+  'білорусія': 'Belarus',
+  'беларусь': 'Belarus',
+  'белоруссия': 'Belarus',
+  'грузія': 'Georgia',
+  'грузия': 'Georgia',
+  'вірменія': 'Armenia',
+  'армения': 'Armenia',
+  'казахстан': 'Kazakhstan',
+  'узбекистан': 'Uzbekistan',
+  'литва': 'Lithuania',
+  'латвія': 'Latvia',
+  'латвия': 'Latvia',
+  'естонія': 'Estonia',
+  'эстония': 'Estonia',
+  'ізраїль': 'Israel',
+  'израиль': 'Israel',
+  'туреччина': 'Turkey',
+  'турция': 'Turkey',
+};
+
+// Russian Cyrillic markers used to choose the transliteration engine for the
+// city part of a foreign place (KMU-55 is Ukrainian; Russian needs its own).
+const RUSSIAN_MARKERS = /[ёъыэ]/i;
+
+// Foreign capitals/cities whose ESTABLISHED English name is an exonym that
+// differs from a plain transliteration (Москва→"Moscow", not "Moskva").
+// Conservative: only well-known divergent cases. Keyed by lowercase source.
+const FOREIGN_CITY_EXONYMS: Record<string, string> = {
+  'москва': 'Moscow',
+  'варшава': 'Warsaw',
+  'рим': 'Rome',
+  'відень': 'Vienna',
+  'вена': 'Vienna',
+  'прага': 'Prague',
+  'мюнхен': 'Munich',
+  'кельн': 'Cologne',
+  'кёльн': 'Cologne',
+};
+
+// Embedded settlement designators inside a foreign place. We do NOT keep the
+// Ukrainian/Russian «місто»/«город» word; for a foreign city the canonical
+// English designator is simply "city" (or it is dropped — see chosen format).
+const FOREIGN_CITY_DESIGNATOR =
+  /^\s*(?:місто|м\.|город|г\.|city)\s+/iu;
+
+/**
+ * Resolve a Ukrainian/Russian country name to its STANDARD English form.
+ * Exact match, case-insensitive, whitespace-trimmed. Returns null if unknown.
+ */
+export function lookupCountry(cy: string | null | undefined): string | null {
+  if (!cy || typeof cy !== 'string') return null; // defense-in-depth: never throw
+  const key = cy.trim().toLowerCase();
+  return COUNTRIES[key] ?? null;
+}
+
+/**
+ * Normalize a FOREIGN place_of_birth to a clean English form.
+ *
+ * CANONICAL FORMAT (chosen): "Country" or "Country, City"
+ *   «Канада»               → "Canada"
+ *   «Канада, місто Торонто» → "Canada, Toronto"
+ *   «Росія, город Москва»   → "Russia, Moscow"
+ * The embedded «місто/город/city» designator is DROPPED (a foreign birthplace
+ * on a USCIS form is "City, Country"-style; the bare city name is what is wanted,
+ * and we never keep a Cyrillic word). The city is transliterated by source script
+ * (Russian markers → transliterateRussian, otherwise KMU-55).
+ *
+ * Returns null if NO known country token is present — the caller MUST then fall
+ * through to the normal Ukrainian domestic path. Conservative by design: a
+ * Ukrainian place («Київ», «смт Вишневе») never matches a country and returns null.
+ */
+export function normalizeForeignPlace(
+  raw: string | null | undefined,
+): { value: string; isForeign: boolean } | null {
+  if (!raw || typeof raw !== 'string') return null; // defense-in-depth
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // Split on the first comma — foreign places are typically "Country, City…".
+  // If there is no comma the whole string must itself be a country name.
+  const commaIdx = trimmed.indexOf(',');
+  const head = (commaIdx >= 0 ? trimmed.slice(0, commaIdx) : trimmed).trim();
+  const tail = commaIdx >= 0 ? trimmed.slice(commaIdx + 1).trim() : '';
+
+  const country = lookupCountry(head);
+  if (!country) return null; // not a foreign place — let the Ukrainian path handle it
+
+  if (!tail) {
+    return { value: country, isForeign: true };
+  }
+
+  // Clean the city part: drop any embedded settlement designator, then
+  // transliterate by source script. If the tail is already Latin, keep it.
+  const cityRaw = tail.replace(FOREIGN_CITY_DESIGNATOR, '').trim();
+  if (!cityRaw) {
+    return { value: country, isForeign: true };
+  }
+
+  const exonym = FOREIGN_CITY_EXONYMS[cityRaw.toLowerCase()];
+  const hasCyrillic = /[Ѐ-ӿ]/.test(cityRaw);
+  let city: string;
+  if (exonym) {
+    city = exonym; // established English exonym wins over transliteration
+  } else if (!hasCyrillic) {
+    city = cityRaw; // already Latin (e.g. controlling spelling) — do not mangle
+  } else if (RUSSIAN_MARKERS.test(cityRaw)) {
+    city = transliterateRussian(cityRaw);
+  } else {
+    city = transliterateKMU55(cityRaw);
+  }
+
+  return { value: `${country}, ${city}`, isForeign: true };
 }

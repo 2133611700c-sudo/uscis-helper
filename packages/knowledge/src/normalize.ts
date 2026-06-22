@@ -297,17 +297,48 @@ export function normalizePlace(
     }
   }
 
-  // Expand settlement type abbreviations
+  // Expand settlement type abbreviations.
+  //
+  // A designator must be a WHOLE TOKEN, not a bare prefix. The previous
+  // `startsWith(abbr)` test matched any string that merely began with the
+  // designator letters — so the bare key «м» («м.»/«місто» → "city") split
+  // «МОРИНЦІ» into «М» + «ОРИНЦІ» and emitted "city ORYNTSI", corrupting every
+  // place whose NAME starts with М (Моринці, Миколаїв, Маріуполь, Мелітополь,
+  // Мукачево) — and likewise «с» would have eaten «Село…»-shaped names, etc.
+  //
+  // A real designator is delimited from the place name: it ends with a dot
+  // («м.», «смт.»), or is a standalone word followed by whitespace («місто Львів»,
+  // «смт Вишневе»). We therefore require, AFTER the designator, either a dot
+  // (when the abbr doesn't already include one) or a space — i.e. a separator —
+  // before the place name. When the abbr already ends with «.», the dot itself
+  // is the boundary. If no boundary follows, the leading characters are part of
+  // the place name, not a designator, and we MUST NOT split (conservative: keep
+  // the whole string as the place name).
+  const rawTrimmed = raw.trimStart();
+  const rawLower = rawTrimmed.toLowerCase();
   for (const [abbr, info] of Object.entries(SETTLEMENT_TYPES)) {
-    if (raw.toLowerCase().startsWith(abbr.toLowerCase())) {
-      const remainder = raw.slice(abbr.length).replace(/^[\s.]+/, '').trim();
-      const translitPlace = transliterateKMU55(remainder);
-      // PREFIX, mirroring «смт Х» order ("urban-type settlement X"), consistent
-      // with the translation adapter.
-      normalized = `${info.en} ${translitPlace}`;
-      rule = `settlement_type:${abbr}`;
-      break;
-    }
+    const abbrLower = abbr.toLowerCase();
+    if (!rawLower.startsWith(abbrLower)) continue;
+
+    const after = rawTrimmed.slice(abbr.length);
+    const endsWithDot = abbr.endsWith('.');
+    // Boundary required unless the abbr itself supplied a trailing dot:
+    //   «м.» → next char already past the dot, separator satisfied by the dot
+    //   «місто»/«смт» → must be followed by a dot or whitespace
+    const hasBoundary = endsWithDot || after.length === 0 || /^[\s.]/.test(after);
+    if (!hasBoundary) continue;
+
+    const remainder = after.replace(/^[\s.]+/, '').trim();
+    // A designator with no place name after it is not a place expansion — skip
+    // (e.g. a stray «м.» alone should not become "city ").
+    if (remainder.length === 0) continue;
+
+    const translitPlace = transliterateKMU55(remainder);
+    // PREFIX, mirroring «смт Х» order ("urban-type settlement X"), consistent
+    // with the translation adapter.
+    normalized = `${info.en} ${translitPlace}`;
+    rule = `settlement_type:${abbr}`;
+    break;
   }
 
   // Check controlling spelling conflicts

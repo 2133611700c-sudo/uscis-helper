@@ -1,5 +1,18 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-22 | Place recognition: М-place ROOT fix + foreign-country dictionary + non-famous synthetics
+**Done (all integrated to branch `translation/ru-and-model-matrix-fixes`, tests green):**
+- **М-place bug fixed at root** — `normalizePlace` (packages/knowledge/normalize.ts) used `startsWith('м')` on the bare SETTLEMENT_TYPES key, releasing «МОРИНЦІ» as "city ORYNTSI" (and latently corrupting any М-/С-initial place: Миколаїв, Маріуполь…). Designator now must be a whole token. +8 tests.
+- **Foreign-country dictionary added + wired into the brain** — COUNTRIES/lookupCountry/normalizeForeignPlace (24 countries) in dictionary.ts; knowledgeNormalize place branch tries foreign FIRST → «Канада, місто Торонто»→"Canada, Toronto" (was "Kanada, misto Toronto"). null for domestic, UA path untouched. +24 dict tests, +5 brain-wiring tests.
+- **Synthetic fixtures de-famoused** — replaced real Taras Shevchenko (which made Gemini fabricate Моринці instead of reading the text) with invented ЮРЧЕНКО ОЛЕКСІЙ ВАСИЛЬОВИЧ / смт Лісове. e2e assertions + workflow comment updated. 5 PNGs render.
+- Integration was surgical (git-apply hunks) because both fix-agents branched off an older base — verified patronymicRu/KMU_RU_FALLBACK/noCyrillicLeak/CIVIL_STATUS all intact afterward.
+- **Evidence**: knowledge 258 pass / canonical-place 59 pass / knowledgeNormalize 18 pass / tsc apps/web 0 errors. (No live Gemini run this session — recognition fixes are deterministic + unit-proven.)
+
+**Exact next task (owner-gated, do NOT do unilaterally):**
+1. Run the staging REAL-OCR e2e (workflow_dispatch `staging-e2e-translation`) on this branch to confirm the de-famoused fixtures + М-place/foreign fixes hold on a LIVE Gemini read. Verify headSha before trusting (workflow_dispatch propagation lag). Owner action only: needs the Gemini RPM/quota raised for clean primary acceptance (still flash-throttled per prior handoff).
+2. STILL OPEN from prior session (unchanged): primary gemini-3.1-pro-preview RPM throttling on heavy vision → fallback reads force-reviewed (account-side, not code).
+3. Owner-gated: merge to main (= prod deploy) remains blocked on owner go-ahead + the no-MRZ-history republish rule.
+
 ## 2026-06-21 | REAL OCR FULLY GREEN (12/12) — spend cap raised + RU routing fixed
 - staging-e2e-translation REAL Cyrillic OCR: **12 passed, 0 failed** (run on d1b4ec2). First fully-green live-Gemini OCR run.
 - Proven on owner's REAL booklet (qa-shots/private): Kuropiatnyk/Serhii/Serhiiovych/06-25-1986/urban-type settlement Trostianets/Vinnytsia Oblast — zero Cyrillic leak, all hard rules satisfied.
