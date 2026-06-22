@@ -1829,3 +1829,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - PR #208 reopened after force-push closed it.
 
 <!-- session-docs-guard PII redaction follow-up (commit e1f4fa2) — applies to all three docs -->
+
+<!-- 2026-06-21 audit: gemini-quota-diag image probe (primary vs flash on a real image) -->
