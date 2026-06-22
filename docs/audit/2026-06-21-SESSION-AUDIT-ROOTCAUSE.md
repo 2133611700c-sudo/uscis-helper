@@ -516,3 +516,24 @@ intermittent Cyrillic-leak assertion fail under the 2× reads; the flag is for g
 and is default OFF by design). The consensus + doc-language work stays committed, flag-gated OFF.
 ru_printed leak: likely intermittent Gemini read variance on the synthetic (the RU routing fix is
 unit-proven) — flagged for monitoring, not claimed fixed-or-broken.
+
+---
+
+## PART 14 — REGRESSION I CAUSED, caught by the LIVE test: KMU_RU_FALLBACK clobbered
+
+The live ru_printed e2e failed with a Cyrillic leak (SOLOVЁV, ЭDUARD, ИЛЬЁВИЧ, horod Podezdnыi).
+Root cause — MY integration error: when I integrated Fix 3 (month abbreviations) I COPIED the
+months-agent's whole `packages/knowledge/src/transliterate.ts`, which was based on a worktree that
+did NOT have the earlier `KMU_RU_FALLBACK` defense-in-depth (the Ё/Э/Ы→Latin map added with the RU
+routing fix). The wholesale copy REVERTED it (same class of error as the index.ts/transliterationPolicy
+reverts). Verified: `KMU_RU_FALLBACK` had 0 refs on the canon branch. So names using KMU-55 leaked
+Ё/Э/Ы as raw Cyrillic again — in a CERTIFIED legal translation (a hard-rule violation).
+
+FIX: re-added KMU_RU_FALLBACK to transliterate.ts. Verified on the EXACT leaked values:
+СОЛОВЬЁВ→SOLOVYEV, ЭДУАРД→EDUARD, ИЛЬЁВИЧ→YLYEVYCH, город Подъездный→gorod Podyezdnyy — all clean.
+knowledge 74+26+51+36+13 green, tsc 0.
+
+LESSON (process): never `cp` an agent's whole file over canon — apply only the intended hunks; an
+agent worktree based on an older HEAD silently reverts prior fixes. The LIVE real-doc test (not unit
+tests) is what caught this — unit tests passed because the months-agent's transliterate.test.ts
+didn't assert the Ё/Э/Ы no-leak case. Real-doc validation is essential.
