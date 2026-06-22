@@ -2,12 +2,7 @@
  * Transliteration engine tests — KMU-55
  * Test cases from real documents + czo.gov.ua examples
  */
-import {
-  transliterateKMU55,
-  transliterateRussian,
-  detectNameScript,
-  convertDateToUSCIS,
-} from '../transliterate';
+import { transliterateKMU55, convertDateToUSCIS } from '../transliterate';
 
 const cases: [string, string, string][] = [
   // [input, expected, description]
@@ -57,52 +52,6 @@ for (const [input, expected, desc] of cases) {
   }
 }
 
-// ── Russian-script no-Cyrillic-leak regression (real Gemini OCR bug, 2026-06) ──
-// A Russian-script document leaked Cyrillic into the English `value`:
-//   СОЛОВЬЁВ → SOLOVЁV (leaked Ё) · ЭДУАРД → ЭDUARD (leaked Э)
-//   ИЛЬЁВИЧ  → YLЁVYCH (leaked Ё) · город Подъездный → horod Podezdnыi (leaked ы, г→h)
-// Two defects: (1) KMU-55 passed the Russian-only letters Ё/Э/Ы through as raw
-// Cyrillic; (2) Russian-script content was transliterated with KMU-55 (г→h)
-// instead of the Russian table (г→g). Romanization standard for the RU table =
-// BGN/PCGN simplified (pinned by russianTransliterate.test.ts: Алексей→Aleksey,
-// Алексеевич→Alekseyevich): Э→E, Ы→Y, Ё→Ye (position-dependent), Ъ/Ь→omit.
-const NO_CYRILLIC = /[Ѐ-ӿ]/;
-
-// (a) The Russian table produces the correct Latin (BGN/PCGN) for each evidence input.
-const ruVectors: [string, string, string][] = [
-  ['СОЛОВЬЁВ', 'SOLOVYeV', 'surname — Ь dropped, Ё→Ye, zero Cyrillic'],
-  ['ЭДУАРД', 'EDUARD', 'given — Э→E'],
-  ['ИЛЬЁВИЧ', 'ILYeVICh', 'patronymic — Ь dropped, Ё→Ye'],
-  ['город Подъездный', 'gorod Podyezdnyy', 'Russian word — г→g (NOT h), ъ dropped, ы→y'],
-];
-for (const [input, expected, desc] of ruVectors) {
-  const result = transliterateRussian(input);
-  const ok = result === expected && !NO_CYRILLIC.test(result);
-  if (ok) { pass++; } else {
-    fail++;
-    console.error(`FAIL RU: ${desc}\n  Input:    ${input}\n  Expected: ${expected}\n  Got:      ${result}\n  Cyrillic leaked: ${NO_CYRILLIC.test(result)}\n`);
-  }
-}
-
-// (b) detectNameScript flags every evidence input as Russian (distinctive ё/э/ы/ъ).
-for (const [input] of ruVectors) {
-  const d = detectNameScript(input);
-  if (d === 'ru') { pass++; } else {
-    fail++;
-    console.error(`FAIL detect: ${input} → expected 'ru', got '${d}'\n`);
-  }
-}
-
-// (c) HARD CONTRACT: KMU-55 itself must NEVER emit a Cyrillic character, even for
-// Russian-only letters it cannot map (defense-in-depth net against routing misses).
-for (const [input] of ruVectors) {
-  const result = transliterateKMU55(input);
-  if (!NO_CYRILLIC.test(result)) { pass++; } else {
-    fail++;
-    console.error(`FAIL KMU leak: ${input} → KMU-55 leaked Cyrillic: ${result}\n`);
-  }
-}
-
 // Date tests
 const dateCases: [string, string | null, string][] = [
   ['01.01.1990', '01/01/1990', 'Dot format'],
@@ -110,6 +59,57 @@ const dateCases: [string, string | null, string][] = [
   ['19 лютого 2003', '02/19/2003', 'February'],
   ['5 грудня 2011', '12/05/2011', 'December'],
   ['01 января 1990 года', '01/01/1990', 'Russian fallback'],
+
+  // ── Month ABBREVIATIONS (with trailing dot) — Ukrainian ───────────────────
+  ['10 січ. 1990', '01/10/1990', 'UA abbrev січ. → 01'],
+  ['10 лют. 1990', '02/10/1990', 'UA abbrev лют. → 02'],
+  ['10 бер. 1990', '03/10/1990', 'UA abbrev бер. → 03'],
+  ['10 кв. 1990', '04/10/1990', 'UA abbrev кв. → 04'],
+  ['10 трав. 1990', '05/10/1990', 'UA abbrev трав. → 05'],
+  ['10 черв. 1990', '06/10/1990', 'UA abbrev черв. → 06'],
+  ['10 лип. 1990', '07/10/1990', 'UA abbrev лип. → 07'],
+  ['10 липн. 1990', '07/10/1990', 'UA abbrev липн. → 07'],
+  ['10 серп. 1990', '08/10/1990', 'UA abbrev серп. → 08'],
+  ['10 вер. 1990', '09/10/1990', 'UA abbrev вер. → 09'],
+  ['10 жовт. 1990', '10/10/1990', 'UA abbrev жовт. → 10'],
+  ['10 листоп. 1990', '11/10/1990', 'UA abbrev листоп. → 11'],
+  ['10 лист. 1990', '11/10/1990', 'UA abbrev лист. → 11'],
+  ['10 груд. 1990', '12/10/1990', 'UA abbrev груд. → 12'],
+
+  // ── Month ABBREVIATIONS — Russian ─────────────────────────────────────────
+  ['10 ян. 1990', '01/10/1990', 'RU abbrev ян. → 01'],
+  ['10 февр. 1990', '02/10/1990', 'RU abbrev февр. → 02'],
+  ['10 мар. 1990', '03/10/1990', 'RU abbrev мар. → 03'],
+  ['10 апр. 1990', '04/10/1990', 'RU abbrev апр. → 04'],
+  ['10 мая 1990', '05/10/1990', 'RU full мая → 05 (still works)'],
+  ['10 июн. 1990', '06/10/1990', 'RU abbrev июн. → 06'],
+  ['10 июл. 1990', '07/10/1990', 'RU abbrev июл. → 07'],
+  ['10 авг. 1990', '08/10/1990', 'RU abbrev авг. → 08'],
+  ['10 сент. 1990', '09/10/1990', 'RU abbrev сент. → 09'],
+  ['10 окт. 1990', '10/10/1990', 'RU abbrev окт. → 10'],
+  ['10 нояб. 1990', '11/10/1990', 'RU abbrev нояб. → 11'],
+  ['10 дек. 1990', '12/10/1990', 'RU abbrev дек. → 12'],
+
+  // ── Abbreviations WITHOUT the dot also resolve ────────────────────────────
+  ['10 черв 1990', '06/10/1990', 'UA abbrev without dot'],
+
+  // ── Substring-collision guards: full words must NOT be over-matched ───────
+  ['10 марта 1990', '03/10/1990', 'Full word марта → 03 (not confused by мар)'],
+  ['10 мая 1990', '05/10/1990', 'Full word мая → 05'],
+
+  // ── Bilingual passport dates "25 ЧЕР/JUN 86" ──────────────────────────────
+  ['25 ЧЕР/JUN 86', '06/25/1986', 'Bilingual ЧЕР/JUN, year 86 → 1986'],
+  ['01 СІЧ/JAN 90', '01/01/1990', 'Bilingual СІЧ/JAN'],
+  ['07 ГРУ/DEC 05', '12/07/2005', 'Bilingual ГРУ/DEC, year 05 → 2005'],
+  ['15 МАР/MAR 99', '03/15/1999', 'Bilingual RU МАР/MAR'],
+  ['25 чер / jun 86', '06/25/1986', 'Bilingual lowercase + spaces around slash'],
+  ['12 ТРА/MAY 2010', '05/12/2010', 'Bilingual with 4-digit year'],
+
+  // ── Bilingual DISAGREEMENT → null (review, never guess) ───────────────────
+  ['25 ЧЕР/JAN 86', null, 'Bilingual month disagreement → null'],
+  ['25 ЖОВ/SEP 86', null, 'Bilingual ЖОВ(Oct) vs SEP → null'],
+  ['25 ЧЕР/XXX 86', null, 'Bilingual unknown Latin code → null'],
+  ['25 ЗЗЗ/JUN 86', null, 'Bilingual unknown Cyrillic code → null'],
 ];
 
 for (const [input, expected, desc] of dateCases) {

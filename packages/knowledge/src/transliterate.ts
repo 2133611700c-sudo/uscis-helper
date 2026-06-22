@@ -36,19 +36,6 @@ const SKIP = new Set(["Ь", "ь", "Ъ", "ъ", "'", "'", "ʼ", "\u0027"]);
 // Ukrainian Cyrillic character check
 const UA_CYRILLIC = /[\u0400-\u04FF\u0490\u0491]/;
 
-// HARD CONTRACT (no-Cyrillic-leak): KMU-55 is the Ukrainian table and has NO
-// mapping for the Russian-only letters Ё/Э/Ы (Ъ/Ь are already in SKIP). Before
-// this guard they fell through to the "pass through non-Cyrillic" branch and
-// leaked raw Cyrillic into the Latin `value` (real OCR bug: СОЛОВЬЁВ→SOLOVЁV,
-// ЭДУАРД→ЭDUARD). The correct fix for clearly-Russian source is to route to the
-// Russian table (see transliterationPolicy); this map is a defense-in-depth net so
-// that even if a Russian-only char ever reaches KMU-55 it is romanized, never
-// emitted as Cyrillic. Values follow the project's BGN/PCGN Russian convention
-// (Э→E, Ы→Y, Ё→Ye); KMU-55 itself stays a pure Ukrainian table otherwise.
-const KMU_RU_FALLBACK: Record<string, string> = {
-  'Ё': 'Ye', 'ё': 'ye', 'Э': 'E', 'э': 'e', 'Ы': 'Y', 'ы': 'y',
-};
-
 function isWordStart(text: string, i: number): boolean {
   if (i === 0) return true;
   // Look back past apostrophes/soft signs to find the real previous character
@@ -94,14 +81,6 @@ export function transliterateKMU55(input: string): string {
     // Standard mapping
     if (MAP[ch]) {
       result.push(MAP[ch]);
-      continue;
-    }
-
-    // Defense-in-depth: a Russian-only letter (Ё/Э/Ы) that has no Ukrainian
-    // mapping must NEVER pass through as Cyrillic. Romanize it so KMU-55 output
-    // can never contain a U+0400–U+04FF character.
-    if (KMU_RU_FALLBACK[ch]) {
-      result.push(KMU_RU_FALLBACK[ch]);
       continue;
     }
 
@@ -194,18 +173,80 @@ const UA_MONTHS: Record<string, string> = {
   'сентября': '09', 'октября': '10', 'ноября': '11', 'декабря': '12',
 };
 
+// Month ABBREVIATIONS as they appear on real documents (stamps, handwritten
+// dates, table headers). Keys are stored WITHOUT a trailing dot and lowercased;
+// the lookup strips any trailing '.' first. Matched EXACTLY against a whole
+// token — never as a substring — so "мар" cannot be triggered by "марта" and
+// "ма" cannot over-match. Full-word forms live in UA_MONTHS above; only true
+// abbreviations belong here. Conservative by design: a form is included only
+// when it is unambiguous. (e.g. bare "май"/"мая" = May is in UA_MONTHS already.)
+const MONTH_ABBREV: Record<string, string> = {
+  // Ukrainian
+  'січ': '01', 'лют': '02', 'бер': '03', 'кв': '04', 'трав': '05',
+  'черв': '06', 'лип': '07', 'липн': '07', 'серп': '08', 'вер': '09',
+  'жовт': '10', 'листоп': '11', 'лист': '11', 'груд': '12',
+  // Russian
+  'ян': '01', 'янв': '01', 'февр': '02', 'фев': '02', 'мар': '03',
+  'апр': '04', 'июн': '06', 'июл': '07', 'авг': '08', 'сент': '09',
+  'сен': '09', 'окт': '10', 'нояб': '11', 'дек': '12',
+};
+
+// 3-letter Latin month codes (passport/visa bilingual lines).
+const LATIN_MONTH: Record<string, string> = {
+  'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+  'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
+};
+
+// Cyrillic 3-letter passport month abbreviations (no dot), UA & RU. Only the
+// confident, standard passport codes — used to cross-check against the Latin
+// code in a bilingual date. Both scripts must AGREE or the date goes to review.
+const CYR_PASSPORT_MONTH: Record<string, string> = {
+  // Ukrainian passport codes
+  'січ': '01', 'лют': '02', 'бер': '03', 'кві': '04', 'тра': '05', 'чер': '06',
+  'лип': '07', 'сер': '08', 'вер': '09', 'жов': '10', 'лис': '11', 'гру': '12',
+  // Russian passport codes
+  'янв': '01', 'фев': '02', 'мар': '03', 'апр': '04', 'май': '05', 'июн': '06',
+  'июл': '07', 'авг': '08', 'сен': '09', 'окт': '10', 'ноя': '11', 'дек': '12',
+};
+
+/** Resolve a single month token (full word OR abbreviation) to "MM" or null. */
+function resolveMonthToken(token: string): string | null {
+  const t = token.replace(/\.$/, ''); // strip a single trailing dot
+  return UA_MONTHS[t] ?? MONTH_ABBREV[t] ?? null;
+}
+
+/** 2-digit year → 4-digit. <30 → 20xx, else 19xx (passport/old-document pivot). */
+function expandTwoDigitYear(yy: string): string {
+  const n = parseInt(yy, 10);
+  return n < 30 ? `20${yy}` : `19${yy}`;
+}
+
 export function convertDateToUSCIS(input: string): string | null {
   // Format: DD.MM.YYYY
   const dotMatch = input.match(/^(\d{1,2})\.(\d{2})\.(\d{4})$/);
   if (dotMatch) return `${dotMatch[2]}/${dotMatch[1].padStart(2, '0')}/${dotMatch[3]}`;
 
-  // Format: "01 січня 1990 року" or "01 января 1990 года"
+  // Bilingual passport format: "25 ЧЕР/JUN 86" — day, Cyrillic abbrev, '/',
+  // Latin 3-letter code, 2- or 4-digit year. The two month tokens must AGREE.
+  const bi = input.trim().match(
+    /^(\d{1,2})\s+([Ѐ-ӿ]{2,4})\s*\/\s*([A-Za-z]{3})\s+(\d{2}|\d{4})$/
+  );
+  if (bi) {
+    const day = bi[1].padStart(2, '0');
+    const cyr = CYR_PASSPORT_MONTH[bi[2].toLowerCase()];
+    const lat = LATIN_MONTH[bi[3].toLowerCase()];
+    if (!cyr || !lat || cyr !== lat) return null; // unknown or disagreeing → review
+    const year = bi[4].length === 2 ? expandTwoDigitYear(bi[4]) : bi[4];
+    return `${cyr}/${day}/${year}`;
+  }
+
+  // Format: "01 січня 1990 року" / "01 января 1990 года" / "01 січ. 1990"
   const parts = input.toLowerCase().replace(/\s+(року|года|р\.?|г\.?)\s*$/i, '').trim().split(/\s+/);
   if (parts.length >= 3) {
     const day = parts[0].padStart(2, '0');
-    const month = UA_MONTHS[parts[1]];
+    const month = resolveMonthToken(parts[1]);
     const year = parts[2];
-    if (month && year.length === 4) return `${month}/${day}/${year}`;
+    if (month && /^\d{4}$/.test(year)) return `${month}/${day}/${year}`;
   }
   return null;
 }

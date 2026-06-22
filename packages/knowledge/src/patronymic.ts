@@ -159,3 +159,134 @@ export function reconcilePatronymic(
 
   return { value: '', source: 'unresolved', review_required: true, reason: 'could not validate read nor derive from given name' }
 }
+
+/* ======================================================================== *
+ * RUSSIAN patronymic (отчество) engine.
+ *
+ * WHY: Soviet-era / Russian-context documents (e.g. a 1986 Soviet birth
+ * certificate) carry the parents' names in RUSSIAN (Сергей Леонидович,
+ * Наталия Степановна). The Ukrainian engine above cannot reconcile these,
+ * forcing every such doc to manual review. Russian отчество is, like the
+ * Ukrainian one, DERIVED deterministically from the father's given name +
+ * the child's sex — so the same validate / reconstruct discipline applies.
+ *
+ * Same contract as the Ukrainian engine: never guess silently; when a value
+ * is not derivable, return review_required=true with an empty/candidate value.
+ * Cyrillic only; KMU-55 / GOST transliteration happens downstream.
+ * ======================================================================== */
+
+const MALE_SUFFIXES_RU = ['ович', 'евич', 'ич'] as const
+const FEMALE_SUFFIXES_RU = ['овна', 'евна', 'ична', 'инична'] as const
+
+/**
+ * Irregular Russian given names whose отчество is not produced by the regular
+ * rules (special stem, inserted consonant, or non-productive -ич/-ична form).
+ * Key = given name in nominative (lowercase Cyrillic). Only names verified as
+ * standard Russian usage are included — a wrong patronymic on a legal document
+ * is harmful, so anything uncertain is OMITTED (falls through to review).
+ */
+const EXCEPTIONS_RU: Record<string, { M: string; F: string }> = {
+  'сергей': { M: 'Сергеевич', F: 'Сергеевна' }, // -ей stem keeps -еевич (not Сергейевич)
+  'лев':    { M: 'Львович',   F: 'Львовна' },    // fleeting vowel: Лев→Льв-
+  'пётр':   { M: 'Петрович',  F: 'Петровна' },   // fleeting ё→е
+  'петр':   { M: 'Петрович',  F: 'Петровна' },   // spelling variant without ё
+  'никита': { M: 'Никитич',   F: 'Никитична' },  // -а name, non-productive -ич
+  'фёдор':  { M: 'Фёдорович', F: 'Фёдоровна' },
+  'федор':  { M: 'Фёдорович', F: 'Фёдоровна' },  // spelling variant without ё
+  'илья':   { M: 'Ильич',     F: 'Ильинична' },
+  'кузьма': { M: 'Кузьмич',   F: 'Кузьминична' },
+  'фома':   { M: 'Фомич',     F: 'Фоминична' },
+  'лука':   { M: 'Лукич',     F: 'Лукинична' },
+  'яков':   { M: 'Яковлевич', F: 'Яковлевна' },  // inserted -л-
+}
+
+/** Title-case a Russian word. */
+function titleCaseRu(s: string): string {
+  if (!s) return s
+  return s[0].toLocaleUpperCase('ru') + s.slice(1).toLocaleLowerCase('ru')
+}
+
+/**
+ * Is `value` a complete, well-formed Russian отчество for the given sex?
+ * Rejects suffix fragments ("евич"/"овна" alone), digits, and too-short tokens.
+ */
+export function isValidPatronymicRu(value: string, sex?: Sex): boolean {
+  const v = norm(value).toLocaleLowerCase('ru')
+  if (!v || /[0-9]/.test(v)) return false
+  if (v.length < 6) return false // "евич"(4)/"овна"(4)/"ович"(4) fragments rejected; shortest real "Ильич"(5) handled via exception read below
+  const suffixes = sex === 'F' ? FEMALE_SUFFIXES_RU : sex === 'M' ? MALE_SUFFIXES_RU : [...MALE_SUFFIXES_RU, ...FEMALE_SUFFIXES_RU]
+  // Prefer the longest matching suffix so the root check is honest
+  // (e.g. "инична" before "ична", "евич" before "ич").
+  const matched = [...suffixes]
+    .sort((a, b) => b.length - a.length)
+    .find((suf) => v.endsWith(suf))
+  if (!matched) return false
+  const root = v.slice(0, v.length - matched.length)
+  return root.length >= 2 // real root before the suffix (reject bare fragments)
+}
+
+/**
+ * Derive the Russian отчество from a father's given name + sex using the
+ * regular rules, falling back to EXCEPTIONS_RU. Returns null when the name
+ * shape is not safely covered (caller must send to human review).
+ */
+export function generatePatronymicRu(givenName: string, sex: Sex): string | null {
+  const name = norm(givenName).toLocaleLowerCase('ru')
+  if (!name || name.length < 2) return null
+
+  const ex = EXCEPTIONS_RU[name]
+  if (ex) return ex[sex]
+
+  const last = name[name.length - 1]
+
+  // -й ending (Андрей, Алексей, Геннадий): drop -й, add -евич / -евна.
+  if (last === 'й') {
+    const stem = name.slice(0, -1)
+    return titleCaseRu(stem + (sex === 'M' ? 'евич' : 'евна'))
+  }
+
+  // -ь ending (Игорь): drop -ь, add -евич / -евна.
+  if (last === 'ь') {
+    const stem = name.slice(0, -1)
+    return titleCaseRu(stem + (sex === 'M' ? 'евич' : 'евна'))
+  }
+
+  // consonant ending (Иван, Александр, Владимир): +ович / +овна. Productive.
+  const vowels = 'аеиоуыэюяёй'
+  if (!vowels.includes(last)) {
+    return titleCaseRu(name + (sex === 'M' ? 'ович' : 'овна'))
+  }
+
+  // -а / -я / other vowel endings not in EXCEPTIONS_RU: NOT safely derivable.
+  return null
+}
+
+/**
+ * Russian counterpart to reconcilePatronymic. Given the Reader's value
+ * (possibly a fragment) plus the known given name + sex, return the canonical
+ * отчество with a review flag.
+ *
+ * Priority:
+ *   1. A read that is already complete & well-formed → keep it (doc is truth).
+ *   2. Otherwise derive from given name + sex (regular or exception).
+ *   3. Otherwise → empty + review_required (never guess).
+ */
+export function reconcilePatronymicRu(
+  read: string | null | undefined,
+  givenName: string | null | undefined,
+  sex: Sex,
+): { value: string; review_required: boolean } {
+  const r = norm(read ?? '')
+  if (r && isValidPatronymicRu(r, sex)) {
+    return { value: titleCaseRu(r), review_required: false }
+  }
+
+  const gen = generatePatronymicRu(givenName ?? '', sex)
+  if (gen) {
+    // Generated from a (handwriting-derived) given name → keep a light review
+    // flag, same posture as the Ukrainian engine's regular generations.
+    return { value: gen, review_required: true }
+  }
+
+  return { value: '', review_required: true }
+}
