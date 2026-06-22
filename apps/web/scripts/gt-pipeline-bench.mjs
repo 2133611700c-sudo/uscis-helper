@@ -45,7 +45,9 @@ import { tmpdir } from 'node:os'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(__dir, '../../..')
-const PROD = 'https://messenginfo.com/api/translation/vision-extract'
+// Target endpoint: prod by default; override with BENCH_URL to test a local/preview
+// build of THIS branch (e.g. BENCH_URL=http://localhost:3000/api/translation/vision-extract).
+const PROD = process.env.BENCH_URL || 'https://messenginfo.com/api/translation/vision-extract'
 const EDGE_BODY_LIMIT = 4_000_000 // Vercel serverless request-body cap (~4.5MB); downscale above this
 
 // ── CLI flags ────────────────────────────────────────────────────────────────
@@ -88,16 +90,46 @@ const normLatin = (s) => collapse(s).toLowerCase()
 const normCyr = (s) => collapse(s)
 const isEmpty = (s) => collapse(s) === ''
 
+// SEX is a coded enum, not free text: the pipeline emits the English word ("Male")
+// while GT carries the form code ("M"); both are the SAME recognized value. Fold any
+// sex token (uk/ru/en/code) to m|f|'' so a format difference is not a false WRONG.
+const canonicalSex = (s) => {
+  const v = collapse(s).toLowerCase()
+  if (/^(m|male|чол|чоловіча|муж|мужской|ч)$/.test(v) || v.startsWith('чолов') || v.startsWith('мужск')) return 'm'
+  if (/^(f|female|жін|жіноча|жен|женский|ж)$/.test(v) || v.startsWith('жіноч') || v.startsWith('женск')) return 'f'
+  return v
+}
+
+// RU↔UA SCRIPT-VARIANT detector (DIAGNOSTIC ONLY — never changes the score).
+// A Soviet-era cert may be written in Russian (Сергей/Сергеевич/Куропятник) while GT
+// carries the person's modern Ukrainian passport form (Сергій/Сергійович/Куроп'ятник).
+// That is a genuine read of the source in the OTHER language, not a misread of letters.
+// Fold the RU/UA-distinctive letters + common patronymic endings; if the two collapse
+// to the same key, flag it so the report distinguishes "other-language form" from a
+// true letter-swap. The verdict STAYS WRONG (policy/GT decision is the owner's).
+const ruUaFold = (s) => apos((s ?? '').toString().trim().toLowerCase())
+  .replace(/еевич$/, 'ійович').replace(/еевна$/, 'іївна') // RU patronymic → UA
+  .replace(/[ёэ]/g, 'е').replace(/ы/g, 'и').replace(/ъ/g, '')
+  .replace(/і|ї|и/g, 'и').replace(/є|е/g, 'е').replace(/ґ|г/g, 'г')
+  .replace(/'/g, '')
+const isRuUaVariant = (exp, got) => {
+  if (isEmpty(exp) || isEmpty(got)) return false
+  if (collapse(exp) === collapse(got)) return false // identical → not a variant, just CORRECT
+  return ruUaFold(exp) === ruUaFold(got)
+}
+
 /**
  * Classify one field: compare an expected GT value against the read value.
  * Returns one of CORRECT | WRONG | MISS | CORRECT_EMPTY | FABRICATED.
+ * `field` (route field name) lets us apply enum-aware comparison (e.g. sex).
  */
-function classify(expected, got, kind /* 'latin' | 'cyrillic' */) {
+function classify(expected, got, kind /* 'latin' | 'cyrillic' */, field = '') {
   const gtEmpty = isEmpty(expected)
   const readEmpty = isEmpty(got)
   if (gtEmpty && readEmpty) return 'CORRECT_EMPTY'
   if (gtEmpty && !readEmpty) return 'FABRICATED'
   if (!gtEmpty && readEmpty) return 'MISS'
+  if (field === 'sex') return canonicalSex(expected) === canonicalSex(got) ? 'CORRECT' : 'WRONG'
   const norm = kind === 'latin' ? normLatin : normCyr
   return norm(expected) === norm(got) ? 'CORRECT' : 'WRONG'
 }
@@ -175,13 +207,17 @@ function scoreDoc(d, read, gt) {
       channel = 'latin'; expected = ''; gotVal = g?.value ?? g?.raw_cyrillic
     }
 
-    const verdict = classify(expected, gotVal, channel)
+    const verdict = classify(expected, gotVal, channel, routeField)
     rows.push({
       field: routeField,
       channel,
       verdict,
       present: Boolean(g),
       review_required: g?.review_required ?? null,
+      // DIAGNOSTIC: a WRONG name field that is actually the RU/UA form of the same
+      // name (Soviet-era source in Russian vs UA passport GT) — surfaced separately,
+      // does NOT change the verdict/score.
+      script_variant: verdict === 'WRONG' && isRuUaVariant(expected, gotVal),
       // raw values only in the gitignored raw dump, never in the markdown summary
       _expected: expected, _got: gotVal ?? null,
     })
@@ -271,11 +307,14 @@ for (const r of results) {
   md += r.downscaled ? ` · downscaled from ${r.orig_mb}MB (>4MB edge limit)\n\n` : `\n\n`
   md += `| field | channel | verdict | present | review |\n|---|---|---|---|---|\n`
   for (const x of r.rows) {
-    md += `| ${x.field} | ${x.channel} | ${ICON[x.verdict]} | ${x.present ? '✓' : '✗'} | ${x.review_required === null ? '—' : x.review_required ? 'review' : 'ok'} |\n`
+    const note = x.script_variant ? ' ⟳ ru/ua-variant' : ''
+    md += `| ${x.field} | ${x.channel} | ${ICON[x.verdict]}${note} | ${x.present ? '✓' : '✗'} | ${x.review_required === null ? '—' : x.review_required ? 'review' : 'ok'} |\n`
   }
   const t = emptyTally(); for (const x of r.rows) add(t, x.verdict)
+  const variants = r.rows.filter((x) => x.script_variant).length
   md += `\n**Recognition rate: ${pct(rate(t))}** — `
-  md += `CORRECT ${t.CORRECT} · WRONG ${t.WRONG} · MISS ${t.MISS} · FABRICATED ${t.FABRICATED} · empty-ok ${t.CORRECT_EMPTY}\n\n`
+  md += `CORRECT ${t.CORRECT} · WRONG ${t.WRONG} · MISS ${t.MISS} · FABRICATED ${t.FABRICATED} · empty-ok ${t.CORRECT_EMPTY}`
+  md += variants ? ` · of WRONG, ${variants} are RU/UA script-variants (same name, other language — GT/policy, not a misread)\n\n` : `\n\n`
 }
 
 md += `## Summary\n\n`
