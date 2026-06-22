@@ -1445,3 +1445,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-21: real birth-cert test — FIXED пгт (Russian urban-type settlement) strip; orientation handled; date correctly review-gated. -->
 
 <!-- 2026-06-21: full corpus run (10 real docs) — 0 Cyrillic leaks, пгт fix live, 9/10 primary, ADR-018 holds. Accuracy PROVEN across doc types. -->
+
+<!-- 2026-06-21 Fix1: partial-date ISO validation — reject illegal month/day, keep year-only (was '1939-00-00'→'00/00/1939'). Part of auto-delivery recognition fixes. -->
