@@ -248,3 +248,18 @@ proven on real documents (not synthetic).
 first PRIMARY-model, real-owner-document, ground-truth-checked evidence: **N=2 PROVEN correct.**
 Remaining: widen N across doc types (birth/marriage/divorce certs, ID card) and operators — bounded
 by PII + budget; the harness now exists (POST real doc → read_models + fields → check vs GT).
+
+### Cross-document controlling-Latin confirmation (US DL)
+The owner's California driver license (a US doc, NOT a translation target) prints the controlling
+Latin name with a spelling that matches the international passport and DIFFERS from the internal
+passport's KMU-55 transliteration. This externally confirms the hard rule: where an official Latin
+spelling exists (passport/DL/MRZ), it must be preserved verbatim and NOT replaced by KMU-55. The
+system does this correctly on the real documents. (DL/EAD/I-94 are US docs for the TPS/EAD products,
+not the translator.)
+
+### Real-doc quality verification — CONCLUSION
+Available real Ukrainian translation-target documents in the project: internal passport booklet
+(qa-shots/private/1-4.jpg, same doc pages) + international passport. BOTH verified: primary model,
+100% correct vs ground truth, all hard rules. The translator + brain + dictionaries are PROVEN on
+real documents for these types. Widening to certificates (birth/marriage/divorce) requires real
+samples not present in the repo (the only birth-cert artifact is a 2.5KB placeholder PDF).

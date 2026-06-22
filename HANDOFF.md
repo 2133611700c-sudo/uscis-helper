@@ -1439,3 +1439,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-21: consolidation verdict — canon=translation/ru-and-model-matrix-fixes (green); merge-to-main gated (no common ancestor + history has redacted key + prod). -->
 
 <!-- 2026-06-21: real-doc quality N=2 PROVEN (internal+intl passport, primary model, 100% correct vs ground truth, all hard rules). Closes prior-audit accuracy-UNVERIFIED gap. -->
+
+<!-- 2026-06-21: real-doc quality CONCLUDED — internal+intl passport proven on primary, 100% correct; DL confirms controlling-Latin rule. -->
