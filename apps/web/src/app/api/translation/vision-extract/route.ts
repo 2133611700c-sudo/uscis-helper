@@ -416,13 +416,22 @@ async function POST_impl(req: NextRequest) {
       const ens = await runDateEnsemble(fields, docTypeId, rawFiles[0])
       fields = ens.fields
       const requiresReview = fields.some((f) => f.review_required)
-      console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview)
+      // OBSERVABILITY/ADR-018 (2026-06-21): report the model(s) that ACTUALLY read the
+      // pages (r.model from readDocument), NOT process.env.GEMINI_MODEL. The env default
+      // ('gemini-2.5-flash' when GEMINI_MODEL is unset) is reported regardless of the
+      // real reader, which (a) made the model field meaningless for telemetry and (b)
+      // would mislead any acceptance gate that checks the model. Join unique per-page
+      // models so a mixed primary/fallback read is visible (e.g. "gemini-3.1-pro-preview").
+      const readModels = [...new Set(corePages.map((p) => p.r?.model).filter((m): m is string => !!m))]
+      const actualModel = readModels.length ? readModels.join('+') : normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash')
+      console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview, '; read_models=', readModels.join('+') || 'none')
       return NextResponse.json({
         ok: true, doc_type_id: docTypeId, fields,
         date_ensemble: ens.diag,
         pages: corePageResults, page_count: rawFiles.length,
         provider: 'one-brain-core:translation-b2',
-        model: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash'),
+        model: actualModel,
+        read_models: readModels,
         status: 'ok:core-b2',
         core_version: 'b2',
         // CUTOVER: the Core path is the canonical arbitration path. Marked honestly
