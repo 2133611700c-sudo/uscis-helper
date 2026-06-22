@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { buildPrompt, buildResponseSchema } from '../providers/geminiVisionProvider'
-import { getDocTypeSpec } from '../documentRegistry'
+import { getDocTypeSpec, DOCUMENT_TYPES } from '../documentRegistry'
 import { readingRulesPromptBlock, DOC_READING_RULES } from '../docReadingRules'
 
 const booklet = getDocTypeSpec('ua_internal_passport_booklet')!
@@ -69,6 +69,14 @@ describe('STAGE 1 — per-document reading rules (teach the brain)', () => {
       expect(r.language, id).toBeTruthy()
       expect(r.rules.length, id).toBeGreaterThan(0)
     }
+  })
+
+  it('COMPLETENESS — EVERY document class in the registry has reading rules', () => {
+    // Owner rule: every document must have its own rules with examples. This guard
+    // fails if a new doc type is added to the registry without a reading-rules block.
+    const allIds = Object.keys(DOCUMENT_TYPES)
+    const missing = allIds.filter((id) => !DOC_READING_RULES[id])
+    expect(missing, `doc classes WITHOUT reading rules: ${missing.join(', ')}`).toEqual([])
   })
 
   it('flag gates the block into the prompt: OFF → absent, ON → present', () => {
