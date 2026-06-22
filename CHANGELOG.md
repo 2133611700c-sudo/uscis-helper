@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-21 | Typecheck fix + legacy-translation audit
+- Fix TS2345 in translationScenariosFixtureE2E.test.ts (cast rows as never[] for applyOcrFieldSafety) — unblocks Content & Brand Guards (typecheck).
+- Audited legacy lib/translation subsystem: routes /extract + /ocr-from-storage are DEAD (no callers); live wizard uses /vision-extract (canonical knowledge brain). Migration plan to fold remaining capability (field validators, review policies, ~26 agency abbreviations) into @uscis-helper/knowledge before quarantine.
+
+
 ## 2026-06-21 | REAL OCR FULLY GREEN (12/12) — spend cap raised + RU routing fixed
 - staging-e2e-translation REAL Cyrillic OCR: **12 passed, 0 failed** (run on d1b4ec2). First fully-green live-Gemini OCR run.
 - Proven on owner's REAL booklet (qa-shots/private): Kuropiatnyk/Serhii/Serhiiovych/06-25-1986/urban-type settlement Trostianets/Vinnytsia Oblast — zero Cyrillic leak, all hard rules satisfied.
