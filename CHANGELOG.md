@@ -1980,3 +1980,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 <!-- 2026-06-21: RELEASE_STATE guard — feat shares no ancestor with rewritten origin/main; set basis to a real feat-reachable commit (guard real-commit check passes), prod UNVERIFIED. main is managed by the hardening automation. -->
 
 <!-- 2026-06-21 RC2: route now reports REAL reader model (read_models), not env default. Audit journal docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md -->
+
+<!-- 2026-06-21: full session audit journal written (docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md): RC1 corrected (no 3.1→2.5 fallback; model field was env-default bug), RC2 fixed, single-brain/C3/dictionaries/branch maps. -->

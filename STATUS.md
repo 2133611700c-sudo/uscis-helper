@@ -184,3 +184,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-21T02:05:00Z: typecheck fix (applyOcrFieldSafety cast in scenario E2E test) → Content&Brand guard green. e2e 12/12; reads still gemini-2.5-flash (RPM, account-side). -->
 
 <!-- 2026-06-21 RC2: route now reports REAL reader model (read_models), not env default. Audit journal docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md -->
+
+<!-- 2026-06-21: full session audit journal written (docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md): RC1 corrected (no 3.1→2.5 fallback; model field was env-default bug), RC2 fixed, single-brain/C3/dictionaries/branch maps. -->

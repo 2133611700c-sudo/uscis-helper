@@ -1433,3 +1433,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-21T02:05:00Z: Fixed Content&Brand typecheck (FieldOut[]→SafeField[] cast) + this commit touches all 3 session docs (session-docs-guard requires every commit to). Legacy translation subsystem audited: 95% dead, vision-extract is the single live brain; migration plan recorded. -->
 
 <!-- 2026-06-21 RC2: route now reports REAL reader model (read_models), not env default. Audit journal docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md -->
+
+<!-- 2026-06-21: full session audit journal written (docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md): RC1 corrected (no 3.1→2.5 fallback; model field was env-default bug), RC2 fixed, single-brain/C3/dictionaries/branch maps. -->
