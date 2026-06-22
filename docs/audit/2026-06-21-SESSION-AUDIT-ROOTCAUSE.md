@@ -389,3 +389,29 @@ AUTO-DELIVERY calibration (owner risk-decision — loosening review on LEGAL fil
 RISK NOTE: #6-8 let confident+stable values auto-deliver to a user who won't review — a wrong
 auto-delivered name/date on a USCIS filing is a real harm. The calibration is CONSERVATIVE
 (consensus-gated), but the decision to auto-deliver legal-document fields is the owner's to accept.
+
+---
+
+## PART 9 — Fix 4 FOUNDATION: cross-read consensus for safe auto-delivery (flag-gated)
+
+Built + tested the CORE of the auto-delivery fix:
+- `apps/web/src/lib/docintel/autoDeliveryConsensus.ts` — PURE function `applyConsensusAutoDelivery`:
+  AUTO-DELIVERS (review_required=false) a field ONLY if its source text is IDENTICAL across all
+  reads AND confidence ≥ floor (0.90) AND it carries no HARD reason (ambiguous script, unresolved,
+  fallback, not-read, date-disagreement, role-conflict, self-consistency mismatch) AND value≠null.
+  Per-field granularity: a stable name auto-delivers while an unstable handwritten DOB reviews.
+  Never changes a value. 6 unit tests.
+- Wired in `documentFieldReader.ts` behind `AUTO_DELIVERY_CONSENSUS_ENABLED` (default OFF): re-reads
+  the page K=2 (primary) and applies consensus. Confidence alone is NOT trusted on handwriting
+  (Gemini reports high confidence on a wrong month) — cross-read AGREEMENT is the reliable signal.
+- docintel 239 green, tsc 0. Default OFF ⇒ zero behavior change until enabled.
+
+### REMAINING for end-to-end auto-delivery (NOT yet done — honest)
+1. **C3 calibration:** the route's `applyOcrFieldSafety` still nulls/reviews CRITICAL fields on
+   HARD_CASE classes regardless of consensus. To auto-deliver critical fields on a birth cert, C3
+   must accept a consensus-reliable signal (pass per-field `consensus_reliable` into the gate).
+2. **REAL-DOC VALIDATION:** before go-live, run the consensus path on the real corpus and confirm
+   it auto-delivers CORRECT values (not just confident ones) — the legal-safety gate.
+3. **GO-LIVE = owner decision:** enabling auto-delivery on USCIS legal filings (a no-review user
+   files whatever is auto-delivered) is the owner's risk acceptance + a 2× read-cost (budget).
+   The flag + conservative floor make it tunable; default stays OFF until validated.
