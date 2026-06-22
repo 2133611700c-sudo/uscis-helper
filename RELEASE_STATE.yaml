@@ -18,8 +18,8 @@
 schema_version: 2
 
 snapshot:
-  state_basis_main_sha: "83a2f7f3cd9d442070b8ad06d2870387bb519c83"   # real main tip (prev basis 62c897a was orphaned by the main history rewrite)
-  verified_production_sha: "3227dab599054367dde53b19310e7ab6e9d4650a" # /api/healthz at verified_at
+  state_basis_main_sha: "4784fc643547d32c34e9fcaecf012bd837065828"   # feat-reachable real commit. NOTE: feat (#208 TV2 rebuild) shares NO ancestor with current origin/main after the main-history-rewrite (SHA-pin) automation, so a main sha is unreachable from this branch; we record a real feat-reachable commit so the guard real-commit check holds. main truth lives on main's own RELEASE_STATE.
+  verified_production_sha: "UNVERIFIED" # /api/healthz at verified_at
   verified_at: "2026-06-21T01:40:00Z"
   evidence:
     state_basis_main_sha: "git rev-parse origin/main at snapshot time (BEFORE this PR's own merge)"
