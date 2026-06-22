@@ -47,6 +47,7 @@ export {
   SETTLEMENT_TYPES, settlementDesignatorEn, FIELD_LABELS, SEX_MAP, GLOBAL_BLOCKLIST,
   OBLAST_GENITIVE_TO_NOMINATIVE, normalizeOblastToNominative,
   DOCUMENT_TYPES, CIVIL_STATUS,
+  COUNTRIES, lookupCountry, normalizeForeignPlace,
 } from './dictionary';
 export type { AuthorityEntry, GeoCorrection, FieldLabel, DocumentTypeEntry } from './dictionary';
 

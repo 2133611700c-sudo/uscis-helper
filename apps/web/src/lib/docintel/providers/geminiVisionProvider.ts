@@ -21,7 +21,8 @@ import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } f
 const GEMINI_PROVIDER_NAME = 'gemini'
 // Bump these when buildPrompt() text or the image preprocessing changes, so the
 // shadow cache-hit analysis never reuses a key across a prompt/preproc change.
-const GEMINI_PROMPT_VERSION = 'v1'
+// v2 (2026-06-22): handwritten-field markers + date-distinctness rule + response schema.
+const GEMINI_PROMPT_VERSION = 'v2'
 const GEMINI_PREPROC_VERSION = 'v1'
 
 // Model order is env-driven so prod can flip models WITHOUT a code redeploy.
@@ -59,14 +60,28 @@ function modelFallback(docTypeId?: string): string[] {
   return docTypeId ? chain.filter((m) => !isDisqualifiedFor(m, docTypeId)) : chain
 }
 
-function buildPrompt(spec: DocTypeSpec): string {
+export function buildPrompt(spec: DocTypeSpec): string {
   const lines = spec.fields.map((f) => {
     const dateHint = f.kind === 'date' ? ' (also return iso_date YYYY-MM-DD)' : ''
     const nameHint = f.kind === 'name' && spec.script === 'mixed'
       ? ' (this document prints the name in BOTH Cyrillic and the official LATIN romanization, e.g. "ТАРАС/TARAS" and in the MRZ — return the LATIN spelling EXACTLY as printed, it is the controlling spelling; do NOT transliterate it yourself)'
       : ''
-    return `- ${f.field} (${f.label_uk})${dateHint}${nameHint}`
+    // R1: tell the model WHICH fields are handwritten cursive. The registry marks
+    // identity-page fields handwritten:true; without this the model pattern-matches
+    // cursive to a common printed word. The flag was previously dropped here.
+    const hwHint = f.handwritten ? ' [HANDWRITTEN cursive — read letter by letter]' : ''
+    return `- ${f.field} (${f.label_uk})${dateHint}${nameHint}${hwHint}`
   })
+  // R1: enumerate the DISTINCT date fields so the model never copies one date into
+  // another slot (the verified DOB==date-of-issue bug). Each date is its own location.
+  const dateFields = spec.fields.filter((f) => f.kind === 'date')
+  const hasHandwritten = spec.fields.some((f) => f.handwritten)
+  const dateRule = dateFields.length > 1
+    ? `\n- DATES — this document has ${dateFields.length} SEPARATE date fields (${dateFields.map((f) => `${f.field} = ${f.label_uk}`).join('; ')}). Each is a DISTINCT location on the page. Read each date from its OWN place. NEVER copy one date into another date field — a person's date of birth is NOT the date of issue and NOT the date of expiry. If a particular date is not present, leave that field empty (can_read=false); do NOT fill it by reusing another date.`
+    : ''
+  const handwritingRule = hasHandwritten
+    ? `\n- HANDWRITING — fields marked [HANDWRITTEN cursive] are written by hand, not printed. Read them letter by letter; do NOT pattern-match a cursive scrawl to the nearest common name. A handwritten DATE is a sequence of separate digits — read each digit individually (handwritten 1/2/7, 4/9, 3/5/8 are easily confused; pick the digits that form a plausible real date, day 01-31, month 01-12). A handwritten name must still be a REAL Ukrainian name spelled with Ukrainian letters.`
+    : ''
   return `You are reading a ${spec.title_en}. The IMAGE is the ground truth — read only what is visibly written. Do NOT guess, do NOT infer typical values.
 
 Return a JSON object with these keys, reading each from the document text:
@@ -80,13 +95,35 @@ For each key return an object:
   "reason": "<short>" }
 
 Rules:
-- LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Тарас→(wrong)Сергей, Тарасович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake.
+- LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Тарас→(wrong)Сергей, Тарасович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake. (Exception: a genuinely Soviet-era document may itself be written in Russian — then transcribe the Russian exactly as written; do NOT Ukrainianize it either. Transcribe the script that is ON the page.)
 - ORIENTATION — the photo is very often ROTATED (90° sideways, 180° upside-down, or 270°), e.g. a passport page shot in portrait. You MUST mentally rotate the page until the text is upright, then read every field. NEVER return can_read=false just because the text is sideways or upside-down — rotation is normal and you are expected to handle it. Reading rotated text is required; orientation must not change what you read.
 - Read the FULL word, every letter. Never return only a suffix (never "ович" alone).
-- Handwritten Ukrainian "Т" and "П" look similar; pick the letter that forms a REAL Ukrainian name/place.
+- Handwritten Ukrainian "Т" and "П" look similar, as do "и/н", "ш/щ", "л/м"; pick the letter that forms a REAL Ukrainian name/place.${dateRule}${handwritingRule}
 - ABSENT FIELDS ARE NORMAL. Many of the requested fields may simply NOT be present on this particular document — that is expected and correct. If a field is not visibly written on the document, or is not clearly legible, set can_read=false and cyrillic="". Returning an absent field is the CORRECT answer. NEVER invent, NEVER infer a typical/default value (e.g. do NOT assume citizenship "Україна", do NOT copy a value from another field, do NOT guess a series or a date). An empty field is always better than an invented one.
 - Do NOT transliterate to Latin yourself. Return the original script (except iso_date).
 - Output ONLY the JSON object.`
+}
+
+// R2: a strict response schema built from the spec so Gemini returns well-formed,
+// per-field structured JSON (response_mime_type alone only guarantees "some JSON").
+// Eliminates the JSON.parse-fail wasted attempt and enforces the per-field shape.
+export function buildResponseSchema(spec: DocTypeSpec): Record<string, unknown> {
+  const properties: Record<string, unknown> = {}
+  for (const f of spec.fields) {
+    const fieldProps: Record<string, unknown> = {
+      cyrillic: { type: 'string' },
+      can_read: { type: 'boolean' },
+      confidence: { type: 'number' },
+      reason: { type: 'string' },
+    }
+    if (f.kind === 'date') fieldProps.iso_date = { type: 'string' }
+    properties[f.field] = {
+      type: 'object',
+      properties: fieldProps,
+      required: ['cyrillic', 'can_read', 'confidence'],
+    }
+  }
+  return { type: 'object', properties }
 }
 
 async function callGemini(
@@ -96,6 +133,7 @@ async function callGemini(
   mimeType: string,
   prompt: string,
   timeoutMs: number,
+  responseSchema?: Record<string, unknown>,
 ): Promise<{ ok: boolean; status: number; json: any }> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
@@ -134,7 +172,12 @@ async function callGemini(
           signal: ctrl.signal,
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: imageB64 } }] }],
-            generationConfig: { temperature: 0, response_mime_type: 'application/json', maxOutputTokens: 8192 },
+            generationConfig: {
+              temperature: 0,
+              response_mime_type: 'application/json',
+              maxOutputTokens: 8192,
+              ...(responseSchema ? { response_schema: responseSchema } : {}),
+            },
           }),
         },
       ),
@@ -174,6 +217,7 @@ export class GeminiVisionProvider implements VisionProvider {
     const deadline = t0 + timeoutMs
     const attempts = opts.attemptsPerModel ?? 2
     const prompt = buildPrompt(spec)
+    const responseSchema = buildResponseSchema(spec)
     const imageB64 = imageBuffer.toString('base64')
     const allowed = new Set(spec.fields.map((f) => f.field))
     let lastErr = 'unknown'
@@ -188,7 +232,7 @@ export class GeminiVisionProvider implements VisionProvider {
         const remaining = deadline - Date.now()
         if (remaining < 3000) { lastErr = 'deadline'; break } // not enough time for another attempt
         try {
-          const { ok, status, json } = await callGemini(model, apiKey, imageB64, mimeType, prompt, remaining)
+          const { ok, status, json } = await callGemini(model, apiKey, imageB64, mimeType, prompt, remaining, responseSchema)
           if (ok) {
             const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
             let parsed: Record<string, any>

@@ -107,3 +107,42 @@ describe('arbitrateDocument — knowledge OFF = identical, ON = conflict→revie
     expect(fields[0].normalizedValue).not.toMatch(/[Ѐ-ӿ]/) // transliterated
   })
 })
+
+describe('knowledgeNormalize — place brain wiring (М-place + foreign country)', () => {
+  // Regression for the live bug: «МОРИНЦІ» released as "city ORYNTSI" — the bare «м»
+  // designator was matched as a prefix, dropping the leading М and adding a spurious
+  // "city". A place name that merely STARTS with М/С must never be split.
+  it('М-place: «МОРИНЦІ» → Moryntsi, no "city" prefix, М preserved', () => {
+    const d = normalizeCanonicalValue('place_of_birth_city', 'МОРИНЦІ', { ukrainianDoc: true })
+    expect(d.finalValue ?? d.candidateValue ?? '').toMatch(/moryntsi/i)
+    expect(d.finalValue ?? d.candidateValue ?? '').not.toMatch(/\bcity\b/i)
+    expect(d.finalValue ?? d.candidateValue ?? '').not.toMatch(/[Ѐ-ӿ]/)
+  })
+
+  it('М-place: «Миколаїв» keeps its leading М (Mykolaiv, not "city ...")', () => {
+    const d = normalizeCanonicalValue('place_of_birth_city', 'Миколаїв', { ukrainianDoc: true })
+    expect(d.finalValue ?? d.candidateValue ?? '').toMatch(/mykolaiv/i)
+    expect(d.finalValue ?? d.candidateValue ?? '').not.toMatch(/^city /i)
+  })
+
+  // Foreign birthplace: must translate the country and never leak Cyrillic / «місто».
+  it('foreign place: «Канада, місто Торонто» → ACCEPT clean English, no Cyrillic, no "misto"', () => {
+    const d = normalizeCanonicalValue('place_of_birth', 'Канада, місто Торонто', { ukrainianDoc: true })
+    expect(d.action).toBe('accept')
+    expect(d.finalValue).toMatch(/canada/i)
+    expect(d.finalValue).toMatch(/toronto/i)
+    expect(d.finalValue).not.toMatch(/[Ѐ-ӿ]/)
+    expect(d.finalValue ?? '').not.toMatch(/misto/i)
+  })
+
+  it('foreign place: «США» → United States', () => {
+    const d = normalizeCanonicalValue('place_of_birth', 'США', { ukrainianDoc: true })
+    expect(d.finalValue ?? '').toMatch(/united states/i)
+  })
+
+  it('domestic place unaffected by foreign path: «смт Вишневе» stays urban-type settlement', () => {
+    const d = normalizeCanonicalValue('place_of_birth_city', 'смт Вишневе', { ukrainianDoc: true })
+    expect(d.finalValue ?? d.candidateValue ?? '').toMatch(/urban-type settlement/i)
+    expect(d.finalValue ?? d.candidateValue ?? '').not.toMatch(/canada|united states/i)
+  })
+})

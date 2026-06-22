@@ -28,6 +28,7 @@ import {
   settlementDesignatorEn,
   normalizeName,
   normalizePlace,
+  normalizeForeignPlace,
   normalizeAuthority,
   normalizeSex,
   type OutputMode,
@@ -198,6 +199,18 @@ export function normalizeCanonicalValue(
       // normalizePlace removes a country token, so it leaked into the released place.
       // Strip it first (any separator, suffix OR prefix; embedded substrings safe).
       const placeRaw = stripCountryCode(raw)
+      // FOREIGN PLACE (Task #14): a foreign birthplace ("Канада, місто Торонто",
+      // "Росія, город Москва") leads with a known country token. The Ukrainian
+      // gazetteer/normalizePlace path has no countries, so it leaked Cyrillic-
+      // transliterated junk ("Kanada, misto Toronto"). Try the country dictionary
+      // FIRST; it returns null for any domestic place (no country token), so the
+      // normal UA path below is untouched. Diaspora/adoptee filings are common.
+      if (cyr) {
+        const foreign = normalizeForeignPlace(placeRaw)
+        if (foreign && foreign.isForeign) {
+          return accept(foreign.value, 'place.foreign_country', 'country_dict', 0.85)
+        }
+      }
       // City fields: gazetteer on the RAW Cyrillic. EXACT ⇒ accept; FUZZY ⇒ suggest (never overwrite).
       if ((key_.includes('city') || key_.endsWith('place_of_birth')) && cyr) {
         const snap = snapCity(placeRaw)

@@ -139,17 +139,18 @@ async function run() {
       file: 'ua_birth_printed.png',
       docTypeId: 'ua_birth_certificate',
       assert: (fields) => {
-        record('ua_birth: surname → Shevchenko (KMU-55)',
-          anyValueMatches(fields, /shevchenko/i),
+        record('ua_birth: surname → Yurchenko (KMU-55)',
+          anyValueMatches(fields, /yurchenko/i),
           'surname value')
-        record('ua_birth: given name → Taras (KMU-55)',
-          anyValueMatches(fields, /taras/i), 'given value')
+        record('ua_birth: given name → Oleksii (KMU-55)',
+          anyValueMatches(fields, /oleksii/i), 'given value')
         const place = fieldByKindOrName(fields, 'place_of_birth', 'birth_place', 'place')
         // ROBUST: the смт→"urban-type settlement" HARD RULE is enforced ONLY when the
         // model actually READ an смт/пгт source. Gemini's read of a synthetic varies
-        // run-to-run (and with a famous synthetic name it may even fabricate a known
-        // place), so we never fail on read-ACCURACY — only on the RULE: when смт is in
-        // the source text, the value must be urban-type settlement, never city/town.
+        // run-to-run, so we never fail on read-ACCURACY — only on the RULE: when смт is
+        // in the source text, the value must be urban-type settlement, never city/town.
+        // (The fixture now uses an INVENTED non-famous name + place, so the model has no
+        // known person/birthplace to fabricate from — see scripts/synthetic-docs.)
         // (Exact-value matching belongs in the deterministic unit tests, not here.)
         const rawHasUts = !!place && /смт|пгт|с\.?\s*м\.?\s*т/iu.test(place.raw_cyrillic || '')
         record('ua_birth: смт → "urban-type settlement" (never city/town) [rule, when смт read]',
@@ -176,8 +177,8 @@ async function run() {
       docTypeId: 'ua_international_passport',
       assert: (fields) => {
         // MRZ authority value is Latin (controlling Latin spelling beats re-translit).
-        record('passport: surname Latin from MRZ/bio (Shevchenko)',
-          anyValueMatches(fields, /shevchenko/i))
+        record('passport: surname Latin from MRZ/bio (Yurchenko)',
+          anyValueMatches(fields, /yurchenko/i))
         record('passport: no Cyrillic leak in English values',
           noCyrillicLeakInValues(fields))
       },
