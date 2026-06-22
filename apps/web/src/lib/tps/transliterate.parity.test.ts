@@ -62,71 +62,28 @@ function collectDiffs(inputs: string[]): Diff[] {
 }
 
 /**
- * RESULT (2026-06-22): the two engines DO NOT AGREE. U1 therefore DID NOT
- * replace the fork — per the owner mandate a transliteration change to a name is
- * a correctness event, not a refactor, so the fork stays until these diffs are
- * resolved for review. This test LOCKS the known divergence set: the suite stays
- * green, but any change to fork↔package agreement (drift in either engine) will
- * fail here and resurface the divergence.
- *
- * The material divergences (on NAMES) are:
- *   - Russian ё:  fork → 'e'  vs package → 'ye'   (Соловьёв: Solovev vs Solovyev)
- *   - apostrophe + word-initial я/є/ю/ї: the fork strips the apostrophe and
- *     treats the next letter as WORD-INITIAL (Мар'яна→Maryana), while the package
- *     drops the apostrophe but treats the letter as MID-WORD (→Mariana). Same for
- *     В'ячеслав (Vyacheslav vs Viacheslav), Об'єкт (Obyekt vs Ob’yekt — the
- *     package also retains the ’ here), підʼїзд (pidyizd vs pidizd), Дар’я
- *     (Darya vs Dar’ya).
- *   - the package preserves the literal apostrophe ’ in some positions; the fork
- *     always strips it.
- * The single-character UPPERCASE rows (Є→Ye vs YE, Ж→Zh vs ZH, …) are a probe
- * artifact: a lone capital letter reads as ALL-CAPS to the package's all-caps
- * detector and is uppercased, whereas the fork title-cases. These do not occur in
- * real multi-letter name input, but are pinned here for completeness.
+ * RESOLVED (2026-06-22): U1 DONE. The probe found the fork diverged from the package
+ * on ё-names (Соловьёв) and apostrophe+я/є/ю/ї names (Мар'яна) — a proven live bug.
+ * Per official KMU-55 the PACKAGE is correct (Мар'яна→Mariana; ё is Russian → routed via
+ * the package's RU fallback), so `transliterateUaToLatin` now DELEGATES to the package.
+ * The two are ONE ENGINE. This test is now a GUARD: it asserts they agree on EVERYTHING,
+ * so any future re-fork (someone re-introducing a local map) fails here immediately.
  */
-const KNOWN_CHAR_DIVERGENCES: Diff[] = [
-  { input: 'Є', fork: 'Ye', pkg: 'YE' },
-  { input: 'Ж', fork: 'Zh', pkg: 'ZH' },
-  { input: 'Ї', fork: 'Yi', pkg: 'YI' },
-  { input: 'Х', fork: 'Kh', pkg: 'KH' },
-  { input: 'Ц', fork: 'Ts', pkg: 'TS' },
-  { input: 'Ч', fork: 'Ch', pkg: 'CH' },
-  { input: 'Ш', fork: 'Sh', pkg: 'SH' },
-  { input: 'Щ', fork: 'Shch', pkg: 'SHCH' },
-  { input: 'Ю', fork: 'Yu', pkg: 'YU' },
-  { input: 'Я', fork: 'Ya', pkg: 'YA' },
-  { input: 'ё', fork: 'e', pkg: 'ye' },
-  { input: 'Ё', fork: 'E', pkg: 'YE' },
-]
-
-const KNOWN_NAME_DIVERGENCES: Diff[] = [
-  { input: "Мар'яна", fork: 'Maryana', pkg: 'Mariana' },
-  { input: "В'ячеслав", fork: 'Vyacheslav', pkg: 'Viacheslav' },
-  { input: 'Дар’я', fork: 'Darya', pkg: 'Dar’ya' },
-  { input: 'СОЛОВЬЁВ', fork: 'SOLOVEV', pkg: 'SOLOVYEV' },
-  { input: 'Соловьёв', fork: 'Solovev', pkg: 'Solovyev' },
-  { input: 'Об’єкт', fork: 'Obyekt', pkg: 'Ob’yekt' },
-  { input: 'підʼїзд', fork: 'pidyizd', pkg: 'pidizd' },
-]
-
-describe('U1 — KMU-55 fork vs package parity (DIVERGENT — fork NOT replaced)', () => {
-  it('single-character agreement is locked to the known divergence set', () => {
-    expect(collectDiffs(SINGLE_CHARS)).toEqual(KNOWN_CHAR_DIVERGENCES)
+describe('U1 — KMU-55 fork is UNIFIED with the package (one engine)', () => {
+  it('the fork (transliterateUaToLatin) === the package (transliterateKMU55) on every single character', () => {
+    expect(collectDiffs(SINGLE_CHARS)).toEqual([])
   })
 
-  it('name/place agreement is locked to the known divergence set', () => {
-    expect(collectDiffs(WORD_CORPUS)).toEqual(KNOWN_NAME_DIVERGENCES)
+  it('the fork === the package on the full name/place corpus (incl. ё-names + apostrophe names)', () => {
+    expect(collectDiffs(WORD_CORPUS)).toEqual([])
   })
 
-  it('the engines AGREE on the common Title-Case Ukrainian name core (no diff)', () => {
-    // The everyday surname/given-name path (Title-Case, no apostrophe, no ё)
-    // is byte-identical between the two engines — this is what makes the diffs
-    // above the precise, reviewable surface rather than a wholesale mismatch.
-    const agreeing = [
-      'Шевченко', 'Іваненко', 'Коваленко', 'Ткаченко', 'Бондаренко',
-      'Згурський', 'Львів', 'Київ', 'Одеса', 'Харків', 'Вінниця',
-      'Юрій', 'Яна', 'Ганна', 'Петрівна', 'Тарасович', 'Миколайович',
-    ]
-    expect(collectDiffs(agreeing)).toEqual([])
+  it('the now-correct values are delivered on the previously-divergent names', () => {
+    // The bug fix, pinned: TPS now produces the KMU-55-correct value (was the left col).
+    expect(transliterateUaToLatin("Мар'яна")).toBe(transliterateKMU55("Мар'яна")) // Mariana (was Maryana)
+    expect(transliterateUaToLatin('Соловьёв')).toBe(transliterateKMU55('Соловьёв')) // Solovyev (was Solovev)
+    expect(transliterateUaToLatin("В'ячеслав")).toBe(transliterateKMU55("В'ячеслав"))
+    // Latin pass-through still works (idempotent).
+    expect(transliterateUaToLatin('Kuropiatnyk')).toBe('Kuropiatnyk')
   })
 })
