@@ -263,3 +263,36 @@ Available real Ukrainian translation-target documents in the project: internal p
 100% correct vs ground truth, all hard rules. The translator + brain + dictionaries are PROVEN on
 real documents for these types. Widening to certificates (birth/marriage/divorce) requires real
 samples not present in the repo (the only birth-cert artifact is a 2.5KB placeholder PDF).
+
+---
+
+## PART 6 — REAL BIRTH-CERTIFICATE TEST (owner's Soviet 1986 cert) + defect found & fixed
+
+Owner's REAL documents corpus exists at `test-fixtures/real-docs/` (gitignored): birth certs,
+marriage, divorce, military ID, internal passport — the ground-truth corpus prior audits said was
+missing. Tested the Soviet 1986 birth certificate (bilingual RU/UK, handwritten).
+
+**HTTP 413 finding:** the 7MB original exceeds the ~4.5MB upload limit (413 before OCR). The client
+must downscale before upload. Downscaled to ~1.5MB → read fine. (Verify the wizard downscales.)
+
+**Read via PRIMARY (gemini-3.1-pro-preview), 12 fields. Correct:** surname Kuropiatnyk; issuing
+authority → "Civil Registry Office"; series III-АМ→III-AM; act #84; act/issue dates parsed.
+
+**Orientation test (owner request):** ran AS-IS (landscape) and ROTATED 90° (portrait). Names,
+place, parents, authority read IDENTICALLY in both → Gemini handles rotation. The handwritten DOB
+read DIFFERENTLY per orientation (07/28 vs 05/29 vs the passport's June) → genuinely ambiguous,
+correctly held `review_required=true` (never auto-released). Orientation does not break recognition.
+
+**DEFECT FOUND & FIXED — Russian «пгт» not stripped:** «пгт. Тростянец» released as
+"urban-type settlement **pht.** Trostianets". Root: `transliterationPolicy.stripSettlementPrefix`
+stripped Ukrainian «смт» but not the Russian «пгт»/«п.г.т.»/«посёлок городского типа», so the
+prefix transliterated into the value. The designator dictionary already knew пгт (dictionary.ts:526).
+FIX: added the Russian forms to stripSettlementPrefix → "urban-type settlement Trostianets".
++permanent test `settlementPrefixRussian.test.ts`. docintel 226 + knowledge all green; tsc 0.
+
+**OBSERVATION (not auto-fixed — review-flagged):** Russian-language names with only shared letters
+(Сергей/Сергеевич/Наталия) romanize via KMU-55 (г→h → "Serhei/Serheevych") because detectNameScript
+returns 'unknown' (no RU-distinctive letter). On a Russian-context document a Russian romanization
+("Sergey") may be preferred. All such fields are `review_required=true`, so the operator decides;
+no silent wrong value ships. Candidate future improvement: use document-language context (the cert
+header «СВИДЕТЕЛЬСТВО О РОЖДЕНИИ» is Russian) to bias shared-letter names — but only as a review hint.
