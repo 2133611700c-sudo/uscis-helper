@@ -111,8 +111,87 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     dateGuidance: MONTH_WORD_RULE,
     rules: [
       'Read both former spouses, the dissolution date, the act-record number, the registering ' +
-        'office, and the serial. Some copies are PII-redacted (greyed boxes) — leave redacted ' +
-        'fields empty, never guess under a redaction.',
+        'office, and the serial (e.g. "I-БК № 18…"). Some copies are PII-redacted (greyed ' +
+        'boxes) — leave redacted fields EMPTY, never guess under a redaction.',
+    ],
+  },
+
+  ua_death_certificate: {
+    language:
+      'Ukrainian (Свідоцтво про смерть) or Russian (Свидетельство о смерти); vintage = ' +
+      'handwritten on a printed form. Transcribe the script as written; do not convert RU↔UA.',
+    dateGuidance:
+      'TWO distinct dates: date of birth and DATE OF DEATH — read each from its own location, ' +
+      'never copy one into the other. ' + MONTH_WORD_RULE,
+    rules: [
+      'Read the deceased: surname / given / patronymic (e.g. "Куроп’ятник Сергій Сергійович").',
+      'place_of_death is "м./смт/село <Name>, <oblast> область".',
+      'Read the act-record number, the registering RAGS/DRACS office, and the serial ' +
+        '(Roman + letters + digits, e.g. "I-АМ № 123456").',
+    ],
+  },
+
+  ua_name_change_certificate: {
+    language: 'Ukrainian/Russian; vintage = handwritten (Свідоцтво про зміну імені).',
+    dateGuidance: MONTH_WORD_RULE,
+    rules: [
+      'There are TWO name sets — the PREVIOUS name and the NEW name. Read both fully and keep ' +
+        'them in their own fields; never merge them (e.g. previous "Іванов Іван Іванович" → ' +
+        'new "Петренко Іван Іванович").',
+      'Read the act-record number, registering office, and serial.',
+    ],
+  },
+
+  ua_id_card: {
+    language:
+      'Modern PLASTIC ID card (ID-1), machine-printed Ukrainian; carries a TD1 MRZ on the back.',
+    dateGuidance:
+      'Dates are printed DD.MM.YYYY. The TD1 MRZ (3 lines × 30 chars) encodes the record number, ' +
+      'DOB (YYMMDD + check digit) and expiry — it is the math anchor.',
+    rules: [
+      'Read the printed Cyrillic names; if an official Latin transliteration is printed, return ' +
+        'it EXACTLY (controlling). The record number is a 9-digit number (e.g. "001234567").',
+      'High-accuracy printed class — but still cross-check DOB/number against the TD1 MRZ.',
+    ],
+  },
+
+  us_ead: {
+    language: 'US Employment Authorization Document (Form I-766), machine-printed ENGLISH.',
+    dateGuidance:
+      'Dates are printed MM/DD/YYYY (e.g. "Card Expires 03/15/2026"). Two dates: valid-from and ' +
+      'card-expires — keep them separate.',
+    rules: [
+      'A-Number (USCIS #): "A" + 9 digits, often shown as "A### ### ###" (e.g. A123456789) — ' +
+        'return digits only, preserve all 9.',
+      'Card # (USCIS card number): 3 letters + 10 digits (e.g. "SRC2290012345").',
+      'CATEGORY is a code, NOT free text — e.g. "C08", "C09", "A12", "C19" (C19/A12 = TPS); ' +
+        'read it EXACTLY (letter+digits), do not interpret it.',
+      'Names are printed in the document’s controlling Latin — return as printed.',
+    ],
+  },
+
+  us_i94: {
+    language: 'US I-94 Arrival/Departure Record, machine-printed ENGLISH (web printout or stamp).',
+    dateGuidance:
+      'Dates often "YYYY Month DD" or MM/DD/YYYY. "Admit Until Date" may be a date OR the text ' +
+      '"D/S" (Duration of Status) — if it says D/S, return "D/S", do not invent a date.',
+    rules: [
+      'Admission (I-94) Number: 11 characters (digits, sometimes with a trailing letter) — ' +
+        'read ALL 11, e.g. "12345678901".',
+      'Class of Admission is a visa code (e.g. "B2", "F1", "H1B", "TPS") — read exactly.',
+      'Port of entry is a US city/airport (e.g. "CHICAGO, IL").',
+    ],
+  },
+
+  us_i797: {
+    language: 'US Form I-797 Notice of Action (USCIS), machine-printed ENGLISH.',
+    dateGuidance: 'Dates are printed MM/DD/YYYY (Notice Date, Received Date, Valid From/To).',
+    rules: [
+      'Receipt Number: 3 letters + 10 digits — the prefix is a service-center code ' +
+        '(EAC/WAC/SRC/MSC/LIN/IOE), e.g. "IOE1234567890". Read all 13 characters exactly.',
+      'A-Number: "A" + 9 digits (e.g. A123456789). USCIS Online Account Number is a separate ' +
+        '12-digit number — do not confuse the two.',
+      'Notice type / form number (e.g. "I-765", "I-821") and the validity window may be present.',
     ],
   },
 }
