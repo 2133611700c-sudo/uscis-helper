@@ -1443,3 +1443,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-21: real-doc quality CONCLUDED — internal+intl passport proven on primary, 100% correct; DL confirms controlling-Latin rule. -->
 
 <!-- 2026-06-21: real birth-cert test — FIXED пгт (Russian urban-type settlement) strip; orientation handled; date correctly review-gated. -->
+
+<!-- 2026-06-21: full corpus run (10 real docs) — 0 Cyrillic leaks, пгт fix live, 9/10 primary, ADR-018 holds. Accuracy PROVEN across doc types. -->
