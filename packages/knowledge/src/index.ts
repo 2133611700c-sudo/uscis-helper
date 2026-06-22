@@ -2,7 +2,7 @@
  * @messenginfo/knowledge — Ukrainian terminology & transliteration
  * Dictionary v1.3 | KMU-55 engine | Normalization layer | TPS Requirements
  */
-export { transliterateKMU55, transliterateRussian, detectNameScript, convertDateToUSCIS } from './transliterate';
+export { transliterateKMU55, transliterateRussian, detectNameScript, convertDateToUSCIS, UA_MONTHS } from './transliterate';
 export type { OutputMode } from './transliterate';
 
 // D2 Validator — patronymic (по батькові) engine: validate a read, reconstruct

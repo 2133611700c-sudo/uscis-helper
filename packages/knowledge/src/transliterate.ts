@@ -183,7 +183,7 @@ export function detectNameScript(input: string): 'ua' | 'ru' | 'unknown' {
  * Convert Ukrainian date string to USCIS format (MM/DD/YYYY).
  * Input: "01 січня 1990 року" or "01.01.1990"
  */
-const UA_MONTHS: Record<string, string> = {
+export const UA_MONTHS: Record<string, string> = {
   'січня': '01', 'лютого': '02', 'березня': '03', 'квітня': '04',
   'травня': '05', 'червня': '06', 'липня': '07', 'серпня': '08',
   'вересня': '09', 'жовтня': '10', 'листопада': '11', 'грудня': '12',

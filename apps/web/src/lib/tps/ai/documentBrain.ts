@@ -37,6 +37,7 @@ import { z } from 'zod'
 
 import { chat, isDeepSeekError, type ChatMessage } from '@/lib/deepseek/client'
 import { hasCyrillic, toWinAnsiSafe } from '@/lib/tps/transliterate'
+import { UA_MONTHS as PKG_UA_MONTHS } from '@uscis-helper/knowledge'
 import { fenceUntrustedText, UNTRUSTED_TEXT_SYSTEM_RULE } from '@/lib/tps/ai/untrustedText'
 // Reusing nameNormalizer from the translation product (built for v6 OCR).
 // Catches mixed-script (Cyrillic+Latin look-alikes), abnormal casing,
@@ -605,20 +606,19 @@ function parseDate(s: string): Date | null {
       .replace(/ґ/g, 'г')
       .replace(/ё/g, 'е')
 
-  const MONTHS_UA_FULL: Record<string, number> = {
-    'січня': 1,
-    'лютого': 2,
-    'березня': 3,
-    'квітня': 4,
-    'травня': 5,
-    'червня': 6,
-    'липня': 7,
-    'серпня': 8,
-    'вересня': 9,
-    'жовтня': 10,
-    'листопада': 11,
-    'грудня': 12,
-  }
+  // U-STAGE 1 (ONE DICTIONARY): months derive from the canonical package
+  // `UA_MONTHS` (single source of truth) instead of a forked inline copy.
+  // Restricted to the 12 Ukrainian full-word keys this parser historically
+  // accepted, so behaviour is byte-identical (no new Russian-month parsing is
+  // introduced here). Equality with the prior inline map is proven in
+  // documentBrain.months-parity.test.ts.
+  const UA_FULL_MONTH_KEYS = [
+    'січня', 'лютого', 'березня', 'квітня', 'травня', 'червня',
+    'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня',
+  ] as const
+  const MONTHS_UA_FULL: Record<string, number> = Object.fromEntries(
+    UA_FULL_MONTH_KEYS.map((k) => [k, parseInt(PKG_UA_MONTHS[k], 10)]),
+  )
 
   // Ukrainian textual date (explicit parser, no Date.parse locale magic):
   //  "01 січня 1990 року" / "01 січня 1990"

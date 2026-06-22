@@ -61,7 +61,7 @@ KNOWN FACTS:
 - Surnames end in typical Ukrainian endings (-ник, -ко, -ук, -чук, etc.)
 - Patronymics end in -ович/-овна/-івна (Cyrillic); full patronymic must include a name root + suffix
 - Cities are real Ukrainian cities (must exist in Ukraine)
-- Province = one of 25 Ukrainian oblasts
+- Province = one of 24 Ukrainian oblasts (plus the 2 special-status cities Київ and Севастополь)
 - Both OCR engines may read the SAME handwritten text differently — cross-reference helps
 - IMPORTANT: When two OCR readings differ, construct the BEST HYBRID by combining correctly-read parts from each. Example: if Vision reads "Коваленко" and DocAI reads "Коваронко", the correct hybrid might be "Коваленко" (Ковал- prefix + -енко suffix), because "-енко" is a common Ukrainian surname suffix.
 - Similarly for patronymics: if both readings start with "Іван..." consider that "Іванович" is the standard patronymic from "Іван".
