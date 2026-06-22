@@ -97,3 +97,27 @@ describe('arbitrateField — reader reviewRequired carry-through', () => {
     expect(f.reviewReasons).toContain('critical_no_mrz_anchor')
   })
 })
+
+// ── Registry-backfill survival: an unread REQUIRED field must NOT vanish ───────
+// Root cause (2026-06-22 real-doc test): a handwritten booklet whose dob the model
+// could not read had the dob field SILENTLY DROPPED — arbitrateField returned null
+// for an all-empty candidate group, undoing the reader's `not_read_manual_entry`
+// backfill. The user never saw a "enter date of birth" row and the form 422'd.
+describe('arbitrateField — not_read_manual_entry placeholder survives arbitration', () => {
+  it('an empty placeholder carrying not_read_manual_entry → surfaces as null + review row', () => {
+    const f = arbitrateField('dob', [
+      c({ key: 'dob', value: '', source: 'ai_vision', confidence: 0, reviewRequired: true, reviewReasons: ['not_read_manual_entry'] }),
+    ])
+    expect(f).not.toBeNull()
+    expect(f!.normalizedValue).toBeNull()
+    expect(f!.reviewRequired).toBe(true)
+    expect(f!.reviewReasons).toContain('not_read_manual_entry')
+  })
+
+  it('an empty candidate WITHOUT the backfill reason still yields no field (no spurious rows)', () => {
+    const f = arbitrateField('some_optional', [
+      c({ key: 'some_optional', value: '', source: 'ai_vision', confidence: 0 }),
+    ])
+    expect(f).toBeNull()
+  })
+})

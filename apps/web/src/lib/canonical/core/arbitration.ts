@@ -102,7 +102,20 @@ function toEvidence(c: FieldCandidate): FieldEvidence {
  */
 export function arbitrateField(key: string, candidates: FieldCandidate[]): CanonicalField | null {
   const usable = candidates.filter((c) => (c.value ?? '').trim() !== '')
-  if (usable.length === 0) return null
+  if (usable.length === 0) {
+    // No readable value. The reader's REGISTRY BACKFILL (documentFieldReader) emits
+    // an explicit placeholder for a spec field the model could not read, carrying
+    // `not_read_manual_entry`, so the field surfaces as an "enter manually" row and
+    // the UI prompts the user. Without this branch, arbitration silently DROPPED that
+    // placeholder — a critical unread field (e.g. dob on a handwritten booklet) just
+    // VANISHED from the output instead of prompting the user, then the form 422'd on a
+    // missing value. Honor the backfill: emit a null + review manual-entry field.
+    const placeholder = candidates.find((c) => c.reviewReasons?.includes('not_read_manual_entry'))
+    if (placeholder) {
+      return field(key, null, placeholder.source, criticalityOf(key), true, ['not_read_manual_entry'], [], 0, placeholder.rawCyrillic, placeholder.consensus_reliable)
+    }
+    return null
+  }
 
   const crit = criticalityOf(key)
   const evidence = usable.map(toEvidence)
@@ -334,7 +347,7 @@ function normalize(s: string): string {
 
 function field(
   key: string,
-  value: string,
+  value: string | null,
   source: CanonicalField['source'],
   criticality: CanonicalField['criticality'],
   reviewRequired: boolean,
