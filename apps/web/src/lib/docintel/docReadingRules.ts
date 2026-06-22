@@ -211,6 +211,11 @@ export function readingRulesPromptBlock(docTypeId: string): string {
   return lines.join('\n')
 }
 
+// DEFAULT ON (2026-06-22): the per-document reading rules are proven to fix real reads
+// (Soviet birth-cert DOB "26 июля"→"25 июня", 2/2 live) and are strictly-additive guidance
+// per document class — so they are active by default for ALL products (translation, TPS,
+// EAD, Re-Parole all read through the shared readDocument → buildPrompt). Set
+// DOC_READING_RULES_ENABLED=0 to disable (rollback without a code change).
 export function isDocReadingRulesEnabled(env: Record<string, string | undefined> = process.env): boolean {
-  return env.DOC_READING_RULES_ENABLED === '1'
+  return env.DOC_READING_RULES_ENABLED !== '0'
 }
