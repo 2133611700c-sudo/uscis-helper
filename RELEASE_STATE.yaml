@@ -18,7 +18,7 @@
 schema_version: 2
 
 snapshot:
-  state_basis_main_sha: "505153713b7023f80349c2652dd3218694d28449"   # main HEAD before CI hardening batch (commit before acc1693d)
+  state_basis_main_sha: "c1ab383019e495ec88d824ca88e31e190c9e80b0"   # main HEAD before CI hardening batch (commit before acc1693d)
   verified_production_sha: "UNVERIFIED" # /api/healthz returns short SHA "3227dab" not resolvable from this clone
   verified_at: "2026-06-21T02:17:00Z"
   evidence:
