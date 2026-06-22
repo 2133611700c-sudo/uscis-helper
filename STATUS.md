@@ -156,3 +156,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- session-docs-guard PII redaction follow-up (commit e1f4fa2) — applies to all three docs -->
 
 <!-- 2026-06-21 audit: gemini-quota-diag image probe (primary vs flash on a real image) -->
+
+<!-- 2026-06-21 audit: diag image-gen robust (Pillow) -->
