@@ -1823,7 +1823,7 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 ## 2026-06-22 | uscis-helper PUBLIC + history rewrite
 - 4-pass git filter-repo to purge owner PII from history (docs/reports/evidence/, qa-shots/private/, name strings, author emails).
-- Owner emails sergiikuropiatnyk@gmail.com / 2133611700c@gmail.com rewritten to owner@redacted.invalid; author names normalized to Owner / Claude.
+- Owner emails [OLD_EMAIL_1] / [OLD_EMAIL_2] rewritten to owner@redacted.invalid; author names normalized to Owner / Claude.
 - Force-pushed 70 branches. Repository flipped PUBLIC. Free unlimited Actions + free ruleset on main now active.
 - Secret scanning, push protection, Dependabot security updates, private vulnerability reporting all enabled.
 - PR #208 reopened after force-push closed it.
