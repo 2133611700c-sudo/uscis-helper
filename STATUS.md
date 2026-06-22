@@ -180,3 +180,4 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-21: OCR UNBLOCKED — was AI Studio monthly spend cap (RESOURCE_EXHAUSTED), owner raised it. REAL OCR proven on owner booklet (flash-fallback, force-reviewed). Provider now surfaces hard-quota honestly. -->
 <!-- 2026-06-21: RU Cyrillic leak fixed (routing RU→Russian table); deterministic core all green. -->
 <!-- 2026-06-21: REAL OCR 12/12 GREEN on staging (spend cap raised + RU routing fixed). Proven on owner booklet. Remaining: raise gemini-3.1-pro-preview RPM for clean primary reads (account-side). #208 merge gate satisfied; awaiting owner go-ahead. -->
+<!-- 2026-06-21: provider now enforces ADR-018 DISQUALIFIED (2.5-flash excluded for certs); RELEASE_STATE basis sha fixed. -->
