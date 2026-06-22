@@ -1451,3 +1451,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-21 Fix2+3: Russian patronymic engine (51 tests) + month abbreviations uk/ru + bilingual passport dates (74 tests). Fix3 live via convertDateToUSCIS; Fix2 capability added, needs document-language routing to fire on RU docs. -->
 
 <!-- 2026-06-22 Fix4 foundation: cross-read consensus auto-delivery (autoDeliveryConsensus.ts), flag AUTO_DELIVERY_CONSENSUS_ENABLED default OFF. Remaining: C3 calibration + real-doc validation + owner go-live. -->
+
+<!-- 2026-06-22 Fix4 complete: C3 gate respects consensus_reliable → accept_final on hard-case stable criticals. End-to-end auto-delivery wired, flag-gated OFF. 339 green. -->

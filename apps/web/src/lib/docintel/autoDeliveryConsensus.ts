@@ -49,6 +49,8 @@ export interface ConsensusField {
   confidence?: number
   review_required?: boolean
   review_reasons?: string[]
+  /** Set true on auto-delivered fields: cross-read-validated → C3 may accept_final. */
+  consensus_reliable?: boolean
 }
 
 /** One alternate read's per-field raw source (field → raw_cyrillic/value as read). */
@@ -103,7 +105,8 @@ export function applyConsensusAutoDelivery<T extends ConsensusField>(
     const reliable = agrees && conf >= floor && !hasHard && f.value != null
     if (reliable) {
       auto++
-      return { ...f, review_required: false }
+      // Mark cross-read-validated so C3 can accept_final instead of parking it.
+      return { ...f, review_required: false, consensus_reliable: true }
     }
     rev++
     // Mark WHY it stayed in review (observability), without changing the value.
