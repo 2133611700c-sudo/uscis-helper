@@ -7,7 +7,7 @@
 
 ## THIS SESSION (current) — Public flip + history rewrite
 - Trigger: owner declared uscis-helper as priority #1 main project; flip to PUBLIC for free unlimited Actions + free ruleset.
-- Executed: 4-pass git filter-repo across ALL refs to drop docs/reports/evidence/, qa-shots/private/, owner identity strings, owner emails (sergiikuropiatnyk@gmail.com, 2133611700c@gmail.com) → owner@redacted.invalid, owner names → Owner. Final history audit: 0 PII references reachable.
+- Executed: 4-pass git filter-repo across ALL refs to drop docs/reports/evidence/, qa-shots/private/, owner identity strings, owner emails ([OLD_EMAIL_1], [OLD_EMAIL_2]) → owner@redacted.invalid, owner names → Owner. Final history audit: 0 PII references reachable.
 - Force-pushed 70 branches. Repo flipped PUBLIC. Secret scanning + push protection auto-enabled. Branch ruleset on main (no force-push, no deletion). Dependabot security updates + private vuln reporting enabled.
 - PR #208 was auto-closed by GitHub when its head SHA changed via history rewrite; reopened. Diff now against rewritten main.
 - NEXT EXACT STEP: continue Translation V2 work on PR #208 — no further blockers.
