@@ -415,3 +415,25 @@ Built + tested the CORE of the auto-delivery fix:
 3. **GO-LIVE = owner decision:** enabling auto-delivery on USCIS legal filings (a no-review user
    files whatever is auto-delivered) is the owner's risk acceptance + a 2× read-cost (budget).
    The flag + conservative floor make it tunable; default stays OFF until validated.
+
+---
+
+## PART 10 — Fix 4 COMPLETE (end-to-end): C3 respects cross-read consensus
+
+The consensus signal now flows end-to-end so auto-delivery actually reaches the user:
+- `autoDeliveryConsensus.applyConsensusAutoDelivery` sets `consensus_reliable=true` on a field that
+  is cross-read-identical + high-confidence + clean.
+- `ExtractedDocField` / `SafeField` carry `consensus_reliable`; `applyOcrFieldSafety` passes it into
+  the C3 gate.
+- `ocrFieldSafetyGate.protectOcrField`: a `consensus_reliable` critical field SKIPS the SOFT unsafe
+  reasons (hard_case_manual_required / no_strong_source_anchor / low_confidence) → `accept_final`
+  instead of `candidate_only`. HARD reasons (doc-type mismatch, stale session, classifier conflict,
+  unknown class, zero recognition) STILL block — consensus cannot vouch for document integrity.
+- Tests: consensus core 6, C3 calibration 4 (with-consensus→accept_final, without→candidate_only,
+  HARD-condition still blocks). documentSafety+docintel 339 green, tsc 0. All under
+  AUTO_DELIVERY_CONSENSUS_ENABLED (default OFF) → byte-identical to today until enabled.
+
+Net effect when enabled: a handwritten birth-cert field that reads IDENTICALLY across 2 primary
+reads at ≥0.90 confidence auto-delivers (review_required=false, C3 accept_final); the unstable
+handwritten DOB (varies between reads) stays review. ~100%-review → only the genuinely-uncertain
+fields. Remaining: REAL-DOC validation run (flag ON) + owner go-live (legal risk + 2× read cost).

@@ -81,6 +81,8 @@ export interface SafeField {
   raw_cyrillic?: string | null
   confidence?: number
   review_required?: boolean
+  /** Cross-read consensus marker (auto-delivery) — overrides C3 SOFT unsafe conditions. */
+  consensus_reliable?: boolean
   // C3 safety additions:
   candidate_value?: string | null
   manual_required?: boolean
@@ -127,6 +129,10 @@ export function applyOcrFieldSafety<T extends SafeField>(
       source_doc_id_hash: ctx.source_doc_id_hash ?? null,
       session_doc_id_hash: ctx.session_doc_id_hash ?? null,
       zero_usable_recognition: opts.zeroRecognition === true,
+      // Auto-delivery: a cross-read-consensus-validated field overrides the SOFT unsafe
+      // conditions in C3 (hard_case/no_anchor/low_conf). Only set when the consensus
+      // flag is on; otherwise undefined → C3 behaves exactly as before (fully safe).
+      consensus_reliable: f.consensus_reliable === true,
     })
     if ((criticality === 'critical_identity' || criticality === 'critical_document') &&
         (r.review_required || r.manual_required)) {

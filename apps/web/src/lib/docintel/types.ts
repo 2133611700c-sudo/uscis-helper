@@ -112,6 +112,12 @@ export interface ExtractedDocField {
   provider: string
   /** Optional machine-readable reasons review was forced (e.g. anti-fabrication gate). */
   review_reasons?: string[]
+  /**
+   * Cross-read consensus (AUTO_DELIVERY_CONSENSUS): true when the field's source text
+   * matched across K primary reads at high confidence with no hard reason → auto-delivered.
+   * Lets the C3 gate accept_final instead of parking a verifiably-stable critical field.
+   */
+  consensus_reliable?: boolean
 }
 
 export interface DocumentReadResult {

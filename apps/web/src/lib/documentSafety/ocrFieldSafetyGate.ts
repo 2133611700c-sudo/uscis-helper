@@ -64,6 +64,17 @@ export interface OcrFieldSafetyInput {
   hard_case?: boolean
   legacy_reader?: boolean
   classifier_conflict?: boolean
+  /**
+   * Cross-read consensus marker (AUTO_DELIVERY_CONSENSUS): the field's source text was
+   * read IDENTICALLY across K primary-model reads AND at high confidence AND carries no
+   * hard reason. This is a STRONG reliability signal that overrides the SOFT unsafe
+   * conditions (hard_case / no_strong_source_anchor / low_confidence) so a verifiably
+   * stable critical field can auto-deliver instead of being parked candidate-only. It
+   * does NOT override HARD conditions (doc-type mismatch, stale session, classifier
+   * conflict, unknown class, zero recognition) — those are document-integrity failures
+   * that consensus cannot vouch for. Only set when AUTO_DELIVERY_CONSENSUS_ENABLED=1.
+   */
+  consensus_reliable?: boolean
 }
 
 export interface OcrFieldSafetyOutput {
@@ -122,11 +133,16 @@ export function protectOcrField(input: OcrFieldSafetyInput): OcrFieldSafetyOutpu
   const noAnchor = input.strong_source_anchor !== true
   const legacy = !!input.legacy_reader
 
+  // Cross-read consensus vouches for the READ's reliability → it satisfies the SOFT
+  // conditions (hard_case "we don't trust the read", no_anchor, low_conf). It does NOT
+  // touch the HARD conditions below (mismatch/stale/conflict/unknown), which are
+  // document-integrity failures consensus cannot address.
+  const consensusReliable = input.consensus_reliable === true
   if (critical) {
-    if (hardCase) reasons.add('hard_case_manual_required')
+    if (hardCase && !consensusReliable) reasons.add('hard_case_manual_required')
     if (legacy && !input.strong_source_anchor) reasons.add('legacy_reader_untrusted')
-    if (noAnchor) reasons.add('no_strong_source_anchor')
-    if (lowConf) reasons.add('low_confidence')
+    if (noAnchor && !consensusReliable) reasons.add('no_strong_source_anchor')
+    if (lowConf && !consensusReliable) reasons.add('low_confidence')
     if (unknownClass) reasons.add('unknown_document_class')
   }
 
