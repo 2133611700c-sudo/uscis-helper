@@ -1978,3 +1978,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 <!-- 2026-06-21: FIX RU Cyrillic leak (real OCR found it on ru_printed). Root cause: RU content routed through UA KMU-55 (г→h, ё/э/ы leak). Fix: romanizeBySourceScript routes RU→Russian table for place/oblast/agency/text + KMU-55 defense-in-depth can't emit Cyrillic. 247 apps/web + knowledge green. -->
 <!-- 2026-06-21: ENFORCE ADR-018 model matrix in provider — modelFallback(docTypeId) now drops DISQUALIFIED models (gemini-2.5-flash never reads birth/marriage/etc certs; it read a different person). Sourced from modelMatrix (no drift). Fixed RELEASE_STATE.yaml orphaned basis sha (62c897a→real main 83a2f7f; verified_production_sha→live prod 3227dab). 226 docintel green. -->
 <!-- 2026-06-21: RELEASE_STATE guard — feat shares no ancestor with rewritten origin/main; set basis to a real feat-reachable commit (guard real-commit check passes), prod UNVERIFIED. main is managed by the hardening automation. -->
+
+<!-- 2026-06-21 RC2: route now reports REAL reader model (read_models), not env default. Audit journal docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md -->

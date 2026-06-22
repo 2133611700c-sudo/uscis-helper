@@ -1431,3 +1431,5 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-06-21: RELEASE_STATE guard — feat shares no ancestor with rewritten origin/main; set basis to a real feat-reachable commit (guard real-commit check passes), prod UNVERIFIED. main is managed by the hardening automation. -->
 
 <!-- 2026-06-21T02:05:00Z: Fixed Content&Brand typecheck (FieldOut[]→SafeField[] cast) + this commit touches all 3 session docs (session-docs-guard requires every commit to). Legacy translation subsystem audited: 95% dead, vision-extract is the single live brain; migration plan recorded. -->
+
+<!-- 2026-06-21 RC2: route now reports REAL reader model (read_models), not env default. Audit journal docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md -->
