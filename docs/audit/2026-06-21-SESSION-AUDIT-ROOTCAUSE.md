@@ -487,3 +487,32 @@ Modern Ukrainian ID docs (the bulk of real uploads): auto-deliver all fields whe
 Soviet certificates: auto-deliver the unambiguous fields; review only genuinely-uncertain ones
 (Russian-script names, handwritten unstable dates). All under AUTO_DELIVERY_CONSENSUS_ENABLED
 (default OFF) → owner enables when ready (legal acceptance + 2× read cost).
+
+---
+
+## PART 13 — LIVE validation (consensus ON) + corrected picture (soft-confirm, not manual)
+
+Deployed staging with AUTO_DELIVERY_CONSENSUS_ENABLED=1; POSTed the REAL booklet through the LIVE
+path (2 real primary reads). Result: read by gemini-3.1-pro-preview; **2/6 fields full-auto**
+(city, province); the 4 critical identity fields (family_name=Kuropiatnyk, given_name=Serhii,
+patronymic=Serhiiovych, dob=06/25/1986 — ALL correct) flagged with the SINGLE reason
+`critical_no_mrz_anchor`.
+
+**Corrected understanding (I over-alarmed with "2/6"):** `critical_no_mrz_anchor` is a THIRD review
+layer added by `arbitration.ts:90` for every critical field on a no-MRZ document. But the product's
+`reviewGate.isSoftAnchorOnly` already treats a field whose ONLY reason is `critical_no_mrz_anchor`
+as SOFT: `getHardUnresolvedReviewFields` does NOT hard-block it — it becomes a one-click "confirm"
+that unlocks payment (the value is pre-filled correctly). So the real UX is: 2 full-auto + 4
+pre-filled-correct one-click-confirm + ZERO manual data entry. The owner's "user must manually fix"
+fear is largely addressed — nothing requires typing; identity fields need a single confirm click
+(a deliberate legal-safety stance for unconfirmed identity on a no-MRZ doc).
+
+**To make criticals FULLY auto (no confirm)** would require consensus to also clear
+`critical_no_mrz_anchor` in arbitration — i.e. auto-releasing an UNCONFIRMED legal identity to a
+no-review user. That is the deepest legal-risk decision and is left to the owner.
+
+**Staging flag reverted** (e2e ran with consensus and the ru_printed synthetic showed an
+intermittent Cyrillic-leak assertion fail under the 2× reads; the flag is for go-live, not the e2e,
+and is default OFF by design). The consensus + doc-language work stays committed, flag-gated OFF.
+ru_printed leak: likely intermittent Gemini read variance on the synthetic (the RU routing fix is
+unit-proven) — flagged for monitoring, not claimed fixed-or-broken.

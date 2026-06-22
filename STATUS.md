@@ -210,3 +210,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-22 doc-language routing: shared-letter names on UA ID docs not ambiguous → booklet auto-delivery 5/6→6/6. Certs keep the gate. -->
 
 <!-- 2026-06-22: staging deploy sets AUTO_DELIVERY_CONSENSUS_ENABLED=1 for live auto-delivery validation. -->
+
+<!-- 2026-06-22: staging consensus flag reverted (e2e). Live booklet: 2 full-auto + 4 soft-confirm (critical_no_mrz_anchor = one-click, pre-filled correct, not manual). Full-auto criticals = owner legal decision. -->

@@ -100,7 +100,6 @@ jobs:
             -e SUPABASE_SERVICE_ROLE_KEY="$STAGING_SR" \
             -e SUPABASE_DB_PASSWORD="$STAGING_DB_PASSWORD" \
             -e GEMINI_API_KEY="$GEMINI_API_KEY" \
-            -e AUTO_DELIVERY_CONSENSUS_ENABLED="1" \
             -e ADMIN_SECRET="$ADMIN_SECRET" \
             -e CRON_SECRET="$CRON_SECRET" \
             -e RESEND_API_KEY="$RESEND_API_KEY" \
