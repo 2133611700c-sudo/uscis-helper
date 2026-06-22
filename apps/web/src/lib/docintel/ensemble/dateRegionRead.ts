@@ -35,9 +35,14 @@ function coerceBox(b: unknown): BBox | null {
   return null
 }
 
+// Box detection is a COARSE spatial task (where are the dates), NOT a fine read — so it
+// uses a FAST model on a SMALL thumbnail. The premium preview model on a full 7MB image
+// timed out at 25s → no_boxes → the proven date-region read never ran (real-doc 2026-06-22).
+const DATEBOX_MODEL = process.env.GEMINI_DATEBOX_MODEL || 'gemini-3.5-flash'
+
 async function geminiDateBoxes(imageB64: string, mime: string, model: string, key: string): Promise<BBox[]> {
   const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), 25_000)
+  const t = setTimeout(() => ctrl.abort(), 30_000)
   try {
     // Ask for ARRAY boxes [ymin,xmin,ymax,xmax] — arrays come back far more reliably
     // than keyed objects (the model returned malformed keyed JSON otherwise).
@@ -77,6 +82,41 @@ async function geminiDateBoxes(imageB64: string, mime: string, model: string, ke
   } catch { return [] } finally { clearTimeout(t) }
 }
 
+/**
+ * Read the DATE from a small high-res crop with Gemini. The crop is zoomed+upscaled+
+ * sharpened and free of surrounding clutter, so the model reads the handwritten digits
+ * far better than on the downscaled full page — and it does NOT depend on Google Vision
+ * (which is billing-disabled, HTTP 403, on this account). Returns the date as written
+ * (text) for the reconciler; '' on any failure (fail-open).
+ */
+async function geminiReadDateCrop(cropB64: string, model: string, key: string): Promise<string> {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), 25_000)
+  try {
+    // PLAIN-TEXT answer (no JSON mode): a thinking/preview model wraps JSON in a
+    // preamble + sometimes truncates it. Asking for ONLY the ISO date and regex-
+    // extracting it is far more robust for a single value.
+    const prompt =
+      'This image is a CROPPED close-up of ONE date from a Ukrainian/Russian document, ' +
+      'often HANDWRITTEN. Read it EXACTLY — each digit and the month individually; do NOT ' +
+      'guess a typical date. Ukrainian/Russian months (січня/января … грудня/декабря) → 01–12. ' +
+      'Reply with ONLY the date as YYYY-MM-DD (e.g. 1986-06-25), and nothing else. ' +
+      'If unreadable, reply NONE.'
+    const res = await fetch(GEMINI_URL(model, key), {
+      method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: cropB64 } }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 4096 },
+      }),
+    })
+    if (!res.ok) return ''
+    const j = await res.json()
+    const txt: string = j?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    const iso = txt.match(/\d{4}-\d{2}-\d{2}/)
+    return iso ? iso[0] : ''
+  } catch { return '' } finally { clearTimeout(t) }
+}
+
 export interface DateRegionReadResult {
   text: string
   /** PII-free diagnostics (no values): how far the pipeline got. */
@@ -103,7 +143,11 @@ export async function readDateRegionsWithVision(opts: {
     const W = meta.width ?? 0, H = meta.height ?? 0
     if (!W || !H) { diag.error = 'no_dims'; return { text: '', diag } }
 
-    const boxes = await geminiDateBoxes(base.toString('base64'), opts.mimeType, opts.geminiModel, opts.geminiApiKey)
+    // Box detection runs on a SMALL thumbnail with a FAST model: boxes are normalized
+    // 0-1000 (resolution-independent), so a downscale costs nothing in accuracy but
+    // avoids the preview-model 25s timeout that produced no_boxes on full 7MB scans.
+    const thumb = await sharp(base).resize({ width: 1024, withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()
+    const boxes = await geminiDateBoxes(thumb.toString('base64'), 'image/jpeg', DATEBOX_MODEL, opts.geminiApiKey)
     diag.boxes = boxes.length
     if (boxes.length === 0) { diag.error = 'no_boxes'; return { text: '', diag } }
 
@@ -124,8 +168,13 @@ export async function readDateRegionsWithVision(opts: {
         .sharpen()
         .jpeg({ quality: 92 })
         .toBuffer()
-      const r = await opts.vision.extractText({ imageBuffer: crop, mimeType: 'image/jpeg' })
       diag.crops++
+      // PRIMARY crop reader = Gemini on the high-res crop (Google Vision is billing-
+      // disabled on this account). Fall back to the Vision provider IF it ever works.
+      const gem = await geminiReadDateCrop(crop.toString('base64'), opts.geminiModel, opts.geminiApiKey)
+      if (process.env.DATE_CROP_DEBUG === '1') console.info('[date_crop_debug] crop read:', JSON.stringify(gem))
+      if (gem.trim()) { texts.push(gem); continue }
+      const r = await opts.vision.extractText({ imageBuffer: crop, mimeType: 'image/jpeg' })
       if (!isUnusableOcr(r) && r.raw_text) texts.push(r.raw_text)
     }
     const text = texts.join('\n')
