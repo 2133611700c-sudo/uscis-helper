@@ -8,6 +8,7 @@ export type { OutputMode } from './transliterate';
 // D2 Validator — patronymic (по батькові) engine: validate a read, reconstruct
 // from given name + sex, reject OCR suffix fragments ("ович"/"Yovych").
 export { isValidPatronymic, generatePatronymic, reconcilePatronymic } from './patronymic';
+export { isValidPatronymicRu, generatePatronymicRu, reconcilePatronymicRu } from './patronymic';
 export type { Sex, PatronymicResult } from './patronymic';
 
 // D2 Validator — gazetteer: snap a handwriting-OCR place reading to a real
