@@ -15,6 +15,7 @@
 import type { DocTypeSpec, VisionFieldRead, VisionProvider, VisionReadResult } from '../types'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
+import { FALLBACK_MODELS, isDisqualifiedFor } from '../modelMatrix'
 import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
 
 const GEMINI_PROVIDER_NAME = 'gemini'
@@ -46,10 +47,16 @@ export function primaryGeminiModel(): string {
   return normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview')
 }
 
-function modelFallback(): string[] {
+function modelFallback(docTypeId?: string): string[] {
   const primary = primaryGeminiModel()
-  // gemini-2.0-flash removed from fallback: deprecated (HTTP 404) as of 2026-06.
-  return [...new Set([primary, 'gemini-3.5-flash', 'gemini-2.5-flash'])]
+  // ADR-018: source the fallback list from the modelMatrix SINGLE SOURCE OF TRUTH
+  // (not a hardcoded list that can drift), then DROP any model DISQUALIFIED for this
+  // doc class. gemini-2.5-flash is disqualified for certificate-family docs (it read
+  // a DIFFERENT person — 2026-06 adjudication), so it must NEVER appear in a
+  // birth/marriage/divorce/death/name_change chain. Without this filter the provider
+  // silently fell back to a disqualified model on certs under RPM pressure.
+  const chain = [...new Set([primary, ...FALLBACK_MODELS])]
+  return docTypeId ? chain.filter((m) => !isDisqualifiedFor(m, docTypeId)) : chain
 }
 
 function buildPrompt(spec: DocTypeSpec): string {
@@ -176,7 +183,7 @@ export class GeminiVisionProvider implements VisionProvider {
     let lastStatus: number | undefined
     let lastTimeout = false
 
-    for (const model of modelFallback()) {
+    for (const model of modelFallback(spec.id)) {
       for (let a = 0; a < attempts; a++) {
         const remaining = deadline - Date.now()
         if (remaining < 3000) { lastErr = 'deadline'; break } // not enough time for another attempt

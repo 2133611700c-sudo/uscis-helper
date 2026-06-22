@@ -56,8 +56,21 @@ describe('GUARD: the provider source obeys the matrix (no drift, no deprecated m
     expect(PROVIDER_SRC).toContain(`'${PRIMARY_READER}'`)
   })
 
-  it('provider fallback chain contains exactly the sanctioned fallbacks', () => {
-    for (const m of FALLBACK_MODELS) expect(PROVIDER_SRC).toContain(`'${m}'`)
+  it('provider SOURCES its fallbacks from the matrix and filters DISQUALIFIED (no hardcoded drift)', () => {
+    // Stronger than the old literal-check: the provider must IMPORT the sanctioned
+    // fallback list from modelMatrix (so it can never drift from this source of
+    // truth) AND filter the chain by isDisqualifiedFor, so a model disqualified for
+    // a doc class (e.g. gemini-2.5-flash on a birth certificate) can never read it.
+    expect(PROVIDER_SRC).toContain('FALLBACK_MODELS')
+    expect(PROVIDER_SRC).toContain('isDisqualifiedFor')
+    // and it must NOT re-hardcode a fallback literal (that would reintroduce drift)
+    for (const m of FALLBACK_MODELS) {
+      const hardcoded = PROVIDER_SRC.split('\n').some((ln) => {
+        const code = ln.replace(/\/\/.*$/, '')
+        return code.includes(`'${m}'`)
+      })
+      expect(hardcoded, `provider must not hardcode '${m}' — import it from modelMatrix`).toBe(false)
+    }
   })
 
   it('NO deprecated model appears as an ACTIVE chain member (only allowed in a comment)', () => {
