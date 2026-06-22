@@ -23,7 +23,10 @@ const GEMINI_PROVIDER_NAME = 'gemini'
 // shadow cache-hit analysis never reuses a key across a prompt/preproc change.
 // v2 (2026-06-22): handwritten-field markers + date-distinctness rule + response schema.
 const GEMINI_PROMPT_VERSION = 'v2'
-const GEMINI_PREPROC_VERSION = 'v1'
+// v2 (2026-06-22, R3): Core path now runs preprocessImage BEFORE the read —
+// EXIF rotate + UPSCALE small scans (short side →~1500px + mild sharpen) +
+// down-cap ≤2048. Different pixels reach the model → invalidate the shadow cache.
+const GEMINI_PREPROC_VERSION = 'v2'
 
 // Model order is env-driven so prod can flip models WITHOUT a code redeploy.
 // 2026-05-29 ensemble bench (docs/reports/GEMINI_ENSEMBLE_BENCH.md), 3 docs incl. a

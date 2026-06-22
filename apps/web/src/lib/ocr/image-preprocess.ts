@@ -15,6 +15,26 @@
 const PREPROCESS_MAX_DIMENSION = 2048   // px — large enough for Vision, small enough to avoid timeouts
 const PREPROCESS_JPEG_QUALITY  = 85     // higher than old 70 — Vision benefits from quality
 
+// ── Upscaling (R3) ──────────────────────────────────────────────────────────
+// Non-technical 35-80yo users photograph documents at low DPI. A small scan
+// (e.g. 600px short side) gives the model too few pixels per glyph, which hurts
+// handwritten Cyrillic OCR badly. We ENLARGE such scans so the SHORT side reaches
+// PREPROCESS_MIN_SHORT_SIDE, then apply a mild sharpen to recover edge contrast
+// lost to interpolation. We DELIBERATELY do not greyscale/binarize — autoOrient.ts
+// documents that tonal ops degrade handwriting; we keep full tone.
+//
+// Threshold rationale:
+//   - 1500px short side ≈ the point where individual handwritten strokes have
+//     enough pixels for the model to disambiguate (below ~1000px the failures
+//     spike). 1500 stays well under the 2048 long-side DOWN-cap so a typical
+//     ~1.4:1 document page (e.g. A4/passport) enlarged to 1500 short ≈ 2100 long
+//     is then trimmed by the existing down-resize to ≤2048 — the two rules
+//     compose without conflict.
+//   - We cap the enlargement FACTOR at 3x so a tiny 200px thumbnail is not blown
+//     up to a blurry 1500px mush that wastes payload/RPM without adding signal.
+const PREPROCESS_MIN_SHORT_SIDE = 1500  // px — enlarge images whose short side is below this
+const PREPROCESS_MAX_UPSCALE    = 3     // never enlarge more than 3x (avoid mush + payload bloat)
+
 // ── Quality gate thresholds (LENIENT — only reject obviously bad images) ──
 // These are intentionally low to avoid false rejections. Calibrate with real user photos.
 const MIN_DIMENSION          = 200     // px — below this, OCR text is unreadable
@@ -41,7 +61,7 @@ export interface PreprocessResult {
   width: number
   height: number
   resized: boolean
-  scaleFactor: number   // < 1 if image was shrunk; 1.0 if not resized
+  scaleFactor: number   // < 1 if shrunk; > 1 if enlarged (R3 upscale); 1.0 if untouched
   /** Image quality metrics (for diagnostics and future threshold calibration) */
   quality: {
     brightness: number    // 0-255 mean across channels
@@ -113,17 +133,53 @@ export async function preprocessImage(
       }
     }
 
-    const needsResize = origW > PREPROCESS_MAX_DIMENSION || origH > PREPROCESS_MAX_DIMENSION
-    const scaleFactor = needsResize
-      ? PREPROCESS_MAX_DIMENSION / Math.max(origW, origH)
-      : 1.0
+    // ── Sizing (R3): three regimes that compose without conflict ──────────────
+    //   tiny  → ENLARGE so short side reaches PREPROCESS_MIN_SHORT_SIDE (capped 3x)
+    //   huge  → SHRINK so long side ≤ PREPROCESS_MAX_DIMENSION (existing behaviour)
+    //   mid   → untouched
+    const longSide  = Math.max(origW, origH)
+    const shortSide = Math.min(origW, origH)
 
-    const resized = pipeline.clone().resize(PREPROCESS_MAX_DIMENSION, PREPROCESS_MAX_DIMENSION, {
-      fit: 'inside',
-      withoutEnlargement: true,
-    })
+    const needsDownResize = longSide > PREPROCESS_MAX_DIMENSION
+    // Only consider upscaling when the image is NOT already large enough to be
+    // down-resized (a small-short/large-long sliver should still be capped, not grown).
+    const upscaleNeeded = !needsDownResize && shortSide < PREPROCESS_MIN_SHORT_SIDE
 
-    const outputBuffer = await resized
+    let resizePipeline = pipeline.clone()
+    let scaleFactor = 1.0
+    let resized = false
+
+    if (upscaleNeeded) {
+      // Enlarge by the factor that brings the short side up to the target, capped.
+      const rawFactor = PREPROCESS_MIN_SHORT_SIDE / shortSide
+      let upFactor = Math.min(rawFactor, PREPROCESS_MAX_UPSCALE)
+      // COMPOSE with the down-cap: a long, thin page (e.g. 600×900) enlarged to
+      // short=1500 would be 1500×2250 — long side 2250 > 2048. Clamp the factor so
+      // the resulting LONG side never exceeds PREPROCESS_MAX_DIMENSION. The short
+      // side may then land slightly below the 1500 target — that's the correct
+      // trade-off (the down-cap wins, exactly as for a huge image).
+      const longCapFactor = PREPROCESS_MAX_DIMENSION / longSide
+      upFactor = Math.min(upFactor, longCapFactor)
+      scaleFactor = upFactor
+      const targetShort = Math.round(shortSide * scaleFactor)
+      // Drive the resize off the short side: enlarge the smaller dimension to
+      // targetShort, let the longer one scale proportionally (fit:'outside' grows
+      // until BOTH dims are >= the box, i.e. the short side hits targetShort).
+      resizePipeline = resizePipeline
+        .resize(targetShort, targetShort, { fit: 'outside', withoutEnlargement: false })
+        // Mild sharpen to recover edge contrast lost to interpolation (handwriting).
+        .sharpen({ sigma: 1 })
+      resized = true
+    } else if (needsDownResize) {
+      scaleFactor = PREPROCESS_MAX_DIMENSION / longSide
+      resizePipeline = resizePipeline.resize(PREPROCESS_MAX_DIMENSION, PREPROCESS_MAX_DIMENSION, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      resized = true
+    }
+
+    const outputBuffer = await resizePipeline
       .jpeg({ quality: PREPROCESS_JPEG_QUALITY, mozjpeg: false })
       .toBuffer({ resolveWithObject: true })
 
@@ -196,7 +252,7 @@ export async function preprocessImage(
       originalMimeType: mimeType,
       width: finalW,
       height: finalH,
-      resized: needsResize,
+      resized,
       scaleFactor,
       quality: {
         brightness: Math.round(brightness * 10) / 10,

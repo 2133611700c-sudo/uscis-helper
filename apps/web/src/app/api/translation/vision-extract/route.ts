@@ -307,16 +307,45 @@ async function POST_impl(req: NextRequest) {
     // sum. Paid Gemini tier handles 2-6 concurrent calls; per-page timeout
     // stays 40s. Merge order is preserved by index (earliest page still wins
     // in the arbiter) — results are awaited as a positional array.
+    // CORE_PREPROCESS_ENABLED (R3) — pixel-level image preprocessing on the DEFAULT
+    // read path BEFORE the Gemini fan-out. DEFAULTS ON ('!== 0'). Free (no extra API
+    // call): EXIF rotate, UPSCALE small/low-DPI scans (short side → ~1500px + mild
+    // sharpen), DOWN-cap huge scans (long side ≤2048), JPEG q85. Non-technical users
+    // photograph docs at low quality; this gives the model an adequately sized image.
+    // GRACEFUL FALLBACK: preprocessing NEVER fails the read — on throw OR a non-ok
+    // PreprocessResult we log and use the RAW buffer. Page→field provenance is
+    // preserved (index `i` is unchanged; only the bytes handed to readDocument change).
+    const corePreprocessEnabled = process.env.CORE_PREPROCESS_ENABLED !== '0'
     const corePages = await Promise.all(rawFiles.map(async (file, i) => {
       // HEIC was already converted to JPEG at intake (heicToJpeg, top of handler).
-      const buffer = Buffer.from(await file.arrayBuffer())
+      const rawBuffer = Buffer.from(await file.arrayBuffer())
+      const rawMime = file.type || 'image/jpeg'
+      let buffer: Buffer = rawBuffer
+      let mime: string = rawMime
+      if (corePreprocessEnabled) {
+        try {
+          const pre = await preprocessImage(rawBuffer, rawMime)
+          if (pre.ok) {
+            buffer = pre.buffer
+            mime = pre.mimeType
+          } else {
+            // A quality-gate reject (too_blurry/dark/small) or unsupported type:
+            // do NOT block the Core read on it — fall through with the raw bytes
+            // (the model is more lenient than the gate; honest degradation handles
+            // a genuine unreadable doc downstream). Log for monitoring.
+            console.warn('[Core B2] preprocess non-ok, using raw buffer — page', i + 1, 'code:', pre.code)
+          }
+        } catch (e: any) {
+          console.warn('[Core B2] preprocess threw, using raw buffer — page', i + 1, e?.message ?? e)
+        }
+      }
       // timeoutMs is the TOTAL deadline per page across the fallback chain (not
       // per attempt). Handwritten/Soviet docs need the model to think 40-70s, so
       // 40s was too tight (it failed a real Soviet birth cert outright). Pages run
       // in PARALLEL, so a generous per-page budget still fits maxDuration=120.
       // attemptsPerModel:1 so a slow primary doesn't burn the budget on a retry —
       // the budget goes to the faster fallback models instead.
-      const r = await readDocument(buffer, file.type || 'image/jpeg', docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation' })
+      const r = await readDocument(buffer, mime, docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation' })
       return { i, r }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
