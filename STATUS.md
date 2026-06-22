@@ -154,3 +154,5 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-21: gemini-quota-diag.yml on main — RAW Gemini 429 root-cause probe (quota metric + model existence). -->
 
 <!-- session-docs-guard PII redaction follow-up (commit e1f4fa2) — applies to all three docs -->
+
+<!-- 2026-06-21 audit: gemini-quota-diag image probe (primary vs flash on a real image) -->
