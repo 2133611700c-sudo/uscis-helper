@@ -51,6 +51,17 @@ export interface ConsensusField {
   review_reasons?: string[]
   /** Set true on auto-delivered fields: cross-read-validated → C3 may accept_final. */
   consensus_reliable?: boolean
+  /** Is this a HANDWRITTEN field on the source? A handwritten DATE can be read
+   *  STABLY-WRONG (a cursive 25↔26), so unanimous consensus does NOT prove it — such
+   *  a field never auto-delivers on consensus (real-doc 2026-06-22). */
+  handwritten?: boolean
+}
+
+/** A date/number field whose digits a model can stably misread by hand. */
+function isHandwrittenMisreadRisk(field: string): boolean {
+  const k = (field || '').toLowerCase()
+  return /(^|_)(dob|date|expiry|expiration|issue|valid_from|valid_to)(_|$)/.test(k) ||
+    k.includes('date_of_') || k.includes('_date') || k.includes('number') || k.includes('series')
 }
 
 /** One alternate read's per-field raw source (field → raw_cyrillic/value as read). */
@@ -102,7 +113,11 @@ export function applyConsensusAutoDelivery<T extends ConsensusField>(
     const agrees =
       mine.length > 0 &&
       otherSnapshots.every((snap) => normToken(snap.get(f.field)) === mine)
-    const reliable = agrees && conf >= floor && !hasHard && f.value != null
+    // SAFETY: a handwritten date/number can be read STABLY-WRONG, so unanimous
+    // consensus does NOT prove it. Such fields never auto-deliver on consensus alone —
+    // they stay soft-confirm (one click). Handwritten NAMES are read reliably and may.
+    const handwrittenMisreadRisk = f.handwritten === true && isHandwrittenMisreadRisk(f.field)
+    const reliable = agrees && conf >= floor && !hasHard && f.value != null && !handwrittenMisreadRisk
     if (reliable) {
       auto++
       // Mark cross-read-validated so C3 can accept_final instead of parking it.

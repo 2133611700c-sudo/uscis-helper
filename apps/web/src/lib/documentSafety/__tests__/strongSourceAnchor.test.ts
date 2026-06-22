@@ -40,4 +40,26 @@ describe('R7 — computeStrongSourceAnchor', () => {
   it('flag ON: an unanchored non-date critical (no signal) stays false', () => {
     expect(computeStrongSourceAnchor({ key: 'family_name', source: 'ai_vision', confidence: 0.95 } as never, true)).toBe(false)
   })
+
+  // SAFETY (real-doc 2026-06-22): a handwritten DOB read STABLY-WRONG (cursive 25→26 on
+  // every pass) auto-delivered a wrong date. A handwritten DATE must NEVER self-anchor.
+  describe('handwritten-date safety — never self-anchored', () => {
+    it('a HANDWRITTEN date does NOT anchor on consensus (stable misread risk)', () => {
+      expect(computeStrongSourceAnchor({ key: 'date_of_birth', consensus_reliable: true, handwritten: true }, true)).toBe(false)
+      expect(computeStrongSourceAnchor({ key: 'dob', consensus_reliable: true, handwritten: true }, true)).toBe(false)
+    })
+    it('a HANDWRITTEN date does NOT anchor on "passed internal guards"', () => {
+      expect(computeStrongSourceAnchor({ key: 'date_of_birth', handwritten: true, reviewReasons: [] }, true)).toBe(false)
+    })
+    it('a PRINTED date still anchors (consensus or passed guards)', () => {
+      expect(computeStrongSourceAnchor({ key: 'date_of_birth', consensus_reliable: true, handwritten: false }, true)).toBe(true)
+      expect(computeStrongSourceAnchor({ key: 'issue_date', handwritten: false, reviewReasons: [] }, true)).toBe(true)
+    })
+    it('a HANDWRITTEN NAME still anchors on consensus (cursive names read reliably)', () => {
+      expect(computeStrongSourceAnchor({ key: 'family_name', consensus_reliable: true, handwritten: true }, true)).toBe(true)
+    })
+    it('a HANDWRITTEN date with MRZ/dictionary external check STILL anchors', () => {
+      expect(computeStrongSourceAnchor({ key: 'date_of_birth', source: 'mrz', mrzCheckValid: true, handwritten: true }, true)).toBe(true)
+    })
+  })
 })

@@ -74,7 +74,9 @@ const PERSON = (prefix = '') => ({
   [`${prefix}patronymic`]:  { latin: 'patronymic_latin',  cyr: 'patronymic_cyrillic' },
 })
 const FIELD_MAP_BY_DOC = {
-  ua_internal_passport_booklet: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
+  // city_of_birth/province_of_birth exercise the CONSTRAINED-vocabulary autocorrect
+  // (gazetteer settlement + oblast) — scored only where GT carries the English value.
+  ua_internal_passport_booklet: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' }, city_of_birth: { latin: 'place_of_birth_english' }, province_of_birth: { latin: 'province' } },
   ua_military_id:               { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_birth_certificate:         { ...PERSON('child_'), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
 }
@@ -218,6 +220,9 @@ function scoreDoc(d, read, gt) {
       // name (Soviet-era source in Russian vs UA passport GT) — surfaced separately,
       // does NOT change the verdict/score.
       script_variant: verdict === 'WRONG' && isRuUaVariant(expected, gotVal),
+      // AUTO-FILL = the product goal: read CORRECTLY *and* delivered without forcing
+      // a human (review_required===false). This is the % the owner targets at 95%+.
+      auto_filled_correct: verdict === 'CORRECT' && g?.review_required === false,
       // raw values only in the gitignored raw dump, never in the markdown summary
       _expected: expected, _got: gotVal ?? null,
     })
@@ -312,9 +317,12 @@ for (const r of results) {
   }
   const t = emptyTally(); for (const x of r.rows) add(t, x.verdict)
   const variants = r.rows.filter((x) => x.script_variant).length
+  const scoredRows = r.rows.filter((x) => SCORED.has(x.verdict)).length
+  const autoFilled = r.rows.filter((x) => x.auto_filled_correct).length
   md += `\n**Recognition rate: ${pct(rate(t))}** — `
   md += `CORRECT ${t.CORRECT} · WRONG ${t.WRONG} · MISS ${t.MISS} · FABRICATED ${t.FABRICATED} · empty-ok ${t.CORRECT_EMPTY}`
-  md += variants ? ` · of WRONG, ${variants} are RU/UA script-variants (same name, other language — GT/policy, not a misread)\n\n` : `\n\n`
+  md += variants ? ` · of WRONG, ${variants} are RU/UA script-variants (same name, other language — GT/policy, not a misread)` : ``
+  md += `\n**AUTO-FILLED correctly (no human): ${autoFilled}/${scoredRows} = ${pct(scoredRows ? autoFilled / scoredRows : null)}** (correct value AND review_required=false)\n\n`
 }
 
 md += `## Summary\n\n`

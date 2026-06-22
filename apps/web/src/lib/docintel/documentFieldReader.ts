@@ -312,7 +312,10 @@ export async function readDocument(
       } catch { /* a failed re-read = no agreement for any field → everything stays review */ }
     }
     if (snaps.length > 0) {
-      const res = applyConsensusAutoDelivery(finalFields, snaps, {
+      // Tag each field with its registry handwritten flag so consensus can refuse to
+      // auto-deliver a handwritten DATE/number (stably-misread risk) — names still may.
+      const withHandwritten = finalFields.map((f) => ({ ...f, handwritten: isHandwritten(spec, f.field) }))
+      const res = applyConsensusAutoDelivery(withHandwritten, snaps, {
         confidenceFloor: Number(process.env.AUTO_DELIVERY_CONFIDENCE_FLOOR) || 0.9,
       })
       finalFields = res.fields as typeof finalFields

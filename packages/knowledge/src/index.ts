@@ -16,6 +16,15 @@ export type { Sex, PatronymicResult } from './patronymic';
 export { snapCity, confusionDistance, GAZETTEER } from './gazetteer';
 export type { PlaceMatch } from './gazetteer';
 
+// D2 CONSTRAINED-VOCABULARY auto-correction — snap a near-miss read to the UNIQUE
+// nearest closed-set entry (oblast/sex/civil_status/country/date). Ambiguity ⇒ no
+// correction (the caller keeps suggest/review). Gated by the caller's flag.
+export {
+  autoCorrectOblast, autoCorrectSex, autoCorrectCivilStatus,
+  autoCorrectCountry, autoCorrectDateParts, AUTOCORRECT_THRESHOLD,
+} from './autocorrect';
+export type { AutoCorrectMatch, DateParts } from './autocorrect';
+
 // S3 no-silent-correction — format a Latin person name without corrupting its
 // controlling spelling (O'Brien / hyphenated / multi-word / deliberate mixed case).
 export { formatLatinName } from './formatName';
