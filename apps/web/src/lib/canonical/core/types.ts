@@ -36,6 +36,13 @@ export interface FieldCandidate {
   reviewRequired?: boolean
   /** Reasons the reader set reviewRequired (carried into the arbitrated field). */
   reviewReasons?: string[]
+  /**
+   * R4 (UN-SEVER): cross-read consensus marker produced on ExtractedDocField by
+   * applyConsensusAutoDelivery (AUTO_DELIVERY_CONSENSUS). Threaded through the Core so
+   * C3 can accept_final a verifiably-stable critical field instead of parking it.
+   * Default/absent = false → byte-identical when consensus is OFF (the value is just false).
+   */
+  consensus_reliable?: boolean
 }
 
 /** The Core result, or an explicit "ask for a better photo" (never garbage). */

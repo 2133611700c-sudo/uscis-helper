@@ -22,7 +22,14 @@ import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
-import { identityHash, decideStatus, applySelfConsistencyOutcome } from './selfConsistency'
+import {
+  identityHash,
+  decideStatus,
+  applySelfConsistencyOutcome,
+  isSelfConsistencyVoteEnabled,
+  decideVote,
+  applyVoteOutcome,
+} from './selfConsistency'
 import { applyConsensusAutoDelivery, snapshotOf } from './autoDeliveryConsensus'
 import { recordDocumentClassMetric, type MetricProduct } from './documentClassMetric'
 import { classifyProviderError } from '@/lib/ocr/ocrErrors'
@@ -255,11 +262,16 @@ export async function readDocument(
     const scTimeout = Number(process.env.SELF_CONSISTENCY_TIMEOUT_MS) || opts.timeoutMs
     const first = identityHash(read.fields)
     const others: Array<{ hash: string; count: number } | null> = []
+    // R5 — when SELF_CONSISTENCY_VOTE_ENABLED is also ON, retain the re-read field
+    // arrays so we can MAJORITY-PICK per identity field. OFF → arrays unused (today).
+    const voteOn = isSelfConsistencyVoteEnabled()
+    const reReadFields: Array<typeof read.fields> = []
     if (first.count >= 2) {
       for (let i = 1; i < runs; i++) {
         try {
           const r2 = await provider.readFields(imageBuffer, mimeType, spec, { timeoutMs: scTimeout })
           others.push(r2.ok ? identityHash(r2.fields) : null)
+          if (voteOn && r2.ok && Array.isArray(r2.fields)) reReadFields.push(r2.fields)
         } catch {
           others.push(null)
         }
@@ -267,6 +279,12 @@ export async function readDocument(
     }
     const status = decideStatus(first, others)
     finalFields = applySelfConsistencyOutcome(finalFields, status)
+    // R5 — majority-pick voting (gated). Runs AFTER the instability outcome so it can
+    // only ADD review (minority/no-majority), never lower it. OFF → skipped entirely.
+    if (voteOn && first.count >= 2) {
+      const outcome = decideVote(read.fields, reReadFields)
+      finalFields = applyVoteOutcome(finalFields, outcome)
+    }
     selfConsistency = {
       status,
       instability: status === 'mismatch',
