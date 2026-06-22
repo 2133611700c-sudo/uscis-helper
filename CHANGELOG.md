@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-21 | ROOT CAUSE of OCR 429 = AI Studio monthly SPEND CAP (not depleted/daily); fixed by owner; REAL OCR proven on owner booklet
+- Raw Gemini probe (gemini-quota-diag.yml): key VALID (models.list 200), all configured models exist; generateContent → 429 RESOURCE_EXHAUSTED "project exceeded its monthly spending cap" (ai.studio/spend). Owner raised the cap → models now 200.
+- REAL OCR on owner's real booklet (qa-shots/private/booklet_test_resized.jpg) via live preview: REDACTED_NAME→REDACTED, Сергій→Serhii, Сергійович→Serhiiovych, 25 червня 1986→06/25/1986, смт Тростянець→"urban-type settlement Trostianets", Вінницької області→"Vinnytsia Oblast". Every hard rule satisfied.
+- HONEST: read came via fallback gemini-2.5-flash (primary gemini-3.1-pro-preview RPM-throttled on heavy vision payload) → all fields force-reviewed per ADR-018. Pursuing a clean primary read on a fresh deploy.
+- CODE FIX: geminiVisionProvider now surfaces Google RPC status (RESOURCE_EXHAUSTED) so classifier returns OCR_QUOTA_EXHAUSTED (hard, no pointless retry, honest message) instead of mislabeling it OCR_RATE_LIMITED. +1 marker-channel test (ocrErrors 18/18).
+
+
 ## 2026-06-21 | Scenario E2E coverage (RU + MRZ + operator-correction) + public CI mirror green
 - Public history-free CI mirror **2133611700c-sudo/uscis-helper-ci** runs Core Proof on free unlimited Linux Actions — 4 jobs GREEN (knowledge/brain/PDF/full-pipeline).
 - Added two locally+CI-verified E2E test files (13 tests, no Gemini): translationScenariosFixtureE2E (RU transliteration, passport TD3 MRZ controlling-Latin) + translationOperatorCorrectionE2E (C3 parks low-conf dob → real normalizer ISO→USCIS → release guard → regenerated certified PDF, zero Cyrillic leak).
