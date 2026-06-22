@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-21 | REAL OCR FULLY GREEN (12/12) — spend cap raised + RU routing fixed
+- staging-e2e-translation REAL Cyrillic OCR: **12 passed, 0 failed** (run on d1b4ec2). First fully-green live-Gemini OCR run.
+- Proven on owner's REAL booklet (qa-shots/private): Kuropiatnyk/Serhii/Serhiiovych/06-25-1986/urban-type settlement Trostianets/Vinnytsia Oblast — zero Cyrillic leak, all hard rules satisfied.
+- RU routing fix confirmed live (ru_printed: no Cyrillic leak). Public mirror core-proof green @fd5c35a.
+- REMAINING OWNER ACTION (account-side, not code): primary gemini-3.1-pro-preview falls to flash on real vision due to LOW per-minute RPM (premium preview model) + parallel page fan-out. Reads are correct but force-reviewed per ADR-018. Raise the RPM/quota for gemini-3.1-pro-preview in Google Cloud (same place as the spend cap) to get clean primary acceptance reads.
+- MERGE GATE: the original "no merge until real OCR proven on staging" gate (#208) is now SATISFIED. Merge to main = production deploy → awaiting owner go-ahead.
+
+
 ## 2026-06-21 | ROOT CAUSE of OCR 429 = AI Studio monthly SPEND CAP (not depleted/daily); fixed by owner; REAL OCR proven on owner booklet
 - Raw Gemini probe (gemini-quota-diag.yml): key VALID (models.list 200), all configured models exist; generateContent → 429 RESOURCE_EXHAUSTED "project exceeded its monthly spending cap" (ai.studio/spend). Owner raised the cap → models now 200.
 - REAL OCR on owner's real booklet (qa-shots/private/booklet_test_resized.jpg) via live preview: Куроп'ятник→Kuropiatnyk, Сергій→Serhii, Сергійович→Serhiiovych, 25 червня 1986→06/25/1986, смт Тростянець→"urban-type settlement Trostianets", Вінницької області→"Vinnytsia Oblast". Every hard rule satisfied.
