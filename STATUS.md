@@ -176,3 +176,4 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- REAL-OCR: BLOCKED_EXTERNAL — pipeline proven to live Gemini; key quota depleted (429 across 152s backoff). Unblock = funded GEMINI_API_KEY secret, no code change. -->
 
 <!-- 2026-06-21: public CI mirror uscis-helper-ci GREEN (4 jobs); +13 scenario E2E tests (RU/MRZ/operator-correction). OCR still Gemini-quota-blocked. -->
+<!-- 2026-06-21: gemini-quota-diag.yml added to capture RAW Gemini 429 body (quota metric) + model-existence — root-cause probe for persistent OCR 429. -->

@@ -1,0 +1,56 @@
+name: Gemini Quota Diagnostic (manual)
+
+# One-off root-cause probe for the persistent OCR 429. Calls the CONFIGURED
+# GEMINI_API_KEY directly against the AI Studio endpoint and prints the RAW
+# response: (1) which models the key can see, (2) the raw 429 body + its quota
+# metric on a known-good model, (3) whether the configured primary model exists.
+# The key is sent as a header (never in a logged URL); GitHub also masks secrets.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1) models list — key validity + which models actually exist
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          set +x
+          code=$(curl -s -o /tmp/models.json -w '%{http_code}' \
+            -H "x-goog-api-key: $GEMINI_API_KEY" \
+            "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200")
+          echo "models.list HTTP=$code"
+          echo "--- model names containing pro/flash (no key printed) ---"
+          jq -r '.models[]?.name' /tmp/models.json 2>/dev/null | grep -iE "pro|flash" | head -60 \
+            || { echo "(jq failed; raw head:)"; head -c 1200 /tmp/models.json; }
+          echo "--- is the configured primary model present? ---"
+          jq -r '.models[]?.name' /tmp/models.json 2>/dev/null | grep -E "gemini-3.1-pro-preview|gemini-3.5-flash|gemini-2.5-flash" || echo "NONE of the configured models found in list"
+
+      - name: 2) raw generateContent on gemini-2.5-flash — capture the quota metric
+        if: always()
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          set +x
+          code=$(curl -s -o /tmp/gen25.json -w '%{http_code}' \
+            -H "x-goog-api-key: $GEMINI_API_KEY" -H "content-type: application/json" \
+            -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent" \
+            -d '{"contents":[{"parts":[{"text":"hi"}]}],"generationConfig":{"maxOutputTokens":1}}')
+          echo "gemini-2.5-flash generateContent HTTP=$code"
+          echo "--- raw body (error metric / quota reason is here; no key in body) ---"
+          head -c 2500 /tmp/gen25.json
+
+      - name: 3) raw generateContent on configured primary gemini-3.1-pro-preview — 404 vs 429
+        if: always()
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          set +x
+          code=$(curl -s -o /tmp/genp.json -w '%{http_code}' \
+            -H "x-goog-api-key: $GEMINI_API_KEY" -H "content-type: application/json" \
+            -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent" \
+            -d '{"contents":[{"parts":[{"text":"hi"}]}],"generationConfig":{"maxOutputTokens":1}}')
+          echo "gemini-3.1-pro-preview generateContent HTTP=$code (404=model does not exist, 429=exists-but-rate/quota)"
+          echo "--- raw body ---"
+          head -c 2000 /tmp/genp.json
