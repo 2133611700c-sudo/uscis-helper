@@ -10,6 +10,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildPrompt, buildResponseSchema } from '../providers/geminiVisionProvider'
 import { getDocTypeSpec } from '../documentRegistry'
+import { readingRulesPromptBlock, DOC_READING_RULES } from '../docReadingRules'
 
 const booklet = getDocTypeSpec('ua_internal_passport_booklet')!
 
@@ -44,6 +45,44 @@ describe('R1 — buildPrompt threads handwritten + date-distinctness', () => {
     const p = buildPrompt(booklet)
     expect(p).toMatch(/Do NOT transliterate to Latin yourself/)
     expect(p).toMatch(/NEVER invent/)
+  })
+})
+
+describe('STAGE 1 — per-document reading rules (teach the brain)', () => {
+  it('birth-cert rules teach the cursive-month-word + RU/UA + spelled-out date', () => {
+    const block = readingRulesPromptBlock('ua_birth_certificate')
+    expect(block).toMatch(/червня\/июня = 06 June/)
+    expect(block).toMatch(/NOT.*июля = 07 July/)
+    expect(block).toMatch(/SPELLED OUT in cursive WORDS/)
+    expect(block).toMatch(/do NOT Ukrainianize/i)
+  })
+
+  it('international-passport rules teach controlling Latin + MRZ anchor', () => {
+    const block = readingRulesPromptBlock('ua_international_passport')
+    expect(block).toMatch(/CONTROLLING/)
+    expect(block).toMatch(/SERGII/)
+    expect(block).toMatch(/MRZ/)
+  })
+
+  it('every rule set has language + at least one rule', () => {
+    for (const [id, r] of Object.entries(DOC_READING_RULES)) {
+      expect(r.language, id).toBeTruthy()
+      expect(r.rules.length, id).toBeGreaterThan(0)
+    }
+  })
+
+  it('flag gates the block into the prompt: OFF → absent, ON → present', () => {
+    const booklet = getDocTypeSpec('ua_birth_certificate')!
+    const prev = process.env.DOC_READING_RULES_ENABLED
+    try {
+      delete process.env.DOC_READING_RULES_ENABLED
+      expect(buildPrompt(booklet)).not.toMatch(/DOCUMENT-SPECIFIC READING RULES/)
+      process.env.DOC_READING_RULES_ENABLED = '1'
+      expect(buildPrompt(booklet)).toMatch(/DOCUMENT-SPECIFIC READING RULES/)
+    } finally {
+      if (prev === undefined) delete process.env.DOC_READING_RULES_ENABLED
+      else process.env.DOC_READING_RULES_ENABLED = prev
+    }
   })
 })
 

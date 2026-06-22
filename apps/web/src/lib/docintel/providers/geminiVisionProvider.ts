@@ -16,6 +16,7 @@ import type { DocTypeSpec, VisionFieldRead, VisionProvider, VisionReadResult } f
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
 import { FALLBACK_MODELS, isDisqualifiedFor } from '../modelMatrix'
+import { readingRulesPromptBlock, isDocReadingRulesEnabled } from '../docReadingRules'
 import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
 
 const GEMINI_PROVIDER_NAME = 'gemini'
@@ -85,6 +86,9 @@ export function buildPrompt(spec: DocTypeSpec): string {
   const handwritingRule = hasHandwritten
     ? `\n- HANDWRITING — fields marked [HANDWRITTEN cursive] are written by hand, not printed. Read them letter by letter; do NOT pattern-match a cursive scrawl to the nearest common name. A handwritten DATE is a sequence of separate digits — read each digit individually (handwritten 1/2/7, 4/9, 3/5/8 are easily confused; pick the digits that form a plausible real date, day 01-31, month 01-12). A handwritten name must still be a REAL Ukrainian name spelled with Ukrainian letters.`
     : ''
+  // STAGE 1 (teach the brain): per-document-class reading instructions, grounded in
+  // real-doc analysis. Gated; OFF ⇒ prompt unchanged. Appended after the generic rules.
+  const docRules = isDocReadingRulesEnabled() ? readingRulesPromptBlock(spec.id) : ''
   return `You are reading a ${spec.title_en}. The IMAGE is the ground truth — read only what is visibly written. Do NOT guess, do NOT infer typical values.
 
 Return a JSON object with these keys, reading each from the document text:
@@ -104,7 +108,7 @@ Rules:
 - Handwritten Ukrainian "Т" and "П" look similar, as do "и/н", "ш/щ", "л/м"; pick the letter that forms a REAL Ukrainian name/place.${dateRule}${handwritingRule}
 - ABSENT FIELDS ARE NORMAL. Many of the requested fields may simply NOT be present on this particular document — that is expected and correct. If a field is not visibly written on the document, or is not clearly legible, set can_read=false and cyrillic="". Returning an absent field is the CORRECT answer. NEVER invent, NEVER infer a typical/default value (e.g. do NOT assume citizenship "Україна", do NOT copy a value from another field, do NOT guess a series or a date). An empty field is always better than an invented one.
 - Do NOT transliterate to Latin yourself. Return the original script (except iso_date).
-- Output ONLY the JSON object.`
+- Output ONLY the JSON object.${docRules}`
 }
 
 // R2: a strict response schema built from the spec so Gemini returns well-formed,
