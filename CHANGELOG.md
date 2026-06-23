@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-23 | Sex-from-patronymic (deterministic, FREE) — closes the measured sex=MISS gap, zero LLM cost
+- The stability audit found sex=MISS on the birth cert + military ID. The patronymic encodes sex unambiguously (Сергеевич→M, Степановна→F), so derive it for $0 — the cost-efficiency-first principle (never spend an LLM call for what a suffix tells us). This is the teaching loop in action: mentor found the gap → encoded a deterministic FREE rule in the ONE codex.
+- `packages/knowledge` (codex): new `sexFromPatronymic(p): Sex|null` — female suffixes checked first (longer/more specific); not-a-patronymic ⇒ null (never guesses). Exported from index. +16 tests (sexFromPatronymic.test, wired into CI). Verified live before pinning (12/12 incl. owner's Сергеевич→M).
+- `docintel/patronymicReconcile.ts`: backfill an EMPTY `sex` field from a read patronymic via the codex `sexFromPatronymic` — held for review (reason `sex_from_patronymic`), NEVER overwrites a sex the model read, no-patronymic ⇒ stays empty. Behind the existing SMART_NORMALIZE_ENABLED (default OFF) ⇒ flag-OFF byte-identical. +4 tests. (Also surfaced a parallel local sex-inference there — backfill now uses the ONE codex function per L2.)
+- RULE_REGISTRY updated. Evidence: apps/web 4650 pass; knowledge suites green; tsc 0. Zero Gemini calls.
+
 ## 2026-06-23 | Codex & continuous-teaching system: reference validation + Gemini↔DeepSeek sync + registry (all FREE)
 - Owner directive: develop ONE codex, teach Gemini+DeepSeek everything Claude learns + new rules, loop teach-after-each-process, GitHub-researched but verify-don't-trust, and MINIMIZE expensive LLM calls. Deep GitHub/web research done; heavy infra REJECTED (ADR-025).
 - **PHASE 1 — validate codex vs AUTHORITIES (referenceValidation.test, 29):** pinned KMU-55 (Щ→Shch, зг→zgh, Г→H, Х→Kh, Ц→Ts, Є→Ye — vs czo.gov.ua official + translit-ua/anyascii), Russian BGN/PCGN (Ёлкин→Yelkin, Цой→Tsoy — NOT GOST), oblast English = modern Ukrainian (Kyiv≠Kiev, Odesa≠Odessa, Kharkiv≠Kharkov, Lviv≠Lvov), + round-trip determinism. Verified live before pinning — our codex is correct vs the standards.

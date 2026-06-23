@@ -37,6 +37,7 @@ Each class injects the constants above + its own `rules[]`. Notable per-class te
 | Oblast English names | modern Ukrainian (GeoNames/DMS): Kyiv≠Kiev, Odesa≠Odessa | `referenceValidation.test`; `russianGlossary.test` (RU oblasts) |
 | Civil-registry terms (UA+RU) | Federal Law 143-ФЗ; UA РАЦС/ДРАЦС | `russianGlossary.test`; `civilRegistryDeathNameChange.test` |
 | Patronymic (UA+RU) | derivation rules + exceptions | `patronymic.test`, `patronymicRu.test` |
+| **Sex-from-patronymic** (Сергеевич→M, Степановна→F) — deterministic, FREE; fills an empty sex instead of a MISS (no LLM call) | UA/RU patronymic suffix grammar | `sexFromPatronymic.test` (16); wired (flag SMART_NORMALIZE_ENABLED) in `patronymicReconcile`, held for review, never overwrites a read sex |
 | Apostrophe family (U+2019 etc.) | KMU-55 (apostrophe not reproduced) | `alphabetCompleteness.test` |
 
 ## How to add a rule (see TEACHING_LOOP.md)
