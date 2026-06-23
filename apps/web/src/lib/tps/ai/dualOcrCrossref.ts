@@ -43,6 +43,13 @@ const CROSSREF_PROMPT = `You are a Ukrainian document OCR expert.
 I have TWO separate OCR readings of the SAME Ukrainian internal passport (booklet).
 Both read the same handwritten document but with different OCR engines.
 
+BOUNDED ROLE (Constitution L3 / ADR-018 / RECOGNITION_ORG_CHART D3): you compare the two
+OCR texts and propose the best Cyrillic reading ONLY. You do NOT transliterate to Latin,
+you do NOT decide the final released identity / date / number value, and you do NOT touch
+locked tokens. Your "value" is a non-authoritative Cyrillic candidate; Latin transliteration
+(KMU-55) and the released final value are produced deterministically in code afterwards.
+You see NO pixels — only the two OCR texts below. Invent nothing beyond their evidence.
+
 === GOOGLE VISION OCR ===
 {VISION_TEXT}
 

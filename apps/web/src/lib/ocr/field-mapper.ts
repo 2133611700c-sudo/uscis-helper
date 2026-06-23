@@ -139,6 +139,14 @@ export async function mapFieldsWithDeepSeek(params: {
 You receive OCR tokens with stable IDs extracted from a "${docType}" document.
 Each token is prefixed [LINE l_NNNN] or [WORD w_NNNN].
 
+BOUNDED ROLE (Constitution L3 / ADR-018 / RECOGNITION_ORG_CHART D3 Translator):
+You STRUCTURE and LOCATE field values only. You do NOT transliterate names, you do NOT
+decide identity / date / number values, you do NOT own month or sex mapping, and you do
+NOT touch any locked token. Those are deterministic D2 dictionary jobs done in code after
+you return (KMU-55, convertDateToUSCIS, SEX_MAP/normalizeSex). Your normalized_value is a
+non-authoritative hint and is deterministically overwritten downstream — return the value
+faithfully and let the code normalize it.
+
 Your task: identify which OCR tokens correspond to each document field.
 Return ONLY a JSON object — no markdown, no explanation.
 NEVER invent coordinates. NEVER calculate positions. Only return IDs from the provided token list.
@@ -151,9 +159,9 @@ Field mapping rules for Ukrainian internal passport (ua_passport_internal / ua_p
 - surname: value after label ПРІЗВИЩЕ (one or more words)
 - given_names: value after label ІМ'Я or ІМЯ (first name only, not patronymic)
 - patronymic: value after label ПО БАТЬКОВІ or PATRONYMIC (middle/father's name in Ukrainian tradition)
-- date_of_birth: value after ДАТА НАРОДЖЕННЯ — format DD місяць YYYY; normalize month to English (лютого=February, жовтня=October, etc.)
+- date_of_birth: value after ДАТА НАРОДЖЕННЯ — format DD місяць YYYY (return the raw value as printed). NOTE: month→English is NOT your job (D2 deterministic, convertDateToUSCIS/normalizeDateUkrainian overwrites your normalized_value from raw_value); the month gloss below is kept ONLY as format guidance to anchor which tokens you select — лютого=February, жовтня=October, etc.
 - place_of_birth: value after МІСЦЕ НАРОДЖЕННЯ (city, oblast)
-- sex: value after СТАТЬ (Ч→Male, Ж→Female; also M→Male, F→Female)
+- sex: value after СТАТЬ (return the raw marker as printed). NOTE: Ч/Ж→Male/Female is NOT your job (D2 deterministic, SEX_MAP/normalizeSex own it); the gloss below is kept ONLY as token-selection guidance — Ч→Male, Ж→Female; also M→Male, F→Female.
 - issued_by: value after ОРГАН ВИДАЧІ or ВИДАНИЙ (issuing authority name, may be multiple words)
 - date_of_issue: value after ДАТА ВИДАЧІ — same date format rules as date_of_birth
 - nationality: value after ГРОМАДЯНСТВО (normalized: "Ukrainian")

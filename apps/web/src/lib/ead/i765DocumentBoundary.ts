@@ -17,6 +17,14 @@
 import type { EadFieldData } from './i765FieldMap'
 import type { CanonicalDocumentResult, CanonicalField } from '@/lib/canonical/types'
 
+// U-STAGE 4 provenance fix: EadFieldData is HAND-TYPED wizard input, not an OCR
+// read. Stamping source:'document_ocr' + confidence.final:1 FAKED OCR provenance,
+// which would fool any confidence-/source-based gate into trusting typed values as
+// document-verified. Mark it as 'manual_user_entry' (lowest authority) with no
+// synthetic confidence (final:0 — typed input carries no OCR/source agreement).
+// SAFE: the I-765/I-131 mappers release values via getCanonicalValue, which reads
+// ONLY finalValue/normalizedValue/rawValue — never source or confidence — so the
+// filled PDF is byte-identical. This change only stops the gate from being fooled.
 function docField(key: string, value: string | null | undefined): CanonicalField | null {
   if (value == null || value === '') return null
   return {
@@ -24,8 +32,8 @@ function docField(key: string, value: string | null | undefined): CanonicalField
     rawValue: value,
     normalizedValue: value,
     criticality: 'medium',
-    confidence: { ocr: null, field_match: null, normalization: null, source_match: null, final: 1 },
-    source: 'document_ocr',
+    confidence: { ocr: null, field_match: null, normalization: null, source_match: null, final: 0 },
+    source: 'manual_user_entry',
     reviewRequired: false,
     reviewReasons: [],
     evidence: [],

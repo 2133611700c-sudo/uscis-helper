@@ -18,6 +18,13 @@
 import type { ReParoleAnswers } from './answers'
 import type { CanonicalDocumentResult, CanonicalField } from '@/lib/canonical/types'
 
+// U-STAGE 4 provenance fix: ReParoleAnswers is HAND-TYPED wizard input, not an OCR
+// read. Stamping source:'document_ocr' + confidence.final:1 FAKED OCR provenance,
+// which would fool any confidence-/source-based gate into trusting typed values as
+// document-verified. Mark it 'manual_user_entry' (lowest authority) with no
+// synthetic confidence (final:0). SAFE: buildI131DocumentOps releases values via
+// getCanonicalValue, which reads ONLY finalValue/normalizedValue/rawValue — never
+// source or confidence — so the filled I-131 is byte-identical.
 function docField(key: string, value: string | null | undefined): CanonicalField | null {
   if (value == null || value === '') return null
   return {
@@ -26,8 +33,8 @@ function docField(key: string, value: string | null | undefined): CanonicalField
     normalizedValue: value,
     // finalValue undefined ⇒ accessor releases normalizedValue (legacy path, C3 off here).
     criticality: 'medium',
-    confidence: { ocr: null, field_match: null, normalization: null, source_match: null, final: 1 },
-    source: 'document_ocr',
+    confidence: { ocr: null, field_match: null, normalization: null, source_match: null, final: 0 },
+    source: 'manual_user_entry',
     reviewRequired: false,
     reviewReasons: [],
     evidence: [],
