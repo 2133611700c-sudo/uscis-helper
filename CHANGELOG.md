@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-23 | CONNECTED PROFILE — turn the pipeline ON in the right order (FREE now, PAID when budget)
+- Answered the owner's "why isn't it all connected / on?": everything ships behind flags (L10 safe-change) and the FINAL flip needs a live measurement — but I conflated two flag classes. Split + connected them:
+  - **TIER 1 FREE (connected now, $0, unit-proven):** SMART_NORMALIZE (patronymic + sex-from-patronymic + authority), DOC_SCRIPT_ROUTING + RU_TRANSLIT (Russian names → Russian table), DICTIONARY_AUTOCORRECT, CROSS_DOC_RECONCILE (+ free-first knownValues). Set in .env.local (local) + documented for prod.
+  - **TIER 2 PAID (gated until budget):** CONTENT_ORIENT, HIRES_TILE_RECOVER, voting, consensus — they add Gemini calls; the monthly $35 cap is near and a live read currently DEADLINES, so they cannot be measured now. Free-first ordering means Tier 2 only fires for fields still empty after Tier 1.
+- `docs/codex/CONNECTED_PROFILE.md` — the single recommended env profile + the free/paid split + why-not-default-ON + how to verify free.
+- **Proof the connected FREE pipeline works (zero Gemini):** the owner's Russian birth cert, fed as Cyrillic, deterministically produced the full English certified-translation output — Birth Certificate; Kuropyatnik/Sergey/Sergeyevich; SEX=M (derived from отчество, was a MISS); parents; urban-type settlement Trostyanets, Vinnytsia Oblast; III-АМ № 428069. All from the codex, $0.
+- Honest: the live PAID measurement remains blocked by the budget cap (a read deadlined live). Code is ready + deterministically proven; needs only fresh quota.
+
 ## 2026-06-23 | FREE-FIRST cost ordering: fill empty fields from FREE sibling values BEFORE paid tile recovery
 - Cost-efficiency principle wired into the read path: when a field is empty, fill it at $0 from a STRONGER sibling document (passport MRZ etc.) BEFORE spending the paid hi-res tile recovery on it — so Gemini is only spent on what is genuinely unknown.
 - `documentFieldReader.ts`: new `applyKnownValues(fields, known)` (pure, exported) fills an EMPTY field from `opts.knownValues` (held for review, reason `known_from_sibling`), NEVER overwrites a read value; runs BEFORE the tile-recovery block, so recovered fields are no longer empty ⇒ not pursued by the paid pass. +4 tests. Opt absent ⇒ byte-identical.
