@@ -51,6 +51,27 @@ const RUSSIAN_SCRIPT_RULE =
   'map to 01–12. Do NOT romanize — return the Cyrillic exactly; the correct system (Russian ' +
   'BGN/PCGN vs Ukrainian KMU-55) is chosen downstream by the source script.'
 
+// SEPARATE, EXPLICIT RUSSIAN-DOCUMENT rule (owner request 2026-06-23). RUSSIAN_SCRIPT_RULE above
+// governs READING (keep the Russian script as written). This rule governs the Russian document as a
+// whole: how its Russian TERMS and PLACES become English, the passport-match for names, and archaic
+// letters. Values are sourced from the RU normative base (Federal Law 143-FZ «Об актах гражданского
+// состояния»; BGN/PCGN). The English glossary lives in packages/knowledge (civil_registry_terms.json
+// `lang: ru` + dictionary RUSSIAN oblast/settlement maps) — the model need only read faithfully; the
+// English rendering is deterministic downstream.
+const RUSSIAN_DOCUMENT_RULE =
+  'RUSSIAN DOCUMENT (separate rule) — Ukrainian/Soviet documents are frequently written in RUSSIAN; ' +
+  'treat Russian as a first-class source language. (1) READ verbatim in Russian (see the Russian-source ' +
+  'rule). (2) TERMS: a Russian header still names the SAME document — «СВИДЕТЕЛЬСТВО О РОЖДЕНИИ» is a ' +
+  'Birth Certificate, «…О БРАКЕ» Marriage, «…О РАСТОРЖЕНИИ БРАКА» Divorce, «…О СМЕРТИ» Death, «…О ' +
+  'ПЕРЕМЕНЕ ИМЕНИ» Name-Change; «ЗАГС/отдел ЗАГС/орган ЗАГС» = Civil Registry Office; «фамилия/имя/' +
+  'отчество» = Surname/Given name/Patronymic (отчество is a Patronymic, NEVER a Middle Name). ' +
+  '(3) PLACES in Ukraine keep the modern UKRAINIAN English form even when written in Russian: ' +
+  '«Винницкая область» → Vinnytsia Oblast (NOT Vinnitsa), «Тростянецкого района» → Trostianets Raion, ' +
+  '«посёлок городского типа/пгт» → urban-type settlement, «село/деревня» → village. ' +
+  '(4) NAMES: the controlling Latin spelling on a passport/MRZ (if present in the same packet) WINS ' +
+  'over re-transliteration (USCIS expects consistency with the passport). (5) ARCHAIC pre-1918 letters ' +
+  '(ѣ/yat, і, ѳ, ѵ) on very old documents read as their modern equivalents (ѣ→е, ѳ→ф, ѵ→и/у, і→и).'
+
 export const DOC_READING_RULES: Record<string, DocReadingRules> = {
   ua_birth_certificate: {
     language:
@@ -70,6 +91,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'This is a vintage handwritten certificate on a printed form — the LABELS are printed, ' +
         'the VALUES are handwritten cursive. Read the cursive values letter by letter.',
       RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
       'Read ALL parties: child, FATHER full name, MOTHER full name (e.g. "Куропятник Сергей ' +
         'Леонидович", "Куропятник Наталья Степановна").',
       'Read the certificate series + number, usually Roman-numeral + letters + digits (e.g. ' +
@@ -120,6 +142,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     dateGuidance: MONTH_WORD_RULE,
     rules: [
       RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
       'Read BOTH spouses (surname/given/patronymic + each birth date + birth place), the ' +
         'marriage date, the act-record number, the registering RAGS/DRACS office, and the ' +
         'serial (e.g. "I-БК № 153243"). Note the surname each spouse takes after marriage.',
@@ -131,6 +154,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     dateGuidance: MONTH_WORD_RULE,
     rules: [
       RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
       'Read both former spouses, the dissolution date, the act-record number, the registering ' +
         'office, and the serial (e.g. "I-БК № 18…"). Some copies are PII-redacted (greyed ' +
         'boxes) — leave redacted fields EMPTY, never guess under a redaction.',
@@ -146,6 +170,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'never copy one into the other. ' + MONTH_WORD_RULE,
     rules: [
       RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
       'Read the deceased: surname / given / patronymic (e.g. "Куроп’ятник Сергій Сергійович").',
       'place_of_death is "м./смт/село <Name>, <oblast> область".',
       'Read the act-record number, the registering RAGS/DRACS office, and the serial ' +

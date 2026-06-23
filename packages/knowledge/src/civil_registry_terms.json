@@ -58,7 +58,48 @@
       "era": "2016-present",
       "review_required": false,
       "confidence": "high"
+    },
+
+    "ЗАГС": {
+      "lang": "ru",
+      "ru_full": "Запись актов гражданского состояния",
+      "en": "Civil Registry Office (ZAGS)",
+      "era": "soviet",
+      "note": "RUSSIAN-language civil registry (Soviet/UkrSSR documents). Source: Federal Law 143-FZ «Об актах гражданского состояния».",
+      "review_required": false,
+      "confidence": "high"
+    },
+    "ОТДЕЛ ЗАГС": {
+      "lang": "ru",
+      "ru_full": "Отдел записи актов гражданского состояния",
+      "en": "Civil Registry Office Department",
+      "review_required": false,
+      "confidence": "high"
+    },
+    "БЮРО ЗАГС": {
+      "lang": "ru",
+      "en": "Civil Registry Bureau",
+      "review_required": false,
+      "confidence": "high"
+    },
+    "ОРГАН ЗАГС": {
+      "lang": "ru",
+      "ru_full": "Орган записи актов гражданского состояния",
+      "en": "Civil Registry Authority",
+      "review_required": false,
+      "confidence": "high"
     }
+  },
+
+  "_russian_note": "RUSSIAN-language terms (lang: ru) added 2026-06-23 — Ukrainian/Soviet documents are often written in Russian. Sources: Federal Law 143-FZ «Об актах гражданского состояния»; BGN/PCGN romanization. Place names in Ukraine keep the modern Ukrainian English form (Vinnytsia, not Vinnitsa).",
+  "soviet_abbreviations": {
+    "СССР": { "en": "USSR", "ru_full": "Союз Советских Социалистических Республик" },
+    "РСФСР": { "en": "RSFSR", "ru_full": "Российская Советская Федеративная Социалистическая Республика" },
+    "УССР": { "en": "Ukrainian SSR", "ru_full": "Украинская Советская Социалистическая Республика" },
+    "МВД": { "en": "Ministry of Internal Affairs", "ru_full": "Министерство внутренних дел" },
+    "ОВД": { "en": "Department of Internal Affairs", "ru_full": "Отдел внутренних дел" },
+    "ВОЕННЫЙ КОМИССАРИАТ": { "en": "Military Commissariat" },
+    "ПАСПОРТНЫЙ СТОЛ": { "en": "Passport Office" }
   },
   "document_terms": {
     "СВІДОЦТВО": {
@@ -266,6 +307,33 @@
     "МАТИ": {
       "en": "Mother",
       "field_hint": "mother_full_name"
-    }
+    },
+
+    "СВИДЕТЕЛЬСТВО": { "lang": "ru", "en": "Certificate", "field_hint": "document_type" },
+    "СВИДЕТЕЛЬСТВО О РОЖДЕНИИ": { "lang": "ru", "en": "Birth Certificate", "field_hint": "document_type" },
+    "СВИДЕТЕЛЬСТВО О БРАКЕ": { "lang": "ru", "en": "Marriage Certificate", "field_hint": "document_type" },
+    "СВИДЕТЕЛЬСТВО О ЗАКЛЮЧЕНИИ БРАКА": { "lang": "ru", "en": "Marriage Certificate", "field_hint": "document_type" },
+    "СВИДЕТЕЛЬСТВО О РАСТОРЖЕНИИ БРАКА": { "lang": "ru", "en": "Divorce Certificate", "field_hint": "document_type", "note": "Also Certificate of Dissolution of Marriage." },
+    "СВИДЕТЕЛЬСТВО О РАЗВОДЕ": { "lang": "ru", "en": "Divorce Certificate", "field_hint": "document_type" },
+    "СВИДЕТЕЛЬСТВО О СМЕРТИ": { "lang": "ru", "en": "Death Certificate", "field_hint": "document_type" },
+    "СВИДЕТЕЛЬСТВО О ПЕРЕМЕНЕ ИМЕНИ": { "lang": "ru", "en": "Name Change Certificate", "field_hint": "document_type" },
+    "ФАМИЛИЯ": { "lang": "ru", "en": "Surname", "field_hint": "family_name" },
+    "ИМЯ": { "lang": "ru", "en": "Given Name", "field_hint": "given_name" },
+    "ОТЧЕСТВО": { "lang": "ru", "en": "Patronymic", "field_hint": "patronymic", "note": "Render as Patronymic, NEVER Middle Name." },
+    "ДАТА РОЖДЕНИЯ": { "lang": "ru", "en": "Date of Birth", "field_hint": "date_of_birth" },
+    "МЕСТО РОЖДЕНИЯ": { "lang": "ru", "en": "Place of Birth", "field_hint": "place_of_birth" },
+    "ОТЕЦ": { "lang": "ru", "en": "Father", "field_hint": "father_full_name" },
+    "МАТЬ": { "lang": "ru", "en": "Mother", "field_hint": "mother_full_name" },
+    "РОДИТЕЛИ": { "lang": "ru", "en": "Parents", "field_hint": "parents" },
+    "ДАТА ВЫДАЧИ": { "lang": "ru", "en": "Date of Issue", "field_hint": "date_of_issue" },
+    "ЗАПИСЬ АКТА": { "lang": "ru", "en": "Act Record", "field_hint": "act_record_number" },
+    "НОМЕР АКТОВОЙ ЗАПИСИ": { "lang": "ru", "en": "Act Record Number", "field_hint": "act_record_number" },
+    "АКТОВАЯ ЗАПИСЬ": { "lang": "ru", "en": "Act Record", "field_hint": "act_record_number" },
+    "СЕРИЯ": { "lang": "ru", "en": "Series", "field_hint": "certificate_series" },
+    "НОМЕР": { "lang": "ru", "en": "Number", "field_hint": "certificate_number or act_record_number — distinguish by label zone" },
+    "ПРИЧИНА СМЕРТИ": { "lang": "ru", "en": "Cause of Death", "field_hint": "cause_of_death", "note": "Medical wording — long/complex → manual_review. Do NOT infer." },
+    "ДАТА СМЕРТИ": { "lang": "ru", "en": "Date of Death", "field_hint": "date_of_death" },
+    "МЕСТО СМЕРТИ": { "lang": "ru", "en": "Place of Death", "field_hint": "place_of_death" },
+    "ПОВТОРНО": { "lang": "ru", "en": "Duplicate / Issued Again", "field_hint": "repeated_certificate_marker", "review_required": true, "note": "Re-issued certificate marker — surface in Evidence Review." }
   }
 }
