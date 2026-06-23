@@ -30,11 +30,14 @@ describe('OBLAST auto-correct', () => {
     expect(d.provenance).toBe('oblast_autocorrect')
   })
 
-  it('RU-spelled "Винницкой области" → Vinnytsia Oblast, ACCEPT', () => {
+  it('RU-spelled "Винницкой области" → Vinnytsia Oblast, ACCEPT (now deterministic)', () => {
+    // 2026-06-23: the Russian oblast genitive forms were added to the deterministic dictionary
+    // (RUSSIAN forms in normalizeOblastToNominative), so RU oblasts now resolve by EXACT match —
+    // an improvement over the prior fuzzy oblast_autocorrect path. Value unchanged.
     const d = normalizeCanonicalValue('place_oblast', 'Винницкой области', ON)
     expect(d.action).toBe('accept')
     expect(d.finalValue).toBe('Vinnytsia Oblast')
-    expect(d.provenance).toBe('oblast_autocorrect')
+    expect(d.provenance).not.toBe('oblast_autocorrect') // resolved by exact RU dict
   })
 
   it('AMBIGUOUS oblast ("Луська область") → NOT auto-corrected to an oblast', () => {

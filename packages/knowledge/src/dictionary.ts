@@ -465,7 +465,9 @@ export function normalizeOblastToNominative(raw: string): { nominative_uk: strin
   // Strip oblast/obl suffix before lookup. Must match full words:
   // "область", "обл.", "обл" — but NOT strip "обл" as a prefix of "область".
   // Pattern: обл(?:асть|асті|\.?) covers all three forms safely.
-  const lower = raw.toLowerCase().replace(/\s*(областей?|обл(?:асть|асті|\.?))\s*/gi, '').trim();
+  // Strip the oblast suffix in BOTH Ukrainian (область/області/обл.) and RUSSIAN
+  // (область/области — Soviet/RU-language documents) forms.
+  const lower = raw.toLowerCase().replace(/\s*(областей?|обл(?:асть|асті|асти|\.?))\s*/gi, '').trim();
 
   // DMS-verified English names for oblasts (from dmsu.gov.ua/en-home/contacts.html)
   const DMS_ENGLISH: Record<string, string> = {
@@ -494,6 +496,34 @@ export function normalizeOblastToNominative(raw: string): { nominative_uk: strin
     'черкаської': 'Cherkasy', 'черкаська': 'Cherkasy',
     'чернівецької': 'Chernivtsi', 'чернівецька': 'Chernivtsi',
     'чернігівської': 'Chernihiv', 'чернігівська': 'Chernihiv',
+
+    // RUSSIAN-language forms of the SAME 24 Ukrainian oblasts (Soviet/RU documents).
+    // The English is the modern UKRAINIAN romanization (the place is in Ukraine) — e.g.
+    // Винницкой/Винницкая → Vinnytsia, NOT the Russified "Vinnitsa".
+    'винницкой': 'Vinnytsia', 'винницкая': 'Vinnytsia',
+    'волынской': 'Volyn', 'волынская': 'Volyn',
+    'днепропетровской': 'Dnipropetrovsk', 'днепропетровская': 'Dnipropetrovsk',
+    'донецкой': 'Donetsk', 'донецкая': 'Donetsk',
+    'житомирской': 'Zhytomyr', 'житомирская': 'Zhytomyr',
+    'закарпатской': 'Zakarpattia', 'закарпатская': 'Zakarpattia',
+    'запорожской': 'Zaporizhzhia', 'запорожская': 'Zaporizhzhia',
+    'ивано-франковской': 'Ivano-Frankivsk', 'ивано-франковская': 'Ivano-Frankivsk',
+    'киевской': 'Kyiv', 'киевская': 'Kyiv',
+    'кировоградской': 'Kirovohrad', 'кировоградская': 'Kirovohrad',
+    'луганской': 'Luhansk', 'луганская': 'Luhansk',
+    'львовской': 'Lviv', 'львовская': 'Lviv',
+    'николаевской': 'Mykolaiv', 'николаевская': 'Mykolaiv',
+    'одесской': 'Odesa', 'одесская': 'Odesa',
+    'полтавской': 'Poltava', 'полтавская': 'Poltava',
+    'ровенской': 'Rivne', 'ровенская': 'Rivne',
+    'сумской': 'Sumy', 'сумская': 'Sumy',
+    'тернопольской': 'Ternopil', 'тернопольская': 'Ternopil',
+    'харьковской': 'Kharkiv', 'харьковская': 'Kharkiv',
+    'херсонской': 'Kherson', 'херсонская': 'Kherson',
+    'хмельницкой': 'Khmelnytskyi', 'хмельницкая': 'Khmelnytskyi',
+    'черкасской': 'Cherkasy', 'черкасская': 'Cherkasy',
+    'черновицкой': 'Chernivtsi', 'черновицкая': 'Chernivtsi',
+    'черниговской': 'Chernihiv', 'черниговская': 'Chernihiv',
   };
 
   // Normalize ANY oblast adjective case to the nominative -ка form so every
@@ -525,13 +555,14 @@ export function normalizeOblastToNominative(raw: string): { nominative_uk: strin
 // unambiguous full forms (смт, село, селище, хутір, місто) fire even when the OCR
 // lowercased the city name (e.g. «смт вишневе» → urban-type settlement).
 const DESIGNATOR_PREFIXES: Array<{ re: RegExp; en: string | null; guardCase?: boolean }> = [
-  { re: /^\s*(?:смт\.?|с\.\s*м\.\s*т\.?|селище міського типу|пгт\.?|п\.\s*г\.\s*т\.?)\s+/iu, en: 'urban-type settlement' },
+  { re: /^\s*(?:смт\.?|с\.\s*м\.\s*т\.?|селище міського типу|посёлок городского типа|поселок городского типа|пгт\.?|п\.\s*г\.\s*т\.?)\s+/iu, en: 'urban-type settlement' },
   { re: /^\s*село\s+/iu, en: 'village' },
+  { re: /^\s*(?:деревня|дер\.)\s+/iu, en: 'village' }, // RU: деревня = village
   { re: /^\s*с\.\s+/iu, en: 'village', guardCase: true },
-  { re: /^\s*(?:селище|с-ще)\s+/iu, en: 'settlement' },
-  { re: /^\s*(?:хутір|хут\.)\s+/iu, en: 'khutor' },
-  { re: /^\s*місто\s+/iu, en: null }, // city stays bare
-  { re: /^\s*м\.\s+/iu, en: null, guardCase: true },
+  { re: /^\s*(?:селище|с-ще|посёлок|поселок|пос\.)\s+/iu, en: 'settlement' }, // RU: посёлок = settlement
+  { re: /^\s*(?:хутір|хутор|хут\.)\s+/iu, en: 'khutor' }, // RU: хутор
+  { re: /^\s*(?:місто|город)\s+/iu, en: null }, // city stays bare (UK місто / RU город)
+  { re: /^\s*(?:м\.|г\.)\s+/iu, en: null, guardCase: true }, // UK м. / RU г.
 ];
 
 export function settlementDesignatorEn(rawCyrillic: string | null | undefined): string | null {
