@@ -34,7 +34,8 @@ const WIZARD_SRC = fs.readFileSync(WIZARD_PATH, 'utf-8')
 // ── 1. SERVER: extract route persists + emits canonical_document_id ───────────
 describe('ReParole extract route — canonical persistence + id emission', () => {
   it('imports persistCanonicalDocument from the canonical persistence module', () => {
-    expect(ROUTE_SRC).toMatch(/import\s*\{\s*persistCanonicalDocument\s*\}\s*from\s*['"]@\/lib\/canonical\/persistence['"]/)
+    // Seam A also imports loadAllCanonicalDocumentsForSession from the same module.
+    expect(ROUTE_SRC).toMatch(/import\s*\{[^}]*\bpersistCanonicalDocument\b[^}]*\}\s*from\s*['"]@\/lib\/canonical\/persistence['"]/)
   })
 
   it('guards persistence behind the product-scoped canonical mode (off = skip)', () => {
@@ -45,7 +46,10 @@ describe('ReParole extract route — canonical persistence + id emission', () =>
   })
 
   it('persists the built CanonicalDocumentResult and keeps the returned row id', () => {
-    expect(ROUTE_SRC).toMatch(/persistCanonicalDocument\(\s*canonical\s*,\s*document_id\s*\)/)
+    // Seam A: session id is persistSessionId (= stable wizard cookie behind the flag, else the
+    // ephemeral document_id ⇒ byte-identical when the flag is OFF).
+    expect(ROUTE_SRC).toMatch(/persistCanonicalDocument\(\s*canonical\s*,\s*persistSessionId\s*\)/)
+    expect(ROUTE_SRC).toMatch(/const persistSessionId = wizardAnonId \?\? document_id/)
     expect(ROUTE_SRC).toMatch(/reParoleCanonicalDocumentId\s*=\s*persisted\.id/)
   })
 
