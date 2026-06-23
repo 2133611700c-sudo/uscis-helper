@@ -37,6 +37,20 @@ const MONTH_WORD_RULE =
   'липня/июля = 07 July); травня/мая = 05 May (NOT березня/марта = 03 March). A wrong month ' +
   'is the most common error on these documents — be deliberate.'
 
+// RUSSIAN-SCRIPT rule for Soviet/UkrSSR-era documents written in RUSSIAN. The model tends
+// to "helpfully" Ukrainianize a Russian source (Сергей→Сергій). That is a TRANSCRIPTION
+// ERROR for a certified translation, which must reflect the document AS WRITTEN.
+const RUSSIAN_SCRIPT_RULE =
+  'RUSSIAN SOURCE — Soviet/UkrSSR-era documents are often written in RUSSIAN, not Ukrainian. ' +
+  'If the script on the page is Russian, transcribe it EXACTLY as Russian — do NOT convert it to ' +
+  'Ukrainian. Keep the Russian letters ы/э/ё/ъ (do not "fix" them to и/е/є/і). Keep Russian name ' +
+  'forms verbatim: Сергей (NOT Сергій), Сергеевич (NOT Сергійович), Наталья (NOT Наталія), ' +
+  'Куропятник with no apostrophe (NOT Куроп’ятник), Леонидович, Степановна. Keep Russian place/' +
+  'oblast forms: Винницкая область (NOT Вінницька), Тростянецкого района (NOT району). Russian ' +
+  'month names января/февраля/марта/апреля/мая/июня/июля/августа/сентября/октября/ноября/декабря ' +
+  'map to 01–12. Do NOT romanize — return the Cyrillic exactly; the correct system (Russian ' +
+  'BGN/PCGN vs Ukrainian KMU-55) is chosen downstream by the source script.'
+
 export const DOC_READING_RULES: Record<string, DocReadingRules> = {
   ua_birth_certificate: {
     language:
@@ -51,6 +65,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     rules: [
       'This is a vintage handwritten certificate on a printed form — the LABELS are printed, ' +
         'the VALUES are handwritten cursive. Read the cursive values letter by letter.',
+      RUSSIAN_SCRIPT_RULE,
       'Read ALL parties: child, FATHER full name, MOTHER full name (e.g. "Куропятник Сергей ' +
         'Леонидович", "Куропятник Наталья Степановна").',
       'Read the certificate series + number, usually Roman-numeral + letters + digits (e.g. ' +
@@ -100,6 +115,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     language: 'Modern = PRINTED Ukrainian (high accuracy); vintage = handwritten.',
     dateGuidance: MONTH_WORD_RULE,
     rules: [
+      RUSSIAN_SCRIPT_RULE,
       'Read BOTH spouses (surname/given/patronymic + each birth date + birth place), the ' +
         'marriage date, the act-record number, the registering RAGS/DRACS office, and the ' +
         'serial (e.g. "I-БК № 153243"). Note the surname each spouse takes after marriage.',
@@ -110,6 +126,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     language: 'Ukrainian; modern printed or vintage handwritten. May be marked "ПОВТОРНО".',
     dateGuidance: MONTH_WORD_RULE,
     rules: [
+      RUSSIAN_SCRIPT_RULE,
       'Read both former spouses, the dissolution date, the act-record number, the registering ' +
         'office, and the serial (e.g. "I-БК № 18…"). Some copies are PII-redacted (greyed ' +
         'boxes) — leave redacted fields EMPTY, never guess under a redaction.',
@@ -124,6 +141,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'TWO distinct dates: date of birth and DATE OF DEATH — read each from its own location, ' +
       'never copy one into the other. ' + MONTH_WORD_RULE,
     rules: [
+      RUSSIAN_SCRIPT_RULE,
       'Read the deceased: surname / given / patronymic (e.g. "Куроп’ятник Сергій Сергійович").',
       'place_of_death is "м./смт/село <Name>, <oblast> область".',
       'Read the act-record number, the registering RAGS/DRACS office, and the serial ' +
