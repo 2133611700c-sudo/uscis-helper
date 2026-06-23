@@ -13,7 +13,7 @@ export type { Sex, PatronymicResult } from './patronymic';
 
 // D2 Validator — gazetteer: snap a handwriting-OCR place reading to a real
 // Ukrainian place via Cyrillic-confusion-weighted edit distance.
-export { snapCity, confusionDistance, GAZETTEER } from './gazetteer';
+export { snapCity, confusionDistance, GAZETTEER, isKnownSettlement, isKnownRaion } from './gazetteer';
 export type { PlaceMatch } from './gazetteer';
 
 // D2 CONSTRAINED-VOCABULARY auto-correction — snap a near-miss read to the UNIQUE
