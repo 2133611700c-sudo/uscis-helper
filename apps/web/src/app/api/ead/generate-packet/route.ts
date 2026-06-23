@@ -38,6 +38,12 @@ import {
   verifyCanonicalHash,
 } from '@/lib/canonical/persistence'
 import { canonicalError } from '@/lib/canonical/persistence/errors'
+// U-STAGE 4: shared content-validation gate (flag-gated, default OFF).
+import {
+  sharedContentAudit,
+  isSharedFormGateEnabled,
+  EAD_READINESS_SPEC,
+} from '@/lib/canonical/forms/sharedReadiness'
 
 export const dynamic = 'force-dynamic'
 
@@ -77,6 +83,28 @@ export async function POST(req: NextRequest) {
       { error: 'At least first or last name is required to generate a draft I-765.' },
       { status: 400 },
     )
+  }
+
+  // U-STAGE 4: shared pre-PDF content firewall (Cyrillic-leak + date format +
+  // A-Number digit/length). Flag-gated; DEFAULT OFF → byte-identical to today
+  // (EAD has had NO content gate). When SHARED_FORM_GATE_ENABLED is on, EAD gets
+  // the same checks TPS already enforces, sourced from the one shared rulebook.
+  if (isSharedFormGateEnabled()) {
+    const audit = sharedContentAudit(
+      data as unknown as Record<string, unknown>,
+      EAD_READINESS_SPEC,
+    )
+    if (audit.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'PDF safety check failed',
+          issues: audit,
+          guidance:
+            'Please correct the listed fields on the review screen before generating the packet.',
+        },
+        { status: 422 },
+      )
+    }
   }
 
   // ── CANONICAL_CONTINUITY: load resolved canonical if available ──────────────

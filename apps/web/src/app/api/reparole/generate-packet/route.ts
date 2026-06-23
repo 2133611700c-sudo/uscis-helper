@@ -32,6 +32,12 @@ import {
   verifyCanonicalHash,
 } from '@/lib/canonical/persistence'
 import { canonicalError } from '@/lib/canonical/persistence/errors'
+// U-STAGE 4: shared content-validation gate (flag-gated, default OFF).
+import {
+  sharedContentAudit,
+  isSharedFormGateEnabled,
+  REPAROLE_READINESS_SPEC,
+} from '@/lib/canonical/forms/sharedReadiness'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -172,6 +178,27 @@ export async function POST(req: NextRequest) {
         guidance: 'Please correct the listed fields on the review screen before generating the packet.' },
       { status: 422 },
     )
+  }
+
+  // U-STAGE 4: shared pre-PDF content firewall from the ONE shared rulebook.
+  // Flag-gated; DEFAULT OFF → byte-identical to today (the local preflightAudit
+  // above already enforces the same checks unconditionally, so this adds nothing
+  // when OFF). When SHARED_FORM_GATE_ENABLED is on, the shared rulebook re-runs
+  // the identical Cyrillic/date/A-Number checks against the same field list,
+  // keeping EAD + Re-Parole on a single source of truth. The local block stays
+  // so flag-OFF behavior is provably unchanged.
+  if (isSharedFormGateEnabled()) {
+    const sharedAudit = sharedContentAudit(
+      answers as unknown as Record<string, unknown>,
+      REPAROLE_READINESS_SPEC,
+    )
+    if (sharedAudit.length > 0) {
+      return NextResponse.json(
+        { error: 'PDF safety check failed', issues: sharedAudit,
+          guidance: 'Please correct the listed fields on the review screen before generating the packet.' },
+        { status: 422 },
+      )
+    }
   }
 
   // ── CANONICAL_CONTINUITY: load resolved canonical if available ──────────────

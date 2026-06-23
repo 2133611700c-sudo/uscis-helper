@@ -43,6 +43,11 @@ import { fenceUntrustedText, UNTRUSTED_TEXT_SYSTEM_RULE } from '@/lib/tps/ai/unt
 // Catches mixed-script (Cyrillic+Latin look-alikes), abnormal casing,
 // applies safe title-case. Saves us from reinventing it for TPS.
 import { analyseNameField, NAME_FIELDS } from '@/lib/ocr/nameNormalizer'
+import {
+  assertDeepSeekBoundary,
+  findBoundaryViolations,
+  type BoundaryCheckField,
+} from '@/lib/tps/ai/deepseekBoundaryGuard'
 
 // ── Schema ──────────────────────────────────────────────────────────────────
 
@@ -309,6 +314,19 @@ export async function runBrain(
   // to remove the Brain's freedom to invent transliteration. This is
   // the "validators decide, AI suggests" contract enforced in code.
   const hardened = hardenFinalValues(parsed.data)
+
+  // Constitution L3 boundary guard (re-instated, U-STAGE 2): assert the
+  // deterministic overwrite actually ran — a DeepSeek-claimed final_value must
+  // never escape for an identity/date/number field. We compare the model's
+  // CLAIMED final_value (parsed.data) against the hardened release value.
+  //
+  // L10 safe-change: default behaviour is UNCHANGED. The guard runs as an
+  // audit; on a violation it escalates the offending field to requires_review
+  // (additive, never silently releases) and records a warning. Only when
+  // TPS_DEEPSEEK_BOUNDARY_STRICT=1 does a violation hard-throw — that strict
+  // mode is for tests/CI and operator opt-in, never the default prod path.
+  applyBoundaryGuard(parsed.data, hardened)
+
   return { ok: true, result: hardened, raw_response_length: content.length }
 }
 
@@ -433,6 +451,56 @@ function titleCaseOneToken(tok: string): string {
   const tail = m[2]
   if (!letters) return tok
   return letters.charAt(0).toUpperCase() + letters.slice(1).toLowerCase() + tail
+}
+
+/**
+ * Constitution L3 boundary enforcement over hardened output.
+ *
+ * Builds the {source_value, claimed_final_value, hardened_final_value} triples
+ * from the model's raw parse (`claimed`) and the hardened result (`hardened`),
+ * then runs the boundary guard. Mutates `hardened` in place to escalate any
+ * offending field to requires_review (additive, behaviour-preserving). Only
+ * hard-throws when TPS_DEEPSEEK_BOUNDARY_STRICT=1.
+ */
+function applyBoundaryGuard(
+  claimed: DocumentBrainResult,
+  hardened: DocumentBrainResult,
+): void {
+  const triples: BoundaryCheckField[] = []
+  const keys = Object.keys(hardened.fields) as Array<keyof typeof hardened.fields>
+  for (const k of keys) {
+    const hf = hardened.fields[k]
+    const cf = claimed.fields[k]
+    if (!hf || !cf) continue
+    triples.push({
+      field: String(k),
+      source_value: cf.source_value,
+      claimed_final_value: cf.final_value,
+      hardened_final_value: hf.final_value,
+    })
+  }
+
+  if (process.env.TPS_DEEPSEEK_BOUNDARY_STRICT === '1') {
+    // Strict mode (tests / CI / operator opt-in): a violation is a hard error —
+    // the deterministic overwrite is broken and nothing may be released.
+    assertDeepSeekBoundary(triples)
+    return
+  }
+
+  // Default mode (L10 safe): audit only. A violation never silently releases —
+  // escalate the offending field to requires_review and record a warning.
+  const violations = findBoundaryViolations(triples)
+  if (violations.length === 0) return
+  for (const v of violations) {
+    const k = v.field as keyof typeof hardened.fields
+    const f = hardened.fields[k]
+    if (f) hardened.fields[k] = { ...f, requires_review: true }
+  }
+  hardened.needs_manual_review = true
+  hardened.warnings = [
+    ...hardened.warnings,
+    `L3 boundary: ${violations.map((x) => x.field).join(', ')} flagged for review (DeepSeek final_value not deterministically overwritten)`,
+  ].slice(0, 50)
 }
 
 /**
@@ -746,6 +814,13 @@ const SYSTEM_PROMPT = `You are an OCR text classifier for a USCIS packet prepara
 You receive plain text extracted from a single document image. You return ONLY a JSON object
 matching the schema below. You do NOT give legal advice. You do NOT decide eligibility.
 You do NOT invent values. If you cannot find a field, omit it from the output.
+
+BOUNDED ROLE (Constitution L3 / ADR-018 / RECOGNITION_ORG_CHART D3): you STRUCTURE and
+classify text only. You do NOT decide the released identity / date / number value: your
+final_value is a non-authoritative SUGGESTION that is deterministically OVERWRITTEN in code
+(KMU-55 transliteration + WinAnsi-safe + dictionary normalization). You never own the
+transliteration of a name and never touch locked tokens. Put what the document shows in
+source_value faithfully; the deterministic D2 layer produces the authoritative final_value.
 
 Schema:
 {

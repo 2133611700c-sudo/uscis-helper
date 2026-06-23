@@ -34,7 +34,7 @@ import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
-import { applyOcrFieldSafety, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
+import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { getDocTypeSpec } from '@/lib/docintel/documentRegistry'
@@ -446,12 +446,13 @@ async function POST_impl(req: NextRequest) {
       // the Core path because this is the live return (status ok:core-b2).
       const ens = await runDateEnsemble(fields, docTypeId, rawFiles[0])
       fields = ens.fields
-      // R8 — C3 (OCR field safety) on the CORE path, behind OCR_FIELD_SAFETY_ENABLED
-      // (default OFF → Core path byte-identical to prod). The legacy fallback already
-      // runs C3 unconditionally; the Core path did NOT (GAP-2). When the flag is ON,
-      // C3 runs here too so the live arbitration path enforces the same contract.
+      // R8 — C3 (OCR field safety) on the CORE path, ALWAYS (no env flag). The legacy
+      // fallback runs C3 unconditionally; the Core path now does too (closes GAP-2 and
+      // honors audit #195 / TV2-C2: translation's critical-null safety is never gated).
+      // C3 is a safety gate (nulls uncertain criticals) — running it is more conservative,
+      // never a wrong-delivery. Auto-delivery widening stays gated INSIDE via anchorFlagOn.
       let coreOcrFieldSafety: { applied: boolean; unresolved_critical?: boolean } = { applied: false }
-      if (isOcrFieldSafetyEnabled()) {
+      {
         // R7 — per-field strong-source-anchor (gated on DICTIONARY_CLEARS_SOFT_REVIEW).
         // Anchor map is computed from the arbitrated CanonicalField metadata (provenance,
         // source, consensus marker, date-guard reasons) which the FieldOut row does not
