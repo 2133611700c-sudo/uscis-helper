@@ -60,8 +60,12 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'Сергій), keep Ukrainian. Never convert one to the other.',
     dateGuidance:
       'The date of birth is usually SPELLED OUT in cursive WORDS ("двадцать пятого июня ' +
-      'тысяча девятьсот восемьдесят шестого года" = 25 June 1986), NOT digits. Read the day ' +
-      'word and the month WORD in full. ' + MONTH_WORD_RULE,
+      'тысяча девятьсот восемьдесят шестого года" = 25 June 1986), NOT digits. ' +
+      'METHOD (how a careful reader decodes it): FIRST anchor on the YEAR — it is four number-' +
+      'words "(одна) тысяча девятьсот <tens> <units> года" and is the easiest part; read it to ' +
+      'fix the year. THEN read the DAY as an ordinal word (першого/першій=01 … двадцять ' +
+      'п’ятого/двадцать пятого=25 … тридцять першого=31) and the MONTH as a word. Assemble ' +
+      'YYYY-MM-DD. ' + MONTH_WORD_RULE,
     rules: [
       'This is a vintage handwritten certificate on a printed form — the LABELS are printed, ' +
         'the VALUES are handwritten cursive. Read the cursive values letter by letter.',

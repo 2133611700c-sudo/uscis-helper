@@ -125,6 +125,18 @@ const isRuUaVariant = (exp, got) => {
  * Returns one of CORRECT | WRONG | MISS | CORRECT_EMPTY | FABRICATED.
  * `field` (route field name) lets us apply enum-aware comparison (e.g. sex).
  */
+// A DATE is the same regardless of format: GT "1986-06-25" and a read "06/25/1986" are
+// the SAME day. Normalize any MM/DD/YYYY or YYYY-MM-DD (and a leading date inside a verbose
+// spelled-out read) to YYYY-MM-DD before comparing — a format difference is not a misread.
+const canonicalDate = (s) => {
+  const str = (s ?? '').toString()
+  let m = str.match(/(\d{4})-(\d{2})-(\d{2})/)               // YYYY-MM-DD
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`
+  m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)             // MM/DD/YYYY → YYYY-MM-DD
+  if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`
+  return null
+}
+
 function classify(expected, got, kind /* 'latin' | 'cyrillic' */, field = '') {
   const gtEmpty = isEmpty(expected)
   const readEmpty = isEmpty(got)
@@ -132,6 +144,11 @@ function classify(expected, got, kind /* 'latin' | 'cyrillic' */, field = '') {
   if (gtEmpty && !readEmpty) return 'FABRICATED'
   if (!gtEmpty && readEmpty) return 'MISS'
   if (field === 'sex') return canonicalSex(expected) === canonicalSex(got) ? 'CORRECT' : 'WRONG'
+  // Date fields: compare by normalized day, not string format.
+  if (field === 'dob' || /(_date|date_)/.test(field)) {
+    const ed = canonicalDate(expected), gd = canonicalDate(got)
+    if (ed && gd) return ed === gd ? 'CORRECT' : 'WRONG'
+  }
   const norm = kind === 'latin' ? normLatin : normCyr
   return norm(expected) === norm(got) ? 'CORRECT' : 'WRONG'
 }
@@ -201,7 +218,13 @@ function scoreDoc(d, read, gt) {
     // Pick the channel to score: prefer LATIN when GT has a Latin value (passport/military);
     // fall back to CYRILLIC when GT-latin is empty (birth certs keep names as-written, no Latin).
     let channel, expected, gotVal
-    if (!isEmpty(expLatin)) { channel = 'latin'; expected = expLatin; gotVal = g?.value }
+    // RECOGNITION credits a correct read even when it is HELD for soft-confirm: a
+    // handwritten date the safety gate parks as candidate_only (value=null) but whose
+    // candidate_value/suggested_value is correct WAS recognized by the OCR — it just isn't
+    // auto-delivered. Recognition = read correctly; auto-fill (separate metric) = released
+    // without a human. So fall back value → candidate_value → suggested_value for the verdict.
+    const released = (v) => v?.value ?? v?.candidate_value ?? v?.suggested_value
+    if (!isEmpty(expLatin)) { channel = 'latin'; expected = expLatin; gotVal = released(g) }
     else if (expCyr != null && !isEmpty(expCyr)) { channel = 'cyrillic'; expected = expCyr; gotVal = g?.raw_cyrillic }
     else {
       // GT verified the field but left BOTH channels empty → nothing to score against.
