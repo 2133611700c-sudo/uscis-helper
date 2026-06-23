@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-06-22 | Fresh cross-document self-read + rotation test + live DeepSeek teaching proof
+- **Owner task A — "сам по всем правилам проверь документы как модель":** read the REAL document images directly (Claude as the model), applying the rules. Cross-document result:
+  - **DOB = 25 June 1986 CONFIRMED by 3 docs**: passport "25 ЧЕР/JUN 86" + MRZ `8606257` + record `19860625`; military "_5 червня 1986"; birth-cert "25 июня 1986". The handwritten military day "_5" (ambiguous 15/25 alone) is disambiguated to 25 by the passport MRZ — textbook cross-doc anchoring.
+  - **Controlling Latin = SERGII** (passport print "СЕРГІЙ/SERGII" + MRZ) — NOT "Serhii". Confirms L7 (controlling Latin wins); Gemini's KMU-55 re-transliteration to Serhii is wrong.
+  - **КУРОП'ЯТНИК → KUROPIATNYK** (apostrophe dropped) — LIVE VALIDATION of the U+2019 SKIP fix from the prior commit: the real passport does exactly that.
+  - The per-document reading rules (RUSSIAN_SCRIPT_RULE, MONTH_WORD_RULE, controlling-Latin) MATCH what I read from the originals — teaching is grounded, not invented.
+- **Owner task B — "обучи дипсик и демини":** rules verified embedded in BOTH prompt paths (Gemini `readingRulesPromptBlock`, DeepSeek `textRulesForDeepSeek`). LIVE DeepSeek proof (`apps/web/scripts/test-deepseek-teaching.mjs`): on the Russian birth-cert text (clean AND hard ъ/ѣ-garbled), DeepSeek-chat V3 keeps Russian (Сергей/Сергеевич, not Ukrainianized) and parses the spelled-out date → 1986-06-25 (June) **with AND without** the shared rules. HONEST finding: on TEXT the rules give **parity / no-regression**, not a measurable lift — DeepSeek V3 is already competent on text; the rules' real lift is on GEMINI's image read (proven 2/2 earlier). Gemini live re-test BLOCKED (429 monthly quota cap) — not faked.
+- **Owner task C — "система сама переворачивает документы, протести всё":** `apps/web/scripts/test-rotation-live.mjs`. Findings:
+  - EXIF auto-rotate (`sharp.rotate()`, ON via `CORE_PREPROCESS_ENABLED`) is a **NO-OP on CONTENT rotation** — PROVEN deterministically: passport content-rotated 90° (2493×3554 → 3554×2493) stays sideways after EXIF rotate. So a genuinely sideways-shot doc (e.g. the military ID) is NOT pixel-corrected today.
+  - `autoOrient` (Gemini-thumbnail content-rotation detect→rotate→verify loop) is the real fixer but is **OFF** (`AUTO_ORIENT_ENABLED` unset). Built, fail-open, unit-tested, A/B-proven 2026-06-10 ("day 26→25 correct").
+  - Live orientation detection BLOCKED (429) — could not re-verify now.
+  - **Recommendation:** flip `AUTO_ORIENT_ENABLED=1` (owner-gated) — without it, sideways docs rely only on Gemini's "mentally rotate" prompt, which returns MISS on the rotated handwritten military DOB per the comparison report.
+- Evidence: knowledge + apps/web suites green (4531 pass, tsc 0) from the prior commit; no source behavior changed in this commit (added 2 evidence scripts only).
+
 ## 2026-06-22 | Dictionary normative audit vs KMU-55 — completeness guard + missing apostrophe sign added
 - **Owner task:** critically audit + improve the transliteration dictionaries against Ukraine's normative base (KMU-55); add any missing letters/signs.
 - **Web-verified the code's KMU-55 table against the OFFICIAL norm** (KMU Resolution №55, 27 Jan 2010; sources: czo.gov.ua, mfa.gov.ua #CorrectUA, UN E/CONF.101/84): Г→H, Ґ→G, Х→Kh, Ц→Ts, Щ→Shch, зг→zgh digraph, Я→ia/ya by position, ь/apostrophe not reproduced — **all match.** UA (33 letters + apostrophe) + RU (33) fully covered; zero Cyrillic leak. No letter values were wrong.
