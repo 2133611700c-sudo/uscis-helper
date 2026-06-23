@@ -17,7 +17,12 @@ import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVis
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { autoOrient } from './orientation/autoOrient'
 import { applyDateRoleGuard } from './dates/dateRoleGuard'
-import { toCanonicalValue, isNameSourceScriptAmbiguous } from './transliterationPolicy'
+import {
+  toCanonicalValue,
+  isNameSourceScriptAmbiguous,
+  documentScriptOf,
+  romanizeNameForDocScript,
+} from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
@@ -183,6 +188,34 @@ export async function readDocument(
       provider: provider.name,
       ...(ambiguousScript ? { review_reasons: ['source_script_ambiguous'] } : {}),
     })
+  }
+
+  // DOC-SCRIPT NAME ROUTING (DOC_SCRIPT_ROUTING_ENABLED, default OFF). This is the
+  // ONE place that sees ALL fields, so it can compute a doc-level Russian signal an
+  // individual name read cannot (a bare «Сергей» has no distinctive letter). When the
+  // aggregate document is clearly Russian (a -еевич patronymic, Russian month/place
+  // word forms — detectDocumentScript over EVERY field's raw Cyrillic), an
+  // AMBIGUOUS-script NAME is re-romanized via the Russian table (Сергей→Sergey,
+  // Сергеевич→Sergeyevich) instead of the KMU-55 default (Serhei/Serheevych). A name
+  // with a distinctive UA letter is never force-Russified. Conservative: detector
+  // returns 'ru' only on a one-sided signal, else the value is untouched. Flag OFF ⇒
+  // no doc-level signal is computed and every `value` is byte-identical to before.
+  if (process.env.DOC_SCRIPT_ROUTING_ENABLED === '1' && fields.length > 0) {
+    const docScript = documentScriptOf(read.fields.map((r) => r.cyrillic))
+    if (docScript === 'ru') {
+      let rerouted = 0
+      for (const f of fields) {
+        if (f.kind !== 'name' || !f.raw_cyrillic) continue
+        const next = romanizeNameForDocScript(f.raw_cyrillic, f.value, docScript)
+        if (next !== f.value) {
+          f.value = next
+          rerouted++
+        }
+      }
+      if (rerouted > 0) {
+        console.info('[doc_script_routing]', JSON.stringify({ doc_type_id: docTypeId, docScript, rerouted }))
+      }
+    }
   }
 
   // REGISTRY BACKFILL (2026-06-11, owner live test): an unread field
