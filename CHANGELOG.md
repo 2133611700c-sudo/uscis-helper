@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-22 | Seam A (part 3): cross-doc reconciliation wired into EAD + Re-Parole (server complete)
+- Replicated the exact TPS Seam-A pattern into the EAD and Re-Parole OCR routes (one brain ⇒ identical contract): behind CROSS_DOC_RECONCILE_ENABLED, persist under the stable `wizard_anon_id` cookie (flag OFF ⇒ ephemeral document_id ⇒ byte-identical), then loadAll session docs (scoped to the product) → reconcileSessionDocuments → emit `cross_doc_suggestions` (best-effort try/catch, never blocks OCR).
+- `api/ead/ocr/extract/route.ts`, `api/reparole/ocr/extract/route.ts` updated.
+- **Tests:** new `api/__tests__/crossDocReconcileWiringAllProducts.test.ts` (18 = 6 contract checks × TPS/EAD/Re-Parole — flag-gated cookie, persistSessionId not raw document_id, product-scoped load, best-effort, emits suggestions). Updated the existing Re-Parole canonicalCarriage source assertions to the new persistSessionId reality.
+- **Evidence:** full suite 4566 pass / 24 skip; tsc 0. Flag OFF byte-identical across all 3 products. SERVER half of Seam A COMPLETE for every multi-document product. Remaining for full Seam A: client one-click pre-fill consumption of `cross_doc_suggestions` in the wizards.
+
 ## 2026-06-22 | Seam A (part 2): cross-doc reconciliation wired into TPS OCR route (server, flag-gated)
 - **Root-cause closed:** the OCR routes persisted each upload under an EPHEMERAL random `document_id`, so a person's documents never shared a `canonical_documents.session_id` → reconciliation had no group to work on. Fix: behind CROSS_DOC_RECONCILE_ENABLED, persist under the STABLE wizard cookie (`wizard_anon_id`, 30-day UUID from /api/wizard/session). Flag OFF ⇒ session id = today's ephemeral `document_id` ⇒ BYTE-IDENTICAL.
 - **New:** `lib/security/wizardSessionCookie.ts` (`getWizardAnonId` — validated UUID reader). `crossDocSession.suggestionsForDoc` (pure: per-doc one-click suggestions for an OCR response).

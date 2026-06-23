@@ -39,7 +39,11 @@ import { isUnusableOcr } from '@/lib/ocr/types'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { mrzCandidatesFromText } from '@/lib/canonical/core/mrzAuthority'
 // CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
-import { persistCanonicalDocument } from '@/lib/canonical/persistence'
+import { persistCanonicalDocument, loadAllCanonicalDocumentsForSession } from '@/lib/canonical/persistence'
+// SEAM A: cross-document reconciliation (passport MRZ anchors a sibling doc's held field)
+import { reconcileSessionDocuments, suggestionsForDoc } from '@/lib/canonical/core/crossDocSession'
+import { isCrossDocReconcileEnabled } from '@/lib/canonical/core/crossDocReconcile'
+import { getWizardAnonId } from '@/lib/security/wizardSessionCookie'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -163,6 +167,12 @@ async function POST_impl(req: NextRequest) {
 
   // ── Core path: docintel → arbitration → Re-Parole adapter ───────────────
   const document_id = `reparole_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  // SEAM A: stable wizard session id groups a person's documents ONLY behind the flag (+ cookie);
+  // flag OFF ⇒ ephemeral document_id ⇒ byte-identical. cross_doc_suggestions empty unless ON.
+  const crossDocOn = isCrossDocReconcileEnabled()
+  const wizardAnonId = crossDocOn ? getWizardAnonId(req) : null
+  const persistSessionId = wizardAnonId ?? document_id
+  let crossDocSuggestions: Array<{ field_key: string; suggested_value: string; from_doc_type: string }> = []
   try {
     // 1. For international passport: run Vision OCR in parallel with Gemini docintel
     //    to obtain raw text for MRZ parsing. MRZ_WIRED: the MRZ (machine-readable zone)
@@ -262,7 +272,7 @@ async function POST_impl(req: NextRequest) {
     const continuityMode = getCanonicalMode('reparole')
     if (continuityMode !== 'off') {
       try {
-        const persisted = await persistCanonicalDocument(canonical, document_id)
+        const persisted = await persistCanonicalDocument(canonical, persistSessionId)
         reParoleCanonicalDocumentId = persisted.id
         console.info('[canonical/continuity] persisted ReParole', {
           event: 'canonical_persisted',
@@ -270,6 +280,23 @@ async function POST_impl(req: NextRequest) {
           fields_hash: persisted.fieldsHash.slice(0, 8),
           mode: continuityMode,
         })
+
+        // SEAM A: reconcile THIS doc against the person's other session docs (flag + cookie
+        // gated). Read-only one-click suggestions; best-effort (never blocks OCR).
+        if (crossDocOn && wizardAnonId) {
+          try {
+            const sessionDocs = await loadAllCanonicalDocumentsForSession(persistSessionId, 'reparole')
+            const reconciled = reconcileSessionDocuments(sessionDocs, true)
+            crossDocSuggestions = suggestionsForDoc(reconciled, docintelId)
+            if (reconciled.changes.length > 0) {
+              console.info('[seam-a/cross-doc] reconciled ReParole', {
+                session_docs: sessionDocs.length, changes: reconciled.changes.length, for_this_doc: crossDocSuggestions.length,
+              })
+            }
+          } catch (e: any) {
+            console.warn('[seam-a/cross-doc] reconcile failed (non-blocking)', { error: e?.message ?? String(e) })
+          }
+        }
       } catch {
         if (continuityMode === 'enforce') {
           return NextResponse.json(
@@ -303,6 +330,8 @@ async function POST_impl(req: NextRequest) {
         ok: true,
         ...reParoleAnswers,
         document_id,
+        // SEAM A: cross-document one-click suggestions (empty unless flag ON + cookie + stronger sibling anchor)
+        cross_doc_suggestions: crossDocSuggestions,
         // CANONICAL_CONTINUITY: persisted canonical row id (null when off / shadow persist failed).
         canonical_document_id: reParoleCanonicalDocumentId,
         doc_type_hint: docTypeHint,
