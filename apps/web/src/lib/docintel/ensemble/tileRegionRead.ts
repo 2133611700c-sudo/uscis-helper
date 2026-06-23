@@ -169,8 +169,31 @@ export async function geminiReadFieldsFromCrop(
   const samples: Array<Record<string, string>> = []
   for (let i = 0; i < runs; i++) {
     try { samples.push(await sampler(cropBuffer, fields)) } catch { samples.push({}) }
+    // COST: early-exit once every field's outcome is already decided (a strict majority is
+    // reached, or the remaining samples can no longer change it). In the common stable case the
+    // first 2 reads agree ⇒ stop at 2 instead of `runs` — Gemini is expensive (owner: it eats a lot).
+    if (votingSettled(samples, fields, runs)) break
   }
   return foldMajority(samples, fields, runs)
+}
+
+/** True when no remaining sample can change any field's majority outcome (used for cost early-exit). */
+export function votingSettled(
+  samples: Array<Record<string, string>>,
+  fields: Array<{ key: string }>,
+  runs: number,
+): boolean {
+  const remaining = runs - samples.length
+  if (remaining <= 0) return true
+  for (const { key } of fields) {
+    const counts = new Map<string, number>()
+    for (const s of samples) { const v = (s?.[key] ?? '').trim(); if (!v) continue; const t = normalizeForCompare(v); if (t) counts.set(t, (counts.get(t) ?? 0) + 1) }
+    let best = 0; for (const c of counts.values()) if (c > best) best = c
+    const won = best * 2 > runs
+    const cannotWin = (best + remaining) * 2 <= runs // even the leader can't reach a strict majority
+    if (!won && !cannotWin) return false // this field is still undecided
+  }
+  return true
 }
 
 /** Targeted reader: read the named fields from ONE high-res crop. Returns key→cyrillic (only the
