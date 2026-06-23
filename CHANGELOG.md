@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-22 | Seam A COMPLETE: client one-click consumption (TPS) — cross-doc reconciliation end-to-end
+- Finished the client half. New PURE module `lib/tps/crossDocSuggestions.ts`: `extractCrossDocSuggestions` (defensive parse of the response array — flag-OFF [] ⇒ [], malformed ⇒ [], never throws), `applyCrossDocSuggestion` (returns a HELD pre-filled field — one-click confirm, never auto-applied; source 'inferred'), `wizardFieldKey` (canonical→wizard key alias date_of_birth→dob etc.).
+- Wired into the LIVE wizard `TPSWizardV2.tsx` (NOT the dead DocumentUploadScreen — verified): captures `cross_doc_suggestions` into UploadEntry (mirrors canonical_document_id capture), builds a per-session suggestion map, and renders a one-click "Apply (from passport)" button in the existing RW review row (reuses the edit-button styling; localized en/uk/ru/es). Apply writes the pre-fill but KEEPS requires_review=true.
+- **Self-corrected a stale claim:** I had said the client was "unverifiable without Gemini quota" — FALSE. The consumption logic extracts into a pure function tested deterministically with a mocked response. +12 tests (extract/apply/purity/alias + source-inspection that the wizard calls the helpers).
+- **Flag-OFF byte-identical:** server emits [] ⇒ empty map ⇒ RW applyLabel null ⇒ no button, identical DOM. No ExtractionSource enum change. Evidence: suite 4578 pass / 24 skip (+12); tsc 0.
+- Seam A is now COMPLETE end-to-end (engine + TPS/EAD/Re-Parole server + TPS client), all behind CROSS_DOC_RECONCILE_ENABLED (OFF). EAD/Re-Parole client adoption later = 3-line capture + same RW affordance.
+
 ## 2026-06-22 | Seam A (part 3): cross-doc reconciliation wired into EAD + Re-Parole (server complete)
 - Replicated the exact TPS Seam-A pattern into the EAD and Re-Parole OCR routes (one brain ⇒ identical contract): behind CROSS_DOC_RECONCILE_ENABLED, persist under the stable `wizard_anon_id` cookie (flag OFF ⇒ ephemeral document_id ⇒ byte-identical), then loadAll session docs (scoped to the product) → reconcileSessionDocuments → emit `cross_doc_suggestions` (best-effort try/catch, never blocks OCR).
 - `api/ead/ocr/extract/route.ts`, `api/reparole/ocr/extract/route.ts` updated.
