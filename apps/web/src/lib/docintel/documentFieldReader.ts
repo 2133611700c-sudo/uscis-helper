@@ -17,6 +17,9 @@ import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVis
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { autoOrient } from './orientation/autoOrient'
 import { orientToUpright, isContentOrientEnabled } from './orientation/detectOrientation'
+import {
+  recoverEmptyFieldsByTiles, geminiReadFieldsFromCrop, isHiResTileRecoverEnabled, isEmptyField,
+} from './ensemble/tileRegionRead'
 import { applyDateRoleGuard } from './dates/dateRoleGuard'
 import {
   toCanonicalValue,
@@ -58,6 +61,9 @@ export async function readDocument(
     product?: MetricProduct
     /** Tenant/session scope bound into the OCR coordination cache key (isolation). */
     cacheScope?: string
+    /** STAGE 4: the PRE-DOWNSCALE high-res original upload. When HIRES_TILE_RECOVER_ENABLED and
+     *  the read leaves critical fields empty, it is oriented + tiled to recover those fields. */
+    originalBuffer?: Buffer
   } = {},
 ): Promise<DocumentReadResult> {
   const spec = getDocTypeSpec(docTypeId)
@@ -379,6 +385,37 @@ export async function readDocument(
   finalFields = dateGuard.fields
   if (dateGuard.conflicts.length) {
     console.info('[date_role_guard]', JSON.stringify({ doc_type_id: docTypeId, conflicts: dateGuard.conflicts }))
+  }
+
+  // STAGE 4 (HIRES_TILE_RECOVER_ENABLED, default OFF): a dense region read at full-page scale
+  // (~4-5 px/letter) returns EMPTY for fields that are PRESENT. When the hi-res original is
+  // available, orient it (content-based, reliable) and re-read the empty critical fields from
+  // hi-res tiles. Additive + fail-open: only empties pursued, never overwrites a read field;
+  // recovered values are held for review. Proven live: birth-cert parents/series recovered 4/5.
+  if (isHiResTileRecoverEnabled() && opts.originalBuffer) {
+    const criticalKeys = new Set(spec.fields.filter((f) => f.handwritten || f.required).map((f) => f.field))
+    const hasEmptyCritical = finalFields.some((f) => isEmptyField(f) && criticalKeys.has(f.field))
+    const apiKey = getGeminiApiKey()
+    if (hasEmptyCritical && apiKey) {
+      try {
+        const model = primaryGeminiModel()
+        // Orient the hi-res original to upright (reliable grid detector) so L/R tiles map to the
+        // real page geometry regardless of the main read's orientation flag.
+        const oriented = await orientToUpright(opts.originalBuffer, apiKey, model)
+        const fieldLabels = Object.fromEntries(spec.fields.map((f) => [f.field, f.label_uk]))
+        const rec = await recoverEmptyFieldsByTiles({
+          baseFields: finalFields,
+          originalBuffer: oriented.buffer,
+          fieldLabels,
+          cropRead: (crop, flds) => geminiReadFieldsFromCrop(crop, flds, apiKey, model),
+          criticalKeys,
+        })
+        finalFields = rec.fields
+        console.info('[hires_tile_recover]', JSON.stringify({ doc_type_id: docTypeId, orient_applied: oriented.applied, ...rec.diag }))
+      } catch (e) {
+        console.warn('[hires_tile_recover] failed (non-blocking)', e instanceof Error ? e.message : String(e))
+      }
+    }
   }
 
   return {

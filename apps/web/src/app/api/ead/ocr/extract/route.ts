@@ -172,7 +172,7 @@ async function POST_impl(req: NextRequest) {
   let crossDocSuggestions: Array<{ field_key: string; suggested_value: string; from_doc_type: string }> = []
   try {
     // 1. Visual read (Gemini docintel) — the only I/O call in this route
-    const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'ead' })
+    const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'ead', originalBuffer: rawBuffer })
 
     if (!coreRead.ok || !Array.isArray(coreRead.fields) || coreRead.fields.length === 0) {
       console.warn('[B4/EAD/Core] docintel returned no fields:', {
