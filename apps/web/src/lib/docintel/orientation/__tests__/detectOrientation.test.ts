@@ -11,6 +11,9 @@ import {
   orientToUpright,
   detectUprightCw,
   isContentOrientEnabled,
+  foldOrientationVotes,
+  orientVoteRuns,
+  detectUprightCwVoted,
 } from '../detectOrientation'
 
 afterEach(() => { vi.restoreAllMocks() })
@@ -87,6 +90,51 @@ describe('orientToUpright — fail-open', () => {
   it('HTTP error ⇒ detectUprightCw null', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 429, json: async () => ({}) })))
     expect(await detectUprightCw(await testImage(), 'key', 'm')).toBeNull()
+  })
+})
+
+describe('foldOrientationVotes (K-vote stabilization)', () => {
+  it('strict majority wins (270 in 2 of 3)', () => {
+    expect(foldOrientationVotes([270, 270, 0], 3)).toBe(270)
+  })
+  it('split 0/270 (no strict majority over runs) ⇒ null (do not rotate)', () => {
+    expect(foldOrientationVotes([0, 270, null], 3)).toBeNull() // best=1, 1*2 not > 3
+  })
+  it('nulls do not vote; 2 of 3 real agree ⇒ wins even with a null', () => {
+    expect(foldOrientationVotes([90, 90, null], 3)).toBe(90)
+  })
+  it('5 runs, 3 agree ⇒ wins; 2-2-1 ⇒ null', () => {
+    expect(foldOrientationVotes([90, 90, 90, 0, 270], 5)).toBe(90)
+    expect(foldOrientationVotes([0, 0, 270, 270, 90], 5)).toBeNull()
+  })
+})
+
+describe('orientVoteRuns env', () => {
+  it('default 3; 1→1; 5→5; garbage→3; 9→clamp 5', () => {
+    expect(orientVoteRuns({})).toBe(3)
+    expect(orientVoteRuns({ ORIENT_VOTE_RUNS: '1' })).toBe(1)
+    expect(orientVoteRuns({ ORIENT_VOTE_RUNS: '5' })).toBe(5)
+    expect(orientVoteRuns({ ORIENT_VOTE_RUNS: 'x' })).toBe(3)
+    expect(orientVoteRuns({ ORIENT_VOTE_RUNS: '9' })).toBe(5)
+  })
+})
+
+describe('detectUprightCwVoted (injected sampler)', () => {
+  it('votes K times and returns the majority', async () => {
+    const seq: Array<0 | 90 | 180 | 270 | null> = [270, 0, 270]
+    let i = 0
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 3, sampler: async () => seq[i++] })
+    expect(out).toBe(270)
+  })
+  it('runs:1 ⇒ single detect verbatim', async () => {
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 1, sampler: async () => 90 })
+    expect(out).toBe(90)
+  })
+  it('a throwing sample counts as null, not a crash', async () => {
+    const seq = [async () => 270 as const, async () => { throw new Error('x') }, async () => 270 as const]
+    let i = 0
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 3, sampler: () => seq[i++]() })
+    expect(out).toBe(270)
   })
 })
 
