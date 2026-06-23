@@ -66,7 +66,7 @@ import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 // CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
 import { persistCanonicalDocument, loadAllCanonicalDocumentsForSession } from '@/lib/canonical/persistence'
 // SEAM A: cross-document reconciliation (passport MRZ anchors a sibling doc's held field)
-import { reconcileSessionDocuments, suggestionsForDoc } from '@/lib/canonical/core/crossDocSession'
+import { reconcileSessionDocuments, suggestionsForDoc, strongSiblingValues } from '@/lib/canonical/core/crossDocSession'
 import { isCrossDocReconcileEnabled } from '@/lib/canonical/core/crossDocReconcile'
 import { getWizardAnonId } from '@/lib/security/wizardSessionCookie'
 import { classifyCriticality, isOcrFieldSafetyEnabled } from '@/lib/documentSafety/applyOcrFieldSafety'
@@ -283,6 +283,15 @@ async function POST_impl(req: NextRequest) {
   const crossDocOn = isCrossDocReconcileEnabled()
   const wizardAnonId = crossDocOn ? getWizardAnonId(req) : null
   const persistSessionId = wizardAnonId ?? document_id
+  // FREE-FIRST (cost): values already known from the session's STRONGER sibling documents (passport
+  // MRZ etc.), keyed by field. Passed into readDocument so an empty field is filled at $0 BEFORE the
+  // paid hi-res tile recovery. Loaded ONLY when cross-doc is on + the stable cookie exists ⇒ flag OFF
+  // is byte-identical (no DB read, empty map). Best-effort: any failure leaves it empty.
+  let knownValues: Record<string, string> = {}
+  if (crossDocOn && wizardAnonId) {
+    try { knownValues = strongSiblingValues(await loadAllCanonicalDocumentsForSession(persistSessionId, 'tps')) }
+    catch (e: any) { console.warn('[free-first] known-values load failed (non-blocking)', { error: e?.message ?? String(e) }) }
+  }
   // SEAM A: cross-document suggestions for THIS document, attached to the response (flag-gated).
   let crossDocSuggestions: Array<{ field_key: string; suggested_value: string; from_doc_type: string }> = []
   let moduleResult: TpsModuleResult | null = null
@@ -306,7 +315,7 @@ async function POST_impl(req: NextRequest) {
     coreStatus = 'skipped_no_mapping'
   } else {
     try {
-      const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'tps', originalBuffer: rawBuffer })
+      const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'tps', originalBuffer: rawBuffer, knownValues })
       if (coreRead.ok && Array.isArray(coreRead.fields) && coreRead.fields.length > 0) {
         const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
         if (docintelId === 'ua_international_passport') {

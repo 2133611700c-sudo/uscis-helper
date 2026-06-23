@@ -64,6 +64,10 @@ export async function readDocument(
     /** STAGE 4: the PRE-DOWNSCALE high-res original upload. When HIRES_TILE_RECOVER_ENABLED and
      *  the read leaves critical fields empty, it is oriented + tiled to recover those fields. */
     originalBuffer?: Buffer
+    /** FREE-FIRST (cost): raw-cyrillic values already known for free from a STRONGER sibling document
+     *  (cross-doc reconciliation / MRZ), keyed by field. An empty field present here is filled at $0
+     *  BEFORE the paid hi-res tile recovery — so Gemini is only spent on what's genuinely unknown. */
+    knownValues?: Record<string, string>
   } = {},
 ): Promise<DocumentReadResult> {
   const spec = getDocTypeSpec(docTypeId)
@@ -392,6 +396,15 @@ export async function readDocument(
   // available, orient it (content-based, reliable) and re-read the empty critical fields from
   // hi-res tiles. Additive + fail-open: only empties pursued, never overwrites a read field;
   // recovered values are held for review. Proven live: birth-cert parents/series recovered 4/5.
+  // FREE-FIRST (cost-efficiency): fill empty fields from already-known sibling values ($0) BEFORE any
+  // paid recovery. A field filled here is held for review (it is borrowed from another doc, not read
+  // here) and is then NOT pursued by the expensive tile recovery below. Never overwrites a read value.
+  if (opts.knownValues && Object.keys(opts.knownValues).length > 0) {
+    const res = applyKnownValues(finalFields, opts.knownValues)
+    finalFields = res.fields
+    if (res.filled) console.info('[free_first_fill]', JSON.stringify({ doc_type_id: docTypeId, filled: res.filled }))
+  }
+
   if (isHiResTileRecoverEnabled() && opts.originalBuffer) {
     const criticalKeys = new Set(spec.fields.filter((f) => f.handwritten || f.required).map((f) => f.field))
     const hasEmptyCritical = finalFields.some((f) => isEmptyField(f) && criticalKeys.has(f.field))
@@ -428,4 +441,28 @@ export async function readDocument(
 
 function isHandwritten(spec: ReturnType<typeof getDocTypeSpec>, field: string): boolean {
   return !!spec?.fields.find((f) => f.field === field)?.handwritten
+}
+
+/**
+ * FREE-FIRST fill: set EMPTY fields from already-known sibling/MRZ values ($0), held for review
+ * (borrowed, not read here). NEVER overwrites a field the model already read. Pure; returns a new
+ * array + the count filled. This runs BEFORE the paid tile recovery so Gemini is spent only on the
+ * fields that are still genuinely unknown (cost-efficiency-first).
+ */
+export function applyKnownValues(
+  fields: ExtractedDocField[],
+  known: Record<string, string>,
+): { fields: ExtractedDocField[]; filled: number } {
+  let filled = 0
+  const out = fields.map((f) => {
+    const v = known[f.field]
+    const empty = (f.value ?? '').trim() === '' && (f.raw_cyrillic ?? '').trim() === ''
+    if (!v || !v.trim() || !empty) return f
+    filled++
+    return {
+      ...f, raw_cyrillic: v.trim(), confidence: Math.min(f.confidence ?? 0, 0.5) || 0.5,
+      review_required: true, review_reasons: [...(f.review_reasons ?? []), 'known_from_sibling'],
+    }
+  })
+  return { fields: out, filled }
 }
