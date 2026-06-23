@@ -180,6 +180,75 @@ export function detectNameScript(input: string): 'ua' | 'ru' | 'unknown' {
 }
 
 /**
+ * DOC-LEVEL script detector (additive, pure). A single name line like «Сергей»
+ * carries NO distinctive letter (no ы/э/ё/ъ, no і/ї/є/ґ) so detectNameScript ⇒
+ * 'unknown' and the per-name romanization can only fall to the KMU-55 default —
+ * yet the DOCUMENT as a whole is often unambiguously Russian from OTHER fields
+ * (a Russian patronymic, a Russian month word, a Russian place form). This
+ * aggregates those signals across ALL of a document's Cyrillic field values and
+ * decides 'ru' / 'uk' / 'unknown' for the WHOLE document, so a caller can route
+ * an otherwise-ambiguous NAME on a clearly-Russian doc through the Russian table
+ * (Сергей→Sergey, Сергеевич→Sergeyevich) instead of KMU-55 (Serhei/Serheevych).
+ *
+ * CONSERVATIVE by design (review > wrong-Russify): we return 'ru' / 'uk' ONLY on
+ * a clear aggregate signal; any conflict (both languages signalled) or no signal
+ * ⇒ 'unknown', and the caller keeps its safe default. This NEVER overrides a
+ * per-name distinctive letter — a name with і/ї/є/ґ still routes UA at the call
+ * site even on a 'ru' document (we never force-Russify a clearly-Ukrainian name).
+ */
+
+// NOTE on word boundaries: JS \b is ASCII-only and does NOT fire between two
+// Cyrillic letters, so we use an explicit "end-of-token" lookahead — end of
+// string OR a non-Cyrillic char (space, punctuation). EOT must be a SUFFIX match
+// for endings (patronymic) and a WHOLE-token match for words (months/places).
+const EOT = '(?![\\u0400-\\u04FF\\u0490\\u0491])' // not followed by a Cyrillic letter
+const BOT = '(?<![\\u0400-\\u04FF\\u0490\\u0491])' // not preceded by a Cyrillic letter
+
+/** Distinctive RUSSIAN-only patronymic endings (Ukrainian uses -ійович/-ївна/-івна). */
+const RU_PATRONYMIC = new RegExp(`(?:еевич|еевна|ьевич|ьевна|[оа]евич|[оа]евна)${EOT}`, 'iu')
+/** Distinctive UKRAINIAN-only patronymic endings. */
+const UA_PATRONYMIC = new RegExp(`(?:[іи]йович|ійович|ївна|івна)${EOT}`, 'iu')
+/** Russian-only month words (genitive, as written on dates). */
+const RU_MONTHS_RE = new RegExp(`${BOT}(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)${EOT}`, 'iu')
+/** Ukrainian-only month words. */
+const UA_MONTHS_RE = new RegExp(`${BOT}(?:січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня)${EOT}`, 'iu')
+/** Russian-only place/administrative word forms (района not району, года not року). */
+const RU_PLACE_RE = new RegExp(`${BOT}(?:района|области|года|город|посёлок|поселок|деревня)${EOT}`, 'iu')
+/** Ukrainian-only place/administrative word forms. */
+const UA_PLACE_RE = new RegExp(`${BOT}(?:району|області|року|місто|селище)${EOT}`, 'iu')
+
+/**
+ * Aggregate doc-level script over a document's Cyrillic field values.
+ * Returns 'ru' only on a clear Russian aggregate signal with NO Ukrainian signal;
+ * 'uk' on the symmetric Ukrainian case; 'unknown' on conflict or no signal.
+ */
+export function detectDocumentScript(fields: Array<string | null | undefined>): 'ru' | 'uk' | 'unknown' {
+  let ru = 0
+  let ua = 0
+  for (const raw of fields) {
+    const s = (raw ?? '').trim()
+    if (!s) continue
+    // Highest-confidence signal: a distinctive single-letter that exists in only
+    // one alphabet. One such letter ANYWHERE pins that field's language.
+    if (RU_ONLY.test(s)) ru++
+    if (UA_ONLY.test(s)) ua++
+    // Morphology signals (patronymic / month / place word forms).
+    if (RU_PATRONYMIC.test(s)) ru++
+    if (UA_PATRONYMIC.test(s)) ua++
+    if (RU_MONTHS_RE.test(s)) ru++
+    if (UA_MONTHS_RE.test(s)) ua++
+    if (RU_PLACE_RE.test(s)) ru++
+    if (UA_PLACE_RE.test(s)) ua++
+  }
+  // Conservative: require a clear, one-sided signal. A document that signals BOTH
+  // (legitimately bilingual Soviet cert) stays 'unknown' → caller keeps its safe
+  // default and reviews rather than guessing a wrong romanization.
+  if (ru > 0 && ua === 0) return 'ru'
+  if (ua > 0 && ru === 0) return 'uk'
+  return 'unknown'
+}
+
+/**
  * Convert Ukrainian date string to USCIS format (MM/DD/YYYY).
  * Input: "01 січня 1990 року" or "01.01.1990"
  */

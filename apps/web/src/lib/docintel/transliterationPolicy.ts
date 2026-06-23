@@ -6,7 +6,7 @@
  * and non-reproducible). Every product flow gets identical canonical values from here.
  */
 
-import { transliterateKMU55, transliterateRussian, detectNameScript, SEX_MAP } from '@uscis-helper/knowledge'
+import { transliterateKMU55, transliterateRussian, detectNameScript, detectDocumentScript, SEX_MAP } from '@uscis-helper/knowledge'
 import { normalizeProvince, normalizeCity } from '@/lib/tps/dictionaryBridge'
 import type { FieldKind, VisionFieldRead } from './types'
 
@@ -133,6 +133,54 @@ export function isNameSourceScriptAmbiguous(
  */
 function romanizeBySourceScript(cy: string): string {
   return detectNameScript(cy) === 'ru' ? transliterateRussian(cy) : transliterateKMU55(cy)
+}
+
+/**
+ * DOC-SCRIPT NAME ROUTING (additive, flag-gated `DOC_SCRIPT_ROUTING_ENABLED`,
+ * default OFF). The per-name `toCanonicalValue` has no sibling context: a name
+ * like «Сергей» carries no distinctive letter, so detectNameScript ⇒ 'unknown'
+ * and it can only fall to the KMU-55 default ("Serhei/Serheevych"). But the
+ * DOCUMENT is often detectably Russian from OTHER fields (a -еевич patronymic,
+ * Russian month/place forms). documentFieldReader sees ALL fields and can pass
+ * that aggregate `docScript` down here.
+ *
+ * Behavior (only when the flag is ON):
+ *   - docScript==='ru' AND the name's OWN script is ambiguous ('unknown') ⇒ use
+ *     transliterateRussian (Сергей→Sergey, Сергеевич→Sergeyevich, Куропятник→
+ *     Kuropyatnik) instead of KMU-55. We re-romanize from the RAW Cyrillic.
+ *   - a name with a distinctive UA letter (detectNameScript==='ua') is NEVER
+ *     force-Russified — it keeps KMU-55. A distinctive-RU name already routes RU
+ *     via toCanonicalValue's own RU_TRANSLIT_ENABLED branch and is unchanged here.
+ * Flag OFF ⇒ this is a no-op and callers keep the existing canonical value
+ * byte-for-byte (no doc-level signal reaches name romanization at all).
+ *
+ * Returns the (possibly re-romanized) Latin value, or the input `current` value
+ * unchanged when no routing applies. Never returns null for a non-empty input.
+ */
+export function romanizeNameForDocScript(
+  rawCyrillic: string,
+  current: string | null,
+  docScript: 'ru' | 'uk' | 'unknown',
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  if (env.DOC_SCRIPT_ROUTING_ENABLED !== '1') return current
+  const cy = (rawCyrillic ?? '').trim()
+  if (!cy) return current
+  if (docScript !== 'ru') return current
+  // Already-Latin controlling spelling (passport/MRZ) — never re-transliterate.
+  if (/[A-Za-z]/.test(cy) && !/[Ѐ-ӿ]/.test(cy)) return current
+  // Only ambiguous-script names are re-routed; a clearly-Ukrainian name (і/ї/є/ґ)
+  // stays KMU-55 even on a Russian document (never force-Russify a UA name).
+  if (detectNameScript(cy) !== 'unknown') return current
+  return transliterateRussian(cy) || current
+}
+
+/**
+ * Compute the document-level script from a set of canonical fields' raw Cyrillic.
+ * Thin wrapper so documentFieldReader has one import surface for the policy.
+ */
+export function documentScriptOf(rawCyrillicValues: Array<string | null | undefined>): 'ru' | 'uk' | 'unknown' {
+  return detectDocumentScript(rawCyrillicValues)
 }
 
 /**
