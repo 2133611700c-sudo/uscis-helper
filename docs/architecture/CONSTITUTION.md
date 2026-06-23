@@ -72,9 +72,23 @@ CONSTITUTION (these laws)
                 └── PRODUCTS (thin adapters: Translation, TPS, EAD, Re-Parole)
 ```
 
-## Open deviations from these laws (the unification backlog — see ONE_BRAIN_UNIFICATION_PLAN)
-- L1/L3: TPS/EAD/Re-Parole still read via DeepSeek, not the Gemini brain (U-STAGE 3).
-- L4: raw_cyrillic dropped after the read (GAP A) — carry it through (U-STAGE 5).
-- L3: the DeepSeek boundary guard was deleted — re-instate.
-- L9: DeepSeek prompts don't yet consume the shared `docReadingRules` (U-STAGE 2).
-- PDF: two translation renderers; gating forked per product (U-STAGE 4/5).
+## Status of the unification (2026-06-22 — most laws now enforced)
+- **L1/L3 — DONE.** VERIFIED: all 4 products (translation, TPS-UA, EAD, Re-Parole) read
+  through the ONE Gemini `readDocument` brain (`oneBrainGuard.test.ts`). DeepSeek is the
+  SECONDARY US-Latin-doc path only, now bounded by explicit role lines + the re-instated
+  `deepseekBoundaryGuard` (U-STAGE 2).
+- **L2 — DONE.** One Codex; the forked TPS transliterator now delegates to the package;
+  `oneDictionaryGuard.test.ts` fails the build on any new fork.
+- **L4 — DONE (Phase 2.0).** `raw_cyrillic` is threaded ExtractedDocField → FieldCandidate
+  → CanonicalField; D2 receives the Cyrillic (`arbitration.ts inputForD2 = f.rawCyrillic`).
+- **L5 — DONE.** C3 now runs unconditionally on the Core path too (closes GAP-2).
+- **L9 — DONE.** `docReadingRules` (per-document, default ON) feed the Gemini prompt for all
+  products; DeepSeek prompts carry bounded-role lines.
+- PDF (render layer): mirror renderer determinism pinned + leak-gated (U-STAGE 5); the two
+  renderers are NOT yet collapsed (deferred, low risk). Form gating unified behind
+  `SHARED_FORM_GATE_ENABLED` (U-STAGE 4, default OFF — flip after measure).
+
+## Remaining (small)
+- Codex DATA: load the full КАТОТТГ village/raion tier (external download + bundle decision).
+- Flip the measured flags (SHARED_FORM_GATE / DICTIONARY_AUTOCORRECT / consensus) per the
+  real-doc harness, owner-gated.
