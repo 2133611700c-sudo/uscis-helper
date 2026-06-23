@@ -11,7 +11,11 @@ import {
   recoverEmptyFieldsByTiles,
   isEmptyField,
   isHiResTileRecoverEnabled,
+  foldMajority,
+  tileVoteRuns,
+  geminiReadFieldsFromCrop,
   type CropFieldReadFn,
+  type SingleCropSampler,
 } from '../tileRegionRead'
 import type { ExtractedDocField } from '../../types'
 
@@ -100,5 +104,110 @@ describe('recoverEmptyFieldsByTiles', () => {
   it('flag default OFF; only "1" enables', () => {
     expect(isHiResTileRecoverEnabled({})).toBe(false)
     expect(isHiResTileRecoverEnabled({ HIRES_TILE_RECOVER_ENABLED: '1' })).toBe(true)
+  })
+})
+
+describe('foldMajority (K-sample stabilization)', () => {
+  const F = [{ key: 'father' }, { key: 'mother' }]
+  it('value in 2 of 3 ⇒ wins (exact raw string preserved)', () => {
+    const out = foldMajority(
+      [{ father: 'Куропятник Сергей' }, { father: 'Куропятник Сергей' }, { father: 'Иванов' }],
+      F, 3,
+    )
+    expect(out.father).toBe('Куропятник Сергей')
+  })
+  it('3 all different (1/1/1) ⇒ omitted (no majority)', () => {
+    const out = foldMajority([{ father: 'A' }, { father: 'B' }, { father: 'C' }], F, 3)
+    expect(out.father).toBeUndefined()
+  })
+  it('normalize-then-vote: "Сергей" vs "сергей " count as one ⇒ majority', () => {
+    const out = foldMajority([{ father: 'Сергей' }, { father: 'сергей ' }, { father: 'X' }], F, 3)
+    // winner token has 2 votes; emits the most frequent raw (tie → first seen = 'Сергей')
+    expect(normalizeLower(out.father)).toBe('сергей')
+  })
+  it('5 runs, 2-2-1 ⇒ no strict majority ⇒ omitted', () => {
+    const out = foldMajority([{ father: 'A' }, { father: 'A' }, { father: 'B' }, { father: 'B' }, { father: 'C' }], F, 5)
+    expect(out.father).toBeUndefined()
+  })
+  it('5 runs, 3 agree ⇒ wins', () => {
+    const out = foldMajority([{ father: 'A' }, { father: 'A' }, { father: 'A' }, { father: 'B' }, { father: 'C' }], F, 5)
+    expect(out.father).toBe('A')
+  })
+  it('lone read (1 of 3, others empty) ⇒ omitted (flaky single never wins)', () => {
+    const out = foldMajority([{ father: 'Lone' }, {}, {}], F, 3)
+    expect(out.father).toBeUndefined()
+  })
+  function normalizeLower(s: string | undefined) { return (s ?? '').trim().toLowerCase() }
+})
+
+describe('tileVoteRuns env parsing', () => {
+  it('default 3; "1"→1; "5"→5; garbage→3; "9"→clamp 5', () => {
+    expect(tileVoteRuns({})).toBe(3)
+    expect(tileVoteRuns({ TILE_VOTE_RUNS: '1' })).toBe(1)
+    expect(tileVoteRuns({ TILE_VOTE_RUNS: '5' })).toBe(5)
+    expect(tileVoteRuns({ TILE_VOTE_RUNS: 'x' })).toBe(3)
+    expect(tileVoteRuns({ TILE_VOTE_RUNS: '0' })).toBe(3)
+    expect(tileVoteRuns({ TILE_VOTE_RUNS: '9' })).toBe(5)
+  })
+})
+
+describe('geminiReadFieldsFromCrop voting wrapper (injected sampler)', () => {
+  const fields = [{ key: 'father', label: 'Батько' }]
+  const crop = Buffer.from('x')
+  it('passes only majority keys through', async () => {
+    const seq = [{ father: 'X' }, { father: 'X' }, { father: 'Y' }]
+    let i = 0
+    const sampler: SingleCropSampler = async () => seq[i++]
+    const out = await geminiReadFieldsFromCrop(crop, fields, 'k', 'm', 60_000, { runs: 3, sampler })
+    expect(out.father).toBe('X')
+  })
+  it('per-sample throw still reaches majority (2 of 3 agree)', async () => {
+    const seq: Array<() => Promise<Record<string, string>>> = [
+      async () => ({ father: 'X' }),
+      async () => { throw new Error('socket') },
+      async () => ({ father: 'X' }),
+    ]
+    let i = 0
+    const sampler: SingleCropSampler = () => seq[i++]()
+    const out = await geminiReadFieldsFromCrop(crop, fields, 'k', 'm', 60_000, { runs: 3, sampler })
+    expect(out.father).toBe('X')
+  })
+  it('runs:1 ⇒ returns the single sample verbatim (back-compat)', async () => {
+    const sampler: SingleCropSampler = async () => ({ father: 'Solo' })
+    const out = await geminiReadFieldsFromCrop(crop, fields, 'k', 'm', 60_000, { runs: 1, sampler })
+    expect(out.father).toBe('Solo')
+  })
+})
+
+describe('recoverEmptyFieldsByTiles with a voting crop reader (integration)', () => {
+  const field = (p: Partial<ExtractedDocField> & { field: string }): ExtractedDocField => ({
+    kind: 'name', raw_cyrillic: null, value: null, confidence: 0, review_required: false,
+    source: 'vision', provider: 'gemini', ...p,
+  })
+  it('majority-won field filled; no-majority field stays empty', async () => {
+    const base = [
+      field({ field: 'father_full_name', value: '', raw_cyrillic: '' }),
+      field({ field: 'mother_full_name', value: '', raw_cyrillic: '' }),
+    ]
+    // father: 2/3 agree → filled. mother: 1/1/1 → omitted (stays empty).
+    const samples = [
+      { father_full_name: 'Куропятник Сергей', mother_full_name: 'A' },
+      { father_full_name: 'Куропятник Сергей', mother_full_name: 'B' },
+      { father_full_name: 'Z', mother_full_name: 'C' },
+    ]
+    let i = 0
+    const sampler: SingleCropSampler = async () => samples[i++ % samples.length]
+    const votingCropRead: CropFieldReadFn = (crop, flds) =>
+      geminiReadFieldsFromCrop(crop, flds, 'k', 'm', 60_000, { runs: 3, sampler })
+    const img = await (await import('sharp')).default({ create: { width: 1200, height: 800, channels: 3, background: '#eee' } }).jpeg().toBuffer()
+    const { fields, diag } = await recoverEmptyFieldsByTiles({
+      baseFields: base, originalBuffer: img, fieldLabels: { father_full_name: 'Батько', mother_full_name: 'Мати' },
+      cropRead: votingCropRead,
+    })
+    const father = fields.find((f) => f.field === 'father_full_name')!
+    expect(father.raw_cyrillic).toBe('Куропятник Сергей')
+    expect(father.review_reasons).toContain('hires_tile_recovered')
+    expect(isEmptyField(fields.find((f) => f.field === 'mother_full_name')!)).toBe(true) // no majority ⇒ held
+    expect(diag.recovered).toBe(1)
   })
 })
