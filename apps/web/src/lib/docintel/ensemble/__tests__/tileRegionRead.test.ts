@@ -14,6 +14,7 @@ import {
   foldMajority,
   tileVoteRuns,
   geminiReadFieldsFromCrop,
+  votingSettled,
   type CropFieldReadFn,
   type SingleCropSampler,
 } from '../tileRegionRead'
@@ -176,6 +177,29 @@ describe('geminiReadFieldsFromCrop voting wrapper (injected sampler)', () => {
     const sampler: SingleCropSampler = async () => ({ father: 'Solo' })
     const out = await geminiReadFieldsFromCrop(crop, fields, 'k', 'm', 60_000, { runs: 1, sampler })
     expect(out.father).toBe('Solo')
+  })
+  it('COST early-exit: first 2 agree ⇒ stops at 2 calls (not 3), same result', async () => {
+    let calls = 0
+    const sampler: SingleCropSampler = async () => { calls++; return { father: 'X' } }
+    const out = await geminiReadFieldsFromCrop(crop, fields, 'k', 'm', 60_000, { runs: 3, sampler })
+    expect(out.father).toBe('X')
+    expect(calls).toBe(2) // saved the 3rd Gemini call
+  })
+})
+
+describe('votingSettled (cost early-exit predicate)', () => {
+  const F = [{ key: 'father' }]
+  it('2 of 3 agree ⇒ settled (majority reached)', () => {
+    expect(votingSettled([{ father: 'X' }, { father: 'X' }], F, 3)).toBe(true)
+  })
+  it('1 of 3 ⇒ not settled (a 3rd could still form a majority)', () => {
+    expect(votingSettled([{ father: 'X' }], F, 3)).toBe(false)
+  })
+  it('2 disagree of 3 ⇒ not settled (remaining sample could tie the leader to 2)', () => {
+    expect(votingSettled([{ father: 'X' }, { father: 'Y' }], F, 3)).toBe(false)
+  })
+  it('all-empty so far with 1 remaining ⇒ settled (cannot reach majority)', () => {
+    expect(votingSettled([{}, {}], F, 3)).toBe(true)
   })
 })
 

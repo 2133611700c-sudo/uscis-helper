@@ -14,6 +14,7 @@ import {
   foldOrientationVotes,
   orientVoteRuns,
   detectUprightCwVoted,
+  orientationSettled,
 } from '../detectOrientation'
 
 afterEach(() => { vi.restoreAllMocks() })
@@ -135,6 +136,20 @@ describe('detectUprightCwVoted (injected sampler)', () => {
     let i = 0
     const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 3, sampler: () => seq[i++]() })
     expect(out).toBe(270)
+  })
+  it('COST early-exit: first 2 agree ⇒ stops at 2 detects (not 3)', async () => {
+    let calls = 0
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 3, sampler: async () => { calls++; return 270 } })
+    expect(out).toBe(270)
+    expect(calls).toBe(2)
+  })
+})
+
+describe('orientationSettled (cost early-exit)', () => {
+  it('2 of 3 agree ⇒ settled; 1 of 3 ⇒ not; all-null with 1 left ⇒ settled', () => {
+    expect(orientationSettled([270, 270], 3)).toBe(true)
+    expect(orientationSettled([270], 3)).toBe(false)
+    expect(orientationSettled([null, null], 3)).toBe(true)
   })
 })
 

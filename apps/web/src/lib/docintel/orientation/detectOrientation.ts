@@ -134,8 +134,23 @@ export async function detectUprightCwVoted(
   const sample = opts.sampler ?? ((b: Buffer) => detectUprightCw(b, apiKey, model))
   if (runs <= 1) return sample(buffer)
   const votes: Array<Cw | null> = []
-  for (let i = 0; i < runs; i++) { try { votes.push(await sample(buffer)) } catch { votes.push(null) } }
+  for (let i = 0; i < runs; i++) {
+    try { votes.push(await sample(buffer)) } catch { votes.push(null) }
+    if (orientationSettled(votes, runs)) break // COST: stop once the angle is decided (≥2 agree).
+  }
   return foldOrientationVotes(votes, runs)
+}
+
+/** True when no remaining vote can change the orientation majority (cost early-exit). */
+export function orientationSettled(votes: Array<Cw | null>, runs: number): boolean {
+  const remaining = runs - votes.length
+  if (remaining <= 0) return true
+  const counts = new Map<Cw, number>()
+  for (const v of votes) if (v !== null) counts.set(v, (counts.get(v) ?? 0) + 1)
+  let best = 0; for (const c of counts.values()) if (c > best) best = c
+  const won = best * 2 > runs
+  const cannotWin = (best + remaining) * 2 <= runs
+  return won || cannotWin
 }
 
 export interface OrientResult {
