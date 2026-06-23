@@ -78,6 +78,12 @@ export interface TranslationOptions {
    * Set by TranslationReviewGate component after user checks the certification checkbox.
    */
   reviewConfirmed?: boolean
+  /**
+   * DETERMINISM (U-STAGE 5 / #195): pinned certification timestamp (ISO 8601) for
+   * the embedded translation PDF. When absent, a fixed deterministic anchor is used
+   * instead of wall-clock `new Date()` so the TPS ZIP's translation bytes are stable.
+   */
+  signedAt?: string
 }
 
 export async function buildPacket(
@@ -220,6 +226,7 @@ export async function buildPacket(
                 result._signerName ?? '',
                 result._signerAddress ?? '',
                 docType,
+                translationOpts.signedAt,
               )
               const pdfBuffer = await generateTranslationPDF(pdfInput)
               zip.file(filename, pdfBuffer)
@@ -294,6 +301,11 @@ function buildTranslationPacketInput(
   signerName: string,
   signerAddress: string,
   docType: TPSDocumentType,
+  /** DETERMINISM (U-STAGE 5 / #195): pinned ISO timestamp anchoring the cert's
+   * signed_at. The deterministic engine pins CreationDate/ModDate to this, so the
+   * TPS-embedded translation PDF must NOT use wall-clock new Date() here. Absent →
+   * fixed epoch anchor (stable bytes regardless of caller). */
+  signedAt?: string,
 ): PacketInput {
   const scopeMap: Partial<Record<TPSDocumentType, string>> = {
     passportBooklet: 'Ukrainian Internal Passport (Book Format)',
@@ -323,7 +335,7 @@ function buildTranslationPacketInput(
       statement:
         'I certify that I am competent in both the Ukrainian and English languages, and that the above is a true and accurate translation of the document submitted.',
       signature_typed_name: signerName,
-      signed_at: new Date().toISOString(),
+      signed_at: signedAt ?? new Date(0).toISOString(),
       source_language: 'Ukrainian',
       address: signerAddress,
       certification_version: '8cfr_103_2_b_3_v1',

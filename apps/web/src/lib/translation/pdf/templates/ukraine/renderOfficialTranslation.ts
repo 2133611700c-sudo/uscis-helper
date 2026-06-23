@@ -71,5 +71,18 @@ export async function renderOfficialTranslation(
   L(`Address: ${opts.signerAddress ?? '____________________'}`, 10); y -= 8
   L(`Official structure basis: ${safe(schema.officialSource.act)} - ${schema.officialSource.url}`, 7, ital, gray)
   page.drawRectangle({ x: M - 14, y: 30, width: W - 2 * (M - 14), height: H - 60, borderColor: rule, borderWidth: 1 })
+  // DETERMINISM (U-STAGE 5 / #195): pdf-lib otherwise stamps CreationDate/ModDate
+  // with the render wall-clock and a version-dependent Producer, making the bytes
+  // non-deterministic. Pin all document metadata to the certification's signedAt
+  // (the single pinned time source) + fixed strings, so the same input always
+  // renders byte-identical output (stable V2 immutable-artifact content-address).
+  // Same approach as lib/packet/pdf.ts:259-270. VISIBLE content is unchanged.
+  // signedAt absent (legacy callers) → epoch, a fixed deterministic anchor.
+  const parsed = opts.signedAt ? new Date(opts.signedAt) : new Date(0)
+  const pinned = Number.isNaN(parsed.getTime()) ? new Date(0) : parsed
+  pdf.setCreationDate(pinned)
+  pdf.setModificationDate(pinned)
+  pdf.setProducer('Messenginfo')
+  pdf.setCreator('Messenginfo Translation')
   return { pdf: Buffer.from(await pdf.save()), unresolved }
 }

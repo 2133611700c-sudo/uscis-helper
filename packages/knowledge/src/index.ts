@@ -69,6 +69,14 @@ export {
 } from './registry/registryLookup';
 export type { RegistryCategory, LookupResult, LookupOptions, RegistryRow } from './registry/registry.schema';
 
+// U-STAGE 6 — document-number / series FORMAT validators (pure, additive).
+// Single codex place to validate the SHAPE of UA/US doc numbers + EAD category map.
+export {
+  validateDocNumber, DOC_NUMBER_FORMATS, US_SERVICE_CENTER_PREFIXES,
+  EAD_CATEGORY_MEANINGS, lookupEadCategory,
+} from './docNumberFormats';
+export type { DocNumberKind, DocNumberResult } from './docNumberFormats';
+
 // MRZ (passport machine-readable zone) — controlling Latin name/number/DOB.
 export { parseMrz, checkDigit, findMrzLines, findTd1Lines } from './mrz';
 export { classifyGarbage, isGarbageValue } from './garbageGuard';
