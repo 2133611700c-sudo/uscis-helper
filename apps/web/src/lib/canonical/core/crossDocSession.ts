@@ -31,6 +31,26 @@ export interface SessionReconcileResult {
   changes: ReconcileChange[]
 }
 
+/** One-click cross-doc suggestion for a single document, shaped for an OCR route response. */
+export interface CrossDocSuggestion {
+  field_key: string
+  suggested_value: string
+  from_doc_type: string
+}
+
+/**
+ * Extract the suggestions that apply to ONE document (by docType) from a session reconcile
+ * result — the values a stronger sibling anchor pre-filled into this doc's held fields.
+ * Pure; returns [] when this docType has no changes.
+ */
+export function suggestionsForDoc(result: SessionReconcileResult, docType: string): CrossDocSuggestion[] {
+  const thisDoc = result.perDoc.find((d) => d.docType === docType)
+  if (!thisDoc) return []
+  return result.changes
+    .filter((c) => c.docId === thisDoc.docId)
+    .map((c) => ({ field_key: c.fieldKey, suggested_value: c.suggestedValue, from_doc_type: c.fromDocType }))
+}
+
 /**
  * Adapt the session's persisted canonical documents into PerDocFields[], keeping ONE entry
  * per doc_type (the most recently created row for that type). Order is stable (by docType).

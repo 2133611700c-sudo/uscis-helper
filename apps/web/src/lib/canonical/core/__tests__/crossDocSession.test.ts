@@ -6,7 +6,7 @@
  * (byte-identical); (4) RU/UA name script guard (L8) survives the session path.
  */
 import { describe, it, expect } from 'vitest'
-import { canonicalDocsToPerDocFields, reconcileSessionDocuments } from '../crossDocSession'
+import { canonicalDocsToPerDocFields, reconcileSessionDocuments, suggestionsForDoc } from '../crossDocSession'
 import type { CanonicalDocumentResult, CanonicalField } from '../../types'
 
 const field = (p: Partial<CanonicalField> & { key: string }): CanonicalField => ({
@@ -100,5 +100,27 @@ describe('reconcileSessionDocuments', () => {
   it('single document ⇒ no reconciliation', () => {
     const { changes } = reconcileSessionDocuments([passportDoc()], true)
     expect(changes).toHaveLength(0)
+  })
+})
+
+describe('suggestionsForDoc', () => {
+  it('returns the cross-doc suggestions that apply to the named doc only', () => {
+    const reconciled = reconcileSessionDocuments([passportDoc(), birthCertDoc()], true)
+    const forBirth = suggestionsForDoc(reconciled, 'ua_birth_certificate')
+    expect(forBirth).toEqual([
+      { field_key: 'date_of_birth', suggested_value: '1986-06-25', from_doc_type: 'ua_international_passport' },
+    ])
+    // the passport itself (the anchor) received nothing.
+    expect(suggestionsForDoc(reconciled, 'ua_international_passport')).toEqual([])
+  })
+
+  it('flag OFF ⇒ no suggestions for any doc', () => {
+    const reconciled = reconcileSessionDocuments([passportDoc(), birthCertDoc()], false)
+    expect(suggestionsForDoc(reconciled, 'ua_birth_certificate')).toEqual([])
+  })
+
+  it('unknown docType ⇒ empty', () => {
+    const reconciled = reconcileSessionDocuments([passportDoc(), birthCertDoc()], true)
+    expect(suggestionsForDoc(reconciled, 'ua_military_id')).toEqual([])
   })
 })
