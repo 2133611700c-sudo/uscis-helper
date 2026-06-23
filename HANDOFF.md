@@ -1,5 +1,15 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-22 | Dictionary normative audit vs KMU-55 (autonomous; tsc 0; all suites green)
+**Done (branch `translation/ru-and-model-matrix-fixes`):**
+- Web-verified `transliterate.ts` KMU-55 table vs the OFFICIAL norm (KMU №55; czo.gov.ua / mfa.gov.ua / UN E/CONF.101/84). All letter values CORRECT (Г→H, Х→Kh, Щ→Shch, зг→zgh, Я→ia/ya by position). No wrong/missing letters.
+- **Found + fixed a missing SIGN:** typographic apostrophe `’` (U+2019) was NOT in `SKIP` → leaked into Latin names (`Мар’яна → Mar’iana`). Added full apostrophe family (U+0027/2019/2018/02BC/02BB/0060/00B4/02B9). Now `Мар’яна → Mariana`.
+- Added permanent **completeness guard** (`__tests__/alphabetCompleteness.test.ts`, in the knowledge test script): every UA+RU letter maps, zero Cyrillic leak, normative spot-checks. 82/82.
+- Evidence: knowledge suite green; apps/web 4531 pass; tsc 0. Additive change, no regression.
+
+**EXACT NEXT TASK:** owner-gated flag flips still pending live Gemini quota (see R0-R8 matrix below) — re-measure `gt-pipeline-bench.mjs` once quota is back, then owner go/no-go on `DICTIONARY_CLEARS_SOFT_REVIEW`. Cross-doc reconciliation (`crossDocReconcile.ts`) built + tested but NOT wired (integration point: TPS packetBuilder.ts:185 / translation order).
+
+
 ## 2026-06-22 | Recognition program R0-R8 done (autonomous); auto-delivery backbone built behind OFF flags
 **Done (branch `translation/ru-and-model-matrix-fixes`, commits b660be8 / 1a80de4 / 32fe26f; tsc 0; suites green):**
 - R0 measurement harness FIXED (was broken — non-existent fixtures) → honest **45% baseline** (birth 20 / booklet 60 / military 80).

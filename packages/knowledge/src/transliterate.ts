@@ -30,8 +30,21 @@ const MIDDLE: Record<string, string> = {
   'Й': 'I', 'й': 'i', 'Ю': 'Iu', 'ю': 'iu', 'Я': 'Ia', 'я': 'ia',
 };
 
-// Characters to skip (soft sign, hard sign, apostrophe variants)
-const SKIP = new Set(["Ь", "ь", "Ъ", "ъ", "'", "'", "ʼ", "\u0027"]);
+// Characters to skip (soft sign, hard sign, FULL apostrophe family). Real Ukrainian
+// documents use many apostrophe glyphs — all must be dropped, else they LEAK into the
+// Latin name ("Мар’яна" → "Mar’iana" instead of "Mariana"). U+2019 (typographic, the most
+// common in real text) and U+2018 were missing before 2026-06-22. KMU-55: apostrophe not reproduced.
+const SKIP = new Set([
+  "Ь", "ь", "Ъ", "ъ",
+  "\u0027", // straight apostrophe
+  "\u2019", // right single quote (typographic — most common)
+  "\u2018", // left single quote
+  "\u02BC", // modifier letter apostrophe
+  "\u02BB", // modifier letter turned comma
+  "\u0060", // grave accent
+  "\u00B4", // acute accent
+  "\u02B9", // modifier letter prime
+]);
 
 // Ukrainian Cyrillic character check
 const UA_CYRILLIC = /[\u0400-\u04FF\u0490\u0491]/;

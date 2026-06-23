@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "test": "npx tsx src/__tests__/transliterate.test.ts && npx tsx src/__tests__/patronymic.test.ts && npx tsx src/__tests__/patronymicRu.test.ts && npx tsx src/__tests__/normalize.test.ts && npx tsx src/__tests__/e2e-passport.test.ts && npx tsx src/__tests__/noCyrillicLeak.test.ts && npx tsx src/__tests__/countries.test.ts && npx tsx src/__tests__/villages.test.ts && npx tsx src/__tests__/autocorrect.test.ts && npx tsx src/__tests__/docNumberFormats.test.ts && npx tsx src/__tests__/civilRegistryDeathNameChange.test.ts"
+    "test": "npx tsx src/__tests__/transliterate.test.ts && npx tsx src/__tests__/detectDocumentScript.test.ts && npx tsx src/__tests__/patronymic.test.ts && npx tsx src/__tests__/patronymicRu.test.ts && npx tsx src/__tests__/normalize.test.ts && npx tsx src/__tests__/e2e-passport.test.ts && npx tsx src/__tests__/noCyrillicLeak.test.ts && npx tsx src/__tests__/countries.test.ts && npx tsx src/__tests__/villages.test.ts && npx tsx src/__tests__/alphabetCompleteness.test.ts && npx tsx src/__tests__/autocorrect.test.ts && npx tsx src/__tests__/docNumberFormats.test.ts && npx tsx src/__tests__/civilRegistryDeathNameChange.test.ts"
   },
   "dependencies": {}
 }
