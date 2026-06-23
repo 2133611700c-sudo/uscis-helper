@@ -1,6 +1,6 @@
 {
-  "_version": "2.0.0",
-  "_purpose": "Civil registry terminology for Ukrainian birth, marriage, and divorce certificate extraction and translation.",
+  "_version": "2.1.0",
+  "_purpose": "Civil registry terminology for Ukrainian birth, marriage, divorce, DEATH, and NAME-CHANGE certificate extraction and translation.",
   "_notes": [
     "HISTORICAL ACCURACY RULES:",
     "1. ЗАГС is Soviet-era. Do NOT modernize to ДРАЦС silently.",
@@ -77,6 +77,75 @@
       "en": "Divorce Certificate",
       "field_hint": "document_type",
       "note": "Also known as Certificate of Dissolution of Marriage."
+    },
+    "СВІДОЦТВО ПРО СМЕРТЬ": {
+      "en": "Death Certificate",
+      "field_hint": "document_type"
+    },
+    "СВІДОЦТВО ПРО ЗМІНУ ІМЕНІ": {
+      "en": "Name Change Certificate",
+      "field_hint": "document_type",
+      "note": "Covers зміна прізвища, імені or по батькові. The Ukrainian «ім'я» here means the full name, not only the given name."
+    },
+    "ПРИЧИНА СМЕРТІ": {
+      "en": "Cause of Death",
+      "field_hint": "cause_of_death",
+      "note": "Death certificate field. Medical wording — long/complex text → manual_review. Do NOT infer."
+    },
+    "ДАТА СМЕРТІ": {
+      "en": "Date of Death",
+      "field_hint": "date_of_death"
+    },
+    "МІСЦЕ СМЕРТІ": {
+      "en": "Place of Death",
+      "field_hint": "place_of_death"
+    },
+    "ДАТА ВНЕСЕННЯ ЗАПИСУ": {
+      "en": "Date of Record Entry",
+      "field_hint": "act_record_date",
+      "note": "Used on death and name-change records for the act-record entry date."
+    },
+    "ПРІЗВИЩЕ ДО ЗМІНИ": {
+      "en": "Surname before Change",
+      "field_hint": "name_before_change"
+    },
+    "ІМ'Я ДО ЗМІНИ": {
+      "en": "Given Name before Change",
+      "field_hint": "name_before_change"
+    },
+    "ПО БАТЬКОВІ ДО ЗМІНИ": {
+      "en": "Patronymic before Change",
+      "field_hint": "name_before_change",
+      "note": "Must be rendered as Patronymic, not Middle Name."
+    },
+    "ПРІЗВИЩЕ ПІСЛЯ ЗМІНИ": {
+      "en": "Surname after Change",
+      "field_hint": "name_after_change"
+    },
+    "ІМ'Я ПІСЛЯ ЗМІНИ": {
+      "en": "Given Name after Change",
+      "field_hint": "name_after_change"
+    },
+    "ПО БАТЬКОВІ ПІСЛЯ ЗМІНИ": {
+      "en": "Patronymic after Change",
+      "field_hint": "name_after_change",
+      "note": "Must be rendered as Patronymic, not Middle Name."
+    },
+    "НОВЕ ПРІЗВИЩЕ": {
+      "en": "New Surname",
+      "field_hint": "name_after_change"
+    },
+    "НОВЕ ІМ'Я": {
+      "en": "New Given Name",
+      "field_hint": "name_after_change"
+    },
+    "ПРІЗВИЩЕ, ІМ'Я ТА ПО БАТЬКОВІ ДО ЗМІНИ": {
+      "en": "Full Name before Change",
+      "field_hint": "name_before_change"
+    },
+    "ПРІЗВИЩЕ, ІМ'Я ТА ПО БАТЬКОВІ ПІСЛЯ ЗМІНИ": {
+      "en": "Full Name after Change",
+      "field_hint": "name_after_change"
     },
     "СЕРІЯ": {
       "en": "Series",
