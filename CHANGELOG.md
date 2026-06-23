@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-22 | Seam A (part 2): cross-doc reconciliation wired into TPS OCR route (server, flag-gated)
+- **Root-cause closed:** the OCR routes persisted each upload under an EPHEMERAL random `document_id`, so a person's documents never shared a `canonical_documents.session_id` → reconciliation had no group to work on. Fix: behind CROSS_DOC_RECONCILE_ENABLED, persist under the STABLE wizard cookie (`wizard_anon_id`, 30-day UUID from /api/wizard/session). Flag OFF ⇒ session id = today's ephemeral `document_id` ⇒ BYTE-IDENTICAL.
+- **New:** `lib/security/wizardSessionCookie.ts` (`getWizardAnonId` — validated UUID reader). `crossDocSession.suggestionsForDoc` (pure: per-doc one-click suggestions for an OCR response).
+- **TPS route (`api/tps/ocr/extract/route.ts`):** computes `persistSessionId = crossDocOn && cookie ? wizard_anon_id : document_id`; persists under it; when flag ON + cookie, loads all the session's canonical docs, runs `reconcileSessionDocuments`, and emits `cross_doc_suggestions` (best-effort, try/catch — never blocks OCR). C3 stays the single writer; suggestions are one-click pre-fills, never auto-applied (review kept).
+- **Tests (+11):** crossDocSession `suggestionsForDoc` (per-doc filter, flag-OFF empty, unknown-doc empty); TPS route wiring (source contract: persists under persistSessionId not document_id, cookie read only behind flag, best-effort try/catch, emits cross_doc_suggestions) + pure session-id decision sim (OFF⇒ephemeral, ON+cookie⇒stable, ON+no-cookie⇒ephemeral fallback).
+- **Evidence:** full suite 4548 pass / 24 skip (+11); tsc 0. Flag OFF byte-identical. No prod write changes until owner flips the flag. REMAINING for full Seam A: client one-click pre-fill consumption + same wiring for EAD/Re-Parole.
+
 ## 2026-06-22 | Seam A (part 1): cross-doc reconciliation session wiring — adapter + orchestrator + loader
 - **Owner task:** integrate everything into one working brain; owner chose Seam A (cross-document reconciliation) first.
 - **Honest root-cause found (no fake):** `reconcileAcrossDocuments` had ZERO callers because multiple documents of one person never coexisted in code — each product OCR route reads ONE doc and persists it to `canonical_documents` (session_id+product+doc_type), but there was no loader for "all docs of a session". The DB schema already supports it (index session_id, doc_type); the wiring was the only gap.
