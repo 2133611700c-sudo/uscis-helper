@@ -104,6 +104,40 @@ export async function detectUprightCw(
   }
 }
 
+/** K-sample orientation vote count: env ORIENT_VOTE_RUNS, default 3, clamp 1..5. =1 ⇒ single detect. */
+export function orientVoteRuns(env: Record<string, string | undefined> = process.env): number {
+  const k = Number(env.ORIENT_VOTE_RUNS)
+  return Number.isFinite(k) && k >= 1 ? Math.min(5, Math.floor(k)) : 3
+}
+
+/** Majority-fold K orientation detections (pure). A correction wins only on a STRICT majority of
+ *  `runs` (bestCount*2 > runs ⇒ ≥2/3, ≥3/5); no majority ⇒ null (do NOT rotate on a split — a wrong
+ *  rotate breaks geometry, and the VLM mentally rotates the main read anyway). nulls don't vote. */
+export function foldOrientationVotes(votes: Array<Cw | null>, runs: number): Cw | null {
+  const count = new Map<Cw, number>()
+  for (const v of votes) if (v !== null) count.set(v, (count.get(v) ?? 0) + 1)
+  let best: Cw | null = null, bestN = 0
+  for (const [cw, n] of count) if (n > bestN) { bestN = n; best = cw }
+  return best !== null && bestN * 2 > runs ? best : null
+}
+
+/**
+ * Detect the upright correction by VOTING the grid detector K times (research-backed
+ * self-consistency: the single grid call flips e.g. 0↔270 on an ambiguous two-page spread; a
+ * majority over K stabilizes it). runs=1 ⇒ a single detect (back-compat). Sampler injectable for tests.
+ */
+export async function detectUprightCwVoted(
+  buffer: Buffer, apiKey: string, model: string,
+  opts: { runs?: number; sampler?: (b: Buffer) => Promise<Cw | null> } = {},
+): Promise<Cw | null> {
+  const runs = opts.runs ?? orientVoteRuns()
+  const sample = opts.sampler ?? ((b: Buffer) => detectUprightCw(b, apiKey, model))
+  if (runs <= 1) return sample(buffer)
+  const votes: Array<Cw | null> = []
+  for (let i = 0; i < runs; i++) { try { votes.push(await sample(buffer)) } catch { votes.push(null) } }
+  return foldOrientationVotes(votes, runs)
+}
+
 export interface OrientResult {
   buffer: Buffer
   applied: Cw
@@ -111,11 +145,11 @@ export interface OrientResult {
 }
 
 /**
- * Detect the upright rotation and apply it. Returns the corrected buffer + the applied angle.
- * Fail-open: detection failure ⇒ original buffer, applied 0, detected false.
+ * Detect the upright rotation (K-vote stabilized) and apply it. Returns the corrected buffer + the
+ * applied angle. Fail-open: detection failure ⇒ original buffer, applied 0, detected false.
  */
 export async function orientToUpright(buffer: Buffer, apiKey: string, model: string): Promise<OrientResult> {
-  const cw = await detectUprightCw(buffer, apiKey, model)
+  const cw = await detectUprightCwVoted(buffer, apiKey, model)
   if (cw === null || cw === 0) return { buffer, applied: 0, detected: cw !== null }
   try {
     const rotated = await sharp(buffer).rotate(cw).toBuffer()

@@ -34,7 +34,10 @@ let callsUsed = 0
 const { readDocument } = await import(path.join(ROOT, 'apps/web/src/lib/docintel/documentFieldReader.ts'))
 const { preprocessImage } = await import(path.join(ROOT, 'apps/web/src/lib/ocr/image-preprocess.ts'))
 const { primaryGeminiModel } = await import(path.join(ROOT, 'apps/web/src/lib/docintel/providers/geminiVisionProvider.ts'))
-const { detectUprightCw } = await import(path.join(ROOT, 'apps/web/src/lib/docintel/orientation/detectOrientation.ts'))
+const { detectUprightCw, detectUprightCwVoted } = await import(path.join(ROOT, 'apps/web/src/lib/docintel/orientation/detectOrientation.ts'))
+// orient measurement mirrors the pipeline: voted when ORIENT_VOTE_RUNS>1 (default 3), else single.
+const ORIENT_RUNS = Math.min(5, Math.max(1, Number(process.env.ORIENT_VOTE_RUNS) || 3))
+const measureOrient = (buf) => ORIENT_RUNS > 1 ? detectUprightCwVoted(buf, KEY, PRIMARY, { runs: ORIENT_RUNS }) : detectUprightCw(buf, KEY, PRIMARY)
 const { getGeminiApiKey } = await import(path.join(ROOT, 'apps/web/src/lib/gemini/apiKey.ts'))
 const { normalizeForCompare } = await import(path.join(ROOT, 'apps/web/src/lib/docintel/selfConsistency.ts'))
 const PRIMARY = primaryGeminiModel()
@@ -90,7 +93,7 @@ for (const d of DOCS) {
     if (callsUsed >= MAX_CALLS) { runs.push({ blocked: 'cost_cap' }); continue }
     // orientation (1 call) — separate so we can measure orientation stability
     let orient = null
-    try { orient = await detectUprightCw(baseBuf, KEY, PRIMARY); callsUsed++ } catch { orient = 'ERR' }
+    try { orient = await measureOrient(baseBuf); callsUsed += ORIENT_RUNS } catch { orient = 'ERR' }
     let r
     try { r = await readDocument(baseBuf, mime, d.docTypeId, { attemptsPerModel: 1, timeoutMs: 85_000, originalBuffer: raw }); callsUsed += 3 }
     catch (e) { runs.push({ blocked: 'threw' }); continue }
