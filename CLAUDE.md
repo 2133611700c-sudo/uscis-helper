@@ -1,5 +1,11 @@
 # CLAUDE.md — Mandatory Agent Rules for uscis-helper
 
+## THE RULES MENU — start here, don't grep (2026-06-22):
+- `docs/architecture/RULES_MASTER_INDEX.md` — the audit menu: WHO has which rules, by TOPIC, by DOCUMENT, by GUARD, with file pointers. Open this to find any rule instead of searching.
+- `docs/architecture/CONSTITUTION.md` — the 10 laws (L1–L10) above everything (one Gemini reader, one codex, DeepSeek prose-only, C3 single final_value writer, never guess critical, …).
+- `docs/architecture/RECOGNITION_ORG_CHART.md` — each AI's single role; `docs/adr/ADR-AGENT-PERMISSIONS.md` — permissions.
+- RULE #1 (owner-emphatic): for ANY task, read the existing report/audit on THAT question BEFORE planning or coding.
+
 ## BEFORE YOU TOUCH ANY CODE — READ THESE FILES (in order):
 0. `docs/audit/2026-06-13-DOCUMENT_CORE_AND_PROJECT_STATE_AUDIT.md` — consolidated evidence-only audit (brain/dictionary/arbitration/canonical + repo/PR/security/deploy). Read FIRST; verified facts, `UNVERIFIED` items, and risk register.
 1. `STATUS.md` — current operational truth (1 screen)
