@@ -397,6 +397,24 @@ function hardenFinalValues(r: DocumentBrainResult): DocumentBrainResult {
         Boolean(extraReviewReason),
     }
   }
+
+  // DATE-ROLE DEFENSE-IN-DEPTH (2026-06-22, live-found): a live probe showed DeepSeek can
+  // put a non-birth date into `dob` (it copied a date-of-issue into dob despite the explicit
+  // prompt rule). The FULL deterministic date-role guard lives on the Gemini path
+  // (dateRoleGuard.ts), where all UA identity docs are read; the DeepSeek path handles
+  // US-Latin docs. As belt-and-suspenders here: if dob's value collides with ANY other date
+  // field's value (date copied across roles), force dob to review (never silently release a
+  // role-confused birth date).
+  const dob = next.fields.dob
+  if (dob && (dob.final_value ?? '').trim()) {
+    const dobVal = (dob.final_value ?? '').trim()
+    const otherDateCollision = (Object.keys(next.fields) as Array<keyof typeof next.fields>)
+      .some((kk) => kk !== 'dob' && /(_date|expir|valid)/i.test(String(kk)) &&
+        (next.fields[kk]?.final_value ?? '').trim() === dobVal && dobVal !== '')
+    if (otherDateCollision) {
+      next.fields.dob = { ...dob, requires_review: true }
+    }
+  }
   return next
 }
 
