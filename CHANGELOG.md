@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-22 | Seam A (part 1): cross-doc reconciliation session wiring — adapter + orchestrator + loader
+- **Owner task:** integrate everything into one working brain; owner chose Seam A (cross-document reconciliation) first.
+- **Honest root-cause found (no fake):** `reconcileAcrossDocuments` had ZERO callers because multiple documents of one person never coexisted in code — each product OCR route reads ONE doc and persists it to `canonical_documents` (session_id+product+doc_type), but there was no loader for "all docs of a session". The DB schema already supports it (index session_id, doc_type); the wiring was the only gap.
+- **Built (pure, behind CROSS_DOC_RECONCILE_ENABLED default OFF, no prod writes, no Gemini quota):**
+  - `canonical/core/crossDocSession.ts` — `canonicalDocsToPerDocFields` (one PerDoc per doc_type, latest createdAt wins) + `reconcileSessionDocuments(docs, flagOn)` (pure orchestrator over `reconcileAcrossDocuments`; loader injected by the caller so it is fully unit-testable, no Supabase in the core).
+  - `canonical/persistence/index.ts` — `loadAllCanonicalDocumentsForSession(sessionId, product?)` READ-ONLY (latest row per doc_type). Writes nothing.
+  - `crossDocSession.test.ts` (6) — passport MRZ DOB fills sibling birth-cert held DOB (suggestedValue, review KEPT = one-click confirm); RU/UA name script guard survives the session path (Сергей not harmonized to Сергій); flag OFF ⇒ zero changes; single doc ⇒ no-op; latest-per-type dedup.
+- **Evidence:** full suite 4537 pass / 24 skip (+6); tsc 0. Flag OFF ⇒ byte-identical (orchestrator returns input unchanged). NOT yet wired into a route response — next step: attach suggestions in the TPS OCR route behind the OFF flag.
+
 ## 2026-06-22 | Fresh cross-document self-read + rotation test + live DeepSeek teaching proof
 - **Owner task A — "сам по всем правилам проверь документы как модель":** read the REAL document images directly (Claude as the model), applying the rules. Cross-document result:
   - **DOB = 25 June 1986 CONFIRMED by 3 docs**: passport "25 ЧЕР/JUN 86" + MRZ `8606257` + record `19860625`; military "_5 червня 1986"; birth-cert "25 июня 1986". The handwritten military day "_5" (ambiguous 15/25 alone) is disambiguated to 25 by the passport MRZ — textbook cross-doc anchoring.

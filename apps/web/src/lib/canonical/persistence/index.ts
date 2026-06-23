@@ -487,6 +487,47 @@ export async function loadCanonicalDocumentBySession(
 }
 
 // ---------------------------------------------------------------------------
+// 3b. loadAllCanonicalDocumentsForSession (cross-doc reconciliation source)
+// ---------------------------------------------------------------------------
+
+/**
+ * Load ALL canonical documents for a session (one per doc_type — the most recent row of each).
+ * READ-ONLY. Feeds cross-document reconciliation (crossDocSession.reconcileSessionDocuments),
+ * which needs >=2 of a person's documents at once. When `product` is given, scopes to that
+ * product's rows (session_id is shared across products). Returns [] when none exist.
+ */
+export async function loadAllCanonicalDocumentsForSession(
+  sessionId: string,
+  product?: string,
+): Promise<CanonicalDocumentResult[]> {
+  const supabase = getSupabaseClient()
+
+  let query = supabase
+    .from('canonical_documents')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: false })
+  if (product) query = query.eq('product', product)
+
+  const { data, error } = await query
+  if (error) {
+    throw new Error(`[canonical/persistence] loadAllForSession failed: ${error.message}`)
+  }
+  if (!data || data.length === 0) return []
+
+  // Keep only the most recent row per doc_type (rows are already newest-first).
+  const seen = new Set<string>()
+  const out: CanonicalDocumentResult[] = []
+  for (const row of data as Array<Record<string, unknown>>) {
+    const docType = row.doc_type as string
+    if (seen.has(docType)) continue
+    seen.add(docType)
+    out.push(rowToResult(row))
+  }
+  return out
+}
+
+// ---------------------------------------------------------------------------
 // 4. appendCanonicalOverride
 // ---------------------------------------------------------------------------
 
