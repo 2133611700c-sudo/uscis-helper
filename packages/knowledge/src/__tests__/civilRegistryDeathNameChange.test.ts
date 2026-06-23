@@ -15,7 +15,7 @@ function assert(condition: boolean, desc: string, detail?: string) {
 const dt = (terms as { document_terms: Record<string, { en: string; field_hint?: string }> }).document_terms;
 
 // ── version bumped (additive) ───────────────────────────────
-assert((terms as { _version: string })._version === '2.1.0', 'civil_registry_terms version bumped to 2.1.0');
+assert((terms as { _version: string })._version === '2.2.0', 'civil_registry_terms version bumped to 2.2.0 (RU section added 2026-06-23)');
 
 // ── doc-type entries (already-existing classes, now with field coverage) ──
 assert(dt['СВІДОЦТВО ПРО СМЕРТЬ']?.en === 'Death Certificate', 'death certificate doc-type label');
