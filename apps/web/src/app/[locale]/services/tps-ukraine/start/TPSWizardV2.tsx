@@ -30,6 +30,10 @@ import type { TPSAnswers } from '@/lib/tps/answers'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { applyI94StatusAlias } from '@/lib/tps/wizardAliases'
 import { captureCanonicalDocumentId, selectCanonicalDocumentIdForGenerate } from '@/lib/tps/canonicalCarriage'
+import {
+  extractCrossDocSuggestions, applyCrossDocSuggestion, wizardFieldKey,
+  type CrossDocSuggestion,
+} from '@/lib/tps/crossDocSuggestions'
 import { resolveAllFields, type ExtractedCandidate, type SourceDoc, type SourceType } from '@/lib/tps/fieldArbiter'
 import { DOCUMENT_CONTRACTS } from '@/lib/tps/ocr/documentContracts'
 import type { TpsExtractionSource } from '@/lib/tps/types'
@@ -140,6 +144,12 @@ interface UploadEntry {
    * identity slot) in the generate-packet body as `canonical_document_id`.
    */
   canonical_document_id?: string | null
+  /**
+   * SEAM A: cross-document one-click suggestions for THIS slot, captured from the extract
+   * response (empty unless CROSS_DOC_RECONCILE_ENABLED + a stronger sibling anchor). Each is a
+   * held pre-fill the user confirms with one click; never auto-applied.
+   */
+  cross_doc_suggestions?: CrossDocSuggestion[]
 }
 
 interface WizardData {
@@ -251,6 +261,8 @@ const T = {
     continueSession: 'Продовжити',
     freshStart: '↺ Почати знову',
     edit: 'Змінити',
+    applyFromDoc: (doc: string) => `Підставити (з ${doc})`,
+    docNoun: { passport: 'паспорта', booklet: 'паспорта-книжки', birth: 'свідоцтва', military: 'військового квитка' },
     notSet: '—',
     notFound: 'Не знайдено — введіть вручну',
     notInPassport: 'Немає в закордонному паспорті — заповніть на наступному кроці',
@@ -471,6 +483,8 @@ const T = {
     continueSession: 'Продолжить',
     freshStart: '↺ Начать заново',
     edit: 'Изменить',
+    applyFromDoc: (doc: string) => `Подставить (из ${doc})`,
+    docNoun: { passport: 'паспорта', booklet: 'паспорта-книжки', birth: 'свидетельства', military: 'военного билета' },
     notSet: '—',
     notFound: 'Не найдено — введите вручную',
     notInPassport: 'Нет в загранпаспорте — заполните на следующем шаге',
@@ -690,6 +704,8 @@ const T = {
     continueSession: 'Continue',
     freshStart: '↺ Start fresh',
     edit: 'Edit',
+    applyFromDoc: (doc: string) => `Apply (from ${doc})`,
+    docNoun: { passport: 'passport', booklet: 'passport booklet', birth: 'birth certificate', military: 'military ID' },
     notSet: '—',
     notFound: 'Not found — enter manually',
     notInPassport: 'Not on international passport — fill in next step',
@@ -910,6 +926,8 @@ const T = {
     continueSession: 'Continuar',
     freshStart: '↺ Empezar de nuevo',
     edit: 'Editar',
+    applyFromDoc: (doc: string) => `Aplicar (de ${doc})`,
+    docNoun: { passport: 'pasaporte', booklet: 'libreta de pasaporte', birth: 'certificado de nacimiento', military: 'cartilla militar' },
     notSet: '—',
     notFound: 'No encontrado — escriba a mano',
     notInPassport: 'No está en el pasaporte internacional — llene en el siguiente paso',
@@ -1360,6 +1378,9 @@ function RW({
   onEdit,
   editLabel,
   editTestId,
+  applyLabel,
+  onApply,
+  applyTestId,
 }: {
   label: string
   /** Human-readable provenance e.g. "Паспорт · MRZ (высокая точность)". */
@@ -1380,6 +1401,12 @@ function RW({
   editLabel: string
   /** Stable testid for the edit button (e.g. tps-ocr-edit-given_name). */
   editTestId?: string
+  /** SEAM A: localized "Apply (from passport)" label; null/undefined hides the apply button. */
+  applyLabel?: string | null
+  /** SEAM A: one-click apply the cross-doc suggestion. */
+  onApply?: () => void
+  /** Stable testid for the apply button (e.g. tps-ocr-apply-dob). */
+  applyTestId?: string
 }) {
   return (
     <div
@@ -1415,6 +1442,28 @@ function RW({
           >
             {reviewBadge}
           </span>
+        )}
+        {applyLabel && onApply && (
+          <button
+            type="button"
+            onClick={onApply}
+            data-testid={applyTestId}
+            style={{
+              background: 'none',
+              border: `1px solid ${WARN_BORDER}`,
+              borderRadius: 6,
+              fontSize: 13,
+              color: WARN_TEXT,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              padding: '6px 12px',
+              minHeight: 36,
+              whiteSpace: 'nowrap',
+              fontWeight: 600,
+            }}
+          >
+            {applyLabel}
+          </button>
         )}
         <button
           type="button"
@@ -2356,6 +2405,9 @@ export default function TPSWizardV2({ locale }: Props) {
         // wrong/stale id is worse than none. Resent at generate time for the
         // primary identity slot.
         const canonicalDocumentId: string | null = captureCanonicalDocumentId(json)
+        // SEAM A CAPTURE: cross-document one-click suggestions for this slot (empty unless the
+        // server flag is on AND a stronger sibling document anchored a held field). Never throws.
+        const crossDocSuggestions = extractCrossDocSuggestions(json)
         setData((d) => ({
           ...d,
           uploads: {
@@ -2377,6 +2429,7 @@ export default function TPSWizardV2({ locale }: Props) {
               knowledge_rejected_fields: knowledgeRejectedFields,
               knowledge_diagnostics: knowledgeDiagnostics,
               canonical_document_id: canonicalDocumentId,
+              cross_doc_suggestions: crossDocSuggestions,
             },
           },
         }))
@@ -3193,6 +3246,48 @@ export default function TPSWizardV2({ locale }: Props) {
                 type={data.type}
                 ead={data.ead}
                 mergedFields={mergedFields}
+                crossDocSuggestions={(() => {
+                  // SEAM A: collect this session's cross-doc suggestions into one map keyed by
+                  // the WIZARD field key (canonical key aliased). Empty unless the server flag is
+                  // on. The Apply button surfaces only for a field that has a suggestion.
+                  const map = new Map<string, CrossDocSuggestion>()
+                  for (const u of Object.values(data.uploads)) {
+                    for (const s of u?.cross_doc_suggestions ?? []) {
+                      map.set(wizardFieldKey(s.field_key), s)
+                    }
+                  }
+                  return map
+                })()}
+                onApply={(key, suggestion) => {
+                  // One-click pre-fill from a stronger sibling document. Writes the suggested
+                  // value into the FIRST upload that carries this field (else a synthetic slot),
+                  // KEEPING requires_review=true — the user still confirms (never auto-applied).
+                  setData((d) => {
+                    const next = { ...d, uploads: { ...d.uploads } }
+                    let written = false
+                    for (const slotId of Object.keys(next.uploads)) {
+                      const u = next.uploads[slotId]
+                      if (!u.fields || !u.fields[key]) continue
+                      next.uploads[slotId] = {
+                        ...u,
+                        fields: { ...u.fields, [key]: { ...applyCrossDocSuggestion(u.fields[key], suggestion), doc_slot: slotId } as FieldExtraction },
+                      }
+                      written = true
+                      break
+                    }
+                    if (!written) {
+                      const slotId = 'manual'
+                      const existing = next.uploads[slotId]
+                      next.uploads[slotId] = {
+                        file: existing?.file ?? null,
+                        fileName: existing?.fileName ?? 'manual',
+                        status: 'done',
+                        fields: { ...(existing?.fields ?? {}), [key]: { ...applyCrossDocSuggestion(existing?.fields?.[key], suggestion), doc_slot: slotId } as FieldExtraction },
+                      }
+                    }
+                    return next
+                  })
+                }}
                 onEdit={(key, label, current) => {
                   // Real inline edit. We deliberately use the browser
                   // native prompt() here as Round 3 — it's universally
@@ -3798,17 +3893,32 @@ function NoPassportBlock({ t }: { t: (typeof T)[LocaleKey] }) {
   )
 }
 
+/** SEAM A: map a server doc-type id (from a cross-doc suggestion) to a localized doc noun. */
+function docTypeNoun(fromDocType: string, t: (typeof T)[LocaleKey]): string {
+  if (fromDocType === 'ua_international_passport') return t.docNoun.passport
+  if (fromDocType === 'ua_internal_passport_booklet') return t.docNoun.booklet
+  if (fromDocType === 'ua_birth_certificate') return t.docNoun.birth
+  if (fromDocType === 'ua_military_id') return t.docNoun.military
+  return t.docNoun.passport
+}
+
 function ReviewOcr({
   t,
   type,
   ead,
   mergedFields,
+  crossDocSuggestions,
+  onApply,
   onEdit,
 }: {
   t: (typeof T)[LocaleKey]
   type?: FilingType
   ead?: EadChoice
   mergedFields: Record<string, FieldExtraction>
+  /** SEAM A: wizard-key → cross-doc suggestion (empty unless the server flag is on). */
+  crossDocSuggestions?: Map<string, CrossDocSuggestion>
+  /** SEAM A: one-click apply a suggestion to a field (pre-fill, stays held for review). */
+  onApply?: (key: string, suggestion: CrossDocSuggestion) => void
   /**
    * Called when the user clicks "Изменить" on a row. The parent owns the
    * uploads state, so it does the actual update — we just route the
@@ -3934,6 +4044,10 @@ function ReviewOcr({
     <>
       {rows.map((r) => {
         const fx = mergedFields[r.key]
+        // SEAM A: a cross-doc suggestion for this field (stronger sibling doc) → one-click Apply.
+        const sug = crossDocSuggestions?.get(r.key)
+        const applyLabel = sug && onApply ? t.applyFromDoc(docTypeNoun(sug.from_doc_type, t)) : null
+        const onApplyRow = sug && onApply ? () => onApply(r.key, sug) : undefined
         if (fx && fx.value) {
           return (
             <RW
@@ -3945,6 +4059,9 @@ function ReviewOcr({
               onEdit={() => onEdit(r.key, r.label, fx?.value ?? '')}
               editLabel={t.edit}
               editTestId={`tps-ocr-edit-${r.key}`}
+              applyLabel={applyLabel}
+              onApply={onApplyRow}
+              applyTestId={`tps-ocr-apply-${r.key}`}
             />
           )
         }
@@ -3957,6 +4074,9 @@ function ReviewOcr({
             source=""
             value={missingMsg}
             missing
+            applyLabel={applyLabel}
+            onApply={onApplyRow}
+            applyTestId={`tps-ocr-apply-${r.key}`}
             onEdit={() => onEdit(r.key, r.label, '')}
             editLabel={t.edit}
             editTestId={`tps-ocr-edit-${r.key}`}
