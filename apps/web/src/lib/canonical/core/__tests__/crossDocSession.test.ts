@@ -6,7 +6,7 @@
  * (byte-identical); (4) RU/UA name script guard (L8) survives the session path.
  */
 import { describe, it, expect } from 'vitest'
-import { canonicalDocsToPerDocFields, reconcileSessionDocuments, suggestionsForDoc } from '../crossDocSession'
+import { canonicalDocsToPerDocFields, reconcileSessionDocuments, suggestionsForDoc, strongSiblingValues } from '../crossDocSession'
 import type { CanonicalDocumentResult, CanonicalField } from '../../types'
 
 const field = (p: Partial<CanonicalField> & { key: string }): CanonicalField => ({
@@ -122,5 +122,20 @@ describe('suggestionsForDoc', () => {
   it('unknown docType ⇒ empty', () => {
     const reconciled = reconcileSessionDocuments([passportDoc(), birthCertDoc()], true)
     expect(suggestionsForDoc(reconciled, 'ua_military_id')).toEqual([])
+  })
+})
+
+describe('strongSiblingValues (free-first source map)', () => {
+  it('returns the STRONGEST confidently-read raw cyrillic per reconcilable field', () => {
+    // passport DOB is MRZ-validated (strongest); a held birth-cert DOB must NOT win.
+    const out = strongSiblingValues([passportDoc(), birthCertDoc()])
+    expect(out.date_of_birth).toBe('1986-06-25') // from the passport MRZ field (mrz_validated)
+    // the held birth-cert dob (review/empty) contributes nothing.
+  })
+  it('ignores held/uncertain fields (never borrows an unverified value)', () => {
+    const heldOnly = doc({ docType: 'ua_birth_certificate', fields: [
+      field({ key: 'date_of_birth', normalizedValue: null, rawCyrillic: 'двадцать', reviewRequired: true }),
+    ] })
+    expect(strongSiblingValues([heldOnly]).date_of_birth).toBeUndefined()
   })
 })

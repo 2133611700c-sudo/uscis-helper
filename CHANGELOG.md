@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-23 | FREE-FIRST cost ordering: fill empty fields from FREE sibling values BEFORE paid tile recovery
+- Cost-efficiency principle wired into the read path: when a field is empty, fill it at $0 from a STRONGER sibling document (passport MRZ etc.) BEFORE spending the paid hi-res tile recovery on it — so Gemini is only spent on what is genuinely unknown.
+- `documentFieldReader.ts`: new `applyKnownValues(fields, known)` (pure, exported) fills an EMPTY field from `opts.knownValues` (held for review, reason `known_from_sibling`), NEVER overwrites a read value; runs BEFORE the tile-recovery block, so recovered fields are no longer empty ⇒ not pursued by the paid pass. +4 tests. Opt absent ⇒ byte-identical.
+- `canonical/core/crossDocSession.ts`: new `strongSiblingValues(docs)` — the strongest confidently-read value (raw cyrillic, or the released value for dates/numbers) per reconcilable field across the session's other docs; skips held/uncertain reads. +2 tests.
+- `api/tps/ocr/extract/route.ts`: loads the session's sibling canonical docs and passes `knownValues` into readDocument — ONLY when CROSS_DOC_RECONCILE_ENABLED + the stable wizard cookie exist ⇒ flag OFF is byte-identical (no DB read). Best-effort (non-blocking).
+- Evidence: apps/web 4656 pass; tsc 0. Zero Gemini calls. The paid tile recovery now fires only after the free fill — deterministic-first, LLM-minimal.
+
 ## 2026-06-23 | Sex-from-patronymic (deterministic, FREE) — closes the measured sex=MISS gap, zero LLM cost
 - The stability audit found sex=MISS on the birth cert + military ID. The patronymic encodes sex unambiguously (Сергеевич→M, Степановна→F), so derive it for $0 — the cost-efficiency-first principle (never spend an LLM call for what a suffix tells us). This is the teaching loop in action: mentor found the gap → encoded a deterministic FREE rule in the ONE codex.
 - `packages/knowledge` (codex): new `sexFromPatronymic(p): Sex|null` — female suffixes checked first (longer/more specific); not-a-patronymic ⇒ null (never guesses). Exported from index. +16 tests (sexFromPatronymic.test, wired into CI). Verified live before pinning (12/12 incl. owner's Сергеевич→M).

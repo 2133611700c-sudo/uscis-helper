@@ -20,6 +20,9 @@ import type { CanonicalDocumentResult } from '../types'
 import {
   reconcileAcrossDocuments,
   isCrossDocReconcileEnabled,
+  classifyStrength,
+  ANCHOR_STRENGTH,
+  RECONCILABLE_FIELDS,
   type PerDocFields,
   type ReconcileChange,
 } from './crossDocReconcile'
@@ -81,6 +84,30 @@ export function canonicalDocsToPerDocFields(docs: CanonicalDocumentResult[]): Pe
  * @param docs   the session's canonical documents (already loaded by the route)
  * @param flagOn defaults to isCrossDocReconcileEnabled(); pass explicitly in tests.
  */
+/**
+ * FREE-FIRST source map: the STRONGEST confidently-read value (raw Cyrillic) per reconcilable field
+ * across the session's OTHER documents. Feeds readDocument's `knownValues` so an empty field on the
+ * current doc is filled at $0 from a stronger sibling (e.g. a passport MRZ date) BEFORE any paid
+ * tile recovery. Only mrz/printed/dictionary/consensus-strength values qualify (never a held read).
+ */
+export function strongSiblingValues(docs: CanonicalDocumentResult[]): Record<string, string> {
+  const perDoc = canonicalDocsToPerDocFields(docs)
+  const best: Record<string, { strength: number; cyr: string }> = {}
+  for (const d of perDoc) {
+    for (const f of d.fields) {
+      if (!RECONCILABLE_FIELDS.has(f.key)) continue
+      const strength = ANCHOR_STRENGTH[classifyStrength(f)]
+      if (strength <= ANCHOR_STRENGTH.handwritten_uncertain) continue // not a usable anchor
+      // prefer the raw Cyrillic (names); fall back to the released value (dates/numbers are not Cyrillic).
+      const cyr = (f.rawCyrillic ?? '').trim()
+        || (f.finalValue ?? f.normalizedValue ?? f.rawValue ?? '').toString().trim()
+      if (!cyr) continue
+      if (!best[f.key] || strength > best[f.key].strength) best[f.key] = { strength, cyr }
+    }
+  }
+  return Object.fromEntries(Object.entries(best).map(([k, v]) => [k, v.cyr]))
+}
+
 export function reconcileSessionDocuments(
   docs: CanonicalDocumentResult[],
   flagOn: boolean = isCrossDocReconcileEnabled(),
