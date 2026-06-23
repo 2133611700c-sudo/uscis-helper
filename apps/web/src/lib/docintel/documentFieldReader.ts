@@ -16,6 +16,7 @@ import { getDocTypeSpec } from './documentRegistry'
 import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVisionProvider'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { autoOrient } from './orientation/autoOrient'
+import { orientToUpright, isContentOrientEnabled } from './orientation/detectOrientation'
 import { applyDateRoleGuard } from './dates/dateRoleGuard'
 import {
   toCanonicalValue,
@@ -75,8 +76,21 @@ export async function readDocument(
   // A real birth cert was photographed sideways (90°) and every engine read the
   // cursive sideways. sharp.rotate() fixes only EXIF; this detects + fixes rotated
   // CONTENT. Fail-open. OFF ⇒ byte-identical, no extra cost.
+  // CONTENT_ORIENT_ENABLED (default OFF, PREFERRED): content-based upright detection by direct
+  // grid comparison — proven 3/3 + stable on real docs where the old detectCw failed (it
+  // false-negatived a sideways military ID and false-positived an upright birth cert, and EXIF is
+  // unreliable: military + birth carry the same EXIF flag but only one needs it). Fail-open.
   let orientApplied = 0
-  if (process.env.AUTO_ORIENT_ENABLED === '1') {
+  if (isContentOrientEnabled()) {
+    const apiKey = getGeminiApiKey()
+    if (apiKey) {
+      const oriented = await orientToUpright(imageBuffer, apiKey, primaryGeminiModel())
+      imageBuffer = oriented.buffer
+      orientApplied = oriented.applied
+      if (orientApplied) console.info('[content_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
+    }
+  } else if (process.env.AUTO_ORIENT_ENABLED === '1') {
+    // Legacy iterative detector (deprecated — kept for rollback; see detectOrientation.ts for why).
     const apiKey = getGeminiApiKey()
     if (apiKey) {
       const oriented = await autoOrient(imageBuffer, apiKey, primaryGeminiModel())
