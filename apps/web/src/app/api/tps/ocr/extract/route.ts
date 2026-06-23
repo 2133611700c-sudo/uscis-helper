@@ -306,7 +306,7 @@ async function POST_impl(req: NextRequest) {
     coreStatus = 'skipped_no_mapping'
   } else {
     try {
-      const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'tps' })
+      const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'tps', originalBuffer: rawBuffer })
       if (coreRead.ok && Array.isArray(coreRead.fields) && coreRead.fields.length > 0) {
         const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
         if (docintelId === 'ua_international_passport') {

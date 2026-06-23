@@ -347,7 +347,7 @@ async function POST_impl(req: NextRequest) {
       // in PARALLEL, so a generous per-page budget still fits maxDuration=120.
       // attemptsPerModel:1 so a slow primary doesn't burn the budget on a retry —
       // the budget goes to the faster fallback models instead.
-      const r = await readDocument(buffer, mime, docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation' })
+      const r = await readDocument(buffer, mime, docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation', originalBuffer: rawBuffer })
       return { i, r }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
@@ -569,7 +569,7 @@ async function POST_impl(req: NextRequest) {
       // a full page, so 15s aborted it every time → always fell to the flash
       // fallback → every field flagged review. Pages run in parallel under the
       // 60s route budget, so 25s is safe.
-      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 25_000, product: 'translation' })
+      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 25_000, product: 'translation', originalBuffer: rawBuffer })
       return { kind: 'read', page: i + 1, r }
     } catch (e: any) {
       console.error('[translation/vision-extract page', i + 1, ']', e?.message ?? e)

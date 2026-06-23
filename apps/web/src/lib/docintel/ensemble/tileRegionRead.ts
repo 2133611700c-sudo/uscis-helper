@@ -32,7 +32,7 @@ export async function geminiReadFieldsFromCrop(
   fields: Array<{ key: string; label: string }>,
   apiKey: string,
   model: string,
-  timeoutMs = 30_000,
+  timeoutMs = 60_000,
 ): Promise<Record<string, string>> {
   if (fields.length === 0) return {}
   const ctrl = new AbortController()
@@ -61,10 +61,16 @@ export async function geminiReadFieldsFromCrop(
     })
     const call = () => withOcrCostMetrics(
       { product: 'ocr', route: 'provider:gemini_tile_fields', provider: 'gemini', model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('gemini', model) },
-      () => fetch(GEMINI_URL(model, apiKey), { method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json', connection: 'close' }, body }),
+      () => fetch(GEMINI_URL(model, apiKey), { method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' }, body }),
     )
     let res
-    try { res = await call() } catch { try { res = await call() } catch { return {} } }
+    for (let attempt = 1; ; attempt++) {
+      try { res = await call(); break } catch (e) {
+        const err = e as { cause?: { code?: string }; message?: string }
+        if (attempt >= 3) { if (process.env.TILE_DEBUG === '1') console.warn('[tile_debug] crop call failed after retries:', err?.cause?.code ?? err?.message); return {} }
+        await new Promise((r) => setTimeout(r, 1500 * attempt))
+      }
+    }
     if (!res.ok) return {}
     const j = await res.json()
     const txt: string = j?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
