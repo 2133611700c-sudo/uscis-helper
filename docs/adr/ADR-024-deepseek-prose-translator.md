@@ -1,4 +1,4 @@
-# ADR-019 — DeepSeek prose translator: built, proven, gated until a prose field exists
+# ADR-024 — DeepSeek prose translator: built, proven, gated until a prose field exists
 
 Date: 2026-06-22
 Status: ACCEPTED (owner delegated the decision: "прими сам решение, делай как нужно")
