@@ -233,6 +233,84 @@ export function readingRulesPromptBlock(docTypeId: string): string {
   return lines.join('\n')
 }
 
+// ── L9: SAME source, taught to a TEXT-ONLY model (DeepSeek) ───────────────────
+//
+// DeepSeek never sees pixels (Constitution L3 / RECOGNITION_ORG_CHART D3: it is a TEXT
+// structurer, never an identity authority). So when we teach it from the SAME codex the
+// Gemini reader uses, we must hand it ONLY the text-relevant rules and DROP the pure-image
+// guidance that is meaningless to a text model:
+//   KEEP — RUSSIAN_SCRIPT_RULE (transcribe RU as written, keep Сергей/Сергеевич, RU months
+//          →01-12), the spelled-out-date METHOD (anchor on the year-words, then day-ordinal +
+//          month-word → YYYY-MM-DD), the "present-but-hard → best-effort, never drop a present
+//          field; never invent an absent one" principle, the language/script note, and the
+//          per-field examples.
+//   DROP — orientation/rotation, "read … from the pixels / letter by letter", and the
+//          "[HANDWRITTEN cursive]" pixel markers.
+//
+// IMAGE_ONLY_SENTENCE: a full rule bullet that is ENTIRELY about pixels — dropped whole.
+const IMAGE_ONLY_SENTENCE = [
+  /photographed\s+rotated/i, // "OFTEN PHOTOGRAPHED ROTATED 90°/180°"
+  /rotate\s+upright/i,
+  /\brotated?\b.*\bupright\b/i,
+]
+
+// IMAGE_ONLY_CLAUSE: a pixel-bound clause embedded inside an otherwise text-useful rule —
+// stripped in place, leaving the text-relevant remainder intact. Each is matched against a
+// single trailing clause so the remaining sentence is still well-formed.
+const IMAGE_ONLY_CLAUSE_REPLACERS: Array<[RegExp, string]> = [
+  // "Read the cursive values letter by letter." → drop (pure pixel instruction).
+  [/\s*Read the cursive values letter by letter\.?/gi, ''],
+  // "read names letter by letter; " → drop the pixel half, keep the rest.
+  [/\s*read names letter by letter;\s*/gi, ' '],
+  // generic "read … letter by letter from the pixels" fragments.
+  [/\s*,?\s*read(?:ing)?[^.;]*letter by letter[^.;]*(?=[.;]|$)/gi, ''],
+  // the "[HANDWRITTEN cursive]" pixel marker, meaningless to a text model.
+  [/\s*\[HANDWRITTEN cursive\]\s*/gi, ' '],
+]
+
+const TEXT_BEST_EFFORT_RULE =
+  'PRESENT-BUT-HARD → BEST-EFFORT: if a field is present in the text but garbled/ambiguous, ' +
+  'give your best-effort reading and flag low confidence — never DROP a field that is present, ' +
+  'and never INVENT a field that is absent. A missing field is reported missing; it is never ' +
+  'fabricated.'
+
+/** Strip a single rule string of image-only clauses; collapse leftover whitespace. */
+function stripImageOnlyClauses(rule: string): string {
+  let out = rule
+  for (const [re, repl] of IMAGE_ONLY_CLAUSE_REPLACERS) out = out.replace(re, repl)
+  return out.replace(/\s{2,}/g, ' ').replace(/\s+([.;,])/g, '$1').trim()
+}
+
+/**
+ * textRulesForDeepSeek — the SAME per-document reading rules the Gemini reader gets, but with
+ * the pure-IMAGE guidance removed, for the TEXT-ONLY DeepSeek structurer (L9 + L3).
+ *
+ * Returns a non-empty prompt block for a known class, or '' for an unknown/uncovered class.
+ * Never throws.
+ */
+export function textRulesForDeepSeek(docTypeId: string): string {
+  const r = DOC_READING_RULES[docTypeId]
+  if (!r) return ''
+  const lines: string[] = []
+  lines.push(`\nSHARED DOCUMENT READING RULES (text-only) for this ${docTypeId}:`)
+  lines.push(`- LANGUAGE/SCRIPT: ${r.language}`)
+  if (r.dateGuidance) {
+    // dateGuidance is the spelled-out-date METHOD + month rule — fully text-relevant, kept verbatim.
+    lines.push(`- DATES: ${r.dateGuidance}`)
+  }
+  for (const rule of r.rules) {
+    // Drop bullets that are ENTIRELY about pixels (orientation/rotation).
+    if (IMAGE_ONLY_SENTENCE.some((re) => re.test(rule))) continue
+    const cleaned = stripImageOnlyClauses(rule)
+    // A bullet may reduce to nothing once its only content was a pixel instruction.
+    if (cleaned.length === 0) continue
+    lines.push(`- ${cleaned}`)
+  }
+  // Always teach the present-but-hard / never-drop / never-invent principle (text-safe).
+  lines.push(`- ${TEXT_BEST_EFFORT_RULE}`)
+  return lines.join('\n')
+}
+
 // DEFAULT ON (2026-06-22): the per-document reading rules are proven to fix real reads
 // (Soviet birth-cert DOB "26 июля"→"25 июня", 2/2 live) and are strictly-additive guidance
 // per document class — so they are active by default for ALL products (translation, TPS,
@@ -240,4 +318,14 @@ export function readingRulesPromptBlock(docTypeId: string): string {
 // DOC_READING_RULES_ENABLED=0 to disable (rollback without a code change).
 export function isDocReadingRulesEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DOC_READING_RULES_ENABLED !== '0'
+}
+
+// L9 DeepSeek shared-rules flag. DEFAULT OFF (opt-in): when unset/!=="1", the DeepSeek
+// (documentBrain) system prompt is BYTE-IDENTICAL to today (no shared block appended). Set
+// DEEPSEEK_SHARED_RULES_ENABLED=1 to append textRulesForDeepSeek() for the doc class. This
+// gate is the L10 safe-change discipline for L9's DeepSeek-sharing extension.
+export function isDeepSeekSharedRulesEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.DEEPSEEK_SHARED_RULES_ENABLED === '1'
 }
