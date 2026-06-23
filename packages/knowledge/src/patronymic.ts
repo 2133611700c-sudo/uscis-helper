@@ -290,3 +290,25 @@ export function reconcilePatronymicRu(
 
   return { value: '', review_required: true }
 }
+
+// ── SEX FROM PATRONYMIC (deterministic, FREE — derive sex when the doc omits it) ──────────────
+//
+// Real birth certs + military IDs often do not state «пол/стать» explicitly, yet the patronymic
+// encodes it unambiguously: a male patronymic ends -ович/-евич/-ич (UA/RU), a female one ends
+// -овна/-евна/-івна/-ївна/-ична/-инична (UA/RU). This recovers `sex` for $0 instead of a MISS — the
+// cost-efficiency principle (do it deterministically, never spend an LLM call for what a suffix tells us).
+// Female suffixes are checked FIRST (they are longer/more specific, so «-ична» wins over «-ич»).
+const FEMALE_PATRONYMIC_SUFFIXES = [...FEMALE_SUFFIXES, ...FEMALE_SUFFIXES_RU] as const
+const MALE_PATRONYMIC_SUFFIXES = [...MALE_SUFFIXES, ...MALE_SUFFIXES_RU] as const
+
+/**
+ * Derive Sex from a patronymic (по батькові / отчество). Returns 'M' | 'F', or null when the value
+ * is not a recognizable patronymic (so the caller leaves sex for review — never guesses). Pure.
+ */
+export function sexFromPatronymic(patronymic: string | null | undefined): Sex | null {
+  const v = (patronymic ?? '').toString().trim().toLowerCase().replace(/['’ʼ`]/g, '')
+  if (v.length < 5) return null // too short to be a real patronymic suffix
+  if (FEMALE_PATRONYMIC_SUFFIXES.some((s) => v.endsWith(s))) return 'F'
+  if (MALE_PATRONYMIC_SUFFIXES.some((s) => v.endsWith(s))) return 'M'
+  return null
+}

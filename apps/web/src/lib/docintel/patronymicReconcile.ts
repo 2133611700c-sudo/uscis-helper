@@ -22,12 +22,17 @@
  *   - Malformed / undeterminable patronymic → keep the value, force review.
  */
 
-import { reconcilePatronymic, isValidPatronymic, transliterateKMU55 } from '@uscis-helper/knowledge'
+import { reconcilePatronymic, isValidPatronymic, transliterateKMU55, sexFromPatronymic } from '@uscis-helper/knowledge'
 import type { Sex } from '@uscis-helper/knowledge'
 import type { ExtractedDocField } from './types'
 
 /** Field ids that hold a single-token patronymic, per the document registry. */
 const PATRONYMIC_FIELDS = new Set(['patronymic', 'middle_name', 'child_patronymic'])
+
+/** A field holds no usable value (the place to backfill sex). */
+function isEmptyValue(f: ExtractedDocField): boolean {
+  return (f.value ?? '').trim() === '' && (f.raw_cyrillic ?? '').trim() === ''
+}
 
 /** Infer sex from the patronymic's own suffix (ович/ич → M, івна/ічна → F). */
 function inferSexFromPatronymic(cyrillic: string): Sex | null {
@@ -46,7 +51,7 @@ function sameLatin(a: string | null, b: string | null): boolean {
  * fields pass through untouched.
  */
 export function reconcilePatronymicFields(fields: ExtractedDocField[]): ExtractedDocField[] {
-  return fields.map((f) => {
+  const out = fields.map((f) => {
     if (!PATRONYMIC_FIELDS.has(f.field)) return f // not a patronymic field
 
     const patrCy = (f.raw_cyrillic ?? '').trim()
@@ -79,4 +84,25 @@ export function reconcilePatronymicFields(fields: ExtractedDocField[]): Extracte
       review_required: f.review_required || res.review_required || changed,
     }
   })
+
+  // SEX BACKFILL (deterministic, FREE — cost-efficiency-first): a birth cert / military ID often
+  // omits «пол/стать», yet the patronymic suffix encodes it (Сергеевич→M, Степановна→F). When the
+  // `sex` field is EMPTY but a patronymic was read, derive sex via the codex `sexFromPatronymic`
+  // instead of a MISS — NO LLM call. Held for review (it is an inference, not a printed field); never
+  // overwrites a value the model already read.
+  const sexIdx = out.findIndex((f) => f.field === 'sex')
+  if (sexIdx >= 0 && isEmptyValue(out[sexIdx])) {
+    const patr = out.find((f) => PATRONYMIC_FIELDS.has(f.field) && (f.raw_cyrillic ?? '').trim())
+    const derived = patr ? sexFromPatronymic(patr.raw_cyrillic) : null
+    if (derived) {
+      out[sexIdx] = {
+        ...out[sexIdx],
+        value: derived,
+        confidence: 0.5,
+        review_required: true,
+        review_reasons: [...(out[sexIdx].review_reasons ?? []), 'sex_from_patronymic'],
+      }
+    }
+  }
+  return out
 }

@@ -111,3 +111,42 @@ describe('readDocument — SMART_NORMALIZE_ENABLED gating for patronymic', () =>
     expect(p.review_required).toBe(true)
   })
 })
+
+describe('sex backfill from patronymic (deterministic, free)', () => {
+  it('fills an EMPTY sex from a male patronymic, held for review', () => {
+    const out = reconcilePatronymicFields([
+      field({ field: 'child_patronymic', raw_cyrillic: 'Сергеевич', value: 'Sergeyevich' }),
+      field({ field: 'sex', kind: 'sex', raw_cyrillic: '', value: '' }),
+    ])
+    const sex = out.find((f) => f.field === 'sex')!
+    expect(sex.value).toBe('M')
+    expect(sex.review_required).toBe(true)
+    expect(sex.review_reasons).toContain('sex_from_patronymic')
+  })
+
+  it('fills an EMPTY sex from a female patronymic', () => {
+    const out = reconcilePatronymicFields([
+      field({ field: 'patronymic', raw_cyrillic: 'Степановна', value: 'Stepanovna' }),
+      field({ field: 'sex', kind: 'sex', raw_cyrillic: null, value: null }),
+    ])
+    expect(out.find((f) => f.field === 'sex')!.value).toBe('F')
+  })
+
+  it('NEVER overwrites a sex the model already read', () => {
+    const out = reconcilePatronymicFields([
+      field({ field: 'child_patronymic', raw_cyrillic: 'Сергеевна', value: 'Sergeyevna' }),
+      field({ field: 'sex', kind: 'sex', raw_cyrillic: 'M', value: 'M', review_required: false }),
+    ])
+    const sex = out.find((f) => f.field === 'sex')!
+    expect(sex.value).toBe('M')
+    expect(sex.review_required).toBe(false) // untouched
+  })
+
+  it('no patronymic ⇒ empty sex stays empty (never guesses)', () => {
+    const out = reconcilePatronymicFields([
+      field({ field: 'family_name', raw_cyrillic: 'Куропятник', value: 'Kuropyatnik' }),
+      field({ field: 'sex', kind: 'sex', raw_cyrillic: '', value: '' }),
+    ])
+    expect((out.find((f) => f.field === 'sex')!.value ?? '')).toBe('')
+  })
+})
