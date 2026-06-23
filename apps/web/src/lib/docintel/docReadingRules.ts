@@ -299,6 +299,13 @@ const TEXT_BEST_EFFORT_RULE =
   'and never INVENT a field that is absent. A missing field is reported missing; it is never ' +
   'fabricated.'
 
+/** A rule bullet that is ENTIRELY about pixels (orientation/rotation) — legitimately absent from the
+ *  text-only DeepSeek block. Used by the Gemini↔DeepSeek sync guard to allow these (and only these)
+ *  to be dropped. Exported so the guard test stays in lock-step with the real drop logic. */
+export function isImageOnlyRule(rule: string): boolean {
+  return IMAGE_ONLY_SENTENCE.some((re) => re.test(rule))
+}
+
 /** Strip a single rule string of image-only clauses; collapse leftover whitespace. */
 function stripImageOnlyClauses(rule: string): string {
   let out = rule

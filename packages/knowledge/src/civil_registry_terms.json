@@ -1,6 +1,13 @@
 {
-  "_version": "2.1.0",
-  "_purpose": "Civil registry terminology for Ukrainian birth, marriage, divorce, DEATH, and NAME-CHANGE certificate extraction and translation.",
+  "_version": "2.2.0",
+  "schema_version": "1.0",
+  "_purpose": "Civil registry terminology for Ukrainian + RUSSIAN birth, marriage, divorce, DEATH, and NAME-CHANGE certificate extraction and translation.",
+  "_sources": [
+    "Ukrainian: РАЦС/ДРАЦС/ЗАГС era-gated; КМУ №1025 (zakon.rada.gov.ua/laws/show/1025-2010-п).",
+    "Russian: Federal Law 143-ФЗ «Об актах гражданского состояния»; BGN/PCGN romanization.",
+    "Place English forms: modern Ukrainian (GeoNames/DMS) — Kyiv/Vinnytsia/Odesa, not the Russified spellings.",
+    "Validated by packages/knowledge/src/__tests__/russianGlossary.test.ts + referenceValidation.test.ts."
+  ],
   "_notes": [
     "HISTORICAL ACCURACY RULES:",
     "1. ЗАГС is Soviet-era. Do NOT modernize to ДРАЦС silently.",
