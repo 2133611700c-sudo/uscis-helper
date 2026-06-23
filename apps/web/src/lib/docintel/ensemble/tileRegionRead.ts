@@ -17,17 +17,21 @@
  */
 import type { ExtractedDocField } from '../types'
 import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
+import { normalizeForCompare } from '../selfConsistency'
 
 const GEMINI_URL = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
 
 /**
- * Real Gemini targeted crop reader (the production CropFieldReadFn). Aggressive prompt: NAME each
- * wanted field and demand a best-effort letter-by-letter read, NEVER empty for a present field —
- * this is what recovered the parents/series on the hi-res crop where the standard prompt gave up.
- * Returns key→cyrillic for the fields it read. Fail-open: '' / {} on any error.
+ * Single-sample Gemini targeted crop reader. Aggressive prompt: NAME each wanted field and demand a
+ * best-effort letter-by-letter read, NEVER empty for a present field — this is what recovered the
+ * parents/series on the hi-res crop where the standard prompt gave up. Returns key→cyrillic for the
+ * fields it read. Fail-open: {} on any error. ONE Gemini call.
+ *
+ * A single temperature-0 sample is still NON-DETERMINISTIC on dense handwriting (proven live: the
+ * same crop gave 0/4/7 across runs). geminiReadFieldsFromCrop wraps this in K-sample majority voting.
  */
-export async function geminiReadFieldsFromCrop(
+export async function geminiReadFieldsFromCropOnce(
   cropBuffer: Buffer,
   fields: Array<{ key: string; label: string }>,
   apiKey: string,
@@ -90,6 +94,83 @@ export async function geminiReadFieldsFromCrop(
   } finally {
     clearTimeout(timer)
   }
+}
+
+/** One single-sample crop read (injected → the voting wrapper is unit-testable without Gemini). */
+export type SingleCropSampler = (
+  crop: Buffer,
+  fields: Array<{ key: string; label: string }>,
+) => Promise<Record<string, string>>
+
+/** K-sample vote count: env TILE_VOTE_RUNS, default 3, clamped 1..5. =1 ⇒ today's single-read behavior. */
+export function tileVoteRuns(env: Record<string, string | undefined> = process.env): number {
+  const k = Number(env.TILE_VOTE_RUNS)
+  return Number.isFinite(k) && k >= 1 ? Math.min(5, Math.floor(k)) : 3
+}
+
+/**
+ * Majority-fold K crop samples (research-backed self-consistency: temp-0 multi-sample + majority
+ * vote stabilizes a flaky VLM read). For each requested field: normalize-then-count the non-empty
+ * readings; a value WINS only on a STRICT majority of `runs` (bestCount*2 > runs ⇒ ≥2/3, ≥3/5). The
+ * winning field emits the most-frequent EXACT raw string (preserves Cyrillic casing for downstream
+ * C3/transliteration). No majority ⇒ the field is OMITTED (stays empty, held for review) — a lone
+ * flaky read never wins. Pure.
+ */
+export function foldMajority(
+  samples: Array<Record<string, string>>,
+  fields: Array<{ key: string }>,
+  runs: number,
+): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const { key } of fields) {
+    // token (normalized) → { count, raw-string histogram }
+    const byToken = new Map<string, { count: number; raws: Map<string, number> }>()
+    for (const s of samples) {
+      const v = (s?.[key] ?? '').trim()
+      if (!v) continue
+      const token = normalizeForCompare(v)
+      if (!token) continue
+      const e = byToken.get(token) ?? { count: 0, raws: new Map<string, number>() }
+      e.count += 1
+      e.raws.set(v, (e.raws.get(v) ?? 0) + 1)
+      byToken.set(token, e)
+    }
+    let bestToken: string | null = null, bestCount = 0
+    for (const [token, e] of byToken) if (e.count > bestCount) { bestCount = e.count; bestToken = token }
+    if (bestToken === null || bestCount * 2 <= runs) continue // no strict majority ⇒ omit (held)
+    // emit the most-frequent EXACT raw string of the winning token (tie → first seen).
+    const raws = byToken.get(bestToken)!.raws
+    let bestRaw = '', bestRawCount = 0
+    for (const [raw, c] of raws) if (c > bestRawCount) { bestRawCount = c; bestRaw = raw }
+    out[key] = bestRaw
+  }
+  return out
+}
+
+/**
+ * Production targeted crop reader with K-sample MAJORITY VOTING (drop-in for the old single reader:
+ * same positional signature; the caller in documentFieldReader.ts is unchanged). Reads the crop
+ * `runs` times (default tileVoteRuns()) and majority-folds. A failed sample is skipped (no vote),
+ * never aborts. opts.sampler is injectable for tests. runs=1 ⇒ byte-identical to a single read.
+ */
+export async function geminiReadFieldsFromCrop(
+  cropBuffer: Buffer,
+  fields: Array<{ key: string; label: string }>,
+  apiKey: string,
+  model: string,
+  timeoutMs = 60_000,
+  opts: { runs?: number; sampler?: SingleCropSampler } = {},
+): Promise<Record<string, string>> {
+  if (fields.length === 0) return {}
+  const runs = opts.runs ?? tileVoteRuns()
+  const sampler: SingleCropSampler =
+    opts.sampler ?? ((crop, flds) => geminiReadFieldsFromCropOnce(crop, flds, apiKey, model, timeoutMs))
+  if (runs <= 1) return sampler(cropBuffer, fields)
+  const samples: Array<Record<string, string>> = []
+  for (let i = 0; i < runs; i++) {
+    try { samples.push(await sampler(cropBuffer, fields)) } catch { samples.push({}) }
+  }
+  return foldMajority(samples, fields, runs)
 }
 
 /** Targeted reader: read the named fields from ONE high-res crop. Returns key→cyrillic (only the
