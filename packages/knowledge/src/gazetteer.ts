@@ -18,6 +18,7 @@
  */
 
 import { SETTLEMENT_ROWS } from './registry/settlements.generated'
+import { VILLAGE_NAMES, RAION_NAMES } from './registry/villages.generated'
 
 export interface PlaceMatch {
   /** The value to USE. NEVER a silent fuzzy replacement: on an EXACT match it is the
@@ -115,6 +116,33 @@ export const GAZETTEER: string[] = Array.from(new Set([...CURATED_SEED, ...REGIS
 
 const GAZ_LOWER = GAZETTEER.map((c) => c.toLocaleLowerCase('uk'))
 
+// КАТОТТГ village/rural (C+X, ~17k) + raion (P) tiers — name-only, for O(1) EXACT
+// membership (the bulk geography). A known village is a REAL settlement → accept with
+// confidence instead of "unknown_geography". We do NOT add 17k names to the fuzzy loop
+// (kept on the small city/UTS set for speed); villages match by exact membership only.
+const VILLAGE_LOWER: Map<string, string> = new Map(
+  VILLAGE_NAMES.map((n) => [n.toLocaleLowerCase('uk'), n]),
+)
+const RAION_LOWER: Set<string> = new Set(RAION_NAMES.map((n) => n.toLocaleLowerCase('uk')))
+
+/** Is `name` a real Ukrainian settlement (city/UTS seed OR КАТОТТГ village/rural)? */
+export function isKnownSettlement(name: string): boolean {
+  const lower = cleanPlace(name ?? '').toLocaleLowerCase('uk')
+  return !!lower && (GAZ_LOWER.includes(lower) || VILLAGE_LOWER.has(lower))
+}
+
+/** Is `name` a real Ukrainian raion (district)? Handles the genitive document form
+ *  ("Ізюмського району" → "Ізюмський"): strips the "район" word + maps the adjective
+ *  genitive ending (-ого/-ого → -ий) to the nominative the registry stores. */
+export function isKnownRaion(name: string): boolean {
+  const lower = (name ?? '').replace(/\s+(район[уа]?|р-н)\.?$/iu, '').trim().toLocaleLowerCase('uk')
+  if (!lower) return false
+  if (RAION_LOWER.has(lower)) return true
+  // genitive adjective → nominative (Ізюмського→Ізюмський, Тростянецького→Тростянецький)
+  const nominative = lower.replace(/ського$/u, 'ський').replace(/цького$/u, 'цький').replace(/ого$/u, 'ий')
+  return RAION_LOWER.has(nominative)
+}
+
 /** Clean a place token: strip settlement-type prefixes, trailing punctuation. */
 function cleanPlace(raw: string): string {
   return raw
@@ -137,6 +165,11 @@ export function snapCity(raw: string, opts: { threshold?: number } = {}): PlaceM
   const exactIdx = GAZ_LOWER.indexOf(lower)
   if (exactIdx >= 0) {
     return { value: GAZETTEER[exactIdx], matched: true, distance: 0, review_required: false, suggestedValue: null, reason: 'exact gazetteer match' }
+  }
+  // КАТОТТГ village/rural exact membership (O(1)) — a real but small settlement.
+  const village = VILLAGE_LOWER.get(lower)
+  if (village) {
+    return { value: village, matched: true, distance: 0, review_required: false, suggestedValue: null, reason: 'exact village (КАТОТТГ)' }
   }
 
   let best = Infinity
