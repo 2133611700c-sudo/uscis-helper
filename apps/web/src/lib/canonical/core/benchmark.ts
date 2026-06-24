@@ -53,10 +53,20 @@ export interface BenchmarkScore {
   fields: ScoredField[]
 }
 
+// NOTE (ADR-026): this fold is alphabet-AGNOSTIC. It is only safe because GroundTruth keys are
+// single-script per field (`*_cyrillic` vs `*_latin`) so both operands are the same alphabet. Never
+// feed it a Cyrillic truth with a Latin produced value (or vice-versa) — that would false-miss a correct
+// read. Channel-aware acceptance lives in cyrillicAcceptanceMetrics.ts (the production scorer).
 function norm(s: string | null | undefined): string {
   return (s ?? '').normalize('NFC').replace(/\s+/g, '').toLocaleLowerCase()
 }
 
+/**
+ * @deprecated TEST-ONLY baseline scorer (not used in the production acceptance path). It compares
+ * with an alphabet-agnostic fold and assumes same-script operands. For any real acceptance/accuracy
+ * decision use `scoreDocumentAcceptance` in `canonical/core/cyrillicAcceptanceMetrics.ts`, which is
+ * channel-aware (Cyrillic vs Latin-translit) per ADR-026 and never compares across alphabets.
+ */
 export function scoreAgainstTruth(produced: ProducedField[], truth: GroundTruth): BenchmarkScore {
   const got = new Map<string, ProducedField>()
   for (const p of produced) got.set(p.key, p)
