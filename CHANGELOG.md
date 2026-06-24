@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-06-24 | Engineered ALL audit open points + final critical re-verification (agents)
+- Owner: "работай по всем пунктам как инженер — собери, протести критично без лжи не веря тесту, шаг за шагом, в конце критический аудит". 5 tasks, each gather→implement→critically test; an independent verification agent re-checked every fix (not trusting the committer) and found 2 residual gaps → both fixed.
+- **#31 sync guard (P1):** token/clause coverage (e6352ae) + verbatim whole-rule presence (closes the cross-rule token-overlap hole the final audit found, e.g. ua_death_certificate[3]); self-tests prove both bite; 0/49 non-verbatim.
+- **#32 RU/UA routing (P1):** normalizeName routes clearly-RU→Russian table, UA/ambiguous→KMU-55 (4491a91); Чёрный→Chernyy, Мышкин→Myshkin; UA byte-identical; ambiguous stays KMU by design.
+- **#33 no-Cyrillic-leak (P2):** sanitizeCyrillicLeak catch-all + full-block sweep (raw 182/190 → 0 sanitized, no regression).
+- **#34 CI:** goldenDictionaryVectors + sweep wired into knowledge test.
+- **#35 doc/law + banner:** ADR-026 PENDING banner in modelMatrix; corrected MODEL_INVENTORY matrix row 22 (final audit caught it still contradicting the code).
+- **Gates:** knowledge 18/18 files, web 4664 pass / 24 skip / 0 fail, tsc 0 (both), PII clean 0/1808. Report: docs/audit/2026-06-24-RULES_DICTIONARIES_CRITICAL_AUDIT.md (FINAL section). Residual = owner decisions (RU_TRANSLIT flip; raxtemur sidecar host).
+
 ## 2026-06-24 | Critical audit of rules + dictionaries (3 agents) + propagated ADR-026 to the law layer
 - Owner: "проверь все правила и инструкции как всё обновлено и работает и словари — максимально критично." 3 parallel critical agents + objective test runs. Report: docs/audit/2026-06-24-RULES_DICTIONARIES_CRITICAL_AUDIT.md.
 - **Dictionaries GREEN** (knowledge 550/0 + golden 79/0, tsc 0) with 3 gaps: RU/UA routing hardwires KMU-55 in normalizeName + the app router is flag-OFF (RU_TRANSLIT_ENABLED) [P1, matches memory]; "no Cyrillic leak" overstated (182/190 non-standard codepoints) [P2]; goldenDictionaryVectors + registry/mrz not in `knowledge test` [P2].
