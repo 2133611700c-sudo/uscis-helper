@@ -126,6 +126,22 @@ the safety gate, but HTR is now a viable autonomous-candidate reader pending bro
 (the APIs got a downscaled full page). Worth re-testing Gemini/GPT on native-res field crops before treating
 their fabrication as intrinsic.
 
+## Generalization test (N=2 real RU docs, parallel agents, 2026-06-24)
+Applied the SAME recipe (native-res crop + 2/98 contrast + raxtemur + channel-aware score) to more real docs:
+- **birth_cert_soviet_01 (2nd real RU handwritten): recipe GENERALIZES.** given **CER 0.000 exact**, patronymic
+  **CER 0.000 exact**, surname **CER 0.200** (8/10 — residual is a stamp/watermark intruding into the crop, a
+  localization artifact, not a model limit). Blank-control clean.
+- **marriage_zastavnyi_kovshirina (UA) + marriage_1939_kharkiv (old cursive): BLOCKED — GT MISSING.** Both
+  agents correctly STOPPED rather than fabricate a number (OWNER_FILL placeholders). UA validation — our main
+  scope alongside RU — cannot proceed until the owner transcribes the real names into the gitignored qa-private GT.
+
+**Honest tally (N=2 RU docs, 6 name fields):** 4 exact (CER 0) + 1 near (0.2) + 1 substring-match (0.333),
+blank-control clean both docs. The recipe reads real RU handwriting; the remaining gap to EXACT (which a legal
+surname requires) is **field-region isolation** — stamps/labels/watermarks bleeding into a hand-found crop.
+Next lever = automatic per-field localization; human review stays for any non-exact read.
+**GT bug found:** `birth_cert_soviet_01.json` has `handwritten:false` though the name VALUES are cursive — the
+flag describes the printed labels, mis-scoping the doc for HTR routing; worth correcting.
+
 ## Reproduce (PII-free numbers only)
 `qa-private/htr-venv/bin/python qa-private/htr-poc/{infer,bakeoff,verify_root}.py` (crops + venv + polyscriptor
 + real reads are all gitignored under qa-private/). The binding recipe: native-res crop + contrast-stretch + raxtemur.
