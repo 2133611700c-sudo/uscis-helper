@@ -349,8 +349,9 @@ export function isImageOnlyRule(rule: string): boolean {
   return IMAGE_ONLY_SENTENCE.some((re) => re.test(rule))
 }
 
-/** Strip a single rule string of image-only clauses; collapse leftover whitespace. */
-function stripImageOnlyClauses(rule: string): string {
+/** Strip a single rule string of image-only clauses; collapse leftover whitespace.
+ * Exported so the Gemini↔DeepSeek sync guard mirrors the EXACT legitimate-drop set (no drift). */
+export function stripImageOnlyClauses(rule: string): string {
   let out = rule
   for (const [re, repl] of IMAGE_ONLY_CLAUSE_REPLACERS) out = out.replace(re, repl)
   return out.replace(/\s{2,}/g, ' ').replace(/\s+([.;,])/g, '$1').trim()
