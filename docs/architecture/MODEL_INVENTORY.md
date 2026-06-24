@@ -9,8 +9,11 @@
 > (Apache) — reads the handwritten UA/RU child name EXACTLY** (surname+given CER 0.000, patronymic matches; N=1
 > verified) when the field is cropped at **native resolution** + contrast-stretched (never downscaled, never
 > binarized). The earlier "no model reads handwriting" was an artifact of OUR low-res crop + a scorer
-> channel bug, not a model limit. Human review stays the safety gate, but HTR is now a viable autonomous-
-> CANDIDATE reader pending broader-N validation. Printed docs (passport, military ID, EAD, I-94) read correctly.
+> channel bug, not a model limit. **CORRECTED 2026-06-24 (honest re-test, HTR_HONEST_RETEST.md): ROUTE BY
+> FIELD RENDERING** — handwritten field → raxtemur (best on cursive) BUT it CANNOT abstain (fabricates a word
+> on a blank crop) → non-exact reads gated (consistency/confidence) + human-reviewed; PRINTED field → an LLM
+> (raxtemur FAILS print, CER ~1.0; Gemini/GPT read the printed passport perfectly). Human review stays the
+> safety gate. Printed docs (passport, military ID, EAD, I-94) read correctly by the LLMs.
 
 ## The matrix (live-tested 2026-06-23)
 
