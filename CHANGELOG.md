@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-24 | Project aligned to the verified HTR standard (inventory 3 agents → fix each, suite green per step)
+- Owner: "прогоняй весь проект через себя, инвентаризируй все процессы у себя и в проекте, настрой как у тебя при правильном результате, тесты после каждого". Inventoried every OCR/resolution/scoring process (3 parallel agents) vs the verified recipe (ADR-026), fixed each divergence; web suite 4660 pass / 24 skip + tsc 0 after EVERY step.
+- **tileRegionRead.ts** (061e3cb): per-region reader was cropping native then downscaling tile to 1600px → now native res up to OCR_TILE_MAX_DIMENSION (3000) + `.normalise()` contrast-stretch + q92.
+- **upload/downscaleImage.ts** (bee3a58): client pre-shrank to 2400px (below server 3072 cap) → aligned to 3072, q0.80 (under ~4.5MB Vercel cap); resolution lost once, server-side.
+- **image-preprocess.ts** (8d7f55c): added `.normalise()` contrast-stretch to the faded/low-DPI upscale branch (recipe's 2nd lever); no binarization.
+- **benchmark.ts** (b5d6c23): deprecated test-only alphabet-agnostic `scoreAgainstTruth`; redirect to channel-aware `scoreDocumentAcceptance`. Production scorers were already channel-aware (verified) — no recognition-path binarization anywhere.
+- **Still open (needs hosting decision):** native-res PER-FIELD reader as the PRIMARY path + automatic field-region localization + raxtemur sidecar host. ADR-026 updated with the alignment log.
+
 ## 2026-06-24 | ROOT-CAUSE REVERSAL — handwritten UA/RU Cyrillic IS readable key-free; the blocker was OUR pipeline
 - Owner: "ищи корень не поверхностно; все корни; потом тест; работай агентами". Ran 4 PARALLEL root-cause agents (measurement / segmentation / image-restoration / data), then independently reproduced the binding root. **This OVERTURNS the prior "no key-free model reads the surname" conclusion — that was an artifact of OUR pipeline, not a model limit.**
 - **VERIFIED (raxtemur/trocr-base-ru, Apache, key-free, local; native-res crop from 4128×3096 + contrast-stretch, NO downscale, NO binarize):** child surname **CER 0.000 exact** (3/3 consistent), given **CER 0.000 exact**, patronymic **CER 0.333 (matches)**. Blank-control clean (not fabrication). Reproduced by an independent agent + `verify_root.py`.
