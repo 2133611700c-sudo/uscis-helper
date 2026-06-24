@@ -1,10 +1,10 @@
 /**
  * crossDocReconcile.test.ts — STAGE 3 cross-document reconciliation engine (the proof).
  *
- * Realistic multi-doc fixture: an MRZ-validated passport (dob 1986-06-25, name Сергій) +
- * a Soviet-era birth-cert (dob held-for-review, name Сергей). Proves the HARD INVARIANTS:
+ * Realistic multi-doc fixture: an MRZ-validated passport (dob 1990-01-15, name Андрій) +
+ * a Soviet-era birth-cert (dob held-for-review, name Андрей). Proves the HARD INVARIANTS:
  *   - passport DOB (mrz_validated) resolves the birth-cert held DOB → suggestedValue
- *     1986-06-25, provenance cross_doc_reconciled, review STILL required (one-click).
+ *     1990-01-15, provenance cross_doc_reconciled, review STILL required (one-click).
  *   - a confidently-read field is NEVER overwritten.
  *   - a Ukrainian-passport NAME does NOT overwrite a Russian birth-cert NAME (L8 script guard).
  *   - flag OFF → byte-identical, zero changes.
@@ -33,19 +33,19 @@ const field = (p: Partial<CanonicalField> & { key: string }): CanonicalField => 
 
 // --- realistic fixture ------------------------------------------------------
 
-/** Passport: MRZ-validated DOB + Ukrainian printed name (raw Cyrillic Сергій). */
+/** Passport: MRZ-validated DOB + Ukrainian printed name (raw Cyrillic Андрій). */
 function passport(): PerDocFields {
   return {
     docId: 'doc_passport',
     docType: 'ua_international_passport',
     fields: [
-      field({ key: 'date_of_birth', normalizedValue: '1986-06-25', source: 'mrz', reviewRequired: false }),
-      field({ key: 'given_name', normalizedValue: 'SERHII', source: 'mrz', rawCyrillic: 'Сергій', reviewRequired: false }),
+      field({ key: 'date_of_birth', normalizedValue: '1990-01-15', source: 'mrz', reviewRequired: false }),
+      field({ key: 'given_name', normalizedValue: 'ANDRII', source: 'mrz', rawCyrillic: 'Андрій', reviewRequired: false }),
     ],
   }
 }
 
-/** Birth-cert: DOB held for review (faded handwriting), Russian name Сергей. */
+/** Birth-cert: DOB held for review (faded handwriting), Russian name Андрей. */
 function birthCert(): PerDocFields {
   return {
     docId: 'doc_birthcert',
@@ -63,7 +63,7 @@ function birthCert(): PerDocFields {
         key: 'given_name',
         normalizedValue: 'SERGEY',
         source: 'ai_vision',
-        rawCyrillic: 'Сергей',
+        rawCyrillic: 'Андрей',
         reviewRequired: false, // confidently read on the cert
       }),
     ],
@@ -75,7 +75,7 @@ describe('cross-doc reconcile — the biggest lever', () => {
     const { docs, changes } = reconcileAcrossDocuments([passport(), birthCert()], true)
 
     const certDob = docs.find(d => d.docId === 'doc_birthcert')!.fields.find(f => f.key === 'date_of_birth')!
-    expect(certDob.suggestedValue).toBe('1986-06-25')
+    expect(certDob.suggestedValue).toBe('1990-01-15')
     expect(certDob.knowledgeProvenance).toBe('cross_doc_reconciled')
     expect(certDob.reviewRequired).toBe(true) // L6 — still held, human confirms
     expect(certDob.reviewReasons).toContain('cross_doc_reconciled')
@@ -86,7 +86,7 @@ describe('cross-doc reconcile — the biggest lever', () => {
     expect(changes).toContainEqual(expect.objectContaining({
       docId: 'doc_birthcert',
       fieldKey: 'date_of_birth',
-      suggestedValue: '1986-06-25',
+      suggestedValue: '1990-01-15',
       fromDocId: 'doc_passport',
       fromStrength: 'mrz_validated',
       toStrength: 'handwritten_uncertain',
@@ -97,14 +97,14 @@ describe('cross-doc reconcile — the biggest lever', () => {
     const { docs } = reconcileAcrossDocuments([passport(), birthCert()], true)
     const passDob = docs.find(d => d.docId === 'doc_passport')!.fields.find(f => f.key === 'date_of_birth')!
     expect(passDob.suggestedValue).toBeUndefined()
-    expect(passDob.normalizedValue).toBe('1986-06-25')
+    expect(passDob.normalizedValue).toBe('1990-01-15')
     expect(passDob.knowledgeProvenance).toBeUndefined()
   })
 
   it('NAME-SCRIPT GUARD (L8): Ukrainian passport name does NOT overwrite Russian birth-cert name', () => {
     const { docs, changes } = reconcileAcrossDocuments([passport(), birthCert()], true)
     const certName = docs.find(d => d.docId === 'doc_birthcert')!.fields.find(f => f.key === 'given_name')!
-    // Сергей stays Сергей — no Serhii pushed across the RU/UA boundary.
+    // Андрей stays Андрей — no Andrii pushed across the RU/UA boundary.
     expect(certName.normalizedValue).toBe('SERGEY')
     expect(certName.suggestedValue).toBeUndefined()
     expect(certName.knowledgeProvenance).toBeUndefined()
@@ -137,15 +137,15 @@ describe('cross-doc reconcile — the biggest lever', () => {
   it('reconciles a same-script (UA→UA) held name from a stronger anchor', () => {
     const passUa: PerDocFields = {
       docId: 'p', docType: 'ua_international_passport',
-      fields: [field({ key: 'given_name', normalizedValue: 'SERHII', source: 'mrz', rawCyrillic: 'Сергій', reviewRequired: false })],
+      fields: [field({ key: 'given_name', normalizedValue: 'ANDRII', source: 'mrz', rawCyrillic: 'Андрій', reviewRequired: false })],
     }
     const militaryUa: PerDocFields = {
       docId: 'm', docType: 'ua_military_id',
-      fields: [field({ key: 'given_name', rawCyrillic: 'Сергій', source: 'ai_vision', reviewRequired: true, reviewReasons: ['low_confidence'] })],
+      fields: [field({ key: 'given_name', rawCyrillic: 'Андрій', source: 'ai_vision', reviewRequired: true, reviewReasons: ['low_confidence'] })],
     }
     const { docs, changes } = reconcileAcrossDocuments([passUa, militaryUa], true)
     const milName = docs[1].fields[0]
-    expect(milName.suggestedValue).toBe('SERHII')
+    expect(milName.suggestedValue).toBe('ANDRII')
     expect(milName.reviewRequired).toBe(true)
     expect(changes).toHaveLength(1)
   })
@@ -153,7 +153,7 @@ describe('cross-doc reconcile — the biggest lever', () => {
 
 describe('classifyStrength', () => {
   it('valid MRZ (not review) → mrz_validated', () => {
-    expect(classifyStrength(field({ key: 'date_of_birth', source: 'mrz', normalizedValue: '1986-06-25', reviewRequired: false }))).toBe('mrz_validated')
+    expect(classifyStrength(field({ key: 'date_of_birth', source: 'mrz', normalizedValue: '1990-01-15', reviewRequired: false }))).toBe('mrz_validated')
   })
   it('held/review field → handwritten_uncertain (can never be an anchor)', () => {
     expect(classifyStrength(field({ key: 'date_of_birth', reviewRequired: true }))).toBe('handwritten_uncertain')
@@ -171,15 +171,15 @@ describe('classifyStrength', () => {
 
 describe('sameNameScript guard', () => {
   it('UA vs RU → false (no cross-push)', () => {
-    expect(sameNameScript('Сергій', 'Сергей')).toBe(false)
+    expect(sameNameScript('Андрій', 'Андрей')).toBe(false)
   })
   it('UA vs UA → true', () => {
-    expect(sameNameScript('Сергій', 'Сергій')).toBe(true)
+    expect(sameNameScript('Андрій', 'Андрій')).toBe(true)
   })
   it('unknown (no distinctive letter) → false (review, never guess)', () => {
     expect(sameNameScript('Иван', 'Иван')).toBe(false) // no ru-only/ua-only letter
   })
   it('missing raw cyrillic → false', () => {
-    expect(sameNameScript(null, 'Сергій')).toBe(false)
+    expect(sameNameScript(null, 'Андрій')).toBe(false)
   })
 })

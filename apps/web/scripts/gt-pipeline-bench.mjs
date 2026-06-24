@@ -12,7 +12,7 @@
  *     key handling — the production brain measures itself.
  *
  *   --dry mode: reads FROZEN real reads from a saved JSON (default
- *     apps/web/scripts/__fixtures__/gt-pipeline-bench.dry-reads.json) instead of
+ *     qa-private/reports/gt-pipeline-bench.dry-reads.json — gitignored real data) instead of
  *     calling Gemini, so the scoring logic itself is testable offline with zero cost.
  *     Override the source with `--reads=<path>` (e.g. a fresh raw dump).
  *
@@ -54,16 +54,21 @@ const EDGE_BODY_LIMIT = 4_000_000 // Vercel serverless request-body cap (~4.5MB)
 const ARGV = process.argv.slice(2)
 const DRY = ARGV.includes('--dry')
 const readsArg = ARGV.find((a) => a.startsWith('--reads='))?.split('=')[1]
-const DEFAULT_DRY_READS = resolve(__dir, '__fixtures__/gt-pipeline-bench.dry-reads.json')
+// Frozen REAL reads are real data → they live under gitignored qa-private/ (never committed).
+// Override with --reads=<path>; absent (clean checkout w/o qa-private) ⇒ --dry skips gracefully.
+const DEFAULT_DRY_READS = resolve(REPO, 'qa-private/reports/gt-pipeline-bench.dry-reads.json')
 const READS_PATH = readsArg ? resolve(REPO, readsArg) : DEFAULT_DRY_READS
 
 // Core Cyrillic set (cost control: 4 docs). Named fixtures pair 1:1 with GT.
-// NOTE: these paths are the files that actually exist on disk (*_kuropiatnyk.*).
+// NOTE: these paths are the files that actually exist on disk (*_01.*).
 const DOCS = [
-  { fixture: 'test-fixtures/real-docs/internal_passport_kuropiatnyk.jpg', gt: 'qa-private/ground-truth/internal_passport_kuropiatnyk.json', docTypeId: 'ua_internal_passport_booklet', label: 'internal_passport_booklet (handwritten)' },
-  { fixture: 'test-fixtures/real-docs/birth_cert_handwritten_kuropiatnyk.jpg', gt: 'qa-private/ground-truth/birth_cert_handwritten_kuropiatnyk.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (handwritten)' },
-  { fixture: 'test-fixtures/real-docs/birth_cert_soviet_kuropiatnyk.jpg', gt: 'qa-private/ground-truth/birth_cert_soviet_kuropiatnyk.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (Soviet bilingual)' },
-  { fixture: 'test-fixtures/real-docs/military_id_p1_kuropiatnyk.jpg', gt: 'qa-private/ground-truth/military_id_p1_kuropiatnyk.json', docTypeId: 'ua_military_id', label: 'military_id_p1 (printed+hw)' },
+  // VERIFIED by image read (2026-06-23): internal_passport_01.jpg is the INTERNATIONAL (foreign-travel,
+  // biometric, MRZ "P<UKR…") passport — printed, NO patronymic, place-of-birth = oblast only. It was
+  // mislabeled as the handwritten internal booklet (GPT-4.1 caught this; Gemini read it blindly).
+  { fixture: 'test-fixtures/real-docs/internal_passport_01.jpg', gt: 'qa-private/ground-truth/internal_passport_01.json', docTypeId: 'ua_international_passport', label: 'international_passport (printed + MRZ)' },
+  { fixture: 'test-fixtures/real-docs/birth_cert_handwritten_01.jpg', gt: 'qa-private/ground-truth/birth_cert_handwritten_01.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (handwritten)' },
+  { fixture: 'test-fixtures/real-docs/birth_cert_soviet_01.jpg', gt: 'qa-private/ground-truth/birth_cert_soviet_01.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (Soviet bilingual)' },
+  { fixture: 'test-fixtures/real-docs/military_id_p1_01.jpg', gt: 'qa-private/ground-truth/military_id_p1_01.json', docTypeId: 'ua_military_id', label: 'military_id_p1 (printed+hw)' },
 ]
 
 // Per-doc-class map: route field name → { latin: GT key, cyr?: GT key }.
@@ -76,6 +81,8 @@ const PERSON = (prefix = '') => ({
 const FIELD_MAP_BY_DOC = {
   // city_of_birth/province_of_birth exercise the CONSTRAINED-vocabulary autocorrect
   // (gazetteer settlement + oblast) — scored only where GT carries the English value.
+  // International passport: NO patronymic printed; score the visible ID fields only.
+  ua_international_passport: { family_name: { latin: 'family_name_latin', cyr: 'family_name_cyrillic' }, given_name: { latin: 'given_name_latin', cyr: 'given_name_cyrillic' }, dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_internal_passport_booklet: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' }, city_of_birth: { latin: 'place_of_birth_english' }, province_of_birth: { latin: 'province' } },
   ua_military_id:               { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_birth_certificate:         { ...PERSON('child_'), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
@@ -103,8 +110,8 @@ const canonicalSex = (s) => {
 }
 
 // RU↔UA SCRIPT-VARIANT detector (DIAGNOSTIC ONLY — never changes the score).
-// A Soviet-era cert may be written in Russian (Сергей/Сергеевич/Куропятник) while GT
-// carries the person's modern Ukrainian passport form (Сергій/Сергійович/Куроп'ятник).
+// A Soviet-era cert may be written in Russian (Андрей/Тимофеевич/Соловьяк) while GT
+// carries the person's modern Ukrainian passport form (Андрій/Андрійович/Солов'як).
 // That is a genuine read of the source in the OTHER language, not a misread of letters.
 // Fold the RU/UA-distinctive letters + common patronymic endings; if the two collapse
 // to the same key, flag it so the report distinguishes "other-language form" from a
@@ -125,7 +132,7 @@ const isRuUaVariant = (exp, got) => {
  * Returns one of CORRECT | WRONG | MISS | CORRECT_EMPTY | FABRICATED.
  * `field` (route field name) lets us apply enum-aware comparison (e.g. sex).
  */
-// A DATE is the same regardless of format: GT "1986-06-25" and a read "06/25/1986" are
+// A DATE is the same regardless of format: GT "1990-01-15" and a read "01/15/1990" are
 // the SAME day. Normalize any MM/DD/YYYY or YYYY-MM-DD (and a leading date inside a verbose
 // spelled-out read) to YYYY-MM-DD before comparing — a format difference is not a misread.
 const canonicalDate = (s) => {
@@ -266,7 +273,7 @@ const mode = DRY ? 'DRY (offline, frozen reads)' : 'LIVE (prod /api/translation/
 process.stderr.write(`gt-pipeline-bench — mode: ${mode}\n`)
 let dryDb = null
 if (DRY) {
-  if (!existsSync(READS_PATH)) { process.stderr.write(`FATAL: dry reads file not found: ${READS_PATH}\n`); process.exit(2) }
+  if (!existsSync(READS_PATH)) { process.stderr.write(`SKIP: no frozen reads dump at ${READS_PATH} (qa-private absent). Pass --reads=<path> to score a dump.\n`); process.exit(0) }
   dryDb = JSON.parse(readFileSync(READS_PATH, 'utf8'))
 }
 

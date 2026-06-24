@@ -84,6 +84,6 @@ describe('U1 — KMU-55 fork is UNIFIED with the package (one engine)', () => {
     expect(transliterateUaToLatin('Соловьёв')).toBe(transliterateKMU55('Соловьёв')) // Solovyev (was Solovev)
     expect(transliterateUaToLatin("В'ячеслав")).toBe(transliterateKMU55("В'ячеслав"))
     // Latin pass-through still works (idempotent).
-    expect(transliterateUaToLatin('Kuropiatnyk')).toBe('Kuropiatnyk')
+    expect(transliterateUaToLatin('Soloviak')).toBe('Soloviak')
   })
 })

@@ -47,7 +47,7 @@ async function detectCwLive(buf, label) {
 console.log('=== ROTATION LIVE TEST ===\n')
 
 // ── PART A: deterministic — EXIF rotate is a NO-OP on CONTENT rotation ──
-const passport = await readFile(path.join(DOCS, 'internal_passport_kuropiatnyk.jpg'))
+const passport = await readFile(path.join(DOCS, 'internal_passport_01.jpg'))
 const rot90 = await sharp(passport).rotate(90).jpeg().toBuffer() // CONTENT-rotated 90° (no EXIF tag)
 const afterExif = await sharp(rot90).rotate().jpeg().toBuffer()   // sharp EXIF auto-rotate
 const m0 = await sharp(passport).metadata()
@@ -65,7 +65,7 @@ console.log(`  CONCLUSION: ${exifFixedIt ? 'unexpected' : 'CONFIRMED — sharp.r
 if (!KEY) { console.log('PART B — SKIPPED (no GEMINI_API_KEY)'); process.exit(0) }
 console.log('PART B — live Gemini orientation detection:')
 // probe quota with the REAL sideways military ID first
-const mil = await readFile(path.join(DOCS, 'military_id_p1_kuropiatnyk.jpg'))
+const mil = await readFile(path.join(DOCS, 'military_id_p1_01.jpg'))
 const milRes = await detectCwLive(mil, 'REAL military_id_p1 (shot sideways)')
 console.log(`  ${milRes.label}: ${milRes.status}${milRes.detectedCw != null ? ` detectedCW=${milRes.detectedCw}°` : ''}${milRes.raw ? ` (raw="${milRes.raw}")` : ''}${milRes.detail ? ` ${milRes.detail}` : ''}`)
 if (milRes.status === 'BLOCKED_429') {

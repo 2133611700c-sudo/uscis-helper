@@ -6,22 +6,22 @@ const F = (field: string, raw: string | null, value: string | null, confidence =
 
 describe('auto-delivery consensus (conservative: only lower review when verifiably reliable)', () => {
   it('AGREE + high conf + clean → auto-deliver (review_required=false)', () => {
-    const fields = [F('family_name', 'Куроп’ятник', 'Kuropiatnyk', 0.97)]
-    const others = [snapshotOf([{ field: 'family_name', raw_cyrillic: 'КУРОП’ЯТНИК' }])] // case-insensitive agree
+    const fields = [F('family_name', 'Солов’як', 'Soloviak', 0.97)]
+    const others = [snapshotOf([{ field: 'family_name', raw_cyrillic: 'СОЛОВ’ЯК' }])] // case-insensitive agree
     const r = applyConsensusAutoDelivery(fields, others)
     expect(r.fields[0].review_required).toBe(false)
     expect(r.auto_delivered).toBe(1)
   })
   it('DISAGREE across reads → stays review + cross_read_disagreement', () => {
     const fields = [F('dob', '28 июля 1986', '07/28/1986', 0.96)]
-    const others = [snapshotOf([{ field: 'dob', raw_cyrillic: '25 червня 1986' }])] // month differs
+    const others = [snapshotOf([{ field: 'dob', raw_cyrillic: '15 січня 1990' }])] // month differs
     const r = applyConsensusAutoDelivery(fields, others)
     expect(r.fields[0].review_required).toBe(true)
     expect(r.fields[0].review_reasons).toContain('cross_read_disagreement')
   })
   it('LOW confidence → stays review even if agrees', () => {
-    const fields = [F('patronymic', 'Сергійович', 'Serhiiovych', 0.70)]
-    const others = [snapshotOf([{ field: 'patronymic', raw_cyrillic: 'Сергійович' }])]
+    const fields = [F('patronymic', 'Андрійович', 'Andriiovych', 0.70)]
+    const others = [snapshotOf([{ field: 'patronymic', raw_cyrillic: 'Андрійович' }])]
     const r = applyConsensusAutoDelivery(fields, others)
     expect(r.fields[0].review_required).toBe(true)
     expect(r.fields[0].review_reasons).toContain('low_confidence')
@@ -39,12 +39,12 @@ describe('auto-delivery consensus (conservative: only lower review when verifiab
   })
   it('mixed doc: stable name auto-delivers, unstable date reviews (per-field granularity)', () => {
     const fields = [
-      F('family_name', 'Куроп’ятник', 'Kuropiatnyk', 0.97),
+      F('family_name', 'Солов’як', 'Soloviak', 0.97),
       F('dob', '28 июля 1986', '07/28/1986', 0.96),
     ]
     const others = [snapshotOf([
-      { field: 'family_name', raw_cyrillic: 'Куроп’ятник' },
-      { field: 'dob', raw_cyrillic: '25 червня 1986' },
+      { field: 'family_name', raw_cyrillic: 'Солов’як' },
+      { field: 'dob', raw_cyrillic: '15 січня 1990' },
     ])]
     const r = applyConsensusAutoDelivery(fields, others)
     expect(r.fields.find((f) => f.field === 'family_name')!.review_required).toBe(false)

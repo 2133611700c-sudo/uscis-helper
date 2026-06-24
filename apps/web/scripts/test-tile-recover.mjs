@@ -19,9 +19,9 @@ const { preprocessImage } = await import(path.join(ROOT, 'apps/web/src/lib/ocr/i
 const { recoverEmptyFieldsByTiles, geminiReadFieldsFromCrop } = await import(path.join(ROOT, 'apps/web/src/lib/docintel/ensemble/tileRegionRead.ts'))
 const { getGeminiApiKey } = await import(path.join(ROOT, 'apps/web/src/lib/gemini/apiKey.ts'))
 const KEY = getGeminiApiKey()
-const LABELS = { father_full_name: 'Батько / Отец', mother_full_name: 'Мати / Мать', certificate_series_number: 'Серія та номер (e.g. III-АМ № 428069)', act_record_number: 'Актовий запис №', issuing_authority: 'Орган реєстрації (ЗАГС/РАЦС)' }
+const LABELS = { father_full_name: 'Батько / Отец', mother_full_name: 'Мати / Мать', certificate_series_number: 'Серія та номер (e.g. II-БК № 530174)', act_record_number: 'Актовий запис №', issuing_authority: 'Орган реєстрації (ЗАГС/РАЦС)' }
 
-const raw = await readFile(path.join(ROOT, 'test-fixtures/real-docs/birth_cert_handwritten_kuropiatnyk.jpg'))
+const raw = await readFile(path.join(ROOT, 'test-fixtures/real-docs/birth_cert_handwritten_01.jpg'))
 const docType = 'ua_birth_certificate'
 
 // BASE read (full page, downscaled — as the prod route does).
@@ -54,4 +54,4 @@ for (const k of ['father_full_name', 'mother_full_name', 'certificate_series_num
   const f = fields.find((x) => x.field === k)
   if (f) console.log(`  ${k}: value="${f.value ?? ''}" cyr="${f.raw_cyrillic ?? ''}" review=${f.review_required} reasons=${(f.review_reasons ?? []).join('|')}`)
 }
-console.log('\nGT: father Куропятник Сергей Леонидович | mother Куропятник Наталья Степановна | series III-АМ № 428069')
+console.log('\nGT: father Соловьяк Андрей Богданович | mother Соловьяк Дарья Петровна | series II-БК № 530174')

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import {
   PRIMARY_READER, FALLBACK_MODELS, SANCTIONED_CHAIN, DEPRECATED_MODELS,
   isPrimaryReader, isSanctionedModel, acceptanceModelVerdict, assertPrimaryReader, isDisqualifiedFor,
+  isHandwrittenFamily, MODEL_PROFILES,
 } from '../modelMatrix'
 import { primaryGeminiModel } from '../providers/geminiVisionProvider'
 
@@ -26,6 +27,7 @@ describe('modelMatrix — the ADR-018 law in code', () => {
 
   it('acceptanceModelVerdict: ONLY the primary read is acceptance-valid', () => {
     expect(acceptanceModelVerdict(PRIMARY_READER)).toEqual({ valid: true })
+    expect(acceptanceModelVerdict('gemini-2.5-pro')).toEqual({ valid: false, reason: 'fallback_model_not_acceptance_valid' })
     expect(acceptanceModelVerdict('gemini-3.5-flash')).toEqual({ valid: false, reason: 'fallback_model_not_acceptance_valid' })
     expect(acceptanceModelVerdict('gemini-2.5-flash')).toEqual({ valid: false, reason: 'fallback_model_not_acceptance_valid' })
     expect(acceptanceModelVerdict('some-random-model')).toEqual({ valid: false, reason: 'unsanctioned_model' })
@@ -38,16 +40,36 @@ describe('modelMatrix — the ADR-018 law in code', () => {
     expect(() => assertPrimaryReader(null)).toThrow(/model_matrix_violation/)
   })
 
-  it('2.5-flash is DISQUALIFIED for certificate doc classes (read a different person)', () => {
+  it('2.5-flash AND 2.5-pro are DISQUALIFIED for certificate doc classes (fabricate a different person on handwriting)', () => {
     expect(isDisqualifiedFor('gemini-2.5-flash', 'ua_birth_certificate')).toBe(true)
     expect(isDisqualifiedFor('gemini-2.5-flash', 'ua_marriage_certificate')).toBe(true)
     expect(isDisqualifiedFor('gemini-2.5-flash', 'ua_internal_passport_booklet')).toBe(false)
+    // 2.5-pro is GA + accurate on PRINTED docs, but fabricates on handwritten certs (live bench 2026-06-23).
+    expect(isDisqualifiedFor('gemini-2.5-pro', 'ua_birth_certificate')).toBe(true)
+    expect(isDisqualifiedFor('gemini-2.5-pro', 'ua_death_certificate')).toBe(true)
+    expect(isDisqualifiedFor('gemini-2.5-pro', 'ua_internal_passport_booklet')).toBe(false) // OK for printed
     expect(isDisqualifiedFor(PRIMARY_READER, 'ua_birth_certificate')).toBe(false)
   })
 
-  it('sanctioned chain = primary + the two flash fallbacks', () => {
-    expect([...SANCTIONED_CHAIN]).toEqual(['gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash'])
+  it('sanctioned chain = primary + 2.5-pro + the two flash fallbacks (preference order)', () => {
+    expect([...SANCTIONED_CHAIN]).toEqual(['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'])
     expect([...FALLBACK_MODELS].every((m) => isSanctionedModel(m))).toBe(true)
+  })
+
+  it('handwritten doc families are flagged for mandatory human review (any model)', () => {
+    expect(isHandwrittenFamily('ua_birth_certificate')).toBe(true)
+    expect(isHandwrittenFamily('ua_marriage_certificate')).toBe(true)
+    expect(isHandwrittenFamily('ua_internal_passport_booklet')).toBe(false) // printed identity page
+    expect(isHandwrittenFamily(null)).toBe(false)
+  })
+
+  it('MODEL_PROFILES inventory covers every sanctioned model with a tested verdict', () => {
+    for (const m of SANCTIONED_CHAIN) {
+      expect(MODEL_PROFILES[m], `missing profile for ${m}`).toBeTruthy()
+      expect(MODEL_PROFILES[m].tested).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    }
+    expect(MODEL_PROFILES[PRIMARY_READER].role).toBe('primary')
+    expect(MODEL_PROFILES['gemini-2.5-pro'].role).toBe('fallback')
   })
 })
 

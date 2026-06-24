@@ -33,9 +33,11 @@ Maps 1:1 to v5.0 "Controlled Autonomy" (AI drafts/validates/renders → human co
 ## D1 — Recognition (Отдел распознавания)
 **Mission:** read the Cyrillic characters exactly as written. Read, do not interpret.
 
+> Reader model law (full live-tested matrix): `docs/architecture/MODEL_INVENTORY.md` (mirrors `apps/web/src/lib/docintel/modelMatrix.ts`, ADR-018). NO model is safe on handwriting → certificate family is ALWAYS human-reviewed.
+
 | Employee | Engine | Job description | Hard rules |
 |---|---|---|---|
-| Reader (Чтец) | **Gemini 2.5 Pro Vision** on tight field crops | Read Cyrillic VALUES per field. Return **top-3 candidates + per-field confidence**. | NEVER transliterate. NEVER guess: illegible → `can_read=false` + empty. Never return a suffix fragment ("ович" alone). |
+| Reader (Чтец) | **`gemini-3.1-pro-preview`** on tight field crops — the PRIMARY / only acceptance-valid reader (a PREVIEW with unreliable availability: 503/429, retried with backoff). Availability fallback: GA **`gemini-2.5-pro`** for PRINTED docs ONLY (force-reviewed, never acceptance; DISQUALIFIED for handwritten certificates — it fabricates a different person). | Read Cyrillic VALUES per field. Return **top-3 candidates + per-field confidence**. | NEVER transliterate. NEVER guess: illegible → `can_read=false` + empty. Never return a suffix fragment ("ович" alone). |
 | Proofreader | **Google Vision / DocAI** (printed zones only) | Second read of printed text (MRZ, printed certificate labels, series/number). | Used only where the document is printed; disagreement with Reader → flag for Chief Engineer. |
 
 ## D2 — Normalization & Knowledge (Отдел нормализации)

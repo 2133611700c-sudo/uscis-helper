@@ -36,7 +36,7 @@ flags. Anything claiming "all separate, big rebuild" would be false.
 ### SEAM A — Cross-document reconciliation NOT wired (the biggest quality lever)
 - Built + 14 tests: `apps/web/src/lib/canonical/core/crossDocReconcile.ts` (`reconcileAcrossDocuments`).
 - NOT called in any route (tests only). Integration points already identified: TPS packetBuilder.ts:185 / translation order assembly.
-- Proven need (today's fresh read): the handwritten military DOB day "_5" is ambiguous (15/25) alone; the passport MRZ `8606257` + record `19860625` make it 25. Reconciliation is what carries that authority across a person's documents.
+- Proven need (today's fresh read): the handwritten military DOB day "_5" is ambiguous (15/25) alone; the passport MRZ `9001158` + record `19900115` make it 25. Reconciliation is what carries that authority across a person's documents.
 - Does NOT need Gemini quota — pure logic over already-read fields. **Can do now, behind its OFF flag.**
 
 ### SEAM B — TPS US-form slots bypass the one brain
@@ -76,7 +76,7 @@ For every field where a model misses, write the per-document rule (the L9 teachi
 
 Per the owner's sequence, for EACH real document in test-fixtures/real-docs + its VERIFIED_BY_OWNER GT:
 
-1. **Claude (me) reads the image** applying ALL rules (RUSSIAN_SCRIPT, MONTH_WORD, controlling-Latin, source-faithful, cross-doc anchor). Record field-by-field. (Done today for passport/military/birth — DOB 25 June 1986 confirmed across 3 docs; SERGII controlling; КУРОП'ЯТНИК→KUROPIATNYK.)
+1. **Claude (me) reads the image** applying ALL rules (RUSSIAN_SCRIPT, MONTH_WORD, controlling-Latin, source-faithful, cross-doc anchor). Record field-by-field. (Done today for passport/military/birth — DOB 25 June 1986 confirmed across 3 docs; SERGII controlling; СОЛОВ'ЯК→SOLOVIAK.)
 2. **DeepSeek reads the Vision-OCR text** with shared rules ON. Record. (Live-proven: keeps Russian, parses spelled date.)
 3. **Gemini pipeline reads the image** via readDocument. Record. (BLOCKED_429 now — not faked.)
 4. **Compare** all three vs GT → verdict table per field.
@@ -94,9 +94,9 @@ Honesty gates: a flash-model read is NEVER an acceptance number (ADR-018). EMPTY
 | 1 | Read the image | Gemini gemini-3.1-pro-preview ONLY | L1: single reader, all products; flash = fallback→forced review, never acceptance | ON |
 | 2 | Cyrillic transcription | Gemini | L8: source-faithful — RU stays RU, UA stays UA; keep ы/э/ё/ъ; never convert | ON (rule in prompt) |
 | 3 | Spelled-out date | Gemini | MONTH_WORD: read whole word; червня/июня=June≠липня/июля=July; anchor year→day→month | ON |
-| 4 | Controlling Latin | Gemini | L7: printed/MRZ Latin returned exactly (SERGII ≠ SERHII) | ON (rule) — but verify pipeline doesn't re-transliterate |
+| 4 | Controlling Latin | Gemini | L7: printed/MRZ Latin returned exactly (SERGII ≠ ANDRII) | ON (rule) — but verify pipeline doesn't re-transliterate |
 | 5 | Transliteration | packages/knowledge | L2: KMU-55 (UA) / BGN-PCGN (RU) from raw Cyrillic; apostrophe family dropped (U+2019 fix) | ON |
-| 6 | RU name routing | transliterationPolicy | ambiguous RU name on RU doc → RU table (Sergey≠Serhei) | OFF (DOC_SCRIPT_ROUTING) |
+| 6 | RU name routing | transliterationPolicy | ambiguous RU name on RU doc → RU table (Andrey≠Serhei) | OFF (DOC_SCRIPT_ROUTING) |
 | 7 | Critical-field safety | C3 applyOcrFieldSafety | L5/L6: uncertain critical → null + review, never a guess; single final_value writer | ON (unconditional, translation) |
 | 8 | Handwritten date anchor | strongSourceAnchor | L6: handwritten date never self-anchors; needs MRZ/dictionary external check | ON |
 | 9 | Cross-document authority | crossDocReconcile | STAGE 3: MRZ-validated passport resolves a sibling doc's ambiguous field | BUILT, NOT WIRED (Seam A) |

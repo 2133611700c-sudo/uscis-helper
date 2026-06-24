@@ -1,0 +1,41 @@
+{
+  "_note": "SHA-256 of normalized real-PII tokens (owner surname forms + distinctive document numbers). Hashes reveal nothing. The guard scripts/check-no-pii.mjs hashes each scanned token and fails on a match. Regenerate via qa-private/tools/gen-pii-denylist.mjs (gitignored).",
+  "tokens": [
+    {
+      "hash": "4bd9b3652144d4a9f109ed8432a4c5eacb8a0b45ee8234a92e0e62c0ff38f543",
+      "hint": "surname-ua"
+    },
+    {
+      "hash": "9ce121c8b5c5898b90399e7572fd8eebbe25e4fe836c24eb1464d53b169f3a07",
+      "hint": "surname-ru"
+    },
+    {
+      "hash": "77fba7870e7d70b8b7aab455867d16eea0769f49a1aff8a7133fc7c565add90e",
+      "hint": "surname-latin"
+    },
+    {
+      "hash": "2cdae27a2e3702f878b22efa113c392d8cb79ba9c8d9b2e2e757d6579f7841d5",
+      "hint": "surname-latin"
+    },
+    {
+      "hash": "3e783da883c4f71d90256a0828060210988cacf52c8a24d3e4250653a5946908",
+      "hint": "surname-latin"
+    },
+    {
+      "hash": "3e3cebdada9b3a4a388452bda43f0c6bdff7ac17f54f784c5dfbf5abe71a8894",
+      "hint": "cert-series-number"
+    },
+    {
+      "hash": "e06965ad9d06472f103bff9b9d5d257578e474d21d148fadd342a9934ec3db44",
+      "hint": "passport-number"
+    },
+    {
+      "hash": "c3c8e1d8db517ca5678a188571f9237a84e41c1bdaca05d6f8e5e315691598f6",
+      "hint": "military-number"
+    },
+    {
+      "hash": "3bd86dbbef25d3ca3b08db2bbba60c8923b6a8a6503a23790e63b08994f77f9e",
+      "hint": "mrz-dob"
+    }
+  ]
+}

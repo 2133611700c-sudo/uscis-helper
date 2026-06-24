@@ -33,8 +33,8 @@ hard docs, **90%+** on printed.
 
 ### A2. Russianization of Ukrainian text (names on Soviet/bilingual docs)
 - **Evidence (UKRAINIAN_OCR_FAILURE_ANALYSIS — "Core finding"):** the model does not read the
-  Ukrainian — it returns the Russian form (Сергій→Сергей, Сергійович→Сергеевич, Куроп'ятник→
-  Куропятник). This is an OCR/vision/language error UPSTREAM; a dictionary can flag it but must
+  Ukrainian — it returns the Russian form (Андрій→Андрей, Андрійович→Тимофеевич, Солов'як→
+  Соловьяк). This is an OCR/vision/language error UPSTREAM; a dictionary can flag it but must
   NOT silently "fix" it (that would be fabrication).
 - **Live this session:** confirmed — birth-cert names came back Russian. Open question (owner,
   factual): is the SOURCE doc actually Russian (then the read is correct + GT is wrong) or
@@ -131,7 +131,7 @@ hard docs, **90%+** on printed.
 - Only 4 scorable real docs, ALL hard (handwritten booklet, 2 birth certs, military). No modern
   printed-passport IMAGE on disk (only the booklet) — so the easy/common case can't be measured.
 - GT itself has issues: sex coded "M" vs the pipeline's "Male" (false WRONG, now folded); birth-cert
-  GT expects Ukrainian "Сергій" on a Russian-script source (the RU/UA question). The "20% birth
+  GT expects Ukrainian "Андрій" on a Russian-script source (the RU/UA question). The "20% birth
   cert" is partly a GT/policy artifact, not pure OCR.
 
 ### D3. No live GT benchmark in CI; quota-blocked

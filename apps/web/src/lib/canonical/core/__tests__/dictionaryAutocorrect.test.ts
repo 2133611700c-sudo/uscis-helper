@@ -94,19 +94,19 @@ describe('SEX auto-correct', () => {
 })
 
 describe('PATRONYMIC reconstruction', () => {
-  it('unread patronymic + father "Сергій" → Serhiiovych reconstructed (uk)', () => {
-    const d = normalizeCanonicalValue('child_patronymic', '', { ...ON, sex: 'M', givenNameCyrillic: 'Сергій' })
+  it('unread patronymic + father "Андрій" → Andriiovych reconstructed (uk)', () => {
+    const d = normalizeCanonicalValue('child_patronymic', '', { ...ON, sex: 'M', givenNameCyrillic: 'Андрій' })
     // empty read → suggest (light review), but the value is reconstructed.
     expect(d.candidateValue ?? d.finalValue).toBeTruthy()
-    expect((d.candidateValue ?? d.finalValue ?? '')).toMatch(/Serhii?ovych/i)
+    expect((d.candidateValue ?? d.finalValue ?? '')).toMatch(/Andrii?ovych/i)
     expect(d.provenance).toBe('patronymic_reconstructed')
   })
 
-  it('partial read "Серг" + father "Сергій" → AGREES → ACCEPT', () => {
-    const d = normalizeCanonicalValue('patronymic', 'Серг', { ...ON, sex: 'M', givenNameCyrillic: 'Сергій' })
+  it('partial read "Андр" + father "Андрій" → AGREES → ACCEPT', () => {
+    const d = normalizeCanonicalValue('patronymic', 'Андр', { ...ON, sex: 'M', givenNameCyrillic: 'Андрій' })
     expect(d.action).toBe('accept')
     expect(d.provenance).toBe('patronymic_reconstructed')
-    expect(d.finalValue).toMatch(/Serhii?ovych/i)
+    expect(d.finalValue).toMatch(/Andrii?ovych/i)
   })
 
   it('Russian context: father "Андрей" → RU отчество (Andreyevich), NOT the UA form', () => {

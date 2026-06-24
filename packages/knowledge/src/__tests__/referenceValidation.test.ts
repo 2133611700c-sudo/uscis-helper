@@ -31,9 +31,9 @@ eq(transliterateRussian('Цой'), 'Tsoy', 'RU BGN/PCGN ц→ts')
 eq(transliterateRussian('Хомяков'), 'Khomyakov', 'RU BGN/PCGN х→kh, я→ya')
 eq(transliterateRussian('Щербаков'), 'Shcherbakov', 'RU BGN/PCGN щ→shch')
 eq(transliterateRussian('Юрий'), 'Yuriy', 'RU BGN/PCGN ю→yu, -ий→iy')
-// owner's real Russian birth cert (source-faithful).
-eq(transliterateRussian('Сергеевич'), 'Sergeyevich', 'RU Сергеевич')
-eq(transliterateRussian('Куропятник'), 'Kuropyatnik', 'RU Куропятник')
+// RU source-faithful patronymic + surname (fictional data; proves the rule, not a memorized value).
+eq(transliterateRussian('Тимофеевич'), 'Timofeyevich', 'RU -еевич→-eyevich (double-e)')
+eq(transliterateRussian('Соловьяк'), 'Solovyak', 'RU surname ьяк→yak')
 
 // 3. Oblast English names — modern UKRAINIAN form (a Russified spelling would be a certified-translation defect).
 eq(normalizeOblastToNominative('Київська область')?.transliterated, 'Kyiv Oblast', 'Kyiv (NOT Kiev)')
@@ -44,7 +44,7 @@ eq(normalizeOblastToNominative('Львівська область')?.translitera
 eq(normalizeOblastToNominative('Винницкой области')?.transliterated, 'Vinnytsia Oblast', 'RU Винницкой → Vinnytsia (NOT Vinnitsa)')
 
 // 4. ROUND-TRIP DETERMINISM — the same input must transliterate identically every call (a translator must be a pure function).
-for (const w of ['Куроп’ятник', 'Сергеевич', 'Згурський', 'Naталья'.replace('Na', 'На')]) {
+for (const w of ['Солов’як', 'Тимофеевич', 'Згурський', 'Олена']) {
   const a = transliterateKMU55(w), b = transliterateKMU55(w), c = transliterateKMU55(w)
   eq(a === b && b === c, true, `deterministic KMU-55 "${w}" (${a}/${b}/${c})`)
   const ra = transliterateRussian(w), rb = transliterateRussian(w)

@@ -23,8 +23,8 @@
  * NAME-SCRIPT GUARD (CONSTITUTION L8 — SOURCE-FAITHFUL TRANSCRIPTION; CLAUDE.md HARD RULE
  * "Self-name on .gov.ua beats any third-party reference" / RU-vs-UA never silently convert):
  * a NAME anchor only reconciles across docs in the SAME SOURCE SCRIPT/language. A Ukrainian
- * passport's "Serhii" (raw Cyrillic Сергій) must NOT be pushed onto a Russian Soviet-era
- * birth-cert's "Sergey" (raw Cyrillic Сергей) — that is the RU/UA distinction the project
+ * passport's "Andrii" (raw Cyrillic Андрій) must NOT be pushed onto a Russian Soviet-era
+ * birth-cert's "Andrey" (raw Cyrillic Андрей) — that is the RU/UA distinction the project
  * forbids harmonizing. DATES and NUMBERS are language-neutral and reconcile freely; only
  * NAME/PLACE reconciliation is gated on matching source script (detectNameScript on
  * rawCyrillic). When scripts differ or either is unknown → NO name reconciliation.

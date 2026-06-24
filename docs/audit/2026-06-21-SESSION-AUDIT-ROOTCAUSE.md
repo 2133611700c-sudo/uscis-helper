@@ -149,7 +149,7 @@ spend AND rate limits) — owner billing decision; not a code blocker today.
 
 ### Dictionaries / legacy (Agent 3, reconciled)
 - LIVE translator path (vision-extract) = canonical `@uscis-helper/knowledge` ONLY. PROVEN today on
-  the owner's real booklet (Kuropiatnyk/Serhii/смт→urban-type settlement/Vinnytsia Oblast).
+  the owner's real booklet (Soloviak/Andrii/смт→urban-type settlement/Vinnytsia Oblast).
 - Legacy glossary (`lib/translation/glossary/*`, `ukraine_agency_abbreviations.json` ~56 entries,
   validators ~2574 lines) is imported only by routes `/api/translation/extract` +
   `/ocr-from-storage`, which have NO live fetch() caller (earlier caller-grep) → effectively DEAD.
@@ -275,8 +275,8 @@ missing. Tested the Soviet 1986 birth certificate (bilingual RU/UK, handwritten)
 **HTTP 413 finding:** the 7MB original exceeds the ~4.5MB upload limit (413 before OCR). The client
 must downscale before upload. Downscaled to ~1.5MB → read fine. (Verify the wizard downscales.)
 
-**Read via PRIMARY (gemini-3.1-pro-preview), 12 fields. Correct:** surname Kuropiatnyk; issuing
-authority → "Civil Registry Office"; series III-АМ→III-AM; act #84; act/issue dates parsed.
+**Read via PRIMARY (gemini-3.1-pro-preview), 12 fields. Correct:** surname Soloviak; issuing
+authority → "Civil Registry Office"; series II-БК→II-BK; act #84; act/issue dates parsed.
 
 **Orientation test (owner request):** ran AS-IS (landscape) and ROTATED 90° (portrait). Names,
 place, parents, authority read IDENTICALLY in both → Gemini handles rotation. The handwritten DOB
@@ -291,9 +291,9 @@ FIX: added the Russian forms to stripSettlementPrefix → "urban-type settlement
 +permanent test `settlementPrefixRussian.test.ts`. docintel 226 + knowledge all green; tsc 0.
 
 **OBSERVATION (not auto-fixed — review-flagged):** Russian-language names with only shared letters
-(Сергей/Сергеевич/Наталия) romanize via KMU-55 (г→h → "Serhei/Serheevych") because detectNameScript
+(Андрей/Тимофеевич/Дарья) romanize via KMU-55 (г→h → "Serhei/Serheevych") because detectNameScript
 returns 'unknown' (no RU-distinctive letter). On a Russian-context document a Russian romanization
-("Sergey") may be preferred. All such fields are `review_required=true`, so the operator decides;
+("Andrey") may be preferred. All such fields are `review_required=true`, so the operator decides;
 no silent wrong value ships. Candidate future improvement: use document-language context (the cert
 header «СВИДЕТЕЛЬСТВО О РОЖДЕНИИ» is Russian) to bias shared-letter names — but only as a review hint.
 
@@ -314,7 +314,7 @@ with the observability + пгт fixes deployed.
 | marriage (apostille) | primary | 1 | none | — | sparse (apostille stamp page) |
 | marriage (foreign spouse) | gemini-3.5-flash | 17 | none | — | sanctioned fallback (observability shows it) |
 | divorce (redacted) | primary | 3 | none | — | "Civil Registry Office"; series I-BK |
-| military id p1 | primary | 5 | none | — | Ukrainian Serhii/Serhiiovych |
+| military id p1 | primary | 5 | none | — | Ukrainian Andrii/Andriiovych |
 | military id p2 | primary | 1 | none | — | back page sparse |
 
 **RESULTS:**
@@ -358,7 +358,7 @@ malformed, self-consistency mismatch (OFF), date-ensemble disagreement (OFF), da
 
 ### DICTIONARY/RULE GAPS (Agent 3) — what's missing for correct recognition
 - Document-LANGUAGE → name-table routing MISSING: Russian-context names route through KMU-55
-  (Сергей→"Serhei" г→h) instead of Russian "Sergey". detectNameScript only sees per-name letters.
+  (Андрей→"Serhei" г→h) instead of Russian "Andrey". detectNameScript only sees per-name letters.
 - Russian PATRONYMIC engine COMPLETELY MISSING (patronymic.ts is UA-only) → Russian father/mother
   names unresolved on Soviet certs.
 - COUNTRY dictionary MISSING (Канада→Canada) → foreign birthplaces unresolved.
@@ -444,15 +444,15 @@ fields. Remaining: REAL-DOC validation run (flag ON) + owner go-live (legal risk
 
 Ran the consensus+C3 pipeline on the owner's REAL booklet OCR (which read IDENTICALLY across 3
 live runs) and the soviet birth cert, locally (no budget):
-- **Booklet: 5 of 6 fields AUTO-DELIVERED** (given_name=Serhii, patronymic=Serhiiovych,
-  dob=06/25/1986, city=urban-type settlement Trostianets, province=Vinnytsia Oblast) with correct
+- **Booklet: 5 of 6 fields AUTO-DELIVERED** (given_name=Andrii, patronymic=Andriiovych,
+  dob=01/15/1990, city=urban-type settlement Trostianets, province=Vinnytsia Oblast) with correct
   non-null values. Was 0/6. The FATAL "auto-deliver=0" is solved at the foundation.
 - Birth cert: 4/12 auto (place/authority/series/act-number); names + the unstable date stay review.
 
 ### KEY LIMITER FOUND (honest) — source_script_ambiguous blocks confident stable surnames
-`family_name = Куроп'ятник` did NOT auto-deliver: it has no UA-distinctive letter (і/ї/є/ґ) → its
+`family_name = Солов'як` did NOT auto-deliver: it has no UA-distinctive letter (і/ї/є/ґ) → its
 script is 'unknown' → `source_script_ambiguous`, which is in HARD_REVIEW_REASONS → never auto-delivered
-even with consensus. A LARGE fraction of Ukrainian surnames (Петренко, Іванов, Куроп'ятник…) have no
+even with consensus. A LARGE fraction of Ukrainian surnames (Петренко, Іванов, Солов'як…) have no
 distinctive letter → they will ALWAYS review under the current rule, capping auto-delivery.
 
 ### NEXT UNLOCK — document-language routing (the dictionary gap Agent 3 flagged)
@@ -474,11 +474,11 @@ DOCUMENT type: a shared-letter name ('unknown' script, no і/ї/є/ґ and no ы/
 Ukrainian-issued ID (ua_internal_passport_booklet / ua_international_passport / ua_id_card /
 ua_military_id) is NOT ambiguous — it is the citizen's official Ukrainian name → KMU-55 with
 confidence → can auto-deliver. On a Soviet/bilingual CERTIFICATE (birth/marriage/divorce/death)
-the gate STAYS (the name may genuinely be Russian, e.g. Сергей). Default (no docTypeId) keeps the
+the gate STAYS (the name may genuinely be Russian, e.g. Андрей). Default (no docTypeId) keeps the
 safe cert behavior — existing source-script tests unchanged (243 docintel green).
 
 Re-validated on the real booklet: **6 of 6 fields auto-deliver** (was 5/6, originally 0/6) — the
-surname «Куроп'ятник» now auto-delivers as Kuropiatnyk. The owner's internal passport fully
+surname «Солов'як» now auto-delivers as Soloviak. The owner's internal passport fully
 auto-completes. Certificates keep the conservative gate (Russian-context names + unstable
 handwritten dates correctly review). tsc 0; +4 doc-language tests.
 
@@ -494,8 +494,8 @@ Soviet certificates: auto-deliver the unambiguous fields; review only genuinely-
 
 Deployed staging with AUTO_DELIVERY_CONSENSUS_ENABLED=1; POSTed the REAL booklet through the LIVE
 path (2 real primary reads). Result: read by gemini-3.1-pro-preview; **2/6 fields full-auto**
-(city, province); the 4 critical identity fields (family_name=Kuropiatnyk, given_name=Serhii,
-patronymic=Serhiiovych, dob=06/25/1986 — ALL correct) flagged with the SINGLE reason
+(city, province); the 4 critical identity fields (family_name=Soloviak, given_name=Andrii,
+patronymic=Andriiovych, dob=01/15/1990 — ALL correct) flagged with the SINGLE reason
 `critical_no_mrz_anchor`.
 
 **Corrected understanding (I over-alarmed with "2/6"):** `critical_no_mrz_anchor` is a THIRD review

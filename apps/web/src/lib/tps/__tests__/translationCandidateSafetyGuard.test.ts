@@ -16,7 +16,7 @@ function baseFields(overrides: Partial<TranslationFieldSet> = {}): TranslationFi
     patronymic:       'Petrovych',
     date_of_birth:    'January 1, 1990',
     sex:              'Male',
-    passport_number:  'FU 262473',
+    passport_number:  'MX 481390',
     city_of_birth:    'Vinnytsia',
     province_of_birth: 'Vinnytsia Oblast',
     issued_by:        'Department of the State Migration Service of Ukraine in Vinnytsia Oblast',

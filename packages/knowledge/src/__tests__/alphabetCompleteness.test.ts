@@ -29,11 +29,11 @@ ok(transliterateKMU55('Яна') === 'Yana', 'Я word-initial → Ya (Яна → 
 ok(transliterateKMU55('Мар’яна') === 'Mariana', 'я mid-word → ia (Мар’яна → Mariana)')
 ok(transliterateKMU55('Юрій') === 'Yurii', 'Ю initial → Yu, й mid → i (Юрій → Yurii)')
 
-// 3. Russian BGN/PCGN values (for source-faithful Russian documents).
-ok(transliterateRussian('Сергеевич') === 'Sergeyevich', 'RU Сергеевич → Sergeyevich')
-ok(transliterateRussian('Куропятник') === 'Kuropyatnik', 'RU Куропятник → Kuropyatnik')
-ok(transliterateRussian('Сергей') === 'Sergey', 'RU Сергей → Sergey')
-ok(transliterateRussian('Наталья') === 'Natalya', 'RU Наталья → Natalya')
+// 3. Russian BGN/PCGN values (for source-faithful Russian documents; fictional names).
+ok(transliterateRussian('Тимофеевич') === 'Timofeyevich', 'RU Тимофеевич → Timofeyevich')
+ok(transliterateRussian('Соловьяк') === 'Solovyak', 'RU Соловьяк → Solovyak')
+ok(transliterateRussian('Андрей') === 'Andrey', 'RU Андрей → Andrey')
+ok(transliterateRussian('Елена') === 'Yelena', 'RU Елена → Yelena')
 
 console.log(`=== Alphabet Completeness: ${pass} passed, ${fail} failed ===`)
 if (fail > 0) process.exit(1)

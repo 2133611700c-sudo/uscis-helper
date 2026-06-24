@@ -37,7 +37,7 @@ const KURO_MERGED: Record<string, MergedField> = {
   dob:                  mergedField('dob',                  '1990-01-01'),
   city_of_birth:        mergedField('city_of_birth',        'Vinnytsia'),
   province_of_birth:    mergedField('province_of_birth',    'Vinnytsia Oblast'),
-  passport_number:      mergedField('passport_number',      'FU 262473'),
+  passport_number:      mergedField('passport_number',      'MX 481390'),
   sex:                  mergedField('sex',                  'M'),
   issued_by:            mergedField('issued_by',            'Department of the State Migration Service of Ukraine in Vinnytsia Oblast'),
   passport_date_of_issue: mergedField('passport_date_of_issue', '2019-08-12'),

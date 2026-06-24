@@ -19,11 +19,11 @@ describe('transliterateRussian — BGN/PCGN simplified (owner-approved 2026-06-1
   it('Леонидович → Leonidovich (not Leonidovych)', () => {
     expect(transliterateRussian('Леонидович')).toBe('Leonidovich')
   })
-  it('Наталья → Natalya (BGN/PCGN: я → ya, ь omitted)', () => {
-    expect(transliterateRussian('Наталья')).toBe('Natalya')
+  it('Дарья → Darya (BGN/PCGN: я → ya, ь omitted)', () => {
+    expect(transliterateRussian('Дарья')).toBe('Darya')
   })
-  it('Степановна → Stepanovna', () => {
-    expect(transliterateRussian('Степановна')).toBe('Stepanovna')
+  it('Петровна → Petrovna', () => {
+    expect(transliterateRussian('Петровна')).toBe('Petrovna')
   })
   it('Иваненко → Ivanenko (synthetic surname)', () => {
     expect(transliterateRussian('Иваненко')).toBe('Ivanenko')
@@ -70,13 +70,13 @@ describe('the two systems must NOT cross (no silent normalization)', () => {
 describe('detectNameScript — by distinctive letters; ambiguous → review, not guess', () => {
   it('Ukrainian-only letters (і/ї/є/ґ) → ua', () => {
     expect(detectNameScript('Іван')).toBe('ua')
-    expect(detectNameScript('Наталія')).toBe('ua')
+    expect(detectNameScript('Дарія')).toBe('ua')
   })
   it('Russian-only letters (ы/э/ё/ъ) → ru', () => {
     expect(detectNameScript('Эдуард')).toBe('ru')
   })
   it('no distinctive letter → unknown (caller reviews, never guesses)', () => {
-    expect(detectNameScript('Наталья')).toBe('unknown')   // ь/я are shared
+    expect(detectNameScript('Дарья')).toBe('unknown')   // ь/я are shared
     expect(detectNameScript('Алексеевна')).toBe('unknown')
   })
 })

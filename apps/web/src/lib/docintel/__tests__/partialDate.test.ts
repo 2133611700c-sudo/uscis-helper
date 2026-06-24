@@ -9,7 +9,7 @@ const dt = (iso: string | null) => ({ field: 'dob', cyrillic: '', can_read: true
 
 describe('partial / invalid ISO date handling', () => {
   it('passes a full legal date', () => {
-    expect(toCanonicalValue(dt('1986-06-25') as never, 'date')).toBe('1986-06-25')
+    expect(toCanonicalValue(dt('1990-01-15') as never, 'date')).toBe('1990-01-15')
   })
   it('year-only "1939-00-00" → keeps the year, not a fake day/month', () => {
     expect(toCanonicalValue(dt('1939-00-00') as never, 'date')).toBe('1939')
@@ -21,6 +21,6 @@ describe('partial / invalid ISO date handling', () => {
   })
   it('non-ISO / missing → null', () => {
     expect(toCanonicalValue(dt(null) as never, 'date')).toBeNull()
-    expect(toCanonicalValue(dt('25.06.1986') as never, 'date')).toBeNull()
+    expect(toCanonicalValue(dt('15.01.1990') as never, 'date')).toBeNull()
   })
 })

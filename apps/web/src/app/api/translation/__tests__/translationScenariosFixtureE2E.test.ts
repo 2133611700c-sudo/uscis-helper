@@ -92,19 +92,19 @@ function runRealPipeline(fields: ExtractedDocField[], docTypeId: string) {
 // ── Scenario A — RU-printed document (Russian-script values) ─────────────────
 
 describe('Scenario A — RU-printed document, real transliteration end-to-end', () => {
-  it('A1) REAL Russian transliteration produces the correct Latin (Petrov/Sergey/Moskva)', () => {
+  it('A1) REAL Russian transliteration produces the correct Latin (Petrov/Andrey/Moskva)', () => {
     // The prompt's canonical RU examples — proven against the REAL BGN/PCGN engine.
     expect(transliterateRussian('Петров')).toBe('Petrov')
-    expect(transliterateRussian('Сергей')).toBe('Sergey')
+    expect(transliterateRussian('Андрей')).toBe('Andrey')
     expect(transliterateRussian('Москва')).toBe('Moskva')
   })
 
-  it('A2) HONEST: detectNameScript(Петров/Сергей/Москва) === "unknown" (no RU-distinctive letter)', () => {
+  it('A2) HONEST: detectNameScript(Петров/Андрей/Москва) === "unknown" (no RU-distinctive letter)', () => {
     // None of these words carry a RU-only letter (ы/э/ё/ъ) NOR a UA-only letter
     // (і/ї/є/ґ), so the source script is genuinely ambiguous. "unknown" is the
     // correct conservative verdict — we assert it honestly, we do NOT force "ru".
     expect(detectNameScript('Петров')).toBe('unknown')
-    expect(detectNameScript('Сергей')).toBe('unknown')
+    expect(detectNameScript('Андрей')).toBe('unknown')
     expect(detectNameScript('Москва')).toBe('unknown')
   })
 

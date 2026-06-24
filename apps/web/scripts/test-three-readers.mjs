@@ -23,9 +23,9 @@ delete process.env.ANTI_FABRICATION_GATE_ENABLED
 delete process.env.SELF_CONSISTENCY_VOTE_ENABLED
 
 const DOCS = {
-  passport: { img: 'internal_passport_kuropiatnyk.jpg', gt: 'internal_passport_kuropiatnyk.json', docType: 'ua_international_passport' },
-  military: { img: 'military_id_p1_kuropiatnyk.jpg', gt: 'military_id_p1_kuropiatnyk.json', docType: 'ua_military_id' },
-  birth: { img: 'birth_cert_handwritten_kuropiatnyk.jpg', gt: 'birth_cert_handwritten_kuropiatnyk.json', docType: 'ua_birth_certificate' },
+  passport: { img: 'internal_passport_01.jpg', gt: 'internal_passport_01.json', docType: 'ua_international_passport' },
+  military: { img: 'military_id_p1_01.jpg', gt: 'military_id_p1_01.json', docType: 'ua_military_id' },
+  birth: { img: 'birth_cert_handwritten_01.jpg', gt: 'birth_cert_handwritten_01.json', docType: 'ua_birth_certificate' },
 }
 const which = process.env.DOC || 'passport'
 const cfg = DOCS[which]

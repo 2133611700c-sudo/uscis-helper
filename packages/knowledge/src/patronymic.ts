@@ -164,8 +164,8 @@ export function reconcilePatronymic(
  * RUSSIAN patronymic (отчество) engine.
  *
  * WHY: Soviet-era / Russian-context documents (e.g. a 1986 Soviet birth
- * certificate) carry the parents' names in RUSSIAN (Сергей Леонидович,
- * Наталия Степановна). The Ukrainian engine above cannot reconcile these,
+ * certificate) carry the parents' names in RUSSIAN (a Russian given name +
+ * отчество, e.g. Иван Петрович). The Ukrainian engine above cannot reconcile these,
  * forcing every such doc to manual review. Russian отчество is, like the
  * Ukrainian one, DERIVED deterministically from the father's given name +
  * the child's sex — so the same validate / reconstruct discipline applies.

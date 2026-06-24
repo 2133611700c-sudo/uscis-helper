@@ -16,7 +16,7 @@ import { lookupAuthority } from '@uscis-helper/knowledge'
 
 // Typical military ID identity page OCR text (from real document test)
 const TYPICAL_IDENTITY_OCR = `ВІЙСЬКОВИЙ КВИТОК
-Серія Со № 845621
+Серія Со № 307258
 Іваненко
 Іван
 По батькові: Петрович
@@ -52,7 +52,7 @@ describe('extractMilitaryId', () => {
 
   it('extracts military_id_number in Серія+№ format', () => {
     const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
-    expect(result.military_id_number).toBe('Со 845621')
+    expect(result.military_id_number).toBe('Со 307258')
   })
 
   it('extracts military_id_series separately', () => {
@@ -165,7 +165,7 @@ describe('given_name guard: patronymic OCR confusion rejected in extraction', ()
   it('given_name "По батьковим Іванови" is not emitted by extraction (inline tail)', () => {
     // OCR where "ім'я" label and patronymic text land on the same line (inline confusion)
     const ocr = `ВІЙСЬКОВИЙ КВИТОК
-Серія Со № 845621
+Серія Со № 307258
 Іваненко
 ім'я По батьковим Іванови
 01 січня 1990 р.

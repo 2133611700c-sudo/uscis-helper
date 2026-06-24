@@ -30,20 +30,20 @@ const doc = (p: Partial<CanonicalDocumentResult> & { docType: string; fields: Ca
   ...p,
 })
 
-/** Passport: MRZ-validated DOB + Ukrainian printed name (raw Cyrillic Сергій). */
+/** Passport: MRZ-validated DOB + Ukrainian printed name (raw Cyrillic Андрій). */
 function passportDoc(): CanonicalDocumentResult {
   return doc({
     documentSessionId: 'd_pass',
     docType: 'ua_international_passport',
     createdAt: '2026-06-22T10:00:00Z',
     fields: [
-      field({ key: 'date_of_birth', normalizedValue: '1986-06-25', source: 'mrz', reviewRequired: false }),
-      field({ key: 'given_name', normalizedValue: 'SERHII', source: 'mrz', rawCyrillic: 'Сергій', reviewRequired: false }),
+      field({ key: 'date_of_birth', normalizedValue: '1990-01-15', source: 'mrz', reviewRequired: false }),
+      field({ key: 'given_name', normalizedValue: 'ANDRII', source: 'mrz', rawCyrillic: 'Андрій', reviewRequired: false }),
     ],
   })
 }
 
-/** Soviet birth-cert: DOB held-for-review (uncertain handwriting) + Russian name (Сергей). */
+/** Soviet birth-cert: DOB held-for-review (uncertain handwriting) + Russian name (Андрей). */
 function birthCertDoc(): CanonicalDocumentResult {
   return doc({
     documentSessionId: 'd_birth',
@@ -51,7 +51,7 @@ function birthCertDoc(): CanonicalDocumentResult {
     createdAt: '2026-06-22T10:05:00Z',
     fields: [
       field({ key: 'date_of_birth', normalizedValue: null, reviewRequired: true, reviewReasons: ['handwritten_uncertain'] }),
-      field({ key: 'given_name', normalizedValue: 'Sergey', rawCyrillic: 'Сергей', reviewRequired: false }),
+      field({ key: 'given_name', normalizedValue: 'Andrey', rawCyrillic: 'Андрей', reviewRequired: false }),
     ],
   })
 }
@@ -76,7 +76,7 @@ describe('reconcileSessionDocuments', () => {
     const { perDoc, changes } = reconcileSessionDocuments([passportDoc(), birthCertDoc()], true)
     const birth = perDoc.find((d) => d.docType === 'ua_birth_certificate')!
     const dob = birth.fields.find((f) => f.key === 'date_of_birth')!
-    expect(dob.suggestedValue).toBe('1986-06-25')
+    expect(dob.suggestedValue).toBe('1990-01-15')
     expect(dob.knowledgeProvenance).toBe('cross_doc_reconciled')
     expect(dob.reviewRequired).toBe(true) // L6: still a one-click confirm, not auto-applied
     expect(changes.some((c) => c.fieldKey === 'date_of_birth' && c.fromDocType === 'ua_international_passport')).toBe(true)
@@ -86,8 +86,8 @@ describe('reconcileSessionDocuments', () => {
     const { perDoc } = reconcileSessionDocuments([passportDoc(), birthCertDoc()], true)
     const birth = perDoc.find((d) => d.docType === 'ua_birth_certificate')!
     const given = birth.fields.find((f) => f.key === 'given_name')!
-    expect(given.suggestedValue).toBeUndefined() // Сергей stays Сергей; never harmonized to Сергій
-    expect(given.normalizedValue).toBe('Sergey')
+    expect(given.suggestedValue).toBeUndefined() // Андрей stays Андрей; never harmonized to Андрій
+    expect(given.normalizedValue).toBe('Andrey')
   })
 
   it('flag OFF ⇒ zero changes, byte-identical pass-through', () => {
@@ -108,7 +108,7 @@ describe('suggestionsForDoc', () => {
     const reconciled = reconcileSessionDocuments([passportDoc(), birthCertDoc()], true)
     const forBirth = suggestionsForDoc(reconciled, 'ua_birth_certificate')
     expect(forBirth).toEqual([
-      { field_key: 'date_of_birth', suggested_value: '1986-06-25', from_doc_type: 'ua_international_passport' },
+      { field_key: 'date_of_birth', suggested_value: '1990-01-15', from_doc_type: 'ua_international_passport' },
     ])
     // the passport itself (the anchor) received nothing.
     expect(suggestionsForDoc(reconciled, 'ua_international_passport')).toEqual([])
@@ -129,7 +129,7 @@ describe('strongSiblingValues (free-first source map)', () => {
   it('returns the STRONGEST confidently-read raw cyrillic per reconcilable field', () => {
     // passport DOB is MRZ-validated (strongest); a held birth-cert DOB must NOT win.
     const out = strongSiblingValues([passportDoc(), birthCertDoc()])
-    expect(out.date_of_birth).toBe('1986-06-25') // from the passport MRZ field (mrz_validated)
+    expect(out.date_of_birth).toBe('1990-01-15') // from the passport MRZ field (mrz_validated)
     // the held birth-cert dob (review/empty) contributes nothing.
   })
   it('ignores held/uncertain fields (never borrows an unverified value)', () => {

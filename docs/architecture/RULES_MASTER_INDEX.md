@@ -16,7 +16,7 @@ Maintenance: when you add a rule, add its row here. The `oneBrainGuard`/`oneDict
 
 | Component | Engine | ROLE (one job) | Rule count | Lives in | Responsible for | NOT allowed |
 |---|---|---|---|---|---|---|
-| **Reader** | Gemini 3.1-pro | read Cyrillic exactly, don't interpret | 5 universal + 13 per-doc | `geminiVisionProvider.buildPrompt` + `docReadingRules.ts` | every field's raw read (all 4 products) | transliterate; guess; decide release |
+| **Reader** | `gemini-3.1-pro-preview` (primary, acceptance-only; GA `gemini-2.5-pro` = PRINTED-docs availability fallback, force-reviewed/never-acceptance — see `MODEL_INVENTORY.md`, ADR-018) | read Cyrillic exactly, don't interpret | 5 universal + 13 per-doc | `geminiVisionProvider.buildPrompt` + `docReadingRules.ts` + `docintel/modelMatrix.ts` | every field's raw read (all 4 products) | transliterate; guess; decide release; report a fallback read as acceptance |
 | **Brain (TPS US-docs)** | DeepSeek-chat V3 | structure/classify text only | 28 (documentBrain) + 3 (dualOcrCrossref) + 6 (field-mapper) | `lib/tps/ai/*.ts`, `lib/ocr/field-mapper.ts` | US-Latin doc structuring | identity/date/number authority; touch locked tokens (L3) |
 | **Prose Translator** | DeepSeek-chat V3 | translate open prose only | safe-by-design + guard | `lib/translation/prose/translateProse.ts` | free-text translation (parked, ADR-024) | see/alter identity (masked away) |
 | **Normalizer / Codex** | deterministic code | transliterate + validate from closed UA data | 12 modules | `packages/knowledge/src/*` | the ONLY knowledge source (L2) | — (no AI) |
@@ -78,6 +78,7 @@ Maintenance: when you add a rule, add its row here. The `oneBrainGuard`/`oneDict
 ## 5. THE LAW LAYER (above this index)
 - **CONSTITUTION** (`docs/architecture/CONSTITUTION.md`) — the 10 laws L1–L10.
 - **ROLES** (`RECOGNITION_ORG_CHART.md`) — each engine as an "employee" with one job.
+- **MODEL LAW** (`docs/architecture/MODEL_INVENTORY.md` ← mirrors `apps/web/src/lib/docintel/modelMatrix.ts`; law = **ADR-018**) — which model reads, which is acceptance-valid (`gemini-3.1-pro-preview` only), which are force-reviewed availability fallbacks, which are DISQUALIFIED on handwriting.
 - **PERMISSIONS** (`docs/adr/ADR-AGENT-PERMISSIONS.md`).
 - **Key ADRs**: 017 (one brain), 018 (model matrix), 005 (transliteration), 004 (historical
   authority), 015 (PDF), 007 (signatures), 024 (prose translator). Full list: `docs/adr/`.
