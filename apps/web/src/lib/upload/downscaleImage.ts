@@ -20,8 +20,13 @@
  */
 
 const DEFAULT_THRESHOLD_BYTES = 3_800_000 // headroom under the ~4.5 MB edge cap
-const DEFAULT_MAX_EDGE = 2400
-const DEFAULT_QUALITY = 0.82
+// ADR-026: handwritten Cyrillic reads correctly only at near-native resolution. The client used to
+// pre-shrink to 2400px — BELOW the server's 3072 OCR cap (image-preprocess) — so it discarded pixels the
+// server would have kept, degrading handwriting before any read. Match the server cap (3072) so resolution
+// is lost once, server-side, where the native-res region reader (tileRegionRead) can still recover.
+// Quality trimmed to 0.80 so a 3072px document JPEG stays comfortably under the ~4.5MB body cap.
+const DEFAULT_MAX_EDGE = 3072
+const DEFAULT_QUALITY = 0.80
 
 export interface DownscaleOptions {
   thresholdBytes?: number
