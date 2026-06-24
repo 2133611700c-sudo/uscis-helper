@@ -1,5 +1,12 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-24 | HTR zero-shot POC — open Cyrillic models on the real cert (key-free baseline)
+**Done:** Built the key-free HTR baseline the owner asked for. Local CPU venv (gitignored `qa-private/htr-venv`, torch 2.8/transformers 4.57, NO keys); ran 3 Apache/MIT Cyrillic HTR models zero-shot on verified line-crops of the real birth cert. **2/3 (raxtemur Apache, cyrillic-trocr MIT) read the child GIVEN name** the LLM APIs fabricate; **none read the cursive SURNAME** zero-shot (CER>1; apostrophe + stamp over ink). Wrote `docs/research/HTR_ZEROSHOT_POC.md` (PII-free); crops/reads/venv gitignored. Confirms `CYRILLIC_HTR_LANDSCAPE.md`: off-the-shelf zero-shot is NOT autonomous for the critical field.
+**EXACT NEXT TASK (owner decision — no money/keys, costs labeling effort):**
+1. If owner approves the fine-tune path: label **~30–50 pages** of this doc family in eScriptorium (FICTIONAL/sanitized GT per PII policy; real PII stays in qa-private) → fine-tune Kraken/PyLaia (CTC) or TrOCR → measure surname CER lift (target ~8–12% = proofreading-assist). Training is hours/1-GPU; cost is labeling (1–2 weeks).
+2. Until that number exists: production unchanged — handwritten certs = human review; printed = LLM APIs. Do NOT ship HTR as autonomous on surnames.
+
+
 ## 2026-06-23 | NO REAL PII — fictionalized every committed identity value + hash guard (autonomous; all suites green)
 **Done (branch `translation/ru-and-model-matrix-fixes`):**
 - Replaced the owner's real document identity with ONE consistent FICTIONAL family across ALL committed code/tests/golden-vectors/scripts/docs (+ 2 memory files), so tests prove the recognition RULES, not a memorized identity. Each fictional value was chosen to hit the same rule feature and VERIFIED by running the codex functions (not hand-guessed): Солов'як/Соловьяк→Soloviak/Solovyak, Андрій/Андрей→Andrii/Andrey, Тимофеевич→Timofeyevich, Богданович, Петровна, смт Лісове, II-БК № 530174, MX481390, НК 307258, DOB 1990-01-15 / MRZ 9001158.

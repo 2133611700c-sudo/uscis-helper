@@ -1,4 +1,6 @@
-# STATUS (2026-06-23 — PII fictionalized + model inventory corrected + pipeline over-constraint audit started)
+# STATUS (2026-06-24 — HTR zero-shot POC done; PII fictionalized + model inventory corrected + pipeline over-constraint audit)
+
+<!-- HTR ZERO-SHOT POC (2026-06-24): key-free open Cyrillic HTR baseline on the real birth cert (gitignored qa-private/htr-venv, torch/transformers, NO API keys). raxtemur/trocr-base-ru (Apache) + cyrillic-trocr (MIT) READ the child GIVEN name the LLM APIs fabricate; NONE read the cursive SURNAME zero-shot (CER>1; apostrophe + stamp over ink); Kansallisarkisto (Apache) missed both. => off-the-shelf zero-shot NOT autonomous for the critical field; lever = fine-tune ~30-50 labeled pages (CER ~8-12%), labeling cost not money/keys. Production unchanged: handwritten=human review, printed=LLM APIs. Report docs/research/HTR_ZEROSHOT_POC.md (PII-free); landscape docs/research/CYRILLIC_HTR_LANDSCAPE.md. OWNER DECISION pending on the fine-tune path. -->
 
 <!-- SESSION 2026-06-23 (branch translation/ru-and-model-matrix-fixes, NOT yet pushed):
 (1) PII: every committed identity value → ONE fictional family; hash guard scripts/check-no-pii.mjs (0/1781) + vitest piiGuard.test + gitignored generator. Removed real-PII qa-private/reports/gt-pipeline-bench.dry-reads.json from git index (was tracked via git mv; kept on disk).
