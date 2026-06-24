@@ -172,6 +172,11 @@ export async function preprocessImage(
       // until BOTH dims are >= the box, i.e. the short side hits targetShort).
       resizePipeline = resizePipeline
         .resize(targetShort, targetShort, { fit: 'outside', withoutEnlargement: false })
+        // Contrast-stretch faded ink (ADR-026: proven lift on low-contrast handwritten Cyrillic —
+        // raxtemur read the surname at CER 0.000 only after a contrast-stretch). normalise() is a
+        // near no-op on already-full-range scans, so it targets exactly the faded/low-DPI case.
+        // We DELIBERATELY do not binarize (Otsu/Sauvola destroy faded strokes).
+        .normalise()
         // Mild sharpen to recover edge contrast lost to interpolation (handwriting).
         .sharpen({ sigma: 1 })
       resized = true
