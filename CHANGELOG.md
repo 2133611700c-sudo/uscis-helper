@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-24 | Critical audit of rules + dictionaries (3 agents) + propagated ADR-026 to the law layer
+- Owner: "проверь все правила и инструкции как всё обновлено и работает и словари — максимально критично." 3 parallel critical agents + objective test runs. Report: docs/audit/2026-06-24-RULES_DICTIONARIES_CRITICAL_AUDIT.md.
+- **Dictionaries GREEN** (knowledge 550/0 + golden 79/0, tsc 0) with 3 gaps: RU/UA routing hardwires KMU-55 in normalizeName + the app router is flag-OFF (RU_TRANSLIT_ENABLED) [P1, matches memory]; "no Cyrillic leak" overstated (182/190 non-standard codepoints) [P2]; goldenDictionaryVectors + registry/mrz not in `knowledge test` [P2].
+- **Rules had DRIFTED** — ADR-026 was not propagated past MODEL_INVENTORY. FIXED (P0): CLAUDE.md MODELS + CONSTITUTION L1 + RULES_MASTER_INDEX (Reader split into printed/LLM vs handwriting/raxtemur, ADR-026 added) + modelMatrix.ts (corrected stale "gemini-3.1-pro-preview best reader incl handwriting" → unstable preview, not the HW reader). Suite 4660 green, tsc 0, PII clean.
+- **Guards green, one weak:** `docReadingRulesSync` only probes first/last 24 chars of each rule → mid-rule drift passes undetected [P1 open]. modelMatrix/registryHandwritten/oneDictionaryGuard/sharedRules/PII strong; no unconditional skips.
+- Open (tracked in the audit): harden the sync guard; RU/UA routing product decision; wire goldenDictionaryVectors into CI; build or banner the ADR-026 handwriting reader in modelMatrix.
+
 ## 2026-06-24 | HONEST critical re-test (owner: "не верь ранним тестам, делай заново честно") — corrected 2 over-claims
 - Re-tested cert + PASSPORT with FIXED boxes (no CER-tuning), blank-control, 3 runs/reader, 4 readers. Passport (printed) = control. PII → paid tiers + gitignored; PII-free report.
 - **CORRECTION 1 — raxtemur CANNOT abstain:** on a BLANK crop raxtemur emitted 9 Cyrillic chars (fabrication); all 3 LLMs returned empty. So "blank-control clean" was overstated — only raxtemur's EXACT/run-consistent reads are trustworthy; non-exact reads must be gated + human-reviewed.

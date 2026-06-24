@@ -9,7 +9,12 @@ where it is ENFORCED in code so it is checkable, not aspirational.
 
 ## The Laws
 
-**L1 — ONE READER.** `gemini-3.1-pro-preview` is THE document reader (D1) for ALL
+**L1 — ONE READER.** _(CORRECTED by ADR-026, 2026-06-24: this "one LLM reads ALL doc classes" law
+is amended toward ROUTE-BY-FIELD-RENDERING — handwritten field → key-free `raxtemur` HTR on a native-res
+crop (best on cursive, cannot abstain → gate + human review); printed field → an LLM. The handwriting reader
+is verified but NOT yet wired to production (sidecar hosting decision pending); until then the LLM matrix
+below ships as the reader. Also: `gemini-3.1-pro-preview` is run-to-run UNSTABLE — see HTR_STABLE_BENCHMARK.)_
+`gemini-3.1-pro-preview` is THE document reader (D1) for ALL
 products, ALL doc classes, and is the ONLY acceptance-valid reader. BUT it is a PREVIEW
 endpoint with NO capacity guarantee → unreliable availability (sporadic 503 UNAVAILABLE /
 429 RESOURCE_EXHAUSTED); it is retried with exponential backoff before any fallback.

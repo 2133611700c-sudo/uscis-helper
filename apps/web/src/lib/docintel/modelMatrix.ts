@@ -83,8 +83,8 @@ export const MODEL_PROFILES: Readonly<Record<string, ModelProfile>> = Object.fre
   'gemini-3.1-pro-preview': {
     id: 'gemini-3.1-pro-preview', tier: 'preview', role: 'primary',
     availability: 'UNRELIABLE — preview, no capacity guarantee; sporadic 503 UNAVAILABLE + 429 RESOURCE_EXHAUSTED. Retried with exponential backoff before fallback.',
-    readsWell: 'Historically the best reader of the owner\'s Cyrillic incl. handwriting (vision-arbiter proof); the ONLY acceptance-valid model.',
-    failsOn: 'Availability (503/429). Even it is NOT proven error-free on handwriting → handwriting still human-reviewed.',
+    readsWell: 'PRINTED Cyrillic as an LLM acceptance reader. (CORRECTED 2026-06-24, ADR-026 + HTR_STABLE_BENCHMARK: it is NOT the best handwriting reader — key-free raxtemur beats it 3/6 vs 2/6 on cursive — and as a PREVIEW it WOBBLES across runs; dropped from HTR benchmarks. Handwriting reader = raxtemur, route by field rendering.)',
+    failsOn: 'Availability (503/429) + run-to-run INSTABILITY (preview). NOT a handwriting reader (route handwriting to raxtemur per ADR-026); handwriting still human-reviewed regardless of model.',
     function: 'D1 PRIMARY READER — the only model whose read is a product/acceptance result.',
     tested: '2026-06-23',
   },
