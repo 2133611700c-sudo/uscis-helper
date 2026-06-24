@@ -4,10 +4,13 @@
 `DISQUALIFIED`, `HANDWRITTEN_DOC_FAMILIES`). This doc mirrors it for humans. The law is ADR-018.
 **Last full live bench against the real documents: 2026-06-23.**
 
-> **THE ONE-LINE TRUTH about handwriting:** **No model reads handwritten certificates without errors.**
-> Printed docs (passport, military ID, EAD, I-94) read correctly. Handwritten birth/marriage/death
-> certificates are ALWAYS human-reviewed — the GA flash/pro-2.5 models FABRICATE a different, fake
-> person on them; the historically-best reader (preview) is currently unavailable.
+> **THE ONE-LINE TRUTH about handwriting (CORRECTED 2026-06-24 — see ADR-026):** the GA **LLM APIs**
+> (Gemini/GPT) fabricate on handwriting. BUT a specialized **key-free local HTR — `raxtemur/trocr-base-ru`
+> (Apache) — reads the handwritten UA/RU child name EXACTLY** (surname+given CER 0.000, patronymic matches; N=1
+> verified) when the field is cropped at **native resolution** + contrast-stretched (never downscaled, never
+> binarized). The earlier "no model reads handwriting" was an artifact of OUR low-res crop + a scorer
+> channel bug, not a model limit. Human review stays the safety gate, but HTR is now a viable autonomous-
+> CANDIDATE reader pending broader-N validation. Printed docs (passport, military ID, EAD, I-94) read correctly.
 
 ## The matrix (live-tested 2026-06-23)
 
