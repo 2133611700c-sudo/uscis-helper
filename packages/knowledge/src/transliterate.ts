@@ -56,6 +56,67 @@ const KMU_RU_FALLBACK: Record<string, string> = {
   "\u0401": "Ye", "\u0451": "ye", "\u042D": "E", "\u044D": "e", "\u042B": "Y", "\u044B": "y",
 };
 
+/**
+ * EXTENDED-CYRILLIC CATCH-ALL \u2014 best-effort romanization for every U+0400\u2013U+04FF letter the
+ * modern KMU-55/Russian tables don't cover (Serbian \u0402/\u0409/\u040A, Belarusian \u040E, archaic/OCS \u0462/\u0472/\u0474,
+ * extended-minority \u0492/\u049A/\u04BA/\u04D8/\u04E8\u2026). Used by sanitizeCyrillicLeak so romanized output can NEVER
+ * contain raw Cyrillic. Values follow common scholarly/UN transliteration (ASCII-folded for
+ * USCIS Latin fields). None of these affect modern UA/RU document romanization.
+ */
+const EXTENDED_CYRILLIC: Record<string, string> = {
+  '\u0404': 'Ye', '\u0454': 'ie', '\u0406': 'I', '\u0456': 'i', '\u0407': 'Yi', '\u0457': 'i', '\u0490': 'G', '\u0491': 'g',
+  '\u0402': 'Dj', '\u0452': 'dj', '\u0403': 'G', '\u0453': 'g', '\u0405': 'Dz', '\u0455': 'dz',
+  '\u0408': 'J', '\u0458': 'j', '\u0409': 'Lj', '\u0459': 'lj', '\u040A': 'Nj', '\u045A': 'nj',
+  '\u040B': 'C', '\u045B': 'c', '\u040C': 'K', '\u045C': 'k', '\u040F': 'Dz', '\u045F': 'dz',
+  '\u0400': 'E', '\u0450': 'e', '\u040D': 'I', '\u045D': 'i',
+  '\u040E': 'U', '\u045E': 'u',
+  '\u0460': 'O', '\u0461': 'o', '\u0462': 'Ie', '\u0463': 'ie', '\u0464': 'Ie', '\u0465': 'ie',
+  '\u0466': 'E', '\u0467': 'e', '\u0468': 'Ie', '\u0469': 'ie', '\u046A': 'U', '\u046B': 'u',
+  '\u046C': 'Iu', '\u046D': 'iu', '\u046E': 'Ks', '\u046F': 'ks', '\u0470': 'Ps', '\u0471': 'ps',
+  '\u0472': 'F', '\u0473': 'f', '\u0474': 'Y', '\u0475': 'y', '\u0476': 'Y', '\u0477': 'y',
+  '\u0478': 'U', '\u0479': 'u', '\u047A': 'O', '\u047B': 'o', '\u047C': 'O', '\u047D': 'o',
+  '\u047E': 'Ot', '\u047F': 'ot', '\u0480': 'C', '\u0481': 'c',
+  '\u048A': 'I', '\u048B': 'i', '\u048C': 'E', '\u048D': 'e', '\u048E': 'R', '\u048F': 'r',
+  '\u0492': 'Gh', '\u0493': 'gh', '\u0494': 'G', '\u0495': 'g', '\u0496': 'Zh', '\u0497': 'zh',
+  '\u0498': 'Z', '\u0499': 'z', '\u049A': 'Q', '\u049B': 'q', '\u049C': 'K', '\u049D': 'k',
+  '\u049E': 'Q', '\u049F': 'q', '\u04A0': 'K', '\u04A1': 'k', '\u04A2': 'Ng', '\u04A3': 'ng',
+  '\u04A4': 'Ng', '\u04A5': 'ng', '\u04A6': 'P', '\u04A7': 'p', '\u04A8': 'O', '\u04A9': 'o',
+  '\u04AA': 'S', '\u04AB': 's', '\u04AC': 'T', '\u04AD': 't', '\u04AE': 'U', '\u04AF': 'u',
+  '\u04B0': 'U', '\u04B1': 'u', '\u04B2': 'H', '\u04B3': 'h', '\u04B4': 'Ts', '\u04B5': 'ts',
+  '\u04B6': 'Ch', '\u04B7': 'ch', '\u04B8': 'Ch', '\u04B9': 'ch', '\u04BA': 'H', '\u04BB': 'h',
+  '\u04BC': 'Ch', '\u04BD': 'ch', '\u04BE': 'Ch', '\u04BF': 'ch',
+  '\u04C0': 'I',
+  '\u04C1': 'Zh', '\u04C2': 'zh', '\u04C3': 'Q', '\u04C4': 'q', '\u04C5': 'L', '\u04C6': 'l',
+  '\u04C7': 'Ng', '\u04C8': 'ng', '\u04C9': 'N', '\u04CA': 'n', '\u04CB': 'Ch', '\u04CC': 'ch',
+  '\u04CD': 'M', '\u04CE': 'm', '\u04CF': 'i',
+  '\u04D0': 'A', '\u04D1': 'a', '\u04D2': 'A', '\u04D3': 'a', '\u04D4': 'Ae', '\u04D5': 'ae',
+  '\u04D6': 'E', '\u04D7': 'e', '\u04D8': 'A', '\u04D9': 'a', '\u04DA': 'A', '\u04DB': 'a',
+  '\u04DC': 'Zh', '\u04DD': 'zh', '\u04DE': 'Z', '\u04DF': 'z', '\u04E0': 'Dz', '\u04E1': 'dz',
+  '\u04E2': 'I', '\u04E3': 'i', '\u04E4': 'I', '\u04E5': 'i', '\u04E6': 'O', '\u04E7': 'o',
+  '\u04E8': 'O', '\u04E9': 'o', '\u04EA': 'O', '\u04EB': 'o', '\u04EC': 'E', '\u04ED': 'e',
+  '\u04EE': 'U', '\u04EF': 'u', '\u04F0': 'U', '\u04F1': 'u', '\u04F2': 'U', '\u04F3': 'u',
+  '\u04F4': 'Ch', '\u04F5': 'ch', '\u04F6': 'G', '\u04F7': 'g', '\u04F8': 'Y', '\u04F9': 'y',
+  '\u04FA': 'Gh', '\u04FB': 'gh', '\u04FC': 'H', '\u04FD': 'h', '\u04FE': 'H', '\u04FF': 'h',
+};
+
+const ANY_CYRILLIC = /[\u0400-\u04FF]/;
+
+/**
+ * FINAL no-Cyrillic-leak guard. Apply to romanized output to GUARANTEE zero raw Cyrillic
+ * (U+0400\u2013U+04FF). Mapped extended/archaic letters \u2192 best-effort Latin; anything unmappable
+ * (combining marks U+0483\u2013U+0489, numero U+0482, exotic) \u2192 stripped. No-op (returns input
+ * unchanged) when the string has no Cyrillic, so it never alters normal KMU-55/Russian output.
+ */
+export function sanitizeCyrillicLeak(s: string): string {
+  if (!s || !ANY_CYRILLIC.test(s)) return s;
+  let out = '';
+  for (const ch of s) {
+    if (!ANY_CYRILLIC.test(ch)) { out += ch; continue; }
+    out += EXTENDED_CYRILLIC[ch] ?? ''; // map, else strip \u2014 NEVER leak
+  }
+  return out;
+}
+
 function isWordStart(text: string, i: number): boolean {
   if (i === 0) return true;
   // Look back past apostrophes/soft signs to find the real previous character
