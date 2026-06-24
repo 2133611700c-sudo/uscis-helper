@@ -1,5 +1,16 @@
 # HTR zero-shot POC — off-the-shelf Cyrillic models on our real handwritten cert (2026-06-24)
 
+> ## ⛔ CORRECTION (2026-06-24, root-cause pass) — the earlier "no key-free model reads the surname" verdict was WRONG
+> It was an artifact of OUR pipeline, not a model limit. A 4-agent root-cause pass + independent reproduction proved:
+> **`raxtemur/trocr-base-ru` (Apache, key-free, local) reads the handwritten child name EXACTLY** when fed a crop taken
+> at **native resolution** from the 4128×3096 source + a light **contrast-stretch** (NO downscale, NO binarization):
+> surname **CER 0.000 (exact, 10/10)**, given **CER 0.000 (exact)**, patronymic **CER 0.333 (matches)**; blank-control
+> clean (not fabrication); reproduced on independent runs. The earlier 0/8 was caused by three OWN bugs: (1) the crop was
+> **downscaled to height 128** → signal destroyed; (2) the scorer folded Latin output against Cyrillic GT (`\w` keeps a–z)
+> → correct reads counted as misses; (3) loose crops carried printed-label + stamp contamination. See the **ROOT-CAUSE
+> REVERSAL** section below + `docs/adr/ADR-026-htr-native-res-pipeline.md`. Target scope: **modern Ukrainian & Russian
+> Cyrillic** (not historical/Church-Slavonic).
+
 **Goal (owner: "скопировать всё что можем легально"):** before spending any labeling effort, measure
 what legally-clean (Apache/MIT) open Cyrillic HTR models read on our real Soviet birth certificate
 **zero-shot, no API keys, no training**. This is the honest baseline for "off-the-shelf, ours".
@@ -73,6 +84,48 @@ production_allowed: false` until a per-corpus rights audit. Transkribus/Google/A
 NOT run: they egress the real document off-box → one-time-with-consent benchmark only, never in the production
 loop on real PII.
 
+## ROOT-CAUSE REVERSAL (2026-06-24) — 4 parallel agents, then independent test
+Owner directive: "ищи корень, не поверхностно; все корни; потом тест; работай агентами." Four agents each
+root-caused one hypothesis (measurement, segmentation, image-restoration, data); the binding root was found,
+then reproduced independently.
+
+**The four roots (PII-free):**
+1. **Measurement was BROKEN (agent 1):** the bake-off `fold()` used `\w` (keeps a–z), so a model emitting the
+   **Latin transliteration** was scored against the **Cyrillic** GT → guaranteed false miss. The substring
+   `match` gate also under-counted partial reads. GT itself was validated as correct (surname = 10 Cyrillic
+   chars). The production eval `scripts/.../rescore-channels.mjs` is already channel-aware; the bug was POC-local.
+2. **Segmentation matters (agent 2):** rough band (label + stamp) CER 1.10 → tight word crop CER 0.30 (−73%).
+3. **IMAGE RESOLUTION was the binding root (agent 3):** the prior crops were **downscaled to height 128**.
+   Re-cropping the surname at **native resolution** from the 4128×3096 source + a light **contrast-stretch /
+   gamma** (NOT binarization — binarizing HURT: Otsu 0.30, Sauvola 0.90) drove `raxtemur/trocr-base-ru` to
+   **CER 0.000, exact 10/10**. Upscaling alone was neutral; the stamp (~5–6%) was secondary.
+4. **Data was NOT the binding constraint (agent 4 SUPERSEDED):** agent 4 concluded "need labeled data" but
+   reasoned only from the OLD low-res numbers and did not have agent 3's result — superseded the moment it
+   landed. Synthetic-font fine-tuning was a dead end (synthetic val CER 0.59→0.26 but real flat/worse, conf
+   0.33→0.15) — but moot, because the base model already reads the real hand once the crop is right.
+
+**Independent verification (`qa-private/htr-poc/verify_root.py`), raxtemur, native-res crop + 2/98 contrast-stretch:**
+
+| Field | best CER | match | channel | consistency | box on 4128×3096 |
+|---|---|---|---|---|---|
+| surname | **0.000** | ✅ exact | Cyrillic | 3/3 identical | (960,705,2250,905) |
+| given | **0.000** | ✅ exact | Cyrillic | — | (540,905,1010,1120) |
+| patronymic | 0.333 | ✅ (substring) | Cyrillic | — | (700,905,2050,1120) |
+
+- **Blank control:** a white image yields NO name → the reads are real recognition, not fabrication.
+- **Engine:** `raxtemur/trocr-base-ru` (Apache-2.0, Russian-handwriting TrOCR). `cyrillic-trocr` did NOT match
+  even restored — raxtemur is the reader for our **UA/RU** hand.
+
+**Corrected conclusion:** off-the-shelf, key-free, local HTR **DOES** read this modern UA/RU handwritten cert —
+the blocker was our own low-res crop + scorer bug, not model capability and not missing labeled data. No
+fine-tuning needed for this document. The production fix is a **pipeline rule** (native-res field crop +
+contrast-stretch, never downscale, never binarize, channel-aware scoring) — see ADR-026. Human review stays as
+the safety gate, but HTR is now a viable autonomous-candidate reader pending broader N validation.
+
+**Open follow-up (honest):** the LLM-API "fabrication" trap result may ALSO be partly a low-res-input artifact
+(the APIs got a downscaled full page). Worth re-testing Gemini/GPT on native-res field crops before treating
+their fabrication as intrinsic.
+
 ## Reproduce (PII-free numbers only)
-`qa-private/htr-venv/bin/python qa-private/htr-poc/{infer,bakeoff}.py` (crops + venv + polyscriptor + real
-reads are all gitignored under qa-private/).
+`qa-private/htr-venv/bin/python qa-private/htr-poc/{infer,bakeoff,verify_root}.py` (crops + venv + polyscriptor
++ real reads are all gitignored under qa-private/). The binding recipe: native-res crop + contrast-stretch + raxtemur.
