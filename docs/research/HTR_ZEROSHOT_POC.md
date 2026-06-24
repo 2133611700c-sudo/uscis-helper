@@ -42,5 +42,37 @@ what legally-clean (Apache/MIT) open Cyrillic HTR models read on our real Soviet
 3. Production stays unchanged until that number exists: handwritten certs = **human review** (CONSTITUTION +
    MODEL_INVENTORY handwriting policy). Printed docs keep the LLM APIs (already work).
 
+## Bake-off completion (2026-06-24, same day) — the 4th candidate + stamp-suppression
+Per the expert critique ("test the missing local candidate; surname may be an IMAGE problem, not a model
+problem"), two more PII-safe, key-free tests on the same crops:
+
+**Step A — PyLaia CRNN-CTC (the missing candidates), all local, Apache-2.0:**
+- `achimrabus/crnn-ctc-ukrainian` (verified Apache in card; raw PyLaia checkpoint, loaded via the MIT
+  `inference_pylaia_native.py` from achimrabus/polyscriptor): surname CER 0.90 / conf **0.33** (miss);
+  given CER 1.00 (miss — **worse** than the TrOCR models, which read the given name). NOT a zero-shot winner.
+- `achimrabus/crnn-ctc-church-slavonic`: CER 1.0–1.17 — useless on modern Ukrainian → **transfer-gap
+  confirmed empirically** (a Church-Slavonic model does not transfer to a modern UA civil cert).
+- **Useful positive:** PyLaia confidence on every wrong read is LOW (0.21–0.38) — calibrated in the right
+  direction, so the confidence score is usable as a **reviewer-assist flag** ("don't trust this read").
+
+**Step B — stamp suppression (test the image-hypothesis):** the blue registry stamp covers only **~5%** of
+the surname crop. Removing it (blue-channel mask → white; and HSV-value grayscale) moved `raxtemur` surname
+CER 1.10 → **0.70** (real but partial), `cyrillic-trocr` mixed. ⇒ the stamp hurts a little; the **dominant**
+blocker is the cursive + faded ink itself, not occlusion.
+
+**Decisive verdict (now across architectures, not one):** NO key-free model — TrOCR transformer, PyLaia
+CRNN-CTC, or the Ukrainian-specific model — reads our cursive **surname** zero-shot. This is the off-the-shelf
+ceiling, not a model-selection miss. The only remaining key-free lever for the surname is **fine-tuning on our
+own labeled corpus of modern Ukrainian/Soviet documents** (NOT someone else's medieval corpus) — exactly the
+expert conclusion, now empirical. Engine for that: PyLaia/Kraken (CTC) — it's the same family the only model
+that even got the alphabet right is built on; trainable, local, Apache/MIT.
+
+**License reality (per the legal-manifest discipline):** `card-license=apache-2.0` for the achimrabus weights
+covers the weights as declared, NOT the training-data provenance → `benchmark_allowed: true,
+production_allowed: false` until a per-corpus rights audit. Transkribus/Google/Azure comparison readers were
+NOT run: they egress the real document off-box → one-time-with-consent benchmark only, never in the production
+loop on real PII.
+
 ## Reproduce (PII-free numbers only)
-`qa-private/htr-venv/bin/python qa-private/htr-poc/infer.py` (crops + venv + real reads are gitignored).
+`qa-private/htr-venv/bin/python qa-private/htr-poc/{infer,bakeoff}.py` (crops + venv + polyscriptor + real
+reads are all gitignored under qa-private/).
