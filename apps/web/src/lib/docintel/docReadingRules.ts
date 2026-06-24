@@ -138,6 +138,9 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     rules: [
       'Handwritten identity page — read names letter by letter; the patronymic is often the ' +
         'hardest field (do NOT return a bare suffix like "ович").',
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
@@ -166,6 +169,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'The page is OFTEN PHOTOGRAPHED ROTATED 90°/180° — mentally rotate upright first.',
       'Series + number is "<2 Cyrillic letters> ######" (e.g. "НК 307258").',
       'Place of birth is "сел./смт <Name>, <oblast> обл."; marital status may be "неодружений".',
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
@@ -178,6 +182,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'Read BOTH spouses (surname/given/patronymic + each birth date + birth place), the ' +
         'marriage date, the act-record number, the registering RAGS/DRACS office, and the ' +
         'serial (e.g. "I-БК № 153243"). Note the surname each spouse takes after marriage.',
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
@@ -190,6 +195,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'Read both former spouses, the dissolution date, the act-record number, the registering ' +
         'office, and the serial (e.g. "I-БК № 18…"). Some copies are PII-redacted (greyed ' +
         'boxes) — leave redacted fields EMPTY, never guess under a redaction.',
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
@@ -207,6 +213,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'place_of_death is "м./смт/село <Name>, <oblast> область".',
       'Read the act-record number, the registering RAGS/DRACS office, and the serial ' +
         '(Roman + letters + digits, e.g. "I-АМ № 123456").',
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
@@ -214,10 +221,13 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     language: 'Ukrainian/Russian; vintage = handwritten (Свідоцтво про зміну імені).',
     dateGuidance: MONTH_WORD_RULE,
     rules: [
+      RUSSIAN_SCRIPT_RULE,
+      RUSSIAN_DOCUMENT_RULE,
       'There are TWO name sets — the PREVIOUS name and the NEW name. Read both fully and keep ' +
         'them in their own fields; never merge them (e.g. previous "Іванов Іван Іванович" → ' +
         'new "Петренко Іван Іванович").',
       'Read the act-record number, registering office, and serial.',
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
@@ -231,6 +241,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'Read the printed Cyrillic names; if an official Latin transliteration is printed, return ' +
         'it EXACTLY (controlling). The record number is a 9-digit number (e.g. "001234567").',
       'High-accuracy printed class — but still cross-check DOB/number against the TD1 MRZ.',
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
