@@ -50,6 +50,32 @@ assert(patronymic.normalized_value === 'Petrovych',
 assert(patronymic.field === 'patronymic',
   'Field is "patronymic" not "middle_name"');
 
+// ── RU SOURCE-SCRIPT ROUTING: a name with a distinctive RU letter (ё/ы/э/ъ) → Russian table ──
+// (verified outputs; KMU-55 would mis-Russify these). Safe: never touches UA/ambiguous names.
+const ctx_plain: NormalizationContext = { mode: 'uscis_normalized' };
+const ruCases: [string, string][] = [
+  ['Чёрный', 'Chernyy'],   // KMU-55 gives Chyernyi (wrong)
+  ['Мышкин', 'Myshkin'],   // KMU-55 gives Myshkyn (wrong)
+  ['Соловьёв', 'Solovyev'],
+  ['Рыжов', 'Ryzhov'],
+];
+for (const [cyr, exp] of ruCases) {
+  const r = normalizeName(cyr, 'surname', 'birth_cert', ctx_plain);
+  assert(r.normalized_value === exp, `RU surname ${cyr} → ${exp} (Russian table)`, `Got: ${r.normalized_value}`);
+  assert(r.rule_applied === 'ru_transliteration', `RU surname ${cyr} tagged ru_transliteration`, `Got: ${r.rule_applied}`);
+}
+// ── UA REGRESSION: Ukrainian + ambiguous names stay KMU-55, byte-identical ──
+const uaCases: [string, string][] = [
+  ['Іваненко', 'Ivanenko'],
+  ['Андрій', 'Andrii'],
+  ['Сергійович', 'Serhiiovych'],
+];
+for (const [cyr, exp] of uaCases) {
+  const r = normalizeName(cyr, 'surname', 'birth_cert', ctx_plain);
+  assert(r.normalized_value === exp, `UA name ${cyr} stays KMU-55 → ${exp}`, `Got: ${r.normalized_value}`);
+  assert(r.rule_applied === 'kmu55_transliteration', `UA name ${cyr} stays kmu55_transliteration`, `Got: ${r.rule_applied}`);
+}
+
 // Validate blocklist catches "Middle Name" if somehow injected
 const fakeMiddle = { ...patronymic, normalized_value: 'Middle Name: Petrovych' };
 const validated = validateOutput(fakeMiddle);

@@ -5,7 +5,20 @@
  * Every field gets: raw_value, normalized_value, source, rule, confidence, review_required
  */
 
-import { transliterateKMU55, convertDateToUSCIS } from './transliterate';
+import { transliterateKMU55, transliterateRussian, detectNameScript, convertDateToUSCIS } from './transliterate';
+
+/**
+ * Romanize a NAME field by its OWN source script. A name whose own token carries a distinctive
+ * Russian letter (ы/э/ё/ъ, no Ukrainian і/ї/є/ґ) → Russian table; UA and ambiguous ('unknown')
+ * names → KMU-55. Same safety class as transliterationPolicy.romanizeBySourceScript: the script is
+ * VISUALLY confirmed, not guessed, so it never Russifies a UA-or-ambiguous name (the regression the
+ * gated RU_TRANSLIT_ENABLED path guards). Fixes Чёрный→Chernyy / Мышкин→Myshkin (KMU mis-Russified).
+ * NOTE: ambiguous tokens (Сергеевич/Андрей, no distinctive letter) stay KMU — fixing those needs the
+ * doc-level signal (gated romanizeNameForDocScript, owner decision).
+ */
+function romanizeNameBySourceScript(raw: string): string {
+  return detectNameScript(raw) === 'ru' ? transliterateRussian(raw) : transliterateKMU55(raw);
+}
 import type { OutputMode } from './transliterate';
 import {
   AUTHORITIES, AUTHORITY_PATTERNS, GEO_CORRECTIONS,
@@ -59,7 +72,7 @@ export function normalizeName(
 
   // Controlling spelling wins
   if (controlling) {
-    const kmu55 = transliterateKMU55(raw);
+    const kmu55 = romanizeNameBySourceScript(raw);
     const conflict = kmu55.toLowerCase() !== controlling.latin_value.toLowerCase();
     return {
       field: fieldType,
@@ -76,14 +89,14 @@ export function normalizeName(
     };
   }
 
-  // KMU-55 transliteration
-  const normalized = transliterateKMU55(raw);
+  // Script-aware transliteration (KMU-55 for UA/ambiguous, Russian table for clearly-RU names)
+  const normalized = romanizeNameBySourceScript(raw);
   return {
     field: fieldType,
     raw_value: raw,
     normalized_value: normalized,
     source_document: source_doc,
-    rule_applied: 'kmu55_transliteration',
+    rule_applied: detectNameScript(raw) === 'ru' ? 'ru_transliteration' : 'kmu55_transliteration',
     confidence: raw.length > 0 ? 0.90 : 0,
     review_required: false,
   };
