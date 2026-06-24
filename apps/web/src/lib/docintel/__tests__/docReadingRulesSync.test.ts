@@ -25,6 +25,7 @@ const STOPWORDS = new Set([
   'from','with','that','this','not','no','do','does','if','so','than','then','each','any','all',
   'your','you','may','can','still','etc','vs','into','over','only','but','per','via',
 ])
+const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, ' ').trim()
 // Content-bearing tokens: letter/digit runs, length ≥ 3, minus stopwords. Deduped.
 function contentTokens(s: string): string[] {
   const raw = s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []
@@ -48,11 +49,18 @@ describe('Gemini↔DeepSeek rule sync (one source → both models)', () => {
       const deepseek = textRulesForDeepSeek(cls)
       expect(gemini).not.toBe('') // Gemini gets a block
       expect(deepseek).not.toBe('') // DeepSeek gets a block
+      const normBlock = norm(deepseek)
       for (const rule of DOC_READING_RULES[cls].rules) {
         if (isImageOnlyRule(rule)) continue // pixel-only rules legitimately drop for the text model
-        // TOKEN/CLAUSE COVERAGE: every content token of the rule (after the legitimate image-only
-        // clause strip) must survive into the DeepSeek block. Catches MID-rule deletion/rewording
-        // that the old first24/last24 probe was blind to.
+        // PRIMARY (verbatim presence): the WHOLE rule, after the legitimate image-only clause strip,
+        // must appear in the DeepSeek block. This is the strong guarantee — it catches whole-rule
+        // deletion EVEN when every token of the rule also appears in other rules (the cross-rule
+        // token-overlap hole that pure token coverage cannot see). Verified 0/49 rules are non-verbatim.
+        expect(
+          normBlock.includes(norm(stripImageOnlyClauses(rule))),
+          `rule body missing from DeepSeek for ${cls}: "${rule.slice(0, 60)}…"`,
+        ).toBe(true)
+        // SECONDARY (token diagnostics): pinpoints WHICH tokens were lost on a partial mid-rule edit.
         const missing = tokensMissingFromBlock(rule, deepseek)
         expect(
           missing,
@@ -82,6 +90,17 @@ describe('SELF-TEST: token-coverage guard catches mid-rule loss (do not weaken)'
     const probe = fullRule.replace(/\s+/g, ' ').trim().slice(0, 24)
     const oldProbePasses = ('- ' + guttedMiddle).includes(probe) || ('- ' + guttedMiddle).includes(fullRule.slice(-24))
     expect(oldProbePasses).toBe(true) // old guard fooled → justifies the hardening
+  })
+  // The cross-rule-token-overlap hole the final audit found: a whole rule whose EVERY token also
+  // appears in a sibling rule. Token coverage alone would NOT catch its deletion; the verbatim
+  // presence check MUST.
+  it('verbatim check catches whole-rule deletion even when all tokens are shared elsewhere', () => {
+    const ruleA = 'settlement oblast region name marker alpha'
+    // ruleB carries every content token of A but in a different order → A's verbatim phrase is NOT present.
+    const ruleB = 'alpha marker name region oblast settlement listed separately'
+    const blockWithoutA = norm('- ' + ruleB) // A deleted; all A tokens still present via B
+    expect(tokensMissingFromBlock(ruleA, blockWithoutA)).toEqual([]) // token coverage is FOOLED
+    expect(blockWithoutA.includes(norm(ruleA))).toBe(false)          // verbatim check CATCHES it
   })
 })
 

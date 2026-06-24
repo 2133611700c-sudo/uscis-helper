@@ -45,7 +45,28 @@ green. 24 skipped tests are all conditional infra/env gates (no unconditional sk
   newly-added rules. Recommended: replace the 24-char probe with token/clause-coverage + reconcile the legitimate
   drop set (`isImageOnlyRule`) against the actual clause-stripper output.
 
-## Prioritized open fixes (not done this commit)
+## FINAL — all open fixes engineered + critically re-verified (2026-06-24, later same day)
+Worked every point as an engineer (gather → implement → critically test → an independent verification agent
+re-checked each, NOT trusting the committer). All objective gates green: **knowledge 18/18 files, web 4664
+pass / 24 skip / 0 fail, tsc 0 (both packages), PII guard clean 0/1808.**
+1. **Sync guard (P1) — DONE + strengthened.** Token/clause coverage (e6352ae) PLUS a verbatim whole-rule
+   presence check — the final audit found token-coverage alone could be fooled when EVERY token of a rule also
+   appears in a sibling rule (cross-rule overlap, e.g. ua_death_certificate[3]); the verbatim check closes that,
+   with a self-test proving it bites. Verified 0/49 rules are non-verbatim (no false-fail).
+2. **RU/UA routing (P1) — DONE.** `normalizeName` now routes clearly-RU names (distinctive ы/э/ё/ъ) → Russian
+   table, UA/ambiguous → KMU-55 (4491a91). Verified Чёрный→Chernyy, Мышкин→Myshkin; UA byte-identical. Ambiguous
+   tokens (Сергеевич) still KMU by design (needs gated doc-level path). Prod `RU_TRANSLIT_ENABLED` flip = owner.
+3. **No-Cyrillic-leak (P2) — DONE.** `sanitizeCyrillicLeak` catch-all; full-block sweep test (530 assertions):
+   raw leaks 182/190 → sanitized 0, modern output byte-identical.
+4. **CI wiring (P2) — DONE.** goldenDictionaryVectors + the new sweep added to `knowledge test`.
+5. **Doc/law propagation (P2) — DONE.** ADR-026 route-by-rendering propagated to CLAUDE.md, CONSTITUTION L1,
+   RULES_MASTER_INDEX, modelMatrix.ts (banner + profile), and MODEL_INVENTORY matrix row 22 (the final audit
+   caught row 22 still contradicting the corrected code — now fixed).
+**Residual (genuinely needs owner/build, not text):** flip RU_TRANSLIT_ENABLED (product decision); build the
+ADR-026 raxtemur handwriting reader + routing (sidecar hosting decision). Cyrillic Extended-B (U+A640+) is out
+of the sanitizer's U+0400–U+04FF scope (latent, not on UA/RU document inputs).
+
+## Prioritized open fixes (superseded by FINAL above)
 1. (P1) Harden `docReadingRulesSync` to token/clause coverage.
 2. (P1, product decision) RU/UA routing: evaluate flipping `RU_TRANSLIT_ENABLED` with real-OCR validation, or move
    the router into the codex so `normalizeName` stops hardwiring KMU-55.
