@@ -111,9 +111,9 @@ describe('extractTranslationFields', () => {
   })
 
   it('picks up passport_number from cb_rejected when not in merged', () => {
-    const rejected = [rf('passport_number', 'FU 262473')]
+    const rejected = [rf('passport_number', 'MX 481390')]
     const result = extractTranslationFields(baseMerged, rejected, {})
-    expect(result.passport_number).toBe('FU 262473')
+    expect(result.passport_number).toBe('MX 481390')
     expect(result._sources.passport_number).toBe('cb_rejected')
   })
 

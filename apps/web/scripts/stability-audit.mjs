@@ -62,14 +62,15 @@ function classify(expected, got, kind, field = '') {
 }
 const PERSON = (p = '') => ({ [`${p}family_name`]: { latin: 'family_name_latin', cyr: 'family_name_cyrillic' }, [`${p}given_name`]: { latin: 'given_name_latin', cyr: 'given_name_cyrillic' }, [`${p}patronymic`]: { latin: 'patronymic_latin', cyr: 'patronymic_cyrillic' } })
 const FIELD_MAP_BY_DOC = {
+  ua_international_passport: { family_name: { latin: 'family_name_latin', cyr: 'family_name_cyrillic' }, given_name: { latin: 'given_name_latin', cyr: 'given_name_cyrillic' }, dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_internal_passport_booklet: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_military_id: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_birth_certificate: { ...PERSON('child_'), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
 }
 let DOCS = [
-  { img: 'internal_passport_kuropiatnyk.jpg', gt: 'internal_passport_kuropiatnyk.json', docTypeId: 'ua_internal_passport_booklet', key: 'passport' },
-  { img: 'military_id_p1_kuropiatnyk.jpg', gt: 'military_id_p1_kuropiatnyk.json', docTypeId: 'ua_military_id', key: 'military' },
-  { img: 'birth_cert_handwritten_kuropiatnyk.jpg', gt: 'birth_cert_handwritten_kuropiatnyk.json', docTypeId: 'ua_birth_certificate', key: 'birth' },
+  { img: 'internal_passport_01.jpg', gt: 'internal_passport_01.json', docTypeId: 'ua_international_passport', key: 'passport' }, // VERIFIED international (foreign-travel, MRZ), not the internal booklet
+  { img: 'military_id_p1_01.jpg', gt: 'military_id_p1_01.json', docTypeId: 'ua_military_id', key: 'military' },
+  { img: 'birth_cert_handwritten_01.jpg', gt: 'birth_cert_handwritten_01.json', docTypeId: 'ua_birth_certificate', key: 'birth' },
 ]
 if (process.env.STAB_DOC) DOCS = DOCS.filter((d) => d.key === process.env.STAB_DOC)
 const sha6 = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 6)

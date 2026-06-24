@@ -102,7 +102,7 @@ For each key return an object:
   "reason": "<short>" }
 
 Rules:
-- LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Тарас→(wrong)Сергей, Тарасович→(wrong)Сергеевич, Степанівна→(wrong)Степановна, Наталія→(wrong)Наталья, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake. (Exception: a genuinely Soviet-era document may itself be written in Russian — then transcribe the Russian exactly as written; do NOT Ukrainianize it either. Transcribe the script that is ON the page.)
+- LANGUAGE — transcribe the Cyrillic EXACTLY as written. These are UKRAINIAN-issued documents: keep Ukrainian letters (і, ї, є, ґ, апостроф) and Ukrainian name/place forms — do NOT convert them to Russian. Errors to AVOID: Тарас→(wrong)Андрей, Тарасович→(wrong)Тимофеевич, Степанівна→(wrong)Петровна, Наталія→(wrong)Елена, Кіровоградської→(wrong)Кировоградской, Вінницької→(wrong)Винницкой, ЗАГС/РАЦС forms must stay as written. Russifying a Ukrainian name or place is a transcription mistake. (Exception: a genuinely Soviet-era document may itself be written in Russian — then transcribe the Russian exactly as written; do NOT Ukrainianize it either. Transcribe the script that is ON the page.)
 - ORIENTATION — the photo is very often ROTATED (90° sideways, 180° upside-down, or 270°), e.g. a passport page shot in portrait. You MUST mentally rotate the page until the text is upright, then read every field. NEVER return can_read=false just because the text is sideways or upside-down — rotation is normal and you are expected to handle it. Reading rotated text is required; orientation must not change what you read.
 - Read the FULL word, every letter. Never return only a suffix (never "ович" alone).
 - Handwritten Ukrainian "Т" and "П" look similar, as do "и/н", "ш/щ", "л/м"; pick the letter that forms a REAL Ukrainian name/place.${dateRule}${handwritingRule}
@@ -184,7 +184,20 @@ async function callGemini(
             generationConfig: {
               temperature: 0,
               response_mime_type: 'application/json',
-              maxOutputTokens: 8192,
+              // MEDIA RESOLUTION: the API media_resolution default (MEDIUM) compresses the image into a
+              // coarser feature map; a HIGHER value allocates more visual tokens and is CONFIRMED by
+              // Google's docs to help small/dense text — relevant to handwriting. (HYPOTHESIS, not proven:
+              // that the gemini.google.com app uses HIGH internally — do NOT state as fact.) This setting
+              // is APPLIED but its real lift on our docs is PENDING an A/B measurement (medium vs high vs
+              // ultra). Override via GEMINI_MEDIA_RESOLUTION. [ai.google.dev/gemini-api/docs/media-resolution]
+              media_resolution: process.env.GEMINI_MEDIA_RESOLUTION || 'MEDIA_RESOLUTION_HIGH',
+              // Thinking models (gemini-3.1-pro-preview, gemini-2.5-pro) spend OUTPUT tokens on
+              // internal reasoning BEFORE emitting JSON — at 8192 a dense full-page read hit
+              // finishReason=MAX_TOKENS and returned EMPTY (a silent "0 fields" that looked like a
+              // misread). maxOutputTokens is a CAP, billed on actual tokens, so raising it is free
+              // when unused and prevents truncation. Verified 2026-06-23: 2.5-pro went 0→100% on
+              // the passport once the budget was raised. Override with GEMINI_MAX_OUTPUT_TOKENS.
+              maxOutputTokens: Math.max(8192, Number(process.env.GEMINI_MAX_OUTPUT_TOKENS) || 16384),
               ...(responseSchema ? { response_schema: responseSchema } : {}),
             },
           }),
@@ -236,58 +249,87 @@ export class GeminiVisionProvider implements VisionProvider {
     let lastStatus: number | undefined
     let lastTimeout = false
 
+    // Exponential backoff + jitter for transient failures on the PREVIEW primary.
+    // gemini-3.1-pro-preview is a PREVIEW endpoint with NO capacity guarantee, so it
+    // sporadically returns 503 UNAVAILABLE / deadlines that NO console setting, key, or
+    // permission can fix — Google's documented remedy is retry-with-backoff. ADR-018-safe:
+    // this only lets the PRIMARY survive a transient blip so we get a real primary read
+    // instead of immediately falling to a force-reviewed flash; the fallback chain and the
+    // force-review gate (documentFieldReader) are unchanged. Knobs (env, sane defaults):
+    //   GEMINI_PRIMARY_RETRY_MAX (3) · GEMINI_RETRY_BASE_MS (700) · GEMINI_RETRY_CAP_MS (8000)
+    // The old code did `setTimeout(1500); continue` with attemptsPerModel=1 — but `continue`
+    // exited the `a < 1` loop, so the primary was NEVER actually retried (it slept 1.5s then
+    // fell to flash). That is the root cause of the "every run → flash/BLOCKED" instability.
+    const RETRY_BASE_MS = Math.max(100, Number(process.env.GEMINI_RETRY_BASE_MS) || 700)
+    const RETRY_CAP_MS = Math.max(RETRY_BASE_MS, Number(process.env.GEMINI_RETRY_CAP_MS) || 8000)
+    const PRIMARY_RETRY_MAX = Math.max(0, Number(process.env.GEMINI_PRIMARY_RETRY_MAX ?? 3))
+    const PRIMARY = primaryGeminiModel()
+    const backoffMs = (n: number) => Math.min(RETRY_BASE_MS * 2 ** n, RETRY_CAP_MS) + Math.floor(Math.random() * RETRY_BASE_MS)
+
     for (const model of modelFallback(spec.id)) {
-      for (let a = 0; a < attempts; a++) {
+      // The PREVIEW primary gets a real transient-retry budget; availability fallbacks keep the
+      // caller's small attempt count (they exist only for degraded service, never for quality).
+      const maxTransient = model === PRIMARY ? PRIMARY_RETRY_MAX : Math.max(0, attempts - 1)
+      let transient = 0
+      for (;;) {
         const remaining = deadline - Date.now()
         if (remaining < 3000) { lastErr = 'deadline'; break } // not enough time for another attempt
+        let isTransient = false
         try {
           const { ok, status, json } = await callGemini(model, apiKey, imageB64, mimeType, prompt, remaining, responseSchema)
           if (ok) {
             const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-            let parsed: Record<string, any>
+            let parsed: Record<string, any> | null
             try {
               parsed = JSON.parse(text)
             } catch {
               lastErr = 'invalid JSON from model'
-              continue
+              parsed = null
+              isTransient = true // a malformed emission can clear on a re-read
             }
-            const fields: VisionFieldRead[] = []
-            for (const key of Object.keys(parsed)) {
-              if (!allowed.has(key)) continue
-              const v = parsed[key]
-              if (!v || typeof v !== 'object') continue
-              fields.push({
-                field: key,
-                cyrillic: typeof v.cyrillic === 'string' ? v.cyrillic.trim() : '',
-                iso_date: typeof v.iso_date === 'string' ? v.iso_date.trim() : null,
-                can_read: v.can_read === true,
-                confidence: typeof v.confidence === 'number' ? v.confidence : 0,
-                reason: typeof v.reason === 'string' ? v.reason : '',
-              })
+            if (parsed) {
+              const fields: VisionFieldRead[] = []
+              for (const key of Object.keys(parsed)) {
+                if (!allowed.has(key)) continue
+                const v = parsed[key]
+                if (!v || typeof v !== 'object') continue
+                fields.push({
+                  field: key,
+                  cyrillic: typeof v.cyrillic === 'string' ? v.cyrillic.trim() : '',
+                  iso_date: typeof v.iso_date === 'string' ? v.iso_date.trim() : null,
+                  can_read: v.can_read === true,
+                  confidence: typeof v.confidence === 'number' ? v.confidence : 0,
+                  reason: typeof v.reason === 'string' ? v.reason : '',
+                })
+              }
+              return { ok: true, fields, model, ms: Date.now() - t0 }
             }
-            return { ok: true, fields, model, ms: Date.now() - t0 }
+          } else {
+            // Surface the Google RPC status (e.g. RESOURCE_EXHAUSTED for a monthly
+            // spend cap / hard quota) so the downstream classifier can tell a HARD
+            // quota apart from a transient rate limit. Without this, a spend-cap 429
+            // is mislabeled OCR_RATE_LIMITED ("try again in a few seconds") and the
+            // stack wastes retries on a block that will never clear by waiting.
+            const rpcStatus = typeof json?.error?.status === 'string' ? json.error.status : ''
+            lastErr = rpcStatus ? `HTTP ${status} ${rpcStatus}` : `HTTP ${status}`
+            lastStatus = status
+            lastTimeout = false
+            // RESOURCE_EXHAUSTED / hard quota will NOT recover on retry — straight to next model.
+            const isHardQuota = /RESOURCE_EXHAUSTED|QUOTA/.test(rpcStatus)
+            isTransient = !isHardQuota && (status === 429 || (status >= 500 && status <= 599))
+            if (!isTransient) break // hard-quota 429 / 4xx / other → next model
           }
-          // Surface the Google RPC status (e.g. RESOURCE_EXHAUSTED for a monthly
-          // spend cap / hard quota) so the downstream classifier can tell a HARD
-          // quota apart from a transient rate limit. Without this, a spend-cap 429
-          // is mislabeled OCR_RATE_LIMITED ("try again in a few seconds") and the
-          // stack wastes retries on a block that will never clear by waiting.
-          const rpcStatus = typeof json?.error?.status === 'string' ? json.error.status : ''
-          lastErr = rpcStatus ? `HTTP ${status} ${rpcStatus}` : `HTTP ${status}`
-          lastStatus = status
-          lastTimeout = false
-          // RESOURCE_EXHAUSTED / hard quota will NOT recover on retry — don't burn the
-          // inner attempts; move straight to the next model (also capped) and out.
-          const isHardQuota = /RESOURCE_EXHAUSTED|QUOTA/.test(rpcStatus)
-          if ((status === 503 || status === 429) && !isHardQuota) {
-            await new Promise((r) => setTimeout(r, 1500))
-            continue
-          }
-          break // other error (incl. hard-quota 429) → next model
         } catch (e: any) {
           if (e?.name === 'AbortError') { lastErr = 'timeout'; lastTimeout = true; lastStatus = undefined }
           else { lastErr = e?.message ?? 'fetch error'; lastTimeout = false; lastStatus = undefined }
+          isTransient = true // a network blip / abort is worth a bounded retry
         }
+        if (!isTransient) break
+        if (transient >= maxTransient) break // this model's transient budget spent → next model
+        const wait = backoffMs(transient)
+        if ((deadline - Date.now()) < wait + 3000) break // no time to wait + retry within budget
+        transient++
+        await new Promise((r) => setTimeout(r, wait))
       }
     }
     return { ok: false, fields: [], model: null, ms: Date.now() - t0, error: lastErr, errorStatus: lastStatus, errorTimeout: lastTimeout }

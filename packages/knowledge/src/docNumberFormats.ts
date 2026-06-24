@@ -14,14 +14,14 @@
  *     (uppercased, separators regularized). It never invents missing characters.
  *
  * SOURCES (format facts):
- *   UA international passport (ID-3 booklet/card): 2 letters + 6 digits, e.g. FU262473
+ *   UA international passport (ID-3 booklet/card): 2 letters + 6 digits, e.g. MX481390
  *     — dmsu.gov.ua passport spec; ICAO Doc 9303 document-number field.
  *   UA ID card (паспорт громадянина України, ID-1) record number: 9 digits
  *     — dmsu.gov.ua "номер запису в Єдиному державному демографічному реєстрі".
  *   UA certificate series (свідоцтва ДРАЦС/РАЦС): Roman numerals + "-" + 2
- *     Cyrillic letters + " №" + digits, e.g. "III-АМ № 428069" — КМУ №1025 acts.
+ *     Cyrillic letters + " №" + digits, e.g. "II-БК № 530174" — КМУ №1025 acts.
  *   UA military ticket (військовий квиток): 2 Cyrillic letters + 6 digits,
- *     e.g. "СО 845621" — Міноборони військовий квиток blank.
+ *     e.g. "НК 307258" — Міноборони військовий квиток blank.
  *   US A-Number (Alien Registration Number): "A" + up to 9 digits — USCIS;
  *     modern filings use exactly 9 digits (zero-padded).
  *   US EAD (Form I-766) card number: 3 letters + 10 digits, e.g. SRC2290012345
@@ -70,14 +70,14 @@ const CYR = '[А-ЩЬЮЯҐЄІЇ]';
 const LAT_OR_CYR = '[A-ZА-ЩЬЮЯҐЄІЇ]';
 
 export const DOC_NUMBER_FORMATS: Record<DocNumberKind, RegExp> = {
-  // 2 letters (Latin or Cyrillic look-alike) + 6 digits, e.g. FU262473
+  // 2 letters (Latin or Cyrillic look-alike) + 6 digits, e.g. MX481390
   ua_intl_passport: new RegExp(`^${LAT_OR_CYR}{2}\\d{6}$`),
   // 9 digits
   ua_id_card_record: /^\d{9}$/,
-  // Roman numerals + "-" + 2 Cyrillic letters + " №" + digits, e.g. "III-АМ № 428069"
+  // Roman numerals + "-" + 2 Cyrillic letters + " №" + digits, e.g. "II-БК № 530174"
   // Roman set restricted to the characters that actually appear on series blanks.
   ua_certificate_series: new RegExp(`^[IVXLCDM]+-${CYR}{2}\\s*№\\s*\\d+$`),
-  // 2 Cyrillic letters + 6 digits, e.g. "СО 845621"
+  // 2 Cyrillic letters + 6 digits, e.g. "НК 307258"
   ua_military_ticket: new RegExp(`^${CYR}{2}\\s*\\d{6}$`),
   // "A" + exactly 9 digits (modern zero-padded A-Number)
   us_a_number: /^A\d{9}$/,
@@ -97,14 +97,14 @@ function preNormalize(kind: DocNumberKind, raw: string): string {
   const upper = raw.trim().toUpperCase();
   switch (kind) {
     case 'ua_certificate_series':
-      // canonical " №" spacing: "III-АМ № 428069"
+      // canonical " №" spacing: "II-БК № 530174"
       return upper
         .replace(/\s+/g, ' ')
         .replace(/\s*-\s*/g, '-')
         .replace(/\s*№\s*/g, ' № ')
         .trim();
     case 'ua_military_ticket':
-      // canonical single space between the 2 letters and 6 digits: "СО 845621"
+      // canonical single space between the 2 letters and 6 digits: "НК 307258"
       return upper
         .replace(/\s+/g, '')
         .replace(/^([А-ЩЬЮЯҐЄІЇ]{2})(\d{6})$/u, '$1 $2');
@@ -140,7 +140,7 @@ function semanticReason(kind: DocNumberKind, normalized: string): string | null 
  * any non-match → { valid:false } so the caller routes to review. Never throws.
  *
  * @example
- *   validateDocNumber('ua_intl_passport', 'FU262473')      // { valid:true, normalized:'FU262473' }
+ *   validateDocNumber('ua_intl_passport', 'MX481390')      // { valid:true, normalized:'MX481390' }
  *   validateDocNumber('us_a_number', 'A123456789')         // { valid:true, normalized:'A123456789' }
  *   validateDocNumber('us_ead_card', 'SRC2290012345')      // { valid:true, normalized:'SRC2290012345' }
  *   validateDocNumber('us_a_number', 'A12345')             // { valid:false, reason:'format_mismatch' }

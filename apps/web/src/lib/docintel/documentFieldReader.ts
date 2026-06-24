@@ -216,11 +216,11 @@ export async function readDocument(
 
   // DOC-SCRIPT NAME ROUTING (DOC_SCRIPT_ROUTING_ENABLED, default OFF). This is the
   // ONE place that sees ALL fields, so it can compute a doc-level Russian signal an
-  // individual name read cannot (a bare «Сергей» has no distinctive letter). When the
+  // individual name read cannot (a bare «Андрей» has no distinctive letter). When the
   // aggregate document is clearly Russian (a -еевич patronymic, Russian month/place
   // word forms — detectDocumentScript over EVERY field's raw Cyrillic), an
-  // AMBIGUOUS-script NAME is re-romanized via the Russian table (Сергей→Sergey,
-  // Сергеевич→Sergeyevich) instead of the KMU-55 default (Serhei/Serheevych). A name
+  // AMBIGUOUS-script NAME is re-romanized via the Russian table (Андрей→Andrey,
+  // Тимофеевич→Timofeyevich) instead of the KMU-55 default (Andrei/...). A name
   // with a distinctive UA letter is never force-Russified. Conservative: detector
   // returns 'ru' only on a one-sided signal, else the value is untouched. Flag OFF ⇒
   // no doc-level signal is computed and every `value` is byte-identical to before.

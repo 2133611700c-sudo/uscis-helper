@@ -58,9 +58,13 @@ Entity: SK Logistics LLC, Los Angeles, CA.
 - Oblast genitive ("Вінницької") → nominative DMS-verified ("Vinnytsia Oblast")
 
 ## MODELS — ADR-018 IS LAW (enforced in code: `apps/web/src/lib/docintel/modelMatrix.ts`)
-- **Primary reader = `gemini-3.1-pro-preview` ONLY.** It is the single model whose read is a valid product/acceptance result.
-- **Flash (`gemini-3.5-flash`, `gemini-2.5-flash`) = AVAILABILITY fallback, NEVER quality, NEVER primary.** A fallback read of a non-Latin doc is force-reviewed (`fallback_model_used`). `gemini-2.5-flash` is DISQUALIFIED for certificate docs (read a different person). `gemini-2.0-flash` is DEPRECATED (404) — never use.
+- **Primary reader = `gemini-3.1-pro-preview` ONLY.** It is the single model whose read is a valid product/acceptance result. It is a PREVIEW with NO capacity guarantee → sporadic 503 UNAVAILABLE / 429 RESOURCE_EXHAUSTED; it is retried with exponential backoff before any fallback.
+- **Fallbacks = AVAILABILITY only, force-reviewed, NEVER acceptance, NEVER primary**, in PREFERENCE order: `gemini-2.5-pro` (GA, accurate on PRINTED docs), `gemini-3.5-flash`, `gemini-2.5-flash`. A fallback read of a non-Latin doc is force-reviewed (`fallback_model_used`).
+- **`gemini-2.5-pro` AND `gemini-2.5-flash` are DISQUALIFIED for certificate docs** — they FABRICATE a different, fake person on handwriting. `gemini-2.0-flash` is DEPRECATED (404) — never use.
+- **NO model — not even the primary — reads HANDWRITTEN certificates without error → those are ALWAYS human-reviewed**, regardless of model (birth/marriage/divorce/death/name-change/certificate).
+- **Token budget:** thinking models hit `MAX_TOKENS` at 8192 → EMPTY reads; the provider raised the cap to `max(8192, GEMINI_MAX_OUTPUT_TOKENS || 16384)`.
 - **NEVER report a fallback read as a quality/acceptance number.** Acceptance is measured ONLY on the primary reader; if it is unavailable (e.g. quota 429), the result is `BLOCKED_…`, NOT a flash number. (This rule exists because an agent once proposed measuring acceptance on flash.) Enforced by `modelMatrix.acceptanceModelVerdict()` + the runner gate + `modelMatrix.test.ts` (CI).
+- Full live matrix: `docs/architecture/MODEL_INVENTORY.md`.
 
 ## TECH STACK
 - Next.js 14 (App Router), TypeScript strict, Tailwind CSS

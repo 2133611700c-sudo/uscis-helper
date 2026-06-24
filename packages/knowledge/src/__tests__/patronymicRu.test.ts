@@ -1,8 +1,8 @@
 /**
  * Russian patronymic (отчество) engine tests. Context: Soviet/Russian-era
- * documents (e.g. a 1986 Soviet birth certificate) carry parents' names in
- * Russian (Сергей Леонидович, Наталия Степановна). отчество is derived
- * deterministically from the father's given name + the child's sex.
+ * documents carry parents' names in Russian; отчество is derived
+ * deterministically from the father's given name + the child's sex. All names
+ * below are generic Russian dictionary entries, not anyone's document data.
  */
 import {
   isValidPatronymicRu,
@@ -24,8 +24,8 @@ check('Иван → F Ивановна',         generatePatronymicRu('Иван'
 check('Александр → M',             generatePatronymicRu('Александр', 'M'), 'Александрович')
 check('Александр → F',             generatePatronymicRu('Александр', 'F'), 'Александровна')
 check('Владимир → M',              generatePatronymicRu('Владимир', 'M'), 'Владимирович')
-check('Степан → F Степановна',     generatePatronymicRu('Степан', 'F'), 'Степановна') // 1986 cert mother
-check('Леонид → M Леонидович',     generatePatronymicRu('Леонид', 'M'), 'Леонидович') // 1986 cert father
+check('Степан → F Степановна',     generatePatronymicRu('Степан', 'F'), 'Степановна')
+check('Леонид → M Леонидович',     generatePatronymicRu('Леонид', 'M'), 'Леонидович')
 
 console.log('generatePatronymicRu — -й ending → -евич / -евна')
 check('Андрей → M Андреевич',      generatePatronymicRu('Андрей', 'M'), 'Андреевич')

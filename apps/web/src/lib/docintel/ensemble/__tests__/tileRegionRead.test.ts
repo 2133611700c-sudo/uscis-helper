@@ -38,29 +38,29 @@ describe('isEmptyField', () => {
   })
   it('not empty when it has a value or cyrillic', () => {
     expect(isEmptyField(field({ field: 'f', value: 'X' }))).toBe(false)
-    expect(isEmptyField(field({ field: 'f', raw_cyrillic: 'Куропятник' }))).toBe(false)
+    expect(isEmptyField(field({ field: 'f', raw_cyrillic: 'Соловьяк' }))).toBe(false)
   })
 })
 
 describe('recoverEmptyFieldsByTiles', () => {
   it('fills an empty field from the tile that reads it; held for review, raw cyrillic only', async () => {
     const base = [
-      field({ field: 'given_name', value: 'Sergey', raw_cyrillic: 'Сергей' }),
+      field({ field: 'given_name', value: 'Andrey', raw_cyrillic: 'Андрей' }),
       field({ field: 'father_full_name', value: '', raw_cyrillic: '' }),
     ]
     const cropRead: CropFieldReadFn = async (_crop, fields) => {
       // the targeted reader recovers the father name (only when asked for it).
       const r: Record<string, string> = {}
-      if (fields.some((f) => f.key === 'father_full_name')) r.father_full_name = 'Куропятник Сергей Леонидович'
+      if (fields.some((f) => f.key === 'father_full_name')) r.father_full_name = 'Соловьяк Андрей Богданович'
       return r
     }
     const { fields, diag } = await recoverEmptyFieldsByTiles({ baseFields: base, originalBuffer: await img(), fieldLabels: LABELS, cropRead })
     const father = fields.find((f) => f.field === 'father_full_name')!
-    expect(father.raw_cyrillic).toBe('Куропятник Сергей Леонидович')
+    expect(father.raw_cyrillic).toBe('Соловьяк Андрей Богданович')
     expect(father.value).toBeNull() // downstream C3/transliteration own the canonical value
     expect(father.review_required).toBe(true)
     expect(father.review_reasons).toContain('hires_tile_recovered')
-    expect(fields.find((f) => f.field === 'given_name')!.value).toBe('Sergey') // untouched
+    expect(fields.find((f) => f.field === 'given_name')!.value).toBe('Andrey') // untouched
     expect(diag).toMatchObject({ emptyBefore: 1, recovered: 1 })
     expect(diag.tiles).toBeGreaterThanOrEqual(1)
   })
@@ -75,7 +75,7 @@ describe('recoverEmptyFieldsByTiles', () => {
   })
 
   it('no empties ⇒ no tiles, no crop reads', async () => {
-    const base = [field({ field: 'given_name', value: 'Sergey', raw_cyrillic: 'Сергей' })]
+    const base = [field({ field: 'given_name', value: 'Andrey', raw_cyrillic: 'Андрей' })]
     let calls = 0
     const cropRead: CropFieldReadFn = async () => { calls++; return {} }
     const { diag } = await recoverEmptyFieldsByTiles({ baseFields: base, originalBuffer: await img(), fieldLabels: LABELS, cropRead })
@@ -112,19 +112,19 @@ describe('foldMajority (K-sample stabilization)', () => {
   const F = [{ key: 'father' }, { key: 'mother' }]
   it('value in 2 of 3 ⇒ wins (exact raw string preserved)', () => {
     const out = foldMajority(
-      [{ father: 'Куропятник Сергей' }, { father: 'Куропятник Сергей' }, { father: 'Иванов' }],
+      [{ father: 'Соловьяк Андрей' }, { father: 'Соловьяк Андрей' }, { father: 'Иванов' }],
       F, 3,
     )
-    expect(out.father).toBe('Куропятник Сергей')
+    expect(out.father).toBe('Соловьяк Андрей')
   })
   it('3 all different (1/1/1) ⇒ omitted (no majority)', () => {
     const out = foldMajority([{ father: 'A' }, { father: 'B' }, { father: 'C' }], F, 3)
     expect(out.father).toBeUndefined()
   })
-  it('normalize-then-vote: "Сергей" vs "сергей " count as one ⇒ majority', () => {
-    const out = foldMajority([{ father: 'Сергей' }, { father: 'сергей ' }, { father: 'X' }], F, 3)
-    // winner token has 2 votes; emits the most frequent raw (tie → first seen = 'Сергей')
-    expect(normalizeLower(out.father)).toBe('сергей')
+  it('normalize-then-vote: "Андрей" vs "андрей " count as one ⇒ majority', () => {
+    const out = foldMajority([{ father: 'Андрей' }, { father: 'андрей ' }, { father: 'X' }], F, 3)
+    // winner token has 2 votes; emits the most frequent raw (tie → first seen = 'Андрей')
+    expect(normalizeLower(out.father)).toBe('андрей')
   })
   it('5 runs, 2-2-1 ⇒ no strict majority ⇒ omitted', () => {
     const out = foldMajority([{ father: 'A' }, { father: 'A' }, { father: 'B' }, { father: 'B' }, { father: 'C' }], F, 5)
@@ -215,8 +215,8 @@ describe('recoverEmptyFieldsByTiles with a voting crop reader (integration)', ()
     ]
     // father: 2/3 agree → filled. mother: 1/1/1 → omitted (stays empty).
     const samples = [
-      { father_full_name: 'Куропятник Сергей', mother_full_name: 'A' },
-      { father_full_name: 'Куропятник Сергей', mother_full_name: 'B' },
+      { father_full_name: 'Соловьяк Андрей', mother_full_name: 'A' },
+      { father_full_name: 'Соловьяк Андрей', mother_full_name: 'B' },
       { father_full_name: 'Z', mother_full_name: 'C' },
     ]
     let i = 0
@@ -229,7 +229,7 @@ describe('recoverEmptyFieldsByTiles with a voting crop reader (integration)', ()
       cropRead: votingCropRead,
     })
     const father = fields.find((f) => f.field === 'father_full_name')!
-    expect(father.raw_cyrillic).toBe('Куропятник Сергей')
+    expect(father.raw_cyrillic).toBe('Соловьяк Андрей')
     expect(father.review_reasons).toContain('hires_tile_recovered')
     expect(isEmptyField(fields.find((f) => f.field === 'mother_full_name')!)).toBe(true) // no majority ⇒ held
     expect(diag.recovered).toBe(1)

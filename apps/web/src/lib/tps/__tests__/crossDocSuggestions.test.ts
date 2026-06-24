@@ -19,11 +19,11 @@ describe('extractCrossDocSuggestions', () => {
     const resp = {
       ok: true,
       cross_doc_suggestions: [
-        { field_key: 'date_of_birth', suggested_value: '1986-06-25', from_doc_type: 'ua_international_passport' },
+        { field_key: 'date_of_birth', suggested_value: '1990-01-15', from_doc_type: 'ua_international_passport' },
       ],
     }
     expect(extractCrossDocSuggestions(resp)).toEqual([
-      { field_key: 'date_of_birth', suggested_value: '1986-06-25', from_doc_type: 'ua_international_passport' },
+      { field_key: 'date_of_birth', suggested_value: '1990-01-15', from_doc_type: 'ua_international_passport' },
     ])
   })
 
@@ -47,7 +47,7 @@ describe('extractCrossDocSuggestions', () => {
   it('filters entries missing any key or with non-string / empty values', () => {
     const resp = {
       cross_doc_suggestions: [
-        { field_key: 'dob', suggested_value: '1986-06-25', from_doc_type: 'passport' }, // good
+        { field_key: 'dob', suggested_value: '1990-01-15', from_doc_type: 'passport' }, // good
         { field_key: 'sex', suggested_value: '' , from_doc_type: 'passport' }, // empty value
         { field_key: '', suggested_value: 'X', from_doc_type: 'passport' }, // empty key
         { field_key: 'x', suggested_value: 'Y' }, // missing from_doc_type
@@ -55,17 +55,17 @@ describe('extractCrossDocSuggestions', () => {
       ],
     }
     expect(extractCrossDocSuggestions(resp)).toEqual([
-      { field_key: 'dob', suggested_value: '1986-06-25', from_doc_type: 'passport' },
+      { field_key: 'dob', suggested_value: '1990-01-15', from_doc_type: 'passport' },
     ])
   })
 })
 
 describe('applyCrossDocSuggestion', () => {
-  const s = { field_key: 'date_of_birth', suggested_value: '1986-06-25', from_doc_type: 'ua_international_passport' }
+  const s = { field_key: 'date_of_birth', suggested_value: '1990-01-15', from_doc_type: 'ua_international_passport' }
 
   it('held/undefined current ⇒ pre-filled field, STILL held for review', () => {
     const out = applyCrossDocSuggestion(undefined, s)
-    expect(out.value).toBe('1986-06-25')
+    expect(out.value).toBe('1990-01-15')
     expect(out.requires_review).toBe(true) // never auto-applied
     expect(out.source).toBe('inferred') // existing enum member
     expect(out.source_document_id).toBe('cross_doc:ua_international_passport')

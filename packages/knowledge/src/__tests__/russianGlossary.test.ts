@@ -21,7 +21,7 @@ eq(normalizeOblastToNominative('Львовская область')?.translitera
 eq(normalizeOblastToNominative('Одесской области')?.transliterated, 'Odesa Oblast', 'Одесской области')
 
 // 2. RUSSIAN settlement designators.
-eq(settlementDesignatorEn('пгт Тростянец'), 'urban-type settlement', 'пгт')
+eq(settlementDesignatorEn('пгт Лесовое'), 'urban-type settlement', 'пгт')
 eq(settlementDesignatorEn('посёлок городского типа Иваново'), 'urban-type settlement', 'посёлок городского типа')
 eq(settlementDesignatorEn('деревня Малиновка'), 'village', 'деревня')
 eq(settlementDesignatorEn('село Петрово'), 'village', 'село')
@@ -44,18 +44,18 @@ for (const [k, v] of Object.entries(dt)) if (v.lang === 'ru') {
   ok(!!v.en && v.en.trim() !== '' && !CYR.test(v.en), `RU term ${k} → "${v.en}" must be non-empty English`)
 }
 
-// 4. RUSSIAN name transliteration (BGN/PCGN) — the owner's Russian birth cert.
-eq(transliterateRussian('Куропятник'), 'Kuropyatnik', 'Куропятник')
-eq(transliterateRussian('Сергей'), 'Sergey', 'Сергей')
-eq(transliterateRussian('Сергеевич'), 'Sergeyevich', 'Сергеевич')
-eq(transliterateRussian('Наталья'), 'Natalya', 'Наталья')
-eq(transliterateRussian('Леонидович'), 'Leonidovich', 'Леонидович')
-eq(transliterateRussian('Степановна'), 'Stepanovna', 'Степановна')
+// 4. RUSSIAN name transliteration (BGN/PCGN) — a fictional Russian-script family (proves the rule).
+eq(transliterateRussian('Соловьяк'), 'Solovyak', 'Соловьяк (ьяк→yak)')
+eq(transliterateRussian('Андрей'), 'Andrey', 'Андрей (-ей→ey)')
+eq(transliterateRussian('Тимофеевич'), 'Timofeyevich', 'Тимофеевич (-еевич→eyevich)')
+eq(transliterateRussian('Елена'), 'Yelena', 'Елена (initial е→Ye)')
+eq(transliterateRussian('Богданович'), 'Bogdanovich', 'Богданович (г→g)')
+eq(transliterateRussian('Петровна'), 'Petrovna', 'Петровна (-овна)')
 
-// 5. GOLDEN RU→EN VECTOR — the owner's Russian birth certificate, end-to-end pieces.
-eq(transliterateRussian('Тростянец'), 'Trostyanets', 'Тростянец (RU translit)')
+// 5. GOLDEN RU→EN VECTOR — a fictional Russian-script birth certificate, end-to-end pieces.
+eq(transliterateRussian('Лесовое'), 'Lesovoye', 'Лесовое (RU translit)')
 eq(normalizeOblastToNominative('Винницкой области')?.transliterated, 'Vinnytsia Oblast', 'place oblast English')
-eq(settlementDesignatorEn('пгт Тростянец'), 'urban-type settlement', 'place designator English')
+eq(settlementDesignatorEn('пгт Лесовое'), 'urban-type settlement', 'place designator English')
 
 console.log(`=== Russian Glossary: ${pass} passed, ${fail} failed ===`)
 if (fail > 0) process.exit(1)

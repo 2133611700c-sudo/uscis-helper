@@ -47,7 +47,7 @@ describe('cross-cutting Russian rules reach BOTH models from one source', () => 
   for (const cls of RU_CLASSES.filter((c) => DOC_READING_RULES[c])) {
     it(`${cls}: RUSSIAN_SCRIPT_RULE + RUSSIAN_DOCUMENT_RULE in Gemini AND DeepSeek`, () => {
       for (const block of [readingRulesPromptBlock(cls), textRulesForDeepSeek(cls)]) {
-        expect(block).toContain('Сергей') // RUSSIAN_SCRIPT_RULE marker (keep Russian forms)
+        expect(block).toContain('Андрей') // RUSSIAN_SCRIPT_RULE marker (keep Russian forms)
         expect(block).toMatch(/Birth Certificate|СВИДЕТЕЛЬСТВО/) // RUSSIAN_DOCUMENT_RULE marker (RU→EN terms)
       }
     })

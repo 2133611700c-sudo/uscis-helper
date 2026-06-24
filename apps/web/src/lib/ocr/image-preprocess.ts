@@ -12,8 +12,13 @@
  * if sharp is unavailable (e.g., edge runtime without native binaries).
  */
 
-const PREPROCESS_MAX_DIMENSION = 2048   // px — large enough for Vision, small enough to avoid timeouts
-const PREPROCESS_JPEG_QUALITY  = 85     // higher than old 70 — Vision benefits from quality
+// Down-cap for the long side. 2048 was a major "app reads but our API doesn't" cause: a 4–7MB
+// document scan got crushed to 2048px → dense HANDWRITING fell to ~4–5 px/letter and read empty.
+// The apps send full resolution. Raised to 3072 (≈2.25× more pixels; a 3072px q85 JPEG ≈ 1–2MB,
+// still under the ~4MB edge body limit). Tune via OCR_MAX_IMAGE_DIMENSION; never below 2048.
+// Pair this with Gemini media_resolution=HIGH (geminiVisionProvider) — both are needed.
+const PREPROCESS_MAX_DIMENSION = Math.max(2048, Number(process.env.OCR_MAX_IMAGE_DIMENSION) || 3072)
+const PREPROCESS_JPEG_QUALITY  = Math.max(70, Number(process.env.OCR_JPEG_QUALITY) || 90) // was 85; apps keep near-original
 
 // ── Upscaling (R3) ──────────────────────────────────────────────────────────
 // Non-technical 35-80yo users photograph documents at low DPI. A small scan

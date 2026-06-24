@@ -10,10 +10,18 @@ where it is ENFORCED in code so it is checkable, not aspirational.
 ## The Laws
 
 **L1 — ONE READER.** `gemini-3.1-pro-preview` is THE document reader (D1) for ALL
-products, ALL doc classes. Flash models are availability fallbacks only; a fallback read
-of a non-Latin doc is force-reviewed and is NEVER a quality/acceptance number; some are
-disqualified for whole doc classes. *Enforced:* `modelMatrix.ts`, `geminiVisionProvider.ts`,
-`documentFieldReader.ts` (fallback_model_used), `modelMatrix.test.ts` + CI guard. (ADR-018)
+products, ALL doc classes, and is the ONLY acceptance-valid reader. BUT it is a PREVIEW
+endpoint with NO capacity guarantee → unreliable availability (sporadic 503 UNAVAILABLE /
+429 RESOURCE_EXHAUSTED); it is retried with exponential backoff before any fallback.
+Availability fallbacks, in PREFERENCE order: `gemini-2.5-pro` (GA, preferred — accurate on
+PRINTED docs), then `gemini-3.5-flash`, then `gemini-2.5-flash`. EVERY fallback read is
+force-reviewed and is NEVER a quality/acceptance number. `gemini-2.5-pro` AND
+`gemini-2.5-flash` are DISQUALIFIED for the certificate family (they FABRICATE a different,
+fake person on HANDWRITING). And: NO model — not even the primary — is proven error-free on
+HANDWRITTEN certificates, so handwritten birth/marriage/divorce/death/name-change/certificate
+docs are ALWAYS human-reviewed regardless of model. *Enforced:* `modelMatrix.ts`,
+`geminiVisionProvider.ts`, `documentFieldReader.ts` (fallback_model_used), `modelMatrix.test.ts`
++ CI guard. (ADR-018; full live matrix: `docs/architecture/MODEL_INVENTORY.md`)
 
 **L2 — ONE CODEX.** ALL knowledge (transliteration/KMU-55, gazetteer, oblasts,
 authorities, months, civil-status, countries, settlement types, doc-number formats) AND

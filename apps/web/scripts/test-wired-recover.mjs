@@ -16,7 +16,7 @@ delete process.env.SELF_CONSISTENCY_VOTE_ENABLED
 const { readDocument } = await import(path.join(ROOT, 'apps/web/src/lib/docintel/documentFieldReader.ts'))
 const { preprocessImage } = await import(path.join(ROOT, 'apps/web/src/lib/ocr/image-preprocess.ts'))
 
-const raw = await readFile(path.join(ROOT, 'test-fixtures/real-docs/birth_cert_handwritten_kuropiatnyk.jpg'))
+const raw = await readFile(path.join(ROOT, 'test-fixtures/real-docs/birth_cert_handwritten_01.jpg'))
 const pre = await preprocessImage(raw, 'image/jpeg')
 const baseBuf = pre.ok ? pre.buffer : raw
 console.log('reading birth cert through readDocument (flag ON, originalBuffer=raw)...')
@@ -28,4 +28,4 @@ for (const k of ['father_full_name', 'mother_full_name', 'certificate_series_num
   const f = (r.fields ?? []).find((x) => x.field === k)
   if (f) console.log(`  ${k}: value="${f.value ?? ''}" cyr="${f.raw_cyrillic ?? ''}" review=${f.review_required} reasons=${(f.review_reasons ?? []).join('|')}`)
 }
-console.log('GT: father Куропятник Сергей Леонидович | mother Наталья Степановна | series III-АМ № 428069')
+console.log('GT: father Соловьяк Андрей Богданович | mother Дарья Петровна | series II-БК № 530174')

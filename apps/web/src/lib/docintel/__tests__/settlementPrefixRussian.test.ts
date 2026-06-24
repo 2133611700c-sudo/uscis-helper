@@ -1,6 +1,6 @@
 /**
- * settlementPrefixRussian.test.ts — regression for a real defect found on the owner's
- * 1986 Soviet birth certificate: «пгт. Тростянец» released as
+ * settlementPrefixRussian.test.ts — regression for a real defect found on a
+ * Soviet-era birth certificate: «пгт. Тростянец» released as
  * "urban-type settlement pht. Trostianets" (the Russian settlement abbreviation
  * «пгт» was not stripped, so it leaked transliterated as "pht."). The designator
  * dictionary already knew пгт = urban-type settlement; only stripSettlementPrefix

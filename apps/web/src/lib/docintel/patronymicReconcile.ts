@@ -86,7 +86,7 @@ export function reconcilePatronymicFields(fields: ExtractedDocField[]): Extracte
   })
 
   // SEX BACKFILL (deterministic, FREE — cost-efficiency-first): a birth cert / military ID often
-  // omits «пол/стать», yet the patronymic suffix encodes it (Сергеевич→M, Степановна→F). When the
+  // omits «пол/стать», yet the patronymic suffix encodes it (Тимофеевич→M, Петровна→F). When the
   // `sex` field is EMPTY but a patronymic was read, derive sex via the codex `sexFromPatronymic`
   // instead of a MISS — NO LLM call. Held for review (it is an inference, not a printed field); never
   // overwrites a value the model already read.

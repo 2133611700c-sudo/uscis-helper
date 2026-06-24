@@ -149,10 +149,10 @@ export function isAuthorityOcrGarbage(text: string): boolean {
 
 /**
  * Extract the military ID series and number from text.
- * Format: "Серія Со № 845621" → series="Со", number="Со 845621"
+ * Format: "Серія Со № 307258" → series="Со", number="Со 307258"
  */
 function extractSerialNumber(rawText: string): { series: string | null; number: string | null } {
-  // Matches "Серія Со № 845621" or "Серія АА №123456" etc.
+  // Matches "Серія Со № 307258" or "Серія АА №123456" etc.
   // Series is 2 Cyrillic letters; number is 6+ digits
   const m = rawText.match(/[Сс]ері[яі]\s+([А-ЯІЇЄҐа-яіїєґ]{1,3})\s*[№N#]\s*(\d{5,7})/u)
   if (m) {
@@ -160,7 +160,7 @@ function extractSerialNumber(rawText: string): { series: string | null; number: 
     const num = m[2].trim()
     return { series, number: `${series} ${num}` }
   }
-  // Also try "АА 845621" without "Серія" label (some OCR variants)
+  // Also try "АА 307258" without "Серія" label (some OCR variants)
   const m2 = rawText.match(/\b([А-ЯІЇЄҐа-яіїєґ]{2})\s+(\d{6})\b/u)
   if (m2) {
     const series = m2[1].trim()

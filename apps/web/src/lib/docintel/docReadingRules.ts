@@ -38,14 +38,14 @@ const MONTH_WORD_RULE =
   'is the most common error on these documents — be deliberate.'
 
 // RUSSIAN-SCRIPT rule for Soviet/UkrSSR-era documents written in RUSSIAN. The model tends
-// to "helpfully" Ukrainianize a Russian source (Сергей→Сергій). That is a TRANSCRIPTION
+// to "helpfully" Ukrainianize a Russian source (Андрей→Андрій). That is a TRANSCRIPTION
 // ERROR for a certified translation, which must reflect the document AS WRITTEN.
 const RUSSIAN_SCRIPT_RULE =
   'RUSSIAN SOURCE — Soviet/UkrSSR-era documents are often written in RUSSIAN, not Ukrainian. ' +
   'If the script on the page is Russian, transcribe it EXACTLY as Russian — do NOT convert it to ' +
   'Ukrainian. Keep the Russian letters ы/э/ё/ъ (do not "fix" them to и/е/є/і). Keep Russian name ' +
-  'forms verbatim: Сергей (NOT Сергій), Сергеевич (NOT Сергійович), Наталья (NOT Наталія), ' +
-  'Куропятник with no apostrophe (NOT Куроп’ятник), Леонидович, Степановна. Keep Russian place/' +
+  'forms verbatim: Андрей (NOT Андрій), Тимофеевич (NOT Тимофійович), Елена (NOT Олена), ' +
+  'Соловьяк with no apostrophe (NOT Солов’як), Богданович, Петровна. Keep Russian place/' +
   'oblast forms: Винницкая область (NOT Вінницька), Тростянецкого района (NOT району). Russian ' +
   'month names января/февраля/марта/апреля/мая/июня/июля/августа/сентября/октября/ноября/декабря ' +
   'map to 01–12. Do NOT romanize — return the Cyrillic exactly; the correct system (Russian ' +
@@ -76,12 +76,12 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
   ua_birth_certificate: {
     language:
       'May be RUSSIAN (Soviet/UkrSSR era) OR Ukrainian. Transcribe EXACTLY the script that ' +
-      'is on the page — if the certificate is written in Russian (Куропятник, Сергей, ' +
-      'Сергеевич), keep the Russian; do NOT Ukrainianize it. If Ukrainian (Куроп’ятник, ' +
-      'Сергій), keep Ukrainian. Never convert one to the other.',
+      'is on the page — if the certificate is written in Russian (Соловьяк, Андрей, ' +
+      'Тимофеевич), keep the Russian; do NOT Ukrainianize it. If Ukrainian (Солов’як, ' +
+      'Андрій), keep Ukrainian. Never convert one to the other.',
     dateGuidance:
-      'The date of birth is usually SPELLED OUT in cursive WORDS ("двадцать пятого июня ' +
-      'тысяча девятьсот восемьдесят шестого года" = 25 June 1986), NOT digits. ' +
+      'The date of birth is usually SPELLED OUT in cursive WORDS ("пятнадцатого января ' +
+      'тысяча девятьсот девяностого года" = 15 January 1990), NOT digits. ' +
       'METHOD (how a careful reader decodes it): FIRST anchor on the YEAR — it is four number-' +
       'words "(одна) тысяча девятьсот <tens> <units> года" and is the easiest part; read it to ' +
       'fix the year. THEN read the DAY as an ordinal word (першого/першій=01 … двадцять ' +
@@ -92,10 +92,10 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
         'the VALUES are handwritten cursive. Read the cursive values letter by letter.',
       RUSSIAN_SCRIPT_RULE,
       RUSSIAN_DOCUMENT_RULE,
-      'Read ALL parties: child, FATHER full name, MOTHER full name (e.g. "Куропятник Сергей ' +
-        'Леонидович", "Куропятник Наталья Степановна").',
+      'Read ALL parties: child, FATHER full name, MOTHER full name (e.g. "Соловьяк Андрей ' +
+        'Богданович", "Соловьяк Елена Петровна").',
       'Read the certificate series + number, usually Roman-numeral + letters + digits (e.g. ' +
-        '"III-АМ № 428069").',
+        '"II-БК № 530174").',
       'Place of birth is "пгт/смт/село <Name>, <…> району/района, <…> області/области, УРСР/УССР".',
     ],
   },
@@ -114,25 +114,25 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     language:
       'Bilingual PRINTED biometric passport: Cyrillic + the official LATIN romanization + MRZ.',
     dateGuidance:
-      'Dates are printed (e.g. "25 ЧЕР/JUN 86"). The MRZ second line encodes YYMMDD with a ' +
-      'check digit (e.g. 8606257 = 1986-06-25, check digit 7) — it is the authoritative date.',
+      'Dates are printed (e.g. "15 СІЧ/JAN 90"). The MRZ second line encodes YYMMDD with a ' +
+      'check digit (e.g. 9001158 = 1990-01-15, check digit 8) — it is the authoritative date.',
     rules: [
       'The LATIN spelling printed on the document and in the MRZ is CONTROLLING — return it ' +
-        'EXACTLY as printed (e.g. "SERGII"); do NOT re-transliterate it yourself (do NOT turn ' +
-        'SERGII into SERHII).',
+        'EXACTLY as printed (e.g. "SOLOVIAK"); do NOT re-transliterate it yourself (do NOT turn ' +
+        'SOLOVIAK into SOLOVYAK).',
       'The MRZ is the math anchor: read both MRZ lines verbatim; they validate surname, given ' +
         'name, passport number, date of birth and sex.',
     ],
   },
 
   ua_military_id: {
-    language: 'Ukrainian (Сергій/Сергійович forms), handwritten on a printed booklet.',
+    language: 'Ukrainian (Андрій/Андрійович forms), handwritten on a printed booklet.',
     dateGuidance:
       'Date of birth is handwritten — the month is usually a cursive WORD (червня = June). ' +
       MONTH_WORD_RULE,
     rules: [
       'The page is OFTEN PHOTOGRAPHED ROTATED 90°/180° — mentally rotate upright first.',
-      'Series + number is "<2 Cyrillic letters> ######" (e.g. "СО 845621").',
+      'Series + number is "<2 Cyrillic letters> ######" (e.g. "НК 307258").',
       'Place of birth is "сел./смт <Name>, <oblast> обл."; marital status may be "неодружений".',
     ],
   },
@@ -171,7 +171,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
     rules: [
       RUSSIAN_SCRIPT_RULE,
       RUSSIAN_DOCUMENT_RULE,
-      'Read the deceased: surname / given / patronymic (e.g. "Куроп’ятник Сергій Сергійович").',
+      'Read the deceased: surname / given / patronymic (e.g. "Солов’як Андрій Андрійович").',
       'place_of_death is "м./смт/село <Name>, <oblast> область".',
       'Read the act-record number, the registering RAGS/DRACS office, and the serial ' +
         '(Roman + letters + digits, e.g. "I-АМ № 123456").',
@@ -264,7 +264,7 @@ export function readingRulesPromptBlock(docTypeId: string): string {
 // structurer, never an identity authority). So when we teach it from the SAME codex the
 // Gemini reader uses, we must hand it ONLY the text-relevant rules and DROP the pure-image
 // guidance that is meaningless to a text model:
-//   KEEP — RUSSIAN_SCRIPT_RULE (transcribe RU as written, keep Сергей/Сергеевич, RU months
+//   KEEP — RUSSIAN_SCRIPT_RULE (transcribe RU as written, keep Андрей/Тимофеевич, RU months
 //          →01-12), the spelled-out-date METHOD (anchor on the year-words, then day-ordinal +
 //          month-word → YYYY-MM-DD), the "present-but-hard → best-effort, never drop a present
 //          field; never invent an absent one" principle, the language/script note, and the

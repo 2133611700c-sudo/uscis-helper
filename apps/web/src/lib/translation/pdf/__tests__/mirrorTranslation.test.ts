@@ -40,13 +40,13 @@ describe('buildMirrorValues — registry keys → schema keys', () => {
       // LIVE translation path (documentRegistry) emits `place_of_birth_city`;
       // TPS path emits `city_of_birth`. Both alias → place_of_birth.
       { field: 'place_of_birth_city', normalized_value: 'Vinnytsia', review_required: true },
-      { field: 'certificate_series_number', normalized_value: 'I-АМ № 428069', review_required: false },
+      { field: 'certificate_series_number', normalized_value: 'I-БК № 530174', review_required: false },
     ])
     expect(v.child_surname).toEqual({ value: 'Kovalenko', review: false, canRead: true })
     expect(v.date_of_birth.value).toBe('2010-05-15')
     expect(v.place_of_birth).toEqual({ value: 'Vinnytsia', review: true, canRead: true })
     // certificate_series_number → series_number (was an unmapped blank before the fix)
-    expect(v.series_number).toEqual({ value: 'I-АМ № 428069', review: false, canRead: true })
+    expect(v.series_number).toEqual({ value: 'I-БК № 530174', review: false, canRead: true })
   })
 
   it('prefers final_value over normalized_value (C3 release contract)', () => {
@@ -89,13 +89,13 @@ describe('buildMirrorValues — registry keys → schema keys', () => {
       { field: 'spouse_1_surname', final_value: 'Ivanenko' },
       { field: 'spouse_2_given_name', final_value: 'Olena' },
       { field: 'issuing_authority', final_value: 'Vinnytsia ZAHS' },
-      { field: 'certificate_series_number', final_value: 'I-АМ № 1' },
+      { field: 'certificate_series_number', final_value: 'I-БК № 1' },
     ])
     expect(v.groom_surname).toMatchObject({ value: 'Ivanenko', canRead: true })
     expect(v.bride_given_name).toMatchObject({ value: 'Olena', canRead: true })
     // registration office reads into the official "Place of state registration"
     expect(v.place_of_registration).toMatchObject({ value: 'Vinnytsia ZAHS', canRead: true })
-    expect(v.series_number).toMatchObject({ value: 'I-АМ № 1', canRead: true })
+    expect(v.series_number).toMatchObject({ value: 'I-БК № 1', canRead: true })
     // split keys must NOT leak into ADDITIONAL ENTRIES (all mapped)
     const extras = collectMirrorExtras(m, [
       { field: 'spouse_1_surname', final_value: 'Ivanenko' },

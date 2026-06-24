@@ -18,12 +18,12 @@ function assert(condition: boolean, desc: string, detail?: string) {
 }
 
 // ── UA international passport: 2 letters + 6 digits ──────────
-assert(validateDocNumber('ua_intl_passport', 'FU262473').valid === true, 'UA passport FU262473 valid');
-assert(validateDocNumber('ua_intl_passport', 'fu262473').normalized === 'FU262473', 'UA passport uppercased');
-assert(validateDocNumber('ua_intl_passport', 'F U262473').normalized === 'FU262473', 'UA passport strips spaces');
-assert(validateDocNumber('ua_intl_passport', 'FU26247').valid === false, 'UA passport 5 digits rejected');
-assert(validateDocNumber('ua_intl_passport', 'F1262473').valid === false, 'UA passport letter+digit prefix rejected');
-assert(validateDocNumber('ua_intl_passport', 'FU2624733').valid === false, 'UA passport 7 digits rejected');
+assert(validateDocNumber('ua_intl_passport', 'MX481390').valid === true, 'UA passport MX481390 valid');
+assert(validateDocNumber('ua_intl_passport', 'mx481390').normalized === 'MX481390', 'UA passport uppercased');
+assert(validateDocNumber('ua_intl_passport', 'M X481390').normalized === 'MX481390', 'UA passport strips spaces');
+assert(validateDocNumber('ua_intl_passport', 'MX48139').valid === false, 'UA passport 5 digits rejected');
+assert(validateDocNumber('ua_intl_passport', 'M1481390').valid === false, 'UA passport letter+digit prefix rejected');
+assert(validateDocNumber('ua_intl_passport', 'MX4813900').valid === false, 'UA passport 7 digits rejected');
 
 // ── UA ID card record number: 9 digits ──────────────────────
 assert(validateDocNumber('ua_id_card_record', '123456789').valid === true, 'UA ID record 9 digits valid');
@@ -32,18 +32,18 @@ assert(validateDocNumber('ua_id_card_record', '1234567890').valid === false, 'UA
 assert(validateDocNumber('ua_id_card_record', '12345678A').valid === false, 'UA ID record with letter rejected');
 
 // ── UA certificate series: Roman + "-" + 2 Cyr + " №" + digits ──
-assert(validateDocNumber('ua_certificate_series', 'III-АМ № 428069').valid === true, 'UA cert series valid');
-assert(validateDocNumber('ua_certificate_series', 'III-АМ №428069').normalized === 'III-АМ № 428069', 'UA cert series normalizes № spacing');
+assert(validateDocNumber('ua_certificate_series', 'II-БК № 530174').valid === true, 'UA cert series valid');
+assert(validateDocNumber('ua_certificate_series', 'II-БК №530174').normalized === 'II-БК № 530174', 'UA cert series normalizes № spacing');
 assert(validateDocNumber('ua_certificate_series', 'I-БК № 12').valid === true, 'UA cert series short valid');
-assert(validateDocNumber('ua_certificate_series', 'III-AM № 428069').valid === false, 'UA cert series Latin letters rejected');
-assert(validateDocNumber('ua_certificate_series', 'III АМ № 428069').valid === false, 'UA cert series missing dash rejected');
-assert(validateDocNumber('ua_certificate_series', 'III-АМ 428069').valid === false, 'UA cert series missing № rejected');
+assert(validateDocNumber('ua_certificate_series', 'II-BK № 530174').valid === false, 'UA cert series Latin letters rejected');
+assert(validateDocNumber('ua_certificate_series', 'II БК № 530174').valid === false, 'UA cert series missing dash rejected');
+assert(validateDocNumber('ua_certificate_series', 'II-БК 530174').valid === false, 'UA cert series missing № rejected');
 
 // ── UA military ticket: 2 Cyrillic + 6 digits ───────────────
-assert(validateDocNumber('ua_military_ticket', 'СО 845621').valid === true, 'UA military ticket valid');
-assert(validateDocNumber('ua_military_ticket', 'СО845621').normalized === 'СО 845621', 'UA military ticket normalizes space');
-assert(validateDocNumber('ua_military_ticket', 'SO 845621').valid === false, 'UA military ticket Latin rejected');
-assert(validateDocNumber('ua_military_ticket', 'СО 84562').valid === false, 'UA military ticket 5 digits rejected');
+assert(validateDocNumber('ua_military_ticket', 'НК 307258').valid === true, 'UA military ticket valid');
+assert(validateDocNumber('ua_military_ticket', 'НК307258').normalized === 'НК 307258', 'UA military ticket normalizes space');
+assert(validateDocNumber('ua_military_ticket', 'NK 307258').valid === false, 'UA military ticket Latin rejected');
+assert(validateDocNumber('ua_military_ticket', 'НК 30725').valid === false, 'UA military ticket 5 digits rejected');
 
 // ── US A-Number: "A" + 9 digits ─────────────────────────────
 assert(validateDocNumber('us_a_number', 'A123456789').valid === true, 'US A-Number valid');

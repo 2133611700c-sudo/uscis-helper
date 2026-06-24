@@ -9,7 +9,7 @@
  * crop of the region (~2× per-letter), and (2) a TARGETED prompt that names the wanted fields and
  * says "best-effort letter-by-letter, do NOT return empty for a present field". The standard
  * full-page prompt on a tile stays conservative (it still answered can_read=false); the targeted
- * crop reader read father "Куропятник Сергей Леонидович", series "III-АМ № 428069", office.
+ * crop reader read father "Соловьяк Андрей Богданович", series "II-БК № 530174", office.
  *
  * Additive + fail-open: only EMPTY fields are pursued; a confidently-read field is never touched;
  * any error leaves the base read intact. Behind HIRES_TILE_RECOVER_ENABLED (default OFF). The crop
@@ -51,7 +51,7 @@ export async function geminiReadFieldsFromCropOnce(
       'crop (only omit a field that is genuinely not in this crop). Transcribe the Cyrillic EXACTLY ' +
       'as written (keep Russian ы/э/ё/ъ; do not Ukrainianize). Fields:\n' + list +
       '\nReturn ONLY JSON: an object mapping each field key you could read to its Cyrillic string, ' +
-      'e.g. {"father_full_name":"Куропятник Сергей Леонидович"}. Omit keys not present in this crop.'
+      'e.g. {"father_full_name":"Соловьяк Андрей Богданович"}. Omit keys not present in this crop.'
     const cacheKeySha = computeCacheKeySha({
       fileSha256: sha256Hex(cropB64), provider: 'gemini', model,
       promptVersion: 'tile_fields_v1', preprocVersion: 'tilecrop_v1',

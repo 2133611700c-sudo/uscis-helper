@@ -115,7 +115,7 @@ describe('readDocument — SMART_NORMALIZE_ENABLED gating for patronymic', () =>
 describe('sex backfill from patronymic (deterministic, free)', () => {
   it('fills an EMPTY sex from a male patronymic, held for review', () => {
     const out = reconcilePatronymicFields([
-      field({ field: 'child_patronymic', raw_cyrillic: 'Сергеевич', value: 'Sergeyevich' }),
+      field({ field: 'child_patronymic', raw_cyrillic: 'Тимофеевич', value: 'Timofeyevich' }),
       field({ field: 'sex', kind: 'sex', raw_cyrillic: '', value: '' }),
     ])
     const sex = out.find((f) => f.field === 'sex')!
@@ -126,7 +126,7 @@ describe('sex backfill from patronymic (deterministic, free)', () => {
 
   it('fills an EMPTY sex from a female patronymic', () => {
     const out = reconcilePatronymicFields([
-      field({ field: 'patronymic', raw_cyrillic: 'Степановна', value: 'Stepanovna' }),
+      field({ field: 'patronymic', raw_cyrillic: 'Петровна', value: 'Petrovna' }),
       field({ field: 'sex', kind: 'sex', raw_cyrillic: null, value: null }),
     ])
     expect(out.find((f) => f.field === 'sex')!.value).toBe('F')
@@ -134,7 +134,7 @@ describe('sex backfill from patronymic (deterministic, free)', () => {
 
   it('NEVER overwrites a sex the model already read', () => {
     const out = reconcilePatronymicFields([
-      field({ field: 'child_patronymic', raw_cyrillic: 'Сергеевна', value: 'Sergeyevna' }),
+      field({ field: 'child_patronymic', raw_cyrillic: 'Сергеевна', value: 'Andreyevna' }),
       field({ field: 'sex', kind: 'sex', raw_cyrillic: 'M', value: 'M', review_required: false }),
     ])
     const sex = out.find((f) => f.field === 'sex')!
@@ -144,7 +144,7 @@ describe('sex backfill from patronymic (deterministic, free)', () => {
 
   it('no patronymic ⇒ empty sex stays empty (never guesses)', () => {
     const out = reconcilePatronymicFields([
-      field({ field: 'family_name', raw_cyrillic: 'Куропятник', value: 'Kuropyatnik' }),
+      field({ field: 'family_name', raw_cyrillic: 'Соловьяк', value: 'Solovyak' }),
       field({ field: 'sex', kind: 'sex', raw_cyrillic: '', value: '' }),
     ])
     expect((out.find((f) => f.field === 'sex')!.value ?? '')).toBe('')

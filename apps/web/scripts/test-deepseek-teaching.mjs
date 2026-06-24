@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /* LIVE DeepSeek teaching proof — "обучи дипсик". Feeds the RUSSIAN birth-cert OCR text to
  * DeepSeek WITHOUT shared rules vs WITH textRulesForDeepSeek(ua_birth_certificate), and shows
- * the difference: with rules it (a) keeps Russian forms (Сергей/Сергеевич, NOT Ukrainianized),
+ * the difference: with rules it (a) keeps Russian forms (Андрей/Тимофеевич, NOT Ukrainianized),
  * (b) parses the spelled-out cursive date "двадцать пятого июня ... восемьдесят шестого" →
- * 1986-06-25 with month=June (not July). No mocks; honest. */
+ * 1990-01-15 with month=June (not July). No mocks; honest. */
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -28,12 +28,12 @@ const sharedRules = textRulesForDeepSeek('ua_birth_certificate')
 
 // OCR text as the cursive Russian Soviet birth cert reads (what a vision pass hands DeepSeek)
 const ocrText = `СВИДЕТЕЛЬСТВО О РОЖДЕНИИ / СВІДОЦТВО ПРО НАРОДЖЕННЯ
-Фамилия: Куропятник   Имя, отчество: Сергей Сергеевич
+Фамилия: Соловьяк   Имя, отчество: Андрей Тимофеевич
 родился(лась): двадцать пятого июня тысяча девятьсот восемьдесят шестого года
 Место рождения: пгт Тростянец, Тростянецкого района, Винницкой области, УССР
-Отец: Куропятник Сергей Леонидович, национальность украинец
-Мать: Куропятник Наталья Степановна, национальность украинка
-III-АМ № 428069`
+Отец: Соловьяк Андрей Богданович, национальность украинец
+Мать: Соловьяк Дарья Петровна, национальность украинка
+II-БК № 530174`
 
 const TASK = `Extract identity fields as JSON: {family_name, given_name, patronymic, date_of_birth (YYYY-MM-DD), place_of_birth, father, mother, cert_number}. Return ONLY JSON.`
 
@@ -66,17 +66,17 @@ console.log(`model=${MODEL}  shared-rules block length=${sharedRules.length} cha
 
 const off = await ask(false)
 const on = await ask(true)
-const truth = { given_name: 'Сергей', patronymic: 'Сергеевич', date_of_birth: '1986-06-25' }
+const truth = { given_name: 'Андрей', patronymic: 'Тимофеевич', date_of_birth: '1990-01-15' }
 function score(r, label) {
   console.log(`--- ${label} ---`)
   if (r.status !== 'OK') { console.log(`  ${r.status} ${r.detail || ''}`); return }
   const p = r.parsed || {}
   const gn = p.given_name || '', pat = p.patronymic || '', dob = p.date_of_birth || ''
-  const keptRu = /Сергей/.test(gn) && /Сергеевич/.test(pat)
+  const keptRu = /Андрей/.test(gn) && /Тимофеевич/.test(pat)
   const dateOk = dob === truth.date_of_birth
   console.log(`  given_name="${gn}" patronymic="${pat}" dob="${dob}"`)
-  console.log(`  kept Russian (Сергей/Сергеевич, not Ukrainianized): ${keptRu ? 'YES ✓' : 'NO ✗'}`)
-  console.log(`  date = 1986-06-25 (June, not July): ${dateOk ? 'YES ✓' : 'NO ✗'}`)
+  console.log(`  kept Russian (Андрей/Тимофеевич, not Ukrainianized): ${keptRu ? 'YES ✓' : 'NO ✗'}`)
+  console.log(`  date = 1990-01-15 (June, not July): ${dateOk ? 'YES ✓' : 'NO ✗'}`)
   return { keptRu, dateOk }
 }
 const a = score(off, 'WITHOUT shared rules (today\'s default)')

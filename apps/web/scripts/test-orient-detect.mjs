@@ -30,9 +30,9 @@ const KEY = paidKey()
 const MODEL = process.env.PRIMARY_GEMINI_MODEL || 'gemini-3.1-pro-preview'
 
 const DOCS = [
-  { name: 'passport (upright)', img: 'internal_passport_kuropiatnyk.jpg' },
-  { name: 'military (sideways)', img: 'military_id_p1_kuropiatnyk.jpg' },
-  { name: 'birth (sideways)', img: 'birth_cert_handwritten_kuropiatnyk.jpg' },
+  { name: 'passport (upright)', img: 'internal_passport_01.jpg' },
+  { name: 'military (sideways)', img: 'military_id_p1_01.jpg' },
+  { name: 'birth (sideways)', img: 'birth_cert_handwritten_01.jpg' },
 ]
 // position → clockwise rotation applied to that cell. The cell that looks upright tells us the
 // correction to apply to the ORIGINAL to make it upright.

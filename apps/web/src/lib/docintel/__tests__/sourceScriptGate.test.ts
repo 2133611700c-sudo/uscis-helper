@@ -26,7 +26,7 @@ const DEFAULT_ENV = {}
 describe('isNameSourceScriptAmbiguous — visible source script must be confirmed', () => {
   it('no distinctive letter (Иван) → ambiguous (cannot tell UA from RU by letters)', () => {
     expect(isNameSourceScriptAmbiguous('Иван', RU_ON)).toBe(true)
-    expect(isNameSourceScriptAmbiguous('Наталья', RU_ON)).toBe(true) // ь/я shared
+    expect(isNameSourceScriptAmbiguous('Дарья', RU_ON)).toBe(true) // ь/я shared
   })
   it('distinctive UA letter (Іван, і) → NOT ambiguous → KMU-55', () => {
     expect(isNameSourceScriptAmbiguous('Іван', RU_ON)).toBe(false)

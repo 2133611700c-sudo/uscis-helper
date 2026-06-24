@@ -11,19 +11,19 @@ const env = { SOURCE_SCRIPT_REVIEW_ENABLED: undefined } as Record<string, string
 
 describe('document-language routing for the source-script ambiguity gate', () => {
   it('shared-letter surname on a Ukrainian ID doc → NOT ambiguous (Ukrainian)', () => {
-    expect(isNameSourceScriptAmbiguous("Куроп'ятник", env, 'ua_internal_passport_booklet')).toBe(false)
+    expect(isNameSourceScriptAmbiguous("Солов'як", env, 'ua_internal_passport_booklet')).toBe(false)
     expect(isNameSourceScriptAmbiguous('Петренко', env, 'ua_international_passport')).toBe(false)
     expect(isNameSourceScriptAmbiguous('Петренко', env, 'ua_id_card')).toBe(false)
     expect(isNameSourceScriptAmbiguous('Петренко', env, 'ua_military_id')).toBe(false)
   })
   it('shared-letter surname on a Soviet/bilingual CERTIFICATE → STILL ambiguous (could be Russian)', () => {
-    expect(isNameSourceScriptAmbiguous("Куроп'ятник", env, 'ua_birth_certificate')).toBe(true)
+    expect(isNameSourceScriptAmbiguous("Солов'як", env, 'ua_birth_certificate')).toBe(true)
     expect(isNameSourceScriptAmbiguous('Петрова', env, 'ua_marriage_certificate')).toBe(true)
   })
   it('no docTypeId → safe default (ambiguous) unchanged', () => {
     expect(isNameSourceScriptAmbiguous('Петренко', env)).toBe(true)
   })
   it('distinctive UA name → never ambiguous regardless of doc', () => {
-    expect(isNameSourceScriptAmbiguous('Сергій', env, 'ua_birth_certificate')).toBe(false) // has і
+    expect(isNameSourceScriptAmbiguous('Андрій', env, 'ua_birth_certificate')).toBe(false) // has і
   })
 })

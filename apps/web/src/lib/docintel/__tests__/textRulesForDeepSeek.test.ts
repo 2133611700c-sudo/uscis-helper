@@ -16,15 +16,15 @@ import {
 describe('textRulesForDeepSeek — KEEP text rules', () => {
   const block = textRulesForDeepSeek('ua_birth_certificate')
 
-  it('KEEPS the Russian-script rule (transcribe RU as written, Сергеевич, RU months→01-12)', () => {
+  it('KEEPS the Russian-script rule (transcribe RU as written, Тимофеевич, RU months→01-12)', () => {
     expect(block).toContain('RUSSIAN SOURCE')
-    expect(block).toContain('Сергеевич')
+    expect(block).toContain('Тимофеевич')
     // RU months mapping clause survives.
     expect(block).toMatch(/января\/февраля.*map to 01–12/)
   })
 
   it('KEEPS the spelled-out-date METHOD (anchor on the year-words, day-ordinal + month-word → YYYY-MM-DD)', () => {
-    expect(block).toContain('двадцать пятого июня')
+    expect(block).toContain('пятнадцатого января')
     expect(block).toContain('FIRST anchor on the YEAR')
     expect(block).toContain('Assemble YYYY-MM-DD')
     // the adjacent-month confusion guidance (text-relevant) survives.
@@ -39,7 +39,7 @@ describe('textRulesForDeepSeek — KEEP text rules', () => {
 
   it('KEEPS the per-field examples (father/mother names, series/number)', () => {
     expect(block).toContain('FATHER full name')
-    expect(block).toContain('III-АМ № 428069')
+    expect(block).toContain('II-БК № 530174')
   })
 })
 
@@ -59,7 +59,7 @@ describe('textRulesForDeepSeek — DROP image-only guidance', () => {
     expect(block.toLowerCase()).not.toContain('rotated')
     expect(block.toLowerCase()).not.toContain('rotate upright')
     // but KEEPS the text-relevant series/number example.
-    expect(block).toContain('СО 845621')
+    expect(block).toContain('НК 307258')
   })
 
   it('ua_internal_passport_booklet: DROPS "read names letter by letter", keeps the patronymic warning', () => {

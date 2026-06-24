@@ -60,7 +60,7 @@ describe('STAGE 1 — per-document reading rules (teach the brain)', () => {
   it('international-passport rules teach controlling Latin + MRZ anchor', () => {
     const block = readingRulesPromptBlock('ua_international_passport')
     expect(block).toMatch(/CONTROLLING/)
-    expect(block).toMatch(/SERGII/)
+    expect(block).toMatch(/SOLOVIAK/)
     expect(block).toMatch(/MRZ/)
   })
 

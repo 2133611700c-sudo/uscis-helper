@@ -29,7 +29,7 @@ async function makeJpeg(width: number, height: number): Promise<Buffer> {
 }
 
 const MIN_SHORT_SIDE = 1500
-const MAX_DIMENSION = 2048
+const MAX_DIMENSION = 3072 // raised from 2048 (2026-06-23) — apps send full res; 2048 crushed handwriting
 
 describe('preprocessImage — R3 sizing', () => {
   it('UPSCALES a small near-square (600px) image so its short side reaches ~1500px', async () => {
@@ -45,15 +45,15 @@ describe('preprocessImage — R3 sizing', () => {
     expect(Math.max(res.width, res.height)).toBeLessThanOrEqual(MAX_DIMENSION)
   })
 
-  it('UPSCALES a small long page but lets the down-cap clamp the long side ≤2048', async () => {
-    // 600x900 → upscale toward short=1500 would give long=2250 > 2048; the long-cap
-    // clamps the factor so long=2048 and short lands below the 1500 target.
-    const input = await makeJpeg(600, 900)
+  it('UPSCALES a small long page but lets the down-cap clamp the long side ≤3072', async () => {
+    // 600x1400 → upscale toward short=1500 would give long=3500 > 3072; the long-cap
+    // clamps the factor so long=3072 and short lands below the 1500 target.
+    const input = await makeJpeg(600, 1400)
     const res = await preprocessImage(input, 'image/jpeg')
     expect(res.ok).toBe(true)
     if (!res.ok) return
     expect(res.scaleFactor).toBeGreaterThan(1)                     // still enlarged
-    expect(Math.max(res.width, res.height)).toBeLessThanOrEqual(MAX_DIMENSION) // cap wins
+    expect(Math.max(res.width, res.height)).toBeLessThanOrEqual(MAX_DIMENSION + 2) // cap wins (±1px rounding)
     expect(Math.min(res.width, res.height)).toBeGreaterThan(600)   // short side grew
     expect(Math.min(res.width, res.height)).toBeLessThan(MIN_SHORT_SIDE) // but below 1500
   })
@@ -69,7 +69,7 @@ describe('preprocessImage — R3 sizing', () => {
     expect(Math.min(res.width, res.height)).toBeGreaterThanOrEqual(890)
   })
 
-  it('DOWNSCALES a large (4000px) image to long side ≤2048px', async () => {
+  it('DOWNSCALES a large (4000px) image to long side ≤3072px', async () => {
     const input = await makeJpeg(4000, 3000)
     const res = await preprocessImage(input, 'image/jpeg')
     expect(res.ok).toBe(true)

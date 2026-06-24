@@ -37,7 +37,7 @@ async function ask(buf, prompt) {
 }
 
 // Raw birth cert is landscape-upright (two-page spread; parents + series on the RIGHT page).
-let buf = await readFile(path.join(ROOT, 'test-fixtures/real-docs/birth_cert_handwritten_kuropiatnyk.jpg'))
+let buf = await readFile(path.join(ROOT, 'test-fixtures/real-docs/birth_cert_handwritten_01.jpg'))
 const meta = await sharp(buf).metadata()
 console.log(`raw ${meta.width}x${meta.height}`)
 // Crop the RIGHT ~52% (parents/registration/series) and UPSCALE to ~2200px wide + sharpen.
@@ -52,9 +52,9 @@ const prompt = 'This is the RIGHT page of a Soviet/UkrSSR birth certificate (han
   'Read these fields letter by letter, best effort even if cursive — do NOT return empty for a field that is present:\n' +
   '1) ОТЕЦ / БАТЬКО (father full name, e.g. surname + given + patronymic)\n' +
   '2) МАТЬ / МАТИ (mother full name)\n' +
-  '3) certificate series + number (Roman numerals + 2 Cyrillic letters + digits, e.g. "III-АМ № 428069")\n' +
+  '3) certificate series + number (Roman numerals + 2 Cyrillic letters + digits, e.g. "II-БК № 530174")\n' +
   '4) place/office of registration (ЗАГС / РАЦС).\nReturn each on its own line in Cyrillic exactly as written.'
 console.log('\n=== HI-RES CROP READ (parents/series region) ===')
 console.log(await ask(crop, prompt))
 console.log('\n=== GROUND TRUTH (from my own read) ===')
-console.log('father: Куропятник Сергей Леонидович | mother: Куропятник Наталья Степановна | series: III-АМ № 428069')
+console.log('father: Соловьяк Андрей Богданович | mother: Соловьяк Дарья Петровна | series: II-БК № 530174')

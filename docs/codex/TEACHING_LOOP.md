@@ -7,8 +7,8 @@ Principle: the whole pipeline exists to MINIMIZE expensive LLM calls — do max 
 ## The loop (free-first)
 1. **MENTOR READ (Claude, free).** Claude reads the REAL document with its own eyes (Read tool),
    field by field, by all rules. Records the ground truth. This is the reference — "I go through it
-   myself first, then my understanding becomes bigger." (e.g. the Russian birth cert: Куропятник /
-   Сергей / Сергеевич, 25 июня 1986, пгт Тростянец, Винницкой области, III-АМ № 428069.)
+   myself first, then my understanding becomes bigger." (e.g. the Russian birth cert: Соловьяк /
+   Андрей / Тимофеевич, 15 января 1990, пгт Тростянец, Винницкой области, II-БК № 530174.)
 2. **ENCODE ONCE in the ONE codex.** Put the learning where it belongs, with a SOURCE cite:
    - a reading/translation behavior → a rule in `docReadingRules.ts` (constant or per-doc `rules[]`);
    - a term/place/name fact → `packages/knowledge` (civil_registry_terms.json / dictionary.ts / …);

@@ -47,8 +47,8 @@ describe('Cyrillic golden vectors — Central Brain normalizeCanonicalValue', ()
     expect(d.reasonCodes).toContain('russian_spelling_suspected')
   })
 
-  it('Russian-spelled given name (Сергей) on UA doc → review (no silent KMU-55)', () => {
-    const d = normalizeCanonicalValue('given_name', 'Сергей', { ukrainianDoc: true })
+  it('Russian-spelled given name (Андрей) on UA doc → review (no silent KMU-55)', () => {
+    const d = normalizeCanonicalValue('given_name', 'Андрей', { ukrainianDoc: true })
     expect(d.action).toBe('review')
     expect(d.finalValue).toBeNull()
     expect(d.reasonCodes).toContain('russian_spelling_suspected')

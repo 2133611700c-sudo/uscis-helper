@@ -1,17 +1,17 @@
 /**
  * renderValue.test.ts — the bureau PDF must NEVER silently drop source data.
- * Proves the fix for the silent Cyrillic-strip blocker (I-АМ → I-, data loss).
+ * Proves the fix for the silent Cyrillic-strip blocker (I-БК → I-, data loss).
  */
 import { describe, it, expect } from 'vitest'
 import { renderValueForPdf, pdfSafe } from '../renderValue'
 
 describe('renderValueForPdf — no silent data loss', () => {
-  it('transliterates a Cyrillic series instead of dropping it (I-АМ № 428069 → I-AM No. 428069)', () => {
-    const r = renderValueForPdf('I-АМ № 428069')
-    expect(r.text).toContain('I-AM')   // NOT "I-"
-    expect(r.text).toContain('428069')
+  it('transliterates a Cyrillic series instead of dropping it (I-БК № 530174 → I-BK No. 530174)', () => {
+    const r = renderValueForPdf('I-БК № 530174')
+    expect(r.text).toContain('I-BK')   // NOT "I-"
+    expect(r.text).toContain('530174')
     expect(r.text).not.toMatch(/I-\s*№/) // no untranslated numero, no gap
-    expect(r.text).not.toMatch(/I-\s+428069/) // series letters were not deleted
+    expect(r.text).not.toMatch(/I-\s+530174/) // series letters were not deleted
     expect(r.transliterated).toBe(true)
   })
 

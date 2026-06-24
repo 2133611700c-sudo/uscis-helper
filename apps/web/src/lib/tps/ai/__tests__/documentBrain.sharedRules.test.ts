@@ -14,7 +14,7 @@ import { runBrain, type DocumentBrainInput } from '@/lib/tps/ai/documentBrain'
 import type { ChatMessage } from '@/lib/deepseek/client'
 
 // A long-enough OCR text to pass the ≥10-char gate.
-const RAW = 'Свідоцтво про народження Куропятник Сергей Леонидович 25 червня 1986'
+const RAW = 'Свідоцтво про народження Соловьяк Андрей Богданович 15 січня 1990'
 
 /** Capture the system message, then return a minimal valid JSON envelope. */
 function capturingChat(captured: { system?: string }) {

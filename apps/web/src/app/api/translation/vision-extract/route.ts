@@ -497,7 +497,9 @@ async function POST_impl(req: NextRequest) {
       // would mislead any acceptance gate that checks the model. Join unique per-page
       // models so a mixed primary/fallback read is visible (e.g. "gemini-3.1-pro-preview").
       const readModels = [...new Set(corePages.map((p) => p.r?.model).filter((m): m is string => !!m))]
-      const actualModel = readModels.length ? readModels.join('+') : normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-flash')
+      // When NO page produced a model (all reads failed), report the primary as the intended
+      // reader — never a flash literal, which would misrepresent a failure as a flash read.
+      const actualModel = readModels.length ? readModels.join('+') : normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview')
       console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview, '; read_models=', readModels.join('+') || 'none')
       return NextResponse.json({
         ok: true, doc_type_id: docTypeId, fields,

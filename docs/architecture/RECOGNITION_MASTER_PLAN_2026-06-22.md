@@ -94,21 +94,21 @@ carrying: how to read it, the script/language expectation, the format, the close
 the cross-checks, and the failure modes I observed. Example (grounded in my real reads):
 
 ### ua_birth_certificate (Soviet/vintage, handwritten)
-- LANGUAGE: may be RUSSIAN (Soviet-era) — transcribe AS WRITTEN (Куропятник/Сергей), do NOT
+- LANGUAGE: may be RUSSIAN (Soviet-era) — transcribe AS WRITTEN (Соловьяк/Андрей), do NOT
   Ukrainianize; flag RU/UA for the canonical-name policy, never silently convert.
 - DATE OF BIRTH: usually SPELLED OUT in cursive WORDS ("двадцать пятого июня …"), NOT digits.
   Read the whole month WORD (червня/июня=June 06, липня/июля=July 07 — do NOT confuse adjacent
   months). Day may be a word ("двадцать пятого"=25) or ambiguous digit → low confidence.
 - CROSS-DOC: if a passport/MRZ for the same person exists, its checksummed DOB is authoritative.
-- PARENTS / CERT №: read father/mother full names + "III-АМ № …" series.
+- PARENTS / CERT №: read father/mother full names + "II-БК № …" series.
 - Place: "пгт/смт <name>, <raion> район, <oblast> область" → settlement designator + gazetteer.
 
 ### ua_international_passport (printed + MRZ)
-- Latin is CONTROLLING: return the printed romanization EXACTLY (SERGII, not KMU-55 SERHII).
+- Latin is CONTROLLING: return the printed romanization EXACTLY (SERGII, not KMU-55 ANDRII).
 - MRZ is the math anchor: parse YYMMDD + check digits; it WINS and validates DOB/sex/№.
 
 ### ua_military_id (handwritten, often rotated)
-- Ukrainian forms (Сергій/Сергійович). Date = cursive word month + digit day. Series "СО ######".
+- Ukrainian forms (Андрій/Андрійович). Date = cursive word month + digit day. Series "СО ######".
   Rotated 90° common → orientation-tolerant.
 
 ### ua_marriage_certificate / ua_divorce_certificate

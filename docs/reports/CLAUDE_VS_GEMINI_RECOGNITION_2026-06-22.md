@@ -2,7 +2,7 @@
 
 I (Claude, a multimodal model) read the owner's REAL documents directly with my own
 vision. Gemini's reads are from the live pipeline (gt-pipeline-bench, this session).
-Truth is owner-verified + cross-confirmed by the passport MRZ checksum (DOB 1986-06-25).
+Truth is owner-verified + cross-confirmed by the passport MRZ checksum (DOB 1990-01-15).
 Honest, field by field. No spin.
 
 NOTE on fairness: "Gemini (pipeline)" = the route output AFTER safety gates (which null
@@ -11,31 +11,31 @@ blank read. Where I know the raw read, I say so.
 
 ---
 
-## Doc 1 — International passport (file: internal_passport_kuropiatnyk.jpg) — PRINTED + MRZ
+## Doc 1 — International passport (file: internal_passport_01.jpg) — PRINTED + MRZ
 | Field | Truth | Gemini (pipeline) | Claude (me) | Winner |
 |---|---|---|---|---|
-| Surname (Latin) | KUROPIATNYK | KUROPIATNYK | KUROPIATNYK | tie |
-| Given (Latin) | **SERGII** (printed on doc) | SERHII (KMU-55) | **SERGII** (read the printed Latin) | **Claude** |
-| Date of birth | 1986-06-25 | MISS (nulled) | **1986-06-25** (printed "25 ЧЕР" + MRZ 8606257) | **Claude** |
+| Surname (Latin) | SOLOVIAK | SOLOVIAK | SOLOVIAK | tie |
+| Given (Latin) | **SERGII** (printed on doc) | ANDRII (KMU-55) | **SERGII** (read the printed Latin) | **Claude** |
+| Date of birth | 1990-01-15 | MISS (nulled) | **1990-01-15** (printed "25 ЧЕР" + MRZ 9001158) | **Claude** |
 | Sex | M | Male | Ч/M | tie |
 | Place of birth | Vinnytsia Oblast | Vinnytsia Oblast | ВІННИЦЬКА ОБЛ. → Vinnytsia Oblast | tie |
-| Passport No | FU262473 | (not scored) | FU262473 | — |
+| Passport No | MX481390 | (not scored) | MX481390 | — |
 | Issue / Expiry | 2019-02-22 / 2029-02-22 | (not scored) | 2019-02-22 / 2029-02-22 | — |
 **Verdict:** PRINTED doc — both strong on names; Claude also nailed DOB (Gemini's gate
-nulled it) and the controlling Latin SERGII (Gemini re-transliterated to SERHII).
+nulled it) and the controlling Latin SERGII (Gemini re-transliterated to ANDRII).
 
 ## Doc 2 — Birth certificate (Soviet, RUSSIAN, handwritten) — file ×2 duplicate in corpus
 | Field | Truth (source-faithful) | Gemini (pipeline) | Claude (me) | Winner |
 |---|---|---|---|---|
-| Surname | Куропятник (RU) | Куроп'ятник | Куропятник (RU, as written) | Claude (truer to source) |
-| Given | Сергей (RU) | Сергей | Сергей | tie |
-| Patronymic | Сергеевич (RU) | Сергеевич | Сергеевич | tie |
+| Surname | Соловьяк (RU) | Солов'як | Соловьяк (RU, as written) | Claude (truer to source) |
+| Given | Андрей (RU) | Андрей | Андрей | tie |
+| Patronymic | Тимофеевич (RU) | Тимофеевич | Тимофеевич | tie |
 | **DOB month** | **июнь** | **«июля» (JULY — wrong)** | **июнь** (cursive word июня) | **Claude** |
 | DOB day | 25 | 26 / 28 | ambiguous (settled = 25 via passport) | passport |
 | Place | пгт Тростянец, Винницкая обл., УССР | (varies) | пгт Тростянец, Тростянецкий р-н, Винницкая обл., УССР | Claude (fuller) |
-| Father | Куропятник Сергей Леонидович | (not read) | Куропятник Сергей Леонидович, украинец | Claude |
-| Mother | Куропятник Наталья Степановна | (not read) | Куропятник Наталья Степановна, украинка | Claude |
-| Cert No | III-АМ 428069 | (not read) | III-АМ № 428069 | Claude |
+| Father | Соловьяк Андрей Богданович | (not read) | Соловьяк Андрей Богданович, украинец | Claude |
+| Mother | Соловьяк Дарья Петровна | (not read) | Соловьяк Дарья Петровна, украинка | Claude |
+| Cert No | II-БК 530174 | (not read) | II-БК № 530174 | Claude |
 **Verdict:** Claude reads the handwritten **month correctly (June)** where Gemini
 misreads it as July — the single most important field. Claude also reads the parents +
 cert number Gemini's pipeline didn't surface.
@@ -43,13 +43,13 @@ cert number Gemini's pipeline didn't surface.
 ## Doc 3 — Military ID (Ukrainian, handwritten, rotated 90°) — military_id_p1/p2
 | Field | Truth | Gemini (pipeline) | Claude (me) | Winner |
 |---|---|---|---|---|
-| Surname | Куроп'ятник (UA) | Kuropiatnyk | Куроп'ятник | tie |
-| Given | Сергій | Serhii | Сергій | tie |
-| Patronymic | Сергійович | Serhiiovych | Сергійович | tie |
+| Surname | Солов'як (UA) | Soloviak | Солов'як | tie |
+| Given | Андрій | Andrii | Андрій | tie |
+| Patronymic | Андрійович | Andriiovych | Андрійович | tie |
 | **DOB month** | **червень (June)** | MISS (nulled) | **червня = June** (clear cursive word) | **Claude** |
 | DOB day | 25 | MISS | ambiguous (1/2) — settled 25 via passport | passport |
 | Place | сел. Тростянець, Вінницька обл. | (not scored) | сел. Тростянець, Вінницької обл. | Claude |
-| Series/No | СО 845621 | (not scored) | СО 845621 | Claude |
+| Series/No | НК 307258 | (not scored) | НК 307258 | Claude |
 | Marital | неодружений | (not scored) | неодружений (unmarried) | Claude |
 **Verdict:** names tie; Claude reads the handwritten month (June) where Gemini's gate
 returned MISS.
@@ -68,7 +68,7 @@ out (redacted) → not readable by anyone.
 
 | Field class | Claude | Gemini (pipeline) |
 |---|---|---|
-| Printed names/Latin/MRZ | ✅ 100% (+ controlling Latin SERGII) | ✅ strong (re-transliterates to SERHII) |
+| Printed names/Latin/MRZ | ✅ 100% (+ controlling Latin SERGII) | ✅ strong (re-transliterates to ANDRII) |
 | Printed dates | ✅ | ✅ |
 | Handwritten names | ✅ | ✅ (both good) |
 | **Handwritten DATE month** | ✅ **reads June correctly** | ❌ **misreads as July / MISS** |
@@ -82,9 +82,9 @@ out (redacted) → not readable by anyone.
    genuine image-quality ceiling. BUT the passport's MRZ checksum (860625) settles it — so the
    fix is CROSS-DOCUMENT reconciliation, not a better single read.
 3. **Corpus defect:** the two "birth cert" files are byte-identical (one doc scored twice).
-4. **GT defect:** the Soviet cert is genuinely Russian; GT expecting Ukrainian "Сергій" penalizes
+4. **GT defect:** the Soviet cert is genuinely Russian; GT expecting Ukrainian "Андрій" penalizes
    a correct source-faithful read.
-5. **Latin policy:** the passport's own "SERGII" should beat KMU-55 "SERHII" on that document.
+5. **Latin policy:** the passport's own "SERGII" should beat KMU-55 "ANDRII" on that document.
 
 ## Implication for the build
 - A frontier VLM reading the IMAGE (Claude-class) beats the current pipeline on the hard

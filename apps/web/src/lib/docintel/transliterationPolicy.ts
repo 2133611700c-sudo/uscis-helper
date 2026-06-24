@@ -90,9 +90,9 @@ export function stripCountryCode(cy: string): string {
  * Ukrainian-issued ID documents print the citizen's official Ukrainian name. For
  * these, a shared-letter ('unknown'-script) name is NOT ambiguous — it is Ukrainian,
  * so KMU-55 applies with confidence and the field can auto-deliver. This is what lets
- * a stable surname like «Куроп'ятник» (no і/ї) auto-deliver instead of always
+ * a stable surname like «Солов'як» (no і/ї) auto-deliver instead of always
  * reviewing. EXCLUDED: Soviet-era / potentially-bilingual certificates (birth,
- * marriage, divorce, death) where a name may genuinely be Russian (Сергей) — there the
+ * marriage, divorce, death) where a name may genuinely be Russian (Андрей) — there the
  * ambiguity gate must stay so we never silently Russify/Ukrainianize the wrong way.
  */
 const UKRAINIAN_NAME_DOC_TYPES = new Set<string>([
@@ -146,8 +146,8 @@ function romanizeBySourceScript(cy: string): string {
  *
  * Behavior (only when the flag is ON):
  *   - docScript==='ru' AND the name's OWN script is ambiguous ('unknown') ⇒ use
- *     transliterateRussian (Сергей→Sergey, Сергеевич→Sergeyevich, Куропятник→
- *     Kuropyatnik) instead of KMU-55. We re-romanize from the RAW Cyrillic.
+ *     transliterateRussian (Андрей→Andrey, Тимофеевич→Timofeyevich, Соловьяк→
+ *     Solovyak) instead of KMU-55. We re-romanize from the RAW Cyrillic.
  *   - a name with a distinctive UA letter (detectNameScript==='ua') is NEVER
  *     force-Russified — it keeps KMU-55. A distinctive-RU name already routes RU
  *     via toCanonicalValue's own RU_TRANSLIT_ENABLED branch and is unchanged here.
