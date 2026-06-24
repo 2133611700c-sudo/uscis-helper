@@ -19,6 +19,12 @@ import type { ExtractedDocField } from '../types'
 import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
 import { normalizeForCompare } from '../selfConsistency'
 
+// ADR-026: native-res field crop + contrast-stretch reads handwritten Cyrillic exactly; downscaling a
+// region crop destroys the cursive signal. The old 1600 cap shrank a ~2200px half-tile of a 4128px cert
+// (verified: native-res crop of that exact cert reads the surname at CER 0.000; a downscaled crop fails).
+// Keep crops at native resolution up to this cap (raised from 1600), and contrast-stretch before reading.
+const TILE_MAX_DIMENSION = Math.max(1600, Number(process.env.OCR_TILE_MAX_DIMENSION) || 3000)
+
 const GEMINI_URL = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
 
@@ -257,9 +263,12 @@ export async function recoverEmptyFieldsByTiles(opts: {
       const wanted = [...emptyKeys].map((k) => ({ key: k, label: fieldLabels[k] ?? k }))
       const crop = await sharp(originalBuffer)
         .extract({ left: tile.left, top: 0, width: tile.width, height: H })
-        .resize(1600, 1600, { fit: 'inside', withoutEnlargement: false })
+        // Native resolution preserved up to TILE_MAX_DIMENSION (only downscale if truly huge; still
+        // upscale tiny tiles). NEVER binarize (ADR-026: Otsu/Sauvola destroy faded-ink strokes).
+        .resize(TILE_MAX_DIMENSION, TILE_MAX_DIMENSION, { fit: 'inside', withoutEnlargement: false })
+        .normalise()           // contrast-stretch — proven lift on faded handwritten ink (ADR-026)
         .sharpen({ sigma: 1 })
-        .jpeg({ quality: 88 })
+        .jpeg({ quality: 92 })
         .toBuffer()
       diag.tiles++
       let got: Record<string, string> = {}
