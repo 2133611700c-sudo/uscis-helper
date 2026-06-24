@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-24 | HTR zero-shot POC — legally-clean open Cyrillic models on the real handwritten cert (no keys, no training)
+- Owner: «найди кто читает кириллицу/рукописи, скопируй всё что можем легально». After committing the legal-reuse landscape (`docs/research/CYRILLIC_HTR_LANDSCAPE.md`, 157efe4), ran the planned **zero-shot POC**: local CPU venv (`qa-private/htr-venv`, gitignored, torch 2.8 + transformers 4.57, NO API keys), 3 Apache/MIT Cyrillic HTR models on line-crops of our real birth cert.
+- **First crop missed** (grabbed the printed title, not the name) — caught by EYE (Read the PNG), re-cropped at the verified name band before scoring. No trusting a number from an unverified crop.
+- **Result (zero-shot, no training):** `raxtemur/trocr-base-ru` (Apache) and `cyrillic-trocr/...cyrillic` (MIT) BOTH read the child **given name** correctly (embedded) — the very field the LLM APIs FABRICATED in the trap test; **NONE** read the cursive **surname** (CER>1; surname has apostrophe + a registry stamp over the ink); `Kansallisarkisto/cyrillic-htr` (Apache, native `subfolder="processor"`) missed both.
+- **Verdict:** off-the-shelf zero-shot = NOT autonomous for the critical surname → confirms the landscape prediction; the lever is fine-tuning on ~30–50 labeled pages (CER ~8–12%, labeling cost not money/keys). Production unchanged: handwritten certs = human review; printed = LLM APIs.
+- **Files:** NEW `docs/research/HTR_ZEROSHOT_POC.md` (PII-free). Real reads/crops/venv stay gitignored in `qa-private/htr-poc/`. PII guard clean.
+
 ## 2026-06-23 | MODEL INVENTORY — full live bench of every model + corrected the matrix/constitution/rules everywhere
 - Owner: «инвентаризация — где какая модель работает и какие функции; исправь все правила; какая модель читает рукопись без ошибок?». Ran a full HONEST/CRITICAL live bench (4 parallel agents, one per model) on the 3 real docs, scored vs GT + variance probe + different-person check. **The blunt answer: NO model reads handwritten certificates without errors.**
 - **Tested reality (2026-06-23):**
