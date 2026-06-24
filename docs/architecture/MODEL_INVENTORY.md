@@ -42,6 +42,17 @@
 ALWAYS human-reviewed regardless of model — no GA model is safe, and even the primary is not proven error-free.
 Never report a handwriting read as auto-delivered/acceptance.
 
+**Trap test 2026-06-24 (handwriting-trap-bench.mjs, child surname on the real birth cert, temp 0):** NO model
+read it correctly (0/5 match GT). TWO failure modes, and the danger is the first:
+- **WRONG-STABLE** (gpt-4.1, gemini-2.5-pro, gemini-2.5-flash): returns the SAME wrong person on every run →
+  **consensus / majority-vote / self-consistency CANNOT catch it** (all reads agree on the fabrication).
+- **FABRICATES-DIFFERENT** (gpt-5.4, gpt-5.5): a different fake person each run (voting *would* flag it).
+All models PASSED the blank-control (none invented a name on a blank image — the misread is anchored to real
+ink, not hallucinated from void). A targeted name-region CROP did NOT rescue any model. None obeyed
+"empty-beats-wrong" — every model emitted a name instead of admitting illegibility.
+**Consequence (hard rule):** a handwritten CRITICAL field must NOT be auto-delivered even when multiple reads
+or multiple models AGREE — agreement does not imply correctness here. Human review (or a real HTR engine) only.
+
 ## How to re-bench (when a quiet Gemini window allows)
 `cd apps/web && BENCH_MODELS="gemini-2.5-pro,gemini-3.5-flash,gemini-2.5-flash" node scripts/gemini-model-bench.mjs`
 (writes the FULL report — with real reads — to gitignored `qa-private/reports/`, prints a PII-free verdict matrix).
