@@ -46,8 +46,12 @@ For handwritten Cyrillic (UA/RU) field reading:
   not a known-failure. Promotion to autonomous requires broader N validation across documents/writers.
 
 ## Open follow-ups
-- Re-test the LLM APIs (Gemini/GPT) on native-res field crops — their prior "fabrication" may also be a
-  low-res-input artifact rather than intrinsic.
+- ~~Re-test the LLM APIs (Gemini/GPT) on native-res field crops~~ **ANSWERED (2026-06-24, tri-agent benchmark
+  on the owner's real docs — docs/research/HTR_TRIAGENT_BENCHMARK.md):** on identical native-res crops, the
+  local key-free `raxtemur` wins (3/6 exact) over gemini-3.1-pro-preview (2/6), gpt-4.1 (1/6), gemini-2.5-pro
+  (0/6), gpt-5.5 (0/6). Native-res recovers the STRONGEST model (3.1-pro-preview was partly low-res-limited)
+  but NOT the GA models or newer GPT — those have a genuine handwriting deficit. **raxtemur is the
+  handwritten-field reader; LLMs are not.**
 - Field-region localization: this proof used hand-found boxes; production needs automatic per-field region
   detection (layout/segmentation) to crop at native res.
 - Validate on more real UA/RU documents/writers before relaxing the human-review gate.

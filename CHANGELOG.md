@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-24 | Tri-agent benchmark on the owner's REAL docs — local raxtemur beats both paid clouds on handwriting
+- Owner granted rights to use his original documents; "обучи все 3 агента, тесты на всех трёх, сначала через себя". Fed IDENTICAL native-res + contrast crops (verified recipe) + identical teaching prompt to 3 readers on 2 real RU handwritten birth certs (N=6 owner-VERIFIED name fields). PII → PAID tiers only (GEMINI_API_KEY_PAY, OpenAI paid); full reads gitignored; PII-free report.
+- **Result:** raxtemur (local, key-free, $0) **3/6 exact, 5/6 match** > gemini-3.1-pro-preview 2/6 > gpt-4.1 1/6 > gemini-2.5-pro 0/6 > gpt-5.5 0/6. The local key-free HTR beats every paid cloud model on the owner's handwriting, with zero PII egress.
+- **Answers ADR-026 open Q:** native-res crops recover the STRONGEST model (3.1-pro-preview, partly low-res-limited before) but NOT GA (2.5-pro 0/6) or newer GPT (gpt-5.5 0/6, worse than 4.1) → those have a genuine handwriting deficit, not a resolution one. Newer ≠ better on cursive.
+- Architecture confirmed: raxtemur = handwritten-field reader + human-review gate; remaining lever = automatic per-field localization. NEW docs/research/HTR_TRIAGENT_BENCHMARK.md (PII-free); ADR-026 follow-up marked answered. ~24 paid calls (pennies).
+
 ## 2026-06-24 | Project aligned to the verified HTR standard (inventory 3 agents → fix each, suite green per step)
 - Owner: "прогоняй весь проект через себя, инвентаризируй все процессы у себя и в проекте, настрой как у тебя при правильном результате, тесты после каждого". Inventoried every OCR/resolution/scoring process (3 parallel agents) vs the verified recipe (ADR-026), fixed each divergence; web suite 4660 pass / 24 skip + tsc 0 after EVERY step.
 - **tileRegionRead.ts** (061e3cb): per-region reader was cropping native then downscaling tile to 1600px → now native res up to OCR_TILE_MAX_DIMENSION (3000) + `.normalise()` contrast-stretch + q92.
