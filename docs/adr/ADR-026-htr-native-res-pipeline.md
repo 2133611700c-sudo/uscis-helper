@@ -52,6 +52,27 @@ For handwritten Cyrillic (UA/RU) field reading:
   detection (layout/segmentation) to crop at native res.
 - Validate on more real UA/RU documents/writers before relaxing the human-review gate.
 
+## Project aligned to this standard (2026-06-24, inventory-then-fix, each step tested green)
+Inventoried every OCR/resolution/scoring process in the project (3 parallel agents) and fixed each
+divergence from the verified recipe; full web suite (4660 pass / 24 skip) + tsc 0 after every step:
+1. **`ensemble/tileRegionRead.ts`** — the per-region recovery reader cropped at native res then DOWNSCALED
+   the tile to 1600px (destroying the signal the crop preserved). Now keeps native res up to
+   `OCR_TILE_MAX_DIMENSION` (3000), adds `.normalise()` contrast-stretch, q88→q92. (061e3cb)
+2. **`upload/downscaleImage.ts`** — the client pre-shrank uploads to 2400px, BELOW the server's 3072 OCR
+   cap, discarding pixels the server would keep. Aligned client maxEdge to 3072, q0.82→0.80 (stays under
+   the ~4.5MB Vercel cap). Resolution now lost once, server-side. (bee3a58)
+3. **`ocr/image-preprocess.ts`** — added `.normalise()` contrast-stretch to the faded/low-DPI upscale
+   branch (the recipe's second proven lever), beside the existing handwriting sharpen; no binarization. (8d7f55c)
+4. **`canonical/core/benchmark.ts`** — deprecated the test-only alphabet-agnostic `scoreAgainstTruth`;
+   redirected acceptance to the channel-aware `scoreDocumentAcceptance`. Production scorers were already
+   channel-aware (verified) — this closes the last landmine. (b5d6c23)
+
+**Confirmed safe (no change needed):** production acceptance scorer `cyrillicAcceptanceMetrics.ts` and all
+bench scorers (`rescore-channels`, `gt-pipeline-bench`, etc.) are already channel-aware; no binarization
+exists anywhere in the recognition path. Still-open production gap: a native-res PER-FIELD reader as the
+PRIMARY path (today it's full-downscaled-page → Gemini, with tileRegionRead as recovery) + automatic
+field-region localization + the raxtemur sidecar host — these need the hosting decision.
+
 ## Consequence for the committed record
 MODEL_INVENTORY's blanket "NO model reads handwritten certificates without error" is corrected: it holds for the
 GA LLM APIs (which fabricate) but is FALSE for a specialized key-free HTR (`raxtemur`) given native-res input.
