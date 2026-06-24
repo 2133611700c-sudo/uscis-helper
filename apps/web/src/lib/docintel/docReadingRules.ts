@@ -72,6 +72,36 @@ const RUSSIAN_DOCUMENT_RULE =
   'over re-transliteration (USCIS expects consistency with the passport). (5) ARCHAIC pre-1918 letters ' +
   '(ѣ/yat, і, ѳ, ѵ) on very old documents read as their modern equivalents (ѣ→е, ѳ→ф, ѵ→и/у, і→и).'
 
+// DOCUMENT-FAMILY FIELD DIFFERENCES — an EXPLANATION rule, NOT a restriction. Different Ukrainian
+// document families legitimately carry DIFFERENT field sets for different legal purposes, so a field
+// that is absent on one document is NOT an error, a "limit", or a conflict with another document.
+//   • INTERNATIONAL passport («…для виїзду за кордон») — a machine-readable travel document built to
+//     ICAO Doc 9303 (КМУ постанова №302-2015; Latin per КМУ №55). Its data page carries STANDARDIZED
+//     ICAO fields only: surname + given name (Cyrillic AND official Latin), passport number, nationality,
+//     sex, date of birth, place of birth (country/oblast level), issue/expiry, issuing authority, MRZ.
+//     ICAO 9303 has NO patronymic field and NO detailed internal birthplace — their ABSENCE is normal.
+//   • INTERNAL / civil-status / Soviet / military / administrative documents (birth/marriage/divorce/
+//     death/name-change certs, internal passport booklet, військовий квиток, ЗАГС/ДРАЦС extracts;
+//     КМУ №1025 etc.) legitimately carry patronymic, detailed place (смт/село, район, область),
+//     registry office, historical authority names, Russian or mixed-Cyrillic forms.
+// HARD RULES: (a) Do NOT treat the absence of patronymic / detailed birthplace on an INTERNATIONAL
+// passport as a defect or as a conflict with an internal document. (b) Do NOT treat the PRESENCE of
+// those fields on an internal document as a conflict with the passport — they are different documents
+// with different normative purposes. (c) NEVER invent an absent field from another document; record it
+// factually as field_not_present_on_document (vs not_visible/present_but_unreadable). (d) The normative
+// reason a field is absent is CONTEXT only — never a source for the missing VALUE.
+const DOC_FAMILY_FIELDS_RULE =
+  'DOCUMENT-FAMILY FIELDS (read what THIS document legitimately has; absence ≠ error) — Ukrainian ' +
+  'document families carry DIFFERENT fields by legal design. An INTERNATIONAL passport (для виїзду за ' +
+  'кордон) is an ICAO Doc 9303 travel document: it has surname/given name in Cyrillic AND official ' +
+  'Latin, passport number, nationality, sex, date of birth, place of birth at country/oblast level, ' +
+  'issue/expiry, and an MRZ — and it legitimately has NO patronymic and NO detailed internal ' +
+  'birthplace (ICAO 9303 has no such field). Do NOT invent them and do NOT mark them as errors. ' +
+  'INTERNAL / civil-status / Soviet / military documents legitimately DO carry patronymic, detailed ' +
+  'place (смт/село, район, область), registry office, and historical/Russian forms — read them in ' +
+  'full. If a field is simply not on this document, report field_not_present_on_document; NEVER copy a ' +
+  'value from another document to fill it, and NEVER treat a different field set as a contradiction.'
+
 export const DOC_READING_RULES: Record<string, DocReadingRules> = {
   ua_birth_certificate: {
     language:
@@ -97,6 +127,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
       'Read the certificate series + number, usually Roman-numeral + letters + digits (e.g. ' +
         '"II-БК № 530174").',
       'Place of birth is "пгт/смт/село <Name>, <…> району/района, <…> області/области, УРСР/УССР".',
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
@@ -122,6 +153,7 @@ export const DOC_READING_RULES: Record<string, DocReadingRules> = {
         'SOLOVIAK into SOLOVYAK).',
       'The MRZ is the math anchor: read both MRZ lines verbatim; they validate surname, given ' +
         'name, passport number, date of birth and sex.',
+      DOC_FAMILY_FIELDS_RULE,
     ],
   },
 
