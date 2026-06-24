@@ -1,5 +1,11 @@
 # Tri-agent benchmark on the owner's REAL handwritten documents (2026-06-24)
 
+> **⛔ CORRECTED by the honest re-test (HTR_HONEST_RETEST.md, same day).** Two over-claims here were fixed: (1)
+> raxtemur "blank-control clean" was WRONG — raxtemur fabricates a word on a blank image (cannot abstain); (2)
+> "raxtemur is the reader" was too broad — raxtemur FAILS printed text (passport CER ~1.0); LLMs read print
+> perfectly. The "3/6" included one CER-tuned crop set (soviet01). Correct architecture: route by field
+> rendering (handwriting→raxtemur+gate+review; print→LLM). Read this header before trusting the numbers below.
+
 **Mandate (owner, rights granted to use his originals):** teach all 3 readers identically, then test all
 3 on his real documents; run everything through the verified recipe first. PII discipline: his documents
 were read ONLY on PAID API tiers (Gemini `GEMINI_API_KEY_PAY`, OpenAI paid); full reads stay gitignored in

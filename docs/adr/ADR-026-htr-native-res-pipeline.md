@@ -40,7 +40,11 @@ For handwritten Cyrillic (UA/RU) field reading:
   (The global `image-preprocess` 3072 cap and any height-128 line resize must NOT apply to the field-crop reader.)
 - **Light contrast-stretch / gamma only.** NEVER binarize (Otsu/Sauvola destroy faded-ink stroke continuity).
 - **Stamp suppression** (blue-channel mask → white) is an optional secondary; small effect.
-- **Reader:** `raxtemur/trocr-base-ru` for the UA/RU handwritten hand (cyrillic-trocr underperforms even restored).
+- **Reader — ROUTE BY FIELD RENDERING (corrected 2026-06-24 honest re-test, HTR_HONEST_RETEST.md):**
+  HANDWRITTEN field → `raxtemur/trocr-base-ru` (best on cursive) **but it CANNOT abstain — it fabricates a
+  word on a blank crop**, so its non-exact reads MUST be gated (run-consistency / confidence) + human review;
+  PRINTED field → an LLM (Gemini/GPT read printed passport text perfectly; raxtemur FAILS print, CER ~1.0).
+  Do NOT use one reader for all. `gemini-2.5-pro` stays DISQUALIFIED for handwriting (fabricates).
 - **Scoring/acceptance must be channel-aware** (Cyrillic vs Latin-translit) — never compare across alphabets.
 - **Human review stays as the safety gate** (CONSTITUTION), but HTR is now a viable autonomous-CANDIDATE reader,
   not a known-failure. Promotion to autonomous requires broader N validation across documents/writers.

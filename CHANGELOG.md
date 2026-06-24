@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-24 | HONEST critical re-test (owner: "не верь ранним тестам, делай заново честно") — corrected 2 over-claims
+- Re-tested cert + PASSPORT with FIXED boxes (no CER-tuning), blank-control, 3 runs/reader, 4 readers. Passport (printed) = control. PII → paid tiers + gitignored; PII-free report.
+- **CORRECTION 1 — raxtemur CANNOT abstain:** on a BLANK crop raxtemur emitted 9 Cyrillic chars (fabrication); all 3 LLMs returned empty. So "blank-control clean" was overstated — only raxtemur's EXACT/run-consistent reads are trustworthy; non-exact reads must be gated + human-reviewed.
+- **CORRECTION 2 — raxtemur FAILS printed text:** passport name line CER ~0.9–1.0 (0/2 exact); the 3 LLMs read the printed passport PERFECTLY (2/2 exact each). "raxtemur is the reader" was too broad → **route by field RENDERING**: handwriting→raxtemur(+gate+review), print→LLM.
+- **Held up honestly:** with fixed (non-tuned) boxes raxtemur is still the best HANDWRITING reader (cert 2/3 exact, reproducible); gemini-2.5-pro still fabricates cursive (0/3); harness sound (printed control passed for LLMs). The earlier "3/6" included one CER-tuned crop set (soviet01).
+- NEW docs/research/HTR_HONEST_RETEST.md; corrected ADR-026 + MODEL_INVENTORY + HTR_TRIAGENT_BENCHMARK (correction banner) + memory.
+
 ## 2026-06-24 | Tri-agent benchmark on the owner's REAL docs — local raxtemur beats both paid clouds on handwriting
 - Owner granted rights to use his original documents; "обучи все 3 агента, тесты на всех трёх, сначала через себя". Fed IDENTICAL native-res + contrast crops (verified recipe) + identical teaching prompt to 3 readers on 2 real RU handwritten birth certs (N=6 owner-VERIFIED name fields). PII → PAID tiers only (GEMINI_API_KEY_PAY, OpenAI paid); full reads gitignored; PII-free report.
 - **Result:** raxtemur (local, key-free, $0) **3/6 exact, 5/6 match** > gemini-3.1-pro-preview 2/6 > gpt-4.1 1/6 > gemini-2.5-pro 0/6 > gpt-5.5 0/6. The local key-free HTR beats every paid cloud model on the owner's handwriting, with zero PII egress.
