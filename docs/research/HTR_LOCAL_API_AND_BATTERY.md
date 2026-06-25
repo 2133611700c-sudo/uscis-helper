@@ -42,6 +42,22 @@ abstain. raxtemur + this local API is a **reviewer-assist handwriting reader beh
 gate**, not an autonomous reader. The remaining levers (owner-side): broader human-verified GT for a real
 held-out measurement; a production host for the sidecar.
 
+## End-to-end through the production code path (2026-06-24) — Gemini-INDEPENDENT
+The field-first route is wired into `readDocument` and runs even when the LLM read FAILS:
+- `documentFieldReader.runHtrFieldStage` — for a handwritten doc family + `HTR_SIDECAR_URL` set, the HTR route
+  reads the name fields INDEPENDENTLY of the LLM full-page read (runs on the normal path AND the vision-failed
+  early-return path; creates the name rows if the LLM omitted them). FAIL-CLOSED: HTR unavailable / empty /
+  low-confidence on a critical handwritten field → value=null + review_required → USCIS autofill blocked.
+- `handwrittenFieldRoute` localizer priority: (1) `HTR_FIELD_BOXES` override → (2) NON-LLM per-doc-class
+  `FIELD_BOX_TEMPLATES` (deterministic, no Gemini) → (3) Gemini bbox fallback.
+
+**PROVEN through `readDocument` on the owner's real birth cert, with Gemini FULLY DOWN (503) and NO override
+(the NON-LLM template localized):** `STATUS=htr_only:3f` — family_name (conf 0.96) + given_name (0.98) +
+patronymic (0.94) read field-first by the template + raxtemur sidecar, ALL review-gated, **zero Gemini
+dependency**. With the sidecar down, the same path FAIL-CLOSES (value=null + review). Suite 4677 green, tsc 0,
+OFF by default. Honest remaining: per-class templates beyond birth cert; broad held-out GT; website-UI/tunnel
+staging E2E; a production sidecar host.
+
 ## Reproduce
 Start: `cd qa-private/htr-poc && ../htr-venv/bin/uvicorn ocr_api:app --port 8077`.
 Battery: `../htr-venv/bin/python battery.py`. (venv + crops + reads gitignored.)
