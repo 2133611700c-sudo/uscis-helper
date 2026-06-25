@@ -81,6 +81,27 @@ exists anywhere in the recognition path. Still-open production gap: a native-res
 PRIMARY path (today it's full-downscaled-page → Gemini, with tileRegionRead as recovery) + automatic
 field-region localization + the raxtemur sidecar host — these need the hosting decision.
 
+## WIRED (2026-06-24) — the field-first handwriting route is now in code, OFF by default
+The route-by-rendering path is no longer PENDING — it is implemented and tested, gated by `HTR_SIDECAR_URL`
+(UNSET in prod → disabled, byte-identical):
+1. **HTR sidecar service** — `qa-private/htr-poc/ocr_api.py` (FastAPI, raxtemur on Apple-Silicon MPS, ~1 s/field,
+   POST `/read`). Proven on the owner's real cert: surname+given EXACT (conf 0.96/0.98) through the API.
+2. **TS reader client** — `providers/htrSidecarProvider.ts` (field-first crop loop: native-res crop per box →
+   contrast → sidecar; fail-safe; 4 tests).
+3. **Field localizer** — `ensemble/handwrittenFieldRoute.ts` `localizeHandwrittenFields` (Gemini bbox of the
+   handwritten name fields — LLM localizes even when it can't read cursive) + `readHandwrittenRoute` which emits
+   THREE SEPARATED layers per field: read-quality (`raw_htr_text`,`htr_confidence`) / normalization
+   (`normalized_value`) / review (`review_required`,`review_reason`). 4 tests.
+4. **Pipeline wiring** — `documentFieldReader.ts`: for `isHandwrittenFamily(docTypeId)` + sidecar configured +
+   original buffer, the HTR read becomes the AUTHORITATIVE `raw_cyrillic` for each handwritten name field
+   (canonical Latin re-derived downstream by D2/codex), ALWAYS review-gated. Fail-open. Suite 4672 green, tsc 0.
+
+**Proof battery (`docs/research/HTR_LOCAL_API_AND_BATTERY.md`):** GOLD owner-verified N=6 → 3/6 EXACT, mean CER
+0.172, deterministic 3/3; held-out (1939) FAILS; raxtemur cannot abstain. ⇒ reviewer-assist, not autonomous.
+
+**REMAINING (owner-side, not labor):** a production sidecar HOST (Python/torch, not Vercel) so `HTR_SIDECAR_URL`
+can be set; broader human-verified GT for a real held-out measurement; automatic localizer accuracy validation.
+
 ## Consequence for the committed record
 MODEL_INVENTORY's blanket "NO model reads handwritten certificates without error" is corrected: it holds for the
 GA LLM APIs (which fabricate) but is FALSE for a specialized key-free HTR (`raxtemur`) given native-res input.

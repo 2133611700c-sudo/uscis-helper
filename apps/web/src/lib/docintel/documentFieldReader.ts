@@ -29,6 +29,9 @@ import {
 } from './transliterationPolicy'
 import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
+import { isHandwrittenFamily } from './modelMatrix'
+import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
+import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 import {
@@ -428,6 +431,35 @@ export async function readDocument(
       } catch (e) {
         console.warn('[hires_tile_recover] failed (non-blocking)', e instanceof Error ? e.message : String(e))
       }
+    }
+  }
+
+  // HTR FIELD-FIRST ROUTE (ADR-026; gated by HTR_SIDECAR_URL, UNSET in prod → disabled, byte-identical).
+  // For a HANDWRITTEN doc family the LLM full-page read of a cursive name field is unreliable (it fabricates).
+  // When the key-free HTR sidecar is configured, LOCALIZE each handwritten name field, crop it at NATIVE
+  // resolution, and read it via raxtemur — this becomes the AUTHORITATIVE raw_cyrillic for that field (canonical
+  // Latin is re-derived downstream by D2/codex). ALWAYS review-gated (raxtemur cannot abstain). Fail-open:
+  // any error leaves the LLM read in place. This is the route-by-rendering primary path for handwriting.
+  if (isHtrSidecarEnabled() && isHandwrittenFamily(docTypeId) && opts.originalBuffer) {
+    try {
+      const htr = await readHandwrittenRoute(opts.originalBuffer, mimeType)
+      if (htr.length) {
+        const byField = new Map(htr.map((h) => [h.field, h]))
+        finalFields = finalFields.map((f) => {
+          const h = byField.get(f.field)
+          if (!h || !h.raw_htr_text.trim()) return f
+          return {
+            ...f,
+            raw_cyrillic: h.raw_htr_text.trim(),
+            confidence: h.htr_confidence,
+            review_required: true,
+            review_reasons: [...(f.review_reasons ?? []), h.review_reason],
+          }
+        })
+        console.info('[htr_field_route]', JSON.stringify({ doc_type_id: docTypeId, htr_fields: htr.length }))
+      }
+    } catch (e) {
+      console.warn('[htr_field_route] failed (non-blocking)', e instanceof Error ? e.message : String(e))
     }
   }
 
