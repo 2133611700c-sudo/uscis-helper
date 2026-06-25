@@ -14,17 +14,14 @@ is amended toward ROUTE-BY-FIELD-RENDERING — handwritten field → key-free `r
 crop (best on cursive, cannot abstain → gate + human review); printed field → an LLM. The handwriting reader
 is verified but NOT yet wired to production (sidecar hosting decision pending); until then the LLM matrix
 below ships as the reader. Also: `gemini-3.1-pro-preview` is run-to-run UNSTABLE — see HTR_STABLE_BENCHMARK.)_
-`gemini-3.1-pro-preview` is THE document reader (D1) for ALL
-products, ALL doc classes, and is the ONLY acceptance-valid reader. BUT it is a PREVIEW
-endpoint with NO capacity guarantee → unreliable availability (sporadic 503 UNAVAILABLE /
-429 RESOURCE_EXHAUSTED); it is retried with exponential backoff before any fallback.
-Availability fallbacks, in PREFERENCE order: `gemini-2.5-pro` (GA, preferred — accurate on
-PRINTED docs), then `gemini-3.5-flash`, then `gemini-2.5-flash`. EVERY fallback read is
-force-reviewed and is NEVER a quality/acceptance number. `gemini-2.5-pro` AND
-`gemini-2.5-flash` are DISQUALIFIED for the certificate family (they FABRICATE a different,
-fake person on HANDWRITING). And: NO model — not even the primary — is proven error-free on
-HANDWRITTEN certificates, so handwritten birth/marriage/divorce/death/name-change/certificate
-docs are ALWAYS human-reviewed regardless of model. *Enforced:* `modelMatrix.ts`,
+**`gemini-2.5-pro`** (stable GA) is THE LLM document reader (D1) for PRINTED fields and the ONLY
+acceptance-valid LLM. The unstable PREVIEW `gemini-3.1-pro-preview` was **REMOVED 2026-06-24** (owner) —
+sporadic 503/429 + run-to-run instability → now in `DEPRECATED_MODELS` (never use). Availability fallbacks,
+in PREFERENCE order: `gemini-3.5-flash`, then `gemini-2.5-flash`. EVERY fallback read is force-reviewed and
+is NEVER an acceptance number. `gemini-2.5-pro` (the primary) AND `gemini-2.5-flash` are DISQUALIFIED for the
+certificate family (they FABRICATE a different person on HANDWRITING) → so handwritten certs have NO LLM
+acceptance and are ALWAYS human-reviewed; the handwriting reader is `raxtemur` (ADR-026, not yet wired).
+Handwritten birth/marriage/divorce/death/name-change/certificate docs are ALWAYS human-reviewed regardless of model. *Enforced:* `modelMatrix.ts`,
 `geminiVisionProvider.ts`, `documentFieldReader.ts` (fallback_model_used), `modelMatrix.test.ts`
 + CI guard. (ADR-018; full live matrix: `docs/architecture/MODEL_INVENTORY.md`)
 

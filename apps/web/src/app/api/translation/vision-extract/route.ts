@@ -161,7 +161,7 @@ async function runDateEnsemble<T extends {
     if (apiKey) {
       const rr = await readDateRegionsWithVision({
         imageBuffer, mimeType, geminiApiKey: apiKey,
-        geminiModel: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview'),
+        geminiModel: normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-pro'),
         vision: googleVisionProvider,
       })
       secondText = rr.text; diag = { ...rr.diag, source: 'region_crop' }
@@ -499,7 +499,7 @@ async function POST_impl(req: NextRequest) {
       const readModels = [...new Set(corePages.map((p) => p.r?.model).filter((m): m is string => !!m))]
       // When NO page produced a model (all reads failed), report the primary as the intended
       // reader — never a flash literal, which would misrepresent a failure as a flash read.
-      const actualModel = readModels.length ? readModels.join('+') : normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview')
+      const actualModel = readModels.length ? readModels.join('+') : normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-pro')
       console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview, '; read_models=', readModels.join('+') || 'none')
       return NextResponse.json({
         ok: true, doc_type_id: docTypeId, fields,
