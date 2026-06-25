@@ -453,6 +453,14 @@ export async function readDocument(
       console.warn('[htr_field_route] sidecar error → FAIL-CLOSED on critical handwritten fields', e instanceof Error ? e.message : String(e))
     }
     const handwritten = new Set(spec.fields.filter((f) => f.handwritten).map((f) => f.field))
+    // FIELD-FIRST: ensure the handwritten NAME rows EXIST even when the (flaky) LLM full-page read failed or
+    // omitted them — handwriting is read independently of the LLM, not just as an override.
+    const present = new Set(finalFields.map((f) => f.field))
+    for (const sf of spec.fields) {
+      if (HTR_NAME_FIELDS.has(sf.field) && sf.handwritten && !present.has(sf.field)) {
+        finalFields.push({ field: sf.field, kind: sf.kind, raw_cyrillic: null, value: null, confidence: 0, review_required: true, source: 'vision', provider: provider.name })
+      }
+    }
     finalFields = applyHtrFieldRoute(finalFields, htr, HTR_NAME_FIELDS, handwritten, HTR_MIN_CONF)
     console.info('[htr_field_route]', JSON.stringify({ doc_type_id: docTypeId, htr_fields: htr.length, fail_closed: true }))
   }

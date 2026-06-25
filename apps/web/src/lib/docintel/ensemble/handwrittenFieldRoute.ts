@@ -47,6 +47,22 @@ export async function localizeHandwrittenFields(
   originalBuffer: Buffer,
   mime: string,
 ): Promise<HtrFieldBox[]> {
+  // CONFIG/TEST override: HTR_FIELD_BOXES = JSON {"family_name":[l,t,r,b],...} (native pixels). When set, use
+  // these boxes directly and SKIP the Gemini localizer — for per-document templates or a Gemini-independent
+  // proof (the LLM localizer is itself an availability risk; this decouples the HTR reader from it).
+  const fixed = (process.env.HTR_FIELD_BOXES || '').trim()
+  if (fixed) {
+    try {
+      const obj = JSON.parse(fixed) as Record<string, number[]>
+      const out: HtrFieldBox[] = []
+      for (const [field, b] of Object.entries(obj)) {
+        if (Array.isArray(b) && b.length === 4 && b.every((n) => typeof n === 'number')) {
+          out.push({ field, box: [b[0], b[1], b[2], b[3]] as [number, number, number, number] })
+        }
+      }
+      if (out.length) return out
+    } catch { /* fall through to Gemini */ }
+  }
   const key = geminiKey()
   if (!key) return []
   let sharp: typeof import('sharp')
