@@ -25,26 +25,29 @@
  *     error. Handwritten birth/marriage/divorce/death/name-change docs are ALWAYS human-reviewed,
  *     regardless of model. (See MODEL_PROFILES + HANDWRITTEN_DOC_FAMILIES below.)
  *
- * AVAILABILITY REALITY (2026-06-23): the primary `gemini-3.1-pro-preview` is a PREVIEW endpoint
- * with NO capacity guarantee → it sporadically returns 503 UNAVAILABLE / 429 RESOURCE_EXHAUSTED.
- * The provider retries it with exponential backoff (geminiVisionProvider) before falling back.
- * The GA `gemini-2.5-pro` is reliably AVAILABLE and accurate on PRINTED docs, so it is the
- * preferred availability fallback — but it FABRICATES a different person on handwriting, hence
- * it is DISQUALIFIED for the certificate family.
+ * PRIMARY CHANGE (2026-06-24, owner): the unstable PREVIEW `gemini-3.1-pro-preview` was REMOVED
+ * (sporadic 503/429 + run-to-run instability — HTR_STABLE_BENCHMARK). The stable GA `gemini-2.5-pro`
+ * is now PRIMARY — reliably available + accurate + stable on PRINTED docs. It FABRICATES on handwriting,
+ * so it stays DISQUALIFIED for the certificate family → handwritten certs are force-reviewed (no LLM
+ * acceptance; the handwriting reader is `raxtemur`, ADR-026, not yet wired).
  *
- * Nobody promotes a flash/2.5-pro model to primary. Nobody reports a fallback read as
- * acceptance. These are invariants, enforced here + by tests + by a CI guard.
+ * Nobody reports a fallback read as acceptance. The removed preview must never reappear. These are
+ * invariants, enforced here + by tests + by a CI guard.
  */
 
-/** The ONE document reader (D1). The only model a quality/acceptance number may use. */
-export const PRIMARY_READER = 'gemini-3.1-pro-preview' as const
+/** The ONE document reader (D1). The only model a quality/acceptance number may use.
+ * CHANGED 2026-06-24 (owner): removed the unstable PREVIEW `gemini-3.1-pro-preview` (sporadic 503/429
+ * AND run-to-run instability — HTR_STABLE_BENCHMARK). Promoted the stable GA `gemini-2.5-pro` (reads
+ * PRINTED docs correctly + stably across 5 runs). Handwriting does NOT rely on this LLM: certs are
+ * force-reviewed and DISQUALIFIED below (2.5-pro fabricates cursive) → handwriting reader = raxtemur
+ * (ADR-026, not yet wired) + human review. The deprecated preview is in DEPRECATED_MODELS. */
+export const PRIMARY_READER = 'gemini-2.5-pro' as const
 
 /**
  * Availability fallbacks, in PREFERENCE order (best-available first). NEVER primary. A
- * non-Latin read here is force-reviewed. 2.5-pro is GA + accurate on PRINTED docs, so it
- * outranks flash; flash models follow for last-resort availability.
+ * non-Latin read here is force-reviewed. flash models for last-resort availability only.
  */
-export const FALLBACK_MODELS = ['gemini-2.5-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'] as const
+export const FALLBACK_MODELS = ['gemini-3.5-flash', 'gemini-2.5-flash'] as const
 
 /**
  * Models disqualified for specific doc-class families (returned a DIFFERENT, fabricated person
@@ -61,8 +64,8 @@ export const DISQUALIFIED: Readonly<Record<string, readonly string[]>> = Object.
 /** Doc-type-id family substrings that are typically HANDWRITTEN ⇒ ALWAYS human-reviewed (any model). */
 export const HANDWRITTEN_DOC_FAMILIES = ['birth', 'marriage', 'divorce', 'death', 'name_change', 'certificate'] as const
 
-/** Models that must never appear anywhere (deprecated / 404 on generation). */
-export const DEPRECATED_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-3-pro-preview'] as const
+/** Models that must never appear anywhere (deprecated / 404 / removed for instability). */
+export const DEPRECATED_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-3-pro-preview', 'gemini-3.1-pro-preview'] as const
 
 /** The full sanctioned provider chain (primary first). Anything else is a violation. */
 export const SANCTIONED_CHAIN = [PRIMARY_READER, ...FALLBACK_MODELS] as const
@@ -89,20 +92,20 @@ export interface ModelProfile {
 
 export const MODEL_PROFILES: Readonly<Record<string, ModelProfile>> = Object.freeze({
   'gemini-3.1-pro-preview': {
-    id: 'gemini-3.1-pro-preview', tier: 'preview', role: 'primary',
-    availability: 'UNRELIABLE — preview, no capacity guarantee; sporadic 503 UNAVAILABLE + 429 RESOURCE_EXHAUSTED. Retried with exponential backoff before fallback.',
-    readsWell: 'PRINTED Cyrillic as an LLM acceptance reader. (CORRECTED 2026-06-24, ADR-026 + HTR_STABLE_BENCHMARK: it is NOT the best handwriting reader — key-free raxtemur beats it 3/6 vs 2/6 on cursive — and as a PREVIEW it WOBBLES across runs; dropped from HTR benchmarks. Handwriting reader = raxtemur, route by field rendering.)',
-    failsOn: 'Availability (503/429) + run-to-run INSTABILITY (preview). NOT a handwriting reader (route handwriting to raxtemur per ADR-026); handwriting still human-reviewed regardless of model.',
-    function: 'D1 PRIMARY READER — the only model whose read is a product/acceptance result.',
-    tested: '2026-06-23',
+    id: 'gemini-3.1-pro-preview', tier: 'preview', role: 'deprecated',
+    availability: 'REMOVED 2026-06-24 (owner) — UNRELIABLE preview (sporadic 503/429) AND run-to-run UNSTABLE (HTR_STABLE_BENCHMARK). No longer in the sanctioned chain.',
+    readsWell: '—',
+    failsOn: 'Instability + availability. Removed; never use. Handwriting → raxtemur (ADR-026); printed → gemini-2.5-pro.',
+    function: 'DEPRECATED — must not appear anywhere.',
+    tested: '2026-06-24',
   },
   'gemini-2.5-pro': {
-    id: 'gemini-2.5-pro', tier: 'ga', role: 'fallback',
-    availability: 'RELIABLE — GA, no 503/429 in the bench. NOTE: thinking eats the output budget → set maxOutputTokens high (≥16384) or it returns EMPTY (MAX_TOKENS).',
-    readsWell: 'PRINTED docs (passport, military ID): correct person, stable (95–100% temp-stability), accurate names/dates.',
-    failsOn: 'HANDWRITTEN certificates — FABRICATES a different, fake person (confident + stable). DISQUALIFIED for the certificate family. Never an acceptance number (fallback).',
-    function: 'Preferred AVAILABILITY fallback for PRINTED docs (force-reviewed). NOT for handwriting.',
-    tested: '2026-06-23',
+    id: 'gemini-2.5-pro', tier: 'ga', role: 'primary',
+    availability: 'RELIABLE — GA, no 503/429 in the bench, STABLE across 5 runs. NOTE: thinking eats the output budget → set maxOutputTokens high (≥16384) or it returns EMPTY (MAX_TOKENS).',
+    readsWell: 'PRINTED docs (passport, military ID): correct person, stable (95–100%), accurate names/dates. The acceptance LLM for printed fields.',
+    failsOn: 'HANDWRITTEN certificates — FABRICATES a different, fake person (confident + stable) → DISQUALIFIED for the certificate family; handwriting goes to raxtemur + human review, NOT this model.',
+    function: 'D1 PRIMARY READER (promoted 2026-06-24) — acceptance reader for PRINTED fields. Disqualified on handwriting certs.',
+    tested: '2026-06-24',
   },
   'gemini-3.5-flash': {
     id: 'gemini-3.5-flash', tier: 'ga', role: 'fallback',

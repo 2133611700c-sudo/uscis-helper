@@ -15,7 +15,7 @@
 import type { DocTypeSpec, VisionFieldRead, VisionProvider, VisionReadResult } from '../types'
 import { getGeminiApiKey } from '@/lib/gemini/apiKey'
 import { normalizeGeminiModel } from '@/lib/gemini/model'
-import { FALLBACK_MODELS, isDisqualifiedFor } from '../modelMatrix'
+import { FALLBACK_MODELS, isDisqualifiedFor, PRIMARY_READER } from '../modelMatrix'
 import { readingRulesPromptBlock, isDocReadingRulesEnabled } from '../docReadingRules'
 import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
 
@@ -49,7 +49,7 @@ const GEMINI_PREPROC_VERSION = 'v2'
  *  documentFieldReader can detect when a read came from a FALLBACK model —
  *  fallback reads of Cyrillic docs are never released without review. */
 export function primaryGeminiModel(): string {
-  return normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-3.1-pro-preview')
+  return normalizeGeminiModel(process.env.GEMINI_MODEL, PRIMARY_READER)
 }
 
 function modelFallback(docTypeId?: string): string[] {
