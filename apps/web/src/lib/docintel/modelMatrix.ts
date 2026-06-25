@@ -1,13 +1,14 @@
 /**
  * modelMatrix — the SINGLE CODE source of truth for which model does what.
  *
- * ⚠ ADR-026 PENDING (2026-06-24): this matrix is LLM-only by availability. The verified handwriting
- * standard — ROUTE BY FIELD RENDERING: handwritten field → key-free `raxtemur/trocr-base-ru` HTR on a
- * native-res crop (best on cursive, cannot abstain → gate + human review); printed field → an LLM —
- * is NOT yet encoded here (no raxtemur reader / no routing) because the raxtemur sidecar host is an
- * open decision. Until wired, this file describes the shipped LLM matrix only. The `gemini-3.1-pro-preview`
- * profile is a PREVIEW that is run-to-run UNSTABLE (HTR_STABLE_BENCHMARK) and is NOT the handwriting reader.
- * See docs/adr/ADR-026-htr-native-res-pipeline.md + docs/architecture/MODEL_INVENTORY.md.
+ * ADR-026 (2026-06-24): ROUTE BY FIELD RENDERING — handwritten field → key-free `raxtemur/trocr-base-ru`
+ * HTR on a NATIVE-res crop (cannot abstain → gate + human review); printed field → an LLM. The HTR READER
+ * is now WIRED as `providers/htrSidecarProvider.ts` (field-first crop loop → HTR sidecar `ocr_api.py`),
+ * gated by `HTR_SIDECAR_URL` (UNSET in prod → disabled, byte-identical). REMAINING to make it the PRIMARY
+ * handwriting path: (1) automatic field-region LOCALIZER (boxes) — e.g. Gemini bbox like dateRegionRead;
+ * (2) wire the sidecar reads into documentFieldReader for HANDWRITTEN_DOC_FAMILIES; (3) a prod sidecar host.
+ * This LLM matrix still ships as the reader until those land. `gemini-3.1-pro-preview` was REMOVED (unstable
+ * preview). See docs/adr/ADR-026 + docs/research/HTR_LOCAL_API_AND_BATTERY.md.
  *
  * ADR-018 ("Iron Model Matrix") used to live only in markdown, so an agent (or a
  * script) could act against it — e.g. measure acceptance on a fallback model. This
