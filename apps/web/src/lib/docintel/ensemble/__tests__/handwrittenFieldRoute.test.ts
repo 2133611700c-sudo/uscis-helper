@@ -39,9 +39,18 @@ describe('handwrittenFieldRoute — field-first HTR route (ADR-026), OFF by defa
     expect(fetchSpy).not.toHaveBeenCalled() // no network when the sidecar is not configured
   })
 
-  it('localizeHandwrittenFields returns [] without a Gemini key', async () => {
+  it('localizeHandwrittenFields returns [] without a Gemini key (and no template/override)', async () => {
     delete process.env.GEMINI_API_KEY_PAY; delete process.env.GEMINI_API_KEY
     expect(await localizeHandwrittenFields(await pngImage(), 'image/png')).toEqual([])
+  })
+
+  it('NON-LLM TEMPLATE localizes without Gemini (deterministic, scaled to image dims)', async () => {
+    delete process.env.GEMINI_API_KEY_PAY; delete process.env.GEMINI_API_KEY; delete process.env.HTR_FIELD_BOXES
+    const fetchSpy = vi.fn(); global.fetch = fetchSpy as unknown as typeof fetch
+    const boxes = await localizeHandwrittenFields(await pngImage(), 'image/png', 'ua_birth_certificate') // 1000x1000
+    expect(boxes.map((b) => b.field).sort()).toEqual(['family_name', 'given_name', 'patronymic'])
+    expect(boxes.find((b) => b.field === 'family_name')!.box).toEqual([233, 228, 545, 292]) // 0.2326*1000 etc.
+    expect(fetchSpy).not.toHaveBeenCalled() // NO Gemini call — deterministic template
   })
 
   it('localizeHandwrittenFields maps labels + converts 0-1000 boxes to pixels', async () => {

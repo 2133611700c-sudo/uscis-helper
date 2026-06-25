@@ -524,7 +524,7 @@ async function runHtrFieldStage(
   const HTR_NAME_FIELDS = new Set(['family_name', 'given_name', 'patronymic'])
   const minConf = Number(process.env.HTR_MIN_CONFIDENCE) || 0.5
   let htr: Awaited<ReturnType<typeof readHandwrittenRoute>> = []
-  try { htr = await readHandwrittenRoute(originalBuffer, mimeType) }
+  try { htr = await readHandwrittenRoute(originalBuffer, mimeType, docTypeId) }
   catch (e) { console.warn('[htr_field_route] sidecar error → FAIL-CLOSED', e instanceof Error ? e.message : String(e)) }
   // Inside a HANDWRITTEN doc family the person-name fields ARE handwritten by definition (not gated on a
   // per-field flag). Ensure a row exists for each name field (so fail-closed can null it) and read via HTR.
