@@ -5,6 +5,12 @@
 > "raxtemur is the reader" was too broad — raxtemur FAILS printed text (passport CER ~1.0); LLMs read print
 > perfectly. The "3/6" included one CER-tuned crop set (soviet01). Correct architecture: route by field
 > rendering (handwriting→raxtemur+gate+review; print→LLM). Read this header before trusting the numbers below.
+>
+> **Additional correction after frozen bake-off verification:** the old negative held-out note for
+> `marriage_1939_kharkiv_borodavka` was a crop/localization mistake. On the corrected frozen crop,
+> `raxtemur` and `kansallis-base` both read the surname EXACT. This improves the held-out anecdote,
+> but does NOT turn the program into a verified general handwriting reader because the 1939 field is
+> still non-gold (`agent_visual+filename`) and localization is hand-frozen.
 
 **Mandate (owner, rights granted to use his originals):** teach all 3 readers identically, then test all
 3 on his real documents; run everything through the verified recipe first. PII discipline: his documents

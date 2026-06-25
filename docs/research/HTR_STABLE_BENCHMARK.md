@@ -30,23 +30,25 @@ genuinely wobbling on cursive.
 | passport (PRINT) | surname | 0.9 (fails) | **0.0 exact** | **0.0 exact** |
 | passport (PRINT) | given | 1.0 (fails) | **0.0 exact** | **0.0 exact** |
 
-## ⛔ HELD-OUT REGULARITY CHECK — NEGATIVE (2026-06-24): no proven pattern
-Owner challenge: "не объявляй победу по всей рукописи; прогони held-out набор разных украинских
-рукописей — если повторится, это решение, а не удачный кейс; я не верю, нет закономерности."
-Tested raxtemur on a DIFFERENT handwritten document — `marriage_1939_kharkiv_borodavka` (1939,
-bilingual UA/RU ЗАГС, a different writer/era/style, lower-res 1920px). **The surname FAILED** (the
-visibly-handwritten word read as garbage, not a match), across crop attempts. So:
-- The two "successes" (birth_cert_handwritten_01, birth_cert_soviet_01) are a NARROW CLUSTER — both
-  Soviet/Russian-script cursive at high resolution (2493–4128px). **They are not a pattern; they are
-  two similar points.**
-- The FIRST genuinely different held-out doc broke it. **Regularity is NOT demonstrated.**
-- We have ZERO scored Ukrainian-handwriting results (UA docs lack ground truth); the other UA docs we
-  hold are either PRINTED (modern typed marriage certs) or too low-res to be a fair handwriting test.
-- Field localization is also unsolved: every new document needed hand-found boxes, several mis-located.
-**Honest status:** raxtemur reads a narrow cluster of high-res Soviet-RU cursive; it is NOT a proven
-general handwriting reader. The correct order is (1) assemble a GROUND-TRUTHED held-out set of DIVERSE
-real UA/RU handwriting (needs owner-supplied GT), (2) measure regularity, and ONLY IF it repeats (3)
-build the raxtemur sidecar. Building the sidecar before the regularity evidence would be backwards.
+## Held-out regularity note — stale negative replaced by frozen bake-off truth
+An earlier negative note on `marriage_1939_kharkiv_borodavka` was caused by WRONG localization
+(the crop hit the printed surname-label line, not the handwritten surname). The later frozen
+bake-off (`qa-private/htr-poc/bakeoff_v2.py`, manifest + evidence) corrected the crop and measured:
+
+- `raxtemur` = `EXACT`
+- `kansallis-base` = `EXACT`
+
+for the 1939 held-out surname on the corrected frozen crop.
+
+This does NOT upgrade the program to `VERIFIED` generality:
+
+- the 1939 field is still non-gold (`agent_visual+filename`, not owner-verified),
+- the total proven set remains tiny,
+- localization is still hand-frozen, not automatic,
+- `raxtemur` still cannot abstain.
+
+**Honest status:** the old held-out failure is superseded as a localization error, but broad
+regularity is STILL unproven. The right next step remains a larger owner-verified held-out set.
 
 ## Conclusion (stable + reproducible)
 - **Handwriting → raxtemur:** stable, best (2/3 exact, deterministic). gpt-4.1 gets given only; gemini-2.5-pro

@@ -97,7 +97,7 @@ The route-by-rendering path is no longer PENDING — it is implemented and teste
    (canonical Latin re-derived downstream by D2/codex), ALWAYS review-gated. Fail-open. Suite 4672 green, tsc 0.
 
 **Proof battery (`docs/research/HTR_LOCAL_API_AND_BATTERY.md`):** GOLD owner-verified N=6 → 3/6 EXACT, mean CER
-0.172, deterministic 3/3; held-out (1939) FAILS; raxtemur cannot abstain. ⇒ reviewer-assist, not autonomous.
+0.172, deterministic 3/3; the old 1939 negative was a localization error later superseded by the frozen bake-off on corrected crops; raxtemur still cannot abstain. ⇒ reviewer-assist, not autonomous.
 
 **REMAINING (owner-side, not labor):** a production sidecar HOST (Python/torch, not Vercel) so `HTR_SIDECAR_URL`
 can be set; broader human-verified GT for a real held-out measurement; automatic localizer accuracy validation.

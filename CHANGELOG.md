@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-24 | Critical verification of frozen HTR bake-off claims
+- Re-ran the frozen local bake-off (`qa-private/htr-poc/bakeoff_v2.py`) instead of trusting the saved summary. Winner table reproduced exactly on the frozen gold set: `raxtemur 3/3`, `kazars24-ru 2/3`, `kansallis-base 1/3`, `cyrillic-trocr 0/3 partial-only`, `pylaia-*` wrong.
+- Re-ran `verify_root.py` and separately extracted the blank raw output from `raxtemur`: the model emits non-empty text on blank input (`'профессор'`). Fixed `verify_root.py` so blank-control now checks for EMPTY output, not merely "did not equal the GT surname".
+- Found one summary/doc mismatch: the two missing bake-off models are currently recorded as `LOAD_ERROR`, not plain `MODEL_UNAVAILABLE`, because local snapshots exist but loading failed.
+- Found one stale research contradiction: `HTR_STABLE_BENCHMARK.md` still claimed the 1939 held-out surname failed. Synced it to the later frozen bake-off truth: corrected crop → `raxtemur` and `kansallis-base` both read `marr1939` EXACT, but this remains non-gold and does not upgrade the program to VERIFIED generality.
+
 ## 2026-06-24 | Handwritten birth-cert model protocol and GPT comparison
 - Audited the real handwritten Soviet/Russian-language birth certificate fixture from the pixel path upward before comparing models.
 - Measured pipeline truth: source `4128x3096` / `7.07MB` → preprocess `2304x3072` / `2.20MB`, quality `good`, content orientation `270°`.

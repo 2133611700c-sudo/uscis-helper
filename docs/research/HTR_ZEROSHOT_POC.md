@@ -135,9 +135,10 @@ Applied the SAME recipe (native-res crop + 2/98 contrast + raxtemur + channel-aw
   agents correctly STOPPED rather than fabricate a number (OWNER_FILL placeholders). UA validation — our main
   scope alongside RU — cannot proceed until the owner transcribes the real names into the gitignored qa-private GT.
 
-**Honest tally (N=2 RU docs, 6 name fields):** 4 exact (CER 0) + 1 near (0.2) + 1 substring-match (0.333),
-blank-control clean both docs. The recipe reads real RU handwriting; the remaining gap to EXACT (which a legal
-surname requires) is **field-region isolation** — stamps/labels/watermarks bleeding into a hand-found crop.
+**Honest tally (N=2 RU docs, 6 name fields):** 4 exact (CER 0) + 1 near (0.2) + 1 substring-match (0.333).
+Critical later correction: `raxtemur` is NOT blank-clean; on a blank image it emits non-empty text, so every
+non-exact handwritten read must remain fail-closed and review-gated. The recipe reads real RU handwriting; the
+remaining gap to EXACT (which a legal surname requires) is **field-region isolation** — stamps/labels/watermarks bleeding into a hand-found crop.
 Next lever = automatic per-field localization; human review stays for any non-exact read.
 **GT bug found:** `birth_cert_soviet_01.json` has `handwritten:false` though the name VALUES are cursive — the
 flag describes the printed labels, mis-scoping the doc for HTR routing; worth correcting.
