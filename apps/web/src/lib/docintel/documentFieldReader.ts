@@ -435,32 +435,26 @@ export async function readDocument(
   }
 
   // HTR FIELD-FIRST ROUTE (ADR-026; gated by HTR_SIDECAR_URL, UNSET in prod → disabled, byte-identical).
-  // For a HANDWRITTEN doc family the LLM full-page read of a cursive name field is unreliable (it fabricates).
-  // When the key-free HTR sidecar is configured, LOCALIZE each handwritten name field, crop it at NATIVE
-  // resolution, and read it via raxtemur — this becomes the AUTHORITATIVE raw_cyrillic for that field (canonical
-  // Latin is re-derived downstream by D2/codex). ALWAYS review-gated (raxtemur cannot abstain). Fail-open:
-  // any error leaves the LLM read in place. This is the route-by-rendering primary path for handwriting.
+  // route-by-rendering primary path for handwriting: LOCALIZE each handwritten name field → native-res crop →
+  // key-free HTR sidecar (raxtemur). The HTR read is the AUTHORITATIVE raw_cyrillic (canonical Latin re-derived
+  // downstream by D2/codex) and is ALWAYS review-gated (raxtemur cannot abstain).
+  //
+  // FAIL-CLOSED (safety, per audit): the LLM full-page read of a cursive critical field is NOT trusted. If the
+  // HTR sidecar is unavailable / returns empty / low-confidence for a CRITICAL HANDWRITTEN name field, the value
+  // is NULLED (not left as the LLM read) → C3 yields final_value=null + review_required=true → USCIS autofill
+  // blocked. We never silently fall back to the weaker LLM read on a critical handwritten field.
   if (isHtrSidecarEnabled() && isHandwrittenFamily(docTypeId) && opts.originalBuffer) {
+    const HTR_NAME_FIELDS = new Set(['family_name', 'given_name', 'patronymic'])
+    const HTR_MIN_CONF = Number(process.env.HTR_MIN_CONFIDENCE) || 0.5
+    let htr: Awaited<ReturnType<typeof readHandwrittenRoute>> = []
     try {
-      const htr = await readHandwrittenRoute(opts.originalBuffer, mimeType)
-      if (htr.length) {
-        const byField = new Map(htr.map((h) => [h.field, h]))
-        finalFields = finalFields.map((f) => {
-          const h = byField.get(f.field)
-          if (!h || !h.raw_htr_text.trim()) return f
-          return {
-            ...f,
-            raw_cyrillic: h.raw_htr_text.trim(),
-            confidence: h.htr_confidence,
-            review_required: true,
-            review_reasons: [...(f.review_reasons ?? []), h.review_reason],
-          }
-        })
-        console.info('[htr_field_route]', JSON.stringify({ doc_type_id: docTypeId, htr_fields: htr.length }))
-      }
+      htr = await readHandwrittenRoute(opts.originalBuffer, mimeType)
     } catch (e) {
-      console.warn('[htr_field_route] failed (non-blocking)', e instanceof Error ? e.message : String(e))
+      console.warn('[htr_field_route] sidecar error → FAIL-CLOSED on critical handwritten fields', e instanceof Error ? e.message : String(e))
     }
+    const handwritten = new Set(spec.fields.filter((f) => f.handwritten).map((f) => f.field))
+    finalFields = applyHtrFieldRoute(finalFields, htr, HTR_NAME_FIELDS, handwritten, HTR_MIN_CONF)
+    console.info('[htr_field_route]', JSON.stringify({ doc_type_id: docTypeId, htr_fields: htr.length, fail_closed: true }))
   }
 
   return {
@@ -481,6 +475,37 @@ function isHandwritten(spec: ReturnType<typeof getDocTypeSpec>, field: string): 
  * array + the count filled. This runs BEFORE the paid tile recovery so Gemini is spent only on the
  * fields that are still genuinely unknown (cost-efficiency-first).
  */
+/**
+ * FAIL-CLOSED HTR field-route merge (pure, testable). For each CRITICAL handwritten name field the HTR route
+ * owns: an HTR read above the confidence floor → authoritative raw_cyrillic, LLM Latin cleared, review-gated.
+ * Otherwise (HTR unavailable / empty / low-confidence) the value is NULLED — the weaker LLM cursive read is
+ * NEVER trusted — so C3 yields final_value=null + review_required → USCIS autofill blocked. Non-handwritten or
+ * non-name fields are untouched.
+ */
+export function applyHtrFieldRoute(
+  fields: ExtractedDocField[],
+  htr: { field: string; raw_htr_text: string; htr_confidence: number; review_reason: string }[],
+  nameFields: Set<string>,
+  handwrittenFields: Set<string>,
+  minConf = 0.5,
+): ExtractedDocField[] {
+  const byField = new Map(htr.map((h) => [h.field, h]))
+  return fields.map((f) => {
+    if (!nameFields.has(f.field) || !handwrittenFields.has(f.field)) return f
+    const h = byField.get(f.field)
+    if (h && h.raw_htr_text.trim() && h.htr_confidence >= minConf) {
+      return {
+        ...f, value: '', raw_cyrillic: h.raw_htr_text.trim(), confidence: h.htr_confidence,
+        review_required: true, review_reasons: [...(f.review_reasons ?? []), h.review_reason],
+      }
+    }
+    return {
+      ...f, value: '', raw_cyrillic: '', confidence: 0,
+      review_required: true, review_reasons: [...(f.review_reasons ?? []), 'htr_unavailable_fail_closed'],
+    }
+  })
+}
+
 export function applyKnownValues(
   fields: ExtractedDocField[],
   known: Record<string, string>,
