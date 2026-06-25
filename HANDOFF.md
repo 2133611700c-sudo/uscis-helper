@@ -1,5 +1,19 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-24 | OpenAI/GPT handwritten-cert audit completed — no direct VLM winner
+- Owner asked for a fresh independent comparison of current GPT-family candidates after auditing the real pixel path first. Done on the real handwritten birth certificate fixture, with live preprocess + content-orientation verified. `gemini-3.1-pro-preview` explicitly excluded.
+- Results:
+  - `gemini-2.5-pro`: birth raw bench `0/3`, `DOB N`, very slow (~80s/doc).
+  - `gpt-4.1`: birth pipeline `0/5`, `samePerson=NO`; raw birth `0/3`, `DOB N`.
+  - `gpt-4o`: birth pipeline `0/5`, `samePerson=NO`; raw birth `MODEL_REFUSAL`.
+  - `gpt-5`: raw birth `0/3`, `DOB N`; too slow.
+  - `gpt-5.5-pro`: 404 on current API path.
+- Repo rules updated:
+  - new report `docs/reports/HANDWRITTEN_BIRTH_CERT_MODEL_PROTOCOL_2026-06-24.md`
+  - `prompts/translation-agent-system.md` now carries explicit hard-case handwritten birth-cert rules
+- Honest conclusion: there is NO direct GPT/Gemini image-reader promotion to make here. Handwritten critical fields stay HTR-first + review. Printed docs can still use LLM readers.
+- Next exact step: wire the repo's authoritative handwritten route / prompts / docs so printed = LLM path, handwritten critical = HTR-first path, and keep VLM handwritten outputs as non-acceptance evidence only.
+
 ## 2026-06-24 (latest) | HANDWRITING ROUTE WIRED (ADR-026 no longer PENDING) — supersedes the stale "PENDING/not-wired" notes below
 **The field-first handwriting route IS now in code** (gated by `HTR_SIDECAR_URL`, UNSET in prod → disabled, byte-identical). An audit citing "ADR-026 PENDING / raxtemur not wired / LLM-first only" is reading a PRE-commit state.
 - `providers/htrSidecarProvider.ts` — TS client to the HTR sidecar + field-first native-res crop loop (4 tests).
