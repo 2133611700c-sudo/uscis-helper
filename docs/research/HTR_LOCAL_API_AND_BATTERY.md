@@ -30,17 +30,17 @@ Proven through the API on the owner's birth cert: surname **exact** (conf 0.96, 
 - **Determinism: STABLE 3/3 on every field** — raxtemur is deterministic (reproducible, unlike the LLM previews).
 - **Blank control: raxtemur CANNOT abstain** — emits text on a blank image → its reads MUST be gated
   (confidence + run-consistency) and human-reviewed; never autonomous on a critical field.
-- **Held-out (marriage_1939, different writer/era): FAILS, CER 1.44.** No proven generalization to diverse hands.
+- **Held-out correction:** the old `marr1939` failure was caused by WRONG localization. The later frozen bake-off on corrected crops measured `raxtemur` EXACT and `kansallis-base` EXACT on that surname. This removes the false negative, but does NOT prove broad generalization because the 1939 field is still non-gold (`agent_visual`) and localization is still hand-frozen.
 - **Ablation correction:** on already-TIGHT field crops, downscaling to 128 barely hurts (0.172 → 0.191). The
   large resolution effect is at the FULL-PAGE → field-crop stage, not within a tight crop — earlier
   "resolution is THE lever" was over-stated for the field-crop case; it is the lever at the page stage.
 
 ## Honest verdict
 Positive recognition is PROVEN (3 exact + 3 partial, stable, key-free, ~1 s/field on the Mac GPU, through a
-real service) — but it is **NOT production-grade**: 50% exact on a small gold set, held-out negative, cannot
-abstain. raxtemur + this local API is a **reviewer-assist handwriting reader behind a mandatory human-review
-gate**, not an autonomous reader. The remaining levers (owner-side): broader human-verified GT for a real
-held-out measurement; a production host for the sidecar.
+real service) — but it is **NOT production-grade**: 50% exact on a small gold set, no abstention, hand-frozen
+localization, and no runtime staging/site E2E proof. raxtemur + this local API is a **reviewer-assist
+handwriting reader behind a mandatory human-review gate**, not an autonomous reader. The remaining work is not
+just hosting: we still need broader human-verified GT, real upload-path E2E, and hardened failure-mode proof.
 
 ## End-to-end through the production code path (2026-06-24) — Gemini-INDEPENDENT
 The field-first route is wired into `readDocument` and runs even when the LLM read FAILS:
