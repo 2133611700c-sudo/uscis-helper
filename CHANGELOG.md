@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-06-24 | Handwritten birth-cert model protocol and GPT comparison
+- Audited the real handwritten Soviet/Russian-language birth certificate fixture from the pixel path upward before comparing models.
+- Measured pipeline truth: source `4128x3096` / `7.07MB` → preprocess `2304x3072` / `2.20MB`, quality `good`, content orientation `270°`.
+- Benchmarked current candidates with `gemini-3.1-pro-preview` excluded:
+  - `gemini-2.5-pro`: raw birth `0/3`, `DOB N`, slow.
+  - `gpt-4.1`: pipeline birth `0/5`, raw birth `0/3`.
+  - `gpt-4o`: pipeline birth `0/5`, raw birth refusal.
+  - `gpt-5`: raw birth `0/3`, slow.
+  - `gpt-5.5-pro`: current API path 404.
+- Added `docs/reports/HANDWRITTEN_BIRTH_CERT_MODEL_PROTOCOL_2026-06-24.md`.
+- Updated `prompts/translation-agent-system.md` with a handwritten-birth-certificate protocol: no direct VLM acceptance, no transliteration in-model, orientation separate, no grayscale/binarize, HTR/crop+review for critical handwritten fields.
+
 ## 2026-06-24 | Engineered ALL audit open points + final critical re-verification (agents)
 - Owner: "работай по всем пунктам как инженер — собери, протести критично без лжи не веря тесту, шаг за шагом, в конце критический аудит". 5 tasks, each gather→implement→critically test; an independent verification agent re-checked every fix (not trusting the committer) and found 2 residual gaps → both fixed.
 - **#31 sync guard (P1):** token/clause coverage (e6352ae) + verbatim whole-rule presence (closes the cross-rule token-overlap hole the final audit found, e.g. ua_death_certificate[3]); self-tests prove both bite; 0/49 non-verbatim.

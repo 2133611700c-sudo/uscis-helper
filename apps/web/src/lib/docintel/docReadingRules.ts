@@ -39,7 +39,7 @@ const MONTH_WORD_RULE =
 
 // RUSSIAN-SCRIPT rule for Soviet/UkrSSR-era documents written in RUSSIAN. The model tends
 // to "helpfully" Ukrainianize a Russian source (Андрей→Андрій). That is a TRANSCRIPTION
-// ERROR for a certified translation, which must reflect the document AS WRITTEN.
+// ERROR for a formal source-faithful translation, which must reflect the document AS WRITTEN.
 const RUSSIAN_SCRIPT_RULE =
   'RUSSIAN SOURCE — Soviet/UkrSSR-era documents are often written in RUSSIAN, not Ukrainian. ' +
   'If the script on the page is Russian, transcribe it EXACTLY as Russian — do NOT convert it to ' +

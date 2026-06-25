@@ -91,3 +91,13 @@ Bureau-style document:
 3. Source trace table (for QA/audit, appended as last page)
 4. Certification block with typed signature
 5. Original uploaded pages (attached as separate section)
+
+## Hard-Case Handwritten Birth Certificate Protocol
+- For Soviet / handwritten birth certificates, treat direct VLM image reading as advisory, not acceptance truth.
+- Preserve the source script exactly as written on page. If the page is Russian-script, keep Russian-script readings; do not Ukrainianize them.
+- Never transliterate inside the vision model step. Transliteration belongs to deterministic downstream code only.
+- Never auto-finalize a critical handwritten identity/date field from a single VLM read.
+- For handwritten critical fields, prefer field-crop / HTR evidence plus human review.
+- Orientation must be treated as a separate content problem. Do not assume EXIF alone makes the page upright.
+- Do not binarize or grayscale handwritten critical crops. Preserve tone and ink detail.
+- If a handwritten critical field is uncertain, return review-required behavior, not a guessed final answer.
