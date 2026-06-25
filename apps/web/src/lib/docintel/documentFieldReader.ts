@@ -146,6 +146,17 @@ export async function readDocument(
     // of returning HTTP 200 + fields:[]. When the failure carries no HTTP status
     // (e.g. 'no GEMINI_API_KEY', 'invalid JSON', 'deadline') we leave
     // provider_error UNSET so the route's existing 0-field handling applies.
+    // FIELD-FIRST INDEPENDENCE (ADR-026): even when the LLM full-page read FAILED, a HANDWRITTEN doc can
+    // still be read field-first by the HTR sidecar (the LLM read is not a prerequisite). If the HTR stage
+    // produces any handwritten name field, return those (review-gated) instead of an empty vision_failed.
+    const htrOnly = await runHtrFieldStage([], spec, docTypeId, opts.originalBuffer, mimeType, provider.name)
+    if (htrOnly.ran && htrOnly.produced > 0) {
+      return {
+        ok: true, doc_type_id: docTypeId, fields: htrOnly.fields, anchor_read: false,
+        provider: provider.name, model: read.model, ms: read.ms,
+        status: `htr_only:${htrOnly.produced}f:llm_${read.error ?? 'failed'}`,
+      }
+    }
     const hasHttpSignal = typeof read.errorStatus === 'number' || read.errorTimeout === true
     const providerError = hasHttpSignal
       ? classifyProviderError(read.errorStatus ?? 0, undefined, {
@@ -443,27 +454,7 @@ export async function readDocument(
   // HTR sidecar is unavailable / returns empty / low-confidence for a CRITICAL HANDWRITTEN name field, the value
   // is NULLED (not left as the LLM read) → C3 yields final_value=null + review_required=true → USCIS autofill
   // blocked. We never silently fall back to the weaker LLM read on a critical handwritten field.
-  if (isHtrSidecarEnabled() && isHandwrittenFamily(docTypeId) && opts.originalBuffer) {
-    const HTR_NAME_FIELDS = new Set(['family_name', 'given_name', 'patronymic'])
-    const HTR_MIN_CONF = Number(process.env.HTR_MIN_CONFIDENCE) || 0.5
-    let htr: Awaited<ReturnType<typeof readHandwrittenRoute>> = []
-    try {
-      htr = await readHandwrittenRoute(opts.originalBuffer, mimeType)
-    } catch (e) {
-      console.warn('[htr_field_route] sidecar error → FAIL-CLOSED on critical handwritten fields', e instanceof Error ? e.message : String(e))
-    }
-    const handwritten = new Set(spec.fields.filter((f) => f.handwritten).map((f) => f.field))
-    // FIELD-FIRST: ensure the handwritten NAME rows EXIST even when the (flaky) LLM full-page read failed or
-    // omitted them — handwriting is read independently of the LLM, not just as an override.
-    const present = new Set(finalFields.map((f) => f.field))
-    for (const sf of spec.fields) {
-      if (HTR_NAME_FIELDS.has(sf.field) && sf.handwritten && !present.has(sf.field)) {
-        finalFields.push({ field: sf.field, kind: sf.kind, raw_cyrillic: null, value: null, confidence: 0, review_required: true, source: 'vision', provider: provider.name })
-      }
-    }
-    finalFields = applyHtrFieldRoute(finalFields, htr, HTR_NAME_FIELDS, handwritten, HTR_MIN_CONF)
-    console.info('[htr_field_route]', JSON.stringify({ doc_type_id: docTypeId, htr_fields: htr.length, fail_closed: true }))
-  }
+  finalFields = (await runHtrFieldStage(finalFields, spec, docTypeId, opts.originalBuffer, mimeType, provider.name)).fields
 
   return {
     ok: true, doc_type_id: docTypeId, fields: finalFields, anchor_read: anchorRead,
@@ -512,6 +503,44 @@ export function applyHtrFieldRoute(
       review_required: true, review_reasons: [...(f.review_reasons ?? []), 'htr_unavailable_fail_closed'],
     }
   })
+}
+
+/**
+ * The HTR field-first STAGE (ADR-026), gated by HTR_SIDECAR_URL + handwritten family + original buffer.
+ * Reads the handwritten name fields INDEPENDENTLY of the LLM full-page read: it creates the name rows from
+ * spec if the LLM omitted them (or the LLM read failed entirely), reads each via the HTR sidecar, and applies
+ * the FAIL-CLOSED merge. `ran` is true when the stage executed. Used on BOTH the normal path and the
+ * vision-failed early-return path, so handwriting recognition never depends on a flaky LLM read.
+ */
+async function runHtrFieldStage(
+  fields: ExtractedDocField[],
+  spec: { fields: ReadonlyArray<{ field: string; handwritten?: boolean; kind: ExtractedDocField['kind'] }> },
+  docTypeId: string,
+  originalBuffer: Buffer | undefined,
+  mimeType: string,
+  providerName: string,
+): Promise<{ fields: ExtractedDocField[]; ran: boolean; produced: number }> {
+  if (!isHtrSidecarEnabled() || !isHandwrittenFamily(docTypeId) || !originalBuffer) return { fields, ran: false, produced: 0 }
+  const HTR_NAME_FIELDS = new Set(['family_name', 'given_name', 'patronymic'])
+  const minConf = Number(process.env.HTR_MIN_CONFIDENCE) || 0.5
+  let htr: Awaited<ReturnType<typeof readHandwrittenRoute>> = []
+  try { htr = await readHandwrittenRoute(originalBuffer, mimeType) }
+  catch (e) { console.warn('[htr_field_route] sidecar error → FAIL-CLOSED', e instanceof Error ? e.message : String(e)) }
+  // Inside a HANDWRITTEN doc family the person-name fields ARE handwritten by definition (not gated on a
+  // per-field flag). Ensure a row exists for each name field (so fail-closed can null it) and read via HTR.
+  const out = [...fields]
+  const present = new Set(out.map((f) => f.field))
+  const kindOf = new Map(spec.fields.map((f) => [f.field, f.kind]))
+  const wanted = new Set<string>([...htr.map((h) => h.field), ...spec.fields.map((f) => f.field).filter((k) => HTR_NAME_FIELDS.has(k))])
+  for (const fld of wanted) {
+    if (HTR_NAME_FIELDS.has(fld) && !present.has(fld)) {
+      out.push({ field: fld, kind: kindOf.get(fld) ?? 'text', raw_cyrillic: null, value: null, confidence: 0, review_required: true, source: 'vision', provider: providerName })
+    }
+  }
+  const merged = applyHtrFieldRoute(out, htr, HTR_NAME_FIELDS, HTR_NAME_FIELDS, minConf)
+  const produced = merged.filter((f) => HTR_NAME_FIELDS.has(f.field) && (f.raw_cyrillic ?? '').trim() !== '').length
+  console.info('[htr_field_route]', JSON.stringify({ doc_type_id: docTypeId, htr_fields: htr.length, produced, fail_closed: true }))
+  return { fields: merged, ran: true, produced }
 }
 
 export function applyKnownValues(
