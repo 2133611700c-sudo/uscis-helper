@@ -1,5 +1,16 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-24 (latest) | HANDWRITING ROUTE WIRED (ADR-026 no longer PENDING) — supersedes the stale "PENDING/not-wired" notes below
+**The field-first handwriting route IS now in code** (gated by `HTR_SIDECAR_URL`, UNSET in prod → disabled, byte-identical). An audit citing "ADR-026 PENDING / raxtemur not wired / LLM-first only" is reading a PRE-commit state.
+- `providers/htrSidecarProvider.ts` — TS client to the HTR sidecar + field-first native-res crop loop (4 tests).
+- `ensemble/handwrittenFieldRoute.ts` — Gemini-bbox field LOCALIZER + `readHandwrittenRoute` emitting 3 SEPARATED layers (read-quality / normalization / review) (4 tests).
+- `documentFieldReader.ts:~443` — for `isHandwrittenFamily(docTypeId)` + sidecar configured + original buffer, the HTR read is the AUTHORITATIVE `raw_cyrillic` per handwritten name field, ALWAYS review-gated. Fail-open.
+- `modelMatrix.ts` banner = WIRED (not PENDING). Suite 4672 pass, tsc 0, PII clean. ADR-026 has the full WIRED log.
+- **Local HTR sidecar built + proven:** `qa-private/htr-poc/ocr_api.py` (raxtemur on Apple-Silicon MPS, ~1s/field). On the owner's real cert via the API: surname+given EXACT (conf 0.96/0.98).
+- **STILL TRUE (honest, NOT disputed):** NOT production-grade — proof battery 3/6 exact on owner-verified gold (N=6), HELD-OUT (1939) FAILS, raxtemur cannot abstain. Report: docs/research/HTR_LOCAL_API_AND_BATTERY.md.
+- **REMAINING = owner-side resources, not labor:** (1) a production sidecar HOST so `HTR_SIDECAR_URL` can be set (Python/torch, not Vercel); (2) broader human-verified handwriting GT for a real held-out measurement.
+
+
 ## 2026-06-24 | ROOT-CAUSE REVERSAL — handwritten UA/RU Cyrillic IS readable key-free (raxtemur), blocker was OUR pipeline
 **Done:** 4 parallel root-cause agents + independent reproduction OVERTURNED the prior "no key-free model reads the surname" finding. **raxtemur/trocr-base-ru (Apache, local, no keys)** reads the child name EXACTLY given a NATIVE-resolution crop (from 4128×3096) + contrast-stretch (NO downscale, NO binarize): surname CER 0.000 (3/3), given 0.000, patronymic 0.333 (matches); blank-control clean. Root bugs: (1) crop downscaled to h128 destroyed signal [binding]; (2) scorer Latin-vs-Cyrillic channel bug; (3) label/stamp contamination. Data was NOT the constraint; synthetic fine-tune abandoned. Wrote ADR-026 (production pipeline rule), corrected MODEL_INVENTORY + HTR_ZEROSHOT_POC. Verified by `qa-private/htr-poc/verify_root.py`.
 **Project aligned to the standard (4 tested fixes, suite green per step):** tileRegionRead native-res+contrast (061e3cb); client downscale 2400→3072 (bee3a58); image-preprocess contrast-stretch on upscale branch (8d7f55c); deprecated alphabet-agnostic legacy scorer (b5d6c23). ADR-026 has the full alignment log.
