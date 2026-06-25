@@ -23,6 +23,27 @@ function geminiKey(): string {
   return (process.env.GEMINI_API_KEY_PAY || process.env.GEMINI_API_KEY || '').trim()
 }
 
+/**
+ * NON-LLM field-box TEMPLATES (normalized 0-1 [left,top,right,bottom]) per doc class. These are standardized
+ * government forms, so the handwritten name fields sit at roughly fixed relative positions. A template removes
+ * the Gemini-localizer dependency (the LLM bbox call is itself an availability risk — it 503s). Derived from
+ * the verified boxes on the reference upright scan; combined with the orientation step + a review gate.
+ * (Framing varies between photos → this is a deterministic BASELINE, not pixel-perfect; reads stay review-gated.)
+ */
+const FIELD_BOX_TEMPLATES: Record<string, Record<string, [number, number, number, number]>> = {
+  ua_birth_certificate: {
+    family_name: [0.2326, 0.2277, 0.5451, 0.2923],
+    given_name: [0.1308, 0.2923, 0.2447, 0.3617],
+    patronymic: [0.1696, 0.2923, 0.4966, 0.3617],
+  },
+}
+
+function templateFor(docTypeId: string | undefined): Record<string, [number, number, number, number]> | null {
+  if (!docTypeId) return null
+  for (const [key, tmpl] of Object.entries(FIELD_BOX_TEMPLATES)) if (docTypeId.includes(key)) return tmpl
+  return null
+}
+
 /** Maps the localizer's semantic label → docintel field key. */
 const LABEL_TO_FIELD: Record<string, string> = {
   surname: 'family_name', family_name: 'family_name', last_name: 'family_name',
@@ -42,14 +63,22 @@ export interface HandwrittenFieldResult {
   review_reason: string
 }
 
-/** Localize handwritten name-field boxes via Gemini. Returns PIXEL boxes on the original. [] on any failure. */
+/**
+ * Localize handwritten name-field boxes. Priority: (1) HTR_FIELD_BOXES env override; (2) NON-LLM per-doc-class
+ * TEMPLATE (deterministic, no availability risk); (3) Gemini bbox (general fallback). Returns PIXEL boxes on
+ * the original. [] on any failure.
+ */
 export async function localizeHandwrittenFields(
   originalBuffer: Buffer,
   mime: string,
+  docTypeId?: string,
 ): Promise<HtrFieldBox[]> {
-  // CONFIG/TEST override: HTR_FIELD_BOXES = JSON {"family_name":[l,t,r,b],...} (native pixels). When set, use
-  // these boxes directly and SKIP the Gemini localizer — for per-document templates or a Gemini-independent
-  // proof (the LLM localizer is itself an availability risk; this decouples the HTR reader from it).
+  let sharp: typeof import('sharp')
+  try { sharp = (await import('sharp')).default as unknown as typeof import('sharp') } catch { return [] }
+  const meta0 = await sharp(originalBuffer).metadata().catch(() => null)
+  const W0 = meta0?.width ?? 0, H0 = meta0?.height ?? 0
+
+  // (1) explicit override (native pixels) — per-doc config or a Gemini-independent proof.
   const fixed = (process.env.HTR_FIELD_BOXES || '').trim()
   if (fixed) {
     try {
@@ -61,13 +90,23 @@ export async function localizeHandwrittenFields(
         }
       }
       if (out.length) return out
-    } catch { /* fall through to Gemini */ }
+    } catch { /* fall through */ }
   }
+
+  // (2) NON-LLM template (deterministic, no Gemini dependency) — scale normalized 0-1 boxes to the image.
+  const tmpl = templateFor(docTypeId)
+  if (tmpl && W0 && H0) {
+    const out: HtrFieldBox[] = []
+    for (const [field, [l, t, r, b]] of Object.entries(tmpl)) {
+      out.push({ field, box: [Math.round(l * W0), Math.round(t * H0), Math.round(r * W0), Math.round(b * H0)] })
+    }
+    if (out.length) return out
+  }
+
+  // (3) Gemini bbox fallback (general docs without a template).
   const key = geminiKey()
   if (!key) return []
-  let sharp: typeof import('sharp')
-  try { sharp = (await import('sharp')).default as unknown as typeof import('sharp') } catch { return [] }
-  const meta = await sharp(originalBuffer).metadata().catch(() => null)
+  const meta = meta0
   const W = meta?.width ?? 0, H = meta?.height ?? 0
   if (!W || !H) return []
   const b64 = originalBuffer.toString('base64')
@@ -113,9 +152,10 @@ export async function localizeHandwrittenFields(
 export async function readHandwrittenRoute(
   originalBuffer: Buffer,
   mime: string,
+  docTypeId?: string,
 ): Promise<HandwrittenFieldResult[]> {
   if (!isHtrSidecarEnabled()) return []
-  const boxes = await localizeHandwrittenFields(originalBuffer, mime)
+  const boxes = await localizeHandwrittenFields(originalBuffer, mime, docTypeId)
   if (boxes.length === 0) return []
   const reads = await readHandwrittenFieldsViaSidecar(originalBuffer, boxes)
   return reads.map((r) => ({
