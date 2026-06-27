@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-27 | Gemini reader contract — strict gemini-2.5-pro only, no silent fallback (the single Gemini truth)
+- **Root cause exposed by the forensic logger:** a live read fell back to `gemini-3.5-flash` (not the sanctioned `gemini-2.5-pro`) — the slow Pro read timed out and the provider silently swapped models, presenting a flash read as a Pro result. Forbidden by product contract.
+- `providers/geminiVisionProvider.ts` `modelFallback()` is now **strict primary-only by default**: returns `[gemini-2.5-pro]` unless `READER_FALLBACK_ENABLED=1` (default OFF). On timeout/429/5xx the reader fails-closed (unavailable → null → review); it NEVER swaps to flash and calls it Pro.
+- `modelMatrix.assertAcceptanceRead({requested,actual,fallbackUsed})` — hard gate: acceptance-valid ONLY when requested===actual===`gemini-2.5-pro` and no fallback. Flash is forensic evidence, never acceptance.
+- Key provenance (`gemini/apiKey.ts` `getGeminiKeyProvenance()`): forensic logs `key_alias` + `key_fingerprint` (sha256[:12], never the raw key) + `google_api_key_conflict`. Verified: key passed EXPLICITLY in request URL (no SDK auto-env); `GOOGLE_API_KEY`/`GOOGLE_GENAI_API_KEY` unset → no project reroute. Forensic record gains `fallback_blocked`, `key_alias`, `key_fingerprint`.
+- Tests: `modelMatrix.test.ts` acceptance-contract case + `forensics.test.ts` updated. tsc 0; targeted suites green.
+
 ## 2026-06-27 | Stage-1 forensic logger (behavior-neutral measurement layer)
 - Added `apps/web/src/lib/docintel/forensics.ts` — per-read provenance capture to separate byte-repeat stability vs rotation invariance vs page-context stability. Gated by `FORENSIC_LOG_ENABLED` (default OFF → zero behavior change: no extra Gemini calls, no retry/timing change, no PII).
 - When ON: full record (raw+final values) → gitignored `qa-private/runtime-forensics/<run_id>.json`; console gets a PII-free digest only (run_id, sha, dims, orientation, model, attempts, latency, field NAMES + HASHED values). Fail-open (forensic IO never breaks the read).

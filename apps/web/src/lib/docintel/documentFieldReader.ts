@@ -14,7 +14,7 @@
 
 import { getDocTypeSpec } from './documentRegistry'
 import { defaultVisionProvider, primaryGeminiModel } from './providers/geminiVisionProvider'
-import { getGeminiApiKey } from '@/lib/gemini/apiKey'
+import { getGeminiApiKey, getGeminiKeyProvenance } from '@/lib/gemini/apiKey'
 import { autoOrient } from './orientation/autoOrient'
 import { orientToUpright, isContentOrientEnabled } from './orientation/detectOrientation'
 import {
@@ -472,6 +472,7 @@ export async function readDocument(
   if (isForensicEnabled() && opts.forensic) {
     try {
       const requested = primaryGeminiModel()
+      const keyProv = getGeminiKeyProvenance()
       emitForensic({
         run_id: opts.forensic.runId,
         timestamp: new Date().toISOString(),
@@ -486,6 +487,10 @@ export async function readDocument(
           requested_model: requested,
           actual_model: read.model,
           fallback_used: !!read.model && read.model !== requested,
+          fallback_blocked: process.env.READER_FALLBACK_ENABLED !== '1',
+          key_alias: keyProv.alias,
+          key_fingerprint: keyProv.fingerprint,
+          google_api_key_conflict: keyProv.google_api_key_conflict,
           temperature: 0,
           attempts: [{ n: 1, model: read.model ?? requested, selected: true, ms: read.ms }],
           status: `ok:${read.model}`,

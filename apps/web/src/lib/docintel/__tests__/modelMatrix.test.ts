@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import {
   PRIMARY_READER, FALLBACK_MODELS, SANCTIONED_CHAIN, DEPRECATED_MODELS,
   isPrimaryReader, isSanctionedModel, acceptanceModelVerdict, assertPrimaryReader, isDisqualifiedFor,
-  isHandwrittenFamily, MODEL_PROFILES,
+  isHandwrittenFamily, MODEL_PROFILES, assertAcceptanceRead,
 } from '../modelMatrix'
 import { primaryGeminiModel } from '../providers/geminiVisionProvider'
 
@@ -115,5 +115,14 @@ describe('GUARD: the provider source obeys the matrix (no drift, no deprecated m
       })
       expect(offending, `deprecated model ${dead} used in active code:\n${offending.join('\n')}`).toEqual([])
     }
+  })
+
+  it('acceptance contract: valid ONLY when requested+actual are primary and no fallback fired', () => {
+    expect(assertAcceptanceRead({ requested: PRIMARY_READER, actual: PRIMARY_READER, fallbackUsed: false })).toEqual({ ok: true })
+    // a flash fallback read is NEVER acceptance — even though the API returned a value
+    expect(assertAcceptanceRead({ requested: PRIMARY_READER, actual: 'gemini-3.5-flash', fallbackUsed: true }).ok).toBe(false)
+    expect(assertAcceptanceRead({ requested: PRIMARY_READER, actual: 'gemini-2.5-flash', fallbackUsed: true }).ok).toBe(false)
+    expect(assertAcceptanceRead({ requested: 'gemini-2.5-flash', actual: 'gemini-2.5-flash', fallbackUsed: false }).ok).toBe(false)
+    expect(assertAcceptanceRead({ requested: PRIMARY_READER, actual: null, fallbackUsed: false }).ok).toBe(false)
   })
 })
