@@ -30,9 +30,11 @@ const live = getGeminiApiKey() && process.env.FORENSIC_LOG_ENABLED === '1'
 ;(live ? describe : describe.skip)('Stage-1 forensic baseline (LIVE, paid Gemini)', () => {
   it(`runs birth cert × rotations[${ROTATIONS.join(',')}] × ${REPEATS} repeats`, async () => {
     const sharp = (await import('sharp')).default
-    const raw0 = readFileSync(FIXTURE)
+    // Clean upright base: bake the EXIF rotation in + strip the tag, so synthetic rotations are
+    // NOT confounded by a residual EXIF orientation (the birth cert carries EXIF=6).
+    const base = await sharp(readFileSync(FIXTURE)).rotate().jpeg({ quality: 95 }).toBuffer()
     for (const rot of ROTATIONS) {
-      const rawBytes = rot === 0 ? raw0 : await sharp(raw0).rotate(rot).jpeg({ quality: 92 }).toBuffer()
+      const rawBytes = rot === 0 ? base : await sharp(base).rotate(rot).jpeg({ quality: 92 }).toBuffer()
       for (let n = 1; n <= REPEATS; n++) {
         const pre = await preprocessImage(rawBytes, 'image/jpeg')
         if (!pre.ok) { console.error('[baseline] preprocess failed', rot, pre.code); continue }

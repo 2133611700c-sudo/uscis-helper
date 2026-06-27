@@ -155,7 +155,7 @@ describe('orientationSettled (cost early-exit)', () => {
 })
 
 describe('isContentOrientEnabled', () => {
-  it('default OFF; only "1" enables', () => {
+  it('default OFF (Step-5: detector mis-calibrated; opt-in only); "1" enables', () => {
     expect(isContentOrientEnabled({})).toBe(false)
     expect(isContentOrientEnabled({ CONTENT_ORIENT_ENABLED: '0' })).toBe(false)
     expect(isContentOrientEnabled({ CONTENT_ORIENT_ENABLED: '1' })).toBe(true)

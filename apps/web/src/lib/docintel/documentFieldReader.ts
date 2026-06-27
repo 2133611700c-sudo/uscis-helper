@@ -105,13 +105,16 @@ export async function readDocument(
   // false-negatived a sideways military ID and false-positived an upright birth cert, and EXIF is
   // unreliable: military + birth carry the same EXIF flag but only one needs it). Fail-open.
   let orientApplied = 0
+  let orientationUncertain = false
   if (isContentOrientEnabled()) {
     const apiKey = getGeminiApiKey()
     if (apiKey) {
       const oriented = await orientToUpright(imageBuffer, apiKey, primaryGeminiModel())
       imageBuffer = oriented.buffer
       orientApplied = oriented.applied
+      orientationUncertain = !oriented.detected   // Step-5: undecidable orientation → fail-closed downstream
       if (orientApplied) console.info('[content_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
+      if (orientationUncertain) console.warn('[content_orient] detection_undecidable', JSON.stringify({ doc_type_id: docTypeId }))
     }
   } else if (process.env.AUTO_ORIENT_ENABLED === '1') {
     // Legacy iterative detector (deprecated — kept for rollback; see detectOrientation.ts for why).
@@ -249,6 +252,21 @@ export async function readDocument(
   // with a distinctive UA letter is never force-Russified. Conservative: detector
   // returns 'ru' only on a one-sided signal, else the value is untouched. Flag OFF ⇒
   // no doc-level signal is computed and every `value` is byte-identical to before.
+  // ORIENTATION FAIL-CLOSED GATE (Step-5): content-orient is on, but detection was UNDECIDABLE
+  // (detected:false) → the page orientation is unknown. Every critical field (handwritten OR required)
+  // stays review-required + 'orientation_uncertain'; never silently finalize a possibly-rotated read.
+  if (orientationUncertain && fields.length > 0) {
+    const criticalKeys = new Set(spec.fields.filter((f) => f.handwritten || f.required).map((f) => f.field))
+    let affected = 0
+    for (const f of fields) {
+      if (!criticalKeys.has(f.field)) continue
+      f.review_required = true
+      f.review_reasons = Array.from(new Set([...(f.review_reasons ?? []), 'orientation_uncertain']))
+      affected++
+    }
+    console.warn('[orientation_uncertain] forced review', JSON.stringify({ doc_type_id: docTypeId, affected }))
+  }
+
   if (process.env.DOC_SCRIPT_ROUTING_ENABLED !== '0' && fields.length > 0) {  // default ON (Step-7)
     const docScript = documentScriptOf(read.fields.map((r) => r.cyrillic))
     if (docScript === 'ru') {
@@ -482,6 +500,9 @@ export async function readDocument(
         exif_orientation: opts.forensic.exifOrientation ?? null,
         preprocess: { rotation_applied: opts.forensic.preprocessRotation ?? null, output_dimensions: opts.forensic.outputDimensions ?? null },
         orientation_applied_cw: orientApplied,
+        orientation: isContentOrientEnabled()
+          ? { detected: !orientationUncertain, applied_cw: orientApplied, vote_count: Number(process.env.ORIENT_VOTE_RUNS) || 3, uncertain: orientationUncertain }
+          : null,
         reader: {
           provider: provider.name,
           requested_model: requested,

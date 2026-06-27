@@ -176,5 +176,11 @@ export async function orientToUpright(buffer: Buffer, apiKey: string, model: str
 
 /** Flag: content-based orientation correction (default OFF — measured before enabling). */
 export function isContentOrientEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  // Step-5 (owner 2026-06-27): kept DEFAULT OFF. Enabling it was attempted but the instrumented
+  // EXIF-normalized rotation matrix (vote=3) showed the grid detector is MIS-CALIBRATED: it applied
+  // a systematic ~90° wrong correction and even rotated an UPRIGHT doc by 270°, all while reporting
+  // detected:true (so the fail-closed-on-undecidable gate never fires). Enabling it would DEGRADE
+  // correctly-oriented uploads. Re-enable only after the detector's angle convention is fixed and
+  // re-proven (rotation invariance ≈12/12). Set CONTENT_ORIENT_ENABLED=1 to opt in for testing.
   return env.CONTENT_ORIENT_ENABLED === '1'
 }
