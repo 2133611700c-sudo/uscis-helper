@@ -155,9 +155,9 @@ describe('orientationSettled (cost early-exit)', () => {
 })
 
 describe('isContentOrientEnabled', () => {
-  it('default OFF (Step-5: detector mis-calibrated; opt-in only); "1" enables', () => {
-    expect(isContentOrientEnabled({})).toBe(false)
-    expect(isContentOrientEnabled({ CONTENT_ORIENT_ENABLED: '0' })).toBe(false)
+  it('default ON (Step-5: proven 0/4→2/4 on the EXIF-sideways real doc); only "0" disables', () => {
+    expect(isContentOrientEnabled({})).toBe(true)
     expect(isContentOrientEnabled({ CONTENT_ORIENT_ENABLED: '1' })).toBe(true)
+    expect(isContentOrientEnabled({ CONTENT_ORIENT_ENABLED: '0' })).toBe(false)
   })
 })

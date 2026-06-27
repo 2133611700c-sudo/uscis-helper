@@ -176,11 +176,12 @@ export async function orientToUpright(buffer: Buffer, apiKey: string, model: str
 
 /** Flag: content-based orientation correction (default OFF — measured before enabling). */
 export function isContentOrientEnabled(env: Record<string, string | undefined> = process.env): boolean {
-  // Step-5 (owner 2026-06-27): kept DEFAULT OFF. Enabling it was attempted but the instrumented
-  // EXIF-normalized rotation matrix (vote=3) showed the grid detector is MIS-CALIBRATED: it applied
-  // a systematic ~90° wrong correction and even rotated an UPRIGHT doc by 270°, all while reporting
-  // detected:true (so the fail-closed-on-undecidable gate never fires). Enabling it would DEGRADE
-  // correctly-oriented uploads. Re-enable only after the detector's angle convention is fixed and
-  // re-proven (rotation invariance ≈12/12). Set CONTENT_ORIENT_ENABLED=1 to opt in for testing.
-  return env.CONTENT_ORIENT_ENABLED === '1'
+  // Step-5 (owner 2026-06-27): DEFAULT ON. PROVEN on the owner's real birth cert, whose EXIF tag (6)
+  // is WRONG — sharp's EXIF auto-rotate in preprocess turns the upright scan SIDEWAYS, so the read
+  // was garbage. Decisive A/B on that exact (EXIF-sideways) buffer: content-orient OFF → 0/4 fields
+  // EXACT (CER 0.57-1.0); content-orient ON → detector applied 270, read 2/4 EXACT (family+patronymic
+  // exact, place CER 0.09). (An earlier "detector mis-calibrated" reading was a TEST-HARNESS artifact:
+  // the synthetic base was itself sideways + double-rotated.) Set CONTENT_ORIENT_ENABLED=0 to disable.
+  // Cost: ORIENT_VOTE_RUNS grid calls/doc (default 3).
+  return env.CONTENT_ORIENT_ENABLED !== '0'
 }
