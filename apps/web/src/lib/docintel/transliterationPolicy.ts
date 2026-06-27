@@ -163,7 +163,7 @@ export function romanizeNameForDocScript(
   docScript: 'ru' | 'uk' | 'unknown',
   env: Record<string, string | undefined> = process.env,
 ): string | null {
-  if (env.DOC_SCRIPT_ROUTING_ENABLED !== '1') return current
+  if (env.DOC_SCRIPT_ROUTING_ENABLED === '0') return current  // default ON (Step-7): RU docs route RU; set =0 to disable
   const cy = (rawCyrillic ?? '').trim()
   if (!cy) return current
   if (docScript !== 'ru') return current

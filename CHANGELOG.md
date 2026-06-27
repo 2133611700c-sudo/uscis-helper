@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-27 | Step-7: RU/UA per-field language routing — RU text no longer Ukrainianized
+- Document jurisdiction (UA) and field-text language (RU/UA) are independent. A RU-language Soviet cert was sending Russian names through the Ukrainian KMU-55 table (Сергей→Serhei, Сергеевич→Serheevych). Fixed by making **doc-level script routing the default** (`DOC_SCRIPT_ROUTING_ENABLED` default ON; set `=0` to disable).
+- Behavior: on a decisively-RU document, shared-letter names route through the Russian (BGN/PCGN) table (Сергей→Sergey, Сергеевич→Sergeyevich, Андрей→Andrey); a Ukrainian-distinctive name (і/ї/є/ґ) is NEVER force-Russified (Сергій→Serhii); non-RU docs are a no-op; shared-letter names on certs flag for review; raw Cyrillic never mutated.
+- Acceptance gate: `ruUaLanguageRouting.test.ts` (fixed RU/UA/mixed vectors, 5/5). Full suite 4691 pass, tsc 0 — UA documents byte-unchanged (no Russification amplification).
+
 ## 2026-06-27 | Gemini reader contract — strict gemini-2.5-pro only, no silent fallback (the single Gemini truth)
 - **Root cause exposed by the forensic logger:** a live read fell back to `gemini-3.5-flash` (not the sanctioned `gemini-2.5-pro`) — the slow Pro read timed out and the provider silently swapped models, presenting a flash read as a Pro result. Forbidden by product contract.
 - `providers/geminiVisionProvider.ts` `modelFallback()` is now **strict primary-only by default**: returns `[gemini-2.5-pro]` unless `READER_FALLBACK_ENABLED=1` (default OFF). On timeout/429/5xx the reader fails-closed (unavailable → null → review); it NEVER swaps to flash and calls it Pro.

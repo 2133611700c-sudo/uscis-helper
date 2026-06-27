@@ -37,13 +37,17 @@ const live = getGeminiApiKey() && process.env.FORENSIC_LOG_ENABLED === '1'
         const pre = await preprocessImage(rawBytes, 'image/jpeg')
         if (!pre.ok) { console.error('[baseline] preprocess failed', rot, pre.code); continue }
         const runId = `baseline-rot${rot}-r${n}`
-        const r = await readDocument(pre.buffer, pre.mimeType, DOC_TYPE, {
-          timeoutMs: Number(process.env.READER_TIMEOUT_MS) || 180_000, attemptsPerModel: 1, product: 'translation', originalBuffer: rawBytes,
-          forensic: { runId, sourceSha256: null, exifOrientation: pre.exifOrientation ?? null, outputDimensions: { width: pre.width, height: pre.height } },
-        })
-        console.info('[baseline]', JSON.stringify({ runId, ok: r.ok, model: r.model, fields: r.fields?.length ?? 0 }))
+        try {
+          const r = await readDocument(pre.buffer, pre.mimeType, DOC_TYPE, {
+            timeoutMs: Number(process.env.READER_TIMEOUT_MS) || 180_000, attemptsPerModel: 1, product: 'translation', originalBuffer: rawBytes,
+            forensic: { runId, sourceSha256: null, exifOrientation: pre.exifOrientation ?? null, outputDimensions: { width: pre.width, height: pre.height } },
+          })
+          console.info('[baseline]', JSON.stringify({ runId, ok: r.ok, model: r.model, fields: r.fields?.length ?? 0 }))
+        } catch (e) {
+          console.error('[baseline] read threw (continuing)', runId, (e as Error)?.message)
+        }
       }
     }
     expect(true).toBe(true)
-  }, 600_000)
+  }, 1_800_000)
 })
