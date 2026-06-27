@@ -157,9 +157,15 @@ export async function readHandwrittenRoute(
   docTypeId?: string,
 ): Promise<HandwrittenFieldResult[]> {
   if (!isHtrSidecarEnabled()) return []
-  const boxes = await localizeHandwrittenFields(originalBuffer, mime, docTypeId)
+  // EXIF-NORMALIZE ONCE (Step-5b fix): the raw original may carry an EXIF orientation tag. Both the
+  // dimension read (box scaling) and sharp.extract() would otherwise see/apply EXIF inconsistently →
+  // the crop lands in the wrong region. Bake EXIF in + strip the tag, then use ONE oriented buffer for
+  // both localization (dims) and cropping (extract), so coordinates and pixels share one system.
+  let buf = originalBuffer
+  try { buf = await (await import('sharp')).default(originalBuffer, { failOn: 'error' }).rotate().toBuffer() } catch { buf = originalBuffer }
+  const boxes = await localizeHandwrittenFields(buf, mime, docTypeId)
   if (boxes.length === 0) return []
-  const reads = await readHandwrittenFieldsViaSidecar(originalBuffer, boxes)
+  const reads = await readHandwrittenFieldsViaSidecar(buf, boxes)
   return reads.map((r) => ({
     field: r.field,
     raw_htr_text: r.text,

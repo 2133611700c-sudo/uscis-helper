@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-27 | Step-5b DETERMINISTIC: orientation convention PROVEN + HTR-crop EXIF bug fixed
+- Added `orientationConvention.test.ts` — DETERMINISTIC geometry proof (synthetic asymmetric marker + pixel sampling, NO Gemini): (1) `preprocessImage` applies EXIF EXACTLY ONCE and strips the tag (sideways+EXIF6 → upright; zero→sideways, twice→over-rotated, only once→top); (2) correction = (360−R)%360 restores upright for every content rotation R. The angle convention is correct — the earlier "~90° detector bug" was a test-harness artifact (sideways synthetic base), now settled by math.
+- FIXED a real (latent) bug found by tracing: the HTR field-crop path used the RAW `originalBuffer` (EXIF tag present) for BOTH dimension-scaling and `sharp.extract()`, so sharp auto-applied EXIF inside extract while boxes were computed in raw dims → crop landed in the wrong region for EXIF-tagged uploads. `readHandwrittenRoute` now EXIF-normalizes once (bake + strip) and uses one oriented buffer for both localize + crop. (HTR sidecar is off in prod, so this was latent.)
+- Full suite 4710 pass, tsc 0.
+
 ## 2026-06-27 | Step-5b CORRECTION: content-orient PROVEN to work → ENABLED by default
 - RETRACTS the prior "detector mis-calibrated" entry below — that was a TEST-HARNESS artifact, not a detector bug. The synthetic base was itself sideways (this birth cert's EXIF tag is 6 = WRONG: sharp's EXIF auto-rotate turns the upright scan SIDEWAYS) and the harness then double-rotated it.
 - DECISIVE A/B on the exact real EXIF-sideways buffer (the production preprocess output), gemini-2.5-pro, vote=3, scored vs Tier-A GT:
