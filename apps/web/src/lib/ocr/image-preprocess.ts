@@ -67,6 +67,9 @@ export interface PreprocessResult {
   height: number
   resized: boolean
   scaleFactor: number   // < 1 if shrunk; > 1 if enlarged (R3 upscale); 1.0 if untouched
+  /** EXIF orientation tag from the original upload (1-8, or null/undefined if none). Diagnostic
+   *  provenance for the forensic logger — sharp.rotate() already auto-applied it. */
+  exifOrientation?: number | null
   /** Image quality metrics (for diagnostics and future threshold calibration) */
   quality: {
     brightness: number    // 0-255 mean across channels
@@ -264,6 +267,7 @@ export async function preprocessImage(
       height: finalH,
       resized,
       scaleFactor,
+      exifOrientation: (meta.orientation as number | undefined) ?? null,
       quality: {
         brightness: Math.round(brightness * 10) / 10,
         blurScore: Math.round(blurScore * 100) / 100,

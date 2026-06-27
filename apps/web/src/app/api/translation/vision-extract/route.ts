@@ -37,6 +37,7 @@ import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from 
 import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
+import { isForensicEnabled, sha256Hex } from '@/lib/docintel/forensics'
 import { getDocTypeSpec } from '@/lib/docintel/documentRegistry'
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { isBlocked, isProviderError } from '@/lib/ocr/types'
@@ -318,18 +319,24 @@ async function POST_impl(req: NextRequest) {
     // PreprocessResult we log and use the RAW buffer. Page→field provenance is
     // preserved (index `i` is unchanged; only the bytes handed to readDocument change).
     const corePreprocessEnabled = process.env.CORE_PREPROCESS_ENABLED !== '0'
+    // STAGE-1 forensic: one stable run base per request (computed only when enabled → neutral when off).
+    const forensicRunBase = isForensicEnabled() ? `vx-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}` : ''
     const corePages = await Promise.all(rawFiles.map(async (file, i) => {
       // HEIC was already converted to JPEG at intake (heicToJpeg, top of handler).
       const rawBuffer = Buffer.from(await file.arrayBuffer())
       const rawMime = file.type || 'image/jpeg'
       let buffer: Buffer = rawBuffer
       let mime: string = rawMime
+      let preExifOrientation: number | null = null
+      let preOutDims: { width: number; height: number } | null = null
       if (corePreprocessEnabled) {
         try {
           const pre = await preprocessImage(rawBuffer, rawMime)
           if (pre.ok) {
             buffer = pre.buffer
             mime = pre.mimeType
+            preExifOrientation = pre.exifOrientation ?? null
+            preOutDims = { width: pre.width, height: pre.height }
           } else {
             // A quality-gate reject (too_blurry/dark/small) or unsupported type:
             // do NOT block the Core read on it — fall through with the raw bytes
@@ -347,7 +354,17 @@ async function POST_impl(req: NextRequest) {
       // in PARALLEL, so a generous per-page budget still fits maxDuration=120.
       // attemptsPerModel:1 so a slow primary doesn't burn the budget on a retry —
       // the budget goes to the faster fallback models instead.
-      const r = await readDocument(buffer, mime, docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation', originalBuffer: rawBuffer })
+      const forensic = isForensicEnabled()
+        ? {
+            runId: `${forensicRunBase}-p${i + 1}`,
+            sourceSha256: sha256Hex(rawBuffer),
+            sourceDimensions: null,
+            exifOrientation: preExifOrientation,
+            preprocessRotation: null,
+            outputDimensions: preOutDims,
+          }
+        : undefined
+      const r = await readDocument(buffer, mime, docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation', originalBuffer: rawBuffer, forensic })
       return { i, r }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []

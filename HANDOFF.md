@@ -1,5 +1,10 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-27 | Stage-1 forensic logger (measurement layer, behavior-neutral)
+- New `forensics.ts` + wiring in `readDocument`/`preprocessImage`/`vision-extract`. Flag `FORENSIC_LOG_ENABLED` (default OFF). OFF = byte-identical, no PII, no extra calls. ON = gitignored `qa-private/runtime-forensics/<run_id>.json` (raw) + PII-free console digest.
+- Verified: tsc 0, `forensics.test.ts` 4/4 (OFF-by-default, hashes non-reversible, digest PII-free), reader tests green.
+- NEXT (Stage-1 acceptance gate): run instrumented baseline matrix on the SAME real birth cert — as-is/90/180/270 ×3 each (12 paid Gemini calls, GEMINI_API_KEY_PAY is set) — to split rotation-variance from identical-byte variance. Orientation code stays UNCHANGED until this baseline is captured. Passport 3-page scenario NOT reproducible (only 1 page image on disk).
+
 ## 2026-06-27 | Active Gemini truth cleanup
 - Removed literal Gemini 3.1 version references from active runtime code, active scripts, and authoritative architecture docs.
 - `normalizeGeminiModel()` now accepts only the sanctioned chain from `modelMatrix.ts`; stale env ids fall back automatically.
