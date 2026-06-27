@@ -22,7 +22,7 @@ for (const f of ['.env.local', 'apps/web/.env.local']) {
   } catch {}
 }
 const KEY = process.env.GEMINI_API_KEY
-const MODEL = process.env.PRIMARY_GEMINI_MODEL || 'gemini-3.1-pro-preview'
+const MODEL = process.env.PRIMARY_GEMINI_MODEL || 'gemini-2.5-pro'
 
 async function detectCwLive(buf, label) {
   // ask Gemini: by how many degrees CW must this thumbnail rotate to be upright?

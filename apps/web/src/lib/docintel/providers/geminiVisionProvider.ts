@@ -29,21 +29,9 @@ const GEMINI_PROMPT_VERSION = 'v2'
 // down-cap ≤2048. Different pixels reach the model → invalidate the shadow cache.
 const GEMINI_PREPROC_VERSION = 'v2'
 
-// Model order is env-driven so prod can flip models WITHOUT a code redeploy.
-// 2026-05-29 ensemble bench (docs/reports/GEMINI_ENSEMBLE_BENCH.md), 3 docs incl. a
-// handwritten 1986 UkrSSR birth cert, scored vs ground truth:
-//   gemini-3.1-pro-preview 19/22 (best) · 3.5-flash 16/22 · 2.5-pro 13/22.
-//   2.5-pro CATASTROPHICALLY FABRICATED a fake identity on the handwritten cert
-//   (fabricated a different person entirely) → 1/9 there. So 2.5-pro is
-//   NOT a safe default. 3.1-pro-preview leads; flash is the fast fallback.
-//   The robust answer is the 3-model consensus (E4: 19/22, and it OUTVOTES the
-//   2.5-pro fabrication) — see report. NOTE: 3.1-pro is a PREVIEW model.
-// 2026-06-02 CYRILLIC BENCHMARK adjudication (docs/reports/FAILED_CYRILLIC_GROUND_TRUTH_ADJUDICATION.md):
-//   gemini-2.5-pro + gemini-2.5-flash DISQUALIFIED for certificate docs — returned
-//   wrong person identity. gemini-3.1-flash-image is the per-class candidate for certs.
-//   gemini-2.0-flash / gemini-2.0-flash-lite: DEPRECATED — HTTP 404.
-//   gemini-3.1-flash-image: NOT a global default — per-class candidate only.
-//   Fallback chain updated: gemini-2.0-flash removed (404 deprecated).
+// Model order is env-driven so prod can flip models WITHOUT a code redeploy, but
+// runtime normalization accepts ONLY the sanctioned chain from modelMatrix. Old
+// preview-reader experiments remain in archived reports; they are not active law.
 // pro+thinking on a large scan runs ~20-40s → keep timeoutMs high + Vercel maxDuration.
 /** The configured primary reader model (ADR-018 model matrix). Exported so
  *  documentFieldReader can detect when a read came from a FALLBACK model —
@@ -191,7 +179,7 @@ async function callGemini(
               // is APPLIED but its real lift on our docs is PENDING an A/B measurement (medium vs high vs
               // ultra). Override via GEMINI_MEDIA_RESOLUTION. [ai.google.dev/gemini-api/docs/media-resolution]
               media_resolution: process.env.GEMINI_MEDIA_RESOLUTION || 'MEDIA_RESOLUTION_HIGH',
-              // Thinking models (gemini-3.1-pro-preview, gemini-2.5-pro) spend OUTPUT tokens on
+              // Thinking-capable Gemini models spend OUTPUT tokens on
               // internal reasoning BEFORE emitting JSON — at 8192 a dense full-page read hit
               // finishReason=MAX_TOKENS and returned EMPTY (a silent "0 fields" that looked like a
               // misread). maxOutputTokens is a CAP, billed on actual tokens, so raising it is free
@@ -249,13 +237,11 @@ export class GeminiVisionProvider implements VisionProvider {
     let lastStatus: number | undefined
     let lastTimeout = false
 
-    // Exponential backoff + jitter for transient failures on the PREVIEW primary.
-    // gemini-3.1-pro-preview is a PREVIEW endpoint with NO capacity guarantee, so it
-    // sporadically returns 503 UNAVAILABLE / deadlines that NO console setting, key, or
-    // permission can fix — Google's documented remedy is retry-with-backoff. ADR-018-safe:
-    // this only lets the PRIMARY survive a transient blip so we get a real primary read
-    // instead of immediately falling to a force-reviewed flash; the fallback chain and the
-    // force-review gate (documentFieldReader) are unchanged. Knobs (env, sane defaults):
+    // Exponential backoff + jitter for transient failures on the primary provider.
+    // ADR-018-safe: this only lets the PRIMARY survive a transient blip so we get
+    // a real primary read instead of immediately falling to a force-reviewed flash;
+    // the fallback chain and the force-review gate (documentFieldReader) are unchanged.
+    // Knobs (env, sane defaults):
     //   GEMINI_PRIMARY_RETRY_MAX (3) · GEMINI_RETRY_BASE_MS (700) · GEMINI_RETRY_CAP_MS (8000)
     // The old code did `setTimeout(1500); continue` with attemptsPerModel=1 — but `continue`
     // exited the `a < 1` loop, so the primary was NEVER actually retried (it slept 1.5s then

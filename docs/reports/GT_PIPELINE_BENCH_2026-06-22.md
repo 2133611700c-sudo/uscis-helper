@@ -6,7 +6,7 @@ Verdict taxonomy: CORRECT / WRONG / MISS (GT non-empty, read empty) / FABRICATED
 Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per GT_BENCHMARK_EXIT_CRITERIA: <30 scored fields/class ⇒ direction only).
 
 ## internal_passport_booklet (handwritten)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 8 · downscaled from 4.1MB (>4MB edge limit)
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 8 · downscaled from 4.1MB (>4MB edge limit)
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|
@@ -26,7 +26,7 @@ Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per
 - ERROR: timeout(90s)
 
 ## military_id_p1 (printed+hw)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 5 · downscaled from 4.8MB (>4MB edge limit)
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 5 · downscaled from 4.8MB (>4MB edge limit)
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|

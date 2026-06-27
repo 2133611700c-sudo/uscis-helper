@@ -23,7 +23,7 @@ USER ─► D0 quality ─► D1 Gemini reads CYRILLIC ─► (Vision/MRZ raw si
 | # | Constitution node | Real code | Status |
 |---|---|---|---|
 | D0 | Image quality / reshoot | `ocr/image-preprocess` + `docintel/quality/documentImageQuality` (`QUALITY_GATE_ENABLED`) | CODE_READY_FLAG_OFF |
-| D1 | Gemini reads Cyrillic (no model transliteration) | `geminiVisionProvider` → `VisionFieldRead.cyrillic`; default `gemini-3.1-pro-preview`→flash | LIVE (model choice GT-gated) |
+| D1 | Gemini reads Cyrillic (no model transliteration) | `geminiVisionProvider` → `VisionFieldRead.cyrillic`; default `gemini-2.5-pro` → flash fallbacks | LIVE (model choice GT-gated) |
 | 4 | Vision/MRZ technical eye | `ocr/providers/google-vision`, `canonical/core/mrzAuthority` (MRZ Latin wins in arbitration) | LIVE in TPS/Reparole; translation Core uses docintel only |
 | 5 | **RAW_CYRILLIC preserve** | `ExtractedDocField.raw_cyrillic` (set at `documentFieldReader.ts:76`) | **PARTIAL — see GAP A** |
 | 6 | One Shared Core (the one door) | `documentFieldReader.ts` ("all 4 products inherit via this one door") + `arbitrateDocument` | LIVE (Core flags ON in prod) |

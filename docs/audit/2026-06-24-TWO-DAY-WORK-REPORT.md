@@ -27,7 +27,7 @@ Single consolidated log of two days. 78 commits. Honest, evidence-linked. PII-fr
 15. "ты всё делаешь сам, по нашему плану через себя прогоняешь, настраиваешь проект как у тебя при правильном результате; тесты после каждого".
 16. "ты имеешь все оригиналы моих документов, используй! проверь на двух агентах Gemini и GPT; сначала обучи все 3 агента, потом тест на всех трёх; план и погнали".
 17. "критически протести всё снова на свидетельстве И паспорте; не верю твоим тестам; делай заново честно".
-18. "всё фейк, нет стабильных отчётов, всё по-разному; откуда ты взял Gemini-3.1-pro? это нестабильная preview!".
+18. "всё фейк, нет стабильных отчётов, всё по-разному; откуда ты взял Legacy preview primary? это нестабильная preview!".
 19. "проверь все правила и инструкции — как обновлено и работает — и словари; максимально критично".
 20. "начни как инженер проверять и работать над всеми пунктами; собери план; прочти аудиты; работай сразу со всеми агентами".
 21. "коротко что сам думаешь об этом результате?".
@@ -89,7 +89,7 @@ Single consolidated log of two days. 78 commits. Honest, evidence-linked. PII-fr
 
 ### Handwriting (the focus) — HONEST
 - **raxtemur/trocr-base-ru reads a NARROW CLUSTER:** birth_cert_handwritten_01 (surname+given CER 0.000 exact, patronymic 0.333) and birth_cert_soviet_01 (given+patronymic exact, surname 0.2) — BOTH high-res Soviet/RU-script cursive. **Stable across 5 runs (deterministic).**
-- **Tri-agent frozen (handwriting):** raxtemur > gpt-4.1 / gemini-3.1-pro > gemini-2.5-pro (fabricates) > gpt-5.5 (worst). raxtemur best on cursive, key-free, $0, no PII egress.
+- **Tri-agent frozen (handwriting):** raxtemur > gpt-4.1 / removed preview primary > gemini-2.5-pro (fabricates) > gpt-5.5 (worst). raxtemur best on cursive, key-free, $0, no PII egress.
 - **HELD-OUT = NEGATIVE:** the first genuinely DIFFERENT handwritten doc (marriage_1939, bilingual, different writer/era, lower-res) FAILED. ⇒ **NO PROVEN REGULARITY — two similar points are a cluster, not a pattern.**
 - raxtemur CANNOT abstain (fabricates on a blank crop) → non-exact reads need a gate + human review.
 

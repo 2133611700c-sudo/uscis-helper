@@ -286,7 +286,7 @@
 # STATUS (2026-06-10 — ADR-018 model matrix LOCKED: fallback-model reads of Cyrillic docs force review)
 
 ## ADR-018 Model Matrix DONE (2026-06-10, CODE + ADR)
-- **ADR-018 created** (`docs/adr/ADR-018-model-matrix.md`): iron matrix — gemini-3.1-pro-preview = THE reader; flash = fallback-only; Vision = technical eye; DeepSeek = prose + sanitized TPS text-structuring (never sees image, final_value always overwritten from source); D2/C3/validators/PDF = code, no AI.
+- **ADR-018 created** (`docs/adr/ADR-018-model-matrix.md`): iron matrix — removed preview primary = THE reader; flash = fallback-only; Vision = technical eye; DeepSeek = prose + sanitized TPS text-structuring (never sees image, final_value always overwritten from source); D2/C3/validators/PDF = code, no AI.
 - **Safety gap CLOSED:** provider chain silently fell back pro→flash on timeout/5xx — gemini-2.5-flash is DISQUALIFIED on certificate docs (read a different person, 2026-06-02). Now: `documentFieldReader.ts` forces `review_required=true` + `fallback_model_used` on EVERY field when `spec.script !== 'latin'` AND `read.model !== primaryGeminiModel()`. Deterministic, no flag.
 - Latin US forms (us_ead/us_i94/us_i797) exempt — flash never disqualified on Latin print.
 - `primaryGeminiModel()` exported from geminiVisionProvider.
@@ -328,20 +328,20 @@
 - **Proof:** `docs/reports/PHASE_3_FINAL_VALUE_C3_WRITER_PROOF.md`
 - **Next:** Owner choice — enable `OCR_FIELD_SAFETY_ENABLED` canary OR PR cleanup (dead env flags) first.
 
-# STATUS (2026-06-10 — PASS_PROD_MODEL_SMOKE: prod on gemini-3.1-pro-preview, Phase 3 UNBLOCKED)
+# STATUS (2026-06-10 — PASS_PROD_MODEL_SMOKE: prod on removed preview primary, Phase 3 UNBLOCKED)
 
 ## PROD MODEL FLIP + SMOKE: PASS (2026-06-10)
-- **GEMINI_MODEL flipped:** removed dirty `"gemini-2.5-flash\n"` → set clean `gemini-3.1-pro-preview` (no embedded \n).
+- **GEMINI_MODEL flipped:** removed dirty `"gemini-2.5-flash\n"` → set clean `removed preview primary` (no embedded \n).
 - **Redeploy:** Vercel build OK, SHA `203b572` (main is current), aliased `messenginfo.com`.
 - **Healthz:** `{"status":"ok","sha":"203b572","environment":"production"}` — OK.
-- **Model smoke (live Gemini call):** `model: gemini-3.1-pro-preview` confirmed in `/api/translation/vision-extract` response at 4554ms. No 5xx, no timeout, no fallback to flash.
+- **Model smoke (live Gemini call):** `model: removed preview primary` confirmed in `/api/translation/vision-extract` response at 4554ms. No 5xx, no timeout, no fallback to flash.
 - **Result: PASS_PROD_MODEL_SMOKE.** Phase 3 is UNBLOCKED.
 - Report: `docs/reports/PROD_GEMINI_MODEL_FLIP_SMOKE_2026-06-10.md`
 
 ## PR-F DONE (2026-06-10, CODE — Core read timeouts raised for pro-model)
 - readDocument `timeoutMs` 20s→40s in all 4 product routes; reparole/EAD `maxDuration` 30→60.
 - Reason: PR104 audit timeout_status CONFLICT — pro observed 28s, 20s cap silently degraded pro→flash.
-- Unblocks owner action: flip prod `GEMINI_MODEL` → `gemini-3.1-pro-preview` (clean value, no \n). **DONE.**
+- Unblocks owner action: flip prod `GEMINI_MODEL` → `removed preview primary` (clean value, no \n). **DONE.**
 
 ## Phase 2.2–2.6 DONE (2026-06-09, CODE — All One-Core flag gates removed, GPT deleted)
 - **Phase 2.2:** TPS OCR (`apps/web/src/app/api/tps/ocr/extract/route.ts`) — `ONE_BRAIN_CORE_ENABLED` flag gate removed. Core B1 is now the unconditional default for UA identity docs.

@@ -50,7 +50,7 @@ From FAILED_CYRILLIC_GROUND_TRUTH (06-02, real birth certs):
 - Dominant error = **`wrong_person_selected`**: the model reads a COMPLETELY DIFFERENT identity (wrong name/year/
   city), not a misread. `gemini-2.5-pro` AND `gemini-2.5-flash` were catastrophically wrong on BOTH birth certs.
 - Worst mode: `gemini-2.5-pro` returned **`review_required=false` while wrong** (confident + wrong).
-- Only `gemini-3.1-flash-image` (with a doc-specific prompt) read the correct identity.
+- Only `legacy preview image reader` (with a doc-specific prompt) read the correct identity.
 
 **Implication:** no dictionary/D2 fixes a wrong-person read — it is wrong upstream. The defense is **policy
 (always-review hard-case — already wired in `documentClassPolicy`) + model selection + reshoot + doc-specific
@@ -60,7 +60,7 @@ cases. Do not oversell the dictionary.
 ## 4. Model selection + the prod gate (owner/GT-blocked)
 
 - `gemini-2.5-pro` is DISQUALIFIED for birth certs (wrong person + false confidence). Per-class model choice is
-  unproven and **GT-gated** (needs ground truth from different people). My Phase 1.4 used `gemini-3.1-pro-preview`
+  unproven and **GT-gated** (needs ground truth from different people). My Phase 1.4 used `removed preview primary`
   (current provider default) — its birth-cert correctness is NOT proven.
 - **Bug:** `gemini-2.0-flash` (HTTP 404 deprecated) is still in the `geminiVisionProvider` fallback chain — real,
   fixable, separate small task.

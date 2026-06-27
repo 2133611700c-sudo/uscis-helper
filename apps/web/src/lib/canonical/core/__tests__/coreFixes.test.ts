@@ -120,4 +120,23 @@ describe('arbitrateField — not_read_manual_entry placeholder survives arbitrat
     ])
     expect(f).toBeNull()
   })
+
+  it('a review-only handwritten HTR candidate with rawCyrillic survives as a null + review row', () => {
+    const f = arbitrateField('child_family_name', [
+      c({
+        key: 'child_family_name',
+        value: '',
+        rawCyrillic: 'СИНТЕТИЧНИЙ',
+        source: 'ai_vision',
+        confidence: 0,
+        reviewRequired: true,
+        reviewReasons: ['handwritten_htr_read'],
+      }),
+    ])
+    expect(f).not.toBeNull()
+    expect(f!.normalizedValue).toBeNull()
+    expect(f!.rawCyrillic).toBe('СИНТЕТИЧНИЙ')
+    expect(f!.reviewRequired).toBe(true)
+    expect(f!.reviewReasons).toContain('handwritten_htr_read')
+  })
 })

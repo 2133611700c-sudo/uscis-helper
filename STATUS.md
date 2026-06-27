@@ -1,7 +1,34 @@
 # STATUS (2026-06-24 — ROOT-CAUSE REVERSAL: handwritten UA/RU Cyrillic IS readable key-free; PII fictionalized + model inventory corrected)
 
+## 2026-06-27 | Active Gemini truth cleaned
+- Active runtime truth is now explicit and singular: `gemini-2.5-pro` is the current primary printed-field LLM, with sanctioned fallbacks `gemini-3.5-flash` and `gemini-2.5-flash`.
+- Runtime normalization no longer keeps special-case handling for old preview model ids; any env model outside the sanctioned chain now falls back automatically.
+- Older preview-primary references below are historical notes only and must not be read as current runtime law.
+
+## 2026-06-25 | Handwritten birth-cert deterministic crop path narrowed — real runtime path now reads 3/3 Cyrillic fields on the fixed template
+- Re-checked the owner's correction critically instead of trusting the previous summary. The reported `raxtemur 3/3 EXACT` was true only as **best-of-3 crop variants**, not as the current single operational path.
+- Verified the actual mismatch in the code:
+  - frozen bake-off manifest (`qa-private/htr-poc/bakeoff_manifest.json`) uses the tuned patronymic box `[1090,905,1850,1120]`;
+  - runtime `FIELD_BOX_TEMPLATES.ua_birth_certificate.patronymic` still used the older wider box, which overlapped the given name and produced `гей Сергеевич`.
+- Fixed the deterministic template in `apps/web/src/lib/docintel/ensemble/handwrittenFieldRoute.ts` to the tuned patronymic box and pinned it in `handwrittenFieldRoute.test.ts`.
+- Live module proof through the real sidecar on the real birth certificate fixture (`test-fixtures/real-docs/birth_cert_handwritten_01.jpg`, sidecar `127.0.0.1:8077`) now returns:
+  - `family_name`: `Соловьяк`
+  - `given_name`: `Сергей`
+  - `patronymic`: `Сергеевич`
+  - all with `review_required=true`
+- Critical A/B evidence:
+  - old box → `patronymic = "гей Сергеевич"`
+  - new box → `patronymic = "Сергеевич"`
+  - this was reproduced on the same original file through `readHandwrittenFieldsViaSidecar`, not inferred.
+- Type/test evidence:
+  - `pnpm exec vitest run src/lib/docintel/ensemble/__tests__/handwrittenFieldRoute.test.ts src/lib/docintel/providers/__tests__/htrSidecarProvider.test.ts src/lib/docintel/__tests__/htrOnlyEarlyReturn.test.ts` → PASS
+  - `pnpm exec tsc --noEmit` in `apps/web` → PASS
+- Honest status:
+  - **verified:** deterministic template path on this one handwritten birth certificate now yields clean Cyrillic 3/3 before review.
+  - **still unverified:** broader automatic localization beyond the hard-coded birth-cert template; full browser/site upload → review UI → saved review state for this fixed path; larger-N held-out handwriting set.
+
 ## 2026-06-24 | GPT/OpenAI handwritten birth-cert audit — direct VLM path still NOT acceptable
-- Independent model audit completed on the real handwritten Soviet/Russian-language birth certificate fixture, after live preprocess + content-orientation verification. `gemini-3.1-pro-preview` was excluded per owner instruction.
+- Independent model audit completed on the real handwritten Soviet/Russian-language birth certificate fixture, after live preprocess + content-orientation verification. `removed preview primary` was excluded per owner instruction.
 - **Measured pipeline truth:** source `4128x3096` / `7.07MB` → server preprocess `2304x3072` / `2.20MB`, quality `good`; content-orientation detector chose `270°` on the cert.
 - **Measured model truth (same fixture):**
   - `gemini-2.5-pro` raw bench: birth cert `CYR 0/3`, `LAT 0/3`, `DOB N`, ~80s/doc.
@@ -17,7 +44,7 @@
 
 <!-- SESSION 2026-06-23 (branch translation/ru-and-model-matrix-fixes, NOT yet pushed):
 (1) PII: every committed identity value → ONE fictional family; hash guard scripts/check-no-pii.mjs (0/1781) + vitest piiGuard.test + gitignored generator. Removed real-PII qa-private/reports/gt-pipeline-bench.dry-reads.json from git index (was tracked via git mv; kept on disk).
-(2) MODEL MATRIX corrected by LIVE bench: gemini-3.1-pro-preview=PRIMARY but PREVIEW→503/429 unreliable; gemini-2.5-pro added as GA fallback, DISQUALIFIED for certs (fabricates a different person on handwriting); MODEL_PROFILES + HANDWRITTEN_DOC_FAMILIES in modelMatrix.ts; docs/architecture/MODEL_INVENTORY.md. NO model reads handwriting w/o error. GPT 4.1/5.4/5.5 read PRINTED accurately but FABRICATE on handwriting; gpt-4o REFUSES via API.
+(2) MODEL MATRIX corrected by LIVE bench: removed preview primary=PRIMARY but PREVIEW→503/429 unreliable; gemini-2.5-pro added as GA fallback, DISQUALIFIED for certs (fabricates a different person on handwriting); MODEL_PROFILES + HANDWRITTEN_DOC_FAMILIES in modelMatrix.ts; docs/architecture/MODEL_INVENTORY.md. NO model reads handwriting w/o error. GPT 4.1/5.4/5.5 read PRINTED accurately but FABRICATE on handwriting; gpt-4o REFUSES via API.
 (3) FIXTURE BUG (GPT caught, Gemini didn't): internal_passport_01.jpg is the INTERNATIONAL passport (MRZ), was mislabeled ua_internal_passport_booklet → fixed to ua_international_passport in all benches.
 (4) OVER-CONSTRAINT AUDIT (owner hypothesis CONFIRMED): we downscale+recompress (passport 3.9MB→0.87MB though it fits the 4MB limit; birth/military −45% px). Applied UNMEASURED (pending A/B): Gemini media_resolution=HIGH; OCR cap 2048→3072 q90; primary 503 backoff retry; maxOutputTokens→16384. NEW openaiVisionProvider.ts (taught via the same buildPrompt). NEXT: evidence matrix (image×prompt ablation) → fix proven culprit; doc-family rules (internal vs international, field_not_present); phased OCR/Central-Brain split. Suite 4660/0, tsc 0. -->
 
@@ -62,7 +89,7 @@
 <!-- TPS E2E (2026-06-19): pinned the failing 4-test run from the deployed DOM — owner generate CTA, paywall AND package-ready ALL render only on `step === 6` (TPSWizardV2.tsx:3375). The owner tests asserted `tps-generate-cta` while still on Step 5 (after navigateToReview), so it could never appear; the mail-ready gate was NOT the blocker (the non-owner run reached Step 6 = gate PASSED). Fix is TEST-ONLY (no app change): added `advanceToStep6()` (clicks stable `tps-step6-continue-cta`, surfaces `tps-gate-error-container` text on gate-fail instead of a blind timeout); generateAndSaveZip advances 5→6 first; dropped the wrong non-owner `tps-package-ready-state` count-0 assertion (renders for everyone on step 6 — bypass proof = paywall present AND generate-CTA absent); hardened navigateToReview with explicit per-step visibility waits (kills the cold-hydration "stuck on Step 1" 240s timeout); fixed staging-e2e-tps.yml no-zip path (`mkdir -p tps-artifacts`). Branch fix/tps-e2e-step6-cta-flow. Awaiting staging dispatch for real scenario-a/b ZIPs + I-821/I-765 visual acceptance. -->
 <!-- Correction: real corpus DOES exist in test-fixtures/real-docs (gitignored); earlier "real-docs empty" was wrong dir. -->
 - CORPUS REALITY (corrected — I checked the wrong dir before): test-fixtures/real-docs/ (gitignored ✓) HAS real full-document images — internal passport (4.1MB), birth cert (7MB), military_id_p1/p2 — paired with 8 VERIFIED_BY_OWNER GT in qa-private/ground-truth/. So a REAL pilot corpus exists; NOT fully blocked.
-- PILOT RUNNER BUILT + RAN (branch feat/cyrillic-pilot-acceptance-runner): NEW apps/web/scripts/cyrillic-acceptance.ts (`pnpm --filter web run benchmark:cyrillic-private`) — loads a PRIVATE gitignored manifest (qa-private/acceptance-manifest.json; committed script has NO owner-name filenames), verifies SHA-256, DEDUP-detects (caught the birth-cert data bug: doc-C is byte-identical to doc-B), loads GT honoring owner_verified_fields ONLY, runs the REAL local readDocument (gemini-3.1-pro-preview + 3.5/2.5-flash fallback) with bounded 429 retry, maps to AcceptanceProducedField, scores via cyrillicAcceptanceMetrics (EMPTY/review/null NEVER success), verifies raw_cyrillic flow, emits PII-free report (docs/reports/CYRILLIC_PILOT_ACCEPTANCE.json) + gitignored detail.
+- PILOT RUNNER BUILT + RAN (branch feat/cyrillic-pilot-acceptance-runner): NEW apps/web/scripts/cyrillic-acceptance.ts (`pnpm --filter web run benchmark:cyrillic-private`) — loads a PRIVATE gitignored manifest (qa-private/acceptance-manifest.json; committed script has NO owner-name filenames), verifies SHA-256, DEDUP-detects (caught the birth-cert data bug: doc-C is byte-identical to doc-B), loads GT honoring owner_verified_fields ONLY, runs the REAL local readDocument (removed preview primary + 3.5/2.5-flash fallback) with bounded 429 retry, maps to AcceptanceProducedField, scores via cyrillicAcceptanceMetrics (EMPTY/review/null NEVER success), verifies raw_cyrillic flow, emits PII-free report (docs/reports/CYRILLIC_PILOT_ACCEPTANCE.json) + gitignored detail.
 - PILOT RESULT (honest): runner_status=READY; provider_status=BLOCKED_PROVIDER_RATE_QUOTA — every read 429'd across all 3 models + retries (the local Gemini free-tier project quota is exhausted, same as prod); pilot_result=BLOCKED_PROVIDER_RATE_QUOTA; quality numbers NULL (no successful read). 3 distinct real images, 4 verified GT, 4 matched pairs, 14 verified critical fields, doc-C=dup(doc-B). THE QUALITY QUESTION IS STILL UNANSWERED — blocked on Gemini quota, NOT on corpus or code.
 - CONCRETE EXTERNAL BLOCKER (the genuine one): Gemini/Vision quota on gen-lang-client-0450386998 is exhausted (429 everywhere). UNBLOCK = raise quota or use a billed project; then `pnpm run benchmark:cyrillic-private` produces real per-field numbers with ZERO code change. ARCHITECT FINDINGS: (1) the legacy scripts/gt-pipeline-bench.mjs is BROKEN — references *_ivanenko files that don't exist (real files are the owner-surname naming) + hits prod (429); superseded by the new runner. (2) birth_cert_handwritten & birth_cert_soviet are the SAME image (sha 3188741189ef) — a GT/corpus data-integrity bug to fix. Do NOT enable OCR_CACHE_MODE=enforce until CYRILLIC quality is actually measured.
 <!-- OCR-infra ≠ Cyrillic quality. Coordination program (A–D) done; main product question (real UA docs read correctly) remains UNPROVEN. -->
@@ -203,7 +230,7 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-06-21: gemini-quota-diag.yml added to capture RAW Gemini 429 body (quota metric) + model-existence — root-cause probe for persistent OCR 429. -->
 <!-- 2026-06-21: OCR UNBLOCKED — was AI Studio monthly spend cap (RESOURCE_EXHAUSTED), owner raised it. REAL OCR proven on owner booklet (flash-fallback, force-reviewed). Provider now surfaces hard-quota honestly. -->
 <!-- 2026-06-21: RU Cyrillic leak fixed (routing RU→Russian table); deterministic core all green. -->
-<!-- 2026-06-21: REAL OCR 12/12 GREEN on staging (spend cap raised + RU routing fixed). Proven on owner booklet. Remaining: raise gemini-3.1-pro-preview RPM for clean primary reads (account-side). #208 merge gate satisfied; awaiting owner go-ahead. -->
+<!-- 2026-06-21: REAL OCR 12/12 GREEN on staging (spend cap raised + RU routing fixed). Proven on owner booklet. Remaining: raise removed preview primary RPM for clean primary reads (account-side). #208 merge gate satisfied; awaiting owner go-ahead. -->
 <!-- 2026-06-21: provider now enforces ADR-018 DISQUALIFIED (2.5-flash excluded for certs); RELEASE_STATE basis sha fixed. -->
 <!-- 2026-06-21T02:05:00Z: typecheck fix (applyOcrFieldSafety cast in scenario E2E test) → Content&Brand guard green. e2e 12/12; reads still gemini-2.5-flash (RPM, account-side). -->
 

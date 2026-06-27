@@ -13,7 +13,7 @@ No prod env changed. No flags enabled. Owner decision required to enable any beh
 - **Decision:** do NOT enable SMART_NORMALIZE in prod on this evidence (no benefit, slight cost). Revisit
   only with more, varied, Ukrainian-language GT. `NEEDS_MORE_DATA` is the path to any future ON.
 
-## Recommendation 2 — hard-case model → **prefer gemini-3.1-pro-preview over 2.5-flash; gate mandatory; NEEDS_MORE_DATA for a firm choice**
+## Recommendation 2 — hard-case model → **prefer removed preview primary over 2.5-flash; gate mandatory; NEEDS_MORE_DATA for a firm choice**
 
 - 2.5-flash on hard-case: **0/5 correct (different person), DOB unflagged (FN=5)** without the gate, and
   read DOB month 02 — dangerous.

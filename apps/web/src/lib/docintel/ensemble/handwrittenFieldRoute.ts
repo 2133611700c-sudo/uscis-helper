@@ -34,7 +34,9 @@ const FIELD_BOX_TEMPLATES: Record<string, Record<string, [number, number, number
   ua_birth_certificate: {
     family_name: [0.2326, 0.2277, 0.5451, 0.2923],
     given_name: [0.1308, 0.2923, 0.2447, 0.3617],
-    patronymic: [0.1696, 0.2923, 0.4966, 0.3617],
+    // Tightened on 2026-06-25 to remove the given-name overlap that produced
+    // "гей Сергеевич" instead of "Сергеевич" on the real handwritten birth cert.
+    patronymic: [0.2641, 0.2923, 0.4482, 0.3617],
   },
 }
 

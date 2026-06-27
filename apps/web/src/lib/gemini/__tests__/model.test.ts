@@ -18,5 +18,8 @@ describe('normalizeGeminiModel', () => {
   it('falls back when value is missing', () => {
     expect(normalizeGeminiModel(undefined, 'fallback-model')).toBe('fallback-model')
   })
-})
 
+  it('falls back when env points outside the sanctioned chain', () => {
+    expect(normalizeGeminiModel('unsupported-legacy-preview', 'gemini-2.5-pro')).toBe('gemini-2.5-pro')
+  })
+})

@@ -7,7 +7,7 @@
  * cross-document confirmation). Then evaluates 5 ensemble (consensus) configs to
  * find the "smart system" that recognises best.
  *
- * Models confirmed callable on the paid key: 2.5-pro, 3.1-pro-preview, 3.5-flash.
+ * Models confirmed callable on the paid key: 2.5-pro, 3.5-flash, 2.5-flash.
  * Reads keys from apps/web/.env.local. Never prints keys.
  * Writes docs/reports/GEMINI_ENSEMBLE_BENCH.md
  */
@@ -22,7 +22,7 @@ const eg = (k) => (env.match(new RegExp('^' + k + '=(.*)$', 'm'))?.[1] || '').re
 const KEY = eg('GEMINI_API_KEY')
 const GV_KEY = eg('GOOGLE_CLOUD_VISION_API_KEY') || eg('GOOGLE_VISION_API_KEY')
 
-const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.5-flash', 'gemini-3.1-pro-preview']
+const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.5-flash']
 const FIX = resolve(REPO, 'test-fixtures/real-docs')
 
 // Ground truth lives in test-fixtures/real-docs/bench-truth.json (gitignored).
@@ -133,11 +133,11 @@ const agree = (a, b) => { const x = norm(a), y = norm(b); return !!x && !!y && (
 
     // ── 5 ensembles (consensus): accept a field only when ≥2 voters agree ──
     const ensembles = {
-      'E1 3.1pro+3.5flash (≥2)': { members: ['gemini-3.1-pro-preview', 'gemini-3.5-flash'], min: 2, gv: false },
-      'E2 3.1pro+2.5pro (≥2)': { members: ['gemini-3.1-pro-preview', 'gemini-2.5-pro'], min: 2, gv: false },
-      'E3 3.1pro+3.5flash+2.5flash (≥2)': { members: ['gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash'], min: 2, gv: false },
+      'E1 2.5pro+3.5flash (≥2)': { members: ['gemini-2.5-pro', 'gemini-3.5-flash'], min: 2, gv: false },
+      'E2 2.5pro+2.5flash (≥2)': { members: ['gemini-2.5-pro', 'gemini-2.5-flash'], min: 2, gv: false },
+      'E3 2.5pro+3.5flash+2.5flash (≥2)': { members: ['gemini-2.5-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'], min: 2, gv: false },
       'E4 all-5 majority (≥3)': { members: MODELS, min: 3, gv: false },
-      'E5 3.1pro+3.5flash+GoogleVision (≥2)': { members: ['gemini-3.1-pro-preview', 'gemini-3.5-flash'], min: 2, gv: true },
+      'E5 2.5pro+3.5flash+GoogleVision (≥2)': { members: ['gemini-2.5-pro', 'gemini-3.5-flash'], min: 2, gv: true },
     }
     const eScore = {}
     for (const [name, cfg] of Object.entries(ensembles)) {

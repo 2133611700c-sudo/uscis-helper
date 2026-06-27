@@ -1,7 +1,7 @@
 # GT Pipeline Bench — Findings (2026-06-10)
 
 Live measurement of the production brain (`/api/translation/vision-extract`,
-gemini-3.1-pro-preview) on the owner's real Cyrillic documents vs owner-verified
+removed preview primary) on the owner's real Cyrillic documents vs owner-verified
 ground truth. Runner: `apps/web/scripts/gt-pipeline-bench.mjs` (re-runnable).
 Sanitized scorecard: `GT_PIPELINE_BENCH_2026-06-10.md`. Raw values: gitignored
 `qa-private/`. Sample = 1 doc/class ⇒ **EXPLORATORY ONLY** (per exit criteria).

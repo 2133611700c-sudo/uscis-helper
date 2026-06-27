@@ -22,7 +22,7 @@ Both classes: `auto_fill_allowed: true`, `final_without_review: false` — auto-
 
 | Class | Evidence from Benchmark | always_review |
 |---|---|---|
-| `birth_certificate_handwritten` | gemini-2.5-pro + gemini-2.5-flash both returned wrong person (different family name, given name, birth year, city). gemini-3.1-flash-image reads correct owner identity but DOB uncertain. | true |
+| `birth_certificate_handwritten` | gemini-2.5-pro + gemini-2.5-flash both returned wrong person (different family name, given name, birth year, city). legacy preview image reader reads correct owner identity but DOB uncertain. | true |
 | `birth_certificate_soviet_bilingual` | Same wrong-person failure as handwritten. USSR bilingual UA+RU layers cause generic extraction to confuse identity blocks. gemini-2.5-pro additionally set review_required=false while wrong — most dangerous failure mode. | true |
 | `marriage_apostille` | 82KB image was insufficient. No verified ground truth. Rescan at 300 DPI required before any extraction can be trusted. | true |
 | `unknown_document` | No class match = no trust. | true |
@@ -33,13 +33,13 @@ Both classes: `auto_fill_allowed: true`, `final_without_review: false` — auto-
 
 | Class | Candidate Model | Disqualified Models |
 |---|---|---|
-| `internal_passport_booklet` | gemini-3.1-flash-image | gemini-2.0-flash (404) |
-| `military_id` | gemini-3.1-flash-image | gemini-2.0-flash (404) |
-| `birth_certificate_handwritten` | gemini-3.1-flash-image | gemini-2.5-pro, gemini-2.5-flash (wrong person) |
-| `birth_certificate_soviet_bilingual` | gemini-3.1-flash-image | gemini-2.5-pro (wrong person + false confidence), gemini-2.5-flash (wrong person) |
-| `marriage_apostille` | gemini-3.1-flash-image (safe/null) | No model trusted without better image |
+| `internal_passport_booklet` | legacy preview image reader | gemini-2.0-flash (404) |
+| `military_id` | legacy preview image reader | gemini-2.0-flash (404) |
+| `birth_certificate_handwritten` | legacy preview image reader | gemini-2.5-pro, gemini-2.5-flash (wrong person) |
+| `birth_certificate_soviet_bilingual` | legacy preview image reader | gemini-2.5-pro (wrong person + false confidence), gemini-2.5-flash (wrong person) |
+| `marriage_apostille` | legacy preview image reader (safe/null) | No model trusted without better image |
 
-**Global Gemini default: NOT set.** Model selection is per-class. `gemini-3.1-flash-image` is a per-class candidate, not a global default. Cyrillic is NOT solved globally.
+**Global Gemini default: NOT set.** Model selection is per-class. `legacy preview image reader` is a per-class candidate, not a global default. Cyrillic is NOT solved globally.
 
 ---
 

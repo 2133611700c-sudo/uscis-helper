@@ -2,7 +2,7 @@
 
 ## 1. Current Live Reality (honest, 2026-06-05)
 
-**Live path:** Gemini-3.1-pro-preview → readDocument → arbitration → post-passes → gates → product adapters
+**Live path:** Gemini-legacy-preview-primary → readDocument → arbitration → post-passes → gates → product adapters
 
 **Active in prod:**
 - ANTI_FABRICATION_GATE: ENABLED_BY_ENV — forces review on hard-case identity. **RUNTIME_OBSERVED: NO** (0 documents processed since deploy)

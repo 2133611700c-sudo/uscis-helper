@@ -114,6 +114,29 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
     if (placeholder) {
       return field(key, null, placeholder.source, criticalityOf(key), true, ['not_read_manual_entry'], [], 0, placeholder.rawCyrillic, placeholder.consensus_reliable)
     }
+    // Field-first HTR on handwritten docs is fail-closed: it may return ONLY the
+    // original Cyrillic plus review_required while deliberately blanking the Latin
+    // value (unsafe to auto-release). That is still a REAL review row and must not
+    // vanish here, otherwise the product falls back to "0 fields/manual paywall"
+    // even though HTR actually read the handwritten field.
+    const reviewOnly = candidates.find((c) =>
+      c.reviewRequired === true &&
+      (c.rawCyrillic ?? '').trim() !== '',
+    )
+    if (reviewOnly) {
+      return field(
+        key,
+        null,
+        reviewOnly.source,
+        criticalityOf(key),
+        true,
+        [...(reviewOnly.reviewReasons ?? ['reader_flagged'])],
+        [],
+        0,
+        reviewOnly.rawCyrillic,
+        reviewOnly.consensus_reliable,
+      )
+    }
     return null
   }
 

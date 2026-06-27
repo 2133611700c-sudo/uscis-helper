@@ -7,7 +7,8 @@
  *
  * HARD RULES baked here (do not remove without a new benchmark cycle):
  * - birth_cert_handwritten: gemini-2.5-pro/-flash CATASTROPHICALLY wrong (wrong person).
- *   Only gemini-3.1-flash-image reads correct identity. always_review=true, no auto-final.
+ *   Historical preview-image experiments were stronger, but they are no longer part of
+ *   the active runtime contract. always_review=true, no auto-final.
  * - birth_cert_soviet_bilingual: same wrong-person failure. USSR bilingual layer
  *   confuses generic extraction. always_review=true, no auto-final.
  * - marriage_apostille: no verified ground truth. 82KB image = too small. always_review=true.
@@ -16,7 +17,6 @@
  * - gemini-2.5-pro DISQUALIFIED for certificates: wrong person + review_required=false
  *   (false confidence) = most dangerous failure mode in a legal pipeline.
  * - gemini-2.0-flash / gemini-2.0-flash-lite: deprecated, HTTP 404.
- * - gemini-3.1-flash-image: NOT a global default. Per-class candidate only.
  * - Cyrillic is NOT solved globally. Per-class policy only.
  */
 
@@ -26,7 +26,7 @@ export const DOCUMENT_CLASS_POLICY = {
     always_review: false,
     review_required_fields: ['patronymic'],
     final_without_review: false,
-    model_candidate: 'gemini-3.1-flash-image',
+    model_candidate: 'gemini-2.5-pro',
     notes: 'Benchmark: all models correct. Patronymic often missing — review only that field.',
   },
   military_id: {
@@ -34,7 +34,7 @@ export const DOCUMENT_CLASS_POLICY = {
     always_review: false,
     review_required_fields: ['uncertain_fields'],
     final_without_review: false,
-    model_candidate: 'gemini-3.1-flash-image',
+    model_candidate: 'gemini-2.5-pro',
     notes: 'Benchmark: all models correct on tested sample. Needs more corpus before auto-final.',
   },
   birth_certificate_handwritten: {
@@ -42,18 +42,18 @@ export const DOCUMENT_CLASS_POLICY = {
     always_review: true,
     final_without_review: false,
     auto_final: false,
-    model_candidate: 'gemini-3.1-flash-image',
+    model_candidate: 'manual_review_only',
     reason: 'wrong_person_selected observed in benchmark — different human returned',
     requires_birth_certificate_schema: true,
     notes:
-      'Must use birth-cert-specific schema with child/parent role separation. gemini-2.5-pro/-flash DISQUALIFIED — returned wrong person identity (different family name, given name, birth year, city). gemini-3.1-flash-image reads correct owner identity but DOB uncertain.',
+      'Must use birth-cert-specific schema with child/parent role separation. gemini-2.5-pro/-flash DISQUALIFIED — returned wrong person identity (different family name, given name, birth year, city). Current contract is manual review only.',
   },
   birth_certificate_soviet_bilingual: {
     auto_fill_allowed: false,
     always_review: true,
     final_without_review: false,
     auto_final: false,
-    model_candidate: 'gemini-3.1-flash-image',
+    model_candidate: 'manual_review_only',
     reason: 'wrong_person_selected and bilingual_layer_confusion observed',
     requires_birth_certificate_schema: true,
     notes:

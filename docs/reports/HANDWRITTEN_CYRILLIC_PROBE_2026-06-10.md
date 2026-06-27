@@ -2,7 +2,7 @@
 
 Reason: prior reports over-emphasized PRINTED Cyrillic. The product's real need is
 HANDWRITTEN Cyrillic (old/Soviet certificates, handwritten passports). This probe
-tests the live prod read (gemini-3.1-pro-preview) on 3 handwritten owner documents,
+tests the live prod read (removed preview primary) on 3 handwritten owner documents,
 **3 runs each**, scoring the critical identity fields against owner GT. Raw values
 stay in gitignored qa-private; this doc carries field-level outcomes + failure mode only.
 

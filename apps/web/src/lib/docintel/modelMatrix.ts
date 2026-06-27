@@ -7,8 +7,8 @@
  * gated by `HTR_SIDECAR_URL` (UNSET in prod → disabled, byte-identical). REMAINING to make it the PRIMARY
  * handwriting path: (1) automatic field-region LOCALIZER (boxes) — e.g. Gemini bbox like dateRegionRead;
  * (2) wire the sidecar reads into documentFieldReader for HANDWRITTEN_DOC_FAMILIES; (3) a prod sidecar host.
- * This LLM matrix still ships as the reader until those land. `gemini-3.1-pro-preview` was REMOVED (unstable
- * preview). See docs/adr/ADR-026 + docs/research/HTR_LOCAL_API_AND_BATTERY.md.
+ * This LLM matrix still ships as the printed-field reader until those land. Legacy preview primaries were
+ * removed from the contract. See docs/adr/ADR-026 + docs/research/HTR_LOCAL_API_AND_BATTERY.md.
  *
  * ADR-018 ("Iron Model Matrix") used to live only in markdown, so an agent (or a
  * script) could act against it — e.g. measure acceptance on a fallback model. This
@@ -26,7 +26,7 @@
  *     error. Handwritten birth/marriage/divorce/death/name-change docs are ALWAYS human-reviewed,
  *     regardless of model. (See MODEL_PROFILES + HANDWRITTEN_DOC_FAMILIES below.)
  *
- * PRIMARY CHANGE (2026-06-24, owner): the unstable PREVIEW `gemini-3.1-pro-preview` was REMOVED
+ * PRIMARY CHANGE (2026-06-24, owner): the unstable preview primary was REMOVED
  * (sporadic 503/429 + run-to-run instability — HTR_STABLE_BENCHMARK). The stable GA `gemini-2.5-pro`
  * is now PRIMARY — reliably available + accurate + stable on PRINTED docs. It FABRICATES on handwriting,
  * so it stays DISQUALIFIED for the certificate family → handwritten certs are force-reviewed (no LLM
@@ -37,7 +37,7 @@
  */
 
 /** The ONE document reader (D1). The only model a quality/acceptance number may use.
- * CHANGED 2026-06-24 (owner): removed the unstable PREVIEW `gemini-3.1-pro-preview` (sporadic 503/429
+ * CHANGED 2026-06-24 (owner): removed the unstable preview primary (sporadic 503/429
  * AND run-to-run instability — HTR_STABLE_BENCHMARK). Promoted the stable GA `gemini-2.5-pro` (reads
  * PRINTED docs correctly + stably across 5 runs). Handwriting does NOT rely on this LLM: certs are
  * force-reviewed and DISQUALIFIED below (2.5-pro fabricates cursive) → handwriting reader = raxtemur
@@ -66,7 +66,7 @@ export const DISQUALIFIED: Readonly<Record<string, readonly string[]>> = Object.
 export const HANDWRITTEN_DOC_FAMILIES = ['birth', 'marriage', 'divorce', 'death', 'name_change', 'certificate'] as const
 
 /** Models that must never appear anywhere (deprecated / 404 / removed for instability). */
-export const DEPRECATED_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-3-pro-preview', 'gemini-3.1-pro-preview'] as const
+export const DEPRECATED_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-3-pro-preview'] as const
 
 /** The full sanctioned provider chain (primary first). Anything else is a violation. */
 export const SANCTIONED_CHAIN = [PRIMARY_READER, ...FALLBACK_MODELS] as const
@@ -92,14 +92,6 @@ export interface ModelProfile {
 }
 
 export const MODEL_PROFILES: Readonly<Record<string, ModelProfile>> = Object.freeze({
-  'gemini-3.1-pro-preview': {
-    id: 'gemini-3.1-pro-preview', tier: 'preview', role: 'deprecated',
-    availability: 'REMOVED 2026-06-24 (owner) — UNRELIABLE preview (sporadic 503/429) AND run-to-run UNSTABLE (HTR_STABLE_BENCHMARK). No longer in the sanctioned chain.',
-    readsWell: '—',
-    failsOn: 'Instability + availability. Removed; never use. Handwriting → raxtemur (ADR-026); printed → gemini-2.5-pro.',
-    function: 'DEPRECATED — must not appear anywhere.',
-    tested: '2026-06-24',
-  },
   'gemini-2.5-pro': {
     id: 'gemini-2.5-pro', tier: 'ga', role: 'primary',
     availability: 'RELIABLE — GA, no 503/429 in the bench, STABLE across 5 runs. NOTE: thinking eats the output budget → set maxOutputTokens high (≥16384) or it returns EMPTY (MAX_TOKENS).',

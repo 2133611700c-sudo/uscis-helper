@@ -13,7 +13,7 @@
 
 ---
 
-## RC1 — WHY Gemini switches `gemini-3.1-pro-preview` → `gemini-2.5-flash`
+## RC1 — WHY Gemini switches `removed preview primary` → `gemini-2.5-flash`
 
 **Verdict: the configured PRIMARY reader is a rate-limited PREVIEW model that 429s on
 vision (image) requests; the read falls through the chain to `gemini-2.5-flash`. Raising
@@ -21,7 +21,7 @@ the spend cap (budget) does NOT change rate limits — they are independent quot
 
 ### The fallback algorithm (code, not guess)
 - `apps/web/src/lib/docintel/providers/geminiVisionProvider.ts`
-  - `modelFallback()` chain = `[gemini-3.1-pro-preview, gemini-3.5-flash, gemini-2.5-flash]`
+  - `modelFallback()` chain = `[removed preview primary, gemini-3.5-flash, gemini-2.5-flash]`
     (PRIMARY first, from `modelMatrix.FALLBACK_MODELS`).
   - Loop (`for (const model of modelFallback())`): on HTTP `429/503` it waits 1500ms,
     retries the SAME model up to `attempts` times, then `break`s to the NEXT model.
@@ -30,7 +30,7 @@ the spend cap (budget) does NOT change rate limits — they are independent quot
 
 ### Empirical evidence
 1. **Text probe (gemini-quota-diag run 27921949671 & 27931285729):** after the owner raised
-   the spend cap, `gemini-3.1-pro-preview generateContent HTTP=200` on a tiny TEXT prompt.
+   the spend cap, `removed preview primary generateContent HTTP=200` on a tiny TEXT prompt.
    So the key is valid, the model exists, billing works, and the spend cap is no longer the
    blocker for text.
 2. **Real single-page IMAGE via the live route:** POSTing the owner's real booklet
@@ -49,7 +49,7 @@ FAILED on runner tooling (no ImageMagick/Pillow on the diag runner; runs 2793128
 27931376815 erlored at step 4). The exact metric is a follow-up; it does not change the verdict.
 
 ### DEEPER ROOT (the interconnection the surface "RPM" hides)
-`gemini-3.1-pro-preview` is a **PREVIEW** model. Preview models carry very low default rate
+`removed preview primary` is a **PREVIEW** model. Preview models carry very low default rate
 limits regardless of billing. ADR-018 (`modelMatrix.ts`) makes this model the **ONLY** valid
 acceptance reader and force-reviews every fallback read. So the system is structurally caught:
 the only model allowed to produce a clean (non-review) acceptance read is a preview model that
@@ -58,7 +58,7 @@ almost never produce a clean primary-acceptance read on real documents** — it 
 closed or ships a force-reviewed flash read. This is the real root, not a transient 429.
 
 ### Fix options (for the north-star task; decision pending owner input)
-- **(A) Owner raises the vision rate quota** for gemini-3.1-pro-preview in Google Cloud
+- **(A) Owner raises the vision rate quota** for removed preview primary in Google Cloud
   (Generative Language API → Quotas → requests/tokens per minute for that model). Same console
   as the spend cap, different field.
 - **(B) Re-choose the primary** to a generally-available high-quality model with production
@@ -93,7 +93,7 @@ would mislead any ADR-018 acceptance gate.**
 `route.ts`: compute `readModels = unique(corePages[*].r.model)` and return the ACTUAL
 `model = readModels.join('+')` plus a `read_models[]` array; env default only if no page read.
 tsc clean. This restores real observability so the true reader (possibly the primary
-gemini-3.1-pro-preview) becomes visible, and ADR-018 gating can key off the real model.
+removed preview primary) becomes visible, and ADR-018 gating can key off the real model.
 
 ### Consequence for RC1
 RC1's "primary 429s on a single image" is now **UNVERIFIED** — it was inferred from the bogus
@@ -106,10 +106,10 @@ exactly why the owner said find the root, not the surface: the surface signal wa
 
 ## RC1 — CORRECTED VERDICT (after the RC2 observability fix)
 
-**The primary `gemini-3.1-pro-preview` IS the actual reader. There is NO 3.1→2.5 fallback.**
+**The primary `removed preview primary` IS the actual reader. There is NO 3.1→2.5 fallback.**
 Evidence: staging-e2e run 27931589437 (branch translation/ru-and-model-matrix-fixes, deploy with
 the RC2 fix) reported the REAL per-page reader for ALL 5 scenarios (ua_birth, ru_printed,
-passport, ambiguous, handwritten) = `model=gemini-3.1-pro-preview`, 12/12 pass.
+passport, ambiguous, handwritten) = `model=removed preview primary`, 12/12 pass.
 
 The earlier "model=gemini-2.5-flash" was 100% the fabricated env-default field (RC2), NOT a real
 fallback. **RC1's original "primary 429s on a single image / falls to flash" verdict was WRONG —
@@ -224,7 +224,7 @@ translation/brain/dictionary quality. Live preview deploy `cd634be` (has the obs
 PII redacted to rule-level per convention; the owner verified the actual values in chat against
 his own documents (ground truth).
 
-**N=2 real owner documents, both read by the PRIMARY model (`read_models=['gemini-3.1-pro-preview']`),
+**N=2 real owner documents, both read by the PRIMARY model (`read_models=['removed preview primary']`),
 100% correct against ground truth, all hard rules honored:**
 
 1. **Internal passport booklet** (handwritten Cyrillic, hi-res 4MB → resized): surname KMU-55 with
@@ -275,7 +275,7 @@ missing. Tested the Soviet 1986 birth certificate (bilingual RU/UK, handwritten)
 **HTTP 413 finding:** the 7MB original exceeds the ~4.5MB upload limit (413 before OCR). The client
 must downscale before upload. Downscaled to ~1.5MB → read fine. (Verify the wizard downscales.)
 
-**Read via PRIMARY (gemini-3.1-pro-preview), 12 fields. Correct:** surname Soloviak; issuing
+**Read via PRIMARY (removed preview primary), 12 fields. Correct:** surname Soloviak; issuing
 authority → "Civil Registry Office"; series II-БК→II-BK; act #84; act/issue dates parsed.
 
 **Orientation test (owner request):** ran AS-IS (landscape) and ROTATED 90° (portrait). Names,
@@ -320,7 +320,7 @@ with the observability + пгт fixes deployed.
 **RESULTS:**
 - **ZERO Cyrillic leaks across all 10 docs** (the original defect class — fully clean).
 - **пгт fix CONFIRMED LIVE** on the real birth certs (no "pht." residue).
-- **9/10 read by the PRIMARY** gemini-3.1-pro-preview; 1 by gemini-3.5-flash (sanctioned fallback,
+- **9/10 read by the PRIMARY** removed preview primary; 1 by gemini-3.5-flash (sanctioned fallback,
   now VISIBLE thanks to the observability fix). The DISQUALIFIED gemini-2.5-flash appeared on NONE —
   ADR-018 enforcement holds on real certificates.
 - Dictionaries verified across types: РАЦС/ЗАГС → "Civil Registry Office", oblast genitive →
@@ -493,7 +493,7 @@ Soviet certificates: auto-deliver the unambiguous fields; review only genuinely-
 ## PART 13 — LIVE validation (consensus ON) + corrected picture (soft-confirm, not manual)
 
 Deployed staging with AUTO_DELIVERY_CONSENSUS_ENABLED=1; POSTed the REAL booklet through the LIVE
-path (2 real primary reads). Result: read by gemini-3.1-pro-preview; **2/6 fields full-auto**
+path (2 real primary reads). Result: read by removed preview primary; **2/6 fields full-auto**
 (city, province); the 4 critical identity fields (family_name=Soloviak, given_name=Andrii,
 patronymic=Andriiovych, dob=01/15/1990 — ALL correct) flagged with the SINGLE reason
 `critical_no_mrz_anchor`.

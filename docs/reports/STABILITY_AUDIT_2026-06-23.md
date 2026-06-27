@@ -3,7 +3,7 @@
 Owner demanded an honest, multi-run, can't-be-faked measurement on the REAL documents (the "7/7"
 single-run "proof" was distrusted). This is that measurement. Tool: `apps/web/scripts/stability-audit.mjs`
 (runs each doc N times through the live pipeline, scores the MAJORITY value vs owner GT, reports
-per-field variance; 429/fallback → BLOCKED, never faked — ADR-018). Primary = gemini-3.1-pro-preview.
+per-field variance; 429/fallback → BLOCKED, never faked — ADR-018). Primary = removed preview primary.
 
 ## Runs (N=5/doc, primary-only)
 

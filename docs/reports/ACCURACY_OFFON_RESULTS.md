@@ -19,9 +19,9 @@ candidate-not-verified fields (issue_date/act_record/parents/authority) NOT scor
 | gemini-2.5-flash | A | 0/5/0/1 | **5** | 0 | 06 / 02 | **MISSED** | — |
 | gemini-2.5-flash | B | 0/5/0/1 | **5** | 0 | 06 / 02 | **MISSED** | — |
 | gemini-2.5-flash | C | 0/5/0/1 | **0** | 0 | 06 / 02 | **CAUGHT** | mismatch (instability=true) |
-| gemini-3.1-pro-preview | A | 1/4/0/1 | 2 | 0 | 06 / 07 | CAUGHT | — |
-| gemini-3.1-pro-preview | B | 1/4/0/1 | 2 (0 on soviet) | 0 (1 on soviet) | 06 / 07 | CAUGHT | — |
-| gemini-3.1-pro-preview | C | 1/4/0/1 | **0** | 1 | 06 / 07 | CAUGHT | agree (soviet: mismatch) |
+| removed preview primary | A | 1/4/0/1 | 2 | 0 | 06 / 07 | CAUGHT | — |
+| removed preview primary | B | 1/4/0/1 | 2 (0 on soviet) | 0 (1 on soviet) | 06 / 07 | CAUGHT | — |
+| removed preview primary | C | 1/4/0/1 | **0** | 1 | 06 / 07 | CAUGHT | agree (soviet: mismatch) |
 
 ## Findings
 
@@ -66,7 +66,7 @@ But "GT ready" ≠ "accuracy-scorable through the live door". Of the 6:
 
 So the owner's "accuracy run on 6 docs" is **not** backed by evidence — raw + this rerun cover **3** live-door docs. The other 3 are GT-ready-but-not-live-scorable for the structural reasons above.
 
-### New datapoint — internal_passport @ gemini-3.1-pro (mode A; gate does not target printed passport)
+### New datapoint — internal_passport @ removed preview primary (mode A; gate does not target printed passport)
 `raw → qa-private/reports/accuracy-offon/passport_rerun_raw.json`
 
 | field | verdict |

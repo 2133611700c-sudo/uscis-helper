@@ -42,7 +42,7 @@ fixture, so this is a stability finding, not an accuracy finding.
 - **recommended_default_model:** for hard-case docs (handwritten / faded / Soviet /
   low-quality / rotated), do NOT let `gemini-2.5-flash` serve identity-critical reads
   without forced review. Prefer a stronger/steadier model (3.5-flash was stable here;
-  3.1-pro-preview is the configured primary but 503'd under load). CHANGE warranted for
+  legacy-preview-primary is the configured primary but 503'd under load). CHANGE warranted for
   the hard-case path; keep current default for clean printed docs (passport was stable
   and correct on all models).
 - **hard_case_safety_rule:** `birth_cert_soviet` / handwritten / faded / low-quality /

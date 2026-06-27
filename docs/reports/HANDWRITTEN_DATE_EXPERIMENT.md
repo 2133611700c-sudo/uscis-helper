@@ -1,6 +1,6 @@
 # Handwritten Cyrillic Date — targeted experiment (formally accepted limitation)
 
-Date: 2026-06-16 · PII-free (no field values) · primary model gemini-3.1-pro-preview
+Date: 2026-06-16 · PII-free (no field values) · primary model removed preview primary
 
 ## Question
 Can the handwritten date of birth on the Soviet birth certificate be read accurately

@@ -34,7 +34,7 @@ describe('readDocument → htr_only:* (LLM read FAILED, HTR reads field-first) �
     delete process.env.GEMINI_API_KEY; delete process.env.GEMINI_API_KEY_PAY // force the NON-LLM template localizer
     // sidecar /read mock → a Cyrillic read; (Gemini bbox is never called — template localizes)
     global.fetch = vi.fn(async (url: string) => {
-      if (String(url).includes('/read')) return new Response(JSON.stringify({ text: 'Куропятник', confidence: 0.95 }), { status: 200 })
+      if (String(url).includes('/read')) return new Response(JSON.stringify({ text: 'Соловьяк', confidence: 0.95 }), { status: 200 })
       throw new Error('no Gemini expected: ' + url)
     }) as unknown as typeof fetch
 

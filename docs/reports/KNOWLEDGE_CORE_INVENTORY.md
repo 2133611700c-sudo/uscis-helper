@@ -119,7 +119,7 @@
 
 - **Basis:** Benchmark 2026-06-02 Cyrillic adjudication results
 - **Hard-case rules:** birth_cert_handwritten = always_review=true
-- **Model candidates:** Per-class specification (gemini-3.1-flash-image for Cyrillic)
+- **Model candidates:** Per-class specification (legacy preview image reader for Cyrillic)
 - **Risk-aware:** Birth cert wrongly scored review_required=false in benchmark → flagged
 - **Used by:** TPS/Translation/Re-Parole routes
 - **Risk:** NONE (based on measured model performance)

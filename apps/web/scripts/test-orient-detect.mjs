@@ -27,7 +27,7 @@ function paidKey() {
   return e.GEMINI_API_KEY || ''
 }
 const KEY = paidKey()
-const MODEL = process.env.PRIMARY_GEMINI_MODEL || 'gemini-3.1-pro-preview'
+const MODEL = process.env.PRIMARY_GEMINI_MODEL || 'gemini-2.5-pro'
 
 const DOCS = [
   { name: 'passport (upright)', img: 'internal_passport_01.jpg' },

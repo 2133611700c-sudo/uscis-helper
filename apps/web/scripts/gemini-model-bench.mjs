@@ -30,8 +30,7 @@ if (!KEY) { console.error('FATAL: no GEMINI_API_KEY_PAY / GEMINI_API_KEY in apps
 
 // FULL matrix — the whole point is to test them ALL, honestly, side by side.
 const MODELS = (process.env.BENCH_MODELS || [
-  'gemini-3.1-pro-preview', // current primary (PREVIEW — no capacity guarantee)
-  'gemini-2.5-pro',         // GA Pro — owner-proposed stable fallback
+  'gemini-2.5-pro',         // current primary
   'gemini-3.5-flash',       // GA flash
   'gemini-2.5-flash',       // GA flash (DISQUALIFIED for certs in prod — verify the bug here)
   'gemini-2.5-flash-lite',  // GA flash-lite

@@ -13,9 +13,9 @@ describe('applyHtrFieldRoute — FAIL-CLOSED for critical handwritten fields (au
   const llm = [field('family_name', 'FabricatedSurname'), field('given_name', 'FabricatedGiven'), field('date_of_birth', '1990-01-01')]
 
   it('HTR read above the confidence floor → authoritative raw, LLM Latin cleared, ALWAYS review-gated', () => {
-    const out = applyHtrFieldRoute(llm, [{ field: 'family_name', raw_htr_text: 'Куропятник', htr_confidence: 0.96, review_reason: 'handwritten_htr_read' }], NAME, HW)
+    const out = applyHtrFieldRoute(llm, [{ field: 'family_name', raw_htr_text: 'Соловьяк', htr_confidence: 0.96, review_reason: 'handwritten_htr_read' }], NAME, HW)
     const fam = out.find((f) => f.field === 'family_name')!
-    expect(fam.raw_cyrillic).toBe('Куропятник')
+    expect(fam.raw_cyrillic).toBe('Соловьяк')
     expect(fam.value).toBe('') // LLM fabricated Latin cleared; canonical re-derived downstream
     expect(fam.review_required).toBe(true) // a confident HTR read can still be wrong → never auto-final
     expect(fam.review_reasons).toContain('handwritten_htr_read')

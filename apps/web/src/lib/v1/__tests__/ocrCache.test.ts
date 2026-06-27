@@ -5,7 +5,7 @@ const SHA = 'a'.repeat(64)
 const parts = {
   fileSha256: SHA,
   provider: 'gemini',
-  modelVersion: 'gemini-3.1-pro-preview',
+  modelVersion: 'gemini-2.5-pro',
   promptVersion: 'p7',
   preprocessingVersion: 'pre2',
 }
@@ -13,7 +13,7 @@ const parts = {
 describe('buildOcrCacheKey', () => {
   it('builds a deterministic key from all five parts', () => {
     const k = buildOcrCacheKey(parts)
-    expect(k).toBe(`${SHA}:gemini:gemini-3.1-pro-preview:p7:pre2`)
+    expect(k).toBe(`${SHA}:gemini:gemini-2.5-pro:p7:pre2`)
     expect(buildOcrCacheKey(parts)).toBe(k) // deterministic
   })
 
@@ -43,12 +43,12 @@ describe('buildOcrCacheKey — requestSha binding (different prompts never colla
   const REQ_B = 'c'.repeat(64)
 
   it('is backward-compatible: omitting requestSha yields the original 5-part key', () => {
-    expect(buildOcrCacheKey(parts)).toBe(`${SHA}:gemini:gemini-3.1-pro-preview:p7:pre2`)
+    expect(buildOcrCacheKey(parts)).toBe(`${SHA}:gemini:gemini-2.5-pro:p7:pre2`)
   })
 
   it('appends requestSha when present', () => {
     expect(buildOcrCacheKey({ ...parts, requestSha: REQ_A })).toBe(
-      `${SHA}:gemini:gemini-3.1-pro-preview:p7:pre2:${REQ_A}`,
+      `${SHA}:gemini:gemini-2.5-pro:p7:pre2:${REQ_A}`,
     )
   })
 

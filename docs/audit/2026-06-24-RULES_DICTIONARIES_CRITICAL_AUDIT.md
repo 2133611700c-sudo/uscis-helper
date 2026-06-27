@@ -10,12 +10,12 @@ to the law layer — FIXED here for P0); one GUARD (`docReadingRulesSync`) is sh
 ## A. Rules / instructions — DRIFT (P0 fixed this commit)
 ADR-026 + MODEL_INVENTORY were updated 2026-06-24 but the change did NOT propagate. Fixed now:
 - **CLAUDE.md** MODELS section — added ADR-026 route-by-rendering correction; softened the false blanket
-  "no model reads handwriting"; flagged `gemini-3.1-pro-preview` as an unstable preview. ✅
+  "no model reads handwriting"; flagged `removed preview primary` as an unstable preview. ✅
 - **CONSTITUTION L1** — added the ADR-026 amendment note (route-by-rendering; handwriting reader verified but
   prod-wiring pending; preview is unstable). ✅
 - **RULES_MASTER_INDEX** — split Reader into printed/LLM vs handwriting/raxtemur rows; corrected MODEL-LAW line;
   added ADR-026 to Key ADRs. ✅
-- **modelMatrix.ts** — corrected the stale `gemini-3.1-pro-preview` profile ("best reader incl. handwriting" →
+- **modelMatrix.ts** — corrected the stale `removed preview primary` profile ("best reader incl. handwriting" →
   not the handwriting reader, run-to-run unstable; raxtemur per ADR-026). ✅ (suite 4660 green, tsc 0)
 - **STILL OPEN (needs build/decision, not just text):** modelMatrix.ts has NO raxtemur/route-by-rendering code
   (handwriting routing unbuilt — sidecar hosting pending); the LLM teaching surfaces (buildPrompt/docReadingRules)

@@ -6,10 +6,10 @@ Verdict taxonomy: CORRECT / WRONG / MISS (GT non-empty, read empty) / FABRICATED
 Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per GT_BENCHMARK_EXIT_CRITERIA: <30 scored fields/class ⇒ direction only).
 
 ## international_passport (printed + MRZ)
-- ERROR: no dry reads for label "international_passport (printed + MRZ)" in /Users/sergiikuropiatnyk/work/uscis-helper/qa-private/reports/gt-pipeline-bench.dry-reads.json
+- ERROR: no dry reads for label "international_passport (printed + MRZ)" in /Users/sergiisoloviak/work/uscis-helper/qa-private/reports/gt-pipeline-bench.dry-reads.json
 
 ## birth_certificate (handwritten)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 4
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 4
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|
@@ -23,7 +23,7 @@ Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per
 **AUTO-FILLED correctly (no human): 0/5 = 0.0%** (correct value AND review_required=false)
 
 ## birth_certificate (Soviet bilingual)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 4
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 4
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|
@@ -37,7 +37,7 @@ Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per
 **AUTO-FILLED correctly (no human): 0/5 = 0.0%** (correct value AND review_required=false)
 
 ## military_id_p1 (printed+hw)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 4
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 4
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|

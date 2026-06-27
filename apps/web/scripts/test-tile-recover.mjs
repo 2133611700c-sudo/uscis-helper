@@ -46,7 +46,7 @@ const { fields, diag } = await recoverEmptyFieldsByTiles({
   baseFields,
   originalBuffer: upright,
   fieldLabels: LABELS,
-  cropRead: (crop, flds) => geminiReadFieldsFromCrop(crop, flds, KEY, 'gemini-3.1-pro-preview'),
+  cropRead: (crop, flds) => geminiReadFieldsFromCrop(crop, flds, KEY, 'gemini-2.5-pro'),
   criticalKeys: new Set(['father_full_name', 'mother_full_name', 'certificate_series_number', 'act_record_number', 'issuing_authority']),
 })
 console.log(`\nTILE RECOVER: emptyBefore=${diag.emptyBefore} tiles=${diag.tiles} recovered=${diag.recovered}${diag.error ? ' error=' + diag.error : ''}`)

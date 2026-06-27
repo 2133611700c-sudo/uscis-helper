@@ -495,7 +495,7 @@ async function POST_impl(req: NextRequest) {
       // ('gemini-2.5-flash' when GEMINI_MODEL is unset) is reported regardless of the
       // real reader, which (a) made the model field meaningless for telemetry and (b)
       // would mislead any acceptance gate that checks the model. Join unique per-page
-      // models so a mixed primary/fallback read is visible (e.g. "gemini-3.1-pro-preview").
+      // models so a mixed primary/fallback read is visible (e.g. "gemini-2.5-pro+gemini-3.5-flash").
       const readModels = [...new Set(corePages.map((p) => p.r?.model).filter((m): m is string => !!m))]
       // When NO page produced a model (all reads failed), report the primary as the intended
       // reader — never a flash literal, which would misrepresent a failure as a flash read.
@@ -567,7 +567,7 @@ async function POST_impl(req: NextRequest) {
       if (q.reshoot_required) return { kind: 'reshoot', page: i + 1, q }
     }
     try {
-      // 25s (was 15s): the primary model (gemini-3.1-pro-preview) takes 20-40s on
+      // 25s (was 15s): the primary model can take 20-40s on
       // a full page, so 15s aborted it every time → always fell to the flash
       // fallback → every field flagged review. Pages run in parallel under the
       // 60s route budget, so 25s is safe.

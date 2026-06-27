@@ -135,7 +135,7 @@ Measured truth:
 
 ### Hard rules for this document class
 
-1. Do NOT use `gemini-3.1-pro-preview`.
+1. Do NOT use `removed preview primary`.
 2. Do NOT use any direct GPT/Gemini image read on this handwritten certificate as acceptance truth.
 3. Do NOT let a direct VLM handwritten result auto-fill USCIS critical fields without review.
 4. Do NOT transliterate inside the image model.

@@ -91,7 +91,7 @@ Honesty gates: a flash-model read is NEVER an acceptance number (ADR-018). EMPTY
 
 | # | Point | Who | Rule (one line) | State |
 |---|---|---|---|---|
-| 1 | Read the image | Gemini gemini-3.1-pro-preview ONLY | L1: single reader, all products; flash = fallback→forced review, never acceptance | ON |
+| 1 | Read the image | Gemini `gemini-2.5-pro` primary | L1: single reader, all products; flash = fallback→forced review, never acceptance | ON |
 | 2 | Cyrillic transcription | Gemini | L8: source-faithful — RU stays RU, UA stays UA; keep ы/э/ё/ъ; never convert | ON (rule in prompt) |
 | 3 | Spelled-out date | Gemini | MONTH_WORD: read whole word; червня/июня=June≠липня/июля=July; anchor year→day→month | ON |
 | 4 | Controlling Latin | Gemini | L7: printed/MRZ Latin returned exactly (SERGII ≠ ANDRII) | ON (rule) — but verify pipeline doesn't re-transliterate |

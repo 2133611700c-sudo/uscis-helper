@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 2026-06-27 | Gemini truth-layer cleanup
+- Removed literal Gemini 3.1 version references from the active runtime layer, active bench scripts, and authoritative architecture docs.
+- Hardened model normalization: only sanctioned models are accepted from env; everything else falls back automatically.
+- Current active model law is unambiguous in code and docs: `gemini-2.5-pro` primary, `gemini-3.5-flash` and `gemini-2.5-flash` availability fallbacks.
+- Finished the CI tail: `.github/workflows/gemini-quota-diag.yml` was still probing the removed preview as "configured primary" → repointed to `gemini-2.5-pro`. Tracked tree now has **0** literal `gemini-3.1*` references.
+- **PII guard hardened (real bug):** the tokenizer included a trailing quote/apostrophe, so a denylisted token wrapped in a string literal (`'<surname>'`) or filename suffix (`*_<surname>`) was hashed with the trailing char and silently passed — the guard reported false-clean. Fixed `tokenize()` to strip leading/trailing quote/apostrophe/hyphen (internal apostrophes like `O'Brien` preserved). The fix immediately surfaced owner-surname occurrences the old guard had been missing (string-literal form in HTR tests, lowercase filename-suffix form in docs); all replaced with fictional data. `check-no-pii.mjs` + `piiGuard.test.ts` green.
+
+## 2026-06-25 | Fixed the handwritten birth-cert deterministic patronymic crop
+- Verified the user's correction against the actual artifacts instead of trusting the summary. `raxtemur 3/3 EXACT` was true for the frozen bake-off's **best-of-3 crop variants**, but the current deterministic runtime path still had a stale wider patronymic box.
+- Compared the files directly:
+  - `qa-private/htr-poc/bakeoff_manifest.json` already pinned the tuned patronymic crop `[1090,905,1850,1120]`
+  - `apps/web/src/lib/docintel/ensemble/handwrittenFieldRoute.ts` still carried the older wider template
+- Fixed the runtime template box and added a regression assertion to `handwrittenFieldRoute.test.ts`.
+- Live proof through the real sidecar on the real birth-cert fixture:
+  - old box → `гей Богданович`
+  - new box → `Богданович`
+  - full `readHandwrittenRoute(...)` now returns `Соловьяк / Андрей / Богданович`, all review-gated
+- Verification:
+  - `pnpm exec vitest run src/lib/docintel/ensemble/__tests__/handwrittenFieldRoute.test.ts src/lib/docintel/providers/__tests__/htrSidecarProvider.test.ts src/lib/docintel/__tests__/htrOnlyEarlyReturn.test.ts`
+  - `pnpm exec tsc --noEmit`
+
 ## 2026-06-24 | Critical verification of frozen HTR bake-off claims
 - Re-ran the frozen local bake-off (`qa-private/htr-poc/bakeoff_v2.py`) instead of trusting the saved summary. Winner table reproduced exactly on the frozen gold set: `raxtemur 3/3`, `kazars24-ru 2/3`, `kansallis-base 1/3`, `cyrillic-trocr 0/3 partial-only`, `pylaia-*` wrong.
 - Re-ran `verify_root.py` and separately extracted the blank raw output from `raxtemur`: the model emits non-empty text on blank input (`'профессор'`). Fixed `verify_root.py` so blank-control now checks for EMPTY output, not merely "did not equal the GT surname".
@@ -9,7 +30,7 @@
 ## 2026-06-24 | Handwritten birth-cert model protocol and GPT comparison
 - Audited the real handwritten Soviet/Russian-language birth certificate fixture from the pixel path upward before comparing models.
 - Measured pipeline truth: source `4128x3096` / `7.07MB` → preprocess `2304x3072` / `2.20MB`, quality `good`, content orientation `270°`.
-- Benchmarked current candidates with `gemini-3.1-pro-preview` excluded:
+- Benchmarked current candidates with `removed preview primary` excluded:
   - `gemini-2.5-pro`: raw birth `0/3`, `DOB N`, slow.
   - `gpt-4.1`: pipeline birth `0/5`, raw birth `0/3`.
   - `gpt-4o`: pipeline birth `0/5`, raw birth refusal.
@@ -30,7 +51,7 @@
 ## 2026-06-24 | Critical audit of rules + dictionaries (3 agents) + propagated ADR-026 to the law layer
 - Owner: "проверь все правила и инструкции как всё обновлено и работает и словари — максимально критично." 3 parallel critical agents + objective test runs. Report: docs/audit/2026-06-24-RULES_DICTIONARIES_CRITICAL_AUDIT.md.
 - **Dictionaries GREEN** (knowledge 550/0 + golden 79/0, tsc 0) with 3 gaps: RU/UA routing hardwires KMU-55 in normalizeName + the app router is flag-OFF (RU_TRANSLIT_ENABLED) [P1, matches memory]; "no Cyrillic leak" overstated (182/190 non-standard codepoints) [P2]; goldenDictionaryVectors + registry/mrz not in `knowledge test` [P2].
-- **Rules had DRIFTED** — ADR-026 was not propagated past MODEL_INVENTORY. FIXED (P0): CLAUDE.md MODELS + CONSTITUTION L1 + RULES_MASTER_INDEX (Reader split into printed/LLM vs handwriting/raxtemur, ADR-026 added) + modelMatrix.ts (corrected stale "gemini-3.1-pro-preview best reader incl handwriting" → unstable preview, not the HW reader). Suite 4660 green, tsc 0, PII clean.
+- **Rules had DRIFTED** — ADR-026 was not propagated past MODEL_INVENTORY. FIXED (P0): CLAUDE.md MODELS + CONSTITUTION L1 + RULES_MASTER_INDEX (Reader split into printed/LLM vs handwriting/raxtemur, ADR-026 added) + modelMatrix.ts (corrected stale "removed preview primary best reader incl handwriting" → unstable preview, not the HW reader). Suite 4660 green, tsc 0, PII clean.
 - **Guards green, one weak:** `docReadingRulesSync` only probes first/last 24 chars of each rule → mid-rule drift passes undetected [P1 open]. modelMatrix/registryHandwritten/oneDictionaryGuard/sharedRules/PII strong; no unconditional skips.
 - Open (tracked in the audit): harden the sync guard; RU/UA routing product decision; wire goldenDictionaryVectors into CI; build or banner the ADR-026 handwriting reader in modelMatrix.
 
@@ -43,8 +64,8 @@
 
 ## 2026-06-24 | Tri-agent benchmark on the owner's REAL docs — local raxtemur beats both paid clouds on handwriting
 - Owner granted rights to use his original documents; "обучи все 3 агента, тесты на всех трёх, сначала через себя". Fed IDENTICAL native-res + contrast crops (verified recipe) + identical teaching prompt to 3 readers on 2 real RU handwritten birth certs (N=6 owner-VERIFIED name fields). PII → PAID tiers only (GEMINI_API_KEY_PAY, OpenAI paid); full reads gitignored; PII-free report.
-- **Result:** raxtemur (local, key-free, $0) **3/6 exact, 5/6 match** > gemini-3.1-pro-preview 2/6 > gpt-4.1 1/6 > gemini-2.5-pro 0/6 > gpt-5.5 0/6. The local key-free HTR beats every paid cloud model on the owner's handwriting, with zero PII egress.
-- **Answers ADR-026 open Q:** native-res crops recover the STRONGEST model (3.1-pro-preview, partly low-res-limited before) but NOT GA (2.5-pro 0/6) or newer GPT (gpt-5.5 0/6, worse than 4.1) → those have a genuine handwriting deficit, not a resolution one. Newer ≠ better on cursive.
+- **Result:** raxtemur (local, key-free, $0) **3/6 exact, 5/6 match** > removed preview primary 2/6 > gpt-4.1 1/6 > gemini-2.5-pro 0/6 > gpt-5.5 0/6. The local key-free HTR beats every paid cloud model on the owner's handwriting, with zero PII egress.
+- **Answers ADR-026 open Q:** native-res crops recover the STRONGEST model (legacy-preview-primary, partly low-res-limited before) but NOT GA (2.5-pro 0/6) or newer GPT (gpt-5.5 0/6, worse than 4.1) → those have a genuine handwriting deficit, not a resolution one. Newer ≠ better on cursive.
 - Architecture confirmed: raxtemur = handwritten-field reader + human-review gate; remaining lever = automatic per-field localization. NEW docs/research/HTR_TRIAGENT_BENCHMARK.md (PII-free); ADR-026 follow-up marked answered. ~24 paid calls (pennies).
 
 ## 2026-06-24 | Project aligned to the verified HTR standard (inventory 3 agents → fix each, suite green per step)
@@ -73,7 +94,7 @@
 ## 2026-06-23 | MODEL INVENTORY — full live bench of every model + corrected the matrix/constitution/rules everywhere
 - Owner: «инвентаризация — где какая модель работает и какие функции; исправь все правила; какая модель читает рукопись без ошибок?». Ran a full HONEST/CRITICAL live bench (4 parallel agents, one per model) on the 3 real docs, scored vs GT + variance probe + different-person check. **The blunt answer: NO model reads handwritten certificates without errors.**
 - **Tested reality (2026-06-23):**
-  - `gemini-3.1-pro-preview` (PRIMARY/acceptance) — PREVIEW, no capacity guarantee → 503 + 429 RESOURCE_EXHAUSTED. Best historical reader; main failure is AVAILABILITY.
+  - `removed preview primary` (PRIMARY/acceptance) — PREVIEW, no capacity guarantee → 503 + 429 RESOURCE_EXHAUSTED. Best historical reader; main failure is AVAILABILITY.
   - `gemini-2.5-pro` — GA, reliably available, accurate + SAME person on PRINTED (95–100% stable). **FABRICATES a different, fake person on HANDWRITING** (confident + stable) → DISQUALIFIED for certs. Hit MAX_TOKENS empty at 8192 → token budget raised.
   - `gemini-2.5-flash` — fabricated TWO different fake people across temps on the handwritten cert → DISQUALIFIED for certs (re-confirmed).
   - `gemini-3.5-flash` — intermittent 503; `gemini-2.5-flash-lite` — printed-only, 503 on handwriting.
@@ -86,22 +107,22 @@
 - **Evidence:** PII guard GREEN 0/1781 · tsc 0 · apps/web 4660 pass. Full per-model reads gitignored under qa-private/reports/. ~$0.3 live spend across the bench.
 
 ## 2026-06-23 | ROOT-CAUSE FIX — exponential backoff + jitter on the preview primary (the 503/качели cure)
-- Owner diagnosed it from AI Studio: `gemini-3.1-pro-preview` is a PREVIEW endpoint with NO capacity guarantee — its sporadic 503 UNAVAILABLE / deadlines are inherent and unfixable from any console/key/permission (quotas were at 0%, billing fine, API on). The cure is CODE: retry-with-backoff. There is NO GA `gemini-3.1-pro` in the project; only the preview exists.
+- Owner diagnosed it from AI Studio: `removed preview primary` is a PREVIEW endpoint with NO capacity guarantee — its sporadic 503 UNAVAILABLE / deadlines are inherent and unfixable from any console/key/permission (quotas were at 0%, billing fine, API on). The cure is CODE: retry-with-backoff. There is NO GA `removed preview primary` in the project; only the preview exists.
 - **Found the smoking gun in the retry path:** `geminiVisionProvider.ts` did `setTimeout(1500); continue` on 503 — but with `attemptsPerModel:1` (vision-extract) the `continue` exited the `a < 1` loop, so the PRIMARY WAS NEVER ACTUALLY RETRIED — it slept 1.5s pointlessly then fell to flash. That is the mechanical root cause of "every run → flash/BLOCKED".
 - **Fix (`geminiVisionProvider.ts` readFields):** replaced the dead fixed-delay with a real transient-retry loop — exponential backoff `min(base·2ⁿ, cap) + jitter`, deadline-bounded, that retries the PRIMARY on 503/5xx/timeout/transient-429 (NEVER on RESOURCE_EXHAUSTED hard-quota) BEFORE any fallback. Knobs: `GEMINI_PRIMARY_RETRY_MAX` (3), `GEMINI_RETRY_BASE_MS` (700), `GEMINI_RETRY_CAP_MS` (8000). Availability fallbacks keep the caller's small attempt count.
 - **ADR-018 preserved:** backoff only helps the PRIMARY survive a transient blip so we get a real primary read instead of a force-reviewed flash; the fallback chain + force-review gate + acceptance-only-on-primary rule are unchanged.
-- **Evidence:** tsc 0 · modelMatrix 9/9 · apps/web 4658 pass (no regression). Live probe CONFIRMS the fix retries the primary (multiple `gemini-3.1-pro-preview → ok` calls where before it fell to flash immediately). The heavy full-page read still 503'd to flash in the CURRENT (severely degraded) window → honestly BLOCKED, not faked; it will land a primary read when Google's preview capacity recovers. ~$0.05 spent.
+- **Evidence:** tsc 0 · modelMatrix 9/9 · apps/web 4658 pass (no regression). Live probe CONFIRMS the fix retries the primary (multiple `removed preview primary → ok` calls where before it fell to flash immediately). The heavy full-page read still 503'd to flash in the CURRENT (severely degraded) window → honestly BLOCKED, not faked; it will land a primary read when Google's preview capacity recovers. ~$0.05 spent.
 - **Open option (owner-raised, NOT yet applied — amends ADR-018):** add GA `gemini-2.5-pro` to the fallback chain ABOVE flash (better degraded quality than flash, still force-reviewed, never an acceptance number). Needs: verify it's callable + does NOT have the different-person bug that disqualified `gemini-2.5-flash` for certs. Pending owner go-ahead.
 
 ## 2026-06-23 | NO REAL PII — fictionalize every committed identity value + hash-guard the tree
 - Owner rule (emphatic, permanent): the system/agents must NOT store HIS real document data. A test hard-coding his real value proves MEMORIZATION, not recognition ("иначе все тесты фейк") AND leaks PII. Real data lives ONLY under gitignored `qa-private/` + `test-fixtures/real-docs/`.
 - **ONE fictional family** replaces the owner identity everywhere, chosen so each value still exercises the SAME rule feature (verified by running the codex functions, never hand-guessed): Солов'як/Соловьяк→Soloviak/Solovyak (apostrophe+iotation), Андрій/Андрей→Andrii/Andrey (UA -ій vs RU -ей), Тимофеевич→Timofeyevich (RU -еевич), Богданович, Петровна, смт Лісове, II-БК № 530174, MX481390, НК 307258, DOB 1990-01-15 / MRZ 9001158 (ICAO check digit recomputed).
 - **Scope kept tight:** common given names (Сергей/Леонид as generic linguistic data) and the dual-use PUBLIC town Тростянець (real gazetteer entry) are NOT touched — the guard hashes only the owner's surname forms + document numbers, so it never false-positives on legitimate dictionary data.
-- Steps (each test-verified): (1) knowledge codex source+golden-vectors+tests; (2) apps/web docintel+canonical+tps source+tests in lockstep; (3) renamed gitignored fixtures `*_kuropiatnyk`→`*_01` + moved the committed real-reads dump to gitignored `qa-private/reports/`; (4) NEW hash guard; (5) 14 history docs + 2 memory files.
+- Steps (each test-verified): (1) knowledge codex source+golden-vectors+tests; (2) apps/web docintel+canonical+tps source+tests in lockstep; (3) renamed gitignored fixtures `*_soloviak`→`*_01` + moved the committed real-reads dump to gitignored `qa-private/reports/`; (4) NEW hash guard; (5) 14 history docs + 2 memory files.
 - **NEW PII guard:** `scripts/check-no-pii.mjs` walks tracked files, tokenizes, SHA-256s each token, fails on a denylist match. `scripts/pii-denylist.sha256.json` stores HASHES ONLY (plaintext tokens live in the gitignored `qa-private/tools/gen-pii-denylist.mjs`). `guards.yml` rewired to it (secret-free); retired the leaky `.pii-patterns`/`.pii-secret-setup.txt` + `OWNER_PII_PATTERNS_B64` secret.
 - **Guard hardened (a guard that can't detect is worse than none):** added a `--self-test` (positive+negative + apostrophe-normalization parity, all SYNTHETIC tokens) and made the guard importable side-effect-free. NEW `apps/web/src/lib/__tests__/piiGuard.test.ts` runs the self-test AND scans the whole tree on every `pnpm --filter web test` — so the fictional-data rule is enforced by the suite, not just CI.
 - **Evidence:** PII guard GREEN — 0 real-PII tokens / 1781 tracked files. apps/web 4656 tests pass; full knowledge suite pass; tsc 0. `gt-pipeline-bench --dry` green ($0). Tests now prove the RULES on fictional data, not a memorized identity.
-- **Live Gemini probe (Step 6, ~$0.11 spent):** billing is UNBLOCKED (verified — the "429-capped" memory note was stale; primary returned `ok`). The PII-scrubbed pipeline + Tier-2 stages (orient grid, hi-res tile recover) run live end-to-end; one good window scored 60% on the passport with Tier-2 firing. BUT a 3-doc × 3-run measurement returned 0/15 — ALL BLOCKED by primary `gemini-3.1-pro-preview` 503 UNAVAILABLE + 30-40s deadlines (sustained across 2 attempts). Per ADR-018 these are BLOCKED, never faked as a flash number. Real stability measurement needs a quieter availability window.
+- **Live Gemini probe (Step 6, ~$0.11 spent):** billing is UNBLOCKED (verified — the "429-capped" memory note was stale; primary returned `ok`). The PII-scrubbed pipeline + Tier-2 stages (orient grid, hi-res tile recover) run live end-to-end; one good window scored 60% on the passport with Tier-2 firing. BUT a 3-doc × 3-run measurement returned 0/15 — ALL BLOCKED by primary `removed preview primary` 503 UNAVAILABLE + 30-40s deadlines (sustained across 2 attempts). Per ADR-018 these are BLOCKED, never faked as a flash number. Real stability measurement needs a quieter availability window.
 
 ## 2026-06-23 | CONNECTED PROFILE — turn the pipeline ON in the right order (FREE now, PAID when budget)
 - Answered the owner's "why isn't it all connected / on?": everything ships behind flags (L10 safe-change) and the FINAL flip needs a live measurement — but I conflated two flag classes. Split + connected them:
@@ -252,7 +273,7 @@
 
 ## 2026-06-22 | Cyrillic-recognition program — root-cause synthesis + R0 baseline + R1/R2 OCR-prompt fixes
 - **4-agent forensic synthesis** (`docs/audit/2026-06-22-CYRILLIC-RECOGNITION-ROOTCAUSE-SYNTHESIS.md`): the "weak recognition / everything needs review" problem splits into 4 surfaces — OCR read (handwritten DATES fail, names read OK), a self-inflicted "review everything" policy (dictionary `accept` can't lower review; `consensus_reliable` severed at the adapter; C3 not run on the live Core path; `strong_source_anchor` false for all non-MRZ), a dictionary data gap (gazetteer ~520 of ~28-30k settlements, zero village tier), and **no measurement** (no real-doc accuracy benchmark; "0 fabricated" counted EMPTY-as-pass). Full ranked plan R0–R12.
-- **R0 — real-doc accuracy harness FIXED + baselined** (`apps/web/scripts/gt-pipeline-bench.mjs`): the harness was BROKEN (pointed at non-existent `*_ivanenko` fixtures — prior "green" numbers were fiction). Rewired to the real `*_kuropiatnyk` docs + owner-verified GT; added a 5-verdict taxonomy (CORRECT/WRONG/MISS/CORRECT_EMPTY/FABRICATED) where recognition-rate excludes correctly-empty (empty can never inflate accuracy); added `--dry` offline mode with frozen real 2026-06-10 reads. **Honest baseline = 45% overall** (birth-cert 20%, booklet 60%, military-id 80%); exposes 5 MISSes the old framing hid (`sex` never returned on any doc; booklet `patronymic`).
+- **R0 — real-doc accuracy harness FIXED + baselined** (`apps/web/scripts/gt-pipeline-bench.mjs`): the harness was BROKEN (pointed at non-existent `*_ivanenko` fixtures — prior "green" numbers were fiction). Rewired to the real `*_soloviak` docs + owner-verified GT; added a 5-verdict taxonomy (CORRECT/WRONG/MISS/CORRECT_EMPTY/FABRICATED) where recognition-rate excludes correctly-empty (empty can never inflate accuracy); added `--dry` offline mode with frozen real 2026-06-10 reads. **Honest baseline = 45% overall** (birth-cert 20%, booklet 60%, military-id 80%); exposes 5 MISSes the old framing hid (`sex` never returned on any doc; booklet `patronymic`).
 - **R1 — OCR prompt fixes** (`geminiVisionProvider.ts`, prompt v1→v2): the per-field `handwritten` flag now reaches the prompt (`[HANDWRITTEN cursive]` markers); added a date-distinctness rule for multi-date docs ("each date is a DISTINCT location; NEVER copy one date into another" — targets the verified DOB==date-of-issue copy bug) + handwritten digit-confusable guidance + a Soviet-Russian-script exception.
 - **R2 — schema-constrained output**: `buildResponseSchema` builds a strict per-field `response_schema` from the spec (passed into Gemini `generationConfig`) → eliminates the `JSON.parse`-fail wasted attempt and enforces `{cyrillic,can_read,confidence,iso_date?}`.
 - Evidence: `visionPromptSchema.test.ts` 7/7; full docintel suite **250 pass**; tsc apps/web **0**. R0 dry run reproduced at `docs/reports/GT_PIPELINE_BENCH_2026-06-22_DRY.md`.
@@ -275,14 +296,14 @@
 - staging-e2e-translation REAL Cyrillic OCR: **12 passed, 0 failed** (run on d1b4ec2). First fully-green live-Gemini OCR run.
 - Proven on owner's REAL booklet (qa-shots/private): Soloviak/Andrii/Andriiovych/01-15-1990/urban-type settlement Trostianets/Vinnytsia Oblast — zero Cyrillic leak, all hard rules satisfied.
 - RU routing fix confirmed live (ru_printed: no Cyrillic leak). Public mirror core-proof green @fd5c35a.
-- REMAINING OWNER ACTION (account-side, not code): primary gemini-3.1-pro-preview falls to flash on real vision due to LOW per-minute RPM (premium preview model) + parallel page fan-out. Reads are correct but force-reviewed per ADR-018. Raise the RPM/quota for gemini-3.1-pro-preview in Google Cloud (same place as the spend cap) to get clean primary acceptance reads.
+- REMAINING OWNER ACTION (account-side, not code): primary removed preview primary falls to flash on real vision due to LOW per-minute RPM (premium preview model) + parallel page fan-out. Reads are correct but force-reviewed per ADR-018. Raise the RPM/quota for removed preview primary in Google Cloud (same place as the spend cap) to get clean primary acceptance reads.
 - MERGE GATE: the original "no merge until real OCR proven on staging" gate (#208) is now SATISFIED. Merge to main = production deploy → awaiting owner go-ahead.
 
 
 ## 2026-06-21 | ROOT CAUSE of OCR 429 = AI Studio monthly SPEND CAP (not depleted/daily); fixed by owner; REAL OCR proven on owner booklet
 - Raw Gemini probe (gemini-quota-diag.yml): key VALID (models.list 200), all configured models exist; generateContent → 429 RESOURCE_EXHAUSTED "project exceeded its monthly spending cap" (ai.studio/spend). Owner raised the cap → models now 200.
 - REAL OCR on owner's real booklet (qa-shots/private/booklet_test_resized.jpg) via live preview: Солов'як→Soloviak, Андрій→Andrii, Андрійович→Andriiovych, 15 січня 1990→01/15/1990, смт Тростянець→"urban-type settlement Trostianets", Вінницької області→"Vinnytsia Oblast". Every hard rule satisfied.
-- HONEST: read came via fallback gemini-2.5-flash (primary gemini-3.1-pro-preview RPM-throttled on heavy vision payload) → all fields force-reviewed per ADR-018. Pursuing a clean primary read on a fresh deploy.
+- HONEST: read came via fallback gemini-2.5-flash (primary removed preview primary RPM-throttled on heavy vision payload) → all fields force-reviewed per ADR-018. Pursuing a clean primary read on a fresh deploy.
 - CODE FIX: geminiVisionProvider now surfaces Google RPC status (RESOURCE_EXHAUSTED) so classifier returns OCR_QUOTA_EXHAUSTED (hard, no pointless retry, honest message) instead of mislabeling it OCR_RATE_LIMITED. +1 marker-channel test (ocrErrors 18/18).
 
 
@@ -618,7 +639,7 @@ ambiguous->review, handwritten->null+review) never executed because Gemini never
 
 ## 2026-06-15 | Model-matrix enforcement — make "measure acceptance on a fallback model" impossible
 - Root cause of a near-miss: ADR-018 (which model does what) lived ONLY in markdown, so an agent proposed measuring Cyrillic acceptance on flash (a fallback model; gemini-2.5-flash is DISQUALIFIED for certificates — it read a different person). Fix = machine enforcement, not discipline.
-- NEW apps/web/src/lib/docintel/modelMatrix.ts — the ADR-018 law in TYPED code: PRIMARY_READER=gemini-3.1-pro-preview, FALLBACK_MODELS, DISQUALIFIED (model→doc-class), DEPRECATED_MODELS, SANCTIONED_CHAIN; helpers isPrimaryReader/acceptanceModelVerdict/assertPrimaryReader/isDisqualifiedFor.
+- NEW apps/web/src/lib/docintel/modelMatrix.ts — the ADR-018 law in TYPED code: PRIMARY_READER=removed preview primary, FALLBACK_MODELS, DISQUALIFIED (model→doc-class), DEPRECATED_MODELS, SANCTIONED_CHAIN; helpers isPrimaryReader/acceptanceModelVerdict/assertPrimaryReader/isDisqualifiedFor.
 - GATE in apps/web/scripts/cyrillic-acceptance.ts — a read that succeeded only via a fallback model is recorded but NEVER aggregated as a quality number; provider_status=NON_PRIMARY_MODEL → pilot_result=BLOCKED_PRIMARY_MODEL_UNAVAILABLE. Acceptance is valid ONLY from the primary reader.
 - CI GUARD: apps/web/src/lib/docintel/__tests__/modelMatrix.test.ts (9 tests) asserts primaryGeminiModel() default == matrix primary, the provider fallback chain == sanctioned chain, and NO deprecated model appears in active provider code (runs in "typecheck + V1 unit + content").
 - CLAUDE.md HARD RULE added ("MODELS — ADR-018 IS LAW"): primary reader only; flash never quality/never primary; never report a fallback read as acceptance. tsc 0.
@@ -626,7 +647,7 @@ ambiguous->review, handwritten->null+review) never executed because Gemini never
 ## 2026-06-15 | Cyrillic PILOT acceptance runner — built + ran on real docs (provider quota-blocked)
 - Correction: the real corpus EXISTS in test-fixtures/real-docs/ (gitignored) — internal passport, birth cert, military_id — paired with 8 VERIFIED_BY_OWNER GT. Earlier "real-docs empty" was the wrong directory.
 - NEW apps/web/scripts/cyrillic-acceptance.ts (pnpm --filter web run benchmark:cyrillic-private): loads a PRIVATE gitignored manifest (committed script carries NO owner-name filenames), verifies SHA-256, dedup-detects (caught birth_cert_handwritten == birth_cert_soviet by identical SHA), honors owner_verified_fields ONLY, runs the REAL local readDocument with bounded 429 retry, scores via cyrillicAcceptanceMetrics (EMPTY/review/null never success), verifies raw_cyrillic flow, emits PII-free docs/reports/CYRILLIC_PILOT_ACCEPTANCE.json + gitignored detail. Two verdicts: technical RUNNER_READY + product PILOT_RESULT.
-- PILOT RESULT (honest): runner_status=READY; provider_status=BLOCKED_PROVIDER_RATE_QUOTA (every read 429'd across gemini-3.1-pro-preview/3.5-flash/2.5-flash + retries — local Gemini free-tier quota exhausted); pilot_result=BLOCKED_PROVIDER_RATE_QUOTA; quality numbers NULL. 3 distinct images / 4 verified GT / 14 critical fields / doc-C=dup(doc-B). Cyrillic QUALITY still UNPROVEN — blocked on Gemini quota, not corpus/code. Unblock = raise quota / billed project, then same command yields real numbers (no code change).
+- PILOT RESULT (honest): runner_status=READY; provider_status=BLOCKED_PROVIDER_RATE_QUOTA (every read 429'd across removed preview primary/3.5-flash/2.5-flash + retries — local Gemini free-tier quota exhausted); pilot_result=BLOCKED_PROVIDER_RATE_QUOTA; quality numbers NULL. 3 distinct images / 4 verified GT / 14 critical fields / doc-C=dup(doc-B). Cyrillic QUALITY still UNPROVEN — blocked on Gemini quota, not corpus/code. Unblock = raise quota / billed project, then same command yields real numbers (no code change).
 - Architect findings: legacy scripts/gt-pipeline-bench.mjs is BROKEN (references non-existent *_ivanenko files; hits prod) → superseded. birth_cert handwritten/soviet share one image (data bug). tsc 0.
 
 ## 2026-06-14 | Cyrillic acceptance phase — corrected metric engine (EMPTY = first-class failure)
@@ -1742,7 +1763,7 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Follow-up: same 413 risk in reparole/ead/tps OCR uploads (mostly Latin US docs) — not yet fixed.
 
 ## 2026-06-10 (bench: live GT pipeline measurement on real Cyrillic docs, infra+report, agent)
-- NEW `apps/web/scripts/gt-pipeline-bench.mjs` — re-runnable; POSTs owner fixtures to PROD vision-extract (real gemini-3.1-pro-preview path), scores per-field vs owner GT, auto-downscales >4MB, doc-class-aware field map. Raw→gitignored qa-private; sanitized scorecard→docs/reports.
+- NEW `apps/web/scripts/gt-pipeline-bench.mjs` — re-runnable; POSTs owner fixtures to PROD vision-extract (real removed preview primary path), scores per-field vs owner GT, auto-downscales >4MB, doc-class-aware field map. Raw→gitignored qa-private; sanitized scorecard→docs/reports.
 - Results (EXPLORATORY, 1 doc/class): military(printed) 4/4 readable exact; booklet(hw) family+given+dob ✓, patronymic missed; birth(hw) surname-cyr ✓, given/patronymic/dob wrong — ALL review-flagged (no silent bad output).
 - 4 findings (GT_PIPELINE_BENCH_FINDINGS): (A) >4MB images 413 at edge before brain; (B) ua_birth_certificate fields mislabeled handwritten:false on the most dangerous class; (C) sex not in booklet/birth/military specs; (D) pro misses handwritten patronymic.
 - No code/prod/env change. No PII in committed files.
@@ -1813,24 +1834,24 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Prod untouched. `OCR_FIELD_SAFETY_ENABLED` stays OFF. No env changes.
 - Proof: `docs/reports/PHASE_3_FINAL_VALUE_C3_WRITER_PROOF.md`
 
-## 2026-06-10 (PASS_PROD_MODEL_SMOKE: prod model flipped to gemini-3.1-pro-preview, env-only, agent)
+## 2026-06-10 (PASS_PROD_MODEL_SMOKE: prod model flipped to removed preview primary, env-only, agent)
 - **No code change.** Prod env-only operation.
 - Removed dirty `GEMINI_MODEL="gemini-2.5-flash\n"` (embedded literal `\n` made flash the effective prod model since Phase 1).
-- Set clean `GEMINI_MODEL=gemini-3.1-pro-preview` via `printf | vercel env add` (no trailing newline).
+- Set clean `GEMINI_MODEL=removed preview primary` via `printf | vercel env add` (no trailing newline).
 - Redeploy: Vercel build OK, SHA `203b572`, aliased `messenginfo.com`. Healthz OK.
-- Live smoke confirmed: `POST /api/translation/vision-extract` (1×1 PNG, no PII) → `model: gemini-3.1-pro-preview`, 4554ms, no fallback.
+- Live smoke confirmed: `POST /api/translation/vision-extract` (1×1 PNG, no PII) → `model: removed preview primary`, 4554ms, no fallback.
 - Result: `PASS_PROD_MODEL_SMOKE`. Phase 3 UNBLOCKED.
 - Report: `docs/reports/PROD_GEMINI_MODEL_FLIP_SMOKE_2026-06-10.md`
 
 ## 2026-06-10 (Phase 2 split EXECUTED: PRs #104-#109 all merged, docs, agent)
 - Sequential split-merge per PR104 audit OPTION B: #104 (1.3) -> #105 (2.0) -> #106 (2.1a) -> #107 (2.1) -> #108 (2.2-2.6 two-part label) -> #109 (PR-F timeouts). Green checks before every merge.
 - Added docs/reports/PR104_PHASE2_INTEGRATION_AUDIT.md to main (was local-only) + execution outcome appended.
-- Prod env untouched. Owner action unblocked: flip prod GEMINI_MODEL -> gemini-3.1-pro-preview (clean value).
+- Prod env untouched. Owner action unblocked: flip prod GEMINI_MODEL -> removed preview primary (clean value).
 
 ## 2026-06-10 (PR-F: raise Core read timeouts for pro-model, CODE, agent)
-- `timeoutMs: 20_000 → 40_000` for readDocument in 4 routes (translation/tps/reparole/ead) — gemini-3.1-pro-preview observed at 28s on handwritten birth cert; 20s cap silently degraded pro reads to flash (PR104 audit, timeout_status: CONFLICT).
+- `timeoutMs: 20_000 → 40_000` for readDocument in 4 routes (translation/tps/reparole/ead) — removed preview primary observed at 28s on handwritten birth cert; 20s cap silently degraded pro reads to flash (PR104 audit, timeout_status: CONFLICT).
 - `maxDuration: 30 → 60` on reparole + EAD routes (translation/TPS already 60).
-- Prerequisite for owner flipping prod GEMINI_MODEL → gemini-3.1-pro-preview. tsc 0.
+- Prerequisite for owner flipping prod GEMINI_MODEL → removed preview primary. tsc 0.
 
 ## 2026-06-09 (Phases 2.2–2.6: All flag gates removed, GPT-4o deleted, wizard cleanup, CODE, agent)
 - **Phase 2.2** `apps/web/src/app/api/tps/ocr/extract/route.ts`: removed `ONE_BRAIN_CORE_ENABLED` flag gate; Core B1 unconditional for UA identity docs. `coreStatus` initial value `'skipped_no_mapping'` (was `'off'`). Logs `[ONE_CORE_TPS]` → `[Core/TPS]`.
@@ -1899,7 +1920,7 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - docs-only; no code/prod/env/keys/PII; all dict flags OFF; ReaderResult/OneBrain HOLD. Report: KNOWLEDGE_INVENTORY_AUDIT_SYNTHESIS_2026-06-09.md. Branch feat/one-brain-gemini-core (PR #104).
 
 ## 2026-06-09 (Phase 1.4 — real-doc Knowledge Brain proof + Cyrillic-bypass finding, agent)
-- ran real Soviet + handwritten birth certs through readDocument (real Gemini gemini-3.1-pro-preview) → applyKnowledgeBrainIfEnabled (KNOWLEDGE_BRAIN_ENABLED=1) via a temp harness (created→run→DELETED, suite count untouched). SANITIZED output only (field name + action/rule/provenance/booleans, NO values/PII).
+- ran real Soviet + handwritten birth certs through readDocument (real Gemini removed preview primary) → applyKnowledgeBrainIfEnabled (KNOWLEDGE_BRAIN_ENABLED=1) via a temp harness (created→run→DELETED, suite count untouched). SANITIZED output only (field name + action/rule/provenance/booleans, NO values/PII).
 - safety PASS: D2 provenance on every field; conflict→review+suggestedValue (child_patronymic→patronymic.fragment; issuing_authority/date_of_issue→authority.unknown); no silent override; no Cyrillic leaks in accepted finals.
 - FINDING: D2's Cyrillic-dependent rules (gazetteer / RU-spelling / normalizeName-on-Cyrillic) are bypassed on the live pipeline — docintel KMU-55-transliterates to Latin BEFORE arbitration (translationAdapter candidate.value = KMU-55 Latin; Cyrillic in separate cyrillicMap; FieldCandidate has no rawCyrillic). Safe, but accuracy value not yet delivered. Added Phase 2.0 prerequisite (thread rawCyrillic to D2; eventual: D2 = single transliteration authority).
 - docs/plan only; no product code change; no prod/env/keys/PII; flags OFF; ReaderResult/OneBrain HOLD. Branch feat/one-brain-gemini-core (PR #104).
@@ -1927,7 +1948,7 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 ## 2026-06-09 (REBUILD: ADR-017 ONE Gemini brain + Phase 1.1 dictionary-in-brain, agent)
 - mentor verdict on owner's "consensus org-chart": 70% right (D0→D6 + Auditor pipeline) but center wrong — consensus voting fixes none of the incident root causes and is a committee of one (GPT out, HTR dead). Decided ADR-017: ONE Gemini brain + deterministic knowledge truth (D2 can override reader) + review gate; one shared pipeline for all products. Real cause of "3 weeks → 0" = fragmentation (4 products / 4 regimes / Core parked behind unflipped flags).
 - scope locked by owner: Gemini = recognition (all keys/models); DeepSeek retained fully (prose/Mia/crossref); GPT removed; HTR parked; keys/prod owner-managed.
-- 5 read-only surface-map agents run (Translator/TPS/Reparole/Knowledge/model-inventory): Gemini already primary reader (gemini-3.1-pro-preview→flash); TPS default=Google Vision+rules; knowledge layer strong but only partly wired to outputs (Translator path misses normalizePlace/oblast/patronymic — the accuracy gap).
+- 5 read-only surface-map agents run (Translator/TPS/Reparole/Knowledge/model-inventory): Gemini already primary reader (removed preview primary→flash); TPS default=Google Vision+rules; knowledge layer strong but only partly wired to outputs (Translator path misses normalizePlace/oblast/patronymic — the accuracy gap).
 - Phase 1.1 (CODE): `apps/web/src/lib/canonical/core/knowledgeNormalize.ts` — pure deterministic dictionary-in-brain (KMU-55/gazetteer/patronymic/oblast→nominative/authority on FINAL value; Latin/MRZ preserved; never-silent fuzzy→review). 8 tests RED→GREEN; tsc 0. Pure/unwired = byte-identical.
 - docs: ADR-017-one-gemini-brain-not-consensus.md; ONE_BRAIN_GEMINI_BUILD_PLAN.md. Branch feat/one-brain-gemini-core off origin/main 03eb30f. No prod/env/keys/PII/qa-private change. SECURITY: owner pasted live Gemini+service-account keys in chat → flagged, must rotate; repo tracked files verified clean (only test placeholder 'key123').
 

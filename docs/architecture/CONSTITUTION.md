@@ -13,9 +13,9 @@ where it is ENFORCED in code so it is checkable, not aspirational.
 is amended toward ROUTE-BY-FIELD-RENDERING — handwritten field → key-free `raxtemur` HTR on a native-res
 crop (best on cursive, cannot abstain → gate + human review); printed field → an LLM. The handwriting reader
 is verified but NOT yet wired to production (sidecar hosting decision pending); until then the LLM matrix
-below ships as the reader. Also: `gemini-3.1-pro-preview` is run-to-run UNSTABLE — see HTR_STABLE_BENCHMARK.)_
+below ships as the reader. Also: earlier preview-primary experiments were run-to-run unstable — see HTR_STABLE_BENCHMARK.)_
 **`gemini-2.5-pro`** (stable GA) is THE LLM document reader (D1) for PRINTED fields and the ONLY
-acceptance-valid LLM. The unstable PREVIEW `gemini-3.1-pro-preview` was **REMOVED 2026-06-24** (owner) —
+acceptance-valid LLM. The unstable preview primary was **REMOVED 2026-06-24** (owner) —
 sporadic 503/429 + run-to-run instability → now in `DEPRECATED_MODELS` (never use). Availability fallbacks,
 in PREFERENCE order: `gemini-3.5-flash`, then `gemini-2.5-flash`. EVERY fallback read is force-reviewed and
 is NEVER an acceptance number. `gemini-2.5-pro` (the primary) AND `gemini-2.5-flash` are DISQUALIFIED for the
