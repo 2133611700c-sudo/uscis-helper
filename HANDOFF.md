@@ -1,5 +1,11 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-27 | Gemini reader contract — strict 2.5-pro only (single truth)
+- Forensic logger exposed a live read served by `gemini-3.5-flash` FALLBACK (Pro timed out). Fixed: `modelFallback()` strict primary-only by default (`READER_FALLBACK_ENABLED` default OFF) → no silent flash; timeout/429/5xx fail-closed.
+- Added `assertAcceptanceRead` (requested===actual===2.5-pro & no fallback) + forensic key provenance (alias + sha256[:12] fingerprint, never raw key) + `fallback_blocked`. Verified no GOOGLE_API_KEY conflict (key passed explicitly in URL).
+- Measured: byte-repeat stability 12/12 on the real birth cert (same SHA → same result) → variance is orientation/input-bytes, not model nondeterminism (per-run).
+- NEXT: STRICT baseline re-run on 2.5-pro only (byte×3, rot 0/90/180/270 ×3) — in progress; if 2.5-pro can't return in-sandbox it reports unavailable (honest), then prod Network capture closes the gate.
+
 ## 2026-06-27 | Stage-1 forensic logger (measurement layer, behavior-neutral)
 - New `forensics.ts` + wiring in `readDocument`/`preprocessImage`/`vision-extract`. Flag `FORENSIC_LOG_ENABLED` (default OFF). OFF = byte-identical, no PII, no extra calls. ON = gitignored `qa-private/runtime-forensics/<run_id>.json` (raw) + PII-free console digest.
 - Verified: tsc 0, `forensics.test.ts` 4/4 (OFF-by-default, hashes non-reversible, digest PII-free), reader tests green.

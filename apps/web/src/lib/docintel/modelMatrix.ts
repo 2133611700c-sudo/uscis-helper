@@ -166,6 +166,20 @@ export function assertPrimaryReader(model: string | null | undefined): asserts m
   }
 }
 
+/**
+ * Acceptance-read contract (owner, 2026-06-27 — single Gemini truth): a result is acceptance-valid
+ * ONLY when the requested AND actual model are the primary reader and NO fallback fired. A flash/other
+ * read is forensic evidence, never an acceptance result. Used by the acceptance harness as a hard gate.
+ */
+export function assertAcceptanceRead(p: { requested: string | null; actual: string | null; fallbackUsed: boolean }):
+  | { ok: true }
+  | { ok: false; reason: string } {
+  if (p.requested !== PRIMARY_READER) return { ok: false, reason: `requested_model_not_primary:${p.requested ?? 'null'}` }
+  if (p.actual !== PRIMARY_READER) return { ok: false, reason: `actual_model_not_primary:${p.actual ?? 'null'}` }
+  if (p.fallbackUsed) return { ok: false, reason: 'fallback_used' }
+  return { ok: true }
+}
+
 /** Is `model` disqualified for a given doc type id? (substring match on the family). */
 export function isDisqualifiedFor(model: string | null | undefined, docTypeId: string | null | undefined): boolean {
   if (!model || !docTypeId) return false

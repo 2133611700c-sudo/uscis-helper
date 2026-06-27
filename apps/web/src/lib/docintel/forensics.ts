@@ -64,6 +64,10 @@ export interface ForensicRecord {
     requested_model: string | null
     actual_model: string | null
     fallback_used: boolean
+    fallback_blocked: boolean            // true when strict primary-only (READER_FALLBACK_ENABLED!=1)
+    key_alias: string | null             // which env var supplied the key (e.g. GEMINI_API_KEY_PAY)
+    key_fingerprint: string | null       // sha256(key)[:12] — NEVER the raw key
+    google_api_key_conflict?: boolean    // GOOGLE_API_KEY/GOOGLE_GENAI_API_KEY present (SDK auto-read risk)
     temperature: number
     attempts: ForensicAttempt[]
     status?: string | null
@@ -85,8 +89,13 @@ export function safeDigest(r: ForensicRecord) {
     exif_orientation: r.exif_orientation ?? null,
     preprocess: r.preprocess ?? null,
     orientation_applied_cw: r.orientation_applied_cw,
+    requested_model: r.reader.requested_model,
     model: r.reader.actual_model,
     fallback_used: r.reader.fallback_used,
+    fallback_blocked: r.reader.fallback_blocked,
+    key_alias: r.reader.key_alias,
+    key_fingerprint: r.reader.key_fingerprint,
+    google_api_key_conflict: r.reader.google_api_key_conflict ?? false,
     attempts: r.reader.attempts.map((a) => ({ n: a.n, model: a.model, selected: a.selected, reason: a.reason, http_status: a.http_status, candidate_hash: a.candidate_hash })),
     latency_ms: r.reader.ms ?? null,
     fields: r.fields.map((f) => ({

@@ -10,11 +10,11 @@ describe('forensics logger', () => {
   })
 
   it('hashShort is stable, 12-hex, and NEVER returns the raw input (non-reversible)', () => {
-    const v = 'Куроп’ятник'
+    const v = 'Солов’як'
     const h = hashShort(v)
     expect(h).toBe(hashShort(v))           // stable
     expect(h).toMatch(/^[0-9a-f]{12}$/)    // 12 hex
-    expect(h).not.toContain('Куроп')       // never leaks the value
+    expect(h).not.toContain('Солов')       // never leaks the value
     expect(hashShort(null)).toBeNull()
     expect(hashShort(undefined)).toBeNull()
   })
@@ -36,7 +36,8 @@ describe('forensics logger', () => {
       orientation_applied_cw: 0,
       reader: {
         provider: 'gemini', requested_model: 'gemini-2.5-pro', actual_model: 'gemini-2.5-pro',
-        fallback_used: false, temperature: 0, attempts: [{ n: 1, model: 'gemini-2.5-pro', selected: true, ms: 1234 }],
+        fallback_used: false, fallback_blocked: true, key_alias: 'GEMINI_API_KEY_PAY', key_fingerprint: 'abc123def456',
+        google_api_key_conflict: false, temperature: 0, attempts: [{ n: 1, model: 'gemini-2.5-pro', selected: true, ms: 1234 }],
         status: 'ok', error: null, ms: 1234,
       },
       fields: [

@@ -42,12 +42,14 @@ export function primaryGeminiModel(): string {
 
 function modelFallback(docTypeId?: string): string[] {
   const primary = primaryGeminiModel()
-  // ADR-018: source the fallback list from the modelMatrix SINGLE SOURCE OF TRUTH
-  // (not a hardcoded list that can drift), then DROP any model DISQUALIFIED for this
-  // doc class. gemini-2.5-flash is disqualified for certificate-family docs (it read
-  // a DIFFERENT person — 2026-06 adjudication), so it must NEVER appear in a
-  // birth/marriage/divorce/death/name_change chain. Without this filter the provider
-  // silently fell back to a disqualified model on certs under RPM pressure.
+  // PRODUCT CONTRACT (owner, 2026-06-27 — the single Gemini truth): the document/translation
+  // reader is gemini-2.5-pro ONLY. On timeout/429/5xx it MUST fail-closed (reader unavailable →
+  // final_value=null + review_required), and MUST NEVER silently swap to a weaker model and present
+  // that as a Pro read. So the availability fallback chain is OFF BY DEFAULT (strict primary-only).
+  // READER_FALLBACK_ENABLED=1 re-enables it for explicit NON-ACCEPTANCE availability use only.
+  if (process.env.READER_FALLBACK_ENABLED !== '1') return [primary]
+  // ADR-018: source the fallback list from the modelMatrix SINGLE SOURCE OF TRUTH, then DROP any
+  // model DISQUALIFIED for this doc class (e.g. flash on certificate-family docs).
   const chain = [...new Set([primary, ...FALLBACK_MODELS])]
   return docTypeId ? chain.filter((m) => !isDisqualifiedFor(m, docTypeId)) : chain
 }
