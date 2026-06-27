@@ -1,5 +1,9 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-27 | CORRECTION: 2 owner-verified handwritten hands already in the project
+- Re-inventoried VISUALLY (not by metadata): `military_id_p1_01.jpg` is genuinely handwritten cursive but `_meta handwritten:false` was MISLABELED (owner-verified family/given/patronymic). True Tier-A handwritten = **7 Cyrillic-text fields / 2 independent owner-verified hands** (birth_cert ×4 + military_id_p1 ×3) + marriage_1939 (Tier-C). Retracts earlier "1 doc / 4 fields, need more docs".
+- NEXT (recognition): run the HTR/reader battery on BOTH owner hands (birth_cert + military_id_p1) for a real cross-hand generalization measurement — the corpus is already on disk.
+
 ## 2026-06-27 | Step-5b CORRECTION — content-orient PROVEN, ENABLED by default
 - The prior "detector mis-calibrated" call was a TEST-HARNESS artifact (synthetic base was itself sideways; this doc's EXIF tag=6 is wrong → sharp rotates the upright scan sideways). Decisive A/B on the real EXIF-sideways buffer: content-orient OFF 0/4 EXACT vs ON 2/4 EXACT (family+patronymic exact, place CER 0.09). → `CONTENT_ORIENT_ENABLED` default ON. Cost: ~3 grid calls/doc. given_name miss = handwriting limit, not orientation.
 - Lesson: verify the test base is truly upright before judging an orientation detector. The real prod bug = EXIF-mislabeled scans read sideways; content-orient fixes it.

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-27 | CORRECTION: handwritten corpus is 2 owner-verified hands, not 1 (visual re-inventory)
+- Owner challenge ("why didn't you find the handwritten originals?") was correct. I had under-counted by trusting the `_meta handwritten` flag. VISUAL inspection of every real-doc original shows `military_id_p1_01.jpg` is genuinely HANDWRITTEN cursive (ФИО/date), but its GT carried `handwritten:false` — MISLABELED (same class of error as `internal_passport_01`). It is owner-verified (family/given/patronymic cyrillic + dob/doc#/sex).
+- TRUE handwritten corpus (gitignored GT annotated): **Tier-A = 7 Cyrillic-text fields across 2 INDEPENDENT owner-verified hands** — birth_cert_handwritten_01 (×4) + military_id_p1_01 (×3) — plus marriage_1939 (Tier-C, agent_visual, hand C). The earlier "1 doc / 4 fields, need owner docs" claim is RETRACTED: a second owner-verified hand was already in the project.
+- Genuinely-handwritten originals present: birth_cert, military_id_p1, marriage_1939 (printed: passports, military_p2 stamps, divorce, modern marriage certs). Lesson: classify document type VISUALLY, never trust the handwritten metadata flag.
+
 ## 2026-06-27 | OpenAI vs Gemini parity (handwritten Cyrillic) + forensic covers failed reads
 - PARITY (real reads vs Tier-A GT, birth cert, correctly oriented): **gemini-2.5-pro 2/4 EXACT** (family_name+patronymic exact, place CER 0.09) vs **openai gpt-4.1 0/4 EXACT** (meanCER 0.55). → Gemini-2.5-pro ≥ GPT-4.1 on handwritten Cyrillic; BOTH struggle (handwriting unsolved). Directional only — a clean same-run multi-doc (41 fields) parity needs stable quota (today's runs hit transient API failures).
 - Forensic coverage gap FIXED: `readDocument` now emits the forensic record on EVERY return path (success AND failure — coordination-unavailable / vision_failed / htr_only), via a unified `recordForensic`. Previously a failed/early-return read wrote NO artifact, which silently swallowed a parity read. Now failures are recorded with model/status/error.
