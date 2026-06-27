@@ -19,7 +19,6 @@
 
 | Model | Tier | Role | Availability NOW | Reads well | FABRICATES / forbidden | Function |
 |---|---|---|---|---|---|---|
-| ~~gemini-3.1-pro-preview~~ | preview | **REMOVED 2026-06-24** | ❌ deprecated — unstable preview (503/429 + run-to-run instability) | — | — | DEPRECATED_MODELS — never use. Printed → gemini-2.5-pro; handwriting → raxtemur (ADR-026) |
 | **gemini-2.5-pro** | GA | **PRIMARY LLM** (promoted 2026-06-24) | ✅ reliable (0 retries), STABLE across 5 runs — raise `maxOutputTokens` or it returns EMPTY (MAX_TOKENS) | PRINTED docs: correct person, 95–100% stable, accurate names/dates — the acceptance LLM for printed | ❌ **fabricates a different person on HANDWRITING** → DISQUALIFIED for certificate family (handwriting → raxtemur + human review) | D1 acceptance reader for PRINTED fields |
 | **gemini-3.5-flash** | GA | fallback | ⚠️ intermittent 503 (~1/4 reads landed) | printed identity blocks when it lands | availability (503); fallback only | availability fallback #2; date-box detector (`GEMINI_DATEBOX_MODEL`) |
 | **gemini-2.5-flash** | GA | fallback (last resort) | ✅ available | printed identity blocks | ❌❌ **fabricates TWO different fake people across temps on HANDWRITING** → DISQUALIFIED for certs; hallucinates peripheral fields even on printed | last-resort availability fallback for PRINTED only; force-reviewed; never acceptance |
@@ -27,7 +26,7 @@
 | gemini-2.0-flash(-lite), gemini-3-pro-preview | — | DEPRECATED | 404 | — | never use | removed |
 
 ## Roles by pipeline stage (unchanged laws)
-- **D1 reader (vision):** the model above. Acceptance ONLY on `gemini-3.1-pro-preview` (ADR-018). A fallback
+- **D1 reader (vision):** the model above. Acceptance ONLY on `gemini-2.5-pro` (ADR-018). A fallback
   read of a non-Latin doc is force-reviewed (`fallback_model_used`) and is NEVER a quality number.
 - **D3 prose translator:** DeepSeek V3 — prose ONLY, never identity/date/number, output overwritten from
   source value, locked tokens untouched (CONSTITUTION L3).

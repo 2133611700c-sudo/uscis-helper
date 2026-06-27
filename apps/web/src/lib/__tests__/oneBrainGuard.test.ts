@@ -1,5 +1,5 @@
 /**
- * ONE BRAIN GUARD (Constitution L1: gemini-3.1-pro-preview is THE reader for ALL products).
+ * ONE BRAIN GUARD (Constitution L1: the shared Gemini Core reader is THE OCR path for ALL products).
  *
  * Every product's OCR/extraction route MUST read documents through the single shared
  * Gemini Core brain `readDocument` (docintel → geminiVisionProvider → buildPrompt →

@@ -5,7 +5,7 @@
  * (cyrillicAcceptanceMetrics): EMPTY is a first-class failure, fabrication is
  * distinct from empty, raw_cyrillic flow is verified, transliteration is checked.
  *
- * Runs the REAL local pipeline (readDocument → gemini-3.1-pro-preview + KMU-55 +
+ * Runs the REAL local pipeline (readDocument → current primary + KMU-55 +
  * review gates) using the local GEMINI_API_KEY. If the provider is rate-limited it
  * reports BLOCKED_PROVIDER_RATE_QUOTA — the runner is still fully exercised and the
  * SAME command produces real numbers the moment quota is available (no code change).

@@ -19,7 +19,7 @@ const SHA = 'a'.repeat(64)
 const keyParts = {
   fileSha256: SHA,
   provider: 'gemini',
-  model: 'gemini-3.1-pro-preview',
+  model: 'gemini-2.5-pro',
   promptVersion: 'v1',
   preprocVersion: 'v1',
 }
@@ -50,7 +50,7 @@ describe('ocrCostMetrics — PII-free emitter', () => {
       product: 'tps',
       route: '/api/tps/ocr/extract',
       provider: 'gemini',
-      model: 'gemini-3.1-pro-preview',
+      model: 'gemini-2.5-pro',
       est_cost_usd_micros: 2000,
       cache_key_sha: 'deadbeef',
       duration_ms: 123,

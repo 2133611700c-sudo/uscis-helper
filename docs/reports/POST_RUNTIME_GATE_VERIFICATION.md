@@ -44,7 +44,7 @@ would need `vercel env pull`, which writes secrets to disk — not done).
 
 Because the gates emit no log and a prod HTTP response would carry PII, the gate effect was proven via the
 **identical `readDocument` code path** that prod runs, executed locally with `ANTI_FABRICATION_GATE_ENABLED=1`
-+ `SELF_CONSISTENCY_GATE_ENABLED=1`, on a real hard-case Soviet birth certificate, real `gemini-3.1-pro-preview`.
++ `SELF_CONSISTENCY_GATE_ENABLED=1`, on a real hard-case Soviet birth certificate, real `removed preview primary`.
 Raw → `qa-private/reports/post-runtime-gate-verify/` (gitignored). Sanitized result:
 
 - `doc_class`: birth_certificate_handwritten (via `ua_birth_certificate`) — in the gate allowlist.

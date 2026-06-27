@@ -100,7 +100,7 @@ async function geminiReadDateCrop(cropB64: string, model: string, key: string): 
       'This image is a CROPPED close-up of ONE date from a Ukrainian/Russian document, ' +
       'often HANDWRITTEN. Read it EXACTLY — each digit and the month individually; do NOT ' +
       'guess a typical date. Ukrainian/Russian months (січня/января … грудня/декабря) → 01–12. ' +
-      'Reply with ONLY the date as YYYY-MM-DD (e.g. 1986-06-25), and nothing else. ' +
+      'Reply with ONLY the date as YYYY-MM-DD (e.g. 1990-01-15), and nothing else. ' +
       'If unreadable, reply NONE.'
     const res = await fetch(GEMINI_URL(model, key), {
       method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },

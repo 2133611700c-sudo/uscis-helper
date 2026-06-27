@@ -27,7 +27,7 @@ A user reports (or monitoring shows) one of:
    - This is degraded-safety mode — open a SEV and fix the guard, do not leave it on.
    - NOTE: on Vercel an env change still requires a redeploy to take effect — it is
      a *simpler/safer revert* than a code rollback, not an instant toggle.
-2. **Wrong model in prod:** verify `GEMINI_MODEL` is clean `gemini-3.1-pro-preview`
+2. **Wrong model in prod:** verify `GEMINI_MODEL` resolves to the current sanctioned primary (`gemini-2.5-pro`)
    (no trailing `\n`); see PROD_GEMINI_MODEL_FLIP_SMOKE report. Fallback-model reads
    of non-Latin docs are auto-review-gated (ADR-018) — a fallback flood degrades
    quality but does not release silent defects.

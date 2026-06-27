@@ -51,7 +51,7 @@ hard docs, **90%+** on printed.
   variants returned a COMPLETELY DIFFERENT person (different name, year, city) on handwritten
   certs — and 2.5-pro returned review_required=FALSE (confident + wrong = worst case).
 - **Status:** those models are DISQUALIFIED for certificate classes in code (modelMatrix /
-  ADR-018). Primary = gemini-3.1-pro-preview only. Mitigated, but a real hazard if model config
+  ADR-018). Primary = removed preview primary only. Mitigated, but a real hazard if model config
   ever regresses.
 
 ### A5. Read NON-DETERMINISM / instability (newly quantified this session)
@@ -105,7 +105,7 @@ hard docs, **90%+** on printed.
 ### C2. Gemini RPM throttling → flash fallback → force-review cascade
 - The premium preview model has low RPM; parallel page fan-out + 3× consensus bursts it → 429 →
   fallback to flash → ADR-018 force-reviews everything. Consensus 3× on a 7MB doc = 150s (timeout).
-- Real fix is **account-side: raise gemini-3.1-pro-preview RPM.** Code can't safely parallelize
+- Real fix is **account-side: raise removed preview primary RPM.** Code can't safely parallelize
   (more bursts).
 
 ### C3. Google Cloud billing OFF (Vision + DocAI) — VERIFIED, but Vision is the wrong tool
@@ -124,7 +124,7 @@ hard docs, **90%+** on printed.
 ### D1. The accuracy harness was BROKEN + dishonest (fixed this session)
 - gt-pipeline-bench pointed at non-existent fixtures (`*_ivanenko`) → prior "green" numbers were
   fiction; and "0 fabricated" counted EMPTY-as-pass (a MISS scored as success).
-- **FIXED:** real `*_kuropiatnyk` docs + 5-verdict taxonomy (CORRECT/WRONG/MISS/FABRICATED/
+- **FIXED:** real `*_soloviak` docs + 5-verdict taxonomy (CORRECT/WRONG/MISS/FABRICATED/
   CORRECT_EMPTY) where empty never inflates the rate + an AUTO-FILL metric (correct AND no review).
 
 ### D2. The ground-truth corpus is tiny and partly wrong

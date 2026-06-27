@@ -13,7 +13,7 @@ flags, not 0).
 | Layer | Component | File | Status | Evidence | Risk | Next action |
 |---|---|---|---|---|---|---|
 | Door | `readDocument` | `lib/docintel/documentFieldReader.ts` | **LIVE** | 4 product routes call it (tps/translation/reparole/ead) | single point — but that's the goal | keep as the one door |
-| D1 reader | Gemini vision provider | `lib/docintel/providers/geminiVisionProvider.ts` | **LIVE** | only caller = readDocument; model `gemini-3.1-pro-preview` | single reader, no cross-check | D1 ReaderResult contract (Phase 3) |
+| D1 reader | Gemini vision provider | `lib/docintel/providers/geminiVisionProvider.ts` | **LIVE** | only caller = readDocument; model `removed preview primary` | single reader, no cross-check | D1 ReaderResult contract (Phase 3) |
 | D2 transliterate | KMU-55 / toCanonicalValue | `lib/canonical/vision/transliterationPolicy.ts` | **LIVE** | called per-field in readDocument | applied after read | keep |
 | D2 dict (signal) | dictionaryBridge / snapCity / patronymic / authority | `lib/tps/dictionaryBridge.ts` (+ knowledge pkg) | **LIVE behind `SMART_NORMALIZE_ENABLED` (OFF in prod)** | 3 callers; flag OFF → signal only, no rewrite | none while OFF | keep OFF (DO_NOT_ENABLE) |
 | Arbitration | arbitrateDocument | `lib/canonical/core/arbitration.ts` | **LIVE** | called by product routes after readDocument | — | keep |

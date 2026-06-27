@@ -7,18 +7,19 @@
  */
 import { describe, it, expect } from 'vitest'
 import { autoOrient } from '../autoOrient'
+import { PRIMARY_READER } from '../../modelMatrix'
 
 describe('autoOrient — fail-open', () => {
   it('returns the original buffer when the input is not a valid image', async () => {
     const junk = Buffer.from('not-an-image')
-    const r = await autoOrient(junk, 'fake-key', 'gemini-3.1-pro-preview', 1)
+    const r = await autoOrient(junk, 'fake-key', PRIMARY_READER, 1)
     expect(r.buffer).toBe(junk)        // unchanged
     expect(r.applied).toBe(0)
   })
 
   it('returns the original on an empty buffer', async () => {
     const empty = Buffer.alloc(0)
-    const r = await autoOrient(empty, 'fake-key', 'gemini-3.1-pro-preview', 1)
+    const r = await autoOrient(empty, 'fake-key', PRIMARY_READER, 1)
     expect(r.buffer).toBe(empty)
     expect(r.applied).toBe(0)
   })

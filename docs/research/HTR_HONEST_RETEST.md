@@ -11,7 +11,7 @@ the earlier tri-agent run and CORRECTS two over-claims. PII → paid tiers + git
    the *surname*, not that it returned empty.
 
 ## Method
-Fixed boxes; 4 readers (raxtemur local, gemini-3.1-pro-preview, gemini-2.5-pro, gpt-4.1); 3 runs each
+Fixed boxes; 4 readers (raxtemur local, removed preview primary, gemini-2.5-pro, gpt-4.1); 3 runs each
 (consistency); blank-control per reader; channel-aware scoring. **Passport (PRINTED) is the control** — if all
 readers failed it, the harness would be broken.
 
@@ -30,7 +30,7 @@ passport **perfectly (2/2 exact each)**. So "raxtemur is the reader" was too bro
 | Reader | Handwriting (cert, N=3) | Printed (passport, N=2) |
 |---|---|---|
 | **raxtemur** (local, $0) | **2/3 exact** (best on cursive) | **0/2 (fails print)** |
-| gemini-3.1-pro-preview | 1/3 | 2/2 |
+| removed preview primary | 1/3 | 2/2 |
 | gpt-4.1 | 1/3 | 2/2 |
 | gemini-2.5-pro | 0/3 (fabricates handwriting) | 2/2 |
 

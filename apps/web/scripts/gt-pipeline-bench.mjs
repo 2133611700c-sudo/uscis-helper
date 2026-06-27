@@ -7,7 +7,7 @@
  *
  *   LIVE mode  (default): POSTs each real image to the PROD endpoint
  *     /api/translation/vision-extract, which runs the exact production read
- *     (gemini-3.1-pro-preview + paid prod key + KMU-55 + review gates).
+ *     (current primary + paid prod key + KMU-55 + review gates).
  *     Requires network + prod availability (and prod-side GEMINI quota). No local
  *     key handling — the production brain measures itself.
  *

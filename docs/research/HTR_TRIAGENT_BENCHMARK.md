@@ -30,17 +30,17 @@ were read ONLY on PAID API tiers (Gemini `GEMINI_API_KEY_PAY`, OpenAI paid); ful
 | Reader | tier | exact (CER 0) | match | notes |
 |---|---|---|---|---|
 | **raxtemur/trocr-base-ru** | **local, key-free, $0** | **3/6** | **5/6** | best overall; no PII egress |
-| gemini-3.1-pro-preview | paid, primary (unreliable avail) | 2/6 | 3/6 | best cloud; native-res recovered 2 it fabricated at low-res |
+| removed preview primary | paid, primary (unreliable avail) | 2/6 | 3/6 | best cloud; native-res recovered 2 it fabricated at low-res |
 | gpt-4.1 | paid | 1/6 | 2/6 | partial |
 | gemini-2.5-pro | paid, GA | 0/6 | 1/6 | fabricates handwriting even at native res (ADR-018 disqualified — confirmed) |
 | gpt-5.5 | paid | 0/6 | 0/6 | WORSE than gpt-4.1 — newer ≠ better; fabricates more |
 
-**Ranking on real handwriting:** raxtemur > gemini-3.1-pro-preview > gpt-4.1 > gemini-2.5-pro > gpt-5.5.
+**Ranking on real handwriting:** raxtemur > removed preview primary > gpt-4.1 > gemini-2.5-pro > gpt-5.5.
 
 ## Conclusions (honest)
 1. **The local, key-free `raxtemur` beats every paid cloud model** on the owner's real handwritten Cyrillic —
    at $0 and with zero PII egress. This is the reader for handwritten certificate fields.
-2. **Answers the ADR-026 open question:** native-res crops DO recover the strongest model (gemini-3.1-pro-preview
+2. **Answers the ADR-026 open question:** native-res crops DO recover the strongest model (removed preview primary
    went from fabricating to 2/6 exact) — so part of the prior "fabrication" was a low-res-input artifact for the
    capable model. But native-res does NOT rescue the GA models (gemini-2.5-pro 0/6) or newer GPT (gpt-5.5 0/6) —
    those have a genuine handwriting-reading deficit, not just a resolution problem.

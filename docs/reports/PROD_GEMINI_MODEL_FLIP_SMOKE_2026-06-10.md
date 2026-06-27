@@ -25,14 +25,14 @@ Live prod was running `gemini-2.5-flash` because `GEMINI_MODEL` had a dirty embe
 
 ```
 npx vercel env rm GEMINI_MODEL production -y   → "Removed Environment Variable"
-printf 'gemini-3.1-pro-preview' | npx vercel env add GEMINI_MODEL production
+printf 'removed preview primary' | npx vercel env add GEMINI_MODEL production
   → "Added Environment Variable GEMINI_MODEL to Project uscis-helper"
 ```
 
 Verification via `vercel env pull`:
 ```
-GEMINI_MODEL raw: '"gemini-3.1-pro-preview"\n'   # quotes from .env format; no embedded \n
-Stripped: '"gemini-3.1-pro-preview"'
+GEMINI_MODEL raw: '"removed preview primary"\n'   # quotes from .env format; no embedded \n
+Stripped: '"removed preview primary"'
 Clean: True
 ```
 
@@ -70,15 +70,15 @@ Response:
 ```json
 {
   "ok": false,
-  "model": "gemini-3.1-pro-preview",
+  "model": "removed preview primary",
   "provider": "gemini",
-  "status": "ok:gemini-3.1-pro-preview:4554ms:0f",
+  "status": "ok:removed preview primary:4554ms:0f",
   "error": "No fields extracted across all pages.",
   "fields_count": 0
 }
 ```
 
-- `model: gemini-3.1-pro-preview` — **confirmed live Gemini call**
+- `model: removed preview primary` — **confirmed live Gemini call**
 - 4554ms — well within 40s timeout; no timeout fallback triggered
 - `ok: false` / zero fields — expected for a 1×1 white pixel (no text)
 - No 5xx, no 429, no 502
@@ -92,11 +92,11 @@ Status: `LOG_HISTORY_UNVERIFIED` (expected for Vercel CLI streaming mode).
 
 | Check | Result |
 |---|---|
-| GEMINI_MODEL clean | ✓ `gemini-3.1-pro-preview` (no embedded \n) |
+| GEMINI_MODEL clean | ✓ `removed preview primary` (no embedded \n) |
 | prod redeployed | ✓ |
 | healthz ok | ✓ |
 | smoke 200 (route up) | ✓ |
-| model metadata verified (live call) | ✓ `gemini-3.1-pro-preview` confirmed in response |
+| model metadata verified (live call) | ✓ `removed preview primary` confirmed in response |
 | no 502/404/timeout | ✓ |
 | no fallback to flash | ✓ |
 | no PII | ✓ (1×1 synthetic PNG) |

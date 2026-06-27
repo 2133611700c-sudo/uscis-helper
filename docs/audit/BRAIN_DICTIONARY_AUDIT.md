@@ -91,7 +91,7 @@ Local test run (global `npx vitest`, worktree has no `node_modules`): **18 knowl
   **Status: PROVEN_LOCAL (wired, tested), real-doc effect UNVERIFIED.**
 
 ### B3. Gemini Vision — the actual READER
-- `docintel/providers/geminiVisionProvider.ts`: primary `gemini-3.1-pro-preview`, fallback chain
+- `docintel/providers/geminiVisionProvider.ts`: primary `removed preview primary`, fallback chain
   `gemini-3.5-flash` → `gemini-2.5-flash` (2.0 removed, 404-deprecated). Comments record that
   `gemini-2.5-pro/-flash` returned **wrong-person identity** on certificate docs and are disqualified
   per-class. **This is the real fabrication-risk surface** (a vision model inventing a person), and it

@@ -50,6 +50,7 @@ describe('handwrittenFieldRoute — field-first HTR route (ADR-026), OFF by defa
     const boxes = await localizeHandwrittenFields(await pngImage(), 'image/png', 'ua_birth_certificate') // 1000x1000
     expect(boxes.map((b) => b.field).sort()).toEqual(['family_name', 'given_name', 'patronymic'])
     expect(boxes.find((b) => b.field === 'family_name')!.box).toEqual([233, 228, 545, 292]) // 0.2326*1000 etc.
+    expect(boxes.find((b) => b.field === 'patronymic')!.box).toEqual([264, 292, 448, 362]) // tuned from the real cert proof
     expect(fetchSpy).not.toHaveBeenCalled() // NO Gemini call — deterministic template
   })
 
@@ -66,14 +67,14 @@ describe('handwrittenFieldRoute — field-first HTR route (ADR-026), OFF by defa
   it('end-to-end: localize → native crop → HTR read → 3 SEPARATED layers, review-gated', async () => {
     process.env.HTR_SIDECAR_URL = 'http://127.0.0.1:8077'
     process.env.GEMINI_API_KEY_PAY = 'k'
-    mockBoth({ fields: [{ label: 'surname', box: [100, 200, 200, 600] }] }, ['Куропятник'])
+    mockBoth({ fields: [{ label: 'surname', box: [100, 200, 200, 600] }] }, ['Соловьяк'])
     const out = await readHandwrittenRoute(await pngImage(), 'image/png')
     expect(out).toHaveLength(1)
     const f = out[0]
     expect(f.field).toBe('family_name')
-    expect(f.raw_htr_text).toBe('Куропятник')      // read_quality
+    expect(f.raw_htr_text).toBe('Соловьяк')      // read_quality
     expect(f.htr_confidence).toBe(0.95)             // read_quality
-    expect(f.normalized_value).toBe('Куропятник')   // normalization (codex downstream)
+    expect(f.normalized_value).toBe('Соловьяк')   // normalization (codex downstream)
     expect(f.review_required).toBe(true)            // review — raxtemur can't abstain → always gated
     expect(f.review_reason).toBe('handwritten_htr_read')
   })

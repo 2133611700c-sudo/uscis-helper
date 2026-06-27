@@ -21,7 +21,7 @@
  *
  * Reference: documentClassPolicy.ts military_id class:
  *   auto_fill_allowed=true, always_review=false, review_required_fields=['uncertain_fields']
- *   model_candidate='gemini-3.1-flash-image'
+ *   model_candidate='gemini-2.5-pro'
  */
 
 import type { OcrResult } from '@/lib/ocr/types'

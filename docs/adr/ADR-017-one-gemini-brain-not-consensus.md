@@ -8,7 +8,7 @@ Owner mandate: "распознавание через Gemini (все ключи/
 
 The product ships document recognition for four surfaces — Translator, TPS, Reparole, EAD — plus a Mia FAQ bot. A 2026-06-09 zero-trust audit + 5-agent surface map established the real state:
 
-- Gemini is ALREADY the primary document reader (`docintel`, `gemini-3.1-pro-preview` → `3.5-flash` → `2.5-flash`), but is the DEFAULT only for the Translator. For TPS/Reparole/EAD the Gemini "Core" path is parked behind flags (`ONE_CORE_TPS_ENABLED`, `ONE_CORE_REPAROLE_ENABLED`, `ONE_CORE_EAD_ENABLED`, `ONE_BRAIN_CORE_ENABLED`) that nobody flips.
+- Gemini is ALREADY the primary document reader (`docintel`, `gemini-2.5-pro` → `3.5-flash` → `2.5-flash`), but is the DEFAULT only for the Translator. For TPS/Reparole/EAD the Gemini "Core" path is parked behind flags (`ONE_CORE_TPS_ENABLED`, `ONE_CORE_REPAROLE_ENABLED`, `ONE_CORE_EAD_ENABLED`, `ONE_BRAIN_CORE_ENABLED`) that nobody flips.
 - TPS default = Google Vision OCR + deterministic rule modules. Reparole = Gemini-Core for passport/booklet, TPS fallback for i94/ead/dl.
 - DeepSeek = Mia FAQ, legacy `/api/ocr/extract` text-parse, optional prose translator, optional TPS dual-OCR crossref. NOT document vision.
 - gpt-4o-mini = parked (`ENABLE_OPENAI_VISION` off).
@@ -20,7 +20,7 @@ The owner's reference design ("org chart") put a **consensus engine over 3 indep
 
 **The center of the system is ONE Gemini brain + a deterministic knowledge layer that can override the reader + a strict review gate — NOT a voting consensus of multiple readers.**
 
-1. **One reader: Gemini.** `gemini-3.1-pro-preview` for hard-case/handwriting/birth/soviet; `*-flash` for printed. Google Vision stays as the "eye" (raw text + MRZ input), not a competing reader.
+1. **One reader: Gemini.** `gemini-2.5-pro` for the current printed-field primary path; `*-flash` for availability only. Google Vision stays as the "eye" (raw text + MRZ input), not a competing reader.
 2. **One shared pipeline.** All products call the SAME `readDocument` → `canonical/core` arbitration. Per-product recognition forks are retired. This is the real meaning of "ONE BRAIN" — one pipeline, not a committee.
 3. **Knowledge (D2) is elevated to co-equal with the reader and lives INSIDE the brain.** KMU-55 / gazetteer / patronymic / oblast→nominative / authority are applied deterministically to the FINAL value for every product. The dictionary may OVERRIDE the reader (facts > opinion). Never silent: fuzzy/unresolved → review, value preserved.
 4. **Self-consistency = instability detector, not a vote.** Two reads agreeing on a confident hallucination is still a hallucination; disagreement → review. (Memory: anti-fabrication-self-consistency.)

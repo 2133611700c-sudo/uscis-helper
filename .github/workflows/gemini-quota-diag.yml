@@ -25,7 +25,7 @@ jobs:
           jq -r '.models[]?.name' /tmp/models.json 2>/dev/null | grep -iE "pro|flash" | head -60 \
             || { echo "(jq failed; raw head:)"; head -c 1200 /tmp/models.json; }
           echo "--- is the configured primary model present? ---"
-          jq -r '.models[]?.name' /tmp/models.json 2>/dev/null | grep -E "gemini-3.1-pro-preview|gemini-3.5-flash|gemini-2.5-flash" || echo "NONE of the configured models found in list"
+          jq -r '.models[]?.name' /tmp/models.json 2>/dev/null | grep -E "gemini-2.5-pro|gemini-3.5-flash|gemini-2.5-flash" || echo "NONE of the configured models found in list"
 
       - name: 2) raw generateContent on gemini-2.5-flash — capture the quota metric
         if: always()
@@ -41,7 +41,7 @@ jobs:
           echo "--- raw body (error metric / quota reason is here; no key in body) ---"
           head -c 2500 /tmp/gen25.json
 
-      - name: 3) raw generateContent on configured primary gemini-3.1-pro-preview — 404 vs 429
+      - name: 3) raw generateContent on configured primary gemini-2.5-pro — 404 vs 429
         if: always()
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -49,13 +49,13 @@ jobs:
           set +x
           code=$(curl -s -o /tmp/genp.json -w '%{http_code}' \
             -H "x-goog-api-key: $GEMINI_API_KEY" -H "content-type: application/json" \
-            -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent" \
+            -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent" \
             -d '{"contents":[{"parts":[{"text":"hi"}]}],"generationConfig":{"maxOutputTokens":1}}')
-          echo "gemini-3.1-pro-preview generateContent HTTP=$code (404=model does not exist, 429=exists-but-rate/quota)"
+          echo "gemini-2.5-pro generateContent HTTP=$code (404=model does not exist, 429=exists-but-rate/quota)"
           echo "--- raw body ---"
           head -c 2000 /tmp/genp.json
 
-      - name: 4) IMAGE probe — does PRIMARY gemini-3.1-pro-preview handle a real image or 429? (root-cause RPM/TPM vs spend)
+      - name: 4) IMAGE probe — does PRIMARY gemini-2.5-pro handle a real image or 429? (root-cause RPM/TPM vs spend)
         if: always()
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -64,7 +64,7 @@ jobs:
           # make a ~600KB JPEG (realistic page size) with ImageMagick (preinstalled on ubuntu runners)
           convert -size 1240x1754 xc:white -pointsize 40 -draw "text 100,200 'Шевченко Тарас'" /tmp/page.jpg 2>/dev/null ||             python3 -c "from PIL import Image; Image.new('RGB',(1240,1754),'white').save('/tmp/page.jpg','JPEG',quality=92)"
           B64=$(base64 -w0 /tmp/page.jpg)
-          for MODEL in gemini-3.1-pro-preview gemini-3.5-flash gemini-2.5-flash; do
+          for MODEL in gemini-2.5-pro gemini-3.5-flash gemini-2.5-flash; do
             printf '{"contents":[{"parts":[{"text":"Read the name."},{"inline_data":{"mime_type":"image/jpeg","data":"%s"}}]}],"generationConfig":{"temperature":0,"maxOutputTokens":32}}' "$B64" > /tmp/body.json
             code=$(curl -s -o /tmp/img_$MODEL.json -w '%{http_code}'               -H "x-goog-api-key: $GEMINI_API_KEY" -H "content-type: application/json"               -X POST "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent" --data @/tmp/body.json)
             echo "IMAGE→$MODEL HTTP=$code"

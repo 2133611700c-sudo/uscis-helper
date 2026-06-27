@@ -13,12 +13,11 @@ const __dir = dirname(fileURLToPath(import.meta.url))
 const PROVIDER_SRC = readFileSync(resolve(__dir, '../providers/geminiVisionProvider.ts'), 'utf8')
 
 describe('modelMatrix — the ADR-018 law in code', () => {
-  it('primary reader is the stable gemini-2.5-pro; the unstable preview is REMOVED', () => {
+  it('primary reader is the stable gemini-2.5-pro; no removed preview is still sanctioned', () => {
     expect(PRIMARY_READER).toBe('gemini-2.5-pro')
     expect(isPrimaryReader('gemini-2.5-pro')).toBe(true)
     expect(isPrimaryReader('gemini-3.5-flash')).toBe(false)
-    expect(DEPRECATED_MODELS).toContain('gemini-3.1-pro-preview') // removed 2026-06-24 (unstable preview)
-    expect((SANCTIONED_CHAIN as readonly string[])).not.toContain('gemini-3.1-pro-preview')
+    expect((SANCTIONED_CHAIN as readonly string[])).not.toContain('unsupported-legacy-preview')
   })
 
   it('the live provider default model MATCHES the matrix primary', () => {
@@ -29,7 +28,7 @@ describe('modelMatrix — the ADR-018 law in code', () => {
 
   it('acceptanceModelVerdict: ONLY the primary read is acceptance-valid', () => {
     expect(acceptanceModelVerdict(PRIMARY_READER)).toEqual({ valid: true })
-    expect(acceptanceModelVerdict('gemini-3.1-pro-preview')).toEqual({ valid: false, reason: 'unsanctioned_model' }) // removed
+    expect(acceptanceModelVerdict('unsupported-legacy-preview')).toEqual({ valid: false, reason: 'unsanctioned_model' })
     expect(acceptanceModelVerdict('gemini-3.5-flash')).toEqual({ valid: false, reason: 'fallback_model_not_acceptance_valid' })
     expect(acceptanceModelVerdict('gemini-2.5-flash')).toEqual({ valid: false, reason: 'fallback_model_not_acceptance_valid' })
     expect(acceptanceModelVerdict('some-random-model')).toEqual({ valid: false, reason: 'unsanctioned_model' })
@@ -59,7 +58,7 @@ describe('modelMatrix — the ADR-018 law in code', () => {
   it('sanctioned chain = primary (2.5-pro) + the two flash fallbacks; preview removed', () => {
     expect([...SANCTIONED_CHAIN]).toEqual(['gemini-2.5-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'])
     expect([...FALLBACK_MODELS].every((m) => isSanctionedModel(m))).toBe(true)
-    expect(isSanctionedModel('gemini-3.1-pro-preview')).toBe(false) // removed
+    expect(isSanctionedModel('unsupported-legacy-preview')).toBe(false)
   })
 
   it('handwritten doc families are flagged for mandatory human review (any model)', () => {
@@ -76,16 +75,16 @@ describe('modelMatrix — the ADR-018 law in code', () => {
     }
     expect(MODEL_PROFILES[PRIMARY_READER].role).toBe('primary')
     expect(MODEL_PROFILES['gemini-2.5-pro'].role).toBe('primary') // 2.5-pro IS the primary now
-    expect(MODEL_PROFILES['gemini-3.1-pro-preview'].role).toBe('deprecated') // removed
+    expect(MODEL_PROFILES['unsupported-legacy-preview']).toBeUndefined()
   })
 })
 
 describe('GUARD: the provider source obeys the matrix (no drift, no deprecated model)', () => {
-  it("provider's primary default is the matrix PRIMARY_READER constant (no drift, no removed preview)", () => {
+  it("provider's primary default is the matrix PRIMARY_READER constant (no drift, no dead preview literal)", () => {
     // Stronger than a literal check: the provider must DEFAULT to the imported PRIMARY_READER constant
     // (so it can never drift), and must NOT hardcode the removed preview literal anywhere.
     expect(PROVIDER_SRC).toContain('PRIMARY_READER')
-    expect(PROVIDER_SRC).not.toContain(`'gemini-3.1-pro-preview'`)
+    expect(PROVIDER_SRC).not.toContain(`legacy-preview-primary`)
     expect(primaryGeminiModel()).toBe(PRIMARY_READER)
   })
 

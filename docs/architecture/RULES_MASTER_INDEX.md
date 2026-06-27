@@ -16,7 +16,7 @@ Maintenance: when you add a rule, add its row here. The `oneBrainGuard`/`oneDict
 
 | Component | Engine | ROLE (one job) | Rule count | Lives in | Responsible for | NOT allowed |
 |---|---|---|---|---|---|---|
-| **Reader (printed/LLM)** | `gemini-2.5-pro` (stable GA, PRIMARY since 2026-06-24; unstable `gemini-3.1-pro-preview` REMOVED; fallbacks 3.5-flash/2.5-flash — `MODEL_INVENTORY.md`, ADR-018/026) | read Cyrillic exactly, don't interpret | 5 universal + 13 per-doc | `geminiVisionProvider.buildPrompt` + `docReadingRules.ts` + `docintel/modelMatrix.ts` | every PRINTED field's raw read | transliterate; guess; decide release; report a fallback read as acceptance |
+| **Reader (printed/LLM)** | `gemini-2.5-pro` (stable GA, PRIMARY since 2026-06-24; older preview primary removed; fallbacks 3.5-flash/2.5-flash — `MODEL_INVENTORY.md`, ADR-018/026) | read Cyrillic exactly, don't interpret | 5 universal + 13 per-doc | `geminiVisionProvider.buildPrompt` + `docReadingRules.ts` + `docintel/modelMatrix.ts` | every PRINTED field's raw read | transliterate; guess; decide release; report a fallback read as acceptance |
 | **Reader (handwriting)** | `raxtemur/trocr-base-ru` (key-free HTR, native-res crop + contrast) — **ADR-026; NOT yet wired to prod (hosting pending)** | read handwritten Cyrillic; CANNOT abstain → gate + human-review | recipe (ADR-026) | `qa-private/htr-poc` POC; prod reader TBD | handwritten field reads (route by RENDERING) | be trusted on non-exact reads; read printed (it fails print) |
 | **Brain (TPS US-docs)** | DeepSeek-chat V3 | structure/classify text only | 28 (documentBrain) + 3 (dualOcrCrossref) + 6 (field-mapper) | `lib/tps/ai/*.ts`, `lib/ocr/field-mapper.ts` | US-Latin doc structuring | identity/date/number authority; touch locked tokens (L3) |
 | **Prose Translator** | DeepSeek-chat V3 | translate open prose only | safe-by-design + guard | `lib/translation/prose/translateProse.ts` | free-text translation (parked, ADR-024) | see/alter identity (masked away) |
@@ -79,7 +79,7 @@ Maintenance: when you add a rule, add its row here. The `oneBrainGuard`/`oneDict
 ## 5. THE LAW LAYER (above this index)
 - **CONSTITUTION** (`docs/architecture/CONSTITUTION.md`) — the 10 laws L1–L10.
 - **ROLES** (`RECOGNITION_ORG_CHART.md`) — each engine as an "employee" with one job.
-- **MODEL LAW** (`docs/architecture/MODEL_INVENTORY.md` ← mirrors `apps/web/src/lib/docintel/modelMatrix.ts`; law = **ADR-018**, corrected by **ADR-026**) — which LLM reads printed/acceptance (`gemini-3.1-pro-preview` only, an unstable preview), which are availability fallbacks, which are DISQUALIFIED on handwriting; and **ROUTE BY FIELD RENDERING** — handwriting → key-free `raxtemur` (best on cursive, cannot abstain → gate+review), print → LLM (ADR-026, prod-wiring pending).
+- **MODEL LAW** (`docs/architecture/MODEL_INVENTORY.md` ← mirrors `apps/web/src/lib/docintel/modelMatrix.ts`; law = **ADR-018**, corrected by **ADR-026**) — which LLM reads printed/acceptance (`gemini-2.5-pro`), which are availability fallbacks, which are DISQUALIFIED on handwriting; and **ROUTE BY FIELD RENDERING** — handwriting → key-free `raxtemur` (best on cursive, cannot abstain → gate+review), print → LLM (ADR-026, prod-wiring pending).
 - **PERMISSIONS** (`docs/adr/ADR-AGENT-PERMISSIONS.md`).
 - **Key ADRs**: 017 (one brain), 018 (model matrix), 026 (HTR native-res + route-by-rendering),
   005 (transliteration), 004 (historical authority), 015 (PDF), 007 (signatures), 024 (prose translator).

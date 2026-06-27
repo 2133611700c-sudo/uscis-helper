@@ -5,7 +5,7 @@
 
 ## Context
 
-Measured against owner ground truth (gemini-3.1-pro, the best available reader):
+Measured against owner ground truth (removed preview primary, the best available reader):
 - Hard-case Ukrainian (handwritten / Soviet bilingual birth certs): **1/4 identity fields correct**. The
   model returns a plausible-but-wrong identity and self-reports `review_required=false` — the most dangerous
   failure mode. Russianization of Ukrainian names/patronymics is a real reading error, not normalization.

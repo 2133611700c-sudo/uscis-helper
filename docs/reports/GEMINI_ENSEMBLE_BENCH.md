@@ -1,11 +1,11 @@
 # Gemini Ensemble Bench — 3 models × 3 docs + 5 consensus configs
 
-Models: gemini-2.5-flash-lite, gemini-2.5-flash, gemini-2.5-pro, gemini-3.5-flash, gemini-3.1-pro-preview · scored vs hand-verified ground truth (passport MRZ + cross-doc).
+Models: gemini-2.5-flash-lite, gemini-2.5-flash, gemini-2.5-pro, gemini-3.5-flash, removed preview primary · scored vs hand-verified ground truth (passport MRZ + cross-doc).
 
 
 ## PASSPORT (printed + MRZ)
 
-| field | ground truth | 2.5-flash-lite | 2.5-flash | 2.5-pro | 3.5-flash | 3.1-pro-preview |
+| field | ground truth | 2.5-flash-lite | 2.5-flash | 2.5-pro | 3.5-flash | legacy-preview-primary |
 |---|---|---|---|---|---|---|
 | surname | Іваненко | ✅ ІВАНЕНКО | ✅ ІВАНЕНКО | ✅ ІВАНЕНКО | ✅ ІВАНЕНКО | ✅ ІВАНЕНКО/IVANENKO |
 | given_name | Тарас | ✅ ТАРАС | ✅ ТАРАС | ✅ ТАРАС | ✅ ТАРАС | ✅ ТАРАС/TARAS |
@@ -13,14 +13,14 @@ Models: gemini-2.5-flash-lite, gemini-2.5-flash, gemini-2.5-pro, gemini-3.5-flas
 | passport_no | AA000000 | ✅ AA000000 | ✅ AA000000 | ✅ AA000000 | ✅ AA000000 | ✅ AA000000 |
 | birth_place | Вінницька | ✅ ВІННИЦЬКА ОБЛ./UKR | ✅ ВІННИЦЬКА ОБЛ./UKR | ✅ ВІННИЦЬКА ОБЛ. | ✅ ВІННИЦЬКА ОБЛ./UKR | ✅ ВІННИЦЬКА ОБЛ./UKR |
 
-**Per-model score (correct/total): 2.5-flash-lite 4/5 · 2.5-flash 5/5 · 2.5-pro 5/5 · 3.5-flash 5/5 · 3.1-pro-preview 5/5**
+**Per-model score (correct/total): 2.5-flash-lite 4/5 · 2.5-flash 5/5 · 2.5-pro 5/5 · 3.5-flash 5/5 · legacy-preview-primary 5/5**
 
 **Ensembles (accept field when ≥2 voters agree):**
-- E1 3.1pro+3.5flash (≥2): 5/5 correct, 5/5 auto-accepted
-- E2 3.1pro+2.5pro (≥2): 5/5 correct, 5/5 auto-accepted
-- E3 3.1pro+3.5flash+2.5flash (≥2): 5/5 correct, 5/5 auto-accepted
+- E1 legacyPreview+3.5flash (≥2): 5/5 correct, 5/5 auto-accepted
+- E2 legacyPreview+2.5pro (≥2): 5/5 correct, 5/5 auto-accepted
+- E3 legacyPreview+3.5flash+2.5flash (≥2): 5/5 correct, 5/5 auto-accepted
 - E4 all-5 majority (≥3): 5/5 correct, 5/5 auto-accepted
-- E5 3.1pro+3.5flash+GoogleVision (≥2): 5/5 correct, 5/5 auto-accepted
+- E5 legacyPreview+3.5flash+GoogleVision (≥2): 5/5 correct, 5/5 auto-accepted
 
 <details><summary>Google Vision OCR anchor</summary>
 
@@ -83,7 +83,7 @@ P<UKRIVANENKO<<TARAS
 
 ## BIRTH CERT (handwritten, UkrSSR 1986)
 
-| field | ground truth | 2.5-flash-lite | 2.5-flash | 2.5-pro | 3.5-flash | 3.1-pro-preview |
+| field | ground truth | 2.5-flash-lite | 2.5-flash | 2.5-pro | 3.5-flash | legacy-preview-primary |
 |---|---|---|---|---|---|---|
 | surname | Іваненко | ❌ Ковальчук | ❌ Хроненчук | ❌ Кудрявцев | ✅ Іваненко | ✅ Іваненко |
 | given_name | Андрей | ❌ Ірина | ❌ Олег | ❌ Олег | ✅ Андрей | ✅ Андрей |
@@ -95,14 +95,14 @@ P<UKRIVANENKO<<TARAS
 | mother_full_name | Іваненко Дарья Петровна | ❌ Ковальчук Марія Іванівна | ❌ Хроненчук Надія Степанівна | ❌ Кудрявцева Катерина Степанівна | ❌ Іваненко Дарья Петровна | ✅ Іваненко Дарья Петровна |
 | certificate_number | II-БК 530174 | ✅ II-БК № 530174 | ❌ ІІІ-АМ № 530174 | ✅ II-БК № 530174 | ❌ ІІІ-АМ № 530174 | ✅ II-БК № 530174 |
 
-**Per-model score (correct/total): 2.5-flash-lite 1/9 · 2.5-flash 0/9 · 2.5-pro 1/9 · 3.5-flash 6/9 · 3.1-pro-preview 8/9**
+**Per-model score (correct/total): 2.5-flash-lite 1/9 · 2.5-flash 0/9 · 2.5-pro 1/9 · 3.5-flash 6/9 · legacy-preview-primary 8/9**
 
 **Ensembles (accept field when ≥2 voters agree):**
-- E1 3.1pro+3.5flash (≥2): 6/9 correct, 6/9 auto-accepted
-- E2 3.1pro+2.5pro (≥2): 1/9 correct, 1/9 auto-accepted
-- E3 3.1pro+3.5flash+2.5flash (≥2): 6/9 correct, 7/9 auto-accepted
+- E1 legacyPreview+3.5flash (≥2): 6/9 correct, 6/9 auto-accepted
+- E2 legacyPreview+2.5pro (≥2): 1/9 correct, 1/9 auto-accepted
+- E3 legacyPreview+3.5flash+2.5flash (≥2): 6/9 correct, 7/9 auto-accepted
 - E4 all-5 majority (≥3): 1/9 correct, 1/9 auto-accepted
-- E5 3.1pro+3.5flash+GoogleVision (≥2): 6/9 correct, 6/9 auto-accepted
+- E5 legacyPreview+3.5flash+GoogleVision (≥2): 6/9 correct, 6/9 auto-accepted
 
 <details><summary>Google Vision OCR anchor</summary>
 
@@ -189,7 +189,7 @@ Bix.
 
 ## MILITARY ID (printed + handwritten)
 
-| field | ground truth | 2.5-flash-lite | 2.5-flash | 2.5-pro | 3.5-flash | 3.1-pro-preview |
+| field | ground truth | 2.5-flash-lite | 2.5-flash | 2.5-pro | 3.5-flash | legacy-preview-primary |
 |---|---|---|---|---|---|---|
 | surname | Іваненко | ✅ Іваненко | ✅ Іваненко | ✅ Іваненко | ✅ Іваненко | ✅ Іваненко |
 | given_name | Тарас | ✅ Тарас | ✅ Тарас | ✅ Тарас | ✅ Тарас | ✅ Тарас |
@@ -200,14 +200,14 @@ Bix.
 | series_number | НК 307258 | ✅ НК 307258 | ✅ НК 307258 | ✅ НК 307258 | ❌ CO 307258 | ✅ НК 307258 |
 | issue_date | 2016-12-22 | ❌ 2014-12-22 | ❌ 2016-12-27 | ✅ 2016-12-22 | ❌ 2011-12-22 | ✅ 2016-12-22 |
 
-**Per-model score (correct/total): 2.5-flash-lite 5/8 · 2.5-flash 5/8 · 2.5-pro 7/8 · 3.5-flash 5/8 · 3.1-pro-preview 7/8**
+**Per-model score (correct/total): 2.5-flash-lite 5/8 · 2.5-flash 5/8 · 2.5-pro 7/8 · 3.5-flash 5/8 · legacy-preview-primary 7/8**
 
 **Ensembles (accept field when ≥2 voters agree):**
-- E1 3.1pro+3.5flash (≥2): 5/8 correct, 6/8 auto-accepted
-- E2 3.1pro+2.5pro (≥2): 7/8 correct, 8/8 auto-accepted
-- E3 3.1pro+3.5flash+2.5flash (≥2): 6/8 correct, 7/8 auto-accepted
+- E1 legacyPreview+3.5flash (≥2): 5/8 correct, 6/8 auto-accepted
+- E2 legacyPreview+2.5pro (≥2): 7/8 correct, 8/8 auto-accepted
+- E3 legacyPreview+3.5flash+2.5flash (≥2): 6/8 correct, 7/8 auto-accepted
 - E4 all-5 majority (≥3): 6/8 correct, 7/8 auto-accepted
-- E5 3.1pro+3.5flash+GoogleVision (≥2): 5/8 correct, 6/8 auto-accepted
+- E5 legacyPreview+3.5flash+GoogleVision (≥2): 5/8 correct, 6/8 auto-accepted
 
 <details><summary>Google Vision OCR anchor</summary>
 
@@ -259,11 +259,11 @@ MIL
 - gemini-2.5-flash: 10/22
 - gemini-2.5-pro: 13/22
 - gemini-3.5-flash: 16/22
-- gemini-3.1-pro-preview: 20/22
+- removed preview primary: 20/22
 
 **Ensembles (correct across all docs):**
-- E1 3.1pro+3.5flash (≥2): 16/22 correct, 17/22 accepted
-- E2 3.1pro+2.5pro (≥2): 13/22 correct, 14/22 accepted
-- E3 3.1pro+3.5flash+2.5flash (≥2): 17/22 correct, 19/22 accepted
+- E1 legacyPreview+3.5flash (≥2): 16/22 correct, 17/22 accepted
+- E2 legacyPreview+2.5pro (≥2): 13/22 correct, 14/22 accepted
+- E3 legacyPreview+3.5flash+2.5flash (≥2): 17/22 correct, 19/22 accepted
 - E4 all-5 majority (≥3): 12/22 correct, 13/22 accepted
-- E5 3.1pro+3.5flash+GoogleVision (≥2): 16/22 correct, 17/22 accepted
+- E5 legacyPreview+3.5flash+GoogleVision (≥2): 16/22 correct, 17/22 accepted

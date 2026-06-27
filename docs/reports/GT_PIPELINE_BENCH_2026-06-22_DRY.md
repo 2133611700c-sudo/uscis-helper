@@ -6,7 +6,7 @@ Verdict taxonomy: CORRECT / WRONG / MISS (GT non-empty, read empty) / FABRICATED
 Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per GT_BENCHMARK_EXIT_CRITERIA: <30 scored fields/class ⇒ direction only).
 
 ## internal_passport_booklet (handwritten)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 3
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 3
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|
@@ -19,7 +19,7 @@ Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per
 **Recognition rate: 60.0%** — CORRECT 3 · WRONG 0 · MISS 2 · FABRICATED 0 · empty-ok 0
 
 ## birth_certificate (handwritten)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 4
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 4
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|
@@ -32,7 +32,7 @@ Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per
 **Recognition rate: 20.0%** — CORRECT 1 · WRONG 3 · MISS 1 · FABRICATED 0 · empty-ok 0
 
 ## birth_certificate (Soviet bilingual)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 4
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 4
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|
@@ -45,7 +45,7 @@ Verdict stamp: **EXPLORATORY (N<30 scored fields — NOT canary approval)** (per
 **Recognition rate: 20.0%** — CORRECT 1 · WRONG 3 · MISS 1 · FABRICATED 0 · empty-ok 0
 
 ## military_id_p1 (printed+hw)
-- http 200 · status `ok:core-b2` · model `gemini-3.1-pro-preview` · fields_returned 4
+- http 200 · status `ok:core-b2` · model `removed preview primary` · fields_returned 4
 
 | field | channel | verdict | present | review |
 |---|---|---|---|---|

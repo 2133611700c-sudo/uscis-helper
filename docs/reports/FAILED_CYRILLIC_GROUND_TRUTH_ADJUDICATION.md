@@ -26,7 +26,7 @@
 | model | identity_correct | DOB_correct | review_required | verdict |
 |-------|-----------------|-------------|-----------------|---------|
 | gemini-2.5-pro | **NO — wrong person** | **NO — wrong year** | true | CRITICAL FAIL |
-| gemini-3.1-flash-image | YES — owner identity | UNCERTAIN (day digit) | false (wrong) | LIKELY CORRECT, policy fix needed |
+| legacy preview image reader | YES — owner identity | UNCERTAIN (day digit) | false (wrong) | LIKELY CORRECT, policy fix needed |
 | gemini-2.5-flash (prev, KEY_066) | NO — wrong person | NO | — | CRITICAL FAIL |
 | gemini-2.5-flash (prev, KEY_213) | NO — wrong person | NO | — | CRITICAL FAIL |
 
@@ -37,7 +37,7 @@
 | model | identity_correct | DOB_correct | review_required | verdict |
 |-------|-----------------|-------------|-----------------|---------|
 | gemini-2.5-pro | **NO — wrong person** | **NO — wrong year** | false (wrong) | CRITICAL FAIL + false confidence |
-| gemini-3.1-flash-image | YES — owner identity | UNCERTAIN (day digit) | false (wrong) | LIKELY CORRECT, policy fix needed |
+| legacy preview image reader | YES — owner identity | UNCERTAIN (day digit) | false (wrong) | LIKELY CORRECT, policy fix needed |
 | gemini-2.5-flash (prev) | NO — wrong person | NO | — | CRITICAL FAIL |
 
 **Additional finding:** gemini-2.5-pro returned review_required=false on birth_cert_soviet despite returning an entirely wrong person. This is the most dangerous failure mode — confident and wrong.
@@ -48,7 +48,7 @@
 
 | model | names_extracted | apostille_metadata | review_required | verdict |
 |-------|-----------------|-------------------|-----------------|---------|
-| gemini-3.1-flash-image | null (all) | apostille_date + country correct | true | SAFE PARTIAL — correctly deferred |
+| legacy preview image reader | null (all) | apostille_date + country correct | true | SAFE PARTIAL — correctly deferred |
 | gemini-2.5-pro | names present but unverified | correct | true | SUSPECT — cannot validate, possible registrar/party confusion |
 
 **Image quality issue:** Source file is 84KB. Both birth certs are ~7MB. Resolution is likely the bottleneck for party name extraction on the apostille.
@@ -75,7 +75,7 @@ This is the dominant failure. The model reads a different complete identity from
 
 1. **Multi-document page confusion** — the image may contain visible elements of adjacent records in the register book
 2. **Training data contamination** — model returns a "typical" Ukrainian birth cert rather than reading the actual image
-3. **Document-specific prompt partially addresses this** — gemini-3.1-flash-image with the birth cert prompt reads correct identity; the same image with a generic prompt caused failures in the previous benchmark
+3. **Document-specific prompt partially addresses this** — legacy preview image reader with the birth cert prompt reads correct identity; the same image with a generic prompt caused failures in the previous benchmark
 
 ### Critical Pattern: false confidence (review_required=false when wrong)
 
@@ -117,11 +117,11 @@ gemini-2.5-pro on birth_cert_soviet: returned wrong person AND set review_requir
 
 | class | candidate_model | review_policy | auto_final_allowed | notes |
 |-------|----------------|---------------|--------------------|-------|
-| internal_passport_printed | gemini-3.1-flash-image | patronymic always review; others conditional | YES | All tested models correct. Flash fastest. |
-| military_id | gemini-3.1-flash-image | conditional on confidence | YES | All tested models correct. Printed doc. |
-| birth_cert_handwritten | gemini-3.1-flash-image | ALWAYS review_required=true | **NO** | 2.5-pro/flash catastrophically wrong. Flash reads correct identity but DOB uncertain. |
-| birth_cert_soviet_bilingual | gemini-3.1-flash-image | ALWAYS review_required=true | **NO** | Same failure pattern. 2.5-pro false confidence is disqualifying. |
-| marriage_apostille | gemini-3.1-flash-image (safe/null) or 2.5-pro (names, unverified) | ALWAYS review_required=true | **NO** | No ground truth. Names unverifiable. Rescan required. |
+| internal_passport_printed | legacy preview image reader | patronymic always review; others conditional | YES | All tested models correct. Flash fastest. |
+| military_id | legacy preview image reader | conditional on confidence | YES | All tested models correct. Printed doc. |
+| birth_cert_handwritten | legacy preview image reader | ALWAYS review_required=true | **NO** | 2.5-pro/flash catastrophically wrong. Flash reads correct identity but DOB uncertain. |
+| birth_cert_soviet_bilingual | legacy preview image reader | ALWAYS review_required=true | **NO** | Same failure pattern. 2.5-pro false confidence is disqualifying. |
+| marriage_apostille | legacy preview image reader (safe/null) or 2.5-pro (names, unverified) | ALWAYS review_required=true | **NO** | No ground truth. Names unverifiable. Rescan required. |
 
 **Disqualified models for birth certificate classes:**
 - gemini-2.5-pro: wrong person on both cert types, including false-confidence case
@@ -136,7 +136,7 @@ gemini-2.5-pro on birth_cert_soviet: returned wrong person AND set review_requir
 3. **DOB digit uncertainty** — even the correct model (flash-image) reads the DOB day differently from the passport. Handwritten digits for 1-digit numbers (1, 2, 6) are ambiguous in Cyrillic handwriting.
 4. **review_required=false when should be true** — both flash-image runs set review_required=false despite DOB being uncertain on handwritten documents. This needs to be enforced by policy, not by model output.
 5. **Marriage apostille image quality** — 84KB file too small for reliable party name extraction. Flash correctly deferred (null); pro extracted names but unverifiable.
-6. **Deprecated model names** — gemini-2.0-flash (404 deprecated), gemini-3.1-flash-latest (404 not found). Current valid flash-image model: gemini-3.1-flash-image.
+6. **Deprecated model names** — gemini-2.0-flash (404 deprecated), legacy-preview-image-alias (404 not found). Current valid flash-image model: legacy preview image reader.
 
 ---
 
@@ -159,9 +159,9 @@ The following model IDs referenced in task description / previous benchmarks are
 
 | task_alias | status | correct_id |
 |------------|--------|------------|
-| gemini-3.1-flash-image [KEY_066] | ACTIVE | `gemini-3.1-flash-image` |
-| gemini-2.0-flash | DEPRECATED (HTTP 404) | use `gemini-2.5-flash` or `gemini-3.1-flash-image` |
-| gemini-3.1-flash-latest | NOT FOUND (HTTP 404) | `gemini-3.1-flash-image` (versioned) |
+| legacy preview image reader [KEY_066] | ACTIVE | `legacy preview image reader` |
+| gemini-2.0-flash | DEPRECATED (HTTP 404) | use `gemini-2.5-flash` or `legacy preview image reader` |
+| legacy-preview-image-alias | NOT FOUND (HTTP 404) | `legacy preview image reader` (versioned) |
 
 **Note:** `gemini-2.0-flash` is referenced in `apps/web/src/lib/docintel/providers/geminiVisionProvider.ts` fallback chain. This needs updating. Do not update without separate task — this report does not authorize code changes.
 

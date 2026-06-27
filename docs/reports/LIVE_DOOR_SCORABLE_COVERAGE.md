@@ -39,7 +39,7 @@
    `['patronymic','middle_name_cyrillic']`; gates (`selfConsistency`, `antiFabricationGate`,
    `patronymicReconcile`) already list both. Full suite: 2851 passed / 4 skipped, 0 type errors.
 
-## Live proof (flags OFF, gemini-3.1-pro; raw → qa-private, no PII)
+## Live proof (flags OFF, removed preview primary; raw → qa-private, no PII)
 
 - **`ua_military_id`** (military_id_p1): **5/5 scored fields correct** (family/given/patronymic/dob/doc_number
   all match). Routes through the live door for the first time. The model read the printed identity page cleanly.

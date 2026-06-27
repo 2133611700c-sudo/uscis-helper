@@ -28,9 +28,9 @@ describe('htrSidecarProvider — field-first handwriting reader (ADR-026), OFF b
 
   it('reads ONE field crop via the sidecar when enabled', async () => {
     process.env.HTR_SIDECAR_URL = 'http://127.0.0.1:8077'
-    global.fetch = vi.fn(async () => new Response(JSON.stringify({ text: 'Куропятник', confidence: 0.96 }), { status: 200 })) as unknown as typeof fetch
+    global.fetch = vi.fn(async () => new Response(JSON.stringify({ text: 'Соловьяк', confidence: 0.96 }), { status: 200 })) as unknown as typeof fetch
     const r = await readFieldCrop(Buffer.from('png-bytes'))
-    expect(r).toEqual({ field: '', text: 'Куропятник', confidence: 0.96 })
+    expect(r).toEqual({ field: '', text: 'Соловьяк', confidence: 0.96 })
   })
 
   it('fail-safe: a sidecar error / non-200 → null (pipeline keeps the LLM read + review)', async () => {
@@ -46,7 +46,7 @@ describe('htrSidecarProvider — field-first handwriting reader (ADR-026), OFF b
     // a real 60x30 white PNG so sharp.extract succeeds
     const sharp = (await import('sharp')).default
     const img = await sharp({ create: { width: 60, height: 30, channels: 3, background: { r: 250, g: 250, b: 250 } } }).png().toBuffer()
-    const reads = ['Куропятник', 'Сергій']
+    const reads = ['Соловьяк', 'Сергій']
     let i = 0
     global.fetch = vi.fn(async () => new Response(JSON.stringify({ text: reads[i++], confidence: 0.9 }), { status: 200 })) as unknown as typeof fetch
     const out = await readHandwrittenFieldsViaSidecar(img, [
@@ -54,6 +54,6 @@ describe('htrSidecarProvider — field-first handwriting reader (ADR-026), OFF b
       { field: 'given_name', box: [30, 0, 60, 30] },
     ])
     expect(out.map((r) => r.field)).toEqual(['family_name', 'given_name'])
-    expect(out.map((r) => r.text)).toEqual(['Куропятник', 'Сергій'])
+    expect(out.map((r) => r.text)).toEqual(['Соловьяк', 'Сергій'])
   })
 })

@@ -33,7 +33,10 @@ export const hashToken = (s) => createHash('sha256').update(norm(s)).digest('hex
 
 // Unicode word/number runs: a letter-led word (apostrophes/marks allowed) OR a 4+ digit number.
 const TOKEN = /\p{L}[\p{L}\p{M}’ʼ`'-]*|\d{4,}/gu
-export const tokenize = (text) => [...text.matchAll(TOKEN)].map((m) => m[0])
+// Strip LEADING/TRAILING quote/apostrophe/hyphen so a denylisted token wrapped in a
+// string literal (e.g. quoted 'Surname') still matches; INTERNAL apostrophes (O'Brien) are kept.
+export const tokenize = (text) =>
+  [...text.matchAll(TOKEN)].map((m) => m[0].replace(/^[’ʼ`'\-]+|[’ʼ`'\-]+$/gu, '')).filter(Boolean)
 
 // Scan tracked text files only (the threat model is the committed tree).
 const EXT = /\.(ts|tsx|js|mjs|cjs|json|md|mdx|ya?ml|csv|sh|txt)$/i

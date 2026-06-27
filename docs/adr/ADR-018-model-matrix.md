@@ -19,8 +19,7 @@ any deviation is a bug, not a tuning option.
 
 | Model / service | Role | Status |
 |---|---|---|
-| **gemini-3.1-pro-preview** | THE document reader (D1) — the ONLY acceptance-valid reader, all products, all doc classes | PROD primary. **PREVIEW endpoint, NO capacity guarantee** ⇒ sporadic **503 UNAVAILABLE + 429 RESOURCE_EXHAUSTED** (availability is its main failure). Provider retries it with exponential backoff+jitter (`GEMINI_PRIMARY_RETRY_MAX` / `GEMINI_RETRY_BASE_MS` / `GEMINI_RETRY_CAP_MS`) BEFORE any fallback. Historically the best reader of Cyrillic incl. handwriting |
-| gemini-2.5-pro | Fallback #1 (preferred availability fallback) | GA, reliably AVAILABLE (no 503/429 in the bench). Accurate + SAME person on PRINTED docs (95–100% stable). **DISQUALIFIED for the certificate family** (birth/marriage/divorce/death/name_change): FABRICATES a different, fake person on HANDWRITTEN certificates (confident + stable). Force-reviewed (`fallback_model_used`), NEVER an acceptance number. NOTE: thinking eats the output-token budget ⇒ `maxOutputTokens` must be high (`max(8192, GEMINI_MAX_OUTPUT_TOKENS\|\|16384)`) or it returns EMPTY (MAX_TOKENS) |
+| gemini-2.5-pro | THE document reader (D1) — the ONLY acceptance-valid reader for current printed-field runtime | GA, reliably AVAILABLE (no 503/429 in the bench). Accurate + SAME person on PRINTED docs (95–100% stable). **DISQUALIFIED for the certificate family** (birth/marriage/divorce/death/name_change): FABRICATES a different, fake person on HANDWRITTEN certificates (confident + stable). NOTE: thinking eats the output-token budget ⇒ `maxOutputTokens` must be high (`max(8192, GEMINI_MAX_OUTPUT_TOKENS\|\|16384)`) or it returns EMPTY (MAX_TOKENS) |
 | gemini-3.5-flash | Fallback #2 (availability) | GA. Intermittent 503 in the current window; availability-only fallback. Also the date-box detector (`GEMINI_DATEBOX_MODEL`). Never primary; non-Latin read force-reviewed (`fallback_model_used`) |
 | gemini-2.5-flash | Fallback #3 (last resort, availability) | GA. **DISQUALIFIED for the certificate family** — on a handwritten birth certificate it fabricated TWO different fake people across temperatures (re-confirmed 2026-06-23). Printed-only availability fallback; force-reviewed; never acceptance |
 | gemini-2.5-flash-lite | — | NOT in the sanctioned chain. Printed-only; 503 on handwriting |
@@ -32,7 +31,7 @@ any deviation is a bug, not a tuning option.
 
 All fallbacks (`gemini-2.5-pro`, `gemini-3.5-flash`, `gemini-2.5-flash`) are **AVAILABILITY-only**, force-reviewed
 (`fallback_model_used`), and are **NEVER an acceptance/quality number**. Acceptance is valid ONLY on
-`gemini-3.1-pro-preview`.
+`gemini-2.5-pro`.
 
 ### Handwriting law (NEW, 2026-06-23)
 
@@ -51,7 +50,7 @@ and this very likely also recovers empty PRIMARY reads.)
 | Op | What runs it |
 |---|---|
 | D0 image quality | code (sharp / size checks) — no model |
-| D1 document reading | gemini-3.1-pro-preview (provider chain, fallback ⇒ forced review on non-Latin) |
+| D1 document reading | gemini-2.5-pro (provider chain, fallback ⇒ forced review on non-Latin) |
 | D1 raw OCR / MRZ | Google Vision + deterministic MRZ parser |
 | D1.5 raw_cyrillic preserve | code (adapter/Core, Phase 2.0) |
 | D2 dictionaries / KMU-55 / gazetteer / patronymic / authority | deterministic code — no model |
@@ -72,7 +71,7 @@ and this very likely also recovers empty PRIMARY reads.)
 
 ## Why
 
-- Live bench 2026-06-23 (owner GT docs): `gemini-2.5-flash` fabricated TWO different fake people across temperatures on a handwritten birth certificate (re-confirming 2026-06-02/09); `gemini-2.5-pro` is accurate + same-person on PRINTED docs (95–100% stable) but fabricates a confident, stable, different fake person on the same handwritten certificate ⇒ both are DISQUALIFIED for the certificate family. The primary (`gemini-3.1-pro-preview`) is historically the best reader of Cyrillic incl. handwriting but is a PREVIEW with no capacity guarantee ⇒ its dominant failure is availability (503/429), now mitigated by retry-with-backoff before fallback.
+- Live bench 2026-06-23 (owner GT docs): `gemini-2.5-flash` fabricated TWO different fake people across temperatures on a handwritten birth certificate (re-confirming 2026-06-02/09); `gemini-2.5-pro` is accurate + same-person on PRINTED docs (95–100% stable) but fabricates a confident, stable, different fake person on the same handwritten certificate ⇒ both are DISQUALIFIED for the certificate family. Earlier preview-primary experiments are historical only and are no longer part of the active matrix.
 - NEW LAW: no model — not even the primary — is proven to read handwritten certificates without error ⇒ always-review stays mandatory regardless of model.
 - The fallback chain exists for availability but silently traded safety for it on exactly the doc classes where 2.5-pro / 2.5-flash are disqualified. This ADR makes the trade explicit: availability is kept (a fallback may still read), safety is kept (the read is force-reviewed and never released as an acceptance number).
 

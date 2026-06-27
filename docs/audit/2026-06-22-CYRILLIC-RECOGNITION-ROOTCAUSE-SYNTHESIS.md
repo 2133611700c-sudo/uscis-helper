@@ -17,7 +17,7 @@ Synthesis of 4 parallel read-only forensic audits (dictionary, brain↔dictionar
 
 VERIFIED (geminiVisionProvider.ts, vision-extract/route.ts, image-preprocess.ts, documentFieldReader.ts):
 
-- **Per-page PARALLEL fan-out**: each page = a separate concurrent `generateContent`. A 6-page upload = 6 simultaneous `gemini-3.1-pro-preview` calls → preview-model RPM pressure → 429 → fallback to flash → **every field force-reviewed** (`fallback_model_used`). This is the likely engine of "everything needs manual review." [INFERRED, well-grounded]
+- **Per-page PARALLEL fan-out**: each page = a separate concurrent `generateContent`. A 6-page upload = 6 simultaneous `removed preview primary` calls → preview-model RPM pressure → 429 → fallback to flash → **every field force-reviewed** (`fallback_model_used`). This is the likely engine of "everything needs manual review." [INFERRED, well-grounded]
 - **temperature = 0** already (good — the Моринці fabrication was model choice + weak grounding, not temperature).
 - **Output is prose-described JSON, NOT schema-constrained** (`response_mime_type:'application/json'` but no `responseSchema`) → `JSON.parse` can throw and waste the attempt.
 - **The default (Core) path does ZERO image preprocessing** — no upscale, no deskew, no content-orientation. All preprocessing (down-resize, EXIF rotate, `autoOrient`) is either OFF by flag (`AUTO_ORIENT_ENABLED` unset) or only on the rarely-reached legacy fallback path. The owner's rotated/upside-down scans are handled **only by a prose instruction**.
@@ -80,7 +80,7 @@ VERIFIED (reviewGate.ts, TranslateWizard.tsx, generate-pdf/route.ts, form mapper
 - **R11.** Add a raion gazetteer + document-number/series format validators + a given-name validation list (cross-checks the patronymic engine).
 
 ### Tier 5 — BATCHING (RPM relief)
-- **R12.** Batch pages into ONE Gemini call (multiple `inline_data` parts) instead of N parallel calls → cuts the primary-RPM→flash→force-review cascade. (Owner-side: raise `gemini-3.1-pro-preview` RPM/quota.)
+- **R12.** Batch pages into ONE Gemini call (multiple `inline_data` parts) instead of N parallel calls → cuts the primary-RPM→flash→force-review cascade. (Owner-side: raise `removed preview primary` RPM/quota.)
 
 ---
 

@@ -46,9 +46,10 @@ import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
+import { PRIMARY_READER } from '@/lib/docintel/modelMatrix'
 
 const DOC_TYPE_ID = 'ua_birth_certificate'
-const PROVIDER = 'gemini-3.1-pro-preview' // fixture provenance string only — no call is made
+const PROVIDER = PRIMARY_READER // fixture provenance string only — no call is made
 const CYRILLIC_RE = /[Ѐ-ӿ]/
 
 /**

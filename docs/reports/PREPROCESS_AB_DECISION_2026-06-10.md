@@ -12,7 +12,7 @@ Cyrillic easier to read before sending to Gemini?
 ## Experiment
 
 For 3 real owner documents, three image variants were POSTed to the live prod
-read (`/api/translation/vision-extract`, gemini-3.1-pro-preview) and scored on
+read (`/api/translation/vision-extract`, removed preview primary) and scored on
 Cyrillic field match vs owner GT:
 - `orig` — color, only resized to ≤2400px (geometric, lossless-ish)
 - `gray` — greyscale + normalise + sharpen (gentle enhance)

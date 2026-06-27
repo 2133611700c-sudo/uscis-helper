@@ -16,7 +16,7 @@ for (const f of ['.env.local', 'apps/web/.env.local']) {
   } catch {}
 }
 function paidKey() { const e = process.env; return e.GEMINI_API_KEY_PAY || e.GEMINI_API_KEY2 || e.GEMINI_API_KEY_066 || e.GEMINI_API_KEY || '' }
-const KEY = paidKey(), MODEL = 'gemini-3.1-pro-preview'
+const KEY = paidKey(), MODEL = 'gemini-2.5-pro'
 
 async function ask(buf, prompt) {
   const body = JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: buf.toString('base64') } }] }], generationConfig: { temperature: 0 } })

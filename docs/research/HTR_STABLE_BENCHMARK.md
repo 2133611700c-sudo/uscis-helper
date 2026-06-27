@@ -1,12 +1,12 @@
 # HTR STABLE benchmark — frozen config, 5 runs/field, variance measured (2026-06-24)
 
-**Owner: "всё по-разному = фейк; откуда gemini-3.1-pro? это нестабильная preview!"** — both correct. Prior
-reports wobbled because (1) I wrongly used `gemini-3.1-pro-preview` (a known-unstable PREVIEW), and (2) I
+**Owner: "всё по-разному = фейк; откуда removed preview primary? это нестабильная preview!"** — both correct. Prior
+reports wobbled because (1) I wrongly used `removed preview primary` (a known-unstable PREVIEW), and (2) I
 changed the config between runs (models, CER-tuned vs fixed crops). This is the FROZEN, reproducible benchmark.
 
 ## Method (frozen — do not change)
 - Readers: **raxtemur** (local, deterministic) + **gpt-4.1** + **gemini-2.5-pro** (stable GA). **NO preview
-  models** (gemini-3.1-pro-preview dropped — unreliable by our own finding, ADR-018).
+  models** (removed preview primary dropped — unreliable by our own finding, ADR-018).
 - Fixed boxes (committed cert + eye-set passport). Docs: cert (handwritten) + passport (printed).
 - **N=5 runs per field**, temp 0. Report VARIANCE (distinct outputs / 5) FIRST, then CER. PII → paid tiers +
   gitignored; PII-free here. Reproduce: `qa-private/htr-venv/bin/python qa-private/htr-poc/stable_bench.py`.

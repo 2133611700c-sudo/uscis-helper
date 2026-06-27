@@ -111,7 +111,7 @@ has zero frontend callers.
 
 | env | prod | preview | local |
 |---|---|---|---|
-| GEMINI_MODEL | **`gemini-2.5-flash` + trailing newline (dirty)** | not set → default `gemini-3.1-pro-preview` | `gemini-3.1-pro-preview` |
+| GEMINI_MODEL | **`gemini-2.5-flash` + trailing newline (dirty)** | not set → default `removed preview primary` | `removed preview primary` |
 | key resolved | GEMINI_API_KEY_PAY | GEMINI_API_KEY2 | GEMINI_API_KEY_PAY |
 | key validity | 200 OK | 200 OK (**PAY and KEY2 are the SAME key** — sha match) | free bare key: 200 but 429 on pro models |
 | GOOGLE_CLOUD_VISION_API_KEY | **DEAD: 403 billing disabled** (project 537268475735) | — | same dead key |
@@ -121,21 +121,21 @@ has zero frontend callers.
 | 2.0-flash deprecated | removed from fallback chain (comments only) — confirmed | | |
 
 **Key conflicts:**
-1. **Prod runs `gemini-2.5-flash` while preview/local run `3.1-pro-preview`** — preview proof ≠
+1. **Prod runs `gemini-2.5-flash` while preview/local run `legacy-preview-primary`** — preview proof ≠
    prod behavior. Same-day live GT bench (sanitized, owner docs): on handwritten birth cert
    2.5-flash fabricated a DIFFERENT person's identity (wrong family/given/patronymic/DOB);
-   3.1-pro-preview/3.5-flash read the right person but russified UA spelling (1/5);
-   3.1-flash-image 2/5; internal passport: all models 4/5 (patronymic null→review as GT expects);
+   legacy-preview-primary/3.5-flash read the right person but russified UA spelling (1/5);
+   legacy-preview-image-reader 2/5; internal passport: all models 4/5 (patronymic null→review as GT expects);
    military ID: pro and both flash 6/6, flash-image 4/6. No model is safe on handwritten
    birth certs → always-review policy stays mandatory regardless of model.
 2. **Timeout conflict CONFIRMED:** routes pass `timeoutMs: 20_000` to readDocument while
-   3.1-pro-preview was observed at 28s on the birth cert; provider default is 45s and the code
+   legacy-preview-primary was observed at 28s on the birth cert; provider default is 45s and the code
    comment itself says pro needs 20–40s. With pro as primary, slow reads abort at 20s and
    silently degrade to 3.5-flash. maxDuration: 60s (translation/TPS) is adequate; 30s
    (reparole/EAD) is tight for pro.
 
 **Recommendation (OWNER decision, env NOT changed by agent):**
-prod `GEMINI_MODEL` → `gemini-3.1-pro-preview` (clean value, no `\n`); raise route `timeoutMs`
+prod `GEMINI_MODEL` → `removed preview primary` (clean value, no `\n`); raise route `timeoutMs`
 20s→40s and reparole/EAD `maxDuration` 30→60 in the SAME change; fix or remove the dead Vision
 API key (prod works via SA; the dead key only misleads local dev).
 
@@ -199,7 +199,7 @@ d2_unification_status: CLEAN (SMART/KNOWLEDGE flag merge deferred, both OFF)
 translation_unbypass_status: PASS
 product_route_matrix: see STEP 5 (all 4 products Core-default; fallbacks documented)
 gpt_removal_status: PASS
-model_config_status: MISMATCH documented (prod 2.5-flash+\n, preview/local 3.1-pro-preview)
+model_config_status: MISMATCH documented (prod 2.5-flash+\n, preview/local legacy-preview-primary)
 timeout_status: CONFLICT (route 20s vs pro 28s observed) — fix queued as PR-F
 off_identical_proof: prod flags were ON ⇒ gate removal = identity; new flags OFF+tested
 on_preview_proof: preview runs pro by default (NOT representative of prod flash)
@@ -210,7 +210,7 @@ split_recommendation: split 22dda1d into gate-cleanup vs GPT-removal (or label c
 next_3_actions:
   1. Owner: merge PR #104 (Phase 1.3) — green, self-contained.
   2. Agent (after owner ok): push Phase 2.0 as PR-B; do NOT push 22dda1d unsplit.
-  3. Owner+agent: PR-F timeout fix, THEN owner flips prod GEMINI_MODEL → 3.1-pro-preview (clean value).
+  3. Owner+agent: PR-F timeout fix, THEN owner flips prod GEMINI_MODEL → legacy-preview-primary (clean value).
 confirmed_no_prod_env_change: YES
 confirmed_no_model_provider_change: YES
 confirmed_no_phase3_started: YES
@@ -232,4 +232,4 @@ Split plan executed in full, sequential merge with green checks at every step:
 | #109 (PR-F) | timeoutMs 20s→40s ×4; reparole/EAD maxDuration 30→60 | MERGED |
 
 Prod env untouched by agent. OWNER ACTION now unblocked: flip prod GEMINI_MODEL →
-gemini-3.1-pro-preview (clean value, no trailing newline).
+removed preview primary (clean value, no trailing newline).

@@ -16,6 +16,7 @@ import {
   detectUprightCwVoted,
   orientationSettled,
 } from '../detectOrientation'
+import { PRIMARY_READER } from '../../modelMatrix'
 
 afterEach(() => { vi.restoreAllMocks() })
 
@@ -56,7 +57,7 @@ describe('orientToUpright — fail-open', () => {
   it('detection failure (fetch throws) ⇒ original buffer, applied 0, detected false', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network') }))
     const buf = await testImage()
-    const out = await orientToUpright(buf, 'key', 'gemini-3.1-pro-preview')
+    const out = await orientToUpright(buf, 'key', PRIMARY_READER)
     expect(out.applied).toBe(0)
     expect(out.detected).toBe(false)
     expect(out.buffer).toBe(buf) // unchanged reference
@@ -68,7 +69,7 @@ describe('orientToUpright — fail-open', () => {
       json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-right"}' }] } }] }),
     })))
     const buf = await testImage() // 200x300 portrait
-    const out = await orientToUpright(buf, 'key', 'gemini-3.1-pro-preview')
+    const out = await orientToUpright(buf, 'key', PRIMARY_READER)
     expect(out.applied).toBe(90)
     expect(out.detected).toBe(true)
     const meta = await sharp(out.buffer).metadata()
@@ -82,7 +83,7 @@ describe('orientToUpright — fail-open', () => {
       json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }),
     })))
     const buf = await testImage()
-    const out = await orientToUpright(buf, 'key', 'gemini-3.1-pro-preview')
+    const out = await orientToUpright(buf, 'key', PRIMARY_READER)
     expect(out.applied).toBe(0)
     expect(out.detected).toBe(true)
     expect(out.buffer).toBe(buf)
