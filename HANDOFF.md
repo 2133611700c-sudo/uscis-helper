@@ -1,5 +1,9 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-27 | Step-7 RU/UA routing fixed + Stage-1 rotation baseline closed
+- DOC_SCRIPT_ROUTING_ENABLED now default ON: RU-language docs route RU names via Russian table (Сергей→Sergey), UA-distinctive never force-Russified, certs→review, raw unchanged. Gate `ruUaLanguageRouting.test.ts` 5/5; full suite 4691 pass.
+- Stage-1 rotation baseline (gemini-2.5-pro, paid): rotation 90/180/270 → only 1-2/12 fields match upright(rot0) → ORIENTATION is the proven dominant divergence cause (model nondeterminism minor). First divergence point = orientation of bytes to the model. Justifies Step 4/5 orientation contract (fail-closed on conflict) — still frozen pending implementation.
+
 ## 2026-06-27 | Gemini reader contract — strict 2.5-pro only (single truth)
 - Forensic logger exposed a live read served by `gemini-3.5-flash` FALLBACK (Pro timed out). Fixed: `modelFallback()` strict primary-only by default (`READER_FALLBACK_ENABLED` default OFF) → no silent flash; timeout/429/5xx fail-closed.
 - Added `assertAcceptanceRead` (requested===actual===2.5-pro & no fallback) + forensic key provenance (alias + sha256[:12] fingerprint, never raw key) + `fallback_blocked`. Verified no GOOGLE_API_KEY conflict (key passed explicitly in URL).

@@ -249,7 +249,7 @@ export async function readDocument(
   // with a distinctive UA letter is never force-Russified. Conservative: detector
   // returns 'ru' only on a one-sided signal, else the value is untouched. Flag OFF ⇒
   // no doc-level signal is computed and every `value` is byte-identical to before.
-  if (process.env.DOC_SCRIPT_ROUTING_ENABLED === '1' && fields.length > 0) {
+  if (process.env.DOC_SCRIPT_ROUTING_ENABLED !== '0' && fields.length > 0) {  // default ON (Step-7)
     const docScript = documentScriptOf(read.fields.map((r) => r.cyrillic))
     if (docScript === 'ru') {
       let rerouted = 0
