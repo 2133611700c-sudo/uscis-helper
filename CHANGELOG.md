@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-27 | Stage-1 forensic logger (behavior-neutral measurement layer)
+- Added `apps/web/src/lib/docintel/forensics.ts` — per-read provenance capture to separate byte-repeat stability vs rotation invariance vs page-context stability. Gated by `FORENSIC_LOG_ENABLED` (default OFF → zero behavior change: no extra Gemini calls, no retry/timing change, no PII).
+- When ON: full record (raw+final values) → gitignored `qa-private/runtime-forensics/<run_id>.json`; console gets a PII-free digest only (run_id, sha, dims, orientation, model, attempts, latency, field NAMES + HASHED values). Fail-open (forensic IO never breaks the read).
+- Wired the seam in `documentFieldReader.readDocument` (assembles record before return) + additive `exifOrientation` on `preprocessImage` result + `vision-extract` route passes run_id/sha/exif/out-dims when enabled.
+- Tests: `forensics.test.ts` (4/4) proves OFF-by-default, `hashShort` non-reversible, and the console digest carries NO raw PII. tsc 0 errors; flag-OFF reader tests green (behavior-neutral).
+- Per Stage-0 freeze: orientation code intentionally UNCHANGED until the instrumented baseline rerun captures current behavior.
+
 ## 2026-06-27 | Gemini truth-layer cleanup
 - Removed literal Gemini 3.1 version references from the active runtime layer, active bench scripts, and authoritative architecture docs.
 - Hardened model normalization: only sanctioned models are accepted from env; everything else falls back automatically.

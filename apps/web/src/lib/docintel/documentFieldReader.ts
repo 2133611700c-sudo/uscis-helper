@@ -52,6 +52,7 @@ import type {
   ExtractedDocField,
   VisionProvider,
 } from './types'
+import { isForensicEnabled, emitForensic, sha256Hex } from './forensics'
 
 export async function readDocument(
   imageBuffer: Buffer,
@@ -71,6 +72,16 @@ export async function readDocument(
      *  (cross-doc reconciliation / MRZ), keyed by field. An empty field present here is filled at $0
      *  BEFORE the paid hi-res tile recovery — so Gemini is only spent on what's genuinely unknown. */
     knownValues?: Record<string, string>
+    /** STAGE-1 forensic context (behavior-neutral). Populated by the route ONLY when
+     *  FORENSIC_LOG_ENABLED=1; when absent or flag off, NOTHING forensic runs. */
+    forensic?: {
+      runId: string
+      sourceSha256?: string | null
+      sourceDimensions?: { width: number; height: number } | null
+      exifOrientation?: number | null
+      preprocessRotation?: number | null
+      outputDimensions?: { width: number; height: number } | null
+    }
   } = {},
 ): Promise<DocumentReadResult> {
   const spec = getDocTypeSpec(docTypeId)
@@ -455,6 +466,44 @@ export async function readDocument(
   // is NULLED (not left as the LLM read) → C3 yields final_value=null + review_required=true → USCIS autofill
   // blocked. We never silently fall back to the weaker LLM read on a critical handwritten field.
   finalFields = (await runHtrFieldStage(finalFields, spec, docTypeId, opts.originalBuffer, mimeType, provider.name)).fields
+
+  // STAGE-1 forensic record (behavior-neutral; gated). Full raw values → gitignored artifact;
+  // console gets a PII-free digest. Fail-open — must never alter or break the read.
+  if (isForensicEnabled() && opts.forensic) {
+    try {
+      const requested = primaryGeminiModel()
+      emitForensic({
+        run_id: opts.forensic.runId,
+        timestamp: new Date().toISOString(),
+        doc_type_id: docTypeId,
+        source_sha256: opts.forensic.sourceSha256 ?? sha256Hex(opts.originalBuffer ?? imageBuffer),
+        source_dimensions: opts.forensic.sourceDimensions ?? null,
+        exif_orientation: opts.forensic.exifOrientation ?? null,
+        preprocess: { rotation_applied: opts.forensic.preprocessRotation ?? null, output_dimensions: opts.forensic.outputDimensions ?? null },
+        orientation_applied_cw: orientApplied,
+        reader: {
+          provider: provider.name,
+          requested_model: requested,
+          actual_model: read.model,
+          fallback_used: !!read.model && read.model !== requested,
+          temperature: 0,
+          attempts: [{ n: 1, model: read.model ?? requested, selected: true, ms: read.ms }],
+          status: `ok:${read.model}`,
+          error: null,
+          ms: read.ms,
+        },
+        fields: finalFields.map((f) => ({
+          field: f.field,
+          raw_value: f.raw_cyrillic ?? null,
+          language_route: null,
+          normalizers: [],
+          final_value: f.value ?? null,
+          review_required: !!f.review_required,
+          review_reasons: f.review_reasons,
+        })),
+      })
+    } catch { /* fail-open: forensic must never break the read */ }
+  }
 
   return {
     ok: true, doc_type_id: docTypeId, fields: finalFields, anchor_read: anchorRead,
