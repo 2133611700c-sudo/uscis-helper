@@ -132,6 +132,42 @@ export async function readDocument(
   // byte-identical direct call. enforce ⇒ a winner-failure/loser-timeout surfaces
   // OcrCoordinationUnavailable, which we map to an honest non-2xx (never a crash).
   const provider = opts.provider ?? defaultVisionProvider
+
+  // Unified forensic emit — fires on EVERY return path (success AND failure), so a failed/early-return
+  // read is no longer invisible (the gap that swallowed a parity read). Gated + fail-open + PII-safe.
+  const recordForensic = (model: string | null, ms: number | null, status: string, error: string | null, flds: ExtractedDocField[]) => {
+    if (!isForensicEnabled() || !opts.forensic) return
+    try {
+      const requested = primaryGeminiModel()
+      const keyProv = getGeminiKeyProvenance()
+      emitForensic({
+        run_id: opts.forensic.runId,
+        timestamp: new Date().toISOString(),
+        doc_type_id: docTypeId,
+        source_sha256: opts.forensic.sourceSha256 ?? sha256Hex(opts.originalBuffer ?? imageBuffer),
+        source_dimensions: opts.forensic.sourceDimensions ?? null,
+        exif_orientation: opts.forensic.exifOrientation ?? null,
+        preprocess: { rotation_applied: opts.forensic.preprocessRotation ?? null, output_dimensions: opts.forensic.outputDimensions ?? null },
+        orientation_applied_cw: orientApplied,
+        orientation: isContentOrientEnabled()
+          ? { detected: !orientationUncertain, applied_cw: orientApplied, vote_count: Number(process.env.ORIENT_VOTE_RUNS) || 3, uncertain: orientationUncertain }
+          : null,
+        reader: {
+          provider: provider.name, requested_model: requested, actual_model: model,
+          fallback_used: !!model && model !== requested,
+          fallback_blocked: process.env.READER_FALLBACK_ENABLED !== '1',
+          key_alias: keyProv.alias, key_fingerprint: keyProv.fingerprint, google_api_key_conflict: keyProv.google_api_key_conflict,
+          temperature: 0, attempts: [{ n: 1, model: model ?? requested, selected: true, ms: ms ?? 0 }],
+          status, error, ms,
+        },
+        fields: flds.map((f) => ({
+          field: f.field, raw_value: f.raw_cyrillic ?? null, language_route: null, normalizers: [],
+          final_value: f.value ?? null, review_required: !!f.review_required, review_reasons: f.review_reasons,
+        })),
+      })
+    } catch { /* fail-open */ }
+  }
+
   let read
   try {
     read = await coordinatedDocumentRead(imageBuffer, mimeType, spec, docTypeId, provider, {
@@ -142,6 +178,7 @@ export async function readDocument(
     })
   } catch (err) {
     if (err instanceof OcrCoordinationUnavailable) {
+      recordForensic(null, 0, `ocr_unavailable:${err.errorClass}`, err.message, [])
       return {
         ok: false, doc_type_id: docTypeId, fields: [], anchor_read: false,
         provider: provider.name, model: null, ms: 0,
@@ -165,10 +202,12 @@ export async function readDocument(
     // produces any handwritten name field, return those (review-gated) instead of an empty vision_failed.
     const htrOnly = await runHtrFieldStage([], spec, docTypeId, opts.originalBuffer, mimeType, provider.name)
     if (htrOnly.ran && htrOnly.produced > 0) {
+      const st = `htr_only:${htrOnly.produced}f:llm_${read.error ?? 'failed'}`
+      recordForensic(read.model, read.ms, st, read.error ?? null, htrOnly.fields)
       return {
         ok: true, doc_type_id: docTypeId, fields: htrOnly.fields, anchor_read: false,
         provider: provider.name, model: read.model, ms: read.ms,
-        status: `htr_only:${htrOnly.produced}f:llm_${read.error ?? 'failed'}`,
+        status: st,
       }
     }
     const hasHttpSignal = typeof read.errorStatus === 'number' || read.errorTimeout === true
@@ -178,6 +217,7 @@ export async function readDocument(
           marker: read.error ?? null,
         })
       : undefined
+    recordForensic(read.model, read.ms, `vision_failed:${read.error ?? 'unknown'}`, read.error ?? null, [])
     return {
       ok: false, doc_type_id: docTypeId, fields: [], anchor_read: false,
       provider: provider.name, model: read.model, ms: read.ms,
@@ -485,51 +525,7 @@ export async function readDocument(
   // blocked. We never silently fall back to the weaker LLM read on a critical handwritten field.
   finalFields = (await runHtrFieldStage(finalFields, spec, docTypeId, opts.originalBuffer, mimeType, provider.name)).fields
 
-  // STAGE-1 forensic record (behavior-neutral; gated). Full raw values → gitignored artifact;
-  // console gets a PII-free digest. Fail-open — must never alter or break the read.
-  if (isForensicEnabled() && opts.forensic) {
-    try {
-      const requested = primaryGeminiModel()
-      const keyProv = getGeminiKeyProvenance()
-      emitForensic({
-        run_id: opts.forensic.runId,
-        timestamp: new Date().toISOString(),
-        doc_type_id: docTypeId,
-        source_sha256: opts.forensic.sourceSha256 ?? sha256Hex(opts.originalBuffer ?? imageBuffer),
-        source_dimensions: opts.forensic.sourceDimensions ?? null,
-        exif_orientation: opts.forensic.exifOrientation ?? null,
-        preprocess: { rotation_applied: opts.forensic.preprocessRotation ?? null, output_dimensions: opts.forensic.outputDimensions ?? null },
-        orientation_applied_cw: orientApplied,
-        orientation: isContentOrientEnabled()
-          ? { detected: !orientationUncertain, applied_cw: orientApplied, vote_count: Number(process.env.ORIENT_VOTE_RUNS) || 3, uncertain: orientationUncertain }
-          : null,
-        reader: {
-          provider: provider.name,
-          requested_model: requested,
-          actual_model: read.model,
-          fallback_used: !!read.model && read.model !== requested,
-          fallback_blocked: process.env.READER_FALLBACK_ENABLED !== '1',
-          key_alias: keyProv.alias,
-          key_fingerprint: keyProv.fingerprint,
-          google_api_key_conflict: keyProv.google_api_key_conflict,
-          temperature: 0,
-          attempts: [{ n: 1, model: read.model ?? requested, selected: true, ms: read.ms }],
-          status: `ok:${read.model}`,
-          error: null,
-          ms: read.ms,
-        },
-        fields: finalFields.map((f) => ({
-          field: f.field,
-          raw_value: f.raw_cyrillic ?? null,
-          language_route: null,
-          normalizers: [],
-          final_value: f.value ?? null,
-          review_required: !!f.review_required,
-          review_reasons: f.review_reasons,
-        })),
-      })
-    } catch { /* fail-open: forensic must never break the read */ }
-  }
+  recordForensic(read.model, read.ms, `ok:${read.model}:${read.ms}ms:${fields.length}f`, null, finalFields)
 
   return {
     ok: true, doc_type_id: docTypeId, fields: finalFields, anchor_read: anchorRead,

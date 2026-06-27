@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-27 | OpenAI vs Gemini parity (handwritten Cyrillic) + forensic covers failed reads
+- PARITY (real reads vs Tier-A GT, birth cert, correctly oriented): **gemini-2.5-pro 2/4 EXACT** (family_name+patronymic exact, place CER 0.09) vs **openai gpt-4.1 0/4 EXACT** (meanCER 0.55). → Gemini-2.5-pro ≥ GPT-4.1 on handwritten Cyrillic; BOTH struggle (handwriting unsolved). Directional only — a clean same-run multi-doc (41 fields) parity needs stable quota (today's runs hit transient API failures).
+- Forensic coverage gap FIXED: `readDocument` now emits the forensic record on EVERY return path (success AND failure — coordination-unavailable / vision_failed / htr_only), via a unified `recordForensic`. Previously a failed/early-return read wrote NO artifact, which silently swallowed a parity read. Now failures are recorded with model/status/error.
+- OpenAI key integrated into gitignored `.env.local` (owner-sanctioned, NOT committed, guard clean) — MUST be rotated (was pasted in chat). Full suite 4710 pass, tsc 0.
+
 ## 2026-06-27 | Step-5b DETERMINISTIC: orientation convention PROVEN + HTR-crop EXIF bug fixed
 - Added `orientationConvention.test.ts` — DETERMINISTIC geometry proof (synthetic asymmetric marker + pixel sampling, NO Gemini): (1) `preprocessImage` applies EXIF EXACTLY ONCE and strips the tag (sideways+EXIF6 → upright; zero→sideways, twice→over-rotated, only once→top); (2) correction = (360−R)%360 restores upright for every content rotation R. The angle convention is correct — the earlier "~90° detector bug" was a test-harness artifact (sideways synthetic base), now settled by math.
 - FIXED a real (latent) bug found by tracing: the HTR field-crop path used the RAW `originalBuffer` (EXIF tag present) for BOTH dimension-scaling and `sharp.extract()`, so sharp auto-applied EXIF inside extract while boxes were computed in raw dims → crop landed in the wrong region for EXIF-tagged uploads. `readHandwrittenRoute` now EXIF-normalizes once (bake + strip) and uses one oriented buffer for both localize + crop. (HTR sidecar is off in prod, so this was latent.)
