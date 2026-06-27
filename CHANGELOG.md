@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-27 | Step-8: civil-registry authority preserves district + oblast (no more collapse)
+- "Тростянецкий райотдел ЗАГСа Винницкой обл." no longer collapses to a bare "Civil Registry Office" — district + oblast are content. `normalizeAuthority` now enriches a CIVIL_REGISTRY match: → "Trostianets District Civil Registry Office, Vinnytsia Oblast".
+- Conservative by construction: OBLAST derived via the genitive→nominative map (reliable); DISTRICT English emitted ONLY when `lookupSettlement` CONFIRMS a real settlement for the adjective stem (never fabricate a place — "Плиски …" yields oblast only, no invented district). Compound result is review-flagged. Bare term unchanged + not over-flagged.
+- Tests: normalize.test.ts compound cases (RU/UA/oblast-only/bare, no "Oblast Oblast"). Full knowledge suite green (normalize 64/0, golden 79/0, leak 530/0). (ZAHS typo already ZAGS in registry.csv.)
+
 ## 2026-06-27 | Step-7: RU/UA per-field language routing — RU text no longer Ukrainianized
 - Document jurisdiction (UA) and field-text language (RU/UA) are independent. A RU-language Soviet cert was sending Russian names through the Ukrainian KMU-55 table (Сергей→Serhei, Сергеевич→Serheevych). Fixed by making **doc-level script routing the default** (`DOC_SCRIPT_ROUTING_ENABLED` default ON; set `=0` to disable).
 - Behavior: on a decisively-RU document, shared-letter names route through the Russian (BGN/PCGN) table (Сергей→Sergey, Сергеевич→Sergeyevich, Андрей→Andrey); a Ukrainian-distinctive name (і/ї/є/ґ) is NEVER force-Russified (Сергій→Serhii); non-RU docs are a no-op; shared-letter names on certs flag for review; raw Cyrillic never mutated.
