@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-27 | Cross-hand HTR result: raxtemur does NOT generalize (hand A exact, hand B 0/3)
+- Now that a 2nd owner-verified handwritten hand is identified (military_id_p1, Ukrainian cursive), measured raxtemur on BOTH hands with grid-VERIFIED field boxes (localization confirmed correct, not the variable):
+  - hand A (birth_cert, RUSSIAN cursive): family + patronymic EXACT.
+  - hand B (military_id_p1, UKRAINIAN cursive): **0/3 EXACT** (CER 0.91 / 0.83 / 0.40) even with correct crops.
+- CONCLUSION: `raxtemur/trocr-base-ru` is a RUSSIAN-cursive specialist — it reads the RU-cursive cluster and FAILS Ukrainian cursive even correctly localized. Handwriting recognition across independent hands/scripts is UNSOLVED with the local model; prior "raxtemur reads handwriting" was RU-cursive-specific. (Localization was meticulously verified via coordinate-grid overlay — the failure is the model, not the crop.)
+
 ## 2026-06-27 | CORRECTION: handwritten corpus is 2 owner-verified hands, not 1 (visual re-inventory)
 - Owner challenge ("why didn't you find the handwritten originals?") was correct. I had under-counted by trusting the `_meta handwritten` flag. VISUAL inspection of every real-doc original shows `military_id_p1_01.jpg` is genuinely HANDWRITTEN cursive (ФИО/date), but its GT carried `handwritten:false` — MISLABELED (same class of error as `internal_passport_01`). It is owner-verified (family/given/patronymic cyrillic + dob/doc#/sex).
 - TRUE handwritten corpus (gitignored GT annotated): **Tier-A = 7 Cyrillic-text fields across 2 INDEPENDENT owner-verified hands** — birth_cert_handwritten_01 (×4) + military_id_p1_01 (×3) — plus marriage_1939 (Tier-C, agent_visual, hand C). The earlier "1 doc / 4 fields, need owner docs" claim is RETRACTED: a second owner-verified hand was already in the project.
