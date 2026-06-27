@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-06-27 | Step-6 crop contract + Step-8b GT inventory honesty
+- Step-6: froze the single deterministic handwritten-crop recipe. `FIELD_BOX_TEMPLATES` exported + `cropContract.test.ts` pins the exact normalized boxes, asserts well-formedness (0..1, l<r, t<b), and proves NO intra-document box overlap (the bug that produced "гей Сергеевич"). Runtime uses ONE frozen box per field — no best-of-3-after-GT selection.
+- Step-8b (gitignored qa-private GT): additive provenance annotations — mislabeled `handwritten:true` flagged (internal_passport_01 is a printed international passport → `handwritten_actual:false`); byte-identical duplicate group marked (birth_cert_handwritten_01 ≡ birth_cert_soviet_01); provenance tiers A/C/D added. Honest denominator: **Tier-A handwritten Cyrillic-text fields = 4 (one document)**; reaching N=20-50 requires ~16-46 more owner-verified handwritten fields (handwritten marriage/death/old birth certs).
+
 ## 2026-06-27 | Step-8: civil-registry authority preserves district + oblast (no more collapse)
 - "Тростянецкий райотдел ЗАГСа Винницкой обл." no longer collapses to a bare "Civil Registry Office" — district + oblast are content. `normalizeAuthority` now enriches a CIVIL_REGISTRY match: → "Trostianets District Civil Registry Office, Vinnytsia Oblast".
 - Conservative by construction: OBLAST derived via the genitive→nominative map (reliable); DISTRICT English emitted ONLY when `lookupSettlement` CONFIRMS a real settlement for the adjective stem (never fabricate a place — "Плиски …" yields oblast only, no invented district). Compound result is review-flagged. Bare term unchanged + not over-flagged.

@@ -30,7 +30,7 @@ function geminiKey(): string {
  * the verified boxes on the reference upright scan; combined with the orientation step + a review gate.
  * (Framing varies between photos → this is a deterministic BASELINE, not pixel-perfect; reads stay review-gated.)
  */
-const FIELD_BOX_TEMPLATES: Record<string, Record<string, [number, number, number, number]>> = {
+export const FIELD_BOX_TEMPLATES: Record<string, Record<string, [number, number, number, number]>> = {
   ua_birth_certificate: {
     family_name: [0.2326, 0.2277, 0.5451, 0.2923],
     given_name: [0.1308, 0.2923, 0.2447, 0.3617],
