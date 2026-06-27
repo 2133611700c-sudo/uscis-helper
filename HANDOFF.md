@@ -1,5 +1,9 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-27 | Step-5 orientation HONEST NEGATIVE + Stage-9 eval harness
+- Tried to enable content-orient by default; EXIF-normalized rotation matrix (2.5-pro, vote=3) PROVED the grid detector is mis-calibrated (systematic ~90° error; rotated even an upright doc 270°; detected:true throughout so the undecidable gate never fires). Rotation invariance NOT restored (3-5/12). → content-orient KEPT OFF. NEXT: fix detector angle convention (positionToCorrectionCw / grid prompt) then re-prove ≈12/12.
+- Delivered: forensic orientation provenance + fail-closed 'orientation_uncertain' gate (active only when content-orient is on) + Stage-9 `eval_product.py` (PII-free whole-pipeline scorecard). Full suite 4707 pass, tsc 0.
+
 ## 2026-06-27 | Step-7 RU/UA routing fixed + Stage-1 rotation baseline closed
 - DOC_SCRIPT_ROUTING_ENABLED now default ON: RU-language docs route RU names via Russian table (Сергей→Sergey), UA-distinctive never force-Russified, certs→review, raw unchanged. Gate `ruUaLanguageRouting.test.ts` 5/5; full suite 4691 pass.
 - Stage-1 rotation baseline (gemini-2.5-pro, paid): rotation 90/180/270 → only 1-2/12 fields match upright(rot0) → ORIENTATION is the proven dominant divergence cause (model nondeterminism minor). First divergence point = orientation of bytes to the model. Justifies Step 4/5 orientation contract (fail-closed on conflict) — still frozen pending implementation.

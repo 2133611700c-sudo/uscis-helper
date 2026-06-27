@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-27 | Step-5 orientation — HONEST NEGATIVE: content-orient detector is mis-calibrated, kept OFF
+- Attempted to enable content-based upright detection by default (orientation is the proven dominant divergence cause — baseline #38). Instrumented the EXIF-NORMALIZED rotation matrix on gemini-2.5-pro (vote=3) to prove rotation invariance.
+- RESULT (honest): the grid detector is **mis-calibrated** — it applied a systematic ~90° wrong correction and even rotated an UPRIGHT (rot0) document by 270°, all while reporting detected:true. Rotation invariance was NOT restored (rot90/180/270 → 3-5/12 vs rot0). Enabling it by default would DEGRADE correctly-oriented uploads.
+- ACTION: content-orient default KEPT OFF (status quo); re-enable only after the detector's angle convention is fixed and re-proven (≈12/12). Follow-up task created.
+- DELIVERED regardless: (1) forensic now records orientation provenance (detected/applied_cw/vote_count/uncertain); (2) fail-closed gate — when content-orient IS on and detection is undecidable, critical fields force review + 'orientation_uncertain' (never silently proceed); (3) Stage-9 product eval harness (qa-private/htr-poc/eval_product.py, PII-free scorecard from forensic artifacts + Tier-A GT). Full suite 4707 pass, tsc 0.
+
 ## 2026-06-27 | Step-6 crop contract + Step-8b GT inventory honesty
 - Step-6: froze the single deterministic handwritten-crop recipe. `FIELD_BOX_TEMPLATES` exported + `cropContract.test.ts` pins the exact normalized boxes, asserts well-formedness (0..1, l<r, t<b), and proves NO intra-document box overlap (the bug that produced "гей Сергеевич"). Runtime uses ONE frozen box per field — no best-of-3-after-GT selection.
 - Step-8b (gitignored qa-private GT): additive provenance annotations — mislabeled `handwritten:true` flagged (internal_passport_01 is a printed international passport → `handwritten_actual:false`); byte-identical duplicate group marked (birth_cert_handwritten_01 ≡ birth_cert_soviet_01); provenance tiers A/C/D added. Honest denominator: **Tier-A handwritten Cyrillic-text fields = 4 (one document)**; reaching N=20-50 requires ~16-46 more owner-verified handwritten fields (handwritten marriage/death/old birth certs).

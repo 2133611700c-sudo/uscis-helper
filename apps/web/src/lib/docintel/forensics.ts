@@ -59,6 +59,12 @@ export interface ForensicRecord {
   exif_orientation?: number | null
   preprocess?: { rotation_applied?: number | null; output_dimensions?: { width: number; height: number } | null }
   orientation_applied_cw: number          // content/auto-orient correction (0 if none/disabled)
+  orientation?: {
+    detected: boolean                     // false = undecidable → page orientation unknown
+    applied_cw: number
+    vote_count?: number
+    uncertain: boolean                    // detected:false → review forced on critical fields (fail-closed)
+  } | null
   reader: {
     provider: string | null
     requested_model: string | null
@@ -89,6 +95,7 @@ export function safeDigest(r: ForensicRecord) {
     exif_orientation: r.exif_orientation ?? null,
     preprocess: r.preprocess ?? null,
     orientation_applied_cw: r.orientation_applied_cw,
+    orientation: r.orientation ?? null,
     requested_model: r.reader.requested_model,
     model: r.reader.actual_model,
     fallback_used: r.reader.fallback_used,
