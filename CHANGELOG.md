@@ -1,6 +1,13 @@
 # CHANGELOG
 
-## 2026-06-27 | Step-5 orientation — HONEST NEGATIVE: content-orient detector is mis-calibrated, kept OFF
+## 2026-06-27 | Step-5b CORRECTION: content-orient PROVEN to work → ENABLED by default
+- RETRACTS the prior "detector mis-calibrated" entry below — that was a TEST-HARNESS artifact, not a detector bug. The synthetic base was itself sideways (this birth cert's EXIF tag is 6 = WRONG: sharp's EXIF auto-rotate turns the upright scan SIDEWAYS) and the harness then double-rotated it.
+- DECISIVE A/B on the exact real EXIF-sideways buffer (the production preprocess output), gemini-2.5-pro, vote=3, scored vs Tier-A GT:
+  - content-orient OFF → **0/4 fields EXACT** (CER 0.57–1.0; reads the page sideways).
+  - content-orient ON  → detector applied 270°, **2/4 EXACT** (family_name + patronymic EXACT, place CER 0.09; given_name still misses — a handwriting-recognition limit, not orientation).
+- ACTION: `CONTENT_ORIENT_ENABLED` default **ON** (set `=0` to disable). This fixes the real "sideways → wrong read" bug for EXIF-mislabeled scans. Cost: ORIENT_VOTE_RUNS grid calls/doc (default 3). Fail-closed gate + forensic orientation provenance retained. tsc 0; suite green.
+
+## 2026-06-27 | Step-5 orientation — HONEST NEGATIVE: content-orient detector is mis-calibrated, kept OFF (SUPERSEDED by Step-5b above — was a harness artifact)
 - Attempted to enable content-based upright detection by default (orientation is the proven dominant divergence cause — baseline #38). Instrumented the EXIF-NORMALIZED rotation matrix on gemini-2.5-pro (vote=3) to prove rotation invariance.
 - RESULT (honest): the grid detector is **mis-calibrated** — it applied a systematic ~90° wrong correction and even rotated an UPRIGHT (rot0) document by 270°, all while reporting detected:true. Rotation invariance was NOT restored (rot90/180/270 → 3-5/12 vs rot0). Enabling it by default would DEGRADE correctly-oriented uploads.
 - ACTION: content-orient default KEPT OFF (status quo); re-enable only after the detector's angle convention is fixed and re-proven (≈12/12). Follow-up task created.

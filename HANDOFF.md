@@ -1,6 +1,10 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
-## 2026-06-27 | Step-5 orientation HONEST NEGATIVE + Stage-9 eval harness
+## 2026-06-27 | Step-5b CORRECTION — content-orient PROVEN, ENABLED by default
+- The prior "detector mis-calibrated" call was a TEST-HARNESS artifact (synthetic base was itself sideways; this doc's EXIF tag=6 is wrong → sharp rotates the upright scan sideways). Decisive A/B on the real EXIF-sideways buffer: content-orient OFF 0/4 EXACT vs ON 2/4 EXACT (family+patronymic exact, place CER 0.09). → `CONTENT_ORIENT_ENABLED` default ON. Cost: ~3 grid calls/doc. given_name miss = handwriting limit, not orientation.
+- Lesson: verify the test base is truly upright before judging an orientation detector. The real prod bug = EXIF-mislabeled scans read sideways; content-orient fixes it.
+
+## 2026-06-27 | Step-5 orientation HONEST NEGATIVE + Stage-9 eval harness (SUPERSEDED by Step-5b)
 - Tried to enable content-orient by default; EXIF-normalized rotation matrix (2.5-pro, vote=3) PROVED the grid detector is mis-calibrated (systematic ~90° error; rotated even an upright doc 270°; detected:true throughout so the undecidable gate never fires). Rotation invariance NOT restored (3-5/12). → content-orient KEPT OFF. NEXT: fix detector angle convention (positionToCorrectionCw / grid prompt) then re-prove ≈12/12.
 - Delivered: forensic orientation provenance + fail-closed 'orientation_uncertain' gate (active only when content-orient is on) + Stage-9 `eval_product.py` (PII-free whole-pipeline scorecard). Full suite 4707 pass, tsc 0.
 
