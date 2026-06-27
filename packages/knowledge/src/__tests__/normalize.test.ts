@@ -141,6 +141,38 @@ assert(zags_uscis.normalized_value === 'Civil Registry Office',
   'РАЦС uscis_normalized = "Civil Registry Office" (registry-sourced)',
   `Got: ${zags_uscis.normalized_value}`);
 
+// ── CIVIL REGISTRY: COMPOUND DISTRICT + OBLAST (Step-8) ──────────────
+// A registry line must NOT collapse to a bare term — district + oblast are content.
+const crCompoundRu = normalizeAuthority('Тростянецкий райотдел ЗАГСа Винницкой обл.', 'birth_cert',
+  { mode: 'uscis_normalized' });
+assert(crCompoundRu.normalized_value === 'Trostianets District Civil Registry Office, Vinnytsia Oblast',
+  'RU compound: district + oblast preserved',
+  `Got: ${crCompoundRu.normalized_value}`);
+assert(crCompoundRu.review_required === true,
+  'compound civil-registry authority forces review', `Got: ${crCompoundRu.review_required}`);
+
+const crCompoundUa = normalizeAuthority('Тростянецький райвідділ ЗАГС Вінницької обл.', 'birth_cert',
+  { mode: 'uscis_normalized' });
+assert(crCompoundUa.normalized_value === 'Trostianets District Civil Registry Office, Vinnytsia Oblast',
+  'UA compound renders same as RU', `Got: ${crCompoundUa.normalized_value}`);
+
+// no oblast text in the double-Oblast bug
+assert(!/Oblast Oblast/.test(crCompoundRu.normalized_value),
+  'no doubled "Oblast Oblast"', `Got: ${crCompoundRu.normalized_value}`);
+
+// oblast-only (district is the settlement itself, not an adjective) → no fabricated district
+const crOblastOnly = normalizeAuthority('Плиски райвідділ РАЦС Одеської обл.', 'birth_cert',
+  { mode: 'uscis_normalized' });
+assert(crOblastOnly.normalized_value === 'Civil Registry Office, Odesa Oblast',
+  'oblast preserved, no fabricated district when settlement unconfirmed',
+  `Got: ${crOblastOnly.normalized_value}`);
+
+// bare term (no district/oblast) → unchanged, no over-flagging
+const crBare = normalizeAuthority('відділ ЗАГСу', 'birth_cert', { mode: 'uscis_normalized' });
+assert(crBare.normalized_value === 'Civil Registry Office' && crBare.review_required === false,
+  'bare civil-registry term unchanged, not over-flagged',
+  `Got: ${crBare.normalized_value} review=${crBare.review_required}`);
+
 // ── GEOGRAPHY: USTYNIVKA, VINNYTSIA, KIROVOHRAD ─────────
 
 const ustynivka = normalizePlace('смт. Устинівка', 'birth_locality',

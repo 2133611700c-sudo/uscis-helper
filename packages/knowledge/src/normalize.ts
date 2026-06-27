@@ -26,6 +26,7 @@ import {
   normalizeOblastToNominative,
   type AuthorityEntry,
 } from './dictionary';
+import { lookupSettlement, translateCivilRegistryTerm } from './registry/registryLookup';
 
 // ── TYPES ────────────────────────────────────────────────────
 
@@ -156,6 +157,44 @@ export function normalizeSex(raw: string, source_doc: string): NormalizedField {
  * Normalize an authority/issuer name using the dictionary.
  * Handles historical mode: checks document text first, date as fallback.
  */
+/**
+ * Civil-registry authority enrichment (Step-8): a registry line like
+ * "Тростянецкий райотдел ЗАГСа Винницкой обл." must NOT collapse to a bare
+ * "Civil Registry Office (ZAGS)" — the DISTRICT and OBLAST are content, not noise.
+ * Conservative by design: the OBLAST is derived reliably (genitive→nominative map);
+ * the DISTRICT English form is only emitted when lookupSettlement CONFIRMS a real
+ * settlement for the adjective stem (never fabricate a place name). Missing parts are
+ * simply omitted. Returns the decorated value + whether anything was added.
+ */
+function enrichCivilRegistry(raw: string, baseEn: string): { value: string; enriched: boolean } {
+  // ── district: leading adjective (Тростянецький/Тростянецкий + genitive forms) ──
+  let districtEn: string | null = null
+  const dm = raw.match(/^[\s«"(]*([А-ЯІЇЄҐ][А-Яа-яІЇЄҐіїєґ'’-]+?(?:ецьк|ецк|ськ|цьк|ск|цк|к)(?:ого|ий|ій|ому|им))/u)
+  if (dm) {
+    const W = dm[1]
+    const endings = ['ецького', 'ецкого', 'ецький', 'ецкий', 'ського', 'ского', 'цького', 'цкого', 'ський', 'цький', 'ский', 'цкий', 'ького', 'кого', 'ого', 'ий', 'ій']
+    const cands = new Set<string>([W])
+    for (const e of endings) if (W.endsWith(e)) { const s = W.slice(0, -e.length); for (const suf of ['ець', 'ец', 'ь', 'ць', '']) cands.add(s + suf) }
+    for (const c of cands) {
+      if (c.length < 3) continue
+      const hit = lookupSettlement(c)
+      if (hit.matched && hit.official_en) { districtEn = `${hit.official_en} District`; break }
+    }
+  }
+  // ── oblast: trailing genitive "<X> обл./область" → nominative English ──
+  let oblastEn: string | null = null
+  const om = raw.match(/([А-ЯІЇЄҐ][А-Яа-яІЇЄҐіїєґ'’-]+(?:ської|ской|цької|цкой|зької|зской|ої|ой))\s*(?:обл\.?|область|області)/u)
+  if (om) {
+    const o = normalizeOblastToNominative(`${om[1]} область`)
+    if (o?.transliterated) oblastEn = /\boblast$/i.test(o.transliterated) ? o.transliterated : `${o.transliterated} Oblast`
+  }
+  if (!districtEn && !oblastEn) return { value: baseEn, enriched: false }
+  let v = baseEn
+  if (districtEn) v = `${districtEn} ${v}`
+  if (oblastEn) v = `${v}, ${oblastEn}`
+  return { value: v, enriched: true }
+}
+
 export function normalizeAuthority(
   raw: string,
   source_doc: string,
@@ -195,6 +234,26 @@ export function normalizeAuthority(
       review_required: true,
       review_reason: `Matched key "${matchedKey}" but no dictionary entry`,
     };
+  }
+
+  // Civil registry: preserve district + oblast around the term (Step-8).
+  if (matchedKey === 'CIVIL_REGISTRY') {
+    const base = buildAuthorityResult(raw, entry, matchedKey, source_doc, ctx, `dictionary_match:${matchedKey}`)
+    // Prefer the registry's sourced rendering ("Civil Registry Office (ZAGS)") as the base term.
+    const reg = translateCivilRegistryTerm(raw, ctx.document_date)
+    const baseTerm = reg.matched && reg.official_en ? reg.official_en : base.normalized_value
+    const enr = enrichCivilRegistry(raw, baseTerm)
+    if (enr.enriched) {
+      return {
+        ...base,
+        normalized_value: enr.value,
+        rule_applied: 'civil_registry_compound:district_oblast',
+        confidence: 0.85,
+        review_required: true,
+        review_reason: 'Compound civil-registry authority (district/oblast preserved) — verify against source',
+      }
+    }
+    return base
   }
 
   // Militsiya/Police transition: check text first, date as fallback
