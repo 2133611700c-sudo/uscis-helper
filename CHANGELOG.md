@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-27 | Critical re-verify of `6919dbe`: direction is true, proof package is still mixed
+- Re-verified the cross-hand HTR claim against the actual repo state instead of trusting the doc entry. `6919dbe` changed **docs only** (`CHANGELOG.md`), not code, tests, or a committed evaluation harness.
+- **Verified live now:** the local sidecar is up (`/health` + `/version` OK, `raxtemur/trocr-base-ru`, MPS), and the CURRENT deterministic birth-cert template in `handwrittenFieldRoute.ts` really yields **3/3 exact** on the real fixture through the live sidecar (`family_name`, `given_name`, `patronymic` all strict-CER 0 with the current tuned box).
+- **Verified live now:** the second handwritten owner hand is real on disk (`military_id_p1_01.jpg` + `qa-private/ground-truth/military_id_p1_01.json`), but the evidence is still RESEARCH-grade: the GT file itself still says `_meta.handwritten:false` plus `handwritten_actual:true`, and still carries stale `model_3.1-pro_draft` provenance text. The cross-hand conclusion is therefore based on local/private artifacts, not on a cleaned committed corpus contract.
+- **Verified live now on plausible military FIO crops:** `raxtemur` does NOT give a clean Ukrainian 3/3 exact result. Family name soft-matches only after apostrophe-folding, given name collapses into neighboring text, patronymic tends to Russianized/partial output. So the strategic conclusion "no generalized safe handwritten reader yet" holds; but the exact wording must stay strict: this is a manually localized local proof, not an operational runtime path.
+
 ## 2026-06-27 | Cross-hand HTR result: raxtemur does NOT generalize (hand A exact, hand B 0/3)
 - Now that a 2nd owner-verified handwritten hand is identified (military_id_p1, Ukrainian cursive), measured raxtemur on BOTH hands with grid-VERIFIED field boxes (localization confirmed correct, not the variable):
   - hand A (birth_cert, RUSSIAN cursive): family + patronymic EXACT.

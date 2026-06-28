@@ -1,5 +1,11 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-27 | Critical re-verify of handwritten cross-hand claim
+- I re-checked the latest handwritten conclusion against live local evidence. The strong part is real: the current birth-cert deterministic path is 3/3 exact through the live sidecar, and the military booklet is indeed a second handwritten owner hand present on disk.
+- The weak part is also real: `6919dbe` is **docs-only** and there is still no committed, reproducible cross-hand harness/report for the military result. The military GT metadata remains internally inconsistent (`handwritten:false` + `handwritten_actual:true`, stale `model_3.1-pro_draft` wording), so this corpus contract still needs cleanup before anyone treats it as finalized evidence.
+- Practical truth: `raxtemur` is good enough to prove a Russian-cursive success case on the birth cert, but not good enough to claim a generalized Ukrainian handwritten reader. On plausible military FIO crops it misses strict exactness on all three fields (surname only soft-match after apostrophe-folding; given/patronymic degrade or Russianize).
+- Next exact step: create one reproducible cross-hand harness/report from the current local artifacts (birth template path + military localized boxes + exact/raw-vs-folded scoring), then test a Ukrainian HTR candidate on the SAME boxes. Do not jump to hosting or production claims from the current mixed research state.
+
 ## 2026-06-27 | CORRECTION: 2 owner-verified handwritten hands already in the project
 - Re-inventoried VISUALLY (not by metadata): `military_id_p1_01.jpg` is genuinely handwritten cursive but `_meta handwritten:false` was MISLABELED (owner-verified family/given/patronymic). True Tier-A handwritten = **7 Cyrillic-text fields / 2 independent owner-verified hands** (birth_cert ×4 + military_id_p1 ×3) + marriage_1939 (Tier-C). Retracts earlier "1 doc / 4 fields, need more docs".
 - NEXT (recognition): run the HTR/reader battery on BOTH owner hands (birth_cert + military_id_p1) for a real cross-hand generalization measurement — the corpus is already on disk.
