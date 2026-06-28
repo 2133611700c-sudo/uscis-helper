@@ -6,6 +6,7 @@
 import type {
   RepositoryBundle, DocumentRepository, ReviewRepository, ConfirmationRepository,
   TranslationRepository, PdfArtifactRepository, AuditEventRepository,
+  ManualReviewRepository, ManualReviewTicket, ExtractionRunRepository, ExtractionRun,
   SessionRecord, FieldRecord, PdfArtifactRecord, AuditEventRecord,
 } from './types'
 
@@ -73,6 +74,27 @@ class InMemoryAudit implements AuditEventRepository {
   async list(sessionId: string) { return this.events.filter((e) => e.sessionId === sessionId).map((e) => ({ ...e })) }
 }
 
+class InMemoryManualReview implements ManualReviewRepository {
+  constructor(private tickets: Map<string, ManualReviewTicket[]>) {}
+  async getLatestTicket(sessionId: string) {
+    const list = this.tickets.get(sessionId) ?? []
+    if (!list.length) return null
+    // most recent by createdAt (string ISO compares lexically)
+    return [...list].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0]
+  }
+}
+
+class InMemoryExtractionRuns implements ExtractionRunRepository {
+  constructor(private runs: Map<string, ExtractionRun>, private fields: Map<string, FieldRecord>) {}
+  async getRun(sessionId: string, runId: string) {
+    const r = this.runs.get(runId)
+    return r && r.sessionId === sessionId ? { ...r } : null
+  }
+  async countFields(sessionId: string) {
+    return [...this.fields.values()].filter((f) => f.sessionId === sessionId).length
+  }
+}
+
 /** Build a fresh in-memory bundle (isolated state per call → deterministic tests). */
 export function createInMemoryRepositories(): RepositoryBundle {
   const sessions = new Map<string, SessionRecord>()
@@ -80,6 +102,8 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const translated = new Map<string, string>()
   const artifacts = new Map<string, PdfArtifactRecord>()
   const events: AuditEventRecord[] = []
+  const tickets = new Map<string, ManualReviewTicket[]>()
+  const runs = new Map<string, ExtractionRun>()
   return {
     documents: new InMemoryDocuments(sessions),
     review: new InMemoryReview(fields),
@@ -87,5 +111,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
     translation: new InMemoryTranslation(translated),
     pdfArtifacts: new InMemoryPdf(artifacts),
     audit: new InMemoryAudit(events),
+    manualReview: new InMemoryManualReview(tickets),
+    extractionRuns: new InMemoryExtractionRuns(runs, fields),
   }
 }

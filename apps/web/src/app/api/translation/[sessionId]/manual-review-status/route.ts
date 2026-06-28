@@ -23,7 +23,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 import { canonicalStatus, type ManualReviewStatus } from '@/lib/translation/manualReview/types'
 
 export const dynamic = 'force-dynamic'
@@ -115,22 +115,18 @@ export async function GET(
       return NextResponse.json({ ok: false, error: 'invalid_session_id' }, { status: 400 })
     }
 
-    const supabase = createAdminSupabaseClient()
-
-    // Pick the most recent ticket for this session.
-    // Open tickets first; falls back to most recent terminal ticket.
-    const { data, error } = await supabase
-      .from('manual_review_queue')
-      .select('id,status,priority,updated_at,created_at')
-      .eq('session_id', sessionId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-
-    if (error) {
-      // Failure mode: pretend "not in review" rather than leak DB error.
-      // Server logs hold the real error.
+    // Most recent ticket via the repository (in-memory default; Supabase opt-in
+    // adapter NOT connected). A failure surfaces as null → "not in review".
+    let row: { status: string; priority: string | null } | null = null
+    try {
+      const ticket = await getRepositories().manualReview.getLatestTicket(sessionId)
+      if (ticket) row = { status: ticket.status, priority: ticket.priority }
+    } catch (e) {
       // eslint-disable-next-line no-console
-      console.error('[manual-review-status] db error:', error.message)
+      console.error('[manual-review-status] repo error:', String(e))
+    }
+
+    if (!row) {
       return NextResponse.json({
         ok: true,
         status: 'not_in_review',
@@ -138,24 +134,6 @@ export async function GET(
         estimatedHours: null,
         nextStepKey: null,
       })
-    }
-
-    if (!data || data.length === 0) {
-      return NextResponse.json({
-        ok: true,
-        status: 'not_in_review',
-        messageKey: messageKeyOf('not_in_review'),
-        estimatedHours: null,
-        nextStepKey: null,
-      })
-    }
-
-    const row = data[0] as {
-      id: string
-      status: string
-      priority: string | null
-      updated_at: string
-      created_at: string
     }
 
     const bucket = bucketOf(row.status as ManualReviewStatus)
