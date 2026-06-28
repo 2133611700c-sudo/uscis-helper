@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-27 | Multi-model HTR on hand B (UA cursive): ALL local models 0/3 — handwriting unsolved
+- With grid-VERIFIED field boxes on military_id_p1 (hand B, Ukrainian cursive), ran every locally-available model: raxtemur-ru, cyrillic-trocr (general), kazars24-ru, AND pylaia-UK (a Ukrainian CRNN). **All scored 0/3 EXACT** (CER 0.4–1.27). Not merely "raxtemur is Russian" — even the Ukrainian model fails this hand.
+- The dedicated UA TrOCR (cyrillic-trocr/trocr-ukrainian-handwritten) could NOT be downloaded in-sandbox (weights repeatedly die at ~69M) → untested, the only remaining lever.
+- DEFINITIVE (honest): handwriting recognition on a diverse/Ukrainian hand is UNSOLVED by every model tested (local 0/3; gpt-4.1 0/4; gemini hand-A-only). Handwritten critical fields → human-review gate only (built+tested); no model may auto-finalize handwritten names.
+- PROOF-PACKAGE HONESTY (per the re-verify note below): this measurement runs from a GITIGNORED harness (qa-private/htr-poc) over real-PII fixtures + local model weights + owner GT — it is reproducible LOCALLY but cannot live in CI (real PII + multi-GB models). The repo records the result + methodology; the raw evidence stays gitignored by the no-PII rule. The earlier same-class claim was a docs-only commit; this notes that limitation explicitly rather than implying a committed CI test.
+
 ## 2026-06-27 | Critical re-verify of `6919dbe`: direction is true, proof package is still mixed
 - Re-verified the cross-hand HTR claim against the actual repo state instead of trusting the doc entry. `6919dbe` changed **docs only** (`CHANGELOG.md`), not code, tests, or a committed evaluation harness.
 - **Verified live now:** the local sidecar is up (`/health` + `/version` OK, `raxtemur/trocr-base-ru`, MPS), and the CURRENT deterministic birth-cert template in `handwrittenFieldRoute.ts` really yields **3/3 exact** on the real fixture through the live sidecar (`family_name`, `given_name`, `patronymic` all strict-CER 0 with the current tuned box).
