@@ -1,3 +1,15 @@
+# HANDOFF (2026-06-28 — Unified Document Contract Phase 6–10 done; next = DB-backed staging E2E + flag flip)
+
+## 2026-06-28 | Phase 6–10 complete (branch `translation/ru-and-model-matrix-fixes` @ `91f1cdb`, in worktree `uscis-helper.phase4-integrate`)
+DONE (all flag-gated OFF, byte-identical; 2878 pass/0 fail; tsc 0; PII clean):
+- A live review annotation · B server-side final-PDF gate (both emitters) · C first-class split PDF rows + ON golden · D Gemini→contract boundary · E route bypass guards · F local mocked browser E2E + in-process integration · G flag matrix · H PII-free observability · I PII-incident note.
+
+EXACT NEXT TASK (external blockers — cannot run in sandbox):
+1. Run the **DB-backed staging E2E**: `docs/runbooks/CONTRACT_STAGING_E2E_RUNBOOK.md` (needs Docker + `supabase start`, or Vercel preview with staging secrets) → unskips `apps/web/tests/e2e-contract/review-contract.spec.ts`. Or dispatch `.github/workflows/contract-staging-e2e.yml`.
+2. After E2E PASS + owner sign-off, flip flags per `docs/architecture/CONTRACT_FLAG_ROLLOUT.md` (base→split→normalize→review→gate→PDF) — staging first, prod last. All OFF today.
+3. GitHub Support sensitive-data purge of dangling `31b62cd` (`docs/security/PII_INCIDENT_2026-06-28.md`).
+Reproduce locally: `cd apps/web && ./node_modules/.bin/vitest run src/lib/contracts src/lib/translation src/lib/canonical`; `npx tsc --noEmit -p apps/web/tsconfig.json`; `node scripts/check-no-pii.mjs`; browser stack `npx playwright test -c playwright.contract.config.ts`.
+
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
 ## 2026-06-27 | Committed cross-hand harness + clean military GT (proof package upgraded)

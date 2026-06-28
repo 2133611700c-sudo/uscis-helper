@@ -1,6 +1,15 @@
 # SOURCE_OF_TRUTH.md
 Purpose: define canonical modules. Prevent duplication. Stop re-litigation.
 
+## Unified Document Contract (birth certificate) — authoritative modules (Phase 6–10, flag-gated OFF)
+- **Contract SoT:** `apps/web/src/lib/contracts/birthCertSovietV1Contract.ts` — the ONE source for field keys, labels, splits, criticality. KEY_ALIASES / buildMirrorValues / review / PDF labels source from it. Do NOT re-declare birth-cert fields elsewhere.
+- **Split + normalize:** `contractFieldFlow.ts` (`applyContractSplitFlow`, `normalizeContractSplitFields`) — split via `splitMergedFields.ts`, normalize via `@uscis-helper/knowledge` (no parallel dict).
+- **Review states:** `contractReviewState.ts` (`annotateReviewFields`, `contractReviewState`, `mustAlwaysReview`).
+- **Final-PDF safety boundary (server-side):** `finalPdfGate.ts` `assertDocumentReadyForFinalPdf` — applied to ALL translation PDF emitters (`generate-pdf`, `render`). No PDF route may bypass it (route invariants).
+- **Gemini→contract boundary:** `contractExtractionBoundary.ts` (schema-from-contract, provenance, candidate-only sanitizer). One adapter; model never sets `confirmed`.
+- **Observability:** `contractObservability.ts` (PII-free allow-list events).
+- **Flags (all OFF):** `UNIFIED_DOC_CONTRACT_ENABLED`, `_SPLIT_`, `_NORMALIZE_`, `FINAL_PDF_CONFIRMATION_GATE_ENABLED`. Rollout: `docs/architecture/CONTRACT_FLAG_ROLLOUT.md`. ADR: `docs/adr/ADR-CONTRACT-VERTICAL.md`. Design: `docs/architecture/contracts/ua_birth_certificate_soviet_v1/`.
+
 > **LIVE V1 PROGRAM TRACKER:** GitHub issue #159 "USCIS HELPER V1 — FINAL DELIVERY PROGRAM" is the single source of release-gate truth. DONE: #161 (OCR coordination wired to live path, off by default), #160 (isolated staging LIVE + runtime-proven — Supabase `rxnlpvldngxgdxkxoaaj` + Vercel preview, `V1_STAGING_READY=true`, ADR-023). PR #119 (Translation V2) = KEEP_DRAFT→REBUILD_FROM_MAIN→supersede. NEXT: product browser E2E (TPS first). Staging deploy = `.github/workflows/staging-deploy.yml` (`vercel deploy -e/-b`); staging DB provision = `.github/workflows/staging-provision.yml`. V1 verdict: **NOT_READY** (E2E/visual/Stripe-test/canary gates pending).
 
 ## Canonical normalization layer

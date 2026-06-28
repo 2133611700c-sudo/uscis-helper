@@ -1,3 +1,12 @@
+# STATUS (2026-06-28 — Unified Document Contract Phase 6–10 complete; STAGING READY pending DB E2E + owner sign-off)
+
+## 2026-06-28 | Unified Document Contract vertical (Phase 6–10) — staging-ready
+- Branch `translation/ru-and-model-matrix-fixes` @ `91f1cdb`. ALL flags default OFF → byte-identical (OFF golden `sha256 89611c7a…`). Full suite **2878 pass / 0 fail**; tsc 0; PII clean.
+- Contract OCR→canonical→normalize→review→confirmation→PDF wired: split fields (P6) + knowledge-normalize (P7) + review annotation (A) + server-side final-PDF gate on BOTH emitters (B, flag `FINAL_PDF_CONFIRMATION_GATE_ENABLED`) + first-class split PDF rows (C) + Gemini→contract boundary (D) + route bypass guards (E) + PII-free observability (H) + flag matrix/runbook/PII-incident (G/I).
+- **raw→PDF CLOSED**; mirror gated; local mocked browser E2E PASS; in-process vertical integration PASS.
+- **OPEN (external):** live DB-backed browser E2E BLOCKED (no Docker→no local Supabase; runbook `docs/runbooks/CONTRACT_STAGING_E2E_RUNBOOK.md`); production flags OFF (need staging E2E + owner sign-off); GitHub Support purge of dangling `31b62cd` (manual). ADR: `docs/adr/ADR-CONTRACT-VERTICAL.md`.
+- Verdict: **STAGING READY — NOT production-ready.**
+
 # STATUS (2026-06-24 — ROOT-CAUSE REVERSAL: handwritten UA/RU Cyrillic IS readable key-free; PII fictionalized + model inventory corrected)
 
 ## 2026-06-27 | Cross-hand proof package UPGRADED: committed harness + clean military GT
