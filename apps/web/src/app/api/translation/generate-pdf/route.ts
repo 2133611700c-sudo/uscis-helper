@@ -21,6 +21,7 @@ import { renderMirrorTranslationPDF } from '@/lib/translation/pdf/renderMirrorTr
 import { isDualRenderEnabled, buildDualRenderLog } from '@/lib/translation/pdf/dualRenderCompare'
 import { hasOfficialSchema } from '@/lib/translation/forms/ukraine/schemas/registry'
 import { shouldBlockRawPdfFallback } from '@/lib/contracts/contractReviewState'
+import { assertDocumentReadyForFinalPdf } from '@/lib/contracts/finalPdfGate'
 import { buildCertificationRecord } from '@/lib/translation/certificationRecord'
 import { ExtractedField, SourceTrace } from '@/lib/translation/types'
 import { isOwnerSession } from '@/lib/ownerAccess'
@@ -379,6 +380,22 @@ export async function POST(req: NextRequest) {
     sourceLanguage: 'Ukrainian',
     signatureTypedName: profile.name,
   })
+
+  // Phase 10 / Workstream B — single server-side confirmation boundary applied to
+  // ALL renderers below (mirror + generic). Flag FINAL_PDF_CONFIRMATION_GATE_ENABLED
+  // (default OFF → not enforced → legacy gates only → golden byte-identical).
+  const finalGate = assertDocumentReadyForFinalPdf(payload.fields ?? [], payload.doc_type, process.env)
+  if (finalGate.enforced && !finalGate.ready) {
+    await recordGuardBlock({
+      gateType: 'final_pdf_confirmation', reasonCode: finalGate.blockedReasons.join(',') || 'not_ready',
+      wouldBlock: true, docType: payload.doc_type ?? null, sessionId: payload.session_id ?? null,
+    })
+    console.warn('[generate-pdf] final-PDF gate BLOCKED', JSON.stringify({ doc_type: payload.doc_type, reasons: finalGate.blockedReasons }))
+    return NextResponse.json(
+      { ok: false, error: 'review_required', gate: 'final_pdf_confirmation', reasons: finalGate.blockedReasons },
+      { status: 403 },
+    )
+  }
 
   // Generate real PDF
   let pdfBuffer: Buffer | null = null
