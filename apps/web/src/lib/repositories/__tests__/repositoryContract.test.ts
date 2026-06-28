@@ -148,6 +148,13 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       await r.orders.appendEvent('ORD-x', 'noop', { k: 1 }) // no-throw even if order absent
     })
 
+    it('certification audit: append order + audit rows (opaque)', async () => {
+      const r = make()
+      await r.certificationAudit.appendOrderRow({ name: 'X', plan: 'basic' })
+      await r.certificationAudit.appendCertificationAudit({ document_hash: 'abc' })
+      // no-throw shape contract; in-memory exposes the rows via __getCertificationAuditRows
+    })
+
     it('final render: save (upsert) → get', async () => {
       const r = make()
       expect(await r.finalRenders.getFinalRender(SID)).toBeNull()
@@ -203,5 +210,6 @@ describe('repository resolver + Supabase stub (fail-closed; Supabase OFF by defa
     await expect(r.storage.download('b', 'k')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.extractionRuns.createRun({ sessionId: SID, documentId: 'd', status: 's', startedAt: AT, retakeCount: 0 })).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.finalRenders.getFinalRender(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.certificationAudit.appendOrderRow({})).rejects.toBeInstanceOf(SupabaseNotConnectedError)
   })
 })

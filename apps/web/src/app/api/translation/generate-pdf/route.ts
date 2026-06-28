@@ -15,7 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email/resend'
 import { getCanonicalMode } from '@/lib/canonical/continuityMode'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { repositoryInsertableClient } from '@/lib/repositories'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
 import { renderMirrorTranslationPDF } from '@/lib/translation/pdf/renderMirrorTranslationPDF'
 import { isDualRenderEnabled, buildDualRenderLog } from '@/lib/translation/pdf/dualRenderCompare'
@@ -507,7 +507,7 @@ export async function POST(req: NextRequest) {
   // certification had been recorded. persistCertification inserts order + audit
   // with one retry each (transient-blip tolerance). (Prior code logged a warning
   // and returned the PDF anyway → a signed document with no audit trail.)
-  const persist = await persistCertification(createAdminSupabaseClient(), {
+  const persist = await persistCertification(repositoryInsertableClient(), {
     orderRow: {
       name: profile.name,                 // NOT NULL — review gate guarantees signer name
       email: profile.email || '',         // NOT NULL — wizard sends '' (no email collected)

@@ -1,4 +1,11 @@
-# STATUS (2026-06-28 — Unified Document Contract Phase 6–10 + repository abstraction; Supabase intentionally DISCONNECTED)
+# STATUS (2026-06-28 — Route cutover COMPLETE: every translation route is repository-driven; Supabase intentionally DISCONNECTED)
+
+## 2026-06-28 | Runtime route cutover COMPLETE — ratchet 0 — APPLICATION CODE COMPLETE (routes)
+**Readiness: APPLICATION CODE COMPLETE (routes) — READY FOR SUPABASE ADAPTER CONNECTION + DATABASE-BACKED STAGING VALIDATION** (NOT production-ready).
+- **ALL 13 active translation API routes now use `getRepositories()`** — zero direct Supabase imports in the route layer; the import-boundary ratchet (`noDirectSupabaseInDomain.test.ts`) asserts `toEqual([])` + `KNOWN_COUPLED_ROUTES.size===0`. Migrated: upload, ocr-from-storage, extract, extraction-status, manual-review-status, review-state, confirm-field, correct-field, certify, delete, process, render, generate-pdf.
+- **RepositoryBundle** (in-memory default; Supabase adapter still a fail-closed STUB, NOT connected) now models: documents, review, confirmation, translation, pdfArtifacts, audit, manualReview, extractionRuns, storage, certification, orders, finalRenders, certificationAudit (+ `repositoryInsertableClient()` for the client-agnostic persistCertification lib). One contract suite both impls must satisfy.
+- **Evidence:** full suite **4944 pass / 26 skip / 0 fail**; tsc 0; PII clean. All flags default OFF. Supabase NOT connected/migrated; no real DB writes; no secrets.
+- **Next (owner-gated):** implement the real Supabase adapter against the SAME contract suite, then run the connection sequence in `docs/architecture/SUPABASE_CONNECTION_PLAN.md` + DB-backed staging E2E. Do NOT connect Supabase / enable production flags without owner approval.
 
 ## 2026-06-28 | Repository abstraction + Supabase preparation (NOT connected)
 **Readiness: CODE COMPLETE — READY FOR DATABASE-BACKED STAGING VALIDATION** (NOT production-ready).
