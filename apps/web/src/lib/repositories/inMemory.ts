@@ -10,6 +10,7 @@ import type {
   CertificationRepository, CertificationRecordRow,
   OrderRepository, OrderRecord,
   FinalRenderRepository, FinalRenderRecord,
+  CertificationAuditRepository,
   ExtractionRunRepository, ExtractionRun,
   SessionRecord, FieldRecord, DocumentRecord, PdfArtifactRecord, AuditEventRecord,
 } from './types'
@@ -174,6 +175,12 @@ class InMemoryFinalRenders implements FinalRenderRepository {
   async getFinalRender(sessionId: string) { const r = this.renders.get(sessionId); return r ? { ...r } : null }
 }
 
+class InMemoryCertificationAudit implements CertificationAuditRepository {
+  constructor(private orderRows: unknown[], private auditRows: unknown[]) {}
+  async appendOrderRow(row: unknown) { this.orderRows.push(row) }
+  async appendCertificationAudit(row: unknown) { this.auditRows.push(row) }
+}
+
 class InMemoryExtractionRuns implements ExtractionRunRepository {
   constructor(private runs: Map<string, ExtractionRun>, private fields: Map<string, FieldRecord>) {}
   async getRun(sessionId: string, runId: string) {
@@ -214,6 +221,8 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const orders = new Map<string, OrderRecord>()
   const orderEvents: { orderId: string; eventType: string; metadata: Record<string, string | number | boolean | null> }[] = []
   const finalRenders = new Map<string, FinalRenderRecord>()
+  const certOrderRows: unknown[] = []
+  const certAuditRows: unknown[] = []
   const runs = new Map<string, ExtractionRun>()
   const corrections = new Map<string, number>()
   return {
@@ -229,6 +238,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
     certification: new InMemoryCertification(certifications),
     orders: new InMemoryOrders(orders, orderEvents),
     finalRenders: new InMemoryFinalRenders(finalRenders),
+    certificationAudit: new InMemoryCertificationAudit(certOrderRows, certAuditRows),
   }
 }
 
@@ -253,4 +263,10 @@ export function __seedDocument(bundle: RepositoryBundle, doc: DocumentRecord): v
 export function __seedOrder(bundle: RepositoryBundle, order: OrderRecord): void {
   const o = bundle.orders as unknown as { orders: Map<string, OrderRecord> }
   o.orders.set(order.orderId, { ...order })
+}
+
+/** Inspect persisted certification-audit rows — test helper for the in-memory bundle. */
+export function __getCertificationAuditRows(bundle: RepositoryBundle): { orderRows: unknown[]; auditRows: unknown[] } {
+  const c = bundle.certificationAudit as unknown as { orderRows: unknown[]; auditRows: unknown[] }
+  return { orderRows: c.orderRows, auditRows: c.auditRows }
 }

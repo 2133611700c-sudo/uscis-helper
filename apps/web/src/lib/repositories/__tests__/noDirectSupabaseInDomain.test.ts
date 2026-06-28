@@ -51,20 +51,13 @@ describe('boundary — clean layers import NO Supabase client', () => {
 })
 
 describe('ratchet — active translation routes coupled to Supabase may only shrink', () => {
-  // KNOWN backlog (2026-06-28). MUST shrink to [] for APPLICATION CODE COMPLETE.
-  // Do NOT add to this list — migrate the route to getRepositories() instead.
-  const KNOWN_COUPLED_ROUTES = new Set([
-    // confirm-field + correct-field + delete MIGRATED to getRepositories() (2026-06-28) — removed from backlog.
-    // extraction-status + manual-review-status MIGRATED (2026-06-28) — removed.
-    // ocr-from-storage MIGRATED (2026-06-28) — storage.download + extraction runs + markExtracted.
-    // review-state MIGRATED (2026-06-28) — compound load via repositories.
-    // certify MIGRATED (2026-06-28) — certification record + status + audit via repository.
-    // extract MIGRATED (2026-06-28) — markExtracted via repository.
-    'src/app/api/translation/generate-pdf/route.ts',
-    // upload MIGRATED (2026-06-28) — storage.upload + documents.createDocument/markUploaded.
-    // process MIGRATED (2026-06-28) — legacy orders via OrderRepository.
-    // render MIGRATED (2026-06-28) — FinalRenderRepository + repos for all persistence.
-  ])
+  // ✅ EMPTY (2026-06-28): ALL active translation routes migrated to getRepositories().
+  // APPLICATION CODE COMPLETE for routes — Supabase access lives only in the
+  // (not-connected) adapter stub. Do NOT add to this set; migrate any new route to
+  // getRepositories() instead. Migrated: upload, ocr-from-storage, extract, extraction-
+  // status, manual-review-status, review-state, confirm-field, correct-field, certify,
+  // delete, process, render, generate-pdf.
+  const KNOWN_COUPLED_ROUTES = new Set<string>([])
 
   it('no NEW route couples to Supabase (set ⊆ known backlog)', () => {
     const routes = tsFiles(join(WEB, 'src/app/api/translation')).filter((f) => /route\.tsx?$/.test(f))
@@ -75,10 +68,13 @@ describe('ratchet — active translation routes coupled to Supabase may only shr
     expect(unknown, 'a NEW route imports Supabase directly — route it through getRepositories()').toEqual([])
   })
 
-  it('documents remaining backlog count (APPLICATION CODE COMPLETE when 0)', () => {
+  it('ZERO active translation routes import Supabase directly (APPLICATION CODE COMPLETE)', () => {
     const routes = tsFiles(join(WEB, 'src/app/api/translation')).filter((f) => /route\.tsx?$/.test(f))
-    const remaining = routes.filter((f) => SUPABASE_IMPORT.test(readFileSync(f, 'utf8'))).length
-    // Honest tripwire: when migration completes, flip this to toBe(0).
-    expect(remaining).toBeLessThanOrEqual(KNOWN_COUPLED_ROUTES.size)
+    const remaining = routes
+      .filter((f) => SUPABASE_IMPORT.test(readFileSync(f, 'utf8')))
+      .map((f) => f.replace(WEB + '/', ''))
+    // Migration COMPLETE: the route layer is fully repository-driven.
+    expect(remaining, 'a translation route still imports Supabase directly').toEqual([])
+    expect(KNOWN_COUPLED_ROUTES.size).toBe(0)
   })
 })

@@ -9,7 +9,7 @@ import { createInMemoryRepositories } from './inMemory'
 import { createSupabaseRepositoriesStub } from './supabaseAdapter.stub'
 
 export * from './types'
-export { createInMemoryRepositories, __seedManualReviewCase, __seedDocument, __seedOrder } from './inMemory'
+export { createInMemoryRepositories, __seedManualReviewCase, __seedDocument, __seedOrder, __getCertificationAuditRows } from './inMemory'
 export { createSupabaseRepositoriesStub } from './supabaseAdapter.stub'
 
 export type RepositoryDriver = 'in_memory' | 'supabase'
@@ -34,3 +34,30 @@ export function getRepositories(env: Record<string, string | undefined> = proces
 
 /** Test helper: reset the in-memory singleton for isolation. */
 export function __resetInMemoryRepositories(): void { memoSingleton = null }
+
+/**
+ * Structural adapter that lets the client-agnostic `persistCertification` lib
+ * (which expects an `{ from(table).insert(row) }` shape) write through the
+ * repository bundle instead of a Supabase client. Known tables route to the
+ * CertificationAuditRepository; an unknown table is reported as an error (never
+ * silently dropped). A thrown repo error (e.g. Supabase-not-connected) surfaces
+ * as `{ error }` so the caller fails closed.
+ */
+export function repositoryInsertableClient(bundle: RepositoryBundle = getRepositories()) {
+  return {
+    from(table: string) {
+      return {
+        async insert(row: unknown): Promise<{ error: { code?: string; message?: string } | null }> {
+          try {
+            if (table === 'translation_orders') await bundle.certificationAudit.appendOrderRow(row)
+            else if (table === 'translation_certification_audit') await bundle.certificationAudit.appendCertificationAudit(row)
+            else return { error: { code: 'UNKNOWN_TABLE', message: table } }
+            return { error: null }
+          } catch (e) {
+            return { error: { message: e instanceof Error ? e.message : String(e) } }
+          }
+        },
+      }
+    },
+  }
+}

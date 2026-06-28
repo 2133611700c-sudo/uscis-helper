@@ -227,6 +227,16 @@ export interface FinalRenderRepository {
   getFinalRender(sessionId: string): Promise<FinalRenderRecord | null>
 }
 
+/**
+ * Legacy compliance-record persistence for the signed-PDF route: the
+ * `translation_orders` order row + the `translation_certification_audit` row
+ * (8 CFR §103.2(b)(3) artifact). Rows are opaque (the route owns their shape).
+ */
+export interface CertificationAuditRepository {
+  appendOrderRow(row: unknown): Promise<void>
+  appendCertificationAudit(row: unknown): Promise<void>
+}
+
 export interface ExtractionRun {
   id: string
   sessionId: string
@@ -264,6 +274,7 @@ export interface RepositoryBundle {
   certification: CertificationRepository
   orders: OrderRepository
   finalRenders: FinalRenderRepository
+  certificationAudit: CertificationAuditRepository
 }
 
 /** Thrown by the Supabase adapter stub until the owner wires + approves it. */
