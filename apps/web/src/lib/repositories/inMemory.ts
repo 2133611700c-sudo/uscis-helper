@@ -43,6 +43,11 @@ class InMemoryDocuments implements DocumentRepository {
   async markUploaded(id: string, uploadedPages: number, at: string) {
     const s = this.sessions.get(id); if (s) this.sessions.set(id, { ...s, status: 'uploaded', uploadedPages, updatedAt: at })
   }
+  async getDocument(sessionId: string, documentId: string) {
+    const list = this.docs.get(sessionId) ?? []
+    const d = list.find((x) => x.id === documentId)
+    return d ? { ...d } : null
+  }
 }
 
 class InMemoryReview implements ReviewRepository {
@@ -117,19 +122,26 @@ class InMemoryManualReview implements ManualReviewRepository {
 }
 
 class InMemoryStorage implements StorageRepository {
-  constructor(private files: Map<string, Set<string>>) {}
+  constructor(private files: Map<string, Map<string, Uint8Array>>) {}
+  private bucketMap(bucket: string) {
+    let m = this.files.get(bucket); if (!m) { m = new Map(); this.files.set(bucket, m) }
+    return m
+  }
   async remove(bucket: string, keys: string[]) {
-    const set = this.files.get(bucket); if (!set) return
-    for (const k of keys) set.delete(k)
+    const m = this.files.get(bucket); if (!m) return
+    for (const k of keys) m.delete(k)
   }
   async createSignedUrl(bucket: string, key: string, expirySeconds: number) {
     // deterministic, network-free stand-in for a Supabase signed URL
     return `memory://${bucket}/${key}?expires_in=${expirySeconds}`
   }
-  async upload(bucket: string, key: string, _bytes: Uint8Array, _contentType: string, opts?: { upsert?: boolean }) {
-    const set = this.files.get(bucket) ?? new Set<string>()
-    if (set.has(key) && !opts?.upsert) throw new Error(`storage object already exists: ${bucket}/${key}`)
-    set.add(key); this.files.set(bucket, set)
+  async upload(bucket: string, key: string, bytes: Uint8Array, _contentType: string, opts?: { upsert?: boolean }) {
+    const m = this.bucketMap(bucket)
+    if (m.has(key) && !opts?.upsert) throw new Error(`storage object already exists: ${bucket}/${key}`)
+    m.set(key, bytes)
+  }
+  async download(bucket: string, key: string) {
+    return this.files.get(bucket)?.get(key) ?? null
   }
 }
 
@@ -164,6 +176,20 @@ class InMemoryExtractionRuns implements ExtractionRunRepository {
   async countFields(sessionId: string) {
     return [...this.fields.values()].filter((f) => f.sessionId === sessionId).length
   }
+  async createRun(input: { sessionId: string; documentId: string; status: string; startedAt: string; retakeCount: number }) {
+    const n = [...this.runs.values()].filter((r) => r.sessionId === input.sessionId).length + 1
+    const id = `run-${input.sessionId}-${n}`
+    this.runs.set(id, {
+      id, sessionId: input.sessionId, status: input.status,
+      retakeCount: input.retakeCount, startedAt: input.startedAt, createdAt: input.startedAt,
+    })
+    return { id }
+  }
+  async updateRun(runId: string | null, patch: Record<string, unknown>) {
+    if (!runId) return
+    const r = this.runs.get(runId); if (!r) return
+    this.runs.set(runId, { ...r, ...(patch as Partial<ExtractionRun>) })
+  }
 }
 
 /** Build a fresh in-memory bundle (isolated state per call → deterministic tests). */
@@ -176,7 +202,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const events: AuditEventRecord[] = []
   const tickets = new Map<string, ManualReviewTicket[]>()
   const cases = new Map<string, ManualReviewCase>()
-  const storageFiles = new Map<string, Set<string>>()
+  const storageFiles = new Map<string, Map<string, Uint8Array>>()
   const certifications = new Map<string, CertificationRecordRow>()
   const orders = new Map<string, OrderRecord>()
   const orderEvents: { orderId: string; eventType: string; metadata: Record<string, string | number | boolean | null> }[] = []
@@ -202,9 +228,9 @@ export function __seedManualReviewCase(
   bundle: RepositoryBundle, caseId: string, bucket: string, fileUrl: string | null,
 ): void {
   const mr = bundle.manualReview as unknown as { cases: Map<string, ManualReviewCase> }
-  const st = bundle.storage as unknown as { files: Map<string, Set<string>> }
+  const st = bundle.storage as unknown as { files: Map<string, Map<string, Uint8Array>> }
   mr.cases.set(caseId, { id: caseId, fileUrl })
-  if (fileUrl) { const set = st.files.get(bucket) ?? new Set<string>(); set.add(fileUrl); st.files.set(bucket, set) }
+  if (fileUrl) { const m = st.files.get(bucket) ?? new Map<string, Uint8Array>(); m.set(fileUrl, new Uint8Array()); st.files.set(bucket, m) }
 }
 
 /** Seed an uploaded source document — test/dev helper for the in-memory bundle. */

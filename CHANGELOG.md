@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-28 | Route cutover #11 — ocr-from-storage → getRepositories() (ratchet 3→2)
+- `apps/web/src/app/api/translation/[sessionId]/ocr-from-storage/route.ts` no longer imports any Supabase client — session/document load, extraction-run create/finalise, storage image download, and session status→`extracted` now via `getRepositories()`. The OCR pipeline externals stay direct deps: Vision OCR, DeepSeek field-mapper, image preprocess, manual-review router, and `persistExtractedFields`/`writeAuditLog` (lib wrappers, not flagged by the ratchet). All status codes (400/404/422/503/500), Smart-Retake, and manual-review gates preserved; `finaliseRun` helper now takes the repository bundle.
+- Repository surface extensions: `StorageRepository.download`, `DocumentRepository.getDocument`, `ExtractionRunRepository.createRun`/`updateRun`. In-memory storage now holds object bytes (bucket→key→Uint8Array) so download round-trips. In-memory impls + fail-closed Supabase stubs + contract assertions.
+- New `ocrFromStorageRoute.test.ts` (in-memory, OCR externals mocked): happy path creates run + downloads + persists + marks session extracted; 404 missing session/document (no OCR calls); 500 when storage has the doc row but no bytes.
+- Ratchet: ocr-from-storage removed from `KNOWN_COUPLED_ROUTES` (3→2 remain: generate-pdf, render).
+- Green: repositories + ocr-from-storage 36/36; repositories+translation+contracts+v1 477/477; tsc 0; PII clean. All flags default OFF.
+
 ## 2026-06-28 | Route cutover #10 — process (legacy orders) → getRepositories() (ratchet 4→3)
 - `apps/web/src/app/api/translation/process/route.ts` no longer imports `@supabase/supabase-js` — GET/PATCH/POST drive the legacy `translation_orders` + `translation_events` via a new `OrderRepository`. The legacy packet generator (`@/lib/packet generateFullPacket`) stays a direct call (POST path); only its surrounding order persistence moved. Response shapes preserved (GET full row, PATCH `{order_id,status,ocr_status,updated_at}`, POST `{ok,order_id,download_url,expires_at,files}`); PATCH/POST now return 404 (was 500) for an unknown order.
 - New `OrderRepository.getOrder`/`updateOrder`/`appendEvent` (+ `OrderRecord`): in-memory impl + events store, fail-closed Supabase stub, contract assertions; `__seedOrder` test helper.

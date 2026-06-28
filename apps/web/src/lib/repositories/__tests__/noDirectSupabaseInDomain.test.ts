@@ -56,7 +56,7 @@ describe('ratchet — active translation routes coupled to Supabase may only shr
   const KNOWN_COUPLED_ROUTES = new Set([
     // confirm-field + correct-field + delete MIGRATED to getRepositories() (2026-06-28) — removed from backlog.
     // extraction-status + manual-review-status MIGRATED (2026-06-28) — removed.
-    'src/app/api/translation/[sessionId]/ocr-from-storage/route.ts',
+    // ocr-from-storage MIGRATED (2026-06-28) — storage.download + extraction runs + markExtracted.
     // review-state MIGRATED (2026-06-28) — compound load via repositories.
     // certify MIGRATED (2026-06-28) — certification record + status + audit via repository.
     // extract MIGRATED (2026-06-28) — markExtracted via repository.

@@ -30,7 +30,8 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { runWithUploadCostTally } from '@/lib/v1/ocrCostMetrics'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
+import type { RepositoryBundle } from '@/lib/repositories'
 import { loadGlossary, lookupTerm } from '@/lib/translation/glossary/glossaryLoader'
 import { transliterateName } from '@/lib/translation/glossary/nominativeCaseRestorer'
 import { normalizeDateUkrainian } from '@/lib/translation/numericAccuracy/dateFieldLockValidator'
@@ -93,40 +94,26 @@ async function POST_impl(
   }
 
   const retakeCount  = typeof body.retake_count === 'number' ? body.retake_count : 0
-  const supabase     = createAdminSupabaseClient()
+  const repos        = getRepositories()
 
   // ── 1. Validate session ───────────────────────────────────────────────────
-  const { data: session } = await supabase
-    .from('translation_sessions')
-    .select('session_id, doc_type, status')
-    .eq('session_id', sessionId)
-    .single()
+  const session = await repos.documents.getSession(sessionId)
 
   if (!session) {
     return NextResponse.json({ ok: false, error: 'Session not found' }, { status: 404 })
   }
 
   const docType: DocumentType =
-    body.doc_type ?? (session.doc_type as DocumentType) ?? 'ua_passport_booklet'
+    body.doc_type ?? (session.docType as DocumentType) ?? 'ua_passport_booklet'
 
   // Critical field set — driven by module registry, not hardcoded
   // This replaces the old static 8-field CRITICAL_FIELDS constant.
   const CRITICAL_FIELDS = getCriticalFieldSetForDocumentType(docType)
 
   // ── 2. Locate document ────────────────────────────────────────────────────
-  const docQuery = supabase
-    .from('translation_documents')
-    .select('id, storage_key, mime_type, original_name')
-    .eq('session_id', sessionId)
-
-  if (body.document_id) {
-    docQuery.eq('id', body.document_id)
-  } else {
-    docQuery.order('created_at', { ascending: false }).limit(1)
-  }
-
-  const { data: docRows } = await docQuery
-  const doc = docRows?.[0]
+  const doc = body.document_id
+    ? await repos.documents.getDocument(sessionId, body.document_id)
+    : await repos.documents.getLatestDocument(sessionId)
 
   if (!doc) {
     return NextResponse.json({
@@ -136,19 +123,13 @@ async function POST_impl(
   }
 
   // ── Create extraction_runs row for audit ──────────────────────────────────
-  let runId: string | null = null
-  const { data: runRow } = await supabase
-    .from('extraction_runs')
-    .insert({
-      session_id:   sessionId,
-      document_id:  doc.id,
-      status:       'processing',
-      started_at:   new Date().toISOString(),
-      retake_count: retakeCount,
-    })
-    .select('id')
-    .single()
-  runId = runRow?.id ?? null
+  const { id: runId } = await repos.extractionRuns.createRun({
+    sessionId,
+    documentId: doc.id,
+    status: 'processing',
+    startedAt: new Date().toISOString(),
+    retakeCount,
+  })
 
   await writeAuditLog({
     session_id: sessionId,
@@ -156,17 +137,14 @@ async function POST_impl(
     metadata: { run_id: runId, doc_type: docType, document_id: doc.id, provider: 'google_vision', retake_count: retakeCount },
   })
 
-  // ── 3. Download image from Supabase Storage ───────────────────────────────
+  // ── 3. Download image from object storage ─────────────────────────────────
   let imageBuffer: Buffer
   try {
-    const { data: fileData, error: dlErr } = await supabase.storage
-      .from('translation-documents')
-      .download(doc.storage_key)
-
-    if (dlErr || !fileData) throw new Error(dlErr?.message ?? 'download returned no data')
-    imageBuffer = Buffer.from(await fileData.arrayBuffer())
+    const fileData = await repos.storage.download('translation-documents', doc.storageKey)
+    if (!fileData) throw new Error('download returned no data')
+    imageBuffer = Buffer.from(fileData)
   } catch (err) {
-    await finaliseRun(supabase, runId, 'failed', sessionId, {
+    await finaliseRun(repos, runId, 'failed', sessionId, {
       error_message: 'Could not load your document. Please try re-uploading.',
       error_detail: String(err),
     })
@@ -174,11 +152,11 @@ async function POST_impl(
   }
 
   // ── 4. Preprocess image ───────────────────────────────────────────────────
-  const pre = await preprocessImage(imageBuffer, doc.mime_type ?? 'image/jpeg')
+  const pre = await preprocessImage(imageBuffer, doc.mimeType ?? 'image/jpeg')
 
   if (!pre.ok) {
     if (pre.code === 'unsupported_file_type') {
-      await finaliseRun(supabase, runId, 'failed', sessionId, {
+      await finaliseRun(repos, runId, 'failed', sessionId, {
         error_message: pre.message,
         error_detail:  pre.detail,
       })
@@ -194,7 +172,7 @@ async function POST_impl(
       }))
       return NextResponse.json({ ok: false, error: pre.message, code: pre.code }, { status: 422 })
     }
-    await finaliseRun(supabase, runId, 'failed', sessionId, {
+    await finaliseRun(repos, runId, 'failed', sessionId, {
       error_message: pre.message,
       error_detail:  pre.detail,
     })
@@ -225,7 +203,7 @@ async function POST_impl(
     const blockReason = isProviderError(ocrRaw) ? ocrRaw.error.message : ocrRaw.reason
     const requiredEnv = isProviderError(ocrRaw) ? [] : ocrRaw.required_env_vars
     const blockCode = isProviderError(ocrRaw) ? ocrRaw.error.error_code : 'ocr_provider_blocked'
-    await finaliseRun(supabase, runId, 'failed', sessionId, {
+    await finaliseRun(repos, runId, 'failed', sessionId, {
       error_message: 'OCR provider not configured. Contact support.',
       error_detail:  blockReason,
     })
@@ -254,7 +232,7 @@ async function POST_impl(
   // No text detected → Smart Retake or manual review
   if (ocrResult.words.length === 0 || ocrResult.raw_text.trim().length < 5) {
     if (retakeCount < SMART_RETAKE_MAX_ATTEMPTS) {
-      await finaliseRun(supabase, runId, 'retake_required', sessionId, {
+      await finaliseRun(repos, runId, 'retake_required', sessionId, {
         error_message: SMART_RETAKE_USER_MESSAGE,
         image_quality: { overall: 0.1, issues: ['no_text_detected'] },
         retake_count: retakeCount,
@@ -268,7 +246,7 @@ async function POST_impl(
       }, { status: 422 })
     }
     // Exhausted retakes → manual review
-    await finaliseRun(supabase, runId, 'manual_review_required', sessionId, {
+    await finaliseRun(repos, runId, 'manual_review_required', sessionId, {
       error_message: 'Automatic extraction could not read your document. Please use manual entry or re-upload a clearer photo.',
     })
     // G4: smart-retake exhausted (no text detected) → manual review ticket
@@ -295,7 +273,7 @@ async function POST_impl(
   const mapResult = await mapFieldsWithDeepSeek({ ocrResult, docType, glossaryJson })
 
   if (!mapResult.ok || mapResult.fields.length === 0) {
-    await finaliseRun(supabase, runId, 'manual_review_required', sessionId, {
+    await finaliseRun(repos, runId, 'manual_review_required', sessionId, {
       error_message: 'Could not identify fields in your document. Please re-upload a clearer photo or enter fields manually.',
       raw_text: ocrResult.raw_text.slice(0, 2000),
     })
@@ -323,7 +301,7 @@ async function POST_impl(
     imageQuality.overall < SMART_RETAKE_QUALITY_THRESHOLD &&
     retakeCount < SMART_RETAKE_MAX_ATTEMPTS
   ) {
-    await finaliseRun(supabase, runId, 'retake_required', sessionId, {
+    await finaliseRun(repos, runId, 'retake_required', sessionId, {
       error_message: SMART_RETAKE_USER_MESSAGE,
       image_quality: imageQuality,
       retake_count: retakeCount,
@@ -473,11 +451,7 @@ async function POST_impl(
   await persistExtractedFields(sessionId, withPlaceholders)
 
   // Advance session status
-  await supabase.from('translation_sessions').update({
-    status:     'extracted',
-    doc_type:   docType,
-    updated_at: new Date().toISOString(),
-  }).eq('session_id', sessionId)
+  await repos.documents.markExtracted(sessionId, docType, new Date().toISOString())
 
   // Finalise extraction_runs row
   const durationMs      = Date.now() - startMs
@@ -485,7 +459,7 @@ async function POST_impl(
     ? withPlaceholders.reduce((s, f) => s + f.confidence, 0) / withPlaceholders.length
     : 0
 
-  await finaliseRun(supabase, runId, 'completed', sessionId, {
+  await finaliseRun(repos, runId, 'completed', sessionId, {
     provider:       'google_vision',
     raw_text:       ocrResult.raw_text.slice(0, 8000),
     warnings:       [...ocrResult.warnings, ...mapResult.warnings],
@@ -550,18 +524,18 @@ async function POST_impl(
 
 // ── Helper: update extraction_runs row ───────────────────────────────────────
 async function finaliseRun(
-  supabase: ReturnType<typeof createAdminSupabaseClient>,
+  repos: RepositoryBundle,
   runId: string | null,
   status: string,
   sessionId: string,
   extra: Record<string, unknown>
 ): Promise<void> {
   if (!runId) return
-  await supabase.from('extraction_runs').update({
+  await repos.extractionRuns.updateRun(runId, {
     status,
     completed_at: new Date().toISOString(),
     ...extra,
-  }).eq('id', runId).then(() => {}, () => {})
+  }).then(() => {}, () => {})
 
   if (status === 'failed' || status === 'manual_review_required' || status === 'retake_required') {
     await writeAuditLog({

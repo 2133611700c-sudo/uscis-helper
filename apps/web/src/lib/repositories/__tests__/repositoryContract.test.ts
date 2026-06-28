@@ -96,18 +96,33 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       expect(url).toContain('uploads/x.jpg')
     })
 
-    it('upload → createDocument → getLatestDocument; markUploaded; upsert conflict throws', async () => {
+    it('upload → createDocument → getLatestDocument/getDocument; download bytes; markUploaded; upsert conflict throws', async () => {
       const r = make()
       await r.documents.createSession({ sessionId: SID, docType: 'unknown', status: 'created', createdAt: AT, updatedAt: AT })
       await r.storage.upload('translation-documents', `${SID}/1.jpg`, new Uint8Array([1, 2, 3]), 'image/jpeg', { upsert: false })
       // re-upload same key without upsert → throws
       await expect(r.storage.upload('translation-documents', `${SID}/1.jpg`, new Uint8Array([1]), 'image/jpeg')).rejects.toThrow(/already exists/)
+      // download round-trips the stored bytes; absent key → null
+      expect(Array.from((await r.storage.download('translation-documents', `${SID}/1.jpg`))!)).toEqual([1, 2, 3])
+      expect(await r.storage.download('translation-documents', 'nope')).toBeNull()
       const doc = await r.documents.createDocument({ sessionId: SID, storageKey: `${SID}/1.jpg`, originalName: 'a.jpg', mimeType: 'image/jpeg', fileSizeBytes: 3, createdAt: AT })
       expect(doc.id).toBeTruthy()
       expect((await r.documents.getLatestDocument(SID))?.storageKey).toBe(`${SID}/1.jpg`)
+      expect((await r.documents.getDocument(SID, doc.id))?.storageKey).toBe(`${SID}/1.jpg`)
+      expect(await r.documents.getDocument(SID, 'missing')).toBeNull()
       await r.documents.markUploaded(SID, 2, '2026-06-28T02:00:00Z')
       const s = await r.documents.getSession(SID)
       expect(s?.status).toBe('uploaded'); expect(s?.uploadedPages).toBe(2)
+    })
+
+    it('extraction run: createRun → getRun → updateRun patches status', async () => {
+      const r = make()
+      const { id } = await r.extractionRuns.createRun({ sessionId: SID, documentId: 'doc-1', status: 'processing', startedAt: AT, retakeCount: 0 })
+      expect(id).toBeTruthy()
+      expect((await r.extractionRuns.getRun(SID, id!))?.status).toBe('processing')
+      await r.extractionRuns.updateRun(id, { status: 'completed' })
+      expect((await r.extractionRuns.getRun(SID, id!))?.status).toBe('completed')
+      await r.extractionRuns.updateRun(null, { status: 'x' }) // null runId → no-op
     })
 
     it('certification record: save (upsert) → get; second save overwrites', async () => {
@@ -176,5 +191,7 @@ describe('repository resolver + Supabase stub (fail-closed; Supabase OFF by defa
     await expect(r.storage.createSignedUrl('b', 'k', 60)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.storage.upload('b', 'k', new Uint8Array([1]), 'image/jpeg')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.orders.getOrder('ORD-x')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.storage.download('b', 'k')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.extractionRuns.createRun({ sessionId: SID, documentId: 'd', status: 's', startedAt: AT, retakeCount: 0 })).rejects.toBeInstanceOf(SupabaseNotConnectedError)
   })
 })

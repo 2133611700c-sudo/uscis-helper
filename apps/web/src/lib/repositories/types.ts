@@ -85,6 +85,8 @@ export interface DocumentRepository {
   markExtracted(sessionId: string, docType: string, at: string): Promise<void>
   /** Most-recently-uploaded source document for a session; null if none. */
   getLatestDocument(sessionId: string): Promise<DocumentRecord | null>
+  /** A specific document by id within a session; null if not found. */
+  getDocument(sessionId: string, documentId: string): Promise<DocumentRecord | null>
   /** Persist a new uploaded document row; returns the stored record (with id). */
   createDocument(input: {
     sessionId: string; storageKey: string; originalName: string | null
@@ -158,6 +160,8 @@ export interface StorageRepository {
   createSignedUrl(bucket: string, key: string, expirySeconds: number): Promise<string | null>
   /** Upload an object. Throws if the key exists and opts.upsert is not true. */
   upload(bucket: string, key: string, bytes: Uint8Array, contentType: string, opts?: { upsert?: boolean }): Promise<void>
+  /** Download an object's bytes; null if the key is absent. */
+  download(bucket: string, key: string): Promise<Uint8Array | null>
 }
 
 /**
@@ -225,6 +229,10 @@ export interface ExtractionRun {
 export interface ExtractionRunRepository {
   getRun(sessionId: string, runId: string): Promise<ExtractionRun | null>
   countFields(sessionId: string): Promise<number>
+  /** Insert a new extraction run; returns its id (null if it could not be created). */
+  createRun(input: { sessionId: string; documentId: string; status: string; startedAt: string; retakeCount: number }): Promise<{ id: string | null }>
+  /** Patch an existing run (status + freeform metadata columns). No-op if runId is null/absent. */
+  updateRun(runId: string | null, patch: Record<string, unknown>): Promise<void>
 }
 
 export interface RepositoryBundle {
