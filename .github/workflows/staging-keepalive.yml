@@ -1,0 +1,76 @@
+name: Staging Keep-Alive (Free-tier idle guard)
+
+# Supabase Free auto-pauses a project after ~7 days with zero DB/API activity.
+# The isolated staging project (ADR-023) is intentionally on a separate Free
+# account and stays idle between V1 release pushes, so Supabase paused-pending
+# warnings will fire whenever no PR touches staging for a week.
+#
+# This workflow performs the cheapest possible activity that Supabase counts as
+# usage: a single `SELECT 1` against the staging DB through the IPv4 session
+# pooler (same endpoint `staging-provision.yml` and `staging-webhook-replay-proof.yml`
+# already use). Read-only, no DDL, no data writes.
+#
+# Required existing secrets (already used by other staging workflows):
+#   STAGING_SUPABASE_PROJECT_REF   — must equal rxnlpvldngxgdxkxoaaj (staging)
+#   STAGING_SUPABASE_DB_PASSWORD   — staging DB password
+# Optional:
+#   STAGING_DB_POOLER_HOST         — defaults to aws-1-us-west-1.pooler.supabase.com
+#
+# Hard guard: refuses to run if the target ref equals the production ref.
+
+on:
+  workflow_dispatch:        # manual test button
+  schedule:
+    - cron: '0 9 */3 * *'   # every 3 days at 09:00 UTC
+
+permissions:
+  contents: read
+
+env:
+  PROD_REF: rtfxrlountkoegsseukx
+  STAGING_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+
+jobs:
+  keepalive:
+    name: SELECT 1 on staging (idle-guard)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Guard — staging ref present and != production
+        run: |
+          if [ -z "$STAGING_REF" ]; then
+            echo "::error::STAGING_SUPABASE_PROJECT_REF secret missing — refusing to run."
+            exit 1
+          fi
+          if [ "$STAGING_REF" = "$PROD_REF" ]; then
+            echo "::error::GUARD FAIL: staging ref equals production ref — refusing to run."
+            exit 1
+          fi
+          echo "guard_ok: target=$STAGING_REF (not prod)"
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+          psql --version
+
+      - name: SELECT 1 via IPv4 session pooler
+        env:
+          POOLER_HOST: ${{ secrets.STAGING_DB_POOLER_HOST || 'aws-1-us-west-1.pooler.supabase.com' }}
+          DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DB_PASSWORD:-}" ]; then
+            echo "::error::STAGING_SUPABASE_DB_PASSWORD secret missing — refusing to run."
+            exit 1
+          fi
+          # urlencode the password (defensive: passwords may contain reserved chars)
+          ENC_PW=$(python3 -c "import urllib.parse,os;print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")
+          DB="postgresql://postgres.${STAGING_REF}:${ENC_PW}@${POOLER_HOST}:5432/postgres?sslmode=require"
+          # one read-only round trip; output should be exactly "1"
+          OUT=$(psql "$DB" -tAc 'select 1;' | tr -d '[:space:]')
+          if [ "$OUT" != "1" ]; then
+            echo "::error::keepalive query did not return 1 (got: '$OUT')"
+            exit 1
+          fi
+          echo "keepalive_ok: SELECT 1 on staging returned 1 at $(date -u +%FT%TZ)"

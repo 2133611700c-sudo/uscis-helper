@@ -58,6 +58,11 @@
 - NOTE: STATUS block below ("PII ledger WIRED/READY", "phases PASS", sha 62c897a) is STALE/overclaiming — see CLAIMS_VS_REALITY.csv. No runtime/env/PR119 change in this audit.
 
 ---
+## 2026-06-27 | Staging keep-alive workflow (Free-tier idle guard)
+- Added `.github/workflows/staging-keepalive.yml`: cron `0 9 */3 * *` runs `SELECT 1` on staging via IPv4 session pooler. Read-only, no DDL, no data writes. Same hard-guard pattern as `staging-provision.yml` (target ref != prod ref). Uses existing secrets `STAGING_SUPABASE_PROJECT_REF` / `STAGING_SUPABASE_DB_PASSWORD`; optional `STAGING_DB_POOLER_HOST` falls back to `aws-1-us-west-1.pooler.supabase.com`.
+- Why: Supabase Free auto-pauses a project after ~7 days of zero DB/API activity. The isolated staging project `rxnlpvldngxgdxkxoaaj` (ADR-023) lives on a separate Free account and is intentionally idle between V1 release pushes, so pause warnings fire whenever no PR touches it for a week.
+- Why nightly does not protect it: `v1-nightly-staging.yml` is still a dry-run stub — its only meaningful run path prints `"Staging ready. (Real staging smoke is implemented in a later phase; still no production, no real money.)"` and exits without touching the DB. Supabase therefore correctly counts staging as idle. Keep-alive is a behavior-neutral idle-guard; the nightly stub stays untouched for its later real-smoke implementation.
+
 ## Pre-audit pipeline state — 2026-06-14 (NOTE: claims below are STALE/overclaiming per the audit above; sha 62c897a is outdated, real main=prod=02eb595)
 
 > **This file is current state ONLY.** Machine-readable **verified snapshot**: [RELEASE_STATE.yaml](RELEASE_STATE.yaml)

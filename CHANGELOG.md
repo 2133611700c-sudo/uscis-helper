@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-27 | Staging Free-tier keep-alive workflow
+### Added
+- `.github/workflows/staging-keepalive.yml` — read-only `SELECT 1` keep-alive against the isolated staging Supabase (`rxnlpvldngxgdxkxoaaj`) every 3 days via the IPv4 session pooler. Prevents Supabase Free auto-pause without upgrading the staging account.
+- Hard-guard refuses to run if target ref equals production ref (same pattern as `staging-provision.yml`). Uses only existing secrets `STAGING_SUPABASE_PROJECT_REF` / `STAGING_SUPABASE_DB_PASSWORD`; optional `STAGING_DB_POOLER_HOST` falls back to `aws-1-us-west-1.pooler.supabase.com`.
+
+### Notes
+- `v1-nightly-staging.yml` remains a dry-run stub (documented "Real staging smoke is implemented in a later phase") and does not touch the DB; keep-alive is independent of that future work.
+
 ## 2026-06-21 | guards.yml — fork-PR skip on OWNER_PII_PATTERNS_B64 step (public-ready prep)
 - Added `if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository` to the `Block real owner PII` step in `.github/workflows/guards.yml`.
 - Why: in a future public-repo state, fork PRs do not receive repository secrets. Without the skip, the FAIL-CLOSED gate would always fail on external contributions. With the skip, internal PRs and pushes to main still enforce the gate; fork PRs simply do not run it (the secret was never available to them anyway).
