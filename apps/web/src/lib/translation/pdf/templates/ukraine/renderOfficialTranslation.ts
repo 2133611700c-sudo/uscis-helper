@@ -4,6 +4,7 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import type { OfficialFormSchema } from '../../../forms/ukraine/schemas/types'
 import { pdfSafe } from '../../renderValue'
+import { fieldByOutputKey, isUnifiedDocContractEnabled, BIRTH_CERT_LEGACY_DOCTYPE } from '@/lib/contracts/birthCertSovietV1Contract'
 
 export interface FieldValue { value: string; review: boolean; canRead: boolean }
 const GROUP_TITLE: Record<string, string> = {
@@ -21,7 +22,15 @@ export interface ExtraEntry { key: string; label: string; value: string; review:
 export async function renderOfficialTranslation(
   schema: OfficialFormSchema, values: Record<string, FieldValue>,
   opts: { signerName?: string; signerAddress?: string; signedAt?: string; extras?: ExtraEntry[] } = {},
+  env: Record<string, string | undefined> = process.env,
 ): Promise<{ pdf: Buffer; unresolved: string[] }> {
+  // Phase 4: single English-label source. Flag OFF (default) → schema.sourceLabelEn
+  // (byte-identical). Flag ON → birth-cert labels sourced from the unified contract,
+  // whose englishLabel equals sourceLabelEn (locked by the contract test), so output
+  // is unchanged. Order/section still come from schema.fields/fieldGroup.
+  const useContract = isUnifiedDocContractEnabled(env) && schema.docType === BIRTH_CERT_LEGACY_DOCTYPE
+  const labelEn = (key: string, fallback: string): string =>
+    (useContract ? fieldByOutputKey(key)?.englishLabel : undefined) ?? fallback
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
@@ -44,9 +53,10 @@ export async function renderOfficialTranslation(
     L(GROUP_TITLE[g] ?? g.toUpperCase(), 10, bold, gray)
     for (const f of flds) {
       const v = values[f.key]
-      if (v && v.canRead && v.value && !v.review) L(`  ${f.sourceLabelEn}: ${v.value}`, 10)
-      else if (v && v.canRead && v.value) { L(`  ${f.sourceLabelEn}: ${v.value}    [CONFIRM]`, 10, font, warn); unresolved.push(f.key) }
-      else { L(`  ${f.sourceLabelEn}: ____________________  [enter from document]`, 10, font, warn); unresolved.push(f.key) }
+      const lbl = labelEn(f.key, f.sourceLabelEn)
+      if (v && v.canRead && v.value && !v.review) L(`  ${lbl}: ${v.value}`, 10)
+      else if (v && v.canRead && v.value) { L(`  ${lbl}: ${v.value}    [CONFIRM]`, 10, font, warn); unresolved.push(f.key) }
+      else { L(`  ${lbl}: ____________________  [enter from document]`, 10, font, warn); unresolved.push(f.key) }
     }
     y -= 3
   }
