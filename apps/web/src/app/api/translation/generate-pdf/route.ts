@@ -20,6 +20,7 @@ import { generateTranslationPDF } from '@/lib/packet/pdf'
 import { renderMirrorTranslationPDF } from '@/lib/translation/pdf/renderMirrorTranslationPDF'
 import { isDualRenderEnabled, buildDualRenderLog } from '@/lib/translation/pdf/dualRenderCompare'
 import { hasOfficialSchema } from '@/lib/translation/forms/ukraine/schemas/registry'
+import { shouldBlockRawPdfFallback } from '@/lib/contracts/contractReviewState'
 import { buildCertificationRecord } from '@/lib/translation/certificationRecord'
 import { ExtractedField, SourceTrace } from '@/lib/translation/types'
 import { isOwnerSession } from '@/lib/ownerAccess'
@@ -450,7 +451,15 @@ export async function POST(req: NextRequest) {
       }
     }
     if (!pdfBuffer) {
-      pdfBuffer = await renderGenericPdf()
+      // Phase 8 — raw→PDF closure (flag UNIFIED_DOC_CONTRACT_ENABLED, default OFF).
+      // When ON, a contract certificate may NOT emit the raw generic PDF: the final
+      // PDF is allowed ONLY from the validated schema/mirror path. OFF → unchanged.
+      if (shouldBlockRawPdfFallback(payload.doc_type, process.env)) {
+        console.warn('[generate-pdf] raw→PDF fallback BLOCKED by unified contract (mirror/validated required):', payload.doc_type)
+        // leave pdfBuffer null → no raw PDF emitted; client resolves via review/mirror.
+      } else {
+        pdfBuffer = await renderGenericPdf()
+      }
     }
   } catch (err) {
     console.error('[generate-pdf] PDF generation failed:', err)
