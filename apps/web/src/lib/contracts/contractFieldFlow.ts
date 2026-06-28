@@ -20,6 +20,12 @@
  */
 import type { FieldOut } from '@/lib/canonical/core/translationAdapter'
 import {
+  normalizePlace,
+  normalizeOblastToNominative,
+  settlementDesignatorEn,
+  type NormalizationContext,
+} from '@uscis-helper/knowledge'
+import {
   splitSeriesNumber,
   splitBirthPlace,
   splitRegistryOffice,
@@ -89,4 +95,73 @@ export function applyContractSplitFlow(
   }
 
   return rows.length ? [...fields, ...rows] : fields
+}
+
+// ── Phase 7: normalize/translate the split fields via the knowledge codex ───────
+//
+// Flag UNIFIED_DOC_CONTRACT_NORMALIZE_ENABLED (default OFF). Runs ONLY the split
+// rows (review_reasons includes 'contract_split_field') through the EXISTING
+// packages/knowledge functions — never a parallel dictionary (Constitution L2).
+// Strict layering: raw_cyrillic stays the RAW segment (untouched); `value` becomes
+// the NORMALIZED/TRANSLATED English. Confirmed value is the review layer (Phase 8).
+// The normalizer NEVER guesses missing data or abbreviates district/oblast: when
+// the codex cannot validate, the structural value is kept and review_required=true.
+
+export function isUnifiedDocContractNormalizeEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.UNIFIED_DOC_CONTRACT_NORMALIZE_ENABLED === '1'
+}
+
+const SPLIT_REASON = 'contract_split_field'
+const CTX: NormalizationContext = { mode: 'uscis_normalized', is_historical_document: true }
+
+/** Knowledge-normalize one split row's raw Cyrillic into its English value. */
+function normalizeSplitValue(field: string, rawCyr: string | null, latin: string | null): { value: string | null; review: boolean } {
+  const raw = (rawCyr ?? '').trim()
+  const keepLatin = latin?.trim() || null
+  if (!raw) return { value: keepLatin, review: true }
+
+  // oblast → genitive→nominative DMS-verified English (preserve full form)
+  if (field === 'place_of_birth_oblast' || field === 'registry_office_oblast') {
+    const o = normalizeOblastToNominative(raw)
+    if (o?.transliterated) {
+      const v = /\boblast$/i.test(o.transliterated) ? o.transliterated : `${o.transliterated} Oblast`
+      return { value: v, review: false }
+    }
+    return { value: keepLatin, review: true }
+  }
+  // settlement type → designator (смт → "urban-type settlement", NEVER city/town).
+  // settlementDesignatorEn matches a designator PREFIX of a fuller string, so the
+  // bare type token is suffixed with a sentinel word to satisfy the regex.
+  if (field === 'place_of_birth_settlement_type') {
+    const d = settlementDesignatorEn(`${raw} Х`)
+    return d ? { value: d, review: false } : { value: keepLatin ?? raw, review: true }
+  }
+  // district → place normalizer (settlement lookup; full form preserved, no abbrev)
+  if (field === 'place_of_birth_district' || field === 'registry_office_district') {
+    const n = normalizePlace(raw, field, 'birth_certificate', CTX)
+    return { value: n.normalized_value || keepLatin, review: n.review_required }
+  }
+  // republic (УРСР), series, number → locked verbatim: never guess/translate. Keep
+  // the structural value (Latin transliteration or printed), force review.
+  return { value: keepLatin ?? raw, review: true }
+}
+
+/** Phase 7 — normalize split rows in place-ish (returns a new array). OFF → identity. */
+export function normalizeContractSplitFields(
+  fields: FieldOut[],
+  env: Record<string, string | undefined> = process.env,
+): FieldOut[] {
+  if (!isUnifiedDocContractNormalizeEnabled(env)) return fields
+  let touched = false
+  const out = fields.map((f) => {
+    if (!f.review_reasons?.includes(SPLIT_REASON)) return f
+    const { value, review } = normalizeSplitValue(f.field, f.raw_cyrillic, f.value)
+    if (value === f.value && review === f.review_required) return f
+    touched = true
+    // raw_cyrillic (RAW) untouched; value = NORMALIZED/TRANSLATED layer.
+    return { ...f, value, review_required: f.review_required || review }
+  })
+  return touched ? out : fields
 }
