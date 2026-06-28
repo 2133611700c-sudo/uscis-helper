@@ -225,6 +225,8 @@ describe('SOURCE INVARIANT — route builds rows only through the brain/canonica
       'legacyEns.fields',     // legacy date ensemble over existing rows
       'fields.map(',          // policy guards re-map existing rows (review flags only)
       'res.fields as',        // applyOcrFieldSafety output (operates on existing rows)
+      'applyContractSplitFlow(',      // Phase 6: flag-gated ADDITIVE split over the canonical rows (OFF=identity)
+      'normalizeContractSplitFields(',// Phase 7: flag-gated normalize of the split rows (OFF=identity)
     ]
     // Match `let fields = ...` and `fields = ...` (the live row variable in both paths).
     const assignments = routeSrc.match(/(?:^|\s)fields\s*=\s*[^=].*$/gm) ?? []
