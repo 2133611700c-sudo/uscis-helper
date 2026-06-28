@@ -69,7 +69,19 @@ export const UKR_LABEL_BY_FIELD: Record<string, string> = {
   doc_number: 'Номер документа',
 }
 
-/** Label for a field — NEVER drops: unknown keys fall back to the raw key. */
-export function ukrLabelFor(field: string): string {
+import { birthCertReviewLabels, isUnifiedDocContractEnabled } from '@/lib/contracts/birthCertSovietV1Contract'
+
+/**
+ * Label for a field — NEVER drops: unknown keys fall back to the raw key.
+ * Flag OFF (default) → the legacy UKR_LABEL_BY_FIELD literal (byte-identical).
+ * Flag ON → birth-cert read-side keys are sourced from the unified contract; the
+ * contract values equal the legacy entries (Phase-4 parity test), so behaviour is
+ * unchanged. Non-birth-cert keys always use the legacy map.
+ */
+export function ukrLabelFor(field: string, env: Record<string, string | undefined> = process.env): string {
+  if (isUnifiedDocContractEnabled(env)) {
+    const fromContract = birthCertReviewLabels()[field]
+    if (fromContract) return fromContract
+  }
   return UKR_LABEL_BY_FIELD[field] ?? field
 }

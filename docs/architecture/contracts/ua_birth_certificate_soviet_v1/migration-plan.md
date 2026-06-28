@@ -26,6 +26,26 @@ Reconcile with the **existing** `KEY_ALIASES` (`canonical/core/keyAliases.ts`) a
 - Ambiguous entries (#2/#3) are **absent** from the maps until decided (fail-loud, never guess).
 - **Exit:** adapter unit tests green; production code still uses old maps. **Rollback:** delete adapters.
 
+> **STATUS 2026-06-27 — Phases 0–2 DONE.** Phase 0/1: contract landed as a typed module
+> (`apps/web/src/lib/contracts/birthCertSovietV1Contract.ts`) consumed by nothing + golden baseline;
+> decisions #1 (flat runtimeKey) and #2/#3/#4 baked in (verified against live `buildMirrorValues`:
+> `issuing_authority→place_of_registration`, `certificate_series_number→series_number`). Phase 2:
+> reconciliation test (`__tests__/birthCertSovietV1Reconcile.test.ts`) asserts the contract does not
+> contradict the **second** alias island `KEY_ALIASES` (D), covers the crop layer `FIELD_BOX_TEMPLATES`
+> (C), and **pins the latent HTR empty-intersection bug** (audit conflict #1: A `child_*` keys never
+> match `HTR_NAME_FIELDS={family_name,given_name,patronymic}` → HTR never fires; the contract bridges it).
+> 21 contract tests green, tsc 0, no runtime change.
+>
+> **STATUS 2026-06-27 — Phase 3 DONE + parity-verified.** `buildMirrorValues.resolveAliases()` and
+> `keyAliases.resolveKeyAliases()` are flag-gated (`UNIFIED_DOC_CONTRACT_ENABLED`, default OFF = legacy
+> literals byte-identical); flag ON sources the birth-cert maps from the contract
+> (`birthCertMirrorAliases()` / `birthCertContractKeyAliases()`). `phase3ContractRuntimeParity.test.ts`
+> proves flag ON == OFF (mirror map deep-equals legacy `ALIASES`; `buildMirrorValues`/`collectMirrorExtras`
+> identical OFF vs ON on a fictional fixture; `resolveKeyAliases(ON)===OFF`; contribution is a strict subset).
+> 633 tests green, tsc 0. The two alias islands now collapse to one source with zero behavior change.
+> **Next: Phase 4 (single English-label + order source) — and the owner may flip the flag once Phase 4
+> lands, since parity is proven.** Not committed/pushed (push auto-deploys; flag stays OFF).
+
 ## Phase 3 — Make `KEY_ALIASES` + `buildMirrorValues` DERIVE from the contract
 - Replace the two hand-maintained alias maps with projections of the contract (single source). Behavior must be **byte-identical** (golden snapshot from Phase 0).
 - This collapses the two alias islands into one without renaming any stored key.
@@ -35,6 +55,17 @@ Reconcile with the **existing** `KEY_ALIASES` (`canonical/core/keyAliases.ts`) a
 - Point `renderOfficialTranslation.ts` and the review UI (`EvidenceReviewPage.tsx` / `translationFieldLabels.ts`) at `contract.fields[].output` for label/section/order.
 - Verify PDF + review render byte-identical to baseline.
 - **Exit:** one label source; snapshot identical. **Rollback:** flag back to old label maps.
+
+> **STATUS 2026-06-27 — Phase 4 DONE + byte-identity-verified.** The contract now carries `reviewLabelUk`
+> per birth-cert field (the wizard's independent Ukrainian map `UKR_LABEL_BY_FIELD` folds in). `ukrLabelFor`
+> (review UI) and `renderOfficialTranslation` (PDF English label) are flag-gated (`UNIFIED_DOC_CONTRACT_ENABLED`,
+> default OFF byte-identical); flag ON sources labels from the contract via `birthCertReviewLabels()` /
+> `fieldByOutputKey().englishLabel`. Order/section still come from `schema.fields`/`fieldGroup` (the contract's
+> englishLabel/section is locked == schema). `phase4ContractLabelParity.test.ts` proves: contract reviewLabelUk
+> == legacy UK map; contract englishLabel == schema sourceLabelEn; `ukrLabelFor` ON==OFF for every key; and the
+> **rendered birth-cert mirror PDF is byte-for-byte identical OFF vs ON** (`Buffer.compare === 0`). 80 contract+pdf
+> tests green; full suite 4747 green; tsc 0. **Next: Phase 5 (split merged fields — series/number, place parts —
+> additive/opt-in).** Not committed/pushed (push auto-deploys; flag stays OFF).
 
 ## Phase 5 — Split the merged fields (additive, opt-in)
 - `certificate_series_number` / `series_number` → `document.series` + `document.number` (decision #4).

@@ -53,6 +53,8 @@ export interface BirthCertFieldContract {
   outputKey?: string
   /** English label — single source for PDF + review (must equal B.sourceLabelEn when outputKey set). */
   englishLabel: string
+  /** Ukrainian review-UI label — single source for the wizard (must equal UKR_LABEL_BY_FIELD[readSideKey]). */
+  reviewLabelUk?: string
   section: ContractSection
   order: number
   occurrence: Occurrence
@@ -81,21 +83,21 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'person.child.surname', runtimeKey: 'family_name',
     readSideKey: 'child_family_name', outputKey: 'child_surname',
-    englishLabel: 'Surname', section: 'child', order: 1,
+    englishLabel: 'Surname', reviewLabelUk: 'Прізвище дитини', section: 'child', order: 1,
     occurrence: 'REQUIRED_ONCE', criticality: 'critical', rendering: 'handwritten',
     locator: 'fixed_region', readerRoute: 'dual_reader_llm_plus_htr', autoFinalize: false, alwaysReview: true,
   },
   {
     canonicalKey: 'person.child.given_name', runtimeKey: 'given_name',
     readSideKey: 'child_given_name', outputKey: 'child_given_name',
-    englishLabel: 'Given name', section: 'child', order: 2,
+    englishLabel: 'Given name', reviewLabelUk: "Ім'я дитини", section: 'child', order: 2,
     occurrence: 'REQUIRED_ONCE', criticality: 'critical', rendering: 'handwritten',
     locator: 'fixed_region', readerRoute: 'dual_reader_llm_plus_htr', autoFinalize: false, alwaysReview: true,
   },
   {
     canonicalKey: 'person.child.patronymic', runtimeKey: 'patronymic',
     readSideKey: 'child_patronymic', outputKey: 'child_patronymic',
-    englishLabel: 'Patronymic', section: 'child', order: 3,
+    englishLabel: 'Patronymic', reviewLabelUk: 'По батькові дитини', section: 'child', order: 3,
     occurrence: 'REQUIRED_ONCE', criticality: 'critical', rendering: 'handwritten',
     locator: 'fixed_region', readerRoute: 'dual_reader_llm_plus_htr', autoFinalize: false, alwaysReview: true,
     note: 'NEVER "Middle Name".',
@@ -110,7 +112,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'event.birth.date', runtimeKey: 'date_of_birth',
     readSideKey: 'dob', outputKey: 'date_of_birth',
-    englishLabel: 'Date of birth', section: 'child', order: 5,
+    englishLabel: 'Date of birth', reviewLabelUk: 'Дата народження', section: 'child', order: 5,
     occurrence: 'REQUIRED_ONCE', criticality: 'critical', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
     readKeyIsSynonym: true,
@@ -119,7 +121,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'event.birth.settlement', runtimeKey: 'place_of_birth',
     readSideKey: 'place_of_birth_city', outputKey: 'place_of_birth',
-    englishLabel: 'Place of birth', section: 'birthPlace', order: 6,
+    englishLabel: 'Place of birth', reviewLabelUk: 'Місце народження', section: 'birthPlace', order: 6,
     occurrence: 'REQUIRED_ONCE', criticality: 'high', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
     splitsInto: ['event.birth.settlement_type', 'event.birth.district', 'event.birth.oblast', 'event.birth.republic'],
@@ -156,7 +158,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'registry.record.number', runtimeKey: 'act_record_number',
     readSideKey: 'act_record_number', outputKey: 'act_record_number',
-    englishLabel: 'Act record No.', section: 'actRecord', order: 11,
+    englishLabel: 'Act record No.', reviewLabelUk: 'Актовий запис №', section: 'actRecord', order: 11,
     occurrence: 'REQUIRED_ONCE', criticality: 'critical', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
     note: 'NOT the certificate number; silent-wrong incident on a real cert (2026-06-11).',
@@ -164,14 +166,14 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'registry.record.date', runtimeKey: 'act_record_date',
     readSideKey: 'act_record_date', outputKey: 'act_record_date',
-    englishLabel: 'Act record date', section: 'actRecord', order: 12,
+    englishLabel: 'Act record date', reviewLabelUk: 'Дата складання актового запису', section: 'actRecord', order: 12,
     occurrence: 'OPTIONAL_ONCE', criticality: 'high', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
   },
   {
     canonicalKey: 'registry.office.name', runtimeKey: 'place_of_registration',
     readSideKey: 'issuing_authority', outputKey: 'place_of_registration',
-    englishLabel: 'Place of state registration', section: 'issuing', order: 13,
+    englishLabel: 'Place of state registration', reviewLabelUk: 'Орган реєстрації', section: 'issuing', order: 13,
     occurrence: 'OPTIONAL_ONCE', criticality: 'high', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
     splitsInto: ['registry.office.district', 'registry.office.oblast'],
@@ -192,7 +194,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'person.parent.father.full_name', runtimeKey: 'father_full_name',
     readSideKey: 'father_full_name', outputKey: 'father_full_name',
-    englishLabel: 'Father', section: 'parents', order: 16,
+    englishLabel: 'Father', reviewLabelUk: 'Батько', section: 'parents', order: 16,
     occurrence: 'OPTIONAL_ONCE', criticality: 'high', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
     note: 'Composite kept for v1 (decision #5).',
@@ -207,7 +209,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'person.parent.mother.full_name', runtimeKey: 'mother_full_name',
     readSideKey: 'mother_full_name', outputKey: 'mother_full_name',
-    englishLabel: 'Mother', section: 'parents', order: 18,
+    englishLabel: 'Mother', reviewLabelUk: 'Мати', section: 'parents', order: 18,
     occurrence: 'OPTIONAL_ONCE', criticality: 'high', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
   },
@@ -221,7 +223,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'document.series', runtimeKey: 'document_series',
     readSideKey: 'certificate_series_number', outputKey: 'series_number',
-    englishLabel: 'Series and No.', section: 'issuing', order: 20,
+    englishLabel: 'Series and No.', reviewLabelUk: 'Серія та номер свідоцтва', section: 'issuing', order: 20,
     occurrence: 'REQUIRED_ONCE', criticality: 'high', rendering: 'printed',
     locator: 'anchor_relative', readerRoute: 'deterministic_parser', autoFinalize: false, alwaysReview: true,
     splitsInto: ['document.number'],
@@ -237,7 +239,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   {
     canonicalKey: 'document.issue_date', runtimeKey: 'date_of_issue',
     readSideKey: 'date_of_issue', outputKey: 'date_of_issue',
-    englishLabel: 'Date of issue', section: 'issuing', order: 22,
+    englishLabel: 'Date of issue', reviewLabelUk: 'Дата видачі', section: 'issuing', order: 22,
     occurrence: 'OPTIONAL_ONCE', criticality: 'high', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
   },
@@ -327,6 +329,27 @@ export function birthCertContractKeyAliases(): Record<string, string[]> {
     if (f.readKeyIsSynonym && f.readSideKey && f.readSideKey !== f.runtimeKey) {
       out[f.runtimeKey] = [...(out[f.runtimeKey] ?? []), f.readSideKey]
     }
+  }
+  return out
+}
+
+// ── Phase 4: single label source (English PDF + Ukrainian review), flag-gated ───
+
+/** Contract entry whose output (B schema) key matches `outputKey`. */
+export function fieldByOutputKey(outputKey: string): BirthCertFieldContract | undefined {
+  return birthCertSovietV1Contract.find((f) => f.outputKey === outputKey)
+}
+
+/**
+ * Ukrainian review-UI labels sourced from the contract: read-side key →
+ * reviewLabelUk. Equals the legacy UKR_LABEL_BY_FIELD entries for the birth-cert
+ * read-side keys (proven by Phase-4 parity tests), so routing the wizard through
+ * this is byte-identical. Keyed by readSideKey (what the wizard receives).
+ */
+export function birthCertReviewLabels(): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const f of birthCertSovietV1Contract) {
+    if (f.readSideKey && f.reviewLabelUk) out[f.readSideKey] = f.reviewLabelUk
   }
   return out
 }
