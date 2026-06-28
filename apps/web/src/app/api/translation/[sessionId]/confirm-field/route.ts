@@ -1,18 +1,22 @@
 /**
  * POST /api/translation/[sessionId]/confirm-field
  *
- * Marks a single extracted field as human-confirmed.
- * Required before certification is allowed for critical fields.
+ * Marks a single extracted field as human-confirmed. Required before certification
+ * is allowed for critical fields.
  *
  * Body: { field: string }   — snake_case field name (e.g. 'surname')
- *
  * Returns: { ok, field, confirmed_at, gates }
+ *
+ * RUNTIME-DECOUPLED: persistence goes through getRepositories() (in-memory by
+ * default; Supabase only via the opt-in adapter — NOT connected). This route no
+ * longer imports a Supabase client. The canonical override-loop (flag-gated, default
+ * OFF) is the only DB-adjacent dependency and lives in the canonical adapter layer.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 import { validateSessionId, validateFieldName } from '@/lib/translation/inputValidation'
-// CANONICAL_OVERRIDE_LOOP (P1): route the live confirmation into the canonical
-// override chain (dual-write) — flag default OFF, legacy write unchanged.
+// CANONICAL_OVERRIDE_LOOP (P1): dual-write into the canonical override chain —
+// flag default OFF, legacy behaviour unchanged.
 import { getOverrideLoopMode } from '@/lib/canonical/overrideLoopMode'
 import { appendCorrectionAsCanonicalOverride } from '@/lib/canonical/overrideLoop'
 
@@ -25,16 +29,6 @@ const CRITICAL_FIELDS = [
   'series', 'number', 'issued_by', 'date_of_issue',
 ]
 
-/** Best-effort audit write — never throws. */
-async function tryAudit(
-  supabase: ReturnType<typeof createAdminSupabaseClient>,
-  payload: Record<string, unknown>
-): Promise<void> {
-  try {
-    await supabase.from('audit_logs').insert(payload)
-  } catch { /* swallow — audit must never crash the route */ }
-}
-
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> }
@@ -46,67 +40,38 @@ export async function POST(
   // ── Input validation ─────────────────────────────────────────────────────
   const sessionErr = validateSessionId(sessionId)
   if (sessionErr) return NextResponse.json({ ok: false, ...sessionErr }, { status: sessionErr.status })
-
   const fieldErr = validateFieldName(field)
   if (fieldErr) return NextResponse.json({ ok: false, ...fieldErr }, { status: fieldErr.status })
 
   const safeField = field as string
-  const supabase = createAdminSupabaseClient()
+  const repos = getRepositories()
 
   // ── Session existence check ──────────────────────────────────────────────
-  const { data: session } = await supabase
-    .from('translation_sessions')
-    .select('session_id')
-    .eq('session_id', sessionId)
-    .single()
-
+  const session = await repos.documents.getSession(sessionId)
   if (!session) {
     return NextResponse.json({ ok: false, error: 'session_not_found', message: 'Session not found.' }, { status: 404 })
   }
 
   const confirmedAt = new Date().toISOString()
 
-  // Load the current value BEFORE update so the canonical override (dual-write,
-  // below) can record the confirmed value. Confirm has no new value — it ratifies
-  // the existing extracted value. PII-safe: value used only for the override write.
-  const { data: existingField } = await supabase
-    .from('extracted_fields')
-    .select('normalized_value')
-    .eq('session_id', sessionId)
-    .eq('field', safeField)
-    .single()
+  // Load current value BEFORE confirm (for the canonical override dual-write).
+  const existingField = await repos.review.getField(sessionId, safeField)
 
-  const { error: updateErr } = await supabase
-    .from('extracted_fields')
-    .update({ confirmed: true, confirmed_at: confirmedAt })
-    .eq('session_id', sessionId)
-    .eq('field', safeField)
-
-  if (updateErr) {
-    await tryAudit(supabase, {
-      session_id: sessionId,
-      event_type: 'error',
-      metadata: { route: 'confirm-field', field: safeField, error_code: updateErr.code },
-    })
+  try {
+    await repos.confirmation.confirmField(sessionId, safeField, confirmedAt)
+  } catch {
+    await repos.audit.append({ sessionId, eventType: 'error', at: confirmedAt, detail: { route: 'confirm-field', field: safeField } }).catch(() => {})
     return NextResponse.json({ ok: false, error: 'db_error', message: 'Could not update field.' }, { status: 500 })
   }
 
-  // ── Audit ────────────────────────────────────────────────────────────────
-  await tryAudit(supabase, {
-    session_id: sessionId,
-    event_type: 'field_confirmed',
-    metadata: { field: safeField, confirmed_at: confirmedAt },
-  })
+  // ── Audit (best-effort, PII-free) ─────────────────────────────────────────
+  await repos.audit.append({ sessionId, eventType: 'field_confirmed', at: confirmedAt, detail: { field: safeField } }).catch(() => {})
 
-  // ── CANONICAL_OVERRIDE_LOOP (P1): dual-write into the canonical chain ─────
-  // Flag default OFF → skipped (legacy confirm byte-identical to today). In
-  // shadow, additionally append a confirmed canonical override recording the
-  // ratified value. Best-effort; never affects the legacy 200. Fail-safe: only
-  // when a valid canonical_document_id was supplied.
+  // ── CANONICAL_OVERRIDE_LOOP (P1): dual-write into the canonical chain ──────
   let canonicalLoop: 'off' | 'skipped_no_id' | 'skipped_no_value' | 'appended' | 'not_found' | 'conflict' | 'storage_error' = 'off'
   const overrideLoopMode = getOverrideLoopMode()
   if (overrideLoopMode !== 'off') {
-    const confirmedValue = existingField?.normalized_value ?? null
+    const confirmedValue = existingField?.normalizedValue ?? null
     if (typeof canonical_document_id === 'string' && UUID_RE.test(canonical_document_id)) {
       if (typeof confirmedValue === 'string' && confirmedValue.length > 0) {
         const res = await appendCorrectionAsCanonicalOverride({
@@ -117,15 +82,11 @@ export async function POST(
           actor: 'user',
           reason: 'confirm',
         })
-        canonicalLoop = res.ok
-          ? 'appended'
-          : res.kind === 'not_found'
-            ? 'not_found'
-            : res.kind === 'conflict'
-              ? 'conflict'
-              : 'storage_error'
+        canonicalLoop = res.ok ? 'appended'
+          : res.kind === 'not_found' ? 'not_found'
+          : res.kind === 'conflict' ? 'conflict'
+          : 'storage_error'
       } else {
-        // Confirm with no value to ratify → nothing to write to canonical.
         canonicalLoop = 'skipped_no_value'
       }
     } else {
@@ -134,14 +95,9 @@ export async function POST(
   }
 
   // ── Recompute gates ──────────────────────────────────────────────────────
-  const { data: allFields } = await supabase
-    .from('extracted_fields')
-    .select('field, confirmed')
-    .eq('session_id', sessionId)
-
-  const fields = allFields ?? []
-  const criticalRows = fields.filter(f => CRITICAL_FIELDS.includes(f.field))
-  const criticalConfirmed = criticalRows.filter(f => f.confirmed).length
+  const fields = await repos.review.listFields(sessionId)
+  const criticalRows = fields.filter((f) => CRITICAL_FIELDS.includes(f.field))
+  const criticalConfirmed = criticalRows.filter((f) => f.confirmed).length
   const canCertify = criticalRows.length > 0 && criticalConfirmed === criticalRows.length
 
   return NextResponse.json({
@@ -149,10 +105,6 @@ export async function POST(
     field: safeField,
     confirmed_at: confirmedAt,
     canonical_loop: canonicalLoop,
-    gates: {
-      can_certify: canCertify,
-      critical_confirmed: criticalConfirmed,
-      critical_total: criticalRows.length,
-    },
+    gates: { can_certify: canCertify, critical_confirmed: criticalConfirmed, critical_total: criticalRows.length },
   })
 }
