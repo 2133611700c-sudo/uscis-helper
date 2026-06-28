@@ -37,6 +37,16 @@ confirmation-gate→PDF→staging E2E→sign-off→prod. Production flags stay O
 full DB-backed staging E2E passes and the owner signs off. Every flag is independently
 reversible (additive design, no data migration).
 
+## 5. Persistence repository abstraction (Supabase disconnected)
+Domain/runtime code depends on `RepositoryBundle` interfaces (`apps/web/src/lib/repositories/`),
+never on a Supabase client. Default driver = in-memory (dev/tests/mocked E2E); a Supabase
+adapter is a separate, fail-closed stub enabled only by `REPOSITORY_DRIVER=supabase` AND
+owner wiring. ONE contract test suite is the behavioral spec all implementations satisfy;
+raw values are immutable. Supabase stays DISCONNECTED until the owner runs the supervised
+sequence in `SUPABASE_CONNECTION_PLAN.md`. Rationale: connecting a real DB (RLS, secrets,
+migrations) is an owner-supervised step, not an agent action; the abstraction lets the full
+vertical run + be fully tested with zero external DB.
+
 ## Consequences
 - OFF golden byte-identical (`sha256 89611c7a…`); ON path proven on synthetic fixtures.
 - Live DB-backed browser E2E requires Docker/Supabase (staging) — see

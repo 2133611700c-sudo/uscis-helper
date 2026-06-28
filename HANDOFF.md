@@ -1,6 +1,10 @@
 # HANDOFF (2026-06-28 — Unified Document Contract Phase 6–10 done; next = DB-backed staging E2E + flag flip)
 
-## 2026-06-28 | Phase 6–10 — CODE COMPLETE — READY FOR STAGING VALIDATION
+## 2026-06-28 | Repository abstraction + Supabase prep — CODE COMPLETE — READY FOR DATABASE-BACKED STAGING VALIDATION
+Supabase intentionally DISCONNECTED. Persistence behind `apps/web/src/lib/repositories/` (in-memory default + fail-closed Supabase stub + contract suite + env validation). Full vertical proven on in-memory infra (`inMemoryVerticalFlow.test`). DB integration points: `docs/architecture/SUPABASE_CONNECTION_PLAN.md` + `supabase/migrations/0001_contract_vertical.sql` (**DO NOT RUN WITHOUT OWNER APPROVAL**).
+Test repo layer: `cd apps/web && ./node_modules/.bin/vitest run src/lib/repositories`. Supabase connect = owner-run sequence in the connection plan (link staging → db push → seed synthetic → wire adapter → REPOSITORY_DRIVER=supabase → contract suite vs adapter → DB-backed E2E). Do NOT connect Supabase or enable production flags without owner approval.
+
+## 2026-06-28 | Phase 6–10 — CODE COMPLETE — READY FOR DATABASE-BACKED STAGING VALIDATION
 Authoritative code tip: `91f1cdbf2ba4a57966562420cc66d174aabb3f5b` on `translation/ru-and-model-matrix-fixes`.
 Worktree: `uscis-helper.phase4-integrate`. ALL flags default OFF (byte-identical); 2878 pass/0 fail; tsc 0; PII clean.
 DONE: A live review annotation · B server-side final-PDF gate (both emitters) · C first-class split PDF rows + ON golden · D Gemini→contract boundary · E route bypass guards · F mocked browser E2E + in-process integration · G flag matrix · H PII-free observability · I PII-incident note.

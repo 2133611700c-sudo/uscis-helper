@@ -17,6 +17,9 @@ Purpose: define canonical modules. Prevent duplication. Stop re-litigation.
 - **Confirmation / final-PDF boundary (server-side):** `finalPdfGate.ts` `assertDocumentReadyForFinalPdf`, applied to BOTH translation PDF emitters (`api/translation/generate-pdf`, `api/translation/render`).
 - **Observability:** `contractObservability.ts` (PII-free allow-list events).
 
+### Persistence (Supabase-independent; Supabase DISCONNECTED)
+- **Authoritative persistence abstraction:** `apps/web/src/lib/repositories/` — `RepositoryBundle` (Document/Review/Confirmation/Translation/PdfArtifact/AuditEvent). Domain code calls `getRepositories()`; it must NOT import a Supabase client directly. Default driver = **in-memory**; Supabase = opt-in (`REPOSITORY_DRIVER=supabase`) and the adapter is a fail-closed stub until owner-wired. ONE contract suite (`repositoryContract.test.ts`) is the spec all impls satisfy. raw values are immutable (confirm/correct never overwrite raw). Future wiring: `docs/architecture/SUPABASE_CONNECTION_PLAN.md` + `supabase/migrations/0001_contract_vertical.sql` (DO NOT RUN). No competing repository abstraction.
+
 ### FORBIDDEN bypass paths (enforced by tests)
 - raw extracted field → final PDF (closed: `shouldBlockRawPdfFallback` + `assertDocumentReadyForFinalPdf`; route invariant `finalPdfGateRouteInvariant`).
 - ANY translation route emitting `application/pdf` without the gate (route-scan `workstreamERoutes` — currently only `generate-pdf` + `render`, both gated).
