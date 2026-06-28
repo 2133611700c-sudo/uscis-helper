@@ -1,14 +1,32 @@
 # SOURCE_OF_TRUTH.md
 Purpose: define canonical modules. Prevent duplication. Stop re-litigation.
 
-## Unified Document Contract (birth certificate) — authoritative modules (Phase 6–10, flag-gated OFF)
-- **Contract SoT:** `apps/web/src/lib/contracts/birthCertSovietV1Contract.ts` — the ONE source for field keys, labels, splits, criticality. KEY_ALIASES / buildMirrorValues / review / PDF labels source from it. Do NOT re-declare birth-cert fields elsewhere.
-- **Split + normalize:** `contractFieldFlow.ts` (`applyContractSplitFlow`, `normalizeContractSplitFields`) — split via `splitMergedFields.ts`, normalize via `@uscis-helper/knowledge` (no parallel dict).
-- **Review states:** `contractReviewState.ts` (`annotateReviewFields`, `contractReviewState`, `mustAlwaysReview`).
-- **Final-PDF safety boundary (server-side):** `finalPdfGate.ts` `assertDocumentReadyForFinalPdf` — applied to ALL translation PDF emitters (`generate-pdf`, `render`). No PDF route may bypass it (route invariants).
-- **Gemini→contract boundary:** `contractExtractionBoundary.ts` (schema-from-contract, provenance, candidate-only sanitizer). One adapter; model never sets `confirmed`.
+## Unified Document Contract (birth certificate) — Phase 6–10 (authoritative code tip `91f1cdb`; flags default OFF)
+
+### Runtime flow (the ONE lifecycle for the translation birth-cert vertical)
+`upload → content-orient → docType (registry-validated, fail-safe) → Gemini 2.5 Pro read (docintel) → arbitrateDocument → CanonicalField[] → toTranslationRows (FieldOut[]) → applyContractSplitFlow → normalizeContractSplitFields → persist extracted_fields → review-state(annotateReviewFields) → user confirm/correct → assertDocumentReadyForFinalPdf → mirror/official PDF`.
+
+### Authoritative source-of-truth per concern (do NOT duplicate)
+- **Contract / field keys / labels / splits / criticality:** `apps/web/src/lib/contracts/birthCertSovietV1Contract.ts`. The ONE source.
+- **Aliases:** `KEY_ALIASES` (`canonical/core/keyAliases.ts`) and mirror `ALIASES` (`translation/pdf/buildMirrorValues.ts`) SOURCE from the contract when `UNIFIED_DOC_CONTRACT_ENABLED`.
+- **Labels (EN + UK):** the contract (`englishLabel` / `reviewLabelUk`) — single source for PDF + review when the flag is ON.
+- **Split fields:** `splitMergedFields.ts` + `contractFieldFlow.ts` (`applyContractSplitFlow`). `document.series/number`, `event.birth.place.*`, `registry.office.*`.
+- **Translation / normalization:** `@uscis-helper/knowledge` ONLY (KMU-55 / BGN-PCGN / gazetteer / oblast nominative), via `normalizeContractSplitFields`. NO parallel dictionary (Constitution L2).
+- **Review states:** `contractReviewState.ts` (`annotateReviewFields`, `contractReviewState`, `mustAlwaysReview`) — candidate/confirmed/missing/unreadable/not_applicable/conflict.
+- **Gemini 2.5 Pro → contract boundary:** `contractExtractionBoundary.ts` (schema-from-contract, provenance with model-mismatch flag, candidate-only sanitizer). Model returns CANDIDATES only; it can never set `confirmed`/`final_value`. One adapter — no competing chains.
+- **Confirmation / final-PDF boundary (server-side):** `finalPdfGate.ts` `assertDocumentReadyForFinalPdf`, applied to BOTH translation PDF emitters (`api/translation/generate-pdf`, `api/translation/render`).
 - **Observability:** `contractObservability.ts` (PII-free allow-list events).
-- **Flags (all OFF):** `UNIFIED_DOC_CONTRACT_ENABLED`, `_SPLIT_`, `_NORMALIZE_`, `FINAL_PDF_CONFIRMATION_GATE_ENABLED`. Rollout: `docs/architecture/CONTRACT_FLAG_ROLLOUT.md`. ADR: `docs/adr/ADR-CONTRACT-VERTICAL.md`. Design: `docs/architecture/contracts/ua_birth_certificate_soviet_v1/`.
+
+### FORBIDDEN bypass paths (enforced by tests)
+- raw extracted field → final PDF (closed: `shouldBlockRawPdfFallback` + `assertDocumentReadyForFinalPdf`; route invariant `finalPdfGateRouteInvariant`).
+- ANY translation route emitting `application/pdf` without the gate (route-scan `workstreamERoutes` — currently only `generate-pdf` + `render`, both gated).
+- a renderer running before the gate (`finalPdfGateRouteInvariant`).
+- the model declaring a field `confirmed` (stripped by `sanitizeContractExtractionResponse`).
+- field rows reaching the PDF outside `toTranslationRows`/sanctioned guards (`brainSingleArbiterInvariant`).
+- a second/parallel dictionary for translation (Constitution L2).
+
+### Flags (ALL default OFF → byte-identical)
+`UNIFIED_DOC_CONTRACT_ENABLED`, `UNIFIED_DOC_CONTRACT_SPLIT_ENABLED`, `UNIFIED_DOC_CONTRACT_NORMALIZE_ENABLED`, `FINAL_PDF_CONFIRMATION_GATE_ENABLED`. Rollout: `docs/architecture/CONTRACT_FLAG_ROLLOUT.md`. ADR: `docs/adr/ADR-CONTRACT-VERTICAL.md`. Design: `docs/architecture/contracts/ua_birth_certificate_soviet_v1/`. Out of this vertical: TPS/EAD birth-cert + legacy non-Core extract path (unchanged).
 
 > **LIVE V1 PROGRAM TRACKER:** GitHub issue #159 "USCIS HELPER V1 — FINAL DELIVERY PROGRAM" is the single source of release-gate truth. DONE: #161 (OCR coordination wired to live path, off by default), #160 (isolated staging LIVE + runtime-proven — Supabase `rxnlpvldngxgdxkxoaaj` + Vercel preview, `V1_STAGING_READY=true`, ADR-023). PR #119 (Translation V2) = KEEP_DRAFT→REBUILD_FROM_MAIN→supersede. NEXT: product browser E2E (TPS first). Staging deploy = `.github/workflows/staging-deploy.yml` (`vercel deploy -e/-b`); staging DB provision = `.github/workflows/staging-provision.yml`. V1 verdict: **NOT_READY** (E2E/visual/Stripe-test/canary gates pending).
 

@@ -1,14 +1,46 @@
 # HANDOFF (2026-06-28 — Unified Document Contract Phase 6–10 done; next = DB-backed staging E2E + flag flip)
 
-## 2026-06-28 | Phase 6–10 complete (branch `translation/ru-and-model-matrix-fixes` @ `91f1cdb`, in worktree `uscis-helper.phase4-integrate`)
-DONE (all flag-gated OFF, byte-identical; 2878 pass/0 fail; tsc 0; PII clean):
-- A live review annotation · B server-side final-PDF gate (both emitters) · C first-class split PDF rows + ON golden · D Gemini→contract boundary · E route bypass guards · F local mocked browser E2E + in-process integration · G flag matrix · H PII-free observability · I PII-incident note.
+## 2026-06-28 | Phase 6–10 — CODE COMPLETE — READY FOR STAGING VALIDATION
+Authoritative code tip: `91f1cdbf2ba4a57966562420cc66d174aabb3f5b` on `translation/ru-and-model-matrix-fixes`.
+Worktree: `uscis-helper.phase4-integrate`. ALL flags default OFF (byte-identical); 2878 pass/0 fail; tsc 0; PII clean.
+DONE: A live review annotation · B server-side final-PDF gate (both emitters) · C first-class split PDF rows + ON golden · D Gemini→contract boundary · E route bypass guards · F mocked browser E2E + in-process integration · G flag matrix · H PII-free observability · I PII-incident note.
 
-EXACT NEXT TASK (external blockers — cannot run in sandbox):
-1. Run the **DB-backed staging E2E**: `docs/runbooks/CONTRACT_STAGING_E2E_RUNBOOK.md` (needs Docker + `supabase start`, or Vercel preview with staging secrets) → unskips `apps/web/tests/e2e-contract/review-contract.spec.ts`. Or dispatch `.github/workflows/contract-staging-e2e.yml`.
-2. After E2E PASS + owner sign-off, flip flags per `docs/architecture/CONTRACT_FLAG_ROLLOUT.md` (base→split→normalize→review→gate→PDF) — staging first, prod last. All OFF today.
-3. GitHub Support sensitive-data purge of dangling `31b62cd` (`docs/security/PII_INCIDENT_2026-06-28.md`).
-Reproduce locally: `cd apps/web && ./node_modules/.bin/vitest run src/lib/contracts src/lib/translation src/lib/canonical`; `npx tsc --noEmit -p apps/web/tsconfig.json`; `node scripts/check-no-pii.mjs`; browser stack `npx playwright test -c playwright.contract.config.ts`.
+### Exact commands
+```bash
+# fetch / verify tip
+git fetch origin translation/ru-and-model-matrix-fixes
+git rev-parse origin/translation/ru-and-model-matrix-fixes   # expect 91f1cdb… (or later docs commit)
+
+# install / build / typecheck / PII
+pnpm install --frozen-lockfile
+npx tsc --noEmit -p apps/web/tsconfig.json
+node scripts/check-no-pii.mjs
+
+# tests (regression smoke + full)
+cd apps/web && ./node_modules/.bin/vitest run src/lib/contracts                                  # contract suite
+./node_modules/.bin/vitest run src/lib/contracts src/lib/translation src/lib/canonical           # full regression (2878 pass)
+
+# local production server (for browser E2E)
+cd .. && pnpm --filter web build
+cd apps/web && npx next start -p 3100
+
+# mocked Playwright browser E2E (auto-boots next start via webServer)
+npx playwright install chromium
+npx playwright test -c playwright.contract.config.ts --project=chromium   # 2 pass; review spec self-skips (no DB)
+```
+
+### DB-backed staging E2E (external — needs Docker or staging secrets)
+Follow `docs/runbooks/CONTRACT_STAGING_E2E_RUNBOOK.md`: `supabase start` → migrations → synthetic seed → build → start with the 4 flags ON → `CONTRACT_E2E_BASE_URL=… npx playwright test -c playwright.contract.config.ts`. Or dispatch `.github/workflows/contract-staging-e2e.yml`. Unskips `apps/web/tests/e2e-contract/review-contract.spec.ts`.
+
+### Flag enable order (staging only; per docs/architecture/CONTRACT_FLAG_ROLLOUT.md)
+`UNIFIED_DOC_CONTRACT_ENABLED` → `_SPLIT_` → `_NORMALIZE_` → verify review → `FINAL_PDF_CONFIRMATION_GATE_ENABLED` → verify PDF → DB E2E PASS → sign-off.
+**Do NOT enable production flags without owner sign-off.**
+
+### Rollback
+Set any flag to `0` / unset → that layer reverts to legacy immediately (additive; no data migration). OFF = byte-identical (`sha256 89611c7a…`).
+
+### Manual (owner)
+GitHub Support sensitive-data purge of dangling `31b62cd` — `docs/security/PII_INCIDENT_2026-06-28.md` (value [REDACTED]).
 
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
