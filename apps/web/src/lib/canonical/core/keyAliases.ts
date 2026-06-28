@@ -6,7 +6,13 @@
  * value transformation, no inference — only "these keys are the same field".
  *
  * One primary key is canonical; the rest are accepted aliases when reading.
+ *
+ * LEGACY COMPATIBILITY ADAPTER (kept verbatim). When UNIFIED_DOC_CONTRACT_ENABLED=1
+ * this table is MERGED with the unified-contract contribution via resolveKeyAliases;
+ * the contribution is a subset, so behaviour is unchanged (Phase-3 parity tests).
  */
+import { birthCertContractKeyAliases, isUnifiedDocContractEnabled } from '@/lib/contracts/birthCertSovietV1Contract'
+
 export const KEY_ALIASES: Readonly<Record<string, readonly string[]>> = {
   // ── required initial set (owner contract) ──
   date_of_birth: ['dob'],
@@ -25,16 +31,36 @@ export const KEY_ALIASES: Readonly<Record<string, readonly string[]>> = {
   given_name: ['given_name_latin'],
 } as const
 
+/**
+ * Resolve the active alias table. Flag OFF → the legacy literal KEY_ALIASES,
+ * returned by reference (identical behaviour). Flag ON → the legacy table merged
+ * with the unified-contract contribution (birth-cert synonyms, e.g.
+ * date_of_birth→['dob']). The contribution is a subset of the legacy table, so
+ * the merged result is content-equal to legacy (Phase-3 parity tests).
+ */
+export function resolveKeyAliases(
+  env: Record<string, string | undefined> = process.env,
+): Readonly<Record<string, readonly string[]>> {
+  if (!isUnifiedDocContractEnabled(env)) return KEY_ALIASES
+  const merged: Record<string, string[]> = {}
+  for (const [k, v] of Object.entries(KEY_ALIASES)) merged[k] = [...v]
+  for (const [k, v] of Object.entries(birthCertContractKeyAliases())) {
+    merged[k] = [...new Set([...(merged[k] ?? []), ...v])]
+  }
+  return merged
+}
+
 /** All keys (primary + aliases) that resolve to the given primary key, primary first. */
-export function keysFor(primary: string): string[] {
-  const aliases = KEY_ALIASES[primary] ?? []
+export function keysFor(primary: string, env: Record<string, string | undefined> = process.env): string[] {
+  const aliases = resolveKeyAliases(env)[primary] ?? []
   return [primary, ...aliases]
 }
 
 /** Reverse lookup: the primary canonical key a given key belongs to (itself if none). */
-export function primaryKeyOf(key: string): string {
-  if (KEY_ALIASES[key]) return key
-  for (const [primary, aliases] of Object.entries(KEY_ALIASES)) {
+export function primaryKeyOf(key: string, env: Record<string, string | undefined> = process.env): string {
+  const table = resolveKeyAliases(env)
+  if (table[key]) return key
+  for (const [primary, aliases] of Object.entries(table)) {
     if (aliases.includes(key)) return primary
   }
   return key
