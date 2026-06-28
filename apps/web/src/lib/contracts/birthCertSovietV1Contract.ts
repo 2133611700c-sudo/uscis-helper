@@ -66,6 +66,10 @@ export interface BirthCertFieldContract {
   scopeEra?: 'soviet_pre1991'
   /** A legacy key that carries several canonical values lists the others here. */
   splitsInto?: string[]
+  /** Extra historical extraction-key aliases for the same field (e.g. TPS-path key). */
+  legacyReadAliases?: string[]
+  /** readSideKey is a pure SYNONYM of runtimeKey (e.g. dob↔date_of_birth) → KEY_ALIASES. */
+  readKeyIsSynonym?: boolean
   note?: string
 }
 
@@ -109,6 +113,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
     englishLabel: 'Date of birth', section: 'child', order: 5,
     occurrence: 'REQUIRED_ONCE', criticality: 'critical', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
+    readKeyIsSynonym: true,
     note: 'Year/day also spelled out ("цифрами и прописью") — cross-check, not a separate field.',
   },
   {
@@ -118,7 +123,8 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
     occurrence: 'REQUIRED_ONCE', criticality: 'high', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
     splitsInto: ['event.birth.settlement_type', 'event.birth.district', 'event.birth.oblast', 'event.birth.republic'],
-    note: 'A/B collapse settlement+district+oblast+republic into one field; contract splits (additive).',
+    legacyReadAliases: ['city_of_birth'],
+    note: 'A/B collapse settlement+district+oblast+republic into one field; contract splits (additive). city_of_birth = TPS-path extraction key.',
   },
   {
     canonicalKey: 'event.birth.settlement_type', runtimeKey: 'place_of_birth_settlement_type',
@@ -279,4 +285,48 @@ export function fieldByRuntimeKey(runtimeKey: string): BirthCertFieldContract | 
 /** dotted canonicalKey → flat runtimeKey (decision #1 projection). */
 export function canonicalToRuntime(canonicalKey: string): string | undefined {
   return birthCertSovietV1Contract.find((f) => f.canonicalKey === canonicalKey)?.runtimeKey
+}
+
+// ── Phase 3: drive runtime alias layers from this contract (flag-gated) ─────────
+
+/**
+ * Feature flag for routing KEY_ALIASES + buildMirrorValues through this unified
+ * contract. Default OFF → legacy literal maps are used unchanged (byte-identical).
+ * ON → the same maps are SOURCED from the contract (proven parity by tests).
+ */
+export function isUnifiedDocContractEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.UNIFIED_DOC_CONTRACT_ENABLED === '1'
+}
+
+/**
+ * EXTRACTION-key → official-SCHEMA-key alias map for the birth certificate,
+ * derived from the contract. Equals the legacy buildMirrorValues ALIASES entry
+ * for 'ua_birth_certificate' (only true renames; identity keys are omitted).
+ */
+export function birthCertMirrorAliases(): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const f of birthCertSovietV1Contract) {
+    if (!f.readSideKey || !f.outputKey) continue
+    if (f.readSideKey !== f.outputKey) out[f.readSideKey] = f.outputKey
+    for (const a of f.legacyReadAliases ?? []) out[a] = f.outputKey
+  }
+  return out
+}
+
+/**
+ * Contribution to canonical KEY_ALIASES sourced from the contract: primary flat
+ * runtimeKey → its synonym read-side keys (e.g. date_of_birth → ['dob']). Only
+ * pure synonyms (readKeyIsSynonym) are emitted, never doc-prefixed structural
+ * renames, so the merge stays a subset of the legacy KEY_ALIASES.
+ */
+export function birthCertContractKeyAliases(): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (const f of birthCertSovietV1Contract) {
+    if (f.readKeyIsSynonym && f.readSideKey && f.readSideKey !== f.runtimeKey) {
+      out[f.runtimeKey] = [...(out[f.runtimeKey] ?? []), f.readSideKey]
+    }
+  }
+  return out
 }

@@ -12,6 +12,7 @@
  * No value is ever invented.
  */
 import type { OfficialFormSchema } from '../forms/ukraine/schemas/types'
+import { birthCertMirrorAliases, isUnifiedDocContractEnabled } from '@/lib/contracts/birthCertSovietV1Contract'
 
 export interface FieldValue { value: string; review: boolean; canRead: boolean }
 
@@ -29,8 +30,12 @@ export interface ExtractedFieldLite {
  * Only renames are listed; keys that already match are resolved directly.
  * Schema keys with no extraction source (e.g. series_number, oblast_of_birth)
  * are left blank and the renderer prompts the user to enter them.
+ *
+ * LEGACY COMPATIBILITY ADAPTER. Kept verbatim. When UNIFIED_DOC_CONTRACT_ENABLED=1
+ * the birth-certificate map is instead SOURCED from birthCertSovietV1Contract
+ * (see resolveAliases); the contract-derived map is proven to deep-equal this one.
  */
-const ALIASES: Record<string, Record<string, string>> = {
+export const ALIASES: Record<string, Record<string, string>> = {
   ua_birth_certificate: {
     child_family_name: 'child_surname',
     dob: 'date_of_birth',
@@ -112,14 +117,30 @@ function releaseValue(f: ExtractedFieldLite): string {
 }
 
 /**
+ * Resolve the EXTRACTION→SCHEMA alias map for a docType. Flag OFF → legacy
+ * ALIASES (byte-identical). Flag ON → contract-sourced map for the doc types the
+ * unified contract covers (today: ua_birth_certificate), legacy for the rest.
+ */
+export function resolveAliases(
+  docType: string,
+  env: Record<string, string | undefined> = process.env,
+): Record<string, string> {
+  if (isUnifiedDocContractEnabled(env) && docType === 'ua_birth_certificate') {
+    return birthCertMirrorAliases()
+  }
+  return ALIASES[docType] ?? {}
+}
+
+/**
  * Build the schema-keyed value map the mirror renderer expects.
  * Every schema field gets an entry: present+clean, present+review, or blank.
  */
 export function buildMirrorValues(
   schema: OfficialFormSchema,
   extracted: ExtractedFieldLite[],
+  env: Record<string, string | undefined> = process.env,
 ): Record<string, FieldValue> {
-  const alias = ALIASES[schema.docType] ?? {}
+  const alias = resolveAliases(schema.docType, env)
   // Resolve each extracted field to its schema key (alias or identity).
   const bySchemaKey = new Map<string, ExtractedFieldLite>()
   for (const f of extracted) {
@@ -152,10 +173,11 @@ export function buildMirrorValues(
 export function collectMirrorExtras(
   schema: OfficialFormSchema,
   extracted: ExtractedFieldLite[],
+  env: Record<string, string | undefined> = process.env,
 ): ExtraEntry[] {
-  const alias = ALIASES[schema.docType] ?? {}
+  const alias = resolveAliases(schema.docType, env)
   const schemaKeys = new Set(schema.fields.map((f) => f.key))
-  const shownValues = buildMirrorValues(schema, extracted)
+  const shownValues = buildMirrorValues(schema, extracted, env)
   const seen = new Set<string>(
     Object.values(shownValues).filter((v) => v.canRead).map((v) => normVal(v.value)),
   )
