@@ -70,6 +70,55 @@ export function alwaysReviewRuntimeKeys(): string[] {
     .map((f) => f.runtimeKey)
 }
 
+// ── Workstream A: annotate live review rows from the contract (flag-gated) ──────
+//
+// Merged extraction keys that are FULLY decomposed by the split (nothing editable
+// remains on the merged field once its children exist) → mark evidence_only so the
+// merged value is kept as read-only evidence, not a second editable duplicate.
+const FULLY_SPLIT_MERGED: Record<string, string[]> = {
+  certificate_series_number: ['document_series', 'document_number'],
+  series_number: ['document_series', 'document_number'],
+}
+
+export interface AnnotatedReviewRow {
+  field: string
+  raw_value?: string | null
+  normalized_value?: string | null
+  review_required?: boolean | null
+  confirmed?: boolean | null
+  not_applicable?: boolean | null
+  review_reasons?: string[] | null
+  contract_review_state?: ContractFieldState
+  /** merged legacy value kept as read-only evidence (its split children exist). */
+  evidence_only?: boolean
+}
+
+/**
+ * Add contract_review_state + evidence_only to review rows. Flag-gated on
+ * UNIFIED_DOC_CONTRACT_ENABLED → OFF returns rows unchanged (same reference).
+ */
+export function annotateReviewFields<T extends AnnotatedReviewRow>(
+  rows: T[],
+  env: Record<string, string | undefined> = process.env,
+): T[] {
+  if (!isUnifiedDocContractEnabled(env)) return rows
+  const present = new Set(rows.map((r) => r.field))
+  return rows.map((r) => {
+    const state = contractReviewState({
+      field: r.field,
+      value: r.normalized_value ?? null,
+      raw_cyrillic: r.raw_value ?? null,
+      review_required: r.review_required,
+      confirmed: r.confirmed,
+      not_applicable: r.not_applicable,
+      review_reasons: r.review_reasons,
+    })
+    const children = FULLY_SPLIT_MERGED[r.field]
+    const evidence_only = !!children && children.every((c) => present.has(c))
+    return { ...r, contract_review_state: state, evidence_only }
+  })
+}
+
 const CONTRACT_CERT_DOCTYPES = new Set<string>([BIRTH_CERT_LEGACY_DOCTYPE])
 
 /**

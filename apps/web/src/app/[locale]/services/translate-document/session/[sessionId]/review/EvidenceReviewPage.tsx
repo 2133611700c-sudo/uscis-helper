@@ -73,6 +73,10 @@ interface ReviewField {
   evidence_type: 'ocr_bbox' | 'combined_ocr_bbox' | 'full_image' | 'zone_fallback' | null
   bbox_status: 'exact' | 'combined' | 'approximate' | 'missing' | null
   is_critical: boolean
+  // Workstream A — unified-contract review annotations (present when
+  // UNIFIED_DOC_CONTRACT_ENABLED; absent/undefined under the legacy path).
+  contract_review_state?: 'candidate' | 'confirmed' | 'missing' | 'unreadable' | 'not_applicable' | 'conflict'
+  evidence_only?: boolean
 }
 
 interface ReviewGates {
