@@ -30,6 +30,18 @@ class InMemoryDocuments implements DocumentRepository {
     // newest by createdAt (ISO compares lexically)
     return { ...[...list].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0] }
   }
+  async createDocument(input: {
+    sessionId: string; storageKey: string; originalName: string | null
+    mimeType: string | null; fileSizeBytes: number | null; createdAt: string
+  }) {
+    const list = this.docs.get(input.sessionId) ?? []
+    const rec: DocumentRecord = { id: `doc-${input.sessionId}-${list.length + 1}`, ...input }
+    list.push({ ...rec }); this.docs.set(input.sessionId, list)
+    return { ...rec }
+  }
+  async markUploaded(id: string, uploadedPages: number, at: string) {
+    const s = this.sessions.get(id); if (s) this.sessions.set(id, { ...s, status: 'uploaded', uploadedPages, updatedAt: at })
+  }
 }
 
 class InMemoryReview implements ReviewRepository {
@@ -112,6 +124,11 @@ class InMemoryStorage implements StorageRepository {
   async createSignedUrl(bucket: string, key: string, expirySeconds: number) {
     // deterministic, network-free stand-in for a Supabase signed URL
     return `memory://${bucket}/${key}?expires_in=${expirySeconds}`
+  }
+  async upload(bucket: string, key: string, _bytes: Uint8Array, _contentType: string, opts?: { upsert?: boolean }) {
+    const set = this.files.get(bucket) ?? new Set<string>()
+    if (set.has(key) && !opts?.upsert) throw new Error(`storage object already exists: ${bucket}/${key}`)
+    set.add(key); this.files.set(bucket, set)
   }
 }
 

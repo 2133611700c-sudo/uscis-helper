@@ -63,7 +63,7 @@ describe('ratchet — active translation routes coupled to Supabase may only shr
     'src/app/api/translation/generate-pdf/route.ts',
     'src/app/api/translation/process/route.ts',
     'src/app/api/translation/render/route.ts',
-    'src/app/api/translation/upload/route.ts',
+    // upload MIGRATED (2026-06-28) — storage.upload + documents.createDocument/markUploaded.
   ])
 
   it('no NEW route couples to Supabase (set ⊆ known backlog)', () => {

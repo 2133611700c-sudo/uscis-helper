@@ -85,6 +85,13 @@ export interface DocumentRepository {
   markExtracted(sessionId: string, docType: string, at: string): Promise<void>
   /** Most-recently-uploaded source document for a session; null if none. */
   getLatestDocument(sessionId: string): Promise<DocumentRecord | null>
+  /** Persist a new uploaded document row; returns the stored record (with id). */
+  createDocument(input: {
+    sessionId: string; storageKey: string; originalName: string | null
+    mimeType: string | null; fileSizeBytes: number | null; createdAt: string
+  }): Promise<DocumentRecord>
+  /** Mark a session uploaded: status='uploaded' + uploadedPages. */
+  markUploaded(sessionId: string, uploadedPages: number, at: string): Promise<void>
 }
 
 export interface ReviewRepository {
@@ -149,6 +156,8 @@ export interface StorageRepository {
   remove(bucket: string, keys: string[]): Promise<void>
   /** Time-limited signed read URL for an object; null if it cannot be produced. */
   createSignedUrl(bucket: string, key: string, expirySeconds: number): Promise<string | null>
+  /** Upload an object. Throws if the key exists and opts.upsert is not true. */
+  upload(bucket: string, key: string, bytes: Uint8Array, contentType: string, opts?: { upsert?: boolean }): Promise<void>
 }
 
 /**

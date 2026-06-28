@@ -25,6 +25,8 @@ const documents: DocumentRepository = {
   updateSessionStatus: () => notConnected('documents.updateSessionStatus'),
   markExtracted: () => notConnected('documents.markExtracted'),
   getLatestDocument: () => notConnected('documents.getLatestDocument'),
+  createDocument: () => notConnected('documents.createDocument'),
+  markUploaded: () => notConnected('documents.markUploaded'),
 }
 const review: ReviewRepository = {
   listFields: () => notConnected('review.listFields'),
@@ -60,6 +62,7 @@ const extractionRuns: ExtractionRunRepository = {
 const storage: StorageRepository = {
   remove: () => notConnected('storage.remove'),
   createSignedUrl: () => notConnected('storage.createSignedUrl'),
+  upload: () => notConnected('storage.upload'),
 }
 const certification: CertificationRepository = {
   saveCertificationRecord: () => notConnected('certification.saveCertificationRecord'),

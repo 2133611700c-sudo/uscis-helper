@@ -13,7 +13,7 @@
  * Returns: { ok: true, document_id, storage_key, validation }
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,7 +51,7 @@ function validateFile(file: File): ValidationResult {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createAdminSupabaseClient()
+  const repos = getRepositories()
 
   // Parse multipart form
   let formData: FormData
@@ -72,13 +72,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify session exists
-  const { data: session, error: sessionErr } = await supabase
-    .from('translation_sessions')
-    .select('session_id, status')
-    .eq('session_id', sessionId)
-    .single()
-
-  if (sessionErr || !session) {
+  const session = await repos.documents.getSession(sessionId)
+  if (!session) {
     return NextResponse.json({ ok: false, error: `Session not found: ${sessionId}` }, { status: 404 })
   }
 
@@ -112,57 +107,48 @@ export async function POST(req: NextRequest) {
   const ext = '.' + (storedName.split('.').pop() ?? 'jpg').toLowerCase()
   const storageKey = `${sessionId}/${Date.now()}${ext}`
 
-  // Upload to Supabase Storage
-  const { error: uploadErr } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .upload(storageKey, storedBuffer, {
-      contentType: storedType,
-      upsert: false,
-    })
+  const now = new Date().toISOString()
 
-  if (uploadErr) {
-    // Log failure
-    await supabase.from('audit_logs').insert({
-      session_id: sessionId,
-      event_type: 'error',
-      metadata: { step: 'upload', error: uploadErr.message, filename: file.name },
-    })
+  // Upload to object storage (in-memory default; Supabase opt-in not connected)
+  try {
+    await repos.storage.upload(STORAGE_BUCKET, storageKey, storedBuffer, storedType, { upsert: false })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown'
+    await repos.audit.append({
+      sessionId, eventType: 'error', at: now,
+      detail: { step: 'upload', error: message, filename: file.name },
+    }).catch(() => {})
     return NextResponse.json({
       ok: false,
-      error: `Storage upload failed: ${uploadErr.message}`,
+      error: `Storage upload failed: ${message}`,
     }, { status: 500 })
   }
 
   // Persist document row
-  const { data: doc, error: docErr } = await supabase
-    .from('translation_documents')
-    .insert({
-      session_id: sessionId,
-      storage_key: storageKey,
-      original_name: file.name,
-      mime_type: storedType,
-      file_size_bytes: storedBuffer.length,
-      upload_validated: true,
-      validation_errors: [],
+  let doc
+  try {
+    doc = await repos.documents.createDocument({
+      sessionId,
+      storageKey,
+      originalName: file.name,
+      mimeType: storedType,
+      fileSizeBytes: storedBuffer.length,
+      createdAt: now,
     })
-    .select('id, session_id, storage_key, original_name, mime_type, file_size_bytes')
-    .single()
-
-  if (docErr || !doc) {
-    return NextResponse.json({ ok: false, error: `DB insert failed: ${docErr?.message}` }, { status: 500 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown'
+    return NextResponse.json({ ok: false, error: `DB insert failed: ${message}` }, { status: 500 })
   }
 
   // Update session status → uploaded
-  await supabase
-    .from('translation_sessions')
-    .update({ status: 'uploaded', uploaded_pages: 1, updated_at: new Date().toISOString() })
-    .eq('session_id', sessionId)
+  await repos.documents.markUploaded(sessionId, 1, now)
 
   // Audit log
-  await supabase.from('audit_logs').insert({
-    session_id: sessionId,
-    event_type: 'document_uploaded',
-    metadata: {
+  await repos.audit.append({
+    sessionId,
+    eventType: 'document_uploaded',
+    at: now,
+    detail: {
       document_id: doc.id,
       storage_key: storageKey,
       original_name: file.name,

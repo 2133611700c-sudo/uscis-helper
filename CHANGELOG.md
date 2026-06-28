@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-28 | Route cutover #9 — upload → getRepositories() (ratchet 5→4)
+- `apps/web/src/app/api/translation/upload/route.ts` no longer imports any Supabase client — session check, object-storage upload, document-row insert, session status→`uploaded`/uploaded_pages, and audit now via `getRepositories()`. File validation (type/ext/size/empty), HEIC→JPEG conversion, storage key, and response shape preserved. Error paths: storage failure → audit + 500, doc insert failure → 500.
+- Repository surface extensions: `StorageRepository.upload(bucket, key, bytes, contentType, {upsert})` (throws on conflict when not upsert), `DocumentRepository.createDocument` (returns record w/ id) + `markUploaded`. In-memory impls + fail-closed Supabase stubs + contract assertions (incl. upsert-conflict throw).
+- New `uploadRoute.test.ts` (in-memory): valid JPEG stores doc + uploaded session + audit; 404 unknown session; 400 missing file/session; 422 unsupported type; 422 empty file.
+- Ratchet: upload removed from `KNOWN_COUPLED_ROUTES` (5→4 remain: ocr-from-storage, generate-pdf, process, render).
+- Green: repositories + upload + certify + `[sessionId]` 57/57; repositories+translation+contracts 261/261; tsc 0; PII clean. All flags default OFF.
+
 ## 2026-06-28 | Route cutover #8 — review-state → getRepositories() (ratchet 6→5)
 - `apps/web/src/app/api/translation/[sessionId]/review-state/route.ts` no longer imports any Supabase client — compound load (session, extracted fields, latest uploaded document + signed preview URL, certification record) now via `getRepositories()`. Response shape (session/fields/document_image_url/certification_record/review_progress/gates/canonical_document_id), 404, and `annotateReviewFields` flag-gating preserved. Canonical-id lookup (`getCanonicalDocumentId`, flag OFF default) stays a direct dep (not a Supabase repository).
 - Repository surface extensions: `DocumentRepository.getLatestDocument` (+ `DocumentRecord`), `StorageRepository.createSignedUrl`, `SessionRecord.uploadedPages`, and optional `FieldRecord` DB-projection columns (id/sourceLabel/sourceZone/languageLayer/confidence/evidenceType/bboxStatus/createdAt). In-memory impls + fail-closed Supabase stubs + contract assertions. Test helper `__seedDocument`.
