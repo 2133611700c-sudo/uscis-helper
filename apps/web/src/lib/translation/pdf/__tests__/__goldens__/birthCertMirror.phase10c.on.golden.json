@@ -1,0 +1,26 @@
+{
+  "extras": [
+    {
+      "key": "document_series",
+      "label": "Series and No.",
+      "value": "II-BK",
+      "review": true
+    },
+    {
+      "key": "document_number",
+      "label": "Number",
+      "value": "530174",
+      "review": true
+    },
+    {
+      "key": "place_of_birth_oblast",
+      "label": "Oblast",
+      "value": "Vinnytsia Oblast",
+      "review": true
+    }
+  ],
+  "pdf": {
+    "length": 2744,
+    "sha256": "1cb4353ddc1146acb6de5fa52b00e9339c56765925177de5a8b98f3ec67733a2"
+  }
+}

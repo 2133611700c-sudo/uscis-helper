@@ -12,7 +12,7 @@
  * No value is ever invented.
  */
 import type { OfficialFormSchema } from '../forms/ukraine/schemas/types'
-import { birthCertMirrorAliases, isUnifiedDocContractEnabled } from '@/lib/contracts/birthCertSovietV1Contract'
+import { birthCertMirrorAliases, isUnifiedDocContractEnabled, fieldByRuntimeKey } from '@/lib/contracts/birthCertSovietV1Contract'
 
 export interface FieldValue { value: string; review: boolean; canRead: boolean }
 
@@ -197,7 +197,10 @@ export function collectMirrorExtras(
     const n = normVal(value)
     if (seen.has(n)) continue // already shown under a labeled field → don't repeat
     seen.add(n)
-    extras.push({ key: f.field, label: humanizeKey(f.field), value, review: f.review_required === true })
+    // Workstream C — contract split rows get their contract English label (ON);
+    // otherwise humanized key (legacy). OFF path unchanged.
+    const contractLabel = isUnifiedDocContractEnabled(env) ? fieldByRuntimeKey(f.field)?.englishLabel : undefined
+    extras.push({ key: f.field, label: contractLabel ?? humanizeKey(f.field), value, review: f.review_required === true })
   }
   return extras
 }
