@@ -41,7 +41,13 @@ class InMemoryReview implements ReviewRepository {
 }
 
 class InMemoryConfirmation implements ConfirmationRepository {
-  constructor(private fields: Map<string, FieldRecord>) {}
+  constructor(private fields: Map<string, FieldRecord>, private corrections: Map<string, number>) {}
+  async recordUserCorrection(sessionId: string, field: string, _old: string, _new: string, _reason: string, _at: string) {
+    const k = key(sessionId, field)
+    const version = (this.corrections.get(k) ?? 0) + 1
+    this.corrections.set(k, version)
+    return { id: `corr-${sessionId}-${field}-${version}`, version }
+  }
   async confirmField(sessionId: string, field: string, at: string) {
     const f = this.fields.get(key(sessionId, field)); if (!f) return null
     const updated: FieldRecord = { ...f, confirmed: true, confirmedAt: at, reviewRequired: false, confirmedValue: f.normalizedValue ?? f.confirmedValue ?? null }
@@ -107,10 +113,11 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const events: AuditEventRecord[] = []
   const tickets = new Map<string, ManualReviewTicket[]>()
   const runs = new Map<string, ExtractionRun>()
+  const corrections = new Map<string, number>()
   return {
     documents: new InMemoryDocuments(sessions),
     review: new InMemoryReview(fields),
-    confirmation: new InMemoryConfirmation(fields),
+    confirmation: new InMemoryConfirmation(fields, corrections),
     translation: new InMemoryTranslation(translated),
     pdfArtifacts: new InMemoryPdf(artifacts),
     audit: new InMemoryAudit(events),

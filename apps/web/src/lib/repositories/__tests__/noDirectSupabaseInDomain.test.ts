@@ -54,8 +54,7 @@ describe('ratchet — active translation routes coupled to Supabase may only shr
   // KNOWN backlog (2026-06-28). MUST shrink to [] for APPLICATION CODE COMPLETE.
   // Do NOT add to this list — migrate the route to getRepositories() instead.
   const KNOWN_COUPLED_ROUTES = new Set([
-    // confirm-field MIGRATED to getRepositories() (2026-06-28) — removed from backlog.
-    'src/app/api/translation/[sessionId]/correct-field/route.ts',
+    // confirm-field + correct-field MIGRATED to getRepositories() (2026-06-28) — removed from backlog.
     'src/app/api/translation/[sessionId]/delete/route.ts',
     // extraction-status + manual-review-status MIGRATED (2026-06-28) — removed.
     'src/app/api/translation/[sessionId]/ocr-from-storage/route.ts',

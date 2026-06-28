@@ -75,6 +75,8 @@ export interface ConfirmationRepository {
   confirmField(sessionId: string, field: string, at: string): Promise<FieldRecord | null>
   /** Apply a user correction: updates normalized+confirmed, NEVER touches raw. */
   correctField(sessionId: string, field: string, newValue: string, at: string): Promise<FieldRecord | null>
+  /** Append a versioned user-correction audit record (append-only). Returns id+version. */
+  recordUserCorrection(sessionId: string, field: string, oldValue: string, newValue: string, reason: string, at: string): Promise<{ id: string | null; version: number }>
 }
 
 export interface TranslationRepository {

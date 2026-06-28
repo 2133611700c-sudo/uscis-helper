@@ -32,6 +32,7 @@ const review: ReviewRepository = {
 const confirmation: ConfirmationRepository = {
   confirmField: () => notConnected('confirmation.confirmField'),
   correctField: () => notConnected('confirmation.correctField'),
+  recordUserCorrection: () => notConnected('confirmation.recordUserCorrection'),
 }
 const translation: TranslationRepository = {
   saveTranslatedValue: () => notConnected('translation.saveTranslatedValue'),
