@@ -126,6 +126,13 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       expect((await r.certification.getCertificationRecord(SID))?.signerFullName).toBe('Jane Updated')
     })
 
+    it('orders: get null when absent; update only on existing; appendEvent no-throw', async () => {
+      const r = make()
+      expect(await r.orders.getOrder('ORD-x')).toBeNull()
+      expect(await r.orders.updateOrder('ORD-x', { status: 's' }, AT)).toBeNull() // absent → null
+      await r.orders.appendEvent('ORD-x', 'noop', { k: 1 }) // no-throw even if order absent
+    })
+
     it('translation + pdf artifact + audit round-trip', async () => {
       const r = make()
       await r.translation.saveTranslatedValue(SID, 'child_family_name', 'Soloviak')
@@ -168,5 +175,6 @@ describe('repository resolver + Supabase stub (fail-closed; Supabase OFF by defa
     await expect(r.documents.getLatestDocument(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.storage.createSignedUrl('b', 'k', 60)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.storage.upload('b', 'k', new Uint8Array([1]), 'image/jpeg')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.orders.getOrder('ORD-x')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
   })
 })

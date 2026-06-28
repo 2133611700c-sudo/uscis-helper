@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-28 | Route cutover #10 — process (legacy orders) → getRepositories() (ratchet 4→3)
+- `apps/web/src/app/api/translation/process/route.ts` no longer imports `@supabase/supabase-js` — GET/PATCH/POST drive the legacy `translation_orders` + `translation_events` via a new `OrderRepository`. The legacy packet generator (`@/lib/packet generateFullPacket`) stays a direct call (POST path); only its surrounding order persistence moved. Response shapes preserved (GET full row, PATCH `{order_id,status,ocr_status,updated_at}`, POST `{ok,order_id,download_url,expires_at,files}`); PATCH/POST now return 404 (was 500) for an unknown order.
+- New `OrderRepository.getOrder`/`updateOrder`/`appendEvent` (+ `OrderRecord`): in-memory impl + events store, fail-closed Supabase stub, contract assertions; `__seedOrder` test helper.
+- New `processRoute.test.ts` (in-memory, `@/lib/packet` mocked): GET returns order/400/404; PATCH updates+events/404; POST generates packet + packet_ready/404.
+- Ratchet: process removed from `KNOWN_COUPLED_ROUTES` (4→3 remain: ocr-from-storage, generate-pdf, render).
+- Green: repositories + process + upload 39/39; repositories+translation+contracts 265/265; tsc 0; PII clean. All flags default OFF.
+
 ## 2026-06-28 | Route cutover #9 — upload → getRepositories() (ratchet 5→4)
 - `apps/web/src/app/api/translation/upload/route.ts` no longer imports any Supabase client — session check, object-storage upload, document-row insert, session status→`uploaded`/uploaded_pages, and audit now via `getRepositories()`. File validation (type/ext/size/empty), HEIC→JPEG conversion, storage key, and response shape preserved. Error paths: storage failure → audit + 500, doc insert failure → 500.
 - Repository surface extensions: `StorageRepository.upload(bucket, key, bytes, contentType, {upsert})` (throws on conflict when not upsert), `DocumentRepository.createDocument` (returns record w/ id) + `markUploaded`. In-memory impls + fail-closed Supabase stubs + contract assertions (incl. upsert-conflict throw).

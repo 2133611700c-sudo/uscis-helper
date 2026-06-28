@@ -8,6 +8,7 @@ import type {
   TranslationRepository, PdfArtifactRepository, AuditEventRepository,
   ManualReviewRepository, ManualReviewTicket, ManualReviewCase, StorageRepository,
   CertificationRepository, CertificationRecordRow,
+  OrderRepository, OrderRecord,
   ExtractionRunRepository, ExtractionRun,
   SessionRecord, FieldRecord, DocumentRecord, PdfArtifactRecord, AuditEventRecord,
 } from './types'
@@ -138,6 +139,22 @@ class InMemoryCertification implements CertificationRepository {
   async getCertificationRecord(sessionId: string) { const r = this.records.get(sessionId); return r ? { ...r } : null }
 }
 
+class InMemoryOrders implements OrderRepository {
+  constructor(
+    private orders: Map<string, OrderRecord>,
+    private events: { orderId: string; eventType: string; metadata: Record<string, string | number | boolean | null> }[],
+  ) {}
+  async getOrder(orderId: string) { const o = this.orders.get(orderId); return o ? { ...o } : null }
+  async updateOrder(orderId: string, updates: Partial<Omit<OrderRecord, 'orderId'>>, at: string) {
+    const o = this.orders.get(orderId); if (!o) return null
+    const updated: OrderRecord = { ...o, ...updates, updatedAt: at }
+    this.orders.set(orderId, updated); return { ...updated }
+  }
+  async appendEvent(orderId: string, eventType: string, metadata: Record<string, string | number | boolean | null>) {
+    this.events.push({ orderId, eventType, metadata: { ...metadata } })
+  }
+}
+
 class InMemoryExtractionRuns implements ExtractionRunRepository {
   constructor(private runs: Map<string, ExtractionRun>, private fields: Map<string, FieldRecord>) {}
   async getRun(sessionId: string, runId: string) {
@@ -161,6 +178,8 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const cases = new Map<string, ManualReviewCase>()
   const storageFiles = new Map<string, Set<string>>()
   const certifications = new Map<string, CertificationRecordRow>()
+  const orders = new Map<string, OrderRecord>()
+  const orderEvents: { orderId: string; eventType: string; metadata: Record<string, string | number | boolean | null> }[] = []
   const runs = new Map<string, ExtractionRun>()
   const corrections = new Map<string, number>()
   return {
@@ -174,6 +193,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
     extractionRuns: new InMemoryExtractionRuns(runs, fields),
     storage: new InMemoryStorage(storageFiles),
     certification: new InMemoryCertification(certifications),
+    orders: new InMemoryOrders(orders, orderEvents),
   }
 }
 
@@ -192,4 +212,10 @@ export function __seedDocument(bundle: RepositoryBundle, doc: DocumentRecord): v
   const d = bundle.documents as unknown as { docs: Map<string, DocumentRecord[]> }
   const list = d.docs.get(doc.sessionId) ?? []
   list.push({ ...doc }); d.docs.set(doc.sessionId, list)
+}
+
+/** Seed a legacy v3 order — test/dev helper for the in-memory bundle. */
+export function __seedOrder(bundle: RepositoryBundle, order: OrderRecord): void {
+  const o = bundle.orders as unknown as { orders: Map<string, OrderRecord> }
+  o.orders.set(order.orderId, { ...order })
 }

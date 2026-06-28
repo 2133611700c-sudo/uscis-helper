@@ -12,7 +12,7 @@ import {
   type RepositoryBundle, type DocumentRepository, type ReviewRepository,
   type ConfirmationRepository, type TranslationRepository, type PdfArtifactRepository,
   type AuditEventRepository, type ManualReviewRepository, type ExtractionRunRepository,
-  type StorageRepository, type CertificationRepository,
+  type StorageRepository, type CertificationRepository, type OrderRepository,
   SupabaseNotConnectedError,
 } from './types'
 
@@ -68,8 +68,13 @@ const certification: CertificationRepository = {
   saveCertificationRecord: () => notConnected('certification.saveCertificationRecord'),
   getCertificationRecord: () => notConnected('certification.getCertificationRecord'),
 }
+const orders: OrderRepository = {
+  getOrder: () => notConnected('orders.getOrder'),
+  updateOrder: () => notConnected('orders.updateOrder'),
+  appendEvent: () => notConnected('orders.appendEvent'),
+}
 
 /** A bundle whose every call throws SupabaseNotConnectedError (shape-conformant). */
 export function createSupabaseRepositoriesStub(): RepositoryBundle {
-  return { documents, review, confirmation, translation, pdfArtifacts, audit, manualReview, extractionRuns, storage, certification }
+  return { documents, review, confirmation, translation, pdfArtifacts, audit, manualReview, extractionRuns, storage, certification, orders }
 }
