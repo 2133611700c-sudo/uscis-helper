@@ -58,7 +58,7 @@ describe('ratchet — active translation routes coupled to Supabase may only shr
     // extraction-status + manual-review-status MIGRATED (2026-06-28) — removed.
     'src/app/api/translation/[sessionId]/ocr-from-storage/route.ts',
     'src/app/api/translation/[sessionId]/review-state/route.ts',
-    'src/app/api/translation/certify/route.ts',
+    // certify MIGRATED (2026-06-28) — certification record + status + audit via repository.
     // extract MIGRATED (2026-06-28) — markExtracted via repository.
     'src/app/api/translation/generate-pdf/route.ts',
     'src/app/api/translation/process/route.ts',

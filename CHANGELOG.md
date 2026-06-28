@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-28 | Route cutover #7 — certify → getRepositories() (ratchet 7→6)
+- `apps/web/src/app/api/translation/certify/route.ts` no longer imports any Supabase client — critical-field gate (`review.listFields`), doc-type lookup (`documents.getSession`), certification record upsert, session status→`certified`, and PII-safe audit now via `getRepositories()`. Rate-limit, validation, and response shape preserved.
+- New `CertificationRepository.saveCertificationRecord`/`getCertificationRecord` + `CertificationRecordRow` (PII present by design, never logged): in-memory upsert impl, fail-closed Supabase stub, contract-test assertions.
+- New `certifyRoute.test.ts` (in-memory): all-confirmed → certifies + persists record/status/audit (asserts audit detail carries name LENGTH not the name); unconfirmed-critical → 400 gate + no record; missing signer → 400; name/signature mismatch → 400.
+- Ratchet: certify removed from `KNOWN_COUPLED_ROUTES` (7→6 remain: ocr-from-storage, review-state, generate-pdf, process, render, upload).
+- Green: repositories + certify + `[sessionId]` routes 47/47; repositories+translation+contracts 251/251; tsc 0; PII clean. All flags default OFF.
+
 ## 2026-06-28 | Route cutover #6 — delete (GDPR) → getRepositories() (ratchet 8→7)
 - `apps/web/src/app/api/translation/[sessionId]/delete/route.ts` no longer imports any Supabase client — manual-review case lookup/delete + storage object removal now via `getRepositories()`. Token gating (HMAC delete-token, id-match), idempotency, and the `/delete-confirmed` redirect preserved.
 - New repository surfaces: `StorageRepository.remove(bucket, keys)` (idempotent object removal) + `ManualReviewRepository.getCase(caseId)` / `deleteCase(caseId)` (queue case by its own id). In-memory impls + fail-closed Supabase stubs + contract-test assertions (incl. stub rejects). Test helper `__seedManualReviewCase`.

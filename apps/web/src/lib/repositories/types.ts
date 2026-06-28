@@ -126,6 +126,31 @@ export interface StorageRepository {
   remove(bucket: string, keys: string[]): Promise<void>
 }
 
+/**
+ * A signer's certification record (8 CFR §103.2(b)(3)). PII is present BY DESIGN
+ * (the signer's own work product) and is never logged by this layer.
+ */
+export interface CertificationRecordRow {
+  sessionId: string
+  signerFullName: string
+  signerAddress: string | null
+  signerPhone: string | null
+  signerEmail: string | null
+  sourceLanguage: string
+  targetLanguage: string
+  languagePairConfirmed: boolean
+  statement: string
+  signatureTypedName: string
+  certificationVersion: string
+  signedAt: string
+}
+
+export interface CertificationRepository {
+  /** Upsert the certification record for a session (one record per session). */
+  saveCertificationRecord(rec: CertificationRecordRow): Promise<void>
+  getCertificationRecord(sessionId: string): Promise<CertificationRecordRow | null>
+}
+
 export interface ExtractionRun {
   id: string
   sessionId: string
@@ -156,6 +181,7 @@ export interface RepositoryBundle {
   manualReview: ManualReviewRepository
   extractionRuns: ExtractionRunRepository
   storage: StorageRepository
+  certification: CertificationRepository
 }
 
 /** Thrown by the Supabase adapter stub until the owner wires + approves it. */

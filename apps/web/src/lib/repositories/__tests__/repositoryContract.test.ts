@@ -88,6 +88,22 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       await r.storage.remove('translation-uploads', ['a.jpg', 'b.jpg']) // idempotent / no-throw
     })
 
+    it('certification record: save (upsert) → get; second save overwrites', async () => {
+      const r = make()
+      expect(await r.certification.getCertificationRecord(SID)).toBeNull()
+      await r.certification.saveCertificationRecord({
+        sessionId: SID, signerFullName: 'Jane Tester', signerAddress: null, signerPhone: null,
+        signerEmail: null, sourceLanguage: 'Ukrainian', targetLanguage: 'English',
+        languagePairConfirmed: true, statement: 'pursuant to 8 CFR §103.2(b)(3)',
+        signatureTypedName: 'Jane Tester', certificationVersion: 'v1.0-8cfr-2026', signedAt: AT,
+      })
+      const got = await r.certification.getCertificationRecord(SID)
+      expect(got?.signerFullName).toBe('Jane Tester')
+      expect(got?.targetLanguage).toBe('English')
+      await r.certification.saveCertificationRecord({ ...got!, signerFullName: 'Jane Updated', signatureTypedName: 'Jane Updated' })
+      expect((await r.certification.getCertificationRecord(SID))?.signerFullName).toBe('Jane Updated')
+    })
+
     it('translation + pdf artifact + audit round-trip', async () => {
       const r = make()
       await r.translation.saveTranslatedValue(SID, 'child_family_name', 'Soloviak')
@@ -126,5 +142,6 @@ describe('repository resolver + Supabase stub (fail-closed; Supabase OFF by defa
     await expect(r.documents.getSession(SID)).rejects.toThrow(/DO NOT RUN WITHOUT OWNER APPROVAL/)
     await expect(r.manualReview.getCase('x')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.storage.remove('b', ['k'])).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.certification.getCertificationRecord(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
   })
 })
