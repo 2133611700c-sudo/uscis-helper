@@ -27,6 +27,15 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       expect((await r.documents.getSession(SID))?.status).toBe('rendered')
     })
 
+    it('markExtracted sets status=extracted + docType', async () => {
+      const r = make()
+      await r.documents.createSession({ sessionId: SID, docType: 'unknown', status: 'uploaded', createdAt: AT, updatedAt: AT })
+      await r.documents.markExtracted(SID, 'ua_birth_certificate', AT)
+      const s = await r.documents.getSession(SID)
+      expect(s?.status).toBe('extracted')
+      expect(s?.docType).toBe('ua_birth_certificate')
+    })
+
     it('upsert + list + get fields', async () => {
       const r = make()
       await r.review.upsertFields(SID, [field({}), field({ field: 'dob', rawValue: null, normalizedValue: '01/15/1990' })])

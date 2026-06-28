@@ -19,6 +19,9 @@ class InMemoryDocuments implements DocumentRepository {
   async updateSessionStatus(id: string, status: string, at: string) {
     const s = this.sessions.get(id); if (s) this.sessions.set(id, { ...s, status, updatedAt: at })
   }
+  async markExtracted(id: string, docType: string, at: string) {
+    const s = this.sessions.get(id); if (s) this.sessions.set(id, { ...s, status: 'extracted', docType, updatedAt: at })
+  }
 }
 
 class InMemoryReview implements ReviewRepository {

@@ -22,6 +22,7 @@ const documents: DocumentRepository = {
   getSession: () => notConnected('documents.getSession'),
   createSession: () => notConnected('documents.createSession'),
   updateSessionStatus: () => notConnected('documents.updateSessionStatus'),
+  markExtracted: () => notConnected('documents.markExtracted'),
 }
 const review: ReviewRepository = {
   listFields: () => notConnected('review.listFields'),
