@@ -211,6 +211,22 @@ export interface OrderRepository {
   appendEvent(orderId: string, eventType: string, metadata: Record<string, string | number | boolean | null>): Promise<void>
 }
 
+/** A rendered final PDF artifact (the `final_renders` table). */
+export interface FinalRenderRecord {
+  sessionId: string
+  storageKey: string
+  contentType: string
+  fileSizeBytes: number
+  qaPassed: boolean
+  qaReport: unknown
+  createdAt: string
+}
+
+export interface FinalRenderRepository {
+  saveFinalRender(rec: FinalRenderRecord): Promise<void>
+  getFinalRender(sessionId: string): Promise<FinalRenderRecord | null>
+}
+
 export interface ExtractionRun {
   id: string
   sessionId: string
@@ -247,6 +263,7 @@ export interface RepositoryBundle {
   storage: StorageRepository
   certification: CertificationRepository
   orders: OrderRepository
+  finalRenders: FinalRenderRepository
 }
 
 /** Thrown by the Supabase adapter stub until the owner wires + approves it. */

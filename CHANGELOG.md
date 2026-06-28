@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-28 | Route cutover #12 — render → getRepositories() (ratchet 2→1)
+- `apps/web/src/app/api/translation/render/route.ts` no longer imports any Supabase client — session/cert/fields load, completeness + evidence audits, session status→`rendered`, `final_renders` persistence, and all audit logs now via `getRepositories()`. The hard gates and external deps stay direct: Stripe payment verify, pdf-lib renderer, QA validators, bureau renderer, canonical continuity (resolve/hash, off/shadow/enforce), owner-access bypass, `assertDocumentReadyForFinalPdf`. snake_case shims preserve the PacketState/validator shapes; all status codes (400/402/404/422/423/500) and the 7-field certification binding preserved.
+- New `FinalRenderRepository.saveFinalRender`/`getFinalRender` (+ `FinalRenderRecord`): in-memory impl, fail-closed Supabase stub, contract assertions. (Cross-route `ocr_completed` audit read now goes through the audit repository — same-store semantics.)
+- New `renderRoute.test.ts` (in-memory, gate externals mocked to PASS): 400 missing session_id; 404 unknown session; 402 unpaid; full pass → PDF + session rendered + final_renders saved + final_rendered audit.
+- Ratchet: render removed from `KNOWN_COUPLED_ROUTES` (2→1 remain: **generate-pdf**).
+- Green: repositories + render 37/37; repositories+translation+contracts 275/275; tsc 0; PII clean. All flags default OFF.
+
 ## 2026-06-28 | Route cutover #11 — ocr-from-storage → getRepositories() (ratchet 3→2)
 - `apps/web/src/app/api/translation/[sessionId]/ocr-from-storage/route.ts` no longer imports any Supabase client — session/document load, extraction-run create/finalise, storage image download, and session status→`extracted` now via `getRepositories()`. The OCR pipeline externals stay direct deps: Vision OCR, DeepSeek field-mapper, image preprocess, manual-review router, and `persistExtractedFields`/`writeAuditLog` (lib wrappers, not flagged by the ratchet). All status codes (400/404/422/503/500), Smart-Retake, and manual-review gates preserved; `finaliseRun` helper now takes the repository bundle.
 - Repository surface extensions: `StorageRepository.download`, `DocumentRepository.getDocument`, `ExtractionRunRepository.createRun`/`updateRun`. In-memory storage now holds object bytes (bucket→key→Uint8Array) so download round-trips. In-memory impls + fail-closed Supabase stubs + contract assertions.

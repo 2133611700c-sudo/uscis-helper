@@ -13,6 +13,7 @@ import {
   type ConfirmationRepository, type TranslationRepository, type PdfArtifactRepository,
   type AuditEventRepository, type ManualReviewRepository, type ExtractionRunRepository,
   type StorageRepository, type CertificationRepository, type OrderRepository,
+  type FinalRenderRepository,
   SupabaseNotConnectedError,
 } from './types'
 
@@ -77,8 +78,12 @@ const orders: OrderRepository = {
   updateOrder: () => notConnected('orders.updateOrder'),
   appendEvent: () => notConnected('orders.appendEvent'),
 }
+const finalRenders: FinalRenderRepository = {
+  saveFinalRender: () => notConnected('finalRenders.saveFinalRender'),
+  getFinalRender: () => notConnected('finalRenders.getFinalRender'),
+}
 
 /** A bundle whose every call throws SupabaseNotConnectedError (shape-conformant). */
 export function createSupabaseRepositoriesStub(): RepositoryBundle {
-  return { documents, review, confirmation, translation, pdfArtifacts, audit, manualReview, extractionRuns, storage, certification, orders }
+  return { documents, review, confirmation, translation, pdfArtifacts, audit, manualReview, extractionRuns, storage, certification, orders, finalRenders }
 }
