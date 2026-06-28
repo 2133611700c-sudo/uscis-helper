@@ -1,5 +1,10 @@
 # STATUS (2026-06-24 — ROOT-CAUSE REVERSAL: handwritten UA/RU Cyrillic IS readable key-free; PII fictionalized + model inventory corrected)
 
+## 2026-06-27 | Cross-hand proof package UPGRADED: committed harness + clean military GT
+- **Committed** `scripts/htr/cross_hand_harness.py` — reproduces BOTH hands at FROZEN boxes, SHA-pinned fixtures, committed EXPECTED verdicts; strict-exact + folded-soft + CER + model_error scored separately. Verified locally: hand A (birth, RU) **strict_exact 3/3**, hand B (military, UA) **0/3** — both SHA-OK, both match EXPECTED. PII-safe config in-repo; raw+GT stay gitignored (qa-private). Closes the "no committed reproducible harness" gap.
+- **Cleaned military GT** (gitignored): single truthful `handwritten:true` (was `false`+`handwritten_actual:true`); removed stale `model_3.1-pro_draft` from `verification_method` → owner-based only.
+- Verdict unchanged, now REPRODUCIBLE: BIRTH RU PATH **PASS**; CROSS-HAND ZERO-SHOT HTR **FAILED** (committed); UA-TrOCR **BLOCKED/UNTESTED**; AUTO-FINALIZATION **FORBIDDEN**; HUMAN REVIEW **REQUIRED**.
+
 ## 2026-06-27 | Critical truth state of handwritten recognition after re-verify
 - **Verified now:** local sidecar is live (`raxtemur/trocr-base-ru`, MPS), and the CURRENT committed deterministic birth-cert template (`FIELD_BOX_TEMPLATES.ua_birth_certificate`) reads the three birth name fields 3/3 exact through the real sidecar on the real fixture. This is stronger than the old `verify_root.py` result because the patronymic crop in code was tightened after that older script.
 - **Verified now:** a second owner-handwritten source really exists locally (`military_id_p1_01.jpg` + GT file), and visual inspection supports the claim that FIO/date are handwritten.
