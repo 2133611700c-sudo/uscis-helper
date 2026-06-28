@@ -185,6 +185,28 @@ export interface CertificationRepository {
   getCertificationRecord(sessionId: string): Promise<CertificationRecordRow | null>
 }
 
+/** Legacy v3 translation order (the `translation_orders` table). */
+export interface OrderRecord {
+  orderId: string
+  status: string | null
+  ocrStatus?: string | null
+  fieldsExtracted?: unknown
+  fieldsReviewed?: unknown
+  pdfStorageKey?: string | null
+  locale?: string | null
+  documentType?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+export interface OrderRepository {
+  getOrder(orderId: string): Promise<OrderRecord | null>
+  /** Apply a partial update (+ updatedAt); returns the updated record or null if absent. */
+  updateOrder(orderId: string, updates: Partial<Omit<OrderRecord, 'orderId'>>, at: string): Promise<OrderRecord | null>
+  /** Append a translation_events row (append-only). */
+  appendEvent(orderId: string, eventType: string, metadata: Record<string, string | number | boolean | null>): Promise<void>
+}
+
 export interface ExtractionRun {
   id: string
   sessionId: string
@@ -216,6 +238,7 @@ export interface RepositoryBundle {
   extractionRuns: ExtractionRunRepository
   storage: StorageRepository
   certification: CertificationRepository
+  orders: OrderRepository
 }
 
 /** Thrown by the Supabase adapter stub until the owner wires + approves it. */

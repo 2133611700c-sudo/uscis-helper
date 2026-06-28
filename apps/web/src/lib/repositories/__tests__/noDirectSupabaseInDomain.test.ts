@@ -61,9 +61,9 @@ describe('ratchet — active translation routes coupled to Supabase may only shr
     // certify MIGRATED (2026-06-28) — certification record + status + audit via repository.
     // extract MIGRATED (2026-06-28) — markExtracted via repository.
     'src/app/api/translation/generate-pdf/route.ts',
-    'src/app/api/translation/process/route.ts',
     'src/app/api/translation/render/route.ts',
     // upload MIGRATED (2026-06-28) — storage.upload + documents.createDocument/markUploaded.
+    // process MIGRATED (2026-06-28) — legacy orders via OrderRepository.
   ])
 
   it('no NEW route couples to Supabase (set ⊆ known backlog)', () => {

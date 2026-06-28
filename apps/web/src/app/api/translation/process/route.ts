@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { getRepositories } from '@/lib/repositories'
+import type { OrderRecord } from '@/lib/repositories'
 import { generateFullPacket } from '@/lib/packet'
 import type { PacketInput } from '@/lib/packet'
 
-function getSupabase() {
-  const url = process.env.SUPABASE_URL!
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  return createClient(url, key, { auth: { persistSession: false } })
+/** Map a camelCase OrderRecord back to the snake_case response shape. */
+function orderToResponse(o: OrderRecord) {
+  return {
+    order_id: o.orderId,
+    status: o.status,
+    ocr_status: o.ocrStatus ?? null,
+    fields_extracted: o.fieldsExtracted ?? null,
+    fields_reviewed: o.fieldsReviewed ?? null,
+    pdf_storage_key: o.pdfStorageKey ?? null,
+    locale: o.locale ?? null,
+    document_type: o.documentType ?? null,
+    created_at: o.createdAt ?? null,
+    updated_at: o.updatedAt ?? null,
+  }
 }
 
 // GET /api/translation/process?order_id=ORD-xxx — get order status + fields
@@ -15,17 +26,9 @@ export async function GET(req: NextRequest) {
   if (!orderId) return NextResponse.json({ error: 'order_id required' }, { status: 400 })
 
   try {
-    const supabase = getSupabase()
-    const { data, error } = await supabase
-      .from('translation_orders')
-      .select(
-        'order_id, status, ocr_status, fields_extracted, fields_reviewed, pdf_storage_key, locale, document_type, created_at, updated_at'
-      )
-      .eq('order_id', orderId)
-      .single()
-
-    if (error || !data) return NextResponse.json({ error: 'order not found' }, { status: 404 })
-    return NextResponse.json(data)
+    const order = await getRepositories().orders.getOrder(orderId)
+    if (!order) return NextResponse.json({ error: 'order not found' }, { status: 404 })
+    return NextResponse.json(orderToResponse(order))
   } catch (e: unknown) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
@@ -39,28 +42,24 @@ export async function PATCH(req: NextRequest) {
 
     if (!order_id) return NextResponse.json({ error: 'order_id required' }, { status: 400 })
 
-    const supabase = getSupabase()
-    const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
-    if (fields_reviewed !== undefined) update.fields_reviewed = fields_reviewed
-    if (status !== undefined) update.status = status
+    const repos = getRepositories()
+    const now = new Date().toISOString()
+    const updates: Partial<Omit<OrderRecord, 'orderId'>> = {}
+    if (fields_reviewed !== undefined) updates.fieldsReviewed = fields_reviewed
+    if (status !== undefined) updates.status = status
 
-    const { data, error } = await supabase
-      .from('translation_orders')
-      .update(update)
-      .eq('order_id', order_id)
-      .select('order_id, status, ocr_status, updated_at')
-      .single()
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const updated = await repos.orders.updateOrder(order_id, updates, now)
+    if (!updated) return NextResponse.json({ error: 'order not found' }, { status: 404 })
 
     // Log event
-    await supabase.from('translation_events').insert({
-      order_id,
-      event_type: 'fields_reviewed',
-      metadata: { status: data.status },
-    })
+    await repos.orders.appendEvent(order_id, 'fields_reviewed', { status: updated.status })
 
-    return NextResponse.json(data)
+    return NextResponse.json({
+      order_id: updated.orderId,
+      status: updated.status,
+      ocr_status: updated.ocrStatus ?? null,
+      updated_at: updated.updatedAt ?? null,
+    })
   } catch (e: unknown) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
@@ -74,24 +73,19 @@ export async function POST(req: NextRequest) {
 
     if (!order_id) return NextResponse.json({ error: 'order_id required' }, { status: 400 })
 
-    const supabase = getSupabase()
+    const repos = getRepositories()
 
     // Fetch order details
-    const { data: order, error: fetchError } = await supabase
-      .from('translation_orders')
-      .select('order_id, status, document_type, locale, fields_reviewed')
-      .eq('order_id', order_id)
-      .single()
-
-    if (fetchError ?? !order) {
+    const order = await repos.orders.getOrder(order_id)
+    if (!order) {
       return NextResponse.json({ error: 'order not found' }, { status: 404 })
     }
 
     // Build PacketInput from order data
     // Map legacy field shape to v5 ExtractedField shape
     type LegacyField = { field_name: string; source_text: string; translated_text: string }
-    const rawFields = Array.isArray(order.fields_reviewed)
-      ? (order.fields_reviewed as LegacyField[])
+    const rawFields = Array.isArray(order.fieldsReviewed)
+      ? (order.fieldsReviewed as LegacyField[])
       : []
 
     const fields = rawFields.map((f: LegacyField) => ({
@@ -107,10 +101,10 @@ export async function POST(req: NextRequest) {
     }))
 
     const input: PacketInput = {
-      order_id: order.order_id as string,
+      order_id: order.orderId,
       scopeTitle: `English Translation of Ukrainian Document`,
-      documentType: (order.document_type as string) ?? 'other',
-      doc_type: (order.document_type as string) ?? 'other',
+      documentType: (order.documentType as string) ?? 'other',
+      doc_type: (order.documentType as string) ?? 'other',
       source_language: 'Ukrainian',
       target_language: (order.locale as string) ?? 'en',
       translated_at: new Date().toISOString(),
@@ -124,7 +118,7 @@ export async function POST(req: NextRequest) {
         signed_at: new Date().toISOString(),
         certification_version: 'v1.0-8cfr-2026',
       },
-      sessionId: order.order_id as string,
+      sessionId: order.orderId,
     }
 
     const result = await generateFullPacket(input)
@@ -134,18 +128,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Update order status
-    await supabase
-      .from('translation_orders')
-      .update({ status: 'packet_ready', updated_at: new Date().toISOString() })
-      .eq('order_id', order_id)
+    await repos.orders.updateOrder(order_id, { status: 'packet_ready' }, new Date().toISOString())
 
-    await supabase.from('translation_events').insert({
-      order_id,
-      event_type: 'packet_generated',
-      metadata: {
-        has_signed_url: !!result.signedUrl,
-        files_count: result.files.length,
-      },
+    await repos.orders.appendEvent(order_id, 'packet_generated', {
+      has_signed_url: !!result.signedUrl,
+      files_count: result.files.length,
     })
 
     return NextResponse.json({

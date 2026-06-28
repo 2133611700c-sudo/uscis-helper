@@ -9,7 +9,7 @@ import { createInMemoryRepositories } from './inMemory'
 import { createSupabaseRepositoriesStub } from './supabaseAdapter.stub'
 
 export * from './types'
-export { createInMemoryRepositories, __seedManualReviewCase, __seedDocument } from './inMemory'
+export { createInMemoryRepositories, __seedManualReviewCase, __seedDocument, __seedOrder } from './inMemory'
 export { createSupabaseRepositoriesStub } from './supabaseAdapter.stub'
 
 export type RepositoryDriver = 'in_memory' | 'supabase'
