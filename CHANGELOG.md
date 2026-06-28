@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-28 | Repository abstraction + Supabase preparation (NOT connected) — CODE COMPLETE — READY FOR DATABASE-BACKED STAGING VALIDATION
+- `apps/web/src/lib/repositories/` (`cfcc480`): `RepositoryBundle` interfaces (Document/Review/Confirmation/Translation/PdfArtifact/AuditEvent) + in-memory impl (raw immutable) + fail-closed Supabase adapter stub (imports no client; throws SupabaseNotConnectedError) + `getRepositories()` resolver (in-memory default; supabase opt-in only) + shape-only env validation. ONE contract test suite both impls must satisfy.
+- Full birth-cert vertical proven on **in-memory infra** (`1196fc3`, `inMemoryVerticalFlow.test`): session→mocked Gemini→sanitize(strip forged)→split→normalize→persist(raw immutable)→review states→confirm/correct(raw preserved)→final-PDF gate BLOCKED→ALLOWED→artifact+PII-free audit→reopen.
+- Supabase **intentionally DISCONNECTED**: `docs/architecture/SUPABASE_CONNECTION_PLAN.md` + `supabase/migrations/0001_contract_vertical.sql` are FILE-ONLY (DO NOT RUN WITHOUT OWNER APPROVAL) — tables/RLS/indexes/retention/forbidden-fields/owner connect+validate sequence/rollback.
+- Repo tests green; tsc 0; PII clean. Production flags OFF; no Supabase connection; not production-ready. ADR: `docs/adr/ADR-CONTRACT-VERTICAL.md`.
+
 ## 2026-06-28 | Unified Document Contract — Phase 10 (A–I) staging-ready vertical
 - **A** (`d756feb`): live review annotation — `annotateReviewFields` adds `contract_review_state` (candidate/confirmed/missing/unreadable/not_applicable/conflict) + `evidence_only` to the review-state route; split fields first-class; merged-with-splits = read-only evidence. Flag `UNIFIED_DOC_CONTRACT_ENABLED` (OFF identity).
 - **B** (`9384753` + invariant `ffd5f4f`): `assertDocumentReadyForFinalPdf` — single server-side final-PDF boundary, dedicated flag `FINAL_PDF_CONFIRMATION_GATE_ENABLED` (default OFF). Negative battery: raw-only/unconfirmed/conflict/missing/unreadable/forged-confirmed BLOCKED; valid ALLOWED. Route invariant: gate precedes every renderer.

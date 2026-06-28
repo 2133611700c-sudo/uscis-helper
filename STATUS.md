@@ -1,7 +1,13 @@
-# STATUS (2026-06-28 — Unified Document Contract Phase 6–10 complete; STAGING READY pending DB E2E + owner sign-off)
+# STATUS (2026-06-28 — Unified Document Contract Phase 6–10 + repository abstraction; Supabase intentionally DISCONNECTED)
+
+## 2026-06-28 | Repository abstraction + Supabase preparation (NOT connected)
+**Readiness: CODE COMPLETE — READY FOR DATABASE-BACKED STAGING VALIDATION** (NOT production-ready).
+- **Supabase intentionally DISCONNECTED** — not run/connected/migrated. Persistence behind `RepositoryBundle` interfaces (`apps/web/src/lib/repositories/`): in-memory impl (default) + fail-closed Supabase adapter stub + ONE contract test suite both must pass + env validation (shape-only). `getRepositories()` defaults to in-memory; `REPOSITORY_DRIVER=supabase` is opt-in and the stub throws until owner-wired.
+- **Full birth-cert vertical proven on in-memory infra** (`inMemoryVerticalFlow.test`): session→mocked Gemini→sanitize(strip forged)→split→normalize→persist(raw immutable)→review states→confirm/correct(raw preserved)→final-PDF gate BLOCKED→ALLOWED→artifact+PII-free audit→reopen.
+- **Future DB integration points:** `docs/architecture/SUPABASE_CONNECTION_PLAN.md` + `supabase/migrations/0001_contract_vertical.sql` (**DO NOT RUN WITHOUT OWNER APPROVAL**) — tables/RLS/indexes/retention/forbidden-fields/owner connection+validation sequence/rollback.
 
 ## 2026-06-28 | Unified Document Contract vertical (Phase 6–10)
-**Readiness: CODE COMPLETE — READY FOR STAGING VALIDATION** (NOT "staging ready" until the DB-backed E2E passes; NOT production-ready).
+**Readiness: CODE COMPLETE — READY FOR DATABASE-BACKED STAGING VALIDATION** (NOT production-ready; flags OFF; live DB E2E pending).
 - **Authoritative code tip:** `91f1cdbf2ba4a57966562420cc66d174aabb3f5b` on `translation/ru-and-model-matrix-fixes` (docs commits follow on top).
 - **Implemented:** contract OCR→canonical→normalize→review→confirmation→PDF — split fields (P6) + knowledge-normalize (P7) + live review annotation (A) + server-side final-PDF gate on BOTH emitters (B) + first-class split PDF rows (C) + Gemini→contract boundary (D) + route bypass guards (E) + PII-free observability (H) + flag matrix/runbook/PII-incident (G/I).
 - **Flags: ALL default OFF** (`UNIFIED_DOC_CONTRACT_ENABLED`, `_SPLIT_`, `_NORMALIZE_`, `FINAL_PDF_CONFIRMATION_GATE_ENABLED`) → byte-identical legacy (OFF golden `sha256 89611c7a…`). Full suite **2878 pass / 0 fail**; tsc 0; PII clean.
