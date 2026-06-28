@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-06-27 | Committed reproducible cross-hand HTR harness + cleaned military GT
+- NEW committed `scripts/htr/cross_hand_harness.py` (PII-safe): frozen field boxes + SHA-pinned fixtures + committed EXPECTED verdicts + 3 score modes (strict-exact / folded-soft / CER) + model_error separate. Reads real images + GT from gitignored qa-private at runtime; writes full raw evidence to gitignored qa-private/htr-poc/; CI-safe SKIP when weights/fixtures absent. Verified locally: hand A (birth, RU) strict_exact **3/3**, hand B (military, UA) **0/3** — both SHA-OK, both match EXPECTED. This upgrades the cross-hand result from research-grade to a COMMITTED reproducer (addresses the "docs-only / no committed harness" critique).
+- Cleaned `military_id_p1` GT (gitignored): consolidated to a single truthful `handwritten:true` (removed the `handwritten:false` + `handwritten_actual:true` contradiction) and removed the stale `model_3.1-pro_draft` provenance from `verification_method` (GT is owner-verified, not model-derived).
+- Next + only remaining zero-shot lever: fetch the dedicated UA-TrOCR weights OUTSIDE the sandbox, then run the SAME harness via `HTR_MODEL=...`.
+
 ## 2026-06-27 | Multi-model HTR on hand B (UA cursive): ALL local models 0/3 — handwriting unsolved
 - With grid-VERIFIED field boxes on military_id_p1 (hand B, Ukrainian cursive), ran every locally-available model: raxtemur-ru, cyrillic-trocr (general), kazars24-ru, AND pylaia-UK (a Ukrainian CRNN). **All scored 0/3 EXACT** (CER 0.4–1.27). Not merely "raxtemur is Russian" — even the Ukrainian model fails this hand.
 - The dedicated UA TrOCR (cyrillic-trocr/trocr-ukrainian-handwritten) could NOT be downloaded in-sandbox (weights repeatedly die at ~69M) → untested, the only remaining lever.

@@ -1,5 +1,10 @@
 # HANDOFF (2026-06-15 — model-matrix enforcement: code SoT + acceptance gate + CI guard + CLAUDE.md rule)
 
+## 2026-06-27 | Committed cross-hand harness + clean military GT (proof package upgraded)
+- `scripts/htr/cross_hand_harness.py` (committed, PII-safe): frozen boxes + SHA-pinned fixtures + EXPECTED verdicts; reproduces hand A (birth RU) strict_exact 3/3, hand B (military UA) 0/3 locally (both SHA-OK, match EXPECTED). Raw+GT stay gitignored. Run: `qa-private/htr-venv/bin/python scripts/htr/cross_hand_harness.py` (or `HTR_MODEL=… python …` for the UA model once its weights are fetched OUTSIDE the sandbox: `hf download cyrillic-trocr/trocr-ukrainian-handwritten --local-dir ~/models/...`).
+- Military GT cleaned: single `handwritten:true`, removed stale `model_3.1-pro_draft` provenance.
+- NEXT (last zero-shot lever): fetch UA-TrOCR weights externally → run the SAME harness with HTR_MODEL set. Stop-rule: if it's also 0/3 → close zero-shot HTR, next lever = fine-tuning or manual entry.
+
 ## 2026-06-27 | Critical re-verify of handwritten cross-hand claim
 - I re-checked the latest handwritten conclusion against live local evidence. The strong part is real: the current birth-cert deterministic path is 3/3 exact through the live sidecar, and the military booklet is indeed a second handwritten owner hand present on disk.
 - The weak part is also real: `6919dbe` is **docs-only** and there is still no committed, reproducible cross-hand harness/report for the military result. The military GT metadata remains internally inconsistent (`handwritten:false` + `handwritten_actual:true`, stale `model_3.1-pro_draft` wording), so this corpus contract still needs cleanup before anyone treats it as finalized evidence.
