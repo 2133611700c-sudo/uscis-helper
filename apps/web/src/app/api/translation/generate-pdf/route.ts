@@ -22,6 +22,7 @@ import { isDualRenderEnabled, buildDualRenderLog } from '@/lib/translation/pdf/d
 import { hasOfficialSchema } from '@/lib/translation/forms/ukraine/schemas/registry'
 import { shouldBlockRawPdfFallback } from '@/lib/contracts/contractReviewState'
 import { assertDocumentReadyForFinalPdf } from '@/lib/contracts/finalPdfGate'
+import { emitContractEvent } from '@/lib/contracts/contractObservability'
 import { buildCertificationRecord } from '@/lib/translation/certificationRecord'
 import { ExtractedField, SourceTrace } from '@/lib/translation/types'
 import { isOwnerSession } from '@/lib/ownerAccess'
@@ -390,7 +391,7 @@ export async function POST(req: NextRequest) {
       gateType: 'final_pdf_confirmation', reasonCode: finalGate.blockedReasons.join(',') || 'not_ready',
       wouldBlock: true, docType: payload.doc_type ?? null, sessionId: payload.session_id ?? null,
     })
-    console.warn('[generate-pdf] final-PDF gate BLOCKED', JSON.stringify({ doc_type: payload.doc_type, reasons: finalGate.blockedReasons }))
+    emitContractEvent({ event: 'final_pdf_blocked', docType: payload.doc_type ?? null, state: finalGate.blockedReasons.join(',') || 'not_ready' })
     return NextResponse.json(
       { ok: false, error: 'review_required', gate: 'final_pdf_confirmation', reasons: finalGate.blockedReasons },
       { status: 403 },
