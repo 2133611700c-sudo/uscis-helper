@@ -20,6 +20,7 @@ export interface SessionRecord {
   status: string
   scopeTitle?: string | null
   paymentConfirmed?: boolean
+  uploadedPages?: number | null
   createdAt: string
   updatedAt: string
 }
@@ -36,6 +37,26 @@ export interface FieldRecord {
   reviewRequired: boolean
   confirmed: boolean
   confirmedAt?: string | null
+  // ── optional DB-projection columns (carried through for the review UI) ──
+  id?: string | null
+  sourceLabel?: string | null
+  sourceZone?: string | null
+  languageLayer?: string | null
+  confidence?: number | null
+  evidenceType?: string | null
+  bboxStatus?: string | null
+  createdAt?: string | null
+}
+
+/** An uploaded source document (one row per upload). */
+export interface DocumentRecord {
+  id: string
+  sessionId: string
+  storageKey: string
+  originalName: string | null
+  mimeType: string | null
+  fileSizeBytes: number | null
+  createdAt: string
 }
 
 export interface PdfArtifactRecord {
@@ -62,6 +83,8 @@ export interface DocumentRepository {
   updateSessionStatus(sessionId: string, status: string, at: string): Promise<void>
   /** Mark a session extracted: status='extracted' + docType. */
   markExtracted(sessionId: string, docType: string, at: string): Promise<void>
+  /** Most-recently-uploaded source document for a session; null if none. */
+  getLatestDocument(sessionId: string): Promise<DocumentRecord | null>
 }
 
 export interface ReviewRepository {
@@ -124,6 +147,8 @@ export interface ManualReviewRepository {
 export interface StorageRepository {
   /** Remove objects from a bucket. Idempotent (missing keys ignored). */
   remove(bucket: string, keys: string[]): Promise<void>
+  /** Time-limited signed read URL for an object; null if it cannot be produced. */
+  createSignedUrl(bucket: string, key: string, expirySeconds: number): Promise<string | null>
 }
 
 /**
