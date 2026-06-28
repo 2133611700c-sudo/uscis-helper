@@ -1,10 +1,12 @@
-# HANDOFF (2026-06-28 — Route cutover in progress; ratchet at 8; next = review-state cutover)
+# HANDOFF (2026-06-28 — Route cutover in progress; ratchet at 7; next = certify cutover)
 
-## 2026-06-28 | Route cutover progress — ratchet 8 (was 13)
-- **Migrated to `getRepositories()` so far:** confirm-field, extract, extraction-status, manual-review-status, **correct-field (this session)**. Each route imports 0 Supabase clients; in-memory default; Supabase adapter fail-closed.
-- **Remaining coupled routes (8) — ratchet `KNOWN_COUPLED_ROUTES`:** delete, ocr-from-storage, review-state, certify, generate-pdf, process, render, upload. Migrate these (easiest→hardest: review-state → delete → certify → upload → process → ocr-from-storage → render → generate-pdf), each time rewriting the route's Supabase-mock test to in-memory and removing it from the ratchet, until the set is `[]` then flip the final assertion to `toBe(0)`.
-- **New repos still needed before the hard routes:** StorageRepository, OrderRepository, CertificationRepository, FinalRenderRepository (+ extensions). correct-field needed only `ConfirmationRepository.recordUserCorrection` (added this session).
-- **Next exact task:** cutover #6 = review-state route → `getRepositories()`; rewrite its handler test to in-memory; remove from ratchet (8→7); run repositories + `[sessionId]` route tests + tsc + PII.
+## 2026-06-28 | Route cutover progress — ratchet 7 (was 13)
+- **Migrated to `getRepositories()` so far:** confirm-field, extract, extraction-status, manual-review-status, correct-field, **delete (this session)**. Each route imports 0 Supabase clients; in-memory default; Supabase adapter fail-closed.
+- **Remaining coupled routes (7) — ratchet `KNOWN_COUPLED_ROUTES`:** ocr-from-storage, review-state, certify, generate-pdf, process, render, upload.
+- **Repos added so far:** `ConfirmationRepository.recordUserCorrection`; `StorageRepository.remove`; `ManualReviewRepository.getCase`/`deleteCase`.
+- **Repos still needed (per survey):** CertificationRepository (certify, review-state, render, generate-pdf), extend StorageRepository with `upload`/`download`/`createSignedUrl` (upload, review-state, ocr-from-storage, render), DocumentRepository `createDocument`/`listDocuments` (upload, review-state), FinalRenderRepository (render), OrderRepository + events (process, generate-pdf), ExtractionRunRepository `createRun`/`updateRunStatus` (ocr-from-storage), richer extracted_fields columns for review-state. NOTE: external services (Stripe/Resend/Gemini/PDF renderers) stay direct deps — only the Supabase persistence parts move behind repositories.
+- **Recommended next order (easiest→hardest):** certify → review-state → upload → process(legacy; consider sunset) → ocr-from-storage → render → generate-pdf.
+- **Next exact task:** cutover #7 = certify route → `getRepositories()` (needs `CertificationRepository.saveCertificationRecord`/`getCertificationRecord` + critical-field confirmation gate via `review.listFields`); rewrite its handler test to in-memory; remove from ratchet (7→6).
 - Verify each: `cd apps/web && ./node_modules/.bin/vitest run src/lib/repositories "src/app/api/translation/[sessionId]"` + `npx tsc --noEmit -p apps/web/tsconfig.json` + `node ../../scripts/check-no-pii.mjs`.
 
 ## 2026-06-28 | Runtime decoupling status — DOMAIN done; ROUTE cutover OUTSTANDING (NOT yet APPLICATION CODE COMPLETE)

@@ -12,6 +12,7 @@ import {
   type RepositoryBundle, type DocumentRepository, type ReviewRepository,
   type ConfirmationRepository, type TranslationRepository, type PdfArtifactRepository,
   type AuditEventRepository, type ManualReviewRepository, type ExtractionRunRepository,
+  type StorageRepository,
   SupabaseNotConnectedError,
 } from './types'
 
@@ -48,13 +49,18 @@ const audit: AuditEventRepository = {
 }
 const manualReview: ManualReviewRepository = {
   getLatestTicket: () => notConnected('manualReview.getLatestTicket'),
+  getCase: () => notConnected('manualReview.getCase'),
+  deleteCase: () => notConnected('manualReview.deleteCase'),
 }
 const extractionRuns: ExtractionRunRepository = {
   getRun: () => notConnected('extractionRuns.getRun'),
   countFields: () => notConnected('extractionRuns.countFields'),
 }
+const storage: StorageRepository = {
+  remove: () => notConnected('storage.remove'),
+}
 
 /** A bundle whose every call throws SupabaseNotConnectedError (shape-conformant). */
 export function createSupabaseRepositoriesStub(): RepositoryBundle {
-  return { documents, review, confirmation, translation, pdfArtifacts, audit, manualReview, extractionRuns }
+  return { documents, review, confirmation, translation, pdfArtifacts, audit, manualReview, extractionRuns, storage }
 }

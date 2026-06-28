@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-28 | Route cutover #6 — delete (GDPR) → getRepositories() (ratchet 8→7)
+- `apps/web/src/app/api/translation/[sessionId]/delete/route.ts` no longer imports any Supabase client — manual-review case lookup/delete + storage object removal now via `getRepositories()`. Token gating (HMAC delete-token, id-match), idempotency, and the `/delete-confirmed` redirect preserved.
+- New repository surfaces: `StorageRepository.remove(bucket, keys)` (idempotent object removal) + `ManualReviewRepository.getCase(caseId)` / `deleteCase(caseId)` (queue case by its own id). In-memory impls + fail-closed Supabase stubs + contract-test assertions (incl. stub rejects). Test helper `__seedManualReviewCase`.
+- New `deleteRoute.test.ts`: valid-token delete + storage removal, idempotent re-delete, missing-token 404, cross-case token 404, unconfigured-secret 500 — all on in-memory repos.
+- Ratchet: delete removed from `KNOWN_COUPLED_ROUTES` (8→7 remain: ocr-from-storage, review-state, certify, generate-pdf, process, render, upload).
+- Green: repositories + `[sessionId]` routes 42/42; repositories+translation+contracts 246/246; tsc 0; PII clean. All flags default OFF.
+
 ## 2026-06-28 | Route cutover #5 — correct-field → getRepositories() (ratchet 9→8)
 - `apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts` no longer imports any Supabase client — persistence now via `getRepositories()` (in-memory default; Supabase adapter remains fail-closed/not connected). Preserves response shape (`ok/field/new_value/old_value/confirmed_at/correction_id/correction_type/canonical_loop/gates`), status codes (404 session/field, 400 validation, 500 db/correction_log), raw immutability, and the canonical override-loop dual-write (flag default OFF).
 - New repository method `ConfirmationRepository.recordUserCorrection(sessionId, field, old, new, reason, at) → {id, version}`: in-memory impl with a monotonic per-(session,field) version store; Supabase stub fail-closed; contract-test assertion added.
