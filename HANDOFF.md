@@ -5,6 +5,11 @@
 
 
 
+## 2026-06-27 | Staging keep-alive workflow (Free-tier idle guard)
+- Added `.github/workflows/staging-keepalive.yml`: cron `0 9 */3 * *` runs `SELECT 1` on staging via IPv4 session pooler. Read-only, no DDL, no data writes. Same hard-guard pattern as `staging-provision.yml` (target ref != prod ref). Uses existing secrets `STAGING_SUPABASE_PROJECT_REF` / `STAGING_SUPABASE_DB_PASSWORD`; optional `STAGING_DB_POOLER_HOST` falls back to `aws-1-us-west-1.pooler.supabase.com`.
+- Why: Supabase Free auto-pauses a project after ~7 days of zero DB/API activity. The isolated staging project `rxnlpvldngxgdxkxoaaj` (ADR-023) lives on a separate Free account and is intentionally idle between V1 release pushes, so pause warnings fire whenever no PR touches it for a week.
+- Why nightly does not protect it: `v1-nightly-staging.yml` is still a dry-run stub — its only meaningful run path prints `"Staging ready. (Real staging smoke is implemented in a later phase; still no production, no real money.)"` and exits without touching the DB. Supabase therefore correctly counts staging as idle. Keep-alive is a behavior-neutral idle-guard; the nightly stub stays untouched for its later real-smoke implementation.
+
 ## THIS SESSION (current) — Public flip + history rewrite
 - Trigger: owner declared uscis-helper as priority #1 main project; flip to PUBLIC for free unlimited Actions + free ruleset.
 - Executed: 4-pass git filter-repo across ALL refs to drop docs/reports/evidence/, qa-shots/private/, owner identity strings, owner emails ([OLD_EMAIL_1], [OLD_EMAIL_2]) → owner@redacted.invalid, owner names → Owner. Final history audit: 0 PII references reachable.
