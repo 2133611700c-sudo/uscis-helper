@@ -11,7 +11,8 @@
 import {
   type RepositoryBundle, type DocumentRepository, type ReviewRepository,
   type ConfirmationRepository, type TranslationRepository, type PdfArtifactRepository,
-  type AuditEventRepository, SupabaseNotConnectedError,
+  type AuditEventRepository, type ManualReviewRepository, type ExtractionRunRepository,
+  SupabaseNotConnectedError,
 } from './types'
 
 // async so the failure is a REJECTED promise (fail-closed), not a sync throw.
@@ -43,8 +44,15 @@ const audit: AuditEventRepository = {
   append: () => notConnected('audit.append'),
   list: () => notConnected('audit.list'),
 }
+const manualReview: ManualReviewRepository = {
+  getLatestTicket: () => notConnected('manualReview.getLatestTicket'),
+}
+const extractionRuns: ExtractionRunRepository = {
+  getRun: () => notConnected('extractionRuns.getRun'),
+  countFields: () => notConnected('extractionRuns.countFields'),
+}
 
 /** A bundle whose every call throws SupabaseNotConnectedError (shape-conformant). */
 export function createSupabaseRepositoriesStub(): RepositoryBundle {
-  return { documents, review, confirmation, translation, pdfArtifacts, audit }
+  return { documents, review, confirmation, translation, pdfArtifacts, audit, manualReview, extractionRuns }
 }

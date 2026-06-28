@@ -57,8 +57,7 @@ describe('ratchet — active translation routes coupled to Supabase may only shr
     // confirm-field MIGRATED to getRepositories() (2026-06-28) — removed from backlog.
     'src/app/api/translation/[sessionId]/correct-field/route.ts',
     'src/app/api/translation/[sessionId]/delete/route.ts',
-    'src/app/api/translation/[sessionId]/extraction-status/[runId]/route.ts',
-    'src/app/api/translation/[sessionId]/manual-review-status/route.ts',
+    // extraction-status + manual-review-status MIGRATED (2026-06-28) — removed.
     'src/app/api/translation/[sessionId]/ocr-from-storage/route.ts',
     'src/app/api/translation/[sessionId]/review-state/route.ts',
     'src/app/api/translation/certify/route.ts',

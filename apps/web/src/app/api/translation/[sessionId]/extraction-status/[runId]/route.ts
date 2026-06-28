@@ -26,7 +26,7 @@
  * (completed | retake_required | manual_review_required | failed).
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,28 +46,17 @@ export async function GET(
     )
   }
 
-  const supabase = createAdminSupabaseClient()
+  const repos = getRepositories()
 
   // Verify session exists (prevents leaking run data across sessions)
-  const { data: session } = await supabase
-    .from('translation_sessions')
-    .select('session_id')
-    .eq('session_id', sessionId)
-    .single()
-
+  const session = await repos.documents.getSession(sessionId)
   if (!session) {
     return NextResponse.json({ ok: false, error: 'Session not found' }, { status: 404 })
   }
 
   // Load extraction run — must belong to this session
-  const { data: run, error } = await supabase
-    .from('extraction_runs')
-    .select('id, session_id, status, provider, confidence, warnings, raw_text, image_quality, retake_count, error_message, started_at, completed_at, created_at')
-    .eq('id', runId)
-    .eq('session_id', sessionId)
-    .single()
-
-  if (error || !run) {
+  const run = await repos.extractionRuns.getRun(sessionId, runId)
+  if (!run) {
     return NextResponse.json(
       { ok: false, error: 'Extraction run not found' },
       { status: 404 }
@@ -80,22 +69,17 @@ export async function GET(
   const base = {
     ok: true,
     extraction_run_id: run.id,
-    session_id: run.session_id,
+    session_id: run.sessionId,
     status: run.status,
     is_terminal: isTerminal,
-    started_at: run.started_at,
-    completed_at: run.completed_at,
-    created_at: run.created_at,
+    started_at: run.startedAt ?? null,
+    completed_at: run.completedAt ?? null,
+    created_at: run.createdAt ?? null,
   }
 
   // Status-specific extras
   if (run.status === 'completed') {
-    // Count fields that were written for this session
-    const { count: fieldsCount } = await supabase
-      .from('extracted_fields')
-      .select('*', { count: 'exact', head: true })
-      .eq('session_id', sessionId)
-
+    const fieldsCount = await repos.extractionRuns.countFields(sessionId)
     return NextResponse.json({
       ...base,
       provider: run.provider,
@@ -109,10 +93,10 @@ export async function GET(
   if (run.status === 'retake_required') {
     return NextResponse.json({
       ...base,
-      user_message: run.error_message ?? 'Please retake the photo for better results.',
-      retake_count: run.retake_count ?? 0,
+      user_message: run.errorMessage ?? 'Please retake the photo for better results.',
+      retake_count: run.retakeCount ?? 0,
       max_retakes: MAX_RETAKES,
-      image_quality: run.image_quality,
+      image_quality: run.imageQuality,
     })
   }
 
@@ -120,7 +104,7 @@ export async function GET(
     return NextResponse.json({
       ...base,
       user_message:
-        run.error_message ??
+        run.errorMessage ??
         'Automatic extraction could not read your document. Please re-upload a clearer photo.',
     })
   }

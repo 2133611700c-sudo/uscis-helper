@@ -90,6 +90,39 @@ export interface AuditEventRepository {
   list(sessionId: string): Promise<AuditEventRecord[]>
 }
 
+export interface ManualReviewTicket {
+  sessionId: string
+  status: string
+  priority: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ManualReviewRepository {
+  /** Most recent ticket for a session (open first, else latest terminal); null if none. */
+  getLatestTicket(sessionId: string): Promise<ManualReviewTicket | null>
+}
+
+export interface ExtractionRun {
+  id: string
+  sessionId: string
+  status: string
+  provider?: string | null
+  confidence?: number | null
+  warnings?: string[] | null
+  imageQuality?: unknown
+  retakeCount?: number | null
+  errorMessage?: string | null
+  startedAt?: string | null
+  completedAt?: string | null
+  createdAt?: string | null
+}
+
+export interface ExtractionRunRepository {
+  getRun(sessionId: string, runId: string): Promise<ExtractionRun | null>
+  countFields(sessionId: string): Promise<number>
+}
+
 export interface RepositoryBundle {
   documents: DocumentRepository
   review: ReviewRepository
@@ -97,6 +130,8 @@ export interface RepositoryBundle {
   translation: TranslationRepository
   pdfArtifacts: PdfArtifactRepository
   audit: AuditEventRepository
+  manualReview: ManualReviewRepository
+  extractionRuns: ExtractionRunRepository
 }
 
 /** Thrown by the Supabase adapter stub until the owner wires + approves it. */
