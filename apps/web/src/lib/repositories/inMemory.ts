@@ -9,13 +9,13 @@ import type {
   ManualReviewRepository, ManualReviewTicket, ManualReviewCase, StorageRepository,
   CertificationRepository, CertificationRecordRow,
   ExtractionRunRepository, ExtractionRun,
-  SessionRecord, FieldRecord, PdfArtifactRecord, AuditEventRecord,
+  SessionRecord, FieldRecord, DocumentRecord, PdfArtifactRecord, AuditEventRecord,
 } from './types'
 
 const key = (sessionId: string, field: string) => `${sessionId}::${field}`
 
 class InMemoryDocuments implements DocumentRepository {
-  constructor(private sessions: Map<string, SessionRecord>) {}
+  constructor(private sessions: Map<string, SessionRecord>, private docs: Map<string, DocumentRecord[]>) {}
   async getSession(id: string) { return this.sessions.get(id) ?? null }
   async createSession(rec: SessionRecord) { this.sessions.set(rec.sessionId, { ...rec }) }
   async updateSessionStatus(id: string, status: string, at: string) {
@@ -23,6 +23,12 @@ class InMemoryDocuments implements DocumentRepository {
   }
   async markExtracted(id: string, docType: string, at: string) {
     const s = this.sessions.get(id); if (s) this.sessions.set(id, { ...s, status: 'extracted', docType, updatedAt: at })
+  }
+  async getLatestDocument(sessionId: string) {
+    const list = this.docs.get(sessionId) ?? []
+    if (!list.length) return null
+    // newest by createdAt (ISO compares lexically)
+    return { ...[...list].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0] }
   }
 }
 
@@ -103,6 +109,10 @@ class InMemoryStorage implements StorageRepository {
     const set = this.files.get(bucket); if (!set) return
     for (const k of keys) set.delete(k)
   }
+  async createSignedUrl(bucket: string, key: string, expirySeconds: number) {
+    // deterministic, network-free stand-in for a Supabase signed URL
+    return `memory://${bucket}/${key}?expires_in=${expirySeconds}`
+  }
 }
 
 class InMemoryCertification implements CertificationRepository {
@@ -125,6 +135,7 @@ class InMemoryExtractionRuns implements ExtractionRunRepository {
 /** Build a fresh in-memory bundle (isolated state per call → deterministic tests). */
 export function createInMemoryRepositories(): RepositoryBundle {
   const sessions = new Map<string, SessionRecord>()
+  const docs = new Map<string, DocumentRecord[]>()
   const fields = new Map<string, FieldRecord>()
   const translated = new Map<string, string>()
   const artifacts = new Map<string, PdfArtifactRecord>()
@@ -136,7 +147,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const runs = new Map<string, ExtractionRun>()
   const corrections = new Map<string, number>()
   return {
-    documents: new InMemoryDocuments(sessions),
+    documents: new InMemoryDocuments(sessions, docs),
     review: new InMemoryReview(fields),
     confirmation: new InMemoryConfirmation(fields, corrections),
     translation: new InMemoryTranslation(translated),
@@ -157,4 +168,11 @@ export function __seedManualReviewCase(
   const st = bundle.storage as unknown as { files: Map<string, Set<string>> }
   mr.cases.set(caseId, { id: caseId, fileUrl })
   if (fileUrl) { const set = st.files.get(bucket) ?? new Set<string>(); set.add(fileUrl); st.files.set(bucket, set) }
+}
+
+/** Seed an uploaded source document — test/dev helper for the in-memory bundle. */
+export function __seedDocument(bundle: RepositoryBundle, doc: DocumentRecord): void {
+  const d = bundle.documents as unknown as { docs: Map<string, DocumentRecord[]> }
+  const list = d.docs.get(doc.sessionId) ?? []
+  list.push({ ...doc }); d.docs.set(doc.sessionId, list)
 }

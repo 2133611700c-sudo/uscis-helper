@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-28 | Route cutover #8 — review-state → getRepositories() (ratchet 6→5)
+- `apps/web/src/app/api/translation/[sessionId]/review-state/route.ts` no longer imports any Supabase client — compound load (session, extracted fields, latest uploaded document + signed preview URL, certification record) now via `getRepositories()`. Response shape (session/fields/document_image_url/certification_record/review_progress/gates/canonical_document_id), 404, and `annotateReviewFields` flag-gating preserved. Canonical-id lookup (`getCanonicalDocumentId`, flag OFF default) stays a direct dep (not a Supabase repository).
+- Repository surface extensions: `DocumentRepository.getLatestDocument` (+ `DocumentRecord`), `StorageRepository.createSignedUrl`, `SessionRecord.uploadedPages`, and optional `FieldRecord` DB-projection columns (id/sourceLabel/sourceZone/languageLayer/confidence/evidenceType/bboxStatus/createdAt). In-memory impls + fail-closed Supabase stubs + contract assertions. Test helper `__seedDocument`.
+- New `reviewStateRoute.test.ts` (in-memory): full payload + signed URL + cert + gates; 404 unknown session; unconfirmed-critical → can_certify false + listed, null doc/cert.
+- Ratchet: review-state removed from `KNOWN_COUPLED_ROUTES` (6→5 remain: ocr-from-storage, generate-pdf, process, render, upload).
+- Green: repositories + `[sessionId]` + certify 51/51; repositories+translation+contracts 2160 passed/2 skipped; tsc 0; PII clean. All flags default OFF.
+
 ## 2026-06-28 | Route cutover #7 — certify → getRepositories() (ratchet 7→6)
 - `apps/web/src/app/api/translation/certify/route.ts` no longer imports any Supabase client — critical-field gate (`review.listFields`), doc-type lookup (`documents.getSession`), certification record upsert, session status→`certified`, and PII-safe audit now via `getRepositories()`. Rate-limit, validation, and response shape preserved.
 - New `CertificationRepository.saveCertificationRecord`/`getCertificationRecord` + `CertificationRecordRow` (PII present by design, never logged): in-memory upsert impl, fail-closed Supabase stub, contract-test assertions.

@@ -88,6 +88,14 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       await r.storage.remove('translation-uploads', ['a.jpg', 'b.jpg']) // idempotent / no-throw
     })
 
+    it('getLatestDocument null when none; storage.createSignedUrl returns a string', async () => {
+      const r = make()
+      expect(await r.documents.getLatestDocument(SID)).toBeNull()
+      const url = await r.storage.createSignedUrl('translation-documents', 'uploads/x.jpg', 3600)
+      expect(typeof url).toBe('string')
+      expect(url).toContain('uploads/x.jpg')
+    })
+
     it('certification record: save (upsert) → get; second save overwrites', async () => {
       const r = make()
       expect(await r.certification.getCertificationRecord(SID)).toBeNull()
@@ -143,5 +151,7 @@ describe('repository resolver + Supabase stub (fail-closed; Supabase OFF by defa
     await expect(r.manualReview.getCase('x')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.storage.remove('b', ['k'])).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.certification.getCertificationRecord(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.documents.getLatestDocument(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.storage.createSignedUrl('b', 'k', 60)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
   })
 })

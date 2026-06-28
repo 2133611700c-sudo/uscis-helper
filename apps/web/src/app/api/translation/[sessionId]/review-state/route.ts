@@ -14,7 +14,7 @@
  * (this is the translator's own work product).
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 // CANONICAL_OVERRIDE_LOOP (P1): resolve the canonical_document_id for this session so
 // the review UI can thread it into correct-field/confirm-field (dual-write). Only
 // resolved when the flag is on; absent/null → UI sends nothing → legacy-only (fail-safe).
@@ -38,50 +38,68 @@ export async function GET(
     return NextResponse.json({ ok: false, error: 'sessionId required' }, { status: 400 })
   }
 
-  const supabase = createAdminSupabaseClient()
+  const repos = getRepositories()
 
   // Load session
-  const { data: session, error: sessErr } = await supabase
-    .from('translation_sessions')
-    .select('session_id, status, doc_type, scope_title, payment_confirmed, uploaded_pages, created_at, updated_at')
-    .eq('session_id', sessionId)
-    .single()
-
-  if (sessErr || !session) {
+  const sessionRec = await repos.documents.getSession(sessionId)
+  if (!sessionRec) {
     return NextResponse.json({ ok: false, error: 'Session not found' }, { status: 404 })
+  }
+  // Re-shape to the snake_case the response contract exposes.
+  const session = {
+    session_id: sessionRec.sessionId,
+    status: sessionRec.status,
+    doc_type: sessionRec.docType,
+    scope_title: sessionRec.scopeTitle ?? null,
+    payment_confirmed: sessionRec.paymentConfirmed ?? false,
+    uploaded_pages: sessionRec.uploadedPages ?? null,
+    created_at: sessionRec.createdAt,
+    updated_at: sessionRec.updatedAt,
   }
 
   // Load extracted fields (evidence_type + bbox_status added in Phase 1 migration)
-  const { data: fieldRows } = await supabase
-    .from('extracted_fields')
-    .select('id, field, source_label, source_zone, raw_value, normalized_value, language_layer, confidence, review_required, confirmed, confirmed_at, evidence_type, bbox_status, created_at')
-    .eq('session_id', sessionId)
-    .order('created_at')
-
-  const fields = fieldRows ?? []
+  const fieldRecords = await repos.review.listFields(sessionId)
+  // newest-first stability is not required here; keep insertion order via createdAt when present
+  const fields = [...fieldRecords]
+    .sort((a, b) => ((a.createdAt ?? '') < (b.createdAt ?? '') ? -1 : 1))
+    .map(f => ({
+      id: f.id ?? null,
+      field: f.field,
+      source_label: f.sourceLabel ?? null,
+      source_zone: f.sourceZone ?? null,
+      raw_value: f.rawValue,
+      normalized_value: f.normalizedValue,
+      language_layer: f.languageLayer ?? null,
+      confidence: f.confidence ?? null,
+      review_required: f.reviewRequired,
+      confirmed: f.confirmed,
+      confirmed_at: f.confirmedAt ?? null,
+      evidence_type: f.evidenceType ?? null,
+      bbox_status: f.bboxStatus ?? null,
+      created_at: f.createdAt ?? null,
+    }))
 
   // Load most-recent uploaded document for image preview
-  const { data: docRows } = await supabase
-    .from('translation_documents')
-    .select('id, storage_key, original_name, mime_type, file_size_bytes')
-    .eq('session_id', sessionId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-
+  const latestDoc = await repos.documents.getLatestDocument(sessionId)
   let documentImageUrl: string | null = null
-  if (docRows && docRows.length > 0) {
-    const { data: signed } = await supabase.storage
-      .from('translation-documents')
-      .createSignedUrl(docRows[0].storage_key, 3600)
-    documentImageUrl = signed?.signedUrl ?? null
+  if (latestDoc) {
+    documentImageUrl = await repos.storage.createSignedUrl('translation-documents', latestDoc.storageKey, 3600)
   }
 
   // Load certification record
-  const { data: certData } = await supabase
-    .from('certification_records')
-    .select('signer_full_name, signer_address, signer_phone, signer_email, source_language, signature_typed_name, certification_version, signed_at')
-    .eq('session_id', sessionId)
-    .single()
+  const certRec = await repos.certification.getCertificationRecord(sessionId)
+  const certData = certRec
+    ? {
+        signer_full_name: certRec.signerFullName,
+        signer_address: certRec.signerAddress,
+        signer_phone: certRec.signerPhone,
+        signer_email: certRec.signerEmail,
+        source_language: certRec.sourceLanguage,
+        signature_typed_name: certRec.signatureTypedName,
+        certification_version: certRec.certificationVersion,
+        signed_at: certRec.signedAt,
+      }
+    : null
 
   // Compute review progress
   const totalFields = fields.length
