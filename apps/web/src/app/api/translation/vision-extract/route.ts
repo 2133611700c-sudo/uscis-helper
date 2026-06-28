@@ -50,6 +50,7 @@ import { normalizeGeminiModel } from '@/lib/gemini/model'
 // ONE BRAIN Core — B2: Translation consumes same Core as TPS. toTranslationRows = the B2 adapter.
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/canonical/core/translationAdapter'
+import { applyContractSplitFlow } from '@/lib/contracts/contractFieldFlow'
 import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import { mrzCandidatesForTranslation } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
@@ -459,6 +460,10 @@ async function POST_impl(req: NextRequest) {
         console.info('[canonical/continuity] continuity=off — persistence skipped')
       }
       let fields = toTranslationRows(canonicalResult.fields, cyrillicMap)
+      // Phase 6 — unified-contract split fields (flag UNIFIED_DOC_CONTRACT_SPLIT_ENABLED,
+      // default OFF → identity). Additive: merged rows kept as raw evidence, split
+      // rows appended (review_required). No OCR/PDF-layout change.
+      fields = applyContractSplitFlow(fields, docTypeId)
       // Cross-engine date ensemble (handwritten-risk; flag-gated) — wired HERE in
       // the Core path because this is the live return (status ok:core-b2).
       const ens = await runDateEnsemble(fields, docTypeId, rawFiles[0])
