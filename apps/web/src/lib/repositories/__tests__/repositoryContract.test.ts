@@ -96,6 +96,20 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       expect(url).toContain('uploads/x.jpg')
     })
 
+    it('upload → createDocument → getLatestDocument; markUploaded; upsert conflict throws', async () => {
+      const r = make()
+      await r.documents.createSession({ sessionId: SID, docType: 'unknown', status: 'created', createdAt: AT, updatedAt: AT })
+      await r.storage.upload('translation-documents', `${SID}/1.jpg`, new Uint8Array([1, 2, 3]), 'image/jpeg', { upsert: false })
+      // re-upload same key without upsert → throws
+      await expect(r.storage.upload('translation-documents', `${SID}/1.jpg`, new Uint8Array([1]), 'image/jpeg')).rejects.toThrow(/already exists/)
+      const doc = await r.documents.createDocument({ sessionId: SID, storageKey: `${SID}/1.jpg`, originalName: 'a.jpg', mimeType: 'image/jpeg', fileSizeBytes: 3, createdAt: AT })
+      expect(doc.id).toBeTruthy()
+      expect((await r.documents.getLatestDocument(SID))?.storageKey).toBe(`${SID}/1.jpg`)
+      await r.documents.markUploaded(SID, 2, '2026-06-28T02:00:00Z')
+      const s = await r.documents.getSession(SID)
+      expect(s?.status).toBe('uploaded'); expect(s?.uploadedPages).toBe(2)
+    })
+
     it('certification record: save (upsert) → get; second save overwrites', async () => {
       const r = make()
       expect(await r.certification.getCertificationRecord(SID)).toBeNull()
@@ -153,5 +167,6 @@ describe('repository resolver + Supabase stub (fail-closed; Supabase OFF by defa
     await expect(r.certification.getCertificationRecord(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.documents.getLatestDocument(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.storage.createSignedUrl('b', 'k', 60)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.storage.upload('b', 'k', new Uint8Array([1]), 'image/jpeg')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
   })
 })
