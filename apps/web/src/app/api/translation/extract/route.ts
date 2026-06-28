@@ -18,7 +18,7 @@ import { transliterateName } from '@/lib/translation/glossary/nominativeCaseRest
 import { normalizeDateUkrainian } from '@/lib/translation/numericAccuracy/dateFieldLockValidator'
 import { DocumentType, ExtractedField } from '@/lib/translation/types'
 import { persistExtractedFields, writeAuditLog } from '@/lib/translation/packetStateManager'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 import { readFile } from 'fs/promises'
 import path from 'path'
 
@@ -164,12 +164,9 @@ export async function POST(req: NextRequest) {
     try {
       await persistExtractedFields(session_id, processed)
 
-      const supabase = createAdminSupabaseClient()
-      await supabase.from('translation_sessions').update({
-        status: 'extracted',
-        doc_type,
-        updated_at: new Date().toISOString(),
-      }).eq('session_id', session_id)
+      // Runtime-decoupled: session status update via the repository (in-memory
+      // default; Supabase opt-in adapter NOT connected). No direct Supabase client.
+      await getRepositories().documents.markExtracted(session_id, doc_type, new Date().toISOString())
 
       await writeAuditLog({
         session_id,

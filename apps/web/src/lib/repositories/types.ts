@@ -60,6 +60,8 @@ export interface DocumentRepository {
   getSession(sessionId: string): Promise<SessionRecord | null>
   createSession(rec: SessionRecord): Promise<void>
   updateSessionStatus(sessionId: string, status: string, at: string): Promise<void>
+  /** Mark a session extracted: status='extracted' + docType. */
+  markExtracted(sessionId: string, docType: string, at: string): Promise<void>
 }
 
 export interface ReviewRepository {
