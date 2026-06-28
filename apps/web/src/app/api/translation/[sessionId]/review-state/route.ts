@@ -20,6 +20,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 // resolved when the flag is on; absent/null → UI sends nothing → legacy-only (fail-safe).
 import { getOverrideLoopMode } from '@/lib/canonical/overrideLoopMode'
 import { getCanonicalDocumentId } from '@/lib/canonical/persistence'
+import { annotateReviewFields } from '@/lib/contracts/contractReviewState'
 
 export const dynamic = 'force-dynamic'
 
@@ -131,7 +132,9 @@ export async function GET(
       created_at: session.created_at,
       updated_at: session.updated_at,
     },
-    fields: fields.map(f => ({
+    // Workstream A — annotate rows with contract_review_state + evidence_only
+    // (flag UNIFIED_DOC_CONTRACT_ENABLED, default OFF → rows unchanged).
+    fields: annotateReviewFields(fields.map(f => ({
       id: f.id,
       field: f.field,
       source_label: f.source_label,
@@ -147,7 +150,7 @@ export async function GET(
       evidence_type: (f as Record<string, unknown>).evidence_type ?? null,
       bbox_status: (f as Record<string, unknown>).bbox_status ?? null,
       is_critical: CRITICAL_FIELDS.includes(f.field),
-    })),
+    }))),
     document_image_url: documentImageUrl,
     certification_record: certData ?? null,
     review_progress: {
