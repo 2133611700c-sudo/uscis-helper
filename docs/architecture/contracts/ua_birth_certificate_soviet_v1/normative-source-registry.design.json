@@ -1,0 +1,140 @@
+{
+  "_design_only": true,
+  "_note": "DESIGN ARTIFACT — metadata registry of legal/normative sources, NOT their text. The contract references source_id only. CRITICAL: the Soviet observed form is NOT governed by the modern UA acts below; it is pinned by the real scan. Existing repo equivalents to REUSE (not duplicate): packages/knowledge/src/registry/registry.csv (mandatory source_url + valid_from/until + review_rule), docs/official-forms/ukraine/source-ledger.json, docs/architecture/NORMATIVE_BASE_INVENTORY.md.",
+  "generated": "2026-06-27",
+  "accessed": "2026-06-27",
+
+  "scope_era_enum": ["soviet_pre1991", "modern_ua_post1991"],
+
+  "sources": [
+    {
+      "source_id": "cmu-1025-2010",
+      "authority": "Cabinet of Ministers of Ukraine",
+      "type": "resolution",
+      "number": "1025",
+      "adopted": "2010-11-10",
+      "effective_from": "2010-11-10",
+      "status": "in_force",
+      "last_amendment": "2020-12-23 (Res. 1277-2020-п)",
+      "title_uk": "Про затвердження зразків актових записів цивільного стану, описів та зразків бланків свідоцтв про державну реєстрацію актів цивільного стану",
+      "governs": "MODERN certificate blank/template + descriptions + sample act records",
+      "scope_era": "modern_ua_post1991",
+      "applicable_templates": ["ua_birth_certificate_modern_v1"],
+      "not_applicable_to": ["ua_birth_certificate_soviet_bilingual_v1"],
+      "url": "https://zakon.rada.gov.ua/laws/show/1025-2010-%D0%BF",
+      "confidence": "high"
+    },
+    {
+      "source_id": "cmu-1367-2002",
+      "authority": "Cabinet of Ministers of Ukraine",
+      "type": "resolution",
+      "number": "1367",
+      "adopted": "2002 (referenced by repo inv:normative-bases as the pre-2010 edition)",
+      "status": "superseded_by cmu-1025-2010",
+      "governs": "pre-2010 MODERN UA civil-status certificate forms",
+      "scope_era": "modern_ua_post1991",
+      "not_applicable_to": ["ua_birth_certificate_soviet_bilingual_v1"],
+      "url": "https://zakon.rada.gov.ua (verify exact show id)",
+      "confidence": "medium",
+      "_unverified": "exact number/date not re-verified this pass; cited from repo registry"
+    },
+    {
+      "source_id": "moj-52-5-2000",
+      "authority": "Ministry of Justice of Ukraine",
+      "type": "order",
+      "number": "52/5",
+      "adopted": "2000-10-18",
+      "registered": "z0719-00",
+      "status": "in_force (current redaction date soft — verify)",
+      "title_uk": "Про затвердження Правил державної реєстрації актів цивільного стану в Україні",
+      "governs": "MODERN registration PROCEDURE + act-record content (not the blank design)",
+      "scope_era": "modern_ua_post1991",
+      "not_applicable_to": ["ua_birth_certificate_soviet_bilingual_v1"],
+      "url": "https://zakon.rada.gov.ua/laws/show/z0719-00",
+      "confidence": "high"
+    },
+    {
+      "source_id": "moj-1000-5-2015",
+      "authority": "Ministry of Justice of Ukraine",
+      "type": "order",
+      "number": "1000/5",
+      "adopted": "2015-06-18",
+      "registered": "z0736-15 (736/27181)",
+      "status": "in_force (amended 2018, 2022, 2023, 2024)",
+      "title_uk": "Про затвердження Правил організації діловодства та архівного зберігання документів …",
+      "governs": "generic recordkeeping/archival — LOW relevance to certificate structure",
+      "scope_era": "modern_ua_post1991",
+      "relevance": "low",
+      "url": "https://zakon.rada.gov.ua/laws/show/z0736-15",
+      "confidence": "high"
+    },
+    {
+      "source_id": "dstu-4163-2003",
+      "authority": "Держспоживстандарт (order No. 55, 2003-04-07)",
+      "type": "standard",
+      "number": "4163-2003",
+      "effective_from": "2003-09-01",
+      "status": "withdrawn_2021-09-01",
+      "title_uk": "Уніфікована система організаційно-розпорядчої документації. Вимоги до оформлювання документів",
+      "governs": "generic ORD document requisites — NOT certificate-specific",
+      "scope_era": "modern_ua_post1991",
+      "relevance": "context_only",
+      "url": "https://zakon.rada.gov.ua/go/v0055609-03",
+      "confidence": "high"
+    },
+    {
+      "source_id": "dstu-4163-2020",
+      "authority": "national standard (UkrNDNC)",
+      "type": "standard",
+      "number": "4163:2020",
+      "effective_from": "2021-09-01",
+      "status": "in_force (replaced 4163-2003)",
+      "title_uk": "Уніфікована система організаційно-розпорядчої документації. Вимоги до оформлення документів",
+      "governs": "generic ORD requisites (paper + electronic) — NOT certificate-specific",
+      "scope_era": "modern_ua_post1991",
+      "relevance": "context_only",
+      "url": "https://online.budstandart.com/ua/catalog/doc-page.html?id_doc=90348",
+      "confidence": "high"
+    },
+    {
+      "source_id": "soviet-family-code-ussr-1969",
+      "authority": "Ukrainian SSR / USSR",
+      "type": "code_plus_instructions",
+      "number": "Кодекс про шлюб та сім'ю УРСР (1969) + republican ЗАГС instructions",
+      "status": "historical (pre-1991)",
+      "governs": "GOVERNING LINEAGE for the Soviet birth certificate — exact blank-issuing instruction UNVERIFIED",
+      "scope_era": "soviet_pre1991",
+      "applicable_templates": ["ua_birth_certificate_soviet_bilingual_v1"],
+      "pinned_by": "real_document_visual_inspection (NOT this source's text)",
+      "url": "n/a (historical; not in zakon.rada current DB)",
+      "confidence": "low",
+      "_unverified": "Soviet blanks varied by decade/republic/language; treat the real scan as the authority for layout."
+    },
+    {
+      "source_id": "kmu-55-2010-translit",
+      "authority": "Cabinet of Ministers of Ukraine",
+      "type": "resolution",
+      "number": "55",
+      "adopted": "2010-01-27",
+      "status": "in_force",
+      "governs": "Ukrainian→Latin transliteration (KMU-55) — applies to UA-script romanization in output",
+      "scope_era": "modern_ua_post1991",
+      "url": "https://zakon.rada.gov.ua/laws/show/55-2010-%D0%BF",
+      "confidence": "high",
+      "_note": "Russian-script names on this Soviet RU-fill cert romanize via BGN/PCGN, NOT KMU-55 (Constitution L7/L8)."
+    }
+  ],
+
+  "applicability_rules": [
+    "A pipeline reading ua_birth_certificate_soviet_bilingual_v1 MUST NOT apply cmu-1025-2010 / cmu-1367-2002 layout or field set.",
+    "Soviet-only fields (event.birth.republic, person.parent.*.nationality) are valid on soviet_pre1991 and not_applicable on modern_ua_post1991.",
+    "Era-gated terminology (ЗАГС vs РАЦС/ДРАЦС, Militsiya vs National Police) already handled by registry.csv valid_from/valid_until — reuse, do not re-implement.",
+    "All 'official' English claims require a source_url (existing repo rule ADR-013 + registry.csv CI guard)."
+  ],
+
+  "reuse_existing": {
+    "terminology_registry": "packages/knowledge/src/registry/registry.csv (+ registryLookup.ts) — era-gated, source_url-mandatory",
+    "form_source_ledger": "docs/official-forms/ukraine/source-ledger.json",
+    "consolidation_plan": "docs/architecture/NORMATIVE_BASE_INVENTORY.md (P1–P5 dual-brain convergence already planned)"
+  }
+}
