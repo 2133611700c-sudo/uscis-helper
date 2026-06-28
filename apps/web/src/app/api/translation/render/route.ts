@@ -23,6 +23,7 @@ import { buildFinalDocument } from '@/lib/translation/bureauStyleRenderer'
 import { validateCertificationRecord } from '@/lib/translation/certificationRecord'
 import { PacketState } from '@/lib/translation/types'
 import { generateTranslationPDF } from '@/lib/packet/pdf'
+import { assertDocumentReadyForFinalPdf } from '@/lib/contracts/finalPdfGate'
 import {
   getCriticalFieldsForDocumentType,
   getEvidenceRequiredFieldsForDocumentType,
@@ -401,6 +402,17 @@ export async function POST(req: NextRequest) {
       qa_required_actions: qa.required_actions,
       gate: 'qa',
     }, { status: 422 })
+  }
+
+  // Workstream B/E — unified server-side final-PDF boundary, applied to THIS
+  // emitter too (flag FINAL_PDF_CONFIRMATION_GATE_ENABLED, default OFF → not
+  // enforced → render's existing gates stand; golden/legacy unchanged).
+  const finalGate = assertDocumentReadyForFinalPdf(state.extracted_fields, state.document_type, process.env)
+  if (finalGate.enforced && !finalGate.ready) {
+    return NextResponse.json(
+      { ok: false, error: 'review_required', gate: 'final_pdf_confirmation', reasons: finalGate.blockedReasons },
+      { status: 403 },
+    )
   }
 
   // All gates passed — generate real PDF
