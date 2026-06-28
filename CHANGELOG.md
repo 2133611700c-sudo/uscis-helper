@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-28 | Route cutover #5 — correct-field → getRepositories() (ratchet 9→8)
+- `apps/web/src/app/api/translation/[sessionId]/correct-field/route.ts` no longer imports any Supabase client — persistence now via `getRepositories()` (in-memory default; Supabase adapter remains fail-closed/not connected). Preserves response shape (`ok/field/new_value/old_value/confirmed_at/correction_id/correction_type/canonical_loop/gates`), status codes (404 session/field, 400 validation, 500 db/correction_log), raw immutability, and the canonical override-loop dual-write (flag default OFF).
+- New repository method `ConfirmationRepository.recordUserCorrection(sessionId, field, old, new, reason, at) → {id, version}`: in-memory impl with a monotonic per-(session,field) version store; Supabase stub fail-closed; contract-test assertion added.
+- `correctFieldOverrideLoop.test.ts` rewritten to drive the migrated route via in-memory repositories (override-loop helper still mocked): asserts `canonical_loop` off/appended/skipped_no_id, correction recorded, raw preserved, 404 paths.
+- Ratchet `noDirectSupabaseInDomain.test.ts`: correct-field removed from `KNOWN_COUPLED_ROUTES` (9→8 coupled routes remain: delete, ocr-from-storage, review-state, certify, generate-pdf, process, render, upload).
+- Targeted + regression green: repositories + `[sessionId]` routes 36/36; translation+canonical 2844 passed / 20 skipped; tsc 0; PII clean. All flags default OFF.
+
 ## 2026-06-28 | Repository abstraction + Supabase preparation (NOT connected) — CODE COMPLETE — READY FOR DATABASE-BACKED STAGING VALIDATION
 - `apps/web/src/lib/repositories/` (`cfcc480`): `RepositoryBundle` interfaces (Document/Review/Confirmation/Translation/PdfArtifact/AuditEvent) + in-memory impl (raw immutable) + fail-closed Supabase adapter stub (imports no client; throws SupabaseNotConnectedError) + `getRepositories()` resolver (in-memory default; supabase opt-in only) + shape-only env validation. ONE contract test suite both impls must satisfy.
 - Full birth-cert vertical proven on **in-memory infra** (`1196fc3`, `inMemoryVerticalFlow.test`): session→mocked Gemini→sanitize(strip forged)→split→normalize→persist(raw immutable)→review states→confirm/correct(raw preserved)→final-PDF gate BLOCKED→ALLOWED→artifact+PII-free audit→reopen.

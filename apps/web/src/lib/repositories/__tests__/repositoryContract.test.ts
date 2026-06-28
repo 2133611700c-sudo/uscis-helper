@@ -63,6 +63,16 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       expect(c?.rawValue).toBe("Солов'як") // raw immutable
     })
 
+    it('recordUserCorrection returns id + monotonically increasing version', async () => {
+      const r = make()
+      await r.review.upsertFields(SID, [field({})])
+      const c1 = await r.confirmation.recordUserCorrection(SID, 'child_family_name', 'Old', 'New', 'manual', AT)
+      expect(c1.id).toBeTruthy()
+      expect(c1.version).toBe(1)
+      const c2 = await r.confirmation.recordUserCorrection(SID, 'child_family_name', 'New', 'Newer', 'manual', AT)
+      expect(c2.version).toBe(2)
+    })
+
     it('re-upsert does NOT overwrite an existing raw value (raw immutable)', async () => {
       const r = make()
       await r.review.upsertFields(SID, [field({})])
