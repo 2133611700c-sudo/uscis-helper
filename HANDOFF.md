@@ -1,12 +1,12 @@
-# HANDOFF (2026-06-28 — Route cutover in progress; ratchet at 7; next = certify cutover)
+# HANDOFF (2026-06-28 — Route cutover in progress; ratchet at 6; next = review-state cutover)
 
-## 2026-06-28 | Route cutover progress — ratchet 7 (was 13)
-- **Migrated to `getRepositories()` so far:** confirm-field, extract, extraction-status, manual-review-status, correct-field, **delete (this session)**. Each route imports 0 Supabase clients; in-memory default; Supabase adapter fail-closed.
-- **Remaining coupled routes (7) — ratchet `KNOWN_COUPLED_ROUTES`:** ocr-from-storage, review-state, certify, generate-pdf, process, render, upload.
-- **Repos added so far:** `ConfirmationRepository.recordUserCorrection`; `StorageRepository.remove`; `ManualReviewRepository.getCase`/`deleteCase`.
-- **Repos still needed (per survey):** CertificationRepository (certify, review-state, render, generate-pdf), extend StorageRepository with `upload`/`download`/`createSignedUrl` (upload, review-state, ocr-from-storage, render), DocumentRepository `createDocument`/`listDocuments` (upload, review-state), FinalRenderRepository (render), OrderRepository + events (process, generate-pdf), ExtractionRunRepository `createRun`/`updateRunStatus` (ocr-from-storage), richer extracted_fields columns for review-state. NOTE: external services (Stripe/Resend/Gemini/PDF renderers) stay direct deps — only the Supabase persistence parts move behind repositories.
-- **Recommended next order (easiest→hardest):** certify → review-state → upload → process(legacy; consider sunset) → ocr-from-storage → render → generate-pdf.
-- **Next exact task:** cutover #7 = certify route → `getRepositories()` (needs `CertificationRepository.saveCertificationRecord`/`getCertificationRecord` + critical-field confirmation gate via `review.listFields`); rewrite its handler test to in-memory; remove from ratchet (7→6).
+## 2026-06-28 | Route cutover progress — ratchet 6 (was 13)
+- **Migrated to `getRepositories()` so far:** confirm-field, extract, extraction-status, manual-review-status, correct-field, delete, **certify (this session)**. Each route imports 0 Supabase clients; in-memory default; Supabase adapter fail-closed.
+- **Remaining coupled routes (6) — ratchet `KNOWN_COUPLED_ROUTES`:** ocr-from-storage, review-state, generate-pdf, process, render, upload.
+- **Repos added so far:** `ConfirmationRepository.recordUserCorrection`; `StorageRepository.remove`; `ManualReviewRepository.getCase`/`deleteCase`; `CertificationRepository.saveCertificationRecord`/`getCertificationRecord` (+ `CertificationRecordRow`).
+- **Repos still needed (per survey):** extend StorageRepository with `upload`/`download`/`createSignedUrl` (upload, review-state, ocr-from-storage, render), DocumentRepository `createDocument`/`listDocuments` (upload, review-state), FinalRenderRepository (render), OrderRepository + events (process, generate-pdf), ExtractionRunRepository `createRun`/`updateRunStatus` (ocr-from-storage), richer extracted_fields columns for review-state. NOTE: external services (Stripe/Resend/Gemini/PDF renderers) stay direct deps — only the Supabase persistence parts move behind repositories.
+- **Recommended next order (easiest→hardest):** review-state → upload → process(legacy; consider sunset) → ocr-from-storage → render → generate-pdf.
+- **Next exact task:** cutover #8 = review-state route → `getRepositories()`. Needs `StorageRepository.createSignedUrl` (preview URL), `documents.listDocuments` (latest uploaded doc), `certification.getCertificationRecord`, and richer field columns (id/source_label/source_zone/language_layer/confidence/evidence_type/bbox_status) — extend `FieldRecord` accordingly. Rewrite its handler test to in-memory; remove from ratchet (6→5).
 - Verify each: `cd apps/web && ./node_modules/.bin/vitest run src/lib/repositories "src/app/api/translation/[sessionId]"` + `npx tsc --noEmit -p apps/web/tsconfig.json` + `node ../../scripts/check-no-pii.mjs`.
 
 ## 2026-06-28 | Runtime decoupling status — DOMAIN done; ROUTE cutover OUTSTANDING (NOT yet APPLICATION CODE COMPLETE)

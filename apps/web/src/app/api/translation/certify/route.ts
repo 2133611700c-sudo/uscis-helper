@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { buildCertificationRecord, validateCertificationRecord } from '@/lib/translation/certificationRecord'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 import { rateLimit, getClientIP } from '@/lib/security/rate-limit'
 import { getCriticalFieldsForDocumentType } from '@/lib/translation/modules/adapters'
 
@@ -33,24 +33,15 @@ export async function POST(req: NextRequest) {
   if (!signature_typed_name) return NextResponse.json({ ok: false, error: 'signature_typed_name required' }, { status: 400 })
 
   // ── Gate: all critical fields must be confirmed before certification ────────
-  const supabaseGate = createAdminSupabaseClient()
+  const repos = getRepositories()
 
   // Fetch doc_type from session so the critical field list is module-driven
-  const { data: sessionRow } = await supabaseGate
-    .from('translation_sessions')
-    .select('doc_type')
-    .eq('session_id', session_id)
-    .single()
+  const sessionRow = await repos.documents.getSession(session_id)
 
-  const docType = sessionRow?.doc_type ?? null
+  const docType = sessionRow?.docType ?? null
   const CRITICAL_FIELDS = getCriticalFieldsForDocumentType(docType)
 
-  const { data: fieldRows } = await supabaseGate
-    .from('extracted_fields')
-    .select('field, confirmed')
-    .eq('session_id', session_id)
-
-  const fields = fieldRows ?? []
+  const fields = await repos.review.listFields(session_id)
   const presentCritical = CRITICAL_FIELDS.filter(cf => fields.find(f => f.field === cf))
   const unconfirmedCritical = presentCritical.filter(cf => {
     const row = fields.find(f => f.field === cf)
@@ -81,36 +72,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Certification record invalid', details: errors }, { status: 400 })
   }
 
-  // Persist certification record to dedicated table
+  // Persist certification record via repository (in-memory default; Supabase opt-in not connected)
   try {
-    const supabase = supabaseGate
+    const now = new Date().toISOString()
 
-    // Upsert into certification_records
-    await supabase.from('certification_records').upsert({
-      session_id:             session_id,
-      signer_full_name:       record.signer_full_name,
-      signer_address:         body.signer_address ?? null,
-      signer_phone:           body.signer_phone ?? null,
-      signer_email:           body.signer_email ?? null,
-      source_language:        body.source_language ?? 'Ukrainian',
-      target_language:        'English',
-      language_pair_confirmed: record.language_pair_confirmed,
-      statement:              record.statement,
-      signature_typed_name:   record.signature_typed_name,
-      certification_version:  record.certification_version,
-      signed_at:              record.signed_at,
-    }, { onConflict: 'session_id' })
+    // Upsert the certification record (one per session)
+    await repos.certification.saveCertificationRecord({
+      sessionId:             session_id,
+      signerFullName:        record.signer_full_name,
+      signerAddress:         body.signer_address ?? null,
+      signerPhone:           body.signer_phone ?? null,
+      signerEmail:           body.signer_email ?? null,
+      sourceLanguage:        body.source_language ?? 'Ukrainian',
+      targetLanguage:        'English',
+      languagePairConfirmed: record.language_pair_confirmed,
+      statement:             record.statement,
+      signatureTypedName:    record.signature_typed_name,
+      certificationVersion:  record.certification_version,
+      signedAt:              record.signed_at,
+    })
 
     // Update session status
-    await supabase.from('translation_sessions')
-      .update({ status: 'certified', updated_at: new Date().toISOString() })
-      .eq('session_id', session_id)
+    await repos.documents.updateSessionStatus(session_id, 'certified', now)
 
     // Audit log — PII-safe: no raw names, only metadata
-    await supabase.from('audit_logs').insert({
-      session_id,
-      event_type: 'certification_completed',
-      metadata: {
+    await repos.audit.append({
+      sessionId: session_id,
+      eventType: 'certification_completed',
+      at: now,
+      detail: {
         signer_name_length: record.signer_full_name?.length ?? 0,
         certification_version: record.certification_version,
         signed_at: record.signed_at,

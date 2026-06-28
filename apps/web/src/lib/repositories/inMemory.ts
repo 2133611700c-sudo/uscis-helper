@@ -7,6 +7,7 @@ import type {
   RepositoryBundle, DocumentRepository, ReviewRepository, ConfirmationRepository,
   TranslationRepository, PdfArtifactRepository, AuditEventRepository,
   ManualReviewRepository, ManualReviewTicket, ManualReviewCase, StorageRepository,
+  CertificationRepository, CertificationRecordRow,
   ExtractionRunRepository, ExtractionRun,
   SessionRecord, FieldRecord, PdfArtifactRecord, AuditEventRecord,
 } from './types'
@@ -104,6 +105,12 @@ class InMemoryStorage implements StorageRepository {
   }
 }
 
+class InMemoryCertification implements CertificationRepository {
+  constructor(private records: Map<string, CertificationRecordRow>) {}
+  async saveCertificationRecord(rec: CertificationRecordRow) { this.records.set(rec.sessionId, { ...rec }) }
+  async getCertificationRecord(sessionId: string) { const r = this.records.get(sessionId); return r ? { ...r } : null }
+}
+
 class InMemoryExtractionRuns implements ExtractionRunRepository {
   constructor(private runs: Map<string, ExtractionRun>, private fields: Map<string, FieldRecord>) {}
   async getRun(sessionId: string, runId: string) {
@@ -125,6 +132,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const tickets = new Map<string, ManualReviewTicket[]>()
   const cases = new Map<string, ManualReviewCase>()
   const storageFiles = new Map<string, Set<string>>()
+  const certifications = new Map<string, CertificationRecordRow>()
   const runs = new Map<string, ExtractionRun>()
   const corrections = new Map<string, number>()
   return {
@@ -137,6 +145,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
     manualReview: new InMemoryManualReview(tickets, cases),
     extractionRuns: new InMemoryExtractionRuns(runs, fields),
     storage: new InMemoryStorage(storageFiles),
+    certification: new InMemoryCertification(certifications),
   }
 }
 
