@@ -16,7 +16,7 @@
  * Returns: application/pdf binary or { ok: false, qa_failures }
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { runQaValidators } from '@/lib/translation/translationQaValidator'
 import { buildFinalDocument } from '@/lib/translation/bureauStyleRenderer'
@@ -122,42 +122,54 @@ export async function POST(req: NextRequest) {
   }
   if (!session_id) return NextResponse.json({ ok: false, error: 'session_id required' }, { status: 400 })
 
-  // Load all state from v5 schema (session + related tables)
-  const supabase = createAdminSupabaseClient()
-  const { data: sessionData, error } = await supabase
-    .from('translation_sessions')
-    .select('*')
-    .eq('session_id', session_id)
-    .single()
+  // Load all state via repositories (in-memory default; Supabase opt-in not connected)
+  const repos = getRepositories()
+  const sessionRec = await repos.documents.getSession(session_id)
 
-  if (error || !sessionData) {
+  if (!sessionRec) {
     return NextResponse.json({ ok: false, error: 'Session not found' }, { status: 404 })
   }
+  // snake_case shim for the PacketState assembly + the gates below.
+  const sessionData = {
+    session_id:        sessionRec.sessionId,
+    doc_type:          sessionRec.docType,
+    scope_title:       sessionRec.scopeTitle ?? null,
+    payment_confirmed: sessionRec.paymentConfirmed ?? false,
+    status:            sessionRec.status,
+    uploaded_pages:    sessionRec.uploadedPages ?? null,
+    created_at:        sessionRec.createdAt,
+    updated_at:        sessionRec.updatedAt,
+  }
 
-  // Load certification record
-  const { data: certData } = await supabase
-    .from('certification_records')
-    .select('*')
-    .eq('session_id', session_id)
-    .single()
+  // Load certification record (camelCase → snake_case for the renderer/validator)
+  const certRec = await repos.certification.getCertificationRecord(session_id)
+  const certData = certRec ? {
+    signer_full_name:        certRec.signerFullName,
+    signer_address:          certRec.signerAddress,
+    signer_phone:            certRec.signerPhone,
+    signer_email:            certRec.signerEmail,
+    source_language:         certRec.sourceLanguage,
+    target_language:         certRec.targetLanguage,
+    language_pair_confirmed: certRec.languagePairConfirmed,
+    statement:               certRec.statement,
+    signature_typed_name:    certRec.signatureTypedName,
+    certification_version:   certRec.certificationVersion,
+    signed_at:               certRec.signedAt,
+  } : null
 
   // Load extracted fields → map to ExtractedField[] and SourceTrace[]
-  const { data: fieldRows } = await supabase
-    .from('extracted_fields')
-    .select('*')
-    .eq('session_id', session_id)
-    .order('created_at')
+  const fieldRecords = await repos.review.listFields(session_id)
 
-  const dbExtractedFields = (fieldRows ?? []).map((r: Record<string, unknown>) => ({
+  const dbExtractedFields = fieldRecords.map((r) => ({
     field:            r.field,
-    source_label:     r.source_label ?? '',
-    source_zone:      r.source_zone ?? 'unknown',
+    source_label:     r.sourceLabel ?? '',
+    source_zone:      r.sourceZone ?? 'unknown',
     bbox:             [0, 0, 1, 0.1] as [number,number,number,number],
-    raw_value:        r.raw_value ?? '',
-    normalized_value: r.normalized_value ?? '',
-    language_layer:   r.language_layer ?? 'uk',
+    raw_value:        r.rawValue ?? '',
+    normalized_value: r.normalizedValue ?? '',
+    language_layer:   r.languageLayer ?? 'uk',
     confidence:       Number(r.confidence ?? 1),
-    review_required:  Boolean(r.review_required),
+    review_required:  Boolean(r.reviewRequired),
   }))
 
   // ── Canonical → field injection ───────────────────────────────────────────
@@ -291,14 +303,10 @@ export async function POST(req: NextRequest) {
   // All critical fields must be human-confirmed before render
   // Field list is driven by the document module, not hardcoded.
   const CRITICAL_FIELDS_RENDER = getCriticalFieldsForDocumentType(sessionData.doc_type)
-  const { data: confirmedRows } = await supabase
-    .from('extracted_fields')
-    .select('field, confirmed, normalized_value')
-    .eq('session_id', session_id)
 
   type ConfirmedRow = { field: string; confirmed: boolean; normalized_value: string | null }
   const confirmedMap: Record<string, ConfirmedRow> = Object.fromEntries(
-    (confirmedRows ?? []).map(r => [r.field, r as ConfirmedRow])
+    fieldRecords.map(r => [r.field, { field: r.field, confirmed: Boolean(r.confirmed), normalized_value: r.normalizedValue }])
   )
   const unconfirmedCritical = CRITICAL_FIELDS_RENDER.filter(cf => {
     const row = confirmedMap[cf]
@@ -320,13 +328,14 @@ export async function POST(req: NextRequest) {
 
   if (unconfirmedCritical.length > 0 || missingCritical.length > 0 || mismatchedFields.length > 0) {
     // PII-safe: log field names and counts only — never field values
-    await supabase.from('audit_logs').insert({
-      session_id,
-      event_type: 'render_blocked_completeness_audit',
-      metadata: {
-        unconfirmed_critical_fields: unconfirmedCritical,
-        missing_critical_fields: missingCritical,
-        mismatched_field_names: mismatchedFields.map(m => m.split(':')[0]),  // field name only, no values
+    await repos.audit.append({
+      sessionId: session_id,
+      eventType: 'render_blocked_completeness_audit',
+      at: new Date().toISOString(),
+      detail: {
+        unconfirmed_critical_fields: unconfirmedCritical.join(','),
+        missing_critical_fields: missingCritical.join(','),
+        mismatched_field_names: mismatchedFields.map(m => m.split(':')[0]).join(','),  // field name only, no values
         mismatched_count: mismatchedFields.length,
       },
     })
@@ -343,28 +352,15 @@ export async function POST(req: NextRequest) {
   // Gate 3.5: OCR/Vision result exists + evidence coverage for critical fields
   // Checks that an ocr_completed audit event exists for this session (Phase 1+).
   // Pre-Phase-1 sessions (no evidence columns) pass with a warning.
-  const { data: ocrAuditRows } = await supabase
-    .from('audit_logs')
-    .select('id')
-    .eq('session_id', session_id)
-    .eq('event_type', 'ocr_completed')
-    .limit(1)
-
-  const ocrResultExists = (ocrAuditRows?.length ?? 0) > 0
+  const auditEvents = await repos.audit.list(session_id)
+  const ocrResultExists = auditEvents.some((e) => e.eventType === 'ocr_completed')
 
   // Evidence coverage: fields with evidenceRequired='required' and no evidence_type
   // are pre-Phase-1 rows. We warn but do not hard-block (grandfathering).
   const EVIDENCE_REQUIRED_FIELDS = getEvidenceRequiredFieldsForDocumentType(sessionData.doc_type)
-  const { data: evidenceRows } = await supabase
-    .from('extracted_fields')
-    .select('field, evidence_type')
-    .eq('session_id', session_id)
-    .in('field', EVIDENCE_REQUIRED_FIELDS)
-
-  type EvidenceRow = { field: string; evidence_type: string | null }
-  const criticalWithoutEvidence = (evidenceRows ?? [])
-    .filter((r: EvidenceRow) => r.evidence_type === null)
-    .map((r: EvidenceRow) => r.field)
+  const criticalWithoutEvidence = fieldRecords
+    .filter((r) => EVIDENCE_REQUIRED_FIELDS.includes(r.field) && (r.evidenceType ?? null) === null)
+    .map((r) => r.field)
 
   const evidenceWarnings: string[] = []
   if (!ocrResultExists) {
@@ -427,21 +423,20 @@ export async function POST(req: NextRequest) {
       qaWarnings: qa.warnings,
     } as Parameters<typeof generateTranslationPDF>[0])
 
+    const renderedAt = new Date().toISOString()
     // Mark session as rendered
-    await supabase.from('translation_sessions').update({
-      status: 'rendered',
-      updated_at: new Date().toISOString(),
-    }).eq('session_id', session_id)
+    await repos.documents.updateSessionStatus(session_id, 'rendered', renderedAt)
 
     // Persist final_renders row
     const storageKey = `renders/${session_id}/${Date.now()}.pdf`
-    await supabase.from('final_renders').insert({
-      session_id,
-      storage_key: storageKey,
-      content_type: 'application/pdf',
-      file_size_bytes: pdfBuffer.length,
-      qa_passed: true,
-      qa_report: { status: qa.status, warnings: qa.warnings ?? [], failures: qa.failures ?? [] },
+    await repos.finalRenders.saveFinalRender({
+      sessionId: session_id,
+      storageKey,
+      contentType: 'application/pdf',
+      fileSizeBytes: pdfBuffer.length,
+      qaPassed: true,
+      qaReport: { status: qa.status, warnings: qa.warnings ?? [], failures: qa.failures ?? [] },
+      createdAt: renderedAt,
     })
 
     // 7-field certification binding (CERTIFICATION_REPRODUCIBILITY_CONTRACT)
@@ -457,15 +452,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Audit log — PII-free: field keys/counts only, no values
-    await supabase.from('audit_logs').insert({
-      session_id,
-      event_type: 'final_rendered',
-      metadata: {
+    await repos.audit.append({
+      sessionId: session_id,
+      eventType: 'final_rendered',
+      at: renderedAt,
+      detail: {
         file_size_bytes: pdfBuffer.length,
         qa_status: qa.status,
         storage_key: storageKey,
         continuity_mode: continuityMode,
-        ...certificationMetadata,
+        canonical_document_id: certificationMetadata.canonical_document_id,
+        base_canonical_hash: certificationMetadata.base_canonical_hash,
+        resolved_canonical_hash: certificationMetadata.resolved_canonical_hash,
+        override_set_hash: certificationMetadata.override_set_hash,
+        override_version: certificationMetadata.override_version,
+        canonical_schema_version: certificationMetadata.canonical_schema_version,
+        renderer_version: certificationMetadata.renderer_version,
       },
     })
 
@@ -480,10 +482,11 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[translation/render] PDF generation failed:', err)
     // Audit failure
-    await supabase.from('audit_logs').insert({
-      session_id,
-      event_type: 'error',
-      metadata: { step: 'render', error: String(err) },
+    await repos.audit.append({
+      sessionId: session_id,
+      eventType: 'error',
+      at: new Date().toISOString(),
+      detail: { step: 'render', error: String(err) },
     })
     return NextResponse.json({ ok: false, error: 'PDF generation failed', details: String(err) }, { status: 500 })
   }

@@ -9,6 +9,7 @@ import type {
   ManualReviewRepository, ManualReviewTicket, ManualReviewCase, StorageRepository,
   CertificationRepository, CertificationRecordRow,
   OrderRepository, OrderRecord,
+  FinalRenderRepository, FinalRenderRecord,
   ExtractionRunRepository, ExtractionRun,
   SessionRecord, FieldRecord, DocumentRecord, PdfArtifactRecord, AuditEventRecord,
 } from './types'
@@ -167,6 +168,12 @@ class InMemoryOrders implements OrderRepository {
   }
 }
 
+class InMemoryFinalRenders implements FinalRenderRepository {
+  constructor(private renders: Map<string, FinalRenderRecord>) {}
+  async saveFinalRender(rec: FinalRenderRecord) { this.renders.set(rec.sessionId, { ...rec }) }
+  async getFinalRender(sessionId: string) { const r = this.renders.get(sessionId); return r ? { ...r } : null }
+}
+
 class InMemoryExtractionRuns implements ExtractionRunRepository {
   constructor(private runs: Map<string, ExtractionRun>, private fields: Map<string, FieldRecord>) {}
   async getRun(sessionId: string, runId: string) {
@@ -206,6 +213,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const certifications = new Map<string, CertificationRecordRow>()
   const orders = new Map<string, OrderRecord>()
   const orderEvents: { orderId: string; eventType: string; metadata: Record<string, string | number | boolean | null> }[] = []
+  const finalRenders = new Map<string, FinalRenderRecord>()
   const runs = new Map<string, ExtractionRun>()
   const corrections = new Map<string, number>()
   return {
@@ -220,6 +228,7 @@ export function createInMemoryRepositories(): RepositoryBundle {
     storage: new InMemoryStorage(storageFiles),
     certification: new InMemoryCertification(certifications),
     orders: new InMemoryOrders(orders, orderEvents),
+    finalRenders: new InMemoryFinalRenders(finalRenders),
   }
 }
 

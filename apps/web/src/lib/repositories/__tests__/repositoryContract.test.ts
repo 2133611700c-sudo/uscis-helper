@@ -148,6 +148,15 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       await r.orders.appendEvent('ORD-x', 'noop', { k: 1 }) // no-throw even if order absent
     })
 
+    it('final render: save (upsert) → get', async () => {
+      const r = make()
+      expect(await r.finalRenders.getFinalRender(SID)).toBeNull()
+      await r.finalRenders.saveFinalRender({ sessionId: SID, storageKey: `renders/${SID}/1.pdf`, contentType: 'application/pdf', fileSizeBytes: 100, qaPassed: true, qaReport: { status: 'PASS' }, createdAt: AT })
+      const fr = await r.finalRenders.getFinalRender(SID)
+      expect(fr?.storageKey).toBe(`renders/${SID}/1.pdf`)
+      expect(fr?.qaPassed).toBe(true)
+    })
+
     it('translation + pdf artifact + audit round-trip', async () => {
       const r = make()
       await r.translation.saveTranslatedValue(SID, 'child_family_name', 'Soloviak')
@@ -193,5 +202,6 @@ describe('repository resolver + Supabase stub (fail-closed; Supabase OFF by defa
     await expect(r.orders.getOrder('ORD-x')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.storage.download('b', 'k')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.extractionRuns.createRun({ sessionId: SID, documentId: 'd', status: 's', startedAt: AT, retakeCount: 0 })).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.finalRenders.getFinalRender(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
   })
 })
