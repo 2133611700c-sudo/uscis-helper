@@ -1,0 +1,236 @@
+{
+  "docType": "ua_birth_certificate",
+  "extractedFields": [
+    {
+      "field": "child_family_name",
+      "value": "Ivanenko",
+      "review_required": false
+    },
+    {
+      "field": "child_given_name",
+      "value": "Olha",
+      "review_required": false
+    },
+    {
+      "field": "child_patronymic",
+      "value": "Petrivna",
+      "review_required": true
+    },
+    {
+      "field": "dob",
+      "value": "1990-05-14",
+      "review_required": false
+    },
+    {
+      "field": "place_of_birth_city",
+      "value": "Vinnytsia",
+      "review_required": false
+    },
+    {
+      "field": "father_full_name",
+      "value": "Petro Ivanenko",
+      "review_required": false
+    },
+    {
+      "field": "act_record_number",
+      "value": "84",
+      "review_required": false
+    },
+    {
+      "field": "act_record_date",
+      "value": "1990-05-22",
+      "review_required": false
+    },
+    {
+      "field": "issuing_authority",
+      "value": "Trostianets District Civil Registry Office",
+      "review_required": false
+    },
+    {
+      "field": "certificate_series_number",
+      "value": "II-BK 530174",
+      "review_required": false
+    },
+    {
+      "field": "date_of_issue",
+      "value": "1990-05-22",
+      "review_required": false
+    }
+  ],
+  "schemaFieldOrder": [
+    "child_surname",
+    "child_given_name",
+    "child_patronymic",
+    "date_of_birth",
+    "place_of_birth",
+    "father_full_name",
+    "mother_full_name",
+    "act_record_number",
+    "act_record_date",
+    "place_of_registration",
+    "series_number",
+    "date_of_issue"
+  ],
+  "mirrorValues": {
+    "child_surname": {
+      "value": "Ivanenko",
+      "review": false,
+      "canRead": true
+    },
+    "child_given_name": {
+      "value": "Olha",
+      "review": false,
+      "canRead": true
+    },
+    "child_patronymic": {
+      "value": "Petrivna",
+      "review": true,
+      "canRead": true
+    },
+    "date_of_birth": {
+      "value": "1990-05-14",
+      "review": false,
+      "canRead": true
+    },
+    "place_of_birth": {
+      "value": "Vinnytsia",
+      "review": false,
+      "canRead": true
+    },
+    "father_full_name": {
+      "value": "Petro Ivanenko",
+      "review": false,
+      "canRead": true
+    },
+    "mother_full_name": {
+      "value": "",
+      "review": false,
+      "canRead": false
+    },
+    "act_record_number": {
+      "value": "84",
+      "review": false,
+      "canRead": true
+    },
+    "act_record_date": {
+      "value": "1990-05-22",
+      "review": false,
+      "canRead": true
+    },
+    "place_of_registration": {
+      "value": "Trostianets District Civil Registry Office",
+      "review": false,
+      "canRead": true
+    },
+    "series_number": {
+      "value": "II-BK 530174",
+      "review": false,
+      "canRead": true
+    },
+    "date_of_issue": {
+      "value": "1990-05-22",
+      "review": false,
+      "canRead": true
+    }
+  },
+  "reviewPayload": {
+    "extras": [],
+    "unresolved": [
+      "child_patronymic",
+      "mother_full_name"
+    ],
+    "reviewFlaggedFields": [
+      "child_patronymic"
+    ]
+  },
+  "pdf": {
+    "length": 2509,
+    "sha256": "89611c7a7ffe35f525a8a765269828d0255e810522278bd9fedd9d70f498a139"
+  },
+  "renderPlan": [
+    {
+      "group": "child",
+      "key": "child_surname",
+      "label": "Surname",
+      "value": "Ivanenko",
+      "state": "clean"
+    },
+    {
+      "group": "child",
+      "key": "child_given_name",
+      "label": "Given name",
+      "value": "Olha",
+      "state": "clean"
+    },
+    {
+      "group": "child",
+      "key": "child_patronymic",
+      "label": "Patronymic",
+      "value": "Petrivna",
+      "state": "confirm"
+    },
+    {
+      "group": "child",
+      "key": "date_of_birth",
+      "label": "Date of birth",
+      "value": "1990-05-14",
+      "state": "clean"
+    },
+    {
+      "group": "child",
+      "key": "place_of_birth",
+      "label": "Place of birth",
+      "value": "Vinnytsia",
+      "state": "clean"
+    },
+    {
+      "group": "parents",
+      "key": "father_full_name",
+      "label": "Father",
+      "value": "Petro Ivanenko",
+      "state": "clean"
+    },
+    {
+      "group": "parents",
+      "key": "mother_full_name",
+      "label": "Mother",
+      "value": "",
+      "state": "blank"
+    },
+    {
+      "group": "actRecord",
+      "key": "act_record_number",
+      "label": "Act record No.",
+      "value": "84",
+      "state": "clean"
+    },
+    {
+      "group": "actRecord",
+      "key": "act_record_date",
+      "label": "Act record date",
+      "value": "1990-05-22",
+      "state": "clean"
+    },
+    {
+      "group": "issuing",
+      "key": "place_of_registration",
+      "label": "Place of state registration",
+      "value": "Trostianets District Civil Registry Office",
+      "state": "clean"
+    },
+    {
+      "group": "issuing",
+      "key": "series_number",
+      "label": "Series and No.",
+      "value": "II-BK 530174",
+      "state": "clean"
+    },
+    {
+      "group": "issuing",
+      "key": "date_of_issue",
+      "label": "Date of issue",
+      "value": "1990-05-22",
+      "state": "clean"
+    }
+  ]
+}
