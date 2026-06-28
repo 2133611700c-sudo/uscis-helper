@@ -1,11 +1,14 @@
 # STATUS (2026-06-28 — Unified Document Contract Phase 6–10 complete; STAGING READY pending DB E2E + owner sign-off)
 
-## 2026-06-28 | Unified Document Contract vertical (Phase 6–10) — staging-ready
-- Branch `translation/ru-and-model-matrix-fixes` @ `91f1cdb`. ALL flags default OFF → byte-identical (OFF golden `sha256 89611c7a…`). Full suite **2878 pass / 0 fail**; tsc 0; PII clean.
-- Contract OCR→canonical→normalize→review→confirmation→PDF wired: split fields (P6) + knowledge-normalize (P7) + review annotation (A) + server-side final-PDF gate on BOTH emitters (B, flag `FINAL_PDF_CONFIRMATION_GATE_ENABLED`) + first-class split PDF rows (C) + Gemini→contract boundary (D) + route bypass guards (E) + PII-free observability (H) + flag matrix/runbook/PII-incident (G/I).
-- **raw→PDF CLOSED**; mirror gated; local mocked browser E2E PASS; in-process vertical integration PASS.
-- **OPEN (external):** live DB-backed browser E2E BLOCKED (no Docker→no local Supabase; runbook `docs/runbooks/CONTRACT_STAGING_E2E_RUNBOOK.md`); production flags OFF (need staging E2E + owner sign-off); GitHub Support purge of dangling `31b62cd` (manual). ADR: `docs/adr/ADR-CONTRACT-VERTICAL.md`.
-- Verdict: **STAGING READY — NOT production-ready.**
+## 2026-06-28 | Unified Document Contract vertical (Phase 6–10)
+**Readiness: CODE COMPLETE — READY FOR STAGING VALIDATION** (NOT "staging ready" until the DB-backed E2E passes; NOT production-ready).
+- **Authoritative code tip:** `91f1cdbf2ba4a57966562420cc66d174aabb3f5b` on `translation/ru-and-model-matrix-fixes` (docs commits follow on top).
+- **Implemented:** contract OCR→canonical→normalize→review→confirmation→PDF — split fields (P6) + knowledge-normalize (P7) + live review annotation (A) + server-side final-PDF gate on BOTH emitters (B) + first-class split PDF rows (C) + Gemini→contract boundary (D) + route bypass guards (E) + PII-free observability (H) + flag matrix/runbook/PII-incident (G/I).
+- **Flags: ALL default OFF** (`UNIFIED_DOC_CONTRACT_ENABLED`, `_SPLIT_`, `_NORMALIZE_`, `FINAL_PDF_CONFIRMATION_GATE_ENABLED`) → byte-identical legacy (OFF golden `sha256 89611c7a…`). Full suite **2878 pass / 0 fail**; tsc 0; PII clean.
+- **Mocked browser E2E: PASS** (public+home render via real prod server) + in-process vertical integration PASS. **raw→PDF CLOSED**; mirror gated.
+- **Live DB-backed browser E2E: BLOCKED** — no Docker → no local Supabase (runbook `docs/runbooks/CONTRACT_STAGING_E2E_RUNBOOK.md`).
+- **Production: NOT enabled** (flags OFF; needs staging E2E PASS + owner sign-off).
+- **Next manual actions:** (1) run DB-backed staging E2E (runbook / `.github/workflows/contract-staging-e2e.yml`); (2) flip flags per `docs/architecture/CONTRACT_FLAG_ROLLOUT.md` after sign-off; (3) GitHub Support purge of dangling `31b62cd` (`docs/security/PII_INCIDENT_2026-06-28.md`). ADR: `docs/adr/ADR-CONTRACT-VERTICAL.md`.
 
 # STATUS (2026-06-24 — ROOT-CAUSE REVERSAL: handwritten UA/RU Cyrillic IS readable key-free; PII fictionalized + model inventory corrected)
 
