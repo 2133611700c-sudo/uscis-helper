@@ -6,7 +6,8 @@
 import type {
   RepositoryBundle, DocumentRepository, ReviewRepository, ConfirmationRepository,
   TranslationRepository, PdfArtifactRepository, AuditEventRepository,
-  ManualReviewRepository, ManualReviewTicket, ExtractionRunRepository, ExtractionRun,
+  ManualReviewRepository, ManualReviewTicket, ManualReviewCase, StorageRepository,
+  ExtractionRunRepository, ExtractionRun,
   SessionRecord, FieldRecord, PdfArtifactRecord, AuditEventRecord,
 } from './types'
 
@@ -84,12 +85,22 @@ class InMemoryAudit implements AuditEventRepository {
 }
 
 class InMemoryManualReview implements ManualReviewRepository {
-  constructor(private tickets: Map<string, ManualReviewTicket[]>) {}
+  constructor(private tickets: Map<string, ManualReviewTicket[]>, private cases: Map<string, ManualReviewCase>) {}
   async getLatestTicket(sessionId: string) {
     const list = this.tickets.get(sessionId) ?? []
     if (!list.length) return null
     // most recent by createdAt (string ISO compares lexically)
     return [...list].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0]
+  }
+  async getCase(caseId: string) { const c = this.cases.get(caseId); return c ? { ...c } : null }
+  async deleteCase(caseId: string) { this.cases.delete(caseId) }
+}
+
+class InMemoryStorage implements StorageRepository {
+  constructor(private files: Map<string, Set<string>>) {}
+  async remove(bucket: string, keys: string[]) {
+    const set = this.files.get(bucket); if (!set) return
+    for (const k of keys) set.delete(k)
   }
 }
 
@@ -112,6 +123,8 @@ export function createInMemoryRepositories(): RepositoryBundle {
   const artifacts = new Map<string, PdfArtifactRecord>()
   const events: AuditEventRecord[] = []
   const tickets = new Map<string, ManualReviewTicket[]>()
+  const cases = new Map<string, ManualReviewCase>()
+  const storageFiles = new Map<string, Set<string>>()
   const runs = new Map<string, ExtractionRun>()
   const corrections = new Map<string, number>()
   return {
@@ -121,7 +134,18 @@ export function createInMemoryRepositories(): RepositoryBundle {
     translation: new InMemoryTranslation(translated),
     pdfArtifacts: new InMemoryPdf(artifacts),
     audit: new InMemoryAudit(events),
-    manualReview: new InMemoryManualReview(tickets),
+    manualReview: new InMemoryManualReview(tickets, cases),
     extractionRuns: new InMemoryExtractionRuns(runs, fields),
+    storage: new InMemoryStorage(storageFiles),
   }
+}
+
+/** Seed a manual-review case + its storage object — test/dev helper for the in-memory bundle. */
+export function __seedManualReviewCase(
+  bundle: RepositoryBundle, caseId: string, bucket: string, fileUrl: string | null,
+): void {
+  const mr = bundle.manualReview as unknown as { cases: Map<string, ManualReviewCase> }
+  const st = bundle.storage as unknown as { files: Map<string, Set<string>> }
+  mr.cases.set(caseId, { id: caseId, fileUrl })
+  if (fileUrl) { const set = st.files.get(bucket) ?? new Set<string>(); set.add(fileUrl); st.files.set(bucket, set) }
 }

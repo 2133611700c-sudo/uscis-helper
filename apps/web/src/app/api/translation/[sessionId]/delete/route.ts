@@ -16,7 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyDeleteToken } from '@/lib/security/delete-token'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { getRepositories } from '@/lib/repositories'
 
 export const runtime = 'nodejs'
 
@@ -41,21 +41,15 @@ export async function GET(
     return new NextResponse(null, { status: 404 })
   }
 
-  const supabase = createAdminSupabaseClient()
+  const repos = getRepositories()
 
-  // Fetch row to get file_url (idempotent — if already gone, return success)
-  const { data } = await supabase
-    .from('manual_review_queue')
-    .select('id, file_url')
-    .eq('id', pathId)
-    .maybeSingle()
-
-  if (data) {
-    const fileUrl = (data as { id: string; file_url: string | null }).file_url
-    if (fileUrl) {
-      await supabase.storage.from('translation-uploads').remove([fileUrl])
+  // Fetch the case to get its file_url (idempotent — if already gone, return success)
+  const reviewCase = await repos.manualReview.getCase(pathId)
+  if (reviewCase) {
+    if (reviewCase.fileUrl) {
+      await repos.storage.remove('translation-uploads', [reviewCase.fileUrl])
     }
-    await supabase.from('manual_review_queue').delete().eq('id', pathId)
+    await repos.manualReview.deleteCase(pathId)
   }
 
   const url = req.nextUrl.clone()

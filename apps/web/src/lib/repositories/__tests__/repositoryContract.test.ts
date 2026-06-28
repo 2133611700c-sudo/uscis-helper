@@ -80,6 +80,14 @@ function contractSuite(name: string, make: () => RepositoryBundle) {
       expect((await r.review.getField(SID, 'child_family_name'))?.rawValue).toBe("Солов'як")
     })
 
+    it('manual-review case: get → delete is idempotent; storage.remove no-throw', async () => {
+      const r = make()
+      // contract suites with no seed helper (e.g. a future adapter) just prove the no-throw shape
+      expect(await r.manualReview.getCase('missing-case')).toBeNull()
+      await r.manualReview.deleteCase('missing-case') // idempotent
+      await r.storage.remove('translation-uploads', ['a.jpg', 'b.jpg']) // idempotent / no-throw
+    })
+
     it('translation + pdf artifact + audit round-trip', async () => {
       const r = make()
       await r.translation.saveTranslatedValue(SID, 'child_family_name', 'Soloviak')
@@ -116,5 +124,7 @@ describe('repository resolver + Supabase stub (fail-closed; Supabase OFF by defa
     const r = createSupabaseRepositoriesStub()
     await expect(r.review.listFields(SID)).rejects.toBeInstanceOf(SupabaseNotConnectedError)
     await expect(r.documents.getSession(SID)).rejects.toThrow(/DO NOT RUN WITHOUT OWNER APPROVAL/)
+    await expect(r.manualReview.getCase('x')).rejects.toBeInstanceOf(SupabaseNotConnectedError)
+    await expect(r.storage.remove('b', ['k'])).rejects.toBeInstanceOf(SupabaseNotConnectedError)
   })
 })

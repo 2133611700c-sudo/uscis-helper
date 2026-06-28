@@ -102,9 +102,28 @@ export interface ManualReviewTicket {
   updatedAt: string
 }
 
+/** A manual-review queue case (keyed by its own id, NOT a session id). */
+export interface ManualReviewCase {
+  id: string
+  fileUrl: string | null
+}
+
 export interface ManualReviewRepository {
   /** Most recent ticket for a session (open first, else latest terminal); null if none. */
   getLatestTicket(sessionId: string): Promise<ManualReviewTicket | null>
+  /** Fetch a queue case by its own id (for GDPR delete); null if already gone. */
+  getCase(caseId: string): Promise<ManualReviewCase | null>
+  /** Delete a queue case by id. Idempotent (already-gone is a no-op). */
+  deleteCase(caseId: string): Promise<void>
+}
+
+/**
+ * Object-storage abstraction (buckets + keys). Persistence-only; the caller owns
+ * bucket names. No Supabase Storage types leak here.
+ */
+export interface StorageRepository {
+  /** Remove objects from a bucket. Idempotent (missing keys ignored). */
+  remove(bucket: string, keys: string[]): Promise<void>
 }
 
 export interface ExtractionRun {
@@ -136,6 +155,7 @@ export interface RepositoryBundle {
   audit: AuditEventRepository
   manualReview: ManualReviewRepository
   extractionRuns: ExtractionRunRepository
+  storage: StorageRepository
 }
 
 /** Thrown by the Supabase adapter stub until the owner wires + approves it. */
