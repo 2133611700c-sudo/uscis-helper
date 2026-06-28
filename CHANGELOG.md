@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-28 | Unified Document Contract — Phase 10 (A–I) staging-ready vertical
+- **A** (`d756feb`): live review annotation — `annotateReviewFields` adds `contract_review_state` (candidate/confirmed/missing/unreadable/not_applicable/conflict) + `evidence_only` to the review-state route; split fields first-class; merged-with-splits = read-only evidence. Flag `UNIFIED_DOC_CONTRACT_ENABLED` (OFF identity).
+- **B** (`9384753` + invariant `ffd5f4f`): `assertDocumentReadyForFinalPdf` — single server-side final-PDF boundary, dedicated flag `FINAL_PDF_CONFIRMATION_GATE_ENABLED` (default OFF). Negative battery: raw-only/unconfirmed/conflict/missing/unreadable/forged-confirmed BLOCKED; valid ALLOWED. Route invariant: gate precedes every renderer.
+- **C** (`3afbbd2`): split fields render as contract-labeled rows in the mirror PDF (ON); new ON-mode golden; OFF golden byte-identical (`sha256 89611c7a…`).
+- **D** (`7c41747`): `contractExtractionBoundary` — schema-from-contract, provenance (provider/requested/actual model + mismatch + schema version), candidate-only sanitizer (strips forged confirmed, drops unknown keys, never fabricates).
+- **E** (`0d2479b`): unified gate added to 2nd PDF emitter (`render`); route-scan invariant proves every translation `application/pdf` emitter is gated; server-side docType registry validation (fail-safe).
+- **F** (`b17ae64`): prod build verified; Playwright Chromium; **local mocked browser E2E PASS** (public+home via real prod server); **in-process vertical integration PASS** (forged/raw BLOCKED, valid ALLOWED); **live DB-backed E2E BLOCKED** (no Docker→no Supabase) — runbook + manual CI workflow added.
+- **H/G/I** (`407e015`): PII-free observability (allow-list emitter + leak-proof test); flag matrix + rollout doc; PII-incident note + GitHub Support draft (31b62cd NOT reachable via any ref; value [REDACTED]).
+- All flags **default OFF** → byte-identical. Full suite **2878 passed / 0 failed**; tsc 0; PII clean. ADR: `docs/adr/ADR-CONTRACT-VERTICAL.md`. **Production flags OFF — STAGING READY pending DB-backed E2E + owner sign-off (NOT production-ready).**
+
 ## 2026-06-27 | Unified Document Contract — Phase 4 (single label source) DONE + byte-identity-verified
 - Contract now carries `reviewLabelUk` on the 12 birth-cert fields → the wizard's independent Ukrainian label map (`UKR_LABEL_BY_FIELD`) folds into the contract. `ukrLabelFor` (review UI) + `renderOfficialTranslation` (PDF English label) are flag-gated (`UNIFIED_DOC_CONTRACT_ENABLED`, **default OFF = byte-identical**); flag ON sources labels from the contract (`birthCertReviewLabels()` / `fieldByOutputKey().englishLabel`). Order/section unchanged (schema-driven; contract locked == schema).
 - `phase4ContractLabelParity.test.ts` proves: contract `reviewLabelUk` == legacy UK map; contract `englishLabel` == schema `sourceLabelEn`; `ukrLabelFor` ON==OFF for every key; and **the rendered birth-cert mirror PDF is byte-for-byte identical OFF vs ON** (`Buffer.compare === 0`).
