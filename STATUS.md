@@ -1,5 +1,11 @@
 # STATUS (2026-06-24 — ROOT-CAUSE REVERSAL: handwritten UA/RU Cyrillic IS readable key-free; PII fictionalized + model inventory corrected)
 
+## 2026-06-27 | Critical truth state of handwritten recognition after re-verify
+- **Verified now:** local sidecar is live (`raxtemur/trocr-base-ru`, MPS), and the CURRENT committed deterministic birth-cert template (`FIELD_BOX_TEMPLATES.ua_birth_certificate`) reads the three birth name fields 3/3 exact through the real sidecar on the real fixture. This is stronger than the old `verify_root.py` result because the patronymic crop in code was tightened after that older script.
+- **Verified now:** a second owner-handwritten source really exists locally (`military_id_p1_01.jpg` + GT file), and visual inspection supports the claim that FIO/date are handwritten.
+- **Not yet cleanly productized:** the military cross-hand evidence is still ad hoc/local. There is no committed runtime template or committed exact-scoring harness for that second hand; the proof currently lives in local `qa-private/htr-poc/*` artifacts plus manual crop verification.
+- **Functional verdict:** handwritten recognition remains `DEGRADED`, not `PASS`. Birth-cert deterministic route is proven on one Russian-cursive hand; generalized Ukrainian handwritten reading is NOT proven. For the military hand, `raxtemur` still fails strict exactness on plausible FIO crops, so review-gated fail-closed remains the only safe contract.
+
 ## 2026-06-27 | Active Gemini truth cleaned
 - Active runtime truth is now explicit and singular: `gemini-2.5-pro` is the current primary printed-field LLM, with sanctioned fallbacks `gemini-3.5-flash` and `gemini-2.5-flash`.
 - Runtime normalization no longer keeps special-case handling for old preview model ids; any env model outside the sanctioned chain now falls back automatically.
