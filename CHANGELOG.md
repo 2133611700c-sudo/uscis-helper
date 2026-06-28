@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-06-28 | Supabase project transfer preparation (read-only)
+### Added
+- `docs/ops/transfer/2026-06-28-prod-baseline.json` — full pre-transfer snapshot metrics for `rtfxrlountkoegsseukx` (schema fingerprint, table row counts, storage manifest).
+- `docs/ops/transfer/2026-06-28-transfer-runbook.md` — complete transfer runbook including pre-flight, UI steps, post-transfer smoke, rollback, MCP reauth.
+- `scripts/transfer/full-backup.py` — read-only full backup script via PostgREST + Storage API using service_role JWT (no DB password needed).
+- `scripts/transfer/post-transfer-smoke.sh` — automated post-transfer verification.
+
+### Operational
+- Snapshot taken at 2026-06-28T15:53Z to `~/Backups/uscis-helper-prod-2026-06-28T155331Z/` (47 tables, 17 storage files, 6,187,137 bytes — matches baseline byte-for-byte). 0 failures. Not committed: outside the repo.
+
+### Notes
+- No source code or runtime configuration was modified. All work is in `docs/ops/transfer/` and `scripts/transfer/`.
+
 ## 2026-06-27 | Staging Free-tier keep-alive workflow
 ### Added
 - `.github/workflows/staging-keepalive.yml` — read-only `SELECT 1` keep-alive against the isolated staging Supabase (`rxnlpvldngxgdxkxoaaj`) every 3 days via the IPv4 session pooler. Prevents Supabase Free auto-pause without upgrading the staging account.

@@ -5,6 +5,19 @@
 
 
 
+## 2026-06-28 | Supabase project transfer prep — baseline + full backup + runbook
+- Goal confirmed: transfer prod project `rtfxrlountkoegsseukx` from org `nqzhalwtefrgoguvlqex` (USCIS Helper, Free) to org `mbsqpyxwkfuwymnebsbh` (new account `2133611700uscis@gmail.com`, holds staging). New org was created specifically to keep prod on Free; source org reportedly hit Free-quota pressure.
+- Architecture preserved: ADR-023 staging isolation NOT broken — staging stays under the new email exactly as before; only prod moves into the same org. After transfer, target org will hold 2/2 Free projects (staging + prod).
+- Pre-transfer artifacts under `docs/ops/transfer/`:
+  - `2026-06-28-prod-baseline.json` — schema fingerprint `b8a85fd95319a3f74501696343c66121`, 51 migrations (latest `20260615060119`), 47 public tables / 19 populated / 1751 rows, 27 functions / 28 triggers / 153 indexes / 56 RLS policies, 4 storage buckets / 17 objects / 6,187,137 bytes.
+  - `2026-06-28-transfer-runbook.md` — full step-by-step including invite flow, Transfer UI steps, post-transfer smoke, rollback path, MCP re-auth reminder.
+- New scripts under `scripts/transfer/`:
+  - `full-backup.py` — read-only full snapshot via PostgREST + Storage API using service_role key. No DB password required. Output is restorable JSON-per-table + raw Storage files + manifest with SHA-256.
+  - `post-transfer-smoke.sh` — automated smoke (URL probes, GitHub Actions dispatch, SQL fingerprint check, Vercel reminder, MCP reauth reminder).
+- Actual backup taken at 2026-06-28T15:53Z to `~/Backups/uscis-helper-prod-2026-06-28T155331Z/` (9.5 MB total). 47/47 tables, 17/17 storage files, 0 failures. Backup is OUTSIDE the repo and NOT committed (contains user-uploaded document images in `translation-documents` bucket).
+- Why service_role REST and not pg_dump: DB password is not stored locally; service_role key is in `.env.local`. REST + Storage API cover the entire restorable footprint (data + binaries) without ever needing the DB password.
+- Two UI clicks remain on the user (Supabase Management API has no `transfer_project` or `invite_member` endpoint by design): (1) invite main account into target org, (2) accept invite, (3) Settings → General → Transfer project.
+
 ## 2026-06-27 | Staging keep-alive workflow (Free-tier idle guard)
 - Added `.github/workflows/staging-keepalive.yml`: cron `0 9 */3 * *` runs `SELECT 1` on staging via IPv4 session pooler. Read-only, no DDL, no data writes. Same hard-guard pattern as `staging-provision.yml` (target ref != prod ref). Uses existing secrets `STAGING_SUPABASE_PROJECT_REF` / `STAGING_SUPABASE_DB_PASSWORD`; optional `STAGING_DB_POOLER_HOST` falls back to `aws-1-us-west-1.pooler.supabase.com`.
 - Why: Supabase Free auto-pauses a project after ~7 days of zero DB/API activity. The isolated staging project `rxnlpvldngxgdxkxoaaj` (ADR-023) lives on a separate Free account and is intentionally idle between V1 release pushes, so pause warnings fire whenever no PR touches it for a week.
