@@ -1,0 +1,46 @@
+name: Contract Staging E2E (manual, DB-backed)
+
+# Full DB-backed browser E2E for the Unified Document Contract vertical.
+# Manual-trigger ONLY (needs Docker + staging secrets); never auto-runs on push so
+# it cannot fail PRs when secrets/Docker are absent. See
+# docs/runbooks/CONTRACT_STAGING_E2E_RUNBOOK.md.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Existing staging/preview URL (skips local Supabase). Leave blank to run local Supabase.'
+        required: false
+        default: ''
+
+jobs:
+  contract-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: npx playwright install --with-deps chromium
+
+      # Local Supabase only when no external base_url was supplied.
+      - name: Start Supabase (local) + seed synthetic data
+        if: ${{ github.event.inputs.base_url == '' }}
+        run: |
+          npx supabase start
+          npx supabase db reset
+          # psql "$SUPABASE_DB_URL" -f scripts/seed/synthetic-birth-cert.sql
+
+      - name: Build + run contract E2E
+        env:
+          UNIFIED_DOC_CONTRACT_ENABLED: '1'
+          UNIFIED_DOC_CONTRACT_SPLIT_ENABLED: '1'
+          UNIFIED_DOC_CONTRACT_NORMALIZE_ENABLED: '1'
+          FINAL_PDF_CONFIRMATION_GATE_ENABLED: '1'
+          CONTRACT_E2E_BASE_URL: ${{ github.event.inputs.base_url }}
+          # Supabase/Gemini secrets injected from repo/staging secrets here.
+        run: |
+          if [ -z "$CONTRACT_E2E_BASE_URL" ]; then pnpm --filter web build; fi
+          cd apps/web
+          npx playwright test -c playwright.contract.config.ts --project=chromium
