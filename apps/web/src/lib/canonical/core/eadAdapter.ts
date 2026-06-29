@@ -17,7 +17,7 @@
  *  - uncertain_fields list tracks every missing or review-flagged field
  *  - invented_fields_count MUST always be 0
  *
- * Used behind ONE_CORE_EAD_ENABLED flag only. Never affects old path.
+ * Used behind ONE_BRAIN_RECOGNIZE_ENABLED only. Never affects the default OFF path.
  * See docs/architecture/ONE_BRAIN_DECISION.md for the architecture contract.
  *
  * ONE_BRAIN_COMPLETE_CODE_READY: TPS (B1) + Translation (B2) + Re-Parole (B3) + EAD (B4).

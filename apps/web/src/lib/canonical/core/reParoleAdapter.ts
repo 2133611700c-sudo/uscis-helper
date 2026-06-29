@@ -13,7 +13,7 @@
  *  - Missing fields stay null (no invention, no silent correction)
  *  - uncertain_fields list tracks every missing or review-flagged field
  *
- * Used behind ONE_CORE_REPAROLE_ENABLED flag only. Never affects old path.
+ * Used behind ONE_BRAIN_RECOGNIZE_ENABLED only. Never affects the default OFF path.
  * See docs/architecture/ONE_BRAIN_DECISION.md for the architecture contract.
  *
  * ONE_BRAIN_PARTIAL_3_PRODUCTS: TPS (B1) + Translation (B2) + Re-Parole (B3).

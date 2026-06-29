@@ -149,7 +149,7 @@ Branch is **multi-session** (owner's own concurrent agents + ~30 worktrees). **A
 
 ## STATUS 2026-06-29 — code spine COMPLETE (flag-gated), branch feat/one-brain-reader-result (unpushed)
 
-DONE (additive, byte-identical OFF, tsc 0, 298 one-brain tests green):
+DONE (additive, byte-identical OFF; `tsc` green; targeted one-brain cutover tests green):
 - STEP 0 fork registry + parity guards (Level 1 oneBrainForkRegistry + Level 2 ratchet).
 - STEP A ReaderResult + Gemini adapter + disabled reader roster (Vision/DocAI/HTR).
 - STEP B namespace CI-guard (registry/schema + the other islands, ratcheted KNOWN_UNMAPPED).
@@ -161,9 +161,9 @@ DONE (additive, byte-identical OFF, tsc 0, 298 one-brain tests green):
 
 NOT DONE (honest):
 - Flags default OFF → ONE BRAIN is NOT live in prod (nothing changes until flipped).
-- STEP E payoff: bbox/evidence NOT wired into the live wizard (visionBboxLocator + template adapters built,
-  not called; review UI not yet fed EvidenceRegion). Template-evidence (key-free) is wireable WITHOUT Vision;
-  Vision/DocAI bbox is billing-403.
+- STEP E payoff: template-evidence is wired in the Translation backend behind
+  `ONE_BRAIN_EVIDENCE_ENABLED`, but the live review UI still does NOT render EvidenceRegion/crops.
+  Vision/DocAI exact bbox remains billing-403.
 - STEP F one KnowledgeEvaluator + single snapCity (two snapCity callers remain) — shadow + GT-gated.
 - STEP G legacy/DeepSeek/dualOcr → readers + DeepSeek PII-gate (key≠consent) — behavior change, needs sign-off.
 - STEP H 2nd independent reader + true consensus — needs Vision/DocAI billing or HTR host.

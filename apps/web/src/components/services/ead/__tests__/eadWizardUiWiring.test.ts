@@ -281,9 +281,9 @@ describe('EAD wizard + adapter: review_required preserved', () => {
 // ── Architecture contract markers in source ───────────────────────────────────
 
 describe('EAD wizard + route — architecture contract markers', () => {
-  it('route still labels responses with _flag ONE_CORE_EAD_ENABLED for observability', () => {
-    // _flag label in JSON responses is kept for log tracing — not a live gate
-    expect(routeSrc).toContain('ONE_CORE_EAD_ENABLED')
+  it('route labels responses with the real cutover flag for observability', () => {
+    // _flag label in JSON responses should name the actual runtime gate.
+    expect(routeSrc).toContain('ONE_BRAIN_RECOGNIZE_ENABLED')
   })
 
   it('route returns invented_fields_count header', () => {

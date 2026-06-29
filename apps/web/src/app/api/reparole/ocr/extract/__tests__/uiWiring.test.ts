@@ -124,7 +124,7 @@ describe('Core response parsing — ReParoleCoreAnswers → FieldExtraction', ()
     const coreResp = {
       ok: true,
       _core: true,
-      _flag: 'ONE_CORE_REPAROLE_ENABLED',
+      _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
       core_status: 'ok',
       fallback_used: false,
       review_required: false,
