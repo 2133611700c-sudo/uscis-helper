@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-29 | One-Brain — flag-truth alignment (TPS) + full-suite verification
+- **Flag truth (9.2):** removed the misleading `ONE_CORE_TPS_ENABLED` references — there is NO such runtime gate (verified: zero `process.env.ONE_CORE_TPS_ENABLED` reads). The TPS Core path is UNCONDITIONAL; the only recognition flag in the route is `ONE_BRAIN_RECOGNIZE_ENABLED` (selects the recognizeDocument orchestrator vs inline readDocument). Fixed `tpsAdapter.ts` header + `tps/types.ts` `canonical_core` comment. EAD/ReParole stale `ONE_CORE_*` flags were already aligned in `1deab82`.
+- **Full-suite verification (9.1):** ran the COMPLETE web vitest suite (not targeted) — **376 files / 5074 tests passed, 26 skipped, 0 failed** (66.8s). Previously-flaky `piiGuard.test.ts` + `knowledgeSafetyNet.test.ts` are green. tsc 0.
+- **OpenAI selector audit (9.3):** `selectDefaultVisionProvider()` committed (`1a3267a`), default = Gemini, server-side only (no `.tsx`, not `NEXT_PUBLIC`), fail-closed on missing key (`ok:false`). KNOWN GAP: no per-doc-class provider/PII gate beyond the operator env flag (recorded as risk; the flag is the explicit server-side operator consent, default OFF).
+- All additive; flags default OFF → no production behavior change.
+
 ## 2026-06-28 | Route cutover #13 (FINAL) — generate-pdf → getRepositories() — RATCHET 0, ROUTES APPLICATION CODE COMPLETE
 - `apps/web/src/app/api/translation/generate-pdf/route.ts` no longer imports any Supabase client — its sole direct usage (`createAdminSupabaseClient()` passed to `persistCertification`) now goes through a repository-backed `InsertableClient` adapter (`repositoryInsertableClient()`), so the `translation_orders` + `translation_certification_audit` compliance rows persist via the bundle. All gates/externals unchanged: canonical continuity, certifier override, pre-payment review, Stripe verify (+expectedService), confirmed-value guard, OCR-field-safety, mirror/generic PDF render, final-PDF gate, Resend email, attestation.
 - New `CertificationAuditRepository.appendOrderRow`/`appendCertificationAudit` + `repositoryInsertableClient()` structural adapter (unknown table → error, never silent-drop; repo throw → `{error}` fail-closed). In-memory impl + fail-closed Supabase stub + contract assertions; `__getCertificationAuditRows` test helper.

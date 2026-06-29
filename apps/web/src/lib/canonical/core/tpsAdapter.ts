@@ -5,7 +5,12 @@
  * pipeline (contract firewall, postExtractNormalize, Brain fallback, audit) can
  * consume it unchanged. This is the thin product adapter for TPS/Re-Parole.
  *
- * Used behind ONE_CORE_TPS_ENABLED=1 flag only. Never affects old path.
+ * FLAG TRUTH (2026-06-29): there is NO `ONE_CORE_TPS_ENABLED` runtime gate — the
+ * TPS Core path is UNCONDITIONAL (the route always builds canonicalFields and, when
+ * present, projects them via canonicalToTpsModuleResult; on empty it falls through to
+ * legacy). The only recognition flag in the route is `ONE_BRAIN_RECOGNIZE_ENABLED`,
+ * which selects the recognizeDocument orchestrator vs the inline readDocument spine —
+ * it does NOT gate this adapter. (Prior comment referenced a flag that never existed.)
  * See docs/architecture/ONE_BRAIN_DECISION.md for the architecture contract.
  */
 import type { CanonicalField } from '../types'
