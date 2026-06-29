@@ -9,6 +9,7 @@ Owner mandate: "распознавание через Gemini (все ключи/
 The product ships document recognition for four surfaces — Translator, TPS, Reparole, EAD — plus a Mia FAQ bot. A 2026-06-09 zero-trust audit + 5-agent surface map established the real state:
 
 - Gemini is ALREADY the primary document reader (`docintel`, `gemini-2.5-pro` → `3.5-flash` → `2.5-flash`), but is the DEFAULT only for the Translator. For TPS/Reparole/EAD the Gemini "Core" path is parked behind flags (`ONE_CORE_TPS_ENABLED`, `ONE_CORE_REPAROLE_ENABLED`, `ONE_CORE_EAD_ENABLED`, `ONE_BRAIN_CORE_ENABLED`) that nobody flips.
+  - **⚠ CORRECTION (2026-06-29):** the `ONE_CORE_{TPS,EAD,REPAROLE}_ENABLED` flags described above were REMOVED in Phase 2.3/2.4. The EAD/ReParole/TPS Core paths are now UNCONDITIONAL (no env gate); the current code reads none of these flags (enforced by `deadFlagGuard.test.ts`). The only recognition flag the routes read is `ONE_BRAIN_RECOGNIZE_ENABLED` (orchestrator vs inline read). This bullet is kept as the original 2026-06-09 decision record. Canonical flag-truth: `docs/ocr/ONE_BRAIN_CONVERGENCE.md` §Flag Truth.
 - TPS default = Google Vision OCR + deterministic rule modules. Reparole = Gemini-Core for passport/booklet, TPS fallback for i94/ead/dl.
 - DeepSeek = Mia FAQ, legacy `/api/ocr/extract` text-parse, optional prose translator, optional TPS dual-OCR crossref. NOT document vision.
 - gpt-4o-mini = parked (`ENABLE_OPENAI_VISION` off).

@@ -79,6 +79,13 @@ brain_planes:
 # ПОДТВЕРЖДЁННЫЕ ФАКТЫ — не перепроверять, опираться (prod_sha 31353a7)
 # ----------------------------------------------------------------------------
 confirmed:
+  # ⚠ FLAG TRUTH (2026-06-29): the ONE_CORE_{TPS,EAD,REPAROLE}_ENABLED flags below were
+  # real prod env gates at prod_sha 31353a7, but were REMOVED in Phase 2.3/2.4 — the Core
+  # paths are now UNCONDITIONAL and the current code reads NONE of them (verified: 0
+  # process.env reads; enforced by deadFlagGuard.test.ts). The only recognition flag the
+  # routes read now is ONE_BRAIN_RECOGNIZE_ENABLED. Do NOT set the ONE_CORE_* vars — no effect.
+  # Canonical flag-truth: docs/ocr/ONE_BRAIN_CONVERGENCE.md §Flag Truth. (Block kept as a
+  # historical record of prod_sha 31353a7; not current.)
   prod_flags:
     ONE_CORE_TPS_ENABLED: "1"
     ONE_CORE_EAD_ENABLED: "true"

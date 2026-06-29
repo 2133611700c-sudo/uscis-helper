@@ -171,3 +171,33 @@ NOT DONE (honest):
 
 OWNER-BLOCKED (code cannot resolve): Gemini 429 spend cap; GT corpus N=20-30 (multi-person);
 Vision/DocAI billing 403; HTR sidecar host; production flag sign-offs. PUSH is owner-only.
+
+---
+
+## §Flag Truth (canonical — supersedes all older flag tables, 2026-06-29)
+
+This is the single source of truth for recognition flags. Older docs/reports that show
+`ONE_CORE_*` as live gates are HISTORICAL (point-in-time prod records), not current.
+
+**DEAD flags (no runtime gate — removed; code reads NONE; `deadFlagGuard.test.ts` enforces):**
+- `ONE_CORE_TPS_ENABLED`, `ONE_CORE_EAD_ENABLED`, `ONE_CORE_REPAROLE_ENABLED`
+  (+ `NEXT_PUBLIC_` twins). Were real prod env gates at prod_sha 31353a7; REMOVED in
+  Phase 2.3/2.4. The EAD/ReParole/TPS Core paths are now UNCONDITIONAL. Setting these vars
+  has NO effect. NOTE: "unconditional" = no env gate; the Core path can still fall through
+  to legacy when `docintelId` is absent, `candidateCount === 0`, or `canonicalFields` is
+  empty (that is data-driven fallback, not a flag).
+
+**LIVE recognition flags (actually read by the routes):**
+- `ONE_BRAIN_RECOGNIZE_ENABLED` — selects the `recognizeDocument` orchestrator vs the inline
+  `readDocument` spine. Default OFF = byte-identical.
+- `ONE_BRAIN_EVIDENCE_ENABLED` — backend attaches key-free template EvidenceRegion to
+  translation fields; default OFF. (Live wizard crop render: see STEP E payoff.)
+- `READER_PROVIDER=openai` — TEMPORARY operator override routing all reads through GPT vision
+  (default Gemini). Server-side, fail-closed, non-acceptance (force-reviewed per ADR-018).
+- Plus the pre-existing prod-default flags governed elsewhere: `KNOWLEDGE_BRAIN_ENABLED` (ON),
+  `DOC_SCRIPT_ROUTING_ENABLED` (ON), `CONTENT_ORIENT_ENABLED` (ON), `DUAL_OCR_CROSSREF` (ON).
+
+**Reconciliation status (honest):** code = one truth layer (0 dead-flag reads, guard-enforced);
+actionable docs corrected inline (`MIGRATION_BRIEF.yaml`, `ADR-017`, e2e blocker string);
+historical/dated reports keep their point-in-time text and carry a banner pointing here
+(not rewritten — that would falsify the record).

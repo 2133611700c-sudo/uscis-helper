@@ -356,7 +356,7 @@ test('EAD: canonical_document_id captured from extract, resent in generate-packe
     await page.waitForTimeout(1500)
 
     if (c.extract_status === 503) {
-      c.blocker = 'ead_extract_503 (ONE_CORE_EAD_ENABLED is OFF in prod — extract never runs Core, no canonical id)'
+      c.blocker = 'ead_extract_503 (EAD extract returned 503 — no canonical id; note: EAD Core is now unconditional, the old ONE_CORE_EAD_ENABLED gate was removed in Phase 2.4, so a 503 is an upstream/read failure, not a flag-off)'
       await writeResult(c); throw new Error(c.blocker)
     }
     if (!extractId) {
