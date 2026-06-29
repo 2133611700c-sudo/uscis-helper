@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evidenceCropDecision } from '../fieldEvidenceCrop'
+import { evidenceCropDecision, resolveEvidenceImageUrl } from '../fieldEvidenceCrop'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 
 const region = (over: Partial<EvidenceRegion>): EvidenceRegion => ({
@@ -42,5 +42,15 @@ describe('evidenceCropDecision — STEP-E review crop honesty (§3.6)', () => {
       expect(d.approximate).toBe(false)
       expect(d.label).toBe('The part of your document we read')
     }
+  })
+
+  it('never falls back to page 1 when the evidence points to a missing page', () => {
+    const urls = ['blob:page-1']
+    expect(resolveEvidenceImageUrl(region({ page: 2 }), urls)).toBeNull()
+  })
+
+  it('resolves the exact page preview when that page exists', () => {
+    const urls = ['blob:page-1', 'blob:page-2']
+    expect(resolveEvidenceImageUrl(region({ page: 2 }), urls)).toBe('blob:page-2')
   })
 })

@@ -22,7 +22,7 @@ import { isGarbageValue } from '@uscis-helper/knowledge'
 import { getHardUnresolvedReviewFields, getSoftReviewFields } from '@/lib/translation/reviewGate'
 import { ukrLabelFor } from './translationFieldLabels'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
-import { evidenceCropDecision } from './fieldEvidenceCrop'
+import { evidenceCropDecision, resolveEvidenceImageUrl } from './fieldEvidenceCrop'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { rotateImage90 } from '@/lib/upload/autoRotate'
 import { sanitizeFieldListForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
@@ -2122,7 +2122,7 @@ export function TranslateWizard() {
                         {row.evidence && (
                           <FieldEvidenceCrop
                             region={row.evidence}
-                            imageUrl={previewUrls[(row.evidence.page || 1) - 1] ?? previewUrls[0] ?? null}
+                            imageUrl={resolveEvidenceImageUrl(row.evidence, previewUrls)}
                           />
                         )}
                         <div className="tw-trans-arrow" aria-hidden="true">↓</div>

@@ -1,5 +1,13 @@
 # STATUS (2026-06-28 — Route cutover COMPLETE: every translation route is repository-driven; Supabase intentionally DISCONNECTED)
 
+## 2026-06-29 | One-Brain local hardening truth (post-208215f)
+**Readiness: LOCAL CODE HARDENED / STILL NOT LIVE.**
+- The one-brain branch (`feat/one-brain-reader-result`) now has the user-facing evidence payoff **and** two post-audit safety fixes:
+  1. review-crop honesty: no wrong-page fallback when evidence points to a missing preview page;
+  2. temporary GPT route constrained to **printed docs only** (handwritten/certificate families stay off OpenAI).
+- **Local proof only:** full web suite **376 files / 5083 tests passed / 26 skipped / 0 failed**; `tsc` 0; `next build` PASS with existing warnings only.
+- **Still true:** branch has **NO upstream / NO CI proof / NOT live in prod**; `ONE_BRAIN_RECOGNIZE_ENABLED` and `ONE_BRAIN_EVIDENCE_ENABLED` remain rollout questions, not verified runtime outcomes. Exact Vision/DocAI bbox remains unavailable; GT/measurement gates remain blocked on quota/corpus/owner inputs.
+
 ## 2026-06-28 | Runtime route cutover COMPLETE — ratchet 0 — APPLICATION CODE COMPLETE (routes)
 **Readiness: APPLICATION CODE COMPLETE (routes) — READY FOR SUPABASE ADAPTER CONNECTION + DATABASE-BACKED STAGING VALIDATION** (NOT production-ready).
 - **ALL 13 active translation API routes now use `getRepositories()`** — zero direct Supabase imports in the route layer; the import-boundary ratchet (`noDirectSupabaseInDomain.test.ts`) asserts `toEqual([])` + `KNOWN_COUPLED_ROUTES.size===0`. Migrated: upload, ocr-from-storage, extract, extraction-status, manual-review-status, review-state, confirm-field, correct-field, certify, delete, process, render, generate-pdf.

@@ -63,8 +63,12 @@ import { isForensicEnabled, emitForensic, sha256Hex } from './forensics'
  * NEVER an acceptance read — every field is force-reviewed (fallback_model_used),
  * which is the correct, conservative behavior for a temporary swap.
  */
-export function selectDefaultVisionProvider(): VisionProvider {
-  if ((process.env.READER_PROVIDER || '').toLowerCase() === 'openai') {
+export function selectDefaultVisionProvider(docTypeId?: string | null): VisionProvider {
+  // OpenAI is a PRINTED-doc availability route only. Handwritten/certificate families
+  // stay on the default reader path even when the operator enables READER_PROVIDER=openai:
+  // live benches proved GPT vision is unstable/fabricating there, so widening the
+  // override to those families would lower safety rather than improve availability.
+  if ((process.env.READER_PROVIDER || '').toLowerCase() === 'openai' && !isHandwrittenFamily(docTypeId)) {
     return new OpenAIVisionProvider()
   }
   return defaultVisionProvider
@@ -147,7 +151,7 @@ export async function readDocument(
   // provider call runs through the cross-instance lease + secure cache. off ⇒
   // byte-identical direct call. enforce ⇒ a winner-failure/loser-timeout surfaces
   // OcrCoordinationUnavailable, which we map to an honest non-2xx (never a crash).
-  const provider = opts.provider ?? selectDefaultVisionProvider()
+  const provider = opts.provider ?? selectDefaultVisionProvider(docTypeId)
 
   // Unified forensic emit — fires on EVERY return path (success AND failure), so a failed/early-return
   // read is no longer invisible (the gap that swallowed a parity read). Gated + fail-open + PII-safe.

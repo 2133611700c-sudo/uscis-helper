@@ -14,10 +14,15 @@ describe('selectDefaultVisionProvider — temporary GPT route', () => {
   })
   it('READER_PROVIDER=openai → GPT vision provider', () => {
     process.env.READER_PROVIDER = 'openai'
-    expect(selectDefaultVisionProvider().name).toBe('openai')
+    expect(selectDefaultVisionProvider('ua_international_passport').name).toBe('openai')
   })
   it('any other value → Gemini (safe default)', () => {
     process.env.READER_PROVIDER = 'something'
     expect(selectDefaultVisionProvider().name).toBe('gemini')
+  })
+  it('never routes handwritten/certificate families to OpenAI', () => {
+    process.env.READER_PROVIDER = 'openai'
+    expect(selectDefaultVisionProvider('ua_birth_certificate').name).toBe('gemini')
+    expect(selectDefaultVisionProvider('ua_marriage_certificate').name).toBe('gemini')
   })
 })
