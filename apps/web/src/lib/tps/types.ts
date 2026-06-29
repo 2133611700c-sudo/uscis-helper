@@ -35,7 +35,7 @@ export type TpsExtractionSource =
   | 'ocr_keyword'     // anchored to a keyword (e.g. "Class of Admission")
   | 'ai_brain'        // DeepSeek Document Brain — feature-flag gated, validators applied
   | 'dual_ocr_crossref' // Vision+DocAI cross-referenced by DeepSeek (booklet handwriting)
-  | 'canonical_core'  // Document Core arbitration (ONE_CORE_TPS_ENABLED, B1)
+  | 'canonical_core'  // Document Core arbitration (unconditional; NOT flag-gated — ONE_CORE_TPS_ENABLED never existed)
   | 'user_input'      // user typed it directly
   | 'user_corrected'  // user edited an OCR'd value
   | 'inferred'        // derived from another field (e.g. ead_category from filing_path)
