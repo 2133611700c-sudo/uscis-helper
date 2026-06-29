@@ -63,6 +63,8 @@ import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canon
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
 import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
+import { recognizeDocument, isOneBrainRecognizeEnabled } from '@/lib/docintel/recognizeDocument'
+import type { CanonicalField } from '@/lib/canonical/types'
 // CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
 import { persistCanonicalDocument, loadAllCanonicalDocumentsForSession } from '@/lib/canonical/persistence'
 // SEAM A: cross-document reconciliation (passport MRZ anchors a sibling doc's held field)
@@ -315,22 +317,44 @@ async function POST_impl(req: NextRequest) {
     coreStatus = 'skipped_no_mapping'
   } else {
     try {
-      const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'tps', originalBuffer: rawBuffer, knownValues })
-      if (coreRead.ok && Array.isArray(coreRead.fields) && coreRead.fields.length > 0) {
-        const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
-        if (docintelId === 'ua_international_passport') {
-          const mrzCandidates = mrzCandidatesFromText(result.raw_text ?? '')
-          if (mrzCandidates.length > 0) {
-            candidates.push(...mrzCandidates)
-            console.info('[Core/TPS] MRZ_WIRED: injected', mrzCandidates.length,
-              'MRZ candidates, mrzCheckValid:', mrzCandidates[0]?.mrzCheckValid)
+      // ── Recognition: ONE-BRAIN orchestrator (flag ON) or inline spine (flag OFF, byte-identical) ──
+      let canonicalFields: CanonicalField[] = []
+      let coreReadOk = false
+      if (isOneBrainRecognizeEnabled()) {
+        // STEP E cutover. MRZ (from the route's existing OCR `result`) injected as
+        // extraCandidates AFTER read candidates. candidateCount keys the no-fields
+        // fall-through exactly (read fields only, before MRZ) → legacy still runs.
+        const mrzCandidates =
+          docintelId === 'ua_international_passport' ? mrzCandidatesFromText(result.raw_text ?? '') : []
+        const rec = await recognizeDocument({
+          pages: [{ buffer: imageBuffer, mime: effectiveMime }],
+          docTypeId: docintelId,
+          product: 'tps',
+          extraCandidates: mrzCandidates,
+          readOpts: { timeoutMs: 40_000, originalBuffer: rawBuffer, knownValues },
+        })
+        coreReadOk = rec.candidateCount > 0
+        if (rec.canonicalResult) canonicalFields = rec.canonicalResult.fields
+      } else {
+        const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'tps', originalBuffer: rawBuffer, knownValues })
+        if (coreRead.ok && Array.isArray(coreRead.fields) && coreRead.fields.length > 0) {
+          coreReadOk = true
+          const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
+          if (docintelId === 'ua_international_passport') {
+            const mrzCandidates = mrzCandidatesFromText(result.raw_text ?? '')
+            if (mrzCandidates.length > 0) {
+              candidates.push(...mrzCandidates)
+              console.info('[Core/TPS] MRZ_WIRED: injected', mrzCandidates.length,
+                'MRZ candidates, mrzCheckValid:', mrzCandidates[0]?.mrzCheckValid)
+            }
           }
+          canonicalFields = applyKnowledgeBrainIfEnabled(
+            candidates,
+            buildKnowledgeContext({ docTypeId: docintelId, product: 'tps' }),
+          )
         }
-        const canonicalFields = applyKnowledgeBrainIfEnabled(
-          candidates,
-          buildKnowledgeContext({ docTypeId: docintelId, product: 'tps' }),
-        )
-        if (canonicalFields.length > 0) {
+      }
+      if (coreReadOk && canonicalFields.length > 0) {
           moduleResult = canonicalToTpsModuleResult(canonicalFields, docTypeHint, document_id)
           coreStatus = 'ok'
           console.info('[Core/TPS] used Core for', docTypeHint, 'fields:', moduleResult.fields.length,
@@ -388,9 +412,6 @@ async function POST_impl(req: NextRequest) {
         } else {
           coreStatus = 'skipped_no_fields'
         }
-      } else {
-        coreStatus = 'skipped_no_fields'
-      }
     } catch (e: any) {
       console.error('[Core/TPS] error, falling back to old path:', e?.message ?? e)
       coreStatus = 'error'
