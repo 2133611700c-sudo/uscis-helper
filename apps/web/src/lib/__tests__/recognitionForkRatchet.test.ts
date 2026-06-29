@@ -35,6 +35,9 @@ const FORK_SYMBOLS: Record<string, string[]> = {
     'app/api/tps/ocr/shape-debug/route.ts',
     'app/api/tps/ocr/extract/route.ts',
     'lib/ocr/providers/index.ts',
+    // One-Brain evidence locator (STEP E): produces EvidenceRegion bbox, NOT a field
+    // decision — sanctioned as the bbox source, not a parallel recognition plane.
+    'lib/docintel/evidence/visionBboxLocator.ts',
   ],
 }
 
