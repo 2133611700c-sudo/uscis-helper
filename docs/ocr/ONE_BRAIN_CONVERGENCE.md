@@ -144,3 +144,30 @@ J. Canary per field-kind → enforce. *needs staging E2E + owner sign-off*
 ## 7. COORDINATION (critical)
 
 Branch is **multi-session** (owner's own concurrent agents + ~30 worktrees). **All new code goes in an isolated worktree off the current tip**; rebase often; pin `git rev-parse origin/translation/ru-and-model-matrix-fixes` before any push. **Push is owner-only.** Permanent guards that must stay green (collision detectors): `noDirectSupabaseInDomain.test.ts`, `finalPdfGateRouteInvariant.test.ts`, `brainSingleArbiterInvariant.test.ts`, `oneBrainGuard.test.ts` — plus the new parity-trap + namespace CI guard from steps 0/B.
+
+---
+
+## STATUS 2026-06-29 — code spine COMPLETE (flag-gated), branch feat/one-brain-reader-result (unpushed)
+
+DONE (additive, byte-identical OFF, tsc 0, 298 one-brain tests green):
+- STEP 0 fork registry + parity guards (Level 1 oneBrainForkRegistry + Level 2 ratchet).
+- STEP A ReaderResult + Gemini adapter + disabled reader roster (Vision/DocAI/HTR).
+- STEP B namespace CI-guard (registry/schema + the other islands, ratcheted KNOWN_UNMAPPED).
+- STEP C EvidenceRegion contract + provider adapters + visionBboxLocator (pure, fail-open).
+- STEP D recognizeDocument — the ONE internal orchestrator (per-page readOpts + per-page model).
+- STEP E recognition cutover of ALL 4 product routes to recognizeDocument, flag ONE_BRAIN_RECOGNIZE_ENABLED
+  (default OFF = byte-identical): EAD, ReParole, TPS core, Translation core.
+- STEP I measurement taxonomy + rollups (wrong-field-assignment, abstention P/R, per rendering/lang/field-kind).
+
+NOT DONE (honest):
+- Flags default OFF → ONE BRAIN is NOT live in prod (nothing changes until flipped).
+- STEP E payoff: bbox/evidence NOT wired into the live wizard (visionBboxLocator + template adapters built,
+  not called; review UI not yet fed EvidenceRegion). Template-evidence (key-free) is wireable WITHOUT Vision;
+  Vision/DocAI bbox is billing-403.
+- STEP F one KnowledgeEvaluator + single snapCity (two snapCity callers remain) — shadow + GT-gated.
+- STEP G legacy/DeepSeek/dualOcr → readers + DeepSeek PII-gate (key≠consent) — behavior change, needs sign-off.
+- STEP H 2nd independent reader + true consensus — needs Vision/DocAI billing or HTR host.
+- STEP I real-GT benchmark + STEP J canary — need Gemini quota + GT corpus + owner flag sign-off.
+
+OWNER-BLOCKED (code cannot resolve): Gemini 429 spend cap; GT corpus N=20-30 (multi-person);
+Vision/DocAI billing 403; HTR sidecar host; production flag sign-offs. PUSH is owner-only.
