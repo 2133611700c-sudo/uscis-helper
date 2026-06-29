@@ -41,6 +41,8 @@ export function isOneBrainRecognizeEnabled(
 export interface RecognizePage {
   buffer: Buffer
   mime: string
+  /** per-page read opts (e.g. translation's per-page forensic + originalBuffer); merged over global readOpts. */
+  readOpts?: Record<string, unknown>
 }
 
 export interface RecognizeInput {
@@ -62,7 +64,7 @@ export interface RecognizeOutput {
   canonicalResult: CanonicalDocumentResult | null
   cyrillicMap: Map<string, string>
   providerErrors: ProviderErr[]
-  pageResults: Array<{ page: number; ok: boolean; status: string; ms: number }>
+  pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; model: string | null }>
   /** candidates BEFORE arbitration — lets a route distinguish "0 fields read" from "arbitration empty". */
   candidateCount: number
 }
@@ -85,13 +87,14 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
       const r = (await reader(p.buffer, p.mime, input.docTypeId, {
         product: input.product,
         ...(input.readOpts ?? {}),
+        ...(p.readOpts ?? {}),
       })) as ReadDocumentResult
       return { i, r }
     }),
   )
 
   for (const { i, r } of reads) {
-    pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
+    pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, model: r.model ?? null })
     if (r.ok && Array.isArray(r.fields)) {
       buildCyrillicMap(r.fields).forEach((v: string, k: string) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
       readCandidates.push(...r.fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
