@@ -28,6 +28,16 @@ import type { FieldCandidate } from '@/lib/canonical/core/types'
 type ReadDocumentResult = Awaited<ReturnType<typeof readDocument>>
 type ProviderErr = NonNullable<ReadDocumentResult['provider_error']>
 
+/**
+ * Cutover flag (STEP E). Default OFF → routes keep their inline sequence
+ * (byte-identical). ON → the route delegates recognition to recognizeDocument.
+ */
+export function isOneBrainRecognizeEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.ONE_BRAIN_RECOGNIZE_ENABLED === '1'
+}
+
 export interface RecognizePage {
   buffer: Buffer
   mime: string
@@ -53,6 +63,8 @@ export interface RecognizeOutput {
   cyrillicMap: Map<string, string>
   providerErrors: ProviderErr[]
   pageResults: Array<{ page: number; ok: boolean; status: string; ms: number }>
+  /** candidates BEFORE arbitration — lets a route distinguish "0 fields read" from "arbitration empty". */
+  candidateCount: number
 }
 
 /**
@@ -88,7 +100,7 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
 
   // FAIL CLOSED: no usable candidate AND a typed provider error → not read.
   if (candidates.length === 0 && providerErrors.length > 0) {
-    return { status: 'unavailable', canonicalResult: null, cyrillicMap, providerErrors, pageResults }
+    return { status: 'unavailable', canonicalResult: null, cyrillicMap, providerErrors, pageResults, candidateCount: candidates.length }
   }
 
   const canonicalFields = applyKnowledgeBrainIfEnabled(
@@ -107,5 +119,5 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
         })
       : null
 
-  return { status: 'ok', canonicalResult, cyrillicMap, providerErrors, pageResults }
+  return { status: 'ok', canonicalResult, cyrillicMap, providerErrors, pageResults, candidateCount: candidates.length }
 }
