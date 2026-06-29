@@ -3,11 +3,11 @@
  *
  * B3: Re-Parole consumes CanonicalDocumentResult (ONE_BRAIN_PARTIAL_3_PRODUCTS).
  *
- * When ONE_CORE_REPAROLE_ENABLED=true:
+ * When ONE_BRAIN_RECOGNIZE_ENABLED=1:
  *   image → readDocument (Gemini docintel) → arbitrateDocument (Core) →
  *   toReParoleCoreAnswers (Re-Parole adapter) → ReParoleCoreAnswers JSON
  *
- * When ONE_CORE_REPAROLE_ENABLED=false (default):
+ * When ONE_BRAIN_RECOGNIZE_ENABLED is unset/!=1 (default):
  *   Falls through to old TPS OCR path at /api/tps/ocr/extract.
  *   This route returns a redirect or proxied response so the wizard
  *   continues working without any UI changes.
@@ -158,7 +158,7 @@ async function POST_impl(req: NextRequest) {
         ok: false,
         error: `docHint '${docTypeHint}' is not covered by the Re-Parole Core path. Use /api/tps/ocr/extract.`,
         hint_received: docTypeHint,
-        _flag: 'ONE_CORE_REPAROLE_ENABLED',
+        _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
         _core: false,
         fallback_used: true,
       },
@@ -208,13 +208,13 @@ async function POST_impl(req: NextRequest) {
       if (rec.status === 'unavailable' || rec.candidateCount === 0) {
         console.warn('[B3/ReParole/Core] docintel returned no fields (one-brain):', { hint: docTypeHint, docintelId })
         return NextResponse.json(
-          { ok: false, error: 'Core document read returned no fields. Please try a higher-resolution image.', _flag: 'ONE_CORE_REPAROLE_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
+          { ok: false, error: 'Core document read returned no fields. Please try a higher-resolution image.', _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
           { status: 200 },
         )
       }
       if (!rec.canonicalResult) {
         return NextResponse.json(
-          { ok: false, error: 'Core arbitration produced no usable fields.', _flag: 'ONE_CORE_REPAROLE_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
+          { ok: false, error: 'Core arbitration produced no usable fields.', _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
           { status: 200 },
         )
       }
@@ -236,7 +236,7 @@ async function POST_impl(req: NextRequest) {
         {
           ok: false,
           error: 'Core document read returned no fields. Please try a higher-resolution image.',
-          _flag: 'ONE_CORE_REPAROLE_ENABLED',
+          _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
           _core: true,
           core_status: 'failed',
           fallback_used: false,
@@ -273,7 +273,7 @@ async function POST_impl(req: NextRequest) {
         {
           ok: false,
           error: 'Core arbitration produced no usable fields.',
-          _flag: 'ONE_CORE_REPAROLE_ENABLED',
+          _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
           _core: true,
           core_status: 'failed',
           fallback_used: false,
@@ -369,7 +369,7 @@ async function POST_impl(req: NextRequest) {
         canonical_document_id: reParoleCanonicalDocumentId,
         doc_type_hint: docTypeHint,
         _core: true,
-        _flag: 'ONE_CORE_REPAROLE_ENABLED',
+        _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
         processing_ms: Date.now() - t0,
       },
       {
@@ -390,7 +390,7 @@ async function POST_impl(req: NextRequest) {
         ok: false,
         error: 'Core extraction failed. Use /api/tps/ocr/extract as fallback.',
         detail: msg,
-        _flag: 'ONE_CORE_REPAROLE_ENABLED',
+        _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
         _core: true,
         core_status: 'failed',
         fallback_used: true,
@@ -406,7 +406,7 @@ export async function GET() {
       route: '/api/reparole/ocr/extract',
       method: 'POST',
       content_type: 'multipart/form-data',
-      flag: 'ONE_CORE_REPAROLE_ENABLED',
+      flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
       fields: {
         file: 'JPEG / PNG / WebP image (≤ 10 MB)',
         docHint: 'passport | booklet (Ukrainian identity docs only)',

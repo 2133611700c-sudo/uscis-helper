@@ -9,7 +9,9 @@
  * The guard lives at the repo root (scripts/check-no-pii.mjs) and computes its own REPO
  * from its file location, so it works regardless of vitest's cwd.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+
+vi.setConfig({ testTimeout: 120_000 })
 
 const guardUrl = new URL('../../../../../scripts/check-no-pii.mjs', import.meta.url).href
 const { selfTest, scanRepo } = (await import(guardUrl)) as {

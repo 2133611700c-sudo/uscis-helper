@@ -3,11 +3,11 @@
  *
  * B4: EAD consumes CanonicalDocumentResult (ONE_BRAIN_COMPLETE_CODE_READY).
  *
- * When ONE_CORE_EAD_ENABLED=true:
+ * When ONE_BRAIN_RECOGNIZE_ENABLED=1:
  *   image → readDocument (Gemini docintel) → arbitrateDocument (Core) →
  *   toEadAnswers (EAD adapter) → EadCoreAnswers JSON
  *
- * When ONE_CORE_EAD_ENABLED=false (default):
+ * When ONE_BRAIN_RECOGNIZE_ENABLED is unset/!=1 (default):
  *   Returns 503 — caller falls back to old path (no EAD OCR existed before B4).
  *
  * Privacy: the image is not persisted. In-memory only; GC-eligible after response.
@@ -20,7 +20,7 @@
  *  - invented_fields_count always 0
  *
  * ONE_BRAIN_COMPLETE_CODE_READY: TPS (B1) + Translation (B2) + Re-Parole (B3) + EAD (B4).
- * Not live until ONE_CORE_EAD_ENABLED=true in Vercel + ONE_BRAIN_FINAL_SMOKE_TEST.
+ * Not live until ONE_BRAIN_RECOGNIZE_ENABLED=1 in Vercel + ONE_BRAIN_FINAL_SMOKE_TEST.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -155,7 +155,7 @@ async function POST_impl(req: NextRequest) {
         ok: false,
         error: `docHint '${docTypeHint}' is not covered by the EAD Core path.`,
         hint_received: docTypeHint,
-        _flag: 'ONE_CORE_EAD_ENABLED',
+        _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
         _core: false,
         fallback_used: true,
       },
@@ -186,13 +186,13 @@ async function POST_impl(req: NextRequest) {
       if (rec.status === 'unavailable' || rec.candidateCount === 0) {
         console.warn('[B4/EAD/Core] docintel returned no fields (one-brain):', { hint: docTypeHint, docintelId })
         return NextResponse.json(
-          { ok: false, error: 'Core document read returned no fields. Please try a higher-resolution image.', _flag: 'ONE_CORE_EAD_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
+          { ok: false, error: 'Core document read returned no fields. Please try a higher-resolution image.', _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
           { status: 200 },
         )
       }
       if (!rec.canonicalResult) {
         return NextResponse.json(
-          { ok: false, error: 'Core arbitration produced no usable fields.', _flag: 'ONE_CORE_EAD_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
+          { ok: false, error: 'Core arbitration produced no usable fields.', _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
           { status: 200 },
         )
       }
@@ -212,7 +212,7 @@ async function POST_impl(req: NextRequest) {
           {
             ok: false,
             error: 'Core document read returned no fields. Please try a higher-resolution image.',
-            _flag: 'ONE_CORE_EAD_ENABLED',
+            _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
             _core: true,
             core_status: 'failed',
             fallback_used: false,
@@ -236,7 +236,7 @@ async function POST_impl(req: NextRequest) {
           {
             ok: false,
             error: 'Core arbitration produced no usable fields.',
-            _flag: 'ONE_CORE_EAD_ENABLED',
+            _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
             _core: true,
             core_status: 'failed',
             fallback_used: false,
@@ -333,7 +333,7 @@ async function POST_impl(req: NextRequest) {
         canonical_document_id: canonicalDocumentId,
         doc_type_hint: docTypeHint,
         _core: true,
-        _flag: 'ONE_CORE_EAD_ENABLED',
+        _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
         processing_ms: Date.now() - t0,
       },
       {
@@ -355,7 +355,7 @@ async function POST_impl(req: NextRequest) {
         ok: false,
         error: 'Core extraction failed.',
         detail: msg,
-        _flag: 'ONE_CORE_EAD_ENABLED',
+        _flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
         _core: true,
         core_status: 'failed',
         fallback_used: true,
@@ -371,7 +371,7 @@ export async function GET() {
       route: '/api/ead/ocr/extract',
       method: 'POST',
       content_type: 'multipart/form-data',
-      flag: 'ONE_CORE_EAD_ENABLED',
+      flag: 'ONE_BRAIN_RECOGNIZE_ENABLED',
       fields: {
         file: 'JPEG / PNG / WebP image (≤ 10 MB)',
         docHint: 'passport | booklet | ead | i766 | i94 | i797',
