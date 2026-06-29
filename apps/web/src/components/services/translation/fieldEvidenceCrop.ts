@@ -10,6 +10,23 @@ export interface EvidenceCropDecision {
 }
 
 /**
+ * Resolve the client image URL for an evidence region.
+ *
+ * HONESTY RULE: if the evidence points at page N and the client does not have
+ * that exact page preview, render NO crop. Falling back to page 1 would show a
+ * crop from the wrong page and create false confidence.
+ */
+export function resolveEvidenceImageUrl(
+  region: EvidenceRegion | null | undefined,
+  previewUrls: readonly string[],
+): string | null {
+  if (!region) return null
+  const pageIndex = region.page - 1
+  if (!Number.isInteger(pageIndex) || pageIndex < 0) return null
+  return previewUrls[pageIndex] ?? null
+}
+
+/**
  * Pure decision for the STEP-E review-row source crop (One-Brain §3.6 HONESTY RULE).
  *
  * A region is shown as a located crop ONLY when it has a real field-level bbox. Regions

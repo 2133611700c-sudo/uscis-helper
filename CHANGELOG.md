@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-29 | One-Brain — evidence-page honesty + printed-only GPT override
+- Closed two remaining code-solvable truth gaps found during the post-`208215f` hard audit.
+- **Evidence honesty fix:** the live review crop no longer falls back to page 1 when `EvidenceRegion.page` points to a page the client does not have. That fallback could show a crop from the WRONG page and create false confidence. New pure `resolveEvidenceImageUrl()` returns null unless the exact preview page exists; wizard now renders no crop in that case. Added tests.
+- **Reader safety fix:** `READER_PROVIDER=openai` is now **printed-doc only**. Handwritten/certificate families (`birth`, `marriage`, etc.) stay on the default reader path even when the operator enables GPT, because the recorded live/model audits show GPT vision is unsafe there. Added selector tests.
+- Re-verified after the fix: full web suite **376 files / 5083 tests passed / 26 skipped / 0 failed**; `tsc` 0; `next build` PASS with the same pre-existing warnings only.
+
 ## 2026-06-29 | One-Brain — STEP E payoff: live evidence crop in TranslateWizard (user-facing)
 - Closes the audit gap "backend evidence wired, UI not rendered". The live pre-payment review (TranslateWizard screen 5) now renders a source crop per field from the One-Brain EvidenceRegion.
 - New pure `evidenceCropDecision()` (`fieldEvidenceCrop.ts`) + `FieldEvidenceCrop` component in the wizard. ExtractedField gains optional `evidence?: EvidenceRegion[]`; evidence flows response→ExtractedField→translationRows→render. Image from existing `previewUrls`; SVG bbox overlay.
