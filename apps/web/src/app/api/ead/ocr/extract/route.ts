@@ -31,6 +31,7 @@ import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { toEadAnswers } from '@/lib/canonical/core/eadAdapter'
+import { recognizeDocument, isOneBrainRecognizeEnabled } from '@/lib/docintel/recognizeDocument'
 import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 // CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
@@ -171,62 +172,89 @@ async function POST_impl(req: NextRequest) {
   const persistSessionId = wizardAnonId ?? document_id
   let crossDocSuggestions: Array<{ field_key: string; suggested_value: string; from_doc_type: string }> = []
   try {
-    // 1. Visual read (Gemini docintel) — the only I/O call in this route
-    const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'ead', originalBuffer: rawBuffer })
-
-    if (!coreRead.ok || !Array.isArray(coreRead.fields) || coreRead.fields.length === 0) {
-      console.warn('[B4/EAD/Core] docintel returned no fields:', {
-        hint: docTypeHint,
-        docintelId,
-        ok: coreRead.ok,
-        fieldCount: Array.isArray(coreRead.fields) ? coreRead.fields.length : 0,
+    // ── Recognition: ONE-BRAIN orchestrator (flag ON) or the inline spine (flag OFF, byte-identical) ──
+    let canonical: CanonicalDocumentResult
+    if (isOneBrainRecognizeEnabled()) {
+      // STEP E cutover: delegate to the single recognizeDocument orchestrator.
+      const rec = await recognizeDocument({
+        pages: [{ buffer: imageBuffer, mime: effectiveMime }],
+        docTypeId: docintelId,
+        product: 'ead',
+        documentSessionId: document_id,
+        readOpts: { timeoutMs: 40_000, originalBuffer: rawBuffer },
       })
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Core document read returned no fields. Please try a higher-resolution image.',
-          _flag: 'ONE_CORE_EAD_ENABLED',
-          _core: true,
-          core_status: 'failed',
-          fallback_used: false,
-        },
-        { status: 200 },
+      if (rec.status === 'unavailable' || rec.candidateCount === 0) {
+        console.warn('[B4/EAD/Core] docintel returned no fields (one-brain):', { hint: docTypeHint, docintelId })
+        return NextResponse.json(
+          { ok: false, error: 'Core document read returned no fields. Please try a higher-resolution image.', _flag: 'ONE_CORE_EAD_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
+          { status: 200 },
+        )
+      }
+      if (!rec.canonicalResult) {
+        return NextResponse.json(
+          { ok: false, error: 'Core arbitration produced no usable fields.', _flag: 'ONE_CORE_EAD_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
+          { status: 200 },
+        )
+      }
+      canonical = rec.canonicalResult
+    } else {
+      // 1. Visual read (Gemini docintel) — the only I/O call in this route
+      const coreRead = await readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'ead', originalBuffer: rawBuffer })
+
+      if (!coreRead.ok || !Array.isArray(coreRead.fields) || coreRead.fields.length === 0) {
+        console.warn('[B4/EAD/Core] docintel returned no fields:', {
+          hint: docTypeHint,
+          docintelId,
+          ok: coreRead.ok,
+          fieldCount: Array.isArray(coreRead.fields) ? coreRead.fields.length : 0,
+        })
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'Core document read returned no fields. Please try a higher-resolution image.',
+            _flag: 'ONE_CORE_EAD_ENABLED',
+            _core: true,
+            core_status: 'failed',
+            fallback_used: false,
+          },
+          { status: 200 },
+        )
+      }
+
+      // 2. Convert docintel output → Core FieldCandidates
+      const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
+
+      // 3. Arbitrate: candidates → CanonicalField[] (Core's single judgment).
+      //    Knowledge Brain via the shared helper (D2 authority, flag-gated; EAD is non-UA → ukrainianDoc=false).
+      const canonicalFields = applyKnowledgeBrainIfEnabled(
+        candidates,
+        buildKnowledgeContext({ docTypeId: docintelId, product: 'ead' }),
       )
-    }
 
-    // 2. Convert docintel output → Core FieldCandidates
-    const candidates = coreRead.fields.map((f) => docintelToCandidate(f, 1))
+      if (canonicalFields.length === 0) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'Core arbitration produced no usable fields.',
+            _flag: 'ONE_CORE_EAD_ENABLED',
+            _core: true,
+            core_status: 'failed',
+            fallback_used: false,
+          },
+          { status: 200 },
+        )
+      }
 
-    // 3. Arbitrate: candidates → CanonicalField[] (Core's single judgment).
-    //    Knowledge Brain via the shared helper (D2 authority, flag-gated; EAD is non-UA → ukrainianDoc=false).
-    const canonicalFields = applyKnowledgeBrainIfEnabled(
-      candidates,
-      buildKnowledgeContext({ docTypeId: docintelId, product: 'ead' }),
-    )
-
-    if (canonicalFields.length === 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Core arbitration produced no usable fields.',
-          _flag: 'ONE_CORE_EAD_ENABLED',
-          _core: true,
-          core_status: 'failed',
-          fallback_used: false,
-        },
-        { status: 200 },
-      )
-    }
-
-    // 4. Build CanonicalDocumentResult
-    const canonical: CanonicalDocumentResult = {
-      documentSessionId: document_id,
-      product: 'ead',
-      docType: docintelId,
-      fields: canonicalFields,
-      hashes: { uploadHash: null, normalizedImageHash: null, canonicalResultHash: null },
-      createdAt: new Date().toISOString(),
-      requiresReview: canonicalFields.some((f) => f.reviewRequired),
+      // 4. Build CanonicalDocumentResult
+      canonical = {
+        documentSessionId: document_id,
+        product: 'ead',
+        docType: docintelId,
+        fields: canonicalFields,
+        hashes: { uploadHash: null, normalizedImageHash: null, canonicalResultHash: null },
+        createdAt: new Date().toISOString(),
+        requiresReview: canonicalFields.some((f) => f.reviewRequired),
+      }
     }
 
     // 5. Map to EAD answers (pure, no I/O)
@@ -285,7 +313,7 @@ async function POST_impl(req: NextRequest) {
     console.log('[B4/EAD/Core]', {
       doc_type: docintelId,
       hint: docTypeHint,
-      field_count: canonicalFields.length,
+      field_count: canonical.fields.length,
       review_required: eadAnswers.review_required,
       uncertain_fields: eadAnswers.uncertain_fields,
       core_status: eadAnswers.core_status,
@@ -313,7 +341,7 @@ async function POST_impl(req: NextRequest) {
         headers: {
           'Cache-Control': 'no-store',
           'X-Core-Status': eadAnswers.core_status,
-          'X-Core-Fields': String(canonicalFields.length),
+          'X-Core-Fields': String(canonical.fields.length),
           'X-Core-ReviewRequired': String(eadAnswers.review_required),
           'X-Invented-Fields': String(eadAnswers.invented_fields_count), // must be 0
         },
