@@ -1,5 +1,8 @@
 # Door Alignment Trace — smart dictionaries across the 4 products
 
+> ⚠ FLAG TRUTH SUPERSEDED (2026-06-29): any `ONE_CORE_*_ENABLED` shown below as a live gate is a HISTORICAL point-in-time record — those flags are DEAD (removed Phase 2.3/2.4; 0 runtime reads; enforced by deadFlagGuard.test.ts). Canonical flag-truth: docs/ocr/ONE_BRAIN_CONVERGENCE.md §Flag Truth.
+
+
 **Date:** 2026-06-03
 **HEAD at trace:** `21e90c6` (P2.3 authority committed)
 **Status:** documentation checkpoint — NO code change. Verdict: keep `readDocument`

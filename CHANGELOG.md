@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-06-29 | One-Brain — flag-truth TREE-WIDE reconciliation + dead-flag guard
+- **Correcting my own prior overclaim:** the earlier entry below said "flag truth (9.2)" as if closed. It was NOT — it only touched 2 code comments + CHANGELOG. Tree-wide there were 55 `ONE_CORE_*_ENABLED` mentions across 18 files presenting dead flags as live gates. This entry does the actual reconciliation.
+- **Enforcement (the real fix):** new `deadFlagGuard.test.ts` — FAILS if any runtime source file reads `process.env.(NEXT_PUBLIC_)?ONE_CORE_{TPS,EAD,REPAROLE}_ENABLED`. Verified 0 current reads → dead flags can never silently resurrect as a hidden gate.
+- **Canonical truth layer:** added `§Flag Truth` to `docs/ocr/ONE_BRAIN_CONVERGENCE.md` — DEAD flags (ONE_CORE_*, removed Phase 2.3/2.4, Core now unconditional — note: "unconditional" = no env gate, but Core still data-falls-through to legacy when docintelId absent / candidateCount 0 / empty fields) vs LIVE flags (ONE_BRAIN_RECOGNIZE_ENABLED, ONE_BRAIN_EVIDENCE_ENABLED, READER_PROVIDER).
+- **Actionable docs corrected inline:** `MIGRATION_BRIEF.yaml` (no longer instructs setting dead flags), `ADR-017` (dated correction note; original decision text kept), e2e `canonical-carriage.spec.ts` blocker string.
+- **Historical/dated reports** (ONE_BRAIN_FINAL_STATUS, POST_MERGE_VERIFICATION, DOOR_ALIGNMENT_TRACE, ACTUAL_PRODUCT_CALL_GRAPH, P0_OCR_FLOW_INVENTORY, P2 checkpoint, DOCUMENT_CLASS_EXTRACTION_MATRIX): top SUPERSEDED banner pointing to §Flag Truth. NOT rewritten (rewriting a dated record would falsify history). STATUS_ARCHIVE + dated smoke reports left as-is (archival by name).
+- Verified: deadFlagGuard + reparole/ead uiWiring + tps/ead/reparole suites = 112/112; tsc 0. Additive; default prod behavior unchanged.
+
 ## 2026-06-29 | One-Brain — flag-truth alignment (TPS) + full-suite verification
 - **Flag truth (9.2):** removed the misleading `ONE_CORE_TPS_ENABLED` references — there is NO such runtime gate (verified: zero `process.env.ONE_CORE_TPS_ENABLED` reads). The TPS Core path is UNCONDITIONAL; the only recognition flag in the route is `ONE_BRAIN_RECOGNIZE_ENABLED` (selects the recognizeDocument orchestrator vs inline readDocument). Fixed `tpsAdapter.ts` header + `tps/types.ts` `canonical_core` comment. EAD/ReParole stale `ONE_CORE_*` flags were already aligned in `1deab82`.
 - **Full-suite verification (9.1):** ran the COMPLETE web vitest suite (not targeted) — **376 files / 5074 tests passed, 26 skipped, 0 failed** (66.8s). Previously-flaky `piiGuard.test.ts` + `knowledgeSafetyNet.test.ts` are green. tsc 0.

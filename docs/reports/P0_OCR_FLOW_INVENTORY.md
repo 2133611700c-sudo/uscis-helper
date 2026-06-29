@@ -1,5 +1,8 @@
 # P0 — OCR / Document Flow Inventory (forensic, read-only)
 
+> ⚠ FLAG TRUTH SUPERSEDED (2026-06-29): any `ONE_CORE_*_ENABLED` shown below as a live gate is a HISTORICAL point-in-time record — those flags are DEAD (removed Phase 2.3/2.4; 0 runtime reads; enforced by deadFlagGuard.test.ts). Canonical flag-truth: docs/ocr/ONE_BRAIN_CONVERGENCE.md §Flag Truth.
+
+
 **Date:** 2026-06-06. Evidence-based map of EVERY document-recognition flow. No code changed. Purpose: stop
 guessing — see which paths exist, which reader/gate each uses, and where a value becomes "final". Frozen:
 D0 / ReaderResult / OneBrain / HTR / 2nd provider / SMART / model work, until P0–P2 done.
