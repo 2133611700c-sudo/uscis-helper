@@ -53,6 +53,8 @@ import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/
 import { applyContractSplitFlow, normalizeContractSplitFields } from '@/lib/contracts/contractFieldFlow'
 import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import { recognizeDocument, isOneBrainRecognizeEnabled } from '@/lib/docintel/recognizeDocument'
+import { templateEvidenceForDocType } from '@/lib/docintel/evidence/evidenceAdapters'
+import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 import { mrzCandidatesForTranslation } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
 import {
@@ -527,6 +529,17 @@ async function POST_impl(req: NextRequest) {
         )
         fields = res.fields as unknown as typeof fields
         coreOcrFieldSafety = { applied: true, unresolved_critical: res.anyUnresolvedCritical }
+      }
+      // STEP E payoff — attach key-free template source-evidence (approximate crop
+      // regions) per field. Flag ONE_BRAIN_EVIDENCE_ENABLED (default OFF → omitted →
+      // byte-identical). No Vision/DocAI (those are billing-gated); deterministic only.
+      if (process.env.ONE_BRAIN_EVIDENCE_ENABLED === '1') {
+        const ev = templateEvidenceForDocType(docTypeId)
+        if (ev.length > 0) {
+          const byKey = new Map<string, EvidenceRegion[]>()
+          for (const r of ev) { const a = byKey.get(r.fieldKey) ?? []; a.push(r); byKey.set(r.fieldKey, a) }
+          fields = fields.map((f) => (byKey.has(f.field) ? { ...f, evidence: byKey.get(f.field) } : f))
+        }
       }
       const requiresReview = fields.some((f) => f.review_required)
       // OBSERVABILITY/ADR-018 (2026-06-21): report the model(s) that ACTUALLY read the

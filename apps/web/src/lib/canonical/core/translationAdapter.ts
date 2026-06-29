@@ -16,6 +16,7 @@ import { settlementDesignatorEn } from '@uscis-helper/knowledge'
 import type { ExtractedDocField } from '@/lib/docintel/types'
 import type { CanonicalField } from '../types'
 import type { FieldCandidate } from './types'
+import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 import { getCanonicalValue } from './fieldAccessor'
 
 export interface FieldOut {
@@ -39,6 +40,13 @@ export interface FieldOut {
    * shape is unchanged for fields without it.
    */
   consensus_reliable?: boolean
+  /**
+   * STEP E payoff — source-region evidence for this field (One-Brain EvidenceRegion).
+   * Optional → omitted when absent so the response is byte-identical at prod defaults.
+   * Today populated only from key-free FIELD_BOX_TEMPLATES (approximate), behind
+   * ONE_BRAIN_EVIDENCE_ENABLED; Vision/DocAI exact bbox is billing-gated.
+   */
+  evidence?: EvidenceRegion[]
 }
 
 /**
