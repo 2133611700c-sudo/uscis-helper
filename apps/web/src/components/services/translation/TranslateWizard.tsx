@@ -21,6 +21,8 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { isGarbageValue } from '@uscis-helper/knowledge'
 import { getHardUnresolvedReviewFields, getSoftReviewFields } from '@/lib/translation/reviewGate'
 import { ukrLabelFor } from './translationFieldLabels'
+import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
+import { evidenceCropDecision } from './fieldEvidenceCrop'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { rotateImage90 } from '@/lib/upload/autoRotate'
 import { sanitizeFieldListForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
@@ -92,6 +94,10 @@ interface ExtractedField {
   /** ENSEMBLE_DATE: a second engine's reading of this date when the two disagree. */
   ensemble_candidate?: string | null
   review_reasons?: string[]
+  /** STEP E payoff: source-region evidence (One-Brain EvidenceRegion). Present only when the
+   *  backend ran with ONE_BRAIN_EVIDENCE_ENABLED; omitted otherwise → wizard renders no crop
+   *  and stays byte-identical to the pre-evidence behavior. */
+  evidence?: EvidenceRegion[]
 }
 
 interface DraftState {
@@ -937,6 +943,54 @@ const WIZARD_CSS = `
 `
 
 // ─── Component ────────────────────────────────────────────────────────────────
+/**
+ * STEP E payoff — honest source-evidence crop for one review row.
+ * Renders ONLY when the field carries an EvidenceRegion with a real field-level bbox
+ * (populated by the backend behind ONE_BRAIN_EVIDENCE_ENABLED). No evidence / no bbox /
+ * a non-field-level status (full_image|zone_fallback|missing) → renders nothing, so the
+ * wizard is byte-identical to its pre-evidence behavior when the flag is OFF.
+ * HONESTY (§3.6): template evidence is 'approximate' and is labelled as an approximate
+ * area — never presented as an exact field location. Client-facing copy is English.
+ */
+function FieldEvidenceCrop({ region, imageUrl }: { region: EvidenceRegion | null; imageUrl: string | null }) {
+  const decision = evidenceCropDecision(region)
+  if (!decision.render || !region || !region.bbox || !imageUrl) return null
+  const [x0, y0, x1, y1] = region.bbox
+  const label = decision.label
+  return (
+    <div className="tw-evidence-crop" style={{ marginTop: 6 }}>
+      <div
+        style={{
+          position: 'relative',
+          maxWidth: 320,
+          border: '1px solid var(--surface-3, #cbd5e1)',
+          borderRadius: 6,
+          overflow: 'hidden',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageUrl} alt="" style={{ display: 'block', width: '100%', height: 'auto' }} />
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+        >
+          <rect
+            x={`${x0 * 100}%`}
+            y={`${y0 * 100}%`}
+            width={`${(x1 - x0) * 100}%`}
+            height={`${(y1 - y0) * 100}%`}
+            fill="rgba(37,99,235,0.15)"
+            stroke="#2563eb"
+            strokeWidth="0.6"
+          />
+        </svg>
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text-2, #64748b)', marginTop: 2 }}>{label}</div>
+    </div>
+  )
+}
+
 export function TranslateWizard() {
   const params = useParams() as { locale?: string } | null
   const searchParams = useSearchParams()
@@ -1713,6 +1767,8 @@ export function TranslateWizard() {
           requiresReview: Boolean(f.review_required),
           // ENSEMBLE_DATE: second engine's reading when the two disagreed on a date.
           ensembleCandidate: f.ensemble_candidate ?? null,
+          // STEP E payoff: first source-evidence region (null unless ONE_BRAIN_EVIDENCE_ENABLED).
+          evidence: f.evidence?.[0] ?? null,
         }))
     }
     return [] // empty → review screen renders the manual-review notice
@@ -2063,6 +2119,12 @@ export function TranslateWizard() {
                       <div className="tw-trans-stack">
                         <div className="tw-trans-label">{row.ukr}</div>
                         <div className="tw-trans-orig">{row.val_ukr}</div>
+                        {row.evidence && (
+                          <FieldEvidenceCrop
+                            region={row.evidence}
+                            imageUrl={previewUrls[(row.evidence.page || 1) - 1] ?? previewUrls[0] ?? null}
+                          />
+                        )}
                         <div className="tw-trans-arrow" aria-hidden="true">↓</div>
                         <div className="tw-trans-eng">
                           {row.val_eng}

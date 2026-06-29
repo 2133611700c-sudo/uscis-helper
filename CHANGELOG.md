@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-06-29 | One-Brain — STEP E payoff: live evidence crop in TranslateWizard (user-facing)
+- Closes the audit gap "backend evidence wired, UI not rendered". The live pre-payment review (TranslateWizard screen 5) now renders a source crop per field from the One-Brain EvidenceRegion.
+- New pure `evidenceCropDecision()` (`fieldEvidenceCrop.ts`) + `FieldEvidenceCrop` component in the wizard. ExtractedField gains optional `evidence?: EvidenceRegion[]`; evidence flows response→ExtractedField→translationRows→render. Image from existing `previewUrls`; SVG bbox overlay.
+- HONESTY (§3.6): template evidence (`approximate`) labelled "Approximate area we read this from — please compare"; `exact`/`combined` may say "The part of your document we read"; `full_image`/`zone_fallback`/`missing`/no-bbox render NO crop (a whole-page/zone box is never shown as a precise field location). Copy is English.
+- Gated by `ONE_BRAIN_EVIDENCE_ENABLED` (backend attach) — OFF = no evidence on fields = no crop = byte-identical. Coverage today: `ua_birth_certificate` only (sole FIELD_BOX_TEMPLATES entry → family/given/patronymic, 3 regions); verified end-to-end via tsx (3 honest regions; passport → 0).
+- Verified: new fieldEvidenceCrop test (6) + translation suites = 164/164; tsc 0. Default prod behavior unchanged.
+
 ## 2026-06-29 | One-Brain — flag-truth TREE-WIDE reconciliation + dead-flag guard
 - **Correcting my own prior overclaim:** the earlier entry below said "flag truth (9.2)" as if closed. It was NOT — it only touched 2 code comments + CHANGELOG. Tree-wide there were 55 `ONE_CORE_*_ENABLED` mentions across 18 files presenting dead flags as live gates. This entry does the actual reconciliation.
 - **Enforcement (the real fix):** new `deadFlagGuard.test.ts` — FAILS if any runtime source file reads `process.env.(NEXT_PUBLIC_)?ONE_CORE_{TPS,EAD,REPAROLE}_ENABLED`. Verified 0 current reads → dead flags can never silently resurrect as a hidden gate.

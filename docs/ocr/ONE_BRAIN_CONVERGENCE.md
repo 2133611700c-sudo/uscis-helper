@@ -161,9 +161,14 @@ DONE (additive, byte-identical OFF; `tsc` green; targeted one-brain cutover test
 
 NOT DONE (honest):
 - Flags default OFF → ONE BRAIN is NOT live in prod (nothing changes until flipped).
-- STEP E payoff: template-evidence is wired in the Translation backend behind
-  `ONE_BRAIN_EVIDENCE_ENABLED`, but the live review UI still does NOT render EvidenceRegion/crops.
-  Vision/DocAI exact bbox remains billing-403.
+- STEP E payoff: PARTIALLY DONE (2026-06-29). The live TranslateWizard review now RENDERS a
+  source crop per field from EvidenceRegion (component `FieldEvidenceCrop` + pure
+  `evidenceCropDecision`), behind `ONE_BRAIN_EVIDENCE_ENABLED` (OFF = byte-identical). Honest:
+  template evidence (`approximate`) is labelled "approximate area", never "exact"; `full_image`/
+  `zone_fallback`/`missing` render no crop. Coverage is currently `ua_birth_certificate` only
+  (the sole FIELD_BOX_TEMPLATES entry — family/given/patronymic, 3 regions); other doc types
+  show no crop until a template or real OCR bbox exists. Vision/DocAI exact bbox remains
+  billing-403; the post-payment EvidenceReviewPage already had its own SourceCropViewer.
 - STEP F one KnowledgeEvaluator + single snapCity (two snapCity callers remain) — shadow + GT-gated.
 - STEP G legacy/DeepSeek/dualOcr → readers + DeepSeek PII-gate (key≠consent) — behavior change, needs sign-off.
 - STEP H 2nd independent reader + true consensus — needs Vision/DocAI billing or HTR host.
