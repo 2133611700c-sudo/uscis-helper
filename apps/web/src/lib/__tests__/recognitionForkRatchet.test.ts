@@ -46,6 +46,10 @@ const OWN_MODULE: Record<string, RegExp> = {
   googleVisionProvider: /providers[\/\\]google-vision\.ts$/,
 }
 
+/** Files that NAME the fork symbols as documentation/data, not as callers
+ *  (the fork registry maps the forks — it must not be counted as a bypass). */
+const DOC_ONLY = [/oneBrainForkRegistry\.ts$/]
+
 function walk(dir: string): string[] {
   const out: string[] = []
   for (const name of readdirSync(dir)) {
@@ -54,7 +58,7 @@ function walk(dir: string): string[] {
     if (st.isDirectory()) {
       if (name === 'node_modules' || name === '__tests__') continue
       out.push(...walk(p))
-    } else if (/\.(ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name)) {
+    } else if (/\.(ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name) && !DOC_ONLY.some((re) => re.test(name))) {
       out.push(p)
     }
   }
