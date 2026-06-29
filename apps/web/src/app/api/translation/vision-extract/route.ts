@@ -52,6 +52,7 @@ import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canon
 import { docintelToCandidate, buildCyrillicMap, toTranslationRows } from '@/lib/canonical/core/translationAdapter'
 import { applyContractSplitFlow, normalizeContractSplitFields } from '@/lib/contracts/contractFieldFlow'
 import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
+import { recognizeDocument, isOneBrainRecognizeEnabled } from '@/lib/docintel/recognizeDocument'
 import { mrzCandidatesForTranslation } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
 import {
@@ -322,7 +323,9 @@ async function POST_impl(req: NextRequest) {
     const corePreprocessEnabled = process.env.CORE_PREPROCESS_ENABLED !== '0'
     // STAGE-1 forensic: one stable run base per request (computed only when enabled → neutral when off).
     const forensicRunBase = isForensicEnabled() ? `vx-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}` : ''
-    const corePages = await Promise.all(rawFiles.map(async (file, i) => {
+    // Build per-page read inputs ONCE (preprocess + forensic + originalBuffer), so
+    // both the one-brain orchestrator and the inline path read identical bytes/opts.
+    const pages = await Promise.all(rawFiles.map(async (file, i) => {
       // HEIC was already converted to JPEG at intake (heicToJpeg, top of handler).
       const rawBuffer = Buffer.from(await file.arrayBuffer())
       const rawMime = file.type || 'image/jpeg'
@@ -339,22 +342,12 @@ async function POST_impl(req: NextRequest) {
             preExifOrientation = pre.exifOrientation ?? null
             preOutDims = { width: pre.width, height: pre.height }
           } else {
-            // A quality-gate reject (too_blurry/dark/small) or unsupported type:
-            // do NOT block the Core read on it — fall through with the raw bytes
-            // (the model is more lenient than the gate; honest degradation handles
-            // a genuine unreadable doc downstream). Log for monitoring.
             console.warn('[Core B2] preprocess non-ok, using raw buffer — page', i + 1, 'code:', pre.code)
           }
         } catch (e: any) {
           console.warn('[Core B2] preprocess threw, using raw buffer — page', i + 1, e?.message ?? e)
         }
       }
-      // timeoutMs is the TOTAL deadline per page across the fallback chain (not
-      // per attempt). Handwritten/Soviet docs need the model to think 40-70s, so
-      // 40s was too tight (it failed a real Soviet birth cert outright). Pages run
-      // in PARALLEL, so a generous per-page budget still fits maxDuration=120.
-      // attemptsPerModel:1 so a slow primary doesn't burn the budget on a retry —
-      // the budget goes to the faster fallback models instead.
       const forensic = isForensicEnabled()
         ? {
             runId: `${forensicRunBase}-p${i + 1}`,
@@ -365,38 +358,16 @@ async function POST_impl(req: NextRequest) {
             outputDimensions: preOutDims,
           }
         : undefined
-      const r = await readDocument(buffer, mime, docTypeId, { timeoutMs: 85_000, attemptsPerModel: 1, product: 'translation', originalBuffer: rawBuffer, forensic })
-      return { i, r }
+      // timeoutMs is the TOTAL per-page deadline; attemptsPerModel:1 so a slow primary
+      // doesn't burn the budget. Per-page originalBuffer + forensic ride in readOpts.
+      return { buffer, mime, readOpts: { timeoutMs: 85_000, attemptsPerModel: 1, originalBuffer: rawBuffer, forensic } }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
-    // HONEST DEGRADATION (P1): collect any typed provider error a page surfaced.
-    const coreProviderErrors: OcrProviderError[] = []
-    for (const { i, r } of corePages) {
-      corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
-      if (r.ok && Array.isArray(r.fields)) {
-        buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
-        allCandidates.push(...r.fields.map((f) => docintelToCandidate(f, i + 1)))
-      } else if (r.provider_error) {
-        coreProviderErrors.push(r.provider_error)
-      }
-    }
-    // FAIL CLOSED: if NO page produced any usable candidate AND at least one page
-    // failed with a typed provider error (429 rate-limit / 5xx / billing / timeout),
-    // the document was NOT read — return an HONEST non-2xx instead of falling
-    // through to the legacy reader (which would hit the SAME throttled provider and
-    // ultimately return HTTP 200 + fields:[], masking the failure). The genuine
-    // empty-but-successful read (provider returned 200, zero fields, NO error) is
-    // unaffected: it produces no provider_error and falls through as before.
-    if (allCandidates.length === 0 && coreProviderErrors.length > 0) {
-      const chosen = pickMostSevereOcrError(coreProviderErrors)
-      console.warn('[Core B2] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: docTypeId, pages: corePageResults.map((p) => p.status) }))
-      return ocrUnavailableResponse(chosen)
-    }
-    // 1A — MRZ authority for the international passport (flag-gated, default OFF
-    // = byte-identical prod). A valid MRZ (Latin, math-checkable) auto-resolves
-    // passport_number/dob/expiry/names so the field doesn't fall to
-    // critical_no_mrz_anchor. Fail-open: Vision blocked / no MRZ lines → [] →
-    // identical to today. Vision OCR runs on the first (data) page only.
+    const coreReadModels: Array<string | null> = []
+    let canonicalFields: ReturnType<typeof applyKnowledgeBrainIfEnabled> = []
+    // 1A — MRZ authority (flag MRZ_TRANSLATION_ENABLED, default OFF = byte-identical).
+    // Computed once; appended AFTER read candidates in both paths. Fail-open.
+    let mrzExtra: ReturnType<typeof docintelToCandidate>[] = []
     if (process.env.MRZ_TRANSLATION_ENABLED === '1' && docTypeId === 'ua_international_passport' && rawFiles.length > 0) {
       try {
         const firstBuf = Buffer.from(await rawFiles[0].arrayBuffer())
@@ -404,7 +375,7 @@ async function POST_impl(req: NextRequest) {
         if (!isBlocked(vis) && !isProviderError(vis) && vis.raw_text) {
           const mrz = mrzCandidatesForTranslation(vis.raw_text, docTypeId)
           if (mrz.length > 0) {
-            allCandidates.push(...mrz)
+            mrzExtra = mrz
             console.info('[Core B2] MRZ_WIRED:', mrz.length, 'candidates for', docTypeId, 'valid=', mrz[0]?.mrzCheckValid)
           }
         }
@@ -412,10 +383,53 @@ async function POST_impl(req: NextRequest) {
         console.warn('[Core B2] MRZ best-effort failed (fail-open):', (e as Error)?.message ?? e)
       }
     }
-    const canonicalFields = applyKnowledgeBrainIfEnabled(
-      allCandidates,
-      buildKnowledgeContext({ docTypeId, product: 'translation' }),
-    )
+    if (isOneBrainRecognizeEnabled()) {
+      // STEP E cutover: single orchestrator. Per-page opts carried via pages[].readOpts;
+      // MRZ injected as extraCandidates (appended after reads).
+      const documentSessionId = (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
+      const rec = await recognizeDocument({ pages, docTypeId, product: 'translation', documentSessionId, extraCandidates: mrzExtra })
+      for (const p of rec.pageResults) {
+        corePageResults.push({ page: p.page, ok: p.ok, status: p.status, ms: p.ms })
+        coreReadModels.push(p.model)
+      }
+      rec.cyrillicMap.forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
+      // FAIL CLOSED: provider failure with no usable read → honest non-2xx.
+      if (rec.status === 'unavailable') {
+        const chosen = pickMostSevereOcrError(rec.providerErrors)
+        console.warn('[Core B2] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: docTypeId, pages: corePageResults.map((p) => p.status) }))
+        return ocrUnavailableResponse(chosen)
+      }
+      canonicalFields = rec.canonicalResult?.fields ?? []
+    } else {
+      // HONEST DEGRADATION (P1): collect any typed provider error a page surfaced.
+      const coreProviderErrors: OcrProviderError[] = []
+      const corePages = await Promise.all(pages.map(async (p, i) => {
+        const r = await readDocument(p.buffer, p.mime, docTypeId, { product: 'translation', ...p.readOpts })
+        return { i, r }
+      }))
+      for (const { i, r } of corePages) {
+        corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
+        coreReadModels.push(r.model ?? null)
+        if (r.ok && Array.isArray(r.fields)) {
+          buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
+          allCandidates.push(...r.fields.map((f) => docintelToCandidate(f, i + 1)))
+        } else if (r.provider_error) {
+          coreProviderErrors.push(r.provider_error)
+        }
+      }
+      // FAIL CLOSED: NO usable candidate AND a typed provider error → honest non-2xx
+      // (don't fall through to the legacy reader which would mask the throttled provider).
+      if (allCandidates.length === 0 && coreProviderErrors.length > 0) {
+        const chosen = pickMostSevereOcrError(coreProviderErrors)
+        console.warn('[Core B2] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: docTypeId, pages: corePageResults.map((p) => p.status) }))
+        return ocrUnavailableResponse(chosen)
+      }
+      if (mrzExtra.length > 0) allCandidates.push(...mrzExtra)
+      canonicalFields = applyKnowledgeBrainIfEnabled(
+        allCandidates,
+        buildKnowledgeContext({ docTypeId, product: 'translation' }),
+      )
+    }
     if (canonicalFields.length > 0) {
       // Phase 1 (one canonical currency): wrap the arbitrated fields into the ONE
       // internal envelope (CanonicalDocumentResult) instead of stopping at a bare
@@ -521,7 +535,7 @@ async function POST_impl(req: NextRequest) {
       // real reader, which (a) made the model field meaningless for telemetry and (b)
       // would mislead any acceptance gate that checks the model. Join unique per-page
       // models so a mixed primary/fallback read is visible (e.g. "gemini-2.5-pro+gemini-3.5-flash").
-      const readModels = [...new Set(corePages.map((p) => p.r?.model).filter((m): m is string => !!m))]
+      const readModels = [...new Set(coreReadModels.filter((m): m is string => !!m))]
       // When NO page produced a model (all reads failed), report the primary as the intended
       // reader — never a flash literal, which would misrepresent a failure as a flash read.
       const actualModel = readModels.length ? readModels.join('+') : normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-pro')
