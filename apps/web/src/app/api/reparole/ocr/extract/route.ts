@@ -38,6 +38,7 @@ import { isUnusableOcr } from '@/lib/ocr/types'
 // MRZ_WIRED: inject MRZ authority for international passport
 import { googleVisionProvider } from '@/lib/ocr/providers/google-vision'
 import { mrzCandidatesFromText } from '@/lib/canonical/core/mrzAuthority'
+import { recognizeDocument, isOneBrainRecognizeEnabled } from '@/lib/docintel/recognizeDocument'
 // CANONICAL_CONTINUITY: persist canonical result after extraction (shadow/enforce modes)
 import { persistCanonicalDocument, loadAllCanonicalDocumentsForSession } from '@/lib/canonical/persistence'
 // SEAM A: cross-document reconciliation (passport MRZ anchors a sibling doc's held field)
@@ -188,6 +189,37 @@ async function POST_impl(req: NextRequest) {
         : Promise.resolve('')
 
     // 2. Visual read (Gemini docintel) and Vision OCR run in parallel
+    // ── Recognition: ONE-BRAIN orchestrator (flag ON) or inline spine (flag OFF, byte-identical) ──
+    let canonical: CanonicalDocumentResult
+    if (isOneBrainRecognizeEnabled()) {
+      // STEP E cutover: single orchestrator. MRZ (product-specific) is computed here and
+      // injected as extraCandidates AFTER the read candidates (recognizeDocument preserves order).
+      const mrzRawText = await mrzRawTextPromise
+      const mrzCandidates =
+        docintelId === 'ua_international_passport' && mrzRawText ? mrzCandidatesFromText(mrzRawText) : []
+      const rec = await recognizeDocument({
+        pages: [{ buffer: imageBuffer, mime: effectiveMime }],
+        docTypeId: docintelId,
+        product: 'reparole',
+        documentSessionId: document_id,
+        extraCandidates: mrzCandidates,
+        readOpts: { timeoutMs: 40_000, originalBuffer: rawBuffer },
+      })
+      if (rec.status === 'unavailable' || rec.candidateCount === 0) {
+        console.warn('[B3/ReParole/Core] docintel returned no fields (one-brain):', { hint: docTypeHint, docintelId })
+        return NextResponse.json(
+          { ok: false, error: 'Core document read returned no fields. Please try a higher-resolution image.', _flag: 'ONE_CORE_REPAROLE_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
+          { status: 200 },
+        )
+      }
+      if (!rec.canonicalResult) {
+        return NextResponse.json(
+          { ok: false, error: 'Core arbitration produced no usable fields.', _flag: 'ONE_CORE_REPAROLE_ENABLED', _core: true, core_status: 'failed', fallback_used: false },
+          { status: 200 },
+        )
+      }
+      canonical = rec.canonicalResult
+    } else {
     const [coreRead, mrzRawText] = await Promise.all([
       readDocument(imageBuffer, effectiveMime, docintelId, { timeoutMs: 40_000, product: 'reparole', originalBuffer: rawBuffer }),
       mrzRawTextPromise,
@@ -251,7 +283,7 @@ async function POST_impl(req: NextRequest) {
     }
 
     // 6. Build CanonicalDocumentResult
-    const canonical: CanonicalDocumentResult = {
+    canonical = {
       documentSessionId: document_id,
       product: 'reparole',
       docType: docintelId,
@@ -259,6 +291,7 @@ async function POST_impl(req: NextRequest) {
       hashes: { uploadHash: null, normalizedImageHash: null, canonicalResultHash: null },
       createdAt: new Date().toISOString(),
       requiresReview: canonicalFields.some((f) => f.reviewRequired),
+    }
     }
 
     // 6b. CANONICAL_CONTINUITY: persist the canonical result (shadow/enforce modes).
@@ -318,7 +351,7 @@ async function POST_impl(req: NextRequest) {
     console.log('[B3/ReParole/Core]', {
       doc_type: docintelId,
       hint: docTypeHint,
-      field_count: canonicalFields.length,
+      field_count: canonical.fields.length,
       review_required: reParoleAnswers.review_required,
       uncertain_fields: reParoleAnswers.uncertain_fields,
       core_status: reParoleAnswers.core_status,
@@ -344,7 +377,7 @@ async function POST_impl(req: NextRequest) {
         headers: {
           'Cache-Control': 'no-store',
           'X-Core-Status': reParoleAnswers.core_status,
-          'X-Core-Fields': String(canonicalFields.length),
+          'X-Core-Fields': String(canonical.fields.length),
           'X-Core-ReviewRequired': String(reParoleAnswers.review_required),
         },
       },

@@ -74,7 +74,9 @@ export interface RecognizeOutput {
 export async function recognizeDocument(input: RecognizeInput): Promise<RecognizeOutput> {
   const reader = input.reader ?? readDocument
   const cyrillicMap = new Map<string, string>()
-  const candidates: FieldCandidate[] = [...(input.extraCandidates ?? [])]
+  // READ candidates only — the "fields read" set the routes gate their no-fields
+  // error on (BEFORE any product extraCandidates like MRZ are injected).
+  const readCandidates: FieldCandidate[] = []
   const providerErrors: ProviderErr[] = []
   const pageResults: RecognizeOutput['pageResults'] = []
 
@@ -92,17 +94,19 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
     pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
     if (r.ok && Array.isArray(r.fields)) {
       buildCyrillicMap(r.fields).forEach((v: string, k: string) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
-      candidates.push(...r.fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
+      readCandidates.push(...r.fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
     } else if (r.provider_error) {
       providerErrors.push(r.provider_error)
     }
   }
 
   // FAIL CLOSED: no usable candidate AND a typed provider error → not read.
-  if (candidates.length === 0 && providerErrors.length > 0) {
-    return { status: 'unavailable', canonicalResult: null, cyrillicMap, providerErrors, pageResults, candidateCount: candidates.length }
+  if (readCandidates.length === 0 && providerErrors.length > 0) {
+    return { status: 'unavailable', canonicalResult: null, cyrillicMap, providerErrors, pageResults, candidateCount: 0 }
   }
 
+  // reads FIRST, product extraCandidates (e.g. MRZ) appended LAST — matches inline route order.
+  const candidates: FieldCandidate[] = [...readCandidates, ...(input.extraCandidates ?? [])]
   const canonicalFields = applyKnowledgeBrainIfEnabled(
     candidates,
     buildKnowledgeContext({ docTypeId: input.docTypeId, product: input.product }),
@@ -119,5 +123,5 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
         })
       : null
 
-  return { status: 'ok', canonicalResult, cyrillicMap, providerErrors, pageResults, candidateCount: candidates.length }
+  return { status: 'ok', canonicalResult, cyrillicMap, providerErrors, pageResults, candidateCount: readCandidates.length }
 }
