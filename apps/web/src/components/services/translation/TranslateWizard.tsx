@@ -22,7 +22,7 @@ import { isGarbageValue } from '@uscis-helper/knowledge'
 import { getHardUnresolvedReviewFields, getSoftReviewFields } from '@/lib/translation/reviewGate'
 import { ukrLabelFor } from './translationFieldLabels'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
-import { evidenceCropDecision, resolveEvidenceImageUrl } from './fieldEvidenceCrop'
+import { evidenceCropDecision, resolveRenderableEvidence } from './fieldEvidenceCrop'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { rotateImage90 } from '@/lib/upload/autoRotate'
 import { sanitizeFieldListForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
@@ -952,7 +952,7 @@ const WIZARD_CSS = `
  * HONESTY (§3.6): template evidence is 'approximate' and is labelled as an approximate
  * area — never presented as an exact field location. Client-facing copy is English.
  */
-function FieldEvidenceCrop({ region, imageUrl }: { region: EvidenceRegion | null; imageUrl: string | null }) {
+function FieldEvidenceCrop({ region, imageUrl }: { region: EvidenceRegion; imageUrl: string }) {
   const decision = evidenceCropDecision(region)
   if (!decision.render || !region || !region.bbox || !imageUrl) return null
   const [x0, y0, x1, y1] = region.bbox
@@ -1767,8 +1767,9 @@ export function TranslateWizard() {
           requiresReview: Boolean(f.review_required),
           // ENSEMBLE_DATE: second engine's reading when the two disagreed on a date.
           ensembleCandidate: f.ensemble_candidate ?? null,
-          // STEP E payoff: first source-evidence region (null unless ONE_BRAIN_EVIDENCE_ENABLED).
-          evidence: f.evidence?.[0] ?? null,
+          // STEP E payoff: preserve the whole evidence array; the review UI now renders
+          // every honest region whose preview page actually exists.
+          evidence: f.evidence ?? [],
         }))
     }
     return [] // empty → review screen renders the manual-review notice
@@ -2119,12 +2120,13 @@ export function TranslateWizard() {
                       <div className="tw-trans-stack">
                         <div className="tw-trans-label">{row.ukr}</div>
                         <div className="tw-trans-orig">{row.val_ukr}</div>
-                        {row.evidence && (
+                        {resolveRenderableEvidence(row.evidence, previewUrls).map(({ region, imageUrl }, idx) => (
                           <FieldEvidenceCrop
-                            region={row.evidence}
-                            imageUrl={resolveEvidenceImageUrl(row.evidence, previewUrls)}
+                            key={`${row.fieldKey}-evidence-${region.page}-${idx}`}
+                            region={region}
+                            imageUrl={imageUrl}
                           />
-                        )}
+                        ))}
                         <div className="tw-trans-arrow" aria-hidden="true">↓</div>
                         <div className="tw-trans-eng">
                           {row.val_eng}

@@ -43,8 +43,11 @@ export interface FieldOut {
   /**
    * STEP E payoff — source-region evidence for this field (One-Brain EvidenceRegion).
    * Optional → omitted when absent so the response is byte-identical at prod defaults.
-   * Today populated only from key-free FIELD_BOX_TEMPLATES (approximate), behind
-   * ONE_BRAIN_EVIDENCE_ENABLED; Vision/DocAI exact bbox is billing-gated.
+   * Today this is populated only by the translation route's key-free
+   * FIELD_BOX_TEMPLATES attachment (approximate), behind ONE_BRAIN_EVIDENCE_ENABLED.
+   * The provider-driven geometry channel is not yet threaded through
+   * FieldCandidate/CanonicalField, so Vision/DocAI exact bbox is not part of the
+   * live canonical path yet.
    */
   evidence?: EvidenceRegion[]
 }

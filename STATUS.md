@@ -1,3 +1,26 @@
+# STATUS (2026-06-30 — One-Brain evidence-chain audit: visible crop is real, full provider→bbox→UI chain is NOT yet complete)
+
+## 2026-06-30 | One-Brain evidence-chain audit — DEGRADED truth, not full convergence
+**Readiness: PARTIAL / SCOPED PAYOFF ONLY.**
+- The translation review crop/highlight payoff is real and verified, but the full promised chain
+  `provider bbox/layout -> EvidenceRegion -> ReaderResult -> candidate -> Decision Engine -> API -> TranslateWizard`
+  is **not** end-to-end live yet.
+- **Verified live architecture truth:** the visible crop in `TranslateWizard` is currently fed by route-local
+  `templateEvidenceForDocType(...)` attachment in `api/translation/vision-extract`, after `toTranslationRows(...)`.
+  It is not coming from provider-localized bbox data threaded through the canonical pipeline.
+- **Critical gap:** `ReaderFieldObservation.evidenceRegion` exists on the reader contract, but the live
+  adapter/path does not carry that geometry into `FieldCandidate`, `CanonicalField`, or `FieldOut`.
+  `visionBboxLocator(...)` exists and is tested, but is dark code relative to the live translation review flow.
+- **Scoped truth:** current crop/highlight coverage is template-backed only (effectively `ua_birth_certificate`);
+  other docs do not get a generalized provider-bbox crop layer.
+- **Closed one local bottleneck:** the translation review UI no longer collapses `evidence[]` to `evidence[0]`.
+  It now preserves and renders every honest region whose preview page exists. This is a UI correctness fix only;
+  it does not create a provider-driven bbox path.
+- **Tests now re-verified:** targeted evidence-chain suites PASS (36/36), translation route suites PASS (23/23),
+  full web suite PASS (**378 files / 5085 tests / 26 skipped**), `next build` PASS. `typecheck` first failed on
+  stale `.next/types` includes, then passed after build regenerated them.
+- Report: `docs/reports/ONE_BRAIN_EVIDENCE_CHAIN_AUDIT_2026-06-30.md`
+
 # STATUS (2026-06-28 — Route cutover COMPLETE: every translation route is repository-driven; Supabase intentionally DISCONNECTED)
 
 ## 2026-06-29 | One-Brain local hardening truth (post-208215f)

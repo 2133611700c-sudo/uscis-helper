@@ -1,3 +1,34 @@
+# HANDOFF (2026-06-30 — One-Brain evidence-chain audit; next = decide whether to wire true provider evidence or keep template scope explicit)
+
+## 2026-06-30 | Critical evidence-chain audit — what is really wired vs what is only scoped
+- Audited the exact chain the owner asked for:
+  `provider bbox/layout -> EvidenceRegion adapter -> ReaderResult -> candidate -> Decision Engine -> API response -> TranslateWizard review UI -> visible crop/highlight`
+- **Verified:** the visible translation crop/highlight is real and honest. The UI renders it only when a field carries an `EvidenceRegion` with a real bbox, and page mismatch no longer falls back to page 1.
+- **Verified:** this visible crop is currently fed by a route-local template path only:
+  `templateEvidenceForDocType(docTypeId)` is called in `apps/web/src/app/api/translation/vision-extract/route.ts`
+  and attached after `toTranslationRows(...)`.
+- **Critical truth:** the full provider-driven evidence chain is still incomplete. `ReaderFieldObservation.evidenceRegion`
+  exists, but the live adapter/path does not carry geometry through `docintelToCandidate(...)`, arbitration, or
+  `canonicalToFieldOut(...)`. `visionBboxLocator(...)` exists and is tested, but it is not wired into the live
+  translation route.
+- **Additional UI limitation:** `TranslateWizard` currently keeps only `f.evidence?.[0]`, so a future multi-region
+  payload would be narrowed to the first region.
+- **Closed now:** the wizard preserves the full `evidence[]` array and renders every honest region whose preview
+  page exists. This is a scoped UI correctness fix only; it does not create a provider-driven bbox path.
+- **Evidence:** targeted evidence-chain tests PASS (34/34), translation route tests PASS (23/23), full web suite
+  PASS (378 files / 5085 tests / 26 skipped), build PASS. `typecheck` required a build first because stale
+  `.next/types` include paths caused TS6053 until Next regenerated them.
+- **Files changed this session:** `apps/web/src/components/services/translation/fieldEvidenceCrop.ts`,
+  `apps/web/src/components/services/translation/__tests__/fieldEvidenceCrop.test.ts`,
+  `apps/web/src/components/services/translation/TranslateWizard.tsx`,
+  `apps/web/src/lib/canonical/core/translationAdapter.ts`,
+  `docs/ocr/ONE_BRAIN_CONVERGENCE.md`,
+  `docs/reports/ONE_BRAIN_EVIDENCE_CHAIN_AUDIT_2026-06-30.md`, `STATUS.md`, `HANDOFF.md`, `CHANGELOG.md`.
+- **Next exact task:** either
+  1. wire first-class visual evidence through the real reader/candidate/canonical adapter path, or
+  2. freeze the product truth explicitly as "template-backed translation evidence only" and stop implying full
+     provider-bbox convergence.
+
 # HANDOFF (2026-06-28 — ROUTE CUTOVER COMPLETE; ratchet 0; next = Supabase adapter connection (owner) / DB-backed E2E)
 
 ## 2026-06-29 | One-Brain post-208215f hardening — evidence-page honesty + printed-only GPT override
