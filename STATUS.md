@@ -1,3 +1,51 @@
+# STATUS (2026-06-30 — Codex workstation config repair: startup warnings cleared; OAuth still awaiting manual consent)
+
+## 2026-06-30 | One-Brain VISUAL-EVIDENCE subsystem — LOCAL_PASS / PARTIAL
+
+**Status: LOCAL_PASS / PARTIAL** (NOT CI_VERIFIED, NOT CANARY_READY, NOT COMPLETE). Only the
+visual-evidence SUBSYSTEM is hardened; overall One Brain remains PARTIAL. Commits `1ac3e41..ab685ad`
+on `feat/one-brain-reader-result` (NO_UPSTREAM — not pushed, remote CI has not seen them).
+
+**Verified locally (independent-runnable):**
+- First-class visual-evidence contract carriage: ExtractedDocField.evidenceRegions → FieldCandidate.visualEvidence → CanonicalField.visualEvidence → FieldOut.evidence → UI (distinct from semantic `evidence`).
+- Multi-region propagation; provider-over-template precedence; template marked fallback.
+- Coordinate validation/normalization (`bboxOverlayRect`: clamp out-of-range, reject zero/inverted/non-finite).
+- Page-aware TranslateWizard render; no page-1 fallback; no rect for full_image/zone_fallback/missing.
+- Playwright proof = **live UI rendering with INJECTED/FIXTURE evidence** (multiple crops+rects), NOT provider-runtime proof.
+- Provider→EvidenceRegion locator: **contract + SYNTHETIC provider-shaped tokens** tested (exact/combined + fail-open on 403). NOT a real recorded `fullTextAnnotation` fixture.
+- Two DISTINCT flags, both default OFF ('1' required): `ONE_BRAIN_RECOGNIZE_ENABLED` (decision path), `ONE_BRAIN_EVIDENCE_ENABLED` (template attach). Evidence is display-only — never changes value/review (honesty test). NOTE: provider-geometry carriage in the adapter is currently flag-independent (no live reader emits it → prod byte-identical), and the full recognize×evidence mode matrix is NOT pinned by a single test.
+- Full local suite: 5104 passed / 26 skipped / 0 failed; tsc 0; worktree clean at `ab685ad`.
+
+**NOT yet verified (honest):**
+- Remote push + CI for `1ac3e41..ab685ad`.
+- Live Google Vision OCR token response; parsing a REAL recorded `fullTextAnnotation`; token→field localization; provider bbox accuracy vs private GT (IoU/containment), printed vs handwriting separately.
+- Provider adapter code-solvable parts still undone (real-fixture parsing, DI, explicit provider_unavailable status, telemetry/rollback).
+- ONE Decision Engine across all 4 products; ONE signal-only KnowledgeEvaluator.
+- Elimination of TPS legacy / DUAL_OCR_CROSSREF / DeepSeek-brain / Translation dual-pipeline bypasses; runtime ON proof for all 4 products; canary + rollback.
+
+**Blockers:** Google Cloud Vision billing/API/auth/IAM; a confirmed live OCR token source (the live LLM reader emits no `fieldOcrIds` map).
+
+**After billing, 5 separate proofs still required (do NOT assume "geometry just flows"):** provider-invocation, token-normalization, localization, UI-with-source=provider, accuracy benchmark. Handwriting auto-accept stays FORBIDDEN regardless of Cloud Vision's documented handwriting support.
+
+## 2026-06-30 | Codex local config / MCP / Chrome verification — DEGRADED
+**Readiness: LOCAL WORKSTATION MOSTLY RESTORED; OAUTH CONSENT STILL MANUAL.**
+- **Verified fixed:** `~/.codex/config.toml` no longer has malformed agent roles. Added `description` to
+  `[agents.researcher]` and `[agents.reviewer]`, then re-ran `codex doctor`.
+- **Evidence:** `codex doctor` moved from `startup warnings = 2` with
+  `Ignoring malformed agent role definition: agent role researcher/reviewer must define a description`
+  to `0 warn / 0 fail`.
+- **Verified fixed for GitHub MCP source:** user-level launchd env now exposes `GITHUB_PAT_TOKEN`
+  from the existing `gh auth` login (`launchctl getenv GITHUB_PAT_TOKEN | wc -c` returned non-zero).
+  This avoids storing the PAT in `~/.codex/config.toml`.
+- **Verified environment:** Google Chrome is installed and running; Codex Desktop process is running after
+  `codex app`.
+- **Blocked / not yet verified complete:** the pending `codex mcp login figma` and `codex mcp login vercel`
+  sessions both expired with `timed out waiting for OAuth callback` after opening their auth URLs. That means
+  browser-side consent did not complete within the waiting window.
+- **Truth about GitHub MCP:** `codex mcp login github` is not the right path on this setup; it fails with
+  `Dynamic client registration not supported`. The configured GitHub MCP expects `GITHUB_PAT_TOKEN`, not OAuth.
+- **Repo code state:** no application code changed; this was workstation/config repair only.
+
 # STATUS (2026-06-30 — One-Brain evidence-chain audit: visible crop is real, full provider→bbox→UI chain is NOT yet complete)
 
 ## 2026-06-30 | One-Brain evidence-chain audit — DEGRADED truth, not full convergence
