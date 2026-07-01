@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2026-06-30 | One-Brain evidence-chain audit — visible crop real, full provider bbox chain still incomplete
+- Ran a critical end-to-end code audit of the exact chain:
+  `provider bbox/layout -> EvidenceRegion adapter -> ReaderResult -> candidate -> Decision Engine -> API response -> TranslateWizard review UI -> visible crop/highlight`.
+- Verified that the translation review crop/highlight is real, but it is currently powered by route-local
+  `templateEvidenceForDocType(...)` attachment in `apps/web/src/app/api/translation/vision-extract/route.ts`,
+  not by provider-localized bbox data threaded through the full canonical pipeline.
+- Verified the core gap precisely: `ReaderFieldObservation.evidenceRegion` exists, but the live path does not carry
+  geometry through `docintelToCandidate(...)`, arbitration, `CanonicalField`, or `canonicalToFieldOut(...)`.
+  `visionBboxLocator(...)` exists and is tested, but is not wired into the live translation route.
+- Verified a scoped UI limitation: `TranslateWizard` collapses `EvidenceRegion[]` to the first item
+  (`f.evidence?.[0] ?? null`), which is acceptable for the current template path but not a full multi-region contract.
+- Added audit report: `docs/reports/ONE_BRAIN_EVIDENCE_CHAIN_AUDIT_2026-06-30.md`.
+- Closed one remaining code-solvable UI bottleneck after the audit: the live translation review no longer
+  collapses `evidence[]` to the first item. It now preserves and renders every honest region whose preview
+  page exists. This does NOT mean provider-bbox convergence is solved; it only makes the current template-backed
+  path honest and future multi-region-safe.
+- Re-verified:
+  - targeted evidence-chain tests: 36/36 PASS
+  - translation route tests: 23/23 PASS
+  - full web suite: 378 files / 5085 tests PASS, 26 skipped
+  - `next build`: PASS
+  - `typecheck`: first failed on stale `.next/types` includes, then passed after build regenerated them
+
 ## 2026-06-29 | One-Brain — evidence-page honesty + printed-only GPT override
 - Closed two remaining code-solvable truth gaps found during the post-`208215f` hard audit.
 - **Evidence honesty fix:** the live review crop no longer falls back to page 1 when `EvidenceRegion.page` points to a page the client does not have. That fallback could show a crop from the WRONG page and create false confidence. New pure `resolveEvidenceImageUrl()` returns null unless the exact preview page exists; wizard now renders no crop in that case. Added tests.

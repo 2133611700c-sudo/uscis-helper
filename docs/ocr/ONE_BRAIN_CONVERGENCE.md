@@ -84,7 +84,7 @@
 
 ### 3.6 Evidence/bbox + namespace
 - **Namespace:** every field-list island (7: documentRegistry, documentBrain schema, dualOcrCrossref, documentContracts, translationExtractor, extraction prompts, field-mapper) becomes a **projection of the Unified Contract** + a **CI guard test** (every reader key ↔ contract key). Kills child_*/family_name, patronymic/middle_name, dob/date_of_birth drift. `contractExtractionBoundary.ts` already seeds this for birth-cert.
-- **Evidence:** promote `EvidenceItem` → one `EvidenceRegion {fieldKey,bbox 0-1,page,status,source,crop_path}`; per-provider adapter at response boundary; honest status (Gemini→`full_image`, template→`approximate`, OCR token→`exact`/`combined`). Usable live bbox source today = `FIELD_BOX_TEMPLATES` (deterministic, key-free) — Vision is 403.
+- **Evidence:** promote `EvidenceItem` → one `EvidenceRegion {fieldKey,bbox 0-1,page,status,source,crop_path}`; per-provider adapter at response boundary; honest status (Gemini→`full_image`, template→`approximate`, OCR token→`exact`/`combined`). Usable live bbox source today = `FIELD_BOX_TEMPLATES` (deterministic, key-free) — Vision is 403. Important current truth: the reader-side geometry channel is DECLARED (`ReaderFieldObservation.evidenceRegion`) but not populated by the live Gemini path and not threaded through `FieldCandidate -> CanonicalField -> FieldOut`.
 
 ### 3.7 Decision Engine + review + abstention + final-PDF
 - **AS-IS:** decision fragmented across 5 modules / 3 stages (arbitration, C3 applyOcrFieldSafety, reviewGate, finalPdfGate, contractReviewState) each re-deriving status; 4 gates in generate-pdf with 3 default-OFF flags.
@@ -167,8 +167,10 @@ NOT DONE (honest):
   template evidence (`approximate`) is labelled "approximate area", never "exact"; `full_image`/
   `zone_fallback`/`missing` render no crop. Coverage is currently `ua_birth_certificate` only
   (the sole FIELD_BOX_TEMPLATES entry — family/given/patronymic, 3 regions); other doc types
-  show no crop until a template or real OCR bbox exists. Vision/DocAI exact bbox remains
-  billing-403; the post-payment EvidenceReviewPage already had its own SourceCropViewer.
+  show no crop until a template or real OCR bbox exists. The wizard preserves the whole
+  `evidence[]` array now, but the current backend still emits at most one template region
+  per field. Vision/DocAI exact bbox remains billing-403; the post-payment EvidenceReviewPage
+  already had its own SourceCropViewer.
 - STEP F one KnowledgeEvaluator + single snapCity (two snapCity callers remain) — shadow + GT-gated.
 - STEP G legacy/DeepSeek/dualOcr → readers + DeepSeek PII-gate (key≠consent) — behavior change, needs sign-off.
 - STEP H 2nd independent reader + true consensus — needs Vision/DocAI billing or HTR host.

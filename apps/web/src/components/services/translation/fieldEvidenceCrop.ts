@@ -26,6 +26,21 @@ export function resolveEvidenceImageUrl(
   return previewUrls[pageIndex] ?? null
 }
 
+export function resolveRenderableEvidence(
+  regions: readonly EvidenceRegion[] | null | undefined,
+  previewUrls: readonly string[],
+): Array<{ region: EvidenceRegion; imageUrl: string }> {
+  if (!regions?.length) return []
+  const out: Array<{ region: EvidenceRegion; imageUrl: string }> = []
+  for (const region of regions) {
+    if (!evidenceCropDecision(region).render) continue
+    const imageUrl = resolveEvidenceImageUrl(region, previewUrls)
+    if (!imageUrl) continue
+    out.push({ region, imageUrl })
+  }
+  return out
+}
+
 /**
  * Pure decision for the STEP-E review-row source crop (One-Brain §3.6 HONESTY RULE).
  *

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evidenceCropDecision, resolveEvidenceImageUrl } from '../fieldEvidenceCrop'
+import { evidenceCropDecision, resolveEvidenceImageUrl, resolveRenderableEvidence } from '../fieldEvidenceCrop'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 
 const region = (over: Partial<EvidenceRegion>): EvidenceRegion => ({
@@ -52,5 +52,33 @@ describe('evidenceCropDecision — STEP-E review crop honesty (§3.6)', () => {
   it('resolves the exact page preview when that page exists', () => {
     const urls = ['blob:page-1', 'blob:page-2']
     expect(resolveEvidenceImageUrl(region({ page: 2 }), urls)).toBe('blob:page-2')
+  })
+
+  it('preserves every renderable region instead of collapsing to the first one', () => {
+    const urls = ['blob:page-1', 'blob:page-2']
+    const out = resolveRenderableEvidence(
+      [
+        region({ fieldKey: 'given_name', page: 1 }),
+        region({ fieldKey: 'given_name', page: 2, bbox: [0.2, 0.3, 0.5, 0.4] }),
+      ],
+      urls,
+    )
+    expect(out).toHaveLength(2)
+    expect(out[0]?.imageUrl).toBe('blob:page-1')
+    expect(out[1]?.imageUrl).toBe('blob:page-2')
+  })
+
+  it('drops missing-page and non-renderable regions from the rendered set', () => {
+    const urls = ['blob:page-1']
+    const out = resolveRenderableEvidence(
+      [
+        region({ fieldKey: 'family_name', page: 1, status: 'approximate' }),
+        region({ fieldKey: 'family_name', page: 2, status: 'approximate' }),
+        region({ fieldKey: 'family_name', page: 1, status: 'full_image', bbox: null }),
+      ],
+      urls,
+    )
+    expect(out).toHaveLength(1)
+    expect(out[0]?.region.page).toBe(1)
   })
 })
