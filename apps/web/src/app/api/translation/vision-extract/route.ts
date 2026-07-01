@@ -54,6 +54,7 @@ import { applyContractSplitFlow, normalizeContractSplitFields } from '@/lib/cont
 import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import { recognizeDocument, isOneBrainRecognizeEnabled } from '@/lib/docintel/recognizeDocument'
 import { templateEvidenceForDocType } from '@/lib/docintel/evidence/evidenceAdapters'
+import { resolveEvidenceProvider } from '@/lib/docintel/evidence/evidenceProvider'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 import { mrzCandidatesForTranslation } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
@@ -389,7 +390,7 @@ async function POST_impl(req: NextRequest) {
       // STEP E cutover: single orchestrator. Per-page opts carried via pages[].readOpts;
       // MRZ injected as extraCandidates (appended after reads).
       const documentSessionId = (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
-      const rec = await recognizeDocument({ pages, docTypeId, product: 'translation', documentSessionId, extraCandidates: mrzExtra })
+      const rec = await recognizeDocument({ pages, docTypeId, product: 'translation', documentSessionId, extraCandidates: mrzExtra, evidenceProvider: resolveEvidenceProvider() })
       for (const p of rec.pageResults) {
         corePageResults.push({ page: p.page, ok: p.ok, status: p.status, ms: p.ms })
         coreReadModels.push(p.model)

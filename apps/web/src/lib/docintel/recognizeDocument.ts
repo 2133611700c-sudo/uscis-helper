@@ -25,6 +25,34 @@ import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import type { FieldCandidate } from '@/lib/canonical/core/types'
 import { templateEvidenceForDocType } from './evidence/evidenceAdapters'
 import type { EvidenceRegion } from './evidence/EvidenceRegion'
+import { disabledEvidenceProvider, type EvidenceProvider } from './evidence/evidenceProvider'
+
+/**
+ * Populate ExtractedDocField.evidenceRegions from an evidence-only provider (geometry only).
+ * Fails SAFE: provider unavailable / throws / no region for a field → that field is returned
+ * UNCHANGED, so semantic extraction is never harmed and template fallback can still apply.
+ */
+async function attachProviderEvidence(
+  fields: ExtractedDocField[],
+  page: RecognizePage,
+  provider: EvidenceProvider,
+): Promise<ExtractedDocField[]> {
+  const values = fields
+    .filter((f) => (f.value ?? '').trim() !== '')
+    .map((f) => ({ key: f.field, value: f.value as string }))
+  if (values.length === 0) return fields
+  let res
+  try {
+    res = await provider.locateEvidence({ document: { buffer: page.buffer, mime: page.mime }, fields: values })
+  } catch {
+    return fields // provider threw → semantic fields preserved
+  }
+  if (res.status !== 'available') return fields
+  return fields.map((f) => {
+    const regions = res.regionsByField[f.field]
+    return regions && regions.length > 0 ? { ...f, evidenceRegions: regions } : f
+  })
+}
 
 /** The exact shape readDocument resolves to (no separate exported alias exists). */
 type ReadDocumentResult = Awaited<ReturnType<typeof readDocument>>
@@ -57,6 +85,13 @@ export interface RecognizeInput {
   readOpts?: Record<string, unknown>
   /** injectable reader for tests — defaults to the real readDocument. */
   reader?: typeof readDocument
+  /**
+   * Injectable EVIDENCE-ONLY visual-geometry provider. Default = disabledEvidenceProvider
+   * (no external call → byte-identical). Populates ExtractedDocField.evidenceRegions BEFORE
+   * candidate conversion; only runs when ONE_BRAIN_EVIDENCE_ENABLED === '1'. Provider geometry
+   * beats template (template attach below skips candidates that already carry visualEvidence).
+   */
+  evidenceProvider?: EvidenceProvider
   createdAt?: string
 }
 
@@ -77,6 +112,8 @@ export interface RecognizeOutput {
  */
 export async function recognizeDocument(input: RecognizeInput): Promise<RecognizeOutput> {
   const reader = input.reader ?? readDocument
+  const evidenceProvider = input.evidenceProvider ?? disabledEvidenceProvider
+  const evidenceEnabled = process.env.ONE_BRAIN_EVIDENCE_ENABLED === '1'
   const cyrillicMap = new Map<string, string>()
   // READ candidates only — the "fields read" set the routes gate their no-fields
   // error on (BEFORE any product extraCandidates like MRZ are injected).
@@ -99,7 +136,14 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
     pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, model: r.model ?? null })
     if (r.ok && Array.isArray(r.fields)) {
       buildCyrillicMap(r.fields).forEach((v: string, k: string) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
-      readCandidates.push(...r.fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
+      // EVIDENCE PRODUCER (before candidate conversion): a localizing provider locates the
+      // already-read values on THIS page and populates ExtractedDocField.evidenceRegions.
+      // Default provider is disabled (no call → byte-identical); provider unavailable/error
+      // leaves fields UNCHANGED (semantic extraction never harmed) so template fallback applies.
+      const fields = evidenceEnabled
+        ? await attachProviderEvidence(r.fields, input.pages[i], evidenceProvider)
+        : r.fields
+      readCandidates.push(...fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
     } else if (r.provider_error) {
       providerErrors.push(r.provider_error)
     }
