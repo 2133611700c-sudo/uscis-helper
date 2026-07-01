@@ -1,0 +1,108 @@
+{
+  "_comment": "FICTIONAL, PII-FREE Google Vision responses[0].fullTextAnnotation with the REAL nested structure (pages[].blocks[].paragraphs[].words[].symbols[] + boundingBox.vertices in PIXELS). All names/places invented. Mirrors a birth-certificate layout. Consumed by google-vision.ts extractText via a mocked fetch in offlineVisionParseLocalize.test.ts.",
+  "text": "Testenko\nIvan Petrovych\nKyiv\nVinnytsia Oblast\n",
+  "pages": [
+    {
+      "width": 1000,
+      "height": 1400,
+      "blocks": [
+        {
+          "confidence": 0.98,
+          "boundingBox": { "vertices": [ { "x": 100, "y": 200 }, { "x": 460, "y": 200 }, { "x": 460, "y": 250 }, { "x": 100, "y": 250 } ] },
+          "paragraphs": [
+            {
+              "confidence": 0.98,
+              "boundingBox": { "vertices": [ { "x": 100, "y": 200 }, { "x": 460, "y": 200 }, { "x": 460, "y": 250 }, { "x": 100, "y": 250 } ] },
+              "words": [
+                {
+                  "confidence": 0.97,
+                  "boundingBox": { "vertices": [ { "x": 100, "y": 200 }, { "x": 340, "y": 200 }, { "x": 340, "y": 250 }, { "x": 100, "y": 250 } ] },
+                  "symbols": [
+                    { "text": "T" }, { "text": "e" }, { "text": "s" }, { "text": "t" }, { "text": "e" }, { "text": "n" }, { "text": "k" }, { "text": "o" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "confidence": 0.95,
+          "boundingBox": { "vertices": [ { "x": 100, "y": 320 }, { "x": 600, "y": 320 }, { "x": 600, "y": 372 }, { "x": 100, "y": 372 } ] },
+          "paragraphs": [
+            {
+              "confidence": 0.95,
+              "boundingBox": { "vertices": [ { "x": 100, "y": 320 }, { "x": 600, "y": 320 }, { "x": 600, "y": 372 }, { "x": 100, "y": 372 } ] },
+              "words": [
+                {
+                  "confidence": 0.96,
+                  "boundingBox": { "vertices": [ { "x": 100, "y": 320 }, { "x": 260, "y": 320 }, { "x": 260, "y": 370 }, { "x": 100, "y": 370 } ] },
+                  "symbols": [
+                    { "text": "I" }, { "text": "v" }, { "text": "a" }, { "text": "n" }
+                  ]
+                },
+                {
+                  "confidence": 0.94,
+                  "boundingBox": { "vertices": [ { "x": 280, "y": 322 }, { "x": 600, "y": 322 }, { "x": 600, "y": 372 }, { "x": 280, "y": 372 } ] },
+                  "symbols": [
+                    { "text": "P" }, { "text": "e" }, { "text": "t" }, { "text": "r" }, { "text": "o" }, { "text": "v" }, { "text": "y" }, { "text": "c" }, { "text": "h" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "confidence": 0.99,
+          "boundingBox": { "vertices": [ { "x": 100, "y": 440 }, { "x": 250, "y": 440 }, { "x": 250, "y": 490 }, { "x": 100, "y": 490 } ] },
+          "paragraphs": [
+            {
+              "confidence": 0.99,
+              "boundingBox": { "vertices": [ { "x": 100, "y": 440 }, { "x": 250, "y": 440 }, { "x": 250, "y": 490 }, { "x": 100, "y": 490 } ] },
+              "words": [
+                {
+                  "confidence": 0.99,
+                  "boundingBox": { "vertices": [ { "x": 100, "y": 440 }, { "x": 250, "y": 440 }, { "x": 250, "y": 490 }, { "x": 100, "y": 490 } ] },
+                  "symbols": [
+                    { "text": "K" }, { "text": "y" }, { "text": "i" }, { "text": "v" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "width": 1000,
+      "height": 1400,
+      "blocks": [
+        {
+          "confidence": 0.93,
+          "boundingBox": { "vertices": [ { "x": 120, "y": 180 }, { "x": 720, "y": 180 }, { "x": 720, "y": 234 }, { "x": 120, "y": 234 } ] },
+          "paragraphs": [
+            {
+              "confidence": 0.93,
+              "boundingBox": { "vertices": [ { "x": 120, "y": 180 }, { "x": 720, "y": 180 }, { "x": 720, "y": 234 }, { "x": 120, "y": 234 } ] },
+              "words": [
+                {
+                  "confidence": 0.92,
+                  "boundingBox": { "vertices": [ { "x": 120, "y": 180 }, { "x": 460, "y": 180 }, { "x": 460, "y": 232 }, { "x": 120, "y": 232 } ] },
+                  "symbols": [
+                    { "text": "V" }, { "text": "i" }, { "text": "n" }, { "text": "n" }, { "text": "y" }, { "text": "t" }, { "text": "s" }, { "text": "i" }, { "text": "a" }
+                  ]
+                },
+                {
+                  "confidence": 0.93,
+                  "boundingBox": { "vertices": [ { "x": 480, "y": 182 }, { "x": 720, "y": 182 }, { "x": 720, "y": 234 }, { "x": 480, "y": 234 } ] },
+                  "symbols": [
+                    { "text": "O" }, { "text": "b" }, { "text": "l" }, { "text": "a" }, { "text": "s" }, { "text": "t" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
