@@ -22,7 +22,7 @@ import { isGarbageValue } from '@uscis-helper/knowledge'
 import { getHardUnresolvedReviewFields, getSoftReviewFields } from '@/lib/translation/reviewGate'
 import { ukrLabelFor } from './translationFieldLabels'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
-import { evidenceCropDecision, resolveRenderableEvidence } from './fieldEvidenceCrop'
+import { evidenceCropDecision, resolveRenderableEvidence, type OverlayRect } from './fieldEvidenceCrop'
 import { prepareImageForUpload } from '@/lib/upload/prepareImageForUpload'
 import { rotateImage90 } from '@/lib/upload/autoRotate'
 import { sanitizeFieldListForStorage, isDraftExpired } from '@/lib/storage/persistedDraftPolicy'
@@ -952,10 +952,9 @@ const WIZARD_CSS = `
  * HONESTY (§3.6): template evidence is 'approximate' and is labelled as an approximate
  * area — never presented as an exact field location. Client-facing copy is English.
  */
-function FieldEvidenceCrop({ region, imageUrl }: { region: EvidenceRegion; imageUrl: string }) {
+function FieldEvidenceCrop({ region, imageUrl, overlay }: { region: EvidenceRegion; imageUrl: string; overlay: OverlayRect }) {
   const decision = evidenceCropDecision(region)
-  if (!decision.render || !region || !region.bbox || !imageUrl) return null
-  const [x0, y0, x1, y1] = region.bbox
+  if (!decision.render || !region || !region.bbox || !imageUrl || !overlay) return null
   const label = decision.label
   return (
     <div className="tw-evidence-crop" style={{ marginTop: 6 }}>
@@ -976,10 +975,10 @@ function FieldEvidenceCrop({ region, imageUrl }: { region: EvidenceRegion; image
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
         >
           <rect
-            x={`${x0 * 100}%`}
-            y={`${y0 * 100}%`}
-            width={`${(x1 - x0) * 100}%`}
-            height={`${(y1 - y0) * 100}%`}
+            x={`${overlay.xPct}%`}
+            y={`${overlay.yPct}%`}
+            width={`${overlay.wPct}%`}
+            height={`${overlay.hPct}%`}
             fill="rgba(37,99,235,0.15)"
             stroke="#2563eb"
             strokeWidth="0.6"
@@ -2120,11 +2119,12 @@ export function TranslateWizard() {
                       <div className="tw-trans-stack">
                         <div className="tw-trans-label">{row.ukr}</div>
                         <div className="tw-trans-orig">{row.val_ukr}</div>
-                        {resolveRenderableEvidence(row.evidence, previewUrls).map(({ region, imageUrl }, idx) => (
+                        {resolveRenderableEvidence(row.evidence, previewUrls).map(({ region, imageUrl, overlay }, idx) => (
                           <FieldEvidenceCrop
                             key={`${row.fieldKey}-evidence-${region.page}-${idx}`}
                             region={region}
                             imageUrl={imageUrl}
+                            overlay={overlay}
                           />
                         ))}
                         <div className="tw-trans-arrow" aria-hidden="true">↓</div>

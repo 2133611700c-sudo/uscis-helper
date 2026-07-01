@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-06-30 | One-Brain — evidence chain hardening (prompt §6/§15/§17)
+- §15 single coordinate normalizer `bboxOverlayRect()` — the ONE place that converts a normalized-0..1 bbox to an SVG overlay rect. Fails SAFE: null/wrong-length/non-finite → null; out-of-range coords CLAMPED into [0,1]; zero-area/inverted box → null (never draws a degenerate/overflowing rect). Wired into `resolveRenderableEvidence` (invalid bbox → no crop) and `FieldEvidenceCrop` (consumes the shared `overlay`, no inline coord math). +6 edge tests.
+- §6 `ReaderResult.ReaderFieldObservation.evidenceRegions?: EvidenceRegion[]` — canonical multi-region array aligned 1:1 with the live carriage (ExtractedDocField.evidenceRegions → …); legacy singular `evidenceRegion` kept for back-compat. ReaderResult stays dormant; this only aligns the contract so activating a localizing reader needs no further change.
+- §17 route-integration proof `visionExtractEvidence.test.ts` (6/6, none skipped, mutation-verified): provider region survives the whole route to `response.fields[].evidence`; provider geometry NOT overwritten by template (§12); no-provider + template doc → template fallback; multi-region preserved; flag OFF → no evidence (byte-identical); per-page reader error does not destroy fields.
+- Verified: tsc 0; targeted 31/31 + route 6/6. Additive; default prod behavior unchanged.
+
 ## 2026-06-30 | One-Brain — visual-evidence CARRIAGE closed through the contracts (first-class)
 - Threaded visual geometry as FIRST-CLASS data through every existing contract, replacing the route-local post-hoc splice:
   `ExtractedDocField.evidenceRegions → FieldCandidate.visualEvidence → (arbitration) → CanonicalField.visualEvidence → FieldOut.evidence → TranslateWizard crop`.

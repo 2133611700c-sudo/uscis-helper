@@ -21,6 +21,7 @@
  * and is consumed by nothing yet (adapter-first; cut over after parity is green).
  */
 import type { VisionReadResult } from '../types'
+import type { EvidenceRegion } from '../evidence/EvidenceRegion'
 
 export type ReaderFamily =
   | 'gemini'
@@ -48,7 +49,21 @@ export interface ReaderFieldObservation {
   confidence: number
   /** the engine declined this field (≠ low confidence). */
   abstained: boolean
+  /**
+   * DEPRECATED (kept for back-compat): a SINGLE legacy region. New code emits the
+   * canonical `evidenceRegions` array below. A reader may set either; consumers should
+   * prefer `evidenceRegions` and fall back to `[evidenceRegion]`.
+   */
   evidenceRegion?: ReaderEvidenceRegion | null
+  /**
+   * VISUAL evidence — canonical multi-region geometry (§6). This is the forward path
+   * that maps 1:1 onto ExtractedDocField.evidenceRegions → FieldCandidate.visualEvidence
+   * → CanonicalField.visualEvidence. A field's value can span several regions (combined
+   * tokens / multi-line / multi-page), so this is an ARRAY. Absent → no geometry.
+   * (ReaderResult is currently dormant; this keeps the reader contract aligned with the
+   * live carriage so activating a localizing reader needs no further contract change.)
+   */
+  evidenceRegions?: EvidenceRegion[]
   reason?: string | null
 }
 

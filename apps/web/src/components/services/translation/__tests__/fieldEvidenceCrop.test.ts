@@ -1,6 +1,28 @@
 import { describe, it, expect } from 'vitest'
-import { evidenceCropDecision, resolveEvidenceImageUrl, resolveRenderableEvidence } from '../fieldEvidenceCrop'
+import { evidenceCropDecision, resolveEvidenceImageUrl, resolveRenderableEvidence, bboxOverlayRect } from '../fieldEvidenceCrop'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
+
+describe('bboxOverlayRect — the single coordinate normalizer (§15)', () => {
+  it('normalized 0..1 bbox → correct percent rect', () => {
+    expect(bboxOverlayRect([0.1, 0.2, 0.5, 0.6])).toEqual({ xPct: 10, yPct: 20, wPct: 40, hPct: 40 })
+  })
+  it('out-of-range coords are clamped into [0,1] (never overflow the image)', () => {
+    expect(bboxOverlayRect([-0.2, -0.1, 1.4, 1.2])).toEqual({ xPct: 0, yPct: 0, wPct: 100, hPct: 100 })
+  })
+  it('zero-area box → null (do not draw a degenerate rect)', () => {
+    expect(bboxOverlayRect([0.3, 0.3, 0.3, 0.5])).toBeNull() // zero width
+    expect(bboxOverlayRect([0.3, 0.3, 0.5, 0.3])).toBeNull() // zero height
+  })
+  it('inverted box → null', () => {
+    expect(bboxOverlayRect([0.6, 0.6, 0.2, 0.2])).toBeNull()
+  })
+  it('null / wrong length / non-finite → null', () => {
+    expect(bboxOverlayRect(null)).toBeNull()
+    expect(bboxOverlayRect([0.1, 0.2, 0.3] as unknown as EvidenceRegion['bbox'])).toBeNull()
+    expect(bboxOverlayRect([0.1, NaN, 0.5, 0.6])).toBeNull()
+    expect(bboxOverlayRect([0.1, 0.2, Infinity, 0.6])).toBeNull()
+  })
+})
 
 const region = (over: Partial<EvidenceRegion>): EvidenceRegion => ({
   fieldKey: 'family_name',

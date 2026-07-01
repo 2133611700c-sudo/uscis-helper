@@ -26,17 +26,48 @@ export function resolveEvidenceImageUrl(
   return previewUrls[pageIndex] ?? null
 }
 
+/** Overlay rectangle in PERCENT of the rendered image (SVG-ready). */
+export interface OverlayRect {
+  xPct: number
+  yPct: number
+  wPct: number
+  hPct: number
+}
+
+/**
+ * The ONE coordinate-normalization function (prompt §15). EvidenceRegion.bbox is
+ * contractually normalized 0..1 top-left [x0,y0,x1,y1]. This is the single place that
+ * converts it to an overlay rectangle, so the conversion is never smeared across
+ * components. It fails SAFE (returns null → draw nothing) rather than drawing a wrong box:
+ *  - null / not a 4-number tuple / non-finite → null
+ *  - coordinates are clamped into [0,1] (out-of-range never overflows the image)
+ *  - a zero-or-negative-area box (after clamp) → null (never render a degenerate rect)
+ * No rotation handling is needed: the page pixels are rotated pre-OCR (autoRotate) and the
+ * SVG overlays the already-upright preview with preserveAspectRatio='none'.
+ */
+export function bboxOverlayRect(bbox: EvidenceRegion['bbox']): OverlayRect | null {
+  if (!bbox || !Array.isArray(bbox) || bbox.length !== 4) return null
+  if (!bbox.every((n) => typeof n === 'number' && Number.isFinite(n))) return null
+  const clamp = (n: number) => Math.min(1, Math.max(0, n))
+  const x0 = clamp(bbox[0]), y0 = clamp(bbox[1]), x1 = clamp(bbox[2]), y1 = clamp(bbox[3])
+  const w = x1 - x0, h = y1 - y0
+  if (w <= 0 || h <= 0) return null // degenerate / inverted → do not draw
+  return { xPct: x0 * 100, yPct: y0 * 100, wPct: w * 100, hPct: h * 100 }
+}
+
 export function resolveRenderableEvidence(
   regions: readonly EvidenceRegion[] | null | undefined,
   previewUrls: readonly string[],
-): Array<{ region: EvidenceRegion; imageUrl: string }> {
+): Array<{ region: EvidenceRegion; imageUrl: string; overlay: OverlayRect }> {
   if (!regions?.length) return []
-  const out: Array<{ region: EvidenceRegion; imageUrl: string }> = []
+  const out: Array<{ region: EvidenceRegion; imageUrl: string; overlay: OverlayRect }> = []
   for (const region of regions) {
     if (!evidenceCropDecision(region).render) continue
+    const overlay = bboxOverlayRect(region.bbox)
+    if (!overlay) continue // invalid/out-of-range/zero-size bbox → render nothing (honesty)
     const imageUrl = resolveEvidenceImageUrl(region, previewUrls)
     if (!imageUrl) continue
-    out.push({ region, imageUrl })
+    out.push({ region, imageUrl, overlay })
   }
   return out
 }
