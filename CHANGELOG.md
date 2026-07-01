@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-06-30 | One-Brain — visual-evidence CARRIAGE closed through the contracts (first-class)
+- Threaded visual geometry as FIRST-CLASS data through every existing contract, replacing the route-local post-hoc splice:
+  `ExtractedDocField.evidenceRegions → FieldCandidate.visualEvidence → (arbitration) → CanonicalField.visualEvidence → FieldOut.evidence → TranslateWizard crop`.
+- Contracts (all optional → absent = byte-identical): `FieldCandidate.visualEvidence?`, `CanonicalField.visualEvidence?` (DISTINCT from semantic `evidence: FieldEvidence[]`), `ExtractedDocField.evidenceRegions?`.
+- `arbitration.field()` carries the winning candidate's regions; new `mergeVisualEvidence()` dedupes (page|status|bbox) and §9 pools same-value candidates; survives the knowledge layer (`{...f}`). Geometry NEVER changes value or review (honesty §10, tested).
+- `recognizeDocument` attaches key-free template evidence to candidates behind `ONE_BRAIN_EVIDENCE_ENABLED` (provider geometry never overwritten, §12 priority); `canonicalToFieldOut` surfaces `f.visualEvidence` as `FieldOut.evidence`; the route-local template attach is now FALLBACK-ONLY (fills rows lacking canonical evidence — dedupe §11).
+- Proofs: carriage unit test (6) provider region→canonical→FieldOut + dedupe + pooling + knowledge-survival + honesty; provider-locator test (3) real Vision OCR tokens→honest exact/combined EvidenceRegion + fail-open on 403; Playwright browser proof (`translation-evidence.spec.ts`, RAN GREEN, screenshot) — approximate+exact render crops, full_image renders NO rect, out-of-range page renders NO crop.
+- HONEST LIMIT (verdict PARTIAL): real provider geometry is EXTERNALLY BLOCKED at runtime — Google Vision is billing-403 AND the live LLM reader produces no `fieldOcrIds` token map, so `visionBboxLocator` cannot be live-wired without Vision billing + a token source. The carriage + UI are proven (mock/unit/browser); live runtime carries only template evidence (birth cert).
+- Verified: full suite 380 files / 5093 tests / 0 failed; tsc 0. `ONE_BRAIN_EVIDENCE_ENABLED` default OFF → byte-identical.
+
 ## 2026-06-30 | One-Brain evidence-chain audit — visible crop real, full provider bbox chain still incomplete
 - Ran a critical end-to-end code audit of the exact chain:
   `provider bbox/layout -> EvidenceRegion adapter -> ReaderResult -> candidate -> Decision Engine -> API response -> TranslateWizard review UI -> visible crop/highlight`.

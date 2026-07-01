@@ -14,6 +14,8 @@
  *    the consuming product's Review Gate makes values final.
  */
 
+import type { EvidenceRegion } from './evidence/EvidenceRegion'
+
 /** Script of the source document. */
 export type DocScript = 'cyrillic' | 'latin' | 'mixed'
 
@@ -118,6 +120,14 @@ export interface ExtractedDocField {
    * Lets the C3 gate accept_final instead of parking a verifiably-stable critical field.
    */
   consensus_reliable?: boolean
+  /**
+   * VISUAL evidence — WHERE this field's value sits on the page (normalized
+   * EvidenceRegion[]). Set by a localizing reader/locator (Google Vision OCR tokens,
+   * field-template, or full-image/missing fallback); the LLM reader leaves it absent
+   * (no localization). Threaded → FieldCandidate.visualEvidence → CanonicalField.visualEvidence.
+   * Geometry only; never a value or a review signal. Absent → byte-identical.
+   */
+  evidenceRegions?: EvidenceRegion[]
 }
 
 export interface DocumentReadResult {

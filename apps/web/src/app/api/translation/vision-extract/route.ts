@@ -530,15 +530,22 @@ async function POST_impl(req: NextRequest) {
         fields = res.fields as unknown as typeof fields
         coreOcrFieldSafety = { applied: true, unresolved_critical: res.anyUnresolvedCritical }
       }
-      // STEP E payoff — attach key-free template source-evidence (approximate crop
-      // regions) per field. Flag ONE_BRAIN_EVIDENCE_ENABLED (default OFF → omitted →
-      // byte-identical). No Vision/DocAI (those are billing-gated); deterministic only.
+      // STEP E payoff — template source-evidence (approximate crop regions) per field.
+      // Flag ONE_BRAIN_EVIDENCE_ENABLED (default OFF → omitted → byte-identical). No
+      // Vision/DocAI (billing-gated); deterministic only.
+      // CARRIAGE DEDUPE (§11/§12): evidence now rides the first-class candidate →
+      // CanonicalField.visualEvidence → FieldOut.evidence path (attached in
+      // recognizeDocument). This route-local attach is now a FALLBACK ONLY — it fills
+      // rows that arrived WITHOUT canonical evidence (legacy/non-recognize path), and
+      // never overwrites provider/canonical geometry that is already present.
       if (process.env.ONE_BRAIN_EVIDENCE_ENABLED === '1') {
         const ev = templateEvidenceForDocType(docTypeId)
         if (ev.length > 0) {
           const byKey = new Map<string, EvidenceRegion[]>()
           for (const r of ev) { const a = byKey.get(r.fieldKey) ?? []; a.push(r); byKey.set(r.fieldKey, a) }
-          fields = fields.map((f) => (byKey.has(f.field) ? { ...f, evidence: byKey.get(f.field) } : f))
+          fields = fields.map((f) =>
+            (!f.evidence?.length && byKey.has(f.field)) ? { ...f, evidence: byKey.get(f.field) } : f,
+          )
         }
       }
       const requiresReview = fields.some((f) => f.review_required)

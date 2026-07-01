@@ -17,6 +17,7 @@
  * sourceRank, buildConfidence).
  */
 import type { CanonicalField, FieldEvidence } from '../types'
+import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 import { criticalityOf, materiallyDifferent, sourceRank, buildConfidence, REVIEW_THRESHOLD } from '../policy'
 import type { FieldCandidate } from './types'
 import { normalizeCanonicalValue } from './knowledgeNormalize'
@@ -112,7 +113,7 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
     // missing value. Honor the backfill: emit a null + review manual-entry field.
     const placeholder = candidates.find((c) => c.reviewReasons?.includes('not_read_manual_entry'))
     if (placeholder) {
-      return field(key, null, placeholder.source, criticalityOf(key), true, ['not_read_manual_entry'], [], 0, placeholder.rawCyrillic, placeholder.consensus_reliable)
+      return field(key, null, placeholder.source, criticalityOf(key), true, ['not_read_manual_entry'], [], 0, placeholder.rawCyrillic, placeholder.consensus_reliable, placeholder.visualEvidence)
     }
     // Field-first HTR on handwritten docs is fail-closed: it may return ONLY the
     // original Cyrillic plus review_required while deliberately blanking the Latin
@@ -135,6 +136,7 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
         0,
         reviewOnly.rawCyrillic,
         reviewOnly.consensus_reliable,
+        reviewOnly.visualEvidence,
       )
     }
     return null
@@ -150,11 +152,11 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
     if (mrz.mrzCheckValid === true) {
       // valid MRZ = math authority → it wins; disagreement does not override it.
       // MRZ source has no Cyrillic (it is Latin by definition).
-      return field(key, mrz.value, mrz.source, crit, false, [], evidence, mrz.confidence ?? 0.99, undefined, mrz.consensus_reliable)
+      return field(key, mrz.value, mrz.source, crit, false, [], evidence, mrz.confidence ?? 0.99, undefined, mrz.consensus_reliable, mrz.visualEvidence)
     }
     // invalid MRZ = red flag (bad photo / OCR / tampering) → must be reviewed.
     reasons.push('mrz_check_failed')
-    return field(key, mrz.value, mrz.source, crit, true, reasons, evidence, 0.3, undefined, mrz.consensus_reliable)
+    return field(key, mrz.value, mrz.source, crit, true, reasons, evidence, 0.3, undefined, mrz.consensus_reliable, mrz.visualEvidence)
   }
 
   // ── No MRZ anchor: pick the highest-authority candidate ────────────────────
@@ -188,7 +190,14 @@ export function arbitrateField(key: string, candidates: FieldCandidate[]): Canon
     reasons.push('reader_review_required')
   }
 
-  return field(key, primary.value, primary.source, crit, reasons.length > 0, reasons, evidence, conf, primary.rawCyrillic, primary.consensus_reliable)
+  // §9 merge: pool geometry from every candidate that agrees with the winning value
+  // (same normalized value), then dedupe in field(). Conflicting-value candidates keep
+  // their own regions with their candidate; only the winner's value-group is surfaced here.
+  const winnerNorm = normalize(primary.value)
+  const pooledVisual = usable
+    .filter((c) => normalize(c.value) === winnerNorm)
+    .flatMap((c) => c.visualEvidence ?? [])
+  return field(key, primary.value, primary.source, crit, reasons.length > 0, reasons, evidence, conf, primary.rawCyrillic, primary.consensus_reliable, pooledVisual)
 }
 
 /**
@@ -368,6 +377,25 @@ function normalize(s: string): string {
   return (s ?? '').normalize('NFC').replace(/\s+/g, '').toLocaleLowerCase()
 }
 
+/**
+ * Dedupe visual-evidence regions (same page + same bbox + same status). Keeps geometry
+ * first-class without duplicating identical regions when multiple candidates carry the
+ * same template/provider box (§9 merge rule: winner-based, deterministic). Returns
+ * undefined when there is nothing to carry so the field stays byte-identical.
+ */
+function mergeVisualEvidence(regions: EvidenceRegion[] | undefined): EvidenceRegion[] | undefined {
+  if (!regions || regions.length === 0) return undefined
+  const seen = new Set<string>()
+  const out: EvidenceRegion[] = []
+  for (const r of regions) {
+    const kk = `${r.page}|${r.status}|${r.bbox ? r.bbox.join(',') : 'null'}`
+    if (seen.has(kk)) continue
+    seen.add(kk)
+    out.push(r)
+  }
+  return out.length > 0 ? out : undefined
+}
+
 function field(
   key: string,
   value: string | null,
@@ -379,7 +407,9 @@ function field(
   finalConf: number,
   rawCyrillic: string | undefined,
   consensusReliable: boolean | undefined,
+  visualEvidence?: EvidenceRegion[] | undefined,
 ): CanonicalField {
+  const visual = mergeVisualEvidence(visualEvidence)
   return {
     key,
     rawValue: value,
@@ -398,5 +428,8 @@ function field(
     // R4 (UN-SEVER): carry the consensus marker from the winning candidate.
     // undefined when absent → unchanged downstream (treated as false by C3).
     consensus_reliable: consensusReliable,
+    // VISUAL evidence (geometry) from the winning candidate. Omitted when absent →
+    // byte-identical. Never affects value/review — geometry only.
+    ...(visual ? { visualEvidence: visual } : {}),
   }
 }

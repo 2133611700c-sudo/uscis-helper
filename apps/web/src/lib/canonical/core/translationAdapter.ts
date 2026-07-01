@@ -88,6 +88,9 @@ export function docintelToCandidate(f: ExtractedDocField, page: number): FieldCa
     // R4 (UN-SEVER): carry the cross-read consensus marker so it survives to C3.
     // Absent on the reader field → undefined here → treated as false downstream.
     consensus_reliable: f.consensus_reliable,
+    // VISUAL evidence (geometry) from a localizing reader/locator. First structural
+    // hop of the visual-evidence carriage: reader → candidate. Absent → byte-identical.
+    visualEvidence: f.evidenceRegions,
   }
 }
 
@@ -146,6 +149,12 @@ export function canonicalToFieldOut(
     // R4 (UN-SEVER): carry the consensus marker for C3. Omitted unless true so the
     // response shape is byte-identical when consensus is OFF (the value is just absent/false).
     ...(f.consensus_reliable === true ? { consensus_reliable: true } : {}),
+    // VISUAL evidence carriage sink: geometry that rode candidate → arbitration →
+    // CanonicalField.visualEvidence is surfaced here as the FieldOut.evidence the wizard
+    // renders. This is the FIRST-CLASS path (provider/template geometry through contracts),
+    // replacing the old route-local post-hoc attach. Omitted when absent → byte-identical;
+    // the route only falls back to template attach for rows that arrive without evidence.
+    ...(f.visualEvidence?.length ? { evidence: f.visualEvidence } : {}),
     kind: f.source,
   }
 }

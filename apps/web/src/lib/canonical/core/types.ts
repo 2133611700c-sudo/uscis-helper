@@ -8,6 +8,7 @@
  * v1: types + minimal arbitration + benchmark. NOT wired to any product. No flags.
  */
 import type { SourceKind, CanonicalDocumentResult } from '../types'
+import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 
 /**
  * One candidate value for a field, produced by a reader. NEVER final — the Core
@@ -43,6 +44,15 @@ export interface FieldCandidate {
    * Default/absent = false → byte-identical when consensus is OFF (the value is just false).
    */
   consensus_reliable?: boolean
+  /**
+   * VISUAL evidence — WHERE on the page this candidate's value was located, as
+   * normalized EvidenceRegion[] (provider OCR tokens, deterministic field template,
+   * or full-image/missing fallback). This is DISTINCT from `provider` (string
+   * provenance) and from CanonicalField.evidence (semantic candidate list): it is
+   * geometry only. A reader/locator sets it; the arbiter copies the winner's regions
+   * onto CanonicalField.visualEvidence. Absent → no geometry (byte-identical).
+   */
+  visualEvidence?: EvidenceRegion[]
 }
 
 /** The Core result, or an explicit "ask for a better photo" (never garbage). */

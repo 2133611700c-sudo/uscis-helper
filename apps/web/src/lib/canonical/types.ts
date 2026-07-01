@@ -16,6 +16,8 @@
  *   3. One document → one CanonicalDocumentResult → all products.
  */
 
+import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
+
 /** A field's legal criticality — drives the auto-final / review rules. */
 export type Criticality = 'critical' | 'high' | 'medium' | 'low'
 
@@ -93,8 +95,17 @@ export interface CanonicalField {
   reviewRequired: boolean
   /** Machine-readable reasons the field needs review (for UI + audit). */
   reviewReasons: string[]
-  /** All candidates seen (provider disagreement keeps every one). */
+  /** All candidates seen (provider disagreement keeps every one). SEMANTIC provenance. */
   evidence: FieldEvidence[]
+  /**
+   * VISUAL evidence — WHERE the winning value sits on the page (normalized
+   * EvidenceRegion[]). Copied by arbitration from the winning candidate's
+   * `visualEvidence`. DISTINCT from `evidence` (semantic candidate list): geometry
+   * only. Optional/absent → no crop rendered (byte-identical). Never gates review,
+   * never changes rawValue/normalizedValue — presence/absence of a box is not a
+   * quality signal (§10 honesty).
+   */
+  visualEvidence?: EvidenceRegion[]
   /** If a value was rejected in favor of another, why (manual override contract). */
   rejectedReason?: string
   /**

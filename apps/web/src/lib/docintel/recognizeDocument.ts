@@ -23,6 +23,8 @@ import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canon
 import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import type { CanonicalDocumentResult } from '@/lib/canonical/types'
 import type { FieldCandidate } from '@/lib/canonical/core/types'
+import { templateEvidenceForDocType } from './evidence/evidenceAdapters'
+import type { EvidenceRegion } from './evidence/EvidenceRegion'
 
 /** The exact shape readDocument resolves to (no separate exported alias exists). */
 type ReadDocumentResult = Awaited<ReturnType<typeof readDocument>>
@@ -100,6 +102,25 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
       readCandidates.push(...r.fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
     } else if (r.provider_error) {
       providerErrors.push(r.provider_error)
+    }
+  }
+
+  // VISUAL-EVIDENCE CARRIAGE (flag ONE_BRAIN_EVIDENCE_ENABLED): if a localizing reader
+  // did not already attach provider geometry to a candidate, attach deterministic key-free
+  // TEMPLATE evidence by field key so it rides the SAME candidate → arbitration →
+  // CanonicalField.visualEvidence → FieldOut path (first-class), NOT a route-local post-hoc
+  // splice. Provider geometry (when present) is NEVER overwritten. OFF / no template → no
+  // change (byte-identical). §12 priority: provider evidence already on the candidate wins.
+  if (process.env.ONE_BRAIN_EVIDENCE_ENABLED === '1' && readCandidates.length > 0) {
+    const tmpl = templateEvidenceForDocType(input.docTypeId)
+    if (tmpl.length > 0) {
+      const byKey = new Map<string, EvidenceRegion[]>()
+      for (const r of tmpl) { const a = byKey.get(r.fieldKey) ?? []; a.push(r); byKey.set(r.fieldKey, a) }
+      for (const c of readCandidates) {
+        if ((c.visualEvidence?.length ?? 0) === 0 && byKey.has(c.key)) {
+          c.visualEvidence = byKey.get(c.key)
+        }
+      }
     }
   }
 
