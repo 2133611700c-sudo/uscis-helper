@@ -63,8 +63,8 @@ vi.mock('@/lib/docintel/documentFieldReader', () => ({
 // disabledEvidenceProvider + ocrResultEvidenceProvider stay REAL (importActual) so the real
 // offline localizer runs. `providerToReturn` lets each test choose disabled vs. fixture-backed.
 let providerToReturn: import('@/lib/docintel/evidence/evidenceProvider').EvidenceProvider
-vi.mock('@/lib/docintel/evidence/evidenceProvider', async (importActual) => {
-  const actual = await importActual<typeof import('@/lib/docintel/evidence/evidenceProvider')>()
+vi.mock('@/lib/docintel/evidence/resolveEvidenceProvider', async (importActual) => {
+  const actual = await importActual<typeof import('@/lib/docintel/evidence/resolveEvidenceProvider')>()
   return {
     ...actual,
     resolveEvidenceProvider: () => providerToReturn,

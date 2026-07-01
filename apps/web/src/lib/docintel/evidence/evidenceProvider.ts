@@ -58,19 +58,6 @@ export function ocrResultEvidenceProvider(ocr: OcrResult): EvidenceProvider {
   }
 }
 
-/**
- * Route-level DI seam. Production default = disabled (no external call → byte-identical).
- * When a real Google Vision evidence client exists AND `GOOGLE_VISION_EVIDENCE_ENABLED === '1'`
- * (billing/credentials present), that client is returned here — a ONE-LINE swap, the recognition
- * spine and route need no change. Integration tests `vi.mock` this factory to inject a
- * prerecorded `ocrResultEvidenceProvider(fixture)`, exercising the real reader path offline.
- */
-export function resolveEvidenceProvider(): EvidenceProvider {
-  // NOTE: the live googleVisionEvidenceProvider slots in here behind GOOGLE_VISION_EVIDENCE_ENABLED
-  // once billing/IAM is available. Until then the default is disabled (no network, fail-closed).
-  return disabledEvidenceProvider
-}
-
 /** Group flat EvidenceRegion[] by fieldKey — shared helper for provider implementations. */
 export function groupRegionsByField(regions: EvidenceRegion[]): Record<string, EvidenceRegion[]> {
   const out: Record<string, EvidenceRegion[]> = {}

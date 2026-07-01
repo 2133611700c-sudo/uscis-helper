@@ -54,7 +54,7 @@ import { applyContractSplitFlow, normalizeContractSplitFields } from '@/lib/cont
 import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import { recognizeDocument, isOneBrainRecognizeEnabled } from '@/lib/docintel/recognizeDocument'
 import { templateEvidenceForDocType } from '@/lib/docintel/evidence/evidenceAdapters'
-import { resolveEvidenceProvider } from '@/lib/docintel/evidence/evidenceProvider'
+import { resolveEvidenceProvider } from '@/lib/docintel/evidence/resolveEvidenceProvider'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 import { mrzCandidatesForTranslation } from '@/lib/canonical/core/mrzAuthority'
 // POLICY_WIRED: document-class guards (2026-06-03 benchmark findings)
