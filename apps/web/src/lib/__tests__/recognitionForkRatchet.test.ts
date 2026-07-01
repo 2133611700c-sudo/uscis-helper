@@ -38,6 +38,11 @@ const FORK_SYMBOLS: Record<string, string[]> = {
     // One-Brain evidence locator (STEP E): produces EvidenceRegion bbox, NOT a field
     // decision — sanctioned as the bbox source, not a parallel recognition plane.
     'lib/docintel/evidence/visionBboxLocator.ts',
+    // One-Brain REAL EvidenceProvider (drop-in): produces EvidenceRegion geometry by
+    // locating already-decided values in Vision OCR — evidence-only, NOT a field
+    // decision. Disabled by default at runtime (Vision billing-403). Mirrors
+    // visionBboxLocator.ts — sanctioned bbox source, not a parallel recognition plane.
+    'lib/docintel/evidence/googleVisionEvidenceProvider.ts',
   ],
 }
 
