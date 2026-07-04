@@ -35,6 +35,7 @@ import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
 import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
+import { decideFields, isDecisionShadowEnabled } from '@/lib/canonical/core/decisionEngine'
 import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { isForensicEnabled, sha256Hex } from '@/lib/docintel/forensics'
@@ -520,14 +521,43 @@ async function POST_impl(req: NextRequest) {
             ),
           )
         }
-        const res = applyOcrFieldSafety(
-          fields as never[],
-          {
-            flow: 'translation_public',
-            document_class: docintelIdToDocumentClass(docTypeId),
-          },
-          { anchorResolver: (row: { field: string }) => anchorByKey.get(row.field) === true },
-        )
+        const c3Ctx = {
+          flow: 'translation_public' as const,
+          document_class: docintelIdToDocumentClass(docTypeId),
+        }
+        const c3Opts = { anchorResolver: (row: { field: string }) => anchorByKey.get(row.field) === true }
+        const res = applyOcrFieldSafety(fields as never[], c3Ctx, c3Opts)
+        // ONE-BRAIN v2 Phase 1 — DECISION SHADOW (strict '1', default OFF → zero behavior
+        // change): run the extracted Decision Engine in parallel and log a PII-FREE diff
+        // (field key + booleans only, never values). A non-zero diff rate means the engine
+        // is NOT the live logic and the flip stays forbidden.
+        if (isDecisionShadowEnabled()) {
+          try {
+            const shadow = decideFields(fields as never[], c3Ctx, c3Opts)
+            const diffs = shadow.fields
+              .map((sf, i) => {
+                const lf = res.fields[i] as Record<string, unknown>
+                const s = sf as Record<string, unknown>
+                const same =
+                  s.finalValue === lf.finalValue &&
+                  s.review_required === lf.review_required &&
+                  s.manual_required === lf.manual_required &&
+                  s.value === lf.value
+                return same ? null : { field: (sf as { field: string }).field }
+              })
+              .filter(Boolean)
+            console.info('[decision_shadow]', JSON.stringify({
+              doc_type_id: docTypeId,
+              fields: res.fields.length,
+              diffs: diffs.length,
+              diff_keys: diffs.map((d) => (d as { field: string }).field),
+              unresolved_match: shadow.anyUnresolvedCritical === res.anyUnresolvedCritical,
+            }))
+          } catch (e) {
+            // shadow must NEVER affect the request
+            console.warn('[decision_shadow] failed (ignored):', e instanceof Error ? e.message : String(e))
+          }
+        }
         fields = res.fields as unknown as typeof fields
         coreOcrFieldSafety = { applied: true, unresolved_critical: res.anyUnresolvedCritical }
       }

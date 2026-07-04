@@ -20,7 +20,8 @@ import type { CanonicalField, FieldEvidence } from '../types'
 import type { EvidenceRegion } from '@/lib/docintel/evidence/EvidenceRegion'
 import { criticalityOf, materiallyDifferent, sourceRank, buildConfidence, REVIEW_THRESHOLD } from '../policy'
 import type { FieldCandidate } from './types'
-import { normalizeCanonicalValue } from './knowledgeNormalize'
+import type { KnowledgeDecision } from './knowledgeNormalize'
+import { evaluateKnowledge } from './knowledgeEvaluator'
 import type { Sex } from '@uscis-helper/knowledge'
 
 /**
@@ -280,20 +281,23 @@ function applyKnowledge(
   sex: Sex | null,
   givenNameCyrillic: string | null,
 ): CanonicalField {
-  // Feed D2 the ORIGINAL Cyrillic (not the already-transliterated Latin).
-  // This is the GAP A+B fix: D2 now runs its Cyrillic rules (gazetteer, RU/UA detection,
-  // patronymic reconcile) on the actual source text, not on derived Latin.
-  const inputForD2 = f.rawCyrillic ?? f.normalizedValue ?? f.rawValue ?? ''
+  // One-Brain v2 Phase 1 (extract-not-rebuild): the D2 EVALUATION is now the signal-only
+  // knowledgeEvaluator (feeds D2 the ORIGINAL Cyrillic — GAP A+B contract lives there).
+  // This function is the APPLICATION of that signal; identical branches, byte-identical
+  // output (knowledgeEvaluator.parity test). The Decision Engine consumes the same signal
+  // without this rewrite once ONE_BRAIN_DECISION flips.
+  const d = evaluateKnowledge(f, ctx, sex, givenNameCyrillic)
 
-  const d = normalizeCanonicalValue(f.key, inputForD2, {
-    documentClass: ctx.documentClass ?? null,
-    sourceDoc: ctx.documentClass ?? undefined,
-    sex,
-    givenNameCyrillic,
-    isHistorical: ctx.isHistorical === true,
-    ukrainianDoc: ctx.ukrainianDoc,
-  })
+  return applyKnowledgeDecision(f, d)
+}
 
+/**
+ * Apply one KnowledgeDecision to an arbitrated field — today's live semantics, unchanged:
+ * accept/preserve ⇒ take the deterministic value (rewrites normalizedValue); conflict
+ * (suggest/review/block) ⇒ keep the read value, surface suggestedValue, force review.
+ * Exported so parity/shadow harnesses can replay the exact application.
+ */
+export function applyKnowledgeDecision(f: CanonicalField, d: KnowledgeDecision): CanonicalField {
   if (d.action === 'accept' || d.action === 'preserve') {
     // Safe deterministic transform — take it. Provenance kept for the audit log (Phase 4).
     const accepted: CanonicalField = {
