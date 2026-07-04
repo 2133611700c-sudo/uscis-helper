@@ -142,16 +142,9 @@ export const KNOWLEDGE_EXPORT_LEDGER: Record<string, KnowledgeExportLedgerEntry>
     status: 'DEPRECATED',
     note: 'Superseded by normalizeOblastToNominative (live dictionary path).',
   },
-  translatePassportAuthority: {
-    status: 'RESERVED',
-    wireTarget: 'passport module authority rendering (registry path)',
-    note: 'Passport-issuing-authority translation; lookupAuthority (live) covers current use.',
-  },
-  resolveAbbreviation: {
-    status: 'RESERVED',
-    wireTarget: 'translation certificate glossary (abbreviation expansion)',
-    note: 'Era-gated abbreviation expander for certificate translation output.',
-  },
+  // translatePassportAuthority + resolveAbbreviation: WIRED (Phase 6c) — consumed by
+  // canonical/core/knowledgeEvaluator.evaluateAuthoritySignal → entries removed per the
+  // honesty rule in this file's header (consumer now exists).
 
   // ── Dictionary / data-table companions of LIVE functions ─────────────────
   AUTHORITY_PATTERNS: {
