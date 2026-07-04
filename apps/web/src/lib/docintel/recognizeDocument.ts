@@ -92,6 +92,15 @@ export interface RecognizeInput {
    * beats template (template attach below skips candidates that already carry visualEvidence).
    */
   evidenceProvider?: EvidenceProvider
+  /**
+   * ONE-BRAIN v2 Phase 7 — retry-on-empty policy. When the first read pass yields ZERO
+   * usable candidates, re-read every page ONCE with these merged readOpts (e.g. a longer
+   * timeout / preprocessing variant). This folds the translation route's separate
+   * "0 fields → second readDocument" legacy-fallback plane into the SINGLE door as a retry,
+   * not a parallel plane. Gated by RECOGNIZE_RETRY_ON_EMPTY==='1' AND presence of this
+   * option → absent/OFF = exactly one pass = byte-identical.
+   */
+  retryOnEmpty?: { readOpts: Record<string, unknown> }
   createdAt?: string
 }
 
@@ -121,16 +130,30 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
   const providerErrors: ProviderErr[] = []
   const pageResults: RecognizeOutput['pageResults'] = []
 
-  const reads = await Promise.all(
-    input.pages.map(async (p, i) => {
-      const r = (await reader(p.buffer, p.mime, input.docTypeId, {
-        product: input.product,
-        ...(input.readOpts ?? {}),
-        ...(p.readOpts ?? {}),
-      })) as ReadDocumentResult
-      return { i, r }
-    }),
-  )
+  const readPass = (extraOpts: Record<string, unknown>) =>
+    Promise.all(
+      input.pages.map(async (p, i) => {
+        const r = (await reader(p.buffer, p.mime, input.docTypeId, {
+          product: input.product,
+          ...(input.readOpts ?? {}),
+          ...(p.readOpts ?? {}),
+          ...extraOpts,
+        })) as ReadDocumentResult
+        return { i, r }
+      }),
+    )
+
+  let reads = await readPass({})
+  // ONE-BRAIN v2 Phase 7 — retry-on-empty (single door replaces the route's 2nd-reader plane).
+  // Only when the FIRST pass produced no usable fields on any page AND the policy is enabled.
+  if (
+    process.env.RECOGNIZE_RETRY_ON_EMPTY === '1' &&
+    input.retryOnEmpty &&
+    reads.every(({ r }) => !(r.ok && Array.isArray(r.fields) && r.fields.length > 0))
+  ) {
+    console.info('[recognize_retry_on_empty]', JSON.stringify({ product: input.product, doc_type_id: input.docTypeId }))
+    reads = await readPass(input.retryOnEmpty.readOpts)
+  }
 
   for (const { i, r } of reads) {
     pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, model: r.model ?? null })
