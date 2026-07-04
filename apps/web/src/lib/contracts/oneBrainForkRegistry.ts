@@ -67,18 +67,11 @@ export const ONE_BRAIN_FORKS: readonly ForkRecord[] = [
     note: 'Second readDocument call (shorter timeout) — fold into one orchestrator path.',
     owner: 'one-brain-migration',
   },
-  {
-    id: 'translation.ocr-from-storage.dark',
-    product: 'translation',
-    entryPoint: 'src/app/api/translation/[sessionId]/ocr-from-storage/route.ts:273',
-    currentStatus: 'SHADOW',
-    directProviders: ['google_vision', 'deepseek_mapper'],
-    bypassedHooks: ['decisionEngine'],
-    targetAdapter: 'visionBboxLocator + deepseek-mapper(dependent)',
-    removalPhase: 'E',
-    note: 'Dark pipeline: Vision OCR → mapFieldsWithDeepSeek:273 → resolveOcrIds:341 (the ONLY bbox source). Not called by the live wizard. DeepSeek-over-Vision = ONE dependent chain, not a vote.',
-    owner: 'one-brain-migration',
-  },
+  // REMOVED (Phase 7b): 'translation.ocr-from-storage.dark' — the dark DeepSeek-mapper
+  // route (ocr-from-storage/route.ts + field-mapper.ts) was DELETED. It had zero live
+  // callers (never invoked by the wizard). The bbox capability it relied on
+  // (resolveOcrIds combined-token localization) survives via the LIVE evidence path
+  // src/lib/docintel/evidence/visionBboxLocator.ts, so nothing was ported/lost.
   // ── TPS ──────────────────────────────────────────────────────────────────────
   {
     id: 'tps.core',

@@ -21,7 +21,6 @@ describe('ocrCostMetrics wiring — provider call sites (non-invasive)', () => {
     'src/lib/docai/client.ts',
     'src/lib/docintel/providers/geminiVisionProvider.ts',
     'src/lib/deepseek/client.ts',
-    'src/lib/ocr/field-mapper.ts',
     'src/lib/docintel/orientation/autoOrient.ts',
     'src/lib/docintel/ensemble/dateRegionRead.ts',
   ]
@@ -47,7 +46,6 @@ describe('ocrCostMetrics wiring — provider call sites (non-invasive)', () => {
     'src/app/api/reparole/ocr/extract/route.ts',
     'src/app/api/ead/ocr/extract/route.ts',
     'src/app/api/translation/vision-extract/route.ts',
-    'src/app/api/translation/[sessionId]/ocr-from-storage/route.ts',
   ]
 
   it.each(ROUTES)('%s rolls up via runWithUploadCostTally and delegates to POST_impl', (rel) => {

@@ -58,7 +58,7 @@ describe('one-brain fork registry — coverage (no silent dropping)', () => {
     const ids = new Set(ONE_BRAIN_FORKS.map((r) => r.id))
     for (const required of [
       'translation.vision-extract.core',
-      'translation.ocr-from-storage.dark',
+      // 'translation.ocr-from-storage.dark' — REMOVED Phase 7b (dead route deleted).
       'tps.legacy-modules',
       'tps.deepseek-brain',
       'tps.dual-ocr-crossref',

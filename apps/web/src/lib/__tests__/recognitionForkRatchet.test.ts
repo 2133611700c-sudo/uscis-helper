@@ -26,8 +26,9 @@ const FORK_SYMBOLS: Record<string, string[]> = {
   runDualOcrCrossref: ['app/api/tps/ocr/extract/route.ts'],
   // DeepSeek documentBrain extraction — TPS AI fallback plane.
   runBrain: ['app/api/tps/ocr/shape-debug/route.ts', 'app/api/tps/ocr/extract/route.ts'],
-  // DeepSeek field-mapper over Google-Vision OCR — translation dark pipeline.
-  mapFieldsWithDeepSeek: ['app/api/translation/[sessionId]/ocr-from-storage/route.ts'],
+  // NOTE (Phase 7b): 'mapFieldsWithDeepSeek' removed from the ratchet — the translation
+  // dark pipeline (ocr-from-storage/route.ts + field-mapper.ts) was DELETED. The symbol
+  // no longer exists anywhere; the ratchet SHRINKS.
   // Google Vision provider (adjunct OCR / bbox / date ensemble — to become a Reader).
   googleVisionProvider: [
     'app/api/translation/vision-extract/route.ts',
@@ -50,7 +51,6 @@ const FORK_SYMBOLS: Record<string, string[]> = {
 const OWN_MODULE: Record<string, RegExp> = {
   runDualOcrCrossref: /dualOcrCrossref\.ts$/,
   runBrain: /documentBrain\.ts$/,
-  mapFieldsWithDeepSeek: /field-mapper\.ts$/,
   googleVisionProvider: /providers[\/\\]google-vision\.ts$/,
 }
 
