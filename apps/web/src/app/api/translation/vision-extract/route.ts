@@ -38,6 +38,7 @@ import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { decideFields, isDecisionShadowEnabled } from '@/lib/canonical/core/decisionEngine'
 import { runConsistencyCritic } from '@/lib/canonical/core/fieldConsistencyCritic'
 import { runGatesAsReadersShadow } from '@/lib/canonical/core/gatesAsReadersShadow'
+import { explainReviewReasons } from '@/lib/review/reviewExplainer'
 import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { isForensicEnabled, sha256Hex } from '@/lib/docintel/forensics'
@@ -637,6 +638,19 @@ async function POST_impl(req: NextRequest) {
         // R8: only present when C3 actually ran on the Core path (flag ON) so the
         // response shape is byte-identical at prod defaults (flag OFF).
         ...(coreOcrFieldSafety.applied ? { ocr_field_safety: coreOcrFieldSafety } : {}),
+        // BLUEPRINT #5 (REVIEW_EXPLAINER_ENABLED, strict '1', default OFF → key absent →
+        // byte-identical): deterministic reviewer-language explanations of the review
+        // reason codes. Free (glossary, no LLM); keys+codes in, prose out; display-only.
+        ...(process.env.REVIEW_EXPLAINER_ENABLED === '1'
+          ? {
+              review_explanations: explainReviewReasons(
+                (fields as Array<{ field: string; review_reasons?: string[] | null }>).map((f) => ({
+                  field: f.field,
+                  reasons: f.review_reasons ?? [],
+                })),
+              ),
+            }
+          : {}),
         date_ensemble: ens.diag,
         pages: corePageResults, page_count: rawFiles.length,
         provider: 'one-brain-core:translation-b2',
