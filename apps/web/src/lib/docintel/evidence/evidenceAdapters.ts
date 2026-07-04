@@ -61,15 +61,36 @@ function templateForDocType(
  * 'field_template' EvidenceRegion. Returns [] when the doc type has no template.
  * (Templates are right-area, not pixel-perfect → 'approximate', never 'exact'.)
  */
+/**
+ * NAMESPACE ALIASES for template keys (found by the FIRST LIVE Gemini shadow run,
+ * 2026-07-04): FIELD_BOX_TEMPLATES.ua_birth_certificate is keyed `family_name/given_name/
+ * patronymic`, but the birth-cert reader emits `child_*` keys — so template evidence
+ * NEVER attached on the live document (fields_with_evidence=0). Each template region is
+ * ALSO emitted under its child_* alias: same box, same honest 'approximate' status.
+ * Additive — doc types without aliases are byte-identical.
+ */
+const TEMPLATE_KEY_ALIASES: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>> = {
+  ua_birth_certificate: {
+    family_name: ['child_family_name'],
+    given_name: ['child_given_name'],
+    patronymic: ['child_patronymic'],
+  },
+}
+
 export function templateEvidenceForDocType(
   docTypeId: string,
   page = 1,
 ): EvidenceRegion[] {
   const tmpl = templateForDocType(docTypeId)
   if (!tmpl) return []
-  const regions = Object.entries(tmpl).map(([fieldKey, box]) =>
-    fromTemplateBox(fieldKey, box as NormalizedBox, page),
-  )
+  const aliasTable = Object.entries(TEMPLATE_KEY_ALIASES).find(([k]) => docTypeId.includes(k))?.[1]
+  const regions: EvidenceRegion[] = []
+  for (const [fieldKey, box] of Object.entries(tmpl)) {
+    regions.push(fromTemplateBox(fieldKey, box as NormalizedBox, page))
+    for (const alias of aliasTable?.[fieldKey] ?? []) {
+      regions.push(fromTemplateBox(alias, box as NormalizedBox, page))
+    }
+  }
   return regions.map(assertHonest)
 }
 

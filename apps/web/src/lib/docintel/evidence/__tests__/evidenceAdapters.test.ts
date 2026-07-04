@@ -26,7 +26,13 @@ describe('templateEvidenceForDocType', () => {
     expect(regions.length).toBeGreaterThan(0)
 
     const keys = regions.map((r) => r.fieldKey).sort()
-    expect(keys).toEqual(['family_name', 'given_name', 'patronymic'])
+    // 2026-07-04 (found by the first LIVE Gemini shadow run): the birth-cert reader emits
+    // child_* keys, so each template region is ALSO emitted under its child_* alias —
+    // otherwise template evidence never attached on the live document.
+    expect(keys).toEqual([
+      'child_family_name', 'child_given_name', 'child_patronymic',
+      'family_name', 'given_name', 'patronymic',
+    ])
 
     for (const r of regions) {
       expect(r.status).toBe('approximate')
@@ -40,9 +46,8 @@ describe('templateEvidenceForDocType', () => {
   it('resolves a versioned doc id via substring match', () => {
     const regions = templateEvidenceForDocType('ua_birth_certificate_soviet_v1')
     expect(regions.map((r) => r.fieldKey).sort()).toEqual([
-      'family_name',
-      'given_name',
-      'patronymic',
+      'child_family_name', 'child_given_name', 'child_patronymic',
+      'family_name', 'given_name', 'patronymic',
     ])
   })
 
