@@ -42,11 +42,18 @@ export interface WatchdogAggregate {
     engine_tightened_total: number
     mismatched_docs: number
   }
+  normalize_collapse_shadow: {
+    docs: number
+    value_diff_total: number
+    reject_diff_total: number
+    mismatched_docs: number
+  }
   /** deterministic verdicts — the flip-blocking conditions, computed locally */
   flags: {
     decision_flip_blocked: boolean
     arbitration_flip_blocked: boolean
     gates_flip_blocked: boolean
+    normalize_flip_blocked: boolean
     notes: string[]
   }
 }
@@ -66,7 +73,11 @@ const empty = (): WatchdogAggregate => ({
     docs: 0, unresolved_diff_total: 0, release_diff_total: 0,
     engine_loosened_total: 0, engine_tightened_total: 0, mismatched_docs: 0,
   },
-  flags: { decision_flip_blocked: false, arbitration_flip_blocked: false, gates_flip_blocked: false, notes: [] },
+  normalize_collapse_shadow: { docs: 0, value_diff_total: 0, reject_diff_total: 0, mismatched_docs: 0 },
+  flags: {
+    decision_flip_blocked: false, arbitration_flip_blocked: false,
+    gates_flip_blocked: false, normalize_flip_blocked: false, notes: [],
+  },
 })
 
 function tryJson(s: string): Record<string, unknown> | null {
@@ -127,6 +138,14 @@ export function aggregateShadowLogs(logText: string): WatchdogAggregate {
       g.engine_loosened_total += ((j.engine_loosened_keys as string[] | undefined) ?? []).length
       g.engine_tightened_total += ((j.engine_tightened_keys as string[] | undefined) ?? []).length
       if (j.match === false) g.mismatched_docs++
+    } else if (line.includes('[normalize_collapse_shadow]')) {
+      const j = tryJson(line); if (!j) continue
+      agg.markers_parsed++
+      const n = agg.normalize_collapse_shadow
+      n.docs++
+      n.value_diff_total += ((j.value_diff_keys as string[] | undefined) ?? []).length
+      n.reject_diff_total += ((j.reject_diff_keys as string[] | undefined) ?? []).length
+      if (j.match === false) n.mismatched_docs++
     } else if (line.includes('[recognize_retry_on_empty]')) {
       agg.markers_parsed++
       agg.retry_on_empty_fired++
@@ -144,6 +163,10 @@ export function aggregateShadowLogs(logText: string): WatchdogAggregate {
   if (agg.gates_shadow.mismatched_docs > 0 || agg.gates_shadow.engine_loosened_total > 0) {
     agg.flags.gates_flip_blocked = true
     agg.flags.notes.push(`gates_as_readers: mismatched_docs=${agg.gates_shadow.mismatched_docs} loosened=${agg.gates_shadow.engine_loosened_total} — flip forbidden`)
+  }
+  if (agg.normalize_collapse_shadow.mismatched_docs > 0) {
+    agg.flags.normalize_flip_blocked = true
+    agg.flags.notes.push(`normalize_collapse: mismatched_docs=${agg.normalize_collapse_shadow.mismatched_docs} — flip forbidden`)
   }
   return agg
 }

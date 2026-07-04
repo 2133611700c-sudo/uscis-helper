@@ -14,6 +14,7 @@ const LOG = [
   '[ADR018] fallback_model_used {"doc_type_id":"ua_international_passport","model":"gpt-4.1","primary":"gemini-2.5-pro","fields":8}',
   '[recognize_retry_on_empty] {"product":"translation","doc_type_id":"ua_military_id"}',
   '[gates_as_readers_shadow] {"doc_type_id":"ua_birth_certificate","fields":12,"legacy_unresolved":3,"engine_unresolved":2,"unresolved_diff_keys":["dob"],"release_diff_keys":[],"engine_loosened_keys":["dob"],"engine_tightened_keys":[],"match":false}',
+  '[normalize_collapse_shadow] {"doc_type_hint":"passport","fields":5,"signals":5,"value_diff_keys":["family_name"],"reject_diff_keys":[],"match":false}',
   'random unrelated line that must be ignored {"secret":"never-forwarded"}',
 ].join('\n')
 
@@ -21,7 +22,12 @@ describe('aggregateShadowLogs — deterministic, PII-free by construction', () =
   const agg = aggregateShadowLogs(LOG)
 
   it('parses exactly the known markers, ignores everything else', () => {
-    expect(agg.markers_parsed).toBe(8)
+    expect(agg.markers_parsed).toBe(9)
+  })
+
+  it('normalize_collapse shadow: any mismatch blocks the Phase-8 flip', () => {
+    expect(agg.normalize_collapse_shadow).toMatchObject({ docs: 1, value_diff_total: 1, mismatched_docs: 1 })
+    expect(agg.flags.normalize_flip_blocked).toBe(true)
   })
 
   it('gates_as_readers shadow: loosening blocks the Phase-1b flip', () => {

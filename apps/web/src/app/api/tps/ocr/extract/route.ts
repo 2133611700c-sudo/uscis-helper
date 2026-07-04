@@ -54,6 +54,11 @@ import {
   type DocumentBrainOutput,
 } from '@/lib/tps/ai/documentBrain'
 import { postExtractNormalize } from '@/lib/tps/ocr/postExtractNormalize'
+import {
+  evaluatePostExtractPack,
+  isNormalizeCollapseShadowEnabled,
+  runNormalizeCollapseShadow,
+} from '@/lib/tps/ocr/postExtractRulePack'
 // P2 OCR cost OBSERVABILITY (shadow, observe-only): roll up per-upload provider
 // calls + est cost. Does NOT change output/behaviour — emits one summary event.
 import { runWithUploadCostTally } from '@/lib/v1/ocrCostMetrics'
@@ -1162,7 +1167,21 @@ async function POST_impl(req: NextRequest) {
     }>,
   }
   if (mergedModule && mergedModule.fields.length > 0) {
+    // PHASE 8 SHADOW (NORMALIZE_COLLAPSE_SHADOW, strict '1', default OFF → zero behavior
+    // change): evaluate the signal-only rule-pack on the PRE-normalization state, then diff
+    // against what the live in-place writer did. Keys-only [normalize_collapse_shadow].
+    const collapseSignals = isNormalizeCollapseShadowEnabled()
+      ? (() => { try { return evaluatePostExtractPack(mergedModule.fields) } catch { return null } })()
+      : null
     normalizationMeta = postExtractNormalize(mergedModule.fields)
+    if (collapseSignals) {
+      try {
+        const diff = runNormalizeCollapseShadow(collapseSignals, mergedModule.fields, normalizationMeta.rejected_fields)
+        console.info('[normalize_collapse_shadow]', JSON.stringify({ doc_type_hint: docTypeHint, ...diff }))
+      } catch (e) {
+        console.warn('[normalize_collapse_shadow] failed (ignored):', e instanceof Error ? e.message : String(e))
+      }
+    }
     if (normalizationMeta.rejected_fields.length > 0) {
       const rejected = new Set(normalizationMeta.rejected_fields)
       mergedModule = {
