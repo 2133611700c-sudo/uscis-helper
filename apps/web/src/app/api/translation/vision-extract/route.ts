@@ -37,6 +37,7 @@ import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from 
 import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { decideFields, isDecisionShadowEnabled } from '@/lib/canonical/core/decisionEngine'
 import { runConsistencyCritic } from '@/lib/canonical/core/fieldConsistencyCritic'
+import { runGatesAsReadersShadow } from '@/lib/canonical/core/gatesAsReadersShadow'
 import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { isForensicEnabled, sha256Hex } from '@/lib/docintel/forensics'
@@ -573,6 +574,25 @@ async function POST_impl(req: NextRequest) {
               unresolved_match: shadow.anyUnresolvedCritical === res.anyUnresolvedCritical,
               critic_findings: criticFindings.length,
               critic_reasons: [...new Set(criticFindings.map((c) => c.reviewReason))],
+            }))
+            // Phase 1b SHADOW — gates as READERS of FieldDecision: run the REAL gate
+            // derivation on legacy fields vs engine projections; keys-only flip evidence.
+            const gates = runGatesAsReadersShadow(
+              (res.fields as Array<{ field: string; finalValue?: string | null; review_required?: boolean | null }>).map(
+                (f) => ({ field: f.field, finalValue: f.finalValue ?? null, review_required: f.review_required }),
+              ),
+              shadow.decisions,
+            )
+            console.info('[gates_as_readers_shadow]', JSON.stringify({
+              doc_type_id: docTypeId,
+              fields: gates.fields,
+              legacy_unresolved: gates.legacy_unresolved.length,
+              engine_unresolved: gates.engine_unresolved.length,
+              unresolved_diff_keys: gates.unresolved_diff_keys,
+              release_diff_keys: gates.release_diff_keys,
+              engine_loosened_keys: gates.engine_loosened_keys,
+              engine_tightened_keys: gates.engine_tightened_keys,
+              match: gates.match,
             }))
           } catch (e) {
             // shadow must NEVER affect the request

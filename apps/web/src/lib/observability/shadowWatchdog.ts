@@ -34,10 +34,19 @@ export interface WatchdogAggregate {
   deepseek_contribution: { docs: number; brain_added_total: number; by_doc_type: Record<string, number> }
   fallback_model_reads: { docs: number; by_model: Record<string, number> }
   retry_on_empty_fired: number
+  gates_shadow: {
+    docs: number
+    unresolved_diff_total: number
+    release_diff_total: number
+    engine_loosened_total: number
+    engine_tightened_total: number
+    mismatched_docs: number
+  }
   /** deterministic verdicts — the flip-blocking conditions, computed locally */
   flags: {
     decision_flip_blocked: boolean
     arbitration_flip_blocked: boolean
+    gates_flip_blocked: boolean
     notes: string[]
   }
 }
@@ -53,7 +62,11 @@ const empty = (): WatchdogAggregate => ({
   deepseek_contribution: { docs: 0, brain_added_total: 0, by_doc_type: {} },
   fallback_model_reads: { docs: 0, by_model: {} },
   retry_on_empty_fired: 0,
-  flags: { decision_flip_blocked: false, arbitration_flip_blocked: false, notes: [] },
+  gates_shadow: {
+    docs: 0, unresolved_diff_total: 0, release_diff_total: 0,
+    engine_loosened_total: 0, engine_tightened_total: 0, mismatched_docs: 0,
+  },
+  flags: { decision_flip_blocked: false, arbitration_flip_blocked: false, gates_flip_blocked: false, notes: [] },
 })
 
 function tryJson(s: string): Record<string, unknown> | null {
@@ -104,6 +117,16 @@ export function aggregateShadowLogs(logText: string): WatchdogAggregate {
       agg.fallback_model_reads.docs++
       const m = String(j.model ?? 'unknown')
       agg.fallback_model_reads.by_model[m] = (agg.fallback_model_reads.by_model[m] ?? 0) + 1
+    } else if (line.includes('[gates_as_readers_shadow]')) {
+      const j = tryJson(line); if (!j) continue
+      agg.markers_parsed++
+      const g = agg.gates_shadow
+      g.docs++
+      g.unresolved_diff_total += ((j.unresolved_diff_keys as string[] | undefined) ?? []).length
+      g.release_diff_total += ((j.release_diff_keys as string[] | undefined) ?? []).length
+      g.engine_loosened_total += ((j.engine_loosened_keys as string[] | undefined) ?? []).length
+      g.engine_tightened_total += ((j.engine_tightened_keys as string[] | undefined) ?? []).length
+      if (j.match === false) g.mismatched_docs++
     } else if (line.includes('[recognize_retry_on_empty]')) {
       agg.markers_parsed++
       agg.retry_on_empty_fired++
@@ -117,6 +140,10 @@ export function aggregateShadowLogs(logText: string): WatchdogAggregate {
   if (agg.one_arbitration_shadow.missing_in_shadow_total > 0 || agg.one_arbitration_shadow.review_loosened_total > 0) {
     agg.flags.arbitration_flip_blocked = true
     agg.flags.notes.push(`one_arbitration: missing=${agg.one_arbitration_shadow.missing_in_shadow_total} loosened=${agg.one_arbitration_shadow.review_loosened_total} — flip forbidden`)
+  }
+  if (agg.gates_shadow.mismatched_docs > 0 || agg.gates_shadow.engine_loosened_total > 0) {
+    agg.flags.gates_flip_blocked = true
+    agg.flags.notes.push(`gates_as_readers: mismatched_docs=${agg.gates_shadow.mismatched_docs} loosened=${agg.gates_shadow.engine_loosened_total} — flip forbidden`)
   }
   return agg
 }

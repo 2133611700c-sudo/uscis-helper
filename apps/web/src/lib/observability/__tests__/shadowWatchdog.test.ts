@@ -13,6 +13,7 @@ const LOG = [
   '[deepseek_brain_contribution] {"doc_type_hint":"i94","rule_fields":4,"brain_validated":3,"brain_added":2,"brain_added_keys":["place_of_last_entry","given_name"],"brain_skipped":1}',
   '[ADR018] fallback_model_used {"doc_type_id":"ua_international_passport","model":"gpt-4.1","primary":"gemini-2.5-pro","fields":8}',
   '[recognize_retry_on_empty] {"product":"translation","doc_type_id":"ua_military_id"}',
+  '[gates_as_readers_shadow] {"doc_type_id":"ua_birth_certificate","fields":12,"legacy_unresolved":3,"engine_unresolved":2,"unresolved_diff_keys":["dob"],"release_diff_keys":[],"engine_loosened_keys":["dob"],"engine_tightened_keys":[],"match":false}',
   'random unrelated line that must be ignored {"secret":"never-forwarded"}',
 ].join('\n')
 
@@ -20,7 +21,14 @@ describe('aggregateShadowLogs — deterministic, PII-free by construction', () =
   const agg = aggregateShadowLogs(LOG)
 
   it('parses exactly the known markers, ignores everything else', () => {
-    expect(agg.markers_parsed).toBe(7)
+    expect(agg.markers_parsed).toBe(8)
+  })
+
+  it('gates_as_readers shadow: loosening blocks the Phase-1b flip', () => {
+    expect(agg.gates_shadow).toMatchObject({
+      docs: 1, unresolved_diff_total: 1, engine_loosened_total: 1, engine_tightened_total: 0, mismatched_docs: 1,
+    })
+    expect(agg.flags.gates_flip_blocked).toBe(true)
   })
 
   it('decision_shadow aggregate + flip verdict', () => {
