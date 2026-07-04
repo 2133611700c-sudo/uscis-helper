@@ -14,6 +14,7 @@
  * needs a Gemini key; absent → disabled. Everything fail-open (any error → [] → the LLM full-page read stands).
  */
 import { isHtrSidecarEnabled, readHandwrittenFieldsViaSidecar, type HtrFieldBox } from '../providers/htrSidecarProvider'
+import { isLlmCropReaderEnabled, readHandwrittenFieldsViaLlmCrops } from '../providers/llmCropReader'
 
 const GEMINI_URL = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
@@ -156,7 +157,13 @@ export async function readHandwrittenRoute(
   mime: string,
   docTypeId?: string,
 ): Promise<HandwrittenFieldResult[]> {
-  if (!isHtrSidecarEnabled()) return []
+  // TRANSPORT selection (One-Brain v2 crop-reader): the proven native-res crop route has two
+  // transports — the HTR sidecar (preferred when hosted) and the primary-LLM crop reader
+  // (HANDWRITING_CROP_LLM='gemini' — runs TODAY without new infra; closes the app-vs-API
+  // downscale root cause). Both feed the SAME review-gated contract; neither can auto-release.
+  const transport: 'htr' | 'llm' | null =
+    isHtrSidecarEnabled() ? 'htr' : isLlmCropReaderEnabled() ? 'llm' : null
+  if (!transport) return []
   // EXIF-NORMALIZE ONCE (Step-5b fix): the raw original may carry an EXIF orientation tag. Both the
   // dimension read (box scaling) and sharp.extract() would otherwise see/apply EXIF inconsistently →
   // the crop lands in the wrong region. Bake EXIF in + strip the tag, then use ONE oriented buffer for
@@ -165,13 +172,15 @@ export async function readHandwrittenRoute(
   try { buf = await (await import('sharp')).default(originalBuffer, { failOn: 'error' }).rotate().toBuffer() } catch { buf = originalBuffer }
   const boxes = await localizeHandwrittenFields(buf, mime, docTypeId)
   if (boxes.length === 0) return []
-  const reads = await readHandwrittenFieldsViaSidecar(buf, boxes)
+  const reads = transport === 'htr'
+    ? await readHandwrittenFieldsViaSidecar(buf, boxes)
+    : await readHandwrittenFieldsViaLlmCrops(buf, boxes)
   return reads.map((r) => ({
     field: r.field,
     raw_htr_text: r.text,
     htr_confidence: r.confidence,
     normalized_value: r.text, // codex normalization happens downstream (D2); kept separate here
-    review_required: true, // raxtemur cannot abstain → a handwritten critical value is never auto-final
-    review_reason: 'handwritten_htr_read',
+    review_required: true, // neither transport may auto-final a handwritten critical value (L6/ADR-026)
+    review_reason: transport === 'htr' ? 'handwritten_htr_read' : 'handwritten_llm_crop_read',
   }))
 }

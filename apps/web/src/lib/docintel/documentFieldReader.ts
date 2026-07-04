@@ -33,6 +33,7 @@ import { resolveAuthorityFields } from './authorityResolve'
 import { isHandwrittenFamily } from './modelMatrix'
 import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
 import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
+import { isLlmCropReaderEnabled } from './providers/llmCropReader'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
 import { docintelIdToDocumentClass } from '@/lib/canonical/core/documentClassPolicy'
 import {
@@ -611,7 +612,9 @@ async function runHtrFieldStage(
   mimeType: string,
   providerName: string,
 ): Promise<{ fields: ExtractedDocField[]; ran: boolean; produced: number }> {
-  if (!isHtrSidecarEnabled() || !isHandwrittenFamily(docTypeId) || !originalBuffer) return { fields, ran: false, produced: 0 }
+  // Crop-route gate: HTR sidecar OR the LLM crop transport (HANDWRITING_CROP_LLM='gemini').
+  // Both default OFF → byte-identical; readHandwrittenRoute picks the actual transport.
+  if ((!isHtrSidecarEnabled() && !isLlmCropReaderEnabled()) || !isHandwrittenFamily(docTypeId) || !originalBuffer) return { fields, ran: false, produced: 0 }
   const HTR_NAME_FIELDS = new Set(['family_name', 'given_name', 'patronymic'])
   const minConf = Number(process.env.HTR_MIN_CONFIDENCE) || 0.5
   let htr: Awaited<ReturnType<typeof readHandwrittenRoute>> = []
