@@ -1011,6 +1011,20 @@ async function POST_impl(req: NextRequest) {
   if (brainFields.length > 0) {
     const existingKeys = new Set<string>(moduleResult?.fields?.map((f) => f.field) ?? [])
     const additions = brainFields.filter((f) => !existingKeys.has(f.field))
+    // ONE-BRAIN v2 Phase 4 — DEEPSEEK SHADOW METRIC (always-on, PII-FREE: keys+counts only,
+    // never values). Today the brain auto-enables on DEEPSEEK_API_KEY presence (key≠permission
+    // violation, L3). Before the owner signs off on inverting that default, this metric
+    // answers the question the sign-off needs: how many fields does DeepSeek ACTUALLY
+    // contribute per doc type, and which ones. Zero behavior change.
+    console.info('[deepseek_brain_contribution]', JSON.stringify({
+      doc_type_hint: docTypeHint || null,
+      rule_fields: moduleResult?.fields?.length ?? 0,
+      brain_validated: brainFields.length,
+      brain_added: additions.length,
+      brain_added_keys: additions.map((f) => f.field),
+      brain_skipped: brainSkipped.length,
+      would_be_lost_if_key_not_permission: additions.length,
+    }))
     mergedModule = {
       module:
         (moduleResult?.module as string) ||
