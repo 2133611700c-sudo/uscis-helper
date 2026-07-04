@@ -26,6 +26,7 @@ import type { FieldCandidate } from '@/lib/canonical/core/types'
 import { templateEvidenceForDocType } from './evidence/evidenceAdapters'
 import type { EvidenceRegion } from './evidence/EvidenceRegion'
 import { disabledEvidenceProvider, type EvidenceProvider } from './evidence/evidenceProvider'
+import { readerResultFromExtracted, observationToCandidate } from './readers/ReaderResult'
 
 /**
  * Populate ExtractedDocField.evidenceRegions from an evidence-only provider (geometry only).
@@ -166,7 +167,18 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
       const fields = evidenceEnabled
         ? await attachProviderEvidence(r.fields, input.pages[i], evidenceProvider)
         : r.fields
-      readCandidates.push(...fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
+      // TRUTH-PLAN step 4 — ReaderResult LIVE SEAM (READER_RESULT_SEAM='1', default OFF →
+      // byte-identical): candidates convert THROUGH the ReaderResult observation contract
+      // (fields → readerResultFromExtracted → observationToCandidate), field-for-field parity
+      // with docintelToCandidate frozen by readerResultSeam.parity.test. This retires the
+      // "ReaderResult is dormant" truth-entry once flipped.
+      if (process.env.READER_RESULT_SEAM === '1') {
+        const rr = readerResultFromExtracted(fields, r.model ?? null, r.ms)
+        const providerName = (fields[0] as ExtractedDocField | undefined)?.provider ?? 'gemini'
+        readCandidates.push(...rr.fields.map((o) => observationToCandidate(o, i + 1, providerName)))
+      } else {
+        readCandidates.push(...fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
+      }
     } else if (r.provider_error) {
       providerErrors.push(r.provider_error)
     }

@@ -391,7 +391,17 @@ async function POST_impl(req: NextRequest) {
       // STEP E cutover: single orchestrator. Per-page opts carried via pages[].readOpts;
       // MRZ injected as extraCandidates (appended after reads).
       const documentSessionId = (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
-      const rec = await recognizeDocument({ pages, docTypeId, product: 'translation', documentSessionId, extraCandidates: mrzExtra, evidenceProvider: resolveEvidenceProvider() })
+      // TRUTH-PLAN step 3 (fold the LIVE legacy-fallback plane into the one door): when
+      // RECOGNIZE_RETRY_ON_EMPTY='1', a 0-field first pass re-reads ONCE inside the door with
+      // the SAME parameters the route's legacy fallback uses (timeoutMs 25_000 — parity), so a
+      // recovered read returns via the canonical path and the fallback plane below never runs.
+      // Both flags OFF → byte-identical. The fallback plane is NOT removed until a shadow
+      // window proves the in-door retry fully covers it.
+      const rec = await recognizeDocument({
+        pages, docTypeId, product: 'translation', documentSessionId,
+        extraCandidates: mrzExtra, evidenceProvider: resolveEvidenceProvider(),
+        retryOnEmpty: { readOpts: { timeoutMs: 25_000 } },
+      })
       for (const p of rec.pageResults) {
         corePageResults.push({ page: p.page, ok: p.ok, status: p.status, ms: p.ms })
         coreReadModels.push(p.model)
