@@ -18,14 +18,48 @@ import type { TpsExtractedField, TpsModuleResult } from '@/lib/tps/types'
 
 /**
  * Map TPS wizard docHint → docintel document type ID.
- * Returns null for US-form slots that docintel doesn't cover (i94, ead, dl, i797).
+ *
+ * ONE-BRAIN v2 Phase 2 (TPS coverage — the real critical path of the legacy collapse):
+ * docintel SPECS already exist for the US-form slots (us_i94/us_ead/us_i797 — the EAD
+ * route reads them today) and for military/birth (ua_military_id/ua_birth_certificate —
+ * translation reads them today). Historically only passport/booklet were mapped, which
+ * made every other TPS slot 100% dependent on the legacy modules.
+ *
+ * Rollout is per-hint behind the strict allowlist env `TPS_CORE_HINTS` (comma-separated,
+ * e.g. 'i94,i797'). A hint NOT in the allowlist maps exactly as before (extended hints →
+ * null → legacy module runs) — byte-identical. A hint IS enabled only after its own
+ * Core-vs-legacy parity report (tpsHintParity harness). `dl` has NO docintel spec anywhere
+ * — deliberately unmapped (L6: never guess), stays legacy until a spec exists.
  */
-export function mapTpsHintToDocintelId(hint: string): string | null {
-  const map: Record<string, string> = {
-    passport: 'ua_international_passport',
-    booklet:  'ua_internal_passport_booklet',
-  }
-  return map[hint] ?? null
+const TPS_BASE_HINT_MAP: Record<string, string> = {
+  passport: 'ua_international_passport',
+  booklet:  'ua_internal_passport_booklet',
+}
+const TPS_EXTENDED_HINT_MAP: Record<string, string> = {
+  i94:               'us_i94',
+  ead:               'us_ead',
+  ead_old:           'us_ead',
+  i797:              'us_i797',
+  military_id:       'ua_military_id',
+  birth_certificate: 'ua_birth_certificate',
+}
+
+/** Strict allowlist: TPS_CORE_HINTS='i94,i797' — only listed EXTENDED hints route to Core. */
+export function tpsCoreHintAllowlist(env: Record<string, string | undefined> = process.env): Set<string> {
+  const raw = (env.TPS_CORE_HINTS ?? '').trim()
+  if (!raw) return new Set()
+  return new Set(raw.split(',').map((s) => s.trim()).filter(Boolean))
+}
+
+export function mapTpsHintToDocintelId(
+  hint: string,
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  const base = TPS_BASE_HINT_MAP[hint]
+  if (base) return base
+  const extended = TPS_EXTENDED_HINT_MAP[hint]
+  if (extended && tpsCoreHintAllowlist(env).has(hint)) return extended
+  return null
 }
 
 /** Convert one CanonicalField to a TpsExtractedField. */
