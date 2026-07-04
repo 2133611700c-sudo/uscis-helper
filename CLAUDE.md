@@ -68,7 +68,7 @@ Entity: SK Logistics LLC, Los Angeles, CA.
 - Full live matrix: `docs/architecture/MODEL_INVENTORY.md`.
 
 ## TECH STACK
-- Next.js 14 (App Router), TypeScript strict, Tailwind CSS
+- Next.js 15 (App Router; package.json `next@^15.3` — build banner 15.5.x), TypeScript strict, Tailwind CSS
 - Vercel deploy, Supabase DB, DeepSeek R1 AI, Stripe payments
 - pnpm workspace: `apps/web` + `packages/*`
 - Tests: `pnpm --filter web run test` (vitest, expect 1930+ pass)

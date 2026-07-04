@@ -147,7 +147,42 @@ Branch is **multi-session** (owner's own concurrent agents + ~30 worktrees). **A
 
 ---
 
-## STATUS 2026-06-29 — code spine COMPLETE (flag-gated), branch feat/one-brain-reader-result (unpushed)
+## STATUS 2026-07-04 — ONE BRAIN v2 executed through the code-solvable ladder (branch PUSHED, One-Brain CI green)
+
+> **SUPERSEDES the 2026-06-29 block below.** Authoritative execution plan = ONE BRAIN v2
+> (owner-approved 2026-07-04). Branch `feat/one-brain-reader-result` is on origin with a
+> per-push CI gate (`one-brain-ci.yml`: tsc + full vitest ~5247 + PII guard + build flags-OFF).
+> All new flags strict `'1'`, default OFF → prod byte-identical. NOTHING is live-flipped.
+>
+> LANDED (each through green CI):
+> - **Decision Engine extracted** (`canonical/core/decisionEngine.ts` ≡ applyOcrFieldSafety,
+>   byte-parity; C3 stays sole finalValue writer) + **KnowledgeEvaluator** (D2 as signal-only;
+>   arbitration = evaluate+apply composition) + `ONE_BRAIN_DECISION_SHADOW` route diff.
+> - **Gates as READERS** (Phase 1b): `fieldDecisionGateAdapter` projections + cross-plane
+>   invariant guard (engine reject ⟹ reviewGate unresolved ∧ finalPdfGate not-ready).
+> - **TPS coverage** behind `TPS_CORE_HINTS` (i94/ead/ead_old/i797/military/birth; dl never);
+>   parity harness closed gaps G1–G4 → i94/ead PARITY CLOSED; hint-scoped CORE→TPS key
+>   projection (live passport NEVER projected — pinned by guard).
+> - **One-arbitration SHADOW instrument** (`tps/oneArbitrationShadow.ts` behind
+>   `TPS_ONE_ARBITRATION_SHADOW`): the finalized legacy plane (after all SEVEN writers)
+>   replayed through THE arbitration, PII-free diff; flip criteria = missing_in_shadow=0 ∧
+>   review_loosened=0 on real-traffic windows.
+> - **DeepSeek**: `[deepseek_brain_contribution]` shadow metric (sign-off numbers for
+>   inverting key⇒permission); dead dark route `ocr-from-storage` + `mapFieldsWithDeepSeek`
+>   DELETED (0 live callers; ratchet SHRUNK; bbox-resolver kept — live visionBboxLocator).
+> - **Dictionaries 100% accounted**: docNumberFormats → `evaluateDocNumberSignal` (+C11);
+>   registryLookup → `evaluateAuthoritySignal`; `KNOWLEDGE_EXPORT_LEDGER` + guard (consumer
+>   OR ledger entry, CI-enforced); TD1 keep-alive test.
+> - **ReParole decoupled** (`REPAROLE_CORE_USFORMS`: i94/ead → own Core; dl honest 422).
+> - **recognizeDocument retryOnEmpty** (`RECOGNIZE_RETRY_ON_EMPTY`) — 2nd-reader plane as a
+>   policy in the one door (route fallback stays until parity).
+>
+> REMAINING (not code): owner shadow windows (`TPS_ONE_ARBITRATION_SHADOW=1`,
+> `ONE_BRAIN_DECISION_SHADOW=1`) → flips per doc-type/field-kind with sign-off; then P3
+> writer-collapse + P8 normalization 5→2 (one snapCity). Owner blockers unchanged
+> (Gemini 429, Vision billing 403, GT corpus N=3+dup, HTR host).
+
+## STATUS 2026-06-29 (historical) — code spine COMPLETE (flag-gated), branch feat/one-brain-reader-result (unpushed)
 
 DONE (additive, byte-identical OFF; `tsc` green; targeted one-brain cutover tests green):
 - STEP 0 fork registry + parity guards (Level 1 oneBrainForkRegistry + Level 2 ratchet).
