@@ -1,0 +1,53 @@
+name: One-Brain CI
+
+# CI gate for the One-Brain convergence branch (ONE BRAIN v2 — Phase 0).
+# The main-branch workflows (guards.yml / v1-fast-gates.yml) trigger only on main,
+# so this branch had ZERO remote verification. This workflow closes that gap:
+# every push to a one-brain branch must hold the full local gate — typecheck,
+# the COMPLETE web vitest suite (includes all one-brain guard suites: fork registry L1,
+# recognition ratchet L2, namespace, deadFlag, oneDictionary, deepseekBoundary),
+# PII guard, and a production build with ALL recognition flags OFF (byte-identical posture).
+# Single job to conserve Actions minutes (known past spending-limit incidents).
+
+on:
+  push:
+    branches:
+      - 'feat/one-brain-**'
+  workflow_dispatch: {}
+
+jobs:
+  one-brain-gate:
+    name: tsc + full vitest + PII guard + build (flags OFF)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript check
+        run: pnpm --filter web typecheck
+
+      - name: PII / secrets guard
+        run: node scripts/check-no-pii.mjs
+
+      - name: Full web test suite (incl. one-brain guards)
+        env:
+          CI: 'true'
+        run: pnpm --filter web test
+
+      - name: Production build — all recognition flags OFF (byte-identical posture)
+        env:
+          ONE_BRAIN_RECOGNIZE_ENABLED: '0'
+          ONE_BRAIN_EVIDENCE_ENABLED: '0'
+          GOOGLE_VISION_EVIDENCE_ENABLED: '0'
+        run: pnpm --filter web build
