@@ -179,6 +179,10 @@ export const EAD_CATEGORY_MEANINGS: Record<string, string> = {
   C19: 'TPS pending',
   C08: 'asylum application pending',
   C09: 'adjustment of status (AOS) pending',
+  // ONE-BRAIN v2 Phase 6b (display-only, additive): the Re-Parole product's core audience
+  // (U4U parolees) carries this category — missing while the dictionary sat unconsumed.
+  // Per 8 CFR 274a.12(c)(11): public-interest parolee.
+  C11: 'parolee (public interest, incl. Uniting for Ukraine)',
 };
 
 /** Look up the human-readable meaning of an EAD category code (display only). */

@@ -81,3 +81,9 @@ export type { DocNumberKind, DocNumberResult } from './docNumberFormats';
 export { parseMrz, checkDigit, findMrzLines, findTd1Lines } from './mrz';
 export { classifyGarbage, isGarbageValue } from './garbageGuard';
 export type { MrzResult } from './mrz';
+
+// ONE-BRAIN v2 Phase 6 — export ledger (RESERVED/DEPRECATED bookkeeping).
+// Every index export must have a non-test apps/web consumer OR an entry here
+// (enforced by apps/web/src/lib/__tests__/knowledgeExportLedger.guard.test.ts).
+export { KNOWLEDGE_EXPORT_LEDGER } from './DEPRECATED';
+export type { KnowledgeExportLedgerEntry } from './DEPRECATED';
