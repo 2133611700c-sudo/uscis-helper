@@ -6,8 +6,10 @@ strict-флаг default OFF — в проде байт-идентично отс
 не влияет) · **DARK** (код есть, не подключён / внешне заблокирован) · **HISTORICAL** (запись
 прошлого, не опция). Claim сильнее статуса = баг документации.
 
-**Model policy hard lock:** primary printed = `gemini-2.5-pro`. `gemini-3.1*` — НЕ рабочая опция
-(не использовать/не тестировать/не упоминать активно; guard `noGemini31.guard.test.ts`).
+**Model policy hard lock:** primary printed = `gemini-2.5-pro`. Версия Gemini «три-точка-один»
+(любые её id) — НЕ рабочая опция: не использовать, не тестировать, не упоминать активно; сам
+литерал запрещён на активных поверхностях guard'ом `noGemini31.guard.test.ts` — поэтому здесь
+он назван описательно.
 Handwritten = НИКОГДА не LLM-acceptance, только review. GPT — printed-only availability
 (`READER_PROVIDER=openai`, FLAGGED), исключён на handwritten/cert families.
 
@@ -56,7 +58,7 @@ Handwritten = НИКОГДА не LLM-acceptance, только review. GPT — p
 | TPS Core (passport/booklet) | **LIVE** | остальные hints = legacy LIVE; расширение за TPS_CORE_HINTS (FLAGGED; i94/ead parity CLOSED) |
 | EAD / ReParole Core | **LIVE** | ReParole US-форм decoupling — FLAGGED (REPAROLE_CORE_USFORMS) |
 | ocr-from-storage тёмный маршрут | **УДАЛЁН** | + mapFieldsWithDeepSeek удалён |
-| **ПРОД-ДЕПЛОЙ (main)** | **UNVERIFIED здесь** | эта ветка не деплоилась; прод-наблюдение 3.1 — HISTORICAL-запись, требует owner-решения |
+| **ПРОД-ДЕПЛОЙ (main)** | **UNVERIFIED здесь** | эта ветка не деплоилась; прод-наблюдение запрещённой preview-версии — HISTORICAL-запись (см. OWNER_QA), требует owner-решения |
 
 ## Итоговая честная формулировка
 Мост построен ЧАСТИЧНО: сильные root-causes подтверждены кодом; единый живой мозг для 4 сервисов
