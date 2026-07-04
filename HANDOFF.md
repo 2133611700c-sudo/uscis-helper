@@ -1,3 +1,111 @@
+# HANDOFF (2026-07-04 — Local Ollama/Gemma runtime repaired; next = optional project-side helper integration only)
+
+## 2026-07-04 | Local Mac LLM repair + live verification
+- **Changed outside repo:** upgraded the local runtime stack with Homebrew:
+  - `ollama 0.21.0_1 -> 0.31.1`
+  - `mlx 0.31.1 -> 0.31.2`
+  - `mlx-c 0.6.0 -> 0.6.0_2`
+- **Changed outside repo:** restarted the background service via `brew services restart ollama` so the stale
+  `0.21.0` server was replaced by the new `0.31.1` binary.
+- **Verified root cause before restart:** the upgraded client could list models, but real inference still failed
+  because the old launchd service remained live and logged:
+  `unknown runner engine, expected --imagegen-engine or --mlx-engine`.
+- **Verified after restart:** local Ollama is healthy again:
+  - `curl http://127.0.0.1:11434/api/version` → `{"version":"0.31.1"}`
+  - `qwen2.5:7b` generation returned `QWEN_OK`
+  - `gemma4:latest` generation returned `GEMMA_OK`
+- **Verified project-facing helper proof:** local `gemma4` is not just booting; it can perform two relevant tasks:
+  - transliteration helper: `ІВАНЕНКО` → `Ivanenko`
+  - simple document-vision helper: from `test-fixtures/synthetic-passport.jpg`, returned `TESTSURNAME`
+- **Current runtime truth:** local Gemma is now real capacity on this Mac, but only in a helper/shadow role.
+  It is NOT proven as a safe primary reader for handwritten Ukrainian/Russian documents.
+- **Exact next action options:**
+  1. keep Gemma external to runtime decisions and use it only for cheap helper roles
+     (review prose, watchdog prose, agent assistance, low-stakes crop hints);
+  2. if integration is desired, add it only behind strict OFF-by-default helper flags, never as a final writer,
+     and benchmark it on synthetic + private handwritten crops before any stronger claim.
+
+# HANDOFF (2026-07-04 — Dictionary/model audit + local Mac LLM inventory; next = decide whether to repair local Gemma runtime or keep cloud-only)
+
+## 2026-07-04 | Audit-only — dictionaries / handwritten model path / Mac LLM inventory
+- **Verified dictionary/translit core:** no code changes; direct knowledge tests passed:
+  - `referenceValidation.test.ts` → `29/29`
+  - `alphabetCompleteness.test.ts` → `82/82`
+  - `russianGlossary.test.ts` → `55/55`
+  - `noCyrillicLeak.test.ts` → `26/26`
+- **Verified app-layer guards:** targeted packs for `knowledgeBrain`, `knowledgeNormalize`, `dictionaryAutocorrect`,
+  `modelMatrix`, `llmCropReader`, `htrSidecarProvider`, `handwrittenFieldRoute`, and `htrOnlyEarlyReturn` all passed.
+- **Runtime truth from code:** the project is assembled correctly for safety, not yet for full handwritten autonomy:
+  dictionaries are LIVE; handwritten route is still helper/review-only. `HTR_SIDECAR_URL` path and `HANDWRITING_CROP_LLM='gemini'`
+  both stay fail-open and review-gated; neither is a live auto-accept writer.
+- **Mac LLM inventory:** local Ollama manifests exist for `gemma4`, `qwen2.5:7b`, `qwen2.5-coder:7b`, `qwen2.5-coder:14b`.
+  There is NO separate proven local Gemini runtime/app on disk; the Google-side local model evidence is `gemma4` inside Ollama.
+- **Critical blocker:** local Ollama runtime is broken right now. `ollama --version` and `ollama list` both crash in MLX/Metal init with
+  `NSRangeException`, so Gemma is installed but not runnable. Do NOT plan integration work until the local runtime itself is repaired.
+- **Exact next action options:**
+  1. repair the local Ollama/MLX runtime and only then benchmark `gemma4` on text/image helper tasks;
+  2. keep the current cloud Gemini + HTR-sidecar direction and treat local Gemma as future helper/shadow capacity, not a primary reader.
+
+# HANDOFF (2026-07-04 — Translation fallback cutover repaired; next = continue Translation-only collapse)
+
+## 2026-07-04 | Translation legacy fallback now uses the shared recognize door
+- **Changed:** the live fallback inside `apps/web/src/app/api/translation/vision-extract/route.ts` now delegates its read pass to `recognizeDocument(...)` instead of carrying a second partially inlined recognition tail. This keeps the fallback on the shared candidate/canonical/evidence spine even when the Core path falls through.
+- **Fixed:** the broken intermediate state from the prior refactor is gone. `mrzExtra` now lives at request scope, and the fallback response no longer references dead `lastResult`; `anchor_read`, `provider`, `model`, `status`, and `error` are derived from `legacyRec`.
+- **Verified:** `pnpm --dir apps/web exec vitest run src/app/api/translation/__tests__/visionExtractLegacyCutover.test.ts src/app/api/translation/__tests__/visionExtractCorePath.test.ts src/app/api/translation/__tests__/visionExtractReviewExplainerRoute.test.ts src/lib/docintel/__tests__/recognizeDocument.test.ts src/lib/docintel/__tests__/recognizeRetryOnEmpty.test.ts` = PASS (`27 passed`). `pnpm --dir apps/web exec tsc --noEmit` = PASS.
+- **What this does NOT mean:** Translation is still not a single runtime plane. The legacy fallback path is still LIVE; it is just more truthful and more aligned with the shared recognize spine. Removing that fallback plane still requires the real flip windows for `decision_shadow`, `gates_as_readers_shadow`, `RECOGNIZE_RETRY_ON_EMPTY`, and the route-level fallback cleanup itself.
+- **Exact next action:** keep work Translation-only. Collect/verify real shadow windows, then remove the live fallback plane only when the in-door retry plus shared recognize path are proven sufficient.
+
+# HANDOFF (2026-07-04 — T0 truth lock closing pass; next = run the new guard + start Translation-only flips)
+
+## 2026-07-04 | T0 truth lock enforcement + no-guessing law
+- **Added:** `docs/ocr/FLIP_CRITERIA.md` — the concrete flip law for decision-shadow, gates-as-readers, normalize-collapse, TPS one-arbitration, ReaderResult seam, retry-on-empty, review explainer, provider bbox, and DeepSeek helper roles. It makes explicit that parity-CI proves merge-safe-OFF only; real traffic/staging windows + owner sign-off still gate flips.
+- **Added:** `docs/ocr/NO_GUESSING_CONSTITUTION.md` — system law: models may read/propose/verify/explain, but may not invent values. `unknown` is strictly better than fabricated.
+- **Added:** `apps/web/src/lib/__tests__/runtimeTruthVocabulary.guard.test.ts` — CI guard that parses `docs/ocr/ONE_BRAIN_RUNTIME_TRUTH.md` and fails if the 15-node inventory or detail rows stop carrying exactly one allowed class.
+- **Updated:** `docs/ocr/ONE_BRAIN_RUNTIME_TRUTH.md` now explicitly references the no-guessing law and narrows the DeepSeek role to helper/analyst/explainer, never a silent final writer.
+- **What this does NOT prove:** no runtime flip. Translation still has the live fallback plane; TPS still has seven writers; provider bbox remains DARK; DeepSeek prose helpers are still not route-wired beyond the deterministic explainer base.
+- **Exact next action:** run the new guard test + targeted doc/runtime truth checks, then move into the Translation-only vertical: first real window collection for `decision_shadow`, `gates_as_readers_shadow`, `READER_RESULT_SEAM`, and `RECOGNIZE_RETRY_ON_EMPTY`. Do NOT start TPS collapse before Translation is one plane.
+
+## 2026-07-04 | DeepSeek review helper route wiring
+- **Changed:** `apps/web/src/app/api/translation/vision-extract/route.ts` now computes `review_summary` via `deepseekComposeReviewSummary(...)`, but ONLY when `REVIEW_EXPLAINER_ENABLED='1'` and `DEEPSEEK_REVIEW_EXPLAINER='1'`. The deterministic `review_explanations` layer remains mandatory and first.
+- **Safety model preserved:** the helper sees only `{ field, reasons[] }`; no values are passed, and nothing in this path can mutate `fields`, `finalValue`, or `review_required`. This is prose/help only.
+- **Verified:** new `visionExtractReviewExplainerRoute.test.ts` proves three cases: deterministic base only, optional DeepSeek prose when both flags are ON, and no prose when the deterministic base is OFF. `reviewExplainer.test.ts`, `runtimeTruthVocabulary.guard.test.ts`, and `tsc --noEmit` are green.
+- **Exact next action:** keep DeepSeek in helper/shadow/prose roles only, then continue the Translation vertical on the real flip blockers: window collection for decision/gates/seam/retry, followed by collapse of the legacy fallback plane.
+
+## 2026-07-04 | ReaderResult seam made structural inside recognizeDocument
+- **Changed:** `apps/web/src/lib/docintel/recognizeDocument.ts` no longer has a fork between direct `docintelToCandidate` and `ReaderResult`. The orchestrator now always routes reads through `readerResultFromExtracted(...)` → `observationToCandidate(...)`.
+- **Why safe:** `apps/web/src/lib/docintel/readers/__tests__/readerResultSeam.parity.test.ts` already froze byte-parity against the historical direct path. This keeps behavior stable while removing one internal branch.
+- **What this does NOT mean:** ReaderResult is not yet `LIVE` as a global product seam. It is only the mandatory internal seam of `recognizeDocument`; the larger route/runtime flip still depends on Translation/TPS path collapse.
+
+## 2026-07-04 | Shadow watchdog helper script
+- **Added:** `apps/web/scripts/shadow-watchdog.ts` + npm script `watchdog:shadow`. It reads PII-free shadow logs from stdin or a file, emits the deterministic aggregate/flip-block verdicts, and optionally adds `deepseekWatchdogVerdict(...)` over the aggregate only.
+- **Purpose:** cheap helper for engineers/agents operating the One Brain shadow window. It is not a product/runtime writer and it does not consume document values.
+- **Verified:** local synthetic run over a `[decision_shadow]` marker produced the expected JSON aggregate; `tsc --noEmit` stays green.
+
+# HANDOFF (2026-06-30 — Codex workstation config repair; next = finish browser OAuth consent for Figma/Vercel)
+
+## 2026-06-30 | Local Codex repair outside repo code
+- **Changed outside repo:** patched `~/.codex/config.toml` to add:
+  - `[agents.researcher].description = "Researches source material and gathers evidence"`
+  - `[agents.reviewer].description = "Reviews findings and checks correctness"`
+- **Verified:** `codex doctor` before the patch showed exactly two startup warnings for malformed agent roles;
+  after the patch it reported `17 ok · 1 idle · 3 notes · 0 warn · 0 fail ok`.
+- **Changed outside repo:** exported the existing GitHub CLI token to new GUI/CLI sessions via
+  `launchctl setenv GITHUB_PAT_TOKEN "$(gh auth token)"`.
+- **Verified:** `launchctl getenv GITHUB_PAT_TOKEN | wc -c` returned non-zero, so new Codex Desktop/CLI launches
+  can see the token without persisting it in the config file.
+- **Verified GUI/runtime state:** Google Chrome is installed and running; `codex app` launched Codex Desktop
+  and the process list shows both `/Applications/Google Chrome.app/.../Google Chrome` and
+  `/Applications/Codex.app/Contents/MacOS/Codex`.
+- **Not completed:** `figma` and `vercel` OAuth did not finish. The pending `codex mcp login ...` sessions ended
+  with `timed out waiting for OAuth callback` even after opening the auth URLs in Chrome. This is honest
+  `BLOCKED` on browser-side consent, not a hidden CLI failure.
+- **Important truth:** `codex mcp login github` fails by design here with
+  `Dynamic client registration not supported`; GitHub MCP in this install is bearer-token based and expects
+  `GITHUB_PAT_TOKEN`, which is why the launchd env fix is the correct path.
+- **Exact next action:** in the already opened Chrome/Codex windows, complete the Figma and Vercel consent screens.
+  Then rerun `codex mcp login figma` and `codex mcp login vercel` (or poll new sessions) and finish with one more
+  `codex doctor` check from the Desktop-launched environment if needed.
+
 # HANDOFF (2026-06-30 — One-Brain evidence-chain audit; next = decide whether to wire true provider evidence or keep template scope explicit)
 
 ## 2026-06-30 | Critical evidence-chain audit — what is really wired vs what is only scoped

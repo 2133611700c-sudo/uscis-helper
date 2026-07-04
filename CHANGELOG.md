@@ -1,5 +1,56 @@
 # CHANGELOG
 
+## 2026-07-04 | Audit-only: dictionaries + handwritten model path + local Mac LLM inventory
+- Re-verified the Ukrainian/Russian dictionary and transliteration core without changing runtime code. Evidence:
+  `pnpm --dir apps/web exec tsx ../../packages/knowledge/src/__tests__/referenceValidation.test.ts` = `29/29`,
+  `alphabetCompleteness.test.ts` = `82/82`, `russianGlossary.test.ts` = `55/55`,
+  `noCyrillicLeak.test.ts` = `26/26`.
+- Re-verified app-layer knowledge/model guards: targeted `vitest` packs for knowledgeBrain/normalize/autocorrect,
+  modelMatrix, llmCropReader, htrSidecarProvider, handwrittenFieldRoute, htrOnlyEarlyReturn all passed
+  (`87/87` + `32/32` + `15/15` depending on the pack).
+- Mac inventory proved local Ollama model manifests for `gemma4`, `qwen2.5:7b`, `qwen2.5-coder:7b`,
+  `qwen2.5-coder:14b`, but the local Ollama runtime itself is currently broken: `ollama --version` / `ollama list`
+  abort in MLX/Metal init with `NSRangeException`, so local Gemma is installed-on-disk but NOT currently usable.
+- No separate local Google Gemini desktop/runtime was found on disk; the Google-side local model evidence on this Mac
+  is the open-weight `gemma4` manifest under `~/.ollama/models/`.
+
+## 2026-07-04 | Translation legacy fallback — shared recognize door, truthful response tail
+- `apps/web/src/app/api/translation/vision-extract/route.ts`: the live legacy fallback no longer carries a half-removed private read tail. It now delegates the fallback read to `recognizeDocument(...)`, reuses `legacyRec.canonicalResult` when present, and only synthesizes an empty canonical envelope when the shared door returns none.
+- Fixed the broken response tail introduced during the cutover: `mrzExtra` now has request-level scope, and `anchor_read` / `provider` / `model` / `status` / `error` are derived honestly from `legacyRec` instead of dead `lastResult` references.
+- Updated `visionExtractLegacyCutover.test.ts` to freeze the new truth: the fallback delegates to `recognizeDocument`, stays strictly after the Core success return, and reports real reader provider/model rather than relabeling itself as canonical.
+- Re-verified: `vitest` green for `visionExtractLegacyCutover`, `visionExtractCorePath`, `visionExtractReviewExplainerRoute`, `recognizeDocument`, `recognizeRetryOnEmpty`; `tsc --noEmit` green.
+
+## 2026-07-04 | One-Brain T0 truth lock — enforcement + no-guessing law
+- Added `docs/ocr/FLIP_CRITERIA.md`: machine-readable flip law for the current One Brain shadow/flagged nodes. Makes explicit that CI-green while OFF is not flip proof; real-traffic/staging windows + owner sign-off remain mandatory.
+- Added `docs/ocr/NO_GUESSING_CONSTITUTION.md`: the root system law. Models may read/propose/verify/explain, but may not invent values; `unknown` beats fabricated.
+- Added `apps/web/src/lib/__tests__/runtimeTruthVocabulary.guard.test.ts`: parses `docs/ocr/ONE_BRAIN_RUNTIME_TRUTH.md` and fails if the 15-node inventory or detail rows stop carrying exactly one allowed runtime class.
+- Updated `docs/ocr/ONE_BRAIN_RUNTIME_TRUTH.md` to reference the no-guessing law explicitly and to narrow the DeepSeek target role to helper/analyst/explainer, never a silent final-value writer.
+
+## 2026-07-04 | DeepSeek review helper — route-wired as prose-only
+- Wired `deepseekComposeReviewSummary(...)` into `apps/web/src/app/api/translation/vision-extract/route.ts` as an optional `review_summary`, but only when BOTH `REVIEW_EXPLAINER_ENABLED='1'` and `DEEPSEEK_REVIEW_EXPLAINER='1'`.
+- Safety invariant preserved: the helper runs only over `field` keys + `review_reasons` codes; it never receives values and cannot write a final field value or lower review.
+- Added `visionExtractReviewExplainerRoute.test.ts` covering deterministic-base-only, dual-flag prose, and "no prose without deterministic base". Re-verified `reviewExplainer.test.ts`, `runtimeTruthVocabulary.guard.test.ts`, and `tsc`.
+
+## 2026-07-04 | ReaderResult seam — internal fork removed from recognizeDocument
+- `recognizeDocument` now always converts reads through `ReaderResult` (`readerResultFromExtracted` → `observationToCandidate`). The internal direct `docintelToCandidate` branch was removed.
+- This is a structural convergence step only; behavior remains pinned by `readerResultSeam.parity.test.ts`, which proves byte-parity against the historical direct path.
+- Runtime truth updated honestly: ReaderResult is now the built-in seam of `recognizeDocument`, but the node stays `FLAGGED` until the surrounding route/runtime matrix stops treating `recognizeDocument` as just one flagged path.
+
+## 2026-07-04 | Shadow watchdog helper — local aggregate/prose tool
+- Added `apps/web/scripts/shadow-watchdog.ts` and npm script `watchdog:shadow`.
+- The helper reads PII-free shadow markers from stdin/file, emits the deterministic aggregate from `aggregateShadowLogs(...)`, and optionally appends a DeepSeek prose verdict over the aggregate only.
+- This is helper tooling for engineers/agents; it has no product/runtime decision effect.
+
+## 2026-06-30 | Codex workstation repair (external config only; repo code unchanged)
+- Repaired malformed Codex agent-role definitions in `~/.codex/config.toml` by adding `description` for
+  `researcher` and `reviewer`; `codex doctor` startup warnings cleared from 2 to 0.
+- Set `GITHUB_PAT_TOKEN` for new GUI/CLI sessions via `launchctl setenv` sourced from the existing `gh auth`
+  login, so the bearer-token GitHub MCP can authenticate without storing the PAT in repo files or Codex config.
+- Opened pending Figma and Vercel OAuth URLs in Google Chrome and launched Codex Desktop (`codex app`) to restore
+  the correct Chrome-capable app context.
+- Honest blocker: both pending OAuth login sessions timed out waiting for the browser callback; Figma/Vercel MCP
+  auth remains incomplete until browser-side consent is actually confirmed.
+
 ## 2026-06-30 | One-Brain — evidence chain hardening (prompt §6/§15/§17)
 - §15 single coordinate normalizer `bboxOverlayRect()` — the ONE place that converts a normalized-0..1 bbox to an SVG overlay rect. Fails SAFE: null/wrong-length/non-finite → null; out-of-range coords CLAMPED into [0,1]; zero-area/inverted box → null (never draws a degenerate/overflowing rect). Wired into `resolveRenderableEvidence` (invalid bbox → no crop) and `FieldEvidenceCrop` (consumes the shared `overlay`, no inline coord math). +6 edge tests.
 - §6 `ReaderResult.ReaderFieldObservation.evidenceRegions?: EvidenceRegion[]` — canonical multi-region array aligned 1:1 with the live carriage (ExtractedDocField.evidenceRegions → …); legacy singular `evidenceRegion` kept for back-compat. ReaderResult stays dormant; this only aligns the contract so activating a localizing reader needs no further change.
@@ -2540,3 +2591,18 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 <!-- 2026-06-22: permanent no-Cyrillic-leak guard test (26 cases) — transliterateKMU55/Russian can never emit Cyrillic; regression-proof. -->
 
 <!-- 2026-06-22: e2e robustness — смт rule enforced only when смт actually read (stop false-fail on Gemini read-variance). RU leak fix LIVE-confirmed. Narrow М-place brain edge + famous-name-synthetic-fabrication recorded. -->
+# 2026-07-04 | Audit/repair: local Ollama runtime + Gemma/Qwen live proof
+- Repaired the local Mac LLM runtime outside the repo:
+  - upgraded `ollama` to `0.31.1`
+  - upgraded `mlx` to `0.31.2`
+  - upgraded `mlx-c` to `0.6.0_2`
+  - restarted `brew services ollama`
+- Verified the real local API after restart:
+  - `/api/version` = `0.31.1`
+  - `qwen2.5:7b` answered `QWEN_OK`
+  - `gemma4:latest` answered `GEMMA_OK`
+- Verified minimal project-facing usefulness of local `gemma4`:
+  - transliterated `ІВАНЕНКО` → `Ivanenko`
+  - read `test-fixtures/synthetic-passport.jpg` and returned the expected synthetic surname `TESTSURNAME`
+- Truth boundary recorded in `STATUS.md` / `HANDOFF.md`: local Gemma is now usable as a helper/shadow model on
+  this Mac, but it is NOT yet a proven handwritten-document primary reader for the project.

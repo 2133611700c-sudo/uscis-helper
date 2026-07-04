@@ -1,3 +1,85 @@
+# STATUS (2026-07-04 — Local Ollama/Gemma runtime repaired and verified)
+
+## 2026-07-04 | Local Mac LLM runtime — LOCAL_PASS / HELPER-ONLY
+**Readiness: LOCAL MODELS NOW RUN; SUITABLE FOR HELPER/SHADOW TASKS, NOT A PRIMARY DOC READER.**
+- **Verified repaired:** Homebrew upgrade completed for `ollama`, `mlx`, and `mlx-c`:
+  `ollama 0.21.0_1 -> 0.31.1`, `mlx 0.31.1 -> 0.31.2`, `mlx-c 0.6.0 -> 0.6.0_2`.
+- **Verified root cause:** before the repair, the local Ollama runtime was broken in two layers:
+  1. the old `0.21.0` CLI crashed in MLX/Metal init before any useful command;
+  2. after package upgrade, the stale background service still served `0.21.0`, causing real inference to fail with
+     `unknown runner engine, expected --imagegen-engine or --mlx-engine`.
+- **Verified fixed:** after `brew services restart ollama`, the local API now reports `{"version":"0.31.1"}` and
+  real inference succeeds:
+  - `qwen2.5:7b` → `QWEN_OK`
+  - `gemma4:latest` → `GEMMA_OK`
+- **Verified local inventory:** runnable local models now include `gemma4:latest`, `qwen2.5:7b`,
+  `qwen2.5-coder:7b`, and `qwen2.5-coder:14b`.
+- **Verified project-relevant microproofs:**
+  - text helper: local `gemma4` transliterated `ІВАНЕНКО` → `Ivanenko`
+  - vision helper: local `gemma4` read the safe synthetic passport fixture and returned the expected Latin surname
+    `TESTSURNAME`
+- **Current truth:** the local Google-family model on this Mac is `gemma4` via Ollama, not a standalone local
+  Gemini runtime. It is now usable as a cheap helper/shadow/prose/vision-assist model.
+- **Honest boundary:** this is NOT proof that Gemma is suitable as a primary reader for Ukrainian handwritten
+  documents. No live handwritten acceptance benchmark was passed here, and the project rule remains:
+  handwriting stays review-gated / HTR-backed only.
+
+# STATUS (2026-07-04 — Dictionary/model audit + local Mac LLM inventory)
+
+## 2026-07-04 | Dictionaries / transliteration / handwritten model path — LOCAL_PASS / PARTIAL
+**Readiness: DICTIONARY CORE STRONG; HANDWRITTEN AUTONOMY STILL PARTIAL.**
+- **Verified dictionary core:** the Ukrainian/Russian transliteration and glossary layer is healthy. Direct knowledge runs passed:
+  `referenceValidation` `29/29`, `alphabetCompleteness` `82/82`, `russianGlossary` `55/55`, `noCyrillicLeak` `26/26`.
+- **Verified app-layer guards:** targeted packs for knowledge brain/normalize/autocorrect and for model/htr/crop-reader wiring are green.
+- **Current runtime truth:** dictionaries are correctly assembled and live. The handwritten path is assembled safely but not yet as a fully live autonomous reader:
+  `HTR_SIDECAR_URL` is still optional/external, `HANDWRITING_CROP_LLM='gemini'` is helper-only, and both routes remain review-gated/fail-open.
+- **Honest boundary:** this is not proof that handwritten Ukrainian documents are solved. It is proof that the dictionary/translit substrate is strong and the model path is wired conservatively.
+
+## 2026-07-04 | Local Mac LLM inventory — DEGRADED
+**Readiness: LOCAL MODELS PRESENT ON DISK; RUNTIME NOT HEALTHY.**
+- **Verified on disk:** Ollama manifests exist for `gemma4`, `qwen2.5:7b`, `qwen2.5-coder:7b`, and `qwen2.5-coder:14b`.
+- **Verified broken:** `ollama --version` and `ollama list` currently abort in MLX/Metal init with `NSRangeException`, so the local runtime is not healthy enough for integration or benchmarking.
+- **No separate local Gemini proof:** there is no confirmed standalone local Google Gemini runtime/app on this Mac. The local Google model evidence is the `gemma4` Ollama manifest only.
+- **Operational verdict:** local Gemma is currently `BLOCKED` by the broken runtime. It cannot be counted as available project capacity yet.
+
+# STATUS (2026-07-04 — Translation fallback repaired; overall runtime still PARTIAL)
+
+## 2026-07-04 | Translation legacy fallback cutover repair — LOCAL_PASS / FLAGGED-ALIGNMENT
+**Readiness: FALLBACK PATH REPAIRED, NOT REMOVED.**
+- **Verified changed:** the live translation fallback in `apps/web/src/app/api/translation/vision-extract/route.ts` now delegates to `recognizeDocument(...)` for its read pass instead of carrying a broken half-inline second path. The fallback still remains a separate runtime branch, but it now reuses the shared recognize spine more honestly.
+- **Verified fixed:** the route no longer references dead `lastResult` values. `mrzExtra` is request-scoped again, and the legacy response derives `anchor_read`, `provider`, `model`, `status`, and `error` from `legacyRec`.
+- **Evidence:** `visionExtractLegacyCutover.test.ts`, `visionExtractCorePath.test.ts`, `visionExtractReviewExplainerRoute.test.ts`, `recognizeDocument.test.ts`, and `recognizeRetryOnEmpty.test.ts` all pass together (`27/27`); `pnpm --dir apps/web exec tsc --noEmit` is green.
+- **Honest boundary:** this is not the Translation flip. The fallback plane is still LIVE, so Translation still does not satisfy “one runtime decision/read plane”.
+
+# STATUS (2026-07-04 — One-Brain truth lock closing pass)
+
+## 2026-07-04 | T0 truth lock — DEGRADED / PARTIAL
+**Readiness: TRUTH-LOCK PARTIALLY CLOSED, NOT YET RUNTIME-COMPLETE.**
+- **Verified added:** `docs/ocr/FLIP_CRITERIA.md` now exists as the machine-readable flip law for the current One Brain shadow/flagged nodes: decision engine, gates-as-readers, normalize collapse, TPS one-arbitration, ReaderResult seam, retry-on-empty, review explainer, provider bbox, and DeepSeek helper roles.
+- **Verified added:** `apps/web/src/lib/__tests__/runtimeTruthVocabulary.guard.test.ts` now enforces the runtime-truth vocabulary contract against `docs/ocr/ONE_BRAIN_RUNTIME_TRUTH.md`: the 15-node inventory must keep exactly one allowed class per row; detail rows must do the same.
+- **Verified clarified:** `docs/ocr/ONE_BRAIN_RUNTIME_TRUTH.md` now explicitly carries the no-guessing law and points to `docs/ocr/NO_GUESSING_CONSTITUTION.md`. The system may read/propose/verify/explain; it may not invent a value.
+- **Honest remaining gap:** this does NOT make One Brain complete. Translation still has a live legacy fallback plane; TPS still has seven live writers; provider bbox remains DARK; ReaderResult remains FLAGGED; HTR remains BLOCKED_EXTERNAL.
+- **Current truth:** T0 code-solvable enforcement is materially closer, but overall runtime state remains PARTIAL until the per-node flip windows are proven and the live parallel planes are collapsed.
+
+## 2026-07-04 | DeepSeek review helper — LOCAL_PASS / FLAGGED
+**Readiness: HELPER LAYER WIRED, NOT A DECISION WRITER.**
+- **Verified wired:** `DEEPSEEK_REVIEW_EXPLAINER` now reaches the live translation `vision-extract` response, but only on top of the deterministic `REVIEW_EXPLAINER_ENABLED` base layer. The route emits `review_summary` only when both flags are strict `'1'`.
+- **Safety preserved:** DeepSeek still sees only `field` keys + `review_reasons` codes; it never receives values and cannot write `finalValue`, `value`, or release review. The deterministic `review_explanations` list remains the truth base.
+- **Evidence:** route wiring in `apps/web/src/app/api/translation/vision-extract/route.ts`; focused route proof in `apps/web/src/app/api/translation/__tests__/visionExtractReviewExplainerRoute.test.ts`; `reviewExplainer` tests + runtime-truth guard + `tsc` all green.
+- **Honest status:** this improves the cheap helper layer for reviewers/agents, but it does NOT strengthen DeepSeek into a writer plane and does NOT advance any runtime flip by itself.
+
+## 2026-07-04 | ReaderResult seam inside recognizeDocument — LOCAL_PASS / FLAGGED
+**Readiness: INTERNAL SEAM COLLAPSED, ROUTE FLIP STILL PENDING.**
+- **Verified changed:** `recognizeDocument` now ALWAYS converts page reads through `ReaderResult` before candidate creation. The internal direct `docintelToCandidate` fork is gone.
+- **Safety proof:** `readerResultSeam.parity.test.ts` still freezes byte-parity against the historical direct path. This is a structural convergence step, not a product flip.
+- **Honest boundary:** the node remains `FLAGGED` in runtime truth because `recognizeDocument` itself is still only one route option in the broader product matrix; Translation/TPS legacy planes are not gone yet.
+
+## 2026-07-04 | Shadow watchdog helper — LOCAL_PASS / HELPER ONLY
+**Readiness: ENGINEERING/AGENT TOOLING WIRED, NO PRODUCT EFFECT.**
+- **Verified added:** `apps/web/scripts/shadow-watchdog.ts` reads PII-free shadow log lines from stdin/file, computes the deterministic aggregate via `aggregateShadowLogs(...)`, and optionally asks DeepSeek for a prose verdict over the aggregate only.
+- **Verified safety:** no raw values are parsed or emitted; the helper only works over the known shadow markers and their aggregate. It does not influence any runtime decision.
+- **Evidence:** local execution via `pnpm --dir apps/web exec tsx scripts/shadow-watchdog.ts` on a synthetic `[decision_shadow]` line returned the expected aggregate JSON; `tsc --noEmit` remains green.
+
 # STATUS (2026-06-30 — Codex workstation config repair: startup warnings cleared; OAuth still awaiting manual consent)
 
 ## 2026-06-30 | One-Brain VISUAL-EVIDENCE subsystem — LOCAL_PASS / PARTIAL
