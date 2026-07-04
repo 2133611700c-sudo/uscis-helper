@@ -39,7 +39,12 @@ Handwritten = НИКОГДА не LLM-acceptance, только review. GPT — p
 | Arbitration D2 + KNOWLEDGE_BRAIN | **LIVE** | default ON; accept ПЕРЕПИСЫВАЕТ normalizedValue (снятие — за флипом evaluator-пути) |
 | C3 applyOcrFieldSafety (translation) | **LIVE** | безусловно в translation; флаг — для остальных |
 | Decision Engine (decideField ≡ C3) | **SHADOW_ONLY** | ONE_BRAIN_DECISION_SHADOW; 3 живые точки diffs=0 (N=3 ≠ окно) |
-| gates-as-readers (FieldDecision-проекции) | **FLAGGED** | адаптер+инвариант-guard готовы; gates НЕ переведены |
+| gates-as-readers (FieldDecision-проекции) | **SHADOW_ONLY** | адаптер+инвариант-guard + [gates_as_readers_shadow] differ (реальная гейт-деривация с обеих сторон); gates НЕ переведены — флип за чистым окном |
+| VERIFY-критик (C1-C5 cross-field) | **SHADOW_ONLY** | наблюдается в [decision_shadow]; + ASSESS-источник zoom-целей |
+| ASSESS→ZOOM verification re-read | **FLAGGED** | ASSESS_ZOOM_LOOP; значения не меняет, review только вверх (zoom_mismatch); ≤4 целей/док |
+| normalize-collapse rule-pack (P8 шаг 1) | **SHADOW_ONLY** | NORMALIZE_COLLAPSE_SHADOW; сигнальная обёртка САМОГО postExtractNormalize (drift=0 by construction); differ vs live-писатель |
+| Review-Explainer (глоссарий) | **FLAGGED** | REVIEW_EXPLAINER_ENABLED; детерминированный, бесплатный; DeepSeek-полировка отдельно за DEEPSEEK_REVIEW_EXPLAINER (prose-only, keys+codes) |
+| Crop-prompt knowledge-hints | **FLAGGED** | внутри HANDWRITING_CROP_LLM-пути; структурные подсказки, словарные ЗНАЧЕНИЯ в prompt запрещены тестом (анти-прайминг) |
 | TPS 7 параллельных писателей | **LIVE (болезнь)** | НЕ схлопнуты; one-arbitration = только proof-инструмент |
 | TPS one-arbitration differ | **SHADOW_ONLY** | TPS_ONE_ARBITRATION_SHADOW |
 | DeepSeek TPS-brain | **LIVE (наследие)** | включается наличием ключа (key≠permission не инвертирован — ждёт цифр shadow-метрики+sign-off) |
