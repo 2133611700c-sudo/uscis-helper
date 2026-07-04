@@ -41,7 +41,7 @@ describe('vision-extract — no-fields read must be HTTP 200, never 502', () => 
   })
 
   it('still returns ok:false + an error message on the no-fields path', () => {
-    expect(SRC).toMatch(/error:\s*lastResult\?\.error\s*\?\?\s*'No fields extracted across all pages\.'/)
+    expect(SRC).toMatch(/error:\s*'No fields extracted across all pages\.'/)
   })
 
   it('genuine bad-request codes are preserved (400/413/415/429 unchanged)', () => {

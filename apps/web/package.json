@@ -14,7 +14,8 @@
     "guard": "npm run guard:reparole && npm run guard:content && npm run guard:i18n",
     "test": "vitest run",
     "test:watch": "vitest",
-    "benchmark:cyrillic-private": "tsx scripts/cyrillic-acceptance.ts"
+    "benchmark:cyrillic-private": "tsx scripts/cyrillic-acceptance.ts",
+    "watchdog:shadow": "tsx scripts/shadow-watchdog.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.51.0",

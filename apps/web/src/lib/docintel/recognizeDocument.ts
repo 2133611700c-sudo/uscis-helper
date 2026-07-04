@@ -111,7 +111,7 @@ export interface RecognizeOutput {
   canonicalResult: CanonicalDocumentResult | null
   cyrillicMap: Map<string, string>
   providerErrors: ProviderErr[]
-  pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; model: string | null }>
+  pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; model: string | null; provider: string | null }>
   /** candidates BEFORE arbitration — lets a route distinguish "0 fields read" from "arbitration empty". */
   candidateCount: number
 }
@@ -157,7 +157,14 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
   }
 
   for (const { i, r } of reads) {
-    pageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms, model: r.model ?? null })
+    pageResults.push({
+      page: i + 1,
+      ok: r.ok,
+      status: r.status,
+      ms: r.ms,
+      model: r.model ?? null,
+      provider: r.provider ?? null,
+    })
     if (r.ok && Array.isArray(r.fields)) {
       buildCyrillicMap(r.fields).forEach((v: string, k: string) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
       // EVIDENCE PRODUCER (before candidate conversion): a localizing provider locates the
@@ -167,18 +174,13 @@ export async function recognizeDocument(input: RecognizeInput): Promise<Recogniz
       const fields = evidenceEnabled
         ? await attachProviderEvidence(r.fields, input.pages[i], evidenceProvider)
         : r.fields
-      // TRUTH-PLAN step 4 — ReaderResult LIVE SEAM (READER_RESULT_SEAM='1', default OFF →
-      // byte-identical): candidates convert THROUGH the ReaderResult observation contract
-      // (fields → readerResultFromExtracted → observationToCandidate), field-for-field parity
-      // with docintelToCandidate frozen by readerResultSeam.parity.test. This retires the
-      // "ReaderResult is dormant" truth-entry once flipped.
-      if (process.env.READER_RESULT_SEAM === '1') {
-        const rr = readerResultFromExtracted(fields, r.model ?? null, r.ms)
-        const providerName = (fields[0] as ExtractedDocField | undefined)?.provider ?? 'gemini'
-        readCandidates.push(...rr.fields.map((o) => observationToCandidate(o, i + 1, providerName)))
-      } else {
-        readCandidates.push(...fields.map((f: ExtractedDocField) => docintelToCandidate(f, i + 1)))
-      }
+      // ReaderResult is now the ONE internal observation seam of recognizeDocument.
+      // This is a structural refactor only: readerResultSeam.parity.test freezes byte
+      // parity against the old direct docintelToCandidate path, so product behavior
+      // remains unchanged while the internal spine loses a fork.
+      const rr = readerResultFromExtracted(fields, r.model ?? null, r.ms)
+      const providerName = (fields[0] as ExtractedDocField | undefined)?.provider ?? 'gemini'
+      readCandidates.push(...rr.fields.map((o) => observationToCandidate(o, i + 1, providerName)))
     } else if (r.provider_error) {
       providerErrors.push(r.provider_error)
     }

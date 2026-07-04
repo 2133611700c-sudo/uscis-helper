@@ -38,7 +38,8 @@ describe('vision-extract route — honest degradation wiring', () => {
   })
 
   it('legacy path also fails closed on a typed provider error', () => {
-    expect(ROUTE).toMatch(/legacyCandidates\.length === 0 && legacyProviderErrors\.length > 0/)
+    expect(ROUTE).toMatch(/legacyRec\.status === 'unavailable'/)
+    expect(ROUTE).toMatch(/\[legacy\] provider failure — honest degradation:/)
   })
 
   it('the honest response uses the class-derived HTTP status (429/503/502), never 200', () => {

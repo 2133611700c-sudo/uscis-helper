@@ -30,19 +30,20 @@ const SRC = fs.readFileSync(
 )
 
 describe('A) control flow — legacy fallback is now the canonical pipeline + marked', () => {
-  it('the legacy block collects candidates (docintelToCandidate), not a raw FieldOut merge', () => {
+  it('the legacy block delegates recognition to recognizeDocument, not a raw FieldOut merge', () => {
     // The old raw-merge accumulator (Map<string,FieldOut> named `merged`) is gone.
     expect(SRC).not.toMatch(/const\s+merged\s*=\s*new\s+Map<string,\s*FieldOut>/)
-    // It collects candidates carrying the page, exactly like the Core path.
-    expect(SRC).toMatch(/legacyCandidates\.push\(\.\.\.r\.fields\.map\(\(f\)\s*=>\s*docintelToCandidate\(f,\s*p\.page\)\)\)/)
+    // The fallback now reuses the shared recognition door instead of open-coding
+    // a second candidate/arbitration loop.
+    expect(SRC).toMatch(/const\s+legacyRec\s*=\s*await\s+recognizeDocument\(/)
   })
 
-  it('the legacy block runs the SAME arbitration + builds the canonical result', () => {
-    const legacyKb = SRC.indexOf('const legacyCanonicalFields = applyKnowledgeBrainIfEnabled(')
-    const legacyBuild = SRC.indexOf('const legacyCanonicalResult = buildCanonicalResult(')
+  it('the legacy block builds rows from the recognizeDocument canonical result', () => {
+    const legacyRec = SRC.indexOf('const legacyRec = await recognizeDocument(')
+    const legacyBuild = SRC.indexOf('const legacyCanonicalResult = legacyRec.canonicalResult ?? buildCanonicalResult(')
     const legacyRows = SRC.indexOf('toTranslationRows(legacyCanonicalResult.fields')
-    expect(legacyKb).toBeGreaterThan(-1)
-    expect(legacyBuild).toBeGreaterThan(legacyKb)
+    expect(legacyRec).toBeGreaterThan(-1)
+    expect(legacyBuild).toBeGreaterThan(legacyRec)
     expect(legacyRows).toBeGreaterThan(legacyBuild)
   })
 
@@ -58,17 +59,17 @@ describe('A) control flow — legacy fallback is now the canonical pipeline + ma
 
   it('the legacy canonical pipeline sits strictly AFTER the Core success return', () => {
     const coreReturn = SRC.indexOf("status: 'ok:core-b2'")
-    const legacyBuild = SRC.indexOf('const legacyCanonicalResult = buildCanonicalResult(')
+    const legacyRec = SRC.indexOf('const legacyRec = await recognizeDocument(')
     expect(coreReturn).toBeGreaterThan(-1)
-    expect(legacyBuild).toBeGreaterThan(coreReturn)
+    expect(legacyRec).toBeGreaterThan(coreReturn)
   })
 
   it('the legacy provider/model are NOT relabeled canonical (real reader kept)', () => {
     // The legacy terminal response still reports the real reader provider/model,
     // not the one-brain-core provider string the Core return uses.
     const tail = SRC.slice(SRC.indexOf('core_path: \'legacy_fallback\''))
-    expect(tail).toMatch(/provider:\s*lastResult\?\.provider\s*\?\?\s*null/)
-    expect(tail).toMatch(/model:\s*lastResult\?\.model\s*\?\?\s*null/)
+    expect(tail).toMatch(/provider:\s*legacyPrimaryPage\?\.provider\s*\?\?\s*null/)
+    expect(tail).toMatch(/model:\s*legacyReadModels\.join\('\+'\)\s*\|\|\s*null/)
   })
 })
 

@@ -38,7 +38,7 @@ import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { decideFields, isDecisionShadowEnabled } from '@/lib/canonical/core/decisionEngine'
 import { runConsistencyCritic } from '@/lib/canonical/core/fieldConsistencyCritic'
 import { runGatesAsReadersShadow } from '@/lib/canonical/core/gatesAsReadersShadow'
-import { explainReviewReasons } from '@/lib/review/reviewExplainer'
+import { deepseekComposeReviewSummary, explainReviewReasons } from '@/lib/review/reviewExplainer'
 import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { isForensicEnabled, sha256Hex } from '@/lib/docintel/forensics'
@@ -221,6 +221,7 @@ async function POST_impl(req: NextRequest) {
   }
 
   const docTypeId = (form.get('docTypeId') as string | null) ?? 'ua_internal_passport_booklet'
+  let mrzExtra: ReturnType<typeof docintelToCandidate>[] = []
 
   // Collect all `file` entries (repeated key supports multi-page upload).
   const rawFiles = form.getAll('file').filter((v) => v && typeof v !== 'string') as File[]
@@ -374,7 +375,6 @@ async function POST_impl(req: NextRequest) {
     let canonicalFields: ReturnType<typeof applyKnowledgeBrainIfEnabled> = []
     // 1A — MRZ authority (flag MRZ_TRANSLATION_ENABLED, default OFF = byte-identical).
     // Computed once; appended AFTER read candidates in both paths. Fail-open.
-    let mrzExtra: ReturnType<typeof docintelToCandidate>[] = []
     if (process.env.MRZ_TRANSLATION_ENABLED === '1' && docTypeId === 'ua_international_passport' && rawFiles.length > 0) {
       try {
         const firstBuf = Buffer.from(await rawFiles[0].arrayBuffer())
@@ -633,6 +633,21 @@ async function POST_impl(req: NextRequest) {
       // reader — never a flash literal, which would misrepresent a failure as a flash read.
       const actualModel = readModels.length ? readModels.join('+') : normalizeGeminiModel(process.env.GEMINI_MODEL, 'gemini-2.5-pro')
       console.info('[Core B2] Translation: arbitrated', fields.length, 'fields; requiresReview=', requiresReview, '; read_models=', readModels.join('+') || 'none')
+      const reviewReasonFields = (fields as Array<{ field: string; review_reasons?: string[] | null }>).map((f) => ({
+        field: f.field,
+        reasons: f.review_reasons ?? [],
+      }))
+      const reviewExplanations =
+        process.env.REVIEW_EXPLAINER_ENABLED === '1'
+          ? explainReviewReasons(reviewReasonFields)
+          : null
+      // DeepSeek is a helper/prose layer ONLY. It never runs without the deterministic
+      // explainer base, and it only sees keys+codes — never values.
+      const reviewSummary =
+        process.env.REVIEW_EXPLAINER_ENABLED === '1' && process.env.DEEPSEEK_REVIEW_EXPLAINER === '1'
+          ? await deepseekComposeReviewSummary(reviewReasonFields)
+          : null
+
       return NextResponse.json({
         ok: true, doc_type_id: docTypeId, fields,
         // R8: only present when C3 actually ran on the Core path (flag ON) so the
@@ -641,16 +656,8 @@ async function POST_impl(req: NextRequest) {
         // BLUEPRINT #5 (REVIEW_EXPLAINER_ENABLED, strict '1', default OFF → key absent →
         // byte-identical): deterministic reviewer-language explanations of the review
         // reason codes. Free (glossary, no LLM); keys+codes in, prose out; display-only.
-        ...(process.env.REVIEW_EXPLAINER_ENABLED === '1'
-          ? {
-              review_explanations: explainReviewReasons(
-                (fields as Array<{ field: string; review_reasons?: string[] | null }>).map((f) => ({
-                  field: f.field,
-                  reasons: f.review_reasons ?? [],
-                })),
-              ),
-            }
-          : {}),
+        ...(reviewExplanations ? { review_explanations: reviewExplanations } : {}),
+        ...(reviewSummary ? { review_summary: reviewSummary } : {}),
         date_ensemble: ens.diag,
         pages: corePageResults, page_count: rawFiles.length,
         provider: 'one-brain-core:translation-b2',
@@ -686,17 +693,12 @@ async function POST_impl(req: NextRequest) {
   // and preserves rawCyrillic/reviewReasons/suggestedValue by construction. The
   // fallback differs from the Core path ONLY by per-page preprocessing (rotate +
   // quality gate), the shorter per-page timeout, and the explicit fallback flag.
-  const legacyCandidates: ReturnType<typeof docintelToCandidate>[] = []
-  const legacyCyrillicMap = new Map<string, string>()
   const pageResults: Array<{ page: number; ok: boolean; status: string; ms: number; provider?: string; error?: string }> = []
-  const legacyProviderErrors: OcrProviderError[] = []
-  let lastResult: Awaited<ReturnType<typeof readDocument>> | null = null
 
-  type LegacyPage =
+  type LegacyPrep =
     | { kind: 'reshoot'; page: number; q: ReturnType<typeof decideImageQuality> }
-    | { kind: 'read'; page: number; r: Awaited<ReturnType<typeof readDocument>> }
-    | { kind: 'error'; page: number; message: string }
-  const legacyPages: LegacyPage[] = await Promise.all(rawFiles.map(async (file, i): Promise<LegacyPage> => {
+    | { kind: 'page'; page: number; buffer: Buffer; mime: string; rawBuffer: Buffer }
+  const legacyPrepared: LegacyPrep[] = await Promise.all(rawFiles.map(async (file, i): Promise<LegacyPrep> => {
     const mime = file.type || 'image/jpeg'
     const rawBuffer = Buffer.from(await file.arrayBuffer())
     // Auto-rotate (EXIF), resize >2048px, normalize orientation.
@@ -711,19 +713,9 @@ async function POST_impl(req: NextRequest) {
       const q = decideImageQuality(metricsFromPreprocess(pre))
       if (q.reshoot_required) return { kind: 'reshoot', page: i + 1, q }
     }
-    try {
-      // 25s (was 15s): the primary model can take 20-40s on
-      // a full page, so 15s aborted it every time → always fell to the flash
-      // fallback → every field flagged review. Pages run in parallel under the
-      // 60s route budget, so 25s is safe.
-      const r = await readDocument(buffer, effectiveMime, docTypeId, { timeoutMs: 25_000, product: 'translation', originalBuffer: rawBuffer })
-      return { kind: 'read', page: i + 1, r }
-    } catch (e: any) {
-      console.error('[translation/vision-extract page', i + 1, ']', e?.message ?? e)
-      return { kind: 'error', page: i + 1, message: e?.message ?? 'unknown' }
-    }
+    return { kind: 'page', page: i + 1, buffer, mime: effectiveMime, rawBuffer }
   }))
-  for (const p of legacyPages) {
+  for (const p of legacyPrepared) {
     if (p.kind === 'reshoot') {
       return NextResponse.json({
         ok: false,
@@ -735,49 +727,50 @@ async function POST_impl(req: NextRequest) {
         signals: p.q.signals,
       }, { status: 200 })
     }
-    if (p.kind === 'error') {
-      pageResults.push({ page: p.page, ok: false, status: 'error', ms: 0, error: p.message })
-      continue
-    }
-    const r = p.r
-    lastResult = r
-    pageResults.push({ page: p.page, ok: r.ok, status: r.status, ms: r.ms, ...(r.provider ? { provider: r.provider } : {}), ...(r.error ? { error: r.error } : {}) })
-    if (!r.ok && r.provider_error) legacyProviderErrors.push(r.provider_error)
-    if (r.ok && Array.isArray(r.fields)) {
-      // Same as the Core path: build the cyrillic display fallback and collect
-      // candidates carrying the page. The arbiter (arbitrateDocument inside
-      // applyKnowledgeBrainIfEnabled) picks the earliest valid candidate, so the
-      // previous "earliest non-empty page wins" behavior is preserved here.
-      buildCyrillicMap(r.fields).forEach((v, k) => { if (!legacyCyrillicMap.has(k)) legacyCyrillicMap.set(k, v) })
-      legacyCandidates.push(...r.fields.map((f) => docintelToCandidate(f, p.page)))
-    }
+  }
+  const legacyRecognizePages = legacyPrepared
+    .filter((p): p is Extract<LegacyPrep, { kind: 'page' }> => p.kind === 'page')
+    .map((p) => ({
+      buffer: p.buffer,
+      mime: p.mime,
+      readOpts: { timeoutMs: 25_000, product: 'translation', originalBuffer: p.rawBuffer },
+    }))
+  const legacyRec = await recognizeDocument({
+    pages: legacyRecognizePages,
+    docTypeId,
+    product: 'translation',
+    documentSessionId: (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract',
+    extraCandidates: mrzExtra,
+    evidenceProvider: resolveEvidenceProvider(),
+  })
+  for (const p of legacyRec.pageResults) {
+    pageResults.push({
+      page: p.page,
+      ok: p.ok,
+      status: p.status,
+      ms: p.ms,
+      ...(p.provider ? { provider: p.provider } : {}),
+    })
   }
 
   // FAIL CLOSED (P1): legacy path also hit a typed provider failure and read
   // nothing usable → honest non-2xx, NOT the generic 200+no_fields. This covers
   // the case where the Core path returned 0 candidates for a non-HTTP reason and
   // the legacy retry then hit a 429/5xx/timeout.
-  if (legacyCandidates.length === 0 && legacyProviderErrors.length > 0) {
-    const chosen = pickMostSevereOcrError(legacyProviderErrors)
+  if (legacyRec.status === 'unavailable') {
+    const chosen = pickMostSevereOcrError(legacyRec.providerErrors)
     console.warn('[legacy] provider failure — honest degradation:', chosen.error_code, JSON.stringify({ doc_type_id: docTypeId, pages: pageResults.map((p) => p.status) }))
     return ocrUnavailableResponse(chosen)
   }
-
-  // Run the canonical pipeline on the collected candidates — identical arbitration
-  // to the Core path. Empty candidate set ⇒ empty arbitrated set ⇒ ok:false below.
-  const legacyCanonicalFields = applyKnowledgeBrainIfEnabled(
-    legacyCandidates,
-    buildKnowledgeContext({ docTypeId, product: 'translation' }),
-  )
-  const legacyDocumentSessionId =
-    (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
-  const legacyCanonicalResult = buildCanonicalResult({
-    documentSessionId: legacyDocumentSessionId,
+  const legacyCanonicalResult = legacyRec.canonicalResult ?? buildCanonicalResult({
+    documentSessionId: (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract',
     product: 'translation',
     docType: docTypeId,
-    fields: legacyCanonicalFields,
+    fields: [],
     createdAt: new Date().toISOString(),
   })
+  const legacyDocumentSessionId =
+    (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
 
   // CANONICAL_CONTINUITY: persist canonical result (shadow/enforce modes)
   const legacyContinuityMode = getCanonicalMode('translation')
@@ -808,8 +801,11 @@ async function POST_impl(req: NextRequest) {
   // Any field at all? Then the request is considered ok even if some pages
   // failed (e.g. user uploaded one good page + one blurry one).
   // Reaching here means Core returned 0 fields or errored — legacy reader ran.
-  let fields = toTranslationRows(legacyCanonicalResult.fields, legacyCyrillicMap)
+  let fields = toTranslationRows(legacyCanonicalResult.fields, legacyRec.cyrillicMap)
   const ok = fields.length > 0
+  const legacyReadModels = [...new Set(legacyRec.pageResults.map((p) => p.model).filter((m): m is string => !!m))]
+  const legacyPrimaryPage = legacyRec.pageResults.find((p) => p.ok) ?? legacyRec.pageResults.find((p) => p.provider)
+  const legacyAnchorRead = legacyRec.candidateCount > 0
 
   // ── POLICY_WIRED: post-extraction document-class guards ───────────────────
   // Applied AFTER extraction, BEFORE response. Only for Ukrainian identity docs.
@@ -892,12 +888,12 @@ async function POST_impl(req: NextRequest) {
     pages: pageResults,
     page_count: rawFiles.length,
     // Backward compat: keep the single-call shape too for legacy clients.
-    anchor_read: lastResult?.anchor_read ?? null,
-    provider: lastResult?.provider ?? null,
-    model: lastResult?.model ?? null,
+    anchor_read: legacyAnchorRead,
+    provider: legacyPrimaryPage?.provider ?? null,
+    model: legacyReadModels.join('+') || null,
     ms: pageResults.reduce((s, p) => s + p.ms, 0),
-    status: ok ? 'ok:legacy-reader' : (lastResult?.status ?? 'no_fields'),
-    ...(ok ? {} : { error: lastResult?.error ?? 'No fields extracted across all pages.' }),
+    status: ok ? 'ok:legacy-reader' : 'no_fields',
+    ...(ok ? {} : { error: 'No fields extracted across all pages.' }),
     // Zero recognition is review_required even without the C3 flag, so the client
     // always treats a no-fields read as "needs your review", never silent success.
     ...(ok ? {} : { review_required: true }),
