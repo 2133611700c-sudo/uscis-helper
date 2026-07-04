@@ -31,6 +31,11 @@ jobs:
         with:
           run_install: false
 
+      - name: Install system deps (poppler for PDF-text assertions)
+        # packetBuilder/reparole packet tests extract rendered-PDF text via poppler's
+        # `pdftotext`; the runner image does not guarantee it → empty text → false failures.
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
