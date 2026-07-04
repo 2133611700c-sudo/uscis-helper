@@ -92,3 +92,9 @@ Entity: SK Logistics LLC, Los Angeles, CA.
 - Branch: main (direct push)
 - Deploy: auto via Vercel on push
 - Healthcheck: `https://messenginfo.com/api/healthz`
+- **ONE ACTIVE COMMITTER PER WORKTREE (2026-07-04, owner rule).** Parallel agents in one
+  worktree = the same disease as parallel finalValue writers. At any moment exactly ONE
+  agent stages/commits; every other agent is read-only in that worktree (or works in its
+  own branch+worktree). Never commit while another agent holds uncommitted changes unless
+  the owner explicitly hands over the committer role; then verify (tsc + full suite) and
+  commit the WHOLE state — no partial staging of another agent's files.
