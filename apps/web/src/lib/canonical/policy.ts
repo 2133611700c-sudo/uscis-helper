@@ -52,6 +52,12 @@ const CRITICALITY: Record<string, Criticality> = {
   date_of_issue: 'high',
   date_of_expiry: 'high',
   document_series: 'high',
+  // ONE-BRAIN v2 Phase 2c (tpsHintParity gap G4): defaulted to 'low', so a low-confidence
+  // Core read of the I-94 number passed UNREVIEWED where the legacy module forced review.
+  // 'high' = review below threshold — monotonic-up only (C3 already classes it
+  // critical_document at the safety layer; this aligns the arbitration layer).
+  i94_admission_number: 'high',
+  i94_admit_until: 'high',
   sex: 'medium',
   document_color: 'low',
 }

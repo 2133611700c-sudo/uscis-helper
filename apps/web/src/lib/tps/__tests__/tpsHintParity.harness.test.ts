@@ -3,8 +3,7 @@
  *
  * PER-HINT PARITY HARNESS for the TPS_CORE_HINTS allowlist (tpsAdapter.ts):
  * before a hint ('i94', 'ead') may be flipped from the legacy OCR module to the
- * Core path, this harness proves (or documents the exact gaps in) contract
- * compatibility between:
+ * Core path, this harness proves contract compatibility between:
  *
  *   LEGACY:  runI94Module / runEadModule (OcrResult fixture → TpsModuleResult)
  *   CORE:    docintel reader fields (per us_i94 / us_ead registry spec)
@@ -24,49 +23,54 @@
  * field-name coverage (A), value equality after trivial normalization (B), and
  * review semantics (C). All data is FICTIONAL (no real PII).
  *
- * ── EXPLICIT KEY-MAPPING TABLE (the contract this harness establishes) ──────
+ * ── EXPLICIT KEY-MAPPING TABLE (the documented contract) ────────────────────
  * Core (docintel registry key)  →  Legacy/TPS-consumed key    | authority
  *   i94_admission_number        →  i94_admission_number       | identical
  *   i94_class_of_admission      →  i94_class_of_admission     | identical
- *   i94_date_of_entry           →  last_entry_date            | KEY_ALIASES (canonical/core/keyAliases.ts)
- *   i94_place_of_entry          →  place_of_last_entry        | established HERE (mechanical: same fact, "Port of Entry")
- *   date_of_birth               →  dob                        | KEY_ALIASES
+ *   i94_date_of_entry           →  last_entry_date            | CORE_TO_TPS_KEY (tpsAdapter.ts)
+ *   i94_place_of_entry          →  place_of_last_entry        | CORE_TO_TPS_KEY
+ *   date_of_birth               →  dob                        | CORE_TO_TPS_KEY
  *   family_name                 →  family_name                | identical
  *   given_name                  →  given_name                 | identical
  *   a_number                    →  a_number                   | identical
- *   ead_category                →  ead_category_on_card       | established HERE (mechanical: card "Category" line)
- *   ead_validity_to             →  ead_expiration_date        | established HERE (mechanical: card "Card Expires" line)
- *   (no core key)               →  i94_admit_until            | ❌ GAP — us_i94 spec has NO admit-until field
- *   (no core key)               →  country_of_citizenship     | ❌ GAP — us_i94 spec has country_of_birth, which is a
- *                                                             |   DIFFERENT fact (KEY_ALIASES maps it to place_of_birth,
- *                                                             |   NOT citizenship) — must not be conflated
+ *   ead_category                →  ead_category_on_card       | CORE_TO_TPS_KEY
+ *   ead_validity_to             →  ead_expiration_date        | CORE_TO_TPS_KEY
+ *   i94_admit_until             →  i94_admit_until            | identical (spec field added, Phase 2c)
+ *   country_of_citizenship      →  country_of_citizenship     | identical (spec field added, Phase 2c)
  *
- * KNOWN REAL GAPS kept visible via it.fails() (the point of this harness):
- *   G1 (i94): Core cannot produce i94_admit_until — documentContracts.ts calls it
- *       "critical for TPS" (status-window decision). Registry spec must add it before flip.
- *   G2 (i94): Core cannot produce country_of_citizenship (allowed + consumed on the i94 slot).
- *   G3 (both): NOTHING translates Core registry keys → legacy keys between
- *       canonicalToTpsModuleResult (passes f.key through verbatim) and the
- *       applyContract firewall (exact-key match, no aliasing) or
- *       postExtractNormalize (keys on 'dob'/'last_entry_date'/'ead_expiration_date').
- *       The passport flip worked ONLY because the ua_international_passport spec
- *       already uses the legacy keys. us_i94/us_ead specs do NOT.
- *   G4 (i94): i94_admission_number has criticality 'low' in canonical/policy.ts,
- *       so a LOW-CONFIDENCE Core read of it sails through unreviewed, while the
- *       legacy module's uncertain path (unlabelled fallback) forces review.
- *   G5 (i94, surface form only): the Core D2 knowledge layer rewrites values of keys
- *       containing 'date'/'dob' from ISO → USCIS MM/DD/YYYY (knowledgeNormalize.ts
- *       'date.iso_to_uscis'), while legacy modules emit ISO. Affects i94_date_of_entry
- *       and date_of_birth; ead_validity_to/_from escape (no 'date' in the key) and stay
- *       ISO. Downstream postExtractNormalize.ts (lines ~199-208) repairs US→ISO as
- *       PRODUCT_FORMATTING_ONLY — but it keys on the LEGACY names
- *       ('dob'/'last_entry_date'/'ead_expiration_date'), so the repair only reaches
- *       Core fields AFTER the G3 key translation is fixed. Same instant, different
- *       surface — the value-parity comparator below applies exactly that downstream
- *       US→ISO transform, and the B2 tests pin the raw surface behavior per hint.
+ * ── GAP STATUS: G1–G4 CLOSED by Phase 2c ───────────────────────────────────
+ *   G1 CLOSED: documentRegistry.ts us_i94 spec now declares i94_admit_until
+ *       (kind 'date') — the "critical for TPS" status-window fact is coverable.
+ *   G2 CLOSED: us_i94 spec now declares country_of_citizenship (kind 'text'),
+ *       DISTINCT from country_of_birth (birth country ≠ citizenship — the two
+ *       facts stay separate keys and are never conflated).
+ *   G3 CLOSED: canonicalToTpsModuleResult (canonical/core/tpsAdapter.ts) now
+ *       PROJECTS Core registry keys → legacy/TPS keys itself via CORE_TO_TPS_KEY
+ *       (exported helper projectCoreKeyToTps). The adapter OUTPUT carries the
+ *       LEGACY names, so the applyContract firewall (exact-key match) and
+ *       postExtractNormalize (keys on 'dob'/'last_entry_date'/
+ *       'ead_expiration_date') both see the keys they expect. Tests below assert
+ *       the adapter did the projection (legacy key present, registry key absent).
+ *   G4 CLOSED: canonical/policy.ts CRITICALITY now has i94_admission_number:
+ *       'high' and i94_admit_until: 'high', so a low-confidence (<0.85) Core
+ *       read of the primary I-94 facts IS review-flagged (low_final_confidence),
+ *       matching the legacy module's conservative uncertain path.
  *
- * VERDICTS (as of this harness): i94 = GAPS (G1, G2, G3, G4, G5); ead = GAPS (G3 only —
- * field coverage + semantic values + date surface are at parity under the mapping table).
+ * REMAINING PINNED DELTA (surface form only, NOT a blocker):
+ *   G5 (i94): the Core D2 knowledge layer rewrites values of keys containing
+ *       'date'/'dob' from ISO → USCIS MM/DD/YYYY (knowledgeNormalize.ts
+ *       'date.iso_to_uscis') BEFORE the adapter's key projection, so the
+ *       adapter emits last_entry_date/dob with MM/DD/YYYY values while legacy
+ *       emits ISO. Because G3 is closed the downstream US→ISO repair in
+ *       postExtractNormalize.ts (~199-208, PRODUCT_FORMATTING_ONLY) now DOES
+ *       reach these fields (it keys on the legacy names the adapter now emits).
+ *       Same instant, different surface — pinned in B2. ead_validity_to /
+ *       i94_admit_until contain neither 'date' nor 'dob' at D2 time (projection
+ *       happens after D2), so they pass through as ISO.
+ *
+ * VERDICTS (post-Phase-2c): i94 = PARITY (G5 surface delta pinned + healed
+ * downstream); ead = PARITY. This harness is now the FLIP-GATE EVIDENCE for
+ * adding 'i94' and 'ead' to TPS_CORE_HINTS.
  */
 import { describe, expect, it } from 'vitest'
 import type { OcrResult } from '@/lib/ocr/types'
@@ -77,30 +81,34 @@ import { runEadModule } from '@/lib/tps/modules/ead'
 import { getDocTypeSpec } from '@/lib/docintel/documentRegistry'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { applyKnowledgeBrainIfEnabled, buildKnowledgeContext } from '@/lib/canonical/core/knowledgeBrain'
-import { canonicalToTpsModuleResult, mapTpsHintToDocintelId } from '@/lib/canonical/core/tpsAdapter'
+import { canonicalToTpsModuleResult, mapTpsHintToDocintelId, projectCoreKeyToTps } from '@/lib/canonical/core/tpsAdapter'
 import { applyContract } from '@/lib/tps/ocr/documentContracts'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Explicit key mapping: Core (docintel registry) key → legacy/TPS-consumed key.
-// THIS IS THE CONTRACT. Identical keys are listed too so the table is complete
-// and a registry rename breaks the test loudly.
+// DOCUMENTATION of the projection the ADAPTER now performs (CORE_TO_TPS_KEY in
+// tpsAdapter.ts). Kept complete (identical keys listed too) so a registry
+// rename breaks this test loudly. Assertions below consume the adapter's
+// OUTPUT keys directly and verify the adapter applied this table itself.
 // ─────────────────────────────────────────────────────────────────────────────
 const CORE_TO_LEGACY_I94: Record<string, string> = {
   i94_admission_number: 'i94_admission_number',
   i94_class_of_admission: 'i94_class_of_admission',
-  i94_date_of_entry: 'last_entry_date', // KEY_ALIASES
-  i94_place_of_entry: 'place_of_last_entry', // established here (same fact: Port of Entry)
-  date_of_birth: 'dob', // KEY_ALIASES
+  i94_date_of_entry: 'last_entry_date', // CORE_TO_TPS_KEY
+  i94_place_of_entry: 'place_of_last_entry', // CORE_TO_TPS_KEY (same fact: Port of Entry)
+  date_of_birth: 'dob', // CORE_TO_TPS_KEY
   family_name: 'family_name',
   given_name: 'given_name',
+  i94_admit_until: 'i94_admit_until', // spec field added in Phase 2c (G1 closed)
+  country_of_citizenship: 'country_of_citizenship', // spec field added in Phase 2c (G2 closed)
   // country_of_birth deliberately NOT mapped to country_of_citizenship:
-  // birth country ≠ citizenship country (KEY_ALIASES: country_of_birth → place_of_birth).
+  // birth country ≠ citizenship country — they are separate registry fields now.
 }
 
 const CORE_TO_LEGACY_EAD: Record<string, string> = {
   a_number: 'a_number',
-  ead_category: 'ead_category_on_card', // established here (card "Category")
-  ead_validity_to: 'ead_expiration_date', // established here (card "Card Expires")
+  ead_category: 'ead_category_on_card', // CORE_TO_TPS_KEY (card "Category")
+  ead_validity_to: 'ead_expiration_date', // CORE_TO_TPS_KEY (card "Card Expires")
   family_name: 'family_name',
   given_name: 'given_name',
   // card_number / ead_validity_from / country_of_birth: Core surplus — the legacy
@@ -119,6 +127,7 @@ const FICTIONAL = {
   entryUs: '03/15/2024',
   admitUntilIso: '2026-04-11',
   admitUntilUs: '04/11/2026',
+  citizenship: 'UKRAINE',
   port: 'LOS ANGELES, CA',
   aNumber: '123456789',
   eadCategory: 'C11',
@@ -162,7 +171,7 @@ function legacyI94Result(): TpsModuleResult {
     'Date of Birth',
     FICTIONAL.dobUs,
     'Country of Citizenship',
-    'UKRAINE',
+    FICTIONAL.citizenship,
     'Class of Admission',
     FICTIONAL.classOfAdmission,
     'Most Recent Date of Entry',
@@ -250,7 +259,9 @@ function coreI94Result(overrides: Record<string, CoreOverride> = {}): TpsModuleR
     i94_admission_number: FICTIONAL.i94Number,
     i94_class_of_admission: FICTIONAL.classOfAdmission,
     i94_date_of_entry: FICTIONAL.entryIso,
+    i94_admit_until: FICTIONAL.admitUntilIso, // Phase 2c spec field (G1 closed)
     i94_place_of_entry: FICTIONAL.port,
+    country_of_citizenship: FICTIONAL.citizenship, // Phase 2c spec field (G2 closed)
     country_of_birth: 'UKRAINE',
   }, overrides)
 }
@@ -290,19 +301,6 @@ function fieldMap(r: TpsModuleResult): Map<string, { normalized: string | null; 
   return m
 }
 
-/** Core result re-keyed to legacy names via the explicit mapping table. */
-function coreAsLegacyKeys(
-  r: TpsModuleResult,
-  mapping: Record<string, string>,
-): Map<string, { normalized: string | null; review: boolean }> {
-  const m = new Map<string, { normalized: string | null; review: boolean }>()
-  for (const f of r.fields) {
-    const legacyKey = mapping[f.field]
-    if (legacyKey) m.set(legacyKey, { normalized: f.normalized_value, review: f.review_required })
-  }
-  return m
-}
-
 // ═════════════════════════════════════════════════════════════════════════════
 // Flip mechanism sanity: the allowlist gate this evidence feeds.
 // ═════════════════════════════════════════════════════════════════════════════
@@ -312,6 +310,18 @@ describe('tpsHintParity harness — flip gate wiring', () => {
     expect(mapTpsHintToDocintelId('ead', {})).toBeNull()
     expect(mapTpsHintToDocintelId('i94', { TPS_CORE_HINTS: 'i94,ead' })).toBe('us_i94')
     expect(mapTpsHintToDocintelId('ead', { TPS_CORE_HINTS: 'i94,ead' })).toBe('us_ead')
+  })
+
+  it('projectCoreKeyToTps implements exactly the documented mapping table (hint-scoped)', () => {
+    for (const [coreKey, legacyKey] of Object.entries(CORE_TO_LEGACY_I94)) {
+      expect(projectCoreKeyToTps(coreKey, 'i94'), `i94 projection of '${coreKey}'`).toBe(legacyKey)
+    }
+    for (const [coreKey, legacyKey] of Object.entries(CORE_TO_LEGACY_EAD)) {
+      expect(projectCoreKeyToTps(coreKey, 'ead'), `ead projection of '${coreKey}'`).toBe(legacyKey)
+    }
+    // SAFETY scoping (tpsAdapter PROJECTED_TPS_HINTS): the LIVE passport/booklet
+    // path is NEVER projected — its MRZ candidates legitimately emit date_of_birth.
+    expect(projectCoreKeyToTps('date_of_birth', 'passport')).toBe('date_of_birth')
   })
 })
 
@@ -338,92 +348,82 @@ describe('tpsHintParity harness — hint "i94"', () => {
     ])
   })
 
-  it('fixture sanity: Core chain matched and emitted registry-spec keys', () => {
+  it('fixture sanity: Core chain matched and the ADAPTER emitted LEGACY keys (G3 projection applied)', () => {
     expect(core.matched).toBe(true)
     const keys = core.fields.map((f) => f.field).sort()
     expect(keys).toEqual([
-      'country_of_birth',
-      'date_of_birth',
+      'country_of_birth', // Core surplus (distinct fact; passes through un-renamed)
+      'country_of_citizenship',
+      'dob',
       'family_name',
       'given_name',
       'i94_admission_number',
-      'i94_class_of_admission',
-      'i94_date_of_entry',
-      'i94_place_of_entry',
-    ])
-  })
-
-  it('A. field-coverage parity for the fields Core CAN cover (mapping table applied)', () => {
-    const coreLegacyKeys = coreAsLegacyKeys(core, CORE_TO_LEGACY_I94)
-    const coverable = [
-      'i94_admission_number',
+      'i94_admit_until',
       'i94_class_of_admission',
       'last_entry_date',
       'place_of_last_entry',
-      'dob',
-      'family_name',
-      'given_name',
-    ]
-    for (const key of coverable) {
-      expect(coreLegacyKeys.has(key), `Core (via mapping) must cover legacy field '${key}'`).toBe(true)
+    ])
+    // The registry-spec source keys must NOT leak through the adapter:
+    for (const registryKey of ['i94_date_of_entry', 'i94_place_of_entry', 'date_of_birth']) {
+      expect(keys, `adapter must project '${registryKey}' away`).not.toContain(registryKey)
     }
   })
 
-  // G1 + G2 — REAL coverage gaps, kept visible on purpose (this is the flip evidence):
-  //   * i94_admit_until: the us_i94 registry spec has NO admit-until field, but the
-  //     legacy module emits it and documentContracts.ts marks it "critical for TPS"
-  //     (valid-status-window decision). The spec must gain an admit-until field
-  //     (aliasable to i94_admit_until) before 'i94' may enter TPS_CORE_HINTS.
-  //   * country_of_citizenship: legacy emits it (CBP prints it; the i94 slot contract
-  //     allows + consumes it). The us_i94 spec only has country_of_birth, which is a
-  //     DIFFERENT fact and must not be conflated.
-  it.fails('A-FULL. every legacy-emitted field is covered by Core — FAILS: i94_admit_until + country_of_citizenship missing (G1, G2)', () => {
-    const coreLegacyKeys = coreAsLegacyKeys(core, CORE_TO_LEGACY_I94)
+  it('A-FULL. every legacy-emitted field is covered by the Core adapter output — G1+G2+G3 CLOSED', () => {
+    const coreMap = fieldMap(core)
     const missing = legacy.fields
       .map((f) => f.field)
-      .filter((k) => !coreLegacyKeys.has(k))
-    expect(missing, `Core path is missing legacy i94 fields: [${missing.join(', ')}] — registry spec us_i94 must cover them before flip`).toEqual([])
+      .filter((k) => !coreMap.has(k))
+    expect(missing, `Core path is missing legacy i94 fields: [${missing.join(', ')}]`).toEqual([])
+    // The two Phase-2c spec additions specifically:
+    expect(coreMap.has('i94_admit_until'), 'us_i94 spec must cover i94_admit_until (G1)').toBe(true)
+    expect(coreMap.has('country_of_citizenship'), 'us_i94 spec must cover country_of_citizenship (G2)').toBe(true)
   })
 
-  it('B. value parity on overlapping fields (trim/case normalization; ISO dates)', () => {
+  it('B. value parity on ALL legacy-emitted fields (trim/case normalization; US↔ISO date fold)', () => {
     const legacyMap = fieldMap(legacy)
-    const coreLegacyKeys = coreAsLegacyKeys(core, CORE_TO_LEGACY_I94)
+    const coreMap = fieldMap(core)
     const overlapping = [
       'i94_admission_number',
       'i94_class_of_admission',
-      'last_entry_date',   // legacy normalizes 03/15/2024 → 2024-03-15; core reader emits ISO
+      'last_entry_date',   // legacy normalizes 03/15/2024 → 2024-03-15; core D2 emits 03/15/2024 (G5)
+      'i94_admit_until',
       'place_of_last_entry',
       'dob',
+      'country_of_citizenship',
       'family_name',
       'given_name',
     ]
     for (const key of overlapping) {
       const l = legacyMap.get(key)
-      const c = coreLegacyKeys.get(key)
+      const c = coreMap.get(key)
       expect(l, `legacy missing '${key}' (fixture broke)`).toBeDefined()
-      expect(c, `core missing '${key}' (mapping broke)`).toBeDefined()
+      expect(c, `core missing '${key}' (adapter projection broke)`).toBeDefined()
       expect(norm(c!.normalized), `value parity on '${key}'`).toBe(norm(l!.normalized))
     }
   })
 
-  it('B2. date surface-format delta is pinned (G5): Core emits USCIS MM/DD/YYYY, legacy emits ISO', () => {
+  it('B2. date surface-format delta is pinned (G5): Core emits USCIS MM/DD/YYYY on date/dob keys, legacy emits ISO', () => {
     // Semantic parity is proven in B; this pins the SURFACE difference so a change
-    // in either side is caught. The downstream US→ISO repair (postExtractNormalize)
-    // keys on 'last_entry_date'/'dob' — i.e. it heals this only after G3 is fixed.
+    // in either side is caught. Because G3 is closed, the downstream US→ISO repair
+    // (postExtractNormalize keys on 'last_entry_date'/'dob') NOW reaches these
+    // fields — the adapter emits exactly those names.
     const legacyMap = fieldMap(legacy)
     const coreMap = fieldMap(core)
     expect(legacyMap.get('last_entry_date')!.normalized).toBe(FICTIONAL.entryIso)
-    expect(coreMap.get('i94_date_of_entry')!.normalized).toBe(FICTIONAL.entryUs)
+    expect(coreMap.get('last_entry_date')!.normalized).toBe(FICTIONAL.entryUs) // D2 saw 'i94_date_of_entry' (contains 'date')
     expect(legacyMap.get('dob')!.normalized).toBe(FICTIONAL.dobIso)
-    expect(coreMap.get('date_of_birth')!.normalized).toBe(FICTIONAL.dobUs)
+    expect(coreMap.get('dob')!.normalized).toBe(FICTIONAL.dobUs) // D2 saw 'date_of_birth'
+    // i94_admit_until contains neither 'date' nor 'dob' at D2 time → stays ISO:
+    expect(coreMap.get('i94_admit_until')!.normalized).toBe(FICTIONAL.admitUntilIso)
   })
 
   it('C. review semantics: Core is never LESS reviewed than legacy on the clean fixture', () => {
     const legacyMap = fieldMap(legacy)
-    const coreLegacyKeys = coreAsLegacyKeys(core, CORE_TO_LEGACY_I94)
+    const coreMap = fieldMap(core)
     for (const [key, l] of legacyMap) {
-      const c = coreLegacyKeys.get(key)
-      if (!c) continue // coverage gaps are asserted separately above
+      const c = coreMap.get(key)
+      if (!c) continue // coverage is asserted separately above
       if (l.review) {
         expect(c.review, `legacy flags '${key}' for review — Core must too`).toBe(true)
       }
@@ -432,7 +432,7 @@ describe('tpsHintParity harness — hint "i94"', () => {
     // strictly MORE conservative than legacy's clean-read false. Assert it so a
     // future policy loosening is caught here.
     for (const key of ['family_name', 'given_name', 'dob']) {
-      expect(coreLegacyKeys.get(key)!.review, `Core must review critical field '${key}' without an MRZ anchor`).toBe(true)
+      expect(coreMap.get(key)!.review, `Core must review critical field '${key}' without an MRZ anchor`).toBe(true)
     }
   })
 
@@ -449,35 +449,33 @@ describe('tpsHintParity harness — hint "i94"', () => {
     expect(uncertain.manual_review_required).toBe(true)
   })
 
-  // G4 — REAL review-semantics gap, kept visible on purpose:
-  // i94_admission_number has criticality 'low' in canonical/policy.ts (only the six
-  // legal-identity fields are critical), so the confidence<0.85 review gate does not
-  // fire for it. A low-confidence Core read of the PRIMARY I-94 fact therefore passes
-  // UNREVIEWED, while the legacy module's uncertain path (unlabelled fallback) forces
-  // review. Before flip: either raise i94_admission_number criticality or add a
-  // doc-number confidence gate.
-  it.fails('C3. low-confidence Core admission number must be review-flagged — FAILS: criticality "low" skips the confidence gate (G4)', () => {
+  it('C3. low-confidence Core admission number IS review-flagged — G4 CLOSED (criticality "high" arms the confidence gate)', () => {
+    // canonical/policy.ts CRITICALITY now has i94_admission_number: 'high', so a
+    // confidence<0.85 read trips 'low_final_confidence' — matching the legacy
+    // module's conservative uncertain path.
     const lowConf = coreI94Result({ i94_admission_number: { confidence: 0.4 } })
     const adm = lowConf.fields.find((f) => f.field === 'i94_admission_number')
     expect(adm).toBeDefined()
     expect(adm!.review_required, 'low-confidence i94_admission_number must not sail through unreviewed').toBe(true)
+    expect(lowConf.manual_review_required).toBe(true)
   })
 
-  // G3 — REAL contract-firewall gap, kept visible on purpose:
-  // canonicalToTpsModuleResult passes registry keys through VERBATIM and
-  // applyContract matches keys EXACTLY (no aliasing), so the Core-emitted
-  // i94_date_of_entry / i94_place_of_entry / date_of_birth are REJECTED by the
-  // i94 slot contract even though KEY_ALIASES declares the equivalence. The
-  // passport flip only worked because ua_international_passport's spec already
-  // uses legacy keys. Before flip: apply primaryKeyOf()/an explicit rename in the
-  // tpsAdapter (or rename the us_i94 spec keys to the legacy names).
-  it.fails('D. firewall compatibility: mapped Core keys survive applyContract — FAILS: no key translation exists (G3)', () => {
+  it('C4. low-confidence Core admit-until date IS review-flagged (i94_admit_until criticality "high")', () => {
+    const lowConf = coreI94Result({ i94_admit_until: { confidence: 0.4 } })
+    const admitUntil = lowConf.fields.find((f) => f.field === 'i94_admit_until')
+    expect(admitUntil).toBeDefined()
+    expect(admitUntil!.review_required, 'low-confidence i94_admit_until must be review-flagged').toBe(true)
+  })
+
+  it('D. firewall compatibility: adapter-projected keys survive applyContract — G3 CLOSED', () => {
     const contract = applyContract('i94', core.fields.map((f) => f.field), 'i94')
     const accepted = new Set(contract.accepted_field_keys)
-    const rejectedMapped = Object.keys(CORE_TO_LEGACY_I94).filter((coreKey) => !accepted.has(coreKey))
+    // Every legacy-consumed key the adapter emits must pass the exact-key firewall:
+    const legacyConsumed = legacy.fields.map((f) => f.field)
+    const rejected = legacyConsumed.filter((k) => !accepted.has(k))
     expect(
-      rejectedMapped,
-      `i94 slot firewall rejects Core keys [${rejectedMapped.join(', ')}] — KEY_ALIASES is never applied between tpsAdapter and applyContract`,
+      rejected,
+      `i94 slot firewall rejects adapter-emitted keys [${rejected.join(', ')}]`,
     ).toEqual([])
   })
 })
@@ -503,32 +501,35 @@ describe('tpsHintParity harness — hint "ead"', () => {
     expect(legacy.manual_review_required).toBe(false)
   })
 
-  it('fixture sanity: Core chain matched and emitted registry-spec keys', () => {
+  it('fixture sanity: Core chain matched and the ADAPTER emitted LEGACY keys (G3 projection applied)', () => {
     expect(core.matched).toBe(true)
     const keys = core.fields.map((f) => f.field).sort()
     expect(keys).toEqual([
       'a_number',
-      'card_number',
-      'country_of_birth',
-      'ead_category',
-      'ead_validity_from',
-      'ead_validity_to',
+      'card_number',          // Core surplus, passes through un-renamed
+      'country_of_birth',     // Core surplus
+      'ead_category_on_card', // projected from ead_category
+      'ead_expiration_date',  // projected from ead_validity_to
+      'ead_validity_from',    // Core surplus
       'family_name',
       'given_name',
     ])
+    for (const registryKey of ['ead_category', 'ead_validity_to']) {
+      expect(keys, `adapter must project '${registryKey}' away`).not.toContain(registryKey)
+    }
   })
 
-  it('A. field-coverage parity: EVERY legacy-emitted field is covered by Core (mapping table applied) — PARITY', () => {
-    const coreLegacyKeys = coreAsLegacyKeys(core, CORE_TO_LEGACY_EAD)
+  it('A. field-coverage parity: EVERY legacy-emitted field is in the Core adapter output — PARITY', () => {
+    const coreMap = fieldMap(core)
     const missing = legacy.fields
       .map((f) => f.field)
-      .filter((k) => !coreLegacyKeys.has(k))
+      .filter((k) => !coreMap.has(k))
     expect(missing, `Core path is missing legacy ead fields: [${missing.join(', ')}]`).toEqual([])
   })
 
   it('B. value parity on overlapping fields (trim/case normalization; ISO dates)', () => {
     const legacyMap = fieldMap(legacy)
-    const coreLegacyKeys = coreAsLegacyKeys(core, CORE_TO_LEGACY_EAD)
+    const coreMap = fieldMap(core)
     const overlapping = [
       'a_number',
       'ead_category_on_card', // legacy uppercases; core reader emits the printed code
@@ -538,31 +539,31 @@ describe('tpsHintParity harness — hint "ead"', () => {
     ]
     for (const key of overlapping) {
       const l = legacyMap.get(key)
-      const c = coreLegacyKeys.get(key)
+      const c = coreMap.get(key)
       expect(l, `legacy missing '${key}' (fixture broke)`).toBeDefined()
-      expect(c, `core missing '${key}' (mapping broke)`).toBeDefined()
+      expect(c, `core missing '${key}' (adapter projection broke)`).toBeDefined()
       expect(norm(c!.normalized), `value parity on '${key}'`).toBe(norm(l!.normalized))
     }
   })
 
-  it('B2. date surface form pinned: ead_validity_to stays ISO on the Core path (D2 date branch does not fire)', () => {
-    // Unlike i94_date_of_entry/date_of_birth (G5), the key 'ead_validity_to'
-    // contains neither 'date' nor 'dob', so knowledgeNormalize's ISO→USCIS date
-    // branch never fires — the reader's ISO value passes through UNCHANGED and
-    // happens to match legacy's ISO surface exactly. Pinned here because a
-    // registry key rename (e.g. → 'ead_expiration_date') would silently flip
-    // this field into the G5 MM/DD/YYYY rewrite.
+  it('B2. date surface form pinned: ead expiry stays ISO on the Core path (D2 date branch does not fire)', () => {
+    // At D2 time the key is still 'ead_validity_to' (projection happens in the
+    // adapter, AFTER the knowledge layer) — it contains neither 'date' nor 'dob',
+    // so knowledgeNormalize's ISO→USCIS branch never fires: the reader's ISO value
+    // passes through UNCHANGED and matches legacy's ISO surface exactly. Pinned
+    // because a REGISTRY key rename (e.g. spec field → 'ead_expiration_date')
+    // would silently flip this field into the G5 MM/DD/YYYY rewrite.
     const legacyMap = fieldMap(legacy)
     const coreMap = fieldMap(core)
     expect(legacyMap.get('ead_expiration_date')!.normalized).toBe(FICTIONAL.eadExpiresIso)
-    expect(coreMap.get('ead_validity_to')!.normalized).toBe(FICTIONAL.eadExpiresIso)
+    expect(coreMap.get('ead_expiration_date')!.normalized).toBe(FICTIONAL.eadExpiresIso)
   })
 
   it('C. review semantics: a_number (critical) from Core is never LESS reviewed than legacy', () => {
     const legacyMap = fieldMap(legacy)
-    const coreLegacyKeys = coreAsLegacyKeys(core, CORE_TO_LEGACY_EAD)
+    const coreMap = fieldMap(core)
     for (const [key, l] of legacyMap) {
-      const c = coreLegacyKeys.get(key)
+      const c = coreMap.get(key)
       if (!c) continue
       if (l.review) {
         expect(c.review, `legacy flags '${key}' for review — Core must too`).toBe(true)
@@ -570,7 +571,7 @@ describe('tpsHintParity harness — hint "ead"', () => {
     }
     // a_number is one of the six critical fields (canonical/policy.ts) →
     // Core must force review without an MRZ anchor, even on a clean high-confidence read.
-    expect(coreLegacyKeys.get('a_number')!.review, 'Core must review critical a_number without an MRZ anchor').toBe(true)
+    expect(coreMap.get('a_number')!.review, 'Core must review critical a_number without an MRZ anchor').toBe(true)
 
     // And on an UNCERTAIN read (low confidence), the critical gate must hold too.
     const lowConf = coreEadResult({ a_number: { confidence: 0.4 } })
@@ -579,17 +580,15 @@ describe('tpsHintParity harness — hint "ead"', () => {
     expect(aNum!.review_required, 'low-confidence a_number must be review-flagged by Core').toBe(true)
   })
 
-  // G3 (same firewall gap as i94): Core emits ead_category / ead_validity_to, the
-  // ead slot contract only accepts ead_category_on_card / ead_expiration_date, and
-  // nothing translates between them. Field coverage + values are at parity above,
-  // so for 'ead' the ONLY blocker is this key-translation layer.
-  it.fails('D. firewall compatibility: mapped Core keys survive applyContract — FAILS: no key translation exists (G3)', () => {
+  it('D. firewall compatibility: adapter-projected keys survive applyContract — G3 CLOSED', () => {
     const contract = applyContract('ead', core.fields.map((f) => f.field), 'ead')
     const accepted = new Set(contract.accepted_field_keys)
-    const rejectedMapped = Object.keys(CORE_TO_LEGACY_EAD).filter((coreKey) => !accepted.has(coreKey))
+    // Every legacy-consumed key the adapter emits must pass the exact-key firewall:
+    const legacyConsumed = legacy.fields.map((f) => f.field)
+    const rejected = legacyConsumed.filter((k) => !accepted.has(k))
     expect(
-      rejectedMapped,
-      `ead slot firewall rejects Core keys [${rejectedMapped.join(', ')}] — mapping table is never applied between tpsAdapter and applyContract`,
+      rejected,
+      `ead slot firewall rejects adapter-emitted keys [${rejected.join(', ')}]`,
     ).toEqual([])
   })
 })

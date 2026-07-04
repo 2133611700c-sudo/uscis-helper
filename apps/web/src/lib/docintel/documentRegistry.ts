@@ -277,6 +277,13 @@ export const DOCUMENT_TYPES: Record<string, DocTypeSpec> = {
       { field: 'i94_date_of_entry',     label_uk: 'Last Date of Entry',     kind: 'date',       handwritten: false, required: false },
       { field: 'i94_place_of_entry',    label_uk: 'Port of Entry',          kind: 'text',       handwritten: false, required: false },
       { field: 'country_of_birth',      label_uk: 'Country of Birth',       kind: 'text',       handwritten: false, required: false },
+      // ONE-BRAIN v2 Phase 2c (tpsHintParity gaps G1/G2): TPS consumes both — admit-until
+      // drives the status-window decision (documentContracts: critical for TPS); citizenship
+      // is a DIFFERENT fact from country_of_birth (never conflate). Names deliberately match
+      // the legacy/TPS-consumed keys (identity — no projection needed). Additive read:
+      // monotonic for the other us_i94 consumers (EAD/ReParole read 2 more optional fields).
+      { field: 'i94_admit_until',        label_uk: 'Admit Until Date',       kind: 'date',       handwritten: false, required: false },
+      { field: 'country_of_citizenship', label_uk: 'Country of Citizenship', kind: 'text',       handwritten: false, required: false },
     ],
   },
 

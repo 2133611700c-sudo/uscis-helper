@@ -100,12 +100,50 @@ export function canonicalFieldToTpsField(
 }
 
 /** Convert Core fields to a TpsModuleResult that feeds the existing TPS pipeline. */
+/**
+ * CORE→TPS key projection (One-Brain v2 Phase 2c, closes parity gap G3).
+ * The TPS contract firewall consumes LEGACY field names verbatim; the docintel
+ * registry emits canonical names. Without this projection, equivalent fields
+ * (KEY_ALIASES-declared) were firewall-REJECTED (proved by tpsHintParity harness),
+ * which is why only passport/booklet — whose specs already use legacy names —
+ * could ever flip. This is a LAYOUT concern, so it lives in the adapter
+ * (Invariant #10: the adapter lays out into product slots; semantics unchanged).
+ * SAFETY (hint-scoped): the projection applies ONLY to the EXTENDED hints (dormant in
+ * prod until listed in TPS_CORE_HINTS). The LIVE passport/booklet path is NEVER projected —
+ * its MRZ candidates legitimately emit `date_of_birth` (mrzAuthority.ts) and downstream
+ * consumes them as-is today; an unconditional projection changed that live key (caught by
+ * formMapperCanonicalParity). Enforced by the tpsKeyProjection guard test.
+ */
+const CORE_TO_TPS_KEY: Readonly<Record<string, string>> = {
+  i94_date_of_entry: 'last_entry_date',        // KEY_ALIASES equivalence
+  i94_place_of_entry: 'place_of_last_entry',   // same fact ("Port of Entry")
+  date_of_birth: 'dob',                        // KEY_ALIASES equivalence
+  ead_category: 'ead_category_on_card',        // card "Category" line
+  ead_validity_to: 'ead_expiration_date',      // card "Card Expires" line
+}
+
+/** Hints whose Core output is projected onto legacy/TPS keys (extended hints only). */
+const PROJECTED_TPS_HINTS: ReadonlySet<string> = new Set([
+  'i94', 'ead', 'ead_old', 'i797', 'military_id', 'birth_certificate',
+])
+
+export function projectCoreKeyToTps(key: string, docTypeHint: string): string {
+  if (!PROJECTED_TPS_HINTS.has(docTypeHint)) return key
+  return CORE_TO_TPS_KEY[key] ?? key
+}
+
 export function canonicalToTpsModuleResult(
   fields: CanonicalField[],
   docTypeHint: string,
   documentId: string,
 ): TpsModuleResult {
-  const tpsFields = fields.map((f) => canonicalFieldToTpsField(f, documentId))
+  const project = PROJECTED_TPS_HINTS.has(docTypeHint)
+  const tpsFields = fields.map((f) =>
+    canonicalFieldToTpsField(
+      project && f.key in CORE_TO_TPS_KEY ? { ...f, key: CORE_TO_TPS_KEY[f.key] } : f,
+      documentId,
+    ),
+  )
   const anyReview = fields.some((f) => f.reviewRequired)
   return {
     module: 'unknown' as import('@/lib/tps/types').TpsDocType, // refined by contract firewall downstream
