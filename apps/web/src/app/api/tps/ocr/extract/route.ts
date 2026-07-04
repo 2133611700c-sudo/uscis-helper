@@ -62,6 +62,7 @@ import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { buildKnowledgeContext, applyKnowledgeBrainIfEnabled } from '@/lib/canonical/core/knowledgeBrain'
 import { docintelToCandidate } from '@/lib/canonical/core/translationAdapter'
 import { mapTpsHintToDocintelId, canonicalToTpsModuleResult } from '@/lib/canonical/core/tpsAdapter'
+import { isTpsOneArbitrationShadowEnabled, runOneArbitrationShadow } from '@/lib/tps/oneArbitrationShadow'
 import { buildCanonicalResult } from '@/lib/canonical/core/buildCanonicalResult'
 import { recognizeDocument, isOneBrainRecognizeEnabled } from '@/lib/docintel/recognizeDocument'
 import type { CanonicalField } from '@/lib/canonical/types'
@@ -1381,6 +1382,21 @@ async function POST_impl(req: NextRequest) {
       ...mergedModule,
       fields: guardedFields,
       manual_review_required: mergedModule.manual_review_required || anyUnsafeCritical,
+    }
+  }
+
+  // ── ONE-BRAIN v2 Phase 3 — ONE-ARBITRATION SHADOW (strict '1', default OFF) ──
+  // mergedModule is FINAL here (all seven legacy writers have run). Re-emit it as
+  // FieldCandidates into THE one arbitration and log a PII-FREE diff (keys/flags/
+  // counts — never values). Zero behavior change; the flip stays forbidden until
+  // real-traffic windows show missing_in_shadow=0 and review_loosened=0.
+  if (isTpsOneArbitrationShadowEnabled() && mergedModule && mergedModule.fields?.length) {
+    try {
+      const diff = runOneArbitrationShadow(mergedModule, docTypeHint || null, document_id)
+      console.info('[tps_one_arbitration_shadow]', JSON.stringify(diff))
+    } catch (e) {
+      // shadow must NEVER affect the request
+      console.warn('[tps_one_arbitration_shadow] failed (ignored):', e instanceof Error ? e.message : String(e))
     }
   }
 
