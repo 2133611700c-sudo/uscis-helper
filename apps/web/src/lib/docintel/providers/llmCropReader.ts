@@ -42,6 +42,39 @@ const CROP_PROMPT =
   'Reply with ONLY this JSON: {"text": "<transcription or empty>"}'
 
 /**
+ * BLUEPRINT #4 — knowledge into the crop prompt, NON-PRIMING form.
+ *
+ * The hint tells the model WHAT KIND of content the crop holds (structural knowledge from
+ * the field key), never WHAT VALUE to expect. Feeding lexicon values (names, gazetteer
+ * settlements) into a generation prompt PRIMES fabrication — the exact failure mode this
+ * pipeline exists to prevent — so dictionary VALUES stay on the VERIFY side
+ * (fieldConsistencyCritic C4, knowledge signals). Enforced by test: the prompt builder
+ * never emits lexicon entries.
+ */
+export function buildCropPrompt(field: string): string {
+  const k = field.toLowerCase()
+  let hint = ''
+  if (/family|given|patronymic|name/.test(k)) {
+    hint =
+      ' The fragment is a PERSONAL NAME field. Transcribe it letter-by-letter exactly as inked;' +
+      ' NEVER substitute a more common name, never fix an unusual spelling.'
+  } else if (/dob|date/.test(k)) {
+    hint =
+      ' The fragment is a DATE field; the day, month or year may be written as Cyrillic words —' +
+      ' transcribe the words as written, do not convert them to digits.'
+  } else if (/place|city|oblast|raion|region|village/.test(k)) {
+    hint =
+      ' The fragment is a PLACE-NAME field (settlement/raion/oblast). Transcribe exactly as inked;' +
+      ' do not modernize or normalize historical place names.'
+  } else if (/number|series|seriya/.test(k)) {
+    hint =
+      ' The fragment is a DOCUMENT NUMBER/SERIES field; it may mix Cyrillic letters and digits —' +
+      ' keep every character exactly, do not convert letters between alphabets.'
+  }
+  return CROP_PROMPT + hint
+}
+
+/**
  * LLM has no calibrated per-read confidence; this constant is a TRANSPORT detail only — the
  * route forces review_required=true on every crop read regardless, so this value can never
  * flip a decision. It sits above HTR_MIN_CONFIDENCE (0.5) so reads aren't silently dropped
@@ -93,7 +126,7 @@ export async function readHandwrittenFieldsViaLlmCrops(
             body: JSON.stringify({
               contents: [{
                 parts: [
-                  { text: CROP_PROMPT },
+                  { text: buildCropPrompt(b.field) },
                   { inline_data: { mime_type: 'image/png', data: crop.toString('base64') } },
                 ],
               }],

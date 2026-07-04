@@ -4,7 +4,8 @@
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import sharp from 'sharp'
-import { isLlmCropReaderEnabled, readHandwrittenFieldsViaLlmCrops } from '../llmCropReader'
+import { buildCropPrompt, isLlmCropReaderEnabled, readHandwrittenFieldsViaLlmCrops } from '../llmCropReader'
+import { GAZETTEER } from '@uscis-helper/knowledge'
 import type { HtrFieldBox } from '../htrSidecarProvider'
 
 afterEach(() => {
@@ -33,6 +34,31 @@ describe('isLlmCropReaderEnabled — strict, gemini-only', () => {
     expect(isLlmCropReaderEnabled({ HANDWRITING_CROP_LLM: 'true' })).toBe(false)
     expect(isLlmCropReaderEnabled({ HANDWRITING_CROP_LLM: 'openai' })).toBe(false) // GPT owner-excluded on handwriting
     expect(isLlmCropReaderEnabled({ HANDWRITING_CROP_LLM: 'gemini' })).toBe(true)
+  })
+})
+
+describe('buildCropPrompt — blueprint #4, NON-PRIMING knowledge hints', () => {
+  it('field-kind hints attach by key; unknown keys get the base prompt', () => {
+    expect(buildCropPrompt('child_patronymic')).toContain('PERSONAL NAME')
+    expect(buildCropPrompt('dob')).toContain('DATE field')
+    expect(buildCropPrompt('place_of_birth_city')).toContain('PLACE-NAME')
+    expect(buildCropPrompt('passport_number')).toContain('DOCUMENT NUMBER')
+    expect(buildCropPrompt('unknown_key')).not.toContain('field.')
+    expect(buildCropPrompt('unknown_key')).toContain('Transcribe the handwriting EXACTLY')
+  })
+
+  it('name hint is ANTI-priming: forbids substituting a more common name', () => {
+    expect(buildCropPrompt('family_name')).toContain('NEVER substitute a more common name')
+  })
+
+  it('the prompt NEVER carries lexicon values (no gazetteer entries → no fabrication priming)', () => {
+    const prompts = ['family_name', 'place_of_birth_city', 'dob', 'passport_number'].map(buildCropPrompt)
+    const sample = GAZETTEER.slice(0, 500)
+    expect(sample.length).toBeGreaterThan(0)
+    for (const p of prompts) {
+      for (const settlement of sample) expect(p).not.toContain(settlement)
+      expect(/[Ѐ-ӿ]/.test(p)).toBe(false) // no Cyrillic content of any kind in the prompt
+    }
   })
 })
 
