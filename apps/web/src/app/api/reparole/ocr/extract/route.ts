@@ -63,15 +63,29 @@ const ALLOWED_MIME = new Set([
 
 /**
  * Map Re-Parole wizard docHint → docintel document type ID.
- * Only Ukrainian identity documents are covered (passport, booklet).
- * US-form slots (i94, ead, dl) return null — Core does not cover them yet.
+ *
+ * ONE-BRAIN v2 Phase 5 (ReParole decoupling): US-form slots i94/ead now have their OWN
+ * Core path (us_i94/us_ead specs exist; reParoleAdapter already reads i94_admission_number /
+ * i94_class_of_admission), removing the hidden client-side delegation where the wizard POSTed
+ * these to /api/tps/ocr/extract. Gated by REPAROLE_CORE_USFORMS==='1' (strict) → default OFF
+ * returns null → the existing 422 "use TPS" response → byte-identical until the owner flips.
+ * `dl` stays unmapped ALWAYS — no docintel spec exists (L6: never guess).
  */
+function isReParoleCoreUsFormsEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.REPAROLE_CORE_USFORMS === '1'
+}
+
 function mapReParoleHintToDocintelId(hint: string): string | null {
-  const map: Record<string, string> = {
+  const base: Record<string, string> = {
     passport: 'ua_international_passport',
     booklet:  'ua_internal_passport_booklet',
   }
-  return map[hint] ?? null
+  if (base[hint]) return base[hint]
+  if (isReParoleCoreUsFormsEnabled()) {
+    const usForms: Record<string, string> = { i94: 'us_i94', ead: 'us_ead' }
+    if (usForms[hint]) return usForms[hint]
+  }
+  return null
 }
 
 export async function POST(req: NextRequest) {
