@@ -36,6 +36,7 @@ import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
 import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { decideFields, isDecisionShadowEnabled } from '@/lib/canonical/core/decisionEngine'
+import { runConsistencyCritic } from '@/lib/canonical/core/fieldConsistencyCritic'
 import { computeStrongSourceAnchor } from '@/lib/documentSafety/strongSourceAnchor'
 import { readDocument } from '@/lib/docintel/documentFieldReader'
 import { isForensicEnabled, sha256Hex } from '@/lib/docintel/forensics'
@@ -556,12 +557,22 @@ async function POST_impl(req: NextRequest) {
                 return same ? null : { field: (sf as { field: string }).field }
               })
               .filter(Boolean)
+            // VERIFY node (blueprint #3) observed in the same shadow: deterministic cross-field
+            // critic findings, keys-only (PII-free). Visible in the flip evidence BEFORE any flip.
+            const criticFindings = runConsistencyCritic(
+              (res.fields as Array<{ field: string; value?: string | null; raw_cyrillic?: string | null }>).map(
+                (f) => ({ key: f.field, value: f.value ?? null, rawCyrillic: f.raw_cyrillic ?? null }),
+              ),
+              new Date(),
+            )
             console.info('[decision_shadow]', JSON.stringify({
               doc_type_id: docTypeId,
               fields: res.fields.length,
               diffs: diffs.length,
               diff_keys: diffs.map((d) => (d as { field: string }).field),
               unresolved_match: shadow.anyUnresolvedCritical === res.anyUnresolvedCritical,
+              critic_findings: criticFindings.length,
+              critic_reasons: [...new Set(criticFindings.map((c) => c.reviewReason))],
             }))
           } catch (e) {
             // shadow must NEVER affect the request
