@@ -33,7 +33,8 @@ Handwritten = НИКОГДА не LLM-acceptance, только review. GPT — p
 | GPT printed-override | **FLAGGED** | READER_PROVIDER=openai; cert-families исключены |
 | Crop-route: LLM-транспорт | **FLAGGED** | HANDWRITING_CROP_LLM=gemini; live-проверен: механика да, качество 2.5-pro на курсиве НЕ GT/нестабильно |
 | Crop-route: HTR-транспорт (raxtemur) | **DARK** | HTR_SIDECAR_URL не задан (owner-хост) |
-| ReaderResult contract | **DARK (dormant)** | контракт есть, live-seam = ExtractedDocField; «всё идёт через ReaderResult» — ЛОЖЬ до cutover |
+| ReaderResult seam | **FLAGGED** | больше не dormant: candidates конвертируются ЧЕРЕЗ ReaderResult за READER_RESULT_SEAM='1'; byte-parity к прямому пути заморожена тестом; «всё идёт через ReaderResult» станет правдой только после флипа |
+| Translation in-door retry (шаг 3) | **FLAGGED** | RECOGNIZE_RETRY_ON_EMPTY + retryOnEmpty(25s) в route; при флипе 0-field recovery происходит В двери; legacy-plane остаётся LIVE до shadow-окна |
 | **DECISION** | | |
 | Arbitration D2 + KNOWLEDGE_BRAIN | **LIVE** | default ON; accept ПЕРЕПИСЫВАЕТ normalizedValue (снятие — за флипом evaluator-пути) |
 | C3 applyOcrFieldSafety (translation) | **LIVE** | безусловно в translation; флаг — для остальных |
