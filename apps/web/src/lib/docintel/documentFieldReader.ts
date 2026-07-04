@@ -32,6 +32,7 @@ import { reconcilePatronymicFields } from './patronymicReconcile'
 import { resolveAuthorityFields } from './authorityResolve'
 import { isHandwrittenFamily } from './modelMatrix'
 import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
+import { isAssessZoomEnabled, verifySuspectFieldsByZoom } from './ensemble/assessZoom'
 import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
 import { isLlmCropReaderEnabled } from './providers/llmCropReader'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
@@ -493,6 +494,30 @@ export async function readDocument(
   finalFields = dateGuard.fields
   if (dateGuard.conflicts.length) {
     console.info('[date_role_guard]', JSON.stringify({ doc_type_id: docTypeId, conflicts: dateGuard.conflicts }))
+  }
+
+  // ASSESS→ZOOM (BLUEPRINT #2; ASSESS_ZOOM_LOOP, default OFF → byte-identical). The critic
+  // names fields caught in a HARD cross-field contradiction; ONE capped verification re-read
+  // at native res confirms or flags them. Never changes a value, never lowers review —
+  // a disagreement adds 'zoom_mismatch' (monotonic UP). Fail-open.
+  if (isAssessZoomEnabled() && opts.originalBuffer && finalFields.length > 0) {
+    const apiKey = getGeminiApiKey()
+    if (apiKey) {
+      try {
+        const model = primaryGeminiModel()
+        const fieldLabels = Object.fromEntries(spec.fields.map((f) => [f.field, f.label_uk]))
+        const zoom = await verifySuspectFieldsByZoom({
+          fields: finalFields,
+          originalBuffer: opts.originalBuffer,
+          fieldLabels,
+          cropRead: (crop, flds) => geminiReadFieldsFromCrop(crop, flds, apiKey, model),
+        })
+        finalFields = zoom.fields
+        console.info('[assess_zoom]', JSON.stringify({ doc_type_id: docTypeId, ...zoom.diag }))
+      } catch (e) {
+        console.warn('[assess_zoom] failed (non-blocking)', e instanceof Error ? e.message : String(e))
+      }
+    }
   }
 
   // STAGE 4 (HIRES_TILE_RECOVER_ENABLED, default OFF): a dense region read at full-page scale
