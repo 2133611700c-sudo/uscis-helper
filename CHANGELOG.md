@@ -2623,3 +2623,9 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Pinned pnpm 10.33.2 and ran `--filter @uscis-helper/knowledge test` successfully: `530 passed, 0 failed`.
 - `apps/web` still lacks a runnable local test install: `vitest` missing from the workspace binary path, `npx vitest` cannot resolve `vitest/config`, and `typecheck` fails on missing deps in the current install.
 - Report verdict updated to `TRANSLITERATION_SPOT_PASS / RUNNER_BLOCKED`.
+
+## 2026-07-04 | Audit update: build/typecheck blocker removed
+- Added `generateStaticParams()` to `apps/web/src/app/[locale]/disclaimer/page.tsx`, matching the rest of the localized static pages.
+- `next build` now completes and emits `/[locale]/disclaimer` for all 4 locales.
+- `pnpm --dir apps/web run typecheck` now passes on the fresh build output.
+- Report verdict updated to `TRANSLITERATION_PASS`.

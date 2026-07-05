@@ -2,8 +2,13 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
+import { routing } from '@/i18n/routing';
 
 type Props = { params: Promise<{ locale: string }> };
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
