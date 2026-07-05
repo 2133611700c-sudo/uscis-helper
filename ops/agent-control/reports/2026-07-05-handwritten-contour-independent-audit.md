@@ -68,3 +68,17 @@ GT-ведомость (владелец, F2) → Phase A bench (я, 1 заход
 - wrong_auto_accept: 0 наблюдений ✅ · latin_from_model: 0 ✅ (guarded)
 - blank→text: ЗАФИКСИРОВАН у обоих HTR → auto-candidate запрещён обоим до blank-guard (F3)
 - PII leak: 0 (guard clean 2007 файлов; 3 инцидента за сутки пойманы guard'ами ДО merge)
+
+## ADDENDUM — перекрёстный аудит Codex подтверждён (2026-07-05)
+- **F-X1 ПОДТВЕРЖДЁН + бил и по моему аудиту:** `docs/reports/LIVE_DOOR_SCORABLE_COVERAGE.md`
+  (2026-06-04) — существующий coverage-леджер, который мой аудит не цитировал. Правило
+  закрепляется: НОВЫХ GT/coverage-леджеров не заводить; расширять существующие
+  (acceptance-manifest.json + gt._meta.owner_verified_fields + LIVE_DOOR_SCORABLE_COVERAGE).
+- **F-X2 ПОДТВЕРЖДЁН И ИСПРАВЛЕН:** universal-список полей плана даёт структурные false-FAIL.
+  Живой пример НАЙДЕН В НАШЕМ ЖЕ БЕНЧЕ: FIELD_MAP для ua_military_id скорил `sex`, которого
+  НЕТ ни в registry-спеке двери, ни в TPS-контракте → «sex MISS» во всех прошлых прогонах
+  military был замером несоответствия схемы, а не читателя. Убран из мапы (этот коммит).
+  EAD/I-94 через UA-дверь — WITHDRAWN by design (ADR-016, леджер стр. 51) — в Phase A
+  прогоняются своими дверями (us_ead/us_i94), НЕ как UA-рукопись.
+- **F-X3 ПОДТВЕРЖДЁН:** новую схему полей (physical_doc_hash, crop_source, ...) вносить
+  как РАСШИРЕНИЕ `_meta` существующих GT-файлов и строк coverage-леджера, не как второй truth.

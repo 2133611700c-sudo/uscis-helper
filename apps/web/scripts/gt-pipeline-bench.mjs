@@ -103,7 +103,10 @@ const FIELD_MAP_BY_DOC = {
   // International passport: NO patronymic printed; score the visible ID fields only.
   ua_international_passport: { family_name: { latin: 'family_name_latin', cyr: 'family_name_cyrillic' }, given_name: { latin: 'given_name_latin', cyr: 'given_name_cyrillic' }, dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_internal_passport_booklet: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' }, city_of_birth: { latin: 'place_of_birth_english' }, province_of_birth: { latin: 'province' } },
-  ua_military_id:               { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
+  // AUDIT FIX (2026-07-05, per-doc-type schema): the ua_military_id registry spec carries NO
+  // `sex` field — scoring it was a STRUCTURAL false-MISS on every run (measured schema
+  // mismatch, not reader quality). Score only what the door can emit.
+  ua_military_id:               { ...PERSON(), dob: { latin: 'date_of_birth' } },
   ua_birth_certificate:         { ...PERSON('child_'), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   // US docs (owner_fill GT uses flat English keys; these docs carry NO cyr channel).
   us_i94: {
