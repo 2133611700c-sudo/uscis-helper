@@ -92,12 +92,22 @@ Entity: SK Logistics LLC, Los Angeles, CA.
 - Branch: main (direct push)
 - Deploy: auto via Vercel on push
 - Healthcheck: `https://messenginfo.com/api/healthz`
-- **DEV RUNTIME SELF-HEAL (2026-07-05).** node_modules ломается, когда два процесса ставят
-  пакеты в один worktree. Диагноз+лечение одной командой: `bash scripts/dev-doctor.sh`
-  (проверяет next/vitest/tsc/sharp/tesseract/@swc, чистит approve-builds-мусор из
-  pnpm-workspace.yaml, лечит `pnpm install --force`). Build-allowlist декларативен в
-  package.json → pnpm.onlyBuiltDependencies — `pnpm approve-builds` запускать НЕ НУЖНО
-  и НЕЛЬЗЯ (прерванный промпт пишет мусор в pnpm-workspace.yaml).
+- **DEV RUNTIME — HARDENED INSTALL CONTRACT (2026-07-05, owner order: runner must never
+  break again).** Три слоя, все проверены живьём:
+  1. **Interlock (автоматический):** корневой `preinstall` = `scripts/install-guard.mjs` —
+     сырой `pnpm install` ФИЗИЧЕСКИ ОТКАЗЫВАЕТ, если (а) на машине уже идёт другая
+     установка пакетов или (б) внутри этого worktree живёт dev-сервер. Это две измеренные
+     причины всех разрушений node_modules. Fail-open на собственных ошибках guard'а;
+     CI и safe-install проходят.
+  2. **Санкционированный путь:** `bash scripts/safe-install.sh` — ЕДИНСТВЕННЫЙ способ
+     ставить зависимости: mutex-lock (stale 30 мин) → останавливает dev-сервер этого
+     worktree → неинтерактивная установка → dev-doctor verify → рестарт dev.
+  3. **Самолечение:** `bash scripts/dev-doctor.sh [путь-к-worktree]` — проверяет
+     next/vitest/tsc/sharp/tesseract/@swc, чистит approve-builds-мусор, ловит
+     КРОСС-WORKTREE symlink-заражение (измерено 2026-07-05: EPERM из-за линка в соседний
+     worktree), лечит `pnpm install --force`. Может лечить sibling worktree по пути.
+  Build-allowlist декларативен в package.json → pnpm.onlyBuiltDependencies —
+  `pnpm approve-builds` запускать НЕ НУЖНО и НЕЛЬЗЯ.
 - **ONE ACTIVE COMMITTER PER WORKTREE (2026-07-04, owner rule).** Parallel agents in one
   worktree = the same disease as parallel finalValue writers. At any moment exactly ONE
   agent stages/commits; every other agent is read-only in that worktree (or works in its

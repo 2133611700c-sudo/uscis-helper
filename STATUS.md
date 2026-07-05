@@ -1,3 +1,11 @@
+# STATUS (2026-07-05 — runner hardened: raw install physically refuses unsafe conditions)
+
+## 2026-07-05 | Install runner — HARDENED, all three layers proven live
+- Interlock (preinstall guard): refused real live-dev install + simulated concurrent install. LIVE.
+- safe-install (mutex→stop dev→install→verify→restart): E2E passed. LIVE (this branch).
+- dev-doctor: + cross-worktree symlink detection (today's EPERM root cause), sibling-worktree healing. LIVE.
+- Honest limit: interlock reaches main worktree only after merge; until then heal main FROM one-brain.
+
 # STATUS (2026-07-05 — posture round 2: quality threaded; orientation 43/50 combined visual-oracle)
 
 ## 2026-07-05 | Posture envelope — quality signal LIVE-threaded (flag-gated), orientation measured wider

@@ -1,3 +1,15 @@
+# HANDOFF (2026-07-05 — install runner HARDENED: interlock + safe-install + symlink detection)
+
+## 2026-07-05 | Runner safety contract (Claude, owner order «не должен больше ломаться»)
+- **Root cause сегодняшнего EPERM в main worktree:** symlink packages/db/node_modules/typescript указывал ЧЕРЕЗ границу worktree в uscis-helper-one-brain (кросс-заражение установок). Вылечено `pnpm install --force` (main), vitest снова бежит (modelMatrix 12/12).
+- **Предохранитель, 3 слоя, все ДОКАЗАНЫ живьём:**
+  1. `scripts/install-guard.mjs` (root preinstall) — сырой `pnpm install` отказал при реальном dev-сервере (pid 55778) и при симулированной конкурентной установке (ELIFECYCLE exit 1 до линковки).
+  2. `scripts/safe-install.sh` — mutex → stop dev → install → dev-doctor verify → restart dev; E2E пройден (dev остановлен/поднят, все проверки зелёные).
+  3. `scripts/dev-doctor.sh` усилен: детект кросс-worktree symlink'ов + может лечить sibling worktree по пути (`bash scripts/dev-doctor.sh ../uscis-helper` — проверено, main healthy).
+- **Правила:** CLAUDE.md (hardened install contract) + AGENTS.md правило 7 (только safe-install).
+- **Ограничение (честно):** interlock живёт в package.json ЭТОЙ ветки; в main worktree он появится после merge — до тех пор main лечится/проверяется ИЗ one-brain по пути.
+- **EXACT NEXT ACTION:** без изменений — owner GT docs 4–8; agent: 90°/180°-дизамбигуация ориентации.
+
 # HANDOFF (2026-07-05 — posture: quality threaded + extended harness 43/50; envelope stays signal-only)
 
 ## 2026-07-05 | Posture round 2 (Claude)

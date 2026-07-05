@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-07-05 | Runner hardening: preinstall interlock + safe-install + cross-worktree symlink detection
+- NEW `scripts/install-guard.mjs` wired as root `preinstall`: raw `pnpm install` REFUSES under (a) another
+  running package install anywhere on the machine, (b) a live dev server inside this worktree — the two
+  measured causes of every node_modules destruction. Fail-open on guard's own errors; CI/safe-install bypass.
+  PROVEN live: refused against real dev pid 55778 and against a simulated concurrent installer.
+- NEW `scripts/safe-install.sh` — the only sanctioned install path: mutex (stale 30 min) → stop in-worktree
+  dev → non-interactive install → dev-doctor verify → restart dev. E2E passed.
+- `scripts/dev-doctor.sh` hardened: cross-worktree symlink contamination check (today's live EPERM root
+  cause: packages/db/node_modules/typescript linked into a SIBLING worktree) + can target sibling worktrees.
+- CLAUDE.md + AGENTS.md rule 7 updated. Main worktree healed (`pnpm install --force`, vitest 12/12 again).
+
 ## 2026-07-05 | Posture round 2: D0 quality → envelope + extended orientation harness (43/50 combined)
 - `documentPostureEnvelope.ts`: + `qualityStatusFromQualityResult` (D0 verdict mapper, `degraded_other` honest
   fallback — never silently ok); quality enum widened; measured non-ok ⇒ `review_quality_low` gate (13/13 tests).

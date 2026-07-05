@@ -70,3 +70,7 @@ For tasks related to OpenClaw, browser audits, synthetic tests, or production ve
    сомнении `rm -rf apps/web/.next`. Горячая перезагрузка lib-модулей врёт.
 6. **Слово «готово» = три подписи:** код есть · статус честный (класс из
    ONE_BRAIN_RUNTIME_TRUTH) · live-замер на реальном документе приложен.
+7. **Зависимости ставятся ТОЛЬКО через `bash scripts/safe-install.sh`.** Сырой
+   `pnpm install` сам откажет (preinstall-guard) при конкурентной установке или живом
+   dev-сервере — это не баг, это предохранитель. Не обходить (SAFE_INSTALL=1 — только
+   для самих скриптов). Сломалось — `bash scripts/dev-doctor.sh`, и ничего больше.
