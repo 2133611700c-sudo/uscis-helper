@@ -61,6 +61,14 @@
 - **Honest remaining gap:** this does NOT make One Brain complete. Translation still has a live legacy fallback plane; TPS still has seven live writers; provider bbox remains DARK; ReaderResult remains FLAGGED; HTR remains BLOCKED_EXTERNAL.
 - **Current truth:** T0 code-solvable enforcement is materially closer, but overall runtime state remains PARTIAL until the per-node flip windows are proven and the live parallel planes are collapsed.
 
+## 2026-07-05 | Shadow window + live E2E + model probe — PARTIAL, evidence-backed
+**Readiness: SHADOW INSTRUMENTS EXERCISED ON REAL TRAFFIC SHAPES; NOTHING FLIP-READY.**
+- **Verified measured:** translation shadow window N=9 docs / 82 fields via READER_PROVIDER=openai — decision diffs=0, gates loosening=0 (below the N>=25 FLIP_CRITERIA bar; qualifiers in `ops/agent-control/reports/2026-07-04-shadow-window-and-e2e-evidence.md`).
+- **Verified measured:** TPS-route markers = 0 docs, corrected cause = Google Vision billing 403 (`OCR_BILLING_DISABLED`), BLOCKED_EXTERNAL — not Gemini, not the pay-key limit (serviceTier standard; ~$0.002/read; evening spend <$0.10).
+- **Verified passed (LOCAL only):** live wizard E2E `translation-live-review.spec.ts` — real upload → Recognize → review screen with per-field Edit controls; CI does not run Playwright.
+- **Verified measured:** pay-key probe artifact `docs/reports/MODEL_MATRIX_PAY_KEY_PROBE_2026-07-04.md` (10 candidates probed; passive 39 listing); `gemini-pro-latest` serves the banned preview → `*-latest` pro aliases forbidden (MODEL_ROLE_MATRIX law).
+- **Honest remaining:** primary-Gemini window not run (multi-hour Google 503 storm on heavy calls); GT battery vs branch = EXPLORATORY 31.6% on N=19 via fallback reader (NOT acceptance; cert docs blocked by the storm); marriage-docs GT still owner-blank (worksheet extended to 8 docs in qa-private).
+
 ## 2026-07-04 | DeepSeek review helper — LOCAL_PASS / FLAGGED
 **Readiness: HELPER LAYER WIRED, NOT A DECISION WRITER.**
 - **Verified wired:** `DEEPSEEK_REVIEW_EXPLAINER` now reaches the live translation `vision-extract` response, but only on top of the deterministic `REVIEW_EXPLAINER_ENABLED` base layer. The route emits `review_summary` only when both flags are strict `'1'`.

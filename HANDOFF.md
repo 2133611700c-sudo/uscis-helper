@@ -1,3 +1,11 @@
+# HANDOFF (2026-07-05 — shadow window exercised; next = primary-Gemini window + owner GT fill)
+
+## 2026-07-05 | Window/E2E/probe session (Claude)
+- **Done+verified:** shadow window N=9/82 clean (openai reader) · live wizard E2E PASSED local · pay-key probe artifact + `*-latest` ban · master open-items list · one-committer rule · owner-fill worksheet extended to 8 docs (qa-private/ground-truth/OWNER_FILL_REQUIRED.md).
+- **NOT done / blocked:** primary-Gemini window (Google 503 storm on heavy calls, poller keeps trying) · TPS markers (Vision billing 403 — owner) · GT battery = EXPLORATORY 31.6% N=19 via fallback reader (NOT acceptance) · marriage GT blank (owner fill = ~15 min, unlocks H3 without a photoshoot).
+- **EXACT NEXT ACTION:** (1) owner fills worksheet docs 4-8; (2) when Gemini calms: rerun `BENCH_URL=http://localhost:3333/api/translation/vision-extract node apps/web/scripts/gt-pipeline-bench.mjs` for the primary baseline + finish window round 2 cert docs; (3) owner: Vision billing + key rotation + flip sign-offs after N>=25.
+- Evidence: `ops/agent-control/reports/2026-07-04-shadow-window-and-e2e-evidence.md`, `2026-07-05-open-items-master.md`; CI success through `f866e6b`.
+
 # HANDOFF (2026-07-04 — Local Ollama/Gemma runtime repaired; next = optional project-side helper integration only)
 
 ## 2026-07-04 | Local Mac LLM repair + live verification

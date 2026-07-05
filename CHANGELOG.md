@@ -2606,3 +2606,10 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
   - read `test-fixtures/synthetic-passport.jpg` and returned the expected synthetic surname `TESTSURNAME`
 - Truth boundary recorded in `STATUS.md` / `HANDOFF.md`: local Gemma is now usable as a helper/shadow model on
   this Mac, but it is NOT yet a proven handwritten-document primary reader for the project.
+
+## 2026-07-05 | Shadow window run + live wizard E2E + model-probe artifacts + truth-lock evidence pass
+- Ran the first shadow window against branch code (local server, real docs): decision/gates differs clean on N=9/82 fields (openai reader; below flip bar), TPS markers blocked by Vision billing 403 (corrected attribution — not Gemini/key). Files: `ops/agent-control/reports/2026-07-04-shadow-window-and-e2e-evidence.md`, `2026-07-05-open-items-master.md`.
+- Added live Playwright E2E `apps/web/tests/e2e/translation-live-review.spec.ts` (PASSED locally 27.7s; env-gated skip in CI).
+- Pay-key model probe artifact `docs/reports/MODEL_MATRIX_PAY_KEY_PROBE_2026-07-04.md`; law: `*-latest` pro aliases forbidden (`gemini-pro-latest` served the banned preview) — `docs/architecture/MODEL_ROLE_MATRIX.md`.
+- One-committer-per-worktree rule added to CLAUDE.md; owner-fill GT worksheet extended to 8 docs (qa-private).
+- Tests: full suite green earlier commits; guards (noGemini31, runtimeTruthVocabulary) green; CI success through f866e6b.
