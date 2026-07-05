@@ -67,7 +67,11 @@ const DOCS = [
   // mislabeled as the handwritten internal booklet (GPT-4.1 caught this; Gemini read it blindly).
   { fixture: 'test-fixtures/real-docs/internal_passport_01.jpg', gt: 'qa-private/ground-truth/internal_passport_01.json', docTypeId: 'ua_international_passport', label: 'international_passport (printed + MRZ)' },
   { fixture: 'test-fixtures/real-docs/birth_cert_handwritten_01.jpg', gt: 'qa-private/ground-truth/birth_cert_handwritten_01.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (handwritten)' },
-  { fixture: 'test-fixtures/real-docs/birth_cert_soviet_01.jpg', gt: 'qa-private/ground-truth/birth_cert_soviet_01.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (Soviet bilingual)' },
+  // DEDUP (audit 2026-07-05, plan rule «не считать дубликаты»): birth_cert_soviet_01.jpg is a
+  // BYTE-IDENTICAL duplicate of birth_cert_handwritten_01.jpg (sha256 match) — scoring both
+  // double-counted 10 fields of ONE document (the 2026-07-05 TIER-1 64.7%/N=34 включал дубль;
+  // честная переоценка без дубля в аудит-отчёте). Row disabled until a genuinely distinct scan exists.
+  // { fixture: 'test-fixtures/real-docs/birth_cert_soviet_01.jpg', gt: 'qa-private/ground-truth/birth_cert_soviet_01.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (Soviet bilingual) — DUPLICATE, disabled' },
   { fixture: 'test-fixtures/real-docs/military_id_p1_01.jpg', gt: 'qa-private/ground-truth/military_id_p1_01.json', docTypeId: 'ua_military_id', label: 'military_id_p1 (printed+hw)' },
 ]
 
