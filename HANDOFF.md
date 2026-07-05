@@ -1,3 +1,33 @@
+# HANDOFF (2026-07-05 — P1 full-page blank gate: fail-closed before provider call)
+
+## 2026-07-05 | Full-page blank/low-ink gate
+- `readDocument()` now applies the same low-ink test to the full-page intake buffer before any
+  provider selection. Blank pages fail closed with typed `OCR_EMPTY_OR_LOW_INK`, so the route can
+  no longer fall through into a hallucinating reader path on an empty page.
+- Added a direct regression test proving the provider is never invoked on a blank full-page input,
+  plus typed error-map coverage for the new code.
+- Verified after the fix: targeted vitest, `tsc 0`, `next build`, and `node scripts/check-no-pii.mjs`
+  clean.
+- Next open root cause remains the separate 90° sparse-template orientation class; GT is still the
+  handwritten Phase A blocker.
+
+# HANDOFF (2026-07-05 — P1 orientation: doc-type-aware prompt threading + live remeasure)
+
+## 2026-07-05 | Orientation detector root-cause fix (Claude)
+- `detectOrientation.ts` now uses doc-specific hints from `documentRegistry` + `docReadingRules`
+  and those hints are actually threaded from `documentFieldReader.ts` and the measurement scripts
+  via `docTypeId`.
+- The unit tests now assert the Gemini request body contains the class-specific prompt text, so the
+  prompt path is covered directly rather than only indirectly through return values.
+- Live remeasure: `ORIENT_180_CHECK` improved the baseline from 37/40 to 38/40 on the same 10-doc
+  fixture matrix; the old `internal_passport_01 rot_270` 180-degree confusion now resolves when the
+  confirm step is on, but the sparse-template 90-degree class still fails on
+  `marriage_zastavnyi_kovshirina rot_90` and `divorce_blank_template rot_90`.
+- Verified: targeted vitest, `tsc 0`, PII guard clean, and `next build` pass.
+- Exact next action: keep the orientation envelope signal-only, and move the next root-cause search
+  to sparse-page blank/fit gating plus a separate 90-degree-off disambiguation experiment. The 180°-
+  opposite class is improved but not exit-clean.
+
 # HANDOFF (2026-07-05 — P1 core intake quality gate threaded through One Brain)
 
 ## 2026-07-05 | Canonical quality gate fix

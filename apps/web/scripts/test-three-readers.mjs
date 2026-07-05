@@ -64,7 +64,7 @@ if (process.env.ORIENT === '1') {
 }
 if (process.env.CORIENT === '1') {
   const key = getGeminiApiKey()
-  const o = await orientToUpright(imageBuffer, key, PRIMARY)
+  const o = await orientToUpright(imageBuffer, key, PRIMARY, { docTypeId: cfg.docType })
   console.log(`CONTENT-ORIENT(grid): applied=${o.applied}° detected=${o.detected} (${o.applied === 0 ? 'already upright' : 'rotated to upright'})`)
   imageBuffer = o.buffer
 }

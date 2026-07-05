@@ -57,19 +57,19 @@ if (!KEY) { console.error('FATAL: no reader credential resolved (statuses-only p
  * Run 2 (RUN_SET=extended) covers the remaining unique real docs; birth_cert_soviet_01 is a
  * byte-duplicate of birth_cert_handwritten_01 (gt._meta.duplicate_of) — dedup law: not re-run.
  */
-const DOCS_CORE: Array<{ id: string; file: string; visualUprightCw: Cw }> = [
-  { id: 'birth_cert_handwritten_01', file: 'birth_cert_handwritten_01.jpg', visualUprightCw: 0 },
-  { id: 'military_id_p1_01', file: 'military_id_p1_01.jpg', visualUprightCw: 90 },
-  { id: 'internal_passport_01', file: 'internal_passport_01.jpg', visualUprightCw: 0 },
+const DOCS_CORE: Array<{ id: string; file: string; docTypeId: string; visualUprightCw: Cw }> = [
+  { id: 'birth_cert_handwritten_01', file: 'birth_cert_handwritten_01.jpg', docTypeId: 'ua_birth_certificate', visualUprightCw: 0 },
+  { id: 'military_id_p1_01', file: 'military_id_p1_01.jpg', docTypeId: 'ua_military_id', visualUprightCw: 90 },
+  { id: 'internal_passport_01', file: 'internal_passport_01.jpg', docTypeId: 'ua_internal_passport_booklet', visualUprightCw: 0 },
 ]
 const DOCS_EXTENDED: typeof DOCS_CORE = [
-  { id: 'military_id_p2_01', file: 'military_id_p2_01.jpg', visualUprightCw: 0 }, // EXIF 3 LIES
-  { id: 'marriage_1939_kharkiv_borodavka', file: 'marriage_1939_kharkiv_borodavka.jpg', visualUprightCw: 0 },
-  { id: 'marriage_apostille_vasylsiuk', file: 'marriage_apostille_vasylsiuk.jpg', visualUprightCw: 0 },
-  { id: 'marriage_repeat_johnson_kvasnikova', file: 'marriage_repeat_johnson_kvasnikova.jpg', visualUprightCw: 0 },
-  { id: 'marriage_zastavnyi_kovshirina', file: 'marriage_zastavnyi_kovshirina.webp', visualUprightCw: 0 },
-  { id: 'divorce_redacted_pechersk', file: 'divorce_redacted_pechersk.jpg', visualUprightCw: 0 },
-  { id: 'divorce_blank_template', file: 'divorce_blank_template.jpg', visualUprightCw: 0 },
+  { id: 'military_id_p2_01', file: 'military_id_p2_01.jpg', docTypeId: 'ua_military_id', visualUprightCw: 0 }, // EXIF 3 LIES
+  { id: 'marriage_1939_kharkiv_borodavka', file: 'marriage_1939_kharkiv_borodavka.jpg', docTypeId: 'ua_marriage_certificate', visualUprightCw: 0 },
+  { id: 'marriage_apostille_vasylsiuk', file: 'marriage_apostille_vasylsiuk.jpg', docTypeId: 'ua_marriage_certificate', visualUprightCw: 0 },
+  { id: 'marriage_repeat_johnson_kvasnikova', file: 'marriage_repeat_johnson_kvasnikova.jpg', docTypeId: 'ua_marriage_certificate', visualUprightCw: 0 },
+  { id: 'marriage_zastavnyi_kovshirina', file: 'marriage_zastavnyi_kovshirina.webp', docTypeId: 'ua_marriage_certificate', visualUprightCw: 0 },
+  { id: 'divorce_redacted_pechersk', file: 'divorce_redacted_pechersk.jpg', docTypeId: 'ua_divorce_certificate', visualUprightCw: 0 },
+  { id: 'divorce_blank_template', file: 'divorce_blank_template.jpg', docTypeId: 'ua_divorce_certificate', visualUprightCw: 0 },
 ]
 const DOCS = process.env.RUN_SET === 'extended' ? DOCS_EXTENDED : DOCS_CORE
 const exifToCw = (tag: number | undefined): Cw => (tag === 6 ? 90 : tag === 8 ? 270 : tag === 3 ? 180 : 0)
@@ -110,7 +110,7 @@ for (const d of DOCS) {
     let detected: Cw | null = null
     let error: string | undefined
     try {
-      detected = await detectUprightCwVoted(v.buf, KEY, MODEL)
+      detected = await detectUprightCwVoted(v.buf, KEY, MODEL, { docTypeId: d.docTypeId })
     } catch (e) {
       error = e instanceof Error ? e.message.slice(0, 120) : 'unknown'
     }

@@ -131,6 +131,27 @@ fix addresses, but the exit bar is not cleared). `orientation_confidence` stays 
 flag ships default-OFF; this is `ORIENTATION_HARNESS_PARTIAL`, not
 `ORIENTATION_PASS_FOR_FIXTURE_SET`.
 
+## §6d Doc-type-aware prompt threading (current worktree)
+
+`detectOrientation.ts` now threads `docTypeId` from the production call sites and the measurement
+scripts, and builds class-specific hints from `documentRegistry` + `docReadingRules`
+(`Document class`, `vision_anchor`, and a layout cue). The request-body path is unit-tested, so the
+Gemini prompt itself is covered instead of only the return value.
+
+**Live remeasure after the wiring fix**
+
+| Harness | Correct | Notes |
+|---|---|---|
+| core `posture-orientation-harness.mts` | **13/14 (93%)** | `internal_passport_01 rot_270` still wrong on the 4-cell vote |
+| extended `posture-orientation-harness.mts` | **27/29 (93%)** | `marriage_zastavnyi_kovshirina rot_90` remains the 90° class failure |
+| `posture-orient-180check-harness.mts` OFF | **37/40** | baseline off-arm after the docType wiring |
+| `posture-orient-180check-harness.mts` ON | **38/40** | the 180°-opposite `internal_passport_01 rot_270` case now resolves; `wrong_rotation_auto_applied` drops 3→2 |
+
+**Interpretation:** the docType-aware prompt is a real root-cause improvement for the 180°-opposite
+ambiguity, but it does not solve the separate 90° sparse-template class. That class still needs a
+different mechanism, most likely a blank/fit signal or a stronger page-posture prior for sparse
+documents. Orientation remains `PARTIAL`, not solved.
+
 ## §7b Quality threading (this commit)
 
 The D0 intake verdict is no longer dropped for non-reshoot pages: `vision-extract` maps it via
@@ -138,6 +159,20 @@ The D0 intake verdict is no longer dropped for non-reshoot pages: `vision-extrac
 `degraded_other`, never silently ok) and threads it per-page through `readOpts.qualityStatus`
 into `readDocument` → envelope. Gate: any measured non-ok quality ⇒ `review_quality_low`
 (monotonic-up). Quality gate OFF (default) ⇒ `not_measured`, byte-identical behavior.
+
+## §7c Full-page blank / low-ink gate (this commit)
+
+`documentFieldReader.readDocument()` now runs the same `judgeBlankCrop(...)` low-ink test on the
+full-page intake buffer before provider selection. Blank / near-blank pages fail closed with a
+typed `OCR_EMPTY_OR_LOW_INK` provider error instead of entering either the provider path or the
+legacy fallback plane. This closes the structural gap where the crop blank-gate already existed
+but the full-page route could still hallucinate on an empty page.
+
+**Verified:** targeted vitest, `tsc 0`, `next build`, and `node scripts/check-no-pii.mjs` clean.
+
+**Scope note:** this is still an evidence gate, not a document-fit detector. `document_fit`
+remains `not_measured` because there is still no page-fit oracle; this fix only stops the blank /
+near-blank case from reaching any reader.
 
 ## §7 Bench integration
 

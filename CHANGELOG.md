@@ -1,5 +1,26 @@
 # CHANGELOG
 
+# 2026-07-05 | Fix: full-page blank/low-ink gate now fails closed before any reader call
+- `documentFieldReader.readDocument()` now runs `judgeBlankCrop(imageBuffer)` on the full-page
+  intake buffer before provider selection. Blank / near-blank pages now surface a typed
+  `OCR_EMPTY_OR_LOW_INK` failure instead of entering the provider/legacy fallback plane.
+- Added direct regression coverage proving the provider is not called on a blank full-page input,
+  and extended the typed OCR error tests to include the new blank/low-ink code.
+- Verified after the fix: targeted vitest, `tsc 0`, `next build`, and `node scripts/check-no-pii.mjs`
+  clean.
+
+# 2026-07-05 | Fix: doc-type-aware orientation prompt threading and live remeasure
+- `detectOrientation.ts` now builds class-specific orientation hints from `documentRegistry` +
+  `docReadingRules`, and the production call sites now pass `docTypeId` so the detector sees the
+  real document family instead of a generic prompt.
+- Added request-body assertions in `orientation/__tests__/detectOrientation.test.ts` to prove the
+  prompt threading path, not just the final rotation result.
+- Live remeasure: core harness 13/14 correct (93%), extended harness 27/29 correct (93%),
+  `ORIENT_180_CHECK` 37/40 off -> 38/40 on. The 180-degree internal-passport confusion is now
+  resolved by the confirm step, but the sparse 90-degree class remains (e.g.
+  `marriage_zastavnyi_kovshirina rot_90`, `divorce_blank_template rot_90`), so orientation is
+  still partial and blank/fit gating remains the next structural gap.
+
 # 2026-07-05 | Fix: canonical One Brain core path now honors the intake quality gate
 - The canonical translation core path now uses the same `QUALITY_GATE_ENABLED` decision as the
   legacy fallback, so a page that needs a better scan can stop before recognition with the same

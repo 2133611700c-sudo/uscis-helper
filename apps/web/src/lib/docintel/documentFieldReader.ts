@@ -51,6 +51,7 @@ import {
 import { applyConsensusAutoDelivery, snapshotOf } from './autoDeliveryConsensus'
 import { recordDocumentClassMetric, type MetricProduct } from './documentClassMetric'
 import { classifyProviderError } from '@/lib/ocr/ocrErrors'
+import { judgeBlankCrop } from './ensemble/blankCropGate'
 import { coordinatedDocumentRead } from './coordinatedDocumentRead'
 import { OcrCoordinationUnavailable } from '@/lib/v1/ocrCoordination'
 import type {
@@ -138,7 +139,7 @@ export async function readDocument(
   if (isContentOrientEnabled()) {
     const apiKey = getGeminiApiKey()
     if (apiKey) {
-      const oriented = await orientToUpright(imageBuffer, apiKey, primaryGeminiModel())
+      const oriented = await orientToUpright(imageBuffer, apiKey, primaryGeminiModel(), { docTypeId })
       imageBuffer = oriented.buffer
       orientApplied = oriented.applied
       orientationUncertain = !oriented.detected   // Step-5: undecidable orientation → fail-closed downstream
@@ -176,6 +177,38 @@ export async function readDocument(
     cropSource: 'full_page',
   })
   console.info('[posture_envelope]', JSON.stringify({ doc_type_id: docTypeId, ...posture }))
+
+  // FULL-PAGE blank / near-blank gate: the same low-ink rule that protects crop readers
+  // must also stop the full-page path before any provider can hallucinate on an empty page.
+  // Fail-closed and typed: the route sees a real OCR error, not a fake empty success.
+  const blankGate = await judgeBlankCrop(imageBuffer)
+  if (blankGate.blank) {
+    const provider_error = {
+      ok: false,
+      error_code: 'OCR_EMPTY_OR_LOW_INK',
+      retryable: false,
+      message: 'Image appears blank or too low-ink to read. Please retake the photo.',
+      detail: 'blank_page_or_low_ink',
+    } as const
+    console.info('[blank_page_gate]', JSON.stringify({
+      doc_type_id: docTypeId,
+      transport: 'full_page',
+      ink_ratio: Number(blankGate.inkRatio.toFixed(5)),
+    }))
+    return {
+      ok: false,
+      doc_type_id: docTypeId,
+      fields: [],
+      anchor_read: false,
+      provider: null,
+      model: null,
+      ms: 0,
+      status: 'blank_crop_or_low_ink',
+      error: provider_error.message,
+      provider_error,
+      posture,
+    }
+  }
 
   // OCR COORDINATION (issue #161, OCR_DISTRIBUTED_DEDUP_MODE, default off): the ONE
   // provider call runs through the cross-instance lease + secure cache. off ⇒
@@ -574,7 +607,7 @@ export async function readDocument(
         const model = primaryGeminiModel()
         // Orient the hi-res original to upright (reliable grid detector) so L/R tiles map to the
         // real page geometry regardless of the main read's orientation flag.
-        const oriented = await orientToUpright(opts.originalBuffer, apiKey, model)
+        const oriented = await orientToUpright(opts.originalBuffer, apiKey, model, { docTypeId })
         const fieldLabels = Object.fromEntries(spec.fields.map((f) => [f.field, f.label_uk]))
         const rec = await recoverEmptyFieldsByTiles({
           baseFields: finalFields,

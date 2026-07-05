@@ -167,7 +167,7 @@ Current truth (verified in code, not assumed):
   check — it has no separate blank/near-blank detector today
 
 `blank_gate_scope` (must be reported honestly, never implied global):
-- `crop_readers_only` -- current truth
+- `full_page_plus_crop_readers` -- current truth
 - `full_page_also` -- not yet true
 - `partial` / `not_wired` -- not applicable
 
@@ -345,8 +345,9 @@ Owner:
   180-disambiguation evidence, plus flows through to `DocumentReadResult`
 - `ORIENT_180_CHECK` measurably reduces (not eliminates) 180-degree-opposite orientation errors,
   with a live paired same-session measurement, and does not regress the 90-degree-off class
-- blank gate exists in the contour (crop transports only -- full-page LLM path is NOT gated,
-  stated explicitly in the bench skeleton's blank-gate-scope section)
+- blank gate exists in the contour (crop transports + full-page intake -- empty/full-page path
+  is now fail-closed before provider call, and the bench skeleton's blank-gate-scope section
+  should reflect that)
 - one-brain shadow architecture exists
 - current handwritten-Cyrillic GT count is exactly 10 fields / 2 hands (recounted from `_meta`
   during this session's audit, correcting an earlier "~14" approximation)
@@ -358,7 +359,7 @@ Owner:
   reached even with the new disambiguation; a distinct 90-degree-off failure class remains
 - auto-accept for handwriting
 - production flip readiness for handwritten flows
-- blank-gate coverage on the full-page (non-crop) LLM read path
+- blank-gate coverage on the full-page (non-crop) LLM read path -- DONE this commit
 
 ## FINAL VERDICT
 

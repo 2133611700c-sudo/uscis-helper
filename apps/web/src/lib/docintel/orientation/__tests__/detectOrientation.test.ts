@@ -96,6 +96,23 @@ describe('orientToUpright — fail-open', () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 429, json: async () => ({}) })))
     expect(await detectUprightCw(await testImage(), 'key', 'm')).toBeNull()
   })
+
+  it('docTypeId threads class-specific prompt guidance into the Gemini request body', async () => {
+    const bodies: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      bodies.push(String(init?.body ?? ''))
+      return {
+        ok: true,
+        json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }),
+      }
+    }))
+    await detectUprightCw(await testImage(), 'key', 'm', 20_000, { docTypeId: 'ua_military_id' })
+    expect(bodies).toHaveLength(1)
+    const body = JSON.parse(bodies[0]) as { contents?: Array<{ parts?: Array<{ text?: string }> }> }
+    const prompt = body.contents?.[0]?.parts?.[0]?.text ?? ''
+    expect(prompt).toContain('Document class: Ukrainian Military ID (identity page).')
+    expect(prompt).toContain('The page is OFTEN PHOTOGRAPHED ROTATED 90°/180°')
+  })
 })
 
 describe('foldOrientationVotes (K-vote stabilization)', () => {
@@ -252,6 +269,26 @@ describe('orientToUpright — ORIENT_180_CHECK integration (default OFF ⇒ byte
     expect(out.applied).toBe(0)
     expect(out.detected).toBe(true)
     expect(out.disambiguated180).toBeUndefined()
+  })
+
+  it('docTypeId threads class-specific prompt guidance into the 180-confirm request body', async () => {
+    process.env.ORIENT_180_CHECK = '1'
+    process.env.ORIENT_VOTE_RUNS = '1'
+    const bodies: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      bodies.push(String(init?.body ?? ''))
+      return {
+        ok: true,
+        json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }),
+      }
+    }))
+    await orientToUpright(await testImage(), 'key', PRIMARY_READER, { docTypeId: 'ua_birth_certificate' })
+    expect(bodies).toHaveLength(2)
+    const confirmBody = JSON.parse(bodies[1]) as { contents?: Array<{ parts?: Array<{ text?: string }> }> }
+    const prompt = confirmBody.contents?.[0]?.parts?.[0]?.text ?? ''
+    expect(prompt).toContain('Document class: Ukrainian Birth Certificate.')
+    expect(prompt).toContain('Choose the rotation where the child_family_name anchor reads naturally and the page layout makes sense.')
+    expect(prompt).toContain('Read the cursive values letter by letter.')
   })
 
   it('flag ON, confirm undecidable ⇒ detected=false (honest uncertainty, never a silent guess)', async () => {

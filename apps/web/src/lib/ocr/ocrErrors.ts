@@ -20,6 +20,8 @@
 
 /** The closed set of OCR provider error classes. */
 export type OcrErrorCode =
+  /** Intake image is blank / near-blank / too low-ink to safely run OCR. Not retryable. */
+  | 'OCR_EMPTY_OR_LOW_INK'
   /** 429 RATE_QUOTA / RATE_LIMIT_EXCEEDED — temporary per-minute throttle. Retryable. */
   | 'OCR_RATE_LIMITED'
   /** Hard daily / lifetime quota (RESOURCE_EXHAUSTED, not rate). NOT retryable. */
@@ -48,6 +50,11 @@ export interface OcrProviderError {
 
 /** Map each code → HTTP status the route returns and a default client-safe message. */
 const CODE_META: Record<OcrErrorCode, { http: number; retryable: boolean; message: string }> = {
+  OCR_EMPTY_OR_LOW_INK: {
+    http: 422,
+    retryable: false,
+    message: 'Image appears blank or too low-ink to read. Please retake the photo.',
+  },
   OCR_RATE_LIMITED: {
     http: 429,
     retryable: true,

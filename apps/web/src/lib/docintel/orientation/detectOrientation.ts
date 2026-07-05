@@ -18,6 +18,8 @@
  */
 import sharp from 'sharp'
 import { withOcrCostMetrics, computeCacheKeySha, sha256Hex, estCostUsdMicros } from '@/lib/v1/ocrCostMetrics'
+import { getDocTypeSpec } from '../documentRegistry'
+import { DOC_READING_RULES } from '../docReadingRules'
 
 export type Cw = 0 | 90 | 180 | 270
 
@@ -39,12 +41,31 @@ export function positionToCorrectionCw(pos: unknown): Cw | null {
   return cell ? cell.cw : null
 }
 
-const PROMPT =
-  'This image is a 2x2 grid showing the SAME identity document at four rotations: ' +
-  'TOP-LEFT = original, TOP-RIGHT = rotated 90° clockwise, BOTTOM-LEFT = 180°, ' +
-  'BOTTOM-RIGHT = 270° clockwise. Exactly ONE shows the document UPRIGHT: header/printed text ' +
-  'horizontal and left-to-right, any face photo upright. Which one? Answer ONLY JSON ' +
-  '{"pos":"top-left"|"top-right"|"bottom-left"|"bottom-right"}.'
+function buildDocOrientationHint(docTypeId?: string | null): string {
+  if (!docTypeId) return ''
+  const spec = getDocTypeSpec(docTypeId)
+  const rules = DOC_READING_RULES[docTypeId]
+  const hints: string[] = []
+  if (spec?.title_en) hints.push(`Document class: ${spec.title_en}.`)
+  if (spec?.vision_anchor) {
+    hints.push(`Choose the rotation where the ${spec.vision_anchor} anchor reads naturally and the page layout makes sense.`)
+  }
+  const orientRule = rules?.rules.find((r) => /rotated|upright|booklet|identity page/i.test(r)) ?? rules?.rules[0]
+  if (orientRule) hints.push(`Layout cue: ${orientRule}`)
+  return hints.join(' ')
+}
+
+function buildOrientationPrompt(docTypeId?: string | null): string {
+  const hint = buildDocOrientationHint(docTypeId)
+  return (
+    'This image is a 2x2 grid showing the SAME identity document at four rotations: ' +
+    'TOP-LEFT = original, TOP-RIGHT = rotated 90° clockwise, BOTTOM-LEFT = 180°, ' +
+    'BOTTOM-RIGHT = 270° clockwise. Exactly ONE shows the document UPRIGHT: header/printed text ' +
+    'horizontal and left-to-right, any face photo upright. Which one? Answer ONLY JSON ' +
+    '{"pos":"top-left"|"top-right"|"bottom-left"|"bottom-right"}.' +
+    (hint ? ` ${hint}` : '')
+  )
+}
 
 /** Build a 2×2 grid (each cell = the page at one rotation) as a JPEG buffer. */
 export async function buildOrientationGrid(buffer: Buffer, cellPx = 480, padPx = 10): Promise<Buffer> {
@@ -69,6 +90,7 @@ export async function detectUprightCw(
   apiKey: string,
   model: string,
   timeoutMs = 20_000,
+  opts: { docTypeId?: string | null } = {},
 ): Promise<Cw | null> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
@@ -87,7 +109,7 @@ export async function detectUprightCw(
       () => fetch(GEMINI_URL(model, apiKey), {
         method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
+          contents: [{ parts: [{ text: buildOrientationPrompt(opts.docTypeId) }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
           generationConfig: { temperature: 0, response_mime_type: 'application/json' },
         }),
       }),
@@ -128,10 +150,10 @@ export function foldOrientationVotes(votes: Array<Cw | null>, runs: number): Cw 
  */
 export async function detectUprightCwVoted(
   buffer: Buffer, apiKey: string, model: string,
-  opts: { runs?: number; sampler?: (b: Buffer) => Promise<Cw | null> } = {},
+  opts: { runs?: number; sampler?: (b: Buffer) => Promise<Cw | null>; docTypeId?: string | null } = {},
 ): Promise<Cw | null> {
   const runs = opts.runs ?? orientVoteRuns()
-  const sample = opts.sampler ?? ((b: Buffer) => detectUprightCw(b, apiKey, model))
+  const sample = opts.sampler ?? ((b: Buffer) => detectUprightCw(b, apiKey, model, 20_000, { docTypeId: opts.docTypeId }))
   if (runs <= 1) return sample(buffer)
   const votes: Array<Cw | null> = []
   for (let i = 0; i < runs; i++) {
@@ -179,6 +201,11 @@ const PROMPT_180 =
   'signatures/stamps nearer the bottom). Which side is upright? Answer ONLY JSON ' +
   '{"side":"left"|"right"}.'
 
+function build180Prompt(docTypeId?: string | null): string {
+  const hint = buildDocOrientationHint(docTypeId)
+  return PROMPT_180 + (hint ? ` ${hint}` : '')
+}
+
 /** Build a 1×2 grid [candidate | candidate rotated 180°] as a JPEG buffer. */
 export async function build180Grid(buffer: Buffer, cellPx = 640, padPx = 10): Promise<Buffer> {
   const flipped = await sharp(buffer).rotate(180).toBuffer()
@@ -201,6 +228,7 @@ export async function build180Grid(buffer: Buffer, cellPx = 640, padPx = 10): Pr
  */
 export async function confirmUprightVs180(
   buffer: Buffer, apiKey: string, model: string, timeoutMs = 20_000,
+  opts: { docTypeId?: string | null } = {},
 ): Promise<'candidate' | 'flipped' | null> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
@@ -219,7 +247,7 @@ export async function confirmUprightVs180(
       () => fetch(GEMINI_URL(model, apiKey), {
         method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: PROMPT_180 }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
+          contents: [{ parts: [{ text: build180Prompt(opts.docTypeId) }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
           generationConfig: { temperature: 0, response_mime_type: 'application/json' },
         }),
       }),
@@ -248,8 +276,11 @@ export async function confirmUprightVs180(
  * adds review — this NEVER silently guesses between the two poses. OFF (default) ⇒ unchanged
  * behavior, byte-identical to before this change.
  */
-export async function orientToUpright(buffer: Buffer, apiKey: string, model: string): Promise<OrientResult> {
-  const cw = await detectUprightCwVoted(buffer, apiKey, model)
+export async function orientToUpright(
+  buffer: Buffer, apiKey: string, model: string,
+  opts: { docTypeId?: string | null } = {},
+): Promise<OrientResult> {
+  const cw = await detectUprightCwVoted(buffer, apiKey, model, { docTypeId: opts.docTypeId })
   if (cw === null) return { buffer, applied: 0, detected: false }
 
   let out = buffer
@@ -265,7 +296,7 @@ export async function orientToUpright(buffer: Buffer, apiKey: string, model: str
 
   if (!isOrient180CheckEnabled()) return { buffer: out, applied, detected: true }
 
-  const confirm = await confirmUprightVs180(out, apiKey, model)
+  const confirm = await confirmUprightVs180(out, apiKey, model, 20_000, { docTypeId: opts.docTypeId })
   if (confirm === 'candidate') return { buffer: out, applied, detected: true }
   if (confirm === 'flipped') {
     try {

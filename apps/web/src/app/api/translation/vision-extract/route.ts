@@ -119,6 +119,7 @@ function pickMostSevereOcrError(errors: OcrProviderError[]): OcrProviderError {
     OCR_INVALID_RESPONSE: 3,
     OCR_PROVIDER_UNAVAILABLE: 2,
     OCR_RATE_LIMITED: 1,
+    OCR_EMPTY_OR_LOW_INK: 6,
   }
   return errors.reduce((worst, e) => (rank[e.error_code] > rank[worst.error_code] ? e : worst), errors[0])
 }

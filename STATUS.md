@@ -1,3 +1,34 @@
+# STATUS (2026-07-05 — P1 full-page blank gate: fail-closed before reader call)
+
+## 2026-07-05 | Full-page blank/low-ink gate now blocks hallucination before any provider call
+- `documentFieldReader.readDocument()` now runs `judgeBlankCrop(imageBuffer)` on the full-page
+  intake buffer before provider selection. Blank / near-blank pages now fail closed with typed
+  `OCR_EMPTY_OR_LOW_INK` instead of advancing into a reader or legacy fallback plane.
+- Added coverage for the new typed blank-code and a direct readDocument regression test proving the
+  provider is not called on a blank full-page input.
+- Verified after the fix: targeted vitest, `tsc 0`, `next build` pass, PII guard clean.
+- Residual truth unchanged: orientation remains partial (90° sparse-template class still open);
+  GT still blocks handwritten Phase A.
+
+# STATUS (2026-07-05 — P1 orientation: doc-type-aware prompt threading + live remeasure)
+
+## 2026-07-05 | Orientation detector root-cause: docType hints now reach the production prompt
+- `documentFieldReader.ts` now passes `docTypeId` into `orientToUpright(...)` for both the main
+  read path and the hi-res tile recover path, and the orientation measurement scripts pass the same
+  `docTypeId` through to the detector.
+- `detectOrientation.ts` now builds class-specific hints from `documentRegistry` + `docReadingRules`
+  (document class, vision anchor, layout cue) instead of using a generic prompt.
+- Added prompt-threading assertions in `orientation/__tests__/detectOrientation.test.ts` so the
+  Gemini request body is checked, not just the return value.
+- Live remeasure after the wiring fix: core harness 13/14 correct (93%), extended harness 27/29
+  correct (93%), `ORIENT_180_CHECK` 37/40 off -> 38/40 on. The previously stubborn
+  `internal_passport_01 rot_270` 180-degree-opposite case now resolves with the confirm step, but
+  the separate 90-degree sparse-template cases remain (`marriage_zastavnyi_kovshirina rot_90`,
+  `divorce_blank_template rot_90`).
+- Verified: targeted vitest, `tsc 0`, PII guard clean, and `next build` pass.
+- Residual truth unchanged: orientation is still partial, and the next structural gap is
+  blank/fit gating for sparse pages, not more generic prompt wording.
+
 # STATUS (2026-07-05 — P1 core intake quality gate threaded through One Brain)
 
 ## 2026-07-05 | Canonical translation core now gets the same intake quality gate as legacy

@@ -52,17 +52,17 @@ const KEY = paidKey()
 const MODEL = process.env.PRIMARY_GEMINI_MODEL || 'gemini-2.5-pro'
 if (!KEY) { console.error('FATAL: no reader credential resolved (statuses-only policy)'); process.exit(1) }
 
-const DOCS: Array<{ id: string; file: string; visualUprightCw: Cw }> = [
-  { id: 'birth_cert_handwritten_01', file: 'birth_cert_handwritten_01.jpg', visualUprightCw: 0 },
-  { id: 'military_id_p1_01', file: 'military_id_p1_01.jpg', visualUprightCw: 90 },
-  { id: 'internal_passport_01', file: 'internal_passport_01.jpg', visualUprightCw: 0 },
-  { id: 'military_id_p2_01', file: 'military_id_p2_01.jpg', visualUprightCw: 0 },
-  { id: 'marriage_1939_kharkiv_borodavka', file: 'marriage_1939_kharkiv_borodavka.jpg', visualUprightCw: 0 },
-  { id: 'marriage_apostille_vasylsiuk', file: 'marriage_apostille_vasylsiuk.jpg', visualUprightCw: 0 },
-  { id: 'marriage_repeat_johnson_kvasnikova', file: 'marriage_repeat_johnson_kvasnikova.jpg', visualUprightCw: 0 },
-  { id: 'marriage_zastavnyi_kovshirina', file: 'marriage_zastavnyi_kovshirina.webp', visualUprightCw: 0 },
-  { id: 'divorce_redacted_pechersk', file: 'divorce_redacted_pechersk.jpg', visualUprightCw: 0 },
-  { id: 'divorce_blank_template', file: 'divorce_blank_template.jpg', visualUprightCw: 0 },
+const DOCS: Array<{ id: string; file: string; docTypeId: string; visualUprightCw: Cw }> = [
+  { id: 'birth_cert_handwritten_01', file: 'birth_cert_handwritten_01.jpg', docTypeId: 'ua_birth_certificate', visualUprightCw: 0 },
+  { id: 'military_id_p1_01', file: 'military_id_p1_01.jpg', docTypeId: 'ua_military_id', visualUprightCw: 90 },
+  { id: 'internal_passport_01', file: 'internal_passport_01.jpg', docTypeId: 'ua_internal_passport_booklet', visualUprightCw: 0 },
+  { id: 'military_id_p2_01', file: 'military_id_p2_01.jpg', docTypeId: 'ua_military_id', visualUprightCw: 0 },
+  { id: 'marriage_1939_kharkiv_borodavka', file: 'marriage_1939_kharkiv_borodavka.jpg', docTypeId: 'ua_marriage_certificate', visualUprightCw: 0 },
+  { id: 'marriage_apostille_vasylsiuk', file: 'marriage_apostille_vasylsiuk.jpg', docTypeId: 'ua_marriage_certificate', visualUprightCw: 0 },
+  { id: 'marriage_repeat_johnson_kvasnikova', file: 'marriage_repeat_johnson_kvasnikova.jpg', docTypeId: 'ua_marriage_certificate', visualUprightCw: 0 },
+  { id: 'marriage_zastavnyi_kovshirina', file: 'marriage_zastavnyi_kovshirina.webp', docTypeId: 'ua_marriage_certificate', visualUprightCw: 0 },
+  { id: 'divorce_redacted_pechersk', file: 'divorce_redacted_pechersk.jpg', docTypeId: 'ua_divorce_certificate', visualUprightCw: 0 },
+  { id: 'divorce_blank_template', file: 'divorce_blank_template.jpg', docTypeId: 'ua_divorce_certificate', visualUprightCw: 0 },
 ]
 
 interface Row {
@@ -90,7 +90,7 @@ for (const d of DOCS) {
     for (const flag of ['off', 'on'] as const) {
       if (flag === 'on') process.env.ORIENT_180_CHECK = '1'
       else delete process.env.ORIENT_180_CHECK
-      const out = await orientToUpright(buf, KEY, MODEL)
+      const out = await orientToUpright(buf, KEY, MODEL, { docTypeId: d.docTypeId })
       const row: Row = {
         doc: d.id, variant: `rot_${rot}`, flag180: flag,
         expected_correction_cw: expected,

@@ -26,7 +26,7 @@ const results = []
 for (let i = 0; i < RUNS; i++) {
   const t0 = Date.now()
   let r
-  try { r = await detectUprightCw(buf, KEY, MODEL) } catch (e) { r = 'THREW:' + (e?.cause?.code ?? e?.message) }
+  try { r = await detectUprightCw(buf, KEY, MODEL, 20_000, { docTypeId: 'ua_birth_certificate' }) } catch (e) { r = 'THREW:' + (e?.cause?.code ?? e?.message) }
   const ms = Date.now() - t0
   console.log(`  #${i + 1}: ${r === null ? 'null(undecidable/err)' : r + '°'}  (${ms}ms)`)
   results.push(r)

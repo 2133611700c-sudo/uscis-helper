@@ -93,6 +93,11 @@ describe('classifyProviderError', () => {
     expect(err.retryable).toBe(false)
   })
 
+  it('blank / low-ink intake → OCR_EMPTY_OR_LOW_INK, NOT retryable', () => {
+    expect(httpStatusForOcrError('OCR_EMPTY_OR_LOW_INK')).toBe(422)
+    expect(isRetryableOcrError('OCR_EMPTY_OR_LOW_INK')).toBe(false)
+  })
+
   it('unexpected 4xx / malformed → OCR_INVALID_RESPONSE, NOT retryable, NOT a success', () => {
     const err = classifyProviderError(418)
     expect(err.error_code).toBe('OCR_INVALID_RESPONSE')

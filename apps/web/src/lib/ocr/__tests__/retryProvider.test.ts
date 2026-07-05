@@ -61,6 +61,13 @@ describe('retryOcrProvider', () => {
     expect(attempt).toHaveBeenCalledTimes(1)
   })
 
+  it('NEVER retries OCR_EMPTY_OR_LOW_INK', async () => {
+    const attempt = vi.fn(async () => err('OCR_EMPTY_OR_LOW_INK', false))
+    const out = await retryOcrProvider(attempt, { sleep: noopSleep })
+    expect(attempt).toHaveBeenCalledTimes(1)
+    expect(out.ok).toBe(false)
+  })
+
   it('honors Retry-After when computing the next sleep', async () => {
     const sleeps: number[] = []
     const sleep = (ms: number) => { sleeps.push(ms); return Promise.resolve() }

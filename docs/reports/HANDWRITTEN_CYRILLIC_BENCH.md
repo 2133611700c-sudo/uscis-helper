@@ -65,13 +65,14 @@ No number in this section was estimated, projected, or rounded up from a smaller
 
 ## Blank-gate scope (must be stated honestly, not implied global)
 
-`crop_readers_only` is the current true scope. `judgeBlankCrop`
+`full_page_plus_crop_readers` is the current true scope. `judgeBlankCrop`
 (`apps/web/src/lib/docintel/ensemble/blankCropGate.ts`) is called by BOTH crop transports
 — `htrSidecarProvider.ts` and `llmCropReader.ts` — before the model sees the crop, making
 blank-crop fabrication structurally impossible on those two paths. The full-page LLM read
-path (whole-image Gemini read, not a cropped field) is **NOT** gated by this check today
-and has no separate blank/near-blank detector. Any row scored via a full-page read must
-carry `crop_source = full_page` and must not be reported as blank-gated.
+path (whole-image Gemini read, not a cropped field) is also now gated before any provider
+call by the same low-ink rule, so blank/near-blank hallucination is no longer left open on
+the main path. Any row scored via a full-page read must still carry `crop_source = full_page`
+and be reported with the actual posture gate observed, not guessed.
 
 ## Per-field metrics schema
 
@@ -134,8 +135,8 @@ Agent:
    markers, fill the per-field table and per-hand sections above with real measured rows.
 2. Report only an allowed verdict from the list above — never a blended overall number
    without the per-hand breakdown alongside it.
-3. Keep the blank-gate scope note (`crop_readers_only`) accurate as of the run date; if the
-   full-page path gets a blank/near-blank detector, update the note and cite the commit.
+3. Keep the blank-gate scope note accurate as of the run date; if the full-page path changes
+   again, update the note and cite the commit.
 
 ## FINAL VERDICT
 
