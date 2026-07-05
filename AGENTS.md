@@ -55,3 +55,18 @@ For tasks related to OpenClaw, browser audits, synthetic tests, or production ve
 - If any required app/tool is unavailable, blocked, unsigned-in, or requires manual authentication, return `BLOCKED` with the exact blocking reason.
 - Dangerous actions still require explicit owner approval, including destructive actions, billing changes, paid ads changes, customer-facing/public messages, public posts, production secrets handling, domain/env/deployment deletion, force push, and bypassing repository guards.
 - No DONE claim without evidence.
+
+## ПРОСТЫЕ ПРАВИЛА СОВМЕСТНОЙ РАБОТЫ (для Codex и всех агентов, 2026-07-05)
+
+1. **НЕ запускай `pnpm approve-builds`.** Никогда. Разрешения сборок уже прописаны в
+   `package.json → pnpm.onlyBuiltDependencies`. Прерванный промпт ломает workspace.
+2. **Сломался node_modules / vitest / sharp / next?** Одна команда:
+   `bash scripts/dev-doctor.sh` — сама проверит и вылечит. Ничего другого не делай.
+3. **Один коммитер за раз.** Если у другого агента есть незакоммиченные файлы — ты
+   read-only. Передача роли только явным словом владельца.
+4. **Не редактируй `.env.local` без нужды** — там живут ключи и флаги других сессий;
+   append-only, ничего не удалять и не перезаписывать.
+5. **Перед live-контролем правок кода** — перезапусти dev-сервер (kill + start); при
+   сомнении `rm -rf apps/web/.next`. Горячая перезагрузка lib-модулей врёт.
+6. **Слово «готово» = три подписи:** код есть · статус честный (класс из
+   ONE_BRAIN_RUNTIME_TRUTH) · live-замер на реальном документе приложен.

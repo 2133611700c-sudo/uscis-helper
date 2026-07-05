@@ -2613,3 +2613,13 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Pay-key model probe artifact `docs/reports/MODEL_MATRIX_PAY_KEY_PROBE_2026-07-04.md`; law: `*-latest` pro aliases forbidden (the forbidden pro-latest alias served the banned preview family) — `docs/architecture/MODEL_ROLE_MATRIX.md`.
 - One-committer-per-worktree rule added to CLAUDE.md; owner-fill GT worksheet extended to 8 docs (qa-private).
 - Tests: full suite green earlier commits; guards (forbiddenPreviewFamily, runtimeTruthVocabulary) green; CI success through f866e6b.
+
+## 2026-07-04 | Audit: Ukrainian Cyrillic transliteration / integrity
+- Verified deterministic KMU-55 + Russian source-script transliteration by direct import from `packages/knowledge/src/transliterate.ts`.
+- Verified mixed-script detection on `apps/web/src/lib/ocr/nameNormalizer.ts` for mixed tokens such as `Cepгій` and `Iваненко`.
+- `node scripts/check-no-pii.mjs` passed; the prescribed pnpm/vitest suites were blocked by workspace relink EPERM / incomplete local runner, so the audit report is `TRANSLITERATION_SPOT_PASS / RUNNER_BLOCKED`.
+
+## 2026-07-04 | Audit update: runner scope fixed for knowledge
+- Pinned pnpm 10.33.2 and ran `--filter @uscis-helper/knowledge test` successfully: `530 passed, 0 failed`.
+- `apps/web` still lacks a runnable local test install: `vitest` missing from the workspace binary path, `npx vitest` cannot resolve `vitest/config`, and `typecheck` fails on missing deps in the current install.
+- Report verdict updated to `TRANSLITERATION_SPOT_PASS / RUNNER_BLOCKED`.
