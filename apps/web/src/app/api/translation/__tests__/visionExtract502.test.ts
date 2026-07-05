@@ -44,6 +44,12 @@ describe('vision-extract — no-fields read must be HTTP 200, never 502', () => 
     expect(SRC).toMatch(/error:\s*'No fields extracted across all pages\.'/)
   })
 
+  it('core path threads the intake quality gate and can reshoot before recognition', () => {
+    expect(SRC).toMatch(/if \(isQualityGateEnabled\(\)\)/)
+    expect(SRC).toMatch(/qualityStatus:\s*qualityStatusFromQualityResult\(q\)/)
+    expect(SRC).toMatch(/const corePages = pages\.filter\(/)
+  })
+
   it('genuine bad-request codes are preserved (400/413/415/429 unchanged)', () => {
     for (const code of [400, 413, 415, 429]) {
       expect(SRC).toMatch(new RegExp(`status:\\s*${code}`))

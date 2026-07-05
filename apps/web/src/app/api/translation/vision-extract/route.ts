@@ -90,6 +90,7 @@ const ALLOWED_MIME = new Set([
 ])
 const MAX_BYTES = 10 * 1024 * 1024 // 10 MB per page
 const MAX_PAGES = 6                  // hard cap matching the wizard
+type ReadDocumentForensic = NonNullable<Parameters<typeof readDocument>[3]>['forensic']
 
 /**
  * HONEST DEGRADATION (P1, 2026-06-14). Build an honest non-2xx response for a
@@ -332,6 +333,17 @@ async function POST_impl(req: NextRequest) {
     // PreprocessResult we log and use the RAW buffer. Page→field provenance is
     // preserved (index `i` is unchanged; only the bytes handed to readDocument change).
     const corePreprocessEnabled = process.env.CORE_PREPROCESS_ENABLED !== '0'
+    type CorePrep =
+      | { kind: 'reshoot'; page: number; q: ReturnType<typeof decideImageQuality> }
+      | {
+          kind: 'page'
+          page: number
+          buffer: Buffer
+          mime: string
+          rawBuffer: Buffer
+          qualityStatus?: QualityStatusForPosture
+          readOpts: { timeoutMs: number; attemptsPerModel: number; originalBuffer: Buffer; forensic?: ReadDocumentForensic }
+        }
     // STAGE-1 forensic: one stable run base per request (computed only when enabled → neutral when off).
     const forensicRunBase = isForensicEnabled() ? `vx-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}` : ''
     // Build per-page read inputs ONCE (preprocess + forensic + originalBuffer), so
@@ -344,6 +356,7 @@ async function POST_impl(req: NextRequest) {
       let mime: string = rawMime
       let preExifOrientation: number | null = null
       let preOutDims: { width: number; height: number } | null = null
+      let forensic: ReadDocumentForensic
       if (corePreprocessEnabled) {
         try {
           const pre = await preprocessImage(rawBuffer, rawMime)
@@ -352,6 +365,29 @@ async function POST_impl(req: NextRequest) {
             mime = pre.mimeType
             preExifOrientation = pre.exifOrientation ?? null
             preOutDims = { width: pre.width, height: pre.height }
+            forensic = isForensicEnabled()
+              ? {
+                  runId: `${forensicRunBase}-p${i + 1}`,
+                  sourceSha256: sha256Hex(rawBuffer),
+                  sourceDimensions: null,
+                  exifOrientation: preExifOrientation,
+                  preprocessRotation: null,
+                  outputDimensions: preOutDims,
+                }
+              : undefined
+            if (isQualityGateEnabled()) {
+              const q = decideImageQuality(metricsFromPreprocess(pre))
+              if (q.reshoot_required) return { kind: 'reshoot', page: i + 1, q }
+              return {
+                kind: 'page',
+                page: i + 1,
+                buffer,
+                mime,
+                rawBuffer,
+                qualityStatus: qualityStatusFromQualityResult(q),
+                readOpts: { timeoutMs: 85_000, attemptsPerModel: 1, originalBuffer: rawBuffer, forensic },
+              }
+            }
           } else {
             console.warn('[Core B2] preprocess non-ok, using raw buffer — page', i + 1, 'code:', pre.code)
           }
@@ -359,19 +395,19 @@ async function POST_impl(req: NextRequest) {
           console.warn('[Core B2] preprocess threw, using raw buffer — page', i + 1, e?.message ?? e)
         }
       }
-      const forensic = isForensicEnabled()
-        ? {
-            runId: `${forensicRunBase}-p${i + 1}`,
-            sourceSha256: sha256Hex(rawBuffer),
-            sourceDimensions: null,
-            exifOrientation: preExifOrientation,
-            preprocessRotation: null,
-            outputDimensions: preOutDims,
-          }
-        : undefined
+      if (!forensic && isForensicEnabled()) {
+        forensic = {
+          runId: `${forensicRunBase}-p${i + 1}`,
+          sourceSha256: sha256Hex(rawBuffer),
+          sourceDimensions: null,
+          exifOrientation: preExifOrientation,
+          preprocessRotation: null,
+          outputDimensions: preOutDims,
+        }
+      }
       // timeoutMs is the TOTAL per-page deadline; attemptsPerModel:1 so a slow primary
       // doesn't burn the budget. Per-page originalBuffer + forensic ride in readOpts.
-      return { buffer, mime, readOpts: { timeoutMs: 85_000, attemptsPerModel: 1, originalBuffer: rawBuffer, forensic } }
+      return { kind: 'page', page: i + 1, buffer, mime, rawBuffer, readOpts: { timeoutMs: 85_000, attemptsPerModel: 1, originalBuffer: rawBuffer, forensic } }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
     const coreReadModels: Array<string | null> = []
@@ -393,10 +429,23 @@ async function POST_impl(req: NextRequest) {
         console.warn('[Core B2] MRZ best-effort failed (fail-open):', (e as Error)?.message ?? e)
       }
     }
+    const corePages = pages.filter((p) => p.kind === 'page') as Array<Extract<CorePrep, { kind: 'page' }>>
     if (isOneBrainRecognizeEnabled()) {
       // STEP E cutover: single orchestrator. Per-page opts carried via pages[].readOpts;
       // MRZ injected as extraCandidates (appended after reads).
       const documentSessionId = (form.get('documentSessionId') as string | null) ?? 'translation-vision-extract'
+      const coreReshoot = pages.find((p) => p.kind === 'reshoot') as Extract<CorePrep, { kind: 'reshoot' }> | undefined
+      if (coreReshoot) {
+        return NextResponse.json({
+          ok: false,
+          status: 'reshoot_required',
+          reshoot: true,
+          page: coreReshoot.page,
+          message_key: coreReshoot.q.user_message_key,
+          quality_decision: coreReshoot.q.decision,
+          signals: coreReshoot.q.signals,
+        }, { status: 200 })
+      }
       // TRUTH-PLAN step 3 (fold the LIVE legacy-fallback plane into the one door): when
       // RECOGNIZE_RETRY_ON_EMPTY='1', a 0-field first pass re-reads ONCE inside the door with
       // the SAME parameters the route's legacy fallback uses (timeoutMs 25_000 — parity), so a
@@ -404,7 +453,15 @@ async function POST_impl(req: NextRequest) {
       // Both flags OFF → byte-identical. The fallback plane is NOT removed until a shadow
       // window proves the in-door retry fully covers it.
       const rec = await recognizeDocument({
-        pages, docTypeId, product: 'translation', documentSessionId,
+        pages: corePages.map((p) => ({
+          buffer: p.buffer,
+          mime: p.mime,
+          readOpts: {
+            ...p.readOpts,
+            ...(p.qualityStatus ? { qualityStatus: p.qualityStatus } : {}),
+          },
+        })),
+        docTypeId, product: 'translation', documentSessionId,
         extraCandidates: mrzExtra, evidenceProvider: resolveEvidenceProvider(),
         retryOnEmpty: { readOpts: { timeoutMs: 25_000 } },
       })
@@ -423,11 +480,11 @@ async function POST_impl(req: NextRequest) {
     } else {
       // HONEST DEGRADATION (P1): collect any typed provider error a page surfaced.
       const coreProviderErrors: OcrProviderError[] = []
-      const corePages = await Promise.all(pages.map(async (p, i) => {
+      const corePagesResults = await Promise.all(corePages.map(async (p, i) => {
         const r = await readDocument(p.buffer, p.mime, docTypeId, { product: 'translation', ...p.readOpts })
         return { i, r }
       }))
-      for (const { i, r } of corePages) {
+      for (const { i, r } of corePagesResults) {
         corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
         coreReadModels.push(r.model ?? null)
         if (r.ok && Array.isArray(r.fields)) {

@@ -1,3 +1,25 @@
+# STATUS (2026-07-05 — P1 core intake quality gate threaded through One Brain)
+
+## 2026-07-05 | Canonical translation core now gets the same intake quality gate as legacy
+- `apps/web/src/app/api/translation/vision-extract/route.ts` now threads `QUALITY_GATE_ENABLED`
+  into the canonical One Brain core path as well, so the canonical route can emit the same
+  `reshoot_required` result before recognition instead of silently skipping quality measurement.
+- The core path also forwards `qualityStatus` into `readDocument` so the posture envelope is not
+  blind on canonical pages anymore; this closes the split truth between core and legacy intake.
+- Verified: targeted vitest, `tsc 0`, and PII guard clean. Default behavior remains byte-identical
+  when the quality gate flag is off.
+
+# STATUS (2026-07-05 — observability: handwriting shadow metrics normalized)
+
+## 2026-07-05 | P5 reader-metrics aggregation added without changing product flow
+- `apps/web/src/lib/observability/shadowWatchdog.ts` now computes normalized handwriting shadow
+  rates (`agreement_rate`, `disagreement_rate`, `asymmetry_rate`) from the existing
+  `[handwriting_ensemble_shadow]` markers, plus `both_empty_total`.
+- This advances observability only: no reader path, review policy, or final-value behavior
+  changed. `shadowWatchdog.test.ts` passes, `tsc 0`, and PII guard remains clean.
+- Residual truth unchanged: handwritten Phase A is still GT-blocked; orientation is still partial;
+  full-page blank-gate remains unimplemented.
+
 # STATUS (2026-07-05 — poppler-gate transient-spawn hardening)
 
 ## 2026-07-05 | Test robustness: distinguished transient OS spawn failure from real poppler absence

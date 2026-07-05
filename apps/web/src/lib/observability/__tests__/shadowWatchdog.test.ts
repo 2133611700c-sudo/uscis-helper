@@ -28,8 +28,17 @@ describe('aggregateShadowLogs — deterministic, PII-free by construction', () =
 
   it('handwriting ensemble: informational reader-complementarity stats', () => {
     expect(agg.handwriting_ensemble).toMatchObject({
-      docs: 1, fields_compared: 3, agree_total: 1, disagree_total: 1, llm_only_total: 1, htr_only_total: 0,
+      docs: 1,
+      fields_compared: 3,
+      agree_total: 1,
+      disagree_total: 1,
+      llm_only_total: 1,
+      htr_only_total: 0,
+      both_empty_total: 0,
     })
+    expect(agg.handwriting_ensemble.agreement_rate).toBeCloseTo(1 / 3)
+    expect(agg.handwriting_ensemble.disagreement_rate).toBeCloseTo(1 / 3)
+    expect(agg.handwriting_ensemble.asymmetry_rate).toBeCloseTo(1 / 3)
   })
 
   it('normalize_collapse shadow: any mismatch blocks the Phase-8 flip', () => {

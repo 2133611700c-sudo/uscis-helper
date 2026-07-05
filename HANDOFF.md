@@ -1,3 +1,24 @@
+# HANDOFF (2026-07-05 — P1 core intake quality gate threaded through One Brain)
+
+## 2026-07-05 | Canonical quality gate fix
+- Added the same intake quality gate to the canonical One Brain core path in
+  `apps/web/src/app/api/translation/vision-extract/route.ts`.
+- The core path now emits `reshoot_required` before recognition when the intake gate says the page
+  needs a better scan, and it forwards `qualityStatus` into the canonical reader path so posture
+  is recorded on both core and legacy pages.
+- Verified: targeted vitest, `tsc 0`, and `node scripts/check-no-pii.mjs` clean.
+- Remaining truth unchanged: orientation 90-degree class still partial; GT still blocks handwritten
+  Phase A; blank-gate scope is still crop-readers-only.
+
+# HANDOFF (2026-07-05 — observability: handwriting shadow metrics normalized)
+
+## 2026-07-05 | P5 observability increment
+- Added normalized handwriting shadow metrics to `shadowWatchdog`:
+  `agreement_rate`, `disagreement_rate`, `asymmetry_rate`, and `both_empty_total`.
+- Verified: `apps/web/src/lib/observability/__tests__/shadowWatchdog.test.ts` passes; `tsc 0`;
+  `node scripts/check-no-pii.mjs` clean.
+- What remains unchanged: this does not close GT, orientation 90°-off, or blank-gate scope.
+
 # HANDOFF (2026-07-05 — fixed real test-robustness gap: transient ENOBUFS in poppler gate)
 
 ## 2026-07-05 | Root-caused and fixed a genuine local test failure (Claude, per owner audit)

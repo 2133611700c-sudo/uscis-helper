@@ -1,5 +1,18 @@
 # CHANGELOG
 
+# 2026-07-05 | Fix: canonical One Brain core path now honors the intake quality gate
+- The canonical translation core path now uses the same `QUALITY_GATE_ENABLED` decision as the
+  legacy fallback, so a page that needs a better scan can stop before recognition with the same
+  `reshoot_required` contract.
+- `qualityStatus` is also threaded into the canonical reader path, so posture remains visible on
+  the same result object that feeds downstream arbitration.
+
+# 2026-07-05 | Observability: handwriting shadow metrics normalized
+- `shadowWatchdog` now computes normalized handwriting-shadow rates from the existing
+  `[handwriting_ensemble_shadow]` logs: agreement, disagreement, and asymmetry. This makes the
+  P5 shadow telemetry machine-readable without changing reader, arbitration, or final-value flow.
+- Added coverage in `apps/web/src/lib/observability/__tests__/shadowWatchdog.test.ts`.
+
 ## 2026-07-05 | Fix: transient ENOBUFS in poppler rendered-output test gate (root-caused, not papered over)
 - `renderOfficialTranslationDeterminism.test.ts`: the gated `pdftoppm`/`pdftotext` `execSync` calls
   were unprotected against transient OS spawn refusal (ENOBUFS/EAGAIN/ENOMEM) that can occur only

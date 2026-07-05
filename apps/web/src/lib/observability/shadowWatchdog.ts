@@ -56,6 +56,10 @@ export interface WatchdogAggregate {
     disagree_total: number
     llm_only_total: number
     htr_only_total: number
+    both_empty_total: number
+    agreement_rate: number
+    disagreement_rate: number
+    asymmetry_rate: number
   }
   /** deterministic verdicts — the flip-blocking conditions, computed locally */
   flags: {
@@ -83,7 +87,18 @@ const empty = (): WatchdogAggregate => ({
     engine_loosened_total: 0, engine_tightened_total: 0, mismatched_docs: 0,
   },
   normalize_collapse_shadow: { docs: 0, value_diff_total: 0, reject_diff_total: 0, mismatched_docs: 0 },
-  handwriting_ensemble: { docs: 0, fields_compared: 0, agree_total: 0, disagree_total: 0, llm_only_total: 0, htr_only_total: 0 },
+  handwriting_ensemble: {
+    docs: 0,
+    fields_compared: 0,
+    agree_total: 0,
+    disagree_total: 0,
+    llm_only_total: 0,
+    htr_only_total: 0,
+    both_empty_total: 0,
+    agreement_rate: 0,
+    disagreement_rate: 0,
+    asymmetry_rate: 0,
+  },
   flags: {
     decision_flip_blocked: false, arbitration_flip_blocked: false,
     gates_flip_blocked: false, normalize_flip_blocked: false, notes: [],
@@ -166,10 +181,17 @@ export function aggregateShadowLogs(logText: string): WatchdogAggregate {
       h.disagree_total += ((j.disagree as string[] | undefined) ?? []).length
       h.llm_only_total += ((j.llm_only as string[] | undefined) ?? []).length
       h.htr_only_total += ((j.htr_only as string[] | undefined) ?? []).length
+      h.both_empty_total += ((j.both_empty as string[] | undefined) ?? []).length
     } else if (line.includes('[recognize_retry_on_empty]')) {
       agg.markers_parsed++
       agg.retry_on_empty_fired++
     }
+  }
+  const h = agg.handwriting_ensemble
+  if (h.fields_compared > 0) {
+    h.agreement_rate = h.agree_total / h.fields_compared
+    h.disagreement_rate = h.disagree_total / h.fields_compared
+    h.asymmetry_rate = (h.llm_only_total + h.htr_only_total) / h.fields_compared
   }
   // deterministic flip-blocking verdicts (the same criteria the plan fixed)
   if (agg.decision_shadow.diffs > 0 || agg.decision_shadow.unresolved_mismatches > 0) {
