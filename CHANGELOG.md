@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-07-05 | Document posture pre-reader envelope (signal-only) + live orientation harness 19/21
+- NEW `apps/web/src/lib/docintel/posture/documentPostureEnvelope.ts` + 11 unit tests: one typed pre-reader
+  posture contract (EXIF/preprocess/content-orient/quality/fit/gate) assembled from RECORDED signals only;
+  honest `not_measured`; confidence never `high`; gate monotonic-up, never blocks/boosts.
+- `documentFieldReader.ts`: envelope built BEFORE provider selection; `[posture_envelope]` PII-free marker.
+- `gt-pipeline-bench.mjs`: §7 posture section — historical rows `posture_gate=not_measured`, never backfilled.
+- NEW `apps/web/scripts/posture-orientation-harness.mts` (§6): production detector over 21 variants × 3 real
+  docs vs VISUAL oracle → 19/21 (birth 7/7 incl. lying EXIF-6, military 7/7, passport 5/7 — confident 180°
+  errors ⇒ 2 false `pass`, documented). Report: `docs/reports/DOCUMENT_POSTURE_PRE_READER_GATE.md`.
+- Tests: posture 11/11; docintel+ocr 629 pass | 2 skip; tsc 0 errors; PII guard clean (2011 files).
+
 ## 2026-07-04 | Audit-only: dictionaries + handwritten model path + local Mac LLM inventory
 - Re-verified the Ukrainian/Russian dictionary and transliteration core without changing runtime code. Evidence:
   `pnpm --dir apps/web exec tsx ../../packages/knowledge/src/__tests__/referenceValidation.test.ts` = `29/29`,

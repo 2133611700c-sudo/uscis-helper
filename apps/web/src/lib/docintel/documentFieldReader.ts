@@ -33,6 +33,7 @@ import { resolveAuthorityFields } from './authorityResolve'
 import { isHandwrittenFamily } from './modelMatrix'
 import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
 import { isAssessZoomEnabled, verifySuspectFieldsByZoom } from './ensemble/assessZoom'
+import { buildPostureEnvelope } from './posture/documentPostureEnvelope'
 import { diffHandwritingReaders, foldLlmByBaseKey, isHandwritingEnsembleShadowEnabled } from './ensemble/handwritingEnsembleShadow'
 import { critiquePair, critiqueSingle } from '../canonical/core/linguisticCritic'
 import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
@@ -150,6 +151,22 @@ export async function readDocument(
       if (orientApplied) console.info('[auto_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
     }
   }
+
+  // DOCUMENT POSTURE ENVELOPE (owner patch 2026-07-05): ONE typed pre-reader posture/capture
+  // contract assembled from the RECORDED signals above (EXIF/preprocess/content-orient) —
+  // honest `not_measured` for everything we do not measure. Signal-only: it never blocks
+  // reading and never boosts confidence; a non-pass gate can only ADD review downstream
+  // (orientation_uncertain already does; the envelope makes the state one inspectable value).
+  const posture = buildPostureEnvelope({
+    exifOrientation: opts.forensic?.exifOrientation,
+    preprocessRotationApplied: (opts.forensic?.preprocessRotation ?? 0) !== 0 || undefined,
+    contentOrientRan: isContentOrientEnabled(),
+    contentRotationCw: orientApplied,
+    orientationUncertain,
+    inputFormat: 'full_page_image',
+    cropSource: 'full_page',
+  })
+  console.info('[posture_envelope]', JSON.stringify({ doc_type_id: docTypeId, ...posture }))
 
   // OCR COORDINATION (issue #161, OCR_DISTRIBUTED_DEDUP_MODE, default off): the ONE
   // provider call runs through the cross-instance lease + secure cache. off ⇒

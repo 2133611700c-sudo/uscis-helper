@@ -1,3 +1,12 @@
+# STATUS (2026-07-05 — posture envelope SIGNAL-ONLY wired; orientation measured 19/21 visual-oracle)
+
+## 2026-07-05 | Document posture pre-reader envelope — WIRED SIGNAL-ONLY
+**Readiness: envelope LIVE as evidence layer (always builds, never blocks/boosts); orientation NOT solved.**
+- Measured live (production K-vote detector, 21 variants × 3 real docs, visual oracle): 19/21 correct;
+  known failure class = confident 180° miscorrection on printed passport (2 false `pass`) ⇒ confidence capped
+  `medium`, gate stays signal-only. document_fit/quality in reader path = honest `not_measured`.
+- Evidence: `docs/reports/DOCUMENT_POSTURE_PRE_READER_GATE.md`.
+
 # STATUS (2026-07-04 — Local Ollama/Gemma runtime repaired and verified)
 
 ## 2026-07-04 | Local Mac LLM runtime — LOCAL_PASS / HELPER-ONLY

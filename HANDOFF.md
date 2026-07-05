@@ -1,3 +1,13 @@
+# HANDOFF (2026-07-05 — posture envelope wired signal-only; orientation harness measured 19/21)
+
+## 2026-07-05 | Document posture pre-reader envelope (Claude)
+- **Done+verified:** `docintel/posture/documentPostureEnvelope.ts` (typed envelope, honest not_measured, confidence capped medium) wired in `documentFieldReader` BEFORE provider selection with `[posture_envelope]` PII-free marker; 11/11 unit tests; docintel+ocr suites 629 pass; tsc 0.
+- **Live third signature:** `apps/web/scripts/posture-orientation-harness.mts` — production K-vote detector over 21 variants × 3 real docs, re-scored against the VISUAL oracle (birth EXIF-6 tag proven lying again): birth 7/7, military 7/7, passport 5/7 → 19/21 (90%), 0 undecidable. Failure class: confident 180° miscorrection on the printed passport ⇒ 2/21 FALSE `pass` — why the gate stays signal-only and orientation is NOT claimed solved.
+- **Bench §7:** gt-pipeline-bench emits posture section — historical rows honestly `posture_gate=not_measured`, never backfilled.
+- **NOT done:** quality_status not threaded from upload gate into reader-path envelope; document_fit detector does not exist (honest not_measured); 180°-disambiguation experiment pending.
+- **EXACT NEXT ACTION:** owner GT worksheet docs 4-8 (Phase A blocker, unchanged); agent: thread qualityStatus into envelope where both run + extend harness to remaining real docs before any confidence upgrade.
+- Evidence: `docs/reports/DOCUMENT_POSTURE_PRE_READER_GATE.md`.
+
 # HANDOFF (2026-07-05 — shadow window exercised; next = primary-Gemini window + owner GT fill)
 
 ## 2026-07-05 | Window/E2E/probe session (Claude)

@@ -422,6 +422,11 @@ md += `Scored fields (denominator) = ${scoredN}. Verdict: **${verdictStamp}**.\n
     md += `| ${docType} | ${Object.keys(map).join(', ')} |\n`
   }
   md += `\nWITHDRAWN by measurement/design: ua_military_id.sex (absent from registry spec AND TPS contract — scoring it was a structural false-MISS); EAD/I-94 via the UA door (ADR-016).\n`
+  // §7 posture envelope integration (owner patch 2026-07-05): historical bench rows were read
+  // BEFORE the DocumentPostureEnvelope existed — their posture_gate is honestly not_measured.
+  md += `\n## Document posture (§7 envelope law)\n\nposture_gate for ALL rows in this bench: **not_measured** — these reads pre-date the pre-reader `
+  md += `DocumentPostureEnvelope (docintel/posture). New reads emit a \`[posture_envelope]\` marker; a future bench run may join it per row. `
+  md += `Never backfill posture verdicts onto historical rows.\n`
 }
 
 const outMd = resolve(REPO, 'docs/reports', `GT_PIPELINE_BENCH_${stamp}${DRY ? '_DRY' : ''}.md`)
