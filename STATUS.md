@@ -1,3 +1,11 @@
+# STATUS (2026-07-05 — runner-guard: audit closed, invariant proven)
+
+## 2026-07-05 | Runner-guard — ALL AUDIT HOLES CLOSED (live-proven battery)
+- Invariant: под живым dev/конкурентом НИ один мутирующий pnpm-путь не исполняется; exec/run всегда работают;
+  CI и safe-install проходят. 6/6 мутирующих путей отказали, left-pad-проба не просочилась.
+- Residual = социальный слой (SAFE_INSTALL=1 / --ignore-pnpmfile) + main-worktree до merge — записаны.
+- Evidence: docs/reports/RUNNER_GUARD_AUDIT_CLOSURE.md.
+
 # STATUS (2026-07-05 — runner hardened: raw install physically refuses unsafe conditions)
 
 ## 2026-07-05 | Install runner — HARDENED, all three layers proven live
@@ -506,3 +514,4 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-07-04 update: pinned pnpm 10.33.2 fixed the package scope for `packages/knowledge` (530 passed / 0 failed). `apps/web` remains runner-blocked: `vitest` binary missing from the current install, `npx vitest` cannot resolve `vitest/config`, and `typecheck` fails on incomplete local deps. -->
 <!-- 2026-07-04 follow-up: added `generateStaticParams()` to `apps/web/src/app/[locale]/disclaimer/page.tsx`; `next build` now completes, `typecheck` passes, and the transliteration audit is fully green at `TRANSLITERATION_PASS`. -->
 <!-- 2026-07-05: downloaded Ukrainian model bench — local artifact is `cyrillic-trocr/trocr-ukrainian-handwritten` at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`; it is OCR_HTR (VisionEncoderDecoderModel), not a text LLM. Live crop bench on the frozen UA birth and military fixtures was 0/6 exact or partial, blank crop fabricated 3/3, so the model is not a reader as-is and is only a fine-tune candidate. -->
+<!-- 2026-07-05: runner-hardening audit update — `scripts/dev-doctor.sh` had a real recursion risk because `DEV_DOCTOR_RECHECK` was set but never honored. Fixed by stopping after one recursive heal/recheck pass. Syntax verified with `bash -n scripts/dev-doctor.sh`. Live process-based proof of the guard remains BLOCKED in this shell because `ps`/`lsof` are denied here, so the install-guard is code-audited but not dynamically simulated in this environment. -->

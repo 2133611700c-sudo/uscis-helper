@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-07-05 | Runner-guard audit closure: pnpmfile 2nd enforcement + global lock + heal-stops-dev
+- NEW `.pnpmfile.cjs`: second interlock point — covers `--ignore-scripts`, `rebuild`, `prune`, `-r`, `--dir`
+  (pnpmfile is NOT skipped by --ignore-scripts); MUTATING-subcommand-scoped so `exec/run/test/dev` never block
+  (unscoped version measurably paralyzed vitest — fixed same session). Lockfile now carries pnpmfileChecksum.
+- `safe-install.sh`: mutex is now MACHINE-GLOBAL (`$HOME/.uscis-safe-install.lock`) — sibling-worktree
+  concurrent safe-installs (audit hole #1) refuse; proven live.
+- `dev-doctor.sh`: heal now stops in-worktree dev servers first and restarts after (audit hole #2, proven
+  live pid 5491/5518→10717); deep .pnpm symlink sweep resolves ≥4-level candidates (workspace links excluded
+  — false positive fixed); Codex recursion-stop (DEV_DOCTOR_RECHECK) integrated.
+- `install-guard.mjs`: shell-wrapper false positive excluded; dev-process regex widened (vitest watch/tsx/playwright).
+- Battery: all 6 mutating pnpm paths REFUSE under live dev, zero leaks; exec/tsc/vitest work. Report:
+  docs/reports/RUNNER_GUARD_AUDIT_CLOSURE.md.
+
 ## 2026-07-05 | Runner hardening: preinstall interlock + safe-install + cross-worktree symlink detection
 - NEW `scripts/install-guard.mjs` wired as root `preinstall`: raw `pnpm install` REFUSES under (a) another
   running package install anywhere on the machine, (b) a live dev server inside this worktree — the two
@@ -2666,3 +2679,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Identified the downloaded local artifact as `cyrillic-trocr/trocr-ukrainian-handwritten` at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`.
 - Verified with a direct HTR crop bench via `qa-private/htr-poc/bench_downloaded_ukr_model.py` on the frozen birth-certificate and military-id crops.
 - Live result: 0/6 exact or partial on the two hands, blank crop fabricated 3/3, so the model is not a reader as-is and is only a fine-tune candidate.
+
+- 2026-07-05: fixed a real recursion bug in `scripts/dev-doctor.sh`. The script now honors `DEV_DOCTOR_RECHECK` and stops after one recursive heal/recheck pass instead of looping if the second check is still red. Verified with `bash -n scripts/dev-doctor.sh`; live process-based guard proof remains blocked in this shell because `ps`/`lsof` are denied.

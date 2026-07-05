@@ -14,7 +14,10 @@
 set -u
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
-LOCK="$(git rev-parse --git-dir 2>/dev/null || echo .git)/.safe-install-lock"
+# MACHINE-GLOBAL lock (audit 2026-07-05, hole #1): the pnpm store is per-user, not
+# per-worktree — two safe-installs in SIBLING worktrees used to run concurrently and
+# reintroduce disease #1 through the sanctioned path. One lock per user closes it.
+LOCK="$HOME/.uscis-safe-install.lock"
 
 # 1) mutex — concurrent installs are the #1 measured killer
 if mkdir "$LOCK" 2>/dev/null; then

@@ -24,6 +24,7 @@ set -u
 SELF="$(cd "$(dirname "$0")/.." && pwd)"
 if [ -n "${1:-}" ] && [ -d "${1:-}" ]; then TARGET="$(cd "$1" && pwd)"; shift; else TARGET="$SELF"; fi
 cd "$TARGET"
+RECHECK="${DEV_DOCTOR_RECHECK:-0}"
 
 fail=0
 check() {
@@ -60,13 +61,49 @@ for lnk in $(find apps/*/node_modules packages/*/node_modules node_modules \
     *) echo "✗ cross-worktree symlink: $lnk → $tgt"; infected=1; fail=1 ;;
   esac
 done
-[ "$infected" = "0" ] && echo "✓ no cross-worktree symlinks"
+[ "$infected" = "0" ] && echo "✓ no cross-worktree symlinks (shallow)"
+
+# 3b) DEEP contamination sweep (audit 2026-07-05): links climbing ≥4 levels are the only
+#     candidates that CAN escape; resolve just those (few — workspace links legitimately
+#     climb 4 to packages/*) and flag only targets outside this worktree.
+deep=0
+for lnk in $(find node_modules/.pnpm -maxdepth 3 -type l 2>/dev/null | head -4000); do
+  raw="$(readlink "$lnk")" || continue
+  case "$raw" in *../../../../*) : ;; *) continue ;; esac
+  tgt="$(cd "$(dirname "$lnk")" 2>/dev/null && cd "$raw" 2>/dev/null && pwd)" || continue
+  case "$tgt" in
+    "$TARGET"/*) : ;;   # healthy: workspace link resolving inside this worktree
+    *) echo "✗ deep cross-worktree symlink: $lnk → $tgt"; deep=1; fail=1 ;;
+  esac
+done
+[ "$deep" = "0" ] && echo "✓ no deep cross-worktree symlinks (.pnpm)"
 
 if [ "$fail" = "1" ] || [ "${1:-}" = "--heal" ]; then
+  if [ "$RECHECK" = "1" ]; then
+    echo "── re-check failed after heal; stopping after one recursive pass"
+    exit 1
+  fi
+  # Audit 2026-07-05 hole #2: NEVER install under a live dev server — stop any dev/watch
+  # process whose cwd is inside the TARGET worktree (mirror of safe-install), restart after.
+  RESTART_DEV=0
+  for pid in $(ps -axo pid=,command= | awk '!/(zsh|bash|sh) -c/ && (/next(\.js)? dev|next-server/ || /pnpm .*[[:space:]]dev([[:space:]]|$)/) {print $1}'); do
+    dcwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -1)"
+    case "$dcwd" in
+      "$TARGET"|"$TARGET"/*)
+        echo "── heal: stopping dev server pid $pid (cwd $dcwd)"
+        kill "$pid" 2>/dev/null && RESTART_DEV=1
+        ;;
+    esac
+  done
+  [ "$RESTART_DEV" = "1" ] && sleep 3
   echo "── healing: pnpm install --force (declarative build allowlist, no prompts)"
   SAFE_INSTALL=1 pnpm install --force || exit 1
   echo "── re-check"
   DEV_DOCTOR_RECHECK=1 bash "$0" "$TARGET"   # one recursive verify pass (heals are idempotent)
+  if [ "$RESTART_DEV" = "1" ]; then
+    echo "── heal: restarting dev server (pnpm --dir apps/web dev, background)"
+    nohup pnpm --dir "$TARGET/apps/web" dev >/tmp/uscis-dev-restart.log 2>&1 &
+  fi
 else
   echo "── healthy"
 fi

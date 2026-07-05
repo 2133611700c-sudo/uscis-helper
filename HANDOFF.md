@@ -1,3 +1,14 @@
+# HANDOFF (2026-07-05 — runner-guard: ВСЕ дыры аудита закрыты и живьём доказаны)
+
+## 2026-07-05 | Runner-guard audit closure (Claude)
+- Закрыты все 5 дыр аудита: machine-global lock (2-й конкурентный safe-install отказал) · heal останавливает/рестартит dev (доказано pid 5491/5518→10717) · `.pnpmfile.cjs` = 2-я точка enforcement (закрывает `--ignore-scripts` + `rebuild`/`prune`) · эмпирика всех 6 мутирующих путей = refusals при живом dev, утечек 0 (left-pad не просочился).
+- Собственные false positives найдены и исправлены в процессе: shell-wrapper в конкурент-детекте; workspace-линки в deep-скане; НЕзаскоупленный pnpmfile-guard душил `pnpm exec/run` (парализовал бы vitest) — теперь MUTATING-only c argv-парсером.
+- pnpm-lock.yaml несёт pnpmfileChecksum (обязателен для frozen-CI).
+- Codex-фикс рекурсии dev-doctor (DEV_DOCTOR_RECHECK) принят в этот же коммит по правилу передачи.
+- Остаточное (социальный слой, записан): SAFE_INSTALL=1 / --ignore-pnpmfile сознательно; npm/yarn напрямую; main-worktree до merge.
+- Evidence: docs/reports/RUNNER_GUARD_AUDIT_CLOSURE.md.
+- **EXACT NEXT ACTION:** без изменений — owner GT docs 4–8; agent: 90°/180°-дизамбигуация ориентации.
+
 # HANDOFF (2026-07-05 — install runner HARDENED: interlock + safe-install + symlink detection)
 
 ## 2026-07-05 | Runner safety contract (Claude, owner order «не должен больше ломаться»)
@@ -1881,3 +1892,4 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-07-04 update: package-scope runner found. `npm_config_cache=/private/tmp/npm-cache npx -y pnpm@10.33.2 --filter @uscis-helper/knowledge test` passed (530/0). `apps/web` runner still blocked (`vitest` missing locally; `npx vitest` cannot resolve config; `typecheck` missing deps). Next exact action: repair the web workspace install or add a stable runner path, then rerun web translit tests. -->
 <!-- 2026-07-04 follow-up: `apps/web/src/app/[locale]/disclaimer/page.tsx` now declares `generateStaticParams()`; `next build` and `typecheck` both pass. Next exact action: no audit blocker remains for transliteration; preserve the full-green report and keep the historical blocked state only as audit trail. -->
 <!-- 2026-07-05: downloaded Ukrainian model handoff — the local model is `cyrillic-trocr/trocr-ukrainian-handwritten` (OCR_HTR, image-only) at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`; live crop bench showed stable wrong reads on both hands and blank-crop fabrication 3/3. Next exact action: treat it only as a fine-tune base / non-production HTR candidate, never as a reader or helper LLM. -->
+<!-- 2026-07-05: runner-hardening handoff — fixed a real `dev-doctor` recursion bug by honoring `DEV_DOCTOR_RECHECK` and stopping after one heal/recheck pass. `bash -n scripts/dev-doctor.sh` passed. Still BLOCKED for live process-based proof here because `ps`/`lsof` are denied in this shell, so the interlock remains code-audited but not runtime-simulated. -->
