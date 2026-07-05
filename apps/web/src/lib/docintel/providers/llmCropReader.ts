@@ -20,6 +20,7 @@
  *  - Cost: ≤4 tiny crop calls per document, only for handwritten families, only flag-ON.
  */
 import type { HtrFieldBox, HtrFieldRead } from './htrSidecarProvider'
+import { judgeBlankCrop } from '../ensemble/blankCropGate'
 import { PRIMARY_READER } from '../modelMatrix'
 
 export function isLlmCropReaderEnabled(env: Record<string, string | undefined> = process.env): boolean {
@@ -113,6 +114,13 @@ export async function readHandwrittenFieldsViaLlmCrops(
         .normalise()
         .png()
         .toBuffer()
+      // MANDATORY blank gate (plan §7): the LLM crop transport also fabricates on cursive —
+      // a blank crop must not reach ANY reader (blank_fabrication_reachable = 0).
+      const gate = await judgeBlankCrop(crop)
+      if (gate.blank) {
+        console.info('[blank_crop_gate]', JSON.stringify({ field: b.field, transport: 'llm_crop', ink_ratio: Number(gate.inkRatio.toFixed(5)) }))
+        continue
+      }
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 20_000)
       let res: Response

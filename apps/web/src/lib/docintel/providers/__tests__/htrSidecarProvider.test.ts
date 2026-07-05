@@ -45,7 +45,7 @@ describe('htrSidecarProvider — field-first handwriting reader (ADR-026), OFF b
     process.env.HTR_SIDECAR_URL = 'http://127.0.0.1:8077'
     // a real 60x30 white PNG so sharp.extract succeeds
     const sharp = (await import('sharp')).default
-    const img = await sharp({ create: { width: 60, height: 30, channels: 3, background: { r: 250, g: 250, b: 250 } } }).png().toBuffer()
+    const img = await sharp(Buffer.from(`<svg width="60" height="30"><rect width="60" height="30" fill="#f4f1ea"/><path d="M0 10 q 7 -7 15 0 t 15 0 t 15 0 t 15 0" stroke="#222" stroke-width="3" fill="none"/><path d="M0 20 q 7 7 15 0 t 15 0 t 15 0 t 15 0" stroke="#222" stroke-width="3" fill="none"/></svg>`)).png().toBuffer()  // inked strokes: the blank gate (§7) must PASS test crops
     const reads = ['Соловьяк', 'Сергій']
     let i = 0
     global.fetch = vi.fn(async () => new Response(JSON.stringify({ text: reads[i++], confidence: 0.9 }), { status: 200 })) as unknown as typeof fetch

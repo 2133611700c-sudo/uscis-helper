@@ -20,7 +20,7 @@ const geminiJson = (text: string) => ({
 
 async function testImage(): Promise<Buffer> {
   // 200x100 white png — crops are real sharp extracts
-  return sharp({ create: { width: 200, height: 100, channels: 3, background: '#fff' } }).png().toBuffer()
+  return sharp(Buffer.from(`<svg width="200" height="100"><rect width="200" height="100" fill="#f4f1ea"/><path d="M0 33 q 25 -25 50 0 t 50 0 t 50 0 t 50 0" stroke="#222" stroke-width="3" fill="none"/><path d="M0 66 q 25 25 50 0 t 50 0 t 50 0 t 50 0" stroke="#222" stroke-width="3" fill="none"/></svg>`)).png().toBuffer()  // inked strokes: the blank gate (§7) must PASS test crops
 }
 const BOXES: HtrFieldBox[] = [
   { field: 'family_name', box: [10, 10, 120, 40] },

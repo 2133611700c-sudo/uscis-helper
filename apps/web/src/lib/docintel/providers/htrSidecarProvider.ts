@@ -13,6 +13,8 @@
  * Gated by HTR_SIDECAR_URL: absent → disabled (no behaviour change). Present → the field-first path is live.
  */
 
+import { judgeBlankCrop } from '../ensemble/blankCropGate'
+
 export interface HtrFieldBox {
   /** docintel field key, e.g. 'family_name' */
   field: string
@@ -82,6 +84,13 @@ export async function readHandwrittenFieldsViaSidecar(
         .normalise() // 2/98-style contrast-stretch; NO binarize (ADR-026)
         .png()
         .toBuffer()
+      // MANDATORY blank gate (plan §7): HTR cannot abstain — a blank crop MUST NOT reach the
+      // model (blank_fabrication_reachable = 0). Skipped field stays review-gated (fail-closed).
+      const gate = await judgeBlankCrop(crop)
+      if (gate.blank) {
+        console.info('[blank_crop_gate]', JSON.stringify({ field: b.field, transport: 'htr_sidecar', ink_ratio: Number(gate.inkRatio.toFixed(5)) }))
+        continue
+      }
       const read = await readFieldCrop(crop)
       if (read) out.push({ ...read, field: b.field })
     } catch {
