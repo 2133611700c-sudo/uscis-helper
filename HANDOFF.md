@@ -1,3 +1,18 @@
+# HANDOFF (2026-07-05 — runner-guard v4: local isolation restored; version flag hole closed)
+
+## 2026-07-05 | Runner-guard v4 (Claude)
+- The current repo had a real isolation bug: `packages/ai/node_modules` and `packages/db/node_modules` were
+  symlinked into the sibling `uscis-helper` worktree. Removing those symlinks and reinstalling recreated local
+  node_modules and eliminated the repeated EPERM during `pnpm dev`/install.
+- `scripts/runner-guard-logic.cjs` now treats `-v/--version/--help` as info-only, so the interlock no longer
+  blocks pure version/help queries. It also exposes `looksLikeMutatingCmdline(...)`, which `install-guard`
+  uses to see foreign `rebuild/prune/dedupe` activity.
+- Live proof after the fix: `scripts/runner-guard-battery.sh` passed 20/20 against a real dev server; `apps/web`
+  `typecheck` and `next build` passed; local dev now reaches the app boot path instead of failing on cross-worktree
+  symlink contamination.
+- Exact next action remains unchanged: keep the guard truth locked, and only backport the same isolation fix to
+  sibling/main if that worktree is still contaminated.
+
 # HANDOFF (2026-07-05 — runner-guard v3: live install/build/battery reverified; allowBuilds is the real fix)
 
 ## 2026-07-05 | Runner-guard v3 (Claude)

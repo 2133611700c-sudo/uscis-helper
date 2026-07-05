@@ -47,6 +47,8 @@ refuse "pnpm dedupe"
 echo "── benign paths (must all WORK under live dev)"
 works "pnpm --dir apps/web exec tsc --version"
 works "pnpm --filter web exec node -e 1"
+works "pnpm --version"
+works "pnpm -v"
 works "pnpm config get onlyBuiltDependencies"
 works "pnpm store path"
 

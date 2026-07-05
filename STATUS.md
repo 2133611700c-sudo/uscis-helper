@@ -1,3 +1,14 @@
+# STATUS (2026-07-05 — runner-guard v4: local node_modules isolation restored; version flag hole closed)
+
+## 2026-07-05 | Runner-guard — current repo node_modules were broken symlinks into sibling worktree; fixed live
+- Root cause of the fresh EPERM was concrete: `packages/ai/node_modules` and `packages/db/node_modules` in this
+  repo were symlinked into `/Users/.../work/uscis-helper/` instead of living locally. Removing those symlinks and
+  reinstalling recreated local node_modules, and `pnpm --dir apps/web dev` now reaches the real app boot path.
+- Shared runner parser now has an info-only path: `pnpm -v/--version/--help` no longer trips the interlock.
+- The live adversarial battery was rerun against a real dev server: 20/20 (13 mutating paths REFUSED, 6 benign
+  WORK, 0 leaks). The benign set now includes `pnpm --version` and `pnpm -v`.
+- `apps/web` `typecheck` and `next build` still pass after the fix; the remaining warnings are pre-existing.
+
 # STATUS (2026-07-05 — runner-guard v3: config truth + live install/build/battery reverified)
 
 ## 2026-07-05 | Runner-guard — allowBuilds is authoritative; live install/build/battery all green

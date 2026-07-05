@@ -84,3 +84,15 @@ Heuristic-природа ps/lsof-детекта и лимиты symlink-скан
 FINAL VERDICT: RUNNER_GUARD_HARDENED_AND_ADVERSARIALLY_REVERIFIED — allowBuilds authoritative,
 shared parser covers `pnpm.mjs`, live install/build/battery all green; residual = social layer
 (SAFE_INSTALL=1 / --ignore-pnpmfile), ps/lsof heuristics, merge-gap main — all recorded.
+
+## v5 — current repo isolation bug fixed; version/help info-only path added (2026-07-05)
+
+| Finding | Fix | Live proof |
+|---|---|---|
+| Current repo `packages/ai/node_modules` / `packages/db/node_modules` were symlinked into sibling `uscis-helper` worktree, causing repeated EPERM on reinstall/dev | Removed the broken symlinks in this repo and recreated local node_modules via `pnpm install --force --no-frozen-lockfile` | `pnpm --dir apps/web dev` now reaches boot; live battery ran against the local server |
+| `pnpm -v/--version/--help` were falsely enforced | Added info-only path in shared parser | Battery benign set now includes `pnpm --version` and `pnpm -v` |
+| Foreign mutating cmdlines not matching install regex (e.g. rebuild/prune/dedupe) | Added `looksLikeMutatingCmdline(...)` and switched install-guard to it | Battery still refuses foreign mutate paths; `install-guard` now sees the wider set |
+
+FINAL VERDICT: RUNNER_GUARD_HARDENED_AND_ADVERSARIALLY_REVERIFIED — current repo isolation restored,
+info-only version/help no longer blocked, foreign mutating cmdlines covered; remaining risk is the sibling/main
+worktree if it still carries the old contamination.

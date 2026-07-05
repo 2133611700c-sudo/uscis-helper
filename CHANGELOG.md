@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-07-05 | Runner-guard v4: local node_modules isolation restored + version flag hole closed
+- Real root cause in this repo: `packages/ai/node_modules` and `packages/db/node_modules` were symlinked into the
+  sibling `uscis-helper` worktree. Removing those symlinks and reinstalling recreated local node_modules and
+  stopped the repeated EPERM on `pnpm dev`.
+- `scripts/runner-guard-logic.cjs` now has an info-only path for `-v/--version/--help`, so those pure queries do
+  not trip the interlock. It also exports `looksLikeMutatingCmdline(...)` and `install-guard` now uses it to
+  detect foreign `rebuild/prune/dedupe` activity.
+- Live battery against a real dev server: 20/20, including the new `pnpm --version` and `pnpm -v` benign cases.
+
 ## 2026-07-05 | Runner-guard v3: allowBuilds truth fixed + live install/build/battery reverified
 - `pnpm-workspace.yaml` now carries the authoritative pnpm 11 allowlist; `package.json` no longer pretends to be
   the source of truth. On this workspace, `pnpm install --force --no-frozen-lockfile` now completes cleanly and

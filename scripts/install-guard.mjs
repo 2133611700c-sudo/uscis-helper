@@ -55,7 +55,7 @@ try {
   const shellWrapperRe = /\b(zsh|bash|sh)\s+-l?c\b/
   const otherInstalls = lines.filter((l) => {
     const pid = Number(l.trim().split(/\s+/)[0])
-    return runnerGuard.looksLikeInstallCmdline(l) && !shellWrapperRe.test(l) && !self.has(pid)
+    return runnerGuard.looksLikeMutatingCmdline(l) && !shellWrapperRe.test(l) && !self.has(pid)
   })
   if (otherInstalls.length > 0) {
     console.error('✗ install-guard: ANOTHER package install is already running:')

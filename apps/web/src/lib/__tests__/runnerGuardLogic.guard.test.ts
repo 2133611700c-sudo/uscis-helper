@@ -8,8 +8,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const guard = require_(path.resolve(HERE, '../../../../../scripts/runner-guard-logic.cjs')) as {
   isPnpmLauncher: (argv1: string) => boolean
   pnpmSubcommand: (argv: string[]) => string
+  isInfoOnlyPnpmInvocation: (argv: string[]) => boolean
   isMutatingPnpmInvocation: (argv: string[]) => boolean
   looksLikeInstallCmdline: (cmd: string) => boolean
+  looksLikeMutatingCmdline: (cmd: string) => boolean
   looksLikeDevWatcherCmdline: (cmd: string) => boolean
 }
 
@@ -26,8 +28,14 @@ describe('runner guard logic', () => {
   it('classifies mutating invocations through pnpm.mjs', () => {
     expect(guard.pnpmSubcommand(argv('install'))).toBe('install')
     expect(guard.pnpmSubcommand(argv('--workspace-root', 'rebuild'))).toBe('rebuild')
+    expect(guard.isInfoOnlyPnpmInvocation(argv('--version'))).toBe(true)
+    expect(guard.isInfoOnlyPnpmInvocation(argv('-v'))).toBe(true)
+    expect(guard.isInfoOnlyPnpmInvocation(argv('--help'))).toBe(true)
+    expect(guard.isInfoOnlyPnpmInvocation(argv('install'))).toBe(false)
     expect(guard.isMutatingPnpmInvocation(argv('install'))).toBe(true)
     expect(guard.isMutatingPnpmInvocation(argv('--workspace-root', 'rebuild'))).toBe(true)
+    expect(guard.isMutatingPnpmInvocation(argv('--version'))).toBe(false)
+    expect(guard.isMutatingPnpmInvocation(argv('-v'))).toBe(false)
     expect(guard.isMutatingPnpmInvocation(argv('exec', 'vitest', 'run'))).toBe(false)
   })
 
@@ -37,6 +45,14 @@ describe('runner guard logic', () => {
     expect(guard.looksLikeInstallCmdline('node /path/pnpm.js update')).toBe(true)
     expect(guard.looksLikeInstallCmdline('pnpm install')).toBe(true)
     expect(guard.looksLikeInstallCmdline('node /path/pnpm.mjs dev')).toBe(false)
+  })
+
+  it('detects all mutating pnpm cmdlines, including rebuild/prune/dedupe', () => {
+    expect(guard.looksLikeMutatingCmdline('node /path/pnpm.mjs rebuild')).toBe(true)
+    expect(guard.looksLikeMutatingCmdline('node /path/pnpm.mjs prune')).toBe(true)
+    expect(guard.looksLikeMutatingCmdline('pnpm dedupe')).toBe(true)
+    expect(guard.looksLikeMutatingCmdline('pnpm --dir apps/web rebuild sharp')).toBe(true)
+    expect(guard.looksLikeMutatingCmdline('pnpm config get onlyBuiltDependencies')).toBe(false)
   })
 
   it('detects live dev/watch cmdlines broadly but not run/test scripts', () => {
