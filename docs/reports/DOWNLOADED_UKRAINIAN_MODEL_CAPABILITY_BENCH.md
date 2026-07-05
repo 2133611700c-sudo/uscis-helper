@@ -1,15 +1,19 @@
 # DOWNLOADED UKRAINIAN MODEL — CAPABILITY BENCH (2026-07-05)
 
-HEAD: f7c8d21
-WORKTREE: clean (bench script lives in gitignored qa-private/htr-poc/bench_downloaded_ukr_model.py)
+HEAD: 9b82a2369cc3cbacfae3aa7a75ac481791bf5f41
+WORKTREE: dirty (current repo edits in `CHANGELOG.md`, `HANDOFF.md`, `STATUS.md`, `apps/web/src/app/[locale]/disclaimer/page.tsx`, `docs/reports/UKRAINIAN_CYRILLIC_TRANSLITERATION_TEST.md`; bench script lives in gitignored `qa-private/htr-poc/bench_downloaded_ukr_model.py`)
 MODEL_NAME: cyrillic-trocr/trocr-ukrainian-handwritten
-MODEL_PATH: ~/models/trocr-ukrainian-handwritten (local copy; also in HF cache)
+MODEL_PATH: /Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten (local copy; also in HF cache)
 MODEL_FORMAT: transformers / safetensors (1.34 GB)
 MODEL_TYPE: OCR_HTR — VisionEncoderDecoderModel (ViT encoder + TrOCR decoder, vocab 50265)
 HASH: model.safetensors sha256[:16] = cad9e6b333295e43
 INVOCATION: transformers TrOCRProcessor + VisionEncoderDecoderModel.generate on an image LINE CROP
 VISION_SUPPORTED: YES — image-crop input ONLY. NOT a chat/text LLM: разделы «Привіт → ТАК»,
   грамматика, объяснения полей — NOT_SUPPORTED_BY_MODEL_TYPE (нет текстового входа/диалога).
+SMOKE_RAW_OUTPUTS:
+- `birth_cert_handwritten_01` family-name crop → `І ободовіться рі`
+- `military_id_p1_01` given-name crop → `Те то`
+- blank crop → `я`
 
 TEXT_UKRAINIAN_SCORE: N/A (not a text model)
 SCRIPT_INTEGRITY_SCORE: N/A (не анализирует текст — только генерирует его с кропа)
@@ -37,7 +41,7 @@ WHERE_MODEL_IS_WEAK: обе руки; blank-abstention отсутствует; �
 BEST_PROJECT_ROLE: кандидат-БАЗА для fine-tune на нашем GT-корпусе UA-курсива (H3) — как тренируемый артефакт, НЕ как inference-читатель. Больше ролей нет: чат/критик/переводчик/валидатор невозможны по типу модели.
 FORBIDDEN_ROLE: reader (любой), production anything, источник кандидатов даже в shadow (стабильная фабрикация + no-abstain).
 
-WHAT_IS_PROVEN: тип модели (OCR_HTR, image-only); 0/6 на обеих руках на frozen-кропах с owner-GT; фабрикация на blank 3/3; полная стабильность ошибок; локальность (PII не покидала Mac).
+WHAT_IS_PROVEN: тип модели (OCR_HTR, image-only); 0/6 на обеих руках на frozen-кропах с owner-GT; фабрикация на blank 3/3; полная стабильность ошибок; локальность (PII не покидала Mac); raw image-crop outputs are short but wrong and do not support reading or abstention.
 WHAT_IS_NOT_PROVEN: поведение после fine-tune на UA-корпусе (может стать полезной — это гипотеза H3-этапа, не сегодняшний факт); page-level чтение (не тестировалось — модель line-level).
 
 FINAL_VERDICT: **DOWNLOADED_UKRAINIAN_MODEL_NOT_USEFUL (as-is) + UNSAFE_GUESSING (no-abstain, стабильная фабрикация). Единственный допустимый путь — fine-tune-база для H3-корпуса.**
