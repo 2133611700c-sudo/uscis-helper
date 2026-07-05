@@ -214,14 +214,14 @@ async function liveRead(d) {
   fd.append('file', new Blob([buf], { type: 'image/jpeg' }), 'doc.jpg')
   fd.append('docTypeId', d.docTypeId)
   const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), 90000)
+  const t = setTimeout(() => ctrl.abort(), Number(process.env.BENCH_TIMEOUT_MS) || 90000)
   try {
     const r = await fetch(PROD, { method: 'POST', body: fd, signal: ctrl.signal })
     const resp = await r.json()
     return { http: r.status, status: resp.status ?? null, model: resp.model ?? null,
       fields: resp.fields ?? [], downscaled, orig_mb: +(origSize / 1e6).toFixed(1) }
   } catch (e) {
-    return { error: e.name === 'AbortError' ? 'timeout(90s)' : e.message }
+    return { error: e.name === 'AbortError' ? 'timeout' : e.message }
   } finally { clearTimeout(t) }
 }
 
