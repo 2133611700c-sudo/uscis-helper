@@ -1,4 +1,8 @@
-# Model-matrix probe on the owner's pay key — RAW measurement artifact (2026-07-04)
+# Model probe on the owner's pay key — RAW measurement artifact (2026-07-04)
+
+**Scope honesty (audit fix):** this is a PASSIVE 39-model listing + ACTIVE probes of only
+the 10 allowed candidates below. It is NOT a full 39-model status matrix — the banned
+family was never probed (guard law), tts/image/robotics/music models were out of scope.
 
 > HISTORICAL point-in-time observation (docs/reports is guard-exempt by list — raw model
 > ids appear here as MEASURED DATA, not as active options). Law derived from this data
