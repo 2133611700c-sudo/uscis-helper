@@ -1,3 +1,12 @@
+# HANDOFF (2026-07-05 — runner-guard v2: находки adversarial-аудита закрыты, 18/18 батарея)
+
+## 2026-07-05 | Runner-guard v2 (Claude, по независимому аудиту)
+- H1: build-allowlist ПЕРЕНЕСЁН в pnpm-workspace.yaml (pnpm 11 игнорирует package.json-поле; `config get` был undefined → теперь все 7 видны); поле из package.json удалено; pin pnpm@10.33.2 стоял.
+- H2: `--workspace-root`-обход pnpmfile закрыт (булевый флаг + fail-closed на непарсабельное + enforcement только в pnpm-процессе — require() из vitest больше не триггерит guard, это поймано на собственном тесте).
+- Контракт-тесты `pnpmfileGuard.guard.test.ts` 7/7 (в CI) + `scripts/runner-guard-battery.sh` — воспроизводимая adversarial-таблица: **18/18** (13 mutate REFUSED · 4 benign WORK · left-pad leak 0).
+- v1-вердикт отчёта честно суперсиден в v2 (переоценка признана в самом отчёте).
+- **EXACT NEXT ACTION:** без изменений — owner GT docs 4–8; agent: 90°/180°-дизамбигуация ориентации.
+
 # HANDOFF (2026-07-05 — runner-guard: ВСЕ дыры аудита закрыты и живьём доказаны)
 
 ## 2026-07-05 | Runner-guard audit closure (Claude)

@@ -1,3 +1,11 @@
+# STATUS (2026-07-05 — runner-guard v2: adversarially reverified 18/18)
+
+## 2026-07-05 | Runner-guard — v2 after independent adversarial audit
+- Allowlist proven ACTIVE (pnpm-workspace.yaml; config get returns 7/7); --workspace-root bypass closed;
+  7 contract tests in CI; battery 18/18 (all mutate refuse, all benign work, 0 leaks).
+- Residual (recorded): social bypasses (SAFE_INSTALL=1/--ignore-pnpmfile), ps/lsof heuristics fail-open
+  by design, main-worktree gap until merge.
+
 # STATUS (2026-07-05 — runner-guard: audit closed, invariant proven)
 
 ## 2026-07-05 | Runner-guard — ALL AUDIT HOLES CLOSED (live-proven battery)

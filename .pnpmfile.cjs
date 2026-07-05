@@ -27,21 +27,32 @@ const MUTATING = new Set([
 ])
 // argv parsing: skip flags AND the values of known value-taking flags (--dir apps/web
 // must not read "apps/web" as the subcommand); unwrap `recursive`/`m` prefixes.
-const VALUE_FLAGS = new Set(['--dir', '-C', '--filter', '-F', '--filter-prod', '--workspace-root', '--loglevel'])
+// AUDIT FIX 2026-07-05: --workspace-root/-w are BOOLEAN — listing them as value-taking
+// swallowed the real subcommand (`pnpm --workspace-root rebuild` parsed to '' and
+// bypassed enforcement — reproduced by the independent audit).
+const VALUE_FLAGS = new Set(['--dir', '-C', '--filter', '-F', '--filter-prod', '--loglevel'])
 function pnpmSubcommand(argv) {
   const args = argv.slice(2)
   for (let k = 0; k < args.length; k++) {
     const a = args[k]
     if (VALUE_FLAGS.has(a)) { k++; continue }
-    if (a.startsWith('-')) continue
-    if (a === 'recursive' || a === 'm' || a === 'multi') continue // pnpm -r/recursive <cmd>
+    if (a.startsWith('-')) continue // boolean flags incl. --workspace-root/-w/-r and --x=value forms
+    if (a === 'recursive' || a === 'm' || a === 'multi') continue // pnpm recursive <cmd>
     return a.toLowerCase()
   }
   return ''
 }
 const sub = pnpmSubcommand(process.argv)
+// Enforcement scope: ONLY when this process actually IS pnpm (argv[1] is the pnpm
+// entrypoint). Test runners and tooling may require() this file for its exports — they
+// must never trigger the guard (measured: vitest worker argv parsed to '' and refused).
+const isPnpmProcess = /(^|[/\\])pnpm(\.c?js)?$/.test(process.argv[1] || '')
+// FAIL-CLOSED on unparseable pnpm command lines: no recognizable subcommand ⇒ treat as
+// potentially mutating. Every legitimate exec/run/test/dev call has a clear subcommand
+// token, so this cannot re-introduce the exec-paralysis bug.
+const enforce = isPnpmProcess && (sub === '' || MUTATING.has(sub))
 
-if (MUTATING.has(sub)) {
+if (enforce) {
   try {
     const guard = path.join(__dirname, 'scripts', 'install-guard.mjs')
     const r = spawnSync(process.execPath, [guard], { stdio: 'inherit' })
@@ -54,4 +65,4 @@ if (MUTATING.has(sub)) {
   }
 }
 
-module.exports = { hooks: {} }
+module.exports = { hooks: {}, _internal: { pnpmSubcommand, MUTATING } }

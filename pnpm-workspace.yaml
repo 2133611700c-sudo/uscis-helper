@@ -1,3 +1,17 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# BUILD ALLOWLIST — the ONLY authoritative location (audit 2026-07-05).
+# pnpm 10 accepts this here AND in package.json.pnpm; pnpm 11 IGNORES the package.json
+# field (measured: `pnpm config get onlyBuiltDependencies` = undefined with the field
+# present). Agents run different pnpm majors, so the list lives where BOTH read it.
+# Never run `pnpm approve-builds` (interrupted prompt writes junk into this file).
+onlyBuiltDependencies:
+  - "@parcel/watcher"
+  - "@sentry/cli"
+  - "@swc/core"
+  - esbuild
+  - sharp
+  - tesseract.js
+  - unrs-resolver

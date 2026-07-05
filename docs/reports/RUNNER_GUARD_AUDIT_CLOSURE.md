@@ -1,6 +1,10 @@
 # RUNNER GUARD — AUDIT CLOSURE (2026-07-05)
 
-STATUS: ALL_AUDITED_HOLES_CLOSED_AND_LIVE_PROVEN (эта ветка; main worktree — после merge)
+STATUS: v2 — RUNNER_GUARD_HARDENED_AND_ADVERSARIALLY_REVERIFIED (эта ветка; main — после merge)
+> v1 этого отчёта ПЕРЕОЦЕНИВАЛ закрытие (вердикт ALL_..._CLOSED вынесен до независимого
+> adversarial-аудита). Аудит нашёл: (H1) allowlist в package.json НЕ доказан действующим
+> (pnpm 11 игнорирует поле; `config get` = undefined) и (H2) обход `.pnpmfile` через
+> `--workspace-root` (парсер ел подкоманду). Оба закрыты в v2, см. ниже.
 HEAD: см. коммит этого файла
 
 Закрытие дыр из аудита «что защищено / не защищено» (тот же день). Каждый пункт имеет
@@ -48,5 +52,19 @@ CI (`CI` env) и санкционированный `safe-install` проход�
 - main worktree до merge ветки — без interlock (лечится из one-brain по пути).
 - Не-install разрушители (rm -rf, полный диск) — ловятся постфактум dev-doctor'ом.
 
-FINAL VERDICT: RUNNER_GUARD_HARDENED_ALL_AUDIT_HOLES_CLOSED · остаточное = социальный
-слой + merge-gap, оба записаны.
+## v2 — закрытие находок независимого adversarial-аудита (2026-07-05, же день)
+
+| Находка | Фикс | Живое доказательство |
+|---|---|---|
+| H1 allowlist недоказан (pnpm 11 игнорирует package.json.pnpm; config get = undefined) | Список перенесён в `pnpm-workspace.yaml` — единственное место, читаемое и pnpm 10, и 11; поле из package.json УДАЛЕНО (одна правда); pin `packageManager: pnpm@10.33.2` уже стоял | `pnpm config get onlyBuiltDependencies` теперь возвращает все 7; чистый install без ignored-builds warning; sharp loads |
+| H2 `--workspace-root` обходил pnpmfile (флаг ошибочно value-taking → sub='') | Флаг булевый; + fail-closed: непарсабельная pnpm-команда ⇒ enforce; + enforcement только когда процесс = pnpm (иначе require() из vitest сам триггерил guard — поймано и исправлено) | Батарея: все 4 `--workspace-root`-варианта REFUSED |
+| Контракт без тестов | `pnpmfileGuard.guard.test.ts` (7 тестов: обходы, value-флаги, recursive, fail-closed, exec-паралич-регрессия) — в CI | 7/7 |
+| Нет воспроизводимой adversarial-проверки | `scripts/runner-guard-battery.sh` — таблица 13 mutate-путей + 4 benign + leak-check (локальный, требует живой dev) | **18/18: все mutate REFUSED, все benign WORK, утечек 0** |
+
+Heuristic-природа ps/lsof-детекта и лимиты symlink-скана (head-окна) — признаны и
+ОСТАЮТСЯ: это детект-слой поверх двух enforcement-точек, не замена им; fail-open там
+намеренный (guard не должен сам ломать установку).
+
+FINAL VERDICT: RUNNER_GUARD_HARDENED_AND_ADVERSARIALLY_REVERIFIED — 18/18 батарея,
+7/7 контракт-тестов в CI, allowlist доказан действующим; остаточное = социальный слой
+(SAFE_INSTALL=1 / --ignore-pnpmfile), эвристика ps/lsof, merge-gap main — все записаны.

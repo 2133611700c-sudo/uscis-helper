@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-07-05 | Runner-guard v2: audit findings closed (allowlist location + --workspace-root bypass)
+- Build-allowlist moved to pnpm-workspace.yaml (the only location BOTH pnpm 10 and 11 read; the
+  package.json field is ignored by pnpm 11 — `config get` was undefined, now returns all 7); field removed
+  from package.json (single truth). packageManager pin pnpm@10.33.2 already present.
+- .pnpmfile.cjs: --workspace-root is boolean (was value-taking → swallowed the subcommand → reproduced
+  bypass); fail-closed on unparseable pnpm argv; enforcement scoped to actual pnpm processes (vitest
+  require() no longer triggers the guard — caught by own test run).
+- NEW pnpmfileGuard.guard.test.ts (7 contract tests, in CI) + scripts/runner-guard-battery.sh
+  (reproducible adversarial table): 18/18 — 13 mutating paths REFUSED under live dev, 4 benign WORK, 0 leaks.
+- RUNNER_GUARD_AUDIT_CLOSURE.md v2: v1 verdict honestly superseded (overclaim acknowledged in-report).
+
 ## 2026-07-05 | Runner-guard audit closure: pnpmfile 2nd enforcement + global lock + heal-stops-dev
 - NEW `.pnpmfile.cjs`: second interlock point — covers `--ignore-scripts`, `rebuild`, `prune`, `-r`, `--dir`
   (pnpmfile is NOT skipped by --ignore-scripts); MUTATING-subcommand-scoped so `exec/run/test/dev` never block
