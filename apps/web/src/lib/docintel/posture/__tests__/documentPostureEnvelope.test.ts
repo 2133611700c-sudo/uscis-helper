@@ -3,7 +3,7 @@
  * No network, no fs. FICTIONAL inputs only.
  */
 import { describe, it, expect } from 'vitest'
-import { buildPostureEnvelope } from '../documentPostureEnvelope'
+import { buildPostureEnvelope, qualityStatusFromQualityResult } from '../documentPostureEnvelope'
 
 describe('buildPostureEnvelope — honest not_measured (law: never claim unmeasured)', () => {
   it('empty inputs → everything not_measured/unknown, gate = not_measured', () => {
@@ -77,6 +77,34 @@ describe('buildPostureEnvelope — quality + gate monotonicity (signal-only, add
   it('quality ok + orientation not_measured → pass (quality WAS measured)', () => {
     const e = buildPostureEnvelope({ qualityStatus: 'ok' })
     expect(e.posture_gate).toBe('pass')
+  })
+
+  it('D0 verdict mapper: ACCEPT→ok; dominant signal names the reason; unattributable → degraded_other', () => {
+    expect(qualityStatusFromQualityResult({ decision: 'ACCEPT', signals: [] })).toBe('ok')
+    expect(qualityStatusFromQualityResult({
+      decision: 'DEGRADED_REVIEW',
+      signals: [{ name: 'blur', status: 'fail' }, { name: 'brightness', status: 'warning' }],
+    })).toBe('blurred') // fail outranks warning
+    expect(qualityStatusFromQualityResult({
+      decision: 'DEGRADED_REVIEW',
+      signals: [{ name: 'brightness', status: 'fail', reason: 'overexposed 250' }],
+    })).toBe('too_bright')
+    expect(qualityStatusFromQualityResult({
+      decision: 'DEGRADED_REVIEW',
+      signals: [{ name: 'brightness', status: 'warning', reason: 'mean 55 below warn 70' }],
+    })).toBe('too_dark')
+    expect(qualityStatusFromQualityResult({
+      decision: 'RESHOOT_REQUIRED',
+      signals: [{ name: 'resolution', status: 'fail' }],
+    })).toBe('low_resolution')
+    expect(qualityStatusFromQualityResult({
+      decision: 'DEGRADED_REVIEW',
+      signals: [{ name: 'contrast', status: 'warning' }],
+    })).toBe('degraded_other') // never silently ok
+  })
+
+  it('measured degraded_other quality → review_quality_low gate (monotonic-up)', () => {
+    expect(buildPostureEnvelope({ qualityStatus: 'degraded_other' }).posture_gate).toBe('review_quality_low')
   })
 
   it('gate values are the closed enum — no free-text verdicts', () => {

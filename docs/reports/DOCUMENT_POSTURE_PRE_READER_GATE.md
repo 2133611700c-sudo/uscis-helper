@@ -61,6 +61,43 @@ and the envelope reports `posture_gate=pass` for a wrongly-oriented image (false
 This is WHY: (a) orientation_confidence is capped at `medium`; (b) the gate is signal-only and
 never lifts review; (c) POSTURE/ORIENTATION are NOT claimable as solved.
 
+## §6b Extended harness — run 2 (remaining unique real docs, visual oracle in-script)
+
+Same production detector; `RUN_SET=extended`; variants built from the VISUALLY-verified upright
+base (script now carries `visualUprightCw` per doc — metadata never trusted). Tagless docs run
+only the rot-matrix (cost law: original === rot_0 pixel-wise). `birth_cert_soviet_01` excluded —
+byte-duplicate of `birth_cert_handwritten_01` (dedup law).
+
+**Second lying EXIF found:** `military_id_p2_01` carries tag 3 (claims 180°) while its raw
+pixels are VISUALLY upright (same 4128×3096 camera family as the birth cert's lying tag 6).
+The detector read that original correctly (0) against the visual oracle.
+
+| Doc | Correct | Failures |
+|---|---|---|
+| military_id_p2_01 (handwritten p2, lying EXIF-3) | 3/5 | rot_180→90; rot_270→**undecidable ⇒ review_orientation_uncertain (honest fail-closed)** |
+| marriage_1939_kharkiv_borodavka | 4/4 | — |
+| marriage_apostille_vasylsiuk | 4/4 | — |
+| marriage_repeat_johnson_kvasnikova | 4/4 | — |
+| marriage_zastavnyi_kovshirina (768×1024, watermark) | 2/4 | rot_90→180; rot_270→270 (both 90°-off) |
+| divorce_redacted_pechersk | 4/4 | — |
+| divorce_blank_template | 3/4 | rot_90→180 (90°-off) |
+| **Run 2 total** | **24/29 (83%)** | 1 undecidable (gated), 4 confident misses (false pass) |
+
+**Combined runs 1+2: 43/50 (86%) across 10 unique real docs.** Structure of the errors:
+`rot_0` (the dominant real-world case — an already-upright doc) is **10/10**; ALL failures are
+on artificially rotated inputs, split between 180°-confusion (printed passport) and 90°-off
+(low-res/watermarked certs + military p2). One failure was honestly `undecidable` and produced
+the review gate; the other 6 are confident miscorrections ⇒ false `pass` — the standing reason
+confidence stays `medium` and the gate stays signal-only.
+
+## §7b Quality threading (this commit)
+
+The D0 intake verdict is no longer dropped for non-reshoot pages: `vision-extract` maps it via
+`qualityStatusFromQualityResult` (ACCEPT→ok; blur/brightness/resolution named; unattributable →
+`degraded_other`, never silently ok) and threads it per-page through `readOpts.qualityStatus`
+into `readDocument` → envelope. Gate: any measured non-ok quality ⇒ `review_quality_low`
+(monotonic-up). Quality gate OFF (default) ⇒ `not_measured`, byte-identical behavior.
+
 ## §7 Bench integration
 
 `gt-pipeline-bench.mjs` now emits a "Document posture (§7 envelope law)" section:
@@ -81,11 +118,11 @@ No UX change in this patch (document-only): the user-visible review reasons alre
 
 ## FINAL VERDICT
 
-POSTURE_ENVELOPE_WIRED_SIGNAL_ONLY · ORIENTATION_HARNESS_MEASURED_19_OF_21 —
-NOT "posture solved", NOT "orientation solved": document_fit and quality are not measured in
-the reader path, and the detector has a confirmed confident-180° failure class on printed docs.
+POSTURE_ENVELOPE_WIRED_SIGNAL_ONLY · ORIENTATION_HARNESS_MEASURED_43_OF_50 —
+NOT "posture solved", NOT "orientation solved": document_fit has no detector; 6/50 variants are
+confident miscorrections (false `pass`) on artificially rotated inputs, though the dominant
+real-world case (already-upright doc) measured 10/10.
 
-NEXT: (a) thread `qualityStatus` from the upload quality gate into the envelope where both run;
-(b) extend the harness to the remaining real docs + 180°-disambiguation experiment (e.g. add a
-face/photo-position prior for card-format docs) BEFORE any confidence upgrade;
-(c) join `[posture_envelope]` markers into the next GT bench run per row.
+NEXT: (a) DONE this commit — qualityStatus threaded from the D0 gate into the envelope;
+(b) 90°/180°-disambiguation experiment (photo-position / text-baseline prior) BEFORE any
+confidence upgrade; (c) join `[posture_envelope]` markers into the next GT bench run per row.

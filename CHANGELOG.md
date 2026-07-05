@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-07-05 | Posture round 2: D0 quality → envelope + extended orientation harness (43/50 combined)
+- `documentPostureEnvelope.ts`: + `qualityStatusFromQualityResult` (D0 verdict mapper, `degraded_other` honest
+  fallback — never silently ok); quality enum widened; measured non-ok ⇒ `review_quality_low` gate (13/13 tests).
+- `vision-extract/route.ts` + `documentFieldReader.ts`: non-reshoot quality verdict threaded per-page via
+  `readOpts.qualityStatus` into the envelope (gate OFF ⇒ not_measured, byte-identical).
+- `posture-orientation-harness.mts`: visual oracle in-script (`visualUprightCw`, metadata never trusted);
+  `RUN_SET=extended` run 2 on 7 remaining unique real docs = 24/29 (83%), 1 honest undecidable→review;
+  SECOND lying EXIF measured (military_id_p2 tag 3, raw upright). Combined runs: 43/50 (86%), rot_0 10/10.
+- Tests: docintel+ocr+translation-route 759→761 pass; tsc 0; PII guard clean (2014 files).
+
 ## 2026-07-05 | Document posture pre-reader envelope (signal-only) + live orientation harness 19/21
 - NEW `apps/web/src/lib/docintel/posture/documentPostureEnvelope.ts` + 11 unit tests: one typed pre-reader
   posture contract (EXIF/preprocess/content-orient/quality/fit/gate) assembled from RECORDED signals only;

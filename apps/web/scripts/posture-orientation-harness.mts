@@ -49,11 +49,29 @@ const KEY = paidKey()
 const MODEL = process.env.PRIMARY_GEMINI_MODEL || 'gemini-2.5-pro'
 if (!KEY) { console.error('FATAL: no reader credential resolved (statuses-only policy)'); process.exit(1) }
 
-const DOCS = [
-  { id: 'birth_cert_handwritten_01', file: 'birth_cert_handwritten_01.jpg' },
-  { id: 'military_id_p1_01', file: 'military_id_p1_01.jpg' },
-  { id: 'internal_passport_01', file: 'internal_passport_01.jpg' },
+/**
+ * visualUprightCw = CW correction that makes the RAW PIXELS upright, established by direct
+ * VISUAL inspection (owner law: verify visually, never trust metadata). Measured 2026-07-05:
+ * lying EXIF found on birth_cert_handwritten_01 (tag 6, raw upright) AND military_id_p2_01
+ * (tag 3, raw upright); military_id_p1_01 tag 6 is truthful (raw needs 90 CW).
+ * Run 2 (RUN_SET=extended) covers the remaining unique real docs; birth_cert_soviet_01 is a
+ * byte-duplicate of birth_cert_handwritten_01 (gt._meta.duplicate_of) — dedup law: not re-run.
+ */
+const DOCS_CORE: Array<{ id: string; file: string; visualUprightCw: Cw }> = [
+  { id: 'birth_cert_handwritten_01', file: 'birth_cert_handwritten_01.jpg', visualUprightCw: 0 },
+  { id: 'military_id_p1_01', file: 'military_id_p1_01.jpg', visualUprightCw: 90 },
+  { id: 'internal_passport_01', file: 'internal_passport_01.jpg', visualUprightCw: 0 },
 ]
+const DOCS_EXTENDED: typeof DOCS_CORE = [
+  { id: 'military_id_p2_01', file: 'military_id_p2_01.jpg', visualUprightCw: 0 }, // EXIF 3 LIES
+  { id: 'marriage_1939_kharkiv_borodavka', file: 'marriage_1939_kharkiv_borodavka.jpg', visualUprightCw: 0 },
+  { id: 'marriage_apostille_vasylsiuk', file: 'marriage_apostille_vasylsiuk.jpg', visualUprightCw: 0 },
+  { id: 'marriage_repeat_johnson_kvasnikova', file: 'marriage_repeat_johnson_kvasnikova.jpg', visualUprightCw: 0 },
+  { id: 'marriage_zastavnyi_kovshirina', file: 'marriage_zastavnyi_kovshirina.webp', visualUprightCw: 0 },
+  { id: 'divorce_redacted_pechersk', file: 'divorce_redacted_pechersk.jpg', visualUprightCw: 0 },
+  { id: 'divorce_blank_template', file: 'divorce_blank_template.jpg', visualUprightCw: 0 },
+]
+const DOCS = process.env.RUN_SET === 'extended' ? DOCS_EXTENDED : DOCS_CORE
 const exifToCw = (tag: number | undefined): Cw => (tag === 6 ? 90 : tag === 8 ? 270 : tag === 3 ? 180 : 0)
 
 interface Row {
@@ -67,15 +85,18 @@ for (const d of DOCS) {
   const raw = await readFile(path.join(ROOT, 'test-fixtures/real-docs', d.file))
   const meta = await sharp(raw).metadata()
   const exifTag = meta.orientation
-  // manual_upright: honor EXIF (sharp .rotate() with no args), strip metadata
-  const upright = await sharp(raw).rotate().jpeg({ quality: 92 }).toBuffer()
-  const stripped = await sharp(raw).jpeg({ quality: 92 }).toBuffer() // re-encode w/o withMetadata ⇒ EXIF dropped, pixels as stored
+  // VISUAL-upright base (oracle-corrected raw pixels, EXIF ignored/dropped) — run 2 scores
+  // against this, never against metadata. jpeg re-encode drops the EXIF tag.
+  const upright = d.visualUprightCw === 0
+    ? await sharp(raw, { autoOrient: false } as never).jpeg({ quality: 92 }).toBuffer()
+    : await sharp(raw, { autoOrient: false } as never).rotate(d.visualUprightCw).jpeg({ quality: 92 }).toBuffer()
 
-  const variants: Array<{ name: string; buf: Buffer; expected: number | 'exif_implied_see_note'; tag: number | 'none' }> = [
-    { name: 'original_with_EXIF', buf: raw, expected: 'exif_implied_see_note', tag: exifTag ?? 'none' },
-    { name: 'EXIF_stripped', buf: stripped, expected: 'exif_implied_see_note', tag: 'none' },
-    { name: 'manual_upright', buf: upright, expected: 0, tag: 'none' },
-  ]
+  const variants: Array<{ name: string; buf: Buffer; expected: number | 'exif_implied_see_note'; tag: number | 'none' }> = []
+  // Metadata variants only carry information when a tag exists AND could disagree with pixels
+  // (cost-efficiency: for tagless docs original === EXIF_stripped === rot_0 pixel-wise).
+  if (exifTag !== undefined && exifTag !== 1) {
+    variants.push({ name: 'original_with_EXIF', buf: raw, expected: d.visualUprightCw, tag: exifTag })
+  }
   for (const rot of [0, 90, 180, 270] as const) {
     variants.push({
       name: `rot_${rot}`,
@@ -120,7 +141,7 @@ for (const d of DOCS) {
 
 const outDir = path.join(ROOT, 'apps/web/.harness')
 await mkdir(outDir, { recursive: true })
-await writeFile(path.join(outDir, 'posture-orientation-harness.json'), JSON.stringify(rows, null, 2))
+await writeFile(path.join(outDir, `posture-orientation-harness${process.env.RUN_SET === 'extended' ? '-extended' : ''}.json`), JSON.stringify(rows, null, 2))
 const scored = rows.filter((r) => typeof r.expected_correction_cw === 'number')
 const hits = scored.filter((r) => r.orientation_correct === true).length
 console.log(`\nSUMMARY scored_variants=${scored.length} correct=${hits} (${((hits / Math.max(1, scored.length)) * 100).toFixed(0)}%) undecidable=${rows.filter((r) => r.detected_cw === 'undecidable').length} errors=${rows.filter((r) => r.error).length}`)

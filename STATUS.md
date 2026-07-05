@@ -1,3 +1,12 @@
+# STATUS (2026-07-05 — posture round 2: quality threaded; orientation 43/50 combined visual-oracle)
+
+## 2026-07-05 | Posture envelope — quality signal LIVE-threaded (flag-gated), orientation measured wider
+- D0 quality verdict → envelope per page (QUALITY_GATE_ENABLED only; OFF ⇒ not_measured, byte-identical).
+- Orientation combined 43/50 (86%) on 10 unique real docs; rot_0 10/10; 2nd lying EXIF proven (military_id_p2
+  tag 3). Failure classes: confident 180° (printed passport) + 90°-off (low-res/watermark certs); 1 honest
+  undecidable ⇒ review gate. Confidence stays `medium`; gate stays signal-only. NOT solved.
+- Evidence: `docs/reports/DOCUMENT_POSTURE_PRE_READER_GATE.md` §6b/§7b.
+
 # STATUS (2026-07-05 — posture envelope SIGNAL-ONLY wired; orientation measured 19/21 visual-oracle)
 
 ## 2026-07-05 | Document posture pre-reader envelope — WIRED SIGNAL-ONLY

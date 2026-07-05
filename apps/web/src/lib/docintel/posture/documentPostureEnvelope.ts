@@ -23,7 +23,7 @@ export interface DocumentPostureEnvelope {
   orientation_status: 'upright' | 'rotated_90' | 'rotated_180' | 'rotated_270' | 'uncertain' | 'not_measured'
   orientation_source: 'exif' | 'content_orient' | 'manual_owner' | 'test_harness' | 'not_measured'
   orientation_confidence: 'high' | 'medium' | 'low' | 'unknown'
-  quality_status: 'ok' | 'blurred' | 'too_dark' | 'too_bright' | 'low_resolution' | 'not_measured'
+  quality_status: 'ok' | 'blurred' | 'too_dark' | 'too_bright' | 'low_resolution' | 'degraded_other' | 'not_measured'
   document_fit: 'full_page_visible' | 'cropped_or_partial' | 'manual_crop' | 'unknown' | 'not_measured'
   crop_source: 'full_page' | 'manual_crop' | 'frozen_box' | 'detected_box' | 'template_box' | 'unknown'
   posture_gate: 'pass' | 'review_orientation_uncertain' | 'review_quality_low' | 'review_document_partial' | 'not_measured'
@@ -45,6 +45,25 @@ export interface PostureInputs {
   /** how the bytes reached the reader */
   cropSource?: DocumentPostureEnvelope['crop_source']
   inputFormat?: DocumentPostureEnvelope['input_format']
+}
+
+/**
+ * Map the D0 intake quality verdict (documentImageQuality) to the envelope's quality_status.
+ * ACCEPT ⇒ 'ok'; otherwise the dominant failing/warning signal names the reason; a degradation
+ * we cannot attribute stays honest 'degraded_other' (never silently 'ok').
+ */
+export function qualityStatusFromQualityResult(q: {
+  decision: 'ACCEPT' | 'DEGRADED_REVIEW' | 'RESHOOT_REQUIRED'
+  signals: Array<{ name: string; status: 'ok' | 'warning' | 'fail'; reason?: string }>
+}): DocumentPostureEnvelope['quality_status'] {
+  if (q.decision === 'ACCEPT') return 'ok'
+  const bad = [...q.signals.filter((s) => s.status === 'fail'), ...q.signals.filter((s) => s.status === 'warning')]
+  for (const s of bad) {
+    if (s.name === 'blur') return 'blurred'
+    if (s.name === 'resolution') return 'low_resolution'
+    if (s.name === 'brightness') return /bright|overexpos/i.test(s.reason ?? '') ? 'too_bright' : 'too_dark'
+  }
+  return 'degraded_other'
 }
 
 /** Assemble the envelope from RECORDED signals only. Missing signal ⇒ honest not_measured. */

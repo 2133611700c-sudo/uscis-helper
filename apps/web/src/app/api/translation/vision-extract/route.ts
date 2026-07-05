@@ -34,6 +34,9 @@ import { getCanonicalMode } from '@/lib/canonical/continuityMode'
 import { preprocessImage } from '@/lib/ocr/image-preprocess'
 import { heicToJpeg } from '@/lib/ocr/heicToJpeg'
 import { isQualityGateEnabled, decideImageQuality, metricsFromPreprocess } from '@/lib/docintel/quality/documentImageQuality'
+import { qualityStatusFromQualityResult, type DocumentPostureEnvelope } from '@/lib/docintel/posture/documentPostureEnvelope'
+
+type QualityStatusForPosture = DocumentPostureEnvelope['quality_status']
 import { applyOcrFieldSafety } from '@/lib/documentSafety/applyOcrFieldSafety'
 import { decideFields, isDecisionShadowEnabled } from '@/lib/canonical/core/decisionEngine'
 import { runConsistencyCritic } from '@/lib/canonical/core/fieldConsistencyCritic'
@@ -697,7 +700,7 @@ async function POST_impl(req: NextRequest) {
 
   type LegacyPrep =
     | { kind: 'reshoot'; page: number; q: ReturnType<typeof decideImageQuality> }
-    | { kind: 'page'; page: number; buffer: Buffer; mime: string; rawBuffer: Buffer }
+    | { kind: 'page'; page: number; buffer: Buffer; mime: string; rawBuffer: Buffer; qualityStatus?: QualityStatusForPosture }
   const legacyPrepared: LegacyPrep[] = await Promise.all(rawFiles.map(async (file, i): Promise<LegacyPrep> => {
     const mime = file.type || 'image/jpeg'
     const rawBuffer = Buffer.from(await file.arrayBuffer())
@@ -709,9 +712,12 @@ async function POST_impl(req: NextRequest) {
     // ── D0 intake quality gate (QUALITY_GATE_ENABLED, default OFF) ──────────
     // Flag OFF ⇒ skipped ⇒ byte-identical. ON ⇒ a too-blurry/dark/small photo is
     // bounced back for a reshoot BEFORE model spend. Never a fabrication signal.
+    // A non-reshoot verdict is no longer dropped: it feeds the posture envelope
+    // (signal-only) so a DEGRADED_REVIEW page carries its measured quality_status.
     if (isQualityGateEnabled() && pre?.ok) {
       const q = decideImageQuality(metricsFromPreprocess(pre))
       if (q.reshoot_required) return { kind: 'reshoot', page: i + 1, q }
+      return { kind: 'page', page: i + 1, buffer, mime: effectiveMime, rawBuffer, qualityStatus: qualityStatusFromQualityResult(q) }
     }
     return { kind: 'page', page: i + 1, buffer, mime: effectiveMime, rawBuffer }
   }))
@@ -733,7 +739,10 @@ async function POST_impl(req: NextRequest) {
     .map((p) => ({
       buffer: p.buffer,
       mime: p.mime,
-      readOpts: { timeoutMs: 25_000, product: 'translation', originalBuffer: p.rawBuffer },
+      readOpts: {
+        timeoutMs: 25_000, product: 'translation', originalBuffer: p.rawBuffer,
+        ...(p.qualityStatus ? { qualityStatus: p.qualityStatus } : {}),
+      },
     }))
   const legacyRec = await recognizeDocument({
     pages: legacyRecognizePages,

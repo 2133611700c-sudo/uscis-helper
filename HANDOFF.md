@@ -1,3 +1,11 @@
+# HANDOFF (2026-07-05 — posture: quality threaded + extended harness 43/50; envelope stays signal-only)
+
+## 2026-07-05 | Posture round 2 (Claude)
+- **Done+verified:** D0 quality verdict no longer dropped for non-reshoot pages — `qualityStatusFromQualityResult` mapper (ACCEPT→ok; blur/dark/bright/low-res named; unattributable→degraded_other, never silently ok) threaded per-page vision-extract → readOpts → readDocument → envelope; measured non-ok ⇒ `review_quality_low`. Gate OFF (default) ⇒ not_measured, byte-identical.
+- **Live third signature (run 2):** extended harness on remaining 7 unique real docs (visual oracle IN-script, `visualUprightCw`; soviet birth excluded as byte-dubль): 24/29 (83%), 1 undecidable → honest `review_orientation_uncertain`. SECOND lying EXIF found: military_id_p2 tag 3 при визуально-upright raw (та же камера, что и birth tag 6). Combined 1+2: **43/50 (86%) / 10 real docs; rot_0 = 10/10** (главный реальный кейс идеален); все промахи — на искусственных поворотах (180°-класс на печатном паспорте + 90°-off на low-res/watermark certs).
+- **EXACT NEXT ACTION:** owner GT docs 4–8 (unchanged blocker); agent: 90°/180°-disambiguation прайор ДО апгрейда confidence; join `[posture_envelope]` в следующий GT bench.
+- Evidence: `docs/reports/DOCUMENT_POSTURE_PRE_READER_GATE.md` (§6b/§7b), tests 761 pass / tsc 0 / PII clean.
+
 # HANDOFF (2026-07-05 — posture envelope wired signal-only; orientation harness measured 19/21)
 
 ## 2026-07-05 | Document posture pre-reader envelope (Claude)

@@ -107,6 +107,9 @@ export async function readDocument(
       preprocessRotation?: number | null
       outputDimensions?: { width: number; height: number } | null
     }
+    /** D0 intake quality verdict mapped for the posture envelope (qualityStatusFromQualityResult).
+     *  Present ONLY when the quality gate actually ran on this page — absent ⇒ honest not_measured. */
+    qualityStatus?: import('./posture/documentPostureEnvelope').DocumentPostureEnvelope['quality_status']
   } = {},
 ): Promise<DocumentReadResult> {
   const spec = getDocTypeSpec(docTypeId)
@@ -163,6 +166,7 @@ export async function readDocument(
     contentOrientRan: isContentOrientEnabled(),
     contentRotationCw: orientApplied,
     orientationUncertain,
+    qualityStatus: opts.qualityStatus ?? null,
     inputFormat: 'full_page_image',
     cropSource: 'full_page',
   })
