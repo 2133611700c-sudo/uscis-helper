@@ -25,3 +25,15 @@ GAPS:
 NEXT PATCH:
 - Repair the workspace test toolchain and rerun `apps/web` transliteration-related tests under a working runner; knowledge-side scope is already green
 FINAL VERDICT: TRANSLITERATION_SPOT_PASS / RUNNER_BLOCKED
+
+---
+## RUNNER RESTORED — full-runner verification (2026-07-05, hand-over session)
+- Runner heal path: `bash scripts/dev-doctor.sh` (declarative build allowlist in
+  package.json → pnpm.onlyBuiltDependencies; no approve-builds prompt). No packages added,
+  package.json deps/lockfile untouched.
+- `pnpm --filter @uscis-helper/knowledge test` → PASS (incl. mrzTd1 keepalive 19/19)
+- `pnpm --filter web exec vitest run src/lib/ocr src/lib/translation` →
+  **72 files, 1988 passed / 0 failed** (russianTransliterate + transliteration policy suites included)
+- `node scripts/check-no-pii.mjs` → clean (2006 tracked files)
+
+FINAL VERDICT: TRANSLITERATION_PASS
