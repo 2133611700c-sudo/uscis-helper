@@ -17,16 +17,20 @@
 
 export interface DocumentPostureEnvelope {
   input_format: 'full_page_image' | 'pdf_page' | 'manual_crop' | 'screenshot' | 'unknown'
-  exif_orientation: 'present' | 'missing' | 'stripped' | 'applied' | 'unknown'
+  exif_orientation: 'present' | 'missing' | 'stripped' | 'applied' | 'suspicious' | 'unknown'
   preprocess_rotation_applied: boolean
   content_rotation_applied_cw: 0 | 90 | 180 | 270 | null
   orientation_status: 'upright' | 'rotated_90' | 'rotated_180' | 'rotated_270' | 'uncertain' | 'not_measured'
-  orientation_source: 'exif' | 'content_orient' | 'manual_owner' | 'test_harness' | 'not_measured'
+  orientation_source: 'exif' | 'content_orient' | 'visual_oracle' | 'manual_owner' | 'test_harness' | 'not_measured'
   orientation_confidence: 'high' | 'medium' | 'low' | 'unknown'
   quality_status: 'ok' | 'blurred' | 'too_dark' | 'too_bright' | 'low_resolution' | 'degraded_other' | 'not_measured'
   document_fit: 'full_page_visible' | 'cropped_or_partial' | 'manual_crop' | 'unknown' | 'not_measured'
   crop_source: 'full_page' | 'manual_crop' | 'frozen_box' | 'detected_box' | 'template_box' | 'unknown'
   posture_gate: 'pass' | 'review_orientation_uncertain' | 'review_quality_low' | 'review_document_partial' | 'not_measured'
+  /** true when the ORIENT_180_CHECK binary confirm ran and resolved the pose (either "candidate
+   *  confirmed" or "flipped"); absent when the check did not run (flag OFF, or 4-cell vote itself
+   *  failed before reaching it). Evidence only — does NOT raise orientation_confidence above medium. */
+  orientation_180_disambiguated?: boolean
 }
 
 export interface PostureInputs {
@@ -36,8 +40,14 @@ export interface PostureInputs {
   preprocessRotationApplied?: boolean | null
   /** content-orient applied this CW rotation (0 = ran, no rotation needed) */
   contentRotationCw?: number | null
+  /** content-orient ran AND applied a non-zero correction on top of an EXIF-rotated buffer —
+   *  deterministic proof the EXIF tag was wrong (measured twice: birth_cert tag 6, military_p2 tag 3). */
+  contentOrientCorrectedExif?: boolean
   /** content-orient ran but could not decide */
   orientationUncertain?: boolean
+  /** ORIENT_180_CHECK confirmed/flipped the candidate — extra evidence the pose is disambiguated
+   *  from its 180° twin (still capped at 'medium' until the full fixture matrix hits 0 false-pass). */
+  disambiguated180?: boolean
   /** whether the content-orient stage ran at all */
   contentOrientRan?: boolean
   /** documentImageQuality verdict when the quality gate ran ('ok'|'blurred'|...) */
@@ -68,9 +78,13 @@ export function qualityStatusFromQualityResult(q: {
 
 /** Assemble the envelope from RECORDED signals only. Missing signal ⇒ honest not_measured. */
 export function buildPostureEnvelope(i: PostureInputs): DocumentPostureEnvelope {
+  // suspicious: EXIF WAS applied in preprocess, but content-orient still had to correct the
+  // buffer further -> the EXIF tag was wrong (deterministic fact, not a guess). Measured twice:
+  // birth_cert_handwritten_01 (tag 6) and military_id_p2_01 (tag 3) both lied this way.
   const exif: DocumentPostureEnvelope['exif_orientation'] =
     i.exifOrientation === undefined ? 'unknown'
       : i.exifOrientation === null ? 'missing'
+      : i.preprocessRotationApplied && i.contentOrientCorrectedExif ? 'suspicious'
       : i.preprocessRotationApplied ? 'applied'
       : 'present'
 
@@ -118,5 +132,6 @@ export function buildPostureEnvelope(i: PostureInputs): DocumentPostureEnvelope 
     document_fit,
     crop_source,
     posture_gate,
+    ...(i.disambiguated180 !== undefined ? { orientation_180_disambiguated: i.disambiguated180 } : {}),
   }
 }

@@ -90,6 +90,47 @@ on artificially rotated inputs, split between 180°-confusion (printed passport)
 the review gate; the other 6 are confident miscorrections ⇒ false `pass` — the standing reason
 confidence stays `medium` and the gate stays signal-only.
 
+## §6c ORIENT_180_CHECK — binary 180° disambiguation (master-plan P1, this commit)
+
+New flag `ORIENT_180_CHECK` (default OFF, byte-identical when off — proven by a unit test that
+counts fetch calls). When ON, after the 4-cell vote picks a pose, `orientToUpright` runs ONE
+extra binary confirm call (`confirmUprightVs180`): a 1×2 grid of [candidate | candidate+180°],
+asking which side is upright. 'flipped' → apply one more 180° (`disambiguated180: true`);
+undecidable → `detected: false` (honest uncertainty, never a silent guess, same fail-closed path
+as before). This targets the ONE failure class the harness has ever measured: 180°-opposite
+confusion. It was NOT expected to fix 90°-off errors, and it did not (see below) — that is a
+different, unaddressed failure mode.
+
+**Live paired same-session measurement** (`scripts/posture-orient-180check-harness.mts`, raw:
+`apps/web/.harness/posture-orient-180check-harness.json`, gitignored): both flag=OFF and
+flag=ON run back-to-back per variant, in the SAME process, on the SAME 10 real docs ×
+rot_0/90/180/270 = 40 variants each (80 live calls total). Same-session pairing was necessary
+because an earlier attempt to diff against the older cached harness JSON showed an implausible
+270°-offset "regression" on `birth_cert_handwritten_01` that vanished on rerun — day-to-day
+4-cell-vote instability (documented elsewhere in this repo), not a real regression; comparing
+against a stale file would have produced a false signal.
+
+| | n | correct | `wrong_rotation_auto_applied` | undecidable |
+|---|---|---|---|---|
+| flag OFF (baseline, same session) | 40 | 34 | **5** | 1 |
+| flag ON (`ORIENT_180_CHECK=1`) | 40 | 38 | **2** | 0 |
+
+`disambiguated180_fired=2` on the ON arm. Row-by-row: of the 6 OFF-arm failures, **3 were exact
+180°-opposite errors and all 3 were fixed** by the flag (`internal_passport_01` rot_180/rot_270,
+`marriage_repeat_johnson_kvasnikova` rot_270 — each off by exactly 180°); one OFF-arm
+`undecidable` (`military_id_p2_01` rot_270) resolved to correct; one 90°-off failure
+(`marriage_zastavnyi_kovshirina` rot_90) is UNCHANGED, wrong in both arms — outside the fix's
+scope, as expected. One NEW failure appeared only in the ON arm
+(`divorce_blank_template` rot_90, `disambiguated180: false` — the 4-cell vote itself gave a
+different answer than in the OFF arm for the same image on this rerun; same known vote
+instability, not caused by the confirm mechanism).
+
+**Exit criterion status: NOT MET.** `wrong_rotation_auto_applied = 0` requires 0; measured 2
+with the flag on (down from 5 without it — a real, targeted improvement on the failure class the
+fix addresses, but the exit bar is not cleared). `orientation_confidence` stays `medium`; the
+flag ships default-OFF; this is `ORIENTATION_HARNESS_PARTIAL`, not
+`ORIENTATION_PASS_FOR_FIXTURE_SET`.
+
 ## §7b Quality threading (this commit)
 
 The D0 intake verdict is no longer dropped for non-reshoot pages: `vision-extract` maps it via
@@ -111,18 +152,29 @@ No UX change in this patch (document-only): the user-visible review reasons alre
 
 ## §10 Tests
 
-- `posture/__tests__/documentPostureEnvelope.test.ts` — 11/11 pass (not_measured law,
-  source/confidence mapping, gate precedence + monotonicity, closed enum).
-- `vitest run src/lib/docintel src/lib/ocr` — 629 passed | 2 skipped, 0 fail.
-- tsc --noEmit: 0 errors.
+- `posture/__tests__/documentPostureEnvelope.test.ts` — 19/19 pass (not_measured law,
+  source/confidence mapping, gate precedence + monotonicity, closed enum, EXIF `suspicious`,
+  `orientation_180_disambiguated` surfacing).
+- `orientation/__tests__/detectOrientation.test.ts` (+ 2 sibling files) — 34/34 pass, including
+  the new `ORIENT_180_CHECK` block (flag OFF byte-identical, confirm candidate/flipped/undecidable,
+  fail-open on network/HTTP/unparseable).
+- `vitest run src/lib/docintel src/lib/ocr src/lib/translation` — 2551 passed | 4 skipped, 0 fail.
+- tsc --noEmit: 0 errors. PII guard: clean.
 
 ## FINAL VERDICT
 
-POSTURE_ENVELOPE_WIRED_SIGNAL_ONLY · ORIENTATION_HARNESS_MEASURED_43_OF_50 —
-NOT "posture solved", NOT "orientation solved": document_fit has no detector; 6/50 variants are
-confident miscorrections (false `pass`) on artificially rotated inputs, though the dominant
-real-world case (already-upright doc) measured 10/10.
+POSTURE_ENVELOPE_WIRED_SIGNAL_ONLY · ORIENTATION_HARNESS_PARTIAL —
+NOT "posture solved", NOT "orientation solved". `document_fit` still has no detector.
+`ORIENT_180_CHECK` (default OFF) measurably cuts confident 180°-opposite miscorrections
+(paired same-session: `wrong_rotation_auto_applied` 5→2 of 40, one `undecidable`→resolved,
+0 regressions on the 180°-class it targets) but does NOT reach the exit criterion of zero, and
+does nothing for the separate 90°-off failure class (1 case unchanged, 1 new case from
+independently-measured 4-cell-vote day-to-day instability). Confidence stays `medium`.
 
 NEXT: (a) DONE this commit — qualityStatus threaded from the D0 gate into the envelope;
-(b) 90°/180°-disambiguation experiment (photo-position / text-baseline prior) BEFORE any
-confidence upgrade; (c) join `[posture_envelope]` markers into the next GT bench run per row.
+`ORIENT_180_CHECK` binary disambiguation implemented + measured (§6c); posture carried on
+`DocumentReadResult` for bench attachment; (b) a 90°-off failure class remains unaddressed —
+needs its own disambiguation experiment (e.g. photo-position prior for card-format docs) before
+any confidence upgrade; (c) join `[posture_envelope]` markers into the next GT bench run per row
+(API response contract change, deliberately out of scope for this commit — see
+HANDWRITTEN_CYRILLIC_ONE_BRAIN_PLAN.md for why).

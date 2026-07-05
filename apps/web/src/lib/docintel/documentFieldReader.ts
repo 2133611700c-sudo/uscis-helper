@@ -134,6 +134,7 @@ export async function readDocument(
   // unreliable: military + birth carry the same EXIF flag but only one needs it). Fail-open.
   let orientApplied = 0
   let orientationUncertain = false
+  let disambiguated180 = false
   if (isContentOrientEnabled()) {
     const apiKey = getGeminiApiKey()
     if (apiKey) {
@@ -141,8 +142,10 @@ export async function readDocument(
       imageBuffer = oriented.buffer
       orientApplied = oriented.applied
       orientationUncertain = !oriented.detected   // Step-5: undecidable orientation → fail-closed downstream
+      disambiguated180 = oriented.disambiguated180 === true
       if (orientApplied) console.info('[content_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
       if (orientationUncertain) console.warn('[content_orient] detection_undecidable', JSON.stringify({ doc_type_id: docTypeId }))
+      if (disambiguated180) console.info('[content_orient] disambiguated_180', JSON.stringify({ doc_type_id: docTypeId }))
     }
   } else if (process.env.AUTO_ORIENT_ENABLED === '1') {
     // Legacy iterative detector (deprecated — kept for rollback; see detectOrientation.ts for why).
@@ -166,6 +169,8 @@ export async function readDocument(
     contentOrientRan: isContentOrientEnabled(),
     contentRotationCw: orientApplied,
     orientationUncertain,
+    disambiguated180,
+    contentOrientCorrectedExif: isContentOrientEnabled() && (opts.forensic?.preprocessRotation ?? 0) !== 0 && orientApplied !== 0,
     qualityStatus: opts.qualityStatus ?? null,
     inputFormat: 'full_page_image',
     cropSource: 'full_page',
@@ -230,6 +235,7 @@ export async function readDocument(
         status: `ocr_unavailable:${err.errorClass}`,
         error: err.message,
         provider_error: classifyProviderError(503, undefined, { marker: err.errorClass }),
+        posture,
       }
     }
     throw err
@@ -253,6 +259,7 @@ export async function readDocument(
         ok: true, doc_type_id: docTypeId, fields: htrOnly.fields, anchor_read: false,
         provider: provider.name, model: read.model, ms: read.ms,
         status: st,
+        posture,
       }
     }
     const hasHttpSignal = typeof read.errorStatus === 'number' || read.errorTimeout === true
@@ -268,6 +275,7 @@ export async function readDocument(
       provider: provider.name, model: read.model, ms: read.ms,
       status: `vision_failed:${read.error ?? 'unknown'}`, error: read.error,
       ...(providerError ? { provider_error: providerError } : {}),
+      posture,
     }
   }
 
@@ -601,6 +609,7 @@ export async function readDocument(
     provider: provider.name, model: read.model, ms: read.ms,
     status: `ok:${read.model}:${read.ms}ms:${fields.length}f`,
     ...(selfConsistency ? { self_consistency: selfConsistency } : {}),
+    posture,
   }
 }
 

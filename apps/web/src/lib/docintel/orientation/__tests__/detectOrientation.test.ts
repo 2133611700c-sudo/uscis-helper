@@ -15,6 +15,9 @@ import {
   orientVoteRuns,
   detectUprightCwVoted,
   orientationSettled,
+  isOrient180CheckEnabled,
+  build180Grid,
+  confirmUprightVs180,
 } from '../detectOrientation'
 import { PRIMARY_READER } from '../../modelMatrix'
 
@@ -159,5 +162,118 @@ describe('isContentOrientEnabled', () => {
     expect(isContentOrientEnabled({})).toBe(true)
     expect(isContentOrientEnabled({ CONTENT_ORIENT_ENABLED: '1' })).toBe(true)
     expect(isContentOrientEnabled({ CONTENT_ORIENT_ENABLED: '0' })).toBe(false)
+  })
+})
+
+describe('isOrient180CheckEnabled — default OFF (byte-identical unless explicitly turned on)', () => {
+  it('only "1" enables', () => {
+    expect(isOrient180CheckEnabled({})).toBe(false)
+    expect(isOrient180CheckEnabled({ ORIENT_180_CHECK: 'true' })).toBe(false)
+    expect(isOrient180CheckEnabled({ ORIENT_180_CHECK: '0' })).toBe(false)
+    expect(isOrient180CheckEnabled({ ORIENT_180_CHECK: '1' })).toBe(true)
+  })
+})
+
+describe('build180Grid — pure geometry', () => {
+  it('produces a 1x2 grid twice as wide as one cell, with the second cell rotated 180°', async () => {
+    const buf = await testImage() // 200x300 portrait
+    const grid = await build180Grid(buf, 100, 5)
+    const meta = await sharp(grid).metadata()
+    expect(meta.width).toBe(100 * 2 + 5 * 3)
+    expect(meta.height).toBe(100 + 5 * 2)
+  })
+})
+
+describe('confirmUprightVs180 — binary 180° confirm (fail-open)', () => {
+  it('"left" ⇒ candidate is upright', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"left"}' }] } }] }),
+    })))
+    expect(await confirmUprightVs180(await testImage(), 'key', PRIMARY_READER)).toBe('candidate')
+  })
+
+  it('"right" ⇒ candidate needs the extra 180°', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"right"}' }] } }] }),
+    })))
+    expect(await confirmUprightVs180(await testImage(), 'key', PRIMARY_READER)).toBe('flipped')
+  })
+
+  it('HTTP error / unparseable / network failure ⇒ null (never throws)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 429, json: async () => ({}) })))
+    expect(await confirmUprightVs180(await testImage(), 'key', PRIMARY_READER)).toBeNull()
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network') }))
+    expect(await confirmUprightVs180(await testImage(), 'key', PRIMARY_READER)).toBeNull()
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"sideways"}' }] } }] }),
+    })))
+    expect(await confirmUprightVs180(await testImage(), 'key', PRIMARY_READER)).toBeNull()
+  })
+})
+
+describe('orientToUpright — ORIENT_180_CHECK integration (default OFF ⇒ byte-identical)', () => {
+  afterEach(() => { delete process.env.ORIENT_180_CHECK; delete process.env.ORIENT_VOTE_RUNS })
+
+  it('flag OFF (default): no second call is made even if a confirm-style response would be returned', async () => {
+    process.env.ORIENT_VOTE_RUNS = '1'
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url)
+      return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }) }
+    }))
+    const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER)
+    expect(out.detected).toBe(true)
+    expect(out.disambiguated180).toBeUndefined()
+    expect(calls.length).toBe(1) // ONLY the 4-cell vote — no 180 confirm call when the flag is off
+  })
+
+  it('flag ON, confirm says "flipped" ⇒ applies an extra 180°, disambiguated180=true', async () => {
+    process.env.ORIENT_180_CHECK = '1'
+    process.env.ORIENT_VOTE_RUNS = '1'
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"right"}' }] } }] }) }))
+    const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER)
+    expect(out.applied).toBe(180)
+    expect(out.detected).toBe(true)
+    expect(out.disambiguated180).toBe(true)
+  })
+
+  it('flag ON, confirm says "left" (candidate correct) ⇒ no extra rotation, disambiguated180 unset', async () => {
+    process.env.ORIENT_180_CHECK = '1'
+    process.env.ORIENT_VOTE_RUNS = '1'
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"left"}' }] } }] }) }))
+    const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER)
+    expect(out.applied).toBe(0)
+    expect(out.detected).toBe(true)
+    expect(out.disambiguated180).toBeUndefined()
+  })
+
+  it('flag ON, confirm undecidable ⇒ detected=false (honest uncertainty, never a silent guess)', async () => {
+    process.env.ORIENT_180_CHECK = '1'
+    process.env.ORIENT_VOTE_RUNS = '1'
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) }))
+    const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER)
+    expect(out.detected).toBe(false)
+  })
+
+  it('4-cell vote itself undecidable ⇒ no 180-confirm call is attempted', async () => {
+    process.env.ORIENT_180_CHECK = '1'
+    process.env.ORIENT_VOTE_RUNS = '1'
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url)
+      return { ok: false, status: 500, json: async () => ({}) }
+    }))
+    const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER)
+    expect(out.detected).toBe(false)
+    expect(calls.length).toBe(1) // fails before reaching the confirm stage
   })
 })

@@ -1,3 +1,24 @@
+# STATUS (2026-07-05 — P1 orientation: 180-disambiguation measured partial; GT count corrected)
+
+## 2026-07-05 | Master plan Steps 1-4 -- ORIENTATION_HARNESS_PARTIAL, GT count corrected
+- ORIENT_180_CHECK (default OFF) live-measured: wrong_rotation_auto_applied 5/40 -> 2/40 (paired
+  same-session, 80 real calls). Fixes 180-degree confusion exactly; does not touch a separate
+  90-degree-off class (2 remain). Exit criterion (=0) NOT met -- confidence stays medium.
+- Handwritten-Cyrillic GT corrected: exactly 10 fields / 2 hands (was reported as ~14 -- printed
+  owner-fill docs were wrongly counted in). Blank-gate scope corrected: crop_readers_only.
+- `posture` now flows onto `DocumentReadResult`; HANDWRITTEN_CYRILLIC_BENCH.md skeleton exists,
+  BLOCKED_BY_GT until owner fills docs 4-8.
+- Evidence: docs/reports/DOCUMENT_POSTURE_PRE_READER_GATE.md §6c.
+
+# STATUS (2026-07-05 — handwritten/cyrillic roadmap locked; execution plan standardized)
+
+## 2026-07-05 | One Brain handwritten Cyrillic roadmap — ROADMAP_READY
+- Canonical execution plan written to `docs/reports/HANDWRITTEN_CYRILLIC_ONE_BRAIN_PLAN.md`.
+- Current truth unchanged: transliteration PASS, runner guard verified, posture envelope signal-only,
+  handwritten Cyrillic still not solved, GT still the blocker for Phase A.
+- Next engineering step remains the same: finish 90°/180° disambiguation and attach posture signals to the
+  handwritten bench rows before any broader service rollout.
+
 # STATUS (2026-07-05 — runner-guard v4: local node_modules isolation restored; version flag hole closed)
 
 ## 2026-07-05 | Runner-guard — current repo node_modules were broken symlinks into sibling worktree; fixed live

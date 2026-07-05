@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 2026-07-05 | Master plan P1: ORIENT_180_CHECK measured (partial) + posture on DocumentReadResult + bench skeleton
+- NEW `ORIENT_180_CHECK` flag (default OFF): binary "upright vs its 180-flip" confirm call after the
+  4-cell orientation vote (`detectOrientation.ts`: `build180Grid`, `confirmUprightVs180`,
+  `isOrient180CheckEnabled`; `orientToUpright` wires it, fail-open, honest `detected:false` on
+  undecidable). Live paired same-session measurement (80 real Gemini calls, 10 real docs x 4
+  rotations x {off,on}): wrong_rotation_auto_applied 5/40 -> 2/40, undecidable 1->0; all 3 fixed
+  cases were 180-degree confusions (the fix's target); 2 remaining failures are a separate,
+  unaddressed 90-degree-off class. Exit criterion (=0) not met -- `ORIENTATION_HARNESS_PARTIAL`.
+- `DocumentPostureEnvelope`: + `exif_orientation: suspicious` (EXIF applied but content-orient
+  corrected further -- deterministic lie detection), + `orientation_source: visual_oracle`,
+  + `orientation_180_disambiguated` output field.
+- `DocumentReadResult` (types.ts) + `documentFieldReader.ts`: `posture` now carried on all 4
+  in-scope return sites (additive; PII-free) so callers/bench can attach posture_gate to reader
+  metrics without a route contract change.
+- NEW `docs/reports/HANDWRITTEN_CYRILLIC_BENCH.md` skeleton (schema-first, per-hand, blank-gate
+  scope note, BLOCKED_BY_GT). Corrected GT count in the roadmap: ~14 -> exactly 10 fields / 2 hands
+  (owner_verified_fields total of 46 was wrongly conflated with handwritten-Cyrillic count).
+- Tests: posture 19/19, orientation 34/34 (+180-check block), docintel+ocr+translation 2551 pass;
+  tsc 0; PII guard clean.
+
+## 2026-07-05 | Handwritten Cyrillic roadmap standardized
+- Added `docs/reports/HANDWRITTEN_CYRILLIC_ONE_BRAIN_PLAN.md` as the canonical execution roadmap for the
+  One Brain handwritten Cyrillic effort.
+- The roadmap freezes the priority order and exit criteria without changing product behavior:
+  posture/orientation, GT expansion, blank gate, per-hand bench, arbitration/review, deterministic
+  transliteration, service rollout, flip criteria.
+
 ## 2026-07-05 | Runner-guard v4: local node_modules isolation restored + version flag hole closed
 - Real root cause in this repo: `packages/ai/node_modules` and `packages/db/node_modules` were symlinked into the
   sibling `uscis-helper` worktree. Removing those symlinks and reinstalling recreated local node_modules and

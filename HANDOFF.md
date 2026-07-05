@@ -1,3 +1,44 @@
+# HANDOFF (2026-07-05 — P1 90/180 orientation disambiguation measured; posture on DocumentReadResult; bench skeleton)
+
+## 2026-07-05 | Master plan Steps 1-4 execution (Claude, with 2 sub-agents)
+- **GT number corrected everywhere:** ~14 -> exactly 10 unique handwritten Cyrillic fields / 2 hands
+  (recounted directly from `_meta.handwritten_field_attrs`, excluding printed owner-fill docs which
+  were wrongly conflated in). Blank-gate scope corrected: crop_readers_only, full-page LLM path
+  explicitly NOT gated -- fixed in HANDWRITTEN_CYRILLIC_ONE_BRAIN_PLAN.md.
+- **ORIENT_180_CHECK implemented** (default OFF, byte-identical -- proven by call-count unit test):
+  binary confirm ("is this upright or its 180 flip?") after the 4-cell vote. Live paired
+  same-session measurement (80 real Gemini calls, 10 docs x 4 rotations x 2 flag states):
+  wrong_rotation_auto_applied 5/40 -> 2/40, undecidable 1->0. All 3 fixed cases were exact
+  180-degree confusions; the 2 remaining failures are a SEPARATE 90-degree-off class the fix
+  does not address (1 unchanged, 1 new from independently-measured 4-cell-vote day-to-day drift).
+  Exit criterion (=0) NOT met -- honest verdict stays `ORIENTATION_HARNESS_PARTIAL`.
+- **`posture` now carried on `DocumentReadResult`** (all 4 in-scope return sites in
+  documentFieldReader.ts; the 5th, unknown-doc-type, is before posture exists so it's honestly
+  omitted there) -- available for any bench/caller to join per row.
+- **`HANDWRITTEN_CYRILLIC_BENCH.md` skeleton created** (sub-agent) -- schema-first, per-hand
+  sections (all "NO DATA YET"), one fictional example row, BLOCKED_BY_GT status.
+- **Envelope hardening:** `exif_orientation: suspicious` (EXIF applied but content-orient still
+  corrected further -- deterministic proof the tag lied), `orientation_180_disambiguated` surfaced
+  in output, `orientation_source: visual_oracle` enum value added for harness/test use.
+- Deliberately OUT of scope this commit: joining posture into the HTTP bench response (API
+  response-contract change with wider blast radius -- needs its own review, not a silent
+  add-on here); the 90-degree-off failure class (needs a different mechanism).
+- Tests: posture 19/19, orientation 34/34, full docintel+ocr+translation 2551 pass; tsc 0; PII clean.
+- Evidence: docs/reports/DOCUMENT_POSTURE_PRE_READER_GATE.md §6c,
+  docs/reports/HANDWRITTEN_CYRILLIC_ONE_BRAIN_PLAN.md, docs/reports/HANDWRITTEN_CYRILLIC_BENCH.md.
+- **EXACT NEXT ACTION:** unchanged -- owner GT docs 4-8 is the Phase A blocker; agent: separate
+  90-degree-off disambiguation mechanism before any confidence upgrade.
+
+# HANDOFF (2026-07-05 — handwritten/cyrillic roadmap standardized; next = posture + GT)
+
+## 2026-07-05 | One Brain handwritten Cyrillic roadmap (Claude)
+- Added the canonical execution plan report: `docs/reports/HANDWRITTEN_CYRILLIC_ONE_BRAIN_PLAN.md`.
+- It standardizes the rollout order: posture/orientation -> GT -> blank gate -> per-hand bench ->
+  arbitration/review -> deterministic transliteration -> service adapters -> flip criteria.
+- No product flip or code-path change was introduced by the plan doc itself.
+- Exact next action remains: finish 90°/180° disambiguation and attach posture envelope rows to the handwritten
+  bench; owner GT docs 4–8 remains the core blocker.
+
 # HANDOFF (2026-07-05 — runner-guard v4: local isolation restored; version flag hole closed)
 
 ## 2026-07-05 | Runner-guard v4 (Claude)

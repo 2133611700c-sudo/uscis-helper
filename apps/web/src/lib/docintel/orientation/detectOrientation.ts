@@ -157,21 +157,127 @@ export interface OrientResult {
   buffer: Buffer
   applied: Cw
   detected: boolean // false ⇒ detection failed / undecidable ⇒ buffer returned unchanged
+  /** ORIENT_180_CHECK: the binary confirm pass flipped the 4-cell verdict by an extra 180°. */
+  disambiguated180?: boolean
+}
+
+/**
+ * Flag: second-stage 180° disambiguation (default OFF — costs +1 paid call/doc when ON, OFF is
+ * byte-identical to the pre-existing behavior). WHY: the ONLY measured failure class on the
+ * 10-real-doc / 50-variant harness (43/50, see DOCUMENT_POSTURE_PRE_READER_GATE.md §6b) is
+ * 180°-opposite confusion — a focused binary question targets exactly that, instead of adding
+ * more 4-way votes (which does not distinguish "upright" from "its own 180° flip").
+ */
+export function isOrient180CheckEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.ORIENT_180_CHECK === '1'
+}
+
+const PROMPT_180 =
+  'This image shows the SAME document twice, side by side: LEFT and RIGHT are the same page, but ' +
+  'RIGHT is rotated 180° relative to LEFT. Exactly ONE side is UPRIGHT (readable top-to-bottom: ' +
+  'headers/title at the top, text lines read left-to-right, any face photo head-up, ' +
+  'signatures/stamps nearer the bottom). Which side is upright? Answer ONLY JSON ' +
+  '{"side":"left"|"right"}.'
+
+/** Build a 1×2 grid [candidate | candidate rotated 180°] as a JPEG buffer. */
+export async function build180Grid(buffer: Buffer, cellPx = 640, padPx = 10): Promise<Buffer> {
+  const flipped = await sharp(buffer).rotate(180).toBuffer()
+  const tiles = await Promise.all(
+    [buffer, flipped].map(async (b, i) => ({
+      input: await sharp(b).resize(cellPx, cellPx, { fit: 'inside', background: '#ffffff' }).jpeg().toBuffer(),
+      top: padPx,
+      left: padPx + i * (cellPx + padPx),
+    })),
+  )
+  return sharp({
+    create: { width: cellPx * 2 + padPx * 3, height: cellPx + padPx * 2, channels: 3, background: '#dddddd' },
+  }).composite(tiles).jpeg({ quality: 85 }).toBuffer()
+}
+
+/**
+ * Binary 180° confirm: is `buffer` upright, or is its 180°-rotated twin? ONE paid call.
+ * Returns 'candidate' (buffer is upright) | 'flipped' (needs +180°) | null (undecidable/failed —
+ * fail-open, never throws; caller treats null as detection failure).
+ */
+export async function confirmUprightVs180(
+  buffer: Buffer, apiKey: string, model: string, timeoutMs = 20_000,
+): Promise<'candidate' | 'flipped' | null> {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    const grid = await build180Grid(buffer)
+    const gridB64 = grid.toString('base64')
+    const cacheKeySha = computeCacheKeySha({
+      fileSha256: sha256Hex(gridB64), provider: 'gemini', model,
+      promptVersion: 'orient_180_v1', preprocVersion: 'grid1x2_v1',
+    })
+    const res = await withOcrCostMetrics(
+      {
+        product: 'ocr', route: 'provider:gemini_orient_180', provider: 'gemini',
+        model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('gemini', model),
+      },
+      () => fetch(GEMINI_URL(model, apiKey), {
+        method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: PROMPT_180 }, { inline_data: { mime_type: 'image/jpeg', data: gridB64 } }] }],
+          generationConfig: { temperature: 0, response_mime_type: 'application/json' },
+        }),
+      }),
+    )
+    if (!res.ok) return null
+    const j = await res.json()
+    let side: unknown = null
+    try { side = JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.side } catch { return null }
+    if (side === 'left') return 'candidate'
+    if (side === 'right') return 'flipped'
+    return null
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 /**
  * Detect the upright rotation (K-vote stabilized) and apply it. Returns the corrected buffer + the
  * applied angle. Fail-open: detection failure ⇒ original buffer, applied 0, detected false.
+ *
+ * ORIENT_180_CHECK=1 adds a second-stage binary confirm on the ORIENTED candidate (after the 4-cell
+ * vote is applied): 'flipped' ⇒ apply one more 180° (the measured failure class — see module doc);
+ * null/undecidable ⇒ detected=false, so the caller's existing orientation_uncertain fail-closed path
+ * adds review — this NEVER silently guesses between the two poses. OFF (default) ⇒ unchanged
+ * behavior, byte-identical to before this change.
  */
 export async function orientToUpright(buffer: Buffer, apiKey: string, model: string): Promise<OrientResult> {
   const cw = await detectUprightCwVoted(buffer, apiKey, model)
-  if (cw === null || cw === 0) return { buffer, applied: 0, detected: cw !== null }
-  try {
-    const rotated = await sharp(buffer).rotate(cw).toBuffer()
-    return { buffer: rotated, applied: cw, detected: true }
-  } catch {
-    return { buffer, applied: 0, detected: false }
+  if (cw === null) return { buffer, applied: 0, detected: false }
+
+  let out = buffer
+  let applied: Cw = 0
+  if (cw !== 0) {
+    try {
+      out = await sharp(buffer).rotate(cw).toBuffer()
+      applied = cw
+    } catch {
+      return { buffer, applied: 0, detected: false }
+    }
   }
+
+  if (!isOrient180CheckEnabled()) return { buffer: out, applied, detected: true }
+
+  const confirm = await confirmUprightVs180(out, apiKey, model)
+  if (confirm === 'candidate') return { buffer: out, applied, detected: true }
+  if (confirm === 'flipped') {
+    try {
+      const fixed = await sharp(out).rotate(180).toBuffer()
+      const newApplied = ((applied + 180) % 360) as Cw
+      return { buffer: fixed, applied: newApplied, detected: true, disambiguated180: true }
+    } catch {
+      return { buffer: out, applied, detected: true }
+    }
+  }
+  // undecidable between the two 180°-opposite poses ⇒ honest uncertainty, never a silent guess
+  return { buffer: out, applied, detected: false }
 }
 
 /** Flag: content-based orientation correction (default OFF — measured before enabling). */

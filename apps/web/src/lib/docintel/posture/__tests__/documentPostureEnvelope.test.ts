@@ -120,3 +120,41 @@ describe('buildPostureEnvelope — quality + gate monotonicity (signal-only, add
     }
   })
 })
+
+describe('buildPostureEnvelope — EXIF suspicious (audit finding: EXIF is evidence, not truth)', () => {
+  it('EXIF applied in preprocess BUT content-orient still corrected it further ⇒ suspicious', () => {
+    const e = buildPostureEnvelope({
+      exifOrientation: 6, preprocessRotationApplied: true,
+      contentOrientRan: true, contentRotationCw: 270, contentOrientCorrectedExif: true,
+    })
+    expect(e.exif_orientation).toBe('suspicious')
+  })
+
+  it('EXIF applied and content-orient agrees (no further correction claimed) ⇒ applied, not suspicious', () => {
+    const e = buildPostureEnvelope({
+      exifOrientation: 1, preprocessRotationApplied: true,
+      contentOrientRan: true, contentRotationCw: 0,
+    })
+    expect(e.exif_orientation).toBe('applied')
+  })
+
+  it('suspicious is never claimed when contentOrientCorrectedExif is absent/false', () => {
+    expect(buildPostureEnvelope({ exifOrientation: 6, preprocessRotationApplied: true }).exif_orientation).toBe('applied')
+  })
+})
+
+describe('buildPostureEnvelope — disambiguated180 evidence (still capped at medium)', () => {
+  it('disambiguated180=true keeps confidence at medium, never upgrades to high, and is surfaced', () => {
+    const e = buildPostureEnvelope({
+      contentOrientRan: true, contentRotationCw: 180, disambiguated180: true,
+    })
+    expect(e.orientation_confidence).toBe('medium')
+    expect(e.orientation_status).toBe('upright')
+    expect(e.orientation_180_disambiguated).toBe(true)
+  })
+
+  it('disambiguated180=false is surfaced distinctly from "not attempted" (undefined)', () => {
+    expect(buildPostureEnvelope({ contentOrientRan: true, disambiguated180: false }).orientation_180_disambiguated).toBe(false)
+    expect(buildPostureEnvelope({ contentOrientRan: true }).orientation_180_disambiguated).toBeUndefined()
+  })
+})

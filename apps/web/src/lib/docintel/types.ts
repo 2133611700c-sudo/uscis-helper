@@ -148,6 +148,11 @@ export interface DocumentReadResult {
    * successful empty extraction. PII-free; no secrets.
    */
   provider_error?: import('@/lib/ocr/ocrErrors').OcrProviderError
+  /** DOCUMENT POSTURE ENVELOPE (owner patch 2026-07-05): the pre-reader signal-only envelope,
+   *  carried on the result so bench rows and callers can attach posture_gate/orientation_status
+   *  next to reader metrics — without this, "reader quality" numbers cannot be trusted (a wrongly
+   *  oriented or blank-quality read looks identical to a genuine misread). Additive; PII-free. */
+  posture?: import('./posture/documentPostureEnvelope').DocumentPostureEnvelope
   /** Self-consistency gate outcome (only set when the gate ran). PII-free. */
   self_consistency?: {
     status: 'agree' | 'mismatch' | 'incomplete' | 'insufficient_identity_fields'
