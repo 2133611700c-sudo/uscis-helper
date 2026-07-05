@@ -208,7 +208,7 @@
 
 ## 2026-06-27 | Committed reproducible cross-hand HTR harness + cleaned military GT
 - NEW committed `scripts/htr/cross_hand_harness.py` (PII-safe): frozen field boxes + SHA-pinned fixtures + committed EXPECTED verdicts + 3 score modes (strict-exact / folded-soft / CER) + model_error separate. Reads real images + GT from gitignored qa-private at runtime; writes full raw evidence to gitignored qa-private/htr-poc/; CI-safe SKIP when weights/fixtures absent. Verified locally: hand A (birth, RU) strict_exact **3/3**, hand B (military, UA) **0/3** — both SHA-OK, both match EXPECTED. This upgrades the cross-hand result from research-grade to a COMMITTED reproducer (addresses the "docs-only / no committed harness" critique).
-- Cleaned `military_id_p1` GT (gitignored): consolidated to a single truthful `handwritten:true` (removed the `handwritten:false` + `handwritten_actual:true` contradiction) and removed the stale `model_3.1-pro_draft` provenance from `verification_method` (GT is owner-verified, not model-derived).
+- Cleaned `military_id_p1` GT (gitignored): consolidated to a single truthful `handwritten:true` (removed the `handwritten:false` + `handwritten_actual:true` contradiction) and removed the stale model-draft provenance from `verification_method` (GT is owner-verified, not model-derived).
 - Next + only remaining zero-shot lever: fetch the dedicated UA-TrOCR weights OUTSIDE the sandbox, then run the SAME harness via `HTR_MODEL=...`.
 
 ## 2026-06-27 | Multi-model HTR on hand B (UA cursive): ALL local models 0/3 — handwriting unsolved
@@ -220,7 +220,7 @@
 ## 2026-06-27 | Critical re-verify of `6919dbe`: direction is true, proof package is still mixed
 - Re-verified the cross-hand HTR claim against the actual repo state instead of trusting the doc entry. `6919dbe` changed **docs only** (`CHANGELOG.md`), not code, tests, or a committed evaluation harness.
 - **Verified live now:** the local sidecar is up (`/health` + `/version` OK, `raxtemur/trocr-base-ru`, MPS), and the CURRENT deterministic birth-cert template in `handwrittenFieldRoute.ts` really yields **3/3 exact** on the real fixture through the live sidecar (`family_name`, `given_name`, `patronymic` all strict-CER 0 with the current tuned box).
-- **Verified live now:** the second handwritten owner hand is real on disk (`military_id_p1_01.jpg` + `qa-private/ground-truth/military_id_p1_01.json`), but the evidence is still RESEARCH-grade: the GT file itself still says `_meta.handwritten:false` plus `handwritten_actual:true`, and still carries stale `model_3.1-pro_draft` provenance text. The cross-hand conclusion is therefore based on local/private artifacts, not on a cleaned committed corpus contract.
+- **Verified live now:** the second handwritten owner hand is real on disk (`military_id_p1_01.jpg` + `qa-private/ground-truth/military_id_p1_01.json`), but the evidence is still RESEARCH-grade: the GT file itself still says `_meta.handwritten:false` plus `handwritten_actual:true`, and still carries stale model-draft provenance text. The cross-hand conclusion is therefore based on local/private artifacts, not on a cleaned committed corpus contract.
 - **Verified live now on plausible military FIO crops:** `raxtemur` does NOT give a clean Ukrainian 3/3 exact result. Family name soft-matches only after apostrophe-folding, given name collapses into neighboring text, patronymic tends to Russianized/partial output. So the strategic conclusion "no generalized safe handwritten reader yet" holds; but the exact wording must stay strict: this is a manually localized local proof, not an operational runtime path.
 
 ## 2026-06-27 | Cross-hand HTR result: raxtemur does NOT generalize (hand A exact, hand B 0/3)
@@ -286,10 +286,10 @@
 - Per Stage-0 freeze: orientation code intentionally UNCHANGED until the instrumented baseline rerun captures current behavior.
 
 ## 2026-06-27 | Gemini truth-layer cleanup
-- Removed literal Gemini 3.1 version references from the active runtime layer, active bench scripts, and authoritative architecture docs.
+- Removed literal forbidden-family Gemini version references from the active runtime layer, active bench scripts, and authoritative architecture docs.
 - Hardened model normalization: only sanctioned models are accepted from env; everything else falls back automatically.
 - Current active model law is unambiguous in code and docs: `gemini-2.5-pro` primary, `gemini-3.5-flash` and `gemini-2.5-flash` availability fallbacks.
-- Finished the CI tail: `.github/workflows/gemini-quota-diag.yml` was still probing the removed preview as "configured primary" → repointed to `gemini-2.5-pro`. Tracked tree now has **0** literal `gemini-3.1*` references.
+- Finished the CI tail: `.github/workflows/gemini-quota-diag.yml` was still probing the removed preview as "configured primary" → repointed to `gemini-2.5-pro`. Tracked tree now has **0** literal forbidden-family ids.
 - **PII guard hardened (real bug):** the tokenizer included a trailing quote/apostrophe, so a denylisted token wrapped in a string literal (`'<surname>'`) or filename suffix (`*_<surname>`) was hashed with the trailing char and silently passed — the guard reported false-clean. Fixed `tokenize()` to strip leading/trailing quote/apostrophe/hyphen (internal apostrophes like `O'Brien` preserved). The fix immediately surfaced owner-surname occurrences the old guard had been missing (string-literal form in HTR tests, lowercase filename-suffix form in docs); all replaced with fictional data. `check-no-pii.mjs` + `piiGuard.test.ts` green.
 
 ## 2026-06-25 | Fixed the handwritten birth-cert deterministic patronymic crop
@@ -2558,7 +2558,7 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 
 <!-- 2026-06-21 RC2: route now reports REAL reader model (read_models), not env default. Audit journal docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md -->
 
-<!-- 2026-06-21: full session audit journal written (docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md): RC1 corrected (no 3.1→2.5 fallback; model field was env-default bug), RC2 fixed, single-brain/C3/dictionaries/branch maps. -->
+<!-- 2026-06-21: full session audit journal written (docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md): RC1 corrected (no preview-primary→2.5 fallback; model field was env-default bug), RC2 fixed, single-brain/C3/dictionaries/branch maps. -->
 
 <!-- 2026-06-21: consolidation verdict — canon=translation/ru-and-model-matrix-fixes (green); merge-to-main gated (no common ancestor + history has redacted key + prod). -->
 
@@ -2610,6 +2610,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 ## 2026-07-05 | Shadow window run + live wizard E2E + model-probe artifacts + truth-lock evidence pass
 - Ran the first shadow window against branch code (local server, real docs): decision/gates differs clean on N=9/82 fields (openai reader; below flip bar), TPS markers blocked by Vision billing 403 (corrected attribution — not Gemini/key). Files: `ops/agent-control/reports/2026-07-04-shadow-window-and-e2e-evidence.md`, `2026-07-05-open-items-master.md`.
 - Added live Playwright E2E `apps/web/tests/e2e/translation-live-review.spec.ts` (PASSED locally 27.7s; env-gated skip in CI).
-- Pay-key model probe artifact `docs/reports/MODEL_MATRIX_PAY_KEY_PROBE_2026-07-04.md`; law: `*-latest` pro aliases forbidden (`gemini-pro-latest` served the banned preview) — `docs/architecture/MODEL_ROLE_MATRIX.md`.
+- Pay-key model probe artifact `docs/reports/MODEL_MATRIX_PAY_KEY_PROBE_2026-07-04.md`; law: `*-latest` pro aliases forbidden (the forbidden pro-latest alias served the banned preview family) — `docs/architecture/MODEL_ROLE_MATRIX.md`.
 - One-committer-per-worktree rule added to CLAUDE.md; owner-fill GT worksheet extended to 8 docs (qa-private).
-- Tests: full suite green earlier commits; guards (noGemini31, runtimeTruthVocabulary) green; CI success through f866e6b.
+- Tests: full suite green earlier commits; guards (forbiddenPreviewFamily, runtimeTruthVocabulary) green; CI success through f866e6b.

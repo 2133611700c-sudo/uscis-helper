@@ -5,7 +5,7 @@ No prod env changed. No flags enabled. Owner decision required to enable any beh
 
 ## Recommendation 1 — SMART_NORMALIZE_ENABLED → **DO_NOT_ENABLE (now)** / revisit = NEEDS_MORE_DATA
 
-- B-vs-A showed **zero accuracy improvement** on both docs (2.5-flash 0/5=0/5; 3.1-pro 1/4=1/4).
+- B-vs-A showed **zero accuracy improvement** on both docs (2.5-flash 0/5=0/5; preview primary 1/4=1/4).
 - B introduced a `false_positive_review` on one cell (place normalization flagged a correct field) — a
   small UX cost with no correctness upside on this sample.
 - The test docs are Russian-language; the UA gazetteer / KMU dictionaries have little to bite on here, so
@@ -17,7 +17,7 @@ No prod env changed. No flags enabled. Owner decision required to enable any beh
 
 - 2.5-flash on hard-case: **0/5 correct (different person), DOB unflagged (FN=5)** without the gate, and
   read DOB month 02 — dangerous.
-- 3.1-pro: 1/5 correct and **self-flags DOB** (review=true even in mode A) → FN=2 unaided.
+- Preview primary: 1/5 correct and **self-flags DOB** (review=true even in mode A) → FN=2 unaided.
 - Neither is trustworthy unaided → **the anti-fabrication + self-consistency gate (mode C) is mandatory
   regardless of model** (it zeroes false-negative review for both).
 - Do NOT change the prod default model on N=2/one-person. A firm model choice needs more GT/people.

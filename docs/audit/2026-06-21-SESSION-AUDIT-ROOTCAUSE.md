@@ -106,7 +106,7 @@ exactly why the owner said find the root, not the surface: the surface signal wa
 
 ## RC1 — CORRECTED VERDICT (after the RC2 observability fix)
 
-**The primary `removed preview primary` IS the actual reader. There is NO 3.1→2.5 fallback.**
+**The primary `removed preview primary` IS the actual reader. There is NO preview-primary→2.5 fallback.**
 Evidence: staging-e2e run 27931589437 (branch translation/ru-and-model-matrix-fixes, deploy with
 the RC2 fix) reported the REAL per-page reader for ALL 5 scenarios (ua_birth, ru_printed,
 passport, ambiguous, handwritten) = `model=removed preview primary`, 12/12 pass.

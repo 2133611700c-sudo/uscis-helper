@@ -1,7 +1,7 @@
 # OCR_PROVIDER_COST_MATRIX — roles, tariffs, integration decision
 
 **Date:** 2026-05-27
-**Status:** Decision matrix. Prices are APPROXIMATE (verified family-level, May 2026) — pin exact numbers here before integration and re-verify quarterly. Future-version exact prices (e.g. "Gemini 3.1", "GPT-5.4") from third-party lists are NOT trusted; family ranges used instead.
+**Status:** Decision matrix. Prices are APPROXIMATE (verified family-level, May 2026) — pin exact numbers here before integration and re-verify quarterly. Future-version exact prices from third-party lists are NOT trusted; family ranges used instead.
 **Rule:** no provider is "final truth" — all AI/vision output is a *candidate* → Central Brain + Review Gate.
 
 ---

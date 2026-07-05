@@ -110,7 +110,7 @@ missing fixture. UA live-door coverage is 4/4 of the UA docs that have a real im
 **Verified by agent from raw (no values printed):**
 - GT ready = **6/30** `VERIFIED_BY_OWNER` (soviet 6/6, handwritten 6/6, internal_passport 5/5, military_id_p1 6/6, i94 6/6, ead 6/6). **GT-count blocker CLEARED.**
 - BUT live-door-scorable = **3** (2 hard-case birth + internal_passport). `military_id_p1` has **no registry doc type** (`ua_military_id` absent); `ead`/`i94` are **US docs with no upright real image** → not scorable. Owner's "accuracy on 6 docs" is not evidence-backed; real coverage = 3.
-- Hard-case = **1/4 correct even on 3.1-pro** → UNRESOLVED_BLOCKER. Mode C drives `false_negative_review`→0 on both. Passport = 3/3 read fields correct (patronymic dropped — coverage gap).
+- Hard-case = **1/4 correct even on the former preview primary** → UNRESOLVED_BLOCKER. Mode C drives `false_negative_review`→0 on both. Passport = 3/3 read fields correct (patronymic dropped — coverage gap).
 - Calibration = **BLOCKED_INSUFFICIENT_N** (~11 fields can't set numeric thresholds).
 
 **Owner-only — to scale evidence (the real unblock for calibration):**
@@ -139,7 +139,7 @@ vercel env rm SELF_CONSISTENCY_GATE_ENABLED  production
 ## 2026-06-04 — UA correction + gate canary prep
 - Source docs are UKRAINIAN; Russianized output = model error (memory ukrainian-source-language). KMU-55/dict only after correct UA read.
 - ANTI_FABRICATION_GATE = READY_FOR_CANARY_PREP (plan: docs/reports/ANTI_FAB_GATE_CANARY_PLAN.md). NOT enabled. Pre-canary gates unmet: GT≥6 + calibration + rollback rehearsal.
-- hard-case model = UNRESOLVED_BLOCKER (neither 2.5-flash nor 3.1-pro reads UA hard-case reliably).
+- hard-case model = UNRESOLVED_BLOCKER (neither 2.5-flash nor the former preview primary reads UA hard-case reliably).
 - SMART_NORMALIZE = DO_NOT_ENABLE.
 
 
@@ -242,4 +242,3 @@ PII in git history (surname, FA000000, DOB, 51 USCIS packets) = accepted risk fo
 `docs/reports/evidence/` already gitignored — no new leaks forward.
 Phase A/B from PII_HISTORY_REWRITE_RUNBOOK.md = NOT NEEDED unless repo goes external (re-open then).
 **This topic is CLOSED. Do not re-raise.**
-

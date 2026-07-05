@@ -26,7 +26,7 @@ gated on real signature.
 - [ ] Branch `feat/c3-presence` deployed to a Vercel **Preview** (auto on push / from PR #26).
 - [ ] Preview env vars present & SEPARATE from production: `GEMINI_API_KEY_PAY`,
       `GOOGLE_CLOUD_VISION_API_KEY`, `DEEPSEEK_API_KEY`, `CENTRAL_BRAIN_TRANSLATION=on`.
-- [ ] `vision-extract` function maxDuration ≥ 60s allowed on the plan (3.1-pro ~16-40s).
+- [ ] `vision-extract` function maxDuration ≥ 60s allowed on the plan (former preview primary ~16-40s).
 
 ## C. Preview E2E (run in the Preview URL)
 - [ ] **Printed doc** (passport) → review → PDF with NO missing placeholders.

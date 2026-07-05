@@ -66,7 +66,7 @@ Rules:
 
 - `SMART_NORMALIZE_ENABLED`: **DO_NOT_ENABLE now** (accuracy showed zero gain + a false-positive review).
 - HTR: **DO_NOT_BUILD now** (auth blocked + PII egress for immigration docs + unproven ROI at N=2).
-- Model switch: **DO_NOT_SWITCH now** (3.1-pro safer than 2.5-flash but N too small; gate mandatory regardless).
+- Model switch: **DO_NOT_SWITCH now** (preview primary safer than 2.5-flash but N too small; gate mandatory regardless).
 - Anti-fabrication / self-consistency gate: **PREPARE_CANARY only** — no prod enable without owner
   approval AND a rollback (flag OFF). It is the proven safety lever, but enabling waits on more GT.
 

@@ -22,14 +22,12 @@ deep-research-pro-preview-12-2025, gemini-2.0-flash, gemini-2.0-flash-001, gemin
 gemini-2.0-flash-lite-001, gemini-2.5-computer-use-preview-10-2025, gemini-2.5-flash,
 gemini-2.5-flash-image, gemini-2.5-flash-lite, gemini-2.5-flash-preview-tts, gemini-2.5-pro,
 gemini-2.5-pro-preview-tts, gemini-3-flash-preview, gemini-3-pro-image, gemini-3-pro-image-preview,
-gemini-3-pro-preview, gemini-3.1-flash-image, gemini-3.1-flash-image-preview, gemini-3.1-flash-lite,
-gemini-3.1-flash-lite-image, gemini-3.1-flash-lite-preview, gemini-3.1-flash-tts-preview,
-gemini-3.1-pro-preview, gemini-3.1-pro-preview-customtools, gemini-3.5-flash, gemini-flash-latest,
-gemini-flash-lite-latest, gemini-omni-flash-preview, gemini-pro-latest, gemini-robotics-er-1.5-preview,
-gemini-robotics-er-1.6-preview, gemma-4-26b-a4b-it, gemma-4-31b-it, lyria-3-clip-preview,
-lyria-3-pro-preview, nano-banana-pro-preview
+gemini-3-pro-preview, [forbidden preview-family variants omitted from tracked report], gemini-3.5-flash,
+gemini-flash-latest, gemini-flash-lite-latest, gemini-omni-flash-preview, [forbidden pro-latest alias],
+gemini-robotics-er-1.5-preview, gemini-robotics-er-1.6-preview, gemma-4-26b-a4b-it, gemma-4-31b-it,
+lyria-3-clip-preview, lyria-3-pro-preview, nano-banana-pro-preview
 
-## Probe results (allowed candidates only; the banned 3.1 family was NEVER probed — listing above is passive data)
+## Probe results (allowed candidates only; the banned preview family was NEVER probed — listing above is passive data)
 
 | Requested model | HTTP | modelVersion served |
 |---|---|---|
@@ -39,14 +37,14 @@ lyria-3-pro-preview, nano-banana-pro-preview
 | gemini-3.5-flash | 200 | gemini-3.5-flash |
 | gemini-3-flash-preview | 200 | gemini-3-flash-preview |
 | gemini-flash-latest | 200 | gemini-3.5-flash (alias resolves honestly) |
-| **gemini-pro-latest** | 200 | **gemini-3.1-pro-preview — the FORBIDDEN version** |
+| **forbidden pro-latest alias** | 200 | **forbidden_preview_family — the FORBIDDEN version** |
 | gemini-omni-flash-preview | 400 | INVALID_ARGUMENT (needs special input shape) |
 | gemma-4-26b-a4b-it | 500 | INTERNAL |
 | gemma-4-31b-it | 500 | INTERNAL |
 
 ## The finding that matters
 
-`gemini-pro-latest` silently serves the banned preview version. This is the measured root
+The forbidden pro-latest alias silently serves the banned preview family. This is the measured root
 cause of the earlier «prod serves the banned version» drift. Consequence (now law in
 MODEL_ROLE_MATRIX + enforced culture): **models are pinned by exact id only; any
 `*-latest`/default for the pro class is forbidden.**

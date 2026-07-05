@@ -42,7 +42,7 @@ visible review instruction (uncertainty shown to the user). **PASSED 27.7s local
 
 ## 3) Model probe on the pay key — raw artifact
 See `docs/reports/MODEL_MATRIX_PAY_KEY_PROBE_2026-07-04.md` (39-model listing + statuses +
-modelVersion). Key finding: `gemini-pro-latest` serves the banned preview version → law
+modelVersion). Key finding: the forbidden pro-latest alias serves the banned preview family → law
 «pin exact ids, no *-latest for pro» in MODEL_ROLE_MATRIX.md (commit b54b527).
 
 ## 4) CI runs (this session; verified via gh in MY session — re-verify with `gh run list`)

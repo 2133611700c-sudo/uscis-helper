@@ -1,17 +1,17 @@
-# Owner Q&A: почему app читает, а API нет · словари рукописного · откуда 3.1 (2026-07-04)
+# Owner Q&A: почему app читает, а API нет · словари рукописного · откуда forbidden preview family (2026-07-04)
 
-> **HISTORICAL / NON-ACTIVE (model policy hard lock 2026-07-04):** любое упоминание gemini-3.1
-> ниже — точечное НАБЛЮДЕНИЕ прод-дрейфа на дату отчёта, НЕ активная опция. Закон: 3.1 не
+> **HISTORICAL / NON-ACTIVE (model policy hard lock 2026-07-04):** любое упоминание запретной preview-family
+> ниже — точечное НАБЛЮДЕНИЕ прод-дрейфа на дату отчёта, НЕ активная опция. Закон: forbidden preview family не
 > используется, не тестируется, не считается рабочим вариантом; primary = gemini-2.5-pro.
-> Enforced: `apps/web/src/lib/__tests__/noGemini31.guard.test.ts` (активные поверхности = 0 упоминаний).
+> Enforced: `apps/web/src/lib/__tests__/forbiddenPreviewFamily.guard.test.ts` (активные поверхности = 0 упоминаний).
 
 Три вопроса владельца, ответы установлены по коду/логам/git — не по мнению.
 
-## Q1. «Мы договаривались gemini-3.1 не трогать — почему в бенче 3.1-pro-preview?»
+## Q1. «Мы договаривались запретную preview-family не трогать — почему она появилась в бенче?»
 
 `gt-pipeline-bench.mjs` работает в LIVE-режиме: он бьёт в **задеплоенный ПРОД** (`prod
 /api/translation/vision-extract`, "the production brain measures itself") — не в локальный код
-и не через локальные ключи. `gemini-3.1-pro-preview` в его логе — это модель, которую сервит
+и не через локальные ключи. `forbidden_preview_family` в его логе — это модель, которую сервит
 **прод (main-ветка)** сегодня. В one-brain ветке `PRIMARY_READER = 'gemini-2.5-pro'`
 (modelMatrix.ts:45) и локальный live-shadow шёл на 2.5-pro (подтверждено RESULT_META и
 `modelVersion` в прямом API-ответе). **Правило нарушает прод-деплой main, не эта ветка** —
@@ -60,5 +60,5 @@
    одним пролётом; словари наконец получают читаемый вход.
 2. Поднять HTR-sidecar (owner: хост) — raxtemur как второй crop-reader (ADR-026).
 3. Опционально: `DICTIONARY_AUTOCORRECT` shadow-замер (реконструкция отчества).
-4. Owner: вернуть прод на 2.5-pro (Q1) или подтвердить 3.1-preview намеренно.
+4. Owner: вернуть прод на 2.5-pro (Q1) или подтвердить forbidden preview family намеренно.
 5. Owner: если словарь имён существует — передать файл в репо (гitignored при PII-рисках).

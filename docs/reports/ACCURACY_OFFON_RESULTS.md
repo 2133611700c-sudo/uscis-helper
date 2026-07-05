@@ -30,15 +30,15 @@ candidate-not-verified fields (issue_date/act_record/parents/authority) NOT scor
    and MISSES the DOB month error. With it, every identity field is forced to review, the DOB
    month-mismatch is CAUGHT, and self-consistency reports `mismatch`/instability on 2.5-flash. **This is
    the proven, model-independent safety win.**
-2. **DOB month-mismatch (the critical test-case):** GT month = 06 (June). 2.5-flash read month 02, 3.1-pro
+2. **DOB month-mismatch (the critical test-case):** GT month = 06 (June). 2.5-flash read month 02, preview primary
    read month 07 — both WRONG, and inconsistent with each other and with prior runs (July seen earlier) →
-   gross instability on the date. Gate result: 2.5-flash MISSED in A/B, CAUGHT in C; 3.1-pro self-flagged
+   gross instability on the date. Gate result: 2.5-flash MISSED in A/B, CAUGHT in C; preview primary self-flagged
    DOB (review=true) even in A, CAUGHT throughout.
-3. **SMART_NORMALIZE (B vs A): no accuracy improvement** on these docs (2.5-flash 0/5 = 0/5; 3.1-pro 1/4 =
-   1/4). On 3.1-pro soviet, B even introduced a `false_positive_review` (place normalization flagged a
+3. **SMART_NORMALIZE (B vs A): no accuracy improvement** on these docs (2.5-flash 0/5 = 0/5; preview primary 1/4 =
+   1/4). On preview-primary soviet, B even introduced a `false_positive_review` (place normalization flagged a
    correct field). → SMART shows zero correctness benefit here, small UX cost.
 4. **Model comparison (hard-case):** 2.5-flash is materially worse — 0/5 correct (reads a different
-   person) and DOB unflagged (FN=5) without the gate. 3.1-pro: 1/5 correct and self-flags DOB (FN=2).
+   person) and DOB unflagged (FN=5) without the gate. Preview primary: 1/5 correct and self-flags DOB (FN=2).
    Neither is trustworthy unaided.
 
 ## CORRECTED — the "RU spelling" misses are real errors, not a language artifact
@@ -66,7 +66,7 @@ But "GT ready" ≠ "accuracy-scorable through the live door". Of the 6:
 
 So the owner's "accuracy run on 6 docs" is **not** backed by evidence — raw + this rerun cover **3** live-door docs. The other 3 are GT-ready-but-not-live-scorable for the structural reasons above.
 
-### New datapoint — internal_passport @ removed preview primary (mode A; gate does not target printed passport)
+### New datapoint — internal_passport @ preview primary (mode A; gate does not target printed passport)
 `raw → qa-private/reports/accuracy-offon/passport_rerun_raw.json`
 
 | field | verdict |
@@ -84,7 +84,7 @@ collides with the CLAUDE.md hard-rule (Patronymic ≠ Middle Name) — flagged, 
 
 ## Bottom line (updated 2026-06-04)
 - GT-count blocker: **CLEARED** (6 verified). But live-door-scorable = **3** docs, not 6.
-- Hard-case Ukrainian (2 birth certs): **1/4 correct even on 3.1-pro** (only family_name; given/patronymic/DOB wrong). **UNRESOLVED_BLOCKER.**
+- Hard-case Ukrainian (2 birth certs): **1/4 correct even on preview primary** (only family_name; given/patronymic/DOB wrong). **UNRESOLVED_BLOCKER.**
 - Safety: **mode C drives `false_negative_review` to 0 on both hard-case docs** (handwritten needs C, not B) → the gate works. Re-confirmed against GT this session.
 - Printed UA passport: **3/3 read fields correct** (N=1) + a patronymic coverage gap to fix.
 - SMART_NORMALIZE: no accuracy gain → **DO_NOT_ENABLE**.

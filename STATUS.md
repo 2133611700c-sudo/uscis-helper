@@ -66,7 +66,7 @@
 - **Verified measured:** translation shadow window N=9 docs / 82 fields via READER_PROVIDER=openai — decision diffs=0, gates loosening=0 (below the N>=25 FLIP_CRITERIA bar; qualifiers in `ops/agent-control/reports/2026-07-04-shadow-window-and-e2e-evidence.md`).
 - **Verified measured:** TPS-route markers = 0 docs, corrected cause = Google Vision billing 403 (`OCR_BILLING_DISABLED`), BLOCKED_EXTERNAL — not Gemini, not the pay-key limit (serviceTier standard; ~$0.002/read; evening spend <$0.10).
 - **Verified passed (LOCAL only):** live wizard E2E `translation-live-review.spec.ts` — real upload → Recognize → review screen with per-field Edit controls; CI does not run Playwright.
-- **Verified measured:** pay-key probe artifact `docs/reports/MODEL_MATRIX_PAY_KEY_PROBE_2026-07-04.md` (10 candidates probed; passive 39 listing); `gemini-pro-latest` serves the banned preview → `*-latest` pro aliases forbidden (MODEL_ROLE_MATRIX law).
+- **Verified measured:** pay-key probe artifact `docs/reports/MODEL_MATRIX_PAY_KEY_PROBE_2026-07-04.md` (10 candidates probed; passive 39 listing); the forbidden pro-latest alias serves the banned preview family → `*-latest` pro aliases forbidden (MODEL_ROLE_MATRIX law).
 - **Honest remaining:** primary-Gemini window not run (multi-hour Google 503 storm on heavy calls); GT battery vs branch = EXPLORATORY 31.6% on N=19 via fallback reader (NOT acceptance; cert docs blocked by the storm); marriage-docs GT still owner-blank (worksheet extended to 8 docs in qa-private).
 
 ## 2026-07-04 | DeepSeek review helper — LOCAL_PASS / FLAGGED
@@ -196,7 +196,7 @@ on `feat/one-brain-reader-result` (NO_UPSTREAM — not pushed, remote CI has not
 
 ## 2026-06-27 | Cross-hand proof package UPGRADED: committed harness + clean military GT
 - **Committed** `scripts/htr/cross_hand_harness.py` — reproduces BOTH hands at FROZEN boxes, SHA-pinned fixtures, committed EXPECTED verdicts; strict-exact + folded-soft + CER + model_error scored separately. Verified locally: hand A (birth, RU) **strict_exact 3/3**, hand B (military, UA) **0/3** — both SHA-OK, both match EXPECTED. PII-safe config in-repo; raw+GT stay gitignored (qa-private). Closes the "no committed reproducible harness" gap.
-- **Cleaned military GT** (gitignored): single truthful `handwritten:true` (was `false`+`handwritten_actual:true`); removed stale `model_3.1-pro_draft` from `verification_method` → owner-based only.
+- **Cleaned military GT** (gitignored): single truthful `handwritten:true` (was `false`+`handwritten_actual:true`); removed stale model-draft provenance from `verification_method` → owner-based only.
 - Verdict unchanged, now REPRODUCIBLE: BIRTH RU PATH **PASS**; CROSS-HAND ZERO-SHOT HTR **FAILED** (committed); UA-TrOCR **BLOCKED/UNTESTED**; AUTO-FINALIZATION **FORBIDDEN**; HUMAN REVIEW **REQUIRED**.
 
 ## 2026-06-27 | Critical truth state of handwritten recognition after re-verify
@@ -441,7 +441,7 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 
 <!-- 2026-06-21 RC2: route now reports REAL reader model (read_models), not env default. Audit journal docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md -->
 
-<!-- 2026-06-21: full session audit journal written (docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md): RC1 corrected (no 3.1→2.5 fallback; model field was env-default bug), RC2 fixed, single-brain/C3/dictionaries/branch maps. -->
+<!-- 2026-06-21: full session audit journal written (docs/audit/2026-06-21-SESSION-AUDIT-ROOTCAUSE.md): RC1 corrected (no preview-primary→2.5 fallback; model field was env-default bug), RC2 fixed, single-brain/C3/dictionaries/branch maps. -->
 
 <!-- 2026-06-21: consolidation verdict — canon=translation/ru-and-model-matrix-fixes (green); merge-to-main gated (no common ancestor + history has redacted key + prod). -->
 

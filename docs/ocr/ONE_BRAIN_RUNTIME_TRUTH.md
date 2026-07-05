@@ -20,7 +20,7 @@
 
 **Model policy hard lock:** primary printed = `gemini-2.5-pro` (`modelMatrix.ts`: PRIMARY_READER;
 FALLBACK_MODELS = 3.5-flash, 2.5-flash — availability-only, force-review, никогда acceptance).
-Версия Gemini «три-точка-один» (любые её id) — НЕ рабочая опция: guard `noGemini31.guard.test.ts`
+Запретная preview-family Gemini (любые её id) — НЕ рабочая опция: guard `forbiddenPreviewFamily.guard.test.ts`
 валит CI на любое активное упоминание; исторические поверхности — HISTORICAL. Handwritten =
 НИКОГДА не LLM-acceptance, только review. GPT — printed-only availability, исключён на
 handwritten/cert families (`isHandwrittenFamily`).
@@ -44,7 +44,7 @@ handwritten/cert families (`isHandwrittenFamily`).
 | 12 | ASSESS→ZOOM verification re-read | FLAGGED | ASSESS_ZOOM_LOOP: критик называет HARD-противоречия → ≤4 платных перечиток; значения не меняет, review только вверх (zoom_mismatch). Переход: staging-наблюдение маркера + флип |
 | 13 | DeepSeek | LIVE | Наследие: TPS-brain включается НАЛИЧИЕМ ключа (key≠permission не инвертирован — ждёт [deepseek_brain_contribution] цифр + sign-off). Допустимая target-роль: дешёвый helper/analyst/explainer для системы и других агентов; НЕ silent final writer. Prose-инструменты (Watchdog-вердикт, Explainer-полировка) — strict-flag механизмы внутри узла, default OFF; локальный helper `scripts/shadow-watchdog.ts` читает aggregate-only logs |
 | 14 | HTR (raxtemur crop-транспорт) | BLOCKED_EXTERNAL | HTR_SIDECAR_URL не задан (owner-хост). Маршрут готов (crop-контракт + LLM-транспорт live-проверен механически); КАЧЕСТВО рукописи без HTR не решено — LLM на курсиве фабрикует (ADR-026) |
-| 15 | Model policy | LIVE | matrix (PRIMARY/FALLBACK/DEPRECATED/DISQUALIFIED) + acceptanceModelVerdict + noGemini31-guard в CI. Historical-упоминания запретной версии остаются на HISTORICAL-поверхностях by design |
+| 15 | Model policy | LIVE | matrix (PRIMARY/FALLBACK/DEPRECATED/DISQUALIFIED) + acceptanceModelVerdict + forbidden-preview-family guard в CI. Historical-упоминания запретной версии остаются на HISTORICAL-поверхностях by design |
 
 ## Детализация (вспомогательная; классы те же)
 
