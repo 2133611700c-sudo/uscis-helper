@@ -44,12 +44,37 @@ const fold = (s: string | null | undefined): string =>
   (s ?? '').toLowerCase().replace(/[^а-яёіїєґa-z0-9']/gu, '')
 
 /** Pure keys-only differ over the two readers' observations for the given name fields. */
+/** Birth-cert specs name the child fields child_* while the HTR route emits bare name keys —
+ * the KNOWN child_* namespace mismatch. The differ folds the prefix so the comparison is
+ * by SEMANTIC field, not by spelling of the key (live-caught 2026-07-05: without this the
+ * LLM side was invisible on birth certs and the marker lied 'htr_only'). */
+const baseKey = (k: string): string => k.replace(/^child_/, '')
+
+/** Fold the LLM side by SEMANTIC key with non-empty preference. Exported because the
+ * critic wiring must use the SAME pick (live-caught: an empty bare-key placeholder row
+ * from the HTR stage displaced the real child_* value in a naive map/find). */
+export function foldLlmByBaseKey(
+  llmFields: EnsembleLlmSide[],
+  nameFields: ReadonlySet<string>,
+): Map<string, EnsembleLlmSide> {
+  const m = new Map<string, EnsembleLlmSide>()
+  for (const f of llmFields) {
+    const key = baseKey(f.field)
+    if (!nameFields.has(key)) continue
+    const existing = m.get(key)
+    const existingHas = !!fold(existing?.raw_cyrillic ?? existing?.value)
+    const nextHas = !!fold(f.raw_cyrillic ?? f.value)
+    if (!existing || (!existingHas && nextHas)) m.set(key, f)
+  }
+  return m
+}
+
 export function diffHandwritingReaders(
   llmFields: EnsembleLlmSide[],
   htrReads: EnsembleHtrSide[],
   nameFields: ReadonlySet<string>,
 ): HandwritingEnsembleDiff {
-  const llmByKey = new Map(llmFields.filter((f) => nameFields.has(f.field)).map((f) => [f.field, f]))
+  const llmByKey = foldLlmByBaseKey(llmFields, nameFields)
   const htrByKey = new Map(htrReads.filter((h) => nameFields.has(h.field)).map((h) => [h.field, h]))
   const keys = new Set<string>([...llmByKey.keys(), ...htrByKey.keys()])
   const d: HandwritingEnsembleDiff = {

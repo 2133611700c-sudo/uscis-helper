@@ -64,3 +64,30 @@ describe('diffHandwritingReaders', () => {
     expect(json).not.toContain('Інше')
   })
 })
+
+describe('child_* namespace fold (live-caught 2026-07-05)', () => {
+  it('birth-cert child_family_name сравнивается с HTR family_name как ОДНО поле', () => {
+    const d = diffHandwritingReaders(
+      [{ field: 'child_family_name', raw_cyrillic: 'Тестенко' }],
+      [{ field: 'family_name', text: 'Тестенко', confidence: 0.95 }],
+      NAMES,
+    )
+    expect(d.agree_exact).toEqual(['family_name'])
+    expect(d.htr_only).toEqual([])
+  })
+})
+
+describe('placeholder collision (live-caught 2026-07-05)', () => {
+  it('пустой bare-key placeholder НЕ затирает непустой child_* при фолдинге', () => {
+    const d = diffHandwritingReaders(
+      [
+        { field: 'child_family_name', raw_cyrillic: 'Тестенко' },
+        { field: 'family_name', raw_cyrillic: null, value: null }, // placeholder из HTR-этапа
+      ],
+      [{ field: 'family_name', text: 'Тестенко', confidence: 0.95 }],
+      NAMES,
+    )
+    expect(d.agree_exact).toEqual(['family_name'])
+    expect(d.htr_only).toEqual([])
+  })
+})

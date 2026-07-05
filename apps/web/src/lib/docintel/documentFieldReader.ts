@@ -33,7 +33,7 @@ import { resolveAuthorityFields } from './authorityResolve'
 import { isHandwrittenFamily } from './modelMatrix'
 import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
 import { isAssessZoomEnabled, verifySuspectFieldsByZoom } from './ensemble/assessZoom'
-import { diffHandwritingReaders, isHandwritingEnsembleShadowEnabled } from './ensemble/handwritingEnsembleShadow'
+import { diffHandwritingReaders, foldLlmByBaseKey, isHandwritingEnsembleShadowEnabled } from './ensemble/handwritingEnsembleShadow'
 import { critiquePair, critiqueSingle } from '../canonical/core/linguisticCritic'
 import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
 import { isLlmCropReaderEnabled } from './providers/llmCropReader'
@@ -668,8 +668,11 @@ async function runHtrFieldStage(
       const ens = diffHandwritingReaders(out, htrSide, HTR_NAME_FIELDS)
       // Linguistic critic classifies each disagreement (owner doctrine: variant/1-char/
       // script conflicts are named, never auto-picked). Keys+signal codes only.
+      // The llm side is picked via the SAME semantic fold as the differ (live-caught:
+      // a naive find() hit the empty bare-key placeholder instead of the child_* value).
+      const llmPick = foldLlmByBaseKey(out, HTR_NAME_FIELDS)
       const conflict_signals = ens.disagree.map((key) => {
-        const llmVal = out.find((f) => f.field === key)
+        const llmVal = llmPick.get(key)
         const htrVal = htrSide.find((h) => h.field === key)
         const kind = key === 'patronymic' ? 'patronymic' as const : 'name' as const
         const signals = critiquePair(
@@ -682,7 +685,7 @@ async function runHtrFieldStage(
       // Audit fix: the script trap must fire on LONE candidates too (one reader empty).
       for (const key of [...ens.llm_only, ...ens.htr_only]) {
         const val = ens.llm_only.includes(key)
-          ? (out.find((f) => f.field === key)?.raw_cyrillic ?? out.find((f) => f.field === key)?.value ?? null)
+          ? (llmPick.get(key)?.raw_cyrillic ?? llmPick.get(key)?.value ?? null)
           : (htrSide.find((h) => h.field === key)?.text ?? null)
         const signals = critiqueSingle({ field: key, value: val, source: 'lone' }).map((s) => s.signal)
         if (signals.length) conflict_signals.push({ key, signals })
