@@ -92,6 +92,12 @@ Entity: SK Logistics LLC, Los Angeles, CA.
 - Branch: main (direct push)
 - Deploy: auto via Vercel on push
 - Healthcheck: `https://messenginfo.com/api/healthz`
+- **DEV RUNTIME SELF-HEAL (2026-07-05).** node_modules ломается, когда два процесса ставят
+  пакеты в один worktree. Диагноз+лечение одной командой: `bash scripts/dev-doctor.sh`
+  (проверяет next/vitest/tsc/sharp/tesseract/@swc, чистит approve-builds-мусор из
+  pnpm-workspace.yaml, лечит `pnpm install --force`). Build-allowlist декларативен в
+  package.json → pnpm.onlyBuiltDependencies — `pnpm approve-builds` запускать НЕ НУЖНО
+  и НЕЛЬЗЯ (прерванный промпт пишет мусор в pnpm-workspace.yaml).
 - **ONE ACTIVE COMMITTER PER WORKTREE (2026-07-04, owner rule).** Parallel agents in one
   worktree = the same disease as parallel finalValue writers. At any moment exactly ONE
   agent stages/commits; every other agent is read-only in that worktree (or works in its
