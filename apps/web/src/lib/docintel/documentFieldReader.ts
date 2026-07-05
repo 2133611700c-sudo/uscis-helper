@@ -34,7 +34,7 @@ import { isHandwrittenFamily } from './modelMatrix'
 import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
 import { isAssessZoomEnabled, verifySuspectFieldsByZoom } from './ensemble/assessZoom'
 import { diffHandwritingReaders, isHandwritingEnsembleShadowEnabled } from './ensemble/handwritingEnsembleShadow'
-import { critiquePair } from '../canonical/core/linguisticCritic'
+import { critiquePair, critiqueSingle } from '../canonical/core/linguisticCritic'
 import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
 import { isLlmCropReaderEnabled } from './providers/llmCropReader'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
@@ -679,6 +679,14 @@ async function runHtrFieldStage(
         ).map((s) => s.signal)
         return { key, signals }
       })
+      // Audit fix: the script trap must fire on LONE candidates too (one reader empty).
+      for (const key of [...ens.llm_only, ...ens.htr_only]) {
+        const val = ens.llm_only.includes(key)
+          ? (out.find((f) => f.field === key)?.raw_cyrillic ?? out.find((f) => f.field === key)?.value ?? null)
+          : (htrSide.find((h) => h.field === key)?.text ?? null)
+        const signals = critiqueSingle({ field: key, value: val, source: 'lone' }).map((s) => s.signal)
+        if (signals.length) conflict_signals.push({ key, signals })
+      }
       console.info('[handwriting_ensemble_shadow]', JSON.stringify({ doc_type_id: docTypeId, ...ens, conflict_signals }))
     } catch (e) {
       console.warn('[handwriting_ensemble_shadow] failed (ignored):', e instanceof Error ? e.message : String(e))

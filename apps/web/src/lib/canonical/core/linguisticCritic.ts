@@ -11,6 +11,12 @@
  *   - date_forms_agree: word-form date vs ISO date parse to the SAME instant — an
  *     agreement SIGNAL (handwritten stays review-gated regardless).
  *
+ * SCOPE HONESTY (audit 2026-07-05): this is a NARROW deterministic rule-pack — an
+ * extensible suffix/lookalike table, NOT a general linguistic model. Anything outside
+ * the table falls through to the generic candidates_conflict. Asymmetric regimes
+ * (one reader empty) are coverage facts classified by the ensemble differ, not here —
+ * except the script trap, which critiqueSingle flags on lone candidates too.
+ *
  * CONTRACT (owner law, typed in): the critic NEVER selects or rewrites a value —
  * `mayRewriteValue` is the literal type `false`. Output = signals/reasons for the
  * Decision Engine + prose hooks for the Review-Explainer. An optional LLM prose layer
@@ -69,6 +75,16 @@ const res = (
   severity: LinguisticCriticResult['severity'],
   reviewReason: string,
 ): LinguisticCriticResult => ({ field, signal, severity, reviewReason, mayRewriteValue: false })
+
+/** Script trap on a LONE candidate (Latin lookalikes inside Cyrillic) — the one linguistic
+ * check that must not wait for a second reader. */
+export function critiqueSingle(cand: LinguisticCandidate): LinguisticCriticResult[] {
+  const v = (cand.value ?? '').trim()
+  if (v && CYR.test(v) && LATIN_LOOKALIKE.test(v)) {
+    return [res(cand.field, 'script_mismatch', 'block', 'critic:latin_in_cyrillic_candidate')]
+  }
+  return []
+}
 
 /**
  * Judge a PAIR of reader candidates for one field. Pure, deterministic, dictionary-backed.

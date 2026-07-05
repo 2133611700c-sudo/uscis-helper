@@ -4,7 +4,7 @@
  * headline Ukrainian-document traps classify deterministically.
  */
 import { describe, it, expect } from 'vitest'
-import { critiquePair } from '../linguisticCritic'
+import { critiquePair, critiqueSingle } from '../linguisticCritic'
 
 const c = (field: string, value: string, source = 'htr') => ({ field, value, source })
 
@@ -43,5 +43,17 @@ describe('critiquePair — owner doctrine examples', () => {
   it('вывод не несёт значений (keys/signals only — PII-free)', () => {
     const out = critiquePair(c('family_name', 'Кожемятник'), c('family_name', 'Кожематник'), 'name')
     expect(JSON.stringify(out)).not.toContain('Кожем')
+  })
+})
+
+describe('critiqueSingle — script trap on a LONE candidate (audit fix)', () => {
+  it('латинский двойник в одиночном кириллическом кандидате → block', () => {
+    const out = critiqueSingle({ field: 'given_name', value: 'Iван', source: 'lone' })
+    expect(out.map((r) => r.signal)).toEqual(['script_mismatch'])
+    expect(out[0].severity).toBe('block')
+  })
+  it('чистая кириллица / пусто → ничего', () => {
+    expect(critiqueSingle({ field: 'given_name', value: 'Іван', source: 'lone' })).toEqual([])
+    expect(critiqueSingle({ field: 'given_name', value: null, source: 'lone' })).toEqual([])
   })
 })
