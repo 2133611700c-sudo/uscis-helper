@@ -1,7 +1,10 @@
 # DOWNLOADED UKRAINIAN MODEL — CAPABILITY BENCH (2026-07-05)
 
-HEAD: 9b82a2369cc3cbacfae3aa7a75ac481791bf5f41
-WORKTREE: dirty (current repo edits in `CHANGELOG.md`, `HANDOFF.md`, `STATUS.md`, `apps/web/src/app/[locale]/disclaimer/page.tsx`, `docs/reports/UKRAINIAN_CYRILLIC_TRANSLITERATION_TEST.md`; bench script lives in gitignored `qa-private/htr-poc/bench_downloaded_ukr_model.py`)
+HEAD: 5fa619b28ede267f94b22f1aff4842005ed06d7f
+WORKTREE: clean
+AUDIT_STATUS: CURRENT_HEADER_NORMALIZED
+BENCH_RUN_HEAD: 9b82a2369cc3cbacfae3aa7a75ac481791bf5f41
+BENCH_RUN_WORKTREE: dirty at time of measurement (session edits in CHANGELOG/HANDOFF/STATUS, `apps/web/src/app/[locale]/disclaimer/page.tsx`, transliteration report; bench script in gitignored `qa-private/htr-poc/bench_downloaded_ukr_model.py`)
 MODEL_NAME: cyrillic-trocr/trocr-ukrainian-handwritten
 MODEL_PATH: /Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten (local copy; also in HF cache)
 MODEL_FORMAT: transformers / safetensors (1.34 GB)
