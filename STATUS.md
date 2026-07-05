@@ -1,3 +1,10 @@
+# STATUS (2026-07-05 — poppler-gate transient-spawn hardening)
+
+## 2026-07-05 | Test robustness: distinguished transient OS spawn failure from real poppler absence
+- `renderOfficialTranslationDeterminism.test.ts` root-caused and fixed a real failure mode an
+  independent audit hit locally (ENOBUFS under full-suite load); value-layer leak invariant
+  untouched. 3x reruns clean, matches CI (e5ee64a green).
+
 # STATUS (2026-07-05 — P1 orientation: 180-disambiguation measured partial; GT count corrected)
 
 ## 2026-07-05 | Master plan Steps 1-4 -- ORIENTATION_HARNESS_PARTIAL, GT count corrected

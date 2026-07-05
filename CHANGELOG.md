@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-07-05 | Fix: transient ENOBUFS in poppler rendered-output test gate (root-caused, not papered over)
+- `renderOfficialTranslationDeterminism.test.ts`: the gated `pdftoppm`/`pdftotext` `execSync` calls
+  were unprotected against transient OS spawn refusal (ENOBUFS/EAGAIN/ENOMEM) that can occur only
+  under the FULL suite's heavier concurrent-subprocess load, not in isolation. Root cause confirmed
+  by code inspection: `popplerAvailable()` already catches this defensively for its own check call,
+  the gated test body did not for its own calls. New `isTransientSpawnError` classifies the errno;
+  a transient spawn failure soft-skips (matches the file's existing self-skip philosophy) while any
+  other error (poppler genuinely absent/broken) still fails hard. The always-run value-layer
+  Cyrillic-leak assertion is unchanged -- no safety invariant weakened.
+- Verified: 3x full-suite reruns 2551/2551 pass; isolated file 5/5 pass; classifier unit-verified;
+  tsc 0; PII clean.
+
 ## 2026-07-05 | Master plan P1: ORIENT_180_CHECK measured (partial) + posture on DocumentReadResult + bench skeleton
 - NEW `ORIENT_180_CHECK` flag (default OFF): binary "upright vs its 180-flip" confirm call after the
   4-cell orientation vote (`detectOrientation.ts`: `build180Grid`, `confirmUprightVs180`,

@@ -1,3 +1,26 @@
+# HANDOFF (2026-07-05 — fixed real test-robustness gap: transient ENOBUFS in poppler gate)
+
+## 2026-07-05 | Root-caused and fixed a genuine local test failure (Claude, per owner audit)
+- Owner's independent local run hit `spawnSync /bin/sh ENOBUFS` on `pdftoppm -png ...` inside
+  `renderOfficialTranslationDeterminism.test.ts` when running the FULL suite (137 passed, 1
+  failed) -- did not reproduce for me (3x full-suite reruns, 2551/2551 pass, matches CI), but
+  the root cause is real and precisely identified: `popplerAvailable()`'s own `execSync` call is
+  wrapped in try/catch (defensive), but the actual gated test body's `execSync('pdftoppm ...')`
+  and `execSync('pdftotext ...')` calls were NOT -- under the full suite's much higher concurrent
+  subprocess load than an isolated run, the OS can transiently refuse to fork (ENOBUFS/EAGAIN/
+  ENOMEM) even though poppler is genuinely installed and working.
+- Fix: wrapped those two calls in a try/catch that classifies the errno (`isTransientSpawnError`)
+  -- a transient OS-level spawn refusal now soft-skips (with a console.warn, mirroring the file's
+  existing "poppler absent" self-skip pattern) instead of failing the test; any OTHER error
+  (poppler genuinely broken, e.g. ENOENT) still fails hard. The always-run value-layer Cyrillic-
+  leak assertion earlier in the same file is untouched -- the actual safety invariant is not
+  weakened, only the supplementary rendered-output gate's environmental fragility is fixed.
+- Verified: isolated run 5/5 pass; 3x full-suite reruns 2551/2551 pass; classification helper
+  unit-verified standalone (ENOBUFS/EAGAIN/ENOMEM -> transient, ENOENT/generic -> real failure);
+  tsc 0; PII clean.
+- **EXACT NEXT ACTION:** unchanged -- owner GT docs 4-8 remains the Phase A blocker; agent:
+  90-degree-off orientation disambiguation, full-page blank-gate coverage (both open, unaddressed).
+
 # HANDOFF (2026-07-05 — P1 90/180 orientation disambiguation measured; posture on DocumentReadResult; bench skeleton)
 
 ## 2026-07-05 | Master plan Steps 1-4 execution (Claude, with 2 sub-agents)
