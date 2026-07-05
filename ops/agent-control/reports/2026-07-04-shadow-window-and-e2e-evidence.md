@@ -12,8 +12,12 @@ here is flip-ready; (2) «CI success» рядом с E2E — CI runs vitest only
 |---|---|---|---|
 | decision engine (`[decision_shadow]`) | 9 | 82 | diffs=0, unresolved_mismatches=0 |
 | gates-as-readers | 9 | — | loosening=0, mismatched=0 |
-| tps one-arbitration | **0** | — | NO DATA (TPS route has no GPT path; Gemini storm) |
-| normalize collapse | **0** | — | NO DATA (same) |
+| tps one-arbitration | **0** | — | NO DATA — CORRECTED CAUSE: TPS front-OCR = Google Vision → 403 `OCR_BILLING_DISABLED` (node 9, BLOCKED_EXTERNAL on owner billing), NOT the Gemini storm |
+| normalize collapse | **0** | — | NO DATA (same Vision-billing block) |
+
+**Cost fact (raw log):** each Gemini full read = est_cost 2000 micro-USD ($0.002); the whole
+evening's window spent well under $0.10 of the owner's $10 limit; key returned
+`serviceTier: standard` (paid tier active, limit NOT exhausted).
 
 **Qualifiers (mandatory):**
 - Reader for this window = **gpt-4.1 via READER_PROVIDER=openai** (all 17 reads force-reviewed
