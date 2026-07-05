@@ -15,6 +15,7 @@ const LOG = [
   '[recognize_retry_on_empty] {"product":"translation","doc_type_id":"ua_military_id"}',
   '[gates_as_readers_shadow] {"doc_type_id":"ua_birth_certificate","fields":12,"legacy_unresolved":3,"engine_unresolved":2,"unresolved_diff_keys":["dob"],"release_diff_keys":[],"engine_loosened_keys":["dob"],"engine_tightened_keys":[],"match":false}',
   '[normalize_collapse_shadow] {"doc_type_hint":"passport","fields":5,"signals":5,"value_diff_keys":["family_name"],"reject_diff_keys":[],"match":false}',
+  '[handwriting_ensemble_shadow] {"doc_type_id":"ua_military_id","fields_compared":3,"agree_exact":["family_name"],"agree_fold":[],"disagree":["given_name"],"llm_only":["patronymic"],"htr_only":[],"both_empty":[]}',
   'random unrelated line that must be ignored {"secret":"never-forwarded"}',
 ].join('\n')
 
@@ -22,7 +23,13 @@ describe('aggregateShadowLogs — deterministic, PII-free by construction', () =
   const agg = aggregateShadowLogs(LOG)
 
   it('parses exactly the known markers, ignores everything else', () => {
-    expect(agg.markers_parsed).toBe(9)
+    expect(agg.markers_parsed).toBe(10)
+  })
+
+  it('handwriting ensemble: informational reader-complementarity stats', () => {
+    expect(agg.handwriting_ensemble).toMatchObject({
+      docs: 1, fields_compared: 3, agree_total: 1, disagree_total: 1, llm_only_total: 1, htr_only_total: 0,
+    })
   })
 
   it('normalize_collapse shadow: any mismatch blocks the Phase-8 flip', () => {

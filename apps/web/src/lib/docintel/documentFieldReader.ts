@@ -33,6 +33,7 @@ import { resolveAuthorityFields } from './authorityResolve'
 import { isHandwrittenFamily } from './modelMatrix'
 import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
 import { isAssessZoomEnabled, verifySuspectFieldsByZoom } from './ensemble/assessZoom'
+import { diffHandwritingReaders, isHandwritingEnsembleShadowEnabled } from './ensemble/handwritingEnsembleShadow'
 import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
 import { isLlmCropReaderEnabled } from './providers/llmCropReader'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
@@ -654,6 +655,22 @@ async function runHtrFieldStage(
   for (const fld of wanted) {
     if (HTR_NAME_FIELDS.has(fld) && !present.has(fld)) {
       out.push({ field: fld, kind: kindOf.get(fld) ?? 'text', raw_cyrillic: null, value: null, confidence: 0, review_required: true, source: 'vision', provider: providerName })
+    }
+  }
+  // WEEK-PLAN #3 SHADOW (HANDWRITING_ENSEMBLE_SHADOW, strict '1', default OFF): the two
+  // readers are complementary BY HAND (measured 2026-07-05) — diff the full-page LLM
+  // observations vs the HTR crop reads BEFORE the fail-closed merge. Keys-only marker;
+  // zero extra paid calls; merge behavior unchanged.
+  if (isHandwritingEnsembleShadowEnabled()) {
+    try {
+      const ens = diffHandwritingReaders(
+        out,
+        htr.map((h) => ({ field: h.field, text: h.raw_htr_text, confidence: h.htr_confidence })),
+        HTR_NAME_FIELDS,
+      )
+      console.info('[handwriting_ensemble_shadow]', JSON.stringify({ doc_type_id: docTypeId, ...ens }))
+    } catch (e) {
+      console.warn('[handwriting_ensemble_shadow] failed (ignored):', e instanceof Error ? e.message : String(e))
     }
   }
   const merged = applyHtrFieldRoute(out, htr, HTR_NAME_FIELDS, HTR_NAME_FIELDS, minConf)

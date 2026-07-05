@@ -48,6 +48,15 @@ export interface WatchdogAggregate {
     reject_diff_total: number
     mismatched_docs: number
   }
+  /** informational (no flip gate): which handwriting reader sees what, per doc */
+  handwriting_ensemble: {
+    docs: number
+    fields_compared: number
+    agree_total: number
+    disagree_total: number
+    llm_only_total: number
+    htr_only_total: number
+  }
   /** deterministic verdicts — the flip-blocking conditions, computed locally */
   flags: {
     decision_flip_blocked: boolean
@@ -74,6 +83,7 @@ const empty = (): WatchdogAggregate => ({
     engine_loosened_total: 0, engine_tightened_total: 0, mismatched_docs: 0,
   },
   normalize_collapse_shadow: { docs: 0, value_diff_total: 0, reject_diff_total: 0, mismatched_docs: 0 },
+  handwriting_ensemble: { docs: 0, fields_compared: 0, agree_total: 0, disagree_total: 0, llm_only_total: 0, htr_only_total: 0 },
   flags: {
     decision_flip_blocked: false, arbitration_flip_blocked: false,
     gates_flip_blocked: false, normalize_flip_blocked: false, notes: [],
@@ -146,6 +156,16 @@ export function aggregateShadowLogs(logText: string): WatchdogAggregate {
       n.value_diff_total += ((j.value_diff_keys as string[] | undefined) ?? []).length
       n.reject_diff_total += ((j.reject_diff_keys as string[] | undefined) ?? []).length
       if (j.match === false) n.mismatched_docs++
+    } else if (line.includes('[handwriting_ensemble_shadow]')) {
+      const j = tryJson(line); if (!j) continue
+      agg.markers_parsed++
+      const h = agg.handwriting_ensemble
+      h.docs++
+      h.fields_compared += Number(j.fields_compared ?? 0)
+      h.agree_total += ((j.agree_exact as string[] | undefined) ?? []).length + ((j.agree_fold as string[] | undefined) ?? []).length
+      h.disagree_total += ((j.disagree as string[] | undefined) ?? []).length
+      h.llm_only_total += ((j.llm_only as string[] | undefined) ?? []).length
+      h.htr_only_total += ((j.htr_only as string[] | undefined) ?? []).length
     } else if (line.includes('[recognize_retry_on_empty]')) {
       agg.markers_parsed++
       agg.retry_on_empty_fired++
