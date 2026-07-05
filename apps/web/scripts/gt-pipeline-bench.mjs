@@ -398,6 +398,32 @@ for (const [cls, t] of Object.entries(byClass)) {
 md += `| **OVERALL** | ${overall.CORRECT} | ${overall.WRONG} | ${overall.MISS} | ${overall.FABRICATED} | ${overall.CORRECT_EMPTY} | **${pct(rate(overall))}** |\n\n`
 md += `Scored fields (denominator) = ${scoredN}. Verdict: **${verdictStamp}**.\n`
 
+// §2 provenance breakdown (single-ledger law: duplicate/scored flags read FROM gt._meta) +
+// §3 per-doc-type contract lines — a missing field is a FAIL only if the door can emit it.
+{
+  const seenHash = new Map()
+  let dupRows = 0
+  const uaDoor = []
+  const nonUa = []
+  for (const d of DOCS) {
+    let meta = {}
+    try { meta = JSON.parse(readFileSync(resolve(REPO, d.gt), 'utf8'))._meta ?? {} } catch { /* absent gt → handled elsewhere */ }
+    const hash = meta.physical_doc_hash ?? d.fixture
+    if (meta.duplicate_of || (seenHash.has(hash))) dupRows++
+    else seenHash.set(hash, d)
+    ;(d.docTypeId.startsWith('ua_') ? uaDoor : nonUa).push(d.docTypeId)
+  }
+  md += `\n## Provenance breakdown (§2 dedup law)\n\n`
+  md += `- raw_rows: ${DOCS.length}\n- duplicate_rows: ${dupRows} (marked in gt._meta.duplicate_of — never scored as separate docs)\n`
+  md += `- scored_unique_physical_docs: ${seenHash.size}\n- scored_fields: ${scoredN}\n`
+  md += `- UA-door doc types: ${[...new Set(uaDoor)].join(', ') || 'none'}\n- non-UA-door doc types: ${[...new Set(nonUa)].join(', ') || 'none'} (scored via their OWN doors — never as UA handwriting)\n`
+  md += `\n## Contract-driven fields (§3 schema-first)\n\n| DOC_TYPE | SCORED_FIELDS (from door contract map) |\n|---|---|\n`
+  for (const [docType, map] of Object.entries(FIELD_MAP_BY_DOC)) {
+    md += `| ${docType} | ${Object.keys(map).join(', ')} |\n`
+  }
+  md += `\nWITHDRAWN by measurement/design: ua_military_id.sex (absent from registry spec AND TPS contract — scoring it was a structural false-MISS); EAD/I-94 via the UA door (ADR-016).\n`
+}
+
 const outMd = resolve(REPO, 'docs/reports', `GT_PIPELINE_BENCH_${stamp}${DRY ? '_DRY' : ''}.md`)
 writeFileSync(outMd, md)
 process.stderr.write(`✓ wrote ${outMd} (sanitized) + qa-private raw dump\n`)
