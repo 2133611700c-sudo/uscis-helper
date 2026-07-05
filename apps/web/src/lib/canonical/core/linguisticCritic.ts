@@ -4,10 +4,10 @@
  * facts, not judgment calls, so no LLM is needed (or allowed) to flag them:
  *
  *   - language_variant_conflict: two reader candidates are the RU vs UA form of the same
- *     patronymic (Сергеевич vs Сергійович) — different WRITINGS, never silently merged.
+ *     patronymic (Матвеевич vs Матвійович) — different WRITINGS, never silently merged.
  *   - script_mismatch: Latin lookalikes inside a Cyrillic candidate (І↔I, Е↔E, Р↔P...).
  *   - one_char_name_conflict: two plausible Cyrillic surname candidates differ by ~1 char
- *     (Куропятник vs Куропатник) — cannot be auto-picked; review with both shown.
+ *     (Кожемятник vs Кожематник) — cannot be auto-picked; review with both shown.
  *   - date_forms_agree: word-form date vs ISO date parse to the SAME instant — an
  *     agreement SIGNAL (handwritten stays review-gated regardless).
  *

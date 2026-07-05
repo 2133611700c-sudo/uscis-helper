@@ -9,14 +9,14 @@ import { critiquePair } from '../linguisticCritic'
 const c = (field: string, value: string, source = 'htr') => ({ field, value, source })
 
 describe('critiquePair — owner doctrine examples', () => {
-  it('фамилия: Куропятник vs Куропатник → one_char_name_conflict, never auto-pick', () => {
-    const out = critiquePair(c('family_name', 'Куропятник'), c('family_name', 'Куропатник', 'gemini_full_page'), 'name')
+  it('фамилия: Кожемятник vs Кожематник → one_char_name_conflict, never auto-pick', () => {
+    const out = critiquePair(c('family_name', 'Кожемятник'), c('family_name', 'Кожематник', 'gemini_full_page'), 'name')
     expect(out.map((r) => r.signal)).toEqual(['one_char_name_conflict'])
     expect(out[0].mayRewriteValue).toBe(false)
   })
 
-  it('отчество: Сергеевич (RU) vs Сергійович (UA) → language_variant_conflict', () => {
-    const out = critiquePair(c('patronymic', 'Сергеевич'), c('patronymic', 'Сергійович', 'gemini_full_page'), 'patronymic')
+  it('отчество: Матвеевич (RU) vs Матвійович (UA) → language_variant_conflict', () => {
+    const out = critiquePair(c('patronymic', 'Матвеевич'), c('patronymic', 'Матвійович', 'gemini_full_page'), 'patronymic')
     expect(out.map((r) => r.signal)).toEqual(['language_variant_conflict'])
   })
 
@@ -41,7 +41,7 @@ describe('critiquePair — owner doctrine examples', () => {
   })
 
   it('вывод не несёт значений (keys/signals only — PII-free)', () => {
-    const out = critiquePair(c('family_name', 'Куропятник'), c('family_name', 'Куропатник'), 'name')
-    expect(JSON.stringify(out)).not.toContain('Куроп')
+    const out = critiquePair(c('family_name', 'Кожемятник'), c('family_name', 'Кожематник'), 'name')
+    expect(JSON.stringify(out)).not.toContain('Кожем')
   })
 })

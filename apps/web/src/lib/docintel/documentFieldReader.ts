@@ -34,6 +34,7 @@ import { isHandwrittenFamily } from './modelMatrix'
 import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
 import { isAssessZoomEnabled, verifySuspectFieldsByZoom } from './ensemble/assessZoom'
 import { diffHandwritingReaders, isHandwritingEnsembleShadowEnabled } from './ensemble/handwritingEnsembleShadow'
+import { critiquePair } from '../canonical/core/linguisticCritic'
 import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
 import { isLlmCropReaderEnabled } from './providers/llmCropReader'
 import { applyAntiFabricationGate, HANDWRITTEN_FABRICATION_RISK_CLASSES } from './antiFabricationGate'
@@ -663,12 +664,22 @@ async function runHtrFieldStage(
   // zero extra paid calls; merge behavior unchanged.
   if (isHandwritingEnsembleShadowEnabled()) {
     try {
-      const ens = diffHandwritingReaders(
-        out,
-        htr.map((h) => ({ field: h.field, text: h.raw_htr_text, confidence: h.htr_confidence })),
-        HTR_NAME_FIELDS,
-      )
-      console.info('[handwriting_ensemble_shadow]', JSON.stringify({ doc_type_id: docTypeId, ...ens }))
+      const htrSide = htr.map((h) => ({ field: h.field, text: h.raw_htr_text, confidence: h.htr_confidence }))
+      const ens = diffHandwritingReaders(out, htrSide, HTR_NAME_FIELDS)
+      // Linguistic critic classifies each disagreement (owner doctrine: variant/1-char/
+      // script conflicts are named, never auto-picked). Keys+signal codes only.
+      const conflict_signals = ens.disagree.map((key) => {
+        const llmVal = out.find((f) => f.field === key)
+        const htrVal = htrSide.find((h) => h.field === key)
+        const kind = key === 'patronymic' ? 'patronymic' as const : 'name' as const
+        const signals = critiquePair(
+          { field: key, value: llmVal?.raw_cyrillic ?? llmVal?.value ?? null, source: 'gemini_full_page' },
+          { field: key, value: htrVal?.text ?? null, source: 'htr' },
+          kind,
+        ).map((s) => s.signal)
+        return { key, signals }
+      })
+      console.info('[handwriting_ensemble_shadow]', JSON.stringify({ doc_type_id: docTypeId, ...ens, conflict_signals }))
     } catch (e) {
       console.warn('[handwriting_ensemble_shadow] failed (ignored):', e instanceof Error ? e.message : String(e))
     }
