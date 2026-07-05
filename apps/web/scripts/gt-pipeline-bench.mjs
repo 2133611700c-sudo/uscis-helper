@@ -69,6 +69,12 @@ const DOCS = [
   { fixture: 'test-fixtures/real-docs/birth_cert_handwritten_01.jpg', gt: 'qa-private/ground-truth/birth_cert_handwritten_01.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (handwritten)' },
   { fixture: 'test-fixtures/real-docs/birth_cert_soviet_01.jpg', gt: 'qa-private/ground-truth/birth_cert_soviet_01.json', docTypeId: 'ua_birth_certificate', label: 'birth_certificate (Soviet bilingual)' },
   { fixture: 'test-fixtures/real-docs/military_id_p1_01.jpg', gt: 'qa-private/ground-truth/military_id_p1_01.json', docTypeId: 'ua_military_id', label: 'military_id_p1 (printed+hw)' },
+  // 2026-07-05 — three MORE owner-filled GT docs were sitting in qa-shots/private and were
+  // never in this manifest: the owner's international-passport photo, the I-94 printout,
+  // the EAD card. Adding them grows the scored denominator without any new photography.
+  { fixture: 'qa-shots/private/Passport Sergii Kuropiatnyk .jpg', gt: 'qa-private/ground-truth/international_passport_owner_fill.json', docTypeId: 'ua_international_passport', label: 'international_passport (owner photo)' },
+  { fixture: 'qa-shots/private/I94 Sergii Kuropiatnyk .jpg', gt: 'qa-private/ground-truth/i94_owner_fill.json', docTypeId: 'us_i94', label: 'us_i94 (printout)' },
+  { fixture: 'qa-shots/private/Ead1.jpg', gt: 'qa-private/ground-truth/ead_owner_fill.json', docTypeId: 'us_ead', label: 'us_ead (card)' },
 ]
 
 // Per-doc-class map: route field name → { latin: GT key, cyr?: GT key }.
@@ -86,6 +92,19 @@ const FIELD_MAP_BY_DOC = {
   ua_internal_passport_booklet: { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' }, city_of_birth: { latin: 'place_of_birth_english' }, province_of_birth: { latin: 'province' } },
   ua_military_id:               { ...PERSON(), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
   ua_birth_certificate:         { ...PERSON('child_'), dob: { latin: 'date_of_birth' }, sex: { latin: 'sex' } },
+  // US docs (owner_fill GT uses flat English keys; these docs carry NO cyr channel).
+  us_i94: {
+    family_name: { latin: 'family_name' }, given_name: { latin: 'given_name' },
+    date_of_birth: { latin: 'date_of_birth' }, i94_admission_number: { latin: 'i94_admission_number' },
+    i94_class_of_admission: { latin: 'i94_class_of_admission' }, i94_date_of_entry: { latin: 'i94_date_of_entry' },
+    i94_place_of_entry: { latin: 'i94_place_of_entry' },
+  },
+  us_ead: {
+    family_name: { latin: 'family_name' }, given_name: { latin: 'given_name' },
+    card_number: { latin: 'card_number' }, a_number: { latin: 'a_number' },
+    ead_category: { latin: 'ead_category' }, ead_validity_from: { latin: 'ead_validity_from' },
+    ead_validity_to: { latin: 'ead_validity_to' }, country_of_birth: { latin: 'country_of_birth' },
+  },
 }
 
 // ── normalization (conservative) ─────────────────────────────────────────────
