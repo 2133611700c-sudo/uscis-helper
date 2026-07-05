@@ -2629,3 +2629,8 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - `next build` now completes and emits `/[locale]/disclaimer` for all 4 locales.
 - `pnpm --dir apps/web run typecheck` now passes on the fresh build output.
 - Report verdict updated to `TRANSLITERATION_PASS`.
+
+## 2026-07-05 | Audit: downloaded Ukrainian model capability bench
+- Identified the downloaded local artifact as `cyrillic-trocr/trocr-ukrainian-handwritten` at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`.
+- Verified with a direct HTR crop bench via `qa-private/htr-poc/bench_downloaded_ukr_model.py` on the frozen birth-certificate and military-id crops.
+- Live result: 0/6 exact or partial on the two hands, blank crop fabricated 3/3, so the model is not a reader as-is and is only a fine-tune candidate.
