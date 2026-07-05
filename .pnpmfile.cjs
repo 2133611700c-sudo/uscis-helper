@@ -17,40 +17,23 @@
 'use strict'
 const { spawnSync } = require('node:child_process')
 const path = require('node:path')
+const {
+  MUTATING,
+  isPnpmLauncher,
+  isMutatingPnpmInvocation,
+  pnpmSubcommand,
+} = require('./scripts/runner-guard-logic.cjs')
 
 // This file is require()d INSIDE the pnpm process, so process.argv carries the pnpm
 // subcommand. Enforce ONLY on node_modules-MUTATING subcommands — `pnpm exec/run/test/dev`
 // must never be blocked (measured 2026-07-05: an unscoped guard paralyzed vitest runs).
-const MUTATING = new Set([
-  'install', 'i', 'add', 'update', 'up', 'upgrade', 'remove', 'rm', 'uninstall', 'un',
-  'link', 'ln', 'unlink', 'import', 'rebuild', 'rb', 'prune', 'dedupe', 'patch-commit', 'fetch',
-])
-// argv parsing: skip flags AND the values of known value-taking flags (--dir apps/web
-// must not read "apps/web" as the subcommand); unwrap `recursive`/`m` prefixes.
-// AUDIT FIX 2026-07-05: --workspace-root/-w are BOOLEAN — listing them as value-taking
-// swallowed the real subcommand (`pnpm --workspace-root rebuild` parsed to '' and
-// bypassed enforcement — reproduced by the independent audit).
-const VALUE_FLAGS = new Set(['--dir', '-C', '--filter', '-F', '--filter-prod', '--loglevel'])
-function pnpmSubcommand(argv) {
-  const args = argv.slice(2)
-  for (let k = 0; k < args.length; k++) {
-    const a = args[k]
-    if (VALUE_FLAGS.has(a)) { k++; continue }
-    if (a.startsWith('-')) continue // boolean flags incl. --workspace-root/-w/-r and --x=value forms
-    if (a === 'recursive' || a === 'm' || a === 'multi') continue // pnpm recursive <cmd>
-    return a.toLowerCase()
-  }
-  return ''
-}
-const sub = pnpmSubcommand(process.argv)
 // Enforcement scope: ONLY when this process actually IS pnpm (argv[1] is the pnpm
 // entrypoint). Test runners and tooling may require() this file for its exports — they
-// must never trigger the guard (measured: vitest worker argv parsed to '' and refused).
-const isPnpmProcess = /(^|[/\\])pnpm(\.c?js)?$/.test(process.argv[1] || '')
+// must never trigger the guard.
 // FAIL-CLOSED on unparseable pnpm command lines: no recognizable subcommand ⇒ treat as
 // potentially mutating. Every legitimate exec/run/test/dev call has a clear subcommand
 // token, so this cannot re-introduce the exec-paralysis bug.
-const enforce = isPnpmProcess && (sub === '' || MUTATING.has(sub))
+const enforce = isMutatingPnpmInvocation(process.argv)
 
 if (enforce) {
   try {
@@ -65,4 +48,4 @@ if (enforce) {
   }
 }
 
-module.exports = { hooks: {}, _internal: { pnpmSubcommand, MUTATING } }
+module.exports = { hooks: {}, _internal: { pnpmSubcommand, MUTATING, isPnpmLauncher, isMutatingPnpmInvocation } }

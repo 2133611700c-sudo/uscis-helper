@@ -19,6 +19,7 @@
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import runnerGuard from './runner-guard-logic.cjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -51,11 +52,10 @@ try {
   // Shell wrappers (zsh/bash -c '...') merely QUOTE the command text in their own cmdline —
   // measured false positive 2026-07-05: the agent shell that launched `pnpm add` got flagged.
   // The real installer is always the node/pnpm child process, which still matches.
-  const installRe = /pnpm(\.cjs)?["' ]+(install|add|update|remove|up|i)\b|npm (install|ci)\b|yarn( install)?$/
   const shellWrapperRe = /\b(zsh|bash|sh)\s+-l?c\b/
   const otherInstalls = lines.filter((l) => {
     const pid = Number(l.trim().split(/\s+/)[0])
-    return installRe.test(l) && !shellWrapperRe.test(l) && !self.has(pid)
+    return runnerGuard.looksLikeInstallCmdline(l) && !shellWrapperRe.test(l) && !self.has(pid)
   })
   if (otherInstalls.length > 0) {
     console.error('✗ install-guard: ANOTHER package install is already running:')
@@ -68,7 +68,7 @@ try {
   // (2) a live dev/watch server whose cwd is inside THIS worktree (audit 2026-07-05:
   // widened beyond next dev — any watcher holding module files breaks under a file swap)
   const devPids = lines
-    .filter((l) => /next(\.js)? dev|next-server|pnpm .*\bdev\b|vitest\b(?!.*\brun\b)|tsx watch|playwright test-server/.test(l))
+    .filter((l) => runnerGuard.looksLikeDevWatcherCmdline(l))
     .filter((l) => !/\b(zsh|bash|sh)\s+-l?c\b/.test(l))
     .map((l) => Number(l.trim().split(/\s+/)[0]))
     .filter((pid) => Number.isFinite(pid) && !self.has(pid))

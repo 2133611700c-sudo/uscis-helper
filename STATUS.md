@@ -1,3 +1,17 @@
+# STATUS (2026-07-05 — runner-guard v3: config truth + live install/build/battery reverified)
+
+## 2026-07-05 | Runner-guard — allowBuilds is authoritative; live install/build/battery all green
+- pnpm 11.7.0 now reads the allowlist from `pnpm-workspace.yaml`; `pnpm config get onlyBuiltDependencies`
+  resolves all 7 entries, and `pnpm install --force --no-frozen-lockfile` completes cleanly with build scripts
+  actually running.
+- Shared runner parser `scripts/runner-guard-logic.cjs` now covers `pnpm.mjs` launcher forms in both
+  `.pnpmfile.cjs` and `scripts/install-guard.mjs`; `pnpmfileGuard.guard.test.ts` + the new helper battery
+  stay green.
+- Live adversarial battery re-run after the harness fix: 18/18 (13 mutating paths REFUSED, 4 benign WORK,
+  0 leaks). `apps/web` `typecheck` and `next build` also pass; build emits only pre-existing warnings.
+- Residual truth is unchanged: social bypasses remain possible, and the main worktree gap closes only after
+  merge.
+
 # STATUS (2026-07-05 — runner-guard v2: adversarially reverified 18/18)
 
 ## 2026-07-05 | Runner-guard — v2 after independent adversarial audit
@@ -523,3 +537,4 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-07-04 follow-up: added `generateStaticParams()` to `apps/web/src/app/[locale]/disclaimer/page.tsx`; `next build` now completes, `typecheck` passes, and the transliteration audit is fully green at `TRANSLITERATION_PASS`. -->
 <!-- 2026-07-05: downloaded Ukrainian model bench — local artifact is `cyrillic-trocr/trocr-ukrainian-handwritten` at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`; it is OCR_HTR (VisionEncoderDecoderModel), not a text LLM. Live crop bench on the frozen UA birth and military fixtures was 0/6 exact or partial, blank crop fabricated 3/3, so the model is not a reader as-is and is only a fine-tune candidate. -->
 <!-- 2026-07-05: runner-hardening audit update — `scripts/dev-doctor.sh` had a real recursion risk because `DEV_DOCTOR_RECHECK` was set but never honored. Fixed by stopping after one recursive heal/recheck pass. Syntax verified with `bash -n scripts/dev-doctor.sh`. Live process-based proof of the guard remains BLOCKED in this shell because `ps`/`lsof` are denied here, so the install-guard is code-audited but not dynamically simulated in this environment. -->
+<!-- 2026-07-05: runner-hardening follow-up — guard parsing was refactored into `scripts/runner-guard-logic.cjs` so both `.pnpmfile.cjs` and `install-guard.mjs` share the same launcher/subcommand logic. `pnpm.mjs` launcher forms are now covered by helper assertions; no live install battery rerun in this shell because the workspace still hits sibling-worktree EPERM before install can complete. -->

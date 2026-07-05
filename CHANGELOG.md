@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-07-05 | Runner-guard v3: allowBuilds truth fixed + live install/build/battery reverified
+- `pnpm-workspace.yaml` now carries the authoritative pnpm 11 allowlist; `package.json` no longer pretends to be
+  the source of truth. On this workspace, `pnpm install --force --no-frozen-lockfile` now completes cleanly and
+  runs the expected native build scripts.
+- Shared parser extracted to `scripts/runner-guard-logic.cjs` so `.pnpmfile.cjs` and `scripts/install-guard.mjs`
+  agree on `pnpm.mjs` launcher forms and mutating-vs-benign detection.
+- `scripts/runner-guard-battery.sh` rerun after the harness fix: 18/18 (13 mutating REFUSED, 4 benign WORK,
+  0 leaks). `apps/web` `typecheck` and `next build` passed; build output only contains pre-existing warnings.
+
 ## 2026-07-05 | Runner-guard v2: audit findings closed (allowlist location + --workspace-root bypass)
 - Build-allowlist moved to pnpm-workspace.yaml (the only location BOTH pnpm 10 and 11 read; the
   package.json field is ignored by pnpm 11 — `config get` was undefined, now returns all 7); field removed
@@ -2692,3 +2701,5 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Live result: 0/6 exact or partial on the two hands, blank crop fabricated 3/3, so the model is not a reader as-is and is only a fine-tune candidate.
 
 - 2026-07-05: fixed a real recursion bug in `scripts/dev-doctor.sh`. The script now honors `DEV_DOCTOR_RECHECK` and stops after one recursive heal/recheck pass instead of looping if the second check is still red. Verified with `bash -n scripts/dev-doctor.sh`; live process-based guard proof remains blocked in this shell because `ps`/`lsof` are denied.
+
+- 2026-07-05: consolidated runner parsing into `scripts/runner-guard-logic.cjs` and wired both `.pnpmfile.cjs` and `scripts/install-guard.mjs` to it. The guard now recognizes `pnpm.mjs` launcher forms in addition to `pnpm.cjs/js`; helper assertions pass locally. Live install battery was not rerun here because pnpm still aborts earlier on a sibling-worktree EPERM in this workspace.

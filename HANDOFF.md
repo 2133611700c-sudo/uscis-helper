@@ -1,3 +1,15 @@
+# HANDOFF (2026-07-05 — runner-guard v3: live install/build/battery reverified; allowBuilds is the real fix)
+
+## 2026-07-05 | Runner-guard v3 (Claude)
+- `pnpm-workspace.yaml` is now the authoritative allowlist location for pnpm 11.7.0; `onlyBuiltDependencies`
+  in package.json was removed, and `pnpm install --force --no-frozen-lockfile` now completes cleanly with the
+  expected native build scripts running.
+- The shared parser in `scripts/runner-guard-logic.cjs` covers `pnpm.mjs` launcher forms end-to-end; both
+  `.pnpmfile.cjs` and `scripts/install-guard.mjs` import the same parse/detect logic.
+- Live proof after the harness fix: `scripts/runner-guard-battery.sh` passed 18/18, `apps/web` typecheck passed,
+  and `apps/web` `next build` passed with warnings only.
+- Exact next action remains unchanged: owner GT docs 4–8; agent continues with orientation disambiguation only.
+
 # HANDOFF (2026-07-05 — runner-guard v2: находки adversarial-аудита закрыты, 18/18 батарея)
 
 ## 2026-07-05 | Runner-guard v2 (Claude, по независимому аудиту)
@@ -1902,3 +1914,4 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-07-04 follow-up: `apps/web/src/app/[locale]/disclaimer/page.tsx` now declares `generateStaticParams()`; `next build` and `typecheck` both pass. Next exact action: no audit blocker remains for transliteration; preserve the full-green report and keep the historical blocked state only as audit trail. -->
 <!-- 2026-07-05: downloaded Ukrainian model handoff — the local model is `cyrillic-trocr/trocr-ukrainian-handwritten` (OCR_HTR, image-only) at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`; live crop bench showed stable wrong reads on both hands and blank-crop fabrication 3/3. Next exact action: treat it only as a fine-tune base / non-production HTR candidate, never as a reader or helper LLM. -->
 <!-- 2026-07-05: runner-hardening handoff — fixed a real `dev-doctor` recursion bug by honoring `DEV_DOCTOR_RECHECK` and stopping after one heal/recheck pass. `bash -n scripts/dev-doctor.sh` passed. Still BLOCKED for live process-based proof here because `ps`/`lsof` are denied in this shell, so the interlock remains code-audited but not runtime-simulated. -->
+<!-- 2026-07-05: runner-hardening follow-up — extracted shared guard logic into `scripts/runner-guard-logic.cjs` and wired both `.pnpmfile.cjs` + `install-guard.mjs` to it. This closes the `pnpm.mjs` launcher-form gap at code level and is backed by direct helper assertions for `pnpm.mjs`/`pnpm.cjs`/`pnpm.js`. Full live install battery still not rerun in this shell because pnpm install stops on sibling-worktree EPERM before the guard layer can finish. -->

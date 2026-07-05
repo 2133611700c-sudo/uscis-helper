@@ -15,14 +15,14 @@ fi
 
 pass=0; failn=0
 refuse() { # cmd... : must refuse via guard
-  if eval "$*" 2>&1 | grep -qE "✗ install-guard"; then
+  if bash -lc "$*" 2>&1 | grep -qE "✗ install-guard"; then
     echo "REFUSED  ✓  pnpm-path: $*"; pass=$((pass+1))
   else
     echo "EXECUTED ✗✗ BYPASS: $*"; failn=$((failn+1))
   fi
 }
 works() { # cmd... : must succeed
-  if eval "$*" >/dev/null 2>&1; then
+  if bash -lc "$*" >/dev/null 2>&1; then
     echo "WORKS    ✓  benign:    $*"; pass=$((pass+1))
   else
     echo "BLOCKED  ✗✗ paralysis: $*"; failn=$((failn+1))

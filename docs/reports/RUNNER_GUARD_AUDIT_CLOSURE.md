@@ -65,6 +65,22 @@ Heuristic-природа ps/lsof-детекта и лимиты symlink-скан
 ОСТАЮТСЯ: это детект-слой поверх двух enforcement-точек, не замена им; fail-open там
 намеренный (guard не должен сам ломать установку).
 
-FINAL VERDICT: RUNNER_GUARD_HARDENED_AND_ADVERSARIALLY_REVERIFIED — 18/18 батарея,
-7/7 контракт-тестов в CI, allowlist доказан действующим; остаточное = социальный слой
-(SAFE_INSTALL=1 / --ignore-pnpmfile), эвристика ps/lsof, merge-gap main — все записаны.
+## v3 — launcher-form hardening через shared parser (2026-07-05, после рефактора)
+
+| Находка | Фикс | Живое доказательство |
+|---|---|---|
+| `pnpm.mjs` launcher не был покрыт локальными regex в обеих точках | Общая логика вынесена в `scripts/runner-guard-logic.cjs`; `.pnpmfile.cjs` и `scripts/install-guard.mjs` теперь импортируют один и тот же parser/helper | Direct helper assertions passed: `isPnpmLauncher('/x/pnpm.mjs')`, `pnpmSubcommand(['node','/x/pnpm.mjs','--workspace-root','rebuild'])`, `looksLikeInstallCmdline('node /path/pnpm.mjs install')`, `looksLikeDevWatcherCmdline('node /path/pnpm.mjs dev')` |
+| Разъезд логики между preinstall и pnpmfile | Один helper-модуль для `MUTATING`, launcher-detect, subcommand parse, install/dev cmdline detect | `node --check scripts/install-guard.mjs` + `node --check .pnpmfile.cjs` passed; helper assertions passed locally |
+
+## v4 — live install/build/battery reverified after shared-parser refactor (2026-07-05)
+
+| Check | Result | Evidence |
+|---|---|---|
+| `pnpm install --force --no-frozen-lockfile` | PASS | `pnpm config get onlyBuiltDependencies` returns all 7; build scripts run; no ignored-builds warning |
+| `scripts/runner-guard-battery.sh` | PASS | 18/18 after harness fix (`bash -lc` execution path) |
+| `apps/web` typecheck | PASS | `CI=true pnpm --dir apps/web run typecheck` |
+| `apps/web` build | PASS | `CI=true pnpm --dir apps/web run build` completed with warnings only |
+
+FINAL VERDICT: RUNNER_GUARD_HARDENED_AND_ADVERSARIALLY_REVERIFIED — allowBuilds authoritative,
+shared parser covers `pnpm.mjs`, live install/build/battery all green; residual = social layer
+(SAFE_INSTALL=1 / --ignore-pnpmfile), ps/lsof heuristics, merge-gap main — all recorded.

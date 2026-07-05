@@ -14,17 +14,27 @@ import { fileURLToPath } from 'node:url'
 const require_ = createRequire(import.meta.url)
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const pnpmfile = require_(path.resolve(HERE, '../../../../../.pnpmfile.cjs'))
-const { pnpmSubcommand, MUTATING } = pnpmfile._internal as {
+const { pnpmSubcommand, MUTATING, isPnpmLauncher } = pnpmfile._internal as {
   pnpmSubcommand: (argv: string[]) => string
   MUTATING: Set<string>
+  isPnpmLauncher: (argv1: string) => boolean
 }
-const argv = (...a: string[]) => ['node', '/x/pnpm.cjs', ...a]
+const argv = (...a: string[]) => ['node', '/x/pnpm.mjs', ...a]
 const enforces = (...a: string[]) => {
   const sub = pnpmSubcommand(argv(...a))
   return sub === '' || MUTATING.has(sub)
 }
 
 describe('pnpmSubcommand — audit bypasses (must ENFORCE)', () => {
+  it('pnpm.mjs / pnpm.cjs / pnpm.js all count as the pnpm launcher', () => {
+    expect(isPnpmLauncher('/x/pnpm.mjs')).toBe(true)
+    expect(isPnpmLauncher('/x/pnpm.cjs')).toBe(true)
+    expect(isPnpmLauncher('/x/pnpm.js')).toBe(true)
+    expect(isPnpmLauncher('/x/pnpm')).toBe(true)
+    expect(isPnpmLauncher('/x/node_modules/pnpm/bin/pnpm.mjs')).toBe(true)
+    expect(isPnpmLauncher('/x/node_modules/pnpm/bin/pnpm')).toBe(true)
+  })
+
   it('--workspace-root is BOOLEAN: rebuild/prune/add/install behind it are seen', () => {
     expect(pnpmSubcommand(argv('--workspace-root', 'rebuild'))).toBe('rebuild')
     expect(enforces('--workspace-root', 'rebuild')).toBe(true)
