@@ -2778,6 +2778,7 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Live probes on `birth_cert_handwritten_01.jpg` and `military_id_p1_01.jpg` both resolved posture to upright via content_orient cw=90.
 - Gemini hit HTTP 429 RESOURCE_EXHAUSTED in this shell, so the CLI now supports an explicit `--provider openai` fallback; that fallback successfully read both documents and returned handwritten Cyrillic fields with review_required=true.
 - Verified by targeted vitest for orientation, `pnpm --dir apps/web exec tsc --noEmit`, and `node scripts/check-no-pii.mjs`.
+- Follow-up: the CLI now accepts common file-name aliases such as `internal_passport_01` → `ua_internal_passport_booklet`, but that fixture still returns `ok` with 0 handwritten fields under the openai fallback. That is a real reader gap, not an aliasing bug.
 
 ## 2026-07-05 | Shadow window run + live wizard E2E + model-probe artifacts + truth-lock evidence pass
 - Ran the first shadow window against branch code (local server, real docs): decision/gates differs clean on N=9/82 fields (openai reader; below flip bar), TPS markers blocked by Vision billing 403 (corrected attribution — not Gemini/key). Files: `ops/agent-control/reports/2026-07-04-shadow-window-and-e2e-evidence.md`, `2026-07-05-open-items-master.md`.

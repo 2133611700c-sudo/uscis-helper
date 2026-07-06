@@ -36,13 +36,30 @@ function getArg(name: string): string | null {
   return process.argv[idx + 1] && !process.argv[idx + 1].startsWith('--') ? process.argv[idx + 1] : null
 }
 
+function normalizeDocTypeId(value: string): { docTypeId: string; aliasUsed: string | null } {
+  const raw = value.trim()
+  const aliases: Record<string, string> = {
+    internal_passport_01: 'ua_internal_passport_booklet',
+    internal_passport: 'ua_internal_passport_booklet',
+    passport_booklet: 'ua_internal_passport_booklet',
+    birth_cert_handwritten_01: 'ua_birth_certificate',
+    birth_cert_soviet_01: 'ua_birth_certificate',
+    military_id_p1_01: 'ua_military_id',
+    military_id_p2_01: 'ua_military_id',
+    marriage_1939_kharkiv_borodavka: 'ua_marriage_certificate',
+    marriage_apostille_vasylsiuk: 'ua_marriage_certificate',
+  }
+  const normalized = aliases[raw] ?? raw
+  return { docTypeId: normalized, aliasUsed: normalized === raw ? null : `${raw}→${normalized}` }
+}
+
 const file = getArg('file') ?? process.env.ONE_BRAIN_FILE
-const docTypeId = getArg('doc-type') ?? process.env.ONE_BRAIN_DOC_TYPE
+const docTypeInput = getArg('doc-type') ?? process.env.ONE_BRAIN_DOC_TYPE
 const jsonOutput = (getArg('json') ?? process.env.ONE_BRAIN_JSON ?? '') === '1'
 const providerName = (getArg('provider') ?? process.env.ONE_BRAIN_PROVIDER ?? 'gemini').toLowerCase()
 const model = getArg('model') ?? process.env.ONE_BRAIN_MODEL ?? undefined
 
-if (!file || !docTypeId) {
+if (!file || !docTypeInput) {
   console.error('Usage: tsx scripts/one-brain-orient-read.mts --file <image> --doc-type <docTypeId> [--provider gemini|openai] [--model <model>] [--json 1]')
   process.exit(1)
 }
@@ -56,9 +73,14 @@ const mimeType = path.extname(file).toLowerCase() === '.png' ? 'image/png' : 'im
 const pre = await preprocessImage(raw, mimeType)
 const imageBuffer = pre.ok ? pre.buffer : raw
 const finalMime = pre.ok ? pre.mimeType : mimeType
+const { docTypeId, aliasUsed } = normalizeDocTypeId(docTypeInput)
 const provider = providerName === 'openai'
   ? new OpenAIVisionProvider(model ? { model } : {})
   : undefined
+
+if (aliasUsed) {
+  console.info(`[doc_type_alias] ${aliasUsed}`)
+}
 
 const result = await orientAndReadDocument(imageBuffer, finalMime, docTypeId, {
   provider,
