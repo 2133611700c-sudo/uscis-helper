@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-07-06 | Fix real CI failure: documentFit.test.ts unconditionally read gitignored real docs
+- `documentFit.test.ts` (added yesterday) read `test-fixtures/real-docs/*.jpg` -- gitignored,
+  owner's real documents -- with no existence guard, so it was structurally guaranteed to fail
+  in CI (ENOENT) from the moment it was added. Fixed with the same self-skip convention used
+  elsewhere (`HAS_POPPLER`-style): skips the real-doc assertions when the directory is absent,
+  plus a sentinel test so a skip is never mistaken for a pass.
+- Root cause of why this surfaced only now: CI had not actually run since HEAD 7af1878 -- 8
+  commits' worth of "tests green" claims were local-only verifications; this was the first
+  real CI run of that whole stretch.
+- Audited the other 5 test files touching the same gitignored path -- all already properly
+  gated (RUN_REAL_DOC_GATE / live-key + FORENSIC_LOG_ENABLED); this was an isolated gap.
+- Verified locally both ways: fixtures present (4/4 run) and fixtures absent (3 run + 1 skip,
+  simulating CI). Tests 2708/2708; tsc 0; PII clean.
+
 ## 2026-07-06 | Deep audit fixes: military_id family gap + status-string bug + latent test regression
 - `modelMatrix.ts`: added `military_id` to `HANDWRITTEN_DOC_FAMILIES` -- ua_military_id has 5/5
   handwritten contract fields but no family substring, making the crop-based HTR/LLM-crop route

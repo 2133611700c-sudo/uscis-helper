@@ -1,3 +1,30 @@
+# HANDOFF (2026-07-06 — CI fix: documentFit.test.ts self-skip when private fixtures absent)
+
+## 2026-07-06 | Root-caused the actual CI failure on the previous push (Claude)
+- Pushed e77364d, CI FAILED (run 28814361673): `documentFit.test.ts` (added yesterday's
+  `1d664dd` commit) unconditionally read `test-fixtures/real-docs/*.jpg` -- a gitignored
+  directory (owner's real documents, never committed). It could ONLY ever pass on a machine
+  with those private files on disk; it was structurally guaranteed to fail on CI (ENOENT)
+  from the moment it was added.
+- **Bigger finding: CI had not actually run since HEAD 7af1878.** Everything from `5fcc35c`
+  through `271325f` (8 commits, all claimed "tests green") was verified LOCAL-ONLY -- this
+  push was the first time that whole stretch of work hit real CI, and it surfaced this
+  pre-existing gap immediately.
+- Fixed with the same self-skip convention already used elsewhere in this file's sibling
+  suites (`HAS_POPPLER` pattern): `access(REAL_DOCS)` gates the real-doc assertions with
+  `it.skipIf`, plus a "reports when unavailable" sentinel test so a skip is never mistaken
+  for a pass. Verified BOTH ways locally: fixtures present -> 4/4 run; fixtures
+  moved-aside to simulate CI -> 3 run + 1 honest skip, no failure.
+- Audited all 6 test files touching the gitignored real-docs path: the other 5
+  (`realDocGate*.live.test.ts`, `_parity.live.test.ts`, `_forensic_baseline.live.test.ts`,
+  `independentCrossProductAudit.test.ts`) already had proper opt-in guards
+  (`RUN_REAL_DOC_GATE=1` / paid-key + `FORENSIC_LOG_ENABLED=1`) -- this was an isolated
+  oversight in the newest file, not a systemic pattern.
+- Tests: full targeted suite 2708/2708 pass; tsc 0; PII clean.
+- **EXACT NEXT ACTION:** watch this push's CI to confirm it goes green before considering
+  today's fixes (military_id family, status-count, latent evidence-provider regression,
+  this CI fix) fully closed. Owner GT + GPT-crop-policy decision remain unchanged.
+
 # HANDOFF (2026-07-06 — 3 root fixes: military_id family gap, status-string bug, latent test regression)
 
 ## 2026-07-06 | Deep root-cause audit + fixes, live-tested on 3 real documents (Claude)

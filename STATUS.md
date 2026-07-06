@@ -1,3 +1,11 @@
+# STATUS (2026-07-06 — CI failure root-caused and fixed: gitignored-fixture test had no self-skip)
+
+## 2026-07-06 | CI fix + process finding
+- documentFit.test.ts now self-skips when test-fixtures/real-docs is absent (CI), verified both
+  ways locally. Was structurally guaranteed to fail in CI since it was added yesterday.
+- Process finding: CI had not run since 7af1878 -- 8 commits of "green tests" were local-only.
+  This push is the first real CI verification of that work; watching it now.
+
 # STATUS (2026-07-06 — military_id family gap closed + status-count bug fixed + pre-existing test regression found and fixed)
 
 ## 2026-07-06 | Root-cause fixes, live-tested on real documents
