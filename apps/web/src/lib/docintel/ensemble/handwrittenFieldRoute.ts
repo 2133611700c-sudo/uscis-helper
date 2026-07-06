@@ -14,7 +14,7 @@
  * needs a Gemini key; absent → disabled. Everything fail-open (any error → [] → the LLM full-page read stands).
  */
 import { isHtrSidecarEnabled, readHandwrittenFieldsViaSidecar, type HtrFieldBox } from '../providers/htrSidecarProvider'
-import { isLlmCropReaderEnabled, readHandwrittenFieldsViaLlmCrops } from '../providers/llmCropReader'
+import { isLlmCropReaderEnabled, readHandwrittenFieldsViaLlmCrops, resolveLlmCropProvider } from '../providers/llmCropReader'
 
 const GEMINI_URL = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
@@ -38,6 +38,11 @@ export const FIELD_BOX_TEMPLATES: Record<string, Record<string, [number, number,
     // Tightened on 2026-06-25 to remove the given-name overlap that produced
     // "гей Сергеевич" instead of "Сергеевич" on the real handwritten birth cert.
     patronymic: [0.2641, 0.2923, 0.4482, 0.3617],
+  },
+  ua_internal_passport_booklet: {
+    // Frozen from qa-private/htr-poc/stable_bench.py on the real booklet image.
+    family_name: [0.2815, 0.6076, 0.6820, 0.6323],
+    given_name: [0.2815, 0.6388, 0.6820, 0.6682],
   },
 }
 
@@ -164,6 +169,7 @@ export async function readHandwrittenRoute(
   const transport: 'htr' | 'llm' | null =
     isHtrSidecarEnabled() ? 'htr' : isLlmCropReaderEnabled() ? 'llm' : null
   if (!transport) return []
+  const llmProvider = resolveLlmCropProvider()
   // EXIF-NORMALIZE ONCE (Step-5b fix): the raw original may carry an EXIF orientation tag. Both the
   // dimension read (box scaling) and sharp.extract() would otherwise see/apply EXIF inconsistently →
   // the crop lands in the wrong region. Bake EXIF in + strip the tag, then use ONE oriented buffer for
@@ -174,7 +180,7 @@ export async function readHandwrittenRoute(
   if (boxes.length === 0) return []
   const reads = transport === 'htr'
     ? await readHandwrittenFieldsViaSidecar(buf, boxes)
-    : await readHandwrittenFieldsViaLlmCrops(buf, boxes)
+    : await readHandwrittenFieldsViaLlmCrops(buf, boxes, fetch, llmProvider ?? 'gemini')
   return reads.map((r) => ({
     field: r.field,
     raw_htr_text: r.text,

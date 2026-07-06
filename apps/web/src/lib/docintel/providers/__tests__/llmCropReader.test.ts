@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import sharp from 'sharp'
-import { buildCropPrompt, isLlmCropReaderEnabled, readHandwrittenFieldsViaLlmCrops } from '../llmCropReader'
+import { buildCropPrompt, isLlmCropReaderEnabled, readHandwrittenFieldsViaLlmCrops, resolveLlmCropProvider } from '../llmCropReader'
 import { GAZETTEER } from '@uscis-helper/knowledge'
 import type { HtrFieldBox } from '../htrSidecarProvider'
 
@@ -28,12 +28,20 @@ const BOXES: HtrFieldBox[] = [
 ]
 
 describe('isLlmCropReaderEnabled — strict, gemini-only', () => {
-  it("only 'gemini' enables; '1'/'true'/'openai'/absent stay OFF", () => {
+  it("only 'gemini' or 'openai' enables; '1'/'true'/absent stay OFF", () => {
     expect(isLlmCropReaderEnabled({})).toBe(false)
     expect(isLlmCropReaderEnabled({ HANDWRITING_CROP_LLM: '1' })).toBe(false)
     expect(isLlmCropReaderEnabled({ HANDWRITING_CROP_LLM: 'true' })).toBe(false)
-    expect(isLlmCropReaderEnabled({ HANDWRITING_CROP_LLM: 'openai' })).toBe(false) // GPT owner-excluded on handwriting
+    expect(isLlmCropReaderEnabled({ HANDWRITING_CROP_LLM: 'openai' })).toBe(true)
     expect(isLlmCropReaderEnabled({ HANDWRITING_CROP_LLM: 'gemini' })).toBe(true)
+  })
+})
+
+describe('resolveLlmCropProvider', () => {
+  it('maps gemini/openai and rejects unknown values', () => {
+    expect(resolveLlmCropProvider({ HANDWRITING_CROP_LLM: 'gemini' })).toBe('gemini')
+    expect(resolveLlmCropProvider({ HANDWRITING_CROP_LLM: 'openai' })).toBe('openai')
+    expect(resolveLlmCropProvider({ HANDWRITING_CROP_LLM: 'wat' })).toBeNull()
   })
 })
 
@@ -86,6 +94,29 @@ describe('readHandwrittenFieldsViaLlmCrops', () => {
     const body = JSON.parse((f.mock.calls[0][1] as { body: string }).body)
     expect(body.contents[0].parts[1].inline_data.mime_type).toBe('image/png')
     expect(body.contents[0].parts[0].text).toMatch(/Do NOT transliterate/)
+  })
+
+  it('flag ON + openai key → one tiny call per crop; texts land per field (fictional)', async () => {
+    process.env.HANDWRITING_CROP_LLM = 'openai'
+    process.env.OPENAI_API_KEY = 'fake-openai-key'
+    const f = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: JSON.stringify({ text: 'Тестенко' }) } }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: JSON.stringify({ text: 'Іван' }) } }] }),
+      })
+    const out = await readHandwrittenFieldsViaLlmCrops(await testImage(), BOXES, f as never, 'openai')
+    expect(f).toHaveBeenCalledTimes(2)
+    expect(out).toEqual([
+      { field: 'family_name', text: 'Тестенко', confidence: 0.6 },
+      { field: 'given_name', text: 'Іван', confidence: 0.6 },
+    ])
+    const body = JSON.parse((f.mock.calls[0][1] as { body: string }).body)
+    expect(body.model).toBe('gpt-4.1')
+    expect(body.messages[0].content[1].image_url.detail).toBe('high')
   })
 
   it('blank/unreadable ({"text":""}) → field omitted (never fabricates)', async () => {

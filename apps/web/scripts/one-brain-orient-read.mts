@@ -81,6 +81,9 @@ const provider = providerName === 'openai'
 if (aliasUsed) {
   console.info(`[doc_type_alias] ${aliasUsed}`)
 }
+if (providerName === 'openai' && !process.env.HANDWRITING_CROP_LLM) {
+  process.env.HANDWRITING_CROP_LLM = 'openai'
+}
 
 const result = await orientAndReadDocument(imageBuffer, finalMime, docTypeId, {
   provider,

@@ -23,8 +23,16 @@ import type { HtrFieldBox, HtrFieldRead } from './htrSidecarProvider'
 import { judgeBlankCrop } from '../ensemble/blankCropGate'
 import { PRIMARY_READER } from '../modelMatrix'
 
+export type LlmCropProvider = 'gemini' | 'openai'
+
+export function resolveLlmCropProvider(env: Record<string, string | undefined> = process.env): LlmCropProvider | null {
+  const raw = (env.HANDWRITING_CROP_LLM || '').trim().toLowerCase()
+  if (raw === 'gemini' || raw === 'openai') return raw
+  return null
+}
+
 export function isLlmCropReaderEnabled(env: Record<string, string | undefined> = process.env): boolean {
-  return env.HANDWRITING_CROP_LLM === 'gemini'
+  return resolveLlmCropProvider(env) !== null
 }
 
 /** Resolve ANY GEMINI_API_KEY* env (same owner-rotation convention as the vision provider). */
@@ -33,6 +41,10 @@ function resolveGeminiKey(env: Record<string, string | undefined> = process.env)
     if (k.startsWith('GEMINI_API_KEY') && v && v.trim()) return v.trim()
   }
   return null
+}
+
+function resolveOpenAIKey(env: Record<string, string | undefined> = process.env): string | null {
+  return (env.OPENAI_API_KEY || '').trim() || null
 }
 
 const CROP_PROMPT =
@@ -92,10 +104,9 @@ export async function readHandwrittenFieldsViaLlmCrops(
   orientedBuffer: Buffer,
   boxes: HtrFieldBox[],
   fetchImpl: typeof fetch = fetch,
+  provider: LlmCropProvider = 'gemini',
 ): Promise<HtrFieldRead[]> {
   if (!isLlmCropReaderEnabled() || boxes.length === 0) return []
-  const apiKey = resolveGeminiKey()
-  if (!apiKey) return []
   let sharp: typeof import('sharp')
   try {
     sharp = (await import('sharp')).default as unknown as typeof import('sharp')
@@ -125,34 +136,63 @@ export async function readHandwrittenFieldsViaLlmCrops(
       const timer = setTimeout(() => controller.abort(), 20_000)
       let res: Response
       try {
-        res = await fetchImpl(
-          `https://generativelanguage.googleapis.com/v1beta/models/${PRIMARY_READER}:generateContent?key=${apiKey}`,
-          {
+        if (provider === 'openai') {
+          const apiKey = resolveOpenAIKey()
+          if (!apiKey) continue
+          const body: Record<string, unknown> = {
+            model: process.env.OPENAI_VISION_MODEL || 'gpt-4.1',
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'text', text: buildCropPrompt(b.field) },
+                { type: 'image_url', image_url: { url: `data:image/png;base64,${crop.toString('base64')}`, detail: 'high' } },
+              ],
+            }],
+            response_format: { type: 'json_object' },
+            max_tokens: Math.max(8192, Number(process.env.OPENAI_MAX_OUTPUT_TOKENS) || 16384),
+            temperature: 0,
+          }
+          res = await fetchImpl('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', authorization: 'Bearer ' + apiKey },
             signal: controller.signal,
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { text: buildCropPrompt(b.field) },
-                  { inline_data: { mime_type: 'image/png', data: crop.toString('base64') } },
-                ],
-              }],
-              // THINKING-MODEL TRAP (CLAUDE.md/MODELS): 2.5-pro burns output budget on
-              // reasoning; a small cap → MAX_TOKENS → EMPTY read. Same fix as the main
-              // provider: ≥8192. (First live run proved it: 512 → 2 of 3 crops empty.)
-              generationConfig: { maxOutputTokens: 8192, temperature: 0 },
-            }),
-          },
-        )
+            body: JSON.stringify(body),
+          })
+        } else {
+          const apiKey = resolveGeminiKey()
+          if (!apiKey) continue
+          res = await fetchImpl(
+            `https://generativelanguage.googleapis.com/v1beta/models/${PRIMARY_READER}:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
+              body: JSON.stringify({
+                contents: [{
+                  parts: [
+                    { text: buildCropPrompt(b.field) },
+                    { inline_data: { mime_type: 'image/png', data: crop.toString('base64') } },
+                  ],
+                }],
+                // THINKING-MODEL TRAP (CLAUDE.md/MODELS): 2.5-pro burns output budget on
+                // reasoning; a small cap → MAX_TOKENS → EMPTY read. Same fix as the main
+                // provider: ≥8192. (First live run proved it: 512 → 2 of 3 crops empty.)
+                generationConfig: { maxOutputTokens: 8192, temperature: 0 },
+              }),
+            },
+          )
+        }
       } finally {
         clearTimeout(timer)
       }
       if (!res.ok) continue // 429/5xx/403 on one crop → skip it, keep the rest (fail-open)
-      const json = (await res.json()) as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
-      }
-      const rawText = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
+      const json = (await res.json()) as
+        | { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+        | { choices?: Array<{ message?: { content?: string | null } }> }
+      const rawText = 'choices' in json
+        ? String(json.choices?.[0]?.message?.content ?? '')
+        : ((json as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })
+            .candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '')
       const m = rawText.match(/\{[\s\S]*\}/)
       if (!m) continue
       let text = ''
