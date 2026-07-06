@@ -21,12 +21,14 @@ export interface DocumentPostureEnvelope {
   preprocess_rotation_applied: boolean
   content_rotation_applied_cw: 0 | 90 | 180 | 270 | null
   orientation_status: 'upright' | 'rotated_90' | 'rotated_180' | 'rotated_270' | 'uncertain' | 'not_measured'
-  orientation_source: 'exif' | 'content_orient' | 'visual_oracle' | 'manual_owner' | 'test_harness' | 'not_measured'
+  orientation_source: 'exif' | 'content_orient' | 'handwritten_layout_backstop' | 'sparse_layout_backstop' | 'visual_oracle' | 'manual_owner' | 'test_harness' | 'not_measured'
   orientation_confidence: 'high' | 'medium' | 'low' | 'unknown'
   quality_status: 'ok' | 'blurred' | 'too_dark' | 'too_bright' | 'low_resolution' | 'degraded_other' | 'not_measured'
   document_fit: 'full_page_visible' | 'cropped_or_partial' | 'manual_crop' | 'unknown' | 'not_measured'
   crop_source: 'full_page' | 'manual_crop' | 'frozen_box' | 'detected_box' | 'template_box' | 'unknown'
   posture_gate: 'pass' | 'review_orientation_uncertain' | 'review_quality_low' | 'review_document_partial' | 'not_measured'
+  /** Which layout backstop, if any, settled the orientation decision. */
+  orientation_backstop_used: 'none' | 'handwritten_layout' | 'sparse_layout'
   /** true when the ORIENT_180_CHECK binary confirm ran and resolved the pose (either "candidate
    *  confirmed" or "flipped"); absent when the check did not run (flag OFF, or 4-cell vote itself
    *  failed before reaching it). Evidence only — does NOT raise orientation_confidence above medium. */
@@ -52,6 +54,10 @@ export interface PostureInputs {
   disambiguated180?: boolean
   /** Sparse-form 90° adjunct confirm resolved the pose against the 90° neighbor. */
   disambiguated90?: boolean
+  /** Which backstop, if any, was used by the orientation detector before the envelope was built. */
+  layoutBackstopUsed?: 'handwritten_layout' | 'sparse_layout' | null
+  /** document_fit verdict when a fit heuristic ran; absent → honest not_measured. */
+  documentFit?: DocumentPostureEnvelope['document_fit'] | null
   /** whether the content-orient stage ran at all */
   contentOrientRan?: boolean
   /** documentImageQuality verdict when the quality gate ran ('ok'|'blurred'|...) */
@@ -96,7 +102,11 @@ export function buildPostureEnvelope(i: PostureInputs): DocumentPostureEnvelope 
   let orientation_source: DocumentPostureEnvelope['orientation_source'] = 'not_measured'
   let orientation_confidence: DocumentPostureEnvelope['orientation_confidence'] = 'unknown'
   if (i.contentOrientRan) {
-    orientation_source = 'content_orient'
+    orientation_source = i.layoutBackstopUsed === 'handwritten_layout'
+      ? 'handwritten_layout_backstop'
+      : i.layoutBackstopUsed === 'sparse_layout'
+        ? 'sparse_layout_backstop'
+        : 'content_orient'
     if (i.orientationUncertain) {
       orientation_status = 'uncertain'
       orientation_confidence = 'low'
@@ -115,12 +125,14 @@ export function buildPostureEnvelope(i: PostureInputs): DocumentPostureEnvelope 
   }
 
   const quality_status = i.qualityStatus ?? 'not_measured'
-  const document_fit: DocumentPostureEnvelope['document_fit'] = 'not_measured' // no fit detector exists yet — honest
+  const document_fit = i.documentFit ?? 'not_measured'
   const crop_source = i.cropSource ?? 'unknown'
+  const orientation_backstop_used = i.layoutBackstopUsed ?? 'none'
 
   let posture_gate: DocumentPostureEnvelope['posture_gate']
   if (orientation_status === 'uncertain') posture_gate = 'review_orientation_uncertain'
   else if (quality_status !== 'ok' && quality_status !== 'not_measured') posture_gate = 'review_quality_low'
+  else if (document_fit === 'cropped_or_partial' || document_fit === 'manual_crop') posture_gate = 'review_document_partial'
   else if (orientation_status === 'not_measured' && quality_status === 'not_measured') posture_gate = 'not_measured'
   else posture_gate = 'pass'
 
@@ -136,6 +148,7 @@ export function buildPostureEnvelope(i: PostureInputs): DocumentPostureEnvelope 
     document_fit,
     crop_source,
     posture_gate,
+    orientation_backstop_used,
     ...(i.disambiguated180 !== undefined ? { orientation_180_disambiguated: i.disambiguated180 } : {}),
     ...(i.disambiguated90 !== undefined ? { orientation_90_disambiguated: i.disambiguated90 } : {}),
   }

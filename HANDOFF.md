@@ -1,3 +1,15 @@
+# HANDOFF (2026-07-05 — handwritten backstop telemetry surfaced on posture/result)
+
+## 2026-07-05 | Orientation observability hardening
+- Added an explicit `layoutBackstopUsed` signal to the orientation result and threaded it into
+  `DocumentPostureEnvelope.orientation_backstop_used`; `orientation_source` now distinguishes
+  `handwritten_layout_backstop` and `sparse_layout_backstop`.
+- Real-doc probe on handwritten fixtures confirmed the backstop signal end-to-end.
+- Verified: orientation/posture/full-page blank-gate vitest subset = 65 pass / 0 fail,
+  `tsc --noEmit` pass, and `node scripts/check-no-pii.mjs` clean.
+- Exact next action remains unchanged: add a real `document_fit` detector or keep the field honest
+  as `not_measured`; handwritten GT still blocks Phase A.
+
 # HANDOFF (2026-07-05 — P1 orientation: sparse 90° class fixed on measured certificate fixtures)
 
 ## 2026-07-05 | Latest rerun after sparse-fallback: live provider drift, no repo-wide solved claim
@@ -2070,3 +2082,6 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-07-05: runner-hardening handoff — fixed a real `dev-doctor` recursion bug by honoring `DEV_DOCTOR_RECHECK` and stopping after one heal/recheck pass. `bash -n scripts/dev-doctor.sh` passed. Still BLOCKED for live process-based proof here because `ps`/`lsof` are denied in this shell, so the interlock remains code-audited but not runtime-simulated. -->
 <!-- 2026-07-05: runner-hardening follow-up — extracted shared guard logic into `scripts/runner-guard-logic.cjs` and wired both `.pnpmfile.cjs` + `install-guard.mjs` to it. This closes the `pnpm.mjs` launcher-form gap at code level and is backed by direct helper assertions for `pnpm.mjs`/`pnpm.cjs`/`pnpm.js`. Full live install battery still not rerun in this shell because pnpm install stops on sibling-worktree EPERM before the guard layer can finish. -->
 <!-- 2026-07-05: orientation handoff update — the live orientation work is now more specific: the base path has a local OSD-first confirm, and the measurable improvement is `21/29` on the extended harness plus `27/40` on the `ORIENT_180_CHECK` harness with one true `disambiguated180` win. Remaining failures are concentrated in `birth_cert_handwritten_01` and `military_id_p1_01`; next exact step is a separate 90°-class / doc-type-specific refinement, not another 180-only confirm. -->
+<!-- 2026-07-05: orientation handoff follow-up — handwritten docs now bypass OSD high-confidence trust and include a deterministic handwritten-layout backstop, but the live matrix still lands partial on the real fixtures. Unit tests, typecheck, and PII guard are green; the next exact action is to separate the 90°-class problem from the 0/180 handwritten class instead of treating them as one bug. -->
+<!-- 2026-07-05: orientation root-cause handoff — handwritten docs are now fail-closed unless OSD is reliable Cyrillic. Live spot probe on real fixtures: `birth_cert_handwritten_01` and `military_id_p1_01` now return null on all rotations; `military_id_p2_01`, `internal_passport_01`, and `marriage_1939_kharkiv_borodavka` keep correct corrections via reliable Cyrillic OSD. Verified by targeted vitest, `tsc --noEmit`, and `node scripts/check-no-pii.mjs`. Next exact action: if coverage needs to grow, add a separate 90°-class strategy on top of this fail-closed baseline, not instead of it. -->
+<!-- 2026-07-05: posture handoff follow-up — `documentFit` is now opt-in only (`DOCUMENT_FIT_ENABLED=1`) because a live probe on real docs produced a false positive `cropped_or_partial` on `marriage_apostille_vasylsiuk` even though the page is visually full-page. Main reader path keeps fit disabled by default; `documentPostureEnvelope` still accepts explicit `manual_crop` / `cropped_or_partial` signals for future probe work. -->

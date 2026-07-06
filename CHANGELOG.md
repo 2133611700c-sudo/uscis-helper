@@ -1,5 +1,13 @@
 # CHANGELOG
 
+# 2026-07-05 | Fix: handwritten orientation backstop is now observable in posture telemetry
+- `orientToUpright(...)` now returns a structured layout-backstop signal, and
+  `DocumentPostureEnvelope` records it as `orientation_backstop_used` while
+  `orientation_source` distinguishes `handwritten_layout_backstop` and `sparse_layout_backstop`
+  instead of merging the handwritten fallback into generic `content_orient`.
+- This is telemetry hardening only: no reader policy changed, `document_fit` is still
+  `not_measured`, and orientation remains partial overall.
+
 # 2026-07-05 | Fix: sparse 90° orientation class closed on measured marriage/divorce fixtures
 - `detectUprightCwVoted()` now includes a deterministic sparse-layout prior for the certificate
   classes that were still producing the 90° false-pass pattern. The fix is inside the detector
@@ -2801,3 +2809,6 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - 2026-07-05: fixed a real recursion bug in `scripts/dev-doctor.sh`. The script now honors `DEV_DOCTOR_RECHECK` and stops after one recursive heal/recheck pass instead of looping if the second check is still red. Verified with `bash -n scripts/dev-doctor.sh`; live process-based guard proof remains blocked in this shell because `ps`/`lsof` are denied.
 
 - 2026-07-05: consolidated runner parsing into `scripts/runner-guard-logic.cjs` and wired both `.pnpmfile.cjs` and `scripts/install-guard.mjs` to it. The guard now recognizes `pnpm.mjs` launcher forms in addition to `pnpm.cjs/js`; helper assertions pass locally. Live install battery was not rerun here because pnpm still aborts earlier on a sibling-worktree EPERM in this workspace.
+- 2026-07-05: orientation follow-up — threaded a handwritten-doc layout backstop into `apps/web/src/lib/docintel/orientation/detectOrientation.ts` and added a regression test for handwritten override behavior. Verified by `vitest` (43/43 in the orientation file), `tsc --noEmit`, and `check-no-pii.mjs`. Live posture harness still remains partial on birth-cert / military-id classes, so the changelog records a hardening step, not a solved orientation claim.
+- 2026-07-05: orientation root-cause follow-up — handwritten docs now fail closed unless OSD is reliable Cyrillic. Live spot probe on the real fixtures: `birth_cert_handwritten_01` and `military_id_p1_01` now return null on all rotations; `military_id_p2_01`, `internal_passport_01`, and `marriage_1939_kharkiv_borodavka` keep correct corrections via reliable Cyrillic OSD. Verified by targeted `vitest`, `tsc --noEmit`, and `node scripts/check-no-pii.mjs`. This is a safety improvement, not a solved orientation claim.
+- 2026-07-05: posture follow-up — added `documentFit` as an opt-in signal only (`DOCUMENT_FIT_ENABLED=1`) after a live real-doc probe showed a false positive `cropped_or_partial` on visually full-page `marriage_apostille_vasylsiuk`. The main reader path keeps fit disabled by default; `documentPostureEnvelope` still honors explicit `manual_crop` / `cropped_or_partial` evidence for future probes.

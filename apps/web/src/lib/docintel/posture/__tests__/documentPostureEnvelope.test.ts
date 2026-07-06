@@ -12,15 +12,23 @@ describe('buildPostureEnvelope — honest not_measured (law: never claim unmeasu
     expect(e.orientation_source).toBe('not_measured')
     expect(e.orientation_confidence).toBe('unknown')
     expect(e.quality_status).toBe('not_measured')
-    expect(e.document_fit).toBe('not_measured') // no fit detector exists — must stay honest
+    expect(e.document_fit).toBe('not_measured') // absent input ⇒ honest not_measured
     expect(e.exif_orientation).toBe('unknown')
     expect(e.content_rotation_applied_cw).toBeNull() // content-orient did not run
     expect(e.posture_gate).toBe('not_measured')
   })
 
-  it('document_fit is ALWAYS not_measured regardless of inputs (no detector yet)', () => {
-    const e = buildPostureEnvelope({ contentOrientRan: true, contentRotationCw: 90, qualityStatus: 'ok' })
-    expect(e.document_fit).toBe('not_measured')
+  it('document_fit threads through when explicitly supplied', () => {
+    const pass = buildPostureEnvelope({ documentFit: 'full_page_visible' })
+    const manual = buildPostureEnvelope({ documentFit: 'manual_crop' })
+    const partial = buildPostureEnvelope({ documentFit: 'cropped_or_partial' })
+
+    expect(pass.document_fit).toBe('full_page_visible')
+    expect(pass.posture_gate).toBe('not_measured')
+    expect(manual.document_fit).toBe('manual_crop')
+    expect(manual.posture_gate).toBe('review_document_partial')
+    expect(partial.document_fit).toBe('cropped_or_partial')
+    expect(partial.posture_gate).toBe('review_document_partial')
   })
 })
 
@@ -162,10 +170,21 @@ describe('buildPostureEnvelope — disambiguated180 evidence (still capped at me
 describe('buildPostureEnvelope — disambiguated90 evidence (sparse-form adjunct)', () => {
   it('disambiguated90=true is surfaced without changing confidence or gate', () => {
     const e = buildPostureEnvelope({
-      contentOrientRan: true, contentRotationCw: 270, disambiguated90: true,
+      contentOrientRan: true, contentRotationCw: 270, disambiguated90: true, layoutBackstopUsed: 'sparse_layout',
     })
     expect(e.orientation_confidence).toBe('medium')
     expect(e.orientation_status).toBe('upright')
     expect(e.orientation_90_disambiguated).toBe(true)
+    expect(e.orientation_backstop_used).toBe('sparse_layout')
+  })
+})
+
+describe('buildPostureEnvelope — handwritten backstop observability', () => {
+  it('handwritten backstop is surfaced explicitly instead of being merged into content_orient', () => {
+    const e = buildPostureEnvelope({
+      contentOrientRan: true, contentRotationCw: 0, layoutBackstopUsed: 'handwritten_layout',
+    })
+    expect(e.orientation_source).toBe('handwritten_layout_backstop')
+    expect(e.orientation_backstop_used).toBe('handwritten_layout')
   })
 })

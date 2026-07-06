@@ -68,7 +68,7 @@ const DOCS: Array<{ id: string; file: string; docTypeId: string; visualUprightCw
 interface Row {
   doc: string; variant: string; flag180: 'off' | 'on'
   expected_correction_cw: number; detected_cw: number | 'undecidable'
-  correct: boolean; disambiguated180: boolean
+  correct: boolean; disambiguated180: boolean; layout_backstop_used: string
 }
 const rows: Row[] = []
 
@@ -97,6 +97,7 @@ for (const d of DOCS) {
         detected_cw: out.detected ? out.applied : 'undecidable',
         correct: out.detected && out.applied === expected,
         disambiguated180: out.disambiguated180 === true,
+        layout_backstop_used: out.layoutBackstopUsed ?? 'none',
       }
       rows.push(row)
       console.log(JSON.stringify(row))

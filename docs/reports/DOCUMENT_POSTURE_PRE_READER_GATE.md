@@ -21,6 +21,11 @@ WORKTREE: clean на момент коммита
 `DocumentPostureEnvelope` built by pure `buildPostureEnvelope()` from RECORDED signals only,
 wired in `documentFieldReader.readDocument()` immediately after orientation handling and
 BEFORE provider selection; emitted as a PII-free `[posture_envelope]` marker.
+Orientation backstop decisions are now observable too: handwritten fallback decisions surface as
+`orientation_backstop_used: handwritten_layout`, and sparse certificate fallback as
+`orientation_backstop_used: sparse_layout`. The envelope now also names these backstops in
+`orientation_source` (`handwritten_layout_backstop` / `sparse_layout_backstop`) instead of
+flattening them into generic `content_orient`.
 
 Fields MEASURED today: exif_orientation, preprocess_rotation_applied,
 content_rotation_applied_cw, orientation_status/source/confidence, posture_gate.
@@ -261,3 +266,41 @@ The current live rerun changed the shape of the problem, but not the verdict:
 - The hard remaining failures are still the `birth_cert_handwritten_01` and `military_id_p1_01`
   classes, which means the open problem is no longer the binary 180 check itself but the
   broader 90°/doc-type-specific pose confusion.
+
+## §6g 2026-07-05 handwritten fail-closed follow-up
+
+The root cause shifted again: handwritten docs now reject low-confidence / non-Cyrillic OSD
+instead of trying to auto-rotate from unstable sample/layout signals. Live probe on the real
+fixtures now behaves as follows:
+
+- `birth_cert_handwritten_01` → `null` on all four rotations
+- `military_id_p1_01` → `null` on all four rotations
+- `military_id_p2_01` → correct corrections preserved via reliable Cyrillic OSD
+- `internal_passport_01` → correct corrections preserved via reliable Cyrillic OSD
+- `marriage_1939_kharkiv_borodavka` → correct corrections preserved via reliable Cyrillic OSD
+
+Verified in this turn with targeted `vitest`, `tsc --noEmit`, and `node scripts/check-no-pii.mjs`.
+This is safer than the previous handwritten layout fallback, but the broader handwriting/orientation
+problem is still not fully solved. The next open step is to add a separate 90°-class or class-aware
+decision path only if it can beat this fail-closed baseline on live fixtures.
+
+## §7d 2026-07-05 document-fit follow-up
+
+`documentFit` was added as a conservative helper, but the live real-doc probe showed that it is
+not trustworthy enough for the main reader path yet. Measurements:
+
+- `birth_cert_handwritten_01` → `full_page_visible`
+- `military_id_p1_01` → `full_page_visible`
+- `military_id_p2_01` → `full_page_visible`
+- `internal_passport_01` → `full_page_visible`
+- `marriage_1939_kharkiv_borodavka` → `full_page_visible`
+- `divorce_redacted_pechersk` → `full_page_visible`
+- `divorce_blank_template` → `full_page_visible`
+- `marriage_apostille_vasylsiuk` → `cropped_or_partial` on a visually full-page spread
+
+Because of that false positive, `readDocument()` now keeps fit disabled by default and only threads
+the signal when `DOCUMENT_FIT_ENABLED=1`. The envelope still accepts explicit `manual_crop` and
+`cropped_or_partial` evidence for future probe work, but the main path remains honest:
+`document_fit` is not treated as solved.
+
+Verified this turn with targeted `vitest`, `tsc --noEmit`, and `node scripts/check-no-pii.mjs`.

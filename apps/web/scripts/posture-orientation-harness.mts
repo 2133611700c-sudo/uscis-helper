@@ -27,7 +27,7 @@ import sharp from 'sharp'
 // tsx compiles the app's TS (no "type":"module") to CJS — named ESM imports fail; unwrap default.
 type Cw = 0 | 90 | 180 | 270
 const orientMod = await import('../src/lib/docintel/orientation/detectOrientation')
-const { detectUprightCwVoted } = ((orientMod as { default?: unknown }).default ?? orientMod) as typeof import('../src/lib/docintel/orientation/detectOrientation')
+const { detectUprightCwVotedMeta } = ((orientMod as { default?: unknown }).default ?? orientMod) as typeof import('../src/lib/docintel/orientation/detectOrientation')
 const postureMod = await import('../src/lib/docintel/posture/documentPostureEnvelope')
 const { buildPostureEnvelope } = ((postureMod as { default?: unknown }).default ?? postureMod) as typeof import('../src/lib/docintel/posture/documentPostureEnvelope')
 
@@ -77,7 +77,7 @@ const exifToCw = (tag: number | undefined): Cw => (tag === 6 ? 90 : tag === 8 ? 
 interface Row {
   doc: string; variant: string; exif_tag_in_variant: number | 'none'
   expected_correction_cw: number | 'exif_implied_see_note'; detected_cw: number | 'undecidable'
-  orientation_correct: boolean | 'see_note'; posture_gate: string; error?: string
+  orientation_correct: boolean | 'see_note'; posture_gate: string; layout_backstop_used: string; error?: string
 }
 const rows: Row[] = []
 
@@ -108,9 +108,12 @@ for (const d of DOCS) {
 
   for (const v of variants) {
     let detected: Cw | null = null
+    let layoutBackstopUsed = 'none'
     let error: string | undefined
     try {
-      detected = await detectUprightCwVoted(v.buf, KEY, MODEL, { docTypeId: d.docTypeId })
+      const result = await detectUprightCwVotedMeta(v.buf, KEY, MODEL, { docTypeId: d.docTypeId })
+      detected = result.cw
+      layoutBackstopUsed = result.layoutBackstopUsed ?? 'none'
     } catch (e) {
       error = e instanceof Error ? e.message.slice(0, 120) : 'unknown'
     }
@@ -126,6 +129,7 @@ for (const d of DOCS) {
       doc: d.id, variant: v.name, exif_tag_in_variant: v.tag,
       expected_correction_cw: v.expected,
       detected_cw: detected === null ? 'undecidable' : detected,
+      layout_backstop_used: layoutBackstopUsed,
       orientation_correct: typeof v.expected === 'number'
         ? detected === v.expected
         : 'see_note',

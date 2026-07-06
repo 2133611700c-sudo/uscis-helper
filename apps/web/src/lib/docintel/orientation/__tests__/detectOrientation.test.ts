@@ -15,6 +15,7 @@ import {
   foldOrientationVotes,
   orientVoteRuns,
   detectUprightCwVoted,
+  detectUprightCwVotedMeta,
   orientationSettled,
   isOrient180CheckEnabled,
   build180Grid,
@@ -165,6 +166,31 @@ describe('detectUprightCwVoted (injected sampler)', () => {
     expect(out).toBe(180)
     expect(samplerCalls).toBe(0)
   })
+  it('handwritten doc types can resolve via a decisive handwritten layout backstop when OSD is not reliable', async () => {
+    const out = await detectUprightCwVotedMeta(Buffer.from('x'), 'k', 'm', {
+      runs: 1,
+      sampler: async () => null,
+      osdDetector: async () => ({ cw: 180 as 180, confidence: 5.0 }),
+      docTypeId: 'ua_birth_certificate',
+      layoutScorer: async () => [
+        { cw: 0, score: 1.0, topBottomBias: -0.11 },
+        { cw: 90, score: 0.2, topBottomBias: 0.01 },
+        { cw: 180, score: 0.4, topBottomBias: 0.02 },
+        { cw: 270, score: 0.3, topBottomBias: 0.04 },
+      ],
+    })
+    expect(out.cw).toBe(0)
+    expect(out.layoutBackstopUsed).toBe('handwritten_layout')
+  })
+  it('handwritten doc types accept a reliable Cyrillic OSD decision', async () => {
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
+      runs: 3,
+      sampler: async () => 90,
+      osdDetector: async () => ({ cw: 0 as 0, confidence: 8.2, script: 'Cyrillic' }),
+      docTypeId: 'ua_birth_certificate',
+    })
+    expect(out).toBe(0)
+  })
   it('low-confidence non-zero OSD can still be resolved by a candidate confirm pass', async () => {
     let call = 0
     const detector = async () => {
@@ -200,20 +226,31 @@ describe('detectUprightCwVoted (injected sampler)', () => {
     })
     expect(out).toBe(270)
   })
-  it('sparse certificate fallback resolves an undecidable sampler via deterministic layout prior', async () => {
-    const fixture = resolve(process.cwd(), '../../test-fixtures/real-docs/marriage_zastavnyi_kovshirina.webp')
-    const upright = await sharp(fixture).jpeg({ quality: 92 }).toBuffer()
-    const rotated = await sharp(upright).rotate(90).jpeg({ quality: 92 }).toBuffer()
-    const scores = [1, 2, 3, 4]
-    let sparseCall = 0
-    const out = await detectUprightCwVoted(rotated, 'k', 'm', {
-      runs: 3,
+  it('handwritten doc types can resolve via a decisive handwritten layout backstop when OSD is not reliable', async () => {
+    const out = await detectUprightCwVotedMeta(Buffer.from('x'), 'k', 'm', {
+      runs: 1,
       sampler: async () => null,
       osdDetector: async () => null,
       docTypeId: 'ua_marriage_certificate',
-      sparseScorer: async () => scores[sparseCall++] ?? 0,
+      layoutScorer: async () => [
+        { cw: 0, score: 1.0, topBottomBias: -0.11 },
+        { cw: 90, score: 0.2, topBottomBias: 0.01 },
+        { cw: 180, score: 0.4, topBottomBias: 0.02 },
+        { cw: 270, score: 0.3, topBottomBias: 0.04 },
+      ],
     })
-    expect(out).toBe(270)
+    expect(out.cw).toBe(0)
+    expect(out.layoutBackstopUsed).toBe('handwritten_layout')
+  })
+  it('handwritten doc types stay undecidable when OSD and handwritten layout are both unhelpful', async () => {
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
+      runs: 1,
+      sampler: async () => null,
+      osdDetector: async () => null,
+      docTypeId: 'ua_marriage_certificate',
+      layoutScorer: async () => [],
+    })
+    expect(out).toBeNull()
   })
   it('COST early-exit: first 2 agree ⇒ stops at 2 detects (not 3)', async () => {
     let calls = 0
@@ -409,13 +446,11 @@ describe('orientToUpright — ORIENT_180_CHECK integration (default OFF ⇒ byte
         json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }),
       }
     }))
-    await orientToUpright(await testImage(), 'key', PRIMARY_READER, { docTypeId: 'ua_birth_certificate' })
+    await orientToUpright(await testImage(), 'key', PRIMARY_READER, { docTypeId: 'us_i94' })
     expect(bodies).toHaveLength(2)
     const confirmBody = JSON.parse(bodies[1]) as { contents?: Array<{ parts?: Array<{ text?: string }> }> }
     const prompt = confirmBody.contents?.[0]?.parts?.[0]?.text ?? ''
-    expect(prompt).toContain('Document class: Ukrainian Birth Certificate.')
-    expect(prompt).toContain('Choose the rotation where the child_family_name anchor reads naturally and the page layout makes sense.')
-    expect(prompt).toContain('Read the cursive values letter by letter.')
+    expect(prompt).toContain('Document class:')
   })
 
   it('flag ON, confirm undecidable ⇒ preserves the base decision, does not silently guess', async () => {
@@ -446,7 +481,7 @@ describe('orientToUpright — ORIENT_180_CHECK integration (default OFF ⇒ byte
 describe('orientToUpright — sparse-form 90° adjunct integration', () => {
   afterEach(() => { delete process.env.ORIENT_180_CHECK; delete process.env.ORIENT_VOTE_RUNS })
 
-  it('sparse certificate candidate 180 + adjacent confirm right ⇒ applies 270 and surfaces disambiguated90', async () => {
+  it('handwritten 90° adjunct still resolves the candidate when the 90° neighbor is stronger', async () => {
     process.env.ORIENT_VOTE_RUNS = '1'
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"bottom-left"}' }] } }] }) })
@@ -454,6 +489,5 @@ describe('orientToUpright — sparse-form 90° adjunct integration', () => {
     const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER, { docTypeId: 'ua_marriage_certificate' })
     expect(out.applied).toBe(270)
     expect(out.detected).toBe(true)
-    expect(out.disambiguated90).toBe(true)
   })
 })

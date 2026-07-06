@@ -34,6 +34,7 @@ import { isHandwrittenFamily } from './modelMatrix'
 import { readHandwrittenRoute } from './ensemble/handwrittenFieldRoute'
 import { isAssessZoomEnabled, verifySuspectFieldsByZoom } from './ensemble/assessZoom'
 import { buildPostureEnvelope } from './posture/documentPostureEnvelope'
+import { assessDocumentFit } from './posture/documentFit'
 import { diffHandwritingReaders, foldLlmByBaseKey, isHandwritingEnsembleShadowEnabled } from './ensemble/handwritingEnsembleShadow'
 import { critiquePair, critiqueSingle } from '../canonical/core/linguisticCritic'
 import { isHtrSidecarEnabled } from './providers/htrSidecarProvider'
@@ -137,6 +138,8 @@ export async function readDocument(
   let orientationUncertain = false
   let disambiguated180 = false
   let disambiguated90 = false
+  let layoutBackstopUsed: 'handwritten_layout' | 'sparse_layout' | null = null
+  let documentFit: 'full_page_visible' | 'cropped_or_partial' | 'manual_crop' | 'unknown' | 'not_measured' = 'not_measured'
   if (isContentOrientEnabled()) {
     const apiKey = getGeminiApiKey()
     if (apiKey) {
@@ -146,10 +149,12 @@ export async function readDocument(
       orientationUncertain = !oriented.detected   // Step-5: undecidable orientation → fail-closed downstream
       disambiguated180 = oriented.disambiguated180 === true
       disambiguated90 = oriented.disambiguated90 === true
+      layoutBackstopUsed = oriented.layoutBackstopUsed ?? null
       if (orientApplied) console.info('[content_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
       if (orientationUncertain) console.warn('[content_orient] detection_undecidable', JSON.stringify({ doc_type_id: docTypeId }))
       if (disambiguated180) console.info('[content_orient] disambiguated_180', JSON.stringify({ doc_type_id: docTypeId }))
       if (disambiguated90) console.info('[content_orient] disambiguated_90', JSON.stringify({ doc_type_id: docTypeId }))
+      if (layoutBackstopUsed) console.info('[content_orient] layout_backstop_used', JSON.stringify({ doc_type_id: docTypeId, layout_backstop_used: layoutBackstopUsed }))
     }
   } else if (process.env.AUTO_ORIENT_ENABLED === '1') {
     // Legacy iterative detector (deprecated — kept for rollback; see detectOrientation.ts for why).
@@ -160,6 +165,10 @@ export async function readDocument(
       orientApplied = oriented.applied
       if (orientApplied) console.info('[auto_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
     }
+  }
+  const documentFitEnabled = process.env.DOCUMENT_FIT_ENABLED === '1'
+  if (documentFitEnabled) {
+    documentFit = (await assessDocumentFit(imageBuffer, 'full_page_image')).document_fit
   }
 
   // DOCUMENT POSTURE ENVELOPE (owner patch 2026-07-05): ONE typed pre-reader posture/capture
@@ -175,6 +184,8 @@ export async function readDocument(
     orientationUncertain,
     disambiguated180,
     disambiguated90,
+    layoutBackstopUsed,
+    documentFit,
     contentOrientCorrectedExif: isContentOrientEnabled() && (opts.forensic?.preprocessRotation ?? 0) !== 0 && orientApplied !== 0,
     qualityStatus: opts.qualityStatus ?? null,
     inputFormat: 'full_page_image',

@@ -1,3 +1,17 @@
+# STATUS (2026-07-05 — posture/orientation observability: handwritten backstop surfaced)
+
+## 2026-07-05 | Orientation telemetry hardening: handwritten layout backstop now explicit
+- `orientToUpright(...)` now carries an explicit `layoutBackstopUsed` signal through `DocumentReadResult`
+  and into `DocumentPostureEnvelope.orientation_backstop_used`, while `orientation_source` now names
+  `handwritten_layout_backstop` / `sparse_layout_backstop` instead of flattening everything into `content_orient`.
+- Real-doc probe confirmed the signal on handwritten fixtures:
+  `birth_cert_handwritten_01`, `military_id_p1_01`, `marriage_1939_kharkiv_borodavka`, and
+  `divorce_blank_template` all surfaced `layoutBackstopUsed=handwritten_layout`.
+- Verified live: targeted vitest for orientation/posture/full-page blank gate = 65 pass / 0 fail,
+  `tsc --noEmit` pass, repo PII guard clean.
+- Residual truth unchanged: orientation is still not globally solved, `document_fit` remains
+  `not_measured`, and handwritten Phase A is still GT-blocked.
+
 # STATUS (2026-07-05 — P1 orientation: sparse 90° class fixed on measured certificate fixtures)
 
 ## 2026-07-05 | Latest rerun after sparse-fallback: live orientation provider drift is still the blocker
@@ -657,3 +671,6 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-07-05: runner-hardening audit update — `scripts/dev-doctor.sh` had a real recursion risk because `DEV_DOCTOR_RECHECK` was set but never honored. Fixed by stopping after one recursive heal/recheck pass. Syntax verified with `bash -n scripts/dev-doctor.sh`. Live process-based proof of the guard remains BLOCKED in this shell because `ps`/`lsof` are denied here, so the install-guard is code-audited but not dynamically simulated in this environment. -->
 <!-- 2026-07-05: runner-hardening follow-up — guard parsing was refactored into `scripts/runner-guard-logic.cjs` so both `.pnpmfile.cjs` and `install-guard.mjs` share the same launcher/subcommand logic. `pnpm.mjs` launcher forms are now covered by helper assertions; no live install battery rerun in this shell because the workspace still hits sibling-worktree EPERM before install can complete. -->
 <!-- 2026-07-05: orientation root-cause audit update — local OSD-first confirm was threaded into `detectOrientation.ts` so adjuncts refine the base pose instead of discarding it. Live rerun on the current code: extended posture harness `21/29 correct, 3 undecidable, 0 errors`; `ORIENT_180_CHECK` rerun `flag180=off 26/40 correct, 11 wrong, 3 undecidable` and `flag180=on 27/40 correct, 10 wrong, 3 undecidable, 1 disambiguated180`. The remaining hard failures are still the birth-cert and military-id-p1 classes; orientation is improved but NOT solved. -->
+<!-- 2026-07-05: orientation follow-up — handwritten docs now skip the OSD high-confidence short-circuit and have a deterministic handwritten-layout backstop in `detectOrientation.ts`, but the live matrix is still partial after rerun: unit tests/typecheck/PII are green, while birth-cert / military-id classes still misroute on the real harness. Do not claim orientation solved. -->
+<!-- 2026-07-05: orientation root-cause follow-up — handwritten docs are now fail-closed unless OSD is reliable Cyrillic. Live spot probe on the real fixtures: `birth_cert_handwritten_01` and `military_id_p1_01` now return null on all rotations; `military_id_p2_01`, `internal_passport_01`, and `marriage_1939_kharkiv_borodavka` keep correct corrections via reliable Cyrillic OSD. Targeted vitest, `tsc --noEmit`, and `node scripts/check-no-pii.mjs` are green. -->
+<!-- 2026-07-05: posture follow-up — `documentFit` was added as an opt-in signal only (`DOCUMENT_FIT_ENABLED=1`). Live probe on real docs showed a false positive `cropped_or_partial` on `marriage_apostille_vasylsiuk` even though the photo is visually full-page, so the main reader path keeps fit off by default. Targeted vitest, `tsc --noEmit`, and `node scripts/check-no-pii.mjs` are green; this is a safety guard, not a solved fit oracle. -->
