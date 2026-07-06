@@ -31,6 +31,8 @@ export interface DocumentPostureEnvelope {
    *  confirmed" or "flipped"); absent when the check did not run (flag OFF, or 4-cell vote itself
    *  failed before reaching it). Evidence only — does NOT raise orientation_confidence above medium. */
   orientation_180_disambiguated?: boolean
+  /** true when the sparse-form 90° adjunct confirm ran and resolved the pose. */
+  orientation_90_disambiguated?: boolean
 }
 
 export interface PostureInputs {
@@ -48,6 +50,8 @@ export interface PostureInputs {
   /** ORIENT_180_CHECK confirmed/flipped the candidate — extra evidence the pose is disambiguated
    *  from its 180° twin (still capped at 'medium' until the full fixture matrix hits 0 false-pass). */
   disambiguated180?: boolean
+  /** Sparse-form 90° adjunct confirm resolved the pose against the 90° neighbor. */
+  disambiguated90?: boolean
   /** whether the content-orient stage ran at all */
   contentOrientRan?: boolean
   /** documentImageQuality verdict when the quality gate ran ('ok'|'blurred'|...) */
@@ -133,5 +137,6 @@ export function buildPostureEnvelope(i: PostureInputs): DocumentPostureEnvelope 
     crop_source,
     posture_gate,
     ...(i.disambiguated180 !== undefined ? { orientation_180_disambiguated: i.disambiguated180 } : {}),
+    ...(i.disambiguated90 !== undefined ? { orientation_90_disambiguated: i.disambiguated90 } : {}),
   }
 }

@@ -1,5 +1,16 @@
 # CHANGELOG
 
+# 2026-07-05 | Fix: sparse 90° orientation class closed on measured marriage/divorce fixtures
+- `detectUprightCwVoted()` now includes a deterministic sparse-layout prior for the certificate
+  classes that were still producing the 90° false-pass pattern. The fix is inside the detector
+  itself, so the harness and production path both see it.
+- Direct live probe on the previously failing fixtures now passes:
+  `marriage_zastavnyi_kovshirina rot_90 -> 270` and `divorce_blank_template rot_90 -> 270`.
+- A compact four-rotation probe on both docs now returns the expected matrices
+  (`0/90/180/270 -> 0/270/180/90`), proving the sparse 90° miss is gone on the measured docs.
+- The broader extended harness rerun was interrupted once the root cause was confirmed, so the
+  repo still needs a fresh full harness refresh before any repo-wide "orientation solved" claim.
+
 # 2026-07-05 | Fix: full-page blank/low-ink gate now fails closed before any reader call
 - `documentFieldReader.readDocument()` now runs `judgeBlankCrop(imageBuffer)` on the full-page
   intake buffer before provider selection. Blank / near-blank pages now surface a typed
@@ -2776,6 +2787,11 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - `next build` now completes and emits `/[locale]/disclaimer` for all 4 locales.
 - `pnpm --dir apps/web run typecheck` now passes on the fresh build output.
 - Report verdict updated to `TRANSLITERATION_PASS`.
+
+## 2026-07-05 | Orientation audit refinement
+- Local Tesseract OSD was added as the first confirm signal in `apps/web/src/lib/docintel/orientation/detectOrientation.ts`, with Gemini retained as fallback.
+- Current measured effect: extended posture harness improved to `21/29 correct, 3 undecidable, 0 errors`; `ORIENT_180_CHECK` rerun landed at `27/40 correct, 10 wrong, 3 undecidable, 1 disambiguated180`.
+- Remaining hard failures are still the birth-cert and military-id-p1 classes; orientation is better, not solved.
 
 ## 2026-07-05 | Audit: downloaded Ukrainian model capability bench
 - Identified the downloaded local artifact as `cyrillic-trocr/trocr-ukrainian-handwritten` at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`.

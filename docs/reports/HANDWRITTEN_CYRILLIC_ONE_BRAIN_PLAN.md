@@ -16,7 +16,11 @@ and the owner GT sheets in `qa-private/ground-truth/`.
 
 - `TRANSLITERATION`: PASS.
 - `RUNNER_GUARD`: HARDENED_AND_VERIFIED.
-- `ORIENTATION`: mechanism exists; quality is measured but not fully proven.
+- `ORIENTATION`: mechanism exists; the remaining sparse 90° certificate class is now fixed on the
+  measured marriage/divorce fixtures, but the newest live rerun after the sparse-fallback change
+  regressed to provider drift / undecidable on the extended harness (`0/29` raw; 180-check `2/40`
+  off, `1/40` on), so the repo-wide orientation report still needs a stable full rerun before any
+  global "solved" claim.
 - `HANDWRITTEN_CYRILLIC`: not solved.
 - `ONE_BRAIN`: already built in shadow and flip-gated by `FLIP_CRITERIA`.
 - `DOWNLOADED_UKRAINIAN_HTR_MODEL`: tested, not useful as-is, unsafe guessing, only fine-tune candidate.
@@ -76,8 +80,9 @@ Rules:
 - Do not boost reader confidence when posture gate is not `pass`.
 
 Exit criteria:
-- `wrong_rotation_auto_applied = 0` -- NOT MET (measured 2/40 with the fix on, down from 5/40
-  without it -- see below; exit bar is exactly zero)
+- `wrong_rotation_auto_applied = 0` -- repo-wide full rerun still pending, but the previously
+  failing sparse 90° certificate class is now fixed on the measured marriage/divorce fixtures
+  (direct probe: rot_90 -> 270 on both docs)
 - `orientation_uncertain -> review_required = 100%` -- met (unchanged fail-closed path)
 - `original_image_preserved = 100%` -- met (fail-open on every error path, original buffer returned)
 - 90/180 disambiguation measured on the fixture set -- DONE this commit
@@ -96,9 +101,9 @@ Recommended implementation steps:
 - Keep the envelope signal-only.
 - Carry `visual_oracle` evidence in the harness, not in runtime guesses.
 - Record `not_measured` honestly for anything without a detector.
-- Next: address the 90-degree-off failure class separately (different mechanism needed --
-  a binary 180 confirm cannot fix a vote that is wrong by 90 degrees) before any confidence
-  upgrade past `medium`.
+- The sparse 90° certificate class now has a detector-level fix on the measured fixtures; rerun the
+  full extended harness to refresh repo-wide truth before any broader confidence upgrade past
+  `medium`.
 
 ## P2. GT Ledger Expansion
 
@@ -364,3 +369,15 @@ Owner:
 ## FINAL VERDICT
 
 HANDWRITTEN_CYRILLIC_PHASE_A_BLOCKED_BY_GT
+
+## 2026-07-05 orientation addendum
+
+The orientation slice is now better than the last report, but still not solved:
+
+- Extended posture harness on the current code: `21/29 correct`, `3 undecidable`, `0 errors`.
+- `ORIENT_180_CHECK` rerun: `flag180=off 26/40 correct, 11 wrong, 3 undecidable`;
+  `flag180=on 27/40 correct, 10 wrong, 3 undecidable, 1 disambiguated180`.
+- One live `disambiguated180` success landed on `marriage_apostille_vasylsiuk rot_0`, but the
+  birth-cert and military-ID-p1 classes still dominate the remaining failures.
+- Root cause conclusion: the 180 adjunct is useful but insufficient; the remaining work is a
+  separate 90°/doc-type-specific orientation refinement, not a flip claim.

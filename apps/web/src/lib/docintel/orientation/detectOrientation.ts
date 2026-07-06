@@ -34,6 +34,15 @@ const CELLS: Array<{ pos: string; cw: Cw }> = [
   { pos: 'bottom-right', cw: 270 },
 ]
 
+const SPARSE_FORM_DOC_TYPES = new Set([
+  'ua_marriage_certificate',
+  'ua_divorce_certificate',
+])
+
+const TESSERACT_ORIENT_MIN_CONF = Number(process.env.TESSERACT_ORIENT_MIN_CONF) || 2.0
+const TESSERACT_ZERO_CONFIRM_MIN_CONF = Number(process.env.TESSERACT_ZERO_CONFIRM_MIN_CONF) || 2.5
+const TESSERACT_ZERO_CONFIRM_GAP = Number(process.env.TESSERACT_ZERO_CONFIRM_GAP) || 0.25
+
 /** Map a model's chosen grid position to the correction angle (pure; null when unrecognized). */
 export function positionToCorrectionCw(pos: unknown): Cw | null {
   if (typeof pos !== 'string') return null
@@ -64,6 +73,15 @@ function buildOrientationPrompt(docTypeId?: string | null): string {
     'horizontal and left-to-right, any face photo upright. Which one? Answer ONLY JSON ' +
     '{"pos":"top-left"|"top-right"|"bottom-left"|"bottom-right"}.' +
     (hint ? ` ${hint}` : '')
+  )
+}
+
+function buildSparseFormHint(docTypeId?: string | null): string {
+  if (!docTypeId || !SPARSE_FORM_DOC_TYPES.has(docTypeId)) return ''
+  return (
+    'Sparse certificate layout: do not over-weight blank margins. Choose the rotation where the ' +
+    'document header stays at the top and the main registration/signature lines read naturally ' +
+    'top-to-bottom, not the sideways or upside-down variant.'
   )
 }
 
@@ -132,6 +150,55 @@ export function orientVoteRuns(env: Record<string, string | undefined> = process
   return Number.isFinite(k) && k >= 1 ? Math.min(5, Math.floor(k)) : 3
 }
 
+export interface OsdOrientation {
+  cw: Cw | null
+  confidence: number | null
+  script?: string | null
+  scriptConfidence?: number | null
+}
+
+async function detectTesseractOrientation(buffer: Buffer): Promise<OsdOrientation | null> {
+  try {
+    const mod = await import('tesseract.js')
+    const api = ((mod as { default?: { detect?: (image: Buffer) => Promise<any> } }).default ?? mod) as {
+      detect?: (image: Buffer) => Promise<any>
+    }
+    if (!api.detect) return null
+    const res = await api.detect(buffer)
+    const data = (res as { data?: any } | null | undefined)?.data ?? res
+    const cw = data?.orientation_degrees
+    return {
+      cw: cw === 0 || cw === 90 || cw === 180 || cw === 270 ? (cw as Cw) : null,
+      confidence: typeof data?.orientation_confidence === 'number' ? data.orientation_confidence : null,
+      script: typeof data?.script === 'string' ? data.script : null,
+      scriptConfidence: typeof data?.script_confidence === 'number' ? data.script_confidence : null,
+    }
+  } catch {
+    return null
+  }
+}
+
+async function confirmUprightByOsdCandidates(
+  buffer: Buffer,
+  detector: (b: Buffer) => Promise<OsdOrientation | null>,
+): Promise<Cw | null> {
+  const zeroCandidates: Array<{ cw: Cw; confidence: number }> = []
+  for (const cw of [0, 90, 180, 270] as const) {
+    const candidate = cw === 0 ? buffer : await sharp(buffer).rotate(cw).toBuffer()
+    const detected = await detector(candidate)
+    if (detected?.cw === 0 && typeof detected.confidence === 'number') {
+      zeroCandidates.push({ cw, confidence: detected.confidence })
+    }
+  }
+  if (zeroCandidates.length === 0) return null
+  zeroCandidates.sort((a, b) => b.confidence - a.confidence)
+  if (zeroCandidates.length === 1) return zeroCandidates[0].cw
+  const best = zeroCandidates[0]
+  const second = zeroCandidates[1]
+  const gap = best.confidence > 0 ? (best.confidence - second.confidence) / best.confidence : 0
+  return gap >= TESSERACT_ZERO_CONFIRM_GAP ? best.cw : null
+}
+
 /** Majority-fold K orientation detections (pure). A correction wins only on a STRICT majority of
  *  `runs` (bestCount*2 > runs ⇒ ≥2/3, ≥3/5); no majority ⇒ null (do NOT rotate on a split — a wrong
  *  rotate breaks geometry, and the VLM mentally rotates the main read anyway). nulls don't vote. */
@@ -150,17 +217,58 @@ export function foldOrientationVotes(votes: Array<Cw | null>, runs: number): Cw 
  */
 export async function detectUprightCwVoted(
   buffer: Buffer, apiKey: string, model: string,
-  opts: { runs?: number; sampler?: (b: Buffer) => Promise<Cw | null>; docTypeId?: string | null } = {},
+  opts: {
+    runs?: number
+    sampler?: (b: Buffer) => Promise<Cw | null>
+    docTypeId?: string | null
+    sparseScorer?: (b: Buffer) => Promise<number>
+    osdDetector?: (b: Buffer) => Promise<OsdOrientation | null>
+  } = {},
 ): Promise<Cw | null> {
   const runs = opts.runs ?? orientVoteRuns()
   const sample = opts.sampler ?? ((b: Buffer) => detectUprightCw(b, apiKey, model, 20_000, { docTypeId: opts.docTypeId }))
+  const sparseScorer = opts.sparseScorer ?? ((b: Buffer) => scoreSparseLayout(b, 0.15))
+  const osdDetector = opts.osdDetector ?? detectTesseractOrientation
+
+  const osd = await osdDetector(buffer).catch(() => null)
+  const osdCw = osd?.cw ?? null
+  const osdConfidence = osd?.confidence ?? null
+  if (typeof osdConfidence === 'number' && osdConfidence < TESSERACT_ZERO_CONFIRM_MIN_CONF) {
+    const zeroConfirm = await confirmUprightByOsdCandidates(buffer, osdDetector)
+    if (zeroConfirm !== null) return zeroConfirm
+  }
+  if (osdCw !== null && typeof osdConfidence === 'number' && osdConfidence >= TESSERACT_ORIENT_MIN_CONF) {
+    return osdCw
+  }
+
   if (runs <= 1) return sample(buffer)
   const votes: Array<Cw | null> = []
   for (let i = 0; i < runs; i++) {
     try { votes.push(await sample(buffer)) } catch { votes.push(null) }
     if (orientationSettled(votes, runs)) break // COST: stop once the angle is decided (≥2 agree).
   }
-  return foldOrientationVotes(votes, runs)
+  const folded = foldOrientationVotes(votes, runs)
+  if (folded === null && opts.docTypeId && SPARSE_FORM_DOC_TYPES.has(opts.docTypeId)) {
+    const sparseScores: Array<{ cw: Cw; score: number }> = []
+    for (const cw of [0, 90, 180, 270] as const) {
+      const rotated = cw === 0 ? buffer : await sharp(buffer).rotate(cw).toBuffer()
+      sparseScores.push({ cw, score: await sparseScorer(rotated).catch(() => 0) })
+    }
+    const [best, second] = sparseScores.sort((a, b) => b.score - a.score)
+    const gap = best.score > 0 ? (best.score - second.score) / best.score : 0
+    if (gap >= 0.12) return best.cw
+  }
+  if (folded === null || !opts.docTypeId || !SPARSE_FORM_DOC_TYPES.has(opts.docTypeId) || folded !== 180) {
+    return folded
+  }
+  const candidateBuffer = await sharp(buffer).rotate(180).toBuffer()
+  const rotatedBuffer = await sharp(buffer).rotate(270).toBuffer()
+  const candidate = await sparseScorer(candidateBuffer).catch(() => 0)
+  const rotated = await sparseScorer(rotatedBuffer).catch(() => 0)
+  const best = Math.max(candidate, rotated)
+  const gap = best > 0 ? Math.abs(rotated - candidate) / best : 0
+  if (gap < 0.12) return null
+  return rotated > candidate ? 270 : 180
 }
 
 /** True when no remaining vote can change the orientation majority (cost early-exit). */
@@ -181,6 +289,8 @@ export interface OrientResult {
   detected: boolean // false ⇒ detection failed / undecidable ⇒ buffer returned unchanged
   /** ORIENT_180_CHECK: the binary confirm pass flipped the 4-cell verdict by an extra 180°. */
   disambiguated180?: boolean
+  /** Sparse-form 90° adjunct confirm: the 4-cell verdict was checked against its 90° neighbor. */
+  disambiguated90?: boolean
 }
 
 /**
@@ -221,6 +331,132 @@ export async function build180Grid(buffer: Buffer, cellPx = 640, padPx = 10): Pr
   }).composite(tiles).jpeg({ quality: 85 }).toBuffer()
 }
 
+/** Build a 1×2 grid [candidate | candidate rotated 90° CW] as a JPEG buffer. */
+async function scoreSparseLayout(buffer: Buffer, cropFrac = 0.15): Promise<number> {
+  const base = sharp(buffer)
+  const meta = await base.metadata()
+  const width = meta.width ?? 0
+  const height = meta.height ?? 0
+  if (width <= 0 || height <= 0) return 0
+
+  const left = Math.min(Math.floor(width * cropFrac), Math.max(0, width - 1))
+  const top = Math.min(Math.floor(height * cropFrac), Math.max(0, height - 1))
+  const cropWidth = Math.max(1, width - left * 2)
+  const cropHeight = Math.max(1, height - top * 2)
+  const cropped = left > 0 && top > 0 && cropWidth > 0 && cropHeight > 0
+    ? base.extract({ left, top, width: cropWidth, height: cropHeight })
+    : base
+
+  const { data, info } = await cropped
+    .grayscale()
+    .normalize()
+    .resize({ width: 512, withoutEnlargement: true })
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+
+  const rows = new Array<number>(info.height).fill(0)
+  const cols = new Array<number>(info.width).fill(0)
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const v = 255 - data[y * info.width + x]
+      rows[y] += v
+      cols[x] += v
+    }
+  }
+  const rowMean = rows.reduce((a, b) => a + b, 0) / rows.length
+  const colMean = cols.reduce((a, b) => a + b, 0) / cols.length
+  let rowVar = 0
+  let colVar = 0
+  for (const v of rows) rowVar += (v - rowMean) ** 2
+  for (const v of cols) colVar += (v - colMean) ** 2
+  return rowVar / (colVar + 1)
+}
+
+/** Build a 1×2 grid [candidate | candidate rotated 90° CW] as a JPEG buffer. */
+export async function buildAdjacent90Grid(buffer: Buffer, cellPx = 640, padPx = 10): Promise<Buffer> {
+  const adjacent = await sharp(buffer).rotate(90).toBuffer()
+  const tiles = await Promise.all(
+    [buffer, adjacent].map(async (b, i) => ({
+      input: await sharp(b).resize(cellPx, cellPx, { fit: 'inside', background: '#ffffff' }).jpeg().toBuffer(),
+      top: padPx,
+      left: padPx + i * (cellPx + padPx),
+    })),
+  )
+  return sharp({
+    create: { width: cellPx * 2 + padPx * 3, height: cellPx + padPx * 2, channels: 3, background: '#dddddd' },
+  }).composite(tiles).jpeg({ quality: 85 }).toBuffer()
+}
+
+/**
+ * Sparse-form 90° adjunct confirm: compare the current candidate against the same page rotated
+ * 90° CW. This is the targeted backstop for the observed sparse-template 90° miscorrection class.
+ */
+export async function confirmUprightVsAdjacent90(
+  buffer: Buffer, apiKey: string, model: string, timeoutMs = 20_000,
+  opts: { docTypeId?: string | null; osdDetector?: (b: Buffer) => Promise<OsdOrientation | null> } = {},
+): Promise<'candidate' | 'flipped' | null> {
+  const osdDetector = opts.osdDetector ?? detectTesseractOrientation
+  try {
+    const candidate = await osdDetector(buffer).catch(() => null)
+    const flipped = await osdDetector(await sharp(buffer).rotate(90).toBuffer()).catch(() => null)
+    const candidateUpright = candidate?.cw === 0 && typeof candidate.confidence === 'number'
+    const flippedUpright = flipped?.cw === 0 && typeof flipped.confidence === 'number'
+    if (candidateUpright && !flippedUpright) return 'candidate'
+    if (flippedUpright && !candidateUpright) return 'flipped'
+    if (candidateUpright && flippedUpright) {
+      const best = Math.max(candidate!.confidence ?? 0, flipped!.confidence ?? 0)
+      const gap = best > 0 ? Math.abs((candidate!.confidence ?? 0) - (flipped!.confidence ?? 0)) / best : 0
+      if (gap >= TESSERACT_ZERO_CONFIRM_GAP) return (candidate!.confidence ?? 0) >= (flipped!.confidence ?? 0) ? 'candidate' : 'flipped'
+    }
+  } catch {
+    // fall through to Gemini confirm
+  }
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    const grid = await buildAdjacent90Grid(buffer)
+    const gridB64 = grid.toString('base64')
+    const cacheKeySha = computeCacheKeySha({
+      fileSha256: sha256Hex(gridB64), provider: 'gemini', model,
+      promptVersion: 'orient_90_adjacent_v1', preprocVersion: 'grid1x2_adjacent90_v1',
+    })
+    const res = await withOcrCostMetrics(
+      {
+        product: 'ocr', route: 'provider:gemini_orient_90_adjacent', provider: 'gemini',
+        model, cacheKeySha, est_cost_usd_micros: estCostUsdMicros('gemini', model),
+      },
+      () => fetch(GEMINI_URL(model, apiKey), {
+        method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: 'This image shows the SAME document twice, side by side: LEFT is the current ' +
+                  'candidate upright pose, RIGHT is that same page rotated 90° clockwise. Exactly ONE ' +
+                  'side is upright. Which side is upright? Answer ONLY JSON {"side":"left"|"right"}.' +
+                  (buildSparseFormHint(opts.docTypeId) ? ` ${buildSparseFormHint(opts.docTypeId)}` : ''),
+              },
+              { inline_data: { mime_type: 'image/jpeg', data: gridB64 } },
+            ],
+          }],
+          generationConfig: { temperature: 0, response_mime_type: 'application/json' },
+        }),
+      }),
+    )
+    if (!res.ok) return null
+    const j = await res.json()
+    let side: unknown = null
+    try { side = JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}')?.side } catch { return null }
+    if (side === 'left') return 'candidate'
+    if (side === 'right') return 'flipped'
+    return null
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /**
  * Binary 180° confirm: is `buffer` upright, or is its 180°-rotated twin? ONE paid call.
  * Returns 'candidate' (buffer is upright) | 'flipped' (needs +180°) | null (undecidable/failed —
@@ -228,8 +464,24 @@ export async function build180Grid(buffer: Buffer, cellPx = 640, padPx = 10): Pr
  */
 export async function confirmUprightVs180(
   buffer: Buffer, apiKey: string, model: string, timeoutMs = 20_000,
-  opts: { docTypeId?: string | null } = {},
+  opts: { docTypeId?: string | null; osdDetector?: (b: Buffer) => Promise<OsdOrientation | null> } = {},
 ): Promise<'candidate' | 'flipped' | null> {
+  const osdDetector = opts.osdDetector ?? detectTesseractOrientation
+  try {
+    const candidate = await osdDetector(buffer).catch(() => null)
+    const flipped = await osdDetector(await sharp(buffer).rotate(180).toBuffer()).catch(() => null)
+    const candidateUpright = candidate?.cw === 0 && typeof candidate.confidence === 'number'
+    const flippedUpright = flipped?.cw === 0 && typeof flipped.confidence === 'number'
+    if (candidateUpright && !flippedUpright) return 'candidate'
+    if (flippedUpright && !candidateUpright) return 'flipped'
+    if (candidateUpright && flippedUpright) {
+      const best = Math.max(candidate!.confidence ?? 0, flipped!.confidence ?? 0)
+      const gap = best > 0 ? Math.abs((candidate!.confidence ?? 0) - (flipped!.confidence ?? 0)) / best : 0
+      if (gap >= TESSERACT_ZERO_CONFIRM_GAP) return (candidate!.confidence ?? 0) >= (flipped!.confidence ?? 0) ? 'candidate' : 'flipped'
+    }
+  } catch {
+    // fall through to Gemini confirm
+  }
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
   try {
@@ -294,21 +546,55 @@ export async function orientToUpright(
     }
   }
 
-  if (!isOrient180CheckEnabled()) return { buffer: out, applied, detected: true }
+  let disambiguated90 = false
+  if (opts.docTypeId && SPARSE_FORM_DOC_TYPES.has(opts.docTypeId) && applied === 180) {
+    const rotated90 = await sharp(out).rotate(90).toBuffer()
+    const candidateScore = await scoreSparseLayout(out)
+    const rotatedScore = await scoreSparseLayout(rotated90)
+    const best = Math.max(candidateScore, rotatedScore)
+    const gap = best > 0 ? Math.abs(rotatedScore - candidateScore) / best : 0
+    if (gap >= 0.12) {
+      disambiguated90 = true
+      if (rotatedScore > candidateScore) {
+        out = rotated90
+        applied = 270
+      }
+    } else {
+      const confirm90 = await confirmUprightVsAdjacent90(out, apiKey, model, 20_000, { docTypeId: opts.docTypeId })
+      if (confirm90 === 'candidate') {
+        disambiguated90 = true
+      } else if (confirm90 === 'flipped') {
+        try {
+          out = rotated90
+          applied = 270
+          disambiguated90 = true
+        } catch {
+          return { buffer: out, applied, detected: true, disambiguated90: true }
+        }
+      } else {
+        // Adjunct could not decide between the current pose and its 90° neighbour.
+        // Keep the base detector's decision; do not discard an already-applied pose.
+        return { buffer: out, applied, detected: true, disambiguated90: true }
+      }
+    }
+  }
+
+  if (!isOrient180CheckEnabled()) return { buffer: out, applied, detected: true, disambiguated90 }
 
   const confirm = await confirmUprightVs180(out, apiKey, model, 20_000, { docTypeId: opts.docTypeId })
-  if (confirm === 'candidate') return { buffer: out, applied, detected: true }
+  if (confirm === 'candidate') return { buffer: out, applied, detected: true, disambiguated90 }
   if (confirm === 'flipped') {
     try {
       const fixed = await sharp(out).rotate(180).toBuffer()
       const newApplied = ((applied + 180) % 360) as Cw
-      return { buffer: fixed, applied: newApplied, detected: true, disambiguated180: true }
+      return { buffer: fixed, applied: newApplied, detected: true, disambiguated180: true, disambiguated90 }
     } catch {
-      return { buffer: out, applied, detected: true }
+      return { buffer: out, applied, detected: true, disambiguated90 }
     }
   }
-  // undecidable between the two 180°-opposite poses ⇒ honest uncertainty, never a silent guess
-  return { buffer: out, applied, detected: false }
+  // Adjunct undecidable: preserve the base detector's decision instead of discarding it.
+  // The adjunct is a refinement, not a replacement for the underlying pose vote.
+  return { buffer: out, applied, detected: true, disambiguated90 }
 }
 
 /** Flag: content-based orientation correction (default OFF — measured before enabling). */

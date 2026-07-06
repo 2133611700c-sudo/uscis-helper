@@ -136,6 +136,7 @@ export async function readDocument(
   let orientApplied = 0
   let orientationUncertain = false
   let disambiguated180 = false
+  let disambiguated90 = false
   if (isContentOrientEnabled()) {
     const apiKey = getGeminiApiKey()
     if (apiKey) {
@@ -144,9 +145,11 @@ export async function readDocument(
       orientApplied = oriented.applied
       orientationUncertain = !oriented.detected   // Step-5: undecidable orientation → fail-closed downstream
       disambiguated180 = oriented.disambiguated180 === true
+      disambiguated90 = oriented.disambiguated90 === true
       if (orientApplied) console.info('[content_orient] rotated', JSON.stringify({ doc_type_id: docTypeId, cw: orientApplied }))
       if (orientationUncertain) console.warn('[content_orient] detection_undecidable', JSON.stringify({ doc_type_id: docTypeId }))
       if (disambiguated180) console.info('[content_orient] disambiguated_180', JSON.stringify({ doc_type_id: docTypeId }))
+      if (disambiguated90) console.info('[content_orient] disambiguated_90', JSON.stringify({ doc_type_id: docTypeId }))
     }
   } else if (process.env.AUTO_ORIENT_ENABLED === '1') {
     // Legacy iterative detector (deprecated — kept for rollback; see detectOrientation.ts for why).
@@ -171,6 +174,7 @@ export async function readDocument(
     contentRotationCw: orientApplied,
     orientationUncertain,
     disambiguated180,
+    disambiguated90,
     contentOrientCorrectedExif: isContentOrientEnabled() && (opts.forensic?.preprocessRotation ?? 0) !== 0 && orientApplied !== 0,
     qualityStatus: opts.qualityStatus ?? null,
     inputFormat: 'full_page_image',

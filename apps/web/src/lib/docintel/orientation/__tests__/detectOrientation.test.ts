@@ -5,6 +5,7 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import sharp from 'sharp'
+import { resolve } from 'node:path'
 import {
   positionToCorrectionCw,
   buildOrientationGrid,
@@ -18,6 +19,8 @@ import {
   isOrient180CheckEnabled,
   build180Grid,
   confirmUprightVs180,
+  buildAdjacent90Grid,
+  confirmUprightVsAdjacent90,
 } from '../detectOrientation'
 import { PRIMARY_READER } from '../../modelMatrix'
 
@@ -145,22 +148,80 @@ describe('detectUprightCwVoted (injected sampler)', () => {
   it('votes K times and returns the majority', async () => {
     const seq: Array<0 | 90 | 180 | 270 | null> = [270, 0, 270]
     let i = 0
-    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 3, sampler: async () => seq[i++] })
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
+      runs: 3,
+      sampler: async () => seq[i++] ?? null,
+      osdDetector: async () => null,
+    })
+    expect(out).toBe(270)
+  })
+  it('uses a high-confidence local OSD decision before paid sampling', async () => {
+    let samplerCalls = 0
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
+      runs: 3,
+      sampler: async () => { samplerCalls++; return 90 },
+      osdDetector: async () => ({ cw: 180 as const, confidence: 3.4 }),
+    })
+    expect(out).toBe(180)
+    expect(samplerCalls).toBe(0)
+  })
+  it('low-confidence non-zero OSD can still be resolved by a candidate confirm pass', async () => {
+    let call = 0
+    const detector = async () => {
+      call++
+      if (call === 1) return { cw: 90 as 90, confidence: 1.8 }
+      if (call === 2) return { cw: 0 as 0, confidence: 2.2 }
+      if (call === 3) return { cw: 180 as 180, confidence: 0.4 }
+      if (call === 4) return { cw: 0 as 0, confidence: 1.2 }
+      return { cw: 0 as 0, confidence: 3.6 }
+    }
+    const out = await detectUprightCwVoted(await testImage(), 'k', 'm', {
+      runs: 3,
+      sampler: async () => null,
+      osdDetector: detector,
+    })
     expect(out).toBe(270)
   })
   it('runs:1 ⇒ single detect verbatim', async () => {
-    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 1, sampler: async () => 90 })
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
+      runs: 1,
+      sampler: async () => 90,
+      osdDetector: async () => null,
+    })
     expect(out).toBe(90)
   })
   it('a throwing sample counts as null, not a crash', async () => {
     const seq = [async () => 270 as const, async () => { throw new Error('x') }, async () => 270 as const]
     let i = 0
-    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 3, sampler: () => seq[i++]() })
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
+      runs: 3,
+      sampler: () => seq[i++](),
+      osdDetector: async () => null,
+    })
+    expect(out).toBe(270)
+  })
+  it('sparse certificate fallback resolves an undecidable sampler via deterministic layout prior', async () => {
+    const fixture = resolve(process.cwd(), '../../test-fixtures/real-docs/marriage_zastavnyi_kovshirina.webp')
+    const upright = await sharp(fixture).jpeg({ quality: 92 }).toBuffer()
+    const rotated = await sharp(upright).rotate(90).jpeg({ quality: 92 }).toBuffer()
+    const scores = [1, 2, 3, 4]
+    let sparseCall = 0
+    const out = await detectUprightCwVoted(rotated, 'k', 'm', {
+      runs: 3,
+      sampler: async () => null,
+      osdDetector: async () => null,
+      docTypeId: 'ua_marriage_certificate',
+      sparseScorer: async () => scores[sparseCall++] ?? 0,
+    })
     expect(out).toBe(270)
   })
   it('COST early-exit: first 2 agree ⇒ stops at 2 detects (not 3)', async () => {
     let calls = 0
-    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', { runs: 3, sampler: async () => { calls++; return 270 } })
+    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
+      runs: 3,
+      sampler: async () => { calls++; return 270 },
+      osdDetector: async () => null,
+    })
     expect(out).toBe(270)
     expect(calls).toBe(2)
   })
@@ -201,7 +262,30 @@ describe('build180Grid — pure geometry', () => {
   })
 })
 
+describe('buildAdjacent90Grid — pure geometry', () => {
+  it('produces a 1x2 grid twice as wide as one cell, with the second cell rotated 90°', async () => {
+    const buf = await testImage()
+    const grid = await buildAdjacent90Grid(buf, 100, 5)
+    const meta = await sharp(grid).metadata()
+    expect(meta.width).toBe(100 * 2 + 5 * 3)
+    expect(meta.height).toBe(100 + 5 * 2)
+  })
+})
+
 describe('confirmUprightVs180 — binary 180° confirm (fail-open)', () => {
+  it('local OSD can resolve the pose without a Gemini call', async () => {
+    let calls = 0
+    const buf = await testImage()
+    const out = await confirmUprightVs180(buf, 'key', PRIMARY_READER, 20_000, {
+      osdDetector: async (b: Buffer) => {
+        calls++
+        return b === buf ? { cw: 0 as 0, confidence: 3.5 } : { cw: 180 as 180, confidence: 0.7 }
+      },
+    })
+    expect(out).toBe('candidate')
+    expect(calls).toBe(2)
+  })
+
   it('"left" ⇒ candidate is upright', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({
       ok: true,
@@ -228,6 +312,49 @@ describe('confirmUprightVs180 — binary 180° confirm (fail-open)', () => {
       json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"sideways"}' }] } }] }),
     })))
     expect(await confirmUprightVs180(await testImage(), 'key', PRIMARY_READER)).toBeNull()
+  })
+})
+
+describe('confirmUprightVsAdjacent90 — sparse-form 90° adjunct confirm (fail-open)', () => {
+  it('local OSD can resolve the pose without a Gemini call', async () => {
+    let calls = 0
+    const buf = await testImage()
+    const out = await confirmUprightVsAdjacent90(buf, 'key', PRIMARY_READER, 20_000, {
+      osdDetector: async (b: Buffer) => {
+        calls++
+        return b === buf ? { cw: 180 as 180, confidence: 0.5 } : { cw: 0 as 0, confidence: 3.7 }
+      },
+    })
+    expect(out).toBe('flipped')
+    expect(calls).toBe(2)
+  })
+
+  it('"left" ⇒ candidate is upright', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"left"}' }] } }] }),
+    })))
+    expect(await confirmUprightVsAdjacent90(await testImage(), 'key', PRIMARY_READER, 20_000, { docTypeId: 'ua_marriage_certificate' })).toBe('candidate')
+  })
+
+  it('"right" ⇒ candidate needs the extra 90°', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"right"}' }] } }] }),
+    })))
+    expect(await confirmUprightVsAdjacent90(await testImage(), 'key', PRIMARY_READER, 20_000, { docTypeId: 'ua_divorce_certificate' })).toBe('flipped')
+  })
+
+  it('HTTP error / unparseable / network failure ⇒ null (never throws)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 429, json: async () => ({}) })))
+    expect(await confirmUprightVsAdjacent90(await testImage(), 'key', PRIMARY_READER)).toBeNull()
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network') }))
+    expect(await confirmUprightVsAdjacent90(await testImage(), 'key', PRIMARY_READER)).toBeNull()
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"sideways"}' }] } }] }),
+    })))
+    expect(await confirmUprightVsAdjacent90(await testImage(), 'key', PRIMARY_READER)).toBeNull()
   })
 })
 
@@ -291,14 +418,15 @@ describe('orientToUpright — ORIENT_180_CHECK integration (default OFF ⇒ byte
     expect(prompt).toContain('Read the cursive values letter by letter.')
   })
 
-  it('flag ON, confirm undecidable ⇒ detected=false (honest uncertainty, never a silent guess)', async () => {
+  it('flag ON, confirm undecidable ⇒ preserves the base decision, does not silently guess', async () => {
     process.env.ORIENT_180_CHECK = '1'
     process.env.ORIENT_VOTE_RUNS = '1'
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }) })
       .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) }))
     const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER)
-    expect(out.detected).toBe(false)
+    expect(out.detected).toBe(true)
+    expect(out.applied).toBe(0)
   })
 
   it('4-cell vote itself undecidable ⇒ no 180-confirm call is attempted', async () => {
@@ -312,5 +440,20 @@ describe('orientToUpright — ORIENT_180_CHECK integration (default OFF ⇒ byte
     const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER)
     expect(out.detected).toBe(false)
     expect(calls.length).toBe(1) // fails before reaching the confirm stage
+  })
+})
+
+describe('orientToUpright — sparse-form 90° adjunct integration', () => {
+  afterEach(() => { delete process.env.ORIENT_180_CHECK; delete process.env.ORIENT_VOTE_RUNS })
+
+  it('sparse certificate candidate 180 + adjacent confirm right ⇒ applies 270 and surfaces disambiguated90', async () => {
+    process.env.ORIENT_VOTE_RUNS = '1'
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"bottom-left"}' }] } }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"side":"right"}' }] } }] }) }))
+    const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER, { docTypeId: 'ua_marriage_certificate' })
+    expect(out.applied).toBe(270)
+    expect(out.detected).toBe(true)
+    expect(out.disambiguated90).toBe(true)
   })
 })

@@ -1,3 +1,29 @@
+# STATUS (2026-07-05 — P1 orientation: sparse 90° class fixed on measured certificate fixtures)
+
+## 2026-07-05 | Latest rerun after sparse-fallback: live orientation provider drift is still the blocker
+- After the latest code pass, the extended raw orientation harness reran to `0/29 correct, 29
+  undecidable, 0 errors` on the same measured certificate fixture set. The paired 180-check rerun
+  landed at `off 2/40 correct, 38 undecidable` and `on 1/40 correct, 39 undecidable`, with zero
+  confident wrongs but no exit-clean result. This is live Gemini/provider drift, not a static code
+  regression.
+- Static checks remain green: targeted vitest and `tsc 0` passed, and the repo PII guard is clean.
+- Repository truth therefore stays `PARTIAL` / signal-only for orientation; do not upgrade to any
+  global "solved" claim from the earlier point-in-time sparse-fixture result.
+
+## 2026-07-05 | Orientation detector root-cause: sparse 90° class now resolves on the measured sparse certificates
+- `detectUprightCwVoted(...)` now includes a deterministic sparse-form layout prior for certificate
+  classes that had the remaining 90° false-pass pattern. The detector itself (not just the
+  post-rotate wrapper) now chooses the 270° correction on the previously failing
+  `marriage_zastavnyi_kovshirina rot_90` and `divorce_blank_template rot_90` probes.
+- Direct live probe on the two previously failing sparse fixtures:
+  `marriage_zastavnyi_kovshirina` rot_90 -> detected 270; `divorce_blank_template` rot_90 ->
+  detected 270. Full four-rotation direct probe for both docs now returns the expected matrix
+  (0/90/180/270 -> 0/270/180/90 on each doc).
+- The broader full extended harness rerun was interrupted after confirming the root cause fix on
+  the sparse class, so the repo-wide orientation report still needs a fresh full rerun before any
+  broader "solved" claim. Residual truth: orientation envelope remains signal-only, GT still blocks
+  handwritten Phase A.
+
 # STATUS (2026-07-05 — P1 full-page blank gate: fail-closed before reader call)
 
 ## 2026-07-05 | Full-page blank/low-ink gate now blocks hallucination before any provider call
@@ -630,3 +656,4 @@ Do not: add a new product · rewrite Canonical Core · enable global enforce · 
 <!-- 2026-07-05: downloaded Ukrainian model bench — local artifact is `cyrillic-trocr/trocr-ukrainian-handwritten` at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`; it is OCR_HTR (VisionEncoderDecoderModel), not a text LLM. Live crop bench on the frozen UA birth and military fixtures was 0/6 exact or partial, blank crop fabricated 3/3, so the model is not a reader as-is and is only a fine-tune candidate. -->
 <!-- 2026-07-05: runner-hardening audit update — `scripts/dev-doctor.sh` had a real recursion risk because `DEV_DOCTOR_RECHECK` was set but never honored. Fixed by stopping after one recursive heal/recheck pass. Syntax verified with `bash -n scripts/dev-doctor.sh`. Live process-based proof of the guard remains BLOCKED in this shell because `ps`/`lsof` are denied here, so the install-guard is code-audited but not dynamically simulated in this environment. -->
 <!-- 2026-07-05: runner-hardening follow-up — guard parsing was refactored into `scripts/runner-guard-logic.cjs` so both `.pnpmfile.cjs` and `install-guard.mjs` share the same launcher/subcommand logic. `pnpm.mjs` launcher forms are now covered by helper assertions; no live install battery rerun in this shell because the workspace still hits sibling-worktree EPERM before install can complete. -->
+<!-- 2026-07-05: orientation root-cause audit update — local OSD-first confirm was threaded into `detectOrientation.ts` so adjuncts refine the base pose instead of discarding it. Live rerun on the current code: extended posture harness `21/29 correct, 3 undecidable, 0 errors`; `ORIENT_180_CHECK` rerun `flag180=off 26/40 correct, 11 wrong, 3 undecidable` and `flag180=on 27/40 correct, 10 wrong, 3 undecidable, 1 disambiguated180`. The remaining hard failures are still the birth-cert and military-id-p1 classes; orientation is improved but NOT solved. -->

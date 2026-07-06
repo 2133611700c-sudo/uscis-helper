@@ -158,3 +158,14 @@ describe('buildPostureEnvelope — disambiguated180 evidence (still capped at me
     expect(buildPostureEnvelope({ contentOrientRan: true }).orientation_180_disambiguated).toBeUndefined()
   })
 })
+
+describe('buildPostureEnvelope — disambiguated90 evidence (sparse-form adjunct)', () => {
+  it('disambiguated90=true is surfaced without changing confidence or gate', () => {
+    const e = buildPostureEnvelope({
+      contentOrientRan: true, contentRotationCw: 270, disambiguated90: true,
+    })
+    expect(e.orientation_confidence).toBe('medium')
+    expect(e.orientation_status).toBe('upright')
+    expect(e.orientation_90_disambiguated).toBe(true)
+  })
+})

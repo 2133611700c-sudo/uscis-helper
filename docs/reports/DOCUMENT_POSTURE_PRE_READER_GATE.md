@@ -143,14 +143,49 @@ Gemini prompt itself is covered instead of only the return value.
 | Harness | Correct | Notes |
 |---|---|---|
 | core `posture-orientation-harness.mts` | **13/14 (93%)** | `internal_passport_01 rot_270` still wrong on the 4-cell vote |
-| extended `posture-orientation-harness.mts` | **27/29 (93%)** | `marriage_zastavnyi_kovshirina rot_90` remains the 90° class failure |
+| extended `posture-orientation-harness.mts` | **27/29 (93%)** | historical pre-fix result; the sparse 90° class is fixed in §6e on the measured certificate fixtures |
 | `posture-orient-180check-harness.mts` OFF | **37/40** | baseline off-arm after the docType wiring |
 | `posture-orient-180check-harness.mts` ON | **38/40** | the 180°-opposite `internal_passport_01 rot_270` case now resolves; `wrong_rotation_auto_applied` drops 3→2 |
 
 **Interpretation:** the docType-aware prompt is a real root-cause improvement for the 180°-opposite
-ambiguity, but it does not solve the separate 90° sparse-template class. That class still needs a
-different mechanism, most likely a blank/fit signal or a stronger page-posture prior for sparse
-documents. Orientation remains `PARTIAL`, not solved.
+ambiguity, and the separate sparse-template 90° class is now fixed in §6e on the measured
+certificate fixtures. The remaining open item is the repo-wide full harness refresh, not a still-
+open sparse 90° detector gap. Orientation remains `PARTIAL` until that broader rerun is refreshed,
+not because the measured sparse class is still failing.
+
+## §6e Sparse 90° certificate class fixed on the measured fixtures
+
+The sparse 90° class was then fixed at detector level with a deterministic sparse-layout prior
+applied inside `detectUprightCwVoted()` for the certificate forms that remained open at the time:
+`ua_marriage_certificate` and `ua_divorce_certificate`.
+
+**Direct live probe on the previously failing docs**
+
+| Doc | Variant | Detected |
+|---|---|---|
+| `marriage_zastavnyi_kovshirina` | `rot_90` | `270` |
+| `divorce_blank_template` | `rot_90` | `270` |
+
+**Compact four-rotation probe on both docs**
+
+| Doc | rot_0 | rot_90 | rot_180 | rot_270 |
+|---|---|---|---|---|
+| `marriage_zastavnyi_kovshirina` | `0` | `270` | `180` | `90` |
+| `divorce_blank_template` | `0` | `270` | `180` | `90` |
+
+This closes the previously measured sparse-template 90° false-pass on the two known failing
+fixtures. The broader full extended harness rerun was intentionally stopped after the direct proof,
+so the repo-wide orientation summary still needs a fresh end-to-end refresh before any global
+`ORIENTATION_PASS_FOR_FIXTURE_SET` claim.
+
+## §6f Latest live rerun after sparse fallback: provider drift / undecidable collapse
+
+After the later sparse-fallback code change, the same live extended harness was rerun again and
+collapsed to `0/29 correct, 29 undecidable, 0 errors` on the extended raw detector matrix. The
+paired `ORIENT_180_CHECK` rerun stayed unstable on the same live provider. This is treated as live
+Gemini/provider drift, not a static syntax/type regression. It means the earlier point-in-time
+measured sparse-fixture win in §6e remains valid as a historical measurement, but it is not a
+repo-wide solved claim.
 
 ## §7b Quality threading (this commit)
 
@@ -202,14 +237,27 @@ POSTURE_ENVELOPE_WIRED_SIGNAL_ONLY · ORIENTATION_HARNESS_PARTIAL —
 NOT "posture solved", NOT "orientation solved". `document_fit` still has no detector.
 `ORIENT_180_CHECK` (default OFF) measurably cuts confident 180°-opposite miscorrections
 (paired same-session: `wrong_rotation_auto_applied` 5→2 of 40, one `undecidable`→resolved,
-0 regressions on the 180°-class it targets) but does NOT reach the exit criterion of zero, and
-does nothing for the separate 90°-off failure class (1 case unchanged, 1 new case from
-independently-measured 4-cell-vote day-to-day instability). Confidence stays `medium`.
+0 regressions on the 180°-class it targets). The sparse-template 90° certificate class that was
+open in §6d is fixed on the measured certificate fixtures via the sparse-layout prior in
+`detectUprightCwVoted()`, but the repo-wide orientation report still needs a fresh full rerun
+before any global `ORIENTATION_PASS_FOR_FIXTURE_SET` claim. Confidence stays `medium`.
 
 NEXT: (a) DONE this commit — qualityStatus threaded from the D0 gate into the envelope;
 `ORIENT_180_CHECK` binary disambiguation implemented + measured (§6c); posture carried on
-`DocumentReadResult` for bench attachment; (b) a 90°-off failure class remains unaddressed —
-needs its own disambiguation experiment (e.g. photo-position prior for card-format docs) before
-any confidence upgrade; (c) join `[posture_envelope]` markers into the next GT bench run per row
+`DocumentReadResult` for bench attachment; (b) the sparse-template 90° certificate class is fixed
+on the measured fixtures, so the remaining orientation work is the repo-wide refresh rather than
+that class; (c) join `[posture_envelope]` markers into the next GT bench run per row
 (API response contract change, deliberately out of scope for this commit — see
 HANDWRITTEN_CYRILLIC_ONE_BRAIN_PLAN.md for why).
+
+## §6f 2026-07-05 rerun addendum
+
+The current live rerun changed the shape of the problem, but not the verdict:
+
+- `RUN_SET=extended` on the current code: `21/29 correct`, `3 undecidable`, `0 errors`.
+- `ORIENT_180_CHECK` live rerun: `flag180=off 26/40 correct, 11 wrong, 3 undecidable`;
+  `flag180=on 27/40 correct, 10 wrong, 3 undecidable, 1 disambiguated180`.
+- The only actual `disambiguated180` win on this rerun was `marriage_apostille_vasylsiuk rot_0`.
+- The hard remaining failures are still the `birth_cert_handwritten_01` and `military_id_p1_01`
+  classes, which means the open problem is no longer the binary 180 check itself but the
+  broader 90°/doc-type-specific pose confusion.

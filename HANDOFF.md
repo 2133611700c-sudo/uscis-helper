@@ -1,3 +1,27 @@
+# HANDOFF (2026-07-05 — P1 orientation: sparse 90° class fixed on measured certificate fixtures)
+
+## 2026-07-05 | Latest rerun after sparse-fallback: live provider drift, no repo-wide solved claim
+- The newest live rerun after the sparse-fallback code change regressed the extended raw orientation
+  harness to `0/29 correct, 29 undecidable`, and the paired 180-check run landed at `off 2/40
+  correct, 38 undecidable` / `on 1/40 correct, 39 undecidable`. That looks like provider drift /
+  model instability, not a syntax or type regression.
+- Static checks are still green: targeted vitest passed, `tsc 0`, and the repo PII guard is clean.
+- Do not claim orientation solved from the earlier point-in-time sparse-fixture measurement. The
+  repo-wide truth remains `PARTIAL` / signal-only until the live provider stops drifting or a
+  deterministic replacement takes over.
+
+## 2026-07-05 | Sparse 90° orientation root cause fixed at detector level
+- `detectUprightCwVoted(...)` now applies a deterministic sparse-layout prior on the certificate
+  classes that were still producing the 90° false-pass pattern. The fix lives in the detector
+  itself, so the production and harness paths both see it.
+- Direct live probe on the previously failing fixtures now passes:
+  `marriage_zastavnyi_kovshirina rot_90 -> 270` and `divorce_blank_template rot_90 -> 270`.
+- A compact four-rotation probe on both docs now returns the expected matrices
+  (`0/90/180/270 -> 0/270/180/90`), proving the 90° sparse-template miss is gone on the measured
+  docs.
+- The broader extended harness rerun was stopped once the root cause was confirmed, so the repo
+  still needs a fresh full harness refresh before any global "orientation solved" claim.
+
 # HANDOFF (2026-07-05 — P1 full-page blank gate: fail-closed before provider call)
 
 ## 2026-07-05 | Full-page blank/low-ink gate
@@ -2045,3 +2069,4 @@ See STATUS.md (Production Safety Gates table). Rollback: `vercel env rm ANTI_FAB
 <!-- 2026-07-05: downloaded Ukrainian model handoff — the local model is `cyrillic-trocr/trocr-ukrainian-handwritten` (OCR_HTR, image-only) at `/Users/sergiikuropiatnyk/models/trocr-ukrainian-handwritten`; live crop bench showed stable wrong reads on both hands and blank-crop fabrication 3/3. Next exact action: treat it only as a fine-tune base / non-production HTR candidate, never as a reader or helper LLM. -->
 <!-- 2026-07-05: runner-hardening handoff — fixed a real `dev-doctor` recursion bug by honoring `DEV_DOCTOR_RECHECK` and stopping after one heal/recheck pass. `bash -n scripts/dev-doctor.sh` passed. Still BLOCKED for live process-based proof here because `ps`/`lsof` are denied in this shell, so the interlock remains code-audited but not runtime-simulated. -->
 <!-- 2026-07-05: runner-hardening follow-up — extracted shared guard logic into `scripts/runner-guard-logic.cjs` and wired both `.pnpmfile.cjs` + `install-guard.mjs` to it. This closes the `pnpm.mjs` launcher-form gap at code level and is backed by direct helper assertions for `pnpm.mjs`/`pnpm.cjs`/`pnpm.js`. Full live install battery still not rerun in this shell because pnpm install stops on sibling-worktree EPERM before the guard layer can finish. -->
+<!-- 2026-07-05: orientation handoff update — the live orientation work is now more specific: the base path has a local OSD-first confirm, and the measurable improvement is `21/29` on the extended harness plus `27/40` on the `ORIENT_180_CHECK` harness with one true `disambiguated180` win. Remaining failures are concentrated in `birth_cert_handwritten_01` and `military_id_p1_01`; next exact step is a separate 90°-class / doc-type-specific refinement, not another 180-only confirm. -->
