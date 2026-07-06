@@ -719,7 +719,8 @@ export async function orientToUpright(
     }
   }
 
-  if (!isOrient180CheckEnabled()) return { buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
+  const run180Check = isOrient180CheckEnabled() || isHandwrittenDocType(opts.docTypeId)
+  if (!run180Check) return { buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }
 
   const confirm = await confirmUprightVs180(out, apiKey, model, 20_000, { docTypeId: opts.docTypeId })
   if (confirm === 'candidate') return { buffer: out, applied, detected: true, disambiguated90, ...(vote.layoutBackstopUsed ? { layoutBackstopUsed: vote.layoutBackstopUsed } : {}) }

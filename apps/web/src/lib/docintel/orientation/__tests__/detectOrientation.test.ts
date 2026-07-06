@@ -411,6 +411,24 @@ describe('orientToUpright — ORIENT_180_CHECK integration (default OFF ⇒ byte
     expect(calls.length).toBe(1) // ONLY the 4-cell vote — no 180 confirm call when the flag is off
   })
 
+  it('handwritten docs run the 180 confirm even when the env flag is off', async () => {
+    process.env.ORIENT_VOTE_RUNS = '1'
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn()
+      .mockImplementation(async (url: string) => {
+        calls.push(url)
+        return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }) }
+      })
+      .mockImplementationOnce(async (url: string) => {
+        calls.push(url)
+        return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }) }
+      }))
+    const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER, { docTypeId: 'ua_birth_certificate' })
+    expect(out.detected).toBe(true)
+    expect(out.disambiguated180).toBeUndefined()
+    expect(calls.length).toBe(2)
+  })
+
   it('flag ON, confirm says "flipped" ⇒ applies an extra 180°, disambiguated180=true', async () => {
     process.env.ORIENT_180_CHECK = '1'
     process.env.ORIENT_VOTE_RUNS = '1'

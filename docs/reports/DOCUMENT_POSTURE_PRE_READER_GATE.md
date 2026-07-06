@@ -304,3 +304,21 @@ the signal when `DOCUMENT_FIT_ENABLED=1`. The envelope still accepts explicit `m
 `document_fit` is not treated as solved.
 
 Verified this turn with targeted `vitest`, `tsc --noEmit`, and `node scripts/check-no-pii.mjs`.
+
+## §6h 2026-07-05 handwritten 180-confirm default
+
+The earlier handwritten fail-closed baseline was too strict for the real handwritten fixtures:
+`birth_cert_handwritten_01` and `military_id_p1_01` were still miscorrecting on the 180° class
+when `ORIENT_180_CHECK` was left unset. Live probe on the same real fixtures showed that running
+the binary 180° confirm by default for handwritten doc classes fixes those miscorrections without
+changing the printed/sparse fixtures we already measured:
+
+- `birth_cert_handwritten_01` now resolves correctly on all four rotations
+- `military_id_p1_01` now resolves correctly on all four rotations
+- `military_id_p2_01`, `internal_passport_01`, and `marriage_1939_kharkiv_borodavka` stay correct
+
+Implementation: handwritten doc classes now run the 180° confirm even when `ORIENT_180_CHECK`
+is unset. This is not a full solve of the broader 90°/class-specific orientation problem, but it
+does close the specific handwritten 180° miscorrection that was blocking the user-visible path.
+
+Verified this turn with targeted `vitest`, `tsc --noEmit`, and `node scripts/check-no-pii.mjs`.
