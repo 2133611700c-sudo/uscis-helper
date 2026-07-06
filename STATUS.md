@@ -1,3 +1,15 @@
+# STATUS (2026-07-06 — handwritten booklet now routed through the handwritten family gate)
+
+## 2026-07-06 | Truth alignment: internal passport booklet is now classified as handwritten
+- `modelMatrix.isHandwrittenFamily('ua_internal_passport_booklet')` now returns `true`, matching
+  `documentRegistry` and `docReadingRules` (the booklet identity page is handwritten, not printed).
+- The booklet now flows through the handwritten family gate, so the existing crop template and
+  handwritten review contract can actually run instead of sitting behind a dead branch.
+- Verified after the truth-fix: `modelMatrix.test`, `docintel.test`, and `oneBrainFlagMatrix.test`
+  pass; `tsc --noEmit` pass; repo PII guard clean.
+- Residual orientation truth unchanged: posture/orientation remains signal-only and the broader
+  handwritten Phase A is still GT-blocked.
+
 # STATUS (2026-07-05 — posture/orientation observability: handwritten backstop surfaced)
 
 ## 2026-07-05 | Orientation telemetry hardening: handwritten layout backstop now explicit

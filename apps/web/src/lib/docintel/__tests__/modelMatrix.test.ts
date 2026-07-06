@@ -48,7 +48,7 @@ describe('modelMatrix — the ADR-018 law in code', () => {
     // 2.5-pro is GA + accurate on PRINTED docs, but fabricates on handwritten certs (live bench 2026-06-23).
     expect(isDisqualifiedFor('gemini-2.5-pro', 'ua_birth_certificate')).toBe(true)
     expect(isDisqualifiedFor('gemini-2.5-pro', 'ua_death_certificate')).toBe(true)
-    expect(isDisqualifiedFor('gemini-2.5-pro', 'ua_internal_passport_booklet')).toBe(false) // OK for printed
+    expect(isDisqualifiedFor('gemini-2.5-pro', 'ua_internal_passport_booklet')).toBe(false) // review-gated by handwritten family, not model family
     // PRIMARY is now gemini-2.5-pro → it IS disqualified for handwritten certs, so those are force-reviewed
     // (no LLM acceptance on handwriting; reader = raxtemur per ADR-026). Printed docs stay acceptance-valid.
     expect(isDisqualifiedFor(PRIMARY_READER, 'ua_birth_certificate')).toBe(true)
@@ -64,7 +64,7 @@ describe('modelMatrix — the ADR-018 law in code', () => {
   it('handwritten doc families are flagged for mandatory human review (any model)', () => {
     expect(isHandwrittenFamily('ua_birth_certificate')).toBe(true)
     expect(isHandwrittenFamily('ua_marriage_certificate')).toBe(true)
-    expect(isHandwrittenFamily('ua_internal_passport_booklet')).toBe(false) // printed identity page
+    expect(isHandwrittenFamily('ua_internal_passport_booklet')).toBe(true) // handwritten identity page
     expect(isHandwrittenFamily(null)).toBe(false)
   })
 

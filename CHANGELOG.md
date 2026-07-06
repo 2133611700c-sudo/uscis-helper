@@ -1,5 +1,12 @@
 # CHANGELOG
 
+# 2026-07-06 | Fix: internal passport booklet now classified as handwritten
+- `HANDWRITTEN_DOC_FAMILIES` now includes `passport_booklet`, which aligns the model matrix with
+  the registry and doc-reading rules for `ua_internal_passport_booklet`.
+- The booklet's handwritten crop template and evidence-attach path are now reachable instead of
+  sitting behind a printed-doc gate.
+- Verified: modelMatrix + docintel + oneBrainFlagMatrix tests, `tsc --noEmit`, and PII guard clean.
+
 # 2026-07-05 | Fix: handwritten orientation backstop is now observable in posture telemetry
 - `orientToUpright(...)` now returns a structured layout-backstop signal, and
   `DocumentPostureEnvelope` records it as `orientation_backstop_used` while

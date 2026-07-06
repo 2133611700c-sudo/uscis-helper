@@ -1,3 +1,16 @@
+# HANDOFF (2026-07-06 — booklet classification aligned with the handwritten gate)
+
+## 2026-07-06 | Truth fix: booklet is handwritten, not printed
+- `HANDWRITTEN_DOC_FAMILIES` now includes `passport_booklet`, so
+  `ua_internal_passport_booklet` routes through the handwritten family gate consistently with the
+  registry and reading rules.
+- The existing booklet crop template and `ONE_BRAIN_EVIDENCE_ENABLED` template attach now work on
+  that doc type instead of being behind a dead gate.
+- Verified after the fix: `modelMatrix.test`, `docintel.test`, `oneBrainFlagMatrix.test`,
+  `tsc --noEmit`, and `node scripts/check-no-pii.mjs` are all green.
+- Exact next action is unchanged: keep orientation work signal-safe; handwritten Phase A remains
+  blocked by GT ownership.
+
 # HANDOFF (2026-07-05 — handwritten backstop telemetry surfaced on posture/result)
 
 ## 2026-07-05 | Orientation observability hardening

@@ -179,13 +179,17 @@ describe('One-Brain flag matrix — ONE_BRAIN_EVIDENCE_ENABLED (template-attach,
     expect(first[0].source).toBe('field_template')
   })
 
-  it("flag '1' + doc type WITHOUT a template → still no visualEvidence (no template to attach)", async () => {
+  it("flag '1' + booklet doc type → template visualEvidence attaches now that the handwritten gate includes it", async () => {
     process.env.ONE_BRAIN_EVIDENCE_ENABLED = '1'
-    // A doc type id that does NOT match any FIELD_BOX_TEMPLATES key.
     const result = await recognizeDocument(
       inputFor('ua_internal_passport_booklet', [fieldNoEvidence('family_name', 'Testenko')]),
     )
-    expect(evidenceOnCanonical(result)).toHaveLength(0)
+    expect(result.status).toBe('ok')
+    const evidences = evidenceOnCanonical(result)
+    expect(evidences.length).toBeGreaterThan(0)
+    const first = evidences[0] as Array<{ status: string; source: string }>
+    expect(first[0].status).toBe('approximate')
+    expect(first[0].source).toBe('field_template')
   })
 })
 

@@ -63,7 +63,15 @@ export const DISQUALIFIED: Readonly<Record<string, readonly string[]>> = Object.
 })
 
 /** Doc-type-id family substrings that are typically HANDWRITTEN ⇒ ALWAYS human-reviewed (any model). */
-export const HANDWRITTEN_DOC_FAMILIES = ['birth', 'marriage', 'divorce', 'death', 'name_change', 'certificate'] as const
+export const HANDWRITTEN_DOC_FAMILIES = [
+  'birth',
+  'marriage',
+  'divorce',
+  'death',
+  'name_change',
+  'certificate',
+  'passport_booklet',
+] as const
 
 /** Models that must never appear anywhere (deprecated / 404 / removed for instability). */
 export const DEPRECATED_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-3-pro-preview'] as const
