@@ -1,3 +1,36 @@
+# HANDOFF (2026-07-06 — eyes-first method adopted; internal_passport_01 mislabeling caught and fixed)
+
+## 2026-07-06 | Owner-mandated methodology: look at the document myself BEFORE trusting logs
+- Adopted a mandatory "eyes-first" verification law (docs/reports/EYES_FIRST_VERIFICATION_METHOD_2026-07-06.md):
+  before reporting any orientation/recognition claim, independently inspect the raw image, THEN
+  compare against the pipeline's own output -- never accept a log line as proof by itself.
+- Ran a live sweep of all 11 real documents in test-fixtures/real-docs via the CLI probe
+  (HANDWRITING_CROP_LLM=openai --provider openai, Gemini still quota-exhausted this session).
+- **Biggest finding, self-caught by this method**: `internal_passport_01.jpg` was tested under
+  the WRONG doc-type-id for this entire session. Visually it is the PRINTED international/
+  foreign-travel passport (bilingual UA/EN labels, MRZ, biometric card), not the internal
+  passport booklet. This was ALREADY discovered and recorded on 2026-06-27 in
+  `qa-private/ground-truth/internal_passport_01.json._meta` ("handwritten_actual": false) and
+  `gt-pipeline-bench.mjs` already scores it as `ua_international_passport` -- but this session's
+  NEW CLI tool (`one-brain-orient-read.mts`) had its own uncorrected alias pointing it at
+  `ua_internal_passport_booklet`, silently re-introducing an error the project had already fixed
+  once. Fixed the alias. Live-reran: now correctly shows 0 handwritten fields (was showing 8).
+  `ua_internal_passport_booklet` has ZERO real photographed fixtures in this project (its GT
+  placeholders booklet_page_1..4.json are all ground_truth_status:"MISSING").
+- **Consequence**: every earlier claim this session about "the passport crop-route recovers N
+  handwritten fields" (0->3->8 across several commits) was measuring a misclassification, not a
+  real capability -- do not cite those numbers as evidence of anything. The ua_military_id
+  family-gate fix from earlier today remains valid (proven on a genuine handwritten fixture,
+  military_id_p1_01), but was never cross-checked against a real booklet fixture, because none exists.
+- Two other apparent anomalies resolved as non-defects by direct visual inspection: military_id_p2_01
+  "0 fields" is a wrong-page-vs-contract mismatch (photographs page 2/service record, not the
+  page-1 identity fields being scored) -- not a reader defect; divorce_blank_template "0 fields"
+  is a genuinely unfilled official specimen form -- correctly nothing to recognize.
+- Tests: 2708/2708 pass; tsc 0; PII clean.
+- **EXACT NEXT ACTION:** military_id_p2 page/contract mismatch should be fixed in the fixture
+  inventory (own action item, not urgent); GT corpus + GPT-crop-policy decision unchanged,
+  still owner-only.
+
 # HANDOFF (2026-07-06 — CI fix: documentFit.test.ts self-skip when private fixtures absent)
 
 ## 2026-07-06 | Root-caused the actual CI failure on the previous push (Claude)

@@ -39,9 +39,17 @@ function getArg(name: string): string | null {
 function normalizeDocTypeId(value: string): { docTypeId: string; aliasUsed: string | null } {
   const raw = value.trim()
   const aliases: Record<string, string> = {
-    internal_passport_01: 'ua_internal_passport_booklet',
-    internal_passport: 'ua_internal_passport_booklet',
-    passport_booklet: 'ua_internal_passport_booklet',
+    // EYES-FIRST AUDIT FIX (2026-07-06): internal_passport_01.jpg is NOT the internal
+    // passport booklet -- it is the PRINTED international (foreign-travel) passport
+    // (bilingual UA/EN labels, MRZ, biometric-card layout). This was already discovered
+    // and recorded in qa-private/ground-truth/internal_passport_01.json._meta back on
+    // 2026-06-27 ("handwritten_actual": false) and gt-pipeline-bench.mjs already scores
+    // it as 'ua_international_passport' -- this CLI's alias contradicted that established
+    // truth. ua_internal_passport_booklet has ZERO real fixtures in this project (its GT
+    // placeholders booklet_page_1..4.json are all ground_truth_status:"MISSING", no image
+    // file exists) -- do not alias any real filename to it until a genuine booklet photo
+    // is captured.
+    internal_passport_01: 'ua_international_passport',
     birth_cert_handwritten_01: 'ua_birth_certificate',
     birth_cert_soviet_01: 'ua_birth_certificate',
     military_id_p1_01: 'ua_military_id',

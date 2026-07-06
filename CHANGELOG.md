@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-07-06 | Eyes-first verification method adopted; caught and fixed internal_passport_01 mislabeling
+- New mandatory method (docs/reports/EYES_FIRST_VERIFICATION_METHOD_2026-07-06.md): look at the
+  document directly before trusting any pipeline log about orientation/handwritten/field content.
+- Live sweep of all 11 real documents via the CLI probe. Found: `one-brain-orient-read.mts`'s
+  alias for `internal_passport_01` pointed at `ua_internal_passport_booklet`, but this fixture is
+  actually the printed international passport (already discovered 2026-06-27 in GT `_meta`,
+  already correctly scored as `ua_international_passport` by gt-pipeline-bench.mjs). Fixed the
+  alias; verified live -- now correctly 0 handwritten fields (was 8). `ua_internal_passport_booklet`
+  has no real fixtures in this project at all.
+- Two other apparent anomalies (military_id_p2_01 0-fields, divorce_blank_template 0-fields)
+  confirmed as correct/expected behavior by direct visual inspection, not new bugs.
+- Tests: 2708/2708 pass; tsc 0; PII clean.
+
 ## 2026-07-06 | Fix real CI failure: documentFit.test.ts unconditionally read gitignored real docs
 - `documentFit.test.ts` (added yesterday) read `test-fixtures/real-docs/*.jpg` -- gitignored,
   owner's real documents -- with no existence guard, so it was structurally guaranteed to fail

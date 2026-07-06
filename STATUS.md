@@ -1,3 +1,13 @@
+# STATUS (2026-07-06 — eyes-first method adopted; internal_passport_01 mislabeling fixed)
+
+## 2026-07-06 | Methodology upgrade + real fix from direct visual inspection
+- Eyes-first verification now mandatory: independently inspect documents before trusting pipeline logs.
+- Fixed: internal_passport_01.jpg was aliased to the wrong doc-type (ua_internal_passport_booklet,
+  which has zero real fixtures) -- corrected to ua_international_passport, matching the project's own
+  established GT record from 2026-06-27. Earlier session claims about "passport handwritten-field
+  recovery" were measuring a misclassification, now retracted.
+- military_id_p2 and divorce_blank "0 fields" results confirmed correct by direct visual inspection.
+
 # STATUS (2026-07-06 — CI failure root-caused and fixed: gitignored-fixture test had no self-skip)
 
 ## 2026-07-06 | CI fix + process finding
