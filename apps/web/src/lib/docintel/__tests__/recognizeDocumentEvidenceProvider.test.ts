@@ -159,7 +159,13 @@ function regionsOf(f: CanonicalField | undefined): EvidenceRegion[] {
 
 // A doc type WITHOUT a FIELD_BOX_TEMPLATES entry (isolates the provider channel from the
 // template fallback) and one WITH a template (ua_birth_certificate) for the precedence tests.
-const NO_TEMPLATE_DOC = 'ua_internal_passport_booklet'
+// AUDIT FIX (2026-07-06): this used to be 'ua_internal_passport_booklet', but a real
+// FIELD_BOX_TEMPLATES entry was added for that doc type (crop-route root-cause fix), so it
+// stopped being template-less and this file's isolation assumption silently broke — the
+// tests here failed BEFORE this session's edits too (verified against HEAD 271325f). Picked
+// 'ua_id_card' instead: it has a `family_name` field like the two doc types above, and has
+// no FIELD_BOX_TEMPLATES entry (only ua_birth_certificate / ua_internal_passport_booklet do).
+const NO_TEMPLATE_DOC = 'ua_id_card'
 const BIRTH = 'ua_birth_certificate'
 
 describe('recognizeDocument — injected EvidenceProvider (provider geometry channel)', () => {

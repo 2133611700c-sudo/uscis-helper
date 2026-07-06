@@ -166,7 +166,12 @@ function rowFor(json: { fields?: Array<{ field: string }> }, key: string) {
 
 // A doc type with NO FIELD_BOX_TEMPLATES entry → the ONLY possible evidence source is the
 // provider (ocr_token). This is load-bearing: it removes the template fallback as a confound.
-const NO_TEMPLATE_DOC = 'ua_internal_passport_booklet'
+// AUDIT FIX (2026-07-06): this used to be 'ua_internal_passport_booklet', but a real
+// FIELD_BOX_TEMPLATES entry was later added for that doc type (crop-route root-cause fix),
+// so it silently stopped being template-less and this file's isolation assumption broke
+// (verified: this failure pre-dates this session, already present at HEAD 271325f).
+// 'ua_id_card' has a `family_name` field and no FIELD_BOX_TEMPLATES entry.
+const NO_TEMPLATE_DOC = 'ua_id_card'
 
 // ── env harness ────────────────────────────────────────────────────────────────
 const ENV_KEYS = ['ONE_BRAIN_RECOGNIZE_ENABLED', 'ONE_BRAIN_EVIDENCE_ENABLED', 'CANONICAL_CONTINUITY_MODE'] as const

@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 2026-07-06 | Deep audit fixes: military_id family gap + status-string bug + latent test regression
+- `modelMatrix.ts`: added `military_id` to `HANDWRITTEN_DOC_FAMILIES` -- ua_military_id has 5/5
+  handwritten contract fields but no family substring, making the crop-based HTR/LLM-crop route
+  structurally unreachable (same bug class as yesterday's booklet fix). Live-proven on a real
+  document with HANDWRITING_CROP_LLM=openai: the crop route now actually fires and produces fields.
+- `documentFieldReader.ts`: fixed the status/forensic field count to use `finalFields.length`
+  instead of the stale pre-enrichment `fields.length` -- the returned data was always correct,
+  only the human/log-readable count undercounted whenever hi-res recovery, known-values fill, or
+  the HTR crop-route added fields after the raw read.
+- Found + fixed a pre-existing, session-independent regression: `recognizeDocumentEvidenceProvider
+  .test.ts` and `visionExtractProviderRoute.test.ts` assumed `ua_internal_passport_booklet` had no
+  crop template (isolation fixture for the evidence-provider channel); yesterday's real template
+  addition silently broke that assumption. Verified the failure predates this session's edits.
+  Swapped both to `ua_id_card`.
+- Tests: 2707/2707 pass (was 1-3 red before this commit, pre-existing); tsc 0; PII clean. Live
+  end-to-end tested on 3 real documents via the CLI probe, not mocked.
+
 # 2026-07-06 | Fix: internal passport booklet now classified as handwritten
 - `HANDWRITTEN_DOC_FAMILIES` now includes `passport_booklet`, which aligns the model matrix with
   the registry and doc-reading rules for `ua_internal_passport_booklet`.

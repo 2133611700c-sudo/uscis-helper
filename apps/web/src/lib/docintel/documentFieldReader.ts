@@ -650,12 +650,17 @@ export async function readDocument(
   // blocked. We never silently fall back to the weaker LLM read on a critical handwritten field.
   finalFields = (await runHtrFieldStage(finalFields, spec, docTypeId, opts.originalBuffer, mimeType, provider.name)).fields
 
-  recordForensic(read.model, read.ms, `ok:${read.model}:${read.ms}ms:${fields.length}f`, null, finalFields)
+  // AUDIT FIX (2026-07-06): the status/forensic field count was frozen at the raw provider
+  // read (`fields.length`), taken BEFORE hi-res tile recovery, known-values fill, and the HTR
+  // crop-route merge above — all of which can ADD fields. The returned `fields: finalFields`
+  // payload was always correct; only this human/forensic-log count undercounted whenever a
+  // recovery stage fired. Use finalFields.length so the log matches what is actually returned.
+  recordForensic(read.model, read.ms, `ok:${read.model}:${read.ms}ms:${finalFields.length}f`, null, finalFields)
 
   return {
     ok: true, doc_type_id: docTypeId, fields: finalFields, anchor_read: anchorRead,
     provider: provider.name, model: read.model, ms: read.ms,
-    status: `ok:${read.model}:${read.ms}ms:${fields.length}f`,
+    status: `ok:${read.model}:${read.ms}ms:${finalFields.length}f`,
     ...(selfConsistency ? { self_consistency: selfConsistency } : {}),
     posture,
   }

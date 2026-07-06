@@ -1,3 +1,13 @@
+# STATUS (2026-07-06 — military_id family gap closed + status-count bug fixed + pre-existing test regression found and fixed)
+
+## 2026-07-06 | Root-cause fixes, live-tested on real documents
+- ua_military_id now in HANDWRITTEN_DOC_FAMILIES -- crop-route was unreachable, now live-proven to fire.
+- Status-string field count now matches actual returned data (was stale, undercounted after recovery stages).
+- A pre-existing (not session-caused) test regression from yesterday's booklet-template commit found and fixed
+  in 2 files; full suite back to 2707/2707 green.
+- Open: GT corpus unchanged (owner blocker); GPT-on-handwritten-crops policy question still awaiting owner
+  decision; orientation architecture (3 heuristics, 2 allowlists) still unconsolidated.
+
 # STATUS (2026-07-06 — handwritten booklet now routed through the handwritten family gate)
 
 ## 2026-07-06 | Truth alignment: internal passport booklet is now classified as handwritten

@@ -65,6 +65,10 @@ describe('modelMatrix — the ADR-018 law in code', () => {
     expect(isHandwrittenFamily('ua_birth_certificate')).toBe(true)
     expect(isHandwrittenFamily('ua_marriage_certificate')).toBe(true)
     expect(isHandwrittenFamily('ua_internal_passport_booklet')).toBe(true) // handwritten identity page
+    // AUDIT FIX (2026-07-06): 5/5 contract fields are handwritten (registration-page service
+    // record) — crop-based HTR/LLM-crop route was structurally unreachable without this.
+    expect(isHandwrittenFamily('ua_military_id')).toBe(true)
+    expect(isHandwrittenFamily('ua_international_passport')).toBe(false) // printed + MRZ, no substring match
     expect(isHandwrittenFamily(null)).toBe(false)
   })
 

@@ -1,3 +1,41 @@
+# HANDOFF (2026-07-06 — 3 root fixes: military_id family gap, status-string bug, latent test regression)
+
+## 2026-07-06 | Deep root-cause audit + fixes, live-tested on 3 real documents (Claude)
+- **ua_military_id added to HANDWRITTEN_DOC_FAMILIES** (modelMatrix.ts): 5/5 contract fields are
+  handwritten (registration-page service record) but the doc-type-id carried no family substring,
+  so the crop-based HTR/LLM-crop route was structurally unreachable -- the exact same class of gap
+  'passport_booklet' closed yesterday. Live-proven on military_id_p1_01.jpg with
+  HANDWRITING_CROP_LLM=openai: `[htr_field_route] {"doc_type_id":"ua_military_id","htr_fields":3,
+  "produced":3,"fail_closed":true}` -- this log line could not have appeared before the fix (the
+  route returns before reaching it when the family gate blocks). No regression on
+  ua_internal_passport_booklet or ua_birth_certificate (rechecked live, same as before).
+- **Status-string/forensic field-count bug fixed** (documentFieldReader.ts): the human-readable
+  `status`/forensic count used `fields.length` (frozen at the raw provider read, BEFORE hi-res
+  tile recovery / known-values fill / HTR crop-route merge) instead of `finalFields.length` (what
+  is actually returned). Data was always correct; only the diagnostic count undercounted whenever
+  a recovery stage fired. Fixed to use `finalFields.length` in both places. Live-verified: booklet
+  now shows `STATUS: ok:gpt-4.1:11009ms:3f` matching its real 3 returned fields (previously showed
+  a stale `0f`).
+- **Found and fixed a LATENT pre-existing regression, NOT caused by this session**: two test files
+  (`recognizeDocumentEvidenceProvider.test.ts`, `visionExtractProviderRoute.test.ts`) used
+  `ua_internal_passport_booklet` as their `NO_TEMPLATE_DOC` isolation fixture. Yesterday's
+  `b35a477` commit added a REAL `FIELD_BOX_TEMPLATES` entry for that exact doc type, silently
+  breaking the "no template" assumption -- verified this failure was ALREADY present at HEAD
+  `271325f` (before any of today's edits), meaning Codex's own verification for that commit ran a
+  narrower test selection that missed it. Swapped both to `ua_id_card` (has `family_name`, no
+  template entry, untouched by any recent session). Full suite was 1-3 tests red at 271325f;
+  now 2707/2707 green.
+- Deliberately NOT changed: `HANDWRITING_CROP_LLM=openai` policy question (documented owner
+  exclusion from an early commit, silently overridden by `b35a477` without visible sign-off) --
+  flagged repeatedly this session, still awaiting an explicit owner decision, not touched again.
+  GT corpus (10/36+ fields, 2/3+ hands) -- owner-only blocker, cannot be fabricated.
+- Tests: full targeted suite (docintel+ocr+translation+api/translation) 2707/2707 pass; tsc 0;
+  PII guard clean (2028 files). Live-tested on 3 real documents (military_id_p1, internal_passport,
+  birth_cert), all three via the actual CLI probe tool, not mocked.
+- **EXACT NEXT ACTION:** owner GT docs 4-8 unchanged; owner decision needed on the GPT-crop-
+  handwriting policy question; orientation architecture (3 overlapping heuristics, 2 separate
+  allowlists) remains unconsolidated -- flagged as a design smell, not yet restructured.
+
 # HANDOFF (2026-07-06 — booklet classification aligned with the handwritten gate)
 
 ## 2026-07-06 | Truth fix: booklet is handwritten, not printed

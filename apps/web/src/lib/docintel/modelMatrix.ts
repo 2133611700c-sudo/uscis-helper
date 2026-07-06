@@ -71,6 +71,13 @@ export const HANDWRITTEN_DOC_FAMILIES = [
   'name_change',
   'certificate',
   'passport_booklet',
+  // AUDIT FIX (2026-07-06): ua_military_id has 5/5 contract fields marked handwritten:true
+  // (the registration-page service record is handwritten), but its doc-type-id carried no
+  // family substring, so the crop-based HTR/LLM-crop route (readHandwrittenRoute) was
+  // structurally unreachable for it — the same class of gap 'passport_booklet' closed above.
+  // Substring matches ONLY 'ua_military_id' in the registry (verified: no other doc-type-id
+  // contains 'military_id').
+  'military_id',
 ] as const
 
 /** Models that must never appear anywhere (deprecated / 404 / removed for instability). */
