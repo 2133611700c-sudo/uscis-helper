@@ -2773,6 +2773,12 @@ Branch survival/phases-0-3 (NOT pushed; main pinned to prod 54c0e43).
 - Truth boundary recorded in `STATUS.md` / `HANDOFF.md`: local Gemma is now usable as a helper/shadow model on
   this Mac, but it is NOT yet a proven handwritten-document primary reader for the project.
 
+## 2026-07-06 | One-brain orientation + handwritten Cyrillic probe tool
+- Added `apps/web/src/lib/docintel/oneBrainTool.ts` as a thin wrapper around the canonical `readDocument()` spine and `apps/web/scripts/one-brain-orient-read.mts` as a direct CLI probe.
+- Live probes on `birth_cert_handwritten_01.jpg` and `military_id_p1_01.jpg` both resolved posture to upright via content_orient cw=90.
+- Gemini hit HTTP 429 RESOURCE_EXHAUSTED in this shell, so the CLI now supports an explicit `--provider openai` fallback; that fallback successfully read both documents and returned handwritten Cyrillic fields with review_required=true.
+- Verified by targeted vitest for orientation, `pnpm --dir apps/web exec tsc --noEmit`, and `node scripts/check-no-pii.mjs`.
+
 ## 2026-07-05 | Shadow window run + live wizard E2E + model-probe artifacts + truth-lock evidence pass
 - Ran the first shadow window against branch code (local server, real docs): decision/gates differs clean on N=9/82 fields (openai reader; below flip bar), TPS markers blocked by Vision billing 403 (corrected attribution — not Gemini/key). Files: `ops/agent-control/reports/2026-07-04-shadow-window-and-e2e-evidence.md`, `2026-07-05-open-items-master.md`.
 - Added live Playwright E2E `apps/web/tests/e2e/translation-live-review.spec.ts` (PASSED locally 27.7s; env-gated skip in CI).

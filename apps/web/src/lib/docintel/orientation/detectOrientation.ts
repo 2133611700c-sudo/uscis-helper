@@ -248,13 +248,18 @@ export async function detectUprightCwVotedMeta(
   const sparseScorer = opts.sparseScorer ?? ((b: Buffer) => scoreSparseLayout(b, 0.15))
   const layoutScorer = opts.layoutScorer ?? ((b: Buffer) => scoreHandwrittenLayout(b, 0.15))
   const osdDetector = opts.osdDetector ?? detectTesseractOrientation
+  const handwritten = isHandwrittenDocType(opts.docTypeId)
+  const handwrittenLayoutBackstop = handwritten && ROTATION_BACKSTOP_DOC_TYPES.has(opts.docTypeId ?? '')
 
   const osd = await osdDetector(buffer).catch(() => null)
   const osdCw = osd?.cw ?? null
   const osdConfidence = osd?.confidence ?? null
-  const handwritten = isHandwrittenDocType(opts.docTypeId)
   const trustOsd = shouldTrustOsdForDocType(opts.docTypeId)
   if (handwritten && isReliableCyrillicOsd(osd) && osdCw !== null) return { cw: osdCw, layoutBackstopUsed: null }
+  if (handwritten) {
+    const zeroConfirm = await confirmUprightByOsdCandidates(buffer, osdDetector)
+    if (zeroConfirm !== null) return { cw: zeroConfirm, layoutBackstopUsed: null }
+  }
   if (!handwritten && typeof osdConfidence === 'number' && osdConfidence < TESSERACT_ZERO_CONFIRM_MIN_CONF) {
     const zeroConfirm = await confirmUprightByOsdCandidates(buffer, osdDetector)
     if (zeroConfirm !== null) return { cw: zeroConfirm, layoutBackstopUsed: null }
@@ -266,6 +271,10 @@ export async function detectUprightCwVotedMeta(
   if (runs <= 1) {
     const single = await sample(buffer)
     if (!handwritten) return { cw: single, layoutBackstopUsed: null }
+    const adjacent90 = await confirmUprightVsAdjacent90(buffer, apiKey, model, 20_000, { docTypeId: opts.docTypeId, osdDetector })
+    if (adjacent90 === 'candidate') return { cw: single, layoutBackstopUsed: null }
+    if (adjacent90 === 'flipped') return { cw: ((single ?? 0) + 90) as Cw, layoutBackstopUsed: null }
+    if (!handwrittenLayoutBackstop) return { cw: null, layoutBackstopUsed: null }
     const layoutScores = await layoutScorer(buffer).catch(() => [])
     return { cw: chooseHandwrittenLayoutRotation(layoutScores, single), layoutBackstopUsed: 'handwritten_layout' }
   }
@@ -276,8 +285,15 @@ export async function detectUprightCwVotedMeta(
   }
   const folded = foldOrientationVotes(votes, runs)
   if (handwritten) {
-    // Handwritten docs need a stricter policy: only a reliable Cyrillic OSD wins outright.
-    // Otherwise the handwritten layout backstop is the only fallback before we abstain.
+    const adjacent90 = await confirmUprightVsAdjacent90(buffer, apiKey, model, 20_000, { docTypeId: opts.docTypeId, osdDetector })
+    if (adjacent90 === 'candidate') return { cw: folded, layoutBackstopUsed: null }
+    if (adjacent90 === 'flipped') {
+      const base = folded ?? 0
+      return { cw: ((base + 90) % 360) as Cw, layoutBackstopUsed: null }
+    }
+    // Handwritten docs need a stricter policy: only the class-specific handwritten layout
+    // backstop may still override the fold. Other handwritten classes must abstain here.
+    if (!handwrittenLayoutBackstop) return { cw: null, layoutBackstopUsed: null }
     const layoutScores = await layoutScorer(buffer).catch(() => [])
     return { cw: chooseHandwrittenLayoutRotation(layoutScores, folded), layoutBackstopUsed: 'handwritten_layout' }
   }

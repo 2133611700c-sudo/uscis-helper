@@ -166,8 +166,8 @@ describe('detectUprightCwVoted (injected sampler)', () => {
     expect(out).toBe(180)
     expect(samplerCalls).toBe(0)
   })
-  it('handwritten doc types can resolve via a decisive handwritten layout backstop when OSD is not reliable', async () => {
-    const out = await detectUprightCwVotedMeta(Buffer.from('x'), 'k', 'm', {
+  it('birth cert stays undecidable when handwritten layout backstop is not allowed for the class', async () => {
+    const out = await detectUprightCwVotedMeta(await testImage(), 'k', 'm', {
       runs: 1,
       sampler: async () => null,
       osdDetector: async () => ({ cw: 180 as 180, confidence: 5.0 }),
@@ -179,8 +179,34 @@ describe('detectUprightCwVoted (injected sampler)', () => {
         { cw: 270, score: 0.3, topBottomBias: 0.04 },
       ],
     })
-    expect(out.cw).toBe(0)
-    expect(out.layoutBackstopUsed).toBe('handwritten_layout')
+    expect(out.cw).toBeNull()
+    expect(out.layoutBackstopUsed).toBeNull()
+  })
+  it('ua_military_id resolves a 90° adjacent confirm before any handwritten layout backstop', async () => {
+    let layoutCalls = 0
+    const out = await detectUprightCwVotedMeta(await testImage(), 'k', 'm', {
+      runs: 1,
+      sampler: async () => null,
+      docTypeId: 'ua_military_id',
+      osdDetector: async (b: Buffer) => {
+        const meta = await sharp(b).metadata()
+        if (meta.width === 200 && meta.height === 300) return { cw: 180 as 180, confidence: 0.7 }
+        if (meta.width === 300 && meta.height === 200) return { cw: 0 as 0, confidence: 4.4 }
+        return null
+      },
+      layoutScorer: async () => {
+        layoutCalls++
+        return [
+          { cw: 0, score: 0.2, topBottomBias: 0.01 },
+          { cw: 90, score: 1.0, topBottomBias: -0.11 },
+          { cw: 180, score: 0.3, topBottomBias: 0.02 },
+          { cw: 270, score: 0.4, topBottomBias: 0.03 },
+        ]
+      },
+    })
+    expect(out.cw).toBe(90)
+    expect(out.layoutBackstopUsed).toBeNull()
+    expect(layoutCalls).toBe(0)
   })
   it('handwritten doc types accept a reliable Cyrillic OSD decision', async () => {
     const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
@@ -227,7 +253,7 @@ describe('detectUprightCwVoted (injected sampler)', () => {
     expect(out).toBe(270)
   })
   it('handwritten doc types can resolve via a decisive handwritten layout backstop when OSD is not reliable', async () => {
-    const out = await detectUprightCwVotedMeta(Buffer.from('x'), 'k', 'm', {
+    const out = await detectUprightCwVotedMeta(await testImage(), 'k', 'm', {
       runs: 1,
       sampler: async () => null,
       osdDetector: async () => null,
@@ -243,7 +269,7 @@ describe('detectUprightCwVoted (injected sampler)', () => {
     expect(out.layoutBackstopUsed).toBe('handwritten_layout')
   })
   it('handwritten doc types stay undecidable when OSD and handwritten layout are both unhelpful', async () => {
-    const out = await detectUprightCwVoted(Buffer.from('x'), 'k', 'm', {
+    const out = await detectUprightCwVoted(await testImage(), 'k', 'm', {
       runs: 1,
       sampler: async () => null,
       osdDetector: async () => null,
@@ -422,9 +448,9 @@ describe('orientToUpright — ORIENT_180_CHECK integration (default OFF ⇒ byte
       .mockImplementationOnce(async (url: string) => {
         calls.push(url)
         return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"pos":"top-left"}' }] } }] }) }
-      }))
+    }))
     const out = await orientToUpright(await testImage(), 'key', PRIMARY_READER, { docTypeId: 'ua_birth_certificate' })
-    expect(out.detected).toBe(true)
+    expect(out.detected).toBe(false)
     expect(out.disambiguated180).toBeUndefined()
     expect(calls.length).toBe(2)
   })
