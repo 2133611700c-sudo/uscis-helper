@@ -201,6 +201,11 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   },
   {
     canonicalKey: 'person.parent.father.nationality', runtimeKey: 'father_nationality',
+    // Tried adding readSideKey 2026-07-06: read correctly live (conf 0.97) on this Soviet-era
+    // document, but reverted — this field is scopeEra:'soviet_pre1991' and documentRegistry.ts's
+    // ua_birth_certificate spec is the SHARED era-agnostic registry (Soviet + modern docs use the
+    // same docTypeId); wiring it there risks the model looking for a field modern certs don't
+    // have. See documentRegistry.ts's note at this field for the full reasoning.
     englishLabel: 'Father — nationality', section: 'parents', order: 17,
     occurrence: 'OPTIONAL_ONCE', criticality: 'low', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: false,
@@ -215,6 +220,7 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
   },
   {
     canonicalKey: 'person.parent.mother.nationality', runtimeKey: 'mother_nationality',
+    // Tried + reverted 2026-07-06: see father_nationality above (same reasoning).
     englishLabel: 'Mother — nationality', section: 'parents', order: 19,
     occurrence: 'OPTIONAL_ONCE', criticality: 'low', rendering: 'handwritten',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: false,
@@ -249,6 +255,35 @@ export const birthCertSovietV1Contract: readonly BirthCertFieldContract[] = [
     occurrence: 'OPTIONAL_ONCE', criticality: 'medium', rendering: 'handwritten_plus_seal',
     locator: 'anchor_relative', readerRoute: 'full_page_semantic_llm', autoFinalize: false, alwaysReview: true,
     note: 'Re-issue (ПОВТОРНО) case only; may equal registry.office.name. No legacy key yet (decision #2/#3).',
+  },
+  {
+    // CROP-LAYER-ONLY (added 2026-07-06): no readSideKey/outputKey — decision #5 (parents stay
+    // COMPOSITE) is unchanged. These two are internal sub-crops the field-first HTR route reads
+    // independently, then concatenates (HTR_COMBINE_FIELDS in documentFieldReader.ts) into the
+    // SAME composite father_full_name above. Live-verified: raxtemur reads both cleanly once fed
+    // the fully content-orient-corrected buffer (see the 2026-07-06 orientation fix).
+    canonicalKey: 'person.parent.father.given_name', runtimeKey: 'father_given_name',
+    englishLabel: 'Father — given name (crop-only)', section: 'parents', order: 24,
+    occurrence: 'OPTIONAL_ONCE', criticality: 'high', rendering: 'handwritten',
+    locator: 'fixed_region', readerRoute: 'fixed_crop_htr', autoFinalize: false, alwaysReview: true,
+    note: 'Feeds father_full_name only; never surfaced as its own read-side/output field (decision #5).',
+  },
+  {
+    canonicalKey: 'person.parent.father.patronymic', runtimeKey: 'father_patronymic',
+    englishLabel: 'Father — patronymic (crop-only)', section: 'parents', order: 25,
+    occurrence: 'OPTIONAL_ONCE', criticality: 'high', rendering: 'handwritten',
+    locator: 'fixed_region', readerRoute: 'fixed_crop_htr', autoFinalize: false, alwaysReview: true,
+    note: 'Feeds father_full_name only; never surfaced as its own read-side/output field (decision #5).',
+  },
+  {
+    // CROP-LAYER-ONLY (added 2026-07-06, item 2): a SINGLE combined given+patronymic crop, unlike
+    // the father's two separate boxes — a two-box split live-tested worse for this row (garbled
+    // reads). Feeds mother_full_name only; decision #5 (parents stay COMPOSITE) unchanged.
+    canonicalKey: 'person.parent.mother.given_patronymic', runtimeKey: 'mother_given_patronymic',
+    englishLabel: 'Mother — given name + patronymic (crop-only)', section: 'parents', order: 26,
+    occurrence: 'OPTIONAL_ONCE', criticality: 'high', rendering: 'handwritten',
+    locator: 'fixed_region', readerRoute: 'fixed_crop_htr', autoFinalize: false, alwaysReview: true,
+    note: 'Feeds mother_full_name only; never surfaced as its own read-side/output field (decision #5).',
   },
 ] as const
 

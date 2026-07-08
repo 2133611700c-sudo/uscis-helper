@@ -133,6 +133,29 @@ describe('in-flight dedup — collapses N concurrent identical calls to 1', () =
     await Promise.all([a, b])
     expect(calls).toBe(2)
   })
+
+  it('BUG FOUND 2026-07-06: every deduped waiter can independently read a Response body ' +
+    '(real call sites resolve to fetch() Response, whose body can only be read once — sharing ' +
+    'the raw object across waiters previously threw "Body is unusable" for every waiter but the ' +
+    'first to read it, discovered while wiring the orientation detector into this gateway)', async () => {
+    let calls = 0
+    let release!: () => void
+    const gate = new Promise<void>((r) => { release = r })
+    const opts = { keyParts, provider: 'google_vision', route: 'r', estCostUsdMicros: 1500, env }
+    const make = () => runOcrGateway(opts, async () => {
+      calls++
+      await gate
+      return new Response(JSON.stringify({ a: 1 }), { status: 200 })
+    })
+
+    const burst = [make(), make(), make()]
+    release()
+    const responses = await Promise.all(burst)
+
+    expect(calls).toBe(1) // still one provider call
+    const bodies = await Promise.all(responses.map((r) => r.json()))
+    expect(bodies).toEqual([{ a: 1 }, { a: 1 }, { a: 1 }]) // every waiter reads its own clone
+  })
 })
 
 describe('budget kill-switch', () => {

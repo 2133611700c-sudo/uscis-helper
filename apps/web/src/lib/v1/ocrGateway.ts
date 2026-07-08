@@ -265,6 +265,24 @@ function metaFromKeyParts(parts: OcrCacheKeyParts): OcrCodecMeta {
 }
 
 /**
+ * BUG FOUND 2026-07-06 (while wiring the orientation detector into this gateway): every current
+ * call site's `call()` resolves to a raw `fetch()` Response, whose body can only be read ONCE.
+ * Dedup hands the SAME resolved value to every waiter sharing an in-flight key — a second waiter
+ * calling `.json()` on it throws "Body is unusable: Body has already been read", so
+ * OCR_DEDUP_ENABLED=1 (the module's own doc: "Directly mitigates Google Vision HTTP 429") would
+ * have made a 429 burst WORSE, not better, the first time anyone turned it on. Never caught
+ * before because the gateway's own dedup test uses a plain string return value, not a Response.
+ * Fix: hand every waiter (the original caller AND every deduped waiter) an independent
+ * `.clone()` when the shared value is a Response — safe as long as the untouched original is
+ * never itself read (verified: cloning an unread Response any number of times, in any order
+ * relative to when earlier clones are consumed, is safe; only reading the clone-source itself
+ * is unsafe, and nothing here ever does).
+ */
+function shareableDedupResult<T>(value: T): T {
+  return typeof Response !== 'undefined' && value instanceof Response ? (value.clone() as unknown as T) : value
+}
+
+/**
  * Run a paid OCR/AI provider call through the gateway.
  *
  * ALL FLAGS OFF ⇒ returns `await call()` directly (no lookup/dedup/budget),
@@ -422,12 +440,12 @@ export async function runOcrGateway<T>(opts: OcrGatewayOptions<T>, call: () => P
     const existing = _inFlight.get(cacheKey) as Promise<T> | undefined
     if (existing) {
       emitGw({ ...baseEvt, outcome: 'deduped' })
-      return existing
+      return shareableDedupResult(await existing)
     }
     const p = doCall()
     _inFlight.set(cacheKey, p as Promise<unknown>)
     try {
-      return await p
+      return shareableDedupResult(await p)
     } finally {
       _inFlight.delete(cacheKey)
     }

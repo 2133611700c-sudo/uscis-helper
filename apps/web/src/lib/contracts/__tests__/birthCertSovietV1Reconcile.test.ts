@@ -64,8 +64,15 @@ describe('Phase 2 — KEY_ALIASES (D) does not contradict the contract', () => {
 describe('Phase 2 — C crop layer (FIELD_BOX_TEMPLATES) reconciles to contract runtimeKeys', () => {
   const cropKeys = Object.keys(FIELD_BOX_TEMPLATES.ua_birth_certificate ?? {})
 
-  it('the crop layer covers the three child-name fields', () => {
-    expect(cropKeys.sort()).toEqual(['family_name', 'given_name', 'patronymic'])
+  it('the crop layer covers the three child-name fields plus the father/mother crop-only sub-fields', () => {
+    // 2026-07-06: father_given_name/father_patronymic added (concatenated into the composite
+    // father_full_name downstream — decision #5 unchanged, see birthCertSovietV1Contract.ts).
+    // 2026-07-06 (item 2): mother_given_patronymic added (single combined crop, feeds
+    // mother_full_name; a two-box split live-tested worse for this row).
+    expect(cropKeys.sort()).toEqual([
+      'family_name', 'father_given_name', 'father_patronymic', 'given_name',
+      'mother_given_patronymic', 'patronymic',
+    ])
   })
 
   it('every crop key is a contract runtimeKey whose locator is fixed_region', () => {

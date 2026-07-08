@@ -209,6 +209,11 @@ export async function POST(req: NextRequest) {
 }
 
 async function POST_impl(req: NextRequest) {
+  // T1.1 DIAGNOSTIC (temporary, additive-only): stage timing to find the FUNCTION_INVOCATION_TIMEOUT
+  // root cause found 2026-07-08 (504 at 120-245s on a 1.1MB file, well under the per-page 85s model
+  // deadline). No behavior change — logs only. Remove once the timeout is root-caused.
+  const __t0 = Date.now()
+  console.info('[t11_timing] request_start')
   const ip = getClientIP(req)
   const rl = await rateLimit(`translation-vision:${ip}`, 8, 60_000)
   if (!rl.allowed) {
@@ -411,6 +416,9 @@ async function POST_impl(req: NextRequest) {
       return { kind: 'page', page: i + 1, buffer, mime, rawBuffer, readOpts: { timeoutMs: 85_000, attemptsPerModel: 1, originalBuffer: rawBuffer, forensic } }
     }))
     const corePageResults: Array<{ page: number; ok: boolean; status: string; ms: number }> = []
+    // ORIENTATION DIAGNOSTIC (owner focus): surface page-1 auto-orientation decision in the
+    // response so full-pipeline orientation can be measured (angle applied + telemetry). Additive.
+    let coreOrientation: { applied_cw: number | null; status: string | null; measured: boolean | null; trusted: boolean | null; telemetry_status: string | null } | null = null
     const coreReadModels: Array<string | null> = []
     let canonicalFields: ReturnType<typeof applyKnowledgeBrainIfEnabled> = []
     // 1A — MRZ authority (flag MRZ_TRANSLATION_ENABLED, default OFF = byte-identical).
@@ -431,6 +439,7 @@ async function POST_impl(req: NextRequest) {
       }
     }
     const corePages = pages.filter((p) => p.kind === 'page') as Array<Extract<CorePrep, { kind: 'page' }>>
+    console.info('[t11_timing] preprocess_done', Date.now() - __t0, 'pages', corePages.length)
     if (isOneBrainRecognizeEnabled()) {
       // STEP E cutover: single orchestrator. Per-page opts carried via pages[].readOpts;
       // MRZ injected as extraCandidates (appended after reads).
@@ -453,6 +462,7 @@ async function POST_impl(req: NextRequest) {
       // recovered read returns via the canonical path and the fallback plane below never runs.
       // Both flags OFF → byte-identical. The fallback plane is NOT removed until a shadow
       // window proves the in-door retry fully covers it.
+      console.info('[t11_timing] before_recognizeDocument', Date.now() - __t0)
       const rec = await recognizeDocument({
         pages: corePages.map((p) => ({
           buffer: p.buffer,
@@ -466,6 +476,7 @@ async function POST_impl(req: NextRequest) {
         extraCandidates: mrzExtra, evidenceProvider: resolveEvidenceProvider(),
         retryOnEmpty: { readOpts: { timeoutMs: 25_000 } },
       })
+      console.info('[t11_timing] after_recognizeDocument', Date.now() - __t0)
       for (const p of rec.pageResults) {
         corePageResults.push({ page: p.page, ok: p.ok, status: p.status, ms: p.ms })
         coreReadModels.push(p.model)
@@ -481,12 +492,25 @@ async function POST_impl(req: NextRequest) {
     } else {
       // HONEST DEGRADATION (P1): collect any typed provider error a page surfaced.
       const coreProviderErrors: OcrProviderError[] = []
+      console.info('[t11_timing] before_readDocument', Date.now() - __t0, 'pages', corePages.length)
       const corePagesResults = await Promise.all(corePages.map(async (p, i) => {
         const r = await readDocument(p.buffer, p.mime, docTypeId, { product: 'translation', ...p.readOpts })
+        console.info('[t11_timing] readDocument_page_done', i + 1, Date.now() - __t0, 'reader_ms', r.ms)
         return { i, r }
       }))
+      console.info('[t11_timing] after_readDocument_all_pages', Date.now() - __t0)
       for (const { i, r } of corePagesResults) {
         corePageResults.push({ page: i + 1, ok: r.ok, status: r.status, ms: r.ms })
+        if (i === 0 && r.posture) {
+          const ot = r.posture.orientation_telemetry
+          coreOrientation = {
+            applied_cw: r.posture.content_rotation_applied_cw ?? null,
+            status: r.posture.orientation_status ?? null,
+            measured: ot?.measured ?? null,
+            trusted: ot?.trusted ?? null,
+            telemetry_status: ot?.status ?? null,
+          }
+        }
         coreReadModels.push(r.model ?? null)
         if (r.ok && Array.isArray(r.fields)) {
           buildCyrillicMap(r.fields).forEach((v, k) => { if (!cyrillicMap.has(k)) cyrillicMap.set(k, v) })
@@ -711,6 +735,7 @@ async function POST_impl(req: NextRequest) {
 
       return NextResponse.json({
         ok: true, doc_type_id: docTypeId, fields,
+        ...(coreOrientation ? { orientation: coreOrientation } : {}),
         // R8: only present when C3 actually ran on the Core path (flag ON) so the
         // response shape is byte-identical at prod defaults (flag OFF).
         ...(coreOcrFieldSafety.applied ? { ocr_field_safety: coreOcrFieldSafety } : {}),

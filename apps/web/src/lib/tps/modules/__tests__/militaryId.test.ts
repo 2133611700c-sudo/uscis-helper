@@ -60,6 +60,15 @@ describe('extractMilitaryId', () => {
     expect(result.military_id_series).toBe('Со')
   })
 
+  it('BUG FOUND + FIXED 2026-07-06: extracts series+number from the UNLABELED "Со 307258" ' +
+    'fallback format (no "Серія"/"№" label) — this path had never been tested and was fully ' +
+    'dead (JS \\b never fires around Cyrillic; verified directly in Node before this fix)', () => {
+    const unlabeledOcr = TYPICAL_IDENTITY_OCR.replace('Серія Со № 307258', 'Со 307258')
+    const result = extractMilitaryId(unlabeledOcr)
+    expect(result.military_id_series).toBe('Со')
+    expect(result.military_id_number).toBe('Со 307258')
+  })
+
   it('review_required is always true', () => {
     const result = extractMilitaryId(TYPICAL_IDENTITY_OCR)
     expect(result.review_required).toBe(true)

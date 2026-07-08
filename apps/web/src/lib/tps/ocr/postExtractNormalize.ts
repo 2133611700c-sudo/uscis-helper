@@ -63,12 +63,22 @@ const PROVINCE_LATIN_MAP: Array<{ re: RegExp; value: string }> = [
   { re: /\bchernihiv\w*\s+obl(?:ast)?\.?$/iu, value: 'Chernihiv Oblast' },
 ]
 
+// BUG FOUND + FIXED 2026-07-06: same defect as the "A3 FIX" below (JS `\b` never fires around
+// Cyrillic) — the ORIGINAL `\b(?:...|селище...)\b` pattern's Ukrainian "селище"/"селище міського
+// типу" branch could never match (verified directly, reproducibly), so this strip-settlement-
+// designator step silently did nothing for Ukrainian-language input; only the Latin
+// "urban-type settlement"/"settlement" branches ever fired. Fixed with the same lookaround-
+// boundary technique already established in this file (line ~87's A3 FIX), applied uniformly so
+// Latin behavior is unchanged and Ukrainian now also works.
+const SETTLEMENT_DESIGNATOR_RE =
+  /(?<=^|[\s.,;:!?])(?:urban-type\s+settlement|settlement|селище(?:\s+міського\s+типу)?)(?=[\s.,;:!?]|$)/giu
+
 function cleanCityCandidate(raw: string): string {
   return raw
     .trim()
     .replace(/^[.\-:,\s]+/u, '')
     .replace(BROKEN_SETTLEMENT_PREFIX_RE, '')
-    .replace(/\b(?:urban-type\s+settlement|settlement|селище(?:\s+міського\s+типу)?)\b/giu, ' ')
+    .replace(SETTLEMENT_DESIGNATOR_RE, ' ')
     .replace(CITY_PREFIX_RE, '')
     .replace(/\s+/gu, ' ')
     .trim()

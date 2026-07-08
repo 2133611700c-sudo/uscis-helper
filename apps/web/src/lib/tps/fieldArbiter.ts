@@ -219,25 +219,33 @@ export function resolveField(
     }
   }
 
-  const winner = sorted[0]
-  const losers = sorted.slice(1)
+  let winner = sorted[0]
+  let losers = sorted.slice(1)
   const cls = FIELD_CLASS[field] ?? 'WEAK_REVIEW'
 
-  // Plausibility guard for identity fields: reject if winner fails
+  // Plausibility guard for identity fields: reject if winner fails.
+  //
+  // BUG FIX (2026-07-07, found by docs/reports/TPS_FIELD_VALUE_LINEAGE_2026-07-07.md's
+  // measurement test, not by inspection): this used to REASSIGN winner/losers IN PLACE, not by
+  // recursing. The previous version called `return resolveField(field, [newWinner, ...])` — but
+  // resolveField() re-sorts its input by priority FIRST (see `sorted` above), which put the
+  // ORIGINAL implausible-but-highest-priority candidate right back at the front, failed the same
+  // check again, and recursed again — forever, until the JS call stack overflowed
+  // (`RangeError: Maximum call stack size exceeded`). Trigger, verified with fictional data: any
+  // top-priority candidate (e.g. a `user_corrected` value) that is a hyphenated name — ordinary
+  // input for this product's audience, not an edge case. Fixed by promoting the plausible
+  // candidate WITHOUT re-entering the function, so the priority sort never runs again on the same
+  // rejected value.
   const isIdentity = cls === 'STRONG_IDENTITY'
   if (isIdentity && winner.value && !isPlausibleName(winner.value)) {
-    // Winner itself is garbage — try next plausible candidate
-    const plausible = sorted.find((c) => c.value && isPlausibleName(c.value))
+    // Winner itself is garbage — try next plausible candidate among the losers.
+    const plausible = losers.find((c) => c.value && isPlausibleName(c.value))
     if (plausible) {
-      const idx = sorted.indexOf(plausible)
-      sorted.splice(idx, 1)
-      sorted.unshift(plausible)
       notes.push(`plausibility_rejected:${winner.sourceDoc}=${winner.value}`)
-      // Reassign winner
       const oldWinner = winner
-      const newWinner = plausible
+      losers = losers.filter((c) => c !== plausible)
       losers.push(oldWinner)
-      return resolveField(field, [newWinner, ...sorted.slice(1)])
+      winner = plausible
     }
   }
 

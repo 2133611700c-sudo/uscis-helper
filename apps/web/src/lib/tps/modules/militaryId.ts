@@ -161,7 +161,16 @@ function extractSerialNumber(rawText: string): { series: string | null; number: 
     return { series, number: `${series} ${num}` }
   }
   // Also try "АА 307258" without "Серія" label (some OCR variants)
-  const m2 = rawText.match(/\b([А-ЯІЇЄҐа-яіїєґ]{2})\s+(\d{6})\b/u)
+  // BUG FOUND + FIXED 2026-07-06: `\b` is ASCII-only in JS (`\w` never includes Cyrillic, even
+  // with `/u`) — this pattern's character class is PURELY Cyrillic with no Latin fallback, so
+  // `\b` before/after it could NEVER fire (verified: `/\b[А-Я]{2}\s+\d{6}\b/u.test('АА 307258')`
+  // is `false` in every tested context, including string start). This fallback path has been
+  // 100% dead since it was written. Fixed with an explicit Cyrillic+Latin+digit-aware boundary.
+  const CYR_LAT_DIGIT_BOUNDARY = 'А-ЯІЇЄҐа-яіїєґA-Za-z0-9'
+  const m2 = rawText.match(new RegExp(
+    `(?<![${CYR_LAT_DIGIT_BOUNDARY}])([А-ЯІЇЄҐа-яіїєґ]{2})\\s+(\\d{6})(?![${CYR_LAT_DIGIT_BOUNDARY}])`,
+    'u',
+  ))
   if (m2) {
     const series = m2[1].trim()
     const num = m2[2].trim()

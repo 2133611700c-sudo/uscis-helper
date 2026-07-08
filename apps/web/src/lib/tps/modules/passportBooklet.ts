@@ -58,8 +58,23 @@ const BOOKLET_MODULE: TpsDocType = 'passport'
 //   - "EA 991991" (Latin look-alikes mistaken for Cyrillic)
 // We allow Latin A/B/C/E/H/I/K/M/O/P/T/X for letters because Cyrillic
 // letters that look identical to those Latin chars confuse Vision.
-const SERIES_NUMBER_RE =
-  /\b([А-ЯІЇЄҐABCEHIKMOPTX]{2})\s*((?:[0-9]\s*){6})\b/u
+// BUG FOUND + FIXED 2026-07-06: `\b` is ASCII-only in JavaScript (`\w`, which `\b` is defined in
+// terms of, never includes Cyrillic — even with the `/u` Unicode flag, `\b` itself stays
+// ASCII-only). Verified directly: `/\b[А-Я]/u.test('ЕА991991')` is `false` even at absolute
+// string start. This meant the ORIGINAL `\b...\b` version of this regex could only ever match
+// when Vision happened to output the Latin-lookalike spelling ("EA991991") — genuine Cyrillic
+// output ("ЕА991991", `lc.text` is already `.trim()`-ed so this is the realistic shape) never
+// matched at all. Real-world impact on actual booklet scans is NOT independently confirmed (this
+// doc type has zero real photo fixtures in this project — see EYES_FIRST_VERIFICATION_METHOD's
+// round-1 finding), but the regex mechanics themselves are a deterministic, reproducible language
+// fact, not a guess. Fixed with an explicit Cyrillic+Latin+digit-aware boundary (negative
+// lookaround) that strictly subsumes the old behavior — every case the old pattern matched still
+// matches, plus genuine-Cyrillic input now also matches.
+const CYR_LAT_DIGIT_BOUNDARY = 'А-ЯІЇЄҐа-яіїєґA-Za-z0-9'
+const SERIES_NUMBER_RE = new RegExp(
+  `(?<![${CYR_LAT_DIGIT_BOUNDARY}])([А-ЯІЇЄҐABCEHIKMOPTX]{2})\\s*((?:[0-9]\\s*){6})(?![${CYR_LAT_DIGIT_BOUNDARY}])`,
+  'u',
+)
 
 // Date of birth — many formats. We try several:
 //   "01 січня 1990 року"  (UA written-out month)
