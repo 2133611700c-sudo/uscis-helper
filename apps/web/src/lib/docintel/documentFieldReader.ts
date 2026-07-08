@@ -78,15 +78,8 @@ export function selectDefaultVisionProvider(docTypeId?: string | null): VisionPr
   // stay on the default reader path even when the operator enables READER_PROVIDER=openai:
   // live benches proved GPT vision is unstable/fabricating there, so widening the
   // override to those families would lower safety rather than improve availability.
-  //
-  // TEST-ONLY opt-in (2026-07-08): READER_PROVIDER_FORCE_HANDWRITTEN='1' additionally routes
-  // HANDWRITTEN families through GPT too — for the explicit owner-requested measurement of
-  // whether GPT can read handwritten Cyrillic (it is expected to fabricate per ADR-026; this
-  // flag exists to MEASURE that, not to ship it). Default unset = handwritten stays on the
-  // default reader (no behavior change). Every GPT read is still force-reviewed (ADR-018).
   const openaiRequested = (process.env.READER_PROVIDER || '').toLowerCase() === 'openai'
-  const forceHandwritten = process.env.READER_PROVIDER_FORCE_HANDWRITTEN === '1'
-  if (openaiRequested && (forceHandwritten || !isHandwrittenFamily(docTypeId))) {
+  if (openaiRequested && !isHandwrittenFamily(docTypeId)) {
     return new OpenAIVisionProvider()
   }
   return defaultVisionProvider

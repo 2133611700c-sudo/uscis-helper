@@ -5,7 +5,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { selectDefaultVisionProvider } from '../documentFieldReader'
 
-afterEach(() => { delete process.env.READER_PROVIDER; delete process.env.READER_PROVIDER_FORCE_HANDWRITTEN })
+afterEach(() => { delete process.env.READER_PROVIDER })
 
 describe('selectDefaultVisionProvider — temporary GPT route', () => {
   it('defaults to the Gemini provider (byte-identical when unset)', () => {
@@ -24,15 +24,5 @@ describe('selectDefaultVisionProvider — temporary GPT route', () => {
     process.env.READER_PROVIDER = 'openai'
     expect(selectDefaultVisionProvider('ua_birth_certificate').name).toBe('gemini')
     expect(selectDefaultVisionProvider('ua_marriage_certificate').name).toBe('gemini')
-  })
-  it('TEST-ONLY: READER_PROVIDER_FORCE_HANDWRITTEN=1 also routes handwritten to OpenAI (measure fabrication)', () => {
-    process.env.READER_PROVIDER = 'openai'
-    process.env.READER_PROVIDER_FORCE_HANDWRITTEN = '1'
-    expect(selectDefaultVisionProvider('ua_birth_certificate').name).toBe('openai')
-  })
-  it('force-handwritten flag is inert unless READER_PROVIDER=openai too', () => {
-    delete process.env.READER_PROVIDER
-    process.env.READER_PROVIDER_FORCE_HANDWRITTEN = '1'
-    expect(selectDefaultVisionProvider('ua_birth_certificate').name).toBe('gemini')
   })
 })
